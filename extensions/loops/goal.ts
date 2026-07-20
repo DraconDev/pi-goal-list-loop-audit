@@ -99,9 +99,10 @@ function rememberCtx(ctx: ExtensionContext): void {
 
 let state: State = { goal: null };
 
-// Drafting mode: /goal with no args starts a clarification turn; the agent
-// must call propose_goal_draft, which opens the user's Confirm dialog.
-let draftingActive = false;
+// Drafting mode: a no-arg loop command starts a clarification turn; the agent
+// must call propose_goal_draft / propose_loop_draft, which opens the user's
+// Confirm dialog. The target decides where the confirmed contract lands.
+let draftingTarget: "goal" | "list" | "loop" | null = null;
 
 // Dedup set for token accounting (agent_end may replay seen messages).
 const countedTokenMessages = new Set<string>();
@@ -380,23 +381,32 @@ function activateNextListItem(ctx: ExtensionContext): boolean {
 // Drafting: /goal with no args → clarify → Confirm dialog → activate
 // =================================================================
 
-function startDrafting(ctx: ExtensionContext): void {
-  draftingActive = true;
+function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "loop"): void {
+  draftingTarget = target;
+  const prompts: Record<string, [string, string, string]> = {
+    goal: ["goal-loop-draft.md", "Goal drafting", "propose_goal_draft"],
+    list: ["goal-loop-draft.md", "Goal drafting (for the queue)", "propose_goal_draft"],
+    loop: ["goal-loop-forever-draft.md", "Loop drafting", "propose_loop_draft"],
+  };
+  const [file, label, tool] = prompts[target]!;
   ctx.ui.notify(
-    "Goal drafting started. The agent will grill until the objective is concrete, then propose a draft for you to Confirm. No work begins before confirmation.",
+    `${label} started. The agent will grill until the contract is concrete, then ${tool} opens a Confirm dialog. No work begins before confirmation.`,
     "info",
   );
-  const tmplPath = path.resolve(__dirname, "..", "..", "prompts", "goal-loop-draft.md");
+  const tmplPath = path.resolve(__dirname, "..", "..", "prompts", file);
   let tmpl: string;
   try {
     tmpl = fs.readFileSync(tmplPath, "utf-8");
+    if (target === "list") {
+      tmpl = tmpl.replace("[GOAL DRAFTING]", "[GOAL DRAFTING — the confirmed goal goes into the /list QUEUE, it does not activate immediately]");
+    }
   } catch {
-    tmpl = "[GOAL DRAFTING] Clarify the user's goal, then call propose_goal_draft.";
+    tmpl = `[DRAFTING] Clarify the user's ${target}, then call ${tool}.`;
   }
   try {
     extensionApi?.sendUserMessage(tmpl, { deliverAs: ctx.isIdle() ? "followUp" : "steer" });
   } catch {
-    draftingActive = false;
+    draftingTarget = null;
   }
 }
 
