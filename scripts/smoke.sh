@@ -6,8 +6,10 @@
 # loop (goal → agent work → complete_goal → isolated auditor → archive) with
 # real models, which unit tests cannot do.
 #
-# Requirements: tmux, pi, a built-in provider with quota (default auditor
-# model: opencode/deepseek-v4-flash-free — override with AUDITOR_MODEL).
+# Requirements: tmux, pi, a built-in provider with quota. The session runs
+# on MAIN_MODEL (env-overridable); the auditor uses the same pi session model
+# — the plugin never picks models, so there is no separate auditor model to
+# configure here.
 #
 # Usage:  scripts/smoke.sh [scenario]
 #   scenario: goal (default) | list | draft | draft-reject | loop
@@ -21,7 +23,7 @@
 set -uo pipefail
 
 SCENARIO="${1:-goal}"
-AUDITOR_MODEL="${AUDITOR_MODEL:-opencode/deepseek-v4-flash-free}"
+
 EXT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 WORK="$(mktemp -d /tmp/pi-gla-smoke-XXXX)"
 SESS="gla-smoke-$$"
@@ -54,11 +56,12 @@ sys.exit(1)
 EOF
 }
 
-say "setup: $WORK (auditor: $AUDITOR_MODEL)"
+say "setup: $WORK"
 # Hermetic by default: bare agent dir (auth.json only) so global extensions
-# (old npm installs of THIS package, pi-loop-mode's /loop, kilocode provider)
-# can never collide with the dev extension under test. Main model must be a
-# built-in provider; opencode/deepseek-v4-flash-free is free and works bare.
+# (old npm installs of THIS package, kilocode provider, etc.) can never
+# collide with the dev extension under test. MAIN_MODEL is the pi model
+# selected for the test session — it must be a built-in provider (the auditor
+# shares it). Pick any model that works on your rig: MAIN_MODEL=provider/id.
 BARE="$(mktemp -d /tmp/pi-bare-agent-XXXX)"
 cp "$HOME/.pi/agent/auth.json" "$BARE/" 2>/dev/null || true
 MAIN_MODEL="${MAIN_MODEL:-opencode/deepseek-v4-flash-free}"
@@ -69,8 +72,6 @@ tmux new-session -d -s "$SESS" -x 200 -y 50 \
 # drops them into the agent as plain text (a flake we hit twice).
 if wait_for "escape interrupt" 45; then pass "pi started"; else fail "pi did not start in 45s"; fi
 sleep 3
-send "/goal-settings model=$AUDITOR_MODEL"
-sleep 4
 
 case "$SCENARIO" in
   goal)

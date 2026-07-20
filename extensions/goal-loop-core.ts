@@ -98,22 +98,6 @@ export interface AuditVerdict {
 }
 
 /**
- * Capability tier for auditor-model auto-selection (v0.6.2). Lower = stronger.
- * The auditor is the verification gate — when no explicit model is configured
- * we prefer the STRONGEST available built-in model, never a hardcoded one.
- * Heuristic over the model id/name; documented as a heuristic.
- */
-export function auditModelTier(modelIdOrName: string): number {
-  const s = modelIdOrName.toLowerCase();
-  if (s.includes("opus")) return 0;
-  if (s.includes("sonnet") || s.includes("-pro") || s.includes("pro-")) return 1;
-  if (s.includes("gpt") || s.includes("gemini") || s.includes("kimi-k")) return 2;
-  if (s.includes("flash") || s.includes("mini") || s.includes("haiku")) return 3;
-  if (s.includes("free")) return 5;
-  return 4;
-}
-
-/**
  * Sum token usage across assistant messages, counting each message once.
  * `agent_end` events may include already-seen history, so callers pass a
  * dedup set keyed by timestamp+tokens (good-enough identity for counting).
