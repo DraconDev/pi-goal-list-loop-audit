@@ -61,10 +61,15 @@ import {
   type LoopState,
 } from "../goal-loop-forever.js";
 import {
+  accountTurnForNudges,
   BACKOFF_HARD_CAP_MS,
   BACKOFF_IDLE_RETRY_MS,
   backoffMs,
+  HEARTBEAT_INTERVAL_MS,
+  HEARTBEAT_MAX_NUDGES,
+  HEARTBEAT_STALL_MS,
   humanMs,
+  shouldHeartbeatRefire,
   shouldPauseAfterBackoff,
 } from "../goal-loop-backoff.js";
 
@@ -100,6 +105,52 @@ let draftingActive = false;
 
 // Dedup set for token accounting (agent_end may replay seen messages).
 const countedTokenMessages = new Set<string>();
+
+// Heartbeat self-watchdog state: liveness is the loop's own job.
+let lastActivityAt = Date.now();
+let heartbeatNudges = 0;
+let heartbeatTimer: NodeJS.Timeout | null = null;
+
+function noteActivity(): void {
+  lastActivityAt = Date.now();
+}
+
+function isSupervising(): boolean {
+  return isLoopActive() || (!!state.goal && state.goal.status === "active" && state.goal.autoContinue);
+}
+
+function heartbeatTick(): void {
+  const ctx = freshCtx();
+  if (!ctx) return;
+  let sessionIdle = false;
+  try {
+    sessionIdle = ctx.isIdle() && !ctx.hasPendingMessages();
+  } catch {
+    return;
+  }
+  const fire = shouldHeartbeatRefire({
+    supervising: isSupervising(),
+    sessionIdle,
+    timerPending: continuationTimer !== null || loopTimer !== null,
+    msSinceActivity: Date.now() - lastActivityAt,
+    stallMs: HEARTBEAT_STALL_MS,
+  });
+  if (!fire) return;
+  noteActivity();
+  appendLedger(ctx.cwd, "heartbeat_refire", { nudgesSoFar: heartbeatNudges });
+  ctx.ui.notify("Heartbeat: supervisor active but session stalled — re-firing continuation.", "info");
+  if (isLoopActive()) {
+    scheduleLoopTick(ctx);
+  } else {
+    scheduleContinuation(ctx, true);
+  }
+}
+
+function startHeartbeat(): void {
+  if (heartbeatTimer) return;
+  heartbeatTimer = setInterval(heartbeatTick, HEARTBEAT_INTERVAL_MS);
+  heartbeatTimer.unref?.();
+}
 let continuationTimer: NodeJS.Timeout | null = null;
 let continuationScheduledFor: string | null = null;
 let iterationCounter = 0;
@@ -1262,6 +1313,7 @@ function warnOnCommandCollision(ctx: ExtensionContext): void {
 
 export default function (pi: ExtensionAPI): void {
   extensionApi = pi;
+  startHeartbeat();
   pi.registerCommand("goal", {
     description: "Set a goal and start the loop now (no drafting). /goal <objective> [Done when: <verifier>]",
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdSet(args, ctx); },
@@ -1345,10 +1397,38 @@ export default function (pi: ExtensionAPI): void {
 
   pi.on("agent_end", async (event: any, ctx: ExtensionContext) => {
     rememberCtx(ctx);
+    noteActivity();
     if (!registeredCtx) {
       registerAgentTools(pi, ctx);
       registeredCtx = ctx;
     }
+    // Nudge accounting: a supervising turn with zero tool calls is a nudge
+    // (no real progress); 3 consecutive → pause. Tool-use turns reset it.
+    if (isSupervising()) {
+      heartbeatNudges = accountTurnForNudges(toolCallsThisTurn, heartbeatNudges);
+      if (heartbeatNudges >= HEARTBEAT_MAX_NUDGES) {
+        heartbeatNudges = 0;
+        if (isLoopActive()) {
+          clearLoopTimer();
+          state.loop = { ...state.loop!, active: false, stopReason: `stalled: ${HEARTBEAT_MAX_NUDGES} consecutive turns with no tool calls` };
+          persistState(ctx);
+          ctx.ui.notify(`Loop stopped: stalled (${HEARTBEAT_MAX_NUDGES} turns, no tools). /loop start to begin a new one.`, "warning");
+          notifyExternal(ctx, "Loop stopped: stalled (no tool calls).");
+          return;
+        }
+        if (state.goal) {
+          updateGoal({
+            status: "paused",
+            pauseReason: `stalled: ${HEARTBEAT_MAX_NUDGES} consecutive turns with no tool calls`,
+            pauseSuggestedAction: "Inspect the goal — /goal-resume to retry, /goal-tweak to narrow it, /goal-cancel to abort.",
+          }, ctx);
+          ctx.ui.notify(`Goal paused: stalled (${HEARTBEAT_MAX_NUDGES} turns, no tools).`, "warning");
+          notifyExternal(ctx, "Goal paused: stalled (no tool calls).");
+          return;
+        }
+      }
+    }
+    toolCallsThisTurn = 0;
     // Loop 3 runs on the same heartbeat: measure after every agent turn.
     if (isLoopActive()) {
       clearLoopTimer();
@@ -1411,5 +1491,6 @@ export default function (pi: ExtensionAPI): void {
 
   pi.on("tool_call", () => {
     toolCallsThisTurn++;
+    noteActivity();
   });
 }
