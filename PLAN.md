@@ -117,6 +117,14 @@ handles UX; smoke tests run under a bare `PI_CODING_AGENT_DIR` to isolate.
   notify commands; smoke `wait_for "plateau"` matched agent prose instead of
   the orchestrator's stop text (assertions raced the loop).
 
+### M7 — v0.7.0 (global config tier) ✅ (2026-07-21)
+
+User directive: settings are not per-goal/loop/list — there should be ONE
+global config you set once and rarely open. Shipped: project > global >
+defaults resolution, `/goal-settings` writes global by default (`project`
+prefix for local overrides), provenance display, 4 mergeSettings unit tests,
+live-verified both tiers + no-leak smoke. Docs updated.
+
 ### M6 — v0.6.0 (draft everything) ✅ (2026-07-20)
 
 User directive: for a long-running thing, a draft up front is better. Drafting

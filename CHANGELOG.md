@@ -5,6 +5,32 @@ All notable changes to pi-goal-loop-audit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] — 2026-07-21
+
+### Added — global config tier
+
+- **One global config, rarely opened.** Settings now resolve per key as
+  **project > global > defaults**: global lives at
+  `~/.pi/agent/pi-goal-loop-audit.settings.json`, the project override stays
+  at `.pi-gla/settings.json`. `/goal-settings key=value` writes GLOBAL by
+  default (set the auditor override, notify command, token limit once — not
+  in every project); `/goal-settings project key=value` writes the rare local
+  override; `key=unset` removes the key from that tier.
+- **Provenance display**: bare `/goal-settings` shows every effective value
+  with its source (`[project]` / `[global]` / `[default]`) and both file paths.
+- Nothing is per-goal: model, thinking, notify, and token budget are shared
+  config for all three loops. The auditor still defaults to the pi session
+  model — the plugin never picks a model.
+- `mergeSettings` in core (4 unit tests): later layers win per key,
+  `undefined` means "not set here", base never mutated.
+
+### Verified (2026-07-21)
+
+- Live: global write lands at `~/.pi/agent/…` with quoted `$1` commands intact;
+  `project` prefix writes only the project file; provenance display correct.
+- `loop` smoke green with project-scoped notify (no global-config leak).
+- 94 unit tests, tsc clean.
+
 ## [0.6.2] — 2026-07-20
 
 ### Changed (model philosophy: the user selects the model in pi)
