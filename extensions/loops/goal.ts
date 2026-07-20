@@ -480,6 +480,35 @@ async function cmdCancel(ctx: ExtensionContext): Promise<void> {
   ctx.ui.notify("Goal aborted.", "info");
 }
 
+async function cmdGoals(ctx: ExtensionContext): Promise<void> {
+  const dir = archiveDir(ctx.cwd);
+  if (!fs.existsSync(dir)) {
+    ctx.ui.notify("No archived goals yet.", "info");
+    return;
+  }
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md")).sort().reverse();
+  if (files.length === 0) {
+    ctx.ui.notify("No archived goals yet.", "info");
+    return;
+  }
+  const lines = files.slice(0, 20).map((f) => {
+    let status = "?";
+    let stop = "";
+    let obj = "";
+    try {
+      const content = fs.readFileSync(path.join(dir, f), "utf-8");
+      status = content.match(/\*\*Status\*\*:\s*(\w+)/)?.[1] ?? "?";
+      stop = content.match(/\*\*Stop reason\*\*:\s*(.+)/)?.[1]?.trim() ?? "";
+      obj = content.match(/## Objective\s+>\s*(.+)/)?.[1]?.trim() ?? "";
+    } catch { /* unreadable file — show name only */ }
+    return `${f.replace(/\.md$/, "")} [${status}] ${obj.slice(0, 60)}${stop ? ` — ${stop.slice(0, 40)}` : ""}`;
+  });
+  ctx.ui.notify(
+    `Archived goals (${files.length}${files.length > 20 ? ", showing 20" : ""}):\n` + lines.join("\n"),
+    "info",
+  );
+}
+
 async function cmdTweak(args: string, ctx: ExtensionContext): Promise<void> {
   if (!state.goal || state.goal.status !== "active") {
     ctx.ui.notify("No active goal to tweak. /goal <objective> to start one.", "info");
@@ -1164,6 +1193,88 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       scheduleContinuation(liveCtx, true);
       return {
         content: [{ type: "text", text: `Goal confirmed and activated (id ${goal.id}). Begin work now; call complete_goal only when the objective is genuinely satisfied.` }],
+        details: {},
+      };
+    },
+  }));
+
+  pi.registerTool(defineTool({
+    name: "propose_loop_draft",
+    label: "Propose loop draft",
+    description: "During loop drafting (/loop with no args), propose the loop configuration. The orchestrator test-runs the measure command ONCE and shows the user real output + parsed number in a Confirm dialog. A measure producing no number is auto-rejected.",
+    parameters: Type.Object({
+      target: Type.String({ description: "What to improve, concretely" }),
+      measureCmd: Type.String({ description: "Shell command that prints ONE number representing progress" }),
+      direction: Type.Union([Type.Literal("min"), Type.Literal("max")], { description: "min = lower is better, max = higher is better" }),
+      window: Type.Optional(Type.Number({ description: "Plateau stop after N non-improving iterations (default 5)" })),
+      max: Type.Optional(Type.Number({ description: "Iteration cap (default 50)" })),
+      branch: Type.Optional(Type.Boolean({ description: "branch=true: scratch-branch mode (clean git tree required)" })),
+    }),
+    async execute(_id, params, _signal, _onUpdate, execCtx) {
+      const p = params as { target: string; measureCmd: string; direction: "min" | "max"; window?: number; max?: number; branch?: boolean };
+      if (draftingTarget !== "loop") {
+        return {
+          content: [{ type: "text", text: "Not in loop drafting mode. The user starts loop drafting with /loop (no args), or starts directly with /loop start." }],
+          details: {},
+        };
+      }
+      if (!p.target?.trim() || !p.measureCmd?.trim()) {
+        return { content: [{ type: "text", text: "target and measureCmd are both required." }], details: {} };
+      }
+      const liveCtx = (execCtx as ExtensionContext | undefined) ?? ctx;
+      // THE TEST-RUN: orchestrator runs the proposed measure once. The user
+      // sees the real number before a single iteration burns tokens.
+      let rawOutput = "";
+      let parsed: number | null = null;
+      if (extensionApi) {
+        try {
+          const result = await extensionApi.exec("bash", ["-c", p.measureCmd], { cwd: liveCtx.cwd });
+          rawOutput = String((result as any)?.stdout ?? "").trim();
+          parsed = parseMetric(rawOutput);
+        } catch (err) {
+          rawOutput = `(measure command failed: ${err instanceof Error ? err.message : String(err)})`;
+        }
+      }
+      if (parsed === null) {
+        return {
+          content: [{
+            type: "text",
+            text: `Measure test-run produced NO number — proposal auto-rejected.\nCommand: ${p.measureCmd}\nOutput: ${rawOutput.slice(0, 300) || "(empty)"}\nFix the command so it prints exactly one number, sanity-check it against the repo, and propose again.`,
+          }],
+          details: {},
+        };
+      }
+      const window = p.window && p.window > 0 ? Math.floor(p.window) : 5;
+      const max = p.max && p.max > 0 ? Math.floor(p.max) : 50;
+      let confirmed = false;
+      try {
+        confirmed = await liveCtx.ui.confirm(
+          "Confirm loop",
+          `Target: ${p.target.trim()}\n\nMeasure: ${p.measureCmd}\nTest-run output: ${rawOutput.slice(0, 200)}\nParsed number: ${parsed} (${p.direction === "min" ? "lower is better" : "higher is better"})\n\nPlateau stop: ${window} non-improving iterations · Cap: ${max} iterations${p.branch ? "\nbranch mode: scratch branch (clean tree required)" : ""}\n\nStart the loop?`,
+        );
+      } catch {
+        confirmed = false;
+      }
+      if (!confirmed) {
+        return {
+          content: [{ type: "text", text: "Loop draft rejected by the user. Ask what to change — target, metric, direction, or window/max — and propose again." }],
+          details: {},
+        };
+      }
+      draftingTarget = null;
+      const started = await startLoopFromConfig(liveCtx, {
+        target: p.target.trim(),
+        measureCmd: p.measureCmd,
+        direction: p.direction,
+        plateauWindow: window,
+        maxIterations: max,
+        branch: p.branch === true,
+      });
+      if (!started) {
+        return { content: [{ type: "text", text: "Loop could not start (see the warning above — likely a git/dirty-tree issue with branch mode)." }], details: {} };
+      }
+      return {
+        content: [{ type: "text", text: `Loop confirmed and started. Baseline ${parsed}. Make ONE small change per turn to move the metric ${p.direction === "min" ? "down" : "up"}.` }],
         details: {},
       };
     },
