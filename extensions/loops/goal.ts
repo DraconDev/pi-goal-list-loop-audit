@@ -23,6 +23,7 @@
  */
 
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 
 import { defineTool, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
@@ -37,6 +38,7 @@ import {
   archivedGoalPath,
   buildTaskList,
   buildTaskSummary,
+  mergeSettings,
   sumNewAssistantTokens,
   type TaskProposal,
   validateTaskProposal,
@@ -1359,18 +1361,60 @@ const DEFAULT_SETTINGS: Settings = {
   auditorThinkingLevel: "medium",
 };
 
-function settingsPath(cwd: string): string {
+// Two-tier config (v0.7.0): GLOBAL is the normal home — you set things once
+// and rarely open this again. PROJECT is the rare local override.
+// Resolution: project > global > defaults (per key).
+function globalSettingsPath(): string {
+  return path.join(os.homedir(), ".pi", "agent", "pi-goal-loop-audit.settings.json");
+}
+
+function projectSettingsPath(cwd: string): string {
   return path.join(piGlaDir(cwd), "settings.json");
 }
 
-function loadSettings(cwd: string): Settings {
-  const file = settingsPath(cwd);
-  if (!fs.existsSync(file)) return { ...DEFAULT_SETTINGS };
+function readSettingsFile(file: string): Partial<Settings> {
   try {
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(fs.readFileSync(file, "utf-8")) };
+    if (!fs.existsSync(file)) return {};
+    const parsed = JSON.parse(fs.readFileSync(file, "utf-8"));
+    return typeof parsed === "object" && parsed !== null ? parsed as Partial<Settings> : {};
   } catch {
-    return { ...DEFAULT_SETTINGS };
+    return {};
   }
+}
+
+function loadSettings(cwd: string): Settings {
+  return mergeSettings(
+    DEFAULT_SETTINGS as unknown as Record<string, unknown>,
+    readSettingsFile(globalSettingsPath()) as Record<string, unknown>,
+    readSettingsFile(projectSettingsPath(cwd)) as Record<string, unknown>,
+  ) as unknown as Settings;
+}
+
+/** Where each effective setting comes from (for the /goal-settings display). */
+function settingsProvenance(cwd: string): Record<keyof Settings, { value: unknown; source: "project" | "global" | "default" }> {
+  const proj = readSettingsFile(projectSettingsPath(cwd));
+  const glob = readSettingsFile(globalSettingsPath());
+  const effective = loadSettings(cwd);
+  const out: Record<string, { value: unknown; source: "project" | "global" | "default" }> = {};
+  const keys: Array<keyof Settings> = ["auditorModel", "auditorThinkingLevel", "notifyCmd", "tokenLimit"];
+  for (const k of keys) {
+    if ((proj as Record<string, unknown>)[k] !== undefined) out[k] = { value: (proj as any)[k], source: "project" };
+    else if ((glob as Record<string, unknown>)[k] !== undefined) out[k] = { value: (glob as any)[k], source: "global" };
+    else out[k] = { value: (effective as any)[k], source: "default" };
+  }
+  return out as Record<keyof Settings, { value: unknown; source: "project" | "global" | "default" }>;
+}
+
+function saveSettings(scope: "global" | "project", cwd: string, patch: Partial<Settings>): void {
+  const file = scope === "global" ? globalSettingsPath() : projectSettingsPath(cwd);
+  const current = readSettingsFile(file);
+  const next: Record<string, unknown> = { ...current };
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === undefined) delete next[k]; // key=unset removes the key
+    else next[k] = v;
+  }
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(next, null, 2));
 }
 
 /**
