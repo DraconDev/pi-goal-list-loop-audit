@@ -92,13 +92,11 @@ Crossing the limit pauses the goal:
 ## The built-in-provider rule (auditor model)
 
 The auditor runs in an **extension-less** session, so it can only use
-built-in providers. You don't pick a model by hand: the plugin resolves
-the explicit setting → session model (if built-in) → strongest credentialed
-built-in model → clear error. The session-start warning names the exact
-fallback it will use when your session provider is extension-registered.
-
-Set a model explicitly only to override (e.g. a stronger auditor than your
-session model — the auditor is the verification gate):
+built-in providers. You select the model in pi; the auditor uses the same
+session model — the plugin never picks one itself. If your session provider
+is extension-registered, the session-start warning tells you audits will
+fail and offers the two fixes: switch pi's model to a built-in provider, or
+set an explicit override:
 
 ```
 /goal-settings model=provider/model-id

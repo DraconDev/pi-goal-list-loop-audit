@@ -28,16 +28,16 @@ pi install npm:pi-goal-loop-audit
 
 The auditor runs in a **fresh session with no extensions**, so it can only use
 **built-in providers** (opencode, openrouter, minimax, google, anthropic, …).
-You never need to pick a specific model by hand: the resolution chain is
+You select the model in pi; the auditor uses it. The plugin never picks a
+model itself. The resolution is just:
 
-1. your explicit `/goal-settings model=provider/id`, else
-2. the session model (when its provider is built-in), else
-3. the **strongest credentialed built-in model** in your registry
-   (opus > sonnet/pro > gpt/gemini > flash/mini/haiku > free), else
-4. a clear error telling you to set one.
+1. your explicit `/goal-settings model=provider/id` override (rare), else
+2. the pi session model — whatever you selected in pi.
 
-Set it explicitly only when you want a specific auditor (e.g. a stronger model
-than your session model — the auditor is the verification gate, strength helps):
+If your session model's provider is extension-registered, the auditor's
+extension-less session cannot auth it and the plugin says so at session start,
+with the two fixes: switch pi's model to a built-in provider, or set the
+override:
 
 ```
 /goal-settings model=provider/model-id
