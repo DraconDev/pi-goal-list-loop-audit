@@ -97,6 +97,26 @@ export interface AuditVerdict {
   regressionShieldPassed?: boolean;
 }
 
+/**
+ * Sum token usage across assistant messages, counting each message once.
+ * `agent_end` events may include already-seen history, so callers pass a
+ * dedup set keyed by timestamp+tokens (good-enough identity for counting).
+ */
+export function sumNewAssistantTokens(messages: unknown[], seen: Set<string>): number {
+  let total = 0;
+  for (const m of messages) {
+    const msg = m as { role?: string; timestamp?: unknown; usage?: { totalTokens?: unknown } };
+    if (msg?.role !== "assistant") continue;
+    const tokens = typeof msg.usage?.totalTokens === "number" ? msg.usage.totalTokens : 0;
+    if (tokens <= 0) continue;
+    const key = `${String(msg.timestamp ?? "?")}:${tokens}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    total += tokens;
+  }
+  return total;
+}
+
 export interface Goal {
   id: string;
   objective: string;

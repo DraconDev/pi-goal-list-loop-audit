@@ -33,6 +33,17 @@ export interface LoopState {
   stopReason?: string;
   history: LoopMeasure[];
   startedAt: string;
+  /** branch=1 mode: scratch branch holding the loop's commits. */
+  branchName?: string;
+  /** branch=1 mode: the branch to return to on stop. */
+  originalBranch?: string;
+}
+
+/** Scratch-branch name for branch=1 mode. Format pinned by tests. */
+export function loopBranchName(startedAtIso: string, target: string): string {
+  const stamp = startedAtIso.replace(/[^0-9]/g, "").slice(0, 14);
+  const slug = target.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 30) || "loop";
+  return `pi-gla-loop/${stamp}-${slug}`;
 }
 
 export const LOOP_DEFAULTS = {
@@ -102,6 +113,7 @@ export function parseLoopStartArgs(raw: string): {
   direction: LoopDirection;
   plateauWindow: number;
   maxIterations: number;
+  branch: boolean;
 } {
   // Key=value pairs first (measure= and direction= may hold quoted values),
   // the remaining text is the target.
@@ -132,11 +144,13 @@ export function parseLoopStartArgs(raw: string): {
 
   const window = Number.parseInt(kv.get("window") ?? "", 10);
   const max = Number.parseInt(kv.get("max") ?? "", 10);
+  const branchRaw = (kv.get("branch") ?? "").toLowerCase();
   return {
     target,
     measureCmd,
     direction: dirRaw,
     plateauWindow: Number.isFinite(window) && window > 0 ? window : LOOP_DEFAULTS.plateauWindow,
     maxIterations: Number.isFinite(max) && max > 0 ? max : LOOP_DEFAULTS.maxIterations,
+    branch: branchRaw === "1" || branchRaw === "true" || branchRaw === "yes",
   };
 }

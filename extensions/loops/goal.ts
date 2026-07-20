@@ -37,6 +37,7 @@ import {
   archivedGoalPath,
   buildTaskList,
   buildTaskSummary,
+  sumNewAssistantTokens,
   type TaskProposal,
   validateTaskProposal,
   cloneGoal,
@@ -54,6 +55,7 @@ import {
 import { runGoalCompletionAuditor } from "../goal-loop-auditor.js";
 import {
   applyMeasurement,
+  loopBranchName,
   parseLoopStartArgs,
   parseMetric,
   type LoopState,
@@ -95,6 +97,9 @@ let state: State = { goal: null };
 // Drafting mode: /goal with no args starts a clarification turn; the agent
 // must call propose_goal_draft, which opens the user's Confirm dialog.
 let draftingActive = false;
+
+// Dedup set for token accounting (agent_end may replay seen messages).
+const countedTokenMessages = new Set<string>();
 let continuationTimer: NodeJS.Timeout | null = null;
 let continuationScheduledFor: string | null = null;
 let iterationCounter = 0;
@@ -220,7 +225,7 @@ function createGoal(objective: string, ctx: ExtensionContext, policy: "goal" | "
     policy,
     autoContinue: true,
     verificationContract: verificationContract || "",
-    usage: { tokensUsed: 0, tokensLimit: 100_000 },
+    usage: { tokensUsed: 0, tokensLimit: loadSettings(ctx.cwd).tokenLimit ?? 1_000_000 },
     createdAt: nowIso(),
     updatedAt: nowIso(),
   };
@@ -386,6 +391,7 @@ async function cmdStatus(ctx: ExtensionContext): Promise<void> {
     `Objective: ${g.objective}`,
     `Auto-continue: ${g.autoContinue ? "on" : "off"}`,
     `Iteration: ${iterationCounter}`,
+    `Tokens: ${(g.usage?.tokensUsed ?? 0).toLocaleString()} / ${(g.usage?.tokensLimit ?? 1_000_000).toLocaleString()}`,
   ];
   if (g.auditHistory && g.auditHistory.length > 0) {
     lines.push(`Audits: ${g.auditHistory.length} (${g.auditHistory.filter((v) => v.approved).length} approved)`);
@@ -551,6 +557,19 @@ async function runMeasure(ctx: ExtensionContext, cmd: string): Promise<number | 
   }
 }
 
+/** git wrapper for branch=1 mode. Returns {ok, stdout}; never throws. */
+async function runGit(ctx: ExtensionContext, args: string[]): Promise<{ ok: boolean; stdout: string }> {
+  if (!extensionApi) return { ok: false, stdout: "" };
+  try {
+    const result = await extensionApi.exec("git", args, { cwd: ctx.cwd });
+    const r = result as any;
+    const code = typeof r?.code === "number" ? r.code : (r?.exitCode ?? 1);
+    return { ok: code === 0, stdout: String(r?.stdout ?? "").trim() };
+  } catch {
+    return { ok: false, stdout: "" };
+  }
+}
+
 function loopPrompt(loop: LoopState, regressionNote: string): string {
   const tmplPath = path.resolve(__dirname, "..", "..", "prompts", "goal-loop-forever.md");
   let tmpl: string;
@@ -623,13 +642,43 @@ async function runLoopTick(ctx: ExtensionContext): Promise<void> {
     best: loop.bestValue,
     stall: loop.stallCount,
   });
+  // branch=1 mode: commit improvements, hard-reset regressions — always and
+  // only on the scratch branch.
+  if (loop.branchName && outcome.kind === "continue") {
+    if (outcome.improved) {
+      await runGit(ctx, ["add", "-A"]);
+      const committed = await runGit(ctx, ["commit", "-m", `pi-gla-loop: iteration ${loop.iteration} (${loop.direction}=${loop.bestValue})`]);
+      appendLedger(ctx.cwd, "loop_git", { action: "commit", iteration: loop.iteration, ok: committed.ok });
+    } else {
+      const reset = await runGit(ctx, ["reset", "--hard", "HEAD"]);
+      appendLedger(ctx.cwd, "loop_git", { action: "reset", iteration: loop.iteration, ok: reset.ok });
+    }
+    persistState(ctx);
+  }
   if (outcome.kind === "stop") {
+    await finishLoopGit(ctx, loop);
     ctx.ui.notify(`Loop stopped: ${outcome.reason}. ${loop.history.length} iterations recorded.`, "info");
     appendLedger(ctx.cwd, "loop_stopped", { reason: outcome.reason, iterations: loop.iteration, best: loop.bestValue });
     notifyExternal(ctx, `Loop stopped: ${outcome.reason}`);
     return;
   }
   scheduleLoopTick(ctx);
+}
+
+/** On loop stop (any reason): return to the original branch, tell the user
+ * where the work lives and how to merge it. Scratch branch is never deleted. */
+async function finishLoopGit(ctx: ExtensionContext, loop: LoopState): Promise<void> {
+  if (!loop.branchName) return;
+  // Uncommitted remnants (final stalled iterations were reset already, but be safe).
+  await runGit(ctx, ["reset", "--hard", "HEAD"]);
+  if (loop.originalBranch) {
+    await runGit(ctx, ["checkout", loop.originalBranch]);
+  }
+  ctx.ui.notify(
+    `Loop work is on branch ${loop.branchName} (${loop.iteration} iterations, best ${loop.bestValue ?? "n/a"}).\nMerge with: git merge ${loop.branchName} — or delete with: git branch -D ${loop.branchName}`,
+    "info",
+  );
+  appendLedger(ctx.cwd, "loop_git", { action: "finish", branch: loop.branchName, returnedTo: loop.originalBranch });
 }
 
 async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
@@ -673,6 +722,30 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       ctx.ui.notify(`/loop start: ${err instanceof Error ? err.message : String(err)}`, "warning");
       return;
     }
+    // branch=1 mode: scratch branch ONLY. Refuse on non-git or dirty tree —
+    // we never mix uncommitted user work into the loop's branch.
+    let branchName: string | undefined;
+    let originalBranch: string | undefined;
+    if (cfg.branch) {
+      const isRepo = await runGit(ctx, ["rev-parse", "--is-inside-work-tree"]);
+      if (!isRepo.ok) {
+        ctx.ui.notify("branch=1 requires a git repository.", "warning");
+        return;
+      }
+      const dirty = await runGit(ctx, ["status", "--porcelain"]);
+      if (!dirty.ok || dirty.stdout.length > 0) {
+        ctx.ui.notify("branch=1 requires a clean working tree — commit or stash your changes first.", "warning");
+        return;
+      }
+      const current = await runGit(ctx, ["rev-parse", "--abbrev-ref", "HEAD"]);
+      originalBranch = current.ok ? current.stdout : undefined;
+      branchName = loopBranchName(nowIso(), cfg.target);
+      const created = await runGit(ctx, ["checkout", "-b", branchName]);
+      if (!created.ok) {
+        ctx.ui.notify(`Failed to create scratch branch ${branchName}.`, "warning");
+        return;
+      }
+    }
     // Baseline measurement before the first agent turn.
     const baseline = await runMeasure(ctx, cfg.measureCmd);
     state = {
@@ -690,12 +763,15 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
         active: true,
         history: [],
         startedAt: nowIso(),
+        branchName,
+        originalBranch,
       },
     };
     persistState(ctx);
-    appendLedger(ctx.cwd, "loop_started", { target: cfg.target, measureCmd: cfg.measureCmd, direction: cfg.direction, baseline });
+    appendLedger(ctx.cwd, "loop_started", { target: cfg.target, measureCmd: cfg.measureCmd, direction: cfg.direction, baseline, branch: branchName });
     ctx.ui.notify(
-      `Loop started: ${cfg.target.slice(0, 60)}\nBaseline: ${baseline ?? "(measure produced no number — first turn must fix that)"} · direction ${cfg.direction} · window ${cfg.plateauWindow} · max ${cfg.maxIterations}`,
+      `Loop started: ${cfg.target.slice(0, 60)}\nBaseline: ${baseline ?? "(measure produced no number — first turn must fix that)"} · direction ${cfg.direction} · window ${cfg.plateauWindow} · max ${cfg.maxIterations}` +
+      (branchName ? `\nbranch mode: committing improvements to ${branchName}` : ""),
       "info",
     );
     scheduleLoopTick(ctx);
@@ -710,6 +786,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     clearLoopTimer();
     state.loop = { ...state.loop, active: false, stopReason: state.loop.stopReason ?? "stopped by user (/loop stop)" };
     persistState(ctx);
+    await finishLoopGit(ctx, state.loop);
     appendLedger(ctx.cwd, "loop_stopped", { reason: "user", iterations: state.loop.iteration, best: state.loop.bestValue });
     ctx.ui.notify(
       `Loop stopped after ${state.loop.iteration} iterations. Best: ${state.loop.bestValue ?? "n/a"}.`,
@@ -1010,6 +1087,8 @@ interface Settings {
   auditorThinkingLevel?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
   /** Shell command run on goal complete / goal pause / loop stop; message passed as $1. */
   notifyCmd?: string;
+  /** Per-goal token budget; crossing it pauses the goal. Default 1,000,000. */
+  tokenLimit?: number;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -1082,6 +1161,14 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
     } else if (key === "notify" || key === "notifycmd") {
       next.notifyCmd = value === "unset" ? undefined : value;
       changed = true;
+    } else if (key === "tokenlimit") {
+      const n = Number.parseInt(value, 10);
+      if (Number.isFinite(n) && n > 0) {
+        next.tokenLimit = n;
+        changed = true;
+      } else {
+        ctx.ui.notify(`tokenlimit must be a positive integer, got: ${value}`, "warning");
+      }
     } else if (key === "thinking" || key === "auditorthinkinglevel") {
       if (["off", "minimal", "low", "medium", "high", "xhigh"].includes(value)) {
         next.auditorThinkingLevel = value as Settings["auditorThinkingLevel"];
@@ -1232,6 +1319,19 @@ export default function (pi: ExtensionAPI): void {
     }
     warnOnCommandCollision(ctx);
     warnIfAuditorProviderRisky(ctx);
+    // Resumption notice: make persisted supervisor state visible on startup.
+    if (isLoopActive()) {
+      const l = state.loop!;
+      ctx.ui.notify(
+        `Resuming loop (iteration ${l.iteration}/${l.maxIterations}, best ${l.bestValue ?? "n/a"}, stall ${l.stallCount}/${l.plateauWindow}): ${l.target.slice(0, 60)}`,
+        "info",
+      );
+    } else if (state.goal && state.goal.status === "active") {
+      ctx.ui.notify(
+        `Resuming goal [${state.goal.id}]: ${state.goal.objective.slice(0, 70)}${listQueue().length > 0 ? ` (+${listQueue().length} queued)` : ""}`,
+        "info",
+      );
+    }
     if (isLoopActive()) {
       // Session restarted mid-loop: resume measuring from persisted state.
       scheduleLoopTick(ctx);
@@ -1264,12 +1364,26 @@ export default function (pi: ExtensionAPI): void {
     const stopReason = last?.stopReason;
     iterationCounter++;
 
-    // Track tool calls in this turn (agent emits progress events; we don't have
-    // per-turn list here without `before_tool_call`, so we approximate by checking
-    // stopReason presence of tool_execution_end events. For v0.1.0 we just
-    // acknowledge motion: if the assistant emitted text but no tools, that's a
-    // sign of thinking-only loop, but we cannot detect it without the hook. So
-    // we schedule a continuation regardless. The auditor catches rubber-stamps.
+    // Token accounting + cost guard: accumulate this turn's assistant tokens
+    // (deduped — agent_end may replay seen messages). Crossing the goal's
+    // token limit pauses it; /goal-settings tokenlimit=<n> to raise.
+    const newTokens = sumNewAssistantTokens(event.messages as unknown[], countedTokenMessages);
+    if (newTokens > 0) {
+      const used = (state.goal.usage?.tokensUsed ?? 0) + newTokens;
+      const limit = state.goal.usage?.tokensLimit ?? 1_000_000;
+      if (used > limit) {
+        updateGoal({
+          usage: { tokensUsed: used, tokensLimit: limit },
+          status: "paused",
+          pauseReason: `token limit exceeded (${used.toLocaleString()} > ${limit.toLocaleString()})`,
+          pauseSuggestedAction: "/goal-settings tokenlimit=<n> to raise the cap, then /goal-resume",
+        }, ctx);
+        ctx.ui.notify(`Goal paused: token limit exceeded (${used.toLocaleString()} > ${limit.toLocaleString()}).`, "warning");
+        notifyExternal(ctx, `Goal paused: token limit exceeded (${used} > ${limit}).`);
+        return;
+      }
+      updateGoal({ usage: { tokensUsed: used, tokensLimit: limit } }, ctx);
+    }
 
     if (stopReason === "error" || stopReason === "aborted") {
       consecutiveErrorIterations++;

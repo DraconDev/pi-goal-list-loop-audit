@@ -117,11 +117,49 @@ handles UX; smoke tests run under a bare `PI_CODING_AGENT_DIR` to isolate.
   notify commands; smoke `wait_for "plateau"` matched agent prose instead of
   the orchestrator's stop text (assertions raced the loop).
 
-**Deferred to v0.4.0 (with justification)**:
-- Auditor context compaction — zero context-exhaustion events in every live run to
-  date; shipping untested compaction machinery into the verification path is risk
-  without evidence of need. Revisit when a real audit exhausts context.
-- git keep/revert for loop 3 — needs a safe-worktree design.
+### M4 — v0.4.0 (completion release) ✅ (2026-07-20)
+
+Everything left, in one release. Completes the 6-flaw list and makes the docs honest.
+
+1. **Auditor compaction (flaw #3 — the LAST open flaw)**. Enable pi's built-in
+   compaction in the auditor session (currently `compaction: { enabled: false }`).
+   Safety argument: regression_shield is orchestrator-side — a compaction-degraded
+   auditor produces weaker evidence → disapproval, never false approval. The risky
+   direction (silent false approval) is structurally impossible.
+2. **Schema + examples + docs sync**. `schemas/goal.schema.json` still says "oracle"
+   and "v0.1.0 loop 1 only"; `examples/example-objective.md` still uses `/pi-gla-set`;
+   `tests/README.md` has stale counts; `docs/DESIGN.md` needs the v0.2/v0.3 addendum.
+3. **tokensUsed wiring + limit enforcement**. `AgentEndEvent.messages` carries
+   `usage.totalTokens` per assistant message — accumulate per goal. `tokensLimit`
+   becomes a real cost guard: crossing it pauses the goal with a clear reason
+   (configurable via `/goal-settings tokenlimit=`).
+4. **Resumption notice** on `session_start`: if a goal is active or a loop is
+   running, say so. (The "plugin vanished" self-check from D4 is impossible from
+   inside the plugin — absent code cannot run. Recorded as rejected.)
+5. **Loop 3 git-branch mode** (`branch=1` flag): at `/loop start`, create scratch
+   branch `pi-gla-loop/<id>`; commit after each improving iteration; on regression
+   `git reset --hard` to the last improving commit ON THE SCRATCH BRANCH ONLY.
+   The user's branch and uncommitted work are never touched. Requires: git repo,
+   and we refuse `branch=1` with a dirty tree (refuse to mix user work into the
+   scratch branch).
+6. **Draft reject path** in the smoke harness (Confirm → No → agent refines).
+
+After M4 the 6-flaw list is closed and the roadmap table is all-shipped.
+
+**M4 verification evidence** (all live, 2026-07-20):
+- Auditor compaction enabled; `goal` smoke 5/5 green after the change.
+- Token guard: 3 unit tests for dedup accumulation; limit-pause path wired in
+  agent_end with settings-configurable budget.
+- branch=1 live: 5 improvement commits on scratch branch, 0 for stalls, main
+  untouched, returned to main on plateau with merge instructions.
+- `draft-reject` smoke 6/6: Confirm → reject → refine → Confirm → approval.
+- Resumption notice on session_start for active goal/loop.
+- 81 unit tests, tsc clean, all 5 smoke scenarios green.
+- **6/6 pi-goal-x flaws now closed.** The D4 "plugin vanished" self-check is
+  recorded as REJECTED (absent code cannot run); replaced by the resumption
+  notice.
+
+**Deferred to v0.4.0 (with justification)**: (superseded — this release)
 
 ---
 

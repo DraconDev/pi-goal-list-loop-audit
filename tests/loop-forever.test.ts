@@ -10,6 +10,7 @@ import * as assert from "node:assert/strict";
 import {
   applyMeasurement,
   isImprovement,
+  loopBranchName,
   parseLoopStartArgs,
   parseMetric,
   type LoopState,
@@ -171,4 +172,33 @@ test("parseLoopStartArgs: missing target throws", () => {
 test("parseLoopStartArgs: measure with pipes/quotes survives", () => {
   const cfg = parseLoopStartArgs('t measure="grep -c x f.txt | head -1" direction=max');
   assert.equal(cfg.measureCmd, "grep -c x f.txt | head -1");
+});
+
+test("parseLoopStartArgs: branch flag off by default", () => {
+  const cfg = parseLoopStartArgs('t measure="cat x" direction=min');
+  assert.equal(cfg.branch, false);
+});
+
+test("parseLoopStartArgs: branch=1 / branch=true enable branch mode", () => {
+  assert.equal(parseLoopStartArgs('t measure="cat x" direction=min branch=1').branch, true);
+  assert.equal(parseLoopStartArgs('t measure="cat x" direction=min branch=true').branch, true);
+  assert.equal(parseLoopStartArgs('t measure="cat x" direction=min branch=0').branch, false);
+});
+
+// ---- loopBranchName ----
+
+test("loopBranchName: format is pi-gla-loop/<timestamp>-<slug>", () => {
+  const name = loopBranchName("2026-07-20T18:30:00Z", "Reduce TODO count");
+  assert.match(name, /^pi-gla-loop\/\d{14}-reduce-todo-count$/);
+});
+
+test("loopBranchName: empty slug falls back to 'loop'", () => {
+  const name = loopBranchName("2026-07-20T18:30:00Z", "!!!");
+  assert.match(name, /^pi-gla-loop\/\d{14}-loop$/);
+});
+
+test("loopBranchName: slug is capped at 30 chars", () => {
+  const name = loopBranchName("2026-07-20T18:30:00Z", "a very long target description that goes on and on and on");
+  const slug = name.split("-")[0] ? name.slice(name.indexOf("/") + 16) : "";
+  assert.ok(slug.length <= 30, `slug too long: ${slug}`);
 });

@@ -1,16 +1,66 @@
 # pi-goal-loop-audit — design
 
-This is the v0.1.0 design document. It records the architectural choices and why.
+This document records the architectural choices and why. v0.1.0 decisions are
+below; later releases append addenda rather than rewrite history.
 
-## Scope of v0.1.0
-
-Single loop only — **loop 1**, the single ordered goal.
+## Scope
 
 | Loop | Status |
 |---|---|
-| Loop 1 (single ordered goal with auditor) | **v0.1.0** |
-| Loop 2 (list — many goals in a queue) | v0.2.0 |
-| Loop 3 (loop — forever polish) | v0.3.0 |
+| Loop 1 (single ordered goal with auditor) | **shipped v0.1.0** |
+| Loop 2 (list — many goals in a queue) | **shipped v0.2.0** |
+| Loop 3 (loop — metric-driven forever) | **shipped v0.3.0** |
+| Completion release (compaction, token guard, branch mode) | **shipped v0.4.0** |
+
+## Addendum v0.2.0 (list + shield + drafting)
+
+- **`/list` queue**: items are full goals (objective + contract). The active
+  goal and the queue share one `State`; `setGoal`/`archiveCurrentGoal`
+  preserve `state.list` explicitly (an early draft wiped it). Completing or
+  aborting a list-sourced goal auto-activates the next item.
+- **regression_shield**: the auditor's report must contain an `<evidence>`
+  block quoting raw tool output per verification-contract item. Enforcement is
+  **orchestrator-side** (`goal-loop-shield.ts`, pure): an `<approved/>`
+  without complete evidence becomes a disapproval. This closes the
+  "`bash true` rubber-stamp" hole pi-goal-x documented as accepted-risk.
+- **Drafting**: `/goal` with no args sends a drafting prompt; the agent
+  clarifies, then `propose_goal_draft` opens a real Confirm dialog. Direct
+  activation stays available via `/goal "<objective>"`.
+- **Inline contract extraction**: one-liner objectives
+  (`Create x. Done when: grep -q ok x`) extract the contract — the
+  line-start-only extractor silently disarmed the shield on every one-liner.
+
+## Addendum v0.3.0 (metric loop + tasks + notify)
+
+- **Loop 3 is metric-driven, not vibes-driven** (the anti-doorknob law: the
+  loop only believes a number). The **orchestrator** runs the user's `measure`
+  command after every `agent_end`; the agent never self-reports. Termination:
+  plateau (`window` stalls), iteration cap, `/loop stop`. No auditor in
+  loop 3 — the metric is the verdict. No git auto-revert: on regression the
+  agent is told to undo its own change (safe with uncommitted user work).
+- **`propose_task_list`** with anti-drift caps (20 tasks / 5 subtasks) —
+  pi-goal-x flaw #4. Confirm dialog before the list is set.
+- **`notify=<cmd>`**: fire-and-forget shell-out on goal complete / goal pause /
+  loop stop, message as `$1`. Settings parser is quote-aware.
+
+## Addendum v0.4.0 (completion)
+
+- **Auditor compaction enabled** (flaw #3 — the last open one). Safety:
+  the shield is orchestrator-side, so compaction can only weaken the
+  auditor's evidence → disapproval, never a false approval.
+- **Token guard**: real accumulation from assistant-message `usage.totalTokens`
+  (deduped across replayed `agent_end` history). Crossing `tokenlimit`
+  (default 1M) pauses the goal with a clear reason.
+- **Loop 3 `branch=1`**: scratch branch `pi-gla-loop/<ts>-<slug>`; commit per
+  improvement, `git reset --hard` per regression — scratch branch only.
+  Refuses non-git dirs and dirty trees; returns to the original branch on
+  stop with merge instructions.
+- **Resumption notice** on `session_start` (replaces the impossible
+  "plugin vanished" self-check: absent code cannot run).
+
+## Scope of v0.1.0 (original)
+
+Single loop only — **loop 1**, the single ordered goal.
 
 **Why ship loop 1 first**: the user asked for it, it's the highest-value loop, and getting the auditor + drafting right matters more than breadth.
 

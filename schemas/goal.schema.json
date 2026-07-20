@@ -1,96 +1,59 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/dracon/pi-goal-loop-audit/main/schemas/goal.schema.json",
-  "title": "Goal",
-  "description": "Active goal state for pi-goal-loop-audit v0.1.0 (loop 1 only).",
+  "$id": "https://raw.githubusercontent.com/DraconDev/pi-goal-loop-audit/main/schemas/goal.schema.json",
+  "title": "pi-goal-loop-audit goal state",
+  "description": "Active goal state for pi-goal-loop-audit v0.4.0 (loops 1-3). Persisted as markdown at .pi-gla/goals/<id>.md and mirrored into .pi-gla/active.jsonl state events.",
   "type": "object",
-  "required": ["id", "objective", "status", "policy", "createdAt", "updatedAt"],
-  "additionalProperties": false,
+  "required": ["id", "objective", "status", "policy", "autoContinue", "usage", "createdAt", "updatedAt"],
   "properties": {
     "id": {
       "type": "string",
-      "minLength": 1,
-      "description": "Stable identifier for the active goal. Format: <iso8601>-<random6>."
+      "pattern": "^\\d{14}-[a-z0-9]{6}$",
+      "description": "YYYYMMDDHHMMSS + 6-char random suffix"
     },
-    "objective": {
-      "type": "string",
-      "minLength": 1,
-      "description": "User-written goal. Treated as untrusted data by the auditor."
-    },
+    "objective": { "type": "string", "minLength": 1 },
     "status": {
       "type": "string",
       "enum": ["active", "auditing", "complete", "paused", "aborted"]
     },
     "policy": {
       "type": "string",
-      "enum": ["oracle"],
-      "description": "v0.1.0 only supports 'oracle' (loop 1). Loop 2 and loop 3 land in v0.2.0+."
+      "enum": ["goal", "list"],
+      "description": "Which loop created this goal: 'goal' (loop 1) or 'list' (loop 2 queue item). Loop 3 (/loop) keeps its own state shape and has no Goal."
     },
     "verificationContract": {
       "type": "string",
-      "description": "Optional structured set of must-verify items extracted from the objective (e.g. 'Run npm test (0 failures)').",
-      "default": ""
+      "description": "Done-criteria extracted from the objective ('Done when:' / 'Verify:' markers, line-start or inline). When non-empty, regression_shield requires the auditor's <evidence> block to address every item."
     },
-    "autoContinue": {
-      "type": "boolean",
-      "default": true
-    },
+    "autoContinue": { "type": "boolean" },
     "taskList": {
       "type": "object",
-      "description": "Optional sub-task list with validation.",
       "required": ["version", "tasks"],
-      "additionalProperties": false,
       "properties": {
-        "version": { "type": "integer", "const": 1 },
+        "version": { "const": 1 },
         "tasks": {
           "type": "array",
+          "maxItems": 20,
           "items": { "$ref": "#/definitions/task" }
         }
       }
     },
     "auditHistory": {
       "type": "array",
-      "description": "Each item is one auditor verdict (passed or not).",
-      "items": {
-        "type": "object",
-        "required": ["at", "approved", "disapproved", "model"],
-        "additionalProperties": false,
-        "properties": {
-          "at": { "type": "string", "format": "date-time" },
-          "approved": { "type": "boolean" },
-          "disapproved": { "type": "boolean" },
-          "model": { "type": "string" },
-          "thinkingLevel": { "type": "string" },
-          "report": { "type": "string" }
-        }
-      }
+      "maxItems": 20,
+      "items": { "$ref": "#/definitions/auditVerdict" }
     },
-    "stopReason": {
-      "type": "string",
-      "description": "Recorded by orchestrator on pause/abort/complete."
-    },
-    "pauseReason": {
-      "type": "string",
-      "description": "User-or-agent supplied reason for pause."
-    },
-    "pauseSuggestedAction": {
-      "type": "string",
-      "description": "Agent's suggestion when calling pause_goal."
-    },
-    "activePath": {
-      "type": "string",
-      "description": "Path to the .pi-gla/goals/<id>.md file."
-    },
-    "archivedPath": {
-      "type": "string"
-    },
+    "stopReason": { "type": "string" },
+    "pauseReason": { "type": "string" },
+    "pauseSuggestedAction": { "type": "string" },
+    "activePath": { "type": "string" },
+    "archivedPath": { "type": "string" },
     "usage": {
       "type": "object",
       "required": ["tokensUsed", "tokensLimit"],
-      "additionalProperties": false,
       "properties": {
         "tokensUsed": { "type": "integer", "minimum": 0 },
-        "tokensLimit": { "type": "integer", "minimum": 1 }
+        "tokensLimit": { "type": "integer", "minimum": 1, "default": 1000000 }
       }
     },
     "createdAt": { "type": "string", "format": "date-time" },
@@ -100,17 +63,34 @@
     "task": {
       "type": "object",
       "required": ["id", "title", "status"],
-      "additionalProperties": false,
       "properties": {
         "id": { "type": "string" },
-        "title": { "type": "string" },
-        "status": {
-          "type": "string",
-          "enum": ["pending", "in_progress", "complete"]
-        },
+        "title": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "enum": ["pending", "in_progress", "complete"] },
         "subtasks": {
           "type": "array",
+          "maxItems": 5,
           "items": { "$ref": "#/definitions/task" }
+        }
+      }
+    },
+    "auditVerdict": {
+      "type": "object",
+      "required": ["at", "approved", "disapproved", "model"],
+      "properties": {
+        "at": { "type": "string", "format": "date-time" },
+        "approved": { "type": "boolean" },
+        "disapproved": { "type": "boolean" },
+        "model": { "type": "string" },
+        "thinkingLevel": { "type": "string" },
+        "report": { "type": "string" },
+        "error": {
+          "type": "string",
+          "description": "Infrastructure failure detail (abort, auth, no model). Entries with error and no report are not real verdicts."
+        },
+        "regressionShieldPassed": {
+          "type": "boolean",
+          "description": "Present when the goal had a verification contract: did the auditor's <evidence> block satisfy the orchestrator-side shield?"
         }
       }
     }

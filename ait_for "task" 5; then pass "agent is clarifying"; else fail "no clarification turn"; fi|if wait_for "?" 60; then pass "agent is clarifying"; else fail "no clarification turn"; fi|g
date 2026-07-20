@@ -1,0 +1,2 @@
+    || wait_for "task" 5; then pass "agent is clarifying"; else fail "no clarification turn"; fi
+    || wait_for "task" 5; then pass "agent is clarifying"; else fail "no clarification turn"; fi

@@ -1,90 +1,103 @@
-# Example: a v0.1.0 objective
+# Examples: the three loops
 
-This document is a worked example showing the simplest possible goal for
-`pi-goal-loop-audit`. Once you `/pi-gla-set` it, the orchestrator creates
-state at `.pi-gla/` and starts the loop.
+Worked examples for `pi-goal-loop-audit` v0.4.0. State lives at `.pi-gla/`
+(ledger `active.jsonl`, goal markdown in `goals/`, finished goals in `archive/`).
 
-## Set the goal
+## Loop 1: `/goal` — single goal with isolated auditor
+
+Direct (skip drafting):
 
 ```
-/pi-gla-set "
-Step 1. Add a /healthz endpoint to server.ts that returns {status: 'ok'} and HTTP 200.
+/goal "Step 1. Add a /healthz endpoint to server.ts returning {status:'ok'}.
 Step 2. Add a vitest test that hits it.
-
 Done when:
 - curl -fsS localhost:3000/healthz returns 200 with body {\"status\":\"ok\"}
-- npm test exits 0 with 0 failures
-- The test file is committed
-"
+- npm test exits 0 with 0 failures"
 ```
 
-The orchestrator parses the objective, extracts `Done when:` as the
-verification contract, and starts the loop. The agent sees:
+Or drafting (recommended when the idea is still fuzzy):
 
 ```
-[GOAL CHECKPOINT goalId=...]
-Continue working toward the active pi-goal-loop-audit goal.
-
-## Objective
-Step 1. ...
-Step 2. ...
-[+ verification contract]
-[+ tasks / next-pending-task]
+/goal
+# the agent grills one focused question at a time, then a Confirm dialog
+# shows the objective + Done-when contract. Nothing starts before you confirm.
 ```
 
-The agent does work. When it calls `complete_goal(...)`, the **isolated auditor** runs.
+What happens next:
 
-## What the auditor sees
+1. The agent works the objective turn by turn (`agent_end`-driven continuation,
+   5-minute hard backoff cap).
+2. It calls `complete_goal` when it believes it is done.
+3. The **isolated auditor** — a fresh pi session with no extensions and only
+   read tools — inspects the repo. Because this goal has a `Done when:`
+   contract, the auditor MUST quote raw command output per contract item in an
+   `<evidence>` block (regression_shield). An approval without complete
+   evidence is automatically converted to a disapproval.
+4. Approved → goal archived to `.pi-gla/archive/<id>.md`. Disapproved → the
+   loop continues with the auditor's feedback.
 
-The auditor is spawned in a fresh pi session with:
-- No extensions, no skills, no prompts, no themes.
-- Read-only tools: `read`, `grep`, `find`, `ls`, `bash`.
-- The same goal markdown and the agent's `completionSummary` / `verificationSummary`.
+Useful commands: `/goal-status`, `/goal-pause`, `/goal-resume`, `/goal-cancel`,
+`/goal-settings` (auditor model, thinking level, token limit, notify command).
 
-The auditor inspects:
-1. `server.ts` — does the `/healthz` endpoint exist?
-2. The test file — does it cover the endpoint?
-3. `npm test` exit code — does it pass?
-4. Git log — is the test committed?
+## Loop 2: `/list` — queue of goals
 
-If all four pass, the auditor emits `<approved/>`. Otherwise `<disapproved/>`.
+```
+/list add "Create one.txt containing one. Done when: grep -q one one.txt"
+/list add "Create two.txt containing two. Done when: grep -q two two.txt"
+/list            # show active + queue
+/list next       # skip current item
+/list remove 2   # drop queue item 2
+/list clear      # empty the queue
+```
 
-## What happens on `<approved/>`
+Each item is a full goal with its own contract and audit. When one completes
+(or is aborted), the next activates automatically. A restarted session resumes
+a non-empty queue on its own.
 
-The orchestrator archives the goal to `.pi-gla/archive/<id>.md`, sets
-`status = "complete"`, writes `stopReason = "auditor <model> approved"`,
-and notifies the TUI.
+## Loop 3: `/loop` — metric-driven forever loop
 
-## What happens on `<disapproved/>`
+```
+/loop start "reduce TODO comments in src" measure="grep -rc TODO src | cut -d: -f2 | paste -sd+ | bc" direction=min window=5 max=50
+/loop status     # iteration, best, stall, recent values
+/loop stop       # halt with summary
+```
 
-The orchestrator sets `status = "active"` again (the goal is not yet done),
-appends the auditor's report to `auditHistory`, sets
-`pauseReason = "auditor disapproved"`, schedules the next continuation,
-and notifies the agent with the auditor's first 800 chars.
+The **orchestrator** runs your `measure` command after every agent turn — the
+agent never self-reports a number. The loop stops on plateau (`window`
+non-improving iterations), the `max` cap, or `/loop stop`. There is no auditor
+in loop 3: the metric is the verdict.
 
-The agent re-reads the auditor's feedback, fixes the gap, and calls
-`complete_goal` again — with full context of what was missing.
+With `branch=1`, all work happens on a scratch branch
+(`pi-gla-loop/<timestamp>-<slug>`): each improvement is committed, each
+regression is hard-reset (scratch branch only), and on stop you return to your
+original branch with merge instructions. Requires a clean working tree.
 
-## When does the goal end "for real"
+## Notifications (optional)
 
-Only when:
-- Auditor `<approved/>` (objective is genuinely satisfied), OR
-- User `/pi-gla-cancel` (abort), OR
-- User `/pi-gla-pause` + leave it (pause stays).
+```
+/goal-settings notify='echo $1 >> ~/goal-events.log'
+```
 
-There is no other termination path. **Hard 5-minute backoff cap** prevents the
-1-hour-waits problem pi-goal-x exhibits.
+Fires on goal complete, goal pause, and loop stop; message as `$1`.
 
-## Edge cases v0.1.0 explicitly handles
+## Token guard
 
-1. Vague objective (no `Done when:` clause) — auditor decides based on objective text.
-2. Auditor not configured (`/pi-gla-settings`) — defaults to `auditorThinkingLevel=medium`.
-3. Empty turn (no tool calls) — does not pause in v0.1.0; auditor catches rubber-stamps.
-4. Five consecutive errors — auto-pauses with a clear message.
-5. Esc during audit — auto-skip-to-pause, user picks "complete without audit" or "continue".
+Every goal tracks real token usage (summed from assistant messages).
+Crossing the limit pauses the goal:
 
-## Edge cases v0.2.0 will handle
+```
+/goal-settings tokenlimit=2000000
+```
 
-1. Drafting phase — pre-confirmed goal with structured Q&A.
-2. regression_shield — auditor must include raw output for every verification item.
-3. Native TUI form widget for `goal_questionnaire`.
+## The built-in-provider rule (auditor model)
+
+The auditor runs in an **extension-less** session, so it can only use
+built-in providers. If your main session model is extension-registered
+(kilocode, zenmux on some rigs), set a built-in auditor model:
+
+```
+/goal-settings model=opencode/deepseek-v4-flash-free
+```
+
+The plugin warns you at session start when your session provider looks
+extension-registered and no auditor model is configured.

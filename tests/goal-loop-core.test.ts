@@ -28,6 +28,7 @@ import {
   readState,
   renderGoalMarkdown,
   statusLabel,
+  sumNewAssistantTokens,
   writeGoalMd,
 } from "../extensions/goal-loop-core.ts";
 import {
@@ -204,6 +205,39 @@ test("appendLedger + readState roundtrip", () => {
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
   }
+});
+
+test("sumNewAssistantTokens accumulates assistant usage only", () => {
+  const seen = new Set<string>();
+  const msgs = [
+    { role: "user", content: "hi" },
+    { role: "assistant", timestamp: 1, usage: { totalTokens: 100 } },
+    { role: "assistant", timestamp: 2, usage: { totalTokens: 250 } },
+    { role: "assistant", timestamp: 3 }, // no usage → skipped
+  ];
+  assert.equal(sumNewAssistantTokens(msgs, seen), 350);
+});
+
+test("sumNewAssistantTokens dedupes replayed messages", () => {
+  const seen = new Set<string>();
+  const turn1 = [{ role: "assistant", timestamp: 1, usage: { totalTokens: 100 } }];
+  assert.equal(sumNewAssistantTokens(turn1, seen), 100);
+  // same message replayed in a later event (agent_end may include history)
+  const turn2 = [
+    { role: "assistant", timestamp: 1, usage: { totalTokens: 100 } },
+    { role: "assistant", timestamp: 2, usage: { totalTokens: 50 } },
+  ];
+  assert.equal(sumNewAssistantTokens(turn2, seen), 50);
+});
+
+test("sumNewAssistantTokens ignores zero/negative/invalid usage", () => {
+  const seen = new Set<string>();
+  const msgs = [
+    { role: "assistant", timestamp: 1, usage: { totalTokens: 0 } },
+    { role: "assistant", timestamp: 2, usage: { totalTokens: -5 } },
+    { role: "assistant", timestamp: 3, usage: { totalTokens: "many" } },
+  ];
+  assert.equal(sumNewAssistantTokens(msgs, seen), 0);
 });
 
 test("ensureDirs creates the .pi-gla tree", () => {

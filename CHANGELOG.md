@@ -5,6 +5,50 @@ All notable changes to pi-goal-loop-audit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-07-20
+
+The completion release: the last open pi-goal-x flaw is closed, and every
+deferral from earlier milestones either shipped or was recorded as rejected.
+
+### Added
+
+- **Auditor compaction** (closes flaw #3, the final one): pi's built-in
+  compaction is now enabled in the auditor session (was disabled — long audits
+  could exhaust context mid-audit). Safety is structural: regression_shield is
+  orchestrator-side, so compaction can only weaken the auditor's evidence and
+  cause disapproval, never a false approval.
+- **Token guard**: goals now track real token usage (summed from assistant
+  `usage.totalTokens`, deduped across replayed `agent_end` history). Crossing
+  the limit pauses the goal with a clear reason. Default 1M per goal;
+  `/goal-settings tokenlimit=<n>` to tune. Shown in `/goal-status`.
+- **Loop 3 `branch=1` mode**: all loop work on a scratch branch
+  (`pi-gla-loop/<timestamp>-<slug>`) — commit per improvement,
+  `git reset --hard` per regression (scratch branch only; your branch and
+  uncommitted work are never touched). Refuses non-git dirs and dirty trees.
+  On stop: returns to your original branch with merge instructions.
+- **Resumption notice** on `session_start`: active goal (with queue depth) or
+  running loop (iteration/best/stall) is announced. (Replaces the D4
+  "plugin vanished" self-check, which is impossible from inside the plugin —
+  absent code cannot run. Recorded as rejected in PLAN.md.)
+
+### Fixed / synced
+
+- `schemas/goal.schema.json` updated to the current state shape (was v0.1.0,
+  still said "oracle").
+- `examples/example-objective.md` rewritten — it still used `/pi-gla-set`.
+- `docs/DESIGN.md` addenda for v0.2.0/v0.3.0/v0.4.0.
+- Smoke harness: new `draft-reject` scenario (Confirm → No → refine → Yes →\n  audited approval, 6/6); clarified-word probe made robust (a grilling turn
+  ends with `?`).
+
+### Verified live (2026-07-20, `scripts/smoke.sh`)
+
+- `goal` 5/5 (with compaction enabled), `list` 4/4, `loop` 5/5, `draft` 3/3,
+  `draft-reject` 6/6.
+- branch=1 smoke: 5 commits (one per improving iteration) on the scratch
+  branch, zero for stalls, `main` untouched, returned to `main` on plateau
+  stop with merge instructions.
+- 81 unit tests green; `tsc --noEmit` clean.
+
 ## [0.3.0] — 2026-07-20
 
 The third loop. All three loops now ship on one state machine.

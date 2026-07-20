@@ -213,7 +213,11 @@ export async function runGoalCompletionAuditor(args: {
       modelRegistry: ctx.modelRegistry,
       resourceLoader: makeAuditorResourceLoader(),
       sessionManager: SessionManager.inMemory(ctx.cwd),
-      settingsManager: SettingsManager.inMemory({ compaction: { enabled: false } }),
+      // Compaction ENABLED (v0.4.0, closes pi-goal-x flaw #3: context exhaustion
+      // mid-audit). Safety: regression_shield is orchestrator-side — if compaction
+      // degrades the auditor's memory, its <evidence> block gets weaker and the
+      // orchestrator disapproves. Compaction can never cause a false approval.
+      settingsManager: SettingsManager.inMemory({ compaction: { enabled: true } }),
       tools: ["read", "grep", "find", "ls", "bash"],
     });
     const unsub = session.subscribe((event) => {

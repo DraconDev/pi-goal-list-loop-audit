@@ -10,7 +10,7 @@
 # model: opencode/deepseek-v4-flash-free — override with AUDITOR_MODEL).
 #
 # Usage:  scripts/smoke.sh [scenario]
-#   scenario: goal (default) | list | draft | loop
+#   scenario: goal (default) | list | draft | draft-reject | loop
 #
 # The loop scenario runs under a BARE PI_CODING_AGENT_DIR (auth.json only)
 # so global extensions (pi-loop-mode's /loop collision, kilocode provider)
@@ -105,7 +105,7 @@ case "$SCENARIO" in
   draft)
     send '/goal'
     say "waiting for the agent to grill (up to 60s)"
-    if wait_for "idea" 60 || wait_for "task" 5; then pass "agent is clarifying"; else fail "no clarification turn"; fi
+    if wait_for "?" 60; then pass "agent is clarifying"; else fail "no clarification turn"; fi
     send 'create drafted.txt containing confirmed, done when grep -q confirmed drafted.txt passes'
     say "waiting for the Confirm dialog (up to 60s)"
     if wait_for "Yes" 60; then pass "confirm dialog shown"; else fail "no confirm dialog"; fi
@@ -130,6 +130,27 @@ case "$SCENARIO" in
     if ledger_has '"stall":1'; then pass "stall counting recorded"; else fail "no stall events"; fi
     if [ -s "$NOTIFY_LOG" ]; then pass "notify fired on loop stop ($(wc -l < "$NOTIFY_LOG") line(s))"; else fail "notify.log empty"; fi
     rm -rf "$BARE"
+    ;;
+
+  draft-reject)
+    send '/goal'
+    say "waiting for the agent to grill (up to 60s)"
+    if wait_for "?" 60; then pass "agent is clarifying"; else fail "no clarification turn"; fi
+    send 'create rejected.txt containing no, done when grep -q no rejected.txt passes'
+    say "waiting for the first Confirm dialog (up to 60s)"
+    if wait_for "Yes" 60; then pass "first confirm dialog shown"; else fail "no first dialog"; fi
+    # navigate to No and reject
+    tmux send-keys -t "$SESS" Down
+    sleep 1
+    tmux send-keys -t "$SESS" Enter
+    say "waiting for refinement (agent should re-ask or re-propose, up to 60s)"
+    if wait_for "change" 60 || wait_for "refine" 10 || wait_for "What" 10; then pass "agent refining after rejection"; else fail "no refinement after rejection"; fi
+    send 'same thing but create accepted.txt containing yes, done when grep -q yes accepted.txt passes'
+    say "waiting for the second Confirm dialog (up to 60s)"
+    if wait_for "Yes" 60; then pass "second confirm dialog shown"; else fail "no second dialog"; fi
+    send ""   # Enter = accept this time
+    say "waiting for audit + approval (up to 120s)"
+    if wait_for "approved by auditor" 120; then pass "refined goal approved"; else fail "no approval after refinement"; fi
     ;;
 
   *)

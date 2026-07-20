@@ -42,9 +42,15 @@ Use:
 /list remove <n>                   # drop item n from the queue
 /list clear                        # empty the queue
 /loop start "reduce TODOs" measure="grep -c TODO src.txt | head -1" direction=min
+/loop start "reduce TODOs" measure="..." direction=min branch=1   # scratch-branch mode
 /loop status                       # iteration, best, stall, recent values
 /loop stop                         # halt with summary
 ```
+
+With `branch=1`, all work lands on a scratch branch (`pi-gla-loop/<ts>-<slug>`):
+improvements are committed, regressions are hard-reset (scratch branch only),
+and on stop you return to your original branch with merge instructions.
+Requires a clean working tree.
 
 Loop 3 is metric-driven: the **orchestrator** runs your `measure` command after
 every agent turn and stops on plateau (`window=5` non-improving iterations by
@@ -72,8 +78,8 @@ Each loop is a different policy class on the same status machine.
 | `pause_goal` is fire-and-forget | Clear `pauseReason` surfaced in status + agent feedback |
 | Vague objective + weak auditor = rubber-stamp | Drafting phase with Confirm dialog + isolated auditor + shield |
 | Esc mid-audit just dies | Escape dialog: complete-without-audit / continue (shipped v0.2.0) |
-| Auditor can't compact — context exhaustion mid-audit | Deterministic compaction; JSONL state for findings (v0.3.0) |
-| Agent can grow subtasks indefinitely | `max_subtasks_per_task` cap (v0.3.0) |
+| Auditor can't compact — context exhaustion mid-audit | Compaction enabled (v0.4.0); safe because the shield is orchestrator-side |
+| Agent can grow subtasks indefinitely | `propose_task_list` with 20/5 caps + Confirm dialog (v0.3.0) |
 
 ## Files
 
