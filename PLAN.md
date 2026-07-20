@@ -117,7 +117,7 @@ handles UX; smoke tests run under a bare `PI_CODING_AGENT_DIR` to isolate.
   notify commands; smoke `wait_for "plateau"` matched agent prose instead of
   the orchestrator's stop text (assertions raced the loop).
 
-### M5 — v0.5.0 (self-sufficiency) — design
+### M5 — v0.5.0 (self-sufficiency) ✅ (2026-07-20)
 
 User directive: a goal loop that dies silently after compaction and needs an
 EXTERNAL plugin (`@badliveware/pi-compaction-continue`) to restart it is a hole
@@ -141,6 +141,13 @@ in OUR plugin. Liveness is the loop's own job. Bake it in; cut the watchdog.
 4. **Rig cuts** (after publish): `pi-codex-goal`, `pi-loop-mode`,
    `@badliveware/pi-compaction-continue`. AGENTS.md stack table rewritten:
    goal plane = pi-goal-loop-audit.
+
+**M5 evidence** (2026-07-20):
+- Heartbeat: 8 unit tests for the stall predicate + nudge accounting; `goal`
+  smoke 5/5 with the heartbeat interval live through the full cycle.
+- `/goal-tweak`: implemented with Confirm dialog + contract re-extraction.
+- Drafting prompt prefers `ask_user_question` when available.
+- 89 unit tests, tsc clean.
 
 **Deferred**: live footer/TUI widget (pi-loop-mode's dashboard is the one thing
 we genuinely lose by cutting it; v0.6.0 candidate if missed).

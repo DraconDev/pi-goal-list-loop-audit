@@ -35,7 +35,8 @@ Use:
 /goal-pause                        # pause
 /goal-resume                       # resume
 /goal-cancel                       # abort
-/goal-settings                     # auditor model + thinking
+/goal-tweak "<new objective>"      # edit in place (Confirm dialog)
+/goal-settings                     # auditor model + thinking + tokenlimit + notify
 /list add "<objective>"            # queue a goal
 /list                              # show active + queue
 /list next                         # skip current, activate next
