@@ -117,6 +117,35 @@ handles UX; smoke tests run under a bare `PI_CODING_AGENT_DIR` to isolate.
   notify commands; smoke `wait_for "plateau"` matched agent prose instead of
   the orchestrator's stop text (assertions raced the loop).
 
+### M6 — v0.6.0 (draft everything) — design
+
+User directive: for a long-running thing, a draft up front is better. Drafting
+exists only for `/goal`; `/list add` takes raw strings, and `/loop start`
+demands a correct target+measure+direction in one blind shot — the most
+expensive place to be wrong (up to 50 iterations before plateau stops a bad
+metric). Draft all three loops; for `/loop`, validate the metric BEFORE
+confirming.
+
+1. **Unified drafting modes**: drafting target becomes `"goal" | "list" |
+   "loop"`. `/goal` (existing), `/list add` with no args (draft → confirmed
+   contract goes into the QUEUE instead of activating), `/loop` with no args
+   (draft → confirmed loop config starts the loop).
+2. **`/loop` drafting with measure test-run** (centerpiece): the agent grills
+   about target + what number represents progress, then calls
+   `propose_loop_draft(target, measureCmd, direction, window?, max?)`. The
+   **orchestrator runs the measure command once** and shows target + measure +
+   real output + parsed number + direction in the Confirm dialog:
+   "`grep -c TODO src.txt` → `42` (min). Start?" A broken measure (no number)
+   is shown as such and the agent is told to fix the proposal. User validates
+   the metric before a single iteration burns tokens.
+3. **`/goals` archive browser**: list archived goals (id, status, stop reason,
+   objective head) from `.pi-gla/archive/`. Long-running tool needs history.
+4. Gates: unit tests (draft-mode routing, loop-draft measure parsing), smoke
+   scenarios for loop-drafting and list-drafting, publish v0.6.0.
+
+**Still deferred**: live footer/TUI widget (now the ONLY remaining scoreboard
+gap vs pi-loop-mode/pi-goal-x).
+
 ### M5 — v0.5.0 (self-sufficiency) ✅ (2026-07-20)
 
 User directive: a goal loop that dies silently after compaction and needs an
