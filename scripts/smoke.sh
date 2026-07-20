@@ -118,7 +118,8 @@ case "$SCENARIO" in
   loop)
     echo 5 > "$WORK/num.txt"
     NOTIFY_LOG="$WORK/notify.log"
-    send "/goal-settings notify='echo \$1 >> $NOTIFY_LOG'"
+    # project scope — never write test config into the user's GLOBAL settings
+    send "/goal-settings project notify='echo \$1 >> $NOTIFY_LOG'"
     sleep 4
     send '/loop start "Reduce the number in num.txt toward zero, never below 0" measure="cat num.txt" direction=min window=3 max=12'
     say "waiting for plateau stop (up to 300s)"
