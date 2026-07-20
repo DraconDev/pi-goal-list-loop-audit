@@ -1449,47 +1449,69 @@ function resolveAuditorModel(ctx: ExtensionContext, ref?: string): { model: any;
 }
 
 async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
-  // Arg-based (works everywhere, incl. tmux/headless):
-  //   /goal-settings model=provider/model-id
-  //   /goal-settings thinking=high
-  //   /goal-settings            (show current)
-  const s = loadSettings(ctx.cwd);
+  // The plugin's ONE config surface — global by default, rarely opened.
+  //   /goal-settings                      show effective values + where each comes from
+  //   /goal-settings model=provider/id    write to GLOBAL config
+  //   /goal-settings thinking=high        write to GLOBAL config
+  //   /goal-settings notify='cmd $1'      write to GLOBAL config
+  //   /goal-settings tokenlimit=2000000   write to GLOBAL config
+  //   /goal-settings project model=...    write to PROJECT override (rare)
+  //   /goal-settings model=unset          remove key (from global; project model=unset for project)
   const trimmed = args.trim();
   if (!trimmed) {
+    const prov = settingsProvenance(ctx.cwd);
+    const fmt = (k: keyof Settings, label: string) => {
+      const p = prov[k];
+      const v = p.value === undefined ? "(unset)" : String(p.value);
+      return `${label}: ${v}  [${p.source}]`;
+    };
     ctx.ui.notify(
-      `auditorModel: ${s.auditorModel ?? "(unset — session model)"}\n` +
-      `auditorThinkingLevel: ${s.auditorThinkingLevel ?? "medium"}\n` +
-      `Set with: /goal-settings model=provider/id thinking=low|medium|high`,
+      [
+        fmt("auditorModel", "auditorModel"),
+        fmt("auditorThinkingLevel", "thinking"),
+        fmt("notifyCmd", "notify"),
+        fmt("tokenLimit", "tokenLimit"),
+        `\nglobal:  ${globalSettingsPath()}`,
+        `project: ${projectSettingsPath(ctx.cwd)}`,
+        `Set with: /goal-settings key=value (global) · /goal-settings project key=value (project override)`,
+      ].join("\n"),
       "info",
     );
     return;
   }
-  const next = { ...s };
+  // Optional scope prefix: "project" writes the project override; default is global.
+  let scope: "global" | "project" = "global";
+  let rest = trimmed;
+  if (/^project\s+/i.test(rest)) {
+    scope = "project";
+    rest = rest.replace(/^project\s+/i, "");
+  }
+  const patch: Partial<Settings> = {};
   let changed = false;
   // Quote-aware key=value parsing: notify='echo $1 >> /tmp/log' must survive
   // with its spaces intact (naive whitespace splitting mangled it to "'echo").
   const kvRe = /(\w+)=(?:"([^"]*)"|'([^']*)'|(\S+))/g;
   let m: RegExpExecArray | null;
-  while ((m = kvRe.exec(trimmed)) !== null) {
+  while ((m = kvRe.exec(rest)) !== null) {
     const key = m[1]!.toLowerCase();
     const value = m[2] ?? m[3] ?? m[4] ?? "";
     if (key === "model" || key === "auditormodel") {
-      next.auditorModel = value === "unset" ? undefined : value;
+      patch.auditorModel = value === "unset" ? undefined : value;
       changed = true;
     } else if (key === "notify" || key === "notifycmd") {
-      next.notifyCmd = value === "unset" ? undefined : value;
+      patch.notifyCmd = value === "unset" ? undefined : value;
       changed = true;
     } else if (key === "tokenlimit") {
       const n = Number.parseInt(value, 10);
       if (Number.isFinite(n) && n > 0) {
-        next.tokenLimit = n;
+        patch.tokenLimit = n;
         changed = true;
       } else {
         ctx.ui.notify(`tokenlimit must be a positive integer, got: ${value}`, "warning");
       }
     } else if (key === "thinking" || key === "auditorthinkinglevel") {
       if (["off", "minimal", "low", "medium", "high", "xhigh"].includes(value)) {
-        next.auditorThinkingLevel = value as Settings["auditorThinkingLevel"];
+        patch.auditorThinkingLevel = value as Settings["auditorThinkingLevel"];
         changed = true;
       } else {
         ctx.ui.notify(`Unknown thinking level: ${value}`, "warning");
@@ -1497,14 +1519,14 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
     }
   }
   if (!changed) {
-    ctx.ui.notify("Nothing changed. Use model=provider/id or thinking=low|medium|high.", "info");
+    ctx.ui.notify("Nothing changed. Use key=value (model, thinking, notify, tokenlimit), optionally prefixed with 'project'.", "info");
     return;
   }
-  ensureDirs(ctx.cwd);
-  fs.writeFileSync(settingsPath(ctx.cwd), JSON.stringify(next, null, 2));
+  saveSettings(scope, ctx.cwd, patch);
+  const effective = loadSettings(ctx.cwd);
   ctx.ui.notify(
-    `Saved. auditorModel=${next.auditorModel ?? "(session model)"} thinking=${next.auditorThinkingLevel ?? "medium"} notify=${next.notifyCmd ?? "(off)"}\n` +
-    `Note: the auditor runs without extensions — choose a built-in provider (opencode, openrouter, minimax, …), not an extension-registered one.`,
+    `Saved to ${scope} config. Effective now: model=${effective.auditorModel ?? "(session model)"} thinking=${effective.auditorThinkingLevel ?? "medium"} notify=${effective.notifyCmd ?? "(off)"} tokenLimit=${effective.tokenLimit ?? 1_000_000}\n` +
+    `Note: the auditor runs without extensions — it must be a built-in provider, not an extension-registered one.`,
     "info",
   );
 }
