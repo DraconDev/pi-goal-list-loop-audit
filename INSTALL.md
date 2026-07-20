@@ -26,16 +26,24 @@ pi install npm:pi-goal-loop-audit
 
 ## Auditor model: the built-in-provider rule
 
-The auditor runs in a **fresh session with no extensions**. It can therefore only
-use **built-in providers** (opencode, openrouter, minimax, google, anthropic, …).
-If your main session runs an extension-registered provider (kilocode, zenmux,
-kimi-coding on some rigs), the auditor will fail with auth errors until you set:
+The auditor runs in a **fresh session with no extensions**, so it can only use
+**built-in providers** (opencode, openrouter, minimax, google, anthropic, …).
+You never need to pick a specific model by hand: the resolution chain is
+
+1. your explicit `/goal-settings model=provider/id`, else
+2. the session model (when its provider is built-in), else
+3. the **strongest credentialed built-in model** in your registry
+   (opus > sonnet/pro > gpt/gemini > flash/mini/haiku > free), else
+4. a clear error telling you to set one.
+
+Set it explicitly only when you want a specific auditor (e.g. a stronger model
+than your session model — the auditor is the verification gate, strength helps):
 
 ```
-/goal-settings model=opencode/deepseek-v4-flash-free
+/goal-settings model=anthropic/claude-opus-4-6
 ```
 
-Any built-in provider with working credentials works. Verify yours with:
+Whatever you choose must work extension-less. Verify with:
 
 ```bash
 PI_CODING_AGENT_DIR=/tmp/bare-agent pi -p "say ok" --model "provider/model-id"

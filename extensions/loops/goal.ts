@@ -37,6 +37,7 @@ import {
   archivedGoalPath,
   buildTaskList,
   buildTaskSummary,
+  auditModelTier,
   sumNewAssistantTokens,
   type TaskProposal,
   validateTaskProposal,
@@ -987,11 +988,11 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       const p = params as { completionSummary?: string; verificationSummary?: string };
       updateGoal({ status: "auditing" }, ctx);
       const settings = loadSettings(ctx.cwd);
-      const { model: auditorModel, error: modelError } = resolveAuditorModel(ctx, settings.auditorModel);
+      const { model: auditorModel, error: modelError, via } = resolveAuditorModel(ctx, settings.auditorModel);
       if (modelError) {
-        ctx.ui.notify(`Auditor model issue: ${modelError} — falling back to session model.`, "warning");
+        ctx.ui.notify(`Auditor model issue: ${modelError}`, "warning");
       }
-      ctx.ui.notify("Auditor running (isolated session)…", "info");
+      ctx.ui.notify(`Auditor running (isolated session, model: ${via ?? "setting"})…`, "info");
       // Esc during the audit aborts this tool's signal → threaded into the
       // auditor session, which aborts cleanly and returns "Auditor aborted."
       const result = await runGoalCompletionAuditor({
@@ -1508,8 +1509,11 @@ function warnIfAuditorProviderRisky(ctx: ExtensionContext): void {
     if (settings.auditorModel) return; // explicit auditor model — user's call
     const provider = (ctx.model as any)?.provider as string | undefined;
     if (!provider || KNOWN_BUILTIN_PROVIDERS.has(provider)) return;
+    // Name the actual fallback instead of recommending a hardcoded model.
+    const fallback = resolveAuditorModel(ctx, undefined);
+    const fallbackName = fallback.model ? `${(fallback.model as any).provider}/${(fallback.model as any).id}` : "(none available)";
     ctx.ui.notify(
-      `pi-goal-loop-audit: session model provider "${provider}" may be extension-registered. The auditor runs in an extension-less session and may fail auth. If audits error, set a built-in model: /goal-settings model=opencode/deepseek-v4-flash-free`,
+      `pi-goal-loop-audit: session model provider "${provider}" is extension-registered; the auditor (extension-less session) will use ${fallbackName} instead. Override with /goal-settings model=provider/id`,
       "warning",
     );
   } catch {
