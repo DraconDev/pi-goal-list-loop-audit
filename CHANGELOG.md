@@ -5,6 +5,29 @@ All notable changes to pi-goal-loop-audit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] — 2026-07-20
+
+### Changed (model philosophy: the user selects the model in pi)
+
+- **The plugin no longer picks or recommends auditor models.** The auditor
+  uses the pi session model by default; `/goal-settings model=provider/id`
+  remains as an explicit override. An earlier tier-based auto-selection idea
+  was implemented and then ripped out the same day — model choice belongs to
+  the user, not the plugin.
+- **No model names anywhere**: docs, examples, comments, and messages use
+  `provider/model-id` placeholders only. The session-start warning for
+  extension-registered providers now explains the two fixes (switch pi's
+  model to a built-in provider, or set the override) instead of recommending
+  a specific model.
+- The smoke harness no longer configures an auditor model at all — the
+  auditor shares the test session's pi-selected model, which is the path
+  most users will run.
+
+### Verified (2026-07-20)
+
+- `goal` smoke 5/5 with zero auditor-model configuration (auditor ran on the
+  session model directly). 90 unit tests, tsc clean.
+
 ## [0.6.1] — 2026-07-20
 
 ### Fixed (footguns found by real use)
