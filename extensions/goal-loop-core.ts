@@ -139,6 +139,22 @@ export interface Goal {
   updatedAt: string;
 }
 
+/**
+ * Layered settings merge (v0.7.0): later layers win, but only for keys they
+ * actually define — an `undefined` value in a layer means "not set here",
+ * never "set to undefined". Used for defaults → global → project resolution.
+ */
+export function mergeSettings<T extends Record<string, unknown>>(base: T, ...layers: Array<Partial<T> | null | undefined>): T {
+  const out: Record<string, unknown> = { ...base };
+  for (const layer of layers) {
+    if (!layer) continue;
+    for (const [k, v] of Object.entries(layer)) {
+      if (v !== undefined) out[k] = v;
+    }
+  }
+  return out as T;
+}
+
 export interface ListItem {
   id: string;
   objective: string;
