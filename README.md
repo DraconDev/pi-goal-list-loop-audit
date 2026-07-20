@@ -36,7 +36,7 @@ Use:
 /goal-resume                       # resume
 /goal-cancel                       # abort
 /goal-tweak "<new objective>"      # edit in place (Confirm dialog)
-/goal-settings                     # auditor model + thinking + tokenlimit + notify
+/gla                     # auditor model + thinking + tokenlimit + notify
 /list add                         # draft a contract INTO the queue
 /list add "<objective>"            # queue directly
 /list                              # show active + queue

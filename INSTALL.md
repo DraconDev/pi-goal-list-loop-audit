@@ -31,7 +31,7 @@ The auditor runs in a **fresh session with no extensions**, so it can only use
 You select the model in pi; the auditor uses it. The plugin never picks a
 model itself. The resolution is just:
 
-1. your explicit `/goal-settings model=provider/id` override (rare), else
+1. your explicit `/gla model=provider/id` override (rare), else
 2. the pi session model — whatever you selected in pi.
 
 If your session model's provider is extension-registered, the auditor's
@@ -40,7 +40,7 @@ with the two fixes: switch pi's model to a built-in provider, or set the
 override:
 
 ```
-/goal-settings model=provider/model-id
+/gla model=provider/model-id
 ```
 
 Whatever you choose must work extension-less. Verify with:

@@ -5,6 +5,24 @@ All notable changes to pi-goal-loop-audit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] — 2026-07-21
+
+### Changed — `/goal-settings` renamed to `/gla`
+
+One config command for everything — goals, loops, lists, and the auditor —
+deserves a name that doesn't say "goal" alone. `/gla` matches the `.pi-gla/`
+state directory and sits in its own namespace beside the three verbs
+(`/goal`, `/list`, `/loop`). Same handler, same tiers:
+
+```
+/gla                          # effective values + provenance
+/gla model=provider/id        # write GLOBAL
+/gla project tokenlimit=500   # write project override
+```
+
+`/goal-settings` is gone (renamed, not aliased — the plugin is a day old;
+clean break over surface creep).
+
 ## [0.7.0] — 2026-07-21
 
 ### Added — global config tier

@@ -37,7 +37,7 @@ What happens next:
    loop continues with the auditor's feedback.
 
 Useful commands: `/goal-status`, `/goal-pause`, `/goal-resume`, `/goal-cancel`,
-`/goal-settings` (auditor model, thinking level, token limit, notify command).
+`/gla` (auditor model, thinking level, token limit, notify command).
 
 ## Loop 2: `/list` — queue of goals
 
@@ -75,7 +75,7 @@ original branch with merge instructions. Requires a clean working tree.
 ## Notifications (optional)
 
 ```
-/goal-settings notify='echo $1 >> ~/goal-events.log'
+/gla notify='echo $1 >> ~/goal-events.log'
 ```
 
 Fires on goal complete, goal pause, and loop stop; message as `$1`.
@@ -86,7 +86,7 @@ Every goal tracks real token usage (summed from assistant messages).
 Crossing the limit pauses the goal:
 
 ```
-/goal-settings tokenlimit=2000000
+/gla tokenlimit=2000000
 ```
 
 ## The built-in-provider rule (auditor model)
@@ -99,5 +99,5 @@ fail and offers the two fixes: switch pi's model to a built-in provider, or
 set an explicit override:
 
 ```
-/goal-settings model=provider/model-id
+/gla model=provider/model-id
 ```

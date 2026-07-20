@@ -13,7 +13,7 @@
  *   - /goal-pause                    Pause
  *   - /goal-resume                   Resume
  *   - /goal-cancel                   Abort
- *   - /goal-settings                 Auditor model + thinking
+ *   - /gla                 Auditor model + thinking
  *
  * NOT in v0.1.0 (deferred to v0.2.0):
  *   - /list add|show|clear      Queue of goals (loop 2)
@@ -639,7 +639,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
 /**
  * Config-gated push notification: if settings.notifyCmd is set, shell out
  * with the message as $1. Fire-and-forget — a broken notify command never
- * blocks the loop. /goal-settings notify='<cmd>' to configure.
+ * blocks the loop. /gla notify='<cmd>' to configure.
  */
 function notifyExternal(ctx: ExtensionContext, message: string): void {
   try {
@@ -1390,7 +1390,7 @@ function loadSettings(cwd: string): Settings {
   ) as unknown as Settings;
 }
 
-/** Where each effective setting comes from (for the /goal-settings display). */
+/** Where each effective setting comes from (for the /gla display). */
 function settingsProvenance(cwd: string): Record<keyof Settings, { value: unknown; source: "project" | "global" | "default" }> {
   const proj = readSettingsFile(projectSettingsPath(cwd));
   const glob = readSettingsFile(globalSettingsPath());
@@ -1422,7 +1422,7 @@ function saveSettings(scope: "global" | "project", cwd: string, patch: Partial<S
  * model in pi; the auditor uses it.** The plugin never picks a model itself.
  *
  * Chain:
- *   1. Explicit `/goal-settings model=provider/id` override (rare).
+ *   1. Explicit `/gla model=provider/id` override (rare).
  *   2. The pi session model (ctx.model) — whatever the user selected.
  *
  * If the session model's provider is extension-registered, the auditor's
@@ -1450,13 +1450,13 @@ function resolveAuditorModel(ctx: ExtensionContext, ref?: string): { model: any;
 
 async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   // The plugin's ONE config surface — global by default, rarely opened.
-  //   /goal-settings                      show effective values + where each comes from
-  //   /goal-settings model=provider/id    write to GLOBAL config
-  //   /goal-settings thinking=high        write to GLOBAL config
-  //   /goal-settings notify='cmd $1'      write to GLOBAL config
-  //   /goal-settings tokenlimit=2000000   write to GLOBAL config
-  //   /goal-settings project model=...    write to PROJECT override (rare)
-  //   /goal-settings model=unset          remove key (from global; project model=unset for project)
+  //   /gla                      show effective values + where each comes from
+  //   /gla model=provider/id    write to GLOBAL config
+  //   /gla thinking=high        write to GLOBAL config
+  //   /gla notify='cmd $1'      write to GLOBAL config
+  //   /gla tokenlimit=2000000   write to GLOBAL config
+  //   /gla project model=...    write to PROJECT override (rare)
+  //   /gla model=unset          remove key (from global; project model=unset for project)
   const trimmed = args.trim();
   if (!trimmed) {
     const prov = settingsProvenance(ctx.cwd);
@@ -1473,7 +1473,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
         fmt("tokenLimit", "tokenLimit"),
         `\nglobal:  ${globalSettingsPath()}`,
         `project: ${projectSettingsPath(ctx.cwd)}`,
-        `Set with: /goal-settings key=value (global) · /goal-settings project key=value (project override)`,
+        `Set with: /gla key=value (global) · /gla project key=value (project override)`,
       ].join("\n"),
       "info",
     );
@@ -1540,7 +1540,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
 // We detect duplicates at session start and warn loudly once.
 // =================================================================
 
-const OUR_COMMANDS = ["goal", "goals", "goal-status", "goal-pause", "goal-resume", "goal-cancel", "goal-tweak", "goal-settings", "list", "loop"];
+const OUR_COMMANDS = ["goal", "goals", "goal-status", "goal-pause", "goal-resume", "goal-cancel", "goal-tweak", "gla", "list", "loop"];
 let collisionWarned = false;
 
 // Providers verified to exist in a bare (extension-less) session. The auditor
@@ -1563,7 +1563,7 @@ function warnIfAuditorProviderRisky(ctx: ExtensionContext): void {
     const provider = (ctx.model as any)?.provider as string | undefined;
     if (!provider || KNOWN_BUILTIN_PROVIDERS.has(provider)) return;
     ctx.ui.notify(
-      `pi-goal-loop-audit: session model provider "${provider}" is extension-registered — the auditor (extension-less session) cannot auth it and audits will fail. Either switch pi's model to a built-in provider, or set an override with /goal-settings model=provider/id`,
+      `pi-goal-loop-audit: session model provider "${provider}" is extension-registered — the auditor (extension-less session) cannot auth it and audits will fail. Either switch pi's model to a built-in provider, or set an override with /gla model=provider/id`,
       "warning",
     );
   } catch {
@@ -1631,8 +1631,8 @@ export default function (pi: ExtensionAPI): void {
     description: "List archived goals (newest first).",
     handler: (_args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdGoals(ctx); },
   });
-  pi.registerCommand("goal-settings", {
-    description: "Configure auditor model + thinking level (interactive prompt).",
+  pi.registerCommand("gla", {
+    description: "The one config surface for goals, loops, lists, and the auditor. /gla [show] · /gla key=value · /gla project key=value",
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdSettings(args, ctx); },
   });
   pi.registerCommand("list", {
@@ -1743,7 +1743,7 @@ export default function (pi: ExtensionAPI): void {
 
     // Token accounting + cost guard: accumulate this turn's assistant tokens
     // (deduped — agent_end may replay seen messages). Crossing the goal's
-    // token limit pauses it; /goal-settings tokenlimit=<n> to raise.
+    // token limit pauses it; /gla tokenlimit=<n> to raise.
     const newTokens = sumNewAssistantTokens(event.messages as unknown[], countedTokenMessages);
     if (newTokens > 0) {
       const used = (state.goal.usage?.tokensUsed ?? 0) + newTokens;
@@ -1753,7 +1753,7 @@ export default function (pi: ExtensionAPI): void {
           usage: { tokensUsed: used, tokensLimit: limit },
           status: "paused",
           pauseReason: `token limit exceeded (${used.toLocaleString()} > ${limit.toLocaleString()})`,
-          pauseSuggestedAction: "/goal-settings tokenlimit=<n> to raise the cap, then /goal-resume",
+          pauseSuggestedAction: "/gla tokenlimit=<n> to raise the cap, then /goal-resume",
         }, ctx);
         ctx.ui.notify(`Goal paused: token limit exceeded (${used.toLocaleString()} > ${limit.toLocaleString()}).`, "warning");
         notifyExternal(ctx, `Goal paused: token limit exceeded (${used} > ${limit}).`);

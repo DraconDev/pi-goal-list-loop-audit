@@ -113,7 +113,7 @@ handles UX; smoke tests run under a bare `PI_CODING_AGENT_DIR` to isolate.
 - Regression check: `goal` 5/5, `list` 4/4, `draft` 3/3 — all scenarios hermetic
   (bare agent dir + readiness wait) after two collision/REPL-race flakes.
 - 73 unit tests green; `tsc --noEmit` clean.
-- Found + fixed during M3: `/goal-settings` whitespace split mangled quoted
+- Found + fixed during M3: `/gla` whitespace split mangled quoted
   notify commands; smoke `wait_for "plateau"` matched agent prose instead of
   the orchestrator's stop text (assertions raced the loop).
 
@@ -121,7 +121,7 @@ handles UX; smoke tests run under a bare `PI_CODING_AGENT_DIR` to isolate.
 
 User directive: settings are not per-goal/loop/list — there should be ONE
 global config you set once and rarely open. Shipped: project > global >
-defaults resolution, `/goal-settings` writes global by default (`project`
+defaults resolution, `/gla` writes global by default (`project`
 prefix for local overrides), provenance display, 4 mergeSettings unit tests,
 live-verified both tiers + no-leak smoke. Docs updated.
 
@@ -213,7 +213,7 @@ Everything left, in one release. Completes the 6-flaw list and makes the docs ho
 3. **tokensUsed wiring + limit enforcement**. `AgentEndEvent.messages` carries
    `usage.totalTokens` per assistant message — accumulate per goal. `tokensLimit`
    becomes a real cost guard: crossing it pauses the goal with a clear reason
-   (configurable via `/goal-settings tokenlimit=`).
+   (configurable via `/gla tokenlimit=`).
 4. **Resumption notice** on `session_start`: if a goal is active or a loop is
    running, say so. (The "plugin vanished" self-check from D4 is impossible from
    inside the plugin — absent code cannot run. Recorded as rejected.)
@@ -259,7 +259,7 @@ After M4 the 6-flaw list is closed and the roadmap table is all-shipped.
 
 **Discovered during M1 smoke (2026-07-20): the auditor session has no extensions, so it can only use BUILT-IN providers.** On this rig the main session ran kilocode (`tencent/hy3:free`) — an extension-registered provider — and every auditor spawn failed with `No API key found for kilocode`. Verified bare-session matrix: `opencode/deepseek-v4-flash-free` works extension-less; kilocode/zenmux/kimi-coding do not.
 
-**Decision**: default = session model (works when the session model is built-in); `/goal-settings model=provider/id` overrides for rigs running extension-provided session models. The `/goal-settings` save message now warns about the built-in-provider constraint. `resolveAuditorModel` documents it in code. v0.2.0 should add a startup check: if session model's provider is extension-registered and no auditorModel is set, warn once.
+**Decision**: default = session model (works when the session model is built-in); `/gla model=provider/id` overrides for rigs running extension-provided session models. The `/gla` save message now warns about the built-in-provider constraint. `resolveAuditorModel` documents it in code. v0.2.0 should add a startup check: if session model's provider is extension-registered and no auditorModel is set, warn once.
 
 ### D3 — State dir name ✅ RESOLVED
 
