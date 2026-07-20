@@ -780,6 +780,73 @@ async function finishLoopGit(ctx: ExtensionContext, loop: LoopState): Promise<vo
   appendLedger(ctx.cwd, "loop_git", { action: "finish", branch: loop.branchName, returnedTo: loop.originalBranch });
 }
 
+interface LoopConfig {
+  target: string;
+  measureCmd: string;
+  direction: "min" | "max";
+  plateauWindow: number;
+  maxIterations: number;
+  branch: boolean;
+}
+
+/** Shared loop-start path: /loop start AND propose_loop_draft (after Confirm). */
+async function startLoopFromConfig(ctx: ExtensionContext, cfg: LoopConfig): Promise<boolean> {
+  // branch=1 mode: scratch branch ONLY. Refuse on non-git or dirty tree —
+  // we never mix uncommitted user work into the loop's branch.
+  let branchName: string | undefined;
+  let originalBranch: string | undefined;
+  if (cfg.branch) {
+    const isRepo = await runGit(ctx, ["rev-parse", "--is-inside-work-tree"]);
+    if (!isRepo.ok) {
+      ctx.ui.notify("branch=1 requires a git repository.", "warning");
+      return false;
+    }
+    const dirty = await runGit(ctx, ["status", "--porcelain"]);
+    if (!dirty.ok || dirty.stdout.length > 0) {
+      ctx.ui.notify("branch=1 requires a clean working tree — commit or stash your changes first.", "warning");
+      return false;
+    }
+    const current = await runGit(ctx, ["rev-parse", "--abbrev-ref", "HEAD"]);
+    originalBranch = current.ok ? current.stdout : undefined;
+    branchName = loopBranchName(nowIso(), cfg.target);
+    const created = await runGit(ctx, ["checkout", "-b", branchName]);
+    if (!created.ok) {
+      ctx.ui.notify(`Failed to create scratch branch ${branchName}.`, "warning");
+      return false;
+    }
+  }
+  // Baseline measurement before the first agent turn.
+  const baseline = await runMeasure(ctx, cfg.measureCmd);
+  state = {
+    ...state,
+    loop: {
+      target: cfg.target,
+      measureCmd: cfg.measureCmd,
+      direction: cfg.direction,
+      iteration: 0,
+      maxIterations: cfg.maxIterations,
+      plateauWindow: cfg.plateauWindow,
+      stallCount: 0,
+      bestValue: baseline,
+      lastValue: baseline,
+      active: true,
+      history: [],
+      startedAt: nowIso(),
+      branchName,
+      originalBranch,
+    },
+  };
+  persistState(ctx);
+  appendLedger(ctx.cwd, "loop_started", { target: cfg.target, measureCmd: cfg.measureCmd, direction: cfg.direction, baseline, branch: branchName });
+  ctx.ui.notify(
+    `Loop started: ${cfg.target.slice(0, 60)}\nBaseline: ${baseline ?? "(measure produced no number — first turn must fix that)"} · direction ${cfg.direction} · window ${cfg.plateauWindow} · max ${cfg.maxIterations}` +
+    (branchName ? `\nbranch mode: committing improvements to ${branchName}` : ""),
+    "info",
+  );
+  scheduleLoopTick(ctx);
+  return true;
+}
+
 async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
   const parts = args.trim().split(/\s+/);
   const sub = (parts[0] ?? "").toLowerCase();
@@ -832,59 +899,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       ctx.ui.notify(`/loop start: ${err instanceof Error ? err.message : String(err)}`, "warning");
       return;
     }
-    // branch=1 mode: scratch branch ONLY. Refuse on non-git or dirty tree —
-    // we never mix uncommitted user work into the loop's branch.
-    let branchName: string | undefined;
-    let originalBranch: string | undefined;
-    if (cfg.branch) {
-      const isRepo = await runGit(ctx, ["rev-parse", "--is-inside-work-tree"]);
-      if (!isRepo.ok) {
-        ctx.ui.notify("branch=1 requires a git repository.", "warning");
-        return;
-      }
-      const dirty = await runGit(ctx, ["status", "--porcelain"]);
-      if (!dirty.ok || dirty.stdout.length > 0) {
-        ctx.ui.notify("branch=1 requires a clean working tree — commit or stash your changes first.", "warning");
-        return;
-      }
-      const current = await runGit(ctx, ["rev-parse", "--abbrev-ref", "HEAD"]);
-      originalBranch = current.ok ? current.stdout : undefined;
-      branchName = loopBranchName(nowIso(), cfg.target);
-      const created = await runGit(ctx, ["checkout", "-b", branchName]);
-      if (!created.ok) {
-        ctx.ui.notify(`Failed to create scratch branch ${branchName}.`, "warning");
-        return;
-      }
-    }
-    // Baseline measurement before the first agent turn.
-    const baseline = await runMeasure(ctx, cfg.measureCmd);
-    state = {
-      ...state,
-      loop: {
-        target: cfg.target,
-        measureCmd: cfg.measureCmd,
-        direction: cfg.direction,
-        iteration: 0,
-        maxIterations: cfg.maxIterations,
-        plateauWindow: cfg.plateauWindow,
-        stallCount: 0,
-        bestValue: baseline,
-        lastValue: baseline,
-        active: true,
-        history: [],
-        startedAt: nowIso(),
-        branchName,
-        originalBranch,
-      },
-    };
-    persistState(ctx);
-    appendLedger(ctx.cwd, "loop_started", { target: cfg.target, measureCmd: cfg.measureCmd, direction: cfg.direction, baseline, branch: branchName });
-    ctx.ui.notify(
-      `Loop started: ${cfg.target.slice(0, 60)}\nBaseline: ${baseline ?? "(measure produced no number — first turn must fix that)"} · direction ${cfg.direction} · window ${cfg.plateauWindow} · max ${cfg.maxIterations}` +
-      (branchName ? `\nbranch mode: committing improvements to ${branchName}` : ""),
-      "info",
-    );
-    scheduleLoopTick(ctx);
+    await startLoopFromConfig(ctx, cfg);
     return;
   }
 
