@@ -1374,24 +1374,46 @@ function loadSettings(cwd: string): Settings {
 }
 
 /**
- * Resolve the auditor model from settings. Unset → ctx.model (session model).
- * "provider/id" → exact registry lookup. Bare "id" → first available match.
- * IMPORTANT: the auditor runs in an extension-less session, so only built-in
- * providers work there. Extension-provided models (e.g. kilocode on this rig)
- * fail inside the auditor — pick a built-in provider for auditorModel.
+ * Resolve the auditor model (v0.6.2 — no hardcoded model anywhere).
+ *
+ * Fallback chain:
+ *   1. Explicit `/goal-settings model=...` (user's choice wins).
+ *   2. The session model, IF its provider is built-in (the auditor runs in an
+ *      extension-less session; extension-registered providers fail there).
+ *   3. The STRONGEST available built-in model in the registry, ranked by
+ *      auditModelTier. getAvailable() only returns credentialed models, so
+ *      whatever we pick exists on this rig.
+ *   4. A clear error telling the user to set auditorModel.
  */
-function resolveAuditorModel(ctx: ExtensionContext, ref?: string): { model: any; error?: string } {
-  if (!ref || !ref.trim()) return { model: undefined }; // auditor falls back to ctx.model
-  const trimmed = ref.trim();
-  const slash = trimmed.indexOf("/");
-  if (slash > 0) {
-    const provider = trimmed.slice(0, slash);
-    const id = trimmed.slice(slash + 1);
-    const model = ctx.modelRegistry.find(provider, id);
-    return model ? { model } : { model: undefined, error: `model not found: ${trimmed}` };
+function resolveAuditorModel(ctx: ExtensionContext, ref?: string): { model: any; error?: string; via?: string } {
+  if (ref && ref.trim()) {
+    const trimmed = ref.trim();
+    const slash = trimmed.indexOf("/");
+    if (slash > 0) {
+      const provider = trimmed.slice(0, slash);
+      const id = trimmed.slice(slash + 1);
+      const model = ctx.modelRegistry.find(provider, id);
+      return model ? { model, via: "setting" } : { model: undefined, error: `model not found: ${trimmed}` };
+    }
+    const matches = ctx.modelRegistry.getAvailable().filter((m: any) => m.id === trimmed || m.name === trimmed);
+    return matches[0] ? { model: matches[0], via: "setting" } : { model: undefined, error: `no available model matching: ${trimmed}` };
   }
-  const matches = ctx.modelRegistry.getAvailable().filter((m: any) => m.id === trimmed || m.name === trimmed);
-  return matches[0] ? { model: matches[0] } : { model: undefined, error: `no available model matching: ${trimmed}` };
+  // 2. Session model if built-in.
+  const sessionModel = ctx.model as any;
+  if (sessionModel && KNOWN_BUILTIN_PROVIDERS.has(sessionModel.provider)) {
+    return { model: sessionModel, via: "session" };
+  }
+  // 3. Strongest available built-in.
+  const candidates = ctx.modelRegistry.getAvailable()
+    .filter((m: any) => KNOWN_BUILTIN_PROVIDERS.has(m.provider))
+    .sort((a: any, b: any) => auditModelTier(a.id ?? a.name ?? "") - auditModelTier(b.id ?? b.name ?? ""));
+  if (candidates.length > 0) {
+    return { model: candidates[0], via: `auto:${(candidates[0] as any).provider}/${(candidates[0] as any).id}` };
+  }
+  return {
+    model: undefined,
+    error: "no built-in-provider model available for the auditor (the auditor session has no extensions). Set one with /goal-settings model=provider/id",
+  };
 }
 
 async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
