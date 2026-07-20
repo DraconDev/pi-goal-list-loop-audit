@@ -92,12 +92,14 @@ Crossing the limit pauses the goal:
 ## The built-in-provider rule (auditor model)
 
 The auditor runs in an **extension-less** session, so it can only use
-built-in providers. If your main session model is extension-registered
-(kilocode, zenmux on some rigs), set a built-in auditor model:
+built-in providers. You don't pick a model by hand: the plugin resolves
+the explicit setting → session model (if built-in) → strongest credentialed
+built-in model → clear error. The session-start warning names the exact
+fallback it will use when your session provider is extension-registered.
+
+Set a model explicitly only to override (e.g. a stronger auditor than your
+session model — the auditor is the verification gate):
 
 ```
-/goal-settings model=opencode/deepseek-v4-flash-free
+/goal-settings model=provider/model-id
 ```
-
-The plugin warns you at session start when your session provider looks
-extension-registered and no auditor model is configured.

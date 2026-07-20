@@ -1419,7 +1419,7 @@ function resolveAuditorModel(ctx: ExtensionContext, ref?: string): { model: any;
 
 async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   // Arg-based (works everywhere, incl. tmux/headless):
-  //   /goal-settings model=opencode/deepseek-v4-flash-free
+  //   /goal-settings model=provider/model-id
   //   /goal-settings thinking=high
   //   /goal-settings            (show current)
   const s = loadSettings(ctx.cwd);

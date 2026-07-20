@@ -40,7 +40,7 @@ Set it explicitly only when you want a specific auditor (e.g. a stronger model
 than your session model — the auditor is the verification gate, strength helps):
 
 ```
-/goal-settings model=anthropic/claude-opus-4-6
+/goal-settings model=provider/model-id
 ```
 
 Whatever you choose must work extension-less. Verify with:
