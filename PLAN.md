@@ -70,11 +70,58 @@ ls .pi-gla/archive/   # expect: one .md file
 - [x] CHANGELOG, version 0.2.0, publish.
 - [ ] `max_subtasks_per_task` cap → moved to M3 (no task-list creation tool exists yet; capping nothing is premature).
 
-### M3 — v0.3.0 (loop)
+### M3 — v0.3.0 (loop) ✅ (2026-07-20) — design
 
-- [ ] **Loop 3: `/loop`** — `start|stop`; requires a `measure:` command (numeric metric) and a direction (min/max). Each iteration: run measure → propose change → apply → re-measure → keep or revert. Plateau detection (`plateauWindow`) stops the loop.
-- [ ] Push notifications on pause/audit/complete (optional, config-gated).
-- [ ] Live tests, CHANGELOG, tag, publish.
+**Loop 3 is metric-driven, not vibes-driven.** This is the anti-doorknob design:
+pi-loop-mode's failure mode was endless "improvement" churn (the DOORKNOB problem).
+Our loop only believes a number.
+
+**Model**:
+- User supplies: `target` (what to improve), `measure` (shell command that prints
+  a number), `direction` (min|max). Optional: `window` (plateau window, default 5),
+  `max` (iteration cap, default 50).
+- On `/loop start`: orchestrator runs `measure` → baseline.
+- On every `agent_end` while active: orchestrator runs `measure` → compare to best:
+  - improved (min: value < best; max: value > best) → new best, stall=0
+  - not improved / measure failed → stall++
+  - The **orchestrator** runs the measure (via `pi.exec`), never the agent —
+    the agent cannot fake the number.
+- Stop conditions: `stall >= window` (plateau), `iteration >= max`, or `/loop stop`.
+- No git-based auto-revert in v0.3.0 (too dangerous with uncommitted user work);
+  on regression the agent is instructed to undo its own last change, and the next
+  measure verifies.
+- **No auditor in loop 3**: the metric IS the verdict. Documented.
+- Mutual exclusion: a `/loop` cannot start while a goal/list is active and vice versa.
+
+**Command shape**: `/loop start "<target>" measure="<cmd>" direction=min [window=5] [max=50]`
+`/loop` (status) · `/loop stop`
+
+**Collision note**: `/loop` collides with pi-loop-mode — the M1 collision detector
+handles UX; smoke tests run under a bare `PI_CODING_AGENT_DIR` to isolate.
+
+**Also in M3**:
+- `propose_task_list` tool + `max_subtasks_per_task: 5` cap (M2 carry-over — makes
+  the existing complete_task/update_task_status tools actually usable).
+- `notify=<cmd>` setting: shell out on goal complete / goal pause / loop stop
+  (message passed as `$1`; config-gated, no deps).
+- Unit tests (metric parse, plateau logic, task cap) + `/loop` smoke scenario.
+
+**M3 verification evidence** (all live, 2026-07-20):
+- `/loop` smoke: metric 5→0 over 5 improving iterations (stall reset each time),
+  3 stall iterations at 0, plateau stop at window=3, `loop_stopped` + per-iteration
+  `loop_measured` in ledger, notify fired on stop. `scripts/smoke.sh loop` 5/5.
+- Regression check: `goal` 5/5, `list` 4/4, `draft` 3/3 — all scenarios hermetic
+  (bare agent dir + readiness wait) after two collision/REPL-race flakes.
+- 73 unit tests green; `tsc --noEmit` clean.
+- Found + fixed during M3: `/goal-settings` whitespace split mangled quoted
+  notify commands; smoke `wait_for "plateau"` matched agent prose instead of
+  the orchestrator's stop text (assertions raced the loop).
+
+**Deferred to v0.4.0 (with justification)**:
+- Auditor context compaction — zero context-exhaustion events in every live run to
+  date; shipping untested compaction machinery into the verification path is risk
+  without evidence of need. Revisit when a real audit exhausts context.
+- git keep/revert for loop 3 — needs a safe-worktree design.
 
 ---
 

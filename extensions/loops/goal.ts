@@ -35,7 +35,10 @@ import {
   appendLedger,
   archiveDir,
   archivedGoalPath,
+  buildTaskList,
   buildTaskSummary,
+  type TaskProposal,
+  validateTaskProposal,
   cloneGoal,
   ensureDirs,
   findNextPendingTask,
@@ -49,6 +52,12 @@ import {
   writeGoalMd,
 } from "../goal-loop-core.js";
 import { runGoalCompletionAuditor } from "../goal-loop-auditor.js";
+import {
+  applyMeasurement,
+  parseLoopStartArgs,
+  parseMetric,
+  type LoopState,
+} from "../goal-loop-forever.js";
 import {
   BACKOFF_HARD_CAP_MS,
   BACKOFF_IDLE_RETRY_MS,
@@ -249,7 +258,7 @@ function extractVerificationContract(raw: string): { objective: string; verifica
 }
 
 function persistState(ctx: ExtensionContext): void {
-  appendLedger(ctx.cwd, "state", { goal: state.goal, list: state.list ?? [] });
+  appendLedger(ctx.cwd, "state", { goal: state.goal, list: state.list ?? [], loop: state.loop ?? null });
 }
 
 function setGoal(goal: Goal, ctx: ExtensionContext): void {
@@ -348,6 +357,10 @@ async function cmdSet(args: string, ctx: ExtensionContext): Promise<void> {
   }
   if (!raw) {
     startDrafting(ctx);
+    return;
+  }
+  if (isLoopActive()) {
+    ctx.ui.notify("A /loop is active — /loop stop it before setting a goal.", "warning");
     return;
   }
   draftingActive = false; // explicit objective cancels any drafting session
@@ -487,6 +500,228 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
   ctx.ui.notify("Usage: /list [show] | /list add <objective> | /list next | /list remove <n> | /list clear", "info");
 }
 
+/**
+ * Config-gated push notification: if settings.notifyCmd is set, shell out
+ * with the message as $1. Fire-and-forget — a broken notify command never
+ * blocks the loop. /goal-settings notify='<cmd>' to configure.
+ */
+function notifyExternal(ctx: ExtensionContext, message: string): void {
+  try {
+    const settings = loadSettings(ctx.cwd);
+    const cmd = settings.notifyCmd;
+    if (!cmd || !extensionApi) return;
+    void extensionApi.exec("bash", ["-c", cmd, "pi-goal-loop-audit", message], { cwd: ctx.cwd }).catch(() => {});
+  } catch {
+    // non-fatal by design
+  }
+}
+
+// =================================================================
+// Loop 3: /loop — metric-driven forever loop
+//
+// The anti-doorknob law: the loop only believes a number. The orchestrator
+// runs the user's measure command (via pi.exec) after every agent turn;
+// the agent never self-reports progress. Termination: plateau, iteration
+// cap, or /loop stop. There is NO auditor in loop 3 — the metric is the
+// verdict.
+// =================================================================
+
+let loopTimer: NodeJS.Timeout | null = null;
+
+function clearLoopTimer(): void {
+  if (loopTimer) {
+    clearTimeout(loopTimer);
+    loopTimer = null;
+  }
+}
+
+function isLoopActive(): boolean {
+  return !!state.loop?.active;
+}
+
+/** Run the user's measure command. Orchestrator-side, never agent-side. */
+async function runMeasure(ctx: ExtensionContext, cmd: string): Promise<number | null> {
+  if (!extensionApi) return null;
+  try {
+    const result = await extensionApi.exec("bash", ["-c", cmd], { cwd: ctx.cwd });
+    const stdout = (result as any)?.stdout ?? "";
+    return parseMetric(String(stdout));
+  } catch {
+    return null;
+  }
+}
+
+function loopPrompt(loop: LoopState, regressionNote: string): string {
+  const tmplPath = path.resolve(__dirname, "..", "..", "prompts", "goal-loop-forever.md");
+  let tmpl: string;
+  try {
+    tmpl = fs.readFileSync(tmplPath, "utf-8");
+  } catch {
+    tmpl = `[LOOP ITERATION ${loop.iteration + 1}] Target: ${loop.target}. Measure: ${loop.measureCmd} (${loop.direction}). Make ONE small change to improve the metric.`;
+  }
+  return tmpl
+    .replace(/\$\{ITERATION\}/g, String(loop.iteration + 1))
+    .replace(/\$\{TARGET\}/g, loop.target)
+    .replace(/\$\{MEASURE_CMD\}/g, loop.measureCmd)
+    .replace(/\$\{DIRECTION\}/g, loop.direction)
+    .replace(/\$\{DIRECTION_WORD\}/g, loop.direction === "min" ? "lower is better" : "higher is better")
+    .replace(/\$\{LAST_VALUE\}/g, loop.lastValue === null ? "(none yet)" : String(loop.lastValue))
+    .replace(/\$\{BEST_VALUE\}/g, loop.bestValue === null ? "(none yet)" : String(loop.bestValue))
+    .replace(/\$\{STALL_COUNT\}/g, String(loop.stallCount))
+    .replace(/\$\{PLATEAU_WINDOW\}/g, String(loop.plateauWindow))
+    .replace(/\$\{REGRESSION_NOTE\}/g, regressionNote);
+}
+
+function scheduleLoopTick(ctx: ExtensionContext): void {
+  if (!isLoopActive()) return;
+  rememberCtx(ctx);
+  clearLoopTimer();
+  let delay = 0;
+  try {
+    delay = ctx.isIdle() && !ctx.hasPendingMessages() ? 0 : BACKOFF_IDLE_RETRY_MS;
+  } catch {
+    return;
+  }
+  loopTimer = setTimeout(() => sendLoopTurn(), delay);
+  loopTimer.unref?.();
+}
+
+function sendLoopTurn(): void {
+  loopTimer = null;
+  if (!isLoopActive() || !extensionApi) return;
+  const ctx = freshCtx();
+  if (!ctx || !ctx.isIdle() || ctx.hasPendingMessages()) {
+    loopTimer = setTimeout(() => sendLoopTurn(), BACKOFF_IDLE_RETRY_MS);
+    loopTimer.unref?.();
+    return;
+  }
+  const loop = state.loop!;
+  const regressedLast = loop.history.length > 0 && !loop.history[loop.history.length - 1]!.improved && loop.lastValue !== null;
+  const regressionNote = regressedLast
+    ? "**Your last change REGRESSED the metric. Undo it first, then try a different small change.**"
+    : "";
+  try {
+    extensionApi.sendMessage({
+      customType: GOAL_EVENT_ENTRY,
+      content: loopPrompt(loop, regressionNote),
+      display: false,
+    }, { triggerTurn: true, deliverAs: "followUp" });
+  } catch {
+    // stale API — next agent_end reschedules
+  }
+}
+
+/** agent_end hook for loop 3: measure → judge → continue or stop. */
+async function runLoopTick(ctx: ExtensionContext): Promise<void> {
+  const loop = state.loop!;
+  const value = await runMeasure(ctx, loop.measureCmd);
+  const outcome = applyMeasurement(loop, value, nowIso());
+  persistState(ctx);
+  appendLedger(ctx.cwd, "loop_measured", {
+    iteration: loop.iteration,
+    value,
+    best: loop.bestValue,
+    stall: loop.stallCount,
+  });
+  if (outcome.kind === "stop") {
+    ctx.ui.notify(`Loop stopped: ${outcome.reason}. ${loop.history.length} iterations recorded.`, "info");
+    appendLedger(ctx.cwd, "loop_stopped", { reason: outcome.reason, iterations: loop.iteration, best: loop.bestValue });
+    notifyExternal(ctx, `Loop stopped: ${outcome.reason}`);
+    return;
+  }
+  scheduleLoopTick(ctx);
+}
+
+async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
+  const parts = args.trim().split(/\s+/);
+  const sub = (parts[0] ?? "").toLowerCase();
+  const rest = args.trim().slice(sub.length).trim();
+
+  if (!sub || sub === "status") {
+    const loop = state.loop;
+    if (!loop) {
+      ctx.ui.notify("No loop. /loop start \"<target>\" measure=\"<cmd>\" direction=min|max [window=5] [max=50]", "info");
+      return;
+    }
+    const lines = [
+      `Loop: ${loop.active ? "active" : "stopped"} — ${loop.target.slice(0, 80)}`,
+      `Metric: ${loop.measureCmd} (${loop.direction})`,
+      `Iteration ${loop.iteration}/${loop.maxIterations} · best ${loop.bestValue ?? "n/a"} · last ${loop.lastValue ?? "n/a"} · stall ${loop.stallCount}/${loop.plateauWindow}`,
+    ];
+    if (loop.stopReason) lines.push(`Stopped: ${loop.stopReason}`);
+    const tail = loop.history.slice(-5);
+    if (tail.length > 0) {
+      lines.push("Recent: " + tail.map((h) => `${h.value ?? "ERR"}${h.improved ? "↑" : ""}`).join(" "));
+    }
+    ctx.ui.notify(lines.join("\n"), "info");
+    return;
+  }
+
+  if (sub === "start") {
+    if (state.goal && state.goal.status === "active") {
+      ctx.ui.notify("A goal is active — /goal-cancel or /goal-pause it before starting a loop.", "warning");
+      return;
+    }
+    if (isLoopActive()) {
+      ctx.ui.notify("A loop is already active. /loop stop first.", "warning");
+      return;
+    }
+    let cfg;
+    try {
+      cfg = parseLoopStartArgs(rest);
+    } catch (err) {
+      ctx.ui.notify(`/loop start: ${err instanceof Error ? err.message : String(err)}`, "warning");
+      return;
+    }
+    // Baseline measurement before the first agent turn.
+    const baseline = await runMeasure(ctx, cfg.measureCmd);
+    state = {
+      ...state,
+      loop: {
+        target: cfg.target,
+        measureCmd: cfg.measureCmd,
+        direction: cfg.direction,
+        iteration: 0,
+        maxIterations: cfg.maxIterations,
+        plateauWindow: cfg.plateauWindow,
+        stallCount: 0,
+        bestValue: baseline,
+        lastValue: baseline,
+        active: true,
+        history: [],
+        startedAt: nowIso(),
+      },
+    };
+    persistState(ctx);
+    appendLedger(ctx.cwd, "loop_started", { target: cfg.target, measureCmd: cfg.measureCmd, direction: cfg.direction, baseline });
+    ctx.ui.notify(
+      `Loop started: ${cfg.target.slice(0, 60)}\nBaseline: ${baseline ?? "(measure produced no number — first turn must fix that)"} · direction ${cfg.direction} · window ${cfg.plateauWindow} · max ${cfg.maxIterations}`,
+      "info",
+    );
+    scheduleLoopTick(ctx);
+    return;
+  }
+
+  if (sub === "stop") {
+    if (!state.loop) {
+      ctx.ui.notify("No loop to stop.", "info");
+      return;
+    }
+    clearLoopTimer();
+    state.loop = { ...state.loop, active: false, stopReason: state.loop.stopReason ?? "stopped by user (/loop stop)" };
+    persistState(ctx);
+    appendLedger(ctx.cwd, "loop_stopped", { reason: "user", iterations: state.loop.iteration, best: state.loop.bestValue });
+    ctx.ui.notify(
+      `Loop stopped after ${state.loop.iteration} iterations. Best: ${state.loop.bestValue ?? "n/a"}.`,
+      "info",
+    );
+    notifyExternal(ctx, `Loop stopped by user after ${state.loop.iteration} iterations (best: ${state.loop.bestValue ?? "n/a"})`);
+    return;
+  }
+
+  ctx.ui.notify("Usage: /loop [status] | /loop start \"<target>\" measure=\"<cmd>\" direction=min|max [window=5] [max=50] | /loop stop", "info");
+}
+
 // =================================================================
 // Tools exposed to the agent
 // =================================================================
@@ -571,7 +806,9 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
 
       if (result.approved) {
         updateGoal({ auditHistory: history }, ctx);
+        const objective = state.goal.objective;
         archiveCurrentGoal(ctx, "complete", `auditor ${result.model} approved`);
+        notifyExternal(ctx, `Goal complete (auditor approved): ${objective.slice(0, 120)}`);
         return { content: [{ type: "text", text: `Goal approved by auditor ${result.model}.` }], details: {} };
       } else {
         updateGoal({
@@ -609,6 +846,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
         pauseSuggestedAction: p.suggestedAction,
       }, ctx);
       ctx.ui.notify(`Goal paused: ${p.reason}`, "info");
+      notifyExternal(ctx, `Goal paused: ${p.reason.slice(0, 120)}`);
       return { content: [{ type: "text", text: "Goal paused. /goal-resume to continue." }], details: {} };
     },
   }));
@@ -714,6 +952,52 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       };
     },
   }));
+
+  pi.registerTool(defineTool({
+    name: "propose_task_list",
+    label: "Propose task list",
+    description: "Propose a task breakdown for the active goal. Opens the user's Confirm dialog. Limits: 20 top-level tasks, 5 subtasks per task.",
+    parameters: Type.Object({
+      tasks: Type.Array(Type.Object({
+        title: Type.String(),
+        subtasks: Type.Optional(Type.Array(Type.String())),
+      })),
+    }),
+    async execute(_id, params, _signal, _onUpdate, execCtx) {
+      if (!state.goal || state.goal.status !== "active") {
+        return { content: [{ type: "text", text: "No active goal to break down." }], details: {} };
+      }
+      if (state.goal.taskList && state.goal.taskList.tasks.length > 0) {
+        return { content: [{ type: "text", text: "A task list already exists. Use update_task_status / complete_task to work it." }], details: {} };
+      }
+      const p = params as { tasks: TaskProposal[] };
+      const invalid = validateTaskProposal(p.tasks);
+      if (invalid) {
+        return { content: [{ type: "text", text: invalid }], details: {} };
+      }
+      const liveCtx = (execCtx as ExtensionContext | undefined) ?? ctx;
+      const preview = p.tasks.map((t, i) => {
+        const subs = (t.subtasks ?? []).map((s, j) => `   ${i + 1}.${j + 1} ${s}`).join("\n");
+        return `${i + 1}. ${t.title}` + (subs ? `\n${subs}` : "");
+      }).join("\n");
+      let confirmed = false;
+      try {
+        confirmed = await liveCtx.ui.confirm("Confirm task list", preview);
+      } catch {
+        confirmed = false;
+      }
+      if (!confirmed) {
+        return { content: [{ type: "text", text: "Task list rejected by the user. Adjust and propose again." }], details: {} };
+      }
+      const taskList = buildTaskList(p.tasks);
+      updateGoal({ taskList }, liveCtx);
+      const subCount = taskList.tasks.reduce((n, t) => n + (t.subtasks?.length ?? 0), 0);
+      return {
+        content: [{ type: "text", text: `Task list set: ${taskList.tasks.length} tasks, ${subCount} subtasks. Track progress with complete_task / update_task_status.` }],
+        details: {},
+      };
+    },
+  }));
 }
 
 // =================================================================
@@ -724,6 +1008,8 @@ interface Settings {
   /** "provider/model-id" or bare "model-id". Unset → session model. */
   auditorModel?: string;
   auditorThinkingLevel?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+  /** Shell command run on goal complete / goal pause / loop stop; message passed as $1. */
+  notifyCmd?: string;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -783,13 +1069,18 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   }
   const next = { ...s };
   let changed = false;
-  for (const part of trimmed.split(/\s+/)) {
-    const eq = part.indexOf("=");
-    if (eq <= 0) continue;
-    const key = part.slice(0, eq).toLowerCase();
-    const value = part.slice(eq + 1);
+  // Quote-aware key=value parsing: notify='echo $1 >> /tmp/log' must survive
+  // with its spaces intact (naive whitespace splitting mangled it to "'echo").
+  const kvRe = /(\w+)=(?:"([^"]*)"|'([^']*)'|(\S+))/g;
+  let m: RegExpExecArray | null;
+  while ((m = kvRe.exec(trimmed)) !== null) {
+    const key = m[1]!.toLowerCase();
+    const value = m[2] ?? m[3] ?? m[4] ?? "";
     if (key === "model" || key === "auditormodel") {
       next.auditorModel = value === "unset" ? undefined : value;
+      changed = true;
+    } else if (key === "notify" || key === "notifycmd") {
+      next.notifyCmd = value === "unset" ? undefined : value;
       changed = true;
     } else if (key === "thinking" || key === "auditorthinkinglevel") {
       if (["off", "minimal", "low", "medium", "high", "xhigh"].includes(value)) {
@@ -807,7 +1098,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   ensureDirs(ctx.cwd);
   fs.writeFileSync(settingsPath(ctx.cwd), JSON.stringify(next, null, 2));
   ctx.ui.notify(
-    `Saved. auditorModel=${next.auditorModel ?? "(session model)"} thinking=${next.auditorThinkingLevel ?? "medium"}\n` +
+    `Saved. auditorModel=${next.auditorModel ?? "(session model)"} thinking=${next.auditorThinkingLevel ?? "medium"} notify=${next.notifyCmd ?? "(off)"}\n` +
     `Note: the auditor runs without extensions — choose a built-in provider (opencode, openrouter, minimax, …), not an extension-registered one.`,
     "info",
   );
@@ -912,6 +1203,10 @@ export default function (pi: ExtensionAPI): void {
     description: "Loop 2: queue of goals. /list add <obj> | /list show | /list next | /list remove <n> | /list clear",
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdList(args, ctx); },
   });
+  pi.registerCommand("loop", {
+    description: "Loop 3: metric-driven forever loop. /loop start \"<target>\" measure=\"<cmd>\" direction=min|max [window=5] [max=50] | /loop status | /loop stop",
+    handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdLoop(args, ctx); },
+  });
 
   // Tool registration is done after first command so the context is available.
   // For v0.1.0 we register at load; we accept that tools show even without an
@@ -937,7 +1232,10 @@ export default function (pi: ExtensionAPI): void {
     }
     warnOnCommandCollision(ctx);
     warnIfAuditorProviderRisky(ctx);
-    if (state.goal && state.goal.status === "active" && state.goal.autoContinue) {
+    if (isLoopActive()) {
+      // Session restarted mid-loop: resume measuring from persisted state.
+      scheduleLoopTick(ctx);
+    } else if (state.goal && state.goal.status === "active" && state.goal.autoContinue) {
       scheduleContinuation(ctx, true);
     } else if ((!state.goal || state.goal.status === "complete" || state.goal.status === "aborted") && listQueue().length > 0) {
       // Session restarted with a non-empty queue but no active goal.
@@ -950,6 +1248,12 @@ export default function (pi: ExtensionAPI): void {
     if (!registeredCtx) {
       registerAgentTools(pi, ctx);
       registeredCtx = ctx;
+    }
+    // Loop 3 runs on the same heartbeat: measure after every agent turn.
+    if (isLoopActive()) {
+      clearLoopTimer();
+      await runLoopTick(ctx);
+      return;
     }
     if (!state.goal) return;
     if (state.goal.status !== "active") return;
@@ -976,6 +1280,7 @@ export default function (pi: ExtensionAPI): void {
           pauseSuggestedAction: "Use /goal-resume to retry, or /goal-cancel to abort.",
         }, ctx);
         ctx.ui.notify("Goal paused: 5 consecutive errors.", "warning");
+        notifyExternal(ctx, "Goal paused: 5 consecutive errors.");
         return;
       }
     } else {

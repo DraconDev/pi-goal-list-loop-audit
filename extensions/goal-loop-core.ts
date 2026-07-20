@@ -35,6 +35,55 @@ export interface TaskList {
   tasks: Task[];
 }
 
+// =================================================================
+// Task-list proposal validation (used by the propose_task_list tool)
+//
+// The caps are the fix for pi-goal-x flaw #4: the agent could grow subtasks
+// indefinitely, drifting into self-generated busywork. Hard limits keep a
+// breakdown a breakdown.
+// =================================================================
+
+export const MAX_TOP_LEVEL_TASKS = 20;
+export const MAX_SUBTASKS_PER_TASK = 5;
+
+export interface TaskProposal {
+  title: string;
+  subtasks?: string[];
+}
+
+/** Validate a proposed breakdown. Returns an error string or null. */
+export function validateTaskProposal(tasks: TaskProposal[]): string | null {
+  if (!Array.isArray(tasks) || tasks.length === 0) return "Empty task list.";
+  if (tasks.length > MAX_TOP_LEVEL_TASKS) {
+    return `Too many top-level tasks (${tasks.length}); max ${MAX_TOP_LEVEL_TASKS}. Coarser granularity, please.`;
+  }
+  for (const t of tasks) {
+    if (!t.title || !t.title.trim()) return "Every task needs a non-empty title.";
+    const n = t.subtasks?.length ?? 0;
+    if (n > MAX_SUBTASKS_PER_TASK) {
+      return `Task "${t.title}" has ${n} subtasks; max ${MAX_SUBTASKS_PER_TASK}. Merge or split into coarser tasks.`;
+    }
+  }
+  return null;
+}
+
+/** Assign hierarchical ids ("1", "1.1", …) and pending statuses to a proposal. */
+export function buildTaskList(tasks: TaskProposal[]): TaskList {
+  return {
+    version: 1,
+    tasks: tasks.map((t, i) => ({
+      id: String(i + 1),
+      title: t.title.trim(),
+      status: "pending" as const,
+      subtasks: (t.subtasks ?? []).map((s, j) => ({
+        id: `${i + 1}.${j + 1}`,
+        title: s.trim(),
+        status: "pending" as const,
+      })),
+    })),
+  };
+}
+
 export interface AuditVerdict {
   at: string;
   approved: boolean;
@@ -81,6 +130,8 @@ export interface State {
   goal: Goal | null;
   /** Loop 2: queue of pending goal items. Activated one at a time. */
   list?: ListItem[];
+  /** Loop 3: metric-driven forever loop. */
+  loop?: import("./goal-loop-forever.js").LoopState;
 }
 
 export const DEFAULT_STATE: State = {
@@ -138,6 +189,7 @@ export function readState(cwd: string): State {
   return {
     goal: parsed.goal ?? null,
     list: Array.isArray(parsed.list) ? parsed.list : [],
+    loop: parsed.loop && typeof parsed.loop === "object" ? parsed.loop as State["loop"] : undefined,
   };
 }
 

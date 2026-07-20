@@ -10,7 +10,11 @@
 # model: opencode/deepseek-v4-flash-free — override with AUDITOR_MODEL).
 #
 # Usage:  scripts/smoke.sh [scenario]
-#   scenario: goal (default) | list | draft
+#   scenario: goal (default) | list | draft | loop
+#
+# The loop scenario runs under a BARE PI_CODING_AGENT_DIR (auth.json only)
+# so global extensions (pi-loop-mode's /loop collision, kilocode provider)
+# stay out of the way; the main model is the built-in free opencode one.
 #
 # Exit code 0 = all assertions passed.
 
@@ -51,9 +55,20 @@ EOF
 }
 
 say "setup: $WORK (auditor: $AUDITOR_MODEL)"
+# Hermetic by default: bare agent dir (auth.json only) so global extensions
+# (old npm installs of THIS package, pi-loop-mode's /loop, kilocode provider)
+# can never collide with the dev extension under test. Main model must be a
+# built-in provider; opencode/deepseek-v4-flash-free is free and works bare.
+BARE="$(mktemp -d /tmp/pi-bare-agent-XXXX)"
+cp "$HOME/.pi/agent/auth.json" "$BARE/" 2>/dev/null || true
+MAIN_MODEL="${MAIN_MODEL:-opencode/deepseek-v4-flash-free}"
 tmux kill-session -t "$SESS" 2>/dev/null
-tmux new-session -d -s "$SESS" -x 200 -y 50 "cd '$WORK' && pi -e '$EXT_DIR'"
-sleep 15
+tmux new-session -d -s "$SESS" -x 200 -y 50 \
+  "cd '$WORK' && PI_CODING_AGENT_DIR='$BARE' pi -e '$EXT_DIR' --model '$MAIN_MODEL'"
+# Wait for the REPL banner — sending commands before the prompt is ready
+# drops them into the agent as plain text (a flake we hit twice).
+if wait_for "escape interrupt" 45; then pass "pi started"; else fail "pi did not start in 45s"; fi
+sleep 3
 send "/goal-settings model=$AUDITOR_MODEL"
 sleep 4
 
@@ -84,7 +99,7 @@ case "$SCENARIO" in
     n=$(ls "$WORK/.pi-gla/archive/"*.md 2>/dev/null | wc -l)
     if [ "$n" -ge 2 ]; then pass "both items archived ($n)"; else fail "only $n archived"; fi
     if [ -f "$WORK/a.txt" ] && [ -f "$WORK/b.txt" ]; then pass "both files created"; else fail "files missing"; fi
-    if ledger_has '"list":\[\]'; then pass "queue drained"; else fail "queue not empty"; fi
+    if ledger_has '"list":[]'; then pass "queue drained"; else fail "queue not empty"; fi
     ;;
 
   draft)
@@ -99,6 +114,24 @@ case "$SCENARIO" in
     if wait_for "approved by auditor" 120; then pass "drafted goal approved"; else fail "no approval"; fi
     ;;
 
+  loop)
+    echo 5 > "$WORK/num.txt"
+    NOTIFY_LOG="$WORK/notify.log"
+    send "/goal-settings notify='echo \$1 >> $NOTIFY_LOG'"
+    sleep 4
+    send '/loop start "Reduce the number in num.txt toward zero, never below 0" measure="cat num.txt" direction=min window=3 max=12'
+    say "waiting for plateau stop (up to 300s)"
+    # match the ORCHESTRATOR's stop text — the agent saying "plateau" in prose
+    # must not satisfy this (it did once, and the assertions raced the loop).
+    if wait_for "Loop stopped: plateau" 300; then pass "plateau stop fired"; else fail "no plateau within 300s"; fi
+    sleep 2
+    if [ "$(cat "$WORK/num.txt" 2>/dev/null)" = "0" ]; then pass "metric driven to 0"; else fail "num.txt not 0: $(cat "$WORK/num.txt" 2>/dev/null)"; fi
+    if ledger_has 'loop_stopped'; then pass "loop_stopped recorded"; else fail "loop_stopped missing"; fi
+    if ledger_has '"stall":1'; then pass "stall counting recorded"; else fail "no stall events"; fi
+    if [ -s "$NOTIFY_LOG" ]; then pass "notify fired on loop stop ($(wc -l < "$NOTIFY_LOG") line(s))"; else fail "notify.log empty"; fi
+    rm -rf "$BARE"
+    ;;
+
   *)
     echo "unknown scenario: $SCENARIO" >&2
     exit 2
@@ -107,6 +140,7 @@ esac
 
 say "teardown"
 tmux kill-session -t "$SESS" 2>/dev/null
+rm -rf "$BARE"
 [ "${KEEP_WORK:-0}" = "1" ] || rm -rf "$WORK"
 
 if [ "$FAILURES" -eq 0 ]; then

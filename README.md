@@ -41,7 +41,16 @@ Use:
 /list next                         # skip current, activate next
 /list remove <n>                   # drop item n from the queue
 /list clear                        # empty the queue
+/loop start "reduce TODOs" measure="grep -c TODO src.txt | head -1" direction=min
+/loop status                       # iteration, best, stall, recent values
+/loop stop                         # halt with summary
 ```
+
+Loop 3 is metric-driven: the **orchestrator** runs your `measure` command after
+every agent turn and stops on plateau (`window=5` non-improving iterations by
+default), iteration cap (`max=50`), or `/loop stop`. The agent never self-reports
+progress — the loop only believes a number. There is no auditor in loop 3; the
+metric is the verdict.
 
 ## Three loops on one state machine
 
@@ -49,7 +58,7 @@ Use:
 |---|---|---|
 | 1. Single ordered goal | `/goal "<objective>"` | **shipped v0.1.0** |
 | 2. Queue of goals | `/list add\|show\|next\|remove\|clear` | **shipped v0.2.0** |
-| 3. Forever-polish loop | `/loop start\|stop` | v0.3.0 |
+| 3. Forever-polish loop | `/loop start\|status\|stop` | **shipped v0.3.0** |
 
 Each loop is a different policy class on the same status machine.
 

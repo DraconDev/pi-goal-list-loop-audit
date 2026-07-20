@@ -5,6 +5,46 @@ All notable changes to pi-goal-loop-audit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-07-20
+
+The third loop. All three loops now ship on one state machine.
+
+### Added
+
+- **Loop 3: `/loop`** — metric-driven forever loop:
+  `/loop start "<target>" measure="<cmd>" direction=min|max [window=5] [max=50]`,
+  `/loop status`, `/loop stop`. The **orchestrator** runs the measure command
+  after every agent turn (the agent never self-reports) and stops on plateau
+  (`window` consecutive non-improving iterations), iteration cap, or
+  `/loop stop`. This is the anti-doorknob design: the loop only believes a
+  number. No auditor in loop 3 — the metric is the verdict. Pure logic in
+  `extensions/goal-loop-forever.ts` (22 unit tests).
+- **`propose_task_list` tool** — the agent can break a goal into milestones
+  after a Confirm dialog. Anti-drift caps: 20 top-level tasks,
+  **5 subtasks per task** (pi-goal-x flaw #4). Validation/ids in core,
+  8 unit tests. Makes the existing `complete_task` / `update_task_status`
+  tools actually usable.
+- **`notify=<cmd>` setting** — config-gated push: shells out on goal complete,
+  goal pause, and loop stop; message passed as `$1`.
+  `/goal-settings notify='echo $1 >> /tmp/log'` — the settings parser is now
+  quote-aware (a naive whitespace split mangled quoted commands to `"'echo"`).
+
+### Fixed
+
+- `/goal-settings` key=value parsing handles quoted values with spaces.
+- Smoke harness is hermetic: all scenarios run under a bare
+  `PI_CODING_AGENT_DIR` with a readiness wait — global extensions (including
+  older npm installs of this package) can no longer collide with the dev
+  build under test, and commands can't race the REPL into the agent.
+
+### Verified live (2026-07-20, `scripts/smoke.sh`)
+
+- `goal`: 5/5 — auditor approval, shield, archive.
+- `list`: 4/4 — two queued items auto-advanced through audit, queue drained.
+- `loop`: 5/5 — metric 5→0 with per-iteration stall accounting, plateau stop
+  at window, `loop_stopped` in ledger, notify fired.
+- `draft`: 3/3 — grill → Confirm dialog → audited approval.
+
 ## [0.2.0] — 2026-07-20
 
 Second loop, the anti-bamboozle hardening, and drafting.
