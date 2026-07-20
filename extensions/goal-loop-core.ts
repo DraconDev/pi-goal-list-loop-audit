@@ -21,7 +21,7 @@ export type Status =
   | "paused"
   | "aborted";
 
-export type Policy = "goal"; // v0.1.0 only. v0.2.0: "list". v0.3.0: "loop".
+export type Policy = "goal" | "list"; // v0.3.0: "loop".
 
 export interface Task {
   id: string;
@@ -44,6 +44,8 @@ export interface AuditVerdict {
   report?: string;
   /** Infrastructure failure detail (abort, auth, no model). Verdicts only — an entry with error and no report is not a real audit. */
   error?: string;
+  /** regression_shield outcome when the goal had a verification contract. */
+  regressionShieldPassed?: boolean;
 }
 
 export interface Goal {
@@ -68,12 +70,22 @@ export interface Goal {
   updatedAt: string;
 }
 
+export interface ListItem {
+  id: string;
+  objective: string;
+  verificationContract?: string;
+  addedAt: string;
+}
+
 export interface State {
   goal: Goal | null;
+  /** Loop 2: queue of pending goal items. Activated one at a time. */
+  list?: ListItem[];
 }
 
 export const DEFAULT_STATE: State = {
   goal: null,
+  list: [],
 };
 
 // =================================================================
@@ -123,7 +135,10 @@ export function readState(cwd: string): State {
       // skip malformed lines
     }
   }
-  return parsed.goal ? ({ goal: parsed.goal } as State) : { ...DEFAULT_STATE };
+  return {
+    goal: parsed.goal ?? null,
+    list: Array.isArray(parsed.list) ? parsed.list : [],
+  };
 }
 
 export function appendLedger(cwd: string, type: string, value: unknown): void {

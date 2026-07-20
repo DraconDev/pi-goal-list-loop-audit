@@ -16,9 +16,9 @@ Most pi goal extensions — `pi-goal`, `pi-goal-x`, `pi-loop-mode`, `ralphi`, `t
 
 | Stage | Protection |
 |---|---|
-| Goal intake | Drafting + structured Q&A + Confirm/Reject dialog (planned v0.2.0) |
+| Goal intake | Drafting + Confirm/Reject dialog; nothing activates unconfirmed |
 | Implementation | `agent_end`-driven continuation loop with 5-minute hard backoff cap |
-| Completion | Isolated auditor session; raw command output required per item (planned v0.2.0) |
+| Completion | Isolated auditor session + **regression_shield**: raw command output required per verification-contract item, enforced orchestrator-side |
 
 ## Quick start
 
@@ -29,20 +29,26 @@ pi install npm:pi-goal-loop-audit
 
 Use:
 ```
-/goal "Step 1. Step 2. Done when: tests pass."   # set + start
+/goal                              # drafting: agent grills, you Confirm
+/goal "Step 1. Step 2. Done when: tests pass."   # set + start now
 /goal-status                       # show state
 /goal-pause                        # pause
 /goal-resume                       # resume
 /goal-cancel                       # abort
 /goal-settings                     # auditor model + thinking
+/list add "<objective>"            # queue a goal
+/list                              # show active + queue
+/list next                         # skip current, activate next
+/list remove <n>                   # drop item n from the queue
+/list clear                        # empty the queue
 ```
 
 ## Three loops on one state machine
 
 | Loop | Command | Status |
 |---|---|---|
-| 1. Single ordered goal | `/goal "<objective>"` | **v0.1.0** (this release) |
-| 2. Queue of goals | `/list add\|show\|clear` | v0.2.0 |
+| 1. Single ordered goal | `/goal "<objective>"` | **shipped v0.1.0** |
+| 2. Queue of goals | `/list add\|show\|next\|remove\|clear` | **shipped v0.2.0** |
 | 3. Forever-polish loop | `/loop start\|stop` | v0.3.0 |
 
 Each loop is a different policy class on the same status machine.
@@ -53,15 +59,35 @@ Each loop is a different policy class on the same status machine.
 |---|---|
 | `detailedSummary` is hand-concat strings | Structured JSON state + native markdown renderer |
 | Stuck-counter has no ceiling — 1-hour waits happen | Hard 5-minute backoff cap, fall through to user notification |
-| Auditor can't compact — context exhaustion mid-audit | Deterministic compaction; JSONL state for findings (planned v0.2.0) |
-| Agent can grow subtasks indefinitely | `max_subtasks_per_task` cap; further requires confirmation |
-| Auditor can rubber-stamp after `bash true` | `regression_shield`: raw output required per item (planned v0.2.0) |
-| `pause_goal` is fire-and-forget | Live TUI badge + optional push on pause/blocked/auditor events |
-| Vague objective + weak auditor = rubber-stamp | Drafting phase + isolated auditor verifies precisely |
+| Auditor can rubber-stamp after `bash true` | **regression_shield** (shipped v0.2.0): auditor must quote raw tool output per verification-contract item; orchestrator rejects evidence-free approvals |
+| `pause_goal` is fire-and-forget | Clear `pauseReason` surfaced in status + agent feedback |
+| Vague objective + weak auditor = rubber-stamp | Drafting phase with Confirm dialog + isolated auditor + shield |
+| Esc mid-audit just dies | Escape dialog: complete-without-audit / continue (shipped v0.2.0) |
+| Auditor can't compact — context exhaustion mid-audit | Deterministic compaction; JSONL state for findings (v0.3.0) |
+| Agent can grow subtasks indefinitely | `max_subtasks_per_task` cap (v0.3.0) |
+
+## Files
+
+```
+extensions/
+  loops/goal.ts                # /goal + /list commands, agent tools, loop driver
+  goal-loop-core.ts            # types, JSONL state, renderer
+  goal-loop-auditor.ts         # isolated auditor (fresh session, no extensions)
+  goal-loop-shield.ts          # regression_shield (pure, dependency-free)
+  goal-loop-backoff.ts         # 5-min hard cap
+prompts/
+  goal-loop-continuation.md    # loop driver prompt
+  goal-loop-draft.md           # drafting prompt
+scripts/
+  smoke.sh                     # live integration harness (tmux + real models)
+tests/                         # 43 unit tests, no live pi required
+docs/DESIGN.md                 # architectural decisions
+PLAN.md                        # milestones, decisions, gates
+```
 
 ## Detailed design
 
-See `docs/DESIGN.md`.
+See `docs/DESIGN.md`. Milestones and decisions live in `PLAN.md`.
 
 ## Installation from source
 

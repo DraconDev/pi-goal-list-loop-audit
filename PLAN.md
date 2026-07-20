@@ -58,14 +58,17 @@ cat .pi-gla/active.jsonl | tail -3
 ls .pi-gla/archive/   # expect: one .md file
 ```
 
-### M2 — v0.2.0 (list + drafting + regression_shield)
+### M2 — v0.2.0 (list + drafting + regression_shield) ✅ (2026-07-20)
 
-- [ ] **Loop 2: `/list`** — `add|show|clear|next`; each item is a full goal (objective + contract); completing one auto-starts the next.
-- [ ] **Drafting**: `/goal` with no args → structured Q&A → Confirm/Reject dialog before activation. Direct activation only via `/goal "<objective>"`.
-- [ ] **regression_shield**: auditor must quote raw command/tool output per verification-contract item; missing evidence → auto-disapprove.
-- [ ] `max_subtasks_per_task` cap with confirmation.
-- [ ] Live integration test harness (spawn pi headless, assert on `.pi-gla/active.jsonl`).
-- [ ] CHANGELOG, tag, publish.
+- [x] **Loop 2: `/list`** — `add|show|next|remove <n>|clear`; each item is a full goal; completing/aborting one auto-activates the next; session restart resumes a non-empty queue. Live-verified: two items auto-advanced through audit to archive.
+- [x] **Drafting**: `/goal` no-args → agent grills one question at a time → `propose_goal_draft` → real Confirm dialog. Live-verified end-to-end (drafted goal completed with shield).
+- [x] **regression_shield**: auditor must quote raw output per contract item in an `<evidence>` block; orchestrator converts evidence-free `<approved/>` into disapproval. Pure logic in `goal-loop-shield.ts`; 14 unit tests + live verification (verbatim `<evidence>` in history).
+- [x] **Escape dialog**: abort → complete-without-audit / continue choice.
+- [x] **Provider warning**: one-time `session_start` notice when the session provider isn't a confirmed built-in and no auditorModel is set. Live-verified on kilocode.
+- [x] **Inline contract extraction**: one-liner `Done when:` now extracts (was silently skipped before — the shield never engaged on one-liners).
+- [x] **Live integration harness**: `scripts/smoke.sh [goal|list|draft]` — goal scenario 5/5 assertions green.
+- [x] CHANGELOG, version 0.2.0, publish.
+- [ ] `max_subtasks_per_task` cap → moved to M3 (no task-list creation tool exists yet; capping nothing is premature).
 
 ### M3 — v0.3.0 (loop)
 

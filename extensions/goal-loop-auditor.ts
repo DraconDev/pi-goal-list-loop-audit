@@ -39,7 +39,9 @@ export interface GoalAuditorResult {
   model: string;
   thinkingLevel?: ThinkingLevel;
   error?: string;
-  // v0.2.0 will add `regressionShieldPassed?: boolean`.
+  /** regression_shield outcome when the goal has a verification contract. */
+  regressionShieldPassed?: boolean;
+  regressionShieldMissing?: string[];
 }
 
 // =================================================================
@@ -137,8 +139,33 @@ function buildGoalAuditorPrompt(goal: Goal, completionSummary: string | null | u
       : []),
     "5. Explain missing or weak evidence, especially scaffold-vs-final quality gaps.",
     "6. End with exactly <approved/> only if the objective is truly complete; otherwise end with exactly <disapproved/>.",
+    ...(goal.verificationContract?.trim()
+      ? [
+          "",
+          "REGRESSION SHIELD (mandatory because this goal has a verification contract):",
+          "Your report MUST contain an <evidence> section. For EACH item in the verification contract,",
+          "quote the item, then paste the RAW tool output that proves it (real bash/grep/read output,",
+          "copied verbatim — not a paraphrase, not a description of what you saw). Format:",
+          "",
+          "<evidence>",
+          "Item: <contract item 1>",
+          "Output:",
+          "<raw command output here>",
+          "Item: <contract item 2>",
+          "Output:",
+          "<raw command output here>",
+          "</evidence>",
+          "",
+          "An approval without a complete <evidence> section will be rejected automatically.",
+        ]
+      : []),
   ].join("\n");
 }
+
+// regression_shield lives in goal-loop-shield.ts (dependency-free, so unit
+// tests can import it without pulling in pi). Re-exported for callers.
+export { checkRegressionShield, contractItems, type RegressionShieldResult } from "./goal-loop-shield.js";
+import { checkRegressionShield } from "./goal-loop-shield.js";
 
 // =================================================================
 // Auditor entry point
@@ -260,6 +287,37 @@ export async function runGoalCompletionAuditor(args: {
         model: modelLabel(model),
         thinkingLevel,
         error: "Auditor approved without calling any read tool; treated as disapproved.",
+      };
+    }
+
+    // regression_shield: an approval against a verification contract must
+    // carry per-item raw evidence, or it is converted to a disapproval.
+    if (approved && args.goal.verificationContract?.trim()) {
+      const shield = checkRegressionShield(output, args.goal.verificationContract);
+      if (!shield.passed) {
+        const why = !shield.hasEvidenceBlock
+          ? "report has no <evidence> block"
+          : `report's evidence does not address: ${shield.missingItems.join("; ")}`;
+        return {
+          approved: false,
+          disapproved: true,
+          output,
+          model: modelLabel(model),
+          thinkingLevel,
+          error: `regression_shield: approved but ${why}`,
+          regressionShieldPassed: false,
+          regressionShieldMissing: shield.missingItems,
+        };
+      }
+      progress.phase = "complete";
+      emitProgress();
+      return {
+        approved,
+        disapproved,
+        output,
+        model: modelLabel(model),
+        thinkingLevel,
+        regressionShieldPassed: true,
       };
     }
 

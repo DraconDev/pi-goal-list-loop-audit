@@ -5,6 +5,51 @@ All notable changes to pi-goal-loop-audit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-07-20
+
+Second loop, the anti-bamboozle hardening, and drafting.
+
+### Added
+
+- **Loop 2: `/list`** — queue of goals: `/list add|show|next|remove <n>|clear`.
+  Each item is a full goal (objective + verification contract). Completing or
+  aborting a list-sourced goal auto-activates the next queued item; a session
+  restart with a non-empty queue resumes automatically.
+- **regression_shield** — when a goal has a verification contract, the auditor
+  MUST produce an `<evidence>` block quoting raw tool output per contract item;
+  the orchestrator converts `<approved/>` without complete evidence into a
+  disapproval. Kills the "auditor ran `bash true` and approved" hole that
+  pi-goal-x's author documented as unfixable-cheaply. Pure logic lives in
+  `extensions/goal-loop-shield.ts` (dependency-free, fully unit-tested).
+- **Drafting** — `/goal` with no args starts a clarification turn; the agent
+  grills one focused question at a time, then `propose_goal_draft` opens a
+  real Confirm dialog (Yes/No). Nothing activates before confirmation.
+  `/goal "<objective>"` still skips drafting.
+- **Escape dialog** — aborting the auditor (Esc) now asks: complete WITHOUT
+  audit (user takes verification responsibility) or continue working.
+- **Provider warning** — at `session_start`, if no auditor model is configured
+  and the session model's provider is not a confirmed built-in, warn once with
+  the exact `/goal-settings` fix.
+- **Inline contract extraction** — one-liner objectives like
+  `Create x.txt. Done when: grep -q ok x.txt` now extract the contract
+  (previously only line-start markers worked, silently skipping the shield).
+- **Integration harness** — `scripts/smoke.sh [goal|list|draft]` drives a real
+  pi session in tmux and asserts on the ledger.
+
+### Fixed
+
+- State functions (`setGoal`/`archiveCurrentGoal`) no longer wipe the queue.
+- `readState` restores `list` from the ledger; v0.1.0 ledgers upgrade cleanly.
+
+### Verified live (2026-07-20)
+
+- `/list`: two queued items auto-advanced through work → auditor → archive.
+- regression_shield: auditor produced a verbatim `<evidence>` block;
+  `shield=True` recorded in history.
+- Drafting: grill → sharpened contract → Confirm dialog → audited completion.
+- Provider warning fired exactly once on a kilocode session.
+- `scripts/smoke.sh goal`: 5/5 assertions.
+
 ## [0.1.0] — 2026-07-20
 
 First live-verified release. Everything in alpha.1, plus the fixes found by

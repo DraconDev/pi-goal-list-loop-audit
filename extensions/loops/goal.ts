@@ -82,6 +82,10 @@ function rememberCtx(ctx: ExtensionContext): void {
 }
 
 let state: State = { goal: null };
+
+// Drafting mode: /goal with no args starts a clarification turn; the agent
+// must call propose_goal_draft, which opens the user's Confirm dialog.
+let draftingActive = false;
 let continuationTimer: NodeJS.Timeout | null = null;
 let continuationScheduledFor: string | null = null;
 let iterationCounter = 0;
@@ -195,7 +199,7 @@ function continuationPrompt(goal: Goal): string {
 // Goal lifecycle
 // =================================================================
 
-function createGoal(objective: string, ctx: ExtensionContext): Goal {
+function createGoal(objective: string, ctx: ExtensionContext, policy: "goal" | "list" = "goal"): Goal {
   ensureDirs(ctx.cwd);
   // Extract verification contract if present in objective.
   const { objective: cleanObj, verificationContract } = extractVerificationContract(objective);
@@ -204,7 +208,7 @@ function createGoal(objective: string, ctx: ExtensionContext): Goal {
     id,
     objective: cleanObj,
     status: "active",
-    policy: "goal",
+    policy,
     autoContinue: true,
     verificationContract: verificationContract || "",
     usage: { tokensUsed: 0, tokensLimit: 100_000 },
@@ -215,31 +219,45 @@ function createGoal(objective: string, ctx: ExtensionContext): Goal {
 }
 
 function extractVerificationContract(raw: string): { objective: string; verificationContract: string } {
-  // Look for "done when:" or "verify:" markers
+  // Line-based first: a marker at line start begins the contract block.
   const lines = raw.split("\n");
   let mode: "obj" | "verify" = "obj";
   const objParts: string[] = [];
   const verifyParts: string[] = [];
   for (const line of lines) {
     const lower = line.toLowerCase();
-    if (lower.match(/^\s*(?:done when|verify|verification|verified when|done):/)) {
+    if (lower.match(/^\s*(?:done when|verify|verified when|verification|done):/)) {
       mode = "verify";
     }
     if (mode === "obj") objParts.push(line);
     else verifyParts.push(line);
   }
-  return {
-    objective: objParts.join("\n").trim(),
-    verificationContract: verifyParts.join("\n").trim(),
-  };
+  let objective = objParts.join("\n").trim();
+  let verificationContract = verifyParts.join("\n").trim();
+
+  // Inline fallback: users write one-liners like
+  //   "Create x.txt. Done when: grep -q ok x.txt"
+  // where the marker is mid-line. Split at the first inline marker.
+  if (!verificationContract) {
+    const m = raw.match(/^(.*?)(?:\.|;)??\s+(done when|verified when|verify|verification)\s*:\s*(.+)$/is);
+    if (m) {
+      objective = (m[1] ?? "").trim().replace(/[.;]\s*$/, "");
+      verificationContract = (m[3] ?? "").trim();
+    }
+  }
+  return { objective, verificationContract };
+}
+
+function persistState(ctx: ExtensionContext): void {
+  appendLedger(ctx.cwd, "state", { goal: state.goal, list: state.list ?? [] });
 }
 
 function setGoal(goal: Goal, ctx: ExtensionContext): void {
-  state = { goal };
+  state = { goal, list: state.list ?? [] }; // preserve the queue!
   const file = writeGoalMd(ctx.cwd, goal);
   state.goal!.activePath = path.relative(ctx.cwd, file) || file;
-  appendLedger(ctx.cwd, "state", { goal: state.goal });
-  appendLedger(ctx.cwd, "goal_created", { goalId: goal.id, objective: goal.objective });
+  persistState(ctx);
+  appendLedger(ctx.cwd, "goal_created", { goalId: goal.id, objective: goal.objective, policy: goal.policy });
 }
 
 function updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): void {
@@ -247,7 +265,7 @@ function updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): void {
   state.goal = { ...state.goal, ...patch, updatedAt: nowIso() };
   const file = writeGoalMd(ctx.cwd, state.goal);
   state.goal.activePath = path.relative(ctx.cwd, file) || file;
-  appendLedger(ctx.cwd, "state", { goal: state.goal });
+  persistState(ctx);
 }
 
 function archiveCurrentGoal(ctx: ExtensionContext, status: Status, stopReason?: string): void {
@@ -259,8 +277,62 @@ function archiveCurrentGoal(ctx: ExtensionContext, status: Status, stopReason?: 
   fs.writeFileSync(target, md);
   // Remove active md file
   try { fs.unlinkSync(goalMdPath(ctx.cwd, goal.id)); } catch {}
-  state = { goal: { ...goal, status, archivedPath: path.relative(ctx.cwd, target) || target, stopReason } };
+  state = { goal: { ...goal, status, archivedPath: path.relative(ctx.cwd, target) || target, stopReason }, list: state.list ?? [] };
   appendLedger(ctx.cwd, "goal_archived", { goalId: goal.id, status, stopReason });
+  persistState(ctx);
+  // Loop 2: a list-sourced goal reached a terminal state → activate the next
+  // queued item. Terminal = complete or aborted (paused stays paused).
+  if (goal.policy === "list" && (status === "complete" || status === "aborted")) {
+    activateNextListItem(ctx);
+  }
+}
+
+// =================================================================
+// Loop 2: /list queue
+// =================================================================
+
+function listQueue(): NonNullable<State["list"]> {
+  return state.list ?? [];
+}
+
+function activateNextListItem(ctx: ExtensionContext): boolean {
+  const queue = listQueue();
+  if (queue.length === 0) return false;
+  const [next, ...rest] = queue;
+  state = { ...state, list: rest };
+  const goal = createGoal(next!.objective, ctx, "list");
+  if (next!.verificationContract) goal.verificationContract = next!.verificationContract;
+  setGoal(goal, ctx);
+  iterationCounter = 0;
+  consecutiveStuckIterations = 0;
+  consecutiveErrorIterations = 0;
+  ctx.ui.notify(`Next list item activated (${rest.length} remaining): ${goal.objective.slice(0, 80)}`, "info");
+  scheduleContinuation(ctx, true);
+  return true;
+}
+
+// =================================================================
+// Drafting: /goal with no args → clarify → Confirm dialog → activate
+// =================================================================
+
+function startDrafting(ctx: ExtensionContext): void {
+  draftingActive = true;
+  ctx.ui.notify(
+    "Goal drafting started. The agent will grill until the objective is concrete, then propose a draft for you to Confirm. No work begins before confirmation.",
+    "info",
+  );
+  const tmplPath = path.resolve(__dirname, "..", "..", "prompts", "goal-loop-draft.md");
+  let tmpl: string;
+  try {
+    tmpl = fs.readFileSync(tmplPath, "utf-8");
+  } catch {
+    tmpl = "[GOAL DRAFTING] Clarify the user's goal, then call propose_goal_draft.";
+  }
+  try {
+    extensionApi?.sendUserMessage(tmpl, { deliverAs: ctx.isIdle() ? "followUp" : "steer" });
+  } catch {
+    draftingActive = false;
+  }
 }
 
 // =================================================================
@@ -275,9 +347,10 @@ async function cmdSet(args: string, ctx: ExtensionContext): Promise<void> {
     raw = raw.slice(1, -1).trim();
   }
   if (!raw) {
-    ctx.ui.notify("Usage: /goal <objective with optional 'Done when: ...' verification clause>", "info");
+    startDrafting(ctx);
     return;
   }
+  draftingActive = false; // explicit objective cancels any drafting session
   const goal = createGoal(raw, ctx);
   setGoal(goal, ctx);
   // Reset counters
@@ -325,6 +398,93 @@ async function cmdCancel(ctx: ExtensionContext): Promise<void> {
   archiveCurrentGoal(ctx, "aborted", "user cancelled");
   ctx.abort();
   ctx.ui.notify("Goal aborted.", "info");
+}
+
+// =================================================================
+// /list commands (loop 2)
+// =================================================================
+
+async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
+  const parts = args.trim().split(/\s+/);
+  const sub = (parts[0] ?? "").toLowerCase();
+  const rest = args.trim().slice(sub.length).trim();
+
+  if (!sub || sub === "show") {
+    const queue = listQueue();
+    const lines: string[] = [];
+    if (state.goal) {
+      lines.push(`Active: [${state.goal.policy}] ${state.goal.objective.slice(0, 80)} (${statusLabel(state.goal.status)})`);
+    } else {
+      lines.push("Active: (none)");
+    }
+    if (queue.length === 0) {
+      lines.push("Queue: empty. /list add <objective>");
+    } else {
+      lines.push(`Queue (${queue.length}):`);
+      queue.forEach((item, i) => lines.push(`  ${i + 1}. ${item.objective.slice(0, 90)}`));
+    }
+    ctx.ui.notify(lines.join("\n"), "info");
+    return;
+  }
+
+  if (sub === "add") {
+    let raw = rest;
+    if (raw.length >= 2 && ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'")))) {
+      raw = raw.slice(1, -1).trim();
+    }
+    if (!raw) {
+      ctx.ui.notify("Usage: /list add <objective with optional 'Done when: ...' clause>", "info");
+      return;
+    }
+    const { objective, verificationContract } = extractVerificationContract(raw);
+    const item = { id: newGoalId(), objective, verificationContract: verificationContract || undefined, addedAt: nowIso() };
+    state = { ...state, list: [...listQueue(), item] };
+    persistState(ctx);
+    appendLedger(ctx.cwd, "list_added", { id: item.id, objective: item.objective });
+    // Nothing active → activate immediately.
+    if (!state.goal || state.goal.status === "complete" || state.goal.status === "aborted") {
+      activateNextListItem(ctx);
+    } else {
+      ctx.ui.notify(`Queued (${listQueue().length} waiting): ${objective.slice(0, 80)}`, "info");
+    }
+    return;
+  }
+
+  if (sub === "clear") {
+    state = { ...state, list: [] };
+    persistState(ctx);
+    appendLedger(ctx.cwd, "list_cleared", {});
+    ctx.ui.notify("List cleared. Active goal (if any) is untouched — /goal-cancel for that.", "info");
+    return;
+  }
+
+  if (sub === "next") {
+    // Skip the current active goal (abort it) and activate the next queued item.
+    if (state.goal && state.goal.status === "active") {
+      archiveCurrentGoal(ctx, "aborted", "skipped via /list next");
+    }
+    if (!activateNextListItem(ctx)) {
+      ctx.ui.notify("Queue is empty — nothing to advance to.", "info");
+    }
+    return;
+  }
+
+  if (sub === "remove" || sub === "rm") {
+    const n = Number.parseInt(rest, 10);
+    const queue = listQueue();
+    if (!Number.isFinite(n) || n < 1 || n > queue.length) {
+      ctx.ui.notify(`Usage: /list remove <1-${queue.length}>`, "info");
+      return;
+    }
+    const removed = queue[n - 1]!;
+    state = { ...state, list: queue.filter((_, i) => i !== n - 1) };
+    persistState(ctx);
+    appendLedger(ctx.cwd, "list_removed", { id: removed.id, objective: removed.objective });
+    ctx.ui.notify(`Removed: ${removed.objective.slice(0, 80)}`, "info");
+    return;
+  }
+
+  ctx.ui.notify("Usage: /list [show] | /list add <objective> | /list next | /list remove <n> | /list clear", "info");
 }
 
 // =================================================================
@@ -378,9 +538,35 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
           thinkingLevel: result.thinkingLevel,
           report: result.output,
           error: result.error,
+          regressionShieldPassed: result.regressionShieldPassed,
         });
         // Cap history — 39 infra errors taught us unbounded growth is real.
         if (history.length > 20) history.splice(0, history.length - 20);
+      }
+
+      // Escape hatch: the user aborted the audit (Esc). Offer the explicit
+      // choice — complete WITHOUT audit, or keep working. (pi-goal-x parity.)
+      if (result.error === "Auditor aborted.") {
+        updateGoal({ status: "active", auditHistory: history, pauseReason: "audit aborted by user (Esc)" }, ctx);
+        let completeAnyway = false;
+        try {
+          completeAnyway = await ctx.ui.confirm(
+            "Audit aborted",
+            "You aborted the auditor (Escape).\n\nYes = mark the goal COMPLETE WITHOUT AUDIT (you take responsibility for verification).\nNo = continue working; the auditor will verify on the next complete_goal.",
+          );
+        } catch {
+          completeAnyway = false;
+        }
+        if (completeAnyway) {
+          updateGoal({ auditHistory: history }, ctx);
+          archiveCurrentGoal(ctx, "complete", "completed without audit (user choice after Esc)");
+          return { content: [{ type: "text", text: "Goal marked complete without audit (user choice)." }], details: {} };
+        }
+        scheduleContinuation(ctx, true);
+        return {
+          content: [{ type: "text", text: "Audit aborted; continuing. Call complete_goal again when ready — the auditor will re-run." }],
+          details: {},
+        };
       }
 
       if (result.approved) {
@@ -479,6 +665,53 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
         if (t.subtasks) queue.push(...t.subtasks);
       }
       return { content: [{ type: "text", text: `Task ${p.id} not found.` }], details: {} };
+    },
+  }));
+
+  pi.registerTool(defineTool({
+    name: "propose_goal_draft",
+    label: "Propose goal draft",
+    description: "During goal drafting (/goal with no args), propose the clarified goal contract. Opens the user's Confirm dialog — nothing activates until they confirm.",
+    parameters: Type.Object({
+      objective: Type.String({ description: "The clarified, concrete objective" }),
+      verificationContract: Type.Optional(Type.String({ description: "Checkable done-criteria (commands, file states, test outcomes)" })),
+    }),
+    async execute(_id, params, _signal, _onUpdate, execCtx) {
+      const p = params as { objective: string; verificationContract?: string };
+      if (!draftingActive) {
+        return {
+          content: [{ type: "text", text: "Not in drafting mode. The user starts drafting with /goal (no args), or activates directly with /goal <objective>." }],
+          details: {},
+        };
+      }
+      const liveCtx = (execCtx as ExtensionContext | undefined) ?? ctx;
+      const contractBlock = p.verificationContract?.trim()
+        ? `\n\nDone when:\n${p.verificationContract.trim()}`
+        : "\n\n(No verification contract — the auditor will infer done-criteria from the objective. Consider adding one.)";
+      let confirmed = false;
+      try {
+        confirmed = await liveCtx.ui.confirm("Confirm goal", `${p.objective.trim()}${contractBlock}`);
+      } catch {
+        confirmed = false;
+      }
+      if (!confirmed) {
+        return {
+          content: [{ type: "text", text: "Draft rejected by the user. Ask what to change, refine, and propose again. Do not repeat the identical draft." }],
+          details: {},
+        };
+      }
+      draftingActive = false;
+      const full = p.objective.trim() + (p.verificationContract?.trim() ? `\nDone when:\n${p.verificationContract.trim()}` : "");
+      const goal = createGoal(full, liveCtx);
+      setGoal(goal, liveCtx);
+      iterationCounter = 0;
+      consecutiveStuckIterations = 0;
+      consecutiveErrorIterations = 0;
+      scheduleContinuation(liveCtx, true);
+      return {
+        content: [{ type: "text", text: `Goal confirmed and activated (id ${goal.id}). Begin work now; call complete_goal only when the objective is genuinely satisfied.` }],
+        details: {},
+      };
     },
   }));
 }
@@ -592,6 +825,34 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
 const OUR_COMMANDS = ["goal", "goal-status", "goal-pause", "goal-resume", "goal-cancel", "goal-settings", "list", "loop"];
 let collisionWarned = false;
 
+// Providers verified to exist in a bare (extension-less) session. The auditor
+// spawns exactly such a session, so extension-registered providers (kilocode,
+// zenmux on this rig) fail inside it. Unknown providers get a soft one-time
+// notice — not an error, since the built-in set grows over time.
+const KNOWN_BUILTIN_PROVIDERS = new Set([
+  "anthropic", "google", "google-vertex", "google-gemini-cli", "openai", "openai-codex",
+  "openrouter", "opencode", "azure-openai-responses", "groq", "cerebras", "xai", "zai",
+  "minimax", "minimax-cn", "moonshotai", "kimi-coding", "github-copilot", "mistral", "huggingface",
+]);
+let providerWarned = false;
+
+function warnIfAuditorProviderRisky(ctx: ExtensionContext): void {
+  if (providerWarned) return;
+  providerWarned = true;
+  try {
+    const settings = loadSettings(ctx.cwd);
+    if (settings.auditorModel) return; // explicit auditor model — user's call
+    const provider = (ctx.model as any)?.provider as string | undefined;
+    if (!provider || KNOWN_BUILTIN_PROVIDERS.has(provider)) return;
+    ctx.ui.notify(
+      `pi-goal-loop-audit: session model provider "${provider}" may be extension-registered. The auditor runs in an extension-less session and may fail auth. If audits error, set a built-in model: /goal-settings model=opencode/deepseek-v4-flash-free`,
+      "warning",
+    );
+  } catch {
+    // non-fatal by design
+  }
+}
+
 function warnOnCommandCollision(ctx: ExtensionContext): void {
   if (collisionWarned) return;
   collisionWarned = true;
@@ -647,6 +908,10 @@ export default function (pi: ExtensionAPI): void {
     description: "Configure auditor model + thinking level (interactive prompt).",
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdSettings(args, ctx); },
   });
+  pi.registerCommand("list", {
+    description: "Loop 2: queue of goals. /list add <obj> | /list show | /list next | /list remove <n> | /list clear",
+    handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdList(args, ctx); },
+  });
 
   // Tool registration is done after first command so the context is available.
   // For v0.1.0 we register at load; we accept that tools show even without an
@@ -671,8 +936,12 @@ export default function (pi: ExtensionAPI): void {
       registeredCtx = ctx;
     }
     warnOnCommandCollision(ctx);
+    warnIfAuditorProviderRisky(ctx);
     if (state.goal && state.goal.status === "active" && state.goal.autoContinue) {
       scheduleContinuation(ctx, true);
+    } else if ((!state.goal || state.goal.status === "complete" || state.goal.status === "aborted") && listQueue().length > 0) {
+      // Session restarted with a non-empty queue but no active goal.
+      activateNextListItem(ctx);
     }
   });
 
