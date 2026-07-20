@@ -7,19 +7,11 @@
  *
  * Design: see docs/DESIGN.md.
  *
- * Scope of v0.1.0:
- *   - /goal "<objective>"       Set + start now (no drafting)
- *   - /goal-status                   Show state
- *   - /goal-pause                    Pause
- *   - /goal-resume                   Resume
- *   - /goal-cancel                   Abort
- *   - /gla                 Auditor model + thinking
- *
- * NOT in v0.1.0 (deferred to v0.2.0):
- *   - /list add|show|clear      Queue of goals (loop 2)
- *   - /goal-draft                    Drafting with structured Q&A
- *   - /goal-tweak                    Modify active goal in-place
- *   - regression_shield for the auditor (raw output per item)
+ * Command surface (v0.8.0 — four top-level commands):
+ *   /goal "<objective>" | /goal (draft) | /goal status|pause|resume|cancel|tweak <text>|archive
+ *   /list add|show|next|remove|clear
+ *   /loop (draft) | /loop start|status|stop
+ *   /gla (settings UI) | /gla key=value | /gla project key=value
  */
 
 import * as fs from "node:fs";
@@ -485,7 +477,7 @@ async function cmdStatus(ctx: ExtensionContext): Promise<void> {
 async function cmdPause(ctx: ExtensionContext): Promise<void> {
   if (!state.goal) return;
   updateGoal({ status: "paused" }, ctx);
-  ctx.ui.notify(`Goal ${state.goal.id} paused. /goal-resume to continue.`, "info");
+  ctx.ui.notify(`Goal ${state.goal.id} paused. /goal resume to continue.`, "info");
 }
 
 async function cmdResume(ctx: ExtensionContext): Promise<void> {
@@ -540,7 +532,7 @@ async function cmdTweak(args: string, ctx: ExtensionContext): Promise<void> {
     raw = raw.slice(1, -1).trim();
   }
   if (!raw) {
-    ctx.ui.notify("Usage: /goal-tweak <replacement objective, optional 'Done when: ...' clause>", "info");
+    ctx.ui.notify("Usage: /goal tweak <replacement objective, optional 'Done when: ...' clause>", "info");
     return;
   }
   const current = state.goal;
@@ -622,7 +614,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
     state = { ...state, list: [] };
     persistState(ctx);
     appendLedger(ctx.cwd, "list_cleared", {});
-    ctx.ui.notify("List cleared. Active goal (if any) is untouched — /goal-cancel for that.", "info");
+    ctx.ui.notify("List cleared. Active goal (if any) is untouched — /goal cancel for that.", "info");
     return;
   }
 
@@ -946,7 +938,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
 
   if (sub === "start") {
     if (state.goal && state.goal.status === "active") {
-      ctx.ui.notify("A goal is active — /goal-cancel or /goal-pause it before starting a loop.", "warning");
+      ctx.ui.notify("A goal is active — /goal cancel or /goal pause it before starting a loop.", "warning");
       return;
     }
     if (isLoopActive()) {
@@ -1113,7 +1105,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       }, ctx);
       ctx.ui.notify(`Goal paused: ${p.reason}`, "info");
       notifyExternal(ctx, `Goal paused: ${p.reason.slice(0, 120)}`);
-      return { content: [{ type: "text", text: "Goal paused. /goal-resume to continue." }], details: {} };
+      return { content: [{ type: "text", text: "Goal paused. /goal resume to continue." }], details: {} };
     },
   }));
 
@@ -1467,6 +1459,61 @@ function resolveAuditorModel(ctx: ExtensionContext, ref?: string): { model: any;
   return { model: undefined, error: "no session model and no auditorModel configured" };
 }
 
+/**
+ * The /gla interactive settings UI (v0.8.0): a menu loop over pi's dialog
+ * primitives. Pick a setting → edit it → saved to GLOBAL → back to the menu.
+ * Done/Esc exits. Rarely opened by design; scriptable /gla key=value remains
+ * for tmux/headless.
+ */
+async function openSettingsUI(ctx: ExtensionContext): Promise<void> {
+  for (;;) {
+    const prov = settingsProvenance(ctx.cwd);
+    const show = (k: keyof Settings, fallback: string) => {
+      const p = prov[k];
+      const v = p.value === undefined ? fallback : String(p.value);
+      return `${v}  [${p.source}]`;
+    };
+    let choice: string | undefined;
+    try {
+      choice = await ctx.ui.select(
+        `pi-goal-loop-audit settings — global: ${globalSettingsPath()}`,
+        [
+          `Auditor model override — ${show("auditorModel", "(pi session model)")}`,
+          `Auditor thinking — ${show("auditorThinkingLevel", "medium")}`,
+          `Notify command — ${show("notifyCmd", "(off)")}`,
+          `Token limit per goal — ${show("tokenLimit", "1000000")}`,
+          "Done",
+        ],
+      );
+    } catch {
+      return;
+    }
+    if (!choice || choice === "Done") return;
+    try {
+      if (choice.startsWith("Auditor model")) {
+        const v = await ctx.ui.input("Auditor model override", "provider/model-id — empty keeps the pi session model");
+        if (v !== undefined) saveSettings("global", ctx.cwd, { auditorModel: v.trim() || undefined });
+      } else if (choice.startsWith("Auditor thinking")) {
+        const v = await ctx.ui.select("Auditor thinking level", ["off", "minimal", "low", "medium", "high", "xhigh"]);
+        if (v) saveSettings("global", ctx.cwd, { auditorThinkingLevel: v as Settings["auditorThinkingLevel"] });
+      } else if (choice.startsWith("Notify command")) {
+        const v = await ctx.ui.input("Notify command — the event message is passed as $1", "e.g. a desktop-notification or push command; empty = off");
+        if (v !== undefined) saveSettings("global", ctx.cwd, { notifyCmd: v.trim() || undefined });
+      } else if (choice.startsWith("Token limit")) {
+        const v = await ctx.ui.input("Per-goal token budget", "positive integer; empty = default 1000000");
+        if (v !== undefined) {
+          const n = Number.parseInt(v.trim(), 10);
+          if (Number.isFinite(n) && n > 0) saveSettings("global", ctx.cwd, { tokenLimit: n });
+          else if (!v.trim()) saveSettings("global", ctx.cwd, { tokenLimit: undefined });
+          else ctx.ui.notify(`Not a positive integer: ${v}`, "warning");
+        }
+      }
+    } catch {
+      return;
+    }
+  }
+}
+
 async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   // The plugin's ONE config surface — global by default, rarely opened.
   //   /gla                      show effective values + where each comes from
@@ -1712,7 +1759,7 @@ export default function (pi: ExtensionAPI): void {
           updateGoal({
             status: "paused",
             pauseReason: `stalled: ${HEARTBEAT_MAX_NUDGES} consecutive turns with no tool calls`,
-            pauseSuggestedAction: "Inspect the goal — /goal-resume to retry, /goal-tweak to narrow it, /goal-cancel to abort.",
+            pauseSuggestedAction: "Inspect the goal — /goal resume to retry, /goal tweak to narrow it, /goal cancel to abort.",
           }, ctx);
           ctx.ui.notify(`Goal paused: stalled (${HEARTBEAT_MAX_NUDGES} turns, no tools).`, "warning");
           notifyExternal(ctx, "Goal paused: stalled (no tool calls).");
@@ -1748,7 +1795,7 @@ export default function (pi: ExtensionAPI): void {
           usage: { tokensUsed: used, tokensLimit: limit },
           status: "paused",
           pauseReason: `token limit exceeded (${used.toLocaleString()} > ${limit.toLocaleString()})`,
-          pauseSuggestedAction: "/gla tokenlimit=<n> to raise the cap, then /goal-resume",
+          pauseSuggestedAction: "/gla tokenlimit=<n> to raise the cap, then /goal resume",
         }, ctx);
         ctx.ui.notify(`Goal paused: token limit exceeded (${used.toLocaleString()} > ${limit.toLocaleString()}).`, "warning");
         notifyExternal(ctx, `Goal paused: token limit exceeded (${used} > ${limit}).`);
@@ -1763,7 +1810,7 @@ export default function (pi: ExtensionAPI): void {
         updateGoal({
           status: "paused",
           pauseReason: `5 consecutive errors: ${stopReason}`,
-          pauseSuggestedAction: "Use /goal-resume to retry, or /goal-cancel to abort.",
+          pauseSuggestedAction: "Use /goal resume to retry, or /goal cancel to abort.",
         }, ctx);
         ctx.ui.notify("Goal paused: 5 consecutive errors.", "warning");
         notifyExternal(ctx, "Goal paused: 5 consecutive errors.");
