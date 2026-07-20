@@ -1450,7 +1450,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
 // We detect duplicates at session start and warn loudly once.
 // =================================================================
 
-const OUR_COMMANDS = ["goal", "goal-status", "goal-pause", "goal-resume", "goal-cancel", "goal-tweak", "goal-settings", "list", "loop"];
+const OUR_COMMANDS = ["goal", "goals", "goal-status", "goal-pause", "goal-resume", "goal-cancel", "goal-tweak", "goal-settings", "list", "loop"];
 let collisionWarned = false;
 
 // Providers verified to exist in a bare (extension-less) session. The auditor
@@ -1536,6 +1536,10 @@ export default function (pi: ExtensionAPI): void {
   pi.registerCommand("goal-tweak", {
     description: "Edit the active goal's objective in place (Confirm dialog). /goal-tweak <new objective>",
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdTweak(args, ctx); },
+  });
+  pi.registerCommand("goals", {
+    description: "List archived goals (newest first).",
+    handler: (_args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdGoals(ctx); },
   });
   pi.registerCommand("goal-settings", {
     description: "Configure auditor model + thinking level (interactive prompt).",
