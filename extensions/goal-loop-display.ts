@@ -113,7 +113,7 @@ export function buildWidgetLines(state: State, audit?: AuditDisplayProgress | nu
 function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | undefined, now: number): string[] {
   const icon = g.status === "paused" ? "⏸" : g.status === "auditing" ? "⟡" : "◆";
   const head = `${icon} ${truncate(g.objective.replace(/\s+/g, " "), 64)}`;
-  const lines = [head, `├─ ${statusLabel(g.status)} · ${fmtElapsed(now - Date.parse(g.createdAt))} · ${fmtTokens(g.usage?.tokensUsed ?? 0)}/${fmtTokens(g.usage?.tokensLimit ?? 1_000_000)} tok`];
+  const lines = [head, `├─ ${statusLabel(g.status)} · ${fmtElapsed(now - Date.parse(g.createdAt))} · ${fmtTokens(g.usage?.tokensUsed ?? 0)}/${fmtTokens(g.usage?.tokensLimit ?? 10_000_000)} tok`];
   if (g.status === "auditing") {
     lines.push(`├─ auditor: ${audit?.label ?? "running"}${audit?.currentTool ? ` · ${truncate(audit.currentTool, 30)}` : ""}`);
     if (audit?.elapsedMs) lines.push(`└─ ${fmtElapsed(audit.elapsedMs)} in isolated session`);

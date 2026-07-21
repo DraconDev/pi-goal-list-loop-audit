@@ -263,6 +263,11 @@ export interface State {
   loop?: import("./goal-loop-forever.js").LoopState;
 }
 
+/** Default per-goal token budget (v0.9.7): a runaway threshold, not a
+ * "big goal" threshold — real research/feature goals legitimately burn 2-4M.
+ * Loop 3 doesn't rely on this cap (it has max-iterations + plateau brakes). */
+export const DEFAULT_TOKEN_LIMIT = 10_000_000;
+
 export const DEFAULT_STATE: State = {
   goal: null,
   list: [],

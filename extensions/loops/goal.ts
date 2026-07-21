@@ -31,6 +31,7 @@ import {
   buildTaskList,
   buildTaskSummary,
   auditModelTier,
+  DEFAULT_TOKEN_LIMIT,
   mergeSettings,
   parseListImport,
   resolveImportFile,
@@ -303,7 +304,7 @@ function createGoal(objective: string, ctx: ExtensionContext, policy: "goal" | "
     policy,
     autoContinue: true,
     verificationContract: verificationContract || "",
-    usage: { tokensUsed: 0, tokensLimit: loadSettings(ctx.cwd).tokenLimit ?? 1_000_000 },
+    usage: { tokensUsed: 0, tokensLimit: loadSettings(ctx.cwd).tokenLimit ?? DEFAULT_TOKEN_LIMIT },
     createdAt: nowIso(),
     updatedAt: nowIso(),
   };
@@ -500,7 +501,7 @@ async function cmdStatus(ctx: ExtensionContext): Promise<void> {
     `Objective: ${g.objective}`,
     `Auto-continue: ${g.autoContinue ? "on" : "off"}`,
     `Iteration: ${iterationCounter}`,
-    `Tokens: ${(g.usage?.tokensUsed ?? 0).toLocaleString()} / ${(g.usage?.tokensLimit ?? 1_000_000).toLocaleString()}`,
+    `Tokens: ${(g.usage?.tokensUsed ?? 0).toLocaleString()} / ${(g.usage?.tokensLimit ?? DEFAULT_TOKEN_LIMIT).toLocaleString()}`,
   ];
   if (g.auditHistory && g.auditHistory.length > 0) {
     lines.push(`Audits: ${g.auditHistory.length} (${g.auditHistory.filter((v) => v.approved).length} approved)`);
@@ -1767,7 +1768,7 @@ async function openSettingsUI(ctx: ExtensionContext): Promise<void> {
           `Auditor model override — ${show("auditorModel", "(pi session model)")}`,
           `Auditor thinking — ${show("auditorThinkingLevel", "(session, floor high)")}`,
           `Notify command — ${show("notifyCmd", "(off)")}`,
-          `Token limit per goal — ${show("tokenLimit", "1000000")}`,
+          `Token limit per goal — ${show("tokenLimit", "10000000")}`,
           "Done",
         ],
       );
@@ -1786,7 +1787,7 @@ async function openSettingsUI(ctx: ExtensionContext): Promise<void> {
         const v = await ctx.ui.input("Notify command — the event message is passed as $1", "e.g. a desktop-notification or push command; empty = off");
         if (v !== undefined) saveSettings("global", ctx.cwd, { notifyCmd: v.trim() || undefined });
       } else if (choice.startsWith("Token limit")) {
-        const v = await ctx.ui.input("Per-goal token budget", "positive integer; empty = default 1000000");
+        const v = await ctx.ui.input("Per-goal token budget", "positive integer; empty = default 10000000");
         if (v !== undefined) {
           const n = Number.parseInt(v.trim(), 10);
           if (Number.isFinite(n) && n > 0) saveSettings("global", ctx.cwd, { tokenLimit: n });
@@ -1882,7 +1883,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   saveSettings(scope, ctx.cwd, patch);
   const effective = loadSettings(ctx.cwd);
   ctx.ui.notify(
-    `Saved to ${scope} config. Effective now: model=${effective.auditorModel ?? "(session model)"} thinking=${effective.auditorThinkingLevel ?? "(session)"} notify=${effective.notifyCmd ?? "(off)"} tokenLimit=${effective.tokenLimit ?? 1_000_000}\n` +
+    `Saved to ${scope} config. Effective now: model=${effective.auditorModel ?? "(session model)"} thinking=${effective.auditorThinkingLevel ?? "(session)"} notify=${effective.notifyCmd ?? "(off)"} tokenLimit=${effective.tokenLimit ?? DEFAULT_TOKEN_LIMIT}\n` +
     `Note: the auditor runs without extensions — it must be a built-in provider, not an extension-registered one.`,
     "info",
   );
@@ -2084,7 +2085,7 @@ export default function (pi: ExtensionAPI): void {
     const newTokens = sumNewAssistantTokens(event.messages as unknown[], countedTokenMessages);
     if (newTokens > 0) {
       const used = (state.goal.usage?.tokensUsed ?? 0) + newTokens;
-      const limit = state.goal.usage?.tokensLimit ?? 1_000_000;
+      const limit = state.goal.usage?.tokensLimit ?? DEFAULT_TOKEN_LIMIT;
       if (used > limit) {
         updateGoal({
           usage: { tokensUsed: used, tokensLimit: limit },
