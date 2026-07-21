@@ -37,6 +37,7 @@ import {
   routeGoalArgs,
   sumNewAssistantTokens,
   takeAt,
+  goalArgsNeedDrafting,
   type TaskProposal,
   validateTaskProposal,
   cloneGoal,
@@ -413,7 +414,7 @@ function activateNextListItem(ctx: ExtensionContext, n = 1): boolean {
 // Drafting: /goal with no args → clarify → Confirm dialog → activate
 // =================================================================
 
-function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "loop"): void {
+function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "loop", seed?: string): void {
   draftingTarget = target;
   const prompts: Record<string, [string, string, string]> = {
     goal: ["goal-loop-draft.md", "Goal drafting", "propose_goal_draft"],
@@ -422,7 +423,9 @@ function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "loop"):
   };
   const [file, label, tool] = prompts[target]!;
   ctx.ui.notify(
-    `${label} started. The agent will grill until the contract is concrete, then ${tool} opens a Confirm dialog. No work begins before confirmation.`,
+    seed
+      ? `${label}: the objective has no "Done when:" clause — grilling it into a contract first (nothing activates until you confirm).`
+      : `${label} started. The agent will grill until the contract is concrete, then ${tool} opens a Confirm dialog. No work begins before confirmation.`,
     "info",
   );
   const tmplPath = path.resolve(__dirname, "..", "..", "prompts", file);
@@ -437,6 +440,11 @@ function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "loop"):
     }
   } catch {
     tmpl = `[DRAFTING] Clarify the user's ${target}, then call ${tool}.`;
+  }
+  // v0.11.0: a seeded objective came in as /goal args without a contract —
+  // the user already typed it once; grill THAT, don't start from scratch.
+  if (seed) {
+    tmpl += `\n\nThe user's initial objective (verbatim): ${seed}\n\nDo NOT activate this raw. Treat it as the seed: ask the interview questions about it (what does done look like, what exactly changes, constraints), then call ${tool} with the refined objective and a concrete verificationContract. If the seed already answers some questions, don't re-ask them.`;
   }
   try {
     extensionApi?.sendUserMessage(tmpl, { deliverAs: ctx.isIdle() ? "followUp" : "steer" });
@@ -480,6 +488,13 @@ async function cmdSet(args: string, ctx: ExtensionContext): Promise<void> {
   }
   if (isLoopActive()) {
     ctx.ui.notify("A /loop is active — /loop stop it before setting a goal.", "warning");
+    return;
+  }
+  // v0.11.0: a contract-less objective gets drafted, not activated raw —
+  // the pi-goal-x lesson: arg + Enter is worse than a 5-minute draft.
+  // Include an explicit "Done when: …" clause to activate instantly.
+  if (goalArgsNeedDrafting(raw)) {
+    startDrafting(ctx, "goal", raw);
     return;
   }
   draftingTarget = null; // explicit objective cancels any drafting session
