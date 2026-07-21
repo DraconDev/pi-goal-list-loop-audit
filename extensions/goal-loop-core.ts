@@ -98,6 +98,24 @@ export interface AuditVerdict {
 }
 
 /**
+ * Capability tier for auditor-model auto-fallback (v0.8.3). Lower = stronger.
+ * Used ONLY when the pi session model's provider is extension-registered and
+ * the auditor's extension-less session therefore cannot use it — the plugin
+ * picks the strongest available built-in model as the fallback and says so
+ * once. The session model always wins when it works; /gla overrides win
+ * always. Heuristic over the model id/name; documented as a heuristic.
+ */
+export function auditModelTier(modelIdOrName: string): number {
+  const s = modelIdOrName.toLowerCase();
+  if (s.includes("opus")) return 0;
+  if (s.includes("sonnet") || s.includes("-pro") || s.includes("pro-")) return 1;
+  if (s.includes("gpt") || s.includes("gemini") || s.includes("kimi-k")) return 2;
+  if (s.includes("flash") || s.includes("mini") || s.includes("haiku")) return 3;
+  if (s.includes("free")) return 5;
+  return 4;
+}
+
+/**
  * Sum token usage across assistant messages, counting each message once.
  * `agent_end` events may include already-seen history, so callers pass a
  * dedup set keyed by timestamp+tokens (good-enough identity for counting).

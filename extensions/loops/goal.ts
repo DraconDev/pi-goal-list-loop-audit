@@ -30,6 +30,7 @@ import {
   archivedGoalPath,
   buildTaskList,
   buildTaskSummary,
+  auditModelTier,
   mergeSettings,
   parseListImport,
   resolveImportFile,
@@ -662,11 +663,18 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
       return;
     }
     // Flexible by detection, not by verb: an existing file path bulk-imports,
-    // anything else is a single objective. No separate import command.
+    // multi-line pasted text parses as a batch, anything else is one objective.
     const importFile = resolveImportFile(ctx.cwd, raw);
     if (importFile) {
       await bulkAddFromFile(ctx, importFile);
       return;
+    }
+    if (raw.includes("\n")) {
+      const pasted = parseListImport(raw);
+      if (pasted.length > 1) {
+        await bulkAddItems(ctx, pasted, "pasted text");
+        return;
+      }
     }
     const { objective, verificationContract } = extractVerificationContract(raw);
     const item = { id: newGoalId(), objective, verificationContract: verificationContract || undefined, addedAt: nowIso() };
@@ -1567,8 +1575,24 @@ function resolveAuditorModel(ctx: ExtensionContext, ref?: string): { model: any;
     return matches[0] ? { model: matches[0], via: "setting" } : { model: undefined, error: `no available model matching: ${trimmed}` };
   }
   const sessionModel = ctx.model as any;
-  if (sessionModel) return { model: sessionModel, via: "session" };
-  return { model: undefined, error: "no session model and no auditorModel configured" };
+  if (sessionModel && KNOWN_BUILTIN_PROVIDERS.has(sessionModel.provider)) {
+    return { model: sessionModel, via: "session" };
+  }
+  // 3. AUTO-FALLBACK (v0.8.3): the session model's provider is
+  // extension-registered, so the auditor's extension-less session cannot auth
+  // it. Pick the strongest available built-in model and say so once — the
+  // override lives in /gla. Credentialed only (getAvailable).
+  const candidates = ctx.modelRegistry.getAvailable()
+    .filter((m: any) => KNOWN_BUILTIN_PROVIDERS.has(m.provider))
+    .sort((a: any, b: any) => auditModelTier(a.id ?? a.name ?? "") - auditModelTier(b.id ?? b.name ?? ""));
+  if (candidates.length > 0) {
+    const pick = candidates[0] as any;
+    return { model: pick, via: `auto-fallback: ${pick.provider}/${pick.id}` };
+  }
+  return {
+    model: undefined,
+    error: "session model's provider is extension-registered and no built-in-provider model is credentialed for the auditor — set one with /gla model=provider/id",
+  };
 }
 
 /**
@@ -1745,9 +1769,12 @@ function warnIfAuditorProviderRisky(ctx: ExtensionContext): void {
     if (settings.auditorModel) return; // explicit auditor model — user's call
     const provider = (ctx.model as any)?.provider as string | undefined;
     if (!provider || KNOWN_BUILTIN_PROVIDERS.has(provider)) return;
+    // Quiet one-time info: name the auto-fallback pick, don't demand action.
+    const resolved = resolveAuditorModel(ctx, undefined);
+    const picked = resolved.model ? `${(resolved.model as any).provider}/${(resolved.model as any).id}` : "(none available)";
     ctx.ui.notify(
-      `pi-goal-loop-audit: session model provider "${provider}" is extension-registered — the auditor (extension-less session) cannot auth it and audits will fail. Either switch pi's model to a built-in provider, or set an override with /gla model=provider/id`,
-      "warning",
+      `pi-goal-loop-audit: session provider "${provider}" is extension-registered, so the auditor will auto-use ${picked}. Override with /gla model=provider/id`,
+      "info",
     );
   } catch {
     // non-fatal by design
