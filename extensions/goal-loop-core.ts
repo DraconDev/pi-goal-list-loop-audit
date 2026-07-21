@@ -98,30 +98,6 @@ export interface AuditVerdict {
 }
 
 /**
- * Capability tier for auditor-model auto-fallback (v0.8.3). Lower = stronger.
- * Used ONLY when the pi session model's provider is extension-registered and
- * the auditor's extension-less session therefore cannot use it — the plugin
- * picks the strongest available built-in model as the fallback and says so
- * once. The session model always wins when it works; /gla overrides win
- * always. Heuristic over the model id/name; documented as a heuristic.
- */
-export function auditModelTier(modelIdOrName: string): number {
-  const s = modelIdOrName.toLowerCase();
-  if (s.includes("opus")) return 0;
-  if (s.includes("sonnet") || s.includes("-pro") || s.includes("pro-")) return 1;
-  // Free-tier models rank HIGH for fallback purposes (v0.9.10): the chain's
-  // job is reaching a model that WORKS fast — a working free model always
-  // beats a dead paid one (wild-caught: 5 dead paid tiers before the free
-  // ones on a real rig).
-  if (s.includes("free")) return 2;
-  // Speed/cost variants beat family names in precedence: a "gemini-3-flash"
-  // is a flash-tier model even though it is a gemini.
-  if (s.includes("flash") || s.includes("mini") || s.includes("haiku")) return 4;
-  if (s.includes("gpt") || s.includes("gemini") || s.includes("kimi-k")) return 3;
-  return 5;
-}
-
-/**
  * Sum token usage across assistant messages, counting each message once.
  * `agent_end` events may include already-seen history, so callers pass a
  * dedup set keyed by timestamp+tokens (good-enough identity for counting).
