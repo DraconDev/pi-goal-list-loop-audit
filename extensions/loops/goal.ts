@@ -836,7 +836,7 @@ async function runGit(ctx: ExtensionContext, args: string[]): Promise<{ ok: bool
   }
 }
 
-function loopPrompt(loop: LoopState, regressionNote: string): string {
+function loopPrompt(loop: LoopState, regressionNote: string, strategyNote: string, doneNote: string): string {
   const tmplPath = path.resolve(__dirname, "..", "..", "prompts", "goal-loop-forever.md");
   let tmpl: string;
   try {
@@ -854,7 +854,9 @@ function loopPrompt(loop: LoopState, regressionNote: string): string {
     .replace(/\$\{BEST_VALUE\}/g, loop.bestValue === null ? "(none yet)" : String(loop.bestValue))
     .replace(/\$\{STALL_COUNT\}/g, String(loop.stallCount))
     .replace(/\$\{PLATEAU_WINDOW\}/g, String(loop.plateauWindow))
-    .replace(/\$\{REGRESSION_NOTE\}/g, regressionNote);
+    .replace(/\$\{REGRESSION_NOTE\}/g, regressionNote)
+    .replace(/\$\{STRATEGY_NOTE\}/g, strategyNote)
+    .replace(/\$\{DONE_NOTE\}/g, doneNote);
 }
 
 function scheduleLoopTick(ctx: ExtensionContext): void {
@@ -896,7 +898,7 @@ function sendLoopTurn(): void {
   try {
     extensionApi.sendMessage({
       customType: GOAL_EVENT_ENTRY,
-      content: loopPrompt(loop, regressionNote),
+      content: loopPrompt(loop, regressionNote, strategyNote, doneNote),
       display: false,
     }, { triggerTurn: true, deliverAs: "followUp" });
   } catch {
@@ -905,9 +907,17 @@ function sendLoopTurn(): void {
 }
 
 /** agent_end hook for loop 3: measure → judge → continue or stop. */
-async function runLoopTick(ctx: ExtensionContext): Promise<void> {
+async function runLoopTick(ctx: ExtensionContext, event?: any): Promise<void> {
   const loop = state.loop!;
   const value = await runMeasure(ctx, loop.measureCmd);
+  // Hypothesis line (pi-autoresearch's good idea): the agent's stated intent
+  // for the turn goes into the ledger, making loop history auditable.
+  let hypothesis: string | undefined;
+  if (event) {
+    const last = [...(event.messages as any[])].reverse().find((m) => m.role === "assistant");
+    const text = last && Array.isArray(last.content) ? last.content.filter((p: any) => p.type === "text").map((p: any) => p.text).join("\n") : "";
+    hypothesis = text.match(/^HYPOTHESIS:\s*(.+)$/m)?.[1]?.trim().slice(0, 200);
+  }
   const outcome = applyMeasurement(loop, value, nowIso());
   persistState(ctx);
   appendLedger(ctx.cwd, "loop_measured", {
@@ -915,6 +925,7 @@ async function runLoopTick(ctx: ExtensionContext): Promise<void> {
     value,
     best: loop.bestValue,
     stall: loop.stallCount,
+    hypothesis,
   });
   // branch=1 mode: commit improvements, hard-reset regressions — always and
   // only on the scratch branch.
@@ -2052,7 +2063,7 @@ export default function (pi: ExtensionAPI): void {
     // Loop 3 runs on the same heartbeat: measure after every agent turn.
     if (isLoopActive()) {
       clearLoopTimer();
-      await runLoopTick(ctx);
+      await runLoopTick(ctx, event);
       return;
     }
     if (!state.goal) return;
