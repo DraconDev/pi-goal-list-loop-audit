@@ -974,6 +974,7 @@ interface LoopConfig {
   maxIterations: number;
   branch: boolean;
   force?: boolean;
+  doneAt?: number;
 }
 
 /** Shared loop-start path: /loop start AND propose_loop_draft (after Confirm). */

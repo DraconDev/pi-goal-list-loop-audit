@@ -9,6 +9,7 @@ import * as assert from "node:assert/strict";
 
 import {
   applyMeasurement,
+  doneCrossed,
   isImprovement,
   loopBranchName,
   parseLoopStartArgs,
@@ -183,6 +184,61 @@ test("parseLoopStartArgs: branch=1 / branch=true enable branch mode", () => {
   assert.equal(parseLoopStartArgs('t measure="cat x" direction=min branch=1').branch, true);
   assert.equal(parseLoopStartArgs('t measure="cat x" direction=min branch=true').branch, true);
   assert.equal(parseLoopStartArgs('t measure="cat x" direction=min branch=0').branch, false);
+});
+
+test("doneCrossed: min stops at or below threshold", () => {
+  assert.equal(doneCrossed("min", 0, 0), true);
+  assert.equal(doneCrossed("min", -1, 0), true);
+  assert.equal(doneCrossed("min", 1, 0), false);
+  assert.equal(doneCrossed("min", null, 0), false);
+});
+
+test("doneCrossed: max stops at or above threshold", () => {
+  assert.equal(doneCrossed("max", 100, 100), true);
+  assert.equal(doneCrossed("max", 101, 100), true);
+  assert.equal(doneCrossed("max", 99, 100), false);
+});
+
+test("doneCrossed: no threshold means never done", () => {
+  assert.equal(doneCrossed("min", -999, undefined), false);
+});
+
+test("applyMeasurement: done= stops immediately on crossing (min)", () => {
+  const loop = freshLoop({ bestValue: 5, iteration: 1, doneAt: 0 });
+  const out = applyMeasurement(loop, 0, "t1");
+  assert.equal(out.kind, "stop");
+  assert.match(loop.stopReason!, /done — metric crossed 0/);
+  assert.equal(loop.active, false);
+  assert.equal(loop.bestValue, 0);
+});
+
+test("applyMeasurement: done= stops on crossing (max)", () => {
+  const loop = freshLoop({ direction: "max", bestValue: 90, iteration: 4, doneAt: 100 });
+  const out = applyMeasurement(loop, 100, "t1");
+  assert.equal(out.kind, "stop");
+  assert.equal(loop.bestValue, 100);
+});
+
+test("applyMeasurement: done= does not stop before crossing", () => {
+  const loop = freshLoop({ bestValue: 5, iteration: 1, doneAt: 0, plateauWindow: 3 });
+  const out = applyMeasurement(loop, 2, "t1");
+  assert.equal(out.kind, "continue");
+});
+
+test("applyMeasurement: done= beats plateau (crossing on a stall iteration still stops as done)", () => {
+  const loop = freshLoop({ bestValue: 1, iteration: 3, stallCount: 2, plateauWindow: 3, doneAt: 0 });
+  const out = applyMeasurement(loop, 0, "t1"); // improvement AND done-crossing
+  assert.equal(out.kind, "stop");
+  assert.match(loop.stopReason!, /done/);
+});
+
+test("parseLoopStartArgs: done= parses as float", () => {
+  const cfg = parseLoopStartArgs('t measure="cat x" direction=min done=0');
+  assert.equal(cfg.doneAt, 0);
+  const cfg2 = parseLoopStartArgs('t measure="cat x" direction=max done=99.5');
+  assert.equal(cfg2.doneAt, 99.5);
+  const cfg3 = parseLoopStartArgs('t measure="cat x" direction=min');
+  assert.equal(cfg3.doneAt, undefined);
 });
 
 test("parseLoopStartArgs: force flag off by default, on with 1/true", () => {
