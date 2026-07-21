@@ -5,6 +5,28 @@ All notable changes to pi-goal-loop-audit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] — 2026-07-21
+
+### Changed — `/list add` is the flexible path; drafting proposes batches
+
+- **`/list add` now detects files**: `/list add plan.md` bulk-imports when the
+  path exists and is a single objective when it doesn't. No separate verb to
+  remember. (`/list import` remains as an alias for 0.8.1 compatibility.)
+- **Multi-item drafting**: `propose_goal_draft` gains an `items[]` parameter,
+  so a `/list` drafting session can propose a whole plan at once — one Confirm
+  dialog for the batch, per-item `Done when:` extraction, auto-activation.
+  `items[]` in `/goal` drafting is rejected (a goal is single by definition).
+  The list-draft prompt tells the agent to batch: "queue these 50 things"
+  → one proposal, not fifty.
+- `resolveImportFile` in core (4 unit tests): file detection by bare name,
+  relative path, `./` prefix; objectives and directories never match.
+
+### Verified (2026-07-21)
+
+- Live: `/list add plan.md` → file detected → batch Confirm →
+  `list_imported {count: 3}` → first item activated, 2 queued.
+- 116 unit tests, tsc clean.
+
 ## [0.8.1] — 2026-07-21
 
 ### Added — bulk list import + queue paging

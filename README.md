@@ -39,9 +39,9 @@ Four top-level commands, that's all:
 /goal tweak "<new objective>"      # edit in place (Confirm dialog)
 /goal archive                      # archived goals, newest first
 /gla                               # open the settings UI (or /gla key=value)
-/list add                          # draft ONE contract into the queue
+/list add                          # draft a contract (or a whole batch via items[])
 /list add "<objective>"            # queue one directly
-/list import plan.md               # bulk: hundreds of items, one Confirm, no drafting
+/list add plan.md                  # file detected → bulk import, one Confirm, no drafting
 /list                              # show active + queue
 /list next                         # skip current, activate next
 /list remove <n>                   # drop item n from the queue
@@ -57,9 +57,11 @@ Subcommands match **exactly** — `/goal pause the pipeline` sets an objective
 about a pipeline; only bare `/goal pause` pauses. (Same rule everywhere, so
 your objectives can start with any verb.)
 
-Drafting rules: **no-args drafts (single), with-args is direct, `/list import`
-is bulk direct.** A sisyphus-style plan file (checklists, bullets, numbered,
-plain lines) imports as-is — headings become nothing, items become goals.
+Drafting rules: **no-args drafts, with-args is direct, a file path is bulk
+direct.** A sisyphus-style plan file (checklists, bullets, numbered, plain
+lines) imports as-is — headings become nothing, items become goals. And the
+drafter itself batches: asking for "these 50 tasks" in a `/list` drafting
+session produces ONE confirmed batch, not 50 dialogs.
 Note: every queue item is audited individually, so at hundreds of items the
 audit cost per item is the thing to think about.
 
