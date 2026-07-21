@@ -38,8 +38,8 @@ import {
   sumNewAssistantTokens,
   takeAt,
   goalArgsNeedDrafting,
-  DRAFT_INTERVIEW,
-  buildSeededDraftMessage,
+  buildSeedGrillMessage,
+  draftProposalBlock,
   type TaskProposal,
   validateTaskProposal,
   cloneGoal,
@@ -106,6 +106,10 @@ let state: State = { goal: null };
 // must call propose_goal_draft / propose_loop_draft, which opens the user's
 // Confirm dialog. The target decides where the confirmed contract lands.
 let draftingTarget: "goal" | "list" | "loop" | null = null;
+// v0.14.0 drafting floor: user replies counted while drafting; the injected
+// seed prompt itself arrives as a user message — skip exactly that one.
+let draftingUserReplies = 0;
+let draftingSeedInFlight = false;
 
 // Dedup set for token accounting (agent_end may replay seen messages).
 const countedTokenMessages = new Set<string>();
@@ -426,7 +430,7 @@ async function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "l
   const [file, label, tool] = prompts[target]!;
   ctx.ui.notify(
     seed
-      ? `${label}: the objective has no "Done when:" clause — a few questions first, then a contract to confirm.`
+      ? `${label}: the objective has no "Done when:" clause — the agent will grill you about it first (nothing activates until you confirm).`
       : `${label} started. The agent will grill until the contract is concrete, then ${tool} opens a Confirm dialog. No work begins before confirmation.`,
     "info",
   );
@@ -443,44 +447,16 @@ async function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "l
   } catch {
     tmpl = `[DRAFTING] Clarify the user's ${target}, then call ${tool}.`;
   }
-  // v0.13.0: for a seeded GOAL, the PLUGIN runs the interview (v0.11.0 made
-  // it a prompt instruction and models skipped it — the user got a contract
-  // dump with yes/no). The grilling is a mechanism now: the agent only
-  // synthesizes seed + answers into the contract it proposes.
-  if (seed && target === "goal") {
-    const qa: Array<readonly [string, string]> = [];
-    let uiAvailable = true;
-    for (const [q, hint] of DRAFT_INTERVIEW) {
-      let a: string | undefined;
-      try {
-        a = await ctx.ui.input(`${label} (seed: ${seed.slice(0, 40)}${seed.length > 40 ? "…" : ""}) — ${q}`, hint);
-      } catch {
-        uiAvailable = false; // rpc/headless — fall back to the template path
-        break;
-      }
-      if (a === undefined) {
-        draftingTarget = null;
-        ctx.ui.notify("Drafting cancelled — nothing was activated.", "info");
-        return;
-      }
-      qa.push([q, a]);
-    }
-    if (uiAvailable) {
-      try {
-        extensionApi?.sendUserMessage(buildSeededDraftMessage(tmpl, seed, qa, tool), { deliverAs: ctx.isIdle() ? "followUp" : "steer" });
-      } catch {
-        draftingTarget = null;
-      }
-      return;
-    }
-  }
-  // Fallback (no-args drafting, list/loop drafting, rpc): template carries
-  // the instructions; the agent asks what it needs.
+  // v0.14.0: the LLM grills (its strength — v0.13.0's canned questionnaire
+  // accepted non-answers), the plugin enforces the floor: propose_goal_draft
+  // is blocked until the user has replied at least once (see message_start).
   if (seed) {
-    tmpl += `\n\nThe user's initial objective (verbatim): ${seed}\n\nDo NOT activate this raw. Treat it as the seed: ask the interview questions about it (what does done look like, what exactly changes, constraints), then call ${tool} with the refined objective and a concrete verificationContract. If the seed already answers some questions, don't re-ask them.`;
+    tmpl = buildSeedGrillMessage(tmpl, seed, tool);
   }
   try {
     extensionApi?.sendUserMessage(tmpl, { deliverAs: ctx.isIdle() ? "followUp" : "steer" });
+    draftingUserReplies = 0;
+    draftingSeedInFlight = true; // our injected prompt also arrives as a user message — don't count it
   } catch {
     draftingTarget = null;
   }
@@ -1413,7 +1389,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
   pi.registerTool(defineTool({
     name: "propose_goal_draft",
     label: "Propose goal draft",
-    description: "During goal drafting (/goal with no args), propose the clarified goal contract. Opens the user's Confirm dialog — nothing activates until they confirm.",
+    description: "During goal drafting (/goal with no args), propose the clarified goal contract. Opens the user's Confirm dialog — nothing activates until they confirm. BLOCKED until the user has replied to at least one of your interview questions.",
     parameters: Type.Object({
       objective: Type.String({ description: "The clarified, concrete objective (single item) or a summary when items[] is used" }),
       verificationContract: Type.Optional(Type.String({ description: "Checkable done-criteria (commands, file states, test outcomes)" })),
@@ -1426,6 +1402,11 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
           content: [{ type: "text", text: "Not in goal drafting mode. The user starts drafting with /goal or /list add (no args), or activates directly with /goal <objective>." }],
           details: {},
         };
+      }
+      // v0.14.0: the interview floor — no Confirm until the user replied.
+      const block = draftProposalBlock(draftingUserReplies);
+      if (block) {
+        return { content: [{ type: "text", text: block }], details: {} };
       }
       // Multi-item drafts are LIST-only: a goal is single by definition.
       if (p.items && p.items.length > 0 && draftingTarget !== "list") {
@@ -1525,6 +1506,11 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
           content: [{ type: "text", text: "Not in loop drafting mode. The user starts loop drafting with /loop (no args), or starts directly with /loop start." }],
           details: {},
         };
+      }
+      // v0.14.0: the interview floor — no Confirm until the user replied.
+      const loopBlock = draftProposalBlock(draftingUserReplies);
+      if (loopBlock) {
+        return { content: [{ type: "text", text: loopBlock }], details: {} };
       }
       if (!p.target?.trim() || !p.measureCmd?.trim()) {
         return { content: [{ type: "text", text: "target and measureCmd are both required." }], details: {} };
@@ -2098,6 +2084,18 @@ export default function (pi: ExtensionAPI): void {
   // context exists. Tools show even without an active goal (and return
   // "no active goal" if called).
   let registeredCtx: ExtensionContext | null = null;
+
+  pi.on("message_start", async (event: any, _ctx: ExtensionContext) => {
+    // v0.14.0 drafting floor: count real user replies while drafting. Our
+    // own injected draft prompt arrives as a user message — skip that one.
+    if (draftingTarget === null) return;
+    if (event?.message?.role !== "user") return;
+    if (draftingSeedInFlight) {
+      draftingSeedInFlight = false;
+      return;
+    }
+    draftingUserReplies++;
+  });
 
   pi.on("session_start", async (_event: any, ctx: ExtensionContext) => {
     rememberCtx(ctx);

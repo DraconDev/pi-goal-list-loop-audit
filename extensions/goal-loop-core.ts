@@ -258,33 +258,26 @@ export function goalArgsNeedDrafting(args: string): boolean {
 }
 
 /**
- * The plugin-driven drafting interview (v0.13.0). The PLUGIN asks these
- * before the agent speaks — v0.11.0 made the interview a prompt instruction
- * and models skipped straight to a take-it-or-leave-it contract dump.
- * Empty answer = "agent proposes".
+ * Build the seeded drafting message (v0.14.0). v0.13.0 had the PLUGIN ask
+ * three canned questions — a questionnaire, not a grilling: it accepted
+ * non-answers ("not sure", "none") and produced weak contracts. The LLM
+ * does the interviewing (its strength); the plugin only enforces the floor
+ * via draftProposalBlock: propose is blocked until the user has replied.
  */
-export const DRAFT_INTERVIEW: ReadonlyArray<readonly [string, string]> = [
-  ["Done looks like…", "The concrete, checkable end state (files, commands, behaviors). Empty = the agent proposes."],
-  ["Out of scope", "What must this NOT touch, change, or include? Empty = the agent proposes."],
-  ["Constraints", "Hard rules: things to preserve, commands that must pass, style/scope limits. Empty = none beyond the obvious."],
-];
+export function buildSeedGrillMessage(tmpl: string, seed: string, tool: string): string {
+  return `${tmpl}\n\nThe user's initial objective (verbatim): ${seed}\n\nGRILL THEM ABOUT THIS SEED BEFORE PROPOSING. ${tool} is BLOCKED until the user has replied to at least one of your questions — proposing without interviewing returns an error.\n\nHow to grill:\n- Ask ONE sharp, seed-specific question at a time — about THIS objective, not generic filler. If an ask_user_question tool is available in this session, prefer it (structured options render better); plain conversation is fine for free-form answers.\n- Every question ships with a recommended default the user can accept with "yes".\n- Probe what matters: what "done" concretely looks like (checkable evidence — files, commands, behaviors), scope boundaries (what is explicitly OUT), constraints (what must not change), and priorities when the seed bundles several wishes.\n- A non-answer ("not sure", "none", "whatever") is a trigger to offer 2-3 concrete options to pick from — never silently proceed on a non-answer.\n- Do targeted read-only research first when it makes your questions sharper (repo layout, existing docs).\n- Do NOT activate the raw seed. Do NOT implement anything. When the contract is concrete, call ${tool}.`;
+}
 
 /**
- * Build the seeded drafting message: template + verbatim seed + the user's
- * interview answers. The agent's job is synthesis (seed + answers → refined
- * objective + verificationContract), not interrogation.
+ * The drafting floor (v0.14.0): the propose tools call this before opening
+ * the user's Confirm dialog. 0 user replies since drafting started → the
+ * agent is attempting a contract dump; block it with instructions. The
+ * mechanism guarantees an interview HAPPENED; question quality is the
+ * model's job (shaped by buildSeedGrillMessage).
  */
-export function buildSeededDraftMessage(
-  tmpl: string,
-  seed: string,
-  qa: ReadonlyArray<readonly [string, string]>,
-  tool: string,
-): string {
-  const answered = qa.filter(([, a]) => a.trim());
-  const answersBlock = answered.length
-    ? answered.map(([q, a]) => `Q: ${q}\nA: ${a.trim()}`).join("\n\n")
-    : "(the user left every answer blank — propose sensible defaults)";
-  return `${tmpl}\n\nThe user's initial objective (verbatim): ${seed}\n\nThe user was already interviewed by the plugin. Their answers:\n\n${answersBlock}\n\nSynthesize the seed + answers into a refined objective and a concrete verificationContract, then call ${tool}. Do NOT re-ask what the answers already cover; only ask the user something if a genuinely essential ambiguity remains. Do NOT activate the raw seed.`;
+export function draftProposalBlock(userReplies: number): string | null {
+  if (userReplies > 0) return null;
+  return "INTERVIEW FIRST — you have not received a single user reply since drafting started. Ask the user ONE sharp question about their objective (seed-specific, with a recommended default; challenge non-answers by offering concrete options), wait for the answer, and only then call the propose tool again. The Confirm dialog stays closed until the user has actually been heard.";
 }
 
 /**
