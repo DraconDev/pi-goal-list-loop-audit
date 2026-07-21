@@ -885,6 +885,14 @@ function sendLoopTurn(): void {
   const regressionNote = regressedLast
     ? "**Your last change REGRESSED the metric. Undo it first, then try a different small change.**"
     : "";
+  // Strategy rotation (from pi-loop-mode's one good idea): one stall before
+  // the plateau window closes, stop polishing and change approach entirely.
+  const strategyNote = loop.stallCount >= loop.plateauWindow - 1 && loop.stallCount > 0
+    ? "**You are one stall from a plateau stop. Small tweaks are not working — try a FUNDAMENTALLY different approach: different file, different technique, or revert and rethink the angle of attack.**"
+    : "";
+  const doneNote = loop.doneAt !== undefined
+    ? `\n- Done threshold: stop when the metric crosses ${loop.doneAt}`
+    : "";
   try {
     extensionApi.sendMessage({
       customType: GOAL_EVENT_ENTRY,
@@ -1010,12 +1018,13 @@ async function startLoopFromConfig(ctx: ExtensionContext, cfg: LoopConfig): Prom
       active: true,
       history: [],
       startedAt: nowIso(),
+      doneAt: cfg.doneAt,
       branchName,
       originalBranch,
     },
   };
   persistState(ctx);
-  appendLedger(ctx.cwd, "loop_started", { target: cfg.target, measureCmd: cfg.measureCmd, direction: cfg.direction, baseline, branch: branchName });
+  appendLedger(ctx.cwd, "loop_started", { target: cfg.target, measureCmd: cfg.measureCmd, direction: cfg.direction, baseline, branch: branchName, doneAt: cfg.doneAt });
   ctx.ui.notify(
     `Loop started: ${cfg.target.slice(0, 60)}\nBaseline: ${baseline ?? "(forced without a number — first turn must produce one)"} · direction ${cfg.direction} · window ${cfg.plateauWindow} · max ${cfg.maxIterations}` +
     (branchName ? `\nbranch mode: committing improvements to ${branchName}` : ""),

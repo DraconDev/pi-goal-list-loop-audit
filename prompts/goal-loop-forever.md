@@ -18,14 +18,16 @@ ${TARGET}
 - Direction: ${DIRECTION} (${DIRECTION_WORD})
 - Last measured value: ${LAST_VALUE}
 - Best value so far: ${BEST_VALUE}
-- Consecutive non-improving iterations: ${STALL_COUNT} (loop stops at ${PLATEAU_WINDOW})
+- Consecutive non-improving iterations: ${STALL_COUNT} (loop stops at ${PLATEAU_WINDOW})${DONE_NOTE}
 
 ## Your job THIS turn
 
-Make **ONE** small, concrete change that moves the metric in the right
+Start your reply with exactly one line: `HYPOTHESIS: <what you will change and why it should move the metric>`.
+Then make **ONE** small, concrete change that moves the metric in the right
 direction. Then stop.
 
 ${REGRESSION_NOTE}
+${STRATEGY_NOTE}
 
 ## Hard rules
 
