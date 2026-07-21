@@ -258,6 +258,36 @@ export function goalArgsNeedDrafting(args: string): boolean {
 }
 
 /**
+ * The plugin-driven drafting interview (v0.13.0). The PLUGIN asks these
+ * before the agent speaks — v0.11.0 made the interview a prompt instruction
+ * and models skipped straight to a take-it-or-leave-it contract dump.
+ * Empty answer = "agent proposes".
+ */
+export const DRAFT_INTERVIEW: ReadonlyArray<readonly [string, string]> = [
+  ["Done looks like…", "The concrete, checkable end state (files, commands, behaviors). Empty = the agent proposes."],
+  ["Out of scope", "What must this NOT touch, change, or include? Empty = the agent proposes."],
+  ["Constraints", "Hard rules: things to preserve, commands that must pass, style/scope limits. Empty = none beyond the obvious."],
+];
+
+/**
+ * Build the seeded drafting message: template + verbatim seed + the user's
+ * interview answers. The agent's job is synthesis (seed + answers → refined
+ * objective + verificationContract), not interrogation.
+ */
+export function buildSeededDraftMessage(
+  tmpl: string,
+  seed: string,
+  qa: ReadonlyArray<readonly [string, string]>,
+  tool: string,
+): string {
+  const answered = qa.filter(([, a]) => a.trim());
+  const answersBlock = answered.length
+    ? answered.map(([q, a]) => `Q: ${q}\nA: ${a.trim()}`).join("\n\n")
+    : "(the user left every answer blank — propose sensible defaults)";
+  return `${tmpl}\n\nThe user's initial objective (verbatim): ${seed}\n\nThe user was already interviewed by the plugin. Their answers:\n\n${answersBlock}\n\nSynthesize the seed + answers into a refined objective and a concrete verificationContract, then call ${tool}. Do NOT re-ask what the answers already cover; only ask the user something if a genuinely essential ambiguity remains. Do NOT activate the raw seed.`;
+}
+
+/**
  * Take item at 1-based index n out of the list (v0.10.0 pick-any-item
  * activation). n=1 is the head (FIFO default). Returns [taken, rest] or
  * null when n is out of range.

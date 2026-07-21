@@ -8,7 +8,7 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 
-import { goalArgsNeedDrafting, routeGoalArgs } from "../extensions/goal-loop-core.ts";
+import { buildSeededDraftMessage, DRAFT_INTERVIEW, goalArgsNeedDrafting, routeGoalArgs } from "../extensions/goal-loop-core.ts";
 
 test("empty args → draft", () => {
   assert.deepEqual(routeGoalArgs(""), { kind: "draft" });
@@ -81,4 +81,32 @@ test("goalArgsNeedDrafting: explicit contract activates instantly", () => {
 test("goalArgsNeedDrafting: empty is the no-args drafting path", () => {
   assert.equal(goalArgsNeedDrafting(""), false);
   assert.equal(goalArgsNeedDrafting("   "), false);
+});
+
+test("buildSeededDraftMessage includes seed, answers, and tool", () => {
+  const msg = buildSeededDraftMessage(
+    "[DRAFT]",
+    "make the game faster",
+    [["Done looks like…", "60fps in combat"], ["Out of scope", "no new features"], ["Constraints", ""]],
+    "propose_goal_draft",
+  );
+  assert.match(msg, /make the game faster/);
+  assert.match(msg, /Q: Done looks like…\nA: 60fps in combat/);
+  assert.match(msg, /Q: Out of scope\nA: no new features/);
+  assert.doesNotMatch(msg, /Q: Constraints/); // blank answers omitted
+  assert.match(msg, /propose_goal_draft/);
+  assert.match(msg, /Do NOT activate the raw seed/);
+});
+
+test("buildSeededDraftMessage: all-blank answers → propose defaults", () => {
+  const msg = buildSeededDraftMessage("[D]", "seed text", [["Done looks like…", "  "]], "propose_goal_draft");
+  assert.match(msg, /left every answer blank/);
+});
+
+test("DRAFT_INTERVIEW asks done/scope/constraints", () => {
+  assert.equal(DRAFT_INTERVIEW.length, 3);
+  const joined = DRAFT_INTERVIEW.map(([q]) => q).join(" ");
+  assert.match(joined, /Done looks like/);
+  assert.match(joined, /Out of scope/);
+  assert.match(joined, /Constraints/);
 });

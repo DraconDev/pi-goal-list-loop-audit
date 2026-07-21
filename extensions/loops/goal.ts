@@ -38,6 +38,8 @@ import {
   sumNewAssistantTokens,
   takeAt,
   goalArgsNeedDrafting,
+  DRAFT_INTERVIEW,
+  buildSeededDraftMessage,
   type TaskProposal,
   validateTaskProposal,
   cloneGoal,
@@ -414,7 +416,7 @@ function activateNextListItem(ctx: ExtensionContext, n = 1): boolean {
 // Drafting: /goal with no args → clarify → Confirm dialog → activate
 // =================================================================
 
-function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "loop", seed?: string): void {
+async function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "loop", seed?: string): Promise<void> {
   draftingTarget = target;
   const prompts: Record<string, [string, string, string]> = {
     goal: ["goal-loop-draft.md", "Goal drafting", "propose_goal_draft"],
@@ -424,7 +426,7 @@ function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "loop", 
   const [file, label, tool] = prompts[target]!;
   ctx.ui.notify(
     seed
-      ? `${label}: the objective has no "Done when:" clause — grilling it into a contract first (nothing activates until you confirm).`
+      ? `${label}: the objective has no "Done when:" clause — a few questions first, then a contract to confirm.`
       : `${label} started. The agent will grill until the contract is concrete, then ${tool} opens a Confirm dialog. No work begins before confirmation.`,
     "info",
   );
@@ -441,8 +443,39 @@ function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "loop", 
   } catch {
     tmpl = `[DRAFTING] Clarify the user's ${target}, then call ${tool}.`;
   }
-  // v0.11.0: a seeded objective came in as /goal args without a contract —
-  // the user already typed it once; grill THAT, don't start from scratch.
+  // v0.13.0: for a seeded GOAL, the PLUGIN runs the interview (v0.11.0 made
+  // it a prompt instruction and models skipped it — the user got a contract
+  // dump with yes/no). The grilling is a mechanism now: the agent only
+  // synthesizes seed + answers into the contract it proposes.
+  if (seed && target === "goal") {
+    const qa: Array<readonly [string, string]> = [];
+    let uiAvailable = true;
+    for (const [q, hint] of DRAFT_INTERVIEW) {
+      let a: string | undefined;
+      try {
+        a = await ctx.ui.input(`${label} (seed: ${seed.slice(0, 40)}${seed.length > 40 ? "…" : ""}) — ${q}`, hint);
+      } catch {
+        uiAvailable = false; // rpc/headless — fall back to the template path
+        break;
+      }
+      if (a === undefined) {
+        draftingTarget = null;
+        ctx.ui.notify("Drafting cancelled — nothing was activated.", "info");
+        return;
+      }
+      qa.push([q, a]);
+    }
+    if (uiAvailable) {
+      try {
+        extensionApi?.sendUserMessage(buildSeededDraftMessage(tmpl, seed, qa, tool), { deliverAs: ctx.isIdle() ? "followUp" : "steer" });
+      } catch {
+        draftingTarget = null;
+      }
+      return;
+    }
+  }
+  // Fallback (no-args drafting, list/loop drafting, rpc): template carries
+  // the instructions; the agent asks what it needs.
   if (seed) {
     tmpl += `\n\nThe user's initial objective (verbatim): ${seed}\n\nDo NOT activate this raw. Treat it as the seed: ask the interview questions about it (what does done look like, what exactly changes, constraints), then call ${tool} with the refined objective and a concrete verificationContract. If the seed already answers some questions, don't re-ask them.`;
   }
@@ -483,7 +516,7 @@ async function cmdSet(args: string, ctx: ExtensionContext): Promise<void> {
     raw = raw.slice(1, -1).trim();
   }
   if (!raw) {
-    startDrafting(ctx, "goal");
+    await startDrafting(ctx, "goal");
     return;
   }
   if (isLoopActive()) {
@@ -494,7 +527,7 @@ async function cmdSet(args: string, ctx: ExtensionContext): Promise<void> {
   // the pi-goal-x lesson: arg + Enter is worse than a 5-minute draft.
   // Include an explicit "Done when: …" clause to activate instantly.
   if (goalArgsNeedDrafting(raw)) {
-    startDrafting(ctx, "goal", raw);
+    await startDrafting(ctx, "goal", raw);
     return;
   }
   draftingTarget = null; // explicit objective cancels any drafting session
@@ -731,7 +764,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
     }
     if (!raw) {
       // /list add with no args → draft a confirmed contract INTO THE QUEUE.
-      startDrafting(ctx, "list");
+      await startDrafting(ctx, "list");
       return;
     }
     // Flexible by detection, not by verb: an existing file path bulk-imports,
@@ -1092,7 +1125,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       ctx.ui.notify("A loop is already active — /loop status to inspect, /loop stop to end it.", "info");
       return;
     }
-    startDrafting(ctx, "loop");
+    await startDrafting(ctx, "loop");
     return;
   }
 
