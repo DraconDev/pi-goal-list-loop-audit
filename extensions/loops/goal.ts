@@ -395,7 +395,10 @@ function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "loop"):
   try {
     tmpl = fs.readFileSync(tmplPath, "utf-8");
     if (target === "list") {
-      tmpl = tmpl.replace("[GOAL DRAFTING]", "[GOAL DRAFTING — the confirmed goal goes into the /list QUEUE, it does not activate immediately]");
+      tmpl = tmpl.replace(
+        "[GOAL DRAFTING]",
+        "[GOAL DRAFTING — the confirmed goal goes into the /list QUEUE, it does not activate immediately. If the user wants MANY things queued (a plan, a checklist, 'these 50 tasks'), propose them ALL AT ONCE with the items[] parameter — one Confirm for the whole batch, never 50 separate proposals.]",
+      );
     }
   } catch {
     tmpl = `[DRAFTING] Clarify the user's ${target}, then call ${tool}.`;
@@ -713,7 +716,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
     return;
   }
 
-  ctx.ui.notify("Usage: /list [show] | /list add <objective> | /list import <file> | /list next | /list remove <n> | /list clear", "info");
+  ctx.ui.notify("Usage: /list [show] | /list add <objective or file> | /list next | /list remove <n> | /list clear", "info");
 }
 
 /**
@@ -1258,6 +1261,38 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
         };
       }
       const liveCtx = (execCtx as ExtensionContext | undefined) ?? ctx;
+      // Multi-item list draft: one Confirm for the whole batch.
+      if (p.items && p.items.length > 0) {
+        const preview = p.items.slice(0, 6).map((t, i) => `  ${i + 1}. ${t.slice(0, 60)}`).join("\n");
+        let batchConfirmed = false;
+        try {
+          batchConfirmed = await liveCtx.ui.confirm(
+            "Confirm queue batch",
+            `${p.items.length} items:\n${preview}${p.items.length > 6 ? `\n  … and ${p.items.length - 6} more` : ""}`,
+          );
+        } catch {
+          batchConfirmed = false;
+        }
+        if (!batchConfirmed) {
+          return {
+            content: [{ type: "text", text: "Batch rejected by the user. Ask what to change, refine the item list, and propose again." }],
+            details: {},
+          };
+        }
+        draftingTarget = null;
+        const items = p.items.map((text) => {
+          const extracted = extractVerificationContract(text);
+          return { id: newGoalId(), objective: extracted.objective, verificationContract: extracted.verificationContract || undefined, addedAt: nowIso() };
+        });
+        state = { ...state, list: [...listQueue(), ...items] };
+        persistState(liveCtx);
+        appendLedger(liveCtx.cwd, "list_imported", { count: items.length, drafted: true });
+        if (!state.goal || state.goal.status === "complete" || state.goal.status === "aborted") {
+          activateNextListItem(liveCtx);
+          return { content: [{ type: "text", text: `${items.length} items confirmed; first activated (queue was empty). Begin work now.` }], details: {} };
+        }
+        return { content: [{ type: "text", text: `${items.length} items confirmed and queued (${listQueue().length} waiting).` }], details: {} };
+      }
       const contractBlock = p.verificationContract?.trim()
         ? `\n\nDone when:\n${p.verificationContract.trim()}`
         : "\n\n(No verification contract — the auditor will infer done-criteria from the objective. Consider adding one.)";
