@@ -18,7 +18,7 @@ ${TARGET}
 - Direction: ${DIRECTION} (${DIRECTION_WORD})
 - Last measured value: ${LAST_VALUE}
 - Best value so far: ${BEST_VALUE}
-- Consecutive non-improving iterations: ${STALL_COUNT} (loop stops at ${PLATEAU_WINDOW})${DONE_NOTE}
+- Consecutive non-improving iterations: ${STALL_COUNT} (loop stops at ${PLATEAU_WINDOW})${BOUNDS_NOTE}
 
 ## Your job THIS turn
 

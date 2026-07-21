@@ -113,6 +113,7 @@ let draftingSeedInFlight = false;
 
 // Dedup set for token accounting (agent_end may replay seen messages).
 const countedTokenMessages = new Set<string>();
+const countedLoopTokenMessages = new Set<string>();
 
 // Heartbeat self-watchdog state: liveness is the loop's own job.
 let lastActivityAt = Date.now();
@@ -954,6 +955,10 @@ function sendLoopTurn(): void {
 /** agent_end hook for loop 3: measure → judge → continue or stop. */
 async function runLoopTick(ctx: ExtensionContext, event?: any): Promise<void> {
   const loop = state.loop!;
+  // v0.15.0: token budget is an arbitrary bound; accumulate orchestrator-side.
+  if (event?.messages) {
+    loop.tokensUsed = (loop.tokensUsed ?? 0) + sumNewAssistantTokens(event.messages as unknown[], countedLoopTokenMessages);
+  }
   const value = await runMeasure(ctx, loop.measureCmd);
   // Hypothesis line (pi-autoresearch's good idea): the agent's stated intent
   // for the turn goes into the ledger, making loop history auditable.
@@ -1113,7 +1118,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
   if (sub === "status") {
     const loop = state.loop;
     if (!loop) {
-      ctx.ui.notify("No loop. /loop to draft one, or /loop start \"<target>\" measure=\"<cmd>\" direction=min|max [done=<value>] [window=5] [max=50]", "info");
+      ctx.ui.notify("No loop. /loop to draft one, or /loop start \"<target>\" measure=\"<cmd>\" direction=min|max [window=5] [max=50] [time=<hours>] [tokens=<budget>]", "info");
       return;
     }
     const lines = [
@@ -1121,6 +1126,11 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       `Metric: ${loop.measureCmd} (${loop.direction})`,
       `Iteration ${loop.iteration}/${loop.maxIterations} · best ${loop.bestValue ?? "n/a"} · last ${loop.lastValue ?? "n/a"} · stall ${loop.stallCount}/${loop.plateauWindow}`,
     ];
+    const bounds: string[] = [];
+    if (loop.timeLimitHours !== undefined) bounds.push(`time ≤ ${loop.timeLimitHours}h`);
+    if (loop.tokenBudget !== undefined) bounds.push(`tokens ${(loop.tokensUsed ?? 0).toLocaleString()}/${loop.tokenBudget.toLocaleString()}`);
+    if (bounds.length) lines.push(`Bounds: ${bounds.join(" · ")}`);
+    if (loop.refinements?.length) lines.push(`Spec refined ${loop.refinements.length}× (latest: iteration ${loop.refinements[loop.refinements.length - 1]!.iteration})`);
     if (loop.stopReason) lines.push(`Stopped: ${loop.stopReason}`);
     const tail = loop.history.slice(-5);
     if (tail.length > 0) {
@@ -1501,11 +1511,12 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       direction: Type.Union([Type.Literal("min"), Type.Literal("max")], { description: "min = lower is better, max = higher is better" }),
       window: Type.Optional(Type.Number({ description: "Plateau stop after N non-improving iterations (default 5)" })),
       max: Type.Optional(Type.Number({ description: "Iteration cap (default 50)" })),
-      done: Type.Optional(Type.Number({ description: "Done threshold: stop when the metric crosses this value (min: <= done, max: >= done)" })),
+      time: Type.Optional(Type.Number({ description: "Arbitrary bound: stop after this many hours" })),
+      tokens: Type.Optional(Type.Number({ description: "Arbitrary bound: stop after this many tokens (input+output)" })),
       branch: Type.Optional(Type.Boolean({ description: "branch=true: scratch-branch mode (clean git tree required)" })),
     }),
     async execute(_id, params, _signal, _onUpdate, execCtx) {
-      const p = params as { target: string; measureCmd: string; direction: "min" | "max"; window?: number; max?: number; done?: number; branch?: boolean };
+      const p = params as { target: string; measureCmd: string; direction: "min" | "max"; window?: number; max?: number; time?: number; tokens?: number; branch?: boolean };
       if (draftingTarget !== "loop") {
         return {
           content: [{ type: "text", text: "Not in loop drafting mode. The user starts loop drafting with /loop (no args), or starts directly with /loop start." }],
@@ -1549,7 +1560,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       try {
         confirmed = await liveCtx.ui.confirm(
           "Confirm loop",
-          `Target: ${p.target.trim()}\n\nMeasure: ${p.measureCmd}\nTest-run output: ${rawOutput.slice(0, 200)}\nParsed number: ${parsed} (${p.direction === "min" ? "lower is better" : "higher is better"})\n\nPlateau stop: ${window} non-improving iterations · Cap: ${max} iterations${p.branch ? "\nbranch mode: scratch branch (clean tree required)" : ""}\n\nStart the loop?`,
+          `Target: ${p.target.trim()}\n\nMeasure: ${p.measureCmd}\nTest-run output: ${rawOutput.slice(0, 200)}\nParsed number: ${parsed} (${p.direction === "min" ? "lower is better" : "higher is better"})\n\nPlateau stop: ${window} non-improving iterations · Cap: ${max} iterations${typeof p.time === "number" && p.time > 0 ? ` · Time bound: ${p.time}h` : ""}${typeof p.tokens === "number" && p.tokens > 0 ? ` · Token bound: ${p.tokens.toLocaleString()}` : ""}${p.branch ? "\nbranch mode: scratch branch (clean tree required)" : ""}\n\nThe loop never completes — it runs until one of these bounds, plateau, or /loop stop. Start it?`,
         );
       } catch {
         confirmed = false;
@@ -1567,7 +1578,8 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
         direction: p.direction,
         plateauWindow: window,
         maxIterations: max,
-        doneAt: typeof p.done === "number" && Number.isFinite(p.done) ? p.done : undefined,
+        timeLimitHours: typeof p.time === "number" && Number.isFinite(p.time) && p.time > 0 ? p.time : undefined,
+        tokenBudget: typeof p.tokens === "number" && Number.isFinite(p.tokens) && p.tokens > 0 ? Math.floor(p.tokens) : undefined,
         branch: p.branch === true,
       });
       if (!started) {
