@@ -36,6 +36,7 @@ import {
   resolveImportFile,
   routeGoalArgs,
   sumNewAssistantTokens,
+  takeAt,
   type TaskProposal,
   validateTaskProposal,
   cloneGoal,

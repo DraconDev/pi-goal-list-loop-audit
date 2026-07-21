@@ -77,13 +77,13 @@ test("active goal with tasks shows progress", () => {
   assert.match(buildStatusText({ goal: g, list: [] }, null, NOW)!, /1\/2 tasks/);
 });
 
-test("queue depth shows for list policy", () => {
+test("list depth shows for list policy", () => {
   const s = buildStatusText(
     { goal: goalOf({ policy: "list" }), list: [{ id: "x", objective: "y", addedAt: "z" }] },
     null,
     NOW,
   )!;
-  assert.match(s, /queue 1/);
+  assert.match(s, /list 1/);
 });
 
 test("paused shows the reason", () => {
