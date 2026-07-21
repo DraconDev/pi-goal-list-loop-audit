@@ -159,8 +159,10 @@ contradictory turns. One driver at a time:
 **Goes well with it**: `@juicesharp/rpiv-ask-user-question` (drafting uses its
 structured forms), `@tintinweb/pi-subagents` (spawn research/review subagents
 inside goal work), `@tintinweb/pi-tasks` (session-wide DAGs vs our goal-scoped
-task lists — different granularity), `pi-chrome` (browser for research goals),
-search skills (`mmx-cli`, `pi-search-skill`).
+task lists — different granularity), `pi-chrome` (the research/search path for
+goals — logged-in browsing with no extra services; standalone search skills
+like `mmx-cli`/`pi-search-skill` are optional conveniences for bulk queries,
+not requirements).
 
 **Two footnotes**: (1) extension-registered providers work in the main session
 but not the auditor's extension-less session — the auto-fallback names a pick,
