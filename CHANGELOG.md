@@ -5,6 +5,17 @@ All notable changes to pi-goal-loop-audit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4] — 2026-07-21
+
+### Docs — compatibility section
+
+README gains the full complement/conflict map: the Two-Driver Rule (one
+agent_end driver at a time — hard conflicts with pi-codex-goal, pi-loop-mode,
+pi-goal-x family, active ralph/autoresearch), the compaction-continue overlap
+note, the ralph-wiggum "installed but not simultaneous" rule, and the
+complements (rpiv-ask-user-question, pi-subagents, pi-tasks, pi-chrome,
+search skills) with the provider + notification-channel footnotes.
+
 ## [0.9.3] — 2026-07-21
 
 ### Added — bamboozle adversarial scenario (auditor catch-rate testing)
