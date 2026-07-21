@@ -31,7 +31,7 @@ Four top-level commands, that's all:
 
 ```
 /goal                              # drafting: agent grills, you Confirm
-/goal "audit the repo"             # no contract clause → plugin asks 3 questions first
+/goal "audit the repo"             # no contract clause → agent grills you first (propose is gated on it)
 /goal "Step 1. Step 2. Done when: tests pass."   # has contract → starts now
 /goal status                       # show state
 /goal pause                        # pause
@@ -66,10 +66,10 @@ Subcommands match **exactly** — `/goal pause the pipeline` sets an objective
 about a pipeline; only bare `/goal pause` pauses. (Same rule everywhere, so
 your objectives can start with any verb.)
 
-Drafting rules: **no-args drafts, args-without-a-`Done when:`-clause get a
-plugin-run interview (3 questions, then the agent synthesizes YOUR answers
-into the contract you confirm), args-with-a-clause start instantly, a file
-path is bulk direct.** A
+Drafting rules: **no-args drafts, args-without-a-`Done when:`-clause get
+grilled by the agent (proposing is mechanically blocked until you have
+replied at least once), args-with-a-clause start instantly, a file path is
+bulk direct.** A
 sisyphus-style plan file (checklists, bullets, numbered, plain lines) imports
 as-is — headings become nothing, items become goals. And the drafter itself
 batches: asking for "these 50 tasks" in a `/list` drafting session produces
