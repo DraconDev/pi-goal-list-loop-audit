@@ -1424,10 +1424,11 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       direction: Type.Union([Type.Literal("min"), Type.Literal("max")], { description: "min = lower is better, max = higher is better" }),
       window: Type.Optional(Type.Number({ description: "Plateau stop after N non-improving iterations (default 5)" })),
       max: Type.Optional(Type.Number({ description: "Iteration cap (default 50)" })),
+      done: Type.Optional(Type.Number({ description: "Done threshold: stop when the metric crosses this value (min: <= done, max: >= done)" })),
       branch: Type.Optional(Type.Boolean({ description: "branch=true: scratch-branch mode (clean git tree required)" })),
     }),
     async execute(_id, params, _signal, _onUpdate, execCtx) {
-      const p = params as { target: string; measureCmd: string; direction: "min" | "max"; window?: number; max?: number; branch?: boolean };
+      const p = params as { target: string; measureCmd: string; direction: "min" | "max"; window?: number; max?: number; done?: number; branch?: boolean };
       if (draftingTarget !== "loop") {
         return {
           content: [{ type: "text", text: "Not in loop drafting mode. The user starts loop drafting with /loop (no args), or starts directly with /loop start." }],
@@ -1484,6 +1485,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
         direction: p.direction,
         plateauWindow: window,
         maxIterations: max,
+        doneAt: typeof p.done === "number" && Number.isFinite(p.done) ? p.done : undefined,
         branch: p.branch === true,
       });
       if (!started) {
