@@ -9,7 +9,6 @@ import * as assert from "node:assert/strict";
 
 import {
   applyMeasurement,
-  doneCrossed,
   isImprovement,
   loopBranchName,
   parseLoopStartArgs,
@@ -186,59 +185,52 @@ test("parseLoopStartArgs: branch=1 / branch=true enable branch mode", () => {
   assert.equal(parseLoopStartArgs('t measure="cat x" direction=min branch=0').branch, false);
 });
 
-test("doneCrossed: min stops at or below threshold", () => {
-  assert.equal(doneCrossed("min", 0, 0), true);
-  assert.equal(doneCrossed("min", -1, 0), true);
-  assert.equal(doneCrossed("min", 1, 0), false);
-  assert.equal(doneCrossed("min", null, 0), false);
-});
-
-test("doneCrossed: max stops at or above threshold", () => {
-  assert.equal(doneCrossed("max", 100, 100), true);
-  assert.equal(doneCrossed("max", 101, 100), true);
-  assert.equal(doneCrossed("max", 99, 100), false);
-});
-
-test("doneCrossed: no threshold means never done", () => {
-  assert.equal(doneCrossed("min", -999, undefined), false);
-});
-
-test("applyMeasurement: done= stops immediately on crossing (min)", () => {
-  const loop = freshLoop({ bestValue: 5, iteration: 1, doneAt: 0 });
-  const out = applyMeasurement(loop, 0, "t1");
+test("applyMeasurement: time bound stops when elapsed hours exceeded", () => {
+  const loop = freshLoop({ bestValue: 5, iteration: 1, timeLimitHours: 2, startedAt: "2026-07-21T00:00:00.000Z" });
+  const out = applyMeasurement(loop, 4, "2026-07-21T03:00:00.000Z"); // 3h elapsed > 2h bound
   assert.equal(out.kind, "stop");
-  assert.match(loop.stopReason!, /done — metric crossed 0/);
+  assert.match(loop.stopReason!, /time bound reached \(2h\)/);
   assert.equal(loop.active, false);
-  assert.equal(loop.bestValue, 0);
 });
 
-test("applyMeasurement: done= stops on crossing (max)", () => {
-  const loop = freshLoop({ direction: "max", bestValue: 90, iteration: 4, doneAt: 100 });
-  const out = applyMeasurement(loop, 100, "t1");
-  assert.equal(out.kind, "stop");
-  assert.equal(loop.bestValue, 100);
-});
-
-test("applyMeasurement: done= does not stop before crossing", () => {
-  const loop = freshLoop({ bestValue: 5, iteration: 1, doneAt: 0, plateauWindow: 3 });
-  const out = applyMeasurement(loop, 2, "t1");
+test("applyMeasurement: time bound does not stop before the limit", () => {
+  const loop = freshLoop({ bestValue: 5, iteration: 1, timeLimitHours: 2, startedAt: "2026-07-21T00:00:00.000Z" });
+  const out = applyMeasurement(loop, 4, "2026-07-21T01:00:00.000Z");
   assert.equal(out.kind, "continue");
 });
 
-test("applyMeasurement: done= beats plateau (crossing on a stall iteration still stops as done)", () => {
-  const loop = freshLoop({ bestValue: 1, iteration: 3, stallCount: 2, plateauWindow: 3, doneAt: 0 });
-  const out = applyMeasurement(loop, 0, "t1"); // improvement AND done-crossing
+test("applyMeasurement: token budget stops when exhausted", () => {
+  const loop = freshLoop({ bestValue: 5, iteration: 1, tokenBudget: 1000, tokensUsed: 1200 });
+  const out = applyMeasurement(loop, 4, "2026-07-21T00:00:00.000Z");
   assert.equal(out.kind, "stop");
-  assert.match(loop.stopReason!, /done/);
+  assert.match(loop.stopReason!, /token budget exhausted/);
 });
 
-test("parseLoopStartArgs: done= parses as float", () => {
-  const cfg = parseLoopStartArgs('t measure="cat x" direction=min done=0');
-  assert.equal(cfg.doneAt, 0);
-  const cfg2 = parseLoopStartArgs('t measure="cat x" direction=max done=99.5');
-  assert.equal(cfg2.doneAt, 99.5);
-  const cfg3 = parseLoopStartArgs('t measure="cat x" direction=min');
-  assert.equal(cfg3.doneAt, undefined);
+test("applyMeasurement: no bound = process never 'completes' (v0.15.0)", () => {
+  // Even a perfect metric value does not stop the loop — there is no done=.
+  const loop = freshLoop({ direction: "min", bestValue: 5, iteration: 1 });
+  const out = applyMeasurement(loop, 0, "2026-07-21T00:00:00.000Z");
+  assert.equal(out.kind, "continue");
+  assert.equal(loop.active, true);
+});
+
+test("parseLoopStartArgs: done= throws a teaching error (v0.15.0)", () => {
+  assert.throws(
+    () => parseLoopStartArgs('t measure="cat x" direction=min done=0'),
+    /done= was removed.*GOAL/i,
+  );
+});
+
+test("parseLoopStartArgs: time= and tokens= parse as arbitrary bounds", () => {
+  const cfg = parseLoopStartArgs('t measure="cat x" direction=min time=2.5 tokens=500000');
+  assert.equal(cfg.timeLimitHours, 2.5);
+  assert.equal(cfg.tokenBudget, 500000);
+  const bare = parseLoopStartArgs('t measure="cat x" direction=min');
+  assert.equal(bare.timeLimitHours, undefined);
+  assert.equal(bare.tokenBudget, undefined);
+  const bad = parseLoopStartArgs('t measure="cat x" direction=min time=0 tokens=-5');
+  assert.equal(bad.timeLimitHours, undefined);
+  assert.equal(bad.tokenBudget, undefined);
 });
 
 test("parseLoopStartArgs: force flag off by default, on with 1/true", () => {

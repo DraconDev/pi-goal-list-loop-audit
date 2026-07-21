@@ -69,6 +69,30 @@ export const LOOP_DEFAULTS = {
 };
 
 /**
+ * Apply a user-confirmed spec refinement (v0.15.0, propose_loop_refine).
+ * The loop is a process against a LIVING spec: target/measure may be
+ * sharpened mid-run. History keeps both eras via `refinements`. When the
+ * measure changes, the old best/last values are a different scale — the
+ * caller re-baselines with a fresh measurement and stall state resets.
+ */
+export function applyRefinement(
+  loop: LoopState,
+  refinement: LoopRefinement,
+  newBaseline: number | null,
+): void {
+  loop.refinements = loop.refinements ?? [];
+  loop.refinements.push(refinement);
+  loop.target = refinement.newTarget;
+  const measureChanged = refinement.newMeasureCmd !== refinement.oldMeasureCmd;
+  loop.measureCmd = refinement.newMeasureCmd;
+  if (measureChanged) {
+    loop.bestValue = newBaseline;
+    loop.lastValue = newBaseline;
+    loop.stallCount = 0;
+  }
+}
+
+/**
  * Parse the first number in measure-command output. Accepts integers,
  * decimals, negatives, and scientific notation; ignores surrounding text
  * (e.g. "score: 42" → 42). Returns null when no number is present — a
