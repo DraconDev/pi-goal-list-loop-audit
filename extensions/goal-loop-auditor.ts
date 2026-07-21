@@ -189,7 +189,7 @@ export async function runGoalCompletionAuditor(args: {
   const thinkingLevel = args.thinkingLevel ?? "medium";
   const outputParts: string[] = [];
   if (!model) {
-    return { approved: false, disapproved: true, output: "", model: "(unset)", thinkingLevel, error: "no model (session model also unset)" };
+    return { approved: false, disapproved: false, output: "", model: "(unset)", thinkingLevel, error: "no model (session model also unset)" };
   }
   const toolCalls: AuditProgress["toolCalls"] = [];
 
@@ -277,7 +277,7 @@ export async function runGoalCompletionAuditor(args: {
 
     try {
       if (args.signal?.aborted) {
-        return { approved: false, disapproved: true, output: "", model: modelLabel(model), thinkingLevel, error: "Auditor aborted." };
+        return { approved: false, disapproved: false, output: "", model: modelLabel(model), thinkingLevel, error: "Auditor aborted." };
       }
       await session.prompt(buildGoalAuditorPrompt(args.goal, args.completionSummary, args.verificationSummary));
     } finally {
@@ -365,9 +365,13 @@ export async function runGoalCompletionAuditor(args: {
     emitProgress();
     return { approved, disapproved, output, model: modelLabel(model), thinkingLevel };
   } catch (err) {
+    // v0.11.1 (audit critical): a runtime exception is INFRASTRUCTURE, never
+    // a verdict. The three-way split identifies infra by `error &&
+    // !disapproved` — setting disapproved here would silently route this to
+    // the semantic-disapproval branch (the bug v0.9.9 was built to kill).
     return {
       approved: false,
-      disapproved: true,
+      disapproved: false,
       output: "",
       model: modelLabel(model),
       thinkingLevel,
