@@ -5,6 +5,30 @@ All notable changes to pi-goal-loop-audit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.3] — 2026-07-21
+
+### Changed — quiet auditor auto-fallback; `/list add` takes pasted lists
+
+- **The provider warning is gone.** When the pi session model's provider is
+  extension-registered (the auditor's extension-less session can't auth it),
+  the plugin now **auto-uses the strongest credentialed built-in model** and
+  says so ONCE at info level, naming the pick: override any time with
+  `/gla model=provider/id`. Resolution: explicit `/gla` setting → session
+  model (if built-in) → auto-fallback (tier-ranked) → clear error. The
+  session model always wins when it works; nothing is ever written to your
+  config silently.
+- **`/list add` accepts pasted multi-line text**: paste a checklist straight
+  into the command — it parses as a batch with the same single Confirm as a
+  file import. Detection order: existing file → multi-line paste → single
+  objective.
+- `auditModelTier` restored to core (2 unit tests; speed/cost variants
+  outrank family names — `gemini-3-flash` is flash-tier, not gemini-tier).
+
+### Verified (2026-07-21)
+
+- Live: multi-line bracketed paste → batch Confirm → `list_imported {count: 3}`.
+- 118 unit tests, tsc clean.
+
 ## [0.8.2] — 2026-07-21
 
 ### Changed — `/list add` is the flexible path; drafting proposes batches

@@ -41,7 +41,8 @@ Four top-level commands, that's all:
 /gla                               # open the settings UI (or /gla key=value)
 /list add                          # draft a contract (or a whole batch via items[])
 /list add "<objective>"            # queue one directly
-/list add plan.md                  # file detected → bulk import, one Confirm, no drafting
+/list add plan.md                  # file detected → bulk import, one Confirm
+/list add <paste a checklist>      # multi-line paste → same batch flow
 /list                              # show active + queue
 /list next                         # skip current, activate next
 /list remove <n>                   # drop item n from the queue

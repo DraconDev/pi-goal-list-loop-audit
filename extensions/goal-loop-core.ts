@@ -109,8 +109,10 @@ export function auditModelTier(modelIdOrName: string): number {
   const s = modelIdOrName.toLowerCase();
   if (s.includes("opus")) return 0;
   if (s.includes("sonnet") || s.includes("-pro") || s.includes("pro-")) return 1;
-  if (s.includes("gpt") || s.includes("gemini") || s.includes("kimi-k")) return 2;
+  // Speed/cost variants beat family names in precedence: a "gemini-3-flash"
+  // is a flash-tier model even though it is a gemini.
   if (s.includes("flash") || s.includes("mini") || s.includes("haiku")) return 3;
+  if (s.includes("gpt") || s.includes("gemini") || s.includes("kimi-k")) return 2;
   if (s.includes("free")) return 5;
   return 4;
 }
