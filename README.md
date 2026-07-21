@@ -155,7 +155,8 @@ No external watchdog plugin needed.
 /gla model=provider/id              # auditor model override → GLOBAL
 /gla thinking=high                  # auditor thinking → GLOBAL
 /gla notify='cmd "$1"'              # push on complete/pause/stop → GLOBAL
-/gla tokenlimit=10000000            # per-goal token budget → GLOBAL
+/gla tokenlimit=10000000            # per-goal token budget (default: off) → GLOBAL
+/gla tokenlimit=0                   # explicitly no cap (the default)
 /gla project tokenlimit=500         # rare per-project override
 ```
 

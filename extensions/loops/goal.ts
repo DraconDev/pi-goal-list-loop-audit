@@ -537,7 +537,14 @@ async function cmdPause(ctx: ExtensionContext): Promise<void> {
 
 async function cmdResume(ctx: ExtensionContext): Promise<void> {
   if (!state.goal || state.goal.status !== "paused") return;
-  updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined }, ctx);
+  // v0.12.0: refresh the token cap from CURRENT settings on resume — goals
+  // snapshot the cap at creation, so a goal paused under an old default
+  // (e.g. 10M) would re-pause instantly even after the default changed.
+  const freshLimit = loadSettings(ctx.cwd).tokenLimit ?? DEFAULT_TOKEN_LIMIT;
+  const usage = state.goal.usage
+    ? { tokensUsed: state.goal.usage.tokensUsed, tokensLimit: freshLimit }
+    : undefined;
+  updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined, ...(usage ? { usage } : {}) }, ctx);
   scheduleContinuation(ctx, true);
 }
 
@@ -1832,7 +1839,7 @@ async function openSettingsUI(ctx: ExtensionContext): Promise<void> {
           `Auditor model override — ${show("auditorModel", "(pi session model)")}`,
           `Auditor thinking — ${show("auditorThinkingLevel", "(session, floor high)")}`,
           `Notify command — ${show("notifyCmd", "(off)")}`,
-          `Token limit per goal — ${show("tokenLimit", "10000000")}`,
+          `Token limit per goal — ${show("tokenLimit", "(off)")}`,
           "Done",
         ],
       );
@@ -1851,12 +1858,12 @@ async function openSettingsUI(ctx: ExtensionContext): Promise<void> {
         const v = await ctx.ui.input("Notify command — the event message is passed as $1", "e.g. a desktop-notification or push command; empty = off");
         if (v !== undefined) saveSettings("global", ctx.cwd, { notifyCmd: v.trim() || undefined });
       } else if (choice.startsWith("Token limit")) {
-        const v = await ctx.ui.input("Per-goal token budget", "positive integer; empty = default 10000000");
+        const v = await ctx.ui.input("Per-goal token budget", "non-negative integer; 0 or empty = off (no cap)");
         if (v !== undefined) {
           const n = Number.parseInt(v.trim(), 10);
-          if (Number.isFinite(n) && n > 0) saveSettings("global", ctx.cwd, { tokenLimit: n });
+          if (Number.isFinite(n) && n >= 0) saveSettings("global", ctx.cwd, { tokenLimit: n });
           else if (!v.trim()) saveSettings("global", ctx.cwd, { tokenLimit: undefined });
-          else ctx.ui.notify(`Not a positive integer: ${v}`, "warning");
+          else ctx.ui.notify(`Not a non-negative integer: ${v}`, "warning");
         }
       }
     } catch {
@@ -1947,7 +1954,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   saveSettings(scope, ctx.cwd, patch);
   const effective = loadSettings(ctx.cwd);
   ctx.ui.notify(
-    `Saved to ${scope} config. Effective now: model=${effective.auditorModel ?? "(session model)"} thinking=${effective.auditorThinkingLevel ?? "(session)"} notify=${effective.notifyCmd ?? "(off)"} tokenLimit=${effective.tokenLimit ?? DEFAULT_TOKEN_LIMIT}\n` +
+    `Saved to ${scope} config. Effective now: model=${effective.auditorModel ?? "(session model)"} thinking=${effective.auditorThinkingLevel ?? "(session)"} notify=${effective.notifyCmd ?? "(off)"} tokenLimit=${effective.tokenLimit ?? 0}${(effective.tokenLimit ?? 0) > 0 ? "" : " (off)"}\n` +
     `Note: the auditor runs without extensions — it must be a built-in provider, not an extension-registered one.`,
     "info",
   );

@@ -30,6 +30,7 @@ import {
   renderGoalMarkdown,
   statusLabel,
   sumNewAssistantTokens,
+  DEFAULT_TOKEN_LIMIT,
   writeGoalMd,
 } from "../extensions/goal-loop-core.ts";
 import {
@@ -278,4 +279,23 @@ test("ensureDirs creates the .pi-gla tree", () => {
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
   }
+});
+
+test("sumNewAssistantTokens counts input+output, not cache reads (v0.12.0)", () => {
+  const seen = new Set<string>();
+  const msgs = [
+    // 800k cache-read + 50k real → count 50k, not 850k
+    { role: "assistant", timestamp: 1, usage: { input: 40_000, output: 10_000, cacheRead: 800_000, totalTokens: 850_000 } },
+  ];
+  assert.equal(sumNewAssistantTokens(msgs, seen), 50_000);
+});
+
+test("sumNewAssistantTokens falls back to totalTokens when no split", () => {
+  const seen = new Set<string>();
+  const msgs = [{ role: "assistant", timestamp: 1, usage: { totalTokens: 250 } }];
+  assert.equal(sumNewAssistantTokens(msgs, seen), 250);
+});
+
+test("DEFAULT_TOKEN_LIMIT is 0 — the guard is opt-in (v0.12.0)", () => {
+  assert.equal(DEFAULT_TOKEN_LIMIT, 0);
 });
