@@ -5,6 +5,16 @@ All notable changes to pi-goal-loop-audit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.5] — 2026-07-21
+
+### Changed — auditor thinking follows the pi session
+
+- **Auditor thinking level**: was a hardcoded `medium` default. Now the
+  auditor follows the thinking level **you selected in pi** (same philosophy
+  as the model), with a `high` floor when nothing is set — the auditor is the
+  verification gate, depth beats speed there. `/gla thinking=` remains the
+  explicit override; the settings UI shows `(session, floor high)` when unset.
+
 ## [0.8.4] — 2026-07-21
 
 ### Added — free-style list: the agent can manage the queue

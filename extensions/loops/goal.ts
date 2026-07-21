@@ -1109,7 +1109,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
         completionSummary: p.completionSummary,
         verificationSummary: p.verificationSummary,
         model: auditorModel,
-        thinkingLevel: settings.auditorThinkingLevel,
+        thinkingLevel: settings.auditorThinkingLevel ?? getSessionThinkingLevel(),
         signal: signal ?? undefined,
       });
       // Audit history: record REAL verdicts only — a non-empty report is the
@@ -1557,7 +1557,10 @@ interface Settings {
 }
 
 const DEFAULT_SETTINGS: Settings = {
-  auditorThinkingLevel: "medium",
+  // Unset = follow the pi session thinking level (user selects thinking in
+  // pi, auditor follows), floor "high" — the auditor is the verification
+  // gate, depth is worth more there than speed. /gla thinking= overrides.
+  auditorThinkingLevel: undefined,
 };
 
 // Two-tier config (v0.7.0): GLOBAL is the normal home — you set things once
@@ -1614,6 +1617,23 @@ function saveSettings(scope: "global" | "project", cwd: string, patch: Partial<S
   }
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify(next, null, 2));
+}
+
+/**
+ * Session thinking level with a "high" floor (v0.8.5): the auditor follows
+ * the thinking level the user selected in pi; if none is set, audits run at
+ * "high" — the auditor is the verification gate, depth beats speed there.
+ */
+function getSessionThinkingLevel(): "off" | "minimal" | "low" | "medium" | "high" | "xhigh" {
+  try {
+    const level = extensionApi?.getThinkingLevel?.();
+    if (level && ["off", "minimal", "low", "medium", "high", "xhigh"].includes(level)) {
+      return level as "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+    }
+  } catch {
+    // fall through to the floor
+  }
+  return "high";
 }
 
 /**
@@ -1683,7 +1703,7 @@ async function openSettingsUI(ctx: ExtensionContext): Promise<void> {
         `pi-goal-loop-audit settings — global: ${globalSettingsPath()}`,
         [
           `Auditor model override — ${show("auditorModel", "(pi session model)")}`,
-          `Auditor thinking — ${show("auditorThinkingLevel", "medium")}`,
+          `Auditor thinking — ${show("auditorThinkingLevel", "(session, floor high)")}`,
           `Notify command — ${show("notifyCmd", "(off)")}`,
           `Token limit per goal — ${show("tokenLimit", "1000000")}`,
           "Done",
@@ -1800,7 +1820,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   saveSettings(scope, ctx.cwd, patch);
   const effective = loadSettings(ctx.cwd);
   ctx.ui.notify(
-    `Saved to ${scope} config. Effective now: model=${effective.auditorModel ?? "(session model)"} thinking=${effective.auditorThinkingLevel ?? "medium"} notify=${effective.notifyCmd ?? "(off)"} tokenLimit=${effective.tokenLimit ?? 1_000_000}\n` +
+    `Saved to ${scope} config. Effective now: model=${effective.auditorModel ?? "(session model)"} thinking=${effective.auditorThinkingLevel ?? "(session)"} notify=${effective.notifyCmd ?? "(off)"} tokenLimit=${effective.tokenLimit ?? 1_000_000}\n` +
     `Note: the auditor runs without extensions — it must be a built-in provider, not an extension-registered one.`,
     "info",
   );
