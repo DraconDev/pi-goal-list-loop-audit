@@ -1874,7 +1874,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
 // We detect duplicates at session start and warn loudly once.
 // =================================================================
 
-const OUR_COMMANDS = ["goal", "gla", "list", "loop"];
+const OUR_COMMANDS = ["goal", "gla", "queue", "list", "loop"];
 let collisionWarned = false;
 
 // Providers verified to exist in a bare (extension-less) session. The auditor
