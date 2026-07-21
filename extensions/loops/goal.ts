@@ -1147,32 +1147,58 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       const p = params as { completionSummary?: string; verificationSummary?: string };
       updateGoal({ status: "auditing" }, ctx);
       const settings = loadSettings(ctx.cwd);
-      const { model: auditorModel, error: modelError, via } = resolveAuditorModel(ctx, settings.auditorModel);
-      if (modelError) {
-        ctx.ui.notify(`Auditor model issue: ${modelError}`, "warning");
+      // Auditor model chain (v0.9.9): try candidates in order; quota/auth
+      // failures walk to the next instead of dying on the first pick
+      // (wild-caught: a zero-balance auto-pick silently "disapproved" 6×).
+      const candidates = auditorModelCandidates(ctx, settings.auditorModel);
+      if (candidates.length === 0) {
+        ctx.ui.notify("No auditor model available — set one with /gla model=provider/id", "warning");
       }
-      ctx.ui.notify(`Auditor running (isolated session, model: ${via ?? "setting"})…`, "info");
-      // Esc during the audit aborts this tool's signal → threaded into the
-      // auditor session, which aborts cleanly and returns "Auditor aborted."
-      latestAuditProgress = { label: "starting" };
-      const result = await runGoalCompletionAuditor({
-        ctx,
-        goal: state.goal,
-        completionSummary: p.completionSummary,
-        verificationSummary: p.verificationSummary,
-        model: auditorModel,
-        thinkingLevel: settings.auditorThinkingLevel ?? getSessionThinkingLevel(),
-        signal: signal ?? undefined,
-        onProgress: (progress) => {
-          latestAuditProgress = {
-            currentTool: progress.currentTool,
-            label: progress.label,
-            elapsedMs: progress.elapsedMs,
-          };
-          refreshUI(ctx);
-        },
-      });
-      latestAuditProgress = null;
+      let result: Awaited<ReturnType<typeof runGoalCompletionAuditor>> | null = null;
+      let via = "setting";
+      const thinking = settings.auditorThinkingLevel ?? getSessionThinkingLevel();
+      for (const candidate of candidates.slice(0, 5)) {
+        via = candidate.via;
+        ctx.ui.notify(`Auditor running (isolated session, model: ${via})…`, "info");
+        // Esc during the audit aborts this tool's signal → threaded into the
+        // auditor session, which aborts cleanly and returns "Auditor aborted."
+        latestAuditProgress = { label: "starting" };
+        result = await runGoalCompletionAuditor({
+          ctx,
+          goal: state.goal,
+          completionSummary: p.completionSummary,
+          verificationSummary: p.verificationSummary,
+          model: candidate.model,
+          thinkingLevel: thinking,
+          signal: signal ?? undefined,
+          onProgress: (progress) => {
+            latestAuditProgress = {
+              currentTool: progress.currentTool,
+              label: progress.label,
+              elapsedMs: progress.elapsedMs,
+            };
+            refreshUI(ctx);
+          },
+        });
+        latestAuditProgress = null;
+        if (result.error === "Auditor aborted.") break; // user aborted — do not retry
+        if (!isRetryableAuditorError(result.error)) break; // verdict or hard failure
+        deadAuditorModels.add(`${(candidate.model as any).provider}/${(candidate.model as any).id}`);
+        ctx.ui.notify(`Auditor model failed (${via}): ${(result.error ?? "").slice(0, 120)} — trying next candidate…`, "info");
+        result = null;
+      }
+      if (!result) {
+        updateGoal({
+          status: "active",
+          pauseReason: "auditor infrastructure failed on all candidates (auth/quota) — set a working model with /gla model=provider/id",
+          pauseSuggestedAction: "/gla model=provider/id, then call complete_goal again",
+        }, ctx);
+        scheduleContinuation(ctx, true);
+        return {
+          content: [{ type: "text", text: "The auditor could not run on any candidate model (auth/quota failures). This is infrastructure, not a verdict — your work was NOT rejected. Set a working auditor model with /gla model=provider/id and call complete_goal again." }],
+          details: {},
+        };
+      }
       // Audit history: record REAL verdicts only — a non-empty report is the
       // evidence the auditor actually inspected something. Empty-report runs
       // (abort, auth failure, no model) are surfaced via pauseReason, not
@@ -1225,22 +1251,45 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
         archiveCurrentGoal(ctx, "complete", `auditor ${result.model} approved`);
         notifyExternal(ctx, `Goal complete (auditor approved): ${objective.slice(0, 120)}`);
         return { content: [{ type: "text", text: `Goal approved by auditor ${result.model}.` }], details: {} };
-      } else {
+      }
+
+      // THREE-WAY SPLIT (v0.9.9): infrastructure failure is NOT a verdict.
+      // The wild-caught case: 6 silent "disapprovals" that were really a dead
+      // auditor model. The agent must be able to tell the difference.
+      if (result.error && !result.disapproved) {
         updateGoal({
           status: "active",
           auditHistory: history,
-          pauseReason: result.error ? `auditor errored: ${result.error}` : "auditor disapproved",
-          pauseSuggestedAction: "Inspect auditor feedback and fix the actual gap before calling complete_goal again",
+          pauseReason: `auditor infrastructure: ${result.error}`,
+          pauseSuggestedAction: "Fix the auditor model (/gla model=provider/id) and call complete_goal again — your work was NOT judged",
         }, ctx);
         scheduleContinuation(ctx, true);
         return {
           content: [{
             type: "text",
-            text: `Auditor disapproved. Reason: ${result.error || "see history"}.\nReport (first 800 chars):\n${result.output.slice(0, 800)}`,
+            text: `The auditor could not run (infrastructure, NOT a verdict): ${result.error}\nYour completion claim was not evaluated. Fix the auditor model with /gla model=provider/id and call complete_goal again — do not change your deliverable for this.`,
           }],
           details: {},
         };
       }
+
+      const noContractHint = state.goal.verificationContract?.trim()
+        ? ""
+        : "\n\nNote: this goal has no verification contract, so the auditor inferred done-criteria from the objective text. For sharper verdicts, /goal tweak the objective to add a 'Done when: ...' clause.";
+      updateGoal({
+        status: "active",
+        auditHistory: history,
+        pauseReason: "auditor disapproved",
+        pauseSuggestedAction: "Inspect auditor feedback and fix the actual gap before calling complete_goal again",
+      }, ctx);
+      scheduleContinuation(ctx, true);
+      return {
+        content: [{
+          type: "text",
+          text: `Auditor disapproved. Report (first 800 chars):\n${result.output.slice(0, 800)}${noContractHint}`,
+        }],
+        details: {},
+      };
     },
   }));
 
@@ -1744,21 +1793,30 @@ function resolveAuditorModel(ctx: ExtensionContext, ref?: string): { model: any;
   };
 }
 
-/** Ordered auditor candidates for the retry chain: setting → session → tier-sorted built-ins. */
+// Session-level dead-model cache (v0.9.9): candidates that failed with
+// quota/auth errors are skipped for the rest of the session — the first
+// audit walks the chain, later audits go straight to the working model.
+const deadAuditorModels = new Set<string>();
+
+/** Ordered auditor candidates for the retry chain: setting → session → tier-sorted built-ins, minus known-dead. */
 function auditorModelCandidates(ctx: ExtensionContext, ref?: string): Array<{ model: any; via: string }> {
   const out: Array<{ model: any; via: string }> = [];
   if (ref?.trim()) {
     const r = resolveAuditorModel(ctx, ref);
-    if (r.model) out.push({ model: r.model, via: "setting" });
+    if (r.model && !deadAuditorModels.has(`${(r.model as any).provider}/${(r.model as any).id}`)) {
+      out.push({ model: r.model, via: "setting" });
+    }
   }
   const sessionModel = ctx.model as any;
-  if (sessionModel && KNOWN_BUILTIN_PROVIDERS.has(sessionModel.provider)) {
+  if (sessionModel && KNOWN_BUILTIN_PROVIDERS.has(sessionModel.provider)
+    && !deadAuditorModels.has(`${sessionModel.provider}/${sessionModel.id}`)) {
     out.push({ model: sessionModel, via: "session" });
   }
   for (const m of ctx.modelRegistry.getAvailable()
     .filter((m: any) => KNOWN_BUILTIN_PROVIDERS.has(m.provider))
     .sort((a: any, b: any) => auditModelTier(a.id ?? a.name ?? "") - auditModelTier(b.id ?? b.name ?? ""))) {
     const mm = m as any;
+    if (deadAuditorModels.has(`${mm.provider}/${mm.id}`)) continue;
     if (!out.some((c) => c.model.id === mm.id)) out.push({ model: mm, via: `auto-fallback: ${mm.provider}/${mm.id}` });
   }
   return out;
