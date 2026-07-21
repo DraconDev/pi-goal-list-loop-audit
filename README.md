@@ -152,9 +152,10 @@ No external watchdog plugin needed.
 ```
 
 Resolution per key: **project > global > defaults**. The auditor defaults to
-your pi session model (auto-fallback to a credentialed built-in, named once at
-info level, when the session provider is extension-registered); thinking
-follows the session too (floor `high`).
+your pi session model. When the session provider is extension-registered the
+auditor can't auth it — you're told once (info level) with the fix:
+`/gla model=provider/id`, set once, rarely touched again. The plugin never
+picks a model itself. Thinking follows the session too (floor `high`).
 
 ## Token guard
 
@@ -186,8 +187,8 @@ like `mmx-cli`/`pi-search-skill` are optional conveniences for bulk queries,
 not requirements).
 
 **Two footnotes**: (1) extension-registered providers work in the main session
-but not the auditor's extension-less session — the auto-fallback names a pick,
-`/gla model=` pins it. (2) `pi-notify-agent` notifies on every turn;
+but not the auditor's extension-less session — if audits fail auth, set the
+override once with `/gla model=`. (2) `pi-notify-agent` notifies on every turn;
 `/gla notify=` fires only on goal complete/pause/loop stop.
 
 ## Files
