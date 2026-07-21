@@ -31,7 +31,8 @@ Four top-level commands, that's all:
 
 ```
 /goal                              # drafting: agent grills, you Confirm
-/goal "Step 1. Step 2. Done when: tests pass."   # set + start now
+/goal "audit the repo"             # no contract clause → grilled into one first
+/goal "Step 1. Step 2. Done when: tests pass."   # has contract → starts now
 /goal status                       # show state
 /goal pause                        # pause
 /goal resume                       # resume
@@ -65,11 +66,12 @@ Subcommands match **exactly** — `/goal pause the pipeline` sets an objective
 about a pipeline; only bare `/goal pause` pauses. (Same rule everywhere, so
 your objectives can start with any verb.)
 
-Drafting rules: **no-args drafts, with-args is direct, a file path is bulk
-direct.** A sisyphus-style plan file (checklists, bullets, numbered, plain
-lines) imports as-is — headings become nothing, items become goals. And the
-drafter itself batches: asking for "these 50 tasks" in a `/list` drafting
-session produces ONE confirmed batch, not 50 dialogs.
+Drafting rules: **no-args drafts, args-without-a-`Done when:`-clause draft
+too, args-with-a-clause start instantly, a file path is bulk direct.** A
+sisyphus-style plan file (checklists, bullets, numbered, plain lines) imports
+as-is — headings become nothing, items become goals. And the drafter itself
+batches: asking for "these 50 tasks" in a `/list` drafting session produces
+ONE confirmed batch, not 50 dialogs.
 Note: every queue item is audited individually, so at hundreds of items the
 audit cost per item is the thing to think about.
 
@@ -96,8 +98,9 @@ metric is the verdict.
 anything where "done" needs a reader. The isolated auditor verifies against
 your `Done when:` contract with quoted evidence.
 
-**`/queue`** — many things, judged the same way, in turn. Bulk-import a plan
-or just say "queue these 10 things".
+**`/list`** — many things, judged the same way, in turn. Bulk-import a plan
+or just say "queue these 10 things". Order is the default, not the law:
+`/list next <n>` picks any item.
 
 **`/loop`** — one thing, judged *numerically*. ONLY when a shell command can
 print a number that honestly tracks progress: test failures, TODO count,
@@ -179,9 +182,9 @@ contradictory turns. One driver at a time:
 - **Hard conflicts** (do not install together): `pi-codex-goal`, `pi-loop-mode`,
   `pi-goal-x`, `pi-goal*`, `ralphi`, `pi-ralph*`, `pi-autoresearch` (active).
 - **Overlap**: `@badliveware/pi-compaction-continue` — our heartbeat covers
-  stalls while a goal/queue/loop is active; both installed may double-nudge.
+  stalls while a goal/list/loop is active; both installed may double-nudge.
 - **Installed-but-don't-run-simultaneously**: `@tmustier/pi-ralph-wiggum` —
-  fine to keep, never run a ralph loop while a goal/queue/loop is active.
+  fine to keep, never run a ralph loop while a goal/list/loop is active.
 
 **Goes well with it**: `@juicesharp/rpiv-ask-user-question` (drafting uses its
 structured forms), `@tintinweb/pi-subagents` (spawn research/review subagents
