@@ -569,18 +569,10 @@ async function cmdTweak(args: string, ctx: ExtensionContext): Promise<void> {
 // /list commands (loop 2)
 // =================================================================
 
-/** Bulk-enqueue from a file: one Confirm for the whole batch, never drafts. */
-async function bulkAddFromFile(ctx: ExtensionContext, abs: string): Promise<void> {
-  let content: string;
-  try {
-    content = fs.readFileSync(abs, "utf-8");
-  } catch {
-    ctx.ui.notify(`Cannot read: ${abs}`, "warning");
-    return;
-  }
-  const parsed = parseListImport(content);
+/** Bulk-enqueue parsed items: one Confirm for the whole batch, never drafts. */
+async function bulkAddItems(ctx: ExtensionContext, parsed: string[], sourceName: string): Promise<void> {
   if (parsed.length === 0) {
-    ctx.ui.notify("No items found in the file (headings/blank lines don't count).", "warning");
+    ctx.ui.notify("No items found (headings/blank lines don't count).", "warning");
     return;
   }
   const preview = parsed.slice(0, 5).map((t, i) => `  ${i + 1}. ${t.slice(0, 70)}`).join("\n");
@@ -589,7 +581,7 @@ async function bulkAddFromFile(ctx: ExtensionContext, abs: string): Promise<void
     try {
       confirmed = await ctx.ui.confirm(
         "Import into queue?",
-        `${parsed.length} items from ${path.basename(abs)}:\n${preview}${parsed.length > 5 ? `\n  … and ${parsed.length - 5} more` : ""}`,
+        `${parsed.length} items from ${sourceName}:\n${preview}${parsed.length > 5 ? `\n  … and ${parsed.length - 5} more` : ""}`,
       );
     } catch {
       confirmed = false;
@@ -605,12 +597,24 @@ async function bulkAddFromFile(ctx: ExtensionContext, abs: string): Promise<void
   });
   state = { ...state, list: [...listQueue(), ...items] };
   persistState(ctx);
-  appendLedger(ctx.cwd, "list_imported", { file: path.basename(abs), count: items.length });
+  appendLedger(ctx.cwd, "list_imported", { source: sourceName, count: items.length });
   if (!state.goal || state.goal.status === "complete" || state.goal.status === "aborted") {
     activateNextListItem(ctx);
   } else {
     ctx.ui.notify(`Imported ${items.length} items (${listQueue().length} queued).`, "info");
   }
+}
+
+/** Bulk-enqueue from a file: read, parse, delegate to bulkAddItems. */
+async function bulkAddFromFile(ctx: ExtensionContext, abs: string): Promise<void> {
+  let content: string;
+  try {
+    content = fs.readFileSync(abs, "utf-8");
+  } catch {
+    ctx.ui.notify(`Cannot read: ${abs}`, "warning");
+    return;
+  }
+  await bulkAddItems(ctx, parseListImport(content), path.basename(abs));
 }
 
 async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {

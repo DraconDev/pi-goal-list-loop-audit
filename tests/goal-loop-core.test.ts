@@ -26,6 +26,7 @@ import {
   piGlaDir,
   readGoalMd,
   readState,
+  auditModelTier,
   mergeSettings,
   renderGoalMarkdown,
   statusLabel,
@@ -267,6 +268,23 @@ test("mergeSettings: does not mutate the base", () => {
   const base = { a: 1 } as Record<string, unknown>;
   mergeSettings(base, { a: 5 });
   assert.equal(base.a, 1);
+});
+
+test("auditModelTier: opus strongest, free weakest", () => {
+  assert.equal(auditModelTier("claude-opus-4-8"), 0);
+  assert.equal(auditModelTier("claude-sonnet-5"), 1);
+  assert.equal(auditModelTier("deepseek-v4-pro"), 1);
+  assert.equal(auditModelTier("gpt-5"), 2);
+  assert.equal(auditModelTier("gemini-3-flash"), 3);
+  assert.equal(auditModelTier("something-free"), 5);
+  assert.equal(auditModelTier("mystery-model"), 4);
+});
+
+test("auditModelTier: sorting puts strongest first", () => {
+  const ids = ["free-thing", "claude-opus-4-8", "gemini-3-flash", "claude-sonnet-5"];
+  const sorted = [...ids].sort((a, b) => auditModelTier(a) - auditModelTier(b));
+  assert.equal(sorted[0], "claude-opus-4-8");
+  assert.equal(sorted[sorted.length - 1], "free-thing");
 });
 
 test("ensureDirs creates the .pi-gla tree", () => {
