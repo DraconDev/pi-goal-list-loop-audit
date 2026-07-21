@@ -745,12 +745,19 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
   }
 
   if (sub === "next") {
-    // Skip the current active goal (abort it) and activate the next queued item.
-    if (state.goal && state.goal.status === "active") {
-      archiveCurrentGoal(ctx, "aborted", "skipped via /queue next");
+    // Skip the current active goal (abort it) and activate a queued item.
+    // Bare = the head (FIFO default); /list next <n> = item n (shopping-list
+    // semantics: order is the default, not the law).
+    const n = rest ? Number.parseInt(rest, 10) : 1;
+    if (!Number.isInteger(n) || n < 1) {
+      ctx.ui.notify(`Usage: /list next [1-${listQueue().length || 1}]`, "info");
+      return;
     }
-    if (!activateNextListItem(ctx)) {
-      ctx.ui.notify("Queue is empty — nothing to advance to.", "info");
+    if (state.goal && state.goal.status === "active") {
+      archiveCurrentGoal(ctx, "aborted", `skipped via /list next ${n > 1 ? n : ""}`.trim());
+    }
+    if (!activateNextListItem(ctx, n)) {
+      ctx.ui.notify(listQueue().length === 0 ? "List is empty — nothing to activate." : `No item #${n} (list has ${listQueue().length}).`, "info");
     }
     return;
   }
@@ -1555,6 +1562,30 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
   }));
 
   pi.registerTool(defineTool({
+    name: "list_activate",
+    label: "Activate list item",
+    description: "Activate a specific item from the /list queue by position (1-based). Order is the default, not the law: use this when a different item should be worked next (e.g. you want to research item 5 while item 1 waits). Aborts the currently active goal if one is running.",
+    parameters: Type.Object({
+      n: Type.Number({ description: "1-based position in the queue (1 = head)" }),
+    }),
+    async execute(_id, params, _signal, _onUpdate, execCtx) {
+      const p = params as { n: number };
+      const n = Math.floor(p.n);
+      if (!Number.isInteger(n) || n < 1) {
+        return { content: [{ type: "text", text: "n must be a positive integer (1-based position)." }], details: {} };
+      }
+      const liveCtx = (execCtx as ExtensionContext | undefined) ?? ctx;
+      if (state.goal && state.goal.status === "active") {
+        archiveCurrentGoal(liveCtx, "aborted", "skipped via list_activate");
+      }
+      if (!activateNextListItem(liveCtx, n)) {
+        return { content: [{ type: "text", text: listQueue().length === 0 ? "List is empty." : `No item #${n} (list has ${listQueue().length} items).` }], details: {} };
+      }
+      return { content: [{ type: "text", text: `Item #${n} activated. Work it normally; call complete_goal when done.` }], details: {} };
+    },
+  }));
+
+  pi.registerTool(defineTool({
     name: "list_status",
     label: "Queue status",
     description: "Show the active goal and the /queue queue (loop 2) as text: what's running, what's waiting.",
@@ -1989,13 +2020,14 @@ export default function (pi: ExtensionAPI): void {
     description: "Open the settings UI for goals, loops, lists, and the auditor. Scriptable form: /gla key=value · /gla project key=value",
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdSettings(args, ctx); },
   });
-  pi.registerCommand("queue", {
-    description: "Loop 2: the queue of audited goals. /queue add <obj or file or paste> | /queue show | /queue next | /queue remove <n> | /queue clear",
+  pi.registerCommand("list", {
+    description: "Loop 2: the list of audited goals — order is the default, not the law. /list add <obj or file or paste> | /list show | /list next [n] | /list remove <n> | /list clear",
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdList(args, ctx); },
   });
-  // Alias for one release (renamed 0.9.1 → /queue); remove in 0.10.0.
-  pi.registerCommand("list", {
-    description: "Alias for /queue (renamed in v0.9.1). Same subcommands.",
+  // Alias for one release (renamed 0.10.0 back to /list — order isn't
+  // mandatory with subagents; it's a shopping list, not a FIFO).
+  pi.registerCommand("queue", {
+    description: "Alias for /list (renamed in v0.10.0). Same subcommands.",
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdList(args, ctx); },
   });
   pi.registerCommand("loop", {
