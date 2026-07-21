@@ -220,7 +220,16 @@ export async function runGoalCompletionAuditor(args: {
       settingsManager: SettingsManager.inMemory({ compaction: { enabled: true } }),
       tools: ["read", "grep", "find", "ls", "bash"],
     });
+    let streamError: string | undefined;
     const unsub = session.subscribe((event) => {
+      // Capture provider/stream errors (401/403/429/credits) — these often
+      // arrive as events rather than thrown exceptions, and without this they
+      // surface as a silent empty report that looks like a disapproval.
+      const anyEvent = event as any;
+      if (anyEvent.type === "error" || anyEvent.error || anyEvent.type === "auto_retry_start") {
+        const msg = anyEvent.error?.message ?? anyEvent.message ?? anyEvent.errorMessage;
+        if (typeof msg === "string") streamError = msg.slice(0, 300);
+      }
       if (event.type === "tool_execution_start") {
         progress.currentTool = event.toolName;
         progress.currentToolArgs = typeof event.args === "object" && event.args !== null
@@ -276,9 +285,36 @@ export async function runGoalCompletionAuditor(args: {
     }
 
     const output = outputParts.join("\n\n");
+
+    // SILENT-FAILURE GUARD (v0.9.9, wild-caught): an auditor that produced
+    // nothing — or produced text with no verdict marker — did not VERDICT.
+    // That is an infrastructure result (dead model, quota, stream error),
+    // not a disapproval, and must never be recorded as one.
+    if (!output.trim()) {
+      return {
+        approved: false,
+        disapproved: false,
+        output,
+        model: modelLabel(model),
+        thinkingLevel,
+        error: `Auditor produced no output${streamError ? `: ${streamError}` : " — the auditor session likely failed (check the model's auth/quota, or set a working one with /gla model=provider/id)"}`,
+      };
+    }
+
     const lastAssistant = [...outputParts].reverse().find((t) => /<\/?(approved|disapproved)\/>/i.test(t)) ?? output;
     const approved = /<approved\/>/i.test(lastAssistant);
     const disapproved = /<disapproved\/>/i.test(lastAssistant);
+
+    if (!approved && !disapproved) {
+      return {
+        approved: false,
+        disapproved: false,
+        output,
+        model: modelLabel(model),
+        thinkingLevel,
+        error: `Auditor produced no verdict marker (<approved/>/<disapproved/>)${streamError ? ` — stream error: ${streamError}` : ""}. Treating as an error, not a verdict.`,
+      };
+    }
 
     // v0.1.0 honesty: must call at least one read tool, otherwise it didn't really audit.
     const usedReadTool = toolCalls.some((c) => ["read", "grep", "find", "ls", "bash"].includes(c.name));

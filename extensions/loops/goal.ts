@@ -1733,9 +1733,7 @@ function resolveAuditorModel(ctx: ExtensionContext, ref?: string): { model: any;
   // extension-registered, so the auditor's extension-less session cannot auth
   // it. Pick the strongest available built-in model and say so once — the
   // override lives in /gla. Credentialed only (getAvailable).
-  const candidates = ctx.modelRegistry.getAvailable()
-    .filter((m: any) => KNOWN_BUILTIN_PROVIDERS.has(m.provider))
-    .sort((a: any, b: any) => auditModelTier(a.id ?? a.name ?? "") - auditModelTier(b.id ?? b.name ?? ""));
+  const candidates = auditorModelCandidates(ctx);
   if (candidates.length > 0) {
     const pick = candidates[0] as any;
     return { model: pick, via: `auto-fallback: ${pick.provider}/${pick.id}` };
@@ -1744,6 +1742,33 @@ function resolveAuditorModel(ctx: ExtensionContext, ref?: string): { model: any;
     model: undefined,
     error: "session model's provider is extension-registered and no built-in-provider model is credentialed for the auditor — set one with /gla model=provider/id",
   };
+}
+
+/** Ordered auditor candidates for the retry chain: setting → session → tier-sorted built-ins. */
+function auditorModelCandidates(ctx: ExtensionContext, ref?: string): Array<{ model: any; via: string }> {
+  const out: Array<{ model: any; via: string }> = [];
+  if (ref?.trim()) {
+    const r = resolveAuditorModel(ctx, ref);
+    if (r.model) out.push({ model: r.model, via: "setting" });
+  }
+  const sessionModel = ctx.model as any;
+  if (sessionModel && KNOWN_BUILTIN_PROVIDERS.has(sessionModel.provider)) {
+    out.push({ model: sessionModel, via: "session" });
+  }
+  for (const m of ctx.modelRegistry.getAvailable()
+    .filter((m: any) => KNOWN_BUILTIN_PROVIDERS.has(m.provider))
+    .sort((a: any, b: any) => auditModelTier(a.id ?? a.name ?? "") - auditModelTier(b.id ?? b.name ?? ""))) {
+    const mm = m as any;
+    if (!out.some((c) => c.model.id === mm.id)) out.push({ model: mm, via: `auto-fallback: ${mm.provider}/${mm.id}` });
+  }
+  return out;
+}
+
+/** Quota/auth-flavored failures are worth retrying with the next candidate. */
+function isRetryableAuditorError(error?: string): boolean {
+  if (!error) return false;
+  const s = error.toLowerCase();
+  return /401|403|429|credit|insufficient|rate.?limit|quota|balance|no output|no verdict/.test(s);
 }
 
 /**
