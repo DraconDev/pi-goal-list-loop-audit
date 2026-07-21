@@ -192,6 +192,27 @@ export function parseListImport(content: string): string[] {
 }
 
 /**
+ * Detect whether a `/list add` argument is a readable file (v0.8.2). File
+ * detection, not a separate verb: `/list add plan.md` bulk-imports when the
+ * path exists, and is an objective when it doesn't. Returns the absolute
+ * path or null. Directories return null.
+ */
+export function resolveImportFile(cwd: string, arg: string): string | null {
+  const trimmed = arg.trim();
+  if (!trimmed || trimmed.includes("\n")) return null;
+  // Cheap short-circuit: objectives rarely look like paths; require a path
+  // separator or a file-extension-ish suffix before hitting the filesystem.
+  if (!/[\\/]/.test(trimmed) && !/\.[A-Za-z0-9]{1,8}$/.test(trimmed)) return null;
+  try {
+    const abs = path.resolve(cwd, trimmed);
+    const stat = fs.statSync(abs);
+    return stat.isFile() ? abs : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Layered settings merge (v0.7.0): later layers win, but only for keys they
  * actually define — an `undefined` value in a layer means "not set here",
  * never "set to undefined". Used for defaults → global → project resolution.
