@@ -39,16 +39,16 @@ Four top-level commands, that's all:
 /goal tweak "<new objective>"      # edit in place (Confirm dialog)
 /goal archive                      # archived goals, newest first
 /gla                               # open the settings UI (or /gla key=value)
-/list add                          # draft a contract (or a whole batch via items[])
-/list add "<objective>"            # queue one directly
-/list add plan.md                  # file detected → bulk import, one Confirm
-/list add <paste a checklist>      # multi-line paste → same batch flow
+/queue add                          # draft a contract (or a whole batch via items[])
+/queue add "<objective>"            # queue one directly
+/queue add plan.md                  # file detected → bulk import, one Confirm
+/queue add <paste a checklist>      # multi-line paste → same batch flow
 
 (Or just say it: "queue these 10 things…" — the agent manages the list too.)
 /list                              # show active + queue
-/list next                         # skip current, activate next
-/list remove <n>                   # drop item n from the queue
-/list clear                        # empty the queue
+/queue next                         # skip current, activate next
+/queue remove <n>                   # drop item n from the queue
+/queue clear                        # empty the queue
 /loop                              # draft the loop (agent grills; measure is test-run before you confirm)
 /loop start "reduce TODOs" measure="grep -c TODO src.txt | head -1" direction=min
 /loop start "reduce TODOs" measure="..." direction=min branch=1   # scratch-branch mode
@@ -68,7 +68,7 @@ session produces ONE confirmed batch, not 50 dialogs.
 Note: every queue item is audited individually, so at hundreds of items the
 audit cost per item is the thing to think about.
 
-**Drafting is the default for long-running things.** `/goal`, `/list add`, and
+**Drafting is the default for long-running things.** `/goal`, `/queue add`, and
 `/loop` with no arguments all start a grilling turn that ends in a Confirm
 dialog. For `/loop` specifically, the orchestrator **test-runs the proposed
 measure command once** and shows the real number in the dialog — you validate
@@ -90,7 +90,7 @@ metric is the verdict.
 | Loop | Command | Status |
 |---|---|---|
 | 1. Single ordered goal | `/goal "<objective>"` | **shipped v0.1.0** |
-| 2. Queue of goals | `/list add\|show\|next\|remove\|clear` | **shipped v0.2.0** |
+| 2. Queue of goals | `/queue add\|show\|next\|remove\|clear` | **shipped v0.2.0** |
 | 3. Forever-polish loop | `/loop start\|status\|stop` | **shipped v0.3.0** |
 
 Each loop is a different policy class on the same status machine.
