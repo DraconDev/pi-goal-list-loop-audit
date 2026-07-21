@@ -577,12 +577,68 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
       lines.push("Active: (none)");
     }
     if (queue.length === 0) {
-      lines.push("Queue: empty. /list add <objective>");
+      lines.push("Queue: empty. /list add <objective> | /list import <file>");
     } else {
       lines.push(`Queue (${queue.length}):`);
-      queue.forEach((item, i) => lines.push(`  ${i + 1}. ${item.objective.slice(0, 90)}`));
+      const PAGE = 15;
+      queue.slice(0, PAGE).forEach((item, i) => lines.push(`  ${i + 1}. ${item.objective.slice(0, 90)}`));
+      if (queue.length > PAGE) {
+        lines.push(`  … and ${queue.length - PAGE} more. /list remove <n> to prune, /list clear to empty.`);
+      }
     }
     ctx.ui.notify(lines.join("\n"), "info");
+    return;
+  }
+
+  if (sub === "import") {
+    // Bulk enqueue from a file — the sisyphus-style path. Hundreds of items,
+    // one Confirm, never any drafting (bulk is direct by definition).
+    const file = rest.trim().replace(/^["']|["']$/g, "");
+    if (!file) {
+      ctx.ui.notify("Usage: /list import <path> — markdown checklist, bullets, numbered, or plain lines; headings skipped", "info");
+      return;
+    }
+    const abs = path.resolve(ctx.cwd, file);
+    let content: string;
+    try {
+      content = fs.readFileSync(abs, "utf-8");
+    } catch {
+      ctx.ui.notify(`Cannot read: ${abs}`, "warning");
+      return;
+    }
+    const parsed = parseListImport(content);
+    if (parsed.length === 0) {
+      ctx.ui.notify("No items found in the file (headings/blank lines don't count).", "warning");
+      return;
+    }
+    const preview = parsed.slice(0, 5).map((t, i) => `  ${i + 1}. ${t.slice(0, 70)}`).join("\n");
+    let confirmed = true;
+    if (ctx.hasUI) {
+      try {
+        confirmed = await ctx.ui.confirm(
+          "Import into queue?",
+          `${parsed.length} items from ${path.basename(abs)}:\n${preview}${parsed.length > 5 ? `\n  … and ${parsed.length - 5} more` : ""}`,
+        );
+      } catch {
+        confirmed = false;
+      }
+    }
+    if (!confirmed) {
+      ctx.ui.notify("Import cancelled.", "info");
+      return;
+    }
+    const items = parsed.map((text) => {
+      const extracted = extractVerificationContract(text);
+      return { id: newGoalId(), objective: extracted.objective, verificationContract: extracted.verificationContract || undefined, addedAt: nowIso() };
+    });
+    state = { ...state, list: [...listQueue(), ...items] };
+    persistState(ctx);
+    appendLedger(ctx.cwd, "list_imported", { file: path.basename(abs), count: items.length });
+    if (!state.goal || state.goal.status === "complete" || state.goal.status === "aborted") {
+      activateNextListItem(ctx);
+    } else {
+      ctx.ui.notify(`Imported ${items.length} items (${listQueue().length} queued).`, "info");
+    }
     return;
   }
 
@@ -644,7 +700,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
     return;
   }
 
-  ctx.ui.notify("Usage: /list [show] | /list add <objective> | /list next | /list remove <n> | /list clear", "info");
+  ctx.ui.notify("Usage: /list [show] | /list add <objective> | /list import <file> | /list next | /list remove <n> | /list clear", "info");
 }
 
 /**

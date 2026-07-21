@@ -169,6 +169,29 @@ export function routeGoalArgs(raw: string): GoalRoute {
 }
 
 /**
+ * Parse a bulk list-import file (v0.8.1): markdown checklists (`- [ ]`,
+ * `- [x]`), bullets (`-`, `*`, `•`), numbered items (`1.`, `2)`), and plain
+ * lines all become queue items. Headings (`# …`), blank lines, and HTML
+ * comments are skipped. A sisyphus-style plan file should import clean.
+ */
+export function parseListImport(content: string): string[] {
+  const items: string[] = [];
+  for (const line of content.split("\n")) {
+    let t = line.trim();
+    if (!t) continue;
+    if (t.startsWith("#")) continue;                    // headings
+    if (t.startsWith("<!--")) continue;                 // html comments
+    if (/^[-=_*]{3,}$/.test(t)) continue;               // hr rules
+    t = t.replace(/^-\s*\[[ xX]\]\s*/, "");              // - [ ] / - [x]
+    t = t.replace(/^[-*•]\s+/, "");                      // bullets
+    t = t.replace(/^\d+[.)]\s+/, "");                    // 1. / 2)
+    t = t.trim();
+    if (t) items.push(t);
+  }
+  return items;
+}
+
+/**
  * Layered settings merge (v0.7.0): later layers win, but only for keys they
  * actually define — an `undefined` value in a layer means "not set here",
  * never "set to undefined". Used for defaults → global → project resolution.
