@@ -101,13 +101,23 @@ export interface AuditVerdict {
  * Sum token usage across assistant messages, counting each message once.
  * `agent_end` events may include already-seen history, so callers pass a
  * dedup set keyed by timestamp+tokens (good-enough identity for counting).
+ *
+ * v0.12.0: counts input+output (real spend) when the usage object carries
+ * the split; totalTokens includes cache reads, which inflate 10-50× on long
+ * sessions (a day-long goal "used" 216M while real spend was a fraction).
  */
 export function sumNewAssistantTokens(messages: unknown[], seen: Set<string>): number {
   let total = 0;
   for (const m of messages) {
-    const msg = m as { role?: string; timestamp?: unknown; usage?: { totalTokens?: unknown } };
+    const msg = m as {
+      role?: string;
+      timestamp?: unknown;
+      usage?: { input?: unknown; output?: unknown; totalTokens?: unknown };
+    };
     if (msg?.role !== "assistant") continue;
-    const tokens = typeof msg.usage?.totalTokens === "number" ? msg.usage.totalTokens : 0;
+    const u = msg.usage;
+    const split = (typeof u?.input === "number" ? u.input : 0) + (typeof u?.output === "number" ? u.output : 0);
+    const tokens = split > 0 ? split : (typeof u?.totalTokens === "number" ? u.totalTokens : 0);
     if (tokens <= 0) continue;
     const key = `${String(msg.timestamp ?? "?")}:${tokens}`;
     if (seen.has(key)) continue;
@@ -269,7 +279,7 @@ export interface State {
 /** Default per-goal token budget (v0.9.7): a runaway threshold, not a
  * "big goal" threshold — real research/feature goals legitimately burn 2-4M.
  * Loop 3 doesn't rely on this cap (it has max-iterations + plateau brakes). */
-export const DEFAULT_TOKEN_LIMIT = 10_000_000;
+export const DEFAULT_TOKEN_LIMIT = 0; // 0 = opt-in guard, off by default (v0.12.0)
 
 export const DEFAULT_STATE: State = {
   goal: null,

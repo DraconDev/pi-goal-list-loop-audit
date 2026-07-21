@@ -520,7 +520,7 @@ async function cmdStatus(ctx: ExtensionContext): Promise<void> {
     `Objective: ${g.objective}`,
     `Auto-continue: ${g.autoContinue ? "on" : "off"}`,
     `Iteration: ${iterationCounter}`,
-    `Tokens: ${(g.usage?.tokensUsed ?? 0).toLocaleString()} / ${(g.usage?.tokensLimit ?? DEFAULT_TOKEN_LIMIT).toLocaleString()}`,
+    `Tokens: ${(g.usage?.tokensUsed ?? 0).toLocaleString()}${(g.usage?.tokensLimit ?? 0) > 0 ? ` / ${(g.usage!.tokensLimit).toLocaleString()}` : " (no cap — /gla tokenlimit=<n> to set)"}`,
   ];
   if (g.auditHistory && g.auditHistory.length > 0) {
     lines.push(`Audits: ${g.auditHistory.length} (${g.auditHistory.filter((v) => v.approved).length} approved)`);
@@ -2148,14 +2148,15 @@ export default function (pi: ExtensionAPI): void {
     if (newTokens > 0) {
       const used = (state.goal.usage?.tokensUsed ?? 0) + newTokens;
       const limit = state.goal.usage?.tokensLimit ?? DEFAULT_TOKEN_LIMIT;
-      if (used > limit) {
+      // v0.12.0: the guard is opt-in — limit 0/unset means never pause.
+      if (limit > 0 && used > limit) {
         updateGoal({
           usage: { tokensUsed: used, tokensLimit: limit },
           status: "paused",
           pauseReason: `token limit exceeded (${used.toLocaleString()} > ${limit.toLocaleString()})`,
-          pauseSuggestedAction: "/gla tokenlimit=<n> to raise the cap, then /goal resume",
+          pauseSuggestedAction: "/gla tokenlimit=<n> to raise the cap (or 0 to disable), then /goal resume",
         }, ctx);
-        ctx.ui.notify(`Goal paused: token limit exceeded (${used.toLocaleString()} > ${limit.toLocaleString()}).`, "warning");
+        ctx.ui.notify(`Goal paused: token limit exceeded (${used.toLocaleString()} > ${limit.toLocaleString()}). /gla tokenlimit=<n> to raise, 0 to disable.`, "warning");
         notifyExternal(ctx, `Goal paused: token limit exceeded (${used} > ${limit}).`);
         return;
       }
