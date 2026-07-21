@@ -17,6 +17,7 @@ import {
   newGoalId,
   nowIso,
   readState,
+  takeAt,
 } from "../extensions/goal-loop-core.ts";
 
 function tmpCwd(): string {
@@ -88,4 +89,29 @@ test("state event without a list field restores as empty list (v0.1.0 compat)", 
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
   }
+});
+
+test("takeAt: head is the FIFO default", () => {
+  const r = takeAt(["a", "b", "c"], 1)!;
+  assert.equal(r[0], "a");
+  assert.deepEqual(r[1], ["b", "c"]);
+});
+
+test("takeAt: middle item", () => {
+  const r = takeAt(["a", "b", "c"], 2)!;
+  assert.equal(r[0], "b");
+  assert.deepEqual(r[1], ["a", "c"]);
+});
+
+test("takeAt: last item", () => {
+  const r = takeAt(["a", "b", "c"], 3)!;
+  assert.equal(r[0], "c");
+  assert.deepEqual(r[1], ["a", "b"]);
+});
+
+test("takeAt: out of range returns null", () => {
+  assert.equal(takeAt(["a"], 0), null);
+  assert.equal(takeAt(["a"], 2), null);
+  assert.equal(takeAt([], 1), null);
+  assert.equal(takeAt(["a"], 1.5), null);
 });

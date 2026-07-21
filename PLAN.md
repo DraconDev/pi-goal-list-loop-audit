@@ -128,14 +128,14 @@ live-verified both tiers + no-leak smoke. Docs updated.
 ### M6 — v0.6.0 (draft everything) ✅ (2026-07-20)
 
 User directive: for a long-running thing, a draft up front is better. Drafting
-exists only for `/goal`; `/queue add` takes raw strings, and `/loop start`
+exists only for `/goal`; `/list add` takes raw strings, and `/loop start`
 demands a correct target+measure+direction in one blind shot — the most
 expensive place to be wrong (up to 50 iterations before plateau stops a bad
 metric). Draft all three loops; for `/loop`, validate the metric BEFORE
 confirming.
 
 1. **Unified drafting modes**: drafting target becomes `"goal" | "list" |
-   "loop"`. `/goal` (existing), `/queue add` with no args (draft → confirmed
+   "loop"`. `/goal` (existing), `/list add` with no args (draft → confirmed
    contract goes into the QUEUE instead of activating), `/loop` with no args
    (draft → confirmed loop config starts the loop).
 2. **`/loop` drafting with measure test-run** (centerpiece): the agent grills

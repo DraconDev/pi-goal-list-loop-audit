@@ -65,7 +65,7 @@ export function buildStatusText(state: State, audit?: AuditDisplayProgress | nul
     return `gla: paused ⏸ ${truncate(g.pauseReason ?? "", 40)}`;
   }
   if (g.status === "active") {
-    const queue = state.list?.length ? ` · queue ${state.list.length}` : "";
+    const queue = state.list?.length ? ` · list ${state.list.length}` : "";
     const tasks = g.taskList ? ` ${countDone(g)}/${countTotal(g)} tasks ·` : "";
     return `gla: goal ●${tasks} ${fmtElapsed(now - Date.parse(g.createdAt))}${queue}`;
   }
@@ -128,7 +128,7 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
   const next = nextPending(g);
   if (next) lines.push(`├─ next: ${truncate(next, 56)}`);
   const queue = state.list?.length ?? 0;
-  lines.push(`└─ ${queue > 0 ? `queue ${queue} · ` : ""}/goal status · /gla`);
+  lines.push(`└─ ${queue > 0 ? `list ${queue} · ` : ""}/goal status · /gla`);
   return lines;
 }
 

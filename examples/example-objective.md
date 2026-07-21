@@ -42,12 +42,12 @@ Useful commands: `/goal status`, `/goal pause`, `/goal resume`, `/goal cancel`,
 ## Loop 2: `/list` — queue of goals
 
 ```
-/queue add "Create one.txt containing one. Done when: grep -q one one.txt"
-/queue add "Create two.txt containing two. Done when: grep -q two two.txt"
+/list add "Create one.txt containing one. Done when: grep -q one one.txt"
+/list add "Create two.txt containing two. Done when: grep -q two two.txt"
 /list            # show active + queue
-/queue next       # skip current item
-/queue remove 2   # drop queue item 2
-/queue clear      # empty the queue
+/list next       # skip current item
+/list remove 2   # drop queue item 2
+/list clear      # empty the queue
 ```
 
 Each item is a full goal with its own contract and audit. When one completes

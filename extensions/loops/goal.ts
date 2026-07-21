@@ -9,7 +9,7 @@
  *
  * Command surface (v0.8.0 — four top-level commands):
  *   /goal "<objective>" | /goal (draft) | /goal status|pause|resume|cancel|tweak <text>|archive
- *   /queue add|show|next|remove|clear
+ *   /list add|show|next|remove|clear
  *   /loop (draft) | /loop start|status|stop
  *   /gla (settings UI) | /gla key=value | /gla project key=value
  */
@@ -381,7 +381,7 @@ function archiveCurrentGoal(ctx: ExtensionContext, status: Status, stopReason?: 
 }
 
 // =================================================================
-// Loop 2: /queue queue
+// Loop 2: /list list
 // =================================================================
 
 function listQueue(): NonNullable<State["list"]> {
@@ -428,7 +428,7 @@ function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "loop"):
     if (target === "list") {
       tmpl = tmpl.replace(
         "[GOAL DRAFTING]",
-        "[GOAL DRAFTING — the confirmed goal goes into the /queue QUEUE, it does not activate immediately. If the user wants MANY things queued (a plan, a checklist, 'these 50 tasks'), propose them ALL AT ONCE with the items[] parameter — one Confirm for the whole batch, never 50 separate proposals.]",
+        "[GOAL DRAFTING — the confirmed goal goes into the /list LIST, it does not activate immediately. If the user wants MANY things queued (a plan, a checklist, 'these 50 tasks'), propose them ALL AT ONCE with the items[] parameter — one Confirm for the whole batch, never 50 separate proposals.]",
       );
     }
   } catch {
@@ -596,7 +596,7 @@ async function cmdTweak(args: string, ctx: ExtensionContext): Promise<void> {
 }
 
 // =================================================================
-// /queue commands (loop 2)
+// /list commands (loop 2)
 // =================================================================
 
 /**
@@ -673,13 +673,13 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
       lines.push("Active: (none)");
     }
     if (queue.length === 0) {
-      lines.push("Queue: empty. /queue add <objective> | /queue add <file>");
+      lines.push("List: empty. /list add <objective> | /list add <file>");
     } else {
       lines.push(`Queue (${queue.length}):`);
       const PAGE = 15;
       queue.slice(0, PAGE).forEach((item, i) => lines.push(`  ${i + 1}. ${item.objective.slice(0, 90)}`));
       if (queue.length > PAGE) {
-        lines.push(`  … and ${queue.length - PAGE} more. /queue remove <n> to prune, /queue clear to empty.`);
+        lines.push(`  … and ${queue.length - PAGE} more. /list remove <n> to prune, /list clear to empty.`);
       }
     }
     ctx.ui.notify(lines.join("\n"), "info");
@@ -691,7 +691,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
     // Backwards-compat alias (0.8.1 shipped it; 0.8.2 folded it into add).
     const abs = resolveImportFile(ctx.cwd, rest.replace(/^["']|["']$/g, ""));
     if (!abs) {
-      ctx.ui.notify("Usage: /queue add <path> — file detection is automatic now; 'import' is just an alias", "info");
+      ctx.ui.notify("Usage: /list add <path> — file detection is automatic now; 'import' is just an alias", "info");
       return;
     }
     await bulkAddFromFile(ctx, abs);
@@ -704,7 +704,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
       raw = raw.slice(1, -1).trim();
     }
     if (!raw) {
-      // /queue add with no args → draft a confirmed contract INTO THE QUEUE.
+      // /list add with no args → draft a confirmed contract INTO THE QUEUE.
       startDrafting(ctx, "list");
       return;
     }
@@ -766,7 +766,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
     const n = Number.parseInt(rest, 10);
     const queue = listQueue();
     if (!Number.isFinite(n) || n < 1 || n > queue.length) {
-      ctx.ui.notify(`Usage: /queue remove <1-${queue.length}>`, "info");
+      ctx.ui.notify(`Usage: /list remove <1-${queue.length}>`, "info");
       return;
     }
     const removed = queue[n - 1]!;
@@ -777,7 +777,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
     return;
   }
 
-  ctx.ui.notify("Usage: /queue [show] | /queue add <objective or file> | /queue next | /queue remove <n> | /queue clear", "info");
+  ctx.ui.notify("Usage: /list [show] | /list add <objective or file> | /list next | /list remove <n> | /list clear", "info");
 }
 
 /**
@@ -1364,14 +1364,14 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       const p = params as { objective: string; verificationContract?: string; items?: string[] };
       if (draftingTarget !== "goal" && draftingTarget !== "list") {
         return {
-          content: [{ type: "text", text: "Not in goal drafting mode. The user starts drafting with /goal or /queue add (no args), or activates directly with /goal <objective>." }],
+          content: [{ type: "text", text: "Not in goal drafting mode. The user starts drafting with /goal or /list add (no args), or activates directly with /goal <objective>." }],
           details: {},
         };
       }
       // Multi-item drafts are LIST-only: a goal is single by definition.
       if (p.items && p.items.length > 0 && draftingTarget !== "list") {
         return {
-          content: [{ type: "text", text: "items[] is only valid in /queue drafting — a goal is a single objective. Propose one objective, or ask the user to switch to /queue." }],
+          content: [{ type: "text", text: "items[] is only valid in /list drafting — a goal is a single objective. Propose one objective, or ask the user to switch to /list." }],
           details: {},
         };
       }
@@ -1533,7 +1533,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
   pi.registerTool(defineTool({
     name: "list_add",
     label: "Add to queue",
-    description: "Add one or many objectives to the /queue queue (loop 2). Use when the user asks to queue work — 'add these to my list', 'queue these 10 things', 'put this on the backlog'. Each item becomes an audited goal; per-item 'Done when:' clauses are honored. The first queued item activates automatically when nothing is running.",
+    description: "Add one or many objectives to the /list list (loop 2). Use when the user asks to queue work — 'add these to my list', 'queue these 10 things', 'put this on the backlog'. Each item becomes an audited goal; per-item 'Done when:' clauses are honored. The first queued item activates automatically when nothing is running.",
     parameters: Type.Object({
       items: Type.Array(Type.String(), { description: "Objectives to enqueue (1-100). Each may include its own 'Done when:' clause." }),
     }),
@@ -1588,7 +1588,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
   pi.registerTool(defineTool({
     name: "list_status",
     label: "Queue status",
-    description: "Show the active goal and the /queue queue (loop 2) as text: what's running, what's waiting.",
+    description: "Show the active goal and the /list list (loop 2) as text: what's running, what's waiting.",
     parameters: Type.Object({}),
     async execute() {
       const lines: string[] = [];
@@ -1599,7 +1599,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       }
       const queue = listQueue();
       if (queue.length === 0) {
-        lines.push("Queue: empty.");
+        lines.push("List: empty.");
       } else {
         lines.push(`Queue (${queue.length}):`);
         queue.slice(0, 20).forEach((item, i) => lines.push(`${i + 1}. ${item.objective}`));
@@ -1943,7 +1943,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
 // We detect duplicates at session start and warn loudly once.
 // =================================================================
 
-const OUR_COMMANDS = ["goal", "gla", "queue", "list", "loop"];
+const OUR_COMMANDS = ["goal", "gla", "list", "queue", "loop"];
 let collisionWarned = false;
 
 // Providers verified to exist in a bare (extension-less) session. The auditor
@@ -2009,7 +2009,7 @@ export default function (pi: ExtensionAPI): void {
   startUITicker();
   // Four top-level commands, that's all (v0.8.0 consolidation):
   //   /goal  — set/draft + status|pause|resume|cancel|tweak|archive subcommands
-  //   /queue — the queue (add|show|next|remove|clear)
+  //   /list — the list (add|show|next|remove|clear)
   //   /loop  — the metric loop (draft|start|status|stop)
   //   /gla   — the settings UI (+ scriptable key=value)
   pi.registerCommand("goal", {
