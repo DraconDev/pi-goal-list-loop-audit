@@ -270,21 +270,22 @@ test("mergeSettings: does not mutate the base", () => {
   assert.equal(base.a, 1);
 });
 
-test("auditModelTier: opus strongest, free weakest", () => {
+test("auditModelTier: opus strongest, free before mid-tiers (fallback reachability)", () => {
   assert.equal(auditModelTier("claude-opus-4-8"), 0);
   assert.equal(auditModelTier("claude-sonnet-5"), 1);
   assert.equal(auditModelTier("deepseek-v4-pro"), 1);
-  assert.equal(auditModelTier("gpt-5"), 2);
-  assert.equal(auditModelTier("gemini-3-flash"), 3);
-  assert.equal(auditModelTier("something-free"), 5);
-  assert.equal(auditModelTier("mystery-model"), 4);
+  assert.equal(auditModelTier("something-free"), 2);
+  assert.equal(auditModelTier("gpt-5"), 3);
+  assert.equal(auditModelTier("gemini-3-flash"), 4);
+  assert.equal(auditModelTier("mystery-model"), 5);
 });
 
-test("auditModelTier: sorting puts strongest first", () => {
-  const ids = ["free-thing", "claude-opus-4-8", "gemini-3-flash", "claude-sonnet-5"];
+test("auditModelTier: sorting reaches free models before mid-tier paid", () => {
+  const ids = ["gemini-3-flash", "gpt-5", "free-thing", "claude-opus-4-8", "claude-sonnet-5"];
   const sorted = [...ids].sort((a, b) => auditModelTier(a) - auditModelTier(b));
   assert.equal(sorted[0], "claude-opus-4-8");
-  assert.equal(sorted[sorted.length - 1], "free-thing");
+  assert.equal(sorted[1], "claude-sonnet-5");
+  assert.equal(sorted[2], "free-thing"); // free beats gpt/gemini/flash for fallback reachability
 });
 
 test("ensureDirs creates the .pi-gla tree", () => {

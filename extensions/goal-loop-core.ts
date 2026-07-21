@@ -109,12 +109,16 @@ export function auditModelTier(modelIdOrName: string): number {
   const s = modelIdOrName.toLowerCase();
   if (s.includes("opus")) return 0;
   if (s.includes("sonnet") || s.includes("-pro") || s.includes("pro-")) return 1;
+  // Free-tier models rank HIGH for fallback purposes (v0.9.10): the chain's
+  // job is reaching a model that WORKS fast — a working free model always
+  // beats a dead paid one (wild-caught: 5 dead paid tiers before the free
+  // ones on a real rig).
+  if (s.includes("free")) return 2;
   // Speed/cost variants beat family names in precedence: a "gemini-3-flash"
   // is a flash-tier model even though it is a gemini.
-  if (s.includes("flash") || s.includes("mini") || s.includes("haiku")) return 3;
-  if (s.includes("gpt") || s.includes("gemini") || s.includes("kimi-k")) return 2;
-  if (s.includes("free")) return 5;
-  return 4;
+  if (s.includes("flash") || s.includes("mini") || s.includes("haiku")) return 4;
+  if (s.includes("gpt") || s.includes("gemini") || s.includes("kimi-k")) return 3;
+  return 5;
 }
 
 /**
