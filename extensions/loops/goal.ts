@@ -31,6 +31,7 @@ import {
   buildTaskList,
   buildTaskSummary,
   mergeSettings,
+  parseListImport,
   routeGoalArgs,
   sumNewAssistantTokens,
   type TaskProposal,
@@ -1744,7 +1745,7 @@ export default function (pi: ExtensionAPI): void {
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdSettings(args, ctx); },
   });
   pi.registerCommand("list", {
-    description: "Loop 2: queue of goals. /list add <obj> | /list show | /list next | /list remove <n> | /list clear",
+    description: "Loop 2: queue of goals. /list add <obj> | /list import <file> (bulk) | /list show | /list next | /list remove <n> | /list clear",
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdList(args, ctx); },
   });
   pi.registerCommand("loop", {
