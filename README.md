@@ -45,6 +45,11 @@ Four top-level commands, that's all:
 /list add <paste a checklist>      # multi-line paste → same batch flow
 
 (Or just say it: "queue these 10 things…" — the agent manages the list too.)
+
+**Order is the default, not the law**: auto-advance takes the head (FIFO), but
+`/list next <n>` or the agent's `list_activate` tool picks any item — with
+subagents, what gets worked next is a choice, not a position. Numbering always
+matches `/list show`.
 /list                              # show active + queue
 /list next                         # skip current, activate next
 /list remove <n>                   # drop item n from the queue
