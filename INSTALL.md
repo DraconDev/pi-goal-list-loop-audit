@@ -68,7 +68,7 @@ Once installed, restart pi. The plugin contributes:
 npm test
 ```
 
-Expected output: 14 passing tests across `goal-loop-core.test.ts`, `goal.schema.test.ts`, `extract-verification.test.ts`.
+Expected output: 150 passing tests across 13 files (`goal-loop-core.test.ts`, `goal.schema.test.ts`, `extract-verification.test.ts`, `regression-shield.test.ts`, `list-import.test.ts`, `list-queue.test.ts`, `loop-forever.test.ts`, `display.test.ts`, `goal-route.test.ts`, `heartbeat.test.ts`, `task-list.test.ts`, `auditor-error-paths.test.ts`, plus `tests/README.md`).
 
 ## Run the type-check
 

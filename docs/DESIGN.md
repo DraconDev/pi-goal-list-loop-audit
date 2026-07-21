@@ -16,8 +16,9 @@ below; later releases append addenda rather than rewrite history.
 
 - **`/list` queue**: items are full goals (objective + contract). The active
   goal and the queue share one `State`; `setGoal`/`archiveCurrentGoal`
-  preserve `state.list` explicitly (an early draft wiped it). Completing or
-  aborting a list-sourced goal auto-activates the next item.
+  preserve `state.list` explicitly (an early draft wiped it). Completing a
+  list-sourced goal auto-activates the next item (v0.10.0: aborts no longer
+  auto-advance — `/list next` and `list_activate` pick explicitly).
 - **regression_shield**: the auditor's report must contain an `<evidence>`
   block quoting raw tool output per verification-contract item. Enforcement is
   **orchestrator-side** (`goal-loop-shield.ts`, pure): an `<approved/>`
@@ -125,18 +126,21 @@ We fork pi-goal-x 0.19.0 source. We then **simplify by removing the broken parts
 
 This is a **clean break** by decision of the user. We do not interop with `pi-goal-x`'s `.pi/goals/` directory.
 
-### Decision 7: Per-loop file split
+### Decision 7: Per-loop file split (superseded)
+
+> **Superseded by consolidation (v0.8.0).** The planned per-loop files below
+> never shipped: loops 1+2 live together in `extensions/loops/goal.ts`
+> (one state machine, one loop driver), loop 3's helpers in
+> `extensions/loops/forever.ts`, rendering in `goal-loop-display.ts`,
+> drafting inline in `goal.ts` + `prompts/`. Kept for history.
 
 | File | Purpose | Lines |
 |---|---|---|
-| `extensions/loops/goal.ts` | Loop 1 (single ordered goal) — this release | ~400 |
-| `extensions/loop2-list.ts` | Loop 2 (queue of goals) | v0.2.0 |
-| `extensions/loop3-loop.ts` | Loop 3 (forever polish) | v0.3.0 |
-| `extensions/goal-loop-core.ts` | Shared state machine, types, JSONL | ~150 |
-| `extensions/goal-loop-auditor.ts` | Isolated auditor with regression_shield | ~300 |
-| `extensions/goal-loop-backoff.ts` | Hard 5-minute cap | ~80 |
-| `extensions/goal-loop-draft.ts` | Drafting phase with structured Q&A | v0.2.0 |
-| `extensions/goal-loop-renderer.ts` | Native markdown widget | ~120 |
+| `extensions/loops/goal.ts` | Loops 1+2 (single goal + list of goals) | shipped |
+| `extensions/loops/forever.ts` | Loop 3 (metric loop helpers) | shipped |
+| `extensions/goal-loop-core.ts` | Shared state machine, types, JSONL | shipped |
+| `extensions/goal-loop-auditor.ts` | Isolated auditor with regression_shield | shipped |
+| `extensions/goal-loop-display.ts` | Status line + /goal status rendering | shipped |
 | `prompts/goal-loop-continuation.md` | Templated continuation prompt | ~80 |
 | `prompts/goal-loop-auditor.md` | Templated auditor prompt | ~80 |
 | `prompts/goal-loop-draft.md` | Templated drafting prompt | v0.2.0 |

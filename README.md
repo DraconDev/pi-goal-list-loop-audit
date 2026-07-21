@@ -204,16 +204,20 @@ override once with `/gla model=`. (2) `pi-notify-agent` notifies on every turn;
 ```
 extensions/
   loops/goal.ts                # /goal + /list commands, agent tools, loop driver
-  goal-loop-core.ts            # types, JSONL state, renderer
+  goal-loop-core.ts            # types, JSONL state, pure helpers
   goal-loop-auditor.ts         # isolated auditor (fresh session, no extensions)
   goal-loop-shield.ts          # regression_shield (pure, dependency-free)
+  goal-loop-display.ts         # status line + /goal status rendering
+  goal-loop-forever.ts         # /loop measure/parse/plateau helpers
   goal-loop-backoff.ts         # 5-min hard cap
 prompts/
   goal-loop-continuation.md    # loop driver prompt
   goal-loop-draft.md           # drafting prompt
+  goal-loop-forever.md         # /loop driver prompt
+  goal-loop-forever-draft.md   # /loop drafting prompt
 scripts/
   smoke.sh                     # live integration harness (tmux + real models)
-tests/                         # 43 unit tests, no live pi required
+tests/                         # 150 unit tests, no live pi required
 docs/DESIGN.md                 # architectural decisions
 PLAN.md                        # milestones, decisions, gates
 ```

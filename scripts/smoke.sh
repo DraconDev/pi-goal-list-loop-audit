@@ -89,7 +89,7 @@ case "$SCENARIO" in
     send '/list add "Create a.txt containing alpha. Done when: grep -q alpha a.txt"'
     sleep 3
     send '/list add "Create b.txt containing beta. Done when: grep -q beta b.txt"'
-    say "waiting for BOTH queue items to complete (up to 240s)"
+    say "waiting for BOTH list items to complete (up to 240s)"
     if wait_for "approved by auditor" 120; then pass "item 1 approved"; else fail "item 1 not approved"; fi
     # wait for second archive file
     for i in $(seq 1 120); do
@@ -100,7 +100,7 @@ case "$SCENARIO" in
     n=$(ls "$WORK/.pi-gla/archive/"*.md 2>/dev/null | wc -l)
     if [ "$n" -ge 2 ]; then pass "both items archived ($n)"; else fail "only $n archived"; fi
     if [ -f "$WORK/a.txt" ] && [ -f "$WORK/b.txt" ]; then pass "both files created"; else fail "files missing"; fi
-    if ledger_has '"list":[]'; then pass "queue drained"; else fail "queue not empty"; fi
+    if ledger_has '"list":[]'; then pass "list drained"; else fail "list not empty"; fi
     ;;
 
   draft)
