@@ -374,9 +374,12 @@ function archiveCurrentGoal(ctx: ExtensionContext, status: Status, stopReason?: 
   state = { goal: { ...goal, status, archivedPath: path.relative(ctx.cwd, target) || target, stopReason }, list: state.list ?? [] };
   appendLedger(ctx.cwd, "goal_archived", { goalId: goal.id, status, stopReason });
   persistState(ctx);
-  // Loop 2: a list-sourced goal reached a terminal state → activate the next
-  // queued item. Terminal = complete or aborted (paused stays paused).
-  if (goal.policy === "list" && (status === "complete" || status === "aborted")) {
+  // Loop 2: a list-sourced goal COMPLETED → auto-activate the next item.
+  // Aborts are user actions (/list next, /goal cancel, list_activate) which
+  // pick their own next step — auto-advancing on abort double-activates
+  // (v0.2.0 bug: bare /list next silently consumed TWO items, found by the
+  // pick-any-item verification in v0.10.0).
+  if (goal.policy === "list" && status === "complete") {
     activateNextListItem(ctx);
   }
 }
