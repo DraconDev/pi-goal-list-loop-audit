@@ -5,6 +5,26 @@ All notable changes to pi-goal-loop-audit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] — 2026-07-21
+
+### Added — bulk list import + queue paging
+
+- **`/list import <file>`**: the sisyphus-style path. Bulk-enqueue hundreds of
+  items from a plan file — markdown checklists (`- [ ]`), bullets, numbered
+  items, plain lines; headings/comments/hr-rules skipped; per-item `Done
+  when:` extraction; ONE Confirm dialog for the whole batch (count + preview).
+  **Bulk never drafts** — the three drafting rules are now explicit:
+  no-args = draft (single), with-args = direct, import = bulk direct.
+- **`/list show` pages at 15** with `… and N more` (a 500-item queue no longer
+  floods the pane).
+- `parseListImport` in core (8 unit tests incl. a full sisyphus-plan fixture).
+
+### Verified (2026-07-21)
+
+- Live: 20-item plan → Confirm (5 preview + "… and 15 more") →
+  `list_imported {count: 20}` → first item auto-activated, 19 queued, paging
+  correct, agent working. 112 unit tests, tsc clean.
+
 ## [0.8.0] — 2026-07-21
 
 ### Changed — `/gla` opens a real settings UI; four top-level commands
