@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.20.1] — 2026-07-22
+
+### Fixed — the liveness signal looked frozen
+
+The UI ticker ran every 5s while `fmtElapsed` showed minute granularity
+("14m" for a full minute) — an active goal was indistinguishable from a
+wedged one at a glance. Ticker now runs every 1s and elapsed keeps
+seconds visible up to the hour (`1m 05s`, `3m 00s`; `1h 05m` beyond).
+Paused goals still don't tick — the stopped clock is the honest metaphor
+for "waiting on the user".
+
 ## [0.20.0] — 2026-07-22
 
 ### Added — semantic colors in the widget + status line
