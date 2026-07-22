@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.22.5] — 2026-07-22
+
+### Added
+
+- **Subcommand autocomplete for all four commands.** `/goal `, `/list `,
+  `/loop `, `/glla ` now offer arrow-selectable subcommands/keys with
+  one-line descriptions in the /-menu (pi's getArgumentCompletions).
+
+### Fixed
+
+- **Resume/restore messaging names the list.** `/goal resume` printed
+  nothing, and the restore-gate hold hint never mentioned the queue — so
+  resuming a paused list head looked like it only touched a goal. The hold
+  notification, the widget's suggested-action line, and a new resume
+  confirmation now say "(+N queued in the list — resuming the list's head)".
+
 ## [0.22.4] — 2026-07-22
 
 ### Fixed
