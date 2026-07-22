@@ -51,8 +51,8 @@ below; later releases append addenda rather than rewrite history.
   auditor's evidence → disapproval, never a false approval.
 - **Token guard**: real accumulation from assistant-message `usage.totalTokens`
   (deduped across replayed `agent_end` history). Crossing `tokenlimit`
-  (default 1M) pauses the goal with a clear reason.
-- **Loop 3 `branch=1`**: scratch branch `pi-gla-loop/<ts>-<slug>`; commit per
+  (opt-in; off by default since v0.12.0) pauses the goal with a clear reason.
+- **Loop 3 `branch=1`**: scratch branch `pi-glla-loop/<ts>-<slug>`; commit per
   improvement, `git reset --hard` per regression — scratch branch only.
   Refuses non-git dirs and dirty trees; returns to the original branch on
   stop with merge instructions.
@@ -107,7 +107,7 @@ This is a deliberate trade-off. If the user wants drafting in v0.1.0, say so and
 
 Some alternatives considered:
 - Three packages: `pi-goal-list-loop-audit`, `pi-goal-list-loop-audit-list`, `pi-goal-list-loop-audit-loop`.
-- One package with three subcommands: `/goal`, `/pi-gla-list`, `/pi-gla-loop`.
+- One package with three subcommands: `/goal`, `/list`, `/loop`.
 
 We choose **one package with subcommands**. Reasoning:
 - Single install (`pi install npm:pi-goal-list-loop-audit`).
@@ -173,8 +173,8 @@ active → auditing          (complete_goal called)
 auditing → complete        (auditor <approved/>)
 auditing → active          (auditor <disapproved/>; reset iteration counter)
 active → paused            (pause_goal called, or stuck > 5 min, or empty turn)
-paused → active            (user /pi-gla-resume)
-active → aborted           (user /pi-gla-cancel)
+paused → active            (user /goal resume)
+active → aborted           (user /goal cancel)
 ```
 
 ### Decision 9: JSONL state (deterministic compaction)
@@ -189,9 +189,9 @@ This protects against model-generated summaries losing fidelity.
 |---|---|
 | `Esc` during auditor | Pause; user picks "complete without audit" or "continue" |
 | `Esc` during agent turn | Pause |
-| User `/pi-gla-pause` | Pause |
-| User `/pi-gla-cancel` | Abort (wipes active goal) |
-| Stuck > 5 min | Pause + notify |
+| User `/goal pause` | Pause |
+| User `/goal cancel` | Abort (wipes active goal) |
+| Stall watchdog (3 consecutive no-tool turns) | Pause + notify |
 | Empty turn (no tool calls) | Pause (no momentum) |
 
 ## Open follow-ups (post-v0.1.0)

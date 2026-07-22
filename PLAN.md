@@ -1,7 +1,8 @@
 # PLAN — pi-goal-list-loop-audit
 
 Living plan for the project. Update this file as decisions land or milestones close.
-Last updated: v0.1.0-alpha.1 scaffold.
+Last updated: v0.21.1 self-audit refresh (header corrected). The milestones
+below cover the v0.1.0–v0.7.0 scaffold era; later decisions live in CHANGELOG.md.
 
 ---
 
@@ -208,17 +209,17 @@ Everything left, in one release. Completes the 6-flaw list and makes the docs ho
    auditor produces weaker evidence → disapproval, never false approval. The risky
    direction (silent false approval) is structurally impossible.
 2. **Schema + examples + docs sync**. `schemas/goal.schema.json` still says "oracle"
-   and "v0.1.0 loop 1 only"; `examples/example-objective.md` still uses `/pi-gla-set`;
+   and "v0.1.0 loop 1 only"; `examples/example-objective.md` used `/pi-gla-set`;
    `tests/README.md` has stale counts; `docs/DESIGN.md` needs the v0.2/v0.3 addendum.
 3. **tokensUsed wiring + limit enforcement**. `AgentEndEvent.messages` carries
    `usage.totalTokens` per assistant message — accumulate per goal. `tokensLimit`
    becomes a real cost guard: crossing it pauses the goal with a clear reason
-   (configurable via `/gla tokenlimit=`).
+   (configurable via `/glla tokenlimit=`).
 4. **Resumption notice** on `session_start`: if a goal is active or a loop is
    running, say so. (The "plugin vanished" self-check from D4 is impossible from
    inside the plugin — absent code cannot run. Recorded as rejected.)
 5. **Loop 3 git-branch mode** (`branch=1` flag): at `/loop start`, create scratch
-   branch `pi-gla-loop/<id>`; commit after each improving iteration; on regression
+   branch `pi-glla-loop/<id>`; commit after each improving iteration; on regression
    `git reset --hard` to the last improving commit ON THE SCRATCH BRANCH ONLY.
    The user's branch and uncommitted work are never touched. Requires: git repo,
    and we refuse `branch=1` with a dirty tree (refuse to mix user work into the

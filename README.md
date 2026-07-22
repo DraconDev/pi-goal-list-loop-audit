@@ -88,7 +88,7 @@ grilling turn that ends in a Confirm dialog. For `/loop` specifically, the orche
 measure command once** and shows the real number in the dialog — you validate
 the metric before a single iteration burns tokens.
 
-With `branch=1`, all work lands on a scratch branch (`pi-gla-loop/<ts>-<slug>`):
+With `branch=1`, all work lands on a scratch branch (`pi-glla-loop/<ts>-<slug>`):
 improvements are committed, regressions are hard-reset (scratch branch only),
 and on stop you return to your original branch with merge instructions.
 Requires a clean working tree.
@@ -185,9 +185,10 @@ picks a model itself. Thinking follows the session too (floor `high`).
 ## Token guard
 
 Every goal tracks real token usage; crossing the budget pauses the goal.
-Default 10,000,000 per goal — a runaway threshold, not a big-goal threshold
-(real research/feature goals legitimately burn 2-4M). Tune with
-`/glla tokenlimit=<n>`. Loop 3 doesn't need this cap — it has its own brakes
+Off by default (opt-in) — set a budget with `/glla tokenlimit=<n>`. A high
+value like 10000000 is a runaway threshold, not a big-goal threshold
+(real research/feature goals legitimately burn 2-4M). Loop 3 doesn't need
+this cap — it has its own brakes
 (max iterations + plateau).
 
 ## Compatibility (what goes well, what conflicts)
@@ -234,7 +235,7 @@ prompts/
   goal-loop-forever-draft.md   # /loop drafting prompt
 scripts/
   smoke.sh                     # live integration harness (tmux + real models)
-tests/                         # 150 unit tests, no live pi required
+tests/                         # 168 unit tests, no live pi required
 docs/DESIGN.md                 # architectural decisions
 PLAN.md                        # milestones, decisions, gates
 ```

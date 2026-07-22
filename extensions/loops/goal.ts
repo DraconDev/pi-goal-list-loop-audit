@@ -1765,7 +1765,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
 
   pi.registerTool(defineTool({
     name: "list_status",
-    label: "Queue status",
+    label: "List status",
     description: "Show the active goal and the /list list (loop 2) as text: what's running, what's waiting.",
     parameters: Type.Object({}),
     async execute() {

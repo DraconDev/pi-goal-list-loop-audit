@@ -59,7 +59,7 @@ pi -e /home/dracon/Dev/pi-goal-list-loop-audit
 
 Once installed, restart pi. The plugin contributes:
 
-- **Commands**: `/pi-gla-set`, `/pi-gla-status`, `/pi-gla-pause`, `/pi-gla-resume`, `/pi-gla-cancel`, `/pi-gla-settings`.
+- **Commands**: `/goal`, `/list`, `/loop`, `/glla` (settings).
 - **Tools available to the agent** (only when a goal is active): `complete_goal`, `pause_goal`, `complete_task`, `update_task_status`.
 
 ## Run the tests
@@ -68,7 +68,7 @@ Once installed, restart pi. The plugin contributes:
 npm test
 ```
 
-Expected output: 150 passing tests across 13 files (`goal-loop-core.test.ts`, `goal.schema.test.ts`, `extract-verification.test.ts`, `regression-shield.test.ts`, `list-import.test.ts`, `list-queue.test.ts`, `loop-forever.test.ts`, `display.test.ts`, `goal-route.test.ts`, `heartbeat.test.ts`, `task-list.test.ts`, `auditor-error-paths.test.ts`, plus `tests/README.md`).
+Expected output: 168 passing tests across 12 files (`goal-loop-core.test.ts`, `goal.schema.test.ts`, `extract-verification.test.ts`, `regression-shield.test.ts`, `list-import.test.ts`, `list-queue.test.ts`, `loop-forever.test.ts`, `display.test.ts`, `goal-route.test.ts`, `heartbeat.test.ts`, `task-list.test.ts`, `auditor-error-paths.test.ts`, plus `tests/README.md`).
 
 ## Run the type-check
 
@@ -84,7 +84,7 @@ After installing:
 
 1. In a pi session, run:
    ```
-   /pi-gla-set "
+   /goal start "
    Add a /healthz endpoint to src/server.ts that returns {status:'ok'} JSON.
 
    Done when:

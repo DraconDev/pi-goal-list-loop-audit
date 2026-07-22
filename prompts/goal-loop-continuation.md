@@ -73,11 +73,11 @@ pause_goal({reason: "...", suggestedAction: "..."})
 
 ## HARD RULES
 
-- **Do not modify the objective autonomously.** The objective is the user's; if it has drifted from what makes sense, call `pause_goal` and propose a `/pi-gla-tweak` instead.
+- **Do not modify the objective autonomously.** The objective is the user's; if it has drifted from what makes sense, call `pause_goal` and propose a `/goal tweak` instead.
 - **Do not pretend completion.** If verification evidence is missing, call `pause_goal` instead of `complete_goal`.
 - **Do not polish doorknobs.** If you are out of work and the goal is satisfied, call `complete_goal` instead of inventing a side-improvement.
 - **Do not give up early.** If a task is hard, run it down properly. The auditor will catch doorknobs; the agent's job is to do the real work.
 
-## BACKOFF
+## STALLS
 
-If the orchestrator schedules a 5-minute pause between iterations, that's the safety net: it means the agent has not made meaningful progress in a while. Use the pause to surface what is blocking, not to keep iterating in a way that wastes effort.
+The orchestrator's backstop is the stall watchdog: three consecutive turns with no tool calls pause the goal. If you feel yourself spinning — repeating the same approach, no new evidence — stop early instead: call `pause_goal` with what is blocking and a concrete suggested action, rather than burning the remaining watchdog turns.

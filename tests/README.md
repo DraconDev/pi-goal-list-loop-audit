@@ -11,7 +11,7 @@ The test script is:
 node --experimental-strip-types --test tests/*.test.ts
 ```
 
-## What is covered (v0.9.3 — 142 unit tests)
+## What is covered (v0.21.1 — 168 unit tests)
 
 - **goal-loop-core.test.ts**: id generator, status labels, BFS next-pending-task,
   task summary, markdown rendering, file persistence, ledger append/read,
@@ -30,6 +30,16 @@ node --experimental-strip-types --test tests/*.test.ts
   branch-name format.
 - **task-list.test.ts**: proposal validation (20-task / 5-subtask caps) and
   hierarchical id assignment.
+- **list-import.test.ts**: bulk list-import file parsing (checklists, bullets,
+  numbered items; headings/comments skipped).
+- **display.test.ts**: status-line + widget builders (pure, ANSI-free without
+  a theme; elapsed formats; pause/auditing/loop branches).
+- **goal-route.test.ts**: `/goal` argument routing (start/status/pause/…)
+  and text-vs-command detection.
+- **heartbeat.test.ts**: heartbeat/backoff predicates (nudge caps, refire
+  windows, stall detection).
+- **auditor-error-paths.test.ts**: auditor failure classification — infra
+  errors are not disapprovals; verdict-quality failures are.
 
 ## What is NOT covered by unit tests
 
