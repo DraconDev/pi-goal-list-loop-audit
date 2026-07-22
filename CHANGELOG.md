@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.21.1] — 2026-07-22
+
+### Fixed — widget head glyph and tree alignment
+
+- **Active head now renders green for real.** The ◆ (U+25C6) head glyph is
+  substituted by color-emoji fonts in some terminals and ignores ANSI color —
+  it showed yellow no matter what was painted. Head glyph is now ● (U+25CF),
+  the same glyph the status line uses, which takes theme color everywhere.
+- **Branch lines flush-left.** v0.20.0 added a one-space branch indent, but
+  pi's widget renderer already contributes a one-space gutter — branches sat
+  one column deeper than pi-tasks'. ├─/└─/⎇ lines now emit no leading space,
+  matching pi-tasks exactly.
+
 ## [0.21.0] — 2026-07-22
 
 ### Changed — session restore no longer auto-starts work in fresh sessions
