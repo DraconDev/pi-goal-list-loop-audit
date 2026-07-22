@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.22.2] — 2026-07-22
+
+### Fixed
+
+- **Auditor failed silently with extension-registered providers.** The
+  auditor passed `modelRegistry` to `createAgentSession` — an option that
+  does not exist and was silently ignored. A fresh ModelRuntime was built
+  from auth.json/models.json, which has no extension-registered providers,
+  so streaming a session model from one (custom api id / custom streamSimple)
+  failed inside the stream and the auditor produced zero output
+  ("Auditor produced no output — NOT a verdict"). The auditor now passes the
+  parent session's ModelRuntime through, so the isolated session streams
+  through the same composed provider as the parent. Verified live on a rig
+  whose session model is extension-registered: the auditor now runs and
+  returns a verdict. (Root-caused from a user report; the v0.22.0 provider
+  warning's "usually works" premise is now actually true.)
+- **Real stream errors are surfaced.** Stream failures arrive as an
+  assistant message with stopReason "error" + errorMessage, not as an
+  "error" event — the auditor now captures that into the infra-error text
+  instead of the opaque "produced no output".
+- **Widget truncation is width-aware.** Branch lines were cut at fixed
+  ~60-char floors even on wide terminals. Truncation budgets now scale with
+  the terminal width (floors unchanged for narrow terminals); the call site
+  passes process.stdout.columns. Matches pi-tasks' truncate-at-terminal-width
+  behavior.
+
+### Changed
+
+- Dev-dependency `@earendil-works/pi-coding-agent` bumped 0.74.2 → 0.81.1 so
+  type-checking matches the API the extension actually runs against
+  (CreateAgentSessionOptions.modelRuntime).
+
 ## [0.22.1] — 2026-07-22
 
 ### Fixed
