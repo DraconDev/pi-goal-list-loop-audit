@@ -7,7 +7,7 @@
  * ctx.ui.setStatus/setWidget with whatever these return.
  */
 
-import { DEFAULT_TOKEN_LIMIT, type Goal, type State } from "./goal-loop-core.js";
+import type { Goal, State } from "./goal-loop-core.js";
 import type { LoopState } from "./goal-loop-forever.js";
 
 // ---- formatters ----
@@ -140,7 +140,9 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
         : paint(theme, "success", "●");
   const head = `${icon} ${truncate(g.objective.replace(/\s+/g, " "), 64)}`;
   const statusWord = g.status === "active" ? paint(theme, "success", "active") : g.status;
-  const tokens = paint(theme, "dim", `${fmtTokens(g.usage?.tokensUsed ?? 0)}/${fmtTokens(g.usage?.tokensLimit ?? DEFAULT_TOKEN_LIMIT)} tok`);
+  // tokensLimit is always initialized by the orchestrator; the ?? 0 fallback
+  // mirrors DEFAULT_TOKEN_LIMIT (0 = guard off) without a runtime core import.
+  const tokens = paint(theme, "dim", `${fmtTokens(g.usage?.tokensUsed ?? 0)}/${fmtTokens(g.usage?.tokensLimit ?? 0)} tok`);
   const lines = [head, `├─ ${statusWord} · ${fmtElapsed(now - Date.parse(g.createdAt))} · ${tokens}`];
   if (g.status === "auditing") {
     lines.push(`├─ auditor: ${audit?.label ?? "running"}${audit?.currentTool ? ` · ${truncate(audit.currentTool, 30)}` : ""}`);
