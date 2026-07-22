@@ -431,7 +431,7 @@ async function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "l
   draftingTarget = target;
   const prompts: Record<string, [string, string, string]> = {
     goal: ["goal-loop-draft.md", "Goal drafting", "propose_goal_draft"],
-    list: ["goal-loop-draft.md", "Goal drafting (for the queue)", "propose_goal_draft"],
+    list: ["goal-loop-draft.md", "Goal drafting (for the list)", "propose_goal_draft"],
     loop: ["goal-loop-forever-draft.md", "Loop drafting", "propose_loop_draft"],
   };
   const [file, label, tool] = prompts[target]!;
@@ -729,7 +729,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
     if (queue.length === 0) {
       lines.push("List: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.");
     } else {
-      lines.push(`Queue (${queue.length}):`);
+      lines.push(`List (${queue.length}):`);
       const PAGE = 15;
       queue.slice(0, PAGE).forEach((item, i) => lines.push(`  ${i + 1}. ${item.objective.slice(0, 90)}`));
       if (queue.length > PAGE) {
@@ -1772,7 +1772,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       if (queue.length === 0) {
         lines.push("List: empty.");
       } else {
-        lines.push(`Queue (${queue.length}):`);
+        lines.push(`List (${queue.length}):`);
         queue.slice(0, 20).forEach((item, i) => lines.push(`${i + 1}. ${item.objective}`));
         if (queue.length > 20) lines.push(`… and ${queue.length - 20} more`);
       }
@@ -1952,7 +1952,7 @@ function resolveAuditorModel(ctx: ExtensionContext, ref?: string): { model: any;
   }
   const sessionModel = ctx.model as any;
   if (sessionModel) return { model: sessionModel, via: "session" };
-  return { model: undefined, error: "no session model and no auditorModel configured — set one with /gla model=provider/id" };
+  return { model: undefined, error: "no session model and no auditorModel configured — set one with /glla model=provider/id" };
 }
 
 // (v0.9.12) The auto-fallback apparatus was REMOVED: no tier ranking, no
@@ -1963,9 +1963,9 @@ function resolveAuditorModel(ctx: ExtensionContext, ref?: string): { model: any;
 // silently.
 
 /**
- * The /gla interactive settings UI (v0.8.0): a menu loop over pi's dialog
+ * The /glla interactive settings UI (v0.8.0): a menu loop over pi's dialog
  * primitives. Pick a setting → edit it → saved to GLOBAL → back to the menu.
- * Done/Esc exits. Rarely opened by design; scriptable /gla key=value remains
+ * Done/Esc exits. Rarely opened by design; scriptable /glla key=value remains
  * for tmux/headless.
  */
 async function openSettingsUI(ctx: ExtensionContext): Promise<void> {
@@ -2322,9 +2322,9 @@ export default function (pi: ExtensionAPI): void {
           usage: { tokensUsed: used, tokensLimit: limit },
           status: "paused",
           pauseReason: `token limit exceeded (${used.toLocaleString()} > ${limit.toLocaleString()})`,
-          pauseSuggestedAction: "/gla tokenlimit=<n> to raise the cap (or 0 to disable), then /goal resume",
+          pauseSuggestedAction: "/glla tokenlimit=<n> to raise the cap (or 0 to disable), then /goal resume",
         }, ctx);
-        ctx.ui.notify(`Goal paused: token limit exceeded (${used.toLocaleString()} > ${limit.toLocaleString()}). /gla tokenlimit=<n> to raise, 0 to disable.`, "warning");
+        ctx.ui.notify(`Goal paused: token limit exceeded (${used.toLocaleString()} > ${limit.toLocaleString()}). /glla tokenlimit=<n> to raise, 0 to disable.`, "warning");
         notifyExternal(ctx, `Goal paused: token limit exceeded (${used} > ${limit}).`);
         return;
       }
