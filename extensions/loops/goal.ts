@@ -578,6 +578,13 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
     ? { tokensUsed: state.goal.usage.tokensUsed, tokensLimit: freshLimit }
     : undefined;
   updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined, ...(usage ? { usage } : {}) }, ctx);
+  // v0.22.5: say what was resumed — with a non-empty list this also resumes
+  // the queue (the active goal IS the list's head item).
+  const queued = listQueue().length;
+  ctx.ui.notify(
+    `Resumed goal [${state.goal.id}]: ${state.goal.objective.replace(/\s+/g, " ").slice(0, 70)}${queued > 0 ? ` (+${queued} queued in the list — resuming the list's head)` : ""}`,
+    "info",
+  );
   scheduleContinuation(ctx, true);
 }
 
@@ -2225,21 +2232,55 @@ export default function (pi: ExtensionAPI): void {
   //   /list — the list (add|show|next|remove|clear)
   //   /loop  — the metric loop (draft|start|status|stop)
   //   /glla   — the settings UI (+ scriptable key=value)
+  // v0.22.5: subcommand autocomplete for the /-menu.
+  const completions = (items: Array<[string, string]>) => (prefix: string) =>
+    items
+      .filter(([value]) => value.startsWith(prefix))
+      .map(([value, description]) => ({ value, label: value, description }));
+
   pi.registerCommand("goal", {
     description: "Set/draft a goal, or /goal status|pause|resume|cancel|tweak <text>|archive|start <objective>. Objectives without a 'Done when:' clause are grilled into a contract first; include the clause or use /goal start to skip the interview and activate instantly.",
+    getArgumentCompletions: completions([
+      ["start", "skip drafting — /goal start <objective> activates immediately"],
+      ["status", "show the active goal and its task list"],
+      ["pause", "pause the active goal"],
+      ["resume", "resume a paused goal (and the list, when items are queued)"],
+      ["cancel", "abort the active goal"],
+      ["tweak", "change the objective: /goal tweak <text>"],
+      ["archive", "list archived goals"],
+    ]),
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdGoal(args, ctx); },
   });
   const settingsHandler = (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdSettings(args, ctx); };
   pi.registerCommand("glla", {
     description: "Open the settings UI for goals, loops, lists, and the auditor. Scriptable form: /glla key=value · /glla project key=value",
+    getArgumentCompletions: completions([
+      ["model=", "auditor model override: /glla model=provider/id"],
+      ["thinking=", "auditor thinking level: /glla thinking=high"],
+      ["notify=", "desktop push command: /glla notify='notify-send pi \"$1\"'"],
+      ["tokenlimit=", "per-goal token budget (0 = off): /glla tokenlimit=2000000"],
+      ["autoresume=", "on: auto-resume held goals/loops in fresh sessions"],
+      ["project", "write a project override: /glla project key=value"],
+    ]),
     handler: settingsHandler,
   });
   pi.registerCommand("list", {
     description: "Loop 2: the list of audited goals — order is the default, not the law. /list <describe tasks or name a plan file> (dumps get shaped into items, files import, 'Done when:' adds directly) | /list show | /list next [n] | /list remove <n> | /list clear",
+    getArgumentCompletions: completions([
+      ["show", "display the queued items"],
+      ["next", "activate the next item (or /list next <n> for position n)"],
+      ["remove", "remove an item: /list remove <n>"],
+      ["clear", "empty the list"],
+    ]),
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdList(args, ctx); },
   });
   pi.registerCommand("loop", {
     description: "Loop 3: metric-driven process — it never completes. /loop <target> drafts the metric with you · /loop start \"<target>\" measure=\"<cmd>\" direction=min|max [window=5] [max=50] [time=<hours>] [tokens=<budget>] [branch=1] skips drafting · /loop status · /loop stop. 'Improve until X' is a /goal, not a loop.",
+    getArgumentCompletions: completions([
+      ["start", "skip drafting: /loop start \"<target>\" measure=\"<cmd>\" direction=min|max [window=5] [max=50]"],
+      ["status", "show metric, iteration, best/last values, stall count"],
+      ["stop", "end the loop (keeps the best state)"],
+    ]),
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdLoop(args, ctx); },
   });
 
@@ -2309,13 +2350,17 @@ export default function (pi: ExtensionAPI): void {
         );
         scheduleContinuation(ctx, true);
       } else {
+        const queued = listQueue().length;
+        const resumeHint = queued > 0
+          ? `/goal resume to continue (+${queued} queued in the list) · /glla autoresume=on to auto-resume in this project`
+          : "/goal resume to continue · /glla autoresume=on to auto-resume in this project";
         updateGoal({
           status: "paused",
           pauseReason: "restored in a fresh session — no work started",
-          pauseSuggestedAction: "/goal resume to continue · /glla autoresume=on to auto-resume in this project",
+          pauseSuggestedAction: resumeHint,
         }, ctx);
         ctx.ui.notify(
-          `Goal held on restore [${state.goal.id}]: ${state.goal.objective.slice(0, 70)} — /goal resume to continue.`,
+          `Goal held on restore [${state.goal.id}]: ${state.goal.objective.slice(0, 70)}${queued > 0 ? ` (+${queued} queued in the list)` : ""} — /goal resume to continue.`,
           "info",
         );
       }
