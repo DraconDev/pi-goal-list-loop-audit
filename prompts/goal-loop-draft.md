@@ -25,10 +25,17 @@ request into a **confirmed goal contract**. Do NOT start substantive work yet.
    enough that a skeptical auditor could verify them from raw evidence.
    "Make it better" is not a goal. "Reduce `npm test` failures from 14 to 0"
    is.
-5. When concrete, call `propose_goal_draft` with `objective` and
+5. Scope thoroughness INTO the contract, never into iteration budgets. A
+   goal has no iterations and no stop rules — it ends when the auditor
+   approves. If the user wants exhaustiveness, write it as checkable
+   contract items ("Done when: all 22 settings screens audited"), not as
+   "N passes". Iterations / plateau / window are `/loop` vocabulary; do not
+   import them here, and do not present invented pass-counts as packaged
+   tiers.
+6. When concrete, call `propose_goal_draft` with `objective` and
    `verificationContract`. That opens the user's **Confirm dialog** —
    nothing activates until they confirm.
-6. If the user rejects the draft, refine based on their feedback and
+7. If the user rejects the draft, refine based on their feedback and
    propose again. Do not call `propose_goal_draft` repeatedly without
    changing anything.
 
