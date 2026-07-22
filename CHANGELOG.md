@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.23.0] — 2026-07-22
+
+### Added
+
+- **Metricless spec loops** (`measure=none`). For genuinely endless work —
+  an ever-improving spec, continuous hardening, Sisyphus-mode — where no
+  number means "better". There is no plateau stop (nothing to stall on):
+  the loop ends only at its bounds or `/loop stop`. Own iteration prompt
+  (`prompts/goal-loop-forever-metricless.md`): ONE real, inspectable change
+  per turn, never repeat earlier iterations, cosmetic churn called out as
+  the doorknob failure, "say so when the spec is genuinely exhausted".
+  Branch mode commits every iteration (no regression signal to revert on).
+- **`max=0` = truly unbounded** (no iteration cap), measured loops included.
+  Absent `max` still defaults to 50. Status/widget show `∞`.
+- **The loop drafter offers metricless explicitly**: when the user says
+  there is no number, the interview presents the trade-off (no plateau;
+  ends only at bounds or /loop stop) and the Confirm dialog names it.
+  `propose_loop_draft` accepts an omitted/"none" measureCmd and skips the
+  measure test-run. Work with a finish line is still redirected to /goal.
+- 9 new tests (metricless parsing, direction rejection, unbounded,
+  bound-stops, no-plateau).
+
+### Fixed
+
+- `direction=` with `measure=none` is rejected ("direction is meaningless
+  without a metric") instead of silently recorded.
+- `/loop status`, resume notices, the widget, and the status footer render
+  metricless loops (`loop ∞ iter N · metricless`, "metricless — work the
+  spec (no plateau)") instead of `undefined (undefined)`.
+- propose_loop_refine on a metricless loop refuses to bolt a metric on
+  mid-run ("stop, then start a measured loop").
+
 ## [0.22.7] — 2026-07-22
 
 ### Added
