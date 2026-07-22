@@ -158,10 +158,10 @@ export interface Goal {
 export type GoalRoute =
   | { kind: "draft" }
   | { kind: "set"; text: string }
-  | { kind: "sub"; name: "status" | "pause" | "resume" | "cancel" | "tweak" | "archive"; rest: string };
+  | { kind: "sub"; name: "status" | "pause" | "resume" | "cancel" | "tweak" | "archive" | "start"; rest: string };
 
 const GOAL_EXACT_SUBS = new Set(["status", "pause", "resume", "cancel"]);
-const GOAL_ARG_SUBS = new Set(["tweak", "archive"]);
+const GOAL_ARG_SUBS = new Set(["tweak", "archive", "start"]);
 
 export function routeGoalArgs(raw: string): GoalRoute {
   const trimmed = raw.trim();
@@ -173,7 +173,7 @@ export function routeGoalArgs(raw: string): GoalRoute {
     return { kind: "sub", name: first as "status" | "pause" | "resume" | "cancel", rest: "" };
   }
   if (GOAL_ARG_SUBS.has(first)) {
-    return { kind: "sub", name: first as "tweak" | "archive", rest };
+    return { kind: "sub", name: first as "tweak" | "archive" | "start", rest };
   }
   return { kind: "set", text: trimmed };
 }

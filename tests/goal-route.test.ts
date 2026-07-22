@@ -125,3 +125,12 @@ test("askUserQuestionAnswered: answered dialog counts, cancel/esc does not (v0.1
   assert.equal(askUserQuestionAnswered("ask_user_question", undefined), false);
   assert.equal(askUserQuestionAnswered("ask_user_question", "User has answered"), false);
 });
+
+test("/goal start routes as a subcommand with the objective as rest (v0.16.0)", () => {
+  assert.deepEqual(routeGoalArgs("start fix the flaky test"), {
+    kind: "sub", name: "start", rest: "fix the flaky test",
+  });
+  assert.deepEqual(routeGoalArgs("start"), { kind: "sub", name: "start", rest: "" });
+  // exact-match still protects non-subcommand objectives
+  assert.deepEqual(routeGoalArgs("startling discoveries in the logs").kind, "set");
+});

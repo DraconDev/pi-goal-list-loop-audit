@@ -434,7 +434,7 @@ async function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "l
   const [file, label, tool] = prompts[target]!;
   ctx.ui.notify(
     seed
-      ? `${label}: the objective has no "Done when:" clause — the agent will grill you about it first (nothing activates until you confirm).`
+      ? `${label}: the objective has no "Done when:" clause — the agent will grill you about it first (nothing activates until you confirm). Skip the interview entirely: /goal start <objective>.`
       : `${label} started. The agent will grill until the contract is concrete, then ${tool} opens a Confirm dialog. No work begins before confirmation.`,
     "info",
   );
@@ -481,6 +481,16 @@ async function cmdGoal(args: string, ctx: ExtensionContext): Promise<void> {
     if (route.name === "cancel") return cmdCancel(ctx);
     if (route.name === "tweak") return cmdTweak(route.rest, ctx);
     if (route.name === "archive") return cmdGoals(ctx);
+    // v0.16.0: /goal start <objective> — explicit skip-draft. Activates
+    // immediately, no interview, no "Done when:" heuristic. Symmetric
+    // with /loop start. The auditor infers the contract from the objective.
+    if (route.name === "start") {
+      if (!route.rest) {
+        ctx.ui.notify("Usage: /goal start <objective> — activates immediately, skipping the drafting interview. (Without start, an objective needs a 'Done when:' clause or it gets drafted first.)", "warning");
+        return;
+      }
+      return cmdSet(route.rest, ctx, true);
+    }
   }
   return cmdSet(route.kind === "set" ? route.text : "", ctx);
 }
@@ -489,7 +499,7 @@ async function cmdGoal(args: string, ctx: ExtensionContext): Promise<void> {
 // /goal: bypass drafting, start now (the only entry in v0.1.0)
 // =================================================================
 
-async function cmdSet(args: string, ctx: ExtensionContext): Promise<void> {
+async function cmdSet(args: string, ctx: ExtensionContext, skipDraft = false): Promise<void> {
   let raw = args.trim();
   // Users naturally quote the objective ("/goal \"do X\""); strip one layer of
   // surrounding matching quotes so they don't leak into the goal text.
@@ -507,7 +517,8 @@ async function cmdSet(args: string, ctx: ExtensionContext): Promise<void> {
   // v0.11.0: a contract-less objective gets drafted, not activated raw —
   // the pi-goal-x lesson: arg + Enter is worse than a 5-minute draft.
   // Include an explicit "Done when: …" clause to activate instantly.
-  if (goalArgsNeedDrafting(raw)) {
+  // v0.16.0: /goal start bypasses this by explicit user command.
+  if (!skipDraft && goalArgsNeedDrafting(raw)) {
     await startDrafting(ctx, "goal", raw);
     return;
   }
@@ -2149,7 +2160,7 @@ export default function (pi: ExtensionAPI): void {
   //   /loop  — the metric loop (draft|start|status|stop)
   //   /gla   — the settings UI (+ scriptable key=value)
   pi.registerCommand("goal", {
-    description: "Set/draft a goal, or /goal status|pause|resume|cancel|tweak <text>|archive. Objectives without a 'Done when:' clause are grilled into a contract first (nothing activates until you confirm); include the clause to start instantly.",
+    description: "Set/draft a goal, or /goal status|pause|resume|cancel|tweak <text>|archive|start <objective>. Objectives without a 'Done when:' clause are grilled into a contract first; include the clause or use /goal start to skip the interview and activate instantly.",
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdGoal(args, ctx); },
   });
   const settingsHandler = (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdSettings(args, ctx); };
