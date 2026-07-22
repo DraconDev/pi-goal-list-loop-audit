@@ -1491,7 +1491,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
         const wasIdle = !state.goal || state.goal.status === "complete" || state.goal.status === "aborted";
         const n = enqueueItems(liveCtx, p.items, "drafted batch");
         if (wasIdle) {
-          return { content: [{ type: "text", text: `${n} items confirmed; first activated (queue was empty). Begin work now.` }], details: {} };
+          return { content: [{ type: "text", text: `${n} items confirmed; first activated (list was empty). Begin work now.` }], details: {} };
         }
         return { content: [{ type: "text", text: `${n} items confirmed and queued (${listQueue().length} waiting).` }], details: {} };
       }
@@ -1522,7 +1522,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
         appendLedger(liveCtx.cwd, "list_added", { id: item.id, objective: item.objective, drafted: true });
         if (!state.goal || state.goal.status === "complete" || state.goal.status === "aborted") {
           activateNextListItem(liveCtx);
-          return { content: [{ type: "text", text: "Confirmed and activated (queue was empty). Begin work now." }], details: {} };
+          return { content: [{ type: "text", text: "Confirmed and activated (list was empty). Begin work now." }], details: {} };
         }
         return { content: [{ type: "text", text: `Confirmed and queued (${listQueue().length} waiting). It activates when the current goal completes.` }], details: {} };
       }
@@ -1957,7 +1957,7 @@ function resolveAuditorModel(ctx: ExtensionContext, ref?: string): { model: any;
 
 // (v0.9.12) The auto-fallback apparatus was REMOVED: no tier ranking, no
 // candidate chains, no dead-model caches. The plugin never picks a model —
-// you select it in pi (session model) or in /gla (explicit override). When
+// you select it in pi (session model) or in /glla (explicit override). When
 // neither works, the failure surfaces plainly (see the three-way split in
 // the complete_goal handler) with the exact fix; nothing is substituted
 // silently.
@@ -2019,13 +2019,13 @@ async function openSettingsUI(ctx: ExtensionContext): Promise<void> {
 
 async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   // The plugin's ONE config surface — global by default, rarely opened.
-  //   /gla                      show effective values + where each comes from
-  //   /gla model=provider/id    write to GLOBAL config
-  //   /gla thinking=high        write to GLOBAL config
-  //   /gla notify='cmd $1'      write to GLOBAL config
-  //   /gla tokenlimit=2000000   write to GLOBAL config
-  //   /gla project model=...    write to PROJECT override (rare)
-  //   /gla model=unset          remove key (from global; project model=unset for project)
+  //   /glla                      show effective values + where each comes from
+  //   /glla model=provider/id    write to GLOBAL config
+  //   /glla thinking=high        write to GLOBAL config
+  //   /glla notify='cmd $1'      write to GLOBAL config
+  //   /glla tokenlimit=2000000   write to GLOBAL config
+  //   /glla project model=...    write to PROJECT override (rare)
+  //   /glla model=unset          remove key (from global; project model=unset for project)
   const trimmed = args.trim();
   if (!trimmed) {
     if (ctx.hasUI) {
@@ -2047,7 +2047,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
         fmt("tokenLimit", "tokenLimit"),
         `\nglobal:  ${globalSettingsPath()}`,
         `project: ${projectSettingsPath(ctx.cwd)}`,
-        `Set with: /gla key=value (global) · /gla project key=value (project override)`,
+        `Set with: /glla key=value (global) · /glla project key=value (project override)`,
       ].join("\n"),
       "info",
     );
@@ -2137,7 +2137,7 @@ function warnIfAuditorProviderRisky(ctx: ExtensionContext): void {
     const provider = (ctx.model as any)?.provider as string | undefined;
     if (!provider || KNOWN_BUILTIN_PROVIDERS.has(provider)) return;
     ctx.ui.notify(
-      `pi-goal-list-loop-audit: session provider "${provider}" is extension-registered — the auditor (extension-less session) will fail auth with it. If audits error, set a built-in override once: /gla model=provider/id`,
+      `pi-goal-list-loop-audit: session provider "${provider}" is extension-registered — the auditor (extension-less session) will fail auth with it. If audits error, set a built-in override once: /glla model=provider/id`,
       "info",
     );
   } catch {
@@ -2182,7 +2182,7 @@ export default function (pi: ExtensionAPI): void {
   //   /goal  — set/draft + status|pause|resume|cancel|tweak|archive subcommands
   //   /list — the list (add|show|next|remove|clear)
   //   /loop  — the metric loop (draft|start|status|stop)
-  //   /gla   — the settings UI (+ scriptable key=value)
+  //   /glla   — the settings UI (+ scriptable key=value)
   pi.registerCommand("goal", {
     description: "Set/draft a goal, or /goal status|pause|resume|cancel|tweak <text>|archive|start <objective>. Objectives without a 'Done when:' clause are grilled into a contract first; include the clause or use /goal start to skip the interview and activate instantly.",
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdGoal(args, ctx); },
@@ -2311,7 +2311,7 @@ export default function (pi: ExtensionAPI): void {
 
     // Token accounting + cost guard: accumulate this turn's assistant tokens
     // (deduped — agent_end may replay seen messages). Crossing the goal's
-    // token limit pauses it; /gla tokenlimit=<n> to raise.
+    // token limit pauses it; /glla tokenlimit=<n> to raise.
     const newTokens = sumNewAssistantTokens(event.messages as unknown[], countedTokenMessages);
     if (newTokens > 0) {
       const used = (state.goal.usage?.tokensUsed ?? 0) + newTokens;
