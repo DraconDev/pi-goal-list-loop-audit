@@ -1528,11 +1528,12 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       // Multi-item list draft: one Confirm for the whole batch.
       if (p.items && p.items.length > 0) {
         const preview = p.items.slice(0, 6).map((t, i) => `  ${i + 1}. ${t.slice(0, 60)}`).join("\n");
+        const batchActivates = !state.goal || state.goal.status === "complete" || state.goal.status === "aborted";
         let batchConfirmed = false;
         try {
           batchConfirmed = await liveCtx.ui.confirm(
             "Confirm queue batch",
-            `${p.items.length} items:\n${preview}${p.items.length > 6 ? `\n  … and ${p.items.length - 6} more` : ""}`,
+            `${p.items.length} items:\n${preview}${p.items.length > 6 ? `\n  … and ${p.items.length - 6} more` : ""}${batchActivates ? "\n\n(List is empty — confirming ACTIVATES item 1 immediately as the active goal.)" : ""}`,
           );
         } catch {
           batchConfirmed = false;
@@ -1554,9 +1555,19 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       const contractBlock = p.verificationContract?.trim()
         ? `\n\nDone when:\n${p.verificationContract.trim()}`
         : "\n\n(No verification contract — the auditor will infer done-criteria from the objective. Consider adding one.)";
+      // v0.22.6: a list draft that will activate immediately must SAY so in
+      // the Confirm dialog — "I started a list and ended up with a running
+      // goal" was a real surprise. Title + trailing note name the outcome.
+      const isListDraft = draftingTarget === "list";
+      const willActivate = isListDraft && (!state.goal || state.goal.status === "complete" || state.goal.status === "aborted");
+      const activationNote = isListDraft
+        ? willActivate
+          ? "\n\n(List is empty — confirming ACTIVATES this immediately as the active goal. Reject if you only wanted to queue it.)"
+          : "\n\n(Goes into the list, queued behind the active goal.)"
+        : "";
       let confirmed = false;
       try {
-        confirmed = await liveCtx.ui.confirm("Confirm goal", `${p.objective.trim()}${contractBlock}`);
+        confirmed = await liveCtx.ui.confirm(isListDraft ? "Confirm list item" : "Confirm goal", `${p.objective.trim()}${contractBlock}${activationNote}`);
       } catch {
         confirmed = false;
       }
