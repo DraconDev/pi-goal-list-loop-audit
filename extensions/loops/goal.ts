@@ -565,6 +565,12 @@ async function cmdStatus(ctx: ExtensionContext): Promise<void> {
 async function cmdPause(ctx: ExtensionContext): Promise<void> {
   if (!state.goal) return;
   updateGoal({ status: "paused" }, ctx);
+  // v0.22.7: name WHAT was paused — a list item resumes through /list.
+  if (state.goal.policy === "list") {
+    const queued = listQueue().length;
+    ctx.ui.notify(`List item ${state.goal.id} paused${queued > 0 ? ` (${queued} queued in the list)` : ""}. /list resume to continue.`, "info");
+    return;
+  }
   ctx.ui.notify(`Goal ${state.goal.id} paused. /goal resume to continue.`, "info");
 }
 
@@ -580,9 +586,13 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
   updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined, ...(usage ? { usage } : {}) }, ctx);
   // v0.22.5: say what was resumed — with a non-empty list this also resumes
   // the queue (the active goal IS the list's head item).
+  // v0.22.7: name WHAT was resumed — list items resume through /list.
   const queued = listQueue().length;
+  const isListItem = state.goal.policy === "list";
   ctx.ui.notify(
-    `Resumed goal [${state.goal.id}]: ${state.goal.objective.replace(/\s+/g, " ").slice(0, 70)}${queued > 0 ? ` (+${queued} queued in the list — resuming the list's head)` : ""}`,
+    isListItem
+      ? `Resumed list item [${state.goal.id}]: ${state.goal.objective.replace(/\s+/g, " ").slice(0, 70)}${queued > 0 ? ` (+${queued} queued in the list)` : ""}`
+      : `Resumed goal [${state.goal.id}]: ${state.goal.objective.replace(/\s+/g, " ").slice(0, 70)}${queued > 0 ? ` (+${queued} queued in the list — resuming the list's head)` : ""}`,
     "info",
   );
   scheduleContinuation(ctx, true);
@@ -2380,29 +2390,30 @@ export default function (pi: ExtensionAPI): void {
     } else if (state.goal && state.goal.status === "active" && state.goal.autoContinue) {
       if (autoResume) {
         ctx.ui.notify(
-          `Resuming goal [${state.goal.id}]: ${state.goal.objective.slice(0, 70)}${listQueue().length > 0 ? ` (+${listQueue().length} queued)` : ""}`,
+          `Resuming ${state.goal.policy === "list" ? "list item" : "goal"} [${state.goal.id}]: ${state.goal.objective.slice(0, 70)}${listQueue().length > 0 ? ` (+${listQueue().length} queued)` : ""}`,
           "info",
         );
         scheduleContinuation(ctx, true);
       } else {
         const queued = listQueue().length;
-        const resumeHint = queued > 0
-          ? `/goal resume to continue (+${queued} queued in the list) · /glla autoresume=on to auto-resume in this project`
-          : "/goal resume to continue · /glla autoresume=on to auto-resume in this project";
+        // v0.22.7: name WHAT is held — a list head resumes through /list.
+        const isListItem = state.goal.policy === "list";
+        const resumeCmd = isListItem ? "/list resume" : "/goal resume";
+        const resumeHint = `${resumeCmd} to continue${queued > 0 ? ` (+${queued} queued in the list)` : ""} · /glla autoresume=on to auto-resume in this project`;
         updateGoal({
           status: "paused",
           pauseReason: "restored in a fresh session — no work started",
           pauseSuggestedAction: resumeHint,
         }, ctx);
         ctx.ui.notify(
-          `Goal held on restore [${state.goal.id}]: ${state.goal.objective.slice(0, 70)}${queued > 0 ? ` (+${queued} queued in the list)` : ""} — /goal resume to continue.`,
+          `${isListItem ? "List item" : "Goal"} held on restore [${state.goal.id}]: ${state.goal.objective.slice(0, 70)}${queued > 0 ? ` (+${queued} queued in the list)` : ""} — ${resumeCmd} to continue.`,
           "info",
         );
       }
     } else if (state.goal && state.goal.status === "active") {
       // Active but autoContinue off: nothing auto-fires — just surface it.
       ctx.ui.notify(
-        `Restored goal [${state.goal.id}]: ${state.goal.objective.slice(0, 70)}${listQueue().length > 0 ? ` (+${listQueue().length} queued)` : ""}`,
+        `Restored ${state.goal.policy === "list" ? "list item" : "goal"} [${state.goal.id}]: ${state.goal.objective.slice(0, 70)}${listQueue().length > 0 ? ` (+${listQueue().length} queued)` : ""}`,
         "info",
       );
     } else if ((!state.goal || state.goal.status === "complete" || state.goal.status === "aborted") && listQueue().length > 0) {
