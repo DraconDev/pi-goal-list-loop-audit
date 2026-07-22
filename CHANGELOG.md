@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.23.1] — 2026-07-22
+
+### Added
+
+- **Execution discipline in the goal checkpoint prompt** (field report: a
+  9h list item with an 84-minute hung `bun test` and zero subagent use).
+  Two hard lines: delegate independent parallel streams to `Agent`
+  subagents (`Explore` for read-only research — you stay the single
+  writer), and wrap test suites / builds / dev servers in `timeout <n>`
+  so a hang burns two minutes instead of an hour.
+
 ## [0.23.0] — 2026-07-22
 
 ### Added

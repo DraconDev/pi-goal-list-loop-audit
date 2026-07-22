@@ -45,6 +45,11 @@ If the objective decomposes into milestones and no task list exists yet, call `p
 
 When the agent calls any of these, the orchestrator tracks the call and persists state to `.pi-glla/active.jsonl`.
 
+## EXECUTION DISCIPLINE
+
+- **Delegate independent chunks to subagents.** When the work contains parallel, independent streams — surveying separate subsystems, reading disjoint file sets, running independent verifications — spawn `Agent` subagents (`Explore` for read-only research, `general-purpose` for implementation) instead of serializing everything through your own context. You remain the single writer: synthesize subagent findings and apply edits yourself.
+- **Bound every long command.** Wrap test suites, builds, and dev servers in `timeout <seconds>` (e.g. `timeout 120 bun test src/lib`). An unbounded command that hangs burns an hour; a bounded one burns two minutes and tells you it hung. If a command produces no output for many minutes, treat it as hung: kill it, diagnose why, rerun bounded.
+
 ## TASK WORKFLOW
 
 Use tasks as PROGRESS TRACKERS during your work — not as a post-hoc checklist to batch-mark at the end.
