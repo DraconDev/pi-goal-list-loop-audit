@@ -36,6 +36,8 @@ import {
   resolveImportFile,
   routeGoalArgs,
   routeListText,
+  listMutationBlocked,
+  LIST_DRAFTING_BLOCK_MESSAGE,
   sumNewAssistantTokens,
   takeAt,
   goalArgsNeedDrafting,
@@ -1715,6 +1717,9 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
     }),
     async execute(_id, params, _signal, _onUpdate, execCtx) {
       const p = params as { items: string[] };
+      if (listMutationBlocked(draftingTarget)) {
+        return { content: [{ type: "text", text: LIST_DRAFTING_BLOCK_MESSAGE }], details: {} };
+      }
       if (!Array.isArray(p.items) || p.items.length === 0) {
         return { content: [{ type: "text", text: "No items given." }], details: {} };
       }
@@ -1746,6 +1751,9 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
     }),
     async execute(_id, params, _signal, _onUpdate, execCtx) {
       const p = params as { n: number };
+      if (listMutationBlocked(draftingTarget)) {
+        return { content: [{ type: "text", text: LIST_DRAFTING_BLOCK_MESSAGE }], details: {} };
+      }
       const n = Math.floor(p.n);
       if (!Number.isInteger(n) || n < 1) {
         return { content: [{ type: "text", text: "n must be a positive integer (1-based position)." }], details: {} };

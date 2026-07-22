@@ -9,7 +9,7 @@ import * as path from "node:path";
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 
-import { parseListImport, resolveImportFile, routeListText } from "../extensions/goal-loop-core.ts";
+import { parseListImport, resolveImportFile, routeListText, listMutationBlocked, LIST_DRAFTING_BLOCK_MESSAGE } from "../extensions/goal-loop-core.ts";
 
 test("markdown checklist", () => {
   const items = parseListImport("- [ ] first task\n- [x] done task\n- [ ] third task");
@@ -148,4 +148,12 @@ test("routeListText: vague dump goes to conversational drafting", () => {
 test("routeListText: nonexistent file-ish text is not a file", () => {
   const r = routeListText("/nonexistent", "plan.md");
   assert.equal(r.kind, "draft"); // no Done-when → draft, not a usage error
+});
+
+test("listMutationBlocked: only during list drafting sessions", () => {
+  assert.equal(listMutationBlocked("list"), true);
+  assert.equal(listMutationBlocked("goal"), false);
+  assert.equal(listMutationBlocked("loop"), false);
+  assert.equal(listMutationBlocked(null), false);
+  assert.ok(LIST_DRAFTING_BLOCK_MESSAGE.includes("propose_goal_draft"));
 });

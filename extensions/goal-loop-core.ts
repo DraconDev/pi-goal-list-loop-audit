@@ -202,6 +202,21 @@ export function parseListImport(content: string): string[] {
 }
 
 /**
+ * During a LIST drafting session the agent must not queue items one by one
+ * with list_add/list_activate — that bypasses the user's Confirm gate
+ * (observed in the wild: the agent decomposed a dump and ACTIVATED the first
+ * item with zero confirmation). The batch path is propose_goal_draft's
+ * items[]: one Confirm for the whole list. User commands (/list add) are
+ * unaffected — only the agent tools are gated.
+ */
+export function listMutationBlocked(draftingTarget: string | null): boolean {
+  return draftingTarget === "list";
+}
+
+export const LIST_DRAFTING_BLOCK_MESSAGE =
+  "LIST DRAFTING IN PROGRESS — do not queue items one by one. Decompose the request into an items[] array and call propose_goal_draft ONCE: the user confirms the whole batch in a single dialog. list_add / list_activate work again after the drafting session ends.";
+
+/**
  * Route natural-language text handed to `/list` with no subcommand verb
  * (v0.18.0). The user typed a dump — "fix x, do y, write docs" — not a
  * command. Flexible by detection, never a usage error:
