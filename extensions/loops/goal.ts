@@ -145,8 +145,9 @@ let uiTicker: NodeJS.Timeout | null = null;
 function refreshUI(ctx: ExtensionContext): void {
   if (!ctx.hasUI) return;
   try {
-    ctx.ui.setStatus("pi-glla", buildStatusText(state, latestAuditProgress));
-    ctx.ui.setWidget("pi-glla", buildWidgetLines(state, latestAuditProgress));
+    const theme = ctx.ui.theme as unknown as import("../goal-loop-display.js").DisplayTheme | undefined;
+    ctx.ui.setStatus("pi-glla", buildStatusText(state, latestAuditProgress, Date.now(), theme));
+    ctx.ui.setWidget("pi-glla", buildWidgetLines(state, latestAuditProgress, Date.now(), theme));
   } catch {
     // stale ctx — next event refreshes
   }

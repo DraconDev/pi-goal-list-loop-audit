@@ -243,14 +243,14 @@ test("parseLoopStartArgs: force flag off by default, on with 1/true", () => {
 
 // ---- loopBranchName ----
 
-test("loopBranchName: format is pi-gla-loop/<timestamp>-<slug>", () => {
+test("loopBranchName: format is pi-glla-loop/<timestamp>-<slug>", () => {
   const name = loopBranchName("2026-07-20T18:30:00Z", "Reduce TODO count");
-  assert.match(name, /^pi-gla-loop\/\d{14}-reduce-todo-count$/);
+  assert.match(name, /^pi-glla-loop\/\d{14}-reduce-todo-count$/);
 });
 
 test("loopBranchName: empty slug falls back to 'loop'", () => {
   const name = loopBranchName("2026-07-20T18:30:00Z", "!!!");
-  assert.match(name, /^pi-gla-loop\/\d{14}-loop$/);
+  assert.match(name, /^pi-glla-loop\/\d{14}-loop$/);
 });
 
 test("loopBranchName: slug is capped at 30 chars", () => {
