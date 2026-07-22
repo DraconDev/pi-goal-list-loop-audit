@@ -1701,9 +1701,9 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
   pi.registerTool(defineTool({
     name: "list_add",
     label: "Add to queue",
-    description: "Add one or many objectives to the /list list (loop 2). Use when the user asks to queue work — 'add these to my list', 'queue these 10 things', 'put this on the backlog'. Each item becomes an audited goal; per-item 'Done when:' clauses are honored. The first queued item activates automatically when nothing is running.",
+    description: "Add one or many objectives to the /list list (loop 2). Use when the user asks to queue work — 'add these to my list', 'queue these 10 things', 'put this on the backlog'. Each item becomes an audited goal; per-item 'Done when:' clauses are honored. The first queued item activates automatically when nothing is running. The list is UNBOUNDED — hundreds of small items are fine; propose them all.",
     parameters: Type.Object({
-      items: Type.Array(Type.String(), { description: "Objectives to enqueue (1-100). Each may include its own 'Done when:' clause." }),
+      items: Type.Array(Type.String(), { description: "Objectives to enqueue — no count limit; large plans belong in ONE call." }),
     }),
     async execute(_id, params, _signal, _onUpdate, execCtx) {
       const p = params as { items: string[] };
@@ -1712,9 +1712,6 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       }
       if (!Array.isArray(p.items) || p.items.length === 0) {
         return { content: [{ type: "text", text: "No items given." }], details: {} };
-      }
-      if (p.items.length > 100) {
-        return { content: [{ type: "text", text: `Too many items at once (${p.items.length}); max 100 per call — batch larger plans across calls.` }], details: {} };
       }
       const clean = p.items.map((t) => t.trim()).filter((t) => t.length > 0);
       const liveCtx = (execCtx as ExtensionContext | undefined) ?? ctx;

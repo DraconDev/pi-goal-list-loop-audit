@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.19.1] — 2026-07-22
+
+### Changed — the list is unbounded; the 100-per-call cap is gone
+
+The queue was already unbounded (`enqueueItems` appends without limit) —
+the only arbitrary wall was `list_add` rejecting batches over 100. Hundreds
+of small tasks are a legitimate list. The cap is removed and the tool
+descriptions now say so explicitly ("The list is UNBOUNDED — hundreds of
+small items are fine; propose them all"), because agents read caps into
+examples and self-impose limits the plugin never had. The honest cost note
+stays: every item is audited individually, so audit cost is the real
+budget for huge lists — not a number in code.
+
+## [0.19.0] — 2026-07-22
+
 ## [0.19.0] — 2026-07-22
 
 ### Changed — `/list add` is now a no-op alias; detection routes everything
