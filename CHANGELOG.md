@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.19.2] — 2026-07-22
+
+### Fixed — the status line names what it's running; `/gla` and "queue" relics swept
+
+- **Footer shows the right name per loop type.** The status line hardcoded
+  `glla: goal ●` even when the active item came from the list. It now reads
+  `Goal.policy`: `glla: goal ●` for a direct goal, `glla: list ●` for a
+  list-activated item (loop 3 already showed `glla: loop ↑/↓`). One status
+  line, three honest names.
+- **Three more user-facing `/gla` relics** the 0.17.x sweeps missed: the
+  no-model error ("set one with /gla model=…"), the token-limit pause
+  message + its suggested action, and the provider-warning + settings hint
+  text. All say `/glla` now; comment blocks swept too.
+- **"Queue" relics renamed to "list"** in user/agent-facing text: the
+  `/list` show header, the confirm-activation messages, the list-drafting
+  label, and the drafting block message.
+
 ## [0.19.1] — 2026-07-22
 
 ### Changed — the list is unbounded; the 100-per-call cap is gone
