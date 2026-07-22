@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.19.3] — 2026-07-22
+
+### Changed — goal drafting: thoroughness goes in the contract, not in iteration budgets
+
+An agent mid-`/goal`-interview asked the user to pick "Loop size: 30/60/15
+iterations with a stop rule" — loop-3 vocabulary imported into a goal,
+with an invented pass-count dressed up as a recommended preset. The
+mechanical guard was already right (`propose_loop_draft` rejects calls
+outside loop drafting), but the goal-draft prompt never said goals have no
+iterations. Now it does: exhaustiveness is expressed as checkable contract
+items ("Done when: all 22 screens audited"), never as pass-counts, and
+invented tiered packages are called out by name. Same pattern as the
+v0.19.1 list-cap fix: agents confabulate authoritative-looking numbers;
+the prompt is where confabulated framing gets banned.
+
 ## [0.19.2] — 2026-07-22
 
 ### Fixed — the status line names what it's running; `/gla` and "queue" relics swept
