@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.20.0] — 2026-07-22
+
+### Added — semantic colors in the widget + status line
+
+The goal/list/loop widget and the footer status line now paint status
+semantically via pi's theme (works in light + dark themes):
+
+- **green** — active goal/list item (◆/●), loop best value
+- **yellow** — paused awaiting user; loop stall one short of the plateau stop
+- **red** — error pauses (token limit, stalled, auditor infra failure)
+- **accent** — auditing in progress, loop direction arrows
+- **dim** — token counters, hints, suggested actions, measure command
+
+Colors are opt-in at the call site (`DisplayTheme`); the pure builders
+still return plain strings without a theme, so tests stay ANSI-free.
+
+### Fixed — widget column alignment + branch-name relic
+
+- Widget branch lines (`├─`/`└─`) were flush-left while the head glyph
+  padded the text column — the tree looked one space out of column next
+  to other widgets. Branch lines now indent one space (pi-tasks
+  convention): the tree sits under the head glyph, text column consistent.
+- Loop scratch branches were still named `pi-gla-loop/…` (rename relic);
+  now `pi-glla-loop/…`, commit messages included.
+
 ## [0.19.3] — 2026-07-22
 
 ### Changed — goal drafting: thoroughness goes in the contract, not in iteration budgets
