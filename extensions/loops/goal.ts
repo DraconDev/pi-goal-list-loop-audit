@@ -740,6 +740,22 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
   const sub = (parts[0] ?? "").toLowerCase();
   const rest = args.trim().slice(sub.length).trim();
 
+  if (sub === "resume") {
+    // Resume the list's head. The head activates AS the active goal, so this
+    // is the same motion as /goal resume — named for the surface the user is
+    // looking at (v0.22.7: "we would just unpause, and that is next").
+    if (!state.goal || state.goal.status !== "paused") {
+      ctx.ui.notify("No paused list item to resume. /list show to see the queue.", "info");
+      return;
+    }
+    if (state.goal.policy !== "list") {
+      ctx.ui.notify("The paused goal didn't come from the list — /goal resume to continue it.", "info");
+      return;
+    }
+    await cmdResume(ctx);
+    return;
+  }
+
   if (!sub || sub === "show") {
     const queue = listQueue();
     const lines: string[] = [];
@@ -2310,9 +2326,10 @@ export default function (pi: ExtensionAPI): void {
     handler: settingsHandler,
   });
   pi.registerCommand("list", {
-    description: "Loop 2: the list of audited goals — order is the default, not the law. /list <describe tasks or name a plan file> (dumps get shaped into items, files import, 'Done when:' adds directly) | /list show | /list next [n] | /list remove <n> | /list clear",
+    description: "Loop 2: the list of audited goals — order is the default, not the law. /list <describe tasks or name a plan file> (dumps get shaped into items, files import, 'Done when:' adds directly) | /list show | /list resume | /list next [n] | /list remove <n> | /list clear",
     getArgumentCompletions: completions([
       ["show", "display the queued items"],
+      ["resume", "resume the paused list item (the list's head)"],
       ["next", "activate the next item (or /list next <n> for position n)"],
       ["remove", "remove an item: /list remove <n>"],
       ["clear", "empty the list"],

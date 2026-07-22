@@ -93,7 +93,7 @@ export function buildStatusText(state: State, audit?: AuditDisplayProgress | nul
     return `glla: ${paint(theme, "accent", "auditing…")}${tool}`;
   }
   if (g.status === "paused") {
-    const label = `paused ⏸ ${truncate(g.pauseReason ?? "", 40)}`;
+    const label = `${g.policy} paused ⏸ ${truncate(g.pauseReason ?? "", 40)}`;
     return `glla: ${paint(theme, pauseIsError(g) ? "error" : "warning", label)}`;
   }
   if (g.status === "active") {
