@@ -158,7 +158,7 @@ function startUITicker(): void {
   uiTicker = setInterval(() => {
     const ctx = freshCtx();
     if (ctx && isSupervising()) refreshUI(ctx);
-  }, 5_000);
+  }, 1_000);
   uiTicker.unref?.();
 }
 

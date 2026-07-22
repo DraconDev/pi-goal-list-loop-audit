@@ -37,8 +37,8 @@ function goalOf(overrides: Partial<Goal> = {}): Goal {
 test("fmtElapsed", () => {
   assert.equal(fmtElapsed(500), "0s");
   assert.equal(fmtElapsed(45_000), "45s");
-  assert.equal(fmtElapsed(180_000), "3m");
-  assert.equal(fmtElapsed(3_900_000), "1h5m");
+  assert.equal(fmtElapsed(180_000), "3m 00s");
+  assert.equal(fmtElapsed(3_900_000), "1h 05m");
 });
 
 test("fmtTokens", () => {

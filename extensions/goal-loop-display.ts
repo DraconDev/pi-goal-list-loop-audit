@@ -17,9 +17,11 @@ export function fmtElapsed(ms: number): string {
   const s = Math.floor(ms / 1000);
   if (s < 60) return `${s}s`;
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m`;
+  // Seconds stay visible up to the hour: the elapsed counter is the
+  // liveness signal — minute-only granularity looks frozen on a 1s tick.
+  if (m < 60) return `${m}m ${String(s % 60).padStart(2, "0")}s`;
   const h = Math.floor(m / 60);
-  return `${h}h${m % 60}m`;
+  return `${h}h ${String(m % 60).padStart(2, "0")}m`;
 }
 
 export function fmtTokens(n: number): string {
