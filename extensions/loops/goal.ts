@@ -71,15 +71,11 @@ import {
 } from "../goal-loop-forever.js";
 import {
   accountTurnForNudges,
-  BACKOFF_HARD_CAP_MS,
   BACKOFF_IDLE_RETRY_MS,
-  backoffMs,
   HEARTBEAT_INTERVAL_MS,
   HEARTBEAT_MAX_NUDGES,
   HEARTBEAT_STALL_MS,
-  humanMs,
   shouldHeartbeatRefire,
-  shouldPauseAfterBackoff,
 } from "../goal-loop-backoff.js";
 
 // =================================================================
@@ -87,7 +83,6 @@ import {
 // =================================================================
 
 const GOAL_EVENT_ENTRY = "goal-event";
-const STATE_ENTRY = "goal-state";
 /** stopReason marker for a loop held (not stopped) by the fresh-session restore gate. */
 const HELD_ON_RESTORE = "held: restored in a fresh session";
 
@@ -201,7 +196,6 @@ let continuationTimer: NodeJS.Timeout | null = null;
 let continuationScheduledFor: string | null = null;
 let iterationCounter = 0;
 let toolCallsThisTurn = 0;
-let consecutiveStuckIterations = 0;
 let consecutiveErrorIterations = 0;
 let consecutiveNoToolIterations = 0;
 
@@ -420,7 +414,6 @@ function activateNextListItem(ctx: ExtensionContext, n = 1): boolean {
   if (next.verificationContract) goal.verificationContract = next.verificationContract;
   setGoal(goal, ctx);
   iterationCounter = 0;
-  consecutiveStuckIterations = 0;
   consecutiveErrorIterations = 0;
   ctx.ui.notify(`List item #${n} activated (${rest.length} remaining): ${goal.objective.slice(0, 80)}`, "info");
   scheduleContinuation(ctx, true);
@@ -534,7 +527,6 @@ async function cmdSet(args: string, ctx: ExtensionContext, skipDraft = false): P
   setGoal(goal, ctx);
   // Reset counters
   iterationCounter = 0;
-  consecutiveStuckIterations = 0;
   consecutiveErrorIterations = 0;
   consecutiveNoToolIterations = 0;
   ctx.ui.notify(`Goal ${goal.id} created — starting now. Auditor will verify on completion.`, "info");
@@ -1233,7 +1225,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     return;
   }
 
-  ctx.ui.notify("Usage: /loop [status] | /loop start \"<target>\" measure=\"<cmd>\" direction=min|max [done=<value>] [window=5] [max=50] | /loop stop", "info");
+  ctx.ui.notify("Usage: /loop [status] | /loop start \"<target>\" measure=\"<cmd>\" direction=min|max [window=5] [max=50] | /loop stop", "info");
 }
 
 // =================================================================
@@ -2411,10 +2403,9 @@ export default function (pi: ExtensionAPI): void {
       consecutiveErrorIterations = 0;
     }
 
-    // Hard 5-min cap: if no successful continue for >5 min, pause.
-    // For v0.1.0 we only detect this on agent_end; a tighter watchdog lands in v0.2.0.
-    // We schedule the next continuation; if it produces nothing useful in 5 min,
-    // the next agent_end iteration of THIS branch will trigger the cap.
+    // No wall-clock cap by design: a goal ends via completion, explicit
+    // pause/cancel, the stall watchdog, the 5-consecutive-errors pause, or
+    // the token guard — never via an elapsed-time cutoff.
 
     scheduleContinuation(ctx, false);
   });
