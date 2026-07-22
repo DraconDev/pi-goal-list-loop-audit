@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.17.1] — 2026-07-22
+
+### Fixed — four `/gla` strings the 0.17.0 sweep missed
+
+Widget footer hint, loop-block comment, and the two auditor-infrastructure
+error paths still pointed at `/gla`. The relic sweep now greps clean
+(everything except the intentional migration code and CHANGELOG history).
+
+## [0.17.0] — 2026-07-22
+
 ## [0.17.0] — 2026-07-22
 
 ### Breaking — no relics: aliases removed, state dir renamed

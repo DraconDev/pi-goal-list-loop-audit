@@ -834,7 +834,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
 /**
  * Config-gated push notification: if settings.notifyCmd is set, shell out
  * with the message as $1. Fire-and-forget — a broken notify command never
- * blocks the loop. /gla notify='<cmd>' to configure.
+ * blocks the loop. /glla notify='<cmd>' to configure.
  */
 function notifyExternal(ctx: ExtensionContext, message: string): void {
   try {
@@ -1307,13 +1307,13 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
           status: "active",
           auditHistory: history,
           pauseReason: `auditor infrastructure: ${result.error}`,
-          pauseSuggestedAction: "Fix the auditor model (/gla model=provider/id) and call complete_goal again — your work was NOT judged",
+          pauseSuggestedAction: "Fix the auditor model (/glla model=provider/id) and call complete_goal again — your work was NOT judged",
         }, ctx);
         scheduleContinuation(ctx, true);
         return {
           content: [{
             type: "text",
-            text: `The auditor could not run (infrastructure, NOT a verdict): ${result.error}\nYour completion claim was not evaluated. Fix the auditor model with /gla model=provider/id and call complete_goal again — do not change your deliverable for this.`,
+            text: `The auditor could not run (infrastructure, NOT a verdict): ${result.error}\nYour completion claim was not evaluated. Fix the auditor model with /glla model=provider/id and call complete_goal again — do not change your deliverable for this.`,
           }],
           details: {},
         };

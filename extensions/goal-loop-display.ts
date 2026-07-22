@@ -128,7 +128,7 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
   const next = nextPending(g);
   if (next) lines.push(`├─ next: ${truncate(next, 56)}`);
   const queue = state.list?.length ?? 0;
-  lines.push(`└─ ${queue > 0 ? `list ${queue} · ` : ""}/goal status · /gla`);
+  lines.push(`└─ ${queue > 0 ? `list ${queue} · ` : ""}/goal status · /glla`);
   return lines;
 }
 
