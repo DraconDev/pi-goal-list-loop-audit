@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.22.4] — 2026-07-22
+
+### Fixed
+
+- **`/loop <natural language>` now drafts with the seed.** Unknown args
+  previously fell through to a usage line, so `/loop make the tests faster`
+  did nothing. Bare natural language now enters loop drafting with the text
+  as the seed (the metric is the whole game for a loop — the interview
+  designs it); `/loop start "<target>" measure=... direction=...` remains
+  the skip-drafting path. Guards against a second loop while one is active.
+- Seeded-drafting notification is target-aware: the loop variant explains
+  the metric/direction interview and shows the full `/loop start` skip
+  syntax (including time/tokens/branch) instead of the goal-oriented
+  "Done when:" text; the old fallthrough usage line (which omitted
+  time/tokens/branch) is gone.
+- `/loop` command description (the /-menu tooltip) documents the drafting
+  path.
+
 ## [0.22.3] — 2026-07-22
 
 ### Fixed
