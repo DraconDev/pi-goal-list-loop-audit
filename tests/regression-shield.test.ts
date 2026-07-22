@@ -106,3 +106,72 @@ test("case-insensitive matching", () => {
   const r = checkRegressionShield(report, "Done when:\n- npm test exits 0");
   assert.equal(r.passed, true);
 });
+
+// ---- v0.22.6: false-rejection fixes (the hegemon case: three genuine
+// <approved/> audits were shield-converted to disapprovals on vocabulary) ----
+
+test("contractItems: excludes 'Out of scope' boundary lines", () => {
+  const items = contractItems("Done when:\n- npm test passes\n- Out of scope: gameplay changes, dev-route gating");
+  assert.deepEqual(items, ["npm test passes"]);
+});
+
+test("compound tokens match via segments (left-cropped → left + cropped)", () => {
+  const report = [
+    "<evidence>",
+    "P0: map canvas now fills the viewport at 1920x895 — screenshot shows the full-width map,",
+    "no cropped strip on the left edge.",
+    "</evidence>",
+    "<approved/>",
+  ].join("\n");
+  const r = checkRegressionShield(
+    report,
+    "Done when:\n- P0 play-phaser regression fixed — map canvas fills viewport width at 1920x895 (screenshot shows full-width map, no left-cropped strip).",
+  );
+  assert.equal(r.passed, true);
+});
+
+test("prose punctuation glued to tokens does not break matching (file/element.)", () => {
+  const report = [
+    "<evidence>",
+    "P2 polish: type rhythm and contrast improvements shipped, each scoped to a single file",
+    "(one element at a time); surfaces feel tangibly more premium.",
+    "</evidence>",
+    "<approved/>",
+  ].join("\n");
+  const r = checkRegressionShield(
+    report,
+    "Done when:\n- P2 polish items shipped: type rhythm / contrast / micro-anim surfaces that tangibly improve premium feel, each scoped to a single file/element.",
+  );
+  assert.equal(r.passed, true);
+});
+
+test("top-3 candidate matching tolerates contract-only vocabulary", () => {
+  // The single-longest-word rule demanded "regression"'s longer sibling
+  // verbatim; a natural report that says "screenshot" + "viewport" counts.
+  const report = [
+    "<evidence>",
+    "Final premium-feel pass captured: 12 screenshots under .pi/chrome-screenshots/audit-2026-07-21/final/",
+    "</evidence>",
+    "<approved/>",
+  ].join("\n");
+  const r = checkRegressionShield(
+    report,
+    "Done when:\n- Goal ends when: every audit row is fixed OR DEFER-with-reason, AND a final premium-feel screenshot pass of the whole game is captured under .pi/chrome-screenshots/audit-2026-07-21/final/.",
+  );
+  assert.equal(r.passed, true);
+});
+
+test("still rejects: bamboozle report that never touches the item's vocabulary", () => {
+  const report = [
+    "<evidence>",
+    "I ran the checks and everything looks good. The work is complete and correct.",
+    "</evidence>",
+    "<approved/>",
+  ].join("\n");
+  const r = checkRegressionShield(
+    report,
+    "Done when:\n- P0 play-phaser regression fixed — map canvas fills viewport width at 1920x895.",
+  );
+  assert.equal(r.passed, false);
+  assert.equal(r.missingItems.length, 1);
+});
