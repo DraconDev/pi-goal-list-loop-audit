@@ -179,13 +179,23 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
 }
 
 function loopLines(l: LoopState, now: number, theme?: DisplayTheme, width?: number): string[] {
+  // v0.23.0: metricless spec loop — no arrow/best/stall, no plateau.
+  if (!l.measureCmd) {
+    const lines = [
+      `${paint(theme, "accent", "●")} ${truncate(l.target, budgetFor(width, 3, 64))}`,
+      `├─ loop ∞ iter ${l.iteration}${l.maxIterations > 0 ? `/${l.maxIterations}` : ""} · ${fmtElapsed(now - Date.parse(l.startedAt))}`,
+      `└─ ${paint(theme, "dim", "metricless — work the spec (no plateau)")}`,
+    ];
+    if (l.branchName) lines.push(`⎇ ${paint(theme, "muted", truncate(l.branchName, budgetFor(width, 3, 50)))}`);
+    return lines;
+  }
   const arrow = paint(theme, "accent", l.direction === "min" ? "↓" : "↑");
   const best = paint(theme, "success", `${l.bestValue ?? "n/a"}`);
   const stallText = `stall ${l.stallCount}/${l.plateauWindow}`;
   const stall = l.stallCount >= l.plateauWindow - 1 ? paint(theme, "warning", stallText) : stallText;
   const lines = [
     `${paint(theme, "accent", "●")} ${truncate(l.target, budgetFor(width, 3, 64))}`,
-    `├─ loop ${arrow} iter ${l.iteration}/${l.maxIterations} · ${fmtElapsed(now - Date.parse(l.startedAt))}`,
+    `├─ loop ${arrow} iter ${l.iteration}/${l.maxIterations > 0 ? l.maxIterations : "∞"} · ${fmtElapsed(now - Date.parse(l.startedAt))}`,
     `├─ best ${best} · last ${l.lastValue ?? "n/a"} · ${stall}`,
     `└─ ${paint(theme, "dim", truncate(l.measureCmd, budgetFor(width, 3, 56)))}`,
   ];

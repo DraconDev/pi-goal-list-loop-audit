@@ -63,6 +63,7 @@ import { runGoalCompletionAuditor } from "../goal-loop-auditor.js";
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
 import {
   applyMeasurement,
+  applyMetriclessTick,
   applyRefinement,
   loopBranchName,
   parseLoopStartArgs,
@@ -1660,11 +1661,11 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
   pi.registerTool(defineTool({
     name: "propose_loop_draft",
     label: "Propose loop draft",
-    description: "During loop drafting (/loop with no args), propose the loop configuration. The orchestrator test-runs the measure command ONCE and shows the user real output + parsed number in a Confirm dialog. A measure producing no number is auto-rejected.",
+    description: "During loop drafting (/loop with no args), propose the loop configuration. The orchestrator test-runs the measure command ONCE and shows the user real output + parsed number in a Confirm dialog. A measure producing no number is auto-rejected. Omit measureCmd (or pass \"none\") for a metricless spec loop — no plateau stop; ends only at bounds or /loop stop.",
     parameters: Type.Object({
       target: Type.String({ description: "What to improve, concretely" }),
-      measureCmd: Type.String({ description: "Shell command that prints ONE number representing progress" }),
-      direction: Type.Union([Type.Literal("min"), Type.Literal("max")], { description: "min = lower is better, max = higher is better" }),
+      measureCmd: Type.Optional(Type.String({ description: 'Shell command that prints ONE number representing progress — or the literal "none" for a metricless spec loop' })),
+      direction: Type.Optional(Type.Union([Type.Literal("min"), Type.Literal("max")], { description: "min = lower is better, max = higher is better (omit for a metricless loop)" })),
       window: Type.Optional(Type.Number({ description: "Plateau stop after N non-improving iterations (default 5)" })),
       max: Type.Optional(Type.Number({ description: "Iteration cap (default 50)" })),
       time: Type.Optional(Type.Number({ description: "Arbitrary bound: stop after this many hours" })),
@@ -1672,7 +1673,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       branch: Type.Optional(Type.Boolean({ description: "branch=true: scratch-branch mode (clean git tree required)" })),
     }),
     async execute(_id, params, _signal, _onUpdate, execCtx) {
-      const p = params as { target: string; measureCmd: string; direction: "min" | "max"; window?: number; max?: number; time?: number; tokens?: number; branch?: boolean };
+      const p = params as { target: string; measureCmd?: string; direction?: "min" | "max"; window?: number; max?: number; time?: number; tokens?: number; branch?: boolean };
       if (draftingTarget !== "loop") {
         return {
           content: [{ type: "text", text: "Not in loop drafting mode. The user starts loop drafting with /loop (no args), or starts directly with /loop start." }],
@@ -1685,24 +1686,30 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       if (loopBlock) {
         return { content: [{ type: "text", text: loopBlock }], details: {} };
       }
-      if (!p.target?.trim() || !p.measureCmd?.trim()) {
-        return { content: [{ type: "text", text: "target and measureCmd are both required." }], details: {} };
+      if (!p.target?.trim()) {
+        return { content: [{ type: "text", text: "target is required." }], details: {} };
+      }
+      // v0.23.0: measureCmd omitted or "none" → metricless spec loop.
+      const metricless = !p.measureCmd?.trim() || p.measureCmd.trim().toLowerCase() === "none";
+      if (!metricless && p.direction !== "min" && p.direction !== "max") {
+        return { content: [{ type: "text", text: 'direction=min|max is required for a measured loop (omit measureCmd or pass "none" for a metricless spec loop).' }], details: {} };
       }
       const liveCtx = (execCtx as ExtensionContext | undefined) ?? ctx;
       // THE TEST-RUN: orchestrator runs the proposed measure once. The user
       // sees the real number before a single iteration burns tokens.
+      // (Metricless loops skip this — there is no measure to test-run.)
       let rawOutput = "";
       let parsed: number | null = null;
-      if (extensionApi) {
+      if (!metricless && extensionApi) {
         try {
-          const result = await extensionApi.exec("bash", ["-c", p.measureCmd], { cwd: liveCtx.cwd });
+          const result = await extensionApi.exec("bash", ["-c", p.measureCmd!], { cwd: liveCtx.cwd });
           rawOutput = String((result as any)?.stdout ?? "").trim();
           parsed = parseMetric(rawOutput);
         } catch (err) {
           rawOutput = `(measure command failed: ${err instanceof Error ? err.message : String(err)})`;
         }
       }
-      if (parsed === null) {
+      if (!metricless && parsed === null) {
         return {
           content: [{
             type: "text",
@@ -1712,12 +1719,15 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
         };
       }
       const window = p.window && p.window > 0 ? Math.floor(p.window) : 5;
-      const max = p.max && p.max > 0 ? Math.floor(p.max) : 50;
+      // v0.23.0: explicit max=0 = truly unbounded (no iteration cap).
+      const max = p.max !== undefined && Number.isFinite(p.max) && p.max >= 0 ? Math.floor(p.max) : 50;
       let confirmed = false;
       try {
         confirmed = await liveCtx.ui.confirm(
           "Confirm loop",
-          `Target: ${p.target.trim()}\n\nMeasure: ${p.measureCmd}\nTest-run output: ${rawOutput.slice(0, 200)}\nParsed number: ${parsed} (${p.direction === "min" ? "lower is better" : "higher is better"})\n\nPlateau stop: ${window} non-improving iterations · Cap: ${max} iterations${typeof p.time === "number" && p.time > 0 ? ` · Time bound: ${p.time}h` : ""}${typeof p.tokens === "number" && p.tokens > 0 ? ` · Token bound: ${p.tokens.toLocaleString()}` : ""}${p.branch ? "\nbranch mode: scratch branch (clean tree required)" : ""}\n\nThe loop never completes — it runs until one of these bounds, plateau, or /loop stop. Start it?`,
+          metricless
+            ? `Target: ${p.target.trim()}\n\nMeasure: NONE — metricless spec loop. There is NO plateau stop: the loop ends only at ${max > 0 ? `${max} iterations` : "NO iteration cap"}${typeof p.time === "number" && p.time > 0 ? ` · Time bound: ${p.time}h` : ""}${typeof p.tokens === "number" && p.tokens > 0 ? ` · Token bound: ${p.tokens.toLocaleString()}` : ""} · /loop stop.${p.branch ? "\nbranch mode: scratch branch, every iteration committed (clean tree required)" : ""}\n\nEvery iteration must make ONE real, inspectable change — cosmetic churn is the known failure mode (doorknob-polishing). Start it?`
+            : `Target: ${p.target.trim()}\n\nMeasure: ${p.measureCmd}\nTest-run output: ${rawOutput.slice(0, 200)}\nParsed number: ${parsed} (${p.direction === "min" ? "lower is better" : "higher is better"})\n\nPlateau stop: ${window} non-improving iterations · Cap: ${max > 0 ? `${max} iterations` : "none (unbounded)"}${typeof p.time === "number" && p.time > 0 ? ` · Time bound: ${p.time}h` : ""}${typeof p.tokens === "number" && p.tokens > 0 ? ` · Token bound: ${p.tokens.toLocaleString()}` : ""}${p.branch ? "\nbranch mode: scratch branch (clean tree required)" : ""}\n\nThe loop never completes — it runs until one of these bounds, plateau, or /loop stop. Start it?`,
         );
       } catch {
         confirmed = false;
@@ -1731,8 +1741,8 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       draftingTarget = null;
       const started = await startLoopFromConfig(liveCtx, {
         target: p.target.trim(),
-        measureCmd: p.measureCmd,
-        direction: p.direction,
+        measureCmd: metricless ? "" : p.measureCmd!.trim(),
+        direction: metricless ? undefined : p.direction,
         plateauWindow: window,
         maxIterations: max,
         timeLimitHours: typeof p.time === "number" && Number.isFinite(p.time) && p.time > 0 ? p.time : undefined,
@@ -1743,7 +1753,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
         return { content: [{ type: "text", text: "Loop could not start (see the warning above — likely a git/dirty-tree issue with branch mode)." }], details: {} };
       }
       return {
-        content: [{ type: "text", text: `Loop confirmed and started. Baseline ${parsed}. Make ONE small change per turn to move the metric ${p.direction === "min" ? "down" : "up"}.` }],
+        content: [{ type: "text", text: metricless ? "Loop confirmed and started (metricless — no plateau). Make ONE real, inspectable change per turn." : `Loop confirmed and started. Baseline ${parsed}. Make ONE small change per turn to move the metric ${p.direction === "min" ? "down" : "up"}.` }],
         details: {},
       };
     },
@@ -1766,7 +1776,12 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
         return { content: [{ type: "text", text: "No active loop to refine. propose_loop_refine is only valid while a loop is running." }], details: {} };
       }
       const newTarget = p.target?.trim() || loop.target;
-      const newMeasure = p.measureCmd?.trim() || loop.measureCmd;
+      const newMeasure = p.measureCmd?.trim() || loop.measureCmd || "";
+      // v0.23.0: a metricless loop can't be refined into a measured one
+      // (no direction, no baseline semantics) — stop and restart instead.
+      if (!loop.measureCmd && p.measureCmd?.trim()) {
+        return { content: [{ type: "text", text: "This loop is metricless — refining it into a measured loop isn't supported. /loop stop, then /loop start with a metric." }], details: {} };
+      }
       if (newTarget === loop.target && newMeasure === loop.measureCmd) {
         return { content: [{ type: "text", text: "Refinement proposed no changes — provide a new target, a new measureCmd, or both." }], details: {} };
       }
@@ -1806,7 +1821,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
         iteration: loop.iteration,
         oldTarget: loop.target,
         newTarget,
-        oldMeasureCmd: loop.measureCmd,
+        oldMeasureCmd: loop.measureCmd ?? "",
         newMeasureCmd: newMeasure,
       }, newBaseline);
       persistState(liveCtx);
@@ -2363,7 +2378,7 @@ export default function (pi: ExtensionAPI): void {
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdList(args, ctx); },
   });
   pi.registerCommand("loop", {
-    description: "Loop 3: metric-driven process — it never completes. /loop <target> drafts the metric with you · /loop start \"<target>\" measure=\"<cmd>\" direction=min|max [window=5] [max=50] [time=<hours>] [tokens=<budget>] [branch=1] skips drafting · /loop status · /loop stop. 'Improve until X' is a /goal, not a loop.",
+    description: "Loop 3: metric-driven process — it never completes. /loop <target> drafts the metric with you · /loop start \"<target>\" measure=\"<cmd>\" direction=min|max [window=5] [max=50] [time=<hours>] [tokens=<budget>] [branch=1] skips drafting · measure=none = metricless spec loop (no plateau; max=0 = unbounded) · /loop status · /loop stop. 'Improve until X' is a /goal, not a loop.",
     getArgumentCompletions: completions([
       ["start", "skip drafting: /loop start \"<target>\" measure=\"<cmd>\" direction=min|max [window=5] [max=50]"],
       ["status", "show metric, iteration, best/last values, stall count"],

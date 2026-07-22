@@ -23,16 +23,32 @@ stops it.
      (`wc -c < bundle.js`), timings (`hyperfine`-style), scores.
    - Warn the user if the metric is gameable (agent could improve the number
      without improving the target — e.g. deleting tests to reduce failures).
+   - **Offer the metricless alternative explicitly** (v0.23.0): if the user
+     says there is no number — "just work the spec", "keep improving it",
+     Sisyphus-style — a metricless loop is now legitimate: omit `measureCmd`
+     (or pass `"none"`) in the proposal. Tell the user the trade-off in one
+     sentence: no metric means NO plateau stop — the loop ends only at its
+     bounds (max/time/tokens) or `/loop stop`, and cosmetic churn
+     (doorknob-polishing) is the known failure mode. Never pick metricless
+     silently; the user chooses it after hearing that.
+   - Still redirect to `/goal` when the work HAS a finish line (research,
+     write document X, build feature Y): "improve until done" is a goal
+     with an auditor, not a loop. Metricless loops are for work that is
+     genuinely endless (an ever-improving spec, continuous hardening).
 3. Clarify the **direction**: is lower better (min) or higher better (max)?
+   (Skip this for a metricless loop — there is no direction without a metric.)
 4. Optional tuning: `window` (plateau stop after N non-improving iterations,
-   default 5), `max` (iteration cap, default 50). Suggest smaller values for
-   expensive measures.
-5. When concrete, call `propose_loop_draft` with `target`, `measureCmd`,
-   `direction`, and optional `window`/`max`.
+   default 5 — meaningless for metricless), `max` (iteration cap, default 50;
+   `max=0` = truly unbounded). Suggest smaller values for expensive measures.
+   For metricless loops, ALWAYS discuss bounds — an unbounded metricless loop
+   is a deliberate furnace.
+5. When concrete, call `propose_loop_draft` with `target`, `measureCmd` (or
+   omit/`"none"` for metricless), `direction` (measured only), and optional
+   `window`/`max`/`time`/`tokens`.
 6. **The orchestrator will run your proposed measure command ONCE** and show
    the user the real output and parsed number in the Confirm dialog. If your
    command produces no number, the proposal is rejected automatically — fix
-   the command and propose again.
+   the command and propose again. (Metricless proposals skip the test-run.)
 7. If the user rejects, ask what to change, refine, propose again.
 
 ## Hard rules
@@ -41,10 +57,7 @@ stops it.
 - Do not modify the repo while drafting.
 - Do not propose a measure you have not sanity-checked against the actual
   repo layout (read files first if unsure what exists).
-- **If the user's goal has no honest numeric metric — research, writing a
-  document, building a feature, "understand X" — say so plainly and redirect:
-  `/loop` only believes a number; `/goal` is the right tool because its
-  independent auditor verifies semantic completeness against a contract.
-  Offer to hand them a well-structured `/goal` objective instead. Never
-  invent a fake metric (word count alone, file exists) just to make a loop
-  fit — a number that doesn't track the real target is worse than no number.
+- Never invent a fake metric (word count alone, file exists) just to make a
+  measured loop fit — a number that doesn't track the real target is worse
+  than no number. When no honest number exists, the choice is metricless
+  loop (endless process) or /goal (has a finish line) — and the user picks.
