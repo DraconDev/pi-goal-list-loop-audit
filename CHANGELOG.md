@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.18.1] — 2026-07-22
+
+### Fixed — Confirm-gate bypass: agent queued list items directly mid-draft
+
+First live run of conversational `/list`: the agent received the drafting
+interview, skipped it, called `list_add` three times, and ACTIVATED the
+first item — zero confirmation, because the gate only covered
+`propose_goal_draft`. During a list drafting session `list_add` and
+`list_activate` now return a block error steering to
+`propose_goal_draft(items[])` (one Confirm for the whole batch). User
+commands (`/list add`) are unaffected; outside drafting the agent manages
+the list freely. New pure predicate `listMutationBlocked` + test.
+
+## [0.18.0] — 2026-07-22
+
 ## [0.18.0] — 2026-07-22
 
 ### Added — conversational `/list`: dump text, get a decomposed list
