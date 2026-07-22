@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.22.1] — 2026-07-22
+
+### Fixed
+
+- **Goal invisible on session load.** `session_start` only painted the TUI
+  via `persistState`, so a goal that was already paused (or any state that
+  doesn't mutate on load) rendered no widget and no status line after
+  starting or resuming a session — "can't tell if it's on" is a bug. The
+  handler now calls `refreshUI` unconditionally, which also refreshes/clears
+  any stale widget carried over from a previous in-process session.
+
 ## [0.22.0] — 2026-07-22
 
 Self-audit release: the extension audited itself (goal 20260722151428-375it3,
