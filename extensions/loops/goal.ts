@@ -64,10 +64,19 @@ import {
   writeGoalMd,
 } from "../goal-loop-core.js";
 import { runGoalCompletionAuditor } from "../goal-loop-auditor.js";
+import {
+  REPETITION,
+  detectLoopStuck,
+  loopInterventionDirective,
+  continueVariant,
+  textFingerprint,
+  pushCapped as pushRepetitionCapped,
+} from "../goal-loop-repetition.js";
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
 import {
   applyMeasurement,
   applyMetriclessTick,
+  pushCapped,
   applyRefinement,
   loopBranchName,
   parseLoopStartArgs,

@@ -58,6 +58,20 @@ export interface LoopState {
   branchName?: string;
   /** branch=1 mode: the branch to return to on stop. */
   originalBranch?: string;
+  /** v0.24.0 anti-repetition: rolling fingerprints of iteration replies. */
+  recentPrints?: string[];
+  /** v0.24.0: last few iteration texts (near-duplicate check + banned openings). */
+  recentTexts?: string[];
+  /** v0.24.0: rolling tool-result fingerprints {tool, hash, isError}. */
+  recentToolResults?: { tool: string; hash: string; isError: boolean }[];
+  /** v0.24.0: tool calls seen since the last completed iteration. */
+  toolsThisTurn?: number;
+  /** v0.24.0: consecutive iterations with zero tool calls. */
+  toollessStreak?: number;
+  /** v0.24.0: consecutive stuck interventions (resets on a clean iteration). */
+  consecutiveStuck?: number;
+  /** v0.24.0: the last stuck reason (for the intervention directive + ledger). */
+  lastStuckReason?: string;
 }
 
 /** Scratch-branch name for branch=1 mode. Format pinned by tests. */
