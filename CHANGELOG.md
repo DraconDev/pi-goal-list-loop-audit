@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.23.2] — 2026-07-23
+
+### Added
+
+- **Wedge alert** — a wall-clock watchdog for the failure the turn-based
+  watchdogs are blind to: the session is BUSY but silent for 45 minutes
+  because one unbounded command (a test suite that never exits) is holding
+  the entire goal hostage. Field-observed twice in one evening on the same
+  wedged `bun test` call (5,056s and 6,800s — the session counters frozen
+  byte-identical between them). The heartbeat now checks busy-but-silent
+  every tick and fires an in-session warning + the configured notify push,
+  throttled to once per threshold interval while the wedge persists; any
+  activity re-arms. Default 45m; `/glla wedgealert=<minutes>` (0 = off,
+  `unset` = back to default). Predicate `shouldWedgeAlert` in
+  `goal-loop-backoff.ts` + 6 tests; ledger event `wedge_alert`.
+
 ## [0.23.1] — 2026-07-22
 
 ### Added
