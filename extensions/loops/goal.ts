@@ -1408,6 +1408,40 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     return;
   }
 
+  if (sub === "respec") {
+    // v0.24.3: reconcile the codebase against the root spec, forever.
+    // Same auto-start path as /loop start (the user typed the command —
+    // that IS the act); metricless + unbounded by design. No limit-nagging:
+    // bounds exist on /loop start for whoever wants them.
+    if (state.goal && state.goal.status === "active") {
+      ctx.ui.notify("A goal is active — /goal cancel or /goal pause it before starting a loop.", "warning");
+      return;
+    }
+    if (isLoopActive()) {
+      ctx.ui.notify("A loop is already active. /loop stop first.", "warning");
+      return;
+    }
+    const specPath = resolveSpecFile(ctx.cwd);
+    if (!specPath) {
+      ctx.ui.notify(
+        `/loop respec: no spec in the project root (looked for ${RESPEC_SPEC_CANDIDATES.join(", ")}). Create one, or use /loop start "<target>" directly.`,
+        "warning",
+      );
+      return;
+    }
+    const target = respecTarget(basename(specPath));
+    await startLoopFromConfig(ctx, {
+      target,
+      measureCmd: "",
+      direction: undefined,
+      plateauWindow: DEFAULT_PLATEAU_WINDOW,
+      maxIterations: 0,
+      branch: false,
+      force: false,
+    });
+    return;
+  }
+
   // Anything else is a natural-language target (v0.22.4): draft it — the
   // metric is the whole game for a loop, and /loop start with full params
   // is the skip-drafting path. Previously this fell through to a usage
@@ -1868,7 +1902,7 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       const p = params as { target: string; measureCmd?: string; direction?: "min" | "max"; window?: number; max?: number; time?: number; tokens?: number; branch?: boolean };
       if (draftingTarget !== "loop") {
         return {
-          content: [{ type: "text", text: "Not in loop drafting mode. The user starts loop drafting with /loop (no args), or starts directly with /loop start." }],
+          content: [{ type: "text", text: "You cannot start or draft a loop — only the user can, from the slash bar (the Confirm is the product). Do NOT write draft files or wait for the user to say 'start' in chat; that dead-ends. Instead hand the user the exact command: /loop start \"<target>\" (bare = infinite metricless; add measure=\"<cmd>\" direction=min|max for a metric loop), or /loop respec to reconcile against the root spec, or /loop with no args to draft interactively." }],
           details: {},
         };
       }
@@ -2657,6 +2691,7 @@ export default function (pi: ExtensionAPI): void {
     description: "Loop 3: metric-driven process — it never completes. /loop <target> drafts the metric with you · /loop start \"<target>\" = infinite metricless loop (no plateau, no cap; ends at time=/tokens= or /loop stop) · add measure=\"<cmd>\" direction=min|max [window=5] [max=50] [branch=1] for a metric loop · /loop status · /loop stop. 'Improve until X' is a /goal, not a loop.",
     getArgumentCompletions: completions([
       ["start", "skip drafting: /loop start \"<target>\" measure=\"<cmd>\" direction=min|max [window=5] [max=50]"],
+      ["respec", "infinite metricless loop reconciling the codebase against the root SPEC.md"],
       ["status", "show metric, iteration, best/last values, stall count"],
       ["stop", "end the loop (keeps the best state)"],
     ]),

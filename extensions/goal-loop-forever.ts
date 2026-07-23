@@ -10,6 +10,9 @@
  * self-reports progress.
  */
 
+import { existsSync, statSync } from "node:fs";
+import { join } from "node:path";
+
 export type LoopDirection = "min" | "max";
 
 export interface LoopMeasure {
@@ -292,4 +295,31 @@ export function parseLoopStartArgs(raw: string): {
     timeLimitHours: Number.isFinite(timeRaw) && timeRaw > 0 ? timeRaw : undefined,
     tokenBudget: Number.isFinite(tokensRaw) && tokensRaw > 0 ? tokensRaw : undefined,
   };
+}
+
+// ---- /loop respec (v0.24.3) ----
+
+/** Root-only spec candidates, in priority order. No fuzzy search. */
+export const RESPEC_SPEC_CANDIDATES = ["SPEC.md", "spec.md"] as const;
+
+/** Resolve the project spec in the root only; null when absent. */
+export function resolveSpecFile(cwd: string): string | null {
+  for (const name of RESPEC_SPEC_CANDIDATES) {
+    const p = join(cwd, name);
+    try {
+      if (existsSync(p) && statSync(p).isFile()) return p;
+    } catch { /* unreadable — keep looking */ }
+  }
+  return null;
+}
+
+/**
+ * The respec target. The spec is DATA, not gospel: the loop reconciles code
+ * against it but reports stale/contradictory requirements instead of forcing
+ * the code to match a bad spec. Rotation keeps it honest: implement one
+ * iteration, audit the next (the doorknob failure is implementing nothing
+ * while claiming polish).
+ */
+export function respecTarget(specName: string): string {
+  return `Reconcile the codebase against ${specName} (the project spec in the root). Read the spec critically first: if a requirement is stale, contradictory, or wrong for the current codebase, report the discrepancy and move on — never force the code to match a bad spec. Otherwise pick the next gap between spec and code and close it. Rotate: one iteration implements a missing or outdated spec item, the next audits something already "implemented" against the spec and fixes what drifted.`;
 }
