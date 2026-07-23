@@ -1607,13 +1607,15 @@ function registerAgentTools(pi: any, ctx: ExtensionContext): void {
       const liveCtx = (execCtx as ExtensionContext | undefined) ?? ctx;
       // Multi-item list draft: one Confirm for the whole batch.
       if (p.items && p.items.length > 0) {
-        const preview = p.items.slice(0, 6).map((t, i) => `  ${i + 1}. ${t.slice(0, 60)}`).join("\n");
+        // v0.23.7: show ALL items in full — the user approves the whole
+        // batch; hidden items would be approved blind.
+        const preview = p.items.map((t, i) => `  ${i + 1}. ${t}`).join("\n");
         const batchActivates = !state.goal || state.goal.status === "complete" || state.goal.status === "aborted";
         let batchConfirmed = false;
         try {
           batchConfirmed = await liveCtx.ui.confirm(
             "Confirm queue batch",
-            `${p.items.length} items:\n${preview}${p.items.length > 6 ? `\n  … and ${p.items.length - 6} more` : ""}${batchActivates ? "\n\n(List is empty — confirming ACTIVATES item 1 immediately as the active goal.)" : ""}`,
+            `${p.items.length} items:\n${preview}${batchActivates ? "\n\n(List is empty — confirming ACTIVATES item 1 immediately as the active goal.)" : ""}`,
           );
         } catch {
           batchConfirmed = false;
