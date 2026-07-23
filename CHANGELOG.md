@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.24.3] — 2026-07-23
+
+### Added — `/loop respec` (reconcile against the root spec, forever)
+
+- `/loop respec` starts an infinite metricless loop whose target is
+  generated from the project spec: `SPEC.md` / `spec.md` in the root only
+  (one mechanical predicate, no fuzzy search — missing spec = a clear
+  error naming what was looked for). Same auto-start path as `/loop
+  start`: typing the command IS the user act, no drafting, no interview.
+- The generated target bakes in the two field lessons: **read the spec
+  critically first** (stale/contradictory requirements get reported as
+  discrepancies, never forced onto the code — the spec is data, not
+  gospel) and an **implement/audit rotation** (one iteration closes a
+  spec↔code gap, the next audits an "implemented" item against the spec)
+  so a respec loop can't doorknob-polish.
+- **No limit-nagging**: respec is unbounded by design; bounds stay
+  available on `/loop start` for whoever wants them.
+- Sharper `propose_loop_draft` gate error (field report: a chat-agreed
+  loop dead-ended into a hand-written draft file + a "say start" wait).
+  The error now tells the model exactly what to hand the user:
+  `/loop start "<target>"`, `/loop respec`, or `/loop` to draft — and
+  forbids draft-file ceremony.
+- 3 tests (resolution order, root-only, target shape).
+
 ## [0.24.2] — 2026-07-23
 
 ### Added — audit-hardening from the Claude Code / Codex CLI cross-audit
