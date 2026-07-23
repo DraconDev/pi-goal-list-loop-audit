@@ -159,8 +159,16 @@ test("parseLoopStartArgs: unquoted target works", () => {
   assert.equal(cfg.target, "reduce the number in num.txt");
 });
 
-test("parseLoopStartArgs: missing measure throws", () => {
-  assert.throws(() => parseLoopStartArgs("target direction=min"), /measure/);
+test("parseLoopStartArgs: bare start (no measure=) is the infinite metricless form (v0.23.6)", () => {
+  const cfg = parseLoopStartArgs('"keep polishing the UI"');
+  assert.equal(cfg.target, "keep polishing the UI");
+  assert.equal(cfg.measureCmd, "");
+  assert.equal(cfg.direction, undefined);
+  assert.equal(cfg.maxIterations, 0); // unbounded — ends at time=/tokens= or /loop stop
+});
+
+test("parseLoopStartArgs: direction= without a measure throws", () => {
+  assert.throws(() => parseLoopStartArgs('"x" direction=min'), /meaningless without a metric/);
 });
 
 test("parseLoopStartArgs: missing direction throws", () => {
@@ -310,7 +318,7 @@ test("parseLoopStartArgs: measure=none yields a metricless config", () => {
   assert.equal(cfg.target, "keep improving SPEC.md");
   assert.equal(cfg.measureCmd, "");
   assert.equal(cfg.direction, undefined);
-  assert.equal(cfg.maxIterations, 50); // default cap still applies
+  assert.equal(cfg.maxIterations, 0); // v0.23.6: metricless + no explicit max = unbounded
 });
 
 test("parseLoopStartArgs: measure=NONE is case-insensitive", () => {
@@ -323,8 +331,9 @@ test("parseLoopStartArgs: direction with measure=none throws", () => {
   assert.throws(() => parseLoopStartArgs('"x" measure=none direction=min'), /direction= is meaningless/);
 });
 
-test("parseLoopStartArgs: missing measure throws and points at measure=none", () => {
-  assert.throws(() => parseLoopStartArgs('"x" direction=min'), /measure=none/);
+test("parseLoopStartArgs: explicit max= caps even a metricless loop", () => {
+  const cfg = parseLoopStartArgs('"x" measure=none max=50');
+  assert.equal(cfg.maxIterations, 50);
 });
 
 test("parseLoopStartArgs: max=0 = truly unbounded; absent max = 50", () => {

@@ -237,12 +237,17 @@ export function parseLoopStartArgs(raw: string): {
   const measureRaw = (kv.get("measure") ?? "").trim();
   // v0.23.0: measure=none → metricless "spec loop" (Sisyphus mode). No
   // metric, no direction, no plateau — bounds and /loop stop only.
-  const metricless = measureRaw.toLowerCase() === "none";
-  if (!measureRaw) throw new Error('missing measure="<shell command that prints a number>" (or measure=none for a metricless spec loop — no plateau, ends only at bounds or /loop stop)');
+  // v0.23.6: a bare `/loop start "<target>"` IS the infinite command —
+  // no measure= means metricless too. The Confirm dialog names "NO
+  // plateau · NO iteration cap · /loop stop" before anything runs, so
+  // the choice is never silent (the v0.23.0 rule). Metric loops keep
+  // the 50-iteration default cap; metricless loops default to UNBOUNDED
+  // (max=0) unless max= is given explicitly.
+  const metricless = !measureRaw || measureRaw.toLowerCase() === "none";
   const dirRaw = (kv.get("direction") ?? "").toLowerCase();
-  if (metricless && dirRaw) throw new Error("direction= is meaningless with measure=none — there is no metric to have a direction");
-  if (!metricless && dirRaw !== "min" && dirRaw !== "max") throw new Error("missing direction=min|max");
-  if (!target) throw new Error("missing target (what to improve), e.g. /loop start \"reduce test failures\" measure=\"...\" direction=min");
+  if (metricless && dirRaw) throw new Error("direction= is meaningless without a metric — add measure=\"<cmd>\" or drop direction=");
+  if (!metricless && dirRaw !== "min" && dirRaw !== "max") throw new Error("missing direction=min|max (a metric loop needs to know which way is better; a bare /loop start \"<target>\" with no measure= is the infinite metricless form)");
+  if (!target) throw new Error("missing target (what to improve), e.g. /loop start \"keep polishing the UI\" — bare start is metricless + unbounded; add measure=\"<cmd>\" direction=min|max for a metric loop");
 
   const window = Number.parseInt(kv.get("window") ?? "", 10);
   const max = Number.parseInt(kv.get("max") ?? "", 10);
@@ -263,8 +268,11 @@ export function parseLoopStartArgs(raw: string): {
     measureCmd: metricless ? "" : measureRaw,
     direction: metricless ? undefined : dirRaw as LoopDirection,
     plateauWindow: Number.isFinite(window) && window > 0 ? window : LOOP_DEFAULTS.plateauWindow,
-    // v0.23.0: max=0 = truly unbounded (no iteration cap); absent = 50.
-    maxIterations: kv.has("max") ? (Number.isFinite(max) && max >= 0 ? max : LOOP_DEFAULTS.maxIterations) : LOOP_DEFAULTS.maxIterations,
+    // v0.23.0: max=0 = truly unbounded (no iteration cap).
+    // v0.23.6: metricless with no explicit max= defaults to UNBOUNDED —
+    // an infinite loop is the point of the bare form. Metric loops keep
+    // the 50-cap default.
+    maxIterations: kv.has("max") ? (Number.isFinite(max) && max >= 0 ? max : LOOP_DEFAULTS.maxIterations) : metricless ? 0 : LOOP_DEFAULTS.maxIterations,
     branch: branchRaw === "1" || branchRaw === "true" || branchRaw === "yes",
     force: forceRaw === "1" || forceRaw === "true" || forceRaw === "yes",
     timeLimitHours: Number.isFinite(timeRaw) && timeRaw > 0 ? timeRaw : undefined,
