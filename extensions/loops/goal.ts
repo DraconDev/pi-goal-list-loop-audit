@@ -77,6 +77,7 @@ import {
   HEARTBEAT_MAX_NUDGES,
   HEARTBEAT_STALL_MS,
   shouldHeartbeatRefire,
+  MEASURE_TIMEOUT_MS,
   WEDGE_ALERT_DEFAULT_MINUTES,
   shouldWedgeAlert,
 } from "../goal-loop-backoff.js";
@@ -958,7 +959,7 @@ function isLoopActive(): boolean {
 async function runMeasure(ctx: ExtensionContext, cmd: string): Promise<number | null> {
   if (!extensionApi) return null;
   try {
-    const result = await extensionApi.exec("bash", ["-c", cmd], { cwd: ctx.cwd });
+    const result = await extensionApi.exec("bash", ["-c", cmd], { cwd: ctx.cwd, timeout: MEASURE_TIMEOUT_MS });
     const stdout = (result as any)?.stdout ?? "";
     return parseMetric(String(stdout));
   } catch {
@@ -2197,7 +2198,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   //   /glla thinking=high        write to GLOBAL config
   //   /glla notify='cmd $1'      write to GLOBAL config
   //   /glla tokenlimit=2000000   write to GLOBAL config
-  //   /glla wedgealert=30         hung-command alert minutes (0=off, unset=45)
+  //   /glla wedgealert=30         hung-command alert minutes (0=off, unset=30)
   //   /glla project model=...    write to PROJECT override (rare)
   //   /glla model=unset          remove key (from global; project model=unset for project)
   const trimmed = args.trim();
