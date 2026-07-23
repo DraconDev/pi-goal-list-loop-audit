@@ -7,7 +7,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseAuditorVerdict } from "../extensions/goal-loop-auditor.ts";
+import { parseAuditorVerdict } from "../extensions/goal-loop-shield.ts";
 import { countTrailingDisapprovals, type AuditVerdict } from "../extensions/goal-loop-core.ts";
 
 const v = (partial: Partial<AuditVerdict>): AuditVerdict => ({

@@ -27,22 +27,6 @@ import type { Goal } from "./goal-loop-core.js";
 import { renderGoalMarkdown } from "./goal-loop-core.js";
 import { AUDITOR_STALL_MS } from "./goal-loop-backoff.js";
 
-/**
- * v0.24.2: pure verdict parser, exported for tests. The verdict is read from
- * the last output block that mentions any verdict tag.
- */
-export function parseAuditorVerdict(output: string): { approved: boolean; disapproved: boolean; impossible: boolean; impossibleReason?: string } {
-  const parts = output.split("\n\n");
-  const lastAssistant = [...parts].reverse().find((t) => /<\/?(approved|disapproved|impossible)[ />]/i.test(t)) ?? output;
-  const impossibleMatch = /<impossible>([\s\S]*?)<\/impossible>/i.exec(lastAssistant);
-  return {
-    approved: /<approved\/>/i.test(lastAssistant),
-    disapproved: /<disapproved\/>/i.test(lastAssistant),
-    impossible: impossibleMatch !== null,
-    impossibleReason: impossibleMatch?.[1]?.trim().slice(0, 300) || undefined,
-  };
-}
-
 // =================================================================
 // Result type
 // =================================================================
@@ -196,8 +180,8 @@ function buildGoalAuditorPrompt(goal: Goal, completionSummary: string | null | u
 
 // regression_shield lives in goal-loop-shield.ts (dependency-free, so unit
 // tests can import it without pulling in pi). Re-exported for callers.
-export { checkRegressionShield, contractItems, type RegressionShieldResult } from "./goal-loop-shield.js";
-import { checkRegressionShield } from "./goal-loop-shield.js";
+export { checkRegressionShield, contractItems, parseAuditorVerdict, type RegressionShieldResult } from "./goal-loop-shield.js";
+import { checkRegressionShield, parseAuditorVerdict } from "./goal-loop-shield.js";
 
 // =================================================================
 // Auditor entry point

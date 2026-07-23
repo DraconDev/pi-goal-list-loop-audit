@@ -199,6 +199,7 @@ No external watchdog plugin needed.
 /glla tokenlimit=0                   # explicitly no cap (the default)
 /glla wedgealert=30                  # hung-command alert minutes (default: 30, 0 = off)
 /glla autoresume=on                  # held goals/loops auto-resume in fresh sessions (unattended rigs)
+/glla auditcap=5                     # pause the goal after N consecutive auditor disapprovals (default 3, 0 = unlimited)
 /glla autoaccept=on                  # drafts ACTIVATE without the Confirm dialog (unattended rigs)
 /glla project tokenlimit=500         # rare per-project override
 ```
