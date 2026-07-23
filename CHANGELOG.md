@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.23.7] — 2026-07-23
+
+Proactive oversight sweep across the OTHER surfaces, after the last four
+releases all came from one class of bug (parser false positives, dialog
+walls, ceremony defaults, stale text). Five real findings, all fixed:
+
+### Fixed
+
+- **Three Confirm dialogs truncated the content being approved** — a
+  Confirm the user can't fully read is not a gate (the v0.23.5 rule,
+  now applied everywhere): `/goal tweak` showed CURRENT/NEW objectives
+  at 400 chars and the new contract at 200; `/list import` showed 5-of-N
+  items at 70 chars; the list-batch Confirm showed 6-of-N at 60 chars.
+  All three now render every item in full.
+- **Three "done when" parsers had drifted apart** (same class as the
+  0.23.4 shield preamble bug): `goalArgsNeedDrafting` and both
+  `extractVerificationContract` modes required the colon DIRECTLY after
+  "done when", so "/goal Fix X. Done when ALL of the following are
+  true: …" routed to the drafting interview despite carrying a full
+  contract. All three now accept any text before the colon, matching
+  what `contractItems` (0.23.4) and `normalizeDraftContract` (0.23.5)
+  already handle.
+- **extract-verification.test.ts tested a STALE COPY** of
+  `extractVerificationContract` — re-implemented in the test file, with
+  a header comment pointing at a `goal-loop-draft.ts` that no longer
+  exists. Testing a copy is testing nothing: the function moved to the
+  pure `goal-loop-core.ts`, the test imports the real one, and a new
+  round-trip test pins the whole chain: normalizeDraftContract → stored
+  goal text → extractVerificationContract → shield contractItems.
+- **Stale "default 45" wedge-alert text** in the settings input prompt
+  and a comment — the actual default has been 30 since v0.23.3 (the
+  runtime and settings UI used the constant; only these strings lied).
+- **Loop drafter prompt said `max` defaults to 50** for everything —
+  stale after v0.23.6 (metric loops: 50; metricless: unbounded). The
+  drafter would have told users the wrong default.
+
 ## [0.23.6] — 2026-07-23
 
 ### Changed
