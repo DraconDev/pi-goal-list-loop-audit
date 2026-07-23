@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.24.0] — 2026-07-23
+
+### Added
+
+- **Loop anti-repetition — the stuck ladder.** The plateau stop watches
+  the *number*; this watches the *work*. New pure module
+  `goal-loop-repetition.ts` (clean-room — standard fingerprint/Jaccard/
+  n-gram techniques, no AGPL code): every loop iteration is classified by
+  `detectLoopStuck` — narration-only streaks (2+ toolless iterations),
+  degenerate single-reply repetition, exact repeat, near-duplicate
+  (trigram Jaccard ≥ 0.8, digits volatile so "port 8081" ≈ "port 8082"),
+  A-B-A-B window repetition, and same-tool-same-result 3× (repeated error
+  or no new information). A stuck iteration replaces the next prompt with
+  a **rotating intervention** (5 strategies, each different — a repeated
+  nudge gets filtered as noise): different approach → untouched subtask →
+  write PROGRESS.md → fix one test failure → review your own diff.
+  - Rung 3+ = **hard reset**: banned openings (the loop's own repeated
+    phrasings), first action must be a tool call.
+  - Rung 5 = **the loop stops**, reason named (`stuck — <reason> (5
+    consecutive interventions)`), notified + ledgered + external push —
+    bounded and surfaced, same philosophy as plateau.
+  - Applies to BOTH loop flavors: metric loops can doorknob-polish while
+    the number wiggles; metricless loops had NO behavioral defense at all.
+  - Rolling windows live on `LoopState` (persisted — survive restore):
+    `recentPrints`, `recentTexts`, `recentToolResults`, `toollessStreak`,
+    `consecutiveStuck`, `lastStuckReason`.
+  - Ledger: `loop_stuck` per intervention; `loop_measured` gains `stuck`.
+- **Rotating continuation lines** for metricless loops (identical prompts
+  invite identical answers) and `${INTERVENTION_NOTE}` / `${VARIANT_NOTE}`
+  placeholders in both loop prompt templates.
+- 21 tests (`tests/repetition.test.ts`) — real module, no copies.
+
+### Verified
+
+- **Continuation delivery already queues, never steers** (ralph-wiggum
+  parity check): `sendLoopTurn` only fires when `ctx.isIdle() &&
+  !ctx.hasPendingMessages()`, else reschedules — mid-turn steering can't
+  happen.
+
 ## [0.23.8] — 2026-07-23
 
 ### Added

@@ -77,6 +77,17 @@ inspectable change; cosmetic churn is the known failure mode
 number, and tells you the trade-off before you confirm. Work with a finish
 line is still a `/goal`.
 
+**Anti-repetition** (v0.24.0, both loop flavors): the plateau stop watches
+the *number*; the stuck ladder watches the *work*. Every iteration is
+classified — exact/near-duplicate replies, A-B-A-B alternation, same
+tool-same-result three times, narration-only streaks, degenerate
+single-reply repetition — and a stuck iteration swaps the next prompt for
+a rotating intervention (different approach → different subtask →
+PROGRESS.md → fix one test failure → review your own diff). Three stuck in
+a row escalates to a hard reset (banned openings, tool-call-first); five
+stops the loop with the reason — bounded and surfaced, like plateau.
+Continuation lines also rotate: identical prompts invite identical answers.
+
 Subcommands match **exactly** — `/goal pause the pipeline` sets an objective
 about a pipeline; only bare `/goal pause` pauses. (Same rule everywhere, so
 your objectives can start with any verb.)
