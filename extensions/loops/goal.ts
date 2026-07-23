@@ -105,9 +105,26 @@ let extensionApi: ExtensionAPI | null = null;
 // pi replaces sessions (newSession/fork/reload) and stale ctx throws on use,
 // so timers must never capture a ctx — they read lastCtx at fire time.
 let lastCtx: ExtensionContext | null = null;
+// v0.23.8: the session that OWNS the loop (its sessionManager). Subagent
+// sessions (pi-subagents binds extensions there too) fire our handlers
+// with their own ctx — they must never take over lastCtx (a headless
+// subagent ctx would silently kill the heartbeat/wedge machinery).
+let ownerSession: unknown = null;
 
 function rememberCtx(ctx: ExtensionContext): void {
+  let ownerLive = false;
+  if (ownerSession && lastCtx) {
+    try { lastCtx.isIdle(); ownerLive = true; } catch { /* owner went stale (session replaced) */ }
+  }
+  const claim = classifySessionCtx(ownerSession, ownerLive, ctx.sessionManager);
+  if (claim === "foreign") return;
+  ownerSession = ctx.sessionManager;
   lastCtx = ctx;
+}
+
+/** True when ctx belongs to a subagent/foreign session, not the loop owner. */
+function isForeignCtx(ctx: ExtensionContext): boolean {
+  return ownerSession !== null && ctx.sessionManager !== ownerSession;
 }
 
 let state: State = { goal: null };
@@ -2443,6 +2460,10 @@ export default function (pi: ExtensionAPI): void {
 
   pi.on("session_start", async (event: any, ctx: ExtensionContext) => {
     rememberCtx(ctx);
+    // v0.23.8: subagent sessions (pi-subagents binds extensions there too)
+    // are workers — never run the restore gate or reschedule the loop from
+    // a foreign session.
+    if (isForeignCtx(ctx)) return;
     state = readState(ctx.cwd);
     if (!registeredCtx) {
       registerAgentTools(pi, ctx);
@@ -2520,6 +2541,9 @@ export default function (pi: ExtensionAPI): void {
 
   pi.on("agent_end", async (event: any, ctx: ExtensionContext) => {
     rememberCtx(ctx);
+    // v0.23.8: a subagent finishing must not drive the main session's
+    // continuation loop.
+    if (isForeignCtx(ctx)) return;
     noteActivity();
     if (!registeredCtx) {
       registerAgentTools(pi, ctx);

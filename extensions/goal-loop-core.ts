@@ -670,3 +670,21 @@ export function extractVerificationContract(raw: string): { objective: string; v
   }
   return { objective, verificationContract };
 }
+
+/**
+ * v0.23.8: subagent-session ownership. pi-subagents binds extensions in
+ * subagent sessions too, so glla's session_start/handlers fire there with
+ * the same module state. The MAIN session owns the goal/loop; subagent
+ * sessions are workers — they must never clobber the loop's ctx handle
+ * (a headless subagent ctx would silently kill the heartbeat/wedge
+ * machinery), never receive continuation injection, and never mutate goal
+ * state. pi hands a FRESH ctx wrapper per event (verified in
+ * dist/core/extensions/runner.js — createContext() per emit), so object
+ * identity is useless; ctx.sessionManager is the stable per-session
+ * discriminator (each subagent gets its own SessionManager).
+ */
+export type OwnerClaim = "claim" | "refresh" | "foreign";
+export function classifySessionCtx(ownerSession: unknown, ownerLive: boolean, sessionManager: unknown): OwnerClaim {
+  if (!ownerSession || !ownerLive) return "claim";
+  return sessionManager === ownerSession ? "refresh" : "foreign";
+}
