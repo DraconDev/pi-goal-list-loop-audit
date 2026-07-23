@@ -40,6 +40,7 @@ import {
   LIST_DRAFTING_BLOCK_MESSAGE,
   sumNewAssistantTokens,
   takeAt,
+  countTrailingDisapprovals,
   goalArgsNeedDrafting,
   buildSeedGrillMessage,
   askUserQuestionAnswered,
@@ -2196,6 +2197,8 @@ interface Settings {
   /** on → restored goals/loops/lists auto-resume even in fresh sessions
    * (unattended rigs). Default off: restore holds until /goal resume. */
   autoResume?: boolean;
+  /** v0.24.2: pause the goal after N consecutive auditor disapprovals (0 = unlimited). Default 3. */
+  auditCap?: number;
   /** on → propose_* drafts activate WITHOUT the Confirm dialog and the
    * interview floor is skipped — the seed carries the intent (unattended
    * rigs). Default off: nothing activates before the user confirms. */
@@ -2244,7 +2247,7 @@ function settingsProvenance(cwd: string): Record<keyof Settings, { value: unknow
   const glob = readSettingsFile(globalSettingsPath());
   const effective = loadSettings(cwd);
   const out: Record<string, { value: unknown; source: "project" | "global" | "default" }> = {};
-  const keys: Array<keyof Settings> = ["auditorModel", "auditorThinkingLevel", "notifyCmd", "tokenLimit", "wedgeAlertMinutes", "autoResume", "autoAcceptDrafts"];
+  const keys: Array<keyof Settings> = ["auditorModel", "auditorThinkingLevel", "notifyCmd", "tokenLimit", "wedgeAlertMinutes", "autoResume", "autoAcceptDrafts", "auditCap"];
   for (const k of keys) {
     if ((proj as Record<string, unknown>)[k] !== undefined) out[k] = { value: (proj as any)[k], source: "project" };
     else if ((glob as Record<string, unknown>)[k] !== undefined) out[k] = { value: (glob as any)[k], source: "global" };
@@ -2415,6 +2418,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
         fmt("tokenLimit", "tokenLimit"),
         fmt("autoResume", "autoResume"),
         fmt("autoAcceptDrafts", "autoAccept"),
+        fmt("auditCap", "auditCap"),
         `\nglobal:  ${globalSettingsPath()}`,
         `project: ${projectSettingsPath(ctx.cwd)}`,
         `Set with: /glla key=value (global) · /glla project key=value (project override)`,
@@ -2486,6 +2490,19 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
         changed = true;
       } else {
         ctx.ui.notify(`autoaccept must be on or off, got: ${value}`, "warning");
+      }
+    } else if (key === "auditcap") {
+      if (["off", "unset", "default"].includes(value)) {
+        patch.auditCap = undefined;
+        changed = true;
+      } else {
+        const n = Number.parseInt(value, 10);
+        if (Number.isInteger(n) && n >= 0) {
+          patch.auditCap = n;
+          changed = true;
+        } else {
+          ctx.ui.notify(`auditcap must be a non-negative integer (0 = unlimited), got: ${value}`, "warning");
+        }
       }
     } else if (key === "thinking" || key === "auditorthinkinglevel") {
       if (["off", "minimal", "low", "medium", "high", "xhigh"].includes(value)) {
@@ -2618,6 +2635,7 @@ export default function (pi: ExtensionAPI): void {
       ["notify=", "desktop push command: /glla notify='notify-send pi \"$1\"'"],
       ["tokenlimit=", "per-goal token budget (0 = off): /glla tokenlimit=2000000"],
       ["autoresume=", "on: auto-resume held goals/loops in fresh sessions"],
+      ["auditcap=", "N: pause goal after N consecutive auditor disapprovals (default 3, 0 = unlimited)"],
       ["autoaccept=", "on: drafts activate without the Confirm dialog (unattended rigs)"],
       ["project", "write a project override: /glla project key=value"],
     ]),

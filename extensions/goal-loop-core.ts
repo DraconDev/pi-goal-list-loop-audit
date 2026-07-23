@@ -88,6 +88,9 @@ export interface AuditVerdict {
   at: string;
   approved: boolean;
   disapproved: boolean;
+  /** v0.24.2: the auditor's third verdict — the goal can NEVER be satisfied as stated. */
+  impossible?: boolean;
+  impossibleReason?: string;
   model: string;
   thinkingLevel?: string;
   report?: string;
@@ -511,7 +514,7 @@ export function renderGoalMarkdown(goal: Goal): string {
     lines.push("## Audit history");
     lines.push("");
     for (const v of goal.auditHistory) {
-      lines.push(`- ${v.at} — ${v.approved ? "approved" : "disapproved"} — \`${v.model}\``);
+      lines.push(`- ${v.at} — ${v.approved ? "approved" : v.impossible ? "impossible" : "disapproved"} — \`${v.model}\``);
     }
     lines.push("");
   }
