@@ -849,7 +849,32 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
     state = { ...state, list: [] };
     persistState(ctx);
     appendLedger(ctx.cwd, "list_cleared", {});
-    ctx.ui.notify("List cleared. Active goal (if any) is untouched — /goal cancel for that.", "info");
+    ctx.ui.notify("List cleared. Active goal (if any) is untouched — /goal cancel for that, /list cancel to stop the whole list.", "info");
+    return;
+  }
+
+  // v0.24.1: ONE verb for "stop this whole list" — aborts the active item
+  // when it's list-sourced AND drops the waiting items. Before this the user
+  // had to know to combine /goal cancel + /list clear.
+  if (sub === "cancel") {
+    const waiting = listQueue().length;
+    const activeIsListItem = state.goal?.policy === "list" && (state.goal.status === "active" || state.goal.status === "paused");
+    if (waiting === 0 && !activeIsListItem) {
+      ctx.ui.notify("No list to cancel — nothing waiting, and the active goal (if any) isn't a list item. /goal cancel aborts a standalone goal.", "info");
+      return;
+    }
+    const dropped = waiting;
+    state = { ...state, list: [] };
+    persistState(ctx);
+    if (activeIsListItem) {
+      archiveCurrentGoal(ctx, "aborted", "list cancelled");
+      ctx.abort();
+    }
+    appendLedger(ctx.cwd, "list_cancelled", { abortedActive: activeIsListItem, dropped });
+    ctx.ui.notify(
+      `List cancelled: ${activeIsListItem ? "active item aborted + " : ""}${dropped} waiting item(s) dropped.${!activeIsListItem && state.goal && state.goal.status === "active" ? " Active goal is not a list item — untouched (/goal cancel for that)." : ""}`,
+      "info",
+    );
     return;
   }
 
@@ -2549,13 +2574,14 @@ export default function (pi: ExtensionAPI): void {
     handler: settingsHandler,
   });
   pi.registerCommand("list", {
-    description: "Loop 2: the list of audited goals — order is the default, not the law. /list <describe tasks or name a plan file> (dumps get shaped into items, files import, 'Done when:' adds directly) | /list show | /list resume | /list next [n] | /list remove <n> | /list clear",
+    description: "Loop 2: the list of audited goals — order is the default, not the law. /list <describe tasks or name a plan file> (dumps get shaped into items, files import, 'Done when:' adds directly) | /list show | /list resume | /list next [n] | /list remove <n> | /list clear | /list cancel",
     getArgumentCompletions: completions([
       ["show", "display the waiting items"],
       ["resume", "resume the paused list item (the list's head)"],
       ["next", "activate the next item (or /list next <n> for position n)"],
       ["remove", "remove an item: /list remove <n>"],
       ["clear", "empty the list"],
+      ["cancel", "stop the whole list: abort the active item + drop all waiting"],
     ]),
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdList(args, ctx); },
   });

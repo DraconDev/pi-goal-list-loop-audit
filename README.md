@@ -57,6 +57,7 @@ matches `/list show`.
 /list next                         # skip current, activate next
 /list remove <n>                   # drop item n from the list
 /list clear                        # empty the list
+/list cancel                       # stop the whole list: abort the active item + drop all waiting
 /loop                              # draft the loop (agent grills; measure is test-run before you confirm)
 /loop start "keep polishing the UI"                          # infinite metricless loop (v0.23.6): no plateau, no cap — ends at time=/tokens= or /loop stop
 /loop start "reduce TODOs" measure="grep -c TODO src.txt | head -1" direction=min

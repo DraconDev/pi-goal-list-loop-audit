@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.24.1] — 2026-07-23
+
+### Added
+
+- **`/list cancel` — stop the whole list as ONE verb** (field report:
+  "there is no way to cancel a list"). Before this, stopping a list meant
+  knowing to combine `/goal cancel` (aborts only the active item; the
+  waiting list survives) with `/list clear` (drops the waiting items; the
+  active item keeps running). `/list cancel` does both: aborts the active
+  goal when it is list-sourced (archived as `aborted — list cancelled`,
+  `ctx.abort()`), drops all waiting items, ledger `list_cancelled`
+  `{abortedActive, dropped}`, and a notify naming exactly what happened.
+  A standalone (non-list) active goal is left untouched and the notify
+  says so — `/list cancel` never reaches outside the list machine.
+  Nothing-to-cancel case is answered, not silent.
+
 ## [0.24.0] — 2026-07-23
 
 ### Added
