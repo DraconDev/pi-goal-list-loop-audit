@@ -2154,7 +2154,7 @@ async function openSettingsUI(ctx: ExtensionContext): Promise<void> {
           else ctx.ui.notify(`Not a non-negative integer: ${v}`, "warning");
         }
       } else if (choice.startsWith("Wedge alert")) {
-        const v = await ctx.ui.input("Wedge alert threshold (minutes)", "non-negative integer; 0 = off, empty = default 45");
+        const v = await ctx.ui.input("Wedge alert threshold (minutes)", "non-negative integer; 0 = off, empty = default 30");
         if (v !== undefined) {
           const n = Number.parseInt(v.trim(), 10);
           if (Number.isFinite(n) && n >= 0) saveSettings("global", ctx.cwd, { wedgeAlertMinutes: n });
@@ -2243,7 +2243,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
       } else {
         const n = Number.parseInt(value, 10);
         if (Number.isFinite(n) && n >= 0) {
-          patch.wedgeAlertMinutes = n; // 0 = off; unset = default 45
+          patch.wedgeAlertMinutes = n; // 0 = off; unset = default 30
           changed = true;
         } else {
           ctx.ui.notify(`wedgealert must be a non-negative integer (minutes, 0 = off), got: ${value}`, "warning");

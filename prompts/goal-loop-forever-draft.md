@@ -38,10 +38,12 @@ stops it.
 3. Clarify the **direction**: is lower better (min) or higher better (max)?
    (Skip this for a metricless loop — there is no direction without a metric.)
 4. Optional tuning: `window` (plateau stop after N non-improving iterations,
-   default 5 — meaningless for metricless), `max` (iteration cap, default 50;
-   `max=0` = truly unbounded). Suggest smaller values for expensive measures.
-   For metricless loops, ALWAYS discuss bounds — an unbounded metricless loop
-   is a deliberate furnace.
+   default 5 — meaningless for metricless), `max` (iteration cap: default 50
+   for METRIC loops; default UNBOUNDED (`max=0`) for metricless loops,
+   v0.23.6 — a bare infinite loop is the point of the metricless form).
+   Suggest smaller values for expensive measures. For metricless loops,
+   ALWAYS discuss bounds — an unbounded metricless loop is a deliberate
+   furnace.
 5. When concrete, call `propose_loop_draft` with `target`, `measureCmd` (or
    omit/`"none"` for metricless), `direction` (measured only), and optional
    `window`/`max`/`time`/`tokens`.
