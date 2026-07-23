@@ -175,3 +175,39 @@ test("still rejects: bamboozle report that never touches the item's vocabulary",
   assert.equal(r.passed, false);
   assert.equal(r.missingItems.length, 1);
 });
+
+// ---- v0.23.4: preamble lines are not items (darklord field bug) ----
+
+test("contractItems: 'Done when ALL of the following are true:' preamble is dropped", () => {
+  const items = contractItems([
+    "Done when ALL of the following are true:",
+    "1. combat-debug route renders without console errors",
+    "2. art-demo-v7 variants persist across reload",
+  ].join("\n"));
+  assert.deepEqual(items, [
+    "combat-debug route renders without console errors",
+    "art-demo-v7 variants persist across reload",
+  ]);
+});
+
+test("contractItems: preamble without trailing colon is also dropped", () => {
+  const items = contractItems("Done when all of the following are true\n- tests pass cleanly");
+  assert.deepEqual(items, ["tests pass cleanly"]);
+});
+
+test("shield passes a genuine approval that a preamble-only false positive used to block", () => {
+  const report = [
+    "<evidence>",
+    "combat-debug renders: bun test src/lib — 42 pass, 0 fail.",
+    "variants persist: reloaded the page, localStorage key art-demo-v7 intact.",
+    "</evidence>",
+    "<approved/>",
+  ].join("\n");
+  const r = checkRegressionShield(report, [
+    "Done when ALL of the following are true:",
+    "1. combat-debug route renders without console errors",
+    "2. art-demo-v7 variants persist across reload",
+  ].join("\n"));
+  assert.equal(r.passed, true);
+  assert.deepEqual(r.missingItems, []);
+});

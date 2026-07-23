@@ -23,7 +23,16 @@ export function contractItems(contract: string): string[] {
     .filter((l) => l.length > 0)
     // Boundary lines ("Out of scope: ...") constrain the auditor's judgment;
     // they are not deliverables and have no evidence to quote (v0.22.6).
-    .filter((l) => !/^out of scope\b/i.test(l));
+    .filter((l) => !/^out of scope\b/i.test(l))
+    // Preamble lines are not checkable items (v0.23.4, darklord field bug:
+    // "Done when ALL of the following are true:" survived as an "item" —
+    // the prefix strip only fires when a colon directly follows "done
+    // when" — and the shield then blocked TWO genuine approvals forever,
+    // because no evidence can reference a preamble). Two mechanical
+    // predicates: a line still ending in a colon introduces a list, and a
+    // "(done when) (all of) the following ..." line IS the introducer.
+    .filter((l) => !l.endsWith(":"))
+    .filter((l) => !/^(?:done when\s+)?(?:all of\s+)?the following\b/i.test(l));
 }
 
 export interface RegressionShieldResult {

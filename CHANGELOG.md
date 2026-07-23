@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.23.4] — 2026-07-23
+
+### Fixed
+
+- **Shield preamble false positive** (darklord field bug: deliverable
+  complete on disk, auditor approved TWICE with substantive evidence, and
+  the regression shield blocked both — a goal at 36/37 items sat paused
+  11h). `contractItems` only stripped "done when" when a colon directly
+  followed it, so a contract preamble like "Done when ALL of the
+  following are true:" survived as a fake contract "item" — and no
+  auditor report can quote evidence for a preamble, so every approval was
+  converted to a disapproval, forever. Two mechanical predicates now drop
+  introducer lines: a line still ending in a colon after prefix-stripping
+  introduces a list, and "(done when) (all of) the following ..." IS the
+  introducer. Real items are untouched; 3 regression tests.
+
 ## [0.23.3] — 2026-07-23
 
 ### Changed
