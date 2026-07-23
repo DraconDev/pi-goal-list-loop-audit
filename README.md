@@ -58,10 +58,11 @@ matches `/list show`.
 /list remove <n>                   # drop item n from the queue
 /list clear                        # empty the queue
 /loop                              # draft the loop (agent grills; measure is test-run before you confirm)
+/loop start "keep polishing the UI"                          # infinite metricless loop (v0.23.6): no plateau, no cap — ends at time=/tokens= or /loop stop
 /loop start "reduce TODOs" measure="grep -c TODO src.txt | head -1" direction=min
 /loop start "shrink the bundle" measure="..." direction=min time=4 tokens=500000   # arbitrary bounds
 /loop start "reduce TODOs" measure="..." direction=min branch=1   # scratch-branch mode
-/loop start "keep improving SPEC.md" measure=none max=20   # metricless spec loop (v0.23.0)
+/loop start "keep improving SPEC.md" measure=none max=20   # metricless with an explicit cap (v0.23.0)
 /loop status                       # iteration, best, stall, recent values
 /loop stop                         # halt with summary
 ```

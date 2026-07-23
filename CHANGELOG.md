@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.23.6] — 2026-07-23
+
+### Changed
+
+- **Bare `/loop start "<target>"` IS the infinite command.** No
+  `measure=` now means metricless (previously a usage error that made
+  you type `measure=none`), and a metricless loop with no explicit
+  `max=` defaults to UNBOUNDED (`max=0`) instead of 50 — an infinite
+  loop is the point of the bare form. The v0.23.0 rule stands: the
+  Confirm dialog names "NO plateau stop · NO iteration cap · /loop
+  stop" before anything runs, so the choice is never silent. Metric
+  loops are untouched (missing `direction=` still errors; absent
+  `max=` still defaults to 50). Explicit `measure=none max=50` still
+  caps. Field instinct: typing `measure=none max=0` for the common
+  "keep polishing forever" case is ceremony.
+
 ## [0.23.5] — 2026-07-23
 
 ### Fixed
