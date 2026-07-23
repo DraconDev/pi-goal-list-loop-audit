@@ -10,10 +10,15 @@ import * as assert from "node:assert/strict";
 
 import {
   accountTurnForNudges,
+  BACKOFF_HARD_CAP_MS,
+  HEARTBEAT_INTERVAL_MS,
   HEARTBEAT_MAX_NUDGES,
   HEARTBEAT_STALL_MS,
   shouldHeartbeatRefire,
   shouldWedgeAlert,
+  WEDGE_ALERT_DEFAULT_MINUTES,
+  MEASURE_TIMEOUT_MS,
+  AUDITOR_STALL_MS,
 } from "../extensions/goal-loop-backoff.ts";
 
 // ---- shouldHeartbeatRefire ----
@@ -128,4 +133,17 @@ test("shouldWedgeAlert: threshold 0 disables", () => {
     supervising: true, sessionBusy: true,
     silentMs: 100 * 60_000, msSinceLastAlert: 100 * 60_000, thresholdMs: 0,
   }), false);
+});
+
+// ---- v0.23.3: timing defaults stay tight (regression guards) ----
+
+test("timing defaults: wedge 30m, measure 10m, auditor stall 10m", () => {
+  assert.equal(WEDGE_ALERT_DEFAULT_MINUTES, 30);
+  assert.equal(MEASURE_TIMEOUT_MS, 10 * 60_000);
+  assert.equal(AUDITOR_STALL_MS, 10 * 60_000);
+  // The family invariant: every wait has a bound, every bound is minutes
+  // not hours, and no bound is infinite.
+  for (const ms of [HEARTBEAT_INTERVAL_MS, HEARTBEAT_STALL_MS, MEASURE_TIMEOUT_MS, AUDITOR_STALL_MS, BACKOFF_HARD_CAP_MS]) {
+    assert.ok(ms > 0 && ms <= 30 * 60_000, `bound out of range: ${ms}`);
+  }
 });

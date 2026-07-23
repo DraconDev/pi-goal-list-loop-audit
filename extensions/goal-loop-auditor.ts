@@ -25,6 +25,7 @@ import {
 
 import type { Goal } from "./goal-loop-core.js";
 import { renderGoalMarkdown } from "./goal-loop-core.js";
+import { AUDITOR_STALL_MS } from "./goal-loop-backoff.js";
 
 // =================================================================
 // Result type
@@ -239,7 +240,22 @@ export async function runGoalCompletionAuditor(args: {
       tools: ["read", "grep", "find", "ls", "bash"],
     });
     let streamError: string | undefined;
+    // v0.23.3 stall watchdog: any session event is activity. An auditor
+    // with NO events for AUDITOR_STALL_MS is wedged (dead stream, hung
+    // provider call) — abort it and return an ERROR, never a verdict,
+    // and never let the completion gate hang forever (the pi-goal-x
+    // failure shape: unbounded silent waits).
+    let lastEventAt = Date.now();
+    let stalled = false;
+    const stallTimer = setInterval(() => {
+      if (Date.now() - lastEventAt > AUDITOR_STALL_MS) {
+        stalled = true;
+        void session.abort();
+      }
+    }, 15_000);
+    stallTimer.unref?.();
     const unsub = session.subscribe((event) => {
+      lastEventAt = Date.now();
       // Capture provider/stream errors (401/403/429/credits) — these often
       // arrive as events rather than thrown exceptions, and without this they
       // surface as a silent empty report that looks like a disapproval.
@@ -306,7 +322,19 @@ export async function runGoalCompletionAuditor(args: {
       }
       await session.prompt(buildGoalAuditorPrompt(args.goal, args.completionSummary, args.verificationSummary));
     } finally {
+      clearInterval(stallTimer);
       unsub();
+    }
+
+    if (stalled) {
+      return {
+        approved: false,
+        disapproved: false,
+        output: outputParts.join("\n\n"),
+        model: modelLabel(model),
+        thinkingLevel,
+        error: `Auditor stalled — no session activity for ${Math.round(AUDITOR_STALL_MS / 60_000)}m, aborted. This is an infrastructure failure, not a verdict; retry completion (check the auditor model with /glla model=).`,
+      };
     }
 
     const output = outputParts.join("\n\n");
