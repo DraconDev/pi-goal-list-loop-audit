@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.23.8] — 2026-07-23
+
+### Added
+
+- **`/glla autoaccept=on` — auto-accept drafts** (field request: "we
+  might not care to read it — we already filled out our intents"). Every
+  `propose_*` draft (goal, list batch, loop, task list) activates the
+  moment the agent proposes it; BOTH the Confirm dialog and the
+  v0.14.0 interview floor are skipped. Never silent: each auto-accept
+  notifies ("Draft auto-accepted — ACTIVATING now: …") and writes a
+  `draft_autoaccepted` ledger entry. Default off — the Confirm gate is
+  the product; this is for unattended rigs (pairs with `autoresume=on`).
+- **Subagent compatibility, made explicit** (`@tintinweb/pi-subagents`):
+  the main session OWNS the goal/loop/list; subagent sessions are
+  workers. Mechanical ownership via `ctx.sessionManager` identity (pi
+  hands a fresh ctx wrapper per event — object identity is useless):
+  subagent sessions never clobber the loop's ctx handle (a headless
+  subagent ctx would have silently killed the heartbeat/wedge
+  machinery), never run the restore gate, never drive continuation, and
+  state-mutating tools (`complete_goal`, `pause_goal`, `propose_*`,
+  `list_add`, `list_activate`) refuse with "report back to the main
+  agent". Subagent tool activity still feeds the wedge clock — a long
+  subagent run is work, not a hang. `classifySessionCtx` (pure) + 4
+  tests.
+
+### Fixed
+
+- **v0.23.7's un-truncation was only 1/3 applied** — a rejected
+  multi-edit silently dropped the tweak and import dialogs (both still
+  truncated: tweak at 400/200 chars, import at 5-of-N items). Now
+  actually fixed; verified by grep this time. Lesson recorded: verify
+  edits landed before claiming them in a changelog.
+- **Drafter-path metricless loops still defaulted to max=50** —
+  v0.23.6 flipped the CLI default (metricless + no explicit max =
+  unbounded) but `propose_loop_draft` kept its own `: 50`. Aligned.
+
+### Changed
+
+- **"Queue" language → list/pool semantics** (field feedback: the list
+  is "claimed to be a queue" but behaves as a pool — order is the
+  default, not the law). User- and agent-facing strings now say list /
+  waiting / added: "Confirm list batch", "Import into list?", "Added
+  to the list (N waiting)", the `list_add` label/description (which
+  now states the pool semantics explicitly), README ("List of goals (a
+  pool, not a FIFO)"). User-language trigger phrases ("queue these 10
+  things") intentionally kept — that's how people ask.
+
 ## [0.23.7] — 2026-07-23
 
 Proactive oversight sweep across the OTHER surfaces, after the last four

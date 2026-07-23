@@ -197,6 +197,29 @@ auditor can't auth it — you're told once (info level) with the fix:
 `/glla model=provider/id`, set once, rarely touched again. The plugin never
 picks a model itself. Thinking follows the session too (floor `high`).
 
+`autoaccept=on` skips BOTH the Confirm dialog and the drafting interview
+floor — every `propose_*` draft (goal, list batch, loop, task list)
+activates the moment the agent proposes it, with a notification and a
+`draft_autoaccepted` ledger entry (auto-accept is never silent). The seed
+carries the intent. Pair with `autoresume=on` for fully unattended rigs.
+
+## Subagents (`@tintinweb/pi-subagents`)
+
+Subagent sessions bind extensions too, so glla loads there — by design the
+**main session owns the goal/loop/list; subagents are workers** (v0.23.8):
+
+- Read-only agents (Explore, Plan) get no glla tools (pi-subagents gates
+  them); general-purpose agents see them but state-mutating calls
+  (`complete_goal`, `propose_*`, `list_add`, `pause_goal`, …) are refused
+  with "report back to the main agent".
+- A subagent session never clobbers the loop's session handle, never runs
+  the restore gate, and never drives continuation — so the heartbeat,
+  wedge alert, and auto-resume machinery always act on the main session.
+  (pi hands a fresh ctx wrapper per event; `ctx.sessionManager` identity
+  is the discriminator.)
+- Subagent tool activity counts as activity for the wedge clock — a long
+  subagent run is work, not a hang.
+
 ## Token guard
 
 Every goal tracks real token usage; crossing the budget pauses the goal.
