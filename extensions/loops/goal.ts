@@ -81,6 +81,10 @@ import {
   loopBranchName,
   parseLoopStartArgs,
   parseMetric,
+  LOOP_DEFAULTS,
+  RESPEC_SPEC_CANDIDATES,
+  resolveSpecFile,
+  respecTarget,
   type LoopState,
 } from "../goal-loop-forever.js";
 import {
@@ -1429,12 +1433,12 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       );
       return;
     }
-    const target = respecTarget(basename(specPath));
+    const target = respecTarget(path.basename(specPath));
     await startLoopFromConfig(ctx, {
       target,
       measureCmd: "",
       direction: undefined,
-      plateauWindow: DEFAULT_PLATEAU_WINDOW,
+      plateauWindow: LOOP_DEFAULTS.plateauWindow,
       maxIterations: 0,
       branch: false,
       force: false,
@@ -2688,7 +2692,7 @@ export default function (pi: ExtensionAPI): void {
     handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdList(args, ctx); },
   });
   pi.registerCommand("loop", {
-    description: "Loop 3: metric-driven process — it never completes. /loop <target> drafts the metric with you · /loop start \"<target>\" = infinite metricless loop (no plateau, no cap; ends at time=/tokens= or /loop stop) · add measure=\"<cmd>\" direction=min|max [window=5] [max=50] [branch=1] for a metric loop · /loop status · /loop stop. 'Improve until X' is a /goal, not a loop.",
+    description: "Loop 3: metric-driven process — it never completes. /loop <target> drafts the metric with you · /loop start \"<target>\" = infinite metricless loop (no plateau, no cap; ends at time=/tokens= or /loop stop) · /loop respec = infinite metricless reconcile against the root SPEC.md · add measure=\"<cmd>\" direction=min|max [window=5] [max=50] [branch=1] for a metric loop · /loop status · /loop stop. 'Improve until X' is a /goal, not a loop.",
     getArgumentCompletions: completions([
       ["start", "skip drafting: /loop start \"<target>\" measure=\"<cmd>\" direction=min|max [window=5] [max=50]"],
       ["respec", "infinite metricless loop reconciling the codebase against the root SPEC.md"],

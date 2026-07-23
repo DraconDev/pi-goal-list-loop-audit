@@ -6,6 +6,9 @@
 
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import {
   applyMeasurement,
@@ -15,6 +18,8 @@ import {
   loopBranchName,
   parseLoopStartArgs,
   parseMetric,
+  resolveSpecFile,
+  respecTarget,
   type LoopState,
 } from "../extensions/goal-loop-forever.ts";
 
@@ -381,4 +386,39 @@ test("applyMeasurement: max=0 = no iteration cap for measured loops either", () 
     assert.equal(outcome.kind, "continue");
   }
   assert.equal(loop.active, true);
+});
+
+// ---- /loop respec (v0.24.3) ----
+
+test("resolveSpecFile: finds SPEC.md in root, prefers it over spec.md", () => {
+  const dir = mkdtempSync(join(tmpdir(), "respec-"));
+  try {
+    writeFileSync(join(dir, "SPEC.md"), "# Spec\n");
+    writeFileSync(join(dir, "spec.md"), "# other\n");
+    assert.equal(resolveSpecFile(dir), join(dir, "SPEC.md"));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("resolveSpecFile: spec.md fallback; null when absent; root only (no subdir crawl)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "respec-"));
+  try {
+    assert.equal(resolveSpecFile(dir), null);
+    mkdirSync(join(dir, "docs"));
+    writeFileSync(join(dir, "docs", "SPEC.md"), "# nested\n");
+    assert.equal(resolveSpecFile(dir), null, "subdirectories are never searched");
+    writeFileSync(join(dir, "spec.md"), "# Spec\n");
+    assert.equal(resolveSpecFile(dir), join(dir, "spec.md"));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("respecTarget: names the spec, reads critically, rotates implement/audit", () => {
+  const t = respecTarget("SPEC.md");
+  assert.ok(t.includes("SPEC.md"), "names the resolved spec file");
+  assert.ok(/critically/.test(t), "spec-suck protection: read critically");
+  assert.ok(/never force the code to match a bad spec/.test(t), "bad-spec escape");
+  assert.ok(/one iteration implements/.test(t) && /the next audits/.test(t), "implement/audit rotation");
 });
