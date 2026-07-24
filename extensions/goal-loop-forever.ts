@@ -302,15 +302,21 @@ export function parseLoopStartArgs(raw: string): {
 /** Root-only spec candidates, in priority order. No fuzzy search. */
 export const RESPEC_SPEC_CANDIDATES = ["SPEC.md", "spec.md"] as const;
 
-/** Resolve the project spec in the root only; null when absent. */
-export function resolveSpecFile(cwd: string): string | null {
+/** Resolve every root spec candidate that exists (priority order). */
+export function resolveSpecFiles(cwd: string): string[] {
+  const found: string[] = [];
   for (const name of RESPEC_SPEC_CANDIDATES) {
     const p = join(cwd, name);
     try {
-      if (existsSync(p) && statSync(p).isFile()) return p;
+      if (existsSync(p) && statSync(p).isFile()) found.push(p);
     } catch { /* unreadable — keep looking */ }
   }
-  return null;
+  return found;
+}
+
+/** Resolve the project spec in the root only; null when absent. */
+export function resolveSpecFile(cwd: string): string | null {
+  return resolveSpecFiles(cwd)[0] ?? null;
 }
 
 /**

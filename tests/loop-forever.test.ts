@@ -19,6 +19,7 @@ import {
   parseLoopStartArgs,
   parseMetric,
   resolveSpecFile,
+  resolveSpecFiles,
   respecTarget,
   type LoopState,
 } from "../extensions/goal-loop-forever.ts";
@@ -421,4 +422,17 @@ test("respecTarget: names the spec, reads critically, rotates implement/audit", 
   assert.ok(/critically/.test(t), "spec-suck protection: read critically");
   assert.ok(/never force the code to match a bad spec/.test(t), "bad-spec escape");
   assert.ok(/one iteration implements/.test(t) && /the next audits/.test(t), "implement/audit rotation");
+});
+
+test("resolveSpecFiles: returns all root specs in priority order (v0.24.4)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "respec-"));
+  try {
+    assert.deepEqual(resolveSpecFiles(dir), []);
+    writeFileSync(join(dir, "spec.md"), "# a\n");
+    assert.deepEqual(resolveSpecFiles(dir), [join(dir, "spec.md")]);
+    writeFileSync(join(dir, "SPEC.md"), "# b\n");
+    assert.deepEqual(resolveSpecFiles(dir), [join(dir, "SPEC.md"), join(dir, "spec.md")]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

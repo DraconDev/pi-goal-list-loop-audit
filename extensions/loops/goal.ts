@@ -82,8 +82,7 @@ import {
   parseLoopStartArgs,
   parseMetric,
   LOOP_DEFAULTS,
-  RESPEC_SPEC_CANDIDATES,
-  resolveSpecFile,
+  resolveSpecFiles,
   respecTarget,
   type LoopState,
 } from "../goal-loop-forever.js";
@@ -1425,13 +1424,36 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       ctx.ui.notify("A loop is already active. /loop stop first.", "warning");
       return;
     }
-    const specPath = resolveSpecFile(ctx.cwd);
-    if (!specPath) {
-      ctx.ui.notify(
-        `/loop respec: no spec in the project root (looked for ${RESPEC_SPEC_CANDIDATES.join(", ")}). Create one, or use /loop start "<target>" directly.`,
-        "warning",
+    const specs = resolveSpecFiles(ctx.cwd);
+    if (specs.length === 0) {
+      // No spec → the target is undetermined; grill instead of dead-ending
+      // on an error (v0.24.4).
+      ctx.ui.notify("No SPEC.md / spec.md in the project root — drafting the loop target with you (or bootstrap a spec first).", "info");
+      await startDrafting(
+        ctx,
+        "loop",
+        "reconcile the codebase against the project spec — but NO SPEC.md / spec.md exists in the root. Grill the user: should the first work be bootstrapping a SPEC.md from the current code (then reconcile against it), or is the reconciliation target better stated in prose? Challenge vague answers.",
       );
       return;
+    }
+    let specPath = specs[0]!;
+    if (specs.length > 1) {
+      // Two specs = ambiguous — never silently pick (v0.24.4). One
+      // slash-bar select, plus a nudge to consolidate.
+      const names = specs.map((p) => path.basename(p));
+      const choice = await ctx.ui.select(
+        "Both SPEC.md and spec.md exist in the root — which one is the spec?",
+        names,
+      );
+      if (choice === undefined) {
+        ctx.ui.notify("respec cancelled.", "info");
+        return;
+      }
+      specPath = specs[names.indexOf(choice)]!;
+      ctx.ui.notify(
+        `Using ${path.basename(specPath)} as the spec. Both files exist — worth consolidating; the loop treats only ${path.basename(specPath)} as the spec.`,
+        "info",
+      );
     }
     const target = respecTarget(path.basename(specPath));
     await startLoopFromConfig(ctx, {
