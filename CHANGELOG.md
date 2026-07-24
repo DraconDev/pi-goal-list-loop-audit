@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.24.4] — 2026-07-23
+
+### Changed — `/loop respec` ambiguity policy: friction scales with ambiguity
+
+Draft exactly when the input can't be mechanically resolved (the grilling
+philosophy applied to respec):
+
+- **Two specs** (`SPEC.md` AND `spec.md` in the root): never silently pick
+  — one slash-bar select asks which is the spec, and a notify nudges to
+  consolidate the pair (the loop treats only the chosen file as the spec).
+- **No spec**: instead of a flat error, `/loop respec` drops into loop
+  drafting with a respec-flavored seed — grill toward bootstrapping a
+  SPEC.md from the current code (then reconcile) or stating the
+  reconciliation target in prose.
+- **One spec**: auto-start, unchanged — the user typed the command; the
+  happy path keeps zero friction.
+- New pure `resolveSpecFiles` (all matches, priority order); 1 test.
+
 ## [0.24.3] — 2026-07-23
 
 ### Added — `/loop respec` (reconcile against the root spec, forever)
