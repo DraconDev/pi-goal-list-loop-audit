@@ -207,6 +207,12 @@ export interface Goal {
    * detection. Bumped live: turns on agent_end, fileWrites/bashCalls on
    * tool_result while the goal is active. */
   telemetry?: { turns: number; fileWrites: number; bashCalls: number };
+  /** v0.34.9: session-ownership tag. SET on the FIRST session_start that
+   * loads the goal (= the session that started it). Read at every heartbeat
+   * tick and at sendContinuation: if the current session's id differs, the
+   * goal belongs to a DIFFERENT session — the orchestrator must NOT inject
+   * the continuation prompt into an unrelated session. Hold instead. */
+  sessionId?: string;
 }
 
 /**
@@ -374,6 +380,12 @@ export interface ListItem {
   objective: string;
   verificationContract?: string;
   addedAt: string;
+  /** v0.34.9: session-ownership tag. SET on the session_start that loads
+   * the list (or when the item is added via /list add). The cascade into
+   * a goal already inherits the Goal.sessionId guard, but tagging the list
+   * item lets the orchestrator surface a foreign-session notice BEFORE
+   * activation and refuse to silently drain an old queue. */
+  sessionId?: string;
 }
 
 /**

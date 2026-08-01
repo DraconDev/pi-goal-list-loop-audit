@@ -1294,6 +1294,33 @@ function armQueueStuckProbe(ctx: ExtensionContext, sentAt: number): void {
 function scheduleContinuation(ctx: ExtensionContext, force = false, delayMs?: number): void {
   abortedStandDown = false; // v0.29.5: any explicit schedule ends the stand-down
   if (!isActionableGoal()) return;
+  // v0.34.9: cross-session leak guard. If the goal was created in a
+  // different session, do NOT inject the continuation prompt into this
+  // session. The heartbeat / post-compaction / stranded-audit paths all
+  // call scheduleContinuation(ctx, true) with force=true — that flag
+  // bypassed the previous duplicate-timer check, but it must NOT bypass
+  // session ownership. The user runs /goal resume explicitly to opt in.
+  {
+    const currentSessionId = (ctx as any)?.sessionInfo?.id ?? (ctx as any)?.sessionId;
+    const goalSessionId = state.goal && (state.goal as any).sessionId;
+    if (goalSessionId && currentSessionId && goalSessionId !== currentSessionId) {
+      if (continuationScheduledFor === state.goal!.id) {
+        continuationScheduledFor = null;
+      }
+      appendLedger(ctx.cwd, "continuation_held_foreign_session", {
+        goalId: state.goal!.id,
+        goalSession: String(goalSessionId).slice(0, 12),
+        currentSession: String(currentSessionId).slice(0, 12),
+      });
+      try {
+        ctx.ui.notify(
+          `glla: goal from a different session held (id ${state.goal!.id.slice(0, 12)}…, belongs to session ${String(goalSessionId).slice(0, 8)}…; this session is ${String(currentSessionId).slice(0, 8)}…). Run /goal resume to continue it here.`,
+          "info",
+        );
+      } catch { /* ui not available */ }
+      return;
+    }
+  }
   rememberCtx(ctx);
   const goalId = state.goal!.id;
   if (!force && continuationScheduledFor === goalId) return;
@@ -1960,6 +1987,32 @@ function activateNextListItem(ctx: ExtensionContext, n = 1): boolean {
     appendLedger(ctx.cwd, "list_activation_blocked_loop", {});
     return false;
   }
+  // v0.34.9: cross-session leak guard — if the HEAD item's sessionId
+  // belongs to a different session, refuse to cascade. The Goal guard
+  // catches the continuation prompt, but we want to surface this BEFORE
+  // draining the queue so the user explicitly opts in via /list resume.
+  {
+    const headQueue = listQueue();
+    const headItem = headQueue[n - 1];
+    if (headItem) {
+      const headSessId = (headItem as any).sessionId;
+      const curSessId = (ctx.sessionInfo as any)?.id ?? (ctx as any).sessionId;
+      if (headSessId && curSessId && headSessId !== curSessId) {
+        appendLedger(ctx.cwd, "list_activation_held_foreign_session", {
+          item: headItem.id.slice(0, 12),
+          itemSession: String(headSessId).slice(0, 12),
+          currentSession: String(curSessId).slice(0, 12),
+        });
+        try {
+          ctx.ui.notify(
+            `glla: list item from a different session held (id ${headItem.id.slice(0, 12)}…, belongs to session ${String(headSessId).slice(0, 8)}…; this session is ${String(curSessId).slice(0, 8)}…). Run /list resume to continue it here.`,
+            "info",
+          );
+        } catch { /* ui not available */ }
+        return false;
+      }
+    }
+  }
   // v0.28.14: carryover resolution runs BEFORE the item is taken — under
   // carryover=clear the stale queue is dropped first and there is nothing
   // to activate; under pause the ONE summary precedes the activation.
@@ -2492,7 +2545,16 @@ function enqueueItems(ctx: ExtensionContext, texts: string[], source: string, op
   if (fresh.length === 0) return 0;
   const items = fresh.map((text) => {
     const extracted = extractVerificationContract(text);
-    return { id: newGoalId(), objective: extracted.objective, verificationContract: extracted.verificationContract || undefined, addedAt: nowIso() };
+    // v0.34.9: tag each new list item with the current session id so the
+    // cross-session guard can refuse to cascade foreign-session items.
+    const sessId = (ctx.sessionInfo as any)?.id ?? (ctx as any).sessionId;
+    return {
+      id: newGoalId(),
+      objective: extracted.objective,
+      verificationContract: extracted.verificationContract || undefined,
+      addedAt: nowIso(),
+      sessionId: sessId ? String(sessId) : undefined,
+    };
   });
   state = { ...state, list: [...listQueue(), ...items] };
   persistState(ctx);
@@ -2908,6 +2970,26 @@ function loopPrompt(loop: LoopState, regressionNote: string, strategyNote: strin
 
 function scheduleLoopTick(ctx: ExtensionContext): void {
   if (!isLoopActive()) return;
+  // v0.34.9: cross-session leak guard. Mirror of the goal guard — if the
+  // loop was started in a different session, do NOT inject its iteration
+  // prompt into this session. /loop resume to opt in.
+  {
+    const currentSessId = (ctx as any)?.sessionInfo?.id ?? (ctx as any)?.sessionId;
+    const loopSessId = state.loop && (state.loop as any).sessionId;
+    if (loopSessId && currentSessId && loopSessId !== currentSessId) {
+      appendLedger(ctx.cwd, "loop_tick_held_foreign_session", {
+        goalSession: String(loopSessId).slice(0, 12),
+        currentSession: String(currentSessId).slice(0, 12),
+      });
+      try {
+        ctx.ui.notify(
+          `glla: /loop from a different session held (belongs to session ${String(loopSessId).slice(0, 8)}…; this session is ${String(currentSessId).slice(0, 8)}…). Run /loop resume to continue it here.`,
+          "info",
+        );
+      } catch { /* ui not available */ }
+      return;
+    }
+  }
   rememberCtx(ctx);
   clearLoopTimer();
   let delay = 0;
@@ -6382,6 +6464,49 @@ export default function (pi: ExtensionAPI): void {
       }
     }
     state = readState(ctx.cwd);
+    // v0.34.9: session-ownership tag — set the goal/loop sessionId on the
+    // FIRST active session that loads them. Subsequent sessions will see a
+    // mismatch and the heartbeat will hold the continuation prompt.
+    // For UNLOADED goals (paused, complete, aborted) we leave the prior
+    // sessionId untouched so a future /goal resume in the same session
+    // continues to work.
+    if (state.goal && state.goal.status === "active" && !(state.goal as any).sessionId) {
+      const sid = (ctx.sessionInfo as any)?.id ?? (ctx as any).sessionId;
+      if (sid) {
+        (state.goal as any).sessionId = String(sid);
+        appendLedger(ctx.cwd, "goal_session_tagged", { goalId: state.goal.id, sessionId: String(sid).slice(0, 12) });
+        persistState(ctx);
+      }
+    }
+    // v0.34.9: same session-ownership tag for the loop. A loop running in
+    // session A must not fire its iteration prompt into session B.
+    if (state.loop && state.loop.active && !(state.loop as any).sessionId) {
+      const sid2 = (ctx.sessionInfo as any)?.id ?? (ctx as any).sessionId;
+      if (sid2) {
+        (state.loop as any).sessionId = String(sid2);
+        appendLedger(ctx.cwd, "loop_session_tagged", { sessionId: String(sid2).slice(0, 12) });
+        persistState(ctx);
+      }
+    }
+    // v0.34.9: tag list items that have no sessionId yet — back-fill only,
+    // never reassign existing tags (so a foreign-session queue stays
+    // flagged foreign).
+    if (state.list && state.list.length > 0) {
+      const sessId3 = (ctx.sessionInfo as any)?.id ?? (ctx as any).sessionId;
+      let mutated = false;
+      const tagged = state.list.map((it) => {
+        if (!(it as any).sessionId && sessId3) {
+          mutated = true;
+          return { ...it, sessionId: String(sessId3) };
+        }
+        return it;
+      });
+      if (mutated) {
+        state = { ...state, list: tagged };
+        appendLedger(ctx.cwd, "list_session_backfill", { count: tagged.length, sessionId: String(sessId3).slice(0, 12) });
+        persistState(ctx);
+      }
+    }
     // v0.28.14: snapshot carryover BEFORE any restore logic mutates state —
     // a paused goal, waiting list items, or a loop that was live/held when
     // the last session ended. Resolved once at the first NEW activation.

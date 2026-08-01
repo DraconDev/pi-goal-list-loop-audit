@@ -108,6 +108,12 @@ export interface LoopState {
   consecutiveStuck?: number;
   /** v0.24.0: the last stuck reason (for the intervention directive + ledger). */
   lastStuckReason?: string;
+  /** v0.34.9: session-ownership tag. SET on the FIRST session_start that
+   * loads the loop (= the session that started it). Same guard as Goal.sessionId:
+   * the heartbeat / post-compaction / stranded-audit paths all call
+   * scheduleLoopTick(ctx) — if the current session's id differs, the loop
+   * belongs to a DIFFERENT session and must NOT inject its prompt here. */
+  sessionId?: string;
   /** v0.25.1: /loop start toolsamerepeat=N — legacy same-tool-same-result
    * check window. 0 disables it (multi-signal detector only). */
   toolSameRepeat?: number;
