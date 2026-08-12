@@ -101,8 +101,16 @@ async function atomicJson(file, value) {
   try {
     await rename(temp, file);
   } catch (error) {
-    await rm(temp, { force: true }).catch(() => {});
-    throw error;
+    // Windows may refuse to replace a file that a concurrent reader or an
+    // antivirus scanner briefly holds open. Unlink the old target and retry
+    // once before giving up.
+    try {
+      await rm(file, { force: true });
+      await rename(temp, file);
+    } catch (retryError) {
+      await rm(temp, { force: true }).catch(() => {});
+      throw retryError;
+    }
   }
 }
 
@@ -388,6 +396,13 @@ async function main() {
       cwd: request.cwd,
       env: process.env,
       stdio: ["pipe", "pipe", "pipe"],
+      // npm publishes platform shims (pi.cmd/pi.ps1) without a real pi.exe;
+      // plain spawn cannot launch a .cmd file, so route through the shell on
+      // Windows. POSIX keeps the direct exec (no shell injection surface).
+      // piArgs is plugin-constructed (fixed flags plus the model/thinking
+      // level from the audited goal), so the cmd concat is not attacker-
+      // controlled.
+      shell: process.platform === "win32",
     });
 
     const remaining = Math.max(1, request.wallDeadlineAt - Date.now());
