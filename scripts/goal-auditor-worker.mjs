@@ -432,10 +432,17 @@ async function main() {
       "--model", request.model,
       "--thinking", request.thinkingLevel,
     ];
+    // On Windows the npm-installed `pi` entrypoint is a .cmd shim (there is no
+    // pi.exe), and Node's child_process cannot exec .cmd/.bat files without a
+    // shell — spawn("pi") → ENOENT, spawn("pi.cmd") → EINVAL. shell: true routes
+    // the launch through cmd.exe, which resolves the shim via PATH/PATHEXT.
+    // The RPC child's own stdin/stdout/stderr pipes are unaffected. Unix keeps
+    // the direct, shell-less spawn.
     pi = spawn(piBinary, piArgs, {
       cwd: request.cwd,
       env: process.env,
       stdio: ["pipe", "pipe", "pipe"],
+      ...(process.platform === "win32" ? { shell: true } : {}),
     });
 
     const remaining = Math.max(1, request.wallDeadlineAt - Date.now());
