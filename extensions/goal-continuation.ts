@@ -1173,6 +1173,28 @@ export function continuationPrompt(goal: Goal): string {
       `## LATEST AUDITOR ${label} (${lastAudit.at})\n\nThe auditor ${label.toLowerCase()} the last completion claim. Here is the full report:\n\n${report}`,
     );
   }
+  
+  // v0.35.x: detect stale revision rejection — auditor approved at old revision,
+  // goal contract has since advanced. The approval was refused; agent must call
+  // complete_goal again to trigger a fresh audit at current revision.
+  const currentRevision = goal.revision ?? 0;
+  const auditedRevision = lastAudit?.revision ?? 0;
+  if (
+    goal.status === "active" &&
+    !goal.pendingCompletion &&
+    lastAudit &&
+    lastAudit.approved &&
+    !lastAudit.disapproved &&
+    !lastAudit.impossible &&
+    lastAudit.regressionShieldPassed !== false &&
+    currentRevision > auditedRevision
+  ) {
+    directives.push(
+      "## STALE AUDITOR APPROVAL — REVISION MISMATCH\n\n" +
+      "The auditor APPROVED the last completion claim at revision " + auditedRevision + ", but the goal contract has since advanced to revision " + currentRevision + ". The approval was REFUSED as stale.\n\n" +
+      "**Action required:** Call `complete_goal` AGAIN with the same completion summary — this will trigger a fresh audit at the current contract revision (" + currentRevision + "). Do NOT pause or tweak; the work is done, the auditor just needs to re-verify at the new revision.",
+    );
+  }
   const dynamicDirectives = directives.length > 0 ? directives.join("\n\n") : "(no active directives)";
   // Use replacement callbacks: String.replace interprets `$&`, `$1`, `$'`,
   // and ``$``` inside replacement strings, which can corrupt perfectly valid
