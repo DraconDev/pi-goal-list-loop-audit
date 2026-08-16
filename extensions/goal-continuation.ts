@@ -1160,6 +1160,19 @@ export function continuationPrompt(goal: Goal): string {
       "## FULL-AUDIT MODE (aggressiveMode + survey objective)\n\nThis objective is a survey, not a single fix. Spawn 3+ `Explore` subagents NOW — one per subsystem, in a single message so they run in parallel — synthesize their findings, and call `propose_task_list` with the result. Do not start fixing before the task list exists.",
     );
   }
+  // v0.35.x: include the latest auditor disapproval/impossible/shield-blocked report so the agent
+  // sees the actual objections instead of a generic instruction.
+  const lastAudit = goal.auditHistory?.[goal.auditHistory.length - 1];
+  if (lastAudit && lastAudit.report) {
+    const report = lastAudit.report.trim();
+    let label = "DISAPPROVAL";
+    if (lastAudit.impossible) label = "IMPOSSIBLE";
+    else if (lastAudit.approved && lastAudit.regressionShieldPassed === false) label = "REGRESSION SHIELD BLOCKED";
+    else if (lastAudit.disapproved) label = "DISAPPROVAL";
+    directives.push(
+      `## LATEST AUDITOR ${label} (${lastAudit.at})\n\nThe auditor ${label.toLowerCase()} the last completion claim. Here is the full report:\n\n${report}`,
+    );
+  }
   const dynamicDirectives = directives.length > 0 ? directives.join("\n\n") : "(no active directives)";
   // Use replacement callbacks: String.replace interprets `$&`, `$1`, `$'`,
   // and ``$``` inside replacement strings, which can corrupt perfectly valid
