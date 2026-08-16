@@ -2089,6 +2089,25 @@ function registerAgentTools(pi: any): void {
           taskCount: taskList.tasks.length,
         });
         liveCtx.ui.notify(`Repair target restored and task list accepted: ${parsed.objective.slice(0, 120)}`, "info");
+        // v0.35.5: the source fragment that triggered this repair card is
+        // resolved by the user-confirmed redraft. Consume it from the queue
+        // (in-memory list + disk sidecar) so it cannot re-spawn a fresh
+        // repair incarnation after this goal is archived. Without this,
+        // every repair-card completion resurrected the same fragment forever
+        // (uuy2pz -> 4yi9kq -> ... in the 2026-08-16 DECIDE-fragment loop).
+        // Guard: only consume when the queued item is still the original
+        // fragment — if the user edited the item meanwhile, their edit wins.
+        const srcId = repairTarget.id;
+        const queuedSrc = listQueue().find((q: NonNullable<State["list"]>[number]) => q.id === srcId);
+        if (queuedSrc && queuedSrc.objective === repairTarget.objective && !queuedSrc.repairTarget) {
+          deleteQueueItemFile(liveCtx.cwd, srcId);
+          replaceState({ ...state, list: listQueue().filter((q: NonNullable<State["list"]>[number]) => q.id !== srcId) });
+          persistState(liveCtx);
+          appendLedger(liveCtx.cwd, "faulty_objective_source_consumed", {
+            targetId: srcId,
+            objective: repairTarget.objective,
+          });
+        }
       } else {
         updateGoal({ taskList }, liveCtx);
       }

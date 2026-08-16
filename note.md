@@ -40,7 +40,17 @@ loop caused heavy resources consupstion
 
 we want to work on our ui to show what matters,  but also better looking if possible
 
+##
+
+/home/dracon/Pictures/Screenshots/Screenshot_20260816_121308.png 
+
+seeming host sesion lost but we are working
+
 # LATER
+
+##
+
+notificaion on asking user a question 
 
 ## 
 yea i think we need more auto intelligence

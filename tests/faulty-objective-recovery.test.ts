@@ -12,7 +12,7 @@ import {
 import type { Goal } from "../extensions/goal-loop-core.js";
 import activate, { __testOnlyLoadState, __testOnlyResetOwnerSession } from "../extensions/loops/goal.js";
 import { guardGoalBeforeContinuation, sendContinuation } from "../extensions/goal-continuation.js";
-import { readState } from "../extensions/goal-loop-core.js";
+import { readState, queueItemPath, writeQueueItemFile } from "../extensions/goal-loop-core.js";
 import { state } from "../extensions/goal-state.js";
 import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd } from "./harness/mock-pi.js";
 
@@ -432,4 +432,36 @@ test("an active goal with an interrupted terminal stopReason is not dispatched",
   const ctx = makeMockCtx(cwd);
   assert.equal(guardGoalBeforeContinuation(ctx as any, "interrupted-terminal-test", String(g.id)), false);
   assert.match(ledger(cwd), /"faulty_objective_terminal_fence"/);
+});
+
+test("replan confirmation consumes the source queue fragment and its sidecar", async () => {
+  const cwd = tmpCwd();
+  const fragment = "Item: every DECIDE finding has been raised to the user and recorded as DECIDED/DEFERRED (or the report states plainly that none were found)";
+  const src = {
+    id: "20260816054711-jtcstn",
+    objective: fragment,
+    addedAt: "2026-08-16T05:47:11.820Z",
+  };
+  const g = suspiciousGoal("active", "list");
+  g.objective = "Repair the blocked list item from saved intent";
+  g.repairTarget = { id: src.id, objective: fragment, reasons: ["verification-fragment"], source: "list-activation" };
+  seedState(cwd, { goal: g, list: [src] });
+  writeQueueItemFile(cwd, src); // the disk sidecar the queue keeps for the parked fragment
+  const pi = new MockPi();
+  activate(pi.api);
+  const ctx = await boot(pi, cwd);
+  state.goal!.status = "active";
+  ctx.ui.confirmImpl = async () => true;
+  ctx.ui.selectImpl = async () => "Yes";
+  ctx.ui.customStubMode = true;
+  await pi.runTool("propose_task_list", {
+    objective: "Consume repaired queue fragments on replan confirmation so they cannot respawn",
+    tasks: [{ title: "Consume the source fragment" }, { title: "Verify no respawn" }],
+  }, ctx);
+  const after = readState(cwd);
+  assert.equal(after.goal?.repairTarget, undefined);
+  assert.equal(after.goal?.objective, "Consume repaired queue fragments on replan confirmation so they cannot respawn");
+  assert.deepEqual(after.list, []); // the parked fragment left the queue
+  assert.equal(fs.existsSync(queueItemPath(cwd, src.id)), false); // and its sidecar is gone
+  assert.match(ledger(cwd), /"faulty_objective_source_consumed"/);
 });
