@@ -57,7 +57,7 @@ export function buildAuditorPiSpawnSpec(
   }
 
   const command = [piBinary, ...piArgs]
-    .map((argument) => quoteWindowsCommandArgument(argument))
+    .map((argument) => /[\s"&|<>^()]/.test(String(argument)) ? quoteWindowsCommandArgument(argument) : String(argument))
     .join(" ");
 
   // /s /c needs an outer quote pair around a command whose executable and
