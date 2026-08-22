@@ -1215,6 +1215,17 @@ export function continuationPrompt(goal: Goal): string {
         "**Action required:** run `/goal verify` to audit the current contract, then call `complete_goal` again. If the contract change is part of this work, re-submit the claim with `newObjective` instead — the fresh audit then covers the new contract in the same call.",
     );
   }
+  // v0.35.28 (issue #16): when glla AUTO-resumed a lapsed wait, tell the
+  // agent plainly that IT was the session that was disconnected and
+  // recovered — field report: an agent narrated "waiting for the upstream
+  // provider / for itself to be recovered" for 30+ minutes because nothing
+  // told it the recovery had already happened and that it should continue
+  // its own work instead of waiting.
+  if (goal.status === "active" && goal.autoResumedAt) {
+    directives.push(
+      `## RECOVERY NOTICE — WELCOME BACK, YOU WERE RECOVERED\n\nThis goal was paused and glla auto-resumed it at ${goal.autoResumedAt} (event: ${goal.autoResumedEvent ?? "recovery"}). You are the SAME session that was disconnected — nobody else took over, and there is no external recovery signal to wait for. The wait condition you were told about has elapsed; continue your own work toward the objective now.`,
+    );
+  }
   const dynamicDirectives = directives.length > 0 ? directives.join("\n\n") : "(no active directives)";
   // Use replacement callbacks: String.replace interprets `$&`, `$1`, `$'`,
   // and ``$``` inside replacement strings, which can corrupt perfectly valid

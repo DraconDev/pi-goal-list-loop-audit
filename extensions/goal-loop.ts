@@ -932,7 +932,14 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       !!r?.startsWith("stopped by user —") ||
       !!r?.startsWith("plateau —") ||
       !!r?.startsWith("stalled:") ||
-      !!r?.startsWith("stuck —");
+      !!r?.startsWith("stuck —") ||
+      // v0.35.25 (issue #14): abortZombieRun parks with
+      // "stopped: automatic zero-stream abort — … (/loop resume to retry)"
+      // and its user-facing message PROMISES that resume command. The
+      // predicate it lands in never matched the prefix, so /loop resume
+      // answered "No held loop to resume" and the preserved iteration,
+      // best value, and history were unreachable without re-drafting.
+      !!r?.startsWith("stopped: automatic zero-stream abort");
     if (stored && !stored.active && RESUMABLE_STOP(stored.stopReason)) {
       // Branch-mode stop returns HEAD to originalBranch. Refuse a resume from
       // there rather than letting the next tick commit loop work to the

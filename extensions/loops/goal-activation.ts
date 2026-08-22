@@ -1597,6 +1597,14 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
           "warning",
         );
       }
+    } else if ((autoResume || explicitRecovery) && typeof state.loadHoldAt === "number") {
+      // v0.35.28 (issue #16): a hold persisted by a PREVIOUS process must
+      // not outlive the user's consent — with auto-resume on, a stale
+      // hold would freeze supervisorPaused()-gated machinery (including
+      // the due-wait backstop) until a manual resume that may never come.
+      replaceState({ ...state, loadHoldAt: undefined });
+      persistState(ctx);
+      appendLedger(ctx.cwd, "load_hold_released", { via: "consenting-reload" });
     }
     refreshUI(ctx);
   });

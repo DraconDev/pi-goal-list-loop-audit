@@ -336,7 +336,9 @@ test("v0.34.105 source pin: subagent scan precedes the main-model-recovery early
   const hb = fs.readFileSync("extensions/goal-heartbeat.ts", "utf-8"); // decomposition step 4 (v0.34.112)
   const tickBody = hb.slice(hb.indexOf("function heartbeatTick"), hb.indexOf("function startHeartbeat"));
   const scanAt = tickBody.indexOf("subagentHangProbes.size > 0");
-  const recoveryGateAt = tickBody.indexOf("if (mainModelRecoveryActive()) return;");
+  // v0.35.28 (issue #16): the gate became a block that first runs the
+  // due-wait backstop, then returns under active main-model recovery.
+  const recoveryGateAt = tickBody.indexOf("if (mainModelRecoveryActive()) {");
   assert.ok(scanAt > -1, "the subagent scan lives in heartbeatTick");
   assert.ok(recoveryGateAt > -1, "the recovery early-return lives in heartbeatTick");
   assert.ok(scanAt < recoveryGateAt, "the scan runs BEFORE the recovery gate — a quota wall can no longer blind it");

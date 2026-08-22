@@ -453,7 +453,11 @@ test("v0.32.1: post-compaction resume debt + deterministic resync (pi-goal-x's l
 test("v0.34.5: wedge alert names a subagent wait when the in-flight call is one", () => {
   const g = readGoalRuntimeSource();
   assert.match(HEARTBEAT_SRC, /SUBAGENT WAIT/, "the alert names the wait type");
-  assert.match(HEARTBEAT_SRC, /t\.name === "get_subagent_result" \|\| t\.name === "Agent"/, "detects both wait shapes");
+  // v0.35.26 (issue #13): the wedge hint consumes the shared
+  // isSubagentWaitCall predicate — same name set as the zombie stand-down,
+  // extended with the pi-subagents registrations ("subagent", "subagent_wait").
+  assert.match(HEARTBEAT_SRC, /\.filter\(isSubagentWaitCall\)/, "detects waits via the shared predicate");
+  assert.match(HEARTBEAT_SRC, /"subagent",[\s\S]*?"subagent_wait",/, "the set covers the pi-subagents tool names");
   assert.match(HEARTBEAT_SRC, /tool-use\/token counters have stopped moving between checks is hung, not thinking/, "the liveness check is in the message");
   assert.match(HEARTBEAT_SRC, /subagentWait: subWaits\.size > 0/, "ledger marks subagent waits distinctly");
 });

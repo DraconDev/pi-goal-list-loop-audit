@@ -1,5 +1,81 @@
 # Changelog
 
+## 0.35.28 — due-wait backstop: lapsed wait pauses actually resume; "you were recovered" notice (2026-08-22, GitHub issue #16)
+
+### Root cause (field: goal paused 30min past its scheduled auto-resume while the agent narrated "the system should have auto-resumed by now")
+  Auto-resume for pauseKind "wait" relied SOLELY on in-memory timers. An
+  exhaustive map of every wait-pause site found: agent-authored waits
+  (pause_goal kind="wait") armed NO timer at all while their own copy
+  promised automatic continuation; error-brake cooldown waits were not
+  re-armed on session_start; single-slot provider-retry timers could be
+  silently clobbered by a later schedule; and no code path anywhere compared
+  wall time against pauseResumeAt outside display rendering.
+### Fix
+  The heartbeat owns the durable invariant now: every tick, a wait whose
+  pauseResumeAt lapsed >90s is re-fired — main-model recovery waits route to
+  a provider probe, everything else clears the park and dispatches one fresh
+  continuation. supervisorPaused() still freezes it under /glla pause and
+  the load hold, one attempt per (goalId:resumeAt) key prevents storms (the
+  route re-parks with a fresh resumeAt on failure), and every fire is
+  ledgered wait_pause_overdue_resume. A stale hold persisted by a previous
+  process is released when a consenting reload arrives. Issue part 2:
+  resumed goals carry an autoResumed stamp rendered as a RECOVERY NOTICE in
+  the continuation prompt — "welcome back, YOU were recovered" — so agents
+  stop waiting for an external recovery signal that already happened.
+
+## 0.35.27 — Windows auditor launch: quote only when needed, gate always first (2026-08-22, PR #17)
+
+### Field report (PR #17, reproduced on Windows 11 + pnpm global shim)
+  The detached auditor died ~0.5s after launch and retried forever: quoting
+  EVERY argument wraps a bare executable name in quotes, which changes how
+  cmd.exe resolves it and how npm/pnpm .CMD shims compute their own
+  directory -> MODULE_NOT_FOUND -> "pi exited without an agent_settled RPC
+  event" in a 60s retry loop of flashing terminal windows.
+### Fix
+  buildAuditorPiSpawnSpec now runs the WINDOWS_UNSAFE_ARG rejection on EVERY
+  argument BEFORE the quoting decision, then quotes only when tokenization
+  requires it (whitespace / cmd metacharacters / empty). Clean bare tokens
+  reach cmd.exe untouched (shims resolve; full RPC sessions work); the
+  upstream PR's variant was not mergeable as-is because its needs-quoting
+  regex also gated the unsafe-arg check, letting %/CR/LF through bare.
+  Regression tests pin all three classes through the spec builder.
+
+## 0.35.26 — zombie watchdog recognizes pi-subagents tool names (2026-08-22, GitHub issue #13)
+
+### Gap
+  The v0.35.4 subagent-wait carve-out matched only the legacy built-in names
+  (Agent / get_subagent_result / steer_subagent). The pi-subagents extension
+  registers its foreground dispatch tool as "subagent" and a blocking wait as
+  "subagent_wait", so a parent legitimately BUSY on a healthy foreground child
+  tripped the bounded abort: field report shows a child writing Postgres
+  records productively for 30 minutes while the parent was stream-silent on
+  `subagent` — zombie_run_suspected at 20m, loop_stopped + zombie_run_aborted
+  at 30m, productive work killed mid-write.
+### Fix
+  One shared SUBAGENT_WAIT_TOOL_NAMES set + isSubagentWaitCall predicate in
+  goal-heartbeat.ts, consumed by BOTH sites (zombie stand-down and wedge-alert
+  hint) so the lists cannot drift apart again. New names: "subagent",
+  "subagent_wait". Behavioral tests drive the real heartbeat tick with a real
+  tool_call event: stand-down while in flight, clean abort once it settles,
+  no blanket amnesty.
+
+## 0.35.25 — /loop resume honors the zero-stream abort park (2026-08-22, GitHub issue #14)
+
+### Gap
+  abortZombieRun parks a loop with stopReason "stopped: automatic zero-stream
+  abort — ... (iteration N preserved; /loop resume to retry)" and its message
+  promises /loop resume — but the RESUMABLE_STOP predicate in the resume
+  handler never matched that prefix. The explicit resume answered "No held
+  loop to resume"; iteration count, best value, and preserved history were
+  unreachable without re-drafting from scratch (field report: a metricless
+  24h loop parked at iteration 210 with 200 history entries).
+### Fix
+  RESUMABLE_STOP gains the "stopped: automatic zero-stream abort" prefix.
+  The explicit resume now re-arms the loop exactly as promised: fresh stall
+  window, re-armed counters, load hold released, one new dispatch — with
+  iteration/best/history intact. Control test pins that non-resumable stops
+  (e.g. bounds) stay stopped.
+
 ## 0.35.24 — auditor model picker at full selector parity: forbidden-models filtering (2026-08-22, note.md Next #1)
 
 ### Gap

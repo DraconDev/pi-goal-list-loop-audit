@@ -368,6 +368,13 @@ export interface Goal {
   pauseRecommended?: number;
   /** v0.28.22: ISO time a wait-pause becomes resumable (countdown shown). */
   pauseResumeAt?: string;
+  /** v0.35.28 (issue #16): set when glla AUTO-resumed a lapsed wait — the
+   * continuation prompt renders a recovery notice from it so the agent
+   * understands IT was the session that was disconnected and recovered
+   * (issue #16 part 2: agents waited "for themselves to be recovered").
+   * Cleared by an explicit manual /goal resume. */
+  autoResumedAt?: string;
+  autoResumedEvent?: string;
   /** v0.28.1 (S1/S2): stale-handle interrupt marker. Set INSTEAD of pausing
    * when pi invalidates the extension handle mid-goal — the goal stays
    * active so a fresh session auto-resumes it via the restore gate. Cleared

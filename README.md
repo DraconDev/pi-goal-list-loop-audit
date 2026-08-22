@@ -8,9 +8,9 @@ The auditor runs in a fresh extension-less pi RPC process with no extensions, sk
 
 This is a detached process, not a nested session in the main pi process. `complete_goal` returns after writing the claim and job request; the status surface shows `auditor queued`, `auditor running`, or `audit recovery pending` while the worker runs or awaits a fresh lifecycle.
 
-On Windows, npm installs the `pi.cmd` shim rather than a directly executable `pi` binary. The auditor launches it through an explicitly quoted `cmd.exe` boundary; POSIX keeps direct shell-less execution. Protocol snapshots also tolerate transient Windows file-locks without deleting the last valid snapshot first.
+On Windows, npm installs the `pi.cmd` shim rather than a directly executable `pi` binary. The auditor launches it through an explicit `cmd.exe` boundary; arguments are quoted only when tokenization requires it (v0.35.27 — quoting a bare executable name breaks `.CMD` shim resolution on pnpm installs), and every argument passes the unsafe-character gate (`%`, CR, LF) before that decision. POSIX keeps direct shell-less execution. Protocol snapshots also tolerate transient Windows file-locks without deleting the last valid snapshot first.
 
-**Current package version:** `v0.35.24` — use `/glla version` to see the installed version and the command for comparing it with the registry latest. This checkout may contain unreleased changes; the npm registry is authoritative for published versions.
+**Current package version:** `v0.35.28` — use `/glla version` to see the installed version and the command for comparing it with the registry latest. This checkout may contain unreleased changes; the npm registry is authoritative for published versions.
 
 ## Why this exists
 
@@ -301,6 +301,14 @@ below — without touching active work or a running detached audit. The flag is
 persisted and survives restarts; `/glla resume` clears it. Bare `/glla` shows
 the frozen state.
 
+**Zombie watchdog vs subagent waits (v0.35.26, issue #13).** A parent
+blocked on a foreground subagent call is stream-silent by design, so the
+zero-stream watchdog stands down while one is in flight. The recognized
+names cover both the built-ins (`Agent`, `get_subagent_result`,
+`steer_subagent`) and the pi-subagents extension's registrations
+(`subagent`, `subagent_wait`), shared by the watchdog and the wedge-alert
+hint so they cannot drift apart again.
+
 ## Provider failures: aggressive retry envelope, bounded (v0.35.0)
 
 Error text is **not trusted** to pick a retry policy. The runtime does not
@@ -314,6 +322,9 @@ adds a blind `:00:30` retry after each hour starts, so work can be picked up
 quickly after a possible provider-side change. The automatic window is 24h;
 explicit `/goal resume`, `/list resume`, or `/loop resume` starts a fresh
 window. With global `autoResume=on`, pending retries survive a session reload.
+A loop parked by the zero-stream abort (v0.35.25, issue #14) is explicitly
+resumable: `/loop resume` re-arms it with the preserved iteration count,
+best value, and history — exactly as the abort message promises.
 
 Only failures identified by positive evidence as futile avoid automatic retry:
 context/output-token limits and user aborts (`non-recoverable`). Auditor
@@ -465,6 +476,19 @@ without consent: validated handoffs/rebinds, same-process session
 successors, re-arming of work already in flight when a host silently died,
 and the single retry a parked completion claim earns when main-model
 recovery heals the provider that parked it.
+
+**Due-wait backstop (v0.35.28, issue #16).** A time-gated wait pause
+(`pauseKind: "wait"` with a `pauseResumeAt`) is no longer trusted to
+in-memory timers alone — agent-authored waits armed none, error-brake
+cooldowns were not re-armed on reload, and every scheduled resume died with
+its session. The heartbeat now compares wall time against `pauseResumeAt`
+every tick and re-fires the route once the deadline lapses by more than
+~90s (main-model waits probe the provider; other waits clear the park and
+dispatch one fresh continuation). `/glla pause` and the load hold still
+freeze it; every fire is ledgered (`wait_pause_overdue_resume`). Auto-resumed
+goals carry a RECOVERY NOTICE in their next continuation prompt — "welcome
+back, YOU were recovered" — so the agent continues its own work instead of
+waiting for an external recovery signal that already fired.
 
 ## Completion and destructive commands
 

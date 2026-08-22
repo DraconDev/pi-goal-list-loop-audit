@@ -1,58 +1,25 @@
 # Now
 
 ##
-
+investigate the github issues
 https://github.com/DraconDev/pi-goal-list-loop-audit/issues
-
-## DONE v0.35.17 (auditor-approved 2026-08-21)
-
-after accepting the questiong we often see op was aborted /home/dracon/Pictures/Screenshots/Screenshot_20260821_152311.png 
-→ root-caused; zero-stream watchdog abort now schedules ONE bounded automatic retry (~90s); second consecutive abort still parks; /glla pause freezes it; manual /goal resume intact.
-
-## DONE — tags backfilled 2026-08-21 (v0.35.17)
-
-the git repo is misisng tags
-→ all 41 missing v-tags created at historical commits, pushed to origin/github/gitlab.
-
-## DONE v0.35.17
-
-maybe sometimes else or least update teh readme
-→ README currency pass: footer glyphs/meter, /glla pause+resume, quiet-notify, auto-retry, version current.
 
 # Next
 
-## QUEUED → list item 4
+##
 
-the auditor seleciton should be like the main agent selector
-
-## QUEUED → list item 3
-
-when we load a session we dont have to start it right away
-we should decide not auto start
-
-## QUEUED → list item 2
-
-suspicious goal, repair task was qd but nothing started or can be started
-happened when tried to /goal start some kind of audit
-
-suspicious goal / objective
-/home/dracon/Pictures/Screenshots/Screenshot_20260821_134442.png 
-/home/dracon/Pictures/Screenshots/Screenshot_20260821_134645.png 
-
-/home/dracon/Pictures/Screenshots/Screenshot_20260821_114210.png 
-/home/dracon/Pictures/Screenshots/Screenshot_20260821_114109.png 
-
-## QUEUED → list item 1 (active)
-
-list exec stopped and list because not visible til i restarted session
-/home/dracon/Pictures/Screenshots/Screenshot_20260821_213238.png 
-/home/dracon/Pictures/Screenshots/Screenshot_20260821_214510.png 
-
-here too
-/home/dracon/Pictures/Screenshots/Screenshot_20260821_215228.png /home/dracon/Pictures/Screenshots/Screenshot_20260821_215209.png 
-
+updating the readme and docs would be nice
 
 # Later
+
+##
+
+loop ended ? not sure it should have, albeit this may not be our fault but hte system went to sleep unless we can make sure that pi doesnt do that 
+else i need a solution elsewhere
+/home/dracon/Pictures/Screenshots/Screenshot_20260822_094423.png 
+
+albeit other loop did not end
+/home/dracon/Pictures/Screenshots/Screenshot_20260822_095058.png 
 
 ##
 
@@ -80,6 +47,11 @@ Is htis intended, like ai cant prune the list?
     to confirm positions before the second)
 
  What remains queued afterwards: the codex-reset.json refresh automation, the SSR aria fail-loud check, and the resets-this-month counter — all real pending work from your DECIDED verdicts.
+
+##
+
+we coudl use better visuals cause this is what wesee now and it is worth htinking what and how we show
+/home/dracon/Pictures/Screenshots/Screenshot_20260822_132806.png 
 
 # Idea
 

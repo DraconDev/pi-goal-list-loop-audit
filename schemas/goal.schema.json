@@ -60,6 +60,8 @@
     "pauseOptions": { "type": "array", "items": { "type": "string" } },
     "pauseRecommended": { "type": "number" },
     "pauseResumeAt": { "type": "string" },
+  "autoResumedAt": { "type": "string", "description": "v0.35.28 issue #16: ISO time glla auto-resumed a lapsed wait; renders the RECOVERY NOTICE in the continuation prompt; cleared by manual /goal resume" },
+  "autoResumedEvent": { "type": "string", "description": "v0.35.28 issue #16: what auto-resumed the goal (overdue wait route, provider recovery event)" },
     "providerErrorDiagnostic": { "type": "string", "description": "Bounded provider diagnostic retained for ledger/archive forensics; never a chat projection." },
     "recoveryEpisodeKey": { "type": "string" },
     "recoveryNoticeKeys": { "type": "array", "maxItems": 16, "items": { "type": "string" } },

@@ -26,6 +26,7 @@ import {
   appendLedger,
   nowIso,
   resolveEffectiveAggressiveSettings,
+  supervisorPaused,
   type Goal,
 } from "./goal-loop-core.js";
 import { loadSettings } from "./goal-settings.js";
@@ -39,7 +40,7 @@ import {
   shouldWedgeAlert,
 } from "./goal-loop-backoff.js";
 import { isLoopActive, loopTimerPending, scheduleLoopTick } from "./goal-loop.js";
-import { mainModelRecoveryActive, markCompletionAuditRecoveryPending } from "./goal-recovery.js";
+import { mainModelRecoveryActive, markCompletionAuditRecoveryPending, probeMainModelRecovery } from "./goal-recovery.js";
 import type { ContinuationDispatch } from "./goal-loop-dispatch.js";
 
 /** goal.ts-owned module lets the heartbeat reads/writes through this accessor.
@@ -174,6 +175,93 @@ let zombieRunAbortGraceMsOverride: number | null = null;
 const ZOMBIE_RUN_SILENT_MS = 20 * 60_000;
 const ZOMBIE_RUN_ABORT_GRACE_MS = 10 * 60_000;
 const ZOMBIE_RUN_ALERT_THROTTLE_MS = 10 * 60_000;
+
+// v0.35.26 (issue #13): ONE shared name set for "the parent is legitimately
+// stream-silent because it is blocked on a subagent call" — consumed by both
+// the zombie stand-down and the wedge-alert hint so the two sites cannot
+// drift apart again (that drift is exactly the bug). The legacy built-in
+// names (Agent / get_subagent_result / steer_subagent) are joined by the
+// pi-subagents extension's registrations: its foreground dispatch tool is
+// named "subagent" and its blocking background wait is "subagent_wait"
+// (field 2026-08-21: a healthy foreground child wrote Postgres records for
+// 30 productive minutes while the parent was stream-silent on `subagent` —
+// the watchdog aborted it at the grace boundary anyway).
+const SUBAGENT_WAIT_TOOL_NAMES: ReadonlySet<string> = new Set([
+  "Agent",
+  "get_subagent_result",
+  "steer_subagent",
+  "subagent",
+  "subagent_wait",
+]);
+const isSubagentWaitCall = (t: { name?: string }): boolean =>
+  typeof t.name === "string" && SUBAGENT_WAIT_TOOL_NAMES.has(t.name);
+
+// ============================================================================
+// v0.35.28 (issue #16): due-wait backstop — the durable invariant that a
+// pauseKind "wait" actually resumes when its pauseResumeAt lapses.
+//
+// Field report: a goal sat paused for 30+ minutes past its scheduled
+// auto-resume while the agent narrated "the system should have auto-resumed
+// by now". Investigation found auto-resume relied SOLELY on in-memory
+// timers: agent-authored waits (pause_goal kind="wait") armed NO timer at
+// all while their own copy promised automatic continuation; error-brake
+// cooldowns were not re-armed on session_start; and every scheduled resume
+// died with the session that created it. The heartbeat now compares wall
+// time against pauseResumeAt on every tick and re-fires the route.
+const WAIT_OVERDUE_GRACE_MS = 90 * 1_000;
+/** One backstop attempt per (goalId:resumeAt) pair — the underlying route
+ * rewrites pauseResumeAt when it re-parks, which re-arms the key. */
+let lastOverdueWaitKey = "";
+
+function overdueWaitDue(): boolean {
+  const goal = state.goal;
+  if (!goal || goal.status !== "paused" || goal.pauseKind !== "wait") return false;
+  if (typeof goal.pauseResumeAt !== "string") return false;
+  const dueMs = Date.now() - Date.parse(goal.pauseResumeAt);
+  if (!Number.isFinite(dueMs) || dueMs < WAIT_OVERDUE_GRACE_MS) return false;
+  // Manual /glla pause and the v0.35.23 load hold freeze ALL automatic
+  // dispatch — an overdue wait under them stays frozen until an explicit
+  // resume releases the hold (same consent boundary as session_start).
+  if (supervisorPaused(state)) return false;
+  return `${goal.id}:${goal.pauseResumeAt}` !== lastOverdueWaitKey;
+}
+
+function overdueWaitBackstop(ctx: ExtensionContext): void {
+  if (!overdueWaitDue()) return;
+  const goal = state.goal!;
+  const reason = goal.pauseReason ?? "";
+  lastOverdueWaitKey = `${goal.id}:${goal.pauseResumeAt}`;
+  appendLedger(ctx.cwd, "wait_pause_overdue_resume", {
+    goalId: goal.id,
+    pauseResumeAt: goal.pauseResumeAt,
+    overdueMs: Date.now() - Date.parse(goal.pauseResumeAt!),
+    reason: reason.slice(0, 160),
+    route: reason.startsWith("main model recovery") ? "main-model-probe" : "continuation",
+  });
+  if (reason.startsWith("main model recovery")) {
+    void probeMainModelRecovery(ctx).catch(() => { /* re-parks with a fresh resumeAt on failure */ });
+    return;
+  }
+  // Agent-authored waits and error-brake cooldowns alike: the stated wait
+  // condition's deadline has passed — clear the park and re-dispatch, with
+  // a recovery stamp so the continuation prompt tells the agent it was
+  // ITSELF that was recovered (issue #16 part 2).
+  updateGoal({
+    status: "active",
+    pauseKind: undefined,
+    pauseResumeAt: undefined,
+    pauseReason: undefined,
+    pauseSuggestedAction: undefined,
+    autoResumedAt: new Date().toISOString(),
+    autoResumedEvent: `overdue wait resumed (${reason.slice(0, 80) || "time-gated wait"})`,
+  }, ctx);
+  scheduleContinuation(ctx, true);
+}
+
+/** Test-only: reset the due-wait backstop latch between isolated rigs. */
+export function __testOnlyResetOverdueWaitBackstop(): void {
+  lastOverdueWaitKey = "";
+}
 
 function zombieRunSilentMs(): number {
   return zombieRunSilentMsOverride ?? ZOMBIE_RUN_SILENT_MS;
@@ -409,7 +497,11 @@ function heartbeatTick(): void {
     || state.loop?.stopReason?.startsWith("extension api stale");
   const parkedCompletionAuditRecovery = state.goal?.status === "paused"
     && state.goal.pendingCompletion?.phase === "recovery-pending";
-  if (state.goal?.status !== "active"
+  // v0.35.28 (issue #16): a lapsed wait-pause is host-bound work too — the
+  // heartbeat owns its durable due-time backstop (see overdueWaitBackstop).
+  if (overdueWaitDue()) {
+    // fall through: the backstop below needs a heartbeat opportunity
+  } else if (state.goal?.status !== "active"
     && state.goal?.status !== "auditing"
     && !isLoopActive()
     && !staleRecoveryDebt
@@ -554,7 +646,11 @@ function heartbeatTick(): void {
       notifyExternal(ctx, msg);
     }
   }
-  if (mainModelRecoveryActive()) return;
+  if (mainModelRecoveryActive()) {
+    overdueWaitBackstop(ctx);
+    return;
+  }
+  overdueWaitBackstop(ctx);
   let idle = false;
   let pending = false;
   try {
@@ -622,7 +718,7 @@ function heartbeatTick(): void {
     // subagent tool call is recorded — the abort must not own that case.
     const subagentWaitInFlight =
       hasLiveSubagentHangProbes() ||
-      [...flags.inFlightToolCalls.values()].some((t) => t.name === "Agent" || t.name === "get_subagent_result" || t.name === "steer_subagent");
+      [...flags.inFlightToolCalls.values()].some(isSubagentWaitCall);
     if (subagentWaitInFlight) {
       if (streamSilentMs >= zombieAbortMs && !flags.abortedStandDown) {
         appendLedger(ctx.cwd, "zombie_run_stood_down_subagent_wait", { streamSilentMs });
@@ -764,7 +860,7 @@ function heartbeatTick(): void {
     // whose tool-use counter stops moving is hung, not thinking.
     const subWaits = new Set(
       [...flags.inFlightToolCalls.values()]
-        .filter((t) => t.name === "get_subagent_result" || t.name === "Agent")
+        .filter(isSubagentWaitCall)
         .map((t) => t.name),
     );
     const subHint = subWaits.size > 0

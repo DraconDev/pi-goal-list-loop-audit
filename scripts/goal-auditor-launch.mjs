@@ -56,8 +56,26 @@ export function buildAuditorPiSpawnSpec(
     return { file: piBinary, args: [...piArgs], options: {} };
   }
 
+  // v0.35.27 (issue PR #17 field report): quote an argument ONLY when
+  // cmd.exe/CRT tokenization requires it — whitespace, shell metacharacters,
+  // or empty. Quoting EVERY argument wraps a bare executable name in quotes,
+  // which changes how cmd.exe resolves it and how npm/pnpm-generated .CMD
+  // shims compute their own directory — on pnpm global installs every
+  // detached auditor died instantly with MODULE_NOT_FOUND (~0.5s exit, then
+  // a 60s retry storm of flashing terminal windows).
+  // The WINDOWS_UNSAFE_ARG rejection (% / CR / LF) applies to EVERY argument
+  // BEFORE the quoting decision: an unquoted passthrough must never become a
+  // way around the gate (% would expand as a cmd variable in bare position).
   const command = [piBinary, ...piArgs]
-    .map((argument) => /[\s"&|<>^()]/.test(String(argument)) ? quoteWindowsCommandArgument(argument) : String(argument))
+    .map((argument) => {
+      const text = String(argument);
+      if (WINDOWS_UNSAFE_ARG.test(text)) {
+        throw new Error("unsafe Windows auditor launch argument");
+      }
+      return text === "" || /[\s"&|<>^()]/.test(text)
+        ? quoteWindowsCommandArgument(text)
+        : text;
+    })
     .join(" ");
 
   // /s /c needs an outer quote pair around a command whose executable and

@@ -1500,7 +1500,9 @@ export function mainModelRecoverySucceeded(ctx: ExtensionContext): void {
   // started at +2m51s).
   flags.lastMainModelRecoveryResumeAt = Date.now();
   if (resumed === "goal") {
-    updateGoal({ status: "active", pauseKind: undefined, pauseResumeAt: undefined, pauseReason: undefined, pauseSuggestedAction: undefined, providerErrorDiagnostic: undefined, recoveryEpisodeKey: undefined, recoveryNoticeKeys: undefined }, ctx);
+    // v0.35.28 (issue #16): stamp the auto-recovery so the continuation
+    // prompt tells the agent it was itself that was recovered.
+    updateGoal({ status: "active", pauseKind: undefined, pauseResumeAt: undefined, pauseReason: undefined, pauseSuggestedAction: undefined, providerErrorDiagnostic: undefined, recoveryEpisodeKey: undefined, recoveryNoticeKeys: undefined, autoResumedAt: new Date().toISOString(), autoResumedEvent: "main-model provider recovered" }, ctx);
     scheduleContinuation(ctx, true, 1_000);
   } else if (resumed === "loop") {
     state.loop = { ...state.loop!, active: true, stopReason: undefined };

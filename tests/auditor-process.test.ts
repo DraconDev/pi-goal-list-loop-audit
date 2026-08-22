@@ -149,6 +149,33 @@ test("Windows auditor launch uses an explicit cmd shim boundary without shell ar
   assert.throws(() => quoteWindowsCommandArgument("provider\nmodel"), /unsafe Windows/);
 });
 
+test("v0.35.27 (PR #17): bare tokens pass unquoted for .CMD shims, unsafe-arg gate still covers EVERY arg", () => {
+  // The field fix: a quoted bare executable name breaks npm/pnpm .CMD shim
+  // resolution — bare tokens must reach cmd.exe untouched.
+  const bare = buildAuditorPiSpawnSpec("pi", ["--mode", "rpc", "--model", "provider/model"], "win32", "cmd.exe");
+  assert.equal(bare.args[3], '"pi --mode rpc --model provider/model"', "no CRT quotes on clean bare tokens");
+
+  // Whitespace / metacharacters / empty STILL get CRT quoting.
+  const mixed = buildAuditorPiSpawnSpec(
+    "C:\\Program Files\\pi\\pi.cmd",
+    ["--title", "audit report", "", "a&b"],
+    "win32",
+    "cmd.exe",
+  );
+  assert.ok(mixed.args[3]?.startsWith('""C:\\Program Files\\pi\\pi.cmd"'), "executable with spaces stays quoted");
+  assert.ok(mixed.args[3]?.includes('"audit report"'));
+  assert.ok(mixed.args[3]?.includes('"a&b"'), "cmd metacharacters stay quoted");
+
+  // THE PR #17 REGRESSION GUARD: % and CR/LF contain no whitespace or
+  // metacharacters, so a naive needs-quoting regex would pass them BARE —
+  // bypassing the unsafe gate (% expands as a cmd variable; CR/LF breaks
+  // the command line). The spec builder must reject them regardless of
+  // the quoting decision.
+  assert.throws(() => buildAuditorPiSpawnSpec("pi", ["--model", "100%PATH%"], "win32"), /unsafe Windows/);
+  assert.throws(() => buildAuditorPiSpawnSpec("pi", ["--model", "bad\nref"], "win32"), /unsafe Windows/);
+  assert.throws(() => buildAuditorPiSpawnSpec("pi", ["--model", "bad\rref"], "win32"), /unsafe Windows/);
+});
+
 test("Windows worker shutdown kills the cmd/pi process tree", async () => {
   const workerSource = await readFile(path.resolve(process.cwd(), "scripts/goal-auditor-worker.mjs"), "utf8");
   assert.match(workerSource, /taskkill/);
