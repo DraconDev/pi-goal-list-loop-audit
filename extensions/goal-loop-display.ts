@@ -15,6 +15,7 @@ import { truncateToWidth as tuiTruncateToWidth, visibleWidth as tuiVisibleWidth 
 import type { Goal, MainModelRecovery, State } from "./goal-loop-core.js";
 import { compactDisplayText, formatMainModelRecoveryStatus, isPersistenceDegraded, lastPersistenceFailure, sanitizeDisplayText, sanitizeProviderAuditReport, sanitizeProviderDisplayText, stripThinkBlocks } from "./goal-loop-core.js";
 import { HELD_ON_RESTORE, type LoopState } from "./goal-loop-forever.js";
+import { auditorSurfaceSuppressed } from "./loops/goal-auditor-surface.js";
 
 /** v0.34.57 (OPEN-ISSUES bug #1.8 / tasklist item #2): the MAIN host is
  * NEVER detached — it is always SUPERVISING, regardless of any handle state.
@@ -359,6 +360,9 @@ interface LatestAuditFeedback {
 }
 
 function latestAuditFeedback(g: Goal): LatestAuditFeedback | undefined {
+  // blank-until-resume: a fresh session must not paint the previous
+  // session's auditor verdict until something resumes/continues the work.
+  if (auditorSurfaceSuppressed()) return undefined;
   const verdict = [...(g.auditHistory ?? [])].reverse().find((entry) =>
     (entry.disapproved || (entry.approved && entry.regressionShieldPassed === false))
     && typeof entry.report === "string"

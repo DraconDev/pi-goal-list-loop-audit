@@ -19,6 +19,7 @@ import {
   formatMainModelRecoveryStatus,
   isStaleApiError,
   nowIso,
+  piGlaDir,
   resolveEffectiveAggressiveSettings,
   sumNewAssistantTokens,
   supervisorPaused,
@@ -516,7 +517,7 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
   let specItemProgress = 0;
   if (iterStartAt) {
     try {
-      const ledgerPath = path.join(ctx.cwd, ".pi-glla", "active.jsonl");
+      const ledgerPath = path.join(piGlaDir(ctx.cwd), "active.jsonl");
       const lines = fs.readFileSync(ledgerPath, "utf-8").split("\n");
       for (const line of lines) {
         if (!line.includes("spec_item_progress")) continue;

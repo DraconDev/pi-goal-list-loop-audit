@@ -20,6 +20,7 @@ import {
   captureGoalRevision,
   isRetriableInfraError,
   isForbiddenModel,
+  piGlaDir,
   type Goal,
   type GoalRevisionToken,
 } from "./goal-loop-core.js";
@@ -403,7 +404,7 @@ function processAlive(pid: number): boolean {
 }
 
 function durableWorkerPids(cwd: string, logicalAttemptId: string): Array<{ pid: number; attemptId: string; dir: string }> {
-  const root = path.resolve(cwd, ".pi-glla", "audit-jobs");
+  const root = path.join(piGlaDir(cwd), "audit-jobs");
   const names: string[] = [];
   try {
     for (const entry of readdirSync(root, { withFileTypes: true })) {
@@ -809,7 +810,7 @@ export async function runDetachedGoalCompletionAuditor(args: {
     return infra(model, thinkingLevel, error instanceof Error ? error.message : String(error), "", capturedRevisionToken, "transport");
   }
 
-  const jobDir = path.resolve(args.cwd, ".pi-glla", "audit-jobs", attemptId);
+  const jobDir = path.join(piGlaDir(args.cwd), "audit-jobs", attemptId);
   const jobsRoot = path.dirname(jobDir);
   const requestPath = path.join(jobDir, "request.json");
   const resultPath = path.join(jobDir, "result.json");

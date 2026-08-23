@@ -8,6 +8,7 @@
  */
 
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { execSync } from "node:child_process";
 import { normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, sanitizeProviderAuditReport, sanitizeProviderDisplayText, type QuotaSignal } from "./quota-retry.js";
@@ -1014,7 +1015,85 @@ function persistedPathSegment(id: string): string {
   return `invalid-${encoded}`;
 }
 
+// =================================================================
+// State root : where the .pi-glla state directory lives.
+//
+// "workingDir" (default) keeps the historical <cwd>/.pi-glla. "sessionDir"
+// moves the state root to <top-level session directory>/pi-glla — the
+// TOP-LEVEL session dir (from --session-dir / PI_CODING_AGENT_SESSION_DIR /
+// settings sessionDir / the default per-cwd-encoded layout), never a
+// per-session UUID or session-file path. The choice is machine-wide and
+// lives in the GLOBAL settings file, because project settings.json sits
+// INSIDE the very directory this setting locates.
+// =================================================================
+
+export type GllaStateRoot = "workingDir" | "sessionDir";
+
+export function globalSettingsPath(): string {
+  // v0.28.18: test/embedding override — the suite must be hermetic from
+  // the developer's real global settings file. (Moved here from
+  // goal-settings.ts so core's piGlaDir can read the global file without a
+  // circular import; goal-settings.ts re-exports it for API compatibility.)
+  const override = process.env.GLLA_GLOBAL_SETTINGS_PATH;
+  if (override) return override;
+  return path.join(os.homedir(), ".pi", "agent", "pi-goal-list-loop-audit.settings.json");
+}
+
+/** The live session's TOP-LEVEL directory, registered by the extension at
+ * session_start from ctx.sessionManager.getSessionDir(). Undefined until a
+ * host session registers one (early startup, unit tests). */
+let runtimeSessionDir: string | undefined;
+
+/** Register/unregister the current session's top-level directory. Pass
+ * undefined on session shutdown/rebind to drop a stale registration. */
+export function setRuntimeSessionDir(dir: string | undefined): void {
+  runtimeSessionDir = typeof dir === "string" && dir.length > 0 ? dir : undefined;
+}
+
+/** Best-effort session-dir resolution for sessionDir mode:
+ * 1. the registered ctx.sessionManager.getSessionDir() value;
+ * 2. dirname(PI_SESSION_FILE) — set for bash-tool children and inherited by
+ *    spawned auditors/workers;
+ * 3. undefined → callers fall back to workingDir mode (fail-safe). */
+export function resolveRuntimeSessionDir(): string | undefined {
+  if (runtimeSessionDir) return runtimeSessionDir;
+  const sessionFile = process.env.PI_SESSION_FILE;
+  if (sessionFile) {
+    const parent = path.dirname(path.resolve(sessionFile));
+    if (parent && parent !== ".") return parent;
+  }
+  return undefined;
+}
+
+/** True when sessionDir mode is configured but no top-level session dir can
+ * be resolved yet (early startup, unit tests, bare child processes without
+ * PI_SESSION_FILE). Deferral contract: while pending, glla must not
+ * CREATE anything under <cwd>/.pi-glla — mkdirs and durable writes defer
+ * until session_start registers the session dir. Reads of the (nonexistent)
+ * cwd tree degrade gracefully to empty state; nothing is created. */
+export function stateRootPending(): boolean {
+  return readStateRootSetting() === "sessionDir" && !resolveRuntimeSessionDir();
+}
+
+function readStateRootSetting(): GllaStateRoot {
+  try {
+    const raw = JSON.parse(fs.readFileSync(globalSettingsPath(), "utf-8")) as Record<string, unknown>;
+    return raw.stateRoot === "sessionDir" ? "sessionDir" : "workingDir";
+  } catch {
+    return "workingDir";
+  }
+}
+
 export function piGlaDir(cwd: string): string {
+  // sessionDir mode resolves against the TOP-LEVEL session
+  // directory. No migration/copy either way — switching roots leaves the old
+  // tree untouched and the new one starts empty. If no session dir can be
+  // resolved (no registration, no PI_SESSION_FILE), fall back safely to
+  // workingDir mode rather than guessing a path.
+  if (readStateRootSetting() === "sessionDir") {
+    const sessionDir = resolveRuntimeSessionDir();
+    if (sessionDir) return path.join(sessionDir, "pi-glla");
+  }
   const dir = path.join(cwd, ".pi-glla");
   // v0.17.0: one-time migration of the pre-rename state dir (.pi-gla →
   // .pi-glla). Active goals, ledgers, and project settings move with the
@@ -1208,6 +1287,9 @@ export function readQueueFromDisk(cwd: string, excludeIds: ReadonlySet<string> =
 // =================================================================
 
 export function ensureDirs(cwd: string): void {
+  // sessionDir mode with an unresolved session dir must never
+  // create <cwd>/.pi-glla as a side effect — defer until the dir registers.
+  if (stateRootPending()) return;
   fs.mkdirSync(path.join(piGlaDir(cwd), "goals"), { recursive: true });
   fs.mkdirSync(archiveDir(cwd), { recursive: true });
 }
@@ -2130,7 +2212,8 @@ export function isFullAuditObjective(objective: string): boolean {
 export const PAUSE_AUTO_COMMIT_SENTINEL = ".pause-auto-commit";
 
 export function pauseAutoCommit(cwd: string, reason: string): string {
-  const dir = path.join(cwd, ".pi-glla");
+  const dir = piGlaDir(cwd);
+  if (stateRootPending()) return path.join(dir, PAUSE_AUTO_COMMIT_SENTINEL); // deferred — no cwd tree creation
   fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, PAUSE_AUTO_COMMIT_SENTINEL);
   fs.writeFileSync(file, `pausedAt: ${nowIso()}\nreason: ${reason}\n`, "utf-8");
@@ -2138,7 +2221,7 @@ export function pauseAutoCommit(cwd: string, reason: string): string {
 }
 
 export function resumeAutoCommit(cwd: string): boolean {
-  const file = path.join(cwd, ".pi-glla", PAUSE_AUTO_COMMIT_SENTINEL);
+  const file = path.join(piGlaDir(cwd), PAUSE_AUTO_COMMIT_SENTINEL);
   try {
     fs.unlinkSync(file);
     return true;
@@ -2149,7 +2232,7 @@ export function resumeAutoCommit(cwd: string): boolean {
 
 export function isAutoCommitPaused(cwd: string): boolean {
   try {
-    fs.accessSync(path.join(cwd, ".pi-glla", PAUSE_AUTO_COMMIT_SENTINEL));
+    fs.accessSync(path.join(piGlaDir(cwd), PAUSE_AUTO_COMMIT_SENTINEL));
     return true;
   } catch {
     return false;
@@ -2366,11 +2449,13 @@ export interface AuditLogEntry {
 }
 
 export function auditLogPath(cwd: string): string {
-  return path.join(cwd, ".pi-glla", "audits.jsonl");
+  // follow the state root instead of hardcoding <cwd>/.pi-glla.
+  return path.join(piGlaDir(cwd), "audits.jsonl");
 }
 
 export function appendAuditLog(cwd: string, entry: AuditLogEntry): void {
   try {
+    if (stateRootPending()) return; // deferred — never create the cwd tree
     ensureDirs(cwd);
     fs.appendFileSync(auditLogPath(cwd), JSON.stringify(entry) + "\n");
   } catch {

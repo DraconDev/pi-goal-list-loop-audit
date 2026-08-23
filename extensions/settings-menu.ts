@@ -499,6 +499,14 @@ export function buildSettingsRows(
   // ── Other ──
   rows.push(
     {
+      id: "stateRoot",
+      section: "other",
+      label: "State root",
+      valueText: show("stateRoot", "workingDir"),
+      sourceText: src("stateRoot"),
+      description: "where the glla state directory lives — workingDir: <cwd>/.pi-glla · sessionDir: <session dir>/pi-glla (top-level, machine-wide; old root untouched on switch)",
+    },
+    {
       id: "notifyCmd",
       section: "other",
       label: "Notify command",

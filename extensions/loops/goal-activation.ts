@@ -96,6 +96,7 @@ import {
   compactDisplayText,
   sanitizeDisplayText,
   piGlaDir,
+  setRuntimeSessionDir,
   normalizeDraftContract,
   draftContractItemCount,
   extractVerificationContract,
@@ -177,6 +178,7 @@ import {
   tickLengthContinue,
 } from "../length-continue.js";
 import { isSubagentProviderFailure } from "../quota-retry.js";
+import { releaseAuditorSurface, suppressAuditorSurfaceAfterColdRestore } from "./goal-auditor-surface.js";
 import {
   classifyMainModelFailure,
   isMainModelFallbackFailure,
@@ -983,9 +985,19 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     clearSessionOwnedTimers();
     toolsRegistered = false;
     toolHealNotified = false;
+    setRuntimeSessionDir(undefined); // drop the stale session-dir registration
   });
 
   pi.on("session_start", async (event: any, ctx: ExtensionContext) => {
+    // register this session's TOP-LEVEL directory so piGlaDir can
+    // resolve sessionDir mode (<session dir>/pi-glla). Registered before the
+    // foreign-session gates: whichever host context is live owns the path.
+    try {
+      const getDir = (ctx.sessionManager as { getSessionDir?: () => string } | undefined)?.getSessionDir;
+      setRuntimeSessionDir(typeof getDir === "function" ? String(getDir.call(ctx.sessionManager)) : undefined);
+    } catch {
+      setRuntimeSessionDir(undefined);
+    }
     // v0.23.8: subagent sessions (pi-subagents binds extensions there too)
     // are workers — never run the restore gate or reschedule the loop from
     // a foreign session. Host replacement events are the exception: pi can
@@ -1264,6 +1276,9 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
         ctx.ui.notify(`Completion audit blocked — no verdict. The claim is safe; load the session, then ${activeGoalSurfaceCommand("resume")} to retry.`, "warning");
       }
       appendLedger(ctx.cwd, "session_waiting_for_load", { reason: startReason });
+      // blank-until-resume: the load barrier is also a no-consent
+      // boundary — hide last-auditor surfaces until an explicit resume.
+      suppressAuditorSurfaceAfterColdRestore();
       // The blank startup barrier must defer continuation, not the durable
       // status surface. Paint the state we just rehydrated before returning so
       // a freshly restarted session does not look nonexistent while pi loads
@@ -1299,6 +1314,15 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // consents to load-time automation now.
     const autoResumeSetting = loadGlobalSettings().autoResume;
     const autoResume = shouldAutoResumeOnSessionStart(event?.reason, autoResumeSetting);
+    // blank-until-resume: a fresh session with NO continuation
+    // consent stays blank of the previous session's auditor result until
+    // something resumes/continues the work in THIS session (see
+    // goal-auditor-surface.ts). Any consent path releases it immediately.
+    if (!autoResume && !explicitRecovery && !sameProcessSuccessorResume && !staleRearmedOnSessionStart) {
+      suppressAuditorSurfaceAfterColdRestore();
+    } else {
+      releaseAuditorSurface();
+    }
     const mainRecovery = state.mainModelRecovery;
     if (mainRecovery?.manualResumeRequired) {
       const recoveryResumeCmd = recoverySurfaceCommand(mainRecovery.kind, "resume");

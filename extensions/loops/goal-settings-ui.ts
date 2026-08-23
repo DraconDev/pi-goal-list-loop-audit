@@ -830,6 +830,15 @@ function parseToolOverrideValueLocal(s: string): unknown {
 
 export async function handleSettingChoice(id: string, ctx: ExtensionContext): Promise<void> {
   switch (id) {
+    case "stateRoot": {
+      // exactly two options, short labels — long strings break pi's
+      // select UI. Global scope: the project settings file lives inside the
+      // directory this key locates. Switching never copies/moves/deletes the
+      // old root; the new one starts empty.
+      const v = await ctx.ui.select("State root — where the glla state directory lives", ["workingDir", "sessionDir"]);
+      if (v) saveSettings("global", ctx.cwd, { stateRoot: v === "sessionDir" ? "sessionDir" : "workingDir" });
+      return;
+    }
     case "autoResume": {
       const v = await ctx.ui.select("Auto-resume on session start — a LOADED session waits for an explicit resume; on reload/fork the machinery still rebinds so work never strands", [
         "default — hold on load, rebind on reload/fork",

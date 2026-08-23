@@ -439,3 +439,17 @@ test("v0.28.20: no bracket/paren chrome — VALUE and SOURCE render bare", () =>
   );
   assert.doesNotMatch(eff.valueText, /\(|\)/, `no parens in composite: ${eff.valueText}`);
 });
+
+/* --------------------------------------------------------------------- */
+/*  state-root row                                               */
+/* --------------------------------------------------------------------- */
+
+test("stateRoot: exactly one row, short label, default valueText workingDir", () => {
+  const rows = buildSettingsRows(SAMPLE_SETTINGS, EMPTY_PROV);
+  const stateRows = rows.filter((r: SettingsRow) => r.id === "stateRoot");
+  assert.equal(stateRows.length, 1);
+  const row = stateRows[0]!;
+  assert.equal(row.label, "State root");
+  assert.equal(row.section, "other");
+  assert.equal(row.valueText, "workingDir", "default renders workingDir");
+});

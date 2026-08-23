@@ -92,6 +92,7 @@ import {
   compactDisplayText,
   sanitizeDisplayText,
   piGlaDir,
+  stateRootPending,
   normalizeDraftContract,
   draftContractItemCount,
   extractVerificationContract,
@@ -519,12 +520,14 @@ const instanceId = `${process.pid}:${instanceStartedAt}`;
 let zombieStoodDown = false;
 
 function ownerFilePath(cwd: string): string {
-  return path.join(cwd, ".pi-glla", "owner.json");
+  // follow the state root instead of hardcoding <cwd>/.pi-glla.
+  return path.join(piGlaDir(cwd), "owner.json");
 }
 
 function writeOwnerFile(cwd: string): void {
   try {
-    fs.mkdirSync(path.join(cwd, ".pi-glla"), { recursive: true });
+    if (stateRootPending()) return; // deferred — never create the cwd tree
+    fs.mkdirSync(piGlaDir(cwd), { recursive: true });
     fs.writeFileSync(ownerFilePath(cwd), JSON.stringify({ instanceId, pid: process.pid, at: Date.now() }));
   } catch {
     /* owner file is advisory — never block activation on it */

@@ -40,6 +40,7 @@ import { cmdLoop, clearLoopTimer, finishLoopGit, isLoopActive, scheduleLoopTick 
 import { chooseObjectiveConflict, liveObjectives } from "./goal-objective-conflict.js";
 import { formatGllaVersion } from "./glla-version.js";
 import { cancelDetachedGoalCompletionAuditor } from "./goal-loop-auditor-process.js";
+import { releaseAuditorSurface } from "./loops/goal-auditor-surface.js";
 
 export interface CommandFlags {
   get draftingTarget(): "goal" | "list" | "loop" | null; set draftingTarget(v: "goal" | "list" | "loop" | null);
@@ -358,6 +359,9 @@ async function cmdPause(ctx: ExtensionContext): Promise<void> {
 
 async function cmdResume(ctx: ExtensionContext): Promise<void> {
   releaseInitialSessionLoadBarrier();
+  // blank-until-resume: an explicit resume re-surfaces the last
+  // auditor report from durable state (unchanged on disk).
+  releaseAuditorSurface();
   // v0.35.23 (note.md Next #2): an explicit resume is exactly the decision
   // the load hold waits for — release it before re-arming automation, or
   // the scheduleContinuation below would be a frozen no-op.

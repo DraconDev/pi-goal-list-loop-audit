@@ -470,3 +470,179 @@ test("v0.24.5 missingGllaTools: missing just one tool → that single name", () 
   const missing = missingGllaTools(allButOne);
   assert.deepEqual([...missing], ["complete_goal"]);
 });
+
+// ---- state-root tests ----
+
+import { globalSettingsPath, setRuntimeSessionDir, resolveRuntimeSessionDir, stateRootPending } from "../extensions/goal-loop-core.ts";
+import { loadSettings, saveSettings } from "../extensions/goal-settings.js";
+
+/** Hermetic state-root fixture: point the global settings file at a temp
+ * file, register a temp session dir, and hand back restore + cleanup. */
+function stateRootFixture(opts: { stateRoot?: string } = {}): { sessionDir: string; cwd: string; globalFile: string; restore: () => void } {
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "glla-root-cwd-"));
+  const sessionDir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-root-sess-"));
+  const globalFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "glla-root-gl-")), "settings.json");
+  fs.writeFileSync(globalFile, JSON.stringify({ stateRoot: opts.stateRoot ?? "workingDir" }));
+  const prevGlobal = process.env.GLLA_GLOBAL_SETTINGS_PATH;
+  const prevSessionFile = process.env.PI_SESSION_FILE;
+  delete process.env.PI_SESSION_FILE;
+  process.env.GLLA_GLOBAL_SETTINGS_PATH = globalFile;
+  return {
+    sessionDir,
+    cwd,
+    globalFile,
+    restore: () => {
+      if (prevGlobal === undefined) delete process.env.GLLA_GLOBAL_SETTINGS_PATH;
+      else process.env.GLLA_GLOBAL_SETTINGS_PATH = prevGlobal;
+      if (prevSessionFile === undefined) delete process.env.PI_SESSION_FILE;
+      else process.env.PI_SESSION_FILE = prevSessionFile;
+      setRuntimeSessionDir(undefined);
+      fs.rmSync(path.dirname(globalFile), { recursive: true, force: true });
+      fs.rmSync(cwd, { recursive: true, force: true });
+      fs.rmSync(sessionDir, { recursive: true, force: true });
+    },
+  };
+}
+
+test("stateRoot default (unset/workingDir): piGlaDir stays <cwd>/.pi-glla", () => {
+  const fx = stateRootFixture();
+  try {
+    assert.equal(piGlaDir(fx.cwd), path.join(fx.cwd, ".pi-glla"));
+    // workingDir mode never touches the session dir
+    assert.equal(fs.readdirSync(fx.sessionDir).length, 0);
+  } finally {
+    fx.restore();
+  }
+});
+
+test("stateRoot sessionDir mode: piGlaDir is <top-level session dir>/pi-glla — no UUID or session-file component", () => {
+  const fx = stateRootFixture({ stateRoot: "sessionDir" });
+  try {
+    setRuntimeSessionDir(fx.sessionDir);
+    const dir = piGlaDir(fx.cwd);
+    assert.equal(dir, path.join(fx.sessionDir, "pi-glla"));
+    assert.ok(dir.endsWith("/pi-glla") || dir.endsWith("\\pi-glla"), `top-level only, got ${dir}`);
+    // switching roots leaves the old tree untouched and starts empty
+    assert.equal(fs.existsSync(path.join(fx.cwd, ".pi-glla")), false, "old root untouched");
+  } finally {
+    fx.restore();
+  }
+});
+
+test("stateRoot sessionDir mode falls back to workingDir when no session dir can be resolved", () => {
+  const fx = stateRootFixture({ stateRoot: "sessionDir" });
+  try {
+    setRuntimeSessionDir(undefined);
+    delete process.env.PI_SESSION_FILE;
+    assert.equal(piGlaDir(fx.cwd), path.join(fx.cwd, ".pi-glla"), "fail-safe fallback");
+    // PI_SESSION_FILE fallback: dirname of the session file
+    process.env.PI_SESSION_FILE = path.join(fx.sessionDir, "some-uuid-session.jsonl");
+    assert.equal(resolveRuntimeSessionDir(), fx.sessionDir);
+    assert.equal(piGlaDir(fx.cwd), path.join(fx.sessionDir, "pi-glla"));
+  } finally {
+    fx.restore();
+  }
+});
+
+test("stateRoot setting round-trips through the GLOBAL file; project copies are stripped", () => {
+  const fx = stateRootFixture();
+  try {
+    saveSettings("global", fx.cwd, { stateRoot: "sessionDir" });
+    assert.equal(loadSettings(fx.cwd).stateRoot, "sessionDir");
+    // a project-level copy must not survive (global-only key).
+    // deferral: with sessionDir mode active, a runtime session dir
+    // must be registered first — exactly what real runtimes do after
+    // session_start. The pending case has its own test above.
+    setRuntimeSessionDir(fx.sessionDir);
+    saveSettings("project", fx.cwd, { stateRoot: "sessionDir" });
+    const projRaw = JSON.parse(fs.readFileSync(path.join(fx.sessionDir, "pi-glla", "settings.json"), "utf8")) as Record<string, unknown>;
+    assert.ok(!("stateRoot" in projRaw), "stateRoot stripped from project scope");
+    // toggling back removes nothing else and does not create the other root
+    saveSettings("global", fx.cwd, { stateRoot: undefined });
+    assert.equal(loadSettings(fx.cwd).stateRoot, "workingDir");
+    assert.equal(JSON.parse(fs.readFileSync(fx.globalFile, "utf8")).stateRoot, undefined);
+  } finally {
+    fx.restore();
+  }
+});
+
+// ---- state-root deferral: sessionDir mode must never CREATE <cwd>/.pi-glla ----
+
+test("stateRoot sessionDir pending (no session dir): ensureDirs/appendLedger defer — no cwd tree created", () => {
+  const fx = stateRootFixture({ stateRoot: "sessionDir" });
+  try {
+    setRuntimeSessionDir(undefined);
+    delete process.env.PI_SESSION_FILE;
+    assert.equal(stateRootPending(), true, "pending while session dir unresolved");
+    ensureDirs(fx.cwd);
+    appendLedger(fx.cwd, "test_event", { ok: true });
+    assert.equal(fs.existsSync(path.join(fx.cwd, ".pi-glla")), false, "cwd tree NOT created while pending");
+  } finally {
+    fx.restore();
+  }
+});
+
+test("stateRoot sessionDir resolved: ensureDirs/appendLedger create only <sessionDir>/pi-glla", () => {
+  const fx = stateRootFixture({ stateRoot: "sessionDir" });
+  try {
+    setRuntimeSessionDir(fx.sessionDir);
+    assert.equal(stateRootPending(), false);
+    ensureDirs(fx.cwd);
+    appendLedger(fx.cwd, "test_event", { ok: true });
+    assert.equal(fs.existsSync(path.join(fx.cwd, ".pi-glla")), false, "no cwd tree in sessionDir mode");
+    assert.ok(fs.existsSync(path.join(fx.sessionDir, "pi-glla", "goals")), "session tree created");
+    assert.ok(fs.existsSync(path.join(fx.sessionDir, "pi-glla", "active.jsonl")), "ledger written under session root");
+  } finally {
+    fx.restore();
+  }
+});
+
+test("stateRoot workingDir default: ensureDirs still creates and uses <cwd>/.pi-glla", () => {
+  const fx = stateRootFixture({ stateRoot: "workingDir" });
+  try {
+    setRuntimeSessionDir(undefined);
+    assert.equal(stateRootPending(), false, "never pending in workingDir mode");
+    ensureDirs(fx.cwd);
+    appendLedger(fx.cwd, "test_event", { ok: true });
+    assert.ok(fs.existsSync(path.join(fx.cwd, ".pi-glla", "goals")), "cwd tree created");
+    assert.ok(fs.existsSync(path.join(fx.cwd, ".pi-glla", "active.jsonl")));
+    assert.equal(fs.existsSync(path.join(fx.sessionDir, "pi-glla")), false);
+  } finally {
+    fx.restore();
+  }
+});
+
+test("switching to sessionDir mode leaves an existing leftover <cwd>/.pi-glla untouched", () => {
+  const fx = stateRootFixture({ stateRoot: "sessionDir" });
+  try {
+    // pre-existing cwd tree from the workingDir era
+    fs.mkdirSync(path.join(fx.cwd, ".pi-glla", "goals"), { recursive: true });
+    fs.writeFileSync(path.join(fx.cwd, ".pi-glla", "marker.txt"), "keep me");
+    setRuntimeSessionDir(fx.sessionDir);
+    ensureDirs(fx.cwd);
+    appendLedger(fx.cwd, "test_event", {});
+    assert.ok(fs.existsSync(path.join(fx.cwd, ".pi-glla", "marker.txt")), "leftover tree not deleted");
+    assert.deepEqual(fs.readdirSync(path.join(fx.cwd, ".pi-glla")).sort(), ["goals", "marker.txt"], "leftover tree unchanged");
+    assert.ok(fs.existsSync(path.join(fx.sessionDir, "pi-glla", "goals")));
+  } finally {
+    fx.restore();
+  }
+});
+
+test("project-scope saveSettings throws (defers) while sessionDir mode is pending — no cwd creation", () => {
+  const fx = stateRootFixture({ stateRoot: "sessionDir" });
+  try {
+    setRuntimeSessionDir(undefined);
+    delete process.env.PI_SESSION_FILE;
+    let threw = false;
+    try {
+      saveSettings("project", fx.cwd, { auditFeedbackChars: 1 });
+    } catch {
+      threw = true;
+    }
+    assert.equal(threw, true, "pending project save is refused");
+    assert.equal(fs.existsSync(path.join(fx.cwd, ".pi-glla")), false, "refusal must not create the cwd tree");
+  } finally {
+    fx.restore();
+  }
+});

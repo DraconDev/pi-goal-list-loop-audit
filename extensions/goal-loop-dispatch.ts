@@ -11,7 +11,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { runPersistStep } from "./goal-loop-core.js";
+import { runPersistStep, piGlaDir, stateRootPending } from "./goal-loop-core.js";
 
 export const DISPATCH_RECORD_VERSION = 1;
 export const DISPATCH_RECORD_FILE = "continuation-dispatch.json";
@@ -53,7 +53,8 @@ export interface ContinuationDispatch extends DispatchLifecycleTimestamps {
 }
 
 export function dispatchRecordPath(cwd: string): string {
-  return path.join(cwd, ".pi-glla", DISPATCH_RECORD_FILE);
+  // follow the state root instead of hardcoding <cwd>/.pi-glla.
+  return path.join(piGlaDir(cwd), DISPATCH_RECORD_FILE);
 }
 
 export function createContinuationDispatch(input: {
@@ -109,6 +110,9 @@ export function dispatchTimedOut(record: ContinuationDispatch, now: number, time
  */
 export function persistDispatchRecord(cwd: string, record: ContinuationDispatch): boolean {
   return runPersistStep("writeContinuationDispatch", () => {
+    // sessionDir mode with an unresolved session dir defers — never
+    // create <cwd>/.pi-glla as a write side effect.
+    if (stateRootPending()) return false;
     const dir = path.dirname(dispatchRecordPath(cwd));
     fs.mkdirSync(dir, { recursive: true });
     const target = dispatchRecordPath(cwd);
