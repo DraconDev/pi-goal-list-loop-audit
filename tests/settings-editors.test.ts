@@ -42,6 +42,21 @@ function readGlobal(): Record<string, unknown> {
   return fs.existsSync(GLOBAL_FILE) ? (JSON.parse(fs.readFileSync(GLOBAL_FILE, "utf-8")) as Record<string, unknown>) : {};
 }
 
+test("T4: select editor — stateRoot writes the global workingDir/sessionDir choice", async () => {
+  try {
+    const ctx = makeMockCtx(tmpCwd());
+    ctx.ui.selectImpl = async () => "sessionDir — top-level Pi session directory (opt-in)";
+    await handleSettingChoice("stateRoot", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().stateRoot, "sessionDir");
+
+    ctx.ui.selectImpl = async () => "workingDir — <cwd>/.pi-glla (default)";
+    await handleSettingChoice("stateRoot", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().stateRoot, "workingDir");
+  } finally {
+    restoreGlobal();
+  }
+});
+
 test("T4: select editor — autoResume writes on/off/default with the right key", async () => {
   try {
     const ctx = makeMockCtx(tmpCwd());
@@ -383,26 +398,4 @@ const CMDS = fs.readFileSync("extensions/goal-commands.ts", "utf-8");
   assert.match(README, /Overlaps — pick one/);
   assert.match(README, /We ran both\s+and removed pi-tasks\./);
   assert.match(README, /auto-detects `notify-send`\/`osascript`; `notify=off` silences/);
-});
-
-test("T4: stateRoot editor — select writes workingDir/sessionDir to the GLOBAL scope only", async () => {
-  try {
-    restoreGlobal(); // known-clean baseline
-    const ctx = makeMockCtx(tmpCwd());
-    // exactly two options, short labels (long strings break pi's select UI)
-    const offered: string[][] = [];
-    ctx.ui.selectImpl = async (_t, options) => {
-      offered.push([...options]);
-      return "sessionDir";
-    };
-    await handleSettingChoice("stateRoot", ctx as unknown as ExtensionContext);
-    assert.deepEqual(offered[0], ["workingDir", "sessionDir"]);
-    assert.equal(readGlobal().stateRoot, "sessionDir");
-
-    ctx.ui.selectImpl = async () => "workingDir";
-    await handleSettingChoice("stateRoot", ctx as unknown as ExtensionContext);
-    assert.equal(readGlobal().stateRoot, "workingDir");
-  } finally {
-    restoreGlobal();
-  }
 });

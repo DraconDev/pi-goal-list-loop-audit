@@ -140,6 +140,16 @@ export function classifyMainModelFailure(error: string | undefined, opts?: { isC
       ? { kind: "context-overflow", raw }
       : { kind: "non-recoverable", raw };
   }
+  // v0.35.51 (note.md Now): payload-size rejections are retryable, NOT a
+  // reason to walk the fallback chain — every provider caps request size, so
+  // rotation cannot heal a bloated history. The payload guard (context-event
+  // projection) bounds image bytes before the next attempt, so the eager
+  // first retry succeeds. Observed shapes: 413 {"message":"Downloaded image
+  // content cannot exceed 30MB"...} and 413 {"code":"413","message":"Request
+  // Entity Too Large"}.
+  if (/\b413\b|request entity too large|payload too large|image content cannot exceed/.test(text)) {
+    return { kind: "transient", raw };
+  }
   if (/401|403|unauthori[sz]ed|forbidden|invalid (?:api|access) key|authentication|no api key|credential/.test(text)) {
     return { kind: "auth", raw };
   }

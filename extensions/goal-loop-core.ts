@@ -8,12 +8,13 @@
  */
 
 import * as fs from "node:fs";
-import * as os from "node:os";
 import * as path from "node:path";
 import { execSync } from "node:child_process";
 import { normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, sanitizeProviderAuditReport, sanitizeProviderDisplayText, type QuotaSignal } from "./quota-retry.js";
 import { MAX_MAIN_MODEL_FALLBACKS } from "./main-model-recovery.js";
+import { resolveGllaStateDir, stateRootPending } from "./glla-state-root.js";
 export { normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, sanitizeProviderAuditReport, sanitizeProviderDisplayText } from "./quota-retry.js";
+export { globalSettingsPath, resolveRuntimeSessionDir, setRuntimeSessionDir, stateRootPending, type GllaStateRoot } from "./glla-state-root.js";
 
 /** v0.26.1: consecutive heartbeat refires without a real agent turn
  * before the supervisor gives up (pauses the goal / stops the loop).
@@ -1015,89 +1016,13 @@ function persistedPathSegment(id: string): string {
   return `invalid-${encoded}`;
 }
 
-// =================================================================
-// State root : where the .pi-glla state directory lives.
-//
-// "workingDir" (default) keeps the historical <cwd>/.pi-glla. "sessionDir"
-// moves the state root to <top-level session directory>/pi-glla — the
-// TOP-LEVEL session dir (from --session-dir / PI_CODING_AGENT_SESSION_DIR /
-// settings sessionDir / the default per-cwd-encoded layout), never a
-// per-session UUID or session-file path. The choice is machine-wide and
-// lives in the GLOBAL settings file, because project settings.json sits
-// INSIDE the very directory this setting locates.
-// =================================================================
-
-export type GllaStateRoot = "workingDir" | "sessionDir";
-
-export function globalSettingsPath(): string {
-  // v0.28.18: test/embedding override — the suite must be hermetic from
-  // the developer's real global settings file. (Moved here from
-  // goal-settings.ts so core's piGlaDir can read the global file without a
-  // circular import; goal-settings.ts re-exports it for API compatibility.)
-  const override = process.env.GLLA_GLOBAL_SETTINGS_PATH;
-  if (override) return override;
-  return path.join(os.homedir(), ".pi", "agent", "pi-goal-list-loop-audit.settings.json");
-}
-
-/** The live session's TOP-LEVEL directory, registered by the extension at
- * session_start from ctx.sessionManager.getSessionDir(). Undefined until a
- * host session registers one (early startup, unit tests). */
-let runtimeSessionDir: string | undefined;
-
-/** Register/unregister the current session's top-level directory. Pass
- * undefined on session shutdown/rebind to drop a stale registration. */
-export function setRuntimeSessionDir(dir: string | undefined): void {
-  runtimeSessionDir = typeof dir === "string" && dir.length > 0 ? dir : undefined;
-}
-
-/** Best-effort session-dir resolution for sessionDir mode:
- * 1. the registered ctx.sessionManager.getSessionDir() value;
- * 2. dirname(PI_SESSION_FILE) — set for bash-tool children and inherited by
- *    spawned auditors/workers;
- * 3. undefined → callers fall back to workingDir mode (fail-safe). */
-export function resolveRuntimeSessionDir(): string | undefined {
-  if (runtimeSessionDir) return runtimeSessionDir;
-  const sessionFile = process.env.PI_SESSION_FILE;
-  if (sessionFile) {
-    const parent = path.dirname(path.resolve(sessionFile));
-    if (parent && parent !== ".") return parent;
-  }
-  return undefined;
-}
-
-/** True when sessionDir mode is configured but no top-level session dir can
- * be resolved yet (early startup, unit tests, bare child processes without
- * PI_SESSION_FILE). Deferral contract: while pending, glla must not
- * CREATE anything under <cwd>/.pi-glla — mkdirs and durable writes defer
- * until session_start registers the session dir. Reads of the (nonexistent)
- * cwd tree degrade gracefully to empty state; nothing is created. */
-export function stateRootPending(): boolean {
-  return readStateRootSetting() === "sessionDir" && !resolveRuntimeSessionDir();
-}
-
-function readStateRootSetting(): GllaStateRoot {
-  try {
-    const raw = JSON.parse(fs.readFileSync(globalSettingsPath(), "utf-8")) as Record<string, unknown>;
-    return raw.stateRoot === "sessionDir" ? "sessionDir" : "workingDir";
-  } catch {
-    return "workingDir";
-  }
-}
-
 export function piGlaDir(cwd: string): string {
-  // sessionDir mode resolves against the TOP-LEVEL session
-  // directory. No migration/copy either way — switching roots leaves the old
-  // tree untouched and the new one starts empty. If no session dir can be
-  // resolved (no registration, no PI_SESSION_FILE), fall back safely to
-  // workingDir mode rather than guessing a path.
-  if (readStateRootSetting() === "sessionDir") {
-    const sessionDir = resolveRuntimeSessionDir();
-    if (sessionDir) return path.join(sessionDir, "pi-glla");
-  }
-  const dir = path.join(cwd, ".pi-glla");
+  const dir = resolveGllaStateDir(cwd);
   // v0.17.0: one-time migration of the pre-rename state dir (.pi-gla →
-  // .pi-glla). Active goals, ledgers, and project settings move with the
-  // name — no relics, no lost state.
+  // .pi-glla) applies only to the historical cwd root. Session-root mode
+  // intentionally leaves every old project tree untouched. Pending
+  // sessionDir resolution is also a no-migration read boundary.
+  if (dir !== path.join(cwd, ".pi-glla") || stateRootPending()) return dir;
   const legacy = path.join(cwd, ".pi-gla");
   try {
     if (!fs.existsSync(dir) && fs.existsSync(legacy)) fs.renameSync(legacy, dir);
@@ -1159,6 +1084,7 @@ export interface QueueItemWriteResult {
  * clean up the temporary file before returning to the caller. */
 export function writeQueueItemFile(cwd: string, item: ListItem, options: { replace?: boolean } = {}): QueueItemWriteResult {
   const file = queueItemPath(cwd, item.id);
+  if (stateRootPending()) return { path: file, wrote: false, failed: true };
   if (!isSafePersistedId(item.id)) {
     return { path: file, wrote: false, failed: true };
   }
@@ -1191,6 +1117,7 @@ export function writeQueueItemFile(cwd: string, item: ListItem, options: { repla
 }
 
 export function deleteQueueItemFile(cwd: string, id: string): boolean {
+  if (stateRootPending()) return false;
   if (!isSafePersistedId(id)) return false;
   const file = queueItemPath(cwd, id);
   if (!fs.existsSync(file)) return false;
@@ -1205,6 +1132,7 @@ export function queueItemSidecarCount(cwd: string): number {
 }
 
 export function clearQueueItemFiles(cwd: string): { removed: number; failed: string[] } {
+  if (stateRootPending()) return { removed: 0, failed: [] };
   const dir = path.join(piGlaDir(cwd), "goals");
   let names: string[];
   try { names = fs.readdirSync(dir); } catch { return { removed: 0, failed: [] }; }
@@ -1287,8 +1215,9 @@ export function readQueueFromDisk(cwd: string, excludeIds: ReadonlySet<string> =
 // =================================================================
 
 export function ensureDirs(cwd: string): void {
-  // sessionDir mode with an unresolved session dir must never
-  // create <cwd>/.pi-glla as a side effect — defer until the dir registers.
+  // In sessionDir mode the lifecycle must register the session root before
+  // any write can choose a durable location. Reads may safely fall back to
+  // cwd; writes must not recreate an ambiguous cwd state tree.
   if (stateRootPending()) return;
   fs.mkdirSync(path.join(piGlaDir(cwd), "goals"), { recursive: true });
   fs.mkdirSync(archiveDir(cwd), { recursive: true });
@@ -1470,6 +1399,7 @@ export function appendLedger(cwd: string, type: string, value: unknown): void {
   // v0.28.6 (E1): guarded — a disk failure degrades loudly, never throws
   // into an orchestrator handler.
   runPersistStep("appendLedger", () => {
+    if (stateRootPending()) return;
     ensureDirs(cwd);
     const line = JSON.stringify({ type, value, at: new Date().toISOString() });
     fs.appendFileSync(ledgerPath(cwd), line + "\n");
@@ -1536,6 +1466,11 @@ export function isForbiddenModel(ref: string | undefined, forbiddenModels: reado
 
 export function writeGoalMd(cwd: string, goal: Goal): string {
   const file = goalMdPath(cwd, goal.id);
+  // A pending sessionDir has no durable destination yet. Returning the
+  // intended path mirrors the existing persistence-degradation contract, but
+  // unlike ensureDirs this guard must happen before writeFileSync: an old cwd
+  // goals directory may already exist and would otherwise accept the fallback.
+  if (stateRootPending()) return file;
   if (!isSafePersistedId(goal.id)) {
     runPersistStep("writeGoalMd", () => {
       throw new Error("refused unsafe persisted goal id");
@@ -2019,7 +1954,18 @@ export function extractVerificationContract(raw: string): { objective: string; v
   // kept as contract text; later lines after a bare marker still belong to
   // the contract block.
   let explicitClear = false;
-  const MARKER_START = /^\s*(?:done when|verified when|verify|verification|done)\b[^:]*:/i;
+  // v0.35.53 (note.md Now): "verify"/"verification" are also ordinary
+  // imperative verbs — the marker form requires the colon IMMEDIATELY after
+  // (optionally "verify when:"). The old unbounded `verify\b[^:]*:` swallowed
+  // a whole imperative sentence as a marker ("Verify the shipped X pass (...):
+  // confirm ..."), leaving the objective EMPTY and the entire intent inside
+  // the verification contract — the field item then tripped the activation
+  // gate's "empty" reason into an endless repair-card loop (neonbreak:
+  // faulty_objective_list_activation_blocked ×42 over 22h). "done"/"done
+  // when"/"verified when" keep a bounded decorated-marker gap (they are not
+  // imperative openers), now capped at 60 chars so prose tails cannot
+  // masquerade as markers either.
+  const MARKER_START = /^\s*(?:(?:done|verified)\s+when\b[^:]{0,60}:|done\b[^:]{0,60}:|verify(?:\s+when)?\s*:|verification\s*:)/i;
   for (const line of lines) {
     const m = line.match(MARKER_START);
     if (m) {
@@ -2213,7 +2159,7 @@ export const PAUSE_AUTO_COMMIT_SENTINEL = ".pause-auto-commit";
 
 export function pauseAutoCommit(cwd: string, reason: string): string {
   const dir = piGlaDir(cwd);
-  if (stateRootPending()) return path.join(dir, PAUSE_AUTO_COMMIT_SENTINEL); // deferred — no cwd tree creation
+  if (stateRootPending()) return path.join(dir, PAUSE_AUTO_COMMIT_SENTINEL);
   fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, PAUSE_AUTO_COMMIT_SENTINEL);
   fs.writeFileSync(file, `pausedAt: ${nowIso()}\nreason: ${reason}\n`, "utf-8");
@@ -2221,6 +2167,7 @@ export function pauseAutoCommit(cwd: string, reason: string): string {
 }
 
 export function resumeAutoCommit(cwd: string): boolean {
+  if (stateRootPending()) return false;
   const file = path.join(piGlaDir(cwd), PAUSE_AUTO_COMMIT_SENTINEL);
   try {
     fs.unlinkSync(file);
@@ -2449,13 +2396,12 @@ export interface AuditLogEntry {
 }
 
 export function auditLogPath(cwd: string): string {
-  // follow the state root instead of hardcoding <cwd>/.pi-glla.
   return path.join(piGlaDir(cwd), "audits.jsonl");
 }
 
 export function appendAuditLog(cwd: string, entry: AuditLogEntry): void {
   try {
-    if (stateRootPending()) return; // deferred — never create the cwd tree
+    if (stateRootPending()) return;
     ensureDirs(cwd);
     fs.appendFileSync(auditLogPath(cwd), JSON.stringify(entry) + "\n");
   } catch {

@@ -17,27 +17,24 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { normalizeAuditorAllowedExtensions } from "./auditor-extensions.ts";
+import { globalSettingsPath, stateRootPending } from "./glla-state-root.js";
 
 import {
   DEFAULT_AUDIT_FEEDBACK_CHARS,
   DEFAULT_FORBIDDEN_MODELS,
-  globalSettingsPath,
   mergeSettings,
   piGlaDir,
-  stateRootPending,
-} from "./goal-loop-core.ts";import type { SubagentModelStrategy } from "./goal-loop-subagents.js";
+} from "./goal-loop-core.ts";
+import type { SubagentModelStrategy } from "./goal-loop-subagents.js";
 import {
   DEFAULT_MAIN_MODEL_PRIMARY_PROBE_MINUTES,
   normalizeMainModelFallbackRefs,
 } from "./main-model-recovery.js";
 
 export interface Settings {
-/** where the glla state root lives. `workingDir` (default) =
- * <cwd>/.pi-glla; `sessionDir` = <top-level session dir>/pi-glla (from
- * ctx.sessionManager.getSessionDir(), never a per-session UUID/file path).
- * Machine-wide (global-only): project settings.json sits inside the very
- * directory this key locates. Switching does NOT copy/move/delete the old
- * root — the new one starts empty. */
+  /** Where glla's durable state directory lives. This is global-only because
+   * project settings.json lives inside the selected state root. The historical
+   * cwd root remains the safe default; sessionDir is an explicit opt-in. */
   stateRoot?: "workingDir" | "sessionDir";
   /** v0.34.57: model refs/ids that must never be selected — the policy
    * guard (bug #1.14). The v0.34.115 default is [] (no opinionated ban
@@ -210,10 +207,10 @@ export interface Settings {
   };
 }
 
-/** These settings describe machine-wide policy, not a project artifact.
- * The runtime intentionally reads the GLOBAL file for them; ignoring project
- * copies keeps the settings table and behavior honest instead of showing a
- * project value the resolver cannot use. */
+/** These settings describe the main session's provider-recovery policy, not a
+ * project artifact. The recovery runtime intentionally reads the global file
+ * for them; ignoring project copies keeps the settings table and behavior
+ * honest instead of showing a project value that the retry path cannot use. */
 const GLOBAL_ONLY_KEYS: ReadonlySet<keyof Settings> = new Set([
   "stateRoot",
   "mainModelFallbacks",
@@ -227,12 +224,11 @@ const GLOBAL_ONLY_KEYS: ReadonlySet<keyof Settings> = new Set([
 ]);
 
 export const DEFAULT_SETTINGS: Settings = {
+  // cwd/.pi-glla preserves historical behavior; sessionDir is explicit opt-in.
+  stateRoot: "workingDir",
   // Main-agent fallback models are opt-in: an empty list preserves pi's normal
   // session model behavior, while the recovery cadence still protects an
   // active supervised goal from provider failures.
-  // the state root defaults to the historical <cwd>/.pi-glla;
-  // sessionDir mode is an explicit machine-wide opt-in.
-  stateRoot: "workingDir",
   mainModelFallbacks: [],
   // v0.34.115: the default policy list is empty — no model is forbidden
   // unless the user explicitly configures forbiddenModels. The blocking gate
@@ -280,9 +276,9 @@ export const DEFAULT_SETTINGS: Settings = {
   aggressiveMode: true,
 };
 
-// moved to goal-loop-core.ts so piGlaDir can read the global file
-// without a circular import. Re-exported for API compatibility.
-export { globalSettingsPath } from "./goal-loop-core.js";
+// Re-exported for compatibility; the dependency-free state-root module owns
+// this path so goal-loop-core can resolve piGlaDir without a settings cycle.
+export { globalSettingsPath } from "./glla-state-root.js";
 
 export function projectSettingsPath(cwd: string): string {
   return path.join(piGlaDir(cwd), "settings.json");
@@ -492,12 +488,10 @@ function withSettingsFileLock<T>(file: string, fn: () => T): T {
 }
 
 export function saveSettings(scope: "global" | "project", cwd: string, patch: Partial<Settings>): void {
-  const file = scope === "global" ? globalSettingsPath() : projectSettingsPath(cwd);
-  // a project-scope save while sessionDir mode is pending would
-  // create <cwd>/.pi-glla as a side effect — defer instead.
   if (scope === "project" && stateRootPending()) {
     throw new Error("state root pending (sessionDir mode, no session dir yet) — project settings save deferred");
   }
+  const file = scope === "global" ? globalSettingsPath() : projectSettingsPath(cwd);
   withSettingsFileLock(file, () => {
     const current = migrateLegacySettings(readSettingsFile(file));
     const next: Record<string, unknown> = { ...current };

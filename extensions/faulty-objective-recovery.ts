@@ -149,6 +149,30 @@ function seedObjective(seed: unknown): string | null {
   return usableCandidate(raw.split(/\b(?:done\s+when|verify)\s*:/i)[0]);
 }
 
+/**
+ * v0.35.53 (note.md Now): heal legacy malformed queue items WITHOUT a repair
+ * card. The v0.35.53 parser tightening stops NEW items from being written
+ * with an empty objective, but items already persisted that way (field:
+ * neonbreak — objective "", the entire intent inside the verification
+ * contract, faulty_objective_list_activation_blocked ×42 over 22h) need a
+ * deterministic heal at activation: when the objective is empty but the
+ * contract carries a clean, actionable leading imperative, derive the
+ * objective from the contract's first sentence. Returns null when the
+ * contract is absent or itself suspicious — those stay on the true
+ * broken-objective repair path.
+ */
+export function deriveObjectiveFromContract(contract: unknown): string | null {
+  const text = normalizedText(contract);
+  if (!text) return null;
+  if (assessSuspiciousObjective(text).suspicious) return null;
+  if (!IMPERATIVE_START.test(text)) return null;
+  const firstSentence = text.split(/(?<=[.!?])\s+/)[0] ?? text;
+  // 400: long single-sentence intents are legitimate objectives (the field
+  // sentence is ~253 chars); the cap only guards against pathological dumps.
+  const bounded = firstSentence.slice(0, 400).trim();
+  return bounded.length >= 8 ? bounded : null;
+}
+
 function repairContract(goal: Goal): { value?: string; source: string } {
   const candidates: Array<[string, unknown]> = [
     ["current contract", goal.verificationContract],

@@ -15,7 +15,6 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-
 import { piGlaDir, stateRootPending } from "./goal-loop-core.js";
 
 export type ReviewerMode = "off" | "on" | "auto" | "aggressive";
@@ -298,7 +297,7 @@ export function formatReviewReport(r: ReviewReport): string {
 
 export function writeReviewReport(cwd: string, report: ReviewReport): string {
   const dir = path.join(piGlaDir(cwd), "reviews");
-  if (stateRootPending()) return path.join(dir, `${report.goalId}-deferred.md`); // deferred — never create the cwd tree
+  if (stateRootPending()) return path.join(dir, `${report.goalId}-deferred.md`);
   fs.mkdirSync(dir, { recursive: true });
   const ts = report.at.replace(/[:.]/g, "-");
   const file = path.join(dir, `${report.goalId}-${ts}.md`);

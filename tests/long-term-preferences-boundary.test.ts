@@ -103,11 +103,10 @@ test("Settings has no opaque free-form text field (typed boundary)", () => {
 test("saveSettings is the only writer to the settings JSON files", () => {
   // Both helpers must route through os.homedir() and cwd respectively —
   // a literal constant would let a writer bypass and still pass the
-  // path test. The global helper has an env-var override for tests;
-  // accept either branch. globalSettingsPath lives in
-  // goal-loop-core.ts (so piGlaDir can read the global file without a
-  // circular import); goal-settings.ts re-exports it.
-  const globalPathFn = fs.readFileSync("extensions/goal-loop-core.ts", "utf-8").match(/globalSettingsPath\(\):\s*string\s*\{[\s\S]+?\n\}/m);
+  // path test. The dependency-free state-root module owns the global
+  // helper so goal-loop-core can resolve piGlaDir without a settings cycle;
+  // goal-settings re-exports it for API compatibility.
+  const globalPathFn = fs.readFileSync("extensions/glla-state-root.ts", "utf-8").match(/globalSettingsPath\(\):\s*string\s*\{[\s\S]+?\n\}/m);
   const projectPathFn = fs.readFileSync("extensions/goal-settings.ts", "utf-8").match(/projectSettingsPath\([^)]*\):\s*string\s*\{[\s\S]+?\n\}/m);
   assert.ok(globalPathFn && projectPathFn, "global/project path helpers found");
   assert.match(globalPathFn[0]!, /os\.homedir\(/, "global path routes through os.homedir");

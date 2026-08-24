@@ -18,8 +18,8 @@ import {
   clearLoadHold,
   formatMainModelRecoveryStatus,
   isStaleApiError,
+  ledgerPath,
   nowIso,
-  piGlaDir,
   resolveEffectiveAggressiveSettings,
   sumNewAssistantTokens,
   supervisorPaused,
@@ -517,8 +517,8 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
   let specItemProgress = 0;
   if (iterStartAt) {
     try {
-      const ledgerPath = path.join(piGlaDir(ctx.cwd), "active.jsonl");
-      const lines = fs.readFileSync(ledgerPath, "utf-8").split("\n");
+      const p = ledgerPath(ctx.cwd);
+      const lines = fs.readFileSync(p, "utf-8").split("\n");
       for (const line of lines) {
         if (!line.includes("spec_item_progress")) continue;
         try {
@@ -937,6 +937,18 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       !!r?.startsWith("plateau —") ||
       !!r?.startsWith("stalled:") ||
       !!r?.startsWith("stuck —") ||
+      // v0.35.54 (collect-pass HIGH finding): the v0.35.31 "metric never
+      // moved" stop message promises "/loop resume retries or /loop stop",
+      // but this predicate never matched that prefix — the promised command
+      // answered "No held loop to resume" and, with propose_loop_refine
+      // gated on an ACTIVE loop, the only recovery was /loop stop + a fresh
+      // start discarding iteration history. Same class as the v0.35.25
+      // issue-#14 zombie prefix (fixed there, missed for this brand-new
+      // prefix). Resuming re-arms the counters; if the metric is still dead
+      // it re-stops loudly after its window — and a measure-changing
+      // propose_loop_refine (usable again once resumed) re-scopes the era so
+      // the never-moved grace re-arms.
+      !!r?.startsWith("metric never moved —") ||
       // v0.35.25 (issue #14): abortZombieRun parks with
       // "stopped: automatic zero-stream abort — … (/loop resume to retry)"
       // and its user-facing message PROMISES that resume command. The

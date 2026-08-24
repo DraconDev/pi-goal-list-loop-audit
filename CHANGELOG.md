@@ -1,5 +1,217 @@
 # Changelog
 
+## 0.35.57 — objective-loss validation (2026-08-24)
+
+### Evidence
+  Validated the Now report that objectives disappeared after a Wez crash or
+  version/cwd switch. `tests/objective-loss-state-root.test.ts` proves that a
+  same-cwd restart path retains durable state, that the historical workingDir
+  default intentionally makes a cwd switch select a different on-disk root,
+  and that explicit sessionDir keeps the objective visible across cwd changes.
+  It also proves pending session-root resolution does not migrate or delete
+  the old cwd tree. The bounded result is evidence-based closure, not a forced
+  production change: crash-only loss was not reproduced, while cwd coupling is
+  already addressed by the opt-in state-root port. The subsequent gettick,
+  list-reload, and subagent-visibility reports remain separate items.
+  Full evidence: audit/OBJECTIVE-LOSS-VALIDATION-2026-08-24.md.
+
+### Tests
+  Focused objective/state-root tests and clean tsc pass; the full release gate
+  is run for this version before closure.
+## 0.35.56 — state-root consumer/lifecycle hardening (2026-08-24)
+
+### Fix
+  Hardened every remaining state-root consumer and lifecycle boundary missed
+  by the core/settings slice. Raw `<cwd>/.pi-glla` joins in auditor jobs,
+  dispatch, goal-loop ledger reads, reviewer, stats rollup/discovery, and
+  session owner/handoff/pending-list paths now route through `piGlaDir` and
+  respect the selected root. Pending `sessionDir` resolution (no session dir
+  yet) is a strict deferral: dispatch, reviewer, session owner, handoff, and
+  pending-list writes return a deferred/false result without creating a
+  fallback `<cwd>/.pi-glla` tree, and legacy `.pi-gla` trees are still never
+  migrated. Audit-loop open-count helpers now resolve via the selected root
+  as well. Host/subagent ownership stays per-process via `PI_SESSION_FILE`
+  fallback and the explicit `setRuntimeSessionDir` hook — no global overwrite.
+
+### Tests
+  New `tests/state-root-consumers.test.ts` pins resolved-root routing for
+  dispatch/stats/audit helpers, pending deferral for dispatch/reviewer, the
+  `PI_SESSION_FILE` fallback, and source-level absence of raw hardcodings plus
+  pending guards. Existing `tests/state-root.test.ts` continues to cover core
+  core/settings behavior. Red/green: breaking the `piGlaDir` routing makes the
+  consumer pins fail; restoring passes 9/9 focused plus 56 prior. tsc and full
+  release gate green for this tree.
+## 0.35.55 — opt-in session-root state core/settings slice (2026-08-24)
+
+### Fix
+  Ported the valid state-root portion of PR #21 onto current main without
+  merging the stale PR verbatim. New dependency-free
+  extensions/glla-state-root.ts owns the typed global root selector and
+  session-directory resolution so goal-loop-core can select a root without a
+  settings import cycle. The historical <cwd>/.pi-glla workingDir remains
+  the default; sessionDir is explicit opt-in and resolves to the top-level Pi
+  session directory (or PI_SESSION_FILE's parent for worker processes).
+  Session-root mode is global-only because project settings.json lives inside
+  the selected root. Pending sessionDir resolution is a write boundary:
+  core directory/ledger/queue/sentinel/audit-log writes defer rather than
+  recreate an ambiguous cwd tree, and old .pi-gla/.pi-glla trees are never
+  migrated or deleted by the new mode. The settings menu exposes the two
+  choices and project attempts to override stateRoot are stripped.
+
+### Tests
+  tests/state-root.test.ts covers default cwd persistence, opt-in session-root
+  persistence, pending-write/no-migration behavior, PI_SESSION_FILE fallback,
+  and global-only settings round-trip. settings-editors and
+  settings-menu-complete pin the UI/provenance surface; the long-term
+  preferences boundary now checks the dependency-free global path owner.
+  Red/green proved the session-root branch is required (2 of 5 focused tests
+  fail when neutered; restored 5/5). tsc and focused tests pass before the
+  full release gate.
+## 0.35.54 — RESUMABLE_STOP honors the v0.35.31 "metric never moved" stop (2026-08-24)
+
+### Fix
+  Collect-pass HIGH finding: the v0.35.31 "metric never moved" stop reason
+  promises "/loop resume retries or /loop stop" in its own message, but the
+  RESUMABLE_STOP predicate in /loop resume never matched that prefix - the
+  promised command answered "No held loop to resume", and with
+  propose_loop_refine gated on an ACTIVE loop, the only recovery was
+  /loop stop + a fresh start discarding iteration history. Same class as
+  the v0.35.25 issue-#14 zombie prefix bug (fixed there for zero-stream,
+  missed for this brand-new prefix). The prefix is now resumable: resuming
+  re-arms the error/stuck/stall counters while preserving iteration, best,
+  and history; if the metric is still dead it re-stops loudly after its
+  window, and a measure-changing propose_loop_refine (usable again once
+  resumed) re-scopes the measure era so the never-moved grace re-arms.
+
+### Tests
+  tests/metric-never-moved-resumable.test.ts: behavioral - a loop parked by
+  the exact production reason string resumes via /loop resume with
+  iteration/best/history preserved and all three streak counters re-armed;
+  negative pin - a bounded stop ("max iterations reached") stays
+  non-resumable. Red-proven by removing the predicate clause (behavioral
+  fails, negative pin stays green).
+## 0.35.53 — false repair card after abort+reload: parser marker fix + contract-derived objective heal (2026-08-24)
+
+### Fix
+  note.md Now: "objective needs repair issue, but before reload it looked
+  fine". Field forensics (neonbreak, item 20260823082852-in3rc7): the list
+  draft batch wrote an item with objective "" and the ENTIRE intent inside
+  the verification contract - extractVerificationContract's line marker
+  regex `verify\b[^:]*:` misread the imperative sentence "Verify the
+  shipped PREMIUM-UIUX pass (...): confirm ..." as a contract marker
+  ("verify" is both a marker word and an ordinary imperative verb), leaving
+  the objective empty. The activation gate then correctly flagged "empty"
+  and jammed a repair card ahead of the item - 42
+  faulty_objective_list_activation_blocked events over 22 hours, an endless
+  repair-card loop that wedged the session. Two-layer durable fix:
+  (1) WRITER - the line marker for the ambiguous verbs now requires the
+  colon immediately ("Verify:" / "Verify when:" / "Verification:");
+  "done"/"done when"/"verified when" keep a bounded 60-char decorated-marker
+  gap so prose tails cannot masquerade as markers either. The field text
+  now parses with the real objective and only the grep tail as contract.
+  (2) READER - legacy items already persisted with an empty objective plus
+  a clean, actionable contract derive their objective deterministically
+  from the contract's leading imperative sentence at activation
+  (list_objective_derived_from_contract) instead of demanding a repair
+  card. Empty objective + absent or suspicious contract still takes the
+  true broken-objective repair path, unchanged.
+
+### Tests
+  tests/false-repair-card.test.ts: the exact field text parses with its
+  intent in the objective; short-marker and decorated-marker forms still
+  parse; derivation unit rules (first sentence, suspicious/non-imperative
+  contracts rejected); behavioral - a legacy stuck item activates with the
+  derived objective (no repair demand, contract preserved), a truly broken
+  item still triggers the repair card, and a fresh /list add of the field
+  text activates directly end-to-end. Red-proven by neutering both layers
+  (4 of 6 fail; the true-broken-path tests stay green).
+## 0.35.52 — context hygiene: era-scope failed error-only turns out of the effective context (2026-08-24)
+
+### Fix
+  note.md Now: "failed requests add to the context, while clearly adding
+  nothing of value". When retries are exhausted, the failed assistant turn
+  (stopReason "error", errorMessage set, content empty/partial) STAYS in
+  agent state and the session - pi strips it from live state only for
+  mid-flight retries. Every later LLM call receives it and compaction
+  summarizes it; nothing downstream filters these. Field evidence (polis,
+  2026-08-23): a run of 503/network_error/retry-cancelled turns drove the
+  estimated context to 122.7% of the 200k window, and auto-compaction then
+  aborted on its own bloated summarization input. New
+  extensions/context-hygiene.ts: a durable bounded rule drops error-only
+  assistant turns (stopReason "error", NO tool-call blocks) from the
+  effective context EXCEPT the most recent one, which stays so the model
+  sees why the previous attempt failed on the retry send. Applied at two
+  points: the `context` event projection (per-send, transcript untouched -
+  alongside the v0.35.51 payload guard) and `session_before_compact`
+  (prunes the shared preparation object the compaction runner summarizes,
+  shrinking the summarizer request and keeping failures out of the summary).
+  Tool-call-carrying error turns own paired toolResults and stay intact;
+  "aborted" turns are user-intent boundaries and are never touched. Drops
+  are ledgered (context_hygiene_dropped / context_hygiene_compaction_input).
+
+### Tests
+  tests/context-hygiene.test.ts: predicate (tool-carrying/aborted/healthy
+  never droppable); bounded drop rule (newest kept, older dropped, identity
+  preserved at/under the window, configurable window); seeded bloat (60
+  failures collapse, normal turns survive verbatim); in-place compaction
+  preparation pruning; behavioral wiring through MockPi for both hooks with
+  ledger assertions and clean-history no-op. Red-proven by neutering both
+  production call sites.
+## 0.35.51 — payload guard: bound inline image bytes on every outgoing LLM call (2026-08-24)
+
+### Fix
+  note.md Now: "req body too large due to images in context". Generated
+  images accumulate in conversation history as inline base64 blocks until
+  the provider rejects the request with 413 ("Downloaded image content
+  cannot exceed 30MB" / "Request Entity Too Large") - and every
+  main-model-recovery probe re-sent the same bloated history, so recovery
+  could never classify or heal the failure; the session was wedged until a
+  manual restart WITHOUT history. Two-layer durable fix: (1) a new
+  extensions/payload-guard.ts projects the outgoing message list at the pi
+  `context` event (fired before EVERY LLM call), bounding cumulative
+  inline-image bytes to 16MB - evicting the OLDEST images first, always
+  keeping the newest two, replacing each evicted block with a short text
+  placeholder. Disk history is untouched (per-send projection), and the
+  chokepoint protects ordinary turns AND recovery probes alike. Evictions
+  are ledgered as payload_guard_eviction. (2) classifyMainModelFailure now
+  maps 413/payload-size texts to "transient" - retryable in place, because
+  the payload guard (not a fallback-model switch) heals the size; the old
+  "unknown" classification burned the whole chain on useless rotations.
+
+### Tests
+  tests/payload-guard.test.ts: under-budget pass-through (same identity);
+  oldest-first eviction with newest-two floor; floor holds when the budget
+  cannot be met; idempotent projection, non-image content untouched;
+  behavioral wiring (context handler projects + ledgeres; under-budget
+  passes unprojected); 413 texts classify transient (not unknown, not
+  context-overflow). Red-proven by neutering both production sites.
+## 0.35.50 — same-process session successors auto-resume the main thread (2026-08-23)
+
+### Fix
+  note.md Now #2: session-start auto-resume asymmetry. The v0.35.23 loop
+  branch treats a SAME-PROCESS session successor (shutdown recorded in the
+  owner sidecar with a non-quit reason, previous pid === current pid) as
+  mid-flight continuity and resumes held loops - but a plain ACTIVE goal
+  held ("restored on session load - held for explicit resume") and a parked
+  completion-audit claim stayed parked in that exact corner: from the
+  user's seat, the list kept going after the session replacement while the
+  goal sat "awaiting first turn". The goal restore gate and the auditor
+  claim's canRecoverNow now accept the same consent, refined per the
+  v0.34.49 one-shot identity law: a PRESENT handoff marker is authoritative
+  even when mismatched (rejection holds); only an ABSENT marker with a
+  same-pid non-quit shutdown is continuity - the same distinction
+  listOperationLifecycleResume already draws. Different-pid crash
+  successors and cold loads still hold for an explicit decision;
+  Auto-resume stays the only load-time automation for them.
+
+### Tests
+  tests/same-process-successor-resume.test.ts: same-process successor
+  resumes a held ACTIVE goal (continuation dispatched, no stale interrupt
+  marker); same-process successor auto-retries a parked completion claim
+  (audit_recovery_auto_retry_claimed fence in the ledger); different-pid
+  crash successor still HOLDS (cold-load law). Red-proven by neutering
+  both consent sites; the v0.34.49 mismatched-marker identity test stays
+  green against the refined consent.
 ## 0.35.49 — parent-side silence watchdogs close the auditor-AWOL gap (2026-08-23)
 
 ### Fix

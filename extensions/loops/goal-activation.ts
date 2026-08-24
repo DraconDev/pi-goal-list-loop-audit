@@ -18,7 +18,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import { defineTool, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { defineTool, type ContextEvent, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 // v0.34.109 (decomposition step 1): the state singleton and the persistence
@@ -259,6 +259,8 @@ import {
   type ModelPickItem,
 } from "../model-picker.js";
 import { consumeRecoveryResume } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
+import { payloadGuardProjection } from "../payload-guard.js"; // v0.35.51 image-413 guard
+import { dropFailedErrorOnlyTurns, pruneCompactionPreparation } from "../context-hygiene.js"; // v0.35.52 error-turn hygiene
 import {
   createGoalHeartbeat,
   releaseZombieAbortKey,
@@ -1252,6 +1254,17 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // (the /reload family), so the held work is mid-flight continuity, not
     // a cold start. Different-pid successors hold like any cold load.
     const sameProcessSuccessorResume = nonQuitShutdownResume && ownerClaim.previousPid === process.pid;
+    // v0.35.50 (note.md Now #2): MAIN-thread consent for the same-process
+    // successor corner — shutdown recorded + same pid AND no contradicting
+    // handoff evidence. A PRESENT handoff marker is authoritative even when
+    // mismatched (v0.34.49 one-shot identity law: rejection holds); only an
+    // ABSENT marker with a same-pid non-quit shutdown is mid-flight
+    // continuity — the same distinction listOperationLifecycleResume already
+    // draws. This closes the asymmetry where the loop branch (v0.35.23)
+    // resumed on sameProcessSuccessorResume while a plain goal held
+    // ("list keeps going, goal awaits first turn"). Different-pid crash
+    // successors and cold loads still hold for an explicit decision.
+    const sameProcessContinuityResume = sameProcessSuccessorResume && !handoffMarkerPresent;
     const heldLoopSuccessorResume = !!state.loop
       && !state.loop.active
       && isLifecycleHeldLoopReason(state.loop.stopReason)
@@ -1492,7 +1505,9 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       // downstream policy checks; staleRearmedOnSessionStart is the additional
       // one-shot consent for silent host-handle death.
       // if (autoResume || recoveryResume || rebindResume || handoffResume) {
-      if (autoResume || recoveryResume || rebindResume || handoffResume || staleRearmedOnSessionStart) {
+    // Different-pid crash successors still hold like any cold load;
+    // Auto-resume stays the only load-time automation for them.
+    if (autoResume || recoveryResume || rebindResume || handoffResume || staleRearmedOnSessionStart || sameProcessContinuityResume) {
         // v0.28.1 (S2): clear the stale-handle interrupt marker — this IS
         // the auto-resume the marker promised.
         if (wasInterrupted) updateGoal({ interruptedAt: undefined, interruptedReason: undefined }, ctx);
@@ -1570,7 +1585,10 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       // Auto-resume — dispatched automation on a cold load. Removed: parked
       // claims hold for explicit consent like every other pending state;
       // the else branch below defers them with a truthful ledger event.
-      const canRecoverNow = explicitRecovery || autoResume;
+      // v0.35.50: same-process continuity consent — parity with the goal
+      // branch above; a same-pid session replacement without contradicting
+      // handoff evidence is mid-flight continuity for the stored claim too.
+      const canRecoverNow = explicitRecovery || autoResume || sameProcessContinuityResume;
       if (canRecoverNow && recoveredClaim && (recoveredClaim.phase ?? "recovery-pending") === "recovery-pending") {
         completionAuditRecoveryArmed = true;
         const started = maybeAutoRetryParkedCompletionAudit(hostLifecycleStart || explicitRecovery ? "host-rebind" : "session-start");
@@ -2299,5 +2317,69 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     const e = (data ?? {}) as { id?: unknown };
     const recordId = typeof e.id === "string" && e.id.length > 0 ? e.id : undefined;
     if (recordId) endSubagentHangProbe(recordId);
+  });
+
+  // v0.35.51 (note.md Now): payload guard — bound inline base64 image bytes
+  // on EVERY outgoing LLM call. Generated images accumulate in history until
+  // the provider rejects the request with 413 ("Downloaded image content
+  // cannot exceed 30MB"), and every main-model-recovery probe re-sent the
+  // same bloated history so recovery could never classify or heal the
+  // failure. The `context` event fires before each provider call with the
+  // outgoing message list; projecting it here protects ordinary turns AND
+  // recovery probes at one chokepoint. The session transcript on disk is
+  // NOT touched — this is a per-send projection. Always-on (not gated on a
+  // live goal): the wedge hits any image-heavy session this extension runs.
+  // The cast at the boundary is sound: the projection only replaces image
+  // blocks with text placeholders inside existing message objects, never
+  // re-shapes messages.
+  pi.on("context", (event: ContextEvent, ctx: ExtensionContext) => {
+    const messages = event?.messages;
+    if (!Array.isArray(messages)) return {};
+    const projection = payloadGuardProjection(messages);
+    // v0.35.52: error-turn hygiene — failed error-only assistant turns
+    // (stopReason "error", no tool calls) are dropped from the effective
+    // context except the most recent one (retry continuity). Failed turns
+    // accumulate forever otherwise: polis hit 122.7% of a 200k window on
+    // error entries alone, and compaction then aborted on its own bloat.
+    const hygiene = dropFailedErrorOnlyTurns(projection.messages);
+    if (projection.evicted.length === 0 && hygiene.dropped.length === 0) return {};
+    try {
+      if (hygiene.dropped.length > 0) {
+        appendLedger(ctx.cwd, "context_hygiene_dropped", {
+          dropped: hygiene.dropped.length,
+          kept: hygiene.kept,
+          lastError: hygiene.dropped[hygiene.dropped.length - 1]?.errorMessage?.slice(0, 160),
+          generation: sessionGeneration,
+        });
+      }
+      if (projection.evicted.length > 0) {
+        appendLedger(ctx.cwd, "payload_guard_eviction", {
+          evicted: projection.evicted.length,
+          bytesFreed: projection.totalImageBytes - projection.remainingImageBytes,
+          remainingImageBytes: projection.remainingImageBytes,
+          generation: sessionGeneration,
+        });
+      }
+    } catch {
+      // The projection itself must never fail a send over ledger bookkeeping.
+    }
+    return { messages: hygiene.messages as unknown as ContextEvent["messages"] };
+  });
+
+  // v0.35.52: the same bounded rule prunes the compaction summarization
+  // input — the preparation object is shared by reference with the compaction
+  // runner, so reassigning the message arrays here shrinks the summarizer
+  // request and keeps failed turns out of the summary. Never cancels and
+  // never supplies its own compaction; firstKeptEntryId and friends untouched.
+  pi.on("session_before_compact", (event: { preparation?: unknown }, ctx: ExtensionContext) => {
+    const dropped = pruneCompactionPreparation(event?.preparation);
+    if (dropped > 0) {
+      try {
+        appendLedger(ctx.cwd, "context_hygiene_compaction_input", { dropped, generation: sessionGeneration });
+      } catch {
+        // bookkeeping must never break compaction
+      }
+    }
+    return {};
   });
 }

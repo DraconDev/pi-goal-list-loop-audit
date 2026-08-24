@@ -10,6 +10,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { piGlaDir } from "./goal-loop-core.js";
 
 export interface LedgerEntry {
   type: string;
@@ -143,7 +144,7 @@ export function rollupEntries(project: string, entries: LedgerEntry[]): ProjectR
 }
 
 export function rollupProject(projectPath: string): ProjectRollup | undefined {
-  const ledger = path.join(projectPath, ".pi-glla", "active.jsonl");
+  const ledger = path.join(piGlaDir(projectPath), "active.jsonl");
   let raw: string;
   try {
     raw = fs.readFileSync(ledger, "utf-8");
@@ -172,7 +173,7 @@ export function discoverGllaProjects(opts: { home?: string; cwd?: string; budget
 
   const hasLedger = (dir: string): boolean => {
     try {
-      fs.accessSync(path.join(dir, ".pi-glla", "active.jsonl"));
+      fs.accessSync(path.join(piGlaDir(dir), "active.jsonl"));
       return true;
     } catch {
       return false;

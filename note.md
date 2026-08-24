@@ -2,38 +2,9 @@
 
 ##
 
-auditor can go awol for long, we need some way to handle it
-in this case its not slow response but we were workign with a model that kept ahving errors but it was fine when we retried but seemingly we dont least as eagerly for auditor
-/home/dracon/Pictures/Screenshots/Screenshot_20260823_152629.png /home/dracon/Pictures/Screenshots/Screenshot_20260823_152617.png /home/dracon/Pictures/Screenshots/Screenshot_20260823_152536.png /home/dracon/Pictures/Screenshots/Screenshot_20260823_152321.png /home/dracon/Pictures/Screenshots/Screenshot_20260823_152319.png /home/dracon/Pictures/Screenshots/Screenshot_20260823_152316.png 
+https://github.com/DraconDev/pi-goal-list-loop-audit/pulls
 
-> /home/dracon/Pictures/Screenshots/Screenshot_20260823_153139.png so we can see the mdoel struggless but we still need ot keep retrying it 
-
-##
-another problem is that on session start, we odnt auto start the main thread we do auto start the auditor if it was their turn
-
-##
-
-another problem is htat failed requests add to the context, while clearly adding nothing of value
-/home/dracon/Pictures/Screenshots/Screenshot_20260823_154439.png 
-
-##
-
-/home/dracon/Pictures/Screenshots/Screenshot_20260823_155115.png 
-
-ok seemingly we keep sending the images as context to the model , so the context fits but the requst is too big 
-
-> /home/dracon/Pictures/Screenshots/Screenshot_20260823_155311.png starting without history works
-
-then
-
-> /home/dracon/Pictures/Screenshots/Screenshot_20260823_160928.png we make more iamges and doesnt work again
-
-##
-
-objective needs repair issue, but before reload it looked fine
-/home/dracon/Pictures/Screenshots/Screenshot_20260823_155633.png 
-
-# Next
+investiate
 
 ##
 
@@ -62,7 +33,32 @@ here too we can't even start a new list
 another concern is that do we have these explores, clearly not desired, is this our bug 
 /home/dracon/Pictures/Screenshots/Screenshot_20260823_120936.png 
 
-# Later
+# Next
+
+## objective cant complete
+
+/home/dracon/Pictures/Screenshots/Screenshot_20260824_183359.png 
+
+##
+
+auditor selectorshould be like the main model selector
+also no thinking select seperately we just select along with picking the model like model selector
+
+##
+
+anything that goes on for too long is suspcious so look into this
+
+super sus
+/home/dracon/Pictures/Screenshots/Screenshot_20260824_091051.png 
+
+/home/dracon/Pictures/Screenshots/Screenshot_20260824_124530.png 
+we even warn but not act
+
+## nothing to resume with clear obvious goal to resume
+
+/home/dracon/Pictures/Screenshots/Screenshot_20260824_091334.png
+it was a list iwth many items
+/home/dracon/Pictures/Screenshots/Screenshot_20260824_091423.png 
 
 ##
 
@@ -81,12 +77,21 @@ even shows the list alive
     5. Deep audit + fix: briefing page. Dedupe first; fix only NEW findings
 ```
 
+/home/dracon/Pictures/Screenshots/Screenshot_20260823_203354.png 
+same we got list items but they are not showing
+
+list resume doesnt work 
+
+# Later
+
 ##
 
 not sure we want manual 
 
 /list add
 i never use it jsut accidentally type it instead of audit 
+
+
 
 ##
 
@@ -117,3 +122,10 @@ or do these have speical meaning, cause seemingly
 /list start
 /goal start 
 with saying audit would make more sense and audit might go too wide too cuase it start immedateli y without knowing what i meant
+
+## quesiton are good but esp mid of list / goal / loop i i am not sure they norammly should happen
+we can save questions after, mainly pop questions when the decision is truly a real change
+if not my intention can be inferrred as prefrence for quality long term solution and the objective so far
+also we cna do more drafting up front, so fo we dont have to ask questions in the middle
+
+yea we keep pausing a fair bit mid exec

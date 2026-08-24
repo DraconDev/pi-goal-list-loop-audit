@@ -504,7 +504,7 @@ export function buildSettingsRows(
       label: "State root",
       valueText: show("stateRoot", "workingDir"),
       sourceText: src("stateRoot"),
-      description: "where the glla state directory lives — workingDir: <cwd>/.pi-glla · sessionDir: <session dir>/pi-glla (top-level, machine-wide; old root untouched on switch)",
+      description: "durable glla state location — workingDir: <cwd>/.pi-glla · sessionDir: top-level Pi session directory (global-only; old root untouched)",
     },
     {
       id: "notifyCmd",

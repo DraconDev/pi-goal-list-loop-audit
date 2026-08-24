@@ -372,6 +372,7 @@ import {
 } from "../drafter-model.js";
 import {
   assessSuspiciousObjective,
+  deriveObjectiveFromContract,
   buildRepairTaskObjective,
 } from "../faulty-objective-recovery.js";
 
@@ -696,8 +697,24 @@ function activateNextListItem(ctx: ExtensionContext, n = 1, opts?: { explicit?: 
     return false;
   }
   const candidate = queue[n - 1];
+  let derivedObjective: string | undefined;
   if (candidate) {
-    const assessment = assessSuspiciousObjective(candidate.objective, candidate.verificationContract);
+    // v0.35.53: heal legacy malformed items deterministically — an item with
+    // an EMPTY objective but a clean, actionable contract (field: the draft
+    // batch that wrote "" + full intent into the contract, then got blocked
+    // as "empty" ×42 over 22h) derives its objective from the contract's
+    // leading imperative instead of demanding a repair card. Contracts that
+    // are themselves suspicious stay on the true broken-objective path.
+    let objectiveText = candidate.objective;
+    derivedObjective = undefined;
+    if (!objectiveText.trim() && candidate.verificationContract) {
+      const derived = deriveObjectiveFromContract(candidate.verificationContract);
+      if (derived) {
+        objectiveText = derived;
+        derivedObjective = derived;
+      }
+    }
+    const assessment = assessSuspiciousObjective(objectiveText, candidate.verificationContract);
     if (assessment.suspicious) {
       appendLedger(ctx.cwd, "faulty_objective_list_activation_blocked", {
         queueItemId: candidate.id,
@@ -710,7 +727,11 @@ function activateNextListItem(ctx: ExtensionContext, n = 1, opts?: { explicit?: 
   }
   const taken = takeAt(queue, n);
   if (!taken) return false;
-  const [next, rest] = taken;
+  const [rawNext, rest] = taken;
+  if (derivedObjective) {
+    appendLedger(ctx.cwd, "list_objective_derived_from_contract", { queueItemId: rawNext.id, objective: derivedObjective.slice(0, 200) });
+  }
+  const next = { ...rawNext, ...(derivedObjective ? { objective: derivedObjective } : {}) };
   replaceState({ ...state, list: rest });
   // v0.34.60: remove the disk sidecar. The active goal .md takes its
   // place via setGoal → writeGoalMd; the sidecar would re-show the item

@@ -13,6 +13,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { piGlaDir } from "./goal-loop-core.js";
 
 export type LoopDirection = "min" | "max";
 
@@ -552,7 +553,7 @@ export const AUDIT_PLATEAU_MAX_REPRIEVES = 2;
  * stop means "the well is dry"; with K open boxes it is objectively not. */
 export function countOpenAuditFindings(cwd: string): number {
   try {
-    const p = join(cwd, AUDIT_FINDINGS_REL);
+    const p = join(piGlaDir(cwd), "audit-loop/findings.md");
     if (!existsSync(p)) return 0;
     return readFileSync(p, "utf-8").split("\n").filter((l) => /^- \[[ \t]+\]/.test(l)).length;
   } catch {
@@ -564,7 +565,7 @@ export function countOpenAuditFindings(cwd: string): number {
  * to close, not just how many remain. */
 export function topOpenAuditFinding(cwd: string): string | null {
   try {
-    const p = join(cwd, AUDIT_FINDINGS_REL);
+    const p = join(piGlaDir(cwd), "audit-loop/findings.md");
     if (!existsSync(p)) return null;
     const line = readFileSync(p, "utf-8").split("\n").find((l) => /^- \[[ \t]+\]/.test(l));
     return line ? line.replace(/^- \[ \]\s*/, "").trim().slice(0, 120) : null;

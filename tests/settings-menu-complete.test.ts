@@ -417,6 +417,15 @@ test("postaudit and reviewer routes both open the reviewer menu (back-compat)", 
   assert.match(src, /postaudit.*cmdReviewerSettings|cmdReviewerSettings/);
 });
 
+test("stateRoot: one global-only row with the workingDir default", () => {
+  const rows = buildSettingsRows(SAMPLE_SETTINGS, EMPTY_PROV);
+  const stateRows = rows.filter((r: SettingsRow) => r.id === "stateRoot");
+  assert.equal(stateRows.length, 1);
+  assert.equal(stateRows[0]?.section, "other");
+  assert.equal(stateRows[0]?.valueText, "workingDir");
+  assert.match(stateRows[0]?.description ?? "", /sessionDir/);
+});
+
 test("v0.28.20: no bracket/paren chrome — VALUE and SOURCE render bare", () => {
   const rows = buildSettingsRows(SAMPLE_SETTINGS, {});
   for (const r of rows) {

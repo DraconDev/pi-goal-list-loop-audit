@@ -520,13 +520,12 @@ const instanceId = `${process.pid}:${instanceStartedAt}`;
 let zombieStoodDown = false;
 
 function ownerFilePath(cwd: string): string {
-  // follow the state root instead of hardcoding <cwd>/.pi-glla.
   return path.join(piGlaDir(cwd), "owner.json");
 }
 
 function writeOwnerFile(cwd: string): void {
   try {
-    if (stateRootPending()) return; // deferred — never create the cwd tree
+    if (stateRootPending()) return;
     fs.mkdirSync(piGlaDir(cwd), { recursive: true });
     fs.writeFileSync(ownerFilePath(cwd), JSON.stringify({ instanceId, pid: process.pid, at: Date.now() }));
   } catch {
@@ -712,6 +711,7 @@ function writeSessionHandoff(ctx: ExtensionContext, reason: string): boolean {
     return false;
   }
   try {
+    if (stateRootPending()) return false;
     fs.mkdirSync(piGlaDir(ctx.cwd), { recursive: true });
     const handoff: SessionHandoffRecord = {
       version: SESSION_HANDOFF_VERSION,
@@ -828,6 +828,7 @@ function queuePendingListOperation(ctx: ExtensionContext, args: string): boolean
     operations,
   };
   try {
+    if (stateRootPending()) return false;
     fs.mkdirSync(piGlaDir(ctx.cwd), { recursive: true });
     const tmp = `${p}.tmp-${process.pid}-${Date.now()}`;
     try {
@@ -930,6 +931,17 @@ function claimSessionOwnerAndDetectRebind(
   currentGeneration: number,
   ownerSessionId: string,
 ): SessionOwnerClaim {
+  if (stateRootPending()) {
+    return {
+      rebind: false,
+      generation: currentGeneration,
+      previousGeneration: null,
+      previousOwnerSessionId: null,
+      hadShutdown: false,
+      previousPid: null,
+      previousShutdownReason: null,
+    };
+  }
   try {
     const p = path.join(piGlaDir(cwd), SESSION_OWNER_FILE);
     let previous: SessionOwnerRecord = {};

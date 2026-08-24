@@ -16,11 +16,11 @@ import * as os from "node:os";
 import { fileURLToPath } from "node:url";
 
 import {
+  piGlaDir,
   stripThinkBlocks,
   captureGoalRevision,
   isRetriableInfraError,
   isForbiddenModel,
-  piGlaDir,
   type Goal,
   type GoalRevisionToken,
 } from "./goal-loop-core.js";
