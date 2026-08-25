@@ -11,6 +11,7 @@ import {
   newDetachedAuditJobAttemptId,
   AUDITOR_TOOLS,
   requestHash,
+  resolveWorkerCommand,
   runDetachedGoalCompletionAuditor,
   stableJson,
   type AuditorModel,
@@ -763,7 +764,7 @@ test("detached worker treats silent provider time as infrastructure, not a verdi
   const dir = await mkdtemp(path.join(tmpdir(), "glla-stall-"));
   const fakePi = path.join(dir, "silent-pi.mjs");
   const reports: AuditorProgress[] = [];
-  await writeFile(fakePi, "#!/usr/bin/env node\\nprocess.stdin.resume(); setInterval(() => {}, 1000);\\n");
+  await writeFile(fakePi, "#!/usr/bin/env node\nprocess.stdin.resume(); setInterval(() => {}, 1000);\n");
   await chmod(fakePi, 0o700);
   try {
     const result = await runDetachedGoalCompletionAuditor({
@@ -1228,4 +1229,55 @@ test("v0.36.0: a malformed allowedExtensions request fails closed as an identity
     await stopTestProcess(child);
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test("v0.35.60: resolveWorkerCommand falls back from compiled-binary execPath to a JS runtime", () => {
+  // Known JS runtimes return their own path unchanged
+  assert.equal(
+    resolveWorkerCommand("/usr/local/bin/node"),
+    "/usr/local/bin/node",
+  );
+  assert.equal(
+    resolveWorkerCommand("/home/user/.nvm/versions/node/v22.19.0/bin/node"),
+    "/home/user/.nvm/versions/node/v22.19.0/bin/node",
+  );
+  assert.equal(
+    resolveWorkerCommand("/usr/local/bin/bun"),
+    "/usr/local/bin/bun",
+  );
+  assert.equal(
+    resolveWorkerCommand("/usr/local/bin/deno"),
+    "/usr/local/bin/deno",
+  );
+
+  // Windows JS runtime paths
+  assert.equal(
+    resolveWorkerCommand("C:\\nodejs\\node.exe"),
+    "C:\\nodejs\\node.exe",
+  );
+
+  // Non-JS-runtime paths (compiled binaries) fall back to 'node'
+  assert.equal(
+    resolveWorkerCommand("/Users/juanjosegongi/.local/share/mise/installs/pi/0.84.2/pi/pi"),
+    "node",
+  );
+  assert.equal(
+    resolveWorkerCommand("/usr/local/bin/pi"),
+    "node",
+  );
+  assert.equal(
+    resolveWorkerCommand("C:\\Program Files\\Pi\\pi.exe"),
+    "node",
+  );
+  // Also covers bare name (no directory)
+  assert.equal(
+    resolveWorkerCommand("pi"),
+    "node",
+  );
+
+  // nodejs alias should also resolve its own path
+  assert.equal(
+    resolveWorkerCommand("/usr/bin/nodejs"),
+    "/usr/bin/nodejs",
+  );
 });
