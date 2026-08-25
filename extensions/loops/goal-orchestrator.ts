@@ -110,6 +110,7 @@ import {
   missingGllaTools,
   runPersistStep,
   isSafePersistedId,
+  stateRootPending,
   isPersistenceDegraded,
   lastPersistenceFailure,
   modelSwitch,
@@ -902,6 +903,10 @@ function archiveCurrentGoal(
   patch: Partial<Pick<Goal, "completionSummary" | "pendingTasks">> = {},
 ): boolean {
   if (!state.goal) return false;
+  if (stateRootPending()) {
+    ctx.ui.notify("Could not archive the goal — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.", "warning");
+    return false;
+  }
   const goal = state.goal;
   if (!isSafePersistedId(goal.id)) {
     ctx.ui.notify("Could not archive the goal — its persisted id is invalid, so no filesystem path was used. Repair the state before retrying.", "warning");

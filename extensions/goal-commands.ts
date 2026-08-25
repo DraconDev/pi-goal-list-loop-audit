@@ -24,7 +24,7 @@ import {
   formatListDepth, goalArgsNeedDrafting, ledgerPath, newGoalId, nowIso, parseListImport, parseListItemDeclaration,
   assignQueueOrder, compareQueueItems, readAuditLog, readQueueFromDisk, routeGoalArgs, routeListText, sanitizeDisplayText, sanitizeProviderAuditReport, statusLabel,
   writeQueueItemFile, type ModeCommand, type State, LIST_MUTATING_SUBCOMMANDS, SETTINGS_MUTATING_ACTIONS,
-  clearLoadHold,
+  clearLoadHold, stateRootPending,
 } from "./goal-loop-core.js";
 import { clearDispatchRecord, dispatchRecordExists } from "./goal-loop-dispatch.js";
 import type { AuditDisplayProgress } from "./goal-loop-display.js";
@@ -501,6 +501,10 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
 }
 
 async function cmdCancel(ctx: ExtensionContext): Promise<void> {
+  if (stateRootPending()) {
+    ctx.ui.notify("Cancel deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.", "warning");
+    return;
+  }
   if (!state.goal) {
     // v0.28.14: users reach for /goal cancel to kill a LOOP (no goal
     // active) — point at the right verb instead of doing nothing silently.
@@ -1270,6 +1274,10 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
   }
 
   if (sub === "clear" && !rest) {
+    if (stateRootPending()) {
+      ctx.ui.notify("List clear deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.", "warning");
+      return;
+    }
     // v0.34.61: delete the sidecars of every removed item BEFORE clearing
     // state. The /list disk-recovery fallback scans .pi-glla/goals/*.queue.json
     // when memQueue is empty; without this, a /list clear followed by a
@@ -1288,6 +1296,10 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
   // when it's list-sourced AND drops the waiting items. Before this the user
   // had to know to combine /goal cancel + /list clear.
   if (sub === "cancel" && !rest) {
+    if (stateRootPending()) {
+      ctx.ui.notify("List cancel deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.", "warning");
+      return;
+    }
     const waiting = listQueue().length;
     const activeIsListItem = state.goal?.policy === "list" && (state.goal.status === "active" || state.goal.status === "paused" || state.goal.status === "auditing");
     if (waiting === 0 && !activeIsListItem) {
@@ -1787,6 +1799,10 @@ function cmdSwitchlog(args: string, ctx: ExtensionContext): void {
  */
 async function cmdGllaWipe(ctx: ExtensionContext, entryChecked = false): Promise<void> {
   if (!entryChecked && warnIfStaleAtEntry(ctx, "/glla wipe")) return;
+  if (stateRootPending()) {
+    ctx.ui.notify("Wipe deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.", "warning");
+    return;
+  }
   const g = state.goal;
   const live = g && (g.status === "active" || g.status === "paused" || g.status === "auditing");
   const memoryQueue = listQueue();
@@ -2044,6 +2060,10 @@ async function cmdGllaResume(ctx: ExtensionContext): Promise<void> {
  * queue after aborting only its current item.
  */
 async function cmdGllaCancel(ctx: ExtensionContext): Promise<void> {
+  if (stateRootPending()) {
+    ctx.ui.notify("Cancel deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.", "warning");
+    return;
+  }
   // A running loop is itself the active objective. Stop it before looking at
   // an unrelated waiting list; otherwise `/glla cancel` can silently drop the
   // queue while leaving the loop running.

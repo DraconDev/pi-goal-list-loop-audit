@@ -1,23 +1,70 @@
 # Changelog
 
+## 0.35.60 — pre-turn glla tool visibility (2026-08-25)
+
+### Fix
+  GLLA agent tools are now registered and reactivated immediately before
+  agent turns, with `agent_start`/`turn_start` compatibility fallbacks. This
+  closes the interval where an external tool allowlist or modlist could remove
+  `pause_goal` after session restore and Pi would answer a valid model call
+  with `Tool pause_goal not found`, leaving a parked objective looking stuck
+  until reload.
+
+### Tests
+  `tests/gettick-tool-visibility.test.ts` simulates a post-restore active-tool
+  replacement and verifies the pre-turn boundary restores `pause_goal` and
+  keeps it callable. Version metadata is synchronized to 0.35.60.
+
+## 0.35.59 — safe cancel/wipe across unresolved session roots (2026-08-25)
+
+### Fix
+  `/glla cancel`, `/glla wipe`, `/list cancel`, `/list clear`, and the shared
+  goal archive path now fail closed while opt-in `sessionDir` resolution is
+  pending. They leave the in-memory objective/list untouched and do not
+  recreate or mutate an ambiguous cwd state tree; after host lifecycle
+  admission registers the session root, cancel and wipe archive/clear under
+  the selected session root as before.
+
+### Tests
+  `tests/objective-loss-lifecycle.test.ts` covers both deferred destructive
+  commands and successful `/glla cancel` + `/glla wipe` cleanup under a
+  registered session root. Version metadata is synchronized to 0.35.59.
+
+## 0.35.58 — objective-loss lifecycle repair (2026-08-24)
+
+### Fix
+  Wired the opt-in `sessionDir` root into the admitted production lifecycle.
+  `session_start` and silent host-successor admission now register Pi's
+  canonical `SessionManager.getSessionDir()` before owner, invalidation, or
+  restore writes; in-memory worker sessions remain pending instead of creating
+  an ambiguous cwd tree. The configured session directory wins over an
+  imported session-file parent, while `PI_SESSION_FILE` remains the explicit
+  child-process fallback.
+
+### Evidence
+  Added `tests/objective-loss-lifecycle.test.ts`: a real registered
+  `session_start` handler proves production root registration, and separate
+  fresh Bun writer/reader processes recover an objective across a cwd switch.
+  The report intentionally does not claim to simulate a crash mid-write or a
+  specific version migration. Full evidence:
+  audit/OBJECTIVE-LOSS-VALIDATION-2026-08-24.md.
+
+### Tests
+  Focused lifecycle/state-root tests and clean tsc pass; the full release gate
+  is run for this version before closure.
+
 ## 0.35.57 — objective-loss validation (2026-08-24)
 
 ### Evidence
   Validated the Now report that objectives disappeared after a Wez crash or
-  version/cwd switch. `tests/objective-loss-state-root.test.ts` proves that a
-  same-cwd restart path retains durable state, that the historical workingDir
-  default intentionally makes a cwd switch select a different on-disk root,
-  and that explicit sessionDir keeps the objective visible across cwd changes.
-  It also proves pending session-root resolution does not migrate or delete
-  the old cwd tree. The bounded result is evidence-based closure, not a forced
-  production change: crash-only loss was not reproduced, while cwd coupling is
-  already addressed by the opt-in state-root port. The subsequent gettick,
-  list-reload, and subagent-visibility reports remain separate items.
+  version/cwd switch. The historical workingDir default intentionally makes a
+  cwd switch select a different on-disk root, while explicit sessionDir keeps
+  the objective visible across cwd changes. Pending session-root resolution
+  does not migrate or delete the old cwd tree. The bounded result was
+  evidence-based closure pending production lifecycle wiring; crash-only loss
+  was not reproduced. The subsequent gettick, list-reload, and
+  subagent-visibility reports remain separate items.
   Full evidence: audit/OBJECTIVE-LOSS-VALIDATION-2026-08-24.md.
-
-### Tests
-  Focused objective/state-root tests and clean tsc pass; the full release gate
-  is run for this version before closure.
 ## 0.35.56 — state-root consumer/lifecycle hardening (2026-08-24)
 
 ### Fix

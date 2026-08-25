@@ -14,7 +14,7 @@ import { normalizeProviderErrorText, providerErrorFingerprint, providerErrorPres
 import { MAX_MAIN_MODEL_FALLBACKS } from "./main-model-recovery.js";
 import { resolveGllaStateDir, stateRootPending } from "./glla-state-root.js";
 export { normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, sanitizeProviderAuditReport, sanitizeProviderDisplayText } from "./quota-retry.js";
-export { globalSettingsPath, resolveRuntimeSessionDir, setRuntimeSessionDir, stateRootPending, type GllaStateRoot } from "./glla-state-root.js";
+export { globalSettingsPath, resolveRuntimeSessionDir, setRuntimeSessionDir, setRuntimeSessionDirFromSessionManager, stateRootPending, type GllaStateRoot } from "./glla-state-root.js";
 
 /** v0.26.1: consecutive heartbeat refires without a real agent turn
  * before the supervisor gives up (pauses the goal / stops the loop).

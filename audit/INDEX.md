@@ -13,7 +13,10 @@ audit policy). The next pass owns the durable policy artifacts and
 the open notes (`note.md` host lifecycle / completion recap /
 long-term preferences).
 
-**Most recent (2026-08-21):**
+**Most recent (2026-08-25):**
+- `GETTICK-TOOL-VISIBILITY-2026-08-25.md` — pre-turn GLLA tool self-heal for the parked-objective / `Tool pause_goal not found` race; v0.35.60
+
+**Previous (2026-08-21):**
 - `EXTENSION-AUDIT-2026-08-21.md` — full package/runtime, lifecycle, prompt/trust-boundary, test/release survey; v0.35.14 hardening and deferred architecture ledger
 
 **2026-08-19:**
@@ -35,6 +38,7 @@ long-term preferences).
 
 | Version | Date | Audit doc | What landed |
 |---|---|---|---|
+| v0.35.60 | 2026-08-25 | `GETTICK-TOOL-VISIBILITY-2026-08-25.md` | pre-turn agent-tool registration/self-heal; closes the `pause_goal not found` parked-objective race |
 | v0.35.14 | 2026-08-21 | `EXTENSION-AUDIT-2026-08-21.md` | full extension audit; shell-free verification, lifecycle fencing, evidence/verdict hardening, ID validation, branch guard, release CI |
 | v0.35.6 | 2026-08-19 | `LONG-TERM-PREFERENCES-POLICY-2026-08-19.md` | typed-boundary regression pins; conversation / completion / auditor / Explore transcripts cannot land in settings storage |
 | v0.35.5 | 2026-08-19 | `COMPLETION-SUMMARY-POLICY-2026-08-19.md` | `complete_goal` schema adopts the six-label recap |

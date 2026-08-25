@@ -93,6 +93,7 @@ import {
   sanitizeDisplayText,
   piGlaDir,
   stateRootPending,
+  setRuntimeSessionDirFromSessionManager,
   normalizeDraftContract,
   draftContractItemCount,
   extractVerificationContract,
@@ -1401,6 +1402,9 @@ function isHostSuccessorContact(ctx: ExtensionContext): boolean {
 function tryAbsorbHostSuccessor(ctx: ExtensionContext, via: string): boolean {
   if (zombieStoodDown) return false; // a successor INSTANCE owns owner.json — this instance stands down forever
   if (!isHostSuccessorContact(ctx)) return false;
+  // v0.35.58: bind the successor's canonical session directory before the
+  // id-invalidation event below can write to the state root.
+  setRuntimeSessionDirFromSessionManager(ctx.sessionManager);
   const completionAuditNeedsRecovery = !!state.goal?.pendingCompletion && (
     state.goal.status === "auditing"
     || (state.goal.status === "paused" && (state.goal.pendingCompletion.phase ?? "recovery-pending") === "recovery-pending")

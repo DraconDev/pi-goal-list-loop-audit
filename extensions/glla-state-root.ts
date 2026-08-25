@@ -1,4 +1,4 @@
-// pi-goal-list-loop-audit — v0.35.55
+// pi-goal-list-loop-audit — v0.35.58
 // extensions/glla-state-root.ts
 //
 // The state-root boundary is deliberately dependency-free: goal-loop-core and
@@ -32,6 +32,33 @@ let runtimeSessionDir: string | undefined;
 
 export function setRuntimeSessionDir(dir: string | undefined): void {
   runtimeSessionDir = typeof dir === "string" && dir.trim() ? path.resolve(dir) : undefined;
+}
+
+/** Register the host session root from pi's file-backed SessionManager. The
+ * lifecycle owns this admission point; keeping the derivation here makes the
+ * state-root boundary identical for normal starts and successor rebinds.
+ * `getSessionDir()` is authoritative: a session file may be imported from a
+ * different directory, while in-memory subagent managers return an empty dir. */
+export function setRuntimeSessionDirFromSessionManager(sessionManager: unknown): string | undefined {
+  let sessionDir: unknown;
+  try {
+    const getter = (sessionManager as { getSessionDir?: unknown } | null | undefined)?.getSessionDir;
+    if (typeof getter !== "function") {
+      setRuntimeSessionDir(undefined);
+      return undefined;
+    }
+    sessionDir = (getter as () => unknown).call(sessionManager);
+  } catch {
+    setRuntimeSessionDir(undefined);
+    return undefined;
+  }
+  if (typeof sessionDir !== "string" || !sessionDir.trim()) {
+    setRuntimeSessionDir(undefined);
+    return undefined;
+  }
+  const dir = path.resolve(sessionDir);
+  setRuntimeSessionDir(dir);
+  return dir;
 }
 
 export function resolveRuntimeSessionDir(): string | undefined {

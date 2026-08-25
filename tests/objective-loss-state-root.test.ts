@@ -1,4 +1,4 @@
-// pi-goal-list-loop-audit — v0.35.57
+// pi-goal-list-loop-audit — v0.35.58
 // tests/objective-loss-state-root.test.ts
 //
 // Objective-loss report: "wez crashed and some objectives were no longer live,
