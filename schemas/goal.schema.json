@@ -126,7 +126,8 @@
         "objective": { "type": "string", "minLength": 1 },
         "verificationContract": { "type": "string" },
         "reasons": { "type": "array", "items": { "type": "string" } },
-        "source": { "type": "string", "minLength": 1 }
+        "source": { "type": "string", "minLength": 1 },
+        "replanPromptedAt": { "type": "string", "format": "date-time", "description": "Timestamp of the one bounded repair/replan bootstrap turn; cleared on explicit retry or confirmed redraft." }
       }
     },
     "objectiveRepair": {

@@ -178,7 +178,6 @@ import {
   tickLengthContinue,
 } from "../length-continue.js";
 import { isSubagentProviderFailure } from "../quota-retry.js";
-import { releaseAuditorSurface, suppressAuditorSurfaceAfterColdRestore } from "./goal-auditor-surface.js";
 import {
   classifyMainModelFailure,
   isMainModelFallbackFailure,
@@ -220,6 +219,7 @@ import {
   rollupProject,
   type ProjectRollup,
 } from "../goal-loop-stats.js";
+import { releaseAuditorSurface, suppressAuditorSurfaceAfterColdRestore } from "./goal-auditor-surface.js";
 import {
   cancelDetachedGoalCompletionAuditor,
   newDetachedAuditJobAttemptId,
@@ -263,6 +263,9 @@ import { payloadGuardProjection } from "../payload-guard.js"; // v0.35.51 image-
 import { dropFailedErrorOnlyTurns, pruneCompactionPreparation } from "../context-hygiene.js"; // v0.35.52 error-turn hygiene
 import {
   createGoalHeartbeat,
+  bindSubagentRpcHost,
+  observeSubagentRpcReadiness,
+  releaseSubagentRpcHost,
   releaseZombieAbortKey,
   endSubagentHangProbe,
   markSubagentHangProgress,
@@ -623,7 +626,21 @@ export function abortZombieRun(
   return true;
 }
 
+// Slash commands are an independent mutation surface from registered agent
+// tools. Keep this guard outside the completion-factory source block so the
+// command registration remains a pure shared factory (and source pin).
+function refuseForeignCommand(ctx: ExtensionContext): boolean {
+  const refusal = foreignToolGuard(ctx);
+  if (!refusal) return false;
+  try { ctx.ui.notify(refusal, "warning"); } catch { /* child UI may be headless */ }
+  return true;
+}
+
 export function registerGoalRuntime(pi: ExtensionAPI): void {
+  // Factories run before lifecycle events, so observe readiness now; the
+  // admitted session_start below decides which bus/generation may control a
+  // child. Worker factories can never claim this binding.
+  observeSubagentRpcReadiness(pi.events);
   // Four top-level commands, that's all (v0.8.0 consolidation):
   //   /goal  — set/draft + status|pause|resume|cancel|tweak|archive subcommands
   //   /list — the list (add|show|tweak|next|remove|clear)
@@ -661,9 +678,17 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       ["tweak", "change the objective: /goal tweak <text>"],
       ["archive", "list archived goals"],
     ]),
-    handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdGoal(args, ctx); },
+    handler: (args: string, ctx: ExtensionContext) => {
+      rememberCtx(ctx);
+      if (refuseForeignCommand(ctx)) return Promise.resolve();
+      return cmdGoal(args, ctx);
+    },
   });
-  const settingsHandler = (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdSettings(args, ctx); };
+  const settingsHandler = (args: string, ctx: ExtensionContext) => {
+    rememberCtx(ctx);
+    if (refuseForeignCommand(ctx)) return Promise.resolve();
+    return cmdSettings(args, ctx);
+  };
   pi.registerCommand("glla", {
     description: "Open the settings UI for goals, loops, lists, and the auditor. `/glla version` shows the installed package version; `/glla pause` freezes the supervisor's automatic machinery (re-arms/recovery/auto-resume/dispatch) without touching active work; `/glla cancel` cancels the active objective; `/glla wipe` Confirm-gatedly clears all live state while preserving history.",
     getArgumentCompletions: completions([
@@ -686,7 +711,11 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
   });
   pi.registerCommand("review", {
     description: "Manually run the postaudit on an archived goal: /review <goal-id> [off|on|auto|aggressive] — extracts findings, writes a report to .pi-glla/reviews/, cascades per the mode (auto/aggressive = no Confirms). Bypasses the trigger gates (explicit user request).",
-    handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdReview(args, ctx); },
+    handler: (args: string, ctx: ExtensionContext) => {
+      rememberCtx(ctx);
+      if (refuseForeignCommand(ctx)) return Promise.resolve();
+      return cmdReview(args, ctx);
+    },
   });
   pi.registerCommand("list", {
     description: "Loop 2: the list of audited goals — order is the default, not the law. /list <describe tasks or name a plan file> (dumps get shaped into items, files import, 'Done when:' adds directly) | /list audit [focus] (collect findings, then drain them as items) | /list show | /list resume | /list tweak <text> | /list next [n] | /list remove <n> | /list clear | /list cancel. Settings are under /glla, not /list — bare /glla opens the settings table.",
@@ -707,7 +736,11 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       ["depth", "queue depth, oldest item age, average item duration"],
       ["cancel", "stop the whole list: abort the active item + drop all waiting"],
     ]),
-    handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdList(args, ctx); },
+    handler: (args: string, ctx: ExtensionContext) => {
+      rememberCtx(ctx);
+      if (refuseForeignCommand(ctx)) return Promise.resolve();
+      return cmdList(args, ctx);
+    },
   });
   pi.registerCommand("loop", {
     description: "Loop 3: metric-driven process — it never completes. /loop <target> drafts the metric with you · /loop start \"<target>\" = infinite metricless loop (no plateau, no cap; ends at time=/tokens= or /loop stop) · /loop respec = infinite metricless reconcile against the root SPEC.md · add measure=\"<cmd>\" direction=min|max [window=5] [max=50] [branch=1] for a metric loop · /loop status · /loop stop (alias /loop cancel). 'Improve until X' is a /goal, not a loop.",
@@ -724,7 +757,11 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       ["cancel", "alias of /loop stop — end the loop"],
       ["finish", "end the loop cleanly: /loop finish [reason] → stopReason 'completed: <reason>'"],
     ]),
-    handler: (args: string, ctx: ExtensionContext) => { rememberCtx(ctx); return cmdLoop(args, ctx); },
+    handler: (args: string, ctx: ExtensionContext) => {
+      rememberCtx(ctx);
+      if (refuseForeignCommand(ctx)) return Promise.resolve();
+      return cmdLoop(args, ctx);
+    },
   });
 
   // Tool registration is lazy: done on the first session event, when a
@@ -959,6 +996,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
 
   pi.on("session_shutdown", async (event: any, ctx: ExtensionContext) => {
     if (isForeignCtx(ctx)) return;
+    releaseSubagentRpcHost(pi.events);
     // v0.30.0: attribution + rebind window. pi announces WHY the session
     // is being replaced (reload/resume/new/fork/quit) — the ledger can
     // now answer "what killed the handle?" without guesswork (hegemon's
@@ -1006,6 +1044,10 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
   });
 
   pi.on("session_start", async (event: any, ctx: ExtensionContext) => {
+    // A child session can bind this extension before or after the MAIN host.
+    // Reject it before root registration, restore, owner-file writes, or tool
+    // repair; otherwise an owner-null first child can claim the plane.
+    if (isWorkerSessionCtx(ctx)) return;
     // v0.23.8: subagent sessions (pi-subagents binds extensions there too)
     // are workers — never run the restore gate or reschedule the loop from
     // a foreign session. Host replacement events are the exception: pi can
@@ -1076,6 +1118,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     deadOwnerSession = null; // v0.34.25: a real session_start supersedes the silent-swap record
     deadOwnerCwd = null;
     sessionGeneration++;
+    bindSubagentRpcHost(pi.events, sessionGeneration);
     clearDraftingState();
     // An auditor belonging to the disposed generation cannot block the fresh
     // session's recovery gate; its finally block is generation-guarded too.
@@ -1286,6 +1329,10 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       appendLedger(ctx.cwd, "terminal_goal_slot_closed", { goalId: terminal.id, status: terminal.status, via: "session-start" });
     }
     if (initialSessionLoadPending && !explicitRecovery && !heldLoopSuccessorResume) {
+      // The objective/status projection remains visible below, but the
+      // previous auditor report must not become fresh model/UI context before
+      // this session has granted continuation consent.
+      suppressAuditorSurfaceAfterColdRestore();
       // Even a blank startup must not leave a stored completion claim in the
       // old AUDITING state: there is no worker verdict to wait for after a
       // session boundary. Release it before the transcript-load barrier;
@@ -1295,9 +1342,6 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
         ctx.ui.notify(`Completion audit blocked — no verdict. The claim is safe; load the session, then ${activeGoalSurfaceCommand("resume")} to retry.`, "warning");
       }
       appendLedger(ctx.cwd, "session_waiting_for_load", { reason: startReason });
-      // blank-until-resume: the load barrier is also a no-consent
-      // boundary — hide last-auditor surfaces until an explicit resume.
-      suppressAuditorSurfaceAfterColdRestore();
       // The blank startup barrier must defer continuation, not the durable
       // status surface. Paint the state we just rehydrated before returning so
       // a freshly restarted session does not look nonexistent while pi loads
@@ -1333,15 +1377,16 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // consents to load-time automation now.
     const autoResumeSetting = loadGlobalSettings().autoResume;
     const autoResume = shouldAutoResumeOnSessionStart(event?.reason, autoResumeSetting);
-    // blank-until-resume: a fresh session with NO continuation
-    // consent stays blank of the previous session's auditor result until
-    // something resumes/continues the work in THIS session (see
-    // goal-auditor-surface.ts). Any consent path releases it immediately.
-    if (!autoResume && !explicitRecovery && !sameProcessSuccessorResume && !staleRearmedOnSessionStart) {
-      suppressAuditorSurfaceAfterColdRestore();
-    } else {
-      releaseAuditorSurface();
-    }
+    // Consent is established by the same lifecycle paths that are allowed to
+    // resume work. Do not release merely because a scheduler was asked to
+    // run; rejected/held schedules must leave the old report suppressed.
+    const continuationConsent = autoResume
+      || explicitRecovery
+      || staleRearmedOnSessionStart
+      || sameProcessSuccessorResume
+      || heldLoopSuccessorResume;
+    if (continuationConsent) releaseAuditorSurface();
+    else suppressAuditorSurfaceAfterColdRestore();
     const mainRecovery = state.mainModelRecovery;
     if (mainRecovery?.manualResumeRequired) {
       const recoveryResumeCmd = recoverySurfaceCommand(mainRecovery.kind, "resume");

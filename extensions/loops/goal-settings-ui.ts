@@ -1290,6 +1290,18 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       }
       return;
     }
+    case "subagentHangEscalationMinutes": {
+      const v = await ctx.ui.input("Subagent hang action threshold (minutes)", "0 = warning/telemetry only; positive integer >= 5; empty = default 30");
+      if (v !== undefined) {
+        const raw = v.trim();
+        const n = Number.parseInt(raw, 10);
+        if (Number.isFinite(n) && n === 0) saveSettings("global", ctx.cwd, { subagentHangEscalationMinutes: 0 });
+        else if (Number.isFinite(n) && n >= 5) saveSettings("global", ctx.cwd, { subagentHangEscalationMinutes: n });
+        else if (!raw) saveSettings("global", ctx.cwd, { subagentHangEscalationMinutes: undefined });
+        else ctx.ui.notify(`Subagent hang action must be 0 or an integer >= 5 minutes: ${v}`, "warning");
+      }
+      return;
+    }
     case "stuckMaxInterventions": {
       const v = await ctx.ui.input("Consecutive stuck interventions before a loop stops", "positive integer; empty = default 5 (10 under aggressiveMode)");
       if (v !== undefined) {

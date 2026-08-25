@@ -1,5 +1,78 @@
 # Changelog
 
+## 0.35.64 — bounded recovery for frozen subagents (2026-08-25)
+
+### Fix
+  A tracked top-level subagent that produces no tool-use or output-token
+  progress now receives the existing short warning first, then one
+  generation-fenced child-specific abort request after the configurable
+  `subagentHangEscalationMinutes` threshold (default 30; 0 keeps
+  warning/telemetry-only behavior). Nested, unreachable, or ownership-
+  ambiguous children remain warning-only. A stale child no longer shields an
+  unrelated parent zombie watchdog, and `/glla agents` shows ABORTING,
+  unavailable, or failed action state while preserving partial output.
+
+### Tests
+  `tests/subagent-hang-detection.test.ts` covers one-shot escalation,
+  progress-before-action cancellation, manager-unavailable and nested-child
+  safety, and `tests/agents-panel.test.ts` pins the action surface. Settings
+  menu/editor and INSTALL documentation expose the new threshold.
+
+## 0.35.63 — auditor context held until resume (2026-08-25)
+
+### Fix
+  Cold session restores now keep unfinished goal/list objectives and their
+  status visible without automatically injecting the previous auditor report
+  or dispatching a new continuation. Explicit `/goal resume`, list/glla/loop
+  continuation commands, validated lifecycle continuity, and global
+  `autoResume: true` release the auditor-context gate. The prior Pi transcript
+  and durable audit history remain untouched.
+
+### Tests
+  `tests/auditor-blank-until-resume.test.ts` proves objective visibility,
+  pre-consent report/TODO suppression, explicit resume release, auto-resume
+  release, and rejected stale-resume suppression. Version metadata is
+  synchronized to 0.35.63.
+
+### Follow-up hardening
+  `/goal resume` now releases the auditor surface only after its existing
+  stale/foreign admission probe. Active-idle resumes receive the same probe;
+  stale paused resumes preserve the existing active/interrupted recovery
+  marker without exposing old auditor context. Main-model recovery resumes
+  now use the same stale/foreign admission probe and release the surface on
+  manual-hold, retry, and primary-probe recovery paths; a recovery regression
+  test pins the consent behavior.
+
+## 0.35.62 — subagent host-state boundary (2026-08-25)
+
+### Fix
+  Headless child sessions are now rejected before state-root registration,
+  restore, owner claims, and tool repair. The same fail-closed boundary covers
+  persistent children, foreign slash commands, and missing tool invocation
+  contexts. File-backed host successors remain eligible for legitimate reload
+  and silent-rebind recovery. Main-host subagent telemetry continues through
+  the event bus and `/glla agents` path.
+
+### Tests
+  `tests/subagent-host-boundary.test.ts` proves first-claim prevention,
+  foreign slash-command refusal, persistent-worker refusal, legitimate host
+  successor admission, and durable Explore telemetry. Version metadata is
+  synchronized to 0.35.62.
+
+## 0.35.61 — list queue visibility across host replacement (2026-08-25)
+
+### Fix
+  Waiting-only list state now has an actionable status/widget projection even
+  when no list item is active. Silent host-successor and same-session stale
+  recovery boundaries also re-read the selected durable root and hydrate queue
+  sidecars before repainting. A recovered queue now stays visible and can be
+  started with `/list next` without requiring a full reload.
+
+### Tests
+  `tests/list-invisible-restart.test.ts` covers waiting-only visibility and
+  activation plus sidecar-only silent-successor rehydration. Version metadata
+  is synchronized to 0.35.61.
+
 ## 0.35.60 — pre-turn glla tool visibility (2026-08-25)
 
 ### Fix
@@ -473,9 +546,9 @@
   gain nothing). Regression tests: clause+role user seeds dispatch verbatim;
   reviewer-created goals with matching-cleaned seeds never get the trust.
 
-## 0.35.35 — mechanical pre-audit: maxBuffer ceiling killed verbose green suites (2026-08-23)
+### Mechanical pre-audit: maxBuffer ceiling killed verbose green suites (2026-08-23)
 
-### Fix
+#### Fix
   runMechanicalPreAuditChecks passed no maxBuffer to execFileSync, so
   Node's default 1 MB cap applied: any contract gate whose output exceeds
   1 MB gets its child SIGTERMed by Node and the call throws ENOBUFS —

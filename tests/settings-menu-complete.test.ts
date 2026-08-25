@@ -35,6 +35,7 @@ const SAMPLE_SETTINGS: Settings = {
   mainModelFailback: "auto",
   mainModelPrimaryProbeMinutes: 15,
   wedgeAlertMinutes: 0,
+  subagentHangEscalationMinutes: 30,
   stuckMaxInterventions: 5,
   stallEscalationRefires: 5,
   stallShortWords: 15,
@@ -179,6 +180,7 @@ test("key rows from v0.27.0 settings menu are all present (menu coverage contrac
     "auditCap",
     "auditFeedbackChars",
     "wedgeAlertMinutes",
+    "subagentHangEscalationMinutes",
     "stuckMaxInterventions",
     "stallEscalationRefires",
     "stallShortWords",
@@ -273,6 +275,7 @@ test("valueText derives from settings (effective values surface for each row)", 
   assert.equal(byId.get("autoResume")!.valueText, "on"); // v0.35.4: booleans render on/off, not raw true/false
   assert.equal(byId.get("auditorModel")!.valueText, "anthropic/claude-sonnet-4 · high");
   assert.equal(byId.get("wedgeAlertMinutes")!.valueText, "0");
+  assert.equal(byId.get("subagentHangEscalationMinutes")!.valueText, "30m");
   assert.equal(
     byId.get("subagentModelOverrides.Explore")!.valueText,
     "minimax/MiniMax-M3",
@@ -297,6 +300,7 @@ test("default fallbacks surface when settings + provenance both missing", () => 
   assert.equal(byId.get("auditCap")!.valueText, "10");
   assert.equal(byId.get("stuckMaxInterventions")!.valueText, "10");
   assert.equal(byId.get("wedgeAlertMinutes")!.valueText, "0");
+  assert.equal(byId.get("subagentHangEscalationMinutes")!.valueText, "30m");
   assert.match(byId.get("subagentModelStrategy")!.valueText, /inherit-parent/);
 });
 
@@ -369,6 +373,11 @@ test("headless `/glla` fallback keeps stall brakes and the v0.34.127 sync list",
     fallback,
     /fmt\("wedgeAlertMinutes", "wedgeAlert"\)/,
     "headless fallback must still include wedgeAlertMinutes",
+  );
+  assert.match(
+    fallback,
+    /fmt\("subagentHangEscalationMinutes", "subagentHangActionMinutes"\)/,
+    "headless fallback must include the subagent hang action setting",
   );
 
   // v0.34.127: every key copied into the interactive settings list must also

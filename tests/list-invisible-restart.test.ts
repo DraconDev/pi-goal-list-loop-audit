@@ -22,8 +22,8 @@ import * as path from "node:path";
 import activate, { __testOnlyResetOwnerSession } from "../extensions/loops/goal.js";
 import { buildWidgetLines } from "../extensions/goal-loop-display.ts";
 import { readState, writeQueueItemFile } from "../extensions/goal-loop-core.js";
-import { state } from "../extensions/goal-state.js";
-import { MockPi, makeMockCtx, tmpCwd, seedState, tick } from "./harness/mock-pi.js";
+import { replaceState, state } from "../extensions/goal-state.js";
+import { MockPi, invalidateHostSession, makeMockCtx, tmpCwd, seedState, tick } from "./harness/mock-pi.js";
 
 const MAIN_SM = { name: "main-session-manager" };
 
@@ -80,6 +80,80 @@ test("v0.35.21: session_start converges a disk-sidecar queue the state ledger lo
   // The convergence is announced honestly.
   const restoredNote = ctx.ui.matching("restored 1 queued list item");
   assert.equal(restoredNote.length, 1, "the hydration notifies with a truthful count");
+});
+
+test("v0.35.61: a waiting-only queue is visible and startable without a reload", async () => {
+  const cwd = tmpCwd();
+  const now = new Date().toISOString();
+  const waitingItem = {
+    id: "20260825210000-waiting-only",
+    objective: "waiting-only list item — done when pinned",
+    addedAt: now,
+    queueOrder: 1,
+  };
+  seedState(cwd, { goal: null, list: [waitingItem] });
+
+  const pi = new MockPi();
+  activate(pi.api);
+  __testOnlyResetOwnerSession();
+  const ctx = ownerCtx(cwd);
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  await tick();
+
+  const status = ctx.ui.statuses["pi-glla"] ?? "";
+  assert.match(status, /LIST QUEUED/);
+  assert.match(status, /1 waiting/);
+  assert.match(status, /\/list next/);
+  const lines = buildWidgetLines(state)?.join("\\n") ?? "";
+  assert.match(lines, /list queued/);
+  assert.match(lines, /up next: waiting-only list item/);
+  assert.match(lines, /\/list next starts the queue/);
+
+  // The visible command is also immediately actionable; no second reload or
+  // manual sidecar repair is needed to promote the waiting item.
+  await pi.command("list", "next", ctx);
+  assert.equal(readState(cwd).goal?.policy, "list");
+  assert.equal(readState(cwd).goal?.objective, waitingItem.objective);
+  await pi.fire("session_shutdown", { reason: "quit" }, ctx);
+});
+
+test("v0.35.61: silent host replacement rehydrates a sidecar-only waiting queue before repaint", async () => {
+  const cwd = tmpCwd();
+  const now = new Date().toISOString();
+  const waitingItem = {
+    id: "20260825211000-silent-successor",
+    objective: "silent successor queue item — done when pinned",
+    addedAt: now,
+    queueOrder: 1,
+  };
+  seedState(cwd, { goal: null, list: [] });
+  const pi = new MockPi();
+  activate(pi.api);
+  __testOnlyResetOwnerSession();
+  const first = ownerCtx(cwd);
+  await pi.fire("session_start", { reason: "startup" }, first);
+  await tick();
+  assert.equal(writeQueueItemFile(cwd, waitingItem as never).wrote, true);
+  // Simulate the stale runtime projection: disk has the sidecar, while the
+  // successor arrives with the old in-memory empty queue still in place.
+  replaceState({ goal: null, list: [], loop: undefined });
+  invalidateHostSession(pi, first);
+  const successorManager = {
+    name: "silent-successor-session-manager",
+    getSessionFile: () => path.join(cwd, "host-session.jsonl"),
+  };
+  const successor = makeMockCtx(cwd, { sessionManager: successorManager });
+  await pi.fire("before_agent_start", {
+    type: "before_agent_start",
+    prompt: "continue the recovered list",
+    systemPrompt: "",
+    systemPromptOptions: {},
+  }, successor);
+
+  assert.ok((state.list ?? []).some((item) => item.id === waitingItem.id), "silent successor hydrates the sidecar before repaint");
+  assert.match(successor.ui.statuses["pi-glla"] ?? "", /LIST QUEUED/);
+  assert.match(buildWidgetLines(state)?.join("\\n") ?? "", /silent successor queue item/);
+  await pi.fire("session_shutdown", { reason: "quit" }, successor);
 });
 
 test("v0.35.21: convergence is idempotent — an item present in BOTH state and sidecar is not duplicated", async () => {

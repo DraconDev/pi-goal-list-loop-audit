@@ -1,27 +1,23 @@
-// pi-goal-list-loop-audit — blank-until-resume auditor-surface gate 
+// pi-goal-list-loop-audit — blank-until-resume auditor surface
 //
-// A genuinely fresh session (cold pi start, no resume consent) must stay
-// BLANK of the previous session's auditor result: no LATEST AUDITOR block in
-// injected continuation context, no last-auditor paint in the TUI. Durable
-// state (active.jsonl / auditHistory) is untouched — an explicit resume in
-// this session (or any continuation consent: auto-resume, handoff, rebind,
-// stale-rearm) releases the gate and the report is available again from disk.
+// A cold session load may restore an unfinished objective without granting the
+// supervisor permission to continue it. Keep the durable objective/list card
+// visible, but do not re-surface the previous auditor report in newly built
+// continuation context or feedback UI until a continuation consent path is
+// admitted. The existing transcript is historical and is intentionally not
+// edited.
 //
-// Rationale (recorded 2026-08-23): strict "blank until /glla resume" would
-// break unattended rigs whose auto-resume legitimately continues work and
-// needs the auditor report to fix gaps. So the gate releases on ANY
-// continuation consent, not just the manual command — default installs
-// (auto-resume off) get exactly the user-visible behavior they asked for.
+// This module is dependency-free because the display, continuation, command,
+// and lifecycle slices all need the same process-local gate.
 
 let suppressedAfterColdRestore = false;
 
-/** Called on a fresh session_start with NO resume consent: hide last-auditor
- * surfaces until something in this session resumes/continues the work. */
+/** Hide only newly projected auditor feedback after a no-consent cold load. */
 export function suppressAuditorSurfaceAfterColdRestore(): void {
   suppressedAfterColdRestore = true;
 }
 
-/** Release the gate — any explicit resume or continuation consent. */
+/** Release the gate after an actual explicit/automatic continuation consent. */
 export function releaseAuditorSurface(): void {
   suppressedAfterColdRestore = false;
 }
@@ -30,7 +26,7 @@ export function auditorSurfaceSuppressed(): boolean {
   return suppressedAfterColdRestore;
 }
 
-/** Test hook: reset module state so tests are order-independent. */
+/** Test hook: prevent module state leaking between co-resident fixtures. */
 export function __testOnlyResetAuditorSurface(): void {
   suppressedAfterColdRestore = false;
 }

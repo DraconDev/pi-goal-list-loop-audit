@@ -44,3 +44,22 @@ test("release contract: README version matches package metadata", () => {
   const readme = fs.readFileSync("README.md", "utf-8");
   assert.match(readme, new RegExp(`Current package version:\\*\\*.*v${packageJson.version.replaceAll(".", "\\.")}`));
 });
+
+test("release workflow scopes trusted-publishing OIDC to the publish job", () => {
+  const workflow = fs.readFileSync(".github/workflows/publish.yml", "utf-8");
+  const jobsAt = workflow.indexOf("jobs:\n");
+  assert.ok(jobsAt > 0, "publish workflow has a jobs section");
+  const globalPermissions = workflow.slice(0, jobsAt);
+  assert.doesNotMatch(globalPermissions, /id-token:\s*write/, "quality must not inherit publish OIDC permission");
+  const qualityAt = workflow.indexOf("  quality:", jobsAt);
+  const publishAt = workflow.indexOf("  publish:", qualityAt);
+  assert.ok(qualityAt > jobsAt && publishAt > qualityAt, "quality and publish jobs are present");
+  assert.doesNotMatch(workflow.slice(qualityAt, publishAt), /id-token:\s*write/, "quality has no OIDC permission");
+  assert.match(workflow.slice(publishAt), /permissions:\n\s+contents: read\n\s+id-token: write/, "publish retains trusted publishing OIDC");
+});
+
+test("release contract: changelog has one heading for each release version", () => {
+  const changelog = fs.readFileSync("CHANGELOG.md", "utf-8");
+  const headings = changelog.match(/^## 0\.35\.35\b/gm) ?? [];
+  assert.equal(headings.length, 1, "0.35.35 release notes must have one unambiguous heading");
+});

@@ -6,7 +6,8 @@ Run the current suite with:
 npm test                 # runs: bun test
 ```
 
-For the release gate (suite, typecheck, and the jiti regression test), run:
+For the release gate (suite, typecheck, jiti regression, and the mandatory
+hermetic auditor-extension boundary check), run:
 
 ```bash
 npm run test:all

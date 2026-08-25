@@ -63,6 +63,7 @@ declare global {
   var isBlankInitialStartup: any;
   var releaseInitialSessionLoadBarrier: any;
   var ownerProbeLive: any;
+  var isWorkerSessionCtx: any;
   var isHostSuccessorCtx: any;
   var isHostSuccessorContact: any;
   var tryAbsorbHostSuccessor: any;

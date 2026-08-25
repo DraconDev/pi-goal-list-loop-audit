@@ -83,6 +83,39 @@ test("active goal shows a compact state capsule + elapsed", () => {
   assert.doesNotMatch(s, /glla: goal/, 'v0.34.1: the status line drops the policy word — the widget owns type naming');
 });
 
+test("repair cards show the preserved target and the concrete one-turn recovery", () => {
+  const g = goalOf({
+    policy: "list",
+    repairTarget: {
+      id: "original-item",
+      objective: "Audit the saved intent and preserve its complete target",
+      reasons: ["dangling-fragment"],
+      source: "list-activation",
+    },
+  });
+  const lines = buildWidgetLines({ goal: g, list: [{ id: "waiting", objective: "next item", addedAt: "2026-07-21T11:59:00Z" }] }, null, NOW)!;
+  const rendered = lines.join("\\n");
+  assert.match(rendered, /REPLAN REQUIRED/);
+  assert.match(rendered, /Audit the saved intent/);
+  assert.match(rendered, /propose_task_list/);
+  assert.match(rendered, /1 waiting · up next: next item/);
+});
+
+test("repair cards with a sent bootstrap show the explicit retry action", () => {
+  const g = goalOf({
+    policy: "list",
+    repairTarget: {
+      id: "original-item",
+      objective: "Audit the saved intent",
+      reasons: ["dangling-fragment"],
+      source: "list-activation",
+      replanPromptedAt: "2026-07-21T11:59:00Z",
+    },
+  });
+  const rendered = buildWidgetLines({ goal: g, list: [] }, null, NOW)!.join("\\n");
+  assert.ok(rendered.includes("/list resume retries one bounded replan turn"));
+});
+
 test("active status does not make first-turn or long-idle gaps look green", () => {
   const state = { goal: goalOf(), list: [] };
   const awaiting = buildWidgetLines(state, null, NOW, undefined, undefined, { activity: "awaiting-first-turn" })!;

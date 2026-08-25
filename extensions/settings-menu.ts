@@ -152,6 +152,10 @@ export function buildSettingsRows(
   const rows: SettingsRow[] = [];
   const sessionRef = subagent.sessionModel ?? "session model";
   const sessionThinking = subagent.sessionThinkingLevel ?? "session thinking";
+  const configuredSubagentHangMinutes = provFor("subagentHangEscalationMinutes").value;
+  const subagentHangMinutes = typeof configuredSubagentHangMinutes === "number"
+    ? configuredSubagentHangMinutes
+    : settings.subagentHangEscalationMinutes ?? 30;
   const drafterRef = settings.drafterModel ?? sessionRef;
   const drafterThinking = settings.drafterThinkingLevel ?? sessionThinking;
   const auditorRef = settings.auditorModel ?? sessionRef;
@@ -423,6 +427,14 @@ export function buildSettingsRows(
       valueText: show("wedgeAlertMinutes", `${effective.wedgeAlertMinutes}`),
       sourceText: src("wedgeAlertMinutes"),
       description: "hung-command alert while the session is busy (0 = off)",
+    },
+    {
+      id: "subagentHangEscalationMinutes",
+      section: "stall-brakes",
+      label: "Subagent hang action",
+      valueText: subagentHangMinutes === 0 ? "warning only" : `${subagentHangMinutes}m`,
+      sourceText: src("subagentHangEscalationMinutes"),
+      description: "request one child-specific abort after confirmed no progress (0 = warning only)",
     },
     {
       id: "stuckMaxInterventions",

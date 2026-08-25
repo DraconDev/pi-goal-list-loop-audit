@@ -31,6 +31,7 @@ export interface AgentsPanelRow {
   outputTokens: number;
   silentMs: number;
   evidence: "record-frozen" | "event-only" | "live";
+  action?: "abort-requested" | "unavailable" | "failed";
   endedOk?: boolean;
   endedAt?: number;
 }
@@ -70,10 +71,18 @@ export function renderAgentsPanel(rows: AgentsPanelRow[], now: number, managerAv
     const glyph = row.status === "ended" ? "✓" : row.status === "hung" ? "⚠" : "●";
     const stateWord = row.status === "ended"
       ? `ENDED ${row.endedOk === false ? "✗" : "ok"} ${fmtDuration((row.endedAt ?? now) - row.spawnedAt)}`
-      : `${row.status === "hung" ? "HUNG?" : "RUNNING"} ${fmtDuration(now - row.spawnedAt)}`;
+      : row.action === "abort-requested"
+        ? `ABORTING ${fmtDuration(now - row.spawnedAt)}`
+        : `${row.status === "hung" ? "HUNG?" : "RUNNING"} ${fmtDuration(now - row.spawnedAt)}`;
     lines.push(`${glyph} ${rowLabel(row)}  ${stateWord}`);
     lines.push(`  tools ${row.toolUses} · out ${row.outputTokens >= 1000 ? `${(row.outputTokens / 1000).toFixed(1)}k` : row.outputTokens} · silent ${fmtDuration(row.silentMs)}${row.evidence !== "live" ? ` (${row.evidence})` : ""}`);
-    if (row.status === "hung") {
+    if (row.action === "abort-requested") {
+      lines.push("  └ child-specific abort requested; partial output remains available while it settles");
+    } else if (row.action === "unavailable") {
+      lines.push("  └ no safe child-abort capability; inspect the child and interrupt explicitly if needed");
+    } else if (row.action === "failed") {
+      lines.push("  └ child-abort request failed; inspect the child and interrupt explicitly if needed");
+    } else if (row.status === "hung") {
       lines.push("  └ check the Agents panel: a child whose counters stopped moving is hung, not thinking");
     }
   }
@@ -88,7 +97,11 @@ export function renderAgentsWidgetLine(rows: AgentsPanelRow[]): string | undefin
   const active = rows.filter((r) => r.status !== "ended");
   if (active.length === 0) return undefined;
   const busiest = [...active].sort((a, b) => b.silentMs - a.silentMs)[0]!;
-  const hung = busiest.status === "hung" ? " ⚠" : "";
+  const hung = busiest.action === "abort-requested"
+    ? " ⚠ aborting"
+    : busiest.status === "hung"
+      ? " ⚠"
+      : "";
   return `● ${active.length} agent${active.length === 1 ? "" : "s"} · ${(busiest.agentType ?? "subagent")} silent ${fmtDuration(busiest.silentMs)}${hung}`;
 }
 

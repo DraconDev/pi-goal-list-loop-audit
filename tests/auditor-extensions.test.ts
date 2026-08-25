@@ -188,19 +188,22 @@ test("auditorExtensionArgs only emits args for a non-empty allowlist", () => {
   ]);
 });
 
-test("live (opt-in GLLA_LIVE_PI=1): resolved-path extension registers providers offline, no temp install", { skip: !process.env.GLLA_LIVE_PI }, () => {
-  // Bounded live check (scripts/verify-auditor-extensions-offline.mjs):
-  // spawns the REAL pi with PI_OFFLINE=1 — `pi --no-extensions -e
-  // <resolved-path> --list-models` must list the extension's provider
-  // models, and no temporary npm install dir may appear. Raw `npm:` specs
-  // fail both ways (network install or 0 models offline), which is why the
-  // allowlist resolves specs to install paths before the worker sees them.
+test("mandatory hermetic auditor-extension validation loads the resolved allowlist path", () => {
+  // The release gate invokes the REAL pi with an isolated
+  // PI_CODING_AGENT_DIR and PI_OFFLINE=1. The repository fixture registers a
+  // provider without credentials, network, or a temporary package install.
+  // Keep the default path mandatory: an absent optional live package must not
+  // turn this boundary check into a passing skip.
+  const env = { ...process.env };
+  delete env.GLLA_LIVE_PI;
+  delete env.GLLA_LIVE_EXT_PKG;
   const r = execFileSync(
     "timeout",
     ["120", process.execPath, path.join(repoRoot, "scripts", "verify-auditor-extensions-offline.mjs")],
-    { env: { ...process.env }, encoding: "utf8" },
+    { env, encoding: "utf8" },
   );
-  assert.ok(r.includes("VERIFIED offline auditor extension loading"), r);
+  assert.match(r, /glla-auditor-fixture/);
+  assert.match(r, /VERIFIED offline auditor extension loading/);
 });
 
 test("settings round-trip: menu pick persists, load normalizes, clear removes", async () => {

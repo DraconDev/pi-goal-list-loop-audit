@@ -68,6 +68,15 @@ test("v0.35.29 #15: empty state explains where evidence comes from", () => {
   assert.match(lines.join("\n"), /event probes/);
 });
 
+test("v0.35.64: the panel makes a child-specific abort request visible", () => {
+  const lines = renderAgentsPanel([
+    row({ status: "hung", action: "abort-requested", silentMs: 31 * MIN, evidence: "record-frozen" }),
+  ], NOW, true).join("\n");
+  assert.match(lines, /ABORTING/);
+  assert.match(lines, /child-specific abort requested/);
+  assert.doesNotMatch(lines, /parent was aborted/);
+});
+
 test("v0.35.29 #15: the widget line hides at zero active children and warns when the busiest is hung", () => {
   assert.equal(renderAgentsWidgetLine([row({ status: "ended", endedOk: true })]), undefined, "all-ended → hidden");
   const line = renderAgentsWidgetLine([

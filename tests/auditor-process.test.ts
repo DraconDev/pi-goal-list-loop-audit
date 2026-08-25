@@ -558,7 +558,12 @@ process.stdin.on("data", async (chunk) => {
   // independent latest entries in the progress HUD.
   for (const delta of ["Audit summary: checked\\nNext li", "ne", ": anal", "ys", "is", "\\n<disapproved/>"]) {
     out({ type: "message_update", assistantMessageEvent: { type: "text_delta", delta } });
-    await sleep(120); // hardened: 25ms emit gaps let a stretched parent poll miss byte counts (2026-08-10)
+    // Keep the snapshots observable even when the full release gate is
+    // sharing a heavily loaded machine. The parent polls a single atomic
+    // progress file, so a tight synthetic stream can legitimately overwrite
+    // an intermediate snapshot before it is observed; this delay preserves
+    // the per-fragment telemetry contract without weakening the assertion.
+    await sleep(500);
   }
   out({ type: "agent_settled" });
 });
@@ -577,7 +582,7 @@ process.stdin.on("data", async (chunk) => {
         env: { GLLA_PI_BINARY: fakePi },
         attemptId: () => "attempt-fragment-telemetry",
         pollIntervalMs: 5,
-        wallTimeoutMs: 5_000,
+        wallTimeoutMs: 10_000,
       },
     });
     assert.equal(result.disapproved, true);
@@ -1171,7 +1176,11 @@ setInterval(() => {}, 1000);
         homeDir: home,
         attemptId: () => "worker-resolve-test",
         pollIntervalMs: 10,
-        wallTimeoutMs: 1_000,
+        // The stub deliberately stays alive so the parent must reap it. Keep
+        // enough startup budget for a busy release gate: the assertion is
+        // about resolved request contents, not a one-second process-launch
+        // deadline (field: v0.36.0 request-copy failure under load).
+        wallTimeoutMs: 5_000,
       },
     });
     assert.ok(result.error, "stub worker never produces a verdict");

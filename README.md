@@ -10,7 +10,7 @@ This is a detached process, not a nested session in the main pi process. `comple
 
 On Windows, npm installs the `pi.cmd` shim rather than a directly executable `pi` binary. The auditor launches it through an explicit `cmd.exe` boundary; arguments are quoted only when tokenization requires it (v0.35.27 — quoting a bare executable name breaks `.CMD` shim resolution on pnpm installs), and every argument passes the unsafe-character gate (`%`, CR, LF) before that decision. POSIX keeps direct shell-less execution. Protocol snapshots also tolerate transient Windows file-locks without deleting the last valid snapshot first.
 
-**Current package version:** `v0.35.60` — use `/glla version` to see the installed version and the command for comparing it with the registry latest. This checkout may contain unreleased changes; the npm registry is authoritative for published versions.
+**Current package version:** `v0.35.64` — use `/glla version` to see the installed version and the command for comparing it with the registry latest. This checkout may contain unreleased changes; the npm registry is authoritative for published versions.
 
 ## Why this exists
 
@@ -503,6 +503,16 @@ successors, re-arming of work already in flight when a host silently died,
 and the single retry a parked completion claim earns when main-model
 recovery heals the provider that parked it.
 
+### Auditor context without autostart (v0.35.63)
+
+A restored objective remains visible in the status/widget UI even when the
+load hold is active, but GLLA does not add a new continuation or re-inject the
+previous auditor report until continuation consent exists. `/goal resume`,
+`/list resume`, `/list next`, `/glla resume`, admitted loop resumes, validated
+session continuity, and global **Auto-resume = on** are consent paths. The
+previous Pi transcript is historical and remains untouched; this gate controls
+only newly projected auditor feedback and model context.
+
 **Due-wait backstop (v0.35.28, issue #16).** A time-gated wait pause
 (`pauseKind: "wait"` with a `pauseResumeAt`) is no longer trusted to
 in-memory timers alone — agent-authored waits armed none, error-brake
@@ -632,15 +642,21 @@ are workers** (v0.23.8):
 - A subagent session never clobbers the loop's session handle, never runs
   the restore gate, and never drives continuation — so the heartbeat,
   wedge alert, and auto-resume machinery always act on the main session.
-  (pi hands a fresh ctx wrapper per event; `ctx.sessionManager` identity
-  is the discriminator.)
+  Headless `print`/`json` child contexts are rejected before root
+  registration, restore, owner claims, or command/tool mutation; this also
+  covers persistent children, not only the usual in-memory workers.
 - Subagent tool activity counts as activity for the wedge clock — a long
-  subagent run is work, not a hang.
+  productive child run is work, not a hang. If a tracked top-level child stops
+  changing its tool-use/output counters, glla warns at the short detection
+  threshold and can request one child-specific abort after
+  `subagentHangEscalationMinutes` (default 30; `0` = warning-only). The main
+  host still records lifecycle, action state, and partial output for
+  `/glla agents` through the event bus.
 - With `@tintinweb/pi-subagents` specifically (the one we test against):
   read-only agents (Explore, Plan) get no glla tools; general-purpose
   agents see them but state-mutating calls (`complete_goal`, `propose_*`,
-  `list_add`, `pause_goal`, …) are refused with "report back to the main
-  agent".
+  `list_add`, `pause_goal`, …) and foreign slash commands are refused with
+  "report back to the main agent".
 
 ## Token guard
 
@@ -772,7 +788,8 @@ prompts/  (7 — one per prompt surface; edited as .md, read at runtime)
 scripts/
   goal-auditor-worker.mjs      # extension-less RPC auditor child process
   goal-auditor-launch.mjs      # Windows-safe spawn spec builder (gate-before-quote)
-  verify-auditor-extensions-offline.mjs  # gate: auditor session loads zero extensions
+  auditor-extension-fixture.mjs       # hermetic provider fixture for the auditor gate
+  verify-auditor-extensions-offline.mjs  # mandatory gate: resolved allowlist loads offline
   smoke.sh                     # live integration harness (tmux + real models)
 tests/                         # current test count is reported by `bun test`; no live pi required for the suite
 docs/DESIGN.md                 # architectural decisions

@@ -14,6 +14,9 @@ the open notes (`note.md` host lifecycle / completion recap /
 long-term preferences).
 
 **Most recent (2026-08-25):**
+- `AUDITOR-BLANK-UNTIL-RESUME-2026-08-25.md` — objective/status remains visible while stale auditor context waits for continuation consent; v0.35.63
+- `SUBAGENT-HOST-BOUNDARY-2026-08-25.md` — fail-closed child-session ownership and preserved host telemetry; v0.35.62
+- `LIST-QUEUE-VISIBILITY-2026-08-25.md` — durable queue hydration and queue-only status/widget convergence across silent host replacement; v0.35.61
 - `GETTICK-TOOL-VISIBILITY-2026-08-25.md` — pre-turn GLLA tool self-heal for the parked-objective / `Tool pause_goal not found` race; v0.35.60
 
 **Previous (2026-08-21):**
@@ -38,6 +41,9 @@ long-term preferences).
 
 | Version | Date | Audit doc | What landed |
 |---|---|---|---|
+| v0.35.63 | 2026-08-25 | `AUDITOR-BLANK-UNTIL-RESUME-2026-08-25.md` | objective/status stays visible while stale auditor context waits for continuation consent |
+| v0.35.62 | 2026-08-25 | `SUBAGENT-HOST-BOUNDARY-2026-08-25.md` | fail-closed child-session ownership and preserved host telemetry |
+| v0.35.61 | 2026-08-25 | `LIST-QUEUE-VISIBILITY-2026-08-25.md` | durable queue hydration and queue-only status/widget convergence across silent host replacement |
 | v0.35.60 | 2026-08-25 | `GETTICK-TOOL-VISIBILITY-2026-08-25.md` | pre-turn agent-tool registration/self-heal; closes the `pause_goal not found` parked-objective race |
 | v0.35.14 | 2026-08-21 | `EXTENSION-AUDIT-2026-08-21.md` | full extension audit; shell-free verification, lifecycle fencing, evidence/verdict hardening, ID validation, branch guard, release CI |
 | v0.35.6 | 2026-08-19 | `LONG-TERM-PREFERENCES-POLICY-2026-08-19.md` | typed-boundary regression pins; conversation / completion / auditor / Explore transcripts cannot land in settings storage |

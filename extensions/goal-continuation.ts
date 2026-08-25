@@ -49,7 +49,7 @@ import {
   type Goal,
   type ObjectiveRepairTarget,
 } from "./goal-loop-core.js";
-import { auditorSurfaceSuppressed, releaseAuditorSurface } from "./loops/goal-auditor-surface.js";
+import { auditorSurfaceSuppressed } from "./loops/goal-auditor-surface.js";
 import {
   createContinuationDispatch,
   transitionDispatch,
@@ -488,6 +488,20 @@ export function dispatchPrepare(
     return null;
   }
   pendingContinuationDispatch = record;
+  const repairGoal = state.goal;
+  const repairTarget = record.kind === "goal" && repairGoal && repairGoal.id === record.goalId
+    ? repairGoal.repairTarget
+    : undefined;
+  if (repairTarget && !repairTarget.replanPromptedAt) {
+    const promptedAt = nowIso();
+    updateGoal({ repairTarget: { ...repairTarget, replanPromptedAt: promptedAt } }, ctx);
+    appendLedger(ctx.cwd, "faulty_objective_replan_turn_armed", {
+      goalId: record.goalId,
+      targetId: repairTarget.id,
+      promptedAt,
+      attemptId: record.id,
+    });
+  }
   appendLedger(ctx.cwd, "continuation_dispatch_prepared", dispatchLedgerValue(record, {
     acknowledgement: "pending",
     startProofSource: null,
@@ -495,6 +509,18 @@ export function dispatchPrepare(
     resync: record.resync,
   }));
   return record;
+}
+
+function resetRepairReplanBootstrap(ctx: ExtensionContext, via: string): void {
+  const goal = state.goal;
+  const target = goal?.repairTarget;
+  if (!goal || !target?.replanPromptedAt) return;
+  updateGoal({ repairTarget: { ...target, replanPromptedAt: undefined } }, ctx);
+  appendLedger(ctx.cwd, "faulty_objective_replan_turn_reset", {
+    goalId: goal.id,
+    targetId: target.id,
+    via,
+  });
 }
 
 export function dispatchFailed(ctx: ExtensionContext, record: ContinuationDispatch, reason: string): void {
@@ -506,6 +532,7 @@ export function dispatchFailed(ctx: ExtensionContext, record: ContinuationDispat
   };
   pendingContinuationDispatch = failed;
   persistDispatchRecord(ctx.cwd, failed);
+  resetRepairReplanBootstrap(ctx, "dispatch-failed");
   appendLedger(ctx.cwd, "continuation_dispatch_failed", dispatchLedgerValue(failed, {
     acknowledgement: "rejected",
     startProofSource: null,
@@ -595,6 +622,7 @@ function dispatchStartUnacknowledged(ctx: ExtensionContext, record: Continuation
   if (state.goal && state.goal.status === "active" && (record.kind === "goal" || record.kind === "stall")) {
     updateGoal({ interruptedAt: nowIso(), interruptedReason: reason }, ctx);
   }
+  resetRepairReplanBootstrap(ctx, "start-unacknowledged");
   const msg = `glla: pi accepted the ${dispatchLabel(record)} continuation, but no observable turn-start event arrived within ${Math.round((Date.now() - record.sentAt) / 1000)}s despite one automatic retry. Automatic re-sends are stopped to avoid a blind queue storm. The work is safe in .pi-glla; start a fresh session or use /goal resume, /list resume, or /loop resume to retry explicitly.`;
   ctx.ui.notify(msg, "warning");
   notifyExternal(ctx, sanitizeDisplayText(msg));
@@ -786,9 +814,10 @@ export function armQueueStuckProbe(sentAt: number): void {
  * v0.35.x: a stale or reviewer-derived objective must never reach pi's
  * follow-up queue. This is the final shared choke point for manual resume,
  * session-start auto-resume, list activation, and delayed continuation sends.
- * Repair is intentionally provenance-only: event handlers do not create a
- * model turn or invent a task. A missing repair becomes a paused goal plus a
- * short queued repair item.
+ * Repair is provenance-only: event handlers do not invent a replacement
+ * objective. A missing repair becomes a short queued repair item; once that
+ * explicit repair card is active, exactly one bootstrap turn may ask the
+ * model to propose a confirmed task-list redraft.
  */
 export function guardGoalBeforeContinuation(
   ctx: ExtensionContext,
@@ -835,20 +864,27 @@ export function guardGoalBeforeContinuation(
     return false;
   }
 
-  // A repair/replan card is intentionally not auto-repaired again. Its
-  // original target is durable in repairTarget; only a confirmed task-list
-  // redraft may clear that latch. This prevents the generic repair objective
-  // from becoming an endlessly self-repeating successor.
+  // A repair/replan card gets exactly one bootstrap turn so the model can
+  // call propose_task_list with the preserved target and obtain the user's
+  // confirmation. The old guard blocked that first turn too, leaving an
+  // ACTIVE card with a REPLAN REQUIRED banner but no way to reach the tool.
+  // Once the bootstrap is sent, only the confirmed redraft or an explicit
+  // resume may clear the durable one-shot latch; automatic heartbeats cannot
+  // create a repair-card storm.
   if (goal.repairTarget) {
-    appendLedger(ctx.cwd, "faulty_objective_replan_required", {
-      goalId: goal.id,
-      where,
-      targetId: goal.repairTarget.id,
-      originalObjective: goal.repairTarget.objective,
-      reasons: goal.repairTarget.reasons,
-    });
-    ctx.ui.notify(`Replan required before continuing: ${goal.repairTarget.objective.slice(0, 140)}`, "warning");
-    return false;
+    const bootstrapPending = !goal.repairTarget.replanPromptedAt
+      && (where === "schedule" || where === "dispatch" || where === "dispatch-prepare");
+    if (!bootstrapPending) {
+      appendLedger(ctx.cwd, "faulty_objective_replan_required", {
+        goalId: goal.id,
+        where,
+        targetId: goal.repairTarget.id,
+        originalObjective: goal.repairTarget.objective,
+        reasons: goal.repairTarget.reasons,
+      });
+      ctx.ui.notify(`Replan required before continuing: ${goal.repairTarget.objective.slice(0, 140)}. The one replan turn must call propose_task_list and receive confirmation.`, "warning");
+      return false;
+    }
   }
 
   const assessment = assessSuspiciousObjective(goal.objective, goal.verificationContract);
@@ -920,10 +956,6 @@ export function guardGoalBeforeContinuation(
 }
 
 export function scheduleContinuation(ctx: ExtensionContext, force = false, delayMs?: number): void {
-  // blank-until-resume: a scheduled continuation means the work is
-  // actively continuing in THIS session — the last auditor report becomes
-  // legitimate context again (see goal-auditor-surface.ts rationale).
-  releaseAuditorSurface();
   // v0.35.15: `/glla pause` freezes ALL automatic dispatch — even `force`
   // re-arms. Explicit user intent outranks every internal retry policy;
   // `/glla resume` is the only way back. Manual sends (user-typed prompts)
@@ -1193,7 +1225,9 @@ export function continuationPrompt(goal: Goal): string {
     );
   }
   const effSettings = resolveEffectiveAggressiveSettings(loadSettings(freshCtx()?.cwd ?? process.cwd()));
-  if (goal.pendingTasks && goal.pendingTasks.length > 0) {
+  // Auditor-derived TODOs are part of the same stale report surface. Keep
+  // them durable, but do not inject them before continuation consent.
+  if (!auditorSurfaceSuppressed() && goal.pendingTasks && goal.pendingTasks.length > 0) {
     directives.push(
       `## AUDITOR TODO LIST (from ${goal.pauseReason?.includes("cap") ? "the disapproval cap" : "the last audit"})\n\nAddress these objections, in order, before re-calling complete_goal:\n${goal.pendingTasks.map((t, i) => `${i + 1}. ${t}`).join("\n")}`,
     );
@@ -1213,8 +1247,6 @@ export function continuationPrompt(goal: Goal): string {
   // the agent sees the actual objections instead of a generic instruction
   // (field-observed 2026-08-16: after a disapproval the continuation carried
   // no report text and the agent had to dig through .pi-glla/audits.jsonl).
-  // blank-until-resume: skipped while a fresh session has not yet
-  // resumed/continued — the report stays on disk, not in context.
   const lastAudit = goal.auditHistory?.[goal.auditHistory.length - 1];
   if (lastAudit && lastAudit.report && !auditorSurfaceSuppressed()) {
     // Auditor output is untrusted repository-derived data. Keep it visibly
@@ -1242,6 +1274,7 @@ export function continuationPrompt(goal: Goal): string {
   // or a newObjective-carrying claim — a bare complete_goal retry is REJECTED,
   // so advising one would stall the loop (reject -> retry -> reject forever).
   if (
+    !auditorSurfaceSuppressed() &&
     goal.status === "active" &&
     !goal.pendingCompletion &&
     lastAudit?.approved &&

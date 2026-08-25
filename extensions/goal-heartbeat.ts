@@ -19,6 +19,7 @@
 //     stranded_audit_recovered, subagent_hang_detected, ...).
 // ============================================================================
 
+import { randomUUID } from "node:crypto";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { state } from "./goal-state.js";
 import {
@@ -338,9 +339,11 @@ let heartbeatStaleDebounce = HEARTBEAT_STALE_DEBOUNCE;
 // (tool uses or assistant output tokens) for SUBAGENT_HANG_NO_PROGRESS_MS
 // (5m default — SHORTER than the auditor's 10m, because a hung subagent
 // costs parent tokens on every turn) is surfaced to the user and ledgered
-// `subagent_hang_detected`. Detection + guidance only: the main session
-// decides whether to abort — never an auto-kill.
+// `subagent_hang_detected`. A much longer second threshold can request one
+// child-specific abort; zero disables that action while retaining detection.
 const SUBAGENT_HANG_NO_PROGRESS_MS = 5 * 60_000;
+const SUBAGENT_HANG_ESCALATION_DEFAULT_MINUTES = 30;
+const SUBAGENT_HANG_ESCALATION_MIN_MS = 5 * 60_000;
 // v0.34.102 (field: pully W161 rehearsal agent aac4ab1e, 2026-08-08T08:15
 // → 10:13 — a 118-minute wedge where `subagent_hang_detected` NEVER fired
 // because the manager record was unreachable and classifyHungSubagents
@@ -377,6 +380,8 @@ interface SubagentHangProbe {
   agentType?: string;
   summary?: string;
   spawnedAt: number;
+  /** Host generation that observed this child spawn. */
+  ownerGeneration: number;
   /** Last time the subagent delivered NEW progress (tool use / output tokens). */
   lastProgressAt: number;
   /** Last polled record.toolUses — progress when it increases. */
@@ -385,6 +390,9 @@ interface SubagentHangProbe {
   lastOutputTokens: number;
   /** Throttle: last user-facing hang warning for this subagent. */
   hangAlertedAt?: number;
+  /** One-shot action state for the current no-progress episode. */
+  hangAction?: "abort-requested" | "unavailable" | "failed";
+  hangActionAt?: number;
   endedAt?: number;
 }
 
@@ -397,8 +405,18 @@ const subagentHangProbes = new Map<string, SubagentHangProbe>();
  * cross-extension stream event. Defensive: absent when pi-subagents isn't
  * loaded or the record shape changes (falls back to event-only evidence). */
 const SUBAGENT_MANAGER_KEY = Symbol.for("pi-subagents:manager");
-type SubagentRecordPoll = { toolUses?: number; lifetimeUsage?: { output?: number }; status?: string };
-type SubagentManagerPoll = { getRecord?: (id: string) => SubagentRecordPoll | undefined };
+type SubagentRecordPoll = {
+  toolUses?: number;
+  lifetimeUsage?: { output?: number };
+  status?: string;
+  /** Present on pi-subagents records; required before automatic control. */
+  parentAgentId?: string;
+};
+type SubagentManagerPoll = {
+  getRecord?: (id: string) => SubagentRecordPoll | undefined;
+  /** Optional future registry capability; never fall back to a parent abort. */
+  abort?: (id: string) => boolean;
+};
 function subagentManagerPoller(): SubagentManagerPoll {
   try {
     return ((globalThis as any)[SUBAGENT_MANAGER_KEY] ?? {}) as SubagentManagerPoll;
@@ -407,25 +425,158 @@ function subagentManagerPoller(): SubagentManagerPoll {
   }
 }
 
+/** Minimal pi.events surface used by the pinned pi-subagents RPC bridge. */
+export interface SubagentRpcEventBus {
+  on(event: string, handler: (data: unknown) => void): () => void;
+  emit(event: string, data: unknown): void;
+}
+
+type SubagentStopRpcResult =
+  | { kind: "requested" }
+  | { kind: "unavailable"; reason: string }
+  | { kind: "failed"; error: string }
+  | { kind: "stale" };
+
+type SubagentRpcBinding = {
+  events: SubagentRpcEventBus;
+  generation: number;
+  ready: boolean;
+};
+
+const SUBAGENT_RPC_STOP_TIMEOUT_MS = 2_000;
+let subagentRpcBinding: SubagentRpcBinding | null = null;
+const observedSubagentRpcBuses = new Set<SubagentRpcEventBus>();
+const readySubagentRpcBuses = new Set<SubagentRpcEventBus>();
+
+/**
+ * Observe readiness at factory time. Extension factories run before lifecycle
+ * events, so this catches `subagents:ready` even when pi-subagents' handler is
+ * registered before GLLA's `session_start` handler. The event bus is only
+ * usable for control after bindSubagentRpcHost admits the current host.
+ */
+export function observeSubagentRpcReadiness(events: SubagentRpcEventBus): void {
+  if (observedSubagentRpcBuses.has(events)) return;
+  observedSubagentRpcBuses.add(events);
+  try {
+    events.on("subagents:ready", () => {
+      readySubagentRpcBuses.add(events);
+      if (subagentRpcBinding?.events === events) subagentRpcBinding.ready = true;
+    });
+  } catch {
+    // A factory-time event bus can be unavailable on older hosts; control will
+    // remain fail-closed and produce the durable unavailable escalation.
+  }
+}
+
+/** Bind the RPC stop capability to an admitted MAIN host generation. */
+export function bindSubagentRpcHost(events: SubagentRpcEventBus, generation: number): void {
+  observeSubagentRpcReadiness(events);
+  const retainedReady = subagentRpcBinding?.events === events && subagentRpcBinding.ready;
+  subagentRpcBinding = {
+    events,
+    generation,
+    ready: retainedReady || readySubagentRpcBuses.has(events),
+  };
+}
+
+/** Clear a host-bound RPC capability before its event bus becomes stale. */
+export function releaseSubagentRpcHost(events?: SubagentRpcEventBus): void {
+  if (events && subagentRpcBinding?.events !== events) return;
+  const boundEvents = subagentRpcBinding?.events ?? events;
+  subagentRpcBinding = null;
+  if (boundEvents) readySubagentRpcBuses.delete(boundEvents);
+}
+
+function requestSubagentStopViaRpc(recordId: string, generation: number): Promise<SubagentStopRpcResult> | undefined {
+  const binding = subagentRpcBinding;
+  if (!binding) return undefined;
+  if (!binding.ready) {
+    return Promise.resolve({ kind: "unavailable", reason: "the subagents RPC service is not ready" });
+  }
+  if (binding.generation !== generation || flags.sessionGeneration !== generation) {
+    return Promise.resolve({ kind: "stale" });
+  }
+
+  const requestId = randomUUID();
+  const replyChannel = `subagents:rpc:stop:reply:${requestId}`;
+  return new Promise<SubagentStopRpcResult>((resolve) => {
+    let settled = false;
+    let unsubscribe = () => {};
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const finish = (result: SubagentStopRpcResult): void => {
+      if (settled) return;
+      settled = true;
+      unsubscribe();
+      if (timeout) clearTimeout(timeout);
+      resolve(result);
+    };
+    try {
+      unsubscribe = binding.events.on(replyChannel, (raw) => {
+        if (subagentRpcBinding?.events !== binding.events
+          || subagentRpcBinding.generation !== generation
+          || flags.sessionGeneration !== generation) {
+          finish({ kind: "stale" });
+          return;
+        }
+        const reply = raw as { success?: boolean; error?: unknown } | null;
+        if (reply?.success === true) finish({ kind: "requested" });
+        else finish({ kind: "failed", error: typeof reply?.error === "string" ? reply.error : "the RPC service rejected the request" });
+      });
+      // Arm the timeout before emitting: a compatible host/test bus may reply
+      // synchronously, and finish() must then be able to clear the timer.
+      timeout = setTimeout(() => finish({ kind: "unavailable", reason: "the subagents stop RPC timed out" }), SUBAGENT_RPC_STOP_TIMEOUT_MS);
+      timeout.unref?.();
+      binding.events.emit("subagents:rpc:stop", { requestId, agentId: recordId });
+    } catch (error) {
+      finish({ kind: "unavailable", reason: error instanceof Error ? error.message : String(error) });
+    }
+  });
+}
+
+let subagentHangEscalationMsOverride: number | null = null;
+function subagentHangEscalationMs(cwd: string): number {
+  if (subagentHangEscalationMsOverride !== null) return Math.max(0, subagentHangEscalationMsOverride);
+  const minutes = loadSettings(cwd).subagentHangEscalationMinutes;
+  if (minutes === 0) return 0;
+  if (typeof minutes !== "number" || !Number.isFinite(minutes) || minutes < 5) {
+    return SUBAGENT_HANG_ESCALATION_DEFAULT_MINUTES * 60_000;
+  }
+  return minutes * 60_000;
+}
+
+function ownerGeneration(): number {
+  try { return flags?.sessionGeneration ?? 0; } catch { return 0; }
+}
+
 export function upsertSubagentHangProbe(recordId: string, agentType: string | undefined, summary: string | undefined, now = Date.now()): void {
   const existing = subagentHangProbes.get(recordId);
   if (existing) {
     // Re-observation (resume / re-run): fresh evidence + refreshed metadata.
     existing.lastProgressAt = now;
+    existing.ownerGeneration = ownerGeneration();
     existing.endedAt = undefined;
+    existing.hangAlertedAt = undefined;
+    existing.hangAction = undefined;
+    existing.hangActionAt = undefined;
     if (agentType) existing.agentType = agentType;
     if (summary) existing.summary = summary;
     return;
   }
   subagentHangProbes.set(recordId, {
     recordId, agentType, summary,
+    ownerGeneration: ownerGeneration(),
     spawnedAt: now, lastProgressAt: now, lastToolUses: 0, lastOutputTokens: 0,
   });
 }
 
 export function markSubagentHangProgress(recordId: string, now = Date.now()): void {
   const p = subagentHangProbes.get(recordId);
-  if (p) p.lastProgressAt = now;
+  if (p) {
+    p.lastProgressAt = now;
+    p.hangAlertedAt = undefined;
+    p.hangAction = undefined;
+    p.hangActionAt = undefined;
+  }
 }
 
 export function endSubagentHangProbe(recordId: string, now = Date.now()): void {
@@ -446,6 +597,9 @@ export function classifyHungSubagents(
     lastProgressAt: number;
     lastToolUses: number;
     lastOutputTokens: number;
+    hangAlertedAt?: number;
+    hangAction?: "abort-requested" | "unavailable" | "failed";
+    hangActionAt?: number;
     endedAt?: number;
   }>,
   getRecord: (id: string) => SubagentRecordPoll | undefined,
@@ -474,12 +628,174 @@ export function classifyHungSubagents(
       p.lastToolUses = toolUses;
       p.lastOutputTokens = output;
       p.lastProgressAt = now;
+      p.hangAlertedAt = undefined;
+      p.hangAction = undefined;
+      p.hangActionAt = undefined;
       continue;
     }
     const silentMs = now - p.lastProgressAt;
     if (silentMs >= SUBAGENT_HANG_NO_PROGRESS_MS) hung.push({ recordId: p.recordId, silentMs });
   }
   return hung;
+}
+
+function isLiveSubagentRecord(rec: SubagentRecordPoll | undefined): boolean {
+  return !!rec && (rec.status === "running" || rec.status === "steered" || rec.status === "queued");
+}
+
+/** Only a child with fresh evidence keeps the generic parent zombie watchdog
+ * stood down. A classified stale child must not shield an unrelated parent
+ * turn forever; an event-only child gets the longer event-evidence window. */
+function hasHealthySubagentHangProbe(now = Date.now()): boolean {
+  const poll = subagentManagerPoller();
+  for (const probe of subagentHangProbes.values()) {
+    if (probe.endedAt !== undefined || probe.hangActionAt !== undefined) continue;
+    const rec = poll.getRecord?.(probe.recordId);
+    if (rec && isLiveSubagentRecord(rec)) {
+      const toolUses = rec.toolUses ?? 0;
+      const output = rec.lifetimeUsage?.output ?? 0;
+      if (toolUses > probe.lastToolUses || output > probe.lastOutputTokens
+          || now - probe.lastProgressAt < SUBAGENT_HANG_NO_PROGRESS_MS) return true;
+    } else if (!rec && now - probe.lastProgressAt < SUBAGENT_HANG_EVENT_ONLY_MS) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function hasStaleSubagentHangProbe(now = Date.now()): boolean {
+  const poll = subagentManagerPoller();
+  for (const probe of subagentHangProbes.values()) {
+    if (probe.endedAt !== undefined || probe.hangActionAt !== undefined) continue;
+    const rec = poll.getRecord?.(probe.recordId);
+    if (rec && isLiveSubagentRecord(rec) && now - probe.lastProgressAt >= SUBAGENT_HANG_NO_PROGRESS_MS) return true;
+    if (!rec && now - probe.lastProgressAt >= SUBAGENT_HANG_EVENT_ONLY_MS) return true;
+  }
+  return false;
+}
+
+function requestSubagentHangAction(
+  ctx: ExtensionContext,
+  probe: SubagentHangProbe,
+  silentMs: number,
+  poll: SubagentManagerPoll,
+  now: number,
+  escalationMs: number,
+): void {
+  if (escalationMs <= 0 || silentMs < escalationMs || probe.hangActionAt !== undefined) return;
+  // Claim the episode before any capability call. A rejected/throwing manager
+  // must not produce a ledger/notify storm on every 15s heartbeat tick.
+  probe.hangActionAt = now;
+  const label = [probe.agentType, probe.summary].filter(Boolean).join(" ") || "subagent";
+  const common = {
+    recordId: probe.recordId,
+    agentType: probe.agentType,
+    summary: probe.summary,
+    silentMs,
+    generation: flags.sessionGeneration,
+    ownerGeneration: probe.ownerGeneration,
+    at: nowIso(),
+  };
+  const unavailable = (reason: string): void => {
+    probe.hangAction = "unavailable";
+    appendLedger(ctx.cwd, "subagent_hang_action_unavailable", { ...common, reason });
+    const msg = `glla: ${label} stayed frozen for ${Math.max(1, Math.round(silentMs / 60_000))}m, but no safe child-abort capability is available (${reason}). The warning and partial evidence are preserved; inspect the Agents panel and decide whether to interrupt the parent.`;
+    ctx.ui.notify(msg, "warning");
+    notifyExternal(ctx, msg);
+  };
+
+  if (probe.ownerGeneration !== flags.sessionGeneration) {
+    unavailable("the child belongs to an older host generation");
+    return;
+  }
+  const rec = poll.getRecord?.(probe.recordId);
+  if (!rec) {
+    unavailable("the manager record is unavailable");
+    return;
+  }
+  if (!isLiveSubagentRecord(rec)) {
+    unavailable(`the child is no longer running (status=${rec.status ?? "unknown"})`);
+    return;
+  }
+  // Automatic control is limited to top-level records. The capability is
+  // deliberately required to expose the ownership field; guessing about a
+  // nested child could kill work owned by another subagent.
+  if (!("parentAgentId" in rec) || rec.parentAgentId !== undefined) {
+    unavailable("the child is nested or its ownership is unknown");
+    return;
+  }
+  const toolUses = rec.toolUses ?? 0;
+  const output = rec.lifetimeUsage?.output ?? 0;
+  if (toolUses > probe.lastToolUses || output > probe.lastOutputTokens) {
+    // Progress arrived between classification and the capability call. Drop
+    // the latch so a later genuine no-progress episode can be evaluated.
+    probe.hangActionAt = undefined;
+    probe.hangAction = undefined;
+    probe.lastToolUses = toolUses;
+    probe.lastOutputTokens = output;
+    probe.lastProgressAt = now;
+    return;
+  }
+  const recordRequestedAbort = (): void => {
+    probe.hangAction = "abort-requested";
+    appendLedger(ctx.cwd, "subagent_hang_action_requested", { ...common, action: "abort", via: "subagents:rpc:stop" });
+    const msg = `glla: requested a bounded abort for frozen ${label} after ${Math.max(1, Math.round(silentMs / 60_000))}m with no progress. The parent was not aborted; partial child output remains available for inspection. /goal resume or /list resume retries the owning work after it settles.`;
+    ctx.ui.notify(msg, "warning");
+    notifyExternal(ctx, msg);
+  };
+  const applyRpcResult = (result: SubagentStopRpcResult): void => {
+    // A reply from a disposed host must not mutate the successor's ledger/UI.
+    if (result.kind === "stale"
+      || flags.sessionGeneration !== probe.ownerGeneration
+      || flags.sessionGeneration !== common.generation) return;
+    if (result.kind === "requested") {
+      recordRequestedAbort();
+      return;
+    }
+    if (result.kind === "unavailable") {
+      unavailable(result.reason);
+      return;
+    }
+    appendLedger(ctx.cwd, "subagent_hang_action_failed", { ...common, action: "abort", error: result.error, via: "subagents:rpc:stop" });
+    probe.hangAction = "failed";
+    ctx.ui.notify(`glla: the child-stop RPC failed for ${label}; the parent was not aborted. Inspect the Agents panel and use an explicit interrupt if needed.`, "warning");
+    notifyExternal(ctx, `glla: the child-stop RPC failed for ${label}; the parent was not aborted. Inspect the Agents panel and use an explicit interrupt if needed.`);
+  };
+
+  // v0.35.65: the pinned pi-subagents registry intentionally exposes only
+  // polling; production child control is the admitted root-session RPC.
+  const rpcRequest = requestSubagentStopViaRpc(probe.recordId, common.generation);
+  if (rpcRequest) {
+    void rpcRequest.then(applyRpcResult);
+    return;
+  }
+
+  // Keep compatibility with a future registry capability and with the focused
+  // unit seam, but never infer a parent abort from a missing child capability.
+  if (typeof poll.abort !== "function") {
+    unavailable("the manager exposes no child-specific abort method or stop RPC");
+    return;
+  }
+  let accepted = false;
+  try {
+    accepted = poll.abort(probe.recordId);
+  } catch (error) {
+    appendLedger(ctx.cwd, "subagent_hang_action_failed", {
+      ...common,
+      action: "abort",
+      error: error instanceof Error ? error.message : String(error),
+    });
+    probe.hangAction = "failed";
+    ctx.ui.notify(`glla: could not request a child-specific abort for ${label}; the parent was not aborted. Inspect the Agents panel and use an explicit interrupt if needed.`, "warning");
+    return;
+  }
+  if (!accepted) {
+    appendLedger(ctx.cwd, "subagent_hang_action_failed", { ...common, action: "abort", error: "manager rejected the running child" });
+    probe.hangAction = "failed";
+    ctx.ui.notify(`glla: the manager rejected the child-specific abort for ${label}; the parent was not aborted. Inspect the Agents panel and use an explicit interrupt if needed.`, "warning");
+    return;
+  }
+  recordRequestedAbort();
 }
 
 function heartbeatTick(): void {
@@ -623,19 +939,19 @@ function heartbeatTick(): void {
   // 74305f7e while the MAIN model was also in recovery; heartbeatTick
   // returned at the `mainModelRecoveryActive()` gate BELOW, so the
   // subagent hang scan never ran and the 12m+ wedge produced ZERO
-  // `subagent_hang_detected`). The scan is detection + notify only
-  // (never an auto-kill, never a send) — it MUST run even while the
-  // main model is parked, because a shared provider failure can freeze
-  // subagents and the main model at the same time.
+  // `subagent_hang_detected`). The scan still runs before that gate.
+  // Detection remains warning/telemetry-first; only a much longer, confirmed
+  // frozen top-level record may request the manager's child-specific abort.
   if (subagentHangProbes.size > 0) {
     const nowMs = Date.now();
     const poll = subagentManagerPoller();
+    const escalationMs = subagentHangEscalationMs(ctx.cwd);
     const hung = classifyHungSubagents([...subagentHangProbes.values()], (id) => poll.getRecord?.(id), nowMs);
     pruneEndedSubagentHangProbes(nowMs);
     for (const h of hung) {
       const p = subagentHangProbes.get(h.recordId);
-      if (!p || (p.hangAlertedAt !== undefined && nowMs - p.hangAlertedAt < SUBAGENT_HANG_ALERT_THROTTLE_MS)) continue;
-      p.hangAlertedAt = nowMs;
+      if (!p) continue;
+      const shouldAlert = p.hangAlertedAt === undefined || nowMs - p.hangAlertedAt >= SUBAGENT_HANG_ALERT_THROTTLE_MS;
       const label = [p.agentType, p.summary].filter(Boolean).join(" ");
       const mins = Math.max(1, Math.round(h.silentMs / 60_000));
       // v0.34.102: classifyHungSubagents cannot tell us the evidence class
@@ -645,20 +961,24 @@ function heartbeatTick(): void {
       // only its event trail (spawn/compacted/steered) remains. Name it so
       // the user knows whether the Agents panel can still show a live child.
       const stillTracked = poll.getRecord?.(p.recordId) !== undefined;
-      appendLedger(ctx.cwd, "subagent_hang_detected", {
-        recordId: p.recordId,
-        agentType: p.agentType,
-        summary: p.summary,
-        silentMs: h.silentMs,
-        spawnedAt: new Date(p.spawnedAt).toISOString(),
-        evidence: stillTracked ? "record-frozen" : "event-only",
-        at: nowIso(),
-      });
-      const msg = `glla: subagent${label ? ` (${label})` : ""} shows no progress for ${mins}m — ${stillTracked
-        ? "still running with no new tool calls or output"
-        : "its manager record is unreachable and it produced no events (spawn/compaction/steer)"}. It may be hung; the main session can decide to abort it.`;
-      ctx.ui.notify(msg, "warning");
-      notifyExternal(ctx, msg);
+      if (shouldAlert) {
+        p.hangAlertedAt = nowMs;
+        appendLedger(ctx.cwd, "subagent_hang_detected", {
+          recordId: p.recordId,
+          agentType: p.agentType,
+          summary: p.summary,
+          silentMs: h.silentMs,
+          spawnedAt: new Date(p.spawnedAt).toISOString(),
+          evidence: stillTracked ? "record-frozen" : "event-only",
+          at: nowIso(),
+        });
+        const msg = `glla: subagent${label ? ` (${label})` : ""} shows no progress for ${mins}m — ${stillTracked
+          ? "still running with no new tool calls or output"
+          : "its manager record is unreachable and it produced no events (spawn/compaction/steer)"}. It may be hung; a longer frozen interval will request a bounded child abort when safe.`;
+        ctx.ui.notify(msg, "warning");
+        notifyExternal(ctx, msg);
+      }
+      requestSubagentHangAction(ctx, p, h.silentMs, poll, nowMs, escalationMs);
     }
   }
   if (mainModelRecoveryActive()) {
@@ -728,12 +1048,17 @@ function heartbeatTick(): void {
     // abort and parked a run whose child was legitimately working). A parent
     // BUSY-waiting on Agent / steer_subagent / get_subagent_result is
     // EXPECTED to be stream-silent; child liveness is the subagent-hang
-    // watchdog's detection+notify territory and the wedge alert names the
-    // wait. Stand down the whole branch while a live probe or an in-flight
-    // subagent tool call is recorded — the abort must not own that case.
-    const subagentWaitInFlight =
-      hasLiveSubagentHangProbes() ||
-      [...flags.inFlightToolCalls.values()].some(isSubagentWaitCall);
+    // watchdog's detection/action territory and the wedge alert names the
+    // wait. Stand down only while a probe still has fresh evidence. Once a
+    // child is classified stale or an action was requested, it must not shield
+    // an unrelated parent turn from its own bounded cleanup.
+    const inFlightSubagentTool = [...flags.inFlightToolCalls.values()].some(isSubagentWaitCall);
+    const healthySubagentWait = hasHealthySubagentHangProbe();
+    const staleSubagent = hasStaleSubagentHangProbe();
+    // Keep the legacy tool-name path for a foreground wait whose lifecycle
+    // event has not reached the probe registry yet. Once a probe is already
+    // stale, however, the same ambiguous tool name must not shield cleanup.
+    const subagentWaitInFlight = healthySubagentWait || (inFlightSubagentTool && !staleSubagent);
     if (subagentWaitInFlight) {
       if (streamSilentMs >= zombieAbortMs && !flags.abortedStandDown) {
         appendLedger(ctx.cwd, "zombie_run_stood_down_subagent_wait", { streamSilentMs });
@@ -980,7 +1305,8 @@ export function __testOnlySetHeartbeatStaleDebounce(n: number | null): void {
  * probe counters (unlike classifyHungSubagents, which advances them).
  * Hung classification mirrors the heartbeat scan's semantics without its
  * mutation: no new progress for >= SUBAGENT_HANG_NO_PROGRESS_MS with the
- * manager record still pollable = record-frozen; without = event-only. */
+ * manager record still pollable = record-frozen; without a record, the longer
+ * SUBAGENT_HANG_EVENT_ONLY_MS window applies = event-only. */
 export interface SubagentAgentView {
   recordId: string;
   agentType?: string;
@@ -994,6 +1320,7 @@ export interface SubagentAgentView {
   silentMs: number;
   evidence: "record-frozen" | "event-only" | "live";
   hangAlertedAt?: number;
+  action?: "abort-requested" | "unavailable" | "failed";
   endedAt?: number;
 }
 
@@ -1005,10 +1332,14 @@ export function getSubagentAgentsSnapshot(now = Date.now()): { agents: SubagentA
     const ended = probe.endedAt !== undefined;
     let status: SubagentAgentView["status"] = "running";
     let evidence: SubagentAgentView["evidence"] = "live";
+    let record: SubagentRecordPoll | undefined;
     if (!ended) {
-      const stillTracked = managerAvailable && poll.getRecord?.(probe.recordId) !== undefined;
+      record = poll.getRecord?.(probe.recordId);
+      const stillTracked = record !== undefined;
       const silentMs = now - probe.lastProgressAt;
-      if (silentMs >= SUBAGENT_HANG_NO_PROGRESS_MS) {
+      if (record && !isLiveSubagentRecord(record)) {
+        status = "ended";
+      } else if (silentMs >= (stillTracked ? SUBAGENT_HANG_NO_PROGRESS_MS : SUBAGENT_HANG_EVENT_ONLY_MS)) {
         status = "hung";
         evidence = stillTracked ? "record-frozen" : "event-only";
       }
@@ -1025,6 +1356,7 @@ export function getSubagentAgentsSnapshot(now = Date.now()): { agents: SubagentA
       silentMs: Math.max(0, now - probe.lastProgressAt),
       evidence,
       ...(probe.hangAlertedAt !== undefined ? { hangAlertedAt: probe.hangAlertedAt } : {}),
+      ...(probe.hangAction !== undefined ? { action: probe.hangAction } : {}),
       ...(probe.endedAt !== undefined ? { endedAt: probe.endedAt } : {}),
     });
   }
@@ -1039,8 +1371,15 @@ export function __testOnlySubagentHangProbes(): SubagentHangProbe[] {
   return [...subagentHangProbes.values()];
 }
 
+/** Test-only: override the long frozen-child action threshold. `0` keeps
+ * detection warning-only; null restores the settings-backed default. */
+export function __testOnlySetSubagentHangEscalationMs(ms: number | null): void {
+  subagentHangEscalationMsOverride = ms;
+}
+
 /** Test-only: clear the subagent-hang probe registry (between tests). Never
  * called by production code. */
 export function __testOnlyClearSubagentHangProbes(): void {
   subagentHangProbes.clear();
+  subagentHangEscalationMsOverride = null;
 }

@@ -27,6 +27,7 @@ import activate, {
 import {
   classifyHungSubagents,
   __testOnlyClearSubagentHangProbes,
+  __testOnlySetSubagentHangEscalationMs,
   __testOnlyHeartbeatTick,
   __testOnlySubagentHangProbes,
 } from "../extensions/goal-heartbeat.js";
@@ -64,24 +65,40 @@ async function spawnFixture(): Promise<{ cwd: string; ctx: MockCtx }> {
   setGlobalAutoResume(false);
   const cwd = tmpCwd();
   const ctx = await freshSession(cwd, "startup");
+  // The real pi-subagents extension emits this after its root session binds
+  // RPC handlers. Unit fixtures opt into that capability explicitly so the
+  // production bridge, rather than the legacy manager abort seam, is tested.
+  pi.emitBus("subagents:ready", {});
   await tick();
   return { cwd, ctx };
 }
 
 const pi = new MockPi();
 activate(pi.api);
+// The fixture's event bus stands in for the root pi-subagents RPC handler.
+// It deliberately uses the production request/reply channel and the manager
+// registry's child-specific capability; there is no parent abort fallback.
+pi.api.events.on("subagents:rpc:stop", (raw: unknown) => {
+  const request = raw as { requestId?: string; agentId?: string };
+  const manager = (globalThis as any)[MANAGER_KEY] as { abort?: (id: string) => boolean } | undefined;
+  const accepted = typeof request.agentId === "string" && manager?.abort?.(request.agentId) === true;
+  pi.emitBus(`subagents:rpc:stop:reply:${request.requestId}`, accepted
+    ? { success: true }
+    : { success: false, error: "Agent not found" });
+});
 
 /** A fake running subagent record, mirroring pi-subagents' AgentRecord poll shape. */
-function runningRecord(overrides: { toolUses?: number; output?: number; status?: string } = {}): any {
+function runningRecord(overrides: { toolUses?: number; output?: number; status?: string; parentAgentId?: string } = {}): any {
   return {
     toolUses: overrides.toolUses ?? 0,
     lifetimeUsage: { output: overrides.output ?? 0 },
     status: overrides.status ?? "running",
+    parentAgentId: overrides.parentAgentId,
   };
 }
 const MANAGER_KEY = Symbol.for("pi-subagents:manager");
-function installManager(getRecord: (id: string) => any | undefined): void {
-  (globalThis as any)[MANAGER_KEY] = { getRecord };
+function installManager(getRecord: (id: string) => any | undefined, abort?: (id: string) => boolean): void {
+  (globalThis as any)[MANAGER_KEY] = { getRecord, ...(abort ? { abort } : {}) };
 }
 function uninstallManager(): void {
   delete (globalThis as any)[MANAGER_KEY];
@@ -201,6 +218,114 @@ test("hang warning is throttled — one alert per 5m streak window, not per tick
   assert.equal(ledgerHangs(cwd).length, 1, "the second tick does not re-alert inside the throttle");
 });
 
+test("long frozen tracked child requests one bounded child-specific abort after the warning window", async () => {
+  __testOnlySetSubagentHangEscalationMs(30 * 60_000);
+  const { cwd, ctx } = await spawnFixture();
+  let aborts = 0;
+  installManager(() => runningRecord(), (id) => {
+    assert.equal(id, "sub-escalate-1");
+    aborts++;
+    return true;
+  });
+  pi.emitBus("subagents:started", { id: "sub-escalate-1", type: "Explore", description: "frozen child" });
+  await tick();
+  const probe = __testOnlySubagentHangProbes()[0]!;
+  probe.lastProgressAt = Date.now() - 31 * 60_000;
+
+  __testOnlyHeartbeatTick();
+  await tick();
+  assert.equal(aborts, 1, "the root RPC handler receives one child-specific abort request");
+  const requested = readLedger(cwd).filter((entry) => entry.type === "subagent_hang_action_requested");
+  assert.equal(requested.length, 1);
+  assert.equal(requested[0]!.value.via, "subagents:rpc:stop");
+  assert.equal(ctx.ui.notifies.filter((n) => n.message.includes("requested a bounded abort")).length, 1);
+
+  __testOnlyHeartbeatTick();
+  await tick();
+  assert.equal(aborts, 1, "the same frozen episode is not aborted repeatedly");
+});
+
+test("progress arriving before escalation cancels the action and starts a fresh episode", async () => {
+  __testOnlySetSubagentHangEscalationMs(30 * 60_000);
+  const { cwd } = await spawnFixture();
+  let record = runningRecord();
+  let aborts = 0;
+  installManager(() => record, () => { aborts++; return true; });
+  pi.emitBus("subagents:started", { id: "sub-progress-before-action", type: "Plan", description: "healthy long tool" });
+  await tick();
+  const probe = __testOnlySubagentHangProbes()[0]!;
+  probe.lastProgressAt = Date.now() - 31 * 60_000;
+  record = runningRecord({ toolUses: 1 });
+
+  __testOnlyHeartbeatTick();
+  await tick();
+  assert.equal(aborts, 0, "fresh tool-use progress cancels the stale action candidate");
+  assert.equal(readLedger(cwd).filter((entry) => entry.type === "subagent_hang_action_requested").length, 0);
+});
+
+test("event-only child reaches an honest unavailable-action record, never a guessed abort", async () => {
+  __testOnlySetSubagentHangEscalationMs(30 * 60_000);
+  const { cwd } = await spawnFixture();
+  let aborts = 0;
+  installManager(() => undefined, () => { aborts++; return true; });
+  pi.emitBus("subagents:started", { id: "sub-event-only-action", type: "Explore", description: "unreachable child" });
+  await tick();
+  const probe = __testOnlySubagentHangProbes()[0]!;
+  probe.lastProgressAt = Date.now() - 31 * 60_000;
+
+  __testOnlyHeartbeatTick();
+  await tick();
+  assert.equal(aborts, 0, "an absent manager record is never guessed into an abort");
+  const unavailable = readLedger(cwd).filter((entry) => entry.type === "subagent_hang_action_unavailable");
+  assert.equal(unavailable.length, 1);
+  assert.equal(unavailable[0]!.value.recordId, "sub-event-only-action");
+  assert.equal(typeof unavailable[0]!.value.generation, "number");
+  assert.equal(typeof unavailable[0]!.value.ownerGeneration, "number");
+  assert.match(unavailable[0]!.value.reason, /manager record is unavailable/);
+  __testOnlyHeartbeatTick();
+  await tick();
+  assert.equal(readLedger(cwd).filter((entry) => entry.type === "subagent_hang_action_unavailable").length, 1, "unavailable escalation is durable and one-shot");
+});
+
+test("nested child is not eligible for top-level automatic abort", async () => {
+  __testOnlySetSubagentHangEscalationMs(30 * 60_000);
+  const { cwd } = await spawnFixture();
+  let aborts = 0;
+  installManager(() => runningRecord({ parentAgentId: "parent-1" }), () => { aborts++; return true; });
+  pi.emitBus("subagents:started", { id: "sub-nested-action", type: "Explore", description: "nested child" });
+  await tick();
+  const probe = __testOnlySubagentHangProbes()[0]!;
+  probe.lastProgressAt = Date.now() - 31 * 60_000;
+
+  __testOnlyHeartbeatTick();
+  await tick();
+  assert.equal(aborts, 0, "nested ownership is left to its parent");
+  assert.equal(readLedger(cwd).filter((entry) => entry.type === "subagent_hang_action_unavailable").length, 1);
+});
+
+test("v0.35.65: an old-generation child cannot receive a stop RPC after host rebind", async () => {
+  __testOnlySetSubagentHangEscalationMs(30 * 60_000);
+  const { cwd, ctx: oldCtx } = await spawnFixture();
+  let aborts = 0;
+  installManager(() => runningRecord(), () => { aborts++; return true; });
+  pi.emitBus("subagents:started", { id: "sub-old-generation", type: "Explore", description: "old host child" });
+  await tick();
+  const probe = __testOnlySubagentHangProbes()[0]!;
+  probe.lastProgressAt = Date.now() - 31 * 60_000;
+
+  await pi.fire("session_shutdown", { reason: "reload" }, oldCtx);
+  await freshSession(cwd, "reload");
+  __testOnlyHeartbeatTick();
+  await tick();
+
+  assert.equal(aborts, 0, "the replacement host never stops the old-generation child");
+  const unavailable = readLedger(cwd).filter((entry) => entry.type === "subagent_hang_action_unavailable");
+  assert.equal(unavailable.length, 1, "the old-generation escalation is durable and one-shot");
+  assert.equal(unavailable[0]!.value.recordId, "sub-old-generation");
+  assert.match(unavailable[0]!.value.reason, /older host generation/);
+  assert.ok(unavailable[0]!.value.ownerGeneration < unavailable[0]!.value.generation, "the durable record preserves the old/new generation boundary");
+});
+
 test("v0.34.102: event-only hang surfaces `subagent_hang_detected` with evidence=event-only when no manager record exists", async () => {
   const { cwd, ctx } = await spawnFixture();
   // NO installManager() — the pi-subagents manager registry is absent, which
@@ -276,6 +401,11 @@ test("source pins: constants, watchdog wiring, and ledger key", () => {
   const hb = fs.readFileSync("extensions/goal-heartbeat.ts", "utf-8"); // decomposition step 4 (v0.34.112)
   assert.match(hb, /const SUBAGENT_HANG_NO_PROGRESS_MS = 5 \* 60_000;/);
   assert.match(hb, /const SUBAGENT_HANG_EVENT_ONLY_MS = 20 \* 60_000;/);
+  assert.match(hb, /subagentHangEscalationMinutes/);
+  assert.match(hb, /subagent_hang_action_requested/);
+  assert.match(hb, /poll\.abort/);
+  assert.match(hb, /subagents:rpc:stop/);
+  assert.match(hb, /subagents:ready/);
   assert.match(hb, /Symbol\.for\("pi-subagents:manager"\)/);
   assert.match(hb, /subagent_hang_detected/);
   assert.match(hb, /evidence: stillTracked \? "record-frozen" : "event-only"/);

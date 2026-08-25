@@ -344,6 +344,31 @@ test("T4: input editor validation — auditCap rejects garbage loudly, accepts i
   }
 });
 
+test("v0.35.64: subagent hang action accepts warning-only/long thresholds and rejects unsafe values", async () => {
+  try {
+    const ctx = makeMockCtx(tmpCwd());
+    ctx.ui.inputImpl = async () => "0";
+    await handleSettingChoice("subagentHangEscalationMinutes", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().subagentHangEscalationMinutes, 0);
+
+    ctx.ui.inputImpl = async () => "4";
+    await handleSettingChoice("subagentHangEscalationMinutes", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().subagentHangEscalationMinutes, 0, "unsafe short action threshold is rejected");
+    assert.ok(ctx.ui.matching("must be 0 or an integer >= 5").length >= 1);
+
+    ctx.ui.inputImpl = async () => "30";
+    await handleSettingChoice("subagentHangEscalationMinutes", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().subagentHangEscalationMinutes, 30);
+
+    ctx.ui.inputImpl = async () => "";
+    await handleSettingChoice("subagentHangEscalationMinutes", ctx as unknown as ExtensionContext);
+    assert.ok(!("subagentHangEscalationMinutes" in readGlobal()), "empty input restores the default");
+    assert.equal(loadSettings(tmpCwd()).subagentHangEscalationMinutes, 30);
+  } finally {
+    restoreGlobal();
+  }
+});
+
 test("T4: a dismissed editor (Esc → undefined) writes NOTHING", async () => {
   try {
     restoreGlobal(); // known-clean baseline

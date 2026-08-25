@@ -345,6 +345,7 @@ import {
   cmdSettings,
   createGoalCommands,
   enqueueItems,
+  hydrateListQueueFromDisk,
   maybeDecisionPopup,
   probeAutoNotify,
   recentlyCompletedObjectives,
@@ -1358,12 +1359,28 @@ function ownerProbeLive(): boolean {
   return false;
 }
 
+/** The child-session runner binds extensions with the no-op `print`/`json`
+ * context, while the interactive/RPC host provides a real UI context. Keep
+ * this discriminator at the session boundary so a worker cannot become the
+ * first owner or masquerade as a file-backed successor (persistent
+ * pi-subagents children are otherwise indistinguishable by session file
+ * alone). A host running an intentionally headless print session is not a
+ * supervised goal host and is fail-closed here. */
+function isWorkerSessionCtx(ctx: ExtensionContext): boolean {
+  try {
+    return !ctx.hasUI && (ctx.mode === "print" || ctx.mode === "json");
+  } catch {
+    return false;
+  }
+}
+
 /** v0.34.25: is this ctx a real pi host session (file-backed), not a subagent
- * worker? pi-subagents sessions are SessionManager.inMemory — no session
- * file (pi-subagents agent-runner.ts). A silent host replacement keeps file
- * persistence; an in-memory ctx can only be an ephemeral worker. Fail closed
- * on any probe error. */
+ * worker? pi-subagents sessions are normally SessionManager.inMemory — no
+ * session file (pi-subagents agent-runner.ts). Persistent children are also
+ * rejected by isWorkerSessionCtx before this structural fallback. A silent
+ * host replacement keeps file persistence; fail closed on probe errors. */
 function isHostSuccessorCtx(ctx: ExtensionContext): boolean {
+  if (isWorkerSessionCtx(ctx)) return false;
   try {
     const sm = ctx.sessionManager as { getSessionFile?: unknown } | null | undefined;
     if (!sm || typeof sm.getSessionFile !== "function") return false;
@@ -1380,6 +1397,7 @@ function isHostSuccessorCtx(ctx: ExtensionContext): boolean {
  * plane. Owner liveness remains fail-closed unless this instance has already
  * declared the old handle terminal. */
 function isHostSuccessorContact(ctx: ExtensionContext): boolean {
+  if (isWorkerSessionCtx(ctx)) return false;
   const recordedOwner = ownerSession ?? deadOwnerSession;
   if (recordedOwner === null || ctx.sessionManager === recordedOwner) return false;
   if (!isHostSuccessorCtx(ctx)) return false;
@@ -1400,11 +1418,21 @@ function isHostSuccessorContact(ctx: ExtensionContext): boolean {
  * Subagent workers (in-memory) and ambiguous cases (owner still live) keep
  * failing closed; a zombie-stood-down instance never reclaims the plane. */
 function tryAbsorbHostSuccessor(ctx: ExtensionContext, via: string): boolean {
+  if (isWorkerSessionCtx(ctx)) return false;
   if (zombieStoodDown) return false; // a successor INSTANCE owns owner.json — this instance stands down forever
   if (!isHostSuccessorContact(ctx)) return false;
   // v0.35.58: bind the successor's canonical session directory before the
   // id-invalidation event below can write to the state root.
   setRuntimeSessionDirFromSessionManager(ctx.sessionManager);
+  // v0.35.61: a silent successor is the same durable restore boundary as a
+  // delivered session_start. Re-read the selected root and hydrate sidecars
+  // before repainting; otherwise a replacement can keep the old in-memory
+  // empty queue until a later full reload, even though the queue is durable.
+  replaceState(readState(ctx.cwd));
+  const restoredQueue = hydrateListQueueFromDisk(ctx);
+  if (restoredQueue > 0) {
+    ctx.ui.notify(`glla: restored ${restoredQueue} queued list item(s) after the host session replacement.`, "info");
+  }
   const completionAuditNeedsRecovery = !!state.goal?.pendingCompletion && (
     state.goal.status === "auditing"
     || (state.goal.status === "paused" && (state.goal.pendingCompletion.phase ?? "recovery-pending") === "recovery-pending")
@@ -1492,6 +1520,7 @@ function tryAbsorbHostSuccessor(ctx: ExtensionContext, via: string): boolean {
  * rebind window, or while the fresh probe still throws (genuinely dead —
  * keep the honest park). */
 function selfHealStaleSameSession(ctx: ExtensionContext): boolean {
+  if (isWorkerSessionCtx(ctx)) return false;
   if (zombieStoodDown) return false; // another instance owns the plane
   const parked = extensionApiStale || sessionHandoffPending || staleTerminalDone;
   if (!parked) return false;
@@ -1520,6 +1549,10 @@ function selfHealStaleSameSession(ctx: ExtensionContext): boolean {
   sessionGeneration++; // a parked generation's delayed callbacks must not fire into the reclaimed plane
   heartbeatStaleStreak = 0;
   clearDraftingState();
+  const restoredQueue = hydrateListQueueFromDisk(ctx);
+  if (restoredQueue > 0) {
+    ctx.ui.notify(`glla: restored ${restoredQueue} queued list item(s) after the stale-handle recovery.`, "info");
+  }
   appendLedger(ctx.cwd, "stale_self_healed", { was, via: "same-session command", generation: sessionGeneration });
   startHeartbeat();
   startUITicker();
@@ -1556,6 +1589,10 @@ function selfHealStaleSameSession(ctx: ExtensionContext): boolean {
 }
 
 function rememberCtx(ctx: ExtensionContext): void {
+  // Worker contexts may load this extension, but they never enter the host
+  // state plane. Keep this before every recovery/claim path, including the
+  // owner-null first-contact case.
+  if (isWorkerSessionCtx(ctx)) return;
   // v0.34.62: spurious-stale self-heal BEFORE the stale gates drop the ctx —
   // a same-session command with a healthy handle proves the park was wrong.
   if (selfHealStaleSameSession(ctx)) return;
@@ -1582,7 +1619,7 @@ function rememberCtx(ctx: ExtensionContext): void {
 
 /** True when ctx belongs to a subagent/foreign session, not the loop owner. */
 function isForeignCtx(ctx: ExtensionContext): boolean {
-  return ownerSession !== null && ctx.sessionManager !== ownerSession;
+  return isWorkerSessionCtx(ctx) || (ownerSession !== null && ctx.sessionManager !== ownerSession);
 }
 
 /**
@@ -1610,7 +1647,10 @@ const FOREIGN_SESSION_TOOL_MESSAGE =
 /** Refusal message when a state-mutating tool is called from a subagent session, else null. */
 function foreignToolGuard(execCtx: unknown): string | null {
   const c = execCtx as ExtensionContext | undefined;
-  if (!c) return null;
+  // Tool execution must fail closed when pi does not provide an invocation
+  // context. Falling back to the host context would let a child call mutate
+  // the main state plane through the owner-bound default.
+  if (!c) return FOREIGN_SESSION_TOOL_MESSAGE;
   // v0.34.25: absorb FIRST — the first sign of pi's silent session swap is
   // often a TOOL CALL from the live replacement session, and after the stale
   // terminal the recorded owner is nulled (the successor is not even
@@ -1723,6 +1763,7 @@ defineGoalRuntimeGlobal("sessionHasConversation", { get: () => sessionHasConvers
 defineGoalRuntimeGlobal("isBlankInitialStartup", { get: () => isBlankInitialStartup });
 defineGoalRuntimeGlobal("releaseInitialSessionLoadBarrier", { get: () => releaseInitialSessionLoadBarrier });
 defineGoalRuntimeGlobal("ownerProbeLive", { get: () => ownerProbeLive });
+defineGoalRuntimeGlobal("isWorkerSessionCtx", { get: () => isWorkerSessionCtx });
 defineGoalRuntimeGlobal("isHostSuccessorCtx", { get: () => isHostSuccessorCtx });
 defineGoalRuntimeGlobal("isHostSuccessorContact", { get: () => isHostSuccessorContact });
 defineGoalRuntimeGlobal("tryAbsorbHostSuccessor", { get: () => tryAbsorbHostSuccessor });

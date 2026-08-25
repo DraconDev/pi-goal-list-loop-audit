@@ -260,6 +260,11 @@ const DEFAULT_HEARTBEAT_NO_PROGRESS_MS = 10 * 60_000;
 const ATTEMPT_ID_RE = /^[A-Za-z0-9._-]{1,100}$/;
 const WORKER_SHUTDOWN_GRACE_MS = 1_000;
 const WORKER_FORCE_SETTLE_MS = 250;
+// A child can finish its final atomic rename just as the parent observes the
+// exit event. Give the filesystem one short poll window before classifying the
+// worker as result-less; otherwise a valid identity-checked result becomes a
+// load-sensitive infrastructure failure.
+const CHILD_EXIT_RESULT_GRACE_MS = 250;
 const activeChildren = new Map<string, ChildProcess>();
 const workerTermination = new WeakMap<ChildProcess, Promise<void>>();
 
@@ -822,6 +827,7 @@ export async function runDetachedGoalCompletionAuditor(args: {
   let jobDirCreated = false;
   let child: ChildProcess | undefined;
   let childSpawnError: string | undefined;
+  let childExitObservedAt: number | undefined;
   let lastProgressSerialized = "";
   // v0.34.57: heartbeat-without-progress watchdog state. `lastProgressAt` is
   // reset whenever the progress signature changes; the watchdog fires when
@@ -1121,7 +1127,18 @@ export async function runDetachedGoalCompletionAuditor(args: {
             );
           }
         }
-        if (child && !childAlive(child)) return infra(model, thinkingLevel, "auditor worker exited without an atomic result", "", capturedRevisionToken, "no-verdict");
+        if (child && !childAlive(child)) {
+          // The worker's result is atomic, but the child exit notification and
+          // the parent's next filesystem read are separate observations. One
+          // bounded grace window lets a final rename become visible without
+          // delaying a genuinely result-less worker by the full wall timeout.
+          childExitObservedAt ??= Date.now();
+          if (Date.now() - childExitObservedAt < CHILD_EXIT_RESULT_GRACE_MS) {
+            await new Promise((resolve) => setTimeout(resolve, Math.min(pollIntervalMs, 25)));
+            continue;
+          }
+          return infra(model, thinkingLevel, "auditor worker exited without an atomic result", "", capturedRevisionToken, "no-verdict");
+        }
         await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
       }
     } finally {

@@ -61,6 +61,7 @@ import { normalizeMainModelFallbackRefs } from "./main-model-recovery.js";
 import { createContinuationDispatch, type ContinuationDispatch } from "./goal-loop-dispatch.js";
 import { attemptFreshSessionRecovery } from "./goal-recovery.js";
 import { chooseObjectiveConflict, liveObjectives } from "./goal-objective-conflict.js";
+import { releaseAuditorSurface } from "./loops/goal-auditor-surface.js";
 
 type DispatchInput = Omit<Parameters<typeof createContinuationDispatch>[0], "id" | "sentAt">;
 
@@ -918,6 +919,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     if (isLoopActive()) {
       if (flags.continuationDispatchStoodDown) {
         releaseContinuationDispatchStandDown();
+        releaseAuditorSurface();
         scheduleLoopTick(ctx);
         ctx.ui.notify("Loop dispatch stand-down cleared — retrying one continuation explicitly.", "info");
       } else {
@@ -991,6 +993,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
         appendLedger(ctx.cwd, "load_hold_released", { via: "loop-resume" });
       }
       releaseContinuationDispatchStandDown();
+      releaseAuditorSurface();
       scheduleLoopTick(ctx);
       ctx.ui.notify(
         `Loop resumed: iteration ${stored.iteration}/${stored.maxIterations > 0 ? stored.maxIterations : "∞"} · best ${stored.bestValue ?? "n/a"} — ${displaySlice(stored.target, 60)}`, 

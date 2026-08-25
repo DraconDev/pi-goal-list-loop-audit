@@ -359,9 +359,6 @@ async function cmdPause(ctx: ExtensionContext): Promise<void> {
 
 async function cmdResume(ctx: ExtensionContext): Promise<void> {
   releaseInitialSessionLoadBarrier();
-  // blank-until-resume: an explicit resume re-surfaces the last
-  // auditor report from durable state (unchanged on disk).
-  releaseAuditorSurface();
   // v0.35.23 (note.md Next #2): an explicit resume is exactly the decision
   // the load hold waits for — release it before re-arming automation, or
   // the scheduleContinuation below would be a frozen no-op.
@@ -371,8 +368,19 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
     ctx.ui.notify("Load hold released — automation is live again.", "info");
   }
   const resumeCommand = activeGoalCommand("resume");
-  if (manuallyResumeMainModelRecovery(ctx)) return;
-  if (state.mainModelRecovery?.retryAt || state.mainModelRecovery?.pendingModelSwitch) {
+  // Main-model recovery returns before the normal paused-goal admission path.
+  // Probe the same stale/foreign boundary first so an admitted recovery resume
+  // can release the auditor surface, while a rejected one falls through to the
+  // existing stale-resume recovery marker without exposing old context.
+  const recoveryStaleEntry = state.mainModelRecovery
+    ? warnIfStaleAtEntry(ctx, resumeCommand)
+    : false;
+  if (!recoveryStaleEntry && manuallyResumeMainModelRecovery(ctx)) {
+    releaseAuditorSurface();
+    return;
+  }
+  if (!recoveryStaleEntry && (state.mainModelRecovery?.retryAt || state.mainModelRecovery?.pendingModelSwitch)) {
+    releaseAuditorSurface();
     clearMainModelRecoveryTimer();
     flags.continuationDispatchStoodDown = false;
     // v0.34.92: the chat-prompt re-arm was removed; recovery is timer-driven.
@@ -380,7 +388,8 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
     void probeMainModelRecovery(ctx);
     return;
   }
-  if (state.mainModelRecovery?.primaryProbeAt || state.mainModelRecovery?.primaryProbeInFlight) {
+  if (!recoveryStaleEntry && (state.mainModelRecovery?.primaryProbeAt || state.mainModelRecovery?.primaryProbeInFlight)) {
+    releaseAuditorSurface();
     clearMainModelRecoveryTimer();
     flags.continuationDispatchStoodDown = false;
     ctx.ui.notify("Probing the preferred primary now — the current fallback remains available if the primary is still unhealthy.", "info");
@@ -395,6 +404,21 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
     if (isLoopActive()) {
       ctx.ui.notify("A loop is active — one active thing at a time. /loop stop it first, then resume the goal.", "warning");
       return;
+    }
+    // An ACTIVE-but-idle goal still needs the entry admission probe: a stale
+    // command must not release the auditor surface before its schedule is
+    // rejected by the stale/foreign session boundary.
+    const staleEntry = warnIfStaleAtEntry(ctx, resumeCommand);
+    if (staleEntry) return;
+    releaseAuditorSurface();
+    if (state.goal.repairTarget?.replanPromptedAt) {
+      const target = state.goal.repairTarget;
+      updateGoal({ repairTarget: { ...target, replanPromptedAt: undefined } }, ctx);
+      appendLedger(ctx.cwd, "faulty_objective_replan_turn_reset", {
+        goalId: state.goal.id,
+        targetId: target.id,
+        via: "manual-resume",
+      });
     }
     appendLedger(ctx.cwd, "resume_rekick", { goalId: state.goal.id, policy: state.goal.policy, via: resumeCommand });
     if (state.goal.interruptedAt) updateGoal({ interruptedAt: undefined, interruptedReason: undefined }, ctx); // v0.34.7: same marker law here
@@ -420,6 +444,7 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
     }
     const staleEntry = warnIfStaleAtEntry(ctx, resumeCommand);
     if (staleEntry) return;
+    releaseAuditorSurface();
     markCompletionAuditRecoveryPending(ctx, "manual-resume");
     flags.completionAuditRecoveryArmed = true;
     ctx.ui.notify("Resuming the stored completion claim — starting a detached auditor (no agent turn needed).", "info");
@@ -478,6 +503,7 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
   const storedCompletion = state.goal.pendingCompletion;
   updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined, pauseKind: undefined, pauseOptions: undefined, pauseRecommended: undefined, pauseResumeAt: undefined, interruptedAt: undefined, interruptedReason: undefined, autoResumedAt: undefined, autoResumedEvent: undefined, ...(staleEntry ? { interruptedAt: nowIso(), interruptedReason: "resumed in a stale session" } : {}), ...(usage ? { usage } : {}) }, ctx);
   if (staleEntry) return;
+  releaseAuditorSurface();
   // A stored completion claim is a direct-audit resume, not an agent turn.
   // Keeping the claim while merely scheduling a continuation left manual
   // pause/resume with an ACTIVE goal that no timer would ever consume.
@@ -1359,6 +1385,10 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
     }
     if (!activateNextListItem(ctx, n, { explicit: true })) {
       ctx.ui.notify(listQueue().length === 0 ? "List is empty — nothing to activate." : `No item #${n} (list has ${listQueue().length}).`, "info");
+    } else {
+      // Explicit list activation is also continuation consent, even when the
+      // activated item is a fresh queue head rather than the parked goal.
+      releaseAuditorSurface();
     }
     return;
   }
@@ -1940,6 +1970,9 @@ async function cmdGllaResume(ctx: ExtensionContext): Promise<void> {
   // used to answer "Nothing to resume" — the resume path must name the
   // real recovery (/reload rebuilds extensions in place), not mislead.
   if (warnIfStaleAtEntry(ctx, "/glla resume")) return;
+  // /glla resume is the broad resume surface and therefore carries the same
+  // consent semantics as /goal resume or /list resume.
+  releaseAuditorSurface();
   releaseInitialSessionLoadBarrier();
   // v0.35.15: clearing a supervisor pause is resume's first job — the flag
   // outlives sessions, so an explicit /glla resume must always unfreeze the
@@ -2380,6 +2413,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
       fmt("aggressiveMode", "aggressiveMode"),
       fmt("stuckMaxInterventions", "stuckMaxInterventions"),
       fmt("stallEscalationRefires", "stallEscalation"),
+      fmt("subagentHangEscalationMinutes", "subagentHangActionMinutes"),
       fmt("wedgeAlertMinutes", "wedgeAlert"),
       fmt("stallShortWords", "stallShortWords"),
       fmt("stallSimilarityThreshold", "stallSimilarityThreshold"),

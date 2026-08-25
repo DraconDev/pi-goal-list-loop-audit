@@ -343,7 +343,18 @@ test("list activation blocks a suspicious queued objective and leaves its repair
   assert.equal(repaired.goal?.objective, "Repair the blocked list item from saved intent");
   assert.equal(repaired.goal?.repairTarget?.id, item.id);
   assert.equal(repaired.goal?.repairTarget?.objective, item.objective);
-  assert.doesNotMatch(ledger(cwd), /"goal_continuation_sent"/);
+  assert.equal(typeof repaired.goal?.repairTarget?.replanPromptedAt, "string", "the one bounded replan turn is durable");
+  assert.equal(pi.sent.length, 1, "the repair card gets one bootstrap turn so the model can propose the confirmed redraft");
+  const firstPrompt = pi.sent[0]?.message.content ?? "";
+  assert.match(firstPrompt, /REPLAN REQUIRED/);
+  assert.match(firstPrompt, /propose_task_list/);
+  assert.ok(firstPrompt.includes(item.objective), "the original target is included in the bootstrap prompt");
+  await tick(80);
+  assert.equal(pi.sent.length, 1, "repeated heartbeat/settle ticks do not re-fire the repair card");
+  await pi.fire("before_agent_start", { prompt: firstPrompt }, ctx);
+  await sendContinuation(String(repaired.goal?.id));
+  await tick(40);
+  assert.equal(pi.sent.length, 1, "after the bootstrap turn, only a confirmed task-list redraft can clear the latch");
   assert.match(ledger(cwd), /"faulty_objective_replan_required"/);
 });
 
@@ -357,8 +368,9 @@ test("repair cards require a concrete replan objective and clear the latch only 
   const pi = new MockPi();
   activate(pi.api);
   const ctx = await boot(pi, cwd);
-  // Restore the active phase only for the tool contract test; the session
-  // restore guard intentionally parks repair cards before dispatch.
+  // Restore the active phase for the direct tool contract test. Production
+  // activation now permits one bounded bootstrap turn, but this case focuses
+  // the confirmed task-list mutation itself.
   state.goal!.status = "active";
   ctx.ui.confirmImpl = async () => true;
   ctx.ui.selectImpl = async () => "Yes";

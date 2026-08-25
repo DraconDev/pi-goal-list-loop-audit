@@ -143,6 +143,16 @@ NOT pause: the auditor's objections become a TODO list (`pendingTasks`)
 rendered into every continuation, and the goal stays ACTIVE. Every
 auto-event announces itself with a one-line notify.
 
+## Subagent stall action (v0.35.64)
+
+The subagent watchdog warns after short no-progress windows. A top-level
+tracked child that remains frozen for the longer
+`subagentHangEscalationMinutes` threshold (default `30`) receives one
+child-specific abort request; the parent goal is not aborted. Set the value to
+`0` under `/glla` for warning/telemetry only. Unreachable, nested, or
+ownership-ambiguous children remain warning-only, and partial output stays
+available for inspection.
+
 ## Subagent model inheritance (v0.24.6)
 
 If you use `@tintinweb/pi-subagents`: its default `Explore` agent pins

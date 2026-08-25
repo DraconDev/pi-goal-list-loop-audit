@@ -159,6 +159,10 @@ export interface Settings {
   /** @deprecated v0.34.16: retained for settings-file compatibility, but
    * ignored. Lifecycle handoff is always enabled. */
   autoRecovery?: boolean;
+  /** v0.35.64: minutes of confirmed no-progress before glla requests a
+   * child-specific abort for a top-level tracked subagent. Default 30; 0 =
+   * warning/telemetry only. The 5m/20m detection warnings remain separate. */
+  subagentHangEscalationMinutes?: number;
   /** v0.26.1: consecutive heartbeat refires without a real turn before
    * the goal pauses / loop stops (default 5; 0 = never escalate). */
   stallEscalationRefires?: number;
@@ -274,6 +278,9 @@ export const DEFAULT_SETTINGS: Settings = {
   // for the conservative pause-first policy; the dial flips DEFAULTS, never
   // explicit per-key user settings.
   aggressiveMode: true,
+  // v0.35.64: warn at the short detection thresholds, then take one
+  // child-specific action after a much longer confirmed frozen interval.
+  subagentHangEscalationMinutes: 30,
 };
 
 // Re-exported for compatibility; the dependency-free state-root module owns
@@ -314,6 +321,13 @@ function normalizeLoadedSettings(settings: Settings): Settings {
       || !Number.isFinite(settings.mainModelPrimaryProbeMinutes)
       || settings.mainModelPrimaryProbeMinutes <= 0) {
     settings.mainModelPrimaryProbeMinutes = DEFAULT_MAIN_MODEL_PRIMARY_PROBE_MINUTES;
+  }
+  // v0.35.64: a positive child-action threshold must leave the short
+  // detection windows meaningful; zero is the explicit warning-only opt-out.
+  if (typeof settings.subagentHangEscalationMinutes !== "number"
+      || !Number.isInteger(settings.subagentHangEscalationMinutes)
+      || (settings.subagentHangEscalationMinutes !== 0 && settings.subagentHangEscalationMinutes < 5)) {
+    settings.subagentHangEscalationMinutes = 30;
   }
   // v0.34.142: these old policy knobs no longer control recovery. Drop
   // them from the effective object so stale files cannot resurrect the old
@@ -400,6 +414,7 @@ export const SETTINGS_KEYS: Array<keyof Settings> = [
   "subagentFallbacks",
   "aggressiveMode",
   "stuckMaxInterventions",
+  "subagentHangEscalationMinutes",
   "stallEscalationRefires",
   "stallShortWords",
   "stallSimilarityThreshold",

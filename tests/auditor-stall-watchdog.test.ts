@@ -70,7 +70,12 @@ setInterval(() => {}, 1_000);
       // Wall deliberately exceeds the silence window: the STALL must fire
       // first — that is the entire point of the watchdog.
       wallTimeoutMs: 10_000,
-      firstEventTimeoutMs: 1_200,
+      // Give the detached Node child enough startup budget to install its
+      // SIGTERM handler on the busy full-suite rig. The first-event watchdog
+      // still fires well before the 10s wall; 1.2s occasionally killed the
+      // process before its handler had executed, making the marker assertion
+      // observe a false negative rather than the cancellation contract.
+      firstEventTimeoutMs: 5_000,
       heartbeatNoProgressMs: 20_000,
       heartbeatFreshMs: 500,
     },

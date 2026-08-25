@@ -301,6 +301,10 @@ export interface ObjectiveRepairTarget {
   verificationContract?: string;
   reasons: string[];
   source: string;
+  /** Durable one-shot guard: the repair bootstrap turn was already sent.
+   * A user-confirmed task-list redraft clears the whole target; an explicit
+   * resume may clear this timestamp to retry one bounded bootstrap turn. */
+  replanPromptedAt?: string;
 }
 
 export interface ObjectiveRepairRecord {
@@ -1191,6 +1195,7 @@ export function readQueueFromDisk(cwd: string, excludeIds: ReadonlySet<string> =
           ...(typeof e.repairTarget.verificationContract === "string" ? { verificationContract: e.repairTarget.verificationContract } : {}),
           reasons: e.repairTarget.reasons,
           source: e.repairTarget.source,
+          ...(typeof e.repairTarget.replanPromptedAt === "string" ? { replanPromptedAt: e.repairTarget.replanPromptedAt } : {}),
         } satisfies ObjectiveRepairTarget
       : undefined;
     out.push({

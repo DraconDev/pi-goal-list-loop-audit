@@ -360,8 +360,6 @@ interface LatestAuditFeedback {
 }
 
 function latestAuditFeedback(g: Goal): LatestAuditFeedback | undefined {
-  // blank-until-resume: a fresh session must not paint the previous
-  // session's auditor verdict until something resumes/continues the work.
   if (auditorSurfaceSuppressed()) return undefined;
   const verdict = [...(g.auditHistory ?? [])].reverse().find((entry) =>
     (entry.disapproved || (entry.approved && entry.regressionShieldPassed === false))
@@ -851,6 +849,7 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
       return `glla: ${paint(theme, "warning", "⏳ main-model recovery")}${summary.map((line) => ` · ${line.replace(/^Main-model recovery: /, "")}`).join("")}`;
     }
     if (held) return `glla: loop ${paint(theme, "warning", "⏸ held")} · iter ${held.iteration} — /loop to resume`;
+    if ((state.list?.length ?? 0) > 0) return waitingListStatus(state, now, theme);
     return undefined;
   }
   if (g.status === "auditing") {
@@ -1121,6 +1120,29 @@ export function buildWidgetLines(state: State, audit?: AuditDisplayProgress | nu
   return lines;
 }
 
+function waitingListStatus(state: State, _now: number, theme?: DisplayTheme): string {
+  const queue = state.list ?? [];
+  const head = queue[0];
+  const objective = head?.objective?.trim() ? sanitizeDisplayText(head.objective) : "unnamed queued item";
+  const hold = typeof state.loadHoldAt === "number" ? " · held on restore" : "";
+  return `glla: ${paint(theme, "accent", "LIST QUEUED")} · ${queue.length} waiting · next: ${truncate(objective, 72)} · /list next${hold}`;
+}
+
+function waitingListLines(state: State, theme?: DisplayTheme, width?: number): string[] {
+  const queue = state.list ?? [];
+  const head = queue[0];
+  const objective = head?.objective?.trim() ? sanitizeDisplayText(head.objective) : "unnamed queued item";
+  const objectiveBudget = budgetFor(width, visibleLen("├─ up next: "), 56);
+  const action = typeof state.loadHoldAt === "number"
+    ? "held on restore · /list next starts the queue"
+    : "/list next starts the queue · /list show to inspect";
+  return [
+    `${paint(theme, "accent", "↻")} ${paint(theme, "accent", "list queued")} · ${queue.length} waiting`,
+    `├─ up next: ${truncate(objective, objectiveBudget)}`,
+    `└─ ${paint(theme, "warning", action)}`,
+  ];
+}
+
 function buildWidgetLinesInner(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, width?: number, extras?: WidgetExtras): string[] | undefined {
   if (state.loop?.active) return loopLines(state.loop, now, theme, width, extras);
   if (state.loop && !state.loop.active && state.mainModelRecovery?.kind === "loop") return parkedLoopRecoveryLines(state.loop, state.mainModelRecovery, now, theme, width, extras?.mainModelFallbacks);
@@ -1130,6 +1152,10 @@ function buildWidgetLinesInner(state: State, audit?: AuditDisplayProgress | null
   if (!g) {
     // v0.28.17: no visible goal — the held loop gets its own card.
     if (held) return heldLoopLines(held, now, theme, width);
+    // v0.35.61: a waiting-only list is live durable work even without an
+    // active list goal. Paint an actionable queue card instead of returning
+    // undefined; otherwise carryover/sidecar work disappears until reload.
+    if ((state.list?.length ?? 0) > 0) return waitingListLines(state, theme, width);
     // v0.35.30: durable last-outcome retention. After an archive the slot is
     // empty; without this the widget goes blank and a finished audit reads
     // as "closed with no verdict" (field: 2026-08-22 screenshots). One dim
@@ -1260,6 +1286,10 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
   const lines = [head];
   if (g.repairTarget) {
     lines.push(`├─ ${paint(theme, "warning", `REPLAN REQUIRED · original target: ${truncate(g.repairTarget.objective.replace(/\s+/g, " "), Math.max(30, (width ?? 80) - 28))}`)}`);
+    const repairStep = g.repairTarget.replanPromptedAt
+      ? "/list resume retries one bounded replan turn"
+      : "one bounded replan turn calls propose_task_list; confirm it to resume";
+    lines.push(`├─ ${paint(theme, "dim", `Recovery: ${repairStep}`)}`);
   }
   // A model switch crosses an asynchronous boundary while the goal remains
   // active. Keep the complete durable recovery projection on the widget too;
