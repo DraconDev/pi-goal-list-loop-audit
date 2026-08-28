@@ -36,6 +36,8 @@ export type MainModelFailureKind = "rate-limit" | "quota" | "billing" | "auth" |
 export interface MainModelFailure {
   kind: MainModelFailureKind;
   raw: string;
+  /** Set only for deterministic prompt-policy / content-filter refusals. */
+  nonRecoverableReason?: "prompt-policy";
   /** Legacy provider-hint fields are accepted by old callers only; the
    * classifier and retry policy never populate or consult them. */
   retryAfterSec?: number;
@@ -110,6 +112,39 @@ export function formatMainModelFallbacks(value: unknown): string {
 }
 
 /**
+ * Deterministic prompt-policy / content-filter refusals. Retrying the same
+ * payload cannot heal them. Keep this narrower than generic provider
+ * failures: rate limits, first-token timeouts, overloads, ordinary 403/500,
+ * bare "policy" / "prompt-policy" tokens, project-policy prose, and stray
+ * "invalid prompt" mentions stay recoverable.
+ *
+ * Verified evidence form (anchored): `Codex error event: invalid prompt`.
+ * Adjacent terminal markers: content_filter / prompt_filter / safety_filter,
+ * content/safety/usage/responsible-AI policy violation, prompt blocked,
+ * prompt/request + flagged/blocked/rejected/refused/violation in a
+ * content-safety / filter / usage-policy context (either order), and
+ * wrapped 403/500 payloads that carry those same refusal markers.
+ */
+export function isPromptPolicyRejection(error: string | undefined): boolean {
+  const raw = typeof error === "string" ? error.trim() : "";
+  if (!raw) return false;
+  if (/^codex error event:\s*invalid prompt\b/i.test(raw)) return true;
+  if (/\b(?:content_filter|prompt_filter|safety_filter)\b/i.test(raw)) return true;
+  if (/\bprompt blocked\b/i.test(raw)) return true;
+  if (/\b(?:content|safety|usage|responsible[-_ ]ai)[-_ ]policy[-_ ]violation\b/i.test(raw)) return true;
+  if (/\b(?:content|safety|usage|responsible[-_ ]ai)[-_ ]policy\s+violation\b/i.test(raw)) return true;
+  const subject = /\b(?:prompt|request)\b/i.test(raw);
+  const verdict = /\b(?:flagged|blocked|reject(?:ed|ion)?|refus(?:ed|al)|violation|violating)\b/i.test(raw);
+  const safety = /\b(?:content[- ]safety|usage[- ]policy|content[_ ]filter|safety[_ ]filter|prompt[_ ]filter|responsible[-_ ]ai)\b/i.test(raw);
+  if (subject && verdict && safety) return true;
+  if (/\b(?:http\s*)?(?:403|500)\b/i.test(raw)) {
+    if (/\b(?:content_filter|prompt_filter|safety_filter|prompt blocked)\b/i.test(raw)) return true;
+    if (/\b(?:content|safety|usage|responsible[-_ ]ai)[-_ ]policy\b/i.test(raw) && verdict) return true;
+  }
+  return false;
+}
+
+/**
  * Classify only provider failures. Context/output-token failures are
  * deterministic prompt-shape problems and must not trigger model rotation.
  *
@@ -134,6 +169,9 @@ export function classifyMainModelFailure(error: string | undefined, opts?: { isC
   }
   if (/^(?:auditor aborted\.?$|user (?:interrupt|abort)|cancelled by user)/i.test(raw) || /user interrupt/.test(text)) {
     return { kind: "non-recoverable", raw };
+  }
+  if (isPromptPolicyRejection(raw)) {
+    return { kind: "non-recoverable", raw, nonRecoverableReason: "prompt-policy" };
   }
   if (/context|output[ -]?token|max_?tokens|length limit|too many tokens|prompt too large|context window/.test(text)) {
     return opts?.isContextOverflow

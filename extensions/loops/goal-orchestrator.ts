@@ -167,6 +167,7 @@ import {
   setLastContinuationSentPayloadRef,
   setContinuationRearmStreak,
   setContinuationRearmSince,
+  resetContinuationDispatchState,
   type ContinuationFlags,
   type ContinuationDeps,
 } from "../goal-continuation.js";
@@ -547,6 +548,44 @@ function scheduleProviderRetryForSession(
 // wiring lives at createGoalRecovery(...) below.
 // ============================================================================
 
+/** Prompt-policy refusals own this agent_end. Mirror abortZombieRun's
+ * no-auto-retry park: reset dispatch, reassert stand-down, persist a
+ * restart-safe error pause (or stop a live loop) with no resume time,
+ * then abort the active turn at most once. Do not schedule recovery. */
+function settlePromptPolicyRejection(ctx: ExtensionContext, failure: MainModelFailure): void {
+  const diagnostic = failure.raw;
+  clearMainModelRecoveryTimer();
+  state.mainModelRecovery = undefined;
+  lastMainModelFailure = null;
+  cancelProviderRetry();
+  resetContinuationDispatchState(ctx.cwd);
+  setContinuationDispatchStoodDownRef(true);
+  abortedStandDown = true;
+  clearLoopTimer();
+  const reason = "provider rejected the prompt as a policy violation — automatic retry cannot succeed";
+  const action = `The work is saved. ${activeGoalSurfaceCommand("resume")} retries with a changed prompt; ${activeGoalSurfaceCommand("cancel")} discards it.`;
+  if (state.goal && state.goal.status !== "complete" && state.goal.status !== "aborted") {
+    updateGoal({
+      status: "paused",
+      pauseKind: "error",
+      pauseResumeAt: undefined,
+      pauseReason: reason,
+      pauseSuggestedAction: action,
+      providerErrorDiagnostic: diagnostic,
+    }, ctx);
+  } else if (isLoopActive()) {
+    state.loop = { ...state.loop!, active: false, stopReason: reason };
+    persistState(ctx);
+  } else {
+    persistState(ctx);
+  }
+  if (!mainModelAbortForRecovery) {
+    mainModelAbortForRecovery = true;
+    try { ctx.abort(); } catch { /* ownership flag prevents a second abort */ }
+  }
+  appendLedger(ctx.cwd, "main_model_prompt_policy_terminal", { model: modelRef(ctx.model) });
+}
+
 /** Handle a provider error before loop/goal bookkeeping can mistake it for
  * an unproductive turn. Returns true when recovery owns this agent_end. */
 async function handleMainModelAgentEnd(ctx: ExtensionContext, rawLastA: any, lastA: any): Promise<boolean> {
@@ -558,6 +597,10 @@ async function handleMainModelAgentEnd(ctx: ExtensionContext, rawLastA: any, las
   if (lastA?.stopReason === "error") {
     const rawError = normalizeProviderErrorText(rawLastA, lastA.text);
     const failure = classifyMainModelFailure(rawError);
+    if (failure.nonRecoverableReason === "prompt-policy") {
+      settlePromptPolicyRejection(ctx, failure);
+      return true;
+    }
     lastMainModelFailure = failure;
     if (failure.kind !== "non-recoverable") {
       const switched = await tryMainModelFallback(ctx, failure);

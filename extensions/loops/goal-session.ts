@@ -1094,6 +1094,9 @@ export function __testOnlyResetTerminalFlags(): void {
   staleContinuationRearmPending = false;
   zombieStoodDown = false;
   sessionHandoffPending = false;
+  mainModelAbortForRecovery = false;
+  lastMainModelFailure = null;
+  abortedStandDown = false;
 }
 
 /** TEST-ONLY hook (tests/harness): set/clear the persisted lastModelRef

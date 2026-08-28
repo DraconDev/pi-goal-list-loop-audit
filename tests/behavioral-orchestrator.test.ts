@@ -19,7 +19,8 @@
 // cwd's .pi-glla, so tests stay independent despite shared module state.
 
 import { resetLengthContinue } from "../extensions/length-continue.js";
-import { resetContinuationDispatchState, clearContinuationTimer } from "../extensions/goal-continuation.js";
+import { resetContinuationDispatchState, clearContinuationTimer, continuationDispatchStoodDownRef, continuationTimerPending, pendingContinuationDispatchRef } from "../extensions/goal-continuation.js";
+import { isProviderRetryPending } from "../extensions/quota-retry.js";
 import { test, afterEach } from "node:test";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -2421,6 +2422,93 @@ test("recoverable error turns enter generic recovery before stall accounting", a
   assert.equal(snapshot.goal.pauseKind, "wait");
   assert.match(snapshot.goal.pauseReason ?? "", /main model recovery/);
   assert.ok(snapshot.mainModelRecovery, "the retry plan is durable before stall accounting");
+});
+
+test("prompt-policy rejection is terminal: no retry, no wait, no continuation, abort once", async () => {
+  __testOnlyResetStaleFlag();
+  __testOnlyResetTerminalFlags();
+  const cwd = tmpCwd();
+  const ctx = await freshSession(cwd, "startup");
+  let aborts = 0;
+  const previousAbort = ctx.abort.bind(ctx);
+  let observedActiveOnAbort = false;
+  ctx.abort = () => {
+    aborts++;
+    const during = readState(cwd).goal as { status?: string } | null;
+    if (during?.status === "active") observedActiveOnAbort = true;
+    previousAbort();
+  };
+  await pi.command("goal", "start prompt-policy terminal target — done when pinned", ctx);
+  await tick();
+  const sentBefore = pi.sent.length;
+  try {
+    await pi.fire("agent_end", {
+      messages: [{ role: "assistant", content: [], stopReason: "error", errorMessage: "Codex error event: invalid prompt" }],
+    }, ctx);
+    await tick();
+    await pi.fire("agent_settled", {}, ctx);
+    await tick(400);
+    const snapshot = readState(cwd) as {
+      goal?: {
+        status?: string;
+        pauseKind?: string;
+        pauseReason?: string;
+        pauseResumeAt?: string;
+        providerErrorDiagnostic?: string;
+      };
+      mainModelRecovery?: { retryAt?: string };
+    };
+    assert.equal(snapshot.mainModelRecovery, undefined, "must not park durable recovery");
+    assert.equal(snapshot.goal?.status, "paused", "terminal rejection pauses the goal");
+    assert.equal(snapshot.goal?.pauseKind, "error", "error pause, not a recovery wait");
+    assert.equal(snapshot.goal?.pauseResumeAt, undefined, "no auto-resume time");
+    assert.match(snapshot.goal?.pauseReason ?? "", /policy violation/);
+    assert.doesNotMatch(snapshot.goal?.pauseReason ?? "", /Codex|invalid prompt/i, "raw provider text is not the pause reason");
+    assert.match(snapshot.goal?.providerErrorDiagnostic ?? "", /Codex error event: invalid prompt/, "raw text stays diagnostic-only");
+    const ledger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
+    assert.ok(ledger.includes("main_model_prompt_policy_terminal"), "terminal outcome ledgered");
+    assert.equal(ledger.includes("main_model_recovery_wait"), false, "no recovery wait");
+    assert.equal(isProviderRetryPending(), false, "provider retry cancelled");
+    assert.equal(pendingContinuationDispatchRef(), null, "dispatch artifacts reset");
+    assert.equal(continuationTimerPending(), false, "continuation timer cancelled");
+    assert.equal(continuationDispatchStoodDownRef(), true, "stand-down reasserted after reset");
+    assert.equal(aborts, 1, "active turn aborted exactly once");
+    assert.equal(observedActiveOnAbort, false, "abort must not observe an active goal");
+    assert.equal(pi.sent.length, sentBefore, "no follow-up turn dispatched");
+
+    __testOnlyLoadState(cwd);
+    const reloaded = readState(cwd).goal as {
+      status?: string;
+      pauseKind?: string;
+      pauseResumeAt?: string;
+      pauseReason?: string;
+      providerErrorDiagnostic?: string;
+    };
+    assert.equal(reloaded.status, "paused", "reload keeps the error pause");
+    assert.equal(reloaded.pauseKind, "error");
+    assert.equal(reloaded.pauseResumeAt, undefined);
+    assert.doesNotMatch(reloaded.pauseReason ?? "", /Codex|invalid prompt/i);
+    assert.match(reloaded.providerErrorDiagnostic ?? "", /Codex error event: invalid prompt/);
+  } finally {
+    resetContinuationDispatchState(cwd);
+    __testOnlyResetTerminalFlags();
+  }
+});
+
+test("transient overload still schedules main-model recovery", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  const ctx = await freshSession(cwd, "startup");
+  await pi.command("goal", "start transient overload recovery target — done when pinned", ctx);
+  await tick();
+  await pi.fire("agent_end", {
+    messages: [{ role: "assistant", content: [], stopReason: "error", errorMessage: "503 upstream overloaded" }],
+  }, ctx);
+  await tick();
+  const snapshot = readState(cwd) as { goal: { status: string; pauseKind?: string }; mainModelRecovery?: { retryAt?: string } };
+  assert.equal(snapshot.goal.status, "paused");
+  assert.equal(snapshot.goal.pauseKind, "wait");
+  assert.ok(snapshot.mainModelRecovery?.retryAt, "transient overload still schedules recovery");
 });
 
 // ────────────────────────────────────────────────────────────────────

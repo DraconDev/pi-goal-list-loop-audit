@@ -10,6 +10,8 @@ import {
   classifyMainModelFailure,
   isMainModelFallbackFailure,
   isMainModelFailbackAuto,
+  isPromptPolicyRejection,
+  requiresMainModelRecovery,
   mainModelAutoRetryUntil,
   mainModelFailureDelayMs,
   mainModelPrimaryProbeDelayMs,
@@ -317,6 +319,57 @@ test("in-band provider output is recognized only for strong repeated-pane marker
   assert.equal(classifyInBandProviderFailure("HTTP 503 upstream unavailable")?.kind, "transient");
   assert.ok(classifyInBandProviderFailure("HTTP 429 Too Many Requests"), "429 remains recoverable even when the generic classifier stays opaque");
   assert.equal(classifyInBandProviderFailure("network_error: fetch failed")?.kind, "transient");
+});
+
+test("prompt-policy rejections are a narrow terminal main-model class", () => {
+  for (const raw of [
+    "Codex error event: invalid prompt",
+    "Invalid prompt: your prompt was flagged as potentially violating our usage policy. Please try again with a different prompt",
+    "content_filter",
+    "prompt_filter: blocked",
+    "safety_filter triggered",
+    "content_policy_violation",
+    "usage policy violation",
+    "safety policy violation",
+    "prompt blocked",
+    "The prompt was rejected due to content safety",
+    "request refused by the usage policy",
+    "HTTP 403 content_filter",
+    "500 prompt blocked",
+  ]) {
+    assert.equal(isPromptPolicyRejection(raw), true, raw);
+    const failure = classifyMainModelFailure(raw);
+    assert.equal(failure.kind, "non-recoverable", raw);
+    assert.equal(failure.nonRecoverableReason, "prompt-policy", raw);
+    assert.equal(requiresMainModelRecovery(failure), false, raw);
+    assert.equal(isMainModelFallbackFailure(failure), false, raw);
+  }
+});
+
+test("bare policy tokens, stray invalid-prompt, and transient failures stay recoverable", () => {
+  for (const raw of [
+    "prompt-policy",
+    "project-policy: use bun test",
+    "project-policy violation",
+    "invalid prompt",
+    "invalid_prompt",
+    "the policy is documented in AGENTS.md",
+    "HTTP 403 forbidden",
+    "HTTP 500 upstream",
+    "503 temporarily unavailable",
+    "first-token timeout",
+    "HTTP 429 Too Many Requests",
+    "rate limit reached",
+    "mysterious provider prose with no hint",
+  ]) {
+    assert.equal(isPromptPolicyRejection(raw), false, raw);
+    const failure = classifyMainModelFailure(raw);
+    assert.notEqual(failure.nonRecoverableReason, "prompt-policy", raw);
+    assert.equal(requiresMainModelRecovery(failure), true, raw);
+    assert.equal(isMainModelFallbackFailure(failure), true, raw);
+  }
+  assert.equal(classifyMainModelFailure("user aborted").nonRecoverableReason, undefined);
+  assert.equal(classifyMainModelFailure("max_tokens exceeds context window").nonRecoverableReason, undefined);
 });
 
 test("main model errors stay opaque to the recovery policy", () => {
