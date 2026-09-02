@@ -322,7 +322,7 @@ export class MultiModelPickerComponent {
   render(width: number): string[] {
     const w = Math.max(20, width - 2);
     const lines: string[] = [];
-    lines.push(this.theme.fg("accent", this.theme.bold(this.title)));
+    lines.push(this.theme.fg("accent", this.theme.bold(truncateToWidth(this.title, w, "…"))));
     if (this.unorderedSet) {
       lines.push(this.theme.fg("muted", "selected extensions are loaded by the auditor; order does not matter:"));
     } else if (this.currentRef) {

@@ -12,6 +12,8 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 
+import { visibleWidth } from "@earendil-works/pi-tui";
+
 import { buildModelPickItems } from "../extensions/model-picker.ts";
 import { MultiModelPickerComponent, type MultiModelPickerResult } from "../extensions/multi-model-picker.ts";
 
@@ -319,6 +321,32 @@ test("multi-model-picker: order mode — empty chain is a no-op and esc still ca
   assert.deepEqual(p.comp.getSelected(), []);
   p.comp.handleInput("\x1b");
   assert.equal(p.result, undefined, "esc cancels even from order mode");
+});
+
+test("multi-model-picker: render truncates a long title to the terminal width", () => {
+  // Regression: untruncated titles (main/auditor fallback help text) crashed
+  // pi with "Rendered line N exceeds terminal width".
+  const longTitle =
+    "Main agent fallback models — try order is current → fallback 1 → fallback 2 … (space add/remove, tab order mode with ↑/↓, enter save); forbidden models are skipped";
+  const items = buildModelPickItems(MODELS, "minimax/MiniMax-M3");
+  const p = new MultiModelPickerComponent(
+    { title: longTitle, items, currentRef: "minimax/MiniMax-M3" },
+    () => undefined,
+    THEME,
+    KB,
+    () => undefined,
+  );
+  const width = 140;
+  const lines = p.render(width);
+  for (const line of lines) {
+    assert.ok(
+      visibleWidth(line) <= width,
+      `line exceeds width ${width}: visible=${visibleWidth(line)} text=${JSON.stringify(line)}`,
+    );
+  }
+  assert.match(lines[0]!, /Main agent fallback models/);
+  assert.match(lines[0]!, /…/);
+  assert.ok(!lines[0]!.includes("forbidden models are skipped"), "trailing help text is truncated");
 });
 
 test("multi-model-picker: order mode — the active chain row is highlighted and the footer switches", () => {

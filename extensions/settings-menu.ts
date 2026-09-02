@@ -778,7 +778,7 @@ export class SettingsMenuComponent implements Component {
 
     const lines: string[] = [];
 
-    lines.push(this.theme.fg("accent", this.theme.bold(this.title)));
+    lines.push(this.theme.fg("accent", this.theme.bold(truncateToWidth(this.title, Math.max(20, width - 2), "…"))));
 
     // v0.28.19: color-only tabs (user call: "dropping the brackets") —
     // active = accent + bold, inactive = dim. No bracket chrome.

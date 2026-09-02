@@ -210,7 +210,7 @@ export class ModelPickerComponent {
   render(width: number): string[] {
     const w = Math.max(20, width - 2);
     const lines: string[] = [];
-    lines.push(this.theme.fg("accent", this.theme.bold(this.title)));
+    lines.push(this.theme.fg("accent", this.theme.bold(truncateToWidth(this.title, w, "…"))));
     lines.push("");
     const searchLine = `search: ${this.query}`;
     lines.push(this.theme.fg("muted", truncateToWidth(searchLine, w, "…") + "▏"));
