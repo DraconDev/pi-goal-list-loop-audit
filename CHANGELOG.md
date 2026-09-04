@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.38.20 — approval-notify cleanup (2026-09-04)
+
+### Fixed
+- Approval chat notify no longer reprints the agent's pre-verdict recap verbatim: the stale `Next: <verdict pending>` line (which read as complete-before-verify next to the approval trailer) is stripped on every approval surface, and the chat notify is outcome + at most two informing details + approval trailer + archive record pointer (`buildApprovalChatLines`, `withoutStaleNext`). The transcript notice keeps the informing details minus the stale Next. Applied to all three `✓ done` paths (detached approval, manual-verify approval, no-audit complete).
+- Field note: the 19:20 `...` cuts were v0.38.13 word-boundary `…` clips working as designed (every cut lands on a word boundary), not mid-word mangling — but five 120-char label lines still scan as soup, which the cap above addresses. The same session showed zero `terminal_completion_notice_*` events because the tab runs pre-v0.38.18 loaded code — `/reload` to pick up the notice path.
+
 ## 0.38.19 — disapproval response: dispatch stall root-cause + state clear (2026-09-04)
 
 ### Fixed

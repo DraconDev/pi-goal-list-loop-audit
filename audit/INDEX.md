@@ -14,6 +14,7 @@ the open notes (`note.md` host lifecycle / completion recap /
 long-term preferences).
 
 **Most recent (2026-09-04):**
+- `APPROVAL-NOTIFY-CLEANUP-2026-09-04.md` — v0.38.20 shipped: approval chat is outcome + ≤2 details + approval + record pointer, stale pre-verdict `Next:` stripped on all three `✓ done` paths; 19:20 field forensics (9.5-min audit disproves complete-before-verify, `…` cuts are word-boundary by design, tab runs pre-v0.38.18 code so `/reload`)
 - `DISAPPROVAL-RESPONSE-DISPATCH-AND-WAITING-2026-09-04.md` — v0.38.19 shipped: busy-but-silent bypass sends the owed marker into pi's followUp queue after 5m of zero stream (track 2 root cause, not the aborter); `auditorDisplayPhase` projects awaiting-verdict only while auditing (track 3 state clear); both with empirical fail-before MockPi tests
 - `COMPLETION-LIFECYCLE-TRILOGY-2026-09-04.md` — v0.38.18 shipped: pipe-syntax pipelines run shell-free (track 1), never-streamed turns park on first abort + honest rearm message (track 2), detached approval closes the transcript via fire-once followUp notice (track 3)
 - `SUBAGENT-DIALECT-2026-09-04.md` — v0.38.16 shipped: prompts/strings speak the live `subagent` tool + `bg_wait` settle (dead tintinweb `Agent`/`get_subagent_result` gone); `isSubagentProviderFailure` matches the live names; tintinweb stays retired, pi-subagents 0.65 gets its own canary'd eval
