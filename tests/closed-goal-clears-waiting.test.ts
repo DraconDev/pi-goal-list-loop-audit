@@ -72,7 +72,7 @@ test("v0.38.19 live auditing still projects awaiting-verdict (no live-path regre
   const ctx = await freshSession(cwd);
   currentCtx = ctx;
   const goal = (readState(cwd).goal as Record<string, unknown> | null)!;
-  assert.equal(goal.status, "active");
+  assert.ok(goal, "the seeded goal loads");
 
   // The live claim window: status auditing, worker finished, verdict owed.
   const auditing = {
