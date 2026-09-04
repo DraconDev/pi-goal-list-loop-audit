@@ -122,6 +122,7 @@ import {
   modelSwitch,
   isForbiddenModel,
 isGoalRevisionCurrent,
+  appendAuditVerdict,
   nextHourlyPromptMs,
   nextHourlyProbeMs,
   type ModelSwitchRecord,
@@ -1139,7 +1140,11 @@ function registerAgentTools(pi: any): void {
         // displays the report.
         const cleanOutput = stripThinkBlocks(result.output);
         result.output = cleanOutput;
-        history.push({
+        // Shared push path (same scope transitions as the detached site:
+        // new disapproval retires older live rounds, clean approval clears).
+        // The 20-cap lives inside the helper — 39 infra errors taught us
+        // unbounded growth is real.
+        appendAuditVerdict(history, {
           at: nowIso(),
           approved: result.approved,
           disapproved: result.disapproved,
@@ -1154,9 +1159,7 @@ function registerAgentTools(pi: any): void {
           // v0.34.60 (steal #3): the revision the worker audited.
           revision: result.goalRevision?.revision ?? state.goal.revision ?? 0,
           durationMs: auditDurationMs,
-        } as any);
-        // Cap history — 39 infra errors taught us unbounded growth is real.
-        if (history.length > 20) history.splice(0, history.length - 20);
+        });
         // v0.25.4: durable append-only audit log — survives state-snapshot
         // rotation; the review surface for "where are we weak".
         const verdict: AuditLogEntry["verdict"] =

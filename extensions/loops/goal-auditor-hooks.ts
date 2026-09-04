@@ -118,6 +118,7 @@ isGoalRevisionCurrent,
   nextHourlyProbeMs,
   supervisorPaused,
   loadHoldActive,
+  appendAuditVerdict,
   type ModelSwitchRecord,
   type ListItem,
 } from "../goal-loop-core.js";
@@ -1358,12 +1359,14 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     return;
   }
 
-  // Record the run in history (same compact shape as the tool path).
+  // Record the run in history via the shared push path (scope transitions
+  // in appendAuditVerdict: a new disapproval retires older live rounds,
+  // a clean approval clears the objection pin).
   const auditorRan = result.output.trim().length > 0;
   const history = state.goal.auditHistory ?? [];
   if (auditorRan) {
     result.output = stripThinkBlocks(result.output);
-    history.push({
+    appendAuditVerdict(history, {
       at: nowIso(),
       approved: result.approved,
       disapproved: result.disapproved,
@@ -1379,8 +1382,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       // dispatch) — the revision-bound validity gate reads this.
       revision: result.goalRevision?.revision ?? state.goal.revision ?? 0,
       durationMs: Date.now() - auditStartMs,
-    } as any);
-    if (history.length > 20) history.splice(0, history.length - 20);
+    });
     const verdict: AuditLogEntry["verdict"] =
       result.error && !result.approved && !result.disapproved
         ? "error"

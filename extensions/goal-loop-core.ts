@@ -189,6 +189,16 @@ export interface AuditVerdict {
    * against a tweaked contract. Legacy entries lack the field and pass
    * the gate unchanged. */
   revision?: number;
+  /** v0.38.21 (objection pinning): round scoping for disapprovals. A new
+   * disapproval supersedes all older live disapprovals (their objections
+   * are settled context, not live); a clean approval clears the pin.
+   * Legacy entries lack the field and count as live. */
+  superseded?: boolean;
+  /** What retired this round: `disapproval:<at>` of the superseding
+   * round, or `approval:<at>` when a later approval cleared the pin. */
+  supersededBy?: string;
+  /** Wall-clock audit duration. Read by the audit-history formatter. */
+  durationMs?: number;
 }
 
 /** The display classification for one stored auditor result. Keep semantic
@@ -1041,6 +1051,53 @@ export function countTrailingDisapprovals(history: AuditVerdict[]): number {
  * signal. Infrastructure entries are transparent, but a changed contract
  * revision breaks the comparison because the auditor may now be judging new
  * work. */
+/** v0.38.21 (objection pinning): the latest still-live disapproval — the
+ * objection set the next retry must argue. Superseded rounds and
+ * verdictless infrastructure entries are never live. A later clean
+ * approval clears the pin, so a live entry is always the newest
+ * verdict-bearing disapproval. */
+export function liveDisapproval(history: AuditVerdict[]): AuditVerdict | undefined {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const v = history[i]!;
+    if (v.superseded) continue;
+    if (v.disapproved) return v;
+  }
+  return undefined;
+}
+
+/** v0.38.21: retire every live disapproval in place. Returns the count
+ * retired. Infrastructure entries are transparent (never verdicts, never
+ * retired); approvals and impossibles are left for their own paths. */
+export function markSupersededObjections(history: AuditVerdict[], byRef: string): number {
+  let n = 0;
+  for (const v of history) {
+    if (v.disapproved && !v.superseded) {
+      v.superseded = true;
+      v.supersededBy = byRef;
+      n++;
+    }
+  }
+  return n;
+}
+
+/** v0.38.21: the single shared push path for completion-audit verdicts
+ * (detached and manual-verify sites both call this — the two
+ * hand-rolled push blocks drifted apart before). Scope transitions:
+ * a new disapproval supersedes older live rounds (their objections are
+ * settled context); a clean approval (`approved`, no error — shield
+ * state irrelevant, the claim passed audit) clears the pin. Errors and
+ * impossibles never touch the flags. Caps the history at 20, as before. */
+export function appendAuditVerdict(history: AuditVerdict[], entry: AuditVerdict): AuditVerdict[] {
+  if (entry.disapproved && !entry.error) {
+    markSupersededObjections(history, `disapproval:${entry.at}`);
+  } else if (entry.approved && !entry.error) {
+    markSupersededObjections(history, `approval:${entry.at}`);
+  }
+  history.push(entry);
+  if (history.length > 20) history.splice(0, history.length - 20);
+  return history;
+}
+
 export const MAX_REPEATED_AUDIT_NO_PROGRESS = 3;
 
 export function auditDisapprovalFingerprint(report: string | undefined): string {
