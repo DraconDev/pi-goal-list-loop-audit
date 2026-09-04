@@ -47,10 +47,14 @@ test("orchestrator injects the FULL-AUDIT directive conditionally (item 28)", ()
 
 test("continuation prompt includes the latest auditor report verbatim", () => {
   const src = fs.readFileSync(path.resolve("extensions", "goal-continuation.ts"), "utf-8");
-  assert.match(src, /LATEST AUDITOR \$\{label\} \(\$\{lastAudit\.at\}\)/);
-  assert.match(src, /lastAudit\.report/);
+  // v0.38.21: the block argues the latest LIVE disapproval (round-scoped),
+  // falling back to the last entry for impossible/shield/approval paths.
+  assert.match(src, /LATEST AUDITOR \$\{label\} \(\$\{shownAudit\.at\}\)/);
+  assert.match(src, /liveDisapproval\(historyForAudit\)/);
+  assert.match(src, /shownAudit\.report/);
   assert.match(src, /full report/);
   assert.match(src, /REGRESSION SHIELD BLOCKED/);
+  assert.match(src, /Settled rounds \(superseded, do not relitigate\)/);
 });
 
 test("stale-approval directive mirrors the numeric-revision gate, never legacy entries", () => {

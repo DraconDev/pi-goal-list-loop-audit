@@ -4,49 +4,26 @@
   "title": "pi-goal-list-loop-audit goal state",
   "description": "Active goal state for pi-goal-list-loop-audit (loops 1-3). Persisted as markdown at .pi-glla/goals/<id>.md and mirrored into .pi-glla/active.jsonl state events.",
   "type": "object",
-  "required": [
-    "id",
-    "objective",
-    "status",
-    "policy",
-    "autoContinue",
-    "usage",
-    "createdAt",
-    "updatedAt"
-  ],
+  "required": ["id", "objective", "status", "policy", "autoContinue", "usage", "createdAt", "updatedAt"],
   "properties": {
     "id": {
       "type": "string",
       "pattern": "^\\d{14}-[a-z0-9]{6}$",
       "description": "YYYYMMDDHHMMSS + 6-char random suffix"
     },
-    "objective": {
-      "type": "string",
-      "minLength": 1
-    },
+    "objective": { "type": "string", "minLength": 1 },
     "status": {
       "type": "string",
-      "enum": [
-        "active",
-        "auditing",
-        "complete",
-        "paused",
-        "aborted"
-      ]
+      "enum": ["active", "auditing", "complete", "paused", "aborted"]
     },
     "policy": {
       "type": "string",
-      "enum": [
-        "goal",
-        "list"
-      ],
+      "enum": ["goal", "list"],
       "description": "Which loop created this goal: 'goal' (loop 1) or 'list' (loop 2 queue item). Loop 3 (/loop) keeps its own state shape and has no Goal."
     },
     "agentRole": {
       "type": "string",
-      "enum": [
-        "designer"
-      ],
+      "enum": ["designer"],
       "description": "Explicit specialist routing requested for this goal or list item."
     },
     "parentId": {
@@ -58,138 +35,64 @@
       "type": "string",
       "description": "Done-criteria extracted from the objective ('Done when:' / 'Verify:' markers, line-start or inline). When non-empty, regression_shield requires the auditor's <evidence> block to address every item."
     },
-    "autoContinue": {
-      "type": "boolean"
-    },
+    "autoContinue": { "type": "boolean" },
     "taskList": {
       "type": "object",
-      "required": [
-        "version",
-        "tasks"
-      ],
+      "required": ["version", "tasks"],
       "properties": {
-        "version": {
-          "const": 1
-        },
+        "version": { "const": 1 },
         "tasks": {
           "type": "array",
           "maxItems": 20,
-          "items": {
-            "$ref": "#/definitions/task"
-          }
+          "items": { "$ref": "#/definitions/task" }
         }
       }
     },
     "auditHistory": {
       "type": "array",
       "maxItems": 20,
-      "items": {
-        "$ref": "#/definitions/auditVerdict"
-      }
+      "items": { "$ref": "#/definitions/auditVerdict" }
     },
-    "stopReason": {
-      "type": "string"
-    },
-    "pauseReason": {
-      "type": "string"
-    },
-    "pauseSuggestedAction": {
-      "type": "string"
-    },
-    "pauseKind": {
-      "type": "string",
-      "enum": [
-        "decision",
-        "error",
-        "wait",
-        "blocked"
-      ]
-    },
-    "pauseOptions": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "pauseRecommended": {
-      "type": "number"
-    },
-    "pauseResumeAt": {
-      "type": "string"
-    },
-    "autoResumedAt": {
-      "type": "string",
-      "description": "v0.35.28 issue #16: ISO time glla auto-resumed a lapsed wait; renders the RECOVERY NOTICE in the continuation prompt; cleared by manual /goal resume"
-    },
-    "autoResumedEvent": {
-      "type": "string",
-      "description": "v0.35.28 issue #16: what auto-resumed the goal (overdue wait route, provider recovery event)"
-    },
-    "providerErrorDiagnostic": {
-      "type": "string",
-      "description": "Bounded provider diagnostic retained for ledger/archive forensics; never a chat projection."
-    },
-    "recoveryEpisodeKey": {
-      "type": "string"
-    },
-    "recoveryNoticeKeys": {
-      "type": "array",
-      "maxItems": 16,
-      "items": {
-        "type": "string"
-      }
-    },
-    "interruptedAt": {
-      "type": "string"
-    },
-    "interruptedReason": {
-      "type": "string"
-    },
-    "auditInfraStreak": {
-      "type": "number"
-    },
-    "errorBrakeStreak": {
-      "type": "number"
-    },
+    "stopReason": { "type": "string" },
+    "pauseReason": { "type": "string" },
+    "pauseSuggestedAction": { "type": "string" },
+    "pauseKind": { "type": "string", "enum": ["decision", "error", "wait", "blocked"] },
+    "pauseOptions": { "type": "array", "items": { "type": "string" } },
+    "pauseRecommended": { "type": "number" },
+    "pauseResumeAt": { "type": "string" },
+  "autoResumedAt": { "type": "string", "description": "v0.35.28 issue #16: ISO time glla auto-resumed a lapsed wait; renders the RECOVERY NOTICE in the continuation prompt; cleared by manual /goal resume" },
+  "autoResumedEvent": { "type": "string", "description": "v0.35.28 issue #16: what auto-resumed the goal (overdue wait route, provider recovery event)" },
+    "providerErrorDiagnostic": { "type": "string", "description": "Bounded provider diagnostic retained for ledger/archive forensics; never a chat projection." },
+    "recoveryEpisodeKey": { "type": "string" },
+    "recoveryNoticeKeys": { "type": "array", "maxItems": 16, "items": { "type": "string" } },
+    "interruptedAt": { "type": "string" },
+    "interruptedReason": { "type": "string" },
+    "auditInfraStreak": { "type": "number" },
+    "errorBrakeStreak": { "type": "number" },
     "revision": {
       "type": "integer",
       "minimum": 0,
       "default": 0,
       "description": "Contract-change counter: bumped on every /goal tweak (and objective repair). Auditors capture it at dispatch; the revision-bound validity gate refuses stale verdicts after the contract moved."
     },
-    "pendingCompletion": {
-      "$ref": "#/definitions/pendingCompletion"
-    },
+    "pendingCompletion": { "$ref": "#/definitions/pendingCompletion" },
     "pendingTasks": {
       "type": "array",
       "maxItems": 5,
-      "items": {
-        "type": "string"
-      },
+      "items": { "type": "string" },
       "description": "aggressiveMode audit-cap TODOs: objections extracted from the latest disapproved report, rendered into every continuation until addressed."
     },
     "durableDeferRecommendation": {
       "type": "object",
-      "required": [
-        "durableFix",
-        "deferRecommendations"
-      ],
+      "required": ["durableFix", "deferRecommendations"],
       "properties": {
-        "durableFix": {
-          "type": "string",
-          "maxLength": 500
-        },
+        "durableFix": { "type": "string", "maxLength": 500 },
         "deferRecommendations": {
           "type": "array",
           "maxItems": 8,
-          "items": {
-            "type": "string",
-            "maxLength": 500
-          }
+          "items": { "type": "string", "maxLength": 500 }
         },
-        "durableBlocked": {
-          "type": "boolean"
-        }
+        "durableBlocked": { "type": "boolean" }
       },
       "description": "Bounded durable-vs-defer decision facts projected into the goal card and retained across reloads."
     },
@@ -197,467 +100,149 @@
       "type": "string",
       "description": "The final completion claim text passed to complete_goal; mirrored into the archive markdown as the final record."
     },
-    "createdVia": {
-      "type": "string"
-    },
-    "activePath": {
-      "type": "string"
-    },
-    "archivedPath": {
-      "type": "string"
-    },
+    "createdVia": { "type": "string" },
+    "activePath": { "type": "string" },
+    "archivedPath": { "type": "string" },
     "objectiveRepairHistory": {
       "type": "array",
       "maxItems": 10,
-      "items": {
-        "$ref": "#/definitions/objectiveRepair"
-      }
+      "items": { "$ref": "#/definitions/objectiveRepair" }
     },
-    "repairTarget": {
-      "$ref": "#/definitions/objectiveRepairTarget"
-    },
-    "objectiveProvenance": {
-      "$ref": "#/definitions/objectiveProvenance"
-    },
+    "repairTarget": { "$ref": "#/definitions/objectiveRepairTarget" },
+    "objectiveProvenance": { "$ref": "#/definitions/objectiveProvenance" },
     "telemetry": {
       "type": "object",
-      "required": [
-        "turns",
-        "fileWrites",
-        "bashCalls"
-      ],
+      "required": ["turns", "fileWrites", "bashCalls"],
       "properties": {
-        "turns": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "fileWrites": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "bashCalls": {
-          "type": "integer",
-          "minimum": 0
-        }
+        "turns": { "type": "integer", "minimum": 0 },
+        "fileWrites": { "type": "integer", "minimum": 0 },
+        "bashCalls": { "type": "integer", "minimum": 0 }
       },
       "description": "Bounded per-goal activity counters used by /glla stats."
     },
     "usage": {
       "type": "object",
-      "required": [
-        "tokensUsed",
-        "tokensLimit"
-      ],
+      "required": ["tokensUsed", "tokensLimit"],
       "properties": {
-        "tokensUsed": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "tokensLimit": {
-          "type": "integer",
-          "minimum": 0,
-          "default": 0,
-          "description": "0 = unlimited; positive values enable the per-goal token guard"
-        }
+        "tokensUsed": { "type": "integer", "minimum": 0 },
+        "tokensLimit": { "type": "integer", "minimum": 0, "default": 0, "description": "0 = unlimited; positive values enable the per-goal token guard" }
       }
     },
-    "createdAt": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "updatedAt": {
-      "type": "string",
-      "format": "date-time"
-    }
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
   },
   "definitions": {
     "objectiveRepairTarget": {
       "type": "object",
-      "required": [
-        "id",
-        "objective",
-        "reasons",
-        "source"
-      ],
+      "required": ["id", "objective", "reasons", "source"],
       "properties": {
-        "id": {
-          "type": "string",
-          "minLength": 1
-        },
-        "objective": {
-          "type": "string",
-          "minLength": 1
-        },
-        "verificationContract": {
-          "type": "string"
-        },
-        "reasons": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "source": {
-          "type": "string",
-          "minLength": 1
-        },
-        "replanPromptedAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp of the one bounded repair/replan bootstrap turn; cleared on explicit retry or confirmed redraft."
-        }
+        "id": { "type": "string", "minLength": 1 },
+        "objective": { "type": "string", "minLength": 1 },
+        "verificationContract": { "type": "string" },
+        "reasons": { "type": "array", "items": { "type": "string" } },
+        "source": { "type": "string", "minLength": 1 },
+        "replanPromptedAt": { "type": "string", "format": "date-time", "description": "Timestamp of the one bounded repair/replan bootstrap turn; cleared on explicit retry or confirmed redraft." }
       }
     },
     "objectiveRepair": {
       "type": "object",
-      "required": [
-        "at",
-        "action",
-        "originalObjective",
-        "source",
-        "reason",
-        "evidence",
-        "confidence",
-        "revisionBefore",
-        "revisionAfter"
-      ],
+      "required": ["at", "action", "originalObjective", "source", "reason", "evidence", "confidence", "revisionBefore", "revisionAfter"],
       "properties": {
-        "at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "action": {
-          "type": "string",
-          "enum": [
-            "auto-applied",
-            "queued"
-          ]
-        },
-        "originalObjective": {
-          "type": "string",
-          "minLength": 1
-        },
-        "replacementObjective": {
-          "type": "string"
-        },
-        "originalContract": {
-          "type": "string"
-        },
-        "replacementContract": {
-          "type": "string"
-        },
-        "source": {
-          "type": "string",
-          "minLength": 1
-        },
-        "reason": {
-          "type": "string",
-          "minLength": 1
-        },
-        "evidence": {
-          "type": "string",
-          "minLength": 1
-        },
-        "confidence": {
-          "type": "string",
-          "enum": [
-            "best-effort",
-            "fallback"
-          ]
-        },
-        "revisionBefore": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "revisionAfter": {
-          "type": "integer",
-          "minimum": 0
-        }
+        "at": { "type": "string", "format": "date-time" },
+        "action": { "type": "string", "enum": ["auto-applied", "queued"] },
+        "originalObjective": { "type": "string", "minLength": 1 },
+        "replacementObjective": { "type": "string" },
+        "originalContract": { "type": "string" },
+        "replacementContract": { "type": "string" },
+        "source": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "string", "minLength": 1 },
+        "confidence": { "type": "string", "enum": ["best-effort", "fallback"] },
+        "revisionBefore": { "type": "integer", "minimum": 0 },
+        "revisionAfter": { "type": "integer", "minimum": 0 }
       }
     },
     "objectiveProvenance": {
       "type": "object",
-      "required": [
-        "originalObjective"
-      ],
+      "required": ["originalObjective"],
       "properties": {
-        "originalObjective": {
-          "type": "string",
-          "minLength": 1
-        },
-        "originalContract": {
-          "type": "string"
-        },
-        "userSeeds": {
-          "type": "array",
-          "maxItems": 10,
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
-        }
+        "originalObjective": { "type": "string", "minLength": 1 },
+        "originalContract": { "type": "string" },
+        "userSeeds": { "type": "array", "maxItems": 10, "items": { "type": "string", "minLength": 1 } }
       }
     },
     "pendingCompletion": {
       "type": "object",
-      "required": [
-        "at"
-      ],
+      "required": ["at"],
       "description": "Durable completion claim and isolated-auditor lifecycle. Legacy claims may omit phase and are treated as recovery-pending after a fresh session.",
       "properties": {
-        "completionSummary": {
-          "type": "string"
-        },
-        "verificationSummary": {
-          "type": "string"
-        },
-        "at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "phase": {
-          "type": "string",
-          "enum": [
-            "running",
-            "recovery-pending",
-            "retry-waiting",
-            "quota-waiting"
-          ],
-          "description": "retry-waiting is canonical; quota-waiting is accepted only for legacy files and is normalized on load."
-        },
-        "attemptId": {
-          "type": "string",
-          "minLength": 1
-        },
-        "startedAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "wallDeadlineAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "recoveryAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "recoveryReason": {
-          "type": "string"
-        },
-        "recoveryRetryAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "providerErrorDiagnostic": {
-          "type": "string",
-          "description": "Bounded provider/auditor diagnostic retained for forensics only."
-        },
-        "recoveryEpisodeKey": {
-          "type": "string"
-        },
-        "recoveryNoticeKeys": {
-          "type": "array",
-          "maxItems": 16,
-          "items": {
-            "type": "string"
-          }
-        },
-        "automaticRecoveryAttempted": {
-          "type": "boolean"
-        },
-        "automaticRecoveryAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "automaticRecoveryGeneration": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "automaticRecoveryAttempts": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "automaticRecoveryFirstAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "automaticRecoveryUntil": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "retryAttempts": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "retryFirstAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "retryUntil": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "quotaAttempts": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "Legacy field; ignored by the generic retry policy."
-        },
-        "quotaFirstAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Legacy field; ignored by the generic retry policy."
-        },
-        "quotaAutoRetryUntil": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Legacy field; ignored by the generic retry policy."
-        },
-        "quotaSignal": {
-          "type": "string",
-          "enum": [
-            "rate-limit",
-            "plan-quota",
-            "billing"
-          ],
-          "description": "Legacy diagnostic field; never used for scheduling or fallback."
-        },
-        "retryAfterSec": {
-          "type": "number",
-          "minimum": 0,
-          "description": "Legacy provider hint; retained only when reading older files and never used for scheduling."
-        },
-        "retryFromUpstream": {
-          "type": "boolean",
-          "description": "Legacy provider hint marker; never used for scheduling."
-        },
-        "resetAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Legacy provider reset hint; never used for scheduling."
-        },
-        "auditorCandidateRefs": {
-          "type": "array",
-          "maxItems": 12,
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "auditorCandidateRef": {
-          "type": "string",
-          "maxLength": 200
-        },
-        "auditorRetryCandidateRef": {
-          "type": "string",
-          "maxLength": 200
-        },
-        "auditorRetryAttemptStartedAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "auditorAttemptedRefs": {
-          "type": "array",
-          "maxItems": 12,
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "auditorFailureCount": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 2
-        },
-        "auditorFailureClass": {
-          "type": "string",
-          "enum": [
-            "transport",
-            "timeout",
-            "no-verdict",
-            "provider"
-          ]
-        },
-        "auditorFallbackExhausted": {
-          "type": "boolean"
-        },
-        "auditorFailureAt": {
-          "type": "string",
-          "format": "date-time"
-        }
+        "completionSummary": { "type": "string" },
+        "verificationSummary": { "type": "string" },
+        "at": { "type": "string", "format": "date-time" },
+        "phase": { "type": "string", "enum": ["running", "recovery-pending", "retry-waiting", "quota-waiting"], "description": "retry-waiting is canonical; quota-waiting is accepted only for legacy files and is normalized on load." },
+        "attemptId": { "type": "string", "minLength": 1 },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "wallDeadlineAt": { "type": "string", "format": "date-time" },
+        "recoveryAt": { "type": "string", "format": "date-time" },
+        "recoveryReason": { "type": "string" },
+        "recoveryRetryAt": { "type": "string", "format": "date-time" },
+        "providerErrorDiagnostic": { "type": "string", "description": "Bounded provider/auditor diagnostic retained for forensics only." },
+        "recoveryEpisodeKey": { "type": "string" },
+        "recoveryNoticeKeys": { "type": "array", "maxItems": 16, "items": { "type": "string" } },
+        "automaticRecoveryAttempted": { "type": "boolean" },
+        "automaticRecoveryAt": { "type": "string", "format": "date-time" },
+        "automaticRecoveryGeneration": { "type": "integer", "minimum": 0 },
+        "automaticRecoveryAttempts": { "type": "integer", "minimum": 0 },
+        "automaticRecoveryFirstAt": { "type": "string", "format": "date-time" },
+        "automaticRecoveryUntil": { "type": "string", "format": "date-time" },
+        "retryAttempts": { "type": "integer", "minimum": 0 },
+        "retryFirstAt": { "type": "string", "format": "date-time" },
+        "retryUntil": { "type": "string", "format": "date-time" },
+        "quotaAttempts": { "type": "integer", "minimum": 0, "description": "Legacy field; ignored by the generic retry policy." },
+        "quotaFirstAt": { "type": "string", "format": "date-time", "description": "Legacy field; ignored by the generic retry policy." },
+        "quotaAutoRetryUntil": { "type": "string", "format": "date-time", "description": "Legacy field; ignored by the generic retry policy." },
+        "quotaSignal": { "type": "string", "enum": ["rate-limit", "plan-quota", "billing"], "description": "Legacy diagnostic field; never used for scheduling or fallback." },
+        "retryAfterSec": { "type": "number", "minimum": 0, "description": "Legacy provider hint; retained only when reading older files and never used for scheduling." },
+        "retryFromUpstream": { "type": "boolean", "description": "Legacy provider hint marker; never used for scheduling." },
+        "resetAt": { "type": "string", "format": "date-time", "description": "Legacy provider reset hint; never used for scheduling." },
+        "auditorCandidateRefs": { "type": "array", "maxItems": 12, "items": { "type": "string", "minLength": 1 } },
+        "auditorCandidateRef": { "type": "string", "maxLength": 200 },
+        "auditorRetryCandidateRef": { "type": "string", "maxLength": 200 },
+        "auditorRetryAttemptStartedAt": { "type": "string", "format": "date-time" },
+        "auditorAttemptedRefs": { "type": "array", "maxItems": 12, "items": { "type": "string", "minLength": 1 } },
+        "auditorFailureCount": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "auditorFailureClass": { "type": "string", "enum": ["transport", "timeout", "no-verdict", "provider"] },
+        "auditorFallbackExhausted": { "type": "boolean" },
+        "auditorFailureAt": { "type": "string", "format": "date-time" }
       }
     },
     "task": {
       "type": "object",
-      "required": [
-        "id",
-        "title",
-        "status"
-      ],
+      "required": ["id", "title", "status"],
       "properties": {
-        "id": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string",
-          "minLength": 1
-        },
-        "status": {
-          "type": "string",
-          "enum": [
-            "pending",
-            "in_progress",
-            "complete"
-          ]
-        },
-        "agentRole": {
-          "type": "string",
-          "enum": [
-            "designer"
-          ]
-        },
+        "id": { "type": "string" },
+        "title": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "enum": ["pending", "in_progress", "complete"] },
+        "agentRole": { "type": "string", "enum": ["designer"] },
         "subtasks": {
           "type": "array",
           "maxItems": 5,
-          "items": {
-            "$ref": "#/definitions/task"
-          }
+          "items": { "$ref": "#/definitions/task" }
         }
       }
     },
     "auditVerdict": {
       "type": "object",
-      "required": [
-        "at",
-        "approved",
-        "disapproved",
-        "model"
-      ],
+      "required": ["at", "approved", "disapproved", "model"],
       "properties": {
-        "at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "approved": {
-          "type": "boolean"
-        },
-        "disapproved": {
-          "type": "boolean"
-        },
-        "impossible": {
-          "type": "boolean"
-        },
-        "impossibleReason": {
-          "type": "string"
-        },
-        "model": {
-          "type": "string"
-        },
-        "thinkingLevel": {
-          "type": "string"
-        },
-        "report": {
-          "type": "string"
-        },
+        "at": { "type": "string", "format": "date-time" },
+        "approved": { "type": "boolean" },
+        "disapproved": { "type": "boolean" },
+        "impossible": { "type": "boolean" },
+        "impossibleReason": { "type": "string" },
+        "model": { "type": "string" },
+        "thinkingLevel": { "type": "string" },
+        "report": { "type": "string" },
         "error": {
           "type": "string",
           "description": "Infrastructure failure detail (abort, auth, no model). Entries with error and no report are not real verdicts."
@@ -668,9 +253,7 @@
         },
         "regressionShieldMissing": {
           "type": "array",
-          "items": {
-            "type": "string"
-          },
+          "items": { "type": "string" },
           "description": "Contract items the shield found unreferenced in the auditor's evidence (present when regressionShieldPassed is false)."
         },
         "revision": {
