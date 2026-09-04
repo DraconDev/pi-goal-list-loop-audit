@@ -252,7 +252,7 @@ import {
   pushCapped as pushRepetitionCapped,
 } from "../goal-loop-repetition.js";
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
-import { compactCompletionSummary, compactTerminalCompletionSummary, resolveCompletionSummary, terminalHumanBrief } from "../completion-summary.js";
+import { buildApprovalChatLines, compactCompletionSummary, compactTerminalCompletionSummary, resolveCompletionSummary, terminalHumanBrief, withoutStaleNext } from "../completion-summary.js";
 import {
   defaultAgentDir,
   resolveEffectiveSubagentModel,
@@ -1224,8 +1224,16 @@ function registerAgentTools(pi: any): void {
             stopReason: terminalReason,
             archivePath: path.relative(ctx.cwd, archivedGoalPath(ctx.cwd, terminalGoal.id)) || archivedGoalPath(ctx.cwd, terminalGoal.id),
           });
-          const briefBlock = [...brief.details, `— completed without audit (your choice).`].join("\n");
-          ctx.ui.notify(`✓ done — ${brief.outcome}\n${briefBlock}`, "info");
+          // v0.38.20: the command output keeps the informing details (stale
+          // `Next:` stripped); the chat notify is outcome + approval +
+          // record pointer like every other approval path.
+          const briefBlock = [...withoutStaleNext(brief.details), `— completed without audit (your choice).`].join("\n");
+          ctx.ui.notify(buildApprovalChatLines({
+            outcome: brief.outcome,
+            details: brief.details,
+            approval: `— completed without audit (your choice).`,
+            record: `— record: ${path.relative(ctx.cwd, archivedGoalPath(ctx.cwd, terminalGoal.id)) || archivedGoalPath(ctx.cwd, terminalGoal.id)}`,
+          }).join("\n"), "info");
           notifyExternal(ctx, `Goal complete without audit (user choice): ${recap}`);
           return { content: [{ type: "text", text: `Goal marked complete without audit (user choice).\n\n${briefBlock}` }], details: {} };
         }
@@ -1274,7 +1282,14 @@ function registerAgentTools(pi: any): void {
           appendLedger(ctx.cwd, "goal_archive_failed_after_approval", { goalId: state.goal?.id, origin: "manual-verify", model: result.model });
           return { content: [{ type: "text", text: "The auditor approved, but the terminal archive could not be persisted. The goal is paused; fix persistence, resume, and retry complete_goal." }], details: {} };
         }
-        ctx.ui.notify(`✓ done — ${brief.outcome}\n${[...brief.details, `— auditor ${result.model} approved.`].join("\n")}`, "info");
+        // v0.38.20: same approval voice as the detached path — the stale
+        // pre-verdict `Next:` never reaches the chat.
+        ctx.ui.notify(buildApprovalChatLines({
+          outcome: brief.outcome,
+          details: brief.details,
+          approval: `— auditor ${result.model} approved.`,
+          record: `— record: ${path.relative(ctx.cwd, archivedGoalPath(ctx.cwd, state.goal.id)) || archivedGoalPath(ctx.cwd, state.goal.id)}`,
+        }).join("\n"), "info");
         notifyExternal(ctx, `Goal complete (auditor approved): ${recap}`);
         return { content: [{ type: "text", text: `Goal approved by auditor ${result.model}.` }], details: {} };
       }
