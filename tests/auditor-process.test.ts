@@ -10,6 +10,8 @@ import { test } from "node:test";
 import {
   newDetachedAuditJobAttemptId,
   AUDITOR_TOOLS,
+  cancelDetachedGoalCompletionAuditor,
+  inspectAuditJobHealth,
   requestHash,
   resolveWorkerCommand,
   runDetachedGoalCompletionAuditor,
@@ -272,7 +274,10 @@ test("detached parent accepts an identity-checked result and applies regression_
     assert.equal(result.disapproved, false);
     assert.equal(result.regressionShieldPassed, true);
     assert.equal(result.model, "test/provider-model");
-    assert.equal(existsSync(path.join(dir, ".pi-glla", "audit-jobs", "attempt-test")), false, "completed auditor job scratch is removed");
+    const jobDir = path.join(dir, ".pi-glla", "audit-jobs", "attempt-test");
+    assert.ok(existsSync(jobDir), "a completed audit's job dir persists as the post-completion transcript");
+    assert.ok(existsSync(path.join(jobDir, "result.json")), "the terminal result stays readable");
+    assert.ok(existsSync(path.join(jobDir, "lock")), "the worker lock stays so health classifies the dir dead, not ambiguous");
   } finally {
     await cleanup(dir);
   }
@@ -554,6 +559,106 @@ process.stdin.on("data", (chunk) => {
   }
 });
 
+test("real worker persists the auditor session when inspection is enabled (spawn spec + progress shape)", { timeout: 40_000 }, async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "glla-inspection-on-"));
+  const fakePi = path.join(dir, "inspection-pi.mjs");
+  const argvDump = path.join(dir, "argv-dump.json");
+  const fakePiSource = `
+import { writeFileSync } from "node:fs";
+writeFileSync(process.env.FAKE_PI_ARGV_DUMP, JSON.stringify(process.argv));
+let handled = false;
+process.stdin.on("data", (chunk) => {
+  if (handled || !String(chunk).includes("\\n")) return;
+  handled = true;
+  const out = (value) => process.stdout.write(JSON.stringify(value) + "\\n");
+  out({ type: "agent_start" });
+  out({ type: "tool_execution_start", toolCallId: "read-1", toolName: "read", args: { path: "/repo/README.md" } });
+  out({ type: "tool_execution_end", toolCallId: "read-1" });
+  out({ type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "<evidence>\\nartifact exists; tests pass\\n</evidence>\\n<approved/>" } });
+  out({ type: "agent_settled" });
+});
+`;
+  await writeFile(fakePi, `#!/usr/bin/env node\n${fakePiSource}`);
+  await chmod(fakePi, 0o700);
+  const reports: AuditorProgress[] = [];
+  try {
+    const result = await runDetachedGoalCompletionAuditor({
+      cwd: dir,
+      goal,
+      model: "test/provider-model",
+      thinkingLevel: "high",
+      inspection: true,
+      onProgress: (progress) => reports.push(progress),
+      runtime: {
+        workerPath: path.resolve(process.cwd(), "scripts/goal-auditor-worker.mjs"),
+        env: { GLLA_PI_BINARY: fakePi, FAKE_PI_ARGV_DUMP: argvDump },
+        attemptId: () => "attempt-inspection",
+        pollIntervalMs: 5,
+        wallTimeoutMs: 30_000,
+      },
+    });
+    assert.equal(result.approved, true);
+    // Spawn spec: --session <jobDir>/session.jsonl replaces --no-session.
+    const argv = JSON.parse(await readFile(argvDump, "utf8"));
+    const expectedSession = path.join(dir, ".pi-glla", "audit-jobs", "attempt-inspection", "session.jsonl");
+    assert.ok(argv.includes("--session"), "the spawn used --session");
+    assert.equal(argv.includes("--no-session"), false, "the spawn dropped --no-session");
+    assert.equal(argv[argv.indexOf("--session") + 1], expectedSession, "--session points at the job-dir session file");
+    // Progress shape: a snapshot carries the deterministic session path.
+    assert.ok(reports.some((progress) => progress.sessionPath === expectedSession), "progress.json carried the session path");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("real worker keeps the original --no-session spawn when inspection is unset (default unchanged)", { timeout: 40_000 }, async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "glla-inspection-off-"));
+  const fakePi = path.join(dir, "inspection-off-pi.mjs");
+  const argvDump = path.join(dir, "argv-dump.json");
+  const fakePiSource = `
+import { writeFileSync } from "node:fs";
+writeFileSync(process.env.FAKE_PI_ARGV_DUMP, JSON.stringify(process.argv));
+let handled = false;
+process.stdin.on("data", (chunk) => {
+  if (handled || !String(chunk).includes("\\n")) return;
+  handled = true;
+  const out = (value) => process.stdout.write(JSON.stringify(value) + "\\n");
+  out({ type: "agent_start" });
+  out({ type: "tool_execution_start", toolCallId: "read-1", toolName: "read", args: { path: "/repo/README.md" } });
+  out({ type: "tool_execution_end", toolCallId: "read-1" });
+  out({ type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "<evidence>\\nartifact exists; tests pass\\n</evidence>\\n<approved/>" } });
+  out({ type: "agent_settled" });
+});
+`;
+  await writeFile(fakePi, `#!/usr/bin/env node\n${fakePiSource}`);
+  await chmod(fakePi, 0o700);
+  const reports: AuditorProgress[] = [];
+  try {
+    const result = await runDetachedGoalCompletionAuditor({
+      cwd: dir,
+      goal,
+      model: "test/provider-model",
+      thinkingLevel: "high",
+      onProgress: (progress) => reports.push(progress),
+      runtime: {
+        workerPath: path.resolve(process.cwd(), "scripts/goal-auditor-worker.mjs"),
+        env: { GLLA_PI_BINARY: fakePi, FAKE_PI_ARGV_DUMP: argvDump },
+        attemptId: () => "attempt-inspection-off",
+        pollIntervalMs: 5,
+        wallTimeoutMs: 30_000,
+      },
+    });
+    assert.equal(result.approved, true);
+    // Default dispatch is byte-identical to pre-feature: --no-session, no --session.
+    const argv = JSON.parse(await readFile(argvDump, "utf8"));
+    assert.equal(argv.includes("--no-session"), true, "the default spawn still uses --no-session");
+    assert.equal(argv.includes("--session"), false, "no --session in the default spawn");
+    assert.ok(reports.every((progress) => progress.sessionPath === undefined), "no session path leaks into progress");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test("worker assembles streamed report fragments into cumulative display lines without changing the exact result", async () => {
   const dir = await mkdtemp(path.join(tmpdir(), "glla-fragment-telemetry-"));
   const fakePi = path.join(dir, "fragment-pi.mjs");
@@ -696,7 +801,7 @@ test("failed setup preserves a pre-existing attempt directory it does not own", 
   }
 });
 
-test("detached retry identities remain unique while completed job scratch is removed", async () => {
+test("detached retry identities remain unique while completed job dirs persist for the retention window", async () => {
   const dir = await setup();
   const logicalAttemptId = "audit-logical-claim";
   const firstAttemptId = newDetachedAuditJobAttemptId(logicalAttemptId);
@@ -708,10 +813,39 @@ test("detached retry identities remain unique while completed job scratch is rem
     await runWithAttempt(dir, firstAttemptId, { FAKE_AUDIT_OUTPUT: "<disapproved/>" });
     await runWithAttempt(dir, secondAttemptId, { FAKE_AUDIT_OUTPUT: "<disapproved/>" });
     const jobs = (await readdir(path.join(dir, ".pi-glla", "audit-jobs"))).sort();
-    assert.deepEqual(jobs, [], "completed retries do not leave durable attempt directories");
+    assert.deepEqual(jobs, [firstAttemptId, secondAttemptId].sort(), "completed audits keep their dirs for the retention window");
+    assert.ok(existsSync(path.join(dir, ".pi-glla", "audit-jobs", firstAttemptId, "result.json")));
+    assert.ok(existsSync(path.join(dir, ".pi-glla", "audit-jobs", secondAttemptId, "result.json")));
   } finally {
     await cleanup(dir);
   }
+});
+
+test("cancel keeps a finished audit's transcript dir but reaps incomplete scratch", async () => {
+  const dir = await setup();
+  const logical = "audit-cancel-retention";
+  const finishedId = newDetachedAuditJobAttemptId(logical);
+  const incompleteId = newDetachedAuditJobAttemptId(logical);
+  // A probe process that exits immediately provides a guaranteed-dead PID
+  // for the fabricated worker locks.
+  const probe = spawn(process.execPath, ["-e", ""]);
+  await new Promise<void>((resolve) => probe.on("exit", () => resolve()));
+  const deadPid: number = probe.pid as number;
+  const writeLock = async (attemptId: string) => {
+    const d = path.join(dir, ".pi-glla", "audit-jobs", attemptId);
+    await mkdir(d, { recursive: true });
+    await writeFile(path.join(d, "lock"), JSON.stringify({ protocolVersion: 1, attemptId, pid: deadPid, role: "worker", workerPath: "/nonexistent/worker.mjs" }));
+  };
+  await writeLock(finishedId);
+  await writeFile(path.join(dir, ".pi-glla", "audit-jobs", finishedId, "result.json"), "{}");
+  await writeLock(incompleteId);
+  cancelDetachedGoalCompletionAuditor(dir, logical);
+  const jobs = (await readdir(path.join(dir, ".pi-glla", "audit-jobs"))).sort();
+  assert.deepEqual(jobs, [finishedId], "the finished transcript survives cancel; incomplete scratch is reaped");
+  const health = inspectAuditJobHealth(dir);
+  const entry = health.entries.find((e) => e.attemptId === finishedId);
+  assert.equal(entry?.status, "dead", "a finished dir with its worker lock classifies dead, so retention can reap it");
+  await cleanup(dir);
 });
 
 test("a mismatched result hash fails closed as infrastructure", async () => {
@@ -792,7 +926,11 @@ process.stdin.on("data", (chunk) => {
     assert.equal(attempts.length, 1, "one detached attempt produces one infrastructure result");
     const piPid = Number(await readFile(pidMarker, "utf8"));
     assert.throws(() => process.kill(piPid, 0), /ESRCH|不存在|not found/i, "the exited RPC child is reaped before return");
-    assert.deepEqual(await readdir(path.join(dir, ".pi-glla", "audit-jobs")), [], "the single attempt's scratch and result are removed");
+    // v0.38.3: the worker self-classified this failure into result.json, so
+    // the finished attempt's transcript (and its worker lock) survive until
+    // /glla audits health cleanup reaps them per auditJobRetentionMs.
+    assert.deepEqual(await readdir(path.join(dir, ".pi-glla", "audit-jobs")), ["attempt-early-rpc-exit"], "a worker-written result keeps the finished attempt readable");
+    assert.ok(existsSync(path.join(dir, ".pi-glla", "audit-jobs", "attempt-early-rpc-exit", "lock")), "the worker lock stays so health classifies the finished dir dead");
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -845,7 +983,10 @@ setInterval(() => {}, 1_000);
     assert.ok(existsSync(sigtermMarker), "the existing cooperative TERM cleanup runs after the EOF grace");
     const piPid = Number(await readFile(pidMarker, "utf8"));
     assert.throws(() => process.kill(piPid, 0), /ESRCH|不存在|not found/i, "the TERM-ignoring child is force-killed before return");
-    assert.deepEqual(await readdir(path.join(dir, ".pi-glla", "audit-jobs")), [], "the grace failure leaves no job scratch");
+    // v0.38.3: result.json was published by the worker, so the finished
+    // attempt stays readable (transcript + retention), not immediately gone.
+    assert.deepEqual(await readdir(path.join(dir, ".pi-glla", "audit-jobs")), ["attempt-live-after-eof"], "a worker-written result keeps the finished attempt readable");
+    assert.ok(existsSync(path.join(dir, ".pi-glla", "audit-jobs", "attempt-live-after-eof", "lock")), "the worker lock stays so health classifies the finished dir dead");
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -883,7 +1024,10 @@ setInterval(() => {}, 1_000);
     assert.equal(result.infrastructureClass, "timeout");
     assert.ok(reports.length > 0, "startup progress reaches the parent");
     assert.equal(reports.some((progress) => progress.lastActivityAt !== undefined), false, "startup silence is not rendered as worker activity");
-    assert.equal(existsSync(path.join(dir, ".pi-glla", "audit-jobs", "attempt-silent")), false, "stalled auditor job scratch is removed");
+    // v0.38.3: the stall brake wrote result.json before exiting, so the
+    // finished attempt's transcript survives until retention reaps it.
+    assert.ok(existsSync(path.join(dir, ".pi-glla", "audit-jobs", "attempt-silent")), "the worker-stall result keeps the finished attempt readable");
+    assert.ok(existsSync(path.join(dir, ".pi-glla", "audit-jobs", "attempt-silent", "lock")), "the worker lock stays so health classifies the finished dir dead");
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

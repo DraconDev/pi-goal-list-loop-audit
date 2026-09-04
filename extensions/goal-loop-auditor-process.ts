@@ -126,6 +126,10 @@ export interface AuditorProgress {
    * display layer renders "tool: X · 4m / 20m budget" and exempts an
    * in-budget long tool from the 3m quiet warning. */
   toolTimeoutMs?: number;
+  /** v0.38.3: worker telemetry — the deterministic session file the
+   * auditor's pi persists when the request enabled live inspection
+   * (<jobDir>/session.jsonl). Absent = the original --no-session spawn. */
+  sessionPath?: string;
 }
 
 export type AuditorModel = string | { provider: string; id: string };
@@ -750,6 +754,18 @@ function durableWorkerPids(cwd: string, logicalAttemptId: string): Array<{ pid: 
   return out;
 }
 
+/** v0.38.3: a finished audit leaves a readable transcript behind — a job dir
+ * holding result.json belongs to the retention policy (/glla audits health
+ * cleanup + auditJobRetentionMs), not to any kill/reap path. */
+function auditDirHasResult(dir: string): boolean {
+  try {
+    statSync(path.join(dir, "result.json"));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export type AuditJobHealthStatus = "live" | "dead" | "ambiguous";
 
 export interface AuditJobHealthEntry {
@@ -776,8 +792,15 @@ export interface AuditJobHealthReport {
 
 /** A deliberately conservative threshold: an auditor that is merely slow is
  * not a stale directory. Explicit cleanup only considers older directories
- * whose worker PID is proven dead and whose lock advertises role=worker. */
+ * whose worker PID is proven dead and whose lock advertises role=worker.
+ * v0.38.3: this constant is the DEFAULT retention; the effective value is
+ * the `auditJobRetentionMs` setting (goal-settings.ts), threaded into
+ * inspectAuditJobHealth / cleanupDeadAuditJobs at the call site. */
 export const AUDIT_JOB_CLEANUP_MIN_AGE_MS = 15 * 60_000;
+/** v0.38.3: upper bound for the `auditJobRetentionMs` setting — 7 days.
+ * Retention is a review window for finished audit logs, not storage:
+ * anything older than a week is noise the reaper should take. */
+export const MAX_AUDIT_JOB_RETENTION_MS = 7 * 86_400_000;
 
 function auditJobDirectoryBytes(dir: string): number {
   let bytes = 0;
@@ -794,7 +817,11 @@ function auditJobDirectoryBytes(dir: string): number {
 
 /** Read-only project-wide audit-job inventory. It never signals a process and
  * never removes an ambiguous or unreadable directory. */
-export function inspectAuditJobHealth(cwd: string, nowMs = Date.now()): AuditJobHealthReport {
+export function inspectAuditJobHealth(
+  cwd: string,
+  nowMs = Date.now(),
+  maxAgeMs = AUDIT_JOB_CLEANUP_MIN_AGE_MS,
+): AuditJobHealthReport {
   const root = path.join(piGlaDir(cwd), "audit-jobs");
   const entries: AuditJobHealthEntry[] = [];
   let dirs: Array<{ name: string; isDirectory: () => boolean }> = [];
@@ -840,20 +867,20 @@ export function inspectAuditJobHealth(cwd: string, nowMs = Date.now()): AuditJob
   const dead = entries.filter((entry) => entry.status === "dead").length;
   const ambiguous = entries.filter((entry) => entry.status === "ambiguous").length;
   const bytes = entries.reduce((sum, entry) => sum + entry.bytes, 0);
-  const cleanupCandidates = entries.filter((entry) => entry.status === "dead" && entry.ageMs >= AUDIT_JOB_CLEANUP_MIN_AGE_MS).length;
+  const cleanupCandidates = entries.filter((entry) => entry.status === "dead" && entry.ageMs >= maxAgeMs).length;
   return { root, scannedAt: new Date(nowMs).toISOString(), total: entries.length, live, dead, ambiguous, bytes, cleanupCandidates, entries };
 }
 
 /** Explicit, age-bounded cleanup for only proven-dead worker identities.
  * Ambiguous locks are intentionally left for operator inspection. */
 export function cleanupDeadAuditJobs(cwd: string, maxAgeMs = AUDIT_JOB_CLEANUP_MIN_AGE_MS, nowMs = Date.now()): AuditJobHealthReport {
-  const report = inspectAuditJobHealth(cwd, nowMs);
+  const report = inspectAuditJobHealth(cwd, nowMs, maxAgeMs);
   for (const entry of report.entries) {
     if (entry.status !== "dead" || entry.ageMs < maxAgeMs || entry.pid === undefined) continue;
     if (processAlive(entry.pid) || workerProcessMatches(cwd, entry.pid, entry.dir)) continue;
     try { rmSync(entry.dir, { recursive: true, force: true }); } catch { /* preserve the next health report */ }
   }
-  return inspectAuditJobHealth(cwd, nowMs);
+  return inspectAuditJobHealth(cwd, nowMs, maxAgeMs);
 }
 
 /** Reap workers left behind when their owning pi host died. This is the
@@ -870,7 +897,11 @@ function reapDurableWorkers(cwd: string, logicalAttemptId: string): boolean {
       // PowerShell/CIM is unavailable). Keep the scratch directory until the
       // process is proven gone; deleting it here could strand a live worker.
       if (!processAlive(pid)) {
-        try { rmSync(dir, { recursive: true, force: true }); } catch { /* best effort */ }
+        // A finished audit's dir holds the post-completion transcript —
+        // retention owns its lifetime, never an immediate reap.
+        if (!auditDirHasResult(dir)) {
+          try { rmSync(dir, { recursive: true, force: true }); } catch { /* best effort */ }
+        }
       }
       continue;
     }
@@ -893,6 +924,7 @@ function reapDurableWorkers(cwd: string, logicalAttemptId: string): boolean {
       // remove it while the process may still write protocol files.
       const cleanup = setTimeout(() => {
         if (workerProcessMatches(cwd, pid, dir) || processAlive(pid)) return;
+        if (auditDirHasResult(dir)) return; // finished transcript → retention
         try { rmSync(dir, { recursive: true, force: true }); } catch { /* best effort */ }
       }, WORKER_SHUTDOWN_GRACE_MS + WORKER_FORCE_SETTLE_MS + 500);
       cleanup.unref?.();
@@ -941,6 +973,11 @@ interface AuditorRequest {
    * switch). Absent/empty = the default extension-less auditor. Part of the
    * request hash like every other field. */
   allowedExtensions?: string[];
+  /** v0.38.3: opt-in live inspection. When true the worker spawns pi with
+   * --session <jobDir>/session.jsonl instead of --no-session, persisting the
+   * auditor's pi as a resumable session (tail -f live, resume after).
+   * Part of the request hash; absent/false = the original spawn. */
+  inspection?: boolean;
   /** v0.34.59: focus revision token captured at dispatch. Echoed in
    * result.json; the parent re-validates against current disk state
    * before applying the verdict. Mismatch → stale-refusal, not a silent
@@ -977,6 +1014,9 @@ interface AuditorProgressFile {
   requestHash: string;
   phase: AuditorProgress["phase"];
   elapsedMs: number;
+  /** v0.38.3: set when the request enabled live inspection — the session
+   * file the auditor's pi writes inside the job dir. */
+  sessionPath?: string;
   /** v0.34.86: monotonic report-stream byte count (text_delta chars). The
    * silent-mode byte counter — the "worker IS making progress" evidence
    * that never reveals prose. */
@@ -1148,6 +1188,7 @@ function asProgress(file: AuditorProgressFile, startedAt: number): AuditorProgre
     ...(file.currentTool ? { currentTool: file.currentTool } : {}),
     ...(file.currentToolArgs ? { currentToolArgs: file.currentToolArgs } : {}),
     ...(file.currentToolStartedAt ? { currentToolStartedAt: file.currentToolStartedAt } : {}),
+    ...(file.sessionPath ? { sessionPath: file.sessionPath } : {}),
     ...(file.unmatchedToolStarts ? { unmatchedToolStarts: file.unmatchedToolStarts } : {}),
     ...(file.unmatchedToolEnds ? { unmatchedToolEnds: file.unmatchedToolEnds } : {}),
   };
@@ -1220,6 +1261,10 @@ export async function runDetachedGoalCompletionAuditor(args: {
    * so no call site can bypass resolution — the detached worker only ever
    * sees directly loadable absolute paths. */
   allowedExtensions?: string[];
+  /** v0.38.3: opt-in live inspection (settings key auditorInspection) — the
+   * worker persists the auditor's pi as a resumable session pinned inside
+   * the job dir. Off/absent = the original --no-session spawn. */
+  inspection?: boolean;
   signal?: AbortSignal;
   onProgress?: AuditorProgressCallback;
   /** v0.34.57: fired once when the heartbeat-without-progress watchdog
@@ -1313,6 +1358,9 @@ export async function runDetachedGoalCompletionAuditor(args: {
       // v0.36.0: only present when non-empty so historical requests hash
       // byte-identically to pre-feature workers.
       ...(allowedExtensions.length ? { allowedExtensions } : {}),
+      // v0.38.3: only present when enabled so default dispatches hash
+      // byte-identically to pre-feature workers.
+      ...(args.inspection ? { inspection: true } : {}),
     };
     const request: AuditorRequest = { ...requestWithoutHash, requestHash: requestHash(requestWithoutHash) };
     await writeAtomicJson(requestPath, request);
@@ -1624,11 +1672,20 @@ export async function runDetachedGoalCompletionAuditor(args: {
   } finally {
     if (child && childAlive(child)) await terminateWorker(child).catch(() => {});
     activeChildren.delete(childKey(args.cwd, attemptId));
-    if (lockHeld) await fs.unlink(lockPath).catch(() => {});
-    // request/progress/result are transport scratch files. Do not retain one
-    // directory per retry, and never remove a colliding directory we did not
-    // successfully create and therefore do not own.
-    if (jobDirCreated) await removeAuditJobDirectory(jobDir);
+    if (jobDirCreated) {
+      if (auditDirHasResult(jobDir)) {
+        // v0.38.3: a finished audit's dir is the post-completion transcript.
+        // Keep the worker lock so health classifies the dir 'dead' (reaped
+        // once aged past auditJobRetentionMs by /glla audits health cleanup)
+        // instead of 'ambiguous' (which cleanup never touches).
+      } else {
+        // No verdict: incomplete transport scratch — remove it so kill-and-
+        // restart loops do not accumulate empty dirs. Never remove a colliding
+        // directory we did not successfully create and therefore do not own.
+        if (lockHeld) await fs.unlink(lockPath).catch(() => {});
+        await removeAuditJobDirectory(jobDir);
+      }
+    }
   }
 }
 

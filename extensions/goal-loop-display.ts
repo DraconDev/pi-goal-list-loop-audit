@@ -578,6 +578,11 @@ export interface AuditDisplayProgress {
    * (after adaptive escalation). Lets the card render "tool: X · 4m /
    * 20m budget" and exempts an in-budget long tool from the quiet phase. */
   toolTimeoutMs?: number;
+  /** v0.38.3: live-inspection session file the auditor's pi writes inside
+   * the job dir (undefined = the original --no-session spawn). Lets the
+   * card point at the resumable session: tail -f it live, or attach with
+   * `pi --session <path>` / `pi --fork <path>` after the audit. */
+  sessionPath?: string;
 }
 
 type AuditorDisplayPhase = "queued" | "running" | "quiet" | "blocked" | "awaiting-verdict";
@@ -1331,7 +1336,8 @@ function buildWidgetLinesInner(state: State, audit?: AuditDisplayProgress | null
     // left no trace — note.md 2026-08-07). v0.34.89: that render is now a
     // single dim SUMMARY line (`─ done · <objective> · took X`), not a full
     // card — the old card read like an active item (Screenshot_20260807_231205).
-    return completedGoalLines(g, now, theme, width);
+    const doneLines = completedGoalLines(g, now, theme, width);
+    return doneLines;
   }
   const lines = goalLines(g, state, audit, now, theme, width, extras);
   // v0.28.17: a held loop rides the goal card as a trailing line.
@@ -1534,6 +1540,12 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
     // This is the difference between “the timer moved” and “I can see what
     // the detached worker last did.”
     const observations: string[] = [];
+    // v0.38.3: live inspection — the auditor's pi persists a resumable
+    // session pinned inside the job dir. Point the user at it: tail -f it
+    // read-only while the audit runs; attach interactively only after.
+    if (audit?.sessionPath) {
+      observations.push(`session: ${audit.sessionPath} — tail -f it live`);
+    }
     const stretch = extras?.auditorQuietStretch;
     if (stretch && Number.isFinite(stretch.ms) && stretch.ms >= AUDITOR_QUIET_MS
         && now - stretch.endedAt <= QUIET_STRETCH_VISIBLE_MS) {

@@ -20,9 +20,11 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { spawn as realSpawn } from "node:child_process";
 import {
+  AUDIT_JOB_CLEANUP_MIN_AGE_MS,
   AUDITOR_TIMEOUT_ESCALATION_MAX_STEPS,
   DEFAULT_AUDITOR_STALL_MS,
   DEFAULT_AUDITOR_TOOL_TIMEOUT_MS,
+  MAX_AUDIT_JOB_RETENTION_MS,
   MAX_AUDITOR_TOOL_TIMEOUT_MS,
   MIN_AUDITOR_STALL_MS,
   escalatedAuditorTimeout,
@@ -269,4 +271,62 @@ test("v0.37.0: durable claims preserve the timeout escalation index across loads
     writeClaim("3");
     assert.equal(readState(cwd).goal?.pendingCompletion?.timeoutEscalation, undefined, "a string index is not a number");
   });
+});
+
+test("v0.38.3: auditJobRetentionMs clamps into [0, 7d] on load", () => {
+  withTmpCwd((cwd) => {
+    const existing = ORIGINAL_GLOBAL ? (JSON.parse(ORIGINAL_GLOBAL) as Record<string, unknown>) : {};
+    try {
+      fs.writeFileSync(GLOBAL_FILE, JSON.stringify({ ...existing, auditJobRetentionMs: 999_999_999_999 }));
+      const high = loadSettings(cwd);
+      assert.equal(high.auditJobRetentionMs, MAX_AUDIT_JOB_RETENTION_MS, "ceiling clamps to 7 days");
+
+      fs.writeFileSync(GLOBAL_FILE, JSON.stringify({ ...existing, auditJobRetentionMs: -5 }));
+      const low = loadSettings(cwd);
+      assert.equal(low.auditJobRetentionMs, 0, "negative clamps to 0 (immediate reap is legal)");
+
+      fs.writeFileSync(GLOBAL_FILE, JSON.stringify({ ...existing, auditJobRetentionMs: 7_200_000 }));
+      const ok = loadSettings(cwd);
+      assert.equal(ok.auditJobRetentionMs, 7_200_000, "in-range value survives untouched");
+
+      fs.writeFileSync(GLOBAL_FILE, JSON.stringify(existing));
+      const defaults = loadSettings(cwd);
+      assert.equal(defaults.auditJobRetentionMs, AUDIT_JOB_CLEANUP_MIN_AGE_MS, "missing key falls back to the legacy 15m threshold");
+    } finally {
+      restoreGlobal();
+    }
+  });
+});
+
+test("v0.38.3: /glla editor accepts duration input for auditJobRetentionMs (0 is legal)", async () => {
+  // Drive the real editor against the real global file (snapshotted above).
+  const ctx = makeMockCtx(tmpCwd());
+  try {
+    ctx.ui.inputImpl = async () => "2h";
+    await handleSettingChoice("auditJobRetentionMs", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().auditJobRetentionMs, 7_200_000, "duration string normalizes to ms");
+
+    ctx.ui.inputImpl = async () => "0";
+    await handleSettingChoice("auditJobRetentionMs", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().auditJobRetentionMs, 0, "zero is a legal retention (reap immediately)");
+
+    ctx.ui.inputImpl = async () => "999999999999";
+    await handleSettingChoice("auditJobRetentionMs", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().auditJobRetentionMs, 0, "out-of-range input leaves the previous value");
+
+    ctx.ui.inputImpl = async () => "";
+    await handleSettingChoice("auditJobRetentionMs", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().auditJobRetentionMs, undefined, "empty clears back to the default");
+  } finally {
+    restoreGlobal();
+    fs.rmSync(ctx.cwd, { recursive: true, force: true });
+  }
+});
+
+test("v0.38.3: settings menu exposes the audit job retention row in the auditor section", () => {
+  const rows = buildSettingsRows({ auditJobRetentionMs: 900_000 } as Settings, {});
+  const row = rows.find((r) => r.id === "auditJobRetentionMs");
+  assert.ok(row, "auditJobRetentionMs row exists");
+  assert.equal(row!.section, "auditor");
+  assert.match(row!.valueText, /15m dead-dir window/);
 });

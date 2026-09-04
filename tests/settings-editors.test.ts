@@ -76,6 +76,21 @@ test("T4: select editor — autoResume writes on/off/default with the right key"
   }
 });
 
+test("T4: select editor — auditorInspection is opt-in on (writes true), off clears to default", async () => {
+  try {
+    const ctx = makeMockCtx(tmpCwd());
+    ctx.ui.selectImpl = async () => "on — --session <jobDir>/session.jsonl: tail -f it live, resume it after the audit";
+    await handleSettingChoice("auditorInspection", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().auditorInspection, true);
+
+    ctx.ui.selectImpl = async () => "off — the original --no-session spawn (default)";
+    await handleSettingChoice("auditorInspection", ctx as unknown as ExtensionContext);
+    assert.ok(!("auditorInspection" in readGlobal()), "off is the default — the key is removed (tri-state undefined)");
+  } finally {
+    restoreGlobal();
+  }
+});
+
 test("removed request-rate fallback setting has no editor or persistence path", async () => {
   try {
     const ctx = makeMockCtx(tmpCwd());
@@ -121,7 +136,7 @@ test("T4: select editor — carryover writes clear/resume, pause removes the key
 
 test("T4: select options stay concise — rationale lives in the title, not the option rows (v0.34.25)", async () => {
   const ctx = makeMockCtx(tmpCwd());
-  for (const id of ["autoResume", "carryover", "aggressiveMode", "auditorSameSessionSwap", "decisionPopup", "autoAcceptDrafts"]) {
+  for (const id of ["autoResume", "carryover", "aggressiveMode", "auditorSameSessionSwap", "decisionPopup", "autoAcceptDrafts", "auditorInspection"]) {
     let seen: string[] = [];
     ctx.ui.selectImpl = async (_t, options) => { seen = options ?? []; return undefined; };
     await handleSettingChoice(id, ctx as unknown as ExtensionContext);

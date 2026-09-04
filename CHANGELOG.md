@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+  Post-completion transcript actually survives completion: the detached-auditor parent removed the job dir (and its worker lock) the moment it consumed result.json, and the archive-time cancel reaped it again — so the finished audit's job dir (session log, result, worker lock) was gone before any verdict applied, defeating the retention window. Now a run that produced a result keeps its dir AND the worker lock: the lock makes `inspectAuditJobHealth` classify the finished dir as `dead` (reapable once aged past `auditJobRetentionMs` by `/glla audits health cleanup`) instead of `ambiguous` (which cleanup never touches). Incomplete runs (no result.json) are still removed immediately so kill-and-restart loops don't accumulate empty dirs, and `reapDurableWorkers`/cancel skip any dir holding result.json.
+
+### Added
+  Configurable cleanup timer: the dead-job-dir retention threshold is now the `auditJobRetentionMs` setting (global-only; default 15m = the legacy hardcoded `AUDIT_JOB_CLEANUP_MIN_AGE_MS`; bounds 0–7d; 0 = reap proven-dead dirs immediately) instead of a constant. `/glla audits health [cleanup]` threads the setting into `inspectAuditJobHealth` / `cleanupDeadAuditJobs`, so the review window during which a finished audit's job dir (session log included) stays readable is user-configurable — raise it to keep logs longer, lower it to reclaim disk sooner. Editor accepts plain ms or s/m/h duration strings; row in the auditor settings section; headless dump line included. Coverage: clamp/editor/menu tests (`tests/auditor-timeout-settings.test.ts`).
+
+  Live auditor inspection: opt-in `auditorInspection` setting (global-only; default off). When on, the detached auditor's pi runs as a **normal persistent session** pinned inside the job dir (`--session <jobDir>/session.jsonl`) instead of the original `--no-session`, so you can `tail -f` it live (read-only while the audit runs) and resume it interactively after completion (`pi --session <path>` / `pi --fork <path>`). Off (default) keeps the original `--no-session` spawn byte-identical. The session file's lifetime equals the job-dir retention window (`auditJobRetentionMs`) — no new cleanup path. `progress.json` carries `sessionPath`; the audit card shows a `session: <path> — tail -f it live` line while running, and the approval notification points at the kept session for post-audit review. Settings row + editor + headless dump line included; real-worker spawn-spec and progress-shape tests in `tests/auditor-process.test.ts`.
+
 ## 0.38.20 — approval-notify cleanup (2026-09-04)
 
 ### Fixed

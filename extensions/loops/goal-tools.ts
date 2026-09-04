@@ -805,6 +805,10 @@ function registerAgentTools(pi: any): void {
       };
       refreshUI(ctx, true);
       void (async () => {
+      // v0.38.3: live-inspection session path, captured from worker progress
+      // BEFORE the post-audit clear — the approval notify uses it to point
+      // the user at the kept resumable session.
+      let inspectionSessionPath: string | undefined;
       const runAudit = (candidate: AuditorModelCandidate) => {
         latestAuditProgress = {
           ...(latestAuditProgress ?? {}),
@@ -827,6 +831,9 @@ function registerAgentTools(pi: any): void {
           // context does not expose a thinking level.
           thinkingLevel: (settings.auditorThinkingLevel ?? ctx.thinkingLevel ?? "max") as any, // pi ≥0.83 understands max; dev-types predate it
           allowedExtensions: settings.auditorAllowedExtensions,
+          // v0.38.3: opt-in live inspection — persist the auditor's pi as a
+          // resumable session pinned inside the job dir (off = --no-session).
+          inspection: settings.auditorInspection === true,
           // The host tool's AbortSignal is the explicit user-stop boundary
           // for the detached audit. It lets the Esc escape hatch settle the
           // worker before offering the user the without-audit choice.
@@ -849,6 +856,7 @@ function registerAgentTools(pi: any): void {
             // toolTimeoutMs is a dispatch fact for the display layer: the
             // quiet watcher exempts an in-budget long tool from the 3m
             // warning, and the card renders "tool: X · 4m / 20m budget".
+            if (progress.sessionPath) inspectionSessionPath = progress.sessionPath;
             publishDetachedAuditProgress(auditGeneration, auditGoalId, auditAttemptId, { ...progress, toolTimeoutMs });
           },
           // v0.34.57: the parent-side heartbeat-without-progress watchdog
@@ -1287,12 +1295,17 @@ function registerAgentTools(pi: any): void {
         }
         // v0.38.20: same approval voice as the detached path — the stale
         // pre-verdict `Next:` never reaches the chat.
-        ctx.ui.notify(buildApprovalChatLines({
+        // PR #43: append the kept inspection-session pointer when present.
+        ctx.ui.notify([...buildApprovalChatLines({
           outcome: brief.outcome,
           details: brief.details,
           approval: `— auditor ${result.model} approved.`,
           record: manualArchiveRecord,
-        }).join("\n"), "info");
+        }),
+          ...(inspectionSessionPath
+            ? [`Auditor session kept for review: pi --session ${inspectionSessionPath} (or pi --fork ${inspectionSessionPath}).`]
+            : []),
+        ].join("\n"), "info");
         notifyExternal(ctx, `Goal complete (auditor approved): ${recap}`);
         return { content: [{ type: "text", text: `Goal approved by auditor ${result.model}.` }], details: {} };
       }

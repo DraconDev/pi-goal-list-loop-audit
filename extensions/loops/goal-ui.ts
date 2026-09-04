@@ -548,6 +548,8 @@ function publishDetachedAuditProgress(
     // attempt; the quiet watcher and the "tool: X · 4m / 20m budget" line
     // consume it.
     toolTimeoutMs: progress.toolTimeoutMs,
+    // v0.38.3: live-inspection session file (undefined = --no-session spawn).
+    sessionPath: progress.sessionPath,
     lastEventAt: Date.now(),
     lastActivityAt: progress.lastActivityAt,
   };

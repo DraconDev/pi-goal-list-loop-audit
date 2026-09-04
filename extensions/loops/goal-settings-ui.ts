@@ -267,8 +267,10 @@ import {
   cancelDetachedGoalCompletionAuditor,
   newDetachedAuditJobAttemptId,
   runDetachedGoalCompletionAuditor,
+  AUDIT_JOB_CLEANUP_MIN_AGE_MS,
   DEFAULT_AUDITOR_STALL_MS,
   DEFAULT_AUDITOR_TOOL_TIMEOUT_MS,
+  MAX_AUDIT_JOB_RETENTION_MS,
   MAX_AUDITOR_STALL_MS,
   MAX_AUDITOR_TOOL_TIMEOUT_MS,
   MIN_AUDITOR_STALL_MS,
@@ -1106,6 +1108,46 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         } else {
           ctx.ui.notify(`Rejected: enter ${min}-${max} ms (e.g. 15m). Allowed range: ${min / 60000}m-${max / 60000}m.`);
         }
+      }
+      return;
+    }
+    case "auditJobRetentionMs": {
+      // v0.38.3: retention is a review window for finished audit logs, not
+      // a watchdog budget — 0 is legal (reap proven-dead dirs immediately).
+      const s = loadSettings(ctx.cwd);
+      const current = typeof s.auditJobRetentionMs === "number" ? s.auditJobRetentionMs : AUDIT_JOB_CLEANUP_MIN_AGE_MS;
+      const input = await ctx.ui.input(
+        `Audit job retention in ms (or s/m/h, e.g. 900000 / 15m / 2h; empty = default ${AUDIT_JOB_CLEANUP_MIN_AGE_MS / 60000}m)`,
+        `current: ${current} ms`,
+      );
+      if (input === undefined) return;
+      const t = input.trim();
+      if (t === "") {
+        saveSettings("global", ctx.cwd, { auditJobRetentionMs: undefined });
+        ctx.ui.notify(`Cleared: auditJobRetentionMs (default ${AUDIT_JOB_CLEANUP_MIN_AGE_MS / 60000}m).`);
+      } else {
+        const ms = parseSettingsDurationMs(t);
+        if (ms !== undefined && ms >= 0 && ms <= MAX_AUDIT_JOB_RETENTION_MS) {
+          saveSettings("global", ctx.cwd, { auditJobRetentionMs: ms });
+          ctx.ui.notify(`Saved auditJobRetentionMs = ${ms} ms.`);
+        } else {
+          ctx.ui.notify(`Rejected: enter 0-${MAX_AUDIT_JOB_RETENTION_MS} ms (e.g. 15m). Allowed range: 0-${MAX_AUDIT_JOB_RETENTION_MS / 60000}m.`);
+        }
+      }
+      return;
+    }
+    case "auditorInspection": {
+      // v0.38.3: opt-in live inspection — the auditor's pi becomes a normal
+      // persistent session you can tail -f or resume. Off = original --no-session.
+      const v = await ctx.ui.select("Auditor inspection session — persist the auditor's pi as a resumable session for live tail -f / post-audit attach", [
+        "off — the original --no-session spawn (default)",
+        "on — --session <jobDir>/session.jsonl: tail -f it live, resume it after the audit",
+      ]);
+      if (v) {
+        const on = v.startsWith("on");
+        saveSettings("global", ctx.cwd, { auditorInspection: on ? true : undefined });
+        ctx.ui.notify(on ? "Auditor inspection ON — audits now persist a resumable session."
+          : "Auditor inspection OFF — back to the original --no-session spawn.", "info");
       }
       return;
     }

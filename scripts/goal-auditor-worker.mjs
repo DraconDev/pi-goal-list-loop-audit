@@ -284,6 +284,13 @@ function identity(request, attemptId) {
   if (typeof request.prompt !== "string" || !request.prompt) throw new Error("auditor request prompt is empty");
   if (typeof request.model !== "string" || !request.model) throw new Error("auditor request model is empty");
   if (typeof request.thinkingLevel !== "string" || !request.thinkingLevel) throw new Error("auditor request thinking level is empty");
+  // v0.38.3: opt-in live inspection toggle. When true the worker spawns pi
+  // with --session <jobDir>/session.jsonl instead of --no-session, so the
+  // auditor's pi persists as a resumable session you can tail -f live or
+  // resume after the audit. Part of the request hash like every field.
+  if (request.inspection !== undefined && typeof request.inspection !== "boolean") {
+    throw new Error("auditor request inspection must be a boolean");
+  }
   // Older request files may carry wallDeadlineAt. It is intentionally not
   // validated or enforced: a guessed duration must not terminate a worker
   // that continues to emit real progress. Current requests omit the field.
@@ -382,6 +389,9 @@ async function main() {
   await regular(lockPath);
   const request = await readJson(requestPath);
   identity(request, attemptId);
+  // v0.38.3: deterministic session path — pinned inside the job dir so its
+  // lifetime equals the job-dir retention window (no new cleanup path).
+  const sessionPath = request.inspection === true ? path.join(jobDir, "session.jsonl") : undefined;
   // Mark the detached worker owner durably. A replacement pi host can reap
   // this PID after the original host dies; parent-owned/pending locks are
   // deliberately not safe to kill across a restart.
@@ -453,6 +463,7 @@ async function main() {
       requestHash: request.requestHash,
       phase,
       elapsedMs: Date.now() - startedAt,
+      ...(sessionPath ? { sessionPath } : {}),
       ...(reportBytes > 0 ? { reportBytes } : {}),
       ...(lastActivityAt !== undefined ? { lastActivityAt } : {}),
       recentOutput: [
@@ -555,9 +566,10 @@ async function main() {
     await progress("starting");
 
     const piBinary = process.env.GLLA_PI_BINARY || "pi";
+    // v0.38.3: off = the original --no-session spawn, byte-identical args.
     const piArgs = [
       "--mode", "rpc",
-      "--no-session",
+      ...(sessionPath ? ["--session", sessionPath] : ["--no-session"]),
       "--no-extensions",
       "--no-skills",
       "--no-prompt-templates",
