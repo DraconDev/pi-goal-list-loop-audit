@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.38.19 — disapproval response: dispatch stall root-cause + state clear (2026-09-04)
+
+### Fixed
+- Track 2 root cause (post-answer stall): the wait-for-idle send gate deferred an owed continuation forever when the session went phantom-busy — busy, nothing pending, zero stream (neonbreak: 35 re-arms, zero sends, 45m to the zombie abort). A busy session with nothing pending and no real stream for `GLLA_BUSY_SILENT_SEND_MS` (default 5m) is wedged, not working: the marker is now sent into pi's followUp queue instead (`goal_continuation_send_busy_bypass`, `busyBypass` on the sent event). Genuinely working sessions and loaded queues keep the old wait path.
+- Track 3 state clear (stale waiting-verdict): `auditorDisplayPhase` projects `awaiting-verdict` only while the goal is still `auditing`. Closed goals (complete/aborted) and pre-archive snapshots carrying a stale running claim fall through to the quiet gate — no stale progress object can resurrect the wait after `goal_archived`.
+- Both fixes carry behavioral MockPi regression tests with empirical fail-before (old code fails the new assertions, guards pass throughout): `tests/answered-question-dispatch.test.ts` (3), `tests/closed-goal-clears-waiting.test.ts` (2).
+
 ## 0.38.18 — completion/lifecycle field trilogy (2026-09-04)
 
 ### Fixed

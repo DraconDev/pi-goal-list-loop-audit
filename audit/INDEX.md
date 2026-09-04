@@ -14,6 +14,7 @@ the open notes (`note.md` host lifecycle / completion recap /
 long-term preferences).
 
 **Most recent (2026-09-04):**
+- `DISAPPROVAL-RESPONSE-DISPATCH-AND-WAITING-2026-09-04.md` — v0.38.19 shipped: busy-but-silent bypass sends the owed marker into pi's followUp queue after 5m of zero stream (track 2 root cause, not the aborter); `auditorDisplayPhase` projects awaiting-verdict only while auditing (track 3 state clear); both with empirical fail-before MockPi tests
 - `COMPLETION-LIFECYCLE-TRILOGY-2026-09-04.md` — v0.38.18 shipped: pipe-syntax pipelines run shell-free (track 1), never-streamed turns park on first abort + honest rearm message (track 2), detached approval closes the transcript via fire-once followUp notice (track 3)
 - `SUBAGENT-DIALECT-2026-09-04.md` — v0.38.16 shipped: prompts/strings speak the live `subagent` tool + `bg_wait` settle (dead tintinweb `Agent`/`get_subagent_result` gone); `isSubagentProviderFailure` matches the live names; tintinweb stays retired, pi-subagents 0.65 gets its own canary'd eval
 - `PAUSE-ANTI-CONFABULATION-2026-09-04.md` — v0.38.15 shipped: `pause_goal` refuses blocker claims that name a missing GLLA tool (the call dispatching proves the batch landed) unless pi's own `Tool X not found` is quoted; new-tab incident forensics (zero tool errors, both claims disproven)
