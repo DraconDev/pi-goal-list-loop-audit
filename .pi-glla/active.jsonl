@@ -734,3 +734,5 @@
 {"type":"reviewer_fired","value":{"goalId":"20260904162433-qm4iq0","kind":"goal","findings":0,"enqueued":0,"proposed":0,"cascadeStep":"notify-and-idle","report":".pi-glla/reviews/20260904162433-qm4iq0-2026-09-04T18-02-04-603Z.md"},"at":"2026-09-04T18:02:04.606Z"}
 {"type":"state","value":{"goal":null,"list":[],"loop":null,"mainModelRecovery":null,"lastModelRef":"opencode-go/muse-spark-1.3-contributor","lastCompactionAt":1788543160173,"supervisorPausedAt":null,"loadHoldAt":null,"lastOutcome":null},"at":"2026-09-04T18:02:04.606Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":1576,"outputTokens":2948,"cacheReadTokens":114161,"cacheWriteTokens":0,"totalTokens":118685},"contextUsage":{"tokens":118685,"contextWindow":200000,"percent":59.3425}},"at":"2026-09-04T18:22:56.113Z"}
+{"type":"session_shutdown","value":{"reason":"reload"},"at":"2026-09-04T18:37:51.273Z"}
+{"type":"session_rebound","value":{"reason":"reload"},"at":"2026-09-04T18:37:53.940Z"}
