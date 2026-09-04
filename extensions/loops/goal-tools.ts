@@ -1267,6 +1267,9 @@ function registerAgentTools(pi: any): void {
           stopReason: terminalReason,
           archivePath: path.relative(ctx.cwd, archivedGoalPath(ctx.cwd, state.goal.id)) || archivedGoalPath(ctx.cwd, state.goal.id),
         }, state.goal.completionSummary);
+        // v0.38.20: captured pre-archive — archiveCurrentGoal clears
+        // state.goal, so the record pointer must be computed here.
+        const manualArchiveRecord = `— record: ${path.relative(ctx.cwd, archivedGoalPath(ctx.cwd, state.goal.id)) || archivedGoalPath(ctx.cwd, state.goal.id)}`;
         const archived = archiveCurrentGoal(ctx, "complete", terminalReason);
         if (!archived) {
           // The archive helper preserves the live objective and emits the
@@ -1288,7 +1291,7 @@ function registerAgentTools(pi: any): void {
           outcome: brief.outcome,
           details: brief.details,
           approval: `— auditor ${result.model} approved.`,
-          record: `— record: ${path.relative(ctx.cwd, archivedGoalPath(ctx.cwd, state.goal.id)) || archivedGoalPath(ctx.cwd, state.goal.id)}`,
+          record: manualArchiveRecord,
         }).join("\n"), "info");
         notifyExternal(ctx, `Goal complete (auditor approved): ${recap}`);
         return { content: [{ type: "text", text: `Goal approved by auditor ${result.model}.` }], details: {} };

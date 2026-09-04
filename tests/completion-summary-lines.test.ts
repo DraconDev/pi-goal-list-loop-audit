@@ -137,9 +137,15 @@ test("v0.38.14: terminal brief resolves through the same facts as the compact re
 test("the ✓ done chat notifies use the line block; external keeps the single line", () => {
   const hooks = fs.readFileSync("extensions/loops/goal-auditor-hooks.ts", "utf8");
   assert.match(hooks, /terminalHumanBrief\(/);
-  assert.match(hooks, /✓ done — \$\{brief\.outcome\}/);
+  // v0.38.20: the approval voice moved into buildApprovalChatLines — the
+  // stale pre-verdict Next: never reaches the chat on any approval path.
+  assert.match(hooks, /buildApprovalChatLines\(\{/);
+  assert.match(hooks, /withoutStaleNext\(brief\.details\)/);
   assert.match(hooks, /— auditor \$\{result\.model\} approved/);
+  const brief = fs.readFileSync("extensions/completion-summary.ts", "utf8");
+  assert.match(brief, /✓ done — \$\{notice\.outcome\}/);
   const tools = fs.readFileSync("extensions/loops/goal-tools.ts", "utf8");
   assert.equal(tools.match(/terminalHumanBrief\(/g)?.length ?? 0, 2, "both tool ✓ done paths use the briefing");
+  assert.equal(tools.match(/buildApprovalChatLines\(\{/g)?.length ?? 0, 2, "both tool ✓ done notifies use the approval voice");
   assert.match(tools, /notifyExternal\(ctx, `Goal complete \(auditor approved\): \$\{recap\}`\)/, "external notify keeps the compact line");
 });
