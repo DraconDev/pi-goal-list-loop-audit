@@ -14,6 +14,7 @@ the open notes (`note.md` host lifecycle / completion recap /
 long-term preferences).
 
 **Most recent (2026-09-04):**
+- `OBJECTION-PINNING-2026-09-04.md` — v0.38.21: PR #43 merged (observability, defaults kept) + disapproval round scoping (`superseded`/`supersededBy`, `liveDisapproval`, shared `appendAuditVerdict`, settled-rounds prompt line); honest scope — full-report surfacing already shipped in v0.35.x, this slice adds the missing round scoping; behavioral fail-before + 3/3 stable
 - `ANTIGRAVITY-TEAMWORK-PREVIEW-2026-09-04.md` — read-only survey: two-phase interview→autonomous teams, artifact handoffs, integrity modes, falsifier-paired search + pitfall registry, self-succession, $916.92/OS-run cost honesty; verdict is selective-borrow (per-repo pitfall registry) not adoption — Teamwork's own spend numbers validate GLLA's cheap-brief + park-default bias
 - `APPROVAL-NOTIFY-CLEANUP-2026-09-04.md` — v0.38.20 shipped: approval chat is outcome + ≤2 details + approval + record pointer, stale pre-verdict `Next:` stripped on all three `✓ done` paths; 19:20 field forensics (9.5-min audit disproves complete-before-verify, `…` cuts are word-boundary by design, tab runs pre-v0.38.18 code so `/reload`)
 - `DISAPPROVAL-RESPONSE-DISPATCH-AND-WAITING-2026-09-04.md` — v0.38.19 shipped: busy-but-silent bypass sends the owed marker into pi's followUp queue after 5m of zero stream (track 2 root cause, not the aborter); `auditorDisplayPhase` projects awaiting-verdict only while auditing (track 3 state clear); both with empirical fail-before MockPi tests

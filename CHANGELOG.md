@@ -1,8 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.38.21 — objection-attached retries + PR #43 auditor observability (2026-09-04)
 
 ### Fixed
+- Objection-attached retries: disapproval rounds are now scoped, not just listed. A new disapproval supersedes older live rounds (`superseded` / `supersededBy: disapproval:<at>` on the verdict) and a clean approval clears the objection pin (`supersededBy: approval:<at>`); shield-blocked approvals clear too (the claim passed audit — only the evidence citation failed), while infra errors and impossibles never touch the flags. The continuation prompt argues the latest LIVE disapproval (`liveDisapproval`) instead of merely the last history entry, and names the settled rounds (`Settled rounds (superseded, do not relitigate)`) so retries argue only live objections. Both verdict push sites (detached + manual-verify) now share one `appendAuditVerdict` helper — the hand-rolled duplicates are gone — and the pin embeds report content already stored in `auditHistory`, never a path into a reaped job dir. Honest scope note: the full-report surfacing itself shipped in v0.35.x (`## LATEST AUDITOR`); this slice adds the missing round scoping. Coverage: `tests/objection-pinning.test.ts` (behavioral two-round MockPi drive with true fail-before + helper pins for approval/shield/error paths).
+- Merged PR #43 (Bjynt): detached-auditor observability — opt-in `auditorInspection` persistent sessions (`--session <jobDir>/session.jsonl`, tail/read-only live, resumable after; default off, byte-identical spawn when off), configurable `auditJobRetentionMs` (default 15m = legacy constant, bounds 0–7d), and the post-completion transcript survival fix (finished dirs keep dir+lock, classified `dead` instead of `ambiguous`). Merged with union resolution against v0.38.20's approval voice (inspection pointer appended after `buildApprovalChatLines`). Defaults kept as shipped (inspection off, 15m).
+
+### Fixed (from Unreleased)
   Post-completion transcript actually survives completion: the detached-auditor parent removed the job dir (and its worker lock) the moment it consumed result.json, and the archive-time cancel reaped it again — so the finished audit's job dir (session log, result, worker lock) was gone before any verdict applied, defeating the retention window. Now a run that produced a result keeps its dir AND the worker lock: the lock makes `inspectAuditJobHealth` classify the finished dir as `dead` (reapable once aged past `auditJobRetentionMs` by `/glla audits health cleanup`) instead of `ambiguous` (which cleanup never touches). Incomplete runs (no result.json) are still removed immediately so kill-and-restart loops don't accumulate empty dirs, and `reapDurableWorkers`/cancel skip any dir holding result.json.
 
 ### Added
