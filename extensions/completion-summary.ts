@@ -159,6 +159,34 @@ export function humanCompletionBrief(
   return { outcome, details };
 }
 
+/** v0.38.20: the agent's `Next:` recap line goes stale the moment the
+ * verdict lands — reprinting it next to the approval trailer reads as
+ * complete-before-verify (field 2026-09-04: `Next: detached auditor
+ * verdict decides.` printed above `— auditor … approved.`). Every approval
+ * surface strips it; the full six-label record stays in the archive. */
+export function withoutStaleNext(details: string[] | undefined): string[] {
+  return (details ?? []).filter((d) => !/^\s*Next\s*:/i.test(d));
+}
+
+/** v0.38.20: the approval chat notify — outcome first, at most two
+ * informing details (the full record lives in the archive and the
+ * transcript notice), then the approval trailer and the record pointer.
+ * Five 120-char label lines scan as soup, not a summary (field
+ * 2026-09-04); the stale Next never reaches the chat. */
+export function buildApprovalChatLines(notice: {
+  outcome: string;
+  details: string[] | undefined;
+  approval: string;
+  record: string;
+}): string[] {
+  return [
+    `✓ done — ${notice.outcome}`,
+    ...withoutStaleNext(notice.details).slice(0, 2),
+    notice.approval,
+    notice.record,
+  ];
+}
+
 /** Multi-line projection: one `Label: value` line per label with generous
  * word-bounded values. This is the user-facing `✓ done` block — six short
  * facts that stay scannable in chat. The single-line projection remains

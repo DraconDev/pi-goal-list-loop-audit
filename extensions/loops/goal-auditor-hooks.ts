@@ -241,7 +241,7 @@ import {
   pushCapped as pushRepetitionCapped,
 } from "../goal-loop-repetition.js";
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
-import { compactCompletionSummary, compactTerminalCompletionSummary, isGenericCompletionSummary, missingCompletionSummaryLabels, terminalHumanBrief } from "../completion-summary.js";
+import { buildApprovalChatLines, compactCompletionSummary, compactTerminalCompletionSummary, isGenericCompletionSummary, missingCompletionSummaryLabels, terminalHumanBrief, withoutStaleNext } from "../completion-summary.js";
 import {
   defaultAgentDir,
   resolveEffectiveSubagentModel,
@@ -1432,6 +1432,9 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       archivePath: path.relative(liveCtx.cwd, archivedGoalPath(liveCtx.cwd, state.goal.id)) || archivedGoalPath(liveCtx.cwd, state.goal.id),
     }, state.goal.completionSummary);
     const approvalVia = `${origin === "manual" ? " on /goal verify" : origin === "session-recovery" ? " after session recovery" : " on the provider retry"}${fallbackUsed ? " after an auditor-model fallback" : ""}`;
+    // v0.38.20: the chat record pointer. Computed pre-archive like the
+    // recap/brief above (archiveCurrentGoal clears state.goal).
+    const approvalRecord = `— record: ${path.relative(liveCtx.cwd, archivedGoalPath(liveCtx.cwd, state.goal.id)) || archivedGoalPath(liveCtx.cwd, state.goal.id)}`;
     const archived = archiveCurrentGoal(liveCtx, "complete", `auditor ${result.model} approved (${origin})`);
     if (!archived) {
       // archiveCurrentGoal already preserved the live record and warned the
@@ -1449,19 +1452,22 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     }
     // v0.38.14: the chat notify is the human briefing — outcome first,
     // filler labels dropped — while the external notify keeps the compact
-    // single line (pager/sound safe).
-    // v0.38.3: live inspection — the auditor's pi persisted a resumable
+    // single line (pager/sound safe). v0.38.20: outcome + at most two
+    // details + approval + record pointer; the agent's pre-verdict `Next:`
+    // is stale the moment the verdict lands and never reaches the chat.
+    // PR #43: live inspection — the auditor's pi persisted a resumable
     // session pinned inside the job dir. Point the user at it AFTER the
     // audit (interactive attach only now; while running it was read-only).
-    liveCtx.ui.notify(
-      `✓ done — ${brief.outcome}\n${[
-        ...brief.details,
-        `— auditor ${result.model} approved${approvalVia}.`,
-        ...(inspectionSessionPath
-          ? [`Auditor session kept for review: pi --session ${inspectionSessionPath} (or pi --fork ${inspectionSessionPath}).`]
-          : []),
-      ].join("\n")}`, "info",
-    );
+    liveCtx.ui.notify([...buildApprovalChatLines({
+      outcome: brief.outcome,
+      details: brief.details,
+      approval: `— auditor ${result.model} approved${approvalVia}.`,
+      record: approvalRecord,
+    }),
+      ...(inspectionSessionPath
+        ? [`Auditor session kept for review: pi --session ${inspectionSessionPath} (or pi --fork ${inspectionSessionPath}).`]
+        : []),
+    ].join("\n"), "info");
     notifyExternal(liveCtx, `Goal complete (auditor approved, ${origin}): ${recap}`);
     // v0.38.18 (track 3): the toast above is ephemeral — without a
     // transcript entry the session keeps narrating "waiting on the
@@ -1473,7 +1479,9 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       sendTerminalCompletionNotice(liveCtx, {
         goalId,
         outcome: brief.outcome,
-        details: [...brief.details, `— auditor ${result.model} approved${approvalVia}.`],
+        // v0.38.20: the transcript keeps the informing details, but the
+        // stale pre-verdict `Next:` is stripped here too.
+        details: [...withoutStaleNext(brief.details), `— auditor ${result.model} approved${approvalVia}.`],
       });
     }
     return;

@@ -10,6 +10,19 @@
 
   Live auditor inspection: opt-in `auditorInspection` setting (global-only; default off). When on, the detached auditor's pi runs as a **normal persistent session** pinned inside the job dir (`--session <jobDir>/session.jsonl`) instead of the original `--no-session`, so you can `tail -f` it live (read-only while the audit runs) and resume it interactively after completion (`pi --session <path>` / `pi --fork <path>`). Off (default) keeps the original `--no-session` spawn byte-identical. The session file's lifetime equals the job-dir retention window (`auditJobRetentionMs`) — no new cleanup path. `progress.json` carries `sessionPath`; the audit card shows a `session: <path> — tail -f it live` line while running, and the approval notification points at the kept session for post-audit review. Settings row + editor + headless dump line included; real-worker spawn-spec and progress-shape tests in `tests/auditor-process.test.ts`.
 
+## 0.38.20 — approval-notify cleanup (2026-09-04)
+
+### Fixed
+- Approval chat notify no longer reprints the agent's pre-verdict recap verbatim: the stale `Next: <verdict pending>` line (which read as complete-before-verify next to the approval trailer) is stripped on every approval surface, and the chat notify is outcome + at most two informing details + approval trailer + archive record pointer (`buildApprovalChatLines`, `withoutStaleNext`). The transcript notice keeps the informing details minus the stale Next. Applied to all three `✓ done` paths (detached approval, manual-verify approval, no-audit complete).
+- Field note: the 19:20 `...` cuts were v0.38.13 word-boundary `…` clips working as designed (every cut lands on a word boundary), not mid-word mangling — but five 120-char label lines still scan as soup, which the cap above addresses. The same session showed zero `terminal_completion_notice_*` events because the tab runs pre-v0.38.18 loaded code — `/reload` to pick up the notice path.
+
+## 0.38.19 — disapproval response: dispatch stall root-cause + state clear (2026-09-04)
+
+### Fixed
+- Track 2 root cause (post-answer stall): the wait-for-idle send gate deferred an owed continuation forever when the session went phantom-busy — busy, nothing pending, zero stream (neonbreak: 35 re-arms, zero sends, 45m to the zombie abort). A busy session with nothing pending and no real stream for `GLLA_BUSY_SILENT_SEND_MS` (default 5m) is wedged, not working: the marker is now sent into pi's followUp queue instead (`goal_continuation_send_busy_bypass`, `busyBypass` on the sent event). Genuinely working sessions and loaded queues keep the old wait path.
+- Track 3 state clear (stale waiting-verdict): `auditorDisplayPhase` projects `awaiting-verdict` only while the goal is still `auditing`. Closed goals (complete/aborted) and pre-archive snapshots carrying a stale running claim fall through to the quiet gate — no stale progress object can resurrect the wait after `goal_archived`.
+- Both fixes carry behavioral MockPi regression tests with empirical fail-before (old code fails the new assertions, guards pass throughout): `tests/answered-question-dispatch.test.ts` (3), `tests/closed-goal-clears-waiting.test.ts` (2).
+
 ## 0.38.18 — completion/lifecycle field trilogy (2026-09-04)
 
 ### Fixed

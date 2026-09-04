@@ -3529,9 +3529,15 @@ test("v0.34.91: detached approval notify carries the agent's completion recap, n
     assert.ok(recapNotifs.some((n: { message: string }) => n.message.includes("Changed:") && n.message.includes("\n")), "the recap arrives as one-label-per-line, not the single-line mash");
     assert.equal(ctx.ui.matching("✓ done").length, 1, "the recap line is the single decisive end-of-goal voice");
     assert.match(recapNotifs[0]!.message, /^✓ done — Pinned the R-key\/HUD retire parity/, "the briefing leads with the outcome in the header");
-    for (const label of ["Changed:", "Evidence:", "Tests:"]) {
+    // v0.38.20: the chat notify is outcome + at most two details + approval
+    // + record pointer (five 120-char label lines scan as soup, not a
+    // summary — field 2026-09-04). Substance lives in the transcript
+    // notice + archive; the chat stays glanceable but never boilerplate.
+    for (const label of ["Changed:", "Evidence:"]) {
       assert.ok(recapNotifs[0]!.message.split("\n").some((line: string) => line.startsWith(label)), `approved briefing keeps informing label ${label}`);
     }
+    assert.ok(recapNotifs[0]!.message.split("\n").length <= 5, "chat notify stays glanceable: outcome + ≤2 details + approval + record");
+    assert.match(recapNotifs[0]!.message, /— record: \.pi-glla\/archive\/.*\.md/, "chat notify points at the archived record");
     for (const label of ["Unresolved:", "Next:"]) {
       assert.ok(!recapNotifs[0]!.message.split("\n").some((line: string) => line.startsWith(label)), `filler ${label} none is dropped from the briefing`);
     }
