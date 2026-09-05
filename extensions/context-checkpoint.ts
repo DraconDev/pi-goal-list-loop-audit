@@ -78,26 +78,28 @@ function loopNumber(value: unknown): string {
 
 /**
  * The loop is a separate work surface from Goal. Keep its durable target and
- * progress in the checkpoint so a loop-only session does not lose its
- * authority when old goal-event payloads are projected out. Recent history is
- * useful for orientation, but is deliberately capped and treated as data.
+ * authority in the checkpoint so a loop-only session does not lose its
+ * context when old goal-event payloads are projected out.
+ *
+ * CACHE-STABILITY INVARIANT (provider prefix-cache rule): this checkpoint is
+ * inserted into the effective per-send message list at the position of the
+ * first removed goal-event payload — i.e. EARLY in history, before every
+ * provider call. Any byte change here invalidates the cache prefix for every
+ * token after it. This block therefore renders ONLY fields that are stable
+ * for the life of the loop run (target / measure / bounds config). Live
+ * counters (iteration, best, last, stall, tokens, history, timestamps) are
+ * intentionally NOT repeated here: they already ride the newest retained
+ * `[LOOP ITERATION …]` prompt (message-list suffix) and durable
+ * `.pi-glla/active.jsonl`. Rendering them here changed the prefix on every
+ * tick, making every loop iteration a full cache miss.
  */
 function loopCheckpointLines(loop: LoopState): string[] {
-  const history = Array.isArray(loop.history) ? loop.history : [];
-  const recentHistory = history.slice(-8).map((entry) =>
-    `iteration=${loopNumber(entry.iteration)}, value=${entry.value === null ? "null" : loopNumber(entry.value)}, improved=${entry.improved === true ? "true" : "false"}, at=${safeInline(entry.at, 80) || "(unknown)"}`,
-  );
-  if (history.length > recentHistory.length) {
-    recentHistory.unshift(`[…${history.length - recentHistory.length} earlier loop measurement(s) omitted]`);
-  }
   return [
     "Active loop authority (durable loop state; not a user request):",
     `Loop target: ${safeInline(loop.target, 2_000) || "(missing — recover from durable loop state before proceeding)"}`,
     `Loop measure: command=${safeInline(loop.measureCmd, 1_200) || "(metricless)"}; direction=${safeInline(loop.direction, 20) || "(none)"}`,
-    `Loop progress: active=${loop.active === true ? "true" : "false"}; iteration=${loopNumber(loop.iteration)}; best=${loopNumber(loop.bestValue)}; last=${loopNumber(loop.lastValue)}; stall=${loopNumber(loop.stallCount)}; nullMeasures=${loopNumber(loop.consecutiveNullMeasures)}; errors=${loopNumber(loop.consecutiveErrors)}`,
-    `Loop bounds: maxIterations=${loopNumber(loop.maxIterations)}; plateauWindow=${loopNumber(loop.plateauWindow)}; timeLimitHours=${loopNumber(loop.timeLimitHours)}; tokenBudget=${loopNumber(loop.tokenBudget)}; tokensUsed=${loopNumber(loop.tokensUsed)}; stopReason=${safeInline(loop.stopReason, 400) || "(none)"}`,
-    `Loop history (latest ${Math.min(history.length, 8)} of ${history.length}):\n${recentHistory.length > 0 ? recentHistory.join("\n") : "(none yet)"}`,
-    `Loop lifecycle: startedAt=${safeInline(loop.startedAt, 100) || "(unknown)"}; lastIterationCompletedAt=${safeInline(loop.lastIterationCompletedAt, 100) || "(none)"}; specFile=${safeInline(loop.specFile, 300) || "(none)"}; refineHint=${safeInline(loop.refineHint, 600) || "(none)"}`,
+    `Loop bounds: maxIterations=${loopNumber(loop.maxIterations)}; plateauWindow=${loopNumber(loop.plateauWindow)}; timeLimitHours=${loopNumber(loop.timeLimitHours)}; tokenBudget=${loopNumber(loop.tokenBudget)}; specFile=${safeInline(loop.specFile, 300) || "(none)"}; startedAt=${safeInline(loop.startedAt, 100) || "(unknown)"}`,
+    "Loop progress: live counters (iteration/best/last/stall/history/tokens/completed-at) are intentionally omitted here — read the newest retained [LOOP ITERATION …] prompt and .pi-glla/active.jsonl. This checkpoint stays byte-stable across iterations so provider prefix caches keep hitting.",
   ];
 }
 
@@ -146,15 +148,13 @@ const OVERFLOW_AUDIT_CHARS = 1_100;
 const OVERFLOW_EMERGENCY_LINE_CHARS = 500;
 
 function compactLoopCheckpointLines(loop: LoopState): string[] {
-  const historyCount = Array.isArray(loop.history) ? loop.history.length : 0;
-  const latest = historyCount > 0 ? loop.history[historyCount - 1] : undefined;
+  // Same cache-stability invariant as loopCheckpointLines: stable fields only.
   return [
     "Active loop authority (durable loop state; not a user request):",
     `Loop target: ${safeInline(loop.target, OVERFLOW_LOOP_TARGET_CHARS) || "(missing — recover from durable loop state before proceeding)"}`,
     `Loop measure: command=${safeInline(loop.measureCmd, OVERFLOW_LOOP_MEASURE_CHARS) || "(metricless)"}; direction=${safeInline(loop.direction, 20) || "(none)"}`,
-    `Loop progress: active=${loop.active === true ? "true" : "false"}; iteration=${loopNumber(loop.iteration)}; best=${loopNumber(loop.bestValue)}; last=${loopNumber(loop.lastValue)}; stall=${loopNumber(loop.stallCount)}; nullMeasures=${loopNumber(loop.consecutiveNullMeasures)}; errors=${loopNumber(loop.consecutiveErrors)}`,
-    `Loop bounds: maxIterations=${loopNumber(loop.maxIterations)}; plateauWindow=${loopNumber(loop.plateauWindow)}; timeLimitHours=${loopNumber(loop.timeLimitHours)}; tokenBudget=${loopNumber(loop.tokenBudget)}; tokensUsed=${loopNumber(loop.tokensUsed)}; stopReason=${safeInline(loop.stopReason, 180) || "(none)"}`,
-    `Loop lifecycle: startedAt=${safeInline(loop.startedAt, 70) || "(unknown)"}; lastIterationCompletedAt=${safeInline(loop.lastIterationCompletedAt, 70) || "(none)"}; specFile=${safeInline(loop.specFile, 160) || "(none)"}; historyCount=${historyCount}; latestIteration=${latest ? loopNumber(latest.iteration) : "(none)"}`,
+    `Loop bounds: maxIterations=${loopNumber(loop.maxIterations)}; plateauWindow=${loopNumber(loop.plateauWindow)}; timeLimitHours=${loopNumber(loop.timeLimitHours)}; tokenBudget=${loopNumber(loop.tokenBudget)}; specFile=${safeInline(loop.specFile, 160) || "(none)"}`,
+    "Loop progress: live counters omitted by design — see the newest retained loop prompt and .pi-glla/active.jsonl (keeps this checkpoint byte-stable for prefix-cache stability).",
   ];
 }
 
@@ -212,7 +212,7 @@ function buildOverflowCheckpoint(
 
   const optionalLines = [
     loop
-      ? `Loop history summary: count=${Array.isArray(loop.history) ? loop.history.length : 0}; latest=${Array.isArray(loop.history) && loop.history.length > 0 ? loopNumber(loop.history[loop.history.length - 1]?.value) : "(none)"}`
+      ? "Loop history summary: omitted by design — live history rides the newest retained loop prompt (keeps this checkpoint byte-stable for prefix-cache stability)"
       : null,
     goal
       ? `Auto-continuation: ${goal.autoContinue === true ? "enabled" : "disabled/unknown"}; stopReason=${safeInline(goal.stopReason, 220) || "(none)"}; pauseKind=${safeInline(goal.pauseKind, 40) || "(none)"}`
