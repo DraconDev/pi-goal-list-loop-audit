@@ -175,6 +175,29 @@ export function hasHungWorker(rows: AgentsPanelRow[]): boolean {
   return rows.some((r) => r.status !== "ended" && (r.status === "hung" || r.action === "abort-requested"));
 }
 
+export type AgentsExtras = { line: string; lines: string[] };
+
+/** v0.38.22 (display unification): the pure richness switch behind the
+ * widget/status worker presence. Rich restores detailed rows (capped,
+ * bucketed — the widget key only moves on genuine state transitions)
+ * plus the task-linkage header native UI can never show; compact keeps
+ * the count line; quiet surfaces hung/aborting workers only. Pure and
+ * hermetic for tests; the caller supplies rows + richness + objective. */
+export function assembleAgentsExtras(
+  rows: AgentsPanelRow[],
+  richness: "rich" | "compact" | "quiet",
+  objective: string,
+  now = Date.now(),
+): AgentsExtras | undefined {
+  const line = renderAgentsWidgetLine(rows);
+  if (!line) return undefined;
+  if (richness === "quiet" && !hasHungWorker(rows)) return undefined;
+  if (richness !== "rich") return { line, lines: [] };
+  const clean = objective.replace(/\s+/g, " ").trim();
+  const header = clean ? [`→ ${truncate(clean, 60)}`] : [];
+  return { line, lines: [...header, ...renderAgentsWidgetLines(rows, now)] };
+}
+
 /** The compact footer summary: count + the least-live child.
  * v0.37.1 (ui-jitter fix): bucket the silent age so the status/widget
  * text stays stable between ticks — a per-second change made the footer

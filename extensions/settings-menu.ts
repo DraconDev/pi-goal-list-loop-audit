@@ -557,6 +557,15 @@ export function buildSettingsRows(
     description:
       "inherit-parent shares your session model; agent-default uses upstream defaults; Designer remains available as a glla role",
   });
+  rows.push({
+    id: "subagentDisplayRichness",
+    section: "subagents",
+    label: "Subagent display richness",
+    valueText: show("subagentDisplayRichness", "rich"),
+    sourceText: src("subagentDisplayRichness"),
+    description:
+      "rich shows worker rows + task linkage (default); compact shows the count line; quiet shows hung/aborting workers only — HUNG is never silent",
+  });
   for (const name of OVERRIDABLE_AGENT_TYPES) {
     rows.push({
       id: `subagentModelOverrides.${name}`,

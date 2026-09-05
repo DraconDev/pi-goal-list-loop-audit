@@ -265,7 +265,7 @@ import {
   type HeartbeatFlags,
 } from "../goal-heartbeat.js"; // decomposition step 4 (v0.34.112)
 import { getSubagentAgentsSnapshot } from "../goal-heartbeat.js";
-import { renderAgentsWidgetLine, renderAgentsWidgetLines, hasHungWorker, truncate, type AgentsPanelRow } from "../goal-agents-panel.js";
+import { assembleAgentsExtras, type AgentsPanelRow } from "../goal-agents-panel.js";
 import {
   clearMainModelRecoveryTimer,
   createGoalRecovery,
@@ -808,14 +808,8 @@ function refreshUI(ctx: ExtensionContext, force = false): void {
         try {
           const { agents } = getSubagentAgentsSnapshot();
           const rows = agents as AgentsPanelRow[];
-          const line = renderAgentsWidgetLine(rows);
-          if (!line) return {};
-          const richness = settings.subagentDisplayRichness ?? "rich";
-          if (richness === "quiet" && !hasHungWorker(rows)) return {};
-          if (richness !== "rich") return { agents: { line, lines: [] as string[] } };
-          const objective = (state.goal?.objective ?? "").replace(/\s+/g, " ").trim();
-          const header = objective ? [`→ ${truncate(objective, 60)}`] : [];
-          return { agents: { line, lines: [...header, ...renderAgentsWidgetLines(rows, now)] } };
+          const extras = assembleAgentsExtras(rows, settings.subagentDisplayRichness ?? "rich", state.goal?.objective ?? "", now);
+          return extras ? { agents: extras } : {};
         } catch { return {}; }
       })(),
       ...activity,

@@ -293,6 +293,7 @@ import {
   syncSubagentModelOverrides,
   type SubagentModelStrategy,
 } from "../goal-loop-subagents.js";
+import type { SubagentDisplayRichness } from "../goal-settings.js";
 import {
   buildSettingsRows,
   SettingsMenuComponent,
@@ -1575,6 +1576,19 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         const strategy: SubagentModelStrategy = v.startsWith("agent-default") ? "agent-default" : "inherit-parent";
         saveSettings("global", ctx.cwd, { subagentModelStrategy: strategy });
         ctx.ui.notify("Subagent model strategy saved — applies to NEW pi sessions (pi-subagents registers agents at session start).", "info");
+      }
+      return;
+    }
+    case "subagentDisplayRichness": {
+      const v = await ctx.ui.select("Subagent display richness (ambient worker UI)", [
+      "rich — worker rows + task linkage (recommended)",
+      "compact — the count line only",
+      "quiet — hung/aborting workers only (HUNG is never silent)",
+      ]);
+      if (v) {
+        const richness: SubagentDisplayRichness = v.startsWith("compact") ? "compact" : v.startsWith("quiet") ? "quiet" : "rich";
+        saveSettings("global", ctx.cwd, { subagentDisplayRichness: richness });
+        ctx.ui.notify(`Subagent display richness saved (${richness}) — applies on the next UI refresh.`, "info");
       }
       return;
     }
