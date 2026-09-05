@@ -159,10 +159,20 @@ export function renderAgentsWidgetLines(rows: AgentsPanelRow[], now = Date.now()
     lines.push(`${rowLabel(row)} · id ${cleanField(row.recordId, 10)}`);
     const evidence = row.evidence !== "live" ? ` · ${row.evidence}` : "";
     const action = row.action === "abort-requested" ? " · aborting" : row.action === "unavailable" ? " · abort unavailable" : row.action === "failed" ? " · abort failed" : "";
-    lines.push(`  ${rowStateWord(row, now)} · silent ${fmtDuration(row.silentMs)}${evidence}${action}`);
+    // v0.38.22 (display unification): bucket the silence age like the
+    // compact line — raw per-second values churn the widget key and
+    // re-layout the editor every tick (the v0.37.1 jumping, reintroduced
+    // the moment rich lines render ambiently).
+    lines.push(`  ${rowStateWord(row, now)} · silent ${fmtDuration(bucketSilentMs(row.silentMs))}${evidence}${action}`);
   }
   if (active.length > shown.length) lines.push(`… ${active.length - shown.length} more agents · /glla agents`);
   return lines;
+}
+
+/** v0.38.22: safety invariant for the richness ladder — HUNG/aborting
+ * workers are never silent, so `quiet` still surfaces them. */
+export function hasHungWorker(rows: AgentsPanelRow[]): boolean {
+  return rows.some((r) => r.status !== "ended" && (r.status === "hung" || r.action === "abort-requested"));
 }
 
 /** The compact footer summary: count + the least-live child.

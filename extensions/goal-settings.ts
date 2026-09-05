@@ -26,6 +26,8 @@ import {
   piGlaDir,
 } from "./goal-loop-core.ts";
 import type { SubagentModelStrategy } from "./goal-loop-subagents.js";
+/** v0.38.22: ambient worker display richness (see subagentDisplayRichness). */
+export type SubagentDisplayRichness = "rich" | "compact" | "quiet";
 import {
   DEFAULT_MAIN_MODEL_PRIMARY_PROBE_MINUTES,
   normalizeMainModelFallbackRefs,
@@ -243,6 +245,12 @@ export interface Settings {
   /** v0.27.5: post-completion audit config. Same shape as `reviewer`. */
   postaudit?: Record<string, unknown>;
   subagentModelStrategy?: SubagentModelStrategy;
+  /** v0.38.22 (display unification): ambient worker richness. `rich`
+   * (default) shows detailed worker rows + the task-linkage header;
+   * `compact` shows the single count line; `quiet` shows worker presence
+   * only when a child is hung/aborting — HUNG is never silent at any
+   * level. `/glla agents` keeps full detail regardless. */
+  subagentDisplayRichness?: SubagentDisplayRichness;
   /** Per-agent-type model pin, e.g. { "scout": "minimax/MiniMax-M3" }.
    * Always wins over subagentModelStrategy — the managed override is written
    * WITH this pin regardless of strategy. */
@@ -345,6 +353,9 @@ export const DEFAULT_SETTINGS: Settings = {
   // v0.24.6: subagents inherit the session model by default, avoiding a
   // surprise provider/model pin from the upstream default agent.
   subagentModelStrategy: "inherit-parent",
+  // v0.38.22 (display unification): rich by default — full worker rows +
+  // task linkage; trimmable to compact/quiet, never silent on hangs.
+  subagentDisplayRichness: "rich",
   auditFeedbackChars: DEFAULT_AUDIT_FEEDBACK_CHARS,
   // v0.34.141: keep-going is the production default. Set false explicitly
   // for the conservative pause-first policy; the dial flips DEFAULTS, never
@@ -401,6 +412,13 @@ function normalizeLoadedSettings(settings: Settings): Settings {
   settings.auditorAllowedExtensions = normalizeAuditorAllowedExtensions(settings.auditorAllowedExtensions);
   if (settings.stateRoot !== "sessionDir" && settings.stateRoot !== "workingDir") {
     settings.stateRoot = "workingDir";
+  }
+  // v0.38.22: hand-edited richness falls back to rich (the default) —
+  // unknown values must not blank the worker display.
+  if (settings.subagentDisplayRichness !== "rich"
+      && settings.subagentDisplayRichness !== "compact"
+      && settings.subagentDisplayRichness !== "quiet") {
+    settings.subagentDisplayRichness = "rich";
   }
   if (settings.mainModelFailback !== "auto" && settings.mainModelFailback !== "sticky") {
     settings.mainModelFailback = "auto";
