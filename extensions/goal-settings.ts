@@ -387,7 +387,7 @@ export function readSettingsFile(file: string): Partial<Settings> {
   }
 }
 
-function normalizeLoadedSettings(settings: Settings): Settings {
+export function normalizeLoadedSettings(settings: Settings): Settings {
   // Settings files can be edited by hand or survive an older UI. Normalize
   // the main fallback chain at every read so runtime, display, and persistence
   // all see the same bounded value.
