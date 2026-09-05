@@ -207,7 +207,13 @@ test("loop-only projection bounds repeated payloads and carries loop authority",
   assert.match(checkpoint, /loopTarget=Bound loop-only continuation context/);
   assert.match(checkpoint, /Loop target: Bound loop-only continuation context/);
   assert.match(checkpoint, /Loop measure: command=printf 17/);
-  assert.match(checkpoint, /iteration=4/);
+  assert.match(checkpoint, /Loop bounds: maxIterations=50/);
+  // Cache-stability invariant: volatile loop counters must NOT be rendered
+  // into the checkpoint (it sits early in the per-send history, so any byte
+  // change busts the provider prefix cache for every later token).
+  assert.ok(!/iteration=4/.test(checkpoint), "checkpoint must not render live iteration");
+  assert.ok(!/best=17/.test(checkpoint), "checkpoint must not render live best value");
+  assert.ok(!/stall=1/.test(checkpoint), "checkpoint must not render live stall count");
 
   const messages = [
     { role: "user", content: "ordinary context" },
@@ -228,6 +234,37 @@ test("loop-only projection bounds repeated payloads and carries loop authority",
   assert.equal(after.messageCount, 3);
   assert.equal(after.gllaMessageCount, 2);
   assert.ok(after.serializedBytes < before.serializedBytes);
+});
+
+test("loop checkpoint is byte-stable across volatile loop progress (prefix-cache stability)", () => {
+  const base = loopFixture();
+  const next: LoopState = {
+    ...base,
+    iteration: 5,
+    stallCount: 2,
+    bestValue: 17,
+    lastValue: 21,
+    consecutiveNullMeasures: 1,
+    consecutiveErrors: 1,
+    tokensUsed: 9_000,
+    lastIterationCompletedAt: "2026-08-29T10:04:00.000Z",
+    refineHint: "try a different angle",
+    history: [
+      ...base.history,
+      { iteration: 4, value: 21, improved: false, at: "2026-08-29T10:04:00.000Z" },
+      { iteration: 5, value: null, improved: false, at: "2026-08-29T10:05:00.000Z" },
+    ],
+  };
+  const input = { goal: null, sessionGeneration: 13, ownerSessionId: "loop-owner-13" } as const;
+  const before = buildAuthoritativeContextCheckpoint({ ...input, loop: base });
+  const after = buildAuthoritativeContextCheckpoint({ ...input, loop: next });
+  assert.equal(after, before, "volatile loop counters must not change checkpoint bytes — the checkpoint is inserted early in history and any change busts the provider prefix cache for every later token");
+  // Stable authority must still move the checkpoint when it genuinely changes.
+  const retargeted = buildAuthoritativeContextCheckpoint({
+    ...input,
+    loop: { ...base, target: "a different loop target" },
+  });
+  assert.notEqual(retargeted, before);
 });
 
 test("context hook projects loop-only state and records loop authority", async () => {
