@@ -751,3 +751,6 @@
 {"type":"drafter_model_restored","value":{"to":"opencode-go/muse-spark-1.3-contributor","alreadyActive":true},"at":"2026-09-05T09:58:22.389Z"}
 {"type":"model_fallback_select","value":{"scope":"drafter","fromRef":"opencode-go/muse-spark-1.3-contributor","reason":"exhausted"},"at":"2026-09-05T09:58:22.389Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":206,"outputTokens":481,"cacheReadTokens":76017,"cacheWriteTokens":0,"totalTokens":76704},"contextUsage":{"tokens":76704,"contextWindow":200000,"percent":38.352000000000004}},"at":"2026-09-05T10:25:49.569Z"}
+{"type":"session_shutdown","value":{"reason":"reload"},"at":"2026-09-05T11:14:50.829Z"}
+{"type":"drafter_model_restored","value":{"to":"opencode-go/muse-spark-1.3-contributor","alreadyActive":true},"at":"2026-09-05T11:14:50.832Z"}
+{"type":"session_rebound","value":{"reason":"reload"},"at":"2026-09-05T11:14:52.563Z"}
