@@ -38,9 +38,9 @@ function row(over: Partial<AgentsPanelRow> = {}): AgentsPanelRow {
 
 test("v0.38.22 richness defaults to rich and normalizes junk", () => {
   assert.equal(DEFAULT_SETTINGS.subagentDisplayRichness, "rich", "rich default");
-  const junk = normalizeLoadedSettingsShallow({ subagentDisplayRichness: "verbose" } as never);
+  const junk = normalizeLoadedSettings({ subagentDisplayRichness: "verbose" } as never);
   assert.equal(junk.subagentDisplayRichness, "rich", "junk falls back to rich, never blanks the display");
-  const unset = normalizeLoadedSettingsShallow({});
+  const unset = normalizeLoadedSettings({});
   assert.equal(unset.subagentDisplayRichness, "rich", "unset means rich");
 });
 
