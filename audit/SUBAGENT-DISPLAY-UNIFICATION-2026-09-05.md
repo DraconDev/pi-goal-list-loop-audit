@@ -85,7 +85,9 @@ places; panels swap order between refreshes ("flop").
 - Gate: `TMPDIR=/var/tmp npm run release:check` **1934 pass, 2 skip,
   0 fail** (196 files; one interim fail was lockfile sync, fixed via
   `npm install --package-lock-only`) + `npx tsc --noEmit` clean.
-- Tag `v0.38.22`, GitHub release, publish workflow, `npm view` verify.
+- Tag `v0.38.22` pushed (`0cd197d`), release published, publish run
+  `33960089043` success (push twins cancelled by the known concurrency
+  race), `npm view` = `0.38.22` live.
 
 ## Upstream
 
