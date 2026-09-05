@@ -547,3 +547,41 @@ n=$((n+1)); echo $n > ${counter3}
   fs.rmSync(cwd2, { recursive: true, force: true });
   fs.rmSync(cwd3, { recursive: true, force: true });
 });
+
+test("v0.38.23: mechanical checks resolve project-local node_modules/.bin (bare tsc ENOENT field fix)", async () => {
+  const { mechanicalCheckEnv, runMechanicalPreAuditChecks } = await import("../extensions/goal-loop-shield.ts");
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+
+  // Field 2026-09-05: contract `tsc --noEmit` spawned BARE against a parent
+  // PATH without tsc → `spawn tsc ENOENT` fast-fail on a green tree.
+  // Pure part: the project .bin dir goes first on PATH when present.
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "mech-localbin-"));
+  const binDir = path.join(cwd, "node_modules", ".bin");
+  fs.mkdirSync(binDir, { recursive: true });
+  const env = mechanicalCheckEnv(cwd);
+  assert.ok(
+    env.PATH === binDir || env.PATH?.startsWith(binDir + path.delimiter),
+    "project .bin must resolve first",
+  );
+  // Absent .bin dir → parent environment untouched.
+  const bare = fs.mkdtempSync(path.join(os.tmpdir(), "mech-nobin-"));
+  assert.equal(mechanicalCheckEnv(bare).PATH, process.env.PATH);
+
+  // Integration part: a stub bin placed ONLY in the fixture .bin resolves.
+  const stubName = process.platform === "win32" ? "mech-stub.cmd" : "mech-stub";
+  const stubPath = path.join(binDir, stubName);
+  fs.writeFileSync(
+    stubPath,
+    process.platform === "win32"
+      ? "@echo mech-stub-ok\r\n"
+      : "#!/bin/sh\necho mech-stub-ok\n",
+  );
+  if (process.platform !== "win32") fs.chmodSync(stubPath, 0o755);
+  const res = await runMechanicalPreAuditChecks(cwd, [stubName]);
+  assert.equal(res.passed, true, `bare stub in node_modules/.bin must resolve (output: ${res.output ?? ""})`);
+
+  fs.rmSync(cwd, { recursive: true, force: true });
+  fs.rmSync(bare, { recursive: true, force: true });
+});

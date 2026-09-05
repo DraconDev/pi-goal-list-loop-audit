@@ -559,6 +559,29 @@ function appendMechanicalOutputTail(current: string, chunk: string): string {
     : combined.slice(-MECHANICAL_OUTPUT_TAIL_CHARS);
 }
 
+/**
+ * Environment for a mechanical check: the parent environment plus the
+ * project's own `node_modules/.bin` first on PATH (when it exists), so
+ * bare contract bins (`tsc`, `eslint`, `wxt`, …) resolve exactly as they do
+ * under `npm run`. Pure and unit-testable via the exported helper below.
+ */
+export function mechanicalCheckEnv(cwd: string): NodeJS.ProcessEnv {
+  const localBin = path.join(cwd, "node_modules", ".bin");
+  let isDir = false;
+  try {
+    isDir = fs.statSync(localBin).isDirectory();
+  } catch { /* absent — parent PATH stands */ }
+  if (!isDir) return { ...process.env };
+  const parentPath = process.env.PATH ?? "";
+  const alreadyFirst = parentPath === localBin
+    || parentPath.startsWith(localBin + path.delimiter);
+  if (alreadyFirst) return { ...process.env };
+  return {
+    ...process.env,
+    PATH: parentPath ? `${localBin}${path.delimiter}${parentPath}` : localBin,
+  };
+}
+
 function runMechanicalCommand(
   cwd: string,
   program: string,
@@ -577,6 +600,14 @@ function runMechanicalCommand(
         // process group so timeout/abort cleanup reaches every descendant.
         detached: process.platform !== "win32",
         stdio: ["ignore", "pipe", "pipe"],
+        // v0.38.23 (field 2026-09-05): a contract naming a project-local bin
+        // (`tsc --noEmit`, `eslint`, `wxt build`) spawned it BARE, but bare
+        // names only resolve via the parent PATH — node_modules/.bin was
+        // never consulted, so a green tree fast-failed with `spawn tsc
+        // ENOENT` while the project's own `bun run check` passed. npm-run
+        // parity: resolve project-local bins first, exactly as `npm run`
+        // does for every script it executes.
+        env: mechanicalCheckEnv(cwd),
       });
     } catch (error) {
       resolve({
