@@ -82,8 +82,9 @@ places; panels swap order between refreshes ("flop").
 
 ## Release record
 
-- Gate: `TMPDIR=/var/tmp npm run release:check` green + `tsc --noEmit`
-  clean (this section updated with counts at ship).
+- Gate: `TMPDIR=/var/tmp npm run release:check` **1934 pass, 2 skip,
+  0 fail** (196 files; one interim fail was lockfile sync, fixed via
+  `npm install --package-lock-only`) + `npx tsc --noEmit` clean.
 - Tag `v0.38.22`, GitHub release, publish workflow, `npm view` verify.
 
 ## Upstream
