@@ -298,6 +298,16 @@ GLLA is the supervisor. These companions add capabilities around it:
   sequential goal can still run cleanly without workers — install when
   parallelism will pay for its coordination and model usage.
 
+  Display coexistence: pi-subagents renders its own inline run panels +
+  FleetView, GLLA renders one compact widget line + the status-bar worker
+  count + `/glla agents`. If you see the same run stacked 3× or panels
+  swapping order, set pi-subagents `inlineToolDisplay: "summary"` (one
+  stable row per run) and pin `fleetViewPlacement`; GLLA's own richness is
+  the `subagentDisplayRichness` setting (`/glla` → Subagents): `rich`
+  (default — worker rows + task linkage), `compact` (count line), `quiet`
+  (hung/aborting workers only). Upstream triple-render report:
+  nicobailon/pi-subagents#1931.
+
 Install (or keep pinned):
 
 ```bash

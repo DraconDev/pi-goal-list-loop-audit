@@ -58,6 +58,34 @@ places; panels swap order between refreshes ("flop").
   `fleetViewPlacement` pin for users seeing triplicates.
 - Upstream issue filed (triple-render + order swap); text in §Upstream.
 
+## GLLA wiring (v0.38.22)
+
+- `goal-settings.ts`: `SubagentDisplayRichness` + `subagentDisplayRichness`
+  (default `"rich"`, hand-edited junk normalizes to rich — unknown values
+  must never blank the worker display). `normalizeLoadedSettings` newly
+  exported for tests.
+- `settings-menu.ts`: Subagents-section row; `loops/goal-settings-ui.ts`:
+  three-option select editor (rich recommended), saved global.
+- `goal-agents-panel.ts`: `hasHungWorker` (hung status or abort-requested,
+  ended excluded), pure `assembleAgentsExtras(rows, richness, objective,
+  now)`; `renderAgentsWidgetLines` buckets silence via `bucketSilentMs`.
+- `loops/goal-ui.ts`: extras assembly calls the pure helper; status-bar
+  count (`buildStatusText` agent summary) follows the ladder for free.
+- Fail-before accounting: the 5 tests are new-behavior pins — on pre-change
+  code the file fails to load (`assembleAgentsExtras`/`hasHungWorker`
+  missing), and the bucket-stability case fails substantively (raw
+  `silentMs` made 31s vs 34s outputs differ).
+- `tests/subagent-display-richness.test.ts` (5): default/normalization,
+  ladder assembly + linkage header, bucket stability + genuine-growth
+  sensitivity, hung invariant (incl. zero-workers hide-at-zero), width
+  safety (every rich line ≤ 100 chars, header ≤ 64).
+
+## Release record
+
+- Gate: `TMPDIR=/var/tmp npm run release:check` green + `tsc --noEmit`
+  clean (this section updated with counts at ship).
+- Tag `v0.38.22`, GitHub release, publish workflow, `npm view` verify.
+
 ## Upstream
 
 Issue: nicobailon/pi-subagents#1931 — "rich inline subagent display renders

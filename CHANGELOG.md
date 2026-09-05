@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.38.22 — subagent display unification: richness ladder + upstream triple-render report (2026-09-05)
+
+### Fixed
+- Subagent display unification (field: triple-rendered run panels swapping order with agent prose, 2026-09-05 screenshot). New `subagentDisplayRichness` setting (`/glla` → Subagents): `rich` (default — detailed worker rows + the task-linkage header `→ <objective>` native UI can never show), `compact` (today's count line), `quiet` (hung/aborting workers only — HUNG is never silent at any level). Rich is safe against the v0.37.1 jumping because `renderAgentsWidgetLines` now buckets silence ages exactly like the compact line, so the widget key only moves on genuine state transitions. Status-bar worker count follows the same ladder automatically. `/glla agents` keeps full detail regardless. Upstream triple-render + order-swap filed as nicobailon/pi-subagents#1931 (read-only diagnosis; GLLA cannot suppress/reorder/merge native panels — no ordering API, transcript components order by arrival); README documents the coexistence escapes (`inlineToolDisplay: "summary"` + `fleetViewPlacement` pin). Coverage: `tests/subagent-display-richness.test.ts` (5 tests: default/normalization, ladder assembly + linkage header, bucket stability, hung invariant, width safety).
+
 ## 0.38.21 — objection-attached retries + PR #43 auditor observability (2026-09-04)
 
 ### Fixed

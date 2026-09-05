@@ -13,7 +13,10 @@ audit policy). The next pass owns the durable policy artifacts and
 the open notes (`note.md` host lifecycle / completion recap /
 long-term preferences).
 
-**Most recent (2026-09-04):**
+**Most recent (2026-09-05):**
+- `SUBAGENT-DISPLAY-UNIFICATION-2026-09-05.md` — v0.38.22: `subagentDisplayRichness` (`rich` default / `compact` / `quiet`, HUNG never silent) + bucketed rich lines + task-linkage header; upstream triple-render/order-swap filed as nicobailon/pi-subagents#1931; README coexistence guidance
+
+**Earlier (2026-09-04):**
 - `OBJECTION-PINNING-2026-09-04.md` — v0.38.21: PR #43 merged (observability, defaults kept) + disapproval round scoping (`superseded`/`supersededBy`, `liveDisapproval`, shared `appendAuditVerdict`, settled-rounds prompt line); honest scope — full-report surfacing already shipped in v0.35.x, this slice adds the missing round scoping; behavioral fail-before + 3/3 stable
 - `ANTIGRAVITY-TEAMWORK-PREVIEW-2026-09-04.md` — read-only survey: two-phase interview→autonomous teams, artifact handoffs, integrity modes, falsifier-paired search + pitfall registry, self-succession, $916.92/OS-run cost honesty; verdict is selective-borrow (per-repo pitfall registry) not adoption — Teamwork's own spend numbers validate GLLA's cheap-brief + park-default bias
 - `APPROVAL-NOTIFY-CLEANUP-2026-09-04.md` — v0.38.20 shipped: approval chat is outcome + ≤2 details + approval + record pointer, stale pre-verdict `Next:` stripped on all three `✓ done` paths; 19:20 field forensics (9.5-min audit disproves complete-before-verify, `…` cuts are word-boundary by design, tab runs pre-v0.38.18 code so `/reload`)

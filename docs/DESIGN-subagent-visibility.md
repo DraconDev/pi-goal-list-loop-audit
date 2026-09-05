@@ -74,3 +74,17 @@ children so idle rigs see no change.
   pin hung classification, cap behavior, loud-missing-file behavior for
   --tail, and widget hide-at-zero.
 - Version + CHANGELOG + README at ship time; full release gate.
+
+## v0.38.22 supersede — display unification (2026-09-05)
+
+The compact-only doctrine above was the v0.37.1 jitter fix (raw per-second
+silence ages re-laid out the editor every tick). v0.38.22 keeps the doctrine's
+safety property by other means — `renderAgentsWidgetLines` buckets silence
+ages exactly like the compact line, so the widget key only moves on genuine
+state transitions — and restores rich ambient rows behind the
+`subagentDisplayRichness` ladder (`rich` default / `compact` / `quiet`, HUNG
+never silent), plus the task-linkage header (`→ <objective>`) only GLLA can
+show. Triplication/ordering against pi-subagents native panels is upstream
+(nicobailon/pi-subagents#1931, read-only); GLLA owns its slot only and
+documents the native escapes. Assembly is the pure `assembleAgentsExtras`
+(pinned in `tests/subagent-display-richness.test.ts`).
