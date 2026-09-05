@@ -60,9 +60,9 @@ places; panels swap order between refreshes ("flop").
 
 ## Upstream
 
-Issue: nicobailon/pi-subagents — "rich inline subagent display renders the
-same run 3× and swaps order with other extensions' updates". Filed as
-<URL>. Evidence: screenshot 2026-09-05 (run 601ef390, three identical
+Issue: nicobailon/pi-subagents#1931 — "rich inline subagent display renders
+the same run 3× and swaps order with other extensions' updates"
+(https://github.com/nicobailon/pi-subagents/issues/1931). Evidence: screenshot 2026-09-05 (run 601ef390, three identical
 `subagent status` panels interleaved with agent prose, pi-subagents 0.65.1,
 default settings). Ask: collapse same-run updates in place (or honor a
 single-row mode that still shows progress), and stable ordering vs other
