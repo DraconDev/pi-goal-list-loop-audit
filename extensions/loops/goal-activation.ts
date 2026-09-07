@@ -370,6 +370,7 @@ import {
   addSingleItem,
   autoNotifyCmd,
   cmdGoal,
+  cmdGauto,
   cmdList,
   cmdReview,
   cmdReviewerSettings,
@@ -779,6 +780,19 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       rememberCtx(ctx);
       if (refuseForeignCommand(ctx)) return Promise.resolve();
       return cmdGoal(args, ctx);
+    },
+  });
+  // v1.0.0: /g auto <objective> is the bare, questionless goal. Reuses the
+  // EXACT same skip-draft path as /goal start <objective> (cmdGauto → cmdSet
+  // with skipDraft true + explicitReplace true) — no interview, no Confirm
+  // gate, no startDrafting.
+  pi.registerCommand("gauto", {
+    description: "Create a goal with an objective and no interview, no Confirm gate, no drafting. /gauto <objective> activates instantly like /goal start but always treats everything after the word as pure objective — no verb subcommands; use /goal <anything> for status|pause|resume|cancel|tweak|archive.",
+    getArgumentCompletions: completions([]),
+    handler: (args: string, ctx: ExtensionContext) => {
+      rememberCtx(ctx);
+      if (refuseForeignCommand(ctx)) return Promise.resolve();
+      return cmdGauto(args, ctx);
     },
   });
   const settingsHandler = (args: string, ctx: ExtensionContext) => {

@@ -372,6 +372,19 @@ async function cmdSet(args: string, ctx: ExtensionContext, skipDraft = false, ex
   scheduleContinuation(ctx, true);
 }
 
+// v0.38.22: /gauto <objective> — the bare, questionless goal. Reuses the
+// EXACT same skip-draft path as /goal start <objective> (cmdSet with
+// skipDraft true + explicitReplace true). No startDrafting, no model-driven
+// interview, no confirmDraft — quote-stripping, stale-entry warning, and
+// resolveCarryover are inherited from cmdSet. The remainder of the
+// command line is treated verbatim as the objective.
+export async function cmdGauto(
+  args: string,
+  ctx: ExtensionContext,
+): Promise<void> {
+  return cmdSet(args, ctx, true, true);
+}
+
 async function cmdStatus(ctx: ExtensionContext): Promise<void> {
   if (!state.goal) {
     const recoveryLines = formatMainModelRecoveryStatus(state.mainModelRecovery, normalizeMainModelFallbackRefs(loadSettings(ctx.cwd).mainModelFallbacks));
