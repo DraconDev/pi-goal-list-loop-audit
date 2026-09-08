@@ -28,6 +28,7 @@ test("cmdGauto calls cmdSet(args, ctx, true, true) — skip-DRAFT path", () => {
   const COMMANDS = fs.readFileSync(path.join(ROOT, "extensions", "goal-commands.ts"), "utf8");
   const m = COMMANDS.match(/cmdGauto[\s\S]*?cmdSet\(([^)]*)\)/);
   assert.ok(m, "cmdGauto must call cmdSet with its arguments");
+  assert.ok(m[1], "cmdGauto must have a capture group over its cmdSet args");
   const args = m[1].split(",").map((s) => s.trim());
   assert.equal(args[0], "args", "first cmdSet arg is args");
   assert.equal(args[1], "ctx", "second cmdSet arg is ctx");
