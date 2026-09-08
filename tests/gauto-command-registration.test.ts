@@ -5,10 +5,13 @@
 // commit that proves the durable local install survives reload).
 //
 // Assertions:
-//   1. cmdGauto and cmdGllagauto both export functions from the durable source.
+//   1. cmdGauto exported from the durable source (feature wired in).
 //   2. cmdGauto calls cmdSet(args, ctx, true, true): skip-DRAFT path.
-//   3. /gauto registered with "no interview" gated contract.
-//   4. install records the durable local source, not npm: copy.
+//   3. /gauto registered on the goal-runtime command surface with the
+//      no-interview, no-Confirm gated contract (reachable every load).
+//   4. install records the durable local source, not an npm: copy — so a
+//      reload rebuilds from the same local files, never a published
+//      node_modules shroud.
 //   5. 383f93f is an ancestor of durable HEAD; npm copy lacks /gauto.
 
 import { test } from "node:test";
