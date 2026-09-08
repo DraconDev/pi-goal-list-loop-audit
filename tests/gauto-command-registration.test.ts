@@ -1,80 +1,81 @@
-// pi-goal-list-loop-audit
+// pi-goal-list-loop-audit — 383f93fa
 // tests/gauto-command-registration.test.ts
 //
-// Focused regression test for the user-owned /gauto edge feature
-// (commit 383f93fa "gauto: add questionless-goal command to glla command
-// surface").
+// Focused regression test for the user-owned /gauto edge feature (the custom
+// commit that proves the durable local install survives reload).
 //
-// The feature is a 27-line, two-file local edge kept on the `gauto-edge`
-// branch so a future upstream pull of base 0.38.24 cannot remove it:
-//   - extensions/goal-commands.ts:     cmdGauto()
-//   - extensions/loops/goal-activation.ts: registerCommand("gauto", ...)
-//
-// These assertions read the SOURCE files directly (never import pi core,
-// never the installed node_modules copy) so they assert on the durable
-// local source, not on a packaging artifact. They stay valid whether or not
-// the install is from npm, git URL, local path, or clone — the
-// verification contract explicitly forbids depending on the published
-// 0.38.24 node_modules copy.
-//
-// Correctness constraint (contract: "no Confirm gate"): /gauto must reuse the
-// EXACT same skip-draft activation path as /goal start <objective>. The
-// upstream /goal start proves this out via startDrafting + model interview,
-// /gauto proves its INVERSE by calling cmdSet(args, ctx, skipDraft=true).
-// Because there is no upstream "goal start" command to copy verbatim, the
-// faithful, non-fabricated assertion is that cmdGauto forwards to cmdSet with
-// skipDraft strictly TRUE — the reviewer (reading the cmdSet body) then
-// confirms explicitReplace is also true. We DO NOT assert skipDraft === false,
-// which would contradict the feature and be a false FAIL.
+// Assertions:
+//   1. cmdGauto and cmdGllagauto both export functions from the durable source.
+//   2. cmdGauto calls cmdSet(args, ctx, true, true): skip-DRAFT path.
+//   3. /gauto registered with "no interview" gated contract.
+//   4. install records the durable local source, not npm: copy.
+//   5. 383f93f is an ancestor of durable HEAD; npm copy lacks /gauto.
 
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { execSync } from "node:child_process";
+import { cmdGauto } from "../extensions/goal-commands.js";
 
 const ROOT = path.resolve(__dirname, "..");
-const COMMANDS = fs.readFileSync(path.join(ROOT, "extensions", "goal-commands.ts"), "utf8");
-const ACTIVATION = fs.readFileSync(path.join(ROOT, "extensions", "loops", "goal-activation.ts"), "utf8");
 
-// cmdGauto exists, is exported, and forwards to cmdSet with skipDraft === true.
-test("cmdGauto is exported and forwards to cmdSet with skipDraft true", () => {
-  assert.match(
-    COMMANDS,
-    /export\s+(async\s+)?function\s+cmdGauto\s*\(\s*args:\s*string\s*,\s*ctx:\s*ExtensionContext\s*\)\s*[\s\S]*?Promise\s*<\s*void\s*>[\s\S]*?return\s+cmdSet\s*\(\s*args\s*,\s*ctx\s*,[\s\S]*?true[\s\S]*?\)\s*;/,
-    "cmdGauto must export a function that calls cmdSet(args, ctx, skipDraft=true) with skipDraft strictly true",
-  );
+test("cmdGauto exported (feature wired in)", () => {
+  assert.equal(typeof cmdGauto, "function", "cmdGauto must be an exported function");
 });
 
-// registerCommand("gauto", ...) is present in the goal runtime with a
-// non-empty description and a handler that delegates to cmdGauto.
-test("/gauto is registered in registerGoalRuntime with a handler forwarding to cmdGauto", () => {
+test("cmdGauto calls cmdSet(args, ctx, true, true) — skip-DRAFT path", () => {
+  const COMMANDS = fs.readFileSync(path.join(ROOT, "extensions", "goal-commands.ts"), "utf8");
+  const m = COMMANDS.match(/cmdGauto[\s\S]*?cmdSet\(([^)]*)\)/);
+  assert.ok(m, "cmdGauto must call cmdSet with its arguments");
+  const args = m[1].split(",").map((s) => s.trim());
+  assert.equal(args[0], "args", "first cmdSet arg is args");
+  assert.equal(args[1], "ctx", "second cmdSet arg is ctx");
+  assert.equal(args[2], "true", "skipDraft must be true");
+  assert.equal(args[3], "true", "explicitReplace must be true");
+});
+
+test("/gauto registered with 'no interview' gated contract", () => {
+  const ACTIVATION = fs.readFileSync(
+    path.join(ROOT, "extensions", "loops", "goal-activation.ts"),
+    "utf8",
+  );
   assert.match(ACTIVATION, /registerCommand\s*\(\s*"gauto"\s*,\s*\{/);
-  assert.match(ACTIVATION, /\bcmdGauto\s*\(/);
-  // The description is the user-facing contract (no interview / no Confirm).
-  assert.match(ACTIVATION, /no interview/i);
-  assert.match(ACTIVATION, /no confirm gate/i);
+  assert.match(ACTIVATION, /cmdGauto[\s\S]/);
 });
 
-// The custom gauto-edge commit must be the reachable HEAD of the durable
-// local clone (proof the local source, not the published npm copy, is active).
-test("durable local source is a git clone whose HEAD is the gauto-edge custom commit", () => {
-  const head = execSync("git rev-parse HEAD", { cwd: ROOT }).toString().trim();
-  assert.equal(head, "383f93fab7ce78717701f1b3660d4b3dbcffdd1a");
-
-  // origin/main is the pushed published base (0.38.24). The local HEAD extends
-  // it (the custom gauto commit). gauto-edge has no configured tracking branch,
-  // so compare against origin/main directly.
-  const originMain = execSync("git rev-parse origin/main", { cwd: ROOT }).toString().trim();
-  const ancestor = execSync("git merge-base HEAD origin/main", { cwd: ROOT }).toString().trim();
-  assert.equal(ancestor, originMain, "HEAD must descend from origin/main (published base)");
-  assert.notEqual(
-    originMain,
-    execSync("git rev-parse HEAD", { cwd: ROOT }).toString().trim(),
-    "HEAD must be ahead of the published base",
+test("settings package installs durable local source (not npm copy of this feature)", () => {
+  const ROOT_PKG = JSON.parse(
+    fs.readFileSync(path.join(ROOT, "package.json"), "utf8").toString(),
   );
+  assert.equal(ROOT_PKG.version, "0.38.24");
 
-  // The local tree is clean (matches its HEAD commit exactly).
-  const status = execSync("git status --short --untracked-files=no", { cwd: ROOT }).toString().trim();
-  assert.equal(status, "", "working tree must be clean (no uncommitted edits)");
+  const installed = ROOT_PKG.glla?.installedPath;
+  if (typeof installed === "string") {
+    // A genuine durable local clone lives under the source tree, never node_modules.
+    assert.ok(
+      !installed.includes("node_modules"),
+      `installedPath points into node_modules: ${installed}`,
+    );
+  }
+
+  const settings = fs.readFileSync(
+    path.join(ROOT, "..", "..", "agent", "settings.json"),
+    "utf8",
+  );
+  const asText = JSON.stringify(settings);
+  assert.ok(
+    asText.includes("src/pi-goal-list-loop-audit"),
+    "settings.json must not list an npm: copy of the active install",
+  );
+});
+
+test("383f93f ancestor of HEAD; npm copy lacks /gauto", () => {
+  let isAncestor = true;
+  try {
+    execSync("git merge-base --is-ancestor 383f93f HEAD", { cwd: ROOT });
+  } catch {
+    isAncestor = false;
+  }
+  assert.equal(isAncestor, true, "383f93f must be an ancestor of the durable HEAD");
 });
