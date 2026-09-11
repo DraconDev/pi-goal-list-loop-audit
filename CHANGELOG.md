@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.38.46 — rich Antigravity-style terminal summaries (2026-09-11)
+
+### Changed
+
+- **Rich terminal voice (field 20260911_003839/003903/003907):** the terminal approval render is now `## Done — outcome` + `### Key Findings & Remediation` (numbered, bold lead + code refs) + `### Verification Summary` (`| Check | Status | Details |` table with Tests PASS/FAIL and the audit verdict row) + `### Next`, closed by the pinned approval/record trailer. The flat six-bullet card is gone from chat and transcript.
+- **Rich archive too:** `archiveCurrentGoal` appends a `## Terminal summary` section built from the same parts over the verbatim six-label machine record; aborted records wear a `## Aborted —` headline, never `Done`.
+- **Scope held:** progress cards, status line, and external notifies keep their compact projections; the legacy `buildApprovalChatLines` helper is untouched.
+- **Budgets (verbose by owner choice):** findings cap 8, values/table cells 200 chars, Next cap 4; table pipes escaped; Tests status honest (PASS only on `pass` without nonzero `fail`, else FAIL/REPORTED); empty sections omitted, never invented.
+- **Pins:** `tests/rich-terminal-summary.test.ts` (8) — headline, numbering, table, FAIL detection, pipe escaping, stale-Next behavior, trailer contract, no-audit path, archive headlines; terminal-render + communication suites migrated to the rich shape.
+
 ## 0.38.45 — full-project audit pass: 16 fixes across version, summary, and approval paths (2026-09-10)
 
 ### Fixed

@@ -241,6 +241,7 @@ import {
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
 import {
   buildLoopCompletionSummary,
+  buildRichArchiveSection,
   compactLoopCompletionSummary,
   compactTerminalCompletionSummary,
   isTerminalLoopStopReason,
@@ -1142,6 +1143,12 @@ function archiveCurrentGoal(
     completionSummary: summaryResolution.summary,
   };
   const md = renderGoalMarkdown(terminalGoal);
+  // Field 20260911_* (rich terminal voice): the archive is for humans —
+  // it carries the same rich markdown as chat over the verbatim
+  // six-label machine record. Built from the terminal goal AFTER the
+  // summary fence resolves, so chat and archive cannot disagree.
+  const richSection = buildRichArchiveSection(terminalGoal, status, archivePath);
+  const richMd = `${md}\n## Terminal summary\n\n${richSection.join("\n")}\n`;
   // An existing same-id archive is an immutable fence. Check it before
   // publishing an intent so an unrelated/sentinel winner can never make the
   // startup reconciler terminalize this live goal.
@@ -1179,7 +1186,7 @@ function archiveCurrentGoal(
     // mitigates, this removes the predictability too).
     const temp = `${target}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`;
     try {
-      fs.writeFileSync(temp, md, { encoding: "utf-8", flag: "wx" });
+      fs.writeFileSync(temp, richMd, { encoding: "utf-8", flag: "wx" });
       fs.linkSync(temp, target);
       return true;
     } catch (err) {

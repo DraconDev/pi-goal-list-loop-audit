@@ -58,10 +58,12 @@ test("canonical render folds a lone approval with the verdict count, model-free"
     approval: "— auditor auditor-model approved on the provider retry.",
     record: "— record: .pi-glla/archive/20260907-approval-render.md",
   });
-  assert.ok((render.chatLines[0] ?? "").startsWith("✓ done — "), "chat opens with the outcome");
-  // v0.38.39 (field 20260909_013733): the trailer rides as bullets — one
-  // voice, no dangling `—` lines; the record pointer stays last.
-  assert.ok(render.chatLines.every((l) => l.startsWith("✓ done — ") || l.startsWith("• ")), "uniform bullets, no dash-prefixed lines");
+  assert.ok((render.chatLines[0] ?? "").startsWith("## Done — "), "chat opens with the Done headline");
+  // Rich voice (field 20260911_*): sections + table + trailer. Headers,
+  // numbered findings, table rows, and Next bullets share the chat; the
+  // record pointer stays last.
+  assert.ok(render.chatLines.includes("### Key Findings & Remediation"), "findings section present");
+  assert.ok(render.chatLines.includes("### Verification Summary"), "verification table present");
   // v0.38.42 (field 20260909_140404): a lone approval folds with the
   // verdict count — no model ID, no redundant standalone audit bullet.
   assert.ok(
@@ -78,7 +80,7 @@ test("canonical render folds a lone approval with the verdict count, model-free"
   assert.ok(!render.transcriptLines.some((l) => /^\s*Next\s*:/i.test(l)), "transcript strips the stale Next too");
   assert.equal(render.approval, "— auditor auditor-model approved on the provider retry.", "the shared approval field keeps the full string for archive/persist consumers");
   assert.ok(render.recap.length > 0, "external single line still produced");
-  assert.equal(render.outcome, (render.chatLines[0] ?? "").replace(/^✓ done — /, ""), "outcome matches the chat lead");
+  assert.equal(render.outcome, (render.chatLines[0] ?? "").replace(/^## Done — /, ""), "outcome matches the chat headline");
 });
 
 test("standalone audit bullet survives only with news", () => {
@@ -147,18 +149,17 @@ test("v0.38.37 posted summary carries verifiable-result bullets plus the deliber
     record: "— record: .pi-glla/archive/20260907-approval-render.md",
   };
   const withLeftOut = buildTerminalApprovalRender({ ...base, leftOut: "the walkthrough artifact surface" });
-  const bullets = withLeftOut.chatLines.filter((l) => l.startsWith("• "));
-  const detailBullets = bullets.filter((l) => !/^(• auditor |• audit:|• record:)/.test(l));
-  assert.ok(detailBullets.length >= 1 && detailBullets.length <= 6, `4-6 verifiable-result bullets, got ${detailBullets.length}`);
-  assert.ok(bullets.some((l) => /Changed: extensions\/completion-summary\.ts/.test(l)), "each bullet carries its evidence inline");
-  // v0.38.39: SIX's concrete `Next: replay on next contact` survives as
-  // the closing action bullet, ahead of the non-do and the trailer.
-  const nextIdx = withLeftOut.chatLines.findIndex((l) => l.startsWith("• Next:"));
-  const leftOutIdx = withLeftOut.chatLines.findIndex((l) => l.startsWith("• Left out:"));
+  const numbered = withLeftOut.chatLines.filter((l) => /^\d+\. \*\*/.test(l));
+  assert.ok(numbered.length >= 1 && numbered.length <= 8, `numbered findings carry the evidence, got ${numbered.length}`);
+  assert.ok(numbered.some((l) => /extensions\/completion-summary\.ts/.test(l)), "each finding carries its evidence inline");
+  // Rich voice: SIX's concrete `Next: replay on next contact` survives in
+  // the Next section, ahead of the non-do; the trailer closes last.
+  const nextIdx = withLeftOut.chatLines.findIndex((l) => l.startsWith("- **Next**"));
+  const leftOutIdx = withLeftOut.chatLines.findIndex((l) => l.startsWith("- **Left out**"));
   const recordIdx = withLeftOut.chatLines.findIndex((l) => l.startsWith("• record:"));
   assert.ok(nextIdx > 0 && leftOutIdx > nextIdx && recordIdx === withLeftOut.chatLines.length - 1, "next action, then non-do, then the record pointer last");
-  assert.ok(withLeftOut.chatLines.some((l) => l === "• Left out: the walkthrough artifact surface"), "agent-claimed non-do closes the bullets");
-  assert.ok(withLeftOut.transcriptLines.some((l) => l === "• Left out: the walkthrough artifact surface"), "transcript surface carries the non-do too");
+  assert.ok(withLeftOut.chatLines.some((l) => l === "- **Left out** — the walkthrough artifact surface"), "agent-claimed non-do closes the sections");
+  assert.ok(withLeftOut.transcriptLines.some((l) => l === "- **Left out** — the walkthrough artifact surface"), "transcript surface carries the non-do too");
   const without = buildTerminalApprovalRender(base);
   assert.ok(!without.chatLines.some((l) => /Left out:/.test(l)), "absent non-do stays absent, never invented");
   assert.ok(!without.transcriptLines.some((l) => /Left out:/.test(l)), "transcript never invents a non-do");
@@ -229,7 +230,7 @@ test("v0.38.39 chat brief strips machine paths but the archive keeps them", () =
     ].join("\n"),
   });
   assert.ok(!render.chatLines.some((l) => l.includes("/var/tmp/")), "no machine path reaches the chat lines");
-  assert.ok(render.chatLines.some((l) => l.startsWith("• Tests: full gate 2040 pass")), "the human proof survives the strip");
+  assert.ok(render.chatLines.some((l) => /^\| Tests \| PASS \| full gate 2040 pass/.test(l)), "the human proof survives the strip in the table");
 });
 
 test("v0.38.39 clause cut respects +-joined lists", () => {

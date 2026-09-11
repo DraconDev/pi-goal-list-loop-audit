@@ -269,6 +269,148 @@ export function withoutStaleNext(details: string[] | undefined): string[] {
   return kept;
 }
 
+/** Rich terminal voice (field 20260911_003839/003903/003907 — the
+ * Antigravity close): section headers, numbered findings with bold
+ * leads + code refs, and a verification table, instead of the flat
+ * six-bullet card. Scope is the terminal render only (chat +
+ * transcript + archive human layer); progress cards, status line, and
+ * external notifies keep their compact projections. Verbose by owner
+ * choice: findings cap 8, values 200, table cells 200. */
+export const RICH_FINDINGS_CAP = 8;
+export const RICH_VALUE_BUDGET = 200;
+export const RICH_NEXT_CAP = 4;
+
+export interface RichTerminalParts {
+  headline: string;
+  findingLines: string[];
+  tableLines: string[];
+  nextLines: string[];
+}
+
+function escapeTableCell(value: string): string {
+  return value.replace(/\|/g, "\\|").replace(/\s+/g, " ").trim();
+}
+
+function testsRowStatus(value: string): string {
+  const fail = /(\d+)\s*fail/i.exec(value);
+  if (fail && Number.parseInt(fail[1]!, 10) > 0) return "FAIL";
+  if (/pass/i.test(value)) return "PASS";
+  return "REPORTED";
+}
+
+function auditRowStatus(history: Goal["auditHistory"]): string {
+  const entries = Array.isArray(history) ? history : [];
+  const last = entries[entries.length - 1];
+  if (!last) return "NO VERDICT";
+  if (last.approved) return `APPROVED \u00d7${entries.length}`;
+  if (last.disapproved) return `DISAPPROVED \u00d7${entries.length}`;
+  if (last.impossible) return "IMPOSSIBLE";
+  return "NO VERDICT";
+}
+
+/** Split a stale-filtered `Label: value` detail into a bold lead + body. */
+function leadBody(detail: string): { lead: string; body: string } {
+  const separator = detail.indexOf(":");
+  if (separator < 0) return { lead: "Note", body: detail };
+  return { lead: detail.slice(0, separator).trim() || "Note", body: detail.slice(separator + 1).trim() };
+}
+
+/** Partition informing details into findings / Tests / next buckets. */
+export function partitionRichDetails(details: string[]): { findings: string[]; tests: string[]; next: string[] } {
+  const findings: string[] = [];
+  const tests: string[] = [];
+  const next: string[] = [];
+  for (const detail of details) {
+    if (/^\s*Tests\s*:/i.test(detail)) tests.push(detail);
+    else if (/^\s*(Next|Unresolved|Left out)\s*:/i.test(detail)) next.push(detail);
+    else findings.push(detail);
+  }
+  return { findings, tests, next };
+}
+
+/** Build the section parts shared by chat, transcript, and archive. */
+export function buildRichTerminalParts(args: {
+  outcome: string;
+  details: string[];
+  countsLine: string;
+  auditHistory?: Goal["auditHistory"];
+}): RichTerminalParts {
+  const { findings, tests, next } = partitionRichDetails(args.details);
+  const findingLines = findings.slice(0, RICH_FINDINGS_CAP).map((detail, i) => {
+    const { lead, body } = leadBody(detail);
+    return `${i + 1}. **${lead}** \u2014 ${clipSummaryValue(body, RICH_VALUE_BUDGET)}`;
+  });
+  const tableRows: string[] = [];
+  for (const detail of tests.slice(0, 2)) {
+    const { body } = leadBody(detail);
+    tableRows.push(`| Tests | ${testsRowStatus(body)} | ${escapeTableCell(clipSummaryValue(body, RICH_VALUE_BUDGET))} |`);
+  }
+  const auditStatus = auditRowStatus(args.auditHistory);
+  if (auditStatus !== "NO VERDICT") {
+    const auditBody = args.countsLine.replace(/^\u2014\s*/, "").replace(/\.\s*$/, "");
+    tableRows.push(`| Audit | ${auditStatus} | ${escapeTableCell(clipSummaryValue(auditBody, RICH_VALUE_BUDGET))} |`);
+  }
+  const tableLines = tableRows.length > 0
+    ? ["| Check | Status | Details |", "| --- | --- | --- |", ...tableRows]
+    : [];
+  const nextLines = next.slice(0, RICH_NEXT_CAP).map((detail) => {
+    const { lead, body } = leadBody(detail);
+    return `- **${lead}** \u2014 ${clipSummaryValue(body, RICH_VALUE_BUDGET)}`;
+  });
+  return {
+    headline: `## Done \u2014 ${args.outcome}`,
+    findingLines,
+    tableLines,
+    nextLines,
+  };
+}
+
+/** Compose parts + headline + section headers into markdown lines. */
+export function composeRichTerminalLines(parts: RichTerminalParts, opts?: { headline?: string }): string[] {
+  const lines = [opts?.headline ?? parts.headline, ""];
+  if (parts.findingLines.length > 0) {
+    lines.push("### Key Findings & Remediation", ...parts.findingLines, "");
+  }
+  if (parts.tableLines.length > 0) {
+    lines.push("### Verification Summary", ...parts.tableLines, "");
+  }
+  if (parts.nextLines.length > 0) {
+    lines.push("### Next", ...parts.nextLines, "");
+  }
+  return lines;
+}
+
+/** Rich human layer for the durable archive (owner: the archive IS for
+ * humans). Same sections as chat, composed from durable goal state — the
+ * raw six-label recap stays verbatim in `## Completion summary` as the
+ * machine layer. Headline follows terminal status; aborted records never
+ * wear a `Done` headline. */
+export function buildRichArchiveSection(goal: Goal, status: Status, archivePath: string): string[] {
+  const facts: CompletionSummaryFacts = { goal, status, archivePath };
+  const summary = resolveCompletionSummary(facts, goal.completionSummary).summary;
+  const brief = humanCompletionBrief(summary, 140, RICH_VALUE_BUDGET);
+  const history = goal.auditHistory ?? [];
+  const latest = history[history.length - 1];
+  const approval = latest
+    ? `\u2014 auditor ${latest.approved ? "approved" : latest.disapproved ? "disapproved" : latest.impossible ? "impossible" : "left no verdict"}.`
+    : "\u2014 completed without a recorded auditor verdict.";
+  const countsLine = buildAuditCountsLine(goal);
+  const parts = buildRichTerminalParts({
+    outcome: brief.outcome,
+    details: withoutStaleNext(brief.details),
+    countsLine,
+    auditHistory: history,
+  });
+  return [
+    ...composeRichTerminalLines(parts, {
+      headline: status === "complete" ? parts.headline : `## Aborted \u2014 ${brief.outcome}`,
+    }),
+    trailerBullet(stripApprovalModel(approval)),
+    trailerBullet(countsLine),
+    trailerBullet(`\u2014 record: ${archivePath}`),
+  ];
+}
+
 /** v0.38.20: the approval chat notify — outcome first, all bounded
  * informing details (the full record lives in the archive and the
  * transcript notice), then the approval trailer and the record pointer.
@@ -382,15 +524,23 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   };
   const candidate = input.completionSummary ?? input.goal.completionSummary;
   const recap = compactTerminalCompletionSummary(facts, candidate);
-  const baseBrief = terminalHumanBrief(facts, candidate);
+  // Rich voice (field 20260911_*): the chat/transcript render uses a
+  // verbose brief (200-char values) while the outcome headline keeps
+  // the 140-char budget. Filler drops via the same briefValueContent
+  // filter; absent stays absent.
+  const richBrief = humanCompletionBrief(
+    resolveCompletionSummary(facts, candidate).summary,
+    140,
+    RICH_VALUE_BUDGET,
+  );
   // v0.38.37 (audit 2026-09-08): the deliberate non-do comes from the
   // agent's complete_goal leftOut claim — never invented. Filler ("none")
   // drops via the same briefValueContent filter; absent stays absent.
   const leftOut = input.leftOut?.trim();
   const leftOutContent = leftOut ? briefValueContent(leftOut) : null;
-  const brief = leftOutContent
-    ? { ...baseBrief, details: [...baseBrief.details, `Left out: ${clipSummaryValue(leftOutContent, 120)}`] }
-    : baseBrief;
+  const richDetails = leftOutContent
+    ? [...richBrief.details, `Left out: ${clipSummaryValue(leftOutContent, RICH_VALUE_BUDGET)}`]
+    : richBrief.details;
   const countsLine = input.countsLine ?? buildAuditCountsLine(input.goal, input.auditNote);
   // v0.38.42 (field 20260909_140404): one canonical approval bullet in
   // chat and transcript — no model ID in either, via-retry news kept. A
@@ -408,19 +558,31 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   const approvalBullet = foldCounts
     ? `• ${chatApproval.replace(/^—\s*/, "").replace(/\.\s*$/, "")} (${history.length} verdict).`
     : trailerBullet(chatApproval);
+  const recordBullet = trailerBullet(input.record);
+  // Rich voice: headline + Key Findings + Verification table + Next,
+  // closed by the pinned trailer (approval/counts/record, record last).
+  // The transcript mirrors chat without the record pointer and extras —
+  // the record lives in chat and the archive, matching the old contract.
+  const richParts = buildRichTerminalParts({
+    outcome: richBrief.outcome,
+    details: withoutStaleNext(richDetails),
+    countsLine,
+    auditHistory: input.goal.auditHistory,
+  });
+  const chatBody = composeRichTerminalLines(richParts);
+  const transcriptBody = composeRichTerminalLines(richParts);
   return {
     chatLines: [
-      `✓ done — ${brief.outcome}`,
-      ...withoutStaleNext(brief.details).map((detail) => `• ${detail}`),
+      ...chatBody,
       approvalBullet,
       ...(foldCounts ? [] : [trailerBullet(countsLine)]),
-      trailerBullet(input.record),
+      recordBullet,
       ...(input.extras ?? []),
     ],
     recap,
-    transcriptLines: [...withoutStaleNext(brief.details).map((detail) => `• ${detail}`), approvalBullet],
+    transcriptLines: [...transcriptBody, approvalBullet],
     countsLine,
-    outcome: brief.outcome,
+    outcome: richBrief.outcome,
     approval: input.approval,
   };
 }
