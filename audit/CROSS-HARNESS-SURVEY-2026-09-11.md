@@ -71,8 +71,7 @@ Tree holds the plugin layer (`plugins/`), not the host binary:
   (`plugins/plugin-dev/skills/skill-development/SKILL.md`).
 - Permissions: declarative allow/ask/deny + managed locks + Bash-only sandbox
   (`examples/settings/settings-strict.json`); plan mode is a permission
-  posture (read-only auto, writes gated, `ExitPlanMode`)
-  (`CHANGELOG.md:1391,1527,1924,...`).
+  posture (read-only auto, writes gated, `ExitPlanMode`).
 - Review: two-stage propose-then-validate PR flow with per-issue validator
   subagents (`plugins/code-review/commands/code-review.md` steps 4-6);
   aspect-routed local review incl. zero-tolerance silent-failure hunter
@@ -116,5 +115,103 @@ goal/session + `/goal` + round-driver), `bundle`/`boot`, capability seams
 (`llm/shell/subprocess/terminal/sandbox/fs/lsp/web`), `subagent`
 (delegation registry + ACP/Codex/Claude/SDK providers), `workflow`
 (model-authored fan-out + `ralph`), `todo`, `plan`, `compaction` (auto +
-tool-result pruner), `session` (JSONL/checkpoints/projections), 
-...[truncated 3881 chars]
+tool-result pruner), `session` (JSONL/checkpoints/projections),
+`session-query` (bounded reads + SQLite FTS + `/export`), `guard`
+(repeat-tool reminder + tool timeouts), `interaction` (slash cmds without
+model turn, approvals, `ask_user_question`), `settings`/`credentials`,
+`hooks` (Claude/Codex bridges), `skill`, `schedule`, `feedback` (ratings
+never fed to model), `runtime-diagnostics` (package-owned invariants).
+- Goal has phases + `GoalBlockReason` but NO independent evaluator: model
+  policy decides sufficiency, certification deferred
+  (`packages/goal/goal-round-driver/README.md` Known Limitations).
+  GLLA's detached auditor has no counterpart; do not copy the gap.
+- Stealable: generated config/tool/event catalogs with freshness gates
+  (`docs/config-catalog.md`); repeat-call guard + tool timeouts
+  (`packages/guard/README.md`); tool-result pruner before compaction
+  (`packages/compaction/README.md`); session-query evidence pack
+  (`packages/session-query/README.md`); ralph bounded handoff schema
+  (`status/summary/evidence/next/blocker`, `maxHandoffChars`)
+  (`packages/workflow/tool-ralph/README.md`).
+- Not borrowed: Cordis runtime, E2B/ACP transports, bilingual i18n gates.
+
+## 6. MoonshotAI/kimi-code — fresh
+
+TypeScript monorepo: CLI/TUI (`apps/kimi-code`), engine
+(`packages/agent-core-v2`), REST+WS server, ACP (`kimi acp`).
+- Bounded loop-control schema: steps/attempts/context-reserve/
+  compaction-ratio, env+TOML, deprecations, actionable max-steps error
+  (`agent-core-v2/src/agent/loop/configSection.ts`).
+- Ordered lifecycle hook slot with before/after semantics (`src/hooks.ts`).
+- Tool contract: typed results (`stopTurn/truncated/note/delivery/spill`),
+  50K default cap (`src/tool/toolContract.ts`).
+- Permissions: modes + policy + per-call approval + trust per install
+  (`src/agent/permissionMode/`, `toolApproval/`).
+- Task handles: `task-{list,output,stop,wait}` + coder/explore/plan subagents.
+- Compaction service + handoff + queue deferral (`fullCompaction/`,
+  `contextMemory/compactionHandoff.ts`); undo bounded by turns, refused
+  across compaction (`agent/undo/undo.ts`).
+- Replayable state keys + transcript L1-store-to-L4-view contract
+  (`state/agentStateService.ts`, `packages/transcript/src/contract/`);
+  replay/vis debuggers (`apps/vis`, `apps/kimi-inspect`).
+- Self-verification: seam-based TDD skill (`.agents/skills/tdd/SKILL.md`),
+  per-package vitest, changesets.
+- Not borrowed: ACP/remote-control/media input, execution-layer internals
+  (minidb, kaos, tree-sitter-bash), repo hygiene (comment-free lint).
+
+## 7. Closed source: Antigravity + ZCode (bounded docs pass)
+
+ZCode identified as Z.ai (Zhipu) desktop agentic IDE, official harness for
+GLM models (https://zcode.z.ai/en); changelog top entry v3.11.2, Sep 4 2026
+(https://zcode.z.ai/en/changelog). Harness itself is a proprietary binary
+(one teardown calls it open-source, but no harness repo exists and npm
+names are placeholders or 404; model weights are MIT, binary unverified).
+Antigravity is alive and versioned: IDE 2.0 v2.12.2, CLI v1.2.0, SDK v0.1.16
+(https://antigravity.google/docs/subagents/); Teamwork still preview-gated.
+Checkable: ZCode Goal Mode semantics (`/goal`, one goal/session,
+pause/resume/replace/clear, per-round met-check, origin-iteration checklist
+pinning, round titles from prior verification's next action)
+(https://zcode.z.ai/en/docs/goal); subagents (general-purpose + read-only
+Explore) (https://zcode.z.ai/en/docs/subagents); hooks as stdin-JSON
+subprocess, 8 events (https://zcode.z.ai/en/docs/hooks); Antigravity
+subagent lifecycle/nesting/frontmatter
+(https://antigravity.google/docs/subagents/).
+Not checkable (unavailable-evidence): poll intervals, supervision loops,
+state/persistence formats, verdict internals, harness license text,
+Antigravity changelog deltas (garbled fetch), VentureBeat piece (walled).
+Verdict: the assumption mostly holds. Both surfaces leak UX conventions
+only; nothing overturns a GLLA design decision. Learnables:
+origin-iteration checklist pinning (display convention, optional),
+thought-level toggle (deferred, no demand), hooks-without-model-handle
+(convergent with Claude). ZCode Goal Mode is narrower than GLLA
+(one goal/session, self-certified rounds); its Explore/general-purpose
+split repeats the Claude pattern.
+
+## 8. Ranked steal table (idea -> concrete GLLA surface)
+
+| # | Idea | From | GLLA surface |
+|---|------|------|--------------|
+| 1 | Atomic task batches + pending-task completion gate | pi-goal-x `goal-task-tools.ts:392-420`, `goal-completion.ts:39-52` | `/list`+`/goal` task tools, auditor contract check |
+| 2 | Per-issue validator second pass for the auditor | claude `code-review.md` steps 5-6 | `scripts/goal-auditor-worker.mjs`, `goal-loop-auditor-process.ts` |
+| 3 | Progressive-disclosure prompt packaging (metadata/body/references) | claude `skill-development/SKILL.md` | `prompts/`, continuation context, compaction path |
+| 4 | Settle-gated audit transcript queue (`triggerTurn:false`) | pi-goal-x `goal-session-safety.ts:23-42` | auditor + display/widget |
+| 5 | Buffered turn transaction + flush-before-audit | pi-goal-x `goal-service.ts:162-260` | orchestrator, `goal-loop-core.ts`, auditor dispatch |
+| 6 | Review-orchestrator fanout (one subagent per dimension) | codex `.codex/skills/code-review/SKILL.md` | detached auditor (parallel verify agents) |
+| 7 | Bounded loop-control schema (steps/attempts/reserve/ratio) | kimi `loop/configSection.ts`, grok `doom_loop.rs` | `/loop` recovery config, settings |
+| 8 | `CompletionRequirement`-style must-call contract | grok `xai-grok-agent/config.rs:782-800` | `/goal` contract schema, auditor check |
+| 9 | Delegated-session guard (`PI_SUBAGENT_DEPTH`) | pi-goal-x `goal-session-safety.ts:4-8` | orchestrator/activation, continuation |
+| 10 | Post-compaction delta resync | pi-goal-x `goal-compaction.ts:156-176` | `goal-continuation.ts`, activation injection |
+| 11 | Declarative exec policy + load-time self-tests | codex `execpolicy/` | auditor tool-gating in worker |
+| 12 | Typed tool-result contract with spill accounting | kimi `tool/toolContract.ts` | tool result clipping, compaction |
+| 13 | Least-privilege subagent tool allowlists | claude `code-explorer.md`, grok subagent template | subagent spawn config |
+| 14 | Generated config/tool/event catalogs (freshness-gated) | deepseek `docs/config-catalog.md` | `/loop` project-audit, release check |
+| 15 | Repeat-call guard + tool timeout policy | deepseek `packages/guard/README.md` | `/loop` bounded recovery |
+| 16 | Tool-result pruner before compaction | deepseek `packages/compaction/README.md` | compaction surface |
+| 17 | Session-query evidence pack (FTS + `/export`) | deepseek `packages/session-query/README.md` | `/list` queue + auditor evidence |
+| 18 | Bounded child handoff schema (`maxHandoffChars`) | deepseek `tool-ralph/README.md` | subagent supervision |
+| 19 | Origin-iteration checklist pinning (display-only) | ZCode `docs/goal` | goal progress rendering |
+| 20 | Typed context-fragment budget (≤10K, no rewrite) | codex `AGENTS.md` | `completion-summary.ts` clipping |
+
+Conscious rejections (audited, do not re-propose without new evidence):
+self-certified rounds (deepseek, ZCode), in-process auditor (pi-goal-x),
+smoothness-over-detachment (codex), unbounded Stop-loop drivers (claude
+ralph-wiggum), OS sandboxes, transcript transplant, MDM/enterprise locks.
