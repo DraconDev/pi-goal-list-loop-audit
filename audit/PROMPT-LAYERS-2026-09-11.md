@@ -81,3 +81,16 @@ First turn after upgrade re-caches once.
   7 files, declared-id lists, loud missing/unknown/defect, order
   determinism, normal-turn omission + saving floor, three exact deltas,
   autoResumedAt path.
+
+## Ship (v0.38.47)
+
+- Gate **2102 pass / 2 skip / 0 fail** across 208 files (`--parallel=1
+  --max-concurrency=1`), `tsc` clean, `release:check` green (pack 96
+  files, tarball install+import smoke OK).
+- Two earlier gate runs each hit ONE wall-clock flake in the untouched
+  `tests/durable-wait.test.mjs` (10ms timers, 250ms bounds; a different
+  test each run), both green in isolation; the file went 10/10 in a loop
+  afterward. Load flake, not a code signal — left untouched, noted here
+  instead of weakened.
+- Tag `v0.38.47` pushed, GitHub release created, publish runs
+  `34620388769` + `34620394557` success, npm `latest` `0.38.47`.
