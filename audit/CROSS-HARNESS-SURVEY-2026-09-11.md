@@ -215,3 +215,18 @@ Conscious rejections (audited, do not re-propose without new evidence):
 self-certified rounds (deepseek, ZCode), in-process auditor (pi-goal-x),
 smoothness-over-detachment (codex), unbounded Stop-loop drivers (claude
 ralph-wiggum), OS sandboxes, transcript transplant, MDM/enterprise locks.
+
+## 9. Post-survey spike verdict: delegated-session guard (goal 20260911115307-u7b6lg)
+
+Question: does GLLA need pi-goal-x's `PI_SUBAGENT_CHILD`/`PI_SUBAGENT_DEPTH`
+guard? Finding: no hole exists. `isWorkerSessionCtx`
+(`extensions/loops/goal-session.ts:1574`, no-UI print/json discriminator)
+rejects worker sessions at `session_start` before root registration, restore,
+owner writes, tool repair, or loop rescheduling
+(`extensions/loops/goal-activation.ts:1246`); `isHostSuccessorCtx` adds a
+file-backed structural fallback; `claimProcessOwner` + last-wins keeps
+"a subagent must never dethrone the main session"; `isForeignCtx` gates
+continuation (`extensions/goal-continuation.ts:661,1174`). Pinned across 7
+test files. Verdict: GLLA's structural guard is strictly stronger than
+env-var depth checks (env inherits/leaks; session identity does not).
+Nothing to port; steal-table row 9 closed.
