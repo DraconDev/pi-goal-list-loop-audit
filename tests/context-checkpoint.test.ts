@@ -153,10 +153,14 @@ test("real continuation payload growth is bounded after checkpoint projection", 
   // continuation template changes. Cardinality pins (messageCount 4, one
   // checkpoint, removed == count - 1) are the real bounded-growth
   // invariant — bytes only name the current template.
+  // Layered prompts: this fixture carries a live disapproval (auditor
+  // playbook stays loaded) but no survey/resync trigger, so exactly the
+  // pivot + restart bodies drop — verified byte-exact against a pre-change
+  // worktree: the projected sets differ by ONLY those two blocks.
   assert.deepEqual(bounded, [
-    { count: 5, messageCount: 4, serializedBytes: 26655, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },
-    { count: 12, messageCount: 4, serializedBytes: 26655, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },
-    { count: 25, messageCount: 4, serializedBytes: 26655, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },
+    { count: 5, messageCount: 4, serializedBytes: 25331, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },
+    { count: 12, messageCount: 4, serializedBytes: 25331, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },
+    { count: 25, messageCount: 4, serializedBytes: 25331, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },
   ]);
   // Serialized bytes consistent across counts (bounded by checkpoint + 1 payload)
   const b0 = bounded[0]!;
