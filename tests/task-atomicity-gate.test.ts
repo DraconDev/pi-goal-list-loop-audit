@@ -5,7 +5,7 @@
 // committed tasks (naming them) before any auditor contact; recorded
 // deferrals exempt.
 
-import { test, afterEach, after } from "node:test";
+import { test, afterEach } from "node:test";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import type { TaskList } from "../extensions/goal-loop-core.ts";
@@ -124,18 +124,10 @@ activate(pi.api);
 // flag. Without it, a later test FILE in the same process reuses the flag
 // and its own MockPi never gets agent tools ("tool not registered").
 let lastSession: { on: MockPi; ctx: MockCtx } | null = null;
-// Successor-file hygiene: an admitted session_start records ownership
-// (live + dead) process-wide. session_shutdown clears the live owner but
-// keeps the dead identity, so a later file's non-lifecycle session_start
-// (e.g. reason "test" on an in-memory manager) is refused as foreign
-// BEFORE tool registration — its runTool then fails with
-// "tool not registered". Null the whole plane after the last test so the
-// next file starts from a clean slate (same trio other suites reset).
-after(() => {
-  __testOnlyResetOwnerSession();
-  __testOnlyResetStaleFlag();
-  __testOnlyResetTerminalFlags();
-});
+// NOTE: the successor-plane reset lives in the LAST TEST below, not in an
+// after() hook — hooks may execute in a different module realm than the
+// tests under bun's per-file isolation, which would leave the next file's
+// non-lifecycle session_start refused as foreign ("tool not registered").
 afterEach(async () => {
   if (lastSession) {
     const s = lastSession;
@@ -173,6 +165,7 @@ function toolFixture(): TaskList {
 async function batchHarness(startReason = "reload"): Promise<{ cwd: string; ctx: MockCtx }> {
   __testOnlyResetStaleFlag();
   __testOnlyResetOwnerSession();
+  __testOnlyResetTerminalFlags();
   fs.writeFileSync(process.env.GLLA_GLOBAL_SETTINGS_PATH!, JSON.stringify({}));
   const cwd = tmpCwd();
   seedState(cwd, { goal: seedGoal({ status: "active", taskList: toolFixture() }) });
@@ -253,7 +246,9 @@ test("single tools keep their pinned messages on the copy-swap path", async () =
 // honest user path. (Stale-flag resets are left out: they are irrelevant
 // here and the owner reset alone determines the hold.)
 async function activeHarness(): Promise<{ cwd: string; ctx: MockCtx; on: MockPi }> {
+  __testOnlyResetStaleFlag();
   __testOnlyResetOwnerSession();
+  __testOnlyResetTerminalFlags();
   const cwd = tmpCwd();
   fs.writeFileSync(process.env.GLLA_GLOBAL_SETTINGS_PATH!, JSON.stringify({}));
   seedState(cwd, { goal: seedGoal({ status: "active", taskList: toolFixture() }) });
@@ -368,4 +363,16 @@ test("claim passes the gate when open tasks are finished and the rest deferred",
   assert.match(defer.content[0]!.text, /exempt from the complete_goal pending-task gate/);
   const res = await on.runTool("complete_goal", CLAIM, ctx);
   assert.doesNotMatch(res.content[0]!.text, /complete_goal REFUSED/);
+});
+
+// MUST stay the last test in this file: null the process-wide ownership
+// plane (live + dead owner, stale/terminal flags) so a successor test
+// FILE's non-lifecycle session_start is admitted and its MockPi gets agent
+// tools. session_shutdown alone is not enough — it preserves the dead
+// owner, which the foreign-session gate refuses (observed as
+// "tool not registered: record_goal_judgment" in the next file).
+test("zzz successor-plane reset (file hygiene, keep last)", () => {
+  __testOnlyResetOwnerSession();
+  __testOnlyResetStaleFlag();
+  __testOnlyResetTerminalFlags();
 });
