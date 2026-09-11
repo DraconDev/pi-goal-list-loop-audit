@@ -110,10 +110,15 @@ status/reason, durable telemetry, captured audit verdicts, and known archive
 path. It says `not recorded` when a changed-file manifest or test result is not
 available. It never infers a passing test or invents a commit.
 
-The full recap lives in the archive and status/history surfaces. Every
-terminal goal notification—including version-bearing already-shipped claims,
-explicit goal/list cancellation, and `/glla wipe`—includes a compact
-projection of all six labels; loop notifications do the same. The terminal
+The full six-label recap lives verbatim in the archive (`## Completion summary`)
+and the status/history surfaces. The human layer in chat, transcript, and the
+archive's `## Terminal summary` renders the same facts as rich sections
+(`## Done`, Key Findings, Verification Summary table, Next, capped and clipped
+to fixed budgets). Width-bound and external surfaces (status line, widget card,
+external notifies) use the compact single-line projection of all six labels.
+Every terminal goal notification, including version-bearing already-shipped claims,
+explicit goal/list cancellation, and `/glla wipe`, carries either the rich sections
+or the compact projection; loop notifications do the same. The terminal
 notification may use a compact excerpt. The executor recap and independent
 auditor verdict stay separate: an approval is not manufactured from the
 presence of a summary.

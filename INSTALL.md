@@ -31,11 +31,11 @@ GLLA loads into new pi sessions. If pi is already open, reload that session:
 
 ## Updating
 
-The status line always shows the running version (`glla: … · v0.38.46`).
+The status line always shows the running version (`glla: … · v0.38.48`).
 When the npm registry is ahead, it also nudges:
 
 ```text
-glla: … · v0.38.45 · update v0.38.46 available
+glla: … · v0.38.47 · update v0.38.48 available
 ```
 
 The nudge comes from a daily sidecar check (`.pi-glla/update-check.json`),

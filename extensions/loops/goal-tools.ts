@@ -2213,9 +2213,14 @@ function registerAgentTools(pi: any): void {
       const tl = state.goal.taskList;
       // v0.38.48: copy-swap — the live list is never mutated in place, so a
       // kill between verify and persist (or a persist failure) cannot leave
-      // partial state. Message strings are unchanged (pinned by tests).
+      // partial state. Message strings are pinned by
+      // tests/task-atomicity-gate.test.ts.
       const t = findTask(tl, p.id);
-      if (t && t.status !== "complete") {
+      if (!t) return { content: [{ type: "text", text: `Task ${p.id} not found.` }], details: {} };
+      // v0.38.49 audit: an existing but already-complete task is a state
+      // fact, not a typo — report it instead of the not-found fallthrough.
+      if (t.status === "complete") return { content: [{ type: "text", text: `Task ${p.id} is already complete.` }], details: {} };
+      if (t) {
         const checkRes = await verifyTaskMilestone(ctx, t.verificationContract, signal);
         if (checkRes) {
           return {
@@ -2231,7 +2236,6 @@ function registerAgentTools(pi: any): void {
         }
         return { content: [{ type: "text", text: `Task ${p.id} marked complete.` }], details: {} };
       }
-      return { content: [{ type: "text", text: `Task ${p.id} not found.` }], details: {} };
     },
   }));
 
@@ -2253,8 +2257,13 @@ function registerAgentTools(pi: any): void {
         return { content: [{ type: "text", text: "No task list in this goal." }], details: {} };
       }
       const tl = state.goal.taskList;
-      // v0.38.48: copy-swap (see complete_task). Message strings unchanged.
+      // v0.38.48: copy-swap (see complete_task). Message strings are pinned
+      // by tests/task-atomicity-gate.test.ts.
       const t = findTask(tl, p.id);
+      if (!t) return { content: [{ type: "text", text: `Task ${p.id} not found.` }], details: {} };
+      // v0.38.49 audit: same-status moves are no-ops with a state-fact
+      // reply, not a persist round-trip reporting a change that happened.
+      if (t.status === p.status) return { content: [{ type: "text", text: `Task ${p.id} is already ${p.status}.` }], details: {} };
       if (t) {
         if (p.status === "complete") {
           const checkRes = await verifyTaskMilestone(ctx, t.verificationContract, signal);
@@ -2273,7 +2282,6 @@ function registerAgentTools(pi: any): void {
         }
         return { content: [{ type: "text", text: `Task ${p.id} → ${p.status}` }], details: {} };
       }
-      return { content: [{ type: "text", text: `Task ${p.id} not found.` }], details: {} };
     },
   }));
 

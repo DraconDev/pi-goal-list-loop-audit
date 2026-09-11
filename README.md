@@ -250,12 +250,14 @@ When the agent calls `complete_goal`, GLLA:
 
 1. runs the contract's mechanical checks when a release or command check is
    specified;
-2. writes an identity-bound completion claim;
-3. starts a detached, fresh pi RPC worker for the audit;
-4. asks the worker to inspect the repository and run bounded checks;
-5. requires raw evidence for each verification-contract item through the
+2. refuses the claim before audit when committed tasks are still open
+   (tasks with a recorded deferral are exempt), naming each open task;
+3. writes an identity-bound completion claim;
+4. starts a detached, fresh pi RPC worker for the audit;
+5. asks the worker to inspect the repository and run bounded checks;
+6. requires raw evidence for each verification-contract item through the
    orchestrator-side regression shield;
-6. keeps the goal open on infrastructure failure, missing evidence, or
+7. keeps the goal open on infrastructure failure, missing evidence, or
    disapproval instead of silently archiving it.
 
 The auditor is intentionally isolated from the implementing conversation and

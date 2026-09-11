@@ -13,7 +13,8 @@ audit policy). The next pass owns the durable policy artifacts and
 the open notes (`note.md` host lifecycle / completion recap /
 long-term preferences).
 
-**Most recent (2026-09-09):**
+**Most recent (2026-09-11):**
+- `FRESH-AUDIT-PASS-2026-09-11.md` — v0.38.49: three-scout pass on v0.38.48, six FIX (prompt batch/gate drift, README verify path, docs versions/voice, summary-gate segmentation, task-tool honesty, sidecar pending boundary), no DECIDE; gate 2121 pass / 0 fail
 - `CODEX-SUMMARY-2026-09-09.md` — v0.38.39: uniform-`•` terminal voice, machine paths to archive, selective Next, `+`-boundary cut
 - `ELAPSED-DUPLICATION-PR47-2026-09-09.md` — v0.38.38: setStatus timer cut (card keeps it), PR #47 closed with per-piece verdicts + re-sync command; no open PRs
 - `HUMAN-VOICE-SUMMARY-2026-09-08.md` — v0.38.36/v0.38.37: Codex-style terminal summaries (field 20260908_223522/223523) — clause-boundary cuts, verdict-only counts, plain-voice pending, then bullets + `leftOut` non-do after the 2026-09-08 disapproval; gate 2040 pass / 0 fail

@@ -157,10 +157,12 @@ test("real continuation payload growth is bounded after checkpoint projection", 
   // playbook stays loaded) but no survey/resync trigger, so exactly the
   // pivot + restart bodies drop — verified byte-exact against a pre-change
   // worktree: the projected sets differ by ONLY those two blocks.
+  // Task-batch and pending-gate prompt guidance — +775 serialized bytes
+  // per payload (the same +769-char template delta as the growth fixture).
   assert.deepEqual(bounded, [
-    { count: 5, messageCount: 4, serializedBytes: 25331, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },
-    { count: 12, messageCount: 4, serializedBytes: 25331, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },
-    { count: 25, messageCount: 4, serializedBytes: 25331, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },
+    { count: 5, messageCount: 4, serializedBytes: 26106, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },
+    { count: 12, messageCount: 4, serializedBytes: 26106, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },
+    { count: 25, messageCount: 4, serializedBytes: 26106, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },
   ]);
   // Serialized bytes consistent across counts (bounded by checkpoint + 1 payload)
   const b0 = bounded[0]!;

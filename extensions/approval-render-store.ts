@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { appendLedger, ensureDirs, nowIso, piGlaDir, runPersistStep } from "./goal-loop-core.js";
+import { stateRootPending } from "./glla-state-root.js";
 
 /** Durable terminal-summary outbox. A toast or a live host is not delivery:
  * only a confirmed visible session message acknowledges a render. */
@@ -67,6 +68,9 @@ function readRenders(cwd: string): PendingApprovalRender[] {
 }
 
 function writeRenders(cwd: string, renders: PendingApprovalRender[]): boolean {
+  // v0.38.49 audit: pending sessionDir resolution defers every write that
+  // would otherwise recreate <cwd>/.pi-glla — the sidecar is no exception.
+  if (stateRootPending()) return false;
   const landed = runPersistStep("persistApprovalRender", () => {
     ensureDirs(cwd);
     const file = approvalRenderStorePath(cwd);

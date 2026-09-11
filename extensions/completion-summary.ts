@@ -31,10 +31,6 @@ export interface CompletionSummaryFacts {
   archivePath?: string;
 }
 
-function labelIndex(text: string, label: CompletionSummaryLabel): number {
-  return text.toLowerCase().indexOf(label.toLowerCase());
-}
-
 /**
  * Validation/version annotations are metadata, not recap fields. Keep them
  * out of the parser so a generated NOTE containing examples such as
@@ -45,17 +41,20 @@ function completionSummaryBody(text: string): string {
   return annotation?.index === undefined ? text : text.slice(0, annotation.index);
 }
 
-/** Return labels that are absent or have no value after the label. */
+/** Return labels that are absent or have no value after the label. Segments on
+ * the same last-occurrence positions as every projector (compact, multi-line,
+ * rich): a label named inside an earlier value must not shift the gate away
+ * from what the user will actually read. */
 export function missingCompletionSummaryLabels(text: string): CompletionSummaryLabel[] {
   const normalized = completionSummaryBody(text).trim();
+  const positions = labelPositions(normalized.toLowerCase());
   return COMPLETION_SUMMARY_LABELS.filter((label) => {
-    const start = labelIndex(normalized, label);
-    if (start < 0) return true;
-    const valueStart = start + label.length;
-    const next = COMPLETION_SUMMARY_LABELS
-      .map((candidate) => labelIndex(normalized.slice(valueStart), candidate))
-      .filter((index) => index >= 0)
-      .map((index) => valueStart + index)
+    const current = positions.find((entry) => entry.label === label);
+    if (!current) return true;
+    const valueStart = current.start + label.length;
+    const next = positions
+      .filter((entry) => entry.start > current.start)
+      .map((entry) => entry.start)
       .sort((a, b) => a - b)[0];
     return normalized.slice(valueStart, next ?? normalized.length).trim().length === 0;
   });

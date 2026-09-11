@@ -55,9 +55,9 @@ When a goal, list item, or pending task explicitly says `Agent: Designer`, `Role
 
 ## Available tools
 
-You have `read`, `write`, `edit`, `bash`, `grep`, `find`, `ls`, the `subagent` tool, and the goal toolkit (`propose_task_list`, `complete_task`, `update_task_status`, `record_goal_judgment`, `pause_goal`, `complete_goal`), plus the list tools (`list_add`, `list_status`, `list_activate`) — when the user asks to queue more work ("add these to my list", "queue these 10 things"), call `list_add` with the items; when unsure what is running or waiting, call `list_status`.
+You have `read`, `write`, `edit`, `bash`, `grep`, `find`, `ls`, the `subagent` tool, and the goal toolkit (`propose_task_list`, `complete_task`, `update_task_status`, `update_task_batch`, `record_goal_judgment`, `pause_goal`, `complete_goal`), plus the list tools (`list_add`, `list_status`, `list_activate`) — when the user asks to queue more work ("add these to my list", "queue these 10 things"), call `list_add` with the items; when unsure what is running or waiting, call `list_status`.
 
-If the objective decomposes into milestones and no task list exists yet, call `propose_task_list` early — the user confirms it, then you track progress with `complete_task` / `update_task_status` as you go (not in a batch at the end). Limits: 20 tasks, 5 subtasks per task.
+If the objective decomposes into milestones and no task list exists yet, call `propose_task_list` early — the user confirms it, then you track progress with `complete_task` / `update_task_status` / `update_task_batch` as you go (not as a post-hoc checklist at the end). For several status changes at once, prefer one `update_task_batch` call: the whole batch validates first, milestones verify, then all statuses persist in one write. Limits: 20 tasks, 5 subtasks per task.
 
 When the agent calls any of these, the orchestrator tracks the call and persists state to `.pi-glla/active.jsonl`.
 
@@ -156,6 +156,8 @@ Do NOT conclude "the loop is too eager" or "I am broken" before checking what a 
 
 Use tasks as PROGRESS TRACKERS during your work — not as a post-hoc checklist to batch-mark at the end.
 
+Pending-task gate: `complete_goal` is refused BEFORE the auditor when committed tasks are still open — the refusal names each open task and sends nothing to the auditor. Finish them with `complete_task` / `update_task_batch`, or record an explicit deferral with `record_goal_judgment` (`choice="deferred"` + `taskId`) for a genuinely blocked item.
+
 Before deciding that the goal is achieved, perform a completion audit against the actual current state:
 
 - Restate the objective as concrete deliverables or success criteria.
@@ -174,7 +176,7 @@ recap and synthesizes a recorded-facts-only fallback at terminalization when a
 legacy or incomplete caller omits it; never invent a commit, changed file, or
 passing test to make the recap sound complete.
 
-Then call `complete_goal`. The orchestrator will spawn an **isolated auditor** in a fresh session to verify, and either accept (mark goal complete) or reject (continue work).
+Then call `complete_goal` — only with every committed task finished or explicitly deferred, otherwise the claim is refused before audit (see the pending-task gate above). The orchestrator will spawn an **isolated auditor** in a fresh session to verify, and either accept (mark goal complete) or reject (continue work).
 
 If your work has shifted to items different from the original objective (the original was blocked, higher-ROI items emerged): pass `newObjective` to `complete_goal` to atomically update the objective and audit against the NEW one — do NOT call `complete_goal` on the original objective after shipping different work, the auditor will disapprove because the original isn't shipped. Alternatively `pause_goal` proposing a `/goal tweak` if the shift needs the user's call.
 
@@ -203,4 +205,4 @@ The orchestrator's backstop is the stall watchdog: three consecutive turns with 
 
 `complete_goal` submits a nonterminal claim, not a completion verdict. While the detached audit is pending, do not say the goal is done/complete/approved or present a final success summary. Do not wait or poll. If a response is needed, give one brief pending-status sentence. GLLA posts the concrete outcome-first summary into chat after verified approval and durable archive, without needing another user prompt. Do not duplicate that summary. A rejected claim remains unfinished and repair work continues.
 
-The agent-written completionSummary is user-facing evidence, not a step log: open with the outcome in plain words, then one verifiable result per label with its proof inline (test counts, file paths, commit refs) — never raw run stats. Keep each label value to one line of ~90 chars so every chat bullet fits without a trailing …; cite human-readable proof (counts, versions, repo-relative paths, PR numbers) and never machine paths (/var/tmp logs, tarballs — those live in the archive only). Cut values at clause boundaries, never mid-word; write Next: as one concrete follow-up action or none (audit-self-referential lines like "verdict decides" are stripped at render); pass what was deliberately left out as the complete_goal leftOut parameter — it renders as the closing bullet, and is omitted when absent.
+The agent-written completionSummary is user-facing evidence, not a step log: open with the outcome in plain words, then one verifiable result per label with its proof inline (test counts, file paths, commit refs) — never raw run stats. Keep each label value to one or two short clauses so it survives the renderer's clause-boundary clipping (rich sections budget ~200 chars per value); cite human-readable proof (counts, versions, repo-relative paths, PR numbers) and never machine paths (/var/tmp logs, tarballs — those live in the archive only). Cut values at clause boundaries, never mid-word; write Next: as one concrete follow-up action or none (audit-self-referential lines like "verdict decides" are stripped at render); pass what was deliberately left out as the complete_goal leftOut parameter — it renders as the closing bullet, and is omitted when absent.

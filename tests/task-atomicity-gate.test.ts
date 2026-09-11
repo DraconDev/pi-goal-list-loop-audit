@@ -238,6 +238,19 @@ test("single tools keep their pinned messages on the copy-swap path", async () =
   assert.deepEqual(taskStatuses(cwd), { "1": "in_progress", "2": "in_progress", "2.1": "complete", "3": "pending" });
 });
 
+test("already-complete and same-status moves report state instead of not found", async () => {
+  const { cwd, ctx } = await batchHarness();
+  const first = await pi.runTool("complete_task", { id: "2.1" }, ctx);
+  assert.match(first.content[0]!.text, /Task 2\.1 marked complete\./);
+  const again = await pi.runTool("complete_task", { id: "2.1" }, ctx);
+  assert.match(again.content[0]!.text, /Task 2\.1 is already complete\./);
+  const noop = await pi.runTool("update_task_status", { id: "1", status: "pending" }, ctx);
+  assert.match(noop.content[0]!.text, /Task 1 is already pending\./);
+  const missing = await pi.runTool("update_task_status", { id: "nope", status: "pending" }, ctx);
+  assert.match(missing.content[0]!.text, /Task nope not found\./);
+  assert.deepEqual(taskStatuses(cwd), { "1": "pending", "2": "in_progress", "2.1": "complete", "3": "pending" });
+});
+
 // ---- record_goal_judgment taskId: the recorded deferral behind the gate exemption ----
 
 // record_goal_judgment and complete_goal only run on an ACTIVE goal owned

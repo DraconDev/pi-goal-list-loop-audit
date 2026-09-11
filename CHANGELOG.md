@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.38.49 — audit-pass drift fixes: prompt gate, summary segmentation, task honesty (2026-09-11)
+
+Full-project audit pass on v0.38.48 (three parallel scout surveys). Six new
+findings, all fixed on main; scout claims that were unproven, stale, or
+by-design are disposed with rationale in the pass note, not as findings.
+
+### Fixed
+
+- **Continuation prompt drift:** the Available-tools list and task workflow
+  now name `update_task_batch` (validate whole, verify milestones, persist
+  once) and the pending-task completion gate (`complete_goal` refused
+  before audit while committed tasks are open; `record_goal_judgment`
+  `choice=deferred` + `taskId` exempts a blocked item). Completion-voice
+guidance matches the rich-section renderer budgets.
+- **README verify path:** the `complete_goal` steps now include the
+  pending-task refusal before audit.
+- **Docs versions/voice:** INSTALL updating examples show the current
+  versions; the supervision design doc distinguishes the verbatim six-label
+  archive record from the rich chat/transcript sections and the compact
+  width-bound projection.
+- **Summary gate segmentation:** `missingCompletionSummaryLabels` segments
+  on the same last-occurrence positions as every projector, so a label
+  named inside an earlier value can no longer pass the gate while rendering
+  shifted (removed the now-dead `labelIndex`).
+- **Task-tool honesty:** completing an already-complete task reports
+  `Task <id> is already complete.` and same-status `update_task_status`
+  moves report `already <status>` instead of the not-found fallthrough or
+a no-op persist.
+- **Sidecar pending boundary:** the approval-render outbox and the
+  update-check refresh defer while sessionDir resolution is pending instead
+  of creating (or latching degraded on) a `<cwd>/.pi-glla` fallback tree.
+
+### Tests
+
+- Re-baselined `tests/context-growth-measurement.test.ts` to 22_570 chars
+  / 22_670 bytes per payload (+769 chars incl. one em dash) with exact
+  multiples preserved across probe sizes. New pins: stolen-label gate
+  agreement, already-complete/no-op task messages, sidecar pending deferral.
+  `tsc` clean.
+
 ## 0.38.48 — atomic task batches + pending-task completion gate (2026-09-11)
 
 ### Added

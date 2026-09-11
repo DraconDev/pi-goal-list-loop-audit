@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { stateRootPending } from "./glla-state-root.js";
 import {
   compareVersions,
   GLLA_PACKAGE_NAME,
@@ -60,6 +61,10 @@ export function refreshUpdateCheck(
   now = Date.now(),
   spawnFn: SpawnFn = spawn as unknown as SpawnFn,
 ): void {
+  // v0.38.49 audit: while sessionDir resolution is pending there is no
+  // session root yet — skip the refresh (and its cache write) instead of
+  // creating a <cwd>/.pi-glla fallback tree.
+  if (stateRootPending()) return;
   try {
     const cached = readUpdateCheckRaw(cwd);
     if (cached && now - cached.checkedAt < UPDATE_CHECK_TTL_MS) return;

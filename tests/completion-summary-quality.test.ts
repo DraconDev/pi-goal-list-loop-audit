@@ -12,7 +12,7 @@ import activate, {
   __testOnlyResetTerminalFlags,
 } from "../extensions/loops/goal.js";
 import { makeMockCtx, MockPi, seedGoal, seedState, tmpCwd } from "./harness/mock-pi.js";
-import { buildRecordedFactsCompletionSummary, compactCompletionSummary, compactTerminalCompletionSummary, isUsefulCompletionSummary, resolveCompletionSummary } from "../extensions/completion-summary.js";
+import { buildRecordedFactsCompletionSummary, compactCompletionSummary, compactTerminalCompletionSummary, isUsefulCompletionSummary, missingCompletionSummaryLabels, resolveCompletionSummary } from "../extensions/completion-summary.js";
 
 const SRC = readGoalRuntimeSource();
 const MAIN_SM = { name: "main-session-manager" };
@@ -134,6 +134,13 @@ test("v0.36.0: valid recap is preserved while generic prose is replaced", () => 
   assert.equal(generic.usedFallback, true);
   assert.match(generic.summary, /Outcome:/);
   assert.doesNotMatch(generic.summary, /Outcome: done/);
+});
+
+test("gate and projectors share last-occurrence segmentation on stolen labels", () => {
+  const stolen = "Outcome: o. Changed: c. Evidence: e. Tests: see Next: x. Unresolved: u. Next:";
+  assert.deepEqual(missingCompletionSummaryLabels(stolen), ["Next:"], "the empty final Next is missing even though Next: appears inside Tests:");
+  assert.equal(isUsefulCompletionSummary(stolen), false, "gate rejects what the projector renders as Next: not recorded");
+  assert.match(compactCompletionSummary(stolen), /Next: not recorded/, "projector and gate agree on the missing label");
 });
 
 test("v0.36.0: compact recap projection keeps all six labels and bounds each value", () => {

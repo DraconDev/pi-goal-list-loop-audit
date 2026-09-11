@@ -16,6 +16,8 @@ import { piGlaDir, setRuntimeSessionDir, stateRootPending } from "../extensions/
 import { dispatchRecordPath, persistDispatchRecord, readDispatchRecord } from "../extensions/goal-loop-dispatch.js";
 import { writeReviewReport } from "../extensions/reviewer.js";
 import { countOpenAuditFindings, topOpenAuditFinding } from "../extensions/goal-loop-forever.js";
+import { persistApprovalRender } from "../extensions/approval-render-store.js";
+import { refreshUpdateCheck } from "../extensions/glla-update-check.js";
 import { rollupProject, discoverGllaProjects } from "../extensions/goal-loop-stats.js";
 
 function fixture(stateRoot: "workingDir" | "sessionDir" = "workingDir") {
@@ -105,6 +107,16 @@ test("pending sessionDir defers dispatch, reviewer, and audit writes — no cwd 
     assert.equal(fs.existsSync(path.join(fx.cwd, ".pi-glla")), false);
     // audit findings: pending reads still fallback to cwd (empty), not sessionDir
     assert.equal(countOpenAuditFindings(fx.cwd), 0);
+    // sidecars defer too: no outbox persist, no update-check spawn/write,
+    // no cwd fallback tree
+    assert.equal(persistApprovalRender(fx.cwd, { goalId: "g1", objective: "x", chatLines: ["done — x"] }), false);
+    let spawned = false;
+    refreshUpdateCheck(fx.cwd, Date.now(), (() => {
+      spawned = true;
+      throw new Error("must not spawn while state root is pending");
+    }) as never);
+    assert.equal(spawned, false, "pending skips the registry refresh");
+    assert.equal(fs.existsSync(path.join(fx.cwd, ".pi-glla")), false);
   } finally {
     fx.restore();
   }
