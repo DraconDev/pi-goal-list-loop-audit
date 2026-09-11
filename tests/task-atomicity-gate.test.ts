@@ -216,16 +216,18 @@ test("single tools keep their pinned messages on the copy-swap path", async () =
 
 // ---- record_goal_judgment taskId: the recorded deferral behind the gate exemption ----
 
-// record_goal_judgment and complete_goal only run on an ACTIVE goal. A
-// restore after __testOnlyReset* holds for explicit resume (the resets
-// simulate a successor environment), so these tests skip the resets and
-// resume explicitly after restore — tools stay on the shared MockPi.
+// record_goal_judgment and complete_goal only run on an ACTIVE goal owned
+// by the calling session. Owner identity binds by object, so each test
+// resets the owner claim, restores (held), and resumes explicitly — the
+// honest user path. (Stale-flag resets are left out: they are irrelevant
+// here and the owner reset alone determines the hold.)
 async function activeHarness(): Promise<{ cwd: string; ctx: MockCtx; on: MockPi }> {
+  __testOnlyResetOwnerSession();
   const cwd = tmpCwd();
   fs.writeFileSync(process.env.GLLA_GLOBAL_SETTINGS_PATH!, JSON.stringify({}));
   seedState(cwd, { goal: seedGoal({ status: "active", taskList: toolFixture() }) });
   const ctx = gllaCtx(cwd);
-  await pi.fire("session_start", { reason: "test" }, ctx);
+  await pi.fire("session_start", { reason: "reload" }, ctx);
   await pi.command("goal", "resume", ctx);
   return { cwd, ctx, on: pi };
 }
@@ -289,4 +291,49 @@ test("inline judgment with a taskId is refused — no exemption by accident", as
   assert.match(res.content[0]!.text, /only valid with choice=deferred/);
   assert.equal(taskById(cwd, "1")!["deferred"], undefined);
   assert.equal(ledgerText(cwd), beforeLedger, "no ledger entry for a refused judgment");
+});
+
+// ---- complete_goal pending-task gate: refuse early, name tasks, deferrals exempt ----
+
+const CLAIM = {
+  completionSummary: "Outcome: tasks done. Changed: code. Evidence: tests. Tests: bun test 14/14. Unresolved: none. Next: none.",
+  verificationSummary: "task-atomicity-gate pins.",
+};
+
+test("claim with open committed tasks is refused naming each one, auditor untouched", async () => {
+  const { cwd, ctx, on } = await activeHarness();
+  const res = await on.runTool("complete_goal", CLAIM, ctx);
+  const text = res.content[0]!.text;
+  assert.match(text, /complete_goal REFUSED — 4 open committed tasks/);
+  assert.match(text, /- 1: "First" \(pending\)/);
+  assert.match(text, /- 2: "Second" \(in_progress\)/);
+  assert.match(text, /- 2\.1: "Second part one" \(pending\)/);
+  assert.match(text, /- 3: "Gated" \(pending\)/);
+  assert.match(text, /NOT sent to the auditor/);
+  assert.doesNotMatch(text, /AUDIT PENDING/);
+  assert.deepEqual(res.details, {});
+  assert.match(ledgerText(cwd), /"complete_goal_tasks_refused"/);
+  assert.match(ledgerText(cwd), /"id":"2\.1"/);
+  assert.equal((readState(cwd).goal as unknown as { status: string }).status, "active");
+});
+
+test("claim passes the gate when open tasks are finished and the rest deferred", async () => {
+  const { cwd, ctx, on } = await activeHarness();
+  const batch = await on.runTool("update_task_batch", {
+    updates: [
+      { id: "1", status: "complete" },
+      { id: "2", status: "complete" },
+      { id: "2.1", status: "complete" },
+    ],
+  }, ctx);
+  assert.match(batch.content[0]!.text, /Task batch applied \(3\)/);
+  const defer = await on.runTool("record_goal_judgment", {
+    choice: "deferred",
+    reason: "external gate down",
+    followUp: "retry the gated step next turn",
+    taskId: "3",
+  }, ctx);
+  assert.match(defer.content[0]!.text, /exempt from the complete_goal pending-task gate/);
+  const res = await on.runTool("complete_goal", CLAIM, ctx);
+  assert.doesNotMatch(res.content[0]!.text, /complete_goal REFUSED/);
 });

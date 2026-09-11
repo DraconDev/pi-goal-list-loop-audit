@@ -566,6 +566,22 @@ function registerAgentTools(pi: any): void {
           details: {},
         };
       }
+      // v0.38.48: pending-task completion gate — a claim with open
+      // committed tasks is refused BEFORE the auditor, naming each open
+      // item. Tasks carrying a recorded deferral (record_goal_judgment
+      // choice=deferred + taskId) are exempt. Placed before newObjective:
+      // a pivot must not silently orphan committed tasks — finish them or
+      // defer them explicitly first. Refusal mutates nothing.
+      if (state.goal.taskList) {
+        const openTasks = collectOpenTasks(state.goal.taskList);
+        if (openTasks.length > 0) {
+          appendLedger(ctx.cwd, "complete_goal_tasks_refused", {
+            goalId: state.goal.id,
+            open: openTasks.map((t) => ({ id: t.id, title: t.title, status: t.status })),
+          });
+          return { content: [{ type: "text", text: formatOpenTaskRefusal(openTasks) }], details: {} };
+        }
+      }
       // v0.25.0 (contract item 15): atomic objective update + audit in one
       // call — the objective-drift disapprove loop (ship shifted work →
       // auditor disapproves the ORIGINAL objective) ends here. Ledgered so
