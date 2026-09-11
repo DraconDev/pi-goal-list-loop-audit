@@ -4571,3 +4571,7 @@
 {"type":"session_rebound","value":{"reason":"startup"},"at":"2026-09-11T23:04:16.788Z"}
 {"type":"id_invalidation","value":{"oldId":"01a054a9-e07f-705b-87a1-9421f9b906dc","newId":"01a092b6-e298-7626-942d-6cfa279f89a5","reason":"session_shutdown","shutdownReason":"quit","at":"2026-09-11T23:04:16.797Z"},"at":"2026-09-11T23:04:16.797Z"}
 {"type":"session_waiting_for_load","value":{"reason":"startup"},"at":"2026-09-11T23:04:16.797Z"}
+{"type":"session_shutdown","value":{"reason":"resume"},"at":"2026-09-11T23:08:14.376Z"}
+{"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-11T23:08:14.737Z"}
+{"type":"id_invalidation","value":{"oldId":"01a092b6-e298-7626-942d-6cfa279f89a5","newId":"01a054a9-e07f-705b-87a1-9421f9b906dc","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-11T23:08:14.741Z"},"at":"2026-09-11T23:08:14.741Z"}
+{"type":"model_fallback_select","value":{"scope":"drafter","fromRef":"opencode-go/muse-spark-1.3-contributor","reason":"exhausted"},"at":"2026-09-11T23:08:25.080Z"}
