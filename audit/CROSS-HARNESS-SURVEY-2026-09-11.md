@@ -223,19 +223,20 @@ guard? Finding: no hole exists. `isWorkerSessionCtx`
 (`extensions/loops/goal-session.ts:1574`, no-UI print/json discriminator)
 rejects worker sessions at `session_start` before root registration, restore,
 owner writes, tool repair, or loop rescheduling
-(`extensions/loops/goal-activation.ts:1246`); `isHostSuccessorCtx` adds a
+(`extensions/loops/goal-activation.ts:1247`); `isHostSuccessorCtx` adds a
 file-backed structural fallback; `claimProcessOwner` + last-wins keeps
 "a subagent must never dethrone the main session"; `isForeignCtx` gates
-continuation (`extensions/goal-continuation.ts:661,1174`). Pinned across 7
-test files. Verdict: GLLA's structural guard is strictly stronger than
-env-var depth checks (env inherits/leaks; session identity does not).
+continuation (`extensions/goal-continuation.ts:661,1174`).
+Direct behavioral pin: `tests/subagent-host-boundary.test.ts` —
+`v0.35.62: a worker cannot be the first claimant` (:54),
+`v0.35.62: foreign slash commands cannot mutate the host list` (:90),
+`v0.35.62: persistent workers cannot masquerade as silent host successors`
+(:112), `v0.35.72: state-root read-only denial` (:150); bounded run
+2026-09-11: 4 pass, 0 fail. Adjacent coverage (ownership refresh,
+continuation gating, stall handling): `tests/last-wins.test.ts`,
+`tests/stale-self-heal.test.ts`, `tests/stale-continuation-integration.test.ts`,
+`tests/stall-handling.test.ts` — bounded run 2026-09-11: 58 pass, 0 fail.
 Nothing to port; steal-table row 9 closed.
-Evidence correction (auditor 2026-09-11): the guard is pinned by 4 test
-files, not 7 — `tests/last-wins.test.ts:174`,
-`tests/stale-self-heal.test.ts:112`,
-`tests/stale-continuation-integration.test.ts:111`,
-`tests/stall-handling.test.ts:55`. Bounded run 2026-09-11:
-`bun test` on those 4 files: 58 pass, 0 fail.
 Scope note: steal-table rows 1-8 and 10-20 are unapproved future-work
 proposals, not open uncertainties; the only unsure item was row 9.
 Goal rescoped to this spike via `newObjective` at completion.
