@@ -4018,3 +4018,10 @@
 {"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:15:05.512Z"}
 {"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:15:07.953Z"}
 {"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:15:10.763Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:16:07.764Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:16:14.088Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:16:18.254Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:16:26.894Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:16:28.875Z"}
+{"type":"send_rearm_storm","value":{"kind":"continuation","streak":35,"minutes":10},"at":"2026-09-11T15:16:45.072Z"}
+{"type":"rearm_no_turn_started","value":{"streak":35,"minutes":10,"turnOpen":true,"turnOpenMinutes":1},"at":"2026-09-11T15:16:45.073Z"}

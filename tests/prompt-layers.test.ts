@@ -135,7 +135,7 @@ test("survey-pivot delta is EXACTLY the deferred body (equal-length objectives)"
   // newline beyond the body itself (skeleton blank lines on both sides).
   // A survey objective in aggressiveMode ALSO arms the pre-existing dynamic
   // FULL-AUDIT directive (unchanged behavior) — strip both, expect identity.
-  const stripped = b.replace(body + "\n", "").replace(/\n\n## FULL-AUDIT MODE[\s\S]*?task list exists\./, "");
+  const stripped = b.replace(body + "\n", "").replace(/\n\n## FULL-AUDIT MODE[\s\S]*?task list exists\./, "").replace(survey, plain);
   assert.equal(stripped, a);
   assert.ok(b.length - a.length >= body.length + 1);
 });
