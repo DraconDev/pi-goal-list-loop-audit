@@ -13,3 +13,4 @@ agy ?? closed
 https://github.com/openai/codex
 https://github.com/anthropics/claude-code
 https://github.com/xai-org/grok-build
+https://github.com/deepseek-ai/deepseek-harness & its plugins 
