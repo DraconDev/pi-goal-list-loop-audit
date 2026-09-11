@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.38.47 — layered prompts: skeleton plus on-demand detail (2026-09-11)
+
+### Changed
+
+- **Prompt layers:** every `prompts/*.md` file is now a static skeleton plus on-demand detail blocks (`<!-- glla-layer: detail <id> -->`). The continuation template carries three conditional details — `auditor-disapproval` (live disapproval), `survey-pivot` (survey objective), `session-restart` (resync/recovery) — loaded only when their trigger is already known at render time; loop, draft, and plan prompts are skeleton-only (per-iteration essential or already file-granular on-demand). Static layers resolve before dynamic substitution, in file order every turn.
+- **Measured saving:** clean-scenario full continuation render drops 24,347 to 21,801 chars (~10%, est. tokens 6,087 to 5,451); firing predicates re-add exactly their own bodies.
+- **Loud failure:** a missing prompt file, unclosed/duplicate block, or unknown detail id throws naming the file — the `[template-not-found]`, inline mini-prompt, and `[DRAFTING] Clarify` silent fallbacks are gone.
+- **Mid-turn contingencies stay put:** subagent death, provider errors, detached commits, stalls, and task workflow remain in the skeleton (their trigger cannot be known before the turn; no mid-turn fetch exists).
+- **Pins:** `tests/prompt-layers.test.ts` (19) — full-assembly render-diff for all 7 files, exact-delta proofs, loud-missing, order determinism; `tests/context-growth-measurement.test.ts` and `tests/context-checkpoint.test.ts` re-baselined deliberately (deltas verified byte-exact against a pre-change worktree).
+
 ## 0.38.46 — rich Antigravity-style terminal summaries (2026-09-11)
 
 ### Changed
