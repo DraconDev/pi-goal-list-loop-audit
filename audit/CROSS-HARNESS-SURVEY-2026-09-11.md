@@ -230,3 +230,12 @@ continuation (`extensions/goal-continuation.ts:661,1174`). Pinned across 7
 test files. Verdict: GLLA's structural guard is strictly stronger than
 env-var depth checks (env inherits/leaks; session identity does not).
 Nothing to port; steal-table row 9 closed.
+Evidence correction (auditor 2026-09-11): the guard is pinned by 4 test
+files, not 7 — `tests/last-wins.test.ts:174`,
+`tests/stale-self-heal.test.ts:112`,
+`tests/stale-continuation-integration.test.ts:111`,
+`tests/stall-handling.test.ts:55`. Bounded run 2026-09-11:
+`bun test` on those 4 files: 58 pass, 0 fail.
+Scope note: steal-table rows 1-8 and 10-20 are unapproved future-work
+proposals, not open uncertainties; the only unsure item was row 9.
+Goal rescoped to this spike via `newObjective` at completion.
