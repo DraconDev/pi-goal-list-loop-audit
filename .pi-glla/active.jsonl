@@ -3684,3 +3684,4 @@
 {"type":"session_shutdown","value":{"reason":"resume"},"at":"2026-09-11T10:05:35.114Z"}
 {"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-11T10:05:36.500Z"}
 {"type":"id_invalidation","value":{"oldId":"01a08fed-e6a4-767c-aac9-c9ad9df9af3a","newId":"01a054a9-e07f-705b-87a1-9421f9b906dc","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-11T10:05:36.504Z"},"at":"2026-09-11T10:05:36.504Z"}
+{"type":"model_fallback_select","value":{"scope":"drafter","fromRef":"opencode-go/muse-spark-1.3-contributor","reason":"exhausted"},"at":"2026-09-11T10:07:35.368Z"}
