@@ -232,7 +232,8 @@ Direct behavioral pin: `tests/subagent-host-boundary.test.ts` —
 `v0.35.62: foreign slash commands cannot mutate the host list` (:90),
 `v0.35.62: persistent workers cannot masquerade as silent host successors`
 (:112), `v0.35.72: state-root read-only denial` (:150); bounded run
-2026-09-11: 4 pass, 0 fail. Adjacent coverage (ownership refresh,
+2026-09-11: 4 pass, 0 fail (re-run with adjacent files after the doc fix:
+62 pass, 0 fail across all 5). Adjacent coverage (ownership refresh,
 continuation gating, stall handling): `tests/last-wins.test.ts`,
 `tests/stale-self-heal.test.ts`, `tests/stale-continuation-integration.test.ts`,
 `tests/stall-handling.test.ts` — bounded run 2026-09-11: 58 pass, 0 fail.
