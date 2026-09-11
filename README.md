@@ -94,7 +94,7 @@ Done when:
 ```
 
 The contract is the important part. Replace the example with the result you
-actually want and checks that another person—or another agent—could inspect.
+actually want and checks that another person (or another agent) could inspect.
 
 For an objective that needs shaping, start with bare `/goal` and answer the
 interview. GLLA will research the ambiguity, ask focused questions, and show a
@@ -132,7 +132,7 @@ forcing every problem into a loop.
 | `/list` | Several outcomes or a backlog of independently verifiable items | Each item is worked and audited separately; the queue advances safely |
 | `/loop` | Ongoing improvement with no single final item | A metric, specification, audit cadence, bound, or `/loop stop` ends the process |
 
-### `/goal` — one outcome
+### `/goal`: one outcome
 
 ```text
 /goal                                      # interview + Confirm
@@ -152,7 +152,7 @@ A goal is the best default for work with a finish line. If the agent discovers
 that the objective is too large, it can propose a bounded task plan instead of
 quietly inventing an unbounded backlog.
 
-### `/list` — a durable work pool
+### `/list`: a durable work pool
 
 ```text
 /list "fix the cache. Done when: tests pass"
@@ -179,11 +179,11 @@ bounded bootstrap turn containing `propose_task_list`. Confirm the redraft;
 automatic repeats are fenced. Use `/list resume` or `/glla resume` for an
 intentional retry of a waiting/restored queue, and `/list next` when you
 intentionally want to skip or choose another queued item. `/list start` is
-also explicit: it activates the queued head, or—when the queue is empty—uses
+also explicit: it activates the queued head, or, when the queue is empty, uses
 one clear recent user request as a seed for the normal Confirm-gated list
 drafting flow. Ambiguous context is never queued automatically.
 
-### `/loop` — an improvement process
+### `/loop`: an improvement process
 
 ```text
 /loop                                     # interview + Confirm
@@ -274,13 +274,13 @@ GLLA is the supervisor. These companions add capabilities around it:
 
 ### Recommended for almost everyone
 
-- **`@juicesharp/rpiv-ask-user-question`** — structured questions, multi-select,
+- **`@juicesharp/rpiv-ask-user-question`**: structured questions, multi-select,
   previews, and Confirm dialogs for drafting and decisions. GLLA has a prose
   fallback, but this is the intended UX.
 
-### Recommended for power — parallel orchestration (`pi-subagents`)
+### Recommended for power: parallel orchestration (`pi-subagents`)
 
-- **`pi-subagents` 0.62.0 (pinned) — the power-max choice for GLLA.** Use it
+- **`pi-subagents` 0.62.0 (pinned): the power-max choice for GLLA.** Use it
   when you want the best automation and quality: `runs.all` parallel fan-out,
   `runs.lanes` worker→review→fix chains, `outputSchema` + `acceptance` structured
   verification, `runs.host` gated shell, worktree isolation, model routing
@@ -295,7 +295,7 @@ GLLA is the supervisor. These companions add capabilities around it:
 
   The main pi session remains the owner of the goal/list/loop; subagents are
   workers and cannot silently replace the parent's objective. A short or mostly
-  sequential goal can still run cleanly without workers — install when
+  sequential goal can still run cleanly without workers; install when
   parallelism will pay for its coordination and model usage.
 
   Display coexistence: pi-subagents renders its own inline run panels +
@@ -304,7 +304,7 @@ GLLA is the supervisor. These companions add capabilities around it:
   swapping order, set pi-subagents `inlineToolDisplay: "summary"` (one
   stable row per run) and pin `fleetViewPlacement`; GLLA's own richness is
   the `subagentDisplayRichness` setting (`/glla` → Subagents): `rich`
-  (default — worker rows + task linkage), `compact` (count line), `quiet`
+  (default: worker rows + task linkage), `compact` (count line), `quiet`
   (hung/aborting workers only). Upstream triple-render report:
   nicobailon/pi-subagents#1931.
 
@@ -319,17 +319,17 @@ recommendation in the same session. Existing Tintin-era agent files are
 cleaned only when GLLA's management marker proves that GLLA owns them; old
 settings are not silently remapped to a different role. Do not stack
 `@quintinshaw/pi-dynamic-workflows` as a competing orchestrator alongside
-GLLA + `pi-subagents` in the same session — duplicate tools and competing
+GLLA + `pi-subagents` in the same session: duplicate tools and competing
 orchestration events create ambiguous ownership. Use its quality helpers
 (`verify`/`judgePanel`/`loopUntilDry`) only as isolated complements if needed.
 
 ### Useful, but optional
 
-- **`@pi-unipi/notify`** — Telegram, Gotify, or ntfy delivery when you need
+- **`@pi-unipi/notify`**: Telegram, Gotify, or ntfy delivery when you need
   alerts away from the desktop. GLLA's local notifications work without it;
   when no command is configured, it auto-detects `notify-send`/`osascript`;
   `notify=off` silences notifications.
-- **`pi-chrome`** — logged-in browser research and interaction when a goal needs
+- **`pi-chrome`**: logged-in browser research and interaction when a goal needs
   a real web session. It is not required for repository-only work.
 
 ### What not to combine with GLLA
@@ -501,4 +501,4 @@ repository material, not first-use package content.
 
 ## License
 
-GNU Affero General Public License v3.0-only — see [LICENSE](LICENSE).
+GNU Affero General Public License v3.0-only; see [LICENSE](LICENSE).

@@ -31,11 +31,11 @@ GLLA loads into new pi sessions. If pi is already open, reload that session:
 
 ## Updating
 
-The status line always shows the running version (`glla: … · v0.38.44`).
+The status line always shows the running version (`glla: … · v0.38.46`).
 When the npm registry is ahead, it also nudges:
 
 ```text
-glla: … · v0.38.43 · update v0.38.44 available
+glla: … · v0.38.45 · update v0.38.46 available
 ```
 
 The nudge comes from a daily sidecar check (`.pi-glla/update-check.json`),
@@ -45,7 +45,7 @@ refreshed on command contact and never blocking a turn. To update:
 pi install npm:pi-goal-list-loop-audit@latest
 ```
 
-Then `/reload` every open pi session — a session keeps running the
+Then `/reload` every open pi session: a session keeps running the
 version it loaded with until reloaded. `/glla version` says whether the
 current session is stale and repeats the update command.
 
@@ -58,7 +58,7 @@ and confirmation UX:
 pi install npm:@juicesharp/rpiv-ask-user-question
 ```
 
-For best automation and quality, add the **pinned parallel-orchestration companion** (`pi-subagents` 0.62.0) — GLLA's power-max choice for `runs.all` fan-out, `runs.lanes` worker→review→fix chains, structured verification, worktree isolation, and durable recovery:
+For best automation and quality, add the **pinned parallel-orchestration companion** (`pi-subagents` 0.62.0): GLLA's power-max choice for `runs.all` fan-out, `runs.lanes` worker→review→fix chains, structured verification, worktree isolation, and durable recovery:
 
 ```bash
 pi install npm:pi-subagents@0.62.0
@@ -260,9 +260,9 @@ supervisor, or let it own the session instead of GLLA.
 
 ## Further reading
 
-- [`README.md`](README.md) — product overview, first-use guide, commands,
+- [`README.md`](README.md): product overview, first-use guide, commands,
   companion policy, autonomy model, recovery, and maintainer map;
-- [`docs/DESIGN.md`](docs/DESIGN.md) — architecture and design decisions;
-- [`docs/INDEX.md`](docs/INDEX.md) — shipped and repository-only documentation;
-- [`docs/RELEASING.md`](docs/RELEASING.md) — release process;
-- [`CHANGELOG.md`](CHANGELOG.md) — version history.
+- [`docs/DESIGN.md`](docs/DESIGN.md): architecture and design decisions;
+- [`docs/INDEX.md`](docs/INDEX.md): shipped and repository-only documentation;
+- [`docs/RELEASING.md`](docs/RELEASING.md): release process;
+- [`CHANGELOG.md`](CHANGELOG.md): version history.

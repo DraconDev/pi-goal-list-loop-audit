@@ -1,16 +1,14 @@
-# docs/ — index
+# docs/ index
 
 Ordered by reading path, not alphabetically.
 
 ## Active focus (recent work, durable artifacts)
 
-This package's policy contracts and recent changes are recorded in
-the audit/ directory of the **repository checkout** — it is not
-shipped in the npm tarball (see "Repository-only material" below).
+Policy contracts and recent changes live in the `audit/` directory of the
+**repository checkout**; that directory is not shipped in the npm tarball
+(see "Repository-only material" below). The shipped entry points are:
 
-For shipped docs, the relevant entry points are:
-
-- `../CHANGELOG.md` — user-facing changelog; an `Unreleased` section may lead
+- `../CHANGELOG.md`: user-facing changelog; an `Unreleased` section may lead
   the file, followed by the current released version. v0.35.5 adopted the six-label completion
   recap; v0.35.6 added typed-boundary regression pins; v0.35.7 added
   deterministic fast-fail pre-audits, zero-pause autonomous execution, and
@@ -28,43 +26,43 @@ For shipped docs, the relevant entry points are:
   packed-artifact release verification, and the 2026-09-07 display/lifecycle/
   settings audit pass (abort-latch send guards, ownership compare-and-swap,
   auditor inherit/clear parity) and the v0.38.25 post-objective summary
-  (canonical approval render, persist + replay, audit-goal counts line), the v0.38.27 selective port of PRs #45/#46 (`/loop pause` soft-hold, widget subtask count), the v0.38.28 provenance-row closure fix, and the v0.38.29 compact active-card recovery/judgment projection — see CHANGELOG.md for the full trail.
-- `../README.md` — what the plugin is, install, quickstart, and the
+  (canonical approval render, persist + replay, audit-goal counts line), the v0.38.27 selective port of PRs #45/#46 (`/loop pause` soft-hold, widget subtask count), the v0.38.28 provenance-row closure fix, and the v0.38.29 compact active-card recovery/judgment projection; see CHANGELOG.md for the full trail.
+- `../README.md`: what the plugin is, install, quickstart, and the
   architectural guarantee (drafting + confirm + detached auditor).
-- `../INSTALL.md` — source install / local development setup; the recommended
+- `../INSTALL.md`: source install / local development setup; the recommended
   companion plugins and the `auditor reads / writes are path-checked`
   note.
 
 ## Entry points
-- `../README.md` — what the plugin is, install, quickstart
-- `SETTINGS.md` — canonical settings reference (files, precedence, every key)
-- `../INSTALL.md` — source install / local development setup
-- `../CHANGELOG.md` — user-facing changelog; the first versioned heading is
+- `../README.md`: what the plugin is, install, quickstart
+- `SETTINGS.md`: canonical settings reference (files, precedence, every key)
+- `../INSTALL.md`: source install / local development setup
+- `../CHANGELOG.md`: user-facing changelog; the first versioned heading is
   the current released package version (use `/glla version` to compare with
   the registry); post-release work may appear in `Unreleased` above it.
 
 ## Architecture
-- `DESIGN.md` — plugin design (types, state, extension lifecycle)
-- `DESIGN-long-running-supervision.md` — v0.36.0 event/progress-driven supervision, aggressive recovery, terminal recaps, and future decision checklist
-- `GLLA-POSITIONING-AND-DECOMPOSITION-2026-08-08.md` — ecosystem
+- `DESIGN.md`: plugin design (types, state, extension lifecycle)
+- `DESIGN-long-running-supervision.md`: v0.36.0 event/progress-driven supervision, aggressive recovery, terminal recaps, and future decision checklist
+- `GLLA-POSITIONING-AND-DECOMPOSITION-2026-08-08.md`: ecosystem
   positioning, competitor review, and the goal.ts decomposition plan
-  (the current strategic doc — read this before touching
+  (the current strategic doc; read this before touching
   `extensions/loops/goal.ts`)
-- `VISION-ASSIST.md` — vision-assist plugin notes
-- `RELEASING.md` — how to publish to npm
+- `VISION-ASSIST.md`: vision-assist plugin notes
+- `RELEASING.md`: how to publish to npm
 
 ## Supporting material
-- `../prompts/` — goal/loop drafting prompt templates
-- `../schemas/` — goal state JSON schema
-- `../examples/` — example objective files
-- `../CHANGELOG.md` — user-facing changelog (unreleased at top)
-- `/glla bug` — `extensions/goal-commands.ts:cmdGllaBug` captures failure context to `<stateDir>/bugs/<ts>-<id>.md` without touching `active.jsonl`/`goals/*.md` (see `tests/glla-bug-capture.test.ts`)
+- `../prompts/`: goal/loop drafting prompt templates
+- `../schemas/`: goal state JSON schema
+- `../examples/`: example objective files
+- `../CHANGELOG.md`: user-facing changelog (unreleased at top)
+- `/glla bug`: `extensions/goal-commands.ts:cmdGllaBug` captures failure context to `<stateDir>/bugs/<ts>-<id>.md` without touching `active.jsonl`/`goals/*.md` (see `tests/glla-bug-capture.test.ts`)
 
 ## Repository-only material
 The audit history and competitor research live in `audit/` and `.research/`
 for contributors, but are intentionally not included in the npm tarball.
 
 ## Research material
-`.research/` — competitor plugin sources pulled from npm tarballs for study
+`.research/`: competitor plugin sources pulled from npm tarballs for study
 (gitignored, local only). Re-pull with `cd .research && npm pack <pkg> &&
 tar xzf <tgz>`; see the positioning doc's appendix for the package list.
