@@ -3922,3 +3922,11 @@
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":33728,"outputTokens":355,"cacheReadTokens":181617,"cacheWriteTokens":0,"totalTokens":215700},"contextUsage":{"tokens":215700,"contextWindow":200000,"percent":107.85}},"at":"2026-09-11T12:00:51.753Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":55655,"outputTokens":1357,"cacheReadTokens":113,"cacheWriteTokens":0,"totalTokens":57125},"contextUsage":{"tokens":57125,"contextWindow":200000,"percent":28.5625}},"at":"2026-09-11T12:02:16.937Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":null,"contextUsage":{"tokens":57135,"contextWindow":200000,"percent":28.567500000000003}},"at":"2026-09-11T14:49:54.036Z"}
+{"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-11T14:51:08.276Z"}
+{"type":"session_rebound","value":{"reason":"startup"},"at":"2026-09-11T14:51:13.329Z"}
+{"type":"id_invalidation","value":{"oldId":"01a054a9-e07f-705b-87a1-9421f9b906dc","newId":"01a090f3-749d-75c6-be18-f4b18cc6c97c","reason":"session_shutdown","shutdownReason":"quit","at":"2026-09-11T14:51:13.342Z"},"at":"2026-09-11T14:51:13.342Z"}
+{"type":"session_waiting_for_load","value":{"reason":"startup"},"at":"2026-09-11T14:51:13.342Z"}
+{"type":"session_shutdown","value":{"reason":"resume"},"at":"2026-09-11T14:51:19.948Z"}
+{"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-11T14:51:20.448Z"}
+{"type":"id_invalidation","value":{"oldId":"01a090f3-749d-75c6-be18-f4b18cc6c97c","newId":"01a054a9-e07f-705b-87a1-9421f9b906dc","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-11T14:51:20.456Z"},"at":"2026-09-11T14:51:20.456Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":56368,"outputTokens":476,"cacheReadTokens":753,"cacheWriteTokens":0,"totalTokens":57597},"contextUsage":{"tokens":57597,"contextWindow":200000,"percent":28.7985}},"at":"2026-09-11T14:51:34.041Z"}
