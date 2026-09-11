@@ -129,8 +129,9 @@ afterEach(async () => {
     lastSession = null;
     try {
       await s.on.fire("session_shutdown", { reason: "quit" }, s.ctx);
-    } catch {
+    } catch (e) {
       // Cleanup only — test assertions already ran.
+      process.stderr.write(`[task-atomicity-gate] shutdown cleanup threw: ${String(e).slice(0, 200)}\n`);
     }
   }
 });
