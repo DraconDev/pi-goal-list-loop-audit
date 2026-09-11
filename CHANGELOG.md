@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.38.48 — atomic task batches + pending-task completion gate (2026-09-11)
+
+### Added
+
+- **update_task_batch tool:** validate whole → verify every `complete` milestone's `verificationContract` → copy + apply → persist once. A rejected batch or a mid-batch milestone failure leaves state untouched.
+- **Pending-task completion gate:** `complete_goal` with open committed tasks is refused BEFORE the auditor, naming each open item (`- <id>: "<title>" (<status>)`) with a `complete_goal_tasks_refused` ledger entry. Refusal mutates nothing and cannot be bypassed via `newObjective` (gate sits before the pivot branch).
+- **Deferral exemption:** `record_goal_judgment` accepts `taskId` only with `choice=deferred`; stamps `task.deferred = { reason, followUp, at }` in the same persist as the ledger entry. `inline` + `taskId` and unknown ids are refused with no ledger change.
+
+### Tests
+
+- `tests/task-atomicity-gate.test.ts`: 7 pure-core + 10 MockPi pins (mid-batch kill untouched, refusal names each task, deferral pass-through). `tsc` clean.
+
 ## 0.38.47 — layered prompts: skeleton plus on-demand detail (2026-09-11)
 
 ### Changed
