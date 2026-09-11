@@ -12,7 +12,7 @@
 // the contract is pinnable without a harness: a rejected batch returns the
 // ORIGINAL list object untouched, and the tools persist exactly once.
 
-import type { Task, TaskList } from "./goal-loop-core.ts";
+import type { Task, TaskList } from "./goal-loop-core.js";
 
 export type TaskStatus = "pending" | "in_progress" | "complete";
 

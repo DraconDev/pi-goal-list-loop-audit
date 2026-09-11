@@ -135,6 +135,15 @@ isGoalRevisionCurrent,
   normalizeDurableDeferRecommendationInput,
 } from "../goal-loop-core.js";
 import {
+  applyValidatedBatch,
+  collectOpenTasks,
+  findTask,
+  formatOpenTaskRefusal,
+  validateTaskBatch,
+  withTaskStatus,
+  type TaskStatusUpdate,
+} from "../task-batch.js";
+import {
   createContinuationDispatch,
   dispatchMatchesOwner,
   dispatchPromptMatches,
@@ -2160,25 +2169,25 @@ function registerAgentTools(pi: any): void {
         return { content: [{ type: "text", text: "No task list in this goal." }], details: {} };
       }
       const tl = state.goal.taskList;
-      const queue: any[] = [...tl.tasks];
-      while (queue.length > 0) {
-        const t = queue.shift();
-        if (t.id === p.id && t.status !== "complete") {
-          const checkRes = await verifyTaskMilestone(ctx, t.verificationContract, signal);
-          if (checkRes) {
-            return {
-              content: [{
-                type: "text",
-                text: `Task ${p.id} milestone verification FAILED for command \`${checkRes.failedCommand}\` (exit code ${checkRes.exitCode}):\n\n${checkRes.output}\n\nTask ${p.id} remains in_progress. Fix the failure before marking complete.`,
-              }],
-              details: {},
-            };
-          }
-          t.status = "complete";
-          updateGoal({ taskList: tl }, ctx);
-          return { content: [{ type: "text", text: `Task ${p.id} marked complete.` }], details: {} };
+      // v0.38.48: copy-swap — the live list is never mutated in place, so a
+      // kill between verify and persist (or a persist failure) cannot leave
+      // partial state. Message strings are unchanged (pinned by tests).
+      const t = findTask(tl, p.id);
+      if (t && t.status !== "complete") {
+        const checkRes = await verifyTaskMilestone(ctx, t.verificationContract, signal);
+        if (checkRes) {
+          return {
+            content: [{
+              type: "text",
+              text: `Task ${p.id} milestone verification FAILED for command \`${checkRes.failedCommand}\` (exit code ${checkRes.exitCode}):\n\n${checkRes.output}\n\nTask ${p.id} remains in_progress. Fix the failure before marking complete.`,
+            }],
+            details: {},
+          };
         }
-        if (t.subtasks) queue.push(...t.subtasks);
+        if (!updateGoal({ taskList: withTaskStatus(tl, p.id, "complete") }, ctx)) {
+          return { content: [{ type: "text", text: `Task ${p.id} could not be marked complete — the persist failed and no state changed. Retry.` }], details: {} };
+        }
+        return { content: [{ type: "text", text: `Task ${p.id} marked complete.` }], details: {} };
       }
       return { content: [{ type: "text", text: `Task ${p.id} not found.` }], details: {} };
     },
@@ -2202,29 +2211,83 @@ function registerAgentTools(pi: any): void {
         return { content: [{ type: "text", text: "No task list in this goal." }], details: {} };
       }
       const tl = state.goal.taskList;
-      const queue: any[] = [...tl.tasks];
-      while (queue.length > 0) {
-        const t = queue.shift();
-        if (t.id === p.id) {
-          if (p.status === "complete") {
-            const checkRes = await verifyTaskMilestone(ctx, t.verificationContract, signal);
-            if (checkRes) {
-              return {
-                content: [{
-                  type: "text",
-                  text: `Task ${p.id} milestone verification FAILED for command \`${checkRes.failedCommand}\` (exit code ${checkRes.exitCode}):\n\n${checkRes.output}\n\nTask ${p.id} remains ${t.status}. Fix the failure before marking complete.`,
-                }],
-                details: {},
-              };
-            }
+      // v0.38.48: copy-swap (see complete_task). Message strings unchanged.
+      const t = findTask(tl, p.id);
+      if (t) {
+        if (p.status === "complete") {
+          const checkRes = await verifyTaskMilestone(ctx, t.verificationContract, signal);
+          if (checkRes) {
+            return {
+              content: [{
+                type: "text",
+                text: `Task ${p.id} milestone verification FAILED for command \`${checkRes.failedCommand}\` (exit code ${checkRes.exitCode}):\n\n${checkRes.output}\n\nTask ${p.id} remains ${t.status}. Fix the failure before marking complete.`,
+              }],
+              details: {},
+            };
           }
-          t.status = p.status;
-          updateGoal({ taskList: tl }, ctx);
-          return { content: [{ type: "text", text: `Task ${p.id} → ${p.status}` }], details: {} };
         }
-        if (t.subtasks) queue.push(...t.subtasks);
+        if (!updateGoal({ taskList: withTaskStatus(tl, p.id, p.status) }, ctx)) {
+          return { content: [{ type: "text", text: `Task ${p.id} could not move to ${p.status} — the persist failed and no state changed. Retry.` }], details: {} };
+        }
+        return { content: [{ type: "text", text: `Task ${p.id} → ${p.status}` }], details: {} };
       }
       return { content: [{ type: "text", text: `Task ${p.id} not found.` }], details: {} };
+    },
+  }));
+
+  pi.registerTool(defineTool({
+    name: "update_task_batch",
+    label: "Update task batch",
+    description: "Atomically update several tasks at once: the whole batch is validated first, milestones are verified, then all statuses persist in one write. Any failure rejects the batch and leaves state untouched.",
+    parameters: Type.Object({
+      updates: Type.Array(Type.Object({
+        id: Type.String({ description: "Task id to update" }),
+        status: Type.Union([Type.Literal("pending"), Type.Literal("in_progress"), Type.Literal("complete")]),
+      }), { description: "Status updates to apply atomically (each task id at most once)" }),
+    }),
+    async execute(_id, params, signal, _onUpdate, execCtx) {
+      const foreignBatch = foreignToolGuard(execCtx);
+      if (foreignBatch) return { content: [{ type: "text", text: foreignBatch }], details: {} };
+      const ctx = currentToolContext(execCtx);
+      if (!ctx) return staleToolResult();
+      const p = params as { updates: TaskStatusUpdate[] };
+      if (!state.goal || !state.goal.taskList) {
+        return { content: [{ type: "text", text: "No task list in this goal." }], details: {} };
+      }
+      const tl = state.goal.taskList;
+      // Phase 1 — validate the WHOLE batch before any verification runs.
+      const validation = validateTaskBatch(tl, p.updates);
+      if (!validation.ok) {
+        return { content: [{ type: "text", text: validation.error }], details: {} };
+      }
+      // Phase 2 — verify every milestone moving to complete. All failures
+      // are collected so one bad milestone does not hide another; NOTHING
+      // is applied until every verification passes (mid-batch kill here
+      // leaves state unchanged — the copy below does not exist yet).
+      const failures: string[] = [];
+      for (const e of validation.entries) {
+        if (e.status === "complete" && e.task.status !== "complete") {
+          const checkRes = await verifyTaskMilestone(ctx, e.task.verificationContract, signal);
+          if (checkRes) {
+            failures.push(`Task ${e.task.id} milestone verification FAILED for command \`${checkRes.failedCommand}\` (exit code ${checkRes.exitCode}):\n\n${checkRes.output}`);
+          }
+        }
+      }
+      if (failures.length > 0) {
+        return {
+          content: [{
+            type: "text",
+            text: `Task batch rejected — ${failures.length} milestone verification${failures.length === 1 ? "" : "s"} failed. No task was changed:\n\n${failures.join("\n\n")}`,
+          }],
+          details: {},
+        };
+      }
+      // Phase 3 — copy, apply, persist ONCE.
+      if (!updateGoal({ taskList: applyValidatedBatch(tl, validation.entries) }, ctx)) {
+        return { content: [{ type: "text", text: "Task batch could not persist — the write failed and no state changed. Retry." }], details: {} };
+      }
+      const applied = validation.entries.map((e) => `${e.task.id} → ${e.status}`).join(", ");
+      return { content: [{ type: "text", text: `Task batch applied (${validation.entries.length}): ${applied}.` }], details: {} };
     },
   }));
 
