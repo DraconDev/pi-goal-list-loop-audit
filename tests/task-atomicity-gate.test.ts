@@ -216,10 +216,18 @@ test("single tools keep their pinned messages on the copy-swap path", async () =
 
 // ---- record_goal_judgment taskId: the recorded deferral behind the gate exemption ----
 
-// record_goal_judgment and complete_goal only run on an ACTIVE goal; a
-// reload-restore parks it (hold-on-restore), so those tests start fresh.
-async function activeHarness(): Promise<{ cwd: string; ctx: MockCtx }> {
-  return batchHarness("test");
+// record_goal_judgment and complete_goal only run on an ACTIVE goal. A
+// restore after __testOnlyReset* holds for explicit resume (the resets
+// simulate a successor environment), so these tests skip the resets and
+// resume explicitly after restore — tools stay on the shared MockPi.
+async function activeHarness(): Promise<{ cwd: string; ctx: MockCtx; on: MockPi }> {
+  const cwd = tmpCwd();
+  fs.writeFileSync(process.env.GLLA_GLOBAL_SETTINGS_PATH!, JSON.stringify({}));
+  seedState(cwd, { goal: seedGoal({ status: "active", taskList: toolFixture() }) });
+  const ctx = gllaCtx(cwd);
+  await pi.fire("session_start", { reason: "test" }, ctx);
+  await pi.command("goal", "resume", ctx);
+  return { cwd, ctx, on: pi };
 }
 
 function ledgerText(cwd: string): string {
@@ -239,8 +247,8 @@ function taskById(cwd: string, id: string): Record<string, unknown> | null {
 }
 
 test("deferred judgment with a real taskId stamps the exemption durably", async () => {
-  const { cwd, ctx } = await activeHarness();
-  const res = await pi.runTool("record_goal_judgment", {
+  const { cwd, ctx, on } = await activeHarness();
+  const res = await on.runTool("record_goal_judgment", {
     choice: "deferred",
     reason: "provider outage blocks the gated step",
     followUp: "retry the gated step tomorrow",
@@ -257,9 +265,9 @@ test("deferred judgment with a real taskId stamps the exemption durably", async 
 });
 
 test("judgment with an unknown taskId records nothing", async () => {
-  const { cwd, ctx } = await activeHarness();
+  const { cwd, ctx, on } = await activeHarness();
   const beforeLedger = ledgerText(cwd);
-  const res = await pi.runTool("record_goal_judgment", {
+  const res = await on.runTool("record_goal_judgment", {
     choice: "deferred",
     reason: "blocked",
     followUp: "retry later",
@@ -271,9 +279,9 @@ test("judgment with an unknown taskId records nothing", async () => {
 });
 
 test("inline judgment with a taskId is refused — no exemption by accident", async () => {
-  const { cwd, ctx } = await activeHarness();
+  const { cwd, ctx, on } = await activeHarness();
   const beforeLedger = ledgerText(cwd);
-  const res = await pi.runTool("record_goal_judgment", {
+  const res = await on.runTool("record_goal_judgment", {
     choice: "inline",
     reason: "shipping the fix now",
     taskId: "1",
