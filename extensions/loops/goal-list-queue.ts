@@ -26,6 +26,7 @@ import { Type } from "typebox";
 // (positioning doc invariant #2). Property reads on the imported binding are
 // fine; wholesale replacement goes through replaceState().
 import { state, replaceState, persistStateLine } from "../goal-state.js";
+import { loadPromptWhole } from "../prompt-layers.js";
 
 import {
   type Goal,
@@ -863,11 +864,9 @@ async function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "l
       : target === "loop"
         ? `${label}: a loop target needs a metric and a direction — the agent will help you design them first (nothing activates until you confirm). Skip the interview entirely: /loop start "<target>" (bare = infinite metricless) or /loop start "<target>" measure="<cmd>" direction=min|max [window=5] [max=50] [time=h] [tokens=n] [branch=1].`
         : `${label}: the objective has no "Done when:" clause — the agent will grill you about it first (nothing activates until you confirm). Skip the interview entirely: /goal start <objective>.`);
-  const tmplPath = path.resolve(__dirname, "..", "..", "prompts", file);
-  let tmpl: string;
-  try {
-    tmpl = fs.readFileSync(tmplPath, "utf-8");
-    if (target === "list") {
+  // Layered-prompt contract: a missing draft file fails loudly — never render lean.
+  let tmpl = loadPromptWhole(file);
+  if (target === "list") {
       tmpl = tmpl.replace(
         "[GOAL DRAFTING]",
         "[LIST DRAFTING — the confirmed item goes into the /list LIST, it does not activate immediately. " +
@@ -880,9 +879,6 @@ async function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "l
           "is still a SHORT task — never an aggregate wrapper ('land all N findings' with a '≥N commits' contract is the " +
           "canonical anti-pattern: the auto-committer squashes, the count fails, the auditor disapproves finished work).]",
       );
-    }
-  } catch {
-    tmpl = `[DRAFTING] Clarify the user's ${target}, then call ${tool}.`;
   }
   // v0.14.0: the LLM grills (its strength — v0.13.0's canned questionnaire
   // accepted non-answers), the plugin enforces the floor: propose_goal_draft

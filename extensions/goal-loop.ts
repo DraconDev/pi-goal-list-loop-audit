@@ -26,6 +26,7 @@ import {
   supervisorPaused,
 } from "./goal-loop-core.js";
 import { BACKOFF_IDLE_RETRY_MS, MEASURE_TIMEOUT_MS } from "./goal-loop-backoff.js";
+import { loadPromptWhole } from "./prompt-layers.js";
 import {
   REPETITION,
   continueVariant,
@@ -285,15 +286,7 @@ function loopPrompt(loop: LoopState, regressionNote: string, strategyNote: strin
   // v0.23.0: metricless loops get their own prompt — no metric section,
   // anti-doorknob rules instead of anti-gaming rules.
   const metricless = !loop.measureCmd;
-  const tmplPath = path.resolve(__dirname, "..", "..", "prompts", metricless ? "goal-loop-forever-metricless.md" : "goal-loop-forever.md");
-  let tmpl: string;
-  try {
-    tmpl = fs.readFileSync(tmplPath, "utf-8");
-  } catch {
-    tmpl = metricless
-      ? `[LOOP ITERATION ${loop.iteration + 1}] Target: ${loop.target}. Metricless spec loop — make ONE real, inspectable change advancing the target. No cosmetic churn. ${variantNote} ${interventionNote}`
-      : `[LOOP ITERATION ${loop.iteration + 1}] Target: ${loop.target}. Measure: ${loop.measureCmd} (${loop.direction}). Make ONE small change to improve the metric. ${interventionNote}`;
-  }
+  const tmpl = loadPromptWhole(metricless ? "goal-loop-forever-metricless.md" : "goal-loop-forever.md");
   return tmpl
     .replace(/\$\{ITERATION\}/g, String(loop.iteration + 1))
     .replace(/\$\{TARGET\}/g, loop.target)

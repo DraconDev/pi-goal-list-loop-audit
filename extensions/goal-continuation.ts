@@ -56,6 +56,7 @@ import {
   type ObjectiveRepairTarget,
 } from "./goal-loop-core.js";
 import { auditorSurfaceSuppressed } from "./loops/goal-auditor-surface.js";
+import { loadPromptWhole } from "./prompt-layers.js";
 import {
   createContinuationDispatch,
   transitionDispatch,
@@ -1503,13 +1504,7 @@ export function continuationPrompt(goal: Goal): string {
   const taskSummary = goal.taskList?.tasks.length
     ? buildTaskSummary(goal.taskList.tasks)
     : "(no task list)";
-  const tmplPath = path.resolve(__dirname, "..", "prompts", "goal-loop-continuation.md");
-  let tmpl: string;
-  try {
-    tmpl = fs.readFileSync(tmplPath, "utf-8");
-  } catch {
-    tmpl = "[template-not-found]";
-  }
+  const tmpl = loadPromptWhole("goal-loop-continuation.md");
   // v0.25.0 (contract items 22/28): conditional directives — aggressiveMode
   // TODOs from the audit cap, and the full-audit fan-out directive when the
   // objective reads as a survey pivot. The canonical judgment policy and
