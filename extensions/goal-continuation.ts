@@ -56,7 +56,7 @@ import {
   type ObjectiveRepairTarget,
 } from "./goal-loop-core.js";
 import { auditorSurfaceSuppressed } from "./loops/goal-auditor-surface.js";
-import { loadPromptWhole } from "./prompt-layers.js";
+import { assemblePrompt } from "./prompt-layers.js";
 import {
   createContinuationDispatch,
   transitionDispatch,
@@ -1236,7 +1236,7 @@ export function buildContinuationContent(goal: Goal, opts: { resync?: string; fi
   const resync = opts.resync ?? "";
   const marker = buildMarkerContent(goal.id);
   const needsFull = (opts.firstSend ?? false) || needsFullContinuation(goal);
-  if (needsFull) return { content: resync + continuationPrompt(goal), kind: resync ? "full+resync" : "full" };
+  if (needsFull) return { content: resync + continuationPrompt(goal, { includeRestartDetail: Boolean(resync) || Boolean(goal.autoResumedAt) }), kind: resync ? "full+resync" : "full" };
   if (resync) return { content: resync + marker, kind: "resync" };
   return { content: marker, kind: "marker" };
 }
@@ -1494,7 +1494,7 @@ export function buildPostCompactResync(briefExcerpt?: string): string {
   return lines.join("\n") + "\n\n";
 }
 
-export function continuationPrompt(goal: Goal): string {
+export function continuationPrompt(goal: Goal, opts: { includeRestartDetail?: boolean } = {}): string {
   // Read the .md file as the template, then substitute {{tokens}}.
   // For v0.1.0 we inline-substitute so we don't need fs at runtime.
   const next = findNextPendingTask(goal.taskList?.tasks ?? []);
@@ -1504,7 +1504,17 @@ export function continuationPrompt(goal: Goal): string {
   const taskSummary = goal.taskList?.tasks.length
     ? buildTaskSummary(goal.taskList.tasks)
     : "(no task list)";
-  const tmpl = loadPromptWhole("goal-loop-continuation.md");
+  // Layered assembly: skeleton always; details only when their trigger is
+  // already known at render time. Static layers resolve before dynamic
+  // ${...} substitution, in file order every turn. Mid-turn contingencies
+  // (subagent death, provider errors, detached commits, stalls, task
+  // workflow) stay in the skeleton: their trigger cannot be known before
+  // the turn, and there is no mid-turn detail fetch.
+  const detailIds = new Set<string>();
+  if (liveDisapproval(goal.auditHistory ?? [])) detailIds.add("auditor-disapproval");
+  if (isFullAuditObjective(goal.objective)) detailIds.add("survey-pivot");
+  if (opts.includeRestartDetail || goal.autoResumedAt) detailIds.add("session-restart");
+  const tmpl = assemblePrompt("goal-loop-continuation.md", detailIds);
   // v0.25.0 (contract items 22/28): conditional directives — aggressiveMode
   // TODOs from the audit cap, and the full-audit fan-out directive when the
   // objective reads as a survey pivot. The canonical judgment policy and

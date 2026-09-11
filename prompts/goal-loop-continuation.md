@@ -77,6 +77,7 @@ When the agent calls any of these, the orchestrator tracks the call and persists
 - **Bound every long command.** Wrap test suites, builds, and dev servers in `timeout <seconds>` (e.g. `timeout 120 bun test src/lib`). An unbounded command that hangs burns an hour; a bounded one burns two minutes and tells you it hung. If a command produces no output for many minutes, treat it as hung: kill it, diagnose why, rerun bounded.
 - **Chunk output near context-full & microcompaction.** When the conversation is heavy (long-running audit, deep debug, big rollout), prefer smaller commits, smaller tool outputs, and focused reasoning — one or two punchy paragraphs, one well-scoped tool call at a time. Don't try to fit a thousand lines of work into one reply. Spool massive stdout/diffs to disk logs if needed. glla's auto-continue fires on `stop_reason="length"` and will reschedule you; chunking is cheaper than recovering from the cap. Save large file writes for their own turns.
 
+<!-- glla-layer: detail auditor-disapproval -->
 ## WHEN THE AUDITOR DISAPPROVES
 
 If the orchestrator tells you the auditor disapproved, **investigate before asking the user**:
@@ -90,7 +91,9 @@ If the orchestrator tells you the auditor disapproved, **investigate before aski
    "The auditor's last 3 reports all complain about saves-3 not shipping. The current objective IS saves-3, but the work shipped is menu-3 + kingdom-2 (different items). I shipped those because [reason]. The auditor is disapproving because the original objective isn't literally shipped. Three options: A. /goal tweak the objective to menu-3+kingdom-2, then /goal resume — B. Re-scope saves-3 and ship it — C. Pivot to a different item entirely."
 
 Do NOT ask the user to choose between generic options like "/goal resume / Move on silently / Different item". Those options tell the user nothing. Always include YOUR ASSESSMENT with quoted objections and shipped evidence.
+<!-- glla-layer: end -->
 
+<!-- glla-layer: detail survey-pivot -->
 ## PIVOT DETECTION
 
 When the user says "do a full audit", "survey the project", "find all problems", "mark a tasklist", or similar — the goal is a SURVEY, not a single fix. You must:
@@ -100,6 +103,7 @@ When the user says "do a full audit", "survey the project", "find all problems",
 3. Use subagents to PARALLEL-survey different subsystems (game logic, UI, audio, tests, docs) — one `scout` agent per subsystem, spawned in a single message.
 4. Don't ship a single bug fix and then ask if the user wants to continue — the user already said "do a full audit".
 5. After the task list is confirmed, work through tasks systematically with `complete_task` / `update_task_status`.
+<!-- glla-layer: end -->
 
 ## WHEN SUBAGENTS DIE: RESUME, DON'T RESPAWN
 
@@ -108,9 +112,11 @@ A failed subagent's SESSION survives its death (verified in pi-subagents source:
 1. **Resume it immediately**: `Agent(resume: "<id>", prompt: "Wrap up now: report what you found within ~150 lines.")`. A resumed agent already HAS its research; it only needs to report. Do not infer a reset time from the error text.
 2. **Resume failed with "not found"?** The manager forgot it (a /reload wipes the in-process registry — old IDs are unresumable). Only NOW respawn, and never the same wide brief: SPLIT into 2 narrower agents or ABSORB the remainder inline.
 
+<!-- glla-layer: detail session-restart -->
 ## AFTER A SESSION RESTART: YOUR SUBAGENTS ARE DEAD
 
 Subagents run IN-PROCESS — a /reload or restart kills every running one instantly and silently (no failure event, no ✗), and their IDs become unresumable. On a restored session, check your transcript for in-flight agents and relaunch them (tight briefs) or absorb their scope — do NOT sit waiting for results that can never arrive. This is why long fan-out passes belong under a glla goal/list item: the goal plane survives restarts and re-drives the fan-out through the continuation; an ad-hoc fan-out dies with the tab.
+<!-- glla-layer: end -->
 
 ## WHEN SUBAGENTS HIT PROVIDER/RUNTIME ERRORS
 
