@@ -4564,3 +4564,5 @@
 {"type":"terminal_approval_render_persisted","value":{"goalId":"20260911190130-sshy0k","delivered":false,"lines":20},"at":"2026-09-11T19:39:26.809Z"}
 {"type":"terminal_completion_notice_sent","value":{"goalId":"20260911190130-sshy0k","payloadChars":1351},"at":"2026-09-11T19:39:26.815Z"}
 {"type":"terminal_approval_render_replayed","value":{"goalId":"20260911190130-sshy0k","createdAt":"2026-09-11T19:39:26.808Z"},"at":"2026-09-11T19:39:26.815Z"}
+{"type":"session_shutdown","value":{"reason":"reload"},"at":"2026-09-11T21:17:07.829Z"}
+{"type":"session_rebound","value":{"reason":"reload"},"at":"2026-09-11T21:17:09.296Z"}
