@@ -3930,3 +3930,4 @@
 {"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-11T14:51:20.448Z"}
 {"type":"id_invalidation","value":{"oldId":"01a090f3-749d-75c6-be18-f4b18cc6c97c","newId":"01a054a9-e07f-705b-87a1-9421f9b906dc","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-11T14:51:20.456Z"},"at":"2026-09-11T14:51:20.456Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":56368,"outputTokens":476,"cacheReadTokens":753,"cacheWriteTokens":0,"totalTokens":57597},"contextUsage":{"tokens":57597,"contextWindow":200000,"percent":28.7985}},"at":"2026-09-11T14:51:34.041Z"}
+{"type":"model_fallback_select","value":{"scope":"drafter","fromRef":"opencode-go/muse-spark-1.3-contributor","reason":"exhausted"},"at":"2026-09-11T14:53:34.383Z"}
