@@ -3949,3 +3949,12 @@
 {"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:07:01.264Z"}
 {"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:07:23.821Z"}
 {"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:07:27.180Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:08:01.399Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:08:04.359Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:08:37.689Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:08:41.416Z"}
+{"type":"send_rearm_storm","value":{"kind":"continuation","streak":19,"minutes":2},"at":"2026-09-11T15:08:44.992Z"}
+{"type":"rearm_no_turn_started","value":{"streak":19,"minutes":2,"turnOpen":true,"turnOpenMinutes":1},"at":"2026-09-11T15:08:44.992Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:08:45.226Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:08:46.724Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260911150619-tfsgvv","removedPayloads":2,"retainedPayloads":1,"checkpointChars":1247,"generation":473},"at":"2026-09-11T15:09:10.048Z"}
