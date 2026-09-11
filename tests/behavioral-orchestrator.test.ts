@@ -486,7 +486,7 @@ test("v0.36.0: aborted detached audit can complete without audit only after arch
     assert.ok(briefings.length > 0, "the no-audit briefing reached the visible session");
     const notice = briefings[0].content as string;
     assert.equal(confirmationTitle, "Audit aborted", "the explicit audit-abort choice was presented");
-    assert.match(notice, /^✓ done — Objective "complete without audit target/, "the briefing leads with the archived objective");
+    assert.match(notice, /^## Done — Objective "complete without audit target/, "the briefing leads with the archived objective");
     assert.match(notice, /• completed without audit \(your choice\)\./, "the no-audit trailer closes the briefing as a bullet (v0.38.39 uniform voice)");
     assert.doesNotMatch(notice, /not recorded/, "system placeholders never reach the briefing");
     assert.ok(fs.readdirSync(path.join(cwd, ".pi-glla", "archive")).length > 0, "archive landed before success was reported");
@@ -3548,18 +3548,19 @@ test("v0.34.91: detached approval notify carries the agent's completion recap, n
     await waitUntil(() => (readState(cwd).goal as { status?: string } | null) === null);
     const recapNotifs = MAIN_SM.entries.filter(e => e.content?.includes("Pinned the R-key/HUD retire parity")).map(e => ({ message: e.content }));
     assert.ok(recapNotifs.length > 0, "the settle notify carries the recap (what happened), not 'auditor approved' alone");
-    assert.ok(recapNotifs.some((n: { message: string }) => n.message.includes("Changed:") && n.message.includes("\n")), "the recap arrives as one-label-per-line, not the single-line mash");
+    assert.ok(recapNotifs.some((n: { message: string }) => n.message.includes("**Changed**") && n.message.includes("\n")), "the recap arrives sectioned, not the single-line mash");
     assert.equal(recapNotifs.length, 1, "the persisted summary is the single decisive end-of-goal voice");
-    assert.match(recapNotifs[0]!.message, /^✓ done — Pinned the R-key\/HUD retire parity/, "the briefing leads with the outcome in the header");
+    assert.match(recapNotifs[0]!.message, /^## Done — Pinned the R-key\/HUD retire parity/, "the briefing leads with the outcome in the header");
     // The chat notify is outcome + informing details + approval
     // + record pointer (five 120-char label lines scan as soup, not a
     // summary — field 2026-09-04). Substance lives in the transcript
     // notice + archive; the chat stays glanceable but never boilerplate.
-    for (const label of ["Changed:", "Evidence:", "Tests:"]) {
-      // v0.38.37: informing details arrive as verifiable-result bullets.
-      assert.ok(recapNotifs[0]!.message.split("\n").some((line: string) => line.replace(/^• /, "").startsWith(label)), `approved briefing keeps informing label ${label}`);
+    for (const label of ["Changed", "Evidence", "Tests"]) {
+      // Rich voice: informing details arrive as numbered findings (Changed/
+      // Evidence) and table rows (Tests).
+      assert.ok(recapNotifs[0]!.message.split("\n").some((line: string) => new RegExp(`^(\\d+\\. \\*\\*${label}\\*\\*|\\| ${label} \\|)`).test(line)), `approved briefing keeps informing label ${label}`);
     }
-    assert.ok(recapNotifs[0]!.message.split("\n").length <= 8, "summary keeps bounded evidence, tests, and unresolved facts");
+    assert.ok(recapNotifs[0]!.message.split("\n").length <= 20, "verbose rich summary stays bounded");
     // v0.38.42 (field 20260909_140404): a lone approval folds with the
     // verdict count — one canonical bullet, no model ID, no redundant
     // standalone audit bullet.
