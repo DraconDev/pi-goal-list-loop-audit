@@ -1994,7 +1994,7 @@ function registerAgentTools(pi: any): void {
       // from the state ledger through Goal.durableDeferRecommendation.
       refreshUI(ctx, true);
       return {
-        content: [{ type: "text", text: `Recorded durable-vs-defer judgment: ${record.choice}.` }],
+        content: [{ type: "text", text: `Recorded durable-vs-defer judgment: ${record.choice}.${taskId ? ` Task ${taskId} ("${deferredTask!.title}") is now exempt from the complete_goal pending-task gate.` : ""}` }],
         details: {},
       };
     },

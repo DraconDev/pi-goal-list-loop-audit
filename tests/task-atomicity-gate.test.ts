@@ -140,14 +140,14 @@ function toolFixture(): TaskList {
   };
 }
 
-async function batchHarness(): Promise<{ cwd: string; ctx: MockCtx }> {
+async function batchHarness(startReason = "reload"): Promise<{ cwd: string; ctx: MockCtx }> {
   __testOnlyResetStaleFlag();
   __testOnlyResetOwnerSession();
   fs.writeFileSync(process.env.GLLA_GLOBAL_SETTINGS_PATH!, JSON.stringify({}));
   const cwd = tmpCwd();
   seedState(cwd, { goal: seedGoal({ status: "active", taskList: toolFixture() }) });
   const ctx = gllaCtx(cwd);
-  await pi.fire("session_start", { reason: "reload" }, ctx);
+  await pi.fire("session_start", { reason: startReason }, ctx);
   return { cwd, ctx };
 }
 
@@ -212,4 +212,73 @@ test("single tools keep their pinned messages on the copy-swap path", async () =
   const missing = await pi.runTool("complete_task", { id: "nope" }, ctx);
   assert.match(missing.content[0]!.text, /Task nope not found\./);
   assert.deepEqual(taskStatuses(cwd), { "1": "in_progress", "2": "in_progress", "2.1": "complete", "3": "pending" });
+});
+
+// ---- record_goal_judgment taskId: the recorded deferral behind the gate exemption ----
+
+// record_goal_judgment and complete_goal only run on an ACTIVE goal; a
+// reload-restore parks it (hold-on-restore), so those tests start fresh.
+async function activeHarness(): Promise<{ cwd: string; ctx: MockCtx }> {
+  return batchHarness("test");
+}
+
+function ledgerText(cwd: string): string {
+  return fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, "utf8");
+}
+
+function taskById(cwd: string, id: string): Record<string, unknown> | null {
+  const goal = readState(cwd).goal as unknown as { taskList: TaskList };
+  const queue: Record<string, unknown>[] = [...(goal.taskList.tasks as unknown as Record<string, unknown>[])];
+  while (queue.length > 0) {
+    const t = queue.shift()!;
+    if (t["id"] === id) return t;
+    const subs = t["subtasks"] as Record<string, unknown>[] | undefined;
+    if (subs) queue.push(...subs);
+  }
+  return null;
+}
+
+test("deferred judgment with a real taskId stamps the exemption durably", async () => {
+  const { cwd, ctx } = await activeHarness();
+  const res = await pi.runTool("record_goal_judgment", {
+    choice: "deferred",
+    reason: "provider outage blocks the gated step",
+    followUp: "retry the gated step tomorrow",
+    taskId: "3",
+  }, ctx);
+  assert.match(res.content[0]!.text, /Recorded durable-vs-defer judgment: deferred\./);
+  assert.match(res.content[0]!.text, /Task 3 .+ exempt from the complete_goal pending-task gate/);
+  const stamped = taskById(cwd, "3")!["deferred"] as Record<string, string>;
+  assert.equal(stamped.reason, "provider outage blocks the gated step");
+  assert.equal(stamped.followUp, "retry the gated step tomorrow");
+  assert.ok(stamped.at, "stamp carries a timestamp");
+  assert.match(ledgerText(cwd), /"durable_defer_choice"/);
+  assert.match(ledgerText(cwd), /"taskId":"3"/);
+});
+
+test("judgment with an unknown taskId records nothing", async () => {
+  const { cwd, ctx } = await activeHarness();
+  const beforeLedger = ledgerText(cwd);
+  const res = await pi.runTool("record_goal_judgment", {
+    choice: "deferred",
+    reason: "blocked",
+    followUp: "retry later",
+    taskId: "99",
+  }, ctx);
+  assert.match(res.content[0]!.text, /No task "99"/);
+  assert.match(res.content[0]!.text, /NOT recorded/);
+  assert.equal(ledgerText(cwd), beforeLedger, "no ledger entry for a refused judgment");
+});
+
+test("inline judgment with a taskId is refused — no exemption by accident", async () => {
+  const { cwd, ctx } = await activeHarness();
+  const beforeLedger = ledgerText(cwd);
+  const res = await pi.runTool("record_goal_judgment", {
+    choice: "inline",
+    reason: "shipping the fix now",
+    taskId: "1",
+  }, ctx);
+  assert.match(res.content[0]!.text, /only valid with choice=deferred/);
+  assert.equal(taskById(cwd, "1")!["deferred"], undefined);
+  assert.equal(ledgerText(cwd), beforeLedger, "no ledger entry for a refused judgment");
 });
