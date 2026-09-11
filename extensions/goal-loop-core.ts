@@ -97,6 +97,15 @@ export function workCommand(mode: Policy | "loop" | undefined, command: string):
   return `${workCommandRoot(mode)} ${command}`;
 }
 
+export interface TaskDeferral {
+  /** Why the durable action is unsafe, impossible, or blocked right now. */
+  reason: string;
+  /** The bounded durable follow-up. */
+  followUp: string;
+  /** ISO timestamp of the recorded judgment. */
+  at: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -106,6 +115,11 @@ export interface Task {
   /** Optional verification gate for milestone-checked tasks. */
   verificationContract?: string;
   subtasks?: Task[];
+  /** A recorded deferral (via record_goal_judgment choice=deferred + taskId)
+   * exempts this task from the complete_goal pending-task gate. The
+   * exemption is durable state, not prose: the ledger holds the judgment,
+   * this stamp is the gate-readable pointer. */
+  deferred?: TaskDeferral;
 }
 
 export interface TaskList {
