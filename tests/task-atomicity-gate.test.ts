@@ -5,7 +5,7 @@
 // committed tasks (naming them) before any auditor contact; recorded
 // deferrals exempt.
 
-import { test } from "node:test";
+import { test, afterEach } from "node:test";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import type { TaskList } from "../extensions/goal-loop-core.ts";
@@ -119,6 +119,22 @@ test("refusal text names every open task with id, title, and status", () => {
 const pi = new MockPi();
 activate(pi.api);
 
+// File hygiene: session_shutdown resets the module-global tool-registration
+// flag. Without it, a later test FILE in the same process reuses the flag
+// and its own MockPi never gets agent tools ("tool not registered").
+let lastSession: { on: MockPi; ctx: MockCtx } | null = null;
+afterEach(async () => {
+  if (lastSession) {
+    const s = lastSession;
+    lastSession = null;
+    try {
+      await s.on.fire("session_shutdown", { reason: "quit" }, s.ctx);
+    } catch {
+      // Cleanup only — test assertions already ran.
+    }
+  }
+});
+
 function gllaCtx(cwd: string): MockCtx {
   return makeMockCtx(cwd, { sessionManager: { name: "main-session-manager-task-batch" } });
 }
@@ -148,6 +164,7 @@ async function batchHarness(startReason = "reload"): Promise<{ cwd: string; ctx:
   seedState(cwd, { goal: seedGoal({ status: "active", taskList: toolFixture() }) });
   const ctx = gllaCtx(cwd);
   await pi.fire("session_start", { reason: startReason }, ctx);
+  lastSession = { on: pi, ctx };
   return { cwd, ctx };
 }
 
@@ -229,6 +246,7 @@ async function activeHarness(): Promise<{ cwd: string; ctx: MockCtx; on: MockPi 
   const ctx = gllaCtx(cwd);
   await pi.fire("session_start", { reason: "reload" }, ctx);
   await pi.command("goal", "resume", ctx);
+  lastSession = { on: pi, ctx };
   return { cwd, ctx, on: pi };
 }
 
@@ -311,7 +329,7 @@ test("claim with open committed tasks is refused naming each one, auditor untouc
   assert.match(text, /- 3: "Gated" \(pending\)/);
   assert.match(text, /NOT sent to the auditor/);
   assert.doesNotMatch(text, /AUDIT PENDING/);
-  assert.deepEqual(res.details, {});
+  assert.deepEqual((res as unknown as { details?: unknown }).details, {});
   assert.match(ledgerText(cwd), /"complete_goal_tasks_refused"/);
   assert.match(ledgerText(cwd), /"id":"2\.1"/);
   assert.equal((readState(cwd).goal as unknown as { status: string }).status, "active");
