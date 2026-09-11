@@ -5,7 +5,7 @@
 // committed tasks (naming them) before any auditor contact; recorded
 // deferrals exempt.
 
-import { test, afterEach } from "node:test";
+import { test, afterEach, after } from "node:test";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import type { TaskList } from "../extensions/goal-loop-core.ts";
@@ -13,6 +13,7 @@ import { readState } from "../extensions/goal-loop-core.js";
 import activate, {
   __testOnlyResetOwnerSession,
   __testOnlyResetStaleFlag,
+  __testOnlyResetTerminalFlags,
 } from "../extensions/loops/goal.js";
 import { MockPi, makeMockCtx, tmpCwd, seedState, seedGoal, type MockCtx } from "./harness/mock-pi.js";
 import {
@@ -123,6 +124,18 @@ activate(pi.api);
 // flag. Without it, a later test FILE in the same process reuses the flag
 // and its own MockPi never gets agent tools ("tool not registered").
 let lastSession: { on: MockPi; ctx: MockCtx } | null = null;
+// Successor-file hygiene: an admitted session_start records ownership
+// (live + dead) process-wide. session_shutdown clears the live owner but
+// keeps the dead identity, so a later file's non-lifecycle session_start
+// (e.g. reason "test" on an in-memory manager) is refused as foreign
+// BEFORE tool registration — its runTool then fails with
+// "tool not registered". Null the whole plane after the last test so the
+// next file starts from a clean slate (same trio other suites reset).
+after(() => {
+  __testOnlyResetOwnerSession();
+  __testOnlyResetStaleFlag();
+  __testOnlyResetTerminalFlags();
+});
 afterEach(async () => {
   if (lastSession) {
     const s = lastSession;
@@ -131,7 +144,7 @@ afterEach(async () => {
       await s.on.fire("session_shutdown", { reason: "quit" }, s.ctx);
     } catch (e) {
       // Cleanup only — test assertions already ran.
-      process.stderr.write(`[task-atomicity-gate] shutdown cleanup threw: ${String(e).slice(0, 200)}\n`);
+      void e;
     }
   }
 });
