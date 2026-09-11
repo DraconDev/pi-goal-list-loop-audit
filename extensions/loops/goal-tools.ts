@@ -139,6 +139,7 @@ import {
   collectOpenTasks,
   findTask,
   formatOpenTaskRefusal,
+  patchTaskCopy,
   validateTaskBatch,
   withTaskStatus,
   type TaskStatusUpdate,
@@ -1922,6 +1923,7 @@ function registerAgentTools(pi: any): void {
       durableFix: Type.Optional(Type.String({ maxLength: 500, description: "The maintainable root-cause action to show in the goal card" })),
       deferRecommendations: Type.Optional(Type.Array(Type.String({ maxLength: 500 }), { maxItems: 8, description: "Earlier bounded workaround/defer recommendations to retain as UI evidence" })),
       durableBlocked: Type.Optional(Type.Boolean({ description: "True only when the durable action is unsafe, impossible, or blocked for this turn" })),
+      taskId: Type.Optional(Type.String({ description: "v0.38.48: with choice=deferred, attach this deferral to a task so the complete_goal pending-task gate exempts it. Only valid with choice=deferred." })),
     }),
     async execute(_id, params, signal, _onUpdate, execCtx) {
       const foreignJudgment = foreignToolGuard(execCtx);
@@ -1939,7 +1941,20 @@ function registerAgentTools(pi: any): void {
         durableFix?: string;
         deferRecommendations?: string[];
         durableBlocked?: boolean;
+        taskId?: string;
       };
+      // v0.38.48: a task-linked deferral exempts that task from the
+      // complete_goal pending-task gate. Inline needs no exemption (the fix
+      // ships now); an unknown task is refused before anything is recorded.
+      const taskId = p.taskId?.trim() || undefined;
+      if (taskId && p.choice !== "deferred") {
+        return { content: [{ type: "text", text: "taskId is only valid with choice=deferred — an inline judgment implements the fix now and needs no task exemption. Nothing was recorded." }], details: {} };
+      }
+      const goal = state.goal;
+      const deferredTask = taskId ? (goal.taskList ? findTask(goal.taskList, taskId) : null) : undefined;
+      if (taskId && !deferredTask) {
+        return { content: [{ type: "text", text: `No task "${taskId}" in this goal's task list — the judgment was NOT recorded.` }], details: {} };
+      }
       const record = buildDurableChoiceRecord(p.choice, p.reason, p.followUp);
       if (!record.reason) {
         return { content: [{ type: "text", text: "A non-empty reason is required to record a durable-vs-defer judgment." }], details: {} };
@@ -1947,19 +1962,30 @@ function registerAgentTools(pi: any): void {
       if (record.choice === "deferred" && !record.followUp) {
         return { content: [{ type: "text", text: "A deferred judgment also requires a durable follow-up." }], details: {} };
       }
-      const goal = state.goal;
       const durableDeferRecommendation = durableDeferFactsForGoal(goal, record, p);
       const landed = appendLedger(ctx.cwd, "durable_defer_choice", {
         goalId: goal.id,
         ...record,
+        ...(taskId ? { taskId, taskTitle: deferredTask!.title } : {}),
         durableDeferRecommendation,
       });
       if (!landed) {
         return { content: [{ type: "text", text: "The durable-vs-defer judgment could not be persisted; no choice was recorded." }], details: {} };
       }
-      if (!updateGoal({ durableDeferRecommendation }, ctx)) {
+      // v0.38.48: the task stamp rides the SAME persist as the UI
+      // projection — one write, never a stamped-but-unprojected split.
+      // record.followUp is proven non-empty for deferred above; a taskId
+      // always implies deferred (refused otherwise), so the non-null
+      // assertion holds exactly when a stamp is written.
+      const patch: Record<string, unknown> = { durableDeferRecommendation };
+      if (taskId && goal.taskList) {
+        patch.taskList = patchTaskCopy(goal.taskList, taskId, {
+          deferred: { reason: record.reason, followUp: record.followUp!, at: nowIso() },
+        });
+      }
+      if (!updateGoal(patch as Parameters<typeof updateGoal>[0], ctx)) {
         return {
-          content: [{ type: "text", text: `Recorded durable-vs-defer judgment: ${record.choice}, but its UI recommendation projection could not be persisted.` }],
+          content: [{ type: "text", text: `Recorded durable-vs-defer judgment: ${record.choice} in the ledger, but its persistence failed${taskId ? " — the task exemption did NOT land, so the gate will still block" : ""}. Retry.` }],
           details: {},
         };
       }

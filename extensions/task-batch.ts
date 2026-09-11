@@ -95,6 +95,19 @@ export function applyValidatedBatch(
   return next;
 }
 
+/** Copy with an arbitrary patch merged into one task; the input list is untouched. */
+export function patchTaskCopy(
+  taskList: TaskList,
+  id: string,
+  patch: Partial<Task>,
+): TaskList {
+  const next: TaskList = JSON.parse(JSON.stringify(taskList)) as TaskList;
+  const target = findTask(next, id);
+  if (!target) throw new Error(`patchTaskCopy: task "${id}" not found.`);
+  Object.assign(target, patch);
+  return next;
+}
+
 /** Copy with a single task's status replaced; the input list is untouched. */
 export function withTaskStatus(
   taskList: TaskList,

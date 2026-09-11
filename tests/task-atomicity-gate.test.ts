@@ -7,7 +7,14 @@
 
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
+import * as fs from "node:fs";
 import type { TaskList } from "../extensions/goal-loop-core.ts";
+import { readState } from "../extensions/goal-loop-core.js";
+import activate, {
+  __testOnlyResetOwnerSession,
+  __testOnlyResetStaleFlag,
+} from "../extensions/loops/goal.js";
+import { MockPi, makeMockCtx, tmpCwd, seedState, seedGoal, type MockCtx } from "./harness/mock-pi.js";
 import {
   applyValidatedBatch,
   collectOpenTasks,
@@ -105,4 +112,104 @@ test("refusal text names every open task with id, title, and status", () => {
   assert.match(text, /- 2\.2: "Persist once" \(pending\)/);
   assert.match(text, /record_goal_judgment/);
   assert.match(text, /NOT sent to the auditor/);
+});
+
+// ---- update_task_batch through the real tool surface (MockPi) ----
+
+const pi = new MockPi();
+activate(pi.api);
+
+function gllaCtx(cwd: string): MockCtx {
+  return makeMockCtx(cwd, { sessionManager: { name: "main-session-manager-task-batch" } });
+}
+
+function toolFixture(): TaskList {
+  return {
+    version: 1,
+    tasks: [
+      { id: "1", title: "First", status: "pending" },
+      {
+        id: "2", title: "Second", status: "in_progress",
+        subtasks: [{ id: "2.1", title: "Second part one", status: "pending" }],
+      },
+      {
+        id: "3", title: "Gated", status: "pending",
+        verificationContract: "Done when `test -f /nonexistent-glla-batch-probe` passes",
+      },
+    ],
+  };
+}
+
+async function batchHarness(): Promise<{ cwd: string; ctx: MockCtx }> {
+  __testOnlyResetStaleFlag();
+  __testOnlyResetOwnerSession();
+  fs.writeFileSync(process.env.GLLA_GLOBAL_SETTINGS_PATH!, JSON.stringify({}));
+  const cwd = tmpCwd();
+  seedState(cwd, { goal: seedGoal({ status: "active", taskList: toolFixture() }) });
+  const ctx = gllaCtx(cwd);
+  await pi.fire("session_start", { reason: "reload" }, ctx);
+  return { cwd, ctx };
+}
+
+function taskStatuses(cwd: string): Record<string, string> {
+  const goal = readState(cwd).goal as unknown as { taskList: TaskList };
+  const out: Record<string, string> = {};
+  const queue = [...goal.taskList.tasks];
+  while (queue.length > 0) {
+    const t = queue.shift()!;
+    out[t.id] = t.status;
+    if (t.subtasks) queue.push(...t.subtasks);
+  }
+  return out;
+}
+
+test("batch tool applies several updates in one write and reports them", async () => {
+  const { cwd, ctx } = await batchHarness();
+  const res = await pi.runTool("update_task_batch", {
+    updates: [{ id: "1", status: "in_progress" }, { id: "2.1", status: "complete" }],
+  }, ctx);
+  assert.match(res.content[0]!.text, /Task batch applied \(2\): 1 → in_progress, 2\.1 → complete\./);
+  assert.deepEqual(taskStatuses(cwd), { "1": "in_progress", "2": "in_progress", "2.1": "complete", "3": "pending" });
+});
+
+test("batch tool rejects an unknown id with state byte-identical", async () => {
+  const { cwd, ctx } = await batchHarness();
+  const before = JSON.stringify((readState(cwd).goal as unknown as { taskList: TaskList }).taskList);
+  const res = await pi.runTool("update_task_batch", {
+    updates: [{ id: "1", status: "complete" }, { id: "9", status: "complete" }],
+  }, ctx);
+  assert.match(res.content[0]!.text, /task "9" not found/);
+  assert.match(res.content[0]!.text, /No task was changed/);
+  assert.equal(
+    JSON.stringify((readState(cwd).goal as unknown as { taskList: TaskList }).taskList),
+    before,
+    "rejected batch persists nothing",
+  );
+});
+
+test("batch milestone failure leaves the whole batch unapplied (mid-batch kill)", async () => {
+  const { cwd, ctx } = await batchHarness();
+  // Task 1 would verify cleanly (no contract); task 3 fails `test -f`.
+  // Atomicity means task 1 must NOT land either.
+  const res = await pi.runTool("update_task_batch", {
+    updates: [{ id: "1", status: "complete" }, { id: "3", status: "complete" }],
+  }, ctx);
+  assert.match(res.content[0]!.text, /Task batch rejected/);
+  assert.match(res.content[0]!.text, /Task 3 milestone verification FAILED/);
+  assert.deepEqual(
+    taskStatuses(cwd),
+    { "1": "pending", "2": "in_progress", "2.1": "pending", "3": "pending" },
+    "no partial application survives a mid-batch failure",
+  );
+});
+
+test("single tools keep their pinned messages on the copy-swap path", async () => {
+  const { cwd, ctx } = await batchHarness();
+  const done = await pi.runTool("complete_task", { id: "2.1" }, ctx);
+  assert.match(done.content[0]!.text, /Task 2\.1 marked complete\./);
+  const moved = await pi.runTool("update_task_status", { id: "1", status: "in_progress" }, ctx);
+  assert.match(moved.content[0]!.text, /Task 1 → in_progress/);
+  const missing = await pi.runTool("complete_task", { id: "nope" }, ctx);
+  assert.match(missing.content[0]!.text, /Task nope not found\./);
+  assert.deepEqual(taskStatuses(cwd), { "1": "in_progress", "2": "in_progress", "2.1": "complete", "3": "pending" });
 });
