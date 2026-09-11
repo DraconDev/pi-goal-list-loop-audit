@@ -133,8 +133,11 @@ test("survey-pivot delta is EXACTLY the deferred body (equal-length objectives)"
   const body = detailBody("survey-pivot");
   // Joining the block into the line stream contributes exactly one extra
   // newline beyond the body itself (skeleton blank lines on both sides).
-  assert.equal(b.length - a.length, body.length + 1);
-  assert.equal(b.replace(body + "\n", ""), a);
+  // A survey objective in aggressiveMode ALSO arms the pre-existing dynamic
+  // FULL-AUDIT directive (unchanged behavior) — strip both, expect identity.
+  const stripped = b.replace(body + "\n", "").replace(/\n\n## FULL-AUDIT MODE[\s\S]*?task list exists\./, "");
+  assert.equal(stripped, a);
+  assert.ok(b.length - a.length >= body.length + 1);
 });
 
 test("session-restart delta is EXACTLY the deferred body (opts flag only)", () => {
