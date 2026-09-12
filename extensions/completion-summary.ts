@@ -1,5 +1,5 @@
-import type { Goal, Status } from "./goal-loop-core.js";
-import { truncateCells } from "./goal-loop-display.js";
+import type { FindingGroup, Goal, Status } from "./goal-loop-core.js";
+import { fmtElapsed, truncateCells } from "./goal-loop-display.js";
 
 /**
  * The durable, user-facing terminal recap contract. Keep this as a small
@@ -269,18 +269,27 @@ export function withoutStaleNext(details: string[] | undefined): string[] {
 }
 
 /** Rich terminal voice (field 20260911_003839/003903/003907 — the
- * Antigravity close): section headers, numbered findings with bold
- * leads + code refs, and a verification table, instead of the flat
- * six-bullet card. Scope is the terminal render only (chat +
+ * Antigravity close; v0.38.50 Gemini-gap survey audit/GEMINI-SUMMARY-GAP-2026-09-11.md:
+ * grouped area sections with nested findings + file:line evidence, a
+ * request-echo headline, a duration line, and an automatic table once
+ * findings span 4+ groups). Scope is the terminal render only (chat +
  * transcript + archive human layer); progress cards, status line, and
  * external notifies keep their compact projections. Verbose by owner
- * choice: findings cap 8, values 200, table cells 200. */
-export const RICH_FINDINGS_CAP = 8;
-export const RICH_VALUE_BUDGET = 200;
-export const RICH_NEXT_CAP = 4;
+ * choice: findings cap 12, values 400, table cells 400, Next 6. */
+export const RICH_FINDINGS_CAP = 12;
+export const RICH_VALUE_BUDGET = 400;
+export const RICH_NEXT_CAP = 6;
+/** v0.38.50: objective echo clipped to a headline-safe width. */
+export const RICH_OBJECTIVE_ECHO_CHARS = 80;
+/** v0.38.50: findings spanning this many groups render as a table
+ * (the 12-row screen-by-screen example); fewer stay nested. */
+export const RICH_TABLE_GROUP_THRESHOLD = 4;
+/** v0.38.50: evidence tokens per finding cell — density, not a dump. */
+export const RICH_EVIDENCE_TOKENS_PER_FINDING = 4;
 
 export interface RichTerminalParts {
   headline: string;
+  durationLine: string | null;
   findingLines: string[];
   tableLines: string[];
   nextLines: string[];
@@ -314,6 +323,63 @@ function leadBody(detail: string): { lead: string; body: string } {
   return { lead: detail.slice(0, separator).trim() || "Note", body: detail.slice(separator + 1).trim() };
 }
 
+/**
+ * v0.38.50: repo-relative `path:line` evidence tokens (soundManager.ts:333,
+ * sim.ts:4505-4530). Absolute paths, home-dir paths, and machine temp
+ * paths are NOT evidence — those stay in the archive only. Extraction is
+ * mechanical substring movement, never inference.
+ */
+const EVIDENCE_TOKEN_PATTERN = /(?<![/~\w])[\w.][\w./-]*\.[A-Za-z0-9]{1,5}:\d+(?:-\d+)?/g;
+
+export function extractEvidenceTokens(text: string): { text: string; evidence: string[] } {
+  const evidence: string[] = [];
+  const stripped = text
+    .replace(EVIDENCE_TOKEN_PATTERN, (match) => {
+      if (evidence.length < RICH_EVIDENCE_TOKENS_PER_FINDING && !evidence.includes(match)) evidence.push(match);
+      return "";
+    })
+    .replace(/\s+/g, " ")
+    .replace(/\s+([,.;:])/g, "$1")
+    .trim();
+  return { text: stripped, evidence };
+}
+
+/**
+ * v0.38.50: enforce the total-findings budget across groups in order —
+ * groups that go empty are dropped so the table/nesting never shows a
+ * bare area header.
+ */
+export function takeBudgetedGroups(groups: FindingGroup[]): FindingGroup[] {
+  const out: FindingGroup[] = [];
+  let remaining = RICH_FINDINGS_CAP;
+  for (const group of groups) {
+    if (remaining <= 0) break;
+    const findings = group.findings.slice(0, remaining);
+    if (findings.length === 0) continue;
+    out.push({ title: group.title, findings });
+    remaining -= findings.length;
+  }
+  return out;
+}
+
+/**
+ * v0.38.50: one compact duration line from durable goal state — turns,
+ * wall-clock elapsed since creation, and audit count. Only known facts
+ * render (absent stays absent); null when nothing is known.
+ */
+export function buildDurationLine(goal: Goal, now = Date.now()): string | null {
+  const segs: string[] = [];
+  const turns = goal.telemetry?.turns;
+  if (typeof turns === "number" && Number.isFinite(turns) && turns >= 0) {
+    segs.push(`${turns} turn${turns === 1 ? "" : "s"}`);
+  }
+  const started = Date.parse(goal.createdAt ?? "");
+  if (Number.isFinite(started)) segs.push(`${fmtElapsed(now - started)} elapsed`);
+  const audits = Array.isArray(goal.auditHistory) ? goal.auditHistory.length : 0;
+  if (audits > 0) segs.push(`${audits} audit${audits === 1 ? "" : "s"}`);
+  return segs.length > 0 ? `\u2014 ${segs.join(" \u00b7 ")}` : null;
+}
+
 /** Partition informing details into findings / Tests / next buckets. */
 export function partitionRichDetails(details: string[]): { findings: string[]; tests: string[]; next: string[] } {
   const findings: string[] = [];
@@ -327,18 +393,52 @@ export function partitionRichDetails(details: string[]): { findings: string[]; t
   return { findings, tests, next };
 }
 
-/** Build the section parts shared by chat, transcript, and archive. */
+/** Build the section parts shared by chat, transcript, and archive.
+ * v0.38.50: agent-structured groups render as `#### n. Area` subsections
+ * with nested evidence bullets; at RICH_TABLE_GROUP_THRESHOLD groups the
+ * same facts render as an Area | Finding | Evidence table instead.
+ * Without groups the flat six-label projection stays the fallback. */
 export function buildRichTerminalParts(args: {
   outcome: string;
   details: string[];
   countsLine: string;
   auditHistory?: Goal["auditHistory"];
+  objective?: string;
+  durationLine?: string | null;
+  groups?: FindingGroup[];
 }): RichTerminalParts {
   const { findings, tests, next } = partitionRichDetails(args.details);
-  const findingLines = findings.slice(0, RICH_FINDINGS_CAP).map((detail, i) => {
-    const { lead, body } = leadBody(detail);
-    return `${i + 1}. **${lead}** \u2014 ${clipSummaryValue(body, RICH_VALUE_BUDGET)}`;
-  });
+  const headline = args.objective?.trim()
+    ? `## Done: ${clipSummaryValue(args.objective.trim(), RICH_OBJECTIVE_ECHO_CHARS)} \u2014 ${args.outcome}`
+    : `## Done \u2014 ${args.outcome}`;
+  const budgeted = takeBudgetedGroups(args.groups ?? []);
+  const useTable = budgeted.length >= RICH_TABLE_GROUP_THRESHOLD;
+  const findingLines: string[] = [];
+  if (useTable) {
+    findingLines.push("| Area | Finding | Evidence |", "| --- | --- | --- |");
+    for (const group of budgeted) {
+      for (const finding of group.findings) {
+        const { text, evidence } = extractEvidenceTokens(finding);
+        const { lead, body } = leadBody(text);
+        findingLines.push(
+          `| ${escapeTableCell(clipSummaryValue(group.title, RICH_OBJECTIVE_ECHO_CHARS))} | ${escapeTableCell(`**${lead}** \u2014 ${clipSummaryValue(body, RICH_VALUE_BUDGET)}`)} | ${escapeTableCell(evidence.join(", ") || "\u2014")} |`,
+        );
+      }
+    }
+  } else if (budgeted.length > 0) {
+    budgeted.forEach((group, i) => {
+      findingLines.push(`#### ${i + 1}. ${clipSummaryValue(group.title, RICH_OBJECTIVE_ECHO_CHARS)}`);
+      for (const finding of group.findings) {
+        const { lead, body } = leadBody(finding);
+        findingLines.push(`- **${lead}** \u2014 ${clipSummaryValue(body, RICH_VALUE_BUDGET)}`);
+      }
+    });
+  } else {
+    findings.slice(0, RICH_FINDINGS_CAP).forEach((detail, i) => {
+      const { lead, body } = leadBody(detail);
+      findingLines.push(`${i + 1}. **${lead}** \u2014 ${clipSummaryValue(body, RICH_VALUE_BUDGET)}`);
+    });
+  }
   const tableRows: string[] = [];
   for (const detail of tests.slice(0, 2)) {
     const { body } = leadBody(detail);
@@ -357,16 +457,19 @@ export function buildRichTerminalParts(args: {
     return `- **${lead}** \u2014 ${clipSummaryValue(body, RICH_VALUE_BUDGET)}`;
   });
   return {
-    headline: `## Done \u2014 ${args.outcome}`,
+    headline,
+    durationLine: args.durationLine ?? null,
     findingLines,
     tableLines,
     nextLines,
   };
 }
 
-/** Compose parts + headline + section headers into markdown lines. */
+/** Compose parts + headline + section headers into markdown lines.
+ * v0.38.50: the duration line rides directly under the headline. */
 export function composeRichTerminalLines(parts: RichTerminalParts, opts?: { headline?: string }): string[] {
   const lines = [opts?.headline ?? parts.headline, ""];
+  if (parts.durationLine) lines.push(parts.durationLine, "");
   if (parts.findingLines.length > 0) {
     lines.push("### Key Findings & Remediation", ...parts.findingLines, "");
   }
