@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.38.51 — Bare /list drafts from context like bare /goal (2026-09-12)
+
+User note: empty `/list` could not start anything while empty `/goal`
+triggers drafting from context. Bare `/list` (no args) now enters LIST
+drafting with no seed — the same context-draft as bare `/goal` — instead of
+rendering the queue. `/list show` remains the viewer; the stale-handle
+guard mirrors the empty-goal path so a doomed handle latches no drafting
+gate. The `propose_goal_draft` idle hint and the `/list` command
+description name the new entry point.
+
+### Preserved
+
+- `/list show`, `/list start`, `/list add`, and the natural-language dump
+  routing are unchanged; read-only verbs stay available on stale handles.
+
 ## 0.38.50 — Gemini-gap terminal upgrade: grouped findings, request-echo headline, duration line (2026-09-12)
 
 Surveyed four Gemini report screenshots (audit/GEMINI-SUMMARY-GAP-2026-09-11.md)
