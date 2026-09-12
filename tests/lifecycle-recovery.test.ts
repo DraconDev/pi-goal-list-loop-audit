@@ -317,9 +317,14 @@ test("v0.34.54: source — read-only surfaces are never in the mutating sets; th
   assert.ok(!LIST_MUTATING_SUBCOMMANDS.has("show") && !LIST_MUTATING_SUBCOMMANDS.has("depth"), "show/depth stay read-only for /list");
   assert.ok(!SETTINGS_MUTATING_ACTIONS.has("status") && !SETTINGS_MUTATING_ACTIONS.has("log") && !SETTINGS_MUTATING_ACTIONS.has("stats") && !SETTINGS_MUTATING_ACTIONS.has("audits"), "read-only /glla verbs stay ungated");
   // The /list show branch must NOT be gated by the entry probe (inspect,
-  // don't mutate) — it only prints the honest warning via the probe:
-  assert.match(CMDS, /const staleEntry = warnIfStaleAtEntry\(ctx, "\/list"\);[\s\S]{0,12000}?if \(!sub \|\| sub === "show"\)/, "the probe is captured before the show branch");
-  const showBlock = CMDS.slice(CMDS.indexOf('if (!sub || sub === "show")'), CMDS.indexOf('if (!sub || sub === "show")') + 400);
+  // don't mutate) — it only prints the honest warning via the probe.
+  // v0.38.51: bare /list drafts (own stale guard, no latched gate) and the
+  // viewer moved to an explicit `show` branch — both sit after the probe.
+  assert.match(CMDS, /const staleEntry = warnIfStaleAtEntry\(ctx, "\/list"\);[\s\S]{0,12000}?if \(!sub\) \{\n    if \(staleEntry\) return;/, "the probe is captured before the bare-draft branch, which refuses stale without latching a gate");
+  const bareIdx = CMDS.indexOf("// v0.38.51 (user note 2026-09-12)");
+  const showIdx = CMDS.indexOf('if (sub === "show") {');
+  assert.ok(bareIdx > 0 && showIdx > bareIdx, "the bare-draft branch precedes the show branch");
+  const showBlock = CMDS.slice(showIdx, showIdx + 400);
   assert.ok(!showBlock.includes("LIST_MUTATING_SUBCOMMANDS"), "the show branch itself is ungated");
   // The settings gate refuses the bare entry on stale and names the recovery:
   // Audit 2026-09-07 (LOW, finding 399): arg-aware for bare `fallbacks`.
