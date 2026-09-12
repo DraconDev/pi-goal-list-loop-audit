@@ -99,10 +99,15 @@ test("v0.38.51: stale bare /list latches no drafting gate — a later list_add l
   await pi.command("list", "", ctx);
   await tick();
 
+  // The lifecycle replacement arrives: a fresh session_start rebinds. If
+  // the stale bare /list had latched the (module-global) drafting gate,
+  // this fresh context's list_add would still be blocked.
   __testOnlyResetStaleFlag();
   pi.sendMessageError = null;
   pi.sessionNameError = null;
-  const added = await pi.runTool("list_add", { items: ["stale-seed item — done when pinned"] }, ctx);
+  const fresh = await freshSession(cwd, "startup");
+  await tick();
+  const added = await pi.runTool("list_add", { items: ["stale-seed item — done when pinned"] }, fresh);
   assert.match(added.content[0]!.text, /item\(s\) added|item.*active/i, "a stale bare /list left no drafting gate behind");
-  await pi.command("list", "cancel", ctx);
+  await pi.command("list", "cancel", fresh);
 });
