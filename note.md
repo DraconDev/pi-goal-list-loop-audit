@@ -7,6 +7,10 @@ working on summary
 
 more working examples
 /home/dracon/Pictures/Screenshots/Screenshot_20260912_034959.png /home/dracon/Pictures/Screenshots/Screenshot_20260912_034934.png /home/dracon/Pictures/Screenshots/Screenshot_20260912_034925.png 
+/home/dracon/Pictures/Screenshots/Screenshot_20260912_133301.png /home/dracon/Pictures/Screenshots/Screenshot_20260912_133258.png /home/dracon/Pictures/Screenshots/Screenshot_20260912_133239.png
+/home/dracon/Pictures/Screenshots/Screenshot_20260912_133231.png /home/dracon/Pictures/Screenshots/Screenshot_20260912_133228.png 
+
+
 
 ##
 working on staged draft
