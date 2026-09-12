@@ -1370,14 +1370,16 @@ function registerAgentTools(pi: any): void {
           // v0.38.37: the deliberate non-do rides the durable claim.
           ...(durableCompletionClaim.leftOut ? { leftOut: durableCompletionClaim.leftOut } : {}),
           // v0.38.50: agent-structured finding groups ride the same claim.
+          // v0.38.52: same for the gate inventory.
           ...(durableCompletionClaim.findingGroups ? { findingGroups: durableCompletionClaim.findingGroups } : {}),
+          ...(durableCompletionClaim.gateRows ? { gateRows: durableCompletionClaim.gateRows } : {}),
           extras: inspectionSessionPath
             ? [`Auditor session kept for review: pi --session ${inspectionSessionPath} (or pi --fork ${inspectionSessionPath}).`]
             : [],
         });
         const manualObjective = state.goal.objective;
         const manualGoalId = state.goal.id;
-        const archived = archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: durableCompletionClaim.findingGroups });
+        const archived = archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: durableCompletionClaim.findingGroups, gateRows: durableCompletionClaim.gateRows });
         if (!archived) {
           // The archive helper preserves the live objective and emits the
           // persistence warning. Stop here: an approved verdict is not a
