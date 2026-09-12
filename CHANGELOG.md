@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.38.52 — Second Gemini-gap: gate-inventory table + per-finding Test Results (2026-09-12)
+
+Surveyed five more Antigravity report screenshots
+(audit/SECOND-GEMINI-SUMMARY-GAP-2026-09-12.md) and closed the second gap
+in the terminal render only (chat + transcript + archive human layer;
+progress cards, status, widget, external notifies unchanged).
+
+### Added
+
+- **Agent-supplied gate inventory:** optional `complete_goal gateRows`
+  (one row per quality gate with scope and outcome notes, sanitized at
+  the claim boundary, max 10). The Verification Summary widens to
+  Quality Gate | Scope | Status | Notes and supersedes the mechanical
+  Tests rows. Statuses are mechanically derived, never claimed: PASS
+  only when the notes say pass with zero failures, FAIL on nonzero
+  failures, REPORTED otherwise — so bare-exit notes like `Clean exit 0`
+  honestly stay REPORTED. Absent inventory keeps the 3-col mechanical
+  table byte-identical.
+- **Per-finding test proof:** optional parallel `tests` array on each
+  `findingGroups` entry (`tests[i]` proves `findings[i]`, clipped to
+  findings, sanitized at the claim boundary). Nested area sections render
+  each as a `Test Results:` sub-bullet; the 4+-group table rides the
+  proof in the Evidence cell (`Evidence · Tests:`). Groups without tests
+  render exactly as v0.38.50.
+
+### Preserved
+
+- Chat close stays archive-only: no commit hash, emoji markers, or
+  artifact links in chat (survey rejects). The verbatim six-label
+  machine record, auditor-verified-before-posting, and the honesty
+  rules (PASS only on pass, NO VERDICT never renders, pipe escaping)
+  are unchanged.
+
 ## 0.38.51 — Bare /list drafts from context like bare /goal (2026-09-12)
 
 User note: empty `/list` could not start anything while empty `/goal`

@@ -47,3 +47,25 @@ duration line, 4+-group auto-table, budgets 12/400/6).
   keeps today's 3-col output byte-identical when absent.
 - Chat close stays archive-only.
 - Full ship: implement + tests + gate + version + release + publish.
+
+## Shipped in v0.38.52
+
+- `GateRow` + `sanitizeGateRows()` in `extensions/goal-loop-core.ts`
+  (max 10 rows; gate 120 / scope 200 / notes 400 chars; unknown keys
+  dropped; garbage degrades to absent); `PendingCompletion.gateRows`.
+- `FindingGroup.tests?: string[]` + `MAX_GROUP_TESTS_CHARS=500`;
+  `sanitizeFindingGroups` parses the parallel array clipped to findings.
+- `buildRichTerminalParts(..., gates)` in
+  `extensions/completion-summary.ts`: agent inventory widens the
+  Verification table to Quality Gate | Scope | Status | Notes with
+  `testsRowStatus`-derived statuses and supersedes the mechanical Tests
+  rows; nested findings gain `Test Results:` sub-bullets, table rows gain
+  `· Tests:` evidence; `takeBudgetedGroups` keeps tests aligned;
+  byte-identical fallback when absent.
+- `complete_goal gateRows` schema + claim/Esc/manual-archive threading
+  (`goal-tools.ts`, `goal-orchestrator.ts`, `goal-auditor-hooks.ts`).
+- Continuation prompt documents `gateRows` + `tests` with both fallbacks.
+- `tests/second-gemini-gap.test.ts` (9 pins incl. a claim-to-chat E2E);
+  `persistence-hardening` + `retry-bounds` call-shape pins re-baselined;
+  `context-growth-measurement` 23_598 chars / 23_708 bytes (+602/+608
+  proved exact) and `context-checkpoint` 27144 re-baselined.

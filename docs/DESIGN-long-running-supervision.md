@@ -114,7 +114,10 @@ The full six-label recap lives verbatim in the archive (`## Completion summary`)
 and the status/history surfaces. The human layer in chat, transcript, and the
 archive's `## Terminal summary` renders the same facts as rich sections
 (`## Done: <objective> — <outcome>`, duration line, Key Findings grouped by area
-or tabulated at 4+ groups, Verification Summary table, Next, capped and clipped
+or tabulated at 4+ groups with per-finding `Test Results:` proof lines,
+Verification Summary table — widened to Quality Gate | Scope | Status | Notes
+with derived statuses when the agent supplies a gate inventory — Next, capped
+and clipped
 to fixed budgets). Width-bound and external surfaces (status line, widget card,
 external notifies) use the compact single-line projection of all six labels.
 Every terminal goal notification, including version-bearing already-shipped claims,

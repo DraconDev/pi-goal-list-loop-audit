@@ -14,6 +14,7 @@ the open notes (`note.md` host lifecycle / completion recap /
 long-term preferences).
 
 **Most recent (2026-09-12):**
+- `SECOND-GEMINI-SUMMARY-GAP-2026-09-12.md` — v0.38.52: five more Antigravity screenshots, ranked steal table; adopted the gate-inventory table (Quality Gate | Scope | Status | Notes, derived statuses) + per-finding `Test Results:` lines; emoji/hash close rejected, archive-only close preserved
 - `BARE-LIST-DRAFT-2026-09-12.md` — v0.38.51: bare `/list` drafts from context like bare `/goal` (user note 2026-09-12, user chose always-draft); `/list show` stays the viewer; stale guard mirrors the empty-goal path
 - `FRESH-AUDIT-PASS-2026-09-11.md` — v0.38.49: three-scout pass on v0.38.48, six FIX (prompt batch/gate drift, README verify path, docs versions/voice, summary-gate segmentation, task-tool honesty, sidecar pending boundary), no DECIDE; gate 2121 pass / 0 fail
 - `CODEX-SUMMARY-2026-09-09.md` — v0.38.39: uniform-`•` terminal voice, machine paths to archive, selective Next, `+`-boundary cut
