@@ -4634,3 +4634,5 @@
 {"type":"rearm_no_turn_started","value":{"streak":19,"minutes":2,"turnOpen":true,"turnOpenMinutes":1},"at":"2026-09-12T02:30:28.776Z"}
 {"type":"send_rearm_storm","value":{"kind":"continuation","streak":25,"minutes":5},"at":"2026-09-12T02:33:28.792Z"}
 {"type":"rearm_no_turn_started","value":{"streak":25,"minutes":5,"turnOpen":true,"turnOpenMinutes":1},"at":"2026-09-12T02:33:28.793Z"}
+{"type":"send_rearm_storm","value":{"kind":"continuation","streak":35,"minutes":10},"at":"2026-09-12T02:38:28.803Z"}
+{"type":"rearm_no_turn_started","value":{"streak":35,"minutes":10,"turnOpen":true,"turnOpenMinutes":3},"at":"2026-09-12T02:38:28.803Z"}
