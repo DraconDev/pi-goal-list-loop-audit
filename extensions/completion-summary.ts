@@ -1,4 +1,4 @@
-import type { FindingGroup, Goal, Status } from "./goal-loop-core.js";
+import type { FindingGroup, GateRow, Goal, Status } from "./goal-loop-core.js";
 import { fmtElapsed, truncateCells } from "./goal-loop-display.js";
 
 /**
@@ -347,7 +347,8 @@ export function extractEvidenceTokens(text: string): { text: string; evidence: s
 /**
  * v0.38.50: enforce the total-findings budget across groups in order —
  * groups that go empty are dropped so the table/nesting never shows a
- * bare area header.
+ * bare area header. v0.38.52: parallel `tests` ride along clipped to the
+ * surviving findings so tests[i] still proves findings[i].
  */
 export function takeBudgetedGroups(groups: FindingGroup[]): FindingGroup[] {
   const out: FindingGroup[] = [];
@@ -356,7 +357,9 @@ export function takeBudgetedGroups(groups: FindingGroup[]): FindingGroup[] {
     if (remaining <= 0) break;
     const findings = group.findings.slice(0, remaining);
     if (findings.length === 0) continue;
-    out.push({ title: group.title, findings });
+    // v0.38.52: keep the parallel test lines aligned with the survivors.
+    const aligned = group.tests?.slice(0, findings.length);
+    out.push(aligned && aligned.length > 0 ? { title: group.title, findings, tests: aligned } : { title: group.title, findings });
     remaining -= findings.length;
   }
   return out;
@@ -407,7 +410,12 @@ export function requestEchoHeadline(kind: "Done" | "Aborted", objective: string 
  * v0.38.50: agent-structured groups render as `#### n. Area` subsections
  * with nested evidence bullets; at RICH_TABLE_GROUP_THRESHOLD groups the
  * same facts render as an Area | Finding | Evidence table instead.
- * Without groups the flat six-label projection stays the fallback. */
+ * Without groups the flat six-label projection stays the fallback.
+ * v0.38.52: optional per-finding `tests` render as a `Test Results:`
+ * sub-bullet (nested) or ride the Evidence cell (table); optional agent
+ * `gates` widen the Verification table to Gate | Scope | Status | Notes
+ * with mechanically derived statuses, superseding the mechanical Tests
+ * rows. Without gates the 3-col mechanical table is byte-identical. */
 export function buildRichTerminalParts(args: {
   outcome: string;
   details: string[];
@@ -416,6 +424,7 @@ export function buildRichTerminalParts(args: {
   objective?: string;
   durationLine?: string | null;
   groups?: FindingGroup[];
+  gates?: GateRow[];
 }): RichTerminalParts {
   const { findings, tests, next } = partitionRichDetails(args.details);
   const headline = requestEchoHeadline("Done", args.objective, args.outcome);
@@ -425,21 +434,28 @@ export function buildRichTerminalParts(args: {
   if (useTable) {
     findingLines.push("| Area | Finding | Evidence |", "| --- | --- | --- |");
     for (const group of budgeted) {
-      for (const finding of group.findings) {
+      group.findings.forEach((finding, fi) => {
         const { text, evidence } = extractEvidenceTokens(finding);
         const { lead, body } = leadBody(text);
+        // v0.38.52: test proof rides the Evidence cell (tables have no
+        // sub-bullets); cells stay pipe-escaped and budgeted.
+        const proof = group.tests?.[fi]?.trim();
+        const evidenceCell = [evidence.join(", ") || "\u2014", ...(proof ? [`Tests: ${proof}`] : [])].join(" \u00b7 ");
         findingLines.push(
-          `| ${escapeTableCell(clipSummaryValue(group.title, RICH_OBJECTIVE_ECHO_CHARS))} | ${escapeTableCell(`**${lead}** \u2014 ${clipSummaryValue(body, RICH_VALUE_BUDGET)}`)} | ${escapeTableCell(evidence.join(", ") || "\u2014")} |`,
+          `| ${escapeTableCell(clipSummaryValue(group.title, RICH_OBJECTIVE_ECHO_CHARS))} | ${escapeTableCell(`**${lead}** \u2014 ${clipSummaryValue(body, RICH_VALUE_BUDGET)}`)} | ${escapeTableCell(clipSummaryValue(evidenceCell, RICH_VALUE_BUDGET))} |`,
         );
-      }
+      });
     }
   } else if (budgeted.length > 0) {
     budgeted.forEach((group, i) => {
       findingLines.push(`#### ${i + 1}. ${clipSummaryValue(group.title, RICH_OBJECTIVE_ECHO_CHARS)}`);
-      for (const finding of group.findings) {
+      group.findings.forEach((finding, fi) => {
         const { lead, body } = leadBody(finding);
         findingLines.push(`- **${lead}** \u2014 ${clipSummaryValue(body, RICH_VALUE_BUDGET)}`);
-      }
+        // v0.38.52: per-finding test proof (shot C) — absent stays absent.
+        const proof = group.tests?.[fi]?.trim();
+        if (proof) findingLines.push(`  - Test Results: ${clipSummaryValue(proof, RICH_VALUE_BUDGET)}`);
+      });
     });
   } else {
     findings.slice(0, RICH_FINDINGS_CAP).forEach((detail, i) => {
@@ -448,17 +464,33 @@ export function buildRichTerminalParts(args: {
     });
   }
   const tableRows: string[] = [];
-  for (const detail of tests.slice(0, 2)) {
-    const { body } = leadBody(detail);
-    tableRows.push(`| Tests | ${testsRowStatus(body)} | ${escapeTableCell(clipSummaryValue(body, RICH_VALUE_BUDGET))} |`);
+  const gates = (args.gates ?? []).slice(0, 10);
+  if (gates.length > 0) {
+    // v0.38.52 (shots B/D): the agent inventory supersedes the mechanical
+    // Tests rows — one curated gate list, never a duplicated one. Status
+    // is derived, never claimed: PASS only when the notes say pass with
+    // zero failures ("Clean exit 0"-style notes honestly stay REPORTED).
+    for (const row of gates) {
+      const derived = testsRowStatus(row.notes ?? "");
+      tableRows.push(`| ${escapeTableCell(clipSummaryValue(row.gate, RICH_OBJECTIVE_ECHO_CHARS))} | ${escapeTableCell(clipSummaryValue(row.scope?.trim() || "\u2014", RICH_VALUE_BUDGET))} | ${derived} | ${escapeTableCell(clipSummaryValue(row.notes?.trim() || "\u2014", RICH_VALUE_BUDGET))} |`);
+    }
+  } else {
+    for (const detail of tests.slice(0, 2)) {
+      const { body } = leadBody(detail);
+      tableRows.push(`| Tests | ${testsRowStatus(body)} | ${escapeTableCell(clipSummaryValue(body, RICH_VALUE_BUDGET))} |`);
+    }
   }
   const auditStatus = auditRowStatus(args.auditHistory);
   if (auditStatus !== "NO VERDICT") {
     const auditBody = args.countsLine.replace(/^\u2014\s*/, "").replace(/\.\s*$/, "");
-    tableRows.push(`| Audit | ${auditStatus} | ${escapeTableCell(clipSummaryValue(auditBody, RICH_VALUE_BUDGET))} |`);
+    if (gates.length > 0) {
+      tableRows.push(`| Audit | ${escapeTableCell(clipSummaryValue(auditBody, RICH_VALUE_BUDGET))} | ${auditStatus} | ${escapeTableCell(clipSummaryValue(auditBody, RICH_VALUE_BUDGET))} |`);
+    } else {
+      tableRows.push(`| Audit | ${auditStatus} | ${escapeTableCell(clipSummaryValue(auditBody, RICH_VALUE_BUDGET))} |`);
+    }
   }
   const tableLines = tableRows.length > 0
-    ? ["| Check | Status | Details |", "| --- | --- | --- |", ...tableRows]
+    ? [(gates.length > 0 ? "| Quality Gate | Scope | Status | Notes |" : "| Check | Status | Details |"), (gates.length > 0 ? "| --- | --- | --- | --- |" : "| --- | --- | --- |"), ...tableRows]
     : [];
   const nextLines = next.slice(0, RICH_NEXT_CAP).map((detail) => {
     const { lead, body } = leadBody(detail);
@@ -495,7 +527,7 @@ export function composeRichTerminalLines(parts: RichTerminalParts, opts?: { head
  * raw six-label recap stays verbatim in `## Completion summary` as the
  * machine layer. Headline follows terminal status; aborted records never
  * wear a `Done` headline. */
-export function buildRichArchiveSection(goal: Goal, status: Status, archivePath: string, findingGroups?: FindingGroup[]): string[] {
+export function buildRichArchiveSection(goal: Goal, status: Status, archivePath: string, findingGroups?: FindingGroup[], gateRows?: GateRow[]): string[] {
   const facts: CompletionSummaryFacts = { goal, status, archivePath };
   const summary = resolveCompletionSummary(facts, goal.completionSummary).summary;
   const brief = humanCompletionBrief(summary, 140, RICH_VALUE_BUDGET);
@@ -513,6 +545,7 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
     objective: goal.objective,
     durationLine: buildDurationLine(goal),
     groups: findingGroups,
+    gates: gateRows,
   });
   return [
     ...composeRichTerminalLines(parts, {
@@ -611,6 +644,12 @@ export interface TerminalApprovalRenderInput {
    * sanitized at claim time). Absent keeps the flat six-label fallback.
    */
   findingGroups?: FindingGroup[];
+  /**
+   * v0.38.52: agent-supplied verification gate rows (complete_goal
+   * gateRows, sanitized at claim time). Absent keeps the mechanical
+   * 3-col verification table.
+   */
+  gateRows?: GateRow[];
 }
 
 export interface TerminalApprovalRender {
