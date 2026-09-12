@@ -89,10 +89,31 @@ test("complete_goal leftOut renders the deliberate-non-do bullet end to end", as
   assert.equal(entries.length, 1);
   assert.match(entries[0].content, /- \*\*Left out\*\* — the walkthrough artifact surface/);
   const lines = entries[0].content.split("\n");
-  assert.ok(lines.every((l: string) => l.startsWith("## ") || l.startsWith("### ") || l.startsWith("• ") || l === "" || /^\d+\. \*\*/.test(l) || l.startsWith("| ") || l.startsWith("- **")), "posted summary is one rich voice: headline, sections, table, trailer");
+  assert.ok(lines.every((l: string) => l.startsWith("## ") || l.startsWith("### ") || l.startsWith("• ") || l === "" || /^\d+\. \*\*/.test(l) || l.startsWith("| ") || l.startsWith("- **") || l.startsWith("\u2014 ")), "posted summary is one rich voice: headline, duration, sections, table, trailer");
   const numbered = lines.filter((l: string) => /^\d+\. \*\*/.test(l));
   assert.ok(numbered.length >= 1 && numbered.length <= 8, `posted summary carries numbered findings plus the trailer, got ${numbered.length}`);
   assert.ok(lines[lines.length - 1]!.startsWith("• record:"), "record pointer stays last");
+});
+
+test("complete_goal findingGroups ride the claim into the grouped terminal render", async () => {
+  const { cwd, ctx, entries } = await setup("approved");
+  await pi.command("goal", "fix routing with areas — done when pinned", ctx);
+  const result = await pi.runTool("complete_goal", {
+    completionSummary: summary,
+    verificationSummary: "pinned",
+    findingGroups: [
+      { title: "Router", findings: ["Reroute: router.ts:12 pins the path"] },
+      { title: "", findings: ["blank title drops at the boundary"] },
+    ],
+  }, ctx) as any;
+  assert.match(result.content[0].text, /AUDIT PENDING — nonterminal/);
+  assert.deepEqual(readState(cwd).goal?.pendingCompletion?.findingGroups, [
+    { title: "Router", findings: ["Reroute: router.ts:12 pins the path"] },
+  ], "the pending claim stores the sanitized groups");
+  await waitFor(() => entries.length === 1);
+  assert.match(entries[0].content, /^## Done: fix routing with areas — done when pinned — Fixed routing\./);
+  assert.ok(entries[0].content.includes("#### 1. Router"), "grouped area subsection reaches the chat");
+  assert.ok(entries[0].content.includes("- **Reroute** — router.ts:12 pins the path"), "nested evidence bullet reaches the chat");
 });
 
 test("disapproval remains unfinished, no final success is posted", async () => {

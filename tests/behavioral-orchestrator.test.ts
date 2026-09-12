@@ -3570,7 +3570,7 @@ test("v0.34.91: detached approval notify carries the agent's completion recap, n
     for (const label of ["Unresolved:", "Next:"]) {
       assert.ok(!recapNotifs[0]!.message.split("\n").some((line: string) => line.startsWith(label)), `filler ${label} none is dropped from the briefing`);
     }
-    assert.doesNotMatch(recapNotifs[0]!.message.split("\n").filter((line: string) => !line.startsWith("• audit:")).join("\n"), / · /, "approved briefing is lines, not the single-line mash (the counts bullet alone could carry · separators)");
+    assert.doesNotMatch(recapNotifs[0]!.message.split("\n").filter((line: string) => !line.startsWith("• audit:") && !line.startsWith("\u2014 ")).join("\n"), / · /, "approved briefing is lines, not the single-line mash (the counts bullet alone could carry · separators; v0.38.50: the one-line duration ledger `— N turns · …` is exempt for the same reason)");
     assert.match(recapNotifs[0]!.message, /…/, "long approved recap values are bounded");
     assert.doesNotMatch(recapNotifs[0]!.message, new RegExp(`(${"durable-proof-marker "}){20}`), "approved notification does not flatten the full long recap");
     assert.doesNotMatch(recapNotifs.join("\n"), /^Goal complete — auditor /, "the old process-only line is gone");
