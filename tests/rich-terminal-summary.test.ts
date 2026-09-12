@@ -6,10 +6,13 @@
 
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
-import type { Goal } from "../extensions/goal-loop-core.js";
+import { sanitizeFindingGroups, type FindingGroup, type Goal } from "../extensions/goal-loop-core.js";
 import {
+  buildDurationLine,
   buildRichArchiveSection,
   buildTerminalApprovalRender,
+  extractEvidenceTokens,
+  takeBudgetedGroups,
 } from "../extensions/completion-summary.js";
 import { seedGoal } from "./harness/mock-pi.js";
 
@@ -46,9 +49,9 @@ function render(extra: Record<string, unknown> = {}) {
   });
 }
 
-test("chat opens with a Done headline and Key Findings numbered with bold leads", () => {
+test("chat opens with a request-echo Done headline and Key Findings numbered with bold leads", () => {
   const { chatLines } = render();
-  assert.ok((chatLines[0] ?? "").startsWith("## Done — "), `headline first, got: ${chatLines[0]}`);
+  assert.ok((chatLines[0] ?? "").startsWith("## Done: restyle the terminal summary — "), `headline echoes the request, got: ${chatLines[0]}`);
   const findingsIdx = chatLines.findIndex((l) => l === "### Key Findings & Remediation");
   assert.ok(findingsIdx > 0, "findings section present");
   assert.match(chatLines[findingsIdx + 1] ?? "", /^1\. \*\*Changed\*\* — /, "numbered bold lead with em-dash body");
@@ -132,10 +135,10 @@ test("no audit history means no Audit row, approval voice still closes", () => {
 
 test("archive section is rich for complete, Aborted-headlined for aborted", () => {
   const done = buildRichArchiveSection(richGoal(), "complete", ".pi-glla/archive/20260911-rich-voice.md");
-  assert.ok(done[0]?.startsWith("## Done — "), "archive headline matches chat");
+  assert.ok(done[0]?.startsWith("## Done: restyle the terminal summary — "), "archive headline matches chat");
   assert.ok(done.includes("### Key Findings & Remediation"), "archive carries findings");
   assert.ok(done.includes("### Verification Summary"), "archive carries the table");
   assert.ok(done.some((l) => l.startsWith("• record: .pi-glla/archive/20260911-rich-voice.md")), "archive record pointer last");
   const aborted = buildRichArchiveSection(richGoal(), "aborted", ".pi-glla/archive/20260911-rich-voice.md");
-  assert.ok(aborted[0]?.startsWith("## Aborted — "), "aborted records never wear a Done headline");
+  assert.ok(aborted[0]?.startsWith("## Aborted: restyle the terminal summary — "), "aborted records never wear a Done headline");
 });

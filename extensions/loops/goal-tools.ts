@@ -785,15 +785,16 @@ function registerAgentTools(pi: any): void {
       if (!guardGoalBeforeContinuation(ctx, "completion-audit-dispatch", state.goal?.id)) {
         return staleToolResult();
       }
+      // v0.38.50: agent-structured finding groups ride the same claim —
+      // sanitized once at the boundary, rendered only after approval.
+      const sanitizedGroups = sanitizeFindingGroups(p.findingGroups);
       const completionClaim = beginCompletionAudit(ctx, {
         completionSummary: finalSummary,
         verificationSummary: p.verificationSummary,
         // v0.38.37: the deliberate non-do rides the pending claim into
         // the terminal render — the only source the summary may cite.
         ...(p.leftOut?.trim() ? { leftOut: p.leftOut.trim().slice(0, 500) } : {}),
-        // v0.38.50: agent-structured finding groups ride the same claim —
-        // sanitized at the boundary, rendered only after auditor approval.
-        ...(sanitizeFindingGroups(p.findingGroups) ? { findingGroups: sanitizeFindingGroups(p.findingGroups) } : {}),
+        ...(sanitizedGroups ? { findingGroups: sanitizedGroups } : {}),
         at: nowIso(),
       }, "complete-goal");
       if (!completionClaim) {
@@ -1248,7 +1249,9 @@ function registerAgentTools(pi: any): void {
       if (result.error === "Auditor aborted.") {
         // v0.38.37: capture the agent-claimed non-do before the claim is
         // cleared below — the Esc-complete path renders the same voice.
+        // v0.38.50: same for agent-structured finding groups.
         const escLeftOut = state.goal.pendingCompletion?.leftOut;
+        const escFindingGroups = state.goal.pendingCompletion?.findingGroups;
         updateGoal({ status: "active", auditHistory: history, pendingCompletion: undefined, pauseReason: "audit aborted by user (Esc)" }, ctx);
         const abortConfirmCtx = freshCtxForGeneration(auditGeneration);
         if (!abortConfirmCtx) return staleToolResult();
@@ -1290,8 +1293,9 @@ function registerAgentTools(pi: any): void {
             // v0.38.37: the claim was cleared pre-confirm; the non-do was
             // captured from it above.
             ...(escLeftOut ? { leftOut: escLeftOut } : {}),
+            ...(escFindingGroups ? { findingGroups: escFindingGroups } : {}),
           });
-          if (!archiveCurrentGoal(ctx, "complete", terminalReason)) {
+          if (!archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: escFindingGroups })) {
             return {
               content: [{ type: "text", text: "The audit was aborted, but the terminal archive could not be persisted. The goal remains active; fix persistence and retry." }],
               details: {},
@@ -1346,13 +1350,15 @@ function registerAgentTools(pi: any): void {
           record: manualArchiveRecord,
           // v0.38.37: the deliberate non-do rides the durable claim.
           ...(durableCompletionClaim.leftOut ? { leftOut: durableCompletionClaim.leftOut } : {}),
+          // v0.38.50: agent-structured finding groups ride the same claim.
+          ...(durableCompletionClaim.findingGroups ? { findingGroups: durableCompletionClaim.findingGroups } : {}),
           extras: inspectionSessionPath
             ? [`Auditor session kept for review: pi --session ${inspectionSessionPath} (or pi --fork ${inspectionSessionPath}).`]
             : [],
         });
         const manualObjective = state.goal.objective;
         const manualGoalId = state.goal.id;
-        const archived = archiveCurrentGoal(ctx, "complete", terminalReason);
+        const archived = archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: durableCompletionClaim.findingGroups });
         if (!archived) {
           // The archive helper preserves the live objective and emits the
           // persistence warning. Stop here: an approved verdict is not a

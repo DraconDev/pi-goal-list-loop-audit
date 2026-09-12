@@ -1441,12 +1441,14 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       record: approvalRecord,
       // v0.38.37: the deliberate non-do the agent claimed, if any.
       ...(claim.leftOut ? { leftOut: claim.leftOut } : {}),
+      // v0.38.50: agent-structured finding groups ride the audited claim.
+      ...(claim.findingGroups ? { findingGroups: claim.findingGroups } : {}),
       extras: inspectionSessionPath
         ? [`Auditor session kept for review: pi --session ${inspectionSessionPath} (or pi --fork ${inspectionSessionPath}).`]
         : [],
     });
     const approvalObjective = state.goal.objective;
-    const archived = archiveCurrentGoal(liveCtx, "complete", `auditor ${result.model} approved (${origin})`);
+    const archived = archiveCurrentGoal(liveCtx, "complete", `auditor ${result.model} approved (${origin})`, {}, { findingGroups: claim.findingGroups });
     if (!archived) {
       // archiveCurrentGoal already preserved the live record and warned the
       // user. Keep the approved claim recoverable, but never emit a terminal

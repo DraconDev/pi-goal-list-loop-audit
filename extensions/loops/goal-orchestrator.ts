@@ -29,6 +29,7 @@ import { Type } from "typebox";
 import { state, replaceState, persistStateLine } from "../goal-state.js";
 
 import {
+  type FindingGroup,
   type Goal,
   type Policy,
   type State,
@@ -1099,6 +1100,9 @@ function archiveCurrentGoal(
   status: Status,
   stopReason?: string,
   patch: Partial<Pick<Goal, "auditHistory" | "completionSummary" | "pendingTasks">> = {},
+  // v0.38.50: agent-structured finding groups ride the audited claim into
+  // the archive rich section only — abort/wip paths omit it (flat fallback).
+  opts?: { findingGroups?: FindingGroup[] },
 ): boolean {
   if (!state.goal) return false;
   if (status !== "complete" && status !== "aborted") return false;
@@ -1147,7 +1151,7 @@ function archiveCurrentGoal(
   // it carries the same rich markdown as chat over the verbatim
   // six-label machine record. Built from the terminal goal AFTER the
   // summary fence resolves, so chat and archive cannot disagree.
-  const richSection = buildRichArchiveSection(terminalGoal, status, archivePath);
+  const richSection = buildRichArchiveSection(terminalGoal, status, archivePath, opts?.findingGroups);
   const richMd = `${md}\n## Terminal summary\n\n${richSection.join("\n")}\n`;
   // An existing same-id archive is an immutable fence. Check it before
   // publishing an intent so an unrelated/sentinel winner can never make the
