@@ -728,6 +728,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     objective: input.goal.objective,
     durationLine: buildDurationLine(input.goal),
     groups: input.findingGroups,
+    gates: input.gateRows,
   });
   const chatBody = composeRichTerminalLines(richParts);
   const transcriptBody = composeRichTerminalLines(richParts);

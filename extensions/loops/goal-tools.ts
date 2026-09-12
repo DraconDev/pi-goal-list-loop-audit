@@ -134,6 +134,7 @@ isGoalRevisionCurrent,
   buildDurableChoiceRecord,
   normalizeDurableDeferRecommendationInput,
   sanitizeFindingGroups,
+  sanitizeGateRows,
 } from "../goal-loop-core.js";
 import {
   applyValidatedBatch,
@@ -540,6 +541,7 @@ function registerAgentTools(pi: any): void {
       findingGroups: Type.Optional(Type.Array(Type.Object({
         title: Type.String({ maxLength: 120, description: "Work-area name (e.g. a subsystem, screen, or phase)" }),
         findings: Type.Array(Type.String({ maxLength: 500 }), { maxItems: 6, description: "Findings in this area as `Lead: body with path:line evidence` (max 6 per area)" }),
+        tests: Type.Optional(Type.Array(Type.String({ maxLength: 500 }), { maxItems: 6, description: "v0.38.52: optional per-finding test-result lines, aligned by index with findings (tests[i] proves findings[i]); each renders as a `Test Results:` sub-line" })),
       }), {
         maxItems: 6,
         description:
@@ -548,6 +550,18 @@ function registerAgentTools(pi: any): void {
           "4+ groups render as an Area | Finding | Evidence table, fewer as nested area sections. " +
           "Presentation only — the six-label completionSummary stays the audited substance, and file:line tokens are never invented. " +
           "Omit for single-area work — the flat six-label render stays the fallback.",
+      })),
+      gateRows: Type.Optional(Type.Array(Type.Object({
+        gate: Type.String({ maxLength: 120, description: "Gate name (e.g. Unit Tests, Typecheck, E2E, Production Build)" }),
+        scope: Type.Optional(Type.String({ maxLength: 200, description: "What the gate covered (e.g. suites, tiers, invariants)" })),
+        notes: Type.Optional(Type.String({ maxLength: 400, description: "Outcome notes with counts (e.g. 743 passed, 0 failed). Status is DERIVED from these notes — PASS only when they say pass with zero failures, never claimed." })),
+      }), {
+        maxItems: 10,
+        description:
+          "v0.38.52: optional verification gate inventory for the terminal summary. " +
+          "Widens the Verification table to Quality Gate | Scope | Status | Notes and supersedes the mechanical Tests rows. " +
+          "Presentation only — the six-label completionSummary stays the audited substance, and counts are never invented. " +
+          "Omit when there is no gate inventory — the mechanical 3-col table stays the fallback.",
       })),
     }),
     async execute(_id, params, signal, _onUpdate, execCtx) {
@@ -572,7 +586,7 @@ function registerAgentTools(pi: any): void {
         }
         return { content: [{ type: "text", text: `No active goal — it is ${state.goal.status}.` }], details: {} };
       }
-      const p = params as { completionSummary?: string; verificationSummary?: string; newObjective?: string; leftOut?: string; findingGroups?: unknown };
+      const p = params as { completionSummary?: string; verificationSummary?: string; newObjective?: string; leftOut?: string; findingGroups?: unknown; gateRows?: unknown };
       if (state.goal.repairTarget) {
         return {
           content: [{ type: "text", text: `This repair card cannot be completed yet. Redraft the original target as a confirmed task list with propose_task_list (include objective: ${state.goal.repairTarget.objective.slice(0, 180)}), then continue the real work.` }],
@@ -787,7 +801,9 @@ function registerAgentTools(pi: any): void {
       }
       // v0.38.50: agent-structured finding groups ride the same claim —
       // sanitized once at the boundary, rendered only after approval.
+      // v0.38.52: same for the agent-supplied gate inventory.
       const sanitizedGroups = sanitizeFindingGroups(p.findingGroups);
+      const sanitizedGates = sanitizeGateRows(p.gateRows);
       const completionClaim = beginCompletionAudit(ctx, {
         completionSummary: finalSummary,
         verificationSummary: p.verificationSummary,
@@ -795,6 +811,7 @@ function registerAgentTools(pi: any): void {
         // the terminal render — the only source the summary may cite.
         ...(p.leftOut?.trim() ? { leftOut: p.leftOut.trim().slice(0, 500) } : {}),
         ...(sanitizedGroups ? { findingGroups: sanitizedGroups } : {}),
+        ...(sanitizedGates ? { gateRows: sanitizedGates } : {}),
         at: nowIso(),
       }, "complete-goal");
       if (!completionClaim) {
@@ -1252,6 +1269,7 @@ function registerAgentTools(pi: any): void {
         // v0.38.50: same for agent-structured finding groups.
         const escLeftOut = state.goal.pendingCompletion?.leftOut;
         const escFindingGroups = state.goal.pendingCompletion?.findingGroups;
+        const escGateRows = state.goal.pendingCompletion?.gateRows;
         updateGoal({ status: "active", auditHistory: history, pendingCompletion: undefined, pauseReason: "audit aborted by user (Esc)" }, ctx);
         const abortConfirmCtx = freshCtxForGeneration(auditGeneration);
         if (!abortConfirmCtx) return staleToolResult();
@@ -1294,8 +1312,9 @@ function registerAgentTools(pi: any): void {
             // captured from it above.
             ...(escLeftOut ? { leftOut: escLeftOut } : {}),
             ...(escFindingGroups ? { findingGroups: escFindingGroups } : {}),
+            ...(escGateRows ? { gateRows: escGateRows } : {}),
           });
-          if (!archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: escFindingGroups })) {
+          if (!archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: escFindingGroups, gateRows: escGateRows })) {
             return {
               content: [{ type: "text", text: "The audit was aborted, but the terminal archive could not be persisted. The goal remains active; fix persistence and retry." }],
               details: {},
