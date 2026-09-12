@@ -846,7 +846,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     },
   });
   pi.registerCommand("list", {
-    description: "Loop 2: the list of audited goals — order is the default, not the law. /list <describe tasks or name a plan file> (dumps get shaped into items, files import, 'Done when:' adds directly) | /list audit [focus] (collect findings, then drain them as items) | /list show | /list start | /list resume | /list tweak <text> | /list next [n] | /list remove <n> | /list clear | /list cancel. /list start explicitly activates the queued head or drafts one clear recent objective with the normal Confirm gate. Settings are under /glla, not /list — bare /glla opens the settings table.",
+    description: "Loop 2: the list of audited goals — order is the default, not the law. Bare /list drafts from context like bare /goal does | /list <describe tasks or name a plan file> (dumps get shaped into items, files import, 'Done when:' adds directly) | /list audit [focus] (collect findings, then drain them as items) | /list show | /list start | /list resume | /list tweak <text> | /list next [n] | /list remove <n> | /list clear | /list cancel. /list start explicitly activates the queued head or drafts one clear recent objective with the normal Confirm gate. Settings are under /glla, not /list — bare /glla opens the settings table.",
     getArgumentCompletions: completions([
       ["show", "display the waiting items"],
       ["start", "explicitly activate the queued head; with no queue, draft one clear recent objective"],

@@ -2380,7 +2380,7 @@ function registerAgentTools(pi: any): void {
       if (!liveCtx) return staleToolResult();
       if (draftingTarget !== "goal" && draftingTarget !== "list") {
         return {
-          content: [{ type: "text", text: "Not in goal drafting mode. The user starts drafting with /goal or /list add (no args), or activates directly with /goal <objective>." }],
+          content: [{ type: "text", text: "Not in goal drafting mode. The user starts drafting with bare /goal, bare /list, or /list add (no args), or activates directly with /goal <objective>." }],
           details: {},
         };
       }

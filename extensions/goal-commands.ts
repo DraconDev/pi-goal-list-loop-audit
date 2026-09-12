@@ -1302,7 +1302,17 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
     return;
   }
 
-  if (!sub || sub === "show") {
+  // v0.38.51 (user note 2026-09-12): bare /list drafts from context like
+  // bare /goal does — /list show remains the viewer. The stale guard
+  // mirrors cmdSet's empty-goal path: a draft seed on a doomed handle
+  // would latch the drafting gate with no live turn to deliver it.
+  if (!sub) {
+    if (staleEntry) return;
+    await startDrafting(ctx, "list");
+    return;
+  }
+
+  if (sub === "show") {
     const memQueue = listQueue();
     // v0.34.60: stale-handle fallback. If in-memory is empty but disk has
     // queue sidecar files (a fresh pi session that hasn't yet reparsed
