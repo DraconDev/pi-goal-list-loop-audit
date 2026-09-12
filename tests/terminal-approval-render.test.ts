@@ -58,7 +58,7 @@ test("canonical render folds a lone approval with the verdict count, model-free"
     approval: "— auditor auditor-model approved on the provider retry.",
     record: "— record: .pi-glla/archive/20260907-approval-render.md",
   });
-  assert.ok((render.chatLines[0] ?? "").startsWith("## Done — "), "chat opens with the Done headline");
+  assert.ok((render.chatLines[0] ?? "").startsWith("## Done: ship the post-objective summary with persist and replay — "), "chat opens with the request-echo Done headline");
   // Rich voice (field 20260911_*): sections + table + trailer. Headers,
   // numbered findings, table rows, and Next bullets share the chat; the
   // record pointer stays last.
@@ -80,7 +80,7 @@ test("canonical render folds a lone approval with the verdict count, model-free"
   assert.ok(!render.transcriptLines.some((l) => /^\s*Next\s*:/i.test(l)), "transcript strips the stale Next too");
   assert.equal(render.approval, "— auditor auditor-model approved on the provider retry.", "the shared approval field keeps the full string for archive/persist consumers");
   assert.ok(render.recap.length > 0, "external single line still produced");
-  assert.equal(render.outcome, (render.chatLines[0] ?? "").replace(/^## Done — /, ""), "outcome matches the chat headline");
+  assert.equal(render.outcome, (render.chatLines[0] ?? "").replace(/^## Done: ship the post-objective summary with persist and replay — /, ""), "outcome matches the chat headline");
 });
 
 test("standalone audit bullet survives only with news", () => {

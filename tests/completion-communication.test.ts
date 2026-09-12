@@ -69,7 +69,7 @@ for (const idle of [true, false]) test(`pending is nonterminal; approval deliver
   assert.equal(entries.length, 0);
   await waitFor(() => readState(cwd).goal === null);
   assert.equal(entries.length, 1);
-  assert.match(entries[0].content, /^## Done — Fixed routing/);
+  assert.match(entries[0].content, /^## Done: fix routing — done when pinned — Fixed routing/);
   assert.match(entries[0].content, /1\. \*\*Changed\*\* — router\.ts/);
   assert.match(entries[0].content, /\| Tests \| PASS \| routing suite passed/);
   assert.doesNotMatch(entries[0].content, /Next:|await audit|Acknowledge briefly/);

@@ -486,7 +486,7 @@ test("v0.36.0: aborted detached audit can complete without audit only after arch
     assert.ok(briefings.length > 0, "the no-audit briefing reached the visible session");
     const notice = briefings[0].content as string;
     assert.equal(confirmationTitle, "Audit aborted", "the explicit audit-abort choice was presented");
-    assert.match(notice, /^## Done — Objective "complete without audit target/, "the briefing leads with the archived objective");
+    assert.match(notice, /^## Done: .*? — Objective "complete without audit target/, "the briefing leads with the archived objective");
     assert.match(notice, /• completed without audit \(your choice\)\./, "the no-audit trailer closes the briefing as a bullet (v0.38.39 uniform voice)");
     assert.doesNotMatch(notice, /not recorded/, "system placeholders never reach the briefing");
     assert.ok(fs.readdirSync(path.join(cwd, ".pi-glla", "archive")).length > 0, "archive landed before success was reported");
@@ -3279,7 +3279,8 @@ test("v0.34.22: complete_goal returns while a detached auditor finishes and arch
     assert.ok(fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8").includes('"goal_archived"'), "approval archived and closed the goal");
     // v0.34.91: the detached-settle chat notify carries the recap (what
     // happened), not "auditor approved" boilerplate.
-    assert.equal(MAIN_SM.entries.filter(e => e.content?.startsWith("## Done — The detached completion path is covered")).length, 1, "exactly one persisted message voices the briefing");
+    assert.ok(MAIN_SM.entries.some(e => e.content?.startsWith("## Done: ") && e.content?.includes("The detached completion path is covered")), "exactly one persisted message voices the briefing");
+    assert.equal(MAIN_SM.entries.filter(e => e.content?.startsWith("## Done: ") && e.content?.includes("The detached completion path is covered")).length, 1, "exactly one persisted message voices the briefing");
     await pi.fire("session_shutdown", { reason: "quit" }, ctx);
   } finally {
     if (previous === undefined) delete process.env.GLLA_PI_BINARY;
@@ -3550,7 +3551,7 @@ test("v0.34.91: detached approval notify carries the agent's completion recap, n
     assert.ok(recapNotifs.length > 0, "the settle notify carries the recap (what happened), not 'auditor approved' alone");
     assert.ok(recapNotifs.some((n: { message: string }) => n.message.includes("**Changed**") && n.message.includes("\n")), "the recap arrives sectioned, not the single-line mash");
     assert.equal(recapNotifs.length, 1, "the persisted summary is the single decisive end-of-goal voice");
-    assert.match(recapNotifs[0]!.message, /^## Done — Pinned the R-key\/HUD retire parity/, "the briefing leads with the outcome in the header");
+    assert.match(recapNotifs[0]!.message, /^## Done: .*? — Pinned the R-key\/HUD retire parity/, "the briefing leads with the outcome in the header");
     // The chat notify is outcome + informing details + approval
     // + record pointer (five 120-char label lines scan as soup, not a
     // summary — field 2026-09-04). Substance lives in the transcript
