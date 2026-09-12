@@ -282,12 +282,21 @@ export type AuditorRecoveryFailureClass = "transport" | "timeout" | "no-verdict"
 export interface FindingGroup {
   title: string;
   findings: string[];
+  /**
+   * v0.38.52 (second Gemini-gap survey, shot C): optional per-finding
+   * test-result lines, aligned by index with `findings` (tests[i] proves
+   * findings[i]). Absent/short entries simply omit the sub-line — old
+   * claims without `tests` render byte-identical to v0.38.50.
+   */
+  tests?: string[];
 }
 
 export const MAX_FINDING_GROUPS = 6;
 export const MAX_GROUP_FINDINGS = 6;
 export const MAX_GROUP_TITLE_CHARS = 120;
 export const MAX_GROUP_FINDING_CHARS = 500;
+/** v0.38.52: per-finding test-result lines share the finding budget. */
+export const MAX_GROUP_TESTS_CHARS = 500;
 
 /**
  * Bound agent-supplied finding groups at the trust boundary. Drops
@@ -313,9 +322,62 @@ export function sanitizeFindingGroups(value: unknown): FindingGroup[] | undefine
       if (text) findings.push(text);
     }
     if (findings.length === 0) continue;
-    groups.push({ title, findings });
+    // v0.38.52: optional test-result lines ride parallel to findings.
+    // Non-string entries drop; the array is clipped to the finding count
+    // so tests[i] always proves findings[i] after budgeting.
+    let tests: string[] | undefined;
+    if (Array.isArray(raw.tests)) {
+      const parsed: string[] = [];
+      for (const entry of raw.tests) {
+        if (typeof entry !== "string") continue;
+        const text = entry.trim().slice(0, MAX_GROUP_TESTS_CHARS);
+        if (text) parsed.push(text);
+      }
+      if (parsed.length > 0) tests = parsed.slice(0, findings.length);
+    }
+    groups.push(tests ? { title, findings, tests } : { title, findings });
   }
   return groups.length > 0 ? groups : undefined;
+}
+
+/**
+ * v0.38.52 (second Gemini-gap survey, shots B/D): one agent-supplied
+ * verification gate row for the widened terminal table. Presentation
+ * only — the six-label completionSummary stays the audited substance.
+ * Status is NEVER agent-controlled: the renderer derives PASS/FAIL/
+ * REPORTED mechanically from `notes` via testsRowStatus, so a gate can
+ * only claim PASS when its notes say so with zero failures.
+ */
+export interface GateRow {
+  gate: string;
+  scope?: string;
+  notes?: string;
+}
+
+export const MAX_GATE_ROWS = 10;
+export const MAX_GATE_GATE_CHARS = 120;
+export const MAX_GATE_SCOPE_CHARS = 200;
+export const MAX_GATE_NOTES_CHARS = 400;
+
+/**
+ * Bound agent-supplied gate rows at the trust boundary. Drops blank
+ * gates; clips cells. Returns undefined when nothing valid survives —
+ * the mechanical 3-col table stays the fallback.
+ */
+export function sanitizeGateRows(value: unknown): GateRow[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const rows: GateRow[] = [];
+  for (const entry of value) {
+    if (rows.length >= MAX_GATE_ROWS) break;
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+    const raw = entry as Record<string, unknown>;
+    const gate = typeof raw.gate === "string" ? raw.gate.trim().slice(0, MAX_GATE_GATE_CHARS) : "";
+    if (!gate) continue;
+    const scope = typeof raw.scope === "string" ? raw.scope.trim().slice(0, MAX_GATE_SCOPE_CHARS) : "";
+    const notes = typeof raw.notes === "string" ? raw.notes.trim().slice(0, MAX_GATE_NOTES_CHARS) : "";
+    rows.push({ gate, ...(scope ? { scope } : {}), ...(notes ? { notes } : {}) });
+  }
+  return rows.length > 0 ? rows : undefined;
 }
 
 export interface PendingCompletion {
@@ -352,6 +414,12 @@ export interface PendingCompletion {
    * Absent means the flat six-label render stays the fallback.
    */
   findingGroups?: FindingGroup[];
+/**
+ * v0.38.52: agent-supplied verification gate rows for the widened
+ * terminal table (complete_goal gateRows, sanitized at claim time).
+ * Absent means the mechanical 3-col table stays the fallback.
+ */
+gateRows?: GateRow[];
   /**
    * Durable one-shot recovery fence. A parked claim may receive one
    * automatic retry after a validated healthy lifecycle/recovery event;
@@ -2213,6 +2281,10 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
   // garbage at the boundary degrades to absent (flat fallback), never
   // to a half-structured projection.
   const sanitizedGroups = sanitizeFindingGroups(raw.findingGroups);
+  // v0.38.52: agent-supplied gate rows survive reloads sanitized; garbage
+  // at the boundary degrades to absent (mechanical fallback), never to a
+  // half-structured projection.
+  const sanitizedGates = sanitizeGateRows(raw.gateRows);
   return {
     ...canonicalOrUnknown,
     ...(auditorCandidateRefs !== undefined ? { auditorCandidateRefs } : {}),
@@ -2226,6 +2298,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     ...(auditorFailureAt ? { auditorFailureAt } : {}),
     ...(timeoutEscalation !== undefined ? { timeoutEscalation } : {}),
     ...(sanitizedGroups ? { findingGroups: sanitizedGroups } : {}),
+    ...(sanitizedGates ? { gateRows: sanitizedGates } : {}),
     ...(phase === "running" || phase === "recovery-pending" || phase === "retry-waiting" ? { phase } : {}),
     ...(typeof raw.retryAttempts === "number"
       ? { retryAttempts: raw.retryAttempts }
