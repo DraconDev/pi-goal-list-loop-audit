@@ -38,6 +38,19 @@ context draft; `/list show` remains the way to view items.
   + plan-mode + drafting-questionnaire (40 pass), behavioral-orchestrator
   (131 pass, incl. the pre-existing stale bare-`/list` no-latch test), `tsc`
   clean.
+- Full gate (`/var/tmp/glla-gate-0.38.51.log`): **2132 pass / 2 skip / 1 fail**.
+  The one failure is `v0.34.22: complete_goal returns while a detached
+  auditor finishes and archives approval` — a detached-auditor timing test
+  (spawns a real 350ms fake-auditor child, asserts `elapsed < 300` and
+  widget-repaint races) with zero shared path with the bare-`/list` entry
+  (it uses `/goal start` + `complete_goal`, never touches drafting). It is
+  green in isolation 2/2 (131/0 twice standalone, incl. once before and
+  once after the gate). Load flake under full-gate pressure; left
+  untouched per the timing-flake policy.
+- Two same-gate failures WERE mine and are fixed in-tree: the docs-index
+  version trail (`v0.35.14–v0.38.51`) and the lifecycle-recovery source pin
+  for the split `!sub` / `show` branches (deliberate re-baseline, intent
+  preserved: show stays ungated, bare refuses stale without a gate).
 
 ## Preserved
 
