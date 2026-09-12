@@ -393,6 +393,16 @@ export function partitionRichDetails(details: string[]): { findings: string[]; t
   return { findings, tests, next };
 }
 
+/**
+ * v0.38.50: request-echo headline — the title mirrors the ask (the
+ * Gemini shape) with the outcome second. Without an objective the legacy
+ * `## Done — outcome` shape stays, so direct unit callers are unaffected.
+ */
+export function requestEchoHeadline(kind: "Done" | "Aborted", objective: string | undefined, outcome: string): string {
+  const echo = objective?.trim() ? clipSummaryValue(objective.trim(), RICH_OBJECTIVE_ECHO_CHARS) : null;
+  return echo ? `## ${kind}: ${echo} \u2014 ${outcome}` : `## ${kind} \u2014 ${outcome}`;
+}
+
 /** Build the section parts shared by chat, transcript, and archive.
  * v0.38.50: agent-structured groups render as `#### n. Area` subsections
  * with nested evidence bullets; at RICH_TABLE_GROUP_THRESHOLD groups the
@@ -408,9 +418,7 @@ export function buildRichTerminalParts(args: {
   groups?: FindingGroup[];
 }): RichTerminalParts {
   const { findings, tests, next } = partitionRichDetails(args.details);
-  const headline = args.objective?.trim()
-    ? `## Done: ${clipSummaryValue(args.objective.trim(), RICH_OBJECTIVE_ECHO_CHARS)} \u2014 ${args.outcome}`
-    : `## Done \u2014 ${args.outcome}`;
+  const headline = requestEchoHeadline("Done", args.objective, args.outcome);
   const budgeted = takeBudgetedGroups(args.groups ?? []);
   const useTable = budgeted.length >= RICH_TABLE_GROUP_THRESHOLD;
   const findingLines: string[] = [];
@@ -487,7 +495,7 @@ export function composeRichTerminalLines(parts: RichTerminalParts, opts?: { head
  * raw six-label recap stays verbatim in `## Completion summary` as the
  * machine layer. Headline follows terminal status; aborted records never
  * wear a `Done` headline. */
-export function buildRichArchiveSection(goal: Goal, status: Status, archivePath: string): string[] {
+export function buildRichArchiveSection(goal: Goal, status: Status, archivePath: string, findingGroups?: FindingGroup[]): string[] {
   const facts: CompletionSummaryFacts = { goal, status, archivePath };
   const summary = resolveCompletionSummary(facts, goal.completionSummary).summary;
   const brief = humanCompletionBrief(summary, 140, RICH_VALUE_BUDGET);
@@ -502,10 +510,13 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
     details: withoutStaleNext(brief.details),
     countsLine,
     auditHistory: history,
+    objective: goal.objective,
+    durationLine: buildDurationLine(goal),
+    groups: findingGroups,
   });
   return [
     ...composeRichTerminalLines(parts, {
-      headline: status === "complete" ? parts.headline : `## Aborted \u2014 ${brief.outcome}`,
+      headline: status === "complete" ? parts.headline : requestEchoHeadline("Aborted", goal.objective, brief.outcome),
     }),
     trailerBullet(stripApprovalModel(approval)),
     trailerBullet(countsLine),
@@ -595,6 +606,11 @@ export interface TerminalApprovalRenderInput {
   auditNote?: string;
   /** v0.38.37: what the agent deliberately left out (complete_goal leftOut). */
   leftOut?: string;
+  /**
+   * v0.38.50: agent-structured finding groups (complete_goal findingGroups,
+   * sanitized at claim time). Absent keeps the flat six-label fallback.
+   */
+  findingGroups?: FindingGroup[];
 }
 
 export interface TerminalApprovalRender {
@@ -670,6 +686,9 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     details: withoutStaleNext(richDetails),
     countsLine,
     auditHistory: input.goal.auditHistory,
+    objective: input.goal.objective,
+    durationLine: buildDurationLine(input.goal),
+    groups: input.findingGroups,
   });
   const chatBody = composeRichTerminalLines(richParts);
   const transcriptBody = composeRichTerminalLines(richParts);

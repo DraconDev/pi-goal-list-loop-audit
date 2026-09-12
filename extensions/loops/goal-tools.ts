@@ -133,6 +133,7 @@ isGoalRevisionCurrent,
   type DurableChoiceRecord,
   buildDurableChoiceRecord,
   normalizeDurableDeferRecommendationInput,
+  sanitizeFindingGroups,
 } from "../goal-loop-core.js";
 import {
   applyValidatedBatch,
@@ -536,6 +537,18 @@ function registerAgentTools(pi: any): void {
           "Renders as the closing `• Left out:` bullet in the user-facing terminal summary. " +
           "Omit when nothing was deliberately left out — absent stays absent, never invented.",
       })),
+      findingGroups: Type.Optional(Type.Array(Type.Object({
+        title: Type.String({ maxLength: 120, description: "Work-area name (e.g. a subsystem, screen, or phase)" }),
+        findings: Type.Array(Type.String({ maxLength: 500 }), { maxItems: 6, description: "Findings in this area as `Lead: body with path:line evidence` (max 6 per area)" }),
+      }), {
+        maxItems: 6,
+        description:
+          "v0.38.50: optional finding groups for the terminal summary. Group multi-area work by area " +
+          "(subsystem, screen, phase); each finding is `Lead: body` with repo-relative `path:line` evidence tokens. " +
+          "4+ groups render as an Area | Finding | Evidence table, fewer as nested area sections. " +
+          "Presentation only — the six-label completionSummary stays the audited substance, and file:line tokens are never invented. " +
+          "Omit for single-area work — the flat six-label render stays the fallback.",
+      })),
     }),
     async execute(_id, params, signal, _onUpdate, execCtx) {
       const foreign0 = foreignToolGuard(execCtx);
@@ -559,7 +572,7 @@ function registerAgentTools(pi: any): void {
         }
         return { content: [{ type: "text", text: `No active goal — it is ${state.goal.status}.` }], details: {} };
       }
-      const p = params as { completionSummary?: string; verificationSummary?: string; newObjective?: string; leftOut?: string };
+      const p = params as { completionSummary?: string; verificationSummary?: string; newObjective?: string; leftOut?: string; findingGroups?: unknown };
       if (state.goal.repairTarget) {
         return {
           content: [{ type: "text", text: `This repair card cannot be completed yet. Redraft the original target as a confirmed task list with propose_task_list (include objective: ${state.goal.repairTarget.objective.slice(0, 180)}), then continue the real work.` }],
@@ -778,6 +791,9 @@ function registerAgentTools(pi: any): void {
         // v0.38.37: the deliberate non-do rides the pending claim into
         // the terminal render — the only source the summary may cite.
         ...(p.leftOut?.trim() ? { leftOut: p.leftOut.trim().slice(0, 500) } : {}),
+        // v0.38.50: agent-structured finding groups ride the same claim —
+        // sanitized at the boundary, rendered only after auditor approval.
+        ...(sanitizeFindingGroups(p.findingGroups) ? { findingGroups: sanitizeFindingGroups(p.findingGroups) } : {}),
         at: nowIso(),
       }, "complete-goal");
       if (!completionClaim) {
