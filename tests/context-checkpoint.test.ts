@@ -161,10 +161,13 @@ test("real continuation payload growth is bounded after checkpoint projection", 
   // per payload (the same +769-char template delta as the growth fixture).
   // Grouped-terminal guidance (findingGroups) — +430 serialized bytes per
   // payload (the same +426-char template delta as the growth fixture).
+  // Gate-inventory and per-finding test guidance (gateRows + tests) —
+  // +608 serialized bytes per payload (the same +602-char template delta
+  // as the growth fixture).
   assert.deepEqual(bounded, [
-    { count: 5, messageCount: 4, serializedBytes: 26536, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },
-    { count: 12, messageCount: 4, serializedBytes: 26536, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },
-    { count: 25, messageCount: 4, serializedBytes: 26536, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },
+    { count: 5, messageCount: 4, serializedBytes: 27144, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },
+    { count: 12, messageCount: 4, serializedBytes: 27144, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },
+    { count: 25, messageCount: 4, serializedBytes: 27144, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },
   ]);
   // Serialized bytes consistent across counts (bounded by checkpoint + 1 payload)
   const b0 = bounded[0]!;
