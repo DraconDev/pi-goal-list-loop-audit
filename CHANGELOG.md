@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.38.50 — Gemini-gap terminal upgrade: grouped findings, request-echo headline, duration line (2026-09-12)
+
+Surveyed four Gemini report screenshots (audit/GEMINI-SUMMARY-GAP-2026-09-11.md)
+and closed the gap in the terminal render only (chat + transcript + archive
+ human layer; progress cards, status, widget, external notifies unchanged).
+
+### Added
+
+- **Agent-structured finding groups:** optional `complete_goal findingGroups`
+  (one group per work area, findings as `Lead: body` with repo-relative
+  `path:line` evidence tokens, sanitized at the claim boundary). Fewer than
+  four groups render as nested `#### n. Area` subsections; four or more
+  render as an Area | Finding | Evidence table. Evidence extraction is
+  mechanical — absolute/home-dir/machine paths never become evidence.
+  Single-area work omits the parameter; the flat six-label render stays
+  the fallback.
+- **Request-echo headline:** `## Done: <objective> — <outcome>` (and
+  `## Aborted: …` for aborted records) so the title mirrors the ask.
+- **Duration line:** `— N turns · … elapsed · M audits` from durable state
+  directly under the headline; unknown facts stay absent.
+- **Raised budgets:** findings 8 → 12, values 200 → 400 chars, Next 4 → 6.
+
+### Preserved
+
+- Auditor-verified-before-posting, the verbatim six-label machine record,
+  and the honesty rules (PASS only on `pass`, `NO VERDICT` never renders,
+  pipe escaping) are unchanged.
+
 ## 0.38.49 — audit-pass drift fixes: prompt gate, summary segmentation, task honesty (2026-09-11)
 
 Full-project audit pass on v0.38.48 (three parallel scout surveys). Six new
