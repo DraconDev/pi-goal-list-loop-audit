@@ -272,6 +272,52 @@ export type AuditorRecoveryFailureClass = "transport" | "timeout" | "no-verdict"
  * completion assertion; the lifecycle fields make an interrupted isolated
  * audit distinguishable from one that is actively running. Fields beyond
  * `at` are optional so v0.34.20 and older claims remain recoverable. */
+/**
+ * v0.38.50 (Gemini-gap survey): one agent-structured work area for the
+ * grouped terminal render. Presentation only — the six-label
+ * completionSummary stays the audited substance. Titles and findings are
+ * agent-authored and clipped at render; evidence tokens (`path:line`)
+ * are extracted mechanically, never inferred.
+ */
+export interface FindingGroup {
+  title: string;
+  findings: string[];
+}
+
+export const MAX_FINDING_GROUPS = 6;
+export const MAX_GROUP_FINDINGS = 6;
+export const MAX_GROUP_TITLE_CHARS = 120;
+export const MAX_GROUP_FINDING_CHARS = 500;
+
+/**
+ * Bound agent-supplied finding groups at the trust boundary. Drops
+ * non-object groups, blank titles, and empty findings; clips the rest.
+ * Returns undefined when nothing valid survives — the flat six-label
+ * render stays the fallback, never a half-structured projection.
+ */
+export function sanitizeFindingGroups(value: unknown): FindingGroup[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const groups: FindingGroup[] = [];
+  for (const entry of value) {
+    if (groups.length >= MAX_FINDING_GROUPS) break;
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+    const raw = entry as Record<string, unknown>;
+    const title = typeof raw.title === "string" ? raw.title.trim().slice(0, MAX_GROUP_TITLE_CHARS) : "";
+    if (!title) continue;
+    if (!Array.isArray(raw.findings)) continue;
+    const findings: string[] = [];
+    for (const finding of raw.findings) {
+      if (findings.length >= MAX_GROUP_FINDINGS) break;
+      if (typeof finding !== "string") continue;
+      const text = finding.trim().slice(0, MAX_GROUP_FINDING_CHARS);
+      if (text) findings.push(text);
+    }
+    if (findings.length === 0) continue;
+    groups.push({ title, findings });
+  }
+  return groups.length > 0 ? groups : undefined;
+}
+
 export interface PendingCompletion {
   completionSummary?: string;
   verificationSummary?: string;
@@ -300,6 +346,12 @@ export interface PendingCompletion {
    * terminal user summary; absent means nothing was deliberately left out.
    */
   leftOut?: string;
+  /**
+   * v0.38.50: agent-structured finding groups for the grouped terminal
+   * render (complete_goal findingGroups, sanitized at claim time).
+   * Absent means the flat six-label render stays the fallback.
+   */
+  findingGroups?: FindingGroup[];
   /**
    * Durable one-shot recovery fence. A parked claim may receive one
    * automatic retry after a validated healthy lifecycle/recovery event;
@@ -2157,6 +2209,10 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     _timeoutEscalation <= 100
       ? _timeoutEscalation
       : undefined;
+  // v0.38.50: agent-structured finding groups survive reloads sanitized;
+  // garbage at the boundary degrades to absent (flat fallback), never
+  // to a half-structured projection.
+  const sanitizedGroups = sanitizeFindingGroups(raw.findingGroups);
   return {
     ...canonicalOrUnknown,
     ...(auditorCandidateRefs !== undefined ? { auditorCandidateRefs } : {}),
@@ -2169,6 +2225,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     ...(auditorFallbackExhausted ? { auditorFallbackExhausted: true } : {}),
     ...(auditorFailureAt ? { auditorFailureAt } : {}),
     ...(timeoutEscalation !== undefined ? { timeoutEscalation } : {}),
+    ...(sanitizedGroups ? { findingGroups: sanitizedGroups } : {}),
     ...(phase === "running" || phase === "recovery-pending" || phase === "retry-waiting" ? { phase } : {}),
     ...(typeof raw.retryAttempts === "number"
       ? { retryAttempts: raw.retryAttempts }
