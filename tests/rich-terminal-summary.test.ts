@@ -10,6 +10,7 @@ import { sanitizeFindingGroups, type FindingGroup, type Goal } from "../extensio
 import {
   buildDurationLine,
   buildRichArchiveSection,
+  buildRichTerminalParts,
   buildTerminalApprovalRender,
   extractEvidenceTokens,
   takeBudgetedGroups,
@@ -141,4 +142,117 @@ test("archive section is rich for complete, Aborted-headlined for aborted", () =
   assert.ok(done.some((l) => l.startsWith("• record: .pi-glla/archive/20260911-rich-voice.md")), "archive record pointer last");
   const aborted = buildRichArchiveSection(richGoal(), "aborted", ".pi-glla/archive/20260911-rich-voice.md");
   assert.ok(aborted[0]?.startsWith("## Aborted: restyle the terminal summary — "), "aborted records never wear a Done headline");
+});
+
+const GROUPS: FindingGroup[] = [
+  { title: "Sound manager", findings: ["Disable path: soundManager.ts:333 mutes WebAudio"] },
+  { title: "Simulation", findings: ["Spawn logic: sim.ts:4505-4530 batches spawns in waves"] },
+];
+
+test("duration line rides under the headline; unknown facts stay absent", () => {
+  const { chatLines } = render({ findingGroups: GROUPS });
+  assert.equal(chatLines[1], "", "blank line after headline");
+  assert.match(chatLines[2] ?? "", /^— 9 turns · .+ elapsed · 1 audit$/, `duration line, got: ${chatLines[2]}`);
+  assert.equal(buildDurationLine({} as Goal), null, "nothing known means no duration line");
+  const bare = buildDurationLine({ telemetry: { turns: 2, fileWrites: 0, bashCalls: 0 } } as Goal);
+  assert.equal(bare, "— 2 turns", "only known facts render");
+});
+
+test("fewer than four groups render as nested area subsections", () => {
+  const { chatLines, transcriptLines } = render({ findingGroups: GROUPS });
+  const findingsIdx = chatLines.findIndex((l) => l === "### Key Findings & Remediation");
+  assert.ok(findingsIdx > 0, "findings section present");
+  assert.equal(chatLines[findingsIdx + 1], "#### 1. Sound manager", "first area subsection");
+  assert.equal(chatLines[findingsIdx + 2], "- **Disable path** — soundManager.ts:333 mutes WebAudio", "nested evidence bullet");
+  assert.ok(!chatLines.some((l) => l.startsWith("| Area |")), "no table below the threshold");
+  assert.deepEqual(transcriptLines.slice(0, 3), chatLines.slice(0, 3), "transcript shares headline and duration");
+});
+
+test("four or more groups render as an Area | Finding | Evidence table", () => {
+  const table = render({
+    findingGroups: [
+      ...GROUPS,
+      { title: "Screen A", findings: ["Layout: +page.svelte:260 pins the canvas"] },
+      { title: "Screen B", findings: ["Probe: /var/tmp/probe.ts:1 stays out of evidence", "Note: nothing to cite"] },
+    ],
+  });
+  const headerIdx = table.chatLines.findIndex((l) => l === "| Area | Finding | Evidence |");
+  assert.ok(headerIdx > 0, "findings table present");
+  assert.equal(table.chatLines[headerIdx + 1], "| --- | --- | --- |", "table separator");
+  const rows = table.chatLines.filter((l) => l.startsWith("| Sound manager |") || l.startsWith("| Simulation |") || l.startsWith("| Screen A |") || l.startsWith("| Screen B |"));
+  assert.equal(rows.length, 5, `one row per finding, got: ${rows.join(" / ")}`);
+  assert.ok(rows.some((l) => /\| soundManager\.ts:333 \|$/.test(l)), "relative path:line lands in Evidence");
+  assert.ok(rows.some((l) => /\| sim\.ts:4505-4530 \|$/.test(l)), "line ranges land in Evidence");
+  assert.ok(rows.some((l) => /\+page\.svelte:260/.test(l) && /\| \+page\.svelte:260 \|$/.test(l)), "svelte evidence token");
+  const probe = rows.find((l) => l.startsWith("| Screen B |") && /probe/.test(l));
+  assert.ok(probe, "absolute-path finding still renders");
+  assert.ok(probe!.endsWith("| — |"), "absolute machine paths never become evidence");
+  assert.ok(!table.chatLines.some((l) => l.startsWith("#### ")), "no nested subsections at table scale");
+});
+
+test("three groups stay nested — the table trigger is exactly four", () => {
+  const three = render({ findingGroups: [...GROUPS, { title: "Third", findings: ["Lead: body"] }] });
+  assert.ok(three.chatLines.some((l) => l.startsWith("#### 3. Third")), "third group nested");
+  assert.ok(!three.chatLines.some((l) => l.startsWith("| Area |")), "still no table");
+});
+
+test("grouped findings respect the raised budgets: 12 findings, 400-char values, 6 Nexts", () => {
+  const many: FindingGroup[] = Array.from({ length: 3 }, (_, g) => ({
+    title: `Area ${g}`,
+    findings: [`Lead ${g}a: ${"x".repeat(500)}`, `Lead ${g}b: short`, `Lead ${g}c: short`, `Lead ${g}d: short`, `Lead ${g}e: short`],
+  }));
+  const crowded = render({ findingGroups: many });
+  const bullets = crowded.chatLines.filter((l) => l.startsWith("- **Lead"));
+  assert.equal(bullets.length, 12, `findings capped at 12, got ${bullets.length}`);
+  const long = bullets.find((l) => l.startsWith("- **Lead 0a**"));
+  assert.ok(long, "first finding present");
+  assert.ok((long!.length - "- **Lead 0a** — ".length) <= 400, `value clipped to 400, got ${long!.length}`);
+  assert.ok(!crowded.chatLines.some((l) => l.startsWith("#### 4.")), "emptied groups drop their header");
+  // The Next budget pins at unit level: the chat filter keeps at most one
+  // concrete Next action (v0.38.39 Codex rule), so the cap is enforced on
+  // the parts input directly — future-proofing, like the old findings cap.
+  const parts = buildRichTerminalParts({
+    outcome: "o",
+    details: Array.from({ length: 7 }, (_, i) => `Next: action ${i}`),
+    countsLine: "",
+  });
+  assert.equal(parts.nextLines.length, 6, `Next capped at 6, got ${parts.nextLines.length}`);
+});
+
+test("extractEvidenceTokens moves tokens mechanically and never invents", () => {
+  assert.deepEqual(extractEvidenceTokens("Fix: a.ts:10 and b.ts:20-25 here"), {
+    text: "Fix: and here",
+    evidence: ["a.ts:10", "b.ts:20-25"],
+  });
+  const abs = extractEvidenceTokens("See /var/tmp/x.ts:1 for details");
+  assert.deepEqual(abs.evidence, [], "absolute paths are not evidence");
+  assert.ok(abs.text.includes("/var/tmp/x.ts:1"), "absolute path stays in the finding text");
+});
+
+test("takeBudgetedGroups fills in order and drops emptied groups", () => {
+  const groups: FindingGroup[] = [
+    { title: "A", findings: Array.from({ length: 12 }, (_, i) => `f${i}`) },
+    { title: "B", findings: ["leftover"] },
+  ];
+  const taken = takeBudgetedGroups(groups);
+  assert.equal(taken.length, 1, "second group emptied by the budget");
+  assert.equal(taken[0]!.findings.length, 12, "first group fills the budget");
+});
+
+test("sanitizeFindingGroups bounds shape at the trust boundary", () => {
+  assert.equal(sanitizeFindingGroups("nope"), undefined, "non-array degrades to absent");
+  assert.equal(sanitizeFindingGroups([]), undefined, "empty degrades to absent");
+  const clean = sanitizeFindingGroups([
+    { title: "  Good  ", findings: ["  Lead: body  ", "", 42, "x".repeat(600)] },
+    { title: "   ", findings: ["blank title drops"] },
+    { title: "Empty", findings: [] },
+    "junk",
+    null,
+  ]);
+  assert.equal(clean?.length, 1, "only the valid group survives");
+  assert.equal(clean?.[0]?.title, "Good", "titles trim");
+  assert.equal(clean?.[0]?.findings.length, 2, "blank/non-string findings drop");
+  assert.equal(clean?.[0]?.findings[1]?.length, 500, "findings clip at 500");
+  const capped = sanitizeFindingGroups(Array.from({ length: 9 }, (_, i) => ({ title: `t${i}`, findings: ["f"] })));
+  assert.equal(capped?.length, 6, "groups capped at 6");
 });

@@ -329,7 +329,7 @@ function leadBody(detail: string): { lead: string; body: string } {
  * paths are NOT evidence — those stay in the archive only. Extraction is
  * mechanical substring movement, never inference.
  */
-const EVIDENCE_TOKEN_PATTERN = /(?<![/~\w])[\w.][\w./-]*\.[A-Za-z0-9]{1,5}:\d+(?:-\d+)?/g;
+const EVIDENCE_TOKEN_PATTERN = /(?<![/~+\w])[\w.+][\w./-]*\.[A-Za-z0-9]{1,8}:\d+(?:-\d+)?/g;
 
 export function extractEvidenceTokens(text: string): { text: string; evidence: string[] } {
   const evidence: string[] = [];
