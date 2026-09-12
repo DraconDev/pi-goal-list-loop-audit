@@ -4596,3 +4596,16 @@
 {"type":"context_checkpoint_projection","value":{"goalId":"20260912022138-wfk27s","removedPayloads":2,"retainedPayloads":1,"checkpointChars":2240,"generation":477},"at":"2026-09-12T02:22:48.840Z"}
 {"type":"context_checkpoint_projection","value":{"goalId":"20260912022138-wfk27s","removedPayloads":2,"retainedPayloads":1,"checkpointChars":2240,"generation":477},"at":"2026-09-12T02:22:53.687Z"}
 {"type":"context_checkpoint_projection","value":{"goalId":"20260912022138-wfk27s","removedPayloads":2,"retainedPayloads":1,"checkpointChars":2240,"generation":477},"at":"2026-09-12T02:22:58.666Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260912022138-wfk27s","removedPayloads":2,"retainedPayloads":1,"checkpointChars":2240,"generation":477},"at":"2026-09-12T02:23:02.645Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260912022138-wfk27s","removedPayloads":2,"retainedPayloads":1,"checkpointChars":2240,"generation":477},"at":"2026-09-12T02:23:08.758Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260912022138-wfk27s","removedPayloads":2,"retainedPayloads":1,"checkpointChars":2240,"generation":477},"at":"2026-09-12T02:23:13.381Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260912022138-wfk27s","removedPayloads":2,"retainedPayloads":1,"checkpointChars":2240,"generation":477},"at":"2026-09-12T02:23:16.307Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260912022138-wfk27s","removedPayloads":2,"retainedPayloads":1,"checkpointChars":2240,"generation":477},"at":"2026-09-12T02:23:20.594Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260912022138-wfk27s","removedPayloads":2,"retainedPayloads":1,"checkpointChars":2240,"generation":477},"at":"2026-09-12T02:23:24.461Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260912022138-wfk27s","removedPayloads":2,"retainedPayloads":1,"checkpointChars":2240,"generation":477},"at":"2026-09-12T02:23:39.156Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260912022138-wfk27s","removedPayloads":2,"retainedPayloads":1,"checkpointChars":2240,"generation":477},"at":"2026-09-12T02:23:50.573Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260912022138-wfk27s","removedPayloads":2,"retainedPayloads":1,"checkpointChars":2240,"generation":477},"at":"2026-09-12T02:24:00.453Z"}
+{"type":"send_rearm_storm","value":{"kind":"continuation","streak":19,"minutes":2},"at":"2026-09-12T02:24:03.503Z"}
+{"type":"rearm_no_turn_started","value":{"streak":19,"minutes":2,"turnOpen":true,"turnOpenMinutes":1},"at":"2026-09-12T02:24:03.503Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260912022138-wfk27s","removedPayloads":2,"retainedPayloads":1,"checkpointChars":2240,"generation":477},"at":"2026-09-12T02:24:09.444Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260912022138-wfk27s","removedPayloads":2,"retainedPayloads":1,"checkpointChars":2240,"generation":477},"at":"2026-09-12T02:24:18.654Z"}
