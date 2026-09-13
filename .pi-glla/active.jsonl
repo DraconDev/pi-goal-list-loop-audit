@@ -4824,3 +4824,15 @@
 {"type":"terminal_approval_render_persisted","value":{"goalId":"20260913103751-o9tzvz","delivered":false,"lines":25},"at":"2026-09-13T13:22:17.497Z"}
 {"type":"terminal_completion_notice_sent","value":{"goalId":"20260913103751-o9tzvz","payloadChars":1493},"at":"2026-09-13T13:22:17.507Z"}
 {"type":"terminal_approval_render_replayed","value":{"goalId":"20260913103751-o9tzvz","createdAt":"2026-09-13T13:22:17.496Z"},"at":"2026-09-13T13:22:17.507Z"}
+{"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-13T15:06:24.932Z"}
+{"type":"session_rebound","value":{"reason":"startup"},"at":"2026-09-13T15:06:31.224Z"}
+{"type":"id_invalidation","value":{"oldId":"01a054a9-e07f-705b-87a1-9421f9b906dc","newId":"01a09b4e-2933-7459-9f41-1ad16aa139e2","reason":"session_shutdown","shutdownReason":"quit","at":"2026-09-13T15:06:31.251Z"},"at":"2026-09-13T15:06:31.251Z"}
+{"type":"session_waiting_for_load","value":{"reason":"startup"},"at":"2026-09-13T15:06:31.251Z"}
+{"type":"session_shutdown","value":{"reason":"resume"},"at":"2026-09-13T15:06:43.459Z"}
+{"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-13T15:06:45.411Z"}
+{"type":"id_invalidation","value":{"oldId":"01a09b4e-2933-7459-9f41-1ad16aa139e2","newId":"01a054a9-e07f-705b-87a1-9421f9b906dc","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-13T15:06:45.424Z"},"at":"2026-09-13T15:06:45.424Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":487},"at":"2026-09-13T15:07:04.223Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":487},"at":"2026-09-13T15:07:18.875Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":487},"at":"2026-09-13T15:07:22.080Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":1212,"outputTokens":389,"cacheReadTokens":180465,"cacheWriteTokens":0,"totalTokens":182066},"contextUsage":{"tokens":182066,"contextWindow":200000,"percent":91.033}},"at":"2026-09-13T15:07:26.755Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":487},"at":"2026-09-13T15:09:10.234Z"}
