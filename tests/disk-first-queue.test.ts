@@ -198,10 +198,10 @@ test("v0.34.61: list-draft path is disk-first (sidecar before state mutation)", 
   // Auditor-fixed gap #2: the /list add (no args) drafting interview that
   // confirms to the queue. Same invariant: writeQueueItemFile first.
   const anchor = "List drafting: the confirmed contract goes into the QUEUE, not active.";
-  // Audit 2026-09-13: widened 1800 -> 3000 — the single-item parent-binding
+  // Audit 2026-09-13: widened 1800 -> 3200 — the single-item parent-binding
   // resolution sits between the anchor and the write; the pinned invariant
   // (sidecar write BEFORE the in-memory commit) is unchanged.
-  const seg = SRC.slice(SRC.indexOf(anchor), SRC.indexOf(anchor) + 3000);
+  const seg = SRC.slice(SRC.indexOf(anchor), SRC.indexOf(anchor) + 3200);
   const writePos = seg.indexOf("writeQueueItemFile(liveCtx.cwd, item)");
   const statePos = seg.indexOf("replaceState({ ...state, list: [...listQueue(), item] })");
   assert.ok(writePos !== -1, "list-draft path calls writeQueueItemFile");
