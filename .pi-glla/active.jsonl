@@ -4682,3 +4682,6 @@
 {"type":"session_shutdown","value":{"reason":"reload"},"at":"2026-09-13T10:33:31.248Z"}
 {"type":"session_rebound","value":{"reason":"reload"},"at":"2026-09-13T10:33:33.516Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":446,"outputTokens":549,"cacheReadTokens":133873,"cacheWriteTokens":0,"totalTokens":134868},"contextUsage":{"tokens":134868,"contextWindow":200000,"percent":67.43400000000001}},"at":"2026-09-13T10:34:04.019Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":618,"outputTokens":924,"cacheReadTokens":134257,"cacheWriteTokens":0,"totalTokens":135799},"contextUsage":{"tokens":135799,"contextWindow":200000,"percent":67.8995}},"at":"2026-09-13T10:35:04.063Z"}
+{"type":"model_switch","value":{"from":"opencode-go/muse-spark-1.3-contributor","to":"openai-codex/gpt-5.6-luna","reason":"manual","at":"2026-09-13T10:35:24.459Z","source":"set"},"at":"2026-09-13T10:35:24.459Z"}
+{"type":"state","value":{"goal":null,"list":[],"loop":null,"mainModelRecovery":null,"lastModelRef":"openai-codex/gpt-5.6-luna","lastCompactionAt":1789180072666,"supervisorPausedAt":null,"loadHoldAt":null,"lastOutcome":null},"at":"2026-09-13T10:35:24.459Z"}
