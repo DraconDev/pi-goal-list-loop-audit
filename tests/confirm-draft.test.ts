@@ -92,6 +92,12 @@ async function enterGoalDrafting(ctx: ReturnType<typeof makeMockCtx>): Promise<v
   await pi.fire("message_start", { message: { role: "user" } }, ctx);
 }
 
+async function enterListDrafting(ctx: ReturnType<typeof makeMockCtx>): Promise<void> {
+  await pi.command("list", "", ctx);
+  await pi.fire("message_start", { message: { role: "user" } }, ctx);
+  await pi.fire("message_start", { message: { role: "user" } }, ctx);
+}
+
 test("custom path: Yes accepts the draft and the dialog is captured", async () => {
   __testOnlyResetOwnerSession();
   const cwd = tmpCwd();
@@ -175,6 +181,43 @@ test("fallback: a stale select error still returns stale", async () => {
   ctx.ui.confirmImpl = undefined;
   assert.match(res.content[0]!.text, /NOT a rejection/);
   assert.equal(readState(cwd).goal, null);
+});
+
+test("list batch confirmation resolves paused carryover before activating the head", async () => {
+  __testOnlyResetOwnerSession();
+  const cwd = tmpCwd();
+  const pausedId = "paused-carryover-draft";
+  seedState(cwd, {
+    goal: seedGoal({
+      id: pausedId,
+      status: "paused",
+      policy: "goal",
+      objective: "paused carryover objective — done when held",
+      pauseReason: "held for explicit resume",
+    }),
+  });
+  const ctx = setup(cwd);
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  await tick();
+  await enterListDrafting(ctx);
+  ctx.ui.customImpl = async () => "Yes";
+  const result = await pi.runTool("propose_goal_draft", {
+    objective: "drafted list batch",
+    items: [
+      "first drafted list item — done when first proof exists",
+      "second drafted list item — done when second proof exists",
+    ],
+  }, ctx);
+  ctx.ui.customImpl = undefined;
+
+  assert.match(result.content[0]!.text, /list head activated|Begin work/i);
+  const current = readState(cwd);
+  assert.equal(current.goal?.policy, "list");
+  assert.equal(current.goal?.status, "active");
+  assert.match(current.goal?.objective ?? "", /first drafted list item/);
+  assert.equal(current.list?.length, 1, "the second batch item remains queued");
+  assert.ok(fs.existsSync(path.join(cwd, ".pi-glla", "archive", `${pausedId}.md`)), "paused carryover is archived");
+  assert.match(ledgerText(cwd), /carryover_resolved/);
 });
 
 // ── v0.34.80 (GitHub #4 rework): the REAL headless/RPC shape ───────────
