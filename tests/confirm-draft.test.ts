@@ -196,7 +196,7 @@ test("list batch confirmation resolves paused carryover before activating the he
       pauseReason: "held for explicit resume",
     }),
   });
-  const ctx = setup(cwd);
+  const ctx = makeMockCtx(cwd);
   await pi.fire("session_start", { reason: "startup" }, ctx);
   await tick();
   await enterListDrafting(ctx);

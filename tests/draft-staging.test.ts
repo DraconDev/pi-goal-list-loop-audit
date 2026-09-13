@@ -27,9 +27,11 @@ test("v0.38.53: list batch conflict handling follows confirmation and precedes e
   const confirm = at(TOOLS, '"Confirm list batch"');
   const conflict = at(TOOLS, 'resolveDraftActivationConflict(liveCtx, "list", p.items.join("; "))', confirm);
   const clear = at(TOOLS, "draftingTarget = null;", conflict);
-  const enqueue = at(TOOLS, 'const wasIdle = !state.goal || state.goal.status === "complete" || state.goal.status === "aborted";', clear);
+  const enqueue = at(TOOLS, 'const n = enqueueItems(liveCtx, p.items, "drafted batch");', clear);
+  const activation = at(TOOLS, "const activated = activateNextListItem(liveCtx);", enqueue);
   assert.ok(confirm < conflict, "the user confirms the whole batch before conflict handling");
   assert.ok(conflict < clear && clear < enqueue, "conflict resolution and draft cleanup precede enqueue");
+  assert.ok(enqueue < activation, "paused-carryover activation follows durable batch enqueue");
 });
 
 test("v0.38.53: single list confirmation precedes post-confirm conflict handling", () => {
