@@ -56,7 +56,8 @@ release contract then passed 10/10. No history rewrite was used.
 
 ## Release state
 
-The package and documentation target v0.38.53. Tagging, GitHub Release
-publication, npm registry verification, and final archive/goal closure are
-performed only after this evidence is durable and the release gates remain
-clean.
+v0.38.53 was tagged and pushed from `main`. The published GitHub Release
+workflow completed successfully, including the packed-artifact test/inspection
+and npm trusted-publishing step. Registry verification reports
+`version = '0.38.53'` and `dist-tags.latest = '0.38.53'`. Final goal archival is
+still governed by the isolated auditor and the durable task/lifecycle gates.
