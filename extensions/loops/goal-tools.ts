@@ -2498,22 +2498,24 @@ function registerAgentTools(pi: any): void {
         }
         draftingTarget = null;
         await ((globalThis as any).restoreDrafterModel?.() ?? Promise.resolve());
-        const n = enqueueItems(liveCtx, p.items, "drafted batch");
-        if (n === 0) {
-          return { content: [{ type: "text", text: "No new list items were queued — the proposed batch was empty after duplicate/persistence checks." }], details: {} };
-        }
         // enqueueItems owns the empty/terminal-slot auto-start. A paused
         // objective is different: preserve the one-confirm batch, then route
         // promotion through the same carryover-aware choke point so the
         // paused record is archived before the new list head starts.
-        if (replacesPaused && state.goal?.status === "paused") {
+        const slotWasEmpty = !state.goal || state.goal.status === "complete" || state.goal.status === "aborted";
+        const pausedBeforeEnqueue = state.goal?.status === "paused";
+        const n = enqueueItems(liveCtx, p.items, "drafted batch");
+        if (n === 0) {
+          return { content: [{ type: "text", text: "No new list items were queued — the proposed batch was empty after duplicate/persistence checks." }], details: {} };
+        }
+        if (pausedBeforeEnqueue && state.goal?.status === "paused") {
           const activated = activateNextListItem(liveCtx);
           if (activated) {
             return { content: [{ type: "text", text: `${n} items confirmed; the list head activated after paused carryover resolution. Begin work now.` }], details: {} };
           }
           return { content: [{ type: "text", text: `${n} items confirmed and queued (${listQueue().length} waiting), but activation was held. The paused objective remains recoverable; retry list activation after fixing the reported issue.` }], details: {} };
         }
-        if (startsFromEmpty && state.goal?.status === "active" && state.goal.policy === "list") {
+        if (slotWasEmpty && state.goal?.status === "active" && state.goal.policy === "list") {
           return { content: [{ type: "text", text: `${n} items confirmed; the first list item activated. Begin work now.` }], details: {} };
         }
         return { content: [{ type: "text", text: `${n} items confirmed and added to the list (${listQueue().length} waiting).` }], details: {} };
