@@ -13,7 +13,10 @@ audit policy). The next pass owns the durable policy artifacts and
 the open notes (`note.md` host lifecycle / completion recap /
 long-term preferences).
 
-**Most recent (2026-09-12):**
+**Most recent (2026-09-13):**
+- `GLLA-DELEGATE-AND-DRAFT-STAGING-2026-09-13.md` — v0.38.53: packaged consent-safe `glla-delegate` skill, supplied-list handling, verified draft staging, real packed-tarball Pi loader probe, and release gate evidence
+
+**2026-09-12:**
 - `SECOND-GEMINI-SUMMARY-GAP-2026-09-12.md` — v0.38.52: five more Antigravity screenshots, ranked steal table; adopted the gate-inventory table (Quality Gate | Scope | Status | Notes, derived statuses) + per-finding `Test Results:` lines; emoji/hash close rejected, archive-only close preserved
 - `BARE-LIST-DRAFT-2026-09-12.md` — v0.38.51: bare `/list` drafts from context like bare `/goal` (user note 2026-09-12, user chose always-draft); `/list show` stays the viewer; stale guard mirrors the empty-goal path
 - `FRESH-AUDIT-PASS-2026-09-11.md` — v0.38.49: three-scout pass on v0.38.48, six FIX (prompt batch/gate drift, README verify path, docs versions/voice, summary-gate segmentation, task-tool honesty, sidecar pending boundary), no DECIDE; gate 2121 pass / 0 fail
