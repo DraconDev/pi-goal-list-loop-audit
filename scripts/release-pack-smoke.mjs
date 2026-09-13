@@ -121,6 +121,7 @@ try {
   });
   if (skillProbe.diagnostics.length > 0) throw new Error(`packed skill has loader diagnostics: ${JSON.stringify(skillProbe.diagnostics).slice(0, 300)}`);
   if (!skillProbe.skills.some((skill) => skill.name === "glla-delegate")) throw new Error("packed skill not discoverable by Pi loadSkills");
+  console.log("OK: packed glla-delegate skill loads with zero diagnostics");
   console.log(`OK: installed and imported ${packageName}@${packageJson.version} from its packed tarball`);
 } finally {
   fs.rmSync(workspace, { recursive: true, force: true });
