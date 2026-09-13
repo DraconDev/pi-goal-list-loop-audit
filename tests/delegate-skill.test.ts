@@ -45,7 +45,7 @@ test("skill documents consent and auto-activation boundaries", () => {
   assert.match(SKILL, /Confirm\s+dialog/);
   assert.match(SKILL, /Never call `list_activate`/);
   assert.match(SKILL, /first item may activate immediately/);
-  assert.match(SKILL, /Worker and subagent sessions do not own GLLA state/);
+  assert.match(SKILL, /Worker and subagent\s+sessions do not own GLLA state/);
 });
 
 test("skill treats pasted list-like input as supplied, not an exactness choice", () => {
