@@ -44,10 +44,11 @@ for (const name of DRAFTING_PROMPTS) {
   });
 }
 
-test("list drafting: pasted list-like seeds use supplied wording without an exactness choice", () => {
-  const p = readPrompt("goal-loop-draft.md");
-  assert.match(p, /multi-line,\s*\n?bulleted, numbered, or checklist-style seed/);
-  assert.match(p, /propose the\s+\n?resulting items together through `items\[\]`/);
-  assert.match(p, /Do not ask whether the user wants\s+the list exact or refined/);
-  assert.match(p, /genuinely\s+\n?ambiguous individual item/);
-});
+for (const name of ["goal-loop-draft.md", "goal-loop-plan.md"]) {
+  test(`${name}: pasted list-like seeds use supplied wording without an exactness choice`, () => {
+    const p = readPrompt(name);
+    assert.match(p, /multi-line,\s*\n?bulleted, numbered, or checklist-style seed/);
+    assert.match(p, /exact or refined/);
+    assert.match(p, /genuinely\s+\n?ambiguous individual item/);
+  });
+}

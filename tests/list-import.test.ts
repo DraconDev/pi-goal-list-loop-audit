@@ -134,6 +134,20 @@ test("routeListText: multi-line paste is an explicit batch", () => {
   if (r.kind === "batch") assert.equal(r.items.length, 3);
 });
 
+test("routeListText: pasted bullets preserve item wording and contracts", () => {
+  const r = routeListText("/nonexistent", "# Plan\n- [ ] Keep punctuation!\n2) Check x. Done when: grep -q ok x\n");
+  assert.deepEqual(r, {
+    kind: "batch",
+    items: ["Keep punctuation!", "Check x. Done when: grep -q ok x"],
+  });
+});
+
+test("routeListText: a one-record paste remains eligible for item-level clarification", () => {
+  const r = routeListText("/nonexistent", "# Plan\n- Fix the auth issue\n");
+  assert.equal(r.kind, "draft");
+  if (r.kind === "draft") assert.equal(r.seed, "# Plan\n- Fix the auth issue\n");
+});
+
 test("routeListText: 'Done when:' clause adds directly, no interview", () => {
   const r = routeListText("/nonexistent", "fix the flaky login test. Done when: npm test is green");
   assert.equal(r.kind, "direct");

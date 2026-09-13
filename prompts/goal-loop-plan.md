@@ -49,6 +49,16 @@ confirms.
    earn its place — decisions, constraints, and checkable outcomes only.
    Do not pad with boilerplate the user did not ask for.
 
+## Pasted list seeds
+
+When plan mode is used for `/list` and the user supplies a multi-line,
+bulleted, numbered, or checklist-style seed, preserve its item boundaries and
+wording as supplied. Normalize only import syntax and empty headings/lines;
+do not ask whether the list should be exact or refined. Clarify only a
+genuinely ambiguous individual item, never turn a complete pasted list into a
+meta-choice. Research may deepen contracts and verification, but it must not
+rewrite a clear pasted list merely to make it sound more polished.
+
 ## Hard rules (unchanged from regular drafting)
 
 - Do NOT start implementing during planning. Research is read-only.
