@@ -880,7 +880,7 @@ async function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "l
           "canonical anti-pattern: the auto-committer squashes, the count fails, the auditor disapproves finished work). " +
           "For a pasted multi-line, bulleted, numbered, or checklist-style seed, preserve the supplied wording and structure, " +
           "strip only import syntax and empty headings/lines, and propose items[] directly — do not ask whether it should be exact " +
-          "or refined; clarify only a genuinely ambiguous individual item.]", 
+          "or refined; clarify only a genuinely ambiguous individual item.]",
       );
   }
   // v0.14.0: the LLM grills (its strength — v0.13.0's canned questionnaire

@@ -29,7 +29,7 @@ function dryRunFiles(): Set<string> {
 
 test("release contract: published documentation links are covered by the npm tarball", () => {
   const files = dryRunFiles();
-  for (const required of ["README.md", "INSTALL.md", "PLAN.md", "LIST-PHILOSOPHY.md", "CHANGELOG.md", "docs/INDEX.md", "examples/example-objective.md", "scripts/release-pack-smoke.mjs"]) {
+  for (const required of ["README.md", "INSTALL.md", "PLAN.md", "LIST-PHILOSOPHY.md", "CHANGELOG.md", "docs/INDEX.md", "examples/example-objective.md", "scripts/release-pack-smoke.mjs", "skills/glla-delegate/SKILL.md"]) {
     assert.ok(files.has(required), `${required} must be shipped`);
   }
   const index = fs.readFileSync("docs/INDEX.md", "utf-8");
