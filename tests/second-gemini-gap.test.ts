@@ -181,20 +181,22 @@ test("v0.38.52: complete_goal gateRows + tests ride the claim into the chat rend
       { title: "Renderer", findings: ["Widen: completion-summary.ts:460 adds the gate table"], tests: ["gate suite 9/9"] },
     ],
     gateRows: [
-      { gate: "Unit Tests", scope: "gate file", notes: "9 passed, 0 failed" },
+      { gate: "Unit Tests", scope: "gate file", notes: "9 passed, 0 failed (shipped 02871aa6)" },
       { gate: "", notes: "blank gate drops" },
     ],
   }, ctx) as any;
   assert.match(result.content[0].text, /AUDIT PENDING — nonterminal/);
   assert.deepEqual(readState(cwd).goal?.pendingCompletion?.gateRows, [
-    { gate: "Unit Tests", scope: "gate file", notes: "9 passed, 0 failed" },
+    { gate: "Unit Tests", scope: "gate file", notes: "9 passed, 0 failed (shipped 02871aa6)" },
   ], "the pending claim stores the sanitized inventory");
   assert.deepEqual(readState(cwd).goal?.pendingCompletion?.findingGroups, [
     { title: "Renderer", findings: ["Widen: completion-summary.ts:460 adds the gate table"], tests: ["gate suite 9/9"] },
   ], "the pending claim stores the parallel test lines");
   await waitFor(() => entries.length === 1);
-  assert.ok(entries[0].content.includes("| Quality Gate | Scope | Status | Notes |"), "wide table reaches the chat");
-  assert.ok(entries[0].content.includes("| Unit Tests | gate file | PASS | 9 passed, 0 failed |"), "derived PASS row reaches the chat");
+  // Audit 2026-09-13: all-green verification auto-collapses — the PASS
+  // line (not the wide table) reaches the chat; findings keep the space.
+  assert.ok(!entries[0].content.includes("| Quality Gate | Scope | Status | Notes |"), "wide table stays out of the green chat");
+  assert.ok(entries[0].content.includes("Unit Tests PASS"), "derived PASS rides the collapsed line");
   assert.ok(entries[0].content.includes("  - Test Results: gate suite 9/9"), "per-finding proof reaches the chat");
-  assert.ok(!entries[0].content.includes("a8f3fad5"), "no commit hash in chat — archive-only close preserved");
+  assert.ok(!entries[0].content.includes("02871aa6"), "no commit hash in chat — archive-only close preserved");
 });

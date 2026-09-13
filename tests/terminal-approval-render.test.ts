@@ -63,7 +63,20 @@ test("canonical render folds a lone approval with the verdict count, model-free"
   // numbered findings, table rows, and Next bullets share the chat; the
   // record pointer stays last.
   assert.ok(render.chatLines.includes("### Key Findings & Remediation"), "findings section present");
-  assert.ok(render.chatLines.includes("### Verification Summary"), "verification table present");
+  // Audit 2026-09-13 (findings-first): all-green verification auto-collapses
+  // to one PASS line — the table is the failure surface, not the default.
+  assert.ok(!render.chatLines.includes("### Verification Summary"), "green verification table stays out of the chat");
+  assert.ok(
+    render.chatLines.some((l) => /^\u2014 Verification passed \(Tests PASS \u00b7 Audit APPROVED \u00d71\); details in the archive record\.$/.test(l)),
+    "one PASS line stands in for the green table",
+  );
+  // Findings-first order: findings, then verification, then Next, then the
+  // pinned trailer (approval, record last).
+  const findingsIdx = render.chatLines.indexOf("### Key Findings & Remediation");
+  const passIdx = render.chatLines.findIndex((l) => l.startsWith("\u2014 Verification passed"));
+  const nextIdx = render.chatLines.indexOf("### Next");
+  const approvalIdx = render.chatLines.findIndex((l) => l.startsWith("\u2022 auditor approved"));
+  assert.ok(findingsIdx !== -1 && findingsIdx < passIdx && passIdx < nextIdx && nextIdx < approvalIdx, "findings precede verification, Next closes the card ahead of the trailer");
   // v0.38.42 (field 20260909_140404): a lone approval folds with the
   // verdict count — no model ID, no redundant standalone audit bullet.
   assert.ok(
@@ -230,7 +243,10 @@ test("v0.38.39 chat brief strips machine paths but the archive keeps them", () =
     ].join("\n"),
   });
   assert.ok(!render.chatLines.some((l) => l.includes("/var/tmp/")), "no machine path reaches the chat lines");
-  assert.ok(render.chatLines.some((l) => /^\| Tests \| PASS \| full gate 2040 pass/.test(l)), "the human proof survives the strip in the table");
+  // Audit 2026-09-13: the green table auto-collapses — the human proof
+  // rides the PASS line as Tests PASS, full detail stays in the archive.
+  assert.ok(!render.chatLines.includes("### Verification Summary"), "green table auto-off in the chat");
+  assert.ok(render.chatLines.some((l) => /^\u2014 Verification passed \(Tests PASS/.test(l)), "the human proof survives the strip as the PASS line");
 });
 
 test("v0.38.39 clause cut respects +-joined lists", () => {

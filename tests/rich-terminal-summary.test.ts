@@ -60,15 +60,16 @@ test("chat opens with a request-echo Done headline and Key Findings numbered wit
   assert.ok(chatLines.some((l) => /extensions\/completion-summary\.ts/.test(l)), "code refs ride the finding bodies");
 });
 
-test("verification table tabulates Tests PASS plus the audit row", () => {
+test("verification auto-off: green rows collapse to one PASS line, findings keep the space", () => {
   const { chatLines } = render();
-  const tableIdx = chatLines.findIndex((l) => l === "### Verification Summary");
-  assert.ok(tableIdx > 0, "verification section present");
-  assert.equal(chatLines[tableIdx + 1], "| Check | Status | Details |", "table header");
-  assert.equal(chatLines[tableIdx + 2], "| --- | --- | --- |", "table separator");
-  const rows = chatLines.slice(tableIdx + 3, tableIdx + 5);
-  assert.ok(rows.some((l) => /^\| Tests \| PASS \|/.test(l)), `Tests PASS row, got: ${rows.join(" / ")}`);
-  assert.ok(rows.some((l) => /^\| Audit \| APPROVED ×1 \|/.test(l)), "audit row carries the verdict count");
+  assert.ok(!chatLines.includes("### Verification Summary"), "no table when every row is green");
+  const passIdx = chatLines.findIndex((l) => l.startsWith("\u2014 Verification passed (Tests PASS"));
+  assert.ok(passIdx !== -1, `one PASS line names each green check, got: ${chatLines.join(" / ")}`);
+  assert.ok(/Audit APPROVED/.test(chatLines[passIdx] ?? ""), "the audit verdict rides the PASS line");
+  // Findings-first: the PASS line rides after the findings, before Next.
+  const findingsIdx = chatLines.indexOf("### Key Findings & Remediation");
+  const nextIdx = chatLines.indexOf("### Next");
+  assert.ok(findingsIdx !== -1 && findingsIdx < passIdx && passIdx < nextIdx, "findings precede verification, Next closes the card");
 });
 
 test("Tests row reports FAIL on nonzero failures and pipes never break the table", () => {
@@ -83,6 +84,65 @@ test("Tests row reports FAIL on nonzero failures and pipes never break the table
   assert.ok(row, "Tests row present");
   assert.match(row!, /^\| Tests \| FAIL \|/, "nonzero failures read FAIL");
   assert.ok(!/(?<!\\)\|/.test(row!.slice("| Tests | FAIL | ".length, -2)), "cell pipes escaped");
+  // Audit 2026-09-13: failure keeps the full table — findings still lead.
+  const tableIdx = failing.chatLines.indexOf("### Verification Summary");
+  const findingsIdx = failing.chatLines.indexOf("### Key Findings & Remediation");
+  const nextIdx = failing.chatLines.indexOf("### Next");
+  assert.ok(tableIdx !== -1, "failing verification renders the full table");
+  assert.ok(!failing.chatLines.some((l) => l.startsWith("\u2014 Verification passed")), "no PASS line on failure");
+  assert.ok(findingsIdx !== -1 && findingsIdx < tableIdx && tableIdx < nextIdx, "findings precede the failure table, Next closes the card");
+});
+
+test("REPORTED verification stays visible — unclaimed status never auto-hides", () => {
+  const { chatLines } = render({
+    goal: seedGoal({
+      id: "20260911-rich-reported",
+      objective: "x",
+      completionSummary: SIX.replace("Tests: bun test 2075 pass, 0 fail", "Tests: exit 0, log kept"),
+    }) as unknown as Goal,
+  });
+  assert.ok(chatLines.includes("### Verification Summary"), "REPORTED keeps the table");
+  assert.ok(chatLines.some((l) => /^\| Tests \| REPORTED \|/.test(l)), "bare-exit notes honestly stay REPORTED");
+});
+
+test("commit hashes stay out of the chat but ride the archive record", () => {
+  const hashed = [
+    "Outcome: shipped the hash audit",
+    "Changed: extensions/completion-summary.ts in 02871aa6",
+    "Evidence: gate green, tarball built from a8f3fad5c9e2b1a4d6f8e0c2b4a6d8e0f1a3b5c7d9",
+    "Tests: bun test 2075 pass, 0 fail",
+    "Unresolved: none",
+    "Next: replay on next contact",
+  ].join("\n");
+  const goal = seedGoal({
+    id: "20260911-rich-hash",
+    objective: "audit hash surfacing",
+    completionSummary: hashed,
+    telemetry: { turns: 9, fileWrites: 4, bashCalls: 2 },
+    auditHistory: [
+      { at: "2026-09-11T00:00:00.000Z", approved: true, disapproved: false, model: "auditor-model", report: "fine" },
+    ],
+  }) as unknown as Goal;
+  const { chatLines } = buildTerminalApprovalRender({
+    goal,
+    status: "complete",
+    stopReason: "auditor approved (detached)",
+    archivePath: ".pi-glla/archive/20260911-rich-hash.md",
+    approval: "\u2014 auditor auditor-model approved.",
+    record: "\u2014 record: .pi-glla/archive/20260911-rich-hash.md",
+    findingGroups: [{ title: "Hashes", findings: ["Scrub: extensions/completion-summary.ts fixed in 02871aa6 with tests green"] }],
+  });
+  const chat = chatLines.join("\n");
+  assert.ok(!chat.includes("02871aa6"), "short hash leaves the chat findings");
+  assert.ok(!chat.includes("a8f3fad5c9e2b1a4d6f8e0c2b4a6d8e0f1a3b5c7d9"), "full SHA leaves the chat evidence");
+  assert.ok(chat.includes("extensions/completion-summary.ts"), "the file ref survives the scrub");
+  // The archive human layer renders flat findings when no groups are
+  // claimed (the verbatim six-label record carries them regardless).
+  const archive = buildRichArchiveSection(goal, "complete", ".pi-glla/archive/20260911-rich-hash.md");
+  const record = archive.join("\n");
+  assert.ok(record.includes("02871aa6"), "the archive keeps the short hash");
+  assert.ok(record.includes("a8f3fad5c9e2b1a4d6f8e0c2b4a6d8e0f1a3b5c7d9"), "the archive keeps the full SHA");
+  assert.ok(archive.includes("### Verification Summary"), "the archive keeps the full table when chat collapses it");
 });
 
 test("Next section carries the concrete action; stale self-reference still drops", () => {
