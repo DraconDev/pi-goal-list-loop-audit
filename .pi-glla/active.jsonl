@@ -4663,3 +4663,11 @@
 {"type":"model_fallback_select","value":{"scope":"drafter","fromRef":"opencode-go/muse-spark-1.3-contributor","reason":"exhausted"},"at":"2026-09-12T23:34:12.211Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":2464,"outputTokens":768,"cacheReadTokens":122353,"cacheWriteTokens":0,"totalTokens":125585},"contextUsage":{"tokens":125585,"contextWindow":200000,"percent":62.7925}},"at":"2026-09-12T23:34:46.449Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":526,"outputTokens":1165,"cacheReadTokens":128113,"cacheWriteTokens":0,"totalTokens":129804},"contextUsage":{"tokens":129804,"contextWindow":200000,"percent":64.902}},"at":"2026-09-13T00:39:55.129Z"}
+{"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-13T00:44:02.025Z"}
+{"type":"drafter_model_restored","value":{"to":"opencode-go/muse-spark-1.3-contributor","alreadyActive":true},"at":"2026-09-13T00:44:02.031Z"}
+{"type":"session_rebound","value":{"reason":"startup"},"at":"2026-09-13T00:44:07.348Z"}
+{"type":"id_invalidation","value":{"oldId":"01a054a9-e07f-705b-87a1-9421f9b906dc","newId":"01a09838-a06e-7567-8411-7ce0d093d157","reason":"session_shutdown","shutdownReason":"quit","at":"2026-09-13T00:44:07.365Z"},"at":"2026-09-13T00:44:07.365Z"}
+{"type":"session_waiting_for_load","value":{"reason":"startup"},"at":"2026-09-13T00:44:07.366Z"}
+{"type":"session_shutdown","value":{"reason":"resume"},"at":"2026-09-13T00:44:13.764Z"}
+{"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-13T00:44:14.150Z"}
+{"type":"id_invalidation","value":{"oldId":"01a09838-a06e-7567-8411-7ce0d093d157","newId":"01a054a9-e07f-705b-87a1-9421f9b906dc","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-13T00:44:14.158Z"},"at":"2026-09-13T00:44:14.158Z"}
