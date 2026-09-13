@@ -2,23 +2,7 @@
 
 # Next
 
-
-
-
-##
-working on staged draft
-
-##
-
-shoudl we add list and goal and maybe loop as skill so the agent can trigger it too during normal chat, much liek it owuld use tasks 
-
-list add too
-
 # Later
-
-##
-working on summary
-
 
 # Research
 investigate 
