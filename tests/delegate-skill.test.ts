@@ -42,7 +42,7 @@ test("package exposes the skill directory and pi.skills manifest entry", () => {
 test("skill documents consent and auto-activation boundaries", () => {
   assert.match(SKILL, /list_add/);
   assert.match(SKILL, /propose_goal_draft/);
-  assert.match(SKILL, /Confirm dialog/);
+  assert.match(SKILL, /Confirm\s+dialog/);
   assert.match(SKILL, /Never call `list_activate`/);
   assert.match(SKILL, /first item may activate immediately/);
   assert.match(SKILL, /Worker and subagent sessions do not own GLLA state/);
@@ -53,5 +53,5 @@ test("skill treats pasted list-like input as supplied, not an exactness choice",
   assert.match(SKILL, /one `list_add` call/);
   assert.match(SKILL, /Do \*\*not\*\* ask whether the user wants the list/);
   assert.match(SKILL, /there is no such choice/);
-  assert.match(SKILL, /genuinely ambiguous individual item/);
+  assert.match(SKILL, /genuinely\s+ambiguous individual item/);
 });

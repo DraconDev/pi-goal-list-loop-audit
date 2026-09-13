@@ -43,3 +43,11 @@ for (const name of DRAFTING_PROMPTS) {
     assert.ok(/say\s+what's wrong/i.test(p), "the correction invitation is explicit");
   });
 }
+
+test("list drafting: pasted list-like seeds use supplied wording without an exactness choice", () => {
+  const p = readPrompt("goal-loop-draft.md");
+  assert.match(p, /multi-line,\s*\n?bulleted, numbered, or checklist-style seed/);
+  assert.match(p, /propose the\s+\n?resulting items together through `items\[\]`/);
+  assert.match(p, /Do not ask whether the user wants\s+the list exact or refined/);
+  assert.match(p, /genuinely\s+\n?ambiguous individual item/);
+});
