@@ -2440,17 +2440,26 @@ function registerAgentTools(pi: any): void {
         // v0.23.7: show ALL items in full — the user approves the whole
         // batch; hidden items would be approved blind.
         const preview = p.items.map((t, i) => `  ${i + 1}. ${t}`).join("\n");
-        const batchActivates = !state.goal || state.goal.status === "complete" || state.goal.status === "aborted";
+        const startsFromEmpty = !state.goal || state.goal.status === "complete" || state.goal.status === "aborted";
+        const replacesPaused = state.goal?.status === "paused";
+        const batchActivates = startsFromEmpty || replacesPaused;
+        const activationNote = startsFromEmpty
+          ? listQueue().length > 0
+            ? "\n\n(Confirming starts the current list head immediately.)"
+            : "\n\n(List is empty — confirming ACTIVATES the first proposed item immediately as the active goal.)"
+          : replacesPaused
+            ? "\n\n(A paused objective is held — confirming resolves that carryover and ACTIVATES the current list head. Reject if you only wanted to queue these items.)"
+            : "";
         let batchConfirmed = false;
         if (autoAccept) {
           batchConfirmed = true;
-          liveCtx.ui.notify(`List batch auto-accepted (Auto-accept drafts = on in /glla settings): ${p.items.length} items${batchActivates ? " — item 1 ACTIVATES now" : ""}.`, "info");
+          liveCtx.ui.notify(`List batch auto-accepted (Auto-accept drafts = on in /glla settings): ${p.items.length} items${batchActivates ? " — the list head ACTIVATES now" : ""}.`, "info");
           appendLedger(liveCtx.cwd, "draft_autoaccepted", { kind: "batch", count: p.items.length });
         } else {
           const c = await confirmDraft(
             liveCtx,
             "Confirm list batch",
-            `${p.items.length} items:\n${preview}${batchActivates ? "\n\n(List is empty — confirming ACTIVATES item 1 immediately as the active goal.)" : ""}`,
+            `${p.items.length} items:\n${preview}${activationNote}`,
           );
           const afterConfirm = freshCtxForGeneration(draftGeneration);
           if (!afterConfirm) {
@@ -2489,10 +2498,23 @@ function registerAgentTools(pi: any): void {
         }
         draftingTarget = null;
         await ((globalThis as any).restoreDrafterModel?.() ?? Promise.resolve());
-        const wasIdle = !state.goal || state.goal.status === "complete" || state.goal.status === "aborted";
         const n = enqueueItems(liveCtx, p.items, "drafted batch");
-        if (wasIdle) {
-          return { content: [{ type: "text", text: `${n} items confirmed; first activated (list was empty). Begin work now.` }], details: {} };
+        if (n === 0) {
+          return { content: [{ type: "text", text: "No new list items were queued — the proposed batch was empty after duplicate/persistence checks." }], details: {} };
+        }
+        // enqueueItems owns the empty/terminal-slot auto-start. A paused
+        // objective is different: preserve the one-confirm batch, then route
+        // promotion through the same carryover-aware choke point so the
+        // paused record is archived before the new list head starts.
+        if (replacesPaused && state.goal?.status === "paused") {
+          const activated = activateNextListItem(liveCtx);
+          if (activated) {
+            return { content: [{ type: "text", text: `${n} items confirmed; the list head activated after paused carryover resolution. Begin work now.` }], details: {} };
+          }
+          return { content: [{ type: "text", text: `${n} items confirmed and queued (${listQueue().length} waiting), but activation was held. The paused objective remains recoverable; retry list activation after fixing the reported issue.` }], details: {} };
+        }
+        if (startsFromEmpty && state.goal?.status === "active" && state.goal.policy === "list") {
+          return { content: [{ type: "text", text: `${n} items confirmed; the first list item activated. Begin work now.` }], details: {} };
         }
         return { content: [{ type: "text", text: `${n} items confirmed and added to the list (${listQueue().length} waiting).` }], details: {} };
       }
