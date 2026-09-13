@@ -3556,11 +3556,16 @@ test("v0.34.91: detached approval notify carries the agent's completion recap, n
     // + record pointer (five 120-char label lines scan as soup, not a
     // summary — field 2026-09-04). Substance lives in the transcript
     // notice + archive; the chat stays glanceable but never boilerplate.
-    for (const label of ["Changed", "Evidence", "Tests"]) {
-      // Rich voice: informing details arrive as numbered findings (Changed/
-      // Evidence) and table rows (Tests).
-      assert.ok(recapNotifs[0]!.message.split("\n").some((line: string) => new RegExp(`^(\\d+\\. \\*\\*${label}\\*\\*|\\| ${label} \\|)`).test(line)), `approved briefing keeps informing label ${label}`);
+    for (const label of ["Changed", "Evidence"]) {
+      // Rich voice: informing details arrive as numbered findings.
+      assert.ok(recapNotifs[0]!.message.split("\n").some((line: string) => new RegExp(`^\\d+\\. \\*\\*${label}\\*\\*`).test(line)), `approved briefing keeps informing label ${label}`);
     }
+    // Audit 2026-09-13: Tests rides the verification table on failure,
+    // the auto-collapsed PASS line when green — never dropped silently.
+    assert.ok(
+      recapNotifs[0]!.message.split("\n").some((line: string) => /^(\d+\. \*\*Tests\*\*|\| Tests \||\u2014 Verification passed \(Tests)/.test(line)),
+      "approved briefing keeps the Tests proof (finding, table row, or PASS line)",
+    );
     assert.ok(recapNotifs[0]!.message.split("\n").length <= 20, "verbose rich summary stays bounded");
     // v0.38.42 (field 20260909_140404): a lone approval folds with the
     // verdict count — one canonical bullet, no model ID, no redundant

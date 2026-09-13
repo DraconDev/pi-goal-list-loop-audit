@@ -71,7 +71,8 @@ for (const idle of [true, false]) test(`pending is nonterminal; approval deliver
   assert.equal(entries.length, 1);
   assert.match(entries[0].content, /^## Done: fix routing — done when pinned — Fixed routing/);
   assert.match(entries[0].content, /1\. \*\*Changed\*\* — router\.ts/);
-  assert.match(entries[0].content, /\| Tests \| PASS \| routing suite passed/);
+  // Audit 2026-09-13: green verification auto-collapses to one PASS line.
+  assert.match(entries[0].content, /\u2014 Verification passed \(Tests PASS/);
   assert.doesNotMatch(entries[0].content, /Next:|await audit|Acknowledge briefly/);
   assert.match(entries[0].content, /• auditor approved \(1 verdict\)\./);
   assert.ok(JSON.parse(fs.readFileSync(approvalRenderStorePath(cwd), "utf8"))[0].deliveredAt);
