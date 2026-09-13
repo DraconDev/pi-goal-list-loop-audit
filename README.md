@@ -157,7 +157,8 @@ quietly inventing an unbounded backlog.
 ```text
 /list "fix the cache. Done when: tests pass"
 /list plan.md                              # import a checklist or plan file
-/list                                     # show active and waiting items
+/list                                     # interview + Confirm for a context draft
+/list show                                # show active and waiting items
 /list start                                # activate the queued head, or draft one clear recent request
 /list next                                 # explicitly skip/activate the next item
 /list next <n>                             # explicitly choose a specific item
@@ -166,6 +167,13 @@ quietly inventing an unbounded backlog.
 /list clear
 /list cancel                               # stop the active item and drop waiting items
 ```
+
+A pasted multi-line, bulleted, numbered, or checklist-style list keeps its
+item wording and boundaries; GLLA does not ask for an “exact or refined” choice.
+Only a genuinely ambiguous individual item needs clarification. The packaged
+`skills/glla-delegate/SKILL.md` records the safe normal-chat delegation path:
+explicit queue requests may use `list_add`, while discovered follow-ups are
+offered first and durable goals remain Confirm-gated.
 
 Order is the default, not the law. Automatic advance normally uses the head of
 the queue, while `/list next <n>` or the agent's `list_activate` tool can choose

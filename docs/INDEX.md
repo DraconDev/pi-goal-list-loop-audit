@@ -25,7 +25,8 @@ Policy contracts and recent changes live in the `audit/` directory of the
   extensions, bounded zero-stream retry containment, crash-safe persistence,
   packed-artifact release verification, and the 2026-09-07 display/lifecycle/
   settings audit pass (abort-latch send guards, ownership compare-and-swap,
-  auditor inherit/clear parity) and the v0.38.25 post-objective summary
+  auditor inherit/clear parity), the v0.38.53 consent-safe `glla-delegate`
+  skill/list-drafting release, and the v0.38.25 post-objective summary
   (canonical approval render, persist + replay, audit-goal counts line), the v0.38.27 selective port of PRs #45/#46 (`/loop pause` soft-hold, widget subtask count), the v0.38.28 provenance-row closure fix, and the v0.38.29 compact active-card recovery/judgment projection; see CHANGELOG.md for the full trail.
 - `../README.md`: what the plugin is, install, quickstart, and the
   architectural guarantee (drafting + confirm + detached auditor).
@@ -37,6 +38,7 @@ Policy contracts and recent changes live in the `audit/` directory of the
 - `../README.md`: what the plugin is, install, quickstart
 - `SETTINGS.md`: canonical settings reference (files, precedence, every key)
 - `../INSTALL.md`: source install / local development setup
+- `../skills/glla-delegate/SKILL.md`: normal-chat goal/list delegation and consent ladder
 - `../CHANGELOG.md`: user-facing changelog; the first versioned heading is
   the current released package version (use `/glla version` to compare with
   the registry); post-release work may appear in `Unreleased` above it.

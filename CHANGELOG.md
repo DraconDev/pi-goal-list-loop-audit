@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.38.53 — Consent-safe GLLA delegation skill and list-draft staging (2026-09-13)
+
+Added the packaged `glla-delegate` skill for normal-chat goal/list delegation.
+It documents the consent ladder, main-session ownership, auto-activation warning,
+and tool-first usage without adding new runtime powers. Its quoted frontmatter
+is validated through Pi's public loader and the packed-file release gate.
+
+### Added
+
+- **Consent-safe delegation guidance:** explicit queue requests may use
+  `list_add`; discovered follow-ups are offered first; durable goals use
+  `propose_goal_draft`; speculative queueing, unowned activation, and agent
+  `/loop` control remain prohibited.
+- **Pasted-list policy:** supplied multi-line, bullet, numbered, and checklist
+  structure is preserved without an exact-versus-refined meta-question. Only a
+  genuinely ambiguous individual item remains eligible for clarification, with
+  one-record seeds retaining the normal draft path.
+- **Release/package coverage:** `skills/glla-delegate/SKILL.md` is allowlisted,
+  declared in `pi.skills`, required by the packed-artifact smoke, and loaded
+  with zero diagnostics in the release contract.
+
+### Fixed
+
+- **Draft staging:** interview and stale-entry gates remain ahead of Confirm;
+  confirmation remains ahead of conflict handling and enqueue.
+- **Paused list carryover:** a confirmed multi-item draft now routes its first
+  promotion through the carryover-aware activation choke point, archiving the
+  paused predecessor before starting the list head instead of leaving the batch
+  stranded behind it.
+
 ## 0.38.52 — Second Gemini-gap: gate-inventory table + per-finding Test Results (2026-09-12)
 
 Surveyed five more Antigravity report screenshots
