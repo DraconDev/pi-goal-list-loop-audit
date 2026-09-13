@@ -49,6 +49,7 @@ try {
     "scripts/goal-auditor-launch.mjs",
     "scripts/goal-auditor-worker.mjs",
     "scripts/release-pack-smoke.mjs",
+    "skills/glla-delegate/SKILL.md",
   ];
   const listing = run("tar", ["-tzf", tarball]);
   for (const file of required) {
