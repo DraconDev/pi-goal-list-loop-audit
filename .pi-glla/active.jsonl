@@ -4792,3 +4792,15 @@
 {"type":"context_checkpoint_projection","value":{"goalId":"20260913103751-o9tzvz","removedPayloads":1,"retainedPayloads":1,"checkpointChars":3126,"generation":484},"at":"2026-09-13T12:52:25.403Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":484},"at":"2026-09-13T12:52:38.448Z"}
 {"type":"context_checkpoint_projection","value":{"goalId":"20260913103751-o9tzvz","removedPayloads":1,"retainedPayloads":1,"checkpointChars":3126,"generation":484},"at":"2026-09-13T12:52:38.449Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":484},"at":"2026-09-13T13:01:28.203Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260913103751-o9tzvz","removedPayloads":1,"retainedPayloads":1,"checkpointChars":3126,"generation":484},"at":"2026-09-13T13:01:28.203Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":484},"at":"2026-09-13T13:01:35.597Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260913103751-o9tzvz","removedPayloads":1,"retainedPayloads":1,"checkpointChars":3126,"generation":484},"at":"2026-09-13T13:01:35.597Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":484},"at":"2026-09-13T13:01:37.741Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260913103751-o9tzvz","removedPayloads":1,"retainedPayloads":1,"checkpointChars":3126,"generation":484},"at":"2026-09-13T13:01:37.741Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":484},"at":"2026-09-13T13:01:41.579Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260913103751-o9tzvz","removedPayloads":1,"retainedPayloads":1,"checkpointChars":3126,"generation":484},"at":"2026-09-13T13:01:41.580Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":484},"at":"2026-09-13T13:01:57.401Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260913103751-o9tzvz","removedPayloads":1,"retainedPayloads":1,"checkpointChars":3126,"generation":484},"at":"2026-09-13T13:01:57.401Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":484},"at":"2026-09-13T13:02:05.264Z"}
+{"type":"context_checkpoint_projection","value":{"goalId":"20260913103751-o9tzvz","removedPayloads":1,"retainedPayloads":1,"checkpointChars":3126,"generation":484},"at":"2026-09-13T13:02:05.264Z"}
