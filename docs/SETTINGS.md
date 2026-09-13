@@ -73,6 +73,7 @@ copies are ignored (the recovery runtime reads the global file):
 | `subagentModelStrategy` | `"inherit-parent"` | Default subagent model policy for new sessions. |
 | `subagentModelOverrides` | unset | Per-agent-type model pin; always wins over strategy. |
 | `subagentFallbacks` | unset | Per-role fallback chains (first eligible ref wins). |
+| `subagentDisplayRichness` | `"quiet"` | Ambient worker UI: `"quiet"` (default, troubled workers + count line) / `"compact"` / `"rich"`. |
 | `aggressiveMode` | `true` | Keep-going defaults (`false` = pause-first policy). |
 | `stuckMaxInterventions` | `5` (10 aggressive) | Consecutive stuck interventions before a loop stops. |
 | `subagentHangEscalationMinutes` | `30` | Confirmed no-progress minutes before child-specific abort (`0` = warn only). |

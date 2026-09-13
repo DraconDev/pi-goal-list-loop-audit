@@ -824,7 +824,9 @@ function refreshUI(ctx: ExtensionContext, force = false): void {
           const rows = agents as AgentsPanelRow[];
           // v0.38.23: the head lifesign reads the same rows the worker
           // rows render — one snapshot, two projections, never diverging.
-          const extras = assembleAgentsExtras(rows, settings.subagentDisplayRichness ?? "rich", now, theme);
+          // Audit 2026-09-13: quiet is the canonical default (2026-09-07
+          // exceptions-only decision, menu label, DEFAULT_SETTINGS).
+          const extras = assembleAgentsExtras(rows, settings.subagentDisplayRichness ?? "quiet", now, theme);
           return extras ? { agents: extras, agentRows: rows } : { agentRows: rows };
         } catch { return {}; }
       })(),

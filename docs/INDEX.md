@@ -25,14 +25,13 @@ Policy contracts and recent changes live in the `audit/` directory of the
   extensions, bounded zero-stream retry containment, crash-safe persistence,
   packed-artifact release verification, and the 2026-09-07 display/lifecycle/
   settings audit pass (abort-latch send guards, ownership compare-and-swap,
-  auditor inherit/clear parity), the v0.38.53 consent-safe `glla-delegate`
-  skill/list-drafting release, and the v0.38.25 post-objective summary
-  (canonical approval render, persist + replay, audit-goal counts line), the v0.38.27 selective port of PRs #45/#46 (`/loop pause` soft-hold, widget subtask count), the v0.38.28 provenance-row closure fix, and the v0.38.29 compact active-card recovery/judgment projection; see CHANGELOG.md for the full trail.
+  auditor inherit/clear parity), the v0.38.25 post-objective summary
+  (canonical approval render, persist + replay, audit-goal counts line), the v0.38.27 selective port of PRs #45/#46 (`/loop pause` soft-hold, widget subtask count), the v0.38.28 provenance-row closure fix, the v0.38.29 compact active-card recovery/judgment projection, and the v0.38.53 consent-safe `glla-delegate`
+  skill/list-drafting release; see CHANGELOG.md for the full trail.
 - `../README.md`: what the plugin is, install, quickstart, and the
   architectural guarantee (drafting + confirm + detached auditor).
-- `../INSTALL.md`: source install / local development setup; the recommended
-  companion plugins and the `auditor reads / writes are path-checked`
-  note.
+- `../INSTALL.md`: source install / local development setup and the
+  recommended companion plugins.
 
 ## Entry points
 - `../README.md`: what the plugin is, install, quickstart

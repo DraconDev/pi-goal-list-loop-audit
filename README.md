@@ -166,18 +166,22 @@ quietly inventing an unbounded backlog.
 /list remove <n>
 /list clear
 /list cancel                               # stop the active item and drop waiting items
+/list add <text...>                        # queue one item directly (no interview)
+/list import <file>                        # import a file: one Confirm for the whole batch
 ```
 
 A pasted multi-line, bulleted, numbered, or checklist-style list keeps its
 item wording and boundaries; GLLA does not ask for an “exact or refined” choice.
-Only a genuinely ambiguous individual item needs clarification. The packaged
+Only a genuinely ambiguous individual item needs clarification. The direct
+`/list add` path skips the interview but not consent: pasted text and files
+still get one Confirm for the whole batch before anything is queued. The packaged
 `skills/glla-delegate/SKILL.md` records the safe normal-chat delegation path:
 explicit queue requests may use `list_add`, while discovered follow-ups are
 offered first and durable goals remain Confirm-gated.
 
 Order is the default, not the law. Automatic advance normally uses the head of
 the queue, while `/list next <n>` or the agent's `list_activate` tool can choose
-another item. Numbering always matches `/list` output. After a list item is
+another item. Numbering always matches `/list show` output. After a list item is
 approved and archived, the next queued item starts automatically; no manual
 `/list next` is needed between items.
 
@@ -313,9 +317,9 @@ GLLA is the supervisor. These companions add capabilities around it:
   count + `/glla agents`. If you see the same run stacked 3× or panels
   swapping order, set pi-subagents `inlineToolDisplay: "summary"` (one
   stable row per run) and pin `fleetViewPlacement`; GLLA's own richness is
-  the `subagentDisplayRichness` setting (`/glla` → Subagents): `rich`
-  (default: worker rows + task linkage), `compact` (count line), `quiet`
-  (hung/aborting workers only). Upstream triple-render report:
+  the `subagentDisplayRichness` setting (`/glla` → Subagents): `quiet`
+  (default: troubled workers + the count line; HUNG is never silent),
+  `compact` (count line), `rich` (all worker rows). Upstream triple-render report:
   nicobailon/pi-subagents#1931.
 
 Install (or keep pinned):

@@ -2496,6 +2496,21 @@ function registerAgentTools(pi: any): void {
             };
           }
         }
+        // Audit 2026-09-13: zero-yield pre-scan BEFORE the conflict can
+        // archive — the batch conflict sits ahead of enqueueItems' own
+        // duplicate filter, so a replace-then-zero-yield run would archive
+        // the paused record and gain nothing. Pinned order is preserved:
+        // this is a read-only scan, not an enqueue mutation.
+        const completedBeforeConflict = recentlyCompletedObjectives(liveCtx.cwd);
+        const freshCount = p.items.filter((t) => {
+          const text = parseListItemDeclaration(t).objective.trim();
+          return text.length > 0 && !completedBeforeConflict.has(normalizeObjective(text));
+        }).length;
+        if (freshCount === 0) {
+          draftingTarget = null;
+          await ((globalThis as any).restoreDrafterModel?.() ?? Promise.resolve());
+          return { content: [{ type: "text", text: "No new list items were queued — every item duplicates work COMPLETED in the last 24h. No conflict was started and the current objective is unchanged." }], details: {} };
+        }
         draftingTarget = null;
         await ((globalThis as any).restoreDrafterModel?.() ?? Promise.resolve());
         // enqueueItems owns the empty/terminal-slot auto-start. A paused
@@ -2533,7 +2548,9 @@ function registerAgentTools(pi: any): void {
       const activationNote = isListDraft
         ? willActivate
           ? "\n\n(List is empty — confirming ACTIVATES this immediately as the active goal. Reject if you only wanted to add it, not start it.)"
-          : "\n\n(Goes into the list, waiting behind the active goal.)"
+          : state.goal?.status === "paused"
+            ? "\n\n(A paused objective is held — confirming queues this item, archives that paused carryover, and ACTIVATES the current list head. Reject if you only wanted to queue this item.)"
+            : "\n\n(Goes into the list, waiting behind the active goal.)"
         : "";
       let confirmed = false;
       if (autoAccept) {
@@ -2606,9 +2623,25 @@ function registerAgentTools(pi: any): void {
         }
         hydrateListQueueFromDisk(liveCtx);
         const extracted = parseListItemDeclaration(full);
+        // Audit 2026-09-13: resolve Subtask-of parent bindings like
+        // enqueueItems — the inline path used to insert children flat.
+        let singleParentId: string | undefined;
+        if (extracted.parentObjective) {
+          if (!extracted.objective) {
+            appendLedger(liveCtx.cwd, "list_subtask_refused", { source: "drafted single", reason: "empty-child" });
+            return { content: [{ type: "text", text: "The draft is a Subtask-of marker with no child text — nothing was queued. Restate the subtask, then propose again." }], details: {} };
+          }
+          const singleParent = listQueue().find((c: ListItem) => !c.parentId && normalizeObjective(c.objective) === normalizeObjective(extracted.parentObjective!));
+          if (!singleParent) {
+            appendLedger(liveCtx.cwd, "list_subtask_refused", { source: "drafted single", declaration: extracted.parentObjective.slice(0, 200) });
+            return { content: [{ type: "text", text: `The Subtask-of declaration did not match any top-level queue item ("${extracted.parentObjective}") — the draft was NOT queued. Fix the parent wording so it names the queued item exactly, then propose again.` }], details: {} };
+          }
+          singleParentId = singleParent.id;
+        }
         const item = assignQueueOrder([{
           id: newGoalId(),
           objective: extracted.objective,
+          ...(singleParentId ? { parentId: singleParentId } : {}),
           ...(extracted.agentRole ? { agentRole: extracted.agentRole } : {}),
           verificationContract: extracted.verificationContract || undefined,
           ...(extracted.parallelSafe === undefined ? {} : { parallelSafe: extracted.parallelSafe }),
@@ -2625,6 +2658,11 @@ function registerAgentTools(pi: any): void {
         replaceState({ ...state, list: [...listQueue(), item] });
         persistState(liveCtx);
         appendLedger(liveCtx.cwd, "list_added", { id: item.id, objective: item.objective, drafted: true });
+        // Audit 2026-09-13: port the v0.38.53 batch fix — a paused holder
+        // never resolves, so queueing behind it strands the item under a
+        // false "activates on completion" promise. Route through the same
+        // carryover-aware choke point instead.
+        const pausedBeforeEnqueue = state.goal?.status === "paused";
         if (!state.goal || state.goal.status === "complete" || state.goal.status === "aborted") {
           // v0.29.4: an auto-accepted draft STARTS — autoAcceptDrafts is the
           // pre-consent (the user asked for the draft in-session). The
@@ -2633,6 +2671,10 @@ function registerAgentTools(pi: any): void {
           // refused duplicates of just-completed work upstream.
           activateNextListItem(liveCtx);
           return { content: [{ type: "text", text: "Confirmed and activated (list was empty). Begin work now." }], details: {} };
+        }
+        if (pausedBeforeEnqueue && state.goal?.status === "paused") {
+          const activated = activateNextListItem(liveCtx);
+          return { content: [{ type: "text", text: activated ? `Confirmed and activated after paused carryover resolution (${listQueue().length} still waiting). Begin work now.` : `Confirmed and queued (${listQueue().length} waiting), but activation was held. The paused objective remains recoverable; retry list activation after fixing the reported issue.` }], details: {} };
         }
         return { content: [{ type: "text", text: `Confirmed and added to the list (${listQueue().length} waiting). It activates when the current goal completes.` }], details: {} };
       }
@@ -2926,12 +2968,29 @@ function registerAgentTools(pi: any): void {
       const clean = p.items.map((t) => t.trim()).filter((t) => t.length > 0);
       const wasIdle = !state.goal || state.goal.status === "complete" || state.goal.status === "aborted";
       const n = enqueueItems(liveCtx, clean, "agent list_add");
+      // Audit 2026-09-13: report post-enqueue truth, not the stale
+      // pre-enqueue snapshot — n===0 (duplicates/persist-fail) and held
+      // auto-activation both used to render as a false "now active".
+      if (n === 0) {
+        return { content: [{ type: "text", text: "No new list items were queued — the batch was empty after duplicate/persistence checks. Nothing was activated." }], details: {} };
+      }
+      if (wasIdle) {
+        const active = state.goal?.status === "active" && state.goal.policy === "list";
+        return {
+          content: [{
+            type: "text",
+            text: active
+              ? `${n} item(s) added; the first is now active. Work it normally and call complete_goal when done — the next item activates automatically.`
+              : `${n} item(s) added but activation was held. The list holds ${listQueue().length} waiting item(s); run /list next when ready.`,
+          }],
+          details: {},
+        };
+      }
+      const holder = state.goal?.status === "paused" ? "paused objective" : "active goal";
       return {
         content: [{
           type: "text",
-          text: wasIdle
-            ? `${n} item(s) added; the first is now active. Work it normally and call complete_goal when done — the next item activates automatically.`
-            : `${n} item(s) queued (${listQueue().length} waiting behind the active goal).`,
+          text: `${n} item(s) queued (${listQueue().length} waiting behind the ${holder}).`,
         }],
         details: {},
       };
@@ -2941,7 +3000,7 @@ function registerAgentTools(pi: any): void {
   pi.registerTool(defineTool({
     name: "list_activate",
     label: "Activate list item",
-    description: "Activate a specific item from the /list queue by position (1-based). Order is the default, not the law: use this when a different item should be worked next (e.g. you want to research item 5 while item 1 waits). Aborts the currently active goal if one is running.",
+    description: "Activate a specific item from the /list queue by position (1-based). Order is the default, not the law: use this when a different item should be worked next (e.g. you want to research item 5 while item 1 waits). If a live objective is running you choose update / replace / cancel first (replace archives it); a paused objective is handled as carryover, not a live conflict.",
     parameters: Type.Object({
       n: Type.Number({ description: "1-based position in the queue (1 = head)" }),
     }),
@@ -2961,6 +3020,17 @@ function registerAgentTools(pi: any): void {
       const targetItem = position.item;
       const rawIndex = position.flatIndex + 1;
       if (targetItem) {
+        // Audit 2026-09-13: screen content BEFORE the conflict can archive —
+        // a suspicious pick queues its repair instead, with the current
+        // objective preserved (mirrors the queue's own activation guard).
+        const preAssessment = assessSuspiciousObjective(targetItem.objective, targetItem.verificationContract);
+        if (preAssessment.suspicious) {
+          queueRepairAheadOfListItem(liveCtx, targetItem, preAssessment);
+          return {
+            content: [{ type: "text", text: "The requested item failed the suspicious-content screen, so a safe repair item was queued in its place; the current objective was preserved and no replacement was started." }],
+            details: {},
+          };
+        }
         const incomingWholeList = targetItem.objective + (targetItem.verificationContract ? `\nDone when:\n${targetItem.verificationContract}` : "");
         const conflict = await resolveDraftActivationConflict(liveCtx, "list", incomingWholeList);
         if (conflict !== "proceed") {

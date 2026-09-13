@@ -643,6 +643,7 @@ export const SETTINGS_KEYS: Array<keyof Settings> = [
   "subagentModelStrategy",
   "subagentModelOverrides",
   "subagentFallbacks",
+  "subagentDisplayRichness",
   "aggressiveMode",
   "stuckMaxInterventions",
   "subagentHangEscalationMinutes",

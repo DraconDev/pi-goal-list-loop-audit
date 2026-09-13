@@ -44,10 +44,32 @@ test("release contract: the release gate exercises the packed artifact", () => {
   assert.match(packageJson, /release:check[\s\S]*release-pack-smoke\.mjs/);
   assert.match(fs.readFileSync("scripts/release-pack-smoke.mjs", "utf-8"), /npm pack/);
   assert.match(fs.readFileSync("scripts/release-pack-smoke.mjs", "utf-8"), /goal\.ts/);
-  assert.match(fs.readFileSync("scripts/release-pack-smoke.mjs", "utf-8"), /skills\/glla-delegate\/SKILL\.md/);
+  assert.match(fs.readFileSync("scripts/release-pack-smoke.mjs", "utf-8"), /loadSkills\(/);
+  assert.match(fs.readFileSync("scripts/release-pack-smoke.mjs", "utf-8"), /installedPackage/);
 });
 
-test("release contract: packaged glla-delegate skill loads without diagnostics", () => {
+test("release contract: packed prompts, schema, and workers ship in the dry-run list", () => {
+  const files = dryRunFiles();
+  for (const required of [
+    "scripts/goal-compactor-worker.mjs",
+    "scripts/durable-wait.mjs",
+    "prompts/goal-loop-continuation.md",
+    "prompts/goal-loop-draft.md",
+    "prompts/goal-loop-forever-draft.md",
+    "prompts/goal-loop-forever-metricless.md",
+    "prompts/goal-loop-forever.md",
+    "prompts/goal-loop-plan-loop.md",
+    "prompts/goal-loop-plan.md",
+    "schemas/goal.schema.json",
+  ]) {
+    assert.ok(files.has(required), `${required} must be shipped`);
+  }
+});
+
+test("release contract: glla-delegate skill loads without diagnostics (source-tree fast tier)", () => {
+  // Audit 2026-09-13: this is the fast source-tree tier only. The packed-
+  // tarball tier lives in scripts/release-pack-smoke.mjs (loadSkills
+  // against the installed tree) — the pin below keeps the two linked.
   const result = loadSkills({
     cwd: process.cwd(),
     agentDir: process.cwd(),

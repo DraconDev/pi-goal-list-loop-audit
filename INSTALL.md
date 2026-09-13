@@ -31,11 +31,11 @@ GLLA loads into new pi sessions. If pi is already open, reload that session:
 
 ## Updating
 
-The status line always shows the running version (`glla: … · v0.38.48`).
+The status line always shows the running version (`glla: … · vX.Y.Z`).
 When the npm registry is ahead, it also nudges:
 
 ```text
-glla: … · v0.38.47 · update v0.38.48 available
+glla: … · vX.Y.Z · update vA.B.C available
 ```
 
 The nudge comes from a daily sidecar check (`.pi-glla/update-check.json`),
@@ -117,10 +117,16 @@ waiting for a decision.
 ```text
 /list "refactor the cache. Done when: tests pass"
 /list plan.md
-/list
+/list                                     # interview + Confirm for a context draft
+/list show                                # show active and waiting items
+/list add <text...>                        # queue one item directly (no interview)
+/list import <file>                        # import a file: one Confirm for the whole batch
 /list start
 /list next
 /list resume
+/list remove <n>
+/list clear
+/list cancel
 
 /loop
 /loop start                                  # one clear recent target, metricless

@@ -464,3 +464,39 @@ not as findings. Append-only; boxes checked only after the fix commit lands.
 - [x] FIX: LOW: completion-summary usefulness gate still uses first-occurrence segmentation while every projector uses last-occurrence (extensions/completion-summary.ts:49) — missingCompletionSummaryLabels matches via labelIndex/indexOf but compactCompletionSummary/completionSummaryLines/labelPositions segment on lastIndexOf, so a stolen label inside an earlier value passes the gate yet renders shifted; the v0.38.45 fix covered only the projectors (see findings line 446) — fixed in 6ad82207
 - [x] FIX: LOW: completing an already-complete task reports not found (extensions/loops/goal-tools.ts:2218,2257) — complete_task falls through to `Task <id> not found` when the id exists with status complete, masking typos vs state; update_task_status has the same blind spot for no-op same-status moves — fixed in 6ad82207
 - [x] FIX: LOW: sidecar writers bypass the pending sessionDir write boundary (extensions/approval-render-store.ts:69; extensions/glla-update-check.ts:58,88) — neither references stateRootPending while every core writer defers pending sessionDir resolution instead of creating a cwd fallback tree (extensions/glla-state-root.ts:84-94; tests/state-root-consumers.test.ts:77), so a pending contact can create the ambiguous cwd tree the boundary exists to prevent — fixed in 6ad82207
+
+---
+# Full-project audit pass — 2026-09-13 (v0.38.53, branch main)
+
+Three parallel scout surveys (lifecycle/staging, prompts/docs/skill,
+tests/packaging), all collected; every finding below was re-verified
+against the tree by the orchestrator before recording. Disposed scout
+claims (unproven, stale, or by-design) are recorded with rationale in
+the pass note, not as findings. Append-only; boxes checked only after
+the fix commit lands.
+
+- [ ] FIX: HIGH: tmpdir spawn-child.js fixture with require() breaks under ambient parent package.json type:module — the known 2026-09-13 field failure (stray /tmp/package.json); no .cjs rename or guard (tests/regression-shield.test.ts:429)
+- [ ] FIX: HIGH: second instance of the same non-hermetic pattern — spawn-many.js with require() in .js under mkdtemp (tests/regression-shield.test.ts:463)
+- [ ] FIX: MEDIUM: packed skill never load-tested — release-contract loads the skill from the repo cwd and the smoke asserts only SKILL.md presence, so a present-but-unloadable-as-shipped skill passes release:check (tests/release-contract.test.ts:51)
+- [ ] FIX: LOW: smoke required[] omits runtime-loaded files (compactor worker, all prompts, schema) so a files-narrowing that drops them ships green (scripts/release-pack-smoke.mjs:46)
+- [ ] FIX: LOW: pipeline probe hardcodes /tmp instead of os.tmpdir(), ignoring TMPDIR and sharing one fixed path across checkouts/users (tests/mechanical-pipeline.test.ts:63)
+- [ ] FIX: MEDIUM: single-item list draft behind a paused goal strands the item — v0.38.53 batch fix not ported: willActivate is false for paused, resolveCarryover is restore-only, the item queues with copy claiming it activates on completion though a paused holder never resolves (extensions/loops/goal-tools.ts:2532)
+- [ ] FIX: MEDIUM: list_add reports from stale pre-enqueue wasIdle with no n===0 guard — "0 item(s) added; the first is now active" on all-duplicate/persist-fail, and claims active when auto-activation is held (extensions/loops/goal-tools.ts:2927)
+- [ ] FIX: MEDIUM: list_activate runs the destructive conflict before suspicious-content screening — Replace archives the live goal, then activation can refuse on suspicious content and queue a repair instead (extensions/loops/goal-tools.ts:2965)
+- [ ] FIX: LOW: batch conflict-replace archives before the zero-yield enqueue check — doubly-confirmed razor path (paused goal + live loop + replace + all-duplicate batch) loses the paused record and gains nothing (extensions/loops/goal-tools.ts:2487)
+- [ ] FIX: LOW: single-item list draft builds the queue item inline without parentObjective binding, so Subtask-of declarations silently insert flat while enqueueItems binds parentId/refuses (extensions/loops/goal-tools.ts:2610)
+- [ ] FIX: LOW: single-draft Confirm note and terminal copy claim "waiting behind the active goal" / "activates when the current goal completes" when the holder is paused (extensions/loops/goal-tools.ts:2536)
+- [ ] FIX: LOW: list_add reply claims items wait "behind the active goal" even when the holder is paused (extensions/loops/goal-tools.ts:2934)
+- [ ] FIX: LOW: list_activate description claims it aborts the active goal, but the code asks update/replace/cancel and aborts only on Replace (extensions/loops/goal-tools.ts:2944)
+- [ ] FIX: LOW: SKILL states the Confirm dialog is the activation gate unconditionally, omitting the autoAcceptDrafts opt-out that skips it (skills/glla-delegate/SKILL.md:18)
+- [ ] FIX: MEDIUM: README /list block omits the real add|import aliases and claims numbering matches /list output, but bare /list drafts since v0.38.51 and the viewer is /list show (README.md:155)
+- [ ] FIX: MEDIUM: continuation tool grant gives list_add/list_activate with no pasted-list wording rule and no list_activate selection guard, contradicting the skill consent posture by omission (prompts/goal-loop-continuation.md:58)
+- [ ] FIX: LOW: docs/INDEX claims INSTALL carries an auditor path-checked note that exists in neither INSTALL nor README (docs/INDEX.md:34)
+- [ ] FIX: LOW: SETTINGS.md Keys table omits the shipped subagentDisplayRichness setting (docs/SETTINGS.md:46)
+- [ ] FIX: LOW: subagentDisplayRichness missing from SETTINGS_KEYS, so the drift gate passes vacuously and per-key provenance never reports it (extensions/goal-settings.ts:608)
+- [ ] FIX: LOW: README claims rich is the default richness but code default and menu label both say quiet (2026-09-07 exceptions-only decision governs) (README.md:315)
+- [ ] FIX: LOW: goal-ui fallback ?? "rich" contradicts the quiet canonical default, so the effective default depends on code path (extensions/loops/goal-ui.ts:827)
+- [ ] FIX: LOW: goal-loop-draft intro says the user invoked /goal, but draftingTemplateFile serves the file verbatim for /list normal drafts too (prompts/goal-loop-draft.md:71)
+- [ ] FIX: LOW: docs/INDEX Active-focus bullet trails v0.38.25/v0.38.27/v0.38.28/v0.38.29 after v0.38.53, reading as if older releases came later (docs/INDEX.md:19)
+- [ ] FIX: LOW: continuation header comment still tagged v0.1.0 vs package 0.38.53 — a recurring-rot tag, not a one-time stale (prompts/goal-loop-continuation.md:1)
+- [ ] FIX: LOW: INSTALL version-nudge example pins v0.38.47/v0.38.48 and the /list inventory omits show/add/remove/clear/cancel with no post-v0.38.51 bare-/list note (INSTALL.md:34)

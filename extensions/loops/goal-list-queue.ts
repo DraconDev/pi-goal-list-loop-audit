@@ -1030,6 +1030,9 @@ function currentToolContext(execCtx: unknown): ExtensionContext | null {
 defineGoalRuntimeGlobal("listQueue", { get: () => listQueue });
 defineGoalRuntimeGlobal("groupOpenChildren", { get: () => groupOpenChildren });
 defineGoalRuntimeGlobal("activateNextListItem", { get: () => activateNextListItem });
+// Audit 2026-09-13: list_activate must screen content before the conflict
+// can archive, so the repair helper joins the runtime-global bridge.
+defineGoalRuntimeGlobal("queueRepairAheadOfListItem", { get: () => queueRepairAheadOfListItem });
 defineGoalRuntimeGlobal("startDrafting", { get: () => startDrafting });
 defineGoalRuntimeGlobal("restoreDrafterModel", { get: () => restoreDrafterModel });
 defineGoalRuntimeGlobal("handleDrafterModelFailure", { get: () => handleDrafterModelFailure });

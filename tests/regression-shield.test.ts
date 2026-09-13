@@ -422,7 +422,11 @@ test("mechanical checks stay async and kill descendant processes on timeout", as
   const os = await import("node:os");
   const path = await import("node:path");
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-mech-tree-"));
-  const scriptPath = path.join(dir, "spawn-child.js");
+  // Audit 2026-09-13: .cjs, not .js — a stray parent package.json with
+  // type:module (field case: /tmp/package.json) makes node treat tmpdir
+  // .js fixtures as ESM and the require() below throws before the timeout
+  // path is ever exercised. .cjs is always CommonJS.
+  const scriptPath = path.join(dir, "spawn-child.cjs");
   const startedPath = path.join(dir, "started");
   const survivorPath = path.join(dir, "survived");
   const childCode = [
@@ -458,7 +462,8 @@ test("mechanical checks stop a runaway process group before the wall timeout", a
   const os = await import("node:os");
   const path = await import("node:path");
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-mech-fork-"));
-  const scriptPath = path.join(dir, "spawn-many.js");
+  // Audit 2026-09-13: .cjs for the same ambient-type:module reason as above.
+  const scriptPath = path.join(dir, "spawn-many.cjs");
   fs.writeFileSync(scriptPath, [
     "const { spawn } = require('node:child_process');",
     "for (let i = 0; i < 12; i++) spawn(process.execPath, ['-e', 'setTimeout(() => {}, 10000)'], { stdio: 'ignore' });",

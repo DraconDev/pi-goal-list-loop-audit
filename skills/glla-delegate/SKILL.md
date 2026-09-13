@@ -20,6 +20,8 @@ tools in the main session only:
 - If one durable, multi-hour objective is warranted, interview only what is
   genuinely unknown, then call `propose_goal_draft`; the user's Confirm
   dialog is the activation gate. Never activate a speculative raw seed.
+  (Unless Auto-accept drafts is on in /glla settings, which skips the
+  Confirm — never promise a dialog that setting suppresses.)
 - Never call `list_activate` for an item the user has not selected or clearly
   authorized. Never control `/loop` bounds, metrics, or stopping on the
   user's behalf.

@@ -1,4 +1,4 @@
-// pi-goal-list-loop-audit — v0.1.0
+// pi-goal-list-loop-audit
 // prompts/goal-loop-continuation.md
 //
 // This file is exported as a raw string. We don't use string-concat in TS for
@@ -55,7 +55,7 @@ When a goal, list item, or pending task explicitly says `Agent: Designer`, `Role
 
 ## Available tools
 
-You have `read`, `write`, `edit`, `bash`, `grep`, `find`, `ls`, the `subagent` tool, and the goal toolkit (`propose_task_list`, `complete_task`, `update_task_status`, `update_task_batch`, `record_goal_judgment`, `pause_goal`, `complete_goal`), plus the list tools (`list_add`, `list_status`, `list_activate`) — when the user asks to queue more work ("add these to my list", "queue these 10 things"), call `list_add` with the items; when unsure what is running or waiting, call `list_status`.
+You have `read`, `write`, `edit`, `bash`, `grep`, `find`, `ls`, the `subagent` tool, and the goal toolkit (`propose_task_list`, `complete_task`, `update_task_status`, `update_task_batch`, `record_goal_judgment`, `pause_goal`, `complete_goal`), plus the list tools (`list_add`, `list_status`, `list_activate`) — when the user asks to queue more work ("add these to my list", "queue these 10 things"), call `list_add` with the items; when unsure what is running or waiting, call `list_status`. A pasted multi-line, bulleted, numbered, or checklist-style list keeps its item wording and boundaries — never ask "exact or refined"; clarify only genuinely ambiguous individual items. Never `list_activate` an item the user has not selected or clearly authorized. Drafts stay Confirm-gated (`propose_goal_draft`); never auto-activate a speculative seed.
 
 If the objective decomposes into milestones and no task list exists yet, call `propose_task_list` early — the user confirms it, then you track progress with `complete_task` / `update_task_status` / `update_task_batch` as you go (not as a post-hoc checklist at the end). For several status changes at once, prefer one `update_task_batch` call: the whole batch validates first, milestones verify, then all statuses persist in one write. Limits: 20 tasks, 5 subtasks per task.
 

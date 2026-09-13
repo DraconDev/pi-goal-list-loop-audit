@@ -219,6 +219,7 @@ export const GOAL_RUNTIME_GLOBAL_NAMES = [
   "listQueue",
   "groupOpenChildren",
   "activateNextListItem",
+  "queueRepairAheadOfListItem",
   "startDrafting",
   "healGoalPolicy",
   "notifyExternal",
@@ -590,6 +591,7 @@ declare global {
   var listQueue: GoalRuntimeGlobals["listQueue"];
   var groupOpenChildren: GoalRuntimeGlobals["groupOpenChildren"];
   var activateNextListItem: GoalRuntimeGlobals["activateNextListItem"];
+  var queueRepairAheadOfListItem: GoalRuntimeGlobals["queueRepairAheadOfListItem"];
   var startDrafting: GoalRuntimeGlobals["startDrafting"];
   var healGoalPolicy: GoalRuntimeGlobals["healGoalPolicy"];
   var notifyExternal: GoalRuntimeGlobals["notifyExternal"];

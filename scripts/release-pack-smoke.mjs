@@ -48,7 +48,20 @@ try {
     "extensions/goal-loop-auditor-process.ts",
     "scripts/goal-auditor-launch.mjs",
     "scripts/goal-auditor-worker.mjs",
+    // Audit 2026-09-13: every runtime-loaded file rides the gate, not just
+    // the entry points — a files-narrowing that drops a prompt, the schema,
+    // or a spawned worker must fail here, not at draft time in the field.
+    "scripts/goal-compactor-worker.mjs",
+    "scripts/durable-wait.mjs",
     "scripts/release-pack-smoke.mjs",
+    "prompts/goal-loop-continuation.md",
+    "prompts/goal-loop-draft.md",
+    "prompts/goal-loop-forever-draft.md",
+    "prompts/goal-loop-forever-metricless.md",
+    "prompts/goal-loop-forever.md",
+    "prompts/goal-loop-plan-loop.md",
+    "prompts/goal-loop-plan.md",
+    "schemas/goal.schema.json",
     "skills/glla-delegate/SKILL.md",
   ];
   const listing = run("tar", ["-tzf", tarball]);
@@ -95,6 +108,19 @@ try {
   const auditor = await jiti.import(path.join(installedPackage, "extensions/goal-loop-auditor-process.ts"));
   if (typeof auditor.resolveWorkerCommand !== "function") throw new Error("packed auditor process did not expose its worker command resolver");
   if (auditor.resolveWorkerCommand("/usr/bin/node") !== "/usr/bin/node") throw new Error("packed auditor resolver returned an unexpected command");
+  // Audit 2026-09-13: presence is not loadability — run the packed skill
+  // through Pi's own loader against the INSTALLED tree (the source-tree
+  // check in release-contract.test.ts cannot catch tarball-only defects).
+  const piCoding = await jiti.import("@earendil-works/pi-coding-agent");
+  if (typeof piCoding.loadSkills !== "function") throw new Error("packed gate could not resolve Pi loadSkills");
+  const skillProbe = piCoding.loadSkills({
+    cwd: installedPackage,
+    agentDir: installedPackage,
+    skillPaths: ["skills/glla-delegate"],
+    includeDefaults: false,
+  });
+  if (skillProbe.diagnostics.length > 0) throw new Error(`packed skill has loader diagnostics: ${JSON.stringify(skillProbe.diagnostics).slice(0, 300)}`);
+  if (!skillProbe.skills.some((skill) => skill.name === "glla-delegate")) throw new Error("packed skill not discoverable by Pi loadSkills");
   console.log(`OK: installed and imported ${packageName}@${packageJson.version} from its packed tarball`);
 } finally {
   fs.rmSync(workspace, { recursive: true, force: true });

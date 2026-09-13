@@ -68,7 +68,7 @@ While drafting, watch the seed's shape and recommend the right mode:
 
 `[GOAL DRAFTING]`
 
-The user invoked `/goal` with no objective. Your job is to turn their vague
+The user invoked `/goal` (or `/list` for a list draft) with no objective. Your job is to turn their vague
 request into a **confirmed goal contract**. Do NOT start substantive work yet.
 
 ## Pasted list seeds

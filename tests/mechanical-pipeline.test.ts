@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import {
   extractMechanicalCheckCommands,
   parseMechanicalPipeline,
@@ -60,7 +62,9 @@ test("pipeline exit follows the head, never the filter", async () => {
 });
 
 test("unsafe pipeline stages never execute: 126 with no side effects", async () => {
-  const probe = "/tmp/glla-pipeline-must-not-exist";
+  // Audit 2026-09-13: probe lives under os.tmpdir() (honors TMPDIR) with a
+  // pid suffix so parallel checkouts/users cannot share one fixed path.
+  const probe = path.join(os.tmpdir(), `glla-pipeline-must-not-exist-${process.pid}`);
   try { fs.unlinkSync(probe); } catch { /* absent is the point */ }
   const res = await runMechanicalPreAuditChecks(process.cwd(), [`node --version | tee ${probe}`]);
   assert.equal(res.passed, false);
