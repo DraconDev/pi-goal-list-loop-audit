@@ -29,6 +29,7 @@
   },
   "files": [
     "extensions",
+    "skills",
     "prompts",
     "schemas",
     "scripts",
@@ -45,6 +46,9 @@
   "pi": {
     "extensions": [
       "extensions/loops/goal.ts"
+    ],
+    "skills": [
+      "skills/glla-delegate"
     ]
   },
   "scripts": {

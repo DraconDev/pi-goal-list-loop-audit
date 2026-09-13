@@ -71,6 +71,17 @@ While drafting, watch the seed's shape and recommend the right mode:
 The user invoked `/goal` with no objective. Your job is to turn their vague
 request into a **confirmed goal contract**. Do NOT start substantive work yet.
 
+## Pasted list seeds
+
+When this prompt is being used for `/list` and the user supplies a multi-line,
+bulleted, numbered, or checklist-style seed, use its structure and wording as
+provided. Strip only import syntax and empty headings/lines, then propose the
+resulting items together through `items[]`. Do not ask whether the user wants
+the list exact or refined: there is no such choice. Clarify only a genuinely
+ambiguous individual item; never turn a complete pasted list into a
+meta-choice. A direct user request to add such a list may use the normal
+bulk-enqueue path instead of drafting.
+
 ## Protocol
 
 1. If the request is vague, ask ONE focused question at a time. Offer a
