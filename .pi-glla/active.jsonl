@@ -4679,3 +4679,6 @@
 {"type":"session_shutdown","value":{"reason":"resume"},"at":"2026-09-13T01:48:17.088Z"}
 {"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-13T01:48:25.228Z"}
 {"type":"id_invalidation","value":{"oldId":"01a09872-fb34-756c-abbf-36648fde76d9","newId":"01a054a9-e07f-705b-87a1-9421f9b906dc","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-13T01:48:25.455Z"},"at":"2026-09-13T01:48:25.455Z"}
+{"type":"session_shutdown","value":{"reason":"reload"},"at":"2026-09-13T10:33:31.248Z"}
+{"type":"session_rebound","value":{"reason":"reload"},"at":"2026-09-13T10:33:33.516Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":446,"outputTokens":549,"cacheReadTokens":133873,"cacheWriteTokens":0,"totalTokens":134868},"contextUsage":{"tokens":134868,"contextWindow":200000,"percent":67.43400000000001}},"at":"2026-09-13T10:34:04.019Z"}
