@@ -1,6 +1,6 @@
 ---
 name: glla-delegate
-description: Use GLLA's audited goals and list queue from normal chat: queue explicit work, offer follow-ups before adding them, or draft a confirmed goal. Includes safe handling for pasted list-like input.
+description: "Use GLLA's audited goals and list queue from normal chat: queue explicit work, offer follow-ups before adding them, or draft a confirmed goal. Includes safe handling for pasted list-like input."
 ---
 
 # GLLA delegation

@@ -2,6 +2,7 @@ import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
+import { loadSkills } from "@earendil-works/pi-coding-agent";
 
 function dryRunFiles(): Set<string> {
   const raw = execFileSync("npm", ["pack", "--dry-run", "--json", "--ignore-scripts"], {
@@ -43,6 +44,18 @@ test("release contract: the release gate exercises the packed artifact", () => {
   assert.match(packageJson, /release:check[\s\S]*release-pack-smoke\.mjs/);
   assert.match(fs.readFileSync("scripts/release-pack-smoke.mjs", "utf-8"), /npm pack/);
   assert.match(fs.readFileSync("scripts/release-pack-smoke.mjs", "utf-8"), /goal\.ts/);
+  assert.match(fs.readFileSync("scripts/release-pack-smoke.mjs", "utf-8"), /skills\/glla-delegate\/SKILL\.md/);
+});
+
+test("release contract: packaged glla-delegate skill loads without diagnostics", () => {
+  const result = loadSkills({
+    cwd: process.cwd(),
+    agentDir: process.cwd(),
+    skillPaths: ["skills/glla-delegate"],
+    includeDefaults: false,
+  });
+  assert.deepEqual(result.diagnostics, []);
+  assert.ok(result.skills.some((skill) => skill.name === "glla-delegate"), "glla-delegate must be discoverable by Pi");
 });
 
 test("release contract: docs index tracks the package version", () => {
