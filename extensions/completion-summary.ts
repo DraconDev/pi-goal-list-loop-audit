@@ -468,7 +468,7 @@ function bannerVerdict(auditStatus: string): string {
  * named by omission, never invented). The render call sites own cwd. */
 export function buildFinalRepoStateLines(cwd: string): string[] | undefined {
   try {
-    const run = (args: string[]): string => execFileSync("git", args, { cwd, encoding: "utf8", timeout: 5000 }).trim();
+    const run = (args: string[]): string => execFileSync("git", args, { cwd, encoding: "utf8", timeout: 5000, stdio: ["ignore", "pipe", "ignore"] }).trim();
     const branch = run(["branch", "--show-current"]) || "detached";
     const head = run(["log", "-1", "--format=%h %s"]);
     const short = run(["status", "--short"]);

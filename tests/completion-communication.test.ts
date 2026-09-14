@@ -69,10 +69,10 @@ for (const idle of [true, false]) test(`pending is nonterminal; approval deliver
   assert.equal(entries.length, 0);
   await waitFor(() => readState(cwd).goal === null);
   assert.equal(entries.length, 1);
-  assert.match(entries[0].content, /^## Done: fix routing — done when pinned — Fixed routing/);
+  assert.match(entries[0].content, /^## Done — auditor approved \(1 verdict\)\n\n## Done: fix routing — done when pinned — Fixed routing/);
   assert.match(entries[0].content, /1\. \*\*Changed\*\* — router\.ts/);
-  // Audit 2026-09-13: green verification auto-collapses to one PASS line.
-  assert.match(entries[0].content, /\u2014 Verification passed \(Tests PASS/);
+  // v0.38.55 (full parity): the verification table always renders in full.
+  assert.match(entries[0].content, /\| Tests \| PASS \|/);
   assert.doesNotMatch(entries[0].content, /Next:|await audit|Acknowledge briefly/);
   assert.match(entries[0].content, /• auditor approved \(1 verdict\)\./);
   assert.ok(JSON.parse(fs.readFileSync(approvalRenderStorePath(cwd), "utf8"))[0].deliveredAt);
@@ -112,7 +112,7 @@ test("complete_goal findingGroups ride the claim into the grouped terminal rende
     { title: "Router", findings: ["Reroute: router.ts:12 pins the path"] },
   ], "the pending claim stores the sanitized groups");
   await waitFor(() => entries.length === 1);
-  assert.match(entries[0].content, /^## Done: fix routing with areas — done when pinned — Fixed routing\./);
+  assert.match(entries[0].content, /^## Done — auditor approved \(1 verdict\)\n\n## Done: fix routing with areas — done when pinned — Fixed routing\./);
   assert.ok(entries[0].content.includes("#### 1. Router"), "grouped area subsection reaches the chat");
   assert.ok(entries[0].content.includes("- **Reroute** — router.ts:12 pins the path"), "nested evidence bullet reaches the chat");
 });
