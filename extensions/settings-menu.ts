@@ -644,6 +644,15 @@ export function buildSettingsRows(
       description:
         "post-completion follow-up enqueuer: mode, triggers, cascade, caps (postaudit / reviewer)",
     },
+    {
+      id: "contextCheckpointProjection",
+      section: "other",
+      label: "Goal-event checkpoint projection",
+      valueText: show("contextCheckpointProjection", "off"),
+      sourceText: src("contextCheckpointProjection"),
+      description:
+        "off (default): skip the projection and let pi manage context compaction \u00b7 on: use legacy bounded checkpoint projection, which evicts/re-splices a message on every new goal-event and can bust the provider's prompt-cache prefix for that turn",
+    },
   );
 
   return rows;

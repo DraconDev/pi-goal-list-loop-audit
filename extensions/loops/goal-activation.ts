@@ -2847,7 +2847,18 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // active, while passing both states so a paused goal is not mistaken for
     // the loop's current objective.
     const activeLoop = state.loop?.active === true ? state.loop : null;
-    const checkpointProjection = state.goal || activeLoop
+    // v0.38.54: opt-in gate. Evicting/re-splicing a message on every new
+    // goal-event payload changes the byte-for-byte message array sent to the
+    // provider on that turn, which busts the provider's prompt-cache prefix
+    // for everything after it — even though the checkpoint TEXT itself is
+    // kept byte-stable (see the CACHE-STABILITY INVARIANT comments in
+    // context-checkpoint.ts). Field report: ~34 avoidable full-prefix cache
+    // misses in one long goal-loop session. Sessions that already rely on
+    // pi's own compaction for context management leave this disabled (the
+    // default); legacy bounded checkpoint behavior is opt-in via
+    // settings.contextCheckpointProjection = true.
+    const checkpointProjectionEnabled = loadSettings(ctx.cwd).contextCheckpointProjection !== false;
+    const checkpointProjection = checkpointProjectionEnabled && (state.goal || activeLoop)
       ? projectBoundedGllaContext(
         hygiene.messages,
         buildAuthoritativeContextCheckpoint({

@@ -7,6 +7,7 @@ import { continuationPrompt } from "../extensions/goal-continuation.ts";
 import { measureContextGrowth } from "../extensions/context-growth.ts";
 import activate, { __testOnlyResetOwnerSession } from "../extensions/loops/goal.ts";
 import { state, replaceState } from "../extensions/goal-state.ts";
+import { saveSettings } from "../extensions/goal-settings.ts";
 import * as fs from "node:fs";
 import { makeMockCtx, MockPi, tmpCwd } from "./harness/mock-pi.js";
 import {
@@ -298,8 +299,9 @@ test("loop checkpoint is byte-stable across volatile loop progress (prefix-cache
   assert.notEqual(retargeted, before);
 });
 
-test("context hook projects loop-only state and records loop authority", async () => {
+test("context hook projects loop-only state and records loop authority when enabled", async () => {
   const cwd = tmpCwd();
+  saveSettings("project", cwd, { contextCheckpointProjection: true });
   const previousState = { ...state };
   replaceState({ ...previousState, goal: null, loop: loopFixture() });
   try {
@@ -334,8 +336,34 @@ test("context hook projects loop-only state and records loop authority", async (
   }
 });
 
-test("paused goal plus active loop preserves both authorities in the checkpoint", async () => {
+test("context checkpoint projection can be disabled to preserve goal-event prompt-cache continuity", async () => {
   const cwd = tmpCwd();
+  const previousState = { ...state };
+  replaceState({ ...previousState, goal: goalFixture(), loop: undefined });
+  saveSettings("project", cwd, { contextCheckpointProjection: false });
+  try {
+    const pi = new MockPi();
+    activate(pi.api);
+    __testOnlyResetOwnerSession();
+    const ctx = makeMockCtx(cwd, { sessionManager: { name: "checkpoint-projection-disabled" } });
+    const handlers = (pi as unknown as { handlers: Map<string, (...args: unknown[]) => unknown> }).handlers;
+    const handler = handlers.get("context");
+    assert.ok(handler);
+
+    const messages = [gllaPayload(1), gllaPayload(2), gllaPayload(3)];
+    const result = await handler({ type: "context", messages }, ctx) as { messages?: unknown[] };
+    assert.equal(result.messages, undefined, "disabled projection must leave the original message sequence intact");
+    assert.equal(messages.length, 3);
+    assert.deepEqual(messages.map((message) => message.content), ["continuation-1", "continuation-2", "continuation-3"]);
+    assert.ok(!fs.existsSync(`${cwd}/.pi-glla/active.jsonl`), "disabled projection must not record a checkpoint projection event");
+  } finally {
+    replaceState(previousState);
+  }
+});
+
+test("paused goal plus active loop preserves both authorities in the checkpoint when enabled", async () => {
+  const cwd = tmpCwd();
+  saveSettings("project", cwd, { contextCheckpointProjection: true });
   const previousState = { ...state };
   const pausedGoal: Goal = { ...goalFixture(), status: "paused" };
   const loop = loopFixture();
@@ -429,8 +457,9 @@ test("oversized paused goal plus active loop reserves required checkpoint fields
   assert.match(checkpoint, /Lifecycle fence:/);
 });
 
-test("context hook uses current durable state and records the projection", async () => {
+test("context hook uses current durable state and records the projection when enabled", async () => {
   const cwd = tmpCwd();
+  saveSettings("project", cwd, { contextCheckpointProjection: true });
   const previousGoal = state.goal;
   replaceState({ goal: goalFixture() });
   try {

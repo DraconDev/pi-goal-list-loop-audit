@@ -1162,6 +1162,20 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       }
       return;
     }
+    case "contextCheckpointProjection": {
+      const v = await ctx.ui.select("Goal-event checkpoint projection — retain only the newest goal-event payload and inject a bounded durable checkpoint", [
+        "off — leave goal-event history to pi's normal context compaction; preserves prompt-cache continuity (default)",
+        "on — bound repeated goal-event payloads with legacy checkpoint projection",
+      ]);
+      if (v) {
+        const on = v.startsWith("on");
+        saveSettings("project", ctx.cwd, { contextCheckpointProjection: on ? true : false });
+        ctx.ui.notify(on
+          ? "Goal-event checkpoint projection ON — continuation payloads are bounded."
+          : "Goal-event checkpoint projection OFF — pi manages goal-event context and prompt-cache continuity.", "info");
+      }
+      return;
+    }
     case "hourlyRetryProbe": {
       const v = await ctx.ui.select("Hourly main-model retry — an extra blind :00:30 attempt while recovery is parked (the normal retry ladder is separate)", [
         "on — fire an extra probe at :00:30 every hour while parked (default)",

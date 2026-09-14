@@ -83,4 +83,5 @@ copies are ignored (the recovery runtime reads the global file):
 | `stallSimilarityThreshold` | `0.6` | Trigram similarity above this (tool-less) is a nudge. |
 | `postaudit` | unset | Post-completion audit config (same shape as legacy `reviewer`). |
 | `toolOverrides` | unset | Per-tool allow/hide/per-tool-config overrides. |
+| `contextCheckpointProjection` | `false` | Off (default): leave all goal-event payloads in the provider context and let pi's normal compaction manage them; this preserves prompt-cache continuity between goal-event ticks. On: use the legacy bounded durable-checkpoint projection. |
 | `reviewer` | legacy | Deprecated alias for `postaudit`; migrated on load, `postaudit` wins. |

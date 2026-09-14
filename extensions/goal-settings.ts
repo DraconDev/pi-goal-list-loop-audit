@@ -270,6 +270,19 @@ export interface Settings {
     /** Per-tool configuration knobs (extensible). */
     perToolConfig?: Record<string, Record<string, unknown>>;
   };
+  /** v0.38.54: whether the per-send goal-event checkpoint projection
+   * (projectBoundedGllaContext in context-checkpoint.ts) runs at all.
+   * Default false leaves context pruning to pi's native compaction. Field
+   * report: evicting/re-splicing a message on every new goal-event tick
+   * changes the exact byte prefix sent to the provider on that turn, which
+   * busts provider prompt-cache continuity for the remainder of the
+   * request even though the checkpoint TEXT itself is byte-stable — one
+   * observed session paid for ~34 avoidable full-prefix cache misses this
+   * way. Sessions that already rely on pi's own compaction/context
+   * management for long-running goal loops leave this false (the default)
+   * to skip the projection and let goal-event payloads flow through
+   * unmodified. */
+  contextCheckpointProjection?: boolean;
 }
 
 /** These settings describe global provider-recovery policy, not a project
@@ -373,6 +386,10 @@ export const DEFAULT_SETTINGS: Settings = {
   // v0.35.x: repeated Pi-core busy/no-stream recovery is useful for a
   // transient retry sleeper, but must remain finite and user-configurable.
   zombieRetryMaxAttempts: DEFAULT_ZOMBIE_RETRY_MAX_ATTEMPTS,
+  // v0.38.54: pi's native compaction is the sole context-pruning authority
+  // by default. Opt in only for environments that explicitly need GLLA's
+  // legacy bounded checkpoint behavior.
+  contextCheckpointProjection: false,
 };
 
 // Re-exported for compatibility; the dependency-free state-root module owns
@@ -416,6 +433,9 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   // extension specs. Hand-edited files may carry junk; keep it bounded and
   // deterministic so the request hash is stable.
   settings.auditorAllowedExtensions = normalizeAuditorAllowedExtensions(settings.auditorAllowedExtensions);
+  if (typeof settings.contextCheckpointProjection !== "boolean") {
+    settings.contextCheckpointProjection = false;
+  }
   if (settings.stateRoot !== "sessionDir" && settings.stateRoot !== "workingDir") {
     settings.stateRoot = "workingDir";
   }
@@ -653,6 +673,7 @@ export const SETTINGS_KEYS: Array<keyof Settings> = [
   "stallSimilarityThreshold",
   "postaudit",
   "toolOverrides",
+  "contextCheckpointProjection",
   "reviewer", // v0.33.1: legacy alias — menu saves can still write it (when postaudit is unset) and load-migration consolidates it into postaudit on the next read; provenance must know it exists or reviewer-sourced values report "unknown"
 ];
 
