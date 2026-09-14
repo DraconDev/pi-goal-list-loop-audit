@@ -5063,3 +5063,4 @@
 {"type":"terminal_approval_render_persisted","value":{"goalId":"20260913164624-cx9fh4","delivered":false,"lines":19},"at":"2026-09-13T18:03:36.394Z"}
 {"type":"terminal_completion_notice_sent","value":{"goalId":"20260913164624-cx9fh4","payloadChars":997},"at":"2026-09-13T18:03:36.418Z"}
 {"type":"terminal_approval_render_replayed","value":{"goalId":"20260913164624-cx9fh4","createdAt":"2026-09-13T18:03:36.392Z"},"at":"2026-09-13T18:03:36.418Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":null,"contextUsage":{"tokens":133657,"contextWindow":200000,"percent":66.8285}},"at":"2026-09-14T12:46:37.876Z"}
