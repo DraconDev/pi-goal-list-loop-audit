@@ -66,7 +66,7 @@ test("verification always renders the full table — the PASS-line collapse is r
   const { chatLines } = render();
   assert.ok(chatLines.includes("### Verification Summary"), "table renders even when every row is green");
   assert.ok(chatLines.some((l) => /^\| Tests \| PASS \|/.test(l)), "green Tests row present");
-  assert.ok(chatLines.some((l) => /^\| Audit \|.*\| APPROVED \u00d71 \|/.test(l)), "the audit verdict rides its own row");
+  assert.ok(chatLines.some((l) => /^\| Audit \|.*APPROVED \u00d71/.test(l)), "the audit verdict rides its own row");
   assert.ok(!chatLines.some((l) => l.startsWith("\u2014 Verification passed")), "no PASS line stands in for the table");
   // Findings-first: the table rides after the findings, before Next.
   const findingsIdx = chatLines.indexOf("### Key Findings & Remediation");
@@ -126,6 +126,7 @@ test("commit hashes ride the chat (full parity) and the archive record", () => {
       { at: "2026-09-11T00:00:00.000Z", approved: true, disapproved: false, model: "auditor-model", report: "fine" },
     ],
   }) as unknown as Goal;
+  const group = "Scrub: extensions/completion-summary.ts fixed in 02871aa6, tarball from a8f3fad5c9e2b1a4d6f8e0c2b4a6d8e0f1a3b5c7d9 with tests green";
   const { chatLines } = buildTerminalApprovalRender({
     goal,
     status: "complete",
@@ -133,7 +134,7 @@ test("commit hashes ride the chat (full parity) and the archive record", () => {
     archivePath: ".pi-glla/archive/20260911-rich-hash.md",
     approval: "\u2014 auditor auditor-model approved.",
     record: "\u2014 record: .pi-glla/archive/20260911-rich-hash.md",
-    findingGroups: [{ title: "Hashes", findings: ["Scrub: extensions/completion-summary.ts fixed in 02871aa6 with tests green"] }],
+    findingGroups: [{ title: "Hashes", findings: [group] }],
   });
   const chat = chatLines.join("\n");
   assert.ok(chat.includes("02871aa6"), "short hash rides the chat findings");
@@ -181,10 +182,18 @@ test("finding and next lines render uncapped (full parity)", () => {
     "Next: ship it",
   ].join("\n");
   const r = render({
-    goal: seedGoal({ id: "20260911-rich-cap", objective: "x", completionSummary: crowded }) as unknown as Goal,
+    goal: seedGoal({
+      id: "20260911-rich-cap",
+      objective: "x",
+      completionSummary: crowded,
+      telemetry: { turns: 9, fileWrites: 4, bashCalls: 2 },
+      auditHistory: [
+        { at: "2026-09-11T00:00:00.000Z", approved: true, disapproved: false, model: "auditor-model", report: "fine" },
+      ],
+    }) as unknown as Goal,
   });
   const numbered = r.chatLines.filter((l) => /^\d+\. \*\*/.test(l));
-  assert.equal(numbered.length, 3, `every flat finding renders, got ${numbered.length}`);
+  assert.equal(numbered.length, 2, `every flat finding renders, got ${numbered.length}`);
 });
 
 test("no audit history means no Audit row, approval voice still closes", () => {

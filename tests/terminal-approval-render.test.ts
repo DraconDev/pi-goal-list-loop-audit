@@ -94,7 +94,7 @@ test("canonical render folds a lone approval with the verdict count, model-free"
   assert.ok(!render.transcriptLines.some((l) => /^\s*Next\s*:/i.test(l)), "transcript strips the stale Next too");
   assert.equal(render.approval, "— auditor auditor-model approved on the provider retry.", "the shared approval field keeps the full string for archive/persist consumers");
   assert.ok(render.recap.length > 0, "external single line still produced");
-  assert.equal(render.outcome, (render.chatLines[0] ?? "").replace(/^## Done: ship the post-objective summary with persist and replay — /, ""), "outcome matches the chat headline");
+  assert.equal(render.outcome, (render.chatLines[2] ?? "").replace(/^## Done: ship the post-objective summary with persist and replay — /, ""), "outcome matches the chat headline under the banner");
 });
 
 test("standalone audit bullet survives only with news", () => {
