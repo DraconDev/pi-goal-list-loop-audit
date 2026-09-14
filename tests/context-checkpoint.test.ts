@@ -86,6 +86,14 @@ function gllaPayload(index: number): Record<string, unknown> {
   };
 }
 
+/** v0.38.54: projection is opt-in (default off). Tests that pin the legacy
+ * per-turn splice write the explicit setting; tests without it pin the
+ * default-off path (transcript untouched, provider prefix-cache preserved). */
+function enableProjection(cwd: string): void {
+  fs.mkdirSync(`${cwd}/.pi-glla`, { recursive: true });
+  fs.writeFileSync(`${cwd}/.pi-glla/settings.json`, JSON.stringify({ contextCheckpointProjection: true }));
+}
+
 test("authoritative checkpoint carries stable state only — no dynamic fields", () => {
   const checkpoint = buildAuthoritativeContextCheckpoint({
     goal: goalFixture(),
@@ -300,6 +308,7 @@ test("loop checkpoint is byte-stable across volatile loop progress (prefix-cache
 
 test("context hook projects loop-only state and records loop authority", async () => {
   const cwd = tmpCwd();
+  enableProjection(cwd);
   const previousState = { ...state };
   replaceState({ ...previousState, goal: null, loop: loopFixture() });
   try {
@@ -336,6 +345,7 @@ test("context hook projects loop-only state and records loop authority", async (
 
 test("paused goal plus active loop preserves both authorities in the checkpoint", async () => {
   const cwd = tmpCwd();
+  enableProjection(cwd);
   const previousState = { ...state };
   const pausedGoal: Goal = { ...goalFixture(), status: "paused" };
   const loop = loopFixture();
@@ -431,6 +441,7 @@ test("oversized paused goal plus active loop reserves required checkpoint fields
 
 test("context hook uses current durable state and records the projection", async () => {
   const cwd = tmpCwd();
+  enableProjection(cwd);
   const previousGoal = state.goal;
   replaceState({ goal: goalFixture() });
   try {
@@ -477,4 +488,54 @@ test("audit-2026-09-06: marker text without customType is content, never control
   const kept = result.messages.filter((m) => (m as { customType?: unknown }).customType !== AUTHORITATIVE_CHECKPOINT_CUSTOM_TYPE);
   assert.equal(kept.length, 1);
   assert.match((kept[0] as { content: string }).content, /\[GOAL CHECKPOINT/);
+});
+
+test("v0.38.54: context hook leaves the transcript alone by default (prefix-cache continuity)", async () => {
+  // Default-off: rewriting history every turn busts the provider
+  // prefix-cache, while the fresh continuation prompt already carries live
+  // durable state. With no explicit opt-in the hook must return no message
+  // rewrite and record no projection event.
+  const cwd = tmpCwd();
+  const previousGoal = state.goal;
+  replaceState({ goal: goalFixture() });
+  try {
+    const pi = new MockPi();
+    activate(pi.api);
+    __testOnlyResetOwnerSession();
+    const ctx = makeMockCtx(cwd, { sessionManager: { name: "checkpoint-default-off" } });
+    const handlers = (pi as unknown as { handlers: Map<string, (...args: unknown[]) => unknown> }).handlers;
+    const handler = handlers.get("context");
+    assert.ok(handler);
+
+    const sent = [gllaPayload(1), gllaPayload(2), gllaPayload(3)];
+    const result = await handler({ type: "context", messages: sent }, ctx) as { messages?: unknown[] };
+    assert.equal(result.messages, undefined, "default-off must not rewrite the transcript");
+
+    const ledgerPath = `${cwd}/.pi-glla/active.jsonl`;
+    if (fs.existsSync(ledgerPath)) {
+      const types = fs.readFileSync(ledgerPath, "utf8")
+        .split("\\n").filter(Boolean).map((line) => (JSON.parse(line) as { type: string }).type);
+      assert.ok(!types.includes("context_checkpoint_projection"), "default-off must not record a projection event");
+    }
+  } finally {
+    replaceState({ goal: previousGoal });
+  }
+});
+
+test("v0.38.54: junk contextCheckpointProjection normalizes to unset (default off)", async () => {
+  const { normalizeLoadedSettings, DEFAULT_SETTINGS } = await import("../extensions/goal-settings.ts");
+  const normalized = normalizeLoadedSettings({ ...DEFAULT_SETTINGS, contextCheckpointProjection: "yes" } as unknown as Parameters<typeof normalizeLoadedSettings>[0]);
+  assert.equal(normalized.contextCheckpointProjection, undefined);
+  const enabled = normalizeLoadedSettings({ ...DEFAULT_SETTINGS, contextCheckpointProjection: true });
+  assert.equal(enabled.contextCheckpointProjection, true);
+});
+
+test("v0.38.54: settings menu carries the opt-in row, off by default", async () => {
+  const { buildSettingsRows } = await import("../extensions/settings-menu.ts");
+  const rows = buildSettingsRows({} as Parameters<typeof buildSettingsRows>[0], {});
+  const row = rows.find((r) => r.id === "contextCheckpointProjection");
+  assert.ok(row, "menu must carry the projection row");
+  assert.equal(row!.section, "other");
+  assert.equal(row!.valueText, "off");
+  assert.equal(row!.sourceText, "default");
 });
