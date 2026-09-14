@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — Full-parity terminal card
+
+The post-objective summary now shares everything the archive knows (owner:
+full parity with the long example closes): a `## Done — auditor …`
+verdict banner opens the card, findings/values/Next render uncapped, the
+verification table always renders in full (the green PASS-line collapse is
+retired), gate rows carry an optional repro `command` with its own Command
+column, commit hashes stay visible, and a `### Final Repository State`
+section (branch, HEAD, tree cleanliness, best-effort) closes the card
+ahead of the record trailer. One surface per fact is preserved: the banner
+owns the verdict, the footer stays liveness-only.
+
 ## 0.38.54 — Opt-in context-checkpoint projection (2026-09-14)
 
 The per-turn `context`-hook projection rewrote history on every turn, busting
