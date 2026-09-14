@@ -5195,3 +5195,6 @@
 {"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-14T20:23:54.830Z"}
 {"type":"id_invalidation","value":{"oldId":"01a0a196-fb08-7520-afac-a54f15764b97","newId":"01a054a9-e07f-705b-87a1-9421f9b906dc","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-14T20:23:54.834Z"},"at":"2026-09-14T20:23:54.834Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":424,"outputTokens":401,"cacheReadTokens":142833,"cacheWriteTokens":0,"totalTokens":143658},"contextUsage":{"tokens":143658,"contextWindow":200000,"percent":71.829}},"at":"2026-09-14T20:39:48.637Z"}
+{"type":"owner_superseded","value":{"prevPid":2312317,"prevAt":1789418388634,"prevSession":null,"byPid":2845475,"bySession":"01a054a9-e07f-705b-87a1-9421f9b906dc"},"at":"2026-09-14T21:23:27.903Z"}
+{"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-14T21:23:27.909Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":8396,"outputTokens":1879,"cacheReadTokens":152177,"cacheWriteTokens":0,"totalTokens":162452},"contextUsage":{"tokens":162452,"contextWindow":200000,"percent":81.226}},"at":"2026-09-14T21:24:19.998Z"}
