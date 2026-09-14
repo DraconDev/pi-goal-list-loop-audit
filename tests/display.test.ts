@@ -17,7 +17,6 @@ import {
   truncate,
   wrap,
   MAIN_HOST_LABEL,
-  WORKER_TEXT_SPACER,
 } from "../extensions/goal-loop-display.ts";
 import { visibleWidth } from "@earendil-works/pi-tui";
 import type { Goal, State } from "../extensions/goal-loop-core.ts";
@@ -1034,7 +1033,7 @@ test("worker-timeout display demotes stale progress to quiet without claiming LI
   assert.match(status, /auditor ◌ quiet/);
   assert.match(status, /silent 4m 00s/);
   assert.doesNotMatch(status, /stale|worker activity|last tool|evidence:/);
-  assert.match(status, /next: worker event or \/goal cancel/);
+  assert.doesNotMatch(status, /next:/, "footer is liveness-only — no transition hint");
   assert.doesNotMatch(status, /AUDITOR · DETACHED · LIVE/);
   const widget = buildWidgetLines({ goal: g, list: [] }, stale, NOW)!.join("\\n");
   assert.match(widget, /auditor: quiet · detached worker/);
@@ -1056,7 +1055,7 @@ test("detached auditor keeps compact footer liveness and detailed widget evidenc
   assert.match(liveStatus, /MAIN HOST · SUPERVISING/);
   assert.match(liveStatus, /auditor ▶ tool executing/);
   assert.match(liveStatus, /AUDITOR · DETACHED · LIVE/);
-  assert.match(liveStatus, /next: worker completion → verdict/);
+  assert.doesNotMatch(liveStatus, /next:|detached worker|verdicts/, "footer repeats no card fact");
   assert.doesNotMatch(liveStatus, / · read|evidence:|elapsed|worker activity/);
   assert.doesNotMatch(liveStatus, /paused/);
   const liveWidget = buildWidgetLines({ goal: g, list: [] }, liveAudit, NOW)!.join("\\n");
@@ -1073,8 +1072,7 @@ test("detached auditor keeps compact footer liveness and detailed widget evidenc
   };
   const verdictStatus = buildStatusText({ goal: g, list: [] }, completeAudit, NOW)!;
   assert.match(verdictStatus, /auditor ✓ awaiting verdict/);
-  assert.match(verdictStatus, /next: apply detached verdict/);
-  assert.match(verdictStatus, /detached worker/);
+  assert.doesNotMatch(verdictStatus, /next:|detached worker/, "footer is liveness-only");
   assert.doesNotMatch(verdictStatus, /last tool:|evidence:|elapsed|worker finished/);
   assert.doesNotMatch(verdictStatus, /paused/);
   const verdictWidget = buildWidgetLines({ goal: g, list: [] }, completeAudit, NOW)!.join("\\n");
@@ -1350,8 +1348,7 @@ test("v0.34.66: at the verdict the FINAL report shows even when silent", () => {
   assert.doesNotMatch(joined, /report stream muted/);
 });
 
-test("v0.34.67: worker/subagent text paragraph gets breathing room — invisible NBSP spacer between observations and the card footer", () => {
-  assert.equal(WORKER_TEXT_SPACER, "\u00A0", "spacer is a non-breaking space: invisible, never collapsed, never skipped");
+test("v0.38.55: no spacer row between observations and the card footer (Screenshot 20260914)", () => {
   const g = goalOf({ status: "auditing", pendingCompletion: { at: "2026-07-21T11:59:00Z", phase: "running", attemptId: "audit-spacing" } });
   const lines = buildWidgetLines({ goal: g, list: [] }, {
     phase: "tool_executing",
@@ -1368,12 +1365,10 @@ test("v0.34.67: worker/subagent text paragraph gets breathing room — invisible
   assert.ok(obsIdx >= 0, "observation paragraph present");
   assert.ok(footerIdx > obsIdx, "footer follows the observations");
   const gap = lines.slice(obsIdx + 1, footerIdx);
-  assert.ok(gap.length >= 2, `text + spacer between observations and footer: ${gap.join("|")}`);
-  assert.equal(gap.at(-1)!, "\u00A0", "the gap ends with the invisible NBSP spacer");
-  assert.match(gap[0]!, /report stream muted/, "the observation text precedes the spacer");
+  assert.ok(!gap.some((l) => l.trim() === "" || l.includes("\u00A0")), `no blank/spacer row before the footer: ${gap.join("|")}`);
 });
 
-test("v0.34.67: no spacer is invented when there is no worker text", () => {
+test("v0.38.55: no spacer is invented when there is no worker text", () => {
   const g = goalOf({ status: "auditing", pendingCompletion: { at: "2026-07-21T11:59:00Z", phase: "running", attemptId: "audit-no-obs" } });
   const lines = buildWidgetLines({ goal: g, list: [] }, {
     phase: "running",

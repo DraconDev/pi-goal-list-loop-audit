@@ -289,17 +289,9 @@ export function wrap(s: string, width: number, maxLines: number): string[] {
  */
 const WIDGET_HORIZONTAL_MARGIN = 2;
 
-/** v0.34.67: paragraph spacer for the widget's worker/subagent text.
- * pi-tui skips whitespace-only widget lines (Text.render returns [] when
- * trim is empty), so the spacer carries a non-breaking space — invisible in
- * every renderer (terminal, π-web HTML), never collapsed, and never
- * misread as punctuation. Inserted between the auditing card's observation
- * paragraph (`tool:`, `latest:`, …) and the footer verdict line (note.md
- * 08-06 "visually subagents least need more spacing for text",
- * Screenshot_20260806_223836). v0.34.123: the previous dim "│ ·" hairline
- * rendered as a lone "·" where the box-drawing glyph is dropped (π-web),
- * which the user flagged as a stray dot (note.md 08-10, 220759). */
-export const WORKER_TEXT_SPACER = "\u00A0";
+// v0.38.55: WORKER_TEXT_SPACER retired — the NBSP "breathing room" row
+// rendered as a stray blank line in the card (Screenshot 20260914). The
+// tree glyphs already structure observations → closing line; no spacer.
 
 function budgetFor(width: number | undefined, prefixCols: number, floor: number): number {
   if (!width || width <= 0) return floor;
@@ -801,15 +793,8 @@ function auditorElapsedMs(audit: AuditDisplayProgress | null | undefined, now: n
   return elapsed;
 }
 
-function auditorNextTransition(phase: AuditorDisplayPhase): string {
-  switch (phase) {
-    case "queued": return "detached worker start";
-    case "running": return "worker completion → verdict";
-    case "quiet": return "worker event or /goal cancel";
-    case "blocked": return "retry/resolve or /goal cancel";
-    case "awaiting-verdict": return "apply detached verdict";
-  }
-}
+// v0.38.55: auditorNextTransition retired with the footer dedupe — the
+// per-phase "next:" hint duplicated the card; the footer is liveness-only.
 
 /** Summarize evidence without exposing the worker's report prose or think
  * blocks. Tool names, call counts, report byte counts, and the existence of a
@@ -1226,19 +1211,14 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
     const label = live
       ? `${paint(theme, "success", phaseText)} ${paint(theme, "accent", activityMeter)} ${activityBadge("AUDITOR · DETACHED · LIVE", now, theme)}`
       : `${paint(theme, color, phaseText)} ${paint(theme, color === "warning" ? "warning" : "dim", activityMeter)}`;
-    // The persistent footer is the global liveness surface. Detailed worker
-    // observations (tool, evidence, elapsed, and freshness) belong in the
-    // above-editor auditor card so the two surfaces do not repeat one another.
+    // The persistent footer is the liveness surface only: host, phase, and
+    // freshness. The auditor card above already owns the transition hint
+    // ("next:"), the worker attribution ("detached worker"), and the
+    // verdict tally ("audits: …") — repeating them here doubled every fact
+    // on screen (Screenshot 20260914). One surface per fact.
     const quietAge = phase === "quiet" ? auditorActivityAge(audit, now) : undefined;
     const quietSuffix = quietAge !== undefined ? ` · silent ${fmtElapsed(quietAge)}` : "";
-    const next = ` · next: ${auditorNextTransition(phase)}`;
-    const detachedSuffix = live ? "" : " · detached worker";
-    // v0.38.7: durable verdict tally on the always-on footer — after a
-    // reload there is no live auditor evidence, so the stored verdicts
-    // (disapproval count + last-verdict age) answer "are we progressing?".
-    const tallyText = formatVerdictTallySegment(auditorVerdictTally(g.auditHistory, now), now);
-    const verdictSuffix = tallyText ? ` · ${tallyText}` : "";
-    return `glla: ${host} · ${label}${quietSuffix}${next}${detachedSuffix}${verdictSuffix}${heldSuffix}`;
+    return `glla: ${host} · ${label}${quietSuffix}${heldSuffix}`;
   }
   if (g.status === "paused") {
     // v0.28.22: the status line names the ACTIONABILITY, not the reason —
@@ -1879,12 +1859,8 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
     observations.forEach((observation, i) => {
       lines.push(`${i === 0 ? "├─" : "│ "} ${paint(theme, "dim", observation)}`);
     });
-    // v0.34.67: paragraph spacing — the worker/subagent text paragraph gets
-    // one dim hairline row of breathing room before the card footer (the
-    // pinned WORKER_TEXT_SPACER; a truly empty line would be skipped by
-    // pi-tui's Text renderer).
-    if (observations.length > 0) lines.push(paint(theme, "dim", WORKER_TEXT_SPACER));
-
+    // v0.38.55: the spacer row is gone (stray blank line, Screenshot
+    // 20260914) — observations flow straight into the closing line.
     const activity = auditorActivityAge(audit, now);
     const last = auditorLastActivity(audit, now);
     if (phase === "quiet") {

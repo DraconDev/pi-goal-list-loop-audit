@@ -8,6 +8,7 @@ import {
   auditorVerdictTally,
   buildLoadHoldRecoveryLines,
   buildStatusText,
+  buildWidgetLines,
   formatVerdictTallySegment,
 } from "../extensions/goal-loop-display.js";
 import type { Goal } from "../extensions/goal-loop-core.js";
@@ -83,7 +84,7 @@ test("recovery banner pins objective, next task, audits, resume", () => {
   assert.match(emptyText, /4 waiting/);
 });
 
-test("auditing status line carries the durable tally", () => {
+test("v0.38.55: auditing status line is liveness-only — the tally lives on the card (Screenshot 20260914)", () => {
   const now = Date.parse("2026-09-03T10:00:00.000Z");
   const g = {
     id: "g1", objective: "o", status: "auditing", policy: "goal",
@@ -95,10 +96,11 @@ test("auditing status line carries the durable tally", () => {
   } as unknown as Goal;
   const text = buildStatusText({ goal: g, list: [], loop: null } as any, null, now);
   assert.ok(text);
-  assert.match(text!, /1 disapproved/);
-  assert.match(text!, /last disapproved 2h/);
-  const fresh = buildStatusText({ goal: { ...g, auditHistory: [] } as unknown as Goal, list: [], loop: null } as any, null, now);
-  assert.ok(fresh && !/verdicts/.test(fresh), "no history means no tally noise");
+  assert.doesNotMatch(text!, /disapproved|verdicts/, "footer repeats no card fact");
+  assert.match(text!, /MAIN HOST · SUPERVISING/, "host + liveness stay");
+  const card = buildWidgetLines({ goal: g, list: [], loop: null } as any, null, now)!.join("\n");
+  assert.match(card, /audits:.*1 disapproved/, "the card owns the tally");
+  assert.match(card, /last disapproved 2h/);
 });
 
 function heldGoal(): Goal {
