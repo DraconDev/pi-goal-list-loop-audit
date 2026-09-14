@@ -644,6 +644,15 @@ export function buildSettingsRows(
       description:
         "post-completion follow-up enqueuer: mode, triggers, cascade, caps (postaudit / reviewer)",
     },
+    {
+      id: "contextCheckpointProjection",
+      section: "other",
+      label: "Context checkpoint projection",
+      valueText: show("contextCheckpointProjection", "off"),
+      sourceText: src("contextCheckpointProjection"),
+      description:
+        "off: leave the transcript alone so the provider prefix-cache holds (default) · on: legacy per-turn splice of a bounded continuation checkpoint",
+    },
   );
 
   return rows;

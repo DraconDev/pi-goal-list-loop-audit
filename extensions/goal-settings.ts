@@ -270,6 +270,13 @@ export interface Settings {
     /** Per-tool configuration knobs (extensible). */
     perToolConfig?: Record<string, Record<string, unknown>>;
   };
+  /** v0.38.54: on → the per-turn `context` hook replaces stale GLLA
+   * continuation payloads with a bounded checkpoint (legacy behaviour).
+   * Default off (unset): the hook leaves the transcript alone so the
+   * provider prefix-cache stays valid across turns; the fresh
+   * continuation prompt still carries live durable state every turn.
+   * Explicit opt-in restores the per-turn splice. */
+  contextCheckpointProjection?: boolean;
 }
 
 /** These settings describe global provider-recovery policy, not a project
@@ -532,6 +539,7 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   if (typeof settings.aggressiveMode !== "boolean") delete settings.aggressiveMode;
   if (typeof settings.autoResume !== "boolean") delete settings.autoResume;
   if (typeof settings.autoAcceptDrafts !== "boolean") delete settings.autoAcceptDrafts;
+  if (typeof settings.contextCheckpointProjection !== "boolean") delete settings.contextCheckpointProjection;
   if (typeof settings.notifyCmd !== "string" || settings.notifyCmd.trim().length === 0) {
     delete settings.notifyCmd;
   }
@@ -653,6 +661,7 @@ export const SETTINGS_KEYS: Array<keyof Settings> = [
   "stallSimilarityThreshold",
   "postaudit",
   "toolOverrides",
+  "contextCheckpointProjection",
   "reviewer", // v0.33.1: legacy alias — menu saves can still write it (when postaudit is unset) and load-migration consolidates it into postaudit on the next read; provenance must know it exists or reviewer-sourced values report "unknown"
 ];
 

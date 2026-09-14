@@ -2846,8 +2846,12 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // may coexist with an active loop. Project whenever either surface is
     // active, while passing both states so a paused goal is not mistaken for
     // the loop's current objective.
+    // v0.38.54: projection is opt-in (default off). Rewriting history
+    // busts the provider prefix-cache on every turn, while the fresh
+    // continuation prompt already carries live durable state. Only splice
+    // the bounded checkpoint when explicitly enabled.
     const activeLoop = state.loop?.active === true ? state.loop : null;
-    const checkpointProjection = state.goal || activeLoop
+    const checkpointProjection = (state.goal || activeLoop) && loadSettings(ctx.cwd).contextCheckpointProjection === true
       ? projectBoundedGllaContext(
         hygiene.messages,
         buildAuthoritativeContextCheckpoint({

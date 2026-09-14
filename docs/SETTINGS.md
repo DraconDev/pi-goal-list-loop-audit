@@ -83,4 +83,5 @@ copies are ignored (the recovery runtime reads the global file):
 | `stallSimilarityThreshold` | `0.6` | Trigram similarity above this (tool-less) is a nudge. |
 | `postaudit` | unset | Post-completion audit config (same shape as legacy `reviewer`). |
 | `toolOverrides` | unset | Per-tool allow/hide/per-tool-config overrides. |
+| `contextCheckpointProjection` | `false` (off) | Per-turn `context`-hook splice of a bounded continuation checkpoint. Off (default) leaves the transcript append-only so the provider prefix-cache holds; the fresh continuation prompt still carries live state. On restores the legacy projection (busts the cache). |
 | `reviewer` | legacy | Deprecated alias for `postaudit`; migrated on load, `postaudit` wins. |

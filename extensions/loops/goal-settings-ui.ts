@@ -1036,6 +1036,17 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       }
       return;
     }
+    case "contextCheckpointProjection": {
+      const v = await ctx.ui.select("Context checkpoint projection — off keeps the transcript append-only so the provider prefix-cache holds across turns; on restores the legacy per-turn splice of a bounded continuation checkpoint", [
+        "off — leave prior GLLA payloads in place; the fresh continuation prompt carries live state (default)",
+        "on — project stale GLLA payloads into a bounded checkpoint every turn (legacy; busts the prompt cache)",
+      ]);
+      if (v) {
+        saveSettings("global", ctx.cwd, { contextCheckpointProjection: v.startsWith("on") ? true : undefined });
+        ctx.ui.notify(v.startsWith("on") ? "Context checkpoint projection ON — legacy per-turn splice; expect higher prompt-cache miss rates." : "Context checkpoint projection OFF — transcript stays append-only; the continuation prompt carries live state.", "info");
+      }
+      return;
+    }
     case "mainAgent": {
       ctx.ui.notify("The current main agent and thinking level are controlled by pi's regular model/thinking selectors. The fallback chain is configured in this tab.", "info");
       return;
