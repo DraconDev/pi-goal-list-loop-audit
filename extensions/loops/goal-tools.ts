@@ -266,7 +266,7 @@ import {
   pushCapped as pushRepetitionCapped,
 } from "../goal-loop-repetition.js";
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
-import { buildTerminalApprovalRender, compactCompletionSummary, compactTerminalCompletionSummary } from "../completion-summary.js";
+import { buildFinalRepoStateLines, buildTerminalApprovalRender, compactCompletionSummary, compactTerminalCompletionSummary } from "../completion-summary.js";
 import { persistApprovalRender, replayUndeliveredApprovalRenders } from "../approval-render-store.js";
 import {
   defaultAgentDir,
@@ -1302,6 +1302,8 @@ function registerAgentTools(pi: any): void {
           // v0.38.25: canonical render (same voice as every approval path).
           // Built from the terminalGoal local, which survives the archive
           // fence clearing state.goal.
+          // v0.38.55 (full parity): final repository state closes the card.
+          const escRepoState = buildFinalRepoStateLines(ctx.cwd);
           const escRender = buildTerminalApprovalRender({
             goal: terminalGoal,
             status: "complete",
@@ -1315,6 +1317,7 @@ function registerAgentTools(pi: any): void {
             ...(escLeftOut ? { leftOut: escLeftOut } : {}),
             ...(escFindingGroups ? { findingGroups: escFindingGroups } : {}),
             ...(escGateRows ? { gateRows: escGateRows } : {}),
+            ...(escRepoState ? { repoState: escRepoState } : {}),
           });
           if (!archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: escFindingGroups, gateRows: escGateRows })) {
             return {
@@ -1361,6 +1364,8 @@ function registerAgentTools(pi: any): void {
         // state.goal, so the record pointer must be computed here.
         const manualArchiveRecord = `— record: ${manualArchivePath}`;
         // v0.38.25: canonical render — same voice as the detached path.
+        // v0.38.55 (full parity): final repository state closes the card.
+        const manualRepoState = buildFinalRepoStateLines(ctx.cwd);
         const manualRender = buildTerminalApprovalRender({
           goal: state.goal,
           status: "complete",
@@ -1375,6 +1380,7 @@ function registerAgentTools(pi: any): void {
           // v0.38.52: same for the gate inventory.
           ...(durableCompletionClaim.findingGroups ? { findingGroups: durableCompletionClaim.findingGroups } : {}),
           ...(durableCompletionClaim.gateRows ? { gateRows: durableCompletionClaim.gateRows } : {}),
+          ...(manualRepoState ? { repoState: manualRepoState } : {}),
           extras: inspectionSessionPath
             ? [`Auditor session kept for review: pi --session ${inspectionSessionPath} (or pi --fork ${inspectionSessionPath}).`]
             : [],

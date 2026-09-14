@@ -242,7 +242,7 @@ import {
   pushCapped as pushRepetitionCapped,
 } from "../goal-loop-repetition.js";
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
-import { buildTerminalApprovalRender, compactCompletionSummary, isGenericCompletionSummary, missingCompletionSummaryLabels } from "../completion-summary.js";
+import { buildFinalRepoStateLines, buildTerminalApprovalRender, compactCompletionSummary, isGenericCompletionSummary, missingCompletionSummaryLabels } from "../completion-summary.js";
 import { persistApprovalRender, replayUndeliveredApprovalRenders } from "../approval-render-store.js";
 import {
   defaultAgentDir,
@@ -1431,6 +1431,9 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     // clears state.goal — and persisted after the archive lands so a
     // verdict that lands with no live turn is replayed on the next live
     // contact instead of going silent (field 2026-09-07).
+    // v0.38.55 (full parity): final repository state closes the card.
+    // Best-effort — unreadable state keeps the section out.
+    const approvalRepoState = buildFinalRepoStateLines(liveCtx.cwd);
     const approvalRender = buildTerminalApprovalRender({
       goal: state.goal,
       status: "complete",
@@ -1445,6 +1448,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       // v0.38.52: same for the gate inventory.
       ...(claim.findingGroups ? { findingGroups: claim.findingGroups } : {}),
       ...(claim.gateRows ? { gateRows: claim.gateRows } : {}),
+      ...(approvalRepoState ? { repoState: approvalRepoState } : {}),
       extras: inspectionSessionPath
         ? [`Auditor session kept for review: pi --session ${inspectionSessionPath} (or pi --fork ${inspectionSessionPath}).`]
         : [],

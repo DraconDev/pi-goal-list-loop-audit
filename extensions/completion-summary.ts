@@ -280,6 +280,11 @@ export function withoutStaleNext(details: string[] | undefined): string[] {
 export const RICH_FINDINGS_CAP = 12;
 export const RICH_VALUE_BUDGET = 400;
 export const RICH_NEXT_CAP = 6;
+/** v0.38.55 (full parity): the chat card shares everything the archive
+ * knows — per-value clipping is effectively off (10k chars guards only
+ * against pathological megabytes). The legacy RICH_* caps stay exported
+ * for ranking/budgeting helpers and older tests. */
+export const RICH_FULL_VALUE_BUDGET = 10_000;
 /** v0.38.50: objective echo clipped to a headline-safe width. */
 export const RICH_OBJECTIVE_ECHO_CHARS = 80;
 /** v0.38.50: findings spanning this many groups render as a table
@@ -485,6 +490,9 @@ export function buildRichTerminalParts(args: {
   durationLine?: string | null;
   groups?: FindingGroup[];
   gates?: GateRow[];
+  /** v0.38.55: headline voice — Done on the terminal path, Aborted for
+   * aborted archive records (which never wear a Done banner). */
+  kind?: "Done" | "Aborted";
   /** v0.38.55 (full parity): final repository state lines (branch, HEAD,
    * tree cleanliness) from the render call site, which owns cwd access.
    * Absent keeps the section out — never invented. */
@@ -492,9 +500,10 @@ export function buildRichTerminalParts(args: {
 }): RichTerminalParts {
   const { findings, tests, next } = partitionRichDetails(args.details);
   const outcome = args.outcome;
-  const headline = requestEchoHeadline("Done", args.objective, outcome);
+  const kind = args.kind ?? "Done";
+  const headline = requestEchoHeadline(kind, args.objective, outcome);
   const auditStatus = auditRowStatus(args.auditHistory);
-  const banner = `## Done \u2014 ${bannerVerdict(auditStatus)}`;
+  const banner = `## ${kind} \u2014 ${bannerVerdict(auditStatus)}`;
   const groups = args.groups ?? [];
   const useTable = groups.length >= RICH_TABLE_GROUP_THRESHOLD;
   const findingLines: string[] = [];
@@ -594,9 +603,14 @@ export function buildRichTerminalParts(args: {
 /** Compose parts + headline + section headers into markdown lines.
  * v0.38.50: the duration line rides directly under the headline.
  * Audit 2026-09-13: findings-first order is pinned — findings, then the
- * verification table (or its auto-collapsed PASS line), then Next. */
+ * verification table (or its auto-collapsed PASS line), then Next.
+ * v0.38.55 (full parity): the verdict banner opens the card and the
+ * final repository state closes it — findings, verification, Next,
+ * repo state, in that order. */
 export function composeRichTerminalLines(parts: RichTerminalParts, opts?: { headline?: string }): string[] {
-  const lines = [opts?.headline ?? parts.headline, ""];
+  const lines = [parts.banner ?? opts?.headline ?? parts.headline, ""];
+  const headline = opts?.headline ?? parts.headline;
+  if (headline !== lines[0]) lines.push(headline, "");
   if (parts.durationLine) lines.push(parts.durationLine, "");
   if (parts.findingLines.length > 0) {
     lines.push("### Key Findings & Remediation", ...parts.findingLines, "");
@@ -609,6 +623,9 @@ export function composeRichTerminalLines(parts: RichTerminalParts, opts?: { head
   if (parts.nextLines.length > 0) {
     lines.push("### Next", ...parts.nextLines, "");
   }
+  if (parts.repoLines.length > 0) {
+    lines.push("### Final Repository State", ...parts.repoLines.map((line) => `- ${line}`), "");
+  }
   return lines;
 }
 
@@ -620,7 +637,7 @@ export function composeRichTerminalLines(parts: RichTerminalParts, opts?: { head
 export function buildRichArchiveSection(goal: Goal, status: Status, archivePath: string, findingGroups?: FindingGroup[], gateRows?: GateRow[]): string[] {
   const facts: CompletionSummaryFacts = { goal, status, archivePath };
   const summary = resolveCompletionSummary(facts, goal.completionSummary).summary;
-  const brief = humanCompletionBrief(summary, 140, RICH_VALUE_BUDGET);
+  const brief = humanCompletionBrief(summary, 140, RICH_FULL_VALUE_BUDGET);
   const history = goal.auditHistory ?? [];
   const latest = history[history.length - 1];
   const approval = latest
@@ -636,14 +653,11 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
     durationLine: buildDurationLine(goal),
     groups: findingGroups,
     gates: gateRows,
-    // Audit 2026-09-13: the archive is the full-detail surface — the
-    // verification table never collapses here and hashes are preserved.
-    verification: "full",
+    // v0.38.55: aborted records never wear a Done banner/headline.
+    kind: status === "complete" ? "Done" : "Aborted",
   });
   return [
-    ...composeRichTerminalLines(parts, {
-      headline: status === "complete" ? parts.headline : requestEchoHeadline("Aborted", goal.objective, brief.outcome),
-    }),
+    ...composeRichTerminalLines(parts),
     trailerBullet(stripApprovalModel(approval)),
     trailerBullet(countsLine),
     trailerBullet(`\u2014 record: ${archivePath}`),
@@ -743,6 +757,12 @@ export interface TerminalApprovalRenderInput {
    * 3-col verification table.
    */
   gateRows?: GateRow[];
+  /**
+   * v0.38.55 (full parity): final repository state lines for the
+   * `### Final Repository State` section — build with
+   * buildFinalRepoStateLines(cwd). Absent keeps the section out.
+   */
+  repoState?: string[];
 }
 
 export interface TerminalApprovalRender {
@@ -778,10 +798,12 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   // verbose brief (200-char values) while the outcome headline keeps
   // the 140-char budget. Filler drops via the same briefValueContent
   // filter; absent stays absent.
+  // v0.38.55 (full parity): values ride unclipped — the card shares
+  // everything the archive knows.
   const richBrief = humanCompletionBrief(
     resolveCompletionSummary(facts, candidate).summary,
     140,
-    RICH_VALUE_BUDGET,
+    RICH_FULL_VALUE_BUDGET,
   );
   // v0.38.37 (audit 2026-09-08): the deliberate non-do comes from the
   // agent's complete_goal leftOut claim — never invented. Filler ("none")
@@ -789,7 +811,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   const leftOut = input.leftOut?.trim();
   const leftOutContent = leftOut ? briefValueContent(leftOut) : null;
   const richDetails = leftOutContent
-    ? [...richBrief.details, `Left out: ${clipSummaryValue(leftOutContent, RICH_VALUE_BUDGET)}`]
+    ? [...richBrief.details, `Left out: ${leftOutContent}`]
     : richBrief.details;
   const countsLine = input.countsLine ?? buildAuditCountsLine(input.goal, input.auditNote);
   // v0.38.42 (field 20260909_140404): one canonical approval bullet in
@@ -809,11 +831,13 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     ? `• ${chatApproval.replace(/^—\s*/, "").replace(/\.\s*$/, "")} (${history.length} verdict).`
     : trailerBullet(chatApproval);
   const recordBullet = trailerBullet(input.record);
-  // Rich voice: headline + Key Findings + Verification table + Next,
-  // closed by the pinned trailer (approval/counts/record, record last).
-  // Audit 2026-09-13: chat is findings-first — verification auto-collapses
-  // to one PASS line when green, hashes stay archive-only. The transcript
-  // mirrors chat; the archive keeps the full table and full text.
+  // Rich voice: banner + headline + Key Findings + full Verification
+  // table + Next + Final Repository State, closed by the pinned trailer
+  // (approval/counts/record, record last).
+  // v0.38.55 (full parity, owner choice): the table always renders in
+  // full and hashes stay visible — chat shares everything the archive
+  // knows. The transcript mirrors chat; the archive keeps the full table
+  // and full text plus the machine layer.
   const richParts = buildRichTerminalParts({
     outcome: richBrief.outcome,
     details: withoutStaleNext(richDetails),
@@ -823,8 +847,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     durationLine: buildDurationLine(input.goal),
     groups: input.findingGroups,
     gates: input.gateRows,
-    verification: "auto",
-    chatSafe: true,
+    ...(input.repoState ? { repoState: input.repoState } : {}),
   });
   const chatBody = composeRichTerminalLines(richParts);
   const transcriptBody = composeRichTerminalLines(richParts);
