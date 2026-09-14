@@ -1038,8 +1038,8 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
     }
     case "contextCheckpointProjection": {
       const v = await ctx.ui.select("Context checkpoint projection — off keeps the transcript append-only so the provider prefix-cache holds across turns; on restores the legacy per-turn splice of a bounded continuation checkpoint", [
-        "off — leave prior GLLA payloads in place; the fresh continuation prompt carries live state (default)",
-        "on — project stale GLLA payloads into a bounded checkpoint every turn (legacy; busts the prompt cache)",
+        "off — leave the transcript alone; the continuation prompt carries live state (default)",
+        "on — splice a bounded checkpoint every turn (legacy; busts the prompt cache)",
       ]);
       if (v) {
         saveSettings("global", ctx.cwd, { contextCheckpointProjection: v.startsWith("on") ? true : undefined });

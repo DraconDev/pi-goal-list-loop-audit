@@ -115,6 +115,22 @@ test("T4: select editor — aggressiveMode writes the boolean + notifies", async
   }
 });
 
+test("T4: select editor — contextCheckpointProjection writes true, off removes the key (v0.38.54)", async () => {
+  try {
+    const ctx = makeMockCtx(tmpCwd());
+    ctx.ui.selectImpl = async () => "on — splice a bounded checkpoint every turn (legacy; busts the prompt cache)";
+    await handleSettingChoice("contextCheckpointProjection", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().contextCheckpointProjection, true);
+    assert.ok(ctx.ui.matching("projection on").length >= 1, "opt-in announced");
+
+    ctx.ui.selectImpl = async () => "off — leave the transcript alone; the continuation prompt carries live state (default)";
+    await handleSettingChoice("contextCheckpointProjection", ctx as unknown as ExtensionContext);
+    assert.ok(!("contextCheckpointProjection" in readGlobal()), "off is the default — the key is removed");
+  } finally {
+    restoreGlobal();
+  }
+});
+
 test("T4: select editor — carryover writes clear/resume, pause removes the key (v0.34.25)", async () => {
   try {
     const ctx = makeMockCtx(tmpCwd());
@@ -136,7 +152,7 @@ test("T4: select editor — carryover writes clear/resume, pause removes the key
 
 test("T4: select options stay concise — rationale lives in the title, not the option rows (v0.34.25)", async () => {
   const ctx = makeMockCtx(tmpCwd());
-  for (const id of ["autoResume", "carryover", "aggressiveMode", "auditorSameSessionSwap", "decisionPopup", "autoAcceptDrafts", "auditorInspection"]) {
+  for (const id of ["autoResume", "carryover", "aggressiveMode", "auditorSameSessionSwap", "decisionPopup", "autoAcceptDrafts", "auditorInspection", "contextCheckpointProjection"]) {
     let seen: string[] = [];
     ctx.ui.selectImpl = async (_t, options) => { seen = options ?? []; return undefined; };
     await handleSettingChoice(id, ctx as unknown as ExtensionContext);
