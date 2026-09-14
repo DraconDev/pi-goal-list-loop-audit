@@ -3577,7 +3577,7 @@ test("v0.34.91: detached approval notify carries the agent's completion recap, n
       assert.ok(!recapNotifs[0]!.message.split("\n").some((line: string) => line.startsWith(label)), `filler ${label} none is dropped from the briefing`);
     }
     assert.doesNotMatch(recapNotifs[0]!.message.split("\n").filter((line: string) => !line.startsWith("• audit:") && !line.startsWith("\u2014 ")).join("\n"), / · /, "approved briefing is lines, not the single-line mash (the counts bullet alone could carry · separators; v0.38.50: the one-line duration ledger `— N turns · …` is exempt for the same reason)");
-    assert.match(recapNotifs[0]!.message, /…/, "long approved recap values are bounded");
+    assert.match(recapNotifs[0]!.message, /durable-proof-marker( durable-proof-marker){19}/, "long approved recap values ride unclipped (v0.38.55 full parity)");
     assert.doesNotMatch(recapNotifs[0]!.message, new RegExp(`(${"durable-proof-marker "}){20}`), "approved notification does not flatten the full long recap");
     assert.doesNotMatch(recapNotifs.join("\n"), /^Goal complete — auditor /, "the old process-only line is gone");
     await pi.fire("session_shutdown", { reason: "quit" }, ctx);
