@@ -5064,3 +5064,4 @@
 {"type":"terminal_completion_notice_sent","value":{"goalId":"20260913164624-cx9fh4","payloadChars":997},"at":"2026-09-13T18:03:36.418Z"}
 {"type":"terminal_approval_render_replayed","value":{"goalId":"20260913164624-cx9fh4","createdAt":"2026-09-13T18:03:36.392Z"},"at":"2026-09-13T18:03:36.418Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":null,"contextUsage":{"tokens":133657,"contextWindow":200000,"percent":66.8285}},"at":"2026-09-14T12:46:37.876Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":1226,"outputTokens":255,"cacheReadTokens":157681,"cacheWriteTokens":0,"totalTokens":159162},"contextUsage":{"tokens":159162,"contextWindow":200000,"percent":79.581}},"at":"2026-09-14T12:48:21.535Z"}
