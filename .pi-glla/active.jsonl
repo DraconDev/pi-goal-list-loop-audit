@@ -5178,3 +5178,4 @@
 {"type":"terminal_approval_render_persisted","value":{"goalId":"20260914150829-m3bgey","delivered":false,"lines":18},"at":"2026-09-14T15:34:51.292Z"}
 {"type":"terminal_completion_notice_sent","value":{"goalId":"20260914150829-m3bgey","payloadChars":900},"at":"2026-09-14T15:34:51.299Z"}
 {"type":"terminal_approval_render_replayed","value":{"goalId":"20260914150829-m3bgey","createdAt":"2026-09-14T15:34:51.291Z"},"at":"2026-09-14T15:34:51.299Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":null,"contextUsage":{"tokens":112510,"contextWindow":200000,"percent":56.255}},"at":"2026-09-14T18:37:39.827Z"}
