@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import type { FindingGroup, GateRow, Goal, Status } from "./goal-loop-core.js";
 import { fmtElapsed, truncateCells } from "./goal-loop-display.js";
 
@@ -288,15 +289,22 @@ export const RICH_TABLE_GROUP_THRESHOLD = 4;
 export const RICH_EVIDENCE_TOKENS_PER_FINDING = 4;
 
 export interface RichTerminalParts {
+  /** v0.38.55 (full parity): verdict banner — `## Done — auditor
+   * approved (N verdicts)` and siblings. Never null on the terminal
+   * path; the headline still echoes the request underneath. */
+  banner: string | null;
   headline: string;
   durationLine: string | null;
   findingLines: string[];
   tableLines: string[];
-  /** Audit 2026-09-13: auto-collapsed green verification (chat only) —
-   * one PASS line standing in for the table section; null when the full
-   * table renders or when there is nothing to verify. */
+  /** Audit 2026-09-13 auto-collapse, retired v0.38.55: the verification
+   * table always renders in full (owner: full parity). Kept (always
+   * null) so persisted-shape consumers do not break. */
   verificationLine: string | null;
   nextLines: string[];
+  /** v0.38.55 (full parity): final repository state section lines.
+   * Empty when the state could not be read (absent stays absent). */
+  repoLines: string[];
 }
 
 function escapeTableCell(value: string): string {
@@ -430,9 +438,44 @@ export function requestEchoHeadline(kind: "Done" | "Aborted", objective: string 
  * Without groups the flat six-label projection stays the fallback.
  * v0.38.52: optional per-finding `tests` render as a `Test Results:`
  * sub-bullet (nested) or ride the Evidence cell (table); optional agent
- * `gates` widen the Verification table to Gate | Scope | Status | Notes
- * with mechanically derived statuses, superseding the mechanical Tests
- * rows. Without gates the 3-col mechanical table is byte-identical. */
+ * `gates` widen the Verification table with mechanically derived
+ * statuses, superseding the mechanical Tests rows. Without gates the
+ * 3-col mechanical table is byte-identical.
+ * v0.38.55 (full parity, owner choice): the chat card shares everything
+ * the archive knows — no finding caps, no value clipping, no PASS-line
+ * collapse, no hash stripping, plus a verdict banner and a final
+ * repository state section. One surface per fact is preserved (banner =
+ * verdict, footer = liveness); the archive keeps the same sections plus
+ * the machine layer. */
+/** v0.38.55 (full parity): the verdict banner's second half, built from
+ * the mechanically derived audit status — never agent-claimed. */
+function bannerVerdict(auditStatus: string): string {
+  const count = /\u00d7(\d+)/.exec(auditStatus)?.[1];
+  if (auditStatus.startsWith("APPROVED")) return `auditor approved (${count ?? 1} verdict${count === "1" ? "" : "s"})`;
+  if (auditStatus.startsWith("DISAPPROVED")) return `auditor disapproved (${count ?? 1} verdict${count === "1" ? "" : "s"})`;
+  if (auditStatus === "IMPOSSIBLE") return "auditor ruled impossible";
+  return "completed without a recorded verdict";
+}
+
+/** v0.38.55 (full parity): final repository state for the terminal card —
+ * branch, HEAD, and tree cleanliness from durable git facts. Best-effort:
+ * any failure returns undefined and the section stays out (absent is
+ * named by omission, never invented). The render call sites own cwd. */
+export function buildFinalRepoStateLines(cwd: string): string[] | undefined {
+  try {
+    const run = (args: string[]): string => execFileSync("git", args, { cwd, encoding: "utf8", timeout: 5000 }).trim();
+    const branch = run(["branch", "--show-current"]) || "detached";
+    const head = run(["log", "-1", "--format=%h %s"]);
+    const short = run(["status", "--short"]);
+    const lines = [`Branch ${branch}${head ? ` @ ${head}` : ""}`];
+    if (!short) lines.push("Tree clean");
+    else lines.push("Tree changed:", ...short.split("\n").map((line) => `  ${line.trim()}`));
+    return lines;
+  } catch {
+    return undefined;
+  }
+}
+
 export function buildRichTerminalParts(args: {
   outcome: string;
   details: string[];
@@ -442,111 +485,109 @@ export function buildRichTerminalParts(args: {
   durationLine?: string | null;
   groups?: FindingGroup[];
   gates?: GateRow[];
-  /** Audit 2026-09-13: "auto" collapses the verification table to one
-   * PASS line when every row is green (chat default-off); "full" keeps
-   * the table (archive + mechanical fallback). Default "full" so the
-   * v0.38.52 byte-identical fallback survives untouched. */
-  verification?: "full" | "auto";
-  /** Audit 2026-09-13: strip commit hashes chat-side (archive keeps them). */
-  chatSafe?: boolean;
+  /** v0.38.55 (full parity): final repository state lines (branch, HEAD,
+   * tree cleanliness) from the render call site, which owns cwd access.
+   * Absent keeps the section out — never invented. */
+  repoState?: string[];
 }): RichTerminalParts {
   const { findings, tests, next } = partitionRichDetails(args.details);
-  const chatSafe = args.chatSafe === true;
-  const safe = (text: string): string => (chatSafe ? stripCommitHashes(text) : text);
-  const outcome = safe(args.outcome);
+  const outcome = args.outcome;
   const headline = requestEchoHeadline("Done", args.objective, outcome);
-  const budgeted = takeBudgetedGroups(args.groups ?? []);
-  const useTable = budgeted.length >= RICH_TABLE_GROUP_THRESHOLD;
+  const auditStatus = auditRowStatus(args.auditHistory);
+  const banner = `## Done \u2014 ${bannerVerdict(auditStatus)}`;
+  const groups = args.groups ?? [];
+  const useTable = groups.length >= RICH_TABLE_GROUP_THRESHOLD;
   const findingLines: string[] = [];
   if (useTable) {
     findingLines.push("| Area | Finding | Evidence |", "| --- | --- | --- |");
-    for (const group of budgeted) {
+    for (const group of groups) {
       group.findings.forEach((finding, fi) => {
         const { text, evidence } = extractEvidenceTokens(finding);
-        const { lead, body } = leadBody(safe(text));
+        const { lead, body } = leadBody(text);
         // v0.38.52: test proof rides the Evidence cell (tables have no
-        // sub-bullets); cells stay pipe-escaped and budgeted.
+        // sub-bullets); cells stay pipe-escaped. v0.38.55: unclipped.
         const proof = group.tests?.[fi]?.trim();
-        const evidenceCell = [evidence.join(", ") || "\u2014", ...(proof ? [`Tests: ${safe(proof)}`] : [])].join(" \u00b7 ");
+        const evidenceCell = [evidence.join(", ") || "\u2014", ...(proof ? [`Tests: ${proof}`] : [])].join(" \u00b7 ");
         findingLines.push(
-          `| ${escapeTableCell(clipSummaryValue(safe(group.title), RICH_OBJECTIVE_ECHO_CHARS))} | ${escapeTableCell(`**${lead}** \u2014 ${clipSummaryValue(body, RICH_VALUE_BUDGET)}`)} | ${escapeTableCell(clipSummaryValue(evidenceCell, RICH_VALUE_BUDGET))} |`,
+          `| ${escapeTableCell(group.title)} | ${escapeTableCell(`**${lead}** \u2014 ${body}`)} | ${escapeTableCell(evidenceCell)} |`,
         );
       });
     }
-  } else if (budgeted.length > 0) {
-    budgeted.forEach((group, i) => {
-      findingLines.push(`#### ${i + 1}. ${clipSummaryValue(safe(group.title), RICH_OBJECTIVE_ECHO_CHARS)}`);
+  } else if (groups.length > 0) {
+    groups.forEach((group, i) => {
+      findingLines.push(`#### ${i + 1}. ${group.title}`);
       group.findings.forEach((finding, fi) => {
-        const { lead, body } = leadBody(safe(finding));
-        findingLines.push(`- **${lead}** \u2014 ${clipSummaryValue(body, RICH_VALUE_BUDGET)}`);
+        const { lead, body } = leadBody(finding);
+        findingLines.push(`- **${lead}** \u2014 ${body}`);
         // v0.38.52: per-finding test proof (shot C) — absent stays absent.
         const proof = group.tests?.[fi]?.trim();
-        if (proof) findingLines.push(`  - Test Results: ${clipSummaryValue(safe(proof), RICH_VALUE_BUDGET)}`);
+        if (proof) findingLines.push(`  - Test Results: ${proof}`);
       });
     });
   } else {
-    findings.slice(0, RICH_FINDINGS_CAP).forEach((detail, i) => {
-      const { lead, body } = leadBody(safe(detail));
-      findingLines.push(`${i + 1}. **${lead}** \u2014 ${clipSummaryValue(body, RICH_VALUE_BUDGET)}`);
+    // v0.38.55: the flat fallback renders every detail — no cap.
+    findings.forEach((detail, i) => {
+      const { lead, body } = leadBody(detail);
+      findingLines.push(`${i + 1}. **${lead}** \u2014 ${body}`);
     });
   }
   const tableRows: string[] = [];
-  // Audit 2026-09-13: parallel check/status facts drive the auto collapse
-  // (row strings alone cannot carry the verdict once escaped/clipped).
-  const rowFacts: Array<{ check: string; status: string }> = [];
-  const gates = (args.gates ?? []).slice(0, 10);
+  // v0.38.52 (shots B/D): the agent inventory supersedes the mechanical
+  // Tests rows — one curated gate list, never a duplicated one. Status
+  // is derived, never claimed: PASS only when the notes say pass with
+  // zero failures ("Clean exit 0"-style notes honestly stay REPORTED).
+  // v0.38.55: every row renders with its repro command when any row
+  // carries one (Stage | Command | Result | Notes parity) — no row cap.
+  const gates = args.gates ?? [];
+  const showCommand = gates.some((row) => row.command?.trim());
   if (gates.length > 0) {
-    // v0.38.52 (shots B/D): the agent inventory supersedes the mechanical
-    // Tests rows — one curated gate list, never a duplicated one. Status
-    // is derived, never claimed: PASS only when the notes say pass with
-    // zero failures ("Clean exit 0"-style notes honestly stay REPORTED).
     for (const row of gates) {
       const derived = testsRowStatus(row.notes ?? "");
-      rowFacts.push({ check: row.gate, status: derived });
-      tableRows.push(`| ${escapeTableCell(clipSummaryValue(safe(row.gate), RICH_OBJECTIVE_ECHO_CHARS))} | ${escapeTableCell(clipSummaryValue(safe(row.scope?.trim() || "\u2014"), RICH_VALUE_BUDGET))} | ${derived} | ${escapeTableCell(clipSummaryValue(safe(row.notes?.trim() || "\u2014"), RICH_VALUE_BUDGET))} |`);
+      const command = row.command?.trim() || "\u2014";
+      tableRows.push(showCommand
+        ? `| ${escapeTableCell(row.gate)} | ${escapeTableCell(command)} | ${escapeTableCell(row.scope?.trim() || "\u2014")} | ${derived} | ${escapeTableCell(row.notes?.trim() || "\u2014")} |`
+        : `| ${escapeTableCell(row.gate)} | ${escapeTableCell(row.scope?.trim() || "\u2014")} | ${derived} | ${escapeTableCell(row.notes?.trim() || "\u2014")} |`);
     }
   } else {
-    for (const detail of tests.slice(0, 2)) {
+    for (const detail of tests) {
       const { body } = leadBody(detail);
       const status = testsRowStatus(body);
-      rowFacts.push({ check: "Tests", status });
-      tableRows.push(`| Tests | ${status} | ${escapeTableCell(clipSummaryValue(safe(body), RICH_VALUE_BUDGET))} |`);
+      tableRows.push(`| Tests | ${status} | ${escapeTableCell(body)} |`);
     }
   }
-  const auditStatus = auditRowStatus(args.auditHistory);
   if (auditStatus !== "NO VERDICT") {
-    rowFacts.push({ check: "Audit", status: auditStatus });
-    const auditBody = safe(args.countsLine.replace(/^\u2014\s*/, "").replace(/\.\s*$/, ""));
+    const auditBody = args.countsLine.replace(/^\u2014\s*/, "").replace(/\.\s*$/, "");
     if (gates.length > 0) {
-      tableRows.push(`| Audit | ${escapeTableCell(clipSummaryValue(auditBody, RICH_VALUE_BUDGET))} | ${auditStatus} | ${escapeTableCell(clipSummaryValue(auditBody, RICH_VALUE_BUDGET))} |`);
+      tableRows.push(showCommand
+        ? `| Audit | \u2014 | ${escapeTableCell(auditBody)} | ${auditStatus} | ${escapeTableCell(auditBody)} |`
+        : `| Audit | ${escapeTableCell(auditBody)} | ${auditStatus} | ${escapeTableCell(auditBody)} |`);
     } else {
-      tableRows.push(`| Audit | ${auditStatus} | ${escapeTableCell(clipSummaryValue(auditBody, RICH_VALUE_BUDGET))} |`);
+      tableRows.push(`| Audit | ${auditStatus} | ${escapeTableCell(auditBody)} |`);
     }
   }
-  // Audit 2026-09-13: auto-off — every row green collapses the table to
-  // one PASS line (findings keep the space); anything else renders full.
-  // REPORTED is not green: an unclaimed status stays visible, never hidden.
-  let tableLines = tableRows.length > 0
-    ? [(gates.length > 0 ? "| Quality Gate | Scope | Status | Notes |" : "| Check | Status | Details |"), (gates.length > 0 ? "| --- | --- | --- | --- |" : "| --- | --- | --- |"), ...tableRows]
+  // v0.38.55: the verification table always renders in full (owner:
+  // full parity, always-full-table) — the auto-collapse is retired.
+  const tableLines = tableRows.length > 0
+    ? [(gates.length > 0
+      ? (showCommand ? "| Quality Gate | Command | Scope | Status | Notes |" : "| Quality Gate | Scope | Status | Notes |")
+      : "| Check | Status | Details |"),
+      (gates.length > 0 ? (showCommand ? "| --- | --- | --- | --- | --- |" : "| --- | --- | --- | --- |") : "| --- | --- | --- |"),
+      ...tableRows]
     : [];
-  let verificationLine: string | null = null;
-  if (args.verification === "auto" && tableRows.length > 0
-    && rowFacts.every((fact) => /^(PASS|APPROVED)/.test(fact.status))) {
-    const middle = clipSummaryValue(rowFacts.map((fact) => `${clipSummaryValue(safe(fact.check), RICH_OBJECTIVE_ECHO_CHARS)} ${fact.status}`).join(" \u00b7 "), 300);
-    verificationLine = `\u2014 Verification passed (${middle}); details in the archive record.`;
-    tableLines = [];
-  }
-  const nextLines = next.slice(0, RICH_NEXT_CAP).map((detail) => {
-    const { lead, body } = leadBody(safe(detail));
-    return `- **${lead}** \u2014 ${clipSummaryValue(body, RICH_VALUE_BUDGET)}`;
+  // v0.38.55: every Next renders — no cap.
+  const nextLines = next.map((detail) => {
+    const { lead, body } = leadBody(detail);
+    return `- **${lead}** \u2014 ${body}`;
   });
   return {
+    banner,
     headline,
     durationLine: args.durationLine ?? null,
     findingLines,
     tableLines,
-    verificationLine,
+    verificationLine: null,
     nextLines,
+    repoLines: args.repoState ?? [],
   };
 }
 

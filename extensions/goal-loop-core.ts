@@ -350,12 +350,16 @@ export function sanitizeFindingGroups(value: unknown): FindingGroup[] | undefine
  */
 export interface GateRow {
   gate: string;
+  /** v0.38.55: repro command for the gate (e.g. `bun test src/`). Renders
+   * its own Command column; absent keeps the 4-col table. */
+  command?: string;
   scope?: string;
   notes?: string;
 }
 
 export const MAX_GATE_ROWS = 10;
 export const MAX_GATE_GATE_CHARS = 120;
+export const MAX_GATE_COMMAND_CHARS = 200;
 export const MAX_GATE_SCOPE_CHARS = 200;
 export const MAX_GATE_NOTES_CHARS = 400;
 
@@ -373,9 +377,10 @@ export function sanitizeGateRows(value: unknown): GateRow[] | undefined {
     const raw = entry as Record<string, unknown>;
     const gate = typeof raw.gate === "string" ? raw.gate.trim().slice(0, MAX_GATE_GATE_CHARS) : "";
     if (!gate) continue;
+    const command = typeof raw.command === "string" ? raw.command.trim().slice(0, MAX_GATE_COMMAND_CHARS) : "";
     const scope = typeof raw.scope === "string" ? raw.scope.trim().slice(0, MAX_GATE_SCOPE_CHARS) : "";
     const notes = typeof raw.notes === "string" ? raw.notes.trim().slice(0, MAX_GATE_NOTES_CHARS) : "";
-    rows.push({ gate, ...(scope ? { scope } : {}), ...(notes ? { notes } : {}) });
+    rows.push({ gate, ...(command ? { command } : {}), ...(scope ? { scope } : {}), ...(notes ? { notes } : {}) });
   }
   return rows.length > 0 ? rows : undefined;
 }

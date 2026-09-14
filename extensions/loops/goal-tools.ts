@@ -553,13 +553,15 @@ function registerAgentTools(pi: any): void {
       })),
       gateRows: Type.Optional(Type.Array(Type.Object({
         gate: Type.String({ maxLength: 120, description: "Gate name (e.g. Unit Tests, Typecheck, E2E, Production Build)" }),
+        command: Type.Optional(Type.String({ maxLength: 200, description: "Repro command for this gate (e.g. bun test src/). Renders its own Command column." })),
         scope: Type.Optional(Type.String({ maxLength: 200, description: "What the gate covered (e.g. suites, tiers, invariants)" })),
         notes: Type.Optional(Type.String({ maxLength: 400, description: "Outcome notes with counts (e.g. 743 passed, 0 failed). Status is DERIVED from these notes — PASS only when they say pass with zero failures, never claimed." })),
       }), {
         maxItems: 10,
         description:
           "v0.38.52: optional verification gate inventory for the terminal summary. " +
-          "Widens the Verification table to Quality Gate | Scope | Status | Notes and supersedes the mechanical Tests rows. " +
+          "Widens the Verification table to Quality Gate | Scope | Status | Notes (plus a Command column when any row carries one) " +
+          "and supersedes the mechanical Tests rows. " +
           "Presentation only — the six-label completionSummary stays the audited substance, and counts are never invented. " +
           "Omit when there is no gate inventory — the mechanical 3-col table stays the fallback.",
       })),
