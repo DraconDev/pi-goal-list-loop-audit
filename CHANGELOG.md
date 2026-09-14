@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.38.54 — Opt-in context-checkpoint projection (2026-09-14)
+
+The per-turn `context`-hook projection rewrote history on every turn, busting
+the provider prefix-cache (upstream issue #53). Projection is now opt-in:
+the hook leaves the transcript append-only by default so the cache holds
+across turns, while the fresh continuation prompt still carries live durable
+state every turn.
+
+### Added
+
+- **`contextCheckpointProjection` setting (default off):** explicit opt-in
+  restores the legacy per-turn splice of a bounded continuation checkpoint.
+  Carried in `SETTINGS_KEYS` with junk-normalization to unset, a row in the
+  `/glla` settings Other tab with an on/off editor, and a `docs/SETTINGS.md`
+  entry (release-gate docs coverage holds).
+
+### Fixed
+
+- **Prompt-cache continuity:** with projection off (the default) the hook
+  returns no message rewrite and records no projection event, preserving
+  cache-prefix reuse turn over turn.
+
+### Tests
+
+- Both hook paths pinned (default-off passthrough + opt-in splice), junk
+  normalization, menu row off/default, editor round-trip, and docs coverage.
+  Full suite 2163 pass / 2 skip / 0 fail; `tsc` clean; `git diff --check`
+  clean.
+
 ## 0.38.53 — Consent-safe GLLA delegation skill and list-draft staging (2026-09-13)
 
 Added the packaged `glla-delegate` skill for normal-chat goal/list delegation.
