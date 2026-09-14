@@ -5199,3 +5199,4 @@
 {"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-14T21:23:27.909Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":8396,"outputTokens":1879,"cacheReadTokens":152177,"cacheWriteTokens":0,"totalTokens":162452},"contextUsage":{"tokens":162452,"contextWindow":200000,"percent":81.226}},"at":"2026-09-14T21:24:19.998Z"}
 {"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-14T21:35:17.987Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":313,"outputTokens":613,"cacheReadTokens":110833,"cacheWriteTokens":0,"totalTokens":111759},"contextUsage":{"tokens":111759,"contextWindow":200000,"percent":55.87950000000001}},"at":"2026-09-14T21:59:32.088Z"}
