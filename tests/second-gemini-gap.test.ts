@@ -13,7 +13,7 @@ import { __testOnlyResetZombieAutoRetry } from "../extensions/loops/goal-activat
 import { __testOnlyResetZombieRunWatchdog } from "../extensions/goal-heartbeat.js";
 import { resetContinuationDispatchState } from "../extensions/goal-continuation.js";
 import { readState, sanitizeFindingGroups, sanitizeGateRows, type FindingGroup, type GateRow, type Goal } from "../extensions/goal-loop-core.js";
-import { buildRichTerminalParts, buildTerminalApprovalRender, takeBudgetedGroups } from "../extensions/completion-summary.js";
+import { buildRichTerminalParts, buildTerminalApprovalRender } from "../extensions/completion-summary.js";
 import { MockPi, makeMockCtx, seedGoal, tmpCwd } from "./harness/mock-pi.js";
 
 const GATES: GateRow[] = [
@@ -80,18 +80,6 @@ test("v0.38.52: table-mode findings ride test proof in the Evidence cell", () =>
   assert.ok(row?.includes("area.ts:1"), "mechanical evidence token still extracted");
   assert.ok(row?.includes("Tests: suite 1 green"), `proof rides the cell, got: ${row}`);
   assert.ok(!/(?<!\\)\|/.test(row!.slice(0, -2).split("|").slice(3).join("|")), "no raw pipes leak into the cell");
-});
-
-test("v0.38.52: takeBudgetedGroups keeps tests aligned with surviving findings", () => {
-  const groups: FindingGroup[] = [
-    { title: "A", findings: Array.from({ length: 8 }, (_, i) => `F${i}: b${i}`), tests: Array.from({ length: 8 }, (_, i) => `t${i}`) },
-    { title: "B", findings: Array.from({ length: 8 }, (_, i) => `G${i}: h${i}`), tests: Array.from({ length: 8 }, (_, i) => `u${i}`) },
-  ];
-  const out = takeBudgetedGroups(groups);
-  assert.equal(out.length, 2, "both groups survive");
-  assert.equal(out[0]!.findings.length, 8, "first group whole");
-  assert.equal(out[1]!.findings.length, 4, "second group clipped to the 12-finding budget");
-  assert.deepEqual(out[1]!.tests, ["u0", "u1", "u2", "u3"], "tests clipped to the surviving findings");
 });
 
 test("v0.38.52: sanitizeGateRows drops garbage, clips, caps", () => {

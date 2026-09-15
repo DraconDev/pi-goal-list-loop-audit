@@ -275,15 +275,12 @@ export function withoutStaleNext(details: string[] | undefined): string[] {
  * request-echo headline, a duration line, and an automatic table once
  * findings span 4+ groups). Scope is the terminal render only (chat +
  * transcript + archive human layer); progress cards, status line, and
- * external notifies keep their compact projections. Verbose by owner
- * choice: findings cap 12, values 400, table cells 400, Next 6. */
-export const RICH_FINDINGS_CAP = 12;
-export const RICH_VALUE_BUDGET = 400;
-export const RICH_NEXT_CAP = 6;
-/** v0.38.55 (full parity): the chat card shares everything the archive
- * knows — per-value clipping is effectively off (10k chars guards only
- * against pathological megabytes). The legacy RICH_* caps stay exported
- * for ranking/budgeting helpers and older tests. */
+ * external notifies keep their compact projections.
+ * v0.38.55 (full parity): findings, values, and Next render uncapped —
+ * the only remaining render-side bounds are the headline echo (80), the
+ * evidence-token density (4/finding), and the sanitize trust boundary
+ * (6 groups x 6 findings, 10 gate rows); the brief value guard is 10k
+ * chars against pathological megabytes. */
 export const RICH_FULL_VALUE_BUDGET = 10_000;
 /** v0.38.50: objective echo clipped to a headline-safe width. */
 export const RICH_OBJECTIVE_ECHO_CHARS = 80;
@@ -302,10 +299,6 @@ export interface RichTerminalParts {
   durationLine: string | null;
   findingLines: string[];
   tableLines: string[];
-  /** Audit 2026-09-13 auto-collapse, retired v0.38.55: the verification
-   * table always renders in full (owner: full parity). Kept (always
-   * null) so persisted-shape consumers do not break. */
-  verificationLine: string | null;
   nextLines: string[];
   /** v0.38.55 (full parity): final repository state section lines.
    * Empty when the state could not be read (absent stays absent). */
@@ -319,7 +312,9 @@ function escapeTableCell(value: string): string {
 function testsRowStatus(value: string): string {
   const fail = /(\d+)\s*fail/i.exec(value);
   if (fail && Number.parseInt(fail[1]!, 10) > 0) return "FAIL";
-  if (/pass/i.test(value)) return "PASS";
+  // v0.38.55 audit: word-bound — a bare /pass/i substring fires on
+  // "bypass"/"password"/"passage". "passed" still counts.
+  if (/\bpass(?:ed)?\b/i.test(value)) return "PASS";
   return "REPORTED";
 }
 
@@ -327,8 +322,10 @@ function auditRowStatus(history: Goal["auditHistory"]): string {
   const entries = Array.isArray(history) ? history : [];
   const last = entries[entries.length - 1];
   if (!last) return "NO VERDICT";
-  if (last.approved) return `APPROVED \u00d7${entries.length}`;
-  if (last.disapproved) return `DISAPPROVED \u00d7${entries.length}`;
+  // v0.38.55 audit: count MATCHING verdicts — the old total-entries
+  // count misattributed mixed approve+disapprove histories.
+  if (last.approved) return `APPROVED \u00d7${entries.filter((e) => e.approved).length}`;
+  if (last.disapproved) return `DISAPPROVED \u00d7${entries.filter((e) => e.disapproved).length}`;
   if (last.impossible) return "IMPOSSIBLE";
   return "NO VERDICT";
 }
@@ -362,27 +359,6 @@ export function extractEvidenceTokens(text: string): { text: string; evidence: s
 }
 
 /**
- * v0.38.50: enforce the total-findings budget across groups in order —
- * groups that go empty are dropped so the table/nesting never shows a
- * bare area header. v0.38.52: parallel `tests` ride along clipped to the
- * surviving findings so tests[i] still proves findings[i].
- */
-export function takeBudgetedGroups(groups: FindingGroup[]): FindingGroup[] {
-  const out: FindingGroup[] = [];
-  let remaining = RICH_FINDINGS_CAP;
-  for (const group of groups) {
-    if (remaining <= 0) break;
-    const findings = group.findings.slice(0, remaining);
-    if (findings.length === 0) continue;
-    // v0.38.52: keep the parallel test lines aligned with the survivors.
-    const aligned = group.tests?.slice(0, findings.length);
-    out.push(aligned && aligned.length > 0 ? { title: group.title, findings, tests: aligned } : { title: group.title, findings });
-    remaining -= findings.length;
-  }
-  return out;
-}
-
-/**
  * v0.38.50: one compact duration line from durable goal state — turns,
  * wall-clock elapsed since creation, and audit count. Only known facts
  * render (absent stays absent); null when nothing is known.
@@ -398,19 +374,6 @@ export function buildDurationLine(goal: Goal, now = Date.now()): string | null {
   const audits = Array.isArray(goal.auditHistory) ? goal.auditHistory.length : 0;
   if (audits > 0) segs.push(`${audits} audit${audits === 1 ? "" : "s"}`);
   return segs.length > 0 ? `\u2014 ${segs.join(" \u00b7 ")}` : null;
-}
-
-/** Audit 2026-09-13 (terminal findings-first): commit SHAs read as
- * machine receipts in chat. Hex tokens of 7+ chars carrying at least one
- * digit are hashes in practice (02871aa6, full SHAs); pure-letter tokens,
- * versions (v9.9.9 splits to v9/9/9), counts, and file:line evidence never
- * match. The archive keeps the full text — strip chat-side only. */
-export function stripCommitHashes(value: string): string {
-  return value
-    .replace(/\b[0-9a-fA-F]{7,64}\b/g, (token) => (/[0-9]/.test(token) ? "\u2026" : token))
-    .replace(/[ \t]{2,}/g, " ")
-    .replace(/\s+([,.;:])/g, "$1")
-    .trim();
 }
 
 /** Partition informing details into findings / Tests / next buckets. */
@@ -463,22 +426,34 @@ function bannerVerdict(auditStatus: string): string {
 }
 
 /** v0.38.55 (full parity): final repository state for the terminal card —
- * branch, HEAD, and tree cleanliness from durable git facts. Best-effort:
- * any failure returns undefined and the section stays out (absent is
- * named by omission, never invented). The render call sites own cwd. */
+ * branch, HEAD, and tree cleanliness from durable git facts. Per-command
+ * partial degradation (a failed subcommand blanks only its own line) with
+ * short timeouts, so one stuck git call cannot wedge the approval path;
+ * the changed-file list caps at 20 with an overflow count. Total failure
+ * still returns undefined and the section stays out (absent is named by
+ * omission, never invented). The render call sites own cwd. */
 export function buildFinalRepoStateLines(cwd: string): string[] | undefined {
-  try {
-    const run = (args: string[]): string => execFileSync("git", args, { cwd, encoding: "utf8", timeout: 5000, stdio: ["ignore", "pipe", "ignore"] }).trim();
-    const branch = run(["branch", "--show-current"]) || "detached";
-    const head = run(["log", "-1", "--format=%h %s"]);
-    const short = run(["status", "--short"]);
-    const lines = [`Branch ${branch}${head ? ` @ ${head}` : ""}`];
-    if (!short) lines.push("Tree clean");
-    else lines.push("Tree changed:", ...short.split("\n").map((line) => `  ${line.trim()}`));
-    return lines;
-  } catch {
-    return undefined;
+  const run = (args: string[]): string | undefined => {
+    try {
+      return execFileSync("git", args, { cwd, encoding: "utf8", timeout: 3000, stdio: ["ignore", "pipe", "ignore"] }).trim() || undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  const branch = run(["branch", "--show-current"]);
+  const head = run(["log", "-1", "--format=%h %s"]);
+  const short = run(["status", "--short"]);
+  if (!branch && !head && short === undefined) return undefined;
+  const lines = [`Branch ${branch ?? "detached"}${head ? ` @ ${head}` : ""}`];
+  if (short === undefined) lines.push("Tree state unreadable");
+  else if (!short) lines.push("Tree clean");
+  else {
+    const files = short.split("\n");
+    const shown = files.slice(0, 20).map((line) => `  ${line.trim()}`);
+    if (files.length > 20) shown.push(`  \u2026and ${files.length - 20} more`);
+    lines.push("Tree changed:", ...shown);
   }
+  return lines;
 }
 
 export function buildRichTerminalParts(args: {
@@ -566,10 +541,12 @@ export function buildRichTerminalParts(args: {
   }
   if (auditStatus !== "NO VERDICT") {
     const auditBody = args.countsLine.replace(/^\u2014\s*/, "").replace(/\.\s*$/, "");
+    // v0.38.55 audit: the Audit row's Scope names the row kind — the old
+    // shape duplicated the counts text in Scope and Notes.
     if (gates.length > 0) {
       tableRows.push(showCommand
-        ? `| Audit | \u2014 | ${escapeTableCell(auditBody)} | ${auditStatus} | ${escapeTableCell(auditBody)} |`
-        : `| Audit | ${escapeTableCell(auditBody)} | ${auditStatus} | ${escapeTableCell(auditBody)} |`);
+        ? `| Audit | \u2014 | auditor verdict | ${auditStatus} | ${escapeTableCell(auditBody)} |`
+        : `| Audit | auditor verdict | ${auditStatus} | ${escapeTableCell(auditBody)} |`);
     } else {
       tableRows.push(`| Audit | ${auditStatus} | ${escapeTableCell(auditBody)} |`);
     }
@@ -594,31 +571,27 @@ export function buildRichTerminalParts(args: {
     durationLine: args.durationLine ?? null,
     findingLines,
     tableLines,
-    verificationLine: null,
     nextLines,
     repoLines: args.repoState ?? [],
   };
 }
 
-/** Compose parts + headline + section headers into markdown lines.
+/** Compose parts + banner + section headers into markdown lines.
  * v0.38.50: the duration line rides directly under the headline.
  * Audit 2026-09-13: findings-first order is pinned — findings, then the
- * verification table (or its auto-collapsed PASS line), then Next.
+ * verification table, then Next.
  * v0.38.55 (full parity): the verdict banner opens the card and the
  * final repository state closes it — findings, verification, Next,
  * repo state, in that order. */
-export function composeRichTerminalLines(parts: RichTerminalParts, opts?: { headline?: string }): string[] {
-  const lines = [parts.banner ?? opts?.headline ?? parts.headline, ""];
-  const headline = opts?.headline ?? parts.headline;
-  if (headline !== lines[0]) lines.push(headline, "");
+export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
+  const lines = [parts.banner ?? parts.headline, ""];
+  if (parts.headline !== lines[0]) lines.push(parts.headline, "");
   if (parts.durationLine) lines.push(parts.durationLine, "");
   if (parts.findingLines.length > 0) {
     lines.push("### Key Findings & Remediation", ...parts.findingLines, "");
   }
   if (parts.tableLines.length > 0) {
     lines.push("### Verification Summary", ...parts.tableLines, "");
-  } else if (parts.verificationLine) {
-    lines.push(parts.verificationLine, "");
   }
   if (parts.nextLines.length > 0) {
     lines.push("### Next", ...parts.nextLines, "");

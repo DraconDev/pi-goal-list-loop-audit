@@ -198,8 +198,9 @@ export interface Settings {
    * (contract item 5): auditCap 10, stuckMax 10, wedge off, and provider
    * errors auto-retry silently. autoResume remains a separate explicit
    * global consent because cold restore must hold by default. v0.34.140:
-   * no-verdict auditor recovery also keeps retrying inside its bounded
-   * 24-hour window. Default ON since v0.34.141; set false for the
+   * no-verdict auditor recovery also keeps retrying — unbounded while
+   * aggressiveMode is on, inside its bounded 24-hour window otherwise.
+   * Default ON since v0.34.141; set false for the
    * conservative pause-first policy. Explicit per-key settings still win. */
   aggressiveMode?: boolean;
   /** Consecutive stuck interventions before a loop stops (default 5,
@@ -426,8 +427,8 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   if (settings.stateRoot !== "sessionDir" && settings.stateRoot !== "workingDir") {
     settings.stateRoot = "workingDir";
   }
-  // v0.38.22: hand-edited richness falls back to rich (the default) —
-  // unknown values must not blank the worker display.
+  // v0.38.22: hand-edited richness falls back to quiet (the canonical
+  // default) — unknown values must not blank the worker display.
   if (settings.subagentDisplayRichness !== "rich"
       && settings.subagentDisplayRichness !== "compact"
       && settings.subagentDisplayRichness !== "quiet") {

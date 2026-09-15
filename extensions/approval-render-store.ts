@@ -20,8 +20,11 @@ const MAX_STORED_RENDERS = 20;
 const MAX_REPLAY_PER_CONTACT = 5;
 // v0.38.30 audit: bound the sidecar behind the "each is ~1KB" comment — a
 // long approval trailer used to grow the 20-entry file without bound.
-const MAX_RENDER_CHAT_LINES = 60;
-const MAX_RENDER_LINE_CHARS = 1000;
+// v0.38.55 audit: raised for the uncapped full-parity card (findings +
+// full table + repo state routinely exceed 60 lines) — a stored render
+// must replay verbatim, so the store bound stays above realistic cards.
+const MAX_RENDER_CHAT_LINES = 150;
+const MAX_RENDER_LINE_CHARS = 2000;
 
 export function approvalRenderStorePath(cwd: string): string {
   return path.join(piGlaDir(cwd), "pending-approval-renders.json");

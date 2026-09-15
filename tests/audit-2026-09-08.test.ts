@@ -203,7 +203,7 @@ test("v0.38.30: approval store truncates by code points and caps chat lines", ()
   const cwd = tmpCwd();
   try {
     const emojiObjective = "😀".repeat(400);
-    const longLines = Array.from({ length: 100 }, (_, i) => `line ${i} ` + "y".repeat(2000));
+    const longLines = Array.from({ length: 200 }, (_, i) => `line ${i} ` + "y".repeat(3000));
     assert.equal(
       persistApprovalRender(cwd, { goalId: "g1", objective: emojiObjective, chatLines: longLines }),
       true,
@@ -212,8 +212,8 @@ test("v0.38.30: approval store truncates by code points and caps chat lines", ()
     const entry = stored.find((e: { goalId: string }) => e.goalId === "g1");
     assert.equal([...entry.objective].length, 300, "objective cut at 300 code points");
     assert.ok(!entry.objective.includes("�"), "no split surrogate halves");
-    assert.ok(entry.chatLines.length <= 60, "chat lines capped");
-    assert.ok(entry.chatLines.every((l: string) => [...l].length <= 1000), "each line capped");
+    assert.equal(entry.chatLines.length, 150, "chat lines capped at the parity-sized bound");
+    assert.ok(entry.chatLines.every((l: string) => [...l].length <= 2000), "each line capped");
   } finally {
     rmSync(cwd, { recursive: true, force: true });
   }

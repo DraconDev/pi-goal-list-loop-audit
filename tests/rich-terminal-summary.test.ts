@@ -14,7 +14,6 @@ import {
   buildRichTerminalParts,
   buildTerminalApprovalRender,
   extractEvidenceTokens,
-  takeBudgetedGroups,
 } from "../extensions/completion-summary.js";
 import { seedGoal } from "./harness/mock-pi.js";
 
@@ -270,18 +269,25 @@ test("three groups stay nested — the table trigger is exactly four", () => {
   assert.ok(!three.chatLines.some((l) => l.startsWith("| Area |")), "still no table");
 });
 
-test("grouped findings render uncapped: every finding, full values, every Next", () => {
+test("v0.38.55: render path respects the sanitize trust boundary", () => {
+  // v0.38.55 audit: the render tests used to bypass the boundary they
+  // claimed to pin — raw oversized groups went straight into the
+  // renderer. The real path always sanitizes first, so the test does too.
   const many: FindingGroup[] = Array.from({ length: 3 }, (_, g) => ({
     title: `Area ${g}`,
     findings: [`Lead ${g}a: ${"x".repeat(500)}`, `Lead ${g}b: short`, `Lead ${g}c: short`, `Lead ${g}d: short`, `Lead ${g}e: short`],
   }));
-  const crowded = render({ findingGroups: many });
+  const crowded = render({ findingGroups: sanitizeFindingGroups(many) });
   const bullets = crowded.chatLines.filter((l) => l.startsWith("- **Lead"));
-  assert.equal(bullets.length, 15, `every finding renders, got ${bullets.length}`);
+  assert.equal(bullets.length, 15, `every in-boundary finding renders, got ${bullets.length}`);
   const long = bullets.find((l) => l.startsWith("- **Lead 0a**"));
   assert.ok(long, "first finding present");
   assert.ok(long!.length - "- **Lead 0a** — ".length >= 500, `value unclipped, got ${long!.length}`);
   assert.ok(crowded.chatLines.some((l) => l.startsWith("#### 3.")), "later groups keep their headers");
+  const nine = sanitizeFindingGroups(Array.from({ length: 9 }, (_, i) => ({ title: `t${i}`, findings: ["Lead: body"] })));
+  const capped = render({ findingGroups: nine });
+  assert.ok(capped.chatLines.some((l) => l.startsWith("| Area |")), "oversized input still renders as a table");
+  assert.ok(!capped.chatLines.some((l) => l.startsWith("| t6 |")), "groups past the 6-group boundary never render");
   // Every Next renders — the one-concrete-action chat filter still
   // applies to six-label Nexts; parts-level Nexts are uncapped.
   const parts = buildRichTerminalParts({
@@ -300,16 +306,6 @@ test("extractEvidenceTokens moves tokens mechanically and never invents", () => 
   const abs = extractEvidenceTokens("See /var/tmp/x.ts:1 for details");
   assert.deepEqual(abs.evidence, [], "absolute paths are not evidence");
   assert.ok(abs.text.includes("/var/tmp/x.ts:1"), "absolute path stays in the finding text");
-});
-
-test("takeBudgetedGroups fills in order and drops emptied groups", () => {
-  const groups: FindingGroup[] = [
-    { title: "A", findings: Array.from({ length: 12 }, (_, i) => `f${i}`) },
-    { title: "B", findings: ["leftover"] },
-  ];
-  const taken = takeBudgetedGroups(groups);
-  assert.equal(taken.length, 1, "second group emptied by the budget");
-  assert.equal(taken[0]!.findings.length, 12, "first group fills the budget");
 });
 
 test("sanitizeFindingGroups bounds shape at the trust boundary", () => {

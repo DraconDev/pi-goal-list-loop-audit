@@ -2753,6 +2753,9 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
       fmt("compactorModel", "compactorModel"),
       `compactorModelFallbacks: ${formatMainModelFallbacks(effectiveSettings.compactorModelFallbacks)}  [${prov.compactorModelFallbacks?.source ?? "default"}]`,
       fmt("subagentDisplayRichness", "subagentDisplayRichness"),
+      // Audit 2026-09-15: the headless fallback omitted this — headless
+      // operators could not see/provenance the projection flag.
+      fmt("contextCheckpointProjection", "contextCheckpointProjection (off default; on = project bounded context)"),
       fmt("notifyCmd", "notify"),
       fmt("tokenLimit", "tokenLimit"),
       fmt("autoResume", "autoResume"),
