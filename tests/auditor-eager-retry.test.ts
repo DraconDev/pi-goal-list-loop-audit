@@ -137,6 +137,21 @@ test("eager: conservative attempts remain bounded by the existing durable safety
   assert.equal(plan.unbounded, false);
 });
 
+test("unified: no auditor-only attempt cap inside the shared horizon", () => {
+  // The retired MAX_AUDITOR_AUTO_RETRY_ATTEMPTS=5 cap stopped the ladder at
+  // attempt 5; the shared 24h horizon is now the only conservative stop —
+  // same as the main-model envelope.
+  const firstAt = new Date().toISOString();
+  const plan = auditorRetryPlan(
+    claim({ retryAttempts: 9, retryFirstAt: firstAt, retryUntil: new Date(Date.now() + 12 * 60 * 60_000).toISOString() }),
+    providerFailure(0, false),
+    60,
+  );
+  assert.equal(plan.attempt, 10);
+  assert.equal(plan.automatic, true, "attempt 10 inside the horizon still retries");
+  assert.equal(plan.unbounded, false);
+});
+
 test("v0.36.0: aggressive auditor recovery ignores the legacy horizon and attempt cap", () => {
   const plan = auditorRetryPlan(
     claim({ retryAttempts: 50, retryFirstAt: new Date(0).toISOString(), retryUntil: new Date(1).toISOString() }),
