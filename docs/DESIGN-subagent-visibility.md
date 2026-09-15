@@ -96,7 +96,8 @@ silence ages re-laid out the editor every tick). v0.38.22 keeps the doctrine's
 safety property by other means — `renderAgentsWidgetLines` buckets silence
 ages exactly like the compact line, so the widget key only moves on genuine
 state transitions — and restores rich ambient rows behind the
-`subagentDisplayRichness` ladder (`rich` default / `compact` / `quiet`, HUNG
+`subagentDisplayRichness` ladder (`quiet` canonical default since the
+2026-09-07 flip — `rich` was the default before / `compact` / `quiet`, HUNG
 never silent), plus — until v0.38.23 — the task-linkage header
 (`→ <objective>`) only GLLA can show. v0.38.23 removes the header (the
 card head already names the objective), collapses worker rows to one

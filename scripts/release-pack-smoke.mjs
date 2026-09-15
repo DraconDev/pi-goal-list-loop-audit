@@ -63,6 +63,10 @@ try {
     "prompts/goal-loop-plan.md",
     "schemas/goal.schema.json",
     "skills/glla-delegate/SKILL.md",
+    // Audit 2026-09-15: docs/ and media/ ship whole — a SETTINGS.md or
+    // hero-image drop must fail here, not in the field.
+    "docs/SETTINGS.md",
+    "media/glla2.png",
   ];
   const listing = run("tar", ["-tzf", tarball]);
   for (const file of required) {

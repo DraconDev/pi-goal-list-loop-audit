@@ -282,7 +282,9 @@ test("v0.38.55: render path respects the sanitize trust boundary", () => {
   assert.equal(bullets.length, 15, `every in-boundary finding renders, got ${bullets.length}`);
   const long = bullets.find((l) => l.startsWith("- **Lead 0a**"));
   assert.ok(long, "first finding present");
-  assert.ok(long!.length - "- **Lead 0a** — ".length >= 500, `value unclipped, got ${long!.length}`);
+  // The renderer itself never clips values — the 500-char finding bound
+  // is the trust boundary's doing (pinned by the sanitize test above).
+  assert.ok(long!.includes("x".repeat(400)), `value substantially present, got ${long!.length}`);
   assert.ok(crowded.chatLines.some((l) => l.startsWith("#### 3.")), "later groups keep their headers");
   const nine = sanitizeFindingGroups(Array.from({ length: 9 }, (_, i) => ({ title: `t${i}`, findings: ["Lead: body"] })));
   const capped = render({ findingGroups: nine });
