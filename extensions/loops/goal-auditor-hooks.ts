@@ -959,7 +959,8 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   // failure; the recovery ladder healing the provider IS the durable
   // consent for its single retry (pinned v0.35.x).
   if (origin !== "manual" && supervisorPaused(state) && !exemptLoadHold) return;
-  if (origin !== "manual" && goal.pendingCompletion.auditorFallbackExhausted) return;
+  const goal = state.goal;
+  if (!goal?.pendingCompletion) return;
   const goalId = goal.id;
   if (completionAuditInFlight) return;
   const generation = sessionGeneration;
@@ -1726,6 +1727,10 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       noticeKey: `${recoveryEpisodeKey}:retry-wait`,
       suppressNotice: true,
     });
+    // The ladder timer above is the primary driver; arm the shared :00:30
+    // ticker as the backstop (missed restore, cleared timer). It no-ops
+    // while this timer is alive — the claim leaves retry-waiting first.
+    scheduleHourlyProbe(liveCtx);
     return;
   }
 

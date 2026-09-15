@@ -894,11 +894,21 @@ export function scheduleMainModelPrimaryProbe(ctx: ExtensionContext, delayMs?: n
  * scheduled (no duplicate schedules). */
 export function scheduleHourlyProbe(ctx: ExtensionContext): void {
   if (loadGlobalSettings().hourlyRetryProbe !== true) return;
+  const mainParked = !!state.mainModelRecovery
+    && state.mainModelRecovery.manualResumeRequired !== true
+    && state.mainModelRecovery.retryAt !== undefined;
+  // Shared ticker: a parked auditor retry-waiting claim rides the same
+  // :00:30 probe as main-model recovery — the auditor is just provider
+  // requests, same as main. The ladder timer stays the primary driver; the
+  // ticker is the backstop when that timer dies (missed restore, cleared
+  // timer) and normally no-ops on the claim-phase guard.
+  const auditorParked = state.goal?.status === "paused"
+    && (state.goal.pendingCompletion?.phase ?? "") === "retry-waiting"
+    && (state.goal.pauseReason ?? "").startsWith("auditor retry:");
   // The ticker is only for a parked recovery. After setModel succeeds,
   // retryAt is cleared while the next supervised turn is being tested; do
   // not let :00:30 switch models underneath that turn.
-  if (!state.mainModelRecovery || state.mainModelRecovery.manualResumeRequired === true) return; // nothing to recover — silent no-op
-  if (state.mainModelRecovery.retryAt === undefined) return; // active supervised turn, not parked
+  if (!mainParked && !auditorParked) return; // nothing to recover — silent no-op
   if (flags.hourlyProbeTimer) return; // already pending
   const now = Date.now();
   const fireAt = nextHourlyProbeMs(now);
@@ -926,7 +936,10 @@ export function scheduleHourlyProbe(ctx: ExtensionContext): void {
  * recovery path's timer cleanup, and a generation/host check prevents a
  * stale session from creating a new timer. */
 export async function fireHourlyProbe(ctx: ExtensionContext): Promise<void> {
-  if (!state.mainModelRecovery || state.mainModelRecovery.manualResumeRequired === true) return; // wall already lifted/held — silent no-op
+  if (!state.mainModelRecovery || state.mainModelRecovery.manualResumeRequired === true) {
+    await fireHourlyProbeForParkedAuditor(ctx);
+    return;
+  }
   const generation = flags.sessionGeneration;
   if (hourlyProbeInFlight && hourlyProbeGeneration !== generation) {
     hourlyProbeInFlight = false;
@@ -958,8 +971,28 @@ export async function fireHourlyProbe(ctx: ExtensionContext): Promise<void> {
     }
     if (generation !== flags.sessionGeneration) return;
     const fresh = freshCtxForGeneration(generation);
-    if (fresh && state.mainModelRecovery && !state.mainModelRecovery.manualResumeRequired) scheduleHourlyProbe(fresh);
+    if (fresh) scheduleHourlyProbe(fresh);
   }
+}
+
+/** Shared-ticker backstop for a parked auditor retry-waiting claim whose
+ * ladder timer died (missed restore, cleared timer). Fires only when the
+ * claim is past due — normally the ladder timer fires first and this
+ * no-ops on the phase guard inside retryStoredCompletionAudit. Never
+ * touches models: a detached audit launch cannot disturb a supervised turn. */
+async function fireHourlyProbeForParkedAuditor(ctx: ExtensionContext): Promise<void> {
+  const goal = state.goal;
+  if (!goal || goal.status !== "paused") return;
+  const pending = goal.pendingCompletion;
+  if (!pending || (pending.phase ?? "") !== "retry-waiting") return;
+  if (!(goal.pauseReason ?? "").startsWith("auditor retry:")) return;
+  if (goal.pauseResumeAt && Date.parse(goal.pauseResumeAt) > Date.now() + 60_000) return; // ladder timer owns the wait
+  if (typeof retryStoredCompletionAudit !== "function") return;
+  appendLedger(ctx.cwd, "hourly_probe_auditor_backstop", {
+    at: new Date().toISOString(),
+    pauseResumeAt: goal.pauseResumeAt ?? null,
+  });
+  await retryStoredCompletionAudit("provider-retry");
 }
 
 /** Cancel the hourly ticker — called on session replacement, recovery

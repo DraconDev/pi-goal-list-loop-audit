@@ -31,6 +31,7 @@ import {
   modelRef,
   nextUntriedModelRef,
   normalizeBoundedModelRefs,
+  splitModelRef,
   MAX_AUDITOR_CANDIDATE_REFS,
 } from "./main-model-recovery.js";
 import { ModelSelector, type ModelFallbackEvent } from "./model-selector.js";
@@ -243,6 +244,24 @@ export async function runAuditorFallbackWithPolicy(
   const addAttempted = (ref: string): void => {
     if (!attempted.some((entry) => entry.toLowerCase() === ref.toLowerCase())) attempted.push(ref);
   };
+  const providerOfRef = (ref: string): string | undefined => {
+    const cand = byRef.get(ref.toLowerCase());
+    const mref = (cand ? modelRef(cand.model) : undefined) ?? ref;
+    return splitModelRef(mref)?.provider.toLowerCase();
+  };
+  // A provider-class failure means the backend is down, not the rung: skip
+  // every untried rung on the same provider instead of burning a launch per
+  // rung. Timeout/transport/no-verdict failures stay rung-local — those can
+  // be specific to one model or one launch.
+  const skipSameProviderRungs = (failedRef: string): void => {
+    const provider = providerOfRef(failedRef);
+    if (!provider) return;
+    for (const ref of refs) {
+      if (sameRef(ref, failedRef)) continue;
+      if (attempted.some((entry) => sameRef(entry, ref))) continue;
+      if (providerOfRef(ref) === provider) addAttempted(ref);
+    }
+  };
   const isLive = (): boolean => {
     if (!opts.shouldRetry) return true;
     try { return opts.shouldRetry(); } catch { return false; }
@@ -441,6 +460,7 @@ export async function runAuditorFallbackWithPolicy(
       if (!isRetriableInfraError(second.error) || !isMainModelFallbackFailure(failure)) {
         return { result: second, retriedOnce, fallbackUsed, via: candidate.via };
       }
+      if (failureClass(second) === "provider") skipSameProviderRungs(selectedRef);
       currentRef = selectedRef;
       const nextRef = nextUntriedModelRef(currentRef, refs, attempted);
       failureAttempt += 1;
@@ -469,6 +489,7 @@ export async function runAuditorFallbackWithPolicy(
 
     // A restart resumed the already-authorized second attempt. Do not grant a
     // third call to the same candidate: advance through the chain now.
+    if (failureClass(first) === "provider") skipSameProviderRungs(selectedRef);
     currentRef = selectedRef;
     const nextRef = nextUntriedModelRef(currentRef, refs, attempted);
     failureAttempt += 1;

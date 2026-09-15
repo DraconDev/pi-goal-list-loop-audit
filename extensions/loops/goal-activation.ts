@@ -1711,6 +1711,8 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
             noticeKey: `${recoveryEpisodeKey}:retry-wait`,
             suppressNotice: !notifyRetry,
           });
+          // Shared-ticker backstop rides along with the restored ladder timer.
+          scheduleHourlyProbe(ctx);
         } else {
           void retryStoredCompletionAudit("session-recovery");
         }

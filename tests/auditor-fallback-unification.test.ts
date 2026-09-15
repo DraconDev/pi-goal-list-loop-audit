@@ -388,23 +388,56 @@ test("partial semantic flags cannot bypass fallback recovery", async () => {
   assert.equal(outcome.result.error, undefined);
 });
 
-test("candidate exhaustion preserves the final concrete failure class", async () => {
+test("same-provider rungs collapse after a provider-class failure", async () => {
+  // One dead backend must not burn a launch per rung: after test/primary
+  // fails twice with a provider-class error, test/fallback-1 (same backend)
+  // is skipped and the chain reports exhausted with the concrete class.
   const exhausted: AuditorFallbackExhaustionInfo[] = [];
+  const calls: string[] = [];
   const outcome = await runAuditorFallbackWithPolicy([
     { ref: "test/primary", model: { provider: "test", id: "primary" }, via: "setting" },
     { ref: "test/fallback-1", model: { provider: "test", id: "fallback-1" }, via: "fallback-pin" },
-  ], async (candidate) => result({ error: "503 provider unavailable", model: candidate.ref }), {
+  ], async (candidate) => {
+    calls.push(candidate.ref!);
+    return result({ error: "503 provider unavailable", model: candidate.ref });
+  }, {
     sleep: async () => {},
     shouldRetry: () => true,
     onCandidateExhausted: (_candidate, _error, info) => { exhausted.push(info); },
   });
 
+  assert.deepEqual(calls, ["test/primary", "test/primary"], "the same-backend rung is skipped, not launched");
+  assert.equal(outcome.result.fallbackExhausted, true);
+  assert.equal(outcome.result.infrastructureClass, "provider");
+  assert.equal(exhausted.length, 1);
+  assert.equal(exhausted[0]?.nextCandidateRef, undefined);
+  assert.deepEqual(exhausted[0]?.attemptedRefs, ["test/primary", "test/fallback-1"]);
+});
+
+test("cross-provider rungs still walk the full chain", async () => {
+  // The collapse is provider-scoped: a dead backend never skips a rung on a
+  // different backend.
+  const exhausted: AuditorFallbackExhaustionInfo[] = [];
+  const calls: string[] = [];
+  const outcome = await runAuditorFallbackWithPolicy([
+    { ref: "a/primary", model: { provider: "a", id: "primary" }, via: "setting" },
+    { ref: "b/fallback-1", model: { provider: "b", id: "fallback-1" }, via: "fallback-pin" },
+  ], async (candidate) => {
+    calls.push(candidate.ref!);
+    return result({ error: "503 provider unavailable", model: candidate.ref });
+  }, {
+    sleep: async () => {},
+    shouldRetry: () => true,
+    onCandidateExhausted: (_candidate, _error, info) => { exhausted.push(info); },
+  });
+
+  assert.deepEqual(calls, ["a/primary", "a/primary", "b/fallback-1", "b/fallback-1"]);
   assert.equal(outcome.result.fallbackExhausted, true);
   assert.equal(outcome.result.infrastructureClass, "provider");
   assert.equal(exhausted.length, 2);
-  assert.equal(exhausted[0]?.nextCandidateRef, "test/fallback-1");
+  assert.equal(exhausted[0]?.nextCandidateRef, "b/fallback-1");
   assert.equal(exhausted[1]?.nextCandidateRef, undefined);
-  assert.deepEqual(exhausted[1]?.attemptedRefs, ["test/primary", "test/fallback-1"]);
+  assert.deepEqual(exhausted[1]?.attemptedRefs, ["a/primary", "b/fallback-1"]);
 });
 
 test("cursor persistence failure fails closed before a retry or fallback", async () => {

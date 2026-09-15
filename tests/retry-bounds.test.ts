@@ -66,7 +66,10 @@ test("v0.36.0: aggressive recovery has no wall-clock episode horizon", () => {
   assert.match(RECOVERY, /autoRetryUntil: aggressive \? undefined : mainModelAutoRetryUntil/);
   assert.match(RECOVERY, /adaptive backoff for as long as it remains recoverable/);
   assert.match(SRC, /auditorRetryPlan\(durableClaim, undefined, undefined, aggressive\)/);
-  assert.match(SRC.replace(/\s+/g, " "), /aggressive \|\| \(attempt < MAX_AUDITOR_AUTO_RETRY_ATTEMPTS/);
+  // Unified envelope: no auditor-only attempt cap — the shared 24h horizon is
+  // the only conservative stop, same as the main-model ladder.
+  assert.match(SRC.replace(/\s+/g, " "), /const automatic = aggressive \|\| now \+ retryAfterSec \* 1_000 <= untilMs;/);
+  assert.doesNotMatch(SRC, /MAX_AUDITOR_AUTO_RETRY_ATTEMPTS/);
 });
 
 test("v0.36.0: aggressive auditor disapprovals become durable TODOs and stop on repeated no-progress", () => {

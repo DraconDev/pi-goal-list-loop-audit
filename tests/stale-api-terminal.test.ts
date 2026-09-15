@@ -206,7 +206,14 @@ test("v0.32.0: audit-opportunistic fix batch — dispose, keys, caps, message", 
   assert.match(GS, /"auditorSameSessionSwap",/);
   const GOAL = readGoalRuntimeSource();
   assert.match(GOAL, /slice\(0, 50\)/); // fan-out cap
-  assert.match(GOAL, /MAX_AUDITOR_AUTO_RETRY_ATTEMPTS = 5/); // durable generic retry terminal cap
+  // Unified envelope: a burned chain ladders like any provider failure — no
+  // attempt cap, no exhausted hard-park.
+  assert.match(GOAL, /chainExhaustedToLadder/); // burned chain skips the one-shot branch into the shared ladder
+  assert.doesNotMatch(GOAL, /MAX_AUDITOR_AUTO_RETRY_ATTEMPTS/); // auditor-only attempt cap retired
+  const REC = fs.readFileSync("extensions/goal-recovery.ts", "utf-8");
+  assert.match(REC, /hourly_probe_auditor_backstop/); // parked auditor claims ride the shared :00:30 ticker
+  assert.match(REC, /auditor retry:/); // ticker backstop keys on the ladder's pause copy
+  assert.match(AUD, /skipSameProviderRungs/); // one dead backend does not burn a launch per rung
   // v0.34.108/0.34.142: the old process-local/provider-specific counters
   // are gone; a manual-origin audit starts a fresh generic retry window.
   assert.match(GOAL, /const freshAuditorCycle = origin === "manual" && claim\.auditorFallbackExhausted === true/);
