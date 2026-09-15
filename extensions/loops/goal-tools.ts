@@ -1171,7 +1171,10 @@ function registerAgentTools(pi: any): void {
       // Candidate cursor callbacks update the same durable claim while the
       // worker is running. Use the refreshed record below so recovery cannot
       // overwrite the cursor with the pre-launch snapshot.
-      const durableCompletionClaim = state.goal.pendingCompletion ?? completionClaim;
+      let durableCompletionClaim = state.goal.pendingCompletion ?? completionClaim;
+      // Unified envelope: set when a burned candidate chain diverts into
+      // the shared ladder below instead of hard-parking.
+      let chainExhaustedToLadder = false;
       if (result.goalRevision && !isGoalRevisionCurrent(result.goalRevision, state.goal)) {
         appendLedger(ctx.cwd, "stale_revision_refused", {
           goalId: auditGoalId,
@@ -1524,7 +1527,34 @@ function registerAgentTools(pi: any): void {
         // directly. A timeout is not a verdict and must not be fed back into
         // the normal agent continuation path.
         const cursorPersistenceFailed = isAuditorCursorPersistenceFailure(result.error);
-        if (result.fallbackExhausted || cursorPersistenceFailed) {
+        if (result.fallbackExhausted && !cursorPersistenceFailed) {
+          // Unified envelope: a burned candidate chain is not a verdict and
+          // not a hard park — it is provider requests failing, the same as
+          // any main-model failure. Clear the burned cursor and fall through
+          // to the shared durable-retry ladder below, which keeps retrying
+          // for as long as main would. Only a cursor-persistence failure
+          // still parks: without a durable cursor a restart could repeat
+          // provider calls.
+          const exhaustedCopy = providerErrorPresentation(result.error, "completion");
+          appendLedger(ctx.cwd, "auditor_fallback_exhausted", {
+            goalId: auditGoalId,
+            attemptId: durableCompletionClaim.attemptId,
+            failureClass: auditorResultFailureClass(result),
+            diagnostic: exhaustedCopy.diagnostic,
+            display: exhaustedCopy.display,
+            recoveryEpisodeKey: durableCompletionClaim.recoveryEpisodeKey ?? `${durableCompletionClaim.at}:${exhaustedCopy.fingerprint}`,
+          });
+          durableCompletionClaim = {
+            ...durableCompletionClaim,
+            auditorCandidateRefs: undefined,
+            auditorCandidateRef: undefined,
+            auditorRetryCandidateRef: undefined,
+            auditorRetryAttemptStarted: undefined,
+            auditorFallbackExhausted: undefined,
+          };
+          chainExhaustedToLadder = true;
+        }
+        if ((result.fallbackExhausted || cursorPersistenceFailed) && !chainExhaustedToLadder) {
           // The configured candidate chain is finite. Exhaustion and cursor
           // persistence failures are hard parked states, not invitations to
           // schedule another automatic cycle that would repeat a provider
@@ -1585,7 +1615,9 @@ function registerAgentTools(pi: any): void {
             details: {},
           };
         }
-        if (isAuditorNoVerdictInfrastructureError(result.error, result.infrastructureClass)) {
+        // A burned chain already diverted to the shared ladder above — the
+        // timeout one-shot must not intercept it back into a single retry.
+        if (!chainExhaustedToLadder && isAuditorNoVerdictInfrastructureError(result.error, result.infrastructureClass)) {
           const failureCopy = providerErrorPresentation(result.error, "completion");
           const recoveryEpisodeKey = durableCompletionClaim.recoveryEpisodeKey ?? `${durableCompletionClaim.at}:${failureCopy.fingerprint}`;
           let pending: PendingCompletion = {
