@@ -4268,15 +4268,22 @@ test("v0.35.x: stale host loss releases an in-flight completion audit without a 
     // v0.35.17: 30s deadline — the chain spans a real detached worker
     // process plus the recovery retry; under heavy machine load (observed
     // load avg 12-16) the old 8s bound expired before the worker started.
+    // Unified envelope: the failed one-shot recovery retry burns the chain
+    // and enters the shared ladder (retry-waiting) instead of re-parking
+    // recovery-pending — while still never claiming or re-arming the
+    // one-shot.
     await waitUntil(() => {
       const settled = readState(cwd).goal as { status?: string; pendingCompletion?: { phase?: string; automaticRecoveryAttempted?: boolean } } | null;
       return settled?.status === "paused"
-        && settled.pendingCompletion?.phase === "recovery-pending"
+        && settled.pendingCompletion?.phase === "retry-waiting"
         && settled.pendingCompletion?.automaticRecoveryAttempted === true;
     }, 30_000);
     const exhausted = readLedger(cwd);
     assert.equal(exhausted.filter((entry) => entry.type === "audit_recovery_auto_retry_claimed").length, 1, "the failed automatic retry is not repeated");
     assert.equal(exhausted.filter((entry) => entry.type === "audit_recovery_retry_scheduled").length, 0, "the failed one-shot retry does not re-arm itself");
+    const settledNow = readState(cwd).goal as { pauseKind?: string; pauseResumeAt?: string } | null;
+    assert.equal(settledNow?.pauseKind, "wait", "the failed recovery retry keeps laddering like the main model");
+    assert.ok(settledNow?.pauseResumeAt, "the ladder owns a retry deadline");
     await pi.fire("session_shutdown", { reason: "quit" }, successor);
     await audit;
     __testOnlyResetOwnerSession();

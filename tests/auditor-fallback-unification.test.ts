@@ -321,9 +321,7 @@ test("a crash after launching the retry consumes that retry and advances without
   const exhausted: AuditorFallbackExhaustionInfo[] = [];
   const outcome = await runAuditorFallbackWithPolicy([
     { ref: "test/primary", model: { provider: "test", id: "primary" }, via: "setting" },
-    // Cross-backend: the cursor's provider-class failure collapses
-    // same-backend rungs, so the advance target must be elsewhere.
-    { ref: "other/fallback-1", model: { provider: "other", id: "fallback-1" }, via: "fallback-pin" },
+    { ref: "test/fallback-1", model: { provider: "test", id: "fallback-1" }, via: "fallback-pin" },
   ], async (candidate) => {
     calls.push(candidate.ref!);
     assert.notEqual(candidate.ref, "test/primary", "the already-started retry must not be replayed after restart");
@@ -339,9 +337,9 @@ test("a crash after launching the retry consumes that retry and advances without
     onCandidateExhausted: (_candidate, _error, info) => { exhausted.push(info); },
   });
 
-  assert.deepEqual(calls, ["other/fallback-1"]);
+  assert.deepEqual(calls, ["test/fallback-1"]);
   assert.equal(exhausted[0]?.candidateRef, "test/primary");
-  assert.equal(exhausted[0]?.nextCandidateRef, "other/fallback-1");
+  assert.equal(exhausted[0]?.nextCandidateRef, "test/fallback-1");
   assert.equal(outcome.result.approved, true);
   assert.equal(outcome.retriedOnce, true);
   assert.equal(outcome.fallbackUsed, true);
@@ -446,6 +444,46 @@ test("cross-provider rungs still walk the full chain", async () => {
   assert.equal(exhausted[0]?.nextCandidateRef, "b/fallback-1");
   assert.equal(exhausted[1]?.nextCandidateRef, undefined);
   assert.deepEqual(exhausted[1]?.attemptedRefs, ["a/primary", "b/fallback-1"]);
+});
+
+test("account-throttle wording collapses same-provider rungs", async () => {
+  // A 429/quota wall classifies "unknown" in the shared kind taxonomy but
+  // is definitionally backend-side: same-provider rungs share the wall.
+  const calls: string[] = [];
+  const outcome = await runAuditorFallbackWithPolicy([
+    { ref: "test/primary", model: { provider: "test", id: "primary" }, via: "setting" },
+    { ref: "test/fallback-1", model: { provider: "test", id: "fallback-1" }, via: "fallback-pin" },
+  ], async (candidate) => {
+    calls.push(candidate.ref!);
+    return result({ error: "429 Token Plan rate limit reached", model: candidate.ref });
+  }, {
+    sleep: async () => {},
+    shouldRetry: () => true,
+  });
+  assert.deepEqual(calls, ["test/primary", "test/primary"]);
+  assert.equal(outcome.result.fallbackExhausted, true);
+});
+
+test("ambiguous worker death still walks the chain", async () => {
+  // "pi exited without an agent_settled RPC event" sits in the default
+  // provider bucket but names no backend-side signal — the session fallback
+  // (the model most likely to work) must still be tried.
+  const calls: string[] = [];
+  const outcome = await runAuditorFallbackWithPolicy([
+    { ref: "provider/primary", model: { provider: "provider", id: "primary" }, via: "setting" },
+    { ref: "provider/session", model: { provider: "provider", id: "session" }, via: "session-fallback" },
+  ], async (candidate) => {
+    calls.push(candidate.ref!);
+    return candidate.ref === "provider/primary"
+      ? result({ error: "pi exited without an agent_settled RPC event", model: candidate.ref })
+      : result({ approved: true, model: candidate.ref });
+  }, {
+    sleep: async () => {},
+    shouldRetry: () => true,
+  });
+  assert.deepEqual(calls, ["provider/primary", "provider/primary", "provider/session"]);
+  assert.equal(outcome.result.approved, true);
+  assert.equal(outcome.fallbackUsed, true);
 });
 
 test("cursor persistence failure fails closed before a retry or fallback", async () => {

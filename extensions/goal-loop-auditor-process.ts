@@ -33,6 +33,7 @@ import {
   normalizeBoundedModelRefs,
   splitModelRef,
   MAX_AUDITOR_CANDIDATE_REFS,
+  type MainModelFailureKind,
 } from "./main-model-recovery.js";
 import { ModelSelector, type ModelFallbackEvent } from "./model-selector.js";
 import { buildGoalAuditorPrompt } from "./goal-loop-auditor.js";
@@ -249,10 +250,24 @@ export async function runAuditorFallbackWithPolicy(
     const mref = (cand ? modelRef(cand.model) : undefined) ?? ref;
     return splitModelRef(mref)?.provider.toLowerCase();
   };
-  // A provider-class failure means the backend is down, not the rung: skip
-  // every untried rung on the same provider instead of burning a launch per
-  // rung. Timeout/transport/no-verdict failures stay rung-local — those can
-  // be specific to one model or one launch.
+  // A provider-class failure names the rung's backend as the problem ONLY
+  // when the shared classifier (or explicit account-throttle wording)
+  // recognizes a backend-side signal: the "provider" bucket is the default
+  // for unrecognized text, and an ambiguous local worker death must still
+  // walk the chain — the session fallback is the model most likely to work.
+  // Stalls stay rung-local via the failureClass gate at the call sites.
+  const ACCOUNT_THROTTLE_WORDS = /\b429\b|rate[\s_-]*limit|too many requests|quota|billing|insufficient[\s_-]+(?:credits?|balance)|token[\s_-]*plan|usage[\s_-]*limit|plan limit/i;
+  const isBackendSideFailure = (
+    cls: AuditorInfrastructureClass,
+    kind: MainModelFailureKind,
+    error: string | undefined,
+  ): boolean => {
+    if (cls !== "provider") return false;
+    if (kind === "transient" || kind === "auth") return true;
+    return ACCOUNT_THROTTLE_WORDS.test(error ?? "");
+  };
+  // One dead backend must not burn a launch per rung: mark every untried
+  // rung on the same provider attempted so the walker advances past them.
   const skipSameProviderRungs = (failedRef: string): void => {
     const provider = providerOfRef(failedRef);
     if (!provider) return;
@@ -361,10 +376,6 @@ export async function runAuditorFallbackWithPolicy(
       const failureClass = opts.retryFailureClass ?? "transport";
       retriedOnce = true;
       const syntheticError = "auditor retry attempt was already started before host restart";
-      // Same unification as a live provider-class failure: the cursor's
-      // known failure class names a dead backend, so same-backend rungs
-      // collapse instead of burning a launch each.
-      if (failureClass === "provider") skipSameProviderRungs(selectedRef);
       const nextRef = nextUntriedModelRef(selectedRef, refs, attempted);
       const retryInfo: AuditorFallbackExhaustionInfo = {
         candidateRef: selectedRef,
@@ -464,7 +475,7 @@ export async function runAuditorFallbackWithPolicy(
       if (!isRetriableInfraError(second.error) || !isMainModelFallbackFailure(failure)) {
         return { result: second, retriedOnce, fallbackUsed, via: candidate.via };
       }
-      if (failureClass(second) === "provider") skipSameProviderRungs(selectedRef);
+      if (isBackendSideFailure(failureClass(second), failure.kind, second.error)) skipSameProviderRungs(selectedRef);
       currentRef = selectedRef;
       const nextRef = nextUntriedModelRef(currentRef, refs, attempted);
       failureAttempt += 1;
@@ -493,7 +504,7 @@ export async function runAuditorFallbackWithPolicy(
 
     // A restart resumed the already-authorized second attempt. Do not grant a
     // third call to the same candidate: advance through the chain now.
-    if (failureClass(first) === "provider") skipSameProviderRungs(selectedRef);
+    if (isBackendSideFailure(failureClass(first), failure.kind, first.error)) skipSameProviderRungs(selectedRef);
     currentRef = selectedRef;
     const nextRef = nextUntriedModelRef(currentRef, refs, attempted);
     failureAttempt += 1;
