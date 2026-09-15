@@ -6120,3 +6120,4 @@
 {"type":"terminal_approval_render_persisted","value":{"goalId":"20260915132443-hs0bvu","delivered":false,"lines":15},"at":"2026-09-15T15:07:01.226Z"}
 {"type":"terminal_completion_notice_sent","value":{"goalId":"20260915132443-hs0bvu","payloadChars":730},"at":"2026-09-15T15:07:01.238Z"}
 {"type":"terminal_approval_render_replayed","value":{"goalId":"20260915132443-hs0bvu","createdAt":"2026-09-15T15:07:01.224Z"},"at":"2026-09-15T15:07:01.239Z"}
+{"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-15T19:10:06.256Z"}
