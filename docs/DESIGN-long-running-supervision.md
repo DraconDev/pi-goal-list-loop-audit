@@ -118,7 +118,8 @@ or tabulated at 4+ groups with per-finding `Test Results:` proof lines,
 Verification Summary table — widened to Quality Gate | Command | Scope |
 Status | Notes when any gate row carries a repro command, else Quality
 Gate | Scope | Status | Notes — with derived statuses when the agent
-supplies a gate inventory — uncapped findings/values/Next, and a Final
+supplies a gate inventory — uncapped findings/values (Next keeps the
+one-concrete-action rule), and a Final
 Repository State section (branch, HEAD, tree) closing the card behind a
 verdict banner that opens it (`## Done — auditor approved (N verdicts)`
 and siblings). Width-bound and external surfaces (status line, widget card,

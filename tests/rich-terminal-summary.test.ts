@@ -286,10 +286,11 @@ test("v0.38.55: render path respects the sanitize trust boundary", () => {
   // is the trust boundary's doing (pinned by the sanitize test above).
   assert.ok(long!.includes("x".repeat(400)), `value substantially present, got ${long!.length}`);
   assert.ok(crowded.chatLines.some((l) => l.startsWith("#### 3.")), "later groups keep their headers");
-  const nine = sanitizeFindingGroups(Array.from({ length: 9 }, (_, i) => ({ title: `t${i}`, findings: ["Lead: body"] })));
-  const capped = render({ findingGroups: nine });
+  const fifteen = sanitizeFindingGroups(Array.from({ length: 15 }, (_, i) => ({ title: `t${i}`, findings: ["Lead: body"] })));
+  const capped = render({ findingGroups: fifteen });
   assert.ok(capped.chatLines.some((l) => l.startsWith("| Area |")), "oversized input still renders as a table");
-  assert.ok(!capped.chatLines.some((l) => l.startsWith("| t6 |")), "groups past the 6-group boundary never render");
+  assert.ok(capped.chatLines.some((l) => l.startsWith("| t11 |")), "groups inside the 12-group boundary render");
+  assert.ok(!capped.chatLines.some((l) => l.startsWith("| t12 |")), "groups past the 12-group boundary never render");
   // Every Next renders — the one-concrete-action chat filter still
   // applies to six-label Nexts; parts-level Nexts are uncapped.
   const parts = buildRichTerminalParts({
@@ -324,8 +325,8 @@ test("sanitizeFindingGroups bounds shape at the trust boundary", () => {
   assert.equal(clean?.[0]?.title, "Good", "titles trim");
   assert.equal(clean?.[0]?.findings.length, 2, "blank/non-string findings drop");
   assert.equal(clean?.[0]?.findings[1]?.length, 500, "findings clip at 500");
-  const capped = sanitizeFindingGroups(Array.from({ length: 9 }, (_, i) => ({ title: `t${i}`, findings: ["f"] })));
-  assert.equal(capped?.length, 6, "groups capped at 6");
+  const capped = sanitizeFindingGroups(Array.from({ length: 15 }, (_, i) => ({ title: `t${i}`, findings: ["f"] })));
+  assert.equal(capped?.length, 12, "groups capped at 12");
 });
 
 test("v0.38.55: banner voices every audit outcome honestly", () => {

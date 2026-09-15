@@ -291,8 +291,11 @@ export interface FindingGroup {
   tests?: string[];
 }
 
-export const MAX_FINDING_GROUPS = 6;
-export const MAX_GROUP_FINDINGS = 6;
+/** v0.38.55 audit (DECIDED 2026-09-15): raised from 6x6 so large work
+ * actually renders uncapped per the full-parity promise — abuse still
+ * bounded, legitimate big goals no longer clipped at the boundary. */
+export const MAX_FINDING_GROUPS = 12;
+export const MAX_GROUP_FINDINGS = 20;
 export const MAX_GROUP_TITLE_CHARS = 120;
 export const MAX_GROUP_FINDING_CHARS = 500;
 /** v0.38.52: per-finding test-result lines share the finding budget. */

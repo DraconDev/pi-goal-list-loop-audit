@@ -279,7 +279,7 @@ export function withoutStaleNext(details: string[] | undefined): string[] {
  * v0.38.55 (full parity): findings, values, and Next render uncapped —
  * the only remaining render-side bounds are the headline echo (80), the
  * evidence-token density (4/finding), and the sanitize trust boundary
- * (6 groups x 6 findings, 10 gate rows); the brief value guard is 10k
+ * (12 groups x 20 findings, 10 gate rows); the brief value guard is 10k
  * chars against pathological megabytes. */
 export const RICH_FULL_VALUE_BUDGET = 10_000;
 /** v0.38.50: objective echo clipped to a headline-safe width. */

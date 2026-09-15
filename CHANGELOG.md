@@ -4,7 +4,8 @@
 
 The post-objective summary now shares everything the archive knows (owner:
 full parity with the long example closes): a `## Done — auditor …`
-verdict banner opens the card, findings/values/Next render uncapped, the
+verdict banner opens the card, findings/values render uncapped (Next
+keeps the one-concrete-action rule — DECIDED 2026-09-15), the
 verification table always renders in full (the green PASS-line collapse is
 retired), gate rows carry an optional repro `command` with its own Command
 column, commit hashes stay visible, and a `### Final Repository State`
