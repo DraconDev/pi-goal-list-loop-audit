@@ -3307,13 +3307,16 @@ test("v0.35.x: provider-wall diagnostics stay durable while completion surfaces 
     }, ctx);
     assert.doesNotMatch(result.content.map((part) => part.text).join("\\n"), /429|Token Plan|abc123/, "the immediate completion-tool result never dumps the provider payload");
     await waitUntil(() => readLedger(cwd).some((entry) => entry.type === "auditor_fallback_exhausted"), 30_000);
-    const parked = readState(cwd).goal as { status?: string; pauseKind?: string; pauseResumeAt?: string; pauseReason?: string; providerErrorDiagnostic?: string; pendingCompletion?: { phase?: string; providerErrorDiagnostic?: string; recoveryNoticeKeys?: string[]; auditorFallbackExhausted?: boolean; recoveryRetryAt?: string } };
+    const parked = readState(cwd).goal as { status?: string; pauseKind?: string; pauseResumeAt?: string; pauseReason?: string; providerErrorDiagnostic?: string; pendingCompletion?: { phase?: string; providerErrorDiagnostic?: string; recoveryNoticeKeys?: string[]; auditorFallbackExhausted?: boolean; recoveryRetryAt?: string; retryAttempts?: number } };
     assert.equal(parked.status, "paused");
-    assert.equal(parked.pauseKind, "error");
-    assert.equal(parked.pendingCompletion?.phase, "recovery-pending");
-    assert.equal(parked.pendingCompletion?.auditorFallbackExhausted, true, "the bounded candidate chain parks after its authorized retry");
-    assert.equal(parked.pendingCompletion?.recoveryRetryAt, undefined, "an exhausted chain has no automatic timer");
-    assert.equal(parked.pauseResumeAt, undefined, "an exhausted chain has no pause deadline");
+    // Unified envelope: a burned chain is provider requests failing, so it
+    // enters the shared ladder — same as main — instead of hard-parking.
+    assert.equal(parked.pauseKind, "wait");
+    assert.equal(parked.pendingCompletion?.phase, "retry-waiting");
+    assert.equal(parked.pendingCompletion?.auditorFallbackExhausted, undefined, "the burned cursor is cleared so the ladder re-walks the chain");
+    assert.ok(parked.pauseResumeAt, "the ladder owns a retry deadline for as long as main would keep retrying");
+    assert.equal(parked.pendingCompletion?.retryAttempts, 1);
+    assert.ok((parked.pauseReason ?? "").startsWith("auditor retry:"));
     assert.doesNotMatch(`${parked.pauseReason ?? ""} ${ctx.ui.notifies.map((notice) => notice.message).join("\\n")}`, /429|Token Plan|abc123/, "recovery notifications and pause copy are sanitized");
     assert.match(parked.providerErrorDiagnostic ?? "", /Token Plan/);
     assert.match(parked.pendingCompletion?.providerErrorDiagnostic ?? "", /429/);
@@ -3427,13 +3430,15 @@ test("v0.35.x: bare 403 completion diagnostics stay durable while completion sur
     }, ctx);
     assert.doesNotMatch(result.content.map((part) => part.text).join("\\n"), /403|upstream denied|auth-sensitive-id/, "completion-tool output is sanitized");
     await waitUntil(() => readLedger(cwd).some((entry) => entry.type === "auditor_fallback_exhausted"), 30_000);
-    const parked = readState(cwd).goal as { status?: string; pauseKind?: string; pauseResumeAt?: string; pauseReason?: string; pauseSuggestedAction?: string; providerErrorDiagnostic?: string; pendingCompletion?: { phase?: string; providerErrorDiagnostic?: string; auditorFallbackExhausted?: boolean; recoveryRetryAt?: string } };
+    const parked = readState(cwd).goal as { status?: string; pauseKind?: string; pauseResumeAt?: string; pauseReason?: string; pauseSuggestedAction?: string; providerErrorDiagnostic?: string; pendingCompletion?: { phase?: string; providerErrorDiagnostic?: string; auditorFallbackExhausted?: boolean; recoveryRetryAt?: string; retryAttempts?: number } };
     assert.equal(parked.status, "paused");
-    assert.equal(parked.pauseKind, "error");
-    assert.equal(parked.pendingCompletion?.phase, "recovery-pending");
-    assert.equal(parked.pendingCompletion?.auditorFallbackExhausted, true);
-    assert.equal(parked.pendingCompletion?.recoveryRetryAt, undefined, "exhaustion does not re-arm generic recovery");
-    assert.equal(parked.pauseResumeAt, undefined);
+    // Unified envelope: exhaustion ladders like any provider failure.
+    assert.equal(parked.pauseKind, "wait");
+    assert.equal(parked.pendingCompletion?.phase, "retry-waiting");
+    assert.equal(parked.pendingCompletion?.auditorFallbackExhausted, undefined);
+    assert.ok(parked.pauseResumeAt, "the ladder owns a retry deadline");
+    assert.equal(parked.pendingCompletion?.retryAttempts, 1);
+    assert.ok((parked.pauseReason ?? "").startsWith("auditor retry:"));
     const liveCopy = [parked.pauseReason, parked.pauseSuggestedAction, ...ctx.ui.notifies.map((notice) => notice.message)].filter(Boolean).join("\\n");
     assert.doesNotMatch(liveCopy, /403|upstream denied|auth-sensitive-id/, "completion recovery copy is sanitized");
     assert.match(parked.providerErrorDiagnostic ?? "", /403|auth-sensitive-id/, "completion goal diagnostic remains durable");
@@ -4095,9 +4100,10 @@ test("v0.35.x: healthy same-session heartbeat recovers a parked completion audit
   }
 });
 
-test("v0.36.0: exhausted no-verdict auditor chain parks without an automatic recovery timer", { timeout: 60_000 }, async () => {
+test("v0.36.0: exhausted no-verdict auditor chain enters the shared ladder with an automatic retry timer", { timeout: 60_000 }, async () => {
   __testOnlyResetStaleFlag();
-  __testOnlySetAuditorRecoveryRetryDelay(120);
+  // Unified envelope: no one-shot delay override — exhaustion ladders with
+  // the uniform eager-then-hourly schedule, same as the main model.
   const cwd = tmpCwd();
   const previous = process.env.GLLA_PI_BINARY;
   process.env.GLLA_PI_BINARY = writeFakeAuditorError(cwd, "Auditor stalled — no progress");
@@ -4112,33 +4118,31 @@ test("v0.36.0: exhausted no-verdict auditor chain parks without an automatic rec
     await pi.runTool("complete_goal", { completionSummary: "Stored claim", verificationSummary: "Stored evidence" }, ctx);
     await waitUntil(() => readLedger(cwd).some((entry) => entry.type === "auditor_fallback_exhausted"), 30_000);
 
-    const parked = readState(cwd).goal as { status?: string; pauseKind?: string; pauseResumeAt?: string; pendingCompletion?: { phase?: string; recoveryRetryAt?: string; automaticRecoveryAttempted?: boolean; auditorFallbackExhausted?: boolean; auditorFailureClass?: string } } | null;
+    const parked = readState(cwd).goal as { status?: string; pauseKind?: string; pauseResumeAt?: string; pendingCompletion?: { phase?: string; recoveryRetryAt?: string; automaticRecoveryAttempted?: boolean; auditorFallbackExhausted?: boolean; auditorFailureClass?: string; retryAttempts?: number } } | null;
     assert.equal(parked?.status, "paused");
-    assert.equal(parked?.pendingCompletion?.phase, "recovery-pending");
-    assert.equal(parked?.pauseKind, "error", "an exhausted no-verdict chain requires explicit resume");
-    assert.equal(parked?.pauseResumeAt, undefined);
-    assert.equal(parked?.pendingCompletion?.recoveryRetryAt, undefined);
+    assert.equal(parked?.pendingCompletion?.phase, "retry-waiting");
+    assert.equal(parked?.pauseKind, "wait", "an exhausted no-verdict chain keeps retrying like the main model");
+    assert.ok(parked?.pauseResumeAt, "the ladder owns a retry deadline");
+    assert.equal(parked?.pendingCompletion?.retryAttempts, 1);
     assert.equal(parked?.pendingCompletion?.automaticRecoveryAttempted, undefined);
-    assert.equal(parked?.pendingCompletion?.auditorFallbackExhausted, true);
+    assert.equal(parked?.pendingCompletion?.auditorFallbackExhausted, undefined, "the burned cursor is cleared for the ladder re-walk");
     assert.ok(parked?.pendingCompletion?.auditorFailureClass, "the concrete infrastructure class remains durable");
 
     const ledger = readLedger(cwd);
-    assert.equal(ledger.filter((entry) => entry.type === "audit_recovery_auto_retry_claimed").length, 0, "exhaustion does not arm a generic automatic recovery");
-    assert.equal(ledger.filter((entry) => entry.type === "audit_recovery_retry_scheduled").length, 0, "the exhausted chain has no automatic retry timer");
+    assert.ok(ledger.some((entry) => entry.type === "goal_paused" && String((entry as { reason?: unknown }).reason ?? "").startsWith("auditor retry:")), "the ladder parks with its retry copy");
   } finally {
     // Clean up even when an assertion/timeout fails; otherwise a detached
     // fake auditor can poison the next recovery test in this shared process.
     if (ctx) await pi.fire("session_shutdown", { reason: "quit" }, ctx).catch(() => {});
     pi.sendMessageError = null;
     pi.sessionNameError = null;
-    __testOnlySetAuditorRecoveryRetryDelay(null);
     __testOnlyResetOwnerSession();
     if (previous === undefined) delete process.env.GLLA_PI_BINARY;
     else process.env.GLLA_PI_BINARY = previous;
   }
 });
 
-test("v0.36.0: aggressive mode parks an exhausted no-verdict auditor chain", { timeout: 60_000 }, async () => {
+test("v0.36.0: aggressive mode ladders an exhausted no-verdict auditor chain without a horizon", { timeout: 60_000 }, async () => {
   // v0.35.15: budget raised 30s→60s — this real-timer test observed 23s on
   // a busy machine (the auditor's own release:check ran concurrently with
   // an active session) and blew the per-test ceiling, fast-failing the
@@ -4150,10 +4154,10 @@ test("v0.36.0: aggressive mode parks an exhausted no-verdict auditor chain", { t
   // cycles legitimately exceed the old budget. Budgets only; semantics
   // untouched.
   __testOnlyResetStaleFlag();
-  __testOnlySetAuditorRecoveryRetryDelay(120);
   const cwd = tmpCwd();
   fs.mkdirSync(path.join(cwd, ".pi-glla"), { recursive: true });
   fs.writeFileSync(path.join(cwd, ".pi-glla", "settings.json"), JSON.stringify({ aggressiveMode: true }));
+  // Unified envelope: no one-shot delay override — exhaustion ladders.
   const previous = process.env.GLLA_PI_BINARY;
   process.env.GLLA_PI_BINARY = writeFakeAuditorError(cwd, "Auditor stalled — no progress");
   let ctx: MockCtx | undefined;
@@ -4174,20 +4178,24 @@ test("v0.36.0: aggressive mode parks an exhausted no-verdict auditor chain", { t
         auditorFallbackExhausted?: boolean;
         auditorFailureClass?: string;
         recoveryRetryAt?: string;
+        retryAttempts?: number;
+        retryUntil?: string;
         automaticRecoveryAttempts?: number;
         automaticRecoveryUntil?: string;
       };
     } | null;
     assert.equal(persisted?.status, "paused");
-    assert.equal(persisted?.pauseKind, "error");
-    assert.equal(persisted?.pauseResumeAt, undefined);
-    assert.equal(persisted?.pendingCompletion?.phase, "recovery-pending");
-    assert.equal(persisted?.pendingCompletion?.auditorFallbackExhausted, true);
+    assert.equal(persisted?.pauseKind, "wait", "aggressive exhaustion keeps retrying without a horizon");
+    assert.ok(persisted?.pauseResumeAt, "the ladder owns a retry deadline");
+    assert.equal(persisted?.pendingCompletion?.phase, "retry-waiting");
+    assert.equal(persisted?.pendingCompletion?.auditorFallbackExhausted, undefined);
     assert.equal(persisted?.pendingCompletion?.recoveryRetryAt, undefined);
+    assert.equal(persisted?.pendingCompletion?.retryAttempts, 1);
+    assert.equal(persisted?.pendingCompletion?.retryUntil, undefined, "aggressive mode keeps no wall-clock episode expiry");
     assert.ok(persisted?.pendingCompletion?.auditorFailureClass, "aggressive mode preserves the concrete failure class");
     assert.equal(persisted?.pendingCompletion?.automaticRecoveryAttempts, undefined, "candidate fallback is not a second generic recovery horizon");
     assert.equal(persisted?.pendingCompletion?.automaticRecoveryUntil, undefined);
-    assert.equal(readLedger(cwd).filter((entry) => entry.type === "audit_recovery_retry_scheduled").length, 0, "aggressive mode does not retry an exhausted candidate chain");
+    assert.ok(readLedger(cwd).some((entry) => entry.type === "goal_paused" && String((entry as { reason?: unknown }).reason ?? "").startsWith("auditor retry:")), "aggressive mode ladders an exhausted candidate chain");
   } finally {
     if (ctx) await pi.fire("session_shutdown", { reason: "quit" }, ctx).catch(() => {});
     pi.sendMessageError = null;
