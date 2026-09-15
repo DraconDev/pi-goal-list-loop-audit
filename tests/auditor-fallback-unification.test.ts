@@ -289,7 +289,9 @@ test("auditor wall timeouts and watchdog stalls walk the fallback chain", async 
 test("a restarted retry cursor spends the second call once, then advances", async () => {
   const candidates: AuditorFallbackCandidate[] = [
     { ref: "test/primary", model: { provider: "test", id: "primary" }, via: "setting" },
-    { ref: "test/fallback-1", model: { provider: "test", id: "fallback-1" }, via: "fallback-pin" },
+    // Cross-backend: the resumed provider-class failure collapses
+    // same-backend rungs, so the advance target must be elsewhere.
+    { ref: "other/fallback-1", model: { provider: "other", id: "fallback-1" }, via: "fallback-pin" },
   ];
   const calls: string[] = [];
   const attempts: string[] = [];
@@ -307,8 +309,8 @@ test("a restarted retry cursor spends the second call once, then advances", asyn
     onAttempt: (_candidate, info) => { attempts.push(`${info.candidateRef}:${info.attempt}`); },
   });
 
-  assert.deepEqual(calls, ["test/primary", "test/fallback-1"], "restart recovery must not issue a third primary call");
-  assert.deepEqual(attempts, ["test/primary:2", "test/fallback-1:1"]);
+  assert.deepEqual(calls, ["test/primary", "other/fallback-1"], "restart recovery must not issue a third primary call");
+  assert.deepEqual(attempts, ["test/primary:2", "other/fallback-1:1"]);
   assert.equal(outcome.result.approved, true);
   assert.equal(outcome.retriedOnce, true);
   assert.equal(outcome.fallbackUsed, true);
@@ -319,7 +321,9 @@ test("a crash after launching the retry consumes that retry and advances without
   const exhausted: AuditorFallbackExhaustionInfo[] = [];
   const outcome = await runAuditorFallbackWithPolicy([
     { ref: "test/primary", model: { provider: "test", id: "primary" }, via: "setting" },
-    { ref: "test/fallback-1", model: { provider: "test", id: "fallback-1" }, via: "fallback-pin" },
+    // Cross-backend: the cursor's provider-class failure collapses
+    // same-backend rungs, so the advance target must be elsewhere.
+    { ref: "other/fallback-1", model: { provider: "other", id: "fallback-1" }, via: "fallback-pin" },
   ], async (candidate) => {
     calls.push(candidate.ref!);
     assert.notEqual(candidate.ref, "test/primary", "the already-started retry must not be replayed after restart");
@@ -335,9 +339,9 @@ test("a crash after launching the retry consumes that retry and advances without
     onCandidateExhausted: (_candidate, _error, info) => { exhausted.push(info); },
   });
 
-  assert.deepEqual(calls, ["test/fallback-1"]);
+  assert.deepEqual(calls, ["other/fallback-1"]);
   assert.equal(exhausted[0]?.candidateRef, "test/primary");
-  assert.equal(exhausted[0]?.nextCandidateRef, "test/fallback-1");
+  assert.equal(exhausted[0]?.nextCandidateRef, "other/fallback-1");
   assert.equal(outcome.result.approved, true);
   assert.equal(outcome.retriedOnce, true);
   assert.equal(outcome.fallbackUsed, true);

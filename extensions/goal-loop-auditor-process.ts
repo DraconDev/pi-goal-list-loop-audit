@@ -361,6 +361,10 @@ export async function runAuditorFallbackWithPolicy(
       const failureClass = opts.retryFailureClass ?? "transport";
       retriedOnce = true;
       const syntheticError = "auditor retry attempt was already started before host restart";
+      // Same unification as a live provider-class failure: the cursor's
+      // known failure class names a dead backend, so same-backend rungs
+      // collapse instead of burning a launch each.
+      if (failureClass === "provider") skipSameProviderRungs(selectedRef);
       const nextRef = nextUntriedModelRef(selectedRef, refs, attempted);
       const retryInfo: AuditorFallbackExhaustionInfo = {
         candidateRef: selectedRef,
