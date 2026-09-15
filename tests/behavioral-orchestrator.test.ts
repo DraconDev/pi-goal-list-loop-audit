@@ -4129,7 +4129,7 @@ test("v0.36.0: exhausted no-verdict auditor chain enters the shared ladder with 
     assert.ok(parked?.pendingCompletion?.auditorFailureClass, "the concrete infrastructure class remains durable");
 
     const ledger = readLedger(cwd);
-    assert.ok(ledger.some((entry) => entry.type === "goal_paused" && String((entry as { reason?: unknown }).reason ?? "").startsWith("auditor retry:")), "the ladder parks with its retry copy");
+    assert.ok(ledger.some((entry) => entry.type === "goal_paused" && String(entry.value?.reason ?? "").startsWith("auditor retry:")), "the ladder parks with its retry copy");
   } finally {
     // Clean up even when an assertion/timeout fails; otherwise a detached
     // fake auditor can poison the next recovery test in this shared process.
@@ -4195,7 +4195,7 @@ test("v0.36.0: aggressive mode ladders an exhausted no-verdict auditor chain wit
     assert.ok(persisted?.pendingCompletion?.auditorFailureClass, "aggressive mode preserves the concrete failure class");
     assert.equal(persisted?.pendingCompletion?.automaticRecoveryAttempts, undefined, "candidate fallback is not a second generic recovery horizon");
     assert.equal(persisted?.pendingCompletion?.automaticRecoveryUntil, undefined);
-    assert.ok(readLedger(cwd).some((entry) => entry.type === "goal_paused" && String((entry as { reason?: unknown }).reason ?? "").startsWith("auditor retry:")), "aggressive mode ladders an exhausted candidate chain");
+    assert.ok(readLedger(cwd).some((entry) => entry.type === "goal_paused" && String(entry.value?.reason ?? "").startsWith("auditor retry:")), "aggressive mode ladders an exhausted candidate chain");
   } finally {
     if (ctx) await pi.fire("session_shutdown", { reason: "quit" }, ctx).catch(() => {});
     pi.sendMessageError = null;
