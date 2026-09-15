@@ -13,6 +13,21 @@ section (branch, HEAD, tree cleanliness, best-effort) closes the card
 ahead of the record trailer. One surface per fact is preserved: the banner
 owns the verdict, the footer stays liveness-only.
 
+## Unreleased — Auditor retries like main (unified recovery envelope)
+
+Field evidence (hellhunter/junk-runner 2026-09-16): a burned auditor
+candidate chain parked with "automatic recovery is stopped" while the
+main model would have kept probing for hours. The auditor is just
+provider requests, so it now reuses the same retry/accounting machinery:
+a burned chain clears its cursor and enters the shared durable-retry
+ladder (eager 5s, then hourly :00:30 probes, 24h horizon; no
+auditor-only attempt cap), one dead backend skips its other rungs
+instead of burning a launch each, and parked auditor claims ride the
+shared hourly ticker as a backstop. The card now reads "next:
+auto-retry in …" while the ladder owns the wait; "automatic recovery
+is stopped" remains only for a genuinely unrecoverable cursor-
+persistence failure.
+
 ## 0.38.54 — Opt-in context-checkpoint projection (2026-09-14)
 
 The per-turn `context`-hook projection rewrote history on every turn, busting

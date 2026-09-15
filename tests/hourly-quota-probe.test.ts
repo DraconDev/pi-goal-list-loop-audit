@@ -143,8 +143,8 @@ test("v0.34.131: a failed hourly probe re-arms only after the async recovery set
   assert.ok(scheduleIdx > 0 && fireIdx > scheduleIdx, "hourly schedule and async fire functions are present");
   const schedule = RECOVERY_SRC.slice(scheduleIdx, fireIdx);
   const fire = RECOVERY_SRC.slice(fireIdx, fireIdx + 2_200);
-  assert.match(schedule, /!state\.mainModelRecovery[\s\S]*state\.mainModelRecovery\.manualResumeRequired\s*===\s*true/, "manual recovery holds do not re-arm the ticker");
-  assert.match(schedule, /state\.mainModelRecovery\.retryAt\s*===\s*undefined/, "active supervised turns do not arm the parked ticker");
+  assert.match(schedule, /mainModelRecovery\.manualResumeRequired !== true/, "manual recovery holds do not re-arm the ticker");
+  assert.match(schedule, /state\.mainModelRecovery\.retryAt !== undefined/, "active supervised turns do not arm the parked ticker");
   assert.match(fire, /state\.mainModelRecovery\.retryAt\s*===\s*undefined/, "a stale hourly callback cannot probe during an active turn");
   assert.match(schedule, /void fireHourlyProbe\(fresh\);/, "the timer awaits the async probe path");
   assert.doesNotMatch(schedule, /fireHourlyProbe\(fresh\);[\s\S]*scheduleHourlyProbe\(fresh\);/, "the timer does not re-arm before the probe settles");
