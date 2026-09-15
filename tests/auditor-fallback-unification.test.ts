@@ -174,7 +174,9 @@ test("auditor retries the same ref, then walks the next untried ref with bounded
   const candidates: AuditorFallbackCandidate[] = [
     { ref: "test/primary", model: { provider: "test", id: "primary" }, via: "setting" },
     { ref: "test/primary", model: { provider: "test", id: "primary" }, via: "duplicate" },
-    { ref: "test/fallback-1", model: { provider: "test", id: "fallback-1" }, via: "fallback-pin" },
+    // Cross-backend fallback: a provider-class failure on test/primary
+    // skips same-backend rungs only, so this walk still exercises.
+    { ref: "other/fallback-1", model: { provider: "other", id: "fallback-1" }, via: "fallback-pin" },
   ];
   const calls: string[] = [];
   const waits: number[] = [];
@@ -197,11 +199,11 @@ test("auditor retries the same ref, then walks the next untried ref with bounded
   assert.equal(outcome.result.approved, true);
   assert.equal(outcome.retriedOnce, true);
   assert.equal(outcome.fallbackUsed, true);
-  assert.deepEqual(calls, ["test/primary", "test/primary", "test/fallback-1"]);
-  assert.deepEqual(fallbacks, ["test/primary->test/fallback-1"]);
+  assert.deepEqual(calls, ["test/primary", "test/primary", "other/fallback-1"]);
+  assert.deepEqual(fallbacks, ["test/primary->other/fallback-1"]);
   assert.deepEqual(waits, [5_000, 120_000]);
   assert.ok(waits.every((delay) => delay >= 1_000 && delay <= MAIN_MODEL_MAX_RETRY_DELAY_MS));
-  assert.deepEqual(selections, ["ok:test/primary", "ok:test/fallback-1"]);
+  assert.deepEqual(selections, ["ok:test/primary", "ok:other/fallback-1"]);
 });
 
 test("auditor forbidden and duplicate refs are skipped before retry ordering", async () => {
@@ -209,7 +211,9 @@ test("auditor forbidden and duplicate refs are skipped before retry ordering", a
     { ref: "test/forbidden", model: { provider: "test", id: "forbidden" }, via: "forbidden" },
     { ref: "test/primary", model: { provider: "test", id: "primary" }, via: "setting" },
     { ref: "TEST/PRIMARY", model: { provider: "test", id: "primary" }, via: "duplicate" },
-    { ref: "test/fallback-2", model: { provider: "test", id: "fallback-2" }, via: "fallback-pin" },
+    // Cross-backend fallback: the primary fails provider-class, so a
+    // same-backend rung would collapse — this keeps the walk exercising.
+    { ref: "other/fallback-2", model: { provider: "other", id: "fallback-2" }, via: "fallback-pin" },
   ];
   const calls: string[] = [];
   const events: string[] = [];
@@ -225,7 +229,7 @@ test("auditor forbidden and duplicate refs are skipped before retry ordering", a
     onSelection: (event) => { if (event.toRef) events.push(`${event.reason}:${event.toRef}`); },
   });
   assert.equal(outcome.result.approved, true);
-  assert.deepEqual(calls, ["test/primary", "test/primary", "test/fallback-2"]);
+  assert.deepEqual(calls, ["test/primary", "test/primary", "other/fallback-2"]);
   assert.ok(events.includes("forbidden:test/forbidden"));
 });
 
