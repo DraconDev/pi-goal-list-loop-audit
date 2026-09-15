@@ -938,6 +938,11 @@ export function scheduleHourlyProbe(ctx: ExtensionContext): void {
 export async function fireHourlyProbe(ctx: ExtensionContext): Promise<void> {
   if (!state.mainModelRecovery || state.mainModelRecovery.manualResumeRequired === true) {
     await fireHourlyProbeForParkedAuditor(ctx);
+    // Keep the backstop alive: the consumed :00:30 slot cleared its own
+    // handle, so re-arm exactly like the main path. Self-gates when the
+    // claim already left retry-waiting (the ladder timer fired first).
+    const fresh = freshCtxForGeneration(flags.sessionGeneration);
+    if (fresh) scheduleHourlyProbe(fresh);
     return;
   }
   const generation = flags.sessionGeneration;
