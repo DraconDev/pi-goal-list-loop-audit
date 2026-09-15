@@ -206,7 +206,6 @@ export const GOAL_RUNTIME_GLOBAL_NAMES = [
   "beginCompletionAudit",
   "isAuditorTimeoutError",
   "isAuditorNoVerdictInfrastructureError",
-  "MAX_AUDITOR_AUTO_RETRY_ATTEMPTS",
   "EAGER_AUDITOR_RETRY_SEC",
   "fmtRetryDelay",
   "auditorRetryPlan",
@@ -334,7 +333,6 @@ interface GoalRuntimeDataTypes {
   consecutiveAbortIterations: number;
   abortedStandDown: boolean;
   persistenceDegradedNotified: boolean;
-  MAX_AUDITOR_AUTO_RETRY_ATTEMPTS: number;
   EAGER_AUDITOR_RETRY_SEC: number;
 }
 
@@ -578,7 +576,6 @@ declare global {
   var beginCompletionAudit: GoalRuntimeGlobals["beginCompletionAudit"];
   var isAuditorTimeoutError: GoalRuntimeGlobals["isAuditorTimeoutError"];
   var isAuditorNoVerdictInfrastructureError: GoalRuntimeGlobals["isAuditorNoVerdictInfrastructureError"];
-  var MAX_AUDITOR_AUTO_RETRY_ATTEMPTS: GoalRuntimeGlobals["MAX_AUDITOR_AUTO_RETRY_ATTEMPTS"];
   var EAGER_AUDITOR_RETRY_SEC: GoalRuntimeGlobals["EAGER_AUDITOR_RETRY_SEC"];
   var fmtRetryDelay: GoalRuntimeGlobals["fmtRetryDelay"];
   var auditorRetryPlan: GoalRuntimeGlobals["auditorRetryPlan"];

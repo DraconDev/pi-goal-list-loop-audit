@@ -550,7 +550,9 @@ export function __testOnlySetAuditorRecoveryRetryDelay(delayMs: number | null): 
  * separate from the provider retry ladder: no-verdict recovery never guesses
  * a provider reason for a dead worker. */
 export function scheduleParkedCompletionAuditRecovery(ctx: ExtensionContext, pending: PendingCompletion, reason: string): PendingCompletion {
-  if (pending.auditorFallbackExhausted) return { ...pending, recoveryRetryAt: undefined };
+  // Note: pending.auditorFallbackExhausted is a legacy diagnostic marker
+  // only — it no longer blocks the shared ladder. The cursor is cleared at
+  // park time, so the next episode re-walks a fresh chain.
   const now = Date.now();
   const aggressive = aggressiveAuditorRecoveryEnabled(ctx.cwd);
   if (pending.automaticRecoveryAttempted === true && !aggressive) return pending;
@@ -593,7 +595,7 @@ export function scheduleParkedCompletionAuditRecovery(ctx: ExtensionContext, pen
     if (!fresh) return;
     const goal = state.goal;
     const claim = goal?.pendingCompletion;
-    if (!goal || goal.status !== "paused" || !claim || claim.auditorFallbackExhausted || (claim.phase ?? "recovery-pending") !== "recovery-pending" || claim.recoveryRetryAt !== retryAt) return;
+    if (!goal || goal.status !== "paused" || !claim || (claim.phase ?? "recovery-pending") !== "recovery-pending" || claim.recoveryRetryAt !== retryAt) return;
     const aggressiveNow = aggressiveAuditorRecoveryEnabled(fresh.cwd);
     if (claim.automaticRecoveryAttempted === true && !aggressiveNow) {
       updateGoal({
@@ -737,7 +739,6 @@ function isAuditorNoVerdictInfrastructureError(error: string | undefined, infras
 // isCompletionAuditRecoveryPending moved to extensions/goal-recovery.ts (decomposition step 3, v0.34.111, cluster C).
 // goal-commands.ts (decomposition step 2) imports it directly from there.
 
-const MAX_AUDITOR_AUTO_RETRY_ATTEMPTS = 5;
 /** v0.34.79/v0.34.141: the FIRST auditor retry after an infrastructure
  * failure is eager — 5s, mirroring runWithInfraRetry's default backoff. The
  * scheduler does not inspect provider families or provider hints to
@@ -781,7 +782,10 @@ export function auditorRetryPlan(claim: PendingCompletion, _legacyQuota?: unknow
     ? EAGER_AUDITOR_RETRY_SEC
     : Math.max(60, Math.round((nextHourlyProbeMs(now) - now) / 1000));
   const retryAfterSec = capProviderRetrySeconds(requestedSec);
-  const automatic = aggressive || (attempt < MAX_AUDITOR_AUTO_RETRY_ATTEMPTS && now + retryAfterSec * 1_000 <= untilMs);
+  // No attempt cap: the shared 24h horizon (MAIN_MODEL_AUTO_RETRY_HORIZON_MS)
+  // is the only conservative stop, same as the main-model envelope. The
+  // attempt counter stays as diagnostic metadata.
+  const automatic = aggressive || now + retryAfterSec * 1_000 <= untilMs;
   return { attempt, retryAfterSec, firstAt, autoRetryUntil: new Date(untilMs).toISOString(), automatic, requestedSec, unbounded: aggressive };
 }
 
@@ -809,7 +813,7 @@ export function maybeAutoRetryParkedCompletionAudit(trigger: AutomaticCompletion
   if (loadHoldActive(state) && trigger !== "main-model-recovery") return false;
   const goal = state.goal;
   const claim = goal?.pendingCompletion;
-  if (!goal || goal.status !== "paused" || !claim || claim.auditorFallbackExhausted) return false;
+  if (!goal || goal.status !== "paused" || !claim) return false;
   if ((claim.phase ?? "recovery-pending") !== "recovery-pending") return false;
   if (completionAuditInFlight) return false;
 
@@ -955,8 +959,6 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   // failure; the recovery ladder healing the provider IS the durable
   // consent for its single retry (pinned v0.35.x).
   if (origin !== "manual" && supervisorPaused(state) && !exemptLoadHold) return;
-  const goal = state.goal;
-  if (!goal?.pendingCompletion) return;
   if (origin !== "manual" && goal.pendingCompletion.auditorFallbackExhausted) return;
   const goalId = goal.id;
   if (completionAuditInFlight) return;
@@ -1314,7 +1316,13 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   // Cursor callbacks may have advanced this same claim while the worker was
   // running. Never rebuild a recovery record from the stale pre-dispatch
   // snapshot: that would erase the candidate position on the first failure.
-  const durableClaim = state.goal.pendingCompletion ?? claim;
+  const durableClaim0 = state.goal.pendingCompletion ?? claim;
+  let durableClaim = durableClaim0;
+  // Set when the per-episode candidate chain burned without a verdict. The
+  // claim then skips the one-shot timeout branch and goes straight to the
+  // single durable retry ladder — a burned chain is an ordinary retryable
+  // failure, same as any main-model provider failure.
+  let chainExhaustedToLadder = false;
   result = normalizeAuditorInfrastructureResult(result);
 
   // v0.34.61: focus revision guard — contract-scoped. The detached
@@ -1511,12 +1519,35 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   }
 
   const cursorPersistenceFailed = isAuditorCursorPersistenceFailure(result.error);
-  if (result.error && (result.fallbackExhausted || cursorPersistenceFailed)) {
-    // A candidate chain is a bounded recovery policy, not a new automatic
-    // retry horizon. Once every allowed candidate has used its one retry, or
-    // the parent could not persist the cursor, park the claim with no timer.
-    // This is deliberately before the generic infrastructure branches so a
-    // restart cannot walk the same exhausted chain again.
+  if (result.error && result.fallbackExhausted && !cursorPersistenceFailed) {
+    // A burned chain is an ordinary retryable failure — the auditor is just
+    // provider requests, same as main. Clear the cursor so the next episode
+    // re-walks a fresh chain, ledger the burn, and fall through to the
+    // single durable retry ladder below. Only a cursor-persistence failure
+    // still hard-parks: without a durable cursor a restart could repeat a
+    // provider call unpredictably.
+    const burnCopy = providerErrorPresentation(result.error, "completion");
+    appendLedger(liveCtx.cwd, "auditor_fallback_exhausted", {
+      goalId,
+      attemptId: durableClaim.attemptId,
+      failureClass: auditorResultFailureClass(result),
+      diagnostic: burnCopy.diagnostic,
+      recoveryEpisodeKey: durableClaim.recoveryEpisodeKey ?? `${durableClaim.at}:${burnCopy.fingerprint}`,
+    });
+    durableClaim = {
+      ...durableClaim,
+      auditorCandidateRefs: undefined,
+      auditorCandidateRef: undefined,
+      auditorRetryCandidateRef: undefined,
+      auditorFallbackExhausted: undefined,
+    };
+    result = { ...result, fallbackExhausted: false };
+    chainExhaustedToLadder = true;
+  }
+  if (result.error && cursorPersistenceFailed) {
+    // Without a durable cursor the parent cannot bound a restart, so park
+    // the claim with no timer. This stays ahead of the generic branches so
+    // a restart cannot walk an uncursorred chain again.
     const failureCopy = providerErrorPresentation(result.error, "completion");
     const recoveryEpisodeKey = durableClaim.recoveryEpisodeKey ?? `${durableClaim.at}:${failureCopy.fingerprint}`;
     const pending: PendingCompletion = {
@@ -1566,7 +1597,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     return;
   }
 
-  if (result.error && !result.disapproved && isAuditorNoVerdictInfrastructureError(result.error, result.infrastructureClass)) {
+  if (result.error && !result.disapproved && !chainExhaustedToLadder && isAuditorNoVerdictInfrastructureError(result.error, result.infrastructureClass)) {
     // Watchdog timeouts stay ahead of the provider retry branch: a hanging
     // verification command is a local infrastructure failure. Normal
     // mode gets one fresh stored-claim retry; aggressiveMode keeps this
@@ -1984,7 +2015,6 @@ defineGoalRuntimeGlobal("validateCompletionSummary", { get: () => validateComple
 defineGoalRuntimeGlobal("beginCompletionAudit", { get: () => beginCompletionAudit });
 defineGoalRuntimeGlobal("isAuditorTimeoutError", { get: () => isAuditorTimeoutError });
 defineGoalRuntimeGlobal("isAuditorNoVerdictInfrastructureError", { get: () => isAuditorNoVerdictInfrastructureError });
-defineGoalRuntimeGlobal("MAX_AUDITOR_AUTO_RETRY_ATTEMPTS", { get: () => MAX_AUDITOR_AUTO_RETRY_ATTEMPTS });
 defineGoalRuntimeGlobal("EAGER_AUDITOR_RETRY_SEC", { get: () => EAGER_AUDITOR_RETRY_SEC });
 defineGoalRuntimeGlobal("fmtRetryDelay", { get: () => fmtRetryDelay });
 defineGoalRuntimeGlobal("auditorRetryPlan", { get: () => auditorRetryPlan });
