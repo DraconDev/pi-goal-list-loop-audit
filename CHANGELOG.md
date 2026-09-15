@@ -21,8 +21,10 @@ main model would have kept probing for hours. The auditor is just
 provider requests, so it now reuses the same retry/accounting machinery:
 a burned chain clears its cursor and enters the shared durable-retry
 ladder (eager 5s, then hourly :00:30 probes, 24h horizon; no
-auditor-only attempt cap), one dead backend skips its other rungs
-instead of burning a launch each, and parked auditor claims ride the
+auditor-only attempt cap), a recognizably backend-side failure (5xx, network,
+auth, or quota-wall wording) skips its backend's other rungs instead of
+burning a launch each — while an ambiguous worker death still walks the
+chain so the session fallback is tried — and parked auditor claims ride the
 shared hourly ticker as a backstop. The card now reads "next:
 auto-retry in …" while the ladder owns the wait; "automatic recovery
 is stopped" remains only for a genuinely unrecoverable cursor-

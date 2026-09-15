@@ -69,8 +69,9 @@ test("unified: the ladder arms the ticker as its backstop", () => {
 
 test("unified: one dead backend does not burn a launch per rung", () => {
   assert.match(PROCESS_SRC, /skipSameProviderRungs/);
-  assert.match(PROCESS_SRC, /failureClass\(second\) === "provider"\) skipSameProviderRungs/);
-  assert.match(PROCESS_SRC, /failureClass\(first\) === "provider"\) skipSameProviderRungs/);
+  assert.match(PROCESS_SRC, /isBackendSideFailure\(failureClass\(second\), failure\.kind, second\.error\)\) skipSameProviderRungs/);
+  assert.match(PROCESS_SRC, /isBackendSideFailure\(failureClass\(first\), failure\.kind, first\.error\)\) skipSameProviderRungs/);
+  assert.match(PROCESS_SRC, /ACCOUNT_THROTTLE_WORDS/);
 });
 
 test("unified: executable runtime regression covers arming, past-due fire, guards, and opt-out", async () => {
