@@ -184,6 +184,7 @@ test("widget wait countdown is uniform auto-retrying (no manual resume hint — 
     pauseReason: "waiting for provider window",
     pauseKind: "wait" as const,
     pauseResumeAt: new Date(NOW + 60_000).toISOString(),
+    recoveryEpisodeKey: "test:supervised-countdown",
     autoResume: true,
   };
   const goalCard = buildWidgetLines({ goal: goalOf(base) }, null, NOW)!;

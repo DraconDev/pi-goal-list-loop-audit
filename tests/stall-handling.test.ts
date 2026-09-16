@@ -534,7 +534,7 @@ test("v0.34.12 + v0.34.64: wait-pause status line counts down live + ticker surv
   const d = fs.readFileSync(path.resolve("extensions/goal-loop-display.ts"), "utf-8");
   // v0.38.31: "resuming…" is grace-bounded — a retry long past with no
   // dispatch reads "retry overdue" instead of promising resume forever.
-  assert.match(d, /-rms >= PAUSED_RESUME_GRACE_MS \? " · retry overdue" : " · resuming…"/, "live countdown, grace-bounded past-resumeAt");
+  assert.match(d, /-rms >= PAUSED_RESUME_GRACE_MS \? ` · \$\{supervised \? "retry" : "auto-continue"\} overdue` : " · resuming…"/, "live countdown, grace-bounded past-resumeAt for recovery and deliberate waits");
   const g = readGoalRuntimeSource();
   assert.match(g, /const auditVisible = state\.goal\?\.status === "auditing";/, "ticker keeps detached-auditor clocks live between worker events");
   assert.match(g, /isSupervising\(\) \|\| auditVisible \|\| \(state\.goal\?\.status === "paused" && !!state\.goal\.pauseResumeAt\)/, "ticker keeps rendering through a timed wait");

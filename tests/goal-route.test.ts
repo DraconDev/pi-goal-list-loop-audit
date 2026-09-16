@@ -91,7 +91,7 @@ test("buildSeedGrillMessage: seed + tool + gate notice + grilling protocol", () 
   assert.match(msg, /2-4 sharp, seed-specific questions UP FRONT in ONE batched ask_user_question call/);
   assert.match(msg, /non-answer/);
   assert.match(msg, /Do NOT activate the raw seed/);
-  assert.match(msg, /eliminates mid-execution interruptions/);
+  assert.match(msg, /Resolve these decisions during drafting, before execution/);
 });
 
 test("draftProposalBlock: 0 replies → block with instructions, ≥1 → null", () => {

@@ -45,7 +45,7 @@ test("drafting gathers constraints upfront and active execution defers local cho
   assert.match(seeded, /constraints/);
   assert.match(seeded, /priorities/);
   assert.match(seeded, /2[–-]4 sharp, seed-specific questions UP FRONT/);
-  assert.match(seeded, /eliminates mid-execution interruptions/);
+  assert.match(seeded, /Resolve these decisions during drafting, before execution/);
 
   assert.match(ACTIVE_EXECUTION_QUESTION_GUIDANCE, /Drafting is the ONLY place/);
   assert.match(ACTIVE_EXECUTION_QUESTION_GUIDANCE, /zero mid-execution questions/);

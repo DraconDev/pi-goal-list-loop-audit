@@ -105,7 +105,10 @@ test("agent_end: length path runs BEFORE nudge accounting, telemetry, and goal g
   // more (silent-swap absorb branch + durable exhaustion pause).
   // Keep the source window above the lifecycle handler's pre-gate recovery
   // block; provider-pane recovery adds a bounded branch before the gate.
-  const handler = SRC.slice(SRC.indexOf('pi.on("agent_end"'), SRC.indexOf('pi.on("agent_end"') + 20500);
+  const start = SRC.indexOf('pi.on("agent_end"');
+  const end = SRC.indexOf('\n  pi.on(', start + 1);
+  assert.ok(end > start, "next registered handler bounds the source slice");
+  const handler = SRC.slice(start, end);
   const lengthIdx = handler.indexOf('tickLengthContinue(lastA?.stopReason === "length" && !contextStarvedLength)');
   assert.ok(lengthIdx > 0, "length tick present");
   assert.ok(handler.indexOf("isContextStarvedLengthStop(rawLastA, contextUsage)") < lengthIdx, "context-starvation classification runs before the tracker");
