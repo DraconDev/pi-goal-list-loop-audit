@@ -1,15 +1,7 @@
 # Now
 
-# Next
-
-we can have longer summaries too this is a good example that it can be extremely useful
-/home/dracon/Pictures/Screenshots/Screenshot_20260916_104621.png /home/dracon/Pictures/Screenshots/Screenshot_20260916_104617.png /home/dracon/Pictures/Screenshots/Screenshot_20260916_104614.png /home/dracon/Pictures/Screenshots/Screenshot_20260916_104611.png /home/dracon/Pictures/Screenshots/Screenshot_20260916_104606.png 
-
 # Later
 
-##
-make sure we first use the concert too to make the objective , cause ere took ok adjust it, instead of the concext that was discussed before
-/home/dracon/Pictures/Screenshots/Screenshot_20260916_133421.png 
 
 ##
 when i write more for the list we shouldnt just offer converting into a list currently if i write multiple senetences my options are 
@@ -17,9 +9,11 @@ when i write more for the list we shouldnt just offer converting into a list cur
 2. do nothing
 
 ##
-
 list didnt use the question tool
 /home/dracon/Pictures/Screenshots/Screenshot_20260916_120648.png 
+
+##
+i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
 
 # Research
 investigate 
