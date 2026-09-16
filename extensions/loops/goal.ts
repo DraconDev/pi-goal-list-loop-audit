@@ -74,7 +74,7 @@ export {
   __testOnlyResetOwnerSession,
   __testOnlyRunFanOutListAuditFindings,
 } from "./goal-session.js";
-export { __testOnlySetLastCompactionAt, __testOnlyLoadState, __testOnlyRegisterAgentTools, __testOnlyRememberCtx, __testOnlyDisplayActivityFor, __testOnlyResetToolActivity, __testOnlySetLastRealActivityAt } from "./goal-ui.js";
+export { __testOnlySetLastCompactionAt, __testOnlyResetStarvationGate, __testOnlyLoadState, __testOnlyRegisterAgentTools, __testOnlyRememberCtx, __testOnlyDisplayActivityFor, __testOnlyResetToolActivity, __testOnlySetLastRealActivityAt } from "./goal-ui.js";
 export { auditorRetryPlan, runDetachedCompletionWithFallback, __testOnlySetAuditorRecoveryRetryDelay, __testOnlyResetAuditorRecoveryRuntime, type AuditorModelCandidate } from "./goal-auditor-hooks.js";
 export { handleSettingChoice } from "./goal-settings-ui.js";
 

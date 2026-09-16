@@ -1056,6 +1056,16 @@ function onCompactionLanded(): void {
   clearContextStarvedStreak();
   compactFirstNudged = false; // v0.38.6: fresh episode after real room
 }
+/** Test-only: reset the whole starvation refuse gate (streak, recency,
+ * sampled percent, compact-first latch). Tests that simulate a hot refusal
+ * episode must clear it in finally — this is process-wide module state and
+ * otherwise outlives the test (2026-09-16: a leaked hot gate refused every
+ * dispatch send in the next test file, timing out the watchdog suite). */
+export function __testOnlyResetStarvationGate(): void {
+  clearContextStarvedStreak();
+  lastContextPercent = null;
+  compactFirstNudged = false;
+}
 /** Public: has the yield path declared compaction absent? The heartbeat
  * consults this to refuse to schedule a new continuation while the
  * session is stuck in the same near-full context. */
