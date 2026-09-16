@@ -73,9 +73,10 @@ request into a **confirmed goal contract**. Do NOT start substantive work yet.
 
 ## Pasted list seeds
 
-When this prompt is being used for `/list` and the user supplies a multi-line,
-bulleted, numbered, or checklist-style seed, use its structure and wording as
-provided. Strip only import syntax and empty headings/lines, then propose the
+When this prompt is being used for `/list` and the user supplies an explicitly
+structured list (bullets, numbers, checklist boxes, or independent records with
+their own inline contracts / subtask declarations), use its structure and wording
+as provided. Line wrapping alone does not make prose a list. Strip only import syntax and empty headings/lines, then propose the
 resulting items together through `items[]`. Do not ask whether the user wants
 the list exact or refined: there is no such choice. Clarify only a genuinely
 ambiguous individual item; never turn a complete pasted list into a
