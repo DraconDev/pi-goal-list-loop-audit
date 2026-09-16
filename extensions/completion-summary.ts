@@ -733,12 +733,14 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
  * raw six-label recap stays verbatim in `## Completion summary` as the
  * machine layer. Headline follows terminal status; aborted records never
  * wear a `Done` headline. */
-export function buildRichArchiveSection(goal: Goal, status: Status, archivePath: string, findingGroups?: FindingGroup[], gateRows?: GateRow[]): string[] {
+export function buildRichArchiveSection(goal: Goal, status: Status, archivePath: string, findingGroups?: FindingGroup[], gateRows?: GateRow[], priorWholeWorkOverride?: string): string[] {
   const facts: CompletionSummaryFacts = { goal, status, archivePath };
   const summary = resolveCompletionSummary(facts, goal.completionSummary).summary;
-  // 2026-09-16 whole-work recap: the archived card leads with the whole
-  // work too when the final audited claim was a delta-only repair note.
-  const priorWholeWork = goal.pendingCompletion?.priorCompletionSummary;
+  // 2026-09-16 whole-work recap: after a repair re-claim, the archived
+  // card leads with the whole work. The caller (archiveCurrentGoal)
+  // captures the claim's carried recap BEFORE pendingCompletion is
+  // cleared; the goal-field fallback covers direct callers.
+  const priorWholeWork = priorWholeWorkOverride ?? goal.pendingCompletion?.priorCompletionSummary;
   const brief = humanCompletionBrief(summary, 140, RICH_FULL_VALUE_BUDGET, priorWholeWork);
   const structured = structuredSummaryLines(summary) ?? structuredSummaryLines(priorWholeWork);
   const history = goal.auditHistory ?? [];

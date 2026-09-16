@@ -1104,7 +1104,7 @@ function archiveCurrentGoal(
   // v0.38.50: agent-structured finding groups ride the audited claim into
   // the archive rich section only — abort/wip paths omit it (flat fallback).
   // v0.38.52: same for the gate inventory.
-  opts?: { findingGroups?: FindingGroup[]; gateRows?: GateRow[] },
+  opts?: { findingGroups?: FindingGroup[]; gateRows?: GateRow[]; priorCompletionSummary?: string },
 ): boolean {
   if (!state.goal) return false;
   if (status !== "complete" && status !== "aborted") return false;
@@ -1153,7 +1153,7 @@ function archiveCurrentGoal(
   // it carries the same rich markdown as chat over the verbatim
   // six-label machine record. Built from the terminal goal AFTER the
   // summary fence resolves, so chat and archive cannot disagree.
-  const richSection = buildRichArchiveSection(terminalGoal, status, archivePath, opts?.findingGroups, opts?.gateRows, goal.pendingCompletion?.priorCompletionSummary);
+  const richSection = buildRichArchiveSection(terminalGoal, status, archivePath, opts?.findingGroups, opts?.gateRows, opts?.priorCompletionSummary ?? goal.pendingCompletion?.priorCompletionSummary);
   const richMd = `${md}\n## Terminal summary\n\n${richSection.join("\n")}\n`;
   // An existing same-id archive is an immutable fence. Check it before
   // publishing an intent so an unrelated/sentinel winner can never make the

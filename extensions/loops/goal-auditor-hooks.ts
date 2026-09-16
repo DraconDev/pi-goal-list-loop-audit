@@ -1476,7 +1476,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
         : [],
     });
     const approvalObjective = state.goal.objective;
-    const archived = archiveCurrentGoal(liveCtx, "complete", `auditor ${result.model} approved (${origin})`, {}, { findingGroups: claim.findingGroups, gateRows: claim.gateRows });
+    const archived = archiveCurrentGoal(liveCtx, "complete", `auditor ${result.model} approved (${origin})`, {}, { findingGroups: claim.findingGroups, gateRows: claim.gateRows, priorCompletionSummary: claim.priorCompletionSummary });
     if (!archived) {
       // archiveCurrentGoal already preserved the live record and warned the
       // user. Keep the approved claim recoverable, but never emit a terminal
