@@ -1962,7 +1962,11 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
       const when = retryMs > 0 ? `next probe in ${fmtElapsed(retryMs)}`
         : overdue ? "overdue — waiting on recovery timer"
         : "now";
-      lines.push(`├─ ${paint(theme, "dim", isSupervisedWait(g) ? `auto-retrying · ${when}` : `waiting for you — auto-continue in ${fmtElapsed(retryMs)}`)}`);
+      const supervisedLine = `auto-retrying · ${when}`;
+      const userWhen = retryMs > 0 ? `auto-continue in ${fmtElapsed(retryMs)}`
+        : overdue ? "auto-continue overdue — waiting on your timer"
+        : "auto-continuing…";
+      lines.push(`├─ ${paint(theme, "dim", isSupervisedWait(g) ? supervisedLine : `waiting for you — ${userWhen}`)}`);
     } else if (kind === "blocked" && state.mainModelRecovery?.manualResumeRequired === true) {
       lines.push(`├─ ${paint(theme, "warning", "manual recovery hold — automatic probes stopped")}`);
     } else if (kind === "blocked") {
