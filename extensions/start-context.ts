@@ -313,7 +313,14 @@ export function isChatterReplacement(text: string): boolean {
   if (!clean) return false;
   if (GENERIC_REPLY_RE.test(clean) || PRONOUN_ONLY_RE.test(clean) || VAGUE_ACTION_RE.test(clean)) return true;
   const stripped = clean.replace(ACK_PREFIX_RE, "").trim();
-  if (stripped !== clean) return stripped ? classifyCandidate(stripped) !== "clear" : true;
+  if (stripped !== clean) {
+    // Bare-start ambiguity (compound requests, long text) is not chatter.
+    // Only an actual acknowledgment or a referential action redirects to
+    // context. Include the field-observed misspelling without rejecting
+    // arbitrary explicit text merely because it is outside ACTION_WORDS.
+    return !stripped || GENERIC_REPLY_RE.test(stripped) || isVagueCandidate(stripped)
+      || /^(?:do|adjust|adjsut)\s+(?:it|this|that)\s*[.!?]*$/i.test(stripped);
+  }
   return false;
 }
 
