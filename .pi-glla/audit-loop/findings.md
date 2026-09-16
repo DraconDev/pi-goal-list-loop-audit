@@ -536,3 +536,5 @@ Verified vs disk before recording. Disposed without findings (rationale): goal-l
 - [ ] FIX: LOW: Paragraph routing documentation omits contract exceptions and pasted-list instructions also classify arbitrary multiline prose as a list (CHANGELOG.md:9; prompts/goal-loop-draft.md:76).
 - [ ] FIX: MEDIUM: Paragraph command regression checks notification only, not preservation of the actual seed; inferred-tweak consent rejection lacks behavioral coverage (tests/behavioral-orchestrator.test.ts:1077).
 - [ ] FIX: MEDIUM: Held-loop refine regression does not verify resumed dispatch/history or wrong-branch refusal (tests/behavioral-orchestrator.test.ts:1088).
+
+- [ ] FIX: MEDIUM: Structured-summary archive-token sanitizer uses unanchored greedy nonspace matching; a 100k plain token causes quadratic scanning and a reproducible default-timeout failure (extensions/completion-summary.ts:347; tests/structured-summary.test.ts:137). Measured 10k/20k/40k tokens at 67/279/1112 ms.
