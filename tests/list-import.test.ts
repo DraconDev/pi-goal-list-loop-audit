@@ -9,7 +9,7 @@ import * as path from "node:path";
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 
-import { parseListImport, resolveImportFile, routeListText, listMutationBlocked, LIST_DRAFTING_BLOCK_MESSAGE } from "../extensions/goal-loop-core.ts";
+import { parseListImport, resolveImportFile, routeListText, hasExplicitListStructure, listMutationBlocked, LIST_DRAFTING_BLOCK_MESSAGE } from "../extensions/goal-loop-core.ts";
 
 test("markdown checklist", () => {
   const items = parseListImport("- [ ] first task\n- [x] done task\n- [ ] third task");
@@ -128,10 +128,30 @@ test("routeListText: file path wins over everything", () => {
   fs.rmSync(cwd, { recursive: true, force: true });
 });
 
-test("routeListText: multi-line paste is an explicit batch", () => {
+test("routeListText: field 2026-09-16 — plain lines are a paragraph, not a batch", () => {
   const r = routeListText("/nonexistent", "fix x\ndo y\nclean z");
-  assert.equal(r.kind, "batch");
-  if (r.kind === "batch") assert.equal(r.items.length, 3);
+  assert.equal(r.kind, "draft");
+  if (r.kind === "draft") assert.equal(r.seed, "fix x\ndo y\nclean z");
+});
+
+test("routeListText: field 2026-09-16 — marked structure still batches", () => {
+  for (const raw of [
+    "- fix x\n- do y\n- clean z",
+    "1. fix x\n2) do y\n3. clean z",
+    "- [ ] fix x\n- [ ] do y",
+    "Some intro prose.\n- fix x\n- do y",
+  ]) {
+    const r = routeListText("/nonexistent", raw);
+    assert.equal(r.kind, "batch", `batches: ${JSON.stringify(raw)}`);
+  }
+});
+
+test("hasExplicitListStructure: two marked lines, one marked line, none", () => {
+  assert.equal(hasExplicitListStructure("- a\n- b"), true);
+  assert.equal(hasExplicitListStructure("1. a\n2. b"), true);
+  assert.equal(hasExplicitListStructure("- a"), false);
+  assert.equal(hasExplicitListStructure("first sentence here.\nSecond sentence here."), false);
+  assert.equal(hasExplicitListStructure("no newlines at all"), false);
 });
 
 test("routeListText: pasted bullets preserve item wording and contracts", () => {

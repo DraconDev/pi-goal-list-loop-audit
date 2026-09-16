@@ -823,10 +823,28 @@ export function routeListText(cwd: string, raw: string): ListTextRoute {
   if (importFile) return { kind: "file", path: importFile };
   if (raw.includes("\n")) {
     const pasted = parseListImport(raw);
-    if (pasted.length > 1) return { kind: "batch", items: pasted };
+    // Field 2026-09-16: split into a batch ONLY on explicit list
+    // structure (bullets, numbers, checklist boxes). A prose paragraph
+    // wrapped over lines is ONE piece of work told in several sentences —
+    // batching it offered "sentences as items or nothing". Unstructured
+    // multi-line text drafts instead, where the interview proposes it
+    // whole (see the paragraph-seeds rule in goal-loop-draft.md).
+    if (pasted.length > 1 && hasExplicitListStructure(raw)) return { kind: "batch", items: pasted };
   }
   if (!goalArgsNeedDrafting(raw)) return { kind: "direct", text: raw };
   return { kind: "draft", seed: raw };
+}
+
+/** Explicit list structure: at least two lines carrying a list marker
+ * (bullet, checklist box, or number). One marked line is a one-record
+ * paste, not a list (clarify it); unmarked prose is a paragraph. */
+export function hasExplicitListStructure(raw: string): boolean {
+  let marked = 0;
+  for (const line of raw.split("\n")) {
+    if (/^\s*(?:-\s*\[[ xX]\]|[-*•]\s+|\d+[.)]\s+)/.test(line)) marked++;
+    if (marked >= 2) return true;
+  }
+  return false;
 }
 
 /**

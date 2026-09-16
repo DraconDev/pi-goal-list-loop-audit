@@ -1045,8 +1045,7 @@ test("field 2026-09-16: plain-/goal update with an explicit contract stays verba
   assert.equal(ctx.ui.matching("acknowledgment rather than a replacement").length, 0, "no guidance for explicit text");
 });
 
-test("field 2026-09-16: chatter typed into the bare-tweak dialog guides, never adopts", async () => {
-  __testOnlyResetStaleFlag();
+test("field 2026-09-16: chatter typed into the bare-tweak dialog guides, never adopts", async () => {  __testOnlyResetStaleFlag();
   const cwd = tmpCwd();
   const before = "Overhaul the Quick full setup overlay in the VidPro extension";
   seedState(cwd, {
@@ -1067,6 +1066,24 @@ test("field 2026-09-16: chatter typed into the bare-tweak dialog guides, never a
   assert.equal(stored.status, "paused", "the park survives");
   assert.ok(ctx.ui.matching("acknowledgment rather than a replacement").length >= 1, "the guidance fires on the dialog path too");
   assert.equal(readLedger(cwd).filter((entry) => entry.type === "goal_tweaked").length, 0, "no adoption is ledgered");
+});
+
+test("field 2026-09-16: a typed paragraph drafts as one thing, never an import-or-nothing", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  seedState(cwd, {});
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  const confirmTitles: string[] = [];
+  ctx.ui.confirmImpl = async (title) => {
+    confirmTitles.push(title);
+    return false;
+  };
+  const sentBefore = pi.sent.length;
+  await pi.command("list", "Overhaul the Quick setup overlay. It should keep the current layout.\nThe progress bar needs a11y labels too.", ctx);
+  assert.ok(!confirmTitles.some((t) => t.includes("Import into list?")), "no sentence-split import is offered");
+  assert.ok(pi.sent.length > sentBefore, "the paragraph seeds a drafting interview instead");
+  assert.deepEqual((readState(cwd).list as unknown[]).length, 0, "nothing is enqueued behind the user's back");
 });
 
 test("field 2026-09-16 (loop sweep): /loop refine on a held loop queues the hint and resumes", async () => {

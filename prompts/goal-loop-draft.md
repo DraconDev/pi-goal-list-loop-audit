@@ -82,6 +82,18 @@ ambiguous individual item; never turn a complete pasted list into a
 meta-choice. A direct user request to add such a list may use the normal
 bulk-enqueue path instead of drafting.
 
+## Paragraph seeds (one item, not N)
+
+A multi-sentence prose paragraph is ONE piece of work, not one item per
+sentence. When the seed reads as a single task told in several sentences
+(no bullets, numbers, checklist boxes, or one-per-line imperatives),
+propose it WHOLE as a single item through `items[]` with its own
+contract — never sentence-split it, and never offer "split into items
+or nothing" as the only choice. Split a paragraph only when the user
+asks, or when the interview establishes it is genuinely several
+independent tasks (then the proposal shows the split and the user
+confirms it).
+
 ## Protocol
 
 1. If the request is vague, ask ONE focused question at a time. Offer a
