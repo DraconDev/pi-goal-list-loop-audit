@@ -1029,19 +1029,43 @@ test("field 2026-09-16: tweak chatter with no discussed objective guides and cha
   assert.equal(readLedger(cwd).filter((entry) => entry.type === "goal_tweaked").length, 0, "no adoption is ledgered");
 });
 
-test("field 2026-09-16: plain-/goal chatter via Update-current-objective guides, never adopts", async () => {
+test("field 2026-09-16: plain-/goal update with an explicit contract stays verbatim (explicit intent wins)", async () => {
   __testOnlyResetStaleFlag();
   setGlobalAutoResume(true);
   const cwd = tmpCwd();
-  const before = "Overhaul the Quick full setup overlay in the VidPro extension";
-  seedState(cwd, { goal: seedGoal({ policy: "goal", status: "active", objective: before }) });
+  seedState(cwd, { goal: seedGoal({ policy: "goal", status: "active", objective: "Overhaul the Quick full setup overlay" }) });
   const ctx = await freshSession(cwd, "reload");
   await tick();
+  assert.equal((readState(cwd).goal as { status: string }).status, "active", "precondition: the goal is active");
   ctx.ui.selectImpl = async () => "Update current objective";
-  await pi.command("goal", "ok adjust it", ctx);
+  await pi.command("goal", "ok adjust it. Done when: the overlay ships", ctx);
+  const stored = readState(cwd).goal as { objective: string; verificationContract?: string };
+  assert.equal(stored.objective, "ok adjust it", "an explicit contract is explicit intent — adopted verbatim");
+  assert.equal(stored.verificationContract, "the overlay ships");
+  assert.equal(ctx.ui.matching("acknowledgment rather than a replacement").length, 0, "no guidance for explicit text");
+});
+
+test("field 2026-09-16: chatter typed into the bare-tweak dialog guides, never adopts", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  const before = "Overhaul the Quick full setup overlay in the VidPro extension";
+  seedState(cwd, {
+    goal: seedGoal({
+      policy: "goal",
+      status: "paused",
+      objective: before,
+      pauseReason: "paused by user",
+      pauseSuggestedAction: "/goal resume to continue",
+    }),
+  });
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  ctx.ui.inputImpl = async () => "go";
+  await pi.command("goal", "tweak", ctx);
   const stored = readState(cwd).goal as { objective: string; status: string };
-  assert.equal(stored.objective, before, "the conflict update path resolves chatter like tweak does");
-  assert.ok(ctx.ui.matching("acknowledgment rather than a replacement").length >= 1, "the guidance fires on the conflict path too");
+  assert.equal(stored.objective, before, "dialog chatter is not adopted");
+  assert.equal(stored.status, "paused", "the park survives");
+  assert.ok(ctx.ui.matching("acknowledgment rather than a replacement").length >= 1, "the guidance fires on the dialog path too");
   assert.equal(readLedger(cwd).filter((entry) => entry.type === "goal_tweaked").length, 0, "no adoption is ledgered");
 });
 
