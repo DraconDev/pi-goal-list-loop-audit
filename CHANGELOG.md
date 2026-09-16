@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Structured-long summaries
+
+A section-structured `Outcome` (2+ `##`–`####` headers, tables) now
+renders in full as the card's `### Summary` section — a working document
+is no longer truncated into a status ping (field 2026-09-16, the
+keyword-review close). Structure is the price of length: unstructured
+values keep today's budgets, the headline echo stays short, and the
+one-action Next rule is untouched. Delivery-only (terminal card +
+archive human layer) with a 100k pathological guard pointing at the
+archive; headline, verification, recap, and every recycled per-tick
+payload stay bounded.
+
 ## 0.38.55 — Full-parity terminal card, lenient auditor, agent resume (2026-09-16)
 
 ### Full-parity terminal card
