@@ -47,7 +47,8 @@ for (const name of DRAFTING_PROMPTS) {
 for (const name of ["goal-loop-draft.md", "goal-loop-plan.md"]) {
   test(`${name}: pasted list-like seeds use supplied wording without an exactness choice`, () => {
     const p = readPrompt(name);
-    assert.match(p, /multi-line,\s*\n?bulleted, numbered, or checklist-style seed/);
+    assert.match(p, /explicitly\s+structured list/);
+    assert.match(p, /(?:Line wrapping alone does not make prose a list|Wrapped prose is one paragraph)/);
     assert.match(p, /exact or refined/);
     assert.match(p, /genuinely\s+\n?ambiguous individual item/);
   });
