@@ -434,10 +434,13 @@ export function extractEvidenceTokens(text: string): { text: string; evidence: s
   const stripped = text
     .replace(EVIDENCE_TOKEN_PATTERN, (match) => {
       if (evidence.length < RICH_EVIDENCE_TOKENS_PER_FINDING && !evidence.includes(match)) evidence.push(match);
+      // The token often rides in parentheses — move the wrapper too, so
+      // no "()" husk remains. Groups that still carry words stay intact.
       return "";
     })
-    .replace(/\s+/g, " ")
+    .replace(/\(([^()]*)\)/g, (group, inner: string) => (/\w/.test(inner) ? group : ""))
     .replace(/\s+([,.;:])/g, "$1")
+    .replace(/\s{2,}/g, " ")
     .trim();
   return { text: stripped, evidence };
 }

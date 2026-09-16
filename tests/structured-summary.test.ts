@@ -10,6 +10,7 @@ import * as assert from "node:assert/strict";
 import type { Goal } from "../extensions/goal-loop-core.js";
 import {
   buildRichArchiveSection,
+  buildRichTerminalParts,
   buildTerminalApprovalRender,
   countSectionHeaders,
   isSectionStructured,
@@ -67,6 +68,25 @@ function render(summary: string) {
     record: "— record: .pi-glla/archive/20260916-structured.md",
   });
 }
+
+test("renderer removes empty evidence parentheses without losing the finding", () => {
+  const parts = buildRichTerminalParts({
+    outcome: "Collision handling corrected", details: [], countsLine: "",
+    groups: [{ title: "Gameplay", findings: ["Fix: Updated collision handling (game.ts:120)."] }],
+  });
+  const text = parts.findingLines.join("\n");
+  assert.match(text, /Updated collision handling/);
+  assert.match(text, /game\.ts:120/);
+  assert.doesNotMatch(text, /\(\s*\)/);
+});
+
+test("headline echo uses the Outcome lead paragraph, never flattened headers", () => {
+  const { chatLines } = render(STRUCTURED);
+  const headline = chatLines[2] ?? "";
+  assert.ok(headline.startsWith("## Done: review the keyword system — "), "headline still echoes the request");
+  assert.doesNotMatch(headline, /## Part|### /, `no flattened markdown in the headline, got: ${headline}`);
+  assert.match(headline, /shipped the keyword review/, "the lead outcome text survives");
+});
 
 test("detector: two ##/### headers earn the structured path, one does not", () => {
   assert.equal(isSectionStructured("Outcome: plain text"), false, "no headers");

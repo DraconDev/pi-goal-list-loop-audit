@@ -309,6 +309,14 @@ test("extractEvidenceTokens moves tokens mechanically and never invents", () => 
   const abs = extractEvidenceTokens("See /var/tmp/x.ts:1 for details");
   assert.deepEqual(abs.evidence, [], "absolute paths are not evidence");
   assert.ok(abs.text.includes("/var/tmp/x.ts:1"), "absolute path stays in the finding text");
+  // 2026-09-16 fragment pin: moving a parenthesized token must not leave
+  // an empty-parenthesis husk, and real words in the group must survive.
+  const husk = extractEvidenceTokens("Fix: Updated collision handling (game.ts:120).");
+  assert.deepEqual(husk.evidence, ["game.ts:120"]);
+  assert.equal(husk.text, "Fix: Updated collision handling.");
+  const prose = extractEvidenceTokens("Fix: retry (with backoff) (sim.ts:4505-4530)");
+  assert.deepEqual(prose.evidence, ["sim.ts:4505-4530"]);
+  assert.equal(prose.text, "Fix: retry (with backoff)");
 });
 
 test("sanitizeFindingGroups bounds shape at the trust boundary", () => {
