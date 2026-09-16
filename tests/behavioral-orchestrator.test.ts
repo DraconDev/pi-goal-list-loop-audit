@@ -1010,7 +1010,10 @@ test("audit 2026-09-16: inferred tweak rejection leaves objective and ledger unc
   __testOnlyResetStaleFlag();
   const cwd = tmpCwd();
   seedState(cwd, { goal: seedGoal({ policy: "goal", status: "paused", objective: "Keep the existing contract" }) });
-  MAIN_SM.entries = [{ type: "message", message: { role: "user", content: "Fix the flaky login test" } }];
+  MAIN_SM.entries = [
+    { type: "message", message: { role: "user", content: "Fix the flaky login test" } },
+    { type: "message", message: { role: "user", content: "/goal tweak ok adjust it" } },
+  ];
   try {
     const ctx = await freshSession(cwd, "reload");
     await tick();
