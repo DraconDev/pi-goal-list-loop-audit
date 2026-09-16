@@ -222,7 +222,7 @@ function isLoopActive(): boolean {
 // could be false (hegemon/polis stopped 2026-07-31 with open findings
 // on 429-dead turns), and an explicit resume is the user's call; the
 // v0.29.19 gate + re-armed counters make the resumed run honest.
-const RESUMABLE_STOP = (r?: string): boolean =>
+export const RESUMABLE_STOP = (r?: string): boolean =>
   r === HELD_ON_RESTORE ||
   !!r?.startsWith("provider errors —") ||
   !!r?.startsWith("stopped by user —") ||
@@ -1216,6 +1216,12 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       return;
     }
     if (!stored.active && !RESUMABLE_STOP(stored.stopReason)) {
+      // A broken measure is fixed from the agent side, not by restarting:
+      // point there instead of at a fresh start.
+      if (stored.stopReason?.startsWith("measure command broken —")) {
+        ctx.ui.notify("That loop stopped on a broken measure — the hint was not queued. Have the agent repair it via propose_loop_refine (it test-runs the new measure), then /loop resume.", "warning");
+        return;
+      }
       ctx.ui.notify(`That loop ended (${stored.stopReason ?? "stopped"}) — the hint was not queued. /loop start begins a fresh run.`, "warning");
       return;
     }

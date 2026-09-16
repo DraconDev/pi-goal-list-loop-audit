@@ -57,7 +57,12 @@ export function isLifecycleHeldLoopReason(reason?: string): boolean {
 /** A stopped loop can be respecified without discarding its history when the
  * stop is a recoverable work failure or an explicit time/token window. Max
  * iterations and clean/user stops remain terminal until a fresh `/loop start`.
- */
+ * Field 2026-09-16 (loop sweep): parked loops (user pause, restore-hold,
+ * zero-stream abort, user-stop-with-em-dash) are refinable too — parity with
+ * the slash-side RESUMABLE_STOP so both surfaces agree on what can be
+ * rescoped. `measure command broken` stays tool-only by design: the agent
+ * fixes the measure here, while slash resume must not restart a broken
+ * loop until it is fixed. */
 export function isRefinableStoppedLoopReason(reason?: string): boolean {
   return !!reason && (
     reason.startsWith("time bound reached")
@@ -68,6 +73,10 @@ export function isRefinableStoppedLoopReason(reason?: string): boolean {
     || reason.startsWith("measure command broken —")
     || reason.startsWith("provider errors —")
     || reason.startsWith("stalled:")
+    || reason === HELD_ON_RESTORE
+    || reason.startsWith("paused by user (/loop pause)")
+    || reason.startsWith("stopped: automatic zero-stream abort")
+    || reason.startsWith("stopped by user —")
   );
 }
 

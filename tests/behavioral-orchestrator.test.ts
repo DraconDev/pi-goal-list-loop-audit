@@ -1022,6 +1022,18 @@ test("field 2026-09-16 (loop sweep): refine on a user-stopped loop refuses with 
   assert.ok(ctx.ui.matching("/loop start begins a fresh run").length >= 1, "the refusal names the fresh-start path");
 });
 
+test("field 2026-09-16 (loop sweep): refine on a measure-broken loop points at the agent repair path", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  seedState(cwd, { loop: seedLoop({ active: false, stopReason: "measure command broken — 5 consecutive null measures", iteration: 7 }) });
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  await pi.command("loop", "refine capture setup cost too", ctx);
+  const loop = readState(cwd).loop as { active: boolean; refineHint?: string };
+  assert.equal(loop.refineHint, undefined, "no hint is queued onto a broken loop");
+  assert.ok(ctx.ui.matching("propose_loop_refine").length >= 1, "the refusal names the agent repair path, not a fresh start");
+});
+
 test("field 2026-09-16 (loop sweep): refine on an active loop keeps today's behavior", async () => {
   __testOnlyResetStaleFlag();
   setGlobalAutoResume(true);
