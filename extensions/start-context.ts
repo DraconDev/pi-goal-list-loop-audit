@@ -297,3 +297,44 @@ export function inferStartFromSession(sessionManager: unknown): StartContextInfe
     currentPromptTruncated: window.currentPromptTruncated,
   });
 }
+
+/** Acknowledgment openers: the user is responding to a proposal, not
+ * stating an objective. `\b` keeps "goals"/"going" out. */
+const ACK_PREFIX_RE = /^(?:ok(?:ay)?|yes|yeah|yep|sure|go|fine|great|perfect|thanks?|thank\s+you)\b[\s,—–-]*/i;
+
+/** Field 2026-09-16 (VidPro ledger: `/goal tweak` adopted "ok adjsut it"
+ * as the objective): chatter is an acknowledgment / pronoun / bare vague
+ * action — possibly behind an ack opener ("ok adjust it") — never a
+ * self-contained objective. Deliberately NOT length-based: short-but-real
+ * objectives ("fix typo in X") pass through untouched. Questions pass
+ * through too — only the acknowledgment shapes divert. */
+export function isChatterReplacement(text: string): boolean {
+  const clean = normalizeWhitespace(text ?? "");
+  if (!clean) return false;
+  if (GENERIC_REPLY_RE.test(clean) || PRONOUN_ONLY_RE.test(clean) || VAGUE_ACTION_RE.test(clean)) return true;
+  const stripped = clean.replace(ACK_PREFIX_RE, "").trim();
+  if (stripped !== clean) return stripped ? classifyCandidate(stripped) !== "clear" : true;
+  return false;
+}
+
+export type TweakReplacement =
+  | { kind: "verbatim" }
+  | { kind: "inferred"; text: string; source: "current-prompt" | "recent-context" }
+  | { kind: "unresolvable"; reason: "ambiguous" | "none"; candidates: string[] };
+
+/** Resolve a tweak/update replacement against what was actually discussed.
+ * Self-contained text is adopted verbatim (today's path, byte-identical).
+ * Chatter ("go fix it", "ok adjsut it") resolves via the session
+ * context into the discussed objective — the user pointed at the context,
+ * so the context supplies the words. When nothing clear was discussed,
+ * the caller guides instead of adopting garbage: raw chatter must never
+ * land in the ledger as an objective again. */
+export function resolveTweakReplacement(raw: string, sessionManager: unknown): TweakReplacement {
+  if (!isChatterReplacement(raw)) return { kind: "verbatim" };
+  const inference = inferStartFromSession(sessionManager);
+  if (inference.kind === "clear") return { kind: "inferred", text: inference.objective, source: inference.source };
+  if (inference.kind === "ambiguous") {
+    return { kind: "unresolvable", reason: "ambiguous", candidates: inference.candidates };
+  }
+  return { kind: "unresolvable", reason: "none", candidates: [] };
+}
