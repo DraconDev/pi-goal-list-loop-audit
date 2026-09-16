@@ -289,6 +289,83 @@ export const RICH_OBJECTIVE_ECHO_CHARS = 80;
 export const RICH_TABLE_GROUP_THRESHOLD = 4;
 /** v0.38.50: evidence tokens per finding cell — density, not a dump. */
 export const RICH_EVIDENCE_TOKENS_PER_FINDING = 4;
+/** Structured-long doctrine (field 2026-09-16 — the keyword-review close):
+ * a section-structured label value is a working document, not a status
+ * ping, and truncating it destroys its purpose. Structure is the price
+ * of length: at least this many `##`–`####` section headers keeps the
+ * value on the structured path; anything else keeps today's budgets.
+ * Delivery-only: the terminal card and the archive human layer. Recycled
+ * per-tick payloads (continuation, handoff, checkpoint) stay bounded. */
+export const RICH_STRUCTURED_MIN_HEADERS = 2;
+/** Structured-long guard against pathological megabytes: the tool call
+ * carries no length bound, so the structured path still ends — with an
+ * honest truncation note pointing at the archive, never silent soup. */
+export const RICH_STRUCTURED_VALUE_BUDGET = 100_000;
+
+/** Count markdown section headers (`##`–`####` with text) in raw text.
+ * H1 (`# `) is a document title, not a section — it does not count. */
+export function countSectionHeaders(text: string): number {
+  const matches = (text ?? "").match(/^#{2,4}\s+\S/gm);
+  return matches ? matches.length : 0;
+}
+
+export function isSectionStructured(text: string): boolean {
+  return countSectionHeaders(text) >= RICH_STRUCTURED_MIN_HEADERS;
+}
+
+const STRUCTURED_LABELS = ["Outcome:", "Changed:", "Evidence:", "Tests:", "Unresolved:", "Next:"];
+
+/** Raw (newline-preserving) label value for the structured path. Labels
+ * anchor to line starts and the last restatement wins — the same
+ * doctrine as labelPositions on the flattened path (v0.38.45). Residual
+ * ambiguity (a structured doc quoting `Changed:` at a line start) cuts
+ * the value early and the detector usually falls back to clipped
+ * rendering — doubt resolves to today's behavior, never to invention. */
+export function rawLabelValue(text: string, label: string): string | null {
+  const source = text ?? "";
+  if (!source) return null;
+  const openings: number[] = [];
+  const openPattern = new RegExp(`^${label}`, "gim");
+  for (const match of source.matchAll(openPattern)) openings.push(match.index ?? 0);
+  if (openings.length === 0) return null;
+  const start = openings[openings.length - 1]! + label.length;
+  const restPattern = new RegExp(`^(${STRUCTURED_LABELS.filter((entry) => entry !== label).join("|")})`, "gim");
+  restPattern.lastIndex = start;
+  const next = restPattern.exec(source);
+  const end = next ? (next.index ?? source.length) : source.length;
+  const value = source.slice(start, end).trim();
+  return value || null;
+}
+
+/** Machine-token strip for structured lines. chatSafeDetailValue also
+ * collapses multi-space runs, which would damage markdown table
+ * alignment padding — structured lines keep their spacing and drop
+ * only the archive-only tokens. */
+function stripMachineTokens(line: string): string {
+  return line
+    .replace(/(?:\/var)?\/tmp\/\S+/g, "")
+    .replace(/\S+\.tgz\b/g, "")
+    .replace(/\(\s*\)/g, "")
+    .replace(/\s+$/u, "");
+}
+
+/** Full Outcome body for the `### Summary` card section, or null when
+ * the value is not section-structured (caller keeps today's budgets).
+ * Newlines and tables survive; machine paths stay archive-only; the
+ * pathological guard ends with an honest pointer, never silent soup. */
+export function structuredSummaryLines(summary: string | undefined, label = "Outcome:"): string[] | null {
+  const raw = rawLabelValue(summary ?? "", label);
+  if (!raw || !isSectionStructured(raw)) return null;
+  const lines = raw.split("\n").map(stripMachineTokens);
+  while (lines.length > 0 && !(lines[0] ?? "").trim()) lines.shift();
+  while (lines.length > 0 && !(lines[lines.length - 1] ?? "").trim()) lines.pop();
+  let text = lines.join("\n");
+  const units = [...text];
+  if (units.length > RICH_STRUCTURED_VALUE_BUDGET) {
+    text = `${units.slice(0, RICH_STRUCTURED_VALUE_BUDGET).join("")}\n\n… (truncated for chat — full text in the archived record.)`;
+  }
+  return text.split("\n");
+}
 
 export interface RichTerminalParts {
   /** v0.38.55 (full parity): verdict banner — `## Done — auditor
@@ -303,6 +380,11 @@ export interface RichTerminalParts {
   /** v0.38.55 (full parity): final repository state section lines.
    * Empty when the state could not be read (absent stays absent). */
   repoLines: string[];
+  /** Structured-long body (field 2026-09-16): full Outcome text with
+   * newlines preserved, rendered as `### Summary`. Empty unless the
+   * value earned the structured path — never a second copy of the
+   * clipped headline echo. */
+  summaryLines: string[];
 }
 
 function escapeTableCell(value: string): string {
@@ -472,6 +554,10 @@ export function buildRichTerminalParts(args: {
    * tree cleanliness) from the render call site, which owns cwd access.
    * Absent keeps the section out — never invented. */
   repoState?: string[];
+  /** Structured-long body lines from structuredSummaryLines. Absent
+   * keeps the `### Summary` section out (unstructured summaries keep
+   * today's headline-echo shape). */
+  summaryLines?: string[];
 }): RichTerminalParts {
   const { findings, tests, next } = partitionRichDetails(args.details);
   const outcome = args.outcome;
@@ -573,6 +659,7 @@ export function buildRichTerminalParts(args: {
     tableLines,
     nextLines,
     repoLines: args.repoState ?? [],
+    summaryLines: args.summaryLines ?? [],
   };
 }
 
@@ -587,6 +674,14 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   const lines = [parts.banner ?? parts.headline, ""];
   if (parts.headline !== lines[0]) lines.push(parts.headline, "");
   if (parts.durationLine) lines.push(parts.durationLine, "");
+  // Structured-long (field 2026-09-16): the full Outcome body rides its
+  // own section between the headline and the findings — findings-first
+  // order is preserved (findings, verification, Next keep their relative
+  // order), the headline echo stays short, and the one-action Next rule
+  // is untouched.
+  if (parts.summaryLines.length > 0) {
+    lines.push("### Summary", ...parts.summaryLines, "");
+  }
   if (parts.findingLines.length > 0) {
     lines.push("### Key Findings & Remediation", ...parts.findingLines, "");
   }
