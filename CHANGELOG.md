@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased — Full-parity terminal card
+## 0.38.55 — Full-parity terminal card, lenient auditor, agent resume (2026-09-16)
+
+### Full-parity terminal card
 
 The post-objective summary now shares everything the archive knows (owner:
 full parity with the long example closes): a `## Done — auditor …`
@@ -12,6 +14,8 @@ column, commit hashes stay visible, and a `### Final Repository State`
 section (branch, HEAD, tree cleanliness, best-effort) closes the card
 ahead of the record trailer. One surface per fact is preserved: the banner
 owns the verdict, the footer stays liveness-only.
+
+### Agent-side resume
 
 Agent-side resume (field incident Screenshot_20260916_090307): a paused goal
 whose blocker the user waives in conversation no longer bounces back to the
@@ -25,7 +29,7 @@ real user command. A cold-load hold releases like any explicit work command
 `agent` audit origin with the manual-equivalent fresh cycle. The paused
 `complete_goal` refusal now points at `resume_goal` first.
 
-## Unreleased — Auditor retries like main (unified recovery envelope)
+### Auditor retries like main (unified recovery envelope)
 
 Field evidence (hellhunter/junk-runner 2026-09-16): a burned auditor
 candidate chain parked with "automatic recovery is stopped" while the
