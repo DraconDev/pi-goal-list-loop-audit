@@ -46,11 +46,29 @@ test("draft-only handoff: a real question waits without an autonomous retry", as
   assert.equal(readState(ctx.cwd).goal, null, "draft does not activate work");
 });
 
-test("field screenshot: answered draft ending with promised questions needs one bounded handoff", async () => {
+test("field screenshot: answered promise-only draft emits one visible notice, never a retry", async () => {
   const ctx = await draft();
   const sent = pi.userMessages.length;
-  await pi.fire("agent_end", ended("Two final policy choices will make the implementation contract concrete:"), ctx);
+  const custom = pi.sent.length;
+  const notices = () => ctx.ui.notifies.filter(n => n.message.includes("Drafting needs attention"));
+  const event = ended("Two final policy choices will make the implementation contract concrete:");
+  await pi.fire("agent_end", event, ctx);
   await tick(100);
-  assert.equal(pi.userMessages.length, sent + 1, "GLLA should request the missing question, not leave an invisible wait");
-  assert.equal(readState(ctx.cwd).goal, null, "repair is still drafting, never execution");
+  assert.equal(notices().length, 1, "unfinished handoff is visible");
+  await pi.fire("agent_end", event, ctx);
+  await pi.fire("tool_result", { toolName: "ask_user_question", details: { cancelled: false, answers: ["yes"] } }, ctx);
+  await pi.fire("agent_end", event, ctx);
+  assert.equal(notices().length, 1, "replays and later answers cannot repeat the notice in this draft");
+  assert.equal(pi.userMessages.length, sent, "no synthetic user send");
+  assert.equal(pi.sent.length, custom, "no alternate-channel continuation");
+  assert.equal(readState(ctx.cwd).goal, null, "draft remains unactivated");
 });
+
+for (const details of [{ cancelled: true, answers: [] }, {}, { cancelled: false, answers: [] }]) {
+  test(`cancelled or missing answer suppresses stale handoff evidence: ${JSON.stringify(details)}`, async () => {
+    const ctx = await draft();
+    await pi.fire("tool_result", { toolName: "ask_user_question", details }, ctx);
+    await pi.fire("agent_end", ended("Two final policy choices will make the implementation contract concrete:"), ctx);
+    assert.equal(ctx.ui.notifies.filter(n => n.message.includes("Drafting needs attention")).length, 0);
+  });
+}

@@ -377,8 +377,10 @@ import {
   type LoopFlags,
 } from "../goal-loop.js";
 import { defineGoalRuntimeGlobal } from "./goal-runtime-globals.js";
+import { draftingHandoff } from "../drafting-handoff.js";
 
 function clearDraftingState(): void {
+  draftingHandoff.reset();
   const restore = (globalThis as any).restoreDrafterModel as (() => Promise<void>) | undefined;
   if (restore) void restore();
   draftingTarget = null;
