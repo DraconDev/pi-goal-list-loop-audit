@@ -530,11 +530,13 @@ Verified vs disk before recording. Disposed without findings (rationale): goal-l
 
 ## Fresh audit — 2026-09-16
 
-- [ ] FIX: HIGH: Bare /list collapses independently contracted records into the first objective's contract (extensions/goal-loop-core.ts:837).
-- [ ] FIX: MEDIUM: /list add splits paragraph and standalone Done when clause into separate items because any contracted line triggers batching (extensions/goal-loop-core.ts:837).
-- [ ] FIX: MEDIUM: Acknowledgment-prefixed compound tweak objectives are misclassified as chatter and replaced by unrelated context or refused (extensions/start-context.ts:317).
-- [ ] FIX: LOW: Paragraph routing documentation omits contract exceptions and pasted-list instructions also classify arbitrary multiline prose as a list (CHANGELOG.md:9; prompts/goal-loop-draft.md:76).
-- [ ] FIX: MEDIUM: Paragraph command regression checks notification only, not preservation of the actual seed; inferred-tweak consent rejection lacks behavioral coverage (tests/behavioral-orchestrator.test.ts:1077).
-- [ ] FIX: MEDIUM: Held-loop refine regression does not verify resumed dispatch/history or wrong-branch refusal (tests/behavioral-orchestrator.test.ts:1088).
+- [x] FIX: HIGH: Bare /list collapses independently contracted records into the first objective's contract (extensions/goal-loop-core.ts:837). — fixed in 9e8b1fc5
+- [x] FIX: MEDIUM: /list add splits paragraph and standalone Done when clause into separate items because any contracted line triggers batching (extensions/goal-loop-core.ts:837). — fixed in 9e8b1fc5
+- [x] FIX: MEDIUM: Acknowledgment-prefixed compound tweak objectives are misclassified as chatter and replaced by unrelated context or refused (extensions/start-context.ts:317). — fixed in c72ad6bd
+- [x] FIX: LOW: Paragraph routing documentation omits contract exceptions and pasted-list instructions also classify arbitrary multiline prose as a list (CHANGELOG.md:9; prompts/goal-loop-draft.md:76). — fixed in 4e187769, 4bc1ca5d, 92ef0506, 9eebe344, e5d25bc9
+- [x] FIX: MEDIUM: Paragraph command regression checks notification only, not preservation of the actual seed; inferred-tweak consent rejection lacks behavioral coverage (tests/behavioral-orchestrator.test.ts:1077). — fixed in 911e625c, 281da126, 00cd4a66
+- [x] FIX: MEDIUM: Held-loop refine regression does not verify resumed dispatch/history or wrong-branch refusal (tests/behavioral-orchestrator.test.ts:1088). — fixed in 911e625c, 00cd4a66
 
-- [ ] FIX: MEDIUM: Structured-summary archive-token sanitizer uses unanchored greedy nonspace matching; a 100k plain token causes quadratic scanning and a reproducible default-timeout failure (extensions/completion-summary.ts:347; tests/structured-summary.test.ts:137). Measured 10k/20k/40k tokens at 67/279/1112 ms.
+- [x] FIX: MEDIUM: Structured-summary archive-token sanitizer uses unanchored greedy nonspace matching; a 100k plain token causes quadratic scanning and a reproducible default-timeout failure (extensions/completion-summary.ts:347; tests/structured-summary.test.ts:137). Measured 10k/20k/40k tokens at 67/279/1112 ms. — fixed in 9eebe344 (7488ms → 4.94ms)
+
+- [x] FIX: HIGH: Starvation refuse gate is process-wide module state with no reset; the v0.35.4 behavioral test leaves a hot episode armed, which deterministically refuses every dispatch send in the next test file (continuation_send_refused_context_starved on all sends — PROBE evidence) and times out four watchdog tests when tests/loops/goal.test.ts runs right after tests/behavioral-orchestrator.test.ts (2026-09-16, deterministic 2/2 repro). — fixed: __testOnlyResetStarvationGate() added (extensions/loops/goal-ui.ts), exported via loops/goal.ts, and the leaking test clears it in finally. Before/after on the same repro: 4 fail → 152 pass.
