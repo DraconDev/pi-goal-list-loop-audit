@@ -967,6 +967,78 @@ test("field 2026-09-16: /goal tweak with no goal names the real path", async () 
   assert.ok(ctx.ui.matching("No goal to tweak. /goal <objective> to start one.").length >= 1, "the refusal names the start path");
 });
 
+test("field 2026-09-16 (loop sweep): /loop refine on a held loop queues the hint and resumes", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  seedState(cwd, { loop: seedLoop({ active: false, stopReason: "paused by user (/loop pause)", iteration: 7 }) });
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  await pi.command("loop", "refine capture setup cost too", ctx);
+  const loop = readState(cwd).loop as { active: boolean; refineHint?: string; iteration: number };
+  assert.equal(loop.refineHint, "capture setup cost too", "the hint is queued");
+  assert.equal(loop.active, true, "refine-and-resume reactivates the held loop");
+  const hint = ledgerEvent(cwd, "loop_refine_hint");
+  assert.equal(hint.value.hint, "capture setup cost too");
+  assert.ok(ctx.ui.matching("Refine hint queued").length >= 1, "the queue voice fires");
+  assert.ok(ctx.ui.matching("Loop resumed:").length >= 1, "the byte-identical resume voice follows");
+  await pi.command("loop", "stop", ctx);
+});
+
+test("field 2026-09-16 (loop sweep): held-loop refine over an active goal queues but stays held", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  seedState(cwd, {
+    loop: seedLoop({ active: false, stopReason: "paused by user (/loop pause)", iteration: 7 }),
+    goal: seedGoal({
+      policy: "goal",
+      status: "paused",
+      objective: "blocking goal objective",
+      pauseReason: "paused by user",
+      pauseSuggestedAction: "/goal resume to continue",
+    }),
+  });
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  await pi.command("goal", "resume", ctx);
+  assert.equal((readState(cwd).goal as { status: string }).status, "active", "precondition: the goal is active");
+  await pi.command("loop", "refine capture setup cost too", ctx);
+  const loop = readState(cwd).loop as { active: boolean; refineHint?: string };
+  assert.equal(loop.refineHint, "capture setup cost too", "the hint is queued even when resume is refused");
+  assert.equal(loop.active, false, "one-active-thing: the loop stays held over the active goal");
+  assert.ok(ctx.ui.matching("stays held").length >= 1, "the guard names the remedy");
+  assert.equal(ctx.ui.matching("Loop resumed:").length, 0, "no resume is claimed");
+});
+
+test("field 2026-09-16 (loop sweep): refine on a user-stopped loop refuses with the honest path", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  seedState(cwd, { loop: seedLoop({ active: false, stopReason: "stopped by user (/loop stop)", iteration: 7 }) });
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  await pi.command("loop", "refine capture setup cost too", ctx);
+  const loop = readState(cwd).loop as { active: boolean; refineHint?: string };
+  assert.equal(loop.refineHint, undefined, "no hint is queued onto a dead loop");
+  assert.equal(loop.active, false, "nothing resumes");
+  assert.ok(ctx.ui.matching("/loop start begins a fresh run").length >= 1, "the refusal names the fresh-start path");
+});
+
+test("field 2026-09-16 (loop sweep): refine on an active loop keeps today's behavior", async () => {
+  __testOnlyResetStaleFlag();
+  setGlobalAutoResume(true);
+  const cwd = tmpCwd();
+  seedState(cwd, { loop: seedLoop({ active: true, iteration: 7 }) });
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  assert.equal((readState(cwd).loop as { active: boolean }).active, true, "precondition: the loop is active");
+  await pi.command("loop", "refine capture setup cost too", ctx);
+  const loop = readState(cwd).loop as { active: boolean; refineHint?: string };
+  assert.equal(loop.refineHint, "capture setup cost too", "the hint is queued");
+  assert.equal(loop.active, true, "the running loop keeps running");
+  assert.ok(ctx.ui.matching("Refine hint queued").length >= 1);
+  assert.equal(ctx.ui.matching("Loop resumed:").length, 0, "no spurious resume voice on an active loop");
+  await pi.command("loop", "stop", ctx);
+});
+
 test("T3d: active loop + human load → HELD_ON_RESTORE (loop deactivated loudly, not silently dropped)", async () => {
   const cwd = tmpCwd();
   seedState(cwd, { loop: seedLoop() });
