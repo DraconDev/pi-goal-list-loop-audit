@@ -195,6 +195,7 @@
         "automaticRecoveryAttempts": { "type": "integer", "minimum": 0 },
         "automaticRecoveryFirstAt": { "type": "string", "format": "date-time" },
         "automaticRecoveryUntil": { "type": "string", "format": "date-time" },
+        "priorCompletionSummary": { "type": "string", "description": "2026-09-16 whole-work recap: the FIRST claim's completionSummary in this terminal episode; a repair re-claim keeps it so the approved render still opens with the whole work." },
         "retryAttempts": { "type": "integer", "minimum": 0 },
         "retryFirstAt": { "type": "string", "format": "date-time" },
         "retryUntil": { "type": "string", "format": "date-time" },

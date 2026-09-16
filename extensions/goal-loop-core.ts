@@ -443,6 +443,11 @@ gateRows?: GateRow[];
   automaticRecoveryAttempts?: number;
   automaticRecoveryFirstAt?: string;
   automaticRecoveryUntil?: string;
+  /** 2026-09-16 whole-work recap: the completionSummary of the FIRST
+   * claim in this goal's terminal episode. When a repair re-claim focuses
+   * on the auditor's correction, the terminal render still opens with the
+   * whole-work outcome; absent on legacy claims (absent stays absent). */
+  priorCompletionSummary?: string;
   /** v0.36.1: bounded detached-auditor candidate cursor. Refs are model
    * identifiers only — never model objects or credentials. The current ref
    * is retried at most once; attemptedRefs contains only candidates already
