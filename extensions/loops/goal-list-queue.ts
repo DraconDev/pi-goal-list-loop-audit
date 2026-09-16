@@ -860,7 +860,7 @@ async function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "l
   // concatenation produced "…regular draft.Goal drafting — deep planning: …".
   const seededHint = (planNote ? `${planNote} ` : "") + (
     target === "list"
-      ? `${label}: free-text is valid without a "Done when:" clause — the agent will turn it into a short list item (or items, when the seed is genuinely several tasks) and grill for concrete per-item contracts (nothing activates until you confirm). A prose paragraph is ONE item, not one per sentence. If the seed is already a pasted multi-line, bulleted, numbered, or checklist-style list, use its wording and structure as supplied; do not ask whether it should be exact or refined. To skip drafting, include a per-item "Done when:" clause.`
+      ? `${label}: free-text is valid without a "Done when:" clause — the agent will turn it into a short list item (or items, when the seed is genuinely several tasks) and grill for concrete per-item contracts (nothing activates until you confirm). A prose paragraph is ONE item, not one per sentence. If the seed is already an explicitly structured list (marked items or independent contracted records), use its wording and structure as supplied; do not ask whether it should be exact or refined. To skip drafting, include a per-item "Done when:" clause.`
       : target === "loop"
         ? `${label}: a loop target needs a metric and a direction — the agent will help you design them first (nothing activates until you confirm). Skip the interview entirely: /loop start "<target>" (bare = infinite metricless) or /loop start "<target>" measure="<cmd>" direction=min|max [window=5] [max=50] [time=h] [tokens=n] [branch=1].`
         : `${label}: the objective has no "Done when:" clause — the agent will grill you about it first (nothing activates until you confirm). Skip the interview entirely: /goal start <objective>.`);
@@ -878,7 +878,8 @@ async function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "l
           "ONCE with the items[] parameter — one Confirm for the whole batch, never 50 separate proposals. Each items[] entry " +
           "is still a SHORT task — never an aggregate wrapper ('land all N findings' with a '≥N commits' contract is the " +
           "canonical anti-pattern: the auto-committer squashes, the count fails, the auditor disapproves finished work). " +
-          "For a pasted multi-line, bulleted, numbered, or checklist-style seed, preserve the supplied wording and structure, " +
+          "For an explicitly structured list (marked items or independent contracted records), preserve the supplied wording and structure. " +
+          "Line wrapping alone does not make prose a list: propose a paragraph whole as one item. " +
           "strip only import syntax and empty headings/lines, and propose items[] directly — do not ask whether it should be exact " +
           "or refined; clarify only a genuinely ambiguous individual item.]",
       );
