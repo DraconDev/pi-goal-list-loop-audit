@@ -706,6 +706,7 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
   const facts: CompletionSummaryFacts = { goal, status, archivePath };
   const summary = resolveCompletionSummary(facts, goal.completionSummary).summary;
   const brief = humanCompletionBrief(summary, 140, RICH_FULL_VALUE_BUDGET);
+  const structured = structuredSummaryLines(summary);
   const history = goal.auditHistory ?? [];
   const latest = history[history.length - 1];
   const approval = latest
@@ -723,6 +724,7 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
     gates: gateRows,
     // v0.38.55: aborted records never wear a Done banner/headline.
     kind: status === "complete" ? "Done" : "Aborted",
+    ...(structured ? { summaryLines: structured } : {}),
   });
   return [
     ...composeRichTerminalLines(parts),
@@ -873,6 +875,11 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     140,
     RICH_FULL_VALUE_BUDGET,
   );
+  // Structured-long (field 2026-09-16): a section-structured Outcome
+  // earns the full `### Summary` section on the terminal card (and the
+  // archive human layer). Headline echo, verification, Next, recap, and
+  // every recycled payload keep their bounds.
+  const structured = structuredSummaryLines(resolveCompletionSummary(facts, candidate).summary);
   // v0.38.37 (audit 2026-09-08): the deliberate non-do comes from the
   // agent's complete_goal leftOut claim — never invented. Filler ("none")
   // drops via the same briefValueContent filter; absent stays absent.
@@ -916,6 +923,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     groups: input.findingGroups,
     gates: input.gateRows,
     ...(input.repoState ? { repoState: input.repoState } : {}),
+    ...(structured ? { summaryLines: structured } : {}),
   });
   const chatBody = composeRichTerminalLines(richParts);
   const transcriptBody = composeRichTerminalLines(richParts);

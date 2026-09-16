@@ -524,6 +524,8 @@ function registerAgentTools(pi: any): void {
           "Outcome: <what was delivered> · Changed: <files/behavior/decision> · Evidence: <key commit/report/result> · " +
           "Tests: <bounded commands + pass/fail, or `not run — <reason>`> · Unresolved: <remaining risk, or `none`> · " +
           "Next: <one follow-up hint, or `none`>. " +
+          "A section-structured Outcome (##/### headers) renders in full as the card Summary section — " +
+          "structure is the price of length. " +
           "See audit/COMPLETION-SUMMARY-POLICY-2026-08-19.md and docs/DESIGN-long-running-supervision.md. Free-form prose is allowed but discouraged; incomplete input receives a recorded-facts-only fallback at terminalization.",
       })),
       verificationSummary: Type.Optional(Type.String({
