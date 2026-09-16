@@ -80,3 +80,21 @@ for (const details of [{ cancelled: true, answers: [] }, {}, { cancelled: false,
     assert.equal(pi.sent.length, sent);
   });
 }
+
+for (const action of ["cancel", "user", "busy", "pending", "shutdown", "new-draft"] as const) {
+  test(`pending draft correction stands down on ${action}`, async () => {
+    const ctx = await draft();
+    const custom = pi.sent.length;
+    await pi.fire("agent_end", ended("Two final policy choices will make the implementation contract concrete:"), ctx);
+    if (action === "cancel") await pi.fire("tool_result", { toolName: "ask_user_question", details: { cancelled: true, answers: [] } }, ctx);
+    if (action === "user") await pi.fire("message_start", { message: { role: "user", content: "Wait, change scope" } }, ctx);
+    if (action === "busy") ctx.isIdle = () => false;
+    if (action === "pending") ctx.hasPendingMessages = () => true;
+    if (action === "shutdown") await pi.fire("session_shutdown", { reason: "reload" }, ctx);
+    if (action === "new-draft") await pi.command("list", "Improve a different search experience", ctx);
+    await tick(2800);
+    assert.equal(pi.sent.length, custom, "no stale corrective send");
+    ctx.isIdle = () => true;
+    ctx.hasPendingMessages = () => false;
+  });
+}

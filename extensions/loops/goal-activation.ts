@@ -2339,9 +2339,9 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
         const fresh = freshCtxForGeneration(generation);
         if (!fresh || draftingTarget !== target || draftingHandoff.revision !== revision) return;
         if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(fresh)) return;
-        if (state.supervisorPausedAt || state.loadHoldAt || !fresh.isIdle() || fresh.hasPendingMessages?.()) return;
-        if (warnIfStaleAtEntry(fresh, "draft handoff correction")) return;
         try {
+          if (warnIfStaleAtEntry(fresh, "draft handoff correction")) return;
+          if (state.supervisorPausedAt || state.loadHoldAt || !fresh.isIdle() || fresh.hasPendingMessages?.()) return;
           // Custom messages cannot count as human interview replies.
           pi.sendMessage({ customType: "draft-handoff-correction", content: DRAFT_HANDOFF_CORRECTION, display: true }, { deliverAs: "followUp", triggerTurn: true });
         } catch {
