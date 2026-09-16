@@ -5,7 +5,7 @@
 // merely OLD queued goal wore a "monitoring" badge with no evidence any
 // external process was watched. Pins:
 //   1. A deliberate user wait (pause_goal kind=wait) keeps its own
-//      "waiting for you / user timer" voice — never "auto-retrying",
+//      scheduled-wait voice (or waiting for you without a timer) — never "auto-retrying",
 //      never a "glla recovery timer" owner.
 //   2. Internal retry pauses (durable recovery evidence present:
 //      pendingCompletion / recoveryEpisodeKey / mainModelRecovery) keep
@@ -63,7 +63,28 @@ test("deliberate user wait is never labeled supervised recovery", () => {
   const text = widget.join("\n");
   assert.doesNotMatch(text, /auto-retrying/, "widget must not promise auto-retry on a user wait");
   assert.doesNotMatch(text, /owner: glla recovery timer/, "user wait names no glla recovery timer");
-  assert.match(text, /waiting for you/i, "the card says who the wait belongs to");
+  assert.match(text, /scheduled wait/i, "a timer is not waiting for user input");
+  assert.match(status, /next: auto-continue in/);
+  assert.doesNotMatch(text, /auto-retry|waiting for you/i);
+});
+
+test("deliberate wait transitions stay truthful with absent, due, or overdue timers", () => {
+  for (const offset of [undefined, -30_000, -3_600_000]) {
+    const goal = goalOf({
+      status: "paused", pauseKind: "wait",
+      pauseResumeAt: offset === undefined ? undefined : new Date(NOW + offset).toISOString(),
+    });
+    const state = stateOf(goal);
+    const text = [buildStatusText(state, null, NOW), ...buildWidgetLines(state, null, NOW, undefined, 200)!].join("\n");
+    assert.doesNotMatch(text, /auto-retry|recovery|in -/);
+    if (offset === undefined) assert.match(text, /waiting for you/);
+    else if (offset === -30_000) assert.match(text, /resuming now/);
+    else {
+      assert.match(text, /auto-continue overdue/);
+      assert.match(text, /next: \/goal resume/);
+      assert.doesNotMatch(text, /resuming now/);
+    }
+  }
 });
 
 test("internal retry pauses keep the supervised recovery labels", () => {

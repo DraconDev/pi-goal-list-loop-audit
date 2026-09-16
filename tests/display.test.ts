@@ -1840,8 +1840,8 @@ test("v0.34.102: paused goal parked on mainModelRecovery renders as RECOVERING, 
 });
 
 test("v0.34.102: wait pause WITHOUT mainModelRecovery keeps the uniform auto-retrying shape", () => {
-  // The v0.34.64 uniform shape survives when the pause is NOT a recovery
-  // park (no state.mainModelRecovery) — e.g. a plain timed wait.
+  // Recovery evidence on the goal is sufficient even without the separate
+  // main-model envelope. Deliberate timed waits have distinct coverage.
   const g = goalOf({
     status: "paused",
     policy: "goal",
@@ -1928,6 +1928,7 @@ test("v0.34.51: a passed quota resumeAt says resuming…, never the old 'retryin
     status: "paused",
     pauseKind: "wait",
     pauseReason: "main model recovery — retrying in 15m (main model quota: 429 Token Plan usage limit)",
+    recoveryEpisodeKey: "test-episode:overdue",
     pauseResumeAt: new Date(Date.now() - 5 * 60_000).toISOString(),
   });
   const state = { goal: g, list: [], loop: null };

@@ -56,10 +56,11 @@ test("drafting batches 2–4 questions up front via one ask_user_question picker
   const msg = buildSeedGrillMessage("[DRAFT]", "ship the feature", "propose_goal_draft");
   assert.match(msg, /2-4 sharp, seed-specific questions UP FRONT in ONE batched ask_user_question call/i);
   assert.match(msg, /recommended default/i);
-  assert.match(msg, /eliminates mid-execution interruptions/i);
+  assert.match(msg, /Resolve these decisions during drafting, before execution/i);
   assert.match(msg, /Do targeted read-only research first/i);
-  // one well-batched interview up front, not one-by-one dribble during execution
-  assert.match(msg, /not.*dribble questions out one by one during execution/i);
+  // Independent choices are batched; dependent choices wait for real answers.
+  assert.match(msg, /batch independent questions within the current phase/i);
+  assert.match(msg, /ask dependent questions only after the earlier answers/i);
 });
 
 test("long-running policies compensate zero mid-run questions with more upfront", () => {

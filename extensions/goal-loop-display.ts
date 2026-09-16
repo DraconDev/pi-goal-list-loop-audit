@@ -1022,7 +1022,9 @@ function pausedRecoveryOwner(g: Goal, state: State): string {
   }
   // 2026-09-16: a bare timed wait without recovery evidence is the user's
   // pause — the timer is theirs, not a GLLA recovery episode.
-  if (pauseKind(g) === "wait" && !isSupervisedWait(g)) return "user timer";
+  if (pauseKind(g) === "wait" && !isSupervisedWait(g)) {
+    return Number.isFinite(Date.parse(g.pauseResumeAt ?? "")) ? "scheduled wait" : "user action";
+  }
   switch (pauseKind(g)) {
     case "decision": return "user decision";
     case "error": return "user action";
@@ -1078,7 +1080,7 @@ function pausedNextTransition(g: Goal, state: State, now: number): string {
   }
   const resumeAt = g.pauseResumeAt ? Date.parse(g.pauseResumeAt) : Number.NaN;
   if (Number.isFinite(resumeAt)) {
-    if (resumeAt > now) return `auto-retry in ${fmtElapsed(resumeAt - now)}`;
+    if (resumeAt > now) return `${isSupervisedWait(g) ? "auto-retry" : "auto-continue"} in ${fmtElapsed(resumeAt - now)}`;
     // Inside the grace window the retry is genuinely imminent. Past it the
     // timer never fired (held host, idle session) — fall through to the
     // kind label below instead of promising "resuming now" forever.
@@ -1097,7 +1099,7 @@ function pausedNextTransition(g: Goal, state: State, now: number): string {
     case "decision": return `user decision → ${resume}`;
     case "error": return `manual action → ${resume}`;
     case "blocked": return resume;
-    case "wait": return isSupervisedWait(g) ? "recovery timer" : "user timer";
+    case "wait": return isSupervisedWait(g) ? "recovery timer" : resume;
     default: return resume;
   }
 }
@@ -1277,7 +1279,7 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
       const supervised = isSupervisedWait(g);
       const when = !Number.isFinite(rms) ? ""
         : rms > 0 ? ` · ${supervised ? "auto-retry" : "auto-continue"} in ${fmtElapsed(rms)}`
-        : -rms >= PAUSED_RESUME_GRACE_MS ? " · retry overdue" : " · resuming…";
+        : -rms >= PAUSED_RESUME_GRACE_MS ? ` · ${supervised ? "retry" : "auto-continue"} overdue` : " · resuming…";
       if (kind === "blocked") {
         const label = state.mainModelRecovery?.manualResumeRequired === true
           ? "⏸ manual recovery hold"
@@ -1297,7 +1299,7 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
         return `glla: ${paint(theme, "dim", label)}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
       }
       if (!supervised) {
-        return `glla: ${paint(theme, "dim", `⏸ waiting for you${when}`)}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
+        return `glla: ${paint(theme, "dim", `⏸ ${Number.isFinite(rms) ? "scheduled wait" : "waiting for you"}${when}`)}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
       }
       return `glla: ${paint(theme, "dim", `⏳ auto-retrying${when}`)}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
     }
@@ -1964,9 +1966,9 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
         : "now";
       const supervisedLine = `auto-retrying · ${when}`;
       const userWhen = retryMs > 0 ? `auto-continue in ${fmtElapsed(retryMs)}`
-        : overdue ? "auto-continue overdue — waiting on your timer"
+        : overdue ? "auto-continue overdue — resume manually"
         : "auto-continuing…";
-      lines.push(`├─ ${paint(theme, "dim", isSupervisedWait(g) ? supervisedLine : `waiting for you — ${userWhen}`)}`);
+      lines.push(`├─ ${paint(theme, "dim", isSupervisedWait(g) ? supervisedLine : `scheduled wait — ${userWhen}`)}`);
     } else if (kind === "blocked" && state.mainModelRecovery?.manualResumeRequired === true) {
       lines.push(`├─ ${paint(theme, "warning", "manual recovery hold — automatic probes stopped")}`);
     } else if (kind === "blocked") {
