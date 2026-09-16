@@ -131,6 +131,10 @@ test("field 2026-09-16: chatter shapes divert, real objectives pass through", ()
     "ok, ship the release. Done when: npm latest reads 0.38.56",
     "Overhaul the Quick full setup overlay",
     "adjust the timeout to 30s",
+    "OK, fix login and update its tests",
+    "Sure, investigate why login times out",
+    "going to improve login",
+    "", "   ",
   ]) {
     assert.equal(isChatterReplacement(real), false, `verbatim: ${real}`);
   }
@@ -152,6 +156,11 @@ test("field 2026-09-16: tweak chatter resolves to the discussed objective (VidPr
   }
 });
 
+test("audit 2026-09-16: explicit compound tweak never substitutes an older request", () => {
+  const manager = { getBranch: () => [message("user", "Delete the stale notes")] };
+  assert.deepEqual(resolveTweakReplacement("OK, fix login and update its tests", manager), { kind: "verbatim" });
+});
+
 test("field 2026-09-16: tweak chatter with no discussed objective is unresolvable, never verbatim", () => {
   const result = resolveTweakReplacement("ok adjsut it", { getBranch: () => [] });
   assert.deepEqual(result, { kind: "unresolvable", reason: "none", candidates: [] });
@@ -168,6 +177,6 @@ test("field 2026-09-16: tweak chatter over competing requests surfaces candidate
   assert.equal(result.kind, "unresolvable");
   if (result.kind === "unresolvable") {
     assert.equal(result.reason, "ambiguous");
-    assert.ok(result.candidates.length >= 2);
+    assert.deepEqual(result.candidates, ["Ship the release notes", "Fix the flaky login test"]);
   }
 });
