@@ -3,6 +3,7 @@ import * as assert from "node:assert/strict";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from "../extensions/loops/goal.js";
 import { MockPi, makeMockCtx, tmpCwd, seedState, tick, type MockCtx } from "./harness/mock-pi.js";
 import { readState } from "../extensions/goal-loop-core.js";
+import { DRAFT_HANDOFF_CORRECTION } from "../extensions/drafting-handoff.js";
 
 const pi = new MockPi();
 activate(pi.api);
@@ -40,35 +41,42 @@ function ended(text: string) {
 test("draft-only handoff: a real question waits without an autonomous retry", async () => {
   const ctx = await draft();
   const sent = pi.userMessages.length;
+  const custom = pi.sent.length;
   await pi.fire("agent_end", ended("Which search backend should we use? Please describe your requirements."), ctx);
-  await tick(100);
+  await tick(2800);
   assert.equal(pi.userMessages.length, sent);
+  assert.equal(pi.sent.length, custom);
   assert.equal(readState(ctx.cwd).goal, null, "draft does not activate work");
 });
 
-test("field screenshot: answered promise-only draft emits one visible notice, never a retry", async () => {
+test("field screenshot: answered promise-only draft delivers exactly one corrective follow-up", { timeout: 15000 }, async () => {
   const ctx = await draft();
   const sent = pi.userMessages.length;
   const custom = pi.sent.length;
-  const notices = () => ctx.ui.notifies.filter(n => n.message.includes("Drafting needs attention"));
   const event = ended("Two final policy choices will make the implementation contract concrete:");
   await pi.fire("agent_end", event, ctx);
-  await tick(100);
-  assert.equal(notices().length, 1, "unfinished handoff is visible");
+  await tick(2800);
+  assert.equal(pi.sent.length, custom + 1);
+  assert.deepEqual(pi.sent.at(-1), {
+    message: { customType: "draft-handoff-correction", content: DRAFT_HANDOFF_CORRECTION, display: true },
+    options: { deliverAs: "followUp", triggerTurn: true },
+  });
   await pi.fire("agent_end", event, ctx);
   await pi.fire("tool_result", { toolName: "ask_user_question", details: { cancelled: false, answers: ["yes"] } }, ctx);
   await pi.fire("agent_end", event, ctx);
-  assert.equal(notices().length, 1, "replays and later answers cannot repeat the notice in this draft");
-  assert.equal(pi.userMessages.length, sent, "no synthetic user send");
-  assert.equal(pi.sent.length, custom, "no alternate-channel continuation");
+  await tick(2800);
+  assert.equal(pi.userMessages.length, sent, "correction never impersonates a human answer");
+  assert.equal(pi.sent.length, custom + 1, "replays and later answers cannot repeat the correction");
   assert.equal(readState(ctx.cwd).goal, null, "draft remains unactivated");
 });
 
 for (const details of [{ cancelled: true, answers: [] }, {}, { cancelled: false, answers: [] }]) {
   test(`cancelled or missing answer suppresses stale handoff evidence: ${JSON.stringify(details)}`, async () => {
     const ctx = await draft();
+    const sent = pi.sent.length;
     await pi.fire("tool_result", { toolName: "ask_user_question", details }, ctx);
     await pi.fire("agent_end", ended("Two final policy choices will make the implementation contract concrete:"), ctx);
-    assert.equal(ctx.ui.notifies.filter(n => n.message.includes("Drafting needs attention")).length, 0);
+    await tick(2800);
+    assert.equal(pi.sent.length, sent);
   });
 }

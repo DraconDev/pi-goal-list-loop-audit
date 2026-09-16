@@ -15,7 +15,7 @@
  */
 
 import * as fs from "node:fs";
-import { draftingHandoff, DRAFT_HANDOFF_NOTICE } from "../drafting-handoff.js";
+import { draftingHandoff, DRAFT_HANDOFF_CORRECTION } from "../drafting-handoff.js";
 import * as os from "node:os";
 import * as path from "node:path";
 
@@ -1077,6 +1077,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       draftingSeedInFlight = false;
       return;
     }
+    draftingHandoff.noteUserReply();
     draftingUserReplies++;
   });
 
@@ -2032,6 +2033,9 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     dispatchStartAcknowledged(ctx, "agent_end");
     lastStreamActivityAt = Date.now();
     streamActivityObserved = true;
+    // A newer turn boundary cancels a queued drafting correction. Replayed
+    // ends cannot rearm it because its per-draft budget is already spent.
+    if (draftingTarget !== null) draftingHandoff.invalidate();
     // v0.27.2: folded-in length-continue (standalone pi-length-continue is
     // deprecated). A response cut by the per-response output cap is NOT a
     // completed turn (no telemetry), NOT a stall (no no-tool nudge), and
@@ -2325,7 +2329,25 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       return;
     }
     if (draftingTarget !== null && draftingHandoff.observe(lastA?.text ?? "", lastA?.stopReason)) {
-      ctx.ui.notify(DRAFT_HANDOFF_NOTICE, "warning");
+      // Spend the episode budget before scheduling. Never rearm this timer.
+      // agent_end precedes host settlement; dispatch only from a fresh idle
+      // owner after the settle delay, with no intervening user/tool activity.
+      const revision = draftingHandoff.revision;
+      const generation = sessionGeneration;
+      const target = draftingTarget;
+      setTimeout(() => {
+        const fresh = freshCtxForGeneration(generation);
+        if (!fresh || draftingTarget !== target || draftingHandoff.revision !== revision) return;
+        if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(fresh)) return;
+        if (state.supervisorPausedAt || state.loadHoldAt || !fresh.isIdle() || fresh.hasPendingMessages?.()) return;
+        if (warnIfStaleAtEntry(fresh, "draft handoff correction")) return;
+        try {
+          // Custom messages cannot count as human interview replies.
+          pi.sendMessage({ customType: "draft-handoff-correction", content: DRAFT_HANDOFF_CORRECTION, display: true }, { deliverAs: "followUp", triggerTurn: true });
+        } catch {
+          fresh.ui.notify("Draft handoff correction could not be delivered. Reply to continue drafting.", "warning");
+        }
+      }, EAGER_CONTINUATION_SETTLE_MS);
     }
     if (!state.goal) return;
     if (state.goal.status !== "active") return;
@@ -2589,6 +2611,11 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     rememberCtx(ctx);
     if (tryAbsorbHostSuccessor(ctx, "tool_call")) return;
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(ctx)) return;
+    if (draftingTarget !== null) {
+      draftingHandoff.invalidate();
+      const name = String(event?.toolName ?? event?.name ?? "");
+      if (name === "ask_user_question" || name === "propose_goal_draft" || name === "propose_loop_draft") draftingHandoff.noteToolResult(name, false);
+    }
     toolCallsThisTurn++;
     noteActivity(true);
     lastStreamActivityAt = Date.now();
@@ -2619,6 +2646,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // to run a turn on a model different from the last observed one. Ledger
     // only: the turn already started, there is nothing to block.
     observeTurnBoundaryModel(ctx);
+    if (draftingTarget !== null) draftingHandoff.invalidate();
     dispatchStartAcknowledged(ctx, "before_agent_start", event?.prompt);
   });
   pi.on("model_select", async (event: any, ctx: ExtensionContext) => {

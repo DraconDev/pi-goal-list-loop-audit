@@ -1,19 +1,24 @@
 /** Observes a narrow, positively identified unfinished drafting handoff.
- * This is not a continuation scheduler: silence and punctuation alone are
- * never evidence that a user wait is broken. No provider sends occur here.
+ * Silence and punctuation alone are never evidence that a user wait is
+ * broken. The caller owns lifecycle-fenced, once-only dispatch.
  */
 export class DraftingHandoffObserver {
   private answered = false;
   private notified = false;
+  revision = 0;
+
+  invalidate(): void { this.revision++; }
 
   reset(): void {
+    this.invalidate();
     this.answered = false;
     this.notified = false;
   }
 
-  noteUserReply(): void { this.answered = true; }
+  noteUserReply(): void { this.invalidate(); this.answered = true; }
 
   noteToolResult(toolName: string, answered: boolean): void {
+    this.invalidate();
     // A new question or proposal supersedes earlier answer evidence, even
     // on Escape, missing details, error, or a rejected confirmation.
     if (toolName === "ask_user_question") this.answered = answered;
@@ -34,4 +39,4 @@ export class DraftingHandoffObserver {
 }
 
 export const draftingHandoff = new DraftingHandoffObserver();
-export const DRAFT_HANDOFF_NOTICE = "Drafting needs attention: the agent announced more questions but did not present them. No work was activated. Reply ‘continue drafting’ to request the missing questions; GLLA will not retry automatically.";
+export const DRAFT_HANDOFF_CORRECTION = "[DRAFT HANDOFF CORRECTION] You announced more questions but did not present them. Continue drafting now: use ask_user_question for the missing structured choices when available, or ask the genuinely free-form question in conversation. If the contract is already concrete, call the drafting proposal tool instead. Never invent answers or activate work without confirmation. This is a one-time correction, not a user answer.";
