@@ -7,7 +7,9 @@ import {
   START_CONTEXT_MAX_TURNS,
   inferStartFromSession,
   inferStartObjective,
+  isChatterReplacement,
   readBoundedStartContext,
+  resolveTweakReplacement,
 } from "../extensions/start-context.ts";
 
 function message(role: "user" | "assistant", content: string): { type: "message"; message: { role: string; content: string } } {
@@ -105,4 +107,67 @@ test("session reader fails closed when the host branch cannot be read", () => {
     getBranch: () => { throw new Error("stale session"); },
   });
   assert.deepEqual(result, { kind: "none", reason: "no-context" });
+});
+
+test("field 2026-09-16: chatter shapes divert, real objectives pass through", () => {
+  for (const chatter of [
+    "ok adjsut it",
+    "ok adjust it",
+    "go fix it",
+    "go",
+    "yes",
+    "ok",
+    "it",
+    "fix it",
+    "sure, do that",
+    "yeah do it",
+    "thanks, go ahead",
+  ]) {
+    assert.equal(isChatterReplacement(chatter), true, `chatter: ${chatter}`);
+  }
+  for (const real of [
+    "new goal objective",
+    "new paused goal objective. Done when: new proof",
+    "ok, ship the release. Done when: npm latest reads 0.38.56",
+    "Overhaul the Quick full setup overlay",
+    "adjust the timeout to 30s",
+  ]) {
+    assert.equal(isChatterReplacement(real), false, `verbatim: ${real}`);
+  }
+});
+
+test("field 2026-09-16: tweak chatter resolves to the discussed objective (VidPro replay)", () => {
+  const manager = {
+    getBranch: () => [
+      message("assistant", "Three ways out: 1. Send the screenshot. 2. Waive that line — say /goal tweak to drop the live-screenshot requirement. 3. Leave it paused."),
+      message("user", "remove the live screenshot requirement from the contract"),
+      message("user", "/goal tweak ok adjsut it"),
+    ],
+  };
+  const result = resolveTweakReplacement("ok adjsut it", manager);
+  assert.equal(result.kind, "inferred");
+  if (result.kind === "inferred") {
+    assert.equal(result.text, "remove the live screenshot requirement from the contract");
+    assert.equal(result.source, "recent-context");
+  }
+});
+
+test("field 2026-09-16: tweak chatter with no discussed objective is unresolvable, never verbatim", () => {
+  const result = resolveTweakReplacement("ok adjsut it", { getBranch: () => [] });
+  assert.deepEqual(result, { kind: "unresolvable", reason: "none", candidates: [] });
+});
+
+test("field 2026-09-16: tweak chatter over competing requests surfaces candidates", () => {
+  const manager = {
+    getBranch: () => [
+      message("user", "Fix the flaky login test"),
+      message("user", "Ship the release notes"),
+    ],
+  };
+  const result = resolveTweakReplacement("go fix it", manager);
+  assert.equal(result.kind, "unresolvable");
+  if (result.kind === "unresolvable") {
+    assert.equal(result.reason, "ambiguous");
+    assert.ok(result.candidates.length >= 2);
+  }
 });

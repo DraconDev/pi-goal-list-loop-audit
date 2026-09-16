@@ -967,6 +967,84 @@ test("field 2026-09-16: /goal tweak with no goal names the real path", async () 
   assert.ok(ctx.ui.matching("No goal to tweak. /goal <objective> to start one.").length >= 1, "the refusal names the start path");
 });
 
+test("field 2026-09-16 (VidPro replay): tweak chatter adopts the discussed objective, never the chatter", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  seedState(cwd, {
+    goal: seedGoal({
+      policy: "goal",
+      status: "paused",
+      objective: "Overhaul the Quick full setup overlay in the VidPro extension (live screenshot required)",
+      pauseReason: "paused by user",
+      pauseSuggestedAction: "/goal resume to continue",
+    }),
+  });
+  // The discussed context: the agent proposed waiving the line, the user
+  // stated it clearly, then typed the chatter into the tweak path.
+  MAIN_SM.entries = [
+    { type: "message", message: { role: "assistant", content: "Three ways out: 1. Send the screenshot. 2. Waive that line — say /goal tweak to drop the live-screenshot requirement. 3. Leave it paused." } },
+    { type: "message", message: { role: "user", content: "remove the live screenshot requirement from the contract" } },
+    { type: "message", message: { role: "user", content: "/goal tweak ok adjsut it" } },
+  ];
+  try {
+    const ctx = await freshSession(cwd, "reload");
+    await tick();
+    let confirmMessage = "";
+    ctx.ui.confirmImpl = async (_title, message) => {
+      confirmMessage = message;
+      return true;
+    };
+    await pi.command("goal", "tweak ok adjsut it", ctx);
+    const stored = readState(cwd).goal as { objective: string; status: string };
+    assert.equal(stored.objective, "remove the live screenshot requirement from the contract", "the discussed objective is adopted");
+    assert.equal(stored.status, "paused", "the park survives the inference");
+    assert.match(confirmMessage, /NEW \(inferred from recent discussion/, "the confirm shows CURRENT → INFERRED");
+    const tweaked = ledgerEvent(cwd, "goal_tweaked");
+    assert.equal(tweaked.value.objective, "remove the live screenshot requirement from the contract", "raw chatter never reaches the ledger");
+  } finally {
+    MAIN_SM.entries = [];
+  }
+});
+
+test("field 2026-09-16: tweak chatter with no discussed objective guides and changes nothing", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  const before = "Overhaul the Quick full setup overlay in the VidPro extension (live screenshot required)";
+  seedState(cwd, {
+    goal: seedGoal({
+      policy: "goal",
+      status: "paused",
+      objective: before,
+      pauseReason: "paused by user",
+      pauseSuggestedAction: "/goal resume to continue",
+    }),
+  });
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  await pi.command("goal", "tweak ok adjsut it", ctx);
+  const stored = readState(cwd).goal as { objective: string; status: string };
+  assert.equal(stored.objective, before, "the objective is untouched");
+  assert.equal(stored.status, "paused", "the park survives");
+  assert.ok(ctx.ui.matching("acknowledgment rather than a replacement").length >= 1, "the guidance names the shape");
+  assert.equal(readLedger(cwd).filter((entry) => entry.type === "goal_tweaked").length, 0, "no adoption is ledgered");
+});
+
+test("field 2026-09-16: plain-/goal chatter via Update-current-objective guides, never adopts", async () => {
+  __testOnlyResetStaleFlag();
+  setGlobalAutoResume(true);
+  const cwd = tmpCwd();
+  const before = "Overhaul the Quick full setup overlay in the VidPro extension";
+  seedState(cwd, { goal: seedGoal({ policy: "goal", status: "active", objective: before }) });
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  ctx.ui.selectImpl = async () => "Update current objective";
+  await pi.command("goal", "ok adjust it", ctx);
+  const stored = readState(cwd).goal as { objective: string; status: string };
+  assert.equal(stored.objective, before, "the conflict update path resolves chatter like tweak does");
+  assert.ok(ctx.ui.matching("acknowledgment rather than a replacement").length >= 1, "the guidance fires on the conflict path too");
+  assert.equal(readLedger(cwd).filter((entry) => entry.type === "goal_tweaked").length, 0, "no adoption is ledgered");
+});
+
 test("field 2026-09-16 (loop sweep): /loop refine on a held loop queues the hint and resumes", async () => {
   __testOnlyResetStaleFlag();
   const cwd = tmpCwd();

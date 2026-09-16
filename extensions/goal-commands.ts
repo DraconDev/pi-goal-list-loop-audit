@@ -39,7 +39,7 @@ import { formatGllaVersion } from "./glla-version.js";
 import { cmdGllaOwner, cmdGllaTakeover } from "./state-root-owner.js";
 import { AUDIT_JOB_CLEANUP_MIN_AGE_MS, cancelDetachedGoalCompletionAuditor, cleanupDeadAuditJobs, inspectAuditJobHealth, DEFAULT_AUDITOR_STALL_MS, DEFAULT_AUDITOR_TOOL_TIMEOUT_MS } from "./goal-loop-auditor-process.js";
 import { releaseAuditorSurface } from "./loops/goal-auditor-surface.js";
-import { inferStartFromSession, type StartContextInference } from "./start-context.js";
+import { inferStartFromSession, resolveTweakReplacement, type StartContextInference } from "./start-context.js";
 
 /** Child pi sessions live under the shared session store, munged by cwd
  * (verified layout: ~/.pi/agent/sessions/--home-user-proj--/*.jsonl). */
@@ -803,7 +803,29 @@ export async function cmdTweak(
     }
     raw = v.trim();
   }
-  const proposed = extractVerificationContract(raw);
+  // Field 2026-09-16 (VidPro ledger — `/goal tweak` adopted "ok adjsut it"
+  // as the objective): chatter is a pointer at the session context, not a
+  // replacement. Resolve it against what was actually discussed; guide when
+  // nothing clear was discussed. Raw chatter never reaches the ledger.
+  // This sits in cmdTweak because all adoption paths funnel here: /goal
+  // tweak, /list tweak, and the plain-/goal "Update current objective"
+  // conflict choice (via updateWholeObjectiveFromConflict).
+  const replacement = resolveTweakReplacement(raw, ctx.sessionManager);
+  let adopted = raw;
+  let inferredNote = "";
+  if (replacement.kind === "inferred") {
+    adopted = replacement.text;
+    inferredNote = ` (inferred from ${replacement.source === "recent-context" ? "recent discussion" : "your message"} — yours read "${displaySlice(raw, 80)}"; cancel and re-run with exact wording if this is wrong)`;
+  } else if (replacement.kind === "unresolvable") {
+    const surface = mode === "list" ? "list item" : "goal";
+    let guidance = `That reads as an acknowledgment rather than a replacement ("${displaySlice(raw, 80)}") — nothing changed. The ${surface} keeps: ${displaySlice(current.objective, 120)}. Say what it should become as full replacement text.`;
+    if (replacement.reason === "ambiguous" && replacement.candidates.length > 0) {
+      guidance += ` It could mean: ${replacement.candidates.slice(0, 2).map((c) => `"${displaySlice(c, 100)}"`).join(" / ")} — re-run with one in full.`;
+    }
+    ctx.ui.notify(guidance, "info");
+    return false;
+  }
+  const proposed = extractVerificationContract(adopted);
   const newObjective = proposed.objective;
   if (!newObjective) {
     // (a bare input of "Done when: ..." only yields this — the replacement
@@ -839,7 +861,7 @@ export async function cmdTweak(
   try {
     confirmed = await ctx.ui.confirm(
       mode === "list" ? "Tweak list item?" : "Tweak goal?",
-      `CURRENT:\n${sanitizeDisplayText(current.objective)}\n\nNEW:\n${sanitizeDisplayText(newObjective)}` +
+      `CURRENT:\n${sanitizeDisplayText(current.objective)}\n\nNEW${inferredNote}:\n${sanitizeDisplayText(newObjective)}` +
       (hasNewContract
         ? `\n\nNew contract:\n${sanitizeDisplayText(proposed.verificationContract)}`
         : clearsContract
@@ -868,7 +890,7 @@ export async function cmdTweak(
     return false;
   }
   const priorProvenance = latest.objectiveProvenance;
-  const userSeeds = [...(priorProvenance?.userSeeds ?? []), raw].slice(-10);
+  const userSeeds = [...(priorProvenance?.userSeeds ?? []), adopted].slice(-10);
   const replacingLiveList = liveListConflict
     && latest.policy === "list"
     && (latest.status === "active" || latest.status === "auditing");
