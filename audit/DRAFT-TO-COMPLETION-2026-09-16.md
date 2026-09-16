@@ -8,7 +8,7 @@
 | Visible phases and dependent questions | same prompt builders; proposal confirmation floor | Roadmap, independent batches, dependent stages, explicit question/proposal handoff; existing confirm-draft tests protect confirmation |
 | Promise-only ending, 20260916_213326 | goal-activation agent_end / tool_result; drafting-handoff observer | drafting-handoff.test.ts registered-handler replay, exact corrective followUp and no duplicate; cancellation, new user, busy, pending, shutdown and new draft suppress stale correction |
 | Paused vs recovery/monitoring, 20260916_195540 | goal-loop-display paused lifecycle and goalDisplayActivity; goal-ui evidence projection | Pending: shared truthful display labels; timestamps are not dispatch evidence; objective age/keywords are not external-job monitoring proof |
-| Outcome-first completion, 20260916_224518 / 224738 / 224741 / 224746 / 224749 | completion-summary renderer; goal-tools claim capture; continuation prompt | Pending: readable groups, compact proof, stripping fragments, archival parity, preservation across repair claims |
+| Outcome-first completion, 20260916_224518 / 224738 / 224741 / 224746 / 224749 | completion-summary renderer; goal-tools claim capture; goal-orchestrator archive | Shipped: lead-paragraph headline echo; empty-paren husks removed in evidence extraction and structured strips (shared stripMachineGroups); repair re-claims carry priorCompletionSummary so chat AND archived Terminal summary lead with the whole work (tests/recap-preservation.test.ts, red→green); 111 adjacent tests pass |
 
 ## Draft handoff diagnosis and containment
 
@@ -21,7 +21,9 @@ The correction is limited to the reported dangling introduction shape after a no
 - Original registered-handler repro: 1 pass / 1 expected failure (missing automatic follow-up).
 - Automatic correction plus adjacent drafting/confirmation/continuation tests: 41 pass / 0 fail, six files (`/var/tmp/glla-drafting-adjacent-auto.log`).
 - Expanded cancellation/lifecycle drafting fixtures: 11 pass / 0 fail (`/var/tmp/glla-drafting-fences.log`).
-- TypeScript: passed before final lifecycle fixture expansion; release-wide rerun still required.
+- Summary fragment fixes: nested-husk probe plus 110 adjacent tests pass across 9 files (`/var/tmp/glla-husk-adjacent.log`).
+- Whole-work recap preservation: red (delta-only re-claim lost the recap from chat AND archive) → green; 111 pass / 0 fail across 10 files, tsc clean, diff-check clean (`/var/tmp/glla-recap-full.log`).
+- Full release-wide gates: still required (task 5).
 
 ## Release status
 
