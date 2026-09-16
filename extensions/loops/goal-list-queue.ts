@@ -15,6 +15,7 @@
  */
 
 import * as fs from "node:fs";
+import { draftingHandoff } from "../drafting-handoff.js";
 import * as os from "node:os";
 import * as path from "node:path";
 
@@ -838,6 +839,7 @@ async function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "l
     clearDraftingState();
     return false;
   }
+  draftingHandoff.reset();
   draftingTarget = target;
   // v0.35.44: no draftingDepth write — the write-only global was removed;
   // template selection goes through draftingTemplateFile(target, depth).

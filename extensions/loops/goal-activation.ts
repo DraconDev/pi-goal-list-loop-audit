@@ -15,6 +15,7 @@
  */
 
 import * as fs from "node:fs";
+import { draftingHandoff, DRAFT_HANDOFF_NOTICE } from "../drafting-handoff.js";
 import * as os from "node:os";
 import * as path from "node:path";
 
@@ -1185,6 +1186,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       }
     }
     if (draftingTarget === null) return;
+    draftingHandoff.noteToolResult(String(event?.toolName ?? ""), askUserQuestionAnswered(String(event?.toolName ?? ""), event?.details));
     if (askUserQuestionAnswered(String(event?.toolName ?? ""), event?.details)) {
       draftingUserReplies++;
     }
@@ -2321,6 +2323,9 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       if ((state.loop!.consecutiveErrors ?? 0) > 0) state.loop!.consecutiveErrors = 0; // a real turn clears the streak (runLoopTick persists)
       await runLoopTick(ctx, event);
       return;
+    }
+    if (draftingTarget !== null && draftingHandoff.observe(lastA?.text ?? "", lastA?.stopReason)) {
+      ctx.ui.notify(DRAFT_HANDOFF_NOTICE, "warning");
     }
     if (!state.goal) return;
     if (state.goal.status !== "active") return;
