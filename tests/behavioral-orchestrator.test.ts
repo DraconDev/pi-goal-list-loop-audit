@@ -1079,10 +1079,9 @@ test("field 2026-09-16: a typed paragraph drafts as one thing, never an import-o
     confirmTitles.push(title);
     return false;
   };
-  const sentBefore = pi.sent.length;
   await pi.command("list", "Overhaul the Quick setup overlay. It should keep the current layout.\nThe progress bar needs a11y labels too.", ctx);
   assert.ok(!confirmTitles.some((t) => t.includes("Import into list?")), "no sentence-split import is offered");
-  assert.ok(pi.sent.length > sentBefore, "the paragraph seeds a drafting interview instead");
+  assert.ok(ctx.ui.matching("Goal drafting (for the list)").length >= 1, "the paragraph seeds a drafting interview instead");
   assert.deepEqual((readState(cwd).list as unknown[]).length, 0, "nothing is enqueued behind the user's back");
 });
 

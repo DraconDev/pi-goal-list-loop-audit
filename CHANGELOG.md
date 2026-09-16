@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Paragraph seeds stay one list item
+
+Typed multi-sentence prose to `/list` no longer routes to the
+"Import into list?" sentence-split (field 2026-09-16 — the only
+options were sentences-as-items or nothing). The router batches only
+on explicit list structure (≥2 bulleted, numbered, or checklist
+lines); unstructured prose drafts instead, and the draft prompt now
+states the rule: a paragraph is ONE item proposed whole, split only on
+request or when the interview establishes genuinely separate tasks.
+
 ## 0.38.56 — Refine-and-resume loops, chatter-resolving tweaks (2026-09-16)
 
 ### Context-inferred tweak objectives
