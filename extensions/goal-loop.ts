@@ -215,6 +215,46 @@ function isLoopActive(): boolean {
   return !!state.loop?.active;
 }
 
+// Resumable-stop predicate, hoisted to module scope (field 2026-09-16,
+// loop sweep): /loop resume and /loop refine share it so a held loop is
+// refinable wherever it is resumable.
+// v0.29.20: plain plateau stops are resumable too — pre-gate plateaus
+// could be false (hegemon/polis stopped 2026-07-31 with open findings
+// on 429-dead turns), and an explicit resume is the user's call; the
+// v0.29.19 gate + re-armed counters make the resumed run honest.
+const RESUMABLE_STOP = (r?: string): boolean =>
+  r === HELD_ON_RESTORE ||
+  !!r?.startsWith("provider errors —") ||
+  !!r?.startsWith("stopped by user —") ||
+  !!r?.startsWith("plateau —") ||
+  !!r?.startsWith("stalled:") ||
+  !!r?.startsWith("stuck —") ||
+  !!r?.startsWith("time bound reached") ||
+  !!r?.startsWith("token budget exhausted") ||
+  // v0.35.54 (collect-pass HIGH finding): the v0.35.31 "metric never
+  // moved" stop message promises "/loop resume retries or /loop stop",
+  // but this predicate never matched that prefix — the promised command
+  // answered "No held loop to resume" and, with propose_loop_refine
+  // gated on an ACTIVE loop, the only recovery was /loop stop + a fresh
+  // start discarding iteration history. Same class as the v0.35.25
+  // issue-#14 zombie prefix (fixed there, missed for this brand-new
+  // prefix). Resuming re-arms the counters; if the metric is still dead
+  // it re-stops loudly after its window — and a measure-changing
+  // propose_loop_refine (usable again once resumed) re-scopes the era so
+  // the never-moved grace re-arms.
+  !!r?.startsWith("metric never moved —") ||
+  // v0.35.25 (issue #14): abortZombieRun parks with
+  // "stopped: automatic zero-stream abort — … (/loop resume to retry)"
+  // and its user-facing message PROMISES that resume command. The
+  // predicate it lands in never matched the prefix, so /loop resume
+  // answered "No held loop to resume" and the preserved iteration,
+  // best value, and history were unreachable without re-drafting.
+  !!r?.startsWith("stopped: automatic zero-stream abort") ||
+  // v0.38.27 (ported from Bjynt's PR #46): /loop pause is a soft-hold
+  // parallel to /goal pause. The loop stays resumable; finishLoopGit
+  // was skipped, so resume picks up iteration/best/history verbatim.
+  !!r?.startsWith("paused by user (/loop pause)");
+
 async function resolveLoopStartConflict(ctx: ExtensionContext, target: string): Promise<boolean> {
   const current = liveObjectives(state);
   if (current.length === 0) return true;
@@ -994,42 +1034,6 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       return;
     }
     const stored = state.loop;
-    // v0.29.20: plain plateau stops are resumable too — pre-gate plateaus
-    // could be false (hegemon/polis stopped 2026-07-31 with open findings
-    // on 429-dead turns), and an explicit resume is the user's call; the
-    // v0.29.19 gate + re-armed counters make the resumed run honest.
-    const RESUMABLE_STOP = (r?: string): boolean =>
-      r === HELD_ON_RESTORE ||
-      !!r?.startsWith("provider errors —") ||
-      !!r?.startsWith("stopped by user —") ||
-      !!r?.startsWith("plateau —") ||
-      !!r?.startsWith("stalled:") ||
-      !!r?.startsWith("stuck —") ||
-      !!r?.startsWith("time bound reached") ||
-      !!r?.startsWith("token budget exhausted") ||
-      // v0.35.54 (collect-pass HIGH finding): the v0.35.31 "metric never
-      // moved" stop message promises "/loop resume retries or /loop stop",
-      // but this predicate never matched that prefix — the promised command
-      // answered "No held loop to resume" and, with propose_loop_refine
-      // gated on an ACTIVE loop, the only recovery was /loop stop + a fresh
-      // start discarding iteration history. Same class as the v0.35.25
-      // issue-#14 zombie prefix (fixed there, missed for this brand-new
-      // prefix). Resuming re-arms the counters; if the metric is still dead
-      // it re-stops loudly after its window — and a measure-changing
-      // propose_loop_refine (usable again once resumed) re-scopes the era so
-      // the never-moved grace re-arms.
-      !!r?.startsWith("metric never moved —") ||
-      // v0.35.25 (issue #14): abortZombieRun parks with
-      // "stopped: automatic zero-stream abort — … (/loop resume to retry)"
-      // and its user-facing message PROMISES that resume command. The
-      // predicate it lands in never matched the prefix, so /loop resume
-      // answered "No held loop to resume" and the preserved iteration,
-      // best value, and history were unreachable without re-drafting.
-      !!r?.startsWith("stopped: automatic zero-stream abort") ||
-      // v0.38.27 (ported from Bjynt's PR #46): /loop pause is a soft-hold
-      // parallel to /goal pause. The loop stays resumable; finishLoopGit
-      // was skipped, so resume picks up iteration/best/history verbatim.
-      !!r?.startsWith("paused by user (/loop pause)");
     if (stored && !stored.active && RESUMABLE_STOP(stored.stopReason)) {
       // Branch-mode stop returns HEAD to originalBranch. Refuse a resume from
       // there rather than letting the next tick commit loop work to the
@@ -1202,8 +1206,17 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     // queues the operator's suggestion into the next iteration's prompt.
     // ("polish" accepted as an alias: the widget footer advertised it
     // before the command existed — now it does.)
-    if (!isLoopActive()) {
+    // Field 2026-09-16 (loop sweep): a resumable-held loop is refinable —
+    // the hint rides the next iteration whenever it resumes. A dead loop
+    // (user stop/finish/maxed) stays refused with the honest fresh-start
+    // path; queuing onto it would promise a prompt that never comes.
+    const stored = state.loop;
+    if (!stored) {
       ctx.ui.notify("No active loop to refine — /loop start first.", "warning");
+      return;
+    }
+    if (!stored.active && !RESUMABLE_STOP(stored.stopReason)) {
+      ctx.ui.notify(`That loop ended (${stored.stopReason ?? "stopped"}) — the hint was not queued. /loop start begins a fresh run.`, "warning");
       return;
     }
     const hint = rest.trim();
@@ -1214,6 +1227,13 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     state.loop!.refineHint = hint.slice(0, 300);
     persistState(ctx);
     appendLedger(ctx.cwd, "loop_refine_hint", { iteration: state.loop!.iteration, hint: state.loop!.refineHint });
+    if (!stored.active) {
+      // Refine-and-resume (owner choice): the hint is queued first, then
+      // the byte-identical resume path runs — wrong-branch and active-goal
+      // guards keep their voices and the loop stays held when they fire.
+      ctx.ui.notify("Refine hint queued — it rides the next iteration's prompt. Resuming the held loop now.", "info");
+      return cmdLoop("resume", ctx);
+    }
     ctx.ui.notify("Refine hint queued — it rides the next iteration's prompt.", "info");
     return;
   }
