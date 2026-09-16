@@ -28,8 +28,11 @@ tools in the main session only:
 
 ## Pasted list-like input
 
-When the user supplies a multi-line, bulleted, numbered, or checklist-style
-list and asks to use or add it, use the structure and wording as supplied.
+When the user supplies an explicitly structured list (marked items or
+independent contracted records) and asks to use or add it, use the structure
+and wording as supplied. Line wrapping alone does not make prose a list:
+keep a paragraph as one item unless the user asks to split it or clarification
+establishes independent tasks.
 Strip only import syntax and empty headings/lines, then pass the resulting
 items in one `list_add` call. Do **not** ask whether the user wants the list
 “exact” or “refined”; there is no such choice. Clarify only a genuinely
