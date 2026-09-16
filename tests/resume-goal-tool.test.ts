@@ -124,16 +124,26 @@ test("resume_goal with no goal answers instead of swallowing the verb", async ()
   }
 });
 
-test("resume_goal refuses over a live loop (one-active-thing)", async () => {
+test("a held-on-restore loop does not block resume_goal (only a LIVE loop does)", async () => {
+  // Restore never leaves a live loop behind a blank startup: stacked
+  // state is arbitrated, solo loops hold. The tool's /loop stop refusal is
+  // defense-in-depth for a transient only (pinned by source below) — the
+  // realistic cold-load shape, a HELD loop beside a paused goal, resumes.
   const cwd = tmpCwd();
-  seedState(cwd, { goal: pausedGoal(), loop: seedLoop() });
+  // Recency arbitration keeps the newer artifact: an old loop beside a
+  // fresh paused goal loses the slot and holds, the goal survives.
+  seedState(cwd, { goal: pausedGoal(), loop: seedLoop({ startedAt: new Date(Date.now() - 86400_000).toISOString() }) });
   const pi = new MockPi();
   activate(pi.api);
   const ctx = await boot(pi, cwd);
   try {
+    const loop = readState(cwd).loop as { active: boolean; stopReason?: string } | null;
+    assert.equal(loop?.active, false, "blank startup holds the loop");
+    assert.match(loop?.stopReason ?? "", /auto-arbitrated/, "recency arbitration names itself");
+    assert.equal(readState(cwd).goal?.status, "paused");
     const result = await pi.runTool("resume_goal", { reason: "user said go" }, ctx) as { content: Array<{ text: string }> };
-    assert.match(result.content[0]!.text, /\/loop stop/, "the refusal names the real unblock command");
-    assert.equal(readState(cwd).goal?.status, "paused", "the pause is untouched");
+    assert.match(result.content[0]!.text, /active again/, "a held loop is not a live loop");
+    assert.equal(readState(cwd).goal?.status, "active");
   } finally {
     await pi.fire("session_shutdown", { reason: "quit" }, ctx);
   }
