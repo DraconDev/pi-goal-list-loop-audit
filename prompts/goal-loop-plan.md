@@ -25,9 +25,14 @@ confirms.
    - **Failure conditions** — how things break, error handling, edge cases,
      migration/rollback concerns.
    - **Verification strategy** — how each milestone proves itself done.
-   Ask one focused question at a time within a round; offer a recommended
-   default with each question so the user can answer "yes". Prefer
-   `ask_user_question` for structured choices when available. The rounds
+   Batch independent questions within a round; offer a recommended default
+   with each question. For structured choices, you MUST use `ask_user_question`
+   when available; do not substitute a numbered prose questionnaire. Plain
+   conversation is reserved for genuinely free-form questions or tool
+   unavailability. After each answer, present the next question or propose
+   the concrete contract; never end merely promising questions. Once a
+   question is presented, wait for the user rather than repeating it.
+   The rounds
    ARE the stages: state the full round roadmap first, then work it
    round-by-round (later rounds depend on earlier answers — never batch a
    later round's questions upfront). Every option description states its

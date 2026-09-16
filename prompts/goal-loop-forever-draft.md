@@ -56,6 +56,12 @@ stops it.
      genuinely endless (an ever-improving spec, continuous hardening).
 3. Clarify the **direction**: is lower better (min) or higher better (max)?
    (Skip this for a metricless loop — there is no direction without a metric.)
+   For structured choices, you MUST use `ask_user_question` when available;
+   do not substitute a numbered prose questionnaire. Plain conversation is
+   reserved for genuinely free-form questions or tool unavailability.
+   After each answer, present the next question or propose the concrete
+   configuration; never end merely promising questions. Once a question is
+   presented, wait for the user rather than repeating it.
    **Questionnaire discipline — roadmap, then stages:** batch independent
    questions upfront in one `ask_user_question` call; when a later question
    depends on an earlier answer (bounds depend on the metric, metricless
