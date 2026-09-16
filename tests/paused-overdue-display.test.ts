@@ -34,6 +34,11 @@ function waitGoal(overrides: Record<string, unknown> = {}): Goal {
     pauseReason: "main model recovery — retrying in 60m (provider unavailable)",
     pauseSuggestedAction:
       "The provider failure is being retried automatically with adaptive backoff for as long as it remains recoverable; configured fallback models are tried in order. /goal resume retries immediately; /goal cancel stops it.",
+    // v0.38.57: these fixtures describe a SUPERVISED recovery wait, so they
+    // carry the durable evidence the real writer (goal-recovery.ts:792)
+    // always persists; a bare timed pause without it renders as the user's
+    // own wait (see tests/truthful-pause-labels.test.ts).
+    recoveryEpisodeKey: "20260908160425:provider",
     ...overrides,
   } as unknown as Goal;
 }

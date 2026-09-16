@@ -1846,15 +1846,18 @@ test("v0.34.102: wait pause WITHOUT mainModelRecovery keeps the uniform auto-ret
     status: "paused",
     policy: "goal",
     pauseKind: "wait",
-    pauseReason: "user timed wait",
+    pauseReason: "main model recovery — retrying (transient)",
     pauseResumeAt: new Date(Date.now() + 15 * 60_000).toISOString(),
-  });
+    // v0.38.57: this pin is about the SUPERVISED retry shape, so the
+    // fixture carries the recovery evidence production writes.
+    recoveryEpisodeKey: "test-episode:supervised",
+  } as Partial<Goal>);
   const state = { goal: g, list: [], loop: null };
   const s = buildStatusText(state as never)!;
   assert.match(s, /auto-retrying/);
   assert.ok(!s.includes("parked on provider wall"), "plain wait is not a provider park");
   const w = buildWidgetLines(state as never)!;
-  assert.ok(w.some((l) => l.includes("auto-retrying")), "plain wait keeps the uniform countdown line");
+  assert.ok(w.some((l) => l.includes("auto-retrying")), "supervised wait keeps the uniform countdown line");
 });
   const goalSrc = readGoalRuntimeSource();
 test("v0.34.64: 24h horizon holds render as a paused card with the suggested action; no manual-resume wording", () => {
