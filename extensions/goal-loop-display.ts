@@ -1020,6 +1020,9 @@ function pausedRecoveryOwner(g: Goal, state: State): string {
   if (state.mainModelRecovery) {
     return "main-model recovery";
   }
+  // 2026-09-16: a bare timed wait without recovery evidence is the user's
+  // pause — the timer is theirs, not a GLLA recovery episode.
+  if (pauseKind(g) === "wait" && !isSupervisedWait(g)) return "user timer";
   switch (pauseKind(g)) {
     case "decision": return "user decision";
     case "error": return "user action";
@@ -1094,7 +1097,7 @@ function pausedNextTransition(g: Goal, state: State, now: number): string {
     case "decision": return `user decision → ${resume}`;
     case "error": return `manual action → ${resume}`;
     case "blocked": return resume;
-    case "wait": return "recovery timer";
+    case "wait": return isSupervisedWait(g) ? "recovery timer" : "user timer";
     default: return resume;
   }
 }
@@ -1268,9 +1271,12 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
       // Every retry-class pause renders the same ⏳ auto-retrying… line +
       // countdown; blocked pauses without a recovery timer render as
       // ⏸ action needed. A main-model manual hold names its recovery owner.
+      // 2026-09-16: a bare timed pause with NO durable recovery evidence is
+      // a deliberate user wait — "⏸ waiting for you", never "auto-retrying".
       const rms = g.pauseResumeAt ? Date.parse(g.pauseResumeAt) - now : Number.NaN;
+      const supervised = isSupervisedWait(g);
       const when = !Number.isFinite(rms) ? ""
-        : rms > 0 ? ` · auto-retry in ${fmtElapsed(rms)}`
+        : rms > 0 ? ` · ${supervised ? "auto-retry" : "auto-continue"} in ${fmtElapsed(rms)}`
         : -rms >= PAUSED_RESUME_GRACE_MS ? " · retry overdue" : " · resuming…";
       if (kind === "blocked") {
         const label = state.mainModelRecovery?.manualResumeRequired === true
@@ -1289,6 +1295,9 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
       if (Number.isFinite(parked) || state.mainModelRecovery?.pendingModelSwitch) {
         const label = "⏳ main-model recovery — retrying automatically";
         return `glla: ${paint(theme, "dim", label)}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
+      }
+      if (!supervised) {
+        return `glla: ${paint(theme, "dim", `⏸ waiting for you${when}`)}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
       }
       return `glla: ${paint(theme, "dim", `⏳ auto-retrying${when}`)}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
     }
@@ -1947,17 +1956,19 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
     else if (Number.isFinite(retryMs)) {
       // v0.38.31: "now" shares the transition grace window — a retry time
       // that passed long ago with no dispatch is overdue, not imminent.
+      // 2026-09-16: a bare timed pause is the user's wait — the countdown
+      // renders as "auto-continue", never "auto-retrying".
       const overdue = -retryMs >= PAUSED_RESUME_GRACE_MS;
       const when = retryMs > 0 ? `next probe in ${fmtElapsed(retryMs)}`
         : overdue ? "overdue — waiting on recovery timer"
         : "now";
-      lines.push(`├─ ${paint(theme, "dim", `auto-retrying · ${when}`)}`);
+      lines.push(`├─ ${paint(theme, "dim", isSupervisedWait(g) ? `auto-retrying · ${when}` : `waiting for you — auto-continue in ${fmtElapsed(retryMs)}`)}`);
     } else if (kind === "blocked" && state.mainModelRecovery?.manualResumeRequired === true) {
       lines.push(`├─ ${paint(theme, "warning", "manual recovery hold — automatic probes stopped")}`);
     } else if (kind === "blocked") {
       lines.push(`├─ ${paint(theme, "warning", "blocked — waiting for manual action")}`);
     } else if (kind === "wait") {
-      lines.push(`├─ ${paint(theme, "dim", "paused — waiting on a recovery timer")}`);
+      lines.push(`├─ ${paint(theme, "dim", isSupervisedWait(g) ? "paused — waiting on a recovery timer" : "paused — waiting for you")}`);
     }
     // v0.27.1: wrap reason + suggested action (see wrap()). v0.28.22:
     // decision/wait reasons cap at 2 lines — the options/countdown below
