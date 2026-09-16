@@ -135,7 +135,7 @@ isGoalRevisionCurrent,
   normalizeDurableDeferRecommendationInput,
   sanitizeFindingGroups,
   sanitizeGateRows,
-  supervisorPaused,
+  clearLoadHold,
 } from "../goal-loop-core.js";
 import {
   applyValidatedBatch,
@@ -2317,11 +2317,18 @@ function registerAgentTools(pi: any): void {
       if (isLoopActive()) {
         return { content: [{ type: "text", text: `A loop is active — one active thing at a time. Ask the user to /loop stop it first, then ${activeGoalSurfaceCommand("resume")} the ${noun}.` }], details: {} };
       }
-      // A supervisor freeze (/glla pause) is a user-level machine decision —
-      // unfreezing stays user-typed. Main-model recovery is machinery-owned
-      // with its own timers — the tool must not cut in front of either.
-      if (supervisorPaused(state)) {
+      // A /glla pause freeze is a user-level machine decision — unfreezing
+      // stays user-typed. The cold-load hold is different: it releases on
+      // any explicit work command (same as /goal resume), and an
+      // in-conversation user authorization IS one. Main-model recovery is
+      // machinery-owned with its own timers — the tool must not cut in
+      // front of it.
+      if (typeof state.supervisorPausedAt === "number") {
         return { content: [{ type: "text", text: `Automation is frozen by /glla pause — ask the user to run ${activeGoalSurfaceCommand("resume")} (or lift the freeze) instead of resuming from the tool.` }], details: {} };
+      }
+      if (clearLoadHold(state)) {
+        appendLedger(ctx.cwd, "load_hold_released", { via: "agent-resume" });
+        ctx.ui.notify("Load hold released — automation is live again.", "info");
       }
       const rec = state.mainModelRecovery;
       if (rec && (rec.retryAt || rec.pendingModelSwitch || rec.primaryProbeAt || rec.primaryProbeInFlight)) {

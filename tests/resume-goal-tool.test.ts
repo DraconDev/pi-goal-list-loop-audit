@@ -72,7 +72,7 @@ test("resume_goal reactivates a paused goal and clears every pause marker", asyn
     };
     assert.match(result.content[0]!.text, /active again/, "the tool confirms reactivation");
     assert.match(result.content[0]!.text, /Continue working in THIS turn/, "the live turn owns what happens next");
-    const after = readState(cwd).goal as Record<string, unknown>;
+    const after = readState(cwd).goal as unknown as Record<string, unknown>;
     assert.equal(after.status, "active");
     assert.equal(after.pauseReason, undefined);
     assert.equal(after.pauseSuggestedAction, undefined);
