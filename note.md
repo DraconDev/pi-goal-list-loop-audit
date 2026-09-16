@@ -2,6 +2,9 @@
 
 # Next
 
+we can have longer summaries too this is a good example that it can be extremely useful
+/home/dracon/Pictures/Screenshots/Screenshot_20260916_104621.png /home/dracon/Pictures/Screenshots/Screenshot_20260916_104617.png /home/dracon/Pictures/Screenshots/Screenshot_20260916_104614.png /home/dracon/Pictures/Screenshots/Screenshot_20260916_104611.png /home/dracon/Pictures/Screenshots/Screenshot_20260916_104606.png 
+
 # Later
 
 # Research
