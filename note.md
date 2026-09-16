@@ -8,6 +8,11 @@ we can have longer summaries too this is a good example that it can be extremely
 # Later
 
 ##
+make sure we first use the concert too to make the objective , cause ere took ok adjust it, instead of the concext that was discussed before
+/home/dracon/Pictures/Screenshots/Screenshot_20260916_133421.png 
+
+##
+
 list didnt use the question tool
 /home/dracon/Pictures/Screenshots/Screenshot_20260916_120648.png 
 
