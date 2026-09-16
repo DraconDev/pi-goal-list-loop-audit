@@ -154,6 +154,18 @@ test("hasExplicitListStructure: two marked lines, one marked line, none", () => 
   assert.equal(hasExplicitListStructure("no newlines at all"), false);
 });
 
+test("routeListText: field 2026-09-16 — explicit add keeps contracted lines batched (v0.34.81 subtasks)", () => {
+  const raw = "Deploy the release pipeline. Done when: foo\nSubtask of: Deploy — bump version. Done when: bar\nUnrelated work. Done when: qux";
+  const r = routeListText("/nonexistent", raw, { explicitAdd: true });
+  assert.equal(r.kind, "batch");
+  if (r.kind === "batch") assert.equal(r.items.length, 3);
+});
+
+test("routeListText: field 2026-09-16 — explicit add with contract-less prose still drafts", () => {
+  const r = routeListText("/nonexistent", "Overhaul the overlay.\nKeep the layout.", { explicitAdd: true });
+  assert.equal(r.kind, "draft");
+});
+
 test("routeListText: pasted bullets preserve item wording and contracts", () => {
   const r = routeListText("/nonexistent", "# Plan\n- [ ] Keep punctuation!\n2) Check x. Done when: grep -q ok x\n");
   assert.deepEqual(r, {

@@ -818,7 +818,7 @@ export type ListTextRoute =
   | { kind: "direct"; text: string }
   | { kind: "draft"; seed: string };
 
-export function routeListText(cwd: string, raw: string): ListTextRoute {
+export function routeListText(cwd: string, raw: string, opts?: { explicitAdd?: boolean }): ListTextRoute {
   const importFile = resolveImportFile(cwd, raw);
   if (importFile) return { kind: "file", path: importFile };
   if (raw.includes("\n")) {
@@ -829,7 +829,14 @@ export function routeListText(cwd: string, raw: string): ListTextRoute {
     // batching it offered "sentences as items or nothing". Unstructured
     // multi-line text drafts instead, where the interview proposes it
     // whole (see the paragraph-seeds rule in goal-loop-draft.md).
-    if (pasted.length > 1 && hasExplicitListStructure(raw)) return { kind: "batch", items: pasted };
+    // Explicit `/list add` keeps line-batch when every line already
+    // carries its own contract: each line is a complete item, so the
+    // structure is explicit even without markers (v0.34.81 subtasks).
+    // Contract-less lines under `add` still draft (the v0.19.0 gate).
+    const contractedLines = pasted.length > 1 && pasted.every((line) => /\bdone\s+when\b/i.test(line));
+    if (pasted.length > 1 && (hasExplicitListStructure(raw) || (opts?.explicitAdd === true && contractedLines))) {
+      return { kind: "batch", items: pasted };
+    }
   }
   if (!goalArgsNeedDrafting(raw)) return { kind: "direct", text: raw };
   return { kind: "draft", seed: raw };

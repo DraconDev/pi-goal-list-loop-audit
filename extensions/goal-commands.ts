@@ -1433,7 +1433,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
       await startDrafting(ctx, "list");
       return;
     }
-    const aliased = routeListText(ctx.cwd, rest.replace(/^["']|["']$/g, ""));
+    const aliased = routeListText(ctx.cwd, rest.replace(/^["']|["']$/g, ""), { explicitAdd: true });
     if (aliased.kind === "file") {
       await bulkAddFromFile(ctx, aliased.path);
       return;
