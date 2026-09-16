@@ -15,6 +15,15 @@ list didnt use the question tool
 ##
 i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
 
+##
+
+we need more drafting in phases
+
+##
+we look paused instead of monitoring
+/home/dracon/Pictures/Screenshots/Screenshot_20260916_195540.png 
+
+
 # Research
 investigate 
 https://pi.dev/packages/pi-goal-x?name=pi+goal+x https://github.com/tmonk/pi-goal-x
