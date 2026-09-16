@@ -191,7 +191,7 @@ export function chatSafeDetailValue(value: string): string {
     const inner = group
       .slice(1, -1)
       .replace(/(?:\/var)?\/tmp\/\S+/g, "")
-      .replace(/\S+\.tgz\b/g, "")
+      .replace(/(?<!\S)\S+\.tgz\b/g, "")
       .replace(/\btarballs?\b|\blogs?\b/gi, "");
     return /[a-z]/i.test(inner) ? group : "";
     });
@@ -201,7 +201,7 @@ export function chatSafeDetailValue(value: string): string {
   const stripped = withoutGroups
     .replace(/(?:\/var)?\/tmp\/\S+/g, "")
     .replace(/\btarballs?\s+\S+\.tgz\b/gi, "")
-    .replace(/\S+\.tgz\b/g, "")
+    .replace(/(?<!\S)\S+\.tgz\b/g, "")
     .replace(/\(\s*\)/g, "")
     .replace(/\s{2,}/g, " ")
     .trim();
@@ -344,7 +344,9 @@ export function rawLabelValue(text: string, label: string): string | null {
 function stripMachineTokens(line: string): string {
   return line
     .replace(/(?:\/var)?\/tmp\/\S+/g, "")
-    .replace(/\S+\.tgz\b/g, "")
+    // Attempt a greedy token match only at its start, not at every byte
+    // of a long nonmatching token (quadratic on pathological summaries).
+    .replace(/(?<!\S)\S+\.tgz\b/g, "")
     .replace(/\(\s*\)/g, "")
     .replace(/\s+$/u, "");
 }

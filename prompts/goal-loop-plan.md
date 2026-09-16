@@ -51,9 +51,11 @@ confirms.
 
 ## Pasted list seeds
 
-When plan mode is used for `/list` and the user supplies a multi-line,
-bulleted, numbered, or checklist-style seed, preserve its item boundaries and
-wording as supplied. Normalize only import syntax and empty headings/lines;
+When plan mode is used for `/list` and the user supplies an explicitly
+structured list (marked items or independent contracted records), preserve
+its item boundaries and wording as supplied. Wrapped prose is one paragraph,
+not a list: propose it whole unless the user requests a split or the interview
+establishes independent tasks. Normalize only import syntax and empty headings/lines;
 do not ask whether the list should be exact or refined. Clarify only a
 genuinely ambiguous individual item, never turn a complete pasted list into a
 meta-choice. Research may deepen contracts and verification, but it must not
