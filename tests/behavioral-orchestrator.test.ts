@@ -1006,6 +1006,28 @@ test("field 2026-09-16 (VidPro replay): tweak chatter adopts the discussed objec
   }
 });
 
+test("audit 2026-09-16: inferred tweak rejection leaves objective and ledger unchanged", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  seedState(cwd, { goal: seedGoal({ policy: "goal", status: "paused", objective: "Keep the existing contract" }) });
+  MAIN_SM.entries = [{ type: "message", message: { role: "user", content: "Fix the flaky login test" } }];
+  try {
+    const ctx = await freshSession(cwd, "reload");
+    await tick();
+    let asked = false;
+    ctx.ui.confirmImpl = async (_title, message) => {
+      assert.match(message, /NEW \(inferred from recent discussion/);
+      assert.match(message, /Fix the flaky login test/);
+      asked = true;
+      return false;
+    };
+    await pi.command("goal", "tweak ok adjust it", ctx);
+    assert.equal(asked, true);
+    assert.equal((readState(cwd).goal as { objective: string }).objective, "Keep the existing contract");
+    assert.equal(readLedger(cwd).filter((entry) => entry.type === "goal_tweaked").length, 0);
+  } finally { MAIN_SM.entries = []; }
+});
+
 test("field 2026-09-16: tweak chatter with no discussed objective guides and changes nothing", async () => {
   __testOnlyResetStaleFlag();
   const cwd = tmpCwd();
@@ -1079,7 +1101,10 @@ test("field 2026-09-16: a typed paragraph drafts as one thing, never an import-o
     confirmTitles.push(title);
     return false;
   };
-  await pi.command("list", "Overhaul the Quick setup overlay. It should keep the current layout.\nThe progress bar needs a11y labels too.", ctx);
+  const seed = "Overhaul the Quick setup overlay. It should keep the current layout.\nThe progress bar needs a11y labels too.";
+  const sentBefore = pi.userMessages.length;
+  await pi.command("list", seed, ctx);
+  assert.ok(pi.userMessages.slice(sentBefore).some(({ message }) => message.includes(seed)), "the drafting prompt preserves the entire multiline seed");
   assert.ok(!confirmTitles.some((t) => t.includes("Import into list?")), "no sentence-split import is offered");
   assert.ok(ctx.ui.matching("Goal drafting (for the list)").length >= 1, "the paragraph seeds a drafting interview instead");
   assert.deepEqual((readState(cwd).list as unknown[]).length, 0, "nothing is enqueued behind the user's back");
@@ -1092,7 +1117,12 @@ test("field 2026-09-16 (loop sweep): /loop refine on a held loop queues the hint
   const ctx = await freshSession(cwd, "reload");
   await tick();
   await pi.command("loop", "refine capture setup cost too", ctx);
-  const loop = readState(cwd).loop as { active: boolean; refineHint?: string; iteration: number };
+  const loop = readState(cwd).loop as { active: boolean; refineHint?: string; iteration: number; stopReason?: string; consecutiveErrors: number; consecutiveStuck: number; stallCount: number };
+  assert.equal(loop.iteration, 7, "resume preserves iteration history");
+  assert.equal(loop.stopReason, undefined);
+  assert.equal(loop.consecutiveErrors, 0);
+  assert.equal(loop.consecutiveStuck, 0);
+  assert.equal(loop.stallCount, 0);
   assert.equal(loop.refineHint, "capture setup cost too", "the hint is queued");
   assert.equal(loop.active, true, "refine-and-resume reactivates the held loop");
   const hint = ledgerEvent(cwd, "loop_refine_hint");
@@ -1100,6 +1130,23 @@ test("field 2026-09-16 (loop sweep): /loop refine on a held loop queues the hint
   assert.ok(ctx.ui.matching("Refine hint queued").length >= 1, "the queue voice fires");
   assert.ok(ctx.ui.matching("Loop resumed:").length >= 1, "the byte-identical resume voice follows");
   await pi.command("loop", "stop", ctx);
+});
+
+test("audit 2026-09-16: held-loop refine respects wrong-branch guard", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  seedState(cwd, { loop: seedLoop({ active: false, stopReason: "paused by user (/loop pause)", branchName: "required-scratch", iteration: 7 }) });
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  const sentBefore = pi.userMessages.length;
+  await pi.command("loop", "refine capture setup cost too", ctx);
+  const loop = readState(cwd).loop as { active: boolean; refineHint?: string };
+  assert.equal(loop.active, false);
+  assert.equal(loop.refineHint, "capture setup cost too");
+  assert.equal(ledgerEvent(cwd, "loop_resume_blocked_wrong_branch").value.expected, "required-scratch");
+  assert.ok(ctx.ui.matching("Loop resume refused").length >= 1);
+  await tick();
+  assert.equal(pi.userMessages.length, sentBefore, "no continuation dispatched");
 });
 
 test("field 2026-09-16 (loop sweep): held-loop refine over an active goal queues but stays held", async () => {
