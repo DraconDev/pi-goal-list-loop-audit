@@ -147,5 +147,5 @@ test("archive human layer carries the same Summary section", () => {
   const section = buildRichArchiveSection(structuredGoal(STRUCTURED), "complete", ".pi-glla/archive/20260916-structured.md");
   assert.ok(section.includes("### Summary"), "archive parity");
   assert.ok(section.includes("| Focus | draw a card |"), "archive keeps full text");
-  assert.ok(section.some((line) => line.startsWith("• — record: ")), "record pointer still closes");
+  assert.ok(section.some((line) => line.startsWith("• record: ")), "record pointer still closes");
 });
