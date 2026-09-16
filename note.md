@@ -4,14 +4,8 @@
 # Next
 
 ##
-when i write more for the list we shouldnt just offer converting into a list currently if i write multiple senetences my options are 
-1. do the sentences as list items
-2. do nothing
-
-##
 list didnt use the question tool
 /home/dracon/Pictures/Screenshots/Screenshot_20260916_120648.png 
-
 
 
 ##
