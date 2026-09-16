@@ -1113,6 +1113,20 @@ test("field 2026-09-16: a typed paragraph drafts as one thing, never an import-o
   assert.deepEqual((readState(cwd).list as unknown[]).length, 0, "nothing is enqueued behind the user's back");
 });
 
+test("audit 2026-09-16: bare list keeps separately contracted objectives in separate queue records", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  seedState(cwd, { goal: seedGoal({ policy: "goal", status: "paused" }) });
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  await pi.command("list", "Fix login. Done when: login passes\nUpdate docs. Done when: docs built", ctx);
+  const items = readState(cwd).list as Array<{ objective: string; verificationContract: string }>;
+  assert.deepEqual(items.map(({ objective, verificationContract }) => ({ objective, verificationContract })), [
+    { objective: "Fix login", verificationContract: "login passes" },
+    { objective: "Update docs", verificationContract: "docs built" },
+  ]);
+});
+
 test("field 2026-09-16 (loop sweep): /loop refine on a held loop queues the hint and resumes", async () => {
   __testOnlyResetStaleFlag();
   const cwd = tmpCwd();
@@ -1132,6 +1146,8 @@ test("field 2026-09-16 (loop sweep): /loop refine on a held loop queues the hint
   assert.equal(hint.value.hint, "capture setup cost too");
   assert.ok(ctx.ui.matching("Refine hint queued").length >= 1, "the queue voice fires");
   assert.ok(ctx.ui.matching("Loop resumed:").length >= 1, "the byte-identical resume voice follows");
+  const sendsBefore = pi.sent.length;
+  await waitUntil(() => pi.sent.slice(sendsBefore).some(({ message }) => String(message.content).includes("capture setup cost too")), 2500);
   await pi.command("loop", "stop", ctx);
 });
 
