@@ -829,12 +829,13 @@ export function routeListText(cwd: string, raw: string, opts?: { explicitAdd?: b
     // batching it offered "sentences as items or nothing". Unstructured
     // multi-line text drafts instead, where the interview proposes it
     // whole (see the paragraph-seeds rule in goal-loop-draft.md).
-    // Explicit `/list add` keeps line-batch when every line already
-    // carries its own contract: each line is a complete item, so the
-    // structure is explicit even without markers (v0.34.81 subtasks).
-    // Contract-less lines under `add` still draft (the v0.19.0 gate).
-    const contractedLines = pasted.length > 1 && pasted.every((line) => /\bdone\s+when\b/i.test(line));
-    if (pasted.length > 1 && (hasExplicitListStructure(raw) || (opts?.explicitAdd === true && contractedLines))) {
+    // Explicit `/list add` keeps line-batch when any line already
+    // carries its own contract: the user handed over line-items, some
+    // complete (a contract-less subtask ref still resolves against its
+    // parent — v0.34.81). Pure prose under `add` still drafts
+    // (the v0.19.0 gate: no contract anywhere, no quality bypass).
+    const anyContractedLine = pasted.length > 1 && pasted.some((line) => /\bdone\s+when\b/i.test(line));
+    if (pasted.length > 1 && (hasExplicitListStructure(raw) || (opts?.explicitAdd === true && anyContractedLine))) {
       return { kind: "batch", items: pasted };
     }
   }

@@ -166,6 +166,12 @@ test("routeListText: field 2026-09-16 — explicit add with contract-less prose 
   assert.equal(r.kind, "draft");
 });
 
+test("routeListText: field 2026-09-16 — explicit add batches mixed contracted lines", () => {
+  const r = routeListText("/nonexistent", "Real parent. Done when: foo\nSubtask of: Bogus parent — child with no actual parent", { explicitAdd: true });
+  assert.equal(r.kind, "batch");
+  if (r.kind === "batch") assert.equal(r.items.length, 2);
+});
+
 test("routeListText: pasted bullets preserve item wording and contracts", () => {
   const r = routeListText("/nonexistent", "# Plan\n- [ ] Keep punctuation!\n2) Check x. Done when: grep -q ok x\n");
   assert.deepEqual(r, {
