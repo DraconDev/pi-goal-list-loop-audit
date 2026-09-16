@@ -1,7 +1,7 @@
 # Now
 
-# Later
 
+# Next
 
 ##
 when i write more for the list we shouldnt just offer converting into a list currently if i write multiple senetences my options are 
@@ -12,16 +12,23 @@ when i write more for the list we shouldnt just offer converting into a list cur
 list didnt use the question tool
 /home/dracon/Pictures/Screenshots/Screenshot_20260916_120648.png 
 
-##
-i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
 
-##
-
-we need more drafting in phases
 
 ##
 we look paused instead of monitoring
 /home/dracon/Pictures/Screenshots/Screenshot_20260916_195540.png 
+
+##
+we need more drafting in phases
+
+##
+draft stuck i think it wanted to ask another question but did not 
+/home/dracon/Pictures/Screenshots/Screenshot_20260916_213326.png 
+
+# Later
+
+##
+i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
 
 
 # Research
