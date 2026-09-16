@@ -909,6 +909,64 @@ test("v0.35.x: /list tweak amends a paused list item without activating it or ch
   assert.equal(tweak.value.objective, "new paused list item");
 });
 
+test("field 2026-09-16 (VidPro park): /goal tweak amends a paused goal without waking it", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  seedState(cwd, {
+    goal: seedGoal({
+      policy: "goal",
+      status: "paused",
+      objective: "old paused goal objective",
+      verificationContract: "old proof",
+      pauseReason: "blocked — waiting for manual action",
+      pauseSuggestedAction: "/goal resume to continue",
+    }),
+  });
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  ctx.ui.confirmImpl = async () => true;
+
+  await pi.command("goal", "tweak new paused goal objective. Done when: new proof", ctx);
+
+  const updated = readState(cwd).goal as {
+    id: string;
+    status: string;
+    policy: string;
+    objective: string;
+    verificationContract?: string;
+    pauseReason?: string;
+    pauseSuggestedAction?: string;
+  };
+  assert.equal(updated.status, "paused", "tweak does not wake the goal");
+  assert.equal(updated.policy, "goal", "the goal provenance is preserved");
+  assert.equal(updated.objective, "new paused goal objective");
+  assert.equal(updated.verificationContract, "new proof", "the replacement contract is stored");
+  assert.equal(updated.pauseReason, "blocked — waiting for manual action", "the pause state remains intact");
+  assert.equal(updated.pauseSuggestedAction, "/goal resume to continue");
+  assert.ok(ctx.ui.matching("Goal tweaked; it remains paused").length >= 1, "the result names the parked goal");
+  assert.equal(ctx.ui.matching("The loop continues against the new objective").length, 0, "no wake is promised");
+  assert.equal(ctx.ui.matching("No goal to tweak").length, 0, "a paused goal is tweakable");
+
+  const tweak = ledgerEvent(cwd, "goal_tweaked");
+  assert.equal(tweak.value.goalId, updated.id);
+  assert.equal(tweak.value.via, "/goal tweak");
+  assert.equal(tweak.value.objective, "new paused goal objective");
+
+  await tick();
+  await tick();
+  assert.equal((readState(cwd).goal as { status: string }).status, "paused", "the park survives later ticks");
+});
+
+test("field 2026-09-16: /goal tweak with no goal names the real path", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  seedState(cwd, {});
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  await pi.command("goal", "tweak whatever the goal should become", ctx);
+  assert.ok(ctx.ui.matching("No goal to tweak. /goal <objective> to start one.").length >= 1, "the refusal names the start path");
+});
+
 test("T3d: active loop + human load → HELD_ON_RESTORE (loop deactivated loudly, not silently dropped)", async () => {
   const cwd = tmpCwd();
   seedState(cwd, { loop: seedLoop() });

@@ -755,11 +755,17 @@ export async function cmdTweak(
     && current?.policy === "list"
     && (current.status === "active" || current.status === "auditing");
   const expectedStatus = mode === "list" ? "paused" : "active";
-  if (!current || (current.status !== expectedStatus && !liveListConflict) || (mode === "list" && current.policy !== "list")) {
+  // Field 2026-09-16 (the VidPro park): /goal tweak accepts a paused goal
+  // instead of stranding it behind a resume round-trip. Mirrors /list
+  // tweak, which is paused-only and stays paused.
+  const tweakable = mode === "list"
+    ? current?.status === expectedStatus
+    : current?.status === "active" || current?.status === "paused";
+  if (!current || (!tweakable && !liveListConflict) || (mode === "list" && current.policy !== "list")) {
     ctx.ui.notify(
       mode === "list"
         ? "No paused list item to tweak. /list tweak <replacement objective, optional 'Done when: ...' clause>"
-        : "No active goal to tweak. /goal <objective> to start one.",
+        : "No goal to tweak. /goal <objective> to start one.",
       "info",
     );
     return false;
@@ -919,6 +925,14 @@ export async function cmdTweak(
   }
   if (mode === "list") {
     ctx.ui.notify("List item tweaked; it remains paused. /list resume to continue.", "info");
+    return true;
+  }
+  // A paused goal stays paused — the tweak must not wake the loop (field
+  // 2026-09-16: the VidPro park re-parked on every wake, which is the
+  // hamster wheel in the report). The user resumes explicitly when the
+  // blocker clears.
+  if (latest.status === "paused") {
+    ctx.ui.notify("Goal tweaked; it remains paused. /goal resume to continue.", "info");
     return true;
   }
   ctx.ui.notify("Goal tweaked. The loop continues against the new objective.", "info");
