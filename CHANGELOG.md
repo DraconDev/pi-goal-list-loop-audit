@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Loop-sweep refinability
+
+`/loop refine` works on resumable-held loops (field 2026-09-16 loop
+sweep): the hint queues, then the byte-identical resume path runs —
+refine-and-resume (owner choice), with wrong-branch and active-goal
+guards keeping their voices so the loop stays held when they fire. Dead
+loops stay refused with the honest path (`/loop start` for ended runs,
+the agent `propose_loop_refine` repair for broken measures — no hint is
+queued onto a loop that can never run again). The agent tool predicate
+accepts parked loops too, so both surfaces agree (parity matrix pinned;
+broken-measure stays tool-only by design). `stop`/`pause`/`finish`/
+`status`/`resume` already handled held loops gracefully — sweep found no
+further dead spots.
+
 ### Paused-goal tweak
 
 `/goal tweak` accepts a paused goal instead of stranding it behind a
