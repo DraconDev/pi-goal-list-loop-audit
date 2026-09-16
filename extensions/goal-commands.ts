@@ -108,7 +108,7 @@ export interface CommandDeps {
   resetContinuationDispatchState: (cwd: string) => boolean;
   isCompletionAuditRecoveryPending: (goal: Goal | null | undefined) => boolean;
   markCompletionAuditRecoveryPending: (ctx: ExtensionContext, reason: string) => boolean;
-  retryStoredCompletionAudit: (origin?: "complete-goal" | "provider-retry" | "manual" | "session-recovery") => Promise<void>;
+  retryStoredCompletionAudit: (origin?: "complete-goal" | "provider-retry" | "manual" | "session-recovery" | "agent") => Promise<void>;
   probeMainModelRecovery: (ctx: ExtensionContext) => Promise<void>;
   releaseContinuationDispatchStandDown: () => void;
   releaseInitialSessionLoadBarrier: () => void;

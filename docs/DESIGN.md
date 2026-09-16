@@ -546,7 +546,7 @@ active → auditing          (complete_goal called)
 auditing → complete        (auditor <approved/>)
 auditing → active          (auditor <disapproved/>; reset iteration counter)
 active → paused            (pause_goal called, or stuck > 5 min, or empty turn)
-paused → active            (user /goal resume)
+paused → active            (user /goal resume, or resume_goal when the user authorized continuation in conversation)
 active → aborted           (user /goal cancel)
 ```
 

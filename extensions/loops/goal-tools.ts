@@ -135,6 +135,7 @@ isGoalRevisionCurrent,
   normalizeDurableDeferRecommendationInput,
   sanitizeFindingGroups,
   sanitizeGateRows,
+  supervisorPaused,
 } from "../goal-loop-core.js";
 import {
   applyValidatedBatch,
@@ -409,6 +410,7 @@ import {
   type LoopFlags,
 } from "../goal-loop.js";
 import { defineGoalRuntimeGlobal } from "./goal-runtime-globals.js";
+import { releaseAuditorSurface } from "./goal-auditor-surface.js";
 import { chooseObjectiveConflict, liveObjectives, type ObjectiveKind } from "../goal-objective-conflict.js";
 import { assessSuspiciousObjective } from "../faulty-objective-recovery.js";
 
@@ -584,7 +586,7 @@ function registerAgentTools(pi: any): void {
           // between "no goal" and "goal parked".
           const isList = state.goal.policy === "list";
           const resume = activeGoalSurfaceCommand("resume");
-          return { content: [{ type: "text", text: `No active goal — the ${isList ? "list item" : "goal"} is paused; ${resume} reactivates it (complete_goal only runs on an active item).` }], details: {} };
+          return { content: [{ type: "text", text: `No active goal — the ${isList ? "list item" : "goal"} is paused; ${resume} reactivates it (complete_goal only runs on an active item). If the user authorized continuation in this conversation, call resume_goal first, then re-submit the claim.` }], details: {} };
         }
         return { content: [{ type: "text", text: `No active goal — it is ${state.goal.status}.` }], details: {} };
       }
@@ -2272,6 +2274,110 @@ function registerAgentTools(pi: any): void {
           text: droppedImpossible
             ? "The list item was auto-dropped as impossible (blocked with no resume path) — the list moved on instead of stopping."
             : `Goal paused. The turn ends here — do NOT continue working. ${activeGoalSurfaceCommand("resume")} to continue.`,
+        }],
+        details: {},
+      };
+    },
+  }));
+
+  pi.registerTool(defineTool({
+    name: "resume_goal",
+    label: "Resume goal",
+    description: "Resume the paused goal or list item yourself when the user has authorized continuation in this conversation (answered a decision, waived the blocker, supplied the missing input, or the wait time arrived). This is the agent-side equivalent of /goal resume: it clears the pause and reactivates the goal, then returns — you MUST keep working in this same turn (work the objective, call complete_goal, or pause_goal again). It schedules nothing by itself. Never call it to bypass a pause whose blocker is still outstanding.",
+    parameters: Type.Object({
+      reason: Type.Optional(Type.String({
+        maxLength: 500,
+        description: "Why resuming now — the user's authorization in their words (e.g. 'user waived the live demo; will submit a tweaked claim'). Ledgered for auditability.",
+      })),
+    }),
+    async execute(_id, params, _signal, _onUpdate, execCtx) {
+      const foreignResume = foreignToolGuard(execCtx);
+      if (foreignResume) return { content: [{ type: "text", text: foreignResume }], details: {} };
+      const ctx = currentToolContext(execCtx);
+      if (!ctx) return staleToolResult();
+      const p = params as { reason?: string };
+      if (!state.goal) return { content: [{ type: "text", text: "No active goal." }], details: {} };
+      const noun = goalNoun();
+      if (state.goal.status !== "paused") {
+        if (state.goal.status === "active") {
+          return { content: [{ type: "text", text: `The ${noun} is already active — just continue working; no resume was needed.` }], details: {} };
+        }
+        if (state.goal.status === "auditing") {
+          return { content: [{ type: "text", text: `A detached completion auditor is in flight — wait for its verdict (the status line shows auditor running). ${activeGoalSurfaceCommand("cancel")} discards the pending claim.` }], details: {} };
+        }
+        const terminal = state.goal.status === "complete" || state.goal.status === "aborted";
+        if (terminal) {
+          return { content: [{ type: "text", text: `The ${noun} is ${state.goal.status} (archived) — it can't be resumed. ${state.goal.policy === "list" ? "/list add <objective> re-queues it." : "/goal <objective> starts a fresh one."}` }], details: {} };
+        }
+        return { content: [{ type: "text", text: `The ${noun} is ${state.goal.status} — nothing to resume.` }], details: {} };
+      }
+      // v0.28.21: one-active-thing — a paused goal must not resume over a
+      // live loop. Unblocking needs the user-typed /loop stop, so the tool
+      // refuses and names it instead of resuming into a held surface.
+      if (isLoopActive()) {
+        return { content: [{ type: "text", text: `A loop is active — one active thing at a time. Ask the user to /loop stop it first, then ${activeGoalSurfaceCommand("resume")} the ${noun}.` }], details: {} };
+      }
+      // A supervisor freeze (/glla pause) is a user-level machine decision —
+      // unfreezing stays user-typed. Main-model recovery is machinery-owned
+      // with its own timers — the tool must not cut in front of either.
+      if (supervisorPaused(state)) {
+        return { content: [{ type: "text", text: `Automation is frozen by /glla pause — ask the user to run ${activeGoalSurfaceCommand("resume")} (or lift the freeze) instead of resuming from the tool.` }], details: {} };
+      }
+      const rec = state.mainModelRecovery;
+      if (rec && (rec.retryAt || rec.pendingModelSwitch || rec.primaryProbeAt || rec.primaryProbeInFlight)) {
+        return { content: [{ type: "text", text: `Main-model recovery is pending — ask the user to run ${activeGoalSurfaceCommand("resume")} so the recovery probe runs first.` }], details: {} };
+      }
+      // A resume inside a stale session is theater — refuse and name the
+      // user command instead of flipping lifecycle state that cannot land.
+      if (warnIfStaleAtEntry(ctx, "agent resume")) {
+        return { content: [{ type: "text", text: `Resume refused in this stale session — ask the user to run ${activeGoalSurfaceCommand("resume")}.` }], details: {} };
+      }
+      // Mirror the /goal resume paused branch: refresh the token cap from
+      // current settings, clear every pause/interrupt marker, reactivate.
+      const freshLimit = loadSettings(ctx.cwd).tokenLimit ?? DEFAULT_TOKEN_LIMIT;
+      const usage = state.goal.usage
+        ? { tokensUsed: state.goal.usage.tokensUsed, tokensLimit: freshLimit }
+        : undefined;
+      const storedCompletion = state.goal.pendingCompletion;
+      const resumedId = state.goal.id;
+      const resumedPolicy = state.goal.policy;
+      const resumedObjective = state.goal.objective;
+      updateGoal({
+        status: "active",
+        pauseReason: undefined,
+        pauseSuggestedAction: undefined,
+        pauseKind: undefined,
+        pauseOptions: undefined,
+        pauseRecommended: undefined,
+        pauseResumeAt: undefined,
+        interruptedAt: undefined,
+        interruptedReason: undefined,
+        autoResumedAt: undefined,
+        autoResumedEvent: undefined,
+        ...(usage ? { usage } : {}),
+      }, ctx);
+      releaseAuditorSurface();
+      appendLedger(ctx.cwd, "goal_resumed", { via: "resume_goal", goalId: resumedId, reason: (p.reason ?? "").slice(0, 200) });
+      // A stored completion claim is a direct-audit resume, not an agent
+      // turn — same law as the manual path: re-fire the detached auditor
+      // instead of leaving an ACTIVE goal no timer would ever consume.
+      if (storedCompletion) {
+        ctx.ui.notify("Resuming the stored completion claim — starting a detached auditor (no agent turn needed).", "info");
+        void retryStoredCompletionAudit("agent");
+        return { content: [{ type: "text", text: `Resumed the ${noun} with its stored completion claim — a detached auditor is now running. Return without waiting or polling; GLLA delivers the verdict.` }], details: {} };
+      }
+      const queued = listQueue().length;
+      const slice = displaySlice(resumedObjective, 70);
+      ctx.ui.notify(
+        resumedPolicy === "list"
+          ? `Resumed list item [${resumedId}]: ${slice}${queued > 0 ? ` (+${queued} waiting in the list)` : ""}`
+          : `Resumed goal [${resumedId}]: ${slice}${queued > 0 ? ` (+${queued} waiting in the list — resuming the list's head)` : ""}`,
+        "info",
+      );
+      return {
+        content: [{
+          type: "text",
+          text: `Resumed the ${noun} — it is active again. Continue working in THIS turn: work the objective, call complete_goal when satisfied, or pause_goal again if blocked. Nothing was scheduled; an idle goal is re-kicked by the heartbeat.`,
         }],
         details: {},
       };

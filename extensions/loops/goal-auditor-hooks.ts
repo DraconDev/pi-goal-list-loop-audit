@@ -648,8 +648,11 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
     && (claim.phase ?? "recovery-pending") === "recovery-pending"
     && (claim.automaticRecoveryAttempted !== true || aggressive)
     && (!aggressive || startedMs < recoveryWindow.untilMs);
-  const freshAuditorCycle = origin === "manual" && claim.auditorFallbackExhausted === true;
-  const claimForAttempt = origin === "manual"
+  // An agent-tool resume carries the same in-conversation user
+  // authorization as a typed /goal resume, so an exhausted claim also
+  // starts a fresh cycle instead of re-walking a dead cursor.
+  const freshAuditorCycle = (origin === "manual" || origin === "agent") && claim.auditorFallbackExhausted === true;
+  const claimForAttempt = (origin === "manual" || origin === "agent")
     ? {
       ...claim,
       retryAttempts: undefined,
@@ -987,10 +990,12 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   if (origin === "session-recovery") {
     appendLedger(liveCtx.cwd, "audit_recovery_started", { goalId, attemptId: claim.attemptId });
   } else {
-    appendLedger(liveCtx.cwd, "goal_resumed", { via: origin === "manual" ? "manual-audit" : "provider-retry-direct-audit" });
+    appendLedger(liveCtx.cwd, "goal_resumed", { via: origin === "manual" ? "manual-audit" : origin === "agent" ? "agent-audit" : "provider-retry-direct-audit" });
   }
   liveCtx.ui.notify(origin === "manual"
     ? "Manual /goal verify — starting the detached auditor now (no agent turn needed)."
+    : origin === "agent"
+      ? "Agent-resumed completion claim — starting the detached auditor now (no agent turn needed)."
     : origin === "session-recovery"
       ? "Fresh session recovered the interrupted completion audit — starting a detached retry for the stored claim."
       : "Auditor provider retry is due — starting a detached retry with your stored completion claim (no agent turn needed).", "info");
@@ -1036,7 +1041,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   completionAuditInFlight = true;
   completionAuditGeneration = generation;
   latestAuditProgress = {
-    label: origin === "session-recovery" ? "recovery starting" : origin === "manual" ? "manual verify" : "provider retry",
+    label: origin === "session-recovery" ? "recovery starting" : origin === "manual" ? "manual verify" : origin === "agent" ? "agent resume" : "provider retry",
     phase: "starting",
     model: modelRef(auditorModel),
     via: via ?? "unset",
@@ -1433,7 +1438,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     // is the agent's completionSummary when captured; the objective is the
     // fallback for legacy/aborted goals.
     const terminalReason = `auditor ${result.model} approved (${origin})`;
-    const approvalVia = `${origin === "manual" ? " on /goal verify" : origin === "session-recovery" ? " after session recovery" : " on the provider retry"}${fallbackUsed ? " after an auditor-model fallback" : ""}`;
+    const approvalVia = `${origin === "manual" ? " on /goal verify" : origin === "agent" ? " after an agent resume" : origin === "session-recovery" ? " after session recovery" : " on the provider retry"}${fallbackUsed ? " after an auditor-model fallback" : ""}`;
     // v0.38.20: the chat record pointer. Computed pre-archive like the
     // render below (archiveCurrentGoal clears state.goal).
     const approvalRecord = `— record: ${path.relative(liveCtx.cwd, archivedGoalPath(liveCtx.cwd, state.goal.id)) || archivedGoalPath(liveCtx.cwd, state.goal.id)}`;
