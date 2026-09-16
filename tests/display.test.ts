@@ -106,13 +106,15 @@ test("version tail rides the status on every branch (field 20260909_161057)", ()
 
 test("monitor goals use the eye icon and do not masquerade as a stuck queue", () => {
   const daemon = goalOf({ objective: "Keep the book-daemon health monitor running" });
+  // v0.38.57 (owner concern 4): age alone is NOT monitoring evidence — an
+  // old queued goal still reads as queued, never as a watched process.
   const longRunning = goalOf({
     objective: "Grow the music catalog",
     createdAt: "2026-07-20T12:00:00Z",
   });
   const ordinary = goalOf({ objective: "Create x.txt", createdAt: "2026-07-21T11:59:00Z" });
   assert.equal(isMonitorGoal(daemon, NOW), true);
-  assert.equal(isMonitorGoal(longRunning, NOW), true);
+  assert.equal(isMonitorGoal(longRunning, NOW), false, "age alone never implies monitoring");
   assert.equal(isMonitorGoal(ordinary, NOW), false);
 
   const status = buildStatusText(
@@ -1759,7 +1761,10 @@ test("v0.34.64: retry-class pause shows uniform auto-retrying countdown; no QUOT
     pauseReason: 'main model recovery — retrying in 15m (main model quota: 429 {"message":"Token Plan usage limit reached"})',
     pauseResumeAt: new Date(Date.now() + 23 * 3600_000).toISOString(),
     pauseSuggestedAction: "The provider/quota wall is being retried automatically; /list resume retries immediately.",
-  });
+    // v0.38.57: production always writes recovery evidence with a retry
+    // wait — the fixture matches the real writer (goal-recovery.ts:792).
+    recoveryEpisodeKey: "test-episode:provider",
+  } as Partial<Goal>);
   const state = { goal: g, list: [{ id: "next", objective: "later", addedAt: "z" }], loop: null };
   const w = buildWidgetLines(state as never)!;
   assert.ok(w.some((l) => l.includes("auto-retrying") && l.includes("next probe in")), `countdown: ${w.join("\n")}`);
@@ -1785,14 +1790,16 @@ test("v0.34.64: ambiguous (transient 503) recovery is shown with the same auto-r
     pauseKind: "wait",
     pauseReason: "main model recovery — retrying in 15m (main model transient: 503 temporarily unavailable)",
     pauseResumeAt: new Date(Date.now() + 15 * 60_000).toISOString(),
-  });
+    // v0.38.57: fixture carries the recovery evidence production writes.
+    recoveryEpisodeKey: "test-episode:transient",
+  } as Partial<Goal>);
   const state = { goal: g, list: [], loop: null };
   const w = buildWidgetLines(state as never)!;
   assert.doesNotMatch(w.join("\\n"), /QUOTA WALL/, "no QUOTA WALL banner ever");
   assert.match(w.join("\\n"), /auto-retrying/, "uses the uniform auto-retrying line");
   const s = buildStatusText(state as never)!;
   assert.match(s, /auto-retrying/);
-  assert.doesNotMatch(s, /waiting(?! for)/, "old `waiting` badge is gone");
+  assert.doesNotMatch(s, /waiting(?! for you)/, "old `waiting` badge is gone");
 });
 
 test("v0.34.102: paused goal parked on mainModelRecovery renders as RECOVERING, not paused (widget head + card)", () => {
