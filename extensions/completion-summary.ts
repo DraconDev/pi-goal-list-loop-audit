@@ -182,22 +182,7 @@ export interface HumanCompletionBrief {
 export function chatSafeDetailValue(value: string): string {
   // v0.38.45 audit: loop the innermost-group strip to a fixpoint
   // (bounded) — a single pass left nested husks like "(log )" behind.
-  let withoutGroups = value;
-  for (let pass = 0; pass < 5; pass++) {
-    const next = withoutGroups.replace(/\([^()]*\)/g, (group) => {
-    // A parenthesized group that carries nothing but stripped tokens and
-    // receipt words is machine packaging — drop the whole group so no
-    // `( tarball )` husk survives. Groups with real words stay verbatim.
-    const inner = group
-      .slice(1, -1)
-      .replace(/(?:\/var)?\/tmp\/\S+/g, "")
-      .replace(/(?<!\S)\S+\.tgz\b/g, "")
-      .replace(/\btarballs?\b|\blogs?\b/gi, "");
-    return /[a-z]/i.test(inner) ? group : "";
-    });
-    if (next === withoutGroups) break;
-    withoutGroups = next;
-  }
+  let withoutGroups = stripMachineGroups(value);
   const stripped = withoutGroups
     .replace(/(?:\/var)?\/tmp\/\S+/g, "")
     .replace(/\btarballs?\s+\S+\.tgz\b/gi, "")
@@ -220,7 +205,18 @@ export function humanCompletionBrief(
 ): HumanCompletionBrief {
   const lines = completionSummaryLines(text, Math.max(outcomeBudget, valueBudget));
   const rawOutcome = (lines[0] ?? "").replace(/^Outcome:\s*/, "");
-  const outcome = clipSummaryValue(briefValueContent(rawOutcome) ?? "done", outcomeBudget);
+  // 2026-09-16 field shots: the headline echo must summarize the ask, not
+  // flatten section-structured Outcome markdown into one clipped line. The
+  // lead paragraph (text before the first section header) is the human
+  // summary; headers ride only in the ### Summary section.
+  const structured = structuredSummaryLines(text);
+  const lead = structured
+    ? (structured.join("\n").split(/\n(?=#{2,4}\s)/)[0] ?? "")
+      .split("\n")
+      .filter((l) => l.trim() && !/^#{1,4}\s/.test(l.trim()))
+      .join(" ")
+    : "";
+  const outcome = clipSummaryValue(briefValueContent(lead || rawOutcome) ?? "done", outcomeBudget);
   const details: string[] = [];
   for (const line of lines.slice(1)) {
     const separator = line.indexOf(":");
@@ -337,17 +333,39 @@ export function rawLabelValue(text: string, label: string): string | null {
   return value || null;
 }
 
+/** Drop parenthesized groups whose content is nothing but machine
+ * packaging (paths, tarballs, log words) after inner stripping. Groups
+ * with real words stay verbatim. Bounded to a fixpoint so nested husks
+ * like "(log )" cannot survive. Shared by chat and structured strips. */
+function stripMachineGroups(value: string): string {
+  let out = value;
+  for (let pass = 0; pass < 5; pass++) {
+    const next = out.replace(/\([^()]*\)/g, (group) => {
+      const inner = group
+        .slice(1, -1)
+        .replace(/(?:\/var)?\/tmp\/\S+/g, "")
+        .replace(/(?<!\S)\S+\.tgz\b/g, "")
+        .replace(/\btarballs?\b|\blogs?\b/gi, "");
+      return /\w/.test(inner) ? group : "";
+    });
+    if (next === out) break;
+    out = next;
+  }
+  return out;
+}
+
 /** Machine-token strip for structured lines. chatSafeDetailValue also
  * collapses multi-space runs, which would damage markdown table
  * alignment padding — structured lines keep their spacing and drop
  * only the archive-only tokens. */
 function stripMachineTokens(line: string): string {
-  return line
+  return stripMachineGroups(line)
     .replace(/(?:\/var)?\/tmp\/\S+/g, "")
     // Attempt a greedy token match only at its start, not at every byte
     // of a long nonmatching token (quadratic on pathological summaries).
     .replace(/(?<!\S)\S+\.tgz\b/g, "")
     .replace(/\(\s*\)/g, "")
+    .replace(/\s+([,.;:])/g, "$1")
     .replace(/\s+$/u, "");
 }
 
