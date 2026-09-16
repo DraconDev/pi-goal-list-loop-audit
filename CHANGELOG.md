@@ -1,6 +1,19 @@
 # Changelog
 
-## Unreleased
+## 0.38.56 — Refine-and-resume loops, chatter-resolving tweaks (2026-09-16)
+
+### Context-inferred tweak objectives
+
+`/goal tweak`, `/list tweak`, and the bare-tweak dialog resolve chatter
+against the session context instead of adopting it (field 2026-09-16 —
+the VidPro ledger recorded `objective:"ok adjsut it"`). Self-contained
+text still adopts verbatim; an acknowledgment (`go`, `ok adjust it`)
+resolves via the discussed context and the confirm shows
+CURRENT → INFERRED; with nothing clear discussed, a guidance message
+names the shape and nothing changes. An explicit `Done when:` contract
+stays verbatim — explicit intent wins. Raw chatter never reaches the
+ledger on any adoption path (including the plain-`/goal` conflict
+update, which funnels through the same resolver).
 
 ### Loop-sweep refinability
 
