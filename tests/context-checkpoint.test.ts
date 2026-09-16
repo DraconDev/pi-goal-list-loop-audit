@@ -175,11 +175,13 @@ test("real continuation payload growth is bounded after checkpoint projection", 
   // consent guidance — +348 serialized bytes on the one retained payload.
   // Audit 2026-09-15: parity-accurate claim guidance + one-action Next
   // language — +313 serialized bytes on the one retained payload
-  // (+311 chars, +2 em dashes).
+  // (+311 chars, +2 em dashes). Agent resume (Screenshot_20260916_090307):
+  // paused-goal agent self-resume guidance — +377 serialized bytes on the
+  // one retained payload (+375 chars, +1 em dash).
   assert.deepEqual(bounded, [
-    { count: 5, messageCount: 4, serializedBytes: 27805, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },
-    { count: 12, messageCount: 4, serializedBytes: 27805, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },
-    { count: 25, messageCount: 4, serializedBytes: 27805, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },
+    { count: 5, messageCount: 4, serializedBytes: 28182, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 4 },
+    { count: 12, messageCount: 4, serializedBytes: 28182, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 11 },
+    { count: 25, messageCount: 4, serializedBytes: 28182, gllaMessageCount: 2, repeatedPayloads: 0, removedPayloads: 24 },
   ]);
   // Serialized bytes consistent across counts (bounded by checkpoint + 1 payload)
   const b0 = bounded[0]!;

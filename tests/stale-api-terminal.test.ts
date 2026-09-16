@@ -216,7 +216,7 @@ test("v0.32.0: audit-opportunistic fix batch — dispose, keys, caps, message", 
   assert.match(AUD, /skipSameProviderRungs/); // one dead backend does not burn a launch per rung
   // v0.34.108/0.34.142: the old process-local/provider-specific counters
   // are gone; a manual-origin audit starts a fresh generic retry window.
-  assert.match(GOAL, /const freshAuditorCycle = origin === "manual" && claim\.auditorFallbackExhausted === true/);
+  assert.match(GOAL, /const freshAuditorCycle = \(origin === "manual" \|\| origin === "agent"\) && claim\.auditorFallbackExhausted === true/);
   assert.match(GOAL, /retryAttempts: undefined,\s*retryFirstAt: undefined,\s*retryUntil: undefined/);
   assert.match(GOAL, /auditorCandidateRefs: undefined,\s*auditorCandidateRef: undefined,\s*auditorRetryCandidateRef: undefined/);
   assert.match(GOAL, /handing off to a fresh pi context — /); // entry probe names the lifecycle handoff honestly

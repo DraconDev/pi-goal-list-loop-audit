@@ -146,10 +146,10 @@ test("v0.28.27/0.29.8: /goal verify (renamed from /goal audit) — manual audito
   assert.match(CMDS, /void retryStoredCompletionAudit\("manual"\);/);
   // Engine parametrized: origin flows into ledger + notifies + archive reason.
   assert.match(SRC, /origin: CompletionAuditOrigin = "provider-retry"/);
-  assert.match(SRC, /via: origin === "manual" \? "manual-audit" : "provider-retry-direct-audit"/);
+  assert.match(SRC, /via: origin === "manual" \? "manual-audit" : origin === "agent" \? "agent-audit" : "provider-retry-direct-audit"/);
   // v0.34.25: the shared completion engine annotates manual,
   // recovery, provider-retry, and model-fallback approval paths in one template.
-  assert.match(SRC, /const approvalVia = `\$\{origin === "manual" \? " on \/goal verify" : origin === "session-recovery" \? " after session recovery" : " on the provider retry"\}\$\{fallbackUsed/);
+  assert.match(SRC, /const approvalVia = `\$\{origin === "manual" \? " on \/goal verify" : origin === "agent" \? " after an agent resume" : origin === "session-recovery" \? " after session recovery" : " on the provider retry"\}\$\{fallbackUsed/);
   assert.ok(SRC.includes("Manual /goal verify — starting the detached auditor now"));
 });
 
