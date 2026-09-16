@@ -6171,3 +6171,4 @@
 {"type":"terminal_completion_notice_sent","value":{"goalId":"20260915230254-205ibo","payloadChars":3505},"at":"2026-09-15T23:57:51.791Z"}
 {"type":"terminal_approval_render_replayed","value":{"goalId":"20260915230254-205ibo","createdAt":"2026-09-15T23:57:51.770Z"},"at":"2026-09-15T23:57:51.791Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":null,"contextUsage":{"tokens":107908,"contextWindow":200000,"percent":53.954}},"at":"2026-09-16T08:13:02.373Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":2273,"outputTokens":852,"cacheReadTokens":132465,"cacheWriteTokens":0,"totalTokens":135590},"contextUsage":{"tokens":135590,"contextWindow":200000,"percent":67.795}},"at":"2026-09-16T08:53:18.129Z"}
