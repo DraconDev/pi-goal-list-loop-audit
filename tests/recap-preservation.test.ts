@@ -93,5 +93,13 @@ test("repair re-claim preserves the whole-work recap in the approved render", { 
   assert.match(chat, /Shipped the search rollout end to end/, "the whole-work outcome leads the repair-approved render");
   assert.match(chat, /2223 pass/, "the whole-work verification proof survives the repair re-claim");
   assert.match(chat, /rollout doc plus full suite/, "the whole-work evidence survives");
+  // Archive parity: the durable record's rich terminal section must carry
+  // the same whole-work lead, not just the delta-only repair claim.
+  const record = (chat.match(/• record: (\S+\.md)/) ?? [])[1];
+  assert.ok(record, "chat carries the archive record pointer");
+  const archiveMd = fs.readFileSync(path.join(cwd, record), "utf-8");
+  assert.match(archiveMd, /## Terminal summary/);
+  assert.match(archiveMd, /Shipped the search rollout end to end/, "the whole-work recap survives into the archived terminal section");
+  assert.match(archiveMd, /2223 pass/, "the whole-work proof survives into the archive");
   assert.ok(JSON.parse(fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf-8").trim().split("\n").at(-1)!));
 });

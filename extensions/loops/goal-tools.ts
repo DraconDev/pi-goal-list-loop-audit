@@ -1388,6 +1388,8 @@ function registerAgentTools(pi: any): void {
           stopReason: terminalReason,
           archivePath: manualArchivePath,
           completionSummary: state.goal.completionSummary,
+          // 2026-09-16 whole-work recap: same merge as the detached path.
+          ...(durableCompletionClaim.priorCompletionSummary ? { priorCompletionSummary: durableCompletionClaim.priorCompletionSummary } : {}),
           approval: `— auditor ${result.model} approved.`,
           record: manualArchiveRecord,
           // v0.38.37: the deliberate non-do rides the durable claim.

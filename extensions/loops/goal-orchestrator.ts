@@ -1153,7 +1153,7 @@ function archiveCurrentGoal(
   // it carries the same rich markdown as chat over the verbatim
   // six-label machine record. Built from the terminal goal AFTER the
   // summary fence resolves, so chat and archive cannot disagree.
-  const richSection = buildRichArchiveSection(terminalGoal, status, archivePath, opts?.findingGroups, opts?.gateRows);
+  const richSection = buildRichArchiveSection(terminalGoal, status, archivePath, opts?.findingGroups, opts?.gateRows, goal.pendingCompletion?.priorCompletionSummary);
   const richMd = `${md}\n## Terminal summary\n\n${richSection.join("\n")}\n`;
   // An existing same-id archive is an immutable fence. Check it before
   // publishing an intent so an unrelated/sentinel winner can never make the

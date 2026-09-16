@@ -736,8 +736,11 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
 export function buildRichArchiveSection(goal: Goal, status: Status, archivePath: string, findingGroups?: FindingGroup[], gateRows?: GateRow[]): string[] {
   const facts: CompletionSummaryFacts = { goal, status, archivePath };
   const summary = resolveCompletionSummary(facts, goal.completionSummary).summary;
-  const brief = humanCompletionBrief(summary, 140, RICH_FULL_VALUE_BUDGET);
-  const structured = structuredSummaryLines(summary);
+  // 2026-09-16 whole-work recap: the archived card leads with the whole
+  // work too when the final audited claim was a delta-only repair note.
+  const priorWholeWork = goal.pendingCompletion?.priorCompletionSummary;
+  const brief = humanCompletionBrief(summary, 140, RICH_FULL_VALUE_BUDGET, priorWholeWork);
+  const structured = structuredSummaryLines(summary) ?? structuredSummaryLines(priorWholeWork);
   const history = goal.auditHistory ?? [];
   const latest = history[history.length - 1];
   const approval = latest
