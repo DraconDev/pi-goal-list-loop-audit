@@ -30,7 +30,10 @@ const GLOBAL_SETTINGS_PATH = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
 
 function ledgerEntries(cwd: string): Array<{ type: string; via?: string; reason?: string }> {
   return fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8").split("\n").filter(Boolean)
-    .map((line) => JSON.parse(line) as { type: string; via?: string; reason?: string });
+    .map((line) => {
+      const entry = JSON.parse(line) as { type: string; via?: string; reason?: string; value?: { via?: string; reason?: string } };
+      return { type: entry.type, via: entry.via ?? entry.value?.via, reason: entry.reason ?? entry.value?.reason };
+    });
 }
 
 function pausedGoal(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -89,11 +92,14 @@ test("resume_goal reactivates a paused goal and clears every pause marker", asyn
 
 test("resume_goal on an already-active goal answers instead of churning state", async () => {
   const cwd = tmpCwd();
-  seedState(cwd, { goal: seedGoal({ objective: "already running — done when pinned" }) });
+  seedState(cwd, {});
   const pi = new MockPi();
   activate(pi.api);
   const ctx = await boot(pi, cwd);
   try {
+    await pi.command("goal", "already running — done when pinned", ctx);
+    await tick();
+    assert.equal(readState(cwd).goal?.status, "active");
     const before = ledgerEntries(cwd).length;
     const result = await pi.runTool("resume_goal", {}, ctx) as { content: Array<{ text: string }> };
     assert.match(result.content[0]!.text, /already active/, "no-op is named, not executed");
@@ -180,10 +186,9 @@ test("resume_goal refuses while main-model recovery is pending", async () => {
 
 test("resume_goal refuses a terminal goal with the real recovery path", async () => {
   const cwd = tmpCwd();
-  const goal = seedGoal({ status: "aborted", objective: "aborted objective — done when never" });
-  fs.mkdirSync(path.join(cwd, ".pi-glla", "archive"), { recursive: true });
-  fs.writeFileSync(path.join(cwd, ".pi-glla", "archive", `${(goal as { id: string }).id}.md`), "**Status**: aborted\n");
-  seedState(cwd, { goal });
+  // No archive file: an unarchived aborted slot persists through startup
+  // so the tool's terminal answer is what gets exercised.
+  seedState(cwd, { goal: seedGoal({ status: "aborted", objective: "aborted objective — done when never" }) });
   const pi = new MockPi();
   activate(pi.api);
   const ctx = await boot(pi, cwd);
