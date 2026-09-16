@@ -1335,7 +1335,7 @@ function registerAgentTools(pi: any): void {
             ...(escGateRows ? { gateRows: escGateRows } : {}),
             ...(escRepoState ? { repoState: escRepoState } : {}),
           });
-          if (!archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: escFindingGroups, gateRows: escGateRows })) {
+          if (!archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: escFindingGroups, gateRows: escGateRows, priorCompletionSummary: durableCompletionClaim.priorCompletionSummary })) {
             return {
               content: [{ type: "text", text: "The audit was aborted, but the terminal archive could not be persisted. The goal remains active; fix persistence and retry." }],
               details: {},
@@ -1405,7 +1405,7 @@ function registerAgentTools(pi: any): void {
         });
         const manualObjective = state.goal.objective;
         const manualGoalId = state.goal.id;
-        const archived = archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: durableCompletionClaim.findingGroups, gateRows: durableCompletionClaim.gateRows });
+        const archived = archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: durableCompletionClaim.findingGroups, gateRows: durableCompletionClaim.gateRows, priorCompletionSummary: durableCompletionClaim.priorCompletionSummary });
         if (!archived) {
           // The archive helper preserves the live objective and emits the
           // persistence warning. Stop here: an approved verdict is not a
