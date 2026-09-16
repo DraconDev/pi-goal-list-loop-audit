@@ -12,6 +12,16 @@ import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { buildSeedGrillMessage } from "../extensions/goal-loop-core.js";
+
+test("seeded drafting requires tool-first choices and a concrete next handoff", () => {
+  const prompt = buildSeedGrillMessage("Draft", "Improve setup", "propose_goal_draft");
+  assert.match(prompt, /MUST use ask_user_question when available/);
+  assert.match(prompt, /genuinely free-form questions or tool unavailability/);
+  assert.match(prompt, /dependent questions only after the earlier answers/);
+  assert.match(prompt, /never end a turn merely promising questions/);
+  assert.match(prompt, /wait for the user — do not autonomously repeat it/);
+});
 
 const DRAFTING_PROMPTS = [
   "goal-loop-draft.md",
