@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Paused-goal tweak
+
+`/goal tweak` accepts a paused goal instead of stranding it behind a
+resume round-trip (field 2026-09-16, the VidPro park: tweak bounced
+with "No active goal to tweak" while the goal sat paused). Mirrors
+`/list tweak`, which is paused-only: the tweak applies, the goal stays
+paused with its pause reason intact, nothing is scheduled, and the
+result points at `/goal resume`. The nothing-to-tweak refusal now reads
+"No goal to tweak. /goal <objective> to start one."
+
 ### Structured-long summaries
 
 A section-structured `Outcome` (2+ `##`–`####` headers, tables) now
