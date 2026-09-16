@@ -1456,7 +1456,12 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       status: "complete",
       stopReason: terminalReason,
       archivePath: approvalArchivePath,
+      // 2026-09-16 whole-work recap: after a repair re-claim the audited
+      // summary may be a delta-only correction; the FIRST claim's recap
+      // leads so the card still explains the whole work. The audited
+      // repair claim stays the substance the approval verdict covers.
       completionSummary: state.goal.completionSummary,
+      priorCompletionSummary: claim.priorCompletionSummary,
       approval: `— auditor ${result.model} approved${approvalVia}.`,
       record: approvalRecord,
       // v0.38.37: the deliberate non-do the agent claimed, if any.

@@ -810,6 +810,14 @@ function registerAgentTools(pi: any): void {
       // v0.38.52: same for the agent-supplied gate inventory.
       const sanitizedGroups = sanitizeFindingGroups(p.findingGroups);
       const sanitizedGates = sanitizeGateRows(p.gateRows);
+      // 2026-09-16 whole-work recap: a re-claim after an auditor disapproval
+      // is usually a delta-only repair note. Keep the FIRST claim's text so
+      // the approved terminal render still opens with the whole work; the
+      // audited repair claim stays the substance.
+      const lastAuditEntry = state.goal.auditHistory?.[state.goal.auditHistory.length - 1];
+      const priorWholeWork = lastAuditEntry?.disapproved && state.goal.completionSummary?.trim()
+        ? state.goal.completionSummary
+        : undefined;
       const completionClaim = beginCompletionAudit(ctx, {
         completionSummary: finalSummary,
         verificationSummary: p.verificationSummary,
@@ -818,6 +826,7 @@ function registerAgentTools(pi: any): void {
         ...(p.leftOut?.trim() ? { leftOut: p.leftOut.trim().slice(0, 500) } : {}),
         ...(sanitizedGroups ? { findingGroups: sanitizedGroups } : {}),
         ...(sanitizedGates ? { gateRows: sanitizedGates } : {}),
+        ...(priorWholeWork ? { priorCompletionSummary: priorWholeWork } : {}),
         at: nowIso(),
       }, "complete-goal");
       if (!completionClaim) {

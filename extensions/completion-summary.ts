@@ -856,6 +856,11 @@ export interface TerminalApprovalRenderInput {
    * buildFinalRepoStateLines(cwd). Absent keeps the section out.
    */
   repoState?: string[];
+  /** 2026-09-16 whole-work recap: the FIRST claim's completionSummary in
+   * this terminal episode. When the audited claim is a delta-only repair
+   * note, the render leads with the whole work instead (headline, Summary
+   * section, and the flat findings fallback); absent stays absent. */
+  priorCompletionSummary?: string;
 }
 
 export interface TerminalApprovalRender {
@@ -897,12 +902,15 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     resolveCompletionSummary(facts, candidate).summary,
     140,
     RICH_FULL_VALUE_BUDGET,
+    input.priorCompletionSummary,
   );
   // Structured-long (field 2026-09-16): a section-structured Outcome
   // earns the full `### Summary` section on the terminal card (and the
   // archive human layer). Headline echo, verification, Next, recap, and
   // every recycled payload keep their bounds.
-  const structured = structuredSummaryLines(resolveCompletionSummary(facts, candidate).summary);
+  const resolvedSummary = resolveCompletionSummary(facts, candidate).summary;
+  const structured = structuredSummaryLines(resolvedSummary)
+    ?? structuredSummaryLines(input.priorCompletionSummary);
   // v0.38.37 (audit 2026-09-08): the deliberate non-do comes from the
   // agent's complete_goal leftOut claim — never invented. Filler ("none")
   // drops via the same briefValueContent filter; absent stays absent.
