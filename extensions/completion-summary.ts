@@ -202,23 +202,31 @@ export function humanCompletionBrief(
   text: string | undefined,
   outcomeBudget = 140,
   valueBudget = 120,
+  priorWholeWork?: string,
 ): HumanCompletionBrief {
   const lines = completionSummaryLines(text, Math.max(outcomeBudget, valueBudget));
   const rawOutcome = (lines[0] ?? "").replace(/^Outcome:\s*/, "");
+  // 2026-09-16 whole-work recap: when the audited claim is a delta-only
+  // repair note, the whole-work recap from the FIRST claim leads. The
+  // repair details still ride; the headline summarizes the whole work.
+  const priorLines = priorWholeWork ? completionSummaryLines(priorWholeWork, Math.max(outcomeBudget, valueBudget)) : [];
+  const priorDetails = priorLines ? priorLines.slice(1) : [];
+  const mergedDetails = [...priorDetails, ...lines.slice(1)];
+  const outcomeSource = priorLines[0]?.replace(/^Outcome:\s*/, "") ?? rawOutcome;
   // 2026-09-16 field shots: the headline echo must summarize the ask, not
   // flatten section-structured Outcome markdown into one clipped line. The
   // lead paragraph (text before the first section header) is the human
   // summary; headers ride only in the ### Summary section.
-  const structured = structuredSummaryLines(text);
+  const structured = structuredSummaryLines(text) ?? structuredSummaryLines(priorWholeWork);
   const lead = structured
     ? (structured.join("\n").split(/\n(?=#{2,4}\s)/)[0] ?? "")
       .split("\n")
       .filter((l) => l.trim() && !/^#{1,4}\s/.test(l.trim()))
       .join(" ")
     : "";
-  const outcome = clipSummaryValue(briefValueContent(lead || rawOutcome) ?? "done", outcomeBudget);
+  const outcome = clipSummaryValue(briefValueContent(lead || outcomeSource) ?? "done", outcomeBudget);
   const details: string[] = [];
-  for (const line of lines.slice(1)) {
+  for (const line of mergedDetails) {
     const separator = line.indexOf(":");
     if (separator < 0) continue;
     const content = briefValueContent(line.slice(separator + 1));
