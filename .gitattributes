@@ -1,5 +1,8 @@
 # --- BEGIN DRACON MANAGED BLOCK ---
 # managed by dracon-warden
+* filter=dracon
+**/creds.json filter=dracon diff=dracon merge=dracon
+**/keys.json filter=dracon diff=dracon merge=dracon
 *.age filter=dracon diff=dracon merge=dracon
 *.key filter=dracon diff=dracon merge=dracon
 *.pem filter=dracon diff=dracon merge=dracon
@@ -10,6 +13,8 @@
 .env.production filter=dracon diff=dracon merge=dracon
 .env.turso filter=dracon diff=dracon merge=dracon
 affiliate/.env.credentials.md filter=dracon diff=dracon merge=dracon
+config/creds.json filter=dracon diff=dracon merge=dracon
+config/keys.json filter=dracon diff=dracon merge=dracon
 config/licenses.json filter=dracon diff=dracon merge=dracon
 config/licenses.test.json filter=dracon diff=dracon merge=dracon
 config/services.json filter=dracon diff=dracon merge=dracon
