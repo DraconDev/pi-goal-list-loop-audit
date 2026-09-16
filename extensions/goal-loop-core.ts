@@ -823,19 +823,17 @@ export function routeListText(cwd: string, raw: string, opts?: { explicitAdd?: b
   if (importFile) return { kind: "file", path: importFile };
   if (raw.includes("\n")) {
     const pasted = parseListImport(raw);
-    // Field 2026-09-16: split into a batch ONLY on explicit list
-    // structure (bullets, numbers, checklist boxes). A prose paragraph
-    // wrapped over lines is ONE piece of work told in several sentences —
-    // batching it offered "sentences as items or nothing". Unstructured
-    // multi-line text drafts instead, where the interview proposes it
-    // whole (see the paragraph-seeds rule in goal-loop-draft.md).
-    // Explicit `/list add` keeps line-batch when any line already
-    // carries its own contract: the user handed over line-items, some
-    // complete (a contract-less subtask ref still resolves against its
-    // parent — v0.34.81). Pure prose under `add` still drafts
-    // (the v0.19.0 gate: no contract anywhere, no quality bypass).
-    const anyContractedLine = pasted.length > 1 && pasted.some((line) => /\bdone\s+when\b/i.test(line));
-    if (pasted.length > 1 && (hasExplicitListStructure(raw) || (opts?.explicitAdd === true && anyContractedLine))) {
+    // Record boundaries come from the text, never the add/import alias.
+    // An inline contract must have an objective before it; standalone
+    // contract headers/bodies belong to the surrounding paragraph.
+    // Contractless subtask declarations are explicit records too (their
+    // parent resolution remains the enqueue layer's responsibility).
+    const independentRecords = pasted.every((line) => {
+      if (/^Subtask\s+of\s*:/i.test(line)) return true;
+      const marker = /\bdone\s+when\b/i.exec(line);
+      return !!marker && /[\p{L}\p{N}]/u.test(line.slice(0, marker.index));
+    });
+    if (pasted.length > 1 && (hasExplicitListStructure(raw) || independentRecords)) {
       return { kind: "batch", items: pasted };
     }
   }

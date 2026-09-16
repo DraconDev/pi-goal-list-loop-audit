@@ -172,6 +172,20 @@ test("routeListText: field 2026-09-16 — explicit add batches mixed contracted 
   if (r.kind === "batch") assert.equal(r.items.length, 2);
 });
 
+test("audit 2026-09-16: bare list preserves independently contracted records", () => {
+  const raw = "Fix login. Done when: login passes\nUpdate docs. Done when: docs built";
+  assert.deepEqual(routeListText("/nonexistent", raw), {
+    kind: "batch", items: raw.split("\n"),
+  });
+});
+
+test("audit 2026-09-16: add preserves a paragraph with a standalone contract", () => {
+  const raw = "Overhaul the overlay.\nKeep the layout.\nDone when: screenshot matches.";
+  assert.deepEqual(routeListText("/nonexistent", raw, { explicitAdd: true }), {
+    kind: "direct", text: raw,
+  });
+});
+
 test("routeListText: pasted bullets preserve item wording and contracts", () => {
   const r = routeListText("/nonexistent", "# Plan\n- [ ] Keep punctuation!\n2) Check x. Done when: grep -q ok x\n");
   assert.deepEqual(r, {

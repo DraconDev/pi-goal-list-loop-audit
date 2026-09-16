@@ -527,3 +527,12 @@ Verified vs disk before recording. Disposed without findings (rationale): goal-l
 - [x] FIX: LOW: release-pack-smoke required[] pins zero docs//media entries though files ships whole docs/, media/, examples/ dirs (scripts/release-pack-smoke.mjs:47) — fixed in e5a069f3
 - [x] DECIDED 2026-09-15: keep the one-concrete-action Next rule (v0.38.39 Codex); parity language scoped to findings/values in 79e44dd — no behavior change, nothing to queue.
 - [x] DECIDED 2026-09-15: raise the trust boundary to 12 groups x 20 findings — implemented in 79e44dd, nothing left to queue.
+
+## Fresh audit — 2026-09-16
+
+- [ ] FIX: HIGH: Bare /list collapses independently contracted records into the first objective's contract (extensions/goal-loop-core.ts:837).
+- [ ] FIX: MEDIUM: /list add splits paragraph and standalone Done when clause into separate items because any contracted line triggers batching (extensions/goal-loop-core.ts:837).
+- [ ] FIX: MEDIUM: Acknowledgment-prefixed compound tweak objectives are misclassified as chatter and replaced by unrelated context or refused (extensions/start-context.ts:317).
+- [ ] FIX: LOW: Paragraph routing documentation omits contract exceptions and pasted-list instructions also classify arbitrary multiline prose as a list (CHANGELOG.md:9; prompts/goal-loop-draft.md:76).
+- [ ] FIX: MEDIUM: Paragraph command regression checks notification only, not preservation of the actual seed; inferred-tweak consent rejection lacks behavioral coverage (tests/behavioral-orchestrator.test.ts:1077).
+- [ ] FIX: MEDIUM: Held-loop refine regression does not verify resumed dispatch/history or wrong-branch refusal (tests/behavioral-orchestrator.test.ts:1088).
