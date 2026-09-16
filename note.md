@@ -7,6 +7,10 @@ we can have longer summaries too this is a good example that it can be extremely
 
 # Later
 
+##
+list didnt use the question tool
+/home/dracon/Pictures/Screenshots/Screenshot_20260916_120648.png 
+
 # Research
 investigate 
 https://pi.dev/packages/pi-goal-x?name=pi+goal+x https://github.com/tmonk/pi-goal-x

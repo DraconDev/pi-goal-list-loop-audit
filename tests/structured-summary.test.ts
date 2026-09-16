@@ -143,6 +143,20 @@ test("guard: pathological structured values end with an honest pointer", () => {
   assert.ok(text.endsWith("… (truncated for chat — full text in the archived record.)"), "honest truncation pointer");
 });
 
+test("doctrine: horizon lives in Summary, Next names only the immediate move", () => {
+  const withRoadmap = STRUCTURED
+    .replace("## Part 2: rollout\nSlice 1 lands first.", "## Part 2: rollout\nSlice 1 lands first.\n## Part 3: later slices\nSlices 2 and 3 follow after slice 1.");
+  const { chatLines } = render(withRoadmap);
+  const summaryIdx = chatLines.indexOf("### Summary");
+  const findingsIdx = chatLines.indexOf("### Key Findings & Remediation");
+  const summaryBlock = chatLines.slice(summaryIdx + 1, findingsIdx - 1);
+  assert.ok(summaryBlock.some((line) => line.includes("Slices 2 and 3 follow")), "horizon stays visible in Summary");
+  const nextIdx = chatLines.indexOf("### Next");
+  const nextBlock = chatLines.slice(nextIdx + 1).filter((line) => line.startsWith("- "));
+  assert.equal(nextBlock.length, 1, `one immediate move, got: ${JSON.stringify(nextBlock)}`);
+  assert.match(nextBlock[0] ?? "", /implement slice 1/, "the immediate move leads");
+});
+
 test("archive human layer carries the same Summary section", () => {
   const section = buildRichArchiveSection(structuredGoal(STRUCTURED), "complete", ".pi-glla/archive/20260916-structured.md");
   assert.ok(section.includes("### Summary"), "archive parity");

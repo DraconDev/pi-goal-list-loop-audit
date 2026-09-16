@@ -7,9 +7,11 @@
 A section-structured `Outcome` (2+ `##`–`####` headers, tables) now
 renders in full as the card's `### Summary` section — a working document
 is no longer truncated into a status ping (field 2026-09-16, the
-keyword-review close). Structure is the price of length: unstructured
-values keep today's budgets, the headline echo stays short, and the
-one-action Next rule is untouched. Delivery-only (terminal card +
+keyword-review close). The card answers two questions, informative over
+long: Summary carries what happened plus the horizon (slices 2–3),
+`Next` still names only the single immediate move (slice 1). Structure
+is the price of length: unstructured values keep today's budgets and
+the headline echo stays short. Delivery-only (terminal card +
 archive human layer) with a 100k pathological guard pointing at the
 archive; headline, verification, recap, and every recycled per-tick
 payload stay bounded.

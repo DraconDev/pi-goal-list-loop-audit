@@ -72,6 +72,13 @@ Rules for the format:
   than implying that an approved audit proves more than it did.
 - `Next` is a human-facing hand-off hint. It must not silently enqueue or
   mutate a goal/list item; queue state remains owned by the existing commands.
+- The card answers two questions (field 2026-09-16): **what happened, and
+  what the good next move is** — informative over long. `Outcome` may be a
+  section-structured working document (`##`/`###` headers, tables); it
+  renders in full as the Summary section and may carry the horizon
+  (slices 2–3). `Next` still names only the single immediate move
+  (slice 1): length is permitted wherever clarity needs the room, never
+  as a goal in itself.
 - Do not write “auditor approved” in the executor recap. The orchestrator adds
   the independent verdict on its own surface, preserving the distinction
   between an executor claim and an auditor decision.
