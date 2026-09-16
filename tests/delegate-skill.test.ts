@@ -49,7 +49,9 @@ test("skill documents consent and auto-activation boundaries", () => {
 });
 
 test("skill treats pasted list-like input as supplied, not an exactness choice", () => {
-  assert.match(SKILL, /multi-line, bulleted, numbered, or checklist-style/);
+  assert.match(SKILL, /explicitly structured list/);
+  assert.match(SKILL, /Line wrapping alone does not make prose a list/);
+  assert.match(SKILL, /keep a paragraph as one item/);
   assert.match(SKILL, /one `list_add` call/);
   assert.match(SKILL, /Do \*\*not\*\* ask whether the user wants the list/);
   assert.match(SKILL, /there is no such choice/);
