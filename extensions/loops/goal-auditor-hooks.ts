@@ -395,7 +395,7 @@ function clearDetachedAuditRuntime(): void {
   completionAuditRecoveryArmed = false;
 }
 
-type CompletionAuditOrigin = "complete-goal" | "provider-retry" | "manual" | "session-recovery";
+type CompletionAuditOrigin = "complete-goal" | "provider-retry" | "manual" | "session-recovery" | "agent";
 
 function clearScheduledAuditorRecoveryTimer(): void {
   if (scheduledAuditorRecoveryTimer) clearTimeout(scheduledAuditorRecoveryTimer);
@@ -953,6 +953,9 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   // retries and session-recovery re-starts stay parked while the supervisor
   // is paused. Explicit manual requests (`/goal resume`, `/goal verify`)
   // still run: the user typed them, so they are not "automatic machinery".
+  // The `agent` origin (resume_goal tool) is refused by the tool itself
+  // while the supervisor is paused, so it never passes this gate either —
+  // unfreezing stays a user-typed decision.
   // v0.35.23: exemptLoadHold carves out ONE narrow path from the automatic
   // LOAD HOLD (never from a manual /glla pause): a main-model-recovery
   // triggered retry. The claim was parked by provider infrastructure
