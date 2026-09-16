@@ -13,6 +13,18 @@ section (branch, HEAD, tree cleanliness, best-effort) closes the card
 ahead of the record trailer. One surface per fact is preserved: the banner
 owns the verdict, the footer stays liveness-only.
 
+Agent-side resume (field incident Screenshot_20260916_090307): a paused goal
+whose blocker the user waives in conversation no longer bounces back to the
+user as a pointless `/goal resume` round-trip. The new `resume_goal` tool is
+the agent-side equivalent of `/goal resume` — same ownership/staleness
+admission, but it schedules nothing (the live turn owns what happens next)
+and refuses everything it must not touch: live loops, `/glla pause` freezes,
+pending main-model recovery, stale sessions, and non-paused states name the
+real user command. A cold-load hold releases like any explicit work command
+(same as `/goal resume`); a stored completion claim re-fires through a new
+`agent` audit origin with the manual-equivalent fresh cycle. The paused
+`complete_goal` refusal now points at `resume_goal` first.
+
 ## Unreleased — Auditor retries like main (unified recovery envelope)
 
 Field evidence (hellhunter/junk-runner 2026-09-16): a burned auditor

@@ -210,8 +210,21 @@ test("resume_goal refuses a terminal goal with the real recovery path", async ()
   }
 });
 
+test("resume_goal keeps its live-loop refusal (source-pinned defense-in-depth)", () => {
+  // A live loop beside a paused goal is unreachable through restore
+  // (recency arbitration) and creation (replace archives) — but the guard
+  // must survive refactors, so its text is pinned like cmdResume's in
+  // replace-resume-intent.test.ts.
+  const src = fs.readFileSync(path.resolve("extensions/loops/goal-tools.ts"), "utf-8");
+  const handler = src.slice(src.indexOf('name: "resume_goal"'));
+  assert.match(handler, /A loop is active — one active thing at a time/);
+  assert.match(handler, /\/loop stop it first/);
+});
+
 // The screenshot regression: pause → resume_goal → complete_goal must flow
 // with no `/goal resume` round-trip in between.
+// (The fake-auditor binaries below MUST emit a tool_execution_start/end
+// cycle: a verdict with zero tool calls never settles — probe10, 2026-09-16.)
 test("paused → resume_goal → complete_goal flows without a manual resume", async () => {
   fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({}));
   const cwd = tmpCwd();
@@ -221,6 +234,8 @@ let handled = false;
 process.stdin.on("data", () => { if (handled) return; handled = true;
 setTimeout(() => {
 const emit = e => process.stdout.write(JSON.stringify(e) + "\\n");
+emit({type:"tool_execution_start",toolCallId:"read",toolName:"read",args:{path:"README.md"}});
+emit({type:"tool_execution_end",toolCallId:"read"});
 emit({type:"message_update",assistantMessageEvent:{type:"text_delta",delta:"<evidence>tweaked claim read</evidence>\\n<approved/>"}});
 emit({type:"agent_settled"});
 }, 350); });`);
@@ -278,6 +293,8 @@ let handled = false;
 process.stdin.on("data", () => { if (handled) return; handled = true;
 setTimeout(() => {
 const emit = e => process.stdout.write(JSON.stringify(e) + "\\n");
+emit({type:"tool_execution_start",toolCallId:"read",toolName:"read",args:{path:"README.md"}});
+emit({type:"tool_execution_end",toolCallId:"read"});
 emit({type:"message_update",assistantMessageEvent:{type:"text_delta",delta:"<evidence>stored claim read</evidence>\\n<approved/>"}});
 emit({type:"agent_settled"});
 }, 350); });`);
