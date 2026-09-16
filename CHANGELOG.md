@@ -6,11 +6,21 @@
 
 Typed multi-sentence prose to `/list` no longer routes to the
 "Import into list?" sentence-split (field 2026-09-16 — the only
-options were sentences-as-items or nothing). The router batches only
-on explicit list structure (≥2 bulleted, numbered, or checklist
-lines); unstructured prose drafts instead, and the draft prompt now
+options were sentences-as-items or nothing). The router batches explicit
+list structure (≥2 bulleted, numbered, or checklist lines) or independent
+records with inline contracts / subtask declarations, identically for bare
+`/list` and its add/import aliases. A standalone `Done when:` block stays
+with its paragraph; contract-less prose drafts instead. The draft prompt
 states the rule: a paragraph is ONE item proposed whole, split only on
 request or when the interview establishes genuinely separate tasks.
+
+### Audit follow-up
+
+Acknowledgment-prefixed compound tweaks such as “OK, fix login and update
+its tests” remain explicit replacements, rather than being mistaken for
+chatter and redirected to older session context. Added regression coverage
+for routing boundaries, full paragraph seed forwarding, inferred-tweak
+confirmation rejection, and held-loop history/reset and wrong-branch guards.
 
 ## 0.38.56 — Refine-and-resume loops, chatter-resolving tweaks (2026-09-16)
 
