@@ -530,6 +530,16 @@ const pauseIsError = (g: Goal): boolean => ERROR_PAUSE.test(g.pauseReason ?? "")
 type PauseKind = "decision" | "error" | "wait" | "blocked";
 const pauseKind = (g: Goal): PauseKind | undefined => g.pauseKind ?? (pauseIsError(g) ? "error" : undefined);
 
+/** 2026-09-16 truthful pause ownership: a wait is a GLLA-supervised retry
+ * only when durable recovery evidence exists (a stored claim or a recovery
+ * episode). A bare timed pause written by pause_goal is a DELIBERATE USER
+ * WAIT — the user owns the resume; labeling it "auto-retrying / recovery
+ * timer" claimed supervision that does not exist. Absent evidence stays
+ * user-owned (absent stays absent). */
+function isSupervisedWait(g: Goal): boolean {
+  return !!g.pendingCompletion || !!g.recoveryEpisodeKey;
+}
+
 /** A released completion claim is infrastructure debt, not a semantic verdict.
  * Keep the MAIN/worker roles explicit so a dead detached auditor cannot make
  * the host look detached or leave the user staring at an indefinite wait. */

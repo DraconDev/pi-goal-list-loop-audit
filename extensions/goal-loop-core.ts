@@ -732,16 +732,17 @@ export function objectiveIsUserSeeded(goal: Pick<Goal, "objective" | "createdVia
 }
 
 /**
- * A long-running goal whose next turn is a health check should not look like
- * a wedged queue. Keep this predicate pure and shared by scheduling and both
- * TUI surfaces so a goal cannot be throttled without receiving the matching
- * monitoring icon (or vice versa).
+ * A goal whose next turn is a health check should not look like a wedged
+ * queue. Monitoring requires EVIDENCE in the objective (a named watch job);
+ * v0.38.57 (2026-09-16): age alone no longer implies monitoring — an old
+ * queued goal is still queued, not a watched external process. Keep this
+ * predicate pure and shared by scheduling and both TUI surfaces so a goal
+ * cannot be throttled without receiving the matching monitoring icon
+ * (or vice versa).
  */
 export function isMonitorGoal(goal: Pick<Goal, "objective" | "createdAt">, now = Date.now()): boolean {
   const objective = goal.objective.toLowerCase();
-  if (/daemon|supervisor|keep.*running|monitor|healthz|book-daemon/.test(objective)) return true;
-  const started = Date.parse(goal.createdAt);
-  return Number.isFinite(started) && now - started > 60 * 60 * 1000;
+  return /daemon|supervisor|keep.*running|monitor|healthz|book-daemon/.test(objective);
 }
 
 /**
