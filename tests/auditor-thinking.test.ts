@@ -6,7 +6,9 @@ const model = (over: Record<string, unknown> = {}): any => ({ reasoning: true, .
 
 test("supported requested level is used verbatim", () => {
   assert.equal(resolveAuditorThinkingLevel(model(), "high"), "high");
-  assert.equal(resolveAuditorThinkingLevel(model(), "max"), "max");
+  // xhigh/max are opt-in per model: absent map support falls to high.
+  assert.equal(resolveAuditorThinkingLevel(model(), "max"), "high");
+  assert.equal(resolveAuditorThinkingLevel(model({ thinkingLevelMap: { max: "max-output" } }), "max"), "max");
 });
 
 test("unsupported xhigh/max fall downwards; mapped nulls are skipped", () => {
