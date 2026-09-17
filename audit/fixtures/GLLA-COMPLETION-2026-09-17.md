@@ -24,7 +24,7 @@ Historical example adapted from Screenshot_20260916_224518.png. Renderer inputs 
 | --- | --- | --- | --- |
 | Before-fix probe | Historical starvation reproduction | FAIL | 4 failed before the fix |
 | After-fix probe | Historical same probe | PASS | 152 passed, 0 failed |
-| Release gate | Screenshot: 2225 tests across 217 files | PASS | 2223 pass, 0 fail; screenshot did not enumerate the remaining checks |
+| Release gate | Screenshot: 2225 tests across 217 files | REPORTED | 2223 pass, 0 fail; screenshot did not enumerate the remaining checks |
 
 ### Next
 - **Unresolved** — Historical screenshot evidence only; the screenshot does not enumerate every check in the release total.
@@ -55,7 +55,7 @@ Historical example adapted from Screenshot_20260916_224518.png. Renderer inputs 
 | --- | --- | --- | --- | --- |
 | Before-fix probe | bun test tests/starvation.test.ts | Historical starvation reproduction | FAIL | 4 failed before the fix |
 | After-fix probe | — | Historical same probe | PASS | 152 passed, 0 failed |
-| Release gate | TMPDIR=/var/tmp npm run release:check | Screenshot: 2225 tests across 217 files | PASS | 2223 pass, 0 fail; screenshot did not enumerate the remaining checks |
+| Release gate | TMPDIR=/var/tmp npm run release:check | Screenshot: 2225 tests across 217 files | REPORTED | 2223 pass, 0 fail; screenshot did not enumerate the remaining checks |
 | Audit | — | auditor verdict | APPROVED ×1 | audit: auditor approved (1 verdict) |
 
 ### Next

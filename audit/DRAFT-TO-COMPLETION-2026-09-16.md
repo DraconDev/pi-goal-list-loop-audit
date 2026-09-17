@@ -178,3 +178,53 @@ and unperformed-check text remain in grouped/flat chat and archive. These are
 synthetic inputs and do not claim a live validation run. Final diff check passes.
 Raw full-gate SHA256: 33a7251e1fc4b1472ab3e10b29e13d357656330aa98a96027eca5066bd4a3f61.
 Raw publish-log SHA256: d4d279a88e669ddaaca906bc29ad6c66b269c1891d77868c794f341e68783776.
+
+
+## Failure-first verification (0.38.61)
+
+The 08:10 auditor correctly found that testsRowStatus only examined the first
+numeric failure count and interpreted negated `pass` as success. All numeric
+failure counts now participate and any positive count wins, regardless of a
+prior zero or later green rerun. Negated/uncertain success is REPORTED. A
+standalone uncounted substring no longer earns PASS: complete affirmative
+status phrases remain compatible. Gate and legacy rows share this derivation
+in chat and archive, with original notes unchanged.
+
+The first attempted edit had a vacuous test and duplicate helper; its apparent
+6-pass result (/var/tmp/glla-v61-initial.log) is INVALID evidence and was removed.
+The receipt test file was restored byte-for-byte to v0.38.60. A separate real
+production test initially indexed an absent archive Command column incorrectly;
+that red trace (/var/tmp/glla-v61-red.log) is NOT the valid baseline. Adding a
+fixture command established the correct matrix; /var/tmp/glla-v61-red-corrected.log
+records 7 pass / 9 fail against original production code, including both exact
+auditor counterexamples. /var/tmp/glla-v61-focused.log then recorded 56 pass / 0 fail.
+
+Fresh read-only reviewer 99cfc62f-05ee-4302-b4d9-17e21e2e9cab verified the source
+and actual assertions and identified the residual `unable to pass` substring
+case. Accepted and repaired before publication, not deferred. Its inference
+that legacy rows already passed pre-fix is incorrect: assertions stop on the
+first surface; both surfaces use the same helper. Source review is not an
+independently executed test. Restricting success initially rejected existing
+`routing suite passed` and `bun test — pass` phrases: honest failed full gate
+/var/tmp/glla-v0.38.61-final-gate.log (2271 pass / 2 skip / 4 fail). Complete
+recognized affirmative phrases restore compatibility without changing existing
+assertions; /var/tmp/glla-v61-compatibility.log = 48 pass / 0 fail.
+
+FINAL command: `TMPDIR=/var/tmp timeout 1800 npm run release:check`.
+/var/tmp/glla-v0.38.61-release-gate.log = **2275 pass / 2 skip / 0 fail**,
+2277 tests across 224 files, typecheck/state-import/auditor fixture/package
+inspection/installed 0.38.61 tarball/skill smoke all pass. Same skipped
+AgentManager RPC and watched-repo integration; no claim they executed.
+Release-file diff checks pass; a concurrent owner addition to note.md has
+trailing whitespace and is left untouched. tests/verification-status.test.ts has 21 cases across
+chat/archive × inventory/legacy, exact status assertions and intact notes.
+All existing tests remain unchanged. Screenshot projections regenerated:
+GLLA's explicitly incomplete historical total is conservatively REPORTED
+instead of PASS; original counts and limitation remain intact in both views.
+Deathrun and Neonbreak projections are unchanged. Saved/read audit/fixtures/VERIFICATION-STATUS-2026-09-17.md: mixed
+counts FAIL, negation and unable-to-pass REPORTED in chat and archive. All
+synthetic/historical fixtures remain clearly labeled, not live check claims.
+
+No changes to lifecycle, ownership, drafting, recap preservation or receipt
+filtering. Owner additions to note.md Later observed at turn start are retained;
+only the publication statement in Next will be reconciled. Publication follows.
