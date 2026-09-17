@@ -280,3 +280,31 @@ has trailing whitespace; that content was not altered by this repair.
 This repair changes only verification aggregation, its tests and release/evidence
 files. Earlier drafting, display, lifecycle, receipt and recap behavior remains
 covered by the full gate. Fresh review and publication records follow.
+
+
+Fresh reviewer 503837e6-6edd-45c9-a39f-056565aa1cb3 returned OK with notes,
+BLOCKERS none. It inspected the changed helper and both call sites plus focused
+traces, not the full suite. Safe-direction vocabulary gaps (e.g. `10 checks
+passed`) intentionally remain REPORTED; no positive result is invented for
+unparsed notes. This is a documented conservative limitation, not a pending
+correctness fix. Red assertions stop at the first failing surface per case;
+the green matrix exercises all four surfaces. The separate exact replay
+/var/tmp/glla-v62-exact-repro.log passed all three auditor examples (30 other
+cases filtered out). No live UI capture or external-project checks are claimed.
+
+The release workflow 35208360182 and tag check 35208360219 succeeded at tag
+v0.38.62 (`d3da25ec`) on main. GitHub release published 2026-09-17T10:02:20Z:
+https://github.com/DraconDev/pi-goal-list-loop-audit/releases/tag/v0.38.62.
+Raw /var/tmp/glla-v0.38.62-publish.log confirms publish to npm latest with
+provenance transparency index 2877003763. Registry verification follows; an
+initial exact-version request returned E404 during propagation (no republish).
+
+
+Registry now verified: separate-shell npm version/latest both **0.38.62** in
+/var/tmp/glla-v0.38.62-registry.json; direct exact-version endpoint shasum
+**e81d1a5e91d95b148f61a8229771d1383deeb2da** matches CI
+(/var/tmp/glla-v0.38.62-registry-version.json). Tag/package/workflow version
+were cross-checked while propagation was pending; no mismatch and no publish
+error. No republish, recreated release, retagging or history rewrite. Full
+`git diff --check` now passes; the earlier owner-note whitespace warning is
+historical and no owner Later content was altered by this work.
