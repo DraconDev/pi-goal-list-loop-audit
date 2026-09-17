@@ -997,12 +997,19 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     });
     if (expired) {
       clearScheduledAuditorRecoveryTimer();
+      // The parked state must keep naming the exhausted chain: the previous
+      // reason already carries "Exhausted auditor chain: …" (set at retry
+      // scheduling); expiry prepends the reason it stopped, never replaces
+      // the diagnostic.
+      const priorReason = (guardedGoal.pauseReason ?? "").replace(/^auditor retry: /, "");
+      const priorChain = /Exhausted auditor chain: [^.]*\./.exec(priorReason)?.[0] ?? "";
+      const chainNotice = priorChain ? `${priorChain} ` : "";
       updateGoal({
         status: "paused",
         pendingCompletion: { ...pending, recoveryRetryAt: undefined },
         pauseKind: "blocked",
         pauseResumeAt: undefined,
-        pauseReason: "auditor retry: automatic recovery window ended before dispatch",
+        pauseReason: `auditor retry: ${chainNotice}automatic recovery window ended before dispatch`,
         pauseSuggestedAction: `The completion claim is stored, but the bounded window ended before dispatch. Check the auditor/model setup, then ${activeGoalSurfaceCommand("resume")} to start a fresh bounded window.`,
       }, initialCtx);
       appendLedger(initialCtx.cwd, "auditor_retry_dispatch_expired", {
