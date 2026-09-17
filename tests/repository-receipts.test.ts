@@ -22,12 +22,16 @@ test("repository-only findings are archive-only, without empty chat groups", () 
 });
 
 test("receipt filtering never hides failures, skips, or substantive ledger fixes", () => {
-  for (const proof of ["2 failed", "4 skipped", "10 partial", "not run — unavailable"]) {
+  for (const proof of ["2 failed", "4 skipped", "10 partial", "not run — unavailable", "unrun — unavailable"]) {
     const chat = render(true, [receipt], [proof]);
     assert.ok(chat.includes(proof));
     assert.match(chat, /Ledger/);
   }
-  assert.match(render(true, ["Ledger corruption: Concurrent writes lost records; serialized writes now preserve account state."]), /Concurrent writes lost records/);
+  const substantive = "Ledger corruption: Concurrent writes lost records; serialized writes now preserve account state.";
+  assert.match(render(true, [substantive]), /Concurrent writes lost records/);
+  const withProof = render(true, [substantive], ["Concurrent-write regression checked."]);
+  assert.match(withProof, /Concurrent writes lost records/);
+  assert.match(withProof, /Concurrent-write regression checked/);
 });
 
 test("flat receipts are archive-only while limitations remain visible", () => {

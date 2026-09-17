@@ -533,8 +533,8 @@ function chatNarrative(value: string): string {
  * result. Match receipt actions as well as subjects, not broad words like
  * "process" or "ledger": fixing ledger corruption is a substantive change.
  * Never suppress a finding carrying failed/skipped/partial/unrun evidence. */
-function isRepositoryReceipt(value: string): boolean {
-  if (/\b(?:fail(?:ed|ure|ures)?|skip(?:ped|s)?|partial|unresolved|not run|not tested|blocked|limitation)\b/i.test(value)) return false;
+function isRepositoryReceipt(value: string, proof = ""): boolean {
+  if (/\b(?:fail(?:ed|ure|ures)?|skip(?:ped|s)?|partial|unresolved|unrun|not run|not tested|blocked|limitation)\b/i.test(`${value} ${proof}`)) return false;
   return /\b(?:ledger|fix entries|closure record|traceability|append-only guard|working tree|repository state|repo state)\b/i.test(value)
     && /\b(?:checked|preserved the original record|record was corrected|clean|committed|pushed|verified findings|entries closed)\b/i.test(value);
 }
@@ -627,7 +627,7 @@ export function buildRichTerminalParts(args: {
   const banner = args.chat ? headline : `## ${kind} \u2014 ${bannerVerdict(auditStatus)}`;
   const groups = args.chat ? (args.groups ?? []).map(group => {
     const entries = group.findings.map((finding, i) => ({ finding, proof: group.tests?.[i] }))
-      .filter(({ finding, proof }) => !isRepositoryReceipt(`${finding} ${proof ?? ""}`));
+      .filter(({ finding, proof }) => !isRepositoryReceipt(finding, proof));
     return { ...group, findings: entries.map(entry => entry.finding), tests: entries.map(entry => entry.proof ?? "") };
   }).filter(group => group.findings.length > 0) : args.groups ?? [];
   const useTable = !args.chat && groups.length >= RICH_TABLE_GROUP_THRESHOLD;
