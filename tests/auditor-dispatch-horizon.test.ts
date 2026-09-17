@@ -89,7 +89,54 @@ process.stdin.once('data', () => {
   }
 });
 
-test("hourly backstop skips blocked capped claims before dispatch", () => {
+test("expired dispatch preserves the exhausted-chain diagnostic", { timeout: 30000 }, async () => {
+  const cwd = tmpCwd();
+  const pi = new MockPi();
+  __testOnlyResetOwnerSession();
+  __testOnlyResetStaleFlag();
+  __testOnlyResetTerminalFlags();
+  activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "dispatch-horizon-keep-chain" } });
+  seedState(cwd, { goal: null });
+  try {
+    await pi.fire("session_start", { reason: "startup" }, ctx);
+    const past = new Date(Date.now() - 60_000).toISOString();
+    // Post-burn retry-wait state: the exhausted chain is already named in the
+    // pause reason (set at retry scheduling); candidate cursor fields are
+    // cleared. Dispatch-time expiry must not overwrite that identity.
+    seedState(cwd, { goal: seedGoal({
+      status: "paused",
+      pauseKind: "wait",
+      pauseResumeAt: past,
+      pauseReason: "auditor retry: Exhausted auditor chain: provider/alpha → provider/beta. provider error",
+      pendingCompletion: {
+        at: new Date().toISOString(),
+        phase: "retry-waiting",
+        completionSummary: "Stored fixture claim",
+        verificationSummary: "Fixture only",
+        retryAttempts: 2,
+        retryFirstAt: past,
+        retryUntil: past,
+        automaticRecoveryUntil: past,
+      } as any,
+    }) });
+    __testOnlyLoadState(cwd);
+    await (globalThis as any).retryStoredCompletionAudit("provider-retry");
+    const goal = readState(cwd).goal as any;
+    assert.equal(goal.status, "paused");
+    assert.match(goal.pauseReason, /Exhausted auditor chain: provider\/alpha → provider\/beta/, "the chain name survives dispatch-time expiry");
+    assert.match(goal.pauseReason, /window ended before dispatch/);
+    assert.match(goal.pauseSuggestedAction ?? "", /resume/, "concrete recovery action stays");
+  } finally {
+    await pi.fire("session_shutdown", {}, ctx);
+    __testOnlyResetOwnerSession();
+    __testOnlyResetStaleFlag();
+    __testOnlyResetTerminalFlags();
+  }
+});
+
+// ─── regression for reviewer BLOCK (2026-09-17T14:07) ───
+
   // The backstop lives in goal-recovery.ts; pin its ineligibility guard so a
   // capped/blocked claim is never re-dispatched hourly after the window ends.
   const src = fs.readFileSync("extensions/goal-recovery.ts", "utf8");
