@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { chmod, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { spawn, type ChildProcess } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { tmpdir } from "node:os";
@@ -449,37 +449,36 @@ test("the real worker forwards ordered tool and report phases to the parent", { 
   const dir = await mkdtemp(path.join(tmpdir(), "glla-live-telemetry-"));
   const fakePi = path.join(dir, "phase-pi.mjs");
   const reports: AuditorProgress[] = [];
+  const ackPrefix = path.join(dir, "observed-");
   const fakePiSource = `
 import { setTimeout as sleep } from "node:timers/promises";
+import { existsSync } from "node:fs";
+const ackPrefix = ${JSON.stringify(ackPrefix)};
+async function observed(phase) {
+  const deadline = Date.now() + 20_000;
+  while (!existsSync(ackPrefix + phase)) {
+    if (Date.now() >= deadline) throw new Error('parent did not observe ' + phase);
+    await sleep(10);
+  }
+}
 let handled = false;
 process.stdin.on("data", async (chunk) => {
   if (handled || !String(chunk).includes("\\n")) return;
   handled = true;
   const out = (value) => process.stdout.write(JSON.stringify(value) + "\\n");
   out({ type: "agent_start" });
-  // v0.38.63: the thinking phase maps from agent_start until the first tool
-  // start. A 75ms hold was skippable by the sampled poll under load
-  // (auditor-disapproval 2026-09-17T18:21: intermittent missing "thinking"
-  // at tests/auditor-process.test.ts:506) — the same field flake v0.35.17
-  // fixed for producing_report. 600ms keeps the phase observably long; the
-  // ORDER assertions stay unchanged.
+  // Advance only after the real parent callback observes this sampled
+  // phase. Missing forwarding fails boundedly instead of relying on sleeps.
+  await observed('thinking');
   out({ type: "tool_execution_start", toolCallId: "read-1", toolName: "read", args: { path: "/repo/README.md" } });
-  await sleep(75);
+  await observed('tool_executing');
   out({ type: "tool_execution_start", toolCallId: "grep-2", toolName: "grep", args: { pattern: "artifact", path: "/repo/src" } });
   out({ type: "tool_execution_end", toolCallId: "read-1" });
   await sleep(75);
   out({ type: "tool_execution_end", toolCallId: "grep-2" });
   await sleep(75);
   out({ type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "<evidence>\\nartifact exists; tests pass\\n</evidence>\\n<approved/>" } });
-  // v0.35.17: hold the producing_report phase for 400ms. The parent samples
-  // progress.json on a >=10ms poll loop, but one slow read (load avg 12-16
-  // observed on this machine) can skip a 75ms window entirely — field flake.
-  // Real reports stream for seconds; 1500ms keeps the phase observably
-  // long without slowing the suite (v0.38.57: one full-suite run skipped
-  // the 400ms window entirely — load avg 12-16; the sampled poll never
-  // saw the phase. A longer hold keeps the ORDER assertion honest under
-  // load instead of weakening it).
-  await sleep(1500);
+  await observed('producing_report');
   out({ type: "agent_settled" });
 });
 `;
@@ -491,7 +490,12 @@ process.stdin.on("data", async (chunk) => {
       goal,
       model: "test/provider-model",
       thinkingLevel: "high",
-      onProgress: (progress) => reports.push(progress),
+      onProgress: (progress) => {
+        reports.push(progress);
+        if (["thinking", "tool_executing", "producing_report"].includes(progress.phase)) {
+          writeFileSync(ackPrefix + progress.phase, "observed");
+        }
+      },
       runtime: {
         workerPath: path.resolve(process.cwd(), "scripts/goal-auditor-worker.mjs"),
         env: { GLLA_PI_BINARY: fakePi },
