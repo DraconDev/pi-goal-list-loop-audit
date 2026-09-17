@@ -152,7 +152,7 @@ test("unified: no auditor-only attempt cap inside the shared horizon", () => {
   assert.equal(plan.unbounded, false);
 });
 
-test("v0.36.0: aggressive auditor recovery ignores the legacy horizon and attempt cap", () => {
+test("aggressive auditor recovery respects the fixed recovery horizon", () => {
   const plan = auditorRetryPlan(
     claim({ retryAttempts: 50, retryFirstAt: new Date(0).toISOString(), retryUntil: new Date(1).toISOString() }),
     providerFailure(0, false),
@@ -160,8 +160,33 @@ test("v0.36.0: aggressive auditor recovery ignores the legacy horizon and attemp
     true,
   );
   assert.equal(plan.attempt, 51);
-  assert.equal(plan.automatic, true);
-  assert.equal(plan.unbounded, true);
+  assert.equal(plan.automatic, false);
+  assert.equal(plan.unbounded, false);
+});
+
+test("manual-started timer retries preserve automatic provenance and clear exhausted cycle state", () => {
+  assert.doesNotMatch(SRC, /retryStoredCompletionAudit\(origin\);/);
+  assert.match(SRC, /retryStoredCompletionAudit\("provider-retry"\);/);
+  const burnedCycle = SRC.slice(SRC.indexOf('const burnCopy ='), SRC.indexOf('chainExhaustedToLadder = true;'));
+  for (const field of ['auditorAttemptedRefs', 'auditorRetryAttemptStartedAt', 'auditorFailureCount']) {
+    assert.ok(burnedCycle.includes(`${field}: undefined`), `fresh cycle clears ${field}`);
+  }
+});
+
+test("automatic plans advance counters while preserving their original envelope", () => {
+  let stored = claim();
+  let originalFirst: string | undefined;
+  let originalUntil: string | undefined;
+  for (let i = 1; i <= 4; i++) {
+    const plan = auditorRetryPlan(stored, undefined, undefined, true);
+    originalFirst ??= plan.firstAt;
+    originalUntil ??= plan.autoRetryUntil;
+    assert.equal(plan.attempt, i);
+    assert.equal(plan.firstAt, originalFirst);
+    assert.equal(plan.autoRetryUntil, originalUntil);
+    assert.ok(i === 1 ? plan.retryAfterSec === 5 : plan.retryAfterSec >= 60);
+    stored = claim({ retryAttempts: plan.attempt, retryFirstAt: plan.firstAt, retryUntil: plan.autoRetryUntil });
+  }
 });
 
 test("source pins: uniform eager retry and hourly probe wording are present at both dispatch sites", () => {
