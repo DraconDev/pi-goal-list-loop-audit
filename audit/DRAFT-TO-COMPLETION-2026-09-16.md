@@ -30,6 +30,21 @@ The correction is limited to the reported dangling introduction shape after a no
 - Subsequent prompt/tool description parity and comment cleanup: 30 pass / 0 fail across six affected files (`/var/tmp/glla-final-targeted.log`); typecheck and diff-check pass. No production behavior change after the full gate.
 - Failed intermediate verification runs remain in `/var/tmp/glla-wreos1-release-check*.log` and `/var/tmp/glla-v0.38.57-gate2.log`; they are not counted as successes. Old presentation assertions were updated to the confirmed chat/archive split. The detached approval test now releases its fake verdict only after observing repaint, removing a fixed-timer race. The telemetry fixture holds its report phase longer but remains a sampled observation test, not a guaranteed event stream.
 
+## Fresh review and dispositions
+
+The fresh read-only reviewer (`da35b8d2-6b4c-4448-b703-e2b51d214b15`, report `wreos1-contract-review.md`) found three valid recap defects and one drafting wording conflict. All were corrected before publication:
+
+- Multi-repair durability: objective-scoped `Goal.completionRecap` is persisted with the audit claim and survives disapproval/reload; a different objective does not inherit it. The registered-handler test now drives **two disapprovals** before final approval.
+- Full archival evidence: the original claim is appended verbatim in a labeled archive section; the regression includes a distinctive log path, hash, and over 10,000 characters of evidence.
+- Structured repair precedence: both headline and Summary select the original recap, whether plain or structured. A four-combination renderer matrix covers plain/structured original and repair claims.
+- Drafting wording: one rule now batches independent questions per phase and defers dependent questions until prerequisites are answered. Superseded literal UP FRONT assertions were updated without removing the batching/structured-picker checks.
+
+The multi-repair handler test failed before the fix (`/var/tmp/glla-multirepair-red.log`) and passed afterward (`/var/tmp/glla-multirepair-green.log`). Adjacent suites: 55 pass (`glla-recap-review-adjacent.log`), drafting suites 58 pass (`glla-review-fixes2.log`), matrix/context suites 21 pass (`glla-review-matrix.log`). Typecheck and diff-check passed.
+
+Full gate4 retained honestly at `/var/tmp/glla-v0.38.57-gate4.log`: 2240 pass / 2 skip / 3 fail. All three failures were explicit template-size pins after a +23 ASCII-byte continuation wording change, not cardinality/growth failures. Pins were refreshed by the per-payload delta; provider usage and cardinality assertions remain unchanged. No measurement implementation changed.
+
+Final full gate: `TMPDIR=/var/tmp timeout 1800 npm run release:check`, `/var/tmp/glla-v0.38.57-gate5.log`: **2244 pass / 2 skip / 0 fail**, 2246 tests across 221 files; typecheck, state-import/auditor fixture, package inspection, installed tarball import and skill smoke all passed. The same two environment-gated integrations remain skipped (AgentManager stop RPC and watched-repo auto-committer). This supersedes gate3 after the production review fixes.
+
 ## Release status
 
-Version 0.38.57 prepared, including the previous Unreleased paragraph-routing and audit fixes. Release-wide verification passed; fresh independent review and publication verification remain. This report is not a completion claim.
+Version 0.38.57 prepared, including the previous Unreleased paragraph-routing and audit fixes. Fresh review findings are resolved and final release-wide verification passed. Publication verification remains. This report is not a completion claim.
