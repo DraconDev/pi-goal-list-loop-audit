@@ -101,14 +101,14 @@ test("expired dispatch preserves the exhausted-chain diagnostic", { timeout: 300
   try {
     await pi.fire("session_start", { reason: "startup" }, ctx);
     const past = new Date(Date.now() - 60_000).toISOString();
-    // Post-burn retry-wait state: the exhausted chain is already named in the
-    // pause reason (set at retry scheduling); candidate cursor fields are
-    // cleared. Dispatch-time expiry must not overwrite that identity.
+    // Post-burn retry-wait state carrying the STRUCTURED exhausted chain
+    // (the shape produced by the burn path); dotted model IDs are the
+    // realistic case that broke reason-based extraction.
     seedState(cwd, { goal: seedGoal({
       status: "paused",
       pauseKind: "wait",
       pauseResumeAt: past,
-      pauseReason: "auditor retry: Exhausted auditor chain: provider/alpha → provider/beta. provider error",
+      pauseReason: "auditor retry: provider error",
       pendingCompletion: {
         at: new Date().toISOString(),
         phase: "retry-waiting",
@@ -118,13 +118,14 @@ test("expired dispatch preserves the exhausted-chain diagnostic", { timeout: 300
         retryFirstAt: past,
         retryUntil: past,
         automaticRecoveryUntil: past,
+        exhaustedChain: "openai/gpt-5.1 → google/gemini-2.5-pro",
       } as any,
     }) });
     __testOnlyLoadState(cwd);
     await (globalThis as any).retryStoredCompletionAudit("provider-retry");
     const goal = readState(cwd).goal as any;
     assert.equal(goal.status, "paused");
-    assert.match(goal.pauseReason, /Exhausted auditor chain: provider\/alpha → provider\/beta/, "the chain name survives dispatch-time expiry");
+    assert.match(goal.pauseReason, /Exhausted auditor chain: openai\/gpt-5\.1 → google\/gemini-2\.5-pro/, "the dotted-ID chain survives dispatch-time expiry verbatim");
     assert.match(goal.pauseReason, /window ended before dispatch/);
     assert.match(goal.pauseSuggestedAction ?? "", /resume/, "concrete recovery action stays");
   } finally {
