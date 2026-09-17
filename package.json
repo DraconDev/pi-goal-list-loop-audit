@@ -1,85 +1,85 @@
 {
-  "name": "pi-goal-list-loop-audit",
-  "version": "0.38.57",
-  "description": "Mission control for autonomous pi: interview-drafted goals, an audited task queue, and forever-loops (metric, spec, project-audit) that run for hours. A detached extension-less auditor process re-verifies every completion with raw evidence without holding the main pi turn; confirmed drafts, decision pauses and consent gates keep you in charge.",
-  "license": "AGPL-3.0-only",
-  "author": "dracon",
-  "type": "module",
-  "keywords": [
-    "pi-package",
-    "pi",
-    "pi-extension",
-    "goal",
-    "loop",
-    "list",
-    "audit",
-    "isolated-auditor",
-    "anti-bamboozle",
-    "agent-loop",
-    "long-running",
-    "verification-contract"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/DraconDev/pi-goal-list-loop-audit.git"
-  },
-  "homepage": "https://github.com/DraconDev/pi-goal-list-loop-audit#readme",
-  "bugs": {
-    "url": "https://github.com/DraconDev/pi-goal-list-loop-audit/issues"
-  },
-  "files": [
-    "extensions",
-    "skills",
-    "prompts",
-    "schemas",
-    "scripts",
-    "docs",
-    "examples",
-    "media",
-    "README.md",
-    "INSTALL.md",
-    "PLAN.md",
-    "LIST-PHILOSOPHY.md",
-    "CHANGELOG.md",
-    "LICENSE"
-  ],
-  "pi": {
-    "extensions": [
-      "extensions/loops/goal.ts"
-    ],
-    "skills": [
-      "skills/glla-delegate"
-    ]
-  },
-  "scripts": {
-    "check": "tsc --noEmit",
-    "test": "bun test --parallel=1 --max-concurrency=1 --timeout=60000",
-    "test:auditor-extensions": "node scripts/verify-auditor-extensions-offline.mjs",
-    "test:all": "bun test --parallel=1 --max-concurrency=1 --timeout=60000 && tsc --noEmit && node tests/repro-jiti-state-split.test.mjs && npm run test:auditor-extensions",
-    "release:check": "npm run test:all && npm pack --dry-run && node scripts/release-pack-smoke.mjs",
-    "test:jiti": "node tests/repro-jiti-state-split.test.mjs"
-  },
-  "peerDependencies": {
-    "@earendil-works/pi-agent-core": "*",
-    "@earendil-works/pi-ai": "*",
-    "@earendil-works/pi-coding-agent": "*",
-    "@earendil-works/pi-tui": "*",
-    "typebox": "*"
-  },
-  "devDependencies": {
-    "@earendil-works/pi-agent-core": "^0.84.2",
-    "@earendil-works/pi-ai": "^0.84.2",
-    "@earendil-works/pi-coding-agent": "^0.84.2",
-    "@earendil-works/pi-tui": "^0.84.2",
-    "jiti": "2.7.0",
-    "typebox": "^1.3.14",
-    "typescript": "^5.9.3",
-    "pi-subagents": "0.62.0"
-  },
-  "engines": {
-    "node": ">=22.19.0"
-  },
-  "publishConfig": {
-    "access": "public"
-  }
+	"name": "pi-goal-list-loop-audit",
+	"version": "0.38.58",
+	"description": "Mission control for autonomous pi: interview-drafted goals, an audited task queue, and forever-loops (metric, spec, project-audit) that run for hours. A detached extension-less auditor process re-verifies every completion with raw evidence without holding the main pi turn; confirmed drafts, decision pauses and consent gates keep you in charge.",
+	"license": "AGPL-3.0-only",
+	"author": "dracon",
+	"type": "module",
+	"keywords": [
+		"pi-package",
+		"pi",
+		"pi-extension",
+		"goal",
+		"loop",
+		"list",
+		"audit",
+		"isolated-auditor",
+		"anti-bamboozle",
+		"agent-loop",
+		"long-running",
+		"verification-contract"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/DraconDev/pi-goal-list-loop-audit.git"
+	},
+	"homepage": "https://github.com/DraconDev/pi-goal-list-loop-audit#readme",
+	"bugs": {
+		"url": "https://github.com/DraconDev/pi-goal-list-loop-audit/issues"
+	},
+	"files": [
+		"extensions",
+		"skills",
+		"prompts",
+		"schemas",
+		"scripts",
+		"docs",
+		"examples",
+		"media",
+		"README.md",
+		"INSTALL.md",
+		"PLAN.md",
+		"LIST-PHILOSOPHY.md",
+		"CHANGELOG.md",
+		"LICENSE"
+	],
+	"pi": {
+		"extensions": [
+			"extensions/loops/goal.ts"
+		],
+		"skills": [
+			"skills/glla-delegate"
+		]
+	},
+	"scripts": {
+		"check": "tsc --noEmit",
+		"test": "bun test --parallel=1 --max-concurrency=1 --timeout=60000",
+		"test:auditor-extensions": "node scripts/verify-auditor-extensions-offline.mjs",
+		"test:all": "bun test --parallel=1 --max-concurrency=1 --timeout=60000 && tsc --noEmit && node tests/repro-jiti-state-split.test.mjs && npm run test:auditor-extensions",
+		"release:check": "npm run test:all && npm pack --dry-run && node scripts/release-pack-smoke.mjs",
+		"test:jiti": "node tests/repro-jiti-state-split.test.mjs"
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-agent-core": "*",
+		"@earendil-works/pi-ai": "*",
+		"@earendil-works/pi-coding-agent": "*",
+		"@earendil-works/pi-tui": "*",
+		"typebox": "*"
+	},
+	"devDependencies": {
+		"@earendil-works/pi-agent-core": "^0.84.2",
+		"@earendil-works/pi-ai": "^0.84.2",
+		"@earendil-works/pi-coding-agent": "^0.84.2",
+		"@earendil-works/pi-tui": "^0.84.2",
+		"jiti": "2.7.0",
+		"typebox": "^1.3.14",
+		"typescript": "^5.9.3",
+		"pi-subagents": "0.62.0"
+	},
+	"engines": {
+		"node": ">=22.19.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
 }

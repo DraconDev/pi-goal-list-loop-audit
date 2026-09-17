@@ -34,11 +34,11 @@ test("long-running supervision is event-driven with 250ms→15s fallback, not du
 test("monitor goals are display-only — scheduling is event-driven for every plane", () => {
   const cont = fs.readFileSync(path.resolve("extensions/goal-continuation.ts"), "utf8");
   assert.match(cont, /scheduling is event-driven for every plane/i, "monitor throttle comment explains event-driven scheduling");
-  assert.match(cont, /isMonitorGoal stays pure for display parity/i);
+  assert.match(cont, /Objective keywords do not attest monitoring/i);
   assert.match(cont, /void MONITOR_CHECK_INTERVAL_MS; \/\/ deprecated throttle/i, "monitor throttle is retired but kept for compat");
   // the old throttle block must not be present as active scheduling logic
   assert.doesNotMatch(cont, /if\s*\(delayMs === undefined && state\.goal && isMonitorGoal/);
-  // display still shares the predicate so icon and throttling cannot diverge silently
+  // Compatibility predicate fails closed; no inferred monitor throttles work.
   const display = fs.readFileSync(path.resolve("extensions/goal-loop-display.ts"), "utf8");
   assert.match(display, /isMonitorGoal/);
   assert.match(display, /MONITORING/);

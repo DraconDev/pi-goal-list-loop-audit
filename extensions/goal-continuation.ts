@@ -51,7 +51,6 @@ import {
   isStaleApiError,
   supervisorPaused,
   objectiveIsUserSeeded,
-  isMonitorGoal,
   type Goal,
   type ObjectiveRepairTarget,
 } from "./goal-loop-core.js";
@@ -73,8 +72,8 @@ import { LENGTH_CONTINUE_MAX, LENGTH_CONTINUE_TEXT } from "./length-continue.js"
 // v0.38.0: GLLA_MONITOR_INTERVAL_MS throttling is deprecated — scheduling is
 // event-driven (250ms→15s adaptive fallback) for every plane, including
 // monitoring goals (see scheduleContinuation comment). Kept for env-var
-// compatibility; display parity still uses isMonitorGoal, but the checker no
-// longer waits a fixed 120s. The constants remain so an explicit env var does
+// compatibility; intent no longer drives monitoring labels or a fixed 120s
+// wait. The constants remain so an explicit env var does
 // not silently disappear from process state during a rolling upgrade.
 const DEFAULT_MONITOR_CHECK_INTERVAL_MS = 120_000;
 const configuredMonitorIntervalMs = Number(process.env.GLLA_MONITOR_INTERVAL_MS);
@@ -1119,15 +1118,13 @@ export function scheduleContinuation(ctx: ExtensionContext, force = false, delay
   } catch {
     return;
   }
-  // v0.38.0 (note.md Now — "keep checking instead of waiting"): monitoring
-  // goals remain visually distinct (👁 MONITORING badge via isMonitorGoal, shared
-  // with the TUI), but scheduling is event-driven for every plane — the 120s
+  // Scheduling is event-driven for every plane — the 120s
   // throttle used to delay implicit continuations for daemon/old goals and
   // made a 10s task wait up to 120s. The durable-state / lifecycle event +
   // 250ms→15s adaptive fallback in ContinuousSupervisor is the primary checker;
   // implicit continuation delay is 0 when idle, 50ms otherwise, never a guessed
-  // task-duration wait. isMonitorGoal stays pure for display parity, not for
-  // throttling the checker — a monitoring goal that actually finishes or
+  // task-duration wait. Objective keywords do not attest monitoring or
+  // throttle the checker — a goal that actually finishes or
   // progresses is picked up within the fallback window, not after a fixed age.
   // v0.34.104 ([Image-#1]): the post-list-completion settle window delays
   // the first continuation after a queue auto-advance. Any real agent

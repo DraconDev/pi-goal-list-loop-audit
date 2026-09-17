@@ -3,7 +3,7 @@
 
 # Next
 
-The four drafting/status reports are implemented; release verification is pending.
+The drafting/status work shipped in 0.38.57; the 0.38.58 monitor-label and citation repairs ship next.
 Screenshot mapping, bounded containment limits, and test evidence:
 `audit/DRAFT-TO-COMPLETION-2026-09-16.md`.
 
