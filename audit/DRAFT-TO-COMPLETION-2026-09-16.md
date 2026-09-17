@@ -47,4 +47,12 @@ Final full gate: `TMPDIR=/var/tmp timeout 1800 npm run release:check`, `/var/tmp
 
 ## Release status
 
-Version 0.38.57 prepared, including the previous Unreleased paragraph-routing and audit fixes. Fresh review findings are resolved and final release-wide verification passed. Publication verification remains. This report is not a completion claim.
+Version **0.38.57 published and registry-verified**, including the previous Unreleased paragraph-routing and audit fixes. Tag `v0.38.57` points to `cbb847d1649857ff9109579486518909f5a6f602` on main; no history rewriting.
+
+- Published release: https://github.com/DraconDev/pi-goal-list-loop-audit/releases/tag/v0.38.57 (2026-09-17T02:36:28Z).
+- Release workflow https://github.com/DraconDev/pi-goal-list-loop-audit/actions/runs/35175063587 succeeded, including 2244 pass / 2 skip / 0 fail and npm trusted publishing with provenance. Tag quality workflow 35175062734 also succeeded. Raw logs: `/var/tmp/glla-v0.38.57-publish.log`, `/var/tmp/glla-v0.38.57-tag-ci.log`.
+- Separate-shell `npm view pi-goal-list-loop-audit version dist-tags.latest --registry=https://registry.npmjs.org --prefer-online --json` returns **0.38.57 / 0.38.57** (`/var/tmp/glla-v0.38.57-registry.json`). Initial index checks returned 0.38.56 while npm processed the new version; no republish or credential change was attempted.
+- Direct version endpoint `/pi-goal-list-loop-audit/0.38.57` confirms tarball shasum `1cf0a29f072ad920a73bbe0e0040f959e809361f`, matching the publish log, plus SLSA provenance metadata (`/var/tmp/glla-registry-version.json`).
+- Running interactive Pi was not reloaded or upgraded during this goal; registry verification does not claim the already-running extension changed version. Isolated installed-tarball loading was verified by both local and release gates.
+
+Fresh review findings are resolved; terminal goal approval remains the detached auditor's decision.
