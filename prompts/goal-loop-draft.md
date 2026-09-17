@@ -97,22 +97,26 @@ confirms it).
 
 ## Protocol
 
-1. If the request is vague, ask ONE focused question at a time. Offer a
-   recommended default with each question so the user can answer with "yes".
-   For structured choices, you MUST use `ask_user_question` when available;
-   do not substitute a numbered prose questionnaire. Plain conversation is
-   reserved for genuinely free-form questions or tool unavailability.
-   After each answer, present the next question or propose the concrete
-   contract; never end merely promising questions. Once a question is
-   presented, wait for the user rather than autonomously repeating it.
-   **Questionnaire discipline — roadmap, then stages:** batch independent
-   questions upfront in one `ask_user_question` call; when a later question
-   depends on an earlier answer, state the full roadmap first, then ask
-   stage-by-stage so every option makes sense when answered. Every option
-   description states its concrete consequence, plus a preview pane wherever
-   what the option produces matters — two honest options beat four padded
-   guesses. Close every batch by inviting correction: if any of this is off,
-   Esc and say what's wrong, and you re-ask.
+1. If the request is vague, resolve it through the question picker before
+   proposing. Offer a recommended default with each question so the user can
+   answer with "yes". For structured choices, you MUST use
+   `ask_user_question` when available; do not substitute a numbered prose
+   questionnaire. Plain conversation is reserved for genuinely free-form
+   questions or tool unavailability. After each answer, present the next
+   question or propose the concrete contract; never end merely promising
+   questions. Once a question is presented, wait for the user rather than
+   autonomously repeating it.
+   **Questionnaire discipline — one consistent rule:** batch independent
+   questions in the current phase into one `ask_user_question` call (2-4
+   when several unknowns exist; a single focused question is fine when one
+   unknown remains); when a later question depends on an earlier answer,
+   state the full roadmap first, then ask stage-by-stage so every option
+   makes sense when answered. Never squeeze dependent decisions into the
+   upfront batch by guessing an earlier answer. Every option description
+   states its concrete consequence, plus a preview pane wherever what the
+   option produces matters — two honest options beat four padded guesses.
+   Close every batch by inviting correction: if any of this is off, Esc
+   and say what's wrong, and you re-ask.
 2. Targeted read-only research is allowed when it helps define a better
    contract (read a file, check the repo layout). Do NOT implement anything.
    **Default to subagents for research**: use the `subagent` tool to spawn a `scout` subagent
