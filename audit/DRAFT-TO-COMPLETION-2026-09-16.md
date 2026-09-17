@@ -109,4 +109,15 @@ counts are clearly labeled, not claimed as freshly executed checks.
 The accidentally duplicated historical changelog tail introduced during 0.38.58
 prep was removed by comparing it to the intact 0.38.57 tagged contents. This
 changes documentation only and does not rewrite Git history. Package, lock and
-docs index now identify 0.38.59; publication verification follows below.
+docs index now identify 0.38.59.
+
+Publication verified: tag `v0.38.59` at `d9834f83` on main; GitHub release
+https://github.com/DraconDev/pi-goal-list-loop-audit/releases/tag/v0.38.59
+published at 2026-09-17T05:15:40Z. Release workflow 35185043123 and tag quality
+workflow 35185043696 succeeded. Publish log:
+`/var/tmp/glla-v0.38.59-publish.log`; provenance transparency index 2873488684.
+Separate-shell npm registry query returns version and latest **0.38.59**
+(`/var/tmp/glla-v0.38.59-registry.json`); direct version endpoint shasum
+`05105b35d72e2161d9773abb8da749675a5a16b4` matches the workflow artifact
+(`/var/tmp/glla-v0.38.59-registry-version.json`). No existing release or Git
+history was rewritten. Running interactive Pi was not reloaded.
