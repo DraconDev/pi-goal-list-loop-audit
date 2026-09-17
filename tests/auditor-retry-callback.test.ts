@@ -37,7 +37,10 @@ process.stdin.once('data', () => {
     __testOnlyLoadState(cwd);
     const retry = (globalThis as any).retryStoredCompletionAudit;
     await retry('manual');
-    const first = readState(cwd).goal?.pendingCompletion;
+    const parked = readState(cwd).goal;
+    assert.match(parked?.pauseReason ?? '', /Exhausted auditor chain: /);
+    assert.match(parked?.pauseSuggestedAction ?? '', /Auto-retry in .*resume/);
+    const first = parked?.pendingCompletion;
     assert.equal(first?.retryAttempts, 1, JSON.stringify({ first, notices: ctx.ui.notifies }));
     assert.equal(first?.auditorAttemptedRefs, undefined, 'burned candidates cleared before timer retry');
     const deadline = Date.now() + 25000;
@@ -50,6 +53,12 @@ process.stdin.once('data', () => {
     assert.equal(second?.retryUntil, first?.retryUntil);
     const ledger = fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, 'utf8').split('\n').filter(Boolean).map(line => JSON.parse(line));
     assert.ok(ledger.some(row => row.type === 'audit_started' && row.value.origin === 'provider-retry'));
+    const exhausted = ledger.filter(row => row.type === 'auditor_fallback_exhausted');
+    assert.ok(exhausted.length >= 2);
+    for (const row of exhausted) {
+      assert.ok(row.value.exhaustedChain, 'burned chain survives cursor clearing in diagnostics');
+      assert.ok(!row.value.exhaustedChain.includes('no available auditor candidates'), 'fixture actually selected an auditor');
+    }
     assert.ok(!ledger.some(row => row.type === 'auditor_fallback_exhausted' && row.value.diagnostic === 'no auditor model'), 'next cycle must launch a candidate');
   } finally {
     await pi.fire('session_shutdown', {}, ctx);
