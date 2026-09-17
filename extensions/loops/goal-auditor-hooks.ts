@@ -999,7 +999,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       clearScheduledAuditorRecoveryTimer();
       updateGoal({
         status: "paused",
-        pendingCompletion: { ...pending, phase: "recovery-pending", recoveryRetryAt: undefined },
+        pendingCompletion: { ...pending, recoveryRetryAt: undefined },
         pauseKind: "blocked",
         pauseResumeAt: undefined,
         pauseReason: "auditor retry: automatic recovery window ended before dispatch",

@@ -992,9 +992,12 @@ async function fireHourlyProbeForParkedAuditor(ctx: ExtensionContext): Promise<v
   if (!pending || (pending.phase ?? "") !== "retry-waiting") return;
   if (!(goal.pauseReason ?? "").startsWith("auditor retry:")) return;
   // A capped/blocked claim must never ride the hourly backstop: its window
-  // ended, so only an explicit user resume may open a fresh envelope.
+  // ended, so only an explicit user resume may open a fresh envelope. The
+  // horizon check covers ONLY the stored recovery windows — a past-due
+  // pauseResumeAt is the backstop's trigger (the ladder timer died), not a
+  // violation.
   if (goal.pauseKind === "blocked") return;
-  const horizon = [pending.retryUntil, goal.pauseResumeAt]
+  const horizon = [pending.retryUntil, pending.automaticRecoveryUntil]
     .filter((value): value is string => typeof value === "string" && value.length > 0)
     .map((value) => Date.parse(value))
     .filter((value) => Number.isFinite(value));
