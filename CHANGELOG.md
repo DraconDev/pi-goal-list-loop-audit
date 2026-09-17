@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.38.60 — Preserve mixed findings and unperformed checks (2026-09-17)
+
+### Conservative chat projection
+
+Replace keyword-based receipt suppression with complete-statement recognition.
+Only wholly recognized bookkeeping without separate proof is archive-only;
+unknown or mixed clauses stay visible. This preserves ledger data-loss repairs
+even when their explanations say “checked,” and limitations such as validation
+not performed because credentials are unavailable. Grouped and flat renderer
+regressions cover both auditor counterexamples and unknown proof wording.
+Full archive evidence, existing screenshot projections and lifecycle gates
+remain unchanged.
+
 ## 0.38.59 — Archive-only repository receipts (2026-09-17)
 
 Repository-only ledger and closure receipts now stay in the durable archive,

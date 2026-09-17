@@ -529,14 +529,26 @@ function chatNarrative(value: string): string {
     .trim());
 }
 
-/** Repository receipt findings belong in the archive, not the reader's
- * result. Match receipt actions as well as subjects, not broad words like
- * "process" or "ledger": fixing ledger corruption is a substantive change.
- * Never suppress a finding carrying failed/skipped/partial/unrun evidence. */
+/** Suppression is lossy, so recognize only COMPLETE bookkeeping statements.
+ * Unknown wording, mixed clauses and any separately supplied proof stay visible.
+ * Never infer expendability from keywords or try to enumerate every possible
+ * way an author can describe a limitation. Archive inputs are never filtered. */
 function isRepositoryReceipt(value: string, proof = ""): boolean {
-  if (/\b(?:fail(?:ed|ure|ures)?|skip(?:ped|s)?|partial|unresolved|unrun|not run|not tested|blocked|limitation)\b/i.test(`${value} ${proof}`)) return false;
-  return /\b(?:ledger|fix entries|closure record|traceability|append-only guard|working tree|repository state|repo state)\b/i.test(value)
-    && /\b(?:checked|preserved the original record|record was corrected|clean|committed|pushed|verified findings|entries closed)\b/i.test(value);
+  if (proof.trim()) return false;
+  const { lead, body } = leadBody(value);
+  if (!/^(?:ledger|traceability(?: repair)?|repository state|repo state|working tree)$/i.test(lead)) return false;
+  // Only a syntactically bounded document citation may follow a receipt.
+  // Parenthetical prose (including limitations) must not be discarded.
+  const statement = body.replace(/\s+\([\w./-]+\.md(?::\d+(?:[-–,]\d+)*)?(?:, commit [a-f0-9]{7,40})?\)\.?$/i, "").replace(/\.$/, "");
+  const clauses = statement.split(/;\s*/);
+  const receiptClauses = [
+    /^(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten) fix entries were checked$/i,
+    /^the append-only guard preserved the original record(?: while adding the verified findings)?$/i,
+    /^the closure record was corrected$/i,
+    /^the underlying (?:list|chatter|reset)(?:, (?:list|chatter|reset))*(?: and (?:list|chatter|reset))? fixes remained unchanged$/i,
+    /^(?:(?:the )?(?:working tree|repository state|repo state) (?:is |was )?)?(?:clean|committed|pushed)$/i,
+  ];
+  return clauses.every(clause => receiptClauses.some(pattern => pattern.test(clause)));
 }
 
 /** Build the section parts shared by chat, transcript, and archive.

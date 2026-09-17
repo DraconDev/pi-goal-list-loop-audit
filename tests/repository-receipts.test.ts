@@ -42,3 +42,31 @@ test("flat receipts are archive-only while limitations remain visible", () => {
   assert.match(chat, /4 skipped tests remain; 10 spec checks are partial/);
   assert.match(archive, /Four fix entries/);
 });
+
+
+test("mixed receipt vocabulary never deletes repairs or unperformed checks", () => {
+  const cases = [
+    "Ledger corruption: Concurrent writes lost records; serialized writes now preserve account state and the regression was checked.",
+    "Ledger: Four fix entries were checked; live validation was not performed because credentials are unavailable.",
+    receipt + " Live validation awaits credentials.",
+    "Ledger: Four fix entries were checked; production coverage is unknown.",
+    "Ledger: Four fix entries were checked; serialization prevents data loss.",
+  ];
+  for (const finding of cases) {
+    for (const grouped of [true, false]) {
+      const args = { outcome: "Persistence improved.", countsLine: "", details: grouped ? [] : [finding],
+        groups: grouped ? [{ title: "Persistence", findings: [finding] }] : undefined };
+      for (const chat of [true, false]) {
+        const text = composeRichTerminalLines(buildRichTerminalParts({ ...args, chat })).join("\n");
+        const body = finding.slice(finding.indexOf(":") + 1).trim();
+        assert.ok(text.includes(body), `${grouped ? "grouped" : "flat"} ${chat ? "chat" : "archive"} lost: ${finding}`);
+      }
+    }
+  }
+});
+
+test("unknown proof is preserved without a limitation vocabulary denylist", () => {
+  for (const proof of ["Live validation was not performed because credentials are unavailable.", "Coverage awaits a production account.", "Concurrent-write regression checked."]) {
+    assert.ok(render(true, [receipt], [proof]).includes(proof));
+  }
+});
