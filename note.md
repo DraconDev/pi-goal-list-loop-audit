@@ -12,6 +12,10 @@ Screenshot mapping, bounded containment limits, and test evidence:
 # Later
 
 ##
+here footer shows monitoring correctly while the main does not
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_093916.png 
+
+##
 got stuck auto compacitng here
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_083546.png 
 
@@ -19,8 +23,11 @@ got stuck auto compacitng here
 i think the auditing might get stuck we are not even getting a lot of info here
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_090729.png 
 
-like this one called open goal and shows audit pending but this is after i woke up so perhaps good time has pass, but at least i dont see it
+like this one called complete goal and shows audit pending but this is after i woke up so perhaps good time has pass, but at least i dont see it
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_091526.png 
+
+same thing completed goal but pending
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_094330.png 
 
 ##
 its nto even obvious that its working i think we need stronger semantic coloring and active indication
