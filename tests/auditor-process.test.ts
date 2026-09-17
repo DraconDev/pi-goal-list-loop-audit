@@ -336,34 +336,45 @@ test("v0.34.57: heartbeat-without-progress watchdog emits auditor_stalled and ca
   const heartbeatWorker = path.join(dir, "heartbeat-worker.mjs");
   const sigtermMarker = path.join(dir, "sigterm-marker");
   await writeFile(heartbeatWorker, `
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile, rename } from "node:fs/promises";
 import { writeFileSync } from "node:fs";
 const dir = process.argv[process.argv.indexOf("--job-dir") + 1];
 const request = JSON.parse(await readFile(dir + "/request.json", "utf8"));
 process.on("SIGTERM", () => { writeFileSync(${JSON.stringify(sigtermMarker)}, "killed"); process.exit(0); });
 // Heartbeat-only worker: fresh lastActivityAt every 15ms, identical
 // signature (same phase/recentOutput/toolCalls), never a result.json.
-setInterval(async () => {
-  await writeFile(dir + "/progress.json", JSON.stringify({
+async function heartbeat() {
+  await writeFile(dir + "/progress.tmp", JSON.stringify({
     protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
     phase: "running", elapsedMs: 1,
     lastActivityAt: Date.now(),
     recentOutput: [],
     toolCalls: [],
   }));
-}, 15);
+  await rename(dir + "/progress.tmp", dir + "/progress.json");
+  setTimeout(heartbeat, 15);
+}
+void heartbeat();
 `);
   const reports: AuditorProgress[] = [];
   const stalled: AuditorStalledInfo[] = [];
+  // Isolate the fresh-heartbeat branch, not real host scheduling latency.
+  // Time advances with observed worker heartbeats; the real worker, parent
+  // polling, watchdog decision and SIGTERM teardown are still exercised.
+  let watchdogNow = Date.now();
   try {
     const result = await runDetachedGoalCompletionAuditor({
       cwd: dir,
       goal,
       model: "test/provider-model",
       thinkingLevel: "high",
-      onProgress: (progress) => reports.push(progress),
+      onProgress: (progress) => {
+        reports.push(progress);
+        if (progress.lastActivityAt) watchdogNow = Math.max(watchdogNow, progress.lastActivityAt);
+      },
       onStalled: (info) => stalled.push(info),
       runtime: {
+        now: () => watchdogNow,
         workerPath: heartbeatWorker,
         attemptId: () => "attempt-heartbeat-stall",
         pollIntervalMs: 10,
