@@ -8,14 +8,24 @@ for (const example of screenshotCases) test(`screenshot-derived ${example.name} 
   assert.match(chat, /^## Done — /);
   assert.doesNotMatch(chat, /\(\s*[,;]\s*\d|\(\s*\)|\| Area \| Finding|\| Command \||Final Repository State/);
   assert.equal((chat.match(/auditor approved/g) ?? []).length, 1);
+  assert.doesNotMatch(chat, /docs\/audits\/2026-09-16-project-audit\.md|Four fix entries were checked|closure record was corrected/);
   assert.ok(chat.includes(example.limitation));
   assert.ok(chat.includes(example.leftOut));
   for (const group of example.groups) {
-    assert.ok(chat.includes(group.title));
+    if (group.title === "Process") assert.doesNotMatch(chat, /#### \d+\. Process/);
+    else assert.ok(chat.includes(group.title));
     for (const finding of group.findings) {
       const { text, evidence } = extractEvidenceTokens(finding);
       const narrative = text.slice(text.indexOf(":") + 1).trim().replace(/\s*\([,\s]*commit [a-f0-9]+\)\.?$/, "");
-      assert.ok(chat.includes(narrative), `complete explanatory clause retained: ${narrative}`);
+      // Explicit expectations for the historical receipts, not a production
+      // classifier import that would make this a self-fulfilling assertion.
+      if (/^(Ledger|Traceability repair):/.test(finding)) {
+        assert.doesNotMatch(chat, /\*\*(Ledger|Traceability repair)\*\*/);
+        assert.ok(archive.includes(narrative), "archive retains repository receipt");
+      } else {
+        const explanation = narrative.replace(/\s*\([^()]*\.(?:ts|md)\)\.?$/, "");
+        assert.ok(chat.includes(explanation), `complete explanatory clause retained: ${explanation}`);
+      }
       for (const token of evidence) assert.ok(archive.includes(token), `archive retains ${token}`);
     }
   }

@@ -3,7 +3,7 @@
 
 # Next
 
-The drafting/status work shipped in 0.38.57; the 0.38.58 monitor-label and citation repairs ship next.
+The drafting/status work was published in 0.38.57; the monitor-label and citation repairs were published and registry-verified in 0.38.58. The requirement report below tracks subsequent audit corrections and their verified release status.
 Screenshot mapping, bounded containment limits, and test evidence:
 `audit/DRAFT-TO-COMPLETION-2026-09-16.md`.
 

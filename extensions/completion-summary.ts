@@ -514,17 +514,33 @@ export function requestEchoHeadline(kind: "Done" | "Aborted", objective: string 
   return echo ? `## ${kind}: ${echo} \u2014 ${outcome}` : `## ${kind} \u2014 ${outcome}`;
 }
 
-/** Chat-only projection: keep explanations and counts, not command/hash receipts. */
+/** Chat-only projection: keep explanations and counts, not command/hash
+ * receipts. Repository bookkeeping (repo-relative file paths) is archive
+ * evidence, never chat content — the chat line keeps the explanation only. */
 function chatNarrative(value: string): string {
   return stripMachineGroups(chatSafeDetailValue(value)
     .replace(/\b(?:fixed in|commit|HEAD(?: at)?|built from)\s+`?[a-f0-9]{7,64}`?/gi, "")
     .replace(/\b(?=[a-f0-9]*[a-f])(?=[a-f0-9]*\d)[a-f0-9]{7,64}\b/gi, "")
     .replace(/`(?:bun|npm|npx|node|git|tsc)\s+[^`]+`/g, "")
     .replace(/\b(?:bun test|npm (?:run \S+|test)|npx tsc|tsc --noEmit)\b(?:\s+(?:--[\w=-]+|[\w./-]+\.(?:ts|js|mjs)))*/g, "")
+    // Repo-relative file references (docs/audits/x.md, src/lib/a.ts:425) are
+    // repository bookkeeping — archive only. Absolute/home/URL paths were
+    // already stripped upstream; this catches the repo-relative remainder.
+    .replace(/(?<![\w./~-])(?:[\w.+-]+\/)+[\w.+-]+\.(?:md|mdx|ts|tsx|js|jsx|mjs|json|jsonl|svelte|yml|yaml|log)\b(?::\d+(?:[-–]\d+)?(?:,\s*\d+(?:[-–]\d+)?)*)?/gi, "")
     .replace(/\(\s*[,;:]*\s*\)/g, "")
     .replace(/\s+([,.;:])/g, "$1")
     .replace(/\s{2,}/g, " ")
     .trim());
+}
+
+/** Repository receipt findings belong in the archive, not the reader's
+ * result. Match receipt actions as well as subjects, not broad words like
+ * "process" or "ledger": fixing ledger corruption is a substantive change.
+ * Never suppress a finding carrying failed/skipped/partial/unrun evidence. */
+function isRepositoryReceipt(value: string): boolean {
+  if (/\b(?:fail(?:ed|ure|ures)?|skip(?:ped|s)?|partial|unresolved|not run|not tested|blocked|limitation)\b/i.test(value)) return false;
+  return /\b(?:ledger|fix entries|closure record|traceability|append-only guard|working tree|repository state|repo state)\b/i.test(value)
+    && /\b(?:checked|preserved the original record|record was corrected|clean|committed|pushed|verified findings|entries closed)\b/i.test(value);
 }
 
 /** Build the section parts shared by chat, transcript, and archive.
@@ -613,7 +629,11 @@ export function buildRichTerminalParts(args: {
   const headline = args.chat ? `## ${kind} — ${outcome}` : requestEchoHeadline(kind, args.objective, outcome);
   const auditStatus = auditRowStatus(args.auditHistory);
   const banner = args.chat ? headline : `## ${kind} \u2014 ${bannerVerdict(auditStatus)}`;
-  const groups = args.groups ?? [];
+  const groups = args.chat ? (args.groups ?? []).map(group => {
+    const entries = group.findings.map((finding, i) => ({ finding, proof: group.tests?.[i] }))
+      .filter(({ finding, proof }) => !isRepositoryReceipt(`${finding} ${proof ?? ""}`));
+    return { ...group, findings: entries.map(entry => entry.finding), tests: entries.map(entry => entry.proof ?? "") };
+  }).filter(group => group.findings.length > 0) : args.groups ?? [];
   const useTable = !args.chat && groups.length >= RICH_TABLE_GROUP_THRESHOLD;
   const findingLines: string[] = [];
   if (useTable) {
@@ -644,7 +664,7 @@ export function buildRichTerminalParts(args: {
     });
   } else {
     // v0.38.55: the flat fallback renders every detail — no cap.
-    findings.forEach((detail, i) => {
+    findings.filter(detail => !args.chat || !isRepositoryReceipt(detail)).forEach((detail, i) => {
       const { lead, body } = leadBody(args.chat ? chatNarrative(detail) : detail);
       findingLines.push(`${i + 1}. **${lead}** \u2014 ${body}`);
     });

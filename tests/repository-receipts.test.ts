@@ -1,0 +1,40 @@
+import { test } from "node:test";
+import * as assert from "node:assert/strict";
+import { buildRichTerminalParts, composeRichTerminalLines } from "../extensions/completion-summary.js";
+
+const receipt = "Ledger: Four fix entries were checked; the append-only guard preserved the original record while adding the verified findings (docs/audits/2026-09-16-project-audit.md).";
+function render(chat: boolean, findings: string[], proofs?: string[]) {
+  return composeRichTerminalLines(buildRichTerminalParts({
+    chat, outcome: "Save ordering corrected.", details: [], countsLine: "", groups: [
+      { title: "Process", findings, tests: proofs },
+      { title: "Engine", findings: ["Behavior: Dash uses 4/285/1000; tier1–4 and helpers/contracts remain checked."] },
+    ],
+  })).join("\n");
+}
+
+test("repository-only findings are archive-only, without empty chat groups", () => {
+  const chat = render(true, [receipt]);
+  assert.doesNotMatch(chat, /Process|Ledger|Four fix entries|docs\/audits/);
+  assert.match(chat, /#### 1\. Engine/);
+  assert.ok(render(false, [receipt]).includes(receipt.replace("Ledger:", "**Ledger** —")));
+  assert.match(chat, /4\/285\/1000/);
+  assert.match(chat, /helpers\/contracts/);
+});
+
+test("receipt filtering never hides failures, skips, or substantive ledger fixes", () => {
+  for (const proof of ["2 failed", "4 skipped", "10 partial", "not run — unavailable"]) {
+    const chat = render(true, [receipt], [proof]);
+    assert.ok(chat.includes(proof));
+    assert.match(chat, /Ledger/);
+  }
+  assert.match(render(true, ["Ledger corruption: Concurrent writes lost records; serialized writes now preserve account state."]), /Concurrent writes lost records/);
+});
+
+test("flat receipts are archive-only while limitations remain visible", () => {
+  const input = { outcome: "Work delivered.", details: [receipt, "Unresolved: 4 skipped tests remain; 10 spec checks are partial."], countsLine: "" };
+  const chat = composeRichTerminalLines(buildRichTerminalParts({ ...input, chat: true })).join("\n");
+  const archive = composeRichTerminalLines(buildRichTerminalParts(input)).join("\n");
+  assert.doesNotMatch(chat, /Four fix entries/);
+  assert.match(chat, /4 skipped tests remain; 10 spec checks are partial/);
+  assert.match(archive, /Four fix entries/);
+});
