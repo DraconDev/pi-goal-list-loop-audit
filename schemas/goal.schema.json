@@ -219,7 +219,8 @@
         "auditorFailureCount": { "type": "integer", "minimum": 0, "maximum": 2 },
         "auditorFailureClass": { "type": "string", "enum": ["transport", "timeout", "no-verdict", "provider"] },
         "auditorFallbackExhausted": { "type": "boolean" },
-        "auditorFailureAt": { "type": "string", "format": "date-time" }
+        "auditorFailureAt": { "type": "string", "format": "date-time" },
+        "exhaustedChain": { "type": "string", "maxLength": 2000, "description": "Newline-free names of the auditor candidates exhausted in the current bounded cycle, joined with ' → '. Set at burn time; cleared with the cycle. Display-only diagnostic — never candidate-selection state." }
       }
     },
     "task": {

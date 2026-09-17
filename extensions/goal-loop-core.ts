@@ -467,6 +467,12 @@ gateRows?: GateRow[];
   auditorFailureClass?: AuditorRecoveryFailureClass;
   auditorFallbackExhausted?: boolean;
   auditorFailureAt?: string;
+  /** 2026-09-17 (auditor objection 18:49): names of the candidates exhausted
+   * in the current bounded cycle, joined with " → ". Set at burn time,
+   * cleared with the cycle, and carried into every parked state (retry-wait
+   * AND dispatch-time expiry) without re-parsing prose. Display-only —
+   * never candidate-selection state. Newline-free by construction. */
+  exhaustedChain?: string;
   /** v0.37.0: adaptive-timeout escalation index. Incremented once per
    * launched detached attempt (persisted through the same cursor writes as
    * the candidate position), so the ×2-per-attempt budget schedule survives
