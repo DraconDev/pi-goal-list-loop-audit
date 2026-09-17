@@ -39,11 +39,12 @@ function fixtureClock(afterSleep) {
 
 test("durable wait succeeds before its deadline and reports elapsed polling", async () => {
   const { directory, file } = await scratchFile();
-  const timers = [setTimeout(() => appendFile(file, '{"event":"done"}\n'), 20)];
+  const timers = [];
+  const clock = fixtureClock(() => appendFile(file, '{"event":"done"}\n'));
   try {
     const result = await waitForDurableEvent(
       () => readDurableFile(file, { doneNeedles: ['"event":"done"'] }),
-      { timeoutMs: 250, pollIntervalMs: 5 },
+      { timeoutMs: 250, pollIntervalMs: 5, ...clock },
     );
     assert.equal(result.ok, true);
     assert.equal(result.terminalReason, "done");
@@ -86,12 +87,13 @@ test("a late done observation after the deadline is a timeout, not success", asy
 
 test("archive-count waits use the same durable deadline and return the observed count", async () => {
   const { directory } = await scratchFile();
-  const timers = [setTimeout(() => writeFile(path.join(directory, "two.md"), ""), 10)];
+  const timers = [];
+  const clock = fixtureClock(() => writeFile(path.join(directory, "two.md"), ""));
   try {
     await writeFile(path.join(directory, "one.md"), "");
     const result = await waitForDurableEvent(
       () => readDurableDirectoryCount(directory, { minimum: 2 }),
-      { timeoutMs: 250, pollIntervalMs: 5 },
+      { timeoutMs: 250, pollIntervalMs: 5, ...clock },
     );
     assert.equal(result.ok, true);
     assert.equal(result.terminalReason, "done");
@@ -103,22 +105,22 @@ test("archive-count waits use the same durable deadline and return the observed 
 
 test("a restarted waiter observes the same durable file without an old timer", async () => {
   const { directory, file } = await scratchFile();
-  const timers = [setTimeout(() => appendFile(file, '{"event":"restart"}\n'), 10)];
+  const timers = [];
+  const firstClock = fixtureClock(() => appendFile(file, '{"event":"restart"}\n'));
   try {
     const first = await waitForDurableEvent(
       () => readDurableFile(file, {
         doneNeedles: ['"event":"done"'],
         terminalNeedles: [{ reason: "restart", needle: '"event":"restart"' }],
       }),
-      { timeoutMs: 250, pollIntervalMs: 5 },
+      { timeoutMs: 250, pollIntervalMs: 5, ...firstClock },
     );
     assert.equal(first.terminalReason, "restart");
 
-    const secondTimer = setTimeout(() => appendFile(file, '{"event":"done"}\n'), 10);
-    timers.push(secondTimer);
+    const secondClock = fixtureClock(() => appendFile(file, '{"event":"done"}\n'));
     const second = await waitForDurableEvent(
       () => readDurableFile(file, { doneNeedles: ['"event":"done"'] }),
-      { timeoutMs: 250, pollIntervalMs: 5 },
+      { timeoutMs: 250, pollIntervalMs: 5, ...secondClock },
     );
     assert.equal(second.ok, true);
     assert.equal(second.terminalReason, "done");
@@ -129,14 +131,16 @@ test("a restarted waiter observes the same durable file without an old timer", a
 
 test("provider recovery is a terminal reason, never a false approval or timeout", async () => {
   const { directory, file } = await scratchFile();
-  const timers = [setTimeout(() => appendFile(file, '{"event":"main_model_recovery_wait"}\n'), 10)];
+  const timers = [];
   try {
     const result = await waitForDurableEvent(
       () => readDurableFile(file, {
         doneNeedles: ['"approved":true'],
         terminalNeedles: [{ reason: "provider-failure", needle: '"event":"main_model_recovery_wait"' }],
       }),
-      { timeoutMs: 250, pollIntervalMs: 5 },
+      { timeoutMs: 250, pollIntervalMs: 5, ...fixtureClock(async () => {
+        await appendFile(file, JSON.stringify({ event: "main_model_recovery_wait" }) + "\n");
+      }) },
     );
     assert.equal(result.ok, false);
     assert.equal(result.terminalReason, "provider-failure");
