@@ -419,11 +419,23 @@ function escapeTableCell(value: string): string {
   return value.replace(/\|/g, "\\|").replace(/\s+/g, " ").trim();
 }
 
+/** Mechanically derived, never claimed: notes decide the status. FAIL wins
+ * over PASS wherever either appears; multiple failure counts (including
+ * formats like "0 failed; ... 2 failed") and negated success wording such as
+ * "did not pass" stay REPORTED at best. Pass-only notes are PASS. */
 function testsRowStatus(value: string): string {
-  const fail = /(\d+)\s*fail/i.exec(value);
-  if (fail && Number.parseInt(fail[1]!, 10) > 0) return "FAIL";
-  // v0.38.55 audit: word-bound — a bare /pass/i substring fires on
-  // "bypass"/"password"/"passage". "passed" still counts.
+  const fail = /(?<![\w.])(\d+)\s*fail(?![\w])/gi;
+  const failures: number[] = [];
+  for (const match of value.matchAll(fail)) {
+    const count = Number.parseInt(match[1]!, 10);
+    if (!Number.isNaN(count)) failures.push(count);
+  }
+  if (failures.some((count) => count > 0)) return "FAIL";
+  const explicitFail = /\b(?:failure|failures)\b/i.test(value) || /\bfail(?:ed|s)?\b(?![^\n]*\b\d)/i.test(value);
+  if (explicitFail) return "FAIL";
+  if (/\b(?:not|never|no longer|did not|didn't|cannot|can't|won't|without)\b[^.\n]*\b(?:pass(?:ed|es)?|succeed(?:ed|s)?|green)\b/i.test(value)
+    || /\b(?:pass(?:ed|es)?|green)\b[^.\n]*\b(?:not|never|unavailable|incomplete|pending|failed)\b/i.test(value)) return "REPORTED";
+  if (/\bun(?:run|verified)|not run|not tested\b/i.test(value)) return "REPORTED";
   if (/\bpass(?:ed)?\b/i.test(value)) return "PASS";
   return "REPORTED";
 }

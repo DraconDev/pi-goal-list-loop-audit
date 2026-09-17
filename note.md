@@ -16,6 +16,19 @@ got stuck auto compacitng here
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_083546.png 
 
 ##
+i think the auditing might get stuck we are not even getting a lot of info here
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_090729.png 
+
+##
+its nto even obvious that its working i think we need stronger semantic coloring and active indication
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_091058.png /home/dracon/Pictures/Screenshots/Screenshot_20260917_091055.png 
+
+##
+we are overflowing information here
+we probably wan to cut the footer and have big informative and not repetative view
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_090729.png 
+
+##
 i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
 
 
