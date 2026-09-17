@@ -434,7 +434,8 @@ function testsRowStatus(value: string): string {
   if (passCounts.length > 0) return passCounts.some(match => Number(match[1]) > 0) ? "PASS" : "REPORTED";
   // Uncounted prose is not evidence just because it contains "pass".
   // Accept only a complete affirmative status, not an arbitrary substring.
-  return /^(?:pass(?:ed)?|all (?:tests|checks) passed)[.!]?$/i.test(value.trim()) ? "PASS" : "REPORTED";
+  const affirmative = /^(?:pass(?:ed)?|all (?:tests|checks) passed|(?:[\w.-]+ )?(?:suite|tests|checks) passed|(?:bun|npm) (?:run )?test(?:\s+[—–-])? pass(?:ed)?)[.!]?$/i;
+  return affirmative.test(value.trim()) ? "PASS" : "REPORTED";
 }
 
 function auditRowStatus(history: Goal["auditHistory"]): string {
