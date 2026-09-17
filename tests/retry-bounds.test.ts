@@ -60,15 +60,15 @@ test("E2: auditor infra errors enter the durable bounded retry plan (v0.34.51 �
   assert.match(SRC, /auditInfraStreak: undefined, \/\/ durable retry owns the wait — infra streak broken/);
 });
 
-test("v0.36.0: aggressive recovery has no wall-clock episode horizon", () => {
+test("main recovery remains unbounded but auditor retries retain their fixed horizon", () => {
   assert.match(RECOVERY, /const normalizedRecovery = aggressive \? \{ \.\.\.normalizedBase, autoRetryUntil: undefined \} : normalizedBase;/);
   assert.match(RECOVERY, /!aggressive && Number\.isFinite\(deadlineMs\)/);
   assert.match(RECOVERY, /autoRetryUntil: aggressive \? undefined : mainModelAutoRetryUntil/);
   assert.match(RECOVERY, /adaptive backoff for as long as it remains recoverable/);
   assert.match(SRC, /auditorRetryPlan\(durableClaim, undefined, undefined, aggressive\)/);
-  // Unified envelope: no auditor-only attempt cap — the shared 24h horizon is
-  // the only conservative stop, same as the main-model ladder.
-  assert.match(SRC.replace(/\s+/g, " "), /const automatic = aggressive \|\| now \+ retryAfterSec \* 1_000 <= untilMs;/);
+  // Auditor retry policy is explicitly bounded even in aggressive mode;
+  // this does not change the main-model policy assertions above.
+  assert.match(SRC.replace(/\s+/g, " "), /const automatic = now \+ retryAfterSec \* 1_000 <= untilMs;/);
   assert.doesNotMatch(SRC, /MAX_AUDITOR_AUTO_RETRY_ATTEMPTS/);
 });
 
