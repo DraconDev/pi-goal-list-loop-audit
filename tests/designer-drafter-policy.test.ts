@@ -35,7 +35,7 @@ test("long-running judgment policy is default-decide and bans band-aid-vs-proper
   const seeded = buildSeedGrillMessage("[DRAFT]", "ship the plugin", "propose_goal_draft");
   assert.match(seeded, /LONG-RUNNING JUDGMENT POLICY/);
   assert.match(seeded, /irreversible\/destructive external action/);
-  assert.match(seeded, /2[–-]4 sharp, seed-specific questions UP FRONT/);
+  assert.match(seeded, /2[–-]4 sharp, seed-specific questions in ONE batched ask_user_question call per phase/);
 });
 
 test("drafting gathers constraints upfront and active execution defers local choices", () => {
@@ -44,7 +44,7 @@ test("drafting gathers constraints upfront and active execution defers local cho
   assert.match(seeded, /scope boundaries/);
   assert.match(seeded, /constraints/);
   assert.match(seeded, /priorities/);
-  assert.match(seeded, /2[–-]4 sharp, seed-specific questions UP FRONT/);
+  assert.match(seeded, /2[–-]4 sharp, seed-specific questions in ONE batched ask_user_question call per phase/);
   assert.match(seeded, /Resolve these decisions during drafting, before execution/);
 
   assert.match(ACTIVE_EXECUTION_QUESTION_GUIDANCE, /Drafting is the ONLY place/);

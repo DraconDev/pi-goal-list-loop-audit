@@ -54,7 +54,7 @@ test("monitor goals are display-only — scheduling is event-driven for every pl
 
 test("drafting batches 2–4 questions up front via one ask_user_question picker", () => {
   const msg = buildSeedGrillMessage("[DRAFT]", "ship the feature", "propose_goal_draft");
-  assert.match(msg, /2-4 sharp, seed-specific questions UP FRONT in ONE batched ask_user_question call/i);
+  assert.match(msg, /2-4 sharp, seed-specific questions in ONE batched ask_user_question call per phase/i);
   assert.match(msg, /recommended default/i);
   assert.match(msg, /Resolve these decisions during drafting, before execution/i);
   assert.match(msg, /Do targeted read-only research first/i);

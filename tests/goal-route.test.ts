@@ -88,7 +88,7 @@ test("buildSeedGrillMessage: seed + tool + gate notice + grilling protocol", () 
   assert.match(msg, /make the game faster/);
   assert.match(msg, /propose_goal_draft/);
   assert.match(msg, /BLOCKED until the user has replied/);
-  assert.match(msg, /2-4 sharp, seed-specific questions UP FRONT in ONE batched ask_user_question call/);
+  assert.match(msg, /2-4 sharp, seed-specific questions in ONE batched ask_user_question call per phase/);
   assert.match(msg, /non-answer/);
   assert.match(msg, /Do NOT activate the raw seed/);
   assert.match(msg, /Resolve these decisions during drafting, before execution/);
