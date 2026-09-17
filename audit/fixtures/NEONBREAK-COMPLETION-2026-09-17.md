@@ -1,6 +1,6 @@
 # Neonbreak screenshot-derived renderer fixture
 
-Historical example adapted from Screenshot_20260916_224738, Screenshot_20260916_224741.png. These are renderer inputs, not newly executed external-project checks.
+Historical example adapted from Screenshot_20260916_224738.png, Screenshot_20260916_224741.png. Renderer inputs only, not newly executed external-project checks.
 
 ## Chat projection
 
@@ -19,8 +19,6 @@ Historical example adapted from Screenshot_20260916_224738, Screenshot_20260916_
 #### 3. Test harness
 - **Port configuration** — Eleven specs defaulted their own BASE to port 1453 and ignored NEONBREAK_PORT — shared resolution now preserves override precedence.
   - Test Results: Previously 39 connection failures; afterward 135 passed / 0 failed on port 1463 and standard 1453, no retries.
-#### 4. Process
-- **Ledger** — Four fix entries were checked; the append-only guard preserved the original record while adding the verified findings (docs/audits/2026-09-16-project-audit.md).
 
 ### Verification Summary
 | Quality Gate | Scope | Status | Notes |

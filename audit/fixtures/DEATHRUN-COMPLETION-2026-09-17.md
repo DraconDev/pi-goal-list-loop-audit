@@ -1,6 +1,6 @@
 # Deathrun screenshot-derived renderer fixture
 
-Historical example adapted from Screenshot_20260916_224746, Screenshot_20260916_224749.png. These are renderer inputs, not newly executed external-project checks.
+Historical example adapted from Screenshot_20260916_224746.png, Screenshot_20260916_224749.png. Renderer inputs only, not newly executed external-project checks.
 
 ## Chat projection
 

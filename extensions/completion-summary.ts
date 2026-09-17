@@ -514,19 +514,15 @@ export function requestEchoHeadline(kind: "Done" | "Aborted", objective: string 
   return echo ? `## ${kind}: ${echo} \u2014 ${outcome}` : `## ${kind} \u2014 ${outcome}`;
 }
 
-/** Chat-only projection: keep explanations and counts, not command/hash
- * receipts. Repository bookkeeping (repo-relative file paths) is archive
- * evidence, never chat content — the chat line keeps the explanation only. */
+/** Chat-only projection: keep explanations and counts, not command/hash receipts.
+ * Repository-only findings are filtered separately; useful implementation
+ * references in substantive explanations are not themselves bookkeeping. */
 function chatNarrative(value: string): string {
   return stripMachineGroups(chatSafeDetailValue(value)
     .replace(/\b(?:fixed in|commit|HEAD(?: at)?|built from)\s+`?[a-f0-9]{7,64}`?/gi, "")
     .replace(/\b(?=[a-f0-9]*[a-f])(?=[a-f0-9]*\d)[a-f0-9]{7,64}\b/gi, "")
     .replace(/`(?:bun|npm|npx|node|git|tsc)\s+[^`]+`/g, "")
     .replace(/\b(?:bun test|npm (?:run \S+|test)|npx tsc|tsc --noEmit)\b(?:\s+(?:--[\w=-]+|[\w./-]+\.(?:ts|js|mjs)))*/g, "")
-    // Repo-relative file references (docs/audits/x.md, src/lib/a.ts:425) are
-    // repository bookkeeping — archive only. Absolute/home/URL paths were
-    // already stripped upstream; this catches the repo-relative remainder.
-    .replace(/(?<![\w./~-])(?:[\w.+-]+\/)+[\w.+-]+\.(?:md|mdx|ts|tsx|js|jsx|mjs|json|jsonl|svelte|yml|yaml|log)\b(?::\d+(?:[-–]\d+)?(?:,\s*\d+(?:[-–]\d+)?)*)?/gi, "")
     .replace(/\(\s*[,;:]*\s*\)/g, "")
     .replace(/\s+([,.;:])/g, "$1")
     .replace(/\s{2,}/g, " ")

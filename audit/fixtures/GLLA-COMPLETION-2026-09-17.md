@@ -1,6 +1,6 @@
 # GLLA screenshot-derived renderer fixture
 
-Historical example adapted from Screenshot_20260916_224518.png. These are renderer inputs, not newly executed external-project checks.
+Historical example adapted from Screenshot_20260916_224518.png. Renderer inputs only, not newly executed external-project checks.
 
 ## Chat projection
 
@@ -18,7 +18,6 @@ Historical example adapted from Screenshot_20260916_224518.png. These are render
   - Test Results: Same probe before/after: 4 fail before the fix; 152 pass after. This is historical screenshot evidence, not a newly executed suite.
 #### 4. Completion evidence
 - **Sanitizer** — Anchored tarball matching prevents machine packaging from overwhelming the human recap (extensions/completion-summary.ts).
-- **Traceability repair** — The closure record was corrected; the underlying list, chatter and reset fixes remained unchanged.
 
 ### Verification Summary
 | Quality Gate | Scope | Status | Notes |
