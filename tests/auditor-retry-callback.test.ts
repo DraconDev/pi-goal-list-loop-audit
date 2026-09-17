@@ -6,6 +6,10 @@ import { readState } from '../extensions/goal-loop-core.js';
 import { MockPi, makeMockCtx, tmpCwd, seedGoal, seedState } from './harness/mock-pi.js';
 
 test('manual audit exhaustion retries through timer with fresh candidates and unchanged envelope', { timeout: 60000 }, async () => {
+  // Regression pin — 2026-09-17T14:07 ledger sequence: exhausted selection
+  // ("no auditor model"), 5s uniform schedule, attempt:1 repetition. The
+  // timer must retry with automatic provenance so counters advance and the
+  // burned chain is never re-walked.
   const cwd = tmpCwd();
   const pi = new MockPi();
   const binary = process.env.GLLA_PI_BINARY;
