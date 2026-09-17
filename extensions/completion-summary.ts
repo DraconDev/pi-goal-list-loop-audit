@@ -512,6 +512,19 @@ export function requestEchoHeadline(kind: "Done" | "Aborted", objective: string 
   return echo ? `## ${kind}: ${echo} \u2014 ${outcome}` : `## ${kind} \u2014 ${outcome}`;
 }
 
+/** Chat-only projection: keep explanations and counts, not command/hash receipts. */
+function chatNarrative(value: string): string {
+  return stripMachineGroups(chatSafeDetailValue(value)
+    .replace(/\b(?:fixed in|commit|HEAD(?: at)?|built from)\s+`?[a-f0-9]{7,64}`?/gi, "")
+    .replace(/\b(?=[a-f0-9]*[a-f])(?=[a-f0-9]*\d)[a-f0-9]{7,64}\b/gi, "")
+    .replace(/`(?:bun|npm|npx|node|git|tsc)\s+[^`]+`/g, "")
+    .replace(/\b(?:bun test|npm (?:run \S+|test)|npx tsc|tsc --noEmit)\b(?:\s+(?:--[\w=-]+|[\w./-]+\.(?:ts|js|mjs)))*/g, "")
+    .replace(/\(\s*[,;:]*\s*\)/g, "")
+    .replace(/\s+([,.;:])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim());
+}
+
 /** Build the section parts shared by chat, transcript, and archive.
  * v0.38.50: agent-structured groups render as `#### n. Area` subsections
  * with nested evidence bullets; at RICH_TABLE_GROUP_THRESHOLD groups the
@@ -620,17 +633,17 @@ export function buildRichTerminalParts(args: {
     groups.forEach((group, i) => {
       findingLines.push(`#### ${i + 1}. ${group.title}`);
       group.findings.forEach((finding, fi) => {
-        const { lead, body } = leadBody(args.chat ? chatSafeDetailValue(extractEvidenceTokens(finding).text) : finding);
+        const { lead, body } = leadBody(args.chat ? chatNarrative(extractEvidenceTokens(finding).text) : finding);
         findingLines.push(`- **${lead}** \u2014 ${body}`);
         // v0.38.52: per-finding test proof (shot C) — absent stays absent.
         const proof = group.tests?.[fi]?.trim();
-        if (proof) findingLines.push(`  - Test Results: ${args.chat ? chatSafeDetailValue(proof) : proof}`);
+        if (proof) findingLines.push(`  - Test Results: ${args.chat ? chatNarrative(proof) : proof}`);
       });
     });
   } else {
     // v0.38.55: the flat fallback renders every detail — no cap.
     findings.forEach((detail, i) => {
-      const { lead, body } = leadBody(detail);
+      const { lead, body } = leadBody(args.chat ? chatNarrative(detail) : detail);
       findingLines.push(`${i + 1}. **${lead}** \u2014 ${body}`);
     });
   }
@@ -646,16 +659,17 @@ export function buildRichTerminalParts(args: {
   if (gates.length > 0) {
     for (const row of gates) {
       const derived = testsRowStatus(row.notes ?? "");
+      const notes = args.chat ? chatNarrative(row.notes ?? "") : row.notes?.trim();
       const command = row.command?.trim() || "\u2014";
       tableRows.push(showCommand
-        ? `| ${escapeTableCell(row.gate)} | ${escapeTableCell(command)} | ${escapeTableCell(row.scope?.trim() || "\u2014")} | ${derived} | ${escapeTableCell(row.notes?.trim() || "\u2014")} |`
-        : `| ${escapeTableCell(row.gate)} | ${escapeTableCell(row.scope?.trim() || "\u2014")} | ${derived} | ${escapeTableCell(row.notes?.trim() || "\u2014")} |`);
+        ? `| ${escapeTableCell(row.gate)} | ${escapeTableCell(command)} | ${escapeTableCell(row.scope?.trim() || "\u2014")} | ${derived} | ${escapeTableCell(notes || "\u2014")} |`
+        : `| ${escapeTableCell(row.gate)} | ${escapeTableCell(row.scope?.trim() || "\u2014")} | ${derived} | ${escapeTableCell(notes || "\u2014")} |`);
     }
   } else {
     for (const detail of tests) {
       const { body } = leadBody(detail);
       const status = testsRowStatus(body);
-      tableRows.push(`| Tests | ${status} | ${escapeTableCell(body)} |`);
+      tableRows.push(`| Tests | ${status} | ${escapeTableCell(args.chat ? chatNarrative(body) : body)} |`);
     }
   }
   if (!args.chat && auditStatus !== "NO VERDICT") {

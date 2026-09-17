@@ -183,9 +183,14 @@ test("v0.38.52: complete_goal gateRows + tests ride the claim into the chat rend
   await waitFor(() => entries.length === 1);
   // v0.38.55 (full parity): the full gate table — with its Command
   // column — always reaches the chat, hashes included.
-  assert.ok(entries[0].content.startsWith("## Done — auditor approved (1 verdict)"), "verdict banner opens the card");
-  assert.ok(entries[0].content.includes("| Quality Gate | Command | Scope | Status | Notes |"), "command column renders when a row carries one");
-  assert.ok(entries[0].content.includes("bun test tests/gate.test.ts"), "repro command reaches the chat");
+  assert.ok(entries[0].content.startsWith("## Done — "), "outcome opens the card");
+  assert.ok(entries[0].content.includes("| Quality Gate | Scope | Status | Notes |"), "compact gate table");
+  assert.ok(!entries[0].content.includes("bun test tests/gate.test.ts"), "repro command stays in the archive");
   assert.ok(entries[0].content.includes("  - Test Results: gate suite 9/9"), "per-finding proof reaches the chat");
-  assert.ok(entries[0].content.includes("02871aa6"), "commit hash rides the chat — full parity, archive keeps it too");
+  assert.ok(!entries[0].content.includes("02871aa6"), "commit hash stays archival");
+  const record = /• record: (\S+\.md)/.exec(entries[0].content)?.[1];
+  assert.ok(record, "record pointer supplied");
+  const archived = fs.readFileSync(path.join(cwd, record!), "utf8");
+  assert.match(archived, /02871aa6/);
+  assert.match(archived, /bun test tests\/gate\.test\.ts/);
 });

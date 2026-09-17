@@ -107,7 +107,7 @@ test("REPORTED verification stays visible — unclaimed status never auto-hides"
   assert.ok(chatLines.some((l) => /^\| Tests \| REPORTED \|/.test(l)), "bare-exit notes honestly stay REPORTED");
 });
 
-test("commit hashes ride the chat (full parity) and the archive record", () => {
+test("commit hashes stay in the archive, while chat keeps explanations", () => {
   const hashed = [
     "Outcome: shipped the hash audit",
     "Changed: extensions/completion-summary.ts in 02871aa6",
@@ -136,8 +136,9 @@ test("commit hashes ride the chat (full parity) and the archive record", () => {
     findingGroups: [{ title: "Hashes", findings: [group] }],
   });
   const chat = chatLines.join("\n");
-  assert.ok(chat.includes("02871aa6"), "short hash rides the chat findings");
-  assert.ok(chat.includes("a8f3fad5c9e2b1a4d6f8e0c2b4a6d8e0f1a3b5c7d9"), "full SHA rides the chat evidence");
+  assert.ok(!chat.includes("02871aa6"), "short hash stays archival");
+  assert.ok(!chat.includes("a8f3fad5c9e2b1a4d6f8e0c2b4a6d8e0f1a3b5c7d9"), "full SHA stays archival");
+  assert.doesNotMatch(chat, /fixed in\s*[,—.]/, "no dangling citation fragment");
   assert.ok(chat.includes("extensions/completion-summary.ts"), "the file ref rides along");
   // The archive human layer renders flat findings when no groups are
   // claimed (the verbatim six-label record carries them regardless).

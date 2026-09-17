@@ -89,7 +89,8 @@ test("repair re-claim preserves the whole-work recap in the approved render", { 
   await pi.runTool("complete_goal", { completionSummary: DELTA_ONLY, verificationSummary: "pinned" }, ctx);
   await waitFor(() => entries.length === 1);
   const chat = entries[0]!.content as string;
-  assert.match(chat, /## Done — auditor approved/);
+  assert.match(chat, /^## Done — Shipped the search rollout end to end/);
+  assert.match(chat, /• auditor approved/);
   assert.match(chat, /Shipped the search rollout end to end/, "the whole-work outcome leads the repair-approved render");
   assert.match(chat, /2223 pass/, "the whole-work verification proof survives the repair re-claim");
   assert.match(chat, /rollout doc plus full suite/, "the whole-work evidence survives");
