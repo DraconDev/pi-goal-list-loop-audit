@@ -473,6 +473,16 @@ process.stdin.on("data", async (chunk) => {
   // Real reports stream for seconds; 400ms keeps the phase observably long
   // without slowing the suite.
   await sleep(400);
+  // v0.38.57: another full sequence pass — under parallel-suite load a
+  // sampled poll can still miss the first 75ms tool window entirely, so a
+  // second cycle doubles the observation windows without changing the
+  // phase order the test pins.
+  out({ type: "tool_execution_start", toolCallId: "read-3", toolName: "read", args: { path: "/repo/README.md" } });
+  await sleep(75);
+  out({ type: "tool_execution_end", toolCallId: "read-3" });
+  await sleep(75);
+  out({ type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "<approved/>" } });
+  await sleep(400);
   out({ type: "agent_settled" });
 });
 `;

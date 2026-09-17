@@ -1,6 +1,25 @@
 # Changelog
 
-## Unreleased
+## 0.38.57 — Phased drafting, truthful waits and outcome-first summaries (2026-09-17)
+
+### Tool-first phased drafting
+
+Structured drafting choices use the question picker when available; independent
+questions are batched within visible phases, while dependent questions wait for
+earlier answers. A narrowly detected promise-only ending after an answered
+questionnaire gets one ownership- and lifecycle-fenced corrective handoff per
+draft. Genuine questions, cancellation, replacement and busy hosts stand down.
+
+### Truthful pauses and outcome-first completion
+
+Deliberate timed waits show scheduled continuation, untimed waits name the user
+action, and durable recovery episodes retain retry ownership. Age alone no longer
+labels queued work as monitoring. Completion chat leads with the outcome and
+readable area groups rather than narrative tables; compact verification retains
+failures, skips and unrun checks. Commands, hashes and repository bookkeeping
+stay archival. Evidence stripping removes empty wrappers, approval is not repeated
+in the header/table, and repair claims retain the whole-work recap in chat and
+the archive. Archive evidence and approval/lifecycle barriers remain intact.
 
 ### Paragraph seeds stay one list item
 

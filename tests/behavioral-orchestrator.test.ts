@@ -136,7 +136,7 @@ process.stdin.on("data", async (chunk) => {
   return script;
 }
 
-function writeFakeAuditor(cwd: string, verdict: "approved" | "disapproved", delayMs = 0, reportOverride?: string): string {
+function writeFakeAuditor(cwd: string, verdict: "approved" | "disapproved", delayMs = 0, reportOverride?: string, releaseFile?: string): string {
   const script = path.join(cwd, "fake-auditor-pi.mjs");
   fs.writeFileSync(script, `#!/usr/bin/env node
 let input = "";
@@ -146,6 +146,7 @@ process.stdin.on("data", async (chunk) => {
   if (handled || !input.includes("\\n")) return;
   handled = true;
   await new Promise((resolve) => setTimeout(resolve, ${delayMs}));
+  ${releaseFile ? `const fs = await import("node:fs"); while (!fs.existsSync(${JSON.stringify(releaseFile)})) await new Promise(resolve => setTimeout(resolve, 10));` : ""}
   const emit = (event) => process.stdout.write(JSON.stringify(event) + "\\n");
   const report = ${JSON.stringify(reportOverride ?? (verdict === "approved" ? "<evidence>\\npinned\\n</evidence>\\n<approved/>" : "## Required fixes\\n- fix the pinned gap\\n<disapproved/>"))};
   emit({ type: "tool_execution_start", toolCallId: "fake-read", toolName: "read", args: { path: "README.md" } });
@@ -3564,7 +3565,8 @@ test("v0.34.119: impossible completion counts reach the durable auditor claim be
 test("v0.34.22: complete_goal returns while a detached auditor finishes and archives approval", async () => {
   __testOnlyResetStaleFlag();
   const cwd = tmpCwd();
-  const fakePi = writeFakeAuditor(cwd, "approved", 350);
+  const releaseFile = path.join(cwd, "release-auditor");
+  const fakePi = writeFakeAuditor(cwd, "approved", 0, undefined, releaseFile);
   const previous = process.env.GLLA_PI_BINARY;
   process.env.GLLA_PI_BINARY = fakePi;
   try {
@@ -3586,7 +3588,7 @@ test("v0.34.22: complete_goal returns while a detached auditor finishes and arch
     }, ctx);
     const elapsed = Date.now() - started;
     assert.match(result.content[0]!.text, /detached auditor is settling/i, "pending names the settling auditor in plain voice");
-    assert.ok(elapsed < 300, `complete_goal waited ${elapsed}ms for the worker`);
+    assert.ok(!fs.existsSync(releaseFile), `tool returned before the verdict was released (${elapsed}ms)`);
     const claimed = readState(cwd).goal as { status: string; pendingCompletion?: { phase?: string } };
     assert.equal(claimed.status, "auditing", "claim is durable before the detached result");
     assert.equal(claimed.pendingCompletion?.phase, "running");
@@ -3597,10 +3599,11 @@ test("v0.34.22: complete_goal returns while a detached auditor finishes and arch
     // current event yields, even if the worker has already moved past its
     // initial queued phase.
     ctx.ui.setWidget("pi-glla", ["stale pre-turn widget"]);
-    await tick(100);
+    await waitUntil(() => ((ctx.ui.widgets["pi-glla"] as string[] | undefined) ?? []).some(line => line.includes("· auditing ·")));
     const repaintedWidget = (ctx.ui.widgets["pi-glla"] as string[] | undefined) ?? [];
     assert.ok(repaintedWidget.some((line) => line.includes("· auditing ·")), "the post-tool repaint restores the durable auditing state");
     assert.ok(repaintedWidget.some((line) => line.includes("detached worker")), "the post-tool repaint restores the detached-auditor surface");
+    fs.writeFileSync(releaseFile, "release verdict");
     await waitUntil(() => (readState(cwd).goal as { status?: string } | null) === null);
     assert.ok(fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8").includes('"goal_archived"'), "approval archived and closed the goal");
     // v0.34.91: the detached-settle chat notify carries the recap (what
