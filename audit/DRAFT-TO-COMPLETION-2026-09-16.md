@@ -45,6 +45,19 @@ Full gate4 retained honestly at `/var/tmp/glla-v0.38.57-gate4.log`: 2240 pass / 
 
 Final full gate: `TMPDIR=/var/tmp timeout 1800 npm run release:check`, `/var/tmp/glla-v0.38.57-gate5.log`: **2244 pass / 2 skip / 0 fail**, 2246 tests across 221 files; typecheck, state-import/auditor fixture, package inspection, installed tarball import and skill smoke all passed. The same two environment-gated integrations remain skipped (AgentManager stop RPC and watched-repo auto-committer). This supersedes gate3 after the production review fixes.
 
+
+## Auditor disapproval 2026-09-17 (monitoring labels, citation husks)
+
+The detached auditor reproduced two production defects and the review was accepted as evidence:
+
+- **Monitoring labels** (`extensions/goal-loop-display.ts:1010`, `extensions/goal-loop-core.ts:745`): the keyword predicate rendered `MONITORING · next check` for a queued goal whose objective merely mentioned `healthz`. Objective text is intent, not runtime evidence; no GLLA producer attests an external watcher. `isMonitorGoal` now fails closed and queued activity renders as queued. Red repro `/var/tmp/glla-monitor-red.log` (the auditor's own probe output is quoted in the report) → green `/var/tmp/glla-monitor-green.log` in `tests/truthful-pause-labels.test.ts`.
+- **Citation husks** (`extensions/completion-summary.ts:456`): the evidence-token grammar consumed only the first line reference, leaving `(,2760)` husks visible in the Deathrun screenshot. The pattern now consumes complete line lists/ranges and the archive retains the full reference. Red `/var/tmp/glla-screenshot-red.log` → green `/var/tmp/glla-screenshot-green.log` in `tests/screenshot-completion.test.ts`.
+- **Substantive fixtures**: GLLA, Deathrun and Neonbreak screenshot-derived renderer fixtures now pin meaningful change explanations, failures/skips/limitations and the chat/archive citation split: `audit/fixtures/GLLA-COMPLETION-2026-09-17.md`, `DEATHRUN-COMPLETION-2026-09-17.md`, `NEONBREAK-COMPLETION-2026-09-17.md` (tests/screenshot-completion.test.ts). They transcribe historical examples; they are not newly executed external-project checks.
+- **note.md** reconciled to verified 0.38.57 publication and the corrective 0.38.58 release; Later/Research retained.
+- Adjacent display/summary/lifecycle suites: 296 pass / 0 fail across 20 files (`/var/tmp/glla-corrective-adjacent.log`).
+
+Corrective release **0.38.58** prepared (package, lock, CHANGELOG `## 0.38.58 — Evidence-based status and clean citations`, docs/INDEX trail). Full gates: gate1 `/var/tmp/glla-v0.38.58-gate1.log` honestly failed the version-trail contract (2248 pass / 1 fail) until `docs/INDEX.md` reached v0.38.58; gate2 `/var/tmp/glla-v0.38.58-gate2.log`: **2249 pass / 2 skip / 0 fail** across 222 files, typecheck/package/skill/tarball smoke green. Publication of 0.38.58 follows the same tag → GitHub Release → workflow path; evidence appended below after completion.
+
 ## Release status
 
 Version **0.38.57 published and registry-verified**, including the previous Unreleased paragraph-routing and audit fixes. Tag `v0.38.57` points to `cbb847d1649857ff9109579486518909f5a6f602` on main; no history rewriting.
