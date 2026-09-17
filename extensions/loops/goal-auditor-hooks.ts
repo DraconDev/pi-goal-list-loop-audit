@@ -794,8 +794,9 @@ export function auditorRetryPlan(claim: PendingCompletion, _legacyQuota?: unknow
   // No attempt cap: the shared 24h horizon (MAIN_MODEL_AUTO_RETRY_HORIZON_MS)
   // is the only conservative stop, same as the main-model envelope. The
   // attempt counter stays as diagnostic metadata.
-  const automatic = aggressive || now + retryAfterSec * 1_000 <= untilMs;
-  return { attempt, retryAfterSec, firstAt, autoRetryUntil: new Date(untilMs).toISOString(), automatic, requestedSec, unbounded: aggressive };
+  // An automatic retry never earns a new window, including aggressive mode.
+  const automatic = now + retryAfterSec * 1_000 <= untilMs;
+  return { attempt, retryAfterSec, firstAt, autoRetryUntil: new Date(untilMs).toISOString(), automatic, requestedSec, unbounded: false };
 }
 
 export type AuditorModelCandidate = AuditorFallbackCandidate;
@@ -1559,6 +1560,9 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       auditorCandidateRefs: undefined,
       auditorCandidateRef: undefined,
       auditorRetryCandidateRef: undefined,
+      auditorRetryAttemptStartedAt: undefined,
+      auditorAttemptedRefs: undefined,
+      auditorFailureCount: undefined,
       auditorFallbackExhausted: undefined,
     };
     result = { ...result, fallbackExhausted: false };
@@ -1702,7 +1706,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       auditorFailureAt: new Date().toISOString(),
       retryAttempts: plan.attempt,
       retryFirstAt: plan.firstAt,
-      ...(aggressive ? { retryUntil: undefined } : { retryUntil: plan.autoRetryUntil }),
+      retryUntil: plan.autoRetryUntil,
     };
     if (!plan.automatic) {
       const notifyCapped = claimRecoveryNotice(pending, `${recoveryEpisodeKey}:retry-capped`);
@@ -1739,7 +1743,9 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     if (notifyRetry) liveCtx.ui.notify(`Auditor still failing — next auto-retry in ${fmtRetryDelay(plan.retryAfterSec)} (your completion claim is stored; no action needed).`, "warning");
     scheduleProviderRetryForSession(liveCtx, plan.retryAfterSec, result.error, (fresh: ExtensionContext) => {
       if (state.goal && state.goal.status === "paused" && (state.goal.pauseReason ?? "").startsWith("auditor retry:") && state.goal.pendingCompletion) {
-        void retryStoredCompletionAudit(origin);
+        // Timer authority is automatic, even when a user started the first
+        // attempt. Reusing "manual" resets the count and deadline forever.
+        void retryStoredCompletionAudit("provider-retry");
       }
     }, undefined, {
       episodeKey: recoveryEpisodeKey,
