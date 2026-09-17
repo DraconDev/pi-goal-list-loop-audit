@@ -82,6 +82,9 @@ we should not be taking goal and lists and loops literally but as a way to write
 this is provider related but we still need to keep relentlessly hammering
 
 ##
+we really should not be stopping mid objective unles we must
+
+##
 i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
 
 
