@@ -62,6 +62,12 @@ the auditor fallbacks dont include thinking levels and we need to look into the 
 # Later
 
 ##
+
+i dont think we shoudl pause for load and resume after 20 is crazy, that is 4 and hafl hours, so even if we paused for that 
+it would need to be extreme and we keep reevaluating often 
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_153404.png 
+
+##
 i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
 
 
