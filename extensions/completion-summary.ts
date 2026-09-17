@@ -589,15 +589,17 @@ export function buildRichTerminalParts(args: {
    * keeps the `### Summary` section out (unstructured summaries keep
    * today's headline-echo shape). */
   summaryLines?: string[];
+  /** Chat favors explanations; the archive retains raw commands and tables. */
+  chat?: boolean;
 }): RichTerminalParts {
   const { findings, tests, next } = partitionRichDetails(args.details);
   const outcome = args.outcome;
   const kind = args.kind ?? "Done";
-  const headline = requestEchoHeadline(kind, args.objective, outcome);
+  const headline = args.chat ? `## ${kind} — ${outcome}` : requestEchoHeadline(kind, args.objective, outcome);
   const auditStatus = auditRowStatus(args.auditHistory);
-  const banner = `## ${kind} \u2014 ${bannerVerdict(auditStatus)}`;
+  const banner = args.chat ? headline : `## ${kind} \u2014 ${bannerVerdict(auditStatus)}`;
   const groups = args.groups ?? [];
-  const useTable = groups.length >= RICH_TABLE_GROUP_THRESHOLD;
+  const useTable = !args.chat && groups.length >= RICH_TABLE_GROUP_THRESHOLD;
   const findingLines: string[] = [];
   if (useTable) {
     findingLines.push("| Area | Finding | Evidence |", "| --- | --- | --- |");
@@ -618,11 +620,11 @@ export function buildRichTerminalParts(args: {
     groups.forEach((group, i) => {
       findingLines.push(`#### ${i + 1}. ${group.title}`);
       group.findings.forEach((finding, fi) => {
-        const { lead, body } = leadBody(finding);
+        const { lead, body } = leadBody(args.chat ? chatSafeDetailValue(extractEvidenceTokens(finding).text) : finding);
         findingLines.push(`- **${lead}** \u2014 ${body}`);
         // v0.38.52: per-finding test proof (shot C) — absent stays absent.
         const proof = group.tests?.[fi]?.trim();
-        if (proof) findingLines.push(`  - Test Results: ${proof}`);
+        if (proof) findingLines.push(`  - Test Results: ${args.chat ? chatSafeDetailValue(proof) : proof}`);
       });
     });
   } else {
@@ -640,7 +642,7 @@ export function buildRichTerminalParts(args: {
   // v0.38.55: every row renders with its repro command when any row
   // carries one (Stage | Command | Result | Notes parity) — no row cap.
   const gates = args.gates ?? [];
-  const showCommand = gates.some((row) => row.command?.trim());
+  const showCommand = !args.chat && gates.some((row) => row.command?.trim());
   if (gates.length > 0) {
     for (const row of gates) {
       const derived = testsRowStatus(row.notes ?? "");
@@ -656,7 +658,7 @@ export function buildRichTerminalParts(args: {
       tableRows.push(`| Tests | ${status} | ${escapeTableCell(body)} |`);
     }
   }
-  if (auditStatus !== "NO VERDICT") {
+  if (!args.chat && auditStatus !== "NO VERDICT") {
     const auditBody = args.countsLine.replace(/^\u2014\s*/, "").replace(/\.\s*$/, "");
     // v0.38.55 audit: the Audit row's Scope names the row kind — the old
     // shape duplicated the counts text in Scope and Notes.
@@ -689,7 +691,7 @@ export function buildRichTerminalParts(args: {
     findingLines,
     tableLines,
     nextLines,
-    repoLines: args.repoState ?? [],
+    repoLines: args.chat ? [] : args.repoState ?? [],
     summaryLines: args.summaryLines ?? [],
   };
 }
@@ -958,6 +960,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   // knows. The transcript mirrors chat; the archive keeps the full table
   // and full text plus the machine layer.
   const richParts = buildRichTerminalParts({
+    chat: true,
     outcome: richBrief.outcome,
     details: withoutStaleNext(richDetails),
     countsLine,
