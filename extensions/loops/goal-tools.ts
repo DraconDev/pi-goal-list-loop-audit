@@ -269,6 +269,7 @@ import {
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
 import { buildFinalRepoStateLines, buildTerminalApprovalRender, compactCompletionSummary, compactTerminalCompletionSummary } from "../completion-summary.js";
 import { persistApprovalRender, replayUndeliveredApprovalRenders } from "../approval-render-store.js";
+import { resolveAuditorThinkingLevel } from "../auditor-thinking.js";
 import {
   defaultAgentDir,
   resolveEffectiveSubagentModel,
@@ -901,6 +902,12 @@ function registerAgentTools(pi: any): void {
       // the user at the kept resumable session.
       let inspectionSessionPath: string | undefined;
       const runAudit = (candidate: AuditorModelCandidate) => {
+        const requestedThinking = settings.auditorThinkingLevel ?? ctx.thinkingLevel ?? "max";
+        const effectiveThinking = resolveAuditorThinkingLevel(candidate.model, requestedThinking);
+        appendLedger(ctx.cwd, "auditor_thinking_selected", {
+          goalId: auditGoalId, attemptId: auditAttemptId, model: modelRef(candidate.model),
+          via: candidate.via, requestedThinking, thinkingLevel: effectiveThinking,
+        });
         latestAuditProgress = {
           ...(latestAuditProgress ?? {}),
           model: modelRef(candidate.model),
@@ -920,7 +927,7 @@ function registerAgentTools(pi: any): void {
           // Unset follows the parent session dial, matching the Auditor
           // settings row; max is the safe detached default when a headless
           // context does not expose a thinking level.
-          thinkingLevel: (settings.auditorThinkingLevel ?? ctx.thinkingLevel ?? "max") as any, // pi ≥0.83 understands max; dev-types predate it
+          thinkingLevel: effectiveThinking as any, // pi ≥0.83 understands max; dev-types predate it
           allowedExtensions: settings.auditorAllowedExtensions,
           // v0.38.3: opt-in live inspection — persist the auditor's pi as a
           // resumable session pinned inside the job dir (off = --no-session).
@@ -1543,6 +1550,10 @@ function registerAgentTools(pi: any): void {
         // completion claim so /goal resume can retry the isolated auditor
         // directly. A timeout is not a verdict and must not be fed back into
         // the normal agent continuation path.
+        const exhaustedChain = result.fallbackExhausted
+          ? (durableCompletionClaim.auditorCandidateRefs ?? durableCompletionClaim.auditorAttemptedRefs ?? []).join(" → ") || "no available auditor candidates"
+          : durableCompletionClaim.exhaustedChain;
+        const exhaustedNotice = exhaustedChain ? `Exhausted auditor chain: ${exhaustedChain}. ` : "";
         const cursorPersistenceFailed = isAuditorCursorPersistenceFailure(result.error);
         if (result.fallbackExhausted && !cursorPersistenceFailed) {
           // Unified envelope: a burned candidate chain is not a verdict and
@@ -1557,6 +1568,7 @@ function registerAgentTools(pi: any): void {
             goalId: auditGoalId,
             attemptId: durableCompletionClaim.attemptId,
             failureClass: auditorResultFailureClass(result),
+            exhaustedChain,
             diagnostic: exhaustedCopy.diagnostic,
             display: exhaustedCopy.display,
             recoveryEpisodeKey: durableCompletionClaim.recoveryEpisodeKey ?? `${durableCompletionClaim.at}:${exhaustedCopy.fingerprint}`,
@@ -1566,8 +1578,11 @@ function registerAgentTools(pi: any): void {
             auditorCandidateRefs: undefined,
             auditorCandidateRef: undefined,
             auditorRetryCandidateRef: undefined,
-            auditorRetryAttemptStarted: undefined,
+            auditorRetryAttemptStartedAt: undefined,
+            auditorAttemptedRefs: undefined,
+            auditorFailureCount: undefined,
             auditorFallbackExhausted: undefined,
+            exhaustedChain,
           };
           chainExhaustedToLadder = true;
         }
@@ -1699,8 +1714,8 @@ function registerAgentTools(pi: any): void {
         }
         // v0.34.51/v0.36.0: ANY infrastructure failure enters the durable
         // retry plan — error text is not trusted to pick one failure family.
-        // Conservative mode keeps its horizon; aggressive mode keeps the
-        // same per-attempt schedule without a wall-clock episode expiry.
+        // Every mode persists the same fixed recovery horizon so the first
+        // automatic dispatch can enforce it even after delayed timer delivery.
         if (result.error && !result.disapproved) {
           const failureCopy = providerErrorPresentation(result.error, "completion");
           const recoveryEpisodeKey = durableCompletionClaim.recoveryEpisodeKey ?? `${durableCompletionClaim.at}:${failureCopy.fingerprint}`;
@@ -1719,7 +1734,7 @@ function registerAgentTools(pi: any): void {
             auditorFailureAt: new Date().toISOString(),
             retryAttempts: plan.attempt,
             retryFirstAt: plan.firstAt,
-            ...(aggressive ? { retryUntil: undefined } : { retryUntil: plan.autoRetryUntil }),
+            retryUntil: plan.autoRetryUntil,
           };
           if (!plan.automatic) {
             const notifyCapped = claimRecoveryNotice(pending, `${recoveryEpisodeKey}:retry-capped`);
@@ -1733,7 +1748,7 @@ function registerAgentTools(pi: any): void {
               recoveryNoticeKeys: pending.recoveryNoticeKeys,
               pauseKind: "blocked",
               pauseResumeAt: undefined,
-              pauseReason: `auditor retry: automatic retry horizon reached (${plan.attempt} attempts)`,
+              pauseReason: `auditor retry: ${exhaustedNotice}automatic retry horizon reached (${plan.attempt} attempts)`,
               pauseSuggestedAction: `The completion claim is stored, but automatic auditor retries are stopped. Check the auditor/model setup, then ${activeGoalSurfaceCommand("resume")} to start a fresh bounded window.`,
             }, ctx);
             appendLedger(ctx.cwd, "auditor_retry_capped", { streak: plan.attempt, autoRetryUntil: plan.autoRetryUntil, requestedSec: plan.requestedSec, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey });
@@ -1756,7 +1771,7 @@ function registerAgentTools(pi: any): void {
             recoveryNoticeKeys: pending.recoveryNoticeKeys,
             pauseKind: "wait",
             pauseResumeAt: new Date(Date.now() + plan.retryAfterSec * 1000).toISOString(),
-            pauseReason: `auditor retry: ${failureCopy.display}`,
+            pauseReason: `auditor retry: ${exhaustedNotice}${failureCopy.display}`,
             pauseSuggestedAction: `Auto-retry in ${fmtRetryDelay(plan.retryAfterSec)} — or ${activeGoalSurfaceCommand("resume")} to retry now`,
           }, ctx);
           appendLedger(ctx.cwd, "goal_paused", { reason: `auditor retry: retry in ${plan.retryAfterSec}s (uniform schedule)`, attempt: plan.attempt, autoRetryUntil: plan.autoRetryUntil, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey });
@@ -1768,7 +1783,7 @@ function registerAgentTools(pi: any): void {
               // agent is not needed to re-submit an unchanged claim, and
               // re-engaging it produced hallucinated-closure loops.
               if (state.goal.pendingCompletion) {
-                void retryStoredCompletionAudit();
+                void retryStoredCompletionAudit("provider-retry");
                 return;
               }
               updateGoal({ status: "active", pauseKind: undefined, pauseResumeAt: undefined, pauseReason: undefined, pauseSuggestedAction: undefined, autoResumedAt: new Date().toISOString(), autoResumedEvent: "auditor provider retry elapsed" }, fresh);
@@ -1793,9 +1808,8 @@ function registerAgentTools(pi: any): void {
         }
         // v0.34.51/v0.36.0: the durable retry plan above owns ALL infra
         // failures now (timeouts keep their own branch). The old 3-strike
-        // "auditor model is likely broken" stop is gone; aggressive mode
-        // continues until a state-based stop, while conservative mode keeps
-        // its bounded horizon.
+        // "auditor model is likely broken" stop is gone; every mode keeps
+        // the fixed recovery horizon.
       }
 
       // Shield-blocked approval (v0.22.6): the auditor APPROVED but the
