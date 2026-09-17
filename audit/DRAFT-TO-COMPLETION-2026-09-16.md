@@ -159,3 +159,22 @@ frame-pacing limitation and prior launch flake; GLLA retains substantive fixes
 and historical failure counts. These are renderer fixtures, not fresh live
 interactive screenshots. Lifecycle and confirmation barriers are untouched.
 Publication evidence follows once the registry verifies this corrective patch.
+
+
+0.38.60 publication verified: tag `18e70811f6ed3dda6da1a6058cae6e2b0f1788b8`
+on main; GitHub release published 2026-09-17T07:19:37Z at
+https://github.com/DraconDev/pi-goal-list-loop-audit/releases/tag/v0.38.60.
+Release workflow 35193974373 and tag quality 35193973852 succeeded. npm publish
+log explicitly targets registry.npmjs.org, latest, public access; provenance
+index 2875227987. After initial E404 propagation responses, bounded polling
+verified version/latest both 0.38.60 in /var/tmp/glla-v0.38.60-registry.json;
+direct version metadata /var/tmp/glla-v0.38.60-registry-version.json has shasum
+c00dea8948530e0720e6320e080888bd87abe0bc matching CI. No republish, release
+recreation, tag movement or history rewriting occurred.
+
+Saved and read the exact counterexample projections in
+`audit/fixtures/MIXED-RECEIPT-COMPLETION-2026-09-17.md`: both substantive repair
+and unperformed-check text remain in grouped/flat chat and archive. These are
+synthetic inputs and do not claim a live validation run. Final diff check passes.
+Raw full-gate SHA256: 33a7251e1fc4b1472ab3e10b29e13d357656330aa98a96027eca5066bd4a3f61.
+Raw publish-log SHA256: d4d279a88e669ddaaca906bc29ad6c66b269c1891d77868c794f341e68783776.
