@@ -62,6 +62,10 @@ the auditor fallbacks dont include thinking levels and we need to look into the 
 # Later
 
 ##
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_195237.png 
+we are in subagent session ?
+
+##
 
 i dont think we shoudl pause for load and resume after 20 is crazy, that is 4 and hafl hours, so even if we paused for that 
 it would need to be extreme and we keep reevaluating often 
