@@ -20,6 +20,23 @@ async function cleanup(directory, timers) {
   await rm(directory, { recursive: true, force: true });
 }
 
+// Control fixture time, not the production deadline: real file IO remains
+// awaited, so loaded CI cannot turn a 10ms fixture write into a late result.
+function fixtureClock(afterSleep) {
+  let elapsed = 0;
+  let written = false;
+  return {
+    now: () => elapsed,
+    sleep: async (ms) => {
+      elapsed += ms;
+      if (!written) {
+        written = true;
+        await afterSleep();
+      }
+    },
+  };
+}
+
 test("durable wait succeeds before its deadline and reports elapsed polling", async () => {
   const { directory, file } = await scratchFile();
   const timers = [setTimeout(() => appendFile(file, '{"event":"done"}\n'), 20)];
