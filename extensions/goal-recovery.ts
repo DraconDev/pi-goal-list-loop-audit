@@ -991,6 +991,14 @@ async function fireHourlyProbeForParkedAuditor(ctx: ExtensionContext): Promise<v
   const pending = goal.pendingCompletion;
   if (!pending || (pending.phase ?? "") !== "retry-waiting") return;
   if (!(goal.pauseReason ?? "").startsWith("auditor retry:")) return;
+  // A capped/blocked claim must never ride the hourly backstop: its window
+  // ended, so only an explicit user resume may open a fresh envelope.
+  if (goal.pauseKind === "blocked") return;
+  const horizon = [pending.retryUntil, goal.pauseResumeAt]
+    .filter((value): value is string => typeof value === "string" && value.length > 0)
+    .map((value) => Date.parse(value))
+    .filter((value) => Number.isFinite(value));
+  if (horizon.some((value) => Date.now() >= value)) return;
   if (goal.pauseResumeAt && Date.parse(goal.pauseResumeAt) > Date.now() + 60_000) return; // ladder timer owns the wait
   if (typeof retryStoredCompletionAudit !== "function") return;
   appendLedger(ctx.cwd, "hourly_probe_auditor_backstop", {

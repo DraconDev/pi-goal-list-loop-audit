@@ -981,6 +981,39 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   if (!guardGoalBeforeContinuation(initialCtx, "stored-completion-audit", goalId, { allowAuditing: true })) return;
   const guardedGoal = state.goal;
   if (!guardedGoal || guardedGoal.id !== goalId || !guardedGoal.pendingCompletion) return;
+  // A timer can fire late (host suspension, reload, a busy event loop) and
+  // the hourly backstop only knows "past due". Scheduling inside the window
+  // is not permission to launch outside it: the stored horizon binds at
+  // DISPATCH. Only an explicit user-authorized resume (manual/agent) opens
+  // a fresh envelope — an expired automatic dispatch must stop cleanly and
+  // hand the decision back to the owner.
+  if (origin !== "manual" && origin !== "agent") {
+    const pending = guardedGoal.pendingCompletion;
+    const deadlines = [pending.retryUntil, pending.automaticRecoveryUntil]
+      .filter((value): value is string => typeof value === "string" && value.length > 0);
+    const expired = deadlines.some((value) => {
+      const parsed = Date.parse(value);
+      return !Number.isFinite(parsed) || Date.now() >= parsed;
+    });
+    if (expired) {
+      clearScheduledAuditorRecoveryTimer();
+      updateGoal({
+        status: "paused",
+        pendingCompletion: { ...pending, phase: "recovery-pending", recoveryRetryAt: undefined },
+        pauseKind: "blocked",
+        pauseResumeAt: undefined,
+        pauseReason: "auditor retry: automatic recovery window ended before dispatch",
+        pauseSuggestedAction: `The completion claim is stored, but the bounded window ended before dispatch. Check the auditor/model setup, then ${activeGoalSurfaceCommand("resume")} to start a fresh bounded window.`,
+      }, initialCtx);
+      appendLedger(initialCtx.cwd, "auditor_retry_dispatch_expired", {
+        goalId,
+        origin,
+        retryUntil: pending.retryUntil,
+        automaticRecoveryUntil: pending.automaticRecoveryUntil,
+      });
+      return;
+    }
+  }
   completionAuditRecoveryArmed = true;
   let liveCtx: ExtensionContext = initialCtx;
   const claim = beginCompletionAudit(liveCtx, guardedGoal.pendingCompletion, origin);
