@@ -38,6 +38,11 @@ same thing says we are done, but we have an audit after, but it did actually wor
 something is up we have way too many reports of this
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_105755.png /home/dracon/Pictures/Screenshots/Screenshot_20260917_105813.png 
 
+same, and we should not be calling complete anyway before the last audit
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_110338.png /home/dracon/Pictures/Screenshots/Screenshot_20260917_110334.png /home/dracon/Pictures/Screenshots/Screenshot_20260917_110331.png /home/dracon/Pictures/Screenshots/Screenshot_20260917_110329.png 
+
+auditor was unhealthy
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_110744.png 
 
 ##
 its nto even obvious that its working i think we need stronger semantic coloring and active indication
