@@ -228,3 +228,16 @@ synthetic/historical fixtures remain clearly labeled, not live check claims.
 No changes to lifecycle, ownership, drafting, recap preservation or receipt
 filtering. Owner additions to note.md Later observed at turn start are retained;
 only the publication statement in Next will be reconciled. Publication follows.
+
+
+0.38.61 publication verified: tag at `49940a7b` on main; GitHub release
+https://github.com/DraconDev/pi-goal-list-loop-audit/releases/tag/v0.38.61
+published 2026-09-17T08:42:03Z. Release workflow 35201088875 and tag-quality
+35201088828 succeeded. Raw publish log /var/tmp/glla-v0.38.61-publish.log;
+provenance index 2876377342. Separate-shell registry query version/latest
+both 0.38.61 (/var/tmp/glla-v0.38.61-registry.json). Direct version endpoint
+/var/tmp/glla-v0.38.61-registry-version.json shasum
+c2adf95d035bca95b2e6484fb06e34dbd5420e1a matches CI. No rewritten tags/history,
+recreated releases or repeat publishes. Next publication statement updated;
+concurrent owner Later/Research additions remain untouched. Final diff check
+passes (earlier concurrent whitespace warning retained above as historical).
