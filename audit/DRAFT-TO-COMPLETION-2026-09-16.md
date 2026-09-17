@@ -121,3 +121,41 @@ Separate-shell npm registry query returns version and latest **0.38.59**
 `05105b35d72e2161d9773abb8da749675a5a16b4` matches the workflow artifact
 (`/var/tmp/glla-v0.38.59-registry-version.json`). No existing release or Git
 history was rewritten. Running interactive Pi was not reloaded.
+
+
+## Conservative receipt recognition (0.38.60)
+
+The 07:03 auditor correctly reproduced two remaining losses in 0.38.59:
+"Ledger corruption: Concurrent writes lost records; serialized writes now
+preserve account state and the regression was checked" and a mixed receipt
+with "live validation was not performed because credentials are unavailable".
+Keyword co-occurrence and a limitation denylist were the root cause. Rather
+than add more exception words, suppression now requires a recognized lead and
+complete recognized receipt clauses; any unknown/mixed clause or separate
+proof preserves the entire finding. The optional document citation grammar
+cannot consume arbitrary parenthetical prose. Archive inputs remain intact.
+
+Regression evidence: /var/tmp/glla-v60-red.log (3 pass / 2 fail before fix),
+/var/tmp/glla-v60-focused.log (40 pass / 0 fail), and the isolated mixed-case
+run /var/tmp/glla-v60-mixed-only.log (1 pass / 0 fail, 4 filtered out). Grouped
+and flat chat AND archive assertions cover both auditor counterexamples plus
+unknown coverage and data-loss clauses. Unknown proof is always retained.
+
+Fresh read-only reviewer 7e2166b9-5e43-4c88-8167-91733e983682 found no blockers.
+Its cosmetic numbering observation is not a defect: filtering before indexing
+intentionally gives consecutive chat numbering, independent of archival rows.
+No review finding deferred; source inspection is distinguished from executed
+verification. The final full gate ran after narrowing the unchanged-fixes
+clause: /var/tmp/glla-v0.38.60-gate.log, command
+`TMPDIR=/var/tmp timeout 1800 npm run release:check`: **2254 pass / 2 skip /
+0 fail**, 2256 tests in 223 files; typecheck, state import, auditor fixture,
+package/skill inspection and installed 0.38.60 tarball smoke all passed.
+The same AgentManager RPC and watched-repo integrations remain skipped.
+
+All three saved screenshot projections were regenerated and read in full;
+outputs are unchanged from the accepted historical-example projection shape:
+Neonbreak Process/Ledger remains archive-only; Deathrun retains skipped checks,
+frame-pacing limitation and prior launch flake; GLLA retains substantive fixes
+and historical failure counts. These are renderer fixtures, not fresh live
+interactive screenshots. Lifecycle and confirmation barriers are untouched.
+Publication evidence follows once the registry verifies this corrective patch.
