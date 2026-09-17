@@ -1542,6 +1542,12 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     return;
   }
 
+  // Capture the burned chain before clearing the execution cursor. Diagnostics
+  // describe this attempt; they must not become candidate-selection state.
+  const exhaustedChain = result.fallbackExhausted
+    ? (durableClaim.auditorCandidateRefs ?? durableClaim.auditorAttemptedRefs ?? []).join(" → ") || "no available auditor candidates"
+    : undefined;
+  const exhaustedNotice = exhaustedChain ? `Exhausted auditor chain: ${exhaustedChain}. ` : "";
   const cursorPersistenceFailed = isAuditorCursorPersistenceFailure(result.error);
   if (result.error && result.fallbackExhausted && !cursorPersistenceFailed) {
     // A burned chain is an ordinary retryable failure — the auditor is just
@@ -1555,6 +1561,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       goalId,
       attemptId: durableClaim.attemptId,
       failureClass: auditorResultFailureClass(result),
+      exhaustedChain,
       diagnostic: burnCopy.diagnostic,
       recoveryEpisodeKey: durableClaim.recoveryEpisodeKey ?? `${durableClaim.at}:${burnCopy.fingerprint}`,
     });
@@ -1722,7 +1729,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
         recoveryNoticeKeys: pending.recoveryNoticeKeys,
         pauseKind: "blocked",
         pauseResumeAt: undefined,
-        pauseReason: `auditor retry: automatic retry horizon reached (${plan.attempt} attempts)`,
+        pauseReason: `auditor retry: ${exhaustedNotice}automatic retry horizon reached (${plan.attempt} attempts)`,
         pauseSuggestedAction: `The completion claim is stored, but automatic auditor retries are stopped. Check the auditor/model setup, then ${activeGoalSurfaceCommand("resume")} to start a fresh bounded window.`,
       }, liveCtx);
       appendLedger(liveCtx.cwd, "auditor_retry_capped", { streak: plan.attempt, autoRetryUntil: plan.autoRetryUntil, requestedSec: plan.requestedSec, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey });
@@ -1739,7 +1746,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       recoveryNoticeKeys: pending.recoveryNoticeKeys,
       pauseKind: "wait",
       pauseResumeAt: new Date(Date.now() + plan.retryAfterSec * 1000).toISOString(),
-      pauseReason: `auditor retry: ${failureCopy.display}`,
+      pauseReason: `auditor retry: ${exhaustedNotice}${failureCopy.display}`,
       pauseSuggestedAction: `Auto-retry in ${fmtRetryDelay(plan.retryAfterSec)} — or ${activeGoalSurfaceCommand("resume")} to retry now`,
     }, liveCtx);
     appendLedger(liveCtx.cwd, "goal_paused", { reason: `auditor retry: retry in ${plan.retryAfterSec}s (uniform schedule)`, attempt: plan.attempt, autoRetryUntil: plan.autoRetryUntil, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey });
