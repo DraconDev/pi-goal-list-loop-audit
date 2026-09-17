@@ -470,9 +470,12 @@ process.stdin.on("data", async (chunk) => {
   // v0.35.17: hold the producing_report phase for 400ms. The parent samples
   // progress.json on a >=10ms poll loop, but one slow read (load avg 12-16
   // observed on this machine) can skip a 75ms window entirely — field flake.
-  // Real reports stream for seconds; 400ms keeps the phase observably long
-  // without slowing the suite.
-  await sleep(400);
+  // Real reports stream for seconds; 1500ms keeps the phase observably
+  // long without slowing the suite (v0.38.57: one full-suite run skipped
+  // the 400ms window entirely — load avg 12-16; the sampled poll never
+  // saw the phase. A longer hold keeps the ORDER assertion honest under
+  // load instead of weakening it).
+  await sleep(1500);
   out({ type: "agent_settled" });
 });
 `;
@@ -499,7 +502,7 @@ process.stdin.on("data", async (chunk) => {
         wallTimeoutMs: 30_000,
       },
     });
-    assert.equal(result.approved, true);
+    assert.equal(result.approved, true, `approved (error: ${result.error ?? "none"}; missing: ${JSON.stringify(result.regressionShieldMissing)}; output: ${(result.output ?? "").slice(0, 240)})`);
     const phases = reports.map((progress) => progress.phase);
     assert.ok(phases.includes("starting"));
     assert.ok(phases.includes("thinking"));
