@@ -1007,8 +1007,9 @@ function lastAuditorTool(audit: AuditDisplayProgress | null | undefined): string
 function goalDisplayActivity(g: Goal, extras?: WidgetExtras, now = Date.now()): GoalDisplayActivity {
   if (g.status !== "active") return "active";
   const activity = extras?.activity ?? "active";
-  if (activity === "queued" && isMonitorGoal(g, now)) return "monitoring";
-  return activity;
+  // Goal activity producers attest queued/working/busy, not external watching.
+  // Objective keywords and an accepted turn never prove a monitor exists.
+  return activity === "monitoring" ? "queued" : activity;
 }
 
 /** Paused-state lifecycle projection. Pausing is durable, but it is not a

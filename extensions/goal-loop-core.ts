@@ -733,18 +733,12 @@ export function objectiveIsUserSeeded(goal: Pick<Goal, "objective" | "createdVia
   });
 }
 
-/**
- * A goal whose next turn is a health check should not look like a wedged
- * queue. Monitoring requires EVIDENCE in the objective (a named watch job);
- * v0.38.57 (2026-09-16): age alone no longer implies monitoring — an old
- * queued goal is still queued, not a watched external process. Keep this
- * predicate pure and shared by scheduling and both TUI surfaces so a goal
- * cannot be throttled without receiving the matching monitoring icon
- * (or vice versa).
- */
-export function isMonitorGoal(goal: Pick<Goal, "objective" | "createdAt">, now = Date.now()): boolean {
-  const objective = goal.objective.toLowerCase();
-  return /daemon|supervisor|keep.*running|monitor|healthz|book-daemon/.test(objective);
+/** @deprecated Objective text and age cannot attest an external watcher.
+ * No goal runtime producer currently supplies monitoring evidence. Kept as
+ * a fail-closed compatibility export; scheduling remains event-driven and
+ * queued turns are rendered as queued, never as a promised health check. */
+export function isMonitorGoal(_goal: Pick<Goal, "objective" | "createdAt">, _now = Date.now()): boolean {
+  return false;
 }
 
 /**

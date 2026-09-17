@@ -104,7 +104,7 @@ test("version tail rides the status on every branch (field 20260909_161057)", ()
   assert.match(nudged, /update v0\.38\.44 available$/);
 });
 
-test("monitor goals use the eye icon and do not masquerade as a stuck queue", () => {
+test("monitoring intent never substitutes for runtime evidence", () => {
   const daemon = goalOf({ objective: "Keep the book-daemon health monitor running" });
   // v0.38.57 (owner concern 4): age alone is NOT monitoring evidence — an
   // old queued goal still reads as queued, never as a watched process.
@@ -113,7 +113,7 @@ test("monitor goals use the eye icon and do not masquerade as a stuck queue", ()
     createdAt: "2026-07-20T12:00:00Z",
   });
   const ordinary = goalOf({ objective: "Create x.txt", createdAt: "2026-07-21T11:59:00Z" });
-  assert.equal(isMonitorGoal(daemon, NOW), true);
+  assert.equal(isMonitorGoal(daemon, NOW), false);
   assert.equal(isMonitorGoal(longRunning, NOW), false, "age alone never implies monitoring");
   assert.equal(isMonitorGoal(ordinary, NOW), false);
 
@@ -124,9 +124,9 @@ test("monitor goals use the eye icon and do not masquerade as a stuck queue", ()
     undefined,
     { activity: "queued", turnPending: true, lastActivityAt: NOW - 5_000 },
   )!;
-  assert.match(status, /glla: \[👁 MONITORING\]/);
-  assert.match(status, /next check/);
-  assert.doesNotMatch(status, /⏳ QUEUED|awaiting pi turn/);
+  assert.doesNotMatch(status, /MONITORING|next check/);
+  assert.match(status, /⏳ QUEUED/);
+  assert.match(status, /awaiting pi turn/);
 });
 
 test("repair cards show the preserved target and the concrete one-turn recovery", () => {

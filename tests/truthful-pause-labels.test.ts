@@ -10,8 +10,8 @@
 //   2. Internal retry pauses (durable recovery evidence present:
 //      pendingCompletion / recoveryEpisodeKey / mainModelRecovery) keep
 //      the existing auto-retry/recovery labels.
-//   3. A queued goal is only "monitoring" when the objective names a
-//      monitor/daemon/health job — age alone no longer implies watching.
+//   3. Neither queued turns, age, nor monitoring keywords prove a watcher.
+//      With no runtime monitoring producer, these goals remain queued.
 //
 // These are display-projection changes only; durable lifecycle and
 // consent semantics do not move.
@@ -103,6 +103,15 @@ test("internal retry pauses keep the supervised recovery labels", () => {
   assert.ok(widget.some((l) => l.includes("auto-retrying") || l.includes("next: auto-retry in")), widget.join("\n"));
 });
 
+test("queued healthz implementation never claims a monitor or next check", () => {
+  const goal = goalOf({ objective: "Implement a healthz endpoint; no monitoring process exists" });
+  const extras = { activity: "queued" as const, turnPending: true };
+  const text = [buildStatusText(stateOf(goal), null, NOW, undefined, extras),
+    ...buildWidgetLines(stateOf(goal), null, NOW, undefined, 200, extras)!].join("\n");
+  assert.doesNotMatch(text, /MONITORING|next check/);
+  assert.match(text, /QUEUED|queued/);
+});
+
 test("age alone never earns the monitoring label on a queued goal", () => {
   const old = goalOf({
     objective: "Grow the music catalog",
@@ -110,7 +119,7 @@ test("age alone never earns the monitoring label on a queued goal", () => {
   });
   assert.equal(isMonitorGoal(old, NOW), false, "old-but-ordinary queued work is not monitoring");
   const daemon = goalOf({ objective: "Keep the book-daemon health monitor running" });
-  assert.equal(isMonitorGoal(daemon, NOW), true, "an objective that names a watch job still monitors");
+  assert.equal(isMonitorGoal(daemon, NOW), false, "watch-job intent is not evidence of a running monitor");
   const status = buildStatusText(
     stateOf(old),
     null,
@@ -118,6 +127,6 @@ test("age alone never earns the monitoring label on a queued goal", () => {
     undefined,
     { activity: "queued", turnPending: true, lastActivityAt: NOW - 5_000 },
   )!;
-  assert.doesNotMatch(status, /MONITORING/, "no monitoring badge without a monitoring objective");
+  assert.doesNotMatch(status, /MONITORING/, "no monitoring badge without runtime evidence");
   assert.match(status, /QUEUED|queued/, "it still reads as queued work");
 });
