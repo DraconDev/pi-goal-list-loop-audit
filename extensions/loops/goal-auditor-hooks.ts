@@ -511,21 +511,16 @@ function aggressiveAuditorRecoveryEnabled(cwd: string): boolean {
   try { return resolveEffectiveAggressiveSettings(loadSettings(cwd)).aggressiveMode; } catch { return false; }
 }
 
-function automaticRecoveryWindow(pending: PendingCompletion, now = Date.now(), unbounded = false): { firstAt: string; until?: string; untilMs: number } {
+function automaticRecoveryWindow(pending: PendingCompletion, now = Date.now(), _legacyUnbounded = false): { firstAt: string; until?: string; untilMs: number } {
   const firstCandidate = [pending.automaticRecoveryFirstAt, pending.automaticRecoveryAt, pending.recoveryAt]
     .map((value) => typeof value === "string" ? Date.parse(value) : Number.NaN)
     .find((value) => Number.isFinite(value));
   const firstMs = Number.isFinite(firstCandidate) ? firstCandidate! : now;
-  // Aggressive automation is event-driven across arbitrary durations. Keep
-  // the old horizon readable for conservative/legacy claims, but do not
-  // resurrect it when the current policy explicitly opted into aggressive
-  // recovery.
-  const existingUntil = unbounded ? Number.NaN : typeof pending.automaticRecoveryUntil === "string" ? Date.parse(pending.automaticRecoveryUntil) : Number.NaN;
-  const untilMs = unbounded
-    ? Number.POSITIVE_INFINITY
-    : Number.isFinite(existingUntil) && existingUntil > firstMs
-      ? existingUntil
-      : firstMs + CONSERVATIVE_AUDITOR_RECOVERY_HORIZON_MS;
+  // Recovery policy may allow more attempts, never a renewed deadline.
+  const existingUntil = typeof pending.automaticRecoveryUntil === "string" ? Date.parse(pending.automaticRecoveryUntil) : Number.NaN;
+  const untilMs = Number.isFinite(existingUntil)
+    ? existingUntil
+    : firstMs + CONSERVATIVE_AUDITOR_RECOVERY_HORIZON_MS;
   return {
     firstAt: new Date(firstMs).toISOString(),
     ...(Number.isFinite(untilMs) ? { until: new Date(untilMs).toISOString() } : {}),
@@ -1066,6 +1061,12 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     ({ result, retriedOnce, fallbackUsed } = await runDetachedCompletionWithFallback(
       auditorCandidates,
       (candidate) => {
+        const requestedThinking = settings.auditorThinkingLevel ?? liveCtx.thinkingLevel ?? "max";
+        const effectiveThinking = resolveAuditorThinkingLevel(candidate.model, requestedThinking);
+        appendLedger(liveCtx.cwd, "auditor_thinking_selected", {
+          goalId, attemptId: claim.attemptId, model: modelRef(candidate.model),
+          via: candidate.via, requestedThinking, thinkingLevel: effectiveThinking,
+        });
         // Progress records do not carry parent-side candidate metadata. Mark
         // the selected ref before launching each attempt; publishDetached-
         // AuditProgress preserves it across worker snapshots and fallback
@@ -1088,7 +1089,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           // Unset follows the parent session dial, matching the Auditor
           // settings row; max is the safe detached default when a headless
           // context does not expose a thinking level.
-          thinkingLevel: (settings.auditorThinkingLevel ?? liveCtx.thinkingLevel ?? "max") as any, // pi ≥0.83 understands max; dev-types predate it
+          thinkingLevel: effectiveThinking as any, // pi ≥0.83 understands max; dev-types predate it
           // v0.36.0: raw settings allowlist; the process layer resolves
           // entries to install paths before hashing (see
           // goal-loop-auditor-process.ts).
