@@ -65,6 +65,8 @@ the auditor fallbacks dont include thinking levels and we need to look into the 
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_195237.png 
 we are in subagent session ?
 
+oddly enoguh after refresh worked 
+
 ##
 
 i dont think we shoudl pause for load and resume after 20 is crazy, that is 4 and hafl hours, so even if we paused for that 
@@ -74,6 +76,10 @@ it would need to be extreme and we keep reevaluating often
 ##
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_184316.png 
 we should not be taking goal and lists and loops literally but as a way to write an objecitve based on what wwas said and can be inferred from the conversation
+
+##
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_200754.png /home/dracon/Pictures/Screenshots/Screenshot_20260917_200751.png 
+this is provider related but we still need to keep relentlessly hammering
 
 ##
 i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
