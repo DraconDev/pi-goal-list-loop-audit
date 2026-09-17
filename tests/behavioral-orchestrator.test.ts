@@ -3620,14 +3620,17 @@ test("v0.34.22: complete_goal returns while a detached auditor finishes and arch
 
 // ---- v0.34.91: the end-of-goal voice carries the recap (what happened) ----
 
-test("v0.35.x: provider-wall diagnostics stay durable while completion surfaces remain sanitized and deduplicated", { timeout: 15_000 }, async () => {
+// The inner detached-state wait is 30s: the runner must allow that wait
+// plus startup/cleanup, or it can abandon a live worker mid-fixture.
+test("v0.35.x: provider-wall diagnostics stay durable while completion surfaces remain sanitized and deduplicated", { timeout: 60_000 }, async () => {
   __testOnlyResetStaleFlag();
   const cwd = tmpCwd();
   const raw = '429 {"error":{"message":"Token Plan rate limit reached: upgrade your Token Plan"},"request_id":"abc123"}';
   const previous = process.env.GLLA_PI_BINARY;
   process.env.GLLA_PI_BINARY = writeFakeAuditorError(cwd, raw);
+  let ctx: MockCtx | undefined;
   try {
-    const ctx = await freshSession(cwd, "startup");
+    ctx = await freshSession(cwd, "startup");
     await pi.command("goal", "provider wall completion target — done when pinned", ctx);
     await tick();
     const result = await pi.runTool("complete_goal", {
@@ -3652,8 +3655,8 @@ test("v0.35.x: provider-wall diagnostics stay durable while completion surfaces 
     const ledger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
     assert.match(ledger, /Token Plan/);
     assert.match(ledger, /429/);
-    await pi.fire("session_shutdown", { reason: "quit" }, ctx);
   } finally {
+    if (ctx) await pi.fire("session_shutdown", { reason: "quit" }, ctx);
     if (previous === undefined) delete process.env.GLLA_PI_BINARY;
     else process.env.GLLA_PI_BINARY = previous;
   }
