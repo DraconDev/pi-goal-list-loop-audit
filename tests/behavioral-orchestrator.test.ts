@@ -4495,6 +4495,12 @@ test("bounded recovery: initial aggressive completion preserves its horizon and 
   let ctx: MockCtx | undefined;
   try {
     ctx = await freshSession(cwd, "startup");
+    ctx.thinkingLevel = "max";
+    ctx.model = { ...ctx.model, reasoning: true, thinkingLevelMap: { max: null, xhigh: null } } as any;
+    // Record the actual RPC child arguments, not only the selection ledger.
+    const fake = process.env.GLLA_PI_BINARY!;
+    fs.writeFileSync(fake, fs.readFileSync(fake, "utf8").replace('let input = "";',
+      `import { appendFileSync } from "node:fs";\nappendFileSync(${JSON.stringify(path.join(cwd, "worker-args.jsonl"))}, JSON.stringify(process.argv) + "\\n");\nlet input = "";`));
     await pi.command("goal", "aggressive no-verdict recovery — done when the stored claim is audited", ctx);
     await tick();
     await pi.runTool("complete_goal", { completionSummary: "Stored claim", verificationSummary: "Stored evidence" }, ctx);
@@ -4533,6 +4539,31 @@ test("bounded recovery: initial aggressive completion preserves its horizon and 
     assert.equal(persisted?.pendingCompletion?.automaticRecoveryAttempts, undefined, "candidate fallback is not a second generic recovery horizon");
     assert.equal(persisted?.pendingCompletion?.automaticRecoveryUntil, undefined);
     assert.ok(readLedger(cwd).some((entry) => entry.type === "goal_paused" && String(entry.value?.reason ?? "").startsWith("auditor retry:")), "aggressive mode ladders an exhausted candidate chain");
+    const args = fs.readFileSync(path.join(cwd, "worker-args.jsonl"), "utf8").trim().split("\n").map(line => JSON.parse(line) as string[]);
+    assert.ok(args.length > 0);
+    assert.ok(args.every(argv => argv[argv.indexOf("--thinking") + 1] === "high"), "actual workers receive supported high, not unsupported max");
+    const selections = readLedger(cwd).filter(entry => entry.type === "auditor_thinking_selected");
+    assert.equal(selections.length, args.length, "every launched candidate records its effective dial");
+    assert.ok(selections.every(entry => entry.value?.requestedThinking === "max" && entry.value?.thinkingLevel === "high"));
+
+    // Advance only the dispatch clock past the REAL initial claim's deadline.
+    // No seeded substitute claim: this proves initial completion persisted the
+    // envelope the common automatic-dispatch guard actually consumes.
+    const realNow = Date.now;
+    const launchesBefore = readLedger(cwd).filter(entry => entry.type === "audit_started").length;
+    try {
+      Date.now = () => Date.parse(pending.retryUntil!) + 1;
+      await (globalThis as any).retryStoredCompletionAudit("provider-retry");
+    } finally { Date.now = realNow; }
+    const expired = readState(cwd).goal!;
+    assert.equal(expired.pauseKind, "blocked");
+    assert.equal(expired.pendingCompletion?.retryAttempts, pending.retryAttempts);
+    assert.equal(expired.pendingCompletion?.retryFirstAt, pending.retryFirstAt);
+    assert.equal(expired.pendingCompletion?.retryUntil, pending.retryUntil);
+    assert.equal(expired.pendingCompletion?.exhaustedChain, pending.exhaustedChain);
+    assert.ok(expired.pauseReason?.includes(pending.exhaustedChain!));
+    assert.ok(readLedger(cwd).some(entry => entry.type === "auditor_retry_dispatch_expired"));
+    assert.equal(readLedger(cwd).filter(entry => entry.type === "audit_started").length, launchesBefore, "delayed first automatic retry never launches past expiry");
   } finally {
     if (ctx) await pi.fire("session_shutdown", { reason: "quit" }, ctx).catch(() => {});
     pi.sendMessageError = null;
