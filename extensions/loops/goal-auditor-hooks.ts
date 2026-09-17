@@ -1767,7 +1767,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       updateGoal({
         status: "paused",
         auditHistory: history,
-        pendingCompletion: pending,
+        pendingCompletion: { ...pending, ...(exhaustedChain ? { exhaustedChain } : {}) },
         providerErrorDiagnostic: failureCopy.diagnostic,
         recoveryEpisodeKey,
         recoveryNoticeKeys: pending.recoveryNoticeKeys,
