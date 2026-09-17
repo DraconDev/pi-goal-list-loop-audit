@@ -997,13 +997,10 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     });
     if (expired) {
       clearScheduledAuditorRecoveryTimer();
-      // The parked state must keep naming the exhausted chain: the previous
-      // reason already carries "Exhausted auditor chain: …" (set at retry
-      // scheduling); expiry prepends the reason it stopped, never replaces
-      // the diagnostic.
-      const priorReason = (guardedGoal.pauseReason ?? "").replace(/^auditor retry: /, "");
-      const priorChain = /Exhausted auditor chain: [^.]*\./.exec(priorReason)?.[0] ?? "";
-      const chainNotice = priorChain ? `${priorChain} ` : "";
+      // The chain name travels as structured claim state (set at burn time),
+      // never re-parsed from prose — dotted model IDs made a reason-based
+      // extraction truncate (auditor objection 2026-09-17T18:49).
+      const chainNotice = pending.exhaustedChain ? `Exhausted auditor chain: ${pending.exhaustedChain}. ` : "";
       updateGoal({
         status: "paused",
         pendingCompletion: { ...pending, recoveryRetryAt: undefined },
