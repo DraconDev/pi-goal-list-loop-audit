@@ -3,7 +3,7 @@
 
 # Next
 
-The drafting/status work was published in 0.38.57; the monitor-label and citation repairs were published in 0.38.58; the archive-only repository receipt correction was published in 0.38.59, with conservative mixed-finding preservation published in 0.38.60 and failure-first verification status published and registry-verified in 0.38.61. The requirement report below records the audit corrections and verified release evidence.
+The drafting/status work was published in 0.38.57; the monitor-label and citation repairs were published in 0.38.58; the archive-only repository receipt correction was published in 0.38.59, with conservative mixed-finding preservation published in 0.38.60 and failure-first verification status published in 0.38.61. Whole-note verification aggregation was published and registry-verified in 0.38.62. The requirement report below records the audit corrections and verified release evidence.
 Screenshot mapping, bounded containment limits, and test evidence:
 `audit/DRAFT-TO-COMPLETION-2026-09-16.md`.
 
