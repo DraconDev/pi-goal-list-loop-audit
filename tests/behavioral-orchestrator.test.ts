@@ -4474,7 +4474,7 @@ test("v0.36.0: exhausted no-verdict auditor chain enters the shared ladder with 
   }
 });
 
-test("v0.36.0: aggressive mode ladders an exhausted no-verdict auditor chain without a horizon", { timeout: 60_000 }, async () => {
+test("bounded recovery: initial aggressive completion preserves its horizon and exhausted chain", { timeout: 60_000 }, async () => {
   // v0.35.15: budget raised 30s→60s — this real-timer test observed 23s on
   // a busy machine (the auditor's own release:check ran concurrently with
   // an active session) and blew the per-test ceiling, fast-failing the
@@ -4517,13 +4517,18 @@ test("v0.36.0: aggressive mode ladders an exhausted no-verdict auditor chain wit
       };
     } | null;
     assert.equal(persisted?.status, "paused");
-    assert.equal(persisted?.pauseKind, "wait", "aggressive exhaustion keeps retrying without a horizon");
+    assert.equal(persisted?.pauseKind, "wait", "initial exhaustion schedules a bounded retry");
     assert.ok(persisted?.pauseResumeAt, "the ladder owns a retry deadline");
     assert.equal(persisted?.pendingCompletion?.phase, "retry-waiting");
     assert.equal(persisted?.pendingCompletion?.auditorFallbackExhausted, undefined);
     assert.equal(persisted?.pendingCompletion?.recoveryRetryAt, undefined);
     assert.equal(persisted?.pendingCompletion?.retryAttempts, 1);
-    assert.equal(persisted?.pendingCompletion?.retryUntil, undefined, "aggressive mode keeps no wall-clock episode expiry");
+    assert.ok(persisted?.pendingCompletion?.retryUntil, "initial aggressive exhaustion persists the fixed recovery deadline");
+    const pending = readState(cwd).goal!.pendingCompletion!;
+    assert.equal(Date.parse(pending.retryUntil!), Date.parse(pending.retryFirstAt!) + 24 * 60 * 60 * 1000);
+    assert.ok(pending.exhaustedChain, "capture the exhausted chain before clearing the cursor");
+    assert.ok(readState(cwd).goal!.pauseReason?.includes(pending.exhaustedChain!));
+    assert.match(readState(cwd).goal!.pauseSuggestedAction ?? "", /resume/);
     assert.ok(persisted?.pendingCompletion?.auditorFailureClass, "aggressive mode preserves the concrete failure class");
     assert.equal(persisted?.pendingCompletion?.automaticRecoveryAttempts, undefined, "candidate fallback is not a second generic recovery horizon");
     assert.equal(persisted?.pendingCompletion?.automaticRecoveryUntil, undefined);
