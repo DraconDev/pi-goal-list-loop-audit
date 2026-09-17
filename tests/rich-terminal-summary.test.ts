@@ -52,8 +52,8 @@ function render(extra: Record<string, unknown> = {}) {
 
 test("card opens with a verdict banner, then the request-echo Done headline and numbered Key Findings", () => {
   const { chatLines } = render();
-  assert.equal(chatLines[0], "## Done — auditor approved (1 verdict)", `verdict banner opens the card, got: ${chatLines[0]}`);
-  assert.ok((chatLines[2] ?? "").startsWith("## Done: restyle the terminal summary — "), `headline echoes the request, got: ${chatLines[2]}`);
+  assert.equal(chatLines[0], "## Done — shipped the rich terminal voice");
+  assert.equal(chatLines.filter(line => line.startsWith("## Done")).length, 1, "one outcome headline");
   const findingsIdx = chatLines.findIndex((l) => l === "### Key Findings & Remediation");
   assert.ok(findingsIdx > 0, "findings section present");
   assert.match(chatLines[findingsIdx + 1] ?? "", /^1\. \*\*Changed\*\* — /, "numbered bold lead with em-dash body");
@@ -65,7 +65,7 @@ test("verification always renders the full table — the PASS-line collapse is r
   const { chatLines } = render();
   assert.ok(chatLines.includes("### Verification Summary"), "table renders even when every row is green");
   assert.ok(chatLines.some((l) => /^\| Tests \| PASS \|/.test(l)), "green Tests row present");
-  assert.ok(chatLines.some((l) => /^\| Audit \|.*APPROVED \u00d71/.test(l)), "the audit verdict rides its own row");
+  assert.ok(!chatLines.some((l) => l.startsWith("| Audit |")), "approval lives once in the trailer, not a repeated audit row");
   assert.ok(!chatLines.some((l) => l.startsWith("\u2014 Verification passed")), "no PASS line stands in for the table");
   // Findings-first: the table rides after the findings, before Next.
   const findingsIdx = chatLines.indexOf("### Key Findings & Remediation");
@@ -223,9 +223,10 @@ const GROUPS: FindingGroup[] = [
 
 test("duration line rides under the headline; unknown facts stay absent", () => {
   const { chatLines } = render({ findingGroups: GROUPS });
-  // [0] banner, [1] blank, [2] headline, [3] blank, [4] duration.
-  assert.equal(chatLines[3], "", "blank line after headline");
-  assert.match(chatLines[4] ?? "", /^— 9 turns · .+ elapsed · 1 audit$/, `duration line, got: ${chatLines[4]}`);
+  // Outcome-first chat has one headline, then a blank and the duration.
+  assert.match(chatLines[0] ?? "", /^## Done — shipped the rich terminal voice$/);
+  assert.equal(chatLines[1], "", "blank line after headline");
+  assert.match(chatLines[2] ?? "", /^— 9 turns · .+ elapsed · 1 audit$/, `duration line, got: ${chatLines[2]}`);
   assert.equal(buildDurationLine({} as Goal), null, "nothing known means no duration line");
   const bare = buildDurationLine({ telemetry: { turns: 2, fileWrites: 0, bashCalls: 0 } } as Goal);
   assert.equal(bare, "— 2 turns", "only known facts render");
@@ -236,19 +237,22 @@ test("fewer than four groups render as nested area subsections", () => {
   const findingsIdx = chatLines.findIndex((l) => l === "### Key Findings & Remediation");
   assert.ok(findingsIdx > 0, "findings section present");
   assert.equal(chatLines[findingsIdx + 1], "#### 1. Sound manager", "first area subsection");
-  assert.equal(chatLines[findingsIdx + 2], "- **Disable path** — soundManager.ts:333 mutes WebAudio", "nested evidence bullet");
+  assert.equal(chatLines[findingsIdx + 2], "- **Disable path** — mutes WebAudio", "explanation without archive-only evidence token");
   assert.ok(!chatLines.some((l) => l.startsWith("| Area |")), "no table below the threshold");
   assert.deepEqual(transcriptLines.slice(0, 3), chatLines.slice(0, 3), "transcript shares headline and duration");
 });
 
 test("four or more groups render as an Area | Finding | Evidence table", () => {
-  const table = render({
-    findingGroups: [
+  // Archive keeps the evidence table; chat keeps readable area groups.
+  const groups: FindingGroup[] = [
       ...GROUPS,
       { title: "Screen A", findings: ["Layout: +page.svelte:260 pins the canvas"] },
       { title: "Screen B", findings: ["Probe: /var/tmp/probe.ts:1 stays out of evidence", "Note: nothing to cite"] },
-    ],
-  });
+    ];
+  const table = { chatLines: buildRichArchiveSection(richGoal(), "complete", "archive.md", groups) };
+  const chat = render({ findingGroups: groups }).chatLines;
+  assert.ok(chat.some(line => line === "#### 4. Screen B"));
+  assert.ok(!chat.some(line => line.startsWith("| Area |")));
   const headerIdx = table.chatLines.findIndex((l) => l === "| Area | Finding | Evidence |");
   assert.ok(headerIdx > 0, "findings table present");
   assert.equal(table.chatLines[headerIdx + 1], "| --- | --- | --- |", "table separator");
@@ -288,9 +292,8 @@ test("v0.38.55: render path respects the sanitize trust boundary", () => {
   assert.ok(crowded.chatLines.some((l) => l.startsWith("#### 3.")), "later groups keep their headers");
   const fifteen = sanitizeFindingGroups(Array.from({ length: 15 }, (_, i) => ({ title: `t${i}`, findings: ["Lead: body"] })));
   const capped = render({ findingGroups: fifteen });
-  assert.ok(capped.chatLines.some((l) => l.startsWith("| Area |")), "oversized input still renders as a table");
-  assert.ok(capped.chatLines.some((l) => l.startsWith("| t11 |")), "groups inside the 12-group boundary render");
-  assert.ok(!capped.chatLines.some((l) => l.startsWith("| t12 |")), "groups past the 12-group boundary never render");
+  assert.ok(capped.chatLines.includes("#### 12. t11"), "groups inside the 12-group boundary render");
+  assert.ok(!capped.chatLines.includes("#### 13. t12"), "groups past the boundary never render");
   // Every Next renders — the one-concrete-action chat filter still
   // applies to six-label Nexts; parts-level Nexts are uncapped.
   const parts = buildRichTerminalParts({
@@ -379,10 +382,9 @@ test("v0.38.55: final repository state closes the card when readable", () => {
   assert.ok(repoState && repoState.length > 0, "a git checkout reports state");
   assert.match(repoState[0] ?? "", /^Branch /, "branch line leads");
   const { chatLines, transcriptLines } = render({ repoState });
-  const repoIdx = chatLines.findIndex((l) => l === "### Final Repository State");
-  assert.ok(repoIdx > 0, "repo section present");
-  const recordIdx = chatLines.findIndex((l) => l.startsWith("• record:"));
-  assert.ok(repoIdx < recordIdx, "repo state rides ahead of the record trailer");
-  assert.ok(transcriptLines.includes("### Final Repository State"), "transcript mirrors the repo state");
+  assert.ok(!chatLines.includes("### Final Repository State"), "bookkeeping stays out of chat");
+  assert.ok(!transcriptLines.includes("### Final Repository State"), "transcript shares concise chat");
+  const archiveParts = buildRichTerminalParts({ outcome: "shipped", details: [], countsLine: "", repoState });
+  assert.deepEqual(archiveParts.repoLines, repoState, "archive projection retains full repository evidence");
   assert.equal(buildFinalRepoStateLines("/nonexistent-dir-xyz"), undefined, "unreadable state degrades to absent");
 });

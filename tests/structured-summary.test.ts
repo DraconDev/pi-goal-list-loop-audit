@@ -82,8 +82,8 @@ test("renderer removes empty evidence parentheses without losing the finding", (
 
 test("headline echo uses the Outcome lead paragraph, never flattened headers", () => {
   const { chatLines } = render(STRUCTURED);
-  const headline = chatLines[2] ?? "";
-  assert.ok(headline.startsWith("## Done: review the keyword system — "), "headline still echoes the request");
+  const headline = chatLines[0] ?? "";
+  assert.ok(headline.startsWith("## Done — "), "headline leads with the outcome");
   assert.doesNotMatch(headline, /## Part|### /, `no flattened markdown in the headline, got: ${headline}`);
   assert.match(headline, /shipped the keyword review/, "the lead outcome text survives");
 });
@@ -118,7 +118,7 @@ test("extractor: last line-anchored restatement wins", () => {
 
 test("card: structured Outcome renders a full ### Summary section, headline stays short", () => {
   const { chatLines } = render(STRUCTURED);
-  assert.equal(chatLines[0], "## Done — auditor approved (1 verdict)", "banner still opens");
+  assert.equal(chatLines[0], "## Done — shipped the keyword review", "outcome opens");
   const summaryIdx = chatLines.indexOf("### Summary");
   assert.ok(summaryIdx > 0, "Summary section present");
   const findingsIdx = chatLines.indexOf("### Key Findings & Remediation");
@@ -128,15 +128,15 @@ test("card: structured Outcome renders a full ### Summary section, headline stay
   const summaryBlock = chatLines.slice(summaryIdx + 1, findingsIdx - 1);
   assert.ok(summaryBlock.includes("| Focus | draw a card |"), "full table text in chat");
   assert.ok(summaryBlock.includes("Slice 1 lands first."), "full prose in chat");
-  const headline = chatLines[2] ?? "";
-  assert.ok(headline.startsWith("## Done: review the keyword system — "), "headline still echoes the request");
+  const headline = chatLines[0] ?? "";
+  assert.ok(headline.startsWith("## Done — "), "headline leads with the outcome");
   assert.ok(headline.length < 300, `headline echo stays short, got ${headline.length} chars`);
 });
 
 test("card: unstructured summaries keep today's shape — no Summary section", () => {
   const { chatLines } = render(PLAIN);
   assert.ok(!chatLines.includes("### Summary"), "no Summary section without structure");
-  assert.equal(chatLines[0], "## Done — auditor approved (1 verdict)", "banner unchanged");
+  assert.equal(chatLines[0], "## Done — shipped the keyword review", "outcome-first headline");
 });
 
 test("card: one-action Next survives the structured body", () => {
