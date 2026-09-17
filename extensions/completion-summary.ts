@@ -420,22 +420,40 @@ function escapeTableCell(value: string): string {
 }
 
 function testsRowStatus(value: string): string {
-  // Aggregate the entire note: an earlier zero or a later green rerun must
-  // never erase a reported failure. Keep the original note in both views.
-  const failureCounts = [...value.matchAll(/\b(\d+)\s+fail(?:ed|ures?|s)?\b/gi)];
-  if (failureCounts.some(match => Number(match[1]) > 0)) return "FAIL";
+  // Failure evidence anywhere wins, including a failed run followed by a
+  // successful rerun. Notes themselves remain verbatim in both projections.
+  const failures = value.matchAll(/\b(\d+)\s+(?:fail(?:ed|ures?|s)?|errors?)\b/gi);
+  if ([...failures].some(match => Number(match[1]) > 0)) return "FAIL";
+  const exits = value.matchAll(/\bexit(?:ed)?(?:\s+with)?(?:\s+(?:code|status))?\s+(-?\d+)\b/gi);
+  if ([...exits].some(match => Number(match[1]) !== 0)) return "FAIL";
 
-  // Free prose is not a verdict protocol. Negation, pending work and unknown
-  // outcomes cannot earn PASS, even when another clause says "passed".
-  const uncounted = value.replace(/\b\d+\s+fail(?:ed|ures?|s)?\b/gi, "");
-  if (/\b(?:not|never|no|without|cannot|incomplete|unavailable|pending|expected|unrun|unverified|will|would|should|could|might|may|fail(?:ed|ures?|s|ing)?)\b|\b\w+n['’]t\b/i.test(uncounted)) return "REPORTED";
-
-  const passCounts = [...value.matchAll(/\b(\d+)\s+pass(?:ed|es)?\b/gi)];
-  if (passCounts.length > 0) return passCounts.some(match => Number(match[1]) > 0) ? "PASS" : "REPORTED";
-  // Uncounted prose is not evidence just because it contains "pass".
-  // Accept only a complete affirmative status, not an arbitrary substring.
-  const affirmative = /^(?:pass(?:ed)?|all (?:tests|checks) passed|(?:[\w.-]+ )?(?:suite|tests|checks) passed|(?:bun|npm) (?:run )?test(?:\s+[—–-])? pass(?:ed)?)[.!]?$/i;
-  return affirmative.test(value.trim()) ? "PASS" : "REPORTED";
+  // PASS is a complete-parse result, not a keyword inference. Parse only
+  // recognized result statements; every unknown clause downgrades the whole
+  // row to REPORTED, regardless of positive counts elsewhere. This also
+  // handles unfamiliar limitation wording without a growing negation list.
+  // A bare absolute log citation is evidence metadata, not result prose.
+  // Strip only that exact shape before splitting separators (paths use '/').
+  const statement = value.replace(/\s+\(\/(?:[\w.-]+\/)*[\w.-]+\.log\)/g, "").trim();
+  const clauses = statement.split(/\s*[;,/\n]\s*|[.!]\s+/);
+  let hasSuccess = false;
+  for (const clause of clauses) {
+    let text = clause.trim().replace(/[.!]$/, "");
+    // Bounded compatibility syntax for existing result labels/runners. Do not
+    // discard arbitrary colon prefixes, parentheses or trailing explanation.
+    text = text.replace(/^(?:(?:unit|integration|password)\s+(?:tests|checks)|integration):\s*/i, "");
+    text = text.replace(/^(?:(?:bun|npm) (?:run )?test|full gate)\s+(?:[—–-]\s*)?/i, "");
+    const count = /^(\d+)\s+(?:(?:tests|files)\s+)?(pass(?:ed)?|fail(?:ed|ures?|s)?|errors?|skip(?:ped|s)?)$/i.exec(text);
+    if (count) {
+      if (/^pass/i.test(count[2]!) && Number(count[1]) > 0) hasSuccess = true;
+      continue;
+    }
+    if (/^(?:pass(?:ed)?|all (?:tests|checks) passed|(?:(?:routing|gate|unit|integration) )?(?:suite|tests|checks) passed)$/i.test(text)) {
+      hasSuccess = true;
+      continue;
+    }
+    return "REPORTED";
+  }
+  return hasSuccess ? "PASS" : "REPORTED";
 }
 
 function auditRowStatus(history: Goal["auditHistory"]): string {

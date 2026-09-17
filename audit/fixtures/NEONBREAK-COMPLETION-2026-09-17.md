@@ -25,10 +25,10 @@ Historical example adapted from Screenshot_20260916_224738.png, Screenshot_20260
 | --- | --- | --- | --- |
 | Before-fix save probe | Historical overlapping saves | FAIL | 1 pass / 2 fail |
 | After-fix save probe | Historical same regression | PASS | 3 pass / 0 fail |
-| Unit tests | Historical 298 files | PASS | 2689 passed, 4 skipped (NB_URL-gated), 0 failed |
+| Unit tests | Historical 298 files | REPORTED | 2689 passed, 4 skipped (NB_URL-gated), 0 failed |
 | Browser standard port | Historical 119 e2e + 16 pixel baselines | PASS | 135 passed / 0 failed |
 | Browser alternate port | Historical same 135 tests, port 1463 | PASS | 135 passed / 0 failed |
-| Spec audit | Historical spec checks | PASS | 350 pass / 10 partial / 0 fail |
+| Spec audit | Historical spec checks | REPORTED | 350 pass / 10 partial / 0 fail |
 
 ### Next
 - **Unresolved** — Four NB_URL-gated live-DOM tests remain skipped by design; 10 spec checks are partial.
@@ -60,10 +60,10 @@ Historical example adapted from Screenshot_20260916_224738.png, Screenshot_20260
 | --- | --- | --- | --- | --- |
 | Before-fix save probe | bun test src/lib/game/persistence/neonbreakAccount.test.ts | Historical overlapping saves | FAIL | 1 pass / 2 fail |
 | After-fix save probe | — | Historical same regression | PASS | 3 pass / 0 fail |
-| Unit tests | timeout 180 bun run test | Historical 298 files | PASS | 2689 passed, 4 skipped (NB_URL-gated), 0 failed |
+| Unit tests | timeout 180 bun run test | Historical 298 files | REPORTED | 2689 passed, 4 skipped (NB_URL-gated), 0 failed |
 | Browser standard port | — | Historical 119 e2e + 16 pixel baselines | PASS | 135 passed / 0 failed |
 | Browser alternate port | — | Historical same 135 tests, port 1463 | PASS | 135 passed / 0 failed |
-| Spec audit | — | Historical spec checks | PASS | 350 pass / 10 partial / 0 fail |
+| Spec audit | — | Historical spec checks | REPORTED | 350 pass / 10 partial / 0 fail |
 | Audit | — | auditor verdict | APPROVED ×1 | audit: auditor approved (1 verdict) |
 
 ### Next

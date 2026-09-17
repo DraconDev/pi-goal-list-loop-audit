@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.38.62 — Whole-note verification aggregation (2026-09-17)
+
+### Conservative result parsing
+
+Positive test counts no longer override unknown or unsuccessful checks elsewhere
+in a verification note. PASS requires every result statement to be recognized;
+unparsed explanations remain REPORTED with all original notes visible. Positive
+failure/error counts and nonzero exit codes take precedence over success.
+Mixed-clause regressions cover unavailable integration validation, process errors,
+unknown outcomes and successful multi-suite reports in chat and archives.
+
 ## 0.38.61 — Failure-first verification status (2026-09-17)
 
 ### Truthful verification rows

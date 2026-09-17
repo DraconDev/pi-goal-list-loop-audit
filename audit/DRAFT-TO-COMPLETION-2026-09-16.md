@@ -241,3 +241,42 @@ c2adf95d035bca95b2e6484fb06e34dbd5420e1a matches CI. No rewritten tags/history,
 recreated releases or repeat publishes. Next publication statement updated;
 concurrent owner Later/Research additions remain untouched. Final diff check
 passes (earlier concurrent whitespace warning retained above as historical).
+
+
+## Whole-note verification aggregation (0.38.62)
+
+The 09:38 disapproval correctly reproduced positive unit counts masking a
+blocked integration check, nonzero exit and explicit errors. A keyword denylist
+cannot characterize all unknown prose. testsRowStatus now requires a complete
+parse of recognized result statements before granting PASS. Unknown clauses,
+unknown parentheticals, and unrecognized positive-count explanations keep the
+whole row REPORTED. Any positive failure/error count or nonzero exit wins FAIL.
+Only bounded existing runner/label syntax and a bare absolute .log citation are
+recognized metadata; all original notes remain untouched in both projections.
+
+Added twelve mixed cases to tests/verification-status.test.ts, keeping the prior
+21 unchanged. Real production assertions cover chat/archive × gate/legacy.
+Before fix: /var/tmp/glla-v62-red.log = 23 pass / 10 fail, including all three
+exact auditor counterexamples. Initial focused parse exposed `No tests passed`
+and the pre-existing bare log citation compatibility assertion; both corrected
+without changing the tests (/var/tmp/glla-v62-focused.log = 82 pass / 2 fail).
+Final focused /var/tmp/glla-v62-focused-green.log = 84 pass / 0 fail in six files.
+Full `TMPDIR=/var/tmp timeout 1800 npm run release:check` evidence in
+/var/tmp/glla-v0.38.62-gate.log: **2287 pass / 2 skip / 0 fail**, 2289 tests in
+224 files. Typecheck, state import, auditor extension fixture, package/skill
+inspection and installed 0.38.62 tarball smoke passed. The same AgentManager
+RPC and watched-repo integrations remain skipped, not newly executed.
+
+Regenerated all screenshot projections: Neonbreak NB_URL-gated and partial
+spec rows now conservatively say REPORTED, with all counts and limitations
+intact in chat and archive. Deathrun/GLLA unchanged. Saved and read all four
+counterexample projections in audit/fixtures/MIXED-VERIFICATION-2026-09-17.md:
+blocked integration REPORTED; nonzero exit and numeric errors FAIL. Inputs
+explicitly labeled synthetic, not claimed live validation. The exact blocked
+integration test also passed in a bounded single-test replay after the gate.
+Release-file diff checks pass. A concurrent owner addition to note.md Later
+has trailing whitespace; that content was not altered by this repair.
+
+This repair changes only verification aggregation, its tests and release/evidence
+files. Earlier drafting, display, lifecycle, receipt and recap behavior remains
+covered by the full gate. Fresh review and publication records follow.

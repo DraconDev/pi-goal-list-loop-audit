@@ -24,6 +24,18 @@ const cases = [
   ["PASS", "PASS"],
   ["All tests passed.", "PASS"],
   ["0 fail", "REPORTED"],
+  ["Unit tests: 10 passed, 0 failed; integration suite unable to pass because credentials are missing.", "REPORTED"],
+  ["10 passed, 0 failed; integration exited with code 1.", "FAIL"],
+  ["10 passed, 0 failed; integration: 2 errors.", "FAIL"],
+  ["10 passed, 0 failed; integration status is unknown.", "REPORTED"],
+  ["10 passed, 0 failed; integration awaits credentials.", "REPORTED"],
+  ["10 passed because the results were fabricated, 0 failed.", "REPORTED"],
+  ["10 passed, 0 failed (integration was omitted).", "REPORTED"],
+  ["10 passed, 0 failed; integration: 3 passed, 0 failed.", "PASS"],
+  ["integration: 3 passed, 0 failed; unit tests: 10 passed, 0 failed.", "PASS"],
+  ["10 passed, 0 failed; integration exited with code 0.", "REPORTED"],
+  ["10 passed, 0 failed; 1 error, 0 errors on rerun.", "FAIL"],
+  ["10 passed, 0 failed; integration exited with code -1.", "FAIL"],
 ] as const;
 
 for (const [notes, expected] of cases) {
