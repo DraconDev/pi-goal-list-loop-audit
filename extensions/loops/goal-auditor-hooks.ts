@@ -496,6 +496,8 @@ function validateCompletionSummary(text: string, ctx: ExtensionContext): string 
   return `${text.trimEnd()} — NOTE: ${annotation}`;
 }
 
+import { resolveAuditorThinkingLevel } from "../auditor-thinking.js";
+
 const AUDITOR_RECOVERY_RETRY_DELAY_MS = Number(process.env.GLLA_AUDITOR_RECOVERY_RETRY_DELAY_MS ?? 60_000);
 let auditorRecoveryRetryDelayOverrideMs: number | null = null;
 let scheduledAuditorRecoveryAt: string | null = null;
