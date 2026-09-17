@@ -25,8 +25,11 @@ The correction is limited to the reported dangling introduction shape after a no
 - Whole-work recap preservation: red (delta-only re-claim lost the recap from chat AND archive) → green; 111 pass / 0 fail across 10 files, tsc clean, diff-check clean (`/var/tmp/glla-recap-full.log`).
 - Drafting + pause/display + continuation policy: 180 pass / 0 fail across 10 files (`/var/tmp/glla-drafting-pause-green.log`); `TMPDIR=/var/tmp npx tsc --noEmit` and `git diff --check` pass.
 - Retry fixture fidelity: production recovery writers persist recoveryEpisodeKey/pendingCompletion; old provider-wall fixtures were updated to carry that evidence. The old plain-user wait pin is superseded by explicit deliberate-wait coverage, not treated as a recovery episode. No scheduling or durable lifecycle change.
-- Full release-wide gates: still required (task 5).
+- Final outcome-first chat/archive tests: 30 pass / 0 fail across four files (`/var/tmp/glla-chat-archive-green.log`). Gate-row integration reads the written archive and verifies command/hash retention; chat omits them. Representative production-renderer output saved and inspected at `audit/fixtures/DRAFT-COMPLETION-CHAT-2026-09-17.md`.
+- Full release gate for 0.38.57: `TMPDIR=/var/tmp timeout 1800 npm run release:check`, raw log `/var/tmp/glla-v0.38.57-gate3.log`: 2243 pass / 2 skip / 0 fail across 221 files, followed by typecheck, state-import repro, auditor-extension fixture, npm pack inspection and installed tarball import/skill smoke success. Two skips: real AgentManager stop RPC; auto-committer watched-repo integration (both environment-gated).
+- Subsequent prompt/tool description parity and comment cleanup: 30 pass / 0 fail across six affected files (`/var/tmp/glla-final-targeted.log`); typecheck and diff-check pass. No production behavior change after the full gate.
+- Failed intermediate verification runs remain in `/var/tmp/glla-wreos1-release-check*.log` and `/var/tmp/glla-v0.38.57-gate2.log`; they are not counted as successes. Old presentation assertions were updated to the confirmed chat/archive split. The detached approval test now releases its fake verdict only after observing repaint, removing a fixed-timer race. The telemetry fixture holds its report phase longer but remains a sampled observation test, not a guaranteed event stream.
 
 ## Release status
 
-Not released. Drafting, display and summary changes are implemented; final release-wide verification and publication remain. This report is not a completion claim.
+Version 0.38.57 prepared, including the previous Unreleased paragraph-routing and audit fixes. Release-wide verification passed; fresh independent review and publication verification remain. This report is not a completion claim.

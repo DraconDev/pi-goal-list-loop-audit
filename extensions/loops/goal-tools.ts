@@ -551,13 +551,13 @@ function registerAgentTools(pi: any): void {
         description:
           "v0.38.50: optional finding groups for the terminal summary. Group multi-area work by area " +
           "(subsystem, screen, phase); each finding is `Lead: body` with repo-relative `path:line` evidence tokens. " +
-          "4+ groups render as an Area | Finding | Evidence table, fewer as nested area sections. " +
+          "Chat uses nested area sections; the archive uses an Area | Finding | Evidence table for 4+ groups. " +
           "Presentation only — the six-label completionSummary stays the audited substance, and file:line tokens are never invented. " +
           "Omit for single-area work — the flat six-label render stays the fallback.",
       })),
       gateRows: Type.Optional(Type.Array(Type.Object({
         gate: Type.String({ maxLength: 120, description: "Gate name (e.g. Unit Tests, Typecheck, E2E, Production Build)" }),
-        command: Type.Optional(Type.String({ maxLength: 200, description: "Repro command for this gate (e.g. bun test src/). Renders its own Command column." })),
+        command: Type.Optional(Type.String({ maxLength: 200, description: "Repro command for this gate (e.g. bun test src/). Retained in the archive Command column, omitted from compact chat." })),
         scope: Type.Optional(Type.String({ maxLength: 200, description: "What the gate covered (e.g. suites, tiers, invariants)" })),
         notes: Type.Optional(Type.String({ maxLength: 400, description: "Outcome notes with counts (e.g. 743 passed, 0 failed). Status is DERIVED from these notes — PASS only when they say pass with zero failures, never claimed." })),
       }), {
