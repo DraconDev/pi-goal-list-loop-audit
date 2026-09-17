@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert/strict';
 import * as fs from 'node:fs';
-import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags } from '../extensions/loops/goal.js';
+import activate, { __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags } from '../extensions/loops/goal.js';
 import { readState } from '../extensions/goal-loop-core.js';
 import { MockPi, makeMockCtx, tmpCwd, seedGoal, seedState } from './harness/mock-pi.js';
 
@@ -26,11 +26,15 @@ process.stdin.once('data', () => {
   fs.writeFileSync(settingsPath, JSON.stringify({ aggressiveMode: true, autoResume: true }));
   activate(pi.api);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: 'retry-fixture' } });
-  seedState(cwd, { goal: seedGoal({ status: 'paused', pendingCompletion: {
-    at: new Date().toISOString(), phase: 'recovery-pending', completionSummary: 'Stored fixture claim', verificationSummary: 'Fixture only',
-  } }) });
+  seedState(cwd, { goal: null });
   try {
     await pi.fire('session_start', { reason: 'startup' }, ctx);
+    // Install the parked claim after startup: session recovery would otherwise
+    // race the explicit manual entry point this regression exercises.
+    seedState(cwd, { goal: seedGoal({ status: 'paused', pendingCompletion: {
+      at: new Date().toISOString(), phase: 'recovery-pending', completionSummary: 'Stored fixture claim', verificationSummary: 'Fixture only',
+    } }) });
+    __testOnlyLoadState(cwd);
     const retry = (globalThis as any).retryStoredCompletionAudit;
     await retry('manual');
     const first = readState(cwd).goal?.pendingCompletion;
