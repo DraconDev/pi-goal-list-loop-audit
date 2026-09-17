@@ -2273,6 +2273,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     auditorFailureClass: _auditorFailureClass,
     auditorFallbackExhausted: _auditorFallbackExhausted,
     auditorFailureAt: _auditorFailureAt,
+    exhaustedChain: _exhaustedChain,
     timeoutEscalation: _timeoutEscalation,
     ...canonicalOrUnknown
   } = raw;
@@ -2308,6 +2309,11 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
   const auditorFailureAt = typeof _auditorFailureAt === "string" && Number.isFinite(Date.parse(_auditorFailureAt))
     ? new Date(Date.parse(_auditorFailureAt)).toISOString()
     : undefined;
+  // 2026-09-17: the exhausted-chain name is a bounded, newline-free display
+  // string. Garbage degrades to absent, never to a half-parsed chain.
+  const exhaustedChain = typeof _exhaustedChain === "string" && _exhaustedChain.trim()
+    ? _exhaustedChain.replace(/[\r\n]+/g, " ").trim().slice(0, 2000)
+    : undefined;
   // v0.37.0: escalation index — hand-edited/corrupt state must not produce a
   // negative or astronomical budget multiplier.
   const timeoutEscalation =
@@ -2336,6 +2342,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     ...(auditorFailureClass ? { auditorFailureClass } : {}),
     ...(auditorFallbackExhausted ? { auditorFallbackExhausted: true } : {}),
     ...(auditorFailureAt ? { auditorFailureAt } : {}),
+    ...(exhaustedChain ? { exhaustedChain } : {}),
     ...(timeoutEscalation !== undefined ? { timeoutEscalation } : {}),
     ...(sanitizedGroups ? { findingGroups: sanitizedGroups } : {}),
     ...(sanitizedGates ? { gateRows: sanitizedGates } : {}),
