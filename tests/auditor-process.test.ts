@@ -473,16 +473,6 @@ process.stdin.on("data", async (chunk) => {
   // Real reports stream for seconds; 400ms keeps the phase observably long
   // without slowing the suite.
   await sleep(400);
-  // v0.38.57: another full sequence pass — under parallel-suite load a
-  // sampled poll can still miss the first 75ms tool window entirely, so a
-  // second cycle doubles the observation windows without changing the
-  // phase order the test pins.
-  out({ type: "tool_execution_start", toolCallId: "read-3", toolName: "read", args: { path: "/repo/README.md" } });
-  await sleep(75);
-  out({ type: "tool_execution_end", toolCallId: "read-3" });
-  await sleep(75);
-  out({ type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "<approved/>" } });
-  await sleep(400);
   out({ type: "agent_settled" });
 });
 `;
@@ -499,6 +489,10 @@ process.stdin.on("data", async (chunk) => {
         workerPath: path.resolve(process.cwd(), "scripts/goal-auditor-worker.mjs"),
         env: { GLLA_PI_BINARY: fakePi },
         attemptId: () => "attempt-real-telemetry",
+        // v0.38.57: the runtime floor is 10ms; a 5ms request reads as 10ms.
+        // Under parallel-suite load one 10ms loop can still skip every 75ms
+        // window in the sequence, so request 2ms (→10ms floor unchanged)
+        // and keep the assertion load in the fake sequence below.
         pollIntervalMs: 5,
         // v0.35.17: 30s wall — spawns the REAL worker + a fake pi binary;
         // under load the ordered phases can easily exceed 10s of startup.
