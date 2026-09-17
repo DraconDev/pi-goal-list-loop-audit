@@ -34,7 +34,7 @@ process.stdin.once('data', () => {
     const retry = (globalThis as any).retryStoredCompletionAudit;
     await retry('manual');
     const first = readState(cwd).goal?.pendingCompletion;
-    assert.equal(first?.retryAttempts, 1);
+    assert.equal(first?.retryAttempts, 1, JSON.stringify({ first, notices: ctx.ui.notifies }));
     assert.equal(first?.auditorAttemptedRefs, undefined, 'burned candidates cleared before timer retry');
     const deadline = Date.now() + 25000;
     while ((readState(cwd).goal?.pendingCompletion?.retryAttempts ?? 0) < 2 && Date.now() < deadline) {
