@@ -199,6 +199,9 @@ test("v0.35.x behavioral: a hung post-accept turn aborts, parks, then AUTO-resum
   // by itself and re-dispatches EXACTLY one continuation.
   const sendsBeforeAbort = pi.sent.length;
   ctx.isIdle = () => true; // the aborted host settles idle before the timer fires
+  // Exercise the existing settle-delay path so the continuation cannot land
+  // during the old 300ms sleep. This deterministically exposes two timers.
+  (globalThis as any).postCompletionSettleUntil = Date.now() + 600;
   // The retry callback records its ledger entry BEFORE scheduling a second
   // timer for the continuation. A fixed sleep can settle between those two
   // timers under load; observe the actual send, then assert exactly once.
