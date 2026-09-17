@@ -1614,6 +1614,10 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       auditorAttemptedRefs: undefined,
       auditorFailureCount: undefined,
       auditorFallbackExhausted: undefined,
+      // Display identity survives cursor clearing as structured state —
+      // never re-parsed from prose (auditor objection 2026-09-17T18:49:
+      // dotted model IDs broke the reason-based extraction).
+      exhaustedChain,
     };
     result = { ...result, fallbackExhausted: false };
     chainExhaustedToLadder = true;
