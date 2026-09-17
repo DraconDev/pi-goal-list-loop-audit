@@ -7,7 +7,13 @@ The drafting/status work was published in 0.38.57; the monitor-label and citatio
 Screenshot mapping, bounded containment limits, and test evidence:
 `audit/DRAFT-TO-COMPLETION-2026-09-16.md`.
 
+
+
 # Later
+
+##
+got stuck auto compacitng here
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_083546.png 
 
 ##
 i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
