@@ -32,9 +32,17 @@ same thing completed goal but pending
 we cant say done even though done, probably same problem
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_095239.png 
 
+same thing says we are done, but we have an audit after, but it did actually work, it disagreed, only seemed like it  was doing nothing i think but hard to tell
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_105606.png /home/dracon/Pictures/Screenshots/Screenshot_20260917_105602.png 
+
+something is up we have way too many reports of this
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_105755.png /home/dracon/Pictures/Screenshots/Screenshot_20260917_105813.png 
+
+
 ##
 its nto even obvious that its working i think we need stronger semantic coloring and active indication
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_091058.png /home/dracon/Pictures/Screenshots/Screenshot_20260917_091055.png 
+
 
 ##
 we are overflowing information here
