@@ -382,6 +382,8 @@ import {
   type LoopFlags,
 } from "../goal-loop.js";
 import { defineGoalRuntimeGlobal } from "./goal-runtime-globals.js";
+import { resolveAuditorThinkingLevel } from "../auditor-thinking.js";
+
 
 type PendingCompletion = NonNullable<Goal["pendingCompletion"]>;
 
@@ -495,8 +497,6 @@ function validateCompletionSummary(text: string, ctx: ExtensionContext): string 
     : flags.join(" ");
   return `${text.trimEnd()} — NOTE: ${annotation}`;
 }
-
-import { resolveAuditorThinkingLevel } from "../auditor-thinking.js";
 
 const AUDITOR_RECOVERY_RETRY_DELAY_MS = Number(process.env.GLLA_AUDITOR_RECOVERY_RETRY_DELAY_MS ?? 60_000);
 let auditorRecoveryRetryDelayOverrideMs: number | null = null;
