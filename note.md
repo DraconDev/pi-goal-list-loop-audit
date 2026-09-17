@@ -3,13 +3,10 @@
 
 # Next
 
-The drafting/status work was published in 0.38.57; the monitor-label and citation repairs were published in 0.38.58; the archive-only repository receipt correction was published in 0.38.59, with conservative mixed-finding preservation published in 0.38.60 and failure-first verification status published in 0.38.61. Whole-note verification aggregation was published and registry-verified in 0.38.62. The requirement report below records the audit corrections and verified release evidence.
-Screenshot mapping, bounded containment limits, and test evidence:
-`audit/DRAFT-TO-COMPLETION-2026-09-16.md`.
+##
+starting a list should launch into questions instead of freestyling 
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_125335.png
 
-
-
-# Later
 
 ##
 here footer shows monitoring correctly while the main does not
@@ -58,6 +55,11 @@ we probably wan to cut the footer and have big informative and not repetative vi
 one plan included manual testing automatically which is okay when mandatory but otherwise not good, 
 we should avoid questions and manual testing in the middle, we should question storm up front and 
 do manual actions when we need it, and ideally to the end
+
+##
+the auditor fallbacks dont include thinking levels and we need to look into the logic esp with retries here
+
+# Later
 
 ##
 i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
