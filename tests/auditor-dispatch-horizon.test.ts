@@ -137,6 +137,7 @@ test("expired dispatch preserves the exhausted-chain diagnostic", { timeout: 300
 
 // ─── regression for reviewer BLOCK (2026-09-17T14:07) ───
 
+test("hourly backstop skips blocked capped claims before dispatch", () => {
   // The backstop lives in goal-recovery.ts; pin its ineligibility guard so a
   // capped/blocked claim is never re-dispatched hourly after the window ends.
   const src = fs.readFileSync("extensions/goal-recovery.ts", "utf8");
