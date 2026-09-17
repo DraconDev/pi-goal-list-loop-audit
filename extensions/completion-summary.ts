@@ -419,25 +419,22 @@ function escapeTableCell(value: string): string {
   return value.replace(/\|/g, "\\|").replace(/\s+/g, " ").trim();
 }
 
-/** Mechanically derived, never claimed: notes decide the status. FAIL wins
- * over PASS wherever either appears; multiple failure counts (including
- * formats like "0 failed; ... 2 failed") and negated success wording such as
- * "did not pass" stay REPORTED at best. Pass-only notes are PASS. */
 function testsRowStatus(value: string): string {
-  const fail = /(?<![\w.])(\d+)\s*fail(?![\w])/gi;
-  const failures: number[] = [];
-  for (const match of value.matchAll(fail)) {
-    const count = Number.parseInt(match[1]!, 10);
-    if (!Number.isNaN(count)) failures.push(count);
-  }
-  if (failures.some((count) => count > 0)) return "FAIL";
-  const explicitFail = /\b(?:failure|failures)\b/i.test(value) || /\bfail(?:ed|s)?\b(?![^\n]*\b\d)/i.test(value);
-  if (explicitFail) return "FAIL";
-  if (/\b(?:not|never|no longer|did not|didn't|cannot|can't|won't|without)\b[^.\n]*\b(?:pass(?:ed|es)?|succeed(?:ed|s)?|green)\b/i.test(value)
-    || /\b(?:pass(?:ed|es)?|green)\b[^.\n]*\b(?:not|never|unavailable|incomplete|pending|failed)\b/i.test(value)) return "REPORTED";
-  if (/\bun(?:run|verified)|not run|not tested\b/i.test(value)) return "REPORTED";
-  if (/\bpass(?:ed)?\b/i.test(value)) return "PASS";
-  return "REPORTED";
+  // Aggregate the entire note: an earlier zero or a later green rerun must
+  // never erase a reported failure. Keep the original note in both views.
+  const failureCounts = [...value.matchAll(/\b(\d+)\s+fail(?:ed|ures?|s)?\b/gi)];
+  if (failureCounts.some(match => Number(match[1]) > 0)) return "FAIL";
+
+  // Free prose is not a verdict protocol. Negation, pending work and unknown
+  // outcomes cannot earn PASS, even when another clause says "passed".
+  const uncounted = value.replace(/\b\d+\s+fail(?:ed|ures?|s)?\b/gi, "");
+  if (/\b(?:not|never|no|without|cannot|incomplete|unavailable|pending|expected|unrun|unverified|will|would|should|could|might|may|fail(?:ed|ures?|s|ing)?)\b|\b\w+n['’]t\b/i.test(uncounted)) return "REPORTED";
+
+  const passCounts = [...value.matchAll(/\b(\d+)\s+pass(?:ed|es)?\b/gi)];
+  if (passCounts.length > 0) return passCounts.some(match => Number(match[1]) > 0) ? "PASS" : "REPORTED";
+  // Uncounted prose is not evidence just because it contains "pass".
+  // Accept only a complete affirmative status, not an arbitrary substring.
+  return /^(?:pass(?:ed)?|all (?:tests|checks) passed)[.!]?$/i.test(value.trim()) ? "PASS" : "REPORTED";
 }
 
 function auditRowStatus(history: Goal["auditHistory"]): string {

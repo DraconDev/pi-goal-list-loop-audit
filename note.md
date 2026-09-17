@@ -19,6 +19,9 @@ got stuck auto compacitng here
 i think the auditing might get stuck we are not even getting a lot of info here
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_090729.png 
 
+like this one called open goal and shows audit pending but this is after i woke up so perhaps good time has pass, but at least i dont see it
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_091526.png 
+
 ##
 its nto even obvious that its working i think we need stronger semantic coloring and active indication
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_091058.png /home/dracon/Pictures/Screenshots/Screenshot_20260917_091055.png 
@@ -27,6 +30,11 @@ its nto even obvious that its working i think we need stronger semantic coloring
 we are overflowing information here
 we probably wan to cut the footer and have big informative and not repetative view
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_090729.png 
+
+##
+one plan included manual testing automatically which is okay when mandatory but otherwise not good, 
+we should avoid questions and manual testing in the middle, we should question storm up front and 
+do manual actions when we need it, and ideally to the end
 
 ##
 i am kind of jelous of how far antigravity goes on for so long, w need to look into it 

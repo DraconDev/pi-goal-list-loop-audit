@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.38.61 — Failure-first verification status (2026-09-17)
+
+### Truthful verification rows
+
+Verification scans every numeric failure count, so an earlier zero or a later
+successful rerun cannot conceal failures. Negated, pending and uncertain success
+statements no longer earn PASS merely by containing “pass.” Both gate-inventory
+and legacy test rows use the same derivation in chat and archives; original
+notes remain intact. Production-renderer regressions cover mixed counts,
+negated success, skipped-only checks and affirmative results.
+
 ## 0.38.60 — Preserve mixed findings and unperformed checks (2026-09-17)
 
 ### Conservative chat projection
