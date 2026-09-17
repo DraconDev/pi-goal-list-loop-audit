@@ -69,3 +69,44 @@ Version **0.38.57 published and registry-verified**, including the previous Unre
 - Running interactive Pi was not reloaded or upgraded during this goal; registry verification does not claim the already-running extension changed version. Isolated installed-tarball loading was verified by both local and release gates.
 
 Fresh review findings are resolved; terminal goal approval remains the detached auditor's decision.
+
+
+## Final receipt-boundary repair (0.38.59)
+
+The 04:54 audit correctly identified the Neonbreak Process/Ledger entry as
+repository bookkeeping and the still-future wording in note.md. The previous
+completion claim's assertion that note.md matched publication was incorrect.
+It is now explicitly reconciled to the verified 0.38.57/0.38.58 releases;
+Later/Research are unchanged. Subsequent release status belongs in this report.
+
+The chat boundary removes repository-only receipt findings, not just their
+paths. Empty groups are removed, remaining groups renumbered, and per-finding
+proof stays aligned. Raw groups remain available to the archive. Failures,
+skips, partial/unrun evidence and scope limitations remain visible. The
+Neonbreak saved chat no longer has Process/Ledger or its audit-document path;
+the archive still has the complete receipt. GLLA's closure receipt is likewise
+archive-only. Useful implementation references and substantive ledger fixes
+remain in chat; receipt classification does not use test-proof action words.
+
+Verification: tests/repository-receipts.test.ts and screenshot-completion.test.ts
+pin those behaviors. A blanket path-stripping attempt caused three existing
+regressions in /var/tmp/glla-receipts-full-gate.log (2249 pass / 2 skip / 3 fail);
+the implementation was narrowed, with those existing assertions unchanged.
+Fresh reviewer 3763f162-c1d7-448b-a988-9bed447b591a identified missing literal
+`unrun` protection and cross-contamination from proof `checked`; both were
+accepted and corrected, with red /var/tmp/glla-v59-review-red.log then green
+/var/tmp/glla-v59-review-green.log (38 pass / 0 fail). No findings deferred.
+
+Final full command: `TMPDIR=/var/tmp timeout 1800 npm run release:check`.
+Raw /var/tmp/glla-v0.38.59-final-gate.log: **2252 pass / 2 skip / 0 fail**,
+2254 tests across 223 files; typecheck, state import, auditor extension fixture,
+package inspection, packed skill and installed 0.38.59 import all passed.
+The same AgentManager RPC and watched-repo integrations remain environment-gated
+skips. `git diff --check` passes. All three regenerated screenshot-derived chat
+and archive projections were inspected; historical external-project test
+counts are clearly labeled, not claimed as freshly executed checks.
+
+The accidentally duplicated historical changelog tail introduced during 0.38.58
+prep was removed by comparing it to the intact 0.38.57 tagged contents. This
+changes documentation only and does not rewrite Git history. Package, lock and
+docs index now identify 0.38.59; publication verification follows below.
