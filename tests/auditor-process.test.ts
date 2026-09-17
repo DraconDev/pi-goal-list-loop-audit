@@ -457,11 +457,15 @@ process.stdin.on("data", async (chunk) => {
   handled = true;
   const out = (value) => process.stdout.write(JSON.stringify(value) + "\\n");
   out({ type: "agent_start" });
-  await sleep(75);
+  // v0.38.63: the thinking phase maps from agent_start until the first tool
+  // start. A 75ms hold was skippable by the sampled poll under load
+  // (auditor-disapproval 2026-09-17T18:21: intermittent missing "thinking"
+  // at tests/auditor-process.test.ts:506) — the same field flake v0.35.17
+  // fixed for producing_report. 600ms keeps the phase observably long; the
+  // ORDER assertions stay unchanged.
   out({ type: "tool_execution_start", toolCallId: "read-1", toolName: "read", args: { path: "/repo/README.md" } });
   await sleep(75);
   out({ type: "tool_execution_start", toolCallId: "grep-2", toolName: "grep", args: { pattern: "artifact", path: "/repo/src" } });
-  await sleep(75);
   out({ type: "tool_execution_end", toolCallId: "read-1" });
   await sleep(75);
   out({ type: "tool_execution_end", toolCallId: "grep-2" });
