@@ -557,6 +557,8 @@ export interface Goal {
    * recorded-facts-only fallback for missing, generic, incomplete, aborted,
    * or legacy claims. */
   completionSummary?: string;
+  /** Original claim for this objective; survives disapproval and reload. */
+  completionRecap?: { objective: string; summary: string };
   pauseReason?: string;
   pauseSuggestedAction?: string;
   /** v0.28.22: pause classification — drives the widget/status rendering

@@ -217,7 +217,7 @@ export function humanCompletionBrief(
   // flatten section-structured Outcome markdown into one clipped line. The
   // lead paragraph (text before the first section header) is the human
   // summary; headers ride only in the ### Summary section.
-  const structured = structuredSummaryLines(text) ?? structuredSummaryLines(priorWholeWork);
+  const structured = structuredSummaryLines(priorWholeWork ?? text);
   const lead = structured
     ? (structured.join("\n").split(/\n(?=#{2,4}\s)/)[0] ?? "")
       .split("\n")
@@ -758,7 +758,7 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
   // cleared; the goal-field fallback covers direct callers.
   const priorWholeWork = priorWholeWorkOverride ?? goal.pendingCompletion?.priorCompletionSummary;
   const brief = humanCompletionBrief(summary, 140, RICH_FULL_VALUE_BUDGET, priorWholeWork);
-  const structured = structuredSummaryLines(summary) ?? structuredSummaryLines(priorWholeWork);
+  const structured = structuredSummaryLines(priorWholeWork ?? summary);
   const history = goal.auditHistory ?? [];
   const latest = history[history.length - 1];
   const approval = latest
@@ -783,6 +783,7 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
     trailerBullet(stripApprovalModel(approval)),
     trailerBullet(countsLine),
     trailerBullet(`\u2014 record: ${archivePath}`),
+    ...(priorWholeWork ? ["", "## Original completion claim (verbatim)", "", priorWholeWork] : []),
   ];
 }
 
@@ -938,8 +939,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   // archive human layer). Headline echo, verification, Next, recap, and
   // every recycled payload keep their bounds.
   const resolvedSummary = resolveCompletionSummary(facts, candidate).summary;
-  const structured = structuredSummaryLines(resolvedSummary)
-    ?? structuredSummaryLines(input.priorCompletionSummary);
+  const structured = structuredSummaryLines(input.priorCompletionSummary ?? resolvedSummary);
   // v0.38.37 (audit 2026-09-08): the deliberate non-do comes from the
   // agent's complete_goal leftOut claim — never invented. Filler ("none")
   // drops via the same briefValueContent filter; absent stays absent.

@@ -26,7 +26,7 @@ async function waitFor(check: () => boolean, timeout = 10000) {
   while (!check()) { if (Date.now() > until) throw new Error("settlement timeout"); await new Promise(r => setTimeout(r, 20)); }
 }
 
-const WHOLE_WORK = "Outcome: Shipped the search rollout end to end.\nChanged: search.ts and 3 call sites.\nEvidence: rollout doc plus full suite.\nTests: bun test 2223 pass, 0 fail.\nUnresolved: none.\nNext: none.";
+const WHOLE_WORK = "Outcome: Shipped the search rollout end to end.\nChanged: search.ts and 3 call sites.\nEvidence: rollout doc plus full suite (/var/tmp/original-full-suite.log), commit abc123456; " + "long evidence ".repeat(1000) + "\nTests: bun test 2223 pass, 0 fail.\nUnresolved: none.\nNext: none.";
 
 function auditorBinary(cwd: string, verdict: "approved" | "disapproved", report: string): string {
   const binary = path.join(cwd, `auditor-${verdict}.mjs`);
@@ -85,8 +85,12 @@ test("repair re-claim preserves the whole-work recap in the approved render", { 
   // whole-work recap from the first claim must still lead the terminal
   // render and survive in the archive.
   const DELTA_ONLY = "Outcome: Fixed the empty-query edge case.\nChanged: search.ts edge guard.\nEvidence: edge-case suite.\nTests: bun test 8 pass, 0 fail.\nUnresolved: none.\nNext: none.";
-  install(auditorBinary(cwd, "approved", ""));
   await pi.runTool("complete_goal", { completionSummary: DELTA_ONLY, verificationSummary: "pinned" }, ctx);
+  await waitFor(() => (readState(cwd).goal?.auditHistory?.filter(v => v.disapproved).length ?? 0) === 2);
+  // A second repair must not replace the original whole-work claim.
+  const STRUCTURED_REPAIR = DELTA_ONLY.replace("Fixed the empty-query edge case.", "Repaired another edge.\n## Guard\nTightened the guard.\n## Proof\nChecked the edge.");
+  install(auditorBinary(cwd, "approved", ""));
+  await pi.runTool("complete_goal", { completionSummary: STRUCTURED_REPAIR, verificationSummary: "pinned" }, ctx);
   await waitFor(() => entries.length === 1);
   const chat = entries[0]!.content as string;
   assert.match(chat, /^## Done — Shipped the search rollout end to end/);
@@ -100,6 +104,8 @@ test("repair re-claim preserves the whole-work recap in the approved render", { 
   assert.ok(record, "chat carries the archive record pointer");
   const archiveMd = fs.readFileSync(path.join(cwd, record), "utf-8");
   assert.match(archiveMd, /## Terminal summary/);
+  assert.ok(archiveMd.includes(WHOLE_WORK), "original raw claim is archived verbatim, without truncation or stripping");
+  assert.doesNotMatch(chat.split("\n")[0]!, /Repaired another edge/);
   assert.match(archiveMd, /Shipped the search rollout end to end/, "the whole-work recap survives into the archived terminal section");
   assert.match(archiveMd, /2223 pass/, "the whole-work proof survives into the archive");
   assert.ok(JSON.parse(fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf-8").trim().split("\n").at(-1)!));

@@ -815,9 +815,11 @@ function registerAgentTools(pi: any): void {
       // the approved terminal render still opens with the whole work; the
       // audited repair claim stays the substance.
       const lastAuditEntry = state.goal.auditHistory?.[state.goal.auditHistory.length - 1];
-      const priorWholeWork = lastAuditEntry?.disapproved && state.goal.completionSummary?.trim()
-        ? state.goal.completionSummary
-        : undefined;
+      const priorWholeWork = state.goal.completionRecap?.objective === state.goal.objective
+        ? state.goal.completionRecap.summary
+        : !state.goal.completionRecap && lastAuditEntry?.disapproved && state.goal.completionSummary?.trim()
+          ? state.goal.completionSummary
+          : undefined;
       const completionClaim = beginCompletionAudit(ctx, {
         completionSummary: finalSummary,
         verificationSummary: p.verificationSummary,

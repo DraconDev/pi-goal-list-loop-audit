@@ -702,6 +702,12 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
   const persisted = updateGoal({
     status: "auditing",
     pendingCompletion: pending,
+    ...(claim.completionSummary && state.goal ? {
+      completionRecap: {
+        objective: state.goal.objective,
+        summary: claim.priorCompletionSummary ?? claim.completionSummary,
+      },
+    } : {}),
     pauseReason: undefined,
     pauseSuggestedAction: undefined,
     pauseKind: undefined,

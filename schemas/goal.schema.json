@@ -100,6 +100,11 @@
       "type": "string",
       "description": "The final completion claim text passed to complete_goal; mirrored into the archive markdown as the final record."
     },
+    "completionRecap": {
+      "type": "object",
+      "required": ["objective", "summary"],
+      "properties": { "objective": { "type": "string" }, "summary": { "type": "string" } }
+    },
     "createdVia": { "type": "string" },
     "activePath": { "type": "string" },
     "archivedPath": { "type": "string" },
