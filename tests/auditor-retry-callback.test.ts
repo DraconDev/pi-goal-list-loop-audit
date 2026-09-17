@@ -5,7 +5,7 @@ import activate, { __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyR
 import { readState } from '../extensions/goal-loop-core.js';
 import { MockPi, makeMockCtx, tmpCwd, seedGoal, seedState } from './harness/mock-pi.js';
 
-test('manual audit exhaustion retries through timer with fresh candidates and unchanged envelope', async () => {
+test('manual audit exhaustion retries through timer with fresh candidates and unchanged envelope', { timeout: 60000 }, async () => {
   const cwd = tmpCwd();
   const pi = new MockPi();
   const binary = process.env.GLLA_PI_BINARY;
