@@ -29,7 +29,7 @@ like this one called complete goal and shows audit pending but this is after i w
 same thing completed goal but pending
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_094330.png 
 
-
+we cant say done even though done, probably same problem
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_095239.png 
 
 ##
