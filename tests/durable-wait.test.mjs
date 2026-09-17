@@ -60,7 +60,7 @@ test("durable wait returns a real timeout instead of treating elapsed time as su
   try {
     const result = await waitForDurableEvent(
       () => readDurableFile(file, { doneNeedles: ['"event":"never"'] }),
-      { timeoutMs: 30, pollIntervalMs: 5 },
+      { timeoutMs: 30, pollIntervalMs: 5, ...fixtureClock(async () => {}) },
     );
     assert.equal(result.ok, false);
     assert.equal(result.terminalReason, "timeout");

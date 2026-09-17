@@ -68,6 +68,10 @@ it would need to be extreme and we keep reevaluating often
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_153404.png 
 
 ##
+/home/dracon/Pictures/Screenshots/Screenshot_20260917_184316.png 
+we should not be taking goal and lists and loops literally but as a way to write an objecitve based on what wwas said and can be inferred from the conversation
+
+##
 i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
 
 
