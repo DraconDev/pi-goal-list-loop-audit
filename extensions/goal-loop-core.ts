@@ -145,7 +145,13 @@ export interface TaskProposal {
   subtasks?: string[];
 }
 
-/** Validate a proposed breakdown. Returns an error string or null. */
+/** Validate a proposed breakdown. Returns an error string or null.
+ *
+ * Execution discipline: a drafted plan must never schedule a mid-run
+ * question or manual-check step. Questions are batched upfront in drafting
+ * (ask_user_question before propose), and manual testing happens only when
+ * the contract mandates it — as a verification gate, never as a scheduled
+ * step. The tool refuses violating breakdowns so they cannot be confirmed. */
 export function validateTaskProposal(tasks: TaskProposal[]): string | null {
   if (!Array.isArray(tasks) || tasks.length === 0) return "Empty task list.";
   if (tasks.length > MAX_TOP_LEVEL_TASKS) {
@@ -158,7 +164,62 @@ export function validateTaskProposal(tasks: TaskProposal[]): string | null {
       return `Task "${t.title}" has ${n} subtasks; max ${MAX_SUBTASKS_PER_TASK}. Merge or split into coarser tasks.`;
     }
   }
+  const violations = findMidRunPlanViolations(tasks);
+  if (violations.length > 0) {
+    const first = violations[0]!;
+    return (
+      `Task "${first.id}" ("${first.title}") schedules a ${first.reason}. ` +
+      `Resolve questions upfront in drafting and keep manual checks in the verification contract — ` +
+      `redraft without the mid-run step${violations.length > 1 ? ` (${violations.length} violating steps total)` : ""}.`
+    );
+  }
   return null;
+}
+
+export interface MidRunPlanViolation {
+  id: string;
+  title: string;
+  reason: string;
+}
+
+/**
+ * Mid-run step detector for drafted plans (pure — pinnable without a harness).
+ *
+ * A drafted plan (propose_task_list breakdown, plan-mode milestones) runs
+ * unattended: it must never schedule a mid-run question (ask the user,
+ * confirm a pick, await input) or a manual-check step (manually verify,
+ * eyeball, click through). The ONLY exemption is a step that explicitly
+ * cites its contract-mandated gate — the Confirm-gated proposal itself, a
+ * Designer checkpoint, or a verification-contract gate that mandates a
+ * human pass no automation covers. Bare mentions of "ask" or "review"
+ * (code review, "ask about X in drafting") do not match: the patterns
+ * require a mid-run scheduling shape.
+ */
+const MID_RUN_QUESTION_RE =
+  /ask_user_question|ask the user|confirm with the user|check with the user|get (the )?(user|human)s? (approval|input|confirmation|decision|pick)|await(ing)? user|user (approval|confirmation|input|pick) (gate|step|checkpoint)|mid-run question|pause for (questions?|input|approval)/i;
+const MID_RUN_MANUAL_RE =
+  /\bmanually\b|\bmanual (test|testing|verification|check|review|confirmation|qa)\b|eyeball|click[ -]?through|human (testing|verification|review|confirmation|eyeballs|in[ -]the[ -]loop)|verify .* by hand|check .* visually/i;
+const CONTRACT_GATE_CITATION_RE =
+  /propose_goal_draft|propose_task_list|confirm dialog|verification contract|designer checkpoint|contract-mandated|contract gate/i;
+
+/** Every task/subtask title that schedules a mid-run step, in list order. */
+export function findMidRunPlanViolations(tasks: TaskProposal[]): MidRunPlanViolation[] {
+  const out: MidRunPlanViolation[] = [];
+  const check = (id: string, raw: string) => {
+    const title = (raw ?? "").trim();
+    if (!title) return;
+    if (CONTRACT_GATE_CITATION_RE.test(title)) return;
+    if (MID_RUN_QUESTION_RE.test(title)) {
+      out.push({ id, title, reason: "mid-run question — resolve it upfront in drafting instead" });
+    } else if (MID_RUN_MANUAL_RE.test(title)) {
+      out.push({ id, title, reason: "manual check — keep it in the verification contract, never as a scheduled step" });
+    }
+  };
+  tasks.forEach((t, i) => {
+    check(String(i + 1), t.title);
+    (t.subtasks ?? []).forEach((s, j) => check(`${i + 1}.${j + 1}`, s));
+  });
+  return out;
 }
 
 /** Assign hierarchical ids ("1", "1.1", …) and pending statuses to a proposal. */

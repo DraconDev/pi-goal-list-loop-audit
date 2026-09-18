@@ -53,6 +53,13 @@ confirms.
 4. **Depth is for the CONTRACT, not for padding.** Every paragraph must
    earn its place — decisions, constraints, and checkable outcomes only.
    Do not pad with boilerplate the user did not ask for.
+5. **Milestones run unattended: no mid-run question or manual-check milestones.**
+   Batch every question into the interview rounds above — never as a milestone
+   that pauses execution waiting for input. Manual testing appears only as a
+   verification-contract gate no automation covers, never as a milestone step.
+   The only exception is a contract-mandated gate that names itself (the
+   Confirm-gated proposal, a Designer checkpoint, or a verification-contract
+gate).
 
 ## Pasted list seeds
 

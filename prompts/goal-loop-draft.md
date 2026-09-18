@@ -153,6 +153,18 @@ confirms it).
    propose again. Do not call `propose_goal_draft` repeatedly without
    changing anything.
 
+## Execution discipline — never schedule mid-run steps
+
+The drafted contract runs unattended, so never schedule a mid-run question
+or manual-check step: batch every question upfront in this interview (the
+question-storm-upfront rule — resolve scope, acceptance, and trade-offs NOW,
+never as a task step that pauses execution waiting for input), and allow
+manual testing only when the contract mandates it — as a verification-gate
+check no automation covers, never as a scheduled mid-run step. The only
+exception is a contract-mandated gate that names itself: the Confirm-gated
+proposal, a Designer checkpoint, or a verification-contract gate. A task
+breakdown that schedules anything else mid-run is refused at proposal time.
+
 ## Hard rules
 
 - Do not call `complete_goal` during drafting.
