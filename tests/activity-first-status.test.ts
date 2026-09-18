@@ -59,7 +59,7 @@ test("activity-first: lead rows follow the head and precede all historical rows"
   const g = goalOf({
     pendingCompletion: claimOf(),
     auditHistory: [
-      { at: "2026-09-17T11:00:00Z", verdict: "approved", summary: "ok" },
+      { at: "2026-09-17T11:00:00Z", approved: true, disapproved: false, model: "test-auditor/model" },
     ],
   });
   const lines = buildWidgetLines(
@@ -310,11 +310,8 @@ test("stampAuditorAttemptThinking stamps only the owning attempt and sanitizes",
     undefined,
     "a stale callback never stamps another attempt's claim",
   );
-  assert.equal(
-    stampAuditorAttemptThinking(base, "audit-activity-first", "max\ninjected"),
-    undefined,
-    "newline garbage is sanitized, not stored",
-  );
+  const sanitized = stampAuditorAttemptThinking(base, "audit-activity-first", "max\ninjected");
+  assert.equal(sanitized?.auditorThinkingLevel, "max injected", "newlines degrade to spaces, never stored raw");
   const fallback = stampAuditorAttemptThinking(stamped, "audit-activity-first", "low");
   assert.equal(fallback?.auditorThinkingLevel, "low", "a fallback candidate renames the level");
 });
