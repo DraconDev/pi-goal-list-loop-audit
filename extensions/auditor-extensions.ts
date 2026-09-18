@@ -259,6 +259,22 @@ export function mergeAuditorAllowedExtensions(
   return out;
 }
 
+/** v0.38.65 (field 151158): dispatch-time allowlist — the curated
+ * setting union the session package mirror, unless the user explicitly
+ * opted out (auditorMirrorSessionExtensions === false). Both dispatch
+ * paths (complete_goal launch + provider-retry re-seed) call this so
+ * provider parity between session and worker stays identical. */
+export function dispatchAuditorAllowedExtensions(
+  user: string[] | undefined,
+  mirrorSetting: boolean | undefined,
+  home: string,
+  cwd?: string,
+): string[] {
+  const enabled = mirrorSetting !== false;
+  const mirror = enabled ? sessionMirrorExtensionSpecs(home, cwd) : [];
+  return mergeAuditorAllowedExtensions(user, mirror, enabled);
+}
+
 /** Bounded, deterministic normalization of the allowlist value.
  * Audit 2026-09-06: dedup is case-insensitive like the model fallback
  * chains (npm names cannot differ by case; a same-case pair is always the
