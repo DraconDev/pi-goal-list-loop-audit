@@ -1845,11 +1845,18 @@ function rememberCtx(ctx: ExtensionContext): void {
   lastCtx = ctx;
 }
 
-/** True when ctx belongs to a subagent/foreign session, not the loop owner. */
+/** True when ctx belongs to a subagent/foreign session, not the loop owner.
+ * v0.38.63 (195237): pi can deliver the SAME resumed session with a NEW
+ * SessionManager object, so the comparison is session identity
+ * (sameSessionIdentity), not object identity — matching the lifecycle path
+ * in goal-activation.ts. Object identity stranded the main session as
+ * "subagent" until a refresh rebound the owner. In-memory workers expose
+ * no session id and never match, so the guard still fails closed. */
 function isForeignCtx(ctx: ExtensionContext): boolean {
   try {
     if (isWorkerSessionCtx(ctx)) return true;
-    return processOwnerDeniedCwd === ctx.cwd || (ownerSession !== null && ctx.sessionManager !== ownerSession);
+    return processOwnerDeniedCwd === ctx.cwd
+      || (ownerSession !== null && !sameSessionIdentity(ctx.sessionManager, ownerSession));
   } catch {
     // Treat stale/ambiguous contexts as foreign and fail closed.
     return true;
