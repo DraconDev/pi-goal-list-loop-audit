@@ -522,6 +522,12 @@ gateRows?: GateRow[];
    * after this point, the unknown call is consumed rather than replayed. */
   auditorRetryAttemptStartedAt?: string;
   auditorAttemptedRefs?: string[];
+  /** v0.38.63 (audit-stuck batch, field 124541): refs proven unresolvable
+   * (model-not-found family) in the current bounded cycle. Survives the
+   * burn clearing that resets attemptedRefs, so the next episode re-seeds
+   * from live refs only; cleared only by a fresh manual/agent cycle, which
+   * re-resolves from config. Displayed via exhaustedChain, never selected. */
+  auditorEvictedRefs?: string[];
   /** 0 = first call in flight, 1 = first failure/retry in flight, 2 = a
    * terminal second failure. State loading clamps this to [0, 2]. */
   auditorFailureCount?: number;
@@ -2336,6 +2342,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     auditorRetryCandidateRef: _auditorRetryCandidateRef,
     auditorRetryAttemptStartedAt: _auditorRetryAttemptStartedAt,
     auditorAttemptedRefs: _auditorAttemptedRefs,
+    auditorEvictedRefs: _auditorEvictedRefs,
     auditorFailureCount: _auditorFailureCount,
     auditorFailureClass: _auditorFailureClass,
     auditorFallbackExhausted: _auditorFallbackExhausted,
@@ -2355,6 +2362,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
   };
   const auditorCandidateRefs = boundedRefs(_auditorCandidateRefs);
   const auditorAttemptedRefs = boundedRefs(_auditorAttemptedRefs);
+  const auditorEvictedRefs = boundedRefs(_auditorEvictedRefs);
   const auditorCandidateRef = typeof _auditorCandidateRef === "string" && _auditorCandidateRef.trim()
     ? _auditorCandidateRef.trim().slice(0, 200)
     : undefined;
@@ -2412,6 +2420,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     ...(auditorRetryCandidateRef ? { auditorRetryCandidateRef } : {}),
     ...(auditorRetryAttemptStartedAt ? { auditorRetryAttemptStartedAt } : {}),
     ...(auditorAttemptedRefs !== undefined ? { auditorAttemptedRefs } : {}),
+    ...(auditorEvictedRefs !== undefined ? { auditorEvictedRefs } : {}),
     ...(auditorFailureCount !== undefined ? { auditorFailureCount } : {}),
     ...(auditorFailureClass ? { auditorFailureClass } : {}),
     ...(auditorFallbackExhausted ? { auditorFallbackExhausted: true } : {}),
@@ -3933,6 +3942,28 @@ export function isRetriableInfraError(error?: string): boolean {
   if (/^(?:Auditor aborted\.?$|user (?:interrupt|abort)|cancelled by user)/i.test(error.trim())) return false;
   if (/no (?:auditor )?model/i.test(error)) return false;
   return true;
+}
+
+/** v0.38.63 (audit-stuck batch, field 124541): a detached-auditor failure
+ * proving the candidate ref itself is unresolvable — the model is gone
+ * from the registry, not temporarily unhealthy. Retrying the same ref (or
+ * re-seeding it next episode) can never land a verdict; the walker must
+ * advance immediately and the (re-)seed must filter the ref out. Kept
+ * separate from isRetriableInfraError on purpose: unresolvable still walks
+ * the chain forward (a live fallback may verdict), it just never burns the
+ * same-ref retry or a re-seed slot on the dead ref. */
+export function isUnresolvableAuditorModelRefError(error?: string): boolean {
+  if (!error) return false;
+  return /model not found|no available model matching|no configured auth/i.test(error);
+}
+
+/** v0.38.63: drop evicted dead refs from a (re-)seeded candidate chain.
+ * Pure: order-preserving, case-insensitive like the walker cursor, never
+ * mutates inputs. An empty/undefined eviction list returns refs unchanged. */
+export function filterEvictedAuditorRefs(refs: string[], evicted?: string[]): string[] {
+  if (!evicted || evicted.length === 0) return refs;
+  const dead = new Set(evicted.map((ref) => ref.toLowerCase()));
+  return refs.filter((ref) => !dead.has(ref.toLowerCase()));
 }
 
 export interface InfraRetryOutcome<T> {

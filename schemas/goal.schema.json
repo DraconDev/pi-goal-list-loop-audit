@@ -216,6 +216,7 @@
         "auditorRetryCandidateRef": { "type": "string", "maxLength": 200 },
         "auditorRetryAttemptStartedAt": { "type": "string", "format": "date-time" },
         "auditorAttemptedRefs": { "type": "array", "maxItems": 12, "items": { "type": "string", "minLength": 1 } },
+        "auditorEvictedRefs": { "type": "array", "maxItems": 12, "items": { "type": "string", "minLength": 1 } },
         "auditorFailureCount": { "type": "integer", "minimum": 0, "maximum": 2 },
         "auditorFailureClass": { "type": "string", "enum": ["transport", "timeout", "no-verdict", "provider"] },
         "auditorFallbackExhausted": { "type": "boolean" },
