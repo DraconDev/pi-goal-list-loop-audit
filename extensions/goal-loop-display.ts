@@ -1272,7 +1272,9 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
     const kind = pauseKind(g);
     if (kind === "decision") return `glla: ${paint(theme, "accent", "⏸ decision needed")}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
     if (kind === "error") return `glla: ${paint(theme, "error", `⏸ action needed — ${truncate(displayPauseReason(g.pauseReason ?? ""), 30)}`)}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
-    if (kind === "wait" || kind === "blocked") {
+    // v0.38.64 (021655): standby joins this gate so its waiting label
+    // renders here instead of falling through to the generic paused line.
+    if (kind === "wait" || kind === "blocked" || kind === "standby") {
       // v0.34.12: live countdown (the UI ticker keeps rendering through a
       // timed wait) — "auto-retry in 23m" beats a static clock time, and a
       // freshly-passed resumeAt says "resuming…" instead of lying about the
