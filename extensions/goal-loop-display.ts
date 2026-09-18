@@ -527,7 +527,7 @@ const pauseIsError = (g: Goal): boolean => ERROR_PAUSE.test(g.pauseReason ?? "")
 /** v0.28.22: the rendering class of a pause — declared kind wins; legacy
  * pauses (no kind) fall back to the error-regex so old states still
  * classify sensibly. */
-type PauseKind = "decision" | "error" | "wait" | "blocked";
+type PauseKind = "decision" | "error" | "wait" | "blocked" | "standby";
 const pauseKind = (g: Goal): PauseKind | undefined => g.pauseKind ?? (pauseIsError(g) ? "error" : undefined);
 
 /** 2026-09-16 truthful pause ownership: a wait is a GLLA-supervised retry
@@ -1031,6 +1031,10 @@ function pausedRecoveryOwner(g: Goal, state: State): string {
     case "error": return "user action";
     case "wait": return "glla recovery timer";
     case "blocked": return "manual action";
+    // v0.38.64 (021655): a standby pause waits on a background subagent
+    // whose native completion wakes the goal — no manual action exists,
+    // so the owner must never read "manual action".
+    case "standby": return "background agent";
     default: return "manual resume";
   }
 }
@@ -1101,6 +1105,9 @@ function pausedNextTransition(g: Goal, state: State, now: number): string {
     case "error": return `manual action → ${resume}`;
     case "blocked": return resume;
     case "wait": return isSupervisedWait(g) ? "recovery timer" : resume;
+    // v0.38.64 (021655): standby resumes itself on native completion —
+    // the next transition is the wake, never a manual resume command.
+    case "standby": return "background-agent completion wakes automatically";
     default: return resume;
   }
 }
