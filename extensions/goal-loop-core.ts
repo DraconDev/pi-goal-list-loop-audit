@@ -3373,6 +3373,29 @@ export function stripTweakProceduralTail(raw: string): string {
   return parts.slice(0, end).join("").trim();
 }
 
+/** Now 200751/200754: error-brake retry re-check, anchored on the
+ * recovery episode instead of the exact pause-reason string. A provider
+ * error arms a bounded retry (escalating brakes, then the 6-brake park
+ * with hourly probes); when the agent pauses mid-episode ("blocked —
+ * waiting for manual action"), the old reason-prefix match silently
+ * stood the armed retry down and the goal sat parked for hours. Resume
+ * whenever the goal is still paused under the SAME episode — whatever
+ * the current reason text — except after an explicit user pause
+ * ("paused by user", the single marker both /goal pause and /list
+ * pause write), which still stands automation down. */
+export function shouldErrorBrakeRetryResume(
+  goal: Pick<Goal, "status" | "pauseKind" | "pauseReason" | "recoveryEpisodeKey"> | undefined | null,
+  episodeKey: string,
+): boolean {
+  if (!goal || goal.status !== "paused") return false;
+  if (!episodeKey) return false;
+  if ((goal.pauseReason ?? "") === "paused by user") return false;
+  // A pending decision picker belongs to the user deliberating right now;
+  // the retry stands down rather than injecting a turn underneath it.
+  if (goal.pauseKind === "decision") return false;
+  return goal.recoveryEpisodeKey === episodeKey;
+}
+
 export function extractVerificationContract(raw: string): { objective: string; verificationContract: string; explicitClear: boolean } {
   // Line-based first: a marker at line start begins the contract block.
   const lines = raw.split("\n");

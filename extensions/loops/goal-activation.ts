@@ -58,6 +58,7 @@ import {
   supervisorPaused,
   appendAuditLog,
   computeListDepth,
+  shouldErrorBrakeRetryResume,
   formatAuditLog,
   formatGoalAuditHistory,
   runWithInfraRetry,
@@ -2479,10 +2480,12 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
           appendLedger(ctx.cwd, "error_brake_capped", { streak: brakeStreak, reason, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey });
           const probeMs = Math.max(1_000, nextHourlyProbeMs(Date.now()) - Date.now());
           scheduleProviderRetryForSession(ctx, probeMs / 1000, reason, (fresh: ExtensionContext) => {
-            // Re-check: only probe if STILL parked by the error-brake cap —
-            // a user pause/resume/cancel meanwhile is never stomped.
-            if (state.goal && state.goal.status === "paused" && state.goal.pauseKind === "error"
-              && (state.goal.pauseReason ?? "").includes("error-brakes in a row")) {
+            // Re-check: probe while STILL parked under the same recovery
+            // episode — an agent pause mid-episode must not kill the
+            // hourly probe (Now 200751/200754). An explicit user pause
+            // ("paused by user") or a resume/cancel meanwhile still
+            // stands it down via shouldErrorBrakeRetryResume.
+            if (state.goal && shouldErrorBrakeRetryResume(state.goal, recoveryEpisodeKey)) {
               appendLedger(fresh.cwd, "hourly_provider_retry", { goalId: state.goal.id, streak: state.goal.errorBrakeStreak ?? 0 });
               updateGoal({ status: "active", pauseKind: undefined, pauseResumeAt: undefined, pauseReason: undefined, pauseSuggestedAction: undefined, providerErrorDiagnostic: undefined, recoveryEpisodeKey: undefined, recoveryNoticeKeys: undefined }, fresh);
               appendLedger(fresh.cwd, "goal_resumed", { via: "hourly-provider-retry" });
@@ -2514,9 +2517,19 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
         }
         appendLedger(ctx.cwd, "goal_paused", { reason, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey });
         scheduleProviderRetryForSession(ctx, cooldownMs / 1000, reason, (fresh: ExtensionContext) => {
-          // Re-check: only auto-resume if STILL paused for the error brake
-          // (a user /goal pause during the window is not stomped).
-          if (state.goal && state.goal.status === "paused" && (state.goal.pauseReason ?? "").startsWith("5 consecutive errors")) {
+          // Re-check: resume while STILL paused under the same recovery
+          // episode — an agent-authored pause mid-episode (blocked on
+          // "manual action") must not silently kill the bounded retry
+          // (Now 200751/200754). An explicit user pause ("paused by
+          // user") still stands it down via shouldErrorBrakeRetryResume.
+          // (Also covers the sensitive-copy brake, whose reason never
+          // carried the old "5 consecutive errors" prefix.)
+          if (state.goal && shouldErrorBrakeRetryResume(state.goal, recoveryEpisodeKey)) {
+            const agentPaused = !((state.goal.pauseReason ?? "").startsWith("5 consecutive errors")
+              || (state.goal.pauseReason ?? "").startsWith("provider recovery wall"));
+            if (agentPaused) {
+              appendLedger(fresh.cwd, "error_brake_retry_agent_pause_overridden", { goalId: state.goal.id, pauseKind: state.goal.pauseKind });
+            }
             updateGoal({ status: "active", pauseKind: undefined, pauseResumeAt: undefined, pauseReason: undefined, pauseSuggestedAction: undefined, providerErrorDiagnostic: undefined, recoveryEpisodeKey: undefined, recoveryNoticeKeys: undefined }, fresh);
             appendLedger(fresh.cwd, "goal_resumed", { via: "error-brake-retry" });
             fresh.ui.notify("Auto-resumed after the 5-error brake (cooldown elapsed).", "info");
