@@ -8,15 +8,25 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 
+import * as fs from "node:fs";
+import * as path from "node:path";
+
+import activate, {
+  __testOnlyResetOwnerSession,
+  __testOnlyResetStaleFlag,
+} from "../extensions/loops/goal.js";
+import { __testOnlyResetAuditorSurface } from "../extensions/loops/goal-auditor-surface.js";
 import {
   isUnresolvableAuditorModelRefError,
   filterEvictedAuditorRefs,
+  readState,
 } from "../extensions/goal-loop-core.ts";
 import {
   runAuditorFallbackWithPolicy,
   type AuditorFallbackCandidate,
   type GoalAuditorResult,
 } from "../extensions/goal-loop-auditor-process.ts";
+import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd, type MockCtx } from "./harness/mock-pi.js";
 
 function result(overrides: Partial<GoalAuditorResult> = {}): GoalAuditorResult {
   return {
