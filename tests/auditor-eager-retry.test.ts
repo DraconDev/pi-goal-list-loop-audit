@@ -42,16 +42,21 @@ test("eager: first attempt is 5s for every provider failure family", () => {
   }
 });
 
-test("hourly: later attempts align just after the next local hour", () => {
+test("hourly: later attempts keep the slot diagnostic but cap the wait at 15m", () => {
+  // Post-drafting stuck cluster (field 111629/111716/111957): the uncapped
+  // :00:30 slot wait read "auto-retry in 44m 03s" — stuck-looking. The
+  // slot stays diagnostic metadata (requestedSec); the persisted wait caps.
   const plan = auditorRetryPlan(
     claim({ retryAttempts: 1, retryFirstAt: new Date().toISOString() }),
     providerFailure(0, false, "plan-quota"),
     60,
   );
   assert.equal(plan.attempt, 2);
-  assert.ok(plan.retryAfterSec >= 60, `hourly probe must floor at 60s, got ${plan.retryAfterSec}`);
-  assert.ok(plan.retryAfterSec <= 60 * 60, `hourly probe must be within one hour, got ${plan.retryAfterSec}`);
-  assert.equal(plan.requestedSec, plan.retryAfterSec);
+  assert.ok(plan.requestedSec >= 60, `hourly slot must floor at 60s, got ${plan.requestedSec}`);
+  assert.ok(plan.requestedSec <= 60 * 60, `hourly slot stays within one hour, got ${plan.requestedSec}`);
+  assert.ok(plan.retryAfterSec >= 60, `capped wait keeps the 60s floor, got ${plan.retryAfterSec}`);
+  assert.ok(plan.retryAfterSec <= 15 * 60, `capped wait never exceeds 15m, got ${plan.retryAfterSec}`);
+  assert.equal(plan.retryAfterSec, Math.min(plan.requestedSec, 15 * 60));
 });
 
 test("hourly: rate-limit, billing, and transient-shaped failures share the same later schedule", () => {
@@ -83,8 +88,8 @@ test("eager: an upstream Retry-After hint does not suppress the uniform retry", 
     providerFailure(7200, true, "billing"),
     60,
   );
-  assert.equal(later.requestedSec, later.retryAfterSec, "the later retry stays hour-aligned");
-  assert.ok(later.retryAfterSec <= 60 * 60);
+  assert.equal(later.retryAfterSec, Math.min(later.requestedSec, 15 * 60), "the later retry caps the hour-aligned slot at 15m");
+  assert.ok(later.retryAfterSec <= 15 * 60);
 });
 
 test("eager: detached auditor retries an account-shaped failure once before durable parking", async () => {
