@@ -106,6 +106,7 @@ export interface LoopFlags {
   set staleTerminalDone(v: boolean);
   get zombieStoodDown(): boolean;
   set zombieStoodDown(v: boolean);
+  get compactionInFlightSince(): number | null;
 }
 
 export interface LoopDeps {

@@ -261,6 +261,7 @@ export interface RecoveryFlags {
   set continuationDispatchStoodDown(v: boolean);
   get lastMainModelRecoveryResumeAt(): number;
   set lastMainModelRecoveryResumeAt(v: number);
+  get compactionInFlightSince(): number | null;
 }
 
 export interface RecoveryDeps {

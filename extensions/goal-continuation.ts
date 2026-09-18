@@ -130,8 +130,8 @@ export interface ContinuationFlags {
   get loopRearmMilestone(): number;
   set loopRearmMilestone(v: number);
   get completionAuditInFlight(): boolean;
+  get compactionInFlightSince(): number | null;
 }
-
 /** goal.ts functions/consts the continuation cluster calls. Wired by goal.ts
  * at factory time. */
 export interface ContinuationDeps {

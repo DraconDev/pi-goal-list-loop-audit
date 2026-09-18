@@ -144,6 +144,7 @@ export const GOAL_RUNTIME_GLOBAL_NAMES = [
   "startUITicker",
   "loopRearmStreak",
   "compactionGraceUntil",
+  "compactionInFlightSince",
   "lastCompactionAt",
   "CONTEXT_STARVATION_REFUSE_THRESHOLD",
   "CONTEXT_STARVATION_RECENT_WINDOW_MS",
@@ -310,6 +311,7 @@ interface GoalRuntimeDataTypes {
   inFlightToolCalls: Map<string, { name: string; arg?: string; at: number }>;
   loopRearmStreak: number;
   compactionGraceUntil: number;
+  compactionInFlightSince: number | null;
   lastCompactionAt: number;
   CONTEXT_STARVATION_REFUSE_THRESHOLD: number;
   CONTEXT_STARVATION_RECENT_WINDOW_MS: number;
@@ -514,6 +516,7 @@ declare global {
   var startUITicker: GoalRuntimeGlobals["startUITicker"];
   var loopRearmStreak: GoalRuntimeGlobals["loopRearmStreak"];
   var compactionGraceUntil: GoalRuntimeGlobals["compactionGraceUntil"];
+  var compactionInFlightSince: GoalRuntimeGlobals["compactionInFlightSince"];
   var lastCompactionAt: GoalRuntimeGlobals["lastCompactionAt"];
   var CONTEXT_STARVATION_REFUSE_THRESHOLD: GoalRuntimeGlobals["CONTEXT_STARVATION_REFUSE_THRESHOLD"];
   var CONTEXT_STARVATION_RECENT_WINDOW_MS: GoalRuntimeGlobals["CONTEXT_STARVATION_RECENT_WINDOW_MS"];

@@ -74,7 +74,7 @@ export {
   __testOnlyResetOwnerSession,
   __testOnlyRunFanOutListAuditFindings,
 } from "./goal-session.js";
-export { __testOnlySetLastCompactionAt, __testOnlyResetStarvationGate, __testOnlyLoadState, __testOnlyRegisterAgentTools, __testOnlyRememberCtx, __testOnlyDisplayActivityFor, __testOnlyResetToolActivity, __testOnlySetLastRealActivityAt } from "./goal-ui.js";
+export { __testOnlySetLastCompactionAt, __testOnlyResetStarvationGate, __testOnlyLoadState, __testOnlyRegisterAgentTools, __testOnlyRememberCtx, __testOnlyDisplayActivityFor, __testOnlyResetToolActivity, __testOnlySetLastRealActivityAt, __testOnlySetLastActivityAt, __testOnlySetCompactionInFlight, noteCompactionStarted, noteCompactionSettled, isCompactionInFlight } from "./goal-ui.js";
 export { auditorRetryPlan, runDetachedCompletionWithFallback, __testOnlySetAuditorRecoveryRetryDelay, __testOnlyResetAuditorRecoveryRuntime, type AuditorModelCandidate } from "./goal-auditor-hooks.js";
 export { handleSettingChoice } from "./goal-settings-ui.js";
 
@@ -144,6 +144,7 @@ const loopFlags: LoopFlags = {
   set staleTerminalDone(v) { staleTerminalDone = v; },
   get zombieStoodDown() { return zombieStoodDown; },
   set zombieStoodDown(v) { zombieStoodDown = v; },
+  get compactionInFlightSince() { return compactionInFlightSince; },
 };
 
 const commandDeps: CommandDeps = {
@@ -270,6 +271,7 @@ const continuationFlags: ContinuationFlags = {
   get loopRearmMilestone() { return loopRearmMilestone; },
   set loopRearmMilestone(v) { loopRearmMilestone = v; },
   get completionAuditInFlight() { return completionAuditInFlight; },
+  get compactionInFlightSince() { return compactionInFlightSince; },
 };
 const continuationDeps: ContinuationDeps = {
   instanceId,
@@ -324,6 +326,7 @@ const recoveryFlags: RecoveryFlags = {
   set continuationDispatchStoodDown(v) { setContinuationDispatchStoodDownRef(v); },
   get lastMainModelRecoveryResumeAt() { return lastMainModelRecoveryResumeAt; },
   set lastMainModelRecoveryResumeAt(v) { lastMainModelRecoveryResumeAt = v; },
+  get compactionInFlightSince() { return compactionInFlightSince; },
 };
 const recoveryDeps: RecoveryDeps = {
   activeGoalSurfaceCommand,
