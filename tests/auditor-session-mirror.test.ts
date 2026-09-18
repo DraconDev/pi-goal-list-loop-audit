@@ -25,6 +25,12 @@ import {
   resolveAuditorAllowedExtensions,
   sessionMirrorExtensionSpecs,
 } from "../extensions/auditor-extensions.js";
+import { globalSettingsPath, loadSettings, saveSettings } from "../extensions/goal-settings.js";
+import { handleSettingChoice } from "../extensions/loops/goal.js";
+import { makeMockCtx, tmpCwd } from "./harness/mock-pi.js";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+
+const ORIGINAL_ENV = process.env.GLLA_GLOBAL_SETTINGS_PATH;
 
 function fakeHome(packages: string[]): string {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "glla-mirror-home-"));
