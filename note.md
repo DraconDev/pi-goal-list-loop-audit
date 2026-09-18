@@ -1,3 +1,13 @@
+# Prio
+
+##
+/home/dracon/Pictures/Screenshots/Screenshot_20260918_151158.png 
+auditor model resolution error
+
+##
+/home/dracon/Pictures/Screenshots/Screenshot_20260918_152226.png 
+maybe the fallback selector is broken
+
 # Now
 
 ##
@@ -56,8 +66,8 @@ too long wait
 # Next
 
 ##
-/home/dracon/Pictures/Screenshots/Screenshot_20260918_151158.png 
-auditor model resolution error
+/home/dracon/Pictures/Screenshots/Screenshot_20260918_162348.png 
+auto continue should just keep going
 
 ##
 auditor chain repeated failure but it was jsut simply out of quota we should be hammering retries
@@ -67,9 +77,7 @@ auditor chain repeated failure but it was jsut simply out of quota we should be 
 /home/dracon/Pictures/Screenshots/Screenshot_20260918_151113.png 
 shows paused but det auditor working ?
 
-##
-/home/dracon/Pictures/Screenshots/Screenshot_20260918_152226.png 
-maybe the fallback selector is broken
+
 
 # Later
 
