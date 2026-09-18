@@ -1294,6 +1294,11 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
           : `⏸ action needed${when}`;
         return `glla: ${paint(theme, "warning", label)}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
       }
+      // v0.38.64 (021655): standby waits on a background agent — dim
+      // waiting label, never the warning "action needed".
+      if (kind === "standby") {
+        return `glla: ${paint(theme, "dim", "⏸ waiting on background agent")}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
+      }
       // v0.34.102 (field: dracon-platform 2026-08-08 091828 "pi did not
       // start a turn"): a wait-pause parked on mainModelRecovery must name
       // the blocker, not promise a live retry. "auto-retrying · auto-retry
@@ -2060,6 +2065,10 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
       lines.push(`├─ ${paint(theme, "warning", "manual recovery hold — automatic probes stopped")}`);
     } else if (kind === "blocked") {
       lines.push(`├─ ${paint(theme, "warning", "blocked — waiting for manual action")}`);
+    // v0.38.64 (021655): standby is parked on a running background agent
+    // — the card waits with it instead of inventing a manual action.
+    } else if (kind === "standby") {
+      lines.push(`├─ ${paint(theme, "dim", "standby — waiting on a background agent")}`);
     } else if (kind === "wait") {
       lines.push(`├─ ${paint(theme, "dim", isSupervisedWait(g) ? "paused — waiting on a recovery timer" : "paused — waiting for you")}`);
     }
