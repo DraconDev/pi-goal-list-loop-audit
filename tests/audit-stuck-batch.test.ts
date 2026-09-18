@@ -102,7 +102,7 @@ function ledgerTypes(cwd: string): string[] {
 // probe inline, never bounce the turn to a user-typed /list resume.
 // ---------------------------------------------------------------------------
 
-test.skip("124544: resume_goal probes pending main-model recovery inline, no user bounce", async () => {
+test("124544: resume_goal probes pending main-model recovery inline, no user bounce", async () => {
   const cwd = tmpCwd();
   seedState(cwd, {
     goal: seedGoal({ status: "paused", policy: "list", pauseKind: "wait", pauseReason: "auditor retry" }),
