@@ -123,7 +123,6 @@ import {
   lastPersistenceFailure,
   modelSwitch,
   isForbiddenModel,
-  isUnresolvableAuditorModelRefError,
   filterEvictedAuditorRefs,
   withEvictedAuditorRef,
 isGoalRevisionCurrent,

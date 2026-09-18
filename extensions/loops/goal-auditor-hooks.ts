@@ -664,6 +664,7 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
         auditorRetryCandidateRef: undefined,
         auditorRetryAttemptStartedAt: undefined,
         auditorAttemptedRefs: undefined,
+        auditorEvictedRefs: undefined,
         auditorFailureCount: undefined,
         auditorFailureClass: undefined,
         auditorFallbackExhausted: undefined,
@@ -1070,7 +1071,10 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     appendLedger(liveCtx.cwd, "auditor_model_issue", { error: modelFailureCopy.diagnostic, display: modelFailureCopy.display });
   }
   const auditorCandidates: AuditorModelCandidate[] = [{ model: auditorModel, via: via ?? "unset" }, ...(fallbackModels ?? [])];
-  const configuredAuditorRefs = auditorCandidateRefs(auditorCandidates);
+  // v0.38.63 (audit-stuck batch, field 124541): same eviction filter as the
+  // complete_goal launch path — a provider-retry re-seed never re-arms a
+  // ref proven unresolvable earlier in this bounded cycle.
+  const configuredAuditorRefs = filterEvictedAuditorRefs(auditorCandidateRefs(auditorCandidates), claim.auditorEvictedRefs);
   const persistedAuditorAttemptedRefs = (claim.auditorAttemptedRefs ?? [])
     .filter((ref) => configuredAuditorRefs.some((candidateRef) => candidateRef.toLowerCase() === ref.toLowerCase()))
     .slice(0, MAX_AUDITOR_CANDIDATE_REFS);
@@ -1260,6 +1264,9 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
         },
         onCandidateExhausted: (candidate, err, info) => {
           const next = info.nextCandidateRef;
+          const priorEvicted = state.goal?.pendingCompletion?.auditorEvictedRefs;
+          const auditorEvictedRefs = withEvictedAuditorRef(priorEvicted, info.candidateRef, err);
+          const evictionPatch = auditorEvictedRefs !== undefined ? { auditorEvictedRefs } : {};
           const persisted = persistDetachedAuditorCursor(
             generation,
             goalId,
@@ -1271,6 +1278,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
                 auditorRetryCandidateRef: undefined,
                 auditorRetryAttemptStartedAt: undefined,
                 auditorAttemptedRefs: info.attemptedRefs.slice(0, MAX_AUDITOR_CANDIDATE_REFS),
+                ...evictionPatch,
                 auditorFailureCount: 0,
                 auditorFailureClass: undefined,
                 auditorFallbackExhausted: undefined,
@@ -1281,6 +1289,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
                 auditorRetryCandidateRef: undefined,
                 auditorRetryAttemptStartedAt: undefined,
                 auditorAttemptedRefs: info.attemptedRefs.slice(0, MAX_AUDITOR_CANDIDATE_REFS),
+                ...evictionPatch,
                 auditorFailureCount: 2,
                 auditorFailureClass: info.failureClass,
                 auditorFallbackExhausted: true,
