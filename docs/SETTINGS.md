@@ -52,6 +52,7 @@ copies are ignored (the recovery runtime reads the global file):
 | `auditorModel` | unset (session) | Detached auditor primary (`"provider/id"` or bare id). |
 | `auditorModelFallbacks` | `[]` | Ordered auditor fallbacks; session model is final. Global-only. |
 | `auditorAllowedExtensions` | `[]` | Extension specs the detached auditor may load; resolved fail-closed, `[]` = isolated. |
+| `auditorMirrorSessionExtensions` | `true` | Also load the session's own packages in the worker (GLLA itself never mirrored); `false` = curated allow-list only. |
 | `auditorSameSessionSwap` | `true` | Walk the fallback chain when the auditor is the session model. |
 | `auditorThinkingLevel` | unset (inherit) | Detached auditor reasoning level; picked with the model. |
 | `auditorToolTimeoutMs` | `300000` | Base budget per auditor tool call (30s–6h). Global-only. |
