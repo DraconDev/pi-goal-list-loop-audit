@@ -506,6 +506,48 @@ function drafterThinkingChoiceOptions(
   ];
 }
 
+/** v0.38.65 (field 152226): thinking is chosen WITH the fallback chain —
+ * same ladder as the primary pick so a fallback chain can be given a
+ * reasoning level at pick time. `set` carries the notify suffix;
+ * `non-reasoning` clears a stale override and reports whether anything
+ * was cleared. NOTE: the auditorModel primary case keeps its own inline
+ * copy (pinned by model-picker.test.ts source-shape assertions) — keep
+ * the two in sync. */
+type AuditorThinkingOutcome =
+  | { kind: "set"; suffix: string }
+  | { kind: "non-reasoning"; clearedStale: boolean };
+
+async function promptAuditorThinking(
+  ctx: ExtensionContext,
+  pickedModel: any | undefined,
+): Promise<AuditorThinkingOutcome> {
+  const curThinking = loadSettings(ctx.cwd).auditorThinkingLevel;
+  const inheritedThinking = ctx.thinkingLevel ?? "max";
+  const levels = auditorThinkingLevels(pickedModel);
+  if (levels.length <= 1) {
+    // Audit 2026-09-07 (MEDIUM, finding 387): a non-reasoning model
+    // must not inherit a dead override — clear it so the next
+    // reasoning model starts from session inheritance, not a stale pin.
+    if (curThinking !== undefined) saveSettings("global", ctx.cwd, { auditorThinkingLevel: undefined });
+    return { kind: "non-reasoning", clearedStale: curThinking !== undefined };
+  }
+  // Audit 2026-09-07 (MEDIUM, finding 386): parity with the drafter
+  // flow — a `session — inherit` row clears the override (undefined
+  // already means inherit at the auditor spawn sites).
+  const t = await ctx.ui.select(
+    "Auditor thinking — DETACHED auditor worker ONLY (your session model's thinking is untouched)",
+    drafterThinkingChoiceOptions(
+      levels,
+      levels.includes(curThinking ?? inheritedThinking) ? (curThinking ?? inheritedThinking) : levels.includes("high") ? "high" : levels[levels.length - 1],
+      curThinking === undefined,
+    ),
+  );
+  const inheritThinking = t?.startsWith("session —") ?? false;
+  if (inheritThinking) saveSettings("global", ctx.cwd, { auditorThinkingLevel: undefined });
+  else if (t) saveSettings("global", ctx.cwd, { auditorThinkingLevel: t.split(" ")[0] as Settings["auditorThinkingLevel"] });
+  return { kind: "set", suffix: inheritThinking ? " · thinking inherited from the session" : t ? ` · thinking ${t.split(" ")[0]}` : "" };
+}
+
 /** Token-cost ladder shared by the auditor-model flow and the standalone
  * Auditor thinking row (v0.34.127). */
 const THINKING_DESCR: Record<string, string> = {
@@ -868,6 +910,17 @@ async function promptModelRefs(
     const refs = normalizeSelection(v);
     if (policyBlocked.length > 0) {
       ctx.ui.notify(`Not saved because policy excludes: ${policyBlocked.join(", ")}`, "warning");
+    }
+    // v0.38.65 (field 152226): the TUI picker disables the current-model
+    // row with a reason, but this free-form path dropped it silently and
+    // reported "cleared" — name the slot-0 exclusion so a typed session
+    // model is never mistaken for a save failure.
+    const currentKey = opts.currentRef?.trim().toLowerCase();
+    const droppedCurrent = currentKey
+      ? typedRefs.filter((ref) => ref.toLowerCase() === currentKey)
+      : [];
+    if (droppedCurrent.length > 0) {
+      ctx.ui.notify(`Current model is slot 0 and was not saved as a backup: ${droppedCurrent.join(", ")}`, "info");
     }
     if (maxSelections !== undefined && refs.length > maxSelections) {
       ctx.ui.notify(`Only the first ${maxSelections} fallback agents are kept; the remaining selections were refused.`, "warning");
@@ -1373,6 +1426,9 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       // Audit 2026-09-07 (MEDIUM, finding 386): parity with the drafter
       // flow — a `session — inherit` row clears the override (undefined
       // already means inherit at the auditor spawn sites).
+      // NOTE: intentionally inline (not via promptAuditorThinking below) —
+      // model-picker.test.ts pins this block's source shape; the fallback
+      // case reuses the helper and the two must stay in sync.
       const t = await ctx.ui.select(
         "Auditor thinking — DETACHED auditor worker ONLY (your session model's thinking is untouched)",
         drafterThinkingChoiceOptions(
@@ -1407,10 +1463,21 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       );
       if (refs === undefined) return;
       saveSettings("global", ctx.cwd, { auditorModelFallbacks: refs.length ? refs : undefined });
+      if (!refs.length) {
+        ctx.ui.notify(
+          "Auditor fallback models cleared — the session model remains the last resort.",
+          "info",
+        );
+        return;
+      }
+      // v0.38.65 (field 152226): parity with the primary pick — the
+      // thinking level is chosen WITH the models, from the first
+      // fallback's levels (unresolvable → full ladder is handled by the
+      // helper's non-reasoning branch, which never invents a pin).
+      const firstModel = resolvePickedModel(ctx, { kind: "ref", ref: refs[0]! });
+      const thinking = await promptAuditorThinking(ctx, firstModel);
       ctx.ui.notify(
-        refs.length
-          ? `Auditor fallback models saved in order: ${refs.join(" → ")}`
-          : "Auditor fallback models cleared — the session model remains the last resort.",
+        `Auditor fallback models saved in order: ${refs.join(" → ")}${thinking.kind === "set" ? thinking.suffix : thinking.clearedStale ? " · cleared the stale thinking override" : ""}`,
         "info",
       );
       return;

@@ -50,7 +50,7 @@ copies are ignored (the recovery runtime reads the global file):
 | `blockForbiddenModelSwitches` | `true` | Revert forbidden switches (`false` = stand but ledger). |
 | `visionAssist` | `true` | Continuation prompts carry the prefer-native-vision directive. |
 | `auditorModel` | unset (session) | Detached auditor primary (`"provider/id"` or bare id). |
-| `auditorModelFallbacks` | `[]` | Ordered auditor fallbacks; session model is final. Global-only. |
+| `auditorModelFallbacks` | `[]` | Ordered auditor fallbacks; session model is final. Saving a non-empty chain offers the thinking pick. Global-only. |
 | `auditorAllowedExtensions` | `[]` | Extension specs the detached auditor may load; resolved fail-closed, `[]` = isolated. |
 | `auditorMirrorSessionExtensions` | `true` | Also load the session's own packages in the worker (GLLA itself never mirrored); `false` = curated allow-list only. |
 | `auditorSameSessionSwap` | `true` | Walk the fallback chain when the auditor is the session model. |
