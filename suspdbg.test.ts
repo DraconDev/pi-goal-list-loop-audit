@@ -40,7 +40,7 @@ emit({type:"agent_settled"});
     if (!g) break;
   }
   const lines = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8").trim().split("\n");
-  console.log("LEDGER KEY:", lines.filter(l => /verdict|disapprov|approv|auditor|repair|replan|complete_goal|settle|pause/i.test(l)).join("\n").slice(0, 5000));
+  console.log("LEDGER KEY:", lines.filter(l => !l.includes('"type":"state"')).join("\n").slice(0, 6000));
   await pi.fire("session_shutdown", { reason: "quit" }, ctx);
   delete process.env.GLLA_PI_BINARY;
 });
