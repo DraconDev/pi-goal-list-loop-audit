@@ -167,7 +167,7 @@ test("resume_goal refuses while the supervisor is frozen", async () => {
   }
 });
 
-test("resume_goal refuses while main-model recovery is pending", async () => {
+test("resume_goal probes pending main-model recovery inline instead of bouncing (124544)", async () => {
   const cwd = tmpCwd();
   seedState(cwd, {
     goal: pausedGoal(),
@@ -187,8 +187,13 @@ test("resume_goal refuses while main-model recovery is pending", async () => {
   const ctx = await boot(pi, cwd);
   try {
     const result = await pi.runTool("resume_goal", { reason: "user said go" }, ctx) as { content: Array<{ text: string }> };
-    assert.match(result.content[0]!.text, /Main-model recovery is pending/, "machinery-owned recovery keeps its own timers");
-    assert.equal(readState(cwd).goal?.status, "paused", "the pause is untouched");
+    assert.doesNotMatch(result.content[0]!.text, /ask the user to run/, "the turn never bounces to a user-typed command");
+    await tick();
+    assert.equal(readState(cwd).goal?.status, "active", "the resume completes in this turn");
+    assert.ok(
+      ledgerEntries(cwd).some((entry) => entry.type === "main_model_probe_retriggered" && entry.via === "agent-resume"),
+      "the pending recovery probe is re-fired inline",
+    );
   } finally {
     await pi.fire("session_shutdown", { reason: "quit" }, ctx);
   }
