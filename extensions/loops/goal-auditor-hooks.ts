@@ -127,6 +127,7 @@ isGoalRevisionCurrent,
   type ListItem,
 } from "../goal-loop-core.js";
 import { dispatchAuditorAllowedExtensions } from "../auditor-extensions.js";
+import {
   createContinuationDispatch,
   dispatchMatchesOwner,
   dispatchPromptMatches,
