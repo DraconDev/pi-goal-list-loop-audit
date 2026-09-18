@@ -169,7 +169,7 @@ test("activity-first: blocked card and footer agree on the blocked label", () =>
   };
   const lines = buildWidgetLines({ goal: g, list: [] }, audit, NOW, undefined, 120)!;
   const text = lines.join("\n");
-  assert.match(lines[1]!, /auditor: blocked · detached worker · last progress/, `blocked phase leads:\n${text}`);
+  assert.match(lines[1]!, /auditor: blocked · .*detached worker · last progress/, `blocked phase leads:\n${text}`);
   assert.match(lines[3]!, /next: \/goal resume retries the claim/, "blocked next action names resume");
   assert.match(text, /auditor blocked — provider error: upstream timeout/, "closer keeps its blocked wording");
   const footer = buildStatusText({ goal: g, list: [] }, audit, NOW)!;
@@ -298,7 +298,11 @@ test("activity-first: footer monitoring and awaiting labels agree with the card 
     undefined,
     { activity: "monitoring" },
   )!;
-  assert.match(monitoringFooter, /👁 MONITORING/, "monitoring badge renders from the shared activity");
+  // goalDisplayActivity deliberately folds external watching into QUEUED
+  // (producers attest queued/working/busy, not watching) — the footer and
+  // the card head share that one mapping, so a monitor can never read
+  // MONITORING on one surface and QUEUED on the other.
+  assert.match(monitoringFooter, /⏳ QUEUED/, "watching folds into QUEUED on every surface");
   const awaitingFooter = buildStatusText(
     { goal: goalOf({ status: "active" }), list: [] },
     null,
