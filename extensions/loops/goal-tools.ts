@@ -125,6 +125,7 @@ import {
   isForbiddenModel,
   filterEvictedAuditorRefs,
   withEvictedAuditorRef,
+  trackAuditorIdenticalFailure,
 isGoalRevisionCurrent,
   appendAuditVerdict,
   nextHourlyPromptMs,
@@ -1746,6 +1747,11 @@ function registerAgentTools(pi: any): void {
           const recoveryEpisodeKey = durableCompletionClaim.recoveryEpisodeKey ?? `${durableCompletionClaim.at}:${failureCopy.fingerprint}`;
           const aggressive = resolveEffectiveAggressiveSettings(loadSettings(ctx.cwd)).aggressiveMode;
           const plan = auditorRetryPlan(durableCompletionClaim, undefined, undefined, aggressive);
+          // v0.38.63 (audit-stuck batch): N consecutive identical infra
+          // failures terminate the loop visibly — park blocked naming the
+          // dead chain, schedule no further retry. Manual/agent resume
+          // still opens a fresh cycle with re-resolved models.
+          const identical = trackAuditorIdenticalFailure(durableCompletionClaim, failureCopy.fingerprint);
           const pending = {
             ...durableCompletionClaim,
             phase: "retry-waiting" as const,
@@ -1757,10 +1763,42 @@ function registerAgentTools(pi: any): void {
             recoveryNoticeKeys: durableCompletionClaim.recoveryNoticeKeys ?? [],
             auditorFailureClass: auditorResultFailureClass(result),
             auditorFailureAt: new Date().toISOString(),
+            auditorLastFailureFingerprint: identical.auditorLastFailureFingerprint,
+            auditorConsecutiveIdenticalFailures: identical.auditorConsecutiveIdenticalFailures,
             retryAttempts: plan.attempt,
             retryFirstAt: plan.firstAt,
             retryUntil: plan.autoRetryUntil,
           };
+          if (identical.identicalParkDue) {
+            const deadChain = (durableCompletionClaim.exhaustedChain
+              ?? (durableCompletionClaim.auditorCandidateRefs ?? durableCompletionClaim.auditorAttemptedRefs ?? []).join(" → ")
+              ?? "").slice(0, 300) || "unknown chain";
+            const identicalParked: typeof pending = {
+              ...pending,
+              phase: "recovery-pending",
+              auditorFallbackExhausted: true,
+            };
+            const notifyIdentical = claimRecoveryNotice(identicalParked, `${recoveryEpisodeKey}:identical-parked`);
+            updateGoal({
+              status: "paused",
+              auditHistory: history,
+              auditInfraStreak: undefined,
+              pendingCompletion: identicalParked,
+              providerErrorDiagnostic: failureCopy.diagnostic,
+              recoveryEpisodeKey,
+              recoveryNoticeKeys: identicalParked.recoveryNoticeKeys,
+              pauseKind: "blocked",
+              pauseResumeAt: undefined,
+              pauseReason: `auditor blocked: ${identical.auditorConsecutiveIdenticalFailures} identical infra failures (${failureCopy.display}) · chain: ${deadChain}`,
+              pauseSuggestedAction: `The completion claim is stored. The auditor chain failed identically ${identical.auditorConsecutiveIdenticalFailures} times — check the auditor/model setup, then ${activeGoalSurfaceCommand("resume")} to start a fresh bounded window with re-resolved models.`,
+            }, ctx);
+            appendLedger(ctx.cwd, "auditor_retry_identical_parked", { count: identical.auditorConsecutiveIdenticalFailures, fingerprint: failureCopy.fingerprint, chain: deadChain, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey });
+            if (notifyIdentical) ctx.ui.notify(`Auditor parked blocked after ${identical.auditorConsecutiveIdenticalFailures} identical infra failures (${deadChain}) — no further automatic retry; the claim stays stored. Check the auditor/model setup, then ${activeGoalSurfaceCommand("resume")}.`, "warning");
+            return {
+              content: [{ type: "text", text: `The auditor hit the same infrastructure wall ${identical.auditorConsecutiveIdenticalFailures} times in a row (NOT a verdict): ${failureCopy.display} · chain: ${deadChain}. Automatic retries stopped — the exact completion claim is stored. Check the auditor/model setup, then ${activeGoalSurfaceCommand("resume")} for a fresh bounded window with re-resolved models.` }],
+              details: {},
+            };
+          }
           if (!plan.automatic) {
             const notifyCapped = claimRecoveryNotice(pending, `${recoveryEpisodeKey}:retry-capped`);
             updateGoal({
