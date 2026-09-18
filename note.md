@@ -100,6 +100,8 @@ keep getitng stuck, keep in mind that after drafting we should never get stuck, 
 
 /home/dracon/Pictures/Screenshots/Screenshot_20260918_111629.png 
 
+/home/dracon/Pictures/Screenshots/Screenshot_20260918_111716.png 
+
 ##
 too long wait
 /home/dracon/Pictures/Screenshots/Screenshot_20260918_110532.png 
