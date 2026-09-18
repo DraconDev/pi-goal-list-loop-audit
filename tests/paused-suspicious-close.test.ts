@@ -9,6 +9,7 @@ import { readState } from "../extensions/goal-loop-core.js";
 import { assessSuspiciousObjective } from "../extensions/faulty-objective-recovery.js";
 import { guardGoalBeforeContinuation, resetContinuationDispatchState } from "../extensions/goal-continuation.js";
 import { MockPi, makeMockCtx, tmpCwd, seedState, seedGoal, tick } from "./harness/mock-pi.js";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 // Field 032245: a work-done goal whose objective carried report prose
 // ("Evidence: tsc clean, 666 tests pass") was flagged verification-fragment,
@@ -44,6 +45,8 @@ let handled = false;
 process.stdin.on("data", () => { if (handled) return; handled = true;
 setTimeout(() => {
 const emit = e => process.stdout.write(JSON.stringify(e) + "\\n");
+emit({type:"tool_execution_start",toolCallId:"read",toolName:"read",args:{path:"README.md"}});
+emit({type:"tool_execution_end",toolCallId:"read"});
 emit({type:"message_update",assistantMessageEvent:{type:"text_delta",delta:${JSON.stringify(verdict === "approved" ? "<evidence>pinned</evidence>\n<approved/>" : "Fix the filter edge case.\n<disapproved/>")}}});
 emit({type:"agent_settled"});
 }, 350); });`);
@@ -71,7 +74,7 @@ test("032245: a paused suspicious goal can submit complete_goal and close on aud
   const ctx = await boot(cwd, seedGoal({ status: "active", objective: FIELD_OBJECTIVE }));
   // Resume/dispatch path pauses the suspicious goal and queues repair —
   // the exact 032245 shape.
-  assert.equal(guardGoalBeforeContinuation(ctx, "dispatch"), false);
+  assert.equal(guardGoalBeforeContinuation(ctx as unknown as ExtensionContext, "dispatch"), false);
   const paused = readState(cwd).goal;
   assert.equal(paused?.status, "paused");
   assert.equal(paused?.pauseKind, "blocked");
@@ -104,9 +107,9 @@ test("stored-completion-audit retry settles a suspicious claim instead of re-pau
   const goal = readState(cwd).goal;
   assert.ok(goal);
   // Without the close flag the guard still shields worker dispatch.
-  assert.equal(guardGoalBeforeContinuation(ctx, "stored-completion-audit", goal.id, { allowAuditing: true }), false);
+  assert.equal(guardGoalBeforeContinuation(ctx as unknown as ExtensionContext, "stored-completion-audit", goal.id, { allowAuditing: true }), false);
   // With it, the in-flight claim may settle — artifacts, not prose.
-  assert.equal(guardGoalBeforeContinuation(ctx, "stored-completion-audit", goal.id, { allowAuditing: true, allowSuspiciousClose: true }), true);
+  assert.equal(guardGoalBeforeContinuation(ctx as unknown as ExtensionContext, "stored-completion-audit", goal.id, { allowAuditing: true, allowSuspiciousClose: true }), true);
   assert.match(ledger(cwd), /"faulty_objective_suspicious_close_allowed"/);
 });
 
