@@ -2376,6 +2376,22 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
   } as PendingCompletion;
 }
 
+/** Stamp the resolved effective thinking level onto the live claim. Pure:
+ * returns the same reference when there is nothing to do (no claim, a
+ * different attempt already owns the claim, or the value is unchanged) so
+ * callers can skip the state write. A fallback candidate overwrites the
+ * previous stamp — the card always names the attempt actually running. */
+export function stampAuditorAttemptThinking(
+  pending: PendingCompletion | null | undefined,
+  attemptId: string | undefined,
+  thinkingLevel: string,
+): PendingCompletion | undefined {
+  if (!pending || !attemptId || pending.attemptId !== attemptId) return undefined;
+  const clean = thinkingLevel.replace(/[\r\n]+/g, " ").trim().slice(0, 20);
+  if (!clean || pending.auditorThinkingLevel === clean) return undefined;
+  return { ...pending, auditorThinkingLevel: clean };
+}
+
 /** Claim one display/action notice in a durable recovery episode. The caller
  * must persist the containing record after this returns true. */
 export function claimRecoveryNotice(record: { recoveryNoticeKeys?: string[] }, key: string): boolean {
