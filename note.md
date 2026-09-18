@@ -85,6 +85,13 @@ this is provider related but we still need to keep relentlessly hammering
 we really should not be stopping mid objective unles we must
 
 ##
+
+false manual action
+/home/dracon/Pictures/Screenshots/Screenshot_20260918_021655.png 
+
+# Much later
+
+##
 i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
 
 
