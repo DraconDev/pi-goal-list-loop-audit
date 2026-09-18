@@ -1565,6 +1565,30 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       objective: approvalObjective,
       chatLines: approvalRender.chatLines,
     });
+    // v0.38.63 (field 032245): the approved work is verified done, so any
+    // queued repair item targeting it is moot. Void those entries (disk +
+    // memory) before the completion cascade runs, or the cascade wakes a
+    // bogus "Repair the blocked goal..." item right after the close.
+    // Applies to every approval with a matching repairTarget — verified-done
+    // needs no repair regardless of which pause shape the claim arrived in.
+    const mootRepairs = (state.list ?? []).filter((item: ListItem) => item.repairTarget?.id === goalId);
+    if (mootRepairs.length > 0) {
+      const voided: string[] = [];
+      const voidFailed: string[] = [];
+      for (const item of mootRepairs) {
+        if (deleteQueueItemFile(liveCtx.cwd, item.id)) voided.push(item.id);
+        else voidFailed.push(item.id);
+      }
+      if (voided.length > 0) {
+        replaceState({ ...state, list: (state.list ?? []).filter((item: ListItem) => !voided.includes(item.id)) });
+        persistStateLine(liveCtx.cwd, state);
+      }
+      appendLedger(liveCtx.cwd, "faulty_objective_repair_voided_on_approval", {
+        goalId,
+        voided,
+        ...(voidFailed.length > 0 ? { voidFailed } : {}),
+      });
+    }
     if (persisted) {
       replayUndeliveredApprovalRenders(liveCtx, (entry) => sendTerminalCompletionNotice(liveCtx, {
         goalId: entry.goalId,

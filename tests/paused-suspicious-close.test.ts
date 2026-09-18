@@ -83,8 +83,13 @@ test("032245: a paused suspicious goal can submit complete_goal and close on aud
   assert.match(result.content[0].text, /AUDIT PENDING — nonterminal/);
   assert.equal(readState(cwd).goal?.status, "auditing");
   assert.match(ledger(cwd), /"complete_goal_suspicious_pause_accepted"/);
-  // And the approved claim closes the goal.
-  await waitFor(() => readState(cwd).goal === null);
+  // The approved claim archives the original goal...
+  await waitFor(() => ledger(cwd).includes('"goal_archived"') && ledger(cwd).includes('"status":"complete"'));
+  // ...and voids the moot queued repair instead of cascading into it.
+  assert.match(ledger(cwd), /"faulty_objective_repair_voided_on_approval"/);
+  const settled = readState(cwd);
+  assert.ok(!settled.list?.some((item: any) => item?.repairTarget?.id === paused?.id), "no repair item targeting the approved goal survives");
+  assert.ok(!settled.goal || settled.goal.id !== paused?.id, "the approved goal itself is closed");
 });
 
 test("stored-completion-audit retry settles a suspicious claim instead of re-pausing it", async () => {
