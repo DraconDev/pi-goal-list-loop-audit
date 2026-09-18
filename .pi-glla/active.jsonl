@@ -1981,3 +1981,6 @@
 {"type":"session_rebound","value":{"reason":"startup"},"at":"2026-09-18T21:32:57.026Z"}
 {"type":"id_invalidation","value":{"oldId":"01a054a9-e07f-705b-87a1-9421f9b906dc","newId":"01a0b66f-ac3b-77be-8dec-2988666e8a18","reason":"session_shutdown","shutdownReason":"quit","at":"2026-09-18T21:32:57.052Z"},"at":"2026-09-18T21:32:57.052Z"}
 {"type":"session_waiting_for_load","value":{"reason":"startup"},"at":"2026-09-18T21:32:57.053Z"}
+{"type":"session_shutdown","value":{"reason":"resume"},"at":"2026-09-18T21:36:19.929Z"}
+{"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-18T21:36:23.868Z"}
+{"type":"id_invalidation","value":{"oldId":"01a0b66f-ac3b-77be-8dec-2988666e8a18","newId":"01a054a9-e07f-705b-87a1-9421f9b906dc","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-18T21:36:23.892Z"},"at":"2026-09-18T21:36:23.892Z"}
