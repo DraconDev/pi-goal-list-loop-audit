@@ -63,6 +63,7 @@ import {
   stripThinkBlocks,
   type AuditLogEntry,
   crossRecommendMode,
+  stampAuditorAttemptThinking,
   formatListDepth,
   parseListItemDeclaration,
   shouldEscalateStall,
@@ -1115,6 +1116,13 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           model: modelRef(candidate.model),
           via: candidate.via,
         };
+        // The activity-first card names the effective thinking level from
+        // the claim (the renderer cannot re-resolve model metadata). Stamp
+        // it per candidate so a fallback attempt renames the level too.
+        const stampedThinking = stampAuditorAttemptThinking(
+          state.goal?.pendingCompletion ?? claim, claim.attemptId, effectiveThinking,
+        );
+        if (stampedThinking) updateGoal({ pendingCompletion: stampedThinking }, liveCtx);
         // v0.37.0: the worker gets the SAME budgets via env so the worker's
         // own per-tool timer and inactivity brake agree with the parent
         // watchdogs instead of racing them at different values.
