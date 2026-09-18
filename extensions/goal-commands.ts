@@ -14,7 +14,7 @@ import { renderAgentsPanel, tailChildTranscript, TRANSCRIPT_HEADER_SCAN_MAX_BYTE
 import { state, replaceState } from "./goal-state.js";
 import {
   DEFAULT_TOKEN_LIMIT, Goal, ListItem, Status, appendLedger, archiveDir, archivedGoalPath, bumpGoalRevision, sanitizeProviderDisplayText,
-  computeListDepthFromLedger, clearQueueItemFiles, deleteQueueItemFile, deleteQueueItemFileResult, extractVerificationContract, formatAuditLog, formatGoalAuditHistory, formatMainModelRecoveryStatus, queueItemSidecarCount,
+  computeListDepthFromLedger, clearQueueItemFiles, deleteQueueItemFile, deleteQueueItemFileResult, extractVerificationContract, stripTweakProceduralTail, formatAuditLog, formatGoalAuditHistory, formatMainModelRecoveryStatus, queueItemSidecarCount,
   formatListDepth, goalArgsNeedDrafting, ledgerPath, newGoalId, nowIso, parseListImport, parseListItemDeclaration, readLedgerTail,
   assignQueueOrder, compareQueueItems, readAuditLog, readQueueFromDisk, routeGoalArgs, routeListText, sanitizeDisplayText, sanitizeProviderAuditReport, statusLabel,
   visibleListPosition, visibleListPositions,
@@ -833,7 +833,12 @@ export async function cmdTweak(
     ctx.ui.notify(guidance, "info");
     return false;
   }
-  const proposed = extractVerificationContract(adopted);
+  // Now 184316: strip the trailing procedural tail BEFORE contract
+  // extraction — a replacement ending in filing instructions plus an
+  // embedded command ("Ensure both objective and verification contract
+  // are updated, then /goal resume.") must file the said work, not the
+  // instructions about the filing. userSeeds below keeps the said words.
+  const proposed = extractVerificationContract(stripTweakProceduralTail(adopted));
   const newObjective = proposed.objective;
   if (!newObjective) {
     // (a bare input of "Done when: ..." only yields this — the replacement

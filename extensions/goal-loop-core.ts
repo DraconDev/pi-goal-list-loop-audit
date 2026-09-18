@@ -3343,6 +3343,36 @@ export function parseListItemDeclaration(raw: string): { objective: string; agen
   return { objective: ext.objective, agentRole, parallelSafe, verificationContract: ext.verificationContract, parentObjective };
 }
 
+/** Now 184316: trailing procedural tail of a tweak replacement.
+ * A substantive replacement often ends with filing instructions addressed
+ * to the agent itself ("Ensure both objective and verification contract
+ * are updated, then /goal resume.") — imperative talk about the filing
+ * plus an embedded slash-command to run. Stored literally, that tail
+ * becomes part of the objective the loop works against. Strip trailing
+ * sentences that match, keeping at least one sentence; single-sentence
+ * inputs and non-instructional command mentions pass through untouched. */
+const TWEAK_TAIL_FILING_META_RE = /\b(ensure|make sure|update|keep)\b[^.!?;]*\b(objective|verification contract|contract)\b[^.!?;]*\b(updat|match|sync|correct)\b/i;
+const TWEAK_TAIL_COMMAND_OPENER_RE = /\b(then|and then|please|ensure(?: that)?|make sure|now)\b/i;
+const TWEAK_TAIL_SLASH_COMMAND_RE = /\/[a-z][\w-]*/i;
+
+function isTweakProceduralTailSentence(sentence: string): boolean {
+  const s = sentence.trim();
+  if (!s) return false;
+  if (TWEAK_TAIL_FILING_META_RE.test(s)) return true;
+  return TWEAK_TAIL_SLASH_COMMAND_RE.test(s) && TWEAK_TAIL_COMMAND_OPENER_RE.test(s);
+}
+
+export function stripTweakProceduralTail(raw: string): string {
+  const text = (raw ?? "").trim();
+  if (!text) return text;
+  const parts = text.match(/[^.!?;]+[.!?;]+|\S[^.!?;]*$/g);
+  if (!parts || parts.length < 2) return text;
+  let end = parts.length;
+  while (end > 1 && isTweakProceduralTailSentence(parts[end - 1]!)) end -= 1;
+  if (end === parts.length) return text;
+  return parts.slice(0, end).join("").trim();
+}
+
 export function extractVerificationContract(raw: string): { objective: string; verificationContract: string; explicitClear: boolean } {
   // Line-based first: a marker at line start begins the contract block.
   const lines = raw.split("\n");
