@@ -115,6 +115,8 @@ import {
   lastPersistenceFailure,
   modelSwitch,
   isForbiddenModel,
+  filterEvictedAuditorRefs,
+  withEvictedAuditorRef,
 isGoalRevisionCurrent,
   nextHourlyProbeMs,
   supervisorPaused,
