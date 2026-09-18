@@ -265,9 +265,13 @@ test("v0.29.9: hourly top-of-hour probe — the park keeps retrying on clock-hou
   assert.ok(src.includes('"Hourly provider retry"'));
   assert.match(src, /hourly_provider_retry/);
   assert.match(src, /via: "hourly-provider-retry"/);
-  // The probe ONLY fires while still error-parked (user pauses/resumes/
-  // cancels are never stomped), and it re-checks kind + reason.
-  assert.match(src, /state\.goal\.pauseKind === "error"\s*\n\s*&& \(state\.goal\.pauseReason \?\? ""\)\.includes\("error-brakes in a row"\)/);
+  // The probe ONLY fires while still parked under the same recovery
+  // episode (Now 200751/200754: anchored on the episode, not the exact
+  // reason string, so an agent pause mid-episode no longer kills the
+  // probe). User pauses/resumes/cancels still stand it down — the
+  // predicate refuses explicit user pauses and decision pickers.
+  assert.match(src, /shouldErrorBrakeRetryResume\(state\.goal, recoveryEpisodeKey\)/);
+  assert.ok(!src.includes('.includes("error-brakes in a row")'), "probe no longer keys on the exact reason string");
   // The park messaging names the hourly retry (no more "no more auto-retries").
   assert.match(src, /Probing at :00:30 after each hour starts/);
   assert.ok(!src.includes("no more auto-retries"), "park is no longer terminal");
