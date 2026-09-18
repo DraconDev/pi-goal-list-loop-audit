@@ -659,3 +659,5 @@
 {"type":"terminal_approval_render_persisted","value":{"goalId":"20260918115619-bqw4v6","delivered":false,"lines":17},"at":"2026-09-18T13:00:41.211Z"}
 {"type":"terminal_completion_notice_sent","value":{"goalId":"20260918115619-bqw4v6","payloadChars":818},"at":"2026-09-18T13:00:41.216Z"}
 {"type":"terminal_approval_render_replayed","value":{"goalId":"20260918115619-bqw4v6","createdAt":"2026-09-18T13:00:41.210Z"},"at":"2026-09-18T13:00:41.216Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":162565,"outputTokens":141,"cacheReadTokens":22257,"cacheWriteTokens":0,"totalTokens":184963},"contextUsage":{"tokens":184963,"contextWindow":200000,"percent":92.48150000000001}},"at":"2026-09-18T13:22:43.974Z"}
+{"type":"compaction_inflight_start","value":{"generation":511},"at":"2026-09-18T13:22:43.980Z"}
