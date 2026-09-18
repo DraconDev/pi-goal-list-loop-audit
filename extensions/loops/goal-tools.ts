@@ -418,7 +418,7 @@ import {
 import { defineGoalRuntimeGlobal } from "./goal-runtime-globals.js";
 import { releaseAuditorSurface } from "./goal-auditor-surface.js";
 import { chooseObjectiveConflict, liveObjectives, type ObjectiveKind } from "../goal-objective-conflict.js";
-import { assessSuspiciousObjective } from "../faulty-objective-recovery.js";
+import { assessSuspiciousObjective, isSuspiciousObjectivePause } from "../faulty-objective-recovery.js";
 
 type AuditorModelCandidate = any;
 type PendingCompletion = any;
@@ -584,7 +584,21 @@ function registerAgentTools(pi: any): void {
       let ctx: ExtensionContext = toolCtx;
       const auditGeneration = sessionGeneration;
       if (!state.goal) return { content: [{ type: "text", text: "No active goal." }], details: {} };
-      if (state.goal.status !== "active") {
+      // v0.38.63 (field 032245): a suspicious-objective pause is a dispatch
+      // shield, not a work stop — resume re-parks it, so refusing the claim
+      // here deadlocks a work-done goal that can never go active again.
+      // The claim carries evidence to the isolated auditor, which still
+      // verifies real artifacts; every other paused shape still refuses.
+      // The repairTarget gate below still refuses repair cards, so a replan
+      // cannot be skipped through this opening.
+      const suspiciousPaused = state.goal.status === "paused" && isSuspiciousObjectivePause(state.goal);
+      if (suspiciousPaused) {
+        appendLedger(ctx.cwd, "complete_goal_suspicious_pause_accepted", {
+          goalId: state.goal.id,
+          pauseReason: state.goal.pauseReason,
+        });
+      }
+      if (state.goal.status !== "active" && !suspiciousPaused) {
         if (state.goal.status === "paused") {
           // v0.34.87: a paused item IS a goal — the old flat "No active
           // goal." read as if the paused card in the widget were nothing at
