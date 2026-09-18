@@ -3966,6 +3966,18 @@ export function filterEvictedAuditorRefs(refs: string[], evicted?: string[]): st
   return refs.filter((ref) => !dead.has(ref.toLowerCase()));
 }
 
+/** v0.38.63: append a dead ref to the eviction list when the error proves it
+ * unresolvable; otherwise return the list untouched (absent stays absent).
+ * Bounded to MAX_AUDITOR_CANDIDATE_REFS like every other cursor ref list. */
+export function withEvictedAuditorRef(evicted: string[] | undefined, candidateRef: string, error: string): string[] | undefined {
+  if (!isUnresolvableAuditorModelRefError(error)) return evicted;
+  const ref = candidateRef.trim().slice(0, 200);
+  if (!ref) return evicted;
+  const prior = Array.isArray(evicted) ? evicted : [];
+  if (prior.some((entry) => entry.toLowerCase() === ref.toLowerCase())) return prior.length > 0 ? prior : evicted;
+  return [...prior, ref].slice(-MAX_AUDITOR_CANDIDATE_REFS);
+}
+
 export interface InfraRetryOutcome<T> {
   result: T;
   retriedOnce: boolean;
