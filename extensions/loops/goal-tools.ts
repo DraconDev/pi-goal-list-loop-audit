@@ -871,7 +871,12 @@ function registerAgentTools(pi: any): void {
         appendLedger(ctx.cwd, "auditor_model_issue", { error: modelFailureCopy.diagnostic, display: modelFailureCopy.display });
       }
       const auditorCandidates: AuditorModelCandidate[] = [{ model: auditorModel, via: via ?? "unset" }, ...(fallbackModels ?? [])];
-      const configuredAuditorRefs = auditorCandidateRefs(auditorCandidates);
+      // v0.38.63 (audit-stuck batch, field 124541): refs proven
+      // unresolvable earlier in this bounded cycle never re-enter the chain
+      // — the next episode starts at a live ref instead of re-arming the
+      // dead one verbatim. A fresh manual/agent cycle clears the eviction
+      // list and re-resolves from config.
+      const configuredAuditorRefs = filterEvictedAuditorRefs(auditorCandidateRefs(auditorCandidates), completionClaim.auditorEvictedRefs);
       const persistedAuditorAttemptedRefs = (completionClaim.auditorAttemptedRefs ?? [])
         .filter((ref: string) => configuredAuditorRefs.some((candidateRef) => candidateRef.toLowerCase() === ref.toLowerCase()))
         .slice(0, MAX_AUDITOR_CANDIDATE_REFS);
@@ -1091,10 +1096,20 @@ function registerAgentTools(pi: any): void {
               const current = detachedAuditContext(auditGeneration, auditGoalId, auditAttemptId);
               if (!current) return false;
               const next = info.nextCandidateRef;
+              const priorEvicted = state.goal?.pendingCompletion?.auditorEvictedRefs;
+              const auditorEvictedRefs = withEvictedAuditorRef(priorEvicted, info.candidateRef, err);
+              if (auditorEvictedRefs !== priorEvicted && auditorEvictedRefs !== undefined) {
+                appendLedger(current.cwd, "auditor_candidate_evicted", {
+                  goalId: auditGoalId,
+                  candidateRef: info.candidateRef,
+                  error: err.slice(0, 200),
+                });
+              }
               const persisted = updateGoal({
                 pendingCompletion: {
                   ...(state.goal?.pendingCompletion ?? completionClaim),
                   auditorCandidateRefs: info.candidateRefs.slice(0, MAX_AUDITOR_CANDIDATE_REFS),
+                  ...(auditorEvictedRefs !== undefined ? { auditorEvictedRefs } : {}),
                   auditorCandidateRef: next,
                   auditorRetryCandidateRef: undefined,
                   auditorRetryAttemptStartedAt: undefined,
