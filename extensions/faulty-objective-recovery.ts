@@ -8,6 +8,25 @@
 
 import type { Goal, ObjectiveRepairRecord } from "./goal-loop-core.js";
 
+/** Prefix written by the dispatch guard when it parks a goal/list item
+ * whose objective prose tripped the fragment heuristics. Exported so the
+ * complete_goal close path can recognize exactly this pause shape without
+ * re-parsing prose. */
+export const SUSPICIOUS_PAUSE_PREFIX = "Suspicious objective detected (";
+
+/** A suspicious-objective pause is a dispatch shield, not a work stop:
+ * the objective prose looked like report garbage, so the worker model must
+ * not be dispatched — but a completion claim carries evidence to the
+ * isolated auditor, which verifies real artifacts. Callers use this to keep
+ * the close path open on exactly this pause shape. */
+export function isSuspiciousObjectivePause(
+  goal: Pick<Goal, "pauseKind" | "pauseReason">,
+): boolean {
+  return goal.pauseKind === "blocked"
+    && typeof goal.pauseReason === "string"
+    && goal.pauseReason.startsWith(SUSPICIOUS_PAUSE_PREFIX);
+}
+
 export type SuspiciousObjectiveReason =
   | "empty"
   | "archive-metadata"

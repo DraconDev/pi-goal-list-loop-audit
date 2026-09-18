@@ -95,6 +95,7 @@ import {
   buildRepairTaskObjective,
   deriveObjectiveRepair,
   hasQueuedObjectiveRepair,
+  SUSPICIOUS_PAUSE_PREFIX,
 } from "./faulty-objective-recovery.js";
 
 /** goal.ts-owned module lets the continuation cluster reads/writes through
@@ -1087,7 +1088,7 @@ export function guardGoalBeforeContinuation(
   }
   goal.status = "paused";
   goal.pauseKind = "blocked";
-  goal.pauseReason = `Suspicious objective detected (${assessment.reasons.join(", ")}).`;
+  goal.pauseReason = `${SUSPICIOUS_PAUSE_PREFIX}${assessment.reasons.join(", ")}).`;
   goal.pauseSuggestedAction = `${activeGoalSurfaceCommand("tweak")} the objective if needed; /list next starts the preserved repair/replan task, then resume the original target after its confirmed task list is accepted.`;
   goal.pauseResumeAt = undefined;
   goal.updatedAt = nowIso();
