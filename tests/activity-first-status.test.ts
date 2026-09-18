@@ -91,14 +91,15 @@ test("activity-first: lead rows follow the head and precede all historical rows"
   )!;
   const text = lines.join("\n");
   assert.match(lines[1]!, /├─ auditor: /, "first content row is the auditor activity lead");
-  assert.match(lines[2]!, /^│ /, "second row continues the activity lead");
-  const leadEnd = 2;
+  assert.match(lines[2]!, /^│ tool: /, "second row carries tool/budget/model/thinking");
+  assert.match(lines[3]!, /^│ next: /, "third row names the next action");
+  const nextAt = lines.findIndex((l) => /^│ next: /.test(l));
   const auditsAt = lines.findIndex((l) => l.includes("audits:"));
   const modelAt = lines.findIndex((l) => l.includes("handled audit:"));
   const judgmentAt = lines.findIndex((l) => l.includes("1. Durable fix"));
-  assert.ok(auditsAt > leadEnd, `verdict tally follows the lead:\n${text}`);
-  assert.ok(modelAt > leadEnd, `provenance follows the lead:\n${text}`);
-  assert.ok(judgmentAt > leadEnd, `judgment follows the lead:\n${text}`);
+  assert.ok(auditsAt > nextAt, `verdict tally follows the lead:\n${text}`);
+  assert.ok(modelAt > nextAt, `provenance follows the lead:\n${text}`);
+  assert.ok(judgmentAt > nextAt, `judgment follows the lead:\n${text}`);
   assert.doesNotMatch(text, /widget truncated/, "no truncation marker on core rows");
 });
 
@@ -127,7 +128,7 @@ test("activity-first: quiet card leads with phase, age, last tool, model, thinki
   assert.match(lines[2]!, /last tool: read/, "stale tool demoted to last-tool, still in the lead");
   assert.match(lines[2]!, /test-auditor\/model/, "effective model named in the lead");
   assert.match(lines[2]!, /thinking max/, "effective thinking named in the lead");
-  assert.match(lines[2]!, /next: \/goal cancel discards the claim/, "quiet next action names the escape hatch");
+  assert.match(lines[3]!, /next: \/goal cancel discards the claim/, "quiet next action names the escape hatch");
   assert.match(text, /auditor quiet 31m/, "closer keeps its byte-identical quiet wording");
   const toolRows = lines.filter((l) => /tool:|last tool:/.test(l));
   assert.equal(toolRows.length, 1, "the card keeps its one-current-observation rule");
@@ -146,7 +147,8 @@ test("activity-first: awaiting-verdict card and footer agree on the phase words"
   const lines = buildWidgetLines({ goal: g, list: [] }, audit, NOW, undefined, 120)!;
   const text = lines.join("\n");
   assert.match(lines[1]!, /auditor: awaiting verdict · detached worker · last progress/, `verdict phase leads:\n${text}`);
-  assert.match(lines[2]!, /test-auditor\/model · thinking high · next: verdict applying/, "model + thinking + next action");
+  assert.match(lines[2]!, /test-auditor\/model · thinking high/, "model + thinking in the lead");
+  assert.match(lines[3]!, /next: verdict applying/, "verdict next action");
   const footer = buildStatusText({ goal: g, list: [] }, audit, NOW)!;
   assert.match(footer, /auditor ✓ awaiting verdict/, "footer names the same phase");
   assert.ok(text.includes("awaiting verdict") && footer.includes("awaiting verdict"), "card and footer agree: awaiting verdict");
@@ -159,7 +161,7 @@ test("activity-first: blocked card and footer agree on the blocked label", () =>
   const g = goalOf({ pendingCompletion: claimOf() });
   const audit = {
     phase: "error" as const,
-    label: "upstream timeout after 30s",
+    label: "provider error: upstream timeout after 30s",
     elapsedMs: 90_000,
     lastActivityAt: NOW - 60_000,
     model: "test-auditor/model",
@@ -168,10 +170,10 @@ test("activity-first: blocked card and footer agree on the blocked label", () =>
   const lines = buildWidgetLines({ goal: g, list: [] }, audit, NOW, undefined, 120)!;
   const text = lines.join("\n");
   assert.match(lines[1]!, /auditor: blocked · detached worker · last progress/, `blocked phase leads:\n${text}`);
-  assert.match(lines[2]!, /next: \/goal resume retries the claim/, "blocked next action names resume");
-  assert.match(text, /auditor blocked — upstream timeout/, "closer keeps its blocked wording");
+  assert.match(lines[3]!, /next: \/goal resume retries the claim/, "blocked next action names resume");
+  assert.match(text, /auditor blocked — provider error: upstream timeout/, "closer keeps its blocked wording");
   const footer = buildStatusText({ goal: g, list: [] }, audit, NOW)!;
-  assert.match(footer, /auditor ✗ blocked — upstream timeout/, "footer names the same blocked label");
+  assert.match(footer, /auditor ✗ blocked — provider error: upstream timeout/, "footer names the same blocked label");
 });
 
 // ---- running live: tool + budget in the lead ----
@@ -197,7 +199,24 @@ test("activity-first: live running card carries tool elapsed/budget in the lead"
   const text = lines.join("\n");
   assert.match(lines[1]!, /auditor: tool executing · detached worker · last progress/, `live phase leads:\n${text}`);
   assert.match(lines[2]!, /tool: read → .*README\.md.*\/ 20m 00s budget/, "tool elapsed + budget in the lead");
-  assert.match(lines[2]!, /next: verdict applies automatically/, "running next action");
+  assert.match(lines[3]!, /next: verdict applies automatically/, "running next action");
+  const narrow = buildWidgetLines(
+    { goal: g, list: [] },
+    {
+      phase: "tool_executing",
+      currentTool: "read",
+      currentToolArgs: JSON.stringify({ path: "/repo/README.md" }),
+      currentToolStartedAt: NOW - 2_000,
+      toolTimeoutMs: 1_200_000,
+      elapsedMs: 42_000,
+      lastActivityAt: NOW - 1_000,
+      model: "test-auditor/model",
+    },
+    NOW,
+    undefined,
+    80,
+  )!;
+  assert.ok(narrow.some((l) => /next: verdict applies automatically/.test(l)), "the next action survives an 80-column terminal");
 });
 
 // ---- legacy claims: absent stays absent ----
@@ -215,7 +234,7 @@ test("activity-first: legacy claim without thinking/model omits the segments, ne
   )!;
   const text = lines.join("\n");
   assert.match(lines[1]!, /auditor: queued · detached worker · last progress none yet/, `legacy lead:\n${text}`);
-  assert.doesNotMatch(lines[2]!, /thinking/, "no thinking segment without a stamped level");
+  assert.doesNotMatch(text, /thinking/, "no thinking segment without a stamped level");
   assert.match(lines[2]!, /next: worker starting/, "queued next action still renders");
 });
 
@@ -277,7 +296,6 @@ test("activity-first: footer monitoring and awaiting labels agree with the card 
     null,
     NOW,
     undefined,
-    undefined,
     { activity: "monitoring" },
   )!;
   assert.match(monitoringFooter, /👁 MONITORING/, "monitoring badge renders from the shared activity");
@@ -285,7 +303,6 @@ test("activity-first: footer monitoring and awaiting labels agree with the card 
     { goal: goalOf({ status: "active" }), list: [] },
     null,
     NOW,
-    undefined,
     undefined,
     { activity: "awaiting-first-turn" },
   )!;
