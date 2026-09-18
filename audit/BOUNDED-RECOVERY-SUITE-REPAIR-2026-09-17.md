@@ -71,3 +71,18 @@ Final gate `/var/tmp/glla-initial-completion-gate2.log`: **2300 pass,
 typecheck + jiti + offline auditor check + pack + installed-tarball smoke).
 `git diff --check` clean. Test edits daemon-committed as `afaea15f`.
 Diff artifact for the dead-reviewer handoff: `/var/tmp/glla-initial-repair.diff`.
+
+A relaunched fresh-context reviewer (explicit session model after the
+first run died on retired union-alpha) returned **merge verdict OK,
+BLOCKERS: none**, verifying per-area attribution from the diff artifact:
+fixed horizon in all modes, per-candidate thinking in real worker argv,
+chain capture/preserve/display, real-claim post-deadline no-dispatch, the
+five shape pins matching production text, and the bounded handshake.
+Its one actionable P2 — a stale comment in `goal-auditor-hooks.ts`
+claiming aggressive mode retries "until a state-based stop" while the code
+persists the fixed horizon — was fixed to the shared wording; final gate
+`/var/tmp/glla-initial-completion-gate3.log`: **2300 pass, 0 fail,
+2 env-gated skips; exit 0** (859.20s), `git diff --check` clean.
+Remaining P2s are doc-only notes (dead `aggressive` param on
+`auditorRetryPlan`, dual-horizon wording on the separate timeout one-shot
+branch), disclosed not hidden.
