@@ -2280,6 +2280,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     auditorFallbackExhausted: _auditorFallbackExhausted,
     auditorFailureAt: _auditorFailureAt,
     exhaustedChain: _exhaustedChain,
+    auditorThinkingLevel: _auditorThinkingLevel,
     timeoutEscalation: _timeoutEscalation,
     ...canonicalOrUnknown
   } = raw;
@@ -2320,6 +2321,12 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
   const exhaustedChain = typeof _exhaustedChain === "string" && _exhaustedChain.trim()
     ? _exhaustedChain.replace(/[\r\n]+/g, " ").trim().slice(0, 2000)
     : undefined;
+  // Activity-first card: the effective thinking level is a bounded,
+  // newline-free display token. Garbage degrades to absent (the card
+  // omits the segment), never to an invented level.
+  const auditorThinkingLevel = typeof _auditorThinkingLevel === "string" && _auditorThinkingLevel.trim()
+    ? _auditorThinkingLevel.replace(/[\r\n]+/g, " ").trim().slice(0, 20)
+    : undefined;
   // v0.37.0: escalation index — hand-edited/corrupt state must not produce a
   // negative or astronomical budget multiplier.
   const timeoutEscalation =
@@ -2349,6 +2356,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     ...(auditorFallbackExhausted ? { auditorFallbackExhausted: true } : {}),
     ...(auditorFailureAt ? { auditorFailureAt } : {}),
     ...(exhaustedChain ? { exhaustedChain } : {}),
+    ...(auditorThinkingLevel ? { auditorThinkingLevel } : {}),
     ...(timeoutEscalation !== undefined ? { timeoutEscalation } : {}),
     ...(sanitizedGroups ? { findingGroups: sanitizedGroups } : {}),
     ...(sanitizedGates ? { gateRows: sanitizedGates } : {}),
