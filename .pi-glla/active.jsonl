@@ -1977,3 +1977,7 @@
 {"type":"terminal_approval_render_persisted","value":{"goalId":"20260918193502-wc4dri","delivered":false,"lines":17},"at":"2026-09-18T20:24:21.133Z"}
 {"type":"terminal_completion_notice_sent","value":{"goalId":"20260918193502-wc4dri","payloadChars":958},"at":"2026-09-18T20:24:21.145Z"}
 {"type":"terminal_approval_render_replayed","value":{"goalId":"20260918193502-wc4dri","createdAt":"2026-09-18T20:24:21.132Z"},"at":"2026-09-18T20:24:21.145Z"}
+{"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-18T21:32:45.308Z"}
+{"type":"session_rebound","value":{"reason":"startup"},"at":"2026-09-18T21:32:57.026Z"}
+{"type":"id_invalidation","value":{"oldId":"01a054a9-e07f-705b-87a1-9421f9b906dc","newId":"01a0b66f-ac3b-77be-8dec-2988666e8a18","reason":"session_shutdown","shutdownReason":"quit","at":"2026-09-18T21:32:57.052Z"},"at":"2026-09-18T21:32:57.052Z"}
+{"type":"session_waiting_for_load","value":{"reason":"startup"},"at":"2026-09-18T21:32:57.053Z"}
