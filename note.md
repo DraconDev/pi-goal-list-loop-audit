@@ -1,10 +1,5 @@
 # Now
 
-
-
-
-
-
 ##
 /home/dracon/Pictures/Screenshots/Screenshot_20260917_195237.png 
 we are in subagent session ?
@@ -60,10 +55,24 @@ too long wait
 
 # Next
 
+##
+/home/dracon/Pictures/Screenshots/Screenshot_20260918_151158.png 
+auditor model resolution error
+
+##
+auditor chain repeated failure but it was jsut simply out of quota we should be hammering retries
+/home/dracon/Pictures/Screenshots/Screenshot_20260918_150821.png 
+
+##
+/home/dracon/Pictures/Screenshots/Screenshot_20260918_151113.png 
+shows paused but det auditor working ?
+
 # Later
 
 ##
 i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
+
+
 
 
 # Research
