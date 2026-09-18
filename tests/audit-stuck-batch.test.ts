@@ -209,14 +209,14 @@ test("splitParkedQueueDuplicates coalesces queued + batch-internal duplicates", 
   const { splitParkedQueueDuplicates } = await import("../extensions/goal-commands.js");
   assert.deepEqual(splitParkedQueueDuplicates([], ["x"]), { fresh: [], coalesced: [] });
   const split = splitParkedQueueDuplicates(
-    ["Refactor the widget harness — Done when: tests pass", "refactor the WIDGET harness — Done when: tests pass", "New thing — Done when: merged"],
+    ["Refactor the widget harness. Done when: tests pass", "refactor the WIDGET harness. Done when: tests pass", "New thing. Done when: merged"],
     ["Refactor the widget harness"],
   );
   assert.deepEqual(split.coalesced.length, 2, "queued + batch-internal duplicates both coalesce");
-  assert.deepEqual(split.fresh, ["New thing — Done when: merged"]);
+  assert.deepEqual(split.fresh, ["New thing. Done when: merged"]);
   assert.deepEqual(
-    splitParkedQueueDuplicates(["New thing — Done when: merged"], ["Other"]).fresh,
-    ["New thing — Done when: merged"],
+    splitParkedQueueDuplicates(["New thing. Done when: merged"], ["Other"]).fresh,
+    ["New thing. Done when: merged"],
     "distinct work always queues",
   );
 });
@@ -230,7 +230,7 @@ test("124536: re-adding a queued objective while parked coalesces, no pile-up", 
   const { pi, ctx } = await bootToolPi(cwd);
   try {
     assert.equal(readState(cwd).list?.length, 1, "seed holds one queued item");
-    await pi.command("list", "add Refactor the widget harness — Done when: tests pass", ctx);
+    await pi.command("list", "add Refactor the widget harness. Done when: tests pass", ctx);
     await tick(120);
     assert.equal(readState(cwd).list?.length, 1, "the duplicate coalesces instead of piling");
     assert.ok(
@@ -238,7 +238,7 @@ test("124536: re-adding a queued objective while parked coalesces, no pile-up", 
       "the coalesce is ledgered",
     );
     assert.equal(readState(cwd).goal?.status, "paused", "the parked head is untouched");
-    await pi.command("list", "add Ship the release notes — Done when: published", ctx);
+    await pi.command("list", "add Ship the release notes. Done when: published", ctx);
     await tick(120);
     assert.equal(readState(cwd).list?.length, 2, "distinct work still queues behind the parked head");
   } finally {
@@ -252,7 +252,7 @@ test("124536: hourly auditor backstop stands down on an identical-parked head", 
   const { pi, ctx } = await bootToolPi(cwd);
   try {
     const { fireHourlyProbe } = await import("../extensions/goal-recovery.js");
-    await fireHourlyProbe(ctx);
+    await fireHourlyProbe(ctx as unknown as Parameters<typeof fireHourlyProbe>[0]);
     await tick(120);
     const types = ledgerTypes(cwd);
     assert.ok(!types.includes("hourly_probe_auditor_backstop"), "no backstop retry fires into a terminal block");
