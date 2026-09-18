@@ -54,15 +54,13 @@ but basically same bug everywhere the auditor pends forever
 
 i think we should be showing the audit working, albeit it mgiht be tied to some models being less reliable
 
-# Next
-
-# Later
-
 ##
 too long wait
 /home/dracon/Pictures/Screenshots/Screenshot_20260918_110532.png 
 
-# Much later
+# Next
+
+# Later
 
 ##
 i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
