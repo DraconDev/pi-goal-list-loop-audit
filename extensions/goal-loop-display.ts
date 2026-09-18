@@ -1704,11 +1704,10 @@ function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefin
   const activity = auditorActivityAge(audit, now);
   const ageSeg = activity !== undefined ? `last progress ${fmtElapsed(activity)} ago` : "last progress none yet";
   const lead = [`├─ auditor: ${paint(theme, auditorPhaseTone(phase, phaseLive), phaseLabel)}${detail} · detached worker · ${ageSeg}`];
-  // Lead row 2: current tool + time budget, effective model + thinking,
-  // next action — in that order. Absent facts are omitted, never
-  // invented; the next action always renders so the glance ends with
-  // what happens next. The tool observation lives ONLY here (it moved
-  // out of the tail) so the card keeps its one-current-observation rule.
+  // Lead row 2: current tool + time budget, effective model + thinking.
+  // Absent facts are omitted, never invented. The tool observation lives
+  // ONLY here (it moved out of the tail) so the card keeps its
+  // one-current-observation rule.
   let toolSeg: string | undefined;
   if (phase === "running" && phaseLive && audit?.currentTool) {
     const target = auditorToolTarget(audit.currentToolArgs);
@@ -1728,7 +1727,12 @@ function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefin
   }
   const modelSeg = auditorCardModelRef(audit, claim);
   const thinkingSeg = claim?.auditorThinkingLevel ? `thinking ${truncate(claim.auditorThinkingLevel, 20)}` : undefined;
-  lead.push(`│ ${[toolSeg, modelSeg, thinkingSeg, `next: ${auditorNextAction(phase)}`].filter(Boolean).join(" · ")}`);
+  const liveSegs = [toolSeg, modelSeg, thinkingSeg].filter(Boolean);
+  if (liveSegs.length > 0) lead.push(`│ ${liveSegs.join(" · ")}`);
+  // Lead row 3 (or 2 when nothing live is known): the next action always
+  // renders, on its own short row so it survives narrow-terminal
+  // truncation that may ellipsize the longer tool/model row above.
+  lead.push(`│ next: ${auditorNextAction(phase)}`);
   // Tail: the remaining observations (session, quiet stretch, report
   // tail, evidence, unmatched events) flow straight into the closing
   // line (v0.38.55 — no spacer row). Closers are byte-identical to the
