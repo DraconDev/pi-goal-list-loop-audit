@@ -20,6 +20,7 @@ import {
   stripThinkBlocks,
   captureGoalRevision,
   isRetriableInfraError,
+  isUnresolvableAuditorModelRefError,
   isForbiddenModel,
   type Goal,
   type GoalRevisionToken,
@@ -440,6 +441,33 @@ export async function runAuditorFallbackWithPolicy(
     if (!isRetriableInfraError(first.error) || !isMainModelFallbackFailure(failure)) {
       return { result: first, retriedOnce, fallbackUsed, via: candidate.via };
     }
+    // v0.38.63 (audit-stuck batch, field 124541): the ref itself is dead
+    // (model-not-found family). A same-ref retry can never heal it, and
+    // sleeping the backoff before advancing only delays the live fallback —
+    // evict via onCandidateExhausted and advance immediately with no delay.
+    if (!isRetryAttempt && isUnresolvableAuditorModelRefError(first.error)) {
+      currentRef = selectedRef;
+      const nextRef = nextUntriedModelRef(currentRef, refs, attempted);
+      failureAttempt += 1;
+      const exhaustedInfo: AuditorFallbackExhaustionInfo = {
+        candidateRef: selectedRef,
+        candidateRefs: candidateRefs.slice(),
+        attemptedRefs: attempted.slice(),
+        ...(nextRef ? { nextCandidateRef: nextRef } : {}),
+        failureClass: failureClass(first),
+        delayMs: 0,
+      };
+      if (!callbackAccepted(opts.onCandidateExhausted?.(candidate, first.error, exhaustedInfo))) {
+        return { result: cursorPersistenceFailure(candidate), retriedOnce, fallbackUsed, via: candidate.via };
+      }
+      if (nextRef === undefined) {
+        return { result: markExhausted(first, failureClass(first)), retriedOnce, fallbackUsed, via: candidate.via };
+      }
+      if (!isLive()) return { result: first, retriedOnce, fallbackUsed, via: candidate.via };
+      fallbackFrom = candidate;
+      fallbackError = first.error;
+      continue;
+    }
 
     if (!isRetryAttempt) {
       failureAttempt += 1;
@@ -479,7 +507,11 @@ export async function runAuditorFallbackWithPolicy(
       currentRef = selectedRef;
       const nextRef = nextUntriedModelRef(currentRef, refs, attempted);
       failureAttempt += 1;
-      fallbackDelayMs = mainModelFailureDelayMs(failure, failureAttempt, opts.retryBaseMinutes ?? 15);
+      // A ref proven dead mid-episode (model removed between the two calls)
+      // advances with no backoff sleep, like the first-failure fast path.
+      fallbackDelayMs = isUnresolvableAuditorModelRefError(second.error)
+        ? 0
+        : mainModelFailureDelayMs(failure, failureAttempt, opts.retryBaseMinutes ?? 15);
       const exhaustedInfo: AuditorFallbackExhaustionInfo = {
         candidateRef: selectedRef,
         candidateRefs: candidateRefs.slice(),
