@@ -3396,6 +3396,16 @@ export function shouldErrorBrakeRetryResume(
   return goal.recoveryEpisodeKey === episodeKey;
 }
 
+/** No mid-objective stop unless we must: a bounded provider-recovery
+ * episode is armed when the goal carries the episode identity plus a
+ * live brake streak — the retry envelope already owns the failure. */
+export function isProviderRecoveryArmed(
+  goal: Pick<Goal, "recoveryEpisodeKey" | "errorBrakeStreak"> | undefined | null,
+): boolean {
+  if (!goal || !goal.recoveryEpisodeKey) return false;
+  return (goal.errorBrakeStreak ?? 0) > 0;
+}
+
 export function extractVerificationContract(raw: string): { objective: string; verificationContract: string; explicitClear: boolean } {
   // Line-based first: a marker at line start begins the contract block.
   const lines = raw.split("\n");

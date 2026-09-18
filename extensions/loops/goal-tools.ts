@@ -140,6 +140,7 @@ isGoalRevisionCurrent,
   sanitizeFindingGroups,
   sanitizeGateRows,
   clearLoadHold,
+  isProviderRecoveryArmed,
 } from "../goal-loop-core.js";
 import {
   applyValidatedBatch,
@@ -2239,6 +2240,19 @@ function registerAgentTools(pi: any): void {
       if (missingClaim && !PI_TOOL_NOT_FOUND_QUOTE.test(p.reason ?? "")) {
         appendLedger(ctx.cwd, "pause_refused_tool_present", { goalId: state.goal.id, tool: missingClaim });
         return { content: [{ type: "text", text: `Not paused: \`${missingClaim}\` is registered in this session — this pause_goal call just dispatched through the same registration batch, so the tool path works. If \`${missingClaim}\` is missing from your visible tool list, that is a client-side gap: call \`${missingClaim}\` now${missingClaim === "complete_goal" ? " with your six-label recap and verification summary" : ""}. If pi itself answers with a \`Tool ${missingClaim} not found\` error, call pause_goal again quoting that exact error and the pause will be accepted.` }], details: {} };
+      }
+      // No mid-objective stop unless we must: an agent error/blocked
+      // park while a bounded provider-recovery episode is armed is
+      // refused — the envelope already owns this failure and the park
+      // adds only a stop (field: the 200751 self-park sat hours on
+      // "manual action" with a live brake retry). Decision pickers and
+      // time-gated waits are genuine blockers and pass through, as does
+      // any park with no armed recovery. The user's own /goal pause path
+      // (cmdPause) is untouched — this guards the agent tool only.
+      const parkKind = p.kind ?? "blocked";
+      if ((parkKind === "error" || parkKind === "blocked") && isProviderRecoveryArmed(state.goal)) {
+        appendLedger(ctx.cwd, "pause_refused_recovery_armed", { goalId: state.goal.id, kind: parkKind, recoveryEpisodeKey: state.goal.recoveryEpisodeKey });
+        return { content: [{ type: "text", text: `Not parked: a bounded provider-error retry is already armed for this episode and resumes the goal on its own (${activeGoalSurfaceCommand("resume")} retries now). Keep working — the envelope owns this failure. Pause here only for something the retry cannot supply (user input, a credential, a destructive-action gate).` }], details: {} };
       }
       const pauseCopy = providerErrorPresentation(p.reason, "recovery");
       const safePauseReason = pauseCopy.sensitive ? pauseCopy.display : p.reason;
