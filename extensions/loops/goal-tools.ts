@@ -2243,6 +2243,31 @@ function registerAgentTools(pi: any): void {
       const pauseCopy = providerErrorPresentation(p.reason, "recovery");
       const safePauseReason = pauseCopy.sensitive ? pauseCopy.display : p.reason;
       const safePauseAction = p.suggestedAction ? sanitizeProviderDisplayText(p.suggestedAction) : p.suggestedAction;
+      // v0.38.63 (153404): agent-authored waits are bounded and
+      // re-evaluated, never slept blind. A 4.5h "resume at 20:00" load
+      // wait parks the objective for the whole evening with no re-check.
+      // Clamp the stored horizon to MAX_AGENT_WAIT_MS; the heartbeat
+      // overdue backstop re-dispatches at the cap, so the agent
+      // re-evaluates (still loaded → wait again, quiet → resume) instead
+      // of sleeping through. Internal recovery waits bypass this tool and
+      // keep their own horizons.
+      const MAX_AGENT_WAIT_MS = 60 * 60 * 1000;
+      let waitClampNotice = "";
+      let storedResumeAt: string | undefined;
+      if (p.kind === "wait" && p.resumeAt) {
+        const requestedMs = Date.parse(p.resumeAt);
+        if (Number.isFinite(requestedMs) && requestedMs - Date.now() > MAX_AGENT_WAIT_MS) {
+          storedResumeAt = new Date(Date.now() + MAX_AGENT_WAIT_MS).toISOString();
+          waitClampNotice = ` The requested wait was bounded to 1h (asked ${p.resumeAt}): the wait auto-continues then so the condition is re-evaluated — re-wait if it still holds, resume if it cleared.`;
+          appendLedger(ctx.cwd, "pause_wait_clamped", {
+            goalId: state.goal.id,
+            requestedResumeAt: p.resumeAt,
+            storedResumeAt,
+          });
+        } else {
+          storedResumeAt = p.resumeAt;
+        }
+      }
       updateGoal({
         status: "paused",
         pauseReason: safePauseReason,
@@ -2250,7 +2275,7 @@ function registerAgentTools(pi: any): void {
         pauseKind: p.kind,
         pauseOptions: p.kind === "decision" && p.options && p.options.length > 0 ? p.options : undefined,
         pauseRecommended: p.kind === "decision" && p.recommended && p.recommended >= 1 ? Math.floor(p.recommended) : undefined,
-        pauseResumeAt: p.kind === "wait" && p.resumeAt ? p.resumeAt : undefined,
+        pauseResumeAt: storedResumeAt,
       }, ctx);
       if (p.kind === "decision" && p.options && p.options.length > 0) maybeDecisionPopup(ctx);
       // v0.27.1: surface the FULL pause contract — reason AND suggested
@@ -2369,7 +2394,7 @@ function registerAgentTools(pi: any): void {
           type: "text",
           text: droppedImpossible
             ? "The list item was auto-dropped as impossible (blocked with no resume path) — the list moved on instead of stopping."
-            : `Goal paused. The turn ends here — do NOT continue working. ${activeGoalSurfaceCommand("resume")} to continue.`,
+            : `Goal paused. The turn ends here — do NOT continue working. ${activeGoalSurfaceCommand("resume")} to continue.${waitClampNotice}`,
         }],
         details: {},
       };
