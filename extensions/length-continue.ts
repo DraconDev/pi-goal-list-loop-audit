@@ -26,6 +26,20 @@ export const LENGTH_CONTINUE_TEXT = [
   "Keep each individual response shorter from here: split large file writes into multiple smaller write/edit calls across turns instead of one giant response.",
 ].join(" ");
 
+// v0.38.66 (PR #55, FOF11): goal-aware variant. When an active goal's worker
+// response is truncated, the generic "keep going" nudge can send the model
+// off on another full work pass even when the goal is already satisfied.
+// Active goals get completion-aware recovery text instead: check
+// satisfaction first, call complete_goal if done, otherwise finish only
+// the interrupted work. Plain sessions keep LENGTH_CONTINUE_TEXT.
+export const GOAL_LENGTH_CONTINUE_TEXT = [
+  "Your previous response was cut off at the model's per-response output token limit.",
+  "Continue EXACTLY where you stopped, but FIRST determine whether the active goal is already satisfied.",
+  "If the goal is satisfied, do not start another research, audit, or implementation pass. Call complete_goal now with a concise completionSummary and verificationSummary so the independent auditor can verify the work.",
+  "If the goal is not yet satisfied, finish only the interrupted work and continue toward the objective.",
+  "Keep each individual response shorter from here: split large file writes into multiple smaller write/edit calls across turns instead of one giant response.",
+].join(" ");
+
 export interface LengthContinueTick {
   /** Send the continue message this round. */
   fire: boolean;
