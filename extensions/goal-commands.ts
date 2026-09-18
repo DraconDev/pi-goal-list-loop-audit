@@ -231,6 +231,14 @@ async function cmdGoal(args: string, ctx: ExtensionContext): Promise<void> {
         ctx.ui.notify("An audit is already running…", "info");
         return;
       }
+      // Pending-claim lifecycle: a stored claim awaiting its verdict owns
+      // the goal surface. Verify reports the awaiting state instead of
+      // destroying the healthy claim and relaunching blindly — the
+      // in-process flag above only covers audits owned by this process.
+      if (state.goal.status === "auditing" && state.goal.pendingCompletion) {
+        ctx.ui.notify(`A completion audit is already awaiting its verdict — wait for it or ${activeGoalSurfaceCommand("cancel")} to discard the pending claim and start over.`, "info");
+        return;
+      }
       updateGoal({
         pendingCompletion: {
           completionSummary: "Manual audit requested by the user via /goal verify (no agent completion claim). Verify the objective against the repo directly.",
