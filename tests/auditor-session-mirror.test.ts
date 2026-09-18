@@ -99,3 +99,25 @@ test("unresolvable mirror entries still drop fail-closed at resolve time", () =>
   );
   assert.deepEqual(resolved, []);
 });
+
+test("settings round-trip: mirror opt-out persists, on clears, junk normalizes", async () => {
+  const cwd = tmpCwd();
+  try {
+    process.env.GLLA_GLOBAL_SETTINGS_PATH = path.join(os.tmpdir(), `glla-mirror-settings-${process.pid}.json`);
+    const ctx = makeMockCtx(cwd);
+    ctx.ui.selectImpl = async (_title, options) =>
+      options.find((option) => option.startsWith("off")) ?? options[0];
+    await handleSettingChoice("auditorMirrorSessionExtensions", ctx as unknown as ExtensionContext);
+    assert.equal(loadSettings(ctx.cwd).auditorMirrorSessionExtensions, false);
+    ctx.ui.selectImpl = async (_title, options) =>
+      options.find((option) => option.startsWith("on")) ?? options[0];
+    await handleSettingChoice("auditorMirrorSessionExtensions", ctx as unknown as ExtensionContext);
+    assert.equal(loadSettings(ctx.cwd).auditorMirrorSessionExtensions, undefined);
+    // Hand-edited junk falls back to on (absent).
+    saveSettings("global", cwd, { auditorMirrorSessionExtensions: "yes" as unknown as boolean });
+    assert.equal(loadSettings(cwd).auditorMirrorSessionExtensions, undefined);
+  } finally {
+    if (ORIGINAL_ENV === undefined) delete process.env.GLLA_GLOBAL_SETTINGS_PATH;
+    else process.env.GLLA_GLOBAL_SETTINGS_PATH = ORIGINAL_ENV;
+  }
+});
