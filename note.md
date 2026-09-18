@@ -102,6 +102,12 @@ keep getitng stuck, keep in mind that after drafting we should never get stuck, 
 
 /home/dracon/Pictures/Screenshots/Screenshot_20260918_111716.png 
 
+i really dont like the complete into audit, complete is based on audit 
+
+/home/dracon/Pictures/Screenshots/Screenshot_20260918_111957.png 
+
+but basically same bug everywhere the auditor pends forever
+
 ##
 too long wait
 /home/dracon/Pictures/Screenshots/Screenshot_20260918_110532.png 
