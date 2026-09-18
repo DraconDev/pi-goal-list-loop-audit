@@ -67,6 +67,10 @@ auditor chain repeated failure but it was jsut simply out of quota we should be 
 /home/dracon/Pictures/Screenshots/Screenshot_20260918_151113.png 
 shows paused but det auditor working ?
 
+##
+/home/dracon/Pictures/Screenshots/Screenshot_20260918_152226.png 
+maybe the fallback selector is broken
+
 # Later
 
 ##
