@@ -94,6 +94,10 @@ paused suspicious goal cant close
 false manual action
 /home/dracon/Pictures/Screenshots/Screenshot_20260918_021655.png 
 
+##
+keep getitng stuck, keep in mind that after drafting we should never get stuck, unless something critical comes up, we want objective completion 99%+ of the time
+/home/dracon/Pictures/Screenshots/Screenshot_20260918_110418.png 
+
 # Much later
 
 ##
