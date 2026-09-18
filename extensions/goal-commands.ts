@@ -1068,6 +1068,32 @@ export function hydrateListQueueFromDisk(ctx: ExtensionContext): number {
   return recovered.length;
 }
 
+/** v0.38.63 (audit-stuck batch, field 124536): while the head goal is
+ * parked, re-adding an objective that is already queued — or duplicated
+ * inside the same batch — coalesces instead of piling up. Pure; both add
+ * funnels (direct + batch) call it with the live queue. */
+export function splitParkedQueueDuplicates(texts: string[], queuedObjectives: Array<string | undefined>): { fresh: string[]; coalesced: string[] } {
+  const seen = new Set<string>();
+  for (const objective of queuedObjectives) {
+    if (typeof objective === "string" && objective.trim()) seen.add(normalizeObjective(objective));
+  }
+  const fresh: string[] = [];
+  const coalesced: string[] = [];
+  for (const text of texts) {
+    let key = "";
+    try {
+      key = normalizeObjective(parseListItemDeclaration(text).objective);
+    } catch { /* unparseable — the funnel below refuses it with its own copy */ }
+    if (key && seen.has(key)) {
+      coalesced.push(text);
+      continue;
+    }
+    if (key) seen.add(key);
+    fresh.push(text);
+  }
+  return { fresh, coalesced };
+}
+
 function enqueueItems(ctx: ExtensionContext, texts: string[], source: string, opts?: { autoActivate?: boolean }): number {
   hydrateListQueueFromDisk(ctx);
   const recentlyDone = recentlyCompletedObjectives(ctx.cwd);
@@ -1079,7 +1105,19 @@ function enqueueItems(ctx: ExtensionContext, texts: string[], source: string, op
     ctx.ui.notify(`Skipped ${skipped} item(s) duplicating work COMPLETED in the last 24h (zombie-twin guard): ${first.slice(0, 90)}`, "warning");
   }
   if (fresh.length === 0) return 0;
-  const items = fresh.map((text) => {
+  // v0.38.63 (audit-stuck batch, field 124536): while parked, duplicates
+  // of waiting work coalesce — the queue must not grow without progress.
+  let toQueue = fresh;
+  if (state.goal?.status === "paused") {
+    const split = splitParkedQueueDuplicates(fresh, listQueue().map((item) => item.objective));
+    if (split.coalesced.length > 0) {
+      appendLedger(ctx.cwd, "list_parked_duplicate_coalesced", { source, count: split.coalesced.length, objective: split.coalesced[0]!.slice(0, 200), queueDepth: listQueue().length });
+      ctx.ui.notify(`Coalesced ${split.coalesced.length} item(s) already waiting behind the paused head — queue depth holds at ${listQueue().length}.`, "info");
+    }
+    toQueue = split.fresh;
+    if (toQueue.length === 0) return 0;
+  }
+  const items = toQueue.map((text) => {
     const extracted = parseListItemDeclaration(text);
     return {
       id: newGoalId(),
@@ -1154,6 +1192,11 @@ function enqueueItems(ctx: ExtensionContext, texts: string[], source: string, op
   appendLedger(ctx.cwd, "list_queue_disk_first", { source, count: itemsToWrite.length, diskFirst });
   persistState(ctx);
   appendLedger(ctx.cwd, "list_imported", { source, count: itemsToWrite.length });
+  if (state.goal?.status === "paused") {
+    // v0.38.63 (audit-stuck batch, field 124536): a parked head queues
+    // silently today — the pile-up grows invisibly. Name the jam + depth.
+    ctx.ui.notify(`Queued ${itemsToWrite.length} item(s) behind the paused head (${listQueue().length} waiting) — ${state.goal.pauseSuggestedAction ?? "resume the head to continue"}.`, "info");
+  }
   if (!state.goal || state.goal.status === "complete" || state.goal.status === "aborted") {
     // v0.28.28: unsolicited sources (the reviewer) do NOT auto-start the
     // head unless autoResume is on — "I cancelled a goal and the next one
@@ -1673,6 +1716,13 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
 /** Append one objective to the list; activate immediately when idle. */
 function addSingleItem(ctx: ExtensionContext, raw: string): void {
   hydrateListQueueFromDisk(ctx);
+  // v0.38.63 (audit-stuck batch, field 124536): same parked coalesce as
+  // the batch funnel — the direct path must not pile up either.
+  if (state.goal?.status === "paused" && splitParkedQueueDuplicates([raw], listQueue().map((item) => item.objective)).coalesced.length > 0) {
+    appendLedger(ctx.cwd, "list_parked_duplicate_coalesced", { source: "direct", count: 1, objective: raw.slice(0, 200), queueDepth: listQueue().length });
+    ctx.ui.notify(`Already waiting behind the paused head — coalesced, queue depth holds at ${listQueue().length}.`, "info");
+    return;
+  }
   const extracted = parseListItemDeclaration(raw);
   const item = assignQueueOrder([{
     id: newGoalId(),
