@@ -220,7 +220,8 @@
         "auditorFailureClass": { "type": "string", "enum": ["transport", "timeout", "no-verdict", "provider"] },
         "auditorFallbackExhausted": { "type": "boolean" },
         "auditorFailureAt": { "type": "string", "format": "date-time" },
-        "exhaustedChain": { "type": "string", "maxLength": 2000, "description": "Newline-free names of the auditor candidates exhausted in the current bounded cycle, joined with ' → '. Set at burn time; cleared with the cycle. Display-only diagnostic — never candidate-selection state." }
+        "exhaustedChain": { "type": "string", "maxLength": 2000, "description": "Newline-free names of the auditor candidates exhausted in the current bounded cycle, joined with ' → '. Set at burn time; cleared with the cycle. Display-only diagnostic — never candidate-selection state." },
+        "auditorThinkingLevel": { "type": "string", "maxLength": 20, "description": "Effective thinking level resolved for the running attempt (per-candidate fallback applied at launch). Display-only — never candidate-selection state; absent on legacy claims." }
       }
     },
     "task": {

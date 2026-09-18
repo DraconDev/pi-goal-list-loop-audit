@@ -473,6 +473,12 @@ gateRows?: GateRow[];
    * AND dispatch-time expiry) without re-parsing prose. Display-only —
    * never candidate-selection state. Newline-free by construction. */
   exhaustedChain?: string;
+  /** Effective thinking level resolved for the running attempt (per-candidate
+   * fallback already applied at launch). Stamped by the launcher alongside
+   * the candidate ref so the status card can name it without re-resolving
+   * model metadata at render time. Absent on legacy claims (omit, never
+   * invent). Display-only — never candidate-selection state. */
+  auditorThinkingLevel?: string;
   /** v0.37.0: adaptive-timeout escalation index. Incremented once per
    * launched detached attempt (persisted through the same cursor writes as
    * the candidate position), so the ×2-per-attempt budget schedule survives
