@@ -94,7 +94,8 @@ test("pause_goal tool: structured kind/options/recommended/resumeAt persist to t
   ];
   // v0.34.51: the 3-strike "reachedInfraCap / auditor infrastructure failed"
   // stop is gone — every infra failure enters the durable bounded retry plan.
-  assert.match(SRC, /auditor retry: automatic retry horizon reached \(\$\{plan\.attempt\} attempts\)/);
+  // The capped stop keeps the exhausted-chain diagnostic (auditor 22:39).
+  assert.match(SRC, /auditor retry: \$\{exhaustedNotice\}automatic retry horizon reached \(\$\{plan\.attempt\} attempts\)/);
   for (const [anchor, kind] of pairs) {
     const esc = anchor.replace(/[.*+?^$()[\]\\|]/g, "\\$&");
     const source = anchor.includes("send-retry storm") ? CONT : SRC; // decomposition step 5: storm pauses moved to goal-continuation.ts

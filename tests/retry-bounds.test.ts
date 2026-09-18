@@ -50,7 +50,9 @@ test("E2: auditor infra errors enter the durable bounded retry plan (v0.34.51 â€
   // conservative horizon stop, aggressive unbounded retry, and a re-checked
   // auto-resume callback.
   assert.match(SRC, /phase: "retry-waiting" as const/);
-  assert.match(SRC, /auditor retry: automatic retry horizon reached \(\$\{plan\.attempt\} attempts\)/);
+  // The capped stop keeps the exhausted-chain diagnostic (auditor 22:39:
+  // the parked state names the chain and the recovery action).
+  assert.match(SRC, /auditor retry: \$\{exhaustedNotice\}automatic retry horizon reached \(\$\{plan\.attempt\} attempts\)/);
   assert.match(SRC, /startsWith\("auditor retry:"\)/);
   // a real auditor run still clears the persisted streak:
   // v0.34.14: only a CLEAN run clears â€” a stalled run returns partial output
@@ -235,8 +237,13 @@ test("v0.28.26: quota-blocked audits store the claim + the retry re-runs the AUD
   assert.match(SRC, /phase: "retry-waiting" as const/);
   // 2. the retry callback prefers the direct-audit path (v0.34.51: any
   //    infra error, not just quota):
-  const cbIdx = SRC.indexOf('(state.goal.pauseReason ?? "").startsWith("auditor retry:")');
-  const directIdx = SRC.indexOf("void retryStoredCompletionAudit();");
+  // Scoped to the initial-completion file: the stored-claim ladder in
+  // goal-auditor-hooks.ts has its own explicit provider-retry dispatch.
+  // The timer callback carries its provenance explicitly (never a bare
+  // call that could read as a manual retry and renew the envelope).
+  const toolsSrc = SRC.slice(SRC.indexOf("/* extensions/loops/goal-tools.ts */"));
+  const cbIdx = toolsSrc.indexOf('(state.goal.pauseReason ?? "").startsWith("auditor retry:")');
+  const directIdx = toolsSrc.indexOf('void retryStoredCompletionAudit("provider-retry");', cbIdx);
   assert.ok(cbIdx > 0 && directIdx > cbIdx, "direct-audit branch inside the quota callback");
   const legacyIdx = SRC.indexOf('appendLedger(fresh.cwd, "goal_resumed", { via: "provider-retry" });');
   assert.ok(legacyIdx > directIdx, "agent-resume is the FALLBACK (no stored claim), not the default");

@@ -202,7 +202,10 @@ test("v0.36.0: auditor thinking inherits the parent dial unless explicitly overr
   const SRC = readGoalRuntimeSource();
   // An unset auditor level follows the live parent session at both audit launch
   // sites; max is the detached/headless default when the host exposes no dial.
-  assert.match(SRC, /thinkingLevel: \(settings\.auditorThinkingLevel \?\? ctx\.thinkingLevel \?\? "max"\) as any,/);
+  // Initial completion resolves the dial per candidate (auditor 22:39: the raw
+  // requested level must never reach a worker that does not support it).
+  assert.match(SRC, /const requestedThinking = settings\.auditorThinkingLevel \?\? ctx\.thinkingLevel \?\? "max";/);
+  assert.match(SRC, /thinkingLevel: effectiveThinking as any,/);
   // Completion retries inherit the dial before resolving support separately
   // for every fallback model; never pass an unsupported level to the worker.
   assert.match(SRC, /const requestedThinking = settings\.auditorThinkingLevel \?\? liveCtx\.thinkingLevel \?\? "max";/);

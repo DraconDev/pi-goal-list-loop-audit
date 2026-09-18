@@ -686,9 +686,17 @@ process.stdin.on("data", (chunk) => {
 test("worker assembles streamed report fragments into cumulative display lines without changing the exact result", async () => {
   const dir = await mkdtemp(path.join(tmpdir(), "glla-fragment-telemetry-"));
   const fakePi = path.join(dir, "fragment-pi.mjs");
+  const ackDir = path.join(dir, "frag-ack");
+  await mkdir(ackDir, { recursive: true });
   const reports: AuditorProgress[] = [];
+  // Cumulative report lengths after each fragment. The producer waits for
+  // the parent to observe each one before sending the next, so no snapshot
+  // is overwritten before its byte count reaches onProgress — deterministic
+  // under full-gate load, where a fixed 500ms sleep still missed 3 of 7.
+  const expectedBytes = [30, 32, 38, 40, 42, 57];
   const fakePiSource = `
 import { setTimeout as sleep } from "node:timers/promises";
+import { existsSync } from "node:fs";
 let handled = false;
 process.stdin.on("data", async (chunk) => {
   if (handled || !String(chunk).includes("\\n")) return;
@@ -697,18 +705,20 @@ process.stdin.on("data", async (chunk) => {
   // ne and ys are deliberately standalone provider chunks inside two
   // logical lines. They must join the buffered current line, never become
   // independent latest entries in the progress HUD.
-  for (const delta of ["Audit summary: checked\\nNext li", "ne", ": anal", "ys", "is", "\\n<disapproved/>"]) {
-    out({ type: "message_update", assistantMessageEvent: { type: "text_delta", delta } });
-    // Keep the snapshots observable even when the full release gate is
-    // sharing a heavily loaded machine. The parent polls a single atomic
-    // progress file, so a tight synthetic stream can legitimately overwrite
-    // an intermediate snapshot before it is observed; this delay preserves
-    // the per-fragment telemetry contract without weakening the assertion.
-    await sleep(500);
+  const deltas = ["Audit summary: checked\\nNext li", "ne", ": anal", "ys", "is", "\\n<disapproved/>"];
+  const ackDir = ${JSON.stringify(ackDir)};
+  const expected = ${JSON.stringify(expectedBytes)};
+  for (let i = 0; i < deltas.length; i++) {
+    out({ type: "message_update", assistantMessageEvent: { type: "text_delta", delta: deltas[i] } });
+    // Handshake: the parent's onProgress writes ackDir/<bytes> when it
+    // observes this fragment's count. Bounded so a real telemetry stall
+    // fails the test instead of hanging it.
+    const deadline = Date.now() + 20_000;
+    while (!existsSync(ackDir + "/" + expected[i]) && Date.now() < deadline) await sleep(10);
   }
   out({ type: "agent_settled" });
 });
-`;
+`; 
   await writeFile(fakePi, `#!/usr/bin/env node\n${fakePiSource}`);
   await chmod(fakePi, 0o700);
   try {
@@ -717,13 +727,20 @@ process.stdin.on("data", async (chunk) => {
       goal,
       model: "test/provider-model",
       thinkingLevel: "high",
-      onProgress: (progress) => reports.push(progress),
+      onProgress: (progress) => {
+        reports.push(progress);
+        // Fragment handshake: acknowledge each observed byte count so the
+        // producer cannot overwrite a snapshot before it is seen.
+        if (typeof progress.reportBytes === "number" && progress.reportBytes > 0) {
+          writeFile(path.join(ackDir, String(progress.reportBytes)), "").catch(() => {});
+        }
+      },
       runtime: {
         workerPath: path.resolve(process.cwd(), "scripts/goal-auditor-worker.mjs"),
         env: { GLLA_PI_BINARY: fakePi },
         attemptId: () => "attempt-fragment-telemetry",
         pollIntervalMs: 5,
-        wallTimeoutMs: 10_000,
+        wallTimeoutMs: 30_000,
       },
     });
     assert.equal(result.disapproved, true);
@@ -747,7 +764,10 @@ process.stdin.on("data", async (chunk) => {
     const byteCounts = reports
       .map((progress) => progress.reportBytes)
       .filter((n): n is number => typeof n === "number" && n > 0);
-    assert.ok(byteCounts.length >= 6, `each text_delta produced an observed byte count: ${byteCounts.join(", ")}`);
+    assert.ok(byteCounts.length >= expectedBytes.length, `each text_delta produced an observed byte count: ${byteCounts.join(", ")}`);
+    for (const n of expectedBytes) {
+      assert.ok(byteCounts.includes(n), `parent observed fragment count ${n}: ${byteCounts.join(", ")}`);
+    }
     for (let i = 1; i < byteCounts.length; i++) {
       assert.ok(byteCounts[i]! >= byteCounts[i - 1]!, `reportBytes monotonic: ${byteCounts.join(", ")}`);
     }

@@ -44,7 +44,9 @@ test("main-model recovery has no quota-derived policy branch", () => {
 
 test("the auditor durable plan is generic and keeps safe diagnostic copy", () => {
   assert.doesNotMatch(SRC, /isQuotaError|parseQuotaError|quota\.signal/);
-  assert.match(SRC, /auditor retry: \$\{failureCopy\.display\}/);
+  // The retry-wait pause keeps the exhausted-chain diagnostic ahead of the
+  // failure display (auditor 22:39: parked state names the chain).
+  assert.match(SRC, /auditor retry: \$\{exhaustedNotice\}\$\{failureCopy\.display\}/);
   assert.match(SRC, /uniform schedule/);
   assert.match(SRC, /auditor_retry_capped/);
   assert.doesNotMatch(SRC, /quota_retry_capped|Auditor still quota-limited|Quota auto-retry in/);
