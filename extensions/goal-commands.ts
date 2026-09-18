@@ -1714,15 +1714,19 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
 }
 
 /** Append one objective to the list; activate immediately when idle. */
+/** v0.38.63 (audit-stuck batch, field 124536): parked-coalesce early-out
+ * for the direct funnel — true when the add merged into waiting work. */
+function coalesceParkedDuplicate(ctx: ExtensionContext, raw: string): boolean {
+  if (state.goal?.status !== "paused") return false;
+  if (splitParkedQueueDuplicates([raw], listQueue().map((item) => item.objective)).coalesced.length === 0) return false;
+  appendLedger(ctx.cwd, "list_parked_duplicate_coalesced", { source: "direct", count: 1, objective: raw.slice(0, 200), queueDepth: listQueue().length });
+  ctx.ui.notify(`Already waiting behind the paused head — coalesced, queue depth holds at ${listQueue().length}.`, "info");
+  return true;
+}
+
 function addSingleItem(ctx: ExtensionContext, raw: string): void {
   hydrateListQueueFromDisk(ctx);
-  // v0.38.63 (audit-stuck batch, field 124536): same parked coalesce as
-  // the batch funnel — the direct path must not pile up either.
-  if (state.goal?.status === "paused" && splitParkedQueueDuplicates([raw], listQueue().map((item) => item.objective)).coalesced.length > 0) {
-    appendLedger(ctx.cwd, "list_parked_duplicate_coalesced", { source: "direct", count: 1, objective: raw.slice(0, 200), queueDepth: listQueue().length });
-    ctx.ui.notify(`Already waiting behind the paused head — coalesced, queue depth holds at ${listQueue().length}.`, "info");
-    return;
-  }
+  if (coalesceParkedDuplicate(ctx, raw)) return;
   const extracted = parseListItemDeclaration(raw);
   const item = assignQueueOrder([{
     id: newGoalId(),
