@@ -35,6 +35,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 
 /** One extension the user could allow-list for the auditor. */
 export interface DiscoveredPiExtension {
@@ -181,6 +182,79 @@ export function resolveAuditorAllowedExtensions(
     if (unique.length !== 1 || seen.has(unique[0]!)) continue;
     seen.add(unique[0]!);
     out.push(unique[0]!);
+  }
+  return out;
+}
+
+/** v0.38.65 (field 151158): repo root of THIS extension — the session
+ * mirror must never feed GLLA back into its own detached worker (an
+ * auditor loading the goal toolkit could re-dispatch goals). Exported
+ * for tests; the mirror filter is the real consumer. */
+export function gllaRepoRoot(): string {
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+}
+
+/** v0.38.65: true when a mirror candidate is GLLA itself — by package
+ * name (no filesystem touch; covers npm: specs and relative paths on
+ * machines where the install lives under a different path) or by
+ * resolved path inside this repo (covers relative-path specs pointing
+ * here under an unfamiliar spelling). */
+export function isSelfMirrorSpec(raw: string, opts: { home: string; cwd?: string }): boolean {
+  const trimmed = raw.trim();
+  if (!trimmed) return false;
+  if (/pi-goal-list-loop-audit/i.test(labelForSpec(trimmed))) return true;
+  const root = gllaRepoRoot();
+  const bases = [path.join(opts.home, ".pi", "agent"), ...(opts.cwd ? [path.join(opts.cwd, ".pi")] : [])];
+  for (const base of bases) {
+    const resolved = resolveAuditorExtensionSpec(trimmed, { home: opts.home, cwd: opts.cwd, base });
+    if (resolved && (resolved === root || resolved.startsWith(root + path.sep))) return true;
+  }
+  return false;
+}
+
+/** v0.38.65 (field 151158): raw session package specs to mirror into the
+ * detached auditor — user settings packages[]/extensions[] first, then
+ * project settings. Raw strings, not resolved paths: the process layer
+ * resolves them fail-closed at dispatch, so an entry that vanishes
+ * between mirror and spawn simply drops out. GLLA itself is excluded.
+ * Read-only and best-effort like the rest of discovery: unreadable
+ * settings files contribute nothing. */
+export function sessionMirrorExtensionSpecs(home: string, cwd?: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const push = (raw: string): void => {
+    const spec = raw.trim();
+    const key = spec.toLowerCase();
+    if (!spec || seen.has(key)) return;
+    if (isSelfMirrorSpec(spec, { home, cwd })) return;
+    seen.add(key);
+    out.push(spec);
+  };
+  for (const raw of readJsonArray(path.join(home, ".pi", "agent", "settings.json"))) push(raw);
+  if (cwd) {
+    for (const raw of readJsonArray(path.join(cwd, ".pi", "settings.json"))) push(raw);
+  }
+  return out;
+}
+
+/** v0.38.65: union the curated allowlist with the session mirror — user
+ * entries first (first spelling wins, case-insensitive), then mirrored
+ * session specs. Mirror off restores the pre-mirror behavior exactly:
+ * the curated allowlist alone, possibly empty (fully isolated). Bounded
+ * like the allowlist itself. */
+export function mergeAuditorAllowedExtensions(
+  user: string[] | undefined,
+  mirror: string[],
+  mirrorEnabled: boolean,
+): string[] {
+  const base = normalizeAuditorAllowedExtensions(user);
+  if (!mirrorEnabled) return base;
+  const seen = new Set(base.map((entry) => entry.toLowerCase()));
+  const out = [...base];
+  for (const entry of normalizeAuditorAllowedExtensions(mirror)) {
+    if (seen.has(entry.toLowerCase())) continue;
+    seen.add(entry.toLowerCase());
+    out.push(entry);
   }
   return out;
 }
