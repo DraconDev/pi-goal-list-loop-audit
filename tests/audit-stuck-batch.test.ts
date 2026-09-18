@@ -29,6 +29,7 @@ import {
   type GoalAuditorResult,
 } from "../extensions/goal-loop-auditor-process.ts";
 import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd, type MockCtx } from "./harness/mock-pi.js";
+import { clearMainModelRecoveryTimer, cancelHourlyProbe } from "../extensions/goal-recovery.js";
 
 function result(overrides: Partial<GoalAuditorResult> = {}): GoalAuditorResult {
   return {
@@ -130,6 +131,15 @@ test("124544: resume_goal probes pending main-model recovery inline, no user bou
     );
   } finally {
     await pi.fire("session_shutdown", { reason: "quit" }, ctx);
+    // The re-fired probe is detached by design (mirrors cmdResume) and
+    // parks an hourly ticker on settlement — drain + clear both so no
+    // timer fires into later test files sharing this process.
+    await tick(150);
+    clearMainModelRecoveryTimer();
+    cancelHourlyProbe();
+    await tick(50);
+    clearMainModelRecoveryTimer();
+    cancelHourlyProbe();
   }
 });
 
@@ -221,7 +231,7 @@ test("splitParkedQueueDuplicates coalesces queued + batch-internal duplicates", 
   );
 });
 
-test.skip("124536: re-adding a queued objective while parked coalesces, no pile-up", async () => {
+test("124536: re-adding a queued objective while parked coalesces, no pile-up", async () => {
   const cwd = tmpCwd();
   seedState(cwd, {
     goal: identicalParkedHead(),
@@ -246,7 +256,7 @@ test.skip("124536: re-adding a queued objective while parked coalesces, no pile-
   }
 });
 
-test.skip("124536: hourly auditor backstop stands down on an identical-parked head", async () => {
+test("124536: hourly auditor backstop stands down on an identical-parked head", async () => {
   const cwd = tmpCwd();
   seedState(cwd, { goal: identicalParkedHead() } as unknown as Parameters<typeof seedState>[1]);
   const { pi, ctx } = await bootToolPi(cwd);
@@ -260,6 +270,8 @@ test.skip("124536: hourly auditor backstop stands down on an identical-parked he
     assert.equal(readState(cwd).goal?.status, "paused");
   } finally {
     await pi.fire("session_shutdown", { reason: "quit" }, ctx);
+    clearMainModelRecoveryTimer();
+    cancelHourlyProbe();
   }
 });
 
