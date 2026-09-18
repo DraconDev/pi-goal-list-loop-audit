@@ -205,6 +205,22 @@ function identicalParkedHead(): Record<string, unknown> {
   });
 }
 
+test("splitParkedQueueDuplicates coalesces queued + batch-internal duplicates", async () => {
+  const { splitParkedQueueDuplicates } = await import("../extensions/goal-commands.js");
+  assert.deepEqual(splitParkedQueueDuplicates([], ["x"]), { fresh: [], coalesced: [] });
+  const split = splitParkedQueueDuplicates(
+    ["Refactor the widget harness — Done when: tests pass", "refactor the WIDGET harness — Done when: tests pass", "New thing — Done when: merged"],
+    ["Refactor the widget harness"],
+  );
+  assert.deepEqual(split.coalesced.length, 2, "queued + batch-internal duplicates both coalesce");
+  assert.deepEqual(split.fresh, ["New thing — Done when: merged"]);
+  assert.deepEqual(
+    splitParkedQueueDuplicates(["New thing — Done when: merged"], ["Other"]).fresh,
+    ["New thing — Done when: merged"],
+    "distinct work always queues",
+  );
+});
+
 test("124536: re-adding a queued objective while parked coalesces, no pile-up", async () => {
   const cwd = tmpCwd();
   seedState(cwd, {
@@ -214,7 +230,7 @@ test("124536: re-adding a queued objective while parked coalesces, no pile-up", 
   const { pi, ctx } = await bootToolPi(cwd);
   try {
     assert.equal(readState(cwd).list?.length, 1, "seed holds one queued item");
-    await pi.command("list", "add Refactor the widget harness", ctx);
+    await pi.command("list", "add Refactor the widget harness — Done when: tests pass", ctx);
     await tick(120);
     assert.equal(readState(cwd).list?.length, 1, "the duplicate coalesces instead of piling");
     assert.ok(
@@ -222,6 +238,9 @@ test("124536: re-adding a queued objective while parked coalesces, no pile-up", 
       "the coalesce is ledgered",
     );
     assert.equal(readState(cwd).goal?.status, "paused", "the parked head is untouched");
+    await pi.command("list", "add Ship the release notes — Done when: published", ctx);
+    await tick(120);
+    assert.equal(readState(cwd).list?.length, 2, "distinct work still queues behind the parked head");
   } finally {
     await pi.fire("session_shutdown", { reason: "quit" }, ctx);
   }
