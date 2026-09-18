@@ -85,6 +85,11 @@ this is provider related but we still need to keep relentlessly hammering
 we really should not be stopping mid objective unles we must
 
 ##
+paused suspicious goal cant close
+/home/dracon/Pictures/Screenshots/Screenshot_20260918_032245.png 
+
+
+##
 
 false manual action
 /home/dracon/Pictures/Screenshots/Screenshot_20260918_021655.png 
