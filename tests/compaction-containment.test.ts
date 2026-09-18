@@ -65,6 +65,10 @@ async function activeGoalSession(): Promise<{ cwd: string; ctx: MockCtx }> {
   const ctx = await freshSession(cwd);
   await pi.runTool("list_add", { items: ["compaction wedge item — done when silence is not a failure"] }, ctx);
   assert.equal((readState(cwd).goal as { status?: string } | null)?.status, "active");
+  // Drain the creation dispatch (its send + pending record) so send deltas
+  // below measure only the compaction lifecycle, not goal-creation fallout.
+  await tick(300);
+  resetContinuationDispatchState(cwd);
   return { cwd, ctx };
 }
 
@@ -167,7 +171,7 @@ test("scheduleContinuation defers while in flight and the settle still sends onc
   await pi.fire("session_before_compact", {}, ctx);
 
   const sentBefore = pi.sent.length;
-  scheduleContinuation(ctx);
+  scheduleContinuation(ctx as never);
   await tick(300);
   assert.equal(pi.sent.length - sentBefore, 0, "no dispatch into a compacting host");
   assert.ok(ledgerTypes(cwd).includes("continuation_dispatch_deferred_compaction"), "deferral is ledgered");
