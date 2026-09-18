@@ -12,7 +12,7 @@
 
 import { truncateToWidth as tuiTruncateToWidth, visibleWidth as tuiVisibleWidth, sliceByColumn as tuiSliceByColumn } from "@earendil-works/pi-tui";
 
-import type { DurableDeferRecommendationInput, Goal, MainModelRecovery, State } from "./goal-loop-core.js";
+import type { DurableDeferRecommendationInput, Goal, MainModelRecovery, PendingCompletion, State } from "./goal-loop-core.js";
 import { auditVerdictLabel, bucketSilentMs, buildDurableDeferRecommendation, compactDisplayText, fmtDuration, formatMainModelRecoveryStatus, headLifesign, isMonitorGoal, isPersistenceDegraded, lastPersistenceFailure, sanitizeDisplayText, sanitizeProviderAuditReport, sanitizeProviderDisplayText, stripThinkBlocks, type LifesignRow } from "./goal-loop-core.js";
 
 export { isMonitorGoal };
@@ -1635,6 +1635,166 @@ function heldLoopLines(l: LoopState, now: number, theme?: DisplayTheme, width?: 
   ];
 }
 
+/** Phase colour for the auditing card's lead row. Blocked/quiet are
+ * warnings; a verdict that landed or live worker evidence is success;
+ * queued/running-without-evidence stay neutral accent — a hung provider
+ * must never wear success (v0.34.39). Colour always pairs with the phase
+ * words (paint wraps the label, never replaces it), so a themeless
+ * renderer loses colour but never meaning. */
+function auditorPhaseTone(phase: AuditorDisplayPhase, live: boolean): DisplayColor {
+  if (phase === "blocked" || phase === "quiet") return "warning";
+  if (phase === "awaiting-verdict" || (phase === "running" && live)) return "success";
+  return "accent";
+}
+
+/** The model actually verifying the claim: live progress first, then the
+ * claim's candidate cursor (which survives reload), never an invented
+ * default. */
+function auditorCardModelRef(audit: AuditDisplayProgress | null | undefined, claim: PendingCompletion | undefined): string | undefined {
+  const ref = audit?.model
+    ?? claim?.auditorRetryCandidateRef
+    ?? claim?.auditorCandidateRef
+    ?? claim?.auditorCandidateRefs?.[0];
+  return ref ? truncate(ref, 48) : undefined;
+}
+
+/** Next action per audit phase, sharing the closer vocabulary so the lead
+ * row and the closing line can never name different actions. */
+function auditorNextAction(phase: AuditorDisplayPhase): string {
+  if (phase === "quiet") return "/goal cancel discards the claim";
+  if (phase === "blocked") return "/goal resume retries the claim";
+  if (phase === "awaiting-verdict") return "verdict applying";
+  if (phase === "queued") return "worker starting";
+  return "verdict applies automatically";
+}
+
+/** Split the auditing card into activity-first rows: `lead` (phase,
+ * last-progress age, current tool + time budget, effective model +
+ * thinking, next action) renders immediately after the head; `tail`
+ * (remaining observations + the phase closer) renders after the
+ * historical rows. One shared phase interpretation feeds both, and the
+ * same interpretation feeds the one-line footer — the three surfaces
+ * agree on phase words by construction. */
+function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefined, now: number, theme?: DisplayTheme, extras?: WidgetExtras): { lead: string[]; tail: string[] } {
+  if (auditRecoveryPending(g)) {
+    return {
+      lead: [
+        `├─ auditor: ${paint(theme, "warning", "recovery pending — previous audit was interrupted")}`,
+        `└─ ${paint(theme, "dim", "stored completion claim is safe; a fresh session will retry it")}`,
+      ],
+      tail: [],
+    };
+  }
+  const claim = g.pendingCompletion;
+  const phase = auditorDisplayPhase(g, audit, now);
+  const phaseLive = auditorHasLiveEvidence(audit, phase, now);
+  // v0.34.86: objective-vocabulary phase label when progress signals are
+  // on ("reading source…" / "writing report…"); the coarse label otherwise.
+  const signals = extras?.auditorProgressSignals !== false;
+  const phaseLabel = signals && phase === "running"
+    ? (auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, phaseLive))
+    : auditorPhaseForDisplay(audit, phase, phaseLive);
+  const detail = audit?.label && audit.label !== "queued" && audit.label !== "running"
+    ? ` · ${truncate(audit.label, 30)}`
+    : "";
+  // Lead row 1: phase + detached-worker identity + liveness age. The
+  // `auditor: <phase> · detached worker` prefix is the worker-row anchor
+  // (worker rows insert before it) and a long-standing test pin — the
+  // activity facts ride AFTER it, never before.
+  const activity = auditorActivityAge(audit, now);
+  const ageSeg = activity !== undefined ? `last progress ${fmtElapsed(activity)} ago` : "last progress none yet";
+  const lead = [`├─ auditor: ${paint(theme, auditorPhaseTone(phase, phaseLive), phaseLabel)}${detail} · detached worker · ${ageSeg}`];
+  // Lead row 2: current tool + time budget, effective model + thinking,
+  // next action — in that order. Absent facts are omitted, never
+  // invented; the next action always renders so the glance ends with
+  // what happens next. The tool observation lives ONLY here (it moved
+  // out of the tail) so the card keeps its one-current-observation rule.
+  let toolSeg: string | undefined;
+  if (phase === "running" && phaseLive && audit?.currentTool) {
+    const target = auditorToolTarget(audit.currentToolArgs);
+    const duration = audit.currentToolStartedAt !== undefined && Number.isFinite(audit.currentToolStartedAt)
+      ? ` · ${fmtElapsed(now - audit.currentToolStartedAt)}`
+      : "";
+    // v0.37.0: show the budget next to the elapsed time so a long tool run
+    // reads as "still inside its window", not "stuck".
+    const budget =
+      typeof audit.toolTimeoutMs === "number" && audit.toolTimeoutMs > 0
+        ? ` / ${fmtElapsed(audit.toolTimeoutMs)} budget`
+        : "";
+    toolSeg = `tool: ${truncate(audit.currentTool, 30)}${target ? ` → ${target}` : ""}${duration}${budget}`;
+  } else {
+    const lastTool = lastAuditorTool(audit) ?? (audit?.currentTool ? truncate(audit.currentTool, 30) : undefined);
+    if (lastTool) toolSeg = `last tool: ${lastTool}`;
+  }
+  const modelSeg = auditorCardModelRef(audit, claim);
+  const thinkingSeg = claim?.auditorThinkingLevel ? `thinking ${truncate(claim.auditorThinkingLevel, 20)}` : undefined;
+  lead.push(`│ ${[toolSeg, modelSeg, thinkingSeg, `next: ${auditorNextAction(phase)}`].filter(Boolean).join(" · ")}`);
+  // Tail: the remaining observations (session, quiet stretch, report
+  // tail, evidence, unmatched events) flow straight into the closing
+  // line (v0.38.55 — no spacer row). Closers are byte-identical to the
+  // pre-activity-first card.
+  const observations: string[] = [];
+  // v0.38.3: live inspection — the auditor's pi persists a resumable
+  // session pinned inside the job dir. Point the user at it: tail -f it
+  // read-only while the audit runs; attach interactively only after.
+  if (audit?.sessionPath) {
+    observations.push(`session: ${audit.sessionPath} — tail -f it live`);
+  }
+  const stretch = extras?.auditorQuietStretch;
+  if (stretch && Number.isFinite(stretch.ms) && stretch.ms >= AUDITOR_QUIET_MS
+      && now - stretch.endedAt <= QUIET_STRETCH_VISIBLE_MS) {
+    observations.push(`silent ${fmtElapsed(stretch.ms)} then resumed`);
+  }
+  const latest = latestAuditorOutput(audit);
+  // v0.34.66: final-only default (note.md #4 — "auditor words one by
+  // one", Screenshot_20260804_211341/211506). With auditorSilent on
+  // (default) the live per-token tail is hidden while the worker
+  // streams; the text surfaces only at awaiting-verdict, when the
+  // report is FINAL. off restores the live tail.
+  const silent = extras?.auditorSilent !== false;
+  if (latest) {
+    if (!silent || phase === "awaiting-verdict") observations.push(`latest: ${latest}`);
+    // v0.34.86: silent-mode byte counter — progress evidence without prose.
+    // "report stream muted — 12.4 KB written" beats a dead timer.
+    else if (extras?.auditorProgressSignals !== false && typeof audit?.reportBytes === "number" && audit.reportBytes > 0)
+      observations.push(`report stream muted — ${fmtByteCount(audit.reportBytes)} written · final text at verdict`);
+    else observations.push("report stream muted — final text at verdict");
+  }
+  // A complete snapshot may have no current tool, so retain a compact,
+  // protocol-safe evidence summary beside the last tool/final report facts.
+  const evidence = auditorEvidenceSummary(audit, phase);
+  if (evidence) observations.push(`evidence: ${evidence}`);
+  const unmatchedStarts = audit?.unmatchedToolStarts ?? 0;
+  const unmatchedEnds = audit?.unmatchedToolEnds ?? 0;
+  if (unmatchedStarts + unmatchedEnds > 0) {
+    observations.push(`unmatched tool events: ${unmatchedStarts} start / ${unmatchedEnds} end — explicitly unpaired, never falsely matched`);
+  }
+  const tail: string[] = [];
+  observations.forEach((observation, i) => {
+    tail.push(`${i === 0 ? "├─" : "│ "} ${paint(theme, "dim", observation)}`);
+  });
+  const last = auditorLastActivity(audit, now);
+  if (phase === "quiet") {
+    const quietMs = activity ?? 0;
+    tail.push(`└─ ${paint(theme, "warning", `auditor quiet ${fmtElapsed(quietMs)}${last} — may be stuck; /goal cancel discards the claim`)}`);
+  } else if (phase === "blocked") {
+    tail.push(`└─ ${paint(theme, "warning", `auditor blocked${audit?.label ? ` — ${truncate(audit.label, 44)}` : ""}${last}`)}`);
+  } else if (phase === "awaiting-verdict") {
+    tail.push(`└─ ${paint(theme, "dim", `waiting for detached verdict${last}`)}`);
+  } else if (phase === "queued") {
+    tail.push(`└─ ${paint(theme, "dim", "detached worker queued — completion claim is durable")}`);
+  } else {
+    const detachedElapsed = auditorElapsedMs(audit, now);
+    if (detachedElapsed !== undefined && detachedElapsed > 0) {
+      const firstEvent = audit?.lastActivityAt === undefined ? " · waiting for first worker event" : "";
+      tail.push(`└─ ${paint(theme, "dim", `${fmtElapsed(detachedElapsed)} in detached worker${firstEvent}${last}`)}`);
+    } else {
+      tail.push(`└─ ${paint(theme, "dim", `detached worker, audit tools${last || " · waiting for first worker event"}`)}`);
+    }
+  }
+  return { lead, tail };
+}
+
 // Branch lines sit flush-left (pi-tasks convention): pi's widget renderer
 // adds its own one-space gutter, so any indent here doubles up.
 function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | undefined, now: number, theme?: DisplayTheme, width?: number, extras?: WidgetExtras): string[] {
@@ -1725,6 +1885,18 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
     : icon;
   const head = `${headIcon} ${truncateObjective(displayObjective(g.objective), objBudget)} ${paint(theme, "dim", "·")} ${segsText}`;
   const lines = [head];
+  // Activity-first card: on an auditing goal the auditor's live state
+  // (phase, last-progress age, tool/budget, model/thinking, next action)
+  // leads immediately after the head — before verdict tally, repair,
+  // recovery, provenance, and judgment history. The card and the one-line
+  // footer share auditorDisplayPhase/auditorPhaseForDisplay, so the two
+  // surfaces agree on phase words by construction.
+  let auditTail: string[] = [];
+  if (g.status === "auditing") {
+    const block = auditingCardBlock(g, audit, now, theme, extras);
+    lines.push(...block.lead);
+    auditTail = block.tail;
+  }
   // v0.38.8: durable verdict tally as a first-class card row — the widget
   // is the glance surface, and stored verdicts are the progress evidence
   // when no auditor is live. Silent when history is empty.
@@ -1798,111 +1970,14 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
   // bar owns LIVE/BUSY/QUEUED/IDLE and stream age. The card stays about the
   // goal and its durable recent action, avoiding the duplicated live badge
   // that made the above-editor panel look noisy.
+  // Activity is intentionally a single-surface HUD: the persistent status
+  // bar owns LIVE/BUSY/QUEUED/IDLE and stream age. The card stays about the
+  // goal and its durable recent action, avoiding the duplicated live badge
+  // that made the above-editor panel look noisy. The auditing tail (detail
+  // observations + closer) lands here, after the historical rows; the
+  // activity-first lead already rendered right after the head above.
   if (g.status === "auditing") {
-    if (auditRecoveryPending(g)) {
-      lines.push(`├─ auditor: ${paint(theme, "warning", "recovery pending — previous audit was interrupted")}`);
-      lines.push(`└─ ${paint(theme, "dim", "stored completion claim is safe; a fresh session will retry it")}`);
-      return lines;
-    }
-    const phase = auditorDisplayPhase(g, audit, now);
-    const phaseLive = auditorHasLiveEvidence(audit, phase, now);
-    // v0.34.86: objective-vocabulary phase label when progress signals are
-    // on ("reading source…" / "writing report…"); the coarse label otherwise.
-    const signals = extras?.auditorProgressSignals !== false;
-    const phaseLabel = signals && phase === "running"
-      ? (auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, phaseLive))
-      : auditorPhaseForDisplay(audit, phase, phaseLive);
-    const detail = audit?.label && audit.label !== "queued" && audit.label !== "running"
-      ? ` · ${truncate(audit.label, 30)}`
-      : "";
-    // The status bar is the single activity HUD. Keep the widget's audit line
-    // factual and compact; the ⟡ head icon plus this phase identify the
-    // detached verifier without repeating the animated status badge.
-    lines.push(`├─ auditor: ${phaseLabel}${detail} · detached worker`);
-
-    // Show observed worker facts, not a made-up percentage or semantic claim.
-    // This is the difference between “the timer moved” and “I can see what
-    // the detached worker last did.”
-    const observations: string[] = [];
-    // v0.38.3: live inspection — the auditor's pi persists a resumable
-    // session pinned inside the job dir. Point the user at it: tail -f it
-    // read-only while the audit runs; attach interactively only after.
-    if (audit?.sessionPath) {
-      observations.push(`session: ${audit.sessionPath} — tail -f it live`);
-    }
-    const stretch = extras?.auditorQuietStretch;
-    if (stretch && Number.isFinite(stretch.ms) && stretch.ms >= AUDITOR_QUIET_MS
-        && now - stretch.endedAt <= QUIET_STRETCH_VISIBLE_MS) {
-      observations.push(`silent ${fmtElapsed(stretch.ms)} then resumed`);
-    }
-    // A stale progress snapshot must not keep presenting its old tool as
-    // currently executing. Only fresh worker telemetry earns the present
-    // tense; otherwise show it as the last observed tool and omit duration.
-    if (phase === "running" && phaseLive && audit?.currentTool) {
-      const target = auditorToolTarget(audit.currentToolArgs);
-      const duration = audit.currentToolStartedAt !== undefined && Number.isFinite(audit.currentToolStartedAt)
-        ? ` · ${fmtElapsed(now - audit.currentToolStartedAt)}`
-        : "";
-      // v0.37.0: show the budget next to the elapsed time so a long tool run
-      // reads as "still inside its window", not "stuck".
-      const budget =
-        typeof audit.toolTimeoutMs === "number" && audit.toolTimeoutMs > 0
-          ? ` / ${fmtElapsed(audit.toolTimeoutMs)} budget`
-          : "";
-      observations.push(`tool: ${truncate(audit.currentTool, 30)}${target ? ` → ${target}` : ""}${duration}${budget}`);
-    } else {
-      const lastTool = lastAuditorTool(audit) ?? (audit?.currentTool ? truncate(audit.currentTool, 30) : undefined);
-      if (lastTool) observations.push(`last tool: ${lastTool}`);
-    }
-    const latest = latestAuditorOutput(audit);
-    // v0.34.66: final-only default (note.md #4 — "auditor words one by
-    // one", Screenshot_20260804_211341/211506). With auditorSilent on
-    // (default) the live per-token tail is hidden while the worker
-    // streams; the text surfaces only at awaiting-verdict, when the
-    // report is FINAL. off restores the live tail.
-    const silent = extras?.auditorSilent !== false;
-    if (latest) {
-      if (!silent || phase === "awaiting-verdict") observations.push(`latest: ${latest}`);
-      // v0.34.86: silent-mode byte counter — progress evidence without prose.
-      // "report stream muted — 12.4 KB written" beats a dead timer.
-      else if (extras?.auditorProgressSignals !== false && typeof audit?.reportBytes === "number" && audit.reportBytes > 0)
-        observations.push(`report stream muted — ${fmtByteCount(audit.reportBytes)} written · final text at verdict`);
-      else observations.push("report stream muted — final text at verdict");
-    }
-    // A complete snapshot may have no current tool, so retain a compact,
-    // protocol-safe evidence summary beside the last tool/final report facts.
-    const evidence = auditorEvidenceSummary(audit, phase);
-    if (evidence) observations.push(`evidence: ${evidence}`);
-    const unmatchedStarts = audit?.unmatchedToolStarts ?? 0;
-    const unmatchedEnds = audit?.unmatchedToolEnds ?? 0;
-    if (unmatchedStarts + unmatchedEnds > 0) {
-      observations.push(`unmatched tool events: ${unmatchedStarts} start / ${unmatchedEnds} end — explicitly unpaired, never falsely matched`);
-    }
-    observations.forEach((observation, i) => {
-      lines.push(`${i === 0 ? "├─" : "│ "} ${paint(theme, "dim", observation)}`);
-    });
-    // v0.38.55: the spacer row is gone (stray blank line, Screenshot
-    // 20260914) — observations flow straight into the closing line.
-    const activity = auditorActivityAge(audit, now);
-    const last = auditorLastActivity(audit, now);
-    if (phase === "quiet") {
-      const quietMs = activity ?? 0;
-      lines.push(`└─ ${paint(theme, "warning", `auditor quiet ${fmtElapsed(quietMs)}${last} — may be stuck; /goal cancel discards the claim`)}`);
-    } else if (phase === "blocked") {
-      lines.push(`└─ ${paint(theme, "warning", `auditor blocked${audit?.label ? ` — ${truncate(audit.label, 44)}` : ""}${last}`)}`);
-    } else if (phase === "awaiting-verdict") {
-      lines.push(`└─ ${paint(theme, "dim", `waiting for detached verdict${last}`)}`);
-    } else if (phase === "queued") {
-      lines.push(`└─ ${paint(theme, "dim", "detached worker queued — completion claim is durable")}`);
-    } else {
-      const detachedElapsed = auditorElapsedMs(audit, now);
-      if (detachedElapsed !== undefined && detachedElapsed > 0) {
-        const firstEvent = audit?.lastActivityAt === undefined ? " · waiting for first worker event" : "";
-        lines.push(`└─ ${paint(theme, "dim", `${fmtElapsed(detachedElapsed)} in detached worker${firstEvent}${last}`)}`);
-      } else {
-        lines.push(`└─ ${paint(theme, "dim", `detached worker, audit tools${last || " · waiting for first worker event"}`)}`);
-      }
-    }
+    lines.push(...auditTail);
     return lines;
   }
   if (g.status === "paused" && g.pauseReason) {
