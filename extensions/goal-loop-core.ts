@@ -528,6 +528,12 @@ gateRows?: GateRow[];
    * from live refs only; cleared only by a fresh manual/agent cycle, which
    * re-resolves from config. Displayed via exhaustedChain, never selected. */
   auditorEvictedRefs?: string[];
+  /** v0.38.63 (audit-stuck batch): stable fingerprint of the last infra
+   * failure that parked the claim, plus the consecutive-identical streak.
+   * At AUDITOR_IDENTICAL_FAILURE_PARK_THRESHOLD the claim parks blocked
+   * with the dead chain named and no further retry scheduled. */
+  auditorLastFailureFingerprint?: string;
+  auditorConsecutiveIdenticalFailures?: number;
   /** 0 = first call in flight, 1 = first failure/retry in flight, 2 = a
    * terminal second failure. State loading clamps this to [0, 2]. */
   auditorFailureCount?: number;
@@ -2343,6 +2349,8 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     auditorRetryAttemptStartedAt: _auditorRetryAttemptStartedAt,
     auditorAttemptedRefs: _auditorAttemptedRefs,
     auditorEvictedRefs: _auditorEvictedRefs,
+    auditorLastFailureFingerprint: _auditorLastFailureFingerprint,
+    auditorConsecutiveIdenticalFailures: _auditorConsecutiveIdenticalFailures,
     auditorFailureCount: _auditorFailureCount,
     auditorFailureClass: _auditorFailureClass,
     auditorFallbackExhausted: _auditorFallbackExhausted,
@@ -2363,6 +2371,15 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
   const auditorCandidateRefs = boundedRefs(_auditorCandidateRefs);
   const auditorAttemptedRefs = boundedRefs(_auditorAttemptedRefs);
   const auditorEvictedRefs = boundedRefs(_auditorEvictedRefs);
+  const auditorLastFailureFingerprint = typeof _auditorLastFailureFingerprint === "string" && _auditorLastFailureFingerprint.trim()
+    ? _auditorLastFailureFingerprint.trim().slice(0, 200)
+    : undefined;
+  const auditorConsecutiveIdenticalFailures = typeof _auditorConsecutiveIdenticalFailures === "number"
+    && Number.isInteger(_auditorConsecutiveIdenticalFailures)
+    && _auditorConsecutiveIdenticalFailures >= 0
+    && _auditorConsecutiveIdenticalFailures <= 100
+    ? _auditorConsecutiveIdenticalFailures
+    : undefined;
   const auditorCandidateRef = typeof _auditorCandidateRef === "string" && _auditorCandidateRef.trim()
     ? _auditorCandidateRef.trim().slice(0, 200)
     : undefined;
@@ -2421,6 +2438,8 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     ...(auditorRetryAttemptStartedAt ? { auditorRetryAttemptStartedAt } : {}),
     ...(auditorAttemptedRefs !== undefined ? { auditorAttemptedRefs } : {}),
     ...(auditorEvictedRefs !== undefined ? { auditorEvictedRefs } : {}),
+    ...(auditorLastFailureFingerprint ? { auditorLastFailureFingerprint } : {}),
+    ...(auditorConsecutiveIdenticalFailures !== undefined ? { auditorConsecutiveIdenticalFailures } : {}),
     ...(auditorFailureCount !== undefined ? { auditorFailureCount } : {}),
     ...(auditorFailureClass ? { auditorFailureClass } : {}),
     ...(auditorFallbackExhausted ? { auditorFallbackExhausted: true } : {}),
@@ -3964,6 +3983,32 @@ export function filterEvictedAuditorRefs(refs: string[], evicted?: string[]): st
   if (!evicted || evicted.length === 0) return refs;
   const dead = new Set(evicted.map((ref) => ref.toLowerCase()));
   return refs.filter((ref) => !dead.has(ref.toLowerCase()));
+}
+
+/** v0.38.63 (audit-stuck batch): N consecutive identical infra failures
+ * park the claim blocked-with-action instead of re-arming the ladder
+ * forever. Matches the repo's 3-strike history (retry-bounds). */
+export const AUDITOR_IDENTICAL_FAILURE_PARK_THRESHOLD = 3;
+
+/** v0.38.63: fold one infra failure fingerprint into the claim's identical
+ * streak. Pure — both retry-ladder park sites call this so the count is
+ * identical whichever path parks. A different fingerprint restarts at 1. */
+export function trackAuditorIdenticalFailure(
+  prev: Pick<PendingCompletion, "auditorLastFailureFingerprint" | "auditorConsecutiveIdenticalFailures">,
+  fingerprint: string,
+): {
+  auditorLastFailureFingerprint: string;
+  auditorConsecutiveIdenticalFailures: number;
+  identicalParkDue: boolean;
+} {
+  const same = typeof prev.auditorLastFailureFingerprint === "string"
+    && prev.auditorLastFailureFingerprint === fingerprint;
+  const count = same ? (prev.auditorConsecutiveIdenticalFailures ?? 1) + 1 : 1;
+  return {
+    auditorLastFailureFingerprint: fingerprint,
+    auditorConsecutiveIdenticalFailures: count,
+    identicalParkDue: count >= AUDITOR_IDENTICAL_FAILURE_PARK_THRESHOLD,
+  };
 }
 
 /** v0.38.63: append a dead ref to the eviction list when the error proves it
