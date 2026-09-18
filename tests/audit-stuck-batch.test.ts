@@ -78,6 +78,59 @@ test("124541: walker does not spend the same-ref retry on an unresolvable ref", 
   assert.equal(outcome.retriedOnce, false, "skipping the doomed retry is not a retry");
 });
 
+async function bootToolPi(cwd: string): Promise<{ pi: MockPi; ctx: MockCtx }> {
+  __testOnlyResetOwnerSession();
+  __testOnlyResetStaleFlag();
+  __testOnlyResetAuditorSurface();
+  const pi = new MockPi();
+  activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `audit-stuck-${Date.now()}-${Math.random()}` } });
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  await tick(120);
+  return { pi, ctx };
+}
+
+function ledgerTypes(cwd: string): string[] {
+  return fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8").split("\n").filter(Boolean)
+    .map((line) => (JSON.parse(line) as { type: string }).type);
+}
+
+// ---------------------------------------------------------------------------
+// 124544: resume/probe deadlock — resume_goal must run the pending recovery
+// probe inline, never bounce the turn to a user-typed /list resume.
+// ---------------------------------------------------------------------------
+
+test("124544: resume_goal probes pending main-model recovery inline, no user bounce", async () => {
+  const cwd = tmpCwd();
+  seedState(cwd, {
+    goal: seedGoal({ status: "paused", policy: "list", pauseKind: "wait", pauseReason: "auditor retry" }),
+    mainModelRecovery: {
+      primary: "test/primary",
+      active: "test/primary",
+      attempted: ["test/primary"],
+      attempts: 1,
+      reason: "provider recovery",
+      kind: "goal",
+      retryAt: Date.now() + 3600_000,
+      pendingModelSwitch: "test/primary",
+    },
+  } as unknown as Parameters<typeof seedState>[1]);
+  const { pi, ctx } = await bootToolPi(cwd);
+  try {
+    const result = await pi.runTool("resume_goal", { reason: "user said go" }, ctx) as { content: Array<{ text: string }> };
+    assert.doesNotMatch(result.content[0]!.text, /ask the user to run/, "never bounces the turn to a user-typed command");
+    assert.doesNotMatch(result.content[0]!.text, /\/list resume/, "no /list resume round-trip");
+    await tick(120);
+    assert.equal(readState(cwd).goal?.status, "active", "the resume completes in this turn");
+    assert.ok(
+      ledgerTypes(cwd).includes("main_model_probe_retriggered"),
+      "the pending recovery probe is re-fired inline with via agent-resume",
+    );
+  } finally {
+    await pi.fire("session_shutdown", { reason: "quit" }, ctx);
+  }
+});
+
 test("124541: re-seed filters evicted refs so the next episode starts live", () => {
   const configured = ["agnes/agnes-3.0-flash", "test/live", "test/other"];
   assert.deepEqual(

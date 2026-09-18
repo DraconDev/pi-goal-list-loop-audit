@@ -2384,13 +2384,32 @@ function registerAgentTools(pi: any): void {
         appendLedger(ctx.cwd, "load_hold_released", { via: "agent-resume" });
         ctx.ui.notify("Load hold released — automation is live again.", "info");
       }
+      // v0.38.63 (audit-stuck batch, field 124544): a pending main-model
+      // recovery no longer bounces the turn to a user-typed command — the
+      // tool runs the same recovery branches as cmdResume (/goal resume)
+      // inline, then falls through to the normal resume below. The probe is
+      // generation-fenced and in-flight guarded, so firing it here is the
+      // same call the user command makes. The stale probe runs first and is
+      // reused below (it notifies, so it must fire exactly once).
+      const staleResume = warnIfStaleAtEntry(ctx, "agent resume");
       const rec = state.mainModelRecovery;
-      if (rec && (rec.retryAt || rec.pendingModelSwitch || rec.primaryProbeAt || rec.primaryProbeInFlight)) {
-        return { content: [{ type: "text", text: `Main-model recovery is pending — ask the user to run ${activeGoalSurfaceCommand("resume")} so the recovery probe runs first.` }], details: {} };
+      if (!staleResume && rec && (rec.manualResumeRequired || rec.retryAt || rec.pendingModelSwitch || rec.primaryProbeAt || rec.primaryProbeInFlight)) {
+        if (manuallyResumeMainModelRecovery(ctx)) {
+          releaseAuditorSurface();
+          appendLedger(ctx.cwd, "main_model_manual_hold_released", { via: "agent-resume" });
+          ctx.ui.notify("Main-model recovery hold released — probing the provider now.", "info");
+        } else {
+          releaseAuditorSurface();
+          clearMainModelRecoveryTimer();
+          releaseContinuationDispatchStandDown();
+          ctx.ui.notify("Retrying the saved main-model recovery now — one provider probe, then the configured fallback models if needed.", "info");
+          void probeMainModelRecovery(ctx);
+          appendLedger(ctx.cwd, "main_model_probe_retriggered", { via: "agent-resume" });
+        }
       }
       // A resume inside a stale session is theater — refuse and name the
       // user command instead of flipping lifecycle state that cannot land.
-      if (warnIfStaleAtEntry(ctx, "agent resume")) {
+      if (staleResume) {
         return { content: [{ type: "text", text: `Resume refused in this stale session — ask the user to run ${activeGoalSurfaceCommand("resume")}.` }], details: {} };
       }
       // Mirror the /goal resume paused branch: refresh the token cap from
