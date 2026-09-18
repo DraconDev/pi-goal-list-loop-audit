@@ -98,6 +98,10 @@ false manual action
 keep getitng stuck, keep in mind that after drafting we should never get stuck, unless something critical comes up, we want objective completion 99%+ of the time
 /home/dracon/Pictures/Screenshots/Screenshot_20260918_110418.png 
 
+##
+too long wait
+/home/dracon/Pictures/Screenshots/Screenshot_20260918_110532.png 
+
 # Much later
 
 ##
