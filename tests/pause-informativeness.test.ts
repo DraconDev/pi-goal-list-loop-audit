@@ -78,7 +78,11 @@ test("pause_goal tool: structured kind/options/recommended/resumeAt persist to t
   assert.match(SRC, /pauseKind: p\.kind,/);
   assert.match(SRC, /pauseOptions: p\.kind === "decision" && p\.options && p\.options\.length > 0 \? p\.options : undefined,/);
   assert.match(SRC, /pauseRecommended: p\.kind === "decision" && p\.recommended && p\.recommended >= 1 \? Math\.floor\(p\.recommended\) : undefined,/);
-  assert.match(SRC, /pauseResumeAt: p\.kind === "wait" && p\.resumeAt \? p\.resumeAt : undefined,/);
+  // v0.38.63 (153404): agent-authored waits are clamped to the hourly
+  // horizon — the stored value is the clamped projection, not the raw ask.
+  assert.match(SRC, /pauseResumeAt: storedResumeAt,/);
+  assert.match(SRC, /MAX_AGENT_WAIT_MS = 60 \* 60 \* 1000/);
+  assert.match(SRC, /pause_wait_clamped/);
   // Resume clears the new fields alongside the old ones.
   assert.match(CMDS, /pauseKind: undefined, pauseOptions: undefined, pauseRecommended: undefined, pauseResumeAt: undefined/); // decomposition step 2: cmdResume moved
   // The extension's own pauses are classified at the source.
