@@ -5,7 +5,7 @@
 // forever. Field evidence: screenshots 124541 (dead-model spin),
 // 124544 (resume/probe deadlock), 124536 (queue pile-up).
 
-import { test } from "node:test";
+import { test, afterEach } from "node:test";
 import * as assert from "node:assert/strict";
 
 import * as fs from "node:fs";
@@ -92,6 +92,18 @@ async function bootToolPi(cwd: string): Promise<{ pi: MockPi; ctx: MockCtx }> {
   await tick(120);
   return { pi, ctx };
 }
+
+// Cross-file hygiene: boots leave owner-session/auditor-surface/timer module
+// state behind (same process runs every file). Reset AFTER each test like
+// resume-goal-tool.test.ts, or later files inherit a phantom rebind owner
+// and their restore-gate holds stop holding.
+afterEach(() => {
+  __testOnlyResetAuditorSurface();
+  __testOnlyResetStaleFlag();
+  __testOnlyResetOwnerSession();
+  clearMainModelRecoveryTimer();
+  cancelHourlyProbe();
+});
 
 function ledgerTypes(cwd: string): string[] {
   return fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8").split("\n").filter(Boolean)
