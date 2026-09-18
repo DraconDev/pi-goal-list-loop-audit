@@ -160,7 +160,7 @@ test("activity-first: awaiting-verdict card and footer agree on the phase words"
 test("activity-first: blocked card and footer agree on the blocked label", () => {
   const g = goalOf({ pendingCompletion: claimOf() });
   const audit = {
-    phase: "error" as const,
+    phase: "running" as const,
     label: "provider error: upstream timeout after 30s",
     elapsedMs: 90_000,
     lastActivityAt: NOW - 60_000,
