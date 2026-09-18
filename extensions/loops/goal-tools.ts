@@ -2395,9 +2395,10 @@ function registerAgentTools(pi: any): void {
       const rec = state.mainModelRecovery;
       if (!staleResume && rec && (rec.manualResumeRequired || rec.retryAt || rec.pendingModelSwitch || rec.primaryProbeAt || rec.primaryProbeInFlight)) {
         if (manuallyResumeMainModelRecovery(ctx)) {
+          // That call already clears the hold, re-arms the window, notifies,
+          // and fires the probe — ledger only the agent-resume provenance.
           releaseAuditorSurface();
           appendLedger(ctx.cwd, "main_model_manual_hold_released", { via: "agent-resume" });
-          ctx.ui.notify("Main-model recovery hold released — probing the provider now.", "info");
         } else {
           releaseAuditorSurface();
           clearMainModelRecoveryTimer();
