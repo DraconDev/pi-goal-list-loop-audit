@@ -86,7 +86,7 @@ import { readHandoffBriefExcerpt } from "./goal-compactor.js";
 import { loadSettings } from "./goal-settings.js";
 import { clearLoopTimer, isLoopActive } from "./goal-loop.js";
 import { attemptFreshSessionRecovery, mainModelRecoveryActive, recoverMainModelFromSendStorm } from "./goal-recovery.js";
-import { sendStormEscalateMs } from "./main-model-recovery.js";
+import { isCompactionInFlightSince, sendStormEscalateMs } from "./main-model-recovery.js";
 import {
   appendObjectiveRepairRecord,
   applyObjectiveRepair,
@@ -410,8 +410,15 @@ export function accountSendRearm(ctx: ExtensionContext, kind: "continuation" | "
     }
   }
   if (elapsed >= sendStormEscalateMs() && Date.now() - flags.lastActivityAt >= SEND_REARM_ESCALATE_SILENT_MS) {
-    if (kind === "continuation") { continuationRearmStreak = 0; continuationRearmSince = 0; } else { flags.loopRearmStreak = 0; flags.loopRearmSince = 0; }
-    escalateSendRearmStorm(ctx, kind);
+    // In-flight auto-compaction is legitimate busy time (field 083546) —
+    // its silence must not read as a stuck send queue. Suppress the
+    // escalation (and its recovery park) until the post-compact settle.
+    if (isCompactionInFlightSince(flags.compactionInFlightSince)) {
+      appendLedger(ctx.cwd, "send_rearm_escalated_suppressed", { reason: "compaction-in-flight", kind, streak, elapsedMinutes: Math.round(elapsed / 60000) });
+    } else {
+      if (kind === "continuation") { continuationRearmStreak = 0; continuationRearmSince = 0; } else { flags.loopRearmStreak = 0; flags.loopRearmSince = 0; }
+      escalateSendRearmStorm(ctx, kind);
+    }
   }
 }
 
@@ -1099,6 +1106,14 @@ export function scheduleContinuation(ctx: ExtensionContext, force = false, delay
   if (mainModelRecoveryActive()) return;
   if (flags.sessionHandoffPending || flags.initialSessionLoadPending || flags.extensionApiStale || flags.staleTerminalDone || flags.zombieStoodDown) return;
   if (pendingContinuationDispatch) return;
+  // In-flight auto-compaction: never dispatch into a compacting host
+  // (field 083546). force (explicit user intent) still bypasses — the
+  // user is alive and the host answered. The post-compact settle owns
+  // the single bounded resume probe.
+  if (!force && isCompactionInFlightSince(flags.compactionInFlightSince)) {
+    appendLedger(ctx.cwd, "continuation_dispatch_deferred_compaction", { goalId: state.goal?.id ?? null });
+    return;
+  }
   if (continuationDispatchStoodDown && !force) return;
   if (force) releaseContinuationDispatchStandDown();
   if (!isActionableGoal()) return;

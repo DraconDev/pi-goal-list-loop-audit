@@ -364,6 +364,7 @@ const heartbeatFlags: HeartbeatFlags = {
   get compactionGraceUntil() { return compactionGraceUntil; },
   get continuationDispatchStoodDown() { return continuationDispatchStoodDownRef(); },
   get pendingContinuationDispatch() { return pendingContinuationDispatchRef(); },
+  get compactionInFlightSince() { return compactionInFlightSince; },
   get postCompactResumeOwed() { return postCompactResumeOwed; },
   set postCompactResumeOwed(v) { postCompactResumeOwed = v; },
   get postCompactResyncPending() { return postCompactResyncPending; },

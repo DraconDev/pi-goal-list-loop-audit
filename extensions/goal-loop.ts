@@ -59,7 +59,7 @@ import {
   LOOP_DEFAULTS,
 } from "./goal-loop-forever.js";
 import { loadSettings } from "./goal-settings.js";
-import { normalizeMainModelFallbackRefs } from "./main-model-recovery.js";
+import { isCompactionInFlightSince, normalizeMainModelFallbackRefs } from "./main-model-recovery.js";
 import { createContinuationDispatch, type ContinuationDispatch } from "./goal-loop-dispatch.js";
 import { attemptFreshSessionRecovery } from "./goal-recovery.js";
 import { chooseObjectiveConflict, liveObjectives } from "./goal-objective-conflict.js";
@@ -363,6 +363,12 @@ function scheduleLoopTickWithUrgency(ctx: ExtensionContext, urgent: boolean): vo
   // automatic machinery includes the metric loop's turn dispatch.
   if (supervisorPaused(state)) return;
   if (mainModelRecoveryActive()) return;
+  // In-flight auto-compaction: no loop turns into a compacting host.
+  // Urgent (explicit starts/resumes) bypasses like force does for goals.
+  if (!urgent && isCompactionInFlightSince(flags.compactionInFlightSince)) {
+    appendLedger(ctx.cwd, "loop_tick_deferred_compaction", {});
+    return;
+  }
   if (flags.sessionHandoffPending || flags.initialSessionLoadPending || flags.extensionApiStale || flags.staleTerminalDone || flags.zombieStoodDown || flags.continuationDispatchStoodDown || flags.pendingContinuationDispatch || !isLoopActive()) return;
   rememberCtx(ctx);
   clearLoopTimer();

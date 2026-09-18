@@ -33,6 +33,7 @@ import {
   type Goal,
 } from "./goal-loop-core.js";
 import { loadSettings } from "./goal-settings.js";
+import { isCompactionInFlightSince } from "./main-model-recovery.js";
 import {
   HEARTBEAT_STALL_MS,
   PENDING_LATCH_STUCK_MS,
@@ -67,6 +68,7 @@ export interface HeartbeatFlags {
   get sessionHandoffPending(): boolean;
   set sessionHandoffPending(v: boolean);
   get compactionGraceUntil(): number;
+  get compactionInFlightSince(): number | null;
   get continuationDispatchStoodDown(): boolean;
   get pendingContinuationDispatch(): ContinuationDispatch | null;
   get postCompactResumeOwed(): boolean;
@@ -1317,6 +1319,10 @@ function heartbeatTick(): void {
   // machinery below stays quiet for 3 minutes while the replaced session
   // settles (latch watchdog, wedge alert, refire counting all resume after).
   if (Date.now() < flags.compactionGraceUntil) return;
+  // In-flight auto-compaction is legitimate busy time (field 083546) —
+  // the whole stall/refire/watchdog machinery below stays quiet while
+  // the marker is armed, same as the post-compact grace above.
+  if (isCompactionInFlightSince(flags.compactionInFlightSince)) return;
   // v0.34.24: an accepted dispatch with no start proof owns the watchdog
   // until its bounded timeout. Do not let the generic heartbeat create a
   // second blind send underneath it; explicit resume or a fresh session

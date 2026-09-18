@@ -31,6 +31,7 @@ import {
   mainModelFailureDelayMs,
   mainModelPrimaryProbeDelayMs,
   mainModelRetryDelayMs,
+  isCompactionInFlightSince,
   MAIN_MODEL_AUTO_RETRY_HORIZON_MS,
   modelRef,
   normalizeBoundedModelRefs,
@@ -1548,6 +1549,12 @@ export function parkMainModelAfterFailure(ctx: ExtensionContext, failure: MainMo
 
 export async function recoverMainModelFromSendStorm(ctx: ExtensionContext, kind: "continuation" | "loop"): Promise<void> {
   if (!isSupervising() || mainModelRecoveryActive()) return;
+  // Belt-and-suspenders behind the accountSendRearm gate: a storm recovery
+  // that somehow fires mid-compact stands down the same way.
+  if (isCompactionInFlightSince(flags.compactionInFlightSince)) {
+    appendLedger(ctx.cwd, "main_model_storm_recovery_deferred", { reason: "compaction-in-flight", kind });
+    return;
+  }
   const failure = classifyMainModelFailure("provider retry stalled with no stream activity");
   const switched = await tryMainModelFallback(ctx, failure);
   if (switched) {

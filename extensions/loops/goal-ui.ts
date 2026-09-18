@@ -1260,6 +1260,8 @@ defineGoalRuntimeGlobal("startUITicker", { get: () => startUITicker });
 defineGoalRuntimeGlobal("loopRearmStreak", { get: () => loopRearmStreak, set: (v) => { loopRearmStreak = v as any; } });
 defineGoalRuntimeGlobal("compactionGraceUntil", { get: () => compactionGraceUntil, set: (v) => { compactionGraceUntil = v as any; } });
 defineGoalRuntimeGlobal("compactionInFlightSince", { get: () => compactionInFlightSince, set: (v) => { compactionInFlightSince = v as any; } });
+defineGoalRuntimeGlobal("noteCompactionStarted", { get: () => noteCompactionStarted });
+defineGoalRuntimeGlobal("noteCompactionSettled", { get: () => noteCompactionSettled });
 defineGoalRuntimeGlobal("lastCompactionAt", { get: () => lastCompactionAt, set: (v) => { lastCompactionAt = v as any; } });
 defineGoalRuntimeGlobal("CONTEXT_STARVATION_REFUSE_THRESHOLD", { get: () => CONTEXT_STARVATION_REFUSE_THRESHOLD });
 defineGoalRuntimeGlobal("CONTEXT_STARVATION_RECENT_WINDOW_MS", { get: () => CONTEXT_STARVATION_RECENT_WINDOW_MS });

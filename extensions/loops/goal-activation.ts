@@ -991,6 +991,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // a 3.5-minute compact) and open the post-compaction stall grace.
     setContinuationRearmStreak(0); setContinuationRearmSince(0);
     loopRearmStreak = 0; loopRearmSince = 0;
+    noteCompactionSettled(); // the compact landed — in-flight ends, the settle below owns the single probe
     compactionGraceUntil = Date.now() + COMPACTION_GRACE_MS;
     lastCompactionAt = Date.now();
     // v0.34.97: persist lastCompactionAt to state so the ⏳ compacting…
@@ -1069,6 +1070,9 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // Our continuations send as customType (never role user); our injected
     // draft seed arrives as role user and is skipped via draftingSeedInFlight.
     if (event?.message?.role === "user" && !draftingSeedInFlight) noteUserMessageForDispatch();
+    // A live user message proves the host is responsive — any compaction
+    // is over or cancelled (clear on liveness, not on guess).
+    if (event?.message?.role === "user") noteCompactionSettled();
     // v0.14.0 drafting floor: count real user replies while drafting. Our
     // own injected draft prompt arrives as a user message — skip that one.
     if (draftingTarget === null) return;
@@ -1370,6 +1374,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     sessionReplacementUntil = 0;
     postCompactResumeOwed = false; // v0.33.1: a compact from a previous session must not resync THIS one
     postCompactResyncPending = false;
+    noteCompactionSettled(); // a fresh session rebind is never mid-compact
     appendLedger(ctx.cwd, "session_rebound", { reason: startReason });
     if (extensionApiStale) {
       extensionApiStale = false; // fresh ctx delivered — re-probe
@@ -2714,6 +2719,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // v0.32.1: a real turn started — the post-compaction resume debt is
     // discharged (the heartbeat stops retrying it).
     postCompactResumeOwed = false;
+    noteCompactionSettled(); // a live turn proves the compaction is over
     dispatchStartAcknowledged(ctx, "agent_start");
   });
   pi.on("turn_start", (_event: any, ctx: ExtensionContext) => {
@@ -2952,6 +2958,18 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       } catch {
         // bookkeeping must never break compaction
       }
+    }
+    // Positively-identified compaction start (field 083546): arm the
+    // in-flight marker so storm escalation, storm recovery, and new
+    // dispatch stand down until the compact settles. Foreign sessions
+    // compact on their own — their marker must not stall OUR dispatch.
+    try {
+      if (!isForeignCtx(ctx)) {
+        noteCompactionStarted();
+        appendLedger(ctx.cwd, "compaction_inflight_start", { generation: sessionGeneration });
+      }
+    } catch {
+      // bookkeeping must never break compaction
     }
     return {};
   });
