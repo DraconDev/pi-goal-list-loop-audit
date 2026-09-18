@@ -29,7 +29,15 @@ function ledgerTypes(cwd: string): string[] {
     .map((line) => (JSON.parse(line) as { type: string }).type);
 }
 
+function setGlobalAutoResume(v: boolean): void {
+  fs.writeFileSync(
+    GLOBAL_SETTINGS_PATH,
+    JSON.stringify(v ? { autoResume: true, aggressiveMode: false } : { aggressiveMode: false }),
+  );
+}
+
 async function activeBoot(cwd: string): Promise<{ pi: MockPi; ctx: MockCtx }> {
+  setGlobalAutoResume(true); // keep the seed ACTIVE past the restore gate
   __testOnlyResetOwnerSession();
   __testOnlyResetStaleFlag();
   seedState(cwd, { goal: seedGoal({ status: "active", policy: "goal" }) });
@@ -45,7 +53,7 @@ afterEach(() => {
   __testOnlyResetAuditorSurface();
   __testOnlyResetStaleFlag();
   __testOnlyResetOwnerSession();
-  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ aggressiveMode: false }));
+  setGlobalAutoResume(false);
 });
 
 test("153404: a 4.5h load wait is clamped to the hourly horizon with a re-check notice", async () => {
