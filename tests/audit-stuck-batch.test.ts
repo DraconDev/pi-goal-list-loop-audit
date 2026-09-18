@@ -180,6 +180,70 @@ test("identical-failure counters survive a state round-trip sanitized", () => {
   assert.deepEqual(claim?.auditorEvictedRefs, ["agnes/agnes-3.0-flash"]);
 });
 
+// ---------------------------------------------------------------------------
+// 124536: queued pile-up behind a parked head. While parked, re-adding an
+// objective that is already queued coalesces (no pile-up growth), and the
+// hourly auditor backstop stands down on a terminal identical-park block.
+// ---------------------------------------------------------------------------
+
+function identicalParkedHead(): Record<string, unknown> {
+  return seedGoal({
+    status: "paused",
+    policy: "list",
+    pauseKind: "blocked",
+    pauseReason: "auditor blocked: 3 identical infra failures (provider error) · chain: agnes/agnes-3.0-flash",
+    pauseSuggestedAction: "The completion claim is stored.",
+    pendingCompletion: {
+      at: new Date().toISOString(),
+      phase: "recovery-pending",
+      completionSummary: "Stored fixture claim",
+      verificationSummary: "Fixture only",
+      auditorFallbackExhausted: true,
+      auditorLastFailureFingerprint: "provider:fp-a",
+      auditorConsecutiveIdenticalFailures: 3,
+    },
+  });
+}
+
+test("124536: re-adding a queued objective while parked coalesces, no pile-up", async () => {
+  const cwd = tmpCwd();
+  seedState(cwd, {
+    goal: identicalParkedHead(),
+    list: [{ id: "queued-1", objective: "Refactor the widget harness", addedAt: new Date().toISOString() }],
+  } as unknown as Parameters<typeof seedState>[1]);
+  const { pi, ctx } = await bootToolPi(cwd);
+  try {
+    assert.equal(readState(cwd).list?.length, 1, "seed holds one queued item");
+    await pi.command("list", "add Refactor the widget harness", ctx);
+    await tick(120);
+    assert.equal(readState(cwd).list?.length, 1, "the duplicate coalesces instead of piling");
+    assert.ok(
+      ledgerTypes(cwd).includes("list_parked_duplicate_coalesced"),
+      "the coalesce is ledgered",
+    );
+    assert.equal(readState(cwd).goal?.status, "paused", "the parked head is untouched");
+  } finally {
+    await pi.fire("session_shutdown", { reason: "quit" }, ctx);
+  }
+});
+
+test("124536: hourly auditor backstop stands down on an identical-parked head", async () => {
+  const cwd = tmpCwd();
+  seedState(cwd, { goal: identicalParkedHead() } as unknown as Parameters<typeof seedState>[1]);
+  const { pi, ctx } = await bootToolPi(cwd);
+  try {
+    const { fireHourlyProbe } = await import("../extensions/goal-recovery.js");
+    await fireHourlyProbe(ctx);
+    await tick(120);
+    const types = ledgerTypes(cwd);
+    assert.ok(!types.includes("hourly_probe_auditor_backstop"), "no backstop retry fires into a terminal block");
+    assert.ok(!types.includes("audit_started"), "no auditor episode launches");
+    assert.equal(readState(cwd).goal?.status, "paused");
+  } finally {
+    await pi.fire("session_shutdown", { reason: "quit" }, ctx);
+  }
+});
+
 test("124541: re-seed filters evicted refs so the next episode starts live", () => {
   const configured = ["agnes/agnes-3.0-flash", "test/live", "test/other"];
   assert.deepEqual(
