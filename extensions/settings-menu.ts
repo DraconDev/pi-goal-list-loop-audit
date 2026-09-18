@@ -405,6 +405,14 @@ export function buildSettingsRows(
       description: "pi extension specs the DETACHED auditor may load (e.g. npm:pi-webaio) so extension-provided model providers can run — tools stay restricted to read/grep/find/ls/bash; empty = the default extension-less auditor",
     },
     {
+      id: "auditorMirrorSessionExtensions",
+      section: "auditor",
+      label: "Mirror session extensions",
+      valueText: show("auditorMirrorSessionExtensions", "on"),
+      sourceText: src("auditorMirrorSessionExtensions"),
+      description: "on: the detached auditor also loads the session's own packages so a session-inherited auditor ref resolves in the worker (GLLA itself is never mirrored) — off: only Allowed extensions above, possibly fully isolated",
+    },
+    {
       id: "auditorSameSessionSwap",
       section: "auditor",
       label: "Same-model swap",

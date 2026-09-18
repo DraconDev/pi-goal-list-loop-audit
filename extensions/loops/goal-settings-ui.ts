@@ -1492,6 +1492,14 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (v) saveSettings("global", ctx.cwd, { auditorSameSessionSwap: v.startsWith("off") ? false : undefined });
       return;
     }
+    case "auditorMirrorSessionExtensions": {
+      const v = await ctx.ui.select("Mirror session extensions — the detached auditor also loads the session's own packages so a session-inherited auditor ref resolves in the worker (GLLA itself is never mirrored; tools stay restricted)", [
+        "on — session packages load in the worker (default)",
+        "off — only the curated allow-list; empty = fully isolated",
+      ]);
+      if (v) saveSettings("global", ctx.cwd, { auditorMirrorSessionExtensions: v.startsWith("off") ? false : undefined });
+      return;
+    }
     case "auditCap": {
       const current = loadSettings(ctx.cwd);
       const defaultCap = resolveEffectiveAggressiveSettings({ ...current, auditCap: undefined }).auditCap;
