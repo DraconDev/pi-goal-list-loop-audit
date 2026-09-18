@@ -117,6 +117,7 @@ import {
   isForbiddenModel,
   filterEvictedAuditorRefs,
   withEvictedAuditorRef,
+  trackAuditorIdenticalFailure,
 isGoalRevisionCurrent,
   nextHourlyProbeMs,
   supervisorPaused,
@@ -665,6 +666,8 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
         auditorRetryAttemptStartedAt: undefined,
         auditorAttemptedRefs: undefined,
         auditorEvictedRefs: undefined,
+        auditorLastFailureFingerprint: undefined,
+        auditorConsecutiveIdenticalFailures: undefined,
         auditorFailureCount: undefined,
         auditorFailureClass: undefined,
         auditorFallbackExhausted: undefined,
@@ -1763,6 +1766,9 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     const recoveryEpisodeKey = durableClaim.recoveryEpisodeKey ?? `${durableClaim.at}:${failureCopy.fingerprint}`;
     const aggressive = aggressiveAuditorRecoveryEnabled(liveCtx.cwd);
     const plan = auditorRetryPlan(durableClaim, undefined, undefined, aggressive);
+    // v0.38.63 (audit-stuck batch): same identical-park gate as the
+    // complete_goal ladder path — the loop terminates visibly here too.
+    const identical = trackAuditorIdenticalFailure(durableClaim, failureCopy.fingerprint);
     const pending = {
       ...durableClaim,
       phase: "retry-waiting" as const,
@@ -1774,10 +1780,38 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       recoveryNoticeKeys: durableClaim.recoveryNoticeKeys ?? [],
       auditorFailureClass: auditorResultFailureClass(result),
       auditorFailureAt: new Date().toISOString(),
+      auditorLastFailureFingerprint: identical.auditorLastFailureFingerprint,
+      auditorConsecutiveIdenticalFailures: identical.auditorConsecutiveIdenticalFailures,
       retryAttempts: plan.attempt,
       retryFirstAt: plan.firstAt,
       retryUntil: plan.autoRetryUntil,
     };
+    if (identical.identicalParkDue) {
+      const deadChain = (durableClaim.exhaustedChain
+        ?? (durableClaim.auditorCandidateRefs ?? durableClaim.auditorAttemptedRefs ?? []).join(" → ")
+        ?? "").slice(0, 300) || "unknown chain";
+      const identicalParked = {
+        ...pending,
+        phase: "recovery-pending" as const,
+        auditorFallbackExhausted: true,
+      };
+      const notifyIdentical = claimRecoveryNotice(identicalParked, `${recoveryEpisodeKey}:identical-parked`);
+      updateGoal({
+        status: "paused",
+        auditHistory: history,
+        pendingCompletion: { ...identicalParked, ...(exhaustedChain ? { exhaustedChain } : {}) },
+        providerErrorDiagnostic: failureCopy.diagnostic,
+        recoveryEpisodeKey,
+        recoveryNoticeKeys: identicalParked.recoveryNoticeKeys,
+        pauseKind: "blocked",
+        pauseResumeAt: undefined,
+        pauseReason: `auditor blocked: ${identical.auditorConsecutiveIdenticalFailures} identical infra failures (${failureCopy.display}) · chain: ${deadChain}`,
+        pauseSuggestedAction: `The completion claim is stored. The auditor chain failed identically ${identical.auditorConsecutiveIdenticalFailures} times — check the auditor/model setup, then ${activeGoalSurfaceCommand("resume")} to start a fresh bounded window with re-resolved models.`,
+      }, liveCtx);
+      appendLedger(liveCtx.cwd, "auditor_retry_identical_parked", { count: identical.auditorConsecutiveIdenticalFailures, fingerprint: failureCopy.fingerprint, chain: deadChain, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey });
+      if (notifyIdentical) liveCtx.ui.notify(`Auditor parked blocked after ${identical.auditorConsecutiveIdenticalFailures} identical infra failures (${deadChain}) — no further automatic retry; the claim stays stored. Check the auditor/model setup, then ${activeGoalSurfaceCommand("resume")}.`, "warning");
+      return;
+    }
     if (!plan.automatic) {
       const notifyCapped = claimRecoveryNotice(pending, `${recoveryEpisodeKey}:retry-capped`);
       updateGoal({
