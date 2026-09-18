@@ -1155,10 +1155,16 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           // settings row; max is the safe detached default when a headless
           // context does not expose a thinking level.
           thinkingLevel: effectiveThinking as any, // pi ≥0.83 understands max; dev-types predate it
-          // v0.36.0: raw settings allowlist; the process layer resolves
-          // entries to install paths before hashing (see
-          // goal-loop-auditor-process.ts).
-          allowedExtensions: settings.auditorAllowedExtensions,
+          // v0.38.65 (field 151158): curated allowlist union the session
+          // package mirror (opt-out via auditorMirrorSessionExtensions) so
+          // a session-inherited ref resolves in the worker; the process
+          // layer still resolves fail-closed before hashing/spawn.
+          allowedExtensions: dispatchAuditorAllowedExtensions(
+            settings.auditorAllowedExtensions,
+            settings.auditorMirrorSessionExtensions,
+            os.homedir(),
+            liveCtx.cwd,
+          ),
           // v0.38.3: opt-in live inspection — persist the auditor's pi as a
           // resumable session pinned inside the job dir (off = --no-session).
           inspection: settings.auditorInspection === true,
