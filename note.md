@@ -108,6 +108,8 @@ i really dont like the complete into audit, complete is based on audit
 
 but basically same bug everywhere the auditor pends forever
 
+i think we should be showing the audit working
+
 ##
 too long wait
 /home/dracon/Pictures/Screenshots/Screenshot_20260918_110532.png 

@@ -1067,9 +1067,13 @@ function onCompactionLanded(): void {
 }
 /** Public: positively-identified compaction started (session_before_compact).
  * Arms the in-flight marker; storm escalation, storm recovery, and new
- * dispatch stand down until the marker settles. */
-export function noteCompactionStarted(): void {
+ * dispatch stand down until the marker settles. Returns true when this
+ * arms a fresh episode (new or expired) — repeat signals refresh the
+ * timestamp silently so arming stays idempotent in the ledger. */
+export function noteCompactionStarted(): boolean {
+  const fresh = !isCompactionInFlightSince(compactionInFlightSince);
   compactionInFlightSince = Date.now();
+  return fresh;
 }
 /** Public: the compaction settled (session_compact) or a live host event
  * proves it over — clear the in-flight marker so the post-compact settle

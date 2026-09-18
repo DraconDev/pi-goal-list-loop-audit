@@ -314,7 +314,7 @@ interface GoalRuntimeDataTypes {
   loopRearmStreak: number;
   compactionGraceUntil: number;
   compactionInFlightSince: number | null;
-  noteCompactionStarted: () => void;
+  noteCompactionStarted: () => boolean;
   noteCompactionSettled: () => void;
   lastCompactionAt: number;
   CONTEXT_STARVATION_REFUSE_THRESHOLD: number;

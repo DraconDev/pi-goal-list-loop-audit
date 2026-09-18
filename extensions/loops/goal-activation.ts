@@ -2964,8 +2964,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // dispatch stand down until the compact settles. Foreign sessions
     // compact on their own — their marker must not stall OUR dispatch.
     try {
-      if (!isForeignCtx(ctx)) {
-        noteCompactionStarted();
+      if (!isForeignCtx(ctx) && noteCompactionStarted()) {
         appendLedger(ctx.cwd, "compaction_inflight_start", { generation: sessionGeneration });
       }
     } catch {
