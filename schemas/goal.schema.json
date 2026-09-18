@@ -56,7 +56,7 @@
     "stopReason": { "type": "string" },
     "pauseReason": { "type": "string" },
     "pauseSuggestedAction": { "type": "string" },
-    "pauseKind": { "type": "string", "enum": ["decision", "error", "wait", "blocked"] },
+    "pauseKind": { "type": "string", "enum": ["decision", "error", "wait", "blocked", "standby"] },
     "pauseOptions": { "type": "array", "items": { "type": "string" } },
     "pauseRecommended": { "type": "number" },
     "pauseResumeAt": { "type": "string" },

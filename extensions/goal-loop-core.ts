@@ -648,8 +648,10 @@ export interface Goal {
   pauseSuggestedAction?: string;
   /** v0.28.22: pause classification — drives the widget/status rendering
    * (a decision pause, an operational failure, a time-gated wait, and a
-   * generic block must not look alike). Undefined = legacy flat card. */
-  pauseKind?: "decision" | "error" | "wait" | "blocked";
+   * generic block must not look alike). v0.38.64 (021655): "standby" —
+   * parked while a background subagent runs; its native completion wakes
+   * the goal, so no manual action exists. Undefined = legacy flat card. */
+  pauseKind?: "decision" | "error" | "wait" | "blocked" | "standby";
   /** v0.28.22: decision pauses — the options the user picks between. */
   pauseOptions?: string[];
   /** v0.28.22: 1-based index into pauseOptions the agent recommends. */
