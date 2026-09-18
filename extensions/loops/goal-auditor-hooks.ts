@@ -760,6 +760,14 @@ function isAuditorNoVerdictInfrastructureError(error: string | undefined, infras
  * parsed provider object remains durable diagnostic metadata only. */
 const EAGER_AUDITOR_RETRY_SEC = 5;
 
+/** Post-drafting stuck cluster (field 111629/111716/111957, 2026-09-18):
+ * attempt>=2 waits aligned to the next :00:30 hourly slot — up to ~60m
+ * ("auto-retry in 44m 03s"). A stuck-looking three-quarter-hour wait is a
+ * stuck wait: cap every post-eager auditor retry at 15 minutes. Hourly
+ * quota resets are still picked up within one cap window, and the ladder
+ * timer keeps owning the wait (the :00:30 backstop only covers dead timers). */
+export const AUDITOR_RETRY_WAIT_CAP_SEC = 15 * 60;
+
 /** Seconds-aware "auto-retry in …" label: "5s" under a minute, else "60m". */
 function fmtRetryDelay(seconds: number): string {
   return seconds < 60 ? `${Math.round(seconds)}s` : `${Math.round(seconds / 60)}m`;
@@ -794,7 +802,8 @@ export function auditorRetryPlan(claim: PendingCompletion, _legacyQuota?: unknow
   const requestedSec = attempt === 1
     ? EAGER_AUDITOR_RETRY_SEC
     : Math.max(60, Math.round((nextHourlyProbeMs(now) - now) / 1000));
-  const retryAfterSec = capProviderRetrySeconds(requestedSec);
+  // requestedSec stays the diagnostic slot; the persisted wait is capped.
+  const retryAfterSec = Math.min(capProviderRetrySeconds(requestedSec), AUDITOR_RETRY_WAIT_CAP_SEC);
   // No attempt cap: the shared 24h horizon (MAIN_MODEL_AUTO_RETRY_HORIZON_MS)
   // is the only conservative stop, same as the main-model envelope. The
   // attempt counter stays as diagnostic metadata.
@@ -1844,10 +1853,13 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       pauseKind: "wait",
       pauseResumeAt: new Date(Date.now() + plan.retryAfterSec * 1000).toISOString(),
       pauseReason: `auditor retry: ${exhaustedNotice}${failureCopy.display}`,
-      pauseSuggestedAction: `Auto-retry in ${fmtRetryDelay(plan.retryAfterSec)} — or ${activeGoalSurfaceCommand("resume")} to retry now`,
+      // Post-drafting stuck cluster (field 110418): a paused recovery wait
+      // is agent-resumable — name resume_goal next to the user verb so the
+      // agent never concludes only a user-side resume can clear it.
+      pauseSuggestedAction: `Auto-retry in ${fmtRetryDelay(plan.retryAfterSec)} — or ${activeGoalSurfaceCommand("resume")} to retry now (agent: resume_goal also retries now)`,
     }, liveCtx);
     appendLedger(liveCtx.cwd, "goal_paused", { reason: `auditor retry: retry in ${plan.retryAfterSec}s (uniform schedule)`, attempt: plan.attempt, autoRetryUntil: plan.autoRetryUntil, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey });
-    if (notifyRetry) liveCtx.ui.notify(`Auditor still failing — next auto-retry in ${fmtRetryDelay(plan.retryAfterSec)} (your completion claim is stored; no action needed).`, "warning");
+    if (notifyRetry) liveCtx.ui.notify(`Auditor still failing — next auto-retry in ${fmtRetryDelay(plan.retryAfterSec)} (your completion claim is stored; it retries automatically, and the agent can retry now with resume_goal).`, "warning");
     scheduleProviderRetryForSession(liveCtx, plan.retryAfterSec, result.error, (fresh: ExtensionContext) => {
       if (state.goal && state.goal.status === "paused" && (state.goal.pauseReason ?? "").startsWith("auditor retry:") && state.goal.pendingCompletion) {
         // Timer authority is automatic, even when a user started the first
