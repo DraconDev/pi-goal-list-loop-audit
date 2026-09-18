@@ -160,8 +160,9 @@ test("v0.28.24: session_compact resets the send-rearm storm streaks + opens the 
   // 3.5-minute compaction; junk-runner burned all 5 stall refires in the 5
   // minutes right after a 196k-token compact. Both are fixed at the hook:
   const hookIdx = SRC.indexOf('pi.on("session_compact"');
-  const resetIdx = SRC.indexOf("setContinuationRearmStreak(0); setContinuationRearmSince(0);\n    loopRearmStreak = 0; loopRearmSince = 0;\n    compactionGraceUntil = Date.now() + COMPACTION_GRACE_MS;");
-  assert.ok(hookIdx > 0 && resetIdx > hookIdx, "streak reset + grace arm inside the session_compact hook (continuation streaks re-spelled via setters, decomposition step 5)");
+  const resetIdx = SRC.indexOf("setContinuationRearmStreak(0); setContinuationRearmSince(0);\n    loopRearmStreak = 0; loopRearmSince = 0;\n    noteCompactionSettled();");
+  const graceIdx = SRC.indexOf("compactionGraceUntil = Date.now() + COMPACTION_GRACE_MS;");
+  assert.ok(hookIdx > 0 && resetIdx > hookIdx && graceIdx > resetIdx, "streak reset + in-flight settle + grace arm inside the session_compact hook (continuation streaks re-spelled via setters, decomposition step 5)");
 });
 
 test("v0.34.82: heartbeat refuses to refire a continuation while pi is context-starved (no compaction landing)", () => {
