@@ -1,13 +1,5 @@
 # Prio
 
-##
-/home/dracon/Pictures/Screenshots/Screenshot_20260918_151158.png 
-auditor model resolution error
-
-##
-/home/dracon/Pictures/Screenshots/Screenshot_20260918_152226.png 
-maybe the fallback selector is broken
-
 # Now
 
 ##
