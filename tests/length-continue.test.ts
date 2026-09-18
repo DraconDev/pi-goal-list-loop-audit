@@ -87,12 +87,19 @@ test("agent_end: length path runs BEFORE nudge accounting, telemetry, and goal g
 test("sendLengthContinue: stale-api terminal guard + admitted-session reset", () => {
   assert.match(CONT, /function sendLengthContinue\(ctx: ExtensionContext, consecutive: number\)/); // decomposition step 5: moved
   assert.match(CONT, /if \(flags\.sessionHandoffPending \|\| flags\.initialSessionLoadPending \|\| !flags\.extensionApi \|\| flags\.extensionApiStale \|\| continuationDispatchStoodDown \|\| pendingContinuationDispatch \|\| flags\.abortedStandDown\) return;/, "lifecycle, blank-start, stale-runtime, in-flight dispatch, and abort-latch guards short-circuit the send (flags accessor re-spelling; audit 2026-09-07 task 5 added the latch)");
-  assert.match(CONT, /kind: "length",\s*\n\s*marker: LENGTH_CONTINUE_TEXT\.slice\(0, 80\)/, "length sends use the dispatch proof state machine");
-  assert.match(CONT, /flags\.extensionApi\.sendMessage\(\{\s*\n\s*customType: GOAL_EVENT_ENTRY,\s*\n\s*content: LENGTH_CONTINUE_TEXT/);
+  assert.match(CONT, /kind: "length",\s*\n\s*marker: content\.slice\(0, 80\)/, "length sends use the effective per-context dispatch proof");
+  assert.match(CONT, /flags\.extensionApi\.sendMessage\(\{\s*\n\s*customType: GOAL_EVENT_ENTRY,\s*\n\s*content,/);
   assert.match(CONT, /appendLedger\(ctx\.cwd, "length_continue_sent", \{ consecutive, attemptId: attempt\.id \}\)/);
   assert.match(CONT, /if \(isStaleApiError\(err\)\)/); // v0.34.117: the stale guard now wraps an auto-recovery call + terminal fallback
   assert.match(CONT, /if \(!attemptFreshSessionRecovery\(ctx, "sendLengthContinue"\)\) goStaleTerminal\(ctx, "sendLengthContinue"\);/); // v0.34.117: auto-recover before terminal park
   assert.match(ACT, /extensionApi = pi;[\s\S]*?resetLengthContinue\(\);/); // reset follows host admission, not factory evaluation
   // give-up is surfaced once via notify + external push
   assert.match(SRC, /lc\.giveUpNow/);
+});
+
+test("sendLengthContinue: active goals get completion-aware recovery guidance", () => {
+  assert.match(CONT, /const GOAL_LENGTH_CONTINUE_TEXT = \[/, "goal-specific recovery text exists");
+  assert.match(CONT, /const content = state\.goal\?\.status === "active" \? GOAL_LENGTH_CONTINUE_TEXT : LENGTH_CONTINUE_TEXT;/, "active goals select the completion-aware text while plain sessions keep the generic text");
+  assert.match(CONT, /If the goal is satisfied, do not start another research, audit, or implementation pass\. Call complete_goal now/, "the recovery instruction explicitly offers closure instead of another blind work pass");
+  assert.match(CONT, /lastContinuationSentPayload = \{ content, display: true \}/, "the retry payload matches the text actually sent");
 });

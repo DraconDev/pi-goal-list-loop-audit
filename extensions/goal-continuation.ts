@@ -1451,27 +1451,36 @@ export function sendStallEscalation(ctx: ExtensionContext, nudges: number): void
 // v0.27.2: send the truncation-continue nudge. Same guards as
 // sendContinuation (stale api = terminal), independent of goal state —
 // plain sessions truncate too.
+const GOAL_LENGTH_CONTINUE_TEXT = [
+  "Your previous response was cut off at the model's per-response output token limit.",
+  "Continue EXACTLY where you stopped, but FIRST determine whether the active goal is already satisfied.",
+  "If the goal is satisfied, do not start another research, audit, or implementation pass. Call complete_goal now with a concise completionSummary and verificationSummary so the independent auditor can verify the work.",
+  "If the goal is not yet satisfied, finish only the interrupted work and continue toward the objective.",
+  "Keep each individual response shorter from here: split large file writes into multiple smaller write/edit calls across turns instead of one giant response.",
+].join(" ");
+
 export function sendLengthContinue(ctx: ExtensionContext, consecutive: number): void {
   if (supervisorPaused(state)) return;
   // Audit 2026-09-07 (HIGH): a length nudge must not resurrect a stood-down
   // chain — same abort-latch reasoning as sendContinuation.
   if (flags.sessionHandoffPending || flags.initialSessionLoadPending || !flags.extensionApi || flags.extensionApiStale || continuationDispatchStoodDown || pendingContinuationDispatch || flags.abortedStandDown) return;
   if (state.goal && !guardGoalBeforeContinuation(ctx, "length-continuation")) return;
+  const content = state.goal?.status === "active" ? GOAL_LENGTH_CONTINUE_TEXT : LENGTH_CONTINUE_TEXT;
   const attempt = dispatchPrepare(ctx, {
     generation: flags.sessionGeneration,
     ownerSessionId: sessionManagerId(ctx),
     kind: "length",
-    marker: LENGTH_CONTINUE_TEXT.slice(0, 80),
+    marker: content.slice(0, 80),
     resync: false,
   });
   if (!attempt) return;
   try {
     flags.extensionApi.sendMessage({
       customType: GOAL_EVENT_ENTRY,
-      content: LENGTH_CONTINUE_TEXT,
+      content,
       display: true,
     }, { triggerTurn: true, deliverAs: "followUp" });
-    lastContinuationSentPayload = { content: LENGTH_CONTINUE_TEXT, display: true }; // v0.34.88: verbatim retry payload
+    lastContinuationSentPayload = { content, display: true }; // v0.34.88: verbatim retry payload
     if (!dispatchAccepted(ctx, attempt)) return;
     appendLedger(ctx.cwd, "length_continue_sent", { consecutive, attemptId: attempt.id });
     ctx.ui.notify(`Response hit the output-token cap — auto-continuing (${consecutive}/${LENGTH_CONTINUE_MAX})`, "warning");
