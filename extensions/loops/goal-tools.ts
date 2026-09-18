@@ -592,12 +592,9 @@ function registerAgentTools(pi: any): void {
       // The repairTarget gate below still refuses repair cards, so a replan
       // cannot be skipped through this opening.
       const suspiciousPaused = state.goal.status === "paused" && isSuspiciousObjectivePause(state.goal);
-      if (suspiciousPaused) {
-        appendLedger(ctx.cwd, "complete_goal_suspicious_pause_accepted", {
-          goalId: state.goal.id,
-          pauseReason: state.goal.pauseReason,
-        });
-      }
+      // v0.38.63 reviewer P2: the accept ledger lives AFTER the
+      // repairTarget + task refusal gates below, so a refused repair
+      // card never ledgers "accepted" before being refused.
       if (state.goal.status !== "active" && !suspiciousPaused) {
         if (state.goal.status === "paused") {
           // v0.34.87: a paused item IS a goal — the old flat "No active
@@ -634,6 +631,15 @@ function registerAgentTools(pi: any): void {
           });
           return { content: [{ type: "text", text: formatOpenTaskRefusal(openTasks) }], details: {} };
         }
+      }
+      // v0.38.63 reviewer P2: accept ledger fires only once every
+      // refusal gate (repair card, open tasks) has passed — a refused
+      // claim must never ledger "accepted".
+      if (suspiciousPaused) {
+        appendLedger(ctx.cwd, "complete_goal_suspicious_pause_accepted", {
+          goalId: state.goal.id,
+          pauseReason: state.goal.pauseReason,
+        });
       }
       // v0.25.0 (contract item 15): atomic objective update + audit in one
       // call — the objective-drift disapprove loop (ship shifted work →

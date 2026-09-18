@@ -84,6 +84,10 @@ shows paused but det auditor working ?
 ##
 i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
 
+##
+/home/dracon/Pictures/Screenshots/Screenshot_20260918_172705.png 
+i would love to see more information for summaries
+
 
 
 

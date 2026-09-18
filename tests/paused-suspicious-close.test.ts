@@ -138,4 +138,6 @@ test("narrowness: a paused repair card cannot skip its replan via the suspicious
   const result = await pi.runTool("complete_goal", { completionSummary: SUMMARY, verificationSummary: "pinned" }, ctx) as any;
   assert.match(result.content[0].text, /cannot be completed yet|propose_task_list/);
   assert.equal(readState(cwd).goal?.status, "paused");
+  // v0.38.63 reviewer P2: a refused repair card must not ledger "accepted".
+  assert.doesNotMatch(ledger(cwd), /"complete_goal_suspicious_pause_accepted"/);
 });
