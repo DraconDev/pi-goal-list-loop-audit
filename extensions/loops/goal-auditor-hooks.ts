@@ -840,7 +840,7 @@ export function maybeAutoRetryParkedCompletionAudit(trigger: AutomaticCompletion
     const window = automaticRecoveryWindow(claim, Date.now(), true);
     if (Number.isFinite(window.untilMs) && Date.now() >= window.untilMs) return false;
   }
-  if (!guardGoalBeforeContinuation(ctx, "stored-completion-audit", goal.id, { allowAuditing: true })) return false;
+  if (!guardGoalBeforeContinuation(ctx, "stored-completion-audit", goal.id, { allowAuditing: true, allowSuspiciousClose: true })) return false;
 
   const current = state.goal;
   const currentClaim = current?.pendingCompletion;
@@ -985,7 +985,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   // cannot be proven live, the fresh session must rehydrate the durable claim.
   const initialCtx = freshCtxForGeneration(generation);
   if (!initialCtx) return;
-  if (!guardGoalBeforeContinuation(initialCtx, "stored-completion-audit", goalId, { allowAuditing: true })) return;
+  if (!guardGoalBeforeContinuation(initialCtx, "stored-completion-audit", goalId, { allowAuditing: true, allowSuspiciousClose: true })) return;
   const guardedGoal = state.goal;
   if (!guardedGoal || guardedGoal.id !== goalId || !guardedGoal.pendingCompletion) return;
   // A timer can fire late (host suspension, reload, a busy event loop) and

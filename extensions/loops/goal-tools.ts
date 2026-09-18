@@ -822,7 +822,7 @@ function registerAgentTools(pi: any): void {
       const finalSummary = versionlessAlreadyShipped && validatedSummary
         ? `${validatedSummary} — NOTE: version-less "${versionlessAlreadyShipped}" claim — the auditor must verify the work exists in the tree (commit hash or current code) before approving.`
         : validatedSummary;
-      if (!guardGoalBeforeContinuation(ctx, "completion-audit-dispatch", state.goal?.id)) {
+      if (!guardGoalBeforeContinuation(ctx, "completion-audit-dispatch", state.goal?.id, { allowSuspiciousClose: suspiciousPaused })) {
         return staleToolResult();
       }
       // v0.38.50: agent-structured finding groups ride the same claim —

@@ -954,9 +954,14 @@ export function guardGoalBeforeContinuation(
   ctx: ExtensionContext,
   where: string,
   expectedGoalId?: string,
-  options: { allowAuditing?: boolean } = {},
+  options: { allowAuditing?: boolean; allowSuspiciousClose?: boolean } = {},
 ): boolean {
   const allowAuditing = options.allowAuditing === true;
+  // v0.38.63 (field 032245): a completion-claim settlement never dispatches
+  // the objective prose to a worker — the isolated auditor verifies real
+  // artifacts. allowSuspiciousClose skips ONLY the suspicious-objective
+  // pause branch below; every other fence (terminal, archive, stale,
+  // replan) still applies.
   const goal = state.goal;
   if (!goal) return false;
   if (expectedGoalId && goal.id !== expectedGoalId) {
@@ -1032,6 +1037,15 @@ export function guardGoalBeforeContinuation(
 
   const assessment = assessSuspiciousObjective(goal.objective, goal.verificationContract);
   if (!assessment.suspicious) return true;
+  if (options.allowSuspiciousClose === true) {
+    appendLedger(ctx.cwd, "faulty_objective_suspicious_close_allowed", {
+      goalId: goal.id,
+      where,
+      reasons: [...assessment.reasons],
+      note: "completion-claim settlement verifies artifacts, never dispatches the objective; suspicious-objective pause skipped",
+    });
+    return true;
+  }
   // v0.35.31 (field: Screenshot_20260822_193744): an EXPLICIT `/goal start
   // <text>` is user intent. The fragment heuristics (dangling-fragment,
   // lowercase-fragment, …) exist to stop AGENT-authored report garbage from
