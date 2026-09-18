@@ -11,7 +11,7 @@
 
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
-import { buildWidgetLines, buildStatusTextBase } from "../extensions/goal-loop-display.ts";
+import { buildWidgetLines, buildStatusText } from "../extensions/goal-loop-display.ts";
 import type { Goal, State } from "../extensions/goal-loop-core.ts";
 
 // "standby" does not exist yet — red baseline. Cast keeps tsc clean while
@@ -45,7 +45,7 @@ test("021655: standby pause names the background agent as owner, not manual acti
 });
 
 test("021655: standby status line waits instead of demanding action", () => {
-  const status = buildStatusTextBase(stateOf(standbyGoal()), null, Date.now(), undefined, undefined, 100)!;
+  const status = buildStatusText(stateOf(standbyGoal()), null, Date.now(), undefined, undefined, 100)!;
   assert.doesNotMatch(status, /action needed/, `status claims no action:\n${status}`);
   assert.match(status, /waiting on background agent/, `status waits:\n${status}`);
 });
@@ -54,7 +54,7 @@ test("021655: neighboring kinds keep their manual-action rendering", () => {
   const blocked = buildWidgetLines(
     stateOf(standbyGoal({ pauseKind: "blocked", pauseReason: "provider 429, manual retry" })), null, Date.now(), undefined, 100)!;
   assert.ok(blocked.some((l) => l.includes("waiting for manual action")), "blocked still names manual action");
-  const err = buildStatusTextBase(
+  const err = buildStatusText(
     stateOf(standbyGoal({ pauseKind: "error", pauseReason: "operation failed" })), null, Date.now(), undefined, undefined, 100)!;
   assert.match(err, /action needed/, "error still demands action");
 });
