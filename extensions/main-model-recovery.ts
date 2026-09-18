@@ -300,3 +300,16 @@ export function mainModelFailureDelayMs(failure: MainModelFailure, attempt: numb
   if (attempt <= 1) return 5_000;
   return mainModelRetryDelayMs(attempt, baseMinutes);
 }
+
+/** Bound for positively-identified in-flight compaction. session_before_compact
+ * arms the marker and session_compact (or the next live host event) clears
+ * it; the cap only bounds a lost clear (cancelled compaction with no event,
+ * crashed host). Auto-compactions run minutes, never tens of minutes. */
+export const COMPACTION_IN_FLIGHT_MAX_MS = 30 * 60_000;
+
+/** True only while a positively-identified compaction is in flight. Silence
+ * alone never counts — the marker must have been armed by
+ * session_before_compact and not yet settled or expired. */
+export function isCompactionInFlightSince(since: number | null | undefined, nowMs = Date.now()): boolean {
+  return typeof since === "number" && since > 0 && nowMs - since < COMPACTION_IN_FLIGHT_MAX_MS;
+}

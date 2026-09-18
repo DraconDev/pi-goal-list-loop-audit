@@ -188,6 +188,7 @@ import {
   mainModelFailureDelayMs,
   mainModelRetryDelayMs,
   MAIN_MODEL_AUTO_RETRY_HORIZON_MS,
+  isCompactionInFlightSince,
   modelRef,
   nextUntriedModelRef,
   normalizeModelRefs,
@@ -975,6 +976,12 @@ let loopRearmStreak = 0;
 // whose turn trigger was still dead — pausing a resumable goal 4 minutes
 // after the compact instead of giving pi room to recover.
 let compactionGraceUntil = 0;
+// In-flight auto-compaction marker (field 083546): session_before_compact
+// arms it, session_compact or the next live host event settles it. While
+// armed, compaction silence is legitimate busy time — neither provider
+// failure nor dead host — so storm escalation, storm recovery, and new
+// continuation/loop dispatch stand down until the post-compact settle.
+let compactionInFlightSince: number | null = null;
 // v0.34.57: timestamp of the most recent session_compact event. The 30s
 // continuation-start watchdog checks this so a compaction that lands inside
 // the watchdog window pauses/resets the watchdog instead of being misread
@@ -1057,6 +1064,37 @@ function clearContextStarvedStreak(): void {
 function onCompactionLanded(): void {
   clearContextStarvedStreak();
   compactFirstNudged = false; // v0.38.6: fresh episode after real room
+}
+/** Public: positively-identified compaction started (session_before_compact).
+ * Arms the in-flight marker; storm escalation, storm recovery, and new
+ * dispatch stand down until the marker settles. */
+export function noteCompactionStarted(): void {
+  compactionInFlightSince = Date.now();
+}
+/** Public: the compaction settled (session_compact) or a live host event
+ * proves it over — clear the in-flight marker so the post-compact settle
+ * owns the single bounded probe. */
+export function noteCompactionSettled(): void {
+  compactionInFlightSince = null;
+}
+/** Public: true only while a positively-identified compaction is in flight
+ * (armed and unexpired). Silence alone never arms it. */
+export function isCompactionInFlight(nowMs = Date.now()): boolean {
+  if (!isCompactionInFlightSince(compactionInFlightSince, nowMs)) {
+    if (compactionInFlightSince !== null) compactionInFlightSince = null; // lazy-expire a lost clear
+    return false;
+  }
+  return true;
+}
+/** Test-only: arm/clear the in-flight marker without firing compaction
+ * events. Pass null to clear. */
+export function __testOnlySetCompactionInFlight(since: number | null): void {
+  compactionInFlightSince = since;
+}
+/** Test-only: set the session-activity clock directly so wedge-silence
+ * scenarios are drivable without wall-clock waits. */
+export function __testOnlySetLastActivityAt(at: number): void {
+  lastActivityAt = at;
 }
 /** Test-only: reset the whole starvation refuse gate (streak, recency,
  * sampled percent, compact-first latch). Tests that simulate a hot refusal
@@ -1221,6 +1259,7 @@ defineGoalRuntimeGlobal("scheduleUIRefresh", { get: () => scheduleUIRefresh });
 defineGoalRuntimeGlobal("startUITicker", { get: () => startUITicker });
 defineGoalRuntimeGlobal("loopRearmStreak", { get: () => loopRearmStreak, set: (v) => { loopRearmStreak = v as any; } });
 defineGoalRuntimeGlobal("compactionGraceUntil", { get: () => compactionGraceUntil, set: (v) => { compactionGraceUntil = v as any; } });
+defineGoalRuntimeGlobal("compactionInFlightSince", { get: () => compactionInFlightSince, set: (v) => { compactionInFlightSince = v as any; } });
 defineGoalRuntimeGlobal("lastCompactionAt", { get: () => lastCompactionAt, set: (v) => { lastCompactionAt = v as any; } });
 defineGoalRuntimeGlobal("CONTEXT_STARVATION_REFUSE_THRESHOLD", { get: () => CONTEXT_STARVATION_REFUSE_THRESHOLD });
 defineGoalRuntimeGlobal("CONTEXT_STARVATION_RECENT_WINDOW_MS", { get: () => CONTEXT_STARVATION_RECENT_WINDOW_MS });
