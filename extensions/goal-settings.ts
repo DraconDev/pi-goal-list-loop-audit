@@ -167,6 +167,14 @@ export interface Settings {
    * paths and drops unloadable entries fail-closed before the worker
    * spawns (extensions/auditor-extensions.ts). */
   auditorAllowedExtensions?: string[];
+  /** v0.38.65 (field 151158): on (default) → the detached auditor also
+   * loads the session's own packages (user + project settings
+   * packages[]/extensions[]) so a session-inherited auditor ref like
+   * agnes/agnes-3.0-flash resolves in the worker exactly as it does in
+   * the main session. Explicit false restores the pre-mirror behavior:
+   * only auditorAllowedExtensions, possibly empty (fully isolated).
+   * GLLA itself is never mirrored. Tools stay restricted regardless. */
+  auditorMirrorSessionExtensions?: boolean;
   auditorThinkingLevel?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
   /** Shell command run on goal complete / goal pause / loop stop; message passed as $1. */
   notifyCmd?: string;
@@ -331,6 +339,10 @@ export const DEFAULT_SETTINGS: Settings = {
   // extension-based model providers otherwise cannot run in the detached
   // auditor).
   auditorAllowedExtensions: [],
+  // v0.38.65: mirror on by default (field 151158) — absent/true both
+  // mean on; only an explicit false restores full isolation. Stored only
+  // when the user opts out so historical settings hash identically.
+  auditorMirrorSessionExtensions: undefined,
   // Unset = inherit the live session thinking level. This keeps the detached
   // auditor's reasoning dial aligned with the parent by default (including
   // max), while an explicit auditorThinkingLevel remains an intentional
@@ -424,6 +436,11 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   // extension specs. Hand-edited files may carry junk; keep it bounded and
   // deterministic so the request hash is stable.
   settings.auditorAllowedExtensions = normalizeAuditorAllowedExtensions(settings.auditorAllowedExtensions);
+  // v0.38.65: the mirror flag is tri-state — true/undefined = on, only an
+  // explicit false opts out. Hand-edited junk falls back to on (absent).
+  if (settings.auditorMirrorSessionExtensions !== false) {
+    delete (settings as any).auditorMirrorSessionExtensions;
+  }
   if (settings.stateRoot !== "sessionDir" && settings.stateRoot !== "workingDir") {
     settings.stateRoot = "workingDir";
   }
@@ -631,6 +648,7 @@ export const SETTINGS_KEYS: Array<keyof Settings> = [
   "auditorModel",
   "auditorModelFallbacks",
   "auditorAllowedExtensions",
+  "auditorMirrorSessionExtensions",
   "auditorSameSessionSwap",
   "auditorThinkingLevel",
   "auditorToolTimeoutMs",
