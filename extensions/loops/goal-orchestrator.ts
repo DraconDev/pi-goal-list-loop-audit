@@ -1257,6 +1257,33 @@ function archiveCurrentGoal(
     });
   }
   appendLedger(ctx.cwd, "goal_archived", { goalId: goal.id, status, stopReason, objective: goal.objective.slice(0, 300) });
+  // v0.38.63 (field 032245): verified-done work needs no repair. Void
+  // queued repair items targeting this goal (disk + memory) before the
+  // terminal state lands, or the completion cascade wakes a bogus
+  // "Repair the blocked goal..." item right after the close. Centralized
+  // here because every completion path (detached audit, inline/provider-
+  // retry, manual verify) funnels through this archive fence. Aborts keep
+  // their queue — only a completion verdict moots a repair.
+  if (status === "complete") {
+    const mootRepairs = (state.list ?? []).filter((item) => item.repairTarget?.id === goal.id);
+    if (mootRepairs.length > 0) {
+      const voided: string[] = [];
+      const voidFailed: string[] = [];
+      for (const item of mootRepairs) {
+        const deleted = deleteQueueItemFileResult(ctx.cwd, item.id);
+        if (!deleted.failed) voided.push(item.id);
+        else voidFailed.push(item.id);
+      }
+      if (voided.length > 0) {
+        replaceState({ ...state, list: (state.list ?? []).filter((item) => !voided.includes(item.id)) });
+      }
+      appendLedger(ctx.cwd, "faulty_objective_repair_voided_on_approval", {
+        goalId: goal.id,
+        voided,
+        ...(voidFailed.length > 0 ? { voidFailed } : {}),
+      });
+    }
+  }
   const terminalStateLanded = persistState(ctx);
   if (!terminalStateLanded) {
     replaceState(stateBeforeArchive);
