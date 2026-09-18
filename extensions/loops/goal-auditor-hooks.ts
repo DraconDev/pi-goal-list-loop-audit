@@ -1635,7 +1635,10 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       auditorFallbackExhausted: undefined,
       // Display identity survives cursor clearing as structured state —
       // never re-parsed from prose (auditor objection 2026-09-17T18:49:
-      // dotted model IDs broke the reason-based extraction).
+      // dotted model IDs broke the reason-based extraction). Same for
+      // auditorEvictedRefs + the identical-failure streak (audit-stuck
+      // batch): the spread above preserves them — do NOT clear them here,
+      // or the next episode re-seeds dead refs and resets the park count.
       exhaustedChain,
     };
     result = { ...result, fallbackExhausted: false };

@@ -1609,6 +1609,10 @@ function registerAgentTools(pi: any): void {
             auditorFailureCount: undefined,
             auditorFallbackExhausted: undefined,
             exhaustedChain,
+            // v0.38.63 (audit-stuck batch): burn clears ONLY the walker
+            // cursor above — auditorEvictedRefs + the identical-failure
+            // streak ride the spread untouched so the next episode neither
+            // re-seeds dead refs nor resets the terminal-park count.
           };
           chainExhaustedToLadder = true;
         }
