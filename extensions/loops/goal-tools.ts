@@ -858,9 +858,14 @@ function registerAgentTools(pi: any): void {
         at: nowIso(),
       }, "complete-goal");
       if (!completionClaim) {
+        // Post-drafting stuck cluster (field 111629/111957): a persist
+        // failure is an ERROR, not a pending narrative — the agent previously
+        // narrated "a detached auditor is settling it" and waited on an
+        // auditor that was never launched. isError forces the failure path.
         return {
-          content: [{ type: "text", text: "Completion claim was not persisted; no auditor was launched. Fix .pi-glla storage and retry complete_goal." }],
+          content: [{ type: "text", text: "FAILED — completion claim was not persisted; no auditor was launched. Do NOT wait for an audit — fix .pi-glla storage and retry complete_goal." }],
           details: {},
+          isError: true,
         };
       }
       updateGoal({ pendingTasks: undefined, ...(finalSummary ? { completionSummary: finalSummary } : {}) }, ctx);
@@ -1860,7 +1865,10 @@ function registerAgentTools(pi: any): void {
             pauseKind: "wait",
             pauseResumeAt: new Date(Date.now() + plan.retryAfterSec * 1000).toISOString(),
             pauseReason: `auditor retry: ${exhaustedNotice}${failureCopy.display}`,
-            pauseSuggestedAction: `Auto-retry in ${fmtRetryDelay(plan.retryAfterSec)} — or ${activeGoalSurfaceCommand("resume")} to retry now`,
+            // Post-drafting stuck cluster (field 110418): mirror of the hooks
+            // park path — name resume_goal so the agent never bounces a
+            // recovery wait to a user-side resume command.
+            pauseSuggestedAction: `Auto-retry in ${fmtRetryDelay(plan.retryAfterSec)} — or ${activeGoalSurfaceCommand("resume")} to retry now (agent: resume_goal also retries now)`,
           }, ctx);
           appendLedger(ctx.cwd, "goal_paused", { reason: `auditor retry: retry in ${plan.retryAfterSec}s (uniform schedule)`, attempt: plan.attempt, autoRetryUntil: plan.autoRetryUntil, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey });
           scheduleProviderRetryForSession(ctx, plan.retryAfterSec, result.error, (fresh: ExtensionContext) => {
@@ -2438,7 +2446,7 @@ function registerAgentTools(pi: any): void {
   pi.registerTool(defineTool({
     name: "resume_goal",
     label: "Resume goal",
-    description: "Resume the paused goal or list item yourself when the user has authorized continuation in this conversation (answered a decision, waived the blocker, supplied the missing input, or the wait time arrived). This is the agent-side equivalent of the user's resume command: it clears the pause and reactivates the goal, then returns — you MUST keep working in this same turn (work the objective, call complete_goal, or pause_goal again). It schedules nothing by itself. A cold-load hold releases like any explicit work command; a supervisor freeze stays user-typed (the tool refuses while frozen). Never call it to bypass a pause whose blocker is still outstanding.",
+    description: "Resume the paused goal or list item yourself when the user has authorized continuation in this conversation (answered a decision, waived the blocker, supplied the missing input, or the wait time arrived). This is the agent-side equivalent of the user's resume command: it clears the pause and reactivates the goal, then returns — you MUST keep working in this same turn (work the objective, call complete_goal, or pause_goal again). It schedules nothing by itself. A cold-load hold releases like any explicit work command; a supervisor freeze stays user-typed (the tool refuses while frozen). This covers every paused list item and recovery-timer wait you hold — including auditor-retry and main-model-recovery waits: resume them yourself instead of asking the user to run a resume command. Never call it to bypass a pause whose blocker is still outstanding.",
     parameters: Type.Object({
       reason: Type.Optional(Type.String({
         maxLength: 500,

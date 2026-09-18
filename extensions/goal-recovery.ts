@@ -785,9 +785,13 @@ export function setMainModelRecoveryPause(ctx: ExtensionContext, recovery: MainM
   clearLoopTimer();
   flags.continuationDispatchStoodDown = true;
   const resumeCmd = recoverySurfaceCommand(normalized.kind, "resume");
+  // Post-drafting stuck cluster (field 110418): the agent concluded only a
+  // user-side resume could clear a recovery wait and bounced to the user.
+  // State the agent verb alongside the user verbs — this wait is resumable
+  // from the agent side with resume_goal.
   const recoveryAction = `${aggressive
     ? "The provider failure is being retried automatically with adaptive backoff for as long as it remains recoverable"
-    : "The provider failure is being retried automatically within the bounded recovery window"}; configured fallback models are tried in order. ${resumeCmd} retries immediately; ${activeGoalSurfaceCommand("cancel")} stops it.`;
+    : "The provider failure is being retried automatically within the bounded recovery window"}; configured fallback models are tried in order. ${resumeCmd} retries immediately; the agent can retry immediately with resume_goal; ${activeGoalSurfaceCommand("cancel")} stops it.`;
   if (normalized.kind === "goal" && state.goal) {
     updateGoal({
       status: "paused",
@@ -817,7 +821,7 @@ export function setMainModelRecoveryPause(ctx: ExtensionContext, recovery: MainM
   const noticeKey = `${normalized.recoveryEpisodeKey ?? "main-recovery"}:wait`;
   if (claimRecoveryNotice(state.mainModelRecovery, noticeKey)) {
     persistState(ctx);
-    ctx.ui.notify(`Main model recovery: ${sanitizeProviderDisplayText(normalized.reason)}. Trying again in ${minutes}m; work is saved and will not be abandoned.`, "warning");
+    ctx.ui.notify(`Main model recovery: ${sanitizeProviderDisplayText(normalized.reason)}. Trying again in ${minutes}m; work is saved and will not be abandoned. The agent can retry now with resume_goal.`, "warning");
   }
   const externalNoticeKey = `${normalized.recoveryEpisodeKey ?? "main-recovery"}:external-wait`;
   if (claimRecoveryNotice(state.mainModelRecovery, externalNoticeKey)) {
