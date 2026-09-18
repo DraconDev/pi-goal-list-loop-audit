@@ -1735,9 +1735,9 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   }
 
   // v0.36.0: ANY infrastructure failure enters the durable retry plan —
-  // error text is not trusted to pick a failure family. Conservative mode
-  // keeps its horizon; aggressive mode preserves the claim on recurring
-  // per-attempt backoff until a state-based stop.
+  // error text is not trusted to pick a failure family. Every mode persists
+  // the same fixed recovery horizon so the first automatic dispatch can
+  // enforce it even after delayed timer delivery.
   if (result.error && !result.disapproved) {
     // Preserve the claim, but use a durable bounded plan.
     const failureCopy = providerErrorPresentation(result.error, "completion");

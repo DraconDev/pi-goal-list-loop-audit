@@ -29,3 +29,45 @@ Final command: `TMPDIR=/var/tmp timeout 1800 npm run release:check`.
 Includes TypeScript, jiti state-split check, offline auditor extension verification, package dry-run and installed-tarball import smoke. Test stage: 2302 tests across 229 files, 845.90s. Package is still 0.38.62; this is validation, not a new publication.
 
 Two pre-existing environment-gated skips: real AgentManager child stop through root RPC; watched-repo auto-committer survival. No new skips. `git diff --check` passed. Test edits committed by the daemon, including `d2c404a3`, `4524f2f1`, `9702a52f`, `2db8d712`. No production code, model settings, history rewriting or owner note changes in this repair.
+
+## Addendum — 22:39 audit: initial `complete_goal` path (2026-09-18)
+
+The auditor accepted the suite repairs but showed the bounded-recovery fixes
+in `goal-auditor-hooks.ts` were missing from the initial `complete_goal`
+path in `goal-tools.ts`: aggressive exhaustion dropped `retryUntil`, passed
+raw thinking levels to every candidate, and discarded the chain at cursor
+clearing — while `tests/behavioral-orchestrator.test.ts` pinned the old
+"without a horizon" behavior. All three findings were valid; fixed inline
+in `281d09e0` (import `resolveAuditorThinkingLevel`, per-candidate
+`auditor_thinking_selected` ledger + `effectiveThinking` worker request,
+`exhaustedChain` captured before clearing with full cursor reset,
+`retryUntil: plan.autoRetryUntil` in all modes, chain notice in capped and
+retry-wait parked reasons, explicit `"provider-retry"` timer origin) with
+the contradictory test rewritten as `bounded recovery: initial aggressive
+completion preserves its horizon and exhausted chain` (`b1c8cc0a`,
+`d7f0e4f6`): unsupported `max` observably falls back to `high` in real
+worker argv, the real claim keeps its 24h deadline + chain, and a
+post-deadline automatic dispatch launches nothing with counters untouched.
+
+The next canonical gate then failed 6 tests (`/var/tmp/glla-initial-completion-gate.log`,
+2294 pass / 6 fail): five were source-shape pins asserting the superseded
+initial-path text, updated to the auditor-required contract —
+`tests/model-picker.test.ts` (initial path now resolves `effectiveThinking`
+per candidate), `tests/retry-bounds.test.ts` E2 + `tests/pause-informativeness.test.ts`
+(capped stop carries `${exhaustedNotice}`), `tests/retry-bounds.test.ts`
+v0.28.26 (timer origin explicit `"provider-retry"`, scoped to the
+initial-completion file), `tests/uniform-provider-retry.test.ts`
+(retry-wait reason carries `${exhaustedNotice}`). The sixth
+(`auditor-process.test.ts:750`, 4 of 7 byte counts observed) was a
+sampled-poll flake: the fixed 500ms sleep still let the parent overwrite
+snapshots before observing them. Replaced with a bounded parent-observed
+ack handshake (producer advances only after `onProgress` acknowledges each
+cumulative length; 20s per-fragment bound so a real stall fails instead of
+hanging) plus per-value containment assertions — strictly stronger and
+faster (0.7s vs 4.8s). No behavioral assertion weakened anywhere.
+
+Final gate `/var/tmp/glla-initial-completion-gate2.log`: **2300 pass,
+0 fail, 2 env-gated skips; exit 0** (2302 tests, 229 files, 457.61s,
+typecheck + jiti + offline auditor check + pack + installed-tarball smoke).
+`git diff --check` clean. Test edits daemon-committed as `afaea15f`.
+Diff artifact for the dead-reviewer handoff: `/var/tmp/glla-initial-repair.diff`.
