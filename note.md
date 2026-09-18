@@ -108,7 +108,7 @@ i really dont like the complete into audit, complete is based on audit
 
 but basically same bug everywhere the auditor pends forever
 
-i think we should be showing the audit working
+i think we should be showing the audit working, albeit it mgiht be tied to some models being less reliable
 
 ##
 too long wait
