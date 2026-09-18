@@ -126,7 +126,7 @@ isGoalRevisionCurrent,
   type ModelSwitchRecord,
   type ListItem,
 } from "../goal-loop-core.js";
-import {
+import { dispatchAuditorAllowedExtensions } from "../auditor-extensions.js";
   createContinuationDispatch,
   dispatchMatchesOwner,
   dispatchPromptMatches,
