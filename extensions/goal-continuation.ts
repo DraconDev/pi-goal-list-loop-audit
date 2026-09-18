@@ -67,7 +67,7 @@ import {
   type ContinuationDispatch,
 } from "./goal-loop-dispatch.js";
 import { BACKOFF_IDLE_RETRY_MS, HEARTBEAT_MAX_NUDGES } from "./goal-loop-backoff.js";
-import { LENGTH_CONTINUE_MAX, LENGTH_CONTINUE_TEXT } from "./length-continue.js";
+import { GOAL_LENGTH_CONTINUE_TEXT, LENGTH_CONTINUE_MAX, LENGTH_CONTINUE_TEXT } from "./length-continue.js";
 
 // v0.38.0: GLLA_MONITOR_INTERVAL_MS throttling is deprecated — scheduling is
 // event-driven (250ms→15s adaptive fallback) for every plane, including
@@ -1466,21 +1466,25 @@ export function sendLengthContinue(ctx: ExtensionContext, consecutive: number): 
   // chain — same abort-latch reasoning as sendContinuation.
   if (flags.sessionHandoffPending || flags.initialSessionLoadPending || !flags.extensionApi || flags.extensionApiStale || continuationDispatchStoodDown || pendingContinuationDispatch || flags.abortedStandDown) return;
   if (state.goal && !guardGoalBeforeContinuation(ctx, "length-continuation")) return;
+  // v0.38.66 (PR #55, FOF11): active goals get completion-aware recovery
+  // text — a truncated turn must offer closure, not another blind work
+  // pass. Plain sessions keep the generic text.
+  const content = state.goal?.status === "active" ? GOAL_LENGTH_CONTINUE_TEXT : LENGTH_CONTINUE_TEXT;
   const attempt = dispatchPrepare(ctx, {
     generation: flags.sessionGeneration,
     ownerSessionId: sessionManagerId(ctx),
     kind: "length",
-    marker: LENGTH_CONTINUE_TEXT.slice(0, 80),
+    marker: content.slice(0, 80),
     resync: false,
   });
   if (!attempt) return;
   try {
     flags.extensionApi.sendMessage({
       customType: GOAL_EVENT_ENTRY,
-      content: LENGTH_CONTINUE_TEXT,
+      content,
       display: true,
     }, { triggerTurn: true, deliverAs: "followUp" });
-    lastContinuationSentPayload = { content: LENGTH_CONTINUE_TEXT, display: true }; // v0.34.88: verbatim retry payload
+    lastContinuationSentPayload = { content, display: true }; // v0.34.88: verbatim retry payload
     if (!dispatchAccepted(ctx, attempt)) return;
     appendLedger(ctx.cwd, "length_continue_sent", { consecutive, attemptId: attempt.id });
     ctx.ui.notify(`Response hit the output-token cap — auto-continuing (${consecutive}/${LENGTH_CONTINUE_MAX})`, "warning");
