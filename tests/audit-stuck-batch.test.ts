@@ -19,6 +19,8 @@ import { __testOnlyResetAuditorSurface } from "../extensions/loops/goal-auditor-
 import {
   isUnresolvableAuditorModelRefError,
   filterEvictedAuditorRefs,
+  AUDITOR_IDENTICAL_FAILURE_PARK_THRESHOLD,
+  trackAuditorIdenticalFailure,
   readState,
 } from "../extensions/goal-loop-core.ts";
 import {
@@ -129,6 +131,53 @@ test("124544: resume_goal probes pending main-model recovery inline, no user bou
   } finally {
     await pi.fire("session_shutdown", { reason: "quit" }, ctx);
   }
+});
+
+// ---------------------------------------------------------------------------
+// N consecutive identical infra failures park blocked-with-action, naming the
+// dead chain — the loop terminates visibly instead of re-arming forever.
+// ---------------------------------------------------------------------------
+
+test("identical infra failures count toward a bounded identical-park threshold", () => {
+  assert.equal(AUDITOR_IDENTICAL_FAILURE_PARK_THRESHOLD, 3);
+  assert.deepEqual(trackAuditorIdenticalFailure({}, "provider:fp-a"), {
+    auditorLastFailureFingerprint: "provider:fp-a",
+    auditorConsecutiveIdenticalFailures: 1,
+    identicalParkDue: false,
+  });
+  assert.deepEqual(
+    trackAuditorIdenticalFailure({ auditorLastFailureFingerprint: "provider:fp-a", auditorConsecutiveIdenticalFailures: 1 }, "provider:fp-a"),
+    { auditorLastFailureFingerprint: "provider:fp-a", auditorConsecutiveIdenticalFailures: 2, identicalParkDue: false },
+  );
+  assert.deepEqual(
+    trackAuditorIdenticalFailure({ auditorLastFailureFingerprint: "provider:fp-a", auditorConsecutiveIdenticalFailures: 2 }, "provider:fp-a"),
+    { auditorLastFailureFingerprint: "provider:fp-a", auditorConsecutiveIdenticalFailures: 3, identicalParkDue: true },
+  );
+  assert.deepEqual(
+    trackAuditorIdenticalFailure({ auditorLastFailureFingerprint: "provider:fp-a", auditorConsecutiveIdenticalFailures: 2 }, "provider:fp-b"),
+    { auditorLastFailureFingerprint: "provider:fp-b", auditorConsecutiveIdenticalFailures: 1, identicalParkDue: false },
+    "a different failure restarts the streak",
+  );
+});
+
+test("identical-failure counters survive a state round-trip sanitized", () => {
+  const cwd = tmpCwd();
+  seedState(cwd, {
+    goal: seedGoal({
+      status: "paused",
+      pendingCompletion: {
+        at: new Date().toISOString(),
+        phase: "retry-waiting",
+        auditorLastFailureFingerprint: "provider:fp-a",
+        auditorConsecutiveIdenticalFailures: 2,
+        auditorEvictedRefs: ["agnes/agnes-3.0-flash"],
+      },
+    }),
+  } as unknown as Parameters<typeof seedState>[1]);
+  const claim = readState(cwd).goal?.pendingCompletion;
+  assert.equal(claim?.auditorLastFailureFingerprint, "provider:fp-a");
+  assert.equal(claim?.auditorConsecutiveIdenticalFailures, 2);
+  assert.deepEqual(claim?.auditorEvictedRefs, ["agnes/agnes-3.0-flash"]);
 });
 
 test("124541: re-seed filters evicted refs so the next episode starts live", () => {
