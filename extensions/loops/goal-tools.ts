@@ -142,6 +142,7 @@ isGoalRevisionCurrent,
   clearLoadHold,
   isProviderRecoveryArmed,
 } from "../goal-loop-core.js";
+import { dispatchAuditorAllowedExtensions } from "../auditor-extensions.js";
 import {
   applyValidatedBatch,
   collectOpenTasks,
