@@ -87,6 +87,24 @@ test("032245: a paused suspicious goal can submit complete_goal and close on aud
   await waitFor(() => readState(cwd).goal === null);
 });
 
+test("stored-completion-audit retry settles a suspicious claim instead of re-pausing it", async () => {
+  const cwd = tmpCwd();
+  const ctx = await boot(cwd, seedGoal({
+    status: "paused",
+    pauseKind: "blocked",
+    pauseReason: "Suspicious objective detected (verification-fragment).",
+    objective: FIELD_OBJECTIVE,
+    pendingCompletion: { attemptId: "attempt-1", phase: "recovery-pending" },
+  }));
+  const goal = readState(cwd).goal;
+  assert.ok(goal);
+  // Without the close flag the guard still shields worker dispatch.
+  assert.equal(guardGoalBeforeContinuation(ctx, "stored-completion-audit", goal.id, { allowAuditing: true }), false);
+  // With it, the in-flight claim may settle — artifacts, not prose.
+  assert.equal(guardGoalBeforeContinuation(ctx, "stored-completion-audit", goal.id, { allowAuditing: true, allowSuspiciousClose: true }), true);
+  assert.match(ledger(cwd), /"faulty_objective_suspicious_close_allowed"/);
+});
+
 test("narrowness: paused-by-user and paused repair cards still refuse complete_goal", async () => {
   const cwd = tmpCwd();
   const ctx = await boot(cwd, seedGoal({
