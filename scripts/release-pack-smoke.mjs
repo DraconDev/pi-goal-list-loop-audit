@@ -102,6 +102,48 @@ try {
   const packedLauncher = await import(pathToFileURL(path.join(installedPackage, "scripts/goal-auditor-launch.mjs")).href);
   if (typeof packedLauncher.buildAuditorPiSpawnSpec !== "function") throw new Error("packed launcher did not load");
   if (typeof packedLauncher.renameWithWindowsRetry !== "function") throw new Error("packed launcher exports are incomplete");
+
+  // Tar-list presence is not worker coverage. Start the shipped worker from
+  // the installed tree with a tiny RPC stub, then require its real result.json
+  // protocol to complete within the smoke timeout.
+  const stableJson = (value) => {
+    if (value === null || typeof value !== "object") return JSON.stringify(value);
+    if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`).join(",")}}`;
+  };
+  const workerProbe = path.join(workspace, "worker-probe");
+  fs.mkdirSync(workerProbe, { recursive: true });
+  const attemptId = "packed-worker-probe";
+  const request = {
+    protocolVersion: 1,
+    attemptId,
+    cwd: repoRoot,
+    prompt: "packed worker smoke probe",
+    model: "packed-probe/model",
+    thinkingLevel: "minimal",
+  };
+  request.requestHash = createHash("sha256").update(stableJson(request), "utf8").digest("hex");
+  fs.writeFileSync(path.join(workerProbe, "request.json"), `${JSON.stringify(request)}\n`);
+  fs.writeFileSync(path.join(workerProbe, "lock"), "{}\n");
+  const piStub = path.join(workspace, "pi-rpc-stub.mjs");
+  fs.writeFileSync(piStub, [
+    "#!/usr/bin/env node",
+    "process.stdout.write(JSON.stringify({type: 'message_update', assistantMessageEvent: {type: 'text_delta', delta: '<approved/>'}}) + '\\n');",
+    "process.stdout.write(JSON.stringify({type: 'agent_settled'}) + '\\n');",
+  ].join("\n"));
+  fs.chmodSync(piStub, 0o755);
+  const workerPath = path.join(installedPackage, "scripts/goal-auditor-worker.mjs");
+  execFileSync(process.execPath, [workerPath, "--job-dir", workerProbe], {
+    cwd: installedPackage,
+    env: { ...process.env, GLLA_PI_BINARY: piStub, GLLA_AUDITOR_STALL_MS: "1000", GLLA_AUDITOR_EOF_EXIT_GRACE_MS: "100" },
+    encoding: "utf8",
+    timeout: 15_000,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  const workerResult = JSON.parse(fs.readFileSync(path.join(workerProbe, "result.json"), "utf8"));
+  if (workerResult.ok !== true || workerResult.output !== "<approved/>") throw new Error("packed worker did not complete its RPC probe");
+  console.log("OK: packed launcher loaded and worker completed its bounded RPC probe");
+
   // Audit 2026-09-13: presence is not loadability — run the packed skill
   // through Pi's own loader against the INSTALLED tree (the source-tree
   // check in release-contract.test.ts cannot catch tarball-only defects).
