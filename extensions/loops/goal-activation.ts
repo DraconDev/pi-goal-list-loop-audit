@@ -2044,13 +2044,13 @@ async function handleHotLengthExhaustion(
   percent: number | null,
   consecutive: number,
   recentCompact: boolean,
-): Promise<boolean> {
+): Promise<"kick" | "settle" | "fresh"> {
   if (decision === "rotate-fallback") {
     const switched = await recoverFromContextOverflow(ctx, `output-token limit — ${LENGTH_CONTINUE_MAX}× truncated at ${percent !== null ? `${percent.toFixed(1)}%` : "near-full"} context; rotating to a larger-context model`);
     if (switched) {
       appendLedger(ctx.cwd, "length_exhausted_rotated", { consecutive, contextPercent: percent });
       ctx.ui.notify(`glla: response truncated ${LENGTH_CONTINUE_MAX}× at ${percent !== null ? `${percent.toFixed(1)}%` : "near-full"} context — rotated to a larger-context backup model with a fresh truncation budget.`, "info");
-      return true;
+      return "kick";
     }
     // Rotation refused (chain burned between decision and attempt) — fall
     // through to compaction-defer below rather than parking.
@@ -2064,9 +2064,12 @@ async function handleHotLengthExhaustion(
       notify: (message) => ctx.ui.notify(message, "info"),
       page: (message) => notifyExternal(ctx, message),
     });
-    return true;
+    // v0.38.68 reviewer P1: settle owns the resume — kicking a turn here
+    // dispatches into a known-hot window before the starvation choke
+    // engages (refuse bites at streak>=2; first exhaustion yields streak=1).
+    return "settle";
   }
-  return false;
+  return "fresh";
 }
 
   pi.on("agent_end", async (event: any, ctx: ExtensionContext) => {
@@ -2224,12 +2227,12 @@ async function handleHotLengthExhaustion(
           const decision = decideLengthExhaustion({ contextPercent: percent, fallbackRefsAvailable: mainModelFallbackRefs(ctx).length > 0 });
           const sinceLastCompactMs = state.lastCompactionAt ? Date.now() - state.lastCompactionAt : Number.POSITIVE_INFINITY;
           const handled = await handleHotLengthExhaustion(ctx, decision, percent, lc.consecutive, sinceLastCompactMs < COMPACTION_GRACE_MS);
-          if (!handled) {
+          if (handled === "fresh") {
             appendLedger(ctx.cwd, "length_exhausted_fresh_budget", { consecutive: lc.consecutive, contextPercent: percent, episode: episode.episodes });
             ctx.ui.notify(`glla: response hit the output-token cap ${LENGTH_CONTINUE_MAX}× in a row — truncation budget restarted (relentless episode ${episode.episodes} of ${LENGTH_EXHAUSTION_MAX_EPISODES - 1}). Split the work into smaller pieces across turns; a repeat parks for manual action.`, "warning");
           }
           resetLengthContinue();
-          scheduleContinuation(ctx);
+          if (handled !== "settle") scheduleContinuation(ctx);
         }
       } else if (state.loop?.active) {
         // v0.38.68 (relentless): same bounded episodes as the goal branch.
@@ -2250,12 +2253,12 @@ async function handleHotLengthExhaustion(
           const decision = decideLengthExhaustion({ contextPercent: percent, fallbackRefsAvailable: mainModelFallbackRefs(ctx).length > 0 });
           const sinceLastCompactMs = state.lastCompactionAt ? Date.now() - state.lastCompactionAt : Number.POSITIVE_INFINITY;
           const handled = await handleHotLengthExhaustion(ctx, decision, percent, lc.consecutive, sinceLastCompactMs < COMPACTION_GRACE_MS);
-          if (!handled) {
+          if (handled === "fresh") {
             appendLedger(ctx.cwd, "length_exhausted_fresh_budget", { consecutive: lc.consecutive, contextPercent: percent, episode: episode.episodes });
             ctx.ui.notify(`glla: response hit the output-token cap ${LENGTH_CONTINUE_MAX}× in a row — truncation budget restarted (relentless episode ${episode.episodes} of ${LENGTH_EXHAUSTION_MAX_EPISODES - 1}). Split the work into smaller pieces across turns; a repeat stops the loop.`, "warning");
           }
           resetLengthContinue();
-          scheduleLoopTick(ctx);
+          if (handled !== "settle") scheduleLoopTick(ctx);
         }
       } else {
         notifyExternal(ctx, "Response truncated 3× in a row — giving up auto-continue.");
