@@ -1615,7 +1615,17 @@ export function mainModelRecoverySucceeded(ctx: ExtensionContext): void {
 
     const probeAt = alreadyScheduled
       ? existingProbeAt!
-      : new Date(Date.now() + mainModelPrimaryProbeDelay()).toISOString();
+      : new Date(Math.max(
+        Date.now() + mainModelPrimaryProbeDelay(),
+        // v0.38.69 (Antigravity port): the primary failed with an explicit
+        // quota reset, and the fallback is serving — probe AT the reset,
+        // not on the generic cadence, so a known-walled primary is not
+        // hammered every 15m while work proceeds on the chain.
+        (() => {
+          const resetMs = recovery.primaryResetAt ? Date.parse(recovery.primaryResetAt) : Number.NaN;
+          return Number.isFinite(resetMs) ? resetMs : 0;
+        })(),
+      )).toISOString();
     const nextRecovery: MainModelRecovery = {
       ...recovery,
       active: current,
