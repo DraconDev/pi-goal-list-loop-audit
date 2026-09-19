@@ -9,7 +9,7 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 
-import { decideLengthExhaustion } from "../extensions/length-continue.js";
+import { decideLengthExhaustion, LENGTH_EXHAUSTION_MAX_EPISODES, nextLengthExhaustionEpisode } from "../extensions/length-continue.js";
 
 test("hot context with fallback refs rotates to a larger-context model", () => {
   assert.equal(
@@ -43,7 +43,16 @@ test("roomy context grants one fresh budget, never an immediate manual park", ()
   );
 });
 
-test("unknown context heat degrades to fresh-budget, never rotate", () => {
+test("exhaustion episodes: first wedge stays relentless, second parks", () => {
+  assert.equal(LENGTH_EXHAUSTION_MAX_EPISODES, 2);
+  assert.deepEqual(nextLengthExhaustionEpisode(0), { episodes: 1, parkNow: false });
+  assert.deepEqual(nextLengthExhaustionEpisode(1), { episodes: 2, parkNow: true });
+});
+
+test("exhaustion episodes degrade garbage to a fresh first episode", () => {
+  assert.deepEqual(nextLengthExhaustionEpisode(Number.NaN), { episodes: 1, parkNow: false });
+  assert.deepEqual(nextLengthExhaustionEpisode(-5), { episodes: 1, parkNow: false });
+});
   // Without a heat reading we cannot prove the prompt needs a bigger
   // model — rotating blind would burn the fallback chain for nothing.
   assert.equal(

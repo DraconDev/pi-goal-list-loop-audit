@@ -144,6 +144,22 @@ export function decideLengthExhaustion(args: {
   return "fresh-budget";
 }
 
+export const LENGTH_EXHAUSTION_MAX_EPISODES = 2;
+
+/** v0.38.68 (relentless goal): bounded exhaustion episodes. The first
+truncation-budget exhaustion stays relentless (rotate / compact-defer /
+fresh-budget per decideLengthExhaustion); when THAT budget exhausts too,
+park for manual action instead of burning quota forever. Pure — the
+agent_end site holds the counter and resets it on clean turns,
+session_start, and manual parks. */
+export function nextLengthExhaustionEpisode(priorEpisodes: number): { episodes: number; parkNow: boolean } {
+  const base = typeof priorEpisodes === "number" && Number.isFinite(priorEpisodes) && priorEpisodes > 0
+    ? Math.trunc(priorEpisodes)
+    : 0;
+  const episodes = base + 1;
+  return { episodes, parkNow: episodes >= LENGTH_EXHAUSTION_MAX_EPISODES };
+}
+
 export function makeLengthContinueTracker(max: number = LENGTH_CONTINUE_MAX) {
   let consecutive = 0;
   let gaveUp = false;
