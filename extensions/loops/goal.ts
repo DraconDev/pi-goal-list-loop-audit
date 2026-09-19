@@ -16,7 +16,7 @@ import "./goal-auditor-hooks.js";
 import "./goal-list-queue.js";
 import "./goal-tools.js";
 import "./goal-settings-ui.js";
-import { abortZombieRun, enqueueFaultRepairTask, registerGoalRuntime } from "./goal-activation.js";
+import { abortZombieRun, enqueueFaultRepairTask, registerGoalRuntime, resetLengthExhaustionEpisodes } from "./goal-activation.js";
 
 import {
   createGoalContinuation,
@@ -178,6 +178,7 @@ const commandDeps: CommandDeps = {
   releaseContinuationDispatchStandDown,
   releaseInitialSessionLoadBarrier,
   resolveCarryover,
+  resetLengthExhaustionEpisodes,
   safeSteerUser,
   scheduleContinuation,
   scheduleSessionTimeout,
