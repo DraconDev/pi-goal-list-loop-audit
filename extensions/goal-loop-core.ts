@@ -4116,6 +4116,7 @@ export function freshAuditorCycleClaim<T extends Record<string, unknown>>(claim:
   for (const key of FRESH_AUDITOR_CYCLE_CLEARED_KEYS) delete reseeded[key];
   return reseeded as T;
 }
+/** v0.38.63: append a dead ref to the eviction list when the error proves it
  * unresolvable; otherwise return the list untouched (absent stays absent).
  * Bounded to MAX_AUDITOR_CANDIDATE_REFS like every other cursor ref list. */
 export function withEvictedAuditorRef(evicted: string[] | undefined, candidateRef: string, error: string): string[] | undefined {
