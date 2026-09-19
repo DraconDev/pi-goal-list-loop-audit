@@ -43,11 +43,16 @@ test("freshAuditorCycleClaim reseeds the dead chain and restarts the streak", ()
     retryAttempts: 9,
     retryFirstAt: new Date().toISOString(),
     retryUntil: new Date().toISOString(),
+    exhaustedChain: "dead/ref → deader/ref",
+    providerErrorDiagnostic: "429 wall from last cycle",
   });
   assert.equal(reseeded.auditorCandidateRefs, undefined);
   assert.equal(reseeded.auditorLastFailureFingerprint, undefined);
   assert.equal(reseeded.auditorConsecutiveIdenticalFailures, undefined);
   assert.equal(reseeded.auditorFallbackExhausted, undefined);
+  // v0.38.68 reviewer P2: stale chain/diagnostic must not render one cycle late.
+  assert.equal((reseeded as Record<string, unknown>).exhaustedChain, undefined);
+  assert.equal((reseeded as Record<string, unknown>).providerErrorDiagnostic, undefined);
   assert.equal(reseeded.retryAttempts, undefined);
   assert.equal(reseeded.retryUntil, undefined);
 });

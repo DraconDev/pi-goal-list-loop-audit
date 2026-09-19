@@ -4109,6 +4109,10 @@ const FRESH_AUDITOR_CYCLE_CLEARED_KEYS = [
   "retryAttempts",
   "retryFirstAt",
   "retryUntil",
+  // v0.38.68 reviewer P2: a fresh cycle must not render the previous
+  // cycle's dead chain or wall text one round late.
+  "exhaustedChain",
+  "providerErrorDiagnostic",
 ] as const;
 
 export function freshAuditorCycleClaim<T extends object>(claim: T): T {
