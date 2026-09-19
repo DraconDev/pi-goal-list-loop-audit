@@ -1525,7 +1525,34 @@ export function buildPostCompactResync(briefExcerpt?: string): string {
   return lines.join("\n") + "\n\n";
 }
 
-export function continuationPrompt(goal: Goal, opts: { includeRestartDetail?: boolean } = {}): string {
+/**
+ * v0.38.69 (Antigravity port, 09-04 borrow candidate #1): per-repo pitfall
+ * registry. `.pi-glla/pitfalls.md` holds distilled, answer-agnostic rakes
+ * (never ledger prose — the ledger is forensics, never distilled). Read at
+ * goal start (and re-read when edited mid-goal); absent/blank/unreadable
+ * resolves absent so repos without one render byte-identical prompts.
+ */
+export const PITFALLS_BRIEF_MAX_CHARS = 1500;
+
+export function readPitfallsBrief(cwd: string): string | undefined {
+  let body: string;
+  try {
+    body = fs.readFileSync(path.join(cwd, ".pi-glla", "pitfalls.md"), "utf8");
+  } catch {
+    return undefined;
+  }
+  const trimmed = body.trim();
+  if (!trimmed) return undefined;
+  return trimmed.length > PITFALLS_BRIEF_MAX_CHARS
+    ? trimmed.slice(0, PITFALLS_BRIEF_MAX_CHARS)
+    : trimmed;
+}
+
+/** Goals already ledgered for their pitfalls consult this process — the
+ * ledger records the consult once per goal, never once per turn. */
+const pitfallsLedgeredGoals = new Set<string>();
+
+export function continuationPrompt(goal: Goal, opts: { includeRestartDetail?: boolean; pitfallsBrief?: string } = {}): string {
   // Read the .md file as the template, then substitute {{tokens}}.
   // For v0.1.0 we inline-substitute so we don't need fs at runtime.
   const next = findNextPendingTask(goal.taskList?.tasks ?? []);
@@ -1567,7 +1594,8 @@ export function continuationPrompt(goal: Goal, opts: { includeRestartDetail?: bo
   // Prompt rendering is also used by offline/status tests before the runtime
   // factory has wired the context accessor. Treat that as an ordinary
   // process-cwd render rather than calling an uninitialized hook.
-  const settingsCwd = freshCtx?.()?.cwd ?? process.cwd();  const effSettings = resolveEffectiveAggressiveSettings(loadSettings(settingsCwd));
+  const settingsCwd = freshCtx?.()?.cwd ?? process.cwd();
+  const effSettings = resolveEffectiveAggressiveSettings(loadSettings(settingsCwd));
   // Auditor-derived TODOs are part of the same stale report surface. Keep
   // them durable, but do not inject them before continuation consent.
   if (!auditorSurfaceSuppressed() && goal.pendingTasks && goal.pendingTasks.length > 0) {
