@@ -23,7 +23,7 @@ test("objection-attached retries: objection bullets extracted", () => {
   const report = [
     "<disapproved/>",
     "- The migration is missing the index on users.email.",
-    "- Unit Tests: 42 pass, 0 fail.",
+    "- Unit Tests: all green.",
     "- The rollback plan is incomplete: no down-migration.",
   ].join("\n");
   const objections = durableObjectionsForDisapproval(report);
