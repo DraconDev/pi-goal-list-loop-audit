@@ -502,6 +502,29 @@ export function extractEvidenceTokens(text: string): { text: string; evidence: s
 }
 
 /**
+ * v0.38.69 (Antigravity port): completion-claim evidence-density lint.
+ * A walkthrough always ships areas + counts; GLLA richness rode optional
+ * agent params, so a flat six-label claim with zero path:line tokens and
+ * zero gate rows still passed. Returns a NOTE annotation when the claim
+ * carries no verifiable pointer at all (no evidence tokens across the
+ * summary and every group finding, and no gate rows) — the claim still
+ * audits, but the terminal render falls back to recorded facts. Tokens in
+ * finding groups count; gate rows count as density without tokens.
+ */
+export function completionSummaryDensityNote(
+  summary: string | undefined,
+  groups?: FindingGroup[],
+  gates?: GateRow[],
+): string | undefined {
+  if (!summary?.trim()) return undefined;
+  const pool = [summary, ...(groups ?? []).flatMap((group) => group.findings ?? [])].join("\n");
+  const { evidence } = extractEvidenceTokens(pool);
+  if (evidence.length > 0) return undefined;
+  if ((gates ?? []).length > 0) return undefined;
+  return "low evidence density: no path:line evidence tokens and no verification gate rows — add file:line pointers (e.g. extensions/goal-recovery.ts:847) or a gateRows inventory so the terminal render is verifiable";
+}
+
+/**
  * v0.38.50: one compact duration line from durable goal state — turns,
  * wall-clock elapsed since creation, and audit count. Only known facts
  * render (absent stays absent); null when nothing is known.
