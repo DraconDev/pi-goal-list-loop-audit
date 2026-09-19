@@ -540,3 +540,13 @@ Verified vs disk before recording. Disposed without findings (rationale): goal-l
 - [x] FIX: MEDIUM: Structured-summary archive-token sanitizer uses unanchored greedy nonspace matching; a 100k plain token causes quadratic scanning and a reproducible default-timeout failure (extensions/completion-summary.ts:347; tests/structured-summary.test.ts:137). Measured 10k/20k/40k tokens at 67/279/1112 ms. — fixed in 9eebe344 (7488ms → 4.94ms)
 
 - [x] FIX: HIGH: Starvation refuse gate is process-wide module state with no reset; the v0.35.4 behavioral test leaves a hot episode armed, which deterministically refuses every dispatch send in the next test file (continuation_send_refused_context_starved on all sends — PROBE evidence) and times out four watchdog tests when tests/loops/goal.test.ts runs right after tests/behavioral-orchestrator.test.ts (2026-09-16, deterministic 2/2 repro). — fixed: __testOnlyResetStarvationGate() added (extensions/loops/goal-ui.ts), exported via loops/goal.ts, and the leaking test clears it in finally. Before/after on the same repro: 4 fail → 152 pass. — fixed in 66e82a51
+
+## Fresh audit — 2026-09-19
+
+- [ ] FIX: HIGH: rejected fresh-session recovery is reported as successful after newSession() returns or rejects asynchronously, leaving stale active work without a terminal/fail-closed path (extensions/goal-recovery.ts:358-414)
+- [ ] FIX: MEDIUM: hourly main-model recovery probes bypass supervisor pause, including an already-queued callback race (extensions/goal-recovery.ts:854-873,921-1007)
+- [ ] FIX: MEDIUM: stall and length continuation nudges omit stale-terminal and zombie-stand-down fences, allowing late events to trigger turns (extensions/goal-continuation.ts:1419-1434,1463-1474)
+- [ ] FIX: MEDIUM: rich terminal summaries can emit unsanitized ANSI/control bytes from details, findings, proofs, and git-derived repository state (extensions/completion-summary.ts:583-584,650-668,714-740)
+- [ ] FIX: LOW: packed release smoke aliases peer imports to the source tree, masking consumer peer-resolution failures (scripts/release-pack-smoke.mjs:78-102)
+- [ ] FIX: LOW: packed release smoke checks launcher/worker tar-list presence but never loads or starts those shipped scripts (scripts/release-pack-smoke.mjs:46-76,104-119)
+- [ ] FIX: LOW: state-root consumer coverage relies on token presence rather than a live pending-root guard for the goal-session owner write (tests/state-root-consumers.test.ts:160-169)
