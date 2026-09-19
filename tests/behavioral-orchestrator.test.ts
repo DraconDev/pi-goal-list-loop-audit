@@ -2625,6 +2625,47 @@ test("v0.38.68 reviewer P1: compact-defer settles without kicking a turn into th
   assert.equal(pi.sent.length, 3, "no continuation kicked into the hot window");
 });
 
+test("manual pause+resume between exhaustion episodes restarts the relentless cycle", async () => {
+  // A user pause between episode 1 and the next wedge must not make the
+  // next wedge park one cycle early: manual resume starts a fresh cycle.
+  __testOnlyResetStaleFlag();
+  __testOnlyResetStarvationGate();
+  resetLengthContinue();
+  __testOnlyResetLengthExhaustionEpisodes();
+  const cwd = tmpCwd();
+  const ctx = await freshSession(cwd, "startup");
+  await pi.command("goal", "resumable work — done when durable", ctx);
+  await tick();
+  await acknowledgeLastContinuation(ctx);
+  pi.sent.length = 0;
+  const lengthEnd = { messages: [{ role: "assistant", content: [{ type: "text", text: "partial artifact…" }], stopReason: "length" }] };
+  for (let i = 0; i < 3; i++) {
+    await pi.fire("agent_end", lengthEnd, ctx);
+    await tick();
+    await acknowledgeLastContinuation(ctx);
+  }
+  await pi.fire("agent_end", lengthEnd, ctx);
+  await tick();
+  await acknowledgeLastContinuation(ctx);
+  assert.equal((readState(cwd).goal as { status: string }).status, "active", "episode 1 stays relentless");
+  await pi.command("goal", "pause", ctx);
+  await tick();
+  assert.equal((readState(cwd).goal as { status: string }).status, "paused", "manual pause lands");
+  await pi.command("goal", "resume", ctx);
+  await tick();
+  assert.equal((readState(cwd).goal as { status: string }).status, "active", "manual resume reactivates");
+  await acknowledgeLastContinuation(ctx);
+  pi.sent.length = 0;
+  for (let i = 0; i < 3; i++) {
+    await pi.fire("agent_end", lengthEnd, ctx);
+    await tick();
+    await acknowledgeLastContinuation(ctx);
+  }
+  await pi.fire("agent_end", lengthEnd, ctx);
+  await tick();
+  assert.equal((readState(cwd).goal as { status: string }).status, "active", "post-resume wedge gets a fresh episode — no one-cycle-early park");
+});
+
 test("v0.34.26: repeated output-token truncation pauses the goal durably with re-scope guidance and a fresh resume budget", async () => {
   __testOnlyResetStaleFlag();
   resetLengthContinue();
