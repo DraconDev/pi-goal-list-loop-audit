@@ -2046,3 +2046,5 @@
 {"type":"send_rearm_storm","value":{"kind":"continuation","streak":19,"minutes":2},"at":"2026-09-19T12:12:23.424Z"}
 {"type":"rearm_no_turn_started","value":{"streak":19,"minutes":2,"turnOpen":true,"turnOpenMinutes":1},"at":"2026-09-19T12:12:23.424Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":4,"kept":1,"lastError":"OpenAI API error (503): {\"param\":null,\"type\":\"server_error\",\"message\":\"Error from provider (Console Go): Upstream request failed: [service_overloaded] The backe","generation":520},"at":"2026-09-19T12:12:23.806Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":4,"kept":1,"lastError":"OpenAI API error (503): {\"param\":null,\"type\":\"server_error\",\"message\":\"Error from provider (Console Go): Upstream request failed: [service_overloaded] The backe","generation":520},"at":"2026-09-19T12:12:50.968Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":4,"kept":1,"lastError":"OpenAI API error (503): {\"param\":null,\"type\":\"server_error\",\"message\":\"Error from provider (Console Go): Upstream request failed: [service_overloaded] The backe","generation":520},"at":"2026-09-19T12:13:03.501Z"}
