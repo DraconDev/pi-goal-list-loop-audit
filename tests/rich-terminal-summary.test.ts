@@ -13,6 +13,7 @@ import {
   buildRichArchiveSection,
   buildRichTerminalParts,
   buildTerminalApprovalRender,
+  composeRichTerminalLines,
   extractEvidenceTokens,
 } from "../extensions/completion-summary.js";
 import { seedGoal } from "./harness/mock-pi.js";
@@ -376,6 +377,28 @@ test("v0.38.55: gate commands render a Command column; absent keeps 4 cols", () 
     gates: [{ gate: "Unit Tests", notes: "9 passed, 0 failed" }],
   });
   assert.ok(without.tableLines.includes("| Quality Gate | Scope | Status | Notes |"), "4-col header preserved");
+});
+
+test("rich terminal projections remove ANSI, OSC, and control bytes from every field", () => {
+  const hostile = "safe\u001b[31mRED\u001b[0m\u001b]0;spoof\u0007\u0000\u202Ehidden\u200B";
+  const groups: FindingGroup[] = [{ title: hostile, findings: [`Finding: ${hostile}`], tests: [`Proof: ${hostile}`] }];
+  const gates = [{ gate: hostile, command: hostile, scope: hostile, notes: `1 passed, 0 failed ${hostile}` }];
+  const input = {
+    outcome: hostile,
+    objective: hostile,
+    details: [`Changed: ${hostile}`, `Tests: ${hostile}`, `Next: ${hostile}`],
+    countsLine: `— audit: ${hostile}.`,
+    groups,
+    gates,
+    repoState: [hostile],
+  };
+  const controls = /[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]/;
+  for (const chat of [false, true]) {
+    const rendered = composeRichTerminalLines(buildRichTerminalParts({ ...input, chat })).join("\n");
+    assert.ok(rendered.includes("safeRED") && rendered.includes("hidden"), `${chat ? "chat" : "archive"} preserves readable text`);
+    assert.ok(!rendered.includes("\u001b") && !rendered.includes("\u0007"), `${chat ? "chat" : "archive"} removes terminal sequences`);
+    assert.ok(!rendered.split("\n").some((line) => controls.test(line)), `${chat ? "chat" : "archive"} has no display controls`);
+  }
 });
 
 test("v0.38.55: final repository state closes the card when readable", () => {
