@@ -26,7 +26,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { execSync } from "node:child_process";
 import activate, { __testOnlyDisplayActivityFor, __testOnlyLastConfirmDialog, __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetStarvationGate, __testOnlyResetTerminalFlags, __testOnlyResetToolActivity, __testOnlyRunFanOutListAuditFindings, __testOnlySetContinuationRetryBackoff, __testOnlySetContinuationStartTimeout, __testOnlySetSessionReplacementUntil, runDetachedCompletionWithFallback } from "../extensions/loops/goal.js";
-import { __testOnlyResetZombieAutoRetry, __testOnlySetZombieRetryMaxAttempts } from "../extensions/loops/goal-activation.js";
+import { __testOnlyResetLengthExhaustionEpisodes, __testOnlyResetZombieAutoRetry, __testOnlySetZombieRetryMaxAttempts } from "../extensions/loops/goal-activation.js";
 import { __testOnlyHeartbeatTick, __testOnlySetZombieRunWindows, __testOnlyResetZombieRunWatchdog, __testOnlyClearSubagentHangProbes, __testOnlySubagentHangProbes, upsertSubagentHangProbe, endSubagentHangProbe } from "../extensions/goal-heartbeat.js";
 import { mainModelRecoverySucceeded } from "../extensions/goal-recovery.js";
 import { isProviderRetryPending } from "../extensions/quota-retry.js";
@@ -2596,6 +2596,7 @@ test("v0.34.27: plain startup from a dead file-backed successor is not rejected 
 test("v0.34.26: repeated output-token truncation pauses the goal durably with re-scope guidance and a fresh resume budget", async () => {
   __testOnlyResetStaleFlag();
   resetLengthContinue();
+  __testOnlyResetLengthExhaustionEpisodes();
   const cwd = tmpCwd();
   const ctx = await freshSession(cwd, "startup");
   await pi.command("goal", "chunked work — done when durable", ctx);
@@ -2609,6 +2610,24 @@ test("v0.34.26: repeated output-token truncation pauses the goal durably with re
     await acknowledgeLastContinuation(ctx);
   }
   assert.equal(pi.sent.length, 3, "three auto-continues fire before the cap");
+  // v0.38.68 (relentless, field 162348): episode 1 stays relentless — a
+  // fresh truncation budget, no manual park. The goal stays active.
+  await pi.fire("agent_end", lengthEnd, ctx);
+  await tick();
+  await acknowledgeLastContinuation(ctx);
+  const gRelentless = readState(cwd).goal as { status: string };
+  assert.equal(gRelentless.status, "active", "first exhaustion stays relentless — no manual park");
+  const ledgerMid = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
+  assert.match(ledgerMid, /"length_exhausted_fresh_budget"/, "relentless episode is ledgered");
+  const afterRelentless = pi.sent.length;
+  // Episode 2: the fresh budget fires three more continues, then the
+  // durable park lands — bounded relentlessness, not an infinite spin.
+  for (let i = 0; i < 3; i++) {
+    await pi.fire("agent_end", lengthEnd, ctx);
+    await tick();
+    await acknowledgeLastContinuation(ctx);
+  }
+  assert.equal(pi.sent.length, afterRelentless + 3, "fresh budget fires three more continues");
   await pi.fire("agent_end", lengthEnd, ctx);
   await tick();
   const g = readState(cwd).goal as { status: string; pauseKind?: string; pauseReason?: string; pauseSuggestedAction?: string };
