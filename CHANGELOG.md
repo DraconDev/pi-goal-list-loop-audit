@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.38.66 — Auditor reliability: eviction, mirrors, bounded waits (2026-09-19)
 
 ### Dead-auditor eviction and identical-failure parking (audit-stuck batch)
 
