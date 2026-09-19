@@ -575,15 +575,17 @@ export function partitionRichDetails(details: string[]): { findings: string[]; t
  * `## Done — outcome` shape stays, so direct unit callers are unaffected.
  */
 export function requestEchoHeadline(kind: "Done" | "Aborted", objective: string | undefined, outcome: string): string {
-  const echo = objective?.trim() ? clipSummaryValue(objective.trim(), RICH_OBJECTIVE_ECHO_CHARS) : null;
-  return echo ? `## ${kind}: ${echo} \u2014 ${outcome}` : `## ${kind} \u2014 ${outcome}`;
+  const safeObjective = objective ? sanitizeDisplayText(objective) : "";
+  const safeOutcome = sanitizeDisplayText(outcome);
+  const echo = safeObjective.trim() ? clipSummaryValue(safeObjective.trim(), RICH_OBJECTIVE_ECHO_CHARS) : null;
+  return echo ? `## ${kind}: ${echo} \u2014 ${safeOutcome}` : `## ${kind} \u2014 ${safeOutcome}`;
 }
 
 /** Chat-only projection: keep explanations and counts, not command/hash receipts.
  * Repository-only findings are filtered separately; useful implementation
  * references in substantive explanations are not themselves bookkeeping. */
 function chatNarrative(value: string): string {
-  return stripMachineGroups(chatSafeDetailValue(value)
+  return stripMachineGroups(chatSafeDetailValue(sanitizeDisplayText(value))
     .replace(/\b(?:fixed in|commit|HEAD(?: at)?|built from)\s+`?[a-f0-9]{7,64}`?/gi, "")
     .replace(/\b(?=[a-f0-9]*[a-f])(?=[a-f0-9]*\d)[a-f0-9]{7,64}\b/gi, "")
     .replace(/`(?:bun|npm|npx|node|git|tsc)\s+[^`]+`/g, "")
@@ -657,9 +659,12 @@ export function buildFinalRepoStateLines(cwd: string): string[] | undefined {
       return undefined;
     }
   };
-  const branch = run(["branch", "--show-current"]);
-  const head = run(["log", "-1", "--format=%h %s"]);
-  const short = run(["status", "--short"]);
+  const branchRaw = run(["branch", "--show-current"]);
+  const headRaw = run(["log", "-1", "--format=%h %s"]);
+  const shortRaw = run(["status", "--short"]);
+  const branch = branchRaw === undefined ? undefined : sanitizeDisplayText(branchRaw);
+  const head = headRaw === undefined ? undefined : sanitizeDisplayText(headRaw);
+  const short = shortRaw === undefined ? undefined : shortRaw.split("\n").map((line) => sanitizeDisplayText(line)).join("\n");
   if (!branch && !head && short === undefined) return undefined;
   const lines = [`Branch ${branch ?? "detached"}${head ? ` @ ${head}` : ""}`];
   if (short === undefined) lines.push("Tree state unreadable");
@@ -697,7 +702,7 @@ export function buildRichTerminalParts(args: {
   chat?: boolean;
 }): RichTerminalParts {
   const { findings, tests, next } = partitionRichDetails(args.details);
-  const outcome = args.outcome;
+  const outcome = sanitizeDisplayText(args.outcome);
   const kind = args.kind ?? "Done";
   const headline = args.chat ? `## ${kind} — ${outcome}` : requestEchoHeadline(kind, args.objective, outcome);
   const auditStatus = auditRowStatus(args.auditHistory);
