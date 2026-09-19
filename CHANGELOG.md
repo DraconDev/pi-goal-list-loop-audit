@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.38.67 — Stop clobbering other extensions' compactions (2026-09-19)
+
+### session_before_compact returns nothing (issue #56, ezoushen)
+
+The `session_before_compact` handler ended with `return {}`, which under
+pi's last-truthy-wins handler semantics silently discarded a
+previously-run extension's `SessionBeforeCompactResult.compaction` — pi
+fell back to default compaction after the other extension had already paid
+for summarization. The handler only prunes the shared preparation by
+reference and arms the in-flight marker, so it now returns nothing, with a
+regression pin asserting no truthy object return.
+
 ## 0.38.66 — Auditor reliability: eviction, mirrors, bounded waits (2026-09-19)
 
 ### Dead-auditor eviction and identical-failure parking (audit-stuck batch)
