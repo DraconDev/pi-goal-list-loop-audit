@@ -5,6 +5,8 @@
 // configured candidates, recognizes positively non-recoverable failures, and
 // computes a bounded-but-persistent retry cadence.
 
+import { DEFAULT_QUOTA_RETRY_SEC, parseQuotaError } from "./quota-retry.js";
+
 export const MAIN_MODEL_MAX_RETRY_DELAY_MS = 5 * 60 * 60_000;
 export const MAIN_MODEL_AUTO_RETRY_HORIZON_MS = 24 * 60 * 60_000;
 export const DEFAULT_MAIN_MODEL_PRIMARY_PROBE_MINUTES = 15;
@@ -291,14 +293,38 @@ export function hourAlignedRetryDelayMs(nowMs = Date.now()): number {
 }
 
 /** One uniform envelope for EVERY provider failure. Error text and upstream
- * Retry-After prose are not trusted to choose a cadence. Every recoverable
- * failure gets the same eager first retry, then the bounded configured ladder;
- * the separate hourly retry adds the :00:30 slot. */
+ * Retry-After prose are not trusted to choose a cadence — EXCEPT one
+ * Antigravity-ported carve-out (v0.38.69): a quota-class failure
+ * (rate-limit/plan-quota signal) carrying an EXPLICIT upstream reset hint
+ * sleeps exactly until reset instead of laddering blindly into a known
+ * wall. The hint never widens the envelope (5h per-attempt cap), the eager
+ * first retry stays eager, and non-quota signals (transient, billing,
+ * unknown) keep the blind ladder — billing still heads for its park.
+ * Every other recoverable failure gets the same eager first retry, then
+ * the bounded configured ladder; the separate hourly retry adds the
+ * :00:30 slot. */
 export function mainModelFailureDelayMs(failure: MainModelFailure, attempt: number, baseMinutes = 15, nowMs = Date.now()): number {
-  void failure;
-  void nowMs;
   if (attempt <= 1) return 5_000;
+  const resetSleep = quotaResetSleepMs(failure, nowMs);
+  if (resetSleep !== undefined) return resetSleep;
   return mainModelRetryDelayMs(attempt, baseMinutes);
+}
+
+/** v0.38.69 (Antigravity port): sleep-until-reset for quota-class failures
+ * with an explicit upstream reset hint. Returns undefined (keep the blind
+ * ladder) unless ALL hold: a rate-limit/plan-quota signal, an upstream
+ * hint (header, JSON field, or explicit retry prose — never the silent
+ * fallback), and a finite non-negative window. The result is floored at
+ * the eager-retry quantum and capped at the per-attempt envelope, so a
+ * "retry in 1 week" wall sleeps 5h and re-evaluates instead of parking
+ * blind or sleeping unbounded. */
+export function quotaResetSleepMs(failure: MainModelFailure, nowMs = Date.now()): number | undefined {
+  if (!failure || typeof failure.raw !== "string" || !failure.raw.trim()) return undefined;
+  const parsed = parseQuotaError(failure.raw, DEFAULT_QUOTA_RETRY_SEC, nowMs);
+  if (!parsed.fromUpstream) return undefined;
+  if (parsed.signal !== "rate-limit" && parsed.signal !== "plan-quota") return undefined;
+  if (!Number.isFinite(parsed.retryAfterSec) || parsed.retryAfterSec < 0) return undefined;
+  return Math.min(Math.max(Math.round(parsed.retryAfterSec * 1000), 5_000), MAIN_MODEL_MAX_RETRY_DELAY_MS);
 }
 
 /** Bound for positively-identified in-flight compaction. session_before_compact
