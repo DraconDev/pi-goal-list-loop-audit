@@ -1129,6 +1129,11 @@ export interface MainModelRecovery {
   retryAt?: string;
   /** Next preferred-primary health probe while a fallback is serving. */
   primaryProbeAt?: string;
+  /** v0.38.69 (Antigravity port): absolute reset of the quota-walled
+   * primary, stamped when the episode failed over with an explicit
+   * upstream reset hint. While a fallback serves, the background primary
+   * probe fires at this reset instead of the generic probe cadence. */
+  primaryResetAt?: string;
   /** A preferred-primary switch was accepted and awaits one supervised turn. */
   primaryProbeInFlight?: boolean;
   /** Number of completed recovery waits; drives the bounded per-attempt exponential cadence. */
@@ -1237,6 +1242,7 @@ export function sanitizeMainModelRecovery(value: unknown): MainModelRecovery | u
     ...(Array.isArray(raw.recoveryNoticeKeys) ? { recoveryNoticeKeys: raw.recoveryNoticeKeys.filter((key): key is string => typeof key === "string").slice(-16).map((key) => key.slice(0, 300)) } : {}),
     ...(date(raw.retryAt) ? { retryAt: date(raw.retryAt) } : {}),
     ...(date(raw.primaryProbeAt) ? { primaryProbeAt: date(raw.primaryProbeAt) } : {}),
+    ...(date(raw.primaryResetAt) ? { primaryResetAt: date(raw.primaryResetAt) } : {}),
     ...(raw.primaryProbeInFlight === true ? { primaryProbeInFlight: true } : {}),
     ...(date(raw.firstFailureAt) ? { firstFailureAt: date(raw.firstFailureAt) } : {}),
     ...(date(raw.autoRetryUntil) ? { autoRetryUntil: date(raw.autoRetryUntil) } : {}),
