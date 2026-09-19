@@ -1610,6 +1610,20 @@ export function continuationPrompt(goal: Goal, opts: { includeRestartDetail?: bo
   if (loadSettings(settingsCwd).visionAssist !== false) {
     directives.push(VISION_ASSIST_GUIDANCE);
   }
+  // v0.38.69 (Antigravity port): the repo pitfall registry rides the
+  // continuation prompt — consulted at goal start, re-read when edited.
+  // Explicit opts win (tests); otherwise the repo file resolves, absent
+  // keeping the prompt byte-identical for repos without one.
+  const pitfallsBrief = opts.pitfallsBrief ?? readPitfallsBrief(settingsCwd);
+  if (pitfallsBrief?.trim()) {
+    directives.push(
+      `## REPO PITFALLS (distilled — consult before acting)\n\nThese rakes already caught this repo. Check your plan against them before the first tool call and before every risky step:\n\n${pitfallsBrief.trim()}`,
+    );
+    if (!pitfallsLedgeredGoals.has(goal.id)) {
+      pitfallsLedgeredGoals.add(goal.id);
+      appendLedger(settingsCwd, "pitfalls_consulted", { goalId: goal.id });
+    }
+  }
   if (effSettings.aggressiveMode && isFullAuditObjective(goal.objective)) {
     directives.push(
       "## FULL-AUDIT MODE (aggressiveMode + survey objective)\n\nThis objective is a survey, not a single fix. Spawn 3+ `scout` subagents NOW — one per subsystem, in a single message so they run in parallel — synthesize their findings, and call `propose_task_list` with the result. Do not start fixing before the task list exists.",
