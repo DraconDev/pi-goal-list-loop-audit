@@ -4111,8 +4111,9 @@ const FRESH_AUDITOR_CYCLE_CLEARED_KEYS = [
   "retryUntil",
 ] as const;
 
-export function freshAuditorCycleClaim<T extends Record<string, unknown>>(claim: T): T {
-  const reseeded: Record<string, unknown> = { ...claim };
+export function freshAuditorCycleClaim<T extends object>(claim: T): T {
+  const reseeded: Record<string, unknown> = {};
+  Object.assign(reseeded, claim);
   for (const key of FRESH_AUDITOR_CYCLE_CLEARED_KEYS) delete reseeded[key];
   return reseeded as T;
 }

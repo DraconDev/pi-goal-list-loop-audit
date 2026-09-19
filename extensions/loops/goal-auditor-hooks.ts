@@ -116,6 +116,8 @@ import {
   modelSwitch,
   isForbiddenModel,
   filterEvictedAuditorRefs,
+  freshAuditorCycleClaim,
+  isQuotaIdenticalParkExempt,
   withEvictedAuditorRef,
   trackAuditorIdenticalFailure,
 isGoalRevisionCurrent,
@@ -653,29 +655,24 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
   // An agent-tool resume carries the same in-conversation user
   // authorization as a typed /goal resume, so an exhausted claim also
   // starts a fresh cycle instead of re-walking a dead cursor.
-  const freshAuditorCycle = (origin === "manual" || origin === "agent") && claim.auditorFallbackExhausted === true;
+  // v0.38.68 (relentless, field 150821): the single automatic
+  // session-recovery retry reseeds too — re-walking a burned cursor is what
+  // bumped an identical-parked claim from 3 to 4 failures. Every origin now
+  // starts a fresh bounded window with re-resolved models via
+  // freshAuditorCycleClaim; the automatic attempt stays bounded by
+  // automaticRecoveryAttempted.
+  const freshAuditorCycle = (origin === "manual" || origin === "agent" || origin === "session-recovery") && claim.auditorFallbackExhausted === true;
   const claimForAttempt = (origin === "manual" || origin === "agent")
     ? {
       ...claim,
       retryAttempts: undefined,
       retryFirstAt: undefined,
       retryUntil: undefined,
-      ...(freshAuditorCycle ? {
-        auditorCandidateRefs: undefined,
-        auditorCandidateRef: undefined,
-        auditorRetryCandidateRef: undefined,
-        auditorRetryAttemptStartedAt: undefined,
-        auditorAttemptedRefs: undefined,
-        auditorEvictedRefs: undefined,
-        auditorLastFailureFingerprint: undefined,
-        auditorConsecutiveIdenticalFailures: undefined,
-        auditorFailureCount: undefined,
-        auditorFailureClass: undefined,
-        auditorFallbackExhausted: undefined,
-        auditorFailureAt: undefined,
-      } : {}),
+      ...(freshAuditorCycle ? freshAuditorCycleClaim(claim) : {}),
     }
-    : claim;
+    : origin === "session-recovery" && freshAuditorCycle
+      ? { ...claim, ...freshAuditorCycleClaim(claim) }
+      : claim;
   const pending: PendingCompletion = {
     ...claimForAttempt,
     phase: "running",
@@ -1787,7 +1784,11 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     const plan = auditorRetryPlan(durableClaim, undefined, undefined, aggressive);
     // v0.38.63 (audit-stuck batch): same identical-park gate as the
     // complete_goal ladder path — the loop terminates visibly here too.
+    // v0.38.68 (relentless, field 150821): quota walls are transient —
+    // hammer the bounded retry plan instead of parking with "check the
+    // setup". Only identical NON-quota failures park.
     const identical = trackAuditorIdenticalFailure(durableClaim, failureCopy.fingerprint);
+    const quotaIdenticalExempt = isQuotaIdenticalParkExempt(failureCopy.diagnostic);
     const pending = {
       ...durableClaim,
       phase: "retry-waiting" as const,
@@ -1805,7 +1806,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       retryFirstAt: plan.firstAt,
       retryUntil: plan.autoRetryUntil,
     };
-    if (identical.identicalParkDue) {
+    if (identical.identicalParkDue && !quotaIdenticalExempt) {
       const deadChain = (durableClaim.exhaustedChain
         ?? (durableClaim.auditorCandidateRefs ?? durableClaim.auditorAttemptedRefs ?? []).join(" → ")
         ?? "").slice(0, 300) || "unknown chain";

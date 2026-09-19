@@ -124,6 +124,7 @@ import {
   modelSwitch,
   isForbiddenModel,
   filterEvictedAuditorRefs,
+  isQuotaIdenticalParkExempt,
   withEvictedAuditorRef,
   trackAuditorIdenticalFailure,
 isGoalRevisionCurrent,
@@ -1791,7 +1792,11 @@ function registerAgentTools(pi: any): void {
           // failures terminate the loop visibly — park blocked naming the
           // dead chain, schedule no further retry. Manual/agent resume
           // still opens a fresh cycle with re-resolved models.
+          // v0.38.68 (relentless, field 150821): quota walls are transient —
+          // hammer the bounded retry plan instead of parking with "check the
+          // setup". Only identical NON-quota failures park.
           const identical = trackAuditorIdenticalFailure(durableCompletionClaim, failureCopy.fingerprint);
+          const quotaIdenticalExempt = isQuotaIdenticalParkExempt(failureCopy.diagnostic);
           const pending = {
             ...durableCompletionClaim,
             phase: "retry-waiting" as const,
@@ -1809,7 +1814,7 @@ function registerAgentTools(pi: any): void {
             retryFirstAt: plan.firstAt,
             retryUntil: plan.autoRetryUntil,
           };
-          if (identical.identicalParkDue) {
+          if (identical.identicalParkDue && !quotaIdenticalExempt) {
             const deadChain = (durableCompletionClaim.exhaustedChain
               ?? (durableCompletionClaim.auditorCandidateRefs ?? durableCompletionClaim.auditorAttemptedRefs ?? []).join(" → ")
               ?? "").slice(0, 300) || "unknown chain";

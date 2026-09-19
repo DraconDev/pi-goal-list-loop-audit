@@ -131,10 +131,12 @@ test("agent_end: length path runs BEFORE nudge accounting, telemetry, and goal g
   // return now lives further down (the context-overflow fallback branch runs
   // first), so the 3400-char window clipped the assertion. v0.38.10: 5000 →
   // 5500 — the starvation branch gained the emergency-compactor trigger.
-  // v0.38.68: 5500 → 8000 — the give-up branch gained the relentless
+  // v0.38.68: 5500 → 8000 → unbounded tail — the give-up branch gained the relentless
   // exhaustion episodes (rotate / compact-defer / fresh-budget) before the
-  // early return. Factual contract unchanged.
-  const early = handler.slice(lengthIdx, lengthIdx + 8000);
+  // early return, and any fixed window just re-clips on the next branch.
+  // Match on the unbounded tail: the regex itself is the strict contract.
+  // Factual contract unchanged.
+  const early = handler.slice(lengthIdx);
   assert.match(early, /if \(lastA\?\.stopReason === "length"\) \{\s*\n\s*if \(lc\.fire && !ctx\.hasPendingMessages\(\)\) sendLengthContinue\(ctx, lc\.consecutive\);\s*\n\s*return;\s*\n\s*\}/);
 });
 
