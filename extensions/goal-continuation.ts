@@ -1567,8 +1567,7 @@ export function continuationPrompt(goal: Goal, opts: { includeRestartDetail?: bo
   // Prompt rendering is also used by offline/status tests before the runtime
   // factory has wired the context accessor. Treat that as an ordinary
   // process-cwd render rather than calling an uninitialized hook.
-  const settingsCwd = freshCtx?.()?.cwd ?? process.cwd();
-  const effSettings = resolveEffectiveAggressiveSettings(loadSettings(settingsCwd));
+  const settingsCwd = freshCtx?.()?.cwd ?? process.cwd();  const effSettings = resolveEffectiveAggressiveSettings(loadSettings(settingsCwd));
   // Auditor-derived TODOs are part of the same stale report surface. Keep
   // them durable, but do not inject them before continuation consent.
   if (!auditorSurfaceSuppressed() && goal.pendingTasks && goal.pendingTasks.length > 0) {
