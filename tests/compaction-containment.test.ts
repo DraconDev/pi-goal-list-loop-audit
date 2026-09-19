@@ -104,6 +104,26 @@ afterEach(async () => {
   }
 });
 
+test("session_before_compact returns nothing — another extension's compaction must survive", () => {
+  // Field #56 (ezoushen): pi keeps the LAST TRUTHY session_before_compact
+  // handler result, so our `return {}` silently reassigned the runner's
+  // result and discarded a previously-run extension's
+  // SessionBeforeCompactResult.compaction — pi fell back to default
+  // compaction after the other extension already paid for summarization.
+  // The handler prunes the shared preparation by reference and arms the
+  // in-flight marker; it supplies no compaction of its own, so it must
+  // return undefined (falsy) and leave an earlier result standing.
+  const SRC = fs.readFileSync("extensions/loops/goal-activation.ts", "utf-8");
+  const start = SRC.indexOf('pi.on("session_before_compact"');
+  assert.ok(start > 0, "handler present");
+  const end = SRC.indexOf("\n  });", start);
+  assert.ok(end > start, "handler body bounded");
+  const body = SRC.slice(start, end);
+  assert.doesNotMatch(body, /return\s*\{/, "no truthy object return — an earlier extension's compaction survives");
+  assert.match(body, /pruneCompactionPreparation/, "pruning still happens by reference");
+  assert.match(body, /noteCompactionStarted/, "in-flight marker still armed");
+});
+
 test("pure: in-flight marker is armed-signal plus timeout, never silence", () => {
   const now = Date.now();
   assert.equal(isCompactionInFlightSince(null, now), false);
