@@ -543,10 +543,10 @@ Verified vs disk before recording. Disposed without findings (rationale): goal-l
 
 ## Fresh audit — 2026-09-19
 
-- [ ] FIX: HIGH: rejected fresh-session recovery is reported as successful after newSession() returns or rejects asynchronously, leaving stale active work without a terminal/fail-closed path (extensions/goal-recovery.ts:358-414)
-- [ ] FIX: MEDIUM: hourly main-model recovery probes bypass supervisor pause, including an already-queued callback race (extensions/goal-recovery.ts:854-873,921-1007)
-- [ ] FIX: MEDIUM: stall and length continuation nudges omit stale-terminal and zombie-stand-down fences, allowing late events to trigger turns (extensions/goal-continuation.ts:1419-1434,1463-1474)
-- [ ] FIX: MEDIUM: rich terminal summaries can emit unsanitized ANSI/control bytes from details, findings, proofs, and git-derived repository state (extensions/completion-summary.ts:583-584,650-668,714-740)
-- [ ] FIX: LOW: packed release smoke aliases peer imports to the source tree, masking consumer peer-resolution failures (scripts/release-pack-smoke.mjs:78-102)
-- [ ] FIX: LOW: packed release smoke checks launcher/worker tar-list presence but never loads or starts those shipped scripts (scripts/release-pack-smoke.mjs:46-76,104-119)
-- [ ] FIX: LOW: state-root consumer coverage relies on token presence rather than a live pending-root guard for the goal-session owner write (tests/state-root-consumers.test.ts:160-169)
+- [x] FIX: HIGH: rejected fresh-session recovery is reported as successful after newSession() returns or rejects asynchronously, leaving stale active work without a terminal/fail-closed path (extensions/goal-recovery.ts:358-414) — fixed in 6d415931
+- [x] FIX: MEDIUM: hourly main-model recovery probes bypass supervisor pause, including an already-queued callback race (extensions/goal-recovery.ts:854-873,921-1007) — fixed in 650fcdcc
+- [x] FIX: MEDIUM: stall and length continuation nudges omit stale-terminal and zombie-stand-down fences, allowing late events to trigger turns (extensions/goal-continuation.ts:1419-1434,1463-1474) — fixed in 650fcdcc
+- [x] FIX: MEDIUM: rich terminal summaries can emit unsanitized ANSI/control bytes from details, findings, proofs, and git-derived repository state (extensions/completion-summary.ts:583-584,650-668,714-740) — fixed in e9dfcb05, cc6136ac, 390ea237, 5995cf84, d1e7af37, 5540c4ef
+- [x] FIX: LOW: packed release smoke aliases peer imports to the source tree, masking consumer peer-resolution failures (scripts/release-pack-smoke.mjs:78-102) — fixed in 70a7689f, 0882d030, f16c97a9
+- [x] FIX: LOW: packed release smoke checks launcher/worker tar-list presence but never loads or starts those shipped scripts (scripts/release-pack-smoke.mjs:46-76,104-119) — fixed in 0882d030, f16c97a9
+- [x] FIX: LOW: state-root consumer coverage relies on token presence rather than a live pending-root guard for the goal-session owner write (tests/state-root-consumers.test.ts:160-169) — fixed in 51779379
