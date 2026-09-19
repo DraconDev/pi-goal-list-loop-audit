@@ -52,6 +52,8 @@ test("exhaustion episodes: first wedge stays relentless, second parks", () => {
 test("exhaustion episodes degrade garbage to a fresh first episode", () => {
   assert.deepEqual(nextLengthExhaustionEpisode(Number.NaN), { episodes: 1, parkNow: false });
   assert.deepEqual(nextLengthExhaustionEpisode(-5), { episodes: 1, parkNow: false });
+});
+
 test("unknown context heat degrades to fresh-budget, never rotate", () => {
   // Without a heat reading we cannot prove the prompt needs a bigger
   // model — rotating blind would burn the fallback chain for nothing.
