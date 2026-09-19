@@ -64,7 +64,11 @@ test("E2: auditor infra errors enter the durable bounded retry plan (v0.34.51 �
 
 test("main recovery remains unbounded but auditor retries retain their fixed horizon", () => {
   assert.match(RECOVERY, /const normalizedRecovery = aggressive \? \{ \.\.\.normalizedBase, autoRetryUntil: undefined \} : normalizedBase;/);
-  assert.match(RECOVERY, /!aggressive && Number\.isFinite\(deadlineMs\)/);
+  // v0.38.69 (Antigravity port): quota waits never park at the horizon —
+  // the hold condition gained a quota-exemption conjunct, so the pin now
+  // matches the composed `horizonApplies` instead of the bare horizon.
+  assert.match(RECOVERY, /const horizonApplies = !aggressive\s*\n?\s*&& !isQuotaHorizonExempt/);
+  assert.match(RECOVERY, /horizonApplies && Number\.isFinite\(deadlineMs\)/);
   assert.match(RECOVERY, /autoRetryUntil: aggressive \? undefined : mainModelAutoRetryUntil/);
   assert.match(RECOVERY, /adaptive backoff for as long as it remains recoverable/);
   assert.match(SRC, /auditorRetryPlan\(durableClaim, undefined, undefined, aggressive\)/);
@@ -75,7 +79,10 @@ test("main recovery remains unbounded but auditor retries retain their fixed hor
 });
 
 test("v0.36.0: aggressive auditor disapprovals become durable TODOs and stop on repeated no-progress", () => {
-  assert.match(SRC, /const durableObjections = result\.disapproved && effectiveCap\.aggressiveMode/);
+  // v0.38.69 (Antigravity port): objections attach on EVERY disapproval —
+  // the retry argues the objection, not generic effort. The aggressive
+  // gate keeps only the cap-keep-going / no-progress-stop behaviors.
+  assert.match(SRC, /durableObjectionsForDisapproval\(safeAuditOutput, activeGoalStatusCommand\(\)\)/);
   assert.match(SRC, /appendLedger\(ctx\.cwd, "audit_objections_todo"/);
   assert.match(SRC, /countTrailingRepeatedDisapprovals\(history\)/);
   assert.match(SRC, /audit_no_progress_stop/);
