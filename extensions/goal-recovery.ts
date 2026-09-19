@@ -31,6 +31,7 @@ import {
   mainModelFailureDelayMs,
   mainModelPrimaryProbeDelayMs,
   mainModelRetryDelayMs,
+  isQuotaHorizonExempt,
   quotaResetSleepMs,
   isCompactionInFlightSince,
   MAIN_MODEL_AUTO_RETRY_HORIZON_MS,
@@ -777,7 +778,13 @@ export function setMainModelRecoveryPause(ctx: ExtensionContext, recovery: MainM
   const now = Date.now();
   const deadlineMs = normalized.autoRetryUntil ? Date.parse(normalized.autoRetryUntil) : Number.NaN;
   const requestedDelayMs = Math.max(1_000, delayMs);
-  if (normalized.manualResumeRequired || (!aggressive && Number.isFinite(deadlineMs) && (now >= deadlineMs || now + requestedDelayMs > deadlineMs))) {
+  // v0.38.69 (Antigravity port): quota waits never park at the horizon —
+  // a rate-limit/plan-quota wall is transient, so the hold below is
+  // skipped and the wait re-arms. Billing and non-quota failures keep
+  // their horizon park.
+  const horizonApplies = !aggressive
+    && !isQuotaHorizonExempt(normalized.providerErrorDiagnostic ?? normalized.reason);
+  if (normalized.manualResumeRequired || (horizonApplies && Number.isFinite(deadlineMs) && (now >= deadlineMs || now + requestedDelayMs > deadlineMs))) {
     holdMainModelRecovery(ctx, normalized, Number.isFinite(deadlineMs) && now >= deadlineMs
       ? "the 24h automatic recovery horizon was reached"
       : "the automatic recovery horizon would be exceeded");
@@ -1412,7 +1419,10 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
       try { return resolveEffectiveAggressiveSettings(loadSettings(ctx.cwd)).aggressiveMode; } catch { return false; }
     })();
     const horizonMs = next.autoRetryUntil ? Date.parse(next.autoRetryUntil) : Number.NaN;
-    if (next.manualResumeRequired || (!aggressive && Number.isFinite(horizonMs) && Date.now() >= horizonMs)) {
+    // v0.38.69: quota waits skip the horizon hold here too (see
+    // setMainModelRecoveryPause) — a wall outliving 24h still resumes.
+    const quotaExempt = isQuotaHorizonExempt(next.providerErrorDiagnostic ?? next.reason);
+    if (next.manualResumeRequired || (!aggressive && !quotaExempt && Number.isFinite(horizonMs) && Date.now() >= horizonMs)) {
       holdMainModelRecovery(ctx, next, "the 24h automatic recovery horizon was reached");
       return;
     }
