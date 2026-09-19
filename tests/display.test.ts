@@ -1744,7 +1744,14 @@ test("provider payloads stay out of durable disapproval widget feedback", () => 
     }],
   });
   const widget = buildWidgetLines({ goal: disapproved, list: [], loop: null } as never)!.join("\n");
-  assert.doesNotMatch(widget, /403|429|Token Plan|secret-request|secret-account|rate limit/);
+  // v0.38.66: scope the leak check to the audit-feedback body. The widget
+  // header carries elapsed-time/cost counters (e.g. "1429h") whose digits
+  // can contain 403/429 as substrings as wall-clock advances — asserting on
+  // the whole widget made this test wall-clock sensitive (red at 1429h
+  // elapsed, green at 1427h/1430h). The payload must not survive in the
+  // feedback lines themselves.
+  const feedback = widget.split("latest audit feedback:")[1] ?? "";
+  assert.doesNotMatch(feedback, /403|429|Token Plan|secret-request|secret-account|rate limit/);
   assert.match(widget, /diagnostic redacted/);
 });
 
