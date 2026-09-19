@@ -109,8 +109,12 @@ test("agent_end: length path runs BEFORE nudge accounting, telemetry, and goal g
   const end = SRC.indexOf('\n  pi.on(', start + 1);
   assert.ok(end > start, "next registered handler bounds the source slice");
   const handler = SRC.slice(start, end);
-  const lengthIdx = handler.indexOf('tickLengthContinue(lastA?.stopReason === "length" && !contextStarvedLength)');
-  assert.ok(lengthIdx > 0, "length tick present");
+  // v0.38.68: the tick input lives in a named const (episode resets share
+  // the predicate) — the order contract is unchanged, only the shape moved.
+  const stoppedDef = handler.indexOf('lastA?.stopReason === "length" && !contextStarvedLength');
+  assert.ok(stoppedDef > 0, "length-stop predicate present");
+  const lengthIdx = handler.indexOf("tickLengthContinue(lengthStopped)", stoppedDef);
+  assert.ok(lengthIdx > stoppedDef, "length tick present after its predicate");
   assert.ok(handler.indexOf("isContextStarvedLengthStop(rawLastA, contextUsage)") < lengthIdx, "context-starvation classification runs before the tracker");
   assert.ok(handler.indexOf('length_continue_deferred_context_full') > lengthIdx, "context-starvation ledger is emitted by the defer path");
   // before the no-tool nudge accounting (stall brake) …
@@ -127,9 +131,10 @@ test("agent_end: length path runs BEFORE nudge accounting, telemetry, and goal g
   // return now lives further down (the context-overflow fallback branch runs
   // first), so the 3400-char window clipped the assertion. v0.38.10: 5000 →
   // 5500 — the starvation branch gained the emergency-compactor trigger.
-  // Factual contract (the inner `if (lastA?.stopReason === "length" && ...)`
-  // block exists) is unchanged.
-  const early = handler.slice(lengthIdx, lengthIdx + 5500);
+  // v0.38.68: 5500 → 8000 — the give-up branch gained the relentless
+  // exhaustion episodes (rotate / compact-defer / fresh-budget) before the
+  // early return. Factual contract unchanged.
+  const early = handler.slice(lengthIdx, lengthIdx + 8000);
   assert.match(early, /if \(lastA\?\.stopReason === "length"\) \{\s*\n\s*if \(lc\.fire && !ctx\.hasPendingMessages\(\)\) sendLengthContinue\(ctx, lc\.consecutive\);\s*\n\s*return;\s*\n\s*\}/);
 });
 
