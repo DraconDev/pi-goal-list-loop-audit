@@ -15,6 +15,7 @@ import * as path from "node:path";
 import activate, { __testOnlyResetStaleFlag, __testOnlyResetOwnerSession, __testOnlyResetTerminalFlags } from "../extensions/loops/goal.js";
 import { requiresMainModelRecovery } from "../extensions/main-model-recovery.js";
 import { resetLengthContinue } from "../extensions/length-continue.js";
+import { __testOnlyResetLengthExhaustionEpisodes } from "../extensions/loops/goal-activation.js";
 import { readState } from "../extensions/goal-loop-core.js";
 import { auditMeasureCmd, AUDIT_FINDINGS_REL } from "../extensions/goal-loop-forever.js";
 import { MockPi, makeMockCtx, tmpCwd, seedState, seedLoop, tick, type MockCtx } from "./harness/mock-pi.js";
@@ -213,10 +214,21 @@ test("v0.34.31: extended quota errors enter durable main-model recovery", async 
 test("v0.34.26: loop output-token exhaustion persists and notifies the compact recap", async () => {
   __testOnlyResetStaleFlag();
   resetLengthContinue();
+  __testOnlyResetLengthExhaustionEpisodes();
   const cwd = tmpCwd();
   try {
     const ctx = await sessionWithLoop(cwd, { measureCmd: "echo 1", direction: "max", bestValue: 1, lastValue: 1 });
     const lengthEnd = { messages: [{ role: "assistant", content: [{ type: "text", text: "partial loop artifact…" }], stopReason: "length" }] };
+    for (let i = 0; i < 3; i++) {
+      await pi.fire("agent_end", lengthEnd, ctx);
+      await tick();
+    }
+    // v0.38.68 (relentless): episode 1 stays relentless — the loop keeps
+    // running on a fresh truncation budget instead of stopping.
+    await pi.fire("agent_end", lengthEnd, ctx);
+    await tick();
+    assert.equal(loop(cwd).active, true, "first exhaustion stays relentless — loop keeps running");
+    // Episode 2 exhausts the fresh budget too — then the durable stop lands.
     for (let i = 0; i < 4; i++) {
       await pi.fire("agent_end", lengthEnd, ctx);
       await tick();
@@ -227,6 +239,7 @@ test("v0.34.26: loop output-token exhaustion persists and notifies the compact r
     assertCompactLoopRecap(ctx);
   } finally {
     resetLengthContinue();
+    __testOnlyResetLengthExhaustionEpisodes();
   }
 });
 
