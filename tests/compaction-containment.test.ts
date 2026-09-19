@@ -106,8 +106,8 @@ afterEach(async () => {
 
 test("session_before_compact returns nothing — another extension's compaction must survive", () => {
   // Field #56 (ezoushen): pi keeps the LAST TRUTHY session_before_compact
-  // handler result, so our `return {}` silently reassigned the runner's
-  // result and discarded a previously-run extension's
+  // handler result, so an empty-object return here silently reassigned the
+  // runner's result and discarded a previously-run extension's
   // SessionBeforeCompactResult.compaction — pi fell back to default
   // compaction after the other extension already paid for summarization.
   // The handler prunes the shared preparation by reference and arms the
