@@ -8,9 +8,11 @@
  */
 
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { pathToFileURL } from "node:url";
 import { createJiti } from "jiti";
 
 const repoRoot = path.resolve(import.meta.dirname, "..");
@@ -80,7 +82,6 @@ try {
     tarball,
     "--ignore-scripts",
     "--omit=dev",
-    "--legacy-peer-deps",
     "--no-save",
     "--prefix",
     installPrefix,
@@ -88,30 +89,19 @@ try {
 
   const installedPackage = path.join(installPrefix, "node_modules", packageName);
   if (!fs.existsSync(installedPackage)) throw new Error(`packed package was not installed at ${installedPackage}`);
-  const nodeModules = path.join(repoRoot, "node_modules");
-  const jiti = createJiti(import.meta.url, {
-    moduleCache: false,
-    alias: {
-      "@earendil-works/pi-agent-core": path.join(nodeModules, "@earendil-works/pi-agent-core"),
-      "@earendil-works/pi-ai": path.join(nodeModules, "@earendil-works/pi-ai"),
-      "@earendil-works/pi-coding-agent": path.join(nodeModules, "@earendil-works/pi-coding-agent"),
-      "@earendil-works/pi-tui": path.join(nodeModules, "@earendil-works/pi-tui"),
-      // Audit 2026-09-06: the @tintinweb/pi-subagents alias was stale
-      // tintinweb-era drift — nothing imports the scoped name and the
-      // package depends on unscoped pi-subagents (which no extension
-      // imports directly, so no alias is needed).
-      // TypeBox exposes only an ESM `exports` entry; point Jiti at that
-      // concrete module because the disposable install intentionally omits
-      // peer dependencies.
-      typebox: path.join(nodeModules, "typebox", "build", "index.mjs"),
-    },
-  });
+  // Load the packed extension with the disposable install's own peer tree.
+  // Never alias imports back to this checkout: that masks a published peer
+  // declaration or an artifact-only module-resolution failure.
+  const jiti = createJiti(pathToFileURL(installedPackage).href, { moduleCache: false });
 
   const activate = await jiti.import(path.join(installedPackage, "extensions/loops/goal.ts"), { default: true });
   if (typeof activate !== "function") throw new Error("packed extension entry did not export a default activation function");
   const auditor = await jiti.import(path.join(installedPackage, "extensions/goal-loop-auditor-process.ts"));
   if (typeof auditor.resolveWorkerCommand !== "function") throw new Error("packed auditor process did not expose its worker command resolver");
   if (auditor.resolveWorkerCommand("/usr/bin/node") !== "/usr/bin/node") throw new Error("packed auditor resolver returned an unexpected command");
+  const packedLauncher = await import(pathToFileURL(path.join(installedPackage, "scripts/goal-auditor-launch.mjs")).href);
+  if (typeof packedLauncher.buildAuditorPiSpawnSpec !== "function") throw new Error("packed launcher did not load");
+  if (typeof packedLauncher.renameWithWindowsRetry !== "function") throw new Error("packed launcher exports are incomplete");
   // Audit 2026-09-13: presence is not loadability — run the packed skill
   // through Pi's own loader against the INSTALLED tree (the source-tree
   // check in release-contract.test.ts cannot catch tarball-only defects).
