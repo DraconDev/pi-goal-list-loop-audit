@@ -50,6 +50,7 @@ test("release contract: the release gate exercises the packed artifact", () => {
   assert.match(smoke, /packedLauncher/);
   assert.match(smoke, /workerPath/);
   assert.match(smoke, /result\.json/);
+  assert.match(smoke, /detached:\s*true/, "the direct worker probe must isolate its process group");
   assert.doesNotMatch(smoke, /legacy-peer-deps/, "the smoke must not skip declared peer resolution");
   assert.doesNotMatch(smoke, /alias\s*:/, "the smoke must not alias peers back to the source tree");
 });
