@@ -28,15 +28,6 @@ shows paused but det auditor working ?
 
 # Later
 
-# Maybe 
-
-
-
-
-
-
-
-
 # Research
 investigate 
 https://pi.dev/packages/pi-goal-x?name=pi+goal+x https://github.com/tmonk/pi-goal-x
