@@ -758,22 +758,25 @@ export function buildRichTerminalParts(args: {
   const showCommand = !args.chat && gates.some((row) => row.command?.trim());
   if (gates.length > 0) {
     for (const row of gates) {
-      const derived = testsRowStatus(row.notes ?? "");
-      const notes = args.chat ? chatNarrative(row.notes ?? "") : row.notes?.trim();
-      const command = row.command?.trim() || "\u2014";
+      const safeNotes = row.notes ? sanitizeDisplayText(row.notes).trim() : "";
+      const derived = testsRowStatus(safeNotes);
+      const notes = args.chat ? chatNarrative(safeNotes) : safeNotes;
+      const command = row.command ? sanitizeDisplayText(row.command).trim() : "\u2014";
+      const gate = sanitizeDisplayText(row.gate);
+      const scope = row.scope ? sanitizeDisplayText(row.scope).trim() : "\u2014";
       tableRows.push(showCommand
-        ? `| ${escapeTableCell(row.gate)} | ${escapeTableCell(command)} | ${escapeTableCell(row.scope?.trim() || "\u2014")} | ${derived} | ${escapeTableCell(notes || "\u2014")} |`
-        : `| ${escapeTableCell(row.gate)} | ${escapeTableCell(row.scope?.trim() || "\u2014")} | ${derived} | ${escapeTableCell(notes || "\u2014")} |`);
+        ? `| ${escapeTableCell(gate)} | ${escapeTableCell(command)} | ${escapeTableCell(scope)} | ${derived} | ${escapeTableCell(notes || "\u2014")} |`
+        : `| ${escapeTableCell(gate)} | ${escapeTableCell(scope)} | ${derived} | ${escapeTableCell(notes || "\u2014")} |`);
     }
   } else {
     for (const detail of tests) {
       const { body } = leadBody(detail);
       const status = testsRowStatus(body);
-      tableRows.push(`| Tests | ${status} | ${escapeTableCell(args.chat ? chatNarrative(body) : body)} |`);
+      tableRows.push(`| Tests | ${status} | ${escapeTableCell(args.chat ? chatNarrative(body) : sanitizeDisplayText(body))} |`);
     }
   }
   if (!args.chat && auditStatus !== "NO VERDICT") {
-    const auditBody = args.countsLine.replace(/^\u2014\s*/, "").replace(/\.\s*$/, "");
+    const auditBody = sanitizeDisplayText(args.countsLine).replace(/^\u2014\s*/, "").replace(/\.\s*$/, "");
     // v0.38.55 audit: the Audit row's Scope names the row kind — the old
     // shape duplicated the counts text in Scope and Notes.
     if (gates.length > 0) {
@@ -805,8 +808,8 @@ export function buildRichTerminalParts(args: {
     findingLines,
     tableLines,
     nextLines,
-    repoLines: args.chat ? [] : args.repoState ?? [],
-    summaryLines: args.summaryLines ?? [],
+    repoLines: args.chat ? [] : (args.repoState ?? []).map((line) => sanitizeDisplayText(line)),
+    summaryLines: (args.summaryLines ?? []).map((line) => sanitizeDisplayText(line)),
   };
 }
 
