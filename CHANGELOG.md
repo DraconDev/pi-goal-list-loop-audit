@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.38.68 — Relentless auto-continue: heat-routed exhaustion, quota retries, truthful recovering (2026-09-19)
+
+### Length-exhaustion wedge fixed at the root: heat, not budget (field 162348)
+
+Repeated output-token truncation at near-full context is a heat problem —
+the prompt no longer fits the model — so growing the truncation budget
+only ping-pongs into the same wall. `decideLengthExhaustion` now routes on
+`contextPercent`: roomy context restarts the truncation budget relentlessly
+(episode 1 of a bounded 2-episode budget, episode 2 parks durably),
+near-full context with a larger-context fallback rotates models, and
+near-full context without one yields to pi auto-compaction and lets the
+settle path own the resume. The compact-defer path no longer kicks a fresh
+turn into the known-hot window, and a manual `/goal resume` between
+episodes restarts the cycle instead of parking one round early.
+
+### Quota-identical auditor failures hammer bounded retries (field 150821)
+
+Rate-limit and plan-quota walls are transient, so they are exempt from the
+identical-failure park: the auditor keeps hammering its bounded retry plan
+instead of parking with "check the auditor/model setup". Billing walls
+and non-quota infra failures still park truthfully. A resumed or recovered
+cycle reseeds the dead candidate chain via `freshAuditorCycleClaim`
+instead of re-walking it, and no longer renders the previous cycle's dead
+chain or diagnostic one round late.
+
+### Armed retry renders recovering, not dead-paused (field 151113)
+
+A supervised auditor wait with an armed retry now renders `recovering`
+with an auto-retrying status line. Bare user waits with no pending claim
+still render `paused` — no false recovering labels.
+
+### glla-delegate skill states its drafting precondition (field 125302)
+
+The skill doc now says `propose_goal_draft` only runs inside an already-open
+drafting session (bare `/goal`, `/list`, or `/list add`), refuses from
+normal chat, and falls back to `list_add` — the refusal is correct
+behavior, so this is a doc fix with a regression pin, no prod change.
+
 ## 0.38.67 — Stop clobbering other extensions' compactions (2026-09-19)
 
 ### session_before_compact returns nothing (issue #56, ezoushen)
