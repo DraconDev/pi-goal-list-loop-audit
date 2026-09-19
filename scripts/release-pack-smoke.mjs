@@ -111,9 +111,9 @@ try {
     if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
     return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`).join(",")}}`;
   };
-  const workerProbe = path.join(workspace, "worker-probe");
-  fs.mkdirSync(workerProbe, { recursive: true });
   const attemptId = "packed-worker-probe";
+  const workerProbe = path.join(workspace, attemptId);
+  fs.mkdirSync(workerProbe, { recursive: true });
   const request = {
     protocolVersion: 1,
     attemptId,
