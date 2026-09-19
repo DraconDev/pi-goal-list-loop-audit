@@ -490,6 +490,12 @@ function clearInBandProviderFailure(): void {
 // session_start, and manual parks — never on starved stops (the wedge
 // persists) so a hot context cannot lap the budget forever.
 let lengthExhaustionEpisodes = 0;
+/** Test-only: reset the exhaustion-episode counter without firing turns.
+Module state would otherwise leak across behavioral tests sharing one
+process (an episode-1 leftover makes the next test's first wedge park). */
+export function __testOnlyResetLengthExhaustionEpisodes(): void {
+  lengthExhaustionEpisodes = 0;
+}
 
 /** Arm the next automatic re-dispatch after a successful zombie abort.
  * The configured retry budget keeps repeated recovery finite; the caller gets
