@@ -488,7 +488,7 @@ function clearInBandProviderFailure(): void {
 // stays relentless per context heat (rotate / compact-defer / fresh
 // budget); episode 2 parks for manual action. Reset on clean turns,
 // session_start, and manual parks — never on starved stops (the wedge
-persists) so a hot context cannot lap the budget forever.
+// persists) so a hot context cannot lap the budget forever.
 let lengthExhaustionEpisodes = 0;
 
 /** Arm the next automatic re-dispatch after a successful zombie abort.
