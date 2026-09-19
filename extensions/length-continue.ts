@@ -123,6 +123,27 @@ export function isContextStarvedLengthStop(
   return false;
 }
 
+export type LengthExhaustionDecision = "rotate-fallback" | "compact-defer" | "fresh-budget";
+
+/** v0.38.68 (relentless goal, field 162348): answer "compact hiccup or
+over-context" by routing on context heat. Hot context (at or above the
+starvation boundary) means the prompt no longer fits the model — a blind
+fresh truncation budget would burn quota re-emitting a giant artifact into
+a full window, so rotate to a larger-context fallback when one exists and
+otherwise defer to pi auto-compaction. Roomy or unknown context means the
+model simply will not chunk: grant one fresh budget (fresh eyes, split
+instructions) and only park for manual action when that budget exhausts
+too. Pure — the agent_end site owns episodes, notify, and rotation. */
+export function decideLengthExhaustion(args: {
+  contextPercent?: number | null;
+  fallbackRefsAvailable: boolean;
+}): LengthExhaustionDecision {
+  const percent = typeof args.contextPercent === "number" ? args.contextPercent : null;
+  const hot = percent !== null && Number.isFinite(percent) && percent >= LENGTH_CONTINUE_CONTEXT_STARVED_PERCENT;
+  if (hot) return args.fallbackRefsAvailable ? "rotate-fallback" : "compact-defer";
+  return "fresh-budget";
+}
+
 export function makeLengthContinueTracker(max: number = LENGTH_CONTINUE_MAX) {
   let consecutive = 0;
   let gaveUp = false;

@@ -11,7 +11,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { createHash } from "node:crypto";
 import { execSync } from "node:child_process";
-import { normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, sanitizeProviderAuditReport, sanitizeProviderDisplayText, type QuotaSignal } from "./quota-retry.js";
+import { normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, quotaSignal, sanitizeProviderAuditReport, sanitizeProviderDisplayText, type QuotaSignal } from "./quota-retry.js";
 import { MAX_AUDITOR_CANDIDATE_REFS, MAX_MAIN_MODEL_FALLBACKS, normalizeBoundedModelRefs } from "./main-model-recovery.js";
 import { resolveGllaStateDir, stateRootPending } from "./glla-state-root.js";
 export { normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, sanitizeProviderAuditReport, sanitizeProviderDisplayText } from "./quota-retry.js";
@@ -4076,7 +4076,46 @@ export function trackAuditorIdenticalFailure(
   };
 }
 
-/** v0.38.63: append a dead ref to the eviction list when the error proves it
+/** v0.38.68 (relentless goal, field 150821): quota walls are transient —
+the fix is hammering bounded retries, not parking with "check the
+auditor/model setup". Rate-limit and plan-quota fingerprints are exempt
+from the identical park; the retry-plan horizon keeps governing them.
+Billing is NOT exempt (retries cannot fix a paywall) and unknown/non-quota
+failures keep the park. Pure. */
+export function isQuotaIdenticalParkExempt(diagnostic: string | undefined): boolean {
+  const signal = quotaSignal(diagnostic);
+  return signal === "rate-limit" || signal === "plan-quota";
+}
+
+/** v0.38.68 (relentless goal, field 150821): reseed a dead auditor chain
+instead of re-walking it. The 3 -> 4 count bump came from a recovery path
+re-firing an identical-parked claim with the burned cursor intact. Clearing
+the candidate chain, the failure streak, and the retry window restarts a
+fresh bounded window with re-resolved models. Pure — callers spread the
+result over the stored claim. */
+const FRESH_AUDITOR_CYCLE_CLEARED_KEYS = [
+  "auditorCandidateRefs",
+  "auditorCandidateRef",
+  "auditorRetryCandidateRef",
+  "auditorRetryAttemptStartedAt",
+  "auditorAttemptedRefs",
+  "auditorEvictedRefs",
+  "auditorLastFailureFingerprint",
+  "auditorConsecutiveIdenticalFailures",
+  "auditorFailureCount",
+  "auditorFailureClass",
+  "auditorFallbackExhausted",
+  "auditorFailureAt",
+  "retryAttempts",
+  "retryFirstAt",
+  "retryUntil",
+] as const;
+
+export function freshAuditorCycleClaim<T extends Record<string, unknown>>(claim: T): T {
+  const reseeded: Record<string, unknown> = { ...claim };
+  for (const key of FRESH_AUDITOR_CYCLE_CLEARED_KEYS) delete reseeded[key];
+  return reseeded as T;
+}
  * unresolvable; otherwise return the list untouched (absent stays absent).
  * Bounded to MAX_AUDITOR_CANDIDATE_REFS like every other cursor ref list. */
 export function withEvictedAuditorRef(evicted: string[] | undefined, candidateRef: string, error: string): string[] | undefined {
