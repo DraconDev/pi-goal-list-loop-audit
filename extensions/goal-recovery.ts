@@ -354,7 +354,10 @@ export function observeCompactFailure(ctx: ExtensionContext, error: string | und
  * current public event API returns false and the caller uses the terminal
  * park with an explicit `/new` instruction instead of claiming recovery.
  *
- * The signature is `where: string` so every attempt/skip is observable. */
+ * The signature is `where: string` so every attempt/skip is observable. A
+ * recovery is successful only when the host synchronously supplies the
+ * replacement context. Async host calls are fail-closed: callers must park
+ * the stale handle instead of treating invocation as recovery. */
 export function attemptFreshSessionRecovery(ctx: ExtensionContext, where: string): boolean {
   type FreshSessionContext = ExtensionContext & {
     newSession?: (options?: {
@@ -386,8 +389,16 @@ export function attemptFreshSessionRecovery(ctx: ExtensionContext, where: string
     return false;
   }
   try {
+    let rebound = false;
+    let failureRecorded = false;
+    const recordFailure = (error: string): void => {
+      if (failureRecorded) return;
+      failureRecorded = true;
+      appendLedger(recoveryCwd, "fresh_session_recovery_failed", { from: where, error });
+    };
     const result = startNewSession.call(freshCtx, {
-      withSession: async (replacementCtx) => {
+      withSession: (replacementCtx) => {
+        rebound = true;
         appendLedger(replacementCtx.cwd, "fresh_session_recovery_rebound", { where });
         replacementCtx.ui.notify(
           "glla: stale ctx detected — host supplied a fresh-session capability; rehydrating the goal now.",
@@ -396,12 +407,23 @@ export function attemptFreshSessionRecovery(ctx: ExtensionContext, where: string
       },
     });
     if (result && typeof (result as Promise<unknown>).then === "function") {
-      // The new session_start rehydrates the goal from disk. Do not await
-      // here: this send already failed on the stale context, and waiting on
-      // the replacement would touch the invalidated context again.
-      (result as Promise<unknown>).catch((err) => {
-        appendLedger(recoveryCwd, "fresh_session_recovery_failed", { from: where, error: err instanceof Error ? err.message : String(err) });
-      });
+      // Do not let a rejected or callback-free async host call masquerade as
+      // recovery. The caller fails closed immediately when `rebound` is
+      // still false; this continuation only records the eventual outcome.
+      (result as Promise<unknown>).then(
+        () => {
+          if (!rebound) recordFailure("host completed without supplying a replacement context");
+        },
+        (err) => {
+          recordFailure(err instanceof Error ? err.message : String(err));
+        },
+      );
+    }
+    if (!rebound) {
+      recordFailure(result && typeof (result as Promise<unknown>).then === "function"
+        ? "host recovery is asynchronous; no replacement context was supplied synchronously"
+        : "host recovery returned without supplying a replacement context");
+      return false;
     }
     appendLedger(recoveryCwd, "fresh_session_recovery_triggered", { from: where });
     return true;
@@ -715,8 +737,9 @@ export async function tryMainModelFallback(ctx: ExtensionContext, failure: MainM
       // never invoke setModel on that stale generation.
       if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation)) return false;
       const api = flags.extensionApi;
+      if (supervisorPaused(state)) return false;
       const accepted = await api?.setModel(candidate);
-      if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation)) return false;
+      if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation) || supervisorPaused(state)) return false;
       if (state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== candidateRef.toLowerCase()) return false;
       if (!accepted) {
         state.mainModelRecovery = { ...state.mainModelRecovery, pendingModelSwitch: undefined, retryAt: undefined };
@@ -962,6 +985,12 @@ export function scheduleHourlyProbe(ctx: ExtensionContext): void {
  * recovery path's timer cleanup, and a generation/host check prevents a
  * stale session from creating a new timer. */
 export async function fireHourlyProbe(ctx: ExtensionContext): Promise<void> {
+  // /glla pause may race an already-dequeued timer. Re-arm the parked slot
+  // without probing so explicit resume still has a durable backstop.
+  if (supervisorPaused(state)) {
+    scheduleHourlyProbe(ctx);
+    return;
+  }
   if (!state.mainModelRecovery || state.mainModelRecovery.manualResumeRequired === true) {
     await fireHourlyProbeForParkedAuditor(ctx);
     // Keep the backstop alive: the consumed :00:30 slot cleared its own
@@ -992,6 +1021,7 @@ export async function fireHourlyProbe(ctx: ExtensionContext): Promise<void> {
     at: new Date().toISOString(),
   });
   try {
+    if (supervisorPaused(state)) return;
     await probeMainModelRecovery(ctx);
   } catch (err) {
     if (isStaleApiError(err)) flags.extensionApiStale = true;
@@ -1012,6 +1042,7 @@ export async function fireHourlyProbe(ctx: ExtensionContext): Promise<void> {
  * no-ops on the phase guard inside retryStoredCompletionAudit. Never
  * touches models: a detached audit launch cannot disturb a supervised turn. */
 async function fireHourlyProbeForParkedAuditor(ctx: ExtensionContext): Promise<void> {
+  if (supervisorPaused(state)) return;
   const goal = state.goal;
   if (!goal || goal.status !== "paused") return;
   const pending = goal.pendingCompletion;
@@ -1034,6 +1065,7 @@ async function fireHourlyProbeForParkedAuditor(ctx: ExtensionContext): Promise<v
     at: new Date().toISOString(),
     pauseResumeAt: goal.pauseResumeAt ?? null,
   });
+  if (supervisorPaused(state)) return;
   await retryStoredCompletionAudit("provider-retry");
 }
 
@@ -1101,6 +1133,7 @@ let hourlyProbeGeneration: number | null = null;
  * durable timer state is not enough to fence the two callbacks once both
  * have fired, so serialize the actual async probe as well. */
 export async function probeMainModelRecovery(ctx: ExtensionContext): Promise<void> {
+  if (supervisorPaused(state)) return;
   const generation = flags.sessionGeneration;
   if (mainModelRecoveryProbeInFlight && mainModelRecoveryProbeGeneration !== generation) {
     mainModelRecoveryProbeInFlight = false;
@@ -1225,8 +1258,9 @@ async function probePreferredPrimary(ctx: ExtensionContext, recovery: MainModelR
   flags.mainModelSwitchInFlight = true;
   try {
     if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation)) return;
+    if (supervisorPaused(state)) return;
     const accepted = await flags.extensionApi?.setModel(candidate);
-    if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation)) return;
+    if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation) || supervisorPaused(state)) return;
     if (state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== primary.toLowerCase()) return;
     if (!accepted) throw new Error("no configured auth for preferred primary");
     const switched = {
@@ -1272,6 +1306,7 @@ async function probePreferredPrimary(ctx: ExtensionContext, recovery: MainModelR
 }
 
 async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> {
+  if (supervisorPaused(state)) return;
   const generation = flags.sessionGeneration;
   const recovery = state.mainModelRecovery;
   if (!recovery) return;

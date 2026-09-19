@@ -55,7 +55,7 @@ test("runtime: a future command-capable host context is actually invoked and led
     ui: { notify: (message: string) => notices.push(message) },
     newSession: (options?: { withSession?: (ctx: any) => void | Promise<void> }) => {
       called += 1;
-      return options?.withSession?.({
+      options?.withSession?.({
         cwd,
         ui: { notify: (message: string) => notices.push(message) },
       });
@@ -66,6 +66,24 @@ test("runtime: a future command-capable host context is actually invoked and led
   assert.equal(notices.length, 1);
   const ledger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
   assert.match(ledger, /fresh_session_recovery_triggered/);
+});
+
+test("runtime: rejected or callback-free async recovery fails closed", async () => {
+  for (const [label, newSession] of [
+    ["reject", () => Promise.reject(new Error("host rejected replacement"))],
+    ["no-callback", () => Promise.resolve(undefined)],
+  ] as const) {
+    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), `glla-stale-${label}-`));
+    const ctx = {
+      cwd,
+      ui: { notify: () => {} },
+      newSession,
+    } as any;
+    assert.equal(attemptFreshSessionRecovery(ctx, `test-${label}`), false, `${label} must not claim recovery`);
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    const ledger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
+    assert.match(ledger, /fresh_session_recovery_failed/, `${label} records failed recovery`);
+  }
 });
 
 test("every stale-ctx send site routes through attemptFreshSessionRecovery before falling back to goStaleTerminal", () => {
