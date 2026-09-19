@@ -1,5 +1,91 @@
 # Changelog
 
+## Unreleased
+
+### Dead-auditor eviction and identical-failure parking (audit-stuck batch)
+
+Detached-auditor failures that prove a model ref unresolvable (`Model not
+found` and synonyms) evict the ref from the candidate chain instead of
+retrying it forever. `resume_goal` runs the recovery probe inline rather
+than refusing while main-model recovery is pending. Three consecutive
+identical infra failures park the claim `blocked` with a named chain and a
+structured fingerprint instead of spinning. Parked-queue duplicates coalesce
+instead of piling up, and queued retries drain rather than jam the list head.
+
+### Session-identity refusal fix (field 195237)
+
+Subagent-session confusion is gone: foreign-context detection compares
+session identity, not object identity, so a worker in the same session is
+no longer refused as foreign.
+
+### Bounded agent load waits (field 153404)
+
+Far-future agent `pause_goal kind="wait"` requests are clamped to one hour
+with a visible notice instead of parking for 4+ hours unchecked.
+
+### Tweak keeps provenance raw (field 184316)
+
+`/goal tweak` strips the procedural tail before extracting the verification
+contract while keeping the raw user seed, so filings say what was done
+without laundering what was asked.
+
+### Relentless provider retry within bounds (fields 200751/200754)
+
+Provider failures keep hammering within the recovery envelope: both
+error-brake callbacks anchor on the recovery episode key instead of matching
+reason strings, so a self-park no longer disarms an armed retry. Genuine
+user pauses and decision-picker stand-downs still stand down.
+
+### No mid-objective parking while recovery is armed
+
+Agent `error`/`blocked` park requests are refused with routing text while
+provider recovery is armed, and ledgered — the run must not stop
+mid-objective unless it must. Decision waits, genuine blockers, and user
+pauses are untouched.
+
+### Suspicious-goal close (field 032245)
+
+A goal paused only by the suspicious-objective dispatch shield can now close
+via `complete_goal`: the accept path verifies artifacts through the isolated
+auditor and voids the queued repair on approval. User pauses and repair
+cards (`repairTarget`) still refuse as before.
+
+### Standby pause for background agents (field 021655)
+
+New structured `standby` pause kind for waits on background agents — the
+card and status line say waiting (not blocked), and completion wakes
+automatically. `blocked`/`error` rendering is unchanged.
+
+### Post-drafting stuck paths fixed
+
+Persist-failed completion claims report error instead of fake pending;
+auditor-retry waits are capped at 15 minutes; recovery waits name the agent
+path (`resume_goal` retries now). After drafting, the loop no longer gets
+stuck short of completion.
+
+### Auditor mirrors session extensions (field 151158)
+
+The detached auditor inherits the session's extension packages by default
+(tri-state `auditorMirrorSessionExtensions`, on unless explicitly off), so a
+session-resolved auditor model ref no longer dies as `Model not found` in
+the isolated worker. GLLA never mirrors itself; unresolvable specs drop
+fail-closed; the read-only tool fence is unchanged.
+
+### Fallback chains offer the thinking pick (field 152226)
+
+Saving a non-empty auditor fallback chain now offers the thinking-level pick
+(the agnes-flash selection sticks), and typing the session model into the
+fallback input names the slot-0 exclusion instead of silently clearing.
+Clearing the chain skips the thinking prompt.
+
+### Goal-aware length continuation (PR #55, FOF11)
+
+When an active goal's response is truncated at the output-token limit, the
+continuation text first asks whether the goal is already satisfied — calling
+`complete_goal` if so — instead of starting another blind work pass. Plain
+sessions keep the generic text; marker and retry payload follow the text
+actually sent.
+
 ## 0.38.62 — Whole-note verification aggregation (2026-09-17)
 
 ### Conservative result parsing

@@ -421,7 +421,8 @@ Open `/glla` for the settings table. The most important choices are:
   unset, auditor thinking inherits the parent session dial (including `max`);
 - **Main-agent and auditor fallback models:** both roles use the same ordered,
   deselectable, bounded fallback-chain picker for provider failures; the
-  auditor's session model remains the final last resort;
+  auditor's session model remains the final last resort. Saving a non-empty
+  auditor chain also offers the thinking-level pick so the selection sticks;
 - **Auto-resume:** whether persisted work may restart automatically after a
   session loads; explicit resume commands are always available;
 - **State root:** `workingDir` by default, opt-in `sessionDir`;
@@ -442,10 +443,12 @@ supervisor.
 ## Model and auditor requirements
 
 The main agent may use the model/provider you normally use in pi. The detached
-auditor starts a fresh extension-less pi process by default, so its selected
-model must authenticate and work without an extension-registered provider.
-Choose an auditor model in `/glla` if the session model depends on a provider
-extension.
+auditor starts a fresh pi process that mirrors your session's extension
+packages by default, so session-resolved models (including
+provider-extension models) work there too; disable the mirror in `/glla`
+settings if you want the fully isolated extension-less auditor. Choose an
+auditor model in `/glla` if the session model depends on something the
+worker cannot reach.
 
 The worker inherits normal pi provider configuration and resolves `pi` from
 `PATH`. If needed, set:
