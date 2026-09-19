@@ -5,7 +5,7 @@
 // configured candidates, recognizes positively non-recoverable failures, and
 // computes a bounded-but-persistent retry cadence.
 
-import { DEFAULT_QUOTA_RETRY_SEC, parseQuotaError } from "./quota-retry.js";
+import { DEFAULT_QUOTA_RETRY_SEC, parseQuotaError, quotaSignal } from "./quota-retry.js";
 
 export const MAIN_MODEL_MAX_RETRY_DELAY_MS = 5 * 60 * 60_000;
 export const MAIN_MODEL_AUTO_RETRY_HORIZON_MS = 24 * 60 * 60_000;
@@ -308,6 +308,19 @@ export function mainModelFailureDelayMs(failure: MainModelFailure, attempt: numb
   const resetSleep = quotaResetSleepMs(failure, nowMs);
   if (resetSleep !== undefined) return resetSleep;
   return mainModelRetryDelayMs(attempt, baseMinutes);
+}
+
+/** v0.38.69 (Antigravity port): quota waits never park at the horizon.
+ * A rate-limit/plan-quota wall is transient by definition — agy
+ * busy-retries it until reset — so the 24h automatic-recovery hold must
+ * not end a quota wait. Billing (account wall, not a transient) and every
+ * non-quota failure keep their horizon park. Derived from the episode
+ * diagnostic text at the hold site, so no new durable state is needed and
+ * reloads classify identically. */
+export function isQuotaHorizonExempt(raw: string | undefined): boolean {
+  if (typeof raw !== "string" || !raw.trim()) return false;
+  const signal = quotaSignal(raw);
+  return signal === "rate-limit" || signal === "plan-quota";
 }
 
 /** v0.38.69 (Antigravity port): sleep-until-reset for quota-class failures
