@@ -178,7 +178,11 @@ test("v0.34.60: complete_goal with newObjective bumps the revision and audits th
     assert.match(res.content[0]!.text, /auditor queued|detached/i, "the claim proceeds (no gate rejection)");
     const st = readState(cwd);
     assert.equal(st.goal?.objective, "shifted objective — different work now", "newObjective replaced the objective");
-    assert.equal(st.goal?.completionSummary, validRecap, "v0.34.91: the completion recap is captured on the goal at claim time (the terminal summary shows what happened)");
+    // v0.38.69 (Antigravity port): the thin harness recap rides the
+    // density NOTE, but the claim text itself is still captured at claim
+    // time ahead of it (v0.34.91 intent preserved).
+    assert.match(st.goal?.completionSummary ?? "", /^Outcome: Test claim\. Changed: none\. Evidence: harness\. Tests: not run — harness\. Unresolved: none\. Next: none\./, "v0.34.91: the completion recap is captured on the goal at claim time (the terminal summary shows what happened)");
+    assert.match(st.goal?.completionSummary ?? "", /low evidence density/, "thin recap carries the density NOTE");
     assert.equal(st.goal?.revision, 2, "newObjective bumps the revision exactly once (seed 1 → 2); settle writes do not bump");
     await waitUntil(() => readState(cwd).goal === null);
   } finally {

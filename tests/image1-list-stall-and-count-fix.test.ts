@@ -88,8 +88,13 @@ test("v0.34.104 [Image-#1] Problem 2: validateCompletionSummary exists and is wi
   // derived from validatedSummary and flows into BOTH beginCompletionAudit
   // and the detached auditor — the pinned wiring below.
   assert.match(SRC, /const finalSummary = versionlessAlreadyShipped && validatedSummary/);
-  assert.match(SRC, /const completionClaim = beginCompletionAudit\(ctx, \{\s*completionSummary: finalSummary,/s);
-  assert.match(SRC, /completionSummary: finalSummary,\s*\n\s*verificationSummary: p\.verificationSummary,/s);
+  // v0.38.69 (Antigravity port): the density lint sits between
+  // finalSummary and the claim — claimedSummary carries an optional NOTE
+  // annotation, and THAT flows into BOTH beginCompletionAudit and the
+  // detached auditor.
+  assert.match(SRC, /const densityNote = completionSummaryDensityNote\(finalSummary, sanitizedGroups, sanitizedGates\);/);
+  assert.match(SRC, /const completionClaim = beginCompletionAudit\(ctx, \{\s*completionSummary: claimedSummary,/s);
+  assert.match(SRC, /completionSummary: claimedSummary,\s*\n\s*verificationSummary: p\.verificationSummary,/s);
 });
 
 test("v0.34.104 [Image-#1] Problem 2: impossible X/Y pass counts match the field regex (29/28)", () => {
