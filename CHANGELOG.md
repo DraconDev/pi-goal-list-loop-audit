@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+### Antigravity auto-continue port (survey 2026-09-19)
+
+- Mid-run interruption budget (`decisionPauseBudget`): decision pauses past
+  budget auto-default to the recommended option and ledger
+  `decision_budget_auto_default` instead of stalling mid-run.
+- Quota sleep-until-reset: quota-class failures with an explicit upstream
+  hint sleep until reset (5h cap; 5s eager first retry preserved); quota
+  waits never park at the 24h horizon; background primary probe re-arms at
+  reset while fallback serves.
+- Completion-claim evidence-density lint: zero path:line tokens AND zero
+  gate rows rides a ledgered NOTE annotation (claim still audits); every
+  terminal path already ends with the archive record pointer.
+- Per-repo pitfall registry: `.pi-glla/pitfalls.md` (absent stays absent)
+  rides the continuation prompt under REPO PITFALLS, ledgered once per goal.
+- Objection-attached retries: every disapproval extracts durable TODOs via
+  `durableObjectionsForDisapproval` (aggressive keeps only cap/no-progress
+  behaviors); two pre-existing source-shape pins revised to the new shape.
+
 ## 0.38.68 — Relentless auto-continue: heat-routed exhaustion, quota retries, truthful recovering (2026-09-19)
 
 ### Length-exhaustion wedge fixed at the root: heat, not budget (field 162348)
