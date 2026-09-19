@@ -1998,3 +1998,11 @@
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":null,"contextUsage":{"tokens":154203,"contextWindow":200000,"percent":77.1015}},"at":"2026-09-19T11:50:56.919Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":null,"contextUsage":{"tokens":159973,"contextWindow":200000,"percent":79.9865}},"at":"2026-09-19T11:51:53.274Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":310,"outputTokens":311,"cacheReadTokens":173553,"cacheWriteTokens":0,"totalTokens":174174},"contextUsage":{"tokens":174174,"contextWindow":200000,"percent":87.087}},"at":"2026-09-19T11:57:31.449Z"}
+{"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-19T12:04:29.158Z"}
+{"type":"session_rebound","value":{"reason":"startup"},"at":"2026-09-19T12:04:31.585Z"}
+{"type":"id_invalidation","value":{"oldId":"01a054a9-e07f-705b-87a1-9421f9b906dc","newId":"01a0b98d-c056-7650-8e12-ed943bc8f175","reason":"session_shutdown","shutdownReason":"quit","at":"2026-09-19T12:04:31.593Z"},"at":"2026-09-19T12:04:31.593Z"}
+{"type":"session_waiting_for_load","value":{"reason":"startup"},"at":"2026-09-19T12:04:31.593Z"}
+{"type":"session_shutdown","value":{"reason":"resume"},"at":"2026-09-19T12:04:36.387Z"}
+{"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-19T12:04:36.592Z"}
+{"type":"id_invalidation","value":{"oldId":"01a0b98d-c056-7650-8e12-ed943bc8f175","newId":"01a054a9-e07f-705b-87a1-9421f9b906dc","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-19T12:04:36.596Z"},"at":"2026-09-19T12:04:36.596Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":7,"kept":1,"lastError":"OpenAI API error (503): {\"param\":null,\"type\":\"server_error\",\"message\":\"Error from provider (Console Go): Upstream request failed: [service_overloaded] The backe","generation":520},"at":"2026-09-19T12:04:47.041Z"}
