@@ -133,8 +133,13 @@ try {
   ].join("\n"));
   fs.chmodSync(piStub, 0o755);
   const workerPath = path.join(installedPackage, "scripts/goal-auditor-worker.mjs");
+  // The worker's bounded process-tree cleanup enumerates its own process
+  // group. Keep this probe in a detached group so a direct smoke invocation
+  // cannot signal the release gate's parent shell while terminating its RPC
+  // stub; the production launcher already supplies the same isolation.
   execFileSync(process.execPath, [workerPath, "--job-dir", workerProbe], {
     cwd: installedPackage,
+    detached: true,
     env: { ...process.env, GLLA_PI_BINARY: piStub, GLLA_AUDITOR_STALL_MS: "1000", GLLA_AUDITOR_EOF_EXIT_GRACE_MS: "100" },
     encoding: "utf8",
     timeout: 15_000,
