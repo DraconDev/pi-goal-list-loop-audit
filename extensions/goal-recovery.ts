@@ -1500,8 +1500,9 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
       resumeCurrent: (state.mainModelRecovery ?? recovery).resumeCurrent,
       pendingModelSwitch: undefined,
     });
-    // All provider failures use the same bounded envelope. Error text and
-    // upstream retry hints do not alter the delay.
+    // All provider failures use the same bounded envelope. Only an explicit
+    // upstream quota-reset hint alters the delay (sleep until reset, 5h
+    // cap); all other error text and retry hints keep the ladder.
     const delay = mainModelFailureDelayMs(failure, next.attempts, loadGlobalSettings().mainModelRetryMinutes);
     if (setMainModelRecoveryPause(ctx, next, delay)) scheduleMainModelRecoveryTimer(ctx, delay);
   } finally {
@@ -1539,7 +1540,9 @@ export function parkMainModelAfterFailure(ctx: ExtensionContext, failure: MainMo
     resumeCurrent: existing.resumeCurrent,
   });
   // The generic envelope owns the wait; the 24h horizon ends automatic
-  // probes regardless of the provider's wording.
+  // probes regardless of the provider's wording. (A quota-class failure
+  // with an explicit upstream reset hint sleeps until reset inside the
+  // same 5h-capped envelope via mainModelFailureDelayMs.)
   const delay = mainModelFailureDelayMs(failure, nextRecovery.attempts, loadGlobalSettings().mainModelRetryMinutes);
   if (!setMainModelRecoveryPause(ctx, nextRecovery, delay)) return;
   flags.mainModelAbortForRecovery = true;
