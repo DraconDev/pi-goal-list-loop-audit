@@ -2635,7 +2635,7 @@ test("v0.34.26: repeated output-token truncation pauses the goal durably with re
   assert.equal(g.pauseKind, "error");
   assert.match(g.pauseReason ?? "", /output-token limit — 3 responses in a row were truncated mid-artifact/);
   assert.match(g.pauseSuggestedAction ?? "", /\/goal resume/);
-  assert.equal(pi.sent.length, 3, "no fourth auto-continue fires");
+  assert.equal(pi.sent.length, afterRelentless + 3, "both truncation budgets fired — no infinite spin, no early park");
   const ledger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
   assert.match(ledger, /"length_continue_exhausted"/, "exhaustion is ledgered");
   // Explicit recovery gets a fresh truncation budget (the sticky gaveUp flag
