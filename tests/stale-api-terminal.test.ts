@@ -216,9 +216,14 @@ test("v0.32.0: audit-opportunistic fix batch — dispose, keys, caps, message", 
   assert.match(AUD, /skipSameProviderRungs/); // one dead backend does not burn a launch per rung
   // v0.34.108/0.34.142: the old process-local/provider-specific counters
   // are gone; a manual-origin audit starts a fresh generic retry window.
-  assert.match(GOAL, /const freshAuditorCycle = \(origin === "manual" \|\| origin === "agent"\) && claim\.auditorFallbackExhausted === true/);
+  // v0.38.68 (relentless): the single automatic session-recovery retry
+  // reseeds a burned chain too — re-walking a dead cursor bumped an
+  // identical-parked claim from 3 to 4 failures. The clears live in
+  // freshAuditorCycleClaim (goal-loop-core) instead of an inline literal.
+  assert.match(GOAL, /const freshAuditorCycle = \(origin === "manual" \|\| origin === "agent" \|\| origin === "session-recovery"\) && claim\.auditorFallbackExhausted === true/);
+  assert.match(GOAL, /freshAuditorCycleClaim\(claim\)/);
   assert.match(GOAL, /retryAttempts: undefined,\s*retryFirstAt: undefined,\s*retryUntil: undefined/);
-  assert.match(GOAL, /auditorCandidateRefs: undefined,\s*auditorCandidateRef: undefined,\s*auditorRetryCandidateRef: undefined/);
+  assert.match(fs.readFileSync("extensions/goal-loop-core.ts", "utf-8"), /FRESH_AUDITOR_CYCLE_CLEARED_KEYS/);
   assert.match(GOAL, /handing off to a fresh pi context — /); // entry probe names the lifecycle handoff honestly
   assert.match(GOAL, /function clearSessionOwnedTimers\(preserveStaleRecovery = false\): void/); // terminal keeps only the recovery probes
 });
