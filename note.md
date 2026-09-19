@@ -6,7 +6,7 @@
 
 ##
 /home/dracon/Pictures/Screenshots/Screenshot_20260918_162348.png 
-auto continue should just keep going
+auto continue should just keep going, if we have an objective we should be jsut nudging forward, and ideally we hsould not ask questions but ask upfront more eagerly
 
 ##
 auditor chain repeated failure but it was jsut simply out of quota we should be hammering retries
@@ -16,9 +16,9 @@ auditor chain repeated failure but it was jsut simply out of quota we should be 
 /home/dracon/Pictures/Screenshots/Screenshot_20260918_151113.png 
 shows paused but det auditor working ?
 
-
-
 # Later
+
+# Maybe 
 
 ##
 i am kind of jelous of how far antigravity goes on for so long, w need to look into it 
