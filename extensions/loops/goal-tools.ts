@@ -274,7 +274,7 @@ import {
   pushCapped as pushRepetitionCapped,
 } from "../goal-loop-repetition.js";
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
-import { buildFinalRepoStateLines, buildTerminalApprovalRender, compactCompletionSummary, compactTerminalCompletionSummary } from "../completion-summary.js";
+import { buildFinalRepoStateLines, buildTerminalApprovalRender, compactCompletionSummary, compactTerminalCompletionSummary, completionSummaryDensityNote } from "../completion-summary.js";
 import { persistApprovalRender, replayUndeliveredApprovalRenders } from "../approval-render-store.js";
 import { resolveAuditorThinkingLevel } from "../auditor-thinking.js";
 import {
@@ -838,6 +838,17 @@ function registerAgentTools(pi: any): void {
       // v0.38.52: same for the agent-supplied gate inventory.
       const sanitizedGroups = sanitizeFindingGroups(p.findingGroups);
       const sanitizedGates = sanitizeGateRows(p.gateRows);
+      // v0.38.69 (Antigravity port): evidence-density lint — a claim with
+      // no path:line tokens and no gate rows still audits, but rides with
+      // a NOTE annotation (ledgered) so the terminal render falls back to
+      // recorded facts instead of rendering unverifiable prose as proof.
+      const densityNote = completionSummaryDensityNote(finalSummary, sanitizedGroups, sanitizedGates);
+      const claimedSummary = densityNote && finalSummary
+        ? `${finalSummary.trimEnd()} — NOTE: ${densityNote}`
+        : finalSummary;
+      if (densityNote) {
+        appendLedger(ctx.cwd, "completion_summary_low_density", { excerpt: (finalSummary ?? "").slice(0, 240) });
+      }
       // 2026-09-16 whole-work recap: a re-claim after an auditor disapproval
       // is usually a delta-only repair note. Keep the FIRST claim's text so
       // the approved terminal render still opens with the whole work; the
@@ -849,7 +860,7 @@ function registerAgentTools(pi: any): void {
           ? state.goal.completionSummary
           : undefined;
       const completionClaim = beginCompletionAudit(ctx, {
-        completionSummary: finalSummary,
+        completionSummary: claimedSummary,
         verificationSummary: p.verificationSummary,
         // v0.38.37: the deliberate non-do rides the pending claim into
         // the terminal render — the only source the summary may cite.
@@ -870,7 +881,7 @@ function registerAgentTools(pi: any): void {
           isError: true,
         };
       }
-      updateGoal({ pendingTasks: undefined, ...(finalSummary ? { completionSummary: finalSummary } : {}) }, ctx);
+      updateGoal({ pendingTasks: undefined, ...(claimedSummary ? { completionSummary: claimedSummary } : {}) }, ctx);
       const auditGoal = state.goal;
       if (!auditGoal) return staleToolResult();
       const auditGoalId = auditGoal.id;
