@@ -120,7 +120,6 @@ test("billing and non-quota failures still park at the horizon", () => {
       false, "billing parks: an account wall is not a transient",
     );
     assert.equal(state.mainModelRecovery?.manualResumeRequired, true);
-    state.mainModelRecovery = undefined;
     assert.equal(
       setMainModelRecoveryPause(r.ctx, pastHorizonEpisode("503 Service Unavailable"), 30 * 60_000),
       false, "non-quota failures keep their horizon park",
