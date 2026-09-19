@@ -64,6 +64,7 @@ copies are ignored (the recovery runtime reads the global file):
 | `wedgeAlertMinutes` | unset (30, or off while aggressive mode is on — the default) | Busy-but-silent minutes before the wedge alert; `0` = off. The menu shows the effective value. |
 | `autoResume` | `false` | Restored goals/loops/lists auto-resume in fresh sessions. Global-only. |
 | `decisionPopup` | `true` | Decision pauses pop the picker (`false` = widget card only). |
+| `decisionPauseBudget` | unset (unlimited) | Max agent-authored decision pauses per goal before auto-default: the (N+1)-th adopts the recommended option as a logged assumption without pausing. `0` = relentless from the first decision. |
 | `carryover` | `"pause"` | Stale carryover on new activation: `"pause"` / `"clear"` / `"resume"`. |
 | `autoAcceptDrafts` | `false` | Drafts activate without the Confirm dialog (unattended rigs). |
 | `auditCap` | `5` (10 aggressive) | Pause after N consecutive auditor disapprovals (`0` = unlimited). |

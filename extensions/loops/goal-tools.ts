@@ -2325,6 +2325,51 @@ function registerAgentTools(pi: any): void {
           storedResumeAt = p.resumeAt;
         }
       }
+      // v0.38.69 (Antigravity port): mid-run interruption budget with
+      // auto-default-and-log fallback. Antigravity's no-mid-run-questions
+      // trick is structural — the run cannot block on a human — while
+      // GLLA's was rhetorical (the continuation prompt says don't ask).
+      // With decisionPauseBudget set, the (N+1)-th agent-authored decision
+      // pause does NOT pause and does NOT abort the turn: the goal stays
+      // active, the recommended option (or option 1 when none is
+      // recommended) is adopted as a logged assumption, and the agent is
+      // told to carry it into its completion recap's Left out. Unset
+      // budget = legacy pause-every-time; 0 = relentless from the start.
+      if (p.kind === "decision" && p.options && p.options.length > 0) {
+        const budgetRaw = loadSettings(ctx.cwd).decisionPauseBudget;
+        const budget = typeof budgetRaw === "number" && Number.isInteger(budgetRaw) && budgetRaw >= 0 ? budgetRaw : undefined;
+        const decisionCount = (state.goal.midRunDecisionCount ?? 0) + 1;
+        if (budget !== undefined && decisionCount > budget) {
+          const recIdx = p.recommended && p.recommended >= 1 && p.recommended <= p.options.length
+            ? Math.floor(p.recommended) - 1
+            : 0;
+          const chosen = p.options[recIdx]!;
+          const entry = {
+            at: new Date().toISOString(),
+            reason: (p.reason ?? "").slice(0, 300),
+            chosen: chosen.slice(0, 300),
+            options: p.options.map((o) => o.slice(0, 200)).slice(0, 10),
+          };
+          updateGoal({
+            midRunDecisionCount: decisionCount,
+            autoDefaultLog: [...(state.goal.autoDefaultLog ?? []), entry].slice(-20),
+          }, ctx);
+          appendLedger(ctx.cwd, "decision_budget_auto_default", {
+            goalId: state.goal.id,
+            budget,
+            decisionCount,
+            chosen,
+            reason: p.reason,
+          });
+          return {
+            content: [{
+              type: "text",
+              text: `Decision budget exhausted (budget ${budget}, this is mid-run decision #${decisionCount}): NOT paused — proceeding with the recommended default, option ${recIdx + 1}: "${chosen}". This assumption is logged on the goal (autoDefaultLog) and ledgered as decision_budget_auto_default. Keep working — record it in your completion summary's Left out: "assumed ${chosen} for: ${(p.reason ?? "").slice(0, 160)}".`,
+            }],
+            details: {},
+          };
+        }
+      }
       updateGoal({
         status: "paused",
         pauseReason: safePauseReason,
@@ -2333,6 +2378,12 @@ function registerAgentTools(pi: any): void {
         pauseOptions: p.kind === "decision" && p.options && p.options.length > 0 ? p.options : undefined,
         pauseRecommended: p.kind === "decision" && p.recommended && p.recommended >= 1 ? Math.floor(p.recommended) : undefined,
         pauseResumeAt: storedResumeAt,
+        // v0.38.69 (Antigravity port): every agent-authored decision
+        // pause counts against the mid-run interruption budget, in-budget
+        // or not, so the counter survives reloads on the goal itself.
+        ...(p.kind === "decision" && p.options && p.options.length > 0
+          ? { midRunDecisionCount: (state.goal.midRunDecisionCount ?? 0) + 1 }
+          : {}),
       }, ctx);
       if (p.kind === "decision" && p.options && p.options.length > 0) maybeDecisionPopup(ctx);
       // v0.27.1: surface the FULL pause contract — reason AND suggested
