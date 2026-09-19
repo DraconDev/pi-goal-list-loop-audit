@@ -2027,6 +2027,42 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     replayApprovalSummariesOnContact(ctx);
   });
 
+/** v0.38.68 (relentless, field 162348): shared hot-exhaustion core for the
+goal and loop give-up branches. Rotation and compaction-defer are identical
+for both; only the fresh-budget copy, the park action, and the kick differ
+and stay at the call sites. Returns true when the episode was handled
+(rotated or deferred) so the caller only owns the fresh-budget path. */
+async function handleHotLengthExhaustion(
+  ctx: ExtensionContext,
+  decision: LengthExhaustionDecision,
+  percent: number | null,
+  consecutive: number,
+  recentCompact: boolean,
+): Promise<boolean> {
+  if (decision === "rotate-fallback") {
+    const switched = await recoverFromContextOverflow(ctx, `output-token limit — ${LENGTH_CONTINUE_MAX}× truncated at ${percent !== null ? `${percent.toFixed(1)}%` : "near-full"} context; rotating to a larger-context model`);
+    if (switched) {
+      appendLedger(ctx.cwd, "length_exhausted_rotated", { consecutive, contextPercent: percent });
+      ctx.ui.notify(`glla: response truncated ${LENGTH_CONTINUE_MAX}× at ${percent !== null ? `${percent.toFixed(1)}%` : "near-full"} context — rotated to a larger-context backup model with a fresh truncation budget.`, "info");
+      return true;
+    }
+    // Rotation refused (chain burned between decision and attempt) — fall
+    // through to compaction-defer below rather than parking.
+  }
+  if (decision !== "fresh-budget") {
+    noteContextPercent(percent);
+    const yielded = noteContextStarvedYield();
+    appendLedger(ctx.cwd, "length_exhausted_compact_pending", { consecutive, contextPercent: percent, starvedStreak: yielded.streak, recentCompact });
+    ctx.ui.notify(`glla: response truncated ${LENGTH_CONTINUE_MAX}× at ${percent !== null ? `${percent.toFixed(1)}%` : "near-full"} context — the prompt no longer fits this model. Yielding to pi auto-compaction; work stays active and resumes with a fresh truncation budget after compaction lands.${recentCompact ? " A compact-and-retry already failed within the last 90s, so the fallback rotation above is the next recourse." : ""}`, "info");
+    void runEmergencyCompactorIfDue(ctx, yielded.shouldRefuse, {
+      notify: (message) => ctx.ui.notify(message, "info"),
+      page: (message) => notifyExternal(ctx, message),
+    });
+    return true;
+  }
+  return false;
+}
+
   pi.on("agent_end", async (event: any, ctx: ExtensionContext) => {
     rememberCtx(ctx);
     signalSupervisionEvent({ plane: state.mainModelRecovery ? "provider-recovery" : state.loop?.active ? "loop" : state.goal?.policy === "list" ? "list" : state.goal ? "goal" : "queue", kind: "progress", source: "agent_end" });
