@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import type { FindingGroup, GateRow, Goal, Status } from "./goal-loop-core.js";
+import { sanitizeDisplayText, type FindingGroup, type GateRow, type Goal, type Status } from "./goal-loop-core.js";
 import { fmtElapsed, truncateCells } from "./goal-loop-display.js";
 
 /**
@@ -180,9 +180,10 @@ export interface HumanCompletionBrief {
  * the durable archive keeps the full text. Falls back to the original
  * when stripping would empty the value. */
 export function chatSafeDetailValue(value: string): string {
+  const safeValue = sanitizeDisplayText(value);
   // v0.38.45 audit: loop the innermost-group strip to a fixpoint
   // (bounded) — a single pass left nested husks like "(log )" behind.
-  let withoutGroups = stripMachineGroups(value);
+  let withoutGroups = stripMachineGroups(safeValue);
   const stripped = withoutGroups
     .replace(/(?:\/var)?\/tmp\/\S+/g, "")
     .replace(/\btarballs?\s+\S+\.tgz\b/gi, "")
@@ -190,7 +191,7 @@ export function chatSafeDetailValue(value: string): string {
     .replace(/\(\s*\)/g, "")
     .replace(/\s{2,}/g, " ")
     .trim();
-  return stripped || value;
+  return stripped || safeValue;
 }
 
 /** The human briefing: outcome first in its own words, then only the
@@ -384,7 +385,7 @@ function stripMachineTokens(line: string): string {
 export function structuredSummaryLines(summary: string | undefined, label = "Outcome:"): string[] | null {
   const raw = rawLabelValue(summary ?? "", label);
   if (!raw || !isSectionStructured(raw)) return null;
-  const lines = raw.split("\n").map(stripMachineTokens);
+  const lines = raw.split("\n").map((line) => stripMachineTokens(sanitizeDisplayText(line)));
   while (lines.length > 0 && !(lines[0] ?? "").trim()) lines.shift();
   while (lines.length > 0 && !(lines[lines.length - 1] ?? "").trim()) lines.pop();
   let text = lines.join("\n");
@@ -416,7 +417,7 @@ export interface RichTerminalParts {
 }
 
 function escapeTableCell(value: string): string {
-  return value.replace(/\|/g, "\\|").replace(/\s+/g, " ").trim();
+  return sanitizeDisplayText(value).replace(/\|/g, "\\|").replace(/\s+/g, " ").trim();
 }
 
 function testsRowStatus(value: string): string {
@@ -470,9 +471,10 @@ function auditRowStatus(history: Goal["auditHistory"]): string {
 
 /** Split a stale-filtered `Label: value` detail into a bold lead + body. */
 function leadBody(detail: string): { lead: string; body: string } {
-  const separator = detail.indexOf(":");
-  if (separator < 0) return { lead: "Note", body: detail };
-  return { lead: detail.slice(0, separator).trim() || "Note", body: detail.slice(separator + 1).trim() };
+  const safeDetail = sanitizeDisplayText(detail);
+  const separator = safeDetail.indexOf(":");
+  if (separator < 0) return { lead: "Note", body: safeDetail };
+  return { lead: safeDetail.slice(0, separator).trim() || "Note", body: safeDetail.slice(separator + 1).trim() };
 }
 
 /**
@@ -487,7 +489,7 @@ const EVIDENCE_TOKEN_PATTERN = /(?<![/~+\w])[\w.+][\w.+/-]*\.[A-Za-z0-9]{1,8}:\d
 
 export function extractEvidenceTokens(text: string): { text: string; evidence: string[] } {
   const evidence: string[] = [];
-  const stripped = text
+  const stripped = sanitizeDisplayText(text)
     .replace(EVIDENCE_TOKEN_PATTERN, (match) => {
       if (evidence.length < RICH_EVIDENCE_TOKENS_PER_FINDING && !evidence.includes(match)) evidence.push(match);
       // The token often rides in parentheses — move the wrapper too, so
