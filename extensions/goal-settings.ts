@@ -191,6 +191,15 @@ export interface Settings {
    * widget card still shows the options; /goal decide opens it on demand).
    * Default on; unattended rigs have no UI so this never fires there. */
   decisionPopup?: boolean;
+  /** v0.38.69 (Antigravity port): maximum agent-authored decision pauses
+   * per goal before the run stops blocking on a human. The (N+1)-th
+   * decision pause does NOT pause: the goal stays active and the
+   * recommended option is adopted as a logged assumption (goal
+   * autoDefaultLog + `decision_budget_auto_default` ledger line), which
+   * the agent must carry into its completion recap's Left out. Unset =
+   * unlimited (legacy pause-every-time). `0` = relentless: the first
+   * decision already auto-defaults. */
+  decisionPauseBudget?: number;
   /** v0.28.14: what happens to stale carryover (paused goal, waiting list,
    * held loop from before this session) when NEW work activates.
    * pause (default) = leave it + ONE summary; clear = drop it all honestly;
@@ -554,6 +563,7 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
     delete settings.carryover;
   }
   if (typeof settings.decisionPopup !== "boolean") delete settings.decisionPopup;
+  if (settings.decisionPauseBudget !== undefined && (!Number.isInteger(settings.decisionPauseBudget) || settings.decisionPauseBudget < 0)) delete settings.decisionPauseBudget;
   if (typeof settings.aggressiveMode !== "boolean") delete settings.aggressiveMode;
   if (typeof settings.autoResume !== "boolean") delete settings.autoResume;
   if (typeof settings.autoAcceptDrafts !== "boolean") delete settings.autoAcceptDrafts;

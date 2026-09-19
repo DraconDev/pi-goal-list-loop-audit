@@ -656,6 +656,15 @@ export interface Goal {
   pauseOptions?: string[];
   /** v0.28.22: 1-based index into pauseOptions the agent recommends. */
   pauseRecommended?: number;
+  /** v0.38.69 (Antigravity port): mid-run decision-pause accounting — every
+   * agent-authored kind="decision" pause increments this, in-budget or
+   * not, so the interruption budget has a durable counter across reloads. */
+  midRunDecisionCount?: number;
+  /** v0.38.69 (Antigravity port): decisions auto-resolved to the
+   * recommended default when the budget was exhausted — the assumption
+   * the agent must carry into its completion recap's Left out. Bounded
+   * to the trailing 20. */
+  autoDefaultLog?: Array<{ at: string; reason: string; chosen: string; options: string[] }>;
   /** v0.28.22: ISO time a wait-pause becomes resumable (countdown shown). */
   pauseResumeAt?: string;
   /** v0.35.28 (issue #16): set when glla AUTO-resumed a lapsed wait — the

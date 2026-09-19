@@ -59,6 +59,20 @@
     "pauseKind": { "type": "string", "enum": ["decision", "error", "wait", "blocked", "standby"] },
     "pauseOptions": { "type": "array", "items": { "type": "string" } },
     "pauseRecommended": { "type": "number" },
+    "midRunDecisionCount": { "type": "number" },
+    "autoDefaultLog": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "properties": {
+          "at": { "type": "string" },
+          "reason": { "type": "string" },
+          "chosen": { "type": "string" },
+          "options": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
     "pauseResumeAt": { "type": "string" },
   "autoResumedAt": { "type": "string", "description": "v0.35.28 issue #16: ISO time glla auto-resumed a lapsed wait; renders the RECOVERY NOTICE in the continuation prompt; cleared by manual /goal resume" },
   "autoResumedEvent": { "type": "string", "description": "v0.35.28 issue #16: what auto-resumed the goal (overdue wait route, provider recovery event)" },
