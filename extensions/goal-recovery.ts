@@ -31,6 +31,7 @@ import {
   mainModelFailureDelayMs,
   mainModelPrimaryProbeDelayMs,
   mainModelRetryDelayMs,
+  quotaResetSleepMs,
   isCompactionInFlightSince,
   MAIN_MODEL_AUTO_RETRY_HORIZON_MS,
   modelRef,
@@ -635,6 +636,18 @@ export async function tryMainModelFallback(ctx: ExtensionContext, failure: MainM
     recoveryEpisodeKey: baseRecovery.recoveryEpisodeKey ?? `${baseRecovery.firstFailureAt ?? nowIso()}:${failureCopy.fingerprint}`,
     recoveryNoticeKeys: baseRecovery.recoveryNoticeKeys ?? [],
   };
+  // v0.38.69 (Antigravity port): a quota-walled primary carries its reset
+  // forward into the episode, so the background primary probe fires at
+  // reset instead of the generic cadence while fallback-chain work
+  // proceeds. Stamped only for failures ON the primary — a fallback's own
+  // wall says nothing about when the primary recovers — and never cleared
+  // here, so later fallback failures cannot erase the primary's reset.
+  if (sameModelRef(current, recovery.primary)) {
+    const resetSleep = quotaResetSleepMs(failure);
+    if (resetSleep !== undefined) {
+      recovery.primaryResetAt = new Date(Date.now() + resetSleep).toISOString();
+    }
+  }
   if (!recovery.attempted.includes(current)) recovery.attempted.push(current);
   const selector = sessionModelSelector(ctx);
   const scope: ModelScope = { kind: "session" };
