@@ -718,11 +718,11 @@ export function buildRichTerminalParts(args: {
     findingLines.push("| Area | Finding | Evidence |", "| --- | --- | --- |");
     for (const group of groups) {
       group.findings.forEach((finding, fi) => {
-        const { text, evidence } = extractEvidenceTokens(finding);
+        const { text, evidence } = extractEvidenceTokens(sanitizeDisplayText(finding));
         const { lead, body } = leadBody(text);
         // v0.38.52: test proof rides the Evidence cell (tables have no
         // sub-bullets); cells stay pipe-escaped. v0.38.55: unclipped.
-        const proof = group.tests?.[fi]?.trim();
+        const proof = group.tests?.[fi] ? sanitizeDisplayText(group.tests[fi]).trim() : "";
         const evidenceCell = [evidence.join(", ") || "\u2014", ...(proof ? [`Tests: ${proof}`] : [])].join(" \u00b7 ");
         findingLines.push(
           `| ${escapeTableCell(group.title)} | ${escapeTableCell(`**${lead}** \u2014 ${body}`)} | ${escapeTableCell(evidenceCell)} |`,
@@ -731,12 +731,12 @@ export function buildRichTerminalParts(args: {
     }
   } else if (groups.length > 0) {
     groups.forEach((group, i) => {
-      findingLines.push(`#### ${i + 1}. ${group.title}`);
+      findingLines.push(`#### ${i + 1}. ${sanitizeDisplayText(group.title)}`);
       group.findings.forEach((finding, fi) => {
-        const { lead, body } = leadBody(args.chat ? chatNarrative(extractEvidenceTokens(finding).text) : finding);
+        const { lead, body } = leadBody(args.chat ? chatNarrative(extractEvidenceTokens(finding).text) : sanitizeDisplayText(finding));
         findingLines.push(`- **${lead}** \u2014 ${body}`);
         // v0.38.52: per-finding test proof (shot C) — absent stays absent.
-        const proof = group.tests?.[fi]?.trim();
+        const proof = group.tests?.[fi] ? sanitizeDisplayText(group.tests[fi]).trim() : "";
         if (proof) findingLines.push(`  - Test Results: ${args.chat ? chatNarrative(proof) : proof}`);
       });
     });
