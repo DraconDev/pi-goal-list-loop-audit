@@ -148,7 +148,9 @@ test("v0.34.131: a failed hourly probe re-arms only after the async recovery set
   assert.match(fire, /state\.mainModelRecovery\.retryAt\s*===\s*undefined/, "a stale hourly callback cannot probe during an active turn");
   assert.match(schedule, /void fireHourlyProbe\(fresh\);/, "the timer awaits the async probe path");
   assert.doesNotMatch(schedule, /fireHourlyProbe\(fresh\);[\s\S]*scheduleHourlyProbe\(fresh\);/, "the timer does not re-arm before the probe settles");
+  assert.match(fire, /supervisorPaused\(state\)[\s\S]*scheduleHourlyProbe\(ctx\)/, "a paused dequeued slot re-arms without probing");
   assert.match(fire, /await probeMainModelRecovery\(ctx\)/, "the failed/successful probe is awaited");
+  assert.match(fire, /if \(supervisorPaused\(state\)\) return;\s*await probeMainModelRecovery/, "pause is re-checked at the async probe boundary");
   assert.match(fire, /finally\s*\{[\s\S]*scheduleHourlyProbe\(fresh\);/, "the ticker re-arms after failure cleanup completes");
   assert.match(fire, /generation !== flags\.sessionGeneration/, "stale generations cannot re-arm a timer");
 });
@@ -169,6 +171,17 @@ test("v0.34.92: session_start re-arms the hourly ticker when recovery is parked"
   const tail = GOAL_SRC.slice(handlerIdx, handlerIdx + 28_000);
   assert.match(tail, /scheduleMainModelRecoveryTimer\(ctx, delay\);/, "session_start re-schedules recovery");
   assert.match(tail, /scheduleHourlyProbe\(ctx\);/, "session_start also re-arms the hourly ticker");
+});
+
+test("fresh pause fences cover the hourly auditor backstop too", () => {
+  const auditorIdx = RECOVERY_SRC.indexOf("async function fireHourlyProbeForParkedAuditor");
+  assert.ok(auditorIdx > 0, "parked-auditor backstop exists");
+  const auditor = RECOVERY_SRC.slice(auditorIdx, auditorIdx + 2_200);
+  assert.match(auditor, /if \(supervisorPaused\(state\)\) return;/, "paused backstop does not retry auditors");
+  assert.match(auditor, /if \(supervisorPaused\(state\)\) return;\s*await retryStoredCompletionAudit/, "pause is checked immediately before retry");
+  const probeIdx = RECOVERY_SRC.indexOf("export async function probeMainModelRecovery");
+  assert.ok(probeIdx > 0, "main recovery probe exists");
+  assert.match(RECOVERY_SRC.slice(probeIdx, probeIdx + 500), /if \(supervisorPaused\(state\)\) return;/, "direct probe calls honor pause");
 });
 
 test("v0.34.142: hourlyRetryProbe setting exists and defaults to ON", () => {

@@ -142,7 +142,7 @@ test("agent_end: length path runs BEFORE nudge accounting, telemetry, and goal g
 
 test("sendLengthContinue: stale-api terminal guard + admitted-session reset", () => {
   assert.match(CONT, /function sendLengthContinue\(ctx: ExtensionContext, consecutive: number\)/); // decomposition step 5: moved
-  assert.match(CONT, /if \(flags\.sessionHandoffPending \|\| flags\.initialSessionLoadPending \|\| !flags\.extensionApi \|\| flags\.extensionApiStale \|\| continuationDispatchStoodDown \|\| pendingContinuationDispatch \|\| flags\.abortedStandDown\) return;/, "lifecycle, blank-start, stale-runtime, in-flight dispatch, and abort-latch guards short-circuit the send (flags accessor re-spelling; audit 2026-09-07 task 5 added the latch)");
+  assert.match(CONT, /if \(flags\.sessionHandoffPending \|\| flags\.initialSessionLoadPending \|\| !flags\.extensionApi \|\| flags\.extensionApiStale \|\| flags\.staleTerminalDone \|\| flags\.zombieStoodDown \|\| continuationDispatchStoodDown \|\| pendingContinuationDispatch \|\| flags\.abortedStandDown\) return;/, "lifecycle, stale-terminal, zombie, blank-start, stale-runtime, in-flight dispatch, and abort-latch guards short-circuit the send");
   assert.match(CONT, /kind: "length",\s*\n\s*marker: content\.slice\(0, 80\)/, "length sends use the effective per-context dispatch proof");
   assert.match(CONT, /flags\.extensionApi\.sendMessage\(\{\s*\n\s*customType: GOAL_EVENT_ENTRY,\s*\n\s*content,/, "length sends dispatch the selected text");
   assert.match(CONT, /appendLedger\(ctx\.cwd, "length_continue_sent", \{ consecutive, attemptId: attempt\.id \}\)/);

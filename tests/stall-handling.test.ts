@@ -396,6 +396,12 @@ test("v0.29.5: the stand-down survives the heartbeat + autoResume is GLOBAL-only
   assert.match(CONT, /pendingContinuationDispatch \|\| flags\.abortedStandDown\) return;/, "sendContinuation checks the abort latch");
   assert.match(CONT, /function sendStallEscalation[\s\S]{0,800}?flags\.abortedStandDown\) return;/, "sendStallEscalation checks the abort latch");
   assert.match(CONT, /function sendLengthContinue[\s\S]{0,800}?flags\.abortedStandDown\) return;/, "sendLengthContinue checks the abort latch");
+  // A stale terminal or zombie stand-down is an independent lifecycle fence;
+  // these late-event paths must match sendContinuation before triggerTurn.
+  const stallStart = CONT.indexOf("export function sendStallEscalation");
+  const lengthStart = CONT.indexOf("export function sendLengthContinue");
+  assert.match(CONT.slice(stallStart, lengthStart), /flags\.staleTerminalDone \|\| flags\.zombieStoodDown/, "stall nudge honors terminal/zombie fences");
+  assert.match(CONT.slice(lengthStart), /flags\.staleTerminalDone \|\| flags\.zombieStoodDown/, "length nudge honors terminal/zombie fences");
   assert.match(CONT, /terminal_completion_notice_refused_stood_down/, "terminal-notice refusal is ledgered");
   // 5. autoResume is GLOBAL-only (user directive: "not supporting project
   //    level setting for it now, just global") — the restore gate and the

@@ -1420,7 +1420,7 @@ export function sendStallEscalation(ctx: ExtensionContext, nudges: number): void
   if (supervisorPaused(state)) return;
   // Audit 2026-09-07 (HIGH): a stall nudge must not resurrect a stood-down
   // chain — same abort-latch reasoning as sendContinuation.
-  if (flags.sessionHandoffPending || flags.initialSessionLoadPending || !flags.extensionApi || flags.extensionApiStale || continuationDispatchStoodDown || pendingContinuationDispatch || flags.abortedStandDown) return;
+  if (flags.sessionHandoffPending || flags.initialSessionLoadPending || !flags.extensionApi || flags.extensionApiStale || flags.staleTerminalDone || flags.zombieStoodDown || continuationDispatchStoodDown || pendingContinuationDispatch || flags.abortedStandDown) return;
   if (!state.goal || !guardGoalBeforeContinuation(ctx, "stall-escalation")) return;
   const remaining = HEARTBEAT_MAX_NUDGES - nudges;
   const text = [
@@ -1464,7 +1464,7 @@ export function sendLengthContinue(ctx: ExtensionContext, consecutive: number): 
   if (supervisorPaused(state)) return;
   // Audit 2026-09-07 (HIGH): a length nudge must not resurrect a stood-down
   // chain — same abort-latch reasoning as sendContinuation.
-  if (flags.sessionHandoffPending || flags.initialSessionLoadPending || !flags.extensionApi || flags.extensionApiStale || continuationDispatchStoodDown || pendingContinuationDispatch || flags.abortedStandDown) return;
+  if (flags.sessionHandoffPending || flags.initialSessionLoadPending || !flags.extensionApi || flags.extensionApiStale || flags.staleTerminalDone || flags.zombieStoodDown || continuationDispatchStoodDown || pendingContinuationDispatch || flags.abortedStandDown) return;
   if (state.goal && !guardGoalBeforeContinuation(ctx, "length-continuation")) return;
   // v0.38.66 (PR #55, FOF11): active goals get completion-aware recovery
   // text — a truncated turn must offer closure, not another blind work
