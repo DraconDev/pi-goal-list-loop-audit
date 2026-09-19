@@ -17,9 +17,14 @@ tools in the main session only:
   current request and offer to queue it first. Queue it without another
   question only when the user has given standing permission such as
   “queue follow-ups as you find them.”
-- If one durable, multi-hour objective is warranted, interview only what is
-  genuinely unknown, then call `propose_goal_draft`; the user's Confirm
-  dialog is the activation gate. Never activate a speculative raw seed.
+- If one durable, multi-hour objective is warranted, `propose_goal_draft`
+  works only while a drafting session is already open (the user ran bare
+  `/goal`, `/list`, or `/list add` with no args): interview only what is
+  genuinely unknown, then propose; the user's Confirm dialog is the
+  activation gate. From normal chat with no draft open, do NOT call
+  `propose_goal_draft` — it refuses outside drafting mode. Ask the user to
+  open drafting with bare `/goal`, or use `list_add` for straight queueing.
+  Never activate a speculative raw seed.
   (Unless Auto-accept drafts is on in /glla settings, which skips the
   Confirm — never promise a dialog that setting suppresses.)
 - Never call `list_activate` for an item the user has not selected or clearly

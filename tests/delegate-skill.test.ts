@@ -48,6 +48,18 @@ test("skill documents consent and auto-activation boundaries", () => {
   assert.match(SKILL, /Worker and subagent\s+sessions do not own GLLA state/);
 });
 
+test("skill states propose_goal_draft needs an open drafting session", () => {
+  // Field 20260919_125302: the skill told normal-chat agents to interview
+  // then call propose_goal_draft, but the tool refuses outside drafting
+  // mode — the agent hit the wall and fell back to list_add. The skill must
+  // state the precondition and the fallback.
+  assert.match(SKILL, /drafting session is already open/);
+  assert.match(SKILL, /bare\s+`\/goal`/);
+  assert.match(SKILL, /do NOT call/);
+  assert.match(SKILL, /refuses outside drafting mode/);
+  assert.match(SKILL, /Ask the user to\s+open drafting with bare `\/goal`/);
+});
+
 test("skill treats pasted list-like input as supplied, not an exactness choice", () => {
   assert.match(SKILL, /explicitly structured list/);
   assert.match(SKILL, /Line wrapping alone does not make prose a list/);
