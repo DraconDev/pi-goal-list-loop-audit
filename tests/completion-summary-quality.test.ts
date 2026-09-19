@@ -82,7 +82,13 @@ test("completion summary quality: valid six-label recap passes without missing-l
     assert.equal(ledger.filter((e) => e.type === "completion_summary_missing_labels").length, 0, "valid recap does not ledger missing labels");
     const { readState } = await import("../extensions/goal-loop-core.js");
     const state = readState(cwd);
-    assert.equal(state.goal?.completionSummary, valid, "valid recap stored verbatim without NOTE");
+    // v0.38.69 (Antigravity port): labels are complete so no missing-label
+    // ledger, but zero path:line tokens and zero gate rows now ride a
+    // density NOTE (ledgered) — the claim still audits, the terminal
+    // render falls back to recorded facts.
+    assert.equal(ledger.filter((e) => e.type === "completion_summary_low_density").length, 1, "thin recap ledgers the density lint");
+    assert.match(state.goal?.completionSummary ?? "", /low evidence density/, "thin recap carries the density NOTE");
+    assert.match(state.goal?.completionSummary ?? "", /^Outcome: Shipped X\./, "the claim text itself is preserved ahead of the NOTE");
   } finally { delete process.env.GLLA_PI_BINARY; __testOnlyResetStaleFlag(); __testOnlyResetTerminalFlags(); __testOnlyResetOwnerSession(); }
 });
 
