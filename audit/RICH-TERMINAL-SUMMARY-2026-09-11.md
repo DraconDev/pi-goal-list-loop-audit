@@ -47,3 +47,23 @@ flat six-bullet `[goal-event]` card. Goal `20260911092611-xnye14`.
 - Migrated: terminal-approval-render (3), completion-communication (3),
   behavioral-orchestrator v0.34.91 / v0.36.0 / v0.34.22, E1 source-text pin.
 - Full gate green at ship; tsc clean; v0.38.46 tagged + released + published.
+
+## 172705 triage (2026-09-19, goal 20260919152907-tjm416)
+
+Field card (db-gateway deploy) showed doubled rows (Changed×2, Tests×2,
+Unresolved×2), REPORTED instead of PASS on `... OK` notes, and `0 turns`.
+Cause map:
+
+- Doubled rows: exact-duplicate claim details, no renderer dedup — fixed in
+  the renderer (`partitionRichDetails` collapses exact dupes per bucket;
+  `tests/rich-summary-dedup.test.ts`). Near-duplicate prose with different
+  wording still renders: that belongs to the agent's claim, not the card.
+  Agents: say each fact once; pass `gateRows` and the mechanical Tests rows
+  collapse into one curated table instead of one row per detail.
+- REPORTED on `OK` notes: intentional policy, NOT changed. `testsRowStatus`
+  is complete-parse — PASS only on recognized result statements with zero
+  failures; unknown clauses (`OK`, bare exits) honestly stay REPORTED
+  (pinned: "bare-exit notes honestly stay REPORTED"). To earn PASS, write
+  notes as counts: `validator OK — 3 checks pass, 0 fail`.
+- `0 turns`: untracked telemetry, not a known fact — `buildDurationLine`
+  now omits a zero turns segment while elapsed/audits still render.
