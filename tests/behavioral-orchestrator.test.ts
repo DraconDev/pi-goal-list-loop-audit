@@ -2593,6 +2593,38 @@ test("v0.34.27: plain startup from a dead file-backed successor is not rejected 
 
 // v0.34.27 — output-token-limit exhaustion: durable explicit failure state.
 
+test("v0.38.68 reviewer P1: compact-defer settles without kicking a turn into the hot window", async () => {
+  // A 98% context means the prompt no longer fits: the handler must yield
+  // to pi auto-compaction and let settle own the resume — NOT dispatch a
+  // continuation into the known-hot window (the starvation choke only
+  // engages at streak>=2; first exhaustion yields streak=1).
+  __testOnlyResetStaleFlag();
+  __testOnlyResetStarvationGate();
+  resetLengthContinue();
+  __testOnlyResetLengthExhaustionEpisodes();
+  const cwd = tmpCwd();
+  const ctx = await freshSession(cwd, "startup");
+  (ctx as unknown as Record<string, unknown>).getContextUsage = () => ({ percent: 98.5 });
+  await pi.command("goal", "hot-context work — done when durable", ctx);
+  await tick();
+  await acknowledgeLastContinuation(ctx);
+  pi.sent.length = 0;
+  const lengthEnd = { messages: [{ role: "assistant", content: [{ type: "text", text: "partial artifact…" }], stopReason: "length" }] };
+  for (let i = 0; i < 3; i++) {
+    await pi.fire("agent_end", lengthEnd, ctx);
+    await tick();
+    await acknowledgeLastContinuation(ctx);
+  }
+  assert.equal(pi.sent.length, 3, "three auto-continues fire before the cap");
+  await pi.fire("agent_end", lengthEnd, ctx);
+  await tick();
+  const g = readState(cwd).goal as { status: string };
+  assert.equal(g.status, "active", "settle keeps the goal active — no kick, no park");
+  const ledger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
+  assert.match(ledger, /"length_exhausted_compact_pending"/, "settle path is ledgered");
+  assert.equal(pi.sent.length, 3, "no continuation kicked into the hot window");
+});
+
 test("v0.34.26: repeated output-token truncation pauses the goal durably with re-scope guidance and a fresh resume budget", async () => {
   __testOnlyResetStaleFlag();
   resetLengthContinue();
