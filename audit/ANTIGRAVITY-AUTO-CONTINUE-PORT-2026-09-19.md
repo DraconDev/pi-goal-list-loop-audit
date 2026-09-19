@@ -85,6 +85,24 @@ the long narrative is one hop away.
 - **(task 8)** Objection-attached retries (link last disapproval report from
   goal file until retry passes, then archive; currently half-present).
 
+## Shipped deltas (2026-09-19, goal 20260919142818-bsof3e, full serial gate 2426 pass · 2 skip · 0 fail)
+
+- Task 6 finding: the full-report pointer half was already satisfied in-tree
+  — every terminal path (detached approval, manual verify, Esc no-audit)
+  ends with `— record: <archive path>`. Shipped only the density lint:
+  `completionSummaryDensityNote` flags zero-token AND zero-gate claims with
+  a ledgered NOTE (claim still audits, terminal falls back to facts).
+- Deliberate pin revisions (doctrine changes, rationale recorded in-test):
+  `uniform-provider-retry` ladder wording (task 3), `completion-summary-quality`
+  verbatim-store (task 6), `revision-bound-audit` recap capture + `image1-list-stall`
+  claim-wiring shape (gate triage), `retry-bounds` horizon condition (task 5
+  leftover: `horizonApplies` quota-exemption conjunct) + aggressive-TODO gate
+  (task 8: objections attach unconditionally).
+- Task 8 finding: report injection + TODO directive existed, but objection
+  extraction was aggressiveMode-gated — default-settings retries carried the
+  report with no TODO list. Shared `durableObjectionsForDisapproval` now
+  wires both disapproval sites; aggressive keeps cap-keep-going/no-progress.
+
 ## Explicitly not ported
 
 Antigravity keep-checking proper (GLLA ContinuousSupervisor is strictly
