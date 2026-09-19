@@ -45,7 +45,13 @@ test("release contract: the release gate exercises the packed artifact", () => {
   assert.match(fs.readFileSync("scripts/release-pack-smoke.mjs", "utf-8"), /npm pack/);
   assert.match(fs.readFileSync("scripts/release-pack-smoke.mjs", "utf-8"), /goal\.ts/);
   assert.match(fs.readFileSync("scripts/release-pack-smoke.mjs", "utf-8"), /loadSkills\(/);
-  assert.match(fs.readFileSync("scripts/release-pack-smoke.mjs", "utf-8"), /installedPackage/);
+  const smoke = fs.readFileSync("scripts/release-pack-smoke.mjs", "utf-8");
+  assert.match(smoke, /installedPackage/);
+  assert.match(smoke, /packedLauncher/);
+  assert.match(smoke, /workerPath/);
+  assert.match(smoke, /result\.json/);
+  assert.doesNotMatch(smoke, /legacy-peer-deps/, "the smoke must not skip declared peer resolution");
+  assert.doesNotMatch(smoke, /alias\s*:/, "the smoke must not alias peers back to the source tree");
 });
 
 test("release contract: packed prompts, schema, and workers ship in the dry-run list", () => {

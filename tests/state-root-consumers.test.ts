@@ -15,6 +15,7 @@ import * as path from "node:path";
 import { piGlaDir, setRuntimeSessionDir, stateRootPending } from "../extensions/goal-loop-core.js";
 import { dispatchRecordPath, persistDispatchRecord, readDispatchRecord } from "../extensions/goal-loop-dispatch.js";
 import { writeReviewReport } from "../extensions/reviewer.js";
+import { writeOwnerFile } from "../extensions/loops/goal-session.js";
 import { countOpenAuditFindings, topOpenAuditFinding } from "../extensions/goal-loop-forever.js";
 import { persistApprovalRender } from "../extensions/approval-render-store.js";
 import { refreshUpdateCheck } from "../extensions/glla-update-check.js";
@@ -105,6 +106,10 @@ test("pending sessionDir defers dispatch, reviewer, and audit writes — no cwd 
     } as any);
     assert.ok(deferred.includes("deferred.md"), "pending returns deferred path");
     assert.equal(fs.existsSync(path.join(fx.cwd, ".pi-glla")), false);
+    // session ownership is also a state-root consumer: a pending runtime
+    // session must not recreate the cwd tree while the host identity settles.
+    writeOwnerFile(fx.cwd);
+    assert.equal(fs.existsSync(path.join(fx.cwd, ".pi-glla")), false, "pending owner write stays deferred");
     // audit findings: pending reads still fallback to cwd (empty), not sessionDir
     assert.equal(countOpenAuditFindings(fx.cwd), 0);
     // sidecars defer too: no outbox persist, no update-check spawn/write,
