@@ -138,7 +138,7 @@ let listQueue: CommandDeps["listQueue"], notifyExternal: CommandDeps["notifyExte
     archiveCurrentGoal: CommandDeps["archiveCurrentGoal"], healGoalPolicy: CommandDeps["healGoalPolicy"], startDrafting: CommandDeps["startDrafting"], warnIfStaleAtEntry: CommandDeps["warnIfStaleAtEntry"], queuePendingListOperation: CommandDeps["queuePendingListOperation"], freshCtx: CommandDeps["freshCtx"],
     freshCtxForGeneration: CommandDeps["freshCtxForGeneration"], goStaleTerminal: CommandDeps["goStaleTerminal"], groupOpenChildren: CommandDeps["groupOpenChildren"], activateNextListItem: CommandDeps["activateNextListItem"], clearMainModelRecoveryTimer: CommandDeps["clearMainModelRecoveryTimer"], mainModelRecoveryTimerActive: CommandDeps["mainModelRecoveryTimerActive"], continuationDispatchPending: CommandDeps["continuationDispatchPending"], resetContinuationDispatchState: CommandDeps["resetContinuationDispatchState"],
     isCompletionAuditRecoveryPending: CommandDeps["isCompletionAuditRecoveryPending"], markCompletionAuditRecoveryPending: CommandDeps["markCompletionAuditRecoveryPending"], retryStoredCompletionAudit: CommandDeps["retryStoredCompletionAudit"], probeMainModelRecovery: CommandDeps["probeMainModelRecovery"], releaseContinuationDispatchStandDown: CommandDeps["releaseContinuationDispatchStandDown"],
-    releaseInitialSessionLoadBarrier: CommandDeps["releaseInitialSessionLoadBarrier"], resolveCarryover: CommandDeps["resolveCarryover"], safeSteerUser: CommandDeps["safeSteerUser"], scheduleContinuation: CommandDeps["scheduleContinuation"], scheduleSessionTimeout: CommandDeps["scheduleSessionTimeout"],
+    releaseInitialSessionLoadBarrier: CommandDeps["releaseInitialSessionLoadBarrier"], resolveCarryover: CommandDeps["resolveCarryover"], resetLengthExhaustionEpisodes: CommandDeps["resetLengthExhaustionEpisodes"], safeSteerUser: CommandDeps["safeSteerUser"], scheduleContinuation: CommandDeps["scheduleContinuation"], scheduleSessionTimeout: CommandDeps["scheduleSessionTimeout"],
     createGoal: CommandDeps["createGoal"], fireReviewer: CommandDeps["fireReviewer"], openSettingsUI: CommandDeps["openSettingsUI"], manuallyResumeMainModelRecovery: CommandDeps["manuallyResumeMainModelRecovery"], activeGoalCommand: CommandDeps["activeGoalCommand"],
     activeGoalStatusCommand: CommandDeps["activeGoalStatusCommand"], activeGoalSurfaceCommand: CommandDeps["activeGoalSurfaceCommand"], goalNoun: CommandDeps["goalNoun"], displaySlice: CommandDeps["displaySlice"], shortObj: CommandDeps["shortObj"];
 
@@ -148,7 +148,7 @@ export function createGoalCommands(d: CommandDeps): void {
   archiveCurrentGoal = d.archiveCurrentGoal; healGoalPolicy = d.healGoalPolicy; startDrafting = d.startDrafting; warnIfStaleAtEntry = d.warnIfStaleAtEntry; queuePendingListOperation = d.queuePendingListOperation; freshCtx = d.freshCtx;
   freshCtxForGeneration = d.freshCtxForGeneration; goStaleTerminal = d.goStaleTerminal; groupOpenChildren = d.groupOpenChildren; activateNextListItem = d.activateNextListItem; clearMainModelRecoveryTimer = d.clearMainModelRecoveryTimer; mainModelRecoveryTimerActive = d.mainModelRecoveryTimerActive; continuationDispatchPending = d.continuationDispatchPending; resetContinuationDispatchState = d.resetContinuationDispatchState;
   isCompletionAuditRecoveryPending = d.isCompletionAuditRecoveryPending; markCompletionAuditRecoveryPending = d.markCompletionAuditRecoveryPending; retryStoredCompletionAudit = d.retryStoredCompletionAudit; probeMainModelRecovery = d.probeMainModelRecovery; releaseContinuationDispatchStandDown = d.releaseContinuationDispatchStandDown;
-  releaseInitialSessionLoadBarrier = d.releaseInitialSessionLoadBarrier; resolveCarryover = d.resolveCarryover; safeSteerUser = d.safeSteerUser; scheduleContinuation = d.scheduleContinuation; scheduleSessionTimeout = d.scheduleSessionTimeout;
+  releaseInitialSessionLoadBarrier = d.releaseInitialSessionLoadBarrier; resolveCarryover = d.resolveCarryover; resetLengthExhaustionEpisodes = d.resetLengthExhaustionEpisodes; safeSteerUser = d.safeSteerUser; scheduleContinuation = d.scheduleContinuation; scheduleSessionTimeout = d.scheduleSessionTimeout;
   createGoal = d.createGoal; fireReviewer = d.fireReviewer; openSettingsUI = d.openSettingsUI; manuallyResumeMainModelRecovery = d.manuallyResumeMainModelRecovery; activeGoalCommand = d.activeGoalCommand;
   activeGoalStatusCommand = d.activeGoalStatusCommand; activeGoalSurfaceCommand = d.activeGoalSurfaceCommand; goalNoun = d.goalNoun; displaySlice = d.displaySlice; shortObj = d.shortObj;
   agentsSnapshot = d.agentsSnapshot;
@@ -589,6 +589,10 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
   updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined, pauseKind: undefined, pauseOptions: undefined, pauseRecommended: undefined, pauseResumeAt: undefined, interruptedAt: undefined, interruptedReason: undefined, autoResumedAt: undefined, autoResumedEvent: undefined, ...(staleEntry ? { interruptedAt: nowIso(), interruptedReason: "resumed in a stale session" } : {}), ...(usage ? { usage } : {}) }, ctx);
   if (staleEntry) return;
   releaseAuditorSurface();
+  // A manual resume starts a fresh relentless cycle: a user pause between
+  // an episode-1 exhaustion wedge and the next one must not make that
+  // wedge park one cycle early.
+  resetLengthExhaustionEpisodes();
   // A stored completion claim is a direct-audit resume, not an agent turn.
   // Keeping the claim while merely scheduling a continuation left manual
   // pause/resume with an ACTIVE goal that no timer would ever consume.
