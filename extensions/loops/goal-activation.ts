@@ -487,7 +487,7 @@ function clearInBandProviderFailure(): void {
 // v0.38.68 (relentless): bounded length-exhaustion episodes. Episode 1
 // stays relentless per context heat (rotate / compact-defer / fresh
 // budget); episode 2 parks for manual action. Reset on clean turns,
-session_start, and manual parks — never on starved stops (the wedge
+// session_start, and manual parks — never on starved stops (the wedge
 persists) so a hot context cannot lap the budget forever.
 let lengthExhaustionEpisodes = 0;
 
