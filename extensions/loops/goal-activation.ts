@@ -490,11 +490,17 @@ function clearInBandProviderFailure(): void {
 // session_start, and manual parks — never on starved stops (the wedge
 // persists) so a hot context cannot lap the budget forever.
 let lengthExhaustionEpisodes = 0;
+/** A manual resume starts a fresh relentless cycle: a user pause between
+an episode-1 wedge and the next one must not make that wedge park one
+cycle early. */
+export function resetLengthExhaustionEpisodes(): void {
+  lengthExhaustionEpisodes = 0;
+}
 /** Test-only: reset the exhaustion-episode counter without firing turns.
 Module state would otherwise leak across behavioral tests sharing one
 process (an episode-1 leftover makes the next test's first wedge park). */
 export function __testOnlyResetLengthExhaustionEpisodes(): void {
-  lengthExhaustionEpisodes = 0;
+  resetLengthExhaustionEpisodes();
 }
 
 /** Arm the next automatic re-dispatch after a successful zombie abort.

@@ -113,7 +113,7 @@ export interface CommandDeps {
   releaseContinuationDispatchStandDown: () => void;
   releaseInitialSessionLoadBarrier: () => void;
   resolveCarryover: (ctx: ExtensionContext, trigger: "goal" | "loop" | "list") => boolean;
-  safeSteerUser: (ctx: ExtensionContext, text: string) => boolean;
+  resetLengthExhaustionEpisodes: () => void;  safeSteerUser: (ctx: ExtensionContext, text: string) => boolean;
   scheduleContinuation: (ctx: ExtensionContext, force?: boolean, delayMs?: number) => void;
   scheduleSessionTimeout: (callback: () => void, delayMs: number) => NodeJS.Timeout;
   createGoal: (objective: string, ctx: ExtensionContext, policy?: "goal" | "list") => Goal;
