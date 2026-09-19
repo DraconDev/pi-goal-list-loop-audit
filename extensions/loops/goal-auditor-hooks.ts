@@ -1962,7 +1962,9 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   const durableObjections = result.disapproved
     ? durableObjectionsForDisapproval(sanitizeProviderAuditReport(result.output), activeGoalStatusCommand())
     : [];
-  if (result.disapproved && aggressive) {
+  // v0.38.69 (Antigravity port): objections attach on EVERY disapproval —
+  // the retry argues the objection, not generic effort.
+  if (result.disapproved) {
     appendLedger(liveCtx.cwd, "audit_objections_todo", {
       goalId,
       attemptId: claim.attemptId,

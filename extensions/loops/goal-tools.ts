@@ -1991,7 +1991,8 @@ function registerAgentTools(pi: any): void {
       const durableObjections = result.disapproved
         ? durableObjectionsForDisapproval(safeAuditOutput, activeGoalStatusCommand())
         : [];
-      if (result.disapproved && effectiveCap.aggressiveMode) {
+      // v0.38.69 (Antigravity port): objections attach on EVERY disapproval.
+      if (result.disapproved) {
         // v0.36.0: every ordinary disapproval becomes the current durable
         // TODO projection, not only the post-cap case. Replacing (rather than
         // appending) the bounded list makes repeated identical reports
