@@ -1826,7 +1826,21 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
   // 090343 "working while displaying paused here"; the rearm storm streak
   // 19 was firing while the head chip said ⏸ paused). The status line already
   // renders ⏳ auto-retrying for these; the widget head must not contradict it.
-  const recovering = g.status === "paused" && !!state.mainModelRecovery && (!!state.mainModelRecovery.retryAt || !!state.mainModelRecovery.pendingModelSwitch);
+  // v0.38.68 (relentless, field 151113): a supervised auditor wait with an
+  // ARMED retry (retry-waiting claim + a finite retry time) is recovering
+  // too — the card read "paused" while the glla recovery timer was
+  // actively auto-retrying. A bare user wait with no retry evidence stays
+  // paused (absent stays absent).
+  const pendingRetryAt = g.pendingCompletion?.phase === "retry-waiting" && typeof g.pendingCompletion.recoveryRetryAt === "string"
+    ? Date.parse(g.pendingCompletion.recoveryRetryAt)
+    : Number.NaN;
+  const waitResumeAt = typeof g.pauseResumeAt === "string" ? Date.parse(g.pauseResumeAt) : Number.NaN;
+  const auditorRecovering = g.status === "paused"
+    && pauseKind(g) === "wait"
+    && !!g.pendingCompletion
+    && (Number.isFinite(pendingRetryAt) || Number.isFinite(waitResumeAt));
+  const recovering = (g.status === "paused" && !!state.mainModelRecovery && (!!state.mainModelRecovery.retryAt || !!state.mainModelRecovery.pendingModelSwitch))
+    || auditorRecovering;
   const icon =
     interrupted
       ? paint(theme, "error", "⚠")
