@@ -2984,9 +2984,9 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       // bookkeeping must never break compaction
     }
     // Field #56: return NOTHING here. pi keeps the last truthy
-    // session_before_compact handler result, so `return {}` would silently
-    // discard another extension's SessionBeforeCompactResult.compaction and
-    // fall back to default compaction. This handler prunes by reference and
+    // session_before_compact handler result, so an empty object here would
+    // silently discard another extension's SessionBeforeCompactResult.compaction
+    // and fall back to default compaction. This handler prunes by reference and
     // arms markers only — it supplies no compaction of its own.
   });
 }
