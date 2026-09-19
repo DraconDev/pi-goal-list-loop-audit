@@ -182,9 +182,13 @@ export { __testOnlySetContinuationStartTimeout, __testOnlySetContinuationRetryBa
 import {
   LENGTH_CONTINUE_MAX,
   LENGTH_CONTINUE_TEXT,
+  LENGTH_EXHAUSTION_MAX_EPISODES,
+  decideLengthExhaustion,
   isContextStarvedLengthStop,
+  nextLengthExhaustionEpisode,
   resetLengthContinue,
   tickLengthContinue,
+  type LengthExhaustionDecision,
 } from "../length-continue.js";
 import { isSubagentProviderFailure } from "../quota-retry.js";
 import { captureProviderTokenUsage } from "../context-growth.js";
@@ -480,6 +484,12 @@ let inBandProviderFailureRaw: string | null = null;
 function clearInBandProviderFailure(): void {
   inBandProviderFailureRaw = null;
 }
+// v0.38.68 (relentless): bounded length-exhaustion episodes. Episode 1
+// stays relentless per context heat (rotate / compact-defer / fresh
+// budget); episode 2 parks for manual action. Reset on clean turns,
+session_start, and manual parks — never on starved stops (the wedge
+persists) so a hot context cannot lap the budget forever.
+let lengthExhaustionEpisodes = 0;
 
 /** Arm the next automatic re-dispatch after a successful zombie abort.
  * The configured retry budget keeps repeated recovery finite; the caller gets
@@ -1333,6 +1343,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // Session-scoped resources are reset only after this context has passed
     // the host-admission gate; child factories never touch host state.
     resetLengthContinue();
+    lengthExhaustionEpisodes = 0;
     sessionHandoffPending = false;
     // Reset terminal ownership before rememberCtx: this is the only event
     // allowed to bind a context after a stale/shutdown handoff.
@@ -2098,7 +2109,12 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       });
     }
     const contextStarvedLength = isContextStarvedLengthStop(rawLastA, contextUsage);
-    const lc = tickLengthContinue(lastA?.stopReason === "length" && !contextStarvedLength);
+    const lengthStopped = lastA?.stopReason === "length" && !contextStarvedLength;
+    // v0.38.68: a genuinely clean turn closes the exhaustion episode. A
+    // starved stop does NOT (the wedge persists); error stops route to the
+    // recovery paths which own the next turn.
+    if (lastA?.stopReason !== "length" && lastA?.stopReason !== "error" && !contextStarvedLength) lengthExhaustionEpisodes = 0;
+    const lc = tickLengthContinue(lengthStopped);
     if (contextStarvedLength) {
       const starved = noteContextStarvedYield();
       appendLedger(ctx.cwd, "length_continue_deferred_context_full", {
