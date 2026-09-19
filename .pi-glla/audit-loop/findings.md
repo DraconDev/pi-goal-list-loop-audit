@@ -550,3 +550,4 @@ Verified vs disk before recording. Disposed without findings (rationale): goal-l
 - [x] FIX: LOW: packed release smoke aliases peer imports to the source tree, masking consumer peer-resolution failures (scripts/release-pack-smoke.mjs:78-102) — fixed in 70a7689f, 0882d030, f16c97a9
 - [x] FIX: LOW: packed release smoke checks launcher/worker tar-list presence but never loads or starts those shipped scripts (scripts/release-pack-smoke.mjs:46-76,104-119) — fixed in 0882d030, f16c97a9
 - [x] FIX: LOW: state-root consumer coverage relies on token presence rather than a live pending-root guard for the goal-session owner write (tests/state-root-consumers.test.ts:160-169) — fixed in 51779379
+  Follow-up verification for the packed launcher/worker smoke: direct worker cleanup now runs in a detached process group, and the release contract pins that isolation — fixed in 59b325cc; test pin 4c698826.
