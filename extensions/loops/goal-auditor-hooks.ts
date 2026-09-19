@@ -1958,13 +1958,8 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   const effectiveCap = resolveEffectiveAggressiveSettings(loadSettings(liveCtx.cwd));
   const auditCap = effectiveCap.auditCap;
   const trailingDisapprovals = countTrailingDisapprovals(history);
-  const durableObjections = result.disapproved && aggressive
-    ? (() => {
-      const extracted = extractPendingTasks(sanitizeProviderAuditReport(result.output), 5);
-      return extracted.length > 0
-        ? extracted
-        : [`Review the latest auditor disapproval in ${activeGoalStatusCommand()}.`];
-    })()
+  const durableObjections = result.disapproved
+    ? durableObjectionsForDisapproval(sanitizeProviderAuditReport(result.output), activeGoalStatusCommand())
     : [];
   if (result.disapproved && aggressive) {
     appendLedger(liveCtx.cwd, "audit_objections_todo", {

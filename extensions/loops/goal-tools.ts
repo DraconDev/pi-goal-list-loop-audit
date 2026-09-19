@@ -1987,13 +1987,8 @@ function registerAgentTools(pi: any): void {
       const auditFeedbackTruncationHint = auditFeedbackIsFull
         ? ""
         : `\n\nReport truncated at the configured limit. ${activeGoalStatusCommand()} shows the full report; change Audit feedback chars in /glla settings (0 = full report).`; 
-      const durableObjections = result.disapproved && effectiveCap.aggressiveMode
-        ? (() => {
-          const extracted = extractPendingTasks(safeAuditOutput, 5);
-          return extracted.length > 0
-            ? extracted
-            : [`Review the latest auditor disapproval in ${activeGoalStatusCommand()}.`];
-        })()
+      const durableObjections = result.disapproved
+        ? durableObjectionsForDisapproval(safeAuditOutput, activeGoalStatusCommand())
         : [];
       if (result.disapproved && effectiveCap.aggressiveMode) {
         // v0.36.0: every ordinary disapproval becomes the current durable

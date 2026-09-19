@@ -3641,6 +3641,21 @@ export function extractPendingTasks(report: string, cap = 5): string[] {
   return out;
 }
 
+/**
+ * v0.38.69 (Antigravity port): objection-attached retries. Every
+ * disapproval — aggressive or not — becomes a durable TODO projection:
+ * extracted objection bullets, or a single review-the-report TODO when
+ * nothing extractable survives. Never an empty list: the retry argues the
+ * objection, not generic effort. The aggressive gate keeps only the
+ * cap-keep-going / no-progress-stop behaviors, never the TODOs.
+ */
+export function durableObjectionsForDisapproval(report: string, statusCommand = "/goal status"): string[] {
+  const extracted = extractPendingTasks(report, 5);
+  return extracted.length > 0
+    ? extracted
+    : [`Review the latest auditor disapproval in ${statusCommand}.`];
+}
+
 /** Contract item 23: is the auditor's IMPOSSIBLE reason about the WHOLE
  * goal or only part of it? Default "full" (safe — keeps the pause);
  * partial only on explicit subset language. */
