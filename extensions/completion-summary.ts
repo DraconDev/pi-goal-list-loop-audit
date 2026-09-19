@@ -532,7 +532,9 @@ export function completionSummaryDensityNote(
 export function buildDurationLine(goal: Goal, now = Date.now()): string | null {
   const segs: string[] = [];
   const turns = goal.telemetry?.turns;
-  if (typeof turns === "number" && Number.isFinite(turns) && turns >= 0) {
+  // Field 20260918_172705: a zero turns count means untracked telemetry,
+  // not a known fact — omit it while elapsed/audits still render.
+  if (typeof turns === "number" && Number.isFinite(turns) && turns > 0) {
     segs.push(`${turns} turn${turns === 1 ? "" : "s"}`);
   }
   const started = Date.parse(goal.createdAt ?? "");
@@ -542,15 +544,25 @@ export function buildDurationLine(goal: Goal, now = Date.now()): string | null {
   return segs.length > 0 ? `\u2014 ${segs.join(" \u00b7 ")}` : null;
 }
 
-/** Partition informing details into findings / Tests / next buckets. */
+/** Partition informing details into findings / Tests / next buckets.
+ * Field 20260918_172705: exact-duplicate lines collapse to one per bucket
+ * (repeated claim details rendered as doubled rows). Near-duplicates with
+ * different wording still render — that prose belongs to the claim. */
 export function partitionRichDetails(details: string[]): { findings: string[]; tests: string[]; next: string[] } {
+  const seen = new Set<string>();
+  const push = (bucket: string[], detail: string) => {
+    const key = detail.trim();
+    if (seen.has(key)) return;
+    seen.add(key);
+    bucket.push(detail);
+  };
   const findings: string[] = [];
   const tests: string[] = [];
   const next: string[] = [];
   for (const detail of details) {
-    if (/^\s*Tests\s*:/i.test(detail)) tests.push(detail);
-    else if (/^\s*(Next|Unresolved|Left out)\s*:/i.test(detail)) next.push(detail);
-    else findings.push(detail);
+    if (/^\s*Tests\s*:/i.test(detail)) push(tests, detail);
+    else if (/^\s*(Next|Unresolved|Left out)\s*:/i.test(detail)) push(next, detail);
+    else push(findings, detail);
   }
   return { findings, tests, next };
 }
