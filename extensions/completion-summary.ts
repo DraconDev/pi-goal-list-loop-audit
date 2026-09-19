@@ -821,28 +821,30 @@ export function buildRichTerminalParts(args: {
  * final repository state closes it — findings, verification, Next,
  * repo state, in that order. */
 export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
-  const lines = [parts.banner ?? parts.headline, ""];
-  if (parts.headline !== lines[0]) lines.push(parts.headline, "");
-  if (parts.durationLine) lines.push(parts.durationLine, "");
+  const banner = sanitizeDisplayText(parts.banner ?? parts.headline);
+  const headline = sanitizeDisplayText(parts.headline);
+  const lines = [banner, ""];
+  if (headline !== lines[0]) lines.push(headline, "");
+  if (parts.durationLine) lines.push(sanitizeDisplayText(parts.durationLine), "");
   // Structured-long (field 2026-09-16): the full Outcome body rides its
   // own section between the headline and the findings — findings-first
   // order is preserved (findings, verification, Next keep their relative
   // order), the headline echo stays short, and the one-action Next rule
   // is untouched.
   if (parts.summaryLines.length > 0) {
-    lines.push("### Summary", ...parts.summaryLines, "");
+    lines.push("### Summary", ...parts.summaryLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.findingLines.length > 0) {
-    lines.push("### Key Findings & Remediation", ...parts.findingLines, "");
+    lines.push("### Key Findings & Remediation", ...parts.findingLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.tableLines.length > 0) {
-    lines.push("### Verification Summary", ...parts.tableLines, "");
+    lines.push("### Verification Summary", ...parts.tableLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.nextLines.length > 0) {
-    lines.push("### Next", ...parts.nextLines, "");
+    lines.push("### Next", ...parts.nextLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.repoLines.length > 0) {
-    lines.push("### Final Repository State", ...parts.repoLines.map((line) => `- ${line}`), "");
+    lines.push("### Final Repository State", ...parts.repoLines.map((line) => `- ${sanitizeDisplayText(line)}`), "");
   }
   return lines;
 }
@@ -934,7 +936,7 @@ function stripApprovalModel(line: string): string {
   return line.replace(/auditor\s+\S+\s+approved/, "auditor approved");
 }
 function trailerBullet(line: string): string {
-  return `• ${line.replace(/^—\s*/, "")}`;
+  return `• ${sanitizeDisplayText(line).replace(/^—\s*/, "")}`;
 }
 
 /** v0.38.25: the audit-goal counts line — verdict proof ONLY, built from
