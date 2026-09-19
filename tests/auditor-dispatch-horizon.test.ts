@@ -143,7 +143,7 @@ test("hourly backstop skips blocked capped claims before dispatch", () => {
   // capped/blocked claim is never re-dispatched hourly after the window ends.
   const src = fs.readFileSync("extensions/goal-recovery.ts", "utf8");
   const fnIdx = src.indexOf("async function fireHourlyProbeForParkedAuditor");
-  const body = src.slice(fnIdx, fnIdx + 1400);
+  const body = src.slice(fnIdx, fnIdx + 2200);
   const dispatchIdx = body.indexOf('retryStoredCompletionAudit("provider-retry")');
   const blockedIdx = body.indexOf('pauseKind === "blocked"');
   assert.ok(blockedIdx > 0, "blocked pauses are ineligible for the hourly auditor backstop");

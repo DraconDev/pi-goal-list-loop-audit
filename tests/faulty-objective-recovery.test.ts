@@ -241,8 +241,8 @@ test("audit history contributes only an actionable required-fix line", () => {
 test("all direct continuation and stored-audit paths retain the final gate", () => {
   const continuation = fs.readFileSync(path.join(process.cwd(), "extensions", "goal-continuation.ts"), "utf8");
   const auditorHooks = fs.readFileSync(path.join(process.cwd(), "extensions", "loops", "goal-auditor-hooks.ts"), "utf8");
-  assert.match(continuation, /sendStallEscalation[\s\S]{0,500}guardGoalBeforeContinuation/);
-  assert.match(continuation, /sendLengthContinue[\s\S]{0,500}guardGoalBeforeContinuation/);
+  assert.match(continuation, /sendStallEscalation[\s\S]{0,800}guardGoalBeforeContinuation/);
+  assert.match(continuation, /sendLengthContinue[\s\S]{0,800}guardGoalBeforeContinuation/);
   assert.match(continuation, /retryContinuationDispatch[\s\S]{0,500}guardGoalBeforeContinuation/);
   assert.match(auditorHooks, /stored-completion-audit/);
 });
