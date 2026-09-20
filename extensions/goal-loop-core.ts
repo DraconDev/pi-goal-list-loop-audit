@@ -3151,7 +3151,16 @@ export function recommendDurableDeferChoice(input: DurableDeferRecommendationInp
  * Implement Keep ..."). Strip one leading Implement/Keep; the composed
  * verb carries the meaning either way. */
 function stripPlaqueVerb(fix: string): string {
-  return fix.replace(/^(implement|keep)\s+/i, "");
+  // Loop twice: fixes arrive as bare phrases ("pin plaque ordering") or
+  // imperative stacks ("Implement Keep ...") — one pass leaves
+  // "Implement Keep ..." doubled against the composed verb.
+  let out = fix;
+  for (let i = 0; i < 2; i++) {
+    const next = out.replace(/^(implement|keep)\s+/i, "");
+    if (next === out) break;
+    out = next;
+  }
+  return out;
 }
 
 /**
