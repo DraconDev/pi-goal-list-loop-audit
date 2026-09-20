@@ -2136,16 +2136,9 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
         lines.push(`${i === 0 ? "├─" : "│ "} ${paint(theme, reasonPaint, w)}`);
       });
     }
-    // v0.28.22: decision options — one numbered line each (Claude Code /
-    // muselinn-Ask convention), the recommended one accented and flagged.
-    if (kind === "decision" && g.pauseOptions && g.pauseOptions.length > 0) {
-      g.pauseOptions.slice(0, 6).forEach((opt, i) => {
-        const rec = g.pauseRecommended === i + 1;
-        const text = `${i + 1}. ${truncate(opt, budget - 4)}${rec ? " ◂ recommended" : ""}`;
-        lines.push(`│  ${paint(theme, rec ? "accent" : "dim", text)}`);
-      });
-      if (g.pauseOptions.length > 6) lines.push(`│  ${paint(theme, "dim", `… and ${g.pauseOptions.length - 6} more`)}`);
-    }
+    const decisionOptions = kind === "decision" && g.pauseOptions && g.pauseOptions.length > 0
+      ? g.pauseOptions
+      : undefined;
     // v0.28.22: wait countdown — moved into the auto-retrying line above
     // (v0.34.64). The old separate `resumes X — or /goal resume now` line
     // implied manual rescue was the path; autoResume + the recovery-cleared
@@ -2175,14 +2168,33 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
     const savedLine = hasTelemetry
       ? `saved — ${spent.join(" · ")} · resumes exactly here`
       : `awaiting first turn — resumes exactly here`;
+    const optionsFollow = decisionOptions !== undefined;
     if (g.pauseSuggestedAction) {
       lines.push(`├─ ${paint(theme, "dim", truncate(savedLine, budget))}`);
       const wrapped = wrap(sanitizeProviderDisplayText(g.pauseSuggestedAction), budget, 3);
       // v0.28.22: for ACTION NEEDED pauses the action is the point — pop it.
       const actionPaint = kind === "error" ? "warning" : "dim";
-      wrapped.forEach((w, i) => lines.push(`${i === wrapped.length - 1 ? "└─" : "│ "} ${paint(theme, actionPaint, w)}`));
+      // v0.38.71 (field UI-SURVEY-2026-09-20 finding 1): the action precedes
+      // the options — a 7-option decision card runs 16 rows and Pi core cuts
+      // the tail, which used to hold the action. Options survive in full in
+      // the ask_user_question dialog; the card keeps the resume path visible.
+      wrapped.forEach((w, i) => lines.push(`${i === wrapped.length - 1 && !optionsFollow ? "└─" : "│ "} ${paint(theme, actionPaint, w)}`));
     } else {
-      lines.push(`└─ ${paint(theme, "dim", truncate(savedLine, budget))}`);
+      lines.push(`${optionsFollow ? "├─" : "└─"} ${paint(theme, "dim", truncate(savedLine, budget))}`);
+    }
+    // v0.28.22: decision options — one numbered line each (Claude Code /
+    // muselinn-Ask convention), the recommended one accented and flagged.
+    if (decisionOptions) {
+      decisionOptions.slice(0, 6).forEach((opt, i) => {
+        const rec = g.pauseRecommended === i + 1;
+        const text = `${i + 1}. ${truncate(opt, budget - 4)}${rec ? " ◂ recommended" : ""}`;
+        lines.push(`│  ${paint(theme, rec ? "accent" : "dim", text)}`);
+      });
+      if (decisionOptions.length > 6) lines.push(`│  ${paint(theme, "dim", `… and ${decisionOptions.length - 6} more`)}`);
+      // Close the options block; the history helper reopens it when deferred
+      // rows follow.
+      const lastOpt = lines[lines.length - 1];
+      if (lastOpt !== undefined) lines[lines.length - 1] = lastOpt.replace(/^│  /, "└─ ");
     }
     return closePausedWithHistory(lines, deferredHistory, theme);
   }
