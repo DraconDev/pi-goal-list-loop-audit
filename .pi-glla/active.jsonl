@@ -2683,3 +2683,4 @@
 {"type":"model_switch","value":{"from":"agnes/agnes-3.0-flash","to":"opencode-go/muse-spark-1.3-contributor","reason":"manual","at":"2026-09-20T12:31:08.026Z","source":"set"},"at":"2026-09-20T12:31:08.027Z"}
 {"type":"state","value":{"goal":null,"list":[],"loop":null,"mainModelRecovery":null,"lastModelRef":"opencode-go/muse-spark-1.3-contributor","lastCompactionAt":1789843183556,"supervisorPausedAt":null,"loadHoldAt":null,"lastOutcome":null},"at":"2026-09-20T12:31:08.027Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":null,"contextUsage":{"tokens":24297,"contextWindow":200000,"percent":12.1485}},"at":"2026-09-20T12:31:11.267Z"}
+{"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-20T12:35:40.203Z"}
