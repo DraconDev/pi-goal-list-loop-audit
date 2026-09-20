@@ -1,0 +1,41 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+body{background:#101014;color:#d4d4d4;font:13px/1.6 ui-monospace,Menlo,monospace;padding:24px}
+h2{font-size:14px;margin:18px 0 8px}.before h2{color:#cc6666}.after h2{color:#b5bd68}
+pre{background:#1e1e24;border:1px solid #505050;border-radius:6px;padding:14px 16px;white-space:pre-wrap}
+.cut{color:#cc6666}
+</style></head><body>
+<div class="before"><h2>BEFORE — decision card, 16 rows: action at row 13, cut by Pi core (~10 rows) <span class="cut">— "Choose one, then /list resume" invisible</span></h2><pre>===== paused-decision: 16 rows =====
+  0 ⏸ Close two remaining New Tab Ultimate reference gaps on /search · list item · paused · total 21h 57m · 5.0k t
+  1 ├─ lifecycle: safely parked · owner: user decision · queue empty
+  2 │  last host activity not available · next: user decision → /list resume
+  3 ├─ decision needed — your call unblocks this
+  4 ├─ choose the deployment target
+  5 │  1. staging ◂ recommended
+  6 │  2. production
+  7 │  3. both-parallel
+  8 │  4. neither-skip
+  9 │  5. ask-again
+  10 │  6. defer-to-tomorrow
+  11 │  … and 1 more
+  12 ├─ saved — 5.0k tok spent · resumes exactly here
+  13 ├─ Choose one, then /list resume.
+  14 ├─ judgment: 2 prior defer recommendations · durable action evaluated first
+  15 └─ selected: inline (durable fix)</pre></div>
+<div class="after"><h2>AFTER (v0.38.71) — action at row 6, cut takes late options + history instead</h2><pre>===== paused-decision-7opts: 16 rows =====
+  0 ⏸ Close two remaining New Tab Ultimate reference gaps on /search · list item · paused · total 21h 57m · 5.0k t
+  1 ├─ lifecycle: safely parked · owner: user decision · queue empty
+  2 │  last host activity not available · next: user decision → /list resume
+  3 ├─ decision needed — your call unblocks this
+  4 ├─ choose the deployment target
+  5 ├─ saved — 5.0k tok spent · resumes exactly here
+  6 │  Choose one, then /list resume.
+  7 │  1. staging ◂ recommended
+  8 │  2. production
+  9 │  3. both
+  10 │  4. neither
+  11 │  5. ask
+  12 │  6. defer
+  13 ├─ … and 1 more
+  14 ├─ judgment: 2 prior defer recommendations · durable action evaluated first
+  15 └─ selected: inline (durable fix)</pre></div>
+</body></html>
