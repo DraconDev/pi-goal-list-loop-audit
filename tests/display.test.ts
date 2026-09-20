@@ -768,6 +768,47 @@ test("paused decision without activity says no turn was observed and names the m
   assert.match(joined, /1\. staging/);
 });
 
+test("v0.38.70: paused action card leads with the action, history rides after (field 20260920_152744)", () => {
+  const state = {
+    goal: goalOf({
+      policy: "list",
+      status: "paused",
+      objective: "Close two remaining New Tab Ultimate reference gaps on /search",
+      usage: undefined,
+      pauseKind: "blocked",
+      pauseReason: "provider error",
+      pauseSuggestedAction:
+        "Enter a Google key directly in the page under Bring your own Google key, run a query, and report when results appear. Then resume the active goal for the final live sticky/grouped-suggest check.",
+    }),
+    list: [],
+  } as State;
+  const widget = buildWidgetLines(
+    state,
+    null,
+    NOW,
+    undefined,
+    190,
+    {
+      durableDeferRecommendation: {
+        durableFix: "Implement Keep sticky/search grouping behavior as typed, pure, test-covered components",
+        deferRecommendations: ["Use only when the durable action is unsafe, impossible, or blocked"],
+      },
+    },
+  )!;
+  const text = widget.join("\n");
+  const actionAt = widget.findIndex((l) => l.includes("Bring your own Google key"));
+  const blockedAt = widget.findIndex((l) => l.includes("blocked — waiting for manual action"));
+  const judgmentAt = widget.findIndex((l) => l.includes("judgment:"));
+  assert.ok(blockedAt >= 0, `blocked banner missing:\n${text}`);
+  assert.ok(actionAt >= 0, `suggested action missing:\n${text}`);
+  assert.ok(judgmentAt >= 0, `collapsed judgment missing:\n${text}`);
+  assert.ok(blockedAt < judgmentAt, `banner must precede history:\n${text}`);
+  assert.ok(actionAt < judgmentAt, `action must precede history:\n${text}`);
+  assert.doesNotMatch(text, /1\. Durable fix/, "plaques collapse on action cards; full text stays in /goal status");
+  assert.match(text, /selected: inline \(durable fix\)/);
+  assert.ok(widget.length <= 10, `action card must fit Pi core's tail budget, got ${widget.length}:\n${text}`);
+});
+
 test("auditing keeps the footer compact while the widget shows the auditor's current tool", () => {
   const g = goalOf({ status: "auditing" });
   const s = buildStatusText({ goal: g, list: [] }, { currentTool: "read" }, NOW)!;
