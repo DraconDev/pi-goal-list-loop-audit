@@ -1589,6 +1589,26 @@ test("decision pause: banner + numbered options + recommended flagged (widget + 
   assert.ok(!s.includes("SUPERSEDED rows"), "status names the actionability, not the reason");
 });
 
+test("v0.38.71: decision card renders the action before the options (field UI-SURVEY-2026-09-20)", () => {
+  const g = goalOf({
+    status: "paused",
+    pauseKind: "decision",
+    pauseReason: "choose the deployment target",
+    pauseOptions: ["staging", "production", "both", "neither", "ask", "defer", "extra"],
+    pauseRecommended: 1,
+    pauseSuggestedAction: "Choose one, then /goal resume.",
+  });
+  const state = { goal: g, list: [], loop: null };
+  const w = buildWidgetLines(state as never, null, NOW, undefined, 190)!;
+  const text = w.join("\n");
+  const actionAt = w.findIndex((l) => l.includes("Choose one, then /goal resume."));
+  const firstOptAt = w.findIndex((l) => l.includes("1. staging"));
+  assert.ok(actionAt >= 0, `action missing:\n${text}`);
+  assert.ok(firstOptAt >= 0, `options missing:\n${text}`);
+  assert.ok(actionAt < firstOptAt, `action must precede options so the tail cut takes options, not the resume path:\n${text}`);
+  assert.ok(w.some((l) => l.includes("7. extra") || l.includes("and 1 more")), `late options present:\n${text}`);
+});
+
 test("error pause: ACTION NEEDED banner, action line popped (widget + status)", () => {
   const g = goalOf({
     status: "paused",
