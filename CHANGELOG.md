@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.38.70 — Paused action cards lead with the action (2026-09-20)
+
+- Paused cards render lifecycle/next, banner, reason, and suggested action before tally, provenance, and judgment, so Pi core tail truncation cuts history instead of the instruction (field 20260920_152744).
+- Judgment rides collapsed on action cards (header + selection; full plaques stay in `/goal status`).
+
 ## 0.38.69 — About and README refresh (2026-09-20)
 
 - Refined npm about line and README intro: tighter mission control wording, no em dashes.
