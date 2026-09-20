@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.38.71 — Decision cards lead with the action, plaque verbs deduped (2026-09-20)
+
+- Decision pause cards render the saved/action row before the numbered options, so Pi core tail truncation cuts late options and history instead of the resume path (UI survey finding 1, audit/UI-SURVEY-2026-09-20.md).
+- Durable/defer plaque bodies strip a leading Implement/Keep from the stored fix, fixing "Implement Implement Keep ..." doubling; ledger facts untouched (UI survey finding 3).
+
 ## 0.38.70 — Paused action cards lead with the action (2026-09-20)
 
 - Paused cards render lifecycle/next, banner, reason, and suggested action before tally, provenance, and judgment, so Pi core tail truncation cuts history instead of the instruction (field 20260920_152744).
