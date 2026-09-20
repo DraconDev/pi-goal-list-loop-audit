@@ -1,0 +1,34 @@
+===== paused-blocked: 10 rows =====
+  0 ⏸ Close two remaining New Tab Ultimate reference gaps on /search · list item · paused · total 21h 57m · 5.0k t
+  1 ├─ lifecycle: safely parked · owner: manual action · queue empty
+  2 │  last host activity not available · next: /list resume
+  3 ├─ blocked — waiting for manual action
+  4 ├─ provider error
+  5 ├─ saved — 5.0k tok spent · resumes exactly here
+  6 │  Enter a Google key directly in the page under Bring your own Google key, run a query, and report when resul
+  7 ├─ appear. Then resume the active goal for the final live check.
+  8 ├─ judgment: 2 prior defer recommendations · durable action evaluated first
+  9 └─ selected: inline (durable fix)
+===== paused-decision-7opts: 16 rows =====
+  0 ⏸ Close two remaining New Tab Ultimate reference gaps on /search · list item · paused · total 21h 57m · 5.0k t
+  1 ├─ lifecycle: safely parked · owner: user decision · queue empty
+  2 │  last host activity not available · next: user decision → /list resume
+  3 ├─ decision needed — your call unblocks this
+  4 ├─ choose the deployment target
+  5 ├─ saved — 5.0k tok spent · resumes exactly here
+  6 │  Choose one, then /list resume.
+  7 │  1. staging ◂ recommended
+  8 │  2. production
+  9 │  3. both
+  10 │  4. neither
+  11 │  5. ask
+  12 │  6. defer
+  13 ├─ … and 1 more
+  14 ├─ judgment: 2 prior defer recommendations · durable action evaluated first
+  15 └─ selected: inline (durable fix)
+===== active-plaque: 5 rows =====
+  0 ● Close two remaining New Tab Ultimate reference gaps on /search · list item · active · total 21h 57m · 5.0k t
+  1 ├─ judgment: 2 prior defer recommendations · durable action evaluated first
+  2 ├─ 1. Durable fix — Implement sticky/search grouping as typed components now; prior defer recommendatio… ◂ rec
+  3 ├─ 2. Defer / workaround — Use only when the durable action is unsafe, impossible, or blocked, and…
+  4 └─ selected: inline (durable fix)
