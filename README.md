@@ -4,20 +4,20 @@
   <img src="media/glla2.png" alt="GLLA mission control" width="960">
 </p>
 
-> **Long-running, high-leverage autonomy for pi.**
+> **Long running, high leverage autonomy for pi.**
 >
 > Give pi a meaningful outcome. GLLA helps it research, plan, execute,
 > recover, and prove the result over hours or days instead of treating one
 > chat turn as the whole job.
 
 `pi-goal-list-loop-audit` (GLLA) is mission control for autonomous work in
-[pi](https://github.com/badlogic/pi-mono). It is for the work that is too broad,
+[pi](https://github.com/badlogic/pi-mono). It fits work that is too broad,
 too long, or too important to leave to a single uninterrupted prompt:
 repo-wide changes, migrations, audits, research, documentation overhauls,
 large refactors, and continuous improvement.
 
-GLLA does not promise that an agent can never make a mistake. It makes the
-agent's work **more effective, durable, recoverable, and difficult to declare
+GLLA does not promise that an agent never makes a mistake. It makes the
+agent's work **more effective, durable, recoverable, and hard to declare
 finished without evidence**:
 
 - You state the outcome and what “done” means.
@@ -30,7 +30,7 @@ finished without evidence**:
 - A separate detached auditor checks the saved completion claim before GLLA
   accepts it.
 
-The aim is not “run forever.” The aim is **more useful work per unit of
+The aim is not "run forever." The aim is **more useful work per unit of
 attention, with event-driven progress instead of guessed-duration waiting, and
 better evidence at the end**. See `docs/DESIGN-long-running-supervision.md` for
 the long-running policy.
@@ -398,7 +398,7 @@ proof of a quota or billing state.
 
 - automatic retries are bounded and visible; a BUSY/no-stream turn is parked
   and re-dispatched within the configurable **Zero-stream retries** budget
-  (default 3, range 0–10), then requires explicit resume;
+  (default 3, range 0 to 10), then requires explicit resume;
 - `/goal resume`, `/list resume`, and `/loop resume` are explicit recovery
   paths;
 - a user abort means stop, not “try again behind my back”;
@@ -431,7 +431,7 @@ Open `/glla` for the settings table. The most important choices are:
 - **Subagent hang escalation:** warning-only at `0`, or one child-specific
   action after a confirmed frozen interval;
 - **Zero-stream retries:** automatic GLLA recovery attempts after a busy,
-  stream-silent Pi turn; `0` keeps recovery manual and `1–10` bounds repeats;
+  stream-silent Pi turn; `0` keeps recovery manual and `1 to 10` bounds repeats;
 - **Audit cap and retry cadence:** bounds for repeated objections and
   infrastructure recovery.
 
