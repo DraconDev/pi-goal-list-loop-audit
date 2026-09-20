@@ -2674,3 +2674,7 @@
 {"type":"model_switch","value":{"from":"agnes/agnes-3.0-flash","to":"openai-codex/gpt-5.6-luna","reason":"manual","at":"2026-09-20T11:46:32.177Z","source":"set"},"at":"2026-09-20T11:46:32.177Z"}
 {"type":"state","value":{"goal":null,"list":[],"loop":null,"mainModelRecovery":null,"lastModelRef":"openai-codex/gpt-5.6-luna","lastCompactionAt":1789843183556,"supervisorPausedAt":null,"loadHoldAt":null,"lastOutcome":null},"at":"2026-09-20T11:46:32.177Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"openai-codex","model":"gpt-5.6-luna","providerUsage":null,"contextUsage":{"tokens":5,"contextWindow":200000,"percent":0.0025}},"at":"2026-09-20T11:46:35.065Z"}
+{"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-20T11:47:31.373Z"}
+{"type":"session_rebound","value":{"reason":"startup"},"at":"2026-09-20T11:47:33.890Z"}
+{"type":"id_invalidation","value":{"oldId":"01a0bea3-917f-7612-a5df-8c4f25f30f20","newId":"01a0bea4-8461-75ac-9339-c11568cf1479","reason":"session_shutdown","shutdownReason":"quit","at":"2026-09-20T11:47:33.899Z"},"at":"2026-09-20T11:47:33.899Z"}
+{"type":"session_waiting_for_load","value":{"reason":"startup"},"at":"2026-09-20T11:47:33.900Z"}
