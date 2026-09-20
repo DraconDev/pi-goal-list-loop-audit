@@ -2693,3 +2693,4 @@
 {"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-20T15:57:01.054Z"}
 {"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-20T16:10:29.541Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":275,"outputTokens":269,"cacheReadTokens":141809,"cacheWriteTokens":0,"totalTokens":142353},"contextUsage":{"tokens":142353,"contextWindow":200000,"percent":71.1765}},"at":"2026-09-20T16:34:17.304Z"}
+{"type":"model_fallback_select","value":{"scope":"drafter","fromRef":"opencode-go/muse-spark-1.3-contributor","reason":"exhausted"},"at":"2026-09-20T16:50:48.298Z"}
