@@ -8,6 +8,20 @@ import {
 } from "../extensions/goal-loop-core.ts";
 
 describe("defer vs durable — semantic recommendation ordering", () => {
+  test("v0.38.71: imperative fix verbs do not double against the plaque verb (field UI-SURVEY-2026-09-20)", () => {
+    const inline = buildDurableDeferRecommendation({
+      durableFix: "Implement Keep sticky/search grouping as typed components",
+      deferRecommendations: ["use only when unsafe"],
+    });
+    assert.match(inline.plaques[0]?.body ?? "", /^Implement sticky\/search grouping as typed components now/);
+    assert.doesNotMatch(inline.plaques[0]?.body ?? "", /Implement Implement|Implement Keep/);
+    const deferred = buildDurableDeferRecommendation({
+      durableFix: "Keep the cleared-segment contract",
+      deferRecommendations: ["use only when unsafe"],
+      durableBlocked: true,
+    });
+    assert.match(deferred.plaques[0]?.body ?? "", /^Keep the cleared-segment contract as the follow-up/);
+  });
   test("three defer recommendations still select the safe durable action first", () => {
     const recommendation = buildDurableDeferRecommendation({
       durableFix: "pin plaque ordering",
