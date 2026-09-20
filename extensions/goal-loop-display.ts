@@ -1112,6 +1112,21 @@ function pausedNextTransition(g: Goal, state: State, now: number): string {
   }
 }
 
+/** v0.38.70 (field 20260920_152744): close a paused action card with its
+ * deferred history. The pause body already ended on a `└─` closer; reopen
+ * it to `├─` and hang the tally/provenance/collapsed-judgment rows after
+ * the action, closing on the last history row. Empty history is a no-op,
+ * so cards with nothing deferred keep their exact shape. */
+function closePausedWithHistory(lines: string[], history: string[], theme?: DisplayTheme): string[] {
+  if (history.length === 0) return lines;
+  const tail = lines[lines.length - 1];
+  if (tail !== undefined) lines[lines.length - 1] = tail.replace(/^└─/, "├─");
+  history.forEach((h, i) => {
+    lines.push(`${i === history.length - 1 ? "└─" : "├─"} ${paint(theme, "dim", h)}`);
+  });
+  return lines;
+}
+
 function pausedLifecycleLines(g: Goal, state: State, extras: WidgetExtras | undefined, now: number): [string, string] {
   const queued = state.list?.length ?? 0;
   return [
@@ -1932,9 +1947,20 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
   // v0.38.8: durable verdict tally as a first-class card row — the widget
   // is the glance surface, and stored verdicts are the progress evidence
   // when no auditor is live. Silent when history is empty.
+  // v0.38.70 (field 20260920_152744): a paused action card must lead with
+  // the action, not history. Pi core truncates the widget tail (~10 rows),
+  // so judgment plaques above the blocked banner pushed the suggested action
+  // below the cut — "... (widget truncated)" with no action visible.
+  // Tally, provenance, and judgment ride AFTER the pause closer instead;
+  // judgment rides collapsed (header + selection; full plaques stay in
+  // /goal status). Interrupted/attention cards keep the existing order.
+  const deferHistory = g.status === "paused" && !!g.pauseReason && !interrupted && !attention;
+  const deferredHistory: string[] = [];
   const headTally = formatVerdictTallySegment(auditorVerdictTally(g.auditHistory, now), now);
   if (headTally) {
-    lines.push(`├─ ${paint(theme, "dim", `audits: ${truncate(headTally, Math.max(20, (width ?? 80) - 12))}`)}`);
+    const tallyRow = `audits: ${truncate(headTally, Math.max(20, (width ?? 80) - 12))}`;
+    if (deferHistory) deferredHistory.push(tallyRow);
+    else lines.push(`├─ ${paint(theme, "dim", tallyRow)}`);
   }
   if (g.repairTarget) {
     lines.push(`├─ ${paint(theme, "warning", `REPLAN REQUIRED · original target: ${truncate(g.repairTarget.objective.replace(/\s+/g, " "), Math.max(30, (width ?? 80) - 28))}`)}`);
@@ -1967,12 +1993,22 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
     ? []
     : modelProvenanceLines(extras?.modelProvenance, width);
   const provenanceStart = lines.length;
-  provenance.forEach((line, i) => {
-    lines.push(`${i === 0 ? "├─" : "│ "} ${paint(theme, "dim", line)}`);
-  });
+  if (deferHistory) {
+    provenance.forEach((line) => deferredHistory.push(line));
+  } else {
+    provenance.forEach((line, i) => {
+      lines.push(`${i === 0 ? "├─" : "│ "} ${paint(theme, "dim", line)}`);
+    });
+  }
   if (extras?.durableDeferRecommendation) {
     const judgment = buildDurableDeferDecisionLines(extras.durableDeferRecommendation, width);
-    judgment.forEach((line) => lines.push(`├─ ${paint(theme, "dim", line)}`));
+    // Collapsed on action cards: header + selection only. Plaque bodies
+    // stay in /goal status; the glance card must fit the action.
+    const collapsed = deferHistory && judgment.length > 2
+      ? [judgment[0]!, judgment[judgment.length - 1]!]
+      : judgment;
+    if (deferHistory) deferredHistory.push(...collapsed);
+    else judgment.forEach((line) => lines.push(`├─ ${paint(theme, "dim", line)}`));
   }
   if (interrupted) {
     const resumeCmd = isList ? "/list resume" : "/goal resume";
@@ -2031,7 +2067,7 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
       lines.push(`├─ ${paint(theme, "dim", lifecycle)}`);
       lines.push(`│  ${paint(theme, "dim", transition)}`);
       lines.push(`└─ ${paint(theme, "warning", sanitizeProviderDisplayText(g.pauseSuggestedAction ?? `The claim is safe; ${isList ? "/list resume" : "/goal resume"} starts exactly one fresh auditor.`))}`);
-      return lines;
+      return closePausedWithHistory(lines, deferredHistory, theme);
     }
     const [lifecycle, transition] = pausedLifecycleLines(g, state, extras, now);
     lines.push(`├─ ${paint(theme, "dim", lifecycle)}`);
@@ -2128,7 +2164,7 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
       // the card here, closing the previous row as the footer.
       const tail = lines[lines.length - 1];
       if (tail !== undefined) lines[lines.length - 1] = tail.replace(/^├─|^│\s*/, "└─ ");
-      return lines;
+      return closePausedWithHistory(lines, deferredHistory, theme);
     }
     const spent: string[] = [];
     const tokUsed = g.usage?.tokensUsed ?? 0;
@@ -2148,7 +2184,7 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
     } else {
       lines.push(`└─ ${paint(theme, "dim", truncate(savedLine, budget))}`);
     }
-    return lines;
+    return closePausedWithHistory(lines, deferredHistory, theme);
   }
   if (attention) {
     const budget = budgetFor(width, 3, 60);
