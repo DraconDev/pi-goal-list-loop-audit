@@ -2662,3 +2662,9 @@
 {"type":"terminal_approval_render_replayed","value":{"goalId":"20260919172928-3zb0qp","createdAt":"2026-09-19T23:38:33.274Z"},"at":"2026-09-19T23:38:33.297Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"openai-codex","model":"gpt-5.6-luna","providerUsage":null,"contextUsage":{"tokens":89057,"contextWindow":200000,"percent":44.5285}},"at":"2026-09-20T09:24:29.636Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"openai-codex","model":"gpt-5.6-luna","providerUsage":null,"contextUsage":{"tokens":89059,"contextWindow":200000,"percent":44.5295}},"at":"2026-09-20T11:45:36.310Z"}
+{"type":"session_shutdown","value":{"reason":"new"},"at":"2026-09-20T11:45:58.749Z"}
+{"type":"session_rebound","value":{"reason":"new"},"at":"2026-09-20T11:45:59.683Z"}
+{"type":"id_invalidation","value":{"oldId":"01a054a9-e07f-705b-87a1-9421f9b906dc","newId":"01a0bea3-27bf-7612-a5df-8c4df5ebe899","reason":"session_shutdown","shutdownReason":"new","at":"2026-09-20T11:45:59.690Z"},"at":"2026-09-20T11:45:59.690Z"}
+{"type":"model_switch","value":{"from":"agnes/agnes-3.0-flash","to":"openai-codex/gpt-5.6-luna","reason":"manual","at":"2026-09-20T11:46:04.923Z","source":"set"},"at":"2026-09-20T11:46:04.923Z"}
+{"type":"state","value":{"goal":null,"list":[],"loop":null,"mainModelRecovery":null,"lastModelRef":"openai-codex/gpt-5.6-luna","lastCompactionAt":1789843183556,"supervisorPausedAt":null,"loadHoldAt":null,"lastOutcome":null},"at":"2026-09-20T11:46:04.923Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"openai-codex","model":"gpt-5.6-luna","providerUsage":null,"contextUsage":{"tokens":21,"contextWindow":200000,"percent":0.0105}},"at":"2026-09-20T11:46:08.556Z"}
