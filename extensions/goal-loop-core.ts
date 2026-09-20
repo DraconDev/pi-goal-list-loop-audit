@@ -3145,6 +3145,15 @@ export function recommendDurableDeferChoice(input: DurableDeferRecommendationInp
   return input.durableBlocked === true ? "deferred" : "inline";
 }
 
+/** v0.38.71 (field UI-SURVEY-2026-09-20): plaque bodies compose a verb
+ * around the stored fix ("Implement X now" / "Keep X as the follow-up"),
+ * so a fix that already starts with that verb doubled ("Implement
+ * Implement Keep ..."). Strip one leading Implement/Keep; the composed
+ * verb carries the meaning either way. */
+function stripPlaqueVerb(fix: string): string {
+  return fix.replace(/^(implement|keep)\s+/i, "");
+}
+
 /**
  * Build the ordered recommendation plaques consumed by prompt and UI
  * projections. The returned order is driven by DURABLE_DEFER_PLAQUE_ORDER so
@@ -3152,7 +3161,7 @@ export function recommendDurableDeferChoice(input: DurableDeferRecommendationInp
  */
 export function buildDurableDeferRecommendation(input: DurableDeferRecommendationInput): DurableDeferRecommendation {
   const facts = normalizeDurableDeferRecommendationInput(input);
-  const durableFix = facts.durableFix || "the durable root-cause fix";
+  const durableFix = stripPlaqueVerb(facts.durableFix || "the durable root-cause fix");
   const deferCount = facts.deferRecommendations.length;
   const choice = recommendDurableDeferChoice(facts);
   const plaques: Record<DurableDeferPlaqueKind, DurableDeferPlaque> = {
