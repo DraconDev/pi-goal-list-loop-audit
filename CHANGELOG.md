@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.38.69 — About and README refresh (2026-09-20)
+
+- Refined npm about line and README intro: tighter mission control wording, no em dashes.
+- README range wording uses plain "to" (0 to 10, 1 to 10).
 
 ### Antigravity auto-continue port (survey 2026-09-19)
 
