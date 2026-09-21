@@ -245,6 +245,53 @@ function normalizeErrorText(...values) {
   ])].join(" — ").slice(0, 500);
 }
 
+// v0.38.76: auditor challenge round (falsification pass). A round-1 approval
+// earns one bounded second RPC round in a FRESH session (no anchoring on
+// round-1 reasoning) with an adversarial brief. The final-line verdict rule
+// makes composition safe: round-2 output is appended, so a challenge
+// disapproval flips the verdict while a re-confirm preserves it — and the
+// shield keeps reading round-1's evidence block (first match wins).
+const CHALLENGE_SEPARATOR = "\n\n--- auditor challenge round (falsification pass) ---\n\n";
+
+// Mirror of parseAuditorVerdict's final-line gate (goal-loop-shield.ts).
+// The worker needs the round-1 verdict to decide whether to challenge;
+// keep this in sync with the parser (final non-blank line only).
+function finalLineOf(output) {
+  const normalized = String(output).replaceAll("\\\\n", "\n").replaceAll("\\\\r", "\r");
+  return normalized.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).at(-1) ?? "";
+}
+
+function finalLineIsApproval(output) {
+  return /^<approved\/>$/i.test(finalLineOf(output));
+}
+
+function finalLineVerdict(output) {
+  const line = finalLineOf(output);
+  if (/^<approved\/>$/i.test(line)) return "approved";
+  if (/^<disapproved\/>$/i.test(line)) return "disapproved";
+  if (/^<impossible>[\s\S]*?<\/impossible>$/i.test(line)) return "impossible";
+  return "none";
+}
+
+function buildChallengePrompt(originalPrompt, round1Output) {
+  return [
+    "AUDITOR CHALLENGE ROUND (falsification pass).",
+    "",
+    "A first-pass auditor already APPROVED the completion below. Approvals can be wrong — your job is to try to prove this one wrong. Re-verify the load-bearing claims with your own tool calls; do not trust the first report's assertions without checking them.",
+    "",
+    "ORIGINAL AUDIT BRIEF (verbatim):",
+    originalPrompt,
+    "",
+    "FIRST-PASS REPORT (verbatim):",
+    round1Output,
+    "",
+    "RULES:",
+    "- If you find ANY genuine gap between the completion claim and the evidence (missing artifact, failing check, untested contract item, hallucinated file, evidence that does not actually show what the report claims), list the concrete gaps, then end your report with a single final line exactly: <disapproved/>",
+    "- If the completion genuinely holds up after your adversarial re-check, end with a single final line exactly: <approved/>",
+    "- The final non-empty line is the ONLY authoritative verdict location. Do not emit verdict markers anywhere else.",
+  ].join("\n");
+}
+
 async function regular(file) {
   const stat = await lstat(file);
   if (!stat.isFile()) throw new Error(`not a regular protocol file: ${file}`);
