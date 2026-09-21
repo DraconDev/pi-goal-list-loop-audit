@@ -632,9 +632,388 @@ async function main() {
 
   // The parent may cancel the detached job after the goal is archived. Cleanly
   // terminate the nested RPC child too, rather than leaving it orphaned.
+  // Cancellation wins over everything, including a round-1 approval awaiting
+  // challenge (v0.38.76): finish(false) directly, never the round-1 fallback.
   process.once("SIGTERM", () => {
     void finish(false, "Auditor aborted.").catch(() => {});
   });
+
+  // v0.38.76 challenge-round machinery. Round 1 is byte-identical to the
+  // historical single-shot flow; round 2 replays it with the falsification
+  // brief. All error paths route through failRound: round-1 errors finish
+  // failed exactly as before, round-2 errors abandon back to the round-1
+  // output (fail-open, recorded — never silent).
+  const resetRoundStreamState = () => {
+    stdoutBuffer = "";
+    settledSeen = false;
+    stdoutEnded = false;
+    piExited = false;
+    piClosed = false;
+    piExitCode = undefined;
+    piExitSignal = undefined;
+    rpcStreamDiagnostic = undefined;
+    lastActivityProbeAt = Date.now();
+  };
+
+  const clearRoundTimers = () => {
+    if (inactivityTimer) clearInterval(inactivityTimer);
+    if (processGroupTimer) clearInterval(processGroupTimer);
+    if (rpcCloseGraceTimer) clearTimeout(rpcCloseGraceTimer);
+    for (const timer of toolTimers.values()) clearTimeout(timer);
+    toolTimers.clear();
+    inactivityTimer = undefined;
+    processGroupTimer = undefined;
+    rpcCloseGraceTimer = undefined;
+  };
+
+  const detachRoundChild = async () => {
+    const old = pi;
+    pi = undefined;
+    if (!old) return;
+    // Remove listeners synchronously on entry: a stale round-1 exit/close/
+    // data event dispatching after the round flips would corrupt round-2
+    // lifecycle state. Termination itself is async and bounded.
+    for (const stream of [old.stdin, old.stdout, old.stderr]) {
+      try { stream?.removeAllListeners(); } catch {}
+    }
+    try { old.removeAllListeners(); } catch {}
+    await terminateChild(old).catch(() => {});
+  };
+
+  const failRound = (error) => {
+    if (round === 1) {
+      void finish(false, error).catch(() => {});
+    } else {
+      void abandonChallenge(error).catch(() => {});
+    }
+  };
+
+  const abandonChallenge = async (reason) => {
+    if (finalized || abandoning) return;
+    abandoning = true;
+    try {
+      // Byte-exact fallback: the published output is indistinguishable from
+      // a run where the challenge never happened. recentOutput (bounded
+      // display telemetry) is intentionally not rewound.
+      outputParts.length = round1EndParts;
+      reportBytes = round1ReportBytes;
+      challengeState = `skipped: ${String(reason ?? "unknown").slice(0, 120)}`;
+      await detachRoundChild();
+      drainActiveTools();
+      clearRoundTimers();
+      // Round 1 settled ok with an approval (the only path here) — finish
+      // true on the preserved output.
+      await finish(true, "");
+    } catch (error) {
+      await finish(false, `challenge abandon failed: ${error instanceof Error ? error.message : String(error)}`).catch(() => {});
+    }
+  };
+
+  const startChallengeRound = async (round1Output) => {
+    // Synchronous prefix first: round flip, output pin, drain, timer clear —
+    // no await may precede detach's listener removal (see detachRoundChild).
+    round = 2;
+    round1EndParts = outputParts.length;
+    round1ReportBytes = reportBytes;
+    drainActiveTools();
+    clearRoundTimers();
+    outputParts.push(CHALLENGE_SEPARATOR);
+    challengeState = "challenging";
+    streamError = undefined;
+    await detachRoundChild();
+    await progress("challenging").catch(() => {});
+    await startRound(buildChallengePrompt(request.prompt, round1Output), "challenging");
+  };
+
+  const startRound = async (roundPrompt, initialPhase) => {
+    resetRoundStreamState();
+    const piBinary = process.env.GLLA_PI_BINARY || "pi";
+    // v0.38.3: off = the original --no-session spawn, byte-identical args.
+    // Round 2 reuses the identical spec (including inspection --session):
+    // the falsification brief carries full context either way.
+    const piArgs = [
+      "--mode", "rpc",
+      ...(sessionPath ? ["--session", sessionPath] : ["--no-session"]),
+      "--no-extensions",
+      "--no-skills",
+      "--no-prompt-templates",
+      "--no-themes",
+      "--no-context-files",
+      "--no-approve",
+      "--tools", "read,grep,find,ls,bash",
+      "--model", request.model,
+      "--thinking", request.thinkingLevel,
+    ];
+    // v0.36.0: explicitly allow-listed extension specs still load under
+    // --no-extensions (pi honors explicit -e paths). Extension tools stay
+    // disabled: --tools above remains the auditor's only tool surface, so
+    // allow-listed extensions effectively contribute model providers.
+    for (const spec of request.allowedExtensions ?? []) piArgs.push("--extension", spec);
+    const launch = buildAuditorPiSpawnSpec(piBinary, piArgs);
+    pi = spawn(launch.file, launch.args, {
+      cwd: request.cwd,
+      env: process.env,
+      stdio: ["pipe", "pipe", "pipe"],
+      ...launch.options,
+    });
+
+    // The worker is detached into its own group by the parent; normal RPC and
+    // shell descendants inherit that group. Count both identities because a
+    // runtime is allowed to create a separate group for its own child tree.
+    // This is a containment fence, not a progress timeout: a legitimate audit
+    // remains eligible while its group stays below the ceiling.
+    const processGroups = [...new Set([
+      linuxProcessGroupId(process.pid),
+      pi.pid ? linuxProcessGroupId(pi.pid) : undefined,
+    ].filter((group) => group !== undefined))];
+    if (processGroups.length > 0) {
+      processGroupTimer = setInterval(() => {
+        if (finalized || !pi || !childRunning(pi)) return;
+        for (const group of processGroups) {
+          const size = linuxProcessGroupSize(group);
+          if (size !== undefined && size > MAX_PROCESS_GROUP_SIZE) {
+            failRound(`Auditor stalled — process group exceeded its ${MAX_PROCESS_GROUP_SIZE}-process safety limit; the worker process tree was aborted.`);
+            break;
+          }
+        }
+      }, PROCESS_GROUP_POLL_MS);
+      processGroupTimer.unref?.();
+    }
+
+    const stallLabel = AUDITOR_STALL_MS >= 60_000
+      ? `${Math.max(1, Math.round(AUDITOR_STALL_MS / 60_000))}m`
+      : `${Math.max(1, Math.round(AUDITOR_STALL_MS / 1_000))}s`;
+    inactivityTimer = setInterval(() => {
+      if (finalized || activeTools.size > 0) return;
+      if (Date.now() - lastActivityProbeAt >= AUDITOR_STALL_MS) {
+        failRound(`Auditor stalled — no session activity for ${stallLabel} while no auditor tool was running, so it was aborted.`);
+      }
+    }, Math.min(15_000, Math.max(10, Math.floor(AUDITOR_STALL_MS / 4))));
+    inactivityTimer.unref?.();
+
+    // RPC is a strict LF-delimited JSON stream. Do not use readline here:
+    // its CRLF normalization accepts transport corruption that the worker
+    // protocol deliberately rejects, and it can obscure an unterminated final
+    // record. Buffer arbitrary chunks, reject raw CR, and process only complete
+    // LF-terminated records. agent_end is intentionally not terminal: Pi may
+    // retry/compact/follow up after it. agent_settled is the completion event.
+    const missingSettledError = (closeGraceExpired = false) => {
+      const processFacts = `pi exited before agent_settled (code=${piExitCode ?? "?"}, signal=${piExitSignal ?? "none"})`;
+      const closeGraceDetail = closeGraceExpired && !piClosed
+        ? `; RPC streams did not close within ${RPC_CLOSE_GRACE_MS}ms`
+        : "";
+      const headline = closeGraceExpired && stdoutEnded && !piExited
+        ? `RPC stdout ended before agent_settled and the child did not close within ${RPC_CLOSE_GRACE_MS}ms`
+        : `${processFacts}${closeGraceDetail}`;
+      return [...new Set([headline, rpcStreamDiagnostic, streamError].filter(Boolean))].join(": ");
+    };
+
+    const coordinatePiEnd = () => {
+      if (finalized || settledSeen) return;
+      if (piClosed) {
+        failRound(missingSettledError());
+        return;
+      }
+      if ((!stdoutEnded && !piExited) || rpcCloseGraceTimer) return;
+      rpcCloseGraceTimer = setTimeout(() => {
+        rpcCloseGraceTimer = undefined;
+        if (finalized || settledSeen || piClosed) return;
+        failRound(missingSettledError(true));
+      }, RPC_CLOSE_GRACE_MS);
+      rpcCloseGraceTimer.unref?.();
+    };
+
+    const handleRpcLine = (line) => {
+      if (finalized || !line) return;
+      // The RPC contract is LF-delimited but permits a trailing CR for
+      // conventional CRLF producers. Any other raw CR is transport damage.
+      if (line.endsWith("\r")) line = line.slice(0, -1);
+      if (line.includes("\r")) {
+        failRound("RPC stream contained a raw CR; expected LF-delimited JSONL");
+        return;
+      }
+      let event;
+      try { event = JSON.parse(line); } catch {
+        failRound("RPC stream contained invalid JSON");
+        return;
+      }
+      const update = event.type === "message_update" ? event.assistantMessageEvent : undefined;
+      const phase = event.type === "message_update" && update?.type === "text_delta"
+        ? "producing_report"
+        : event.type === "tool_execution_start" && AUDITOR_TOOLS.has(event.toolName)
+          ? "tool_executing"
+          : event.type === "tool_execution_end" || event.type === "agent_start" || event.type === "message_start" || event.type === "message_end" || event.type === "response" || event.type === "agent_end"
+            ? "thinking"
+            : "running";
+      const observedAt = Date.now();
+      // Only a parsed RPC event counts as worker activity. Startup writes use
+      // the separate probe clock and must not render `last activity 0s ago`.
+      lastActivityAt = observedAt;
+      lastActivityProbeAt = observedAt;
+      if (event.type === "error" || event.type === "extension_error" || event.type === "auto_retry_start" || event.type === "auto_retry_end") {
+        const message = normalizeErrorText(event);
+        if (message) streamError = message;
+      }
+      if (event.type === "message_end" && event.message?.role === "assistant" && event.message.stopReason === "error") {
+        const message = normalizeErrorText(event.message);
+        if (message) streamError = message;
+      }
+      if (event.type === "response" && event.command === "prompt" && event.success === false) {
+        const message = normalizeErrorText(event) || "RPC prompt was rejected before acceptance";
+        streamError = message;
+        failRound(`RPC prompt rejected: ${streamError}`);
+        return;
+      }
+      if (event.type === "tool_execution_start" && !AUDITOR_TOOLS.has(event.toolName)) {
+        failRound(`Auditor attempted unsupported tool: ${String(event.toolName ?? "(unknown)")}`);
+        return;
+      }
+      if (event.type === "message_update") {
+        if (update?.type === "text_delta" && typeof update.delta === "string") {
+          outputParts.push(update.delta);
+          reportBytes += update.delta.length;
+          appendRecentOutput(recentOutput, recentReportLine, update.delta);
+          void progress(phase).catch(() => {});
+        } else {
+          void progress("thinking").catch(() => {});
+        }
+        return;
+      }
+      if (event.type === "tool_execution_start" && AUDITOR_TOOLS.has(event.toolName)) {
+        const id = event.toolCallId === undefined || event.toolCallId === null ? undefined : String(event.toolCallId);
+        const key = id !== undefined ? id : `${event.toolName}:${activeTools.size}:${Date.now()}`;
+        activeTools.set(key, { name: event.toolName, argsPrefix: toolArgsPrefix(event.args), startedAt: Date.now(), toolCallId: id });
+        if (id === undefined) anonymousStartKeys.add(key);
+        armToolTimer(key, event.toolName);
+        setCurrentToolFromActive();
+        void progress(phase).catch(() => {});
+        return;
+      }
+      if (event.type === "tool_execution_end") {
+        const id = event.toolCallId === undefined || event.toolCallId === null ? undefined : String(event.toolCallId);
+        let key;
+        if (id !== undefined) {
+          key = id;
+        } else if (anonymousStartKeys.size === 1) {
+          key = [...anonymousStartKeys][0];
+        }
+        const active = key !== undefined ? activeTools.get(key) : undefined;
+        if (active) {
+          clearToolTimer(key);
+          const { startedAt: _startedAt, toolCallId: _toolCallId, ...toolCall } = active;
+          toolCalls.push({ ...toolCall, finishedAt: Date.now() });
+          while (toolCalls.length > MAX_TOOL_CALLS) toolCalls.shift();
+          activeTools.delete(key);
+          if (id === undefined) anonymousStartKeys.delete(key);
+          setCurrentToolFromActive();
+        } else {
+          // v0.34.56: an end that provably closes nothing is an EXPLICIT
+          // unmatched fact — never silently dropped. Only telemetry-relevant
+          // auditor tools are tracked, so only their stray ends are
+          // surfaced; ends of untracked tools are outside the telemetry
+          // scope by design.
+          if (!event.toolName || AUDITOR_TOOLS.has(event.toolName)) {
+            unmatchedToolEnds.push({ toolCallId: id, toolName: event.toolName, at: Date.now() });
+            if (unmatchedToolEnds.length > MAX_UNMATCHED_EVENTS) unmatchedToolEnds.shift();
+          }
+        }
+        void progress(activeTools.size > 0 ? "tool_executing" : "thinking").catch(() => {});
+        return;
+      }
+      if (event.type === "agent_settled") {
+        settledSeen = true;
+        const output = outputParts.join("");
+        const hasVerdict = /<(?:approved\/|disapproved\/|impossible>)/i.test(output);
+        // v0.38.76: round-1 approvals earn the falsification pass; every
+        // other round-1 outcome finishes exactly as the historical
+        // single-shot flow. Round-2 verdicts compose by final line.
+        if (round === 1 && (!streamError || hasVerdict) && finalLineIsApproval(output)) {
+          void startChallengeRound(output).catch((error) => abandonChallenge(error instanceof Error ? error.message : String(error)));
+          return;
+        }
+        if (round === 2) {
+          const verdict = finalLineVerdict(output);
+          if (verdict === "approved") {
+            challengeState = "confirmed";
+            void finish(true, "").catch(() => {});
+          } else if (verdict === "disapproved" || verdict === "impossible") {
+            challengeState = "flipped";
+            void finish(true, "").catch(() => {});
+          } else {
+            void abandonChallenge("challenge round settled without a verdict").catch(() => {});
+          }
+          return;
+        }
+        void finish(!streamError || hasVerdict, hasVerdict ? "" : streamError || "auditor session settled without a verdict").catch(() => {});
+        return;
+      }
+      // agent_end is progress only; never finalize on it. Its `thinking`
+      // phase is still published, so a moving worker is visible without
+      // pretending that hidden model reasoning is available.
+      void progress(phase).catch(() => {});
+    };
+    pi.stdout.on("data", (chunk) => {
+      if (finalized) return;
+      stdoutBuffer += String(chunk);
+      let newline;
+      while (!finalized && (newline = stdoutBuffer.indexOf("\n")) >= 0) {
+        const line = stdoutBuffer.slice(0, newline);
+        stdoutBuffer = stdoutBuffer.slice(newline + 1);
+        handleRpcLine(line);
+      }
+    });
+    pi.stdout.on("end", () => {
+      if (finalized) return;
+      stdoutEnded = true;
+      if (stdoutBuffer.length > 0) {
+        rpcStreamDiagnostic = "RPC stream ended with an unterminated LF record";
+      }
+      coordinatePiEnd();
+    });
+
+    pi.stderr.on("data", (chunk) => {
+      const text = String(chunk).trim();
+      if (text) streamError = text.slice(-500);
+    });
+    const handlePiStreamError = (stream, error) => {
+      if (finalized) return;
+      const message = error instanceof Error ? error.message : String(error);
+      streamError = message.slice(-500);
+      failRound(`RPC ${stream} stream failed: ${streamError}`);
+    };
+    // A provider/auth failure can make pi close RPC stdin before the prompt
+    // write completes. Without an error listener, Node treats EPIPE as an
+    // uncaught stream error and kills this worker before it can publish the
+    // atomic infrastructure result the parent is waiting for.
+    pi.stdin.on("error", (error) => handlePiStreamError("stdin", error));
+    pi.stdout.on("error", (error) => handlePiStreamError("stdout", error));
+    pi.stderr.on("error", (error) => handlePiStreamError("stderr", error));
+    pi.on("error", (error) => { failRound(`pi launch failed: ${error.message}`); });
+    pi.on("exit", (code, signal) => {
+      piExited = true;
+      piExitCode = code;
+      piExitSignal = signal;
+      coordinatePiEnd();
+    });
+    pi.on("close", (code, signal) => {
+      piClosed = true;
+      piExited = true;
+      piExitCode = code;
+      piExitSignal = signal;
+      coordinatePiEnd();
+    });
+
+    // Exactly one LF-terminated JSONL prompt. JSON.stringify escapes embedded
+    // newlines and carriage returns, so this remains one strict LF-only line.
+    const promptLine = JSON.stringify({ type: "prompt", message: roundPrompt });
+    if (promptLine.includes("\r") || promptLine.includes("\n")) throw new Error("prompt JSONL encoding is not strict LF-only");
+    pi.stdin.write(`${promptLine}\n`, "utf8");
+    // Keep RPC stdin open. Pi's RPC mode treats stdin EOF as an explicit
+    // shutdown request; closing it immediately after the prompt can terminate
+    // the session before the asynchronous prompt reaches the model or emits
+    // agent_settled. finish() terminates the child after settlement instead.
+    await progress(initialPhase);
+  };
 
   try {
     // There is deliberately no wall-clock lifetime timer here. The worker
