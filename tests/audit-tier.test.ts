@@ -16,6 +16,7 @@ import assert from "node:assert/strict";
 import {
   LIGHT_AUDIT_CEILINGS,
   resolveAuditTier,
+  resolveClaimAuditTier,
 } from "../extensions/goal-loop-auditor-process.js";
 import { DEFAULT_SETTINGS, normalizeLoadedSettings } from "../extensions/goal-settings.js";
 import { buildSettingsRows } from "../extensions/settings-menu.ts";
@@ -141,6 +142,24 @@ test("tier: spot-check rate ships at 0.1 and normalizes junk to default", () => 
   assert.equal(normalizeLoadedSettings({ auditSpotCheckRate: 99 }).auditSpotCheckRate, 0.1, "junk restores the default");
   assert.equal(normalizeLoadedSettings({ auditSpotCheckRate: -2 }).auditSpotCheckRate, 0.1);
   assert.equal(normalizeLoadedSettings({}).auditSpotCheckRate, 0.1, "unset means the default");
+});
+
+test("tier: claim mapper counts disapprovals and carries both escalation flags", () => {
+  const goal = {
+    objective: QUIET.objective,
+    verificationContract: QUIET.verificationContract,
+    telemetry: SMALL,
+    auditHistory: [{ disapproved: true }, { approved: true }],
+  } as never;
+  const rework = resolveClaimAuditTier(goal, {}, 0);
+  assert.equal(rework.tier, "full");
+  assert.ok(rework.reasons.some((r) => /rework history \(1 prior disapproval\)/.test(r)), "counts disapproved entries only");
+  const flagged = resolveClaimAuditTier({ ...goal, auditHistory: [] } as never, {}, 0);
+  assert.equal(flagged.tier, "light");
+  const draft = resolveClaimAuditTier({ ...goal, auditHistory: [], fullAudit: true } as never, {}, 0);
+  assert.equal(draft.tier, "full");
+  const asked = resolveClaimAuditTier({ ...goal, auditHistory: [] } as never, { requestFullAudit: true }, 0);
+  assert.equal(asked.tier, "full");
 });
 
 test("tier: settings menu exposes the spot-check rate row in the auditor section", () => {
