@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.85 — `/goal timeline`: one what-happened + next-action view (2026-09-21)
+
+- New `/goal timeline [N]` renders the goal's own trail — goal-scoped ledger events merged with auditHistory verdicts in time order, key types humanized (pauses, tiers, shields, consents), unknown types compact but never hidden — plus a footer naming the single next action from live state (decision to answer, resume time, open objections, or working). Read-only like `/glla log` (audit/TIMELINE-2026-09-21.md).
+
 ## 0.38.84 — Mode check learns /loop: recurring seeds route to loops (2026-09-21)
 
 - `crossRecommendMode` now catches open-ended/recurring seeds (cadence words, monitor/watch, keep-X-under-Y) in goal and list drafting and steers the interview toward `/loop` — neither goals (end on approval) nor list items (close once) fit "keep doing it". Bounded-until phrasing ("until done/green") stays a goal, and aggregate seeds still win (audit/LOOP-INFERENCE-2026-09-21.md).
