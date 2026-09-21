@@ -9,10 +9,12 @@
 // Design notes:
 // - goal.ts is a singleton module with process-wide state (state.goal,
 //   ownerSession, extensionApiStale, …). bun test SHARES module state across
-//   files (verified empirically), so all goal.ts-driving behavioral tests
-//   live in ONE file (tests/behavioral-orchestrator.test.ts), run in a
-//   deliberate order, and share one sessionManager (the first session_start
-//   claims it; anything else is "foreign").
+//   files (verified empirically). v0.38.88: the preload (setup.ts) calls
+//   __testOnlyResetProcessState() before EACH file, so latch state never
+//   crosses a file boundary; per-test afterEach resets stay as defense in
+//   depth. Within ONE file, tests that share a sessionManager run in a
+//   deliberate order (the first session_start claims it; anything else is
+//   "foreign") — behavioral-orchestrator.test.ts is the big one.
 // - sendMessageError / ui.*Impl are the fault-injection knobs (stale handle,
 //   dialog throws, editor answers).
 // - tick() lets the 0ms/50ms scheduled continuation timers fire.
