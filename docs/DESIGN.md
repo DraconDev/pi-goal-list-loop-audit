@@ -757,6 +757,16 @@ shapes (details in CHANGELOG.md; each is pinned by tests):
   spot mark, and the challenges view reports the spot flip rate — the
   calibration signal for the v1 ceilings and vocabulary.
 
+## Addendum v0.38.82 (fast/slow suite split)
+
+- **The everyday loop is fast; the gate is whole.** `npm test` excludes
+  the 12 evidence-timed slow files via repeated bun
+  `--path-ignore-patterns` (comma-separated does not union); `test:slow`
+  runs them; `test:all` and `release:check` still run everything.
+  Explicit test paths drop the exclusion — naming a file means running
+  it. The slow list (`tests/slow-files.mjs`) carries per-file timings
+  and is validity-checked by `tests/test-split.test.ts`.
+
 ## Files
 
 - `docs/DESIGN.md` — **this file**
