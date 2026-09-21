@@ -18,6 +18,8 @@ import {
   resolveAuditTier,
 } from "../extensions/goal-loop-auditor-process.js";
 import { DEFAULT_SETTINGS, normalizeLoadedSettings } from "../extensions/goal-settings.js";
+import { buildSettingsRows } from "../extensions/settings-menu.ts";
+import type { Settings } from "../extensions/goal-settings.js";
 
 const SMALL = { turns: 5, fileWrites: 3, bashCalls: 2 };
 const QUIET = {
@@ -139,4 +141,12 @@ test("tier: spot-check rate ships at 0.1 and normalizes junk to default", () => 
   assert.equal(normalizeLoadedSettings({ auditSpotCheckRate: 99 }).auditSpotCheckRate, 0.1, "junk restores the default");
   assert.equal(normalizeLoadedSettings({ auditSpotCheckRate: -2 }).auditSpotCheckRate, 0.1);
   assert.equal(normalizeLoadedSettings({}).auditSpotCheckRate, 0.1, "unset means the default");
+});
+
+test("tier: settings menu exposes the spot-check rate row in the auditor section", () => {
+  const rows = buildSettingsRows({ auditSpotCheckRate: 0.25 } as Settings, {});
+  const row = rows.find((r) => r.id === "auditSpotCheckRate");
+  assert.ok(row, "auditSpotCheckRate row exists");
+  assert.equal(row!.section, "auditor");
+  assert.match(row!.valueText, /0\.25 of light audits run full/);
 });

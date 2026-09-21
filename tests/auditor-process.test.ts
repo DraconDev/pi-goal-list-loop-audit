@@ -1584,3 +1584,44 @@ test("v0.38.80: an absent challenge stays undefined for legacy workers", async (
     await cleanup(dir);
   }
 });
+
+test("v0.38.81: the dispatch-decided tier stamps onto the result", async () => {
+  const dir = await setup();
+  try {
+    const result = await runDetachedGoalCompletionAuditor({
+      cwd: dir,
+      goal,
+      model: "test/provider-model",
+      thinkingLevel: "high",
+      auditTier: "light",
+      runtime: { workerPath: workerPathFor(dir), env: { FAKE_AUDIT_OUTPUT: "<disapproved/>" }, attemptId: () => "attempt-tier-stamp", pollIntervalMs: 10, wallTimeoutMs: 10_000 },
+    });
+    assert.equal(result.disapproved, true);
+    assert.equal(result.auditTier, "light");
+    assert.equal(result.spotCheck, undefined, "unstamped spot-check stays absent, never false");
+  } finally {
+    await cleanup(dir);
+  }
+});
+
+test("v0.38.81: spot-check stamps true; legacy callers see no tier fields", async () => {
+  const dir = await setup();
+  try {
+    const spot = await runDetachedGoalCompletionAuditor({
+      cwd: dir,
+      goal,
+      model: "test/provider-model",
+      thinkingLevel: "high",
+      auditTier: "full",
+      spotCheck: true,
+      runtime: { workerPath: workerPathFor(dir), env: { FAKE_AUDIT_OUTPUT: "<disapproved/>" }, attemptId: () => "attempt-spot-stamp", pollIntervalMs: 10, wallTimeoutMs: 10_000 },
+    });
+    assert.equal(spot.auditTier, "full");
+    assert.equal(spot.spotCheck, true);
+    const legacy = await run(dir, { FAKE_AUDIT_OUTPUT: "<disapproved/>" });
+    assert.equal(legacy.auditTier, undefined, "no tier args means untiered, not a default tier");
+    assert.equal(legacy.spotCheck, undefined);
+  } finally {
+    await cleanup(dir);
+  }
+});
