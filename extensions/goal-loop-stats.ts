@@ -175,6 +175,7 @@ function finishRollup(project: string, acc: RollupAccumulator): ProjectRollup {
       writesN++;
     }
   }
+  const outcomes = finishOutcomes(acc);
   return {
     project,
     goalsCreated: acc.goalsCreated,
@@ -186,6 +187,75 @@ function finishRollup(project: string, acc: RollupAccumulator): ProjectRollup {
     prematureCount,
     totalCost,
     lastActive: acc.lastActive,
+    outcomes,
+  };
+}
+
+const TERMINAL_GOAL_STATUSES = new Set(["complete", "aborted"]);
+
+function finishOutcomes(acc: RollupAccumulator): GoalOutcomes {
+  let completed = 0;
+  let aborted = 0;
+  let runToDoneCompleted = 0;
+  let runToDoneAborted = 0;
+  let supervisedCompleted = 0;
+  let supervisedAborted = 0;
+  let roundsSum = 0;
+  let roundsN = 0;
+  let wallSumHrs = 0;
+  let wallN = 0;
+  let tokensSum = 0;
+  let tokensN = 0;
+  for (const [id, rec] of acc.archived) {
+    const done = rec.status === "complete";
+    if (!done && rec.status !== "aborted") continue;
+    if (done) completed++;
+    else aborted++;
+    // The flag rides the last non-null state snapshot; absent on
+    // pre-v0.38.73 goals (supervised-or-legacy bucket).
+    if (acc.finalGoal.get(id)?.runToDone === true) {
+      if (done) runToDoneCompleted++;
+      else runToDoneAborted++;
+    } else {
+      if (done) supervisedCompleted++;
+      else supervisedAborted++;
+    }
+    if (!done) continue;
+    const final = acc.finalGoal.get(id);
+    if (final?.auditHistory) {
+      roundsSum += final.auditHistory.length;
+      roundsN++;
+    }
+    const tokens = final?.usage?.tokensUsed;
+    if (typeof tokens === "number" && Number.isFinite(tokens)) {
+      tokensSum += tokens;
+      tokensN++;
+    }
+    const first = acc.firstSeen.get(id);
+    if (first) {
+      const ms = Date.parse(rec.at) - Date.parse(first);
+      if (Number.isFinite(ms) && ms >= 0) {
+        wallSumHrs += ms / 3_600_000;
+        wallN++;
+      }
+    }
+  }
+  let open = 0;
+  for (const goal of acc.finalGoal.values()) {
+    if (goal.status && !TERMINAL_GOAL_STATUSES.has(goal.status) && !acc.archived.has(goal.id)) open++;
+  }
+  const round1 = (v: number): number => Math.round(v * 10) / 10;
+  return {
+    completed,
+    aborted,
+    open,
+    avgRoundsToApproval: roundsN > 0 ? round1(roundsSum / roundsN) : 0,
+    avgWallClockHrs: wallN > 0 ? round1(wallSumHrs / wallN) : 0,
+    tokensPerCompleted: tokensN > 0 ? Math.round(tokensSum / tokensN) : 0,
+    runToDoneCompleted,
+    runToDoneAborted,
+    supervisedCompleted,
+    supervisedAborted,
   };
 }
 
