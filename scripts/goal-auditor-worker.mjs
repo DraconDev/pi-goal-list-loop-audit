@@ -929,8 +929,15 @@ async function main() {
         // other round-1 outcome finishes exactly as the historical
         // single-shot flow. Round-2 verdicts compose by final line.
         if (round === 1 && (!streamError || hasVerdict) && finalLineIsApproval(output)) {
-          void startChallengeRound(output).catch((error) => abandonChallenge(error instanceof Error ? error.message : String(error)));
-          return;
+          // v0.38.81: light-tier dispatches skip the falsification pass —
+          // recorded as skipped (round 2 never ran), never silent. Falls
+          // through to the historical single-shot finish below.
+          if (request.challenge === false) {
+            challengeState = "skipped: light-tier audit";
+          } else {
+            void startChallengeRound(output).catch((error) => abandonChallenge(error instanceof Error ? error.message : String(error)));
+            return;
+          }
         }
         if (round === 2) {
           const verdict = finalLineVerdict(output);
