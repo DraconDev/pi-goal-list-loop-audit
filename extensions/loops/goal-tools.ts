@@ -2802,11 +2802,12 @@ function registerAgentTools(pi: any): void {
       objective: Type.String({ description: "The clarified, concrete objective (single item) or a summary when items[] is used" }),
       verificationContract: Type.Optional(Type.String({ description: "Checkable done-criteria (commands, file states, test outcomes)" })),
       items: Type.Optional(Type.Array(Type.String(), { description: "LIST drafting only: many objectives at once (e.g. 'queue these 50 things'). Each becomes a list item; per-item 'Done when:' clauses are honored." })),
+      runToDone: Type.Optional(Type.Boolean({ description: "Single-goal drafting only: pass true ONLY when the user explicitly chose run-to-done in the interview (carry to completion with auto-resume + decision auto-default; hard stops still park). Shown in the Confirm dialog — the Confirm is the consent." })),
     }),
     async execute(_id, params, _signal, _onUpdate, execCtx) {
       const foreign2 = foreignToolGuard(execCtx);
       if (foreign2) return { content: [{ type: "text", text: foreign2 }], details: {} };
-      const p = params as { objective: string; verificationContract?: string; items?: string[] };
+      const p = params as { objective: string; verificationContract?: string; items?: string[]; runToDone?: boolean };
       let liveCtx = currentToolContext(execCtx);
       if (!liveCtx) return staleToolResult();
       if (draftingTarget !== "goal" && draftingTarget !== "list") {
@@ -2847,6 +2848,12 @@ function registerAgentTools(pi: any): void {
       }
       // Multi-item list draft: one Confirm for the whole batch.
       if (p.items && p.items.length > 0) {
+        // v0.38.73: run-to-done is single-goal only in v1 — queue items
+        // activate through the list choke point, not this Confirm. Refuse
+        // rather than silently drop the user's stated intent.
+        if (p.runToDone === true) {
+          return { content: [{ type: "text", text: "runToDone is single-goal only in v1 — it cannot ride a batch. Draft one goal with runToDone, or re-propose the batch without it." }], details: {} };
+        }
         // v0.23.7: show ALL items in full — the user approves the whole
         // batch; hidden items would be approved blind.
         const preview = p.items.map((t, i) => `  ${i + 1}. ${t}`).join("\n");
