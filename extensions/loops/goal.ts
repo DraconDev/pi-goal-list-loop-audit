@@ -241,6 +241,34 @@ export function __testOnlySetLastMainModelRecoveryResumeAt(at: number | null): v
   lastMainModelRecoveryResumeAt = at ?? 0;
 }
 
+/** v0.38.88: one composite for every test-only latch reset. bun test shares
+ * module state across files in one process; the preload
+ * (tests/harness/setup.ts) calls this before EACH file so every file starts
+ * from fresh-process latch semantics without hand-picking resets. Each
+ * member restores its module's initial values (or clears its timer); none
+ * touch persisted state, timers owned by other modules, or `state.goal`
+ * (files re-seed/restore that from their own cwd). Never called by
+ * production code. */
+export function __testOnlyResetProcessState(): void {
+  __testOnlyResetOwnerSession();
+  __testOnlyResetStaleFlag();
+  __testOnlyResetTerminalFlags();
+  __testOnlyResetOwnershipRecheck();
+  __testOnlyResetStarvationGate();
+  __testOnlyResetToolActivity();
+  __testOnlyResetAuditorQuietWatch();
+  __testOnlyResetAuditorSurface();
+  __testOnlyResetAuditorRecoveryRuntime();
+  __testOnlyResetLengthExhaustionEpisodes();
+  __testOnlyResetZombieAutoRetry();
+  __testOnlyResetOverdueWaitBackstop();
+  __testOnlyResetZombieRunWatchdog();
+  __testOnlyClearSubagentHangProbes();
+  __testOnlyResetCompactor();
+  __testOnlyResetOwnerHeartbeat();
+  __testOnlyResetStandDownNotice();
+}
+
 // decomposition step 5 (v0.34.113): the continuation cluster (schedule/send,
 // dispatch sidecar, rearm accounting, queue-stuck probe, prompt assembly)
 // lives in goal-continuation.js — goal.ts owns the flags, observes them via
