@@ -429,6 +429,37 @@ export function formatOutcomesTable(rollups: ProjectRollup[]): string {
   return [header, sep, ...rows].join("\n");
 }
 
+function challengeFlipRate(c: ChallengeOutcomes): string {
+  if (c.challenged === 0) return "—";
+  return `${Math.round((c.flipped / c.challenged) * 100)}%`;
+}
+
+export function formatChallengesTable(rollups: ProjectRollup[]): string {
+  const header = "| project | challenged | confirmed | flipped | skipped | flip rate |";
+  const sep = "|---|---|---|---|---|---|";
+  const rows = rollups.map((r) => {
+    const c = r.challenges;
+    return `| ${shortProject(r.project)} | ${c.challenged} | ${c.confirmed} | ${c.flipped} | ${c.skipped} | ${challengeFlipRate(c)} |`;
+  });
+  return [header, sep, ...rows].join("\n");
+}
+
+/** JSON schema matches the challenges table exactly. */
+export function formatChallengesJson(rollups: ProjectRollup[]): string {
+  return JSON.stringify(
+    rollups.map((r) => ({
+      project: r.project,
+      challenged: r.challenges.challenged,
+      confirmed: r.challenges.confirmed,
+      flipped: r.challenges.flipped,
+      skipped: r.challenges.skipped,
+      flip_rate: challengeFlipRate(r.challenges),
+    })),
+    null,
+    2,
+  );
+}
+
 /** JSON schema matches the outcomes table exactly. */
 export function formatOutcomesJson(rollups: ProjectRollup[]): string {
   return JSON.stringify(
