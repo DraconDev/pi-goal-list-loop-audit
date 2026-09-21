@@ -24,6 +24,7 @@ import {
   isForbiddenModel,
   type Goal,
   type GoalRevisionToken,
+  type PendingCompletion,
 } from "./goal-loop-core.js";
 import {
   classifyMainModelFailure,
@@ -164,8 +165,10 @@ export interface AuditTierDecision {
 }
 
 /** Pure tier resolver (v0.38.81): escalation-only. Every rule can push
- * a claim UP to full; nothing pushes it down. Computed once per claim
- * at dispatch; the decision is ledgered as audit_tier_decided. */
+ * a claim UP to full; nothing pushes it down. Computed at each dispatch
+ * (stable across fallback candidates within one dispatch; a later
+ * re-dispatch re-resolves against current telemetry); the decision is
+ * ledgered as audit_tier_decided with the attempt id. */
 export function resolveAuditTier(input: AuditTierInput): AuditTierDecision {
   const reasons: string[] = [];
   if (input.goalFullAudit === true) reasons.push("draft-time full-audit consent");
@@ -197,6 +200,27 @@ export function resolveAuditTier(input: AuditTierInput): AuditTierDecision {
     return { tier: "full", reasons: [`spot-check (rate ${rate})`], spotCheck: true };
   }
   return { tier: "light", reasons, spotCheck: false };
+}
+
+/** Claim-level tier entry (v0.38.81): maps the goal + persisted claim
+ * onto the pure resolver. Both dispatch sites share it so the
+ * complete_goal path and the stored-claim retry path tier identically. */
+export function resolveClaimAuditTier(
+  goal: Goal,
+  claim: Pick<PendingCompletion, "completionSummary" | "verificationSummary" | "requestFullAudit">,
+  spotCheckRate: number | undefined,
+): AuditTierDecision {
+  return resolveAuditTier({
+    telemetry: goal.telemetry,
+    priorDisapprovals: (goal.auditHistory ?? []).filter((v) => v.disapproved === true).length,
+    objective: goal.objective,
+    verificationContract: goal.verificationContract,
+    completionSummary: claim.completionSummary ?? undefined,
+    verificationSummary: claim.verificationSummary ?? undefined,
+    goalFullAudit: goal.fullAudit,
+    claimRequestFullAudit: claim.requestFullAudit,
+    spotCheckRate,
+  });
 }
 
 export interface AuditorProgress {
