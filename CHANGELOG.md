@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.38.92 — Deterministic 400s hold; dethroned sessions named (2026-09-22)
+
+- Main-model recovery no longer blind-retries deterministic provider refusals (HTTP 400 — e.g. 12 images against a 4-image model cap, which burned 7.5h of "retrying automatically"). Identical retries cannot succeed, so it holds for manual resume with fix directions (switch model or trim the request) in every mode; model switches retire the old episode's diagnostic so failover still probes (audit/DETERMINISTIC-400-AND-DETHRONED-2026-09-22.md).
+- A session that loses the state-root race is now told exactly that ("owned by another session … not a subagent refusal") instead of being misdiagnosed as a subagent session.
+
 ## 0.38.91 — Tool descriptions enumerate plan/audit/verify/add (2026-09-21)
 
 - `/goal plan`, `/goal audit`, `/goal verify`, `/list plan`, and `/list add` existed but were undiscoverable from the tool descriptions. Both descriptions now enumerate them with one-line roles; a pin keeps the enumerations (audit/POST-090-IMPROVEMENT-SWEEP-2026-09-21.md).
