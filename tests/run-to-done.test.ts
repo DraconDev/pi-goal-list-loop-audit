@@ -14,6 +14,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 import activate, {
+  __testOnlyLastConfirmDialog,
   __testOnlyResetOwnerSession,
   __testOnlyResetStaleFlag,
 } from "../extensions/loops/goal.js";
@@ -72,19 +73,16 @@ test("run-to-done: draft consent sets the flag, shows the notice, ledgers consen
   const { pi, ctx } = await boot(cwd);
   try {
     await enterGoalDrafting(pi, ctx);
-    let confirmBody = "";
-    ctx.ui.selectImpl = async (titleWithBody: string) => {
-      confirmBody = titleWithBody;
-      return "Yes";
-    };
+    ctx.ui.customImpl = async () => "Yes";
     const res = await pi.runTool("propose_goal_draft", {
       objective: "run-to-done objective — done when pinned",
       verificationContract: "pinned",
       runToDone: true,
     }, ctx) as { content: Array<{ text: string }> };
     assert.match(res.content[0]!.text, /activated/, "draft confirmed and activated");
-    assert.match(confirmBody, /RUN TO DONE/, "the Confirm dialog names the mode — the Confirm is the consent");
-    assert.match(confirmBody, /hard stop/, "hard stops are disclosed before consent");
+    const dialog = __testOnlyLastConfirmDialog();
+    assert.match(dialog?.body ?? "", /RUN TO DONE/, "the Confirm dialog names the mode — the Confirm is the consent");
+    assert.match(dialog?.body ?? "", /hard stop/, "hard stops are disclosed before consent");
     const g = readState(cwd).goal as GoalView;
     assert.equal(g.runToDone, true, "consent is durable on the goal");
     assert.ok(ledgerTypes(cwd).includes("run_to_done_consented"), "consent is ledgered");
@@ -99,17 +97,12 @@ test("run-to-done: drafts without the flag stay supervised", async () => {
   const { pi, ctx } = await boot(cwd);
   try {
     await enterGoalDrafting(pi, ctx);
-    let confirmBody = "";
-    ctx.ui.selectImpl = async (titleWithBody: string) => {
-      confirmBody = titleWithBody;
-      return "Yes";
-    };
-    const dbg = await pi.runTool("propose_goal_draft", {
+    ctx.ui.customImpl = async () => "Yes";
+    await pi.runTool("propose_goal_draft", {
       objective: "supervised objective — done when pinned",
       verificationContract: "pinned",
-    }, ctx) as { content: Array<{ text: string }> };
-    console.log("DEBUG propose result:", JSON.stringify(dbg.content[0]!.text.slice(0, 300)));
-    assert.doesNotMatch(confirmBody, /RUN TO DONE/);
+    }, ctx);
+    assert.doesNotMatch(__testOnlyLastConfirmDialog()?.body ?? "", /RUN TO DONE/);
     const g = readState(cwd).goal as GoalView;
     assert.equal(g.runToDone, undefined, "absent flag means supervised");
     assert.ok(!ledgerTypes(cwd).includes("run_to_done_consented"));
