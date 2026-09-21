@@ -20,10 +20,12 @@ loops (`/goal`, `/list`, `/loop`) share one runtime, one ledger
   there; per-handler gates differ deliberately (worker vs subagent
   vs foreign vs host-successor planes).
 - `session_start` is the lifecycle spine: 12 numbered stages from
-  admission gate → root ownership → rebind reset → queue convergence
-  → recovery → consent computation → arbitration → continuation
-  release. Three closed stages are extracted helpers; the rest stay
-  inline and source-pinned on purpose (see `audit/LIFECYCLE-MAP-*.md`).
+  admission → root ownership → retention sweep → rebind reset →
+  queue convergence → recovery prep → resume-consent → load barrier
+  → arbitration → held-loop resume → continuation release →
+  stored-claim release. Three closed stages are extracted helpers;
+  the rest stay inline and source-pinned on purpose (see
+  `audit/LIFECYCLE-MAP-*.md`).
 - Shared state: `extensions/goal-state.ts` (`state`, `replaceState`)
   plus module-level runtime vars; cross-file sharing goes through
   `goal-runtime-globals.ts` (being retired slice by slice).
