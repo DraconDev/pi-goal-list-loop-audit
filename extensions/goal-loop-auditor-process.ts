@@ -106,7 +106,7 @@ export function normalizeAuditorInfrastructureResult(result: GoalAuditorResult):
 
 export interface AuditorProgress {
   recentOutput: string[];
-  phase: "starting" | "running" | "thinking" | "tool_executing" | "producing_report" | "complete";
+  phase: "starting" | "running" | "thinking" | "tool_executing" | "producing_report" | "challenging" | "complete";
   elapsedMs: number;
   /** v0.34.86: monotonic report-stream byte count (text_delta chars). */
   reportBytes?: number;

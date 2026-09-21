@@ -722,7 +722,7 @@ export interface AuditDisplayProgress {
   currentToolArgs?: string;
   currentToolStartedAt?: number;
   label?: string;
-  phase?: "starting" | "running" | "thinking" | "tool_executing" | "producing_report" | "complete";
+  phase?: "starting" | "running" | "thinking" | "tool_executing" | "producing_report" | "challenging" | "complete";
   elapsedMs?: number;
   /** Inferred start epoch for a live elapsed counter between worker events. */
   startedAt?: number;
@@ -884,6 +884,7 @@ function auditorProgressPhaseLabel(audit: AuditDisplayProgress | null | undefine
   switch (audit?.phase) {
     case "thinking": return "reading source…";
     case "producing_report": return "writing report…";
+    case "challenging": return "challenging report…";
     default: return undefined;
   }
 }
@@ -940,6 +941,7 @@ function auditorObservedPhase(audit: AuditDisplayProgress | null | undefined, ph
     case "thinking": return "thinking";
     case "tool_executing": return "tool executing";
     case "producing_report": return "producing report";
+    case "challenging": return "challenging report";
     case "complete": return "awaiting verdict";
     default: return "running";
   }

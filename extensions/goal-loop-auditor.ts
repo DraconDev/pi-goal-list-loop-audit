@@ -65,7 +65,7 @@ export interface GoalAuditorResult {
 
 export interface AuditProgress {
   recentOutput: string[];
-  phase: "starting" | "running" | "thinking" | "tool_executing" | "producing_report" | "complete";
+  phase: "starting" | "running" | "thinking" | "tool_executing" | "producing_report" | "challenging" | "complete";
   elapsedMs: number;
   label?: string;
   percentage?: number;
