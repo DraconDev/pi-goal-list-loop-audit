@@ -708,6 +708,19 @@ shapes (details in CHANGELOG.md; each is pinned by tests):
 
 ## Addendum v0.38.74 (outcome metrics)
 
+## Addendum v0.38.76 (auditor challenge round)
+
+- **Approvals earn a falsification pass.** The worker runs a second bounded
+  RPC round in a fresh session (no anchoring on round-1 reasoning) with an
+  adversarial brief. Final-line verdict composition: challenge disapproval
+  flips, re-confirm preserves; the shield keeps reading round-1's evidence
+  block (first match wins). Only approvals challenge — disapprovals
+  already force rework.
+- **Fail-open, recorded.** A failed challenge truncates to byte-identical
+  round-1 output (`result.challenge: skipped:<reason>`); cancellation
+  wins outright (`ok:false`, no fallback). Worst-case approval latency
+  roughly doubles; parent timeout/retry absorbs overruns.
+
 - **`/glla stats outcomes`** aggregates what the ledger already records:
   done/aborted/open, completion rate, mean audit rounds to approval,
   mean wall-clock hours and tokens per completed goal, and the

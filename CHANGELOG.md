@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.38.76 — Auditor challenge round: approvals earn a falsification pass (2026-09-20)
+
+- The detached worker now runs a second bounded RPC round in a fresh session whenever round 1 approves, with an adversarial brief (re-verify load-bearing claims; disapprove with specifics on any genuine gap). Outputs compose by final line: a challenge disapproval flips the verdict, a re-confirm preserves it. Disapprovals, impossibles, and failures stay single-round (audit/AUDITOR-CHALLENGE-2026-09-20.md).
+- Fail-open, recorded: a failed challenge truncates back to byte-identical round-1 output and records `skipped:<reason>` in `result.challenge` (`confirmed`/`flipped`/`not-applicable` otherwise). Cancellation still wins outright. New `challenging` progress phase with HUD labels.
+- Tradeoff: worst-case approval latency roughly doubles (same bounds per round); parent wall-timeout + retry machinery absorbs overruns as before.
+
 ## 0.38.75 — Compaction survival suite; cost ceiling verified pre-existing (2026-09-20)
 
 - New `tests/compaction-survival.test.ts`: three genuine mid-run `session_compact` events followed by full detached-audit completion, plus a compact around an in-flight audit. Previously only projection shape, in-flight suppression, and settle probes were covered — nothing proved a goal still completes after real compacts (audit/COMPACTION-SURVIVAL-2026-09-20.md).
