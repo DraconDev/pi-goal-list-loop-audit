@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.38.78 — Remove 6 dead exports; repair hourly-pin window (2026-09-20)
+
+- Free-only scope pass: 6 exported consts with zero references anywhere (including their own files) removed — `DEFAULT_HOURLY_RETRY_PROBE`, 3 `EXPLORE_DEFAULT_*` aliases, `MAX_AUTOMATIC_QUOTA_RETRY_SEC`, `isSubagentQuotaResult`. A first sweep wrongly dropped 49 own-file-used consts; caught by review before any release, fully restored, redone with the correct predicate (audit/FREE-SCOPE-PASS-2026-09-20.md).
+- Hourly source-pin window 28k → 30k: the v0.38.73 run-to-done consent block pushed both schedule calls to ~28.2k/28.5k. Calls unchanged and correctly placed; the pin's own comments document this maintenance.
+
 ## 0.38.77 — Retire 15 single-module runtime globals (222 → 207, 2026-09-20)
 
 - First slice of the `globalThis` bridge retirement: 15 registry names used in exactly one module and nowhere else (no cross-module, test, script, or top-level consumers) lose their registration, ambient declaration, and typed entry. Owning modules keep their locals untouched — zero runtime behavior change (audit/GLOBALS-RETIREMENT-SLICE-2026-09-20.md).
