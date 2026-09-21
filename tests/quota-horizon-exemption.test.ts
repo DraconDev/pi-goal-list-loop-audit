@@ -170,10 +170,16 @@ test("deterministic 400 holds even aggressive and fresh — identical retries ca
     );
     assert.equal(scheduled, false, "no timer for a deterministic refusal, even aggressive");
     assert.equal(state.mainModelRecovery?.manualResumeRequired, true, "held for manual resume with fix directions");
-    assert.match(state.mainModelRecovery?.reason ?? "", /automatic probes stopped/, "pause names the stopped probes");
+    assert.equal(state.mainModelRecovery?.retryAt, undefined, "no probe scheduled");
   } finally {
     r.restore();
   }
+});
+
+test("deterministic hold names the fix directions", () => {
+  const src = fs.readFileSync("extensions/goal-recovery.ts", "utf-8");
+  assert.match(src, /deterministic client error/, "hold names the refusal class");
+  assert.match(src, /Switch model or trim the request, then resume/, "hold tells the user how to unstick it");
 });
 
 test("transient wall still schedules under aggressive (control)", () => {
