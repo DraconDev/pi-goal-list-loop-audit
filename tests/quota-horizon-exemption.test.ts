@@ -22,6 +22,7 @@ import {
   createGoalRecovery,
   setMainModelRecoveryPause,
 } from "../extensions/goal-recovery.js";
+import { isDeterministicProviderError } from "../extensions/main-model-recovery.js";
 import { replaceState, state } from "../extensions/goal-state.js";
 import { globalSettingsPath } from "../extensions/goal-settings.js";
 
@@ -125,6 +126,63 @@ test("billing and non-quota failures still park at the horizon", () => {
       false, "non-quota failures keep their horizon park",
     );
     assert.equal(state.mainModelRecovery?.manualResumeRequired, true);
+  } finally {
+    r.restore();
+  }
+});
+
+function freshEpisode(reason: string) {
+  return {
+    primary: "provider/primary",
+    active: "provider/primary",
+    attempted: ["provider/primary"],
+    attempts: 2,
+    reason,
+    providerErrorDiagnostic: reason,
+    firstFailureAt: new Date().toISOString(),
+    kind: "goal" as const,
+  };
+}
+
+test("deterministic classifier: 400 markers hold, everything else passes through", () => {
+  assert.equal(
+    isDeterministicProviderError('400: {"message":"***.BadRequestError: OpenAIException - {\\"object\\":\\"error\\",\\"message\\":\\"Image count 12 exceeds limit 4 per request.\\",\\"type\\":\\"BadRequestError\\",\\"param\\":null,\\"code\\":400}"}'),
+    true,
+    "field case: image-count 400",
+  );
+  assert.equal(isDeterministicProviderError("invalid_request_error: reasoning encrypted_content was not issued"), true);
+  assert.equal(isDeterministicProviderError('{"type":"upstream_error","code":"400"}'), true);
+  assert.equal(isDeterministicProviderError("429 Too Many Requests"), false);
+  assert.equal(isDeterministicProviderError("503 Service Unavailable"), false);
+  assert.equal(isDeterministicProviderError("used 400 of 200k tokens"), false, "bare 400s (token counts) never match");
+  assert.equal(isDeterministicProviderError(""), false);
+  assert.equal(isDeterministicProviderError(undefined), false);
+});
+
+test("deterministic 400 holds even aggressive and fresh — identical retries cannot succeed", () => {
+  const r = rig();
+  try {
+    fs.writeFileSync(globalSettingsPath(), JSON.stringify({ aggressiveMode: true }));
+    const scheduled = setMainModelRecoveryPause(
+      r.ctx,
+      freshEpisode('BadRequestError: Image count 12 exceeds limit 4 per request. "code":"400"'),
+      15 * 60_000,
+    );
+    assert.equal(scheduled, false, "no timer for a deterministic refusal, even aggressive");
+    assert.equal(state.mainModelRecovery?.manualResumeRequired, true, "held for manual resume with fix directions");
+    assert.match(state.mainModelRecovery?.reason ?? "", /automatic probes stopped/, "pause names the stopped probes");
+  } finally {
+    r.restore();
+  }
+});
+
+test("transient wall still schedules under aggressive (control)", () => {
+  const r = rig();
+  try {
+    fs.writeFileSync(globalSettingsPath(), JSON.stringify({ aggressiveMode: true }));
+    const scheduled = setMainModelRecoveryPause(r.ctx, freshEpisode("429 Too Many Requests — retry later"), 15 * 60_000);
+    assert.equal(scheduled, true, "transient 429 keeps its probe");
+    assert.equal(state.mainModelRecovery?.manualResumeRequired, undefined);
   } finally {
     r.restore();
   }
