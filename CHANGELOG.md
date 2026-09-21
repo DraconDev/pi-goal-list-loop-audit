@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.38.86 — Docs: architecture overview + promotion contract (2026-09-21)
+
+- New `docs/ARCHITECTURE.md`: GLLA in 20 minutes — entry/runtime, the three loops, the audit lifecycle, persistence, and the test suite, every claim grounded in source (stage names, handler counts, and ledger-type counts verified, not remembered).
+- New `docs/PROMOTION-CONTRACT.md`: the list item → goal → archive seam diagrammed and pinned — activate, archive, auto-advance, abort/no-advance, and the one-active-thing rule.
+
 ## 0.38.85 — `/goal timeline`: one what-happened + next-action view (2026-09-21)
 
 - New `/goal timeline [N]` renders the goal's own trail — goal-scoped ledger events merged with auditHistory verdicts in time order, key types humanized (pauses, tiers, shields, consents), unknown types compact but never hidden — plus a footer naming the single next action from live state (decision to answer, resume time, open objections, or working). Read-only like `/glla log` (audit/TIMELINE-2026-09-21.md).
