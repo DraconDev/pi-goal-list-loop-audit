@@ -29,7 +29,19 @@ export function buildRunnerArgs(argv, slowFiles) {
   }
   // Ignore patterns beat even explicit paths in bun, so explicit
   // selection drops them — naming a file means "run this file".
-  const hasExplicitPaths = rest.some((a) => !a.startsWith("-"));
+  // Value-taking flags (-t foo) consume the next token so filter
+  // values are not mistaken for paths.
+  const VALUE_FLAGS = new Set([
+    "-t", "--test-name-pattern", "--timeout", "--parallel",
+    "--max-concurrency", "--preload", "--path-ignore-patterns",
+    "--changed", "--rerun-each", "--repeat-each",
+  ]);
+  let hasExplicitPaths = false;
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i];
+    if (VALUE_FLAGS.has(arg)) { i++; continue; }
+    if (!arg.startsWith("-")) { hasExplicitPaths = true; break; }
+  }
   if (mode === "slow") return { mode, bunArgs: [...SERIAL_FLAGS, ...slowFiles, ...rest] };
   if (mode === "all" || hasExplicitPaths) return { mode: hasExplicitPaths ? "explicit" : mode, bunArgs: [...SERIAL_FLAGS, ...rest] };
   return {

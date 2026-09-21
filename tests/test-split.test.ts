@@ -50,4 +50,7 @@ test("test-split: slow mode names the files; all mode passes through", () => {
   assert.equal(all.mode, "all");
   assert.ok(!all.bunArgs.some((a) => a.includes("ignore-patterns")));
   assert.deepEqual(all.bunArgs.slice(-2), ["-t", "foo"], "filters pass through");
+  const filtered = buildRunnerArgs(["-t", "foo"], ["tests/a.test.ts"]);
+  assert.equal(filtered.mode, "fast", "a -t value is not an explicit path");
+  assert.ok(filtered.bunArgs.some((a) => a.includes("ignore-patterns")), "filtered fast keeps the exclusion");
 });
