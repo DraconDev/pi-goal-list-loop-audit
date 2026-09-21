@@ -2961,6 +2961,11 @@ function registerAgentTools(pi: any): void {
       // the Confirm dialog — "I started a list and ended up with a running
       // goal" was a real surprise. Title + trailing note name the outcome.
       const isListDraft = draftingTarget === "list";
+      // v0.38.73: run-to-done is single-goal only in v1 (queue items lack
+      // the flag; see the batch guard above). Refuse, don't silently drop.
+      if (isListDraft && p.runToDone === true) {
+        return { content: [{ type: "text", text: "runToDone is single-goal only in v1 — list items queue without it. Draft with bare /goal for a run-to-done objective." }], details: {} };
+      }
       const willActivate = isListDraft && (!state.goal || state.goal.status === "complete" || state.goal.status === "aborted");
       const activationNote = isListDraft
         ? willActivate
@@ -2975,7 +2980,12 @@ function registerAgentTools(pi: any): void {
         liveCtx.ui.notify(`Draft auto-accepted (Auto-accept drafts = on in /glla settings)${willActivate ? " — ACTIVATING now" : ""}: ${displaySlice(p.objective.trim(), 90)}`, "info");
         appendLedger(liveCtx.cwd, "draft_autoaccepted", { kind: isListDraft ? "list" : "goal", objective: p.objective.trim().slice(0, 200) });
       } else {
-        const c = await confirmDraft(liveCtx, isListDraft ? "Confirm list item" : "Confirm goal", `${sanitizeDisplayText(p.objective.trim())}${sanitizeDisplayText(contractBlock)}${activationNote}`);
+        // v0.38.73: the Confirm dialog IS the run-to-done consent — the mode
+        // rides the body in full view, never as a silent agent-side param.
+        const runToDoneNotice = !isListDraft && p.runToDone === true
+          ? "\n\n(RUN TO DONE: confirming grants this goal automatic session resume plus immediate decision auto-default until it completes or hits a hard stop — audit/error caps, provider outage, or your abort. The auditor still verifies completion. Reject for supervised pauses instead.)"
+          : "";
+        const c = await confirmDraft(liveCtx, isListDraft ? "Confirm list item" : "Confirm goal", `${sanitizeDisplayText(p.objective.trim())}${sanitizeDisplayText(contractBlock)}${activationNote}${runToDoneNotice}`);
         const afterConfirm = freshCtxForGeneration(draftGeneration);
         if (!afterConfirm) {
           clearDraftingState();
@@ -3105,6 +3115,12 @@ function registerAgentTools(pi: any): void {
       const goal = createGoal(full, liveCtx);
       if (!setGoal(goal, liveCtx, autoAccept ? "draft-autoaccepted" : "draft-confirmed")) {
         return { content: [{ type: "text", text: "Goal activation was not persisted; the current objective remains open." }], details: {} };
+      }
+      // v0.38.73: draft-time run-to-done consent — durable on the goal,
+      // ledgered for the audit trail.
+      if (!isListDraft && p.runToDone === true) {
+        updateGoal({ runToDone: true }, liveCtx);
+        appendLedger(liveCtx.cwd, "run_to_done_consented", { goalId: goal.id, via: autoAccept ? "draft-autoaccepted" : "draft-confirmed" });
       }
       // v0.29.4: auto-accepted drafts START (autoAcceptDrafts is the
       // pre-consent — the user asked for the draft in-session). autoResume
