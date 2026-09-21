@@ -145,6 +145,12 @@ export interface Settings {
    * Default 15m (the legacy hardcoded threshold); bounds 0–7d. Global-only:
    * disk hygiene is a machine characteristic, not a project one. */
   auditJobRetentionMs?: number;
+  /** v0.38.81: fraction of light-tier audits silently escalated to full
+   * (risk-tiered auditing spot-checks). Default 0.1; 0 disables.
+   * Bounds 0–1. Global-only: calibration policy belongs to the rig,
+   * not the project. Tune from the spot flip rate in
+   * /glla stats challenges. */
+  auditSpotCheckRate?: number;
   /** v0.38.3: on → the detached auditor's pi runs as a normal persistent
    * session (--session <jobDir>/session.jsonl) instead of --no-session, so
    * you can `tail -f` it live or resume it interactively after the audit.
@@ -318,6 +324,7 @@ const GLOBAL_ONLY_KEYS: ReadonlySet<keyof Settings> = new Set([
   "auditorToolTimeoutMs",
   "auditorStallMs",
   "auditJobRetentionMs",
+  "auditSpotCheckRate",
   "auditorInspection",
 ]);
 
@@ -378,6 +385,8 @@ export const DEFAULT_SETTINGS: Settings = {
   // v0.38.3: opt-in live inspection — the auditor's pi becomes a normal
   // persistent session you can tail/resume. Off = the original --no-session.
   auditorInspection: false,
+  // v0.38.81: 1-in-10 light audits silently run full (spot-checks).
+  auditSpotCheckRate: 0.1,
   // v0.34.142: an extra blind retry at :00:30 after every hour starts.
   // It never checks provider state; it simply gives parked recovery another
   // opportunity to make progress.
@@ -519,6 +528,16 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
       MAX_AUDIT_JOB_RETENTION_MS,
       Math.max(0, Math.floor(settings.auditJobRetentionMs)),
     );
+  }
+  // v0.38.81: spot-check rate — a fraction, not a knob. Out-of-range
+  // or non-numeric restores the default; 0 is the explicit off switch.
+  if (
+    typeof settings.auditSpotCheckRate !== "number" ||
+    !Number.isFinite(settings.auditSpotCheckRate) ||
+    settings.auditSpotCheckRate < 0 ||
+    settings.auditSpotCheckRate > 1
+  ) {
+    settings.auditSpotCheckRate = 0.1;
   }
   // v0.34.142: these old policy knobs no longer control recovery. Drop
   // them from the effective object so stale files cannot resurrect the old
@@ -664,6 +683,7 @@ export const SETTINGS_KEYS: Array<keyof Settings> = [
   "auditorToolTimeoutMs",
   "auditorStallMs",
   "auditJobRetentionMs",
+  "auditSpotCheckRate",
   "auditorInspection",
   "notifyCmd",
   "tokenLimit",
