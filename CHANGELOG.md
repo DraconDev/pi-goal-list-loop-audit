@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.38.82 — Fast/slow suite split: `npm test` runs the fast set (2026-09-21)
+
+- The full serialized suite takes ~7 minutes — slow enough to skip. `npm test` now runs the fast set via `scripts/run-tests.mjs`: everything minus the 12 slowest files (evidence-timed in `tests/slow-files.mjs`, behavioral-orchestrator alone is ~90s). `npm run test:slow` runs those files, `npm run test:changed` runs git-affected files, and `npm run test:all` / `release:check` still run the whole suite — nothing escapes the gate (audit/TEST-SPLIT-2026-09-21.md).
+- Explicit paths always win: naming a slow file runs it (bun ignore patterns would otherwise beat explicit selection). `-t` filters pass through without tripping path detection.
+- Repair: `package-lock.json` had drifted to 0.38.78 behind three version bumps; re-synced (the `glla-version` sync test caught it on the first fast run).
+
 ## 0.38.81 — Risk-tiered auditing: light tier, spot-checks, full-audit consent (2026-09-21)
 
 - Every audit now dispatches at a risk tier. Full tier = audit plus the falsification round (today's behavior); light tier = the same single-round audit with the same brief, shield, and tool floor, only round 2 skipped. Escalation-only: rework history, activity ceilings, high-stakes language, draft-time `fullAudit` consent, and `complete_goal requestFullAudit` can each push a claim UP to full; nothing pushes it down (audit/RISK-TIERS-2026-09-21.md).
