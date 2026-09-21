@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.38.89 — UI polish finale: stats usage, header prefix, status→timeline pointer (2026-09-21)
+
+- `/glla stats <typo>` now names the usage (`outcomes | challenges | premature | json | project=<path>`) instead of silently rendering the default table; the JSON path stays total for machine readers.
+- The stats table header carries the `/glla` prefix like the stats error paths (`/glla stats …`).
+- The `/goal status` card ends with a `Trail: /goal timeline` pointer to its slow twin.
+
 ## 0.38.88 — Pi-shim isolation: per-file process-state reset (2026-09-21)
 
 - New `__testOnlyResetProcessState()` composite invokes all 17 latch resets, and the test preload calls it before each file — per-file isolation is now structural instead of 99 files hand-picking resets (21 picked none). Membership is pinned: a future reset that bypasses the composite fails the suite (audit/PI-SHIM-ISOLATION-2026-09-21.md).
