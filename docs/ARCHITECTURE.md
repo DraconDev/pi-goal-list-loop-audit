@@ -97,7 +97,7 @@ complete_goal → claim → dispatch (tier) → worker (round 1 [+ challenge]) �
 
 ## 5. The test suite (3 min)
 
-- 260 files, must run **serialized** (`--parallel=1
+- ~260 files, must run **serialized** (`--parallel=1
   --max-concurrency=1`): parallel files trip Bun's nesting guard.
 - `npm test` = fast set (minus the 12 slowest, see
   `tests/slow-files.mjs`); `npm run test:slow`, `test:changed`,
