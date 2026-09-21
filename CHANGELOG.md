@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.38.81 — Risk-tiered auditing: light tier, spot-checks, full-audit consent (2026-09-21)
+
+- Every audit now dispatches at a risk tier. Full tier = audit plus the falsification round (today's behavior); light tier = the same single-round audit with the same brief, shield, and tool floor, only round 2 skipped. Escalation-only: rework history, activity ceilings, high-stakes language, draft-time `fullAudit` consent, and `complete_goal requestFullAudit` can each push a claim UP to full; nothing pushes it down (audit/RISK-TIERS-2026-09-21.md).
+- Spot-checks: a sampled fraction of light audits (setting `auditSpotCheckRate`, default 0.1, 0 = off) silently runs full so under-tiering is caught statistically. Tier + spot mark record on every verdict; `/glla stats challenges` gains the light count and spot flip rate for calibration.
+- Invariants: light never means none, and the agent can demand full but never light. Tier decisions ledger as `audit_tier_decided` with reasons.
+
 ## 0.38.80 — Challenge outcomes recorded; `/glla stats challenges` (2026-09-21)
 
 - The worker's falsification outcome (`confirmed` / `flipped` / `not-applicable` / `skipped:<reason>`) now threads through the parent boundary onto every recorded `AuditVerdict` (both settle sites), so audit quality becomes measurable instead of believed (audit/AUDIT-METRICS-2026-09-21.md).
