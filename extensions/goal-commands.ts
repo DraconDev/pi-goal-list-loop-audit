@@ -2188,6 +2188,7 @@ export function formatGoalTimeline(input: GoalTimelineInput): string {
   const createdAt = goal.createdAt ?? "";
   const rows: Array<{ at: string; text: string }> = [];
   for (const e of entries) {
+    if (LOG_NOISE.has(e.type)) continue;
     if (!timelineBelongsToGoal(e, goal.id, createdAt)) continue;
     rows.push({ at: typeof e.at === "string" ? e.at : "", text: timelineHumanize(e) });
   }

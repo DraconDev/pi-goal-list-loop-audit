@@ -48,7 +48,7 @@ test("timeline: merges ledger events and verdicts in time order, humanized", () 
   const out = formatGoalTimeline({
     goal: goal({
       auditHistory: [
-        { at: iso(T0 + 3 * H), approved: false, disapproved: true, model: "m", report: "r" },
+        { at: iso(T0 + 3 * H), approved: false, disapproved: true, model: "m", report: "r", superseded: true, supersededBy: `approval:${iso(T0 + 5 * H)}` },
         { at: iso(T0 + 5 * H), approved: true, disapproved: false, model: "m2", report: "r2", auditTier: "full", challenge: "confirmed" },
       ],
     }),
