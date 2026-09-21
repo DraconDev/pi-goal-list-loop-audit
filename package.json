@@ -1,6 +1,6 @@
 {
 	"name": "pi-goal-list-loop-audit",
-	"version": "0.38.78",
+	"version": "0.38.79",
 	"description": "Mission control for long running pi work: interview drafted goals, an audited task queue, and metric or audit loops that run for hours. Every completion is rechecked by a detached auditor with raw evidence, while Confirm drafts, decision pauses, and consent gates keep you in charge.",
 	"license": "AGPL-3.0-only",
 	"author": "dracon",

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.79 — Schema covers runToDone; T6 green (2026-09-20)
+
+- `runToDone` joins `schemas/goal.schema.json`: v0.38.73 added the consent flag to the `Goal` interface but not to the published schema, and the T6 drift test caught it in the full suite (2457 pass / 1 fail). One additive boolean property, zero behavior change; full serial suite re-run green (audit/SCHEMA-RUNTO-DONE-2026-09-20.md).
+
 ## 0.38.78 — Remove 6 dead exports; repair hourly-pin window (2026-09-20)
 
 - Free-only scope pass: 6 exported consts with zero references anywhere (including their own files) removed — `DEFAULT_HOURLY_RETRY_PROBE`, 3 `EXPLORE_DEFAULT_*` aliases, `MAX_AUTOMATIC_QUOTA_RETRY_SEC`, `isSubagentQuotaResult`. A first sweep wrongly dropped 49 own-file-used consts; caught by review before any release, fully restored, redone with the correct predicate (audit/FREE-SCOPE-PASS-2026-09-20.md).
