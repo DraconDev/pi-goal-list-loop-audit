@@ -70,7 +70,7 @@ async function stopWorker(child: ChildProcess | undefined): Promise<void> {
   }
 }
 
-async function runWorker(env: NodeJS.ProcessEnv): Promise<{ result: WorkerResult; jobDir: string; cleanup: () => Promise<void> }> {
+async function runWorker(env: NodeJS.ProcessEnv, requestExtra: Record<string, unknown> = {}): Promise<{ result: WorkerResult; jobDir: string; cleanup: () => Promise<void> }> {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "glla-challenge-"));
   const jobDir = path.join(root, ".pi-glla", "audit-jobs", "attempt-challenge");
   fs.mkdirSync(jobDir, { recursive: true });
@@ -84,6 +84,7 @@ async function runWorker(env: NodeJS.ProcessEnv): Promise<{ result: WorkerResult
     prompt: "Audit brief: verify the artifact. End with <approved/> or <disapproved/>.",
     model: "test/challenge-model",
     thinkingLevel: "off",
+    ...requestExtra,
   };
   const request = { ...requestWithoutHash, requestHash: requestHash(requestWithoutHash) };
   fs.writeFileSync(path.join(jobDir, "request.json"), JSON.stringify(request));
