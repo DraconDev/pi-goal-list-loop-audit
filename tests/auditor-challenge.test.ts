@@ -79,6 +79,7 @@ async function runWorker(env: NodeJS.ProcessEnv): Promise<{ result: WorkerResult
   const requestWithoutHash = {
     protocolVersion: 1,
     attemptId: "attempt-challenge",
+    createdAt: new Date().toISOString(),
     cwd: root,
     prompt: "Audit brief: verify the artifact. End with <approved/> or <disapproved/>.",
     model: "test/challenge-model",
