@@ -146,8 +146,12 @@ try {
     stdio: ["ignore", "pipe", "pipe"],
   });
   const workerResult = JSON.parse(fs.readFileSync(path.join(workerProbe, "result.json"), "utf8"));
-  if (workerResult.ok !== true || workerResult.output !== "<approved/>") throw new Error("packed worker did not complete its RPC probe");
-  console.log("OK: packed launcher loaded and worker completed its bounded RPC probe");
+  // v0.38.76: the stub approves, so the worker must run its falsification
+  // round — the probe now pins the challenge (final-line verdict composes).
+  const probeFinalLine = workerResult.output.split("\n").map((l) => l.trim()).filter(Boolean).at(-1);
+  if (workerResult.ok !== true || probeFinalLine !== "<approved/>") throw new Error("packed worker did not complete its RPC probe");
+  if (workerResult.challenge !== "confirmed") throw new Error("packed worker skipped its challenge round");
+  console.log("OK: packed launcher loaded and worker completed its bounded RPC probe (challenge confirmed)");
 
   // Audit 2026-09-13: presence is not loadability — run the packed skill
   // through Pi's own loader against the INSTALLED tree (the source-tree
