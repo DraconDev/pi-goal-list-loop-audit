@@ -2596,7 +2596,6 @@ export const DEFAULT_FORBIDDEN_MODELS: string[] = [];
  * while main-model recovery is parked. This is an unconditional retry slot,
  * not a provider-status probe. The default is ON (opt-out) so work gets an
  * extra attempt shortly after each hour starts. */
-export const DEFAULT_HOURLY_RETRY_PROBE = true;
 
 /** v0.34.57: forbidden-model matcher. Empty/unknown refs are never
  * forbidden; an empty forbidden list forbids nothing. */
