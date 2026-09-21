@@ -323,6 +323,21 @@ export function isQuotaHorizonExempt(raw: string | undefined): boolean {
   return signal === "rate-limit" || signal === "plan-quota";
 }
 
+// v0.38.92 (field 2026-09-21: 12 images vs a 4-image model cap retried 7.5h):
+// a deterministic HTTP 400 client error can never succeed on an identical
+// retry — only a changed request (fewer images, different model, fixed
+// params) can. Retrying it on the ladder burns the horizon (or loops
+// forever under aggressiveMode) while telling the user "retrying
+// automatically". Match the error-type markers, never a bare "400" (token
+// counts and limits quote 400s constantly). Callers hold for manual resume
+// with the fix directions instead of scheduling.
+const DETERMINISTIC_CLIENT_ERROR = /badrequesterror|invalid_request_error|"code"\s*:\s*"400"/i;
+
+export function isDeterministicProviderError(raw: string | undefined): boolean {
+  if (typeof raw !== "string" || !raw.trim()) return false;
+  return DETERMINISTIC_CLIENT_ERROR.test(raw);
+}
+
 /** v0.38.69 (Antigravity port): sleep-until-reset for quota-class failures
  * with an explicit upstream reset hint. Returns undefined (keep the blind
  * ladder) unless ALL hold: a rate-limit/plan-quota signal, an upstream
