@@ -168,7 +168,9 @@ test("v0.34.92: session_start re-arms the hourly ticker when recovery is parked"
   // still cover the schedule call at the bottom of the recovery block.
   // v0.38.12: the last-wins supersede block added ~700 chars above the
   // recovery block — 28k keeps both schedule calls inside the window.
-  const tail = GOAL_SRC.slice(handlerIdx, handlerIdx + 28_000);
+  // v0.38.78: the run-to-done consent block added ~500 chars above —
+  // 30k keeps both schedule calls (now at ~28.2k/28.5k) inside.
+  const tail = GOAL_SRC.slice(handlerIdx, handlerIdx + 30_000);
   assert.match(tail, /scheduleMainModelRecoveryTimer\(ctx, delay\);/, "session_start re-schedules recovery");
   assert.match(tail, /scheduleHourlyProbe\(ctx\);/, "session_start also re-arms the hourly ticker");
 });
