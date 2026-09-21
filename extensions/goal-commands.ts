@@ -13,12 +13,12 @@ import { renderAgentsPanel, tailChildTranscript, TRANSCRIPT_HEADER_SCAN_MAX_BYTE
 
 import { state, replaceState } from "./goal-state.js";
 import {
-  DEFAULT_TOKEN_LIMIT, Goal, ListItem, Status, appendLedger, archiveDir, archivedGoalPath, bumpGoalRevision, sanitizeProviderDisplayText,
+  DEFAULT_TOKEN_LIMIT, Goal, ListItem, Status, appendLedger, archiveDir, archivedGoalPath, auditVerdictLabel, bumpGoalRevision, sanitizeProviderDisplayText,
   computeListDepthFromLedger, clearQueueItemFiles, deleteQueueItemFile, deleteQueueItemFileResult, extractVerificationContract, stripTweakProceduralTail, formatAuditLog, formatGoalAuditHistory, formatMainModelRecoveryStatus, queueItemSidecarCount,
   formatListDepth, goalArgsNeedDrafting, ledgerPath, newGoalId, nowIso, parseListImport, parseListItemDeclaration, readLedgerTail,
   assignQueueOrder, compareQueueItems, readAuditLog, readQueueFromDisk, routeGoalArgs, routeListText, sanitizeDisplayText, sanitizeProviderAuditReport, statusLabel,
   visibleListPosition, visibleListPositions,
-  writeQueueItemFile, type ModeCommand, type State, LIST_MUTATING_SUBCOMMANDS, SETTINGS_MUTATING_ACTIONS,
+  writeQueueItemFile, type ModeCommand, type State, type AuditVerdict, type LedgerRecord, LIST_MUTATING_SUBCOMMANDS, SETTINGS_MUTATING_ACTIONS,
   clearLoadHold, stateRootPending,
 } from "./goal-loop-core.js";
 import { clearDispatchRecord, dispatchRecordExists } from "./goal-loop-dispatch.js";
