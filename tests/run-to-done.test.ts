@@ -104,10 +104,11 @@ test("run-to-done: drafts without the flag stay supervised", async () => {
       confirmBody = titleWithBody;
       return "Yes";
     };
-    await pi.runTool("propose_goal_draft", {
+    const dbg = await pi.runTool("propose_goal_draft", {
       objective: "supervised objective — done when pinned",
       verificationContract: "pinned",
-    }, ctx);
+    }, ctx) as { content: Array<{ text: string }> };
+    console.log("DEBUG propose result:", JSON.stringify(dbg.content[0]!.text.slice(0, 300)));
     assert.doesNotMatch(confirmBody, /RUN TO DONE/);
     const g = readState(cwd).goal as GoalView;
     assert.equal(g.runToDone, undefined, "absent flag means supervised");
