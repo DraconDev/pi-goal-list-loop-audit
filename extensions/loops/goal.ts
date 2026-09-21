@@ -16,7 +16,15 @@ import "./goal-auditor-hooks.js";
 import "./goal-list-queue.js";
 import "./goal-tools.js";
 import "./goal-settings-ui.js";
-import { abortZombieRun, enqueueFaultRepairTask, registerGoalRuntime, resetLengthExhaustionEpisodes } from "./goal-activation.js";
+import { abortZombieRun, enqueueFaultRepairTask, registerGoalRuntime, resetLengthExhaustionEpisodes, __testOnlyResetLengthExhaustionEpisodes, __testOnlyResetZombieAutoRetry } from "./goal-activation.js";
+// v0.38.88: members of the __testOnlyResetProcessState composite.
+import { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags, __testOnlyResetOwnershipRecheck } from "./goal-session.js";
+import { __testOnlyResetStarvationGate, __testOnlyResetToolActivity, __testOnlyResetAuditorQuietWatch } from "./goal-ui.js";
+import { __testOnlyResetAuditorSurface } from "./goal-auditor-surface.js";
+import { __testOnlyResetAuditorRecoveryRuntime } from "./goal-auditor-hooks.js";
+import { __testOnlyResetOverdueWaitBackstop, __testOnlyResetZombieRunWatchdog, __testOnlyClearSubagentHangProbes } from "../goal-heartbeat.js";
+import { __testOnlyResetCompactor } from "../goal-compactor.js";
+import { __testOnlyResetOwnerHeartbeat, __testOnlyResetStandDownNotice } from "../state-root-owner.js";
 
 import {
   createGoalContinuation,
