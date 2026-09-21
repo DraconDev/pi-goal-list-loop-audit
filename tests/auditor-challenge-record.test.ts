@@ -91,7 +91,9 @@ type HistoryVerdict = {
 };
 
 test("challenge-record: a confirmed approval records challenge=confirmed on the verdict", async () => {
-  setSettings({});
+  // autoResume:true releases the seeded goal after cold session_start
+  // (run-to-done.test.ts: the OLD consent; the flag test proves the NEW).
+  setSettings({ autoResume: true });
   const cwd = tmpCwd();
   const previousBinary = process.env.GLLA_PI_BINARY;
   // Evidence-free approval: the shield blocks (contract items uncited) so
@@ -124,7 +126,7 @@ test("challenge-record: a confirmed approval records challenge=confirmed on the 
 });
 
 test("challenge-record: a single-round disapproval records challenge=not-applicable", async () => {
-  setSettings({});
+  setSettings({ autoResume: true });
   const cwd = tmpCwd();
   const previousBinary = process.env.GLLA_PI_BINARY;
   process.env.GLLA_PI_BINARY = writeFakeAuditor(cwd, "## Required fixes\n- gap\n<disapproved/>");
