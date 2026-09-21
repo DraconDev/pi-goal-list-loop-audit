@@ -54,7 +54,7 @@ const progress = {
   } : { recentOutput: [], toolCalls: [] }),
 };
 await atomicJson(dir + "/progress.json", progress);
-await atomicJson(dir + "/result.json", { protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash, ok: true, output: process.env.FAKE_AUDIT_OUTPUT || "<disapproved/>", model: request.model, thinkingLevel: request.thinkingLevel, toolCalls: process.env.FAKE_TOOL === "yes" ? [{ name: "read", argsPrefix: "{}", finishedAt: Date.now() }] : [] });
+await atomicJson(dir + "/result.json", { protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash, ok: true, output: process.env.FAKE_AUDIT_OUTPUT || "<disapproved/>", model: request.model, thinkingLevel: request.thinkingLevel, toolCalls: process.env.FAKE_TOOL === "yes" ? [{ name: "read", argsPrefix: "{}", finishedAt: Date.now() }] : [], ...(process.env.FAKE_CHALLENGE ? { challenge: process.env.FAKE_CHALLENGE } : {}) });
 `;
 
 const goal = {
