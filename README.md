@@ -485,9 +485,13 @@ npm run check
 npm run release:check
 ```
 
-`npm run release:check` runs the serialized Bun suite, TypeScript, the jiti
-reproduction, offline auditor-extension validation, and npm pack. The test
-count changes as regressions are added; the useful result is `0 fail`.
+`npm test` runs the fast set (the full serialized suite minus the 12
+slowest files — ~4 minutes instead of ~7). `npm run test:slow` runs
+those slow files, `npm run test:changed` runs only git-affected files,
+and `npm run test:all` runs everything. `npm run release:check` runs
+the serialized Bun suite, TypeScript, the jiti reproduction, offline
+auditor-extension validation, and npm pack. The test count changes as
+regressions are added; the useful result is `0 fail`.
 
 For design rationale, see [`docs/DESIGN.md`](docs/DESIGN.md). For the shipped
 document index, see [`docs/INDEX.md`](docs/INDEX.md). For publishing, see
