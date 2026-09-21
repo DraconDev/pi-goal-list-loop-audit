@@ -767,6 +767,16 @@ shapes (details in CHANGELOG.md; each is pinned by tests):
   it. The slow list (`tests/slow-files.mjs`) carries per-file timings
   and is validity-checked by `tests/test-split.test.ts`.
 
+## Addendum v0.38.83 (lifecycle map)
+
+- **Navigate, don't restructure.** The `session_start` callback's 12
+  stages are numbered in banners; the three closed/narrow stages
+  (admission gate, root ownership, retention sweep) moved verbatim
+  into named helpers. The per-handler gates differ on purpose and the
+  structure is intentionally source-pinned (including a char-window
+  pin) — the pins are load-bearing curation against restructures
+  that regress, so further stages stay inline and mapped.
+
 ## Files
 
 - `docs/DESIGN.md` — **this file**
