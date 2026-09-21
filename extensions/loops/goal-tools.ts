@@ -2846,11 +2846,12 @@ function registerAgentTools(pi: any): void {
       verificationContract: Type.Optional(Type.String({ description: "Checkable done-criteria (commands, file states, test outcomes)" })),
       items: Type.Optional(Type.Array(Type.String(), { description: "LIST drafting only: many objectives at once (e.g. 'queue these 50 things'). Each becomes a list item; per-item 'Done when:' clauses are honored." })),
       runToDone: Type.Optional(Type.Boolean({ description: "Single-goal drafting only: pass true ONLY when the user explicitly chose run-to-done in the interview (carry to completion with auto-resume + decision auto-default; hard stops still park). Shown in the Confirm dialog — the Confirm is the consent." })),
+      fullAudit: Type.Optional(Type.Boolean({ description: "Single-goal drafting only: pass true ONLY when the user explicitly asked for full audits in the interview (every claim gets the audit plus the falsification round, never the light tier). Escalation only — there is no light-audit request. Shown in the Confirm dialog — the Confirm is the consent." })),
     }),
     async execute(_id, params, _signal, _onUpdate, execCtx) {
       const foreign2 = foreignToolGuard(execCtx);
       if (foreign2) return { content: [{ type: "text", text: foreign2 }], details: {} };
-      const p = params as { objective: string; verificationContract?: string; items?: string[]; runToDone?: boolean };
+      const p = params as { objective: string; verificationContract?: string; items?: string[]; runToDone?: boolean; fullAudit?: boolean };
       let liveCtx = currentToolContext(execCtx);
       if (!liveCtx) return staleToolResult();
       if (draftingTarget !== "goal" && draftingTarget !== "list") {
@@ -2896,6 +2897,12 @@ function registerAgentTools(pi: any): void {
         // rather than silently drop the user's stated intent.
         if (p.runToDone === true) {
           return { content: [{ type: "text", text: "runToDone is single-goal only in v1 — it cannot ride a batch. Draft one goal with runToDone, or re-propose the batch without it." }], details: {} };
+        }
+        // v0.38.81: full-audit consent is single-goal only in v1 — same
+        // reason (queue items activate through the list choke point, not
+        // this Confirm). Refuse rather than silently drop.
+        if (p.fullAudit === true) {
+          return { content: [{ type: "text", text: "fullAudit is single-goal only in v1 — it cannot ride a batch. Draft one goal with fullAudit, or re-propose the batch without it." }], details: {} };
         }
         // v0.23.7: show ALL items in full — the user approves the whole
         // batch; hidden items would be approved blind.
@@ -3009,6 +3016,10 @@ function registerAgentTools(pi: any): void {
       if (isListDraft && p.runToDone === true) {
         return { content: [{ type: "text", text: "runToDone is single-goal only in v1 — list items queue without it. Draft with bare /goal for a run-to-done objective." }], details: {} };
       }
+      // v0.38.81: same single-goal rule for full-audit consent.
+      if (isListDraft && p.fullAudit === true) {
+        return { content: [{ type: "text", text: "fullAudit is single-goal only in v1 — list items queue without it. Draft with bare /goal for a full-audit objective." }], details: {} };
+      }
       const willActivate = isListDraft && (!state.goal || state.goal.status === "complete" || state.goal.status === "aborted");
       const activationNote = isListDraft
         ? willActivate
@@ -3028,7 +3039,11 @@ function registerAgentTools(pi: any): void {
         const runToDoneNotice = !isListDraft && p.runToDone === true
           ? "\n\n(RUN TO DONE: confirming grants this goal automatic session resume plus immediate decision auto-default until it completes or hits a hard stop — audit/error caps, provider outage, or your abort. The auditor still verifies completion. Reject for supervised pauses instead.)"
           : "";
-        const c = await confirmDraft(liveCtx, isListDraft ? "Confirm list item" : "Confirm goal", `${sanitizeDisplayText(p.objective.trim())}${sanitizeDisplayText(contractBlock)}${activationNote}${runToDoneNotice}`);
+        // v0.38.81: the Confirm dialog IS the full-audit consent too.
+        const fullAuditNotice = !isListDraft && p.fullAudit === true
+          ? "\n\n(FULL AUDIT: confirming means every completion claim on this goal gets the audit plus the falsification round — the light tier never applies. Reject for default risk-tiered audits instead.)"
+          : "";
+        const c = await confirmDraft(liveCtx, isListDraft ? "Confirm list item" : "Confirm goal", `${sanitizeDisplayText(p.objective.trim())}${sanitizeDisplayText(contractBlock)}${activationNote}${runToDoneNotice}${fullAuditNotice}`);
         const afterConfirm = freshCtxForGeneration(draftGeneration);
         if (!afterConfirm) {
           clearDraftingState();
@@ -3164,6 +3179,12 @@ function registerAgentTools(pi: any): void {
       if (!isListDraft && p.runToDone === true) {
         updateGoal({ runToDone: true }, liveCtx);
         appendLedger(liveCtx.cwd, "run_to_done_consented", { goalId: goal.id, via: autoAccept ? "draft-autoaccepted" : "draft-confirmed" });
+      }
+      // v0.38.81: draft-time full-audit consent — durable on the goal,
+      // ledgered for the audit trail.
+      if (!isListDraft && p.fullAudit === true) {
+        updateGoal({ fullAudit: true }, liveCtx);
+        appendLedger(liveCtx.cwd, "full_audit_consented", { goalId: goal.id, via: autoAccept ? "draft-autoaccepted" : "draft-confirmed" });
       }
       // v0.29.4: auto-accepted drafts START (autoAcceptDrafts is the
       // pre-consent — the user asked for the draft in-session). autoResume
