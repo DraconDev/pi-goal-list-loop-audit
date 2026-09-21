@@ -84,7 +84,8 @@ test("no hardcoded /goal <cmd> literals remain in generated guidance (goal.ts)",
   // Allowed: deliberate SURFACE MAPS that enumerate every surface's real
   // commands (tool vocabulary descriptions, the /glla status deep map) —
   // these are cross-surface references, not active-surface guidance.
-  const SURFACE_MAP = [/deep: \/goal status/, /\/list remove N/, /status\|pause\|resume\|cancel\|tweak/, /\/goal resume, \/list resume, or \/loop resume/];
+  // v0.38.85: timeline joined the /goal subcommand enumeration.
+  const SURFACE_MAP = [/deep: \/goal status/, /\/list remove N/, /status\|timeline\|pause\|resume\|cancel\|tweak/, /\/goal resume, \/list resume, or \/loop resume/];
   // v0.34.108: the scan used to skip lines without a guidance trigger token
   // (pauseSuggestedAction / notify( / lines.push / text: / description:),
   // so a literal parked on a `const resumeCmd = ...` assignment line escaped
