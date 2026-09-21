@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.38.72 — Automatic audit-job retention sweep at session start (2026-09-20)
+
+- The proven-dead audit-job sweep now runs automatically at admitted-owner session start (previously manual `/glla audits health cleanup` only, which let 207 job dirs accumulate). Windowed by the existing `auditJobRetentionMs` setting, ledgered as `audit_jobs_retention_sweep` when it reaps, fail-silent by design (audit/AUDIT-JOB-RETENTION-SWEEP-2026-09-20.md).
+- Pre-convention finished audits (result.json on file, no worker lock ever written) now classify dead past the retention window instead of ambiguous forever; present-but-corrupt locks and unfinished lockless dirs stay ambiguous for operator inspection.
+- `paused-suspicious-close` settlement ceiling 10s to 30s: the close path legitimately takes ~9.4s unloaded, so the old ceiling flaked under any load.
+- Stale `goal-loop-shield.ts` header corrected (runner section documented as shell-free, matching helpers named as the pure subset).
+
 ## 0.38.71 — Decision cards lead with the action, plaque verbs deduped (2026-09-20)
 
 - Decision pause cards render the saved/action row before the numbered options, so Pi core tail truncation cuts late options and history instead of the resume path (UI survey finding 1, audit/UI-SURVEY-2026-09-20.md).

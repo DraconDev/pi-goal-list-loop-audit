@@ -673,6 +673,19 @@ shapes (details in CHANGELOG.md; each is pinned by tests):
 
 - **Primary scope is the cwd project**: `listAuditCollectTarget`, `projectAuditTarget`, and `auditTarget` now state "current project rooted at the cwd where pi was opened (treat any nested .git as a separate project boundary — do not walk into parent or sibling projects)". The TIGHT scout brief is "named directories under cwd" — external code outside cwd may be READ only to diagnose a failure that blocks the current project, and a finding about external code is valid only when it affects the current project (a typo in an unrelated sibling project is out of scope and never auto-queued). This closes the "audit the parent when you opened a subproject" leak observed when hellhunter was audited from the dracon-platform root and vice-versa.
 
+## Addendum v0.38.72 (retention policy)
+
+- **audit-jobs**: time-window retention, not count-capped. `auditJobRetentionMs`
+  (default 15m, max 7d) bounds how long finished audit transcripts stay
+  readable; the admitted owner sweeps proven-dead and pre-convention finished
+  dirs past the window at every session start (ledgered when it reaps).
+  A count cap was rejected: it could delete recent evidence, while the time
+  window already bounds growth (worst case ≈ one week of audits).
+- **ledger segments**: append-only history, no rotation. Rotation moves the
+  live ledger into segments; segments themselves are never compacted or
+  deleted. Disk cost is the audit trail's price and stays visible in
+  `.pi-glla/ledger-segments/`.
+
 ## Files
 
 - `docs/DESIGN.md` — **this file**
