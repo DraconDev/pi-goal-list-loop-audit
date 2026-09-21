@@ -729,6 +729,16 @@ shapes (details in CHANGELOG.md; each is pinned by tests):
   wins outright (`ok:false`, no fallback). Worst-case approval latency
   roughly doubles; parent timeout/retry absorbs overruns.
 
+## Addendum v0.38.80 (audit metrics)
+
+- **Challenge outcomes are recorded, then judged.** The falsification
+  outcome threads onto every `AuditVerdict`, and `/glla stats
+  challenges` reports confirmed/flipped/skipped plus the flip rate over
+  challenged runs. Same unknowns-stay-unknown rule as outcomes: skipped
+  rounds and legacy verdicts never join the denominator. The flip rate
+  is the calibration signal for risk-tiered auditing: it says whether
+  round 2 earns its latency.
+
 ## Files
 
 - `docs/DESIGN.md` — **this file**
