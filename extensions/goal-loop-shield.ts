@@ -2,7 +2,10 @@
  * pi-goal-list-loop-audit — v0.2.0
  * extensions/goal-loop-shield.ts
  *
- * regression_shield — pure, dependency-free enforcement logic.
+ * regression_shield — evidence-matching enforcement plus the shell-free
+ * mechanical-check runner (audit 2026-09-20: the "pure, dependency-free"
+ * claim below predates the runner section; only the matching helpers are
+ * pure — checkRegressionShield/contractItems/parseAuditorVerdict).
  *
  * When a goal has a verification contract, an <approved/> verdict is only
  * accepted if the auditor's report carries an <evidence> section that
