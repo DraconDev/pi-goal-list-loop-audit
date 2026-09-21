@@ -124,3 +124,35 @@ test("contract 8: five-minute seed in /goal mode suggests /list", () => {
   assert.equal(crossRecommendMode("reduce npm test failures from 14 to 0", "goal"), undefined);
   assert.equal(crossRecommendMode("fix typo in README", "list"), undefined);
 });
+
+test("contract 8: open-ended seed in /goal or /list mode suggests /loop", () => {
+  for (const [seed, mode] of [
+    ["watch the error rate and keep it under 1%", "goal"],
+    ["check the queue depth every morning and report", "list"],
+    ["monitor nightly backup sizes until further notice", "goal"],
+    ["keep the build at zero failures", "list"],
+  ] as Array<[string, "goal" | "list"]>) {
+    const xr = crossRecommendMode(seed, mode);
+    assert.ok(xr, `${mode} seed must trigger a recommendation: ${seed}`);
+    assert.match(xr!, /open-ended\/recurring/i, seed);
+    assert.match(xr!, /\/loop/, seed);
+  }
+});
+
+test("contract 8: bounded-until beats recurring vocabulary (still a goal)", () => {
+  assert.equal(crossRecommendMode("keep at the refactor until done", "goal"), undefined);
+  assert.equal(crossRecommendMode("watch the suite until green, then stop", "goal"), undefined);
+});
+
+test("contract 8: aggregate beats recurring (per-item work wins)", () => {
+  const xr = crossRecommendMode("check all 50 endpoints every hour", "list");
+  assert.ok(xr);
+  assert.match(xr!, /50 discrete items/, "aggregate fires first");
+  assert.doesNotMatch(xr!, /\/loop/, "no loop advice on an aggregate seed");
+});
+
+test("contract 8: recurring beats five-minute (cadence changes the loop)", () => {
+  const xr = crossRecommendMode("fix typo every day", "goal");
+  assert.ok(xr, "the five-minute check already excludes recurring words; the loop check catches it");
+  assert.match(xr!, /\/loop/);
+});
