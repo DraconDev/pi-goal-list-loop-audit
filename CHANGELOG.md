@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.88 — Pi-shim isolation: per-file process-state reset (2026-09-21)
+
+- New `__testOnlyResetProcessState()` composite invokes all 17 latch resets, and the test preload calls it before each file — per-file isolation is now structural instead of 99 files hand-picking resets (21 picked none). Membership is pinned: a future reset that bypasses the composite fails the suite (audit/PI-SHIM-ISOLATION-2026-09-21.md).
+
 ## 0.38.87 — Globals retirement slice 2: 24 ambient slots deleted (2026-09-21)
 
 - The runtime-globals registry drops 207 → 183: 11 `__testOnly*` hooks, `classifySessionHandleInvalidation`, `ownerFilePath`, `recentActions`, `COMPACT_FIRST_NUDGE_PERCENT`, three settings-UI helpers, and six pin-only constants — every consumer already imports directly, so only the ambient slots delete. Two test files switch from the globalThis path to direct imports (audit/GLOBALS-RETIREMENT-SLICE-2-2026-09-21.md).
