@@ -228,7 +228,9 @@ test("run-to-done: the audit cap parks instead of converting to TODOs", async ()
 });
 
 test("run-to-done: aggressive cap conversion is preserved without the flag", async () => {
-  setSettings({ aggressiveMode: true, auditCap: 2 });
+  // autoResume:true is the OLD consent (releases the auditor surface after
+  // cold restore); the flag test above proves the NEW consent does the same.
+  setSettings({ aggressiveMode: true, auditCap: 2, autoResume: true });
   const cwd = tmpCwd();
   const previousBinary = process.env.GLLA_PI_BINARY;
   process.env.GLLA_PI_BINARY = writeFakeAuditor(cwd, R1);
@@ -241,17 +243,10 @@ test("run-to-done: aggressive cap conversion is preserved without the flag", asy
     });
     process.env.GLLA_PI_BINARY = writeFakeAuditor(cwd, R2);
     await pi.runTool("complete_goal", { completionSummary: "Round two claim.", verificationSummary: "e2." }, ctx);
-    try {
-      await waitUntil(() => {
-        const goal = readState(cwd).goal as AuditState;
-        return goal?.status === "active" && !goal.pendingCompletion && (goal.auditHistory?.length ?? 0) >= 2;
-      }, 8000, "control-R2");
-    } catch (e) {
-      const g = readState(cwd).goal as Record<string, unknown>;
-      console.log("DEBUG control-R2 state:", JSON.stringify({ status: g.status, pending: !!g.pendingCompletion, history: (g.auditHistory as unknown[])?.length, pauseReason: g.pauseReason }));
-      console.log("DEBUG ledger tail:", ledgerTypes(cwd).slice(-8).join(","));
-      throw e;
-    }
+    await waitUntil(() => {
+      const goal = readState(cwd).goal as AuditState;
+      return goal?.status === "active" && !goal.pendingCompletion && (goal.auditHistory?.length ?? 0) >= 2;
+    });
     assert.ok(ledgerTypes(cwd).includes("audit_cap_keep_going"), "aggressive default untouched");
   } finally {
     if (previousBinary === undefined) delete process.env.GLLA_PI_BINARY;
