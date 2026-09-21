@@ -101,7 +101,7 @@ test("v0.38.92: a dethroned main is told about the lost root, never called a sub
       );
       assert.match(
         result.content[0]!.text,
-        /state root is owned by another session/,
+        /holds this folder's state root/,
         "the refusal names the lost root",
       );
       assert.match(

@@ -1885,12 +1885,14 @@ function isHostLifecycleSessionStart(event: unknown): boolean {
 const FOREIGN_SESSION_TOOL_MESSAGE =
   "This tool changes goal/loop/list state, which only the MAIN session owns — you are running in a subagent session. Report back to the main agent; it owns the goal and can call this tool.";
 /** Refusal when the caller lost the workingDir state-root race (field
- * 2026-09-21: a dethroned MAIN session got the subagent message above,
+ * 2026-09-21: a dethroned MAIN session got the bare subagent message,
  * which misdiagnoses — it is not a worker, it lost the root to another
- * live session). States the root fact, never the session kind, plus the
- * cure. Replaces FOREIGN_SESSION_TOOL_MESSAGE_WITH_STATE_ROOT_HINT. */
+ * live session). Keeps the v0.35.72 pinned contract (MAIN-owner clause,
+ * "state-root read-only", sessionDir cure) but replaces the false
+ * "subagent session" diagnosis with the dethroned one. Replaces
+ * FOREIGN_SESSION_TOOL_MESSAGE_WITH_STATE_ROOT_HINT. */
 const DETHRONED_SESSION_TOOL_MESSAGE =
-  "This folder's state root is owned by another session, so this session is read-only and cannot change goal/loop/list state — this is not a subagent refusal. Close the other session, or start a fresh session here to take the root back (/glla owner inspects the holder).";
+  "This tool changes goal/loop/list state, which only the MAIN session owns — but this is not a subagent refusal: another live session holds this folder's state root, so this session is state-root read-only. Close the other session, start a fresh session here to take the root back (/glla owner inspects the holder), or switch to sessionDir via /glla settings → State root.";
 
 /** Refusal message when a state-mutating tool is called from a subagent session, else null. */
 function foreignToolGuard(execCtx: unknown): string | null {
