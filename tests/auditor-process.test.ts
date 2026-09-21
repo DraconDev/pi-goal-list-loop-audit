@@ -1557,3 +1557,30 @@ test("v0.36.0: a malformed allowedExtensions request fails closed as an identity
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("v0.38.80: the worker's challenge outcome threads through to the auditor result", async () => {
+  const dir = await setup();
+  try {
+    // Mirrors a flipped run: round 1 approved, the falsification round
+    // disapproved, final line carries the disapproval.
+    const result = await run(dir, {
+      FAKE_AUDIT_OUTPUT: "round-1 approval overwritten by the challenge\n<disapproved/>",
+      FAKE_CHALLENGE: "flipped",
+    });
+    assert.equal(result.disapproved, true);
+    assert.equal(result.challenge, "flipped", "result.challenge survives the parent boundary");
+  } finally {
+    await cleanup(dir);
+  }
+});
+
+test("v0.38.80: an absent challenge stays undefined for legacy workers", async () => {
+  const dir = await setup();
+  try {
+    const result = await run(dir, { FAKE_AUDIT_OUTPUT: "<disapproved/>" });
+    assert.equal(result.disapproved, true);
+    assert.equal(result.challenge, undefined, "no field from the worker means unknown, not not-applicable");
+  } finally {
+    await cleanup(dir);
+  }
+});
