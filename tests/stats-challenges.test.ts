@@ -34,8 +34,8 @@ function archived(id: string, at: number, status: string): LedgerEntry {
   return { type: "goal_archived", at: iso(at), value: { goalId: id, status } };
 }
 
-function verdict(approved: boolean, challenge?: string): Record<string, unknown> {
-  return { ...(approved ? { approved: true } : { disapproved: true }), ...(challenge ? { challenge } : {}) };
+function verdict(approved: boolean, challenge?: string, extra: Record<string, unknown> = {}): Record<string, unknown> {
+  return { ...(approved ? { approved: true } : { disapproved: true }), ...(challenge ? { challenge } : {}), ...extra };
 }
 
 test("challenges: confirmed/flipped/skipped counts over all verdicts, legacy ignored", () => {
@@ -67,7 +67,7 @@ test("challenges: confirmed/flipped/skipped counts over all verdicts, legacy ign
 
 test("challenges: empty ledgers zero out, flip rate renders em-dash without challenged runs", () => {
   const empty = rollupEntries("proj", []).challenges;
-  assert.deepEqual(empty, { challenged: 0, confirmed: 0, flipped: 0, skipped: 0 });
+  assert.deepEqual(empty, { challenged: 0, confirmed: 0, flipped: 0, skipped: 0, light: 0, spotChallenged: 0, spotFlipped: 0 });
   const table = formatChallengesTable([rollupEntries("proj", [])]);
   assert.match(table, /—/, "no challenged runs renders unknown, not 0%");
 });
@@ -82,12 +82,46 @@ test("challenges: table and JSON formats mirror the schema", () => {
     archived("g1", T0 + 2 * H, "complete"),
   ]);
   const table = formatChallengesTable([r]);
-  assert.match(table, /\| project \| challenged \| confirmed \| flipped \| skipped \| flip rate \|/);
-  assert.match(table, /my-proj \| 3 \| 2 \| 1 \| 0 \| 33%/);
+  assert.match(table, /\| project \| challenged \| confirmed \| flipped \| skipped \| flip rate \| light \| spot flip \|/);
+  assert.match(table, /my-proj \| 3 \| 2 \| 1 \| 0 \| 33% \| 0 \| —/);
   const json = JSON.parse(formatChallengesJson([r]) as string) as Array<Record<string, unknown>>;
   assert.equal(json[0]!.challenged, 3);
   assert.equal(json[0]!.confirmed, 2);
   assert.equal(json[0]!.flipped, 1);
   assert.equal(json[0]!.skipped, 0);
   assert.equal(json[0]!.flip_rate, "33%");
+  assert.equal(json[0]!.light, 0);
+  assert.equal(json[0]!.spot_flip_rate, "—");
+});
+
+test("challenges: light-tier verdicts and spot-check flips count separately", () => {
+  const c = rollupEntries("proj", [
+    created("g1", T0),
+    snapshot("g1", T0 + H, {
+      status: "active",
+      auditHistory: [
+        verdict(true, "skipped: light-tier audit", { auditTier: "light" }),
+        verdict(false, "not-applicable", { auditTier: "light" }),
+        verdict(true, "confirmed", { auditTier: "full", spotCheck: true }),
+        verdict(false, "flipped", { auditTier: "full", spotCheck: true }),
+        verdict(true, "confirmed", { auditTier: "full" }),
+      ],
+    }),
+  ]).challenges;
+  assert.equal(c.light, 2, "both light verdicts count even though neither challenged");
+  assert.equal(c.challenged, 3);
+  assert.equal(c.spotChallenged, 2, "settled spot-checks only");
+  assert.equal(c.spotFlipped, 1);
+  const table = formatChallengesTable([rollupEntries("my-proj", [
+    created("g1", T0),
+    snapshot("g1", T0 + H, {
+      status: "active",
+      auditHistory: [
+        verdict(true, "skipped: light-tier audit", { auditTier: "light" }),
+        verdict(true, "confirmed", { auditTier: "full", spotCheck: true }),
+        verdict(false, "flipped", { auditTier: "full", spotCheck: true }),
+      ],
+    }),
+  ])]);
+  assert.match(table, /my-proj \| 2 \| 1 \| 1 \| 1 \| 50% \| 1 \| 50%/);
 });
