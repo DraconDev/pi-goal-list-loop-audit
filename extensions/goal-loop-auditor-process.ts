@@ -927,7 +927,20 @@ export function inspectAuditJobHealth(
         reason = "lock is not a worker-owned identity";
       }
     } catch {
-      /* preserve ambiguous */
+      // v0.38.72: pre-convention finished audits (result.json on file, no
+      // worker lock ever written) are provably finished, not suspicious — a
+      // live audit always holds its lock. A missing lock + a finished
+      // result reaps through the same retention gate as proven-dead
+      // workers. A PRESENT-but-unparseable lock stays ambiguous: atomic
+      // lock writes make corruption genuinely weird (operator inspection).
+      try {
+        statSync(path.join(dir, "lock"));
+      } catch (lockErr) {
+        if ((lockErr as NodeJS.ErrnoException).code === "ENOENT" && auditDirHasResult(dir)) {
+          status = "dead";
+          reason = "no worker lock; finished result on file";
+        }
+      }
     }
     entries.push({ attemptId: entry.name, dir, ageMs, bytes, status, ...(pid !== undefined ? { pid } : {}), ...(reason ? { reason } : {}) });
   }
@@ -944,8 +957,12 @@ export function inspectAuditJobHealth(
 export function cleanupDeadAuditJobs(cwd: string, maxAgeMs = AUDIT_JOB_CLEANUP_MIN_AGE_MS, nowMs = Date.now()): AuditJobHealthReport {
   const report = inspectAuditJobHealth(cwd, nowMs, maxAgeMs);
   for (const entry of report.entries) {
-    if (entry.status !== "dead" || entry.ageMs < maxAgeMs || entry.pid === undefined) continue;
-    if (processAlive(entry.pid) || workerProcessMatches(cwd, entry.pid, entry.dir)) continue;
+    if (entry.status !== "dead" || entry.ageMs < maxAgeMs) continue;
+    // A dead entry WITH a pid always re-verifies liveness first (PID reuse
+    // between scan and reap). A dead entry WITHOUT a pid is only reachable
+    // via the no-lock+result path above — provably finished, no pid to
+    // re-verify — so it reaps on age alone.
+    if (entry.pid !== undefined && (processAlive(entry.pid) || workerProcessMatches(cwd, entry.pid, entry.dir))) continue;
     try { rmSync(entry.dir, { recursive: true, force: true }); } catch { /* preserve the next health report */ }
   }
   return inspectAuditJobHealth(cwd, nowMs, maxAgeMs);
