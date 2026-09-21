@@ -46,6 +46,8 @@ Policy contracts and recent changes live in the `audit/` directory of the
   the registry); post-release work may appear in `Unreleased` above it.
 
 ## Architecture
+- `ARCHITECTURE.md`: 20-minute newcomer overview (three loops, audit lifecycle, persistence)
+- `PROMOTION-CONTRACT.md`: the list item → goal → archive seam, diagrammed
 - `DESIGN.md`: plugin design (types, state, extension lifecycle)
 - `DESIGN-long-running-supervision.md`: v0.36.0 event/progress-driven supervision, aggressive recovery, terminal recaps, and future decision checklist
 - `GLLA-POSITIONING-AND-DECOMPOSITION-2026-08-08.md`: ecosystem
