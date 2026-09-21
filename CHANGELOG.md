@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.84 — Mode check learns /loop: recurring seeds route to loops (2026-09-21)
+
+- `crossRecommendMode` now catches open-ended/recurring seeds (cadence words, monitor/watch, keep-X-under-Y) in goal and list drafting and steers the interview toward `/loop` — neither goals (end on approval) nor list items (close once) fit "keep doing it". Bounded-until phrasing ("until done/green") stays a goal, and aggregate seeds still win (audit/LOOP-INFERENCE-2026-09-21.md).
+
 ## 0.38.83 — Lifecycle map: session_start stages extracted + numbered (2026-09-21)
 
 - The 800-line `session_start` callback is now navigable: three verbatim stages extracted into named nested helpers (`admitSessionStart`, `claimSessionRootOrNotify`, `retentionSweepAuditJobs`) and all 12 stages carry numbered banners. Behavior-identical — moved code is byte-identical except the early returns (audit/LIFECYCLE-MAP-2026-09-21.md).
