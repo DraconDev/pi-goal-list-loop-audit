@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.38.77 — Retire 15 single-module runtime globals (222 → 207, 2026-09-20)
+
+- First slice of the `globalThis` bridge retirement: 15 registry names used in exactly one module and nowhere else (no cross-module, test, script, or top-level consumers) lose their registration, ambient declaration, and typed entry. Owning modules keep their locals untouched — zero runtime behavior change (audit/GLOBALS-RETIREMENT-SLICE-2026-09-20.md).
+- Causality note: the `glla-status-ux` + `behavioral-orchestrator` combo shows 2 pre-existing order-dependent failures (v0.35.15 pause/resume notification counts); verified identical on the pre-retirement tree via worktree comparison.
+
 ## 0.38.76 — Auditor challenge round: approvals earn a falsification pass (2026-09-20)
 
 - The detached worker now runs a second bounded RPC round in a fresh session whenever round 1 approves, with an adversarial brief (re-verify load-bearing claims; disapprove with specifics on any genuine gap). Outputs compose by final line: a challenge disapproval flips the verdict, a re-confirm preserves it. Disapprovals, impossibles, and failures stay single-round (audit/AUDITOR-CHALLENGE-2026-09-20.md).
