@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.38.73 — Run-to-done mode: draft up front, carry to completion (2026-09-20)
+
+- New per-goal run-to-done consent at draft time: the interview asks supervised vs run-to-done, the Confirm dialog discloses the mode (auto session resume + immediate decision auto-default until complete or a hard stop), and consent is durable on the goal plus ledgered (`run_to_done_consented`). Single-goal drafts only in v1; batch/list drafts refuse the flag with guidance (audit/RUN-TO-DONE-2026-09-20.md).
+- Runtime: run-to-done goals auto-resume held work at session start without global autoResume (per-goal consent wins), auto-default every decision immediately (`run_to_done_auto_default`, same autoDefaultLog mechanics), and treat audit caps as hard stops (park, no TODO conversion). Blocked-on-external pauses still park; the auditor is never skipped; user abort always wins. Status line carries a `run to done` chip.
+- `docs/INDEX.md` version trail fixed (was pinned at v0.38.71).
+
 ## 0.38.72 — Automatic audit-job retention sweep at session start (2026-09-20)
 
 - The proven-dead audit-job sweep now runs automatically at admitted-owner session start (previously manual `/glla audits health cleanup` only, which let 207 job dirs accumulate). Windowed by the existing `auditJobRetentionMs` setting, ledgered as `audit_jobs_retention_sweep` when it reaps, fail-silent by design (audit/AUDIT-JOB-RETENTION-SWEEP-2026-09-20.md).

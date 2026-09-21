@@ -686,6 +686,26 @@ shapes (details in CHANGELOG.md; each is pinned by tests):
   deleted. Disk cost is the audit trail's price and stays visible in
   `.pi-glla/ledger-segments/`.
 
+## Addendum v0.38.73 (run-to-done mode)
+
+- **Draft up front, carry to the end.** A goal draft may carry run-to-done
+  consent: the interview asks supervised vs run-to-done, the Confirm
+  dialog discloses the mode in full view (the Confirm IS the consent),
+  and the flag is durable on the goal plus ledgered (`run_to_done_consented`).
+- **What the consent grants**: session-start auto-resume of held work
+  without global autoResume (specific beats general), and immediate
+  decision auto-default (`run_to_done_auto_default`, same autoDefaultLog
+  mechanics as the budget path). Waits already auto-continue; quota still
+  sleeps to reset.
+- **Hard stops still park**: audit disapproval caps (no TODO conversion —
+  repeated rejection means the approach is wrong), consecutive-error
+  ceilings, provider outage, user abort/pause. Blocked-on-external pauses
+  also still park: missing user input is a hard-stop-class dependency,
+  not friction. The auditor is never skipped.
+- **Visibility**: the status line carries a `run to done` chip — an
+  auto-running goal must never look supervised. Single-goal drafts only
+  in v1; list-queue items stay supervised.
+
 ## Files
 
 - `docs/DESIGN.md` — **this file**
