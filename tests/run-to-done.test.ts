@@ -73,9 +73,9 @@ test("run-to-done: draft consent sets the flag, shows the notice, ledgers consen
   try {
     await enterGoalDrafting(pi, ctx);
     let confirmBody = "";
-    ctx.ui.confirmImpl = async (_title: string, message: string) => {
-      confirmBody = message;
-      return true;
+    ctx.ui.selectImpl = async (titleWithBody: string) => {
+      confirmBody = titleWithBody;
+      return "Yes";
     };
     const res = await pi.runTool("propose_goal_draft", {
       objective: "run-to-done objective — done when pinned",
@@ -100,9 +100,9 @@ test("run-to-done: drafts without the flag stay supervised", async () => {
   try {
     await enterGoalDrafting(pi, ctx);
     let confirmBody = "";
-    ctx.ui.confirmImpl = async (_title: string, message: string) => {
-      confirmBody = message;
-      return true;
+    ctx.ui.selectImpl = async (titleWithBody: string) => {
+      confirmBody = titleWithBody;
+      return "Yes";
     };
     await pi.runTool("propose_goal_draft", {
       objective: "supervised objective — done when pinned",
@@ -184,10 +184,10 @@ process.stdin.on("data", async (chunk) => {
   return script;
 }
 
-async function waitUntil(predicate: () => boolean, timeoutMs = 30_000): Promise<void> {
+async function waitUntil(predicate: () => boolean, timeoutMs = 30_000, label = ""): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (!predicate()) {
-    if (Date.now() >= deadline) throw new Error("timed out waiting for detached-auditor state");
+    if (Date.now() >= deadline) throw new Error(`timed out waiting for detached-auditor state ${label}`.trim());
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
 }
