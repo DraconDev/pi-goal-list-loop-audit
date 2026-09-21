@@ -21,7 +21,9 @@ tools in the main session only:
   works only while a drafting session is already open (the user ran bare
   `/goal`, `/list`, or `/list add` with no args): interview only what is
   genuinely unknown, then propose; the user's Confirm dialog is the
-  activation gate. From normal chat with no draft open, do NOT call
+  activation gate. Ask supervised vs run-to-done in the interview; pass
+  `runToDone: true` only on an explicit user choice (it auto-resumes
+  sessions and auto-defaults decisions until complete or a hard stop). From normal chat with no draft open, do NOT call
   `propose_goal_draft` — it refuses outside drafting mode. Ask the user to
   open drafting with bare `/goal`, or use `list_add` for straight queueing.
   Never activate a speculative raw seed.

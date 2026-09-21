@@ -1180,7 +1180,7 @@ export function buildStatusText(state: State, audit?: AuditDisplayProgress | nul
   // sidecar cache proves the registry is ahead; render never touches the
   // network (refresh rides the command-contact gate).
   const versionTail = extras?.versionTail ? ` ${extras.versionTail}` : "";
-  const withVersion = withAgentSummary && versionTail ? `${withAgentSummary}${versionTail}` : withAgentSummary;
+  const withVersion = withMode && versionTail ? `${withMode}${versionTail}` : withMode;
   if (!withVersion || typeof state.supervisorPausedAt !== "number") return truncateStatusToWidth(withVersion, width);
   return truncateStatusToWidth(withVersion.replace(/^glla:/, `glla: ${paint(theme, "warning", "⏸ supervisor")} ·`), width);
 }
