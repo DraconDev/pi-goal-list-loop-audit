@@ -36,3 +36,12 @@ fs.writeFileSync(process.env.GLLA_GLOBAL_SETTINGS_PATH, JSON.stringify({ aggress
 // (pi's turn-teardown blackhole window); tests flush with tick() and must not
 // wait real seconds — zero the settle for the whole suite.
 process.env.GLLA_EAGER_SETTLE_MS ??= "0";
+
+// v0.38.88: same-process module latches are reset before EACH file (verified:
+// this preload re-runs per file, same pid). Before, every behavioral file
+// hand-picked __testOnlyReset* calls in afterEach — 21 activate()-driving
+// files picked none, a latent order-dependence for test:changed subsets.
+// The composite restores fresh-process latch semantics; per-test afterEach
+// resets stay as defense in depth (idempotent, harmless).
+import { __testOnlyResetProcessState } from "../../extensions/loops/goal.js";
+__testOnlyResetProcessState();
