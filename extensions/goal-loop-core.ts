@@ -775,14 +775,14 @@ export interface Goal {
 export type GoalRoute =
   | { kind: "draft" }
   | { kind: "set"; text: string }
-  | { kind: "sub"; name: "status" | "pause" | "resume" | "cancel" | "decide" | "verify" | "audit" | "tweak" | "archive" | "start" | "plan"; rest: string };
+  | { kind: "sub"; name: "status" | "pause" | "resume" | "cancel" | "decide" | "verify" | "audit" | "tweak" | "archive" | "start" | "plan" | "timeline"; rest: string };
 
 // v0.29.8: "audit" moved to ARG subs ("/goal audit [focus]" is the one-shot
 // project audit — user: "/goal audit IS the audit goal"); the v0.28.27
 // manual current-goal verification moved to "verify" (it happens
 // automatically at completion anyway — verify is the on-demand handle).
 const GOAL_EXACT_SUBS = new Set(["status", "pause", "resume", "cancel", "decide", "verify"]);
-const GOAL_ARG_SUBS = new Set(["audit", "tweak", "archive", "start", "plan"]);
+const GOAL_ARG_SUBS = new Set(["audit", "tweak", "archive", "start", "plan", "timeline"]);
 
 export function routeGoalArgs(raw: string): GoalRoute {
   const trimmed = raw.trim();
@@ -794,7 +794,7 @@ export function routeGoalArgs(raw: string): GoalRoute {
     return { kind: "sub", name: first as "status" | "pause" | "resume" | "cancel" | "decide" | "verify", rest: "" };
   }
   if (GOAL_ARG_SUBS.has(first)) {
-    return { kind: "sub", name: first as "audit" | "tweak" | "archive" | "start" | "plan", rest };
+    return { kind: "sub", name: first as "audit" | "tweak" | "archive" | "start" | "plan" | "timeline", rest };
   }
   return { kind: "set", text: trimmed };
 }
