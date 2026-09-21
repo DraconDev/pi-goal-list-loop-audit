@@ -255,6 +255,7 @@ import {
   cancelDetachedGoalCompletionAuditor,
   escalatedAuditorTimeout,
   newDetachedAuditJobAttemptId,
+  resolveClaimAuditTier,
   runDetachedGoalCompletionAuditor,
   DEFAULT_AUDITOR_STALL_MS,
   DEFAULT_AUDITOR_TOOL_TIMEOUT_MS,
@@ -564,6 +565,11 @@ function registerAgentTools(pi: any): void {
           "Presentation only — the six-label completionSummary stays the audited substance, and file:line tokens are never invented. " +
           "Omit for single-area work — the flat six-label render stays the fallback.",
       })),
+      requestFullAudit: Type.Optional(Type.Boolean({
+        description:
+          "v0.38.81: pass true to ask for a full-tier audit on this claim (audit plus falsification round — 'check me carefully'). " +
+          "Escalation only: the agent can demand full, never light. Omit or pass false for the default risk-tiered dispatch.",
+      })),
       gateRows: Type.Optional(Type.Array(Type.Object({
         gate: Type.String({ maxLength: 120, description: "Gate name (e.g. Unit Tests, Typecheck, E2E, Production Build)" }),
         command: Type.Optional(Type.String({ maxLength: 200, description: "Repro command for this gate (e.g. bun test src/). Retained in the archive Command column, omitted from compact chat." })),
@@ -612,7 +618,7 @@ function registerAgentTools(pi: any): void {
         }
         return { content: [{ type: "text", text: `No active goal — it is ${state.goal.status}.` }], details: {} };
       }
-      const p = params as { completionSummary?: string; verificationSummary?: string; newObjective?: string; leftOut?: string; findingGroups?: unknown; gateRows?: unknown };
+      const p = params as { completionSummary?: string; verificationSummary?: string; newObjective?: string; leftOut?: string; findingGroups?: unknown; gateRows?: unknown; requestFullAudit?: boolean };
       if (state.goal.repairTarget) {
         return {
           content: [{ type: "text", text: `This repair card cannot be completed yet. Redraft the original target as a confirmed task list with propose_task_list (include objective: ${state.goal.repairTarget.objective.slice(0, 180)}), then continue the real work.` }],
@@ -869,6 +875,8 @@ function registerAgentTools(pi: any): void {
         ...(sanitizedGroups ? { findingGroups: sanitizedGroups } : {}),
         ...(sanitizedGates ? { gateRows: sanitizedGates } : {}),
         ...(priorWholeWork ? { priorCompletionSummary: priorWholeWork } : {}),
+        // v0.38.81: agent self-escalation rides the claim to dispatch.
+        ...(p.requestFullAudit === true ? { requestFullAudit: true } : {}),
         at: nowIso(),
       }, "complete-goal");
       if (!completionClaim) {
@@ -928,6 +936,14 @@ function registerAgentTools(pi: any): void {
         && configuredAuditorRefs.some((ref) => ref.toLowerCase() === completionClaim.auditorRetryCandidateRef!.toLowerCase())
         ? completionClaim.auditorRetryCandidateRef
         : undefined;
+      // v0.38.81: risk tier resolves once per dispatch — stable across
+      // the candidate chain below. Ledgered with the attempt id so the
+      // trail names who decided what.
+      const tierDecision = resolveClaimAuditTier(auditGoal, completionClaim, settings.auditSpotCheckRate);
+      appendLedger(ctx.cwd, "audit_tier_decided", {
+        goalId: auditGoalId, attemptId: auditAttemptId, tier: tierDecision.tier,
+        reasons: tierDecision.reasons, spotCheck: tierDecision.spotCheck,
+      });
       // v0.34.90: no redundant chat notify here — pi's own complete_goal
       // response already says the claim persisted and the detached auditor
       // is queued; a second "Auditor queued" message is chat spam (never
@@ -979,6 +995,9 @@ function registerAgentTools(pi: any): void {
           goal: auditGoal,
           completionSummary: finalSummary,
           verificationSummary: p.verificationSummary,
+          // v0.38.81: the dispatch-decided tier (stamped onto the result).
+          auditTier: tierDecision.tier,
+          ...(tierDecision.spotCheck ? { spotCheck: true } : {}),
           model: candidate.model,
           // Unset follows the parent session dial, matching the Auditor
           // settings row; max is the safe detached default when a headless
