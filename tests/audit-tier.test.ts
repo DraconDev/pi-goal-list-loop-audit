@@ -150,8 +150,8 @@ test("tier: claim mapper counts disapprovals and carries both escalation flags",
     verificationContract: QUIET.verificationContract,
     telemetry: SMALL,
     auditHistory: [{ disapproved: true }, { approved: true }],
-  } as never;
-  const rework = resolveClaimAuditTier(goal, {}, 0);
+  };
+  const rework = resolveClaimAuditTier(goal as never, {}, 0);
   assert.equal(rework.tier, "full");
   assert.ok(rework.reasons.some((r) => /rework history \(1 prior disapproval\)/.test(r)), "counts disapproved entries only");
   const flagged = resolveClaimAuditTier({ ...goal, auditHistory: [] } as never, {}, 0);
