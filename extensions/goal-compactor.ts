@@ -30,14 +30,11 @@ import { PLAN_B_MAX_ATTEMPTS, resolveCompactorModel } from "./compactor-model.js
 /** Hard cap on the persisted brief: a handoff, not a transcript. */
 export const COMPACTOR_BRIEF_MAX_CHARS = 2000;
 /** Packet budget into the worker: the full brief source, bounded. */
-export const COMPACTOR_PACKET_MAX_CHARS = 6000;
 /** Worker wall clock: a brief is one completion, not an agentic loop. */
-export const COMPACTOR_TIMEOUT_MS = 180_000;
 /** Audit 2026-09-06: grace between SIGTERM and SIGKILL when the worker
  * overruns its timeout — SIGTERM alone can leave a stuck child alive. */
 export const COMPACTOR_KILL_GRACE_MS = 5_000;
 /** The compactor reasons as little as possible: compression, not judgment. */
-export const COMPACTOR_THINKING = "minimal";
 
 export const COMPACTOR_SYSTEM_PROMPT =
   "You compress a goal-state packet into a handoff brief a FRESH session will read after /new. " +
@@ -49,7 +46,6 @@ export function compactorBriefPath(cwd: string): string {
 }
 
 /** Fallback need when usage is unreadable: assume a full 200k window. */
-export const PLAN_B_FALLBACK_NEED = 200_000;
 
 export function compactorJobDir(cwd: string, attemptId: string): string {
   return path.join(piGlaDir(cwd), "compactor-jobs", attemptId);

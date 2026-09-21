@@ -355,12 +355,7 @@ export interface FindingGroup {
 /** v0.38.55 audit (DECIDED 2026-09-15): raised from 6x6 so large work
  * actually renders uncapped per the full-parity promise — abuse still
  * bounded, legitimate big goals no longer clipped at the boundary. */
-export const MAX_FINDING_GROUPS = 12;
-export const MAX_GROUP_FINDINGS = 20;
-export const MAX_GROUP_TITLE_CHARS = 120;
-export const MAX_GROUP_FINDING_CHARS = 500;
 /** v0.38.52: per-finding test-result lines share the finding budget. */
-export const MAX_GROUP_TESTS_CHARS = 500;
 
 /**
  * Bound agent-supplied finding groups at the trust boundary. Drops
@@ -421,11 +416,6 @@ export interface GateRow {
   notes?: string;
 }
 
-export const MAX_GATE_ROWS = 10;
-export const MAX_GATE_GATE_CHARS = 120;
-export const MAX_GATE_COMMAND_CHARS = 200;
-export const MAX_GATE_SCOPE_CHARS = 200;
-export const MAX_GATE_NOTES_CHARS = 400;
 
 /**
  * Bound agent-supplied gate rows at the trust boundary. Drops blank
@@ -1519,7 +1509,6 @@ export function ledgerPath(cwd: string): string {
  * cold-start recovery. Older events stay immutable in this directory so
  * forensic/history views retain their exact source without making the hot
  * file grow forever. */
-export const LEDGER_ROTATION_BYTES = 8 * 1024 * 1024;
 const LEDGER_SEGMENTS_DIR = "ledger-segments";
 const LEDGER_ROTATION_LOCK = "ledger-rotation.lock";
 const LEDGER_ROTATION_STALE_LOCK_MS = 5 * 60_000;
@@ -2596,7 +2585,6 @@ export const DEFAULT_FORBIDDEN_MODELS: string[] = [];
  * while main-model recovery is parked. This is an unconditional retry slot,
  * not a provider-status probe. The default is ON (opt-out) so work gets an
  * extra attempt shortly after each hour starts. */
-export const DEFAULT_HOURLY_RETRY_PROBE = true;
 
 /** v0.34.57: forbidden-model matcher. Empty/unknown refs are never
  * forbidden; an empty forbidden list forbids nothing. */
@@ -3296,7 +3284,6 @@ export function draftContractItemCount(normalized: string): number {
  * from the text — it is a property of the item, not part of the objective or
  * the verification contract.
  */
-export const PARALLEL_MARKER = /[ \t]*\bparallel\b\s*:\s*(yes|true|1|safe|parallel|no|false|0|none|off)\b[.,;]?[ \t]*/i;
 
 /**
  * v0.34.81 (LIGHT parent/child): the `Subtask of: <parent objective>` marker.
@@ -3334,7 +3321,6 @@ export function extractSubtaskParent(raw: string): { objective: string; parentOb
  * role is selected only by a declaration such as `Agent: Designer` or
  * `Role: designer` (the `Designer: yes` shorthand is also accepted).
  */
-export const AGENT_ROLE_MARKER = /[ \t]*(?:\b(?:agent|role)\s*:\s*designer\b|\bdesigner\s*:\s*(?:yes|true|on)\b)[.,;]?[ \t]*/i;
 
 export function extractAgentRole(raw: string): { objective: string; agentRole: AgentRole | undefined } {
   const m = raw.match(AGENT_ROLE_MARKER);
@@ -3599,7 +3585,6 @@ export function claimedMissingGllaTool(reason: string): GllaToolName | null {
 /** Base defaults (explicit aggressiveMode OFF). auditCap base raised 3 → 5
  * in v0.25.0 (contract item 7 — the "fairly eager" baseline). */
 export const BASE_AUDIT_CAP = 5;
-export const BASE_STUCK_MAX_INTERVENTIONS = 5;
 /** aggressiveMode defaults (contract item 5). Explicit per-key settings
  * always win over these — aggressiveMode flips DEFAULTS, not user choices. */
 export const AGGRESSIVE_AUDIT_CAP = 10;
@@ -4270,8 +4255,6 @@ export function bucketSilentMs(ms: number): number {
 }
 
 export type LifesignBand = "fresh" | "aging" | "stale" | "hung";
-export const LIFESIGN_FRESH_MS = 5 * 60_000;
-export const LIFESIGN_STALE_MS = 30 * 60_000;
 export const BREATH_FRAMES = ["●", "◉", "○", "◉"] as const;
 
 /** Minimal structural row for lifesign math — AgentsPanelRow satisfies it. */

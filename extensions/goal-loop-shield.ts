@@ -422,7 +422,6 @@ const MECHANICAL_FORCE_KILL_SETTLE_MS = 250;
  * still stopping the 1,000-process self-invocation shape observed in the
  * field. Linux is the only platform with a cheap process-group census; the
  * existing timeout/tree teardown remains the portable fallback elsewhere. */
-export const MAX_MECHANICAL_PROCESS_GROUP_SIZE = 256;
 const MECHANICAL_PROCESS_GROUP_POLL_MS = 100;
 
 interface MechanicalCommandRun {

@@ -286,14 +286,10 @@ export function withoutStaleNext(details: string[] | undefined): string[] {
  * evidence-token density (4/finding), and the sanitize trust boundary
  * (12 groups x 20 findings, 10 gate rows); the brief value guard is 10k
  * chars against pathological megabytes. */
-export const RICH_FULL_VALUE_BUDGET = 10_000;
 /** v0.38.50: objective echo clipped to a headline-safe width. */
-export const RICH_OBJECTIVE_ECHO_CHARS = 80;
 /** v0.38.50: findings spanning this many groups render as a table
  * (the 12-row screen-by-screen example); fewer stay nested. */
-export const RICH_TABLE_GROUP_THRESHOLD = 4;
 /** v0.38.50: evidence tokens per finding cell — density, not a dump. */
-export const RICH_EVIDENCE_TOKENS_PER_FINDING = 4;
 /** Structured-long doctrine (field 2026-09-16 — the keyword-review close):
  * a section-structured label value is a working document, not a status
  * ping, and truncating it destroys its purpose. Structure is the price

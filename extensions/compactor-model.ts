@@ -27,7 +27,6 @@ export interface CompactorModelCandidate {
 
 /** Absolute floor for plan-B context windows: below this no model can absorb
  * a stuck session's state with headroom, free or not. */
-export const PLAN_B_MIN_CONTEXT_TOKENS = 100_000;
 
 /** Max plan-B attempts per episode: the chain already had its turn; plan B
  * is two verified free swings, not a walk. */
