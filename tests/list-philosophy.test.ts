@@ -145,7 +145,7 @@ test("contract 8: bounded-until beats recurring vocabulary (still a goal)", () =
 });
 
 test("contract 8: aggregate beats recurring (per-item work wins)", () => {
-  const xr = crossRecommendMode("check all 50 endpoints every hour", "list");
+  const xr = crossRecommendMode("check all 50 screens every hour", "list");
   assert.ok(xr);
   assert.match(xr!, /50 discrete items/, "aggregate fires first");
   assert.doesNotMatch(xr!, /\/loop/, "no loop advice on an aggregate seed");

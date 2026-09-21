@@ -3842,7 +3842,7 @@ export function crossRecommendMode(seed: string, mode: "goal" | "list"): string 
   // Bounded-until ("until done/green/shipped") stays a goal: a finish
   // line makes it one-shot work, however watchful the phrasing.
   if (!/\buntil\s+(done|complete|completed|finished|shipped|green|zero|0|passing)\b/i.test(s)) {
-    if (/\b(?:every|each)\s+(?:\d+\s+)?(?:minute|hour|day|night|week|month)s?\b/i.test(s) ||
+    if (/\b(?:every|each)\s+(?:\d+\s+)?(?:minute|hour|day|night|week|month|morning|evening|afternoon|monday|tuesday|wednesday|thursday|friday|saturday|sunday)s?\b/i.test(s) ||
       /\b(?:monitor(?:ing)?|watch(?:ing)?|keep an eye on|until further notice|until I (?:say|stop|tell)|continuously|nightly|hourly|on an? (?:ongoing|rolling|recurring) basis)\b/i.test(s) ||
       /\bkeep\b[^.?!]{0,60}\b(?:under|below|above|at)\b/i.test(s)) {
       return (
