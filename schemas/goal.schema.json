@@ -36,6 +36,7 @@
       "description": "Done-criteria extracted from the objective ('Done when:' / 'Verify:' markers, line-start or inline). When non-empty, regression_shield requires the auditor's <evidence> block to address every item."
     },
     "autoContinue": { "type": "boolean" },
+    "runToDone": { "type": "boolean", "description": "v0.38.73 run-to-done: draft-time user consent to carry the goal to completion without supervised pauses (session-start auto-resume + immediate decision auto-default). Hard stops still park; the auditor is never skipped. Beats global autoResume:false." },
     "taskList": {
       "type": "object",
       "required": ["version", "tasks"],
