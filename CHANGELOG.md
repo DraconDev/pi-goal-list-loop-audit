@@ -4,6 +4,7 @@
 
 - New `docs/ARCHITECTURE.md`: GLLA in 20 minutes — entry/runtime, the three loops, the audit lifecycle, persistence, and the test suite, every claim grounded in source (stage names, handler counts, and ledger-type counts verified, not remembered).
 - New `docs/PROMOTION-CONTRACT.md`: the list item → goal → archive seam diagrammed and pinned — activate, archive, auto-advance, abort/no-advance, and the one-active-thing rule.
+- Repair: v0.38.85's `timeline` subcommand broke the no-hardcoded-guidance pin (the `/goal` tool description is an allowed surface map; its allowlist didn't know the new subcommand). The full-suite gate caught it; the pin now tracks the enumeration.
 
 ## 0.38.85 — `/goal timeline`: one what-happened + next-action view (2026-09-21)
 
