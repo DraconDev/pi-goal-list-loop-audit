@@ -1163,6 +1163,10 @@ interface AuditorRequest {
    * before applying the verdict. Mismatch → stale-refusal, not a silent
    * overwrite. */
   goalRevision?: GoalRevisionToken;
+  /** v0.38.81: `false` on light-tier dispatches (single-round audit —
+   * the worker skips the falsification pass). Absent = full tier =
+   * today's challenge behavior. Part of the request hash. */
+  challenge?: boolean;
 }
 
 interface AuditorToolCall {
