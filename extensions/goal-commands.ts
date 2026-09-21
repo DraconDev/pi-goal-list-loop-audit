@@ -188,6 +188,7 @@ async function cmdGoal(args: string, ctx: ExtensionContext): Promise<void> {
   const route = routeGoalArgs(args);
   if (route.kind === "sub") {
     if (route.name === "status") return cmdStatus(ctx);
+    if (route.name === "timeline") return cmdTimeline(route.rest, ctx);
     if (route.name === "pause") return cmdPause(ctx);
     if (route.name === "resume") return cmdResume(ctx);
     if (route.name === "cancel") return cmdCancel(ctx);

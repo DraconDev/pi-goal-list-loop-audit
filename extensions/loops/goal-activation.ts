@@ -804,8 +804,9 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       }));
 
   pi.registerCommand("goal", {
-    description: "Set/draft a goal, or /goal status|pause|resume|cancel|tweak <text>|archive|start <objective>. Objectives without a 'Done when:' clause are grilled into a contract first; include the clause or use /goal start to skip the interview and activate instantly. Bare /goal start inherits one clear recent objective or falls back to drafting.",
+    description: "Set/draft a goal, or /goal status|timeline|pause|resume|cancel|tweak <text>|archive|start <objective>. Objectives without a 'Done when:' clause are grilled into a contract first; include the clause or use /goal start to skip the interview and activate instantly. Bare /goal start inherits one clear recent objective or falls back to drafting.",
     getArgumentCompletions: completions([
+      ["timeline", "show this goal's event trail plus the single next action (/goal timeline [N])"],
       ["start", "skip drafting — /goal start <objective> activates immediately; bare start uses one clear recent objective"],
       ["plan", "extended draft for greenfield/megaplan work: research-first, multi-round interview, structured expanded objective (still Confirm-gated)"],
       ["audit", "one-shot project audit goal: /goal audit [focus] — fix the non-decisions, present the decisions (v0.29.8)"],
