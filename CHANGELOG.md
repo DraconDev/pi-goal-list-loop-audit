@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.38.75 — Compaction survival suite; cost ceiling verified pre-existing (2026-09-20)
+
+- New `tests/compaction-survival.test.ts`: three genuine mid-run `session_compact` events followed by full detached-audit completion, plus a compact around an in-flight audit. Previously only projection shape, in-flight suppression, and settle probes were covered — nothing proved a goal still completes after real compacts (audit/COMPACTION-SURVIVAL-2026-09-20.md).
+- Cost-ceiling review: no build needed — per-goal token limits already pause with notice (opt-in via limit > 0) and loop token budgets already stop. Verified by inspection, not changed.
+
 ## 0.38.74 — `/glla stats outcomes`: completion metrics per project (2026-09-20)
 
 - New `outcomes` view for `/glla stats` (composes with `json`/`project=`): done/aborted/open counts, completion rate, mean audit rounds to approval, mean wall-clock hours and tokens per completed goal, plus the run-to-done vs supervised completion split — so run-to-done mode can be judged on numbers, not belief (audit/STATS-OUTCOMES-2026-09-20.md).
