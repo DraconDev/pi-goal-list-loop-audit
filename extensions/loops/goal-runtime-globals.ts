@@ -27,7 +27,6 @@ export const GOAL_RUNTIME_GLOBAL_NAMES = [
   "sameSessionIdentity",
   "SESSION_REBIND_GRACE_MS",
   "sessionReplacementUntil",
-  "instanceStartedAt",
   "instanceId",
   "zombieStoodDown",
   "ownerFilePath",
@@ -39,8 +38,6 @@ export const GOAL_RUNTIME_GLOBAL_NAMES = [
   "goStaleTerminal",
   "consumeStaleContinuationRearm",
   "SESSION_HANDOFF_FILE",
-  "SESSION_HANDOFF_VERSION",
-  "SESSION_HANDOFF_FRESH_MS",
   "sessionHandoffPath",
   "writeSessionHandoff",
   "consumeSessionHandoff",
@@ -62,7 +59,6 @@ export const GOAL_RUNTIME_GLOBAL_NAMES = [
   "probeExtensionApiStale",
   "safeSteerUser",
   "warnIfStaleAtEntry",
-  "lastConfirmDialog",
   "confirmDraft",
   "resolveCarryover",
   "lastCtx",
@@ -73,10 +69,8 @@ export const GOAL_RUNTIME_GLOBAL_NAMES = [
   "ownerCwd",
   "deadOwnerSession",
   "deadOwnerCwd",
-  "sessionHasConversation",
   "isBlankInitialStartup",
   "releaseInitialSessionLoadBarrier",
-  "ownerProbeLive",
   "isWorkerSessionCtx",
   "isHostSuccessorCtx",
   "isHostSuccessorContact",
@@ -85,7 +79,6 @@ export const GOAL_RUNTIME_GLOBAL_NAMES = [
   "rememberCtx",
   "isForeignCtx",
   "isHostLifecycleSessionStart",
-  "FOREIGN_SESSION_TOOL_MESSAGE",
   "foreignToolGuard",
   "mainModelRecoveryTimer",
   "mainModelSwitchInFlight",
@@ -127,18 +120,15 @@ export const GOAL_RUNTIME_GLOBAL_NAMES = [
   "isSupervising",
   "latestAuditProgress",
   "uiTicker",
-  "LIVE_STREAM_PROOF_MS",
   "ownsDetachedAudit",
   "detachedAuditContext",
   "publishDetachedAuditProgress",
   "clearDetachedAuditProgress",
   "recentActions",
   "inFlightToolCalls",
-  "summarizeToolArg",
   "noteToolCall",
   "noteToolResult",
   "clearToolActivityState",
-  "displayActivityFor",
   "refreshUI",
   "scheduleUIRefresh",
   "startUITicker",
@@ -157,8 +147,6 @@ export const GOAL_RUNTIME_GLOBAL_NAMES = [
   "shouldCompactFirstNudge",
   "buildStarvationLadderMessage",
   "COMPACT_FIRST_NUDGE_PERCENT",
-  "lastContextPercent",
-  "clearContextStarvedStreak",
   "onCompactionLanded",
   "isContextStarvedRefused",
   "__testOnlySetLastCompactionAt",
@@ -204,10 +192,8 @@ export const GOAL_RUNTIME_GLOBAL_NAMES = [
   "archiveCurrentGoal",
   "terminalizeImpossibleGoal",
   "clearDetachedAuditRuntime",
-  "newCompletionAuditAttemptId",
   "validateCompletionSummary",
   "beginCompletionAudit",
-  "isAuditorTimeoutError",
   "isAuditorNoVerdictInfrastructureError",
   "EAGER_AUDITOR_RETRY_SEC",
   "fmtRetryDelay",
@@ -233,7 +219,6 @@ export const GOAL_RUNTIME_GLOBAL_NAMES = [
   "openSettingsUI",
   "promptSettingsMenu",
   "promptModelRef",
-  "promptModelRefs",
   "handleSettingChoice",
   "observeModelChange",
   "observeTurnBoundaryModel",
@@ -255,15 +240,11 @@ interface GoalRuntimeDataTypes {
   sessionGeneration: number;
   SESSION_REBIND_GRACE_MS: number;
   sessionReplacementUntil: number;
-  instanceStartedAt: number;
   instanceId: string;
   zombieStoodDown: boolean;
   processOwnerDeniedCwd: string | null;
   SESSION_HANDOFF_FILE: string;
-  SESSION_HANDOFF_VERSION: number;
-  SESSION_HANDOFF_FRESH_MS: number;
   SESSION_OWNER_FILE: string;
-  lastConfirmDialog: { title: string; body: string; options: string[] } | null;
   lastCtx: ExtensionContext | null;
   sessionHandoffPending: boolean;
   initialSessionLoadPending: boolean;
@@ -272,7 +253,6 @@ interface GoalRuntimeDataTypes {
   ownerCwd: string | null;
   deadOwnerSession: unknown;
   deadOwnerCwd: string | null;
-  FOREIGN_SESSION_TOOL_MESSAGE: string;
   mainModelRecoveryTimer: NodeJS.Timeout | null;
   mainModelSwitchInFlight: boolean;
   mainModelAbortForRecovery: boolean;
@@ -308,7 +288,6 @@ interface GoalRuntimeDataTypes {
   lastRealActivityAt: number;
   latestAuditProgress: AuditDisplayProgress | null;
   uiTicker: NodeJS.Timeout | null;
-  LIVE_STREAM_PROOF_MS: number;
   recentActions: RecentActionDisplay[];
   inFlightToolCalls: Map<string, { name: string; arg?: string; at: number }>;
   loopRearmStreak: number;
@@ -325,7 +304,6 @@ interface GoalRuntimeDataTypes {
   shouldCompactFirstNudge: (percent: number | null | undefined) => boolean;
   buildStarvationLadderMessage: (input?: { percent?: number | null; streak?: number; recentCompact?: boolean }) => string;
   COMPACT_FIRST_NUDGE_PERCENT: number;
-  lastContextPercent: number | null;
   postCompactResumeOwed: boolean;
   postCompactResyncPending: boolean;
   COMPACTION_GRACE_MS: number;
@@ -403,7 +381,6 @@ declare global {
   var sameSessionIdentity: GoalRuntimeGlobals["sameSessionIdentity"];
   var SESSION_REBIND_GRACE_MS: GoalRuntimeGlobals["SESSION_REBIND_GRACE_MS"];
   var sessionReplacementUntil: GoalRuntimeGlobals["sessionReplacementUntil"];
-  var instanceStartedAt: GoalRuntimeGlobals["instanceStartedAt"];
   var instanceId: GoalRuntimeGlobals["instanceId"];
   var zombieStoodDown: GoalRuntimeGlobals["zombieStoodDown"];
   var ownerFilePath: GoalRuntimeGlobals["ownerFilePath"];
@@ -415,8 +392,6 @@ declare global {
   var goStaleTerminal: GoalRuntimeGlobals["goStaleTerminal"];
   var consumeStaleContinuationRearm: GoalRuntimeGlobals["consumeStaleContinuationRearm"];
   var SESSION_HANDOFF_FILE: GoalRuntimeGlobals["SESSION_HANDOFF_FILE"];
-  var SESSION_HANDOFF_VERSION: GoalRuntimeGlobals["SESSION_HANDOFF_VERSION"];
-  var SESSION_HANDOFF_FRESH_MS: GoalRuntimeGlobals["SESSION_HANDOFF_FRESH_MS"];
   var sessionHandoffPath: GoalRuntimeGlobals["sessionHandoffPath"];
   var writeSessionHandoff: GoalRuntimeGlobals["writeSessionHandoff"];
   var consumeSessionHandoff: GoalRuntimeGlobals["consumeSessionHandoff"];
@@ -438,7 +413,6 @@ declare global {
   var probeExtensionApiStale: GoalRuntimeGlobals["probeExtensionApiStale"];
   var safeSteerUser: GoalRuntimeGlobals["safeSteerUser"];
   var warnIfStaleAtEntry: GoalRuntimeGlobals["warnIfStaleAtEntry"];
-  var lastConfirmDialog: GoalRuntimeGlobals["lastConfirmDialog"];
   var confirmDraft: GoalRuntimeGlobals["confirmDraft"];
   var resolveCarryover: GoalRuntimeGlobals["resolveCarryover"];
   var lastCtx: GoalRuntimeGlobals["lastCtx"];
@@ -449,10 +423,8 @@ declare global {
   var ownerCwd: GoalRuntimeGlobals["ownerCwd"];
   var deadOwnerSession: GoalRuntimeGlobals["deadOwnerSession"];
   var deadOwnerCwd: GoalRuntimeGlobals["deadOwnerCwd"];
-  var sessionHasConversation: GoalRuntimeGlobals["sessionHasConversation"];
   var isBlankInitialStartup: GoalRuntimeGlobals["isBlankInitialStartup"];
   var releaseInitialSessionLoadBarrier: GoalRuntimeGlobals["releaseInitialSessionLoadBarrier"];
-  var ownerProbeLive: GoalRuntimeGlobals["ownerProbeLive"];
   var isWorkerSessionCtx: GoalRuntimeGlobals["isWorkerSessionCtx"];
   var isHostSuccessorCtx: GoalRuntimeGlobals["isHostSuccessorCtx"];
   var isHostSuccessorContact: GoalRuntimeGlobals["isHostSuccessorContact"];
@@ -461,7 +433,6 @@ declare global {
   var rememberCtx: GoalRuntimeGlobals["rememberCtx"];
   var isForeignCtx: GoalRuntimeGlobals["isForeignCtx"];
   var isHostLifecycleSessionStart: GoalRuntimeGlobals["isHostLifecycleSessionStart"];
-  var FOREIGN_SESSION_TOOL_MESSAGE: GoalRuntimeGlobals["FOREIGN_SESSION_TOOL_MESSAGE"];
   var foreignToolGuard: GoalRuntimeGlobals["foreignToolGuard"];
   var mainModelRecoveryTimer: GoalRuntimeGlobals["mainModelRecoveryTimer"];
   var mainModelSwitchInFlight: GoalRuntimeGlobals["mainModelSwitchInFlight"];
@@ -503,18 +474,15 @@ declare global {
   var isSupervising: GoalRuntimeGlobals["isSupervising"];
   var latestAuditProgress: GoalRuntimeGlobals["latestAuditProgress"];
   var uiTicker: GoalRuntimeGlobals["uiTicker"];
-  var LIVE_STREAM_PROOF_MS: GoalRuntimeGlobals["LIVE_STREAM_PROOF_MS"];
   var ownsDetachedAudit: GoalRuntimeGlobals["ownsDetachedAudit"];
   var detachedAuditContext: GoalRuntimeGlobals["detachedAuditContext"];
   var publishDetachedAuditProgress: GoalRuntimeGlobals["publishDetachedAuditProgress"];
   var clearDetachedAuditProgress: GoalRuntimeGlobals["clearDetachedAuditProgress"];
   var recentActions: GoalRuntimeGlobals["recentActions"];
   var inFlightToolCalls: GoalRuntimeGlobals["inFlightToolCalls"];
-  var summarizeToolArg: GoalRuntimeGlobals["summarizeToolArg"];
   var noteToolCall: GoalRuntimeGlobals["noteToolCall"];
   var noteToolResult: GoalRuntimeGlobals["noteToolResult"];
   var clearToolActivityState: GoalRuntimeGlobals["clearToolActivityState"];
-  var displayActivityFor: GoalRuntimeGlobals["displayActivityFor"];
   var refreshUI: GoalRuntimeGlobals["refreshUI"];
   var scheduleUIRefresh: GoalRuntimeGlobals["scheduleUIRefresh"];
   var startUITicker: GoalRuntimeGlobals["startUITicker"];
@@ -533,8 +501,6 @@ declare global {
   var shouldCompactFirstNudge: GoalRuntimeGlobals["shouldCompactFirstNudge"];
   var buildStarvationLadderMessage: GoalRuntimeGlobals["buildStarvationLadderMessage"];
   var COMPACT_FIRST_NUDGE_PERCENT: GoalRuntimeGlobals["COMPACT_FIRST_NUDGE_PERCENT"];
-  var lastContextPercent: GoalRuntimeGlobals["lastContextPercent"];
-  var clearContextStarvedStreak: GoalRuntimeGlobals["clearContextStarvedStreak"];
   var onCompactionLanded: GoalRuntimeGlobals["onCompactionLanded"];
   var isContextStarvedRefused: GoalRuntimeGlobals["isContextStarvedRefused"];
   var __testOnlySetLastCompactionAt: GoalRuntimeGlobals["__testOnlySetLastCompactionAt"];
@@ -580,10 +546,8 @@ declare global {
   var archiveCurrentGoal: GoalRuntimeGlobals["archiveCurrentGoal"];
   var terminalizeImpossibleGoal: GoalRuntimeGlobals["terminalizeImpossibleGoal"];
   var clearDetachedAuditRuntime: GoalRuntimeGlobals["clearDetachedAuditRuntime"];
-  var newCompletionAuditAttemptId: GoalRuntimeGlobals["newCompletionAuditAttemptId"];
   var validateCompletionSummary: GoalRuntimeGlobals["validateCompletionSummary"];
   var beginCompletionAudit: GoalRuntimeGlobals["beginCompletionAudit"];
-  var isAuditorTimeoutError: GoalRuntimeGlobals["isAuditorTimeoutError"];
   var isAuditorNoVerdictInfrastructureError: GoalRuntimeGlobals["isAuditorNoVerdictInfrastructureError"];
   var EAGER_AUDITOR_RETRY_SEC: GoalRuntimeGlobals["EAGER_AUDITOR_RETRY_SEC"];
   var fmtRetryDelay: GoalRuntimeGlobals["fmtRetryDelay"];
@@ -609,7 +573,6 @@ declare global {
   var openSettingsUI: GoalRuntimeGlobals["openSettingsUI"];
   var promptSettingsMenu: GoalRuntimeGlobals["promptSettingsMenu"];
   var promptModelRef: GoalRuntimeGlobals["promptModelRef"];
-  var promptModelRefs: GoalRuntimeGlobals["promptModelRefs"];
   var handleSettingChoice: GoalRuntimeGlobals["handleSettingChoice"];
   var observeModelChange: GoalRuntimeGlobals["observeModelChange"];
   var observeTurnBoundaryModel: GoalRuntimeGlobals["observeTurnBoundaryModel"];

@@ -2168,10 +2168,8 @@ function fireReviewer(
 
 /* Runtime globals: preserve the old monolith lexical links across extracted modules. */
 defineGoalRuntimeGlobal("clearDetachedAuditRuntime", { get: () => clearDetachedAuditRuntime });
-defineGoalRuntimeGlobal("newCompletionAuditAttemptId", { get: () => newCompletionAuditAttemptId });
 defineGoalRuntimeGlobal("validateCompletionSummary", { get: () => validateCompletionSummary });
 defineGoalRuntimeGlobal("beginCompletionAudit", { get: () => beginCompletionAudit });
-defineGoalRuntimeGlobal("isAuditorTimeoutError", { get: () => isAuditorTimeoutError });
 defineGoalRuntimeGlobal("isAuditorNoVerdictInfrastructureError", { get: () => isAuditorNoVerdictInfrastructureError });
 defineGoalRuntimeGlobal("EAGER_AUDITOR_RETRY_SEC", { get: () => EAGER_AUDITOR_RETRY_SEC });
 defineGoalRuntimeGlobal("fmtRetryDelay", { get: () => fmtRetryDelay });

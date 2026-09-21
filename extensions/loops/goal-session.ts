@@ -1964,7 +1964,6 @@ defineGoalRuntimeGlobal("classifySessionHandleInvalidation", { get: () => classi
 defineGoalRuntimeGlobal("sameSessionIdentity", { get: () => sameSessionIdentity });
 defineGoalRuntimeGlobal("SESSION_REBIND_GRACE_MS", { get: () => SESSION_REBIND_GRACE_MS });
 defineGoalRuntimeGlobal("sessionReplacementUntil", { get: () => sessionReplacementUntil, set: (v) => { sessionReplacementUntil = v as any; } });
-defineGoalRuntimeGlobal("instanceStartedAt", { get: () => instanceStartedAt });
 defineGoalRuntimeGlobal("instanceId", { get: () => instanceId });
 defineGoalRuntimeGlobal("zombieStoodDown", { get: () => zombieStoodDown, set: (v) => { zombieStoodDown = v as any; } });
 defineGoalRuntimeGlobal("ownerFilePath", { get: () => ownerFilePath });
@@ -1976,8 +1975,6 @@ defineGoalRuntimeGlobal("absorbStaleIfSuperseded", { get: () => absorbStaleIfSup
 defineGoalRuntimeGlobal("goStaleTerminal", { get: () => goStaleTerminal });
 defineGoalRuntimeGlobal("consumeStaleContinuationRearm", { get: () => consumeStaleContinuationRearm });
 defineGoalRuntimeGlobal("SESSION_HANDOFF_FILE", { get: () => SESSION_HANDOFF_FILE });
-defineGoalRuntimeGlobal("SESSION_HANDOFF_VERSION", { get: () => SESSION_HANDOFF_VERSION });
-defineGoalRuntimeGlobal("SESSION_HANDOFF_FRESH_MS", { get: () => SESSION_HANDOFF_FRESH_MS });
 defineGoalRuntimeGlobal("sessionHandoffPath", { get: () => sessionHandoffPath });
 defineGoalRuntimeGlobal("writeSessionHandoff", { get: () => writeSessionHandoff });
 defineGoalRuntimeGlobal("consumeSessionHandoff", { get: () => consumeSessionHandoff });
@@ -1999,7 +1996,6 @@ defineGoalRuntimeGlobal("probeExtensionApiStaleRaw", { get: () => probeExtension
 defineGoalRuntimeGlobal("probeExtensionApiStale", { get: () => probeExtensionApiStale });
 defineGoalRuntimeGlobal("safeSteerUser", { get: () => safeSteerUser });
 defineGoalRuntimeGlobal("warnIfStaleAtEntry", { get: () => warnIfStaleAtEntry });
-defineGoalRuntimeGlobal("lastConfirmDialog", { get: () => lastConfirmDialog, set: (v) => { lastConfirmDialog = v as any; } });
 defineGoalRuntimeGlobal("confirmDraft", { get: () => confirmDraft });
 defineGoalRuntimeGlobal("resolveCarryover", { get: () => resolveCarryover });
 defineGoalRuntimeGlobal("lastCtx", { get: () => lastCtx, set: (v) => { lastCtx = v as any; } });
@@ -2010,10 +2006,8 @@ defineGoalRuntimeGlobal("ownerSession", { get: () => ownerSession, set: (v) => {
 defineGoalRuntimeGlobal("ownerCwd", { get: () => ownerCwd, set: (v) => { ownerCwd = v as any; } });
 defineGoalRuntimeGlobal("deadOwnerSession", { get: () => deadOwnerSession, set: (v) => { deadOwnerSession = v as any; } });
 defineGoalRuntimeGlobal("deadOwnerCwd", { get: () => deadOwnerCwd, set: (v) => { deadOwnerCwd = v as any; } });
-defineGoalRuntimeGlobal("sessionHasConversation", { get: () => sessionHasConversation });
 defineGoalRuntimeGlobal("isBlankInitialStartup", { get: () => isBlankInitialStartup });
 defineGoalRuntimeGlobal("releaseInitialSessionLoadBarrier", { get: () => releaseInitialSessionLoadBarrier });
-defineGoalRuntimeGlobal("ownerProbeLive", { get: () => ownerProbeLive });
 defineGoalRuntimeGlobal("isWorkerSessionCtx", { get: () => isWorkerSessionCtx });
 defineGoalRuntimeGlobal("isHostSuccessorCtx", { get: () => isHostSuccessorCtx });
 defineGoalRuntimeGlobal("isHostSuccessorContact", { get: () => isHostSuccessorContact });
@@ -2022,7 +2016,6 @@ defineGoalRuntimeGlobal("selfHealStaleSameSession", { get: () => selfHealStaleSa
 defineGoalRuntimeGlobal("rememberCtx", { get: () => rememberCtx });
 defineGoalRuntimeGlobal("isForeignCtx", { get: () => isForeignCtx });
 defineGoalRuntimeGlobal("isHostLifecycleSessionStart", { get: () => isHostLifecycleSessionStart });
-defineGoalRuntimeGlobal("FOREIGN_SESSION_TOOL_MESSAGE", { get: () => FOREIGN_SESSION_TOOL_MESSAGE });
 defineGoalRuntimeGlobal("foreignToolGuard", { get: () => foreignToolGuard });
 defineGoalRuntimeGlobal("mainModelRecoveryTimer", { get: () => mainModelRecoveryTimer, set: (v) => { mainModelRecoveryTimer = v as any; } });
 defineGoalRuntimeGlobal("mainModelSwitchInFlight", { get: () => mainModelSwitchInFlight, set: (v) => { mainModelSwitchInFlight = v as any; } });
