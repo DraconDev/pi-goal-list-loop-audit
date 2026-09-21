@@ -211,6 +211,8 @@ test("v0.34.63 — source guard: the barrier-completing resume gate is wired bef
   const SRC = readGoalRuntimeSource();
   assert.match(SRC, /const barrierAwaitingLoadedSession = initialSessionLoadPending && lifecycleSignal;/);
   assert.match(SRC, /resumeCompletesLoad = barrierAwaitingLoadedSession/);
-  assert.match(SRC, /if \(foreignRecordedSession && !hostLifecycleStart && !resumeCompletesLoad\) return;/);
+  // v0.38.83: the gate moved verbatim into admitSessionStart, where refusal
+  // returns null (the caller returns). The wired condition is unchanged.
+  assert.match(SRC, /if \(foreignRecordedSession && !hostLifecycleStart && !resumeCompletesLoad\) return( null)?;/);
   assert.match(SRC, /sameSessionIdentity\(ctx\.sessionManager, recordedOwner\)/);
 });
