@@ -413,6 +413,8 @@ async function cmdStatus(ctx: ExtensionContext): Promise<void> {
     lines.push(`Completion audit: ${isCompletionAuditRecoveryPending(g) ? `recovery pending — ${activeGoalSurfaceCommand("resume")} retries the stored claim` : flags.completionAuditInFlight && flags.latestAuditProgress?.label === "queued" ? "detached auditor queued" : flags.completionAuditInFlight ? "detached auditor running" : "awaiting lifecycle recovery"}`);
   }
   if (g.pauseReason) lines.push(`Paused: ${sanitizeProviderDisplayText(g.pauseReason)}`);
+  // v0.38.89: the timeline is the status card's slow twin — one pointer.
+  lines.push("Trail: /goal timeline");
   ctx.ui.notify(lines.join("\n"), "info");
 }
 
@@ -1998,12 +2000,33 @@ async function cmdReviewerSettings(ctx: ExtensionContext): Promise<void> {
  * v0.38.80: challenges — falsification-round counts and flip rate per
  *   project. Composes with json/project like outcomes.
  */
+/** v0.38.89: leftover /glla stats args after the known tokens are stripped
+ * (null when clean). A typo'd view used to render the default table
+ * silently; now it names the usage instead. Pure for unit tests. */
+export function unknownStatsArg(args: string): string | null {
+  const rest = args
+    .replace(/\bjson\b/g, "")
+    .replace(/\bpremature\b/g, "")
+    .replace(/\boutcomes\b/g, "")
+    .replace(/\bchallenges\b/g, "")
+    .replace(/project=\S+/g, "")
+    .trim();
+  return rest === "" ? null : rest.slice(0, 60);
+}
+
 function cmdStats(args: string, ctx: ExtensionContext): void {
   const asJson = /\bjson\b/.test(args);
   const prematureOnly = /\bpremature\b/.test(args);
   const outcomes = /\boutcomes\b/.test(args);
   const challenges = /\bchallenges\b/.test(args);
   const projectMatch = args.match(/project=(\S+)/);
+  // v0.38.89: unknown args teach the usage instead of silently rendering
+  // the default view. The JSON path stays total (machine readers).
+  const unknown = asJson ? null : unknownStatsArg(args);
+  if (unknown) {
+    ctx.ui.notify(`Unknown /glla stats argument "${unknown}". Use: outcomes | challenges | premature | json | project=<path>.`, "warning");
+    return;
+  }
   let rollups: ProjectRollup[] = [];
   if (projectMatch) {
     const p = projectMatch[1]!.replace(/^~/, os.homedir());
@@ -2031,7 +2054,7 @@ function cmdStats(args: string, ctx: ExtensionContext): void {
     : outcomes
       ? (asJson ? formatOutcomesJson(rollups) : formatOutcomesTable(rollups))
       : (asJson ? formatRollupJson(rollups) : formatRollupTable(rollups));
-  ctx.ui.notify(`glla stats${view ? ` ${view}` : ""} — ${rollups.length} project(s)${prematureOnly ? " (premature filter)" : ""}\n${out}`, "info");
+  ctx.ui.notify(`/glla stats${view ? ` ${view}` : ""} — ${rollups.length} project(s)${prematureOnly ? " (premature filter)" : ""}\n${out}`, "info");
 }
 
 /**
