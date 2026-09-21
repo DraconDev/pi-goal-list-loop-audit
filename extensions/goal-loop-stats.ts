@@ -234,7 +234,10 @@ function finishOutcomes(acc: RollupAccumulator): GoalOutcomes {
     const first = acc.firstSeen.get(id);
     if (first) {
       const ms = Date.parse(rec.at) - Date.parse(first);
-      if (Number.isFinite(ms) && ms >= 0) {
+      // Strictly positive: a zero delta means the archive event is the
+      // ONLY sighting (unknown duration, not instant completion), and a
+      // negative delta is clock skew. Unknowns stay unknown.
+      if (Number.isFinite(ms) && ms > 0) {
         wallSumHrs += ms / 3_600_000;
         wallN++;
       }
