@@ -23,7 +23,11 @@ tools in the main session only:
   genuinely unknown, then propose; the user's Confirm dialog is the
   activation gate. Ask supervised vs run-to-done in the interview; pass
   `runToDone: true` only on an explicit user choice (it auto-resumes
-  sessions and auto-defaults decisions until complete or a hard stop). From normal chat with no draft open, do NOT call
+  sessions and auto-defaults decisions until complete or a hard stop).
+  For high-stakes objectives, also ask default vs full audits; pass
+  `fullAudit: true` only on an explicit user choice (every claim gets
+  the falsification round — there is no light-audit request, and you
+  must never imply one exists). From normal chat with no draft open, do NOT call
   `propose_goal_draft` — it refuses outside drafting mode. Ask the user to
   open drafting with bare `/goal`, or use `list_add` for straight queueing.
   Never activate a speculative raw seed.
