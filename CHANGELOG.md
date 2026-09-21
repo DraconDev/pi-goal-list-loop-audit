@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.38.80 — Challenge outcomes recorded; `/glla stats challenges` (2026-09-21)
+
+- The worker's falsification outcome (`confirmed` / `flipped` / `not-applicable` / `skipped:<reason>`) now threads through the parent boundary onto every recorded `AuditVerdict` (both settle sites), so audit quality becomes measurable instead of believed (audit/AUDIT-METRICS-2026-09-21.md).
+- New `/glla stats challenges` view (composes with `json`/`project=`): challenged/confirmed/flipped/skipped counts plus the flip rate over challenged runs only. Skipped challenges and legacy verdicts stay unknown, never zero-filled.
+
 ## 0.38.79 — Schema covers runToDone; T6 green (2026-09-20)
 
 - `runToDone` joins `schemas/goal.schema.json`: v0.38.73 added the consent flag to the `Goal` interface but not to the published schema, and the T6 drift test caught it in the full suite (2457 pass / 1 fail). One additive boolean property, zero behavior change; full serial suite re-run green (audit/SCHEMA-RUNTO-DONE-2026-09-20.md).
