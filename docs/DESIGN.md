@@ -739,6 +739,24 @@ shapes (details in CHANGELOG.md; each is pinned by tests):
   is the calibration signal for risk-tiered auditing: it says whether
   round 2 earns its latency.
 
+## Addendum v0.38.81 (risk-tiered auditing)
+
+- **Tiers differ by one round.** Full = audit plus falsification round;
+  light = the identical single-round audit (same brief, shield, tool
+  floor), round 2 skipped via `challenge: false` in the worker request.
+  Light never means none — that invariant is the design's spine.
+- **Escalation-only resolution.** The pure `resolveAuditTier` accumulates
+  full-tier reasons (draft consent, agent request, rework history,
+  activity ceilings, high-stakes vocabulary) and nothing pushes a claim
+  down. Agent-written text is read for escalation only. Computed per
+  dispatch through the shared `resolveClaimAuditTier` so both dispatch
+  paths tier identically; every decision ledgers as
+  `audit_tier_decided` with reasons.
+- **Spot-checks close the loop.** `auditSpotCheckRate` (default 0.1)
+  silently escalates sampled light audits; verdicts carry the tier and
+  spot mark, and the challenges view reports the spot flip rate — the
+  calibration signal for the v1 ceilings and vocabulary.
+
 ## Files
 
 - `docs/DESIGN.md` — **this file**
