@@ -80,6 +80,12 @@ export interface GoalAuditorResult {
    * legacy workers. Never affects verdict semantics — the final-line
    * rule already composed the challenge into approved/disapproved. */
   challenge?: string;
+  /** v0.38.81: the risk tier this attempt ran under (stamped by the
+   * public wrapper from dispatch args). Absent on legacy callers. */
+  auditTier?: AuditTierName;
+  /** v0.38.81: true when this full-tier attempt is a silent spot-check
+   * of the light population. Absent otherwise (absent stays absent). */
+  spotCheck?: boolean;
 }
 
 /** Infrastructure errors are never semantic verdicts, even if a parser or
@@ -1425,13 +1431,17 @@ export function resolveWorkerCommand(execPath: string): string {
  * Infrastructure failures never become semantic disapprovals and never fall
  * back to an in-process session.
  */
-export async function runDetachedGoalCompletionAuditor(args: {
+async function runDetachedGoalCompletionAuditorInner(args: {
   cwd: string;
   goal: Goal;
   completionSummary?: string | null;
   verificationSummary?: string | null;
   model?: AuditorModel;
   thinkingLevel?: string;
+  /** v0.38.81: risk tier resolved once per claim at dispatch. Light
+   * sends `challenge: false` in the worker request (single-round
+   * audit); absent/full keeps today's challenge behavior. */
+  auditTier?: AuditTierName;
   /** v0.36.0: extension specs allow-listed for the detached auditor
    * (settings key auditorAllowedExtensions). Raw specs (npm:/git:/relative)
    * are resolved to concrete install paths HERE, inside the process layer,
