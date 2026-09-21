@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.38.74 — `/glla stats outcomes`: completion metrics per project (2026-09-20)
+
+- New `outcomes` view for `/glla stats` (composes with `json`/`project=`): done/aborted/open counts, completion rate, mean audit rounds to approval, mean wall-clock hours and tokens per completed goal, plus the run-to-done vs supervised completion split — so run-to-done mode can be judged on numbers, not belief (audit/STATS-OUTCOMES-2026-09-20.md).
+- Unknowns stay unknown: goals without timing/usage data are skipped from means, never zero-filled; pre-flag goals land in the supervised-or-legacy bucket.
+
 ## 0.38.73 — Run-to-done mode: draft up front, carry to completion (2026-09-20)
 
 - New per-goal run-to-done consent at draft time: the interview asks supervised vs run-to-done, the Confirm dialog discloses the mode (auto session resume + immediate decision auto-default until complete or a hard stop), and consent is durable on the goal plus ledgered (`run_to_done_consented`). Single-goal drafts only in v1; batch/list drafts refuse the flag with guidance (audit/RUN-TO-DONE-2026-09-20.md).

@@ -706,6 +706,16 @@ shapes (details in CHANGELOG.md; each is pinned by tests):
   auto-running goal must never look supervised. Single-goal drafts only
   in v1; list-queue items stay supervised.
 
+## Addendum v0.38.74 (outcome metrics)
+
+- **`/glla stats outcomes`** aggregates what the ledger already records:
+  done/aborted/open, completion rate, mean audit rounds to approval,
+  mean wall-clock hours and tokens per completed goal, and the
+  run-to-done vs supervised completion split. Unknowns stay unknown
+  (skipped from means, never zero-filled); pre-flag goals land in the
+  supervised-or-legacy bucket. The point is comparative: mode and
+  process changes get judged on numbers.
+
 ## Files
 
 - `docs/DESIGN.md` — **this file**
