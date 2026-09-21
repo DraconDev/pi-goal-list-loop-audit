@@ -2347,7 +2347,11 @@ function registerAgentTools(pi: any): void {
         const budgetRaw = loadSettings(ctx.cwd).decisionPauseBudget;
         const budget = typeof budgetRaw === "number" && Number.isInteger(budgetRaw) && budgetRaw >= 0 ? budgetRaw : undefined;
         const decisionCount = (state.goal.midRunDecisionCount ?? 0) + 1;
-        if (budget !== undefined && decisionCount > budget) {
+        // v0.38.73: run-to-done auto-defaults EVERY decision immediately —
+        // the draft consent is the budget. Same mechanics as the exhausted
+        // path (counter + autoDefaultLog), distinct ledger + copy.
+        const runToDone = state.goal?.runToDone === true;
+        if ((budget !== undefined && decisionCount > budget) || runToDone) {
           const recIdx = p.recommended && p.recommended >= 1 && p.recommended <= p.options.length
             ? Math.floor(p.recommended) - 1
             : 0;
@@ -2362,6 +2366,21 @@ function registerAgentTools(pi: any): void {
             midRunDecisionCount: decisionCount,
             autoDefaultLog: [...(state.goal.autoDefaultLog ?? []), entry].slice(-20),
           }, ctx);
+          if (runToDone) {
+            appendLedger(ctx.cwd, "run_to_done_auto_default", {
+              goalId: state.goal.id,
+              decisionCount,
+              chosen,
+              reason: p.reason,
+            });
+            return {
+              content: [{
+                type: "text",
+                text: `Run-to-done decision #${decisionCount}: NOT paused — proceeding with the recommended default, option ${recIdx + 1}: "${chosen}". This assumption is logged on the goal (autoDefaultLog) and ledgered as run_to_done_auto_default. Keep working — record it in your completion summary's Left out: "assumed ${chosen} for: ${(p.reason ?? "").slice(0, 160)}".`,
+              }],
+              details: {},
+            };
+          }
           appendLedger(ctx.cwd, "decision_budget_auto_default", {
             goalId: state.goal.id,
             budget,
