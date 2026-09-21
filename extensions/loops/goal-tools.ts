@@ -2038,7 +2038,9 @@ function registerAgentTools(pi: any): void {
         // TODO list and keeps going — the objections become pendingTasks
         // rendered into every continuation until addressed. OFF preserves
         // the pause (contract item 24 test 2).
-        if (effectiveCap.aggressiveMode) {
+        // v0.38.73: run-to-done treats caps as hard stops — the goal parks
+        // via the branch below instead of converting to TODOs.
+        if (effectiveCap.aggressiveMode && state.goal?.runToDone !== true) {
           const pendingTasks = durableObjections;
           updateGoal({
             status: "active",
