@@ -708,6 +708,14 @@ shapes (details in CHANGELOG.md; each is pinned by tests):
 
 ## Addendum v0.38.74 (outcome metrics)
 
+- **`/glla stats outcomes`** aggregates what the ledger already records:
+  done/aborted/open, completion rate, mean audit rounds to approval,
+  mean wall-clock hours and tokens per completed goal, and the
+  run-to-done vs supervised completion split. Unknowns stay unknown
+  (skipped from means, never zero-filled); pre-flag goals land in the
+  supervised-or-legacy bucket. The point is comparative: mode and
+  process changes get judged on numbers.
+
 ## Addendum v0.38.76 (auditor challenge round)
 
 - **Approvals earn a falsification pass.** The worker runs a second bounded
@@ -720,14 +728,6 @@ shapes (details in CHANGELOG.md; each is pinned by tests):
   round-1 output (`result.challenge: skipped:<reason>`); cancellation
   wins outright (`ok:false`, no fallback). Worst-case approval latency
   roughly doubles; parent timeout/retry absorbs overruns.
-
-- **`/glla stats outcomes`** aggregates what the ledger already records:
-  done/aborted/open, completion rate, mean audit rounds to approval,
-  mean wall-clock hours and tokens per completed goal, and the
-  run-to-done vs supervised completion split. Unknowns stay unknown
-  (skipped from means, never zero-filled); pre-flag goals land in the
-  supervised-or-legacy bucket. The point is comparative: mode and
-  process changes get judged on numbers.
 
 ## Files
 
