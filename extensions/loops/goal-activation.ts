@@ -1605,6 +1605,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     } catch (err) {
       ctx.ui.notify(`glla subagent override sync failed: ${err instanceof Error ? err.message : String(err)}`, "warning");
     }
+    // [lifecycle 7/12] ownership markers + resume-consent computation
     // Consume ownership markers before the startup barrier so a later loaded
     // session cannot mistake this placeholder runtime for a rebind. The
     // owner sidecar carries the predecessor generation and identity that the
@@ -1674,6 +1675,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       persistState(ctx);
       appendLedger(ctx.cwd, "terminal_goal_slot_closed", { goalId: terminal.id, status: terminal.status, via: "session-start" });
     }
+    // [lifecycle 8/12] load barrier: blank startup parks here until loaded
     if (initialSessionLoadPending && !explicitRecovery && !heldLoopSuccessorResume) {
       // The objective/status projection remains visible below, but the
       // previous auditor report must not become fresh model/UI context before
@@ -1700,6 +1702,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // pi reported a blank startup context. Release the barrier before any
     // scheduling path below can observe it.
     initialSessionLoadPending = false;
+    // [lifecycle 9/12] arbitration + auto-resume consent + auditor surface + retry claims
     // v0.29.6: stacked-state auto-arbitration FIRST — one live artifact
     // survives before the restore gate decides hold-vs-resume for it.
     autoArbitrateStackedState(ctx);
@@ -1822,6 +1825,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     ) {
       ctx.ui.notify("Auto-resume fired (event: session start). Continue working.", "info");
     }
+    // [lifecycle 10/12] held-loop resume + audit-loop migrations
     // v0.29.11: loops stopped by the stale-handle terminal or the stall
     // escalation told the user "restart pi, then /loop start" — but a
     // fresh start discards iteration/best/history. Hold them on load like
@@ -1913,6 +1917,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       // if (autoResume || recoveryResume || rebindResume || handoffResume) {
     // Different-pid crash successors still hold like any cold load;
     // Auto-resume stays the only load-time automation for them.
+    // [lifecycle 11/12] continuation release on any consent signal
     if (autoResume || recoveryResume || rebindResume || handoffResume || staleRearmedOnSessionStart || sameProcessContinuityResume) {
         // v0.28.1 (S2): clear the stale-handle interrupt marker — this IS
         // the auto-resume the marker promised.
@@ -1968,6 +1973,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
         ctx.ui.notify(`List has ${listQueue().length} item(s) waiting — /list next to activate the head.`, "info");
       }
     }
+    // [lifecycle 12/12] stored-claim release + consent-less park + final UI
     // v0.35.x: an interrupted stored completion claim is released from the
     // MAIN's auditing wait before any recovery policy is considered. A valid
     // handoff/rebind or global autoResume may then start one fresh attempt;
