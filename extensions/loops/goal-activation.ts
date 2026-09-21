@@ -996,7 +996,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     }
     ensureAgentToolsActive(pi, ctx);
   }
-  // v0.38.83 (lifecycle map 1/3 — admission): the session_start
+  // v0.38.83 (lifecycle 1/12 — admission): the session_start
   // foreign/worker gate, extracted verbatim from the callback.
   // Null = this contact must not run restore; otherwise the
   // admission facts the later stages read.
@@ -1053,7 +1053,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     };
   }
 
-  // v0.38.83 (lifecycle map 2/3 — root ownership): claim-or-refuse
+  // v0.38.83 (lifecycle 2/12 — root ownership): claim-or-refuse
   // plus the admitted-root registration, extracted verbatim.
   // False = read-only notify already sent; the caller returns.
   function claimSessionRootOrNotify(ctx: ExtensionContext, hostLifecycleStart: boolean): boolean {
@@ -1082,7 +1082,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     return true;
   }
 
-  // v0.38.83 (lifecycle map 3/3 — retention sweep): closed block,
+  // v0.38.83 (lifecycle 3/12 — retention sweep): closed block,
   // extracted verbatim. Best-effort hygiene; never breaks startup.
   function retentionSweepAuditJobs(ctx: ExtensionContext): void {
     // v0.38.72: automate the proven-dead audit-job sweep. Manual-only `/glla
@@ -1388,6 +1388,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     const { hostLifecycleStart, recordedOwner } = admission;
     if (!claimSessionRootOrNotify(ctx, hostLifecycleStart)) return;
     retentionSweepAuditJobs(ctx);
+    // [lifecycle 4/12] rebind reset: capture flags, clear timers, rebind ctx, restore state
     // v0.34.73 (OPEN-ISSUES 1.12): capture the pre-rebind invalidation flags
     // BEFORE the block below clears them — the id_invalidation reason needs
     // to know which mechanism invalidated the old handle.
@@ -1494,6 +1495,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
         clearArchiveIntent(ctx.cwd);
       }
     }
+    // [lifecycle 5/12] queue convergence + stale rearm + policy heal
     // v0.35.21 (list-invisible-until-restart): the durable queue is the
     // UNION of the persisted state and the per-item .queue.json sidecars
     // (v0.34.60 disk-first writes). readState replays only the state
@@ -1515,6 +1517,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     if (staleRearmedOnSessionStart) {
       appendLedger(ctx.cwd, "stale_continuation_rearm_contact", { via: "session_start" });
     }
+    // [lifecycle 6/12] recovery prep: timers, dispatch record, carryover, tool readiness
     // v0.34.68 (bug 1.7): heal a corrupted in-memory policy BEFORE the
     // restore gate below persists state — otherwise the hold/auto-resume
     // would rewrite the durable goal .md with the corrupted policy and
