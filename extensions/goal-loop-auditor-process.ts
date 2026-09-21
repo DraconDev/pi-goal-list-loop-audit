@@ -45,6 +45,7 @@ import { resolveAuditorAllowedExtensions } from "./auditor-extensions.js";
 export type AuditorInfrastructureClass = "no-verdict" | "timeout" | "transport" | "provider";
 export type AuditorRecoveryFailureClass = AuditorInfrastructureClass;
 const AUDITOR_INFRASTRUCTURE_CLASSES = new Set<AuditorInfrastructureClass>(["no-verdict", "timeout", "transport", "provider"]);
+export const AUDITOR_CURSOR_PERSISTENCE_FAILURE = "auditor recovery cursor persistence failed";
 
 export function isAuditorCursorPersistenceFailure(error: unknown): boolean {
   return typeof error === "string" && error.trim() === AUDITOR_CURSOR_PERSISTENCE_FAILURE;

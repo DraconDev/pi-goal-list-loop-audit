@@ -12,6 +12,8 @@
 export const START_CONTEXT_MAX_ENTRIES = 48;
 export const START_CONTEXT_MAX_TURNS = 8;
 export const START_CONTEXT_MAX_CHARS = 3_200;
+export const START_CONTEXT_MAX_TURN_CHARS = 800;
+export const START_CONTEXT_MAX_CANDIDATE_CHARS = 700;
 
 export interface StartContextTurn {
   role: "user" | "assistant";

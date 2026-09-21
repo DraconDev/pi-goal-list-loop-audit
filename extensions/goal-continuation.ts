@@ -1532,6 +1532,7 @@ export function buildPostCompactResync(briefExcerpt?: string): string {
  * goal start (and re-read when edited mid-goal); absent/blank/unreadable
  * resolves absent so repos without one render byte-identical prompts.
  */
+export const PITFALLS_BRIEF_MAX_CHARS = 1500;
 
 export function readPitfallsBrief(cwd: string): string | undefined {
   let body: string;

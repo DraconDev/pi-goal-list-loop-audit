@@ -765,6 +765,7 @@ const EAGER_AUDITOR_RETRY_SEC = 5;
  * stuck wait: cap every post-eager auditor retry at 15 minutes. Hourly
  * quota resets are still picked up within one cap window, and the ladder
  * timer keeps owning the wait (the :00:30 backstop only covers dead timers). */
+export const AUDITOR_RETRY_WAIT_CAP_SEC = 15 * 60;
 
 /** Seconds-aware "auto-retry in …" label: "5s" under a minute, else "60m". */
 function fmtRetryDelay(seconds: number): string {

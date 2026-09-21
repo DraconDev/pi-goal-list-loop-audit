@@ -29,6 +29,7 @@ export type { UpdateCheckCache };
  */
 
 export const UPDATE_CHECK_TTL_MS = 24 * 60 * 60 * 1_000;
+export const UPDATE_CHECK_TIMEOUT_MS = 15_000;
 
 export interface SpawnedRefreshChild {
   on(event: "close", listener: (code: number | null) => void): void;

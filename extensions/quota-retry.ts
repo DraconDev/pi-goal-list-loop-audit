@@ -10,8 +10,11 @@ import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 export type QuotaSignal = "rate-limit" | "plan-quota" | "billing";
 
 /** Never let one automatic provider retry schedule farther than five hours. */
+export const MAX_AUTOMATIC_PROVIDER_RETRY_SEC = 5 * 60 * 60;
 /** Compatibility default for callers that do not provide a delay. */
+export const DEFAULT_PROVIDER_RETRY_SEC = 60 * 60;
 /** @deprecated Use MAX_AUTOMATIC_PROVIDER_RETRY_SEC. */
+export const MAX_AUTOMATIC_QUOTA_RETRY_SEC = MAX_AUTOMATIC_PROVIDER_RETRY_SEC;
 /** @deprecated Use DEFAULT_PROVIDER_RETRY_SEC. */
 export const DEFAULT_QUOTA_RETRY_SEC = DEFAULT_PROVIDER_RETRY_SEC;
 
@@ -518,3 +521,4 @@ export const cancelQuotaRetry = cancelProviderRetry;
 /** @deprecated Use scheduleProviderRetry. */
 export const scheduleQuotaRetry = scheduleProviderRetry;
 /** @deprecated Use isSubagentProviderFailure. */
+export const isSubagentQuotaResult = isSubagentProviderFailure;

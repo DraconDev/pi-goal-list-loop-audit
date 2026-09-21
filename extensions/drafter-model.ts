@@ -12,6 +12,7 @@ import { MAX_MAIN_MODEL_FALLBACKS, modelRef, normalizeMainModelFallbackRefs } fr
 import { ModelSelector } from "./model-selector.js";
 import type { Settings } from "./goal-settings.js";
 
+export const MAX_DRAFTER_FALLBACKS = MAX_MAIN_MODEL_FALLBACKS;
 
 export interface DrafterModelCandidate {
   ref: string;

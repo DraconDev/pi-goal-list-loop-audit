@@ -13,6 +13,8 @@ import * as path from "node:path";
 
 import { piGlaDir, runPersistStep, stateRootPending } from "./goal-loop-core.js";
 
+export const DISPATCH_RECORD_VERSION = 1;
+export const DISPATCH_RECORD_FILE = "continuation-dispatch.json";
 
 export type DispatchKind = "goal" | "loop" | "stall" | "length";
 export type DispatchPhase = "prepared" | "accepted" | "started" | "failed" | "unacknowledged";

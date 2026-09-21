@@ -529,6 +529,7 @@ export function parseLoopStartArgs(raw: string): {
 // ---- /loop respec (v0.24.3) ----
 
 /** Root-only spec candidates, in priority order. No fuzzy search. */
+export const RESPEC_SPEC_CANDIDATES = ["SPEC.md", "spec.md"] as const;
 
 /** Resolve every root spec candidate that exists (priority order). */
 export function resolveSpecFiles(cwd: string): string[] {

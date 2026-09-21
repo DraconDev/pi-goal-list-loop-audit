@@ -101,6 +101,7 @@ export function truncate(text: string, max: number): string {
 }
 
 const PANEL_ROW_CAP = 20;
+export const WIDGET_AGENT_ROW_CAP = 8;
 
 /** Audit 2026-09-07 (field screenshots): the age label never says "silent" — that
  * noun reads as a state claim ("this child is silent") while the child is

@@ -164,6 +164,7 @@ export type OwnerClass =
  * as live merely asks the user. So the recycled verdict needs the
  * occupant to be younger than the claim by a wide margin — clock skew
  * (wall clock vs boot clock) can never fake 60s. */
+export const RECYCLED_MARGIN_MS = 60_000;
 
 /** Classify the record against this process. `startMs` is the current
  * occupant's process start (null = unknowable → never "recycled"). */

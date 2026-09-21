@@ -42,6 +42,7 @@ export const KNOWN_PINNED_DEFAULT_AGENTS = [] as const;
 
 /** Roles that GLLA itself owns. Built-ins are created only for explicit model
  * pins; Designer is always present because GLLA invokes it as a checkpoint. */
+export const KNOWN_MANAGED_AGENT_NAMES = ["Designer"] as const;
 
 /** Names managed by the pre-0.36 Tintin integration. They are cleanup targets
  * only: user-owned files are still left untouched, and old settings are not
@@ -64,7 +65,11 @@ export const SCOUT_DEFAULT_SYSTEM_PROMPT = `You are a scouting subagent running 
 Use the provided tools directly. Move fast, but do not guess. Start discovery with task-provided paths and specific symbols, types, methods, filenames, or likely source roots. Use \`find\` for path discovery. Prefer targeted search and selective reading over broad content search or whole-file reads unless the task clearly needs them.
 
 Focus on the minimum context another agent needs to act: relevant entry points, key types and functions, data flow and dependencies, likely files to change, constraints, risks, and open questions.`;
+export const EXPLORE_DEFAULT_DESCRIPTION = SCOUT_DEFAULT_DESCRIPTION;
+export const EXPLORE_DEFAULT_SYSTEM_PROMPT = SCOUT_DEFAULT_SYSTEM_PROMPT;
+export const EXPLORE_DEFAULT_TOOLS = SCOUT_DEFAULT_TOOLS;
 
+export const DESIGNER_DEFAULT_DESCRIPTION = "Read-only design specialist for turning an explicit design request into an architecture, affected-file map, risks, trade-offs, and a verification plan before implementation.";
 
 export const DESIGNER_DEFAULT_SYSTEM_PROMPT = `# DESIGNER ROLE — READ-ONLY DESIGN CHECKPOINT
 You are the Designer subagent. Do not edit, create, delete, or move files and do not run commands that change repository state.

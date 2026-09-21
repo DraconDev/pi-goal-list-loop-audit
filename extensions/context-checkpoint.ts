@@ -11,6 +11,7 @@ import type { Goal } from "./goal-loop-core.js";
 import type { LoopState } from "./goal-loop-forever.js";
 
 export const AUTHORITATIVE_CHECKPOINT_CUSTOM_TYPE = "glla-authoritative-checkpoint";
+export const DEFAULT_MAX_RETAINED_GLLA_PAYLOADS = 1;
 export const MAX_AUTHORITATIVE_CHECKPOINT_CHARS = 8_192;
 
 export interface AuthoritativeCheckpointInput {
