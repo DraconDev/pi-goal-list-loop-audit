@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.38.83 — Lifecycle map: session_start stages extracted + numbered (2026-09-21)
+
+- The 800-line `session_start` callback is now navigable: three verbatim stages extracted into named nested helpers (`admitSessionStart`, `claimSessionRootOrNotify`, `retentionSweepAuditJobs`) and all 12 stages carry numbered banners. Behavior-identical — moved code is byte-identical except the early returns (audit/LIFECYCLE-MAP-2026-09-21.md).
+- Premise correction: the ×3 loop wiring this item assumed does not exist — one entry, one `registerGoalRuntime`, single registrations; the per-handler gates differ deliberately and the structure is intentionally source-pinned. Full extraction would fight load-bearing pins, so the map documents the stages instead of moving them.
+
 ## 0.38.82 — Fast/slow suite split: `npm test` runs the fast set (2026-09-21)
 
 - The full serialized suite takes ~7 minutes — slow enough to skip. `npm test` now runs the fast set via `scripts/run-tests.mjs`: everything minus the 12 slowest files (evidence-timed in `tests/slow-files.mjs`, behavioral-orchestrator alone is ~90s). `npm run test:slow` runs those files, `npm run test:changed` runs git-affected files, and `npm run test:all` / `release:check` still run the whole suite — nothing escapes the gate (audit/TEST-SPLIT-2026-09-21.md).
