@@ -2137,9 +2137,13 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
     // class pauses (the auto-retrying line above) suppress the reason dump
     // — the recovery timer is the actionable content; dumping raw 429 JSON
     // under it just confuses the card.
-    const reasonPaint = isErr ? "error" : kind === "wait" ? "dim" : "warning";
+    // v0.38.90: standby reasons are monitoring narration, not calls to
+    // action — they render dim like waits (never warning), capped at 2
+    // lines like decisions/waits. A background-agent status dump in full
+    // warning yellow made every standby card shout like an error.
+    const reasonPaint = isErr ? "error" : kind === "wait" || kind === "standby" ? "dim" : "warning";
     if (!Number.isFinite(retryMs)) {
-      wrap(displayPauseReason(g.pauseReason), budget, kind === "decision" || kind === "wait" ? 2 : 3).forEach((w, i) => {
+      wrap(displayPauseReason(g.pauseReason), budget, kind === "decision" || kind === "wait" || kind === "standby" ? 2 : 3).forEach((w, i) => {
         lines.push(`${i === 0 ? "├─" : "│ "} ${paint(theme, reasonPaint, w)}`);
       });
     }

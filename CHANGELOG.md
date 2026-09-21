@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.90 — Monitoring visuals: standby reasons go dim (2026-09-21)
+
+- Paused-on-standby cards rendered background-agent status narration in warning yellow like errors. Standby reasons now render dim like waits and cap at 2 wrapped rows (audit/MONITORING-VISUALS-2026-09-21.md).
+
 ## 0.38.89 — UI polish finale: stats usage, header prefix, status→timeline pointer (2026-09-21)
 
 - `/glla stats <typo>` now names the usage (`outcomes | challenges | premature | json | project=<path>`) instead of silently rendering the default table; the JSON path stays total for machine readers.

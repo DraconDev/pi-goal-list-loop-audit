@@ -11,8 +11,11 @@
 
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
-import { buildWidgetLines, buildStatusText } from "../extensions/goal-loop-display.ts";
+import { buildWidgetLines, buildStatusText, type DisplayTheme } from "../extensions/goal-loop-display.ts";
 import type { Goal, State } from "../extensions/goal-loop-core.ts";
+
+// Marker theme: records the color ride without real ANSI (lifesign precedent).
+const MARKER = { fg: (c: string, t: string) => `[${c}]${t}[/]` } as unknown as DisplayTheme;
 
 // "standby" does not exist yet — red baseline. Cast keeps tsc clean while
 // the behavior is missing, so the failure is behavioral, not a type error.
@@ -48,6 +51,22 @@ test("021655: standby status line waits instead of demanding action", () => {
   const status = buildStatusText(stateOf(standbyGoal()), null, Date.now(), undefined, undefined, 100)!;
   assert.doesNotMatch(status, /action needed/, `status claims no action:\n${status}`);
   assert.match(status, /waiting on background agent/, `status waits:\n${status}`);
+});
+
+test("v0.38.90: standby reason renders dim (monitoring narration, not a call to action)", () => {
+  const lines = buildWidgetLines(stateOf(standbyGoal()), null, Date.now(), MARKER, 100)!;
+  const reasonRows = lines.filter((l) => l.includes("reviewer"));
+  assert.ok(reasonRows.length >= 1, `reason renders:\\n${lines.join("\\n")}`);
+  assert.ok(reasonRows.every((l) => l.includes("[dim]")), `reason rows dim:\\n${reasonRows.join("\\n")}`);
+  assert.ok(reasonRows.every((l) => !l.includes("[warning]")), `reason rows never warning:\\n${reasonRows.join("\\n")}`);
+});
+
+test("v0.38.90: standby reason caps at 2 wrapped rows like decisions/waits", () => {
+  const long = standbyGoal({ pauseReason: `alpha ${"beta ".repeat(120).trim()} omega` });
+  const lines = buildWidgetLines(stateOf(long), null, Date.now(), MARKER, 100)!;
+  const reasonRows = lines.filter((l) => l.includes("beta"));
+  assert.ok(reasonRows.length >= 1, `long reason renders:\\n${lines.join("\\n")}`);
+  assert.ok(reasonRows.length <= 2, `reason capped at 2 rows, got ${reasonRows.length}:\\n${reasonRows.join("\\n")}`);
 });
 
 test("021655: neighboring kinds keep their manual-action rendering", () => {
