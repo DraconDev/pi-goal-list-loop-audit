@@ -1442,6 +1442,10 @@ async function runDetachedGoalCompletionAuditorInner(args: {
    * sends `challenge: false` in the worker request (single-round
    * audit); absent/full keeps today's challenge behavior. */
   auditTier?: AuditTierName;
+  /** v0.38.81: marks this full-tier run as a silent spot-check. Read
+   * only by the public wrapper (stamped onto the result); the worker
+   * never sees it — a spot-check IS a full audit. */
+  spotCheck?: boolean;
   /** v0.36.0: extension specs allow-listed for the detached auditor
    * (settings key auditorAllowedExtensions). Raw specs (npm:/git:/relative)
    * are resolved to concrete install paths HERE, inside the process layer,
@@ -1548,6 +1552,10 @@ async function runDetachedGoalCompletionAuditorInner(args: {
       // v0.38.3: only present when enabled so default dispatches hash
       // byte-identically to pre-feature workers.
       ...(args.inspection ? { inspection: true } : {}),
+      // v0.38.81: only present when light so full-tier dispatches hash
+      // byte-identically to pre-feature workers. Old workers ignore the
+      // flag (always challenge — the safe direction).
+      ...(args.auditTier === "light" ? { challenge: false } : {}),
     };
     const request: AuditorRequest = { ...requestWithoutHash, requestHash: requestHash(requestWithoutHash) };
     await writeAtomicJson(requestPath, request);
@@ -1877,6 +1885,25 @@ async function runDetachedGoalCompletionAuditorInner(args: {
       }
     }
   }
+}
+
+/**
+ * Run one completion audit in a detached worker (public boundary). The
+ * inner run is untouched; the wrapper stamps the dispatch-decided risk
+ * tier onto whatever comes back — semantic verdicts and infrastructure
+ * outcomes alike — so the verdict record always says which tier ran.
+ * Legacy callers pass no tier and see byte-identical results.
+ */
+export async function runDetachedGoalCompletionAuditor(
+  args: Parameters<typeof runDetachedGoalCompletionAuditorInner>,
+): Promise<GoalAuditorResult> {
+  const result = await runDetachedGoalCompletionAuditorInner(args);
+  if (args.auditTier === undefined && args.spotCheck === undefined) return result;
+  return {
+    ...result,
+    ...(args.auditTier ? { auditTier: args.auditTier } : {}),
+    ...(args.spotCheck === true ? { spotCheck: true as const } : {}),
+  };
 }
 
 export { buildPrompt as buildGoalAuditorPrompt };
