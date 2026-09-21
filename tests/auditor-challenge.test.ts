@@ -176,3 +176,19 @@ test("challenge: a failed round 1 still fails without challenging", async () => 
     await cleanup();
   }
 });
+
+test("challenge: a light-tier request skips round 2 and records the skip", async () => {
+  const { result, cleanup } = await runWorker(
+    { FAKE_AUDIT_OUTPUT: AUDIT_OUTPUT, FAKE_CHALLENGE_MODE: "confirm" },
+    { challenge: false },
+  );
+  try {
+    assert.equal(result.ok, true);
+    assert.equal(finalLine(result.output), "<approved/>", "round-1 approval stands single-round");
+    assert.equal(result.challenge, "skipped: light-tier audit", "the policy skip is recorded, never silent");
+    assert.ok(!result.output.includes("challenge round"), "no second spawn for light tier");
+    assert.equal(result.output, AUDIT_OUTPUT, "byte-identical to a run where round 2 never existed");
+  } finally {
+    await cleanup();
+  }
+});
