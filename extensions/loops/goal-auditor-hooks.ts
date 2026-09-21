@@ -1483,6 +1483,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       // dispatch) — the revision-bound validity gate reads this.
       revision: result.goalRevision?.revision ?? state.goal.revision ?? 0,
       durationMs: Date.now() - auditStartMs,
+      challenge: result.challenge,
     });
     const verdict: AuditLogEntry["verdict"] =
       result.error && !result.approved && !result.disapproved

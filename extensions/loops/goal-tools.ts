@@ -1334,6 +1334,7 @@ function registerAgentTools(pi: any): void {
           // v0.34.60 (steal #3): the revision the worker audited.
           revision: result.goalRevision?.revision ?? state.goal.revision ?? 0,
           durationMs: auditDurationMs,
+          challenge: result.challenge,
         });
         // v0.25.4: durable append-only audit log — survives state-snapshot
         // rotation; the review surface for "where are we weak".

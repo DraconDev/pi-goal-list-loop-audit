@@ -274,6 +274,10 @@ export interface AuditVerdict {
   supersededBy?: string;
   /** Wall-clock audit duration. Read by the audit-history formatter. */
   durationMs?: number;
+  /** v0.38.80: falsification-round outcome (`confirmed` / `flipped` /
+   * `not-applicable` / `skipped:<reason>`). Recorded for /glla stats
+   * challenges; legacy entries lack the field (unchallenged, unknown). */
+  challenge?: string;
 }
 
 /** The display classification for one stored auditor result. Keep semantic

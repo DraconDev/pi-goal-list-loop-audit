@@ -32,7 +32,7 @@ export interface GoalRollupSource {
   createdAt?: string;
   updatedAt?: string;
   usage?: { tokensUsed?: number };
-  auditHistory?: Array<{ approved?: boolean; disapproved?: boolean; error?: string }>;
+  auditHistory?: Array<{ approved?: boolean; disapproved?: boolean; error?: string; challenge?: string }>;
   telemetry?: GoalTelemetry;
   runToDone?: boolean;
 }
@@ -59,6 +59,19 @@ export interface GoalOutcomes {
   supervisedAborted: number;
 }
 
+/** Challenge-round metrics: is the falsification round worth its latency?
+ * Counted over every verdict in every final goal snapshot (not just
+ * archived goals — a flip that forced rework still counts). Unknowns
+ * stay unknown: skipped challenges never ran, legacy verdicts never
+ * recorded — neither joins the challenged denominator. */
+export interface ChallengeOutcomes {
+  /** confirmed + flipped: runs where the falsification round settled. */
+  challenged: number;
+  confirmed: number;
+  flipped: number;
+  skipped: number;
+}
+
 export interface ProjectRollup {
   project: string;
   goalsCreated: number;
@@ -74,6 +87,8 @@ export interface ProjectRollup {
   lastActive: string;
   /** v0.38.74: outcome metrics (see GoalOutcomes). */
   outcomes: GoalOutcomes;
+  /** v0.38.80: falsification-round metrics (see ChallengeOutcomes). */
+  challenges: ChallengeOutcomes;
 }
 
 /** Premature-success thresholds (spec-driven verifier design §3): an

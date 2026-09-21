@@ -299,6 +299,10 @@
         "supersededBy": {
           "type": "string",
           "description": "What retired this round: disapproval:<at> of the superseding round, or approval:<at> when a later approval cleared the pin."
+        },
+        "challenge": {
+          "type": "string",
+          "description": "v0.38.80 falsification-round outcome: confirmed / flipped / not-applicable / skipped:<reason>. Absent on legacy verdicts."
         }
       }
     }
