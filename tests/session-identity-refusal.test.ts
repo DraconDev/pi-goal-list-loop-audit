@@ -73,6 +73,50 @@ test("195237: same session id on a new manager object is the owner, not a subage
   }
 });
 
+test("v0.38.92: a dethroned main is told about the lost root, never called a subagent", async () => {
+  const cwd = tmpCwd();
+  seedState(cwd, {
+    goal: seedGoal({
+      status: "paused",
+      pauseKind: "blocked",
+      pauseReason: "blocked on the sudo-mode auth for the live demo",
+      pauseSuggestedAction: "Complete the auth, then run /goal resume",
+    }),
+  });
+  const pi = new MockPi();
+  activate(pi.api);
+  const owner = await boot(pi, cwd, managedSession("session-abc", "owner-before-steal"));
+  try {
+    // Another live session takes the root: the owner is now dethroned.
+    (globalThis as any).processOwnerDeniedCwd = cwd;
+    try {
+      const reborn = makeMockCtx(cwd, { sessionManager: managedSession("session-abc", "owner-after-steal") });
+      const result = await pi.runTool("resume_goal", { reason: "user waived the demo" }, reborn) as {
+        content: Array<{ text: string }>;
+      };
+      assert.doesNotMatch(
+        result.content[0]!.text,
+        /subagent session/,
+        "a dethroned main is never told it is a subagent",
+      );
+      assert.match(
+        result.content[0]!.text,
+        /state root is owned by another session/,
+        "the refusal names the lost root",
+      );
+      assert.match(
+        result.content[0]!.text,
+        /not a subagent refusal/,
+        "the refusal anticipates the confusion",
+      );
+    } finally {
+      (globalThis as any).processOwnerDeniedCwd = null;
+    }
+  } finally {
+    await pi.fire("session_shutdown", { reason: "quit" }, owner);
+  }
+});
+
 test("195237: a genuinely different session is still refused", async () => {
   const cwd = tmpCwd();
   seedState(cwd, {
