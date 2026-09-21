@@ -1169,6 +1169,11 @@ export function buildStatusText(state: State, audit?: AuditDisplayProgress | nul
   const withAgentSummary = base && extras?.agents?.line
     ? `${base} · ${extras.agents.line.replace(/^●\s*/, "")}`
     : base;
+  // v0.38.73: run-to-done is a consent state the user must see at a glance
+  // — an auto-running goal must never look supervised.
+  const withMode = withAgentSummary && state.goal?.runToDone === true
+    ? `${withAgentSummary} · run to done`
+    : withAgentSummary;
   // v0.38.44 (field 20260909_161057): the running version rides the tail
   // of EVERY branch — a stale session must be visible at a glance, not
   // discoverable via a command. The update nudge appears only when the
