@@ -1335,6 +1335,8 @@ function registerAgentTools(pi: any): void {
           revision: result.goalRevision?.revision ?? state.goal.revision ?? 0,
           durationMs: auditDurationMs,
           challenge: result.challenge,
+          auditTier: result.auditTier,
+          spotCheck: result.spotCheck,
         });
         // v0.25.4: durable append-only audit log — survives state-snapshot
         // rotation; the review surface for "where are we weak".

@@ -1484,6 +1484,8 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       revision: result.goalRevision?.revision ?? state.goal.revision ?? 0,
       durationMs: Date.now() - auditStartMs,
       challenge: result.challenge,
+      auditTier: result.auditTier,
+      spotCheck: result.spotCheck,
     });
     const verdict: AuditLogEntry["verdict"] =
       result.error && !result.approved && !result.disapproved
