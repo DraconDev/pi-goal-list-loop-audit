@@ -1998,7 +1998,10 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     return;
   }
   if (result.disapproved && auditCap > 0 && trailingDisapprovals >= auditCap) {
-    if (aggressive) {
+    // v0.38.73: run-to-done treats caps as hard stops — the goal parks via
+    // the branch below instead of converting to TODOs and continuing.
+    const runToDoneStop = readState(liveCtx.cwd).goal?.runToDone === true;
+    if (aggressive && !runToDoneStop) {
       updateGoal({
         status: "active",
         auditHistory: history,
