@@ -1884,8 +1884,13 @@ function isHostLifecycleSessionStart(event: unknown): boolean {
 
 const FOREIGN_SESSION_TOOL_MESSAGE =
   "This tool changes goal/loop/list state, which only the MAIN session owns — you are running in a subagent session. Report back to the main agent; it owns the goal and can call this tool.";
-const FOREIGN_SESSION_TOOL_MESSAGE_WITH_STATE_ROOT_HINT =
-  `${FOREIGN_SESSION_TOOL_MESSAGE} If you also see the state-root read-only warning, close the other host or switch to sessionDir via /glla settings → State root, then start a fresh session.`;
+/** Refusal when the caller lost the workingDir state-root race (field
+ * 2026-09-21: a dethroned MAIN session got the subagent message above,
+ * which misdiagnoses — it is not a worker, it lost the root to another
+ * live session). States the root fact, never the session kind, plus the
+ * cure. Replaces FOREIGN_SESSION_TOOL_MESSAGE_WITH_STATE_ROOT_HINT. */
+const DETHRONED_SESSION_TOOL_MESSAGE =
+  "This folder's state root is owned by another session, so this session is read-only and cannot change goal/loop/list state — this is not a subagent refusal. Close the other session, or start a fresh session here to take the root back (/glla owner inspects the holder).";
 
 /** Refusal message when a state-mutating tool is called from a subagent session, else null. */
 function foreignToolGuard(execCtx: unknown): string | null {
@@ -1901,9 +1906,10 @@ function foreignToolGuard(execCtx: unknown): string | null {
   if (tryAbsorbHostSuccessor(c, "tool-call")) return null;
   if (isForeignCtx(c)) {
     // v0.35.72: when the cwd is also denied by the workingDir state-root
-    // owner, the two warnings co-occur. Correlate them so "MAIN became
-    // subagent and cannot be cured" has an actionable cure.
-    if (c && processOwnerDeniedCwd === c.cwd) return FOREIGN_SESSION_TOOL_MESSAGE_WITH_STATE_ROOT_HINT;
+    // owner, the two warnings co-occur. v0.38.92: name the dethroned
+    // diagnosis, not the subagent one — the caller is usually a former
+    // main session that lost the root race (field 2026-09-21).
+    if (c && processOwnerDeniedCwd === c.cwd) return DETHRONED_SESSION_TOOL_MESSAGE;
     return FOREIGN_SESSION_TOOL_MESSAGE;
   }
   // Post-park the owner is nulled; the dead-owner record means only the
