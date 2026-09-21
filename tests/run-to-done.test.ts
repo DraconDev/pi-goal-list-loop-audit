@@ -207,7 +207,7 @@ test("run-to-done: the audit cap parks instead of converting to TODOs", async ()
     await pi.runTool("complete_goal", { completionSummary: "Round two claim.", verificationSummary: "e2." }, ctx);
     await waitUntil(() => {
       const goal = readState(cwd).goal as AuditState;
-      return !goal?.pendingCompletion && (goal.auditHistory?.length ?? 0) >= 2;
+      return !!goal && !goal.pendingCompletion && (goal.auditHistory?.length ?? 0) >= 2;
     });
     const g = readState(cwd).goal as GoalView & { pauseReason?: string };
     assert.equal(g.status, "paused", "the cap is a hard stop under run-to-done");
