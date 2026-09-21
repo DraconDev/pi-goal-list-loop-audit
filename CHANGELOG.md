@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.87 — Globals retirement slice 2: 24 ambient slots deleted (2026-09-21)
+
+- The runtime-globals registry drops 207 → 183: 11 `__testOnly*` hooks, `classifySessionHandleInvalidation`, `ownerFilePath`, `recentActions`, `COMPACT_FIRST_NUDGE_PERCENT`, three settings-UI helpers, and six pin-only constants — every consumer already imports directly, so only the ambient slots delete. Two test files switch from the globalThis path to direct imports (audit/GLOBALS-RETIREMENT-SLICE-2-2026-09-21.md).
+
 ## 0.38.86 — Docs: architecture overview + promotion contract (2026-09-21)
 
 - New `docs/ARCHITECTURE.md`: GLLA in 20 minutes — entry/runtime, the three loops, the audit lifecycle, persistence, and the test suite, every claim grounded in source (stage names, handler counts, and ledger-type counts verified, not remembered).
