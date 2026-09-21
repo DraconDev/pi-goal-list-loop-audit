@@ -43,5 +43,8 @@ process.env.GLLA_EAGER_SETTLE_MS ??= "0";
 // files picked none, a latent order-dependence for test:changed subsets.
 // The composite restores fresh-process latch semantics; per-test afterEach
 // resets stay as defense in depth (idempotent, harmless).
-import { __testOnlyResetProcessState } from "../../extensions/loops/goal.js";
+// Dynamic import (not static): goal-ui reads GLLA_EAGER_SETTLE_MS at module
+// top level, so the extension graph must load AFTER the env setup above —
+// a static import would hoist above it and re-arm the 2.5s production settle.
+const { __testOnlyResetProcessState } = await import("../../extensions/loops/goal.js");
 __testOnlyResetProcessState();
