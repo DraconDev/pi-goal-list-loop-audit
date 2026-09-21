@@ -37,6 +37,7 @@
     },
     "autoContinue": { "type": "boolean" },
     "runToDone": { "type": "boolean", "description": "v0.38.73 run-to-done: draft-time user consent to carry the goal to completion without supervised pauses (session-start auto-resume + immediate decision auto-default). Hard stops still park; the auditor is never skipped. Beats global autoResume:false." },
+    "fullAudit": { "type": "boolean", "description": "v0.38.81: draft-time user consent to full-tier audits for every claim (never light). Escalation only." },
     "taskList": {
       "type": "object",
       "required": ["version", "tasks"],
@@ -216,6 +217,7 @@
         "automaticRecoveryFirstAt": { "type": "string", "format": "date-time" },
         "automaticRecoveryUntil": { "type": "string", "format": "date-time" },
         "priorCompletionSummary": { "type": "string" },
+        "requestFullAudit": { "type": "boolean", "description": "v0.38.81: the agent asked for a full-tier audit on this claim. Escalation only." },
         "retryAttempts": { "type": "integer", "minimum": 0 },
         "retryFirstAt": { "type": "string", "format": "date-time" },
         "retryUntil": { "type": "string", "format": "date-time" },
@@ -303,6 +305,15 @@
         "challenge": {
           "type": "string",
           "description": "v0.38.80 falsification-round outcome: confirmed / flipped / not-applicable / skipped:<reason>. Absent on legacy verdicts."
+        },
+        "auditTier": {
+          "type": "string",
+          "enum": ["light", "full"],
+          "description": "v0.38.81 risk tier: light = single-round audit, full = audit plus challenge. Absent on legacy verdicts."
+        },
+        "spotCheck": {
+          "type": "boolean",
+          "description": "v0.38.81: true when this full-tier audit was a silent spot-check of the light population."
         }
       }
     }

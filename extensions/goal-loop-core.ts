@@ -278,6 +278,13 @@ export interface AuditVerdict {
    * `not-applicable` / `skipped:<reason>`). Recorded for /glla stats
    * challenges; legacy entries lack the field (unchallenged, unknown). */
   challenge?: string;
+  /** v0.38.81: the risk tier this audit ran under. Light = single-round
+   * audit (no falsification pass); full = audit plus challenge.
+   * Absent on legacy entries (untiered, unknown). */
+  auditTier?: "light" | "full";
+  /** v0.38.81: true when this full-tier audit was a silent spot-check
+   * of the light population. Absent otherwise. */
+  spotCheck?: boolean;
 }
 
 /** The display classification for one stored auditor result. Keep semantic
@@ -494,6 +501,12 @@ export interface PendingCompletion {
  */
 gateRows?: GateRow[];
   /**
+   * v0.38.81: the agent asked for a full-tier audit on this claim
+   * (complete_goal requestFullAudit — "check me carefully").
+   * Escalation only: the agent can demand full, never light.
+   */
+  requestFullAudit?: boolean;
+  /**
    * Durable one-shot recovery fence. A parked claim may receive one
    * automatic retry after a validated healthy lifecycle/recovery event;
    * manual /goal resume remains available after that attempt. Missing on
@@ -675,6 +688,10 @@ export interface Goal {
    * consecutive-error caps, provider-down, user abort. The auditor is never
    * skipped. Specific beats general: beats global autoResume:false. */
   runToDone?: boolean;
+  /** v0.38.81: draft-time user consent to full-tier audits for every
+   * claim on this goal (audit plus falsification round, never light).
+   * Escalation only — the user can demand full, never light. */
+  fullAudit?: boolean;
   /** v0.28.22: ISO time a wait-pause becomes resumable (countdown shown). */
   pauseResumeAt?: string;
   /** v0.35.28 (issue #16): set when glla AUTO-resumed a lapsed wait — the
