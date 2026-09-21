@@ -490,6 +490,26 @@ async function main() {
   let inactivityTimer;
   let processGroupTimer;
   let rpcCloseGraceTimer;
+  // v0.38.76 challenge round: 1 = audit pass, 2 = falsification pass.
+  // round1EndParts/round1ReportBytes pin the byte-exact round-1 output so a
+  // failed challenge truncates back to it (fail-open to today's behavior,
+  // recorded in result.challenge — never silent).
+  let round = 1;
+  let round1EndParts = 0;
+  let round1ReportBytes = 0;
+  let challengeState = "not-applicable";
+  let abandoning = false;
+  // Per-round RPC stream state, hoisted so startRound() resets it between
+  // rounds (a stale settledSeen/exit flag from round 1 must never leak
+  // into round 2's lifecycle).
+  let stdoutBuffer = "";
+  let settledSeen = false;
+  let stdoutEnded = false;
+  let piExited = false;
+  let piClosed = false;
+  let piExitCode;
+  let piExitSignal;
+  let rpcStreamDiagnostic;
   // `lastActivityAt` is user-visible and must remain unset until a real RPC
   // event arrives. The separate probe clock keeps the inactivity brake armed
   // while the provider is silent during startup/thinking.
