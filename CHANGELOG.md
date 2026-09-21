@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.91 — Tool descriptions enumerate plan/audit/verify/add (2026-09-21)
+
+- `/goal plan`, `/goal audit`, `/goal verify`, `/list plan`, and `/list add` existed but were undiscoverable from the tool descriptions. Both descriptions now enumerate them with one-line roles; a pin keeps the enumerations (audit/POST-090-IMPROVEMENT-SWEEP-2026-09-21.md).
+
 ## 0.38.90 — Monitoring visuals: standby reasons go dim (2026-09-21)
 
 - Paused-on-standby cards rendered background-agent status narration in warning yellow like errors. Standby reasons now render dim like waits and cap at 2 wrapped rows (audit/MONITORING-VISUALS-2026-09-21.md).
