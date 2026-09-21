@@ -2073,6 +2073,156 @@ function cmdLog(args: string, ctx: ExtensionContext): void {
   ctx.ui.notify(`Ledger tail (last ${tail.length}${all ? "" : " non-noise"} events — /glla log <N> for more, /glla log all to include noise):\n${lines.join("\n")}`, "info");
 }
 
+/** Unscoped-but-goal-salient ledger types (v0.38.85): older writers omit
+ * goalId, so the timeline claims them when they fall inside the goal's
+ * lifetime (at >= createdAt). Entries carrying a goalId always match
+ * by id, never by this set. */
+const TIMELINE_UNSCOPED_TYPES = new Set([
+  "goal_paused",
+  "goal_resumed",
+  "goal_tweaked",
+  "audit_objections_todo",
+  "decision_budget_auto_default",
+  "provider_retry_audit_verdict",
+]);
+
+function timelineBelongsToGoal(e: LedgerRecord, goalId: string, createdAt: string): boolean {
+  const v = (e.value ?? {}) as Record<string, unknown>;
+  if (typeof v.goalId === "string") return v.goalId === goalId;
+  if (!TIMELINE_UNSCOPED_TYPES.has(e.type)) return false;
+  return typeof e.at === "string" && e.at >= createdAt;
+}
+
+function timelineShort(v: unknown, n: number): string {
+  return typeof v === "string" ? v.slice(0, n) : "";
+}
+
+function timelineHumanize(e: LedgerRecord): string {
+  const v = (e.value ?? {}) as Record<string, unknown>;
+  switch (e.type) {
+    case "goal_created":
+      return `created${v.via ? ` (via ${timelineShort(v.via, 40)})` : ""}`;
+    case "run_to_done_consented":
+      return `run-to-done consented${v.via ? ` (${timelineShort(v.via, 40)})` : ""}`;
+    case "full_audit_consented":
+      return `full-audit consented${v.via ? ` (${timelineShort(v.via, 40)})` : ""}`;
+    case "goal_paused":
+      return `paused: ${timelineShort(v.reason, 100) || "no reason recorded"}`;
+    case "goal_resumed":
+      return `resumed${v.via ? ` (via ${timelineShort(v.via, 40)})` : ""}`;
+    case "goal_tweaked":
+      return `tweaked${v.via ? ` (via ${timelineShort(v.via, 40)})` : ""}`;
+    case "audit_tier_decided": {
+      const reasons = Array.isArray(v.reasons) ? v.reasons.filter((r): r is string => typeof r === "string").join("; ") : "";
+      return `audit tier: ${timelineShort(v.tier, 10) || "?"}${v.spotCheck === true ? " (spot-check)" : ""}${reasons ? ` — ${reasons.slice(0, 100)}` : ""}`;
+    }
+    case "audit_shield_blocked": {
+      const n = Array.isArray(v.missing) ? v.missing.length : 0;
+      return `shield blocked approval (${n} item${n === 1 ? "" : "s"} uncited)`;
+    }
+    case "audit_objections_todo": {
+      const n = Array.isArray(v.pendingTasks) ? v.pendingTasks.length : 0;
+      return `objections → TODOs${n ? `: ${n}` : ""}`;
+    }
+    case "decision_budget_auto_default":
+      return `decision auto-defaulted${v.chosen ? `: ${timelineShort(v.chosen, 60)}` : ""}`;
+    case "manual_audit_requested":
+      return `manual audit requested (/goal verify)`;
+    case "provider_retry_audit_verdict":
+      return `provider-retry verdict${v.verdict ? `: ${timelineShort(v.verdict, 40)}` : ""}`;
+    case "goal_impossible_terminalized":
+      return `declared impossible${v.reason ? `: ${timelineShort(v.reason, 80)}` : ""}`;
+    case "goal_archived":
+      return `archived: ${timelineShort(v.status, 20) || "?"}`;
+    default: {
+      const detail = Object.entries(v)
+        .filter(([k]) => k !== "goalId" && k !== "report")
+        .map(([k, val]) => `${k}=${typeof val === "string" ? val.slice(0, 60) : JSON.stringify(val)?.slice(0, 60)}`)
+        .join(" ");
+      return detail ? `${e.type}  ${detail}` : e.type;
+    }
+  }
+}
+
+function timelineVerdictLine(v: AuditVerdict, n: number): string {
+  const extras: string[] = [];
+  if (v.auditTier) extras.push(v.auditTier);
+  if (v.spotCheck === true) extras.push("spot-check");
+  if (v.challenge) extras.push(v.challenge);
+  if (v.model) extras.push(String(v.model).split("/").pop() ?? String(v.model));
+  return `audit #${n}: ${auditVerdictLabel(v)}${extras.length ? ` · ${extras.join(" · ")}` : ""}`;
+}
+
+function timelineNextAction(
+  goal: Pick<Goal, "status" | "pauseKind" | "pauseReason" | "pauseResumeAt" | "pendingCompletion" | "auditHistory">,
+  nowMs: number,
+): string {
+  if (goal.status === "paused" && goal.pauseKind === "decision") return "Next: answer the pending decision (/goal decide).";
+  if (goal.status === "paused" && goal.pauseResumeAt && Date.parse(goal.pauseResumeAt) > nowMs) {
+    return `Next: auto-resumes at ${goal.pauseResumeAt.slice(11, 19)} — or /goal resume now.`;
+  }
+  if (goal.status === "paused") return `Next: /goal resume to continue${goal.pauseReason ? ` (${goal.pauseReason.slice(0, 80)})` : ""}.`;
+  if (goal.status === "auditing") return "Next: audit in flight — wait for the verdict.";
+  if (goal.pendingCompletion) return "Next: claim submitted — the audit is starting.";
+  const live = (goal.auditHistory ?? []).filter((a) => a.disapproved === true && a.superseded !== true).length;
+  if (live > 0) return `Next: address ${live} open objection${live === 1 ? "" : "s"}, then re-submit.`;
+  if (goal.status === "complete") return "Next: nothing — complete.";
+  if (goal.status === "aborted") return "Next: nothing — aborted.";
+  return "Next: working toward the contract.";
+}
+
+export interface GoalTimelineInput {
+  goal: Pick<Goal, "id" | "objective" | "status" | "createdAt" | "pauseKind" | "pauseReason" | "pauseResumeAt" | "pendingCompletion" | "auditHistory">;
+  entries: LedgerRecord[];
+  nowMs: number;
+  limit?: number;
+}
+
+/** /goal timeline renderer (v0.38.85): goal-scoped ledger events merged
+ * with auditHistory verdicts in time order, key types humanized,
+ * unknown types compact (never hidden), footer names the next action. */
+export function formatGoalTimeline(input: GoalTimelineInput): string {
+  const { goal, entries, nowMs } = input;
+  const limit = Math.min(Math.max(input.limit ?? 20, 1), 100);
+  const createdAt = goal.createdAt ?? "";
+  const rows: Array<{ at: string; text: string }> = [];
+  for (const e of entries) {
+    if (!timelineBelongsToGoal(e, goal.id, createdAt)) continue;
+    rows.push({ at: typeof e.at === "string" ? e.at : "", text: timelineHumanize(e) });
+  }
+  (goal.auditHistory ?? []).forEach((v, i) => {
+    rows.push({ at: v.at ?? "", text: timelineVerdictLine(v, i + 1) });
+  });
+  rows.sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+  const total = rows.length;
+  const shown = rows.slice(-limit);
+  const stamp = (at: string): string => (at.length >= 16 ? `${at.slice(0, 10)} ${at.slice(11, 16)}` : at || "?");
+  const lines = shown.map((r) => `${stamp(r.at)}  ${r.text}`);
+  const head = `Timeline: ${goal.objective.slice(0, 100)} (${goal.status})` +
+    (total > shown.length ? ` — showing last ${shown.length} of ${total}` : "");
+  return [head, ...lines, timelineNextAction(goal, nowMs)].join("\n");
+}
+
+/** v0.38.85: /goal timeline [N] — the goal's own trail plus the single
+ * next action. Read-only: works on a stale handle like /glla log. */
+function cmdTimeline(args: string, ctx: ExtensionContext): void {
+  const goal = state.goal;
+  if (!goal) {
+    ctx.ui.notify("No active goal — /goal timeline needs a goal to narrate.", "info");
+    return;
+  }
+  const nMatch = args.match(/\b(\d+)\b/);
+  const n = Math.min(Math.max(parseInt(nMatch?.[1] ?? "20", 10) || 20, 1), 100);
+  let entries: LedgerRecord[] = [];
+  try {
+    entries = readLedgerTail(ctx.cwd, 500, (e) => !LOG_NOISE.has(e.type) && timelineBelongsToGoal(e, goal.id, goal.createdAt ?? ""));
+  } catch {
+    ctx.ui.notify("No ledger yet — .pi-glla/active.jsonl doesn't exist.", "info");
+    return;
+  }
+  ctx.ui.notify(formatGoalTimeline({ goal, entries, nowMs: Date.now(), limit: n }), "info");
+}
+
 /** v0.34.57: /glla switchlog [N] — the model-switch trail (model_switch +
  * forbidden_model_switch ledger events). Read-only: works on a stale
  * handle, like the other /glla read-only actions. */
