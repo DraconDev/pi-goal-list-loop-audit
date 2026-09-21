@@ -797,6 +797,7 @@ async function main() {
     // record. Buffer arbitrary chunks, reject raw CR, and process only complete
     // LF-terminated records. agent_end is intentionally not terminal: Pi may
     // retry/compact/follow up after it. agent_settled is the completion event.
+    const RPC_CLOSE_GRACE_MS = configuredDuration("GLLA_AUDITOR_EOF_EXIT_GRACE_MS", DEFAULT_RPC_CLOSE_GRACE_MS);
     const missingSettledError = (closeGraceExpired = false) => {
       const processFacts = `pi exited before agent_settled (code=${piExitCode ?? "?"}, signal=${piExitSignal ?? "none"})`;
       const closeGraceDetail = closeGraceExpired && !piClosed
