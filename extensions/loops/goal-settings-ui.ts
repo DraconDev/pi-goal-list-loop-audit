@@ -1211,6 +1211,29 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       }
       return;
     }
+    case "auditSpotCheckRate": {
+      // v0.38.81: spot-check rate — presets, not free input (a fraction).
+      const v = await ctx.ui.select("Audit spot-check rate — fraction of light-tier audits silently escalated to full (tune from the spot flip rate in /glla stats challenges)", [
+        "0.1 — 1-in-10 light audits run full (default)",
+        "0 — off: light audits never spot-check",
+        "0.05 — 1-in-20",
+        "0.25 — 1-in-4",
+        "0.5 — half of all light audits",
+        "1 — every light audit runs full (calibration mode)",
+      ]);
+      if (v) {
+        const rate = parseFloat(v);
+        if (Number.isFinite(rate) && rate >= 0 && rate <= 1) {
+          saveSettings("global", ctx.cwd, { auditSpotCheckRate: rate === 0.1 ? undefined : rate });
+          ctx.ui.notify(rate === 0.1
+            ? "Cleared: auditSpotCheckRate (default 0.1)."
+            : `Saved auditSpotCheckRate = ${rate}.`);
+        } else {
+          ctx.ui.notify("Rejected: pick a preset rate (0–1).");
+        }
+      }
+      return;
+    }
     case "auditorInspection": {
       // v0.38.3: opt-in live inspection — the auditor's pi becomes a normal
       // persistent session you can tail -f or resume. Off = original --no-session.

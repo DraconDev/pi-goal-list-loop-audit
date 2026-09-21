@@ -464,6 +464,15 @@ export function buildSettingsRows(
         "how long a finished audit's job dir (session log, result) survives after the worker dies, before `/glla audits health cleanup` reaps it — raise it to keep finished audit logs readable longer; 0 reaps immediately",
     },
     {
+      id: "auditSpotCheckRate",
+      section: "auditor",
+      label: "Audit spot-check rate",
+      valueText: `${settings.auditSpotCheckRate ?? 0.1} of light audits run full`,
+      sourceText: src("auditSpotCheckRate"),
+      description:
+        "fraction of light-tier audits silently escalated to full (risk-tiered auditing spot-checks) — 0 disables; tune from the spot flip rate in /glla stats challenges",
+    },
+    {
       id: "auditorInspection",
       section: "auditor",
       label: "Auditor inspection session",
