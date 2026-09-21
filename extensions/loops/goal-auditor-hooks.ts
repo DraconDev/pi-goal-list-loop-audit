@@ -233,6 +233,7 @@ import {
   runAuditorFallbackWithPolicy,
   isAuditorCursorPersistenceFailure,
   normalizeAuditorInfrastructureResult,
+  resolveClaimAuditTier,
   runDetachedGoalCompletionAuditor,
   DEFAULT_AUDITOR_STALL_MS,
   DEFAULT_AUDITOR_TOOL_TIMEOUT_MS,
@@ -1097,6 +1098,14 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     && configuredAuditorRefs.some((ref) => ref.toLowerCase() === claim.auditorRetryCandidateRef!.toLowerCase())
     ? claim.auditorRetryCandidateRef
     : undefined;
+  // v0.38.81: risk tier resolves once per dispatch — stable across the
+  // candidate chain below; a later re-dispatch re-resolves. Ledgered
+  // with the attempt id so the trail names who decided what.
+  const tierDecision = resolveClaimAuditTier(auditGoal, claim, settings.auditSpotCheckRate);
+  appendLedger(liveCtx.cwd, "audit_tier_decided", {
+    goalId, attemptId: claim.attemptId, tier: tierDecision.tier,
+    reasons: tierDecision.reasons, spotCheck: tierDecision.spotCheck,
+  });
   completionAuditInFlight = true;
   completionAuditGeneration = generation;
   latestAuditProgress = {
@@ -1149,6 +1158,9 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           goal: auditGoal,
           completionSummary: claim.completionSummary,
           verificationSummary: claim.verificationSummary,
+          // v0.38.81: the dispatch-decided tier (stamped onto the result).
+          auditTier: tierDecision.tier,
+          ...(tierDecision.spotCheck ? { spotCheck: true } : {}),
           model: candidate.model,
           // Unset follows the parent session dial, matching the Auditor
           // settings row; max is the safe detached default when a headless
