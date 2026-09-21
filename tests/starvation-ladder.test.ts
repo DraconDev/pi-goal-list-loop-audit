@@ -17,7 +17,7 @@ import {
   shouldCompactFirstNudge,
 } from "../extensions/loops/goal-ui.js";
 import { LENGTH_CONTINUE_CONTEXT_STARVED_PERCENT } from "../extensions/length-continue.js";
-import activate, { __testOnlyResetOwnerSession } from "../extensions/loops/goal.js";
+import activate, { __testOnlyResetOwnerSession, __testOnlySetLastCompactionAt } from "../extensions/loops/goal.js";
 import { readState } from "../extensions/goal-loop-core.js";
 import type { Goal } from "../extensions/goal-loop-core.js";
 import { MockPi, makeMockCtx, seedState, tick, tmpCwd } from "./harness/mock-pi.js";
@@ -29,7 +29,7 @@ function cleanupStarvationGlobals(): void {
   if (typeof G.onCompactionLanded === "function") G.onCompactionLanded();
   noteContextPercent(null);
   shouldCompactFirstNudge(0);
-  if (typeof G.__testOnlySetLastCompactionAt === "function") G.__testOnlySetLastCompactionAt(null);
+  __testOnlySetLastCompactionAt(null);
 }
 
 afterEach(() => { cleanupStarvationGlobals(); setGlobalAutoResume(false); });
@@ -68,7 +68,7 @@ test("compact-first nudge fires once per episode", () => {
 test("refuse stays sticky while physically over cap", () => {
   assert.equal(typeof G.noteContextStarvedYield, "function");
   assert.equal(typeof G.isContextStarvedRefused, "function");
-  G.__testOnlySetLastCompactionAt(null);
+  __testOnlySetLastCompactionAt(null);
   G.noteContextStarvedYield();
   G.noteContextStarvedYield();
   assert.equal(G.isContextStarvedRefused(), true, "fresh streak refuses");
@@ -113,7 +113,7 @@ function cleanGoal(): Goal {
 test("starved boot refuses the automatic send instead of truncating", async () => {
   const cwd = tmpCwd();
   setGlobalAutoResume(true);
-  G.__testOnlySetLastCompactionAt(null);
+  __testOnlySetLastCompactionAt(null);
   G.noteContextStarvedYield();
   G.noteContextStarvedYield();
   assert.equal(G.isContextStarvedRefused(), true);
