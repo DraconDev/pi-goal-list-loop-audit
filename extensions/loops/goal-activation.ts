@@ -238,10 +238,13 @@ import { releaseAuditorSurface, suppressAuditorSurfaceAfterColdRestore } from ".
 import { shouldSkipApprovalRenderReplay } from "./goal-session.js";
 import {
   cancelDetachedGoalCompletionAuditor,
+  cleanupDeadAuditJobs,
+  inspectAuditJobHealth,
   newDetachedAuditJobAttemptId,
   runDetachedGoalCompletionAuditor,
   type AuditorProgress,
 } from "../goal-loop-auditor-process.js";
+import { stateRootPending } from "../glla-state-root.js";
 import {
   REPETITION,
   isActuallyStuck,
@@ -1333,6 +1336,24 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       return;
     }
     processOwnerDeniedCwd = null;
+    // v0.38.72: automate the proven-dead audit-job sweep. Manual-only `/glla
+    // audits health cleanup` let 207 job dirs accumulate (115 proven-dead,
+    // 91 pre-convention finished). Owner-only (this gate), windowed by the
+    // user's auditJobRetentionMs, ledgered when it reaps, fail-silent:
+    // hygiene must never break startup.
+    try {
+      if (!stateRootPending()) {
+        const retentionMs = loadSettings(ctx.cwd).auditJobRetentionMs;
+        const before = inspectAuditJobHealth(ctx.cwd, Date.now(), retentionMs);
+        if (before.cleanupCandidates > 0) {
+          const after = cleanupDeadAuditJobs(ctx.cwd, retentionMs);
+          const reaped = before.total - after.total;
+          if (reaped > 0) appendLedger(ctx.cwd, "audit_jobs_retention_sweep", { reaped, remaining: after.total });
+        }
+      }
+    } catch {
+      /* best-effort hygiene */
+    }
     // v0.34.73 (OPEN-ISSUES 1.12): capture the pre-rebind invalidation flags
     // BEFORE the block below clears them — the id_invalidation reason needs
     // to know which mechanism invalidated the old handle.
