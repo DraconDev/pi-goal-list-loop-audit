@@ -34,6 +34,7 @@ process.stdin.on("data", (chunk) => {
   const isChallenge = prompt.includes("AUDITOR CHALLENGE ROUND");
   const mode = isChallenge ? (process.env.FAKE_CHALLENGE_MODE || "confirm") : "audit";
   if (mode === "crash") process.exit(3);
+  if (!isChallenge && process.env.FAKE_ROUND1_CRASH === "yes") process.exit(3);
   const emit = (event) => process.stdout.write(JSON.stringify(event) + "\\n");
   const report = !isChallenge
     ? (process.env.FAKE_AUDIT_OUTPUT || "")
@@ -167,10 +168,8 @@ test("challenge: a failed challenge falls back to byte-identical round-1 output"
 test("challenge: a failed round 1 still fails without challenging", async () => {
   const { result, cleanup } = await runWorker({ FAKE_AUDIT_OUTPUT: AUDIT_OUTPUT, FAKE_CHALLENGE_MODE: "confirm", FAKE_ROUND1_CRASH: "yes" });
   try {
-    // FAKE_ROUND1_CRASH is not implemented by the fake: this pins the
-    // harness default instead — remove if round-1 failure coverage moves
-    // here. Round-1 failure paths are covered by auditor-error-paths.
-    assert.equal(result.ok, true);
+    assert.equal(result.ok, false, "round-1 infrastructure failure keeps historical semantics");
+    assert.equal(result.challenge, "not-applicable");
   } finally {
     await cleanup();
   }
