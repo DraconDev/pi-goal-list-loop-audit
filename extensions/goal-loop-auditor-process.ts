@@ -74,6 +74,12 @@ export interface GoalAuditorResult {
    * silent overwrite. The caller decides what to do (typically: skip the
    * verdict, log stale_revision_refused, surface the refusal in the HUD). */
   goalRevision?: GoalRevisionToken;
+  /** v0.38.80: falsification-round outcome threaded from result.json
+   * (`confirmed` / `flipped` / `not-applicable` / `skipped:<reason>`).
+   * Recorded on the verdict for /glla stats challenges; absent on
+   * legacy workers. Never affects verdict semantics — the final-line
+   * rule already composed the challenge into approved/disapproved. */
+  challenge?: string;
 }
 
 /** Infrastructure errors are never semantic verdicts, even if a parser or
@@ -1091,6 +1097,9 @@ interface AuditorResultFile {
    * compares this against the current state.goal.revision; mismatch → the
    * verdict is treated as stale-refused, not a silent overwrite. */
   goalRevision?: GoalRevisionToken;
+  /** v0.38.80: what the worker wrote in result.challenge (see the worker's
+   * challengeState). Declared so the parent can thread it to the verdict. */
+  challenge?: string;
 }
 
 interface AuditorProgressFile {
@@ -1554,6 +1563,9 @@ export async function runDetachedGoalCompletionAuditor(args: {
             }
           }
           const output = stripThinkBlocks(result.output);
+          // v0.38.80: thread the falsification outcome (bounded — the
+          // worker already caps at ~130 chars; the parent trusts nothing).
+          const challenge = typeof result.challenge === "string" && result.challenge ? result.challenge.slice(0, 140) : undefined;
           if (!result.ok) {
             const error = result.error || "detached auditor failed";
             return infra(model, thinkingLevel, error, output, capturedRevisionToken, failedResultClass(error));
@@ -1567,7 +1579,7 @@ export async function runDetachedGoalCompletionAuditor(args: {
           }
           const usedAuditTool = result.toolCalls.some((call) => (AUDITOR_TOOLS as readonly string[]).includes(call.name));
           if (parsed.approved && !usedAuditTool) {
-            return stampToken({ approved: false, disapproved: true, output, model, thinkingLevel, error: "Auditor approved without calling any audit tool; treated as disapproved." }, capturedRevisionToken);
+            return stampToken({ approved: false, disapproved: true, output, model, thinkingLevel, challenge, error: "Auditor approved without calling any audit tool; treated as disapproved." }, capturedRevisionToken);
           }
           if (parsed.approved && args.goal.verificationContract?.trim()) {
             const shield = checkRegressionShield(output, args.goal.verificationContract);
@@ -1577,15 +1589,15 @@ export async function runDetachedGoalCompletionAuditor(args: {
               // not cite every contract item. Keep that outcome distinct from
               // both a work disapproval and infrastructure failure.
               return stampToken({
-                approved: true, disapproved: false, output, model, thinkingLevel,
+                approved: true, disapproved: false, output, model, thinkingLevel, challenge,
                 regressionShieldPassed: false, regressionShieldMissing: shield.missingItems,
               }, capturedRevisionToken);
             }
             args.onProgress?.({ phase: "complete", elapsedMs: now() - startedAt, recentOutput: output.split("\n").filter(Boolean).slice(-8), toolCalls: result.toolCalls, unmatchedToolStarts: [], unmatchedToolEnds: [] });
-            return stampToken({ approved: true, disapproved: false, output, model, thinkingLevel, regressionShieldPassed: true }, capturedRevisionToken);
+            return stampToken({ approved: true, disapproved: false, output, model, thinkingLevel, challenge, regressionShieldPassed: true }, capturedRevisionToken);
           }
           args.onProgress?.({ phase: "complete", elapsedMs: now() - startedAt, recentOutput: output.split("\n").filter(Boolean).slice(-8), toolCalls: result.toolCalls, unmatchedToolStarts: [], unmatchedToolEnds: [] });
-          return stampToken({ approved: parsed.approved, disapproved: parsed.disapproved, impossible: parsed.impossible, impossibleReason: parsed.impossibleReason, output, model, thinkingLevel }, capturedRevisionToken);
+          return stampToken({ approved: parsed.approved, disapproved: parsed.disapproved, impossible: parsed.impossible, impossibleReason: parsed.impossibleReason, output, model, thinkingLevel, challenge }, capturedRevisionToken);
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code !== "ENOENT") return infra(model, thinkingLevel, `invalid auditor result: ${error instanceof Error ? error.message : String(error)}`, "", capturedRevisionToken, "no-verdict");
         }
