@@ -665,6 +665,12 @@ export interface Goal {
    * the agent must carry into its completion recap's Left out. Bounded
    * to the trailing 20. */
   autoDefaultLog?: Array<{ at: string; reason: string; chosen: string; options: string[] }>;
+  /** v0.38.73 (run-to-done): draft-time user consent to carry this goal to
+   * completion without supervised pauses — session-start auto-resume and
+   * immediate decision auto-default. Hard stops still park: audit/
+   * consecutive-error caps, provider-down, user abort. The auditor is never
+   * skipped. Specific beats general: beats global autoResume:false. */
+  runToDone?: boolean;
   /** v0.28.22: ISO time a wait-pause becomes resumable (countdown shown). */
   pauseResumeAt?: string;
   /** v0.35.28 (issue #16): set when glla AUTO-resumed a lapsed wait — the
