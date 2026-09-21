@@ -1995,7 +1995,7 @@ test("v0.36.3: live activity is scoped across lost results, host replacement, ti
   const goal = seedGoal({ id: "activity-boundary-goal", createdAt, updatedAt: createdAt });
   seedState(cwd, { goal });
   __testOnlyLoadState(cwd);
-  __testOnlyRememberCtx(first);
+  __testOnlyRememberCtx(first as any);
 
   // A real tool start is enough to produce WORKING while its result is lost.
   await pi.fire("tool_call", { toolName: "bash", toolCallId: "lost-activity", input: { command: "echo stale" } }, first);
@@ -2009,7 +2009,7 @@ test("v0.36.3: live activity is scoped across lost results, host replacement, ti
   await pi.fire("session_start", { reason: "reload" }, replacement);
   seedState(cwd, { goal });
   __testOnlyLoadState(cwd);
-  __testOnlyRememberCtx(replacement);
+  __testOnlyRememberCtx(replacement as any);
   assert.equal((globalThis as any).inFlightToolCalls.size, 0, "session replacement clears lost tool starts");
   await pi.fire("tool_result", { toolName: "bash", toolCallId: "lost-activity", output: "late" }, replacement);
   assert.equal(recentActions.length, 0, "an unmatched late result cannot repaint the successor");
@@ -2021,7 +2021,7 @@ test("v0.36.3: live activity is scoped across lost results, host replacement, ti
   const future = new Date(Date.now() + 60_000).toISOString();
   seedState(cwd, { goal: { ...goal, createdAt: future, updatedAt: future } });
   __testOnlyLoadState(cwd);
-  __testOnlyRememberCtx(replacement);
+  __testOnlyRememberCtx(replacement as any);
   assert.equal(__testOnlyDisplayActivityFor(replacement as any).activity, "awaiting-first-turn", "pre-goal timestamps do not produce WORKING");
 
   // Timer-backed queued work and a latched pending dispatch are both honest
@@ -2030,7 +2030,7 @@ test("v0.36.3: live activity is scoped across lost results, host replacement, ti
   seedState(cwd, { goal });
   __testOnlyLoadState(cwd);
   const idleCtx = makeMockCtx(cwd, { sessionManager: MAIN_SM, idle: true });
-  __testOnlyRememberCtx(idleCtx);
+  __testOnlyRememberCtx(idleCtx as any);
   releaseInitialSessionLoadBarrier();
   scheduleContinuation(idleCtx as any, true, 60_000);
   assert.equal(__testOnlyDisplayActivityFor(idleCtx as any).activity, "queued", "a live continuation timer is queued work");
@@ -2058,7 +2058,7 @@ test("v0.36.4: /glla resume behaviorally re-kicks an ACTIVE-but-idle goal", asyn
   });
   seedState(cwd, { goal });
   __testOnlyLoadState(cwd);
-  __testOnlyRememberCtx(ctx);
+  __testOnlyRememberCtx(ctx as any);
   pi.sent.length = 0;
 
   await pi.command("glla", "resume", ctx);
