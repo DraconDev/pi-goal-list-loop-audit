@@ -996,6 +996,115 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     }
     ensureAgentToolsActive(pi, ctx);
   }
+  // v0.38.83 (lifecycle map 1/3 — admission): the session_start
+  // foreign/worker gate, extracted verbatim from the callback.
+  // Null = this contact must not run restore; otherwise the
+  // admission facts the later stages read.
+  function admitSessionStart(ctx: ExtensionContext, event: any) {
+    // A child session can bind this extension before or after the MAIN host.
+    // Reject it before root registration, restore, owner-file writes, or tool
+    // repair; otherwise an owner-null first child can claim the plane.
+    if (isWorkerSessionCtx(ctx)) return null;
+    // v0.23.8: subagent sessions (pi-subagents binds extensions there too)
+    // are workers — never run the restore gate or reschedule the loop from
+    // a foreign session. Host replacement events are the exception: pi can
+    // deliver /new, /resume, /fork, or /reload with a new SessionManager and
+    // no session_shutdown, so rejecting them here would permanently lose the
+    // only fresh context that can rebind the loop (v0.34.23).
+    // v0.34.27: a real file-backed successor can report plain `startup`
+    // after pi invalidated the old handle. Recognize that contact before the
+    // foreign-session gate; in-memory subagent startup remains refused.
+    const hostSuccessorStart = isHostSuccessorContact(ctx);
+    const lifecycleSignal = isHostLifecycleSessionStart(event);
+    const sameOwnerStart = ownerSession !== null && ctx.sessionManager === ownerSession;
+    // A lifecycle reason is evidence from pi, not proof that an arbitrary
+    // in-memory SessionManager is the MAIN host. New managers must still be
+    // file-backed (the pi host shape); subagent workers remain refused even
+    // if they manufacture a reload/resume-looking event.
+    const hostLifecycleStart = hostSuccessorStart || sameOwnerStart || (lifecycleSignal && isHostSuccessorCtx(ctx));
+    // `ownerSession` is intentionally nulled at a stale/shutdown terminal,
+    // so isForeignCtx() alone cannot protect the parked plane. Compare with
+    // the retained dead owner too: an in-memory subagent startup must not
+    // consume the recovery event and erase the host's successor proof.
+    const recordedOwner = ownerSession ?? deadOwnerSession;
+    const foreignRecordedSession = recordedOwner !== null && ctx.sessionManager !== recordedOwner;
+    // v0.34.63: quit → fresh pi → blank startup (load barrier pending) →
+    // resume. pi delivers the resumed session with a NEW SessionManager
+    // object, so identity (and possibly file-backed) checks fail and the
+    // resume was silently DROPPED — the goal stayed parked forever with a
+    // dead countdown (dracon-platform 2026-08-07: wall at 01:18, probe at
+    // 01:33 never ran). While this process is waiting on the load barrier,
+    // a lifecycle start from the same workspace carrying the same session
+    // identity IS that load completing — accept it before the gate.
+    const barrierAwaitingLoadedSession = initialSessionLoadPending && lifecycleSignal;
+    const resumeCompletesLoad = barrierAwaitingLoadedSession
+      && (ownerCwd == null || ctx.cwd === ownerCwd)
+      && sameSessionIdentity(ctx.sessionManager, recordedOwner);
+    if (foreignRecordedSession && !hostLifecycleStart && !resumeCompletesLoad) return null;
+    return {
+      hostSuccessorStart,
+      lifecycleSignal,
+      sameOwnerStart,
+      hostLifecycleStart,
+      recordedOwner,
+      foreignRecordedSession,
+      barrierAwaitingLoadedSession,
+      resumeCompletesLoad,
+    };
+  }
+
+  // v0.38.83 (lifecycle map 2/3 — root ownership): claim-or-refuse
+  // plus the admitted-root registration, extracted verbatim.
+  // False = read-only notify already sent; the caller returns.
+  function claimSessionRootOrNotify(ctx: ExtensionContext, hostLifecycleStart: boolean): boolean {
+    // v0.35.58: register the admitted host root before any lifecycle,
+    // ownership, or restore ledger write. In-memory worker managers have no
+    // directory and therefore remain pending rather than falling back to cwd.
+    setRuntimeSessionDirFromSessionManager(ctx.sessionManager);
+    // v0.38.12 (last-wins sessions): a newer MAIN host does not queue
+    // behind the previous session — it takes the root and the old session
+    // stands down to read-only on its next recheck. Workers keep the old
+    // refusal: a subagent must never dethrone the main session it serves.
+    let ownsRoot = claimProcessOwner(ctx.cwd);
+    if (!ownsRoot && hostLifecycleStart) {
+      const supersede = supersedeLiveOwnerRoot(ctx.cwd, { isMainHost: true, bySession: sessionManagerId(ctx) });
+      ownsRoot = supersede !== "refused";
+      if (supersede === "stolen") {
+        ctx.ui.notify("glla: this fresh session took over the state root — the previous live session is now read-only. Your new objective is the real one; the old session's disk state is preserved.", "warning");
+      }
+    }
+    if (!ownsRoot) {
+      processOwnerDeniedCwd = ctx.cwd;
+      ctx.ui.notify("glla: this session could not own the working-directory state root (a worker contact, or an unresolved sessionDir) — it is read-only to prevent competing goal/loop writes. /glla owner inspects the holder; /glla takeover resolves it with confirmation.", "warning");
+      return false;
+    }
+    processOwnerDeniedCwd = null;
+    return true;
+  }
+
+  // v0.38.83 (lifecycle map 3/3 — retention sweep): closed block,
+  // extracted verbatim. Best-effort hygiene; never breaks startup.
+  function retentionSweepAuditJobs(ctx: ExtensionContext): void {
+    // v0.38.72: automate the proven-dead audit-job sweep. Manual-only `/glla
+    // audits health cleanup` let 207 job dirs accumulate (115 proven-dead,
+    // 91 pre-convention finished). Owner-only (this gate), windowed by the
+    // user's auditJobRetentionMs, ledgered when it reaps, fail-silent:
+    // hygiene must never break startup.
+    try {
+      if (!stateRootPending()) {
+        const retentionMs = loadSettings(ctx.cwd).auditJobRetentionMs;
+        const before = inspectAuditJobHealth(ctx.cwd, Date.now(), retentionMs);
+        if (before.cleanupCandidates > 0) {
+          const after = cleanupDeadAuditJobs(ctx.cwd, retentionMs);
+          const reaped = before.total - after.total;
+          if (reaped > 0) appendLedger(ctx.cwd, "audit_jobs_retention_sweep", { reaped, remaining: after.total });
+        }
+      }
+    } catch {
+      /* best-effort hygiene */
+    }
+  }
+
 
   // v0.26.1: compaction ends WITHOUT an agent_end (the compaction turn is
   // not an agent turn), so the continuation chain can dangle until the
@@ -1274,86 +1383,11 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
   });
 
   pi.on("session_start", async (event: any, ctx: ExtensionContext) => {
-    // A child session can bind this extension before or after the MAIN host.
-    // Reject it before root registration, restore, owner-file writes, or tool
-    // repair; otherwise an owner-null first child can claim the plane.
-    if (isWorkerSessionCtx(ctx)) return;
-    // v0.23.8: subagent sessions (pi-subagents binds extensions there too)
-    // are workers — never run the restore gate or reschedule the loop from
-    // a foreign session. Host replacement events are the exception: pi can
-    // deliver /new, /resume, /fork, or /reload with a new SessionManager and
-    // no session_shutdown, so rejecting them here would permanently lose the
-    // only fresh context that can rebind the loop (v0.34.23).
-    // v0.34.27: a real file-backed successor can report plain `startup`
-    // after pi invalidated the old handle. Recognize that contact before the
-    // foreign-session gate; in-memory subagent startup remains refused.
-    const hostSuccessorStart = isHostSuccessorContact(ctx);
-    const lifecycleSignal = isHostLifecycleSessionStart(event);
-    const sameOwnerStart = ownerSession !== null && ctx.sessionManager === ownerSession;
-    // A lifecycle reason is evidence from pi, not proof that an arbitrary
-    // in-memory SessionManager is the MAIN host. New managers must still be
-    // file-backed (the pi host shape); subagent workers remain refused even
-    // if they manufacture a reload/resume-looking event.
-    const hostLifecycleStart = hostSuccessorStart || sameOwnerStart || (lifecycleSignal && isHostSuccessorCtx(ctx));
-    // `ownerSession` is intentionally nulled at a stale/shutdown terminal,
-    // so isForeignCtx() alone cannot protect the parked plane. Compare with
-    // the retained dead owner too: an in-memory subagent startup must not
-    // consume the recovery event and erase the host's successor proof.
-    const recordedOwner = ownerSession ?? deadOwnerSession;
-    const foreignRecordedSession = recordedOwner !== null && ctx.sessionManager !== recordedOwner;
-    // v0.34.63: quit → fresh pi → blank startup (load barrier pending) →
-    // resume. pi delivers the resumed session with a NEW SessionManager
-    // object, so identity (and possibly file-backed) checks fail and the
-    // resume was silently DROPPED — the goal stayed parked forever with a
-    // dead countdown (dracon-platform 2026-08-07: wall at 01:18, probe at
-    // 01:33 never ran). While this process is waiting on the load barrier,
-    // a lifecycle start from the same workspace carrying the same session
-    // identity IS that load completing — accept it before the gate.
-    const barrierAwaitingLoadedSession = initialSessionLoadPending && lifecycleSignal;
-    const resumeCompletesLoad = barrierAwaitingLoadedSession
-      && (ownerCwd == null || ctx.cwd === ownerCwd)
-      && sameSessionIdentity(ctx.sessionManager, recordedOwner);
-    if (foreignRecordedSession && !hostLifecycleStart && !resumeCompletesLoad) return;
-    // v0.35.58: register the admitted host root before any lifecycle,
-    // ownership, or restore ledger write. In-memory worker managers have no
-    // directory and therefore remain pending rather than falling back to cwd.
-    setRuntimeSessionDirFromSessionManager(ctx.sessionManager);
-    // v0.38.12 (last-wins sessions): a newer MAIN host does not queue
-    // behind the previous session — it takes the root and the old session
-    // stands down to read-only on its next recheck. Workers keep the old
-    // refusal: a subagent must never dethrone the main session it serves.
-    let ownsRoot = claimProcessOwner(ctx.cwd);
-    if (!ownsRoot && hostLifecycleStart) {
-      const supersede = supersedeLiveOwnerRoot(ctx.cwd, { isMainHost: true, bySession: sessionManagerId(ctx) });
-      ownsRoot = supersede !== "refused";
-      if (supersede === "stolen") {
-        ctx.ui.notify("glla: this fresh session took over the state root — the previous live session is now read-only. Your new objective is the real one; the old session's disk state is preserved.", "warning");
-      }
-    }
-    if (!ownsRoot) {
-      processOwnerDeniedCwd = ctx.cwd;
-      ctx.ui.notify("glla: this session could not own the working-directory state root (a worker contact, or an unresolved sessionDir) — it is read-only to prevent competing goal/loop writes. /glla owner inspects the holder; /glla takeover resolves it with confirmation.", "warning");
-      return;
-    }
-    processOwnerDeniedCwd = null;
-    // v0.38.72: automate the proven-dead audit-job sweep. Manual-only `/glla
-    // audits health cleanup` let 207 job dirs accumulate (115 proven-dead,
-    // 91 pre-convention finished). Owner-only (this gate), windowed by the
-    // user's auditJobRetentionMs, ledgered when it reaps, fail-silent:
-    // hygiene must never break startup.
-    try {
-      if (!stateRootPending()) {
-        const retentionMs = loadSettings(ctx.cwd).auditJobRetentionMs;
-        const before = inspectAuditJobHealth(ctx.cwd, Date.now(), retentionMs);
-        if (before.cleanupCandidates > 0) {
-          const after = cleanupDeadAuditJobs(ctx.cwd, retentionMs);
-          const reaped = before.total - after.total;
-          if (reaped > 0) appendLedger(ctx.cwd, "audit_jobs_retention_sweep", { reaped, remaining: after.total });
-        }
-      }
-    } catch {
-      /* best-effort hygiene */
-    }
+    const admission = admitSessionStart(ctx, event);
+    if (!admission) return;
+    const { hostLifecycleStart, recordedOwner } = admission;
+    if (!claimSessionRootOrNotify(ctx, hostLifecycleStart)) return;
+    retentionSweepAuditJobs(ctx);
     // v0.34.73 (OPEN-ISSUES 1.12): capture the pre-rebind invalidation flags
     // BEFORE the block below clears them — the id_invalidation reason needs
     // to know which mechanism invalidated the old handle.
