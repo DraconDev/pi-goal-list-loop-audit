@@ -31,6 +31,7 @@ import {
   mainModelFailureDelayMs,
   mainModelPrimaryProbeDelayMs,
   mainModelRetryDelayMs,
+  isDeterministicProviderError,
   isQuotaHorizonExempt,
   quotaResetSleepMs,
   isCompactionInFlightSince,
@@ -800,6 +801,15 @@ export function setMainModelRecoveryPause(ctx: ExtensionContext, recovery: MainM
   };
   const now = Date.now();
   const deadlineMs = normalized.autoRetryUntil ? Date.parse(normalized.autoRetryUntil) : Number.NaN;
+  // v0.38.92: deterministic 400s never schedule — an identical retry cannot
+  // succeed, so the ladder would burn (forever under aggressiveMode) while
+  // promising "retrying automatically". Hold for manual resume with the fix
+  // directions; the user's resume re-probes a CHANGED request. Checked
+  // before the horizon/quota logic so it wins in every mode.
+  if (isDeterministicProviderError(normalized.providerErrorDiagnostic ?? normalized.reason)) {
+    holdMainModelRecovery(ctx, normalized, "the provider refused the request itself (deterministic client error — e.g. too many images for this model). Switch model or trim the request, then resume");
+    return false;
+  }
   const requestedDelayMs = Math.max(1_000, delayMs);
   // v0.38.69 (Antigravity port): quota waits never park at the horizon —
   // a rate-limit/plan-quota wall is transient, so the hold below is
