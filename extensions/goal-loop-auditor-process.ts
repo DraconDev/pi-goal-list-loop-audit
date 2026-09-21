@@ -110,6 +110,89 @@ export function normalizeAuditorInfrastructureResult(result: GoalAuditorResult):
   };
 }
 
+/** v0.38.81: risk-tiered auditing. Full tier = the audit plus the
+ * falsification round (today's behavior). Light tier = the same
+ * single-round audit with the same brief, shield, and tool floor —
+ * only round 2 is skipped. Light never means none. */
+export type AuditTierName = "light" | "full";
+
+/** v1 activity ceilings for the light tier (inclusive): a claim bigger
+ * than any of these always audits full. Tunable constants — the
+ * spot-check flip rate in /glla stats challenges is the calibration
+ * signal, not this comment's confidence. */
+export const LIGHT_AUDIT_CEILINGS = {
+  fileWrites: 12,
+  bashCalls: 20,
+  turns: 80,
+} as const;
+
+/** v1 high-stakes vocabulary (escalation only — agent-written text may
+ * push a claim UP to full, never down). Deliberately tight: bare
+ * "drop"/"table" stay out, destructive phrases stay in. v1
+ * calibration; widen from spot-check data, not imagination. */
+const HIGH_STAKES_RE = /migrat\w+|deploy|publish\b|release\b|production|\bprod\b|payment|billing|charg(e|ing)\b|stripe|paypal|\bauth\b|authentication|authorization|oauth|password|secret\b|credential|api[-_ ]key|private[-_ ]key|database|\bschema\b|backup|restore\b|dns\b|firewall|certificate|\bssl\b|\btls\b|\bdeleted?\b|\bdropped?\b|drop table|truncate\b|rm -rf|\bsudo\b|\bssh\b|chmod 777|\bk8s\b|kubernetes|terraform|ansible|iptables/i;
+
+export interface AuditTierInput {
+  telemetry?: { turns: number; fileWrites: number; bashCalls: number };
+  priorDisapprovals?: number;
+  objective?: string;
+  verificationContract?: string;
+  completionSummary?: string;
+  verificationSummary?: string;
+  /** Draft-time user consent (Goal.fullAudit): always full. */
+  goalFullAudit?: boolean;
+  /** Agent self-escalation (claim.requestFullAudit): always full. */
+  claimRequestFullAudit?: boolean;
+  /** Fraction of light claims silently escalated (0 = off). Clamped. */
+  spotCheckRate?: number;
+  /** Injectable draw for tests; default Math.random. */
+  random?: () => number;
+}
+
+export interface AuditTierDecision {
+  tier: AuditTierName;
+  /** Every escalation reason, in rule order. Empty when light. */
+  reasons: string[];
+  /** True only for spot-check escalations (the light population). */
+  spotCheck: boolean;
+}
+
+/** Pure tier resolver (v0.38.81): escalation-only. Every rule can push
+ * a claim UP to full; nothing pushes it down. Computed once per claim
+ * at dispatch; the decision is ledgered as audit_tier_decided. */
+export function resolveAuditTier(input: AuditTierInput): AuditTierDecision {
+  const reasons: string[] = [];
+  if (input.goalFullAudit === true) reasons.push("draft-time full-audit consent");
+  if (input.claimRequestFullAudit === true) reasons.push("agent requested full audit");
+  const prior = input.priorDisapprovals ?? 0;
+  if (prior > 0) reasons.push(`rework history (${prior} prior disapproval${prior === 1 ? "" : "s"})`);
+  const t = input.telemetry;
+  if (!t) {
+    reasons.push("no activity telemetry");
+  } else if (
+    t.fileWrites > LIGHT_AUDIT_CEILINGS.fileWrites ||
+    t.bashCalls > LIGHT_AUDIT_CEILINGS.bashCalls ||
+    t.turns > LIGHT_AUDIT_CEILINGS.turns
+  ) {
+    reasons.push(`activity above light ceiling (${t.fileWrites} writes/${t.bashCalls} bash/${t.turns} turns)`);
+  }
+  const hay = [input.objective, input.verificationContract, input.completionSummary, input.verificationSummary]
+    .filter((s): s is string => typeof s === "string" && !!s)
+    .map((s) => s.slice(0, 2000))
+    .join("\n");
+  const hit = HIGH_STAKES_RE.exec(hay);
+  if (hit) reasons.push(`high-stakes language (match: "${hit[0].toLowerCase().slice(0, 40)}")`);
+  if (reasons.length > 0) return { tier: "full", reasons, spotCheck: false };
+  const rate = typeof input.spotCheckRate === "number" && Number.isFinite(input.spotCheckRate)
+    ? Math.min(1, Math.max(0, input.spotCheckRate))
+    : 0;
+  const random = input.random ?? Math.random;
+  if (rate > 0 && random() < rate) {
+    return { tier: "full", reasons: [`spot-check (rate ${rate})`], spotCheck: true };
+  }
+  return { tier: "light", reasons, spotCheck: false };
+}
+
 export interface AuditorProgress {
   recentOutput: string[];
   phase: "starting" | "running" | "thinking" | "tool_executing" | "producing_report" | "challenging" | "complete";
