@@ -191,6 +191,7 @@ function finishRollup(project: string, acc: RollupAccumulator): ProjectRollup {
     }
   }
   const outcomes = finishOutcomes(acc);
+  const challenges = finishChallenges(acc);
   return {
     project,
     goalsCreated: acc.goalsCreated,
@@ -203,7 +204,23 @@ function finishRollup(project: string, acc: RollupAccumulator): ProjectRollup {
     totalCost,
     lastActive: acc.lastActive,
     outcomes,
+    challenges,
   };
+}
+
+function finishChallenges(acc: RollupAccumulator): ChallengeOutcomes {
+  let confirmed = 0;
+  let flipped = 0;
+  let skipped = 0;
+  for (const goal of acc.finalGoal.values()) {
+    for (const a of goal.auditHistory ?? []) {
+      if (a.challenge === "confirmed") confirmed++;
+      else if (a.challenge === "flipped") flipped++;
+      else if (typeof a.challenge === "string" && a.challenge.startsWith("skipped")) skipped++;
+      // absent / not-applicable: unchallenged — never counted anywhere.
+    }
+  }
+  return { challenged: confirmed + flipped, confirmed, flipped, skipped };
 }
 
 const TERMINAL_GOAL_STATUSES = new Set(["complete", "aborted"]);
