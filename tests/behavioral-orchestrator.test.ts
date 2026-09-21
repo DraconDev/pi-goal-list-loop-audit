@@ -27,6 +27,7 @@ import * as path from "node:path";
 import { execSync } from "node:child_process";
 import activate, { __testOnlyDisplayActivityFor, __testOnlyLastConfirmDialog, __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetStarvationGate, __testOnlyResetTerminalFlags, __testOnlyResetToolActivity, __testOnlyRunFanOutListAuditFindings, __testOnlySetContinuationRetryBackoff, __testOnlySetContinuationStartTimeout, __testOnlySetSessionReplacementUntil, runDetachedCompletionWithFallback } from "../extensions/loops/goal.js";
 import { __testOnlyResetLengthExhaustionEpisodes, __testOnlyResetZombieAutoRetry, __testOnlySetZombieRetryMaxAttempts } from "../extensions/loops/goal-activation.js";
+import { recentActions } from "../extensions/loops/goal-ui.js";
 import { __testOnlyHeartbeatTick, __testOnlySetZombieRunWindows, __testOnlyResetZombieRunWatchdog, __testOnlyClearSubagentHangProbes, __testOnlySubagentHangProbes, upsertSubagentHangProbe, endSubagentHangProbe } from "../extensions/goal-heartbeat.js";
 import { mainModelRecoverySucceeded } from "../extensions/goal-recovery.js";
 import { isProviderRetryPending } from "../extensions/quota-retry.js";
@@ -2011,7 +2012,7 @@ test("v0.36.3: live activity is scoped across lost results, host replacement, ti
   __testOnlyRememberCtx(replacement);
   assert.equal((globalThis as any).inFlightToolCalls.size, 0, "session replacement clears lost tool starts");
   await pi.fire("tool_result", { toolName: "bash", toolCallId: "lost-activity", output: "late" }, replacement);
-  assert.equal((globalThis as any).recentActions.length, 0, "an unmatched late result cannot repaint the successor");
+  assert.equal(recentActions.length, 0, "an unmatched late result cannot repaint the successor");
   assert.equal(__testOnlyDisplayActivityFor(replacement as any).activity, "busy");
 
   // Keep the same scope but move its durable creation boundary after the

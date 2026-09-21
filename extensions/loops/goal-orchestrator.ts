@@ -1494,7 +1494,6 @@ defineGoalRuntimeGlobal("scheduleProviderRetryForSession", { get: () => schedule
 defineGoalRuntimeGlobal("handleMainModelAgentEnd", { get: () => handleMainModelAgentEnd });
 defineGoalRuntimeGlobal("createGoal", { get: () => createGoal });
 defineGoalRuntimeGlobal("persistState", { get: () => persistState });
-defineGoalRuntimeGlobal("persistenceDegradedNotified", { get: () => persistenceDegradedNotified, set: (v) => { persistenceDegradedNotified = v as any; } });
 defineGoalRuntimeGlobal("shortObj", { get: () => shortObj });
 defineGoalRuntimeGlobal("displaySlice", { get: () => displaySlice });
 defineGoalRuntimeGlobal("goalNoun", { get: () => goalNoun });

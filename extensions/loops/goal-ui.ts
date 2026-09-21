@@ -585,7 +585,8 @@ function clearDetachedAuditProgress(generation: number, goalId: string, attemptI
 // Display-only, never persisted; cleared at every session/objective
 // boundary. The scope/epoch fields are defensive: a late result from a
 // disposed goal must not become the newest action on its replacement.
-const recentActions: import("../goal-loop-display.js").RecentActionDisplay[] = [];
+// v0.38.87: exported for the orchestrator test (globals slice 2 retired the ambient slot).
+export const recentActions: import("../goal-loop-display.js").RecentActionDisplay[] = [];
 const inFlightToolCalls = new Map<string, { name: string; arg?: string; at: number; scope?: string; epoch: number }>();
 let toolActivityEpoch = 0;
 
@@ -1250,7 +1251,6 @@ defineGoalRuntimeGlobal("ownsDetachedAudit", { get: () => ownsDetachedAudit });
 defineGoalRuntimeGlobal("detachedAuditContext", { get: () => detachedAuditContext });
 defineGoalRuntimeGlobal("publishDetachedAuditProgress", { get: () => publishDetachedAuditProgress });
 defineGoalRuntimeGlobal("clearDetachedAuditProgress", { get: () => clearDetachedAuditProgress });
-defineGoalRuntimeGlobal("recentActions", { get: () => recentActions });
 defineGoalRuntimeGlobal("inFlightToolCalls", { get: () => inFlightToolCalls });
 defineGoalRuntimeGlobal("noteToolCall", { get: () => noteToolCall });
 defineGoalRuntimeGlobal("noteToolResult", { get: () => noteToolResult });
@@ -1264,21 +1264,14 @@ defineGoalRuntimeGlobal("compactionInFlightSince", { get: () => compactionInFlig
 defineGoalRuntimeGlobal("noteCompactionStarted", { get: () => noteCompactionStarted });
 defineGoalRuntimeGlobal("noteCompactionSettled", { get: () => noteCompactionSettled });
 defineGoalRuntimeGlobal("lastCompactionAt", { get: () => lastCompactionAt, set: (v) => { lastCompactionAt = v as any; } });
-defineGoalRuntimeGlobal("CONTEXT_STARVATION_REFUSE_THRESHOLD", { get: () => CONTEXT_STARVATION_REFUSE_THRESHOLD });
-defineGoalRuntimeGlobal("CONTEXT_STARVATION_RECENT_WINDOW_MS", { get: () => CONTEXT_STARVATION_RECENT_WINDOW_MS });
 defineGoalRuntimeGlobal("contextStarvedStreak", { get: () => contextStarvedStreak, set: (v) => { contextStarvedStreak = v as any; } });
 defineGoalRuntimeGlobal("lastContextStarvedAt", { get: () => lastContextStarvedAt, set: (v) => { lastContextStarvedAt = v as any; } });
 defineGoalRuntimeGlobal("noteContextStarvedYield", { get: () => noteContextStarvedYield });
 defineGoalRuntimeGlobal("noteContextPercent", { get: () => noteContextPercent });
 defineGoalRuntimeGlobal("shouldCompactFirstNudge", { get: () => shouldCompactFirstNudge });
 defineGoalRuntimeGlobal("buildStarvationLadderMessage", { get: () => buildStarvationLadderMessage });
-defineGoalRuntimeGlobal("COMPACT_FIRST_NUDGE_PERCENT", { get: () => COMPACT_FIRST_NUDGE_PERCENT });
 defineGoalRuntimeGlobal("onCompactionLanded", { get: () => onCompactionLanded });
 defineGoalRuntimeGlobal("isContextStarvedRefused", { get: () => isContextStarvedRefused });
-defineGoalRuntimeGlobal("__testOnlySetLastCompactionAt", { get: () => __testOnlySetLastCompactionAt });
-defineGoalRuntimeGlobal("__testOnlyLoadState", { get: () => __testOnlyLoadState });
-defineGoalRuntimeGlobal("__testOnlyRegisterAgentTools", { get: () => __testOnlyRegisterAgentTools });
-defineGoalRuntimeGlobal("__testOnlyRememberCtx", { get: () => __testOnlyRememberCtx });
 defineGoalRuntimeGlobal("postCompactResumeOwed", { get: () => postCompactResumeOwed, set: (v) => { postCompactResumeOwed = v as any; } });
 defineGoalRuntimeGlobal("postCompactResyncPending", { get: () => postCompactResyncPending, set: (v) => { postCompactResyncPending = v as any; } });
 defineGoalRuntimeGlobal("COMPACTION_GRACE_MS", { get: () => COMPACTION_GRACE_MS });

@@ -2186,7 +2186,6 @@ defineGoalRuntimeGlobal("clearDetachedAuditRuntime", { get: () => clearDetachedA
 defineGoalRuntimeGlobal("validateCompletionSummary", { get: () => validateCompletionSummary });
 defineGoalRuntimeGlobal("beginCompletionAudit", { get: () => beginCompletionAudit });
 defineGoalRuntimeGlobal("isAuditorNoVerdictInfrastructureError", { get: () => isAuditorNoVerdictInfrastructureError });
-defineGoalRuntimeGlobal("EAGER_AUDITOR_RETRY_SEC", { get: () => EAGER_AUDITOR_RETRY_SEC });
 defineGoalRuntimeGlobal("fmtRetryDelay", { get: () => fmtRetryDelay });
 defineGoalRuntimeGlobal("auditorRetryPlan", { get: () => auditorRetryPlan });
 defineGoalRuntimeGlobal("auditorCandidateLabel", { get: () => auditorCandidateLabel });

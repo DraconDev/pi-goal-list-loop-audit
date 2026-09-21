@@ -1882,11 +1882,8 @@ function observeTurnBoundaryModel(ctx: ExtensionContext): void {
 
 
 /* Runtime globals: preserve the old monolith lexical links across extracted modules. */
-defineGoalRuntimeGlobal("auditorThinkingLevels", { get: () => auditorThinkingLevels });
 defineGoalRuntimeGlobal("resolveAuditorModel", { get: () => resolveAuditorModel });
 defineGoalRuntimeGlobal("openSettingsUI", { get: () => openSettingsUI });
-defineGoalRuntimeGlobal("promptSettingsMenu", { get: () => promptSettingsMenu });
-defineGoalRuntimeGlobal("promptModelRef", { get: () => promptModelRef });
 defineGoalRuntimeGlobal("handleSettingChoice", { get: () => handleSettingChoice });
 defineGoalRuntimeGlobal("observeModelChange", { get: () => observeModelChange });
 defineGoalRuntimeGlobal("observeTurnBoundaryModel", { get: () => observeTurnBoundaryModel });
