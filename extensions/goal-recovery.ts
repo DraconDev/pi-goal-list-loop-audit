@@ -1637,7 +1637,11 @@ export async function recoverMainModelFromSendStorm(ctx: ExtensionContext, kind:
     if (!current) return;
     const recovery = state.mainModelRecovery;
     if (!recovery) return;
-    if (setMainModelRecoveryPause(ctx, { ...recovery, kind: kind === "loop" ? "loop" : "goal", active: current, resumeCurrent: true }, 1_000)) {
+    // v0.38.92: the switch retires the old episode's diagnostic — it
+    // describes the previous model's failure, and a stale deterministic
+    // marker must not hold the fresh model's probe. Reason restarts from
+    // the storm failure that triggered the switch.
+    if (setMainModelRecoveryPause(ctx, { ...recovery, kind: kind === "loop" ? "loop" : "goal", active: current, resumeCurrent: true, reason: mainModelRecoveryReason(failure), providerErrorDiagnostic: undefined }, 1_000)) {
       flags.mainModelAbortForRecovery = true;
       try { ctx.abort(); } catch { /* best effort; recovery guard prevents re-send storms */ }
       scheduleMainModelRecoveryTimer(ctx, 1_000);
