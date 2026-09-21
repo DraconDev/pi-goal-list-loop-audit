@@ -121,10 +121,20 @@ interface RollupAccumulator {
   goalsCreated: number;
   lastActive: string;
   finalGoal: Map<string, GoalRollupSource>;
+  archived: Map<string, { status: string; at: string }>;
+  firstSeen: Map<string, string>;
 }
 
 function newRollupAccumulator(): RollupAccumulator {
-  return { goalsCreated: 0, lastActive: "", finalGoal: new Map() };
+  return { goalsCreated: 0, lastActive: "", finalGoal: new Map(), archived: new Map(), firstSeen: new Map() };
+}
+
+function entryGoalId(e: LedgerEntry): string | undefined {
+  const direct = e.value?.goalId;
+  if (typeof direct === "string" && direct) return direct;
+  const nested = e.value?.goal?.id;
+  if (typeof nested === "string" && nested) return nested;
+  return undefined;
 }
 
 function addRollupEntry(acc: RollupAccumulator, e: LedgerEntry): void {
@@ -132,6 +142,11 @@ function addRollupEntry(acc: RollupAccumulator, e: LedgerEntry): void {
   if (e.type === "goal_created") acc.goalsCreated++;
   if (e.type === "state" && e.value?.goal?.id) {
     acc.finalGoal.set(String(e.value.goal.id), e.value.goal as GoalRollupSource);
+  }
+  const gid = entryGoalId(e);
+  if (gid && e.at && !acc.firstSeen.has(gid)) acc.firstSeen.set(gid, e.at);
+  if (e.type === "goal_archived" && gid && e.at && typeof e.value?.status === "string") {
+    acc.archived.set(gid, { status: e.value.status, at: e.at });
   }
 }
 
