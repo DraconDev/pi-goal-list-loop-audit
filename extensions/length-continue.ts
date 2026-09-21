@@ -67,7 +67,6 @@ export interface AssistantLengthMessageLike {
 }
 
 export const LENGTH_CONTINUE_CONTEXT_STARVED_PERCENT = 90;
-export const LENGTH_CONTINUE_CONTEXT_STARVED_MAX_OUTPUT = 8;
 
 /**
  * v0.34.19: distinguish a REAL overlong assistant response from pi's

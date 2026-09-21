@@ -29,7 +29,6 @@ export const DEFAULT_IMAGE_BUDGET_BYTES = 16 * 1024 * 1024;
 
 /** The N most recent images are never evicted regardless of budget — the
  * current turn almost always needs the newest visual state. */
-export const DEFAULT_KEEP_RECENT_IMAGES = 2;
 
 export interface ImageBlockLocation {
   messageIndex: number;

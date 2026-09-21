@@ -99,7 +99,6 @@ const REVIEWER_VOCAB = /architectural-class|bug-class|refactor-class|strategic-c
 /** v0.36.x: outside-scope cap — findings outside the project at hand are
  * recorded in the report but never auto-queued. The auditor may explore
  * outside for context, but "fix the world" is not the cascade. */
-export const OUTSIDE_SCOPE_RE = /\boutside\s+scope\b|\bfix the world\b/i;
 export function isOutsideScopeFinding(text: string): boolean {
   return OUTSIDE_SCOPE_RE.test(text);
 }
@@ -344,7 +343,6 @@ export interface ReviewerOutcome {
   cascadeStep?: string;
 }
 
-export const REVIEWER_REFIRE_WINDOW_MS = 5 * 60_000;
 
 /** v0.28.16: normalize an objective for duplicate-compare — lowercase,
  * goal-ids (yyyyMMddHHmmss-xxxxxx) become <id>, whitespace collapses. */

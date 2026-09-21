@@ -16,8 +16,6 @@ import * as path from "node:path";
 
 export const PROACTIVE_MAX_FILES = 3;
 export const PROACTIVE_MAX_CHARS_PER_FILE = 800;
-export const PROACTIVE_MAX_TOTAL_CHARS = 2800;
-export const PROACTIVE_SEED_EXCERPT = 500;
 
 const PATH_RE = /(?:^|[\s"'`(\[])([a-zA-Z0-9_.\-/@]+\.(?:md|json|ts|js|txt|png|jpg|jpeg|webp|log))/g;
 const ABSOLUTE_RE = /(\/[^\s"'`)\]]+\.(?:md|json|ts|js|txt|png|jpg|jpeg|webp|log))/g;
