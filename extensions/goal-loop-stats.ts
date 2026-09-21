@@ -34,6 +34,29 @@ export interface GoalRollupSource {
   usage?: { tokensUsed?: number };
   auditHistory?: Array<{ approved?: boolean; disapproved?: boolean; error?: string }>;
   telemetry?: GoalTelemetry;
+  runToDone?: boolean;
+}
+
+/** Outcome metrics: what finished, how long it took, what it cost, and
+ * whether run-to-done goals finish differently from supervised ones.
+ * Unknowns stay unknown — a goal without timing/usage data is skipped,
+ * never counted as zero. */
+export interface GoalOutcomes {
+  completed: number;
+  aborted: number;
+  open: number;
+  /** Mean auditHistory length over completed goals with history. */
+  avgRoundsToApproval: number;
+  /** Mean wall-clock hours from first ledger sighting to archive. */
+  avgWallClockHrs: number;
+  /** Mean tokensUsed over completed goals with usage data. */
+  tokensPerCompleted: number;
+  runToDoneCompleted: number;
+  runToDoneAborted: number;
+  /** Supervised bucket doubles as legacy-unknown: pre-v0.38.73 goals
+   * carry no flag. */
+  supervisedCompleted: number;
+  supervisedAborted: number;
 }
 
 export interface ProjectRollup {
@@ -49,6 +72,8 @@ export interface ProjectRollup {
    * this rig; documented in INSTALL.md). */
   totalCost: number;
   lastActive: string;
+  /** v0.38.74: outcome metrics (see GoalOutcomes). */
+  outcomes: GoalOutcomes;
 }
 
 /** Premature-success thresholds (spec-driven verifier design §3): an
