@@ -30,7 +30,7 @@ copies are ignored (the recovery runtime reads the global file):
 `autoResume`, `drafterModel`, `drafterThinkingLevel`,
 `drafterModelFallbacks`, `compactorModel`, `compactorModelFallbacks`,
 `auditorModelFallbacks`, `auditorToolTimeoutMs`, `auditorStallMs`,
-`auditJobRetentionMs`, `auditorInspection`.
+`auditJobRetentionMs`, `auditSpotCheckRate`, `auditorInspection`.
 
 ## Keys
 
@@ -58,6 +58,7 @@ copies are ignored (the recovery runtime reads the global file):
 | `auditorToolTimeoutMs` | `300000` | Base budget per auditor tool call (30s–6h). Global-only. |
 | `auditorStallMs` | `600000` | Base silence budget for the detached auditor (1m–24h). Global-only. |
 | `auditJobRetentionMs` | `900000` | How long proven-dead audit job dirs are kept (0–7d, 0 = reap now). Global-only. |
+| `auditSpotCheckRate` | `0.1` | Fraction of light-tier audits silently escalated to full (0 = off, 1 = calibrate). Global-only. |
 | `auditorInspection` | `false` | Auditor runs as a persistent session you can tail/resume. Global-only. |
 | `notifyCmd` | unset | Shell command on goal complete / pause / loop stop; message is `$1`. |
 | `tokenLimit` | unset (off) | Per-goal token budget; crossing it pauses. `0` = off. |
