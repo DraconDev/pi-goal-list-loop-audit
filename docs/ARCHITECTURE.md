@@ -82,7 +82,7 @@ complete_goal → claim → dispatch (tier) → worker (round 1 [+ challenge]) �
 
 ## 4. Persistence (3 min)
 
-- **Ledger** (`.pi-glla/active.jsonl`): append-only JSONL, ~140 event
+- **Ledger** (`.pi-glla/active.jsonl`): append-only JSONL, ~340 event
   types, the forensic trail. Stats, timeline, and recovery all read it.
 - **State**: snapshots persist the live goal/loop/list; `readState`
   reconciles with the ledger at boundaries.
@@ -97,7 +97,7 @@ complete_goal → claim → dispatch (tier) → worker (round 1 [+ challenge]) �
 
 ## 5. The test suite (3 min)
 
-- ~265 files, must run **serialized** (`--parallel=1
+- 260 files, must run **serialized** (`--parallel=1
   --max-concurrency=1`): parallel files trip Bun's nesting guard.
 - `npm test` = fast set (minus the 12 slowest, see
   `tests/slow-files.mjs`); `npm run test:slow`, `test:changed`,
