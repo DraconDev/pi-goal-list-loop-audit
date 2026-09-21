@@ -2889,6 +2889,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
       `auditorToolTimeoutMs: ${((effectiveSettings.auditorToolTimeoutMs ?? DEFAULT_AUDITOR_TOOL_TIMEOUT_MS) / 60000).toString()}m  [${prov.auditorToolTimeoutMs?.source ?? "default"}]`,
       `auditorStallMs: ${((effectiveSettings.auditorStallMs ?? DEFAULT_AUDITOR_STALL_MS) / 60000).toString()}m  [${prov.auditorStallMs?.source ?? "default"}]`,
       `auditJobRetentionMs: ${((effectiveSettings.auditJobRetentionMs ?? AUDIT_JOB_CLEANUP_MIN_AGE_MS) / 60000).toString()}m  [${prov.auditJobRetentionMs?.source ?? "default"}]`,
+      fmt("auditSpotCheckRate", "auditSpotCheckRate"),
       fmt("auditorInspection", "auditorInspection"),
       fmt("hourlyRetryProbe", "hourlyRetryProbe"),
       fmt("subagentModelStrategy", "subagentModelStrategy"),
