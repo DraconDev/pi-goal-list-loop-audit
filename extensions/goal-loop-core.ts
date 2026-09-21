@@ -3835,6 +3835,25 @@ export function crossRecommendMode(seed: string, mode: "goal" | "list"): string 
       `Any aggregate re-audit becomes the FINAL /goal, not the first.]`
     );
   }
+  // v0.38.84: open-ended/recurring seeds are loop-shaped in EITHER mode —
+  // /goal ends on auditor approval and /list items close once each, so
+  // "keep doing it" fits neither. After aggregate (per-item work wins),
+  // before the size checks (cadence changes the loop, not just the size).
+  // Bounded-until ("until done/green/shipped") stays a goal: a finish
+  // line makes it one-shot work, however watchful the phrasing.
+  if (!/\buntil\s+(done|complete|completed|finished|shipped|green|zero|0|passing)\b/i.test(s)) {
+    if (/\b(?:every|each)\s+(?:\d+\s+)?(?:minute|hour|day|night|week|month)s?\b/i.test(s) ||
+      /\b(?:monitor(?:ing)?|watch(?:ing)?|keep an eye on|until further notice|until I (?:say|stop|tell)|continuously|nightly|hourly|on an? (?:ongoing|rolling|recurring) basis)\b/i.test(s) ||
+      /\bkeep\b[^.?!]{0,60}\b(?:under|below|above|at)\b/i.test(s)) {
+      return (
+        `[MODE CHECK — this seed sounds open-ended/recurring (ongoing work, not a finishable objective). ` +
+        `/goal ends on auditor approval and /list items close once each — neither fits "keep doing it". ` +
+        `Suggest /loop: a metric plus a direction that runs until it holds or the user stops it ` +
+        `(/loop start "<target>" measure="<cmd>" direction=min|max). If the user wants a one-shot version ` +
+        `("get X to Y, then stop"), a /goal fits — comply.]`
+      );
+    }
+  }
   if (mode === "list") {
     if (/\b(?:take|takes|taking)\s+(?:a\s+)?(?:few|several|\d+)\s+hours?\b/i.test(s) || /\b(?:multi-hour|deep (?:audit|research|dive)|all day|over the weekend)\b/i.test(s)) {
       return (
