@@ -552,12 +552,12 @@ async function main() {
     return progressWrite;
   };
 
-  const finish = async (ok, error = "") => {
-    if (finalized) return;
-    finalized = true;
-    // v0.34.56: tools still in flight when the session ends never received
-    // their end — represent them as explicitly unmatched STARTS in the final
-    // telemetry snapshot instead of a phantom in-flight "current tool".
+  // v0.34.56: tools still in flight when the session ends never received
+  // their end — represent them as explicitly unmatched STARTS in the final
+  // telemetry snapshot instead of a phantom in-flight "current tool".
+  // Shared with the round-1→2 transition (v0.38.76), which drains without
+  // finalizing.
+  const drainActiveTools = () => {
     for (const active of activeTools.values()) {
       unmatchedToolStarts.push({ name: active.name, argsPrefix: active.argsPrefix, startedAt: active.startedAt, toolCallId: active.toolCallId });
       if (unmatchedToolStarts.length > MAX_UNMATCHED_EVENTS) unmatchedToolStarts.shift();
@@ -565,6 +565,12 @@ async function main() {
     activeTools.clear();
     anonymousStartKeys.clear();
     setCurrentToolFromActive();
+  };
+
+  const finish = async (ok, error = "") => {
+    if (finalized) return;
+    finalized = true;
+    drainActiveTools();
     // Preserve a final unterminated report line in the last progress snapshot
     // without changing the exact result output used for verdict parsing.
     appendRecentOutput(recentOutput, recentReportLine, "", true);
@@ -594,6 +600,10 @@ async function main() {
       // refuses the verdict instead of silently overwriting a goal that
       // moved on during the audit. Ghost writes cannot survive.
       ...(request.goalRevision ? { goalRevision: request.goalRevision } : {}),
+      // v0.38.76: challenge-round outcome. The parent ignores this field
+      // (verdict comes from output's final line); it exists for forensics
+      // and future surfacing.
+      challenge: challengeState,
       ...(error ? { error: error.slice(0, 500) } : {}),
     };
     // Publish the terminal worker phase before the result. The parent polls
