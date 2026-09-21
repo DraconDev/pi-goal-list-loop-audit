@@ -777,6 +777,14 @@ shapes (details in CHANGELOG.md; each is pinned by tests):
   pin) — the pins are load-bearing curation against restructures
   that regress, so further stages stay inline and mapped.
 
+## Addendum v0.38.85 (goal timeline)
+
+- **One screen answers "what happened, what's next".** `/goal timeline`
+  merges the goal's ledger trail with its audit verdicts in time
+  order (unscoped legacy events claimed by lifetime window, unknown
+  types compact-never-hidden) and derives the single next action
+  from live state. Read-only surface like `/glla log`.
+
 ## Files
 
 - `docs/DESIGN.md` — **this file**
