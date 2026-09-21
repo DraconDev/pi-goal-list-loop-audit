@@ -804,7 +804,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       }));
 
   pi.registerCommand("goal", {
-    description: "Set/draft a goal, or /goal status|timeline|pause|resume|cancel|tweak <text>|archive|start <objective>. Objectives without a 'Done when:' clause are grilled into a contract first; include the clause or use /goal start to skip the interview and activate instantly. Bare /goal start inherits one clear recent objective or falls back to drafting.",
+    description: "Set/draft a goal, or /goal status|timeline|pause|resume|cancel|tweak <text>|archive|start|plan|audit|verify <objective>. Objectives without a 'Done when:' clause are grilled into a contract first; include the clause or use /goal start to skip the interview and activate instantly. Bare /goal start inherits one clear recent objective or falls back to drafting. /goal plan drafts in rounds with a deep contract; /goal audit runs a one-shot project audit; /goal verify audits the current goal.",
     getArgumentCompletions: completions([
       ["timeline", "show this goal's event trail plus the single next action (/goal timeline [N])"],
       ["start", "skip drafting — /goal start <objective> activates immediately; bare start uses one clear recent objective"],
@@ -874,7 +874,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     },
   });
   pi.registerCommand("list", {
-    description: "Loop 2: the list of audited goals — order is the default, not the law. Bare /list drafts from context like bare /goal does | /list <describe tasks or name a plan file> (dumps get shaped into items, files import, 'Done when:' adds directly) | /list audit [focus] (collect findings, then drain them as items) | /list show | /list start | /list resume | /list tweak <text> | /list next [n] | /list remove <n> | /list clear | /list cancel. /list start explicitly activates the queued head or drafts one clear recent objective with the normal Confirm gate. Settings are under /glla, not /list — bare /glla opens the settings table.",
+    description: "Loop 2: the list of audited goals — order is the default, not the law. Bare /list drafts from context like bare /goal does | /list <describe tasks or name a plan file> (dumps get shaped into items, files import, 'Done when:' adds directly) | /list audit [focus] (collect findings, then drain them as items) | /list show | /list start | /list resume | /list tweak <text> | /list next [n] | /list remove <n> | /list clear | /list cancel | /list plan | /list add <text>. /list start explicitly activates the queued head or drafts one clear recent objective with the normal Confirm gate. /list plan drafts in rounds; /list add <text> enqueues directly, drafting only when the text is unclear. Settings are under /glla, not /list — bare /glla opens the settings table.",
     getArgumentCompletions: completions([
       ["show", "display the waiting items"],
       ["start", "explicitly activate the queued head; with no queue, draft one clear recent objective"],

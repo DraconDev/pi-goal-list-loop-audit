@@ -41,6 +41,12 @@ test("v0.38.89: stats header and unknown-arg usage share the /glla prefix", () =
   assert.doesNotMatch(src, /notify\(`glla stats\$\{view/);
 });
 
+test("v0.38.91: tool descriptions enumerate plan/audit/verify/add", () => {
+  const src = fs.readFileSync("extensions/loops/goal-activation.ts", "utf-8");
+  assert.match(src, /\/goal status\|timeline\|pause\|resume\|cancel\|tweak <text>\|archive\|start\|plan\|audit\|verify/);
+  assert.match(src, /\/list plan \| \/list add <text>/);
+});
+
 test("v0.38.89: /goal status card points at /goal timeline", async () => {
   const cwd = tmpCwd();
   seedState(cwd, { goal: seedGoal({ objective: "status card polish — done when pinned" }) });
