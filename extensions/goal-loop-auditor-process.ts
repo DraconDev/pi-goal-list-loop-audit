@@ -1923,7 +1923,7 @@ async function runDetachedGoalCompletionAuditorInner(args: {
  * Legacy callers pass no tier and see byte-identical results.
  */
 export async function runDetachedGoalCompletionAuditor(
-  args: Parameters<typeof runDetachedGoalCompletionAuditorInner>,
+  args: Parameters<typeof runDetachedGoalCompletionAuditorInner>[0],
 ): Promise<GoalAuditorResult> {
   const result = await runDetachedGoalCompletionAuditorInner(args);
   if (args.auditTier === undefined && args.spotCheck === undefined) return result;
