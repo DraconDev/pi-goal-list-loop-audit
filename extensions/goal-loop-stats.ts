@@ -32,7 +32,7 @@ export interface GoalRollupSource {
   createdAt?: string;
   updatedAt?: string;
   usage?: { tokensUsed?: number };
-  auditHistory?: Array<{ approved?: boolean; disapproved?: boolean; error?: string; challenge?: string }>;
+  auditHistory?: Array<{ approved?: boolean; disapproved?: boolean; error?: string; challenge?: string; auditTier?: string; spotCheck?: boolean }>;
   telemetry?: GoalTelemetry;
   runToDone?: boolean;
 }
@@ -70,6 +70,12 @@ export interface ChallengeOutcomes {
   confirmed: number;
   flipped: number;
   skipped: number;
+  /** v0.38.81: light-tier verdicts (single-round by policy). */
+  light: number;
+  /** v0.38.81: spot-checks where the round settled. */
+  spotChallenged: number;
+  /** v0.38.81: spot-check flips — the calibration signal. */
+  spotFlipped: number;
 }
 
 export interface ProjectRollup {
@@ -212,15 +218,23 @@ function finishChallenges(acc: RollupAccumulator): ChallengeOutcomes {
   let confirmed = 0;
   let flipped = 0;
   let skipped = 0;
+  let light = 0;
+  let spotChallenged = 0;
+  let spotFlipped = 0;
   for (const goal of acc.finalGoal.values()) {
     for (const a of goal.auditHistory ?? []) {
       if (a.challenge === "confirmed") confirmed++;
       else if (a.challenge === "flipped") flipped++;
       else if (typeof a.challenge === "string" && a.challenge.startsWith("skipped")) skipped++;
       // absent / not-applicable: unchallenged — never counted anywhere.
+      if (a.auditTier === "light") light++;
+      if (a.spotCheck === true && (a.challenge === "confirmed" || a.challenge === "flipped")) {
+        spotChallenged++;
+        if (a.challenge === "flipped") spotFlipped++;
+      }
     }
   }
-  return { challenged: confirmed + flipped, confirmed, flipped, skipped };
+  return { challenged: confirmed + flipped, confirmed, flipped, skipped, light, spotChallenged, spotFlipped };
 }
 
 const TERMINAL_GOAL_STATUSES = new Set(["complete", "aborted"]);
@@ -434,12 +448,17 @@ function challengeFlipRate(c: ChallengeOutcomes): string {
   return `${Math.round((c.flipped / c.challenged) * 100)}%`;
 }
 
+function spotFlipRate(c: ChallengeOutcomes): string {
+  if (c.spotChallenged === 0) return "—";
+  return `${Math.round((c.spotFlipped / c.spotChallenged) * 100)}%`;
+}
+
 export function formatChallengesTable(rollups: ProjectRollup[]): string {
-  const header = "| project | challenged | confirmed | flipped | skipped | flip rate |";
-  const sep = "|---|---|---|---|---|---|";
+  const header = "| project | challenged | confirmed | flipped | skipped | flip rate | light | spot flip |";
+  const sep = "|---|---|---|---|---|---|---|---|";
   const rows = rollups.map((r) => {
     const c = r.challenges;
-    return `| ${shortProject(r.project)} | ${c.challenged} | ${c.confirmed} | ${c.flipped} | ${c.skipped} | ${challengeFlipRate(c)} |`;
+    return `| ${shortProject(r.project)} | ${c.challenged} | ${c.confirmed} | ${c.flipped} | ${c.skipped} | ${challengeFlipRate(c)} | ${c.light} | ${spotFlipRate(c)} |`;
   });
   return [header, sep, ...rows].join("\n");
 }
@@ -454,6 +473,10 @@ export function formatChallengesJson(rollups: ProjectRollup[]): string {
       flipped: r.challenges.flipped,
       skipped: r.challenges.skipped,
       flip_rate: challengeFlipRate(r.challenges),
+      light: r.challenges.light,
+      spot_challenged: r.challenges.spotChallenged,
+      spot_flipped: r.challenges.spotFlipped,
+      spot_flip_rate: spotFlipRate(r.challenges),
     })),
     null,
     2,
