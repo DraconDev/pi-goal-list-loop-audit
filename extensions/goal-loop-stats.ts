@@ -378,6 +378,42 @@ export function formatRollupTable(rollups: ProjectRollup[]): string {
   return [header, sep, ...rows].join("\n");
 }
 
+function outcomesRate(o: GoalOutcomes): string {
+  const total = o.completed + o.aborted;
+  if (total === 0) return "—";
+  return `${Math.round((o.completed / total) * 100)}%`;
+}
+
+export function formatOutcomesTable(rollups: ProjectRollup[]): string {
+  const header = "| project | done | aborted | open | rate | rounds | hrs | tok/done | r2d done/abort | sup done/abort |";
+  const sep = "|---|---|---|---|---|---|---|---|---|---|";
+  const rows = rollups.map((r) => {
+    const o = r.outcomes;
+    return `| ${shortProject(r.project)} | ${o.completed} | ${o.aborted} | ${o.open} | ${outcomesRate(o)} | ${o.avgRoundsToApproval} | ${o.avgWallClockHrs} | ${o.tokensPerCompleted.toLocaleString()} | ${o.runToDoneCompleted}/${o.runToDoneAborted} | ${o.supervisedCompleted}/${o.supervisedAborted} |`;
+  });
+  return [header, sep, ...rows].join("\n");
+}
+
+/** JSON schema matches the outcomes table exactly. */
+export function formatOutcomesJson(rollups: ProjectRollup[]): string {
+  return JSON.stringify(
+    rollups.map((r) => ({
+      project: r.project,
+      completed: r.outcomes.completed,
+      aborted: r.outcomes.aborted,
+      open: r.outcomes.open,
+      completion_rate: outcomesRate(r.outcomes),
+      avg_rounds_to_approval: r.outcomes.avgRoundsToApproval,
+      avg_wall_clock_hrs: r.outcomes.avgWallClockHrs,
+      tokens_per_completed: r.outcomes.tokensPerCompleted,
+      run_to_done: { completed: r.outcomes.runToDoneCompleted, aborted: r.outcomes.runToDoneAborted },
+      supervised: { completed: r.outcomes.supervisedCompleted, aborted: r.outcomes.supervisedAborted },
+    })),
+    null,
+    2,
+  );
+}
+
 /** JSON schema matches the table exactly (contract item 2). */
 export function formatRollupJson(rollups: ProjectRollup[]): string {
   return JSON.stringify(

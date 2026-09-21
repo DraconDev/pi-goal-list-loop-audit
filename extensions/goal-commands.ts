@@ -26,7 +26,7 @@ import type { AuditDisplayProgress } from "./goal-loop-display.js";
 import { auditorVerdictTally, fmtElapsed, formatVerdictTallySegment } from "./goal-loop-display.js";
 import { AUDIT_FINDINGS_REL, HELD_ON_RESTORE, LOOP_AUDIT_MARKER, listAuditCollectTarget, projectAuditTarget } from "./goal-loop-forever.js";
 import { buildLoopCompletionSummary, compactCompletionSummary, compactTerminalCompletionSummary } from "./completion-summary.js";
-import { ProjectRollup, discoverGllaProjects, filterPremature, formatRollupJson, formatRollupTable, rollupProject } from "./goal-loop-stats.js";
+import { ProjectRollup, discoverGllaProjects, filterPremature, formatOutcomesJson, formatOutcomesTable, formatRollupJson, formatRollupTable, rollupProject } from "./goal-loop-stats.js";
 import { OVERRIDABLE_AGENT_TYPES, resolveEffectiveSubagentModel } from "./goal-loop-subagents.js";
 import { Settings, globalSettingsPath, loadSettings, projectSettingsPath, saveSettings, settingsProvenance } from "./goal-settings.js";
 import { resolveGllaStateDir } from "./glla-state-root.js";
@@ -1991,10 +1991,14 @@ async function cmdReviewerSettings(ctx: ExtensionContext): Promise<void> {
  *   json              machine-readable rollup (same schema as the table)
  *   premature         only projects with premature_success > 0, ratio-sorted
  *   project=<path>    limit the scan to one project
+ * v0.38.74: outcomes — completion/abort/open counts, rounds-to-approval,
+ *   wall-clock and tokens per completed goal, run-to-done vs supervised
+ *   split. Composes with json/project.
  */
 function cmdStats(args: string, ctx: ExtensionContext): void {
   const asJson = /\bjson\b/.test(args);
   const prematureOnly = /\bpremature\b/.test(args);
+  const outcomes = /\boutcomes\b/.test(args);
   const projectMatch = args.match(/project=(\S+)/);
   let rollups: ProjectRollup[] = [];
   if (projectMatch) {
@@ -2017,8 +2021,10 @@ function cmdStats(args: string, ctx: ExtensionContext): void {
     }
   }
   if (prematureOnly) rollups = filterPremature(rollups);
-  const out = asJson ? formatRollupJson(rollups) : formatRollupTable(rollups);
-  ctx.ui.notify(`glla stats — ${rollups.length} project(s)${prematureOnly ? " (premature filter)" : ""}\n${out}`, "info");
+  const out = outcomes
+    ? (asJson ? formatOutcomesJson(rollups) : formatOutcomesTable(rollups))
+    : (asJson ? formatRollupJson(rollups) : formatRollupTable(rollups));
+  ctx.ui.notify(`glla stats${outcomes ? " outcomes" : ""} — ${rollups.length} project(s)${prematureOnly ? " (premature filter)" : ""}\n${out}`, "info");
 }
 
 /**
