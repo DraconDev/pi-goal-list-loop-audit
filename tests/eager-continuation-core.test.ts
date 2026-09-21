@@ -59,8 +59,10 @@ test("classifyImpossibleReason: partial vs full (item 23)", () => {
 // ---- item 24: branch wiring (static) ----
 
 test("audit-cap branch: aggressiveMode keeps ACTIVE + pendingTasks; OFF pauses (item 24 tests 1-2)", () => {
-  // aggressive branch
-  assert.match(goalSrc, /if \(effectiveCap\.aggressiveMode\) \{/);
+  // aggressive branch (v0.38.73: run-to-done goals are excepted — caps are
+  // hard stops there, parked via the branch below; behaviorally pinned in
+  // run-to-done.test.ts, not here)
+  assert.match(goalSrc, /if \(effectiveCap\.aggressiveMode && state\.goal\?\.runToDone !== true\) \{/);
   assert.match(goalSrc, /pendingCompletion: undefined,\n\s+pendingTasks,\n\s+pauseReason: `auditor disapproved \$\{trailingDisapprovals\}× consecutively \(cap \$\{auditCap\}\) — aggressiveMode: continuing with TODOs`/);
   // non-aggressive path still pauses
   assert.match(goalSrc, /status: "paused",\n\s+auditHistory: history,\n\s+pendingCompletion: undefined,\n\s+pauseKind: "decision",[\s\S]{0,500}?pauseReason: `auditor disapproved \$\{trailingDisapprovals\}× consecutively \(cap \$\{auditCap\}\)`,/);
