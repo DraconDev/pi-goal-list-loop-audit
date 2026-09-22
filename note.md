@@ -2,20 +2,8 @@
 
 # Now
 
-##
-/home/dracon/Pictures/Screenshots/Screenshot_20260921_120758.png 
-we need better / difference visuals for monitoring
-
 # Next
 
-##
-we want to work on or ui
-
-##
-we need more staged drafts cause it mgiht ask questions that later questions rely on 
-
-##
-we should not ask questions after draft unless we really need to, we want detailed drafts then have ai grind it
 
 # Later
 
