@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.94 — Fix continuation spam: delta-only actually fires (2026-09-22)
+
+- Field: 909 identical 28KB continuation prompts in one 8h session (57MB transcript). `firstSend` was computed from the in-flight dispatch latch, which is zero before every fresh send — so every send was "first" and the v0.38.5 marker path never fired. A dedicated per-goal latch now flips only when a full brief dispatches and resets on session rebind: one 28KB brief, then 45-char markers (audit/CONTINUATION-SPAM-2026-09-22.md).
+
 ## 0.38.93 — Recovery monitoring: attempts, failing-since, cause (2026-09-22)
 
 - The shared recovery status block (widget, `/goal status`) now carries trajectory facts: `Attempts: N · failing Xh` plus a `Cause: deterministic client error` line when classified — a held 400 with a bare countdown read like a transient that would clear. Transients stay unlabeled; the classifier moved to quota-retry.ts so display shares it without an import cycle.

@@ -15,9 +15,15 @@ import type { Goal } from "../extensions/goal-loop-core.js";
 import activate, { __testOnlyResetOwnerSession } from "../extensions/loops/goal.js";
 import { MockPi, makeMockCtx, seedState, tick, tmpCwd } from "./harness/mock-pi.js";
 
+const GLOBAL_SETTINGS_PATH = process.env.GLLA_GLOBAL_SETTINGS_PATH;
+function setGlobalAutoResume(enabled: boolean): void {
+  if (GLOBAL_SETTINGS_PATH) fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify(enabled ? { autoResume: true, aggressiveMode: false } : { aggressiveMode: false }));
+}
+
 afterEach(() => {
   __testOnlyResetOwnerSession();
   resetContinuationInitialSend();
+  setGlobalAutoResume(false);
 });
 
 function cleanGoal(overrides: Partial<Goal> = {}): Goal {
@@ -92,6 +98,7 @@ test("builder: steady-state marker, resync+marker, dirty full", () => {
 test("v0.38.94: consecutive sends go full once, then marker (field: 909 full sends)", async () => {
   const cwd = tmpCwd();
   const id = `20260922000000-delta${Date.now() % 100000}`;
+  setGlobalAutoResume(true);
   seedState(cwd, { goal: cleanGoal({ id }), list: [] });
   const pi = new MockPi();
   activate(pi.api);
@@ -118,6 +125,7 @@ test("v0.38.94: consecutive sends go full once, then marker (field: 909 full sen
 test("v0.38.94: rebind reset re-arms the one full brief (fresh context)", async () => {
   const cwd = tmpCwd();
   const id = `20260922000001-delta${Date.now() % 100000}`;
+  setGlobalAutoResume(true);
   seedState(cwd, { goal: cleanGoal({ id }), list: [] });
   const pi = new MockPi();
   activate(pi.api);
