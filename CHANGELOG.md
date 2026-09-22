@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.93 — Recovery monitoring: attempts, failing-since, cause (2026-09-22)
+
+- The shared recovery status block (widget, `/goal status`) now carries trajectory facts: `Attempts: N · failing Xh` plus a `Cause: deterministic client error` line when classified — a held 400 with a bare countdown read like a transient that would clear. Transients stay unlabeled; the classifier moved to quota-retry.ts so display shares it without an import cycle.
+
 ## 0.38.92 — Deterministic 400s hold; dethroned sessions named (2026-09-22)
 
 - Main-model recovery no longer blind-retries deterministic provider refusals (HTTP 400 — e.g. 12 images against a 4-image model cap, which burned 7.5h of "retrying automatically"). Identical retries cannot succeed, so it holds for manual resume with fix directions (switch model or trim the request) in every mode; model switches retire the old episode's diagnostic so failover still probes (audit/DETERMINISTIC-400-AND-DETHRONED-2026-09-22.md).
