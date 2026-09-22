@@ -11,7 +11,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { createHash } from "node:crypto";
 import { execSync } from "node:child_process";
-import { normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, quotaSignal, sanitizeProviderAuditReport, sanitizeProviderDisplayText, type QuotaSignal } from "./quota-retry.js";
+import { isDeterministicProviderError, normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, quotaSignal, sanitizeProviderAuditReport, sanitizeProviderDisplayText, type QuotaSignal } from "./quota-retry.js";
 import { MAX_AUDITOR_CANDIDATE_REFS, MAX_MAIN_MODEL_FALLBACKS, normalizeBoundedModelRefs } from "./main-model-recovery.js";
 import { resolveGllaStateDir, stateRootPending } from "./glla-state-root.js";
 export { normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, sanitizeProviderAuditReport, sanitizeProviderDisplayText } from "./quota-retry.js";
@@ -1195,7 +1195,18 @@ export interface MainModelRecovery {
 }
 
 /** Compact, truthful status shared by /goal status and /list show. */
-export function formatMainModelRecoveryStatus(recovery: MainModelRecovery | undefined, configuredBackups: string[] = []): string[] {
+/** Compact elapsed for recovery trajectory lines (core has no display
+ * import — display's fmtElapsed stays the renderer). */
+function fmtRecoveryElapsed(ms: number): string {
+  if (!Number.isFinite(ms) || ms < 0) return "?";
+  const mins = Math.floor(ms / 60_000);
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 48) return `${hours}h${mins % 60 ? ` ${mins % 60}m` : ""}`;
+  return `${Math.floor(hours / 24)}d ${hours % 24}h`;
+}
+
+export function formatMainModelRecoveryStatus(recovery: MainModelRecovery | undefined, configuredBackups: string[] = [], nowMs: number = Date.now()): string[] {
   if (!recovery) return [];
   const safeBackups = configuredBackups.filter((ref) => typeof ref === "string" && ref.trim()).slice(0, MAX_MAIN_MODEL_FALLBACKS);
   const chain = [recovery.primary, ...safeBackups];
@@ -1205,6 +1216,20 @@ export function formatMainModelRecoveryStatus(recovery: MainModelRecovery | unde
   const skipped = recovery.skipped?.length
     ? recovery.skipped.map((entry) => `${entry.ref} (${entry.reason})`).join(", ")
     : "none";
+  // v0.38.93: trajectory facts — attempts + failing-since answer "is it
+  // getting better or worse?", which the retry countdown alone cannot.
+  // Durable counters only, never a provider-side guess.
+  const attempts = typeof recovery.attempts === "number" && recovery.attempts > 0 ? recovery.attempts : 0;
+  const firstMs = typeof recovery.firstFailureAt === "string" ? Date.parse(recovery.firstFailureAt) : Number.NaN;
+  const trajectory = attempts > 0 || Number.isFinite(firstMs)
+    ? [`  Attempts: ${attempts}${Number.isFinite(firstMs) ? ` · failing ${fmtRecoveryElapsed(nowMs - firstMs)}` : ""}`]
+    : [];
+  // v0.38.93: name the deterministic class when classified — a held 400
+  // with a countdown reads like a transient that will clear; it won't.
+  // Transients stay unlabeled (cards never guess provider reasons).
+  const cause = isDeterministicProviderError(recovery.providerErrorDiagnostic ?? recovery.reason)
+    ? ["  Cause: deterministic client error — identical retries cannot succeed"]
+    : [];
   const lines = [
     `Main-model recovery: ${currentIndex >= 0 ? `${currentIndex === 0 ? "primary" : `backup ${currentIndex}/${safeBackups.length}`} selected` : "active model selected"}`,
     `  Order: ${chain.join(" → ")}`,
@@ -1212,6 +1237,8 @@ export function formatMainModelRecoveryStatus(recovery: MainModelRecovery | unde
     ...(recovery.pendingModelSwitch ? [`  Pending switch: ${recovery.pendingModelSwitch}`] : []),
     `  Attempted: ${attempted}`,
     `  Skipped: ${skipped}`,
+    ...trajectory,
+    ...cause,
   ];
   if (recovery.retryAt) lines.push(`  Retry at: ${recovery.retryAt}`);
   if (recovery.primaryProbeAt) lines.push(`  Preferred-primary probe at: ${recovery.primaryProbeAt}`);
