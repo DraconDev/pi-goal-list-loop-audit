@@ -64,5 +64,9 @@ workers, coordination through files, gates enforced by code.
 
 ## Disposition
 
-Research only, no code. If (1) is wanted: parent-plan artifact +
-phase-position monitoring, behind tests, one release.
+Research only, no code. Owner verdict 2026-09-22: do NOT cargo-cult
+the phase shape — GLLA's rigor-over-dynamism is the product, and more
+gates mean more stops, the opposite of the dynamism admired in ZCode.
+Longer goals already work when the provider does. The dynamism gap
+worth closing instead: assisted re-planning at park points (concrete
+alternative routes in the pause, no auto-spend). Not commissioned.
