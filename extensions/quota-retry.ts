@@ -317,6 +317,20 @@ export function isBillingError(error: string | undefined): boolean {
   return quotaSignal(error) === "billing";
 }
 
+// v0.38.92 (field 2026-09-21: 12 images vs a 4-image model cap retried
+// 7.5h): a deterministic HTTP 400 client error can never succeed on an
+// identical retry — only a changed request (fewer images, different
+// model, fixed params) can. Match the error-type markers, never a bare
+// "400" (token counts and limits quote 400s constantly). Moved here from
+// main-model-recovery.ts in v0.38.93 so the display layer can share the
+// classifier without an import cycle (it is re-exported there).
+const DETERMINISTIC_CLIENT_ERROR = /badrequesterror|invalid_request_error|"code"\s*:\s*"400"/i;
+
+export function isDeterministicProviderError(raw: string | undefined): boolean {
+  if (typeof raw !== "string" || !raw.trim()) return false;
+  return DETERMINISTIC_CLIENT_ERROR.test(raw);
+}
+
 /** Match recoverable provider rate/plan walls and explicit billing walls.
  * Ambiguous `temporarily unavailable`, ordinary 403s, and generic network
  * failures intentionally return false. */
