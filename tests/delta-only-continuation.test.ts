@@ -1,5 +1,5 @@
 // v0.38.5 (delta-only): steady-state sends marker-only, deltas send full.
-import { test } from "node:test";
+import { test, afterEach } from "node:test";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 
@@ -8,8 +8,17 @@ import {
   buildMarkerContent,
   continuationPrompt,
   needsFullContinuation,
+  resetContinuationInitialSend,
+  sendContinuation,
 } from "../extensions/goal-continuation.js";
 import type { Goal } from "../extensions/goal-loop-core.js";
+import activate, { __testOnlyResetOwnerSession } from "../extensions/loops/goal.js";
+import { MockPi, makeMockCtx, seedState, tick, tmpCwd } from "./harness/mock-pi.js";
+
+afterEach(() => {
+  __testOnlyResetOwnerSession();
+  resetContinuationInitialSend();
+});
 
 function cleanGoal(overrides: Partial<Goal> = {}): Goal {
   return {
@@ -78,6 +87,65 @@ test("builder: steady-state marker, resync+marker, dirty full", () => {
   const dirtySend = buildContinuationContent(dirty, { firstSend: false });
   assert.equal(dirtySend.kind, "full");
   assert.ok(dirtySend.content.length > 15000);
+});
+
+test("v0.38.94: consecutive sends go full once, then marker (field: 909 full sends)", async () => {
+  const cwd = tmpCwd();
+  const id = `20260922000000-delta${Date.now() % 100000}`;
+  seedState(cwd, { goal: cleanGoal({ id }), list: [] });
+  const pi = new MockPi();
+  activate(pi.api);
+  __testOnlyResetOwnerSession();
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `delta-${id}` } });
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  await tick(80);
+
+  await sendContinuation(id);
+  await tick(80);
+  assert.equal(pi.sent.length, 1, "first send dispatches");
+  const first = pi.sent[0]?.message.content ?? "";
+  assert.ok(first.length > 15000, `first send teaches the full brief, got ${first.length} chars`);
+
+  await pi.fire("before_agent_start", { prompt: first }, ctx);
+  await tick(80);
+  await sendContinuation(id);
+  await tick(80);
+  assert.equal(pi.sent.length, 2, "second send dispatches");
+  const second = pi.sent[1]?.message.content ?? "";
+  assert.equal(second, buildMarkerContent(id), "second send is the tiny marker, not another full brief");
+});
+
+test("v0.38.94: rebind reset re-arms the one full brief (fresh context)", async () => {
+  const cwd = tmpCwd();
+  const id = `20260922000001-delta${Date.now() % 100000}`;
+  seedState(cwd, { goal: cleanGoal({ id }), list: [] });
+  const pi = new MockPi();
+  activate(pi.api);
+  __testOnlyResetOwnerSession();
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `delta-${id}` } });
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  await tick(80);
+
+  await sendContinuation(id);
+  await tick(80);
+  await pi.fire("before_agent_start", { prompt: pi.sent[0]?.message.content ?? "" }, ctx);
+  await tick(80);
+  await sendContinuation(id);
+  await tick(80);
+  assert.equal(pi.sent.length, 2);
+  assert.equal(pi.sent[1]?.message.content, buildMarkerContent(id));
+
+  // Fresh host, same restored goal: the brief must teach again.
+  resetContinuationInitialSend();
+  await pi.fire("before_agent_start", { prompt: pi.sent[1]?.message.content ?? "" }, ctx);
+  await tick(80);
+  await sendContinuation(id);
+  await tick(80);
+  assert.equal(pi.sent.length, 3, "post-rebind send dispatches");
+  assert.ok(
+    (pi.sent[2]?.message.content ?? "").length > 15000,
+    "post-rebind first send is full again",
+  );
 });
 
 test("sendContinuation wires the delta-only branch with kind ledger", () => {

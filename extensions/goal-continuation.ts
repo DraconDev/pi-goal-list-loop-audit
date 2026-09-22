@@ -260,6 +260,23 @@ let continuationScheduledFor: string | null = null;
 
 let lastContinuationSentAt = 0;
 
+/** v0.38.94 (field 2026-09-22: 909 full 28KB sends in one session):
+ * goal id whose initial full brief already landed this session, or null.
+ * Previously `firstSend` was computed as `lastContinuationSentAt === 0`,
+ * but that latch tracks the IN-FLIGHT dispatch — it is zeroed on every
+ * ack/failure/timeout, i.e. before every fresh send — so EVERY send was
+ * "first" and the v0.38.5 delta-only path never fired. This latch flips
+ * only when a full payload actually dispatches, resets on session rebind
+ * (fresh context needs the brief again), and keys on goal id so a new
+ * goal re-teaches once. */
+let continuationInitialFullSentFor: string | null = null;
+
+/** Session-start rebind calls this: a fresh host context never saw the
+ * brief, so the next send for the restored goal goes full again. */
+export function resetContinuationInitialSend(): void {
+  continuationInitialFullSentFor = null;
+}
+
 // Audit 2026-09-07 (MEDIUM): wall-clock of the last genuine user-role
 // message observed via message_start. A user message arriving after a
 // dispatch was sent means the next agent_start/turn_start belongs to the
@@ -1376,7 +1393,7 @@ export function sendContinuation(goalId: string): void {
     // start-proof matching keeps working; fallback agent_start/turn_start
     // needs no prompt at all.
     const goalForSend = state.goal!;
-    const { content, kind } = buildContinuationContent(goalForSend, { resync, firstSend: lastContinuationSentAt === 0 });
+    const { content, kind } = buildContinuationContent(goalForSend, { resync, firstSend: continuationInitialFullSentFor !== goalId });
     flags.extensionApi.sendMessage({
       customType: GOAL_EVENT_ENTRY,
       content,
@@ -1384,6 +1401,9 @@ export function sendContinuation(goalId: string): void {
     }, { triggerTurn: true, deliverAs: "followUp" });
     lastContinuationSentPayload = { content, display: false }; // v0.34.88: verbatim retry payload
     if (!dispatchAccepted(ctx, attempt)) return;
+    // v0.38.94: flip the initial-send latch only once a full payload has
+    // actually dispatched — a failed send must not burn the one full brief.
+    if (kind === "full" || kind === "full+resync") continuationInitialFullSentFor = goalId;
     continuationRearmStreak = 0; continuationRearmSince = 0; // v0.28.5 (E3): an accepted dispatch clears the storm
     appendLedger(ctx.cwd, "goal_continuation_sent", { goalId, attemptId: attempt.id, generation: attempt.generation, kind, payloadChars: content.length, ...(busyBypass ? { busyBypass: true } : {}) });
     // v0.35.37 (audit finding): the welcome-back recovery notice must fire

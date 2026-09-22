@@ -173,6 +173,7 @@ import {
   setContinuationRearmStreak,
   setContinuationRearmSince,
   resetContinuationDispatchState,
+  resetContinuationInitialSend,
   noteUserMessageForDispatch,
   sendTerminalCompletionNotice,
   type ContinuationFlags,
@@ -1426,6 +1427,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     clearToolActivityState();
     bindSubagentRpcHost(pi.events, sessionGeneration);
     clearDraftingState();
+    resetContinuationInitialSend(); // v0.38.94: fresh host context never saw the brief
     // An auditor belonging to the disposed generation cannot block the fresh
     // session's recovery gate; its finally block is generation-guarded too.
     completionAuditInFlight = false;
