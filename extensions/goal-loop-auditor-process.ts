@@ -1278,7 +1278,8 @@ export interface AuditorProcessRuntime {
   /** v0.34.130: independent ceiling for one allowed auditor tool call.
    * This remains armed while the tool is open, unlike the inactivity brake. */
   toolTimeoutMs?: number;
-  /** Environment is inherited by default; useful for a fake pi binary in tests. */
+  /** Additive test/embedding overrides. Production starts from a minimal
+   * execution environment rather than inheriting unrelated parent secrets. */
   env?: NodeJS.ProcessEnv;
   /** v0.36.0: override the home dir used to resolve allowlisted extension
    * specs to install paths (hermetic tests; os.homedir() ignores HOME env
@@ -1327,6 +1328,73 @@ function modelLabel(model: AuditorModel | undefined): string {
   if (typeof model === "string") return model;
   if (model && typeof model === "object") return `${model.provider}/${model.id}`;
   return "(unset)";
+}
+
+/** Environment names safe to inherit into the detached verifier. Anything
+ * credential-shaped is excluded: the worker still needs a provider-specific
+ * key when one is the selected auditor's auth source, but unrelated host
+ * secrets must not become readable from its bash tool. */
+const AUDITOR_ENV_PASSTHROUGH = new Set([
+  "PATH", "Path", "PATHEXT", "SystemRoot", "SYSTEMROOT", "WINDIR", "COMSPEC",
+  "TEMP", "TMP", "TMPDIR", "HOME", "USERPROFILE", "HOMEDRIVE", "HOMEPATH",
+  "LANG", "LC_ALL", "LC_CTYPE", "NODE_OPTIONS", "NODE_PATH",
+  "NODE_EXTRA_CA_CERTS", "SSL_CERT_FILE", "SSL_CERT_DIR",
+  "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY",
+  "http_proxy", "https_proxy", "all_proxy", "no_proxy",
+  "PI_CODING_AGENT_DIR", "PI_OFFLINE", "PI_SHARE_VIEWER_URL",
+  "GLLA_PI_BINARY", "GLLA_AUDITOR_TOOL_TIMEOUT_MS", "GLLA_AUDITOR_STALL_MS",
+  "GLLA_AUDITOR_CHILD_SHUTDOWN_MS", "GLLA_AUDITOR_MAX_PROCESS_GROUP_SIZE",
+]);
+
+/** Resolve only the environment variables needed to authenticate the selected
+ * model from the host. Known provider key/token names plus names containing a
+ * credential marker are admitted; unrelated values are never copied. */
+function auditorCredentialEnv(provider: string | undefined, source: NodeJS.ProcessEnv): Record<string, string> {
+  const normalizedProvider = (provider ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+  const aliases: Record<string, string[]> = {
+    anthropic: ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_OAUTH_TOKEN"],
+    openai: ["OPENAI_API_KEY"],
+    deepseek: ["DEEPSEEK_API_KEY"],
+    nvidia: ["NVIDIA_API_KEY"],
+    gemini: ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
+    google: ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
+    copilot: ["COPILOT_GITHUB_TOKEN"],
+    mistral: ["MISTRAL_API_KEY"],
+    groq: ["GROQ_API_KEY"],
+    cerebras: ["CEREBRAS_API_KEY"],
+    xai: ["XAI_API_KEY"],
+    openrouter: ["OPENROUTER_API_KEY"],
+    opencode: ["OPENCODE_API_KEY"],
+    huggingface: ["HF_TOKEN", "HUGGINGFACE_API_KEY"],
+    fireworks: ["FIREWORKS_API_KEY"],
+    together: ["TOGETHER_API_KEY"],
+    baseten: ["BASETEN_API_KEY"],
+    moonshot: ["MOONSHOT_API_KEY"],
+    qwen: ["QWEN_TOKEN_PLAN_API_KEY"],
+    xiaomi: ["XIAOMI_API_KEY", "XIAOMI_TOKEN_PLAN_API_KEY"],
+  };
+  const admitted = new Set(aliases[normalizedProvider] ?? []);
+  const out: Record<string, string> = {};
+  for (const [name, value] of Object.entries(source)) {
+    if (typeof value !== "string" || value.length === 0) continue;
+    if (admitted.has(name) || /(?:^|_)(?:API_KEY|ACCESS_TOKEN|AUTH_TOKEN|CLIENT_SECRET|CREDENTIALS?)(?:$|_)/.test(name)) {
+      out[name] = value;
+    }
+  }
+  return out;
+}
+
+export function detachedAuditorEnv(
+  source: NodeJS.ProcessEnv = process.env,
+  overrides: NodeJS.ProcessEnv = {},
+  provider?: string,
+): NodeJS.ProcessEnv {
+  const out: NodeJS.ProcessEnv = {};
+  for (const [name, value] of Object.entries(source)) {
+    if (AUDITOR_ENV_PASSTHROUGH.has(name) && typeof value === "string") out[name] = value;
+  }
+  Object.assign(out, auditorCredentialEnv(provider, source), overrides);
+  return out;
 }
 
 function buildPrompt(goal: Goal, completionSummary?: string | null, verificationSummary?: string | null): string {
@@ -1597,7 +1665,8 @@ async function runDetachedGoalCompletionAuditorInner(args: {
     const workerPath = runtime.workerPath ?? defaultWorkerPath();
     const command = runtime.command ?? resolveWorkerCommand(process.execPath);
     const spawn = runtime.spawn ?? nodeSpawn;
-    const env = { ...process.env, ...(runtime.env ?? {}) };
+    const modelProvider = typeof args.model === "string" ? args.model.split("/", 1)[0] : args.model?.provider;
+    const env = detachedAuditorEnv(process.env, runtime.env ?? {}, modelProvider);
     if (runtime.piBinary) env.GLLA_PI_BINARY = runtime.piBinary;
     child = spawn(command, [workerPath, "--job-dir", jobDir], {
       cwd: args.cwd,

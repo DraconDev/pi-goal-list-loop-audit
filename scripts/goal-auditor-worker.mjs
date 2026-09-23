@@ -750,9 +750,12 @@ async function main() {
     // allow-listed extensions effectively contribute model providers.
     for (const spec of request.allowedExtensions ?? []) piArgs.push("--extension", spec);
     const launch = buildAuditorPiSpawnSpec(piBinary, piArgs);
+    // The parent already reduced process.env to execution necessities plus
+    // selected-model credentials. Copy that exact set: inheriting a second
+    // time here would restore unrelated host secrets despite the parent fence.
     pi = spawn(launch.file, launch.args, {
       cwd: request.cwd,
-      env: process.env,
+      env: { ...process.env },
       stdio: ["pipe", "pipe", "pipe"],
       ...launch.options,
     });

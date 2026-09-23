@@ -11,6 +11,7 @@ import {
   newDetachedAuditJobAttemptId,
   AUDITOR_TOOLS,
   cancelDetachedGoalCompletionAuditor,
+  detachedAuditorEnv,
   inspectAuditJobHealth,
   requestHash,
   resolveWorkerCommand,
@@ -633,6 +634,28 @@ process.stdin.on("data", (chunk) => {
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test("detached auditor env keeps runtime necessities and selected provider auth, not unrelated secrets", () => {
+  const env = detachedAuditorEnv({
+    PATH: "/usr/bin",
+    HOME: "/home/tester",
+    PI_CODING_AGENT_DIR: "/agent",
+    OPENAI_API_KEY: "openai-key",
+    ANTHROPIC_API_KEY: "wrong-provider-key",
+    GITHUB_TOKEN: "unrelated-token",
+    AWS_SECRET_ACCESS_KEY: "unrelated-cloud-secret",
+    RANDOM_SETTING: "unrelated-value",
+  }, { FAKE_TEST_FLAG: "1" }, "openai/gpt-test");
+  assert.equal(env.PATH, "/usr/bin");
+  assert.equal(env.HOME, "/home/tester");
+  assert.equal(env.PI_CODING_AGENT_DIR, "/agent");
+  assert.equal(env.OPENAI_API_KEY, "openai-key");
+  assert.equal(env.FAKE_TEST_FLAG, "1");
+  assert.equal(env.ANTHROPIC_API_KEY, undefined, "another provider key is not admitted");
+  assert.equal(env.GITHUB_TOKEN, undefined, "unrelated token is not admitted");
+  assert.equal(env.AWS_SECRET_ACCESS_KEY, undefined, "cloud secret is not admitted");
+  assert.equal(env.RANDOM_SETTING, undefined, "ordinary unrelated setting is not admitted");
 });
 
 test("real worker keeps the original --no-session spawn when inspection is unset (default unchanged)", { timeout: 40_000 }, async () => {

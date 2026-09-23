@@ -450,6 +450,18 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
     }
     if (Object.keys(settings.subagentFallbacks).length === 0) delete (settings as any).subagentFallbacks;
   }
+  // Hand-edited policy arrays must not reach `.length`/`.join` consumers as
+  // strings or objects. Keep only bounded, non-empty string entries; an
+  // explicit [] remains the user's "no forbidden patterns" choice.
+  if (!Array.isArray(settings.forbiddenModels)) {
+    delete settings.forbiddenModels;
+  } else {
+    settings.forbiddenModels = settings.forbiddenModels
+      .filter((entry): entry is string => typeof entry === "string")
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .slice(0, 50);
+  }
   // v0.36.0: the auditor extension allowlist is a plain string[] of pi
   // extension specs. Hand-edited files may carry junk; keep it bounded and
   // deterministic so the request hash is stable.
@@ -716,14 +728,22 @@ export const SETTINGS_KEYS: Array<keyof Settings> = [
 
 /** Where each effective setting comes from (for the /glla display). */
 export function settingsProvenance(cwd: string): Record<keyof Settings, { value: unknown; source: "project" | "global" | "default" }> {
-  const proj = migrateLegacySettings(readSettingsFile(projectSettingsPath(cwd)));
-  const glob = migrateLegacySettings(readSettingsFile(globalSettingsPath()));
+  const rawProject = migrateLegacySettings(readSettingsFile(projectSettingsPath(cwd)));
+  const rawGlobal = migrateLegacySettings(readSettingsFile(globalSettingsPath()));
+  // Normalize each explicitly configured layer independently before
+  // precedence. Do not merge defaults into these layer objects: absence must
+  // stay absent so a normalized project value can fall through to global.
+  const normalizeLayer = (value: Record<string, unknown>): Record<string, unknown> =>
+    normalizeLoadedSettings({ ...value } as Settings) as unknown as Record<string, unknown>;
+  const proj = normalizeLayer(rawProject);
+  const glob = normalizeLayer(rawGlobal);
   const effective = loadSettings(cwd);
   const out: Record<string, { value: unknown; source: "project" | "global" | "default" }> = {};
   for (const k of SETTINGS_KEYS) {
-    const projectValue = GLOBAL_ONLY_KEYS.has(k) ? undefined : (proj as Record<string, unknown>)[k];
-    if (projectValue !== undefined) out[k] = { value: projectValue, source: "project" };
-    else if ((glob as Record<string, unknown>)[k] !== undefined) out[k] = { value: (glob as any)[k], source: "global" };
+    const hasProject = !GLOBAL_ONLY_KEYS.has(k) && Object.prototype.hasOwnProperty.call(rawProject, k) && proj[k] !== undefined;
+    const hasGlobal = Object.prototype.hasOwnProperty.call(rawGlobal, k) && glob[k] !== undefined;
+    if (hasProject) out[k] = { value: proj[k], source: "project" };
+    else if (hasGlobal) out[k] = { value: glob[k], source: "global" };
     else out[k] = { value: (effective as any)[k], source: "default" };
   }
   return out as Record<keyof Settings, { value: unknown; source: "project" | "global" | "default" }>;
