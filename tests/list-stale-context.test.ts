@@ -192,7 +192,7 @@ test("v0.34.51: /list show and /list depth stay usable on a stale handle (inspec
   assert.ok(!after.includes('"list_mutation_refused_stale"'), "read-only commands are not refused");
   assert.equal(
     after.split("\n").length,
-    before.split("\n").length + 1, // only the entry-probe stale ledger line was added
+    before.split("\n").length + 2, // one entry-probe stale line per read-only command
     "stale show/settings add no command-event ledger lines",
   );
   assert.ok(!after.includes('"list_recovered_from_disk"'));
