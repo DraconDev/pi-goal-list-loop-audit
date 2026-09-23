@@ -132,7 +132,9 @@ test("terminal commit failure preserves the uncommitted iteration and skips dest
   seedState(cwd, {
     loop: seedLoop({ branchName: branch, originalBranch: "main", measureCmd: "echo 2", direction: "max", bestValue: 2, lastValue: 2, iteration: 1, maxIterations: 1 }),
   });
+  await pi.fire("session_start", { reason: "reload" }, makeMockCtx(cwd, { sessionManager: { name: "terminal-writer" } }));
   fs.writeFileSync(path.join(cwd, "terminal.txt"), "must survive\n");
+  await pi.fire("session_shutdown", { reason: "test-reset" }, makeMockCtx(cwd, { sessionManager: { name: "terminal-writer" } }));
   const calls: string[][] = [];
   pi.execHandler = (cmd, args, opts) => {
     calls.push([cmd, ...args]);

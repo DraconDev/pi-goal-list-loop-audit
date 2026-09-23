@@ -310,16 +310,20 @@ async function runMeasure(ctx: ExtensionContext, cmd: string): Promise<number | 
   }
 }
 
-/** git wrapper for branch=1 mode. Returns {ok, stdout}; never throws. */
-async function runGit(ctx: ExtensionContext, args: string[]): Promise<{ ok: boolean; stdout: string }> {
-  if (!flags.extensionApi) return { ok: false, stdout: "" };
+/** git wrapper for branch=1 mode. Returns bounded stdout/stderr; never throws. */
+async function runGit(ctx: ExtensionContext, args: string[]): Promise<{ ok: boolean; stdout: string; stderr: string }> {
+  if (!flags.extensionApi) return { ok: false, stdout: "", stderr: "extension API unavailable" };
   try {
     const result = await flags.extensionApi.exec("git", args, { cwd: ctx.cwd });
     const r = result as any;
     const code = typeof r?.code === "number" ? r.code : (r?.exitCode ?? 1);
-    return { ok: code === 0, stdout: String(r?.stdout ?? "").trim() };
-  } catch {
-    return { ok: false, stdout: "" };
+    return {
+      ok: code === 0,
+      stdout: String(r?.stdout ?? "").trim(),
+      stderr: String(r?.stderr ?? "").trim().slice(0, 300),
+    };
+  } catch (error) {
+    return { ok: false, stdout: "", stderr: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -792,15 +796,24 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
     if (await parkLoopOnWrongBranch(ctx, loop, "terminal commit")) return false;
     const pending = await runGit(ctx, ["status", "--porcelain"]);
     if (!rebindLoop()) return false;
-    if (!pending.ok) return await parkLoopOnGitFailure("status", pending);
+    if (!pending.ok) {
+      await parkLoopOnGitFailure("status", pending);
+      return false;
+    }
     if (pending.stdout.length === 0) return true;
     const added = await runGit(ctx, ["add", "-A"]);
     if (!rebindLoop()) return false;
-    if (!added.ok) return await parkLoopOnGitFailure("add", added);
+    if (!added.ok) {
+      await parkLoopOnGitFailure("add", added);
+      return false;
+    }
     const committed = await runGit(ctx, ["commit", "-m", `pi-glla-loop: iteration ${loop.iteration} (${loop.direction ?? "spec"}=${loop.bestValue ?? "n/a"})`]);
     if (!rebindLoop()) return false;
     appendLedger(ctx.cwd, "loop_git", { action: "commit-terminal", iteration: loop.iteration, ok: committed.ok });
-    if (!committed.ok) return await parkLoopOnGitFailure("terminal commit", committed);
+    if (!committed.ok) {
+      await parkLoopOnGitFailure("terminal commit", committed);
+      return false;
+    }
     return true;
   };
   // v0.24.0: the top of the stuck ladder — bounded and surfaced, same
