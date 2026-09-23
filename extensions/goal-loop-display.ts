@@ -2362,18 +2362,18 @@ function loopLines(l: LoopState, now: number, theme?: DisplayTheme, width?: numb
   const targetBudget = width && width > 0
     ? Math.max(16, width - WIDGET_HORIZONTAL_MARGIN - 2 - 3 - visibleLen(segsText) - visibleLen(stallNote))
     : 44;
-  const lines = [`${icon} ${truncate(l.target, targetBudget)} ${paint(theme, "dim", "·")} ${segsText}${stallNote}`];
+  const lines = [`${icon} ${truncate(sanitizeDisplayText(l.target), targetBudget)} ${paint(theme, "dim", "·")} ${segsText}${stallNote}`];
   const act = extras?.recent?.[extras.recent.length - 1];
   if (act) {
     lines.push(`├─ ${paint(theme, act.ok ? "success" : "error", act.ok ? "✓" : "✗")} ${act.name}${act.arg ? ` ${paint(theme, "dim", truncate(act.arg, 24))}` : ""}${act.ms > 0 ? ` ${paint(theme, "dim", `(${fmtElapsed(act.ms)})`)}` : ""}`);
   }
   const footer = !l.measureCmd
     ? "metricless (no plateau) · /loop stop · /loop refine" // v0.33.2: the verb exists now
-    : `${l.kind === "audit" ? "metric: closed findings" : truncate(l.measureCmd, budgetFor(width, 3, 30))} · /loop stop`;
+    : `${l.kind === "audit" ? "metric: closed findings" : truncate(sanitizeDisplayText(l.measureCmd), budgetFor(width, 3, 30))} · /loop stop`;
   // Audit 2026-09-07: the branch rides a detail row BEFORE the footer —
   // appending it after `└─` broke the footer-last tree invariant the
   // worker-row splice relies on.
-  if (l.branchName) lines.push(`├─ ⎇ ${paint(theme, "muted", truncate(l.branchName, budgetFor(width, 3, 50)))}`);
+  if (l.branchName) lines.push(`├─ ⎇ ${paint(theme, "muted", truncate(sanitizeDisplayText(l.branchName), budgetFor(width, 3, 50)))}`);
   lines.push(`└─ ${paint(theme, "dim", footer)}`);
   return lines;
 }

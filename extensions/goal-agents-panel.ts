@@ -168,7 +168,7 @@ export function renderAgentsPanel(rows: AgentsPanelRow[], now: number, managerAv
   // there is nothing to show — never a placeholder row.
   const hangs = recentHangs.filter(Boolean).slice(-3);
   if (hangs.length > 0) {
-    lines.push(`Recent hangs: ${hangs.map((h) => truncate(h, 60)).join(" · ")}`);
+    lines.push(`Recent hangs: ${hangs.map((h) => truncate(sanitizeDisplayText(h), 60)).join(" · ")}`);
   }
   return lines;
 }
@@ -406,7 +406,10 @@ export function formatTranscriptEntry(line: string): string | undefined {
       content?: unknown;
     };
     if (!entry || typeof entry !== "object" || Array.isArray(entry)) return `[raw] ${truncate(sanitizeDisplayText(trimmed), 120)}`;
-    const role = entry.message?.role ?? entry.role ?? entry.type ?? "?";
+    const role = sanitizeDisplayText(String(entry.message?.role ?? entry.role ?? entry.type ?? "?"))
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 40) || "?";
     const content = entry.message?.content ?? entry.content;
     const text = extractText(content);
     if (!text) return undefined;

@@ -71,6 +71,15 @@ test("display projections remove terminal and zero-width control characters with
   assert.ok(!lines.some((line) => controls.test(line)));
   assert.ok(!rendered.includes("\u001b"));
   assert.equal(g.objective, hostile, "display rendering must not mutate persisted objective data");
+
+  const loop = {
+    id: "loop-hostile", target: `target\u001b[2J`, measureCmd: "echo\u001b]0;pwned\u0007 1", direction: "max",
+    plateauWindow: 5, stallCount: 0, maxIterations: 0, active: true, iteration: 1,
+    startedAt: new Date(NOW).toISOString(), history: [], bestValue: 1, lastValue: 1,
+  } as LoopState;
+  const loopLines = buildWidgetLines({ goal: null, loop, list: [] }, null, NOW, undefined, 160)!;
+  assert.doesNotMatch(loopLines.join("\n"), /\u001B|\u0007/);
+  assert.equal(loop.measureCmd, "echo\u001b]0;pwned\u0007 1", "loop display does not mutate persisted command");
 });
 
 // ---- buildStatusText ----

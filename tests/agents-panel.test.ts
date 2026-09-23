@@ -366,6 +366,9 @@ test("v0.35.45: formatTranscriptEntry strips ANSI escapes and control chars on A
   const out = formatTranscriptEntry(raw)!;
   assert.ok(out.startsWith("[raw] "), `raw fallback: ${out}`);
   assert.doesNotMatch(out, /\u001B|\u0007/);
+  const hostileRole = formatTranscriptEntry('{"role":"\\u001b[2Jfake","content":"hello"}')!;
+  assert.equal(hostileRole, "[fake] hello");
+  assert.doesNotMatch(hostileRole, /\u001B/);
 });
 
 test("v0.35.45: the candidate scan reads a bounded tail per file, not full transcripts", () => {
@@ -395,11 +398,12 @@ test("audit-2026-09-06: panel renders the doc-promised blocks row and Recent han
     row({ recordId: "live-1", status: "running", phase: "active", blockedBy: "parent subagent wait (Agent)" }),
     row({ recordId: "ended-1", status: "ended", phase: "ended", blockedBy: "parent subagent wait (Agent)" }),
   ];
-  const lines = renderAgentsPanel(rows, Date.now(), true, ["plan 31m ago"]);
+  const lines = renderAgentsPanel(rows, Date.now(), true, ["plan\u001b[2J 31m ago"]);
   const text = lines.join("\n");
   assert.match(text, /└ blocks: parent subagent wait \(Agent\) \(zombie stand-down active\)/, "live row carries blocks");
   assert.equal(text.match(/└ blocks:/g)?.length ?? 0, 1, "ended rows never carry blocks");
-  assert.match(text, /Recent hangs: plan 31m ago/, "footer present with hangs");
+  assert.match(text, /Recent hangs: plan 31m ago/, "footer present with sanitized hangs");
+  assert.doesNotMatch(text, /\u001B|\u0007/);
   const bare = renderAgentsPanel([row({ recordId: "x", status: "running", phase: "active" })], Date.now(), true);
   assert.doesNotMatch(bare.join("\n"), /blocks:|Recent hangs/, "no wait + no hangs → neither row");
 });

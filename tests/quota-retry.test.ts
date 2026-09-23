@@ -70,6 +70,9 @@ test("non-sensitive provider text projects a bounded display while staying redac
   assert.equal(copy.sensitive, false);
   assert.match(copy.display, /connection reset by peer/);
   assert.match(copy.display, /^[^\n]{1,160}$/, "display is a bounded single line");
+  const hostile = providerErrorPresentation("plain\u001b[2J\u001b]0;pwned\u0007 text", "recovery");
+  assert.doesNotMatch(hostile.display, /\u001B|\u0007/);
+  assert.doesNotMatch(sanitizeProviderDisplayText("plain\u001b[2Jtext"), /\u001B/);
   const empty = providerErrorPresentation("", "recovery");
   assert.equal(empty.display, "provider error", "empty input falls back to the generic copy");
   const multiline = providerErrorPresentation("line one\n\nline two", "recovery");
@@ -102,6 +105,10 @@ test("full auditor reports redact raw provider payload lines while preserving sa
   assert.match(sanitized, /safe conclusion remains visible/);
   assert.doesNotMatch(sanitized, /403|429|upstream denied|Token Plan|auth-sensitive-id/);
   assert.match(sanitized, /provider diagnostic redacted/);
+
+  const hostile = sanitizeProviderAuditReport("safe\u001b[2J finding\n\u001b]0;pwned\u0007 title");
+  assert.doesNotMatch(hostile, /\u001B|\u0007/);
+  assert.match(hostile, /safe finding/);
 });
 
 test("multiline provider markers redact the following arbitrary JSON payload", () => {
