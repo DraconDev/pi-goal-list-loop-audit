@@ -42,10 +42,10 @@ test("v0.38.53: single list confirmation precedes post-confirm conflict handling
   assert.ok(afterConfirm < conflict, "list activation conflict is resolved only after confirmation");
 });
 
-test("v0.38.53: drafting starts only after prompt construction and before steering", () => {
-  const target = at(QUEUE, "draftingTarget = target;");
-  const prompt = at(QUEUE, "let tmpl = loadPromptWhole(file);", target);
-  const model = at(QUEUE, "await beginDrafterModel(ctx);", prompt);
+test("v0.38.53: prompt construction precedes the drafting gate, then model lease and steering", () => {
+  const prompt = at(QUEUE, "tmpl = loadPromptWhole(file);");
+  const target = at(QUEUE, "draftingTarget = target;", prompt);
+  const model = at(QUEUE, "await beginDrafterModel(ctx);", target);
   const steer = at(QUEUE, "const sent = safeSteerUser(ctx, tmpl);", model);
-  assert.ok(target < prompt && prompt < model && model < steer, "draft state, prompt, model lease, then seed steering");
+  assert.ok(prompt < target && target < model && model < steer, "prompt preparation, draft gate, model lease, then seed steering");
 });
