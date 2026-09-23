@@ -29,12 +29,24 @@ timeout 240 bun test tests/glla-stale-context.test.ts tests/compaction-survival.
 
 Result: **9 passed, 0 failed in 10.34s**. This distinguishes load-sensitive suite timeouts from product regressions; both affected flows pass when bounded and isolated.
 
+Follow-up under the same serialized command completed the full canonical
+`test:all` payload:
+
+- 2560 passed
+- 2 skipped (host/daemon environment-gated tests)
+- 0 failed
+- `tsc --noEmit`, the Jiti state-split regression, and offline auditor-extension verification all passed
+
+The remaining package stages were then rerun independently at the same HEAD:
+
+- `TMPDIR=/var/tmp timeout 300 npm pack --dry-run` — exit 0
+- `TMPDIR=/var/tmp timeout 300 node scripts/release-pack-smoke.mjs` — exit 0; packed launcher worker probe, skill load, and installed-package import all passed
+
 Additional gates run green during the pass:
 
 - `npm run check` — exit 0
 - `npm audit --audit-level=moderate` — 0 vulnerabilities
 - focused lifecycle, queue/repair, compaction-failure, recovery-persistence, settings, vision, branch-loop, refinement, schema/release, and display suites — all pass
-- package dry-run and packed-artifact smoke are part of `release:check` and completed before the two load-timeout tests were reported by Bun.
 
 ## Repository state
 
