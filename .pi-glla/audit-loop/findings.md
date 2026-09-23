@@ -558,3 +558,42 @@ Field screenshots `Screenshot_20260923_200339.png`, `Screenshot_20260923_200218.
 
 - [x] FIX: HIGH: Pi 0.87's `session_compact_failed` lifecycle event was unhandled, leaving GLLA's 30-minute in-flight marker armed with no `session_compact` settle event and producing phantom busy/re-arm state after a failed summary — fixed in 44c95861 + 681ec05a (compatibility registration against the 0.84 minimum peer, immediate marker settlement, durable failure ledger, no fake post-compact resume).
 - [x] FIX: HIGH: after a failed context compaction GLLA did not fail closed: it either spun/queued impossible continuations or left an ACTIVE goal/loop at 98–101% context looking idle/working — fixed in 44c95861 (a configured larger-context fallback receives one bounded recovery probe; without a usable fallback, active goals and loops park durably with `/new` then resume instructions while preserving tasks/history/queue).
+
+## Fresh project audit — 2026-09-23 (v0.38.97)
+
+Four parallel scout surveys covered lifecycle/recovery, queue/tools/auditor, commands/settings/UI, and tests/docs/packaging. The candidates below were independently re-read against the current tree; duplicates and disproved claims were excluded. The field compaction failures reported during the pass are recorded in the preceding priority section.
+
+- [x] FIX: HIGH: active branch-mode loops could add/commit/reset on a branch the user or another process had switched to — fixed in c3e22da9 + e3442cb6 (exact branch ownership fence before every mutating boundary; durable park without staging/reset/checkout).
+- [x] FIX: HIGH: branch-mode terminal Git treated failed status/add/commit/reset/checkout as success, so finish could erase the pending iteration or falsely report branch restoration — fixed in a6ccc9ad + 2b967818 + 242c9850 (bounded stderr diagnostics, fail-closed stop, no destructive continuation).
+- [x] FIX: HIGH: `session_compact_failed` was not consumed, leaving the in-flight marker armed and active work stranded — fixed in 44c95861 + 681ec05a; see priority section.
+- [x] FIX: MEDIUM: loop send cleared audit-reprieve, hypothesis, and refine directives before dispatch acceptance, losing one-shot guidance on a transient failure — fixed in b59f44d8 (consume only after accepted dispatch; behavioral send-failure regression).
+- [x] FIX: HIGH: context-free stale-auditor parking ignored persistence failure and heartbeat announced the claim safe while restart still read `auditing` — fixed in 26df745e + 7cd35443 (transaction + checked state append; caller checks result).
+- [x] FIX: HIGH: task-list proposal persistence failure could still consume a repair source and report success — fixed in 7c42aa2d + task-list-persistence regression series (truthful failure before source cleanup).
+- [x] FIX: MEDIUM: repair promotion wrote a tail-ordered repair first, then attempted a non-atomic RAM-only head promotion; reload could demote it or lose repairTarget — fixed in 79b12b01 + 1494f30f.
+- [x] FIX: MEDIUM: `list_activate` resolved visible positions before hydrating disk-only queue state — fixed in 36ad1450 + 6ac65d4f.
+- [x] FIX: MEDIUM: failed parent-sidecar deletion during last-child completion still auto-advanced and could reinterpret the parent as ordinary work — fixed in 36ad1450 (blocked close short-circuits advancement).
+- [x] FIX: MEDIUM: repair replan changed the goal contract without bumping `revision`, allowing an older same-revision approval to satisfy the new contract — fixed in ed9472ab + 6ac65d4f.
+- [x] FIX: MEDIUM: a failed repair-source sidecar deletion detached `repairTarget` from the still-queued source — fixed in ed9472ab + 61125f95 + 981e805f (durable retry link restoration).
+- [x] FIX: MEDIUM: confirmed loop refinement mutated RAM before a non-atomic spec write, so failure could report a partial durable refinement — fixed in bd117be1 (stage/atomically replace spec first; no live mutation on failure).
+- [x] FIX: MEDIUM: loop draft/refine preflight accepted numeric stdout from a nonzero command — fixed in b1e84364 + cb3e5619 + b04980b0 (shared exit-aware probe, numeric-failure regressions).
+- [x] FIX: MEDIUM: `/loop audit` target and measure used cwd-relative findings while open-finding accounting used the selected state root — fixed in 50db98b5 + source/test follow-ups (one selected absolute findings path).
+- [x] FIX: MEDIUM: a missing/corrupt drafting prompt threw after `draftingTarget` was armed, orphaning the drafting gate — fixed in 24d15314 + 060dc220 + ad628f04.
+- [x] FIX: MEDIUM: stale read-only `/list show` and `/list settings` wrote shared ledger events; `/glla bug` created a cwd fallback while sessionDir was pending — fixed in a9369ce0 + eb92fedd.
+- [x] FIX: MEDIUM: provider audit/display projections, transcript role labels, recent-hang labels, and loop measure text allowed terminal control bytes — fixed in 36a754b3 + 9dda193b.
+- [x] FIX: MEDIUM: malformed `forbiddenModels` crashed settings rendering, while provenance displayed rejected raw junk instead of effective normalized values — fixed in 26673820 + 4752990.
+- [x] FIX: LOW: hand-edited `forbiddenModels` wrong types were not normalized and task-level `verificationContract` was absent from the published schema — fixed in 26673820 + 4752990 + b1e4a818.
+- [x] FIX: MEDIUM: vision fallback command interpolated untrusted image/question text into shell syntax — fixed in ee50dd3 (POSIX single-quote encoding + execution regression).
+- [x] FIX: HIGH: managed subagent settings/sync-state names could traverse outside `agents/` and unlink or overwrite a marked file — fixed in 8a98e3c9.
+- [x] FIX: HIGH: detached auditor inherited unrelated host secrets into its bash-capable process — fixed in 26673820 + 492ba8b1 (minimal environment + selected-provider credential allowlist; sentinel regression).
+- [x] FIX: LOW: auditor crash before worker lock rewrite accumulated permanent ambiguous directories — fixed in d8e95ba6 (parent-owned identity plus age/liveness-bounded cleanup).
+- [x] FIX: MEDIUM: pitfall registry ignored the configured state root and could inject stale cwd content — fixed in 3b415701.
+- [x] FIX: LOW: Unicode clause-bound shortening mixed UTF-16 and code-point indices around emoji — fixed in e8273373 + 2b27f74d + 31e117ad.
+- [x] FIX: LOW: continuation prompt instructed `bg_wait` while omitting it from the available-tool grant — fixed in afa3808b.
+- [x] FIX: MEDIUM: whitespace-only goal drafts could be confirmed/auto-accepted as empty active goals — fixed in 5ae4e281.
+- [x] FIX: MEDIUM: task-list Confirm omitted command-bearing milestone verification contracts, so later completion executed undisclosed commands — fixed in 5ae4e281.
+- [x] FIX: MEDIUM: confirmed goal replacement could archive a carryover predecessor before discovering the successor transaction could not be written — fixed in 5ae4e281 (successor transaction preflight before archival).
+- [x] FIX: MEDIUM: INSTALL called Bun optional although every test/release script requires it, and promised an always-visible version on idle sessions — fixed in b1e4a818.
+- [x] FIX: LOW: shipped examples/PLAN used pre-current bare `/list` and historical `.pi-gla` paths/backoff claims — fixed in b1e4a818.
+- [x] FIX: LOW: `tests/goal.schema.test.ts` was a second hand-written shape model that rejected valid list policy and never read the published schema — fixed in b1e4a818 (Ajv-backed active/list/nested fixtures; task contract added to schema).
+
+No new DECIDE finding remained: the auditor-bash confidentiality choice was already resolved in the append-only history, and all other scout candidates were either FIX findings above or duplicates/rejected claims.
