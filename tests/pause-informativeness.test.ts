@@ -117,7 +117,7 @@ test("pause_goal description: teaches the real command surface + no-id vocabular
   assert.match(desc, /NO \/goal drop|no \/goal drop/i, "kills the hallucinated command");
   assert.match(desc, /no command takes a goal id|NO command takes a goal id/i);
   assert.match(desc, /never show goal ids/i);
-  assert.match(desc, /redirect="/, "teaches the park-and-continue redirect param");
+  assert.match(desc, /redirect=/, "teaches the park-and-continue redirect param");
 });
 
 test("late pause calls cannot overwrite a paused or auditing lifecycle", () => {
