@@ -51,6 +51,30 @@ test("zombie branch stands down on human-input waits with its own ledger event",
   assert.match(HEARTBEAT_SRC, /zombie_run_stood_down_subagent_wait/);
 });
 
+test("stand-down ledger is latched per silent episode, not per tick", () => {
+  // Field 2026-09-22: 219 zombie_run_stood_down_user_input entries in a day
+  // — the branch logged on EVERY heartbeat tick while a user-input wait was
+  // pending, unlike the abort path's abortKey latch. Same key space, same
+  // releases: one entry per episode, fresh attempts re-log.
+  assert.match(HEARTBEAT_SRC, /let lastZombieStandDownKey = "";/, "latch declared beside the abort latch");
+  assert.match(HEARTBEAT_SRC, /standDownKey !== lastZombieStandDownKey/, "repeat ticks are suppressed");
+  assert.match(HEARTBEAT_SRC, /lastZombieStandDownKey = standDownKey;/, "first occurrence claims the latch");
+  const resetAt = HEARTBEAT_SRC.indexOf("export function __testOnlyResetZombieRunWatchdog");
+  assert.ok(resetAt >= 0, "watchdog reset exists");
+  assert.match(
+    HEARTBEAT_SRC.slice(resetAt, resetAt + 400),
+    /lastZombieStandDownKey = "";/,
+    "test reset releases the stand-down latch",
+  );
+  const releaseAt = HEARTBEAT_SRC.indexOf("export function releaseZombieAbortKey");
+  assert.ok(releaseAt >= 0, "abort-latch release exists");
+  assert.match(
+    HEARTBEAT_SRC.slice(releaseAt, releaseAt + 400),
+    /lastZombieStandDownKey = "";/,
+    "a retried attempt re-arms stand-down logging with the abort latch",
+  );
+});
+
 test("the abort path is untouched when NO human-input tool is in flight", () => {
   // A genuinely hung stream (no tools at all) must still reach abortZombieRun
   // after the grace window — the carve-out is additive, not a replacement.

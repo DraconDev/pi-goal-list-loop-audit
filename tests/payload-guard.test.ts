@@ -171,6 +171,40 @@ test("wiring: the context event projects bloated histories before EVERY LLM call
   assert.equal(ledger(cwd).length, before, "no ledger entry when nothing was evicted");
 });
 
+test("wiring: identical repeat evictions are deduped; changed values re-arm", async () => {
+  // Field 2026-09-22: 719 identical payload_guard_eviction entries (~12s
+  // cadence, same generation/bytes) — every send re-projects the same
+  // history and re-logs. First occurrence lands; repeats are silent.
+  const cwd = tmpCwd();
+  const pi = new MockPi();
+  activate(pi.api);
+  __testOnlyResetOwnerSession();
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `dedupe-${Date.now()}` } });
+  const handlers = (pi as unknown as { handlers: Map<string, (...a: unknown[]) => unknown> }).handlers;
+  const handler = handlers.get("context");
+  assert.ok(handler, "activate() registers the context-event handler");
+  const evictions = () => ledger(cwd).filter((e) => e.type === "payload_guard_eviction").length;
+
+  const bloated = [
+    userMessage(imageBlock(7 * 1024)),
+    userMessage(imageBlock(7 * 1024)),
+    userMessage(imageBlock(7 * 1024)),
+  ];
+  const before = evictions();
+  await handler!({ type: "context", messages: bloated }, ctx);
+  assert.equal(evictions(), before + 1, "first occurrence is ledgered");
+  await handler!({ type: "context", messages: bloated }, ctx);
+  assert.equal(evictions(), before + 1, "identical repeat is silent");
+
+  const changed = [
+    userMessage(imageBlock(8 * 1024)),
+    userMessage(imageBlock(8 * 1024)),
+    userMessage(imageBlock(8 * 1024)),
+  ];
+  await handler!({ type: "context", messages: changed }, ctx);
+  assert.equal(evictions(), before + 2, "changed values re-arm the ledger");
+});
+
 // ── (3) 413 classification: retryable in place, not chain rotation ───────
 
 test("classifyMainModelFailure: 413 payload-size texts are transient, not unknown", () => {
