@@ -19,8 +19,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { state } from "./goal-state.js";
-import { appendLedger, claimRecoveryNotice, nowIso, piGlaDir, isFreshPastTimestamp, isForbiddenModel, isStaleApiError, nextHourlyProbeMs, providerErrorFingerprint, providerErrorPresentation, resolveEffectiveAggressiveSettings, sanitizeProviderDisplayText, supervisorPaused, writeGoalMd, MAX_AUDITOR_CANDIDATE_REFS, type Goal, type MainModelRecovery, type PendingCompletion } from "./goal-loop-core.js";
-import { persistStateLine } from "./goal-state.js";
+import { appendLedger, claimRecoveryNotice, nowIso, piGlaDir, isFreshPastTimestamp, isForbiddenModel, isStaleApiError, nextHourlyProbeMs, providerErrorFingerprint, providerErrorPresentation, resolveEffectiveAggressiveSettings, sanitizeProviderDisplayText, supervisorPaused, writeGoalMd, goalMdPath, writeGoalStateTransaction, clearGoalStateTransaction, MAX_AUDITOR_CANDIDATE_REFS, type Goal, type MainModelRecovery, type PendingCompletion } from "./goal-loop-core.js";
+import { persistStateLine, replaceState } from "./goal-state.js";
 import { cancelDetachedGoalCompletionAuditor } from "./goal-loop-auditor-process.js";
 import {
   classifyMainModelFailure,
@@ -213,9 +213,21 @@ export function parkCompletionAuditRecovery(cwd: string, reason: string, cursorP
     pauseRecommended: undefined,
     updatedAt: nowIso(),
   };
-  const file = writeGoalMd(cwd, next);
-  state.goal = { ...next, activePath: path.relative(cwd, file) || file };
-  persistStateLine(cwd, state);
+  const file = goalMdPath(cwd, next.id);
+  const nextGoal: Goal = { ...next, activePath: path.relative(cwd, file) || file };
+  // The context-free stale path has no updateGoal wrapper, so reproduce its
+  // durable transaction explicitly. Without a landed snapshot+state line,
+  // reporting success would resurrect `auditing` after restart.
+  if (!writeGoalStateTransaction(cwd, { ...state, goal: nextGoal })) return false;
+  writeGoalMd(cwd, nextGoal);
+  replaceState({ ...state, goal: nextGoal });
+  const stateLanded = persistStateLine(cwd, state);
+  if (!stateLanded) {
+    // The transaction is the recovery record if the append failed. Keep it for
+    // readState startup reconciliation and report the operation as unlanded.
+    return false;
+  }
+  clearGoalStateTransaction(cwd);
   appendLedger(cwd, "audit_recovery_pending", {
     goalId: goal.id,
     attemptId: claim.attemptId,

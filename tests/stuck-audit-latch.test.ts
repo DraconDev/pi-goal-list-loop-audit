@@ -48,8 +48,8 @@ test("Fix B: the stale-latch stranded park runs BEFORE the extensionApiStale ear
   assert.ok(parked < staleBranch, "the stale-latch park is ordered BEFORE the stale probe branch — the backstop is reachable while latched");
   assert.match(HB, /via: "stale-latch"/, "the park is attributed to the stale latch");
   assert.match(HB, /const current = freshCtx\(\);/, "the retained stale context is not used for mutation");
-  assert.match(HB, /markCompletionAuditRecoveryPending\(current, "stale-latch-recovery"\)/, "the park uses a freshly validated context");
-  assert.match(HB, /parkCompletionAuditRecovery\(cwd, "stale-latch-recovery"\)/, "the no-context fallback uses the durable cwd bridge");
+  assert.match(HB, /if \(!markCompletionAuditRecoveryPending\(current, "stale-latch-recovery"\)\)/, "fresh-context success is checked before the safe-claim notice");
+  assert.match(HB, /if \(!parkCompletionAuditRecovery\(cwd, "stale-latch-recovery"\)\)/, "the context-free fallback reports persistence failure honestly");
   assert.doesNotMatch(HB, /markCompletionAuditRecoveryPending\(knownCtx, "stale-latch-recovery"\)/, "the retained stale context is probe-only");
   // A heartbeat must never launch another worker — only the park. The
   // pre-branch block (between the park and the stale probe branch) contains
@@ -66,4 +66,7 @@ test("Fix B: the park requires the exact stuck signature (auditing, no in-flight
   assert.match(HB, /Date\.now\(\) - flags\.lastActivityAt >= 90_000/);
   // the pre-existing (non-stale) stranded block keeps its stored-claim path:
   assert.match(HB, /markCompletionAuditRecoveryPending\(ctx, "heartbeat-recovery"\)/);
+  const RECOVERY = fs.readFileSync("extensions/goal-recovery.ts", "utf-8");
+  assert.match(RECOVERY, /writeGoalStateTransaction\(cwd, \{ \.\.\.state, goal: nextGoal \}\)/, "context-free park writes the durable recovery transaction");
+  assert.match(RECOVERY, /const stateLanded = persistStateLine\(cwd, state\);/, "context-free park checks the state append result");
 });
