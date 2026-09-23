@@ -1113,6 +1113,79 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
   }
 
 
+  // A failed compaction is a first-class lifecycle boundary. Pi emits this
+  // event for manual/threshold/overflow failures, but never emits
+  // session_compact and never retries the failed summary. Without this
+  // handler, compactionInFlightSince remains armed for up to 30 minutes and
+  // GLLA's watchdog narrates a phantom busy turn while the context is still
+  // over cap. Settle the marker, record the failure, and immediately walk a
+  // configured larger-context model; if none exists, park active work with
+  // the exact /new + resume recovery instead of leaving an unreachable ACTIVE
+  // goal behind.
+  pi.on("session_compact_failed", async (event: {
+    reason?: string;
+    errorMessage?: string;
+    aborted?: boolean;
+    willRetry?: boolean;
+    fromExtension?: boolean;
+  }, ctx: ExtensionContext) => {
+    rememberCtx(ctx);
+    if (!tryAbsorbHostSuccessor(ctx, "session_compact_failed") && isForeignCtx(ctx)) return;
+    if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown) return;
+    noteCompactionSettled();
+    const raw = event.errorMessage ?? "compaction failed";
+    const safe = sanitizeDisplayText(raw).replace(/\s+/g, " ").trim().slice(0, 300) || "compaction failed";
+    appendLedger(ctx.cwd, "session_compact_failed", {
+      reason: event.reason ?? "unknown",
+      error: safe,
+      aborted: event.aborted === true,
+      willRetry: event.willRetry === true,
+      fromExtension: event.fromExtension === true,
+      generation: sessionGeneration,
+    });
+    if (event.aborted === true || !isSupervising()) return;
+
+    // Failure is itself positive evidence that the current model could not
+    // summarize/serve the context. Use the same ordered fallback selector as
+    // a post-compaction context overflow; the selected model gets one bounded
+    // continuation probe below.
+    if (mainModelFallbackRefs(ctx).length > 0) {
+      const switched = await recoverFromContextOverflow(ctx, `${raw} — context compaction failed`);
+      if (switched) {
+        ctx.ui.notify("glla: compaction failed — rotated to a larger-context backup model and queued one recovery probe.", "warning");
+        if (isLoopActive()) scheduleLoopTick(ctx);
+        else scheduleContinuation(ctx, true, 1_000);
+        return;
+      }
+    }
+
+    // No usable backup: fail closed and durably. An ACTIVE goal/loop that
+    // cannot fit its own context must not masquerade as WORKING/IDLE while
+    // every automatic send is refused. The operator path is /new (fresh empty
+    // projection), then resume from this durable record.
+    const reason = `context overflow — compaction failed: ${safe}`;
+    const action = `Run /new, then ${activeGoalSurfaceCommand("resume")} to reload the durable goal/task state without a summarization pass${mainModelFallbackRefs(ctx).length > 0 ? "; if a larger-context fallback is configured, fix its model/auth first" : ""}.`;
+    if (state.loop?.active) {
+      clearLoopTimer();
+      state.loop = { ...state.loop, active: false, stopReason: reason };
+      persistState(ctx);
+      appendLedger(ctx.cwd, "loop_stopped", { reason, iterations: state.loop.iteration, best: state.loop.bestValue, cause: "compaction_failed" });
+      ctx.ui.notify(`Loop parked: ${reason}. ${action}`, "warning");
+      announceQueuedListAfterLoopEnd(ctx);
+      return;
+    }
+    if (state.goal?.status === "active") {
+      updateGoal({
+        status: "paused",
+        pauseKind: "blocked",
+        pauseReason: reason,
+        pauseSuggestedAction: action,
+      }, ctx);
+      ctx.ui.notify(`${goalNoun()} parked: ${reason}. ${action}`, "warning");
+      notifyExternal(ctx, `${goalNoun()} parked after failed context compaction. ${action}`);
+    }
+  });
+
   // v0.26.1: compaction ends WITHOUT an agent_end (the compaction turn is
   // not an agent turn), so the continuation chain can dangle until the
   // 60s heartbeat notices. Re-arm it as soon as pi settles post-compact.
