@@ -10,7 +10,6 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 import activate, {
-  __testOnlyLoadState,
   __testOnlyResetOwnerSession,
   __testOnlyResetStaleFlag,
 } from "../extensions/loops/goal.js";
@@ -36,9 +35,7 @@ async function boot(cwd: string, goal = seedGoal({ status: "active", objective: 
   seedState(cwd, { goal, list: [] });
   const pi = new MockPi();
   activate(pi.api);
-  __testOnlyLoadState(cwd);
-  const ctx = makeMockCtx(cwd, { sessionManager: { name: `task-persist-${Date.now()}` } });
-  await pi.fire("session_start", { reason: "reload" }, ctx);
+  const ctx = await boot(pi, cwd);
   session = { pi, ctx };
   return { pi, ctx };
 }
