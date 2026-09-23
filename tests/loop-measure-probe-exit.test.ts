@@ -7,59 +7,45 @@ import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 
 import activate, {
-  __testOnlyLoadState,
-  __testOnlyRegisterAgentTools,
-  __testOnlyRememberCtx,
   __testOnlyResetOwnerSession,
   __testOnlyResetStaleFlag,
 } from "../extensions/loops/goal.js";
-import { MockPi, makeMockCtx, seedLoop, seedState, tmpCwd, type MockCtx } from "./harness/mock-pi.js";
-import { state } from "../extensions/goal-state.js";
-
-/** Test bridge for the internal drafting target. It mirrors what the real
- * `/loop` no-arg command does before asking the model questions. */
-function startLoopDraftingForTest(_ctx: MockCtx): void {
-  state.goal = null;
-  // The actual tool's own guard reads this process-global via the runtime
-  // bridge. Setting it directly is intentionally test-only and local.
-  (globalThis as any).draftingTarget = "loop";
-  (globalThis as any).draftingUserReplies = 1;
-}
+import { MockPi, makeMockCtx, seedLoop, seedState, tick, tmpCwd, type MockCtx } from "./harness/mock-pi.js";
 
 const GLOBAL = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
 const originalGlobal = fs.readFileSync(GLOBAL, "utf8");
 let session: { pi: MockPi; ctx: MockCtx } | null = null;
 
-async function harness(cwd: string) {
-  fs.writeFileSync(GLOBAL, JSON.stringify({ aggressiveMode: false }));
+async function harness(cwd: string, autoResume: boolean) {
+  fs.writeFileSync(GLOBAL, JSON.stringify({ autoResume, aggressiveMode: false }));
   __testOnlyResetOwnerSession();
   __testOnlyResetStaleFlag();
-  __testOnlyLoadState(cwd);
   const pi = new MockPi();
   activate(pi.api);
-  __testOnlyRegisterAgentTools(pi.api);
-  const ctx = makeMockCtx(cwd, { sessionManager: { name: `measure-exit-${Date.now()}` } });
-  // The harness API intentionally exposes tools, not slash commands. Install
-  // the minimal real loop-entry bridge after ctx exists.
-  (pi as unknown as { commands: Map<string, unknown> }).commands.set("loop", {
-    handler: async () => { startLoopDraftingForTest(ctx); },
-  });
-  __testOnlyRememberCtx(ctx as never);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `measure-exit-${Date.now()}-${Math.random()}` } });
+  await pi.fire("session_start", { reason: "reload" }, ctx);
+  await tick(50);
   session = { pi, ctx };
   return { pi, ctx };
 }
 
-afterEach(() => {
-  session = null;
+afterEach(async () => {
+  if (session) {
+    const current = session;
+    session = null;
+    await current.pi.fire("session_shutdown", { reason: "test-end" }, current.ctx);
+  }
   fs.writeFileSync(GLOBAL, originalGlobal);
 });
 
 test("propose_loop_draft rejects non-zero measure output even when stdout is numeric", async () => {
   const cwd = tmpCwd();
   seedState(cwd, { loop: seedLoop({ active: false, stopReason: "paused by user (/loop pause)" }) });
-  const { pi, ctx } = await harness(cwd);
-  // Enter the real loop drafting gate and satisfy the interview floor.
+  const { pi, ctx } = await harness(cwd, false);
+  // Enter the production loop-drafting gate and satisfy the interview floor.
   await pi.command("loop", "", ctx);
+  await pi.fire("message_start", { message: { role: "user" } }, ctx);
+  await pi.fire("message_start", { message: { role: "user" } }, ctx);
   pi.execHandler = () => ({ code: 7, stdout: "42\n", stderr: "measure exploded" });
 
   const res = await pi.runTool("propose_loop_draft", {
@@ -82,7 +68,7 @@ test("propose_loop_refine rejects non-zero measure output and leaves the live lo
     lastValue: 10,
   });
   seedState(cwd, { loop: original });
-  const { pi, ctx } = await harness(cwd);
+  const { pi, ctx } = await harness(cwd, true);
   pi.execHandler = () => ({ code: 9, stdout: "99\n", stderr: "refine probe failed" });
 
   const res = await pi.runTool("propose_loop_refine", {
