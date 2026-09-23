@@ -35,7 +35,8 @@ async function boot(cwd: string, goal = seedGoal({ status: "active", objective: 
   seedState(cwd, { goal, list: [] });
   const pi = new MockPi();
   activate(pi.api);
-  const ctx = await boot(pi, cwd);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `task-persist-${Date.now()}` } });
+  await pi.fire("session_start", { reason: "reload" }, ctx);
   session = { pi, ctx };
   return { pi, ctx };
 }
