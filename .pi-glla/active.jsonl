@@ -2981,3 +2981,4 @@
 {"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-23T20:04:29.063Z"}
 {"type":"zombie_run_suspected","value":{"streamSilentMs":1247622,"pending":false,"abortDue":false},"at":"2026-09-23T20:20:19.165Z"}
 {"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-23T20:24:07.763Z"}
+{"type":"zombie_run_suspected","value":{"streamSilentMs":1200644,"pending":false,"abortDue":false},"at":"2026-09-23T21:01:40.544Z"}
