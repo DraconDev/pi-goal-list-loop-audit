@@ -25,7 +25,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import activate, { __testOnlyResetOwnerSession } from "../extensions/loops/goal.js";
-import { collectImageBlocks, evictStaleImages, isInlineImageBlock, DEFAULT_IMAGE_BUDGET_BYTES } from "../extensions/payload-guard.js";
+import { collectImageBlocks, evictStaleImages, isInlineImageBlock, DEFAULT_IMAGE_BUDGET_BYTES, DEFAULT_MAX_IMAGES_PER_REQUEST } from "../extensions/payload-guard.js";
 import { classifyMainModelFailure } from "../extensions/main-model-recovery.js";
 import { tmpCwd, tick, MockPi, makeMockCtx } from "./harness/mock-pi.js";
 
