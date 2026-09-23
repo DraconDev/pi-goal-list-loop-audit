@@ -644,35 +644,48 @@ function queueRepairAheadOfListItem(ctx: ExtensionContext, item: ListItem, asses
     reasons: [...assessment.reasons],
     source: "list-activation",
   };
-  const existing = listQueue().find((queued) => queued.objective === repairObjective);
+  const current = listQueue();
+  const existing = current.find((queued) => queued.objective === repairObjective);
+  /** Durable head order: lower than every existing item, with a stable
+   * timestamp fallback for legacy sidecars. Persist the same final object that
+   * enters RAM so reload cannot demote the repair behind the malformed head. */
+  const promote = (base: ListItem): ListItem => {
+    const restOrders = current.filter((queued) => queued.id !== base.id)
+      .map((queued) => queued.queueOrder)
+      .filter((order): order is number => typeof order === "number" && Number.isFinite(order));
+    const headOrder = restOrders.length > 0 ? Math.min(...restOrders) - 1 : 0;
+    return { ...base, repairTarget: target, queueOrder: headOrder };
+  };
   if (existing) {
-    if (!existing.repairTarget) {
-      const repaired = { ...existing, repairTarget: target };
-      const written = writeQueueItemFile(ctx.cwd, repaired, { replace: true });
-      if (written.failed) {
-        ctx.ui.notify("Could not persist the repair target; the original queued item remains unchanged.", "warning");
-        return;
-      }
-      replaceState({ ...state, list: listQueue().map((queued) => queued.id === existing.id ? repaired : queued) });
-      persistState(ctx);
-      appendLedger(ctx.cwd, "faulty_objective_repair_target_recovered", { goalId: existing.id, targetId: item.id, source: "list-activation" });
+    const repaired = promote(existing);
+    const written = writeQueueItemFile(ctx.cwd, repaired, { replace: true });
+    if (written.failed) {
+      ctx.ui.notify("Could not durably promote the repair; the original queued order remains unchanged.", "warning");
+      return;
     }
+    const rest = current.filter((queued) => queued.id !== repaired.id);
+    replaceState({ ...state, list: [repaired, ...rest] });
+    persistState(ctx);
+    appendLedger(ctx.cwd, "faulty_objective_repair_target_recovered", { goalId: repaired.id, targetId: item.id, source: "list-activation", queueOrder: repaired.queueOrder });
     return;
   }
-  const before = new Set(listQueue().map((queued) => queued.id));
-  enqueueItems(ctx, [repairObjective], "faulty-objective", { autoActivate: false });
-  const added = listQueue().find((queued) => !before.has(queued.id) && queued.objective === repairObjective);
-  if (!added) return;
-  const repair = { ...added, repairTarget: target };
-  const repairWritten = writeQueueItemFile(ctx.cwd, repair, { replace: true });
-  if (repairWritten.failed) {
-    ctx.ui.notify("Could not persist the repair target; the queued repair remains without promotion metadata.", "warning");
+
+  // Generate the id and final head order BEFORE the first sidecar write. The
+  // ordinary enqueue path deliberately assigns tail order; using it here would
+  // require a second write and leave a crash window between the two shapes.
+  const repair: ListItem = promote({
+    id: newGoalId(),
+    objective: repairObjective,
+    addedAt: nowIso(),
+  });
+  const written = writeQueueItemFile(ctx.cwd, repair);
+  if (written.failed) {
+    ctx.ui.notify("Could not persist the repair item; the original queued item remains unchanged.", "warning");
     return;
   }
-  const rest = listQueue().filter((queued) => queued.id !== added.id);
-  replaceState({ ...state, list: [repair, ...rest] });
+  replaceState({ ...state, list: [repair, ...current] });
   persistState(ctx);
-  appendLedger(ctx.cwd, "faulty_objective_repair_promoted", { goalId: repair.id, targetId: item.id, position: 1, source: "list-activation", reasons: assessment.reasons });
+  appendLedger(ctx.cwd, "faulty_objective_repair_promoted", { goalId: repair.id, targetId: item.id, position: 1, source: "list-activation", reasons: assessment.reasons, queueOrder: repair.queueOrder });
 }
 
 function activateNextListItem(ctx: ExtensionContext, n = 1, opts?: { explicit?: boolean; displayLabel?: string }): boolean {
