@@ -853,7 +853,6 @@ async function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "l
     return false;
   }
   draftingHandoff.reset();
-  draftingTarget = target;
   // v0.35.44: no draftingDepth write — the write-only global was removed;
   // template selection goes through draftingTemplateFile(target, depth).
   const labels: Record<string, [string, string]> = {
@@ -879,8 +878,16 @@ async function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "l
       : target === "loop"
         ? `${label}: a loop target needs a metric and a direction — the agent will help you design them first (nothing activates until you confirm). Skip the interview entirely: /loop start "<target>" (bare = infinite metricless) or /loop start "<target>" measure="<cmd>" direction=min|max [window=5] [max=50] [time=h] [tokens=n] [branch=1].`
         : `${label}: the objective has no "Done when:" clause — the agent will grill you about it first (nothing activates until you confirm). Skip the interview entirely: /goal start <objective>.`);
-  // Layered-prompt contract: a missing draft file fails loudly — never render lean.
-  let tmpl = loadPromptWhole(file);
+  // Build every synchronous prompt surface BEFORE claiming the drafting gate.
+  // A missing/corrupt shipped template must fail loudly without leaving later
+  // proposal tools blocked by a target for an interview that never started.
+  let tmpl: string;
+  try {
+    tmpl = loadPromptWhole(file);
+  } catch (err) {
+    ctx.ui.notify(`Could not start drafting: the ${target} prompt template could not be loaded. Fix the packaged file and retry.`, "warning");
+    throw err;
+  }
   if (target === "list") {
       tmpl = tmpl.replace(
         "[GOAL DRAFTING]",
@@ -918,6 +925,8 @@ async function startDrafting(ctx: ExtensionContext, target: "goal" | "list" | "l
     const pre = gatherProactivePreRead(seed, ctx.cwd);
     if (pre) tmpl += `\n\n${pre}`;
   }
+  // From this point onward, every exit owns the gate it is about to claim.
+  draftingTarget = target;
   try {
     await beginDrafterModel(ctx);
   } catch (err) {
