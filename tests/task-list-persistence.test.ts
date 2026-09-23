@@ -31,6 +31,15 @@ const GLOBAL = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
 const originalGlobal = fs.readFileSync(GLOBAL, "utf8");
 let session: { pi: MockPi; ctx: MockCtx } | null = null;
 
+function writePendingSessionDirSettings(): string {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-task-pending-"));
+  const file = path.join(dir, "settings.json");
+  fs.writeFileSync(file, JSON.stringify({ stateRoot: "sessionDir", aggressiveMode: false }));
+  process.env.GLLA_GLOBAL_SETTINGS_PATH = file;
+  setRuntimeSessionDir(undefined);
+  return dir;
+}
+
 async function boot(cwd: string, goal = seedGoal({ status: "active", objective: "Persist this task list" })) {
   fs.writeFileSync(GLOBAL, JSON.stringify({ aggressiveMode: false }));
   __testOnlyResetOwnerSession();
@@ -59,12 +68,8 @@ test("normal task-list proposal reports failure and stores no task list", async 
   const cwd = tmpCwd();
   const { pi, ctx } = await boot(cwd);
   setRuntimeSessionDir(undefined);
-  const globalDir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-task-pending-"));
-  const pendingFile = path.join(globalDir, "settings.json");
   const prior = process.env.GLLA_GLOBAL_SETTINGS_PATH;
-  process.env.GLLA_GLOBAL_SETTINGS_PATH = pendingFile;
-  fs.writeFileSync(pendingFile, JSON.stringify({ stateRoot: "sessionDir", aggressiveMode: false }));
-  setRuntimeSessionDir(undefined);
+  const globalDir = writePendingSessionDirSettings();
   try {
     const before = ctx.ui.notifies.length;
     const res = await pi.runTool("propose_task_list", {
@@ -101,12 +106,8 @@ test("repair proposal preserves the source sidecar and queue when the task list 
   });
   const { pi, ctx } = await boot(cwd, goal);
   writeQueueItemFile(cwd, source);
-  const globalDir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-repair-pending-"));
-  const pendingFile = path.join(globalDir, "settings.json");
   const prior = process.env.GLLA_GLOBAL_SETTINGS_PATH;
-  process.env.GLLA_GLOBAL_SETTINGS_PATH = pendingFile;
-  fs.writeFileSync(pendingFile, JSON.stringify({ stateRoot: "sessionDir", aggressiveMode: false }));
-  setRuntimeSessionDir(undefined);
+  const globalDir = writePendingSessionDirSettings();
   try {
     const res = await pi.runTool("propose_task_list", {
       objective: "Restore a durable task list for the blocked queue item",
