@@ -196,6 +196,16 @@ export function subagentSyncStatePath(agentDir: string): string {
   return path.join(agentDir, "agents", ".glla-subagent-sync.json");
 }
 
+/** Managed agent files are flat `<name>.md` children of agents/. Reject
+ * separators, dot segments, NUL/control bytes, and alternate separators
+ * before any path construction or unlink. */
+export function isSafeManagedAgentName(name: string): boolean {
+  return /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(name)
+    && name !== "."
+    && name !== ".."
+    && !name.includes("..");
+}
+
 /** Sync <agentDir>/agents/<name>.md with the desired state. Idempotent:
  * writes only when content differs. Never touches non-managed files. */
 export function syncSubagentModelOverrides(opts: {
@@ -225,6 +235,10 @@ export function syncSubagentModelOverrides(opts: {
   ]);
 
   for (const name of names) {
+    if (!isSafeManagedAgentName(name)) {
+      result.skipped.push({ name, reason: "unsafe managed agent name — use letters, digits, dot, underscore, or hyphen only" });
+      continue;
+    }
     const overrideModel = overrides[name];
     const file = path.join(opts.agentDir, "agents", `${name}.md`);
     const exists = fs.existsSync(file);

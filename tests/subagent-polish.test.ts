@@ -10,6 +10,7 @@ import {
   buildAgentOverrideMd,
   resolveEffectiveSubagentModel,
   syncSubagentModelOverrides,
+  isSafeManagedAgentName,
   OVERRIDABLE_AGENT_TYPES,
 } from "../extensions/goal-loop-subagents.ts";
 import { isSubagentProviderFailure } from "../extensions/quota-retry.ts";
@@ -32,6 +33,27 @@ test("strategy-driven sync writes only the GLLA-owned Designer role", () => {
   const sync2 = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", overrides: { scout: "minimax/MiniMax-M3" } });
   assert.deepEqual(sync2.written, ["scout"]);
   assert.match(fs.readFileSync(path.join(dir, "agents", "scout.md"), "utf-8"), /model: minimax\/MiniMax-M3/);
+});
+
+test("managed sync rejects path traversal from settings and corrupt sync state", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-subagent-traversal-"));
+  const agents = path.join(dir, "agents");
+  fs.mkdirSync(agents, { recursive: true });
+  const outside = path.join(dir, "outside.md");
+  fs.writeFileSync(outside, "x-managed-by: pi-goal-list-loop-audit\nuser data\n");
+  fs.writeFileSync(path.join(agents, ".glla-subagent-sync.json"), JSON.stringify({ written: ["../outside"] }));
+  const sync = syncSubagentModelOverrides({
+    agentDir: dir,
+    strategy: "inherit-parent",
+    overrides: { "../outside": "provider/model" },
+  });
+  assert.equal(fs.existsSync(outside), true, "corrupt state cannot unlink outside agents/");
+  assert.equal(fs.existsSync(path.join(dir, "outside.md")), true);
+  assert.ok(sync.skipped.some((row) => row.name.includes("..")));
+  assert.equal(isSafeManagedAgentName("scout"), true);
+  for (const unsafe of ["../outside", "a/b", "a\\b", "..", ".", "a\0b"]) {
+    assert.equal(isSafeManagedAgentName(unsafe), false, unsafe);
+  }
 });
 
 test("repair detection: externally deleted/altered Designer files are re-written and flagged", () => {
