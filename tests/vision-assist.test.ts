@@ -23,7 +23,9 @@
 import { test, afterEach } from "node:test";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
+import { execFileSync } from "node:child_process";
 
 import { readState, isForbiddenModel, DEFAULT_FORBIDDEN_MODELS } from "../extensions/goal-loop-core.js";
 import activate, { __testOnlyResetOwnerSession, __testOnlySetLastModelRef } from "../extensions/loops/goal.js";
@@ -112,12 +114,37 @@ test("docs/VISION-ASSIST.md documents native-first guidance and the preapproval 
 
 test("visionDescribeCommand builds the exact mmx call", () => {
   const cmd = visionDescribeCommand("/home/dracon/Pictures/Screenshots/Screenshot_20260806_115855.png", "Is there an error dialog?");
-  assert.match(cmd, /^mmx vision describe --image "/);
+  assert.match(cmd, /^mmx vision describe --image '/);
   assert.ok(cmd.includes("/home/dracon/Pictures/Screenshots/Screenshot_20260806_115855.png"));
-  assert.ok(cmd.includes('--prompt "Is there an error dialog?"'));
+  assert.ok(cmd.includes("--prompt 'Is there an error dialog?'"));
   assert.ok(cmd.includes("--quiet"));
   const bare = visionDescribeCommand("/tmp/shot.png");
   assert.ok(bare.includes("Describe what is shown in the image."), "a default question is provided");
+
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "glla-vision-quote-"));
+  try {
+    const bin = path.join(tmp, "bin");
+    const argsFile = path.join(tmp, "args");
+    const pwn = path.join(tmp, "pwn");
+    const promptPwn = path.join(tmp, "prompt-pwn");
+    fs.mkdirSync(bin);
+    const fakeMmx = path.join(bin, "mmx");
+    fs.writeFileSync(fakeMmx, "#!/bin/sh\nprintf '%s\\0' \"$@\" > \"$MMX_ARGS_FILE\"\n", { mode: 0o700 });
+    const image = `x'; touch ${pwn}; #`;
+    const question = `$(touch ${promptPwn}); 'quoted'\nnext`;
+    execFileSync("bash", ["-c", visionDescribeCommand(image, question)], {
+      env: { ...process.env, PATH: `${bin}:${process.env.PATH ?? ""}`, MMX_ARGS_FILE: argsFile },
+      encoding: "utf8",
+    });
+    assert.equal(fs.existsSync(pwn), false, "path metacharacters stay inside one argv value");
+    assert.equal(fs.existsSync(promptPwn), false, "prompt substitution never executes");
+    const args = fs.readFileSync(argsFile).toString("utf8").split("\0");
+    assert.equal(args[args.length - 1], "", "nul-separated argv has a trailing sentinel");
+    assert.equal(args[3], image, "image path arrives as one literal argument");
+    assert.equal(args[5], question, "question arrives as one literal argument");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
 
 test("routeVisionCheck: a forbidden target stays on the current model", () => {

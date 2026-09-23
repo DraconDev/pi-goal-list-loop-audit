@@ -53,10 +53,18 @@ or opus through /glla settings. Any switch to an explicitly forbidden model is
 blocked and ledgered as forbidden_model_switch; vision-assist routing is
 ledgered as vision_assist.`;
 
+function shellQuote(value: string): string {
+  // POSIX single-quote encoding: only `'` needs special treatment, and the
+  // resulting text is literal inside a shell word (no $, ;, newline, or
+  // backslash reinterpretation). The helper is a display/guidance command,
+  // so we do not claim Windows cmd.exe compatibility.
+  return `'${value.replaceAll("'", "'\\''")}'`;
+}
+
 /** The exact optional mmx vision describe command for one external check. */
 export function visionDescribeCommand(imagePath: string, question?: string): string {
   const q = question && question.trim().length > 0 ? question.trim() : "Describe what is shown in the image.";
-  return `mmx vision describe --image "${imagePath}" --prompt "${q}" --quiet --non-interactive`;
+  return `mmx vision describe --image ${shellQuote(imagePath)} --prompt ${shellQuote(q)} --quiet --non-interactive`;
 }
 
 export interface VisionCheckRequest {
