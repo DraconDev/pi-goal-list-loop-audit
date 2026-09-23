@@ -2276,7 +2276,7 @@ function registerAgentTools(pi: any): void {
   pi.registerTool(defineTool({
     name: "pause_goal",
     label: "Pause goal",
-    description: "Pause the active goal with a reason and suggested action. Use when blocked on user input or unable to make progress. Pausing ABORTS the current turn immediately — after this call, stop; never keep working. When the user must CHOOSE between options, pass kind=\"decision\" with the options list (recommended = 1-based index of the best one) — decision pauses render as a prominent DECISION NEEDED card and pop a picker for the user. Time-gated waits (retry at a specific time) use kind=\"wait\" with resumeAt (ISO). Operational failures use kind=\"error\". Pauses that only wait on a running background subagent — its native completion wakes the goal, no manual action exists — use kind=\"standby\" so the card waits instead of demanding action. VOCABULARY (v0.28.24): decision options and reasons must reference REAL commands only — /goal resume, /goal cancel, /goal tweak \"<new text>\", /list remove N, /list next, /list resume, /loop stop, /loop resume. These all act on the ACTIVE goal/item: there is NO /goal drop and NO command takes a goal id. Never show goal ids to the user — name the thing ('the active goal', 'list item \"<short name>\"'); ids are internal plumbing the user cannot act on.",
+    description: "Pause the active goal with a reason and suggested action. Use when blocked on user input or unable to make progress. Pausing ABORTS the current turn immediately — after this call, stop; never keep working. When the user interrupts with a NEW task ('do X first'), pass redirect=\"<their request>\" instead: the goal parks but the turn CONTINUES so you work X immediately — a plain pause strands the redirect until the user nudges. Never use redirect to dodge a real blocker, decision, or wait. When the user must CHOOSE between options, pass kind=\"decision\" with the options list (recommended = 1-based index of the best one) — decision pauses render as a prominent DECISION NEEDED card and pop a picker for the user. Time-gated waits (retry at a specific time) use kind=\"wait\" with resumeAt (ISO). Operational failures use kind=\"error\". Pauses that only wait on a running background subagent — its native completion wakes the goal, no manual action exists — use kind=\"standby\" so the card waits instead of demanding action. VOCABULARY (v0.28.24): decision options and reasons must reference REAL commands only — /goal resume, /goal cancel, /goal tweak \"<new text>\", /list remove N, /list next, /list resume, /loop stop, /loop resume. These all act on the ACTIVE goal/item: there is NO /goal drop and NO command takes a goal id. Never show goal ids to the user — name the thing ('the active goal', 'list item \"<short name>\"'); ids are internal plumbing the user cannot act on.",
     parameters: Type.Object({
       reason: Type.String({ description: "Why the work is paused" }),
       suggestedAction: Type.Optional(Type.String({ description: "What the user should do next" })),
@@ -2284,13 +2284,14 @@ function registerAgentTools(pi: any): void {
       options: Type.Optional(Type.Array(Type.String(), { description: "For kind=decision: the options the user picks between (one line each)" })),
       recommended: Type.Optional(Type.Number({ description: "For kind=decision: 1-based index of the recommended option" })),
       resumeAt: Type.Optional(Type.String({ description: "For kind=wait: ISO time the pause lifts (countdown is shown)" })),
+      redirect: Type.Optional(Type.String({ description: "User redirect to work IMMEDIATELY in this same turn (quote or summarize the interrupting request). Parks the goal WITHOUT ending the turn; the result orders the redirect worked now and the goal resumed after. Only for genuine user redirects." })),
     }),
     async execute(_id, params, _signal, _onUpdate, execCtx) {
       const foreign1 = foreignToolGuard(execCtx);
       if (foreign1) return { content: [{ type: "text", text: foreign1 }], details: {} };
       const ctx = currentToolContext(execCtx);
       if (!ctx) return staleToolResult();
-      const p = params as { reason: string; suggestedAction?: string; kind?: "decision" | "error" | "wait" | "blocked" | "standby"; options?: string[]; recommended?: number; resumeAt?: string };
+      const p = params as { reason: string; suggestedAction?: string; kind?: "decision" | "error" | "wait" | "blocked" | "standby"; options?: string[]; recommended?: number; resumeAt?: string; redirect?: string };
       // v0.35.15: a model that passes options but forgets kind="decision"
       // still gets the decision card — a non-empty options array IS the
       // decision intent; silently dropping it left the user with no picker.
@@ -2540,13 +2541,31 @@ function registerAgentTools(pi: any): void {
       // picker can own the screen. The impossible-drop advance is the one
       // exception: the queue already moved to the next item and its
       // continuation owns this turn — aborting would kill the hand-off.
-      if (!droppedImpossible) {
+      // v0.38.97 (field 2026-09-23, dracon-platform): a user redirect is
+      // park-and-CONTINUE, not park-and-stop. When redirect carries the
+      // interrupting request, skip the abort so the turn survives and the
+      // redirect runs NOW — aborting strands it until the user nudges.
+      // Ledgered distinctly so redirect parks don't pollute abort
+      // forensics. An impossible-drop still wins the result copy below.
+      const redirect = (p.redirect ?? "").trim();
+      if (!droppedImpossible && !redirect) {
         try {
           ctx.abort();
           appendLedger(ctx.cwd, "pause_goal_aborted_turn", { goalId: state.goal?.id, kind: p.kind ?? "blocked" });
         } catch (abortError) {
           appendLedger(ctx.cwd, "pause_goal_abort_failed", { goalId: state.goal?.id, error: abortError instanceof Error ? abortError.message : String(abortError) });
         }
+      } else if (redirect && !droppedImpossible) {
+        appendLedger(ctx.cwd, "pause_goal_redirect", { goalId: state.goal?.id, kind: p.kind ?? "blocked" });
+      }
+      if (redirect && !droppedImpossible) {
+        return {
+          content: [{
+            type: "text",
+            text: `Goal parked for a user redirect — do NOT work the goal. Work this NOW in the same turn, without ending the turn: ${redirect}. When it is done, ${activeGoalSurfaceCommand("resume")} the goal (or resume_goal) and continue.${waitClampNotice}`,
+          }],
+          details: {},
+        };
       }
       return {
         content: [{
