@@ -178,6 +178,10 @@ let lastWedgeAlertAt = 0;
 // host turn exactly once. The key fences repeated heartbeat ticks and lets a
 // later explicit resume start a fresh, independently bounded attempt.
 let lastZombieAbortKey = "";
+// Field 2026-09-22: the stand-down branch logged on EVERY heartbeat tick
+// (219 zombie_run_stood_down_user_input in a day) while a wait was pending.
+// Latch it per silent episode exactly like the abort key.
+let lastZombieStandDownKey = "";
 let zombieRunSilentMsOverride: number | null = null;
 let zombieRunAbortGraceMsOverride: number | null = null;
 
@@ -328,6 +332,7 @@ export function __testOnlySetZombieRunWindows(silentMs: number | null, abortGrac
   zombieRunAbortGraceMsOverride = abortGraceMs;
   lastZombieAlertAt = 0;
   lastZombieAbortKey = "";
+  lastZombieStandDownKey = "";
 }
 
 /** Test-only reset for the process-global watchdog state. */
@@ -336,6 +341,7 @@ export function __testOnlyResetZombieRunWatchdog(): void {
   zombieRunAbortGraceMsOverride = null;
   lastZombieAlertAt = 0;
   lastZombieAbortKey = "";
+  lastZombieStandDownKey = "";
 }
 
 /** v0.35.17: release the one-shot abort latch when the bounded automatic
@@ -345,6 +351,7 @@ export function __testOnlyResetZombieRunWatchdog(): void {
  * NEVER re-abort — a permanently BUSY-silent session. */
 export function releaseZombieAbortKey(): void {
   lastZombieAbortKey = "";
+  lastZombieStandDownKey = "";
 }
 
 let lastUnansweredAlertAt = 0;
@@ -1392,7 +1399,9 @@ function heartbeatTick(): void {
       isUserInputWaitCall,
     );
     if (subagentWaitInFlight || userInputWaitInFlight) {
-      if (streamSilentMs >= zombieAbortMs && !flags.abortedStandDown) {
+      const standDownKey = `${flags.sessionGeneration}:${state.goal?.id ?? "loop"}:${flags.lastStreamActivityAt}`;
+      if (streamSilentMs >= zombieAbortMs && !flags.abortedStandDown && standDownKey !== lastZombieStandDownKey) {
+        lastZombieStandDownKey = standDownKey;
         appendLedger(
           ctx.cwd,
           subagentWaitInFlight
