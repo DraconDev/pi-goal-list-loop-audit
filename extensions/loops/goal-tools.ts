@@ -3699,7 +3699,11 @@ function registerAgentTools(pi: any): void {
       if (repairTarget) {
         const prior = state.goal;
         const parsed = extractVerificationContract(redraftedObjective);
+        // A repair contract is a goal revision boundary. Without the bump,
+        // an older approval at the same numeric revision can satisfy the
+        // completion gate for this redrafted objective.
         const persisted = updateGoal({
+          revision: (prior.revision ?? 0) + 1,
           objective: parsed.objective,
           ...(parsed.verificationContract ? { verificationContract: parsed.verificationContract } : repairTarget.verificationContract ? { verificationContract: repairTarget.verificationContract } : {}),
           taskList,
@@ -3738,11 +3742,28 @@ function registerAgentTools(pi: any): void {
         if (queuedSrc && queuedSrc.objective === repairTarget.objective && !queuedSrc.repairTarget) {
           const deletedSource = deleteQueueItemFileResult(liveCtx.cwd, srcId);
           if (deletedSource.failed) {
-            appendLedger(liveCtx.cwd, "faulty_objective_source_consume_failed", { targetId: srcId, path: deletedSource.path });
-            liveCtx.ui.notify("The repaired source item remains queued because its durable sidecar could not be removed. Fix disk access and retry the repair completion.", "warning");
+            // The goal update above already accepted the redraft, but the
+            // source sidecar is still authoritative. Re-attach repairTarget
+            // durably so a retry follows the same repair path instead of
+            // spawning a fresh repair incarnation from the queued fragment.
+            const repairRestored = updateGoal({ repairTarget }, liveCtx);
+            appendLedger(liveCtx.cwd, "faulty_objective_source_consume_failed", {
+              targetId: srcId,
+              path: deletedSource.path,
+              repairTargetRestored: repairRestored,
+            });
+            liveCtx.ui.notify(
+              repairRestored
+                ? "The repaired source item remains queued because its durable sidecar could not be removed; the repair link was restored. Fix disk access and retry."
+                : "The source sidecar could not be removed, and restoring the repair link also failed. Fix .pi-glla storage before continuing.",
+              "warning",
+            );
             return {
-              content: [{ type: "text", text: "Repair accepted, but the original source item was kept queued because its durable sidecar could not be removed." }],
+              content: [{ type: "text", text: repairRestored
+                ? "Repair accepted, but the original source remains queued and the repair link was restored for retry."
+                : "Repair source cleanup and repair-link restoration both failed; durable state may require recovery." }],
               details: {},
+              isError: !repairRestored,
             };
           }
           replaceState({ ...state, list: listQueue().filter((q: NonNullable<State["list"]>[number]) => q.id !== srcId) });
