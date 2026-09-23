@@ -23,3 +23,7 @@ https://github.com/anthropics/claude-code
 https://github.com/deepseek-ai/deepseek-harness & its plugins 
 https://github.com/MoonshotAI/kimi-code
 
+
+## Verification
+- `timeout 1800 npm run release:check`: 2563 pass, 2 skip, 0 fail across 282 files; packed artifact smoke passed.
+- Change-first summary implementation commit: `9d34af17`.
