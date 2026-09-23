@@ -494,6 +494,11 @@ function clearInBandProviderFailure(): void {
 // session_start, and manual parks — never on starved stops (the wedge
 // persists) so a hot context cannot lap the budget forever.
 let lengthExhaustionEpisodes = 0;
+// Field 2026-09-22: every send re-projects the same bloated history, which
+// logged 719 identical payload_guard_eviction entries in a day. Dedupe by
+// fingerprint — first occurrence lands, identical repeats are silent, and
+// any value change (or generation bump) re-arms.
+let lastPayloadEvictionFingerprint = "";
 /** A manual resume starts a fresh relentless cycle: a user pause between
 an episode-1 wedge and the next one must not make that wedge park one
 cycle early. */
@@ -3110,13 +3115,17 @@ async function handleHotLengthExhaustion(
         });
       }
       if (projection.evicted.length > 0) {
-        appendLedger(ctx.cwd, "payload_guard_eviction", {
-          evicted: projection.evicted.length,
-          bytesFreed: projection.totalImageBytes - projection.remainingImageBytes,
-          remainingImageBytes: projection.remainingImageBytes,
-          remainingImageCount: projection.remainingImageCount,
-          generation: sessionGeneration,
-        });
+        const evictionFingerprint = `${sessionGeneration}:${projection.evicted.length}:${projection.totalImageBytes - projection.remainingImageBytes}:${projection.remainingImageBytes}:${projection.remainingImageCount}`;
+        if (evictionFingerprint !== lastPayloadEvictionFingerprint) {
+          lastPayloadEvictionFingerprint = evictionFingerprint;
+          appendLedger(ctx.cwd, "payload_guard_eviction", {
+            evicted: projection.evicted.length,
+            bytesFreed: projection.totalImageBytes - projection.remainingImageBytes,
+            remainingImageBytes: projection.remainingImageBytes,
+            remainingImageCount: projection.remainingImageCount,
+            generation: sessionGeneration,
+          });
+        }
       }
       if (checkpointProjection.removedPayloads > 0) {
         appendLedger(ctx.cwd, "context_checkpoint_projection", {
