@@ -2481,6 +2481,16 @@ async function cmdGllaResume(ctx: ExtensionContext): Promise<void> {
     appendLedger(ctx.cwd, "supervisor_resume", { frozenMs });
     ctx.ui.notify(`Supervisor RESUMED after ${fmtElapsed(frozenMs)} — heartbeat re-arms, recovery probes, auto-resume, continuation dispatch, and auditor quiet notifies are live again.`, "info");
   }
+  // v0.38.96 (field 2026-09-23, dracon-utilities): /glla resume carries the
+  // same consent semantics as /goal resume, so it must release the cold-load
+  // hold too — otherwise manuallyResumeMainModelRecovery consumes the manual
+  // hold and its probe dies silently on the supervisorPaused gate (which
+  // includes loadHoldAt): no probe, no timer, goal still parked.
+  if (clearLoadHold(state)) {
+    persistState(ctx);
+    appendLedger(ctx.cwd, "load_hold_released", { via: "glla-resume" });
+    ctx.ui.notify("Load hold released — automation is live again.", "info");
+  }
   if (manuallyResumeMainModelRecovery(ctx)) return;
   if (state.mainModelRecovery?.retryAt || state.mainModelRecovery?.pendingModelSwitch) {
     clearMainModelRecoveryTimer();

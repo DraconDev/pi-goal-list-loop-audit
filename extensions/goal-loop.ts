@@ -1015,6 +1015,14 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
 
   if (!sub || sub === "resume") {
     releaseInitialSessionLoadBarrier();
+    // v0.38.96 (field 2026-09-23): same release the held-loop path does
+    // below, but at entry — the recovery branches return before it, and a
+    // manual-resume probe fired under a load hold dies silently on the
+    // supervisorPaused gate (hold consumed, loop still held, nothing armed).
+    if (clearLoadHold(state)) {
+      persistState(ctx);
+      appendLedger(ctx.cwd, "load_hold_released", { via: "loop-resume" });
+    }
     if (state.mainModelRecovery?.manualResumeRequired && state.mainModelRecovery.kind === "loop") {
       manuallyResumeMainModelRecovery(ctx);
       return;
