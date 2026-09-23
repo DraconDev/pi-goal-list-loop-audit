@@ -1374,12 +1374,14 @@ function auditorCredentialEnv(provider: string | undefined, source: NodeJS.Proce
     xiaomi: ["XIAOMI_API_KEY", "XIAOMI_TOKEN_PLAN_API_KEY"],
   };
   const admitted = new Set(aliases[normalizedProvider] ?? []);
+  const providerPrefix = normalizedProvider ? `${normalizedProvider}_` : "";
   const out: Record<string, string> = {};
   for (const [name, value] of Object.entries(source)) {
     if (typeof value !== "string" || value.length === 0) continue;
-    if (admitted.has(name) || /(?:^|_)(?:API_KEY|ACCESS_TOKEN|AUTH_TOKEN|CLIENT_SECRET|CREDENTIALS?)(?:$|_)/.test(name)) {
-      out[name] = value;
-    }
+    const upper = name.toUpperCase();
+    const providerScopedCustom = upper.startsWith(providerPrefix)
+      && /(?:^|_)(?:API_KEY|ACCESS_TOKEN|AUTH_TOKEN|CLIENT_SECRET|CREDENTIALS?)(?:$|_)/.test(upper);
+    if (admitted.has(upper) || providerScopedCustom) out[name] = value;
   }
   return out;
 }
