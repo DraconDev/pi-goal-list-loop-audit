@@ -10,6 +10,9 @@ summary should be about what happne not how it was verified and tested
 
 # Later
 
+##
+i think we are stopping moer than ideal mid execution to ask questions we want questions at the start then not ask unless we really to otherwise jsut finish
+
 # Research
 investigate 
 https://pi.dev/packages/pi-goal-x?name=pi+goal+x https://github.com/tmonk/pi-goal-x
