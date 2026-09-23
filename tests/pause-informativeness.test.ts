@@ -108,13 +108,16 @@ test("pause_goal tool: structured kind/options/recommended/resumeAt persist to t
 });
 
 test("pause_goal description: teaches the real command surface + no-id vocabulary (v0.28.24)", () => {
-  const m = SRC.match(/name: "pause_goal",[\s\S]{0,1400}?parameters:/);
+  // v0.38.97: the window grows with the redirect sentence (name→parameters
+  // is now ~1.6k chars); the shape guard stands.
+  const m = SRC.match(/name: "pause_goal",[\s\S]{0,1900}?parameters:/);
   assert.ok(m, "pause_goal registration found");
   const desc = m![0];
   assert.match(desc, /\/list remove N/, "enumerates the real /list command");
   assert.match(desc, /NO \/goal drop|no \/goal drop/i, "kills the hallucinated command");
   assert.match(desc, /no command takes a goal id|NO command takes a goal id/i);
   assert.match(desc, /never show goal ids/i);
+  assert.match(desc, /redirect="/, "teaches the park-and-continue redirect param");
 });
 
 test("late pause calls cannot overwrite a paused or auditing lifecycle", () => {

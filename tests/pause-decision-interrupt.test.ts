@@ -253,14 +253,20 @@ test("source pins: decision picker wiring + abort ordering survive refactors", (
     /if \(p\.kind === "decision" && p\.options && p\.options\.length > 0\) maybeDecisionPopup\(ctx\);/,
   );
   // Abort is inside pause_goal's execute, guarded against the drop path.
+  // v0.38.97: a user redirect is a second no-abort path (park-and-continue).
   const exec = src.match(/name: "pause_goal",[\s\S]*?^ {4}\},$/m);
   assert.ok(exec, "pause_goal registration found");
   assert.match(
     exec![0],
-    /if \(!droppedImpossible\) \{[\s\S]{0,600}?ctx\.abort\(\)/,
-    "abort guarded by !droppedImpossible",
+    /if \(!droppedImpossible && !redirect\) \{[\s\S]{0,600}?ctx\.abort\(\)/,
+    "abort guarded by !droppedImpossible && !redirect",
   );
   assert.match(exec![0], /pause_goal_aborted_turn/, "abort ledgered");
+  assert.match(
+    exec![0],
+    /else if \(redirect && !droppedImpossible\) \{[\s\S]{0,300}?pause_goal_redirect/,
+    "redirect park skips the abort with its own ledger event",
+  );
   // Lenient inference lives before the state guard.
   assert.match(
     src,
