@@ -103,10 +103,12 @@ export function truncateObjective(s: string, max: number): string {
     if (w + cw > budget) break;
     out += ch;
     w += cw;
+    // Keep the boundary in UTF-16 units because the final slice uses the
+    // same units; emoji before the boundary must not shift the clause cut.
     if (/[:;·—–(\[]/.test(ch)) boundaryLen = out.length;
   }
   if (boundaryLen > 0) {
-    const cut = [...out].slice(0, boundaryLen).join("").replace(/[:;·—–(\[\s]+$/u, "");
+    const cut = out.slice(0, boundaryLen).replace(/[:;·—–(\[\s]+$/u, "");
     if (tuiVisibleWidth(cut) >= Math.min(floor, 16)) return `${cut}…`;
   }
   return `${out}…`;
