@@ -6,6 +6,7 @@
 // never uses them.
 
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { sanitizeDisplayText } from "./goal-loop-core.js";
 
 export type QuotaSignal = "rate-limit" | "plan-quota" | "billing";
 
@@ -129,7 +130,7 @@ function providerFingerprintText(error: string): string {
  * Sensitive payloads never reach this — the marker gate above keeps them
  * at the generic "provider error" copy. */
 function providerDisplayText(error: string): string {
-  const oneLine = error.replace(/\s+/g, " ").trim();
+  const oneLine = sanitizeDisplayText(error).replace(/\s+/g, " ").trim();
   return oneLine ? oneLine.slice(0, 160) : "provider error";
 }
 
@@ -166,7 +167,7 @@ export function providerErrorPresentation(error: string | undefined, surface: Pr
  * before provider diagnostics were separated from user-facing copy. */
 export function sanitizeProviderDisplayText(value: string): string {
   const presentation = providerErrorPresentation(value, "recovery");
-  if (!presentation.sensitive) return value;
+  if (!presentation.sensitive) return presentation.display;
   if (/completion audit timed out/i.test(value)) return "completion audit timed out — no verifier verdict was produced";
   if (/auditor retry/i.test(value)) return `auditor retry — ${presentation.display}`;
   if (/main model recovery.*automatic probes stopped/i.test(value)) {
@@ -239,12 +240,13 @@ export function sanitizeProviderAuditReport(report: string | undefined): string 
     if (!marked) {
       // Permit a blank line or a fenced-code opener between a standalone
       // provider marker and its JSON payload, but do not carry the pending
-      // state across ordinary prose.
+      // state across ordinary prose. Even unmarked provider prose crosses a
+      // terminal boundary, so strip ANSI/OSC/control bytes before returning.
       if (pendingJsonLines > 0) {
-        if (!trimmed || /^```(?:json)?\s*$/i.test(trimmed)) return line;
+        if (!trimmed || /^```(?:json)?\s*$/i.test(trimmed)) return sanitizeDisplayText(line);
         pendingJsonLines = 0;
       }
-      return line;
+      return sanitizeDisplayText(line);
     }
 
     const delta = bracketDelta(line);
