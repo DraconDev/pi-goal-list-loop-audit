@@ -2780,6 +2780,34 @@ test("v0.34.26: output-token-limit provider errors pause with the named wall, no
 // T1 — stale paths on the two creation entry points (flag latched from T2)
 // ────────────────────────────────────────────────────────────────────
 
+test("goal draft rejects whitespace-only objectives before Confirm or activation", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  const ctx = await freshSession(cwd, "startup");
+  await pi.command("goal", "", ctx);
+  await pi.fire("message_start", { message: { role: "user" } }, ctx);
+  await pi.fire("message_start", { message: { role: "user" } }, ctx);
+  const confirmsBefore = ctx.ui.matching("Confirm goal").length;
+  const res = await pi.runTool("propose_goal_draft", { objective: "   ", verificationContract: "anything" }, ctx);
+  assert.match(res.content[0]!.text, /objective is empty/i);
+  assert.equal(ctx.ui.matching("Confirm goal").length, confirmsBefore);
+  assert.equal(readState(cwd).goal, null);
+});
+
+test("task-list Confirm discloses milestone verification commands", async () => {
+  __testOnlyResetStaleFlag();
+  setGlobalAutoResume(true);
+  const cwd = tmpCwd();
+  seedState(cwd, { goal: seedGoal({ status: "active", objective: "disclose milestone command" }) });
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  await pi.runTool("propose_task_list", {
+    tasks: [{ title: "Run focused gate", verificationContract: "timeout 120 bun test tests/focus.test.ts" }],
+  }, ctx);
+  const dialog = __testOnlyLastConfirmDialog();
+  assert.match(dialog?.body ?? "", /Verify before completion: timeout 120 bun test tests\/focus\.test\.ts/);
+});
+
 test("T1a: stale Confirm in propose_goal_draft → NOT-a-rejection guidance, no goal created", async () => {
   __testOnlyResetStaleFlag();
   const cwd = tmpCwd();

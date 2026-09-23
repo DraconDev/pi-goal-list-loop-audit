@@ -3043,6 +3043,13 @@ function registerAgentTools(pi: any): void {
         }
         return { content: [{ type: "text", text: `${n} items confirmed and added to the list (${listQueue().length} waiting).` }], details: {} };
       }
+      if (!p.objective?.trim()) {
+        return {
+          content: [{ type: "text", text: "Draft objective is empty. State the concrete outcome, then propose again; no goal was created." }],
+          details: {},
+          isError: true,
+        };
+      }
       const normContract = p.verificationContract?.trim() ? normalizeDraftContract(p.verificationContract) : "";
       const checkCount = normContract ? draftContractItemCount(normContract) : 0;
       const contractBlock = normContract
@@ -3677,7 +3684,10 @@ function registerAgentTools(pi: any): void {
       }
       const preview = `${redraftedObjective ? `Objective: ${redraftedObjective}\n\n` : ""}${p.tasks.map((t, i) => {
         const subs = (t.subtasks ?? []).map((s, j) => `   ${i + 1}.${j + 1} ${s}`).join("\n");
-        return `${i + 1}. ${t.title}${t.agentRole ? ` [${t.agentRole}]` : ""}` + (subs ? `\n${subs}` : "");
+        const verification = t.verificationContract?.trim()
+          ? `\n   Verify before completion: ${sanitizeDisplayText(t.verificationContract.trim())}`
+          : "";
+        return `${i + 1}. ${t.title}${t.agentRole ? ` [${t.agentRole}]` : ""}${verification}` + (subs ? `\n${subs}` : "");
       }).join("\n")}`;
       const autoAcceptTasks = loadSettings(liveCtx.cwd).autoAcceptDrafts === true;
       let confirmed = false;

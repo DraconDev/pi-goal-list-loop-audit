@@ -825,6 +825,17 @@ function goalMarkdownLanded(cwd: string, goal: Goal): boolean {
 }
 
 function setGoal(goal: Goal, ctx: ExtensionContext, via = "user"): boolean {
+  goal.createdVia = via;
+  const successorFile = goalMdPath(ctx.cwd, goal.id);
+  const successor: Goal = { ...goal, activePath: path.relative(ctx.cwd, successorFile) || successorFile };
+  // Prove the successor can be journaled BEFORE any predecessor archive is
+  // published. This is the replacement transaction's commit point: after it
+  // lands, archiveCurrentGoal may clear the old live slot, and setGoal below
+  // can still finish from the durable successor snapshot after a crash.
+  if (!writeGoalStateTransaction(ctx.cwd, { ...state, goal: successor })) {
+    ctx.ui.notify("New objective not started — the durable goal transaction could not be written. Fix .pi-glla storage and retry.", "warning");
+    return false;
+  }
   // v0.28.14: never silently orphan a live goal — a paused/active goal
   // being replaced is archived honestly first (the old behavior left it in
   // goals/ but untracked: "older goals lying around leading to confusion").
@@ -895,17 +906,11 @@ function setGoal(goal: Goal, ctx: ExtensionContext, via = "user"): boolean {
   releaseContinuationDispatchStandDown();
   countedTokenMessages.clear();
   clearToolActivityState();
-  goal.createdVia = via; // v0.28.28: provenance — answerable from the ledger + /glla log
-  // v0.35.72: journal the complete next state before either projection is
-  // changed. If the process dies between the markdown and JSONL writes,
-  // readState can recover this snapshot instead of resurrecting an older
-  // status/objective from the last state line.
-  const file = goalMdPath(ctx.cwd, goal.id);
-  const nextGoal: Goal = { ...goal, activePath: path.relative(ctx.cwd, file) || file };
-  if (!writeGoalStateTransaction(ctx.cwd, { ...state, goal: nextGoal })) {
-    ctx.ui.notify("New objective not started — the durable goal transaction could not be written. Fix .pi-glla storage and retry.", "warning");
-    return false;
-  }
+  // v0.35.72: the successor transaction was committed before archival above;
+  // finish its markdown/state projections now. A crash at either boundary is
+  // recovered from that transaction on the next readState.
+  const file = goalMdPath(ctx.cwd, successor.id);
+  const nextGoal: Goal = { ...successor, activePath: path.relative(ctx.cwd, file) || file };
   writeGoalMd(ctx.cwd, nextGoal);
   replaceState({ ...state, goal: nextGoal }); // preserve list AND loop (v0.28.14: the bare reconstruction used to nuke a held/active loop whenever a goal was set)
   const stateLanded = persistState(ctx);
