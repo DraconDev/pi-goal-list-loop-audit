@@ -3114,6 +3114,7 @@ async function handleHotLengthExhaustion(
           evicted: projection.evicted.length,
           bytesFreed: projection.totalImageBytes - projection.remainingImageBytes,
           remainingImageBytes: projection.remainingImageBytes,
+          remainingImageCount: projection.remainingImageCount,
           generation: sessionGeneration,
         });
       }

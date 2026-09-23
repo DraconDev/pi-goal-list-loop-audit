@@ -57,11 +57,16 @@ export interface EvictionResult {
   totalImageBytes: number;
   /** Cumulative image bytes AFTER eviction. */
   remainingImageBytes: number;
+  /** Image blocks BEFORE eviction. */
+  totalImageCount: number;
+  /** Image blocks AFTER eviction. */
+  remainingImageCount: number;
 }
 
 export interface PayloadGuardOptions {
   imageBudgetBytes?: number;
   keepRecentImages?: number;
+  maxImagesPerRequest?: number;
 }
 
 interface ImageBlockLike {
@@ -106,10 +111,12 @@ function evictionPlaceholder(bytes: number): { type: string; text: string } {
 
 /**
  * Project the outgoing message list with cumulative inline-image bytes
- * bounded to `imageBudgetBytes`. Oldest images are evicted first; the most
- * recent `keepRecentImages` images are never evicted (best effort when the
- * budget cannot be met even without them). Returns the input array identity
- * when nothing needs eviction — callers can cheaply detect the no-op.
+ * bounded to `imageBudgetBytes` AND image blocks bounded to
+ * `maxImagesPerRequest`. Oldest images are evicted first; the most recent
+ * `keepRecentImages` images are never evicted (best effort when neither
+ * bound can be met without them — the floor always wins). Returns the input
+ * array identity when nothing needs eviction — callers can cheaply detect
+ * the no-op.
  */
 export function evictStaleImages(
   messages: readonly unknown[],
@@ -121,27 +128,31 @@ export function evictStaleImages(
   const keepRecent = typeof opts.keepRecentImages === "number" && opts.keepRecentImages >= 0
     ? opts.keepRecentImages
     : DEFAULT_KEEP_RECENT_IMAGES;
+  const maxImages = typeof opts.maxImagesPerRequest === "number" && opts.maxImagesPerRequest > 0
+    ? Math.floor(opts.maxImagesPerRequest)
+    : DEFAULT_MAX_IMAGES_PER_REQUEST;
 
   const blocks = collectImageBlocks(messages);
   const totalImageBytes = blocks.reduce((sum, b) => sum + b.bytes, 0);
-  if (totalImageBytes <= budget) {
-    return { messages, evicted: [], totalImageBytes, remainingImageBytes: totalImageBytes };
+  if (totalImageBytes <= budget && blocks.length <= maxImages) {
+    return { messages, evicted: [], totalImageBytes, remainingImageBytes: totalImageBytes, totalImageCount: blocks.length, remainingImageCount: blocks.length };
   }
 
-  // Evict oldest-first; the newest `keepRecent` are exempt. When even the
-  // exempt set exceeds the budget the eviction stops there — best effort,
-  // never a destructive sweep of the current visual state.
+  // Evict oldest-first until BOTH bounds hold; the newest `keepRecent` are
+  // exempt. When even the exempt set breaks a bound the eviction stops
+  // there — best effort, never a destructive sweep of the current visual
+  // state.
   const evict = new Set<ImageBlockLocation>();
   let remaining = totalImageBytes;
   const exempt = blocks.slice(Math.max(0, blocks.length - keepRecent));
   for (const block of blocks) {
-    if (remaining <= budget) break;
+    if (remaining <= budget && blocks.length - evict.size <= maxImages) break;
     if (exempt.includes(block)) continue;
     evict.add(block);
     remaining -= block.bytes;
   }
   if (evict.size === 0) {
-    return { messages, evicted: [], totalImageBytes, remainingImageBytes: totalImageBytes };
+    return { messages, evicted: [], totalImageBytes, remainingImageBytes: totalImageBytes, totalImageCount: blocks.length, remainingImageCount: blocks.length };
   }
 
   // Group evictions per message so each affected message is copied once.
@@ -165,7 +176,7 @@ export function evictStaleImages(
     return { ...(message as object), content: newContent };
   });
 
-  return { messages: projected, evicted: [...byMessage.values()].flat(), totalImageBytes, remainingImageBytes: remaining };
+  return { messages: projected, evicted: [...byMessage.values()].flat(), totalImageBytes, remainingImageBytes: remaining, totalImageCount: blocks.length, remainingImageCount: blocks.length - evict.size };
 }
 
 /**
