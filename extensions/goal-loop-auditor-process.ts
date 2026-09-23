@@ -1042,6 +1042,17 @@ export function inspectAuditJobHealth(
         } else {
           reason = "PID is alive but worker identity does not match this job";
         }
+      } else if (lock.role === "parent" && Number.isInteger(pid) && pid > 1) {
+        // The parent writes this before request/worker launch. If the host dies
+        // before the worker takes ownership, the directory is provably not a
+        // live worker job once the parent PID is gone. No child can exist yet:
+        // spawn happens only after request/progress are durable.
+        if (!processAlive(pid)) {
+          status = "dead";
+          reason = "parent PID is not alive; worker launch was never proven";
+        } else {
+          reason = "parent-owned launch is still live";
+        }
       } else {
         reason = "lock is not a worker-owned identity";
       }
@@ -1350,7 +1361,7 @@ const AUDITOR_ENV_PASSTHROUGH = new Set([
  * model from the host. Known provider key/token names plus names containing a
  * credential marker are admitted; unrelated values are never copied. */
 function auditorCredentialEnv(provider: string | undefined, source: NodeJS.ProcessEnv): Record<string, string> {
-  const normalizedProvider = (provider ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+  const normalizedProvider = (provider ?? "").toLowerCase().split("/", 1)[0]!.replace(/[^a-z0-9]+/g, "_");
   const aliases: Record<string, string[]> = {
     anthropic: ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_OAUTH_TOKEN"],
     openai: ["OPENAI_API_KEY"],

@@ -43,6 +43,14 @@ function workerLock(dir: string, pid: number): void {
   );
 }
 
+function parentLock(dir: string, pid: number): void {
+  fs.writeFileSync(
+    path.join(dir, "lock"),
+    JSON.stringify({ protocolVersion: 1, pid, role: "parent" }),
+    "utf8",
+  );
+}
+
 test("retention: pre-convention finished dirs (no lock, result on file) reap past the window", () => {
   const cwd = tmpdir();
   const old = jobDir(cwd, "audit-old-finished");
@@ -85,6 +93,24 @@ test("retention: corrupt (present-but-unparseable) locks stay ambiguous", () => 
   assert.equal(health.entries[0]?.status, "ambiguous", "atomic lock writes make corruption genuinely weird");
   cleanupDeadAuditJobs(cwd, RETENTION_MS);
   assert.equal(fs.existsSync(dir), true);
+});
+
+test("retention: crash before worker ownership reaps only when the parent is dead", () => {
+  const cwd = tmpdir();
+  const deadParent = jobDir(cwd, "audit-parent-dead");
+  parentLock(deadParent, 999999);
+  ageDir(deadParent, 10 * DAY_MS);
+  const liveParent = jobDir(cwd, "audit-parent-live");
+  parentLock(liveParent, process.pid);
+  ageDir(liveParent, 10 * DAY_MS);
+
+  const health = inspectAuditJobHealth(cwd, Date.now(), RETENTION_MS);
+  assert.equal(health.entries.find((e) => e.attemptId === "audit-parent-dead")?.status, "dead");
+  assert.equal(health.entries.find((e) => e.attemptId === "audit-parent-live")?.status, "ambiguous");
+  const cleaned = cleanupDeadAuditJobs(cwd, RETENTION_MS);
+  assert.equal(fs.existsSync(deadParent), false, "old pre-worker crash debris reaps");
+  assert.equal(fs.existsSync(liveParent), true, "live parent window is preserved");
+  assert.equal(cleaned.total, 1);
 });
 
 test("retention: proven-dead workers reap past the window, live pids never reap", () => {
