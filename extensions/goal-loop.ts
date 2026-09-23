@@ -323,6 +323,37 @@ async function runGit(ctx: ExtensionContext, args: string[]): Promise<{ ok: bool
   }
 }
 
+/** The current tick's rebind closure while a loop mutation is in flight. */
+let branchGuardRebind: (() => boolean) | null = null;
+
+/**
+ * Branch mode owns mutations, not merely the eventual return path. A user,
+ * agent, or auto-committer can move HEAD while an iteration is running; the
+ * next add/commit/reset must fail closed instead of operating on whichever
+ * branch happens to be checked out now. Park durably and never try to repair
+ * HEAD from here.
+ */
+async function parkLoopOnWrongBranch(ctx: ExtensionContext, loop: LoopState, where: string): Promise<boolean> {
+  if (!loop.branchName) return false;
+  const actual = await runGit(ctx, ["rev-parse", "--abbrev-ref", "HEAD"]);
+  if (branchGuardRebind && !branchGuardRebind()) return true;
+  if (actual.ok && actual.stdout === loop.branchName) return false;
+  const reason = `branch changed — expected ${loop.branchName}, current ${actual.ok ? actual.stdout : "unknown"} (${where})`;
+  loop.active = false;
+  loop.stopReason = reason;
+  clearToolActivityState();
+  persistState(ctx);
+  appendLedger(ctx.cwd, "loop_git_branch_changed", {
+    expected: loop.branchName,
+    actual: actual.ok ? actual.stdout : "unknown",
+    where,
+  });
+  ctx.ui.notify(`Loop parked: ${reason}. No add, commit, reset, or checkout was attempted. Check out ${loop.branchName} explicitly, then ${activeGoalSurfaceCommand("resume")}.`, "warning");
+  notifyExternal(ctx, `Loop parked after HEAD changed: ${reason}`);
+  announceQueuedListAfterLoopEnd(ctx);
+  return true;
+}
+
 function loopPrompt(loop: LoopState, regressionNote: string, strategyNote: string, boundsNote: string, interventionNote = "", variantNote = "", hypothesisNote = "", refineHintNote = ""): string {
   // v0.23.0: metricless loops get their own prompt — no metric section,
   // anti-doorknob rules instead of anti-gaming rules.
@@ -572,6 +603,8 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
     });
     return false;
   };
+  branchGuardRebind = rebindLoop;
+  try {
   // v0.15.0: token budget is an arbitrary bound; accumulate orchestrator-side.
   if (event?.messages) {
     loop.tokensUsed = (loop.tokensUsed ?? 0) + sumNewAssistantTokens(event.messages as unknown[], flags.countedLoopTokenMessages);
@@ -715,6 +748,7 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
   // value hard-resets; flat/null iterations keep their work in the tree
   // for the next tick (or the terminal commit below).
   if (loop.branchName && outcome.kind === "continue") {
+    if (await parkLoopOnWrongBranch(ctx, loop, "iteration commit/reset")) return;
     if (metricless || outcome.improved) {
       await runGit(ctx, ["add", "-A"]);
       if (!rebindLoop()) return;
@@ -734,16 +768,18 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
   // final iteration — including an IMPROVING one stopped by maxIterations.
   // Commit any pending diff before the git-finish so the scratch branch
   // carries the terminal iteration.
-  const commitPendingTerminalWork = async (): Promise<void> => {
-    if (!loop.branchName) return;
+  const commitPendingTerminalWork = async (): Promise<boolean> => {
+    if (!loop.branchName) return true;
+    if (await parkLoopOnWrongBranch(ctx, loop, "terminal commit")) return false;
     const pending = await runGit(ctx, ["status", "--porcelain"]);
-    if (!rebindLoop()) return;
-    if (!pending.ok || pending.stdout.length === 0) return;
+    if (!rebindLoop()) return false;
+    if (!pending.ok || pending.stdout.length === 0) return true;
     await runGit(ctx, ["add", "-A"]);
-    if (!rebindLoop()) return;
+    if (!rebindLoop()) return false;
     const committed = await runGit(ctx, ["commit", "-m", `pi-glla-loop: iteration ${loop.iteration} (${loop.direction ?? "spec"}=${loop.bestValue ?? "n/a"})`]);
-    if (!rebindLoop()) return;
+    if (!rebindLoop()) return false;
     appendLedger(ctx.cwd, "loop_git", { action: "commit-terminal", iteration: loop.iteration, ok: committed.ok });
+    return true;
   };
   // v0.24.0: the top of the stuck ladder — bounded and surfaced, same
   // philosophy as a plateau stop. The loop ends WITH the reason, not in silence.
@@ -754,8 +790,8 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
     clearToolActivityState();
     loop.stopReason = `stuck — ${loop.lastStuckReason} (${loop.consecutiveStuck} consecutive interventions)`;
     persistState(ctx);
-    await commitPendingTerminalWork();
-    await finishLoopGit(ctx, loop);
+    if (!await commitPendingTerminalWork()) return;
+    if (await finishLoopGit(ctx, loop)) return;
     if (!rebindLoop()) return;
     const recap = compactLoopCompletionSummary({ ...loop, historyLength: loop.history.length });
     ctx.ui.notify(`Loop stopped: ${loop.stopReason}. ${loop.history.length} iterations recorded.\nRecap: ${recap}`, "warning");
@@ -797,8 +833,8 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
         outcome = { kind: "stop", reason: honest };
       }
     }
-    await commitPendingTerminalWork();
-    await finishLoopGit(ctx, loop);
+    if (!await commitPendingTerminalWork()) return;
+    if (await finishLoopGit(ctx, loop)) return;
     if (!rebindLoop()) return;
     const recap = compactLoopCompletionSummary({ ...loop, historyLength: loop.history.length });
     ctx.ui.notify(`Loop stopped: ${outcome.reason}. ${loop.history.length} iterations recorded.\nRecap: ${recap}`, "info");
@@ -808,6 +844,9 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
     return;
   }
   scheduleLoopTick(ctx);
+  } finally {
+    if (branchGuardRebind === rebindLoop) branchGuardRebind = null;
+  }
 }
 
 /** v0.35.22 (note.md Next #3, field 2026-08-21): when a loop ends by ANY
@@ -831,18 +870,19 @@ export function announceQueuedListAfterLoopEnd(ctx: ExtensionContext): void {
 
 /** On loop stop (any reason): return to the original branch, tell the user
  * where the work lives and how to merge it. Scratch branch is never deleted. */
-async function finishLoopGit(ctx: ExtensionContext, loop: LoopState): Promise<void> {
-  if (!loop.branchName) return;
+async function finishLoopGit(ctx: ExtensionContext, loop: LoopState): Promise<boolean> {
+  if (!loop.branchName) return false;
   const generation = flags.sessionGeneration;
+  if (await parkLoopOnWrongBranch(ctx, loop, "finish")) return true;
   // Uncommitted remnants (final stalled iterations were reset already, but be safe).
   await runGit(ctx, ["reset", "--hard", "HEAD"]);
   const afterReset = freshCtxForGeneration(generation);
-  if (!afterReset) return;
+  if (!afterReset) return true;
   ctx = afterReset;
   if (loop.originalBranch) {
     await runGit(ctx, ["checkout", loop.originalBranch]);
     const afterCheckout = freshCtxForGeneration(generation);
-    if (!afterCheckout) return;
+    if (!afterCheckout) return true;
     ctx = afterCheckout;
   }
   const recap = compactLoopCompletionSummary({ ...loop, historyLength: loop.history.length });
@@ -851,6 +891,7 @@ async function finishLoopGit(ctx: ExtensionContext, loop: LoopState): Promise<vo
     "info",
   );
   appendLedger(ctx.cwd, "loop_git", { action: "finish", branch: loop.branchName, returnedTo: loop.originalBranch });
+  return false;
 }
 
 interface LoopConfig {
@@ -1278,7 +1319,10 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     state.loop = { ...state.loop, active: false, stopReason: `stopped by user (/loop ${sub})` };
     persistState(ctx);
     const stopGeneration = flags.sessionGeneration;
-    await finishLoopGit(ctx, state.loop);
+    if (await finishLoopGit(ctx, state.loop)) {
+      announceQueuedListAfterLoopEnd(ctx);
+      return;
+    }
     const afterFinish = freshCtxForGeneration(stopGeneration);
     if (!afterFinish) return;
     ctx = afterFinish;
@@ -1345,7 +1389,10 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     state.loop = { ...state.loop, active: false, stopReason: reason };
     persistState(ctx);
     const finishGeneration = flags.sessionGeneration;
-    await finishLoopGit(ctx, state.loop);
+    if (await finishLoopGit(ctx, state.loop)) {
+      announceQueuedListAfterLoopEnd(ctx);
+      return;
+    }
     const afterFinish = freshCtxForGeneration(finishGeneration);
     if (!afterFinish) return;
     ctx = afterFinish;
