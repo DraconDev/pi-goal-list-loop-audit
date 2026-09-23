@@ -428,6 +428,28 @@ type AuditorModelCandidate = any;
 type PendingCompletion = any;
 type DraftActivationConflictResult = "proceed" | "updated" | "cancelled";
 
+/** One exit-aware preflight for both loop draft and refine. A command that
+ * prints a number but exits non-zero has not produced a valid measurement. */
+async function probeLoopMeasure(
+  ctx: ExtensionContext,
+  command: string,
+): Promise<{ stdout: string; value: number | null; error?: string }> {
+  try {
+    const result = await extensionApi?.exec("bash", ["-c", command], { cwd: ctx.cwd, timeout: MEASURE_TIMEOUT_MS });
+    if (!result) return { stdout: "", value: null, error: "no extension API available" };
+    const r = result as any;
+    const stdout = String(r?.stdout ?? "").trim();
+    const code = typeof r?.code === "number" ? r.code : (typeof r?.exitCode === "number" ? r.exitCode : 0);
+    if (code !== 0) {
+      const stderr = String(r?.stderr ?? "").trim();
+      return { stdout, value: null, error: `measure command exited with code ${code}${stderr ? `: ${stderr.slice(0, 160)}` : ""}` };
+    }
+    return { stdout, value: parseMetric(stdout) };
+  } catch (err) {
+    return { stdout: "", value: null, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 async function resolveDraftActivationConflict(ctx: ExtensionContext, incoming: ObjectiveKind, objective: string): Promise<DraftActivationConflictResult> {
   const current = liveObjectives(state);
   if (current.length === 0) return "proceed";
@@ -3274,20 +3296,18 @@ function registerAgentTools(pi: any): void {
       // (Metricless loops skip this — there is no measure to test-run.)
       let rawOutput = "";
       let parsed: number | null = null;
+      let measureFailure: string | undefined;
       if (!metricless && extensionApi) {
-        try {
-          const result = await extensionApi.exec("bash", ["-c", p.measureCmd!], { cwd: liveCtx.cwd, timeout: MEASURE_TIMEOUT_MS });
-          rawOutput = String((result as any)?.stdout ?? "").trim();
-          parsed = parseMetric(rawOutput);
-        } catch (err) {
-          rawOutput = `(measure command failed: ${err instanceof Error ? err.message : String(err)})`;
-        }
+        const probe = await probeLoopMeasure(liveCtx, p.measureCmd!);
+        rawOutput = probe.stdout || (probe.error ? `(measure command failed: ${probe.error})` : "");
+        parsed = probe.value;
+        measureFailure = probe.error;
       }
       if (!metricless && parsed === null) {
         return {
           content: [{
             type: "text",
-            text: `Measure test-run produced NO number — proposal auto-rejected.\nCommand: ${p.measureCmd}\nOutput: ${rawOutput.slice(0, 300) || "(empty)"}\nFix the command so it prints exactly one number, sanity-check it against the repo, and propose again.`,
+            text: `${measureFailure ? `Measure test-run FAILED — proposal auto-rejected.\nReason: ${measureFailure}` : "Measure test-run produced NO number — proposal auto-rejected."}\nCommand: ${p.measureCmd}\nOutput: ${rawOutput.slice(0, 300) || "(empty)"}\nFix the command so it exits successfully and prints exactly one number, sanity-check it against the repo, and propose again.`,
           }],
           details: {},
         };
@@ -3394,16 +3414,12 @@ function registerAgentTools(pi: any): void {
       let testOutput = "";
       if (newMeasure !== loop.measureCmd) {
         if (!extensionApi) return { content: [{ type: "text", text: "No extension API available." }], details: {} };
-        try {
-          const result = await extensionApi.exec("bash", ["-c", newMeasure], { cwd: liveCtx.cwd, timeout: MEASURE_TIMEOUT_MS });
-          testOutput = String((result as any)?.stdout ?? "");
-        } catch (e) {
-          return { content: [{ type: "text", text: `New measure command failed to run: ${String(e).slice(0, 200)}` }], details: {} };
-        }
-        newBaseline = parseMetric(testOutput);
-        if (newBaseline === null) {
+        const probe = await probeLoopMeasure(liveCtx, newMeasure);
+        testOutput = probe.stdout;
+        newBaseline = probe.value;
+        if (probe.error || newBaseline === null) {
           return {
-            content: [{ type: "text", text: `New measure produced NO number — refinement auto-rejected.\nCommand: ${newMeasure}\nOutput: ${testOutput.slice(0, 300) || "(empty)"}\nFix it and propose again.` }],
+            content: [{ type: "text", text: `${probe.error ? `New measure command FAILED — refinement auto-rejected.\nReason: ${probe.error}` : "New measure produced NO number — refinement auto-rejected."}\nCommand: ${newMeasure}\nOutput: ${testOutput.slice(0, 300) || "(empty)"}\nFix it so it exits successfully and prints exactly one number, then propose again.` }],
             details: {},
           };
         }
