@@ -31,6 +31,11 @@ export const DEFAULT_IMAGE_BUDGET_BYTES = 16 * 1024 * 1024;
  * current turn almost always needs the newest visual state. */
 export const DEFAULT_KEEP_RECENT_IMAGES = 2;
 
+/** Max inline image blocks in one outgoing request. Field 2026-09-21: a
+ * provider 400'd `Image count 12 exceeds limit 4 per request` on small
+ * screenshots that fit the byte budget — count is a separate wall. */
+export const DEFAULT_MAX_IMAGES_PER_REQUEST = 4;
+
 export interface ImageBlockLocation {
   messageIndex: number;
   blockIndex: number;

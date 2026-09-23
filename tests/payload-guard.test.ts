@@ -89,6 +89,38 @@ test("payload guard: projection is idempotent and never touches non-image conten
   assert.ok(isInlineImageBlock(messages[0]!.content[0]));
 });
 
+// ── (1b) per-request image COUNT cap ───────────────────────────────────────
+// Field 2026-09-21: 400 "Image count 12 exceeds limit 4 per request" — small
+// screenshots fit the byte budget but the provider caps image BLOCKS per
+// request. The guard must clamp count as well as bytes.
+
+test("payload guard: image count is clamped even when bytes fit the budget", () => {
+  const messages = Array.from({ length: 12 }, () => userMessage(imageBlock(64)));
+  const result = evictStaleImages(messages, { maxImagesPerRequest: 4, keepRecentImages: 2 });
+  assert.equal(result.evicted.length, 8, "oldest 8 evicted down to the 4-image cap");
+  assert.equal(collectImageBlocks(result.messages).length, 4);
+  assert.equal(result.remainingImageCount, 4);
+  const newest = (result.messages[11] as { content: Array<{ type: string }> }).content;
+  assert.equal(newest[0]!.type, "image", "newest image survives the count clamp");
+  const oldest = (result.messages[0] as { content: Array<{ type: string }> }).content;
+  assert.equal(oldest[0]!.type, "text", "oldest image becomes a placeholder");
+});
+
+test("payload guard: the count cap defaults to the observed provider limit", () => {
+  assert.equal(DEFAULT_MAX_IMAGES_PER_REQUEST, 4);
+  const messages = Array.from({ length: 6 }, () => userMessage(imageBlock(64)));
+  const result = evictStaleImages(messages);
+  assert.equal(result.evicted.length, 2, "default cap evicts down to 4 without explicit opts");
+  assert.equal(collectImageBlocks(result.messages).length, 4);
+});
+
+test("payload guard: the keep-recent floor wins over the count cap (best effort)", () => {
+  const messages = Array.from({ length: 5 }, () => userMessage(imageBlock(64)));
+  const result = evictStaleImages(messages, { maxImagesPerRequest: 1, keepRecentImages: 2 });
+  assert.equal(result.evicted.length, 3, "eviction stops at the floor");
+  assert.equal(collectImageBlocks(result.messages).length, 2);
+});
+
 // ── (2) behavioral wiring: the context-event handler ─────────────────────
 
 function ledger(cwd: string): Array<{ type: string; value?: Record<string, unknown> }> {
