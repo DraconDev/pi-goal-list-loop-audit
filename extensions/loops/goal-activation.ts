@@ -1122,7 +1122,18 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
   // configured larger-context model; if none exists, park active work with
   // the exact /new + resume recovery instead of leaving an unreachable ACTIVE
   // goal behind.
-  pi.on("session_compact_failed", async (event: {
+  // Pi 0.87 added session_compact_failed after this package's minimum
+  // peer contract. Register through a narrow compatibility cast so GLLA can
+  // consume the event on new hosts while still compiling against 0.84.
+  (pi as ExtensionAPI & {
+    on(event: "session_compact_failed", handler: (event: {
+      reason?: string;
+      errorMessage?: string;
+      aborted?: boolean;
+      willRetry?: boolean;
+      fromExtension?: boolean;
+    }, ctx: ExtensionContext) => Promise<void>): void;
+  }).on("session_compact_failed", async (event: {
     reason?: string;
     errorMessage?: string;
     aborted?: boolean;

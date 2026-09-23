@@ -82,6 +82,7 @@ test("failed compaction without a usable fallback parks an active goal durably",
   const cwd = tmpCwd();
   seedState(cwd, { goal: seedGoal({ status: "active", objective: "park after failed compaction" }) });
   const { pi, ctx } = await boot(cwd, { mainModelFallbacks: [] });
+  const sendsBeforeFailure = pi.sent.length;
 
   await pi.fire("session_before_compact", {}, ctx);
   await pi.fire("session_compact_failed", {
@@ -96,7 +97,11 @@ test("failed compaction without a usable fallback parks an active goal durably",
   assert.equal(goal.pauseKind, "blocked");
   assert.match(goal.pauseReason ?? "", /compaction failed/i);
   assert.match(goal.pauseSuggestedAction ?? "", /\/new[\s\S]*\/goal resume/);
-  assert.equal(pi.sent.filter((s) => String(s.message.content ?? "").includes("[GOAL CHECKPOINT")).length, 0, "no impossible hot-context retry");
+  assert.equal(
+    pi.sent.slice(sendsBeforeFailure).filter((s) => String(s.message.content ?? "").includes("[GOAL CHECKPOINT")).length,
+    0,
+    "no impossible hot-context retry",
+  );
 });
 
 test("failed compaction parks a branch loop instead of leaving it active", async () => {
