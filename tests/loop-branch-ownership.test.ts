@@ -116,6 +116,76 @@ test("active branch loop parks before commit when HEAD moved to the user's branc
   }
 });
 
+test("terminal commit failure preserves the uncommitted iteration and skips destructive finish", async () => {
+  const cwd = tmpCwd();
+  fs.writeFileSync(path.join(cwd, "seed.txt"), "seed\n");
+  git(cwd, "init", "-b", "main");
+  git(cwd, "config", "user.name", "Audit Test");
+  git(cwd, "config", "user.email", "audit@example.test");
+  git(cwd, "add", "seed.txt");
+  git(cwd, "commit", "-m", "init");
+  const branch = "pi-glla-loop/commit-fail";
+  git(cwd, "checkout", "-b", branch);
+  fs.writeFileSync(path.join(cwd, ".gitignore"), ".pi-glla/\n");
+  git(cwd, "add", ".gitignore");
+  git(cwd, "commit", "-m", "ignore state");
+  seedState(cwd, {
+    loop: seedLoop({ branchName: branch, originalBranch: "main", measureCmd: "echo 2", direction: "max", bestValue: 2, lastValue: 2, iteration: 1, maxIterations: 1 }),
+  });
+  fs.writeFileSync(path.join(cwd, "terminal.txt"), "must survive\n");
+  const calls: string[][] = [];
+  pi.execHandler = (cmd, args, opts) => {
+    calls.push([cmd, ...args]);
+    if (cmd === "git" && args[0] === "commit") return { code: 1, stdout: "", stderr: "injected commit failure" };
+    return realGitExec(cwd, calls)(cmd, args, opts);
+  };
+  const ctx = await boot(cwd);
+  try {
+    await pi.fire("agent_end", {
+      messages: [{ role: "assistant", content: [{ type: "text", text: "HYPOTHESIS: final" }], stopReason: "end_turn" }],
+    }, ctx);
+    const loop = readState(cwd).loop as { active: boolean; stopReason?: string };
+    assert.equal(loop.active, false);
+    assert.match(loop.stopReason ?? "", /git terminal commit failed/i);
+    assert.equal(fs.readFileSync(path.join(cwd, "terminal.txt"), "utf8"), "must survive\n");
+    assert.ok(!calls.some(([cmd, ...args]) => cmd === "git" && args[0] === "reset"), "no destructive reset after commit failure");
+    assert.ok(!calls.some(([cmd, ...args]) => cmd === "git" && args[0] === "checkout"), "no checkout after commit failure");
+    assert.equal(git(cwd, "branch", "--show-current"), branch);
+  } finally {
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});
+
+test("reset failure during finish keeps the terminal branch and never attempts checkout", async () => {
+  const cwd = tmpCwd();
+  fs.writeFileSync(path.join(cwd, "seed.txt"), "seed\n");
+  git(cwd, "init", "-b", "main");
+  git(cwd, "config", "user.name", "Audit Test");
+  git(cwd, "config", "user.email", "audit@example.test");
+  git(cwd, "add", "seed.txt");
+  git(cwd, "commit", "-m", "init");
+  const branch = "pi-glla-loop/reset-fail";
+  git(cwd, "checkout", "-b", branch);
+  seedState(cwd, { loop: seedLoop({ branchName: branch, originalBranch: "main" }) });
+  const calls: string[][] = [];
+  pi.execHandler = (cmd, args, opts) => {
+    calls.push([cmd, ...args]);
+    if (cmd === "git" && args[0] === "reset") return { code: 1, stdout: "", stderr: "injected reset failure" };
+    return realGitExec(cwd, calls)(cmd, args, opts);
+  };
+  const ctx = await boot(cwd);
+  try {
+    await pi.command("loop", "stop", ctx);
+    const loop = readState(cwd).loop as { active: boolean; stopReason?: string };
+    assert.equal(loop.active, false);
+    assert.match(loop.stopReason ?? "", /git reset failed/i);
+    assert.ok(!calls.some(([cmd, ...args]) => cmd === "git" && args[0] === "checkout"));
+    assert.equal(git(cwd, "branch", "--show-current"), branch);
+  } finally {
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});
+
 test("/loop stop on a branch-mode loop parked on a foreign branch attempts no reset or checkout", async () => {
   const cwd = tmpCwd();
   fs.writeFileSync(path.join(cwd, "seed.txt"), "seed\n");

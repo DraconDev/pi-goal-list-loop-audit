@@ -775,17 +775,32 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
   // final iteration — including an IMPROVING one stopped by maxIterations.
   // Commit any pending diff before the git-finish so the scratch branch
   // carries the terminal iteration.
+  const parkLoopOnGitFailure = async (action: string, result: { ok: boolean; stderr?: string }): Promise<boolean> => {
+    if (result.ok || !loop.branchName) return false;
+    const reason = `git ${action} failed during loop finish — terminal work remains uncommitted on ${loop.branchName}: ${(result.stderr || "unknown git error").replace(/\s+/g, " ").trim().slice(0, 160)}`;
+    loop.active = false;
+    loop.stopReason = reason;
+    clearToolActivityState();
+    persistState(ctx);
+    appendLedger(ctx.cwd, "loop_git_finish_failed", { action, branch: loop.branchName, iteration: loop.iteration, error: reason });
+    ctx.ui.notify(`Loop parked: ${reason}. No destructive reset or checkout was attempted; inspect and commit the branch manually.`, "warning");
+    notifyExternal(ctx, `Loop parked after ${action} failed; terminal work remains on ${loop.branchName}.`);
+    return true;
+  };
   const commitPendingTerminalWork = async (): Promise<boolean> => {
     if (!loop.branchName) return true;
     if (await parkLoopOnWrongBranch(ctx, loop, "terminal commit")) return false;
     const pending = await runGit(ctx, ["status", "--porcelain"]);
     if (!rebindLoop()) return false;
-    if (!pending.ok || pending.stdout.length === 0) return true;
-    await runGit(ctx, ["add", "-A"]);
+    if (!pending.ok) return await parkLoopOnGitFailure("status", pending);
+    if (pending.stdout.length === 0) return true;
+    const added = await runGit(ctx, ["add", "-A"]);
     if (!rebindLoop()) return false;
+    if (!added.ok) return await parkLoopOnGitFailure("add", added);
     const committed = await runGit(ctx, ["commit", "-m", `pi-glla-loop: iteration ${loop.iteration} (${loop.direction ?? "spec"}=${loop.bestValue ?? "n/a"})`]);
     if (!rebindLoop()) return false;
     appendLedger(ctx.cwd, "loop_git", { action: "commit-terminal", iteration: loop.iteration, ok: committed.ok });
+    if (!committed.ok) return await parkLoopOnGitFailure("terminal commit", committed);
     return true;
   };
   // v0.24.0: the top of the stuck ladder — bounded and surfaced, same
@@ -882,12 +897,34 @@ async function finishLoopGit(ctx: ExtensionContext, loop: LoopState): Promise<bo
   const generation = flags.sessionGeneration;
   if (await parkLoopOnWrongBranch(ctx, loop, "finish")) return true;
   // Uncommitted remnants (final stalled iterations were reset already, but be safe).
-  await runGit(ctx, ["reset", "--hard", "HEAD"]);
+  const reset = await runGit(ctx, ["reset", "--hard", "HEAD"]);
+  if (!reset.ok) {
+    const reason = `git reset failed during loop finish — terminal work remains on ${loop.branchName}: ${(reset.stderr || "unknown git error").replace(/\s+/g, " ").trim().slice(0, 160)}`;
+    loop.active = false;
+    loop.stopReason = reason;
+    clearToolActivityState();
+    persistState(ctx);
+    appendLedger(ctx.cwd, "loop_git_finish_failed", { action: "reset", branch: loop.branchName, iteration: loop.iteration, error: reason });
+    ctx.ui.notify(`Loop parked: ${reason}. Checkout was not attempted; inspect the branch manually.`, "warning");
+    notifyExternal(ctx, `Loop parked after reset failed; terminal work remains on ${loop.branchName}.`);
+    return true;
+  }
   const afterReset = freshCtxForGeneration(generation);
   if (!afterReset) return true;
   ctx = afterReset;
   if (loop.originalBranch) {
-    await runGit(ctx, ["checkout", loop.originalBranch]);
+    const checkout = await runGit(ctx, ["checkout", loop.originalBranch]);
+    if (!checkout.ok) {
+      const reason = `git checkout failed during loop finish — work remains on ${loop.branchName}: ${(checkout.stderr || "unknown git error").replace(/\s+/g, " ").trim().slice(0, 160)}`;
+      loop.active = false;
+      loop.stopReason = reason;
+      clearToolActivityState();
+      persistState(ctx);
+      appendLedger(ctx.cwd, "loop_git_finish_failed", { action: "checkout", branch: loop.branchName, iteration: loop.iteration, error: reason });
+      ctx.ui.notify(`Loop parked: ${reason}. No success recap was written.`, "warning");
+      notifyExternal(ctx, `Loop parked after checkout failed; work remains on ${loop.branchName}.`);
+      return true;
+    }
     const afterCheckout = freshCtxForGeneration(generation);
     if (!afterCheckout) return true;
     ctx = afterCheckout;
