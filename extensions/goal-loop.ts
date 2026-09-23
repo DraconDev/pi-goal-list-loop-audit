@@ -512,7 +512,6 @@ function sendLoopTurn(): void {
   // v0.29.19: a plateau reprieve's one-shot shove takes priority over the
   // stuck directive (they can't both be meaningful in the same iteration).
   const reprieveNote = loop.auditReprieveNote ?? "";
-  if (reprieveNote) loop.auditReprieveNote = undefined;
   const interventionNote = reprieveNote || ((loop.consecutiveStuck ?? 0) > 0 && loop.lastStuckReason
     ? loopInterventionDirective(loop.consecutiveStuck!, loop.lastStuckReason, loop.recentTexts ?? [])
     : "");
@@ -521,11 +520,10 @@ function sendLoopTurn(): void {
   const variantNote = metricless ? continueVariant(loop.iteration) : "";
   // v0.33.2: one-shot prompt payloads, consumed on use.
   const hypothesisNote = loop.hypothesisFeedback ?? "";
-  if (hypothesisNote) loop.hypothesisFeedback = undefined;
-  const refineHintNote = loop.refineHint
-    ? `**The operator suggests refining the spec:** ${loop.refineHint} — if the current spec no longer captures "better", call propose_loop_refine (target and/or measureCmd${loop.specFile ? " and/or specText/specAppend" : ""}); if it still stands, say why in one line and keep working.`
+  const refineHintValue = loop.refineHint;
+  const refineHintNote = refineHintValue
+    ? `**The operator suggests refining the spec:** ${refineHintValue} — if the current spec no longer captures "better", call propose_loop_refine (target and/or measureCmd${loop.specFile ? " and/or specText/specAppend" : ""}); if it still stands, say why in one line and keep working.`
     : "";
-  if (refineHintNote) loop.refineHint = undefined;
   try {
     let loopResync = "";
     if (flags.postCompactResyncPending) { try { loopResync = buildPostCompactResync(); } catch { loopResync = ""; } } // v0.33.1
@@ -545,6 +543,15 @@ function sendLoopTurn(): void {
     }, { triggerTurn: true, deliverAs: "followUp" });
     flags.lastContinuationSentPayload = { content: loopResync + loopPrompt(loop, regressionNote, strategyNote2, boundsNote, interventionNote, variantNote, hypothesisNote, refineHintNote), display: false }; // v0.34.88: verbatim retry payload
     if (!dispatchAccepted(ctx, attempt)) return;
+    // One-shot directives are consumed only after the dispatch is durably
+    // accepted. A prepare/send failure above leaves the operator hint,
+    // hypothesis feedback, and audit reprieve armed for the next attempt.
+    const liveLoop = state.loop;
+    if (liveLoop?.active) {
+      if (reprieveNote) liveLoop.auditReprieveNote = undefined;
+      if (hypothesisNote) liveLoop.hypothesisFeedback = undefined;
+      if (refineHintNote) liveLoop.refineHint = undefined;
+    }
     // v0.26.1: the send path is ledgered — the hegemon zombie spun 619
     // refires with zero visibility into whether sends were landing.
     flags.loopRearmStreak = 0; flags.loopRearmSince = 0; // v0.28.5 (E3): an accepted dispatch clears the storm

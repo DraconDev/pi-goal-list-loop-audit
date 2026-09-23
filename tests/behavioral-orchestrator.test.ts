@@ -1153,6 +1153,39 @@ test("field 2026-09-16 (loop sweep): /loop refine on a held loop queues the hint
   await pi.command("loop", "stop", ctx);
 });
 
+test("audit 2026-09-23: failed loop dispatch preserves every one-shot directive", async () => {
+  __testOnlyResetStaleFlag();
+  setGlobalAutoResume(false);
+  const cwd = tmpCwd();
+  seedState(cwd, {
+    loop: seedLoop({
+      active: false,
+      stopReason: "paused by user (/loop pause)",
+      iteration: 7,
+      refineHint: "capture setup cost too",
+      hypothesisFeedback: "the previous hypothesis was wrong",
+      auditReprieveNote: "PLATEAU REPRIEVE: close the top finding",
+    }),
+  });
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  pi.sendMessageError = new Error("transient loop send failure");
+  try {
+    await pi.command("loop", "resume", ctx);
+    await tick(50);
+    const loop = readState(cwd).loop as {
+      refineHint?: string;
+      hypothesisFeedback?: string;
+      auditReprieveNote?: string;
+    };
+    assert.equal(loop.refineHint, "capture setup cost too");
+    assert.equal(loop.hypothesisFeedback, "the previous hypothesis was wrong");
+    assert.equal(loop.auditReprieveNote, "PLATEAU REPRIEVE: close the top finding");
+  } finally {
+    pi.sendMessageError = null;
+  }
+});
+
 test("audit 2026-09-16: held-loop refine respects wrong-branch guard", async () => {
   __testOnlyResetStaleFlag();
   const cwd = tmpCwd();
