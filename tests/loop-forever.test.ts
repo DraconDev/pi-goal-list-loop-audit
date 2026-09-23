@@ -590,10 +590,10 @@ test("v0.35.72: all loop measure entry points are bounded and reject failed nume
   assert.match(runMeasure, /if \(code !== 0\) return null/);
   assert.match(runMeasure, /timeout: MEASURE_TIMEOUT_MS/);
 
+  assert.match(TOOLS_RUNTIME, /async function probeLoopMeasure\(/);
+  assert.match(TOOLS_RUNTIME, /extensionApi\?\.exec\("bash", \["-c", command\], \{ cwd: ctx\.cwd, timeout: MEASURE_TIMEOUT_MS \}\)/);
+  assert.match(TOOLS_RUNTIME, /if \(code !== 0\)/);
   const tools = TOOLS_RUNTIME.slice(TOOLS_RUNTIME.indexOf('name: "propose_loop_draft"'), TOOLS_RUNTIME.indexOf('name: "list_add"'));
-  assert.match(tools, /async function probeLoopMeasure\(/);
-  assert.match(tools, /extensionApi\?\.exec\("bash", \["-c", command\], \{ cwd: ctx\.cwd, timeout: MEASURE_TIMEOUT_MS \}\)/);
-  assert.match(tools, /if \(code !== 0\)/);
   assert.match(tools, /probeLoopMeasure\(liveCtx, p\.measureCmd!\)/);
   assert.match(tools, /probeLoopMeasure\(liveCtx, newMeasure\)/);
 });
