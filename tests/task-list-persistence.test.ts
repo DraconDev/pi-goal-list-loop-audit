@@ -10,6 +10,9 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 import activate, {
+  __testOnlyLoadState,
+  __testOnlyRegisterAgentTools,
+  __testOnlyRememberCtx,
   __testOnlyResetOwnerSession,
   __testOnlyResetStaleFlag,
 } from "../extensions/loops/goal.js";
@@ -35,18 +38,16 @@ async function boot(cwd: string, goal = seedGoal({ status: "active", objective: 
   seedState(cwd, { goal, list: [] });
   const pi = new MockPi();
   activate(pi.api);
+  __testOnlyLoadState(cwd);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: `task-persist-${Date.now()}` } });
-  await pi.fire("session_start", { reason: "reload" }, ctx);
+  __testOnlyRememberCtx(ctx);
+  __testOnlyRegisterAgentTools(pi);
   session = { pi, ctx };
   return { pi, ctx };
 }
 
 afterEach(async () => {
-  if (session) {
-    const current = session;
-    session = null;
-    await current.pi.fire("session_shutdown", { reason: "test-end" }, current.ctx);
-  }
+  session = null;
   setRuntimeSessionDir(undefined);
   fs.writeFileSync(GLOBAL, originalGlobal);
 });
