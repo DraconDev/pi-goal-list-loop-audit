@@ -3545,6 +3545,10 @@ function registerAgentTools(pi: any): void {
       if (listMutationBlocked(draftingTarget)) {
         return { content: [{ type: "text", text: LIST_DRAFTING_BLOCK_MESSAGE }], details: {} };
       }
+      // Match /list: sidecars are durable queue state. Resolve visible
+      // positions only after recovery, otherwise a RAM-empty restart rejects
+      // list_activate before activateNextListItem can hydrate the item.
+      hydrateListQueueFromDisk(liveCtx);
       const position = visibleListPosition(listQueue(), p.n);
       if (!position) {
         return { content: [{ type: "text", text: "n must be a visible list position such as 1, 2, or 1.1 for a child item." }], details: {} };

@@ -1340,6 +1340,7 @@ function archiveCurrentGoal(
     // fires on the CHILD's completion (its archive md is the audit unit);
     // no synthetic goal archive is written for the group — the ledger
     // record is the durable trace.
+    let groupCloseBlocked = false;
     if (goal.parentId) {
       const pid = goal.parentId;
       if (groupOpenChildren(pid) === 0) {
@@ -1348,6 +1349,7 @@ function archiveCurrentGoal(
         if (parent) {
           const sidecar = deleteQueueItemFileResult(ctx.cwd, pid);
           if (sidecar.failed) {
+            groupCloseBlocked = true;
             appendLedger(ctx.cwd, "list_group_close_sidecar_delete_failed", { parentId: pid, path: sidecar.path });
             ctx.ui.notify(`Group remains queued — its durable sidecar could not be removed. Fix disk access and retry the group close.`, "warning");
           } else {
@@ -1366,6 +1368,14 @@ function archiveCurrentGoal(
     // findings out into the queue (async — Confirm-gated). When the queue
     // was empty, enqueueItems activates the first fix itself, so the
     // list-complete / reviewer noise below must NOT fire for this item.
+    // A parent whose sidecar deletion failed is still durable work. Do not
+    // auto-advance and reinterpret that parent as an ordinary runnable item;
+    // explicit cleanup/activation can retry after storage recovers.
+    if (groupCloseBlocked) {
+      postCompletionSettleUntil = 0;
+      closeArchivedSlot();
+      return true;
+    }
     const isListAuditCollect = goal.objective.includes(LIST_AUDIT_COLLECT_MARKER);
     // v0.34.7: the float gets a catch — ANY rejection here used to become
     // an uncaughtException and kill pi (darklord 2026-08-01).
