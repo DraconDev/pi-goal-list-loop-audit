@@ -551,3 +551,10 @@ Verified vs disk before recording. Disposed without findings (rationale): goal-l
 - [x] FIX: LOW: packed release smoke checks launcher/worker tar-list presence but never loads or starts those shipped scripts (scripts/release-pack-smoke.mjs:46-76,104-119) — fixed in 0882d030, f16c97a9
 - [x] FIX: LOW: state-root consumer coverage relies on token presence rather than a live pending-root guard for the goal-session owner write (tests/state-root-consumers.test.ts:160-169) — fixed in 51779379
   Follow-up verification for the packed launcher/worker smoke: direct worker cleanup now runs in a detached process group, and the release contract pins that isolation — fixed in 59b325cc; test pin 4c698826.
+
+## Priority field follow-up — 2026-09-23
+
+Field screenshots `Screenshot_20260923_200339.png`, `Screenshot_20260923_200218.png`, and `Screenshot_20260923_200041.png` showed three supervised goals/loops stranded after Pi emitted `Auto-compaction failed: Summarization failed: generation hit the token cap` and `Context overflow recovery failed`; GLLA continued reporting WORKING/BUSY/IDLE, accumulated continuation re-arms, and left an over-cap active objective unable to advance.
+
+- [x] FIX: HIGH: Pi 0.87's `session_compact_failed` lifecycle event was unhandled, leaving GLLA's 30-minute in-flight marker armed with no `session_compact` settle event and producing phantom busy/re-arm state after a failed summary — fixed in 44c95861 + 681ec05a (compatibility registration against the 0.84 minimum peer, immediate marker settlement, durable failure ledger, no fake post-compact resume).
+- [x] FIX: HIGH: after a failed context compaction GLLA did not fail closed: it either spun/queued impossible continuations or left an ACTIVE goal/loop at 98–101% context looking idle/working — fixed in 44c95861 (a configured larger-context fallback receives one bounded recovery probe; without a usable fallback, active goals and loops park durably with `/new` then resume instructions while preserving tasks/history/queue).
