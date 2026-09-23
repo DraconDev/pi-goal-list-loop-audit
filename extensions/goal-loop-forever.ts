@@ -568,6 +568,12 @@ export function respecTarget(specName: string): string {
  */
 export const AUDIT_FINDINGS_REL = ".pi-glla/audit-loop/findings.md";
 
+/** The selected state root's findings file. Display/queue accounting and
+ * the generated shell command must agree in workingDir and sessionDir modes. */
+export function auditFindingsPath(cwd: string): string {
+  return join(piGlaDir(cwd), "audit-loop", "findings.md");
+}
+
 /**
  * The audit-loop measure command: count CLOSED findings. Prints exactly one
  * number in every file state (missing file / zero matches → 0). v0.29.14:
@@ -577,13 +583,20 @@ export const AUDIT_FINDINGS_REL = ".pi-glla/audit-loop/findings.md";
  * is monotonic under the honesty law (a checked box requires a fix commit):
  * discovery alone doesn't move it, landing fixes does — so the plateau
  * stop fires only when NO FIXES LAND for the window: the honest dry well. */
-export function auditMeasureCmd(): string {
+export function auditMeasureCmd(cwd = process.cwd()): string {
   // v0.35.4: count only closed FIX findings. Checked DECIDED/DEFERRED lines
   // (the one-shot audit's decision records, projectAuditTarget step 4) carry
   // no fix commit — counting them as "closed findings" inflated the
   // monotonic metric without any fix landing and delayed the dry-well
   // plateau stop.
-  return `c=$(grep -cE '^[[:space:]]*- \\[[xX]\\] FIX' ${AUDIT_FINDINGS_REL} 2>/dev/null); echo \${c:-0}`;
+  const selected = auditFindingsPath(cwd);
+  // Preserve the canonical relative spelling in the default workingDir mode
+  // (stable target/readability and existing source pins). sessionDir needs
+  // the absolute selected path so a cwd fallback cannot be measured.
+  const findingsPath = selected === join(cwd, AUDIT_FINDINGS_REL)
+    ? AUDIT_FINDINGS_REL
+    : selected.replace(/'/g, `'\\''`);
+  return `c=$(grep -cE '^[[:space:]]*- \\[[xX]\\] FIX' ${findingsPath.startsWith("/") ? `'${findingsPath}'` : findingsPath} 2>/dev/null); echo \${c:-0}`;
 }
 
 /**
@@ -596,8 +609,9 @@ export function auditMeasureCmd(): string {
  * without the fix commit existing (committed with the repo's configured
  * identity, on the current branch — no invented identities or branches).
  */
-export function auditTarget(): string {
-  return `Audit the current project rooted at cwd for real problems and fix them, iteration by iteration — FIX-FIRST: the open backlog comes down before new hunting (user design 2026-07-30: "audit to fix then audit then fix again" — not find-and-present). Scope: current project under cwd (nested .git is a separate project boundary — do not walk into parent or sibling projects); external code outside cwd may be read only to diagnose a failure that blocks the current project. Every iteration: (1) FIX the highest-severity OPEN finding(s) in ${AUDIT_FINDINGS_REL} — real fixes, committed — then check the box: "- [x] … — fixed in <commit>". An iteration that closes nothing while OPEN findings remain is a wasted iteration: if the top findings are genuinely blocked, say what blocks them in one line and work the first unblocked one — "no new action this turn" is never an acceptable iteration while open boxes exist. (2) RE-AUDIT on cadence, not every iteration — run a fresh audit pass (spawn scout subagents for breadth; hunting real issues: bugs, broken flows, regressions, drift between docs and code, dead code, security holes; not style nits, not speculative refactors) ONLY when no OPEN findings remain, when roughly ten iterations have passed since the last pass, or when your own fixes plausibly broke something. (3) Append every NEW finding as one checkbox line "- [ ] SEVERITY: short description (file:line)" to ${AUDIT_FINDINGS_REL} (create the file on the first finding; append-only — never delete, rewrite, or reorder existing lines; never re-report a finding already listed). (4) Honesty law: never fabricate findings to look busy; never mark a finding fixed without the fix commit existing. The orchestrator counts CLOSED findings every iteration (direction=max): discovery alone does not move the metric — landing fixes does. When a full audit pass surfaces nothing new AND no open findings remain, say so plainly — the plateau stop ends the loop when the well is dry.`;
+export function auditTarget(cwd = process.cwd()): string {
+  const findingsPath = auditFindingsPath(cwd);
+  return `Audit the current project rooted at cwd for real problems and fix them, iteration by iteration — FIX-FIRST: the open backlog comes down before new hunting (user design 2026-07-30: "audit to fix then audit then fix again" — not find-and-present). Scope: current project under cwd (nested .git is a separate project boundary — do not walk into parent or sibling projects); external code outside cwd may be read only to diagnose a failure that blocks the current project. Every iteration: (1) FIX the highest-severity OPEN finding(s) in ${findingsPath} — real fixes, committed — then check the box: "- [x] … — fixed in <commit>". An iteration that closes nothing while OPEN findings remain is a wasted iteration: if the top findings are genuinely blocked, say what blocks them in one line and work the first unblocked one — "no new action this turn" is never an acceptable iteration while open boxes exist. (2) RE-AUDIT on cadence, not every iteration — run a fresh audit pass (spawn scout subagents for breadth; hunting real issues: bugs, broken flows, regressions, drift between docs and code, dead code, security holes; not style nits, not speculative refactors) ONLY when no OPEN findings remain, when roughly ten iterations have passed since the last pass, or when your own fixes plausibly broke something. (3) Append every NEW finding as one checkbox line "- [ ] SEVERITY: short description (file:line)" to ${findingsPath} (create the file on the first finding; append-only — never delete, rewrite, or reorder existing lines; never re-report a finding already listed). (4) Honesty law: never fabricate findings to look busy; never mark a finding fixed without the fix commit existing. The orchestrator counts CLOSED findings every iteration (direction=max): discovery alone does not move the metric — landing fixes does. When a full audit pass surfaces nothing new AND no open findings remain, say so plainly — the plateau stop ends the loop when the well is dry.`;
 }
 
 /** v0.29.19: how many times an audit loop's plateau stop stands down
@@ -613,7 +627,7 @@ export const AUDIT_PLATEAU_MAX_REPRIEVES = 2;
  * them too. Mirrors the fan-out open-box shape. */
 export function countOpenAuditFindings(cwd: string): number {
   try {
-    const p = join(piGlaDir(cwd), "audit-loop/findings.md");
+    const p = auditFindingsPath(cwd);
     if (!existsSync(p)) return 0;
     return readFileSync(p, "utf-8").split("\n").filter((l) => /^\s*-\s*\[[ \t]+\]/.test(l)).length;
   } catch {
@@ -625,7 +639,7 @@ export function countOpenAuditFindings(cwd: string): number {
  * to close, not just how many remain. */
 export function topOpenAuditFinding(cwd: string): string | null {
   try {
-    const p = join(piGlaDir(cwd), "audit-loop/findings.md");
+    const p = auditFindingsPath(cwd);
     if (!existsSync(p)) return null;
     const line = readFileSync(p, "utf-8").split("\n").find((l) => /^\s*-\s*\[[ \t]+\]/.test(l));
     // v0.38.30 audit: strip with the same [ \t]+ class as the matcher

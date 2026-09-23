@@ -1430,8 +1430,8 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       );
     }
     await startLoopFromConfig(ctx, {
-      target: auditTarget(),
-      measureCmd: auditMeasureCmd(),
+      target: auditTarget(ctx.cwd),
+      measureCmd: auditMeasureCmd(ctx.cwd),
       direction: "max",
       plateauWindow: LOOP_DEFAULTS.plateauWindow,
       maxIterations: 0,
