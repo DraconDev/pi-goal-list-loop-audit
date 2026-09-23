@@ -17,6 +17,7 @@ import activate, {
 } from "../extensions/loops/goal.js";
 import {
   readQueueFromDisk,
+  readState,
   writeQueueItemFile,
   type ListItem,
 } from "../extensions/goal-loop-core.js";
@@ -71,6 +72,21 @@ test("a new repair item is durable at the head with target metadata in its first
   assert.ok((repair.queueOrder ?? 0) < (malformed.queueOrder ?? 0));
   assert.deepEqual([...disk].sort(compareQueueItems)[0]?.id, repair.id);
   assert.deepEqual(disk, readQueueFromDisk(cwd, new Set()), "sidecar is reload-stable");
+});
+
+test("list_activate hydrates a disk-only queue before resolving the requested position", async () => {
+  const cwd = tmpCwd();
+  const item: ListItem = { id: "disk-only", objective: "Recover this queued item", addedAt: "2026-09-23T00:00:00.000Z" };
+  writeQueueItemFile(cwd, item);
+  // Simulate the stale/torn-ledger shape: RAM has no queue, but the sidecar
+  // is durable. The tool used to validate position #1 before hydration.
+  seedState(cwd, { list: [] });
+  const { pi, ctx } = await toolHarness(cwd);
+
+  const res = await pi.runTool("list_activate", { n: 1 }, ctx);
+  assert.match(res.content[0]!.text, /activated/i);
+  assert.equal(readState(cwd).goal?.objective, item.objective);
+  assert.equal(readQueueFromDisk(cwd, new Set([readState(cwd).goal!.id])).length, 0, "hydrated item sidecar consumed once");
 });
 
 test("an equivalent repair already in the queue is promoted to the durable head", async () => {

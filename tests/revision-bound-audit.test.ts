@@ -251,6 +251,46 @@ test("v0.35.36: complete_goal newObjective does NOT launder the agent-authored o
   }
 });
 
+test("repair replan bumps the contract revision and invalidates an older approval", async () => {
+  const cwd = tmpCwd();
+  seedState(cwd, {
+    goal: seedGoal({
+      status: "active",
+      policy: "list",
+      revision: 4,
+      objective: "repair placeholder",
+      repairTarget: {
+        id: "source-item",
+        objective: "restore the real saved objective",
+        reasons: ["suspicious-fragment"],
+        source: "list-activation",
+      },
+      auditHistory: [{
+        at: "2026-08-06T10:00:00.000Z",
+        approved: true,
+        disapproved: false,
+        model: "old-auditor",
+        revision: 4,
+      }],
+    }),
+  });
+  __testOnlyLoadState(cwd);
+  const pi = new MockPi();
+  activate(pi.api);
+  __testOnlyRegisterAgentTools(pi.api);
+  rememberCtxFor(cwd);
+  const toolCtx = ownerCtx(cwd) as any;
+  toolCtx.ui.confirmImpl = async () => true;
+
+  const res = await pi.runTool("propose_task_list", {
+    objective: "Restore the real saved objective. Done when: focused tests pass",
+    tasks: [{ title: "Rebuild the contract" }],
+  }, toolCtx);
+  assert.match(res.content[0]!.text, /Task list set/);
+  assert.equal(readState(cwd).goal?.revision, 5, "repair contract change advances the revision");
+  assert.equal(readState(cwd).goal?.repairTarget, undefined);
+});
+
 // ---- (b) the complete_goal revision gate ----
 
 test("v0.34.60: complete_goal REJECTS when the contract revision moved past the last audited revision", async () => {
