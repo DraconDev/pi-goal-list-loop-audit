@@ -138,6 +138,91 @@ test("v0.35.23: /goal resume releases the load hold and re-arms automation", asy
   assert.ok(pi.sent.length >= 1 || pi.userMessages.length >= 1, "a continuation actually fires after the release");
 });
 
+test("v0.38.96: /glla resume releases the load hold BEFORE the manual-recovery probe (field 2026-09-23)", async () => {
+  // Field: dracon-utilities — a goal parked on a deterministic-400 manual
+  // hold was cold-loaded (load hold engaged), then /glla resume consumed the
+  // manual hold but the recovery probe died silently on the supervisorPaused
+  // gate (which includes loadHoldAt): no probe event, no timer, goal still
+  // parked. /goal resume and agent-resume release the hold at entry;
+  // /glla resume must too — it carries the same consent semantics.
+  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({}));
+  const cwd = tmpCwd();
+  seedState(cwd, {
+    goal: seedGoal({
+      status: "paused",
+      pauseKind: "blocked",
+      pauseReason: "main model recovery — automatic probes stopped (deterministic client error)",
+      pauseSuggestedAction: "/goal resume to start a fresh recovery window",
+    }),
+    mainModelRecovery: {
+      primary: "anthropic/mock-model",
+      active: "anthropic/mock-model",
+      attempted: ["anthropic/mock-model"],
+      attempts: 5,
+      reason: "main model transient — provider 400",
+      kind: "goal",
+      firstFailureAt: new Date().toISOString(),
+      manualResumeRequired: true,
+    },
+  } as unknown as Parameters<typeof seedState>[1]);
+  const pi = newPi();
+  const ctx = await coldBoot(pi, cwd);
+  assert.equal(typeof readState(cwd).loadHoldAt, "number", "precondition: cold load holds the parked recovery");
+
+  await pi.command("glla", "resume", ctx);
+  await tick(150);
+
+  const after = readState(cwd);
+  assert.equal(after.loadHoldAt, undefined, "/glla resume releases the load hold like /goal resume");
+  assert.ok(ledger(cwd).some((e) => e.type === "load_hold_released" && e.value?.via === "glla-resume"));
+  assert.ok(
+    ledger(cwd).some((e) => e.type === "main_model_probe" || e.type === "main_model_fallback_cycle_reset"),
+    "the recovery probe is dispatched, not dropped on the freeze gate",
+  );
+  assert.equal(after.goal?.status, "active", "the recovery-owned pause un-parks");
+  await tick(1200);
+  assert.ok(pi.sent.length >= 1 || pi.userMessages.length >= 1, "a supervised probe turn actually fires after the release");
+});
+
+test("v0.38.96: /loop resume releases the load hold BEFORE the manual-recovery probe", async () => {
+  // Same wedge, loop kind: /loop resume fired manuallyResumeMainModelRecovery
+  // without releasing the cold-load hold, so the probe bailed silently and
+  // the held loop never re-armed.
+  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({}));
+  const cwd = tmpCwd();
+  seedState(cwd, {
+    loop: seedLoop({
+      active: false,
+      stopReason: "main model recovery — automatic probes stopped (deterministic client error)",
+    }),
+    mainModelRecovery: {
+      primary: "anthropic/mock-model",
+      active: "anthropic/mock-model",
+      attempted: ["anthropic/mock-model"],
+      attempts: 5,
+      reason: "main model transient — provider 400",
+      kind: "loop",
+      firstFailureAt: new Date().toISOString(),
+      manualResumeRequired: true,
+    },
+  } as unknown as Parameters<typeof seedState>[1]);
+  const pi = newPi();
+  const ctx = await coldBoot(pi, cwd);
+  assert.equal(typeof readState(cwd).loadHoldAt, "number", "precondition: cold load holds the parked loop recovery");
+
+  await pi.command("loop", "resume", ctx);
+  await tick(150);
+
+  const after = readState(cwd);
+  assert.equal(after.loadHoldAt, undefined, "/loop resume releases the load hold before probing");
+  assert.ok(ledger(cwd).some((e) => e.type === "load_hold_released" && e.value?.via === "loop-resume"));
+  assert.ok(
+    ledger(cwd).some((e) => e.type === "main_model_probe" || e.type === "main_model_fallback_cycle_reset"),
+    "the recovery probe is dispatched, not dropped on the freeze gate",
+  );
+  assert.equal(after.loop?.active, true, "the recovery-held loop re-arms");
+});
+
 test("v0.35.23: /list next also releases the hold and starts the queued head", async () => {
   fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({}));
   const cwd = tmpCwd();
