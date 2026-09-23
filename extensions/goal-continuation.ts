@@ -37,6 +37,7 @@ import {
   newGoalId,
   archiveDir,
   archivedGoalPath,
+  piGlaDir,
   goalMdPath,
   writeGoalMd,
   sanitizeDisplayText,
@@ -1557,7 +1558,9 @@ export const PITFALLS_BRIEF_MAX_CHARS = 1500;
 export function readPitfallsBrief(cwd: string): string | undefined {
   let body: string;
   try {
-    body = fs.readFileSync(path.join(cwd, ".pi-glla", "pitfalls.md"), "utf8");
+    // The registry is GLLA state, so sessionDir mode must read the selected
+    // root rather than injecting a stale cwd/.pi-glla file into the prompt.
+    body = fs.readFileSync(path.join(piGlaDir(cwd), "pitfalls.md"), "utf8");
   } catch {
     return undefined;
   }

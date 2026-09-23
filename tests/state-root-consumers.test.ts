@@ -20,6 +20,7 @@ import { countOpenAuditFindings, topOpenAuditFinding } from "../extensions/goal-
 import { persistApprovalRender } from "../extensions/approval-render-store.js";
 import { refreshUpdateCheck } from "../extensions/glla-update-check.js";
 import { rollupProject, discoverGllaProjects } from "../extensions/goal-loop-stats.js";
+import { readPitfallsBrief } from "../extensions/goal-continuation.js";
 
 function fixture(stateRoot: "workingDir" | "sessionDir" = "workingDir") {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "glla-consumer-cwd-"));
@@ -70,8 +71,12 @@ test("resolved consumers follow the selected root — dispatch, stats, audit fin
     fs.writeFileSync(path.join(fx.sessionDir, "pi-glla", "audit-loop", "findings.md"), "- [ ] HIGH: something\n");
     assert.equal(countOpenAuditFindings(fx.cwd), 1);
     assert.ok((topOpenAuditFinding(fx.cwd) ?? "").includes("HIGH"));
-    // cwd fallback must stay empty
-    assert.equal(fs.existsSync(path.join(fx.cwd, ".pi-glla")), false);
+    // pitfalls are a selected-root state consumer too
+    fs.writeFileSync(path.join(fx.sessionDir, "pi-glla", "pitfalls.md"), "selected sessionDir pitfall\n");
+    fs.mkdirSync(path.join(fx.cwd, ".pi-glla"), { recursive: true });
+    fs.writeFileSync(path.join(fx.cwd, ".pi-glla", "pitfalls.md"), "stale cwd pitfall\n");
+    assert.equal(readPitfallsBrief(fx.cwd), "selected sessionDir pitfall");
+    fs.rmSync(path.join(fx.cwd, ".pi-glla"), { recursive: true, force: true });
   } finally {
     fx.restore();
   }
