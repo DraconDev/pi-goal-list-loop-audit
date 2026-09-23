@@ -419,3 +419,113 @@ test("main recovery requirements are generic across provider wording", () => {
     assert.equal(isMainModelFallbackFailure(classifyMainModelFailure(raw)), true, raw);
   }
 });
+
+test("single-model chain parks a quiet wait instead of probe theatre (multi-model still cycle-resets)", async () => {
+  // Field 2026-09-22 (ai-auto-writer): the fallback chain held ONE model, so
+  // every cycle-reset probed the same dead model hourly (attempted=[itself])
+  // until a blocked pause. A lone model must wait quietly; resume re-probes.
+  const settingsFile = globalSettingsPath();
+  const original = fs.existsSync(settingsFile) ? fs.readFileSync(settingsFile, "utf8") : undefined;
+  const modelsSet: string[] = [];
+  const continuations: number[] = [];
+  const mkCtx: any = (cwd: string) => ({
+    cwd,
+    model: { provider: "provider", id: "primary" },
+    modelRegistry: {
+      find: (provider: string, id: string) => ({ provider, id }),
+      hasConfiguredAuth: () => true,
+    },
+    ui: { notify: () => {} },
+    abort: () => {},
+  });
+  const mkFlags: any = () => ({
+    completionAuditRecoveryArmed: false,
+    mainModelRecoveryTimer: null,
+    mainModelSwitchInFlight: false,
+    mainModelAbortForRecovery: false,
+    lastMainModelFailure: null,
+    hourlyProbeTimer: null,
+    hourlyProbeFireAt: null,
+    sessionGeneration: 1,
+    extensionApi: { setModel: async (model: any) => { modelsSet.push(`${model.provider}/${model.id}`); return true; } },
+    extensionApiStale: false,
+    continuationDispatchStoodDown: false,
+    lastMainModelRecoveryResumeAt: 0,
+  });
+  const mkDeps: any = () => ({
+    activeGoalSurfaceCommand: (command: string) => `/${command}`,
+    clearDetachedAuditRuntime: () => {},
+    updateGoal: () => {},
+    clearContinuationTimer: () => {},
+    freshCtxForGeneration: () => null,
+    isSupervising: () => true,
+    notifyExternal: () => {},
+    persistState: () => {},
+    recoverySurfaceCommand: (_kind: "goal" | "loop", command: string) => `/${command}`,
+    scheduleContinuation: () => { continuations.push(Date.now()); },
+    scheduleSessionTimeout: () => setTimeout(() => {}, 60_000),
+  });
+  const readLedger = (cwd: string): Array<{ type: string; value?: Record<string, unknown> }> => {
+    try {
+      return fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8")
+        .split("\n").filter(Boolean).map((l) => JSON.parse(l));
+    } catch {
+      return [];
+    }
+  };
+  try {
+    // Case 1: one model total (no fallbacks configured).
+    const soloCwd = fs.mkdtempSync(path.join(os.tmpdir(), "glla-single-model-wait-"));
+    fs.writeFileSync(settingsFile, JSON.stringify({ mainModelFallbacks: [] }));
+    createGoalRecovery(mkFlags(), mkDeps());
+    replaceState({
+      goal: { id: "g1", status: "paused", pauseReason: "main model recovery — retrying" },
+      mainModelRecovery: {
+        primary: "provider/primary",
+        active: "provider/primary",
+        attempted: ["provider/primary"],
+        attempts: 1,
+        reason: "main model recovery — provider error",
+        kind: "goal",
+      },
+    } as any);
+    await probeMainModelRecovery(mkCtx(soloCwd));
+    clearMainModelRecoveryTimer();
+    assert.equal(modelsSet.length, 0, "no model switch when there is nowhere to switch to");
+    assert.equal(continuations.length, 0, "no immediate probe turn on the same dead model");
+    assert.equal(state.mainModelRecovery?.attempts, 2, "the parked cycle still consumes backoff budget");
+    assert.ok(state.mainModelRecovery?.retryAt, "a quiet retry is scheduled on the backoff envelope");
+    const soloTypes = readLedger(soloCwd).map((e) => e.type);
+    assert.ok(soloTypes.includes("main_model_single_model_wait"), "the quiet wait is ledgered distinctly from a probe");
+    assert.ok(!soloTypes.includes("main_model_probe"), "no probe event for the skipped probe");
+
+    // Case 2 (control): a real chain still cycle-resets with a probe turn.
+    const multiCwd = fs.mkdtempSync(path.join(os.tmpdir(), "glla-multi-model-reset-"));
+    fs.writeFileSync(settingsFile, JSON.stringify({ mainModelFallbacks: ["provider/backup"] }));
+    createGoalRecovery(mkFlags(), mkDeps());
+    replaceState({
+      goal: { id: "g1", status: "paused", pauseReason: "main model recovery — retrying" },
+      mainModelRecovery: {
+        primary: "provider/primary",
+        active: "provider/primary",
+        attempted: ["provider/primary", "provider/backup"],
+        attempts: 1,
+        reason: "main model recovery — provider error",
+        kind: "goal",
+      },
+    } as any);
+    await probeMainModelRecovery(mkCtx(multiCwd));
+    clearMainModelRecoveryTimer();
+    assert.equal(continuations.length, 1, "the v0.34.132 probe turn still fires for real chains");
+    const multiTypes = readLedger(multiCwd).map((e) => e.type);
+    assert.ok(multiTypes.includes("main_model_fallback_cycle_reset"), "exhausted chains still cycle-reset");
+  } finally {
+    replaceState({ goal: null } as any);
+    clearMainModelRecoveryTimer();
+    if (original === undefined) {
+      try { fs.unlinkSync(settingsFile); } catch { /* absent */ }
+    } else {
+      fs.writeFileSync(settingsFile, original);
+    }
+  }
+});

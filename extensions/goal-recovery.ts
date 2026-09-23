@@ -1446,6 +1446,18 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
       if (setMainModelRecoveryPause(ctx, next, delay)) scheduleMainModelRecoveryTimer(ctx, delay);
       return;
     }
+    // Field 2026-09-22 (ai-auto-writer): a one-model chain has no cycle to
+    // reset — probing `current` again is theatre (hourly probes of the same
+    // dead model until a blocked pause). Park a quiet wait on the backoff
+    // envelope instead; resume re-probes immediately.
+    const distinctChainRefs = new Set(selectorChain.map((ref) => ref.toLowerCase()));
+    if (distinctChainRefs.size <= 1) {
+      const wait = { ...withMainModelRecoveryWindow(recovery), attempts: recovery.attempts + 1, attempted: [current] };
+      appendLedger(ctx.cwd, "main_model_single_model_wait", { current, attempts: wait.attempts });
+      const delay = mainModelRetryDelayMs(wait.attempts, loadGlobalSettings().mainModelRetryMinutes);
+      if (setMainModelRecoveryPause(ctx, wait, delay)) scheduleMainModelRecoveryTimer(ctx, delay);
+      return;
+    }
     // The ordered chain has been visited for this recovery cycle. Start a
     // deliberate new cycle by retrying the currently selected model; the
     // next failure can then walk primary → backup 1 → … again.
