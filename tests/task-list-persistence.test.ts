@@ -36,7 +36,10 @@ function writePendingSessionDirSettings(): string {
   const file = path.join(dir, "settings.json");
   fs.writeFileSync(file, JSON.stringify({ stateRoot: "sessionDir", aggressiveMode: false }));
   process.env.GLLA_GLOBAL_SETTINGS_PATH = file;
+  const priorSessionFile = process.env.PI_SESSION_FILE;
+  delete process.env.PI_SESSION_FILE;
   setRuntimeSessionDir(undefined);
+  Object.defineProperty(process.env, "__gllaTaskTestSessionFile", { value: priorSessionFile, configurable: true });
   return dir;
 }
 
@@ -85,6 +88,10 @@ test("normal task-list proposal reports failure and stores no task list", async 
   } finally {
     if (prior === undefined) delete process.env.GLLA_GLOBAL_SETTINGS_PATH;
     else process.env.GLLA_GLOBAL_SETTINGS_PATH = prior;
+    const priorSessionFile = (process.env as Record<string, string | undefined>).__gllaTaskTestSessionFile;
+    if (priorSessionFile === undefined) delete process.env.PI_SESSION_FILE;
+    else process.env.PI_SESSION_FILE = priorSessionFile;
+    delete (process.env as Record<string, string | undefined>).__gllaTaskTestSessionFile;
     fs.rmSync(globalDir, { recursive: true, force: true });
   }
 });
@@ -121,6 +128,10 @@ test("repair proposal preserves the source sidecar and queue when the task list 
   } finally {
     if (prior === undefined) delete process.env.GLLA_GLOBAL_SETTINGS_PATH;
     else process.env.GLLA_GLOBAL_SETTINGS_PATH = prior;
+    const priorSessionFile = (process.env as Record<string, string | undefined>).__gllaTaskTestSessionFile;
+    if (priorSessionFile === undefined) delete process.env.PI_SESSION_FILE;
+    else process.env.PI_SESSION_FILE = priorSessionFile;
+    delete (process.env as Record<string, string | undefined>).__gllaTaskTestSessionFile;
     fs.rmSync(globalDir, { recursive: true, force: true });
   }
 });
