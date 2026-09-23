@@ -62,18 +62,14 @@ test("canonical render folds a lone approval with the verdict count, model-free"
   // Rich voice (field 20260911_*): sections + table + trailer. Headers,
   // numbered findings, table rows, and Next bullets share the chat; the
   // record pointer stays last.
-  assert.ok(render.chatLines.includes("### Key Findings & Remediation"), "findings section present");
-  // v0.38.55 (full parity): the verification table always renders in
-  // full — the PASS-line collapse is retired.
-  assert.ok(render.chatLines.includes("### Verification Summary"), "verification table always renders");
-  assert.ok(
-    render.chatLines.some((l) => /^\| Tests \| PASS \|/.test(l)),
-    "green Tests row renders in the full table",
-  );
-  // Findings-first order: findings, then verification, then Next, then the
+  assert.ok(render.chatLines.includes("### What Changed"), "change account present");
+  assert.ok(render.chatLines.includes("### Verification"), "compact verification tail present");
+  assert.ok(render.chatLines.includes("1 passed."), "verification aggregate present");
+  assert.ok(!render.chatLines.some((l) => /^\| Tests \|/.test(l)), "gate table stays archival");
+  // Change-first order: changes, compact verification, then Next, then the
   // pinned trailer (approval, record last).
-  const findingsIdx = render.chatLines.indexOf("### Key Findings & Remediation");
-  const tableIdx = render.chatLines.indexOf("### Verification Summary");
+  const findingsIdx = render.chatLines.indexOf("### What Changed");
+  const tableIdx = render.chatLines.indexOf("### Verification");
   const nextIdx = render.chatLines.indexOf("### Next");
   const approvalIdx = render.chatLines.findIndex((l) => l.startsWith("\u2022 auditor approved"));
   assert.ok(findingsIdx !== -1 && findingsIdx < tableIdx && tableIdx < nextIdx && nextIdx < approvalIdx, "findings precede verification, Next closes the card ahead of the trailer");
@@ -167,10 +163,9 @@ test("v0.38.37 posted summary carries verifiable-result bullets plus the deliber
   assert.ok(numbered.some((l) => /extensions\/completion-summary\.ts/.test(l)), "each finding carries its evidence inline");
   // Rich voice: SIX's concrete `Next: replay on next contact` survives in
   // the Next section, ahead of the non-do; the trailer closes last.
-  const nextIdx = withLeftOut.chatLines.findIndex((l) => l.startsWith("- **Next**"));
-  const leftOutIdx = withLeftOut.chatLines.findIndex((l) => l.startsWith("- **Left out**"));
+  const remainingIdx = withLeftOut.chatLines.findIndex((l) => l.startsWith("- **Left out**"));
   const recordIdx = withLeftOut.chatLines.findIndex((l) => l.startsWith("• record:"));
-  assert.ok(nextIdx > 0 && leftOutIdx > nextIdx && recordIdx === withLeftOut.chatLines.length - 1, "next action, then non-do, then the record pointer last");
+  assert.ok(remainingIdx > 0 && recordIdx === withLeftOut.chatLines.length - 1, "remaining concern then record pointer last");
   assert.ok(withLeftOut.chatLines.some((l) => l === "- **Left out** — the walkthrough artifact surface"), "agent-claimed non-do closes the sections");
   assert.ok(withLeftOut.transcriptLines.some((l) => l === "- **Left out** — the walkthrough artifact surface"), "transcript surface carries the non-do too");
   const without = buildTerminalApprovalRender(base);
@@ -243,10 +238,10 @@ test("v0.38.39 chat brief strips machine paths but the archive keeps them", () =
     ].join("\n"),
   });
   assert.ok(!render.chatLines.some((l) => l.includes("/var/tmp/")), "no machine path reaches the chat lines");
-  // v0.38.55 (full parity): the full verification table renders — the
-  // human proof rides the Tests row, full detail stays in the archive too.
-  assert.ok(render.chatLines.includes("### Verification Summary"), "verification table always renders");
-  assert.ok(render.chatLines.some((l) => /^\| Tests \| PASS \|/.test(l)), "the human proof survives the strip as the Tests row");
+  // Chat uses an aggregate verification sentence; full detail stays in the archive.
+  assert.ok(render.chatLines.includes("### Verification"), "compact verification tail present");
+  assert.ok(render.chatLines.includes("1 passed."), "human proof survives as the aggregate result");
+  assert.ok(!render.chatLines.some((l) => /^\| Tests \|/.test(l)), "gate table stays archival");
 });
 
 test("v0.38.39 clause cut respects +-joined lists", () => {

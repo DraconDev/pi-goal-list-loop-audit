@@ -181,12 +181,13 @@ test("v0.38.52: complete_goal gateRows + tests ride the claim into the chat rend
     { title: "Renderer", findings: ["Widen: completion-summary.ts:460 adds the gate table"], tests: ["gate suite 9/9"] },
   ], "the pending claim stores the parallel test lines");
   await waitFor(() => entries.length === 1);
-  // v0.38.55 (full parity): the full gate table — with its Command
-  // column — always reaches the chat, hashes included.
+  // Chat keeps one aggregate verification sentence; the full gate table stays
+  // in the archive with commands and hashes.
   assert.ok(entries[0].content.startsWith("## Done — "), "outcome opens the card");
-  assert.ok(entries[0].content.includes("| Quality Gate | Scope | Status | Notes |"), "compact gate table");
+  assert.match(entries[0].content, /### Verification\n1 reported\./, "compact gate aggregate");
+  assert.ok(!entries[0].content.includes("| Quality Gate |"), "gate-by-gate table stays archival");
   assert.ok(!entries[0].content.includes("bun test tests/gate.test.ts"), "repro command stays in the archive");
-  assert.ok(entries[0].content.includes("  - Test Results: gate suite 9/9"), "per-finding proof reaches the chat");
+  assert.ok(!entries[0].content.includes("Test Results:"), "per-finding proof stays archival");
   assert.ok(!entries[0].content.includes("02871aa6"), "commit hash stays archival");
   const record = /• record: (\S+\.md)/.exec(entries[0].content)?.[1];
   assert.ok(record, "record pointer supplied");

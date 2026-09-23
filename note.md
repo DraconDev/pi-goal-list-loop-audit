@@ -4,6 +4,9 @@
 
 # Next
 
+##
+summary should be about what happne not how it was verified and tested
+/home/dracon/Pictures/Screenshots/Screenshot_20260923_222609.png /home/dracon/Pictures/Screenshots/Screenshot_20260923_222602.png
 
 # Later
 

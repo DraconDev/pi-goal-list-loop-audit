@@ -41,8 +41,8 @@ test("four-area chat is outcome-first and grouped; archive retains detailed evid
   assert.match(chat.split("\n")[0]!, /Drafting now hands off/);
   assert.match(chat, /#### 1\. Drafting/);
   assert.doesNotMatch(chat, /\| Area \| Finding|\| Command \||bun test tests\/|node scripts\/live|abc12345|Final Repository State|src\/example\.ts:42/);
-  assert.match(chat, /12 passed, 0 failed, 1 skipped/);
-  assert.match(chat, /Not run — provider unavailable/);
+  assert.match(chat, /### Verification\n1 passed, 1 reported\./);
+  assert.doesNotMatch(chat, /12 passed, 0 failed, 1 skipped|Not run — provider unavailable/);
   assert.match(chat, /Live provider not exercised/);
   assert.equal((chat.match(/auditor approved/g) ?? []).length, 1);
   const archive = buildRichArchiveSection(fixtureGoal, "complete", ".pi-glla/archive/fixture.md", fixtureGroups, fixtureGates).join("\n");

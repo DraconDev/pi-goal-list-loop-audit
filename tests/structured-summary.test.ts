@@ -121,10 +121,10 @@ test("card: structured Outcome renders a full ### Summary section, headline stay
   assert.equal(chatLines[0], "## Done — shipped the keyword review", "outcome opens");
   const summaryIdx = chatLines.indexOf("### Summary");
   assert.ok(summaryIdx > 0, "Summary section present");
-  const findingsIdx = chatLines.indexOf("### Key Findings & Remediation");
-  const tableIdx = chatLines.indexOf("### Verification Summary");
+  const findingsIdx = chatLines.indexOf("### What Changed");
+  const tableIdx = chatLines.indexOf("### Verification");
   const nextIdx = chatLines.indexOf("### Next");
-  assert.ok(summaryIdx < findingsIdx && findingsIdx < tableIdx && tableIdx < nextIdx, "Summary rides the headline, findings-first order preserved");
+  assert.ok(summaryIdx < findingsIdx && findingsIdx < tableIdx && tableIdx < nextIdx, "Summary rides the headline, change-first order preserved");
   const summaryBlock = chatLines.slice(summaryIdx + 1, findingsIdx - 1);
   assert.ok(summaryBlock.includes("| Focus | draw a card |"), "full table text in chat");
   assert.ok(summaryBlock.includes("Slice 1 lands first."), "full prose in chat");
@@ -168,7 +168,7 @@ test("doctrine: horizon lives in Summary, Next names only the immediate move", (
     .replace("## Part 2: rollout\nSlice 1 lands first.", "## Part 2: rollout\nSlice 1 lands first.\n## Part 3: later slices\nSlices 2 and 3 follow after slice 1.");
   const { chatLines } = render(withRoadmap);
   const summaryIdx = chatLines.indexOf("### Summary");
-  const findingsIdx = chatLines.indexOf("### Key Findings & Remediation");
+  const findingsIdx = chatLines.indexOf("### What Changed");
   const summaryBlock = chatLines.slice(summaryIdx + 1, findingsIdx - 1);
   assert.ok(summaryBlock.some((line) => line.includes("Slices 2 and 3 follow")), "horizon stays visible in Summary");
   const nextIdx = chatLines.indexOf("### Next");

@@ -406,6 +406,14 @@ export interface RichTerminalParts {
   findingLines: string[];
   tableLines: string[];
   nextLines: string[];
+  /** Human-facing unresolved/left-out concerns. Unlike the technical gate
+   * inventory, these explain what the delivered change does not settle. */
+  remainingLines: string[];
+  /** Compact chat-only verification tail. The archive keeps the full table. */
+  verificationSummaryLine: string | undefined;
+  /** True for the compact chat projection (false/absent retains the detailed
+   * archive headings/tables). */
+  chat?: boolean;
   /** v0.38.55 (full parity): final repository state section lines.
    * Empty when the state could not be read (absent stays absent). */
   repoLines: string[];
@@ -735,9 +743,11 @@ export function buildRichTerminalParts(args: {
       group.findings.forEach((finding, fi) => {
         const { lead, body } = leadBody(args.chat ? chatNarrative(extractEvidenceTokens(finding).text) : sanitizeDisplayText(finding));
         findingLines.push(`- **${lead}** \u2014 ${body}`);
-        // v0.38.52: per-finding test proof (shot C) — absent stays absent.
+        // Test proof is supporting evidence, not a second narrative. Keep it
+        // on the archive's detailed finding; chat folds all gate outcomes into
+        // the compact Verification section below.
         const proof = group.tests?.[fi] ? sanitizeDisplayText(group.tests[fi]).trim() : "";
-        if (proof) findingLines.push(`  - Test Results: ${args.chat ? chatNarrative(proof) : proof}`);
+        if (proof && !args.chat) findingLines.push(`  - Test Results: ${proof}`);
       });
     });
   } else {
@@ -787,8 +797,25 @@ export function buildRichTerminalParts(args: {
       tableRows.push(`| Audit | ${auditStatus} | ${escapeTableCell(auditBody)} |`);
     }
   }
-  // v0.38.55: the verification table always renders in full (owner:
-  // full parity, always-full-table) — the auto-collapse is retired.
+  // Chat is an account of what happened, not a test-run transcript. Aggregate
+  // named checks into one supporting sentence and keep the full status/table
+  // in the archive. Unknown wording stays "reported" rather than claimed pass.
+  let verificationSummaryLine: string | undefined;
+  if (args.chat && (gates.length > 0 || tests.length > 0)) {
+    const gateNotes = gates.length > 0
+      ? gates.map((row) => testsRowStatus(sanitizeDisplayText(row.notes ?? "")))
+      : tests.map((detail) => testsRowStatus(leadBody(detail).body));
+    const passed = gateNotes.filter((status) => status === "PASS").length;
+    const failed = gateNotes.filter((status) => status === "FAIL").length;
+    const reported = gateNotes.length - passed - failed;
+    const parts = [
+      failed > 0 ? `${failed} failed` : passed > 0 ? `${passed} passed` : undefined,
+      reported > 0 ? `${reported} reported` : undefined,
+    ].filter(Boolean);
+    verificationSummaryLine = parts.length > 0 ? `${parts.join(", ")}.` : "Verification reported.";
+  }
+  // v0.38.55: the archive verification table always renders in full. Chat uses
+  // the aggregate line above instead.
   const tableLines = tableRows.length > 0
     ? [(gates.length > 0
       ? (showCommand ? "| Quality Gate | Command | Scope | Status | Notes |" : "| Quality Gate | Scope | Status | Notes |")
@@ -796,11 +823,20 @@ export function buildRichTerminalParts(args: {
       (gates.length > 0 ? (showCommand ? "| --- | --- | --- | --- | --- |" : "| --- | --- | --- | --- |") : "| --- | --- | --- |"),
       ...tableRows]
     : [];
-  // v0.38.55: every Next renders — no cap.
-  const nextLines = next.map((detail) => {
-    const { lead, body } = leadBody(detail);
-    return `- **${lead}** \u2014 ${body}`;
-  });
+  // v0.38.55: every concrete Next renders — no cap. Unresolved and Left out
+  // are change-impact facts, not a second technical next step.
+  const nextLines = next
+    .filter((detail) => !/^\s*(?:Left out|Unresolved)\s*:/i.test(detail))
+    .map((detail) => {
+      const { lead, body } = leadBody(detail);
+      return `- **${lead}** \u2014 ${body}`;
+    });
+  const remainingLines = next
+    .filter((detail) => /^\s*(?:Left out|Unresolved)\s*:/i.test(detail))
+    .map((detail) => {
+      const { lead, body } = leadBody(args.chat ? chatNarrative(detail) : detail);
+      return `- **${lead}** \u2014 ${body}`;
+    });
   return {
     banner,
     headline,
@@ -808,6 +844,9 @@ export function buildRichTerminalParts(args: {
     findingLines,
     tableLines,
     nextLines,
+    remainingLines,
+    verificationSummaryLine,
+    ...(args.chat ? { chat: true } : {}),
     repoLines: args.chat ? [] : (args.repoState ?? []).map((line) => sanitizeDisplayText(line)),
     summaryLines: (args.summaryLines ?? []).map((line) => sanitizeDisplayText(line)),
   };
@@ -835,9 +874,15 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
     lines.push("### Summary", ...parts.summaryLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.findingLines.length > 0) {
-    lines.push("### Key Findings & Remediation", ...parts.findingLines.map((line) => sanitizeDisplayText(line)), "");
+    const heading = parts.chat ? "### What Changed" : "### Key Findings & Remediation";
+    lines.push(heading, ...parts.findingLines.map((line) => sanitizeDisplayText(line)), "");
   }
-  if (parts.tableLines.length > 0) {
+  if (parts.remainingLines.length > 0) {
+    lines.push(parts.chat ? "### Remaining" : "### Key Findings & Remediation", ...parts.remainingLines.map((line) => sanitizeDisplayText(line)), "");
+  }
+  if (parts.verificationSummaryLine) {
+    lines.push("### Verification", sanitizeDisplayText(parts.verificationSummaryLine), "");
+  } else if (parts.tableLines.length > 0) {
     lines.push("### Verification Summary", ...parts.tableLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.nextLines.length > 0) {

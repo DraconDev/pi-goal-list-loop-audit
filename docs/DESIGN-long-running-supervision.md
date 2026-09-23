@@ -111,25 +111,28 @@ path. It says `not recorded` when a changed-file manifest or test result is not
 available. It never infers a passing test or invents a commit.
 
 The full six-label recap lives verbatim in the archive (`## Completion summary`)
-and the status/history surfaces. The human layer in chat, transcript, and the
-archive's `## Terminal summary` renders the same facts as rich sections
-(`## Done: <objective> — <outcome>`, duration line, Key Findings grouped by area
-or tabulated at 4+ groups with per-finding `Test Results:` proof lines,
-Verification Summary table — widened to Quality Gate | Command | Scope |
-Status | Notes when any gate row carries a repro command, else Quality
-Gate | Scope | Status | Notes — with derived statuses when the agent
-supplies a gate inventory — uncapped findings/values (Next keeps the
-one-concrete-action rule), and a Final
-Repository State section (branch, HEAD, tree) closing the card behind a
-verdict banner that opens it (`## Done — auditor approved (N verdicts)`
-and siblings). Width-bound and external surfaces (status line, widget card,
-external notifies) use the compact single-line projection of all six labels.
-Every terminal goal notification, including version-bearing already-shipped claims,
-explicit goal/list cancellation, and `/glla wipe`, carries either the rich sections
-or the compact projection; loop notifications do the same. The terminal
-notification may use a compact excerpt. The executor recap and independent
-auditor verdict stay separate: an approval is not manufactured from the
-presence of a summary.
+and the status/history surfaces. The human layer follows two different purposes:
+
+- Chat and transcript explain **what happened**: outcome first, then a
+  change-first `What Changed` account grouped by area, followed by material
+  `Remaining` limitations and one concrete `Next` action. Named checks collapse
+  to one compact `Verification` sentence. Test-by-test results, commands,
+  hashes, and machine evidence stay in the archive; a passing test is
+  supporting evidence, not the main body of the change story.
+- The archive's `## Terminal summary` remains forensic and complete: detailed
+  findings grouped or tabulated at 4+ groups, per-finding proof, the full
+  Verification Summary table (Quality Gate | Command | Scope | Status | Notes
+  when supplied), and Final Repository State.
+
+Both surfaces retain the independent auditor verdict and the full six-label
+machine recap. A lone approval may be promoted to the chat headline because
+it is a durable verdict fact, not because tests passed. Width-bound and
+external surfaces use the compact single-line projection of all six labels.
+Every terminal goal notification, including version-bearing already-shipped
+claims and explicit cancellation, carries the change-first human view or the
+compact projection; loop notifications do the same. The executor recap and
+independent auditor verdict stay separate: an approval is not manufactured from
+the presence of a summary.
 
 Metric-loop stops use the same six-label contract in their durable loop state
 and `/loop status`, and every terminal loop notification carries a compact

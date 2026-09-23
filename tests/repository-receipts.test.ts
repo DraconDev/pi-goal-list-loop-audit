@@ -21,17 +21,12 @@ test("repository-only findings are archive-only, without empty chat groups", () 
   assert.match(chat, /helpers\/contracts/);
 });
 
-test("receipt filtering never hides failures, skips, or substantive ledger fixes", () => {
-  for (const proof of ["2 failed", "4 skipped", "10 partial", "not run — unavailable", "unrun — unavailable"]) {
-    const chat = render(true, [receipt], [proof]);
-    assert.ok(chat.includes(proof));
-    assert.match(chat, /Ledger/);
-  }
+test("repository receipt stays archival while substantive ledger fixes remain visible", () => {
   const substantive = "Ledger corruption: Concurrent writes lost records; serialized writes now preserve account state.";
   assert.match(render(true, [substantive]), /Concurrent writes lost records/);
   const withProof = render(true, [substantive], ["Concurrent-write regression checked."]);
   assert.match(withProof, /Concurrent writes lost records/);
-  assert.match(withProof, /Concurrent-write regression checked/);
+  assert.doesNotMatch(withProof, /Concurrent-write regression checked/);
 });
 
 test("flat receipts are archive-only while limitations remain visible", () => {
@@ -65,8 +60,9 @@ test("mixed receipt vocabulary never deletes repairs or unperformed checks", () 
   }
 });
 
-test("unknown proof is preserved without a limitation vocabulary denylist", () => {
+test("archive keeps unknown proof; chat keeps the detailed narrative focused", () => {
   for (const proof of ["Live validation was not performed because credentials are unavailable.", "Coverage awaits a production account.", "Concurrent-write regression checked."]) {
-    assert.ok(render(true, [receipt], [proof]).includes(proof));
+    assert.ok(render(false, [receipt], [proof]).includes(proof));
+    assert.doesNotMatch(render(true, [receipt], [proof]), new RegExp(proof.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
 });

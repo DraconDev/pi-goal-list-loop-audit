@@ -4052,12 +4052,10 @@ test("v0.34.91: detached approval notify carries the agent's completion recap, n
       // Rich voice: informing details arrive as numbered findings.
       assert.ok(recapNotifs[0]!.message.split("\n").some((line: string) => new RegExp(`^\\d+\\. \\*\\*${label}\\*\\*`).test(line)), `approved briefing keeps informing label ${label}`);
     }
-    // Audit 2026-09-13: Tests rides the verification table on failure,
-    // the auto-collapsed PASS line when green — never dropped silently.
-    assert.ok(
-      recapNotifs[0]!.message.split("\n").some((line: string) => /^(\d+\. \*\*Tests\*\*|\| Tests \||\u2014 Verification passed \(Tests)/.test(line)),
-      "approved briefing keeps the Tests proof (finding, table row, or PASS line)",
-    );
+    // Verification is supporting evidence: chat keeps one compact aggregate,
+    // while the archive retains the complete gate/test record.
+    assert.match(recapNotifs[0]!.message, /^### Verification\n[^\n]+$/m, "approved briefing keeps compact verification");
+    assert.doesNotMatch(recapNotifs[0]!.message, /\| Quality Gate|\| Tests \|/, "gate-by-gate table stays archival");
     assert.ok(recapNotifs[0]!.message.split("\n").length <= 20, "verbose rich summary stays bounded");
     // v0.38.42 (field 20260909_140404): a lone approval folds with the
     // verdict count — one canonical bullet, no model ID, no redundant

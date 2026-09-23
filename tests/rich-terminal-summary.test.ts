@@ -51,31 +51,31 @@ function render(extra: Record<string, unknown> = {}) {
   });
 }
 
-test("card opens with a verdict banner, then the request-echo Done headline and numbered Key Findings", () => {
+test("card opens with the outcome, then a change-first account and compact verification", () => {
   const { chatLines } = render();
   assert.equal(chatLines[0], "## Done — shipped the rich terminal voice");
   assert.equal(chatLines.filter(line => line.startsWith("## Done")).length, 1, "one outcome headline");
-  const findingsIdx = chatLines.findIndex((l) => l === "### Key Findings & Remediation");
+  const findingsIdx = chatLines.findIndex((l) => l === "### What Changed");
   assert.ok(findingsIdx > 0, "findings section present");
   assert.match(chatLines[findingsIdx + 1] ?? "", /^1\. \*\*Changed\*\* — /, "numbered bold lead with em-dash body");
   assert.match(chatLines[findingsIdx + 2] ?? "", /^2\. \*\*Evidence\*\* — /, "second finding numbered");
   assert.ok(chatLines.some((l) => /extensions\/completion-summary\.ts/.test(l)), "code refs ride the finding bodies");
 });
 
-test("verification always renders the full table — the PASS-line collapse is retired", () => {
-  const { chatLines } = render();
-  assert.ok(chatLines.includes("### Verification Summary"), "table renders even when every row is green");
-  assert.ok(chatLines.some((l) => /^\| Tests \| PASS \|/.test(l)), "green Tests row present");
-  assert.ok(!chatLines.some((l) => l.startsWith("| Audit |")), "approval lives once in the trailer, not a repeated audit row");
-  assert.ok(!chatLines.some((l) => l.startsWith("\u2014 Verification passed")), "no PASS line stands in for the table");
-  // Findings-first: the table rides after the findings, before Next.
-  const findingsIdx = chatLines.indexOf("### Key Findings & Remediation");
-  const tableIdx = chatLines.indexOf("### Verification Summary");
-  const nextIdx = chatLines.indexOf("### Next");
-  assert.ok(findingsIdx !== -1 && findingsIdx < tableIdx && tableIdx < nextIdx, "findings precede verification, Next closes the card");
+test("chat verification is an aggregate tail; the archive retains the full table", () => {
+  const chat = render().chatLines;
+  assert.ok(chat.includes("### Verification"));
+  assert.ok(chat.includes("1 passed."));
+  assert.ok(!chat.some((l) => /^\| Tests \|/.test(l)), "gate-by-gate table stays archival");
+  const findingsIdx = chat.indexOf("### What Changed");
+  const tableIdx = chat.indexOf("### Verification");
+  assert.ok(findingsIdx !== -1 && findingsIdx < tableIdx, "changes precede supporting verification");
+  const archive = buildRichArchiveSection(richGoal(), "complete", ".pi-glla/archive/20260911-rich-voice.md");
+  assert.ok(archive.includes("### Verification Summary"), "archive keeps the detailed verification record");
+  assert.ok(archive.some((l) => /^\| Tests \| PASS \|/.test(l)), "archive keeps the Tests row");
 });
 
-test("Tests row reports FAIL on nonzero failures and pipes never break the table", () => {
+test("failed verification stays visible as a compact failure aggregate", () => {
   const failing = render({
     goal: seedGoal({
       id: "20260911-rich-fail",
@@ -84,16 +84,12 @@ test("Tests row reports FAIL on nonzero failures and pipes never break the table
     }) as unknown as Goal,
   });
   const row = failing.chatLines.find((l) => l.startsWith("| Tests |"));
-  assert.ok(row, "Tests row present");
-  assert.match(row!, /^\| Tests \| FAIL \|/, "nonzero failures read FAIL");
-  assert.ok(!/(?<!\\)\|/.test(row!.slice("| Tests | FAIL | ".length, -2)), "cell pipes escaped");
-  // Audit 2026-09-13: failure keeps the full table — findings still lead.
-  const tableIdx = failing.chatLines.indexOf("### Verification Summary");
-  const findingsIdx = failing.chatLines.indexOf("### Key Findings & Remediation");
-  const nextIdx = failing.chatLines.indexOf("### Next");
-  assert.ok(tableIdx !== -1, "failing verification renders the full table");
-  assert.ok(!failing.chatLines.some((l) => l.startsWith("\u2014 Verification passed")), "no PASS line on failure");
-  assert.ok(findingsIdx !== -1 && findingsIdx < tableIdx && tableIdx < nextIdx, "findings precede the failure table, Next closes the card");
+  assert.equal(row, undefined, "no row-level Tests table in chat");
+  assert.ok(failing.chatLines.includes("### Verification"), "failure still gets a compact verification tail");
+  assert.ok(failing.chatLines.includes("1 failed."), "aggregate preserves the failure");
+  const findingsIdx = failing.chatLines.indexOf("### What Changed");
+  const tableIdx = failing.chatLines.indexOf("### Verification");
+  assert.ok(findingsIdx !== -1 && findingsIdx < tableIdx, "change account precedes the failure summary");
 });
 
 test("REPORTED verification stays visible — unclaimed status never auto-hides", () => {
@@ -104,8 +100,8 @@ test("REPORTED verification stays visible — unclaimed status never auto-hides"
       completionSummary: SIX.replace("Tests: bun test 2075 pass, 0 fail", "Tests: exit 0, log kept"),
     }) as unknown as Goal,
   });
-  assert.ok(chatLines.includes("### Verification Summary"), "REPORTED keeps the table");
-  assert.ok(chatLines.some((l) => /^\| Tests \| REPORTED \|/.test(l)), "bare-exit notes honestly stay REPORTED");
+  assert.ok(chatLines.includes("### Verification"), "reported evidence gets the compact tail");
+  assert.ok(chatLines.includes("1 reported."), "bare-exit wording is not upgraded to PASS");
 });
 
 test("commit hashes stay in the archive, while chat keeps explanations", () => {
@@ -173,7 +169,7 @@ test("trailer contract holds: approval bullet, record pointer last", () => {
   assert.equal(recordIdx, chatLines.length - 1, "record pointer is the final line");
 });
 
-test("finding and next lines render uncapped (full parity)", () => {
+test("change and next lines render uncapped", () => {
   // v0.38.55: every informing detail reaches the chat — caps retired.
   const crowded = [
     "Outcome: many things",
@@ -206,7 +202,7 @@ test("no audit history means no Audit row, approval voice still closes", () => {
   assert.ok(r.chatLines.some((l) => /completed without audit/.test(l)), "path voice still closes the chat");
 });
 
-test("archive section is rich for complete, Aborted-headlined for aborted", () => {
+test("archive section retains detailed findings and verification for complete, Aborted-headlined for aborted", () => {
   const done = buildRichArchiveSection(richGoal(), "complete", ".pi-glla/archive/20260911-rich-voice.md");
   assert.equal(done[0], "## Done — auditor approved (1 verdict)", "verdict banner opens the archive too");
   assert.ok(done[2]?.startsWith("## Done: restyle the terminal summary — "), "archive headline matches chat");
@@ -234,9 +230,9 @@ test("duration line rides under the headline; unknown facts stay absent", () => 
   assert.equal(bare, "— 2 turns", "only known facts render");
 });
 
-test("fewer than four groups render as nested area subsections", () => {
+test("fewer than four groups render as nested change subsections", () => {
   const { chatLines, transcriptLines } = render({ findingGroups: GROUPS });
-  const findingsIdx = chatLines.findIndex((l) => l === "### Key Findings & Remediation");
+  const findingsIdx = chatLines.findIndex((l) => l === "### What Changed");
   assert.ok(findingsIdx > 0, "findings section present");
   assert.equal(chatLines[findingsIdx + 1], "#### 1. Sound manager", "first area subsection");
   assert.equal(chatLines[findingsIdx + 2], "- **Disable path** — mutes WebAudio", "explanation without archive-only evidence token");
@@ -254,6 +250,7 @@ test("four or more groups render as an Area | Finding | Evidence table", () => {
   const table = { chatLines: buildRichArchiveSection(richGoal(), "complete", "archive.md", groups) };
   const chat = render({ findingGroups: groups }).chatLines;
   assert.ok(chat.some(line => line === "#### 4. Screen B"));
+  assert.ok(chat.includes("### What Changed"));
   assert.ok(!chat.some(line => line.startsWith("| Area |")));
   const headerIdx = table.chatLines.findIndex((l) => l === "| Area | Finding | Evidence |");
   assert.ok(headerIdx > 0, "findings table present");
@@ -272,6 +269,7 @@ test("four or more groups render as an Area | Finding | Evidence table", () => {
 test("three groups stay nested — the table trigger is exactly four", () => {
   const three = render({ findingGroups: [...GROUPS, { title: "Third", findings: ["Lead: body"] }] });
   assert.ok(three.chatLines.some((l) => l.startsWith("#### 3. Third")), "third group nested");
+  assert.ok(three.chatLines.includes("### What Changed"));
   assert.ok(!three.chatLines.some((l) => l.startsWith("| Area |")), "still no table");
 });
 
@@ -292,6 +290,7 @@ test("v0.38.55: render path respects the sanitize trust boundary", () => {
   // is the trust boundary's doing (pinned by the sanitize test above).
   assert.ok(long!.includes("x".repeat(400)), `value substantially present, got ${long!.length}`);
   assert.ok(crowded.chatLines.some((l) => l.startsWith("#### 3.")), "later groups keep their headers");
+  assert.ok(crowded.chatLines.includes("### What Changed"));
   const fifteen = sanitizeFindingGroups(Array.from({ length: 15 }, (_, i) => ({ title: `t${i}`, findings: ["Lead: body"] })));
   const capped = render({ findingGroups: fifteen });
   assert.ok(capped.chatLines.includes("#### 12. t11"), "groups inside the 12-group boundary render");
