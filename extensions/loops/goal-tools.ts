@@ -3450,6 +3450,29 @@ function registerAgentTools(pi: any): void {
       if (!confirmed) {
         return { content: [{ type: "text", text: "Refinement rejected by the user. The loop continues against the current spec — keep improving the metric as defined." }], details: {} };
       }
+      // Stage every side effect before mutating the live loop. A confirmed
+      // spec write failure must leave target/measure/history byte-identical,
+      // not report a partial RAM-only refinement.
+      let nextSpec = loop.specFile ? specFileHash(loop.specFile) ?? undefined : undefined;
+      let nextSpecChecked = loop.specFile ? countCheckedSpecItems(loop.specFile) ?? undefined : undefined;
+      if (specChange && loop.specFile) {
+        try {
+          let spec = fs.readFileSync(loop.specFile, "utf8");
+          if (p.specText?.trim()) spec = p.specText.trim() + "\n";
+          if (p.specAppend?.trim()) spec += (p.specText?.trim() ? "" : spec.endsWith("\n") ? "" : "\n") + p.specAppend.trim() + "\n";
+          const temp = `${loop.specFile}.${process.pid}.${Date.now()}.tmp`;
+          try {
+            fs.writeFileSync(temp, spec, { encoding: "utf8", flag: "wx" });
+            fs.renameSync(temp, loop.specFile);
+          } finally {
+            try { fs.rmSync(temp, { force: true }); } catch { /* already renamed */ }
+          }
+          nextSpec = specFileHash(loop.specFile) ?? undefined;
+          nextSpecChecked = countCheckedSpecItems(loop.specFile) ?? undefined;
+        } catch (e) {
+          return { content: [{ type: "text", text: `Spec file write failed: ${String(e).slice(0, 200)}. No loop state changed; fix storage and re-propose.` }], details: {}, isError: true };
+        }
+      }
       applyRefinement(loop, {
         at: nowIso(),
         iteration: loop.iteration,
@@ -3458,23 +3481,10 @@ function registerAgentTools(pi: any): void {
         oldMeasureCmd: loop.measureCmd ?? "",
         newMeasureCmd: newMeasure,
       }, newBaseline);
-      // v0.33.2: the orchestrator owns the spec write (honesty stays
-      // inspectable — the agent never edits the spec it's judged against
-      // outside a confirmed refine).
-      if (specChange && loop.specFile) {
-        try {
-          if (p.specText?.trim()) fs.writeFileSync(loop.specFile, p.specText.trim() + "\n");
-          if (p.specAppend?.trim()) fs.appendFileSync(loop.specFile, (p.specText?.trim() ? "" : "\n") + p.specAppend.trim() + "\n");
-          loop.specHash = specFileHash(loop.specFile) ?? undefined;
-          // v0.35.43 (audit finding): re-baseline checkbox progress too —
-          // otherwise the next tick sees checked > specChecked against the
-          // OLD file's count and ledgers spec_item_progress attributed to
-          // the agent's iteration: unearned progress feeding the stuck gate.
-          loop.specChecked = countCheckedSpecItems(loop.specFile) ?? undefined;
-          appendLedger(liveCtx.cwd, "spec_updated", { via: "refine", iteration: loop.iteration, replaced: Boolean(p.specText?.trim()), appended: Boolean(p.specAppend?.trim()) });
-        } catch (e) {
-          return { content: [{ type: "text", text: `Spec file write failed: ${String(e).slice(0, 200)}. The target/measure refinement was applied; re-propose the spec change.` }], details: {} };
-        }
+      if (specChange) {
+        loop.specHash = nextSpec;
+        loop.specChecked = nextSpecChecked;
+        appendLedger(liveCtx.cwd, "spec_updated", { via: "refine", iteration: loop.iteration, replaced: Boolean(p.specText?.trim()), appended: Boolean(p.specAppend?.trim()) });
       }
       persistState(liveCtx);
       appendLedger(liveCtx.cwd, "loop_refined", { iteration: loop.iteration, newTarget, newMeasureCmd: newMeasure, newBaseline, specChanged: specChange || undefined });
