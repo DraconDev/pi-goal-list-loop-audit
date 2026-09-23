@@ -2203,7 +2203,8 @@ test("v0.33.2: loop proactiveness + respec machinery", () => {
   assert.match(SRC, /state\.loop!\.refineHint = hint\.slice\(0, 300\);/);
   // propose_loop_refine carries specText/specAppend; the orchestrator owns the write.
   assert.match(GOAL, /specText: Type\.Optional/);
-  assert.match(GOAL, /fs\.writeFileSync\(loop\.specFile/);
+  assert.match(GOAL, /fs\.readFileSync\(loop\.specFile/);
+  assert.match(GOAL, /fs\.renameSync\(temp, loop\.specFile\)/);
   // Spec drift detection + checkbox progress emission (spec_item_progress is now emitted).
   assert.match(SRC, /appendLedger\(ctx\.cwd, "spec_updated", \{ via: "external"/);
   assert.match(SRC, /appendLedger\(ctx\.cwd, "spec_item_progress", \{ iteration: loop\.iteration, newlyChecked/);

@@ -104,7 +104,7 @@ test("v0.34.53: /list settings is read-only — it still redirects on a stale ex
 
   const after = ledgerText(cwd);
   assert.ok(ctx.ui.matching("Settings are under /glla").length >= 1, "redirect still works while stale");
-  assert.ok(after.includes('"list_settings_redirect"'), "redirect ledgered");
+  assert.ok(!after.includes('"list_settings_redirect"'), "stale inspection stays byte-read-only");
   assert.ok(!after.includes('"list_mutation_refused_stale"'), "a read-only redirect is not a refused mutation");
   assert.ok(!after.includes('"list_dump_refused_stale"') && !/list_mutation_refused_stale/.test(after), "the dump gate never fired");
   const state = readState(cwd) as { goal: unknown; list: unknown[] };
@@ -145,7 +145,7 @@ test("v0.34.53: source — /list help documents /glla as the settings command an
   const settingsIdx = SRC.indexOf('if (sub === "settings") {');
   const dumpIdx = SRC.indexOf("// v0.18.0: an unknown first word isn't an error");
   assert.ok(settingsIdx > 0 && dumpIdx > settingsIdx, "settings branch precedes the dump fallthrough");
-  assert.match(SRC, /appendLedger\(ctx\.cwd, "list_settings_redirect", \{\}\)/, "redirect is ledgered");
+  assert.match(SRC, /if \(!staleEntry\) appendLedger\(ctx\.cwd, "list_settings_redirect", \{\}\)/, "redirect is ledgered only from the admitted session");
   // And the redirect message itself names the supported command:
   assert.match(SRC, /Settings are under \/glla, not \/list — bare \/glla opens the settings table/, "message names /glla");
 });

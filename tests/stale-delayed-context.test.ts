@@ -103,7 +103,7 @@ test("v0.34.20: loop measurement and branch cleanup rebind after async work", ()
   assert.match(tick, /appendLedger\(ctx\.cwd, "loop_tick_abandoned"/);
   assert.match(tick, /await runMeasure\(ctx, loop\.measureCmd!\);\n  if \(!rebindLoop\(\)\) return;/);
   assert.match(tick, /await runGit\(ctx, \["rev-parse", "HEAD"\]\);\n  if \(!rebindLoop\(\)\) return;/);
-  assert.match(tick, /if \(await finishLoopGit\(ctx, loop\)\) return;\n    if \(!rebindLoop\(\)\) return;/);
+  assert.match(tick, /if \(await finishLoopGit\(ctx, loop\)\) return;\n\s*if \(!rebindLoop\(\)\) return;/);
   assert.doesNotMatch(tick, /await runMeasure\(ctx, loop\.measureCmd!\);\n  if \(!rebind\(\)\) return;/);
   // v0.35.4: branch=1 terminal stops must not erase the final iteration's
   // work (finishLoopGit resets --hard), and flat/null measures are not
