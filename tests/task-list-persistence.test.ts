@@ -52,7 +52,7 @@ async function boot(cwd: string, goal = seedGoal({ status: "active", objective: 
   activate(pi.api);
   __testOnlyLoadState(cwd);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: `task-persist-${Date.now()}` } });
-  __testOnlyRememberCtx(ctx);
+  __testOnlyRememberCtx(ctx as never);
   __testOnlyRegisterAgentTools(pi.api);
   ctx.ui.confirmImpl = async () => true;
   ctx.ui.selectImpl = async (_title, options) => options[0];
@@ -79,7 +79,7 @@ test("normal task-list proposal reports failure and stores no task list", async 
       tasks: [{ title: "Must not land" }],
     }, ctx);
     assert.match(res.content[0]!.text, /Task list was not persisted/);
-    assert.ok(ctx.ui.notifies.slice(before).some((notice) => notice.message.includes("Persistence degraded")));
+    assert.ok(ctx.ui.notifies.slice(before).some((notice) => notice.message.includes("Goal update was not persisted")));
     // The live object may be RAM-only under degradation, but the confirmed
     // behavior is that no success response is emitted. Reload from the last
     // durable line proves the task list was not consumed as accepted.
@@ -121,7 +121,7 @@ test("repair proposal preserves the source sidecar and queue when the task list 
       tasks: [{ title: "Must not consume source" }],
     }, ctx);
     assert.match(res.content[0]!.text, /Repair task list was not persisted/);
-    assert.equal(fs.existsSync(path.join(cwd, ".pi-glla", "queue", `${sourceId}.json`)), true, "source sidecar survives");
+    assert.equal(fs.existsSync(path.join(cwd, ".pi-glla", "goals", `${sourceId}.queue.json`)), true, "source sidecar survives");
     const durable = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
     assert.doesNotMatch(durable, /faulty_objective_source_consumed/);
     assert.doesNotMatch(durable, /Must not consume source/);
