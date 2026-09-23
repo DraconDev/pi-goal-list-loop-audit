@@ -41,7 +41,9 @@ async function boot(cwd: string, goal = seedGoal({ status: "active", objective: 
   __testOnlyLoadState(cwd);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: `task-persist-${Date.now()}` } });
   __testOnlyRememberCtx(ctx);
-  __testOnlyRegisterAgentTools(pi);
+  __testOnlyRegisterAgentTools(pi.api);
+  ctx.ui.confirmImpl = async () => true;
+  ctx.ui.customStubMode = true;
   session = { pi, ctx };
   return { pi, ctx };
 }
