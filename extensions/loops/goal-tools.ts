@@ -3679,7 +3679,7 @@ function registerAgentTools(pi: any): void {
       if (repairTarget) {
         const prior = state.goal;
         const parsed = extractVerificationContract(redraftedObjective);
-        updateGoal({
+        const persisted = updateGoal({
           objective: parsed.objective,
           ...(parsed.verificationContract ? { verificationContract: parsed.verificationContract } : repairTarget.verificationContract ? { verificationContract: repairTarget.verificationContract } : {}),
           taskList,
@@ -3690,6 +3690,13 @@ function registerAgentTools(pi: any): void {
             userSeeds: [...(prior.objectiveProvenance?.userSeeds ?? []), redraftedObjective].slice(-10),
           },
         }, liveCtx);
+        if (!persisted) {
+          return {
+            content: [{ type: "text", text: "Repair task list was not persisted. The original source item and repair card remain queued; fix .pi-glla storage and retry." }],
+            details: {},
+            isError: true,
+          };
+        }
         appendLedger(liveCtx.cwd, "faulty_objective_replanned", {
           goalId: prior.id,
           targetId: repairTarget.id,
@@ -3726,7 +3733,13 @@ function registerAgentTools(pi: any): void {
           });
         }
       } else {
-        updateGoal({ taskList }, liveCtx);
+        if (!updateGoal({ taskList }, liveCtx)) {
+          return {
+            content: [{ type: "text", text: "Task list was not persisted. No task was added; fix .pi-glla storage and retry." }],
+            details: {},
+            isError: true,
+          };
+        }
       }
       const subCount = taskList.tasks.reduce((n, t) => n + (t.subtasks?.length ?? 0), 0);
       return {
