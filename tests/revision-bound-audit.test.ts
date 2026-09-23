@@ -278,9 +278,9 @@ test("repair replan bumps the contract revision and invalidates an older approva
   const pi = new MockPi();
   activate(pi.api);
   __testOnlyRegisterAgentTools(pi.api);
-  rememberCtxFor(cwd);
   const toolCtx = ownerCtx(cwd) as any;
-  toolCtx.ui.confirmImpl = async () => true;
+  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ aggressiveMode: false, autoAcceptDrafts: true }));
+  __testOnlyRememberCtx(toolCtx as never);
 
   const res = await pi.runTool("propose_task_list", {
     objective: "Restore the real saved objective. Done when: focused tests pass",

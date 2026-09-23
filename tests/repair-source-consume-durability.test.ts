@@ -28,7 +28,7 @@ afterEach(() => {
 
 test("failed repair-source deletion restores the durable repair link", async () => {
   const cwd = tmpCwd();
-  fs.writeFileSync(GLOBAL, JSON.stringify({ aggressiveMode: false }));
+  fs.writeFileSync(GLOBAL, JSON.stringify({ aggressiveMode: false, autoAcceptDrafts: true }));
   const source = { id: "repair-source", objective: "restore the saved work", addedAt: new Date().toISOString() };
   const repairTarget = { id: source.id, objective: source.objective, reasons: ["suspicious"], source: "list-activation" as const };
   seedState(cwd, {
@@ -49,7 +49,6 @@ test("failed repair-source deletion restores the durable repair link", async () 
   activate(pi.api);
   __testOnlyRegisterAgentTools(pi.api);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "repair-source-fail" } });
-  (ctx.ui as any).confirmImpl = async () => true;
   __testOnlyRememberCtx(ctx as never);
   session = { pi, ctx };
 
