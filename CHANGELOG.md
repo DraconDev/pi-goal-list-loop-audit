@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.96 — /glla resume + /loop resume release the load hold before probing (2026-09-23)
+
+- Field: a deterministic-400 manual hold cold-loaded (load hold engaged), then `/glla resume` consumed the manual hold and the goal stayed parked — the fired recovery probe died silently on the `supervisorPaused` gate, which includes `loadHoldAt`. No probe, no timer, stale resume text. `/glla resume` and `/loop resume` now release the cold-load hold at entry like `/goal resume` and agent-resume already do (audit/GLLA-RESUME-LOAD-HOLD-2026-09-23.md). Workaround on 0.38.95: run `/goal resume`.
+
 ## 0.38.95 — Stop the pause cycles: image-count clamp, ledger dedupe (2026-09-23)
 
 - The payload guard now clamps image blocks per request (default 4, the observed provider limit) as well as bytes — small screenshots fit the byte budget but 400'd on count (field 2026-09-21: `Image count 12 exceeds limit 4`). Oldest-first, keep-recent floor wins on conflict; eviction entries carry the remaining count (audit/PAUSES-2026-09-22.md).
