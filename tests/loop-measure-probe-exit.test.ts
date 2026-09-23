@@ -7,45 +7,45 @@ import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 
 import activate, {
+  __testOnlyRegisterAgentTools,
+  __testOnlyRememberCtx,
   __testOnlyResetOwnerSession,
   __testOnlyResetStaleFlag,
 } from "../extensions/loops/goal.js";
-import { MockPi, makeMockCtx, seedLoop, seedState, tick, tmpCwd, type MockCtx } from "./harness/mock-pi.js";
+import { readState } from "../extensions/goal-loop-core.js";
+import { MockPi, makeMockCtx, seedLoop, seedState, tmpCwd, type MockCtx } from "./harness/mock-pi.js";
 
 const GLOBAL = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
 const originalGlobal = fs.readFileSync(GLOBAL, "utf8");
 let session: { pi: MockPi; ctx: MockCtx } | null = null;
 
-async function harness(cwd: string, autoResume: boolean) {
-  fs.writeFileSync(GLOBAL, JSON.stringify({ autoResume, aggressiveMode: false }));
+function harness(cwd: string) {
+  fs.writeFileSync(GLOBAL, JSON.stringify({ aggressiveMode: false }));
   __testOnlyResetOwnerSession();
   __testOnlyResetStaleFlag();
   const pi = new MockPi();
   activate(pi.api);
+  (globalThis as any).extensionApi = pi.api;
+  __testOnlyRegisterAgentTools(pi.api);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: `measure-exit-${Date.now()}-${Math.random()}` } });
-  await pi.fire("session_start", { reason: "reload" }, ctx);
-  await tick(50);
+  __testOnlyRememberCtx(ctx as never);
   session = { pi, ctx };
   return { pi, ctx };
 }
 
-afterEach(async () => {
-  if (session) {
-    const current = session;
-    session = null;
-    await current.pi.fire("session_shutdown", { reason: "test-end" }, current.ctx);
-  }
+afterEach(() => {
+  session = null;
   fs.writeFileSync(GLOBAL, originalGlobal);
 });
 
 test("propose_loop_draft rejects non-zero measure output even when stdout is numeric", async () => {
   const cwd = tmpCwd();
   seedState(cwd, { loop: seedLoop({ active: false, stopReason: "paused by user (/loop pause)" }) });
-  const { pi, ctx } = await harness(cwd, false);
-  // Enter the production loop-drafting gate and satisfy the interview floor.
-  await pi.command("loop", "", ctx);
-  await pi.fire("message_start", { message: { role: "user" } }, ctx);
-  await pi.fire("message_start", { message: { role: "user" } }, ctx);
+  const { pi, ctx } = harness(cwd);
+  // The real slash command owns this gate; test-only reach the same runtime
+  // global without claiming a lifecycle event (which would restore/hold state).
+  (globalThis as any).draftingTarget = "loop";
+  (globalThis as any).draftingUserReplies = 1;
   pi.execHandler = () => ({ code: 7, stdout: "42\n", stderr: "measure exploded" });
 
   const res = await pi.runTool("propose_loop_draft", {
@@ -68,7 +68,13 @@ test("propose_loop_refine rejects non-zero measure output and leaves the live lo
     lastValue: 10,
   });
   seedState(cwd, { loop: original });
-  const { pi, ctx } = await harness(cwd, true);
+  const { pi, ctx } = harness(cwd);
+  // Bind the in-memory loop that the test-only loader normally reads.
+  (globalThis as any).__testOnlyLoadState?.(cwd);
+  // The singleton may already be bound from another fixture in this process;
+  // restore the exact live-loop shape through the public state projection.
+  const { replaceState } = await import("../extensions/goal-state.js");
+  replaceState({ ...readState(cwd), loop: original as never });
   pi.execHandler = () => ({ code: 9, stdout: "99\n", stderr: "refine probe failed" });
 
   const res = await pi.runTool("propose_loop_refine", {
@@ -78,7 +84,7 @@ test("propose_loop_refine rejects non-zero measure output and leaves the live lo
   }, ctx);
   assert.match(res.content[0]!.text, /New measure command FAILED/);
   assert.match(res.content[0]!.text, /exited with code 9/);
-  const current = JSON.parse(fs.readFileSync(`${cwd}/.pi-glla/active.jsonl`, "utf8").trim().split("\n").at(-1)!).value.loop;
+  const current = readState(cwd).loop as { target: string; measureCmd?: string; bestValue?: number };
   assert.equal(current.target, original.target);
   assert.equal(current.measureCmd, original.measureCmd);
   assert.equal(current.bestValue, original.bestValue);
