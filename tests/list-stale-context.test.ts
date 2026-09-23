@@ -182,18 +182,21 @@ test("v0.34.51: /list show and /list depth stay usable on a stale handle (inspec
   invalidateHostSession(pi, ctx);
 
   await pi.command("list", "show", ctx);
+  await pi.command("list", "settings", ctx);
   await tick();
 
   const after = ledgerText(cwd);
   const shows = ctx.ui.matching("List (1)");
   assert.ok(shows.length >= 1, "the queue is still visible on the stale handle");
   assert.ok(shows.some((n) => n.message.includes("queued item one")), "items render");
-  assert.ok(!after.includes('"list_mutation_refused_stale"'), "read-only show is not refused");
+  assert.ok(!after.includes('"list_mutation_refused_stale"'), "read-only commands are not refused");
   assert.equal(
     after.split("\n").length,
     before.split("\n").length + 1, // only the entry-probe stale ledger line was added
-    "show itself writes nothing beyond the probe trail",
+    "stale show/settings add no command-event ledger lines",
   );
+  assert.ok(!after.includes('"list_recovered_from_disk"'));
+  assert.ok(!after.includes('"list_settings_redirect"'));
 });
 
 test("v0.34.51: the honest recovery result — the refreshed session owns the command and the add lands", async () => {

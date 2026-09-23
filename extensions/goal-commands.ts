@@ -1412,6 +1412,9 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
   }
 
   if (sub === "show") {
+    // A stale handle may inspect durable sidecars, but inspection must stay
+    // byte-read-only: do not turn recovery into a shared-ledger write from
+    // the superseded session.
     const memQueue = listQueue();
     // v0.34.60: stale-handle fallback. If in-memory is empty but disk has
     // queue sidecar files (a fresh pi session that hasn't yet reparsed
@@ -1425,7 +1428,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
       if (state.goal?.id) exclude.add(state.goal.id);
       const diskQueue = readQueueFromDisk(ctx.cwd, exclude);
       if (diskQueue.length > 0) {
-        appendLedger(ctx.cwd, "list_recovered_from_disk", { count: diskQueue.length });
+        if (!staleEntry) appendLedger(ctx.cwd, "list_recovered_from_disk", { count: diskQueue.length });
         queue = diskQueue;
       }
     }
@@ -1686,7 +1689,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
   // there too. Redirect explicitly — never draft from a settings query.
   // Read-only: works on a stale handle too, like the /glla read-only actions.
   if (sub === "settings") {
-    appendLedger(ctx.cwd, "list_settings_redirect", {});
+    if (!staleEntry) appendLedger(ctx.cwd, "list_settings_redirect", {});
     ctx.ui.notify(
       "Settings are under /glla, not /list — bare /glla opens the settings table (status/log/stats/audits and the actions live there too).",
       "info",
@@ -2707,6 +2710,9 @@ function cmdGllaVersion(ctx: ExtensionContext): void {
 // under <stateDir>/bugs/ so the queue and active goal stay exactly as
 // they were. Stale-safe and pending-safe: read-only w.r.t. goal state.
 export function cmdGllaBug(message: string, ctx: ExtensionContext): string {
+  if (stateRootPending()) {
+    return `Bug capture deferred — the selected sessionDir is not resolved yet; retry after the host session settles.`;
+  }
   const gllaDir = resolveGllaStateDir(ctx.cwd);
   const bugsDir = path.join(gllaDir, "bugs");
   try {
@@ -3001,6 +3007,10 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
     return;
   }
   if (/^bug(?:\s|$)/.test(trimmed)) {
+    if (stateRootPending()) {
+      ctx.ui.notify("Bug capture deferred — the selected sessionDir is not resolved yet. Reload the host session and retry; no fallback .pi-glla tree was created.", "warning");
+      return;
+    }
     const msg = trimmed.slice("bug".length).trim();
     cmdGllaBug(msg, ctx);
     return;

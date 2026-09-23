@@ -21,6 +21,7 @@ import { persistApprovalRender } from "../extensions/approval-render-store.js";
 import { refreshUpdateCheck } from "../extensions/glla-update-check.js";
 import { rollupProject, discoverGllaProjects } from "../extensions/goal-loop-stats.js";
 import { readPitfallsBrief } from "../extensions/goal-continuation.js";
+import { cmdGllaBug } from "../extensions/goal-commands.js";
 
 function fixture(stateRoot: "workingDir" | "sessionDir" = "workingDir") {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "glla-consumer-cwd-"));
@@ -126,7 +127,12 @@ test("pending sessionDir defers dispatch, reviewer, and audit writes — no cwd 
       throw new Error("must not spawn while state root is pending");
     }) as never);
     assert.equal(spawned, false, "pending skips the registry refresh");
-    assert.equal(fs.existsSync(path.join(fx.cwd, ".pi-glla")), false);
+    // /glla bug is deliberately not goal-state, but it still writes under the
+    // selected GLLA root and therefore must not create a cwd fallback tree.
+    const ctx = { cwd: fx.cwd } as never;
+    const bug = cmdGllaBug("pending root sentinel", ctx);
+    assert.match(bug, /deferred/i);
+    assert.equal(fs.existsSync(path.join(fx.cwd, ".pi-glla")), false, "pending bug capture stays deferred");
   } finally {
     fx.restore();
   }
