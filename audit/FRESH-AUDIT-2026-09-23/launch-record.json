@@ -1,0 +1,719 @@
+{
+  "workflowRunId": "876cf269-f827-4de0-b166-e92a0175bea8",
+  "dispatch": "single runs.all workflow with four scout children",
+  "children": [
+    {
+      "runId": "1737a6de-ee84-490d-8533-3d47b1fbfd0e",
+      "agent": "scout",
+      "task": "[prompt redacted]",
+      "exitCode": 1,
+      "model": "openrouter/stealth/space-bunny-alpha:low",
+      "usage": {
+        "input": 176607,
+        "output": 26190,
+        "cacheRead": 1029640,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 12
+      },
+      "error": "Acceptance rejected: Staged files present: MM .pi-glla/active.jsonl, M  extensions/loops/goal-tools.ts, AM tests/loop-measure-probe-exit.test.ts",
+      "acceptance": {
+        "status": "rejected",
+        "evidenceStatus": "rejected",
+        "explicit": true,
+        "effectiveAcceptance": {
+          "level": "checked",
+          "explicit": true,
+          "inferredReason": [
+            "default lightweight attestation"
+          ],
+          "criteria": [
+            {
+              "id": "criterion-1",
+              "must": "Return a concise result and residual risks when applicable",
+              "evidence": [
+                "changed-files",
+                "tests-added",
+                "commands-run",
+                "residual-risks",
+                "no-staged-files"
+              ],
+              "severity": "required"
+            }
+          ],
+          "evidence": [
+            "changed-files",
+            "tests-added",
+            "commands-run",
+            "residual-risks",
+            "no-staged-files"
+          ],
+          "verify": [],
+          "stopRules": []
+        },
+        "inferredReason": [
+          "default lightweight attestation"
+        ],
+        "criteria": [
+          {
+            "id": "criterion-1",
+            "must": "Return a concise result and residual risks when applicable",
+            "evidence": [
+              "changed-files",
+              "tests-added",
+              "commands-run",
+              "residual-risks",
+              "no-staged-files"
+            ],
+            "severity": "required"
+          }
+        ],
+        "runtimeChecks": [
+          {
+            "id": "criterion:criterion-1",
+            "status": "passed",
+            "message": "Required criterion 'criterion-1' satisfied."
+          },
+          {
+            "id": "evidence:changed-files",
+            "status": "passed",
+            "message": "changed-files evidence present."
+          },
+          {
+            "id": "evidence:tests-added",
+            "status": "not-applicable",
+            "message": "tests-added evidence explicitly reported as not applicable."
+          },
+          {
+            "id": "evidence:commands-run",
+            "status": "passed",
+            "message": "commands-run evidence present."
+          },
+          {
+            "id": "evidence:residual-risks",
+            "status": "passed",
+            "message": "residual-risks evidence present."
+          },
+          {
+            "id": "evidence:no-staged-files",
+            "status": "passed",
+            "message": "no-staged-files evidence present."
+          },
+          {
+            "id": "no-staged-files",
+            "status": "failed",
+            "message": "Staged files present: MM .pi-glla/active.jsonl, M  extensions/loops/goal-tools.ts, AM tests/loop-measure-probe-exit.test.ts"
+          }
+        ],
+        "verifyRuns": [],
+        "childReport": {
+          "criteriaSatisfied": [
+            {
+              "id": "criterion-1",
+              "status": "satisfied",
+              "evidence": "Reported three current, deduplicated findings with severity, exact locations, concrete failure scenarios, test gaps, and residual risks."
+            }
+          ],
+          "changedFiles": [
+            "/home/dracon/.pi/agent/sessions/--home-dracon-Dev-pi-plugins-pi-goal-list-loop-audit--/subagent-artifacts/outputs/876cf269-f827-4de0-b166-e92a0175bea8/lifecycle-recovery.md"
+          ],
+          "testsAddedOrUpdated": [],
+          "commandsRun": [
+            {
+              "command": "targeted read-only inspection of scoped production files and directly relevant tests",
+              "result": "passed",
+              "summary": "Mapped lifecycle, persistence, continuation, recovery, heartbeat, and branch-mode paths."
+            },
+            {
+              "command": "deduplication search against .pi-glla/audit-loop/findings.md",
+              "result": "passed",
+              "summary": "Excluded previously recorded findings and retained distinct current failure paths."
+            },
+            {
+              "command": "git status --short; git diff --cached --name-only",
+              "result": "passed",
+              "summary": "Only a pre-existing unstaged .pi-glla/active.jsonl modification was present; no staged files."
+            }
+          ],
+          "validationOutput": [
+            "Findings and exact line ranges were re-read before reporting.",
+            "Repository product code and tests were not modified."
+          ],
+          "residualRisks": [
+            "No failure-injection tests were executed or added during this read-only audit.",
+            "The pre-existing unstaged .pi-glla/active.jsonl modification remains outside this audit."
+          ],
+          "noStagedFiles": true,
+          "diffSummary": "Created only the required external audit artifact.",
+          "reviewFindings": [
+            "blocker: extensions/goal-loop.ts:771-894 - failed terminal commit can be followed by destructive reset and erase work",
+            "medium: extensions/goal-loop.ts:514-546 - failed dispatch consumes one-shot loop directives",
+            "medium: extensions/goal-recovery.ts:216-229 and extensions/goal-heartbeat.ts:1192-1201 - stale audit recovery can claim success without durable state"
+          ],
+          "manualNotes": "BLOCKERS: HIGH-1 is a precise audit blocker."
+        }
+      },
+      "launchContractDigest": "5411e85274b4d1ab0547e735ccffc6c6808f1cfba509601afcb636f84dbb5f55",
+      "launchResolvedExtensions": {
+        "version": 1,
+        "source": "launch-resolved",
+        "disableAmbientExtensions": false,
+        "runtime": [
+          "sha256:86e8e41b016c897c"
+        ],
+        "configured": [],
+        "required": [],
+        "effective": [
+          "sha256:86e8e41b016c897c"
+        ],
+        "omitted": {
+          "runtime": 0,
+          "configured": 0,
+          "required": 0,
+          "effective": 0
+        }
+      },
+      "transcriptPath": "/home/dracon/.pi/agent/sessions/--home-dracon-Dev-pi-plugins-pi-goal-list-loop-audit--/subagent-artifacts/1737a6de-ee84-490d-8533-3d47b1fbfd0e_scout_transcript.jsonl",
+      "skills": [],
+      "timestamp": 1790189233375
+    },
+    {
+      "runId": "37de3347-4d83-4481-be0e-9cb47240fbf3",
+      "agent": "scout",
+      "task": "[prompt redacted]",
+      "exitCode": 0,
+      "model": "openrouter/stealth/space-bunny-alpha:low",
+      "usage": {
+        "input": 193827,
+        "output": 36343,
+        "cacheRead": 1021151,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 11
+      },
+      "acceptance": {
+        "status": "checked",
+        "evidenceStatus": "checked",
+        "explicit": true,
+        "effectiveAcceptance": {
+          "level": "checked",
+          "explicit": true,
+          "inferredReason": [
+            "default lightweight attestation"
+          ],
+          "criteria": [
+            {
+              "id": "criterion-1",
+              "must": "Return a concise result and residual risks when applicable",
+              "evidence": [
+                "changed-files",
+                "tests-added",
+                "commands-run",
+                "residual-risks",
+                "no-staged-files"
+              ],
+              "severity": "required"
+            }
+          ],
+          "evidence": [
+            "changed-files",
+            "tests-added",
+            "commands-run",
+            "residual-risks",
+            "no-staged-files"
+          ],
+          "verify": [],
+          "stopRules": []
+        },
+        "inferredReason": [
+          "default lightweight attestation"
+        ],
+        "criteria": [
+          {
+            "id": "criterion-1",
+            "must": "Return a concise result and residual risks when applicable",
+            "evidence": [
+              "changed-files",
+              "tests-added",
+              "commands-run",
+              "residual-risks",
+              "no-staged-files"
+            ],
+            "severity": "required"
+          }
+        ],
+        "runtimeChecks": [
+          {
+            "id": "criterion:criterion-1",
+            "status": "passed",
+            "message": "Required criterion 'criterion-1' satisfied."
+          },
+          {
+            "id": "evidence:changed-files",
+            "status": "not-applicable",
+            "message": "changed-files evidence explicitly reported as not applicable."
+          },
+          {
+            "id": "evidence:tests-added",
+            "status": "not-applicable",
+            "message": "tests-added evidence explicitly reported as not applicable."
+          },
+          {
+            "id": "evidence:commands-run",
+            "status": "passed",
+            "message": "commands-run evidence present."
+          },
+          {
+            "id": "evidence:residual-risks",
+            "status": "passed",
+            "message": "residual-risks evidence present."
+          },
+          {
+            "id": "evidence:no-staged-files",
+            "status": "passed",
+            "message": "no-staged-files evidence present."
+          },
+          {
+            "id": "no-staged-files",
+            "status": "passed",
+            "message": "No staged files detected."
+          }
+        ],
+        "verifyRuns": [],
+        "childReport": {
+          "criteriaSatisfied": [
+            {
+              "id": "criterion-1",
+              "status": "satisfied",
+              "evidence": "Reported 10 scoped, source-verified candidates with exact file:line locations, reproducible scenarios, missing-test rationale, deduplication notes, and residual risks."
+            }
+          ],
+          "changedFiles": [],
+          "testsAddedOrUpdated": [],
+          "commandsRun": [
+            {
+              "command": "targeted find/grep/read/nl inspection",
+              "result": "passed",
+              "summary": "Mapped requested source files and relevant tests."
+            },
+            {
+              "command": "git status --short",
+              "result": "passed",
+              "summary": "Only pre-existing unstaged .pi-glla/active.jsonl was observed; no source or test edits were made."
+            },
+            {
+              "command": "focused test suites",
+              "result": "not-run",
+              "summary": "Read-only audit reached the browsing budget."
+            }
+          ],
+          "validationOutput": [
+            "Deduplicated against .pi-glla/audit-loop/findings.md.",
+            "BLOCKERS: none"
+          ],
+          "residualRisks": [
+            "Runtime tests were not executed; terminal-control findings should be confirmed against the live host UI."
+          ],
+          "noStagedFiles": true,
+          "diffSummary": "No repository source or test files changed; findings artifact written outside the repository.",
+          "reviewFindings": [
+            "no blockers"
+          ],
+          "manualNotes": "See the authoritative findings artifact at the required output path."
+        }
+      },
+      "launchContractDigest": "6ea8c0df730a6dee79094dc99fa8e23ec2f484e05538809c1b9f0dc35c9c7423",
+      "launchResolvedExtensions": {
+        "version": 1,
+        "source": "launch-resolved",
+        "disableAmbientExtensions": false,
+        "runtime": [
+          "sha256:86e8e41b016c897c"
+        ],
+        "configured": [],
+        "required": [],
+        "effective": [
+          "sha256:86e8e41b016c897c"
+        ],
+        "omitted": {
+          "runtime": 0,
+          "configured": 0,
+          "required": 0,
+          "effective": 0
+        }
+      },
+      "transcriptPath": "/home/dracon/.pi/agent/sessions/--home-dracon-Dev-pi-plugins-pi-goal-list-loop-audit--/subagent-artifacts/37de3347-4d83-4481-be0e-9cb47240fbf3_scout_transcript.jsonl",
+      "skills": [],
+      "timestamp": 1790189301423
+    },
+    {
+      "runId": "4ef32ebd-3037-462d-b9ad-58b036a98323",
+      "agent": "scout",
+      "task": "[prompt redacted]",
+      "exitCode": 0,
+      "model": "openrouter/stealth/space-bunny-alpha:low",
+      "usage": {
+        "input": 118350,
+        "output": 27054,
+        "cacheRead": 1101353,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 17
+      },
+      "acceptance": {
+        "status": "checked",
+        "evidenceStatus": "checked",
+        "explicit": true,
+        "effectiveAcceptance": {
+          "level": "checked",
+          "explicit": true,
+          "inferredReason": [
+            "default lightweight attestation"
+          ],
+          "criteria": [
+            {
+              "id": "criterion-1",
+              "must": "Return a concise result and residual risks when applicable",
+              "evidence": [
+                "changed-files",
+                "tests-added",
+                "commands-run",
+                "residual-risks",
+                "no-staged-files"
+              ],
+              "severity": "required"
+            }
+          ],
+          "evidence": [
+            "changed-files",
+            "tests-added",
+            "commands-run",
+            "residual-risks",
+            "no-staged-files"
+          ],
+          "verify": [],
+          "stopRules": []
+        },
+        "inferredReason": [
+          "default lightweight attestation"
+        ],
+        "criteria": [
+          {
+            "id": "criterion-1",
+            "must": "Return a concise result and residual risks when applicable",
+            "evidence": [
+              "changed-files",
+              "tests-added",
+              "commands-run",
+              "residual-risks",
+              "no-staged-files"
+            ],
+            "severity": "required"
+          }
+        ],
+        "runtimeChecks": [
+          {
+            "id": "criterion:criterion-1",
+            "status": "passed",
+            "message": "Required criterion 'criterion-1' satisfied."
+          },
+          {
+            "id": "evidence:changed-files",
+            "status": "not-applicable",
+            "message": "changed-files evidence explicitly reported as not applicable."
+          },
+          {
+            "id": "evidence:tests-added",
+            "status": "not-applicable",
+            "message": "tests-added evidence explicitly reported as not applicable."
+          },
+          {
+            "id": "evidence:commands-run",
+            "status": "passed",
+            "message": "commands-run evidence present."
+          },
+          {
+            "id": "evidence:residual-risks",
+            "status": "passed",
+            "message": "residual-risks evidence present."
+          },
+          {
+            "id": "evidence:no-staged-files",
+            "status": "passed",
+            "message": "no-staged-files evidence present."
+          },
+          {
+            "id": "no-staged-files",
+            "status": "passed",
+            "message": "No staged files detected."
+          }
+        ],
+        "verifyRuns": [],
+        "childReport": {
+          "criteriaSatisfied": [
+            {
+              "id": "criterion-1",
+              "status": "satisfied",
+              "evidence": "Completed the scoped read-only audit, recorded five concrete findings with severity, locations, impact, and verification gaps, deduplicated against the audit history, and reported no blockers."
+            }
+          ],
+          "changedFiles": [],
+          "testsAddedOrUpdated": [],
+          "commandsRun": [
+            {
+              "command": "npm run check",
+              "result": "passed",
+              "summary": "TypeScript check completed without errors."
+            },
+            {
+              "command": "npm pack --dry-run --json --ignore-scripts",
+              "result": "passed",
+              "summary": "Package dry-run succeeded; 104 files were listed."
+            },
+            {
+              "command": "bash -n scripts/smoke.sh; node --check scripts/release-pack-smoke.mjs; node --check scripts/verify-auditor-extensions-offline.mjs; node --check scripts/run-tests.mjs; JSON parse checks",
+              "result": "passed",
+              "summary": "Scoped syntax and JSON checks passed."
+            },
+            {
+              "command": "npm run test:auditor-extensions",
+              "result": "passed",
+              "summary": "Hermetic offline extension allowlist check passed."
+            },
+            {
+              "command": "bun test tests/release-contract.test.ts tests/goal.schema.test.ts tests/persistence-hardening.test.ts tests/glla-version.test.ts --parallel=1 --max-concurrency=1 --timeout=60000",
+              "result": "passed",
+              "summary": "40 focused tests passed."
+            },
+            {
+              "command": "npm run release:check",
+              "result": "not-run",
+              "summary": "Skipped because the full suite is long."
+            },
+            {
+              "command": "scripts/smoke.sh",
+              "result": "not-run",
+              "summary": "Skipped because it requires tmux, pi authentication, and provider quota."
+            }
+          ],
+          "validationOutput": [
+            "Package version and package-lock metadata are synchronized at 0.38.97.",
+            "Dry-run package listing contains 104 files and excludes tests.",
+            "No repository files were modified or staged."
+          ],
+          "residualRisks": [
+            "Full release:check and live smoke were not run.",
+            "npm audit and multi-host consumer installation tests were not run.",
+            "The findings are documentation/test-coverage risks rather than observed production runtime failures."
+          ],
+          "noStagedFiles": true,
+          "diffSummary": "Read-only audit; no repository diff.",
+          "reviewFindings": [
+            "no blockers",
+            "medium: INSTALL.md:12 contradicts Bun-dependent scripts",
+            "medium: examples/example-objective.md:49 documents old bare-/list behavior",
+            "low: PLAN.md:24-63 ships obsolete state-path and backoff instructions",
+            "low: tests/goal.schema.test.ts:10-81 is a stale hand-written shape test",
+            "low: INSTALL.md:34-38 overstates status-line version visibility"
+          ],
+          "manualNotes": "The bare-/list item is a surviving documentation location of an already-recorded runtime semantics change."
+        }
+      },
+      "launchContractDigest": "9bad7c4b9e53f1834ad4a68b1aa82cbbc9bd9724e3845e8f54255b0b83faff2f",
+      "launchResolvedExtensions": {
+        "version": 1,
+        "source": "launch-resolved",
+        "disableAmbientExtensions": false,
+        "runtime": [
+          "sha256:86e8e41b016c897c"
+        ],
+        "configured": [],
+        "required": [],
+        "effective": [
+          "sha256:86e8e41b016c897c"
+        ],
+        "omitted": {
+          "runtime": 0,
+          "configured": 0,
+          "required": 0,
+          "effective": 0
+        }
+      },
+      "transcriptPath": "/home/dracon/.pi/agent/sessions/--home-dracon-Dev-pi-plugins-pi-goal-list-loop-audit--/subagent-artifacts/4ef32ebd-3037-462d-b9ad-58b036a98323_scout_transcript.jsonl",
+      "skills": [],
+      "timestamp": 1790189292833
+    },
+    {
+      "runId": "6c4d07d8-5771-4a86-aa12-ac5796e64d7d",
+      "agent": "scout",
+      "task": "[prompt redacted]",
+      "exitCode": 1,
+      "model": "openrouter/stealth/space-bunny-alpha:low",
+      "usage": {
+        "input": 251121,
+        "output": 32394,
+        "cacheRead": 979034,
+        "cacheWrite": 0,
+        "cost": 0,
+        "turns": 10
+      },
+      "error": "Acceptance rejected: Staged files present: MM .pi-glla/active.jsonl, M  extensions/loops/goal-tools.ts, AM tests/loop-measure-probe-exit.test.ts",
+      "acceptance": {
+        "status": "rejected",
+        "evidenceStatus": "rejected",
+        "explicit": true,
+        "effectiveAcceptance": {
+          "level": "checked",
+          "explicit": true,
+          "inferredReason": [
+            "default lightweight attestation"
+          ],
+          "criteria": [
+            {
+              "id": "criterion-1",
+              "must": "Return a concise result and residual risks when applicable",
+              "evidence": [
+                "changed-files",
+                "tests-added",
+                "commands-run",
+                "residual-risks",
+                "no-staged-files"
+              ],
+              "severity": "required"
+            }
+          ],
+          "evidence": [
+            "changed-files",
+            "tests-added",
+            "commands-run",
+            "residual-risks",
+            "no-staged-files"
+          ],
+          "verify": [],
+          "stopRules": []
+        },
+        "inferredReason": [
+          "default lightweight attestation"
+        ],
+        "criteria": [
+          {
+            "id": "criterion-1",
+            "must": "Return a concise result and residual risks when applicable",
+            "evidence": [
+              "changed-files",
+              "tests-added",
+              "commands-run",
+              "residual-risks",
+              "no-staged-files"
+            ],
+            "severity": "required"
+          }
+        ],
+        "runtimeChecks": [
+          {
+            "id": "criterion:criterion-1",
+            "status": "passed",
+            "message": "Required criterion 'criterion-1' satisfied."
+          },
+          {
+            "id": "evidence:changed-files",
+            "status": "not-applicable",
+            "message": "changed-files evidence explicitly reported as not applicable."
+          },
+          {
+            "id": "evidence:tests-added",
+            "status": "not-applicable",
+            "message": "tests-added evidence explicitly reported as not applicable."
+          },
+          {
+            "id": "evidence:commands-run",
+            "status": "passed",
+            "message": "commands-run evidence present."
+          },
+          {
+            "id": "evidence:residual-risks",
+            "status": "passed",
+            "message": "residual-risks evidence present."
+          },
+          {
+            "id": "evidence:no-staged-files",
+            "status": "passed",
+            "message": "no-staged-files evidence present."
+          },
+          {
+            "id": "no-staged-files",
+            "status": "failed",
+            "message": "Staged files present: MM .pi-glla/active.jsonl, M  extensions/loops/goal-tools.ts, AM tests/loop-measure-probe-exit.test.ts"
+          }
+        ],
+        "verifyRuns": [],
+        "childReport": {
+          "criteriaSatisfied": [
+            {
+              "id": "criterion-1",
+              "status": "satisfied",
+              "evidence": "Reported 11 concrete, deduplicated read-only audit candidates with severity, repo-relative file:line, failure scenarios, missing-test rationale, and BLOCKERS: none."
+            }
+          ],
+          "changedFiles": [],
+          "testsAddedOrUpdated": [],
+          "commandsRun": [
+            {
+              "command": "git status --short",
+              "result": "passed",
+              "summary": "Observed only the pre-existing unstaged .pi-glla/active.jsonl entry; no staged files."
+            },
+            {
+              "command": "wc -l and targeted rg/sed/find inspection of scoped source and tests",
+              "result": "passed",
+              "summary": "Mapped the requested implementation files, directly relevant tests, and existing findings history."
+            },
+            {
+              "command": "Read-only static control-flow and persistence review",
+              "result": "passed",
+              "summary": "Reviewed drafting, queue activation, proposals, completion/archive transitions, session fencing, detached auditing, and subagent synchronization."
+            }
+          ],
+          "validationOutput": [
+            "Findings artifact written successfully to the authoritative runtime path.",
+            "No source or test files were edited.",
+            "No test suite was run because this was a read-only audit."
+          ],
+          "residualRisks": [
+            "Runtime behavior was not exercised with provider-backed or full behavioral tests.",
+            "The repository already contained an unstaged .pi-glla/active.jsonl modification; it was not touched."
+          ],
+          "noStagedFiles": true,
+          "diffSummary": "Read-only audit; no repository diff produced.",
+          "reviewFindings": [
+            "no blockers"
+          ],
+          "manualNotes": "Full findings are in the authoritative queue-auditor.md artifact."
+        }
+      },
+      "launchContractDigest": "91b731bcb90046a1660402bfee9ca9838002c331fc9e9ccdede7b68bb50169f7",
+      "launchResolvedExtensions": {
+        "version": 1,
+        "source": "launch-resolved",
+        "disableAmbientExtensions": false,
+        "runtime": [
+          "sha256:86e8e41b016c897c"
+        ],
+        "configured": [],
+        "required": [],
+        "effective": [
+          "sha256:86e8e41b016c897c"
+        ],
+        "omitted": {
+          "runtime": 0,
+          "configured": 0,
+          "required": 0,
+          "effective": 0
+        }
+      },
+      "transcriptPath": "/home/dracon/.pi/agent/sessions/--home-dracon-Dev-pi-plugins-pi-goal-list-loop-audit--/subagent-artifacts/6c4d07d8-5771-4a86-aa12-ac5796e64d7d_scout_transcript.jsonl",
+      "skills": [],
+      "timestamp": 1790189265728
+    }
+  ]
+}

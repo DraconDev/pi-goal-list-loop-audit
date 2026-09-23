@@ -597,3 +597,9 @@ Four parallel scout surveys covered lifecycle/recovery, queue/tools/auditor, com
 - [x] FIX: LOW: `tests/goal.schema.test.ts` was a second hand-written shape model that rejected valid list policy and never read the published schema — fixed in b1e4a818 (Ajv-backed active/list/nested fixtures; task contract added to schema).
 
 No new DECIDE finding remained: the auditor-bash confidentiality choice was already resolved in the append-only history, and all other scout candidates were either FIX findings above or duplicates/rejected claims.
+
+### Audit evidence clarification
+
+The fresh scout fan-out was workflow `876cf269-f827-4de0-b166-e92a0175bea8`: one `runs.all` dispatch launched four `scout` children together. Durable launch metadata and all four reports are preserved under `audit/FRESH-AUDIT-2026-09-23/`; canonical gate totals and the bounded rerun of two load-timeout files are in `audit/FRESH-AUDIT-2026-09-23/VERIFICATION.md`.
+
+For the `/loop audit` selected-root line above, `50db98b5` changes `extensions/goal-loop-forever.ts` to resolve one absolute findings path and passes that path to target/measure construction; `fb83ab7f` and `82724893` update the adjacent source fixtures, while `tests/audit-loop-state-root.test.ts` in the same commit proves the sessionDir selected-root value against a cwd decoy.
