@@ -10,12 +10,13 @@ import * as path from "node:path";
 const src = fs.readFileSync("extensions/loops/goal-list-queue.ts", "utf8");
 
 test("drafting gate is claimed only after prompt construction", () => {
-  const load = src.indexOf("tmpl = loadPromptWhole(file);");
+  const load = src.indexOf("tmpl = loadPromptWhole(file);", src.indexOf("let tmpl: string;"));
   const claim = src.indexOf("draftingTarget = target;", load);
   const cleanup = src.indexOf("clearDraftingState();", claim);
   assert.ok(load >= 0 && claim > load, "loadPromptWhole runs before the gate is claimed");
   assert.ok(cleanup > claim, "all post-claim exits can clear the owned gate");
-  assert.match(src.slice(load, claim), /try \{[\s\S]*loadPromptWhole\(file\)[\s\S]*\} catch/);
+  const promptBlock = src.slice(src.lastIndexOf("try {", load), claim);
+  assert.match(promptBlock, /try \{[\s\S]*loadPromptWhole\(file\)[\s\S]*\} catch/);
 });
 
 test("the post-claim model failure still clears drafting state before rethrow", () => {
