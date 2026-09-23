@@ -156,8 +156,10 @@ test("card head cuts the objective at a clause boundary, never mid-word", () => 
 
 test("truncateObjective keeps clause boundaries with emoji and CJK prefixes", () => {
   const emoji = truncateObjective("😀 ship: details after the boundary and more", 30);
-  assert.equal(emoji, "😀 ship: details…", "emoji must not shift the clause boundary");
-  const cjk = truncateObjective("目标：修复审计路径并补充测试覆盖", 16);
+  assert.equal(emoji, "😀 ship: details after the bo…", "emoji is preserved; the 29-cell budget remains exact");
+  const clause = truncateObjective("😀 ship: details after the boundary and more", 17);
+  assert.equal(clause, "😀 ship: details…", "emoji must not shift the clause boundary");
+  const cjk = truncateObjective("目标：修复审计路径并补充测试覆盖", 12);
   assert.equal(cjk, "目标：修复…", "wide glyphs still cut at the clause boundary");
 });
 
