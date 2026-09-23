@@ -1,94 +1,76 @@
-// pi-goal-list-loop-audit — v0.1.0 schema unit tests
-//
-// We don't run a JSON Schema validator here — instead these are
-// fail-fast assertions on shape, so we catch regressions before publish.
+// Published goal contract tests. These validate real fixtures against
+// schemas/goal.schema.json itself; they do not maintain a second hand-written
+// Goal shape that can drift from the shipped artifact.
 
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
+import { Ajv, type ErrorObject, type ValidateFunction } from "ajv";
 
-interface Goal {
-  id: string;
-  objective: string;
-  status: "active" | "auditing" | "complete" | "paused" | "aborted";
-  policy: "goal";
-  autoContinue: boolean;
-  usage: { tokensUsed: number; tokensLimit: number };
-  createdAt: string;
-  updatedAt: string;
+const schemaPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../schemas/goal.schema.json");
+const schema = JSON.parse(fs.readFileSync(schemaPath, "utf8")) as Record<string, unknown>;
+const validate: ValidateFunction = new Ajv({ allErrors: true, strict: false }).compile(schema);
+
+function goalFixture(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    id: "20260923000000-abc123",
+    objective: "Ship the audited contract",
+    status: "active",
+    policy: "goal",
+    autoContinue: true,
+    usage: { tokensUsed: 0, tokensLimit: 1000 },
+    createdAt: "2026-09-23T00:00:00.000Z",
+    updatedAt: "2026-09-23T00:00:00.000Z",
+    ...overrides,
+  };
 }
 
-// Lightweight shape check; full schema validation lands in v0.2.0.
-function isValidShape(g: any): boolean {
-  if (typeof g !== "object" || g === null) return false;
-  const required = ["id", "objective", "status", "policy", "autoContinue", "usage", "createdAt", "updatedAt"];
-  for (const k of required) if (!(k in g)) return false;
-  if (!["active", "auditing", "complete", "paused", "aborted"].includes(g.status)) return false;
-  if (g.policy !== "goal") return false;
-  if (typeof g.autoContinue !== "boolean") return false;
-  if (typeof g.usage.tokensUsed !== "number" || typeof g.usage.tokensLimit !== "number") return false;
-  return true;
+function errors(value: unknown): string {
+  return validate.errors?.map((error: ErrorObject) => `${error.instancePath || "/"} ${error.message ?? "invalid"}`).join("; ") ?? "unknown validation error";
 }
 
-test("valid active goal passes shape check", () => {
-  assert.equal(isValidShape({
-    id: "x",
-    objective: "do thing",
-    status: "active",
-    policy: "goal",
-    autoContinue: true,
-    usage: { tokensUsed: 0, tokensLimit: 1000 },
-    createdAt: "2026-07-19T00:00:00Z",
-    updatedAt: "2026-07-19T00:00:00Z",
-  }), true);
+test("schema accepts active goal and queued-list goal fixtures", () => {
+  assert.equal(validate(goalFixture()), true, errors(goalFixture()));
+  assert.equal(validate(goalFixture({ policy: "list", parentId: "parent-1" })), true);
 });
 
-test("invalid status is rejected", () => {
-  assert.equal(isValidShape({
-    id: "x",
-    objective: "do thing",
-    status: "BOGUS",
-    policy: "goal",
-    autoContinue: true,
-    usage: { tokensUsed: 0, tokensLimit: 1000 },
-    createdAt: "2026-07-19T00:00:00Z",
-    updatedAt: "2026-07-19T00:00:00Z",
-  }), false);
+test("schema rejects invalid status and missing required usage", () => {
+  const badStatus = goalFixture({ status: "BOGUS" });
+  assert.equal(validate(badStatus), false);
+  assert.match(errors(badStatus), /status/);
+  const missingUsage = goalFixture();
+  delete missingUsage.usage;
+  assert.equal(validate(missingUsage), false);
+  assert.match(errors(missingUsage), /usage/);
 });
 
-test("non-goal policy rejected in v0.1.0", () => {
-  assert.equal(isValidShape({
-    id: "x",
-    objective: "do thing",
-    status: "active",
-    policy: "list",
-    autoContinue: true,
-    usage: { tokensUsed: 0, tokensLimit: 1000 },
-    createdAt: "2026-07-19T00:00:00Z",
-    updatedAt: "2026-07-19T00:00:00Z",
-  }), false);
-});
+test("schema validates nested task and audit-verdict required fields", () => {
+  const valid = goalFixture({
+    taskList: {
+      version: 1,
+      tasks: [{
+        id: "1",
+        title: "Verify the gate",
+        status: "pending",
+        verificationContract: "timeout 120 bun test tests/focus.test.ts",
+        subtasks: [{ id: "1.1", title: "Inspect output", status: "in_progress" }],
+      }],
+    },
+    auditHistory: [{
+      at: "2026-09-23T00:01:00.000Z",
+      approved: true,
+      disapproved: false,
+      model: "test/auditor",
+    }],
+  });
+  assert.equal(validate(valid), true, errors(valid));
 
-test("missing usage is rejected", () => {
-  assert.equal(isValidShape({
-    id: "x",
-    objective: "do thing",
-    status: "active",
-    policy: "goal",
-    autoContinue: true,
-    createdAt: "2026-07-19T00:00:00Z",
-    updatedAt: "2026-07-19T00:00:00Z",
-  }), false);
-});
-
-test("missing required field is rejected", () => {
-  assert.equal(isValidShape({
-    id: "x",
-    objective: "do thing",
-    status: "active",
-    policy: "goal",
-    autoContinue: true,
-    usage: { tokensUsed: 0, tokensLimit: 1000 },
-    createdAt: "2026-07-19T00:00:00Z",
-    // missing updatedAt
-  }), false);
+  const missingTaskTitle = structuredClone(valid) as {
+    taskList: { tasks: Array<{ title?: string }> };
+  };
+  delete missingTaskTitle.taskList.tasks[0]!.title;
+  assert.equal(validate(missingTaskTitle), false);
+  assert.match(errors(missingTaskTitle), /title/);
 });

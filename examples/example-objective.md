@@ -46,7 +46,8 @@ Useful commands: `/goal status`, `/goal pause`, `/goal resume`, `/goal cancel`,
 ```
 /list Create one.txt containing one. Done when: grep -q one one.txt
 /list Create two.txt containing two. Done when: grep -q two two.txt
-/list            # show active + waiting items
+/list show       # show active + waiting items
+/list            # draft new list items from the current context (Confirm-gated)
 /list next       # skip current item
 /list remove 2   # drop item 2
 /list clear      # empty the list

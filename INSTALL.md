@@ -14,8 +14,8 @@ installation path.
 - [pi](https://github.com/badlogic/pi-mono) with extension support;
 - Node `22.19.0+` for the detached auditor and helper scripts;
 - a model/provider that pi can authenticate normally;
-- optionally, [Bun](https://bun.sh/) if you are developing GLLA or running its
-  test suite.
+- [Bun](https://bun.sh/) only for development, tests, and `npm run release:check`
+  (runtime goal/loop/list operation needs Node + pi, not Bun).
 
 ## Install from npm
 
@@ -31,8 +31,10 @@ GLLA loads into new pi sessions. If pi is already open, reload that session:
 
 ## Updating
 
-The status line always shows the running version (`glla: … · vX.Y.Z`).
-When the npm registry is ahead, it also nudges:
+While a goal/list/loop is supervised, the status line shows the running
+version (`glla: … · vX.Y.Z`). Idle or hold-only sessions intentionally keep the
+version segment clear; use `/glla version` there. When the npm registry is
+ahead, an active supervised status also nudges:
 
 ```text
 glla: … · vX.Y.Z · update vA.B.C available

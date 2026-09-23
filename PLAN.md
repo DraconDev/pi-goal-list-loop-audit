@@ -1,9 +1,13 @@
 # PLAN — pi-goal-list-loop-audit
 
-Living plan for the project. Update this file as decisions land or milestones close.
-New here? Start with README.md and INSTALL.md — this file is the historical
-plan, not the onboarding path.
-Last updated: v0.29.6 (header refresh). The milestones
+> **Historical scaffold plan — not runnable onboarding or current product
+> documentation.** The command/state examples below describe the v0.1–v0.7 era
+> (for example `.pi-gla/` and the former five-minute backoff cap). Use
+> [`README.md`](README.md) and [`INSTALL.md`](INSTALL.md) for current setup and
+> commands. The milestones below record how the project reached its current
+> architecture; later decisions live in `CHANGELOG.md` and `docs/DESIGN.md`.
+>
+> The milestones
 below cover the v0.1.0–v0.7.0 scaffold era; later decisions live in CHANGELOG.md
 (current through v0.29.6) and the current-state addendum in docs/DESIGN.md.
 
@@ -58,8 +62,8 @@ pi -e /home/dracon/Dev/pi-goal-list-loop-audit
 > /goal "Create file hello.txt containing the word world. Done when: grep -q world hello.txt"
 # expect: agent writes file, calls complete_goal, auditor approves, goal archived
 > /goal status        # expect: complete, audit history shows 1 approved
-cat .pi-gla/active.jsonl | tail -3
-ls .pi-gla/archive/   # expect: one .md file
+cat .pi-glla/active.jsonl | tail -3
+ls .pi-glla/archive/   # expect: one .md file
 ```
 
 ### M2 — v0.2.0 (list + drafting + regression_shield) ✅ (2026-07-20)

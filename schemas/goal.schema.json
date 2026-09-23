@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://raw.githubusercontent.com/DraconDev/pi-goal-list-loop-audit/main/schemas/goal.schema.json",
   "title": "pi-goal-list-loop-audit goal state",
-  "description": "Active goal state for pi-goal-list-loop-audit (loops 1-3). Persisted as markdown at .pi-glla/goals/<id>.md and mirrored into .pi-glla/active.jsonl state events.",
+  "description": "Active goal state for pi-goal-list-loop-audit (loops 1-3). Persisted as markdown under the selected GLLA state root at goals/<id>.md and mirrored into active.jsonl state events.",
   "type": "object",
   "required": ["id", "objective", "status", "policy", "autoContinue", "usage", "createdAt", "updatedAt"],
   "properties": {
@@ -252,6 +252,7 @@
         "title": { "type": "string", "minLength": 1 },
         "status": { "type": "string", "enum": ["pending", "in_progress", "complete"] },
         "agentRole": { "type": "string", "enum": ["designer"] },
+        "verificationContract": { "type": "string" },
         "subtasks": {
           "type": "array",
           "maxItems": 5,
