@@ -590,10 +590,12 @@ test("v0.35.72: all loop measure entry points are bounded and reject failed nume
   assert.match(runMeasure, /if \(code !== 0\) return null/);
   assert.match(runMeasure, /timeout: MEASURE_TIMEOUT_MS/);
 
-  const draft = TOOLS_RUNTIME.slice(TOOLS_RUNTIME.indexOf('name: "propose_loop_draft"'), TOOLS_RUNTIME.indexOf('name: "propose_loop_refine"'));
-  const refine = TOOLS_RUNTIME.slice(TOOLS_RUNTIME.indexOf('name: "propose_loop_refine"'), TOOLS_RUNTIME.indexOf('name: "list_add"'));
-  assert.match(draft, /extensionApi\.exec\("bash", \["-c", p\.measureCmd!\], \{ cwd: liveCtx\.cwd, timeout: MEASURE_TIMEOUT_MS \}\)/);
-  assert.match(refine, /extensionApi\.exec\("bash", \["-c", newMeasure\], \{ cwd: liveCtx\.cwd, timeout: MEASURE_TIMEOUT_MS \}\)/);
+  const tools = TOOLS_RUNTIME.slice(TOOLS_RUNTIME.indexOf('name: "propose_loop_draft"'), TOOLS_RUNTIME.indexOf('name: "list_add"'));
+  assert.match(tools, /async function probeLoopMeasure\(/);
+  assert.match(tools, /extensionApi\?\.exec\("bash", \["-c", command\], \{ cwd: ctx\.cwd, timeout: MEASURE_TIMEOUT_MS \}\)/);
+  assert.match(tools, /if \(code !== 0\)/);
+  assert.match(tools, /probeLoopMeasure\(liveCtx, p\.measureCmd!\)/);
+  assert.match(tools, /probeLoopMeasure\(liveCtx, newMeasure\)/);
 });
 
 test("applyMeasurement: max=0 = no iteration cap for measured loops either", () => {
@@ -676,7 +678,7 @@ test("v0.29.0: /loop audit — metric loop over open findings; plateau = the wel
   const SRC = readFileSync("extensions/goal-loop.ts", "utf-8");
   const GOAL = readGoalRuntimeSource();
   assert.match(SRC, /if \(sub === "audit"\) \{/);
-  assert.match(SRC, /target: auditTarget\(\),\s*\n\s*measureCmd: auditMeasureCmd\(\),\s*\n\s*direction: "max",/);
+  assert.match(SRC, /target: auditTarget\(ctx\.cwd\),\s*\n\s*measureCmd: auditMeasureCmd\(ctx\.cwd\),\s*\n\s*direction: "max",/);
   // v0.35.0: no stacking over an active goal or loop is silent; the shared
   // activation path offers update / replace / cancel after the loop spec is
   // confirmed.
@@ -687,8 +689,8 @@ test("v0.29.0: /loop audit — metric loop over open findings; plateau = the wel
   // the measure is orchestrator-counted and single-number in all file states:
   const F = readFileSync("extensions/goal-loop-forever.ts", "utf-8");
   assert.match(F, /export const AUDIT_FINDINGS_REL = "\.pi-glla\/audit-loop\/findings\.md";/);
-  assert.match(F, /export function auditMeasureCmd\(\): string/);
-  assert.match(F, /export function auditTarget\(\): string/);
+  assert.match(F, /export function auditMeasureCmd\(cwd = process\.cwd\(\)\): string/);
+  assert.match(F, /export function auditTarget\(cwd = process\.cwd\(\)\): string/);
   const measureCmd = auditMeasureCmd();
   assert.ok(measureCmd.includes("grep -cE '^[[:space:]]*- \\[[xX]\\] FIX' .pi-glla/audit-loop/findings.md"), measureCmd);
   assert.ok(measureCmd.includes("echo ${c:-0}"), measureCmd);
@@ -741,7 +743,7 @@ test("v0.35.4: auditMeasureCmd counts closed FIX findings only (DECIDED/DEFERRED
         "- [?] DECIDE: still-open question",
       ].join("\n") + "\n",
     );
-    const out = runIn(cwd, auditMeasureCmd());
+    const out = runIn(cwd, auditMeasureCmd(cwd));
     assert.equal(out, "3", "closed FIX boxes count, including the indented one");
   } finally {
     rmSync(cwd, { recursive: true, force: true });
@@ -789,7 +791,7 @@ test("v0.38.33: indented boxes count and queue identically across all four reade
     writeFileSync(join(cwd, ".pi-glla/audit-loop/findings.md"), md + "\n");
     assert.equal(countOpenAuditFindings(cwd), 2, "both open boxes count");
     assert.equal(topOpenAuditFinding(cwd), "FIX: LOW: flat open box", "reprieve names the flat first box");
-    assert.equal(runIn(cwd, auditMeasureCmd()), "2", "both closed FIX boxes move the metric");
+    assert.equal(runIn(cwd, auditMeasureCmd(cwd)), "2", "both closed FIX boxes move the metric");
     const { open, decisions } = parseAuditFindingsForFanout(md);
     assert.equal(open.length, 2, "fan-out queues both open boxes");
     assert.ok(open.some((f) => f.text.includes("indented open box")), "fan-out queues the indented box");
