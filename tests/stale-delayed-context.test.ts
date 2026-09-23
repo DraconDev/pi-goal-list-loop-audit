@@ -103,14 +103,14 @@ test("v0.34.20: loop measurement and branch cleanup rebind after async work", ()
   assert.match(tick, /appendLedger\(ctx\.cwd, "loop_tick_abandoned"/);
   assert.match(tick, /await runMeasure\(ctx, loop\.measureCmd!\);\n  if \(!rebindLoop\(\)\) return;/);
   assert.match(tick, /await runGit\(ctx, \["rev-parse", "HEAD"\]\);\n  if \(!rebindLoop\(\)\) return;/);
-  assert.match(tick, /await finishLoopGit\(ctx, loop\);\n    if \(!rebindLoop\(\)\) return;/);
+  assert.match(tick, /if \(await finishLoopGit\(ctx, loop\)\) return;\n    if \(!rebindLoop\(\)\) return;/);
   assert.doesNotMatch(tick, /await runMeasure\(ctx, loop\.measureCmd!\);\n  if \(!rebind\(\)\) return;/);
   // v0.35.4: branch=1 terminal stops must not erase the final iteration's
   // work (finishLoopGit resets --hard), and flat/null measures are not
   // regressions (v0.29.10/E5) — only worse-than-best values hard-reset.
-  assert.match(tick, /const commitPendingTerminalWork = async \(\): Promise<void> =>/);
+  assert.match(tick, /const commitPendingTerminalWork = async \(\): Promise<boolean> =>/);
   assert.match(tick, /} else if \(value !== null && value !== loop\.bestValue\) \{/);
-  assert.match(tick, /await commitPendingTerminalWork\(\);\n    await finishLoopGit\(ctx, loop\);/);
+  assert.match(tick, /if \(!await commitPendingTerminalWork\(\)\) return;\n    if \(await finishLoopGit\(ctx, loop\)\) return;/);
   const finish = between(LOOP, "async function finishLoopGit", "interface LoopConfig");
   assert.match(finish, /const afterReset = freshCtxForGeneration\(generation\)/);
   assert.match(finish, /const afterCheckout = freshCtxForGeneration\(generation\)/);
