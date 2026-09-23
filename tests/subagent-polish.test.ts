@@ -117,6 +117,8 @@ test("v0.38.16: model-facing text speaks the current subagent dialect", () => {
   const continuation = fs.readFileSync("prompts/goal-loop-continuation.md", "utf8");
   assert.doesNotMatch(continuation, /get_subagent_result/, "settle guidance no longer names the dead wait tool");
   assert.match(continuation, /bg_wait/, "settle guidance names the live wait");
+  const availableTools = continuation.match(/## Available tools[\s\S]*?## EXECUTION DISCIPLINE/)?.[0] ?? "";
+  assert.match(availableTools, /`bg_wait`/, "the declared tool grant includes the wait primitive used below");
   const panel = fs.readFileSync("extensions/goal-agents-panel.ts", "utf8");
   assert.match(panel, /via the `subagent` tool/, "agents panel points at the live tool");
   const continuationSrc = fs.readFileSync("extensions/goal-continuation.ts", "utf8");
