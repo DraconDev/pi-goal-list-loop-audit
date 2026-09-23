@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.97 — pause_goal redirect: park-and-continue for user interruptions (2026-09-23)
+
+- Field: a mid-goal redirect ("can we get to this first") parked via pause_goal, whose abort + "do NOT continue working" stranded the new task until the user nudged. New optional `redirect` param parks the goal WITHOUT ending the turn and orders the redirect worked immediately, goal resumed after; redirect parks ledger distinctly as `pause_goal_redirect`. Plain pauses still abort (audit/PAUSE-REDIRECT-2026-09-23.md).
+
 ## 0.38.96 — /glla resume + /loop resume release the load hold before probing (2026-09-23)
 
 - Field: a deterministic-400 manual hold cold-loaded (load hold engaged), then `/glla resume` consumed the manual hold and the goal stayed parked — the fired recovery probe died silently on the `supervisorPaused` gate, which includes `loadHoldAt`. No probe, no timer, stale resume text. `/glla resume` and `/loop resume` now release the cold-load hold at entry like `/goal resume` and agent-resume already do (audit/GLLA-RESUME-LOAD-HOLD-2026-09-23.md). Workaround on 0.38.95: run `/goal resume`.
