@@ -43,6 +43,7 @@ async function boot(cwd: string, goal = seedGoal({ status: "active", objective: 
   __testOnlyRememberCtx(ctx);
   __testOnlyRegisterAgentTools(pi.api);
   ctx.ui.confirmImpl = async () => true;
+  ctx.ui.selectImpl = async (_title, options) => options[0];
   ctx.ui.customStubMode = true;
   session = { pi, ctx };
   return { pi, ctx };
