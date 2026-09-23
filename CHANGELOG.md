@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.38.95 — Stop the pause cycles: image-count clamp, single-model quiet wait, ledger dedupe (2026-09-23)
+
+- The payload guard now clamps image blocks per request (default 4, the observed provider limit) as well as bytes — small screenshots fit the byte budget but 400'd on count (field 2026-09-21: `Image count 12 exceeds limit 4`). Oldest-first, keep-recent floor wins on conflict; eviction entries carry the remaining count (audit/PAUSES-2026-09-22.md).
+- A one-model fallback chain no longer probe-theatres the same dead model every cycle: the probe parks a quiet wait on the backoff envelope (`main_model_single_model_wait`) and resume re-probes. Real chains still cycle-reset with the synchronous probe turn.
+- Identical `payload_guard_eviction` repeats are deduped per generation (719 identical entries/day in the field) and zombie stand-down logging is latched per silent episode like the abort key (219/day) — first occurrence lands, repeats are silent, changed values re-arm.
+
 ## 0.38.94 — Fix continuation spam: delta-only actually fires (2026-09-22)
 
 - Field: 909 identical 28KB continuation prompts in one 8h session (57MB transcript). `firstSend` was computed from the in-flight dispatch latch, which is zero before every fresh send — so every send was "first" and the v0.38.5 marker path never fired. A dedicated per-goal latch now flips only when a full brief dispatches and resets on session rebind: one 28KB brief, then 45-char markers (audit/CONTINUATION-SPAM-2026-09-22.md).
