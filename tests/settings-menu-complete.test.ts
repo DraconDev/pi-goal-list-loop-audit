@@ -16,7 +16,7 @@ import {
   SETTINGS_SECTIONS,
   type SettingsRow,
 } from "../extensions/settings-menu.ts";
-import type { Settings } from "../extensions/goal-settings.ts";
+import { normalizeLoadedSettings, type Settings } from "../extensions/goal-settings.ts";
 import { CURRENT_SUBAGENT_AGENT_NAMES } from "../extensions/goal-loop-subagents.ts";
 import { readGoalRuntimeSource } from "./harness/goal-source.js";
 
@@ -523,7 +523,6 @@ test("audit-2026-09-06: settings TUI tabs row is truncated to terminal width", a
 });
 
 test("audit 2026-09-06: normalizeLoadedSettings resets junk numerics/enums/strings to unset", async () => {
-  const { normalizeLoadedSettings } = await import("../extensions/goal-settings.ts");
   const out = normalizeLoadedSettings({
     tokenLimit: -5,
     auditCap: 2.5,
@@ -563,6 +562,35 @@ test("audit 2026-09-06: normalizeLoadedSettings resets junk numerics/enums/strin
   assert.equal(kept.carryover, "clear");
   assert.equal(kept.decisionPopup, false);
   assert.equal(kept.auditorModel, "test/model");
+  // Policy arrays are structural, not scalar strings. A hand-edited string
+  // must not reach menu `.length`/`.join` consumers and crash /glla.
+  assert.equal(normalizeLoadedSettings({ forbiddenModels: "sonnet" } as any).forbiddenModels, undefined);
+  assert.deepEqual(normalizeLoadedSettings({ forbiddenModels: [" sonnet ", "", 42, "opus"] } as any).forbiddenModels, ["sonnet", "opus"]);
+  const rows = buildSettingsRows(normalizeLoadedSettings({ forbiddenModels: "sonnet" } as any), EMPTY_PROV);
+  assert.equal(rows.find((row) => row.id === "forbiddenModels")?.valueText, "none");
+});
+
+test("settings provenance reports normalized effective values, not rejected raw junk", async () => {
+  const { settingsProvenance, projectSettingsPath } = await import("../extensions/goal-settings.ts");
+  const { tmpCwd } = await import("./harness/mock-pi.ts");
+  const { default: path } = await import("node:path");
+  const cwd = tmpCwd();
+  const priorGlobalPath = process.env.GLLA_GLOBAL_SETTINGS_PATH;
+  const globalFile = path.join(cwd, "global-settings.json");
+  fs.writeFileSync(globalFile, JSON.stringify({ auditCap: 7, forbiddenModels: ["sonnet"] }));
+  process.env.GLLA_GLOBAL_SETTINGS_PATH = globalFile;
+  try {
+    fs.mkdirSync(path.dirname(projectSettingsPath(cwd)), { recursive: true });
+    fs.writeFileSync(projectSettingsPath(cwd), JSON.stringify({ auditCap: "oops", forbiddenModels: "sonnet" }));
+    const prov = settingsProvenance(cwd);
+    assert.equal(prov.auditCap.value, 7);
+    assert.equal(prov.auditCap.source, "global", "invalid project value falls through");
+    assert.deepEqual(prov.forbiddenModels.value, ["sonnet"]);
+    assert.equal(prov.forbiddenModels.source, "global", "wrong-type project policy falls through");
+  } finally {
+    if (priorGlobalPath === undefined) delete process.env.GLLA_GLOBAL_SETTINGS_PATH;
+    else process.env.GLLA_GLOBAL_SETTINGS_PATH = priorGlobalPath;
+  }
 });
 
 test("audit 2026-09-06: legacy reviewer block migrates to postaudit", async () => {
