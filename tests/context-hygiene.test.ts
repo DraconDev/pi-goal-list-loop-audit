@@ -205,3 +205,49 @@ test("wiring: session_before_compact prunes and bounds the preparation the runne
   await handler({ type: "session_before_compact", preparation, branchEntries: [], reason: "auto" }, ctx);
   assert.equal(ledger(cwd).length, before);
 });
+
+test("wiring: every default session_before_compact path receives the bounded projection and an undefined hook result", async () => {
+  for (const reason of ["manual", "threshold", "overflow"]) {
+    const cwd = tmpCwd();
+    const pi = new MockPi();
+    activate(pi.api);
+    __testOnlyResetOwnerSession();
+    const ctx = makeMockCtx(cwd, { sessionManager: { name: `compact-${reason}-${Date.now()}` } });
+    const handlers = (pi as unknown as { handlers: Map<string, (...a: unknown[]) => Promise<unknown>> }).handlers;
+    const handler = handlers.get("session_before_compact");
+    assert.ok(handler, `activate() registers the session_before_compact handler for ${reason}`);
+
+    const fileOps = { read: new Set(["src/a.ts"]), written: new Set(), edited: new Set() };
+    const preparation = {
+      messagesToSummarize: [
+        userTurn("old"),
+        { role: "assistant", content: [{ type: "text", text: "successful work ".repeat(1_000) }] },
+      ],
+      turnPrefixMessages: [userTurn("recent")],
+      firstKeptEntryId: `keep-${reason}`,
+      isSplitTurn: reason !== "manual",
+      tokensBefore: 123_456,
+      previousSummary: "prior summary",
+      fileOps,
+    };
+
+    const outcome = await handler({
+      type: "session_before_compact",
+      preparation,
+      branchEntries: [],
+      reason,
+      customInstructions: reason === "manual" ? "focus the summary" : undefined,
+      willRetry: false,
+    }, ctx);
+
+    assert.equal(outcome, undefined, `${reason} must leave Pi's own compaction authoritative`);
+    assert.equal(preparation.firstKeptEntryId, `keep-${reason}`);
+    assert.equal(preparation.tokensBefore, 123_456);
+    assert.equal(preparation.previousSummary, "prior summary");
+    assert.equal(preparation.fileOps, fileOps);
+    const projectedAssistant = preparation.messagesToSummarize[1] as { content: Array<{ text?: string }> };
+    assert.equal((projectedAssistant.content[0]?.text ?? "").length <= 4_096, true, `${reason} bounds assistant text`);
+    const projections = ledger(cwd).filter((e) => e.type === "compaction_input_projection");
+    assert.equal(projections.length, 1, `${reason} emits bounded projection telemetry`);
+  }
+});
