@@ -283,6 +283,7 @@ import {
 import { consumeRecoveryResume } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
 import { payloadGuardProjection } from "../payload-guard.js"; // v0.35.51 image-413 guard
 import { dropFailedErrorOnlyTurns, pruneCompactionPreparation } from "../context-hygiene.js"; // v0.35.52 error-turn hygiene
+import { projectCompactionPreparation } from "../compaction-input.js"; // bounded default-compactor input
 import { buildAuthoritativeContextCheckpoint, projectBoundedGllaContext } from "../context-checkpoint.js"; // v0.36.2 bounded continuation context
 import {
   createGoalHeartbeat,
@@ -3238,6 +3239,28 @@ async function handleHotLengthExhaustion(
     if (dropped > 0) {
       try {
         appendLedger(ctx.cwd, "context_hygiene_compaction_input", { dropped, generation: sessionGeneration });
+      } catch {
+        // bookkeeping must never break compaction
+      }
+    }
+    // Pi's default summarizer serializes successful assistant text, thinking,
+    // and tool-call arguments without a broad input bound. Project those fields
+    // in the shared preparation before the summarizer runs; Pi still owns the
+    // cut point, fileOps, previousSummary, settings, and compaction result.
+    const inputProjection = projectCompactionPreparation(event?.preparation);
+    if (inputProjection.changed) {
+      try {
+        appendLedger(ctx.cwd, "compaction_input_projection", {
+          inputCharsBefore: inputProjection.inputCharsBefore,
+          inputCharsAfter: inputProjection.inputCharsAfter,
+          boundedMessages: inputProjection.boundedMessages,
+          boundedFields: inputProjection.boundedFields,
+          replacedImages: inputProjection.replacedImages,
+          boundedGoalPayloads: inputProjection.boundedGoalPayloads,
+          retainedGoalPayloads: inputProjection.retainedGoalPayloads,
+          scale: inputProjection.scale,
+          generation: sessionGeneration,
+        });
       } catch {
         // bookkeeping must never break compaction
       }
