@@ -422,7 +422,7 @@ import {
 import { defineGoalRuntimeGlobal } from "./goal-runtime-globals.js";
 import { releaseAuditorSurface } from "./goal-auditor-surface.js";
 import { chooseObjectiveConflict, liveObjectives, type ObjectiveKind } from "../goal-objective-conflict.js";
-import { ACTION_REMINDER_CUSTOM_TYPE, buildActionReminder, markPauseAbort } from "../action-reminder.js";
+import { ACTION_REMINDER_CUSTOM_TYPE, buildActionReminder, clearPauseAbort, markPauseAbort } from "../action-reminder.js";
 import { assessSuspiciousObjective, isSuspiciousObjectivePause } from "../faulty-objective-recovery.js";
 
 type AuditorModelCandidate = any;
@@ -2477,6 +2477,7 @@ function registerAgentTools(pi: any): void {
         reason: safePauseReason,
         action: safePauseAction,
         resumeCommand: activeGoalSurfaceCommand("resume"),
+        resumeAt: storedResumeAt,
       });
       extensionApi?.sendMessage({
         customType: ACTION_REMINDER_CUSTOM_TYPE,
@@ -2591,12 +2592,21 @@ function registerAgentTools(pi: any): void {
       // forensics. An impossible-drop still wins the result copy below.
       const redirect = (p.redirect ?? "").trim();
       if (!droppedImpossible && !redirect) {
-        markPauseAbort();
+        markPauseAbort({
+          ownerSession: ctx.sessionManager,
+          goalId: state.goal.id,
+          kind: p.kind ?? "blocked",
+          reason: safePauseReason,
+          action: safePauseAction,
+          resumeCommand: activeGoalSurfaceCommand("resume"),
+          resumeAt: storedResumeAt,
+        });
         try {
           ctx.abort();
-          appendLedger(ctx.cwd, "pause_goal_aborted_turn", { goalId: state.goal?.id, kind: p.kind ?? "blocked" });
+          appendLedger(ctx.cwd, "pause_goal_aborted_turn", { goalId: state.goal.id, kind: p.kind ?? "blocked" });
         } catch (abortError) {
-          appendLedger(ctx.cwd, "pause_goal_abort_failed", { goalId: state.goal?.id, error: abortError instanceof Error ? abortError.message : String(abortError) });
+          clearPauseAbort();
+          appendLedger(ctx.cwd, "pause_goal_abort_failed", { goalId: state.goal.id, error: abortError instanceof Error ? abortError.message : String(abortError) });
         }
       } else if (redirect && !droppedImpossible) {
         appendLedger(ctx.cwd, "pause_goal_redirect", { goalId: state.goal?.id, kind: p.kind ?? "blocked" });

@@ -8,7 +8,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags } from "../extensions/loops/goal.js";
 import { state, replaceState } from "../extensions/goal-state.js";
-import { buildAbortedAssistantNotice, markPauseAbort } from "../extensions/action-reminder.js";
+import { clearPauseAbort, markPauseAbort } from "../extensions/action-reminder.js";
 import { MockPi, makeMockCtx, tmpCwd, seedState, seedGoal } from "./harness/mock-pi.js";
 
 const GLOBAL_SETTINGS_PATH = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
@@ -31,6 +31,7 @@ afterEach(() => {
   __testOnlyResetStaleFlag();
   __testOnlyResetTerminalFlags();
   __testOnlyResetOwnerSession();
+  clearPauseAbort();
   try { fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ aggressiveMode: false })); } catch {}
 });
 
@@ -78,14 +79,21 @@ test("integration: a GLLA pause abort becomes an actionable assistant message", 
   const pi = new MockPi();
   activate(pi.api);
   const cwd = tmpCwd();
-  const goal = seedGoal({ status: "paused", pauseKind: "blocked", pauseReason: "The native popup needs observation.", pauseSuggestedAction: "Open the popup, then /goal resume." });
+  const goal = seedGoal({ id: "pause-action-goal", status: "paused", pauseKind: "blocked", pauseReason: "The native popup needs observation.", pauseSuggestedAction: "Open the popup, then /goal resume." });
   seedState(cwd, { goal });
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "pause-sm", getSessionFile: () => path.join(cwd, "sm.jsonl"), getSessionId: () => "pause-sm" } } as any);
   await pi.fire("session_start", { reason: "startup" }, ctx);
   replaceState({ goal, list: [], loop: null } as any);
   const handler = pi.handlers.get("message_end");
   assert.ok(handler, "message_end handler registered");
-  markPauseAbort();
+  markPauseAbort({
+    ownerSession: ctx.sessionManager,
+    goalId: String(goal.id),
+    kind: "blocked",
+    reason: String(goal.pauseReason),
+    action: typeof goal.pauseSuggestedAction === "string" ? goal.pauseSuggestedAction : undefined,
+    resumeCommand: "/goal resume",
+  });
   const result: any = await (handler as any)({ message: { role: "assistant", stopReason: "aborted", errorMessage: "Operation aborted", content: [] } }, ctx);
   assert.ok(result?.message, "pause abort is replaced");
   const text = result.message.content?.[0]?.text ?? "";
@@ -93,6 +101,81 @@ test("integration: a GLLA pause abort becomes an actionable assistant message", 
   assert.match(text, /Open the popup/);
   assert.doesNotMatch(text, /Operation aborted/);
   assert.equal(result.message.stopReason, "stop");
+});
+
+test("integration: a marked pause without suggestedAction still replaces generic abort text", async () => {
+  __testOnlyResetStaleFlag();
+  __testOnlyResetTerminalFlags();
+  __testOnlyResetOwnerSession();
+  const pi = new MockPi();
+  activate(pi.api);
+  const cwd = tmpCwd();
+  const goal = seedGoal({ id: "pause-no-action-goal", status: "paused", pauseKind: "blocked", pauseReason: "A required local credential is missing.", pauseSuggestedAction: undefined });
+  seedState(cwd, { goal });
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "no-action-sm", getSessionFile: () => path.join(cwd, "sm.jsonl"), getSessionId: () => "no-action-sm" } } as any);
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  const handler = pi.handlers.get("message_end");
+  markPauseAbort({
+    ownerSession: ctx.sessionManager,
+    goalId: String(goal.id),
+    kind: "blocked",
+    reason: String(goal.pauseReason),
+    resumeCommand: "/goal resume",
+  });
+  const result: any = await (handler as any)({ message: { role: "assistant", stopReason: "aborted", errorMessage: "Operation aborted", content: [] } }, ctx);
+  const text = result.message.content?.[0]?.text ?? "";
+  assert.match(text, /required local credential/);
+  assert.match(text, /Next: \/goal resume/);
+  assert.doesNotMatch(text, /Operation aborted/);
+});
+
+test("integration: a stale pause marker cannot rewrite a later unrelated abort", async () => {
+  __testOnlyResetStaleFlag();
+  __testOnlyResetTerminalFlags();
+  __testOnlyResetOwnerSession();
+  const pi = new MockPi();
+  activate(pi.api);
+  const cwd = tmpCwd();
+  const goal = seedGoal({ id: "stale-marker-goal", status: "paused", pauseKind: "blocked", pauseReason: "A prior pause is still recorded.", pauseSuggestedAction: "Complete the prior action." });
+  seedState(cwd, { goal });
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "stale-marker-sm", getSessionFile: () => path.join(cwd, "sm.jsonl"), getSessionId: () => "stale-marker-sm" } } as any);
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  const handler = pi.handlers.get("message_end");
+  markPauseAbort({
+    ownerSession: { name: "old-owner" },
+    goalId: "old-goal",
+    kind: "blocked",
+    reason: "Old pause state.",
+    resumeCommand: "/goal resume",
+  });
+  const result: any = await (handler as any)({ message: { role: "assistant", stopReason: "aborted", errorMessage: "Operation aborted", content: [] } }, ctx);
+  assert.equal(result, undefined, "mismatched owner/goal marker stays Pi-owned");
+});
+
+test("integration: a later same-owner abort after a silent prior marker is not rewritten", async () => {
+  __testOnlyResetStaleFlag();
+  __testOnlyResetTerminalFlags();
+  __testOnlyResetOwnerSession();
+  const pi = new MockPi();
+  activate(pi.api);
+  const cwd = tmpCwd();
+  const goal = seedGoal({ id: "silent-marker-goal", status: "paused", pauseKind: "blocked", pauseReason: "A prior pause is still recorded.", pauseSuggestedAction: "Complete the prior action." });
+  seedState(cwd, { goal });
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "silent-marker-sm", getSessionFile: () => path.join(cwd, "sm.jsonl"), getSessionId: () => "silent-marker-sm" } } as any);
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  const handler = pi.handlers.get("message_end");
+  markPauseAbort({
+    ownerSession: ctx.sessionManager,
+    goalId: String(goal.id),
+    kind: "blocked",
+    reason: String(goal.pauseReason),
+    resumeCommand: "/goal resume",
+  });
+  const nonmatching = await (handler as any)({ message: { role: "custom", customType: "other", content: "not a stale GLLA continuation" } }, ctx);
+  assert.equal(nonmatching, undefined, "non-aborting message does not consume the marker");
+  clearPauseAbort();
+  const result: any = await (handler as any)({ message: { role: "assistant", stopReason: "aborted", errorMessage: "Operation aborted", content: [] } }, ctx);
+  assert.equal(result, undefined, "cleared marker cannot rewrite a later abort");
 });
 
 test("integration: an unrelated owner abort is not rewritten", async () => {
@@ -109,6 +192,24 @@ test("integration: an unrelated owner abort is not rewritten", async () => {
   const handler = pi.handlers.get("message_end");
   const result: any = await (handler as any)({ message: { role: "assistant", stopReason: "aborted", errorMessage: "Operation aborted", content: [] } }, ctx);
   assert.equal(result, undefined, "unmarked owner abort stays Pi-owned");
+});
+
+test("integration: a foreign assistant abort is not rewritten", async () => {
+  __testOnlyResetStaleFlag();
+  __testOnlyResetTerminalFlags();
+  __testOnlyResetOwnerSession();
+  const pi = new MockPi();
+  activate(pi.api);
+  const ownerCwd = tmpCwd();
+  const goal = seedGoal({ status: "paused", pauseKind: "blocked", pauseReason: "Waiting for a real manual action.", pauseSuggestedAction: "Do the real action, then /goal resume." });
+  seedState(ownerCwd, { goal });
+  const owner = makeMockCtx(ownerCwd, { sessionManager: { name: "owner-abort-sm", getSessionFile: () => path.join(ownerCwd, "owner.jsonl"), getSessionId: () => "owner-abort-sm" } } as any);
+  await pi.fire("session_start", { reason: "startup" }, owner);
+  const foreignCwd = tmpCwd();
+  const foreign = makeMockCtx(foreignCwd, { sessionManager: { name: "foreign-abort-sm", getSessionFile: () => path.join(foreignCwd, "foreign.jsonl"), getSessionId: () => "foreign-abort-sm" } } as any);
+  const handler = pi.handlers.get("message_end");
+  const result: any = await (handler as any)({ message: { role: "assistant", stopReason: "aborted", errorMessage: "Operation aborted", content: [] } }, foreign);
+  assert.equal(result, undefined, "foreign assistant abort remains Pi-owned");
 });
 
 test("integration: fresh continuation for active goal is NOT sanitized", async () => {

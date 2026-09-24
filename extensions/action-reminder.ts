@@ -10,7 +10,8 @@ export interface ActionReminderDetails {
   reason: string;
   action: string;
   resumeCommand: string;
-  safelyParked: boolean;
+  resumeAt?: string;
+  safelyParked: true;
 }
 
 export interface ActionReminderCopy {
@@ -18,18 +19,58 @@ export interface ActionReminderCopy {
   details: ActionReminderDetails;
 }
 
-let pauseAbortMarker = false;
-
-/** Mark the exact host turn that pause_goal is about to abort. The marker is
- * consumed by message_end so an unrelated user abort cannot be rewritten. */
-export function markPauseAbort(): void {
-  pauseAbortMarker = true;
+export interface PauseAbortMarker {
+  ownerSession: unknown;
+  goalId: string;
+  kind: ActionReminderKind;
+  reason: string;
+  action?: string;
+  resumeCommand: string;
+  resumeAt?: string;
 }
 
-export function consumePauseAbort(): boolean {
-  const marked = pauseAbortMarker;
-  pauseAbortMarker = false;
-  return marked;
+let pauseAbortMarker: PauseAbortMarker | null = null;
+let pauseTurnStartedAt = 0;
+
+/** Bind the exact pause state and host owner to the turn pause_goal is about
+ * to abort. A session/goal mismatch expires the marker instead of letting it
+ * rewrite some later abort. */
+export function markPauseAbort(marker: PauseAbortMarker): void {
+  pauseAbortMarker = { ...marker, turnStartedAt: pauseTurnStartedAt };
+  // Keep the public marker contract focused on the pause payload. The
+  // internal copy carries the turn fence used by consumePauseAbort().
+  Object.defineProperty(pauseAbortMarker, "turnStartedAt", { value: pauseTurnStartedAt, enumerable: false });
+}
+
+export function markActionReminderTurnStart(): void {
+  pauseTurnStartedAt = Date.now();
+  pauseAbortMarker = null;
+}
+
+export function clearPauseAbort(): void {
+  pauseAbortMarker = null;
+}
+
+/** Consume a pending pause marker only when this exact owner, goal, and turn
+ * still match. `aborted` distinguishes the expected assistant abort from any
+ * other message_end that happens to arrive first. */
+export function consumePauseAbort(input: {
+  ownerSession: unknown;
+  goalId?: string;
+  aborted: boolean;
+}): PauseAbortMarker | null {
+  const marker = pauseAbortMarker;
+  if (!marker) return null;
+  if (
+    !input.aborted
+    || marker.ownerSession !== input.ownerSession
+    || marker.goalId !== input.goalId
+    || pauseTurnStartedAt === 0
+  ) {
+    return null;
+  }
+  pauseAbortMarker = null;
+  return marker;
 }
 
 export function buildAbortedAssistantNotice(input: {
@@ -37,6 +78,7 @@ export function buildAbortedAssistantNotice(input: {
   reason: string;
   action?: string;
   resumeCommand: string;
+  resumeAt?: string;
 }): string {
   const reminder = buildActionReminder(input);
   const next = input.kind === "decision"
@@ -55,20 +97,29 @@ export function buildActionReminder(input: {
   reason: string;
   action?: string;
   resumeCommand: string;
+  resumeAt?: string;
 }): ActionReminderCopy {
   const reason = input.reason.trim() || "The current turn cannot continue safely.";
   const action = input.action?.trim() || input.resumeCommand;
-  const parked = input.kind !== "standby";
-  const heading = parked ? "Action needed — work is safely parked" : "Waiting — work is safely parked";
+  const automaticWait = input.kind === "wait" || input.kind === "standby";
+  const heading = input.kind === "decision"
+    ? "Decision needed — work is safely parked"
+    : automaticWait
+      ? "Waiting — work is safely parked"
+      : "Action needed — work is safely parked";
   const next = input.kind === "decision"
     ? "Choose an option in the decision card, then resume."
     : input.kind === "standby"
       ? "No action is needed; the background completion will wake this work automatically."
-      : `Next: ${action}`;
+      : input.kind === "wait"
+        ? input.resumeAt
+          ? `The wait resumes automatically at ${input.resumeAt}.`
+          : "The wait resumes automatically when its condition clears."
+        : `Next: ${action}`;
   const content = [
     heading,
     `Why: ${reason}`,
-    parked ? "Your saved work is intact; this turn stopped before more work could be lost." : "The turn is waiting without requiring manual intervention.",
+    "Your saved work is intact; this turn stopped before more work could be lost.",
     next,
   ].join("\n");
   return {
@@ -78,7 +129,8 @@ export function buildActionReminder(input: {
       reason,
       action,
       resumeCommand: input.resumeCommand,
-      safelyParked: parked,
+      resumeAt: input.resumeAt,
+      safelyParked: true,
     },
   };
 }
@@ -88,17 +140,25 @@ export function registerActionReminderRenderer(pi: ExtensionAPI): void {
     const details = message.details as Partial<ActionReminderDetails> | undefined;
     const kind = details?.kind ?? "blocked";
     const color = kind === "error" ? "error" : kind === "decision" ? "accent" : "warning";
+    const automaticWait = kind === "wait" || kind === "standby";
     const heading = kind === "standby"
       ? "⏳ GLLA waiting — work is safely parked"
-      : kind === "decision"
-        ? "⏸ GLLA decision needed — work is safely parked"
-        : "⏸ GLLA action needed — work is safely parked";
+      : kind === "wait"
+        ? "⏳ GLLA timed wait — work is safely parked"
+        : kind === "decision"
+          ? "⏸ GLLA decision needed — work is safely parked"
+          : "⏸ GLLA action needed — work is safely parked";
     const box = new Box(outputPad, 1, (t) => theme.bg("customMessageBg", t));
     box.addChild(new Text(theme.fg(color, heading), 0, 0));
     if (details?.reason) box.addChild(new Text(theme.fg("dim", `Why: ${details.reason}`), 0, 0));
-    if (details?.action && kind !== "standby") box.addChild(new Text(theme.fg("accent", `Next: ${details.action}`), 0, 0));
+    if (details?.action && !automaticWait) box.addChild(new Text(theme.fg("accent", `Next: ${details.action}`), 0, 0));
     if (kind === "standby") box.addChild(new Text(theme.fg("dim", "No action is needed; background completion wakes this work automatically."), 0, 0));
-    if (details?.resumeCommand && kind !== "standby") box.addChild(new Text(theme.fg("dim", `Resume: ${details.resumeCommand}`), 0, 0));
+    if (kind === "wait") {
+      box.addChild(new Text(theme.fg("dim", details?.resumeAt
+        ? `Auto-resume: ${details.resumeAt}`
+        : "The wait resumes automatically when its condition clears."), 0, 0));
+    }
+    if (details?.resumeCommand && !automaticWait) box.addChild(new Text(theme.fg("dim", `Resume: ${details.resumeCommand}`), 0, 0));
     return box;
   });
 }

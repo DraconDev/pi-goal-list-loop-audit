@@ -281,7 +281,7 @@ import {
   type ModelPickItem,
 } from "../model-picker.js";
 import { consumeRecoveryResume } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
-import { buildAbortedAssistantNotice, consumePauseAbort } from "../action-reminder.js";
+import { buildAbortedAssistantNotice, clearPauseAbort, consumePauseAbort } from "../action-reminder.js";
 import { payloadGuardProjection } from "../payload-guard.js"; // v0.35.51 image-413 guard
 import { dropFailedErrorOnlyTurns, pruneCompactionPreparation } from "../context-hygiene.js"; // v0.35.52 error-turn hygiene
 import { projectCompactionPreparation } from "../compaction-input.js"; // bounded default-compactor input
@@ -1320,20 +1320,28 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
   pi.on("message_end", async (event: any, ctx: ExtensionContext) => {
     const msg: any = event?.message;
     if (isForeignCtx(ctx)) return;
-    if (msg?.role === "assistant" && msg.stopReason === "aborted" && consumePauseAbort() && state.goal?.status === "paused" && state.goal.pauseSuggestedAction) {
-      return {
-        message: {
-          ...msg,
-          content: [{ type: "text", text: buildAbortedAssistantNotice({
-            kind: state.goal.pauseKind ?? "blocked",
-            reason: state.goal.pauseReason ?? "The turn reached a safety boundary.",
-            action: state.goal.pauseSuggestedAction,
-            resumeCommand: state.goal.policy === "list" ? "/list resume" : "/goal resume",
-          }) }],
-          stopReason: "stop",
-          errorMessage: undefined,
-        },
-      };
+    if (msg?.role === "assistant" && msg.stopReason === "aborted") {
+      const marker = consumePauseAbort({
+        ownerSession: ctx.sessionManager,
+        goalId: state.goal?.id,
+        aborted: true,
+      });
+      if (marker && state.goal?.id === marker.goalId && state.goal.status === "paused") {
+        return {
+          message: {
+            ...msg,
+            content: [{ type: "text", text: buildAbortedAssistantNotice({
+              kind: marker.kind,
+              reason: marker.reason,
+              action: marker.action,
+              resumeCommand: marker.resumeCommand,
+              resumeAt: marker.resumeAt,
+            }) }],
+            stopReason: "stop",
+            errorMessage: undefined,
+          },
+        };
+      }
     }
     if (!msg || msg.role !== "custom" || msg.customType !== "goal-event") return;
     let content = "";
@@ -1533,6 +1541,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     clearToolActivityState();
     bindSubagentRpcHost(pi.events, sessionGeneration);
     clearDraftingState();
+    clearPauseAbort();
     resetContinuationInitialSend(); // v0.38.94: fresh host context never saw the brief
     // An auditor belonging to the disposed generation cannot block the fresh
     // session's recovery gate; its finally block is generation-guarded too.
