@@ -29,6 +29,7 @@ export const DEFAULT_MAX_COMPACTION_USER_CHARS = 4_096;
 export const DEFAULT_MAX_COMPACTION_CUSTOM_CHARS = 4_096;
 export const DEFAULT_MAX_COMPACTION_BASH_OUTPUT_CHARS = 4_096;
 export const DEFAULT_MAX_COMPACTION_SUMMARY_CHARS = 8_192;
+export const DEFAULT_MAX_COMPACTION_PREVIOUS_SUMMARY_CHARS = 4_096;
 
 const TRUNCATION_MARKER = "\n[…glla compaction truncation; full content remains in the session transcript…]";
 const COMPACT_TRUNCATION_MARKER = "…";
@@ -52,6 +53,7 @@ export interface CompactionInputOptions {
   maxCustomChars?: number;
   maxBashOutputChars?: number;
   maxSummaryChars?: number;
+  maxPreviousSummaryChars?: number;
 }
 
 export interface CompactionInputStats {
@@ -102,6 +104,7 @@ interface ProjectionLimits {
   custom: number;
   bashOutput: number;
   summary: number;
+  previousSummary: number;
 }
 
 interface FieldProjection {
@@ -148,6 +151,7 @@ function baseLimits(options: CompactionInputOptions): ProjectionLimits {
     custom: positiveLimit(options.maxCustomChars, DEFAULT_MAX_COMPACTION_CUSTOM_CHARS),
     bashOutput: positiveLimit(options.maxBashOutputChars, DEFAULT_MAX_COMPACTION_BASH_OUTPUT_CHARS),
     summary: positiveLimit(options.maxSummaryChars, DEFAULT_MAX_COMPACTION_SUMMARY_CHARS),
+    previousSummary: positiveLimit(options.maxPreviousSummaryChars, DEFAULT_MAX_COMPACTION_PREVIOUS_SUMMARY_CHARS),
   };
 }
 
