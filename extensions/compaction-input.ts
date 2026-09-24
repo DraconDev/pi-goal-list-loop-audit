@@ -578,13 +578,17 @@ function buildSemanticUnits(history: readonly unknown[], prefix: readonly unknow
       while (end < all.length) {
         const candidate = all[end];
         if (!isRecord(candidate) || candidate.role !== "toolResult" || typeof candidate.toolCallId !== "string") break;
-        if (!keptIds.has(candidate.toolCallId)) break;
+        if (!callIds.has(candidate.toolCallId)) break;
         results.push(end);
         end += 1;
       }
       if (results.length > 0) {
         const half: PreparationHalf = index < history.length ? "history" : "prefix";
-        const messages = [projectToolCallMessage(message, new Set(calls)), ...results.map((resultIndex) => all[resultIndex])];
+        const keptResults = results.filter((resultIndex) => {
+          const result = all[resultIndex];
+          return isRecord(result) && typeof result.toolCallId === "string" && keptIds.has(result.toolCallId);
+        });
+        const messages = [projectToolCallMessage(message, keptIds), ...keptResults.map((resultIndex) => all[resultIndex])];
         units.push({
           half,
           messages,
@@ -773,26 +777,25 @@ export function projectCompactionPreparation(
   const budget = positiveLimit(options.maxInputChars, DEFAULT_COMPACTION_INPUT_CHAR_BUDGET, 1);
 
   let scale = 1;
-  let projected = goalProjection.messages.map((message) => projectMessage(message, limits).value);
-  let fieldProjectedAfter = estimateMessagesChars(projected);
+  let fieldProjected = goalProjection.messages.map((message) => projectMessage(message, limits).value);
+  let fieldProjectedAfter = estimateMessagesChars(fieldProjected);
   // A descending pass is intentionally simple and deterministic. It avoids a
   // dependency on Pi's serializer and remains monotonic enough for the JSON
   // shaped values used by the preparation contract.
   while (fieldProjectedAfter > budget && scale > 0.01) {
     scale = Math.max(0.01, scale * 0.65);
     const scaled = scaleLimits(limits, scale);
-    projected = goalProjection.messages.map((message) => projectMessage(message, scaled).value);
-    fieldProjectedAfter = estimateMessagesChars(projected);
+    fieldProjected = goalProjection.messages.map((message) => projectMessage(message, scaled).value);
+    fieldProjectedAfter = estimateMessagesChars(fieldProjected);
   }
 
-  const fieldStats = countProjectionFields(original, projected);
-  const units = buildSemanticUnits(projected.slice(0, history.length), projected.slice(history.length));
+  const fieldStats = countProjectionFields(original, fieldProjected);
+  const units = buildSemanticUnits(fieldProjected.slice(0, history.length), fieldProjected.slice(history.length));
   const selection = selectBoundedUnits(units, budget);
   const omittedByHalf = { history: 0, prefix: 0 };
   for (let index = 0; index < selection.omitted; index += 1) {
     // Units are selected from the newest end; the omitted prefix is in the
     // older half, with the boundary determined by retained unit halves.
-    const firstSelected = selection.selected[0];
     const omittedUnit = units[index];
     if (omittedUnit) omittedByHalf[omittedUnit.half] += omittedUnit.sourceCount;
   }
