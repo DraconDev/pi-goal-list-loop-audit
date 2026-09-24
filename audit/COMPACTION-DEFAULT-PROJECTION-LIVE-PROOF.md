@@ -1,11 +1,11 @@
 # Default compaction projection — live proof
 
 - **Result:** PASS
-- **Run (UTC):** 2026-09-24T18:43:09.442Z
-- **GLLA revision:** `8b4ae5fb86f648bb3823df4eb6c2857cc22c5604` (package `0.38.98`)
+- **Run (UTC):** 2026-09-24T18:50:52.716Z
+- **GLLA revision:** `9a76a5491250016280db653eb2b45f138bad2c0c` (package `0.38.98`)
 - **Pi revision:** `0.87.1` (fresh child process; only GLLA was explicitly loaded)
 - **Provider/model:** `openrouter` / `stealth/space-bunny-alpha`
-- **Child PID:** `3513212`
+- **Child PID:** `3607846`
 
 ## Isolation and source integrity
 
@@ -14,7 +14,7 @@
 - SHA-256 before: `6a443c1dd8bce42bec86358c5f91de139205784b09b805c6f595f50af7827657`
 - SHA-256 after: `6a443c1dd8bce42bec86358c5f91de139205784b09b805c6f595f50af7827657`
 - Checksum match: **yes**; the original was not opened for writing.
-- Temporary copy used for the run: `/tmp/glla-compaction-live-oxiQ9E/historical-session.jsonl` (removed after verification).
+- Temporary copy used for the run: `/tmp/glla-compaction-live-cERSBO/historical-session.jsonl` (removed after verification).
 - The copy's session header was redirected to an isolated temporary working directory; its historical entries were otherwise retained.
 - The verifier uses isolated GLLA settings with automatic resume disabled; the real working-directory state root and real session file were not used.
 - No credentials or raw transcript/summary text are included in this report or verifier stdout.
@@ -23,7 +23,7 @@
 
 - Automatic compaction start: `overflow`.
 - Compaction ended successfully: **yes**; aborted: `no`; Pi-reported retry: `yes`.
-- Summary length observed in memory: `16672` characters (content intentionally not recorded).
+- Summary length observed in memory: `17961` characters (content intentionally not recorded).
 - Summary length-stop/incomplete error: **none**. Pi 0.87+ rejects a summarizer response with `stopReason=length`; a successful non-aborted `compaction_end` is therefore the live proof that the default summarizer did not stop for length.
 - GLLA hook projection: **observed**.
 - Estimated preparation characters: `189094` before → `13201` after (budget `16000`).
