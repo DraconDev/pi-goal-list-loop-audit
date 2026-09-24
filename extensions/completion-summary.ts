@@ -133,7 +133,7 @@ function labelPositions(lower: string): Array<{ label: string; start: number }> 
 
 /** Compact six-label recap. Terminal user projections pass `includeTests=false`
  * when they want the default human view; archive/machine callers retain it. */
-export function compactCompletionSummary(text: string | undefined, maxValueLength = 72, includeTests = true): string {
+export function compactCompletionSummary(text: string | undefined, maxValueLength = 72, includeTests = false): string {
   const source = completionSummaryBody(text ?? "").replace(/\s+/g, " ").trim();
   if (!source) return "not recorded";
   const lower = source.toLowerCase();
@@ -1098,7 +1098,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     140,
     RICH_FULL_VALUE_BUDGET,
     input.priorCompletionSummary,
-    true,
+    input.showVerification === true,
   );
   // Structured-long (field 2026-09-16): a section-structured Outcome
   // earns the full `### Summary` section on the terminal card (and the
@@ -1175,7 +1175,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
  * word-bounded values. This is the user-facing `✓ done` block — six short
  * facts that stay scannable in chat. The single-line projection remains
  * for width-bound surfaces (TUI widget card, external notifies). */
-export function completionSummaryLines(text: string | undefined, maxValueLength = 240, lineWidth?: number, includeTests = true): string[] {
+export function completionSummaryLines(text: string | undefined, maxValueLength = 240, lineWidth?: number, includeTests = false): string[] {
   const source = completionSummaryBody(text ?? "").replace(/\s+/g, " ").trim();
   const lower = source.toLowerCase();
   const positions = labelPositions(lower);
