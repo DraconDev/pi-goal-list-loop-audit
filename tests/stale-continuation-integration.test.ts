@@ -8,6 +8,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags } from "../extensions/loops/goal.js";
 import { state, replaceState } from "../extensions/goal-state.js";
+import { buildAbortedAssistantNotice } from "../extensions/action-reminder.js";
 import { MockPi, makeMockCtx, tmpCwd, seedState, seedGoal } from "./harness/mock-pi.js";
 
 const GLOBAL_SETTINGS_PATH = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
@@ -68,6 +69,29 @@ test("integration: stale goal continuation is sanitized at message_end and ledge
   assert.equal(sanitized!.value.goalId, gid);
   assert.ok(String(sanitized!.value.originalPreview).includes(gid), "original preview retains goal id for audit");
   assert.ok(String(sanitized!.value.originalPreview).length <= 200, "preview is truncated to 200 chars");
+});
+
+test("integration: a GLLA pause abort becomes an actionable assistant message", async () => {
+  __testOnlyResetStaleFlag();
+  __testOnlyResetTerminalFlags();
+  __testOnlyResetOwnerSession();
+  const pi = new MockPi();
+  activate(pi.api);
+  const cwd = tmpCwd();
+  const goal = seedGoal({ status: "paused", pauseKind: "blocked", pauseReason: "The native popup needs observation.", pauseSuggestedAction: "Open the popup, then /goal resume." });
+  seedState(cwd, { goal });
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "pause-sm", getSessionFile: () => path.join(cwd, "sm.jsonl"), getSessionId: () => "pause-sm" } } as any);
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  replaceState({ goal, list: [], loop: null } as any);
+  const handler = pi.handlers.get("message_end");
+  assert.ok(handler, "message_end handler registered");
+  const result: any = await (handler as any)({ message: { role: "assistant", stopReason: "aborted", errorMessage: "Operation aborted", content: [] } }, ctx);
+  assert.ok(result?.message, "pause abort is replaced");
+  const text = result.message.content?.[0]?.text ?? "";
+  assert.match(text, /GLLA paused this turn safely/);
+  assert.match(text, /Open the popup/);
+  assert.doesNotMatch(text, /Operation aborted/);
+  assert.equal(result.message.stopReason, "stop");
 });
 
 test("integration: fresh continuation for active goal is NOT sanitized", async () => {
