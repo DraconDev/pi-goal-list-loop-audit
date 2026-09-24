@@ -3235,7 +3235,16 @@ async function handleHotLengthExhaustion(
   // request and keeps failed turns out of the summary. Never cancels and
   // never supplies its own compaction; firstKeptEntryId and friends untouched.
   pi.on("session_before_compact", (event: { preparation?: unknown }, ctx: ExtensionContext) => {
-    const dropped = pruneCompactionPreparation(event?.preparation);
+    // Preparation is host-owned data, but a malformed/provider-shaped object
+    // must never turn a preventive projection into a new compaction failure.
+    // Keep the hygiene pass independent as well: either pass may be skipped if
+    // a future Pi version supplies a shape this extension does not recognize.
+    let dropped = 0;
+    try {
+      dropped = pruneCompactionPreparation(event?.preparation);
+    } catch {
+      // defensive containment; Pi's default compactor remains authoritative
+    }
     if (dropped > 0) {
       try {
         appendLedger(ctx.cwd, "context_hygiene_compaction_input", { dropped, generation: sessionGeneration });
@@ -3247,23 +3256,27 @@ async function handleHotLengthExhaustion(
     // and tool-call arguments without a broad input bound. Project those fields
     // in the shared preparation before the summarizer runs; Pi still owns the
     // cut point, fileOps, previousSummary, settings, and compaction result.
-    const inputProjection = projectCompactionPreparation(event?.preparation);
-    if (inputProjection.changed) {
-      try {
-        appendLedger(ctx.cwd, "compaction_input_projection", {
-          inputCharsBefore: inputProjection.inputCharsBefore,
-          inputCharsAfter: inputProjection.inputCharsAfter,
-          boundedMessages: inputProjection.boundedMessages,
-          boundedFields: inputProjection.boundedFields,
-          replacedImages: inputProjection.replacedImages,
-          boundedGoalPayloads: inputProjection.boundedGoalPayloads,
-          retainedGoalPayloads: inputProjection.retainedGoalPayloads,
-          scale: inputProjection.scale,
-          generation: sessionGeneration,
-        });
-      } catch {
-        // bookkeeping must never break compaction
+    try {
+      const inputProjection = projectCompactionPreparation(event?.preparation);
+      if (inputProjection.changed) {
+        try {
+          appendLedger(ctx.cwd, "compaction_input_projection", {
+            inputCharsBefore: inputProjection.inputCharsBefore,
+            inputCharsAfter: inputProjection.inputCharsAfter,
+            boundedMessages: inputProjection.boundedMessages,
+            boundedFields: inputProjection.boundedFields,
+            replacedImages: inputProjection.replacedImages,
+            boundedGoalPayloads: inputProjection.boundedGoalPayloads,
+            retainedGoalPayloads: inputProjection.retainedGoalPayloads,
+            scale: inputProjection.scale,
+            generation: sessionGeneration,
+          });
+        } catch {
+          // bookkeeping must never break compaction
+        }
       }
+    } catch {
+      // A projection failure must not suppress Pi's normal summarization path.
     }
     // Positively-identified compaction start (field 083546): arm the
     // in-flight marker so storm escalation, storm recovery, and new
