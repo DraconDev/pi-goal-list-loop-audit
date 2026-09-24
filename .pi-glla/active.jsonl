@@ -3329,3 +3329,4 @@
 {"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:32:47.990Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:32:58.144Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:33:00.443Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:35:40.994Z"}
