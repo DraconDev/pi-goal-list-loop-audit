@@ -422,7 +422,7 @@ import {
 import { defineGoalRuntimeGlobal } from "./goal-runtime-globals.js";
 import { releaseAuditorSurface } from "./goal-auditor-surface.js";
 import { chooseObjectiveConflict, liveObjectives, type ObjectiveKind } from "../goal-objective-conflict.js";
-import { ACTION_REMINDER_CUSTOM_TYPE, buildActionReminder } from "../action-reminder.js";
+import { ACTION_REMINDER_CUSTOM_TYPE, buildActionReminder, markPauseAbort } from "../action-reminder.js";
 import { assessSuspiciousObjective, isSuspiciousObjectivePause } from "../faulty-objective-recovery.js";
 
 type AuditorModelCandidate = any;
@@ -2591,6 +2591,7 @@ function registerAgentTools(pi: any): void {
       // forensics. An impossible-drop still wins the result copy below.
       const redirect = (p.redirect ?? "").trim();
       if (!droppedImpossible && !redirect) {
+        markPauseAbort();
         try {
           ctx.abort();
           appendLedger(ctx.cwd, "pause_goal_aborted_turn", { goalId: state.goal?.id, kind: p.kind ?? "blocked" });

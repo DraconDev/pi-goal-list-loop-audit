@@ -281,7 +281,7 @@ import {
   type ModelPickItem,
 } from "../model-picker.js";
 import { consumeRecoveryResume } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
-import { buildAbortedAssistantNotice } from "../action-reminder.js";
+import { buildAbortedAssistantNotice, consumePauseAbort } from "../action-reminder.js";
 import { payloadGuardProjection } from "../payload-guard.js"; // v0.35.51 image-413 guard
 import { dropFailedErrorOnlyTurns, pruneCompactionPreparation } from "../context-hygiene.js"; // v0.35.52 error-turn hygiene
 import { projectCompactionPreparation } from "../compaction-input.js"; // bounded default-compactor input
@@ -1319,7 +1319,8 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
   // stale content before it is persisted or drives a turn.
   pi.on("message_end", async (event: any, ctx: ExtensionContext) => {
     const msg: any = event?.message;
-    if (msg?.role === "assistant" && msg.stopReason === "aborted" && state.goal?.status === "paused" && state.goal.pauseSuggestedAction) {
+    if (isForeignCtx(ctx)) return;
+    if (msg?.role === "assistant" && msg.stopReason === "aborted" && consumePauseAbort() && state.goal?.status === "paused" && state.goal.pauseSuggestedAction) {
       return {
         message: {
           ...msg,
@@ -1335,7 +1336,6 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       };
     }
     if (!msg || msg.role !== "custom" || msg.customType !== "goal-event") return;
-    if (isForeignCtx(ctx)) return;
     let content = "";
     if (typeof msg.content === "string") content = msg.content;
     else if (Array.isArray(msg.content)) content = msg.content.map((c: any) => typeof c === "string" ? c : (c?.text ?? "")).join("\n");

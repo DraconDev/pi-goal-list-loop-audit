@@ -18,6 +18,20 @@ export interface ActionReminderCopy {
   details: ActionReminderDetails;
 }
 
+let pauseAbortMarker = false;
+
+/** Mark the exact host turn that pause_goal is about to abort. The marker is
+ * consumed by message_end so an unrelated user abort cannot be rewritten. */
+export function markPauseAbort(): void {
+  pauseAbortMarker = true;
+}
+
+export function consumePauseAbort(): boolean {
+  const marked = pauseAbortMarker;
+  pauseAbortMarker = false;
+  return marked;
+}
+
 export function buildAbortedAssistantNotice(input: {
   kind: ActionReminderKind;
   reason: string;
@@ -74,17 +88,16 @@ export function registerActionReminderRenderer(pi: ExtensionAPI): void {
     const details = message.details as Partial<ActionReminderDetails> | undefined;
     const kind = details?.kind ?? "blocked";
     const color = kind === "error" ? "error" : kind === "decision" ? "accent" : "warning";
-    const heading = details?.safelyParked === false
-      ? "GLLA update"
-      : kind === "standby"
-        ? "⏳ GLLA waiting — work is safely parked"
-        : kind === "decision"
-          ? "⏸ GLLA decision needed — work is safely parked"
-          : "⏸ GLLA action needed — work is safely parked";
+    const heading = kind === "standby"
+      ? "⏳ GLLA waiting — work is safely parked"
+      : kind === "decision"
+        ? "⏸ GLLA decision needed — work is safely parked"
+        : "⏸ GLLA action needed — work is safely parked";
     const box = new Box(outputPad, 1, (t) => theme.bg("customMessageBg", t));
     box.addChild(new Text(theme.fg(color, heading), 0, 0));
     if (details?.reason) box.addChild(new Text(theme.fg("dim", `Why: ${details.reason}`), 0, 0));
     if (details?.action && kind !== "standby") box.addChild(new Text(theme.fg("accent", `Next: ${details.action}`), 0, 0));
+    if (kind === "standby") box.addChild(new Text(theme.fg("dim", "No action is needed; background completion wakes this work automatically."), 0, 0));
     if (details?.resumeCommand && kind !== "standby") box.addChild(new Text(theme.fg("dim", `Resume: ${details.resumeCommand}`), 0, 0));
     return box;
   });
