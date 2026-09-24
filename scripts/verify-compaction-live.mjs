@@ -25,6 +25,7 @@ const REPORT_PATH = path.join(REPO_ROOT, "audit", "COMPACTION-DEFAULT-PROJECTION
 const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;
 const INPUT_BUDGET = 64_000;
 const CONTINUATION_MARKER = "GLLA_POST_COMPACTION_CONTINUATION_OK";
+let verifierStage = "startup";
 
 function usage() {
   console.error("Usage: node scripts/verify-compaction-live.mjs --session <path> --provider <provider> --model <model>");
@@ -457,9 +458,7 @@ async function main() {
   let compactionStart;
   let compactionEnd;
   let continuation = false;
-  let stage = "startup";
-  const setStage = (value) => { stage = value; globalThis.__gllaLiveStage = value; };
-  setStage(stage);
+  const setStage = (value) => { verifierStage = value; };
 
   try {
     copiedSession = copyHistoricalSession(source, tempRoot);
@@ -619,9 +618,7 @@ try {
   // credentials or raw conversation material.
   const message = error instanceof Error ? error.message : String(error);
   const category = redactClass(message);
-  const stage = typeof process.env.GLLA_LIVE_DEBUG === "1" && typeof globalThis.__gllaLiveStage === "string"
-    ? globalThis.__gllaLiveStage
-    : "redacted";
+  const stage = process.env.GLLA_LIVE_DEBUG === "1" ? verifierStage : "redacted";
   console.error(`FAIL: ${category}${stage === "redacted" ? "" : ` (stage=${stage})`}`);
   process.exitCode = 1;
 }
