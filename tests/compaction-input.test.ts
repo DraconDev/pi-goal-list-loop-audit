@@ -118,6 +118,20 @@ test("replaces image blocks while retaining the surrounding message structure", 
   assert.equal(result.replacedImages, 1);
 });
 
+test("bounds a previous compaction summary without changing the preparation contract", () => {
+  const prep = {
+    messagesToSummarize: [{ role: "user", content: "compact me" }],
+    turnPrefixMessages: [],
+    previousSummary: text("prior summary ", 48_000),
+  };
+
+  const result = projectCompactionPreparation(prep);
+  assert.equal(result.inputCharsAfter <= 16_000, true);
+  assert.equal(typeof prep.previousSummary, "string");
+  assert.equal((prep.previousSummary as string).length <= 4_096, true);
+  assert.equal(result.changed, true);
+});
+
 test("leaves preparation metadata and fileOps untouched", () => {
   const fileOps = {
     reads: [{ path: "src/a.ts", line: 1 }],
