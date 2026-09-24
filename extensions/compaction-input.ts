@@ -8,10 +8,12 @@
 // token cap and the summary is incomplete").
 //
 // This module is deliberately a preparation *projection*, not a compactor.
-// It clones messages and trims mutable content while retaining every message,
-// tool-call block, tool-result block, id, role, and ordering relationship.  Pi
-// still owns the cut point, file-operation extraction, previous summary,
-// settings, and the actual summarization call.  No CompactionResult is ever
+// It clones messages and trims mutable content. A fixed character budget cannot
+// losslessly retain arbitrarily many message objects, so a final pair-aware
+// pass retains the newest semantic units and replaces older spans with a short
+// transcript marker. Tool calls and their matching results are never split.
+// Pi still owns the cut point, file-operation extraction, previous summary,
+// settings, and the actual summarization call. No CompactionResult is ever
 // produced here, so another extension's session_before_compact result remains
 // authoritative.
 
@@ -36,6 +38,8 @@ const MAX_TOOL_ARGUMENT_ARRAY_ITEMS = 8;
 const MAX_TOOL_ARGUMENT_DEPTH = 3;
 const MIN_SCALED_TEXT_CHARS = 32;
 const MIN_SCALED_ARGUMENT_CHARS = 64;
+const MAX_CONTENT_BLOCKS = 16;
+const MAX_TOOL_CALLS_PER_GROUP = 8;
 
 export interface CompactionInputOptions {
   /** Maximum estimated mutable input characters. Must be positive. */
@@ -65,8 +69,22 @@ export interface CompactionInputStats {
   boundedGoalPayloads: number;
   /** GLLA goal-event payloads retained (normally zero or one). */
   retainedGoalPayloads: number;
-  /** Final per-field scale selected by the global budget pass. */
+  /** Final per-field scale selected before structural omission. */
   scale: number;
+  /** Original preparation messages represented without omission. */
+  retainedMessages: number;
+  /** Original preparation messages replaced by omission markers. */
+  omittedMessages: number;
+  /** Complete assistant-tool-call/result groups retained. */
+  retainedToolGroups: number;
+  /** Tool groups that lost at least one call or result to bounded projection. */
+  omittedToolGroups: number;
+  /** Individual tool calls omitted from a retained assistant message. */
+  omittedToolCalls: number;
+  /** Bounded transcript markers inserted for omitted spans. */
+  omissionMarkers: number;
+  /** True when structural omission was required to enforce the hard budget. */
+  hardBoundApplied: boolean;
 }
 
 export interface CompactionInputProjectionResult extends CompactionInputStats {
@@ -97,6 +115,21 @@ interface MessageProjection {
   changed: boolean;
   fields: number;
   images: number;
+}
+
+type PreparationHalf = "history" | "prefix";
+
+interface SemanticUnit {
+  half: PreparationHalf;
+  messages: unknown[];
+  sourceCount: number;
+  toolGroup: boolean;
+  retainedToolGroup: boolean;
+  omittedToolCalls: number;
+  omittedToolGroups: number;
+  boundedMessages: number;
+  boundedFields: number;
+  replacedImages: number;
 }
 
 function positiveLimit(value: unknown, fallback: number, minimum = 1): number {
@@ -304,7 +337,40 @@ function projectContentArray(
     }
     return result.value;
   });
-  return { value: projected, changed, fields, images };
+  if (projected.length <= MAX_CONTENT_BLOCKS) {
+    return { value: projected, changed, fields, images };
+  }
+
+  // Bound block count as well as field size. Multiple adjacent text/thinking
+  // blocks are folded into one bounded excerpt; excessive images and tool
+  // calls are replaced by one explicit marker. The untouched transcript and
+  // precomputed fileOps remain the recovery source.
+  const folded: unknown[] = [];
+  const texts: string[] = [];
+  const other: unknown[] = [];
+  let otherImages = 0;
+  for (const block of projected) {
+    if (isRecord(block) && block.type === "text" && typeof block.text === "string") {
+      texts.push(block.text);
+    } else {
+      other.push(block);
+      if (isRecord(block) && block.type === "image") otherImages += 1;
+    }
+  }
+  if (texts.length > 0) {
+    const joined = boundCompactionText(texts.join("\n"), textLimit);
+    folded.push({ type: "text", text: joined });
+  }
+  for (const block of other.slice(0, MAX_CONTENT_BLOCKS)) folded.push(block);
+  if (other.length > MAX_CONTENT_BLOCKS || projected.length > MAX_CONTENT_BLOCKS) {
+    const omittedBlocks = projected.length - texts.length - Math.min(other.length, MAX_CONTENT_BLOCKS);
+    folded.push({ type: "text", text: `[${Math.max(1, omittedBlocks)} additional content blocks omitted from compaction input; full content remains in the session transcript]` });
+    changed = true;
+    fields += 1;
+  }
+  if (otherImages > 0) images = otherImages;
+  if (folded.length !== projected.length) changed = true;
+  return { value: folded, changed, fields, images };
 }
 
 function projectMessage(message: unknown, limits: ProjectionLimits): MessageProjection {
@@ -407,34 +473,169 @@ function contentTextLength(content: unknown): number {
 
 /** Approximate the text Pi's serializeConversation() sends, without importing
  * Pi runtime code into this pure module. */
+function contentTextForPi(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content.flatMap((block) => {
+    if (!isRecord(block)) return [];
+    if (block.type === "text" && typeof block.text === "string") return [block.text];
+    return [];
+  }).join("\n");
+}
+
+/** Conservative estimate of Pi 0.87's convertToLlm + serializeConversation output. */
 function estimateMessageChars(message: unknown): number {
   if (!isRecord(message)) return 0;
-  let chars = 24; // role label and separators
-  if (message.role === "assistant" && Array.isArray(message.content)) {
+  const separator = 2;
+  let parts: string[] = [];
+  if (message.role === "user") {
+    const text = contentTextForPi(message.content);
+    if (text) parts.push(`[User]: ${text}`);
+  } else if (message.role === "assistant" && Array.isArray(message.content)) {
+    const thinking: string[] = [];
+    const calls: string[] = [];
+    let text = "";
     for (const block of message.content) {
       if (!isRecord(block)) continue;
-      if (block.type === "text" && typeof block.text === "string") chars += block.text.length;
-      else if (block.type === "thinking" && typeof block.thinking === "string") chars += block.thinking.length;
-      else if (block.type === "toolCall") chars += String(block.name ?? "").length + (safeJson(block.arguments)?.length ?? 0);
-      else if (block.type === "image" && typeof block.data === "string") chars += block.data.length;
+      if (block.type === "thinking" && typeof block.thinking === "string") thinking.push(block.thinking);
+      else if (block.type === "text" && typeof block.text === "string") text += block.text;
+      else if (block.type === "toolCall") {
+        const args = isRecord(block.arguments) ? block.arguments : {};
+        const argsText = Object.entries(args).map(([key, value]) => `${key}=${safeJson(value) ?? String(value)}`).join(", ");
+        calls.push(`${String(block.name ?? "")}(${argsText})`);
+      }
     }
-    return chars;
+    if (thinking.length > 0) parts.push(`[Assistant thinking]: ${thinking.join("\n")}`);
+    if (text) parts.push(`[Assistant]: ${text}`);
+    if (calls.length > 0) parts.push(`[Assistant tool calls]: ${calls.join("; ")}`);
+  } else if (message.role === "toolResult") {
+    const text = contentTextForPi(message.content);
+    if (text) {
+      const clipped = text.length > DEFAULT_MAX_COMPACTION_TOOL_RESULT_CHARS ? text.slice(0, DEFAULT_MAX_COMPACTION_TOOL_RESULT_CHARS) : text;
+      parts.push(`[Tool result]: ${clipped}`);
+    }
+  } else if (message.role === "bashExecution") {
+    if (message.excludeFromContext === true) return 0;
+    const output = typeof message.output === "string" ? message.output : "";
+    parts.push(`[User]: Ran \`${String(message.command ?? "")}\`\n${output ? `\`\`\`\n${output}\n\`\`\`` : "(no output)"}`);
+  } else if (message.role === "custom") {
+    const text = contentTextForPi(message.content);
+    if (text) parts.push(`[User]: ${text}`);
+  } else if (message.role === "branchSummary" || message.role === "compactionSummary") {
+    const summary = typeof message.summary === "string" ? message.summary : "";
+    if (summary) parts.push(`[User]: ${summary}`);
   }
-  if (message.role === "assistant" && typeof message.content === "string") return chars + message.content.length;
-  if (message.role === "user" || message.role === "custom" || message.role === "toolResult") {
-    return chars + contentTextLength(message.content);
-  }
-  if (message.role === "bashExecution") {
-    return chars + (typeof message.command === "string" ? message.command.length : 0) + (typeof message.output === "string" ? message.output.length : 0);
-  }
-  if (message.role === "branchSummary" || message.role === "compactionSummary") {
-    return chars + (typeof message.summary === "string" ? message.summary.length : 0);
-  }
-  return chars;
+  return parts.reduce((sum, part) => sum + part.length, 0) + Math.max(0, parts.length - 1) * separator;
 }
 
 function estimateMessagesChars(messages: readonly unknown[]): number {
   return messages.reduce<number>((sum, message) => sum + estimateMessageChars(message), 0);
+}
+
+function omissionMarker(count: number): Record<string, unknown> {
+  return {
+    role: "custom",
+    customType: "glla-compaction-omission",
+    display: false,
+    content: `[GLLA omitted ${count} earlier preparation message${count === 1 ? "" : "s"} from the summarizer payload; ordered role/tool content remains in the session transcript and durable state remains in .pi-glla]`,
+  };
+}
+
+function messageToolCallIds(message: unknown): string[] {
+  if (!isRecord(message) || message.role !== "assistant" || !Array.isArray(message.content)) return [];
+  return message.content.flatMap((block) => isRecord(block) && block.type === "toolCall" && typeof block.id === "string" ? [block.id] : []);
+}
+
+function buildSemanticUnits(history: readonly unknown[], prefix: readonly unknown[]): SemanticUnit[] {
+  const units: SemanticUnit[] = [];
+  const addUnit = (half: PreparationHalf, start: number, end: number): void => {
+    const messages = [...history, ...prefix].slice(start, end);
+    const retainedToolGroup = messages.some((message) => isRecord(message) && message.role === "assistant" && messageToolCallIds(message).length > 0)
+      && messages.some((message) => isRecord(message) && message.role === "toolResult");
+    units.push({
+      half,
+      messages,
+      sourceCount: end - start,
+      toolGroup: messages.some((message) => isRecord(message) && (message.role === "assistant" && messageToolCallIds(message).length > 0 || message.role === "toolResult")),
+      retainedToolGroup,
+      omittedToolCalls: 0,
+      omittedToolGroups: 0,
+      boundedMessages: 0,
+      boundedFields: 0,
+      replacedImages: 0,
+    });
+  };
+  const all = [...history, ...prefix];
+  let index = 0;
+  while (index < all.length) {
+    const message = all[index];
+    const callIds = new Set(messageToolCallIds(message));
+    if (callIds.size > 0) {
+      const calls = messageToolCallIds(message).slice(0, MAX_TOOL_CALLS_PER_GROUP);
+      const keptIds = new Set(calls);
+      let end = index + 1;
+      const results: number[] = [];
+      while (end < all.length) {
+        const candidate = all[end];
+        if (!isRecord(candidate) || candidate.role !== "toolResult" || typeof candidate.toolCallId !== "string") break;
+        if (!keptIds.has(candidate.toolCallId)) break;
+        results.push(end);
+        end += 1;
+      }
+      if (results.length > 0) {
+        const half: PreparationHalf = index < history.length ? "history" : "prefix";
+        const messages = [projectToolCallMessage(message, new Set(calls)), ...results.map((resultIndex) => all[resultIndex])];
+        units.push({
+          half,
+          messages,
+          sourceCount: end - index,
+          toolGroup: true,
+          retainedToolGroup: true,
+          omittedToolCalls: messageToolCallIds(message).length - calls.length,
+          omittedToolGroups: messageToolCallIds(message).length > calls.length ? 1 : 0,
+          boundedMessages: messageToolCallIds(message).length > calls.length ? 1 : 0,
+          boundedFields: messageToolCallIds(message).length > calls.length ? 1 : 0,
+          replacedImages: 0,
+        });
+        index = end;
+        continue;
+      }
+    }
+    const half: PreparationHalf = index < history.length ? "history" : "prefix";
+    addUnit(half, index, index + 1);
+    index += 1;
+  }
+  return units;
+}
+
+function projectToolCallMessage(message: unknown, keptIds: Set<string>): unknown {
+  if (!isRecord(message) || !Array.isArray(message.content)) return message;
+  const calls = message.content.filter((block) => isRecord(block) && block.type === "toolCall" && typeof block.id === "string" && keptIds.has(block.id));
+  if (calls.length === message.content.filter((block) => isRecord(block) && block.type === "toolCall").length) return message;
+  return { ...message, content: calls };
+}
+
+function selectBoundedUnits(units: readonly SemanticUnit[], budget: number): { selected: SemanticUnit[]; omitted: number; markers: number; after: number } {
+  if (units.length === 0) return { selected: [], omitted: 0, markers: 0, after: 0 };
+  const selected: SemanticUnit[] = [];
+  let used = 0;
+  for (let index = units.length - 1; index >= 0; index -= 1) {
+    const unit = units[index];
+    const cost = estimateMessagesChars(unit.messages);
+    if (used + cost > budget) break;
+    selected.unshift(unit);
+    used += cost;
+  }
+  const omitted = units.length - selected.length;
+  const markerCost = omitted > 0 ? estimateMessageChars(omissionMarker(omitted)) + 2 : 0;
+  while (selected.length > 0 && used + markerCost > budget) {
+    used -= estimateMessagesChars(selected[0].messages);
+    selected.shift();
+  }
+  const markers = omitted > 0 && markerCost <= budget - used ? 1 : 0;
+  const messages = selected.flatMap((unit) => unit.messages);
+  const after = estimateMessagesChars(messages) + (markers > 0 ? markerCost : 0);
+  return { selected, omitted, markers, after };
 }
 
 function isGoalEvent(message: unknown): boolean {
@@ -549,6 +750,13 @@ export function projectCompactionPreparation(
     boundedGoalPayloads: 0,
     retainedGoalPayloads: 0,
     scale: 1,
+    retainedMessages: 0,
+    omittedMessages: 0,
+    retainedToolGroups: 0,
+    omittedToolGroups: 0,
+    omittedToolCalls: 0,
+    omissionMarkers: 0,
+    hardBoundApplied: false,
   };
   if (!isRecord(preparation)) return empty;
 
@@ -566,27 +774,53 @@ export function projectCompactionPreparation(
 
   let scale = 1;
   let projected = goalProjection.messages.map((message) => projectMessage(message, limits).value);
-  let after = estimateMessagesChars(projected);
-  // A descending pass is intentionally simple and deterministic.  It avoids a
+  let fieldProjectedAfter = estimateMessagesChars(projected);
+  // A descending pass is intentionally simple and deterministic. It avoids a
   // dependency on Pi's serializer and remains monotonic enough for the JSON
   // shaped values used by the preparation contract.
-  while (after > budget && scale > 0.01) {
+  while (fieldProjectedAfter > budget && scale > 0.01) {
     scale = Math.max(0.01, scale * 0.65);
     const scaled = scaleLimits(limits, scale);
     projected = goalProjection.messages.map((message) => projectMessage(message, scaled).value);
-    after = estimateMessagesChars(projected);
+    fieldProjectedAfter = estimateMessagesChars(projected);
   }
 
-  const bounded = countChangedMessages(original, projected);
   const fieldStats = countProjectionFields(original, projected);
-  const projectedHistory = projected.slice(0, history.length);
-  const projectedPrefix = projected.slice(history.length);
+  const units = buildSemanticUnits(projected.slice(0, history.length), projected.slice(history.length));
+  const selection = selectBoundedUnits(units, budget);
+  const omittedByHalf = { history: 0, prefix: 0 };
+  for (let index = 0; index < selection.omitted; index += 1) {
+    // Units are selected from the newest end; the omitted prefix is in the
+    // older half, with the boundary determined by retained unit halves.
+    const firstSelected = selection.selected[0];
+    const omittedUnit = units[index];
+    if (omittedUnit) omittedByHalf[omittedUnit.half] += omittedUnit.sourceCount;
+  }
+  const markerMessage = selection.markers > 0 ? omissionMarker(selection.omitted) : null;
+  let selectedHistory = selection.selected.filter((unit) => unit.half === "history").flatMap((unit) => unit.messages);
+  let selectedPrefix = selection.selected.filter((unit) => unit.half === "prefix").flatMap((unit) => unit.messages);
+  if (markerMessage) {
+    if (omittedByHalf.history > 0) selectedHistory = [markerMessage, ...selectedHistory];
+    else if (omittedByHalf.prefix > 0) selectedPrefix = [markerMessage, ...selectedPrefix];
+    else selectedHistory = [markerMessage, ...selectedHistory];
+  }
+  const projected = [...selectedHistory, ...selectedPrefix];
+  const after = selection.after;
+  const bounded = countChangedMessages(original, projected);
+  const boundedFields = fieldStats.fields + selection.selected.reduce((sum, unit) => sum + unit.omittedToolCalls + unit.boundedFields, 0);
+  const boundedImages = fieldStats.images;
+  const projectedHistory = selectedHistory;
+  const projectedPrefix = selectedPrefix;
+  const retainedToolGroups = selection.selected.filter((unit) => unit.retainedToolGroup).length;
+  const omittedToolGroups = selection.selected.reduce((sum, unit) => sum + unit.omittedToolGroups, 0)
+    + (selection.omitted > 0 ? 1 : 0);
+  const omittedToolCalls = selection.selected.reduce((sum, unit) => sum + unit.omittedToolCalls, 0);
   // Keep each preparation array's identity when that half of the projection
   // is a no-op. Pi and other extensions may retain references to these
   // arrays while they inspect the shared preparation object.
   const historyChanged = hasHistory && !sameMessageElements(history, projectedHistory);
   const prefixChanged = hasPrefix && !sameMessageElements(prefix, projectedPrefix);
-  const changed = bounded > 0 || goalProjection.bounded > 0;
+  const changed = bounded > 0 || goalProjection.bounded > 0 || selection.omitted > 0;
   const result: CompactionInputProjectionResult = {
     changed,
     messagesToSummarize: historyChanged ? projectedHistory : history,
@@ -594,11 +828,18 @@ export function projectCompactionPreparation(
     inputCharsBefore: before,
     inputCharsAfter: after,
     boundedMessages: bounded,
-    boundedFields: fieldStats.fields,
-    replacedImages: fieldStats.images,
+    boundedFields,
+    replacedImages: boundedImages,
     boundedGoalPayloads: goalProjection.bounded,
     retainedGoalPayloads: goalProjection.retained,
     scale,
+    retainedMessages: selection.selected.reduce((sum, unit) => sum + unit.sourceCount, 0),
+    omittedMessages: selection.omitted,
+    retainedToolGroups,
+    omittedToolGroups,
+    omittedToolCalls,
+    omissionMarkers: selection.markers,
+    hardBoundApplied: selection.omitted > 0,
   };
 
   if (historyChanged) preparation.messagesToSummarize = result.messagesToSummarize;

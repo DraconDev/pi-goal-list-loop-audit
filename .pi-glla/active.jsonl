@@ -3243,3 +3243,5 @@
 {"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T16:37:26.618Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T16:37:35.030Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T16:37:40.154Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T16:38:55.134Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T16:39:09.353Z"}
