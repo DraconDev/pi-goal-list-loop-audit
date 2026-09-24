@@ -24,6 +24,7 @@ import * as path from "node:path";
 
 import activate, { __testOnlyResetOwnerSession } from "../extensions/loops/goal.js";
 import { dropFailedErrorOnlyTurns, isFailedErrorOnlyTurn, pruneCompactionPreparation, DEFAULT_KEEP_RECENT_ERROR_TURNS } from "../extensions/context-hygiene.js";
+import { projectCompactionPreparation } from "../extensions/compaction-input.js";
 import { tmpCwd, MockPi, makeMockCtx } from "./harness/mock-pi.js";
 
 function failedTurn(errorMessage: string, blocks: unknown[] = []): Record<string, unknown> {
@@ -156,7 +157,7 @@ test("wiring: the context event drops accumulated error turns and ledgeres the h
   assert.equal(ledger(cwd).length, before);
 });
 
-test("wiring: session_before_compact prunes the preparation the runner will summarize", async () => {
+test("wiring: session_before_compact prunes and bounds the preparation the runner will summarize", async () => {
   const cwd = tmpCwd();
   const pi = new MockPi();
   activate(pi.api);
@@ -167,18 +168,39 @@ test("wiring: session_before_compact prunes the preparation the runner will summ
   assert.ok(handler, "activate() registers the session_before_compact handler");
 
   const preparation = {
-    messagesToSummarize: [userTurn("old"), failedTurn("503"), failedTurn("network_error"), okTurn("work")],
+    messagesToSummarize: [
+      userTurn("old"),
+      failedTurn("503"),
+      failedTurn("network_error"),
+      { role: "assistant", content: [{ type: "text", text: "successful work ".repeat(1_000) }] },
+    ],
     turnPrefixMessages: [userTurn("recent")],
     firstKeptEntryId: "e42",
+    isSplitTurn: true,
+    tokensBefore: 123_456,
+    previousSummary: "prior summary",
+    fileOps: { read: new Set(["src/a.ts"]), written: new Set(), edited: new Set() },
   };
+  const fileOps = preparation.fileOps;
   await handler({ type: "session_before_compact", preparation, branchEntries: [], reason: "auto" }, ctx);
+
   assert.equal(preparation.messagesToSummarize.length, 3, "the runner's shared preparation is pruned in place");
-  assert.equal(preparation.firstKeptEntryId, "e42");
+  assert.equal(preparation.firstKeptEntryId, "e42", "cut metadata is preserved");
+  assert.equal(preparation.isSplitTurn, true);
+  assert.equal(preparation.tokensBefore, 123_456);
+  assert.equal(preparation.previousSummary, "prior summary");
+  assert.equal(preparation.fileOps, fileOps, "fileOps identity is preserved");
+  const projectedAssistant = preparation.messagesToSummarize[2] as { content: Array<{ text?: string }> };
+  assert.equal((projectedAssistant.content[0]?.text ?? "").length <= 4_096, true, "successful assistant text is bounded");
   const events = ledger(cwd).filter((e) => e.type === "context_hygiene_compaction_input");
   assert.equal(events.length, 1);
   assert.equal(events[0]!.value!.dropped, 1);
+  const projections = ledger(cwd).filter((e) => e.type === "compaction_input_projection");
+  assert.equal(projections.length, 1, "the live hook emits bounded projection telemetry");
+  assert.equal((projections[0]!.value!.inputCharsAfter as number) < (projections[0]!.value!.inputCharsBefore as number), true);
+  assert.equal((projections[0]!.value!.boundedMessages as number) >= 1, true);
 
-  // Idempotent second pass: no further drops, no ledger spam.
+  // Idempotent second pass: no further drops or projection ledger spam.
   const before = ledger(cwd).length;
   await handler({ type: "session_before_compact", preparation, branchEntries: [], reason: "auto" }, ctx);
   assert.equal(ledger(cwd).length, before);
