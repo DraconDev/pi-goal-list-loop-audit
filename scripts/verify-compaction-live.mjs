@@ -456,6 +456,9 @@ async function main() {
   let compactionStart;
   let compactionEnd;
   let continuation = false;
+  let stage = "startup";
+  const setStage = (value) => { stage = value; globalThis.__gllaLiveStage = value; };
+  setStage(stage);
 
   try {
     copiedSession = copyHistoricalSession(source, tempRoot);
@@ -491,6 +494,7 @@ async function main() {
     rpc.start();
     processId = String(rpc.child.pid ?? "unknown");
 
+    setStage("state");
     const state = assertSuccessfulResponse(await rpc.send({ type: "get_state" }, 60_000), "get_state");
     if (state?.sessionFile !== copiedSession) throw new Error("Pi did not open the isolated session copy");
     if (state?.autoCompactionEnabled !== true) throw new Error("Pi auto-compaction was not enabled for the proof");
@@ -500,6 +504,7 @@ async function main() {
 
     // Subscribe before sending the prompt: threshold/overflow compaction can
     // begin before the prompt command's response is written.
+    setStage("awaiting_compaction");
     const eventStart = rpc.events.length;
     const compactionEndPromise = rpc.waitForEvent(
       (event) => event.type === "compaction_end",
@@ -533,12 +538,14 @@ async function main() {
     if (!compactionStart || !["threshold", "overflow"].includes(compactionStart.reason)) {
       throw new Error("the observed compaction was not Pi's automatic threshold/overflow path");
     }
+    setStage("post_compaction_response");
     await settledPromise;
     const firstText = assertSuccessfulResponse(await rpc.send({ type: "get_last_assistant_text" }, 60_000), "get_last_assistant_text");
     if (typeof firstText?.text !== "string" || firstText.text.length === 0) {
       throw new Error("no assistant response followed the successful compaction");
     }
 
+    setStage("explicit_continuation");
     const postStart = rpc.events.length;
     const postSettledPromise = rpc.waitForEvent(
       (event) => event.type === "agent_settled",
@@ -556,6 +563,7 @@ async function main() {
       throw new Error("post-compaction continuation did not return the expected marker");
     }
     continuation = true;
+    setStage("complete");
   } finally {
     await rpc?.stop();
   }
@@ -610,6 +618,9 @@ try {
   // credentials or raw conversation material.
   const message = error instanceof Error ? error.message : String(error);
   const category = redactClass(message);
-  console.error(`FAIL: ${category}`);
+  const stage = typeof process.env.GLLA_LIVE_DEBUG === "1" && typeof globalThis.__gllaLiveStage === "string"
+    ? globalThis.__gllaLiveStage
+    : "redacted";
+  console.error(`FAIL: ${category}${stage === "redacted" ? "" : ` (stage=${stage})`}`);
   process.exitCode = 1;
 }
