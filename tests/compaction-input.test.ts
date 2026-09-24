@@ -5,11 +5,17 @@ import { projectCompactionPreparation } from "../extensions/compaction-input.js"
 const text = (value: string, max = 12_000) => value.repeat(Math.ceil(max / Math.max(1, value.length)) + 1).slice(0, max);
 const id = (value: string) => value.repeat(32).slice(0, 32);
 
-function assistantCall(callId: string, args: Record<string, unknown>) {
-  return {
-    role: "assistant",
-    content: [{ type: "toolCall", id: callId, name: "bash", arguments: args }],
-  };
+type RecordValue = Record<string, unknown>;
+
+function asRecord(value: unknown): RecordValue {
+  assert.ok(typeof value === "object" && value !== null && !Array.isArray(value));
+  return value as RecordValue;
+}
+
+function asBlocks(value: unknown): Array<RecordValue> {
+  const record = asRecord(value);
+  assert.ok(Array.isArray(record.content));
+  return record.content as Array<RecordValue>;
 }
 
 function toolResult(callId: string, value: string) {
@@ -45,18 +51,21 @@ test("bounds successful assistant, tool-call, and tool-result content while pres
   };
 
   const result = projectCompactionPreparation(prep);
-  const assistant = result.messagesToSummarize[0];
-  const blocks = assistant.content as Array<Record<string, unknown>>;
-  assert.equal(blocks[0].type, "thinking");
-  assert.equal((blocks[0].thinking as string).length, 1024);
-  assert.equal((blocks[1].text as string).length, 4096);
-  assert.equal(typeof blocks[2].arguments, "string");
-  assert.equal((blocks[2].arguments as string).length < 1536, true);
-  const resultMessage = result.messagesToSummarize[1];
+  const blocks = asBlocks(result.messagesToSummarize[0]);
+  const thinking = asRecord(blocks[0]);
+  const answer = asRecord(blocks[1]);
+  const toolCall = asRecord(blocks[2]);
+  assert.equal(thinking.type, "thinking");
+  assert.equal((thinking.thinking as string).length, 1024);
+  assert.equal((answer.text as string).length, 4096);
+  const projectedArgs = asRecord(toolCall.arguments);
+  assert.equal(JSON.stringify(projectedArgs).length < 1536, true);
+  const resultMessage = asRecord(result.messagesToSummarize[1]);
   assert.equal(resultMessage.toolCallId, callId);
-  assert.equal((resultMessage.content[0] as Record<string, unknown>).text.length <= 4096, true);
+  const resultBlocks = asBlocks(resultMessage);
+  assert.equal((asRecord(resultBlocks[0]).text as string).length <= 4096, true);
   assert.equal(result.inputCharsAfter < result.inputCharsBefore, true);
-  assert.equal(result.boundedMessages, 1);
+  assert.equal(result.boundedMessages, 2);
   assert.equal(result.boundedFields >= 4, true);
 });
 
@@ -72,14 +81,17 @@ test("retains the newest goal payload and marks older payloads without changing 
   };
 
   const result = projectCompactionPreparation(prep);
-  const events = result.messagesToSummarize.filter((message) => message.customType === "goal-event") as Array<Record<string, unknown>>;
+  const messages = result.messagesToSummarize.map(asRecord);
+  const events = messages.filter((message) => message.customType === "goal-event");
   assert.equal(events.length, 2);
-  assert.equal(events[0].content, "[GLLA goal-event payload omitted: older state superseded]");
-  assert.equal((events[1].content as string).startsWith("new payload"), true);
+  assert.equal(events[0]?.content, "[GLLA continuation payload omitted from compaction input; durable state remains in .pi-glla]");
+  assert.equal(typeof events[1]?.content, "string");
+  assert.equal((events[1]?.content as string).startsWith("new payload"), true);
   assert.equal(result.boundedGoalPayloads, 1);
   assert.equal(result.retainedGoalPayloads, 1);
-  assert.equal(result.messagesToSummarize[1].content, "[GLLA goal-event payload omitted: older state superseded]");
-  assert.equal(result.messagesToSummarize[3].content.startsWith("new payload"), true);
+  assert.equal(messages[1]?.content, "[GLLA continuation payload omitted from compaction input; durable state remains in .pi-glla]");
+  assert.equal(typeof messages[3]?.content, "string");
+  assert.equal((messages[3]?.content as string).startsWith("new payload"), true);
 });
 
 test("replaces image blocks while retaining the surrounding message structure", () => {
@@ -98,11 +110,11 @@ test("replaces image blocks while retaining the surrounding message structure", 
   };
 
   const result = projectCompactionPreparation(prep);
-  const content = result.messagesToSummarize[0].content as Array<Record<string, unknown>>;
-  assert.equal(content[1].type, "text");
-  assert.equal(content[1].text, "[image omitted from compaction input: image/png]");
-  assert.equal(content[0].text, "before");
-  assert.equal(content[2].text, "after");
+  const content = asBlocks(result.messagesToSummarize[0]);
+  assert.equal(content[1]?.type, "text");
+  assert.equal(content[1]?.text, "[image omitted from compaction input; image remains in the session transcript: image/png]");
+  assert.equal(content[0]?.text, "before");
+  assert.equal(content[2]?.text, "after");
   assert.equal(result.replacedImages, 1);
 });
 
@@ -122,13 +134,13 @@ test("leaves preparation metadata and fileOps untouched", () => {
     fileOps,
   };
 
-  const result = projectCompactionPreparation(prep);
-  assert.equal(result.firstKeptEntryId, "entry-1");
-  assert.equal(result.isSplitTurn, true);
-  assert.equal(result.previousSummary, "prior summary");
-  assert.equal(result.tokensBefore, 123_456);
-  assert.deepEqual(result.settings, prep.settings);
-  assert.equal(result.fileOps, fileOps);
+  projectCompactionPreparation(prep);
+  assert.equal(prep.firstKeptEntryId, "entry-1");
+  assert.equal(prep.isSplitTurn, true);
+  assert.equal(prep.previousSummary, "prior summary");
+  assert.equal(prep.tokensBefore, 123_456);
+  assert.deepEqual(prep.settings, { reserveTokens: 16_384, keepRecentTokens: 20_000 });
+  assert.equal(prep.fileOps, fileOps);
 });
 
 test("applies one coordinated budget to summarize and turn-prefix arrays", () => {
@@ -142,8 +154,14 @@ test("applies one coordinated budget to summarize and turn-prefix arrays", () =>
   assert.equal(result.turnPrefixMessages.length, 12);
   assert.equal(result.inputCharsAfter <= 64_000, true);
   assert.equal(result.scale < 1, true);
-  assert.equal(result.messagesToSummarize.every((message) => typeof message.content === "string" && message.content.length <= 4_096), true);
-  assert.equal(result.turnPrefixMessages.every((message) => typeof message.content === "string" && message.content.length <= 4_096), true);
+  assert.equal(result.messagesToSummarize.every((message) => {
+    const content = asRecord(message).content;
+    return typeof content === "string" && content.length <= 4_096;
+  }), true);
+  assert.equal(result.turnPrefixMessages.every((message) => {
+    const content = asRecord(message).content;
+    return typeof content === "string" && content.length <= 4_096;
+  }), true);
 });
 
 test("returns no compaction result and tolerates a missing preparation", () => {

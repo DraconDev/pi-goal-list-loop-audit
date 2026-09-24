@@ -211,25 +211,50 @@ function boundJsonValue(
   }
 }
 
-function boundToolArguments(value: unknown, maxChars: number): FieldProjection {
-  const encoded = safeJson(value);
-  if (isRecord(value) && encoded !== undefined && encoded.length <= maxChars) {
-    return { value, changed: false, fields: 0 };
+function fallbackToolArguments(maxChars: number): Record<string, unknown> {
+  const limit = positiveLimit(maxChars, MIN_SCALED_ARGUMENT_CHARS);
+  const candidates: Array<Record<string, unknown>> = [
+    { __glla_bounded: "[tool arguments omitted; full call remains in the session transcript]" },
+    { glla: "…" },
+    {},
+  ];
+  for (const candidate of candidates) {
+    if ((safeJson(candidate)?.length ?? Number.POSITIVE_INFINITY) <= limit) return candidate;
   }
-  if (!isRecord(value)) {
-    const bounded = boundJsonValue(value, Math.max(MIN_SCALED_ARGUMENT_CHARS, maxChars), 0, new Set());
-    return { value: { value: bounded }, changed: true, fields: 1 };
-  }
-
-  const limit = positiveLimit(maxChars, DEFAULT_MAX_COMPACTION_TOOL_ARGUMENT_CHARS, MIN_SCALED_ARGUMENT_CHARS);
-  const projected = boundJsonValue(value, limit, 0, new Set()) as Record<string, unknown>;
-  const projectedEncoded = safeJson(projected) ?? "";
-  if (projectedEncoded === encoded) return { value, changed: false, fields: 0 };
-  return { value: projected, changed: true, fields: 1 };
+  return {};
 }
 
-function imagePlaceholder(): { type: "text"; text: string } {
-  return { type: "text", text: "[image omitted from compaction input; image remains in the session transcript]" };
+function boundToolArguments(value: unknown, maxChars: number): FieldProjection {
+  const limit = positiveLimit(maxChars, DEFAULT_MAX_COMPACTION_TOOL_ARGUMENT_CHARS, 1);
+  const encoded = safeJson(value);
+  if (isRecord(value) && encoded !== undefined && encoded.length <= limit) {
+    return { value, changed: false, fields: 0 };
+  }
+
+  // Tool-call arguments are normally records. Keep that shape for Pi's
+  // serializer, but bound nested strings and collections instead of replacing
+  // the whole call with a string (which would change the tool-call contract).
+  const source = isRecord(value) ? value : { value };
+  let argumentLimit = Math.max(MIN_SCALED_ARGUMENT_CHARS, limit);
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const projected = boundJsonValue(source, argumentLimit, 0, new Set());
+    const projectedRecord = isRecord(projected) ? projected : { value: projected };
+    const projectedEncoded = safeJson(projectedRecord) ?? "";
+    if (projectedEncoded === encoded && isRecord(value)) return { value, changed: false, fields: 0 };
+    if (projectedEncoded.length <= limit) {
+      return { value: projectedRecord, changed: true, fields: 1 };
+    }
+    const nextLimit = Math.max(MIN_SCALED_ARGUMENT_CHARS, Math.floor(argumentLimit * 0.65));
+    if (nextLimit === argumentLimit) break;
+    argumentLimit = nextLimit;
+  }
+
+  return { value: fallbackToolArguments(limit), changed: true, fields: 1 };
+}
+
+function imagePlaceholder(mimeType?: unknown): { type: "text"; text: string } {
+  const mime = typeof mimeType === "string" ? boundCompactionText(mimeType, 64) : "image";
+  return { type: "text", text: `[image omitted from compaction input; image remains in the session transcript: ${mime}]` };
 }
 
 function projectContentBlock(
@@ -257,7 +282,7 @@ function projectContentBlock(
       : { value: block, changed: false, fields: 0, image: false };
   }
   if (block.type === "image" && typeof block.data === "string") {
-    return { value: imagePlaceholder(), changed: true, fields: 1, image: true };
+    return { value: imagePlaceholder(block.mimeType), changed: true, fields: 1, image: true };
   }
   return { value: block, changed: false, fields: 0, image: false };
 }
@@ -279,10 +304,6 @@ function projectContentArray(
     }
     return result.value;
   });
-  // `textLimit` is intentionally accepted here to make the role-specific
-  // policy explicit at call sites; the common block ceiling is still the
-  // safety bound for mixed content arrays.
-  void textLimit;
   return { value: projected, changed, fields, images };
 }
 
@@ -299,6 +320,13 @@ function projectMessage(message: unknown, limits: ProjectionLimits): MessageProj
       fields: content.fields,
       images: content.images,
     };
+  }
+
+  if (role === "assistant" && typeof message.content === "string") {
+    const content = boundCompactionText(message.content, limits.text);
+    return content === message.content
+      ? { value: message, changed: false, fields: 0, images: 0 }
+      : { value: { ...message, content }, changed: true, fields: 1, images: 0 };
   }
 
   if (role === "user" && typeof message.content === "string") {
@@ -388,9 +416,11 @@ function estimateMessageChars(message: unknown): number {
       if (block.type === "text" && typeof block.text === "string") chars += block.text.length;
       else if (block.type === "thinking" && typeof block.thinking === "string") chars += block.thinking.length;
       else if (block.type === "toolCall") chars += String(block.name ?? "").length + (safeJson(block.arguments)?.length ?? 0);
+      else if (block.type === "image" && typeof block.data === "string") chars += block.data.length;
     }
     return chars;
   }
+  if (message.role === "assistant" && typeof message.content === "string") return chars + message.content.length;
   if (message.role === "user" || message.role === "custom" || message.role === "toolResult") {
     return chars + contentTextLength(message.content);
   }
@@ -438,27 +468,53 @@ function countChangedMessages(original: readonly unknown[], projected: readonly 
   return changed;
 }
 
-function countProjectionFields(messages: readonly unknown[]): { fields: number; images: number } {
+function countProjectionFields(
+  original: readonly unknown[],
+  projected: readonly unknown[],
+): { fields: number; images: number } {
   let fields = 0;
   let images = 0;
-  for (const message of messages) {
-    if (!isRecord(message)) continue;
-    if (Array.isArray(message.content)) {
-      for (const block of message.content) {
-        if (!isRecord(block)) continue;
-        if (block.type === "image") { images += 1; continue; }
-        // A bounded marker is the only projected text block we can identify
-        // without retaining a side table. Count it as a bounded field.
-        if (block.type === "text" && typeof block.text === "string" && block.text.includes("compaction input")) fields += 1;
-        if (block.type === "thinking" && typeof block.thinking === "string" && block.thinking.includes("compaction truncation")) fields += 1;
-        if (block.type === "toolCall") {
-          const args = safeJson(block.arguments) ?? "";
-          if (args.includes("glla_truncated") || args.includes("compaction")) fields += 1;
+  const count = Math.max(original.length, projected.length);
+  for (let index = 0; index < count; index += 1) {
+    const before = original[index];
+    const after = projected[index];
+    if (!isRecord(before) || !isRecord(after)) continue;
+
+    if (Array.isArray(before.content) && Array.isArray(after.content)) {
+      const blockCount = Math.max(before.content.length, after.content.length);
+      for (let blockIndex = 0; blockIndex < blockCount; blockIndex += 1) {
+        const oldBlock = before.content[blockIndex];
+        const newBlock = after.content[blockIndex];
+        if (!isRecord(oldBlock) || !isRecord(newBlock)) {
+          if (oldBlock !== newBlock) fields += 1;
+          continue;
         }
+        if (oldBlock.type === "image" && typeof oldBlock.data === "string" && oldBlock !== newBlock) {
+          fields += 1;
+          images += 1;
+          continue;
+        }
+        if (oldBlock.type === "text" && typeof oldBlock.text === "string" && oldBlock.text !== newBlock.text) fields += 1;
+        else if (oldBlock.type === "thinking" && typeof oldBlock.thinking === "string" && oldBlock.thinking !== newBlock.thinking) fields += 1;
+        else if (oldBlock.type === "toolCall") {
+          const oldArgs = safeJson(oldBlock.arguments);
+          const newArgs = safeJson(newBlock.arguments);
+          if (oldArgs !== newArgs) fields += 1;
+        } else if (oldBlock !== newBlock) fields += 1;
       }
-    } else if (typeof message.content === "string" && message.content.includes("compaction")) fields += 1;
-    if (message.role === "bashExecution" && ((typeof message.command === "string" && message.command.includes("compaction")) || (typeof message.output === "string" && message.output.includes("compaction")))) fields += 1;
-    if ((message.role === "branchSummary" || message.role === "compactionSummary") && typeof message.summary === "string" && message.summary.includes("compaction")) fields += 1;
+    } else if (typeof before.content === "string" && typeof after.content === "string" && before.content !== after.content) {
+      fields += 1;
+    } else if (before.content !== after.content) {
+      fields += 1;
+    }
+
+    if (before.role === "bashExecution") {
+      if (before.command !== after.command) fields += 1;
+      if (before.output !== after.output) fields += 1;
+    }
+    if ((before.role === "branchSummary" || before.role === "compactionSummary") && before.summary !== after.summary) {
+      fields += 1;
+    }
   }
   return { fields, images };
 }
@@ -498,7 +554,7 @@ export function projectCompactionPreparation(
   const before = estimateMessagesChars(original);
   const goalProjection = boundOldGoalPayloads(original);
   const limits = baseLimits(options);
-  const budget = positiveLimit(options.maxInputChars, DEFAULT_COMPACTION_INPUT_CHAR_BUDGET, 1_024);
+  const budget = positiveLimit(options.maxInputChars, DEFAULT_COMPACTION_INPUT_CHAR_BUDGET, 1);
 
   let scale = 1;
   let projected = goalProjection.messages.map((message) => projectMessage(message, limits).value);
@@ -514,7 +570,7 @@ export function projectCompactionPreparation(
   }
 
   const bounded = countChangedMessages(original, projected);
-  const fieldStats = countProjectionFields(projected);
+  const fieldStats = countProjectionFields(original, projected);
   const result: CompactionInputProjectionResult = {
     changed: bounded > 0 || goalProjection.bounded > 0,
     messagesToSummarize: projected.slice(0, history.length),
