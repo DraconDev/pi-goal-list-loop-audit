@@ -3268,6 +3268,13 @@ async function handleHotLengthExhaustion(
             replacedImages: inputProjection.replacedImages,
             boundedGoalPayloads: inputProjection.boundedGoalPayloads,
             retainedGoalPayloads: inputProjection.retainedGoalPayloads,
+            retainedMessages: inputProjection.retainedMessages,
+            omittedMessages: inputProjection.omittedMessages,
+            retainedToolGroups: inputProjection.retainedToolGroups,
+            omittedToolGroups: inputProjection.omittedToolGroups,
+            omittedToolCalls: inputProjection.omittedToolCalls,
+            omissionMarkers: inputProjection.omissionMarkers,
+            hardBoundApplied: inputProjection.hardBoundApplied,
             scale: inputProjection.scale,
             generation: sessionGeneration,
           });

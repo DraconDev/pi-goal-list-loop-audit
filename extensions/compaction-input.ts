@@ -324,6 +324,7 @@ function projectContentArray(
   content: readonly unknown[],
   limits: ProjectionLimits,
   textLimit: number,
+  preserveToolCalls = false,
 ): { value: unknown[]; changed: boolean; fields: number; images: number } {
   let changed = false;
   let fields = 0;
@@ -341,34 +342,23 @@ function projectContentArray(
     return { value: projected, changed, fields, images };
   }
 
-  // Bound block count as well as field size. Multiple adjacent text/thinking
-  // blocks are folded into one bounded excerpt; excessive images and tool
-  // calls are replaced by one explicit marker. The untouched transcript and
+  // Bound block count as well as field size. Keep the prefix in its original
+  // order so thinking, text, and tool-call roles remain visible; append one
+  // explicit marker for the omitted suffix. The untouched transcript and
   // precomputed fileOps remain the recovery source.
-  const folded: unknown[] = [];
-  const texts: string[] = [];
-  const other: unknown[] = [];
-  let otherImages = 0;
-  for (const block of projected) {
-    if (isRecord(block) && block.type === "text" && typeof block.text === "string") {
-      texts.push(block.text);
-    } else {
-      other.push(block);
-      if (isRecord(block) && block.type === "image") otherImages += 1;
-    }
-  }
-  if (texts.length > 0) {
-    const joined = boundCompactionText(texts.join("\n"), textLimit);
-    folded.push({ type: "text", text: joined });
-  }
-  for (const block of other.slice(0, MAX_CONTENT_BLOCKS)) folded.push(block);
-  if (other.length > MAX_CONTENT_BLOCKS || projected.length > MAX_CONTENT_BLOCKS) {
-    const omittedBlocks = projected.length - texts.length - Math.min(other.length, MAX_CONTENT_BLOCKS);
-    folded.push({ type: "text", text: `[${Math.max(1, omittedBlocks)} additional content blocks omitted from compaction input; full content remains in the session transcript]` });
+  const kept = preserveToolCalls
+    ? projected.filter((block, index) => {
+      if (index < MAX_CONTENT_BLOCKS - 1) return true;
+      return isRecord(block) && block.type === "toolCall";
+    }).slice(0, MAX_CONTENT_BLOCKS - 1)
+    : projected.slice(0, MAX_CONTENT_BLOCKS - 1);
+  const omittedBlocks = projected.length - kept.length;
+  const folded = [...kept];
+  if (omittedBlocks > 0) {
+    folded.push({ type: "text", text: `[${omittedBlocks} additional content blocks omitted from compaction input; full content remains in the session transcript]` });
     changed = true;
     fields += 1;
   }
-  if (otherImages > 0) images = otherImages;
   if (folded.length !== projected.length) changed = true;
   return { value: folded, changed, fields, images };
 }
@@ -378,7 +368,7 @@ function projectMessage(message: unknown, limits: ProjectionLimits): MessageProj
   const role = message.role;
 
   if (role === "assistant" && Array.isArray(message.content)) {
-    const content = projectContentArray(message.content, limits, limits.text);
+    const content = projectContentArray(message.content, limits, limits.text, true);
     if (!content.changed) return { value: message, changed: false, fields: 0, images: 0 };
     return {
       value: { ...message, content: content.value },
@@ -491,6 +481,8 @@ function estimateMessageChars(message: unknown): number {
   if (message.role === "user") {
     const text = contentTextForPi(message.content);
     if (text) parts.push(`[User]: ${text}`);
+  } else if (message.role === "assistant" && typeof message.content === "string") {
+    if (message.content) parts.push(`[Assistant]: ${message.content}`);
   } else if (message.role === "assistant" && Array.isArray(message.content)) {
     const thinking: string[] = [];
     const calls: string[] = [];
@@ -625,6 +617,7 @@ function selectBoundedUnits(units: readonly SemanticUnit[], budget: number): { s
   let used = 0;
   for (let index = units.length - 1; index >= 0; index -= 1) {
     const unit = units[index];
+    if (!unit) continue;
     const cost = estimateMessagesChars(unit.messages);
     if (used + cost > budget) break;
     selected.unshift(unit);
@@ -633,7 +626,9 @@ function selectBoundedUnits(units: readonly SemanticUnit[], budget: number): { s
   const omitted = units.length - selected.length;
   const markerCost = omitted > 0 ? estimateMessageChars(omissionMarker(omitted)) + 2 : 0;
   while (selected.length > 0 && used + markerCost > budget) {
-    used -= estimateMessagesChars(selected[0].messages);
+    const oldest = selected[0];
+    if (!oldest) break;
+    used -= estimateMessagesChars(oldest.messages);
     selected.shift();
   }
   const markers = omitted > 0 && markerCost <= budget - used ? 1 : 0;
@@ -836,8 +831,8 @@ export function projectCompactionPreparation(
     boundedGoalPayloads: goalProjection.bounded,
     retainedGoalPayloads: goalProjection.retained,
     scale,
-    retainedMessages: selection.selected.reduce((sum, unit) => sum + unit.sourceCount, 0),
-    omittedMessages: selection.omitted,
+    retainedMessages: selection.selected.reduce((sum, unit) => sum + unit.messages.length, 0),
+    omittedMessages: selection.omitted + selection.selected.reduce((sum, unit) => sum + Math.max(0, unit.sourceCount - unit.messages.length), 0),
     retainedToolGroups,
     omittedToolGroups,
     omittedToolCalls,
