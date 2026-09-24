@@ -24,7 +24,7 @@
 - Automatic compaction start: `overflow`.
 - Compaction ended successfully: **yes**; aborted: `no`; Pi-reported retry: `yes`.
 - Summary length observed in memory: `18349` characters (content intentionally not recorded).
-- Summary length-stop/incomplete error: **none**. Pi 0.87+ rejects a summarizer response with `stopReason=length`; a successful non-aborted `compaction_end` is therefore the live proof that the default summarizer did not stop for length.
+- Summary length-stop/incomplete error: **none**. Pi 0.87+ rejects a summarizer response with `stopReason=length`; a successful non-aborted `compaction_end` is therefore the live proof that the default summarizer did not stop for length. Pi's `willRetry: yes` is the normal overflow-path retry signal: Pi retries the provider operation after the bounded input change, while the successful end event proves it did not need a second compaction attempt.
 - GLLA hook projection: **observed**.
 - Estimated preparation characters: `189094` before → `13201` after (budget `16000`).
 - Projection scale: `0.04902227890625002`; bounded messages: `65`; bounded fields: `104`; replaced images: `3`; bounded GLLA payloads: `0`; retained GLLA payloads: `0`.
@@ -42,6 +42,10 @@
 ```sh
 node scripts/verify-compaction-live.mjs --session "/home/dracon/.pi/agent/sessions/--home-dracon-Dev-pi-plugins-pi-goal-list-loop-audit--/2026-09-24T10-47-59-244Z_01a0d307-800b-73f2-84e3-62460f7d57d5.jsonl" --provider openrouter --model stealth/space-bunny-alpha
 ```
+
+## Context-cap and output-cap distinction
+
+The installed `pi-global-context-limit` plugin is configured with `globalContextLimit: 200000` in `/home/dracon/.pi/agent/settings.json`; its documented effect is to cap the model's `contextWindow`, so the historical session's approximately `200419`-token estimate crossed the 200k context/trigger boundary. That plugin cap controls when Pi considers the conversation hot and does **not** set the summarizer's output allowance. The summarizer output ceiling is a separate provider/model/runtime constraint (historically observed here as approximately `floor(0.8 × 16384) = 13107` tokens), which is why the bounded preparation still matters even with a 200k context window.
 
 ## Scope and remaining risk
 
