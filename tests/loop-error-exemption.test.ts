@@ -80,9 +80,10 @@ function loop(cwd: string): LoopSnap {
 function assertCompactLoopRecap(ctx: MockCtx): void {
   const recap = ctx.ui.notifies.find((notice) => notice.message.includes("Recap: Outcome:"));
   assert.ok(recap, `terminal loop notification includes a recap: ${ctx.ui.notifies.map((notice) => notice.message).join(" | ")}`);
-  for (const label of ["Outcome:", "Changed:", "Evidence:", "Tests:", "Unresolved:", "Next:"]) {
+  for (const label of ["Outcome:", "Changed:", "Evidence:", "Unresolved:", "Next:"]) {
     assert.ok(recap!.message.includes(label), `terminal loop recap includes ${label}`);
   }
+  assert.doesNotMatch(recap!.message, /Tests:/, "technical Tests stays out of the default loop recap");
 }
 /** Seed an ACTIVE loop that survives the session-restore gate. */
 async function sessionWithLoop(cwd: string, overrides: Record<string, unknown>): Promise<MockCtx> {

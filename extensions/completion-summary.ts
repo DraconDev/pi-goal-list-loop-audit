@@ -72,11 +72,11 @@ export function isUsefulCompletionSummary(text: string | undefined): boolean {
 }
 
 /**
- * Project a durable six-label recap into one bounded notification line.
- * Terminal state keeps the complete multi-line text; this projection is only
- * for chat/UI/external surfaces where six short facts must remain scannable.
- * Missing labels are retained as `not recorded` so a compact notification
- * cannot accidentally imply evidence that the durable recap did not contain.
+ * Project a durable recap into one bounded notification line. Terminal
+ * state keeps the complete multi-line text; this human projection omits
+ * Tests by default and remains scannable. Missing human labels are retained
+ * as `not recorded` so a compact notification cannot imply evidence that the
+ * durable recap did not contain.
  */
 /** Cut a summary value at a clause boundary, never mid-word (field
  * complaints 2026-09-03 `0 o…` and 2026-09-08 `playlist auto-add,…`:
@@ -131,8 +131,8 @@ function labelPositions(lower: string): Array<{ label: string; start: number }> 
   return positions;
 }
 
-/** Compact six-label recap. Terminal user projections pass `includeTests=false`
- * when they want the default human view; archive/machine callers retain it. */
+/** Compact human recap. Tests/verification detail is omitted by default;
+ * archive and evidence-focused callers pass `includeTests=true`. */
 export function compactCompletionSummary(text: string | undefined, maxValueLength = 72, includeTests = false): string {
   const source = completionSummaryBody(text ?? "").replace(/\s+/g, " ").trim();
   if (!source) return "not recorded";
@@ -636,17 +636,11 @@ function isRepositoryReceipt(value: string, proof = ""): boolean {
  * with nested evidence bullets; at RICH_TABLE_GROUP_THRESHOLD groups the
  * same facts render as an Area | Finding | Evidence table instead.
  * Without groups the flat six-label projection stays the fallback.
- * v0.38.52: optional per-finding `tests` render as a `Test Results:`
- * sub-bullet (nested) or ride the Evidence cell (table); optional agent
- * `gates` widen the Verification table with mechanically derived
- * statuses, superseding the mechanical Tests rows. Without gates the
- * 3-col mechanical table is byte-identical.
- * v0.38.55 (full parity, owner choice): the chat card shares everything
- * the archive knows — no finding caps, no value clipping, no PASS-line
- * collapse, no hash stripping, plus a verdict banner and a final
- * repository state section. One surface per fact is preserved (banner =
- * verdict, footer = liveness); the archive keeps the same sections plus
- * the machine layer. */
+ * v0.38.52: optional per-finding `tests` and agent `gates` remain detailed
+ * archive evidence with mechanically derived statuses.
+ * v0.38.55: no finding caps or value clipping. Chat suppresses technical
+ * Tests/verification by default; the archive keeps the detailed evidence
+ * table and machine layer. */
 /** v0.38.55 (full parity): the verdict banner's second half, built from
  * the mechanically derived audit status — never agent-claimed. */
 function bannerVerdict(auditStatus: string): string {
@@ -1132,13 +1126,9 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     ? `• ${chatApproval.replace(/^—\s*/, "").replace(/\.\s*$/, "")} (${history.length} verdict).`
     : trailerBullet(chatApproval);
   const recordBullet = trailerBullet(input.record);
-  // Rich voice: banner + headline + Key Findings + full Verification
-  // table + Next + Final Repository State, closed by the pinned trailer
-  // (approval/counts/record, record last).
-  // v0.38.55 (full parity, owner choice): the table always renders in
-  // full and hashes stay visible — chat shares everything the archive
-  // knows. The transcript mirrors chat; the archive keeps the full table
-  // and full text plus the machine layer.
+  // Rich voice: banner + headline + change/remaining sections + Next,
+  // closed by the pinned trailer. Technical verification is archive-only
+  // unless the user explicitly opts into one compact supporting sentence.
   const richParts = buildRichTerminalParts({
     chat: true,
     showVerification: input.showVerification,
@@ -1171,10 +1161,10 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   };
 }
 
-/** Multi-line projection: one `Label: value` line per label with generous
- * word-bounded values. This is the user-facing `✓ done` block — six short
- * facts that stay scannable in chat. The single-line projection remains
- * for width-bound surfaces (TUI widget card, external notifies). */
+/** Multi-line projection: one `Label: value` line per human-facing label.
+ * Technical Tests are omitted by default and can be included explicitly for
+ * evidence-focused callers. The single-line projection remains for
+ * width-bound surfaces (TUI widget card, external notifies). */
 export function completionSummaryLines(text: string | undefined, maxValueLength = 240, lineWidth?: number, includeTests = false): string[] {
   const source = completionSummaryBody(text ?? "").replace(/\s+/g, " ").trim();
   const lower = source.toLowerCase();

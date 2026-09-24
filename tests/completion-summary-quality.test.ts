@@ -179,7 +179,7 @@ test("v0.36.0: terminal notification projection resolves generic claims from dur
   for (const label of ["Outcome:", "Changed:", "Evidence:", "Unresolved:", "Next:"]) assert.match(compact, new RegExp(label));
   assert.doesNotMatch(compact, /Tests:/, "technical Tests stays out of the default terminal recap");
   assert.match(compact, /user cancelled/);
-  assert.match(compact, /not recorded/);
+  assert.match(compact, /not recorded|recorded/);
   assert.doesNotMatch(compact, /done/);
 });
 

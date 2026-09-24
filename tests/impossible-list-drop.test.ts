@@ -57,9 +57,10 @@ function readLedger(cwd: string): Array<{ type: string; value?: any }> {
 }
 
 function assertCompactRecap(message: string, context: string): void {
-  for (const label of ["Outcome:", "Changed:", "Evidence:", "Tests:", "Unresolved:", "Next:"]) {
+  for (const label of ["Outcome:", "Changed:", "Evidence:", "Unresolved:", "Next:"]) {
     assert.match(message, new RegExp(label), `${context} includes ${label}`);
   }
+  assert.doesNotMatch(message, /Tests:/, `${context} hides technical Tests by default`);
 }
 
 function runPauseTool(ctx: MockCtx, params: Record<string, unknown>): Promise<{ content: Array<{ type: string; text: string }> }> {

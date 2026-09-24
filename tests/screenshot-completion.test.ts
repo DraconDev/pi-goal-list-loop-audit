@@ -32,6 +32,7 @@ for (const example of screenshotCases) test(`screenshot-derived ${example.name} 
   // Chat hides technical verification by default; the archive retains each
   // historical gate note and command for auditability.
   assert.doesNotMatch(chat, /^### Verification/m);
+  assert.doesNotMatch(chat, /^Tests:/m);
   assert.doesNotMatch(chat, /\| Quality Gate/);
   for (const gate of example.gates) {
     assert.ok(archive.includes(gate.notes!));

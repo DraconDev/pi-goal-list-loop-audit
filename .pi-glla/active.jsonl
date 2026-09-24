@@ -3029,3 +3029,4 @@
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"space-bunny-free","providerUsage":{"inputTokens":62,"outputTokens":235,"cacheReadTokens":118127,"cacheWriteTokens":0,"totalTokens":118424},"contextUsage":{"tokens":118424,"contextWindow":1048576,"percent":11.293792724609375}},"at":"2026-09-23T22:53:05.919Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":{"inputTokens":151,"outputTokens":992,"cacheReadTokens":869886,"cacheWriteTokens":0,"totalTokens":871029},"contextUsage":{"tokens":871029,"contextWindow":1000000,"percent":87.1029}},"at":"2026-09-23T22:59:01.699Z"}
 {"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-24T00:08:17.779Z"}
+{"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-24T00:57:02.060Z"}

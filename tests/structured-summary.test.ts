@@ -122,9 +122,10 @@ test("card: structured Outcome renders a full ### Summary section, headline stay
   const summaryIdx = chatLines.indexOf("### Summary");
   assert.ok(summaryIdx > 0, "Summary section present");
   const findingsIdx = chatLines.indexOf("### What Changed");
-  const tableIdx = chatLines.indexOf("### Verification");
+  const verificationIdx = chatLines.indexOf("### Verification");
   const nextIdx = chatLines.indexOf("### Next");
-  assert.ok(summaryIdx < findingsIdx && findingsIdx < tableIdx && tableIdx < nextIdx, "Summary rides the headline, change-first order preserved");
+  assert.equal(verificationIdx, -1, "technical verification is hidden by default");
+  assert.ok(summaryIdx < findingsIdx && findingsIdx < nextIdx, "Summary rides the headline, then the change-first account");
   const summaryBlock = chatLines.slice(summaryIdx + 1, findingsIdx - 1);
   assert.ok(summaryBlock.includes("| Focus | draw a card |"), "full table text in chat");
   assert.ok(summaryBlock.includes("Slice 1 lands first."), "full prose in chat");

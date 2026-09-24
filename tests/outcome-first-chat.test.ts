@@ -42,6 +42,7 @@ test("four-area chat is outcome-first and grouped; archive retains detailed evid
   assert.match(chat, /#### 1\. Drafting/);
   assert.doesNotMatch(chat, /\| Area \| Finding|\| Command \||bun test tests\/|node scripts\/live|abc12345|Final Repository State|src\/example\.ts:42/);
   assert.doesNotMatch(chat, /### Verification/);
+  assert.doesNotMatch(chat, /^Tests:/m);
   assert.doesNotMatch(chat, /12 passed, 0 failed, 1 skipped|Not run — provider unavailable/);
   assert.match(chat, /Live provider not exercised/);
   assert.equal((chat.match(/auditor approved/g) ?? []).length, 1);

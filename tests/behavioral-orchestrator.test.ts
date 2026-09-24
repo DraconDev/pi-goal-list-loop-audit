@@ -4056,6 +4056,7 @@ test("v0.34.91: detached approval notify carries the agent's completion recap, n
     // Technical verification is archive evidence by default; the human
     // briefing stays focused on what changed and the record pointer.
     assert.doesNotMatch(recapNotifs[0]!.message, /^### Verification/m, "verification is hidden by default");
+    assert.doesNotMatch(recapNotifs[0]!.message, /^Tests:/m, "technical Tests is hidden by default");
     assert.doesNotMatch(recapNotifs[0]!.message, /\| Quality Gate|\| Tests \|/, "gate-by-gate table stays archival");
     assert.ok(recapNotifs[0]!.message.split("\n").length <= 20, "verbose rich summary stays bounded");
     // v0.38.42 (field 20260909_140404): a lone approval folds with the

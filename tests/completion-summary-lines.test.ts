@@ -58,8 +58,8 @@ test("clip cuts at a clause boundary and never strands punctuation (field 2026-0
 
 test("lines project one label per line, in order, word-bounded", () => {
   const lines = completionSummaryLines(SIX);
-  assert.equal(lines.length, 6);
-  for (const label of ["Outcome:", "Changed:", "Evidence:", "Tests:", "Unresolved:", "Next:"]) {
+  assert.equal(lines.length, 5);
+  for (const label of ["Outcome:", "Changed:", "Evidence:", "Unresolved:", "Next:"]) {
     assert.ok(lines.some((l) => l.startsWith(label)), `${label} heads its own line`);
   }
   assert.equal(lines[0], "Outcome: shipped the thing");
@@ -74,8 +74,8 @@ test("lines keep missing labels as not recorded and never mid-word cut", () => {
     assert.doesNotMatch(lines[0]!, /\S…$/, "ellipsis follows a word break, not a fragment");
   }
   const empty = completionSummaryLines(undefined);
-  assert.equal(empty.length, 6);
-  assert.ok(empty.every((l) => l.endsWith("not recorded")), "empty source keeps every label");
+  assert.equal(empty.length, 5);
+  assert.ok(empty.every((l) => l.endsWith("not recorded")), "empty source keeps every human label");
 });
 
 test("compact stays one line but cuts at word boundaries now", () => {
@@ -126,10 +126,10 @@ test("v0.38.14: the briefing leads with the outcome and keeps only informing lab
     "Tests: tsc clean; vitest 1179 passed.",
     "Unresolved: none for this objective.",
     "Next: none — queued follow-ups (analytics SWR cache, new-tab extraction).",
-  ].join("\n"));
+  ].join("\n"), 140, 120, undefined, true);
   assert.equal(brief.outcome, "Full-sweep UI/UX pass with bolder dark+red restyle across shell, all 5 views.");
   assert.ok(brief.details.some((d) => d.startsWith("Changed:")), "informing labels stay");
-  assert.ok(!brief.details.some((d) => d.startsWith("Tests:")), "technical Tests stay out of the default human brief");
+  assert.ok(brief.details.some((d) => d.startsWith("Tests:")), "the full brief helper retains Tests for archive/audit callers");
   assert.ok(brief.details.some((d) => d === "Next: queued follow-ups (analytics SWR cache, new-tab extraction)."), "none-prefix content is kept, prefix stripped");
   assert.ok(!brief.details.some((d) => d.startsWith("Unresolved:")), "filler labels are gone");
   assert.ok(!brief.details.join("\n").includes("not recorded"), "no placeholders leak through");
@@ -207,6 +207,6 @@ test("label named inside a value does not steal later segmentation", () => {
     72,
   );
   assert.match(compacted, /Outcome: fixed the retry path/, "Outcome keeps its full value");
-  const restated = compactCompletionSummary("Outcome: see Tests: x. Tests: 5 pass", 72);
+  const restated = compactCompletionSummary("Outcome: see Tests: x. Tests: 5 pass", 72, true);
   assert.match(restated, /Tests: 5 pass/, "the last restatement of a label wins");
 });

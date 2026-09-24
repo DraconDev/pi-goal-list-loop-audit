@@ -46,7 +46,7 @@ test("chat summary leads with durable change facts and hides verification by def
   assert.equal(verification, -1, "technical verification is not shown unless requested");
   assert.ok(lines.join("\n").includes("Save ordering"));
   assert.ok(lines.join("\n").includes("Packaging"));
-  assert.doesNotMatch(lines.join("\n"), /747 passed|Quality Gate|bun test|wxt build/);
+  assert.doesNotMatch(lines.join("\n"), /747 passed|Quality Gate|bun test|wxt build|Tests:/);
 });
 
 test("explicit verification opt-in adds one aggregate tail, not a gate table", () => {
@@ -56,7 +56,8 @@ test("explicit verification opt-in adds one aggregate tail, not a gate table", (
   const block = lines.slice(start, end).filter((line) => line && (line === "### Verification" || (!line.startsWith("###") && !line.startsWith("- "))));
   assert.deepEqual(block, ["### Verification", "1 passed, 1 reported."], "verification is one aggregate sentence");
   assert.doesNotMatch(block.join("\n"), /Quality Gate|\| Unit tests \||\| Chrome build \|/);
-  assert.doesNotMatch(block.join("\n"), /bun test|wxt build|747 passed/);
+  assert.doesNotMatch(block.join("\n"), /bun test|wxt build|747 passed|Tests:/);
+  assert.doesNotMatch(lines.join("\n"), /^Tests:/m, "explicit verification does not restore the raw Tests label");
 });
 
 test("behavioral limitation belongs under Remaining, not a second technical Next", () => {

@@ -67,6 +67,7 @@ test("chat hides verification by default; the archive retains the full table", (
   assert.equal(chat.includes("### Verification"), false, "technical verification is not default user copy");
   assert.equal(chat.includes("1 passed."), false, "test counts stay out of default chat");
   assert.ok(!chat.some((l) => /^\| Tests \|/.test(l)), "gate-by-gate table stays archival");
+  assert.ok(!chat.some((l) => /^Tests:/.test(l)), "technical Tests label stays out of default chat");
   const archive = buildRichArchiveSection(richGoal(), "complete", ".pi-glla/archive/20260911-rich-voice.md");
   assert.ok(archive.includes("### Verification Summary"), "archive keeps the detailed verification record");
   assert.ok(archive.some((l) => /^\| Tests \| PASS \|/.test(l)), "archive keeps the Tests row");
@@ -92,6 +93,7 @@ test("failed verification is archive-only unless explicitly requested", () => {
   });
   assert.ok(opted.chatLines.includes("### Verification"), "explicit request gets a compact verification tail");
   assert.ok(opted.chatLines.includes("1 failed."), "aggregate preserves the failure");
+  assert.ok(!opted.chatLines.some((l) => /^Tests:/.test(l)), "the opt-in tail does not restore the raw Tests label");
 });
 
 test("REPORTED verification stays visible when explicitly requested — never upgraded to PASS", () => {

@@ -571,7 +571,7 @@ function registerAgentTools(pi: any): void {
         maxLength: 500,
         description:
           "v0.38.37: what this turn deliberately left out (scope cut, deferred item + why, in plain words). " +
-          "Renders as the closing `• Left out:` bullet in the user-facing terminal summary. " +
+          "Renders under `### Remaining` in the user-facing terminal summary. " +
           "Omit when nothing was deliberately left out — absent stays absent, never invented.",
       })),
       showVerification: Type.Optional(Type.Boolean({
@@ -580,7 +580,7 @@ function registerAgentTools(pi: any): void {
       findingGroups: Type.Optional(Type.Array(Type.Object({
         title: Type.String({ maxLength: 120, description: "Work-area name (e.g. a subsystem, screen, or phase)" }),
         findings: Type.Array(Type.String({ maxLength: 500 }), { maxItems: 6, description: "Findings in this area as `Lead: body with path:line evidence` (max 6 per area)" }),
-        tests: Type.Optional(Type.Array(Type.String({ maxLength: 500 }), { maxItems: 6, description: "v0.38.52: optional per-finding test-result lines, aligned by index with findings (tests[i] proves findings[i]); each renders as a `Test Results:` sub-line" })),
+        tests: Type.Optional(Type.Array(Type.String({ maxLength: 500 }), { maxItems: 6, description: "v0.38.52: optional per-finding test-result lines, aligned by index with findings (tests[i] proves findings[i]); retained as detailed archive support and never added to default chat copy" })),
       }), {
         maxItems: 6,
         description:
@@ -604,8 +604,8 @@ function registerAgentTools(pi: any): void {
         maxItems: 10,
         description:
           "v0.38.52: optional verification gate inventory for the terminal summary. " +
-          "Widens the Verification table to Quality Gate | Scope | Status | Notes (plus a Command column when any row carries one) " +
-          "and supersedes the mechanical Tests rows. " +
+          "The archive widens its Verification table to Quality Gate | Scope | Status | Notes (plus a Command column when any row carries one) " +
+          "and supersedes the mechanical Tests rows. Default chat omits technical verification; pass showVerification=true only after an explicit user request. " +
           "Presentation only — the six-label completionSummary stays the audited substance, and counts are never invented. " +
           "Omit when there is no gate inventory — the mechanical 3-col table stays the fallback.",
       })),

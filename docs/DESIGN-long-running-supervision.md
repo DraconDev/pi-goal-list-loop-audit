@@ -115,10 +115,11 @@ and the status/history surfaces. The human layer follows two different purposes:
 
 - Chat and transcript explain **what happened**: outcome first, then a
   change-first `What Changed` account grouped by area, followed by material
-  `Remaining` limitations and one concrete `Next` action. Named checks collapse
-  to one compact `Verification` sentence. Test-by-test results, commands,
-  hashes, and machine evidence stay in the archive; a passing test is
-  supporting evidence, not the main body of the change story.
+  `Remaining` limitations and one concrete `Next` action. Tests, verification,
+  gate tables, commands, hashes, and machine evidence stay out of the default
+  user view. If the user explicitly asks for verification, the terminal render
+  may add one compact `Verification` sentence; the archive always retains the
+  complete evidence.
 - The archive's `## Terminal summary` remains forensic and complete: detailed
   findings grouped or tabulated at 4+ groups, per-finding proof, the full
   Verification Summary table (Quality Gate | Command | Scope | Status | Notes

@@ -65,6 +65,7 @@ test("canonical render folds a lone approval with the verdict count, model-free"
   assert.ok(render.chatLines.includes("### What Changed"), "change account present");
   assert.equal(render.chatLines.includes("### Verification"), false, "verification is hidden by default");
   assert.equal(render.chatLines.includes("1 passed."), false, "test aggregate is hidden by default");
+  assert.ok(!render.chatLines.some((l) => /^Tests:/.test(l)), "technical Tests stays out of default chat");
   assert.ok(!render.chatLines.some((l) => /^\| Tests \|/.test(l)), "gate table stays archival");
   // Change-first order: changes, then Next, then the pinned trailer
   // (approval, record last).
@@ -241,6 +242,7 @@ test("v0.38.39 chat brief strips machine paths but the archive keeps them", () =
   // Chat hides technical verification by default; full detail stays in the archive.
   assert.equal(render.chatLines.includes("### Verification"), false, "verification is hidden by default");
   assert.equal(render.chatLines.includes("1 passed."), false, "test aggregate is hidden by default");
+  assert.ok(!render.chatLines.some((l) => /^Tests:/.test(l)), "technical Tests stays out of default chat");
   assert.ok(!render.chatLines.some((l) => /^\| Tests \|/.test(l)), "gate table stays archival");
 });
 

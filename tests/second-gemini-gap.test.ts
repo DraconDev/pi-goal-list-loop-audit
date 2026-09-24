@@ -185,6 +185,7 @@ test("v0.38.52: complete_goal gateRows + tests ride the claim into the chat rend
   // in the archive with commands and hashes.
   assert.ok(entries[0].content.startsWith("## Done — "), "outcome opens the card");
   assert.equal(entries[0].content.includes("### Verification"), false, "verification is archive-only by default");
+  assert.equal(entries[0].content.includes("Tests:"), false, "technical Tests stay out of default chat");
   assert.ok(!entries[0].content.includes("| Quality Gate |"), "gate-by-gate table stays archival");
   assert.ok(!entries[0].content.includes("bun test tests/gate.test.ts"), "repro command stays in the archive");
   assert.ok(!entries[0].content.includes("Test Results:"), "per-finding proof stays archival");
