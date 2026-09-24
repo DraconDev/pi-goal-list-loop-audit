@@ -3402,3 +3402,8 @@
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"space-bunny-free","providerUsage":null,"contextUsage":{"tokens":165400,"contextWindow":200000,"percent":82.69999999999999}},"at":"2026-09-24T21:15:28.105Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"space-bunny-free","providerUsage":null,"contextUsage":{"tokens":166059,"contextWindow":200000,"percent":83.0295}},"at":"2026-09-24T21:37:48.436Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"opencode-go","model":"space-bunny-free","providerUsage":{"inputTokens":49,"outputTokens":260,"cacheReadTokens":168885,"cacheWriteTokens":0,"totalTokens":169194},"contextUsage":{"tokens":169194,"contextWindow":200000,"percent":84.597}},"at":"2026-09-24T21:42:34.966Z"}
+{"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-24T21:43:51.687Z"}
+{"type":"drafter_model_restored","value":{"to":"opencode-go/space-bunny-free","alreadyActive":true},"at":"2026-09-24T21:43:51.696Z"}
+{"type":"session_rebound","value":{"reason":"startup"},"at":"2026-09-24T21:44:00.028Z"}
+{"type":"id_invalidation","value":{"oldId":"01a0d405-3dac-73f2-84e3-629b7a948947","newId":"01a0d560-00d0-7573-a509-1b844f2d2f2d","reason":"session_shutdown","shutdownReason":"quit","at":"2026-09-24T21:44:00.047Z"},"at":"2026-09-24T21:44:00.048Z"}
+{"type":"session_waiting_for_load","value":{"reason":"startup"},"at":"2026-09-24T21:44:00.048Z"}
