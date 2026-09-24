@@ -95,7 +95,7 @@ function piVersion(piBinary) {
       timeout: 20_000,
     });
     const match = result.match(/\b(\d+\.\d+\.\d+)\b/);
-    return match?.[1] ?? result.trim().slice(0, 80) || "unknown";
+    return (match?.[1] ?? result.trim().slice(0, 80)) || "unknown";
   } catch {
     return "unknown";
   }
