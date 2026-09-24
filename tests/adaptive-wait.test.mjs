@@ -25,19 +25,28 @@ test("nextPollMs doubles each attempt capped at 1s", () => {
 
 test("waitForDurableEvent works with adaptive poll intervals", async () => {
   let attempts = 0;
-  const reads = [];
+  let elapsed = 0;
+  const sleeps = [];
   const result = await waitForDurableEvent(
     () => {
       attempts += 1;
-      reads.push(attempts);
       if (attempts < 3) return { status: "pending" };
       return { status: "done", value: { attempts } };
     },
-    { timeoutMs: 500, pollIntervalMs: nextPollMs(0, 10, 50), sleep: (ms) => new Promise((r) => setTimeout(r, ms)) },
+    {
+      timeoutMs: 500,
+      pollIntervalMs: nextPollMs(0, 10, 50),
+      now: () => elapsed,
+      sleep: async (ms) => {
+        sleeps.push(ms);
+        elapsed += ms;
+      },
+    },
   );
   assert.equal(result.ok, true);
   assert.equal(result.terminalReason, "done");
-  assert.ok(result.checks >= 3);
+  assert.equal(result.checks, 3);
+  assert.deepEqual(sleeps, [10, 20]);
   assert.equal(result.value.attempts, 3);
 });
 

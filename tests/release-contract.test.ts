@@ -93,6 +93,17 @@ test("release contract: docs index tracks the package version", () => {
   assert.ok(index.includes(`v0.35.14–v${version}`), "the active-focus trail must reach the current package version");
 });
 
+test("release contract: package is discoverable as a Pi extension and skill", () => {
+  const manifest = JSON.parse(fs.readFileSync("package.json", "utf-8")) as {
+    keywords?: string[];
+    pi?: { extensions?: string[]; skills?: string[]; image?: string };
+  };
+  assert.ok(manifest.keywords?.includes("pi-package"), "pi-package makes the release eligible for the Pi gallery");
+  assert.deepEqual(manifest.pi?.extensions, ["extensions/loops/goal.ts"]);
+  assert.deepEqual(manifest.pi?.skills, ["skills/glla-delegate"]);
+  assert.match(manifest.pi?.image ?? "", /^https:\/\/raw\.githubusercontent\.com\/.+\/media\/glla2\.png$/);
+});
+
 test("release contract: README package contents claim matches the files allowlist", () => {
   const readme = fs.readFileSync("README.md", "utf-8");
   assert.match(readme, /full test suite remains\s+repository material/);
