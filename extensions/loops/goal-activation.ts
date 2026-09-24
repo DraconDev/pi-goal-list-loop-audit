@@ -281,6 +281,7 @@ import {
   type ModelPickItem,
 } from "../model-picker.js";
 import { consumeRecoveryResume } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
+import { buildAbortedAssistantNotice } from "../action-reminder.js";
 import { payloadGuardProjection } from "../payload-guard.js"; // v0.35.51 image-413 guard
 import { dropFailedErrorOnlyTurns, pruneCompactionPreparation } from "../context-hygiene.js"; // v0.35.52 error-turn hygiene
 import { projectCompactionPreparation } from "../compaction-input.js"; // bounded default-compactor input
@@ -1318,6 +1319,21 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
   // stale content before it is persisted or drives a turn.
   pi.on("message_end", async (event: any, ctx: ExtensionContext) => {
     const msg: any = event?.message;
+    if (msg?.role === "assistant" && msg.stopReason === "aborted" && state.goal?.status === "paused" && state.goal.pauseSuggestedAction) {
+      return {
+        message: {
+          ...msg,
+          content: [{ type: "text", text: buildAbortedAssistantNotice({
+            kind: state.goal.pauseKind ?? "blocked",
+            reason: state.goal.pauseReason ?? "The turn reached a safety boundary.",
+            action: state.goal.pauseSuggestedAction,
+            resumeCommand: state.goal.policy === "list" ? "/list resume" : "/goal resume",
+          }) }],
+          stopReason: "stop",
+          errorMessage: undefined,
+        },
+      };
+    }
     if (!msg || msg.role !== "custom" || msg.customType !== "goal-event") return;
     if (isForeignCtx(ctx)) return;
     let content = "";
