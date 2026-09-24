@@ -417,6 +417,7 @@ function makeReport({
 - GLLA hook projection: **observed**.
 - Estimated preparation characters: \`${projectionValue.inputCharsBefore ?? "unknown"}\` before → \`${projectionValue.inputCharsAfter ?? "unknown"}\` after (budget \`${INPUT_BUDGET}\`).
 - Projection scale: \`${projectionValue.scale ?? "unknown"}\`; bounded messages: \`${projectionValue.boundedMessages ?? 0}\`; bounded fields: \`${projectionValue.boundedFields ?? 0}\`; replaced images: \`${projectionValue.replacedImages ?? 0}\`; bounded GLLA payloads: \`${projectionValue.boundedGoalPayloads ?? 0}\`; retained GLLA payloads: \`${projectionValue.retainedGoalPayloads ?? 0}\`.
+- Structural boundedness: hard bound applied: \`${projectionValue.hardBoundApplied === true ? "yes" : "no"}\`; retained messages: \`${projectionValue.retainedMessages ?? 0}\`; omitted messages: \`${projectionValue.omittedMessages ?? 0}\`; retained tool groups: \`${projectionValue.retainedToolGroups ?? 0}\`; omitted tool groups: \`${projectionValue.omittedToolGroups ?? 0}\`; omitted tool calls: \`${projectionValue.omittedToolCalls ?? 0}\`; omission markers: \`${projectionValue.omissionMarkers ?? 0}\`.
 - The hook returned no custom compaction result; Pi remained responsible for cut-point selection, summarization, persistence, retries, and the final result.
 
 ## Continuation
