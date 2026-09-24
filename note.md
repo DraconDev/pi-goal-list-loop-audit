@@ -33,9 +33,11 @@ we need a better way to showing auto compaction
 
 ##
 /home/dracon/Pictures/Screenshots/Screenshot_20260924_122337.png
-much better but what is lead?
+what is lead?, we removed tests and verdict but we need to update teh rest of it so not jsut a previous minus what we removed
 
-
+##
+auditor should use session thinking level not arbitrarily lower, cur my session is max but auditor is high
+/home/dracon/Pictures/Screenshots/Screenshot_20260924_175934.png 
 
 ##
 improve control ui ?
