@@ -1,15 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { buildAbortedAssistantNotice, buildActionReminder, registerActionReminderRenderer } from "../extensions/action-reminder.js";
+import { markPauseAbort } from "../extensions/action-reminder.js";
 import { MockPi } from "./harness/mock-pi.js";
-import { initTheme, type Theme } from "@earendil-works/pi-coding-agent";
 
 test("standby renderer keeps the background-wake explanation visible", () => {
   const pi = new MockPi();
   registerActionReminderRenderer(pi.api);
   const renderer = pi.messageRenderers.get("glla-action-reminder")!;
   const reminder = buildActionReminder({ kind: "standby", reason: "Waiting for the auditor.", resumeCommand: "/goal resume" });
-  const component = renderer({ customType: "glla-action-reminder", content: reminder.content, display: true, details: reminder.details }, { expanded: false, outputPad: 1 }, initTheme("dark") as unknown as Theme) as { render(width: number): string[] };
+  const testTheme = { fg: (_color: string, text: string) => text, bg: (_color: string, text: string) => text };
+  const component = renderer({ customType: "glla-action-reminder", content: reminder.content, display: true, details: reminder.details }, { expanded: false, outputPad: 1 }, testTheme as never) as { render(width: number): string[] };
   const text = component.render(120).join("\n");
   assert.match(text, /GLLA waiting/);
   assert.match(text, /background completion wakes/);

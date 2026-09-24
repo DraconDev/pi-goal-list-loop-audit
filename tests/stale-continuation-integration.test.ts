@@ -8,7 +8,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags } from "../extensions/loops/goal.js";
 import { state, replaceState } from "../extensions/goal-state.js";
-import { buildAbortedAssistantNotice } from "../extensions/action-reminder.js";
+import { buildAbortedAssistantNotice, markPauseAbort } from "../extensions/action-reminder.js";
 import { MockPi, makeMockCtx, tmpCwd, seedState, seedGoal } from "./harness/mock-pi.js";
 
 const GLOBAL_SETTINGS_PATH = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
@@ -85,6 +85,7 @@ test("integration: a GLLA pause abort becomes an actionable assistant message", 
   replaceState({ goal, list: [], loop: null } as any);
   const handler = pi.handlers.get("message_end");
   assert.ok(handler, "message_end handler registered");
+  markPauseAbort();
   const result: any = await (handler as any)({ message: { role: "assistant", stopReason: "aborted", errorMessage: "Operation aborted", content: [] } }, ctx);
   assert.ok(result?.message, "pause abort is replaced");
   const text = result.message.content?.[0]?.text ?? "";
@@ -92,6 +93,22 @@ test("integration: a GLLA pause abort becomes an actionable assistant message", 
   assert.match(text, /Open the popup/);
   assert.doesNotMatch(text, /Operation aborted/);
   assert.equal(result.message.stopReason, "stop");
+});
+
+test("integration: an unrelated owner abort is not rewritten", async () => {
+  __testOnlyResetStaleFlag();
+  __testOnlyResetTerminalFlags();
+  __testOnlyResetOwnerSession();
+  const pi = new MockPi();
+  activate(pi.api);
+  const cwd = tmpCwd();
+  const goal = seedGoal({ status: "paused", pauseKind: "blocked", pauseReason: "Waiting for a real manual action.", pauseSuggestedAction: "Do the real action, then /goal resume." });
+  seedState(cwd, { goal });
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "unrelated-sm", getSessionFile: () => path.join(cwd, "sm.jsonl"), getSessionId: () => "unrelated-sm" } } as any);
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  const handler = pi.handlers.get("message_end");
+  const result: any = await (handler as any)({ message: { role: "assistant", stopReason: "aborted", errorMessage: "Operation aborted", content: [] } }, ctx);
+  assert.equal(result, undefined, "unmarked owner abort stays Pi-owned");
 });
 
 test("integration: fresh continuation for active goal is NOT sanitized", async () => {
