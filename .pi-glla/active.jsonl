@@ -3108,3 +3108,7 @@
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":{"inputTokens":3821,"outputTokens":44,"cacheReadTokens":192510,"cacheWriteTokens":0,"totalTokens":196375},"contextUsage":{"tokens":196375,"contextWindow":200000,"percent":98.1875}},"at":"2026-09-24T15:12:12.699Z"}
 {"type":"compaction_inflight_start","value":{"generation":535},"at":"2026-09-24T15:12:12.705Z"}
 {"type":"session_compact_failed","value":{"reason":"overflow","error":"Context overflow recovery failed: Summarization failed: generation hit the token cap and the summary is incomplete","aborted":false,"willRetry":false,"fromExtension":false,"generation":535},"at":"2026-09-24T15:14:01.783Z"}
+{"type":"model_fallback_select","value":{"scope":"drafter","fromRef":"openrouter/stealth/space-bunny-alpha","reason":"exhausted"},"at":"2026-09-24T15:21:15.434Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":{"inputTokens":4161,"outputTokens":1,"cacheReadTokens":196327,"cacheWriteTokens":0,"totalTokens":200489},"contextUsage":{"tokens":200489,"contextWindow":200000,"percent":100.2445}},"at":"2026-09-24T15:21:20.578Z"}
+{"type":"length_continue_deferred_context_full","value":{"outputTokens":1,"contextTokens":200489,"contextWindow":200000,"contextPercent":100.2445,"starvedStreak":1},"at":"2026-09-24T15:21:20.579Z"}
+{"type":"compaction_inflight_start","value":{"generation":535},"at":"2026-09-24T15:21:20.583Z"}
