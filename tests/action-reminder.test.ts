@@ -149,3 +149,17 @@ test("assistant abort notice is a GLLA explanation, not generic transport text",
   assert.match(notice, /Inspect the saved work/);
   assert.doesNotMatch(notice, /Operation aborted/);
 });
+
+test("wait abort notice uses the same automatic-wake explanation as its card", () => {
+  const notice = buildAbortedAssistantNotice({
+    kind: "wait",
+    reason: "The rate limit resets later.",
+    resumeCommand: "/goal resume",
+    resumeAt: "2026-09-24T23:59:00.000Z",
+  });
+  assert.match(notice, /GLLA paused this turn safely/);
+  assert.match(notice, /The rate limit resets later/);
+  assert.match(notice, /resumes automatically at 2026-09-24T23:59:00\.000Z/);
+  assert.doesNotMatch(notice, /Next:/);
+  assert.doesNotMatch(notice, /Operation aborted/);
+});

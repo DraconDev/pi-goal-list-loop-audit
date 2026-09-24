@@ -107,12 +107,7 @@ export function buildAbortedAssistantNotice(input: {
   resumeAt?: string;
 }): string {
   const reminder = buildActionReminder(input);
-  const next = input.kind === "decision"
-    ? "Choose an option, then resume."
-    : input.kind === "standby"
-      ? "No manual action is needed; the background completion wakes this work."
-      : `Next: ${reminder.details.action}`;
-  return `GLLA paused this turn safely — ${reminder.details.reason} ${next}`;
+  return `GLLA paused this turn safely — ${reminder.presentation.why} ${reminder.presentation.next}`;
 }
 
 /** Build the durable, user-facing explanation for a GLLA pause. Pi's core

@@ -95,13 +95,15 @@ test("integration: a GLLA pause abort becomes an actionable assistant message", 
     action: typeof goal.pauseSuggestedAction === "string" ? goal.pauseSuggestedAction : undefined,
     resumeCommand: "/goal resume",
   });
-  const result: any = await (handler as any)({ message: { role: "assistant", stopReason: "aborted", errorMessage: "Operation aborted", content: [] } }, ctx);
+  const aborted = { role: "assistant", stopReason: "aborted", errorMessage: "Operation aborted", display: true, content: [] };
+  const result: any = await (handler as any)({ message: aborted }, ctx);
   assert.ok(result?.message, "pause abort is replaced");
   const text = result.message.content?.[0]?.text ?? "";
   assert.match(text, /GLLA paused this turn safely/);
   assert.match(text, /Open the popup/);
   assert.doesNotMatch(text, /Operation aborted/);
   assert.equal(result.message.stopReason, "stop");
+  assert.equal(result.message.display, aborted.display, "abort replacement preserves the host display policy");
 });
 
 test("integration: a marked pause without suggestedAction still replaces generic abort text", async () => {
