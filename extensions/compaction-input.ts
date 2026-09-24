@@ -18,7 +18,7 @@
 // authoritative.
 
 /** Soft budget for mutable content sent to the summarizer. */
-export const DEFAULT_COMPACTION_INPUT_CHAR_BUDGET = 64_000;
+export const DEFAULT_COMPACTION_INPUT_CHAR_BUDGET = 2_000;
 
 /** Per-field ceilings before the global budget pass. */
 export const DEFAULT_MAX_COMPACTION_TEXT_CHARS = 4_096;

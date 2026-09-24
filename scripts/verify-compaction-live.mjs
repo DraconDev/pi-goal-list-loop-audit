@@ -23,7 +23,7 @@ import * as path from "node:path";
 const REPO_ROOT = path.resolve(import.meta.dirname, "..");
 const REPORT_PATH = path.join(REPO_ROOT, "audit", "COMPACTION-DEFAULT-PROJECTION-LIVE-PROOF.md");
 const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;
-const INPUT_BUDGET = 32_000;
+const INPUT_BUDGET = 2_000;
 const CONTINUATION_MARKER = "GLLA_POST_COMPACTION_CONTINUATION_OK";
 let verifierStage = "startup";
 
