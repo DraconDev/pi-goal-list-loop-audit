@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildAbortedAssistantNotice, buildActionReminder } from "../extensions/action-reminder.js";
+import { buildAbortedAssistantNotice, buildActionReminder, registerActionReminderRenderer } from "../extensions/action-reminder.js";
+import { MockPi } from "./harness/mock-pi.js";
+
+test("registers a dedicated GLLA reminder renderer", () => {
+  const pi = new MockPi();
+  registerActionReminderRenderer(pi.api);
+  assert.equal(pi.messageRenderers.has("glla-action-reminder"), true);
+});
 
 test("blocked reminder is actionable and says the work is safely parked", () => {
   const reminder = buildActionReminder({

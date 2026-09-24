@@ -24,9 +24,13 @@ we need a better way to showing auto compaction, not pause i think
 auditor should use session thinking level not arbitrarily lower, cur my session is max but auditor is high
 /home/dracon/Pictures/Screenshots/Screenshot_20260924_175934.png
 
+
+
 # Later
 
-
+##
+/home/dracon/Pictures/Screenshots/Screenshot_20260924_231547.png 
+we need a better thumb for the pi plugin store 
 
  
 
