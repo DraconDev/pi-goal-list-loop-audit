@@ -246,6 +246,9 @@ class JsonRpcProcess {
 
   emit(event) {
     this.events.push(event);
+    if (process.env.GLLA_LIVE_DEBUG === "1" && event?.type === "compaction_end") {
+      globalThis.__gllaCompactionEnd = { aborted: event.aborted === true, willRetry: event.willRetry === true, error: event.errorClass ?? "none", summaryChars: event.result?.summaryChars ?? 0 };
+    }
     for (const listener of [...this.listeners]) {
       try {
         listener(event);
@@ -619,6 +622,7 @@ try {
   const message = error instanceof Error ? error.message : String(error);
   const category = redactClass(message);
   const stage = process.env.GLLA_LIVE_DEBUG === "1" ? verifierStage : "redacted";
-  console.error(`FAIL: ${category}${stage === "redacted" ? "" : ` (stage=${stage})`}`);
+  const debugCompaction = process.env.GLLA_LIVE_DEBUG === "1" ? globalThis.__gllaCompactionEnd : undefined;
+  console.error(`FAIL: ${category}${stage === "redacted" ? "" : ` (stage=${stage})`}${debugCompaction ? ` compaction_end=${JSON.stringify(debugCompaction)}` : ""}`);
   process.exitCode = 1;
 }
