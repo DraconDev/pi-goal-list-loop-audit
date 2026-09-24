@@ -3089,3 +3089,10 @@
 {"type":"compaction_inflight_start","value":{"generation":535},"at":"2026-09-24T12:00:49.733Z"}
 {"type":"session_compact_failed","value":{"reason":"threshold","error":"Auto-compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete","aborted":false,"willRetry":false,"fromExtension":false,"generation":535},"at":"2026-09-24T12:09:03.812Z"}
 {"type":"compaction_inflight_start","value":{"generation":535},"at":"2026-09-24T12:09:16.856Z"}
+{"type":"session_compact_failed","value":{"reason":"threshold","error":"Auto-compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete","aborted":false,"willRetry":false,"fromExtension":false,"generation":535},"at":"2026-09-24T13:10:52.946Z"}
+{"type":"compaction_inflight_start","value":{"generation":535},"at":"2026-09-24T13:11:17.411Z"}
+{"type":"session_compact_failed","value":{"reason":"threshold","error":"Auto-compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete","aborted":false,"willRetry":false,"fromExtension":false,"generation":535},"at":"2026-09-24T13:27:54.166Z"}
+{"type":"compaction_inflight_start","value":{"generation":535},"at":"2026-09-24T13:28:08.946Z"}
+{"type":"session_compact_failed","value":{"reason":"threshold","error":"Auto-compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete","aborted":false,"willRetry":false,"fromExtension":false,"generation":535},"at":"2026-09-24T13:29:51.638Z"}
+{"type":"compaction_inflight_start","value":{"generation":535},"at":"2026-09-24T13:29:53.490Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":{"inputTokens":786,"outputTokens":1024,"cacheReadTokens":178591,"cacheWriteTokens":0,"totalTokens":180401},"contextUsage":{"tokens":180401,"contextWindow":200000,"percent":90.20049999999999}},"at":"2026-09-24T13:41:41.454Z"}
