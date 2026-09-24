@@ -3299,3 +3299,6 @@
 {"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:05:12.203Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:07:13.361Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:09:15.689Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:11:47.121Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:11:52.182Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:11:55.493Z"}
