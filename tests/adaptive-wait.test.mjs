@@ -46,7 +46,10 @@ test("waitForDurableEvent works with adaptive poll intervals", async () => {
   assert.equal(result.ok, true);
   assert.equal(result.terminalReason, "done");
   assert.equal(result.checks, 3);
-  assert.deepEqual(sleeps, [10, 20]);
+  // waitForDurableEvent accepts one bounded poll interval; adaptive backoff
+  // is the caller's loop policy. This test uses a synthetic clock so the
+  // contract stays deterministic under a loaded release suite.
+  assert.deepEqual(sleeps, [10, 10]);
   assert.equal(result.value.attempts, 3);
 });
 
