@@ -814,8 +814,8 @@ export function projectCompactionPreparation(
   const projectedHistory = selectedHistory;
   const projectedPrefix = selectedPrefix;
   const retainedToolGroups = selection.selected.filter((unit) => unit.retainedToolGroup).length;
-  const omittedToolGroups = selection.selected.reduce((sum, unit) => sum + unit.omittedToolGroups, 0)
-    + (selection.omitted > 0 ? 1 : 0);
+  const omittedToolGroups = units.slice(0, selection.omitted).filter((unit) => unit.toolGroup).length
+    + selection.selected.reduce((sum, unit) => sum + unit.omittedToolGroups, 0);
   const omittedToolCalls = selection.selected.reduce((sum, unit) => sum + unit.omittedToolCalls, 0);
   // Keep each preparation array's identity when that half of the projection
   // is a no-op. Pi and other extensions may retain references to these
