@@ -2323,6 +2323,16 @@ function goalDurationMs(g: Goal, now: number): number {
  * live outcome row; the archive remains the durable history.
  */
 
+/** Project only the human outcome for width-constrained TUI surfaces.
+ * The durable recap (including Tests/verification) remains in the archive;
+ * the completed-goal card is an at-a-glance user summary. */
+function completionOutcomeForDisplay(summary: string): string {
+  const source = summary.replace(/\r/g, "").trim();
+  const matches = [...source.matchAll(/(?:^|\n)Outcome:\s*([\s\S]*?)(?=\n(?:Changed|Evidence|Tests|Unresolved|Next):|$)/gi)];
+  const value = matches.at(-1)?.[1]?.trim() || source;
+  return sanitizeDisplayText(value).replace(/\s+/g, " ").trim() || source.replace(/\s+/g, " ").trim();
+}
+
 function completedGoalLines(g: Goal, now: number, theme?: DisplayTheme, width?: number): string[] {
   const done = g.status === "complete";
   const why = g.status === "aborted" ? (g.stopReason ?? g.pauseReason) : undefined;
