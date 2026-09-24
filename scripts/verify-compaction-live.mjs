@@ -246,6 +246,11 @@ class JsonRpcProcess {
 
   emit(event) {
     this.events.push(event);
+    if (process.env.GLLA_LIVE_DEBUG === "1") {
+      const types = globalThis.__gllaLiveEvents ?? [];
+      types.push(String(event?.type ?? "unknown"));
+      globalThis.__gllaLiveEvents = types;
+    }
     for (const listener of [...this.listeners]) {
       try {
         listener(event);
@@ -619,6 +624,9 @@ try {
   const message = error instanceof Error ? error.message : String(error);
   const category = redactClass(message);
   const stage = process.env.GLLA_LIVE_DEBUG === "1" ? verifierStage : "redacted";
-  console.error(`FAIL: ${category}${stage === "redacted" ? "" : ` (stage=${stage})`}`);
+  const eventTypes = process.env.GLLA_LIVE_DEBUG === "1" && Array.isArray(globalThis.__gllaLiveEvents)
+    ? globalThis.__gllaLiveEvents.join(",")
+    : "";
+  console.error(`FAIL: ${category}${stage === "redacted" ? "" : ` (stage=${stage})`}${eventTypes ? ` events=${eventTypes}` : ""}`);
   process.exitCode = 1;
 }
