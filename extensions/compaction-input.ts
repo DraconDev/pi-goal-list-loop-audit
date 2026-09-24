@@ -788,11 +788,15 @@ export function projectCompactionPreparation(
   const units = buildSemanticUnits(fieldProjected.slice(0, history.length), fieldProjected.slice(history.length));
   const selection = selectBoundedUnits(units, budget);
   const omittedByHalf = { history: 0, prefix: 0 };
+  let omittedSourceMessages = 0;
   for (let index = 0; index < selection.omitted; index += 1) {
     // Units are selected from the newest end; the omitted prefix is in the
     // older half, with the boundary determined by retained unit halves.
     const omittedUnit = units[index];
-    if (omittedUnit) omittedByHalf[omittedUnit.half] += omittedUnit.sourceCount;
+    if (omittedUnit) {
+      omittedByHalf[omittedUnit.half] += omittedUnit.sourceCount;
+      omittedSourceMessages += omittedUnit.sourceCount;
+    }
   }
   const markerMessage = selection.markers > 0 ? omissionMarker(selection.omitted) : null;
   let selectedHistory = selection.selected.filter((unit) => unit.half === "history").flatMap((unit) => unit.messages);
@@ -832,7 +836,7 @@ export function projectCompactionPreparation(
     retainedGoalPayloads: goalProjection.retained,
     scale,
     retainedMessages: selection.selected.reduce((sum, unit) => sum + unit.messages.length, 0),
-    omittedMessages: selection.omitted + selection.selected.reduce((sum, unit) => sum + Math.max(0, unit.sourceCount - unit.messages.length), 0),
+    omittedMessages: Math.max(0, original.length - selection.selected.reduce((sum, unit) => sum + unit.messages.length, 0)),
     retainedToolGroups,
     omittedToolGroups,
     omittedToolCalls,

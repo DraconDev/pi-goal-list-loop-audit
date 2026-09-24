@@ -314,3 +314,58 @@ test("contains malformed preparation records without changing their positions", 
   assert.equal(result.turnPrefixMessages.length, 1);
   assert.equal(Number.isFinite(result.inputCharsAfter), true);
 });
+
+test("enforces a hard bound for arbitrarily many tiny messages", () => {
+  const prep = {
+    messagesToSummarize: Array.from({ length: 10_000 }, (_, index) => ({ role: "user", content: `m${index}` })),
+    turnPrefixMessages: Array.from({ length: 10_000 }, (_, index) => ({ role: "user", content: `p${index}` })), 
+  };
+
+  const result = projectCompactionPreparation(prep);
+  const all = [...result.messagesToSummarize, ...result.turnPrefixMessages].map(asRecord);
+  const markerCount = all.filter((message) => message.customType === "glla-compaction-omission").length;
+
+  assert.equal(result.inputCharsAfter <= 64_000, true);
+  assert.equal(result.hardBoundApplied, true);
+  assert.equal(result.omittedMessages > 0, true);
+  assert.equal(markerCount >= 1, true);
+  assert.equal(result.omissionMarkers, markerCount);
+  assert.equal(result.retainedMessages + result.omittedMessages, 20_000);
+  assert.equal(result.messagesToSummarize.length > 0, true);
+  assert.equal(result.turnPrefixMessages.length > 0, true);
+  assert.equal(all.every((message) => message.role === "user" || message.customType === "glla-compaction-omission"), true);
+});
+
+test("keeps complete tool groups when high message counts force omission", () => {
+  const prep = {
+    messagesToSummarize: Array.from({ length: 2_000 }, (_, index) => {
+      const callId = `call-${index}`;
+      return [
+        { role: "assistant", content: [{ type: "toolCall", id: callId, name: "bash", arguments: { command: `echo ${index}` } }], stopReason: "toolUse" },
+        toolResult(callId, `output ${index}`),
+      ];
+    }).flat(),
+    turnPrefixMessages: [],
+  };
+
+  const result = projectCompactionPreparation(prep);
+  const messages = result.messagesToSummarize.map(asRecord);
+  const calls = new Map<string, boolean>();
+  const results = new Set<string>();
+  for (const message of messages) {
+    if (message.role === "assistant") {
+      for (const block of asBlocks(message)) {
+        if (block.type === "toolCall" && typeof block.id === "string") calls.set(block.id, true);
+      }
+    } else if (message.role === "toolResult" && typeof message.toolCallId === "string") {
+      results.add(message.toolCallId);
+    }
+  }
+
+  assert.equal(result.inputCharsAfter <= 64_000, true);
+  assert.equal(result.omittedMessages > 0, true);
+  assert.equal([...calls.keys()].every((callId) => results.has(callId)), true);
+  assert.equal([...results].every((callId) => calls.has(callId)), true);
+  assert.equal(result.retainedToolGroups > 0, true);
+  assert.equal(result.omittedToolGroups > 0, true);
+});
