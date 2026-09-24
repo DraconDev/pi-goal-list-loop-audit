@@ -3305,3 +3305,8 @@
 {"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:14:25.594Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:17:03.766Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:17:11.525Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:19:21.743Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:19:27.023Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:21:51.752Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:21:57.378Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:22:02.397Z"}

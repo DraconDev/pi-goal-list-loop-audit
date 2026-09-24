@@ -23,7 +23,7 @@ import * as path from "node:path";
 const REPO_ROOT = path.resolve(import.meta.dirname, "..");
 const REPORT_PATH = path.join(REPO_ROOT, "audit", "COMPACTION-DEFAULT-PROJECTION-LIVE-PROOF.md");
 const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;
-const INPUT_BUDGET = 64_000;
+const INPUT_BUDGET = 32_000;
 const CONTINUATION_MARKER = "GLLA_POST_COMPACTION_CONTINUATION_OK";
 let verifierStage = "startup";
 
@@ -250,6 +250,7 @@ class JsonRpcProcess {
       const types = globalThis.__gllaLiveEvents ?? [];
       types.push(String(event?.type ?? "unknown"));
       globalThis.__gllaLiveEvents = types;
+      if (event?.type === "compaction_end") globalThis.__gllaLiveCompaction = event;
     }
     for (const listener of [...this.listeners]) {
       try {
@@ -627,6 +628,10 @@ try {
   const eventTypes = process.env.GLLA_LIVE_DEBUG === "1" && Array.isArray(globalThis.__gllaLiveEvents)
     ? globalThis.__gllaLiveEvents.join(",")
     : "";
-  console.error(`FAIL: ${category}${stage === "redacted" ? "" : ` (stage=${stage})`}${eventTypes ? ` events=${eventTypes}` : ""}`);
+  const compaction = process.env.GLLA_LIVE_DEBUG === "1" ? globalThis.__gllaLiveCompaction : undefined;
+  const compactionShape = compaction
+    ? ` compaction_end{aborted=${compaction.aborted === true},willRetry=${compaction.willRetry === true},error=${compaction.errorClass ?? "none"},summaryChars=${compaction.result?.summaryChars ?? 0}}`
+    : "";
+  console.error(`FAIL: ${category}${stage === "redacted" ? "" : ` (stage=${stage})`}${eventTypes ? ` events=${eventTypes}` : ""}${compactionShape}`);
   process.exitCode = 1;
 }
