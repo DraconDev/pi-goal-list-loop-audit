@@ -16,6 +16,7 @@ import type { DurableDeferRecommendationInput, Goal, MainModelRecovery, PendingC
 import { auditVerdictLabel, bucketSilentMs, buildDurableDeferRecommendation, compactDisplayText, fmtDuration, formatMainModelRecoveryStatus, headLifesign, isMonitorGoal, isPersistenceDegraded, lastPersistenceFailure, sanitizeDisplayText, sanitizeProviderAuditReport, sanitizeProviderDisplayText, stripThinkBlocks, type LifesignRow } from "./goal-loop-core.js";
 
 export { isMonitorGoal };
+import { humanCompletionBrief } from "./completion-summary.js";
 import { HELD_ON_RESTORE, type LoopState } from "./goal-loop-forever.js";
 import { auditorSurfaceSuppressed } from "./loops/goal-auditor-surface.js";
 
@@ -2339,7 +2340,7 @@ function completedGoalLines(g: Goal, now: number, theme?: DisplayTheme, width?: 
   // recap — including abort/cancel/impossible-derived archives — while the
   // objective remains the compatibility fallback for legacy records.
   const recap = g.completionSummary?.trim()
-    ? g.completionSummary.replace(/\s+/g, " ").trim()
+    ? humanCompletionBrief(g.completionSummary, 240, 240).outcome
     : g.objective.replace(/\s+/g, " ");
   return [`${paint(theme, "dim", "─")} ${paint(theme, "dim", `${outcome} · ${truncate(recap, objBudget)} · ${tail}`)}`];
 }
