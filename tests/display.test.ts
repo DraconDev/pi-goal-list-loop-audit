@@ -871,6 +871,16 @@ test("v0.34.91: completed goal summary shows the agent's completion recap, not t
   assert.match(lines[0]!, /took 1h 45m/);
 });
 
+test("completed-goal TUI card shows the human outcome without technical recap labels", () => {
+  const g = goalOf({
+    status: "complete",
+    completionSummary: "Outcome: Shipped the user-facing summary.\nChanged: renderer.\nEvidence: release artifact.\nTests: 2563 passed.\nUnresolved: none.\nNext: none.",
+  });
+  const line = buildWidgetLines({ goal: g, list: [] }, null, NOW)![0]!;
+  assert.match(line, /Shipped the user-facing summary/);
+  assert.doesNotMatch(line, /Tests:|2563 passed|Changed:|Evidence:/);
+});
+
 test("v0.34.91: whitespace-only completion summary falls back to the objective", () => {
   const g = goalOf({ status: "complete", createdAt: "2026-07-21T10:00:00Z", updatedAt: "2026-07-21T11:45:00Z", completionSummary: "   " });
   const lines = buildWidgetLines({ goal: g, list: [] }, null, NOW)!;
