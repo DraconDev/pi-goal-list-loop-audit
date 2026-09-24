@@ -3112,3 +3112,10 @@
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":{"inputTokens":4161,"outputTokens":1,"cacheReadTokens":196327,"cacheWriteTokens":0,"totalTokens":200489},"contextUsage":{"tokens":200489,"contextWindow":200000,"percent":100.2445}},"at":"2026-09-24T15:21:20.578Z"}
 {"type":"length_continue_deferred_context_full","value":{"outputTokens":1,"contextTokens":200489,"contextWindow":200000,"contextPercent":100.2445,"starvedStreak":1},"at":"2026-09-24T15:21:20.579Z"}
 {"type":"compaction_inflight_start","value":{"generation":535},"at":"2026-09-24T15:21:20.583Z"}
+{"type":"session_compact_failed","value":{"reason":"overflow","error":"Context overflow recovery failed: Summarization failed: generation hit the token cap and the summary is incomplete","aborted":false,"willRetry":false,"fromExtension":false,"generation":535},"at":"2026-09-24T15:23:01.833Z"}
+{"type":"session_shutdown","value":{"reason":"new"},"at":"2026-09-24T15:25:08.517Z"}
+{"type":"drafter_model_restored","value":{"to":"openrouter/stealth/space-bunny-alpha","alreadyActive":true},"at":"2026-09-24T15:25:08.522Z"}
+{"type":"session_rebound","value":{"reason":"new"},"at":"2026-09-24T15:25:10.170Z"}
+{"type":"continuation_dispatch_recovered","value":{"id":"4059024:1790246405504:535:20260924115438-wcxvd9","phase":"unacknowledged","kind":"length","generation":535},"at":"2026-09-24T15:25:10.178Z"}
+{"type":"id_invalidation","value":{"oldId":"01a0d307-800b-73f2-84e3-62460f7d57d5","newId":"01a0d405-3dac-73f2-84e3-629b7a948947","reason":"session_shutdown","shutdownReason":"new","at":"2026-09-24T15:25:10.190Z"},"at":"2026-09-24T15:25:10.190Z"}
+{"type":"model_fallback_select","value":{"scope":"drafter","fromRef":"openrouter/stealth/space-bunny-alpha","reason":"exhausted"},"at":"2026-09-24T15:25:21.318Z"}
