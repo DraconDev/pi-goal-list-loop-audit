@@ -26,6 +26,12 @@ auto compact fialed
 /home/dracon/Pictures/Screenshots/Screenshot_20260924_122337.png 
 much better but what is lead?
 
+##
+improve control ui ? 
+
+##
+look over /glla ?
+
 # Research
 investigate 
 https://pi.dev/packages/pi-goal-x?name=pi+goal+x https://github.com/tmonk/pi-goal-x
