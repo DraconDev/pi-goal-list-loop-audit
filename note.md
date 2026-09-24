@@ -28,6 +28,10 @@ last uadit not finishing
 /home/dracon/Pictures/Screenshots/Screenshot_20260924_171648.png /home/dracon/Pictures/Screenshots/Screenshot_20260924_171624.png 
 
 ##
+/home/dracon/Pictures/Screenshots/Screenshot_20260924_171935.png /home/dracon/Pictures/Screenshots/Screenshot_20260924_171930.png 
+we need a better way to showing auto compaction
+
+##
 /home/dracon/Pictures/Screenshots/Screenshot_20260924_122337.png
 much better but what is lead?
 
