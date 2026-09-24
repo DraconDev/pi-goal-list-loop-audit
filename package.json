@@ -49,7 +49,8 @@
 		],
 		"skills": [
 			"skills/glla-delegate"
-		]
+		],
+		"image": "https://raw.githubusercontent.com/DraconDev/pi-goal-list-loop-audit/main/media/glla2.png"
 	},
 	"scripts": {
 		"check": "tsc --noEmit",

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.38.98 — audited lifecycle hardening and change-first completion (2026-09-24)
+
+- Fresh audit repairs make goal/list/loop state durable across persistence failures, session replacement, compaction failure, repair promotion, and branch-mode completion. Confirmed loop refinements now apply atomically instead of mutating live state before the spec is safely written.
+- Draft, task, repair, and queue proposals validate their durable contract before side effects; empty or malformed work cannot silently become an active goal. Managed subagent paths are constrained and vision fallback arguments are safely quoted.
+- Terminal output is change-first: approved objectives lead with the delivered behavior, explicit remaining work, and one next action. Verification remains available in the durable archive and is shown in chat only when requested. Status/history and provider diagnostics are sanitized for terminal control bytes.
+- The shipped contract now matches current Pi usage and GLLA state: Bun is documented for development gates, bare `/list` is shown as Confirm-gated drafting, the historical plan is clearly non-authoritative, and the published goal schema is exercised through real JSON Schema validation.
+- The npm package explicitly advertises its Pi extension/skill manifest and gallery preview image. `pi install npm:pi-goal-list-loop-audit` remains the supported install path; the official `pi.dev/packages` gallery indexes the `pi-package` release automatically.
+
 ## 0.38.97 — pause_goal redirect: park-and-continue for user interruptions (2026-09-23)
 
 - Field: a mid-goal redirect ("can we get to this first") parked via pause_goal, whose abort + "do NOT continue working" stranded the new task until the user nudged. New optional `redirect` param parks the goal WITHOUT ending the turn and orders the redirect worked immediately, goal resumed after; redirect parks ledger distinctly as `pause_goal_redirect`. Plain pauses still abort (audit/PAUSE-REDIRECT-2026-09-23.md).
