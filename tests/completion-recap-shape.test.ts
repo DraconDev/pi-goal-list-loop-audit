@@ -47,9 +47,8 @@ test("structured completion recap survives archive rendering and the terminal wi
   );
   assert.ok(widget);
   assert.equal(widget.length, 1, "the compact terminal surface remains one line");
-  for (const label of ["Outcome", "Changed", "Evidence", "Tests", "Unresolved", "Next"]) {
-    assert.match(widget[0]!, new RegExp(`${label}:`), `${label} remains visible in a wide recap projection`);
-  }
+  assert.match(widget[0]!, /Shipped the completion-summary policy review/);
+  assert.doesNotMatch(widget[0]!, /Tests:|52 passed|Changed:|Evidence:/, "technical recap labels stay out of the default TUI card");
   assert.match(widget[0]!, /✓ done/);
   assert.match(widget[0]!, /took 20m/);
 });
