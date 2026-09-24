@@ -450,9 +450,9 @@ createGoalHeartbeat(heartbeatFlags, heartbeatDeps);
 
 
 export default function (pi: ExtensionAPI): void {
-  registerActionReminderRenderer(pi);
   // Factory evaluation can also happen inside pi-subagents child sessions.
   // Registration must not claim the shared host API or start session timers;
   // the admitted host session_start below owns both lifecycle resources.
+  registerActionReminderRenderer(pi);
   registerGoalRuntime(pi);
 }
