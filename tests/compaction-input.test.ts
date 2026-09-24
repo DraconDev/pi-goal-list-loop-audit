@@ -118,6 +118,18 @@ test("replaces image blocks while retaining the surrounding message structure", 
   assert.equal(result.replacedImages, 1);
 });
 
+test("keeps the total bounded for a tiny caller budget with a previous summary", () => {
+  const prep = {
+    messagesToSummarize: [{ role: "user", content: "compact me" }],
+    turnPrefixMessages: [],
+    previousSummary: "previous",
+  };
+
+  const result = projectCompactionPreparation(prep, { maxInputChars: 1, maxPreviousSummaryChars: 4_096 });
+  assert.equal(result.inputCharsAfter <= 1, true);
+  assert.equal(prep.previousSummary, "");
+});
+
 test("bounds a previous compaction summary without changing the preparation contract", () => {
   const prep = {
     messagesToSummarize: [{ role: "user", content: "compact me" }],
@@ -327,6 +339,26 @@ test("contains malformed preparation records without changing their positions", 
   assert.equal(result.messagesToSummarize.length, 6);
   assert.equal(result.turnPrefixMessages.length, 1);
   assert.equal(Number.isFinite(result.inputCharsAfter), true);
+});
+
+test("keeps malformed interleaved tool results paired with their calls", () => {
+  const firstId = id("first-");
+  const secondId = id("second-");
+  const prep = {
+    messagesToSummarize: [
+      { role: "assistant", content: [{ type: "toolCall", id: firstId, name: "bash", arguments: { command: "one" } }] },
+      { role: "toolResult", toolCallId: secondId, content: "unrelated" },
+      { role: "toolResult", toolCallId: firstId, content: "matching" },
+    ],
+    turnPrefixMessages: [],
+  };
+
+  const result = projectCompactionPreparation(prep);
+  const messages = result.messagesToSummarize.map(asRecord);
+  assert.equal(messages.length, 3);
+  assert.equal(asBlocks(messages[0])[0]?.id, firstId);
+  assert.equal(messages[1]?.toolCallId, secondId);
+  assert.equal(messages[2]?.toolCallId, firstId);
 });
 
 test("enforces a hard bound for arbitrarily many tiny messages", () => {

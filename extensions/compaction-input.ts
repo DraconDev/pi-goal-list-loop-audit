@@ -574,18 +574,15 @@ function buildSemanticUnits(history: readonly unknown[], prefix: readonly unknow
       const results: number[] = [];
       while (end < all.length) {
         const candidate = all[end];
-        if (!isRecord(candidate) || candidate.role !== "toolResult" || typeof candidate.toolCallId !== "string") break;
-        if (!callIds.has(candidate.toolCallId)) break;
-        results.push(end);
+        if (isRecord(candidate) && candidate.role === "assistant" && messageToolCallIds(candidate).length > 0) break;
+        if (isRecord(candidate) && candidate.role === "toolResult" && typeof candidate.toolCallId === "string" && callIds.has(candidate.toolCallId)) {
+          results.push(end);
+        }
         end += 1;
       }
       if (results.length > 0) {
         const half: PreparationHalf = index < history.length ? "history" : "prefix";
-        const keptResults = results.filter((resultIndex) => {
-          const result = all[resultIndex];
-          return isRecord(result) && typeof result.toolCallId === "string" && keptIds.has(result.toolCallId);
-        });
-        const messages = [projectToolCallMessage(message, keptIds), ...keptResults.map((resultIndex) => all[resultIndex])];
+        const messages = [projectToolCallMessage(message, keptIds), ...all.slice(index + 1, end)];
         units.push({
           half,
           messages,
@@ -733,10 +730,10 @@ function countProjectionFields(
 }
 
 /**
- * Project a CompactionPreparation-shaped object in place.  Only the two
- * message-array properties are reassigned; fileOps and all preparation
- * metadata are deliberately left untouched.  The return value is suitable for
- * bounded ledger statistics and tests.
+ * Project a CompactionPreparation-shaped object in place. The two
+ * message-array properties and the previous-summary field are bounded; fileOps
+ * and the remaining preparation metadata are deliberately left untouched. The
+ * return value is suitable for bounded ledger statistics and tests.
  */
 export function projectCompactionPreparation(
   preparation: unknown,
@@ -772,13 +769,17 @@ export function projectCompactionPreparation(
   const prefix = hasPrefix ? preparation.turnPrefixMessages as unknown[] : [];
   const original = [...history, ...prefix];
   const before = estimateMessagesChars(original) + (typeof preparation.previousSummary === "string" ? preparation.previousSummary.length : 0);
+  const limits = baseLimits(options);
+  const budget = positiveLimit(options.maxInputChars, DEFAULT_COMPACTION_INPUT_CHAR_BUDGET, 1);
+  // Leave room for at least one message/omission marker when possible. For an
+  // extremely small caller-supplied budget, the previous summary is reduced
+  // further so the total projection still honors the requested hard bound.
+  const previousSummaryLimit = Math.min(limits.previousSummary, Math.max(0, budget - 1));
   const previousSummary = typeof preparation.previousSummary === "string"
-    ? boundCompactionText(preparation.previousSummary, baseLimits(options).previousSummary)
+    ? previousSummaryLimit > 0 ? boundCompactionText(preparation.previousSummary, previousSummaryLimit) : ""
     : preparation.previousSummary;
   const previousSummaryChars = typeof previousSummary === "string" ? previousSummary.length : 0;
   const goalProjection = boundOldGoalPayloads(original);
-  const limits = baseLimits(options);
-  const budget = positiveLimit(options.maxInputChars, DEFAULT_COMPACTION_INPUT_CHAR_BUDGET, 1);
   const messageBudget = Math.max(1, budget - previousSummaryChars);
 
   let scale = 1;

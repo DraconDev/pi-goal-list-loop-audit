@@ -3255,7 +3255,9 @@ async function handleHotLengthExhaustion(
     // Pi's default summarizer serializes successful assistant text, thinking,
     // and tool-call arguments without a broad input bound. Project those fields
     // in the shared preparation before the summarizer runs; Pi still owns the
-    // cut point, fileOps, previousSummary, settings, and compaction result.
+    // cut point, fileOps, settings, and compaction result. The previous-summary
+    // field is bounded only as part of the same input payload; its semantic
+    // role remains Pi's iterative-summary input.
     try {
       const inputProjection = projectCompactionPreparation(event?.preparation);
       if (inputProjection.changed) {
