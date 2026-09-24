@@ -63,16 +63,16 @@ test("canonical render folds a lone approval with the verdict count, model-free"
   // numbered findings, table rows, and Next bullets share the chat; the
   // record pointer stays last.
   assert.ok(render.chatLines.includes("### What Changed"), "change account present");
-  assert.ok(render.chatLines.includes("### Verification"), "compact verification tail present");
-  assert.ok(render.chatLines.includes("1 passed."), "verification aggregate present");
+  assert.equal(render.chatLines.includes("### Verification"), false, "verification is hidden by default");
+  assert.equal(render.chatLines.includes("1 passed."), false, "test aggregate is hidden by default");
   assert.ok(!render.chatLines.some((l) => /^\| Tests \|/.test(l)), "gate table stays archival");
-  // Change-first order: changes, compact verification, then Next, then the
-  // pinned trailer (approval, record last).
+  // Change-first order: changes, then Next, then the pinned trailer
+  // (approval, record last).
   const findingsIdx = render.chatLines.indexOf("### What Changed");
   const tableIdx = render.chatLines.indexOf("### Verification");
   const nextIdx = render.chatLines.indexOf("### Next");
   const approvalIdx = render.chatLines.findIndex((l) => l.startsWith("\u2022 auditor approved"));
-  assert.ok(findingsIdx !== -1 && findingsIdx < tableIdx && tableIdx < nextIdx && nextIdx < approvalIdx, "findings precede verification, Next closes the card ahead of the trailer");
+  assert.ok(findingsIdx !== -1 && findingsIdx < nextIdx && nextIdx < approvalIdx, "findings precede Next, which closes the card ahead of the trailer");
   // v0.38.42 (field 20260909_140404): a lone approval folds with the
   // verdict count — no model ID, no redundant standalone audit bullet.
   assert.ok(
@@ -238,9 +238,9 @@ test("v0.38.39 chat brief strips machine paths but the archive keeps them", () =
     ].join("\n"),
   });
   assert.ok(!render.chatLines.some((l) => l.includes("/var/tmp/")), "no machine path reaches the chat lines");
-  // Chat uses an aggregate verification sentence; full detail stays in the archive.
-  assert.ok(render.chatLines.includes("### Verification"), "compact verification tail present");
-  assert.ok(render.chatLines.includes("1 passed."), "human proof survives as the aggregate result");
+  // Chat hides technical verification by default; full detail stays in the archive.
+  assert.equal(render.chatLines.includes("### Verification"), false, "verification is hidden by default");
+  assert.equal(render.chatLines.includes("1 passed."), false, "test aggregate is hidden by default");
   assert.ok(!render.chatLines.some((l) => /^\| Tests \|/.test(l)), "gate table stays archival");
 });
 

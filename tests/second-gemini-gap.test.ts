@@ -181,10 +181,10 @@ test("v0.38.52: complete_goal gateRows + tests ride the claim into the chat rend
     { title: "Renderer", findings: ["Widen: completion-summary.ts:460 adds the gate table"], tests: ["gate suite 9/9"] },
   ], "the pending claim stores the parallel test lines");
   await waitFor(() => entries.length === 1);
-  // Chat keeps one aggregate verification sentence; the full gate table stays
+  // Chat hides technical verification by default; the full gate table stays
   // in the archive with commands and hashes.
   assert.ok(entries[0].content.startsWith("## Done — "), "outcome opens the card");
-  assert.match(entries[0].content, /### Verification\n1 reported\./, "compact gate aggregate");
+  assert.equal(entries[0].content.includes("### Verification"), false, "verification is archive-only by default");
   assert.ok(!entries[0].content.includes("| Quality Gate |"), "gate-by-gate table stays archival");
   assert.ok(!entries[0].content.includes("bun test tests/gate.test.ts"), "repro command stays in the archive");
   assert.ok(!entries[0].content.includes("Test Results:"), "per-finding proof stays archival");

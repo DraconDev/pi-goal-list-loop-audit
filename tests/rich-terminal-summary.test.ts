@@ -62,20 +62,17 @@ test("card opens with the outcome, then a change-first account and compact verif
   assert.ok(chatLines.some((l) => /extensions\/completion-summary\.ts/.test(l)), "code refs ride the finding bodies");
 });
 
-test("chat verification is an aggregate tail; the archive retains the full table", () => {
+test("chat hides verification by default; the archive retains the full table", () => {
   const chat = render().chatLines;
-  assert.ok(chat.includes("### Verification"));
-  assert.ok(chat.includes("1 passed."));
+  assert.equal(chat.includes("### Verification"), false, "technical verification is not default user copy");
+  assert.equal(chat.includes("1 passed."), false, "test counts stay out of default chat");
   assert.ok(!chat.some((l) => /^\| Tests \|/.test(l)), "gate-by-gate table stays archival");
-  const findingsIdx = chat.indexOf("### What Changed");
-  const tableIdx = chat.indexOf("### Verification");
-  assert.ok(findingsIdx !== -1 && findingsIdx < tableIdx, "changes precede supporting verification");
   const archive = buildRichArchiveSection(richGoal(), "complete", ".pi-glla/archive/20260911-rich-voice.md");
   assert.ok(archive.includes("### Verification Summary"), "archive keeps the detailed verification record");
   assert.ok(archive.some((l) => /^\| Tests \| PASS \|/.test(l)), "archive keeps the Tests row");
 });
 
-test("failed verification stays visible as a compact failure aggregate", () => {
+test("failed verification is archive-only unless explicitly requested", () => {
   const failing = render({
     goal: seedGoal({
       id: "20260911-rich-fail",
@@ -83,17 +80,23 @@ test("failed verification stays visible as a compact failure aggregate", () => {
       completionSummary: SIX.replace("Tests: bun test 2075 pass, 0 fail", "Tests: bun test 3 failed, 9 passed | see log"),
     }) as unknown as Goal,
   });
-  const row = failing.chatLines.find((l) => l.startsWith("| Tests |"));
-  assert.equal(row, undefined, "no row-level Tests table in chat");
-  assert.ok(failing.chatLines.includes("### Verification"), "failure still gets a compact verification tail");
-  assert.ok(failing.chatLines.includes("1 failed."), "aggregate preserves the failure");
-  const findingsIdx = failing.chatLines.indexOf("### What Changed");
-  const tableIdx = failing.chatLines.indexOf("### Verification");
-  assert.ok(findingsIdx !== -1 && findingsIdx < tableIdx, "change account precedes the failure summary");
+  assert.equal(failing.chatLines.includes("### Verification"), false, "failure evidence does not hijack the default user card");
+  assert.equal(failing.chatLines.includes("1 failed."), false, "failure aggregate stays out by default");
+  const opted = render({
+    showVerification: true,
+    goal: seedGoal({
+      id: "20260911-rich-fail-optin",
+      objective: "x",
+      completionSummary: SIX.replace("Tests: bun test 2075 pass, 0 fail", "Tests: bun test 3 failed, 9 passed | see log"),
+    }) as unknown as Goal,
+  });
+  assert.ok(opted.chatLines.includes("### Verification"), "explicit request gets a compact verification tail");
+  assert.ok(opted.chatLines.includes("1 failed."), "aggregate preserves the failure");
 });
 
-test("REPORTED verification stays visible — unclaimed status never auto-hides", () => {
+test("REPORTED verification stays visible when explicitly requested — never upgraded to PASS", () => {
   const { chatLines } = render({
+    showVerification: true,
     goal: seedGoal({
       id: "20260911-rich-reported",
       objective: "x",

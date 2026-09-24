@@ -113,9 +113,10 @@ function ledgerEvent(cwd: string, type: string): { type: string; value: Record<s
 }
 
 function assertCompactRecap(message: string, context: string): void {
-  for (const label of ["Outcome:", "Changed:", "Evidence:", "Tests:", "Unresolved:", "Next:"]) {
+  for (const label of ["Outcome:", "Changed:", "Evidence:", "Unresolved:", "Next:"]) {
     assert.match(message, new RegExp(label), `${context} includes ${label}`);
   }
+  assert.doesNotMatch(message, /Tests:/, `${context} hides technical Tests by default`);
 }
 
 function writeFakeAuditorError(cwd: string, error: string, delayMs = 0): string {
@@ -4052,9 +4053,9 @@ test("v0.34.91: detached approval notify carries the agent's completion recap, n
       // Rich voice: informing details arrive as numbered findings.
       assert.ok(recapNotifs[0]!.message.split("\n").some((line: string) => new RegExp(`^\\d+\\. \\*\\*${label}\\*\\*`).test(line)), `approved briefing keeps informing label ${label}`);
     }
-    // Verification is supporting evidence: chat keeps one compact aggregate,
-    // while the archive retains the complete gate/test record.
-    assert.match(recapNotifs[0]!.message, /^### Verification\n[^\n]+$/m, "approved briefing keeps compact verification");
+    // Technical verification is archive evidence by default; the human
+    // briefing stays focused on what changed and the record pointer.
+    assert.doesNotMatch(recapNotifs[0]!.message, /^### Verification/m, "verification is hidden by default");
     assert.doesNotMatch(recapNotifs[0]!.message, /\| Quality Gate|\| Tests \|/, "gate-by-gate table stays archival");
     assert.ok(recapNotifs[0]!.message.split("\n").length <= 20, "verbose rich summary stays bounded");
     // v0.38.42 (field 20260909_140404): a lone approval folds with the

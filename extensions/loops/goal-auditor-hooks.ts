@@ -1564,6 +1564,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       record: approvalRecord,
       // v0.38.37: the deliberate non-do the agent claimed, if any.
       ...(claim.leftOut ? { leftOut: claim.leftOut } : {}),
+      ...(claim.showVerification ? { showVerification: true } : {}),
       // v0.38.50: agent-structured finding groups ride the audited claim.
       // v0.38.52: same for the gate inventory.
       ...(claim.findingGroups ? { findingGroups: claim.findingGroups } : {}),

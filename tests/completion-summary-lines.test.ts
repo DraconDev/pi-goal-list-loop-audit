@@ -103,9 +103,10 @@ test("terminal lines resolve through the same facts as the compact recap", () =>
     stopReason: "auditor approved",
     archivePath: ".pi-glla/archive/terminal-lines.md",
   });
-  assert.equal(lines.length, 6);
+  assert.equal(lines.length, 5);
   assert.equal(lines[0], "Outcome: shipped the thing");
-  assert.equal(lines[5], "Next: follow-ups below");
+  assert.equal(lines[4], "Next: follow-ups below");
+  assert.ok(!lines.some((line) => line.startsWith("Tests:")), "terminal lines hide Tests by default");
 });
 
 test("v0.38.14: filler values inform nobody and are dropped", () => {
@@ -128,7 +129,7 @@ test("v0.38.14: the briefing leads with the outcome and keeps only informing lab
   ].join("\n"));
   assert.equal(brief.outcome, "Full-sweep UI/UX pass with bolder dark+red restyle across shell, all 5 views.");
   assert.ok(brief.details.some((d) => d.startsWith("Changed:")), "informing labels stay");
-  assert.ok(brief.details.some((d) => d.startsWith("Tests:")), "informing labels stay");
+  assert.ok(!brief.details.some((d) => d.startsWith("Tests:")), "technical Tests stay out of the default human brief");
   assert.ok(brief.details.some((d) => d === "Next: queued follow-ups (analytics SWR cache, new-tab extraction)."), "none-prefix content is kept, prefix stripped");
   assert.ok(!brief.details.some((d) => d.startsWith("Unresolved:")), "filler labels are gone");
   assert.ok(!brief.details.join("\n").includes("not recorded"), "no placeholders leak through");

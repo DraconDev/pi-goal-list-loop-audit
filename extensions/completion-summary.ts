@@ -131,13 +131,16 @@ function labelPositions(lower: string): Array<{ label: string; start: number }> 
   return positions;
 }
 
-export function compactCompletionSummary(text: string | undefined, maxValueLength = 72): string {
+/** Compact six-label recap. Terminal user projections pass `includeTests=false`
+ * when they want the default human view; archive/machine callers retain it. */
+export function compactCompletionSummary(text: string | undefined, maxValueLength = 72, includeTests = true): string {
   const source = completionSummaryBody(text ?? "").replace(/\s+/g, " ").trim();
   if (!source) return "not recorded";
   const lower = source.toLowerCase();
   const limit = Number.isFinite(maxValueLength) ? Math.max(8, Math.floor(maxValueLength)) : 72;
   const positions = labelPositions(lower);
-  const parts = COMPLETION_SUMMARY_LABELS.map((label) => {
+  const labels = includeTests ? COMPLETION_SUMMARY_LABELS : COMPLETION_SUMMARY_LABELS.filter((label) => label !== "Tests:");
+  const parts = labels.map((label) => {
     const current = positions.find((entry) => entry.label === label);
     const name = label.slice(0, -1);
     if (!current) return `${name}: not recorded`;
@@ -204,13 +207,14 @@ export function humanCompletionBrief(
   outcomeBudget = 140,
   valueBudget = 120,
   priorWholeWork?: string,
+  includeTests = false,
 ): HumanCompletionBrief {
-  const lines = completionSummaryLines(text, Math.max(outcomeBudget, valueBudget));
+  const lines = completionSummaryLines(text, Math.max(outcomeBudget, valueBudget), undefined, includeTests);
   const rawOutcome = (lines[0] ?? "").replace(/^Outcome:\s*/, "");
   // 2026-09-16 whole-work recap: when the audited claim is a delta-only
   // repair note, the whole-work recap from the FIRST claim leads. The
   // repair details still ride; the headline summarizes the whole work.
-  const priorLines = priorWholeWork ? completionSummaryLines(priorWholeWork, Math.max(outcomeBudget, valueBudget)) : [];
+  const priorLines = priorWholeWork ? completionSummaryLines(priorWholeWork, Math.max(outcomeBudget, valueBudget), undefined, includeTests) : [];
   const priorDetails = priorLines ? priorLines.slice(1) : [];
   const mergedDetails = [...priorDetails, ...lines.slice(1)];
   const outcomeSource = priorLines[0]?.replace(/^Outcome:\s*/, "") ?? rawOutcome;
@@ -409,7 +413,8 @@ export interface RichTerminalParts {
   /** Human-facing unresolved/left-out concerns. Unlike the technical gate
    * inventory, these explain what the delivered change does not settle. */
   remainingLines: string[];
-  /** Compact chat-only verification tail. The archive keeps the full table. */
+  /** Compact chat-only verification tail, shown only when explicitly
+   * requested. The archive always keeps the full table. */
   verificationSummaryLine: string | undefined;
   /** True for the compact chat projection (false/absent retains the detailed
    * archive headings/tables). */
@@ -708,6 +713,10 @@ export function buildRichTerminalParts(args: {
   summaryLines?: string[];
   /** Chat favors explanations; the archive retains raw commands and tables. */
   chat?: boolean;
+  /** v0.38.98: opt in to a compact verification tail in chat. The default
+   * human summary stays about what changed and what remains; full test/gate
+   * evidence remains in the archive. */
+  showVerification?: boolean;
 }): RichTerminalParts {
   const { findings, tests, next } = partitionRichDetails(args.details);
   const outcome = sanitizeDisplayText(args.outcome);
@@ -797,11 +806,13 @@ export function buildRichTerminalParts(args: {
       tableRows.push(`| Audit | ${auditStatus} | ${escapeTableCell(auditBody)} |`);
     }
   }
-  // Chat is an account of what happened, not a test-run transcript. Aggregate
-  // named checks into one supporting sentence and keep the full status/table
-  // in the archive. Unknown wording stays "reported" rather than claimed pass.
+  // Chat is an account of what happened, not a test-run transcript. Keep
+  // verification out of the default human view; an explicit user request may
+  // opt into one compact supporting sentence. Unknown wording stays
+  // "reported" rather than claimed pass, and the archive always keeps the
+  // full status/table.
   let verificationSummaryLine: string | undefined;
-  if (args.chat && (gates.length > 0 || tests.length > 0)) {
+  if (args.chat && args.showVerification === true && (gates.length > 0 || tests.length > 0)) {
     const gateNotes = gates.length > 0
       ? gates.map((row) => testsRowStatus(sanitizeDisplayText(row.notes ?? "")))
       : tests.map((detail) => testsRowStatus(leadBody(detail).body));
@@ -815,7 +826,7 @@ export function buildRichTerminalParts(args: {
     verificationSummaryLine = parts.length > 0 ? `${parts.join(", ")}.` : "Verification reported.";
   }
   // v0.38.55: the archive verification table always renders in full. Chat uses
-  // the aggregate line above instead.
+  // the opt-in aggregate line above instead; default chat omits this section.
   const tableLines = tableRows.length > 0
     ? [(gates.length > 0
       ? (showCommand ? "| Quality Gate | Command | Scope | Status | Notes |" : "| Quality Gate | Scope | Status | Notes |")
@@ -882,7 +893,7 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   }
   if (parts.verificationSummaryLine) {
     lines.push("### Verification", sanitizeDisplayText(parts.verificationSummaryLine), "");
-  } else if (parts.tableLines.length > 0) {
+  } else if (!parts.chat && parts.tableLines.length > 0) {
     lines.push("### Verification Summary", ...parts.tableLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.nextLines.length > 0) {
@@ -907,7 +918,7 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
   // captures the claim's carried recap BEFORE pendingCompletion is
   // cleared; the goal-field fallback covers direct callers.
   const priorWholeWork = priorWholeWorkOverride ?? goal.pendingCompletion?.priorCompletionSummary;
-  const brief = humanCompletionBrief(summary, 140, RICH_FULL_VALUE_BUDGET, priorWholeWork);
+  const brief = humanCompletionBrief(summary, 140, RICH_FULL_VALUE_BUDGET, priorWholeWork, true);
   const structured = structuredSummaryLines(priorWholeWork ?? summary);
   const history = goal.auditHistory ?? [];
   const latest = history[history.length - 1];
@@ -1030,6 +1041,10 @@ export interface TerminalApprovalRenderInput {
    * 3-col verification table.
    */
   gateRows?: GateRow[];
+  /** v0.38.98: show a compact verification sentence in the human terminal
+   * summary when the user explicitly asks for it. Full evidence remains in
+   * the archive regardless. */
+  showVerification?: boolean;
   /**
    * v0.38.55 (full parity): final repository state lines for the
    * `### Final Repository State` section — build with
@@ -1071,7 +1086,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     archivePath: input.archivePath,
   };
   const candidate = input.completionSummary ?? input.goal.completionSummary;
-  const recap = compactTerminalCompletionSummary(facts, candidate);
+  const recap = compactTerminalCompletionSummary(facts, candidate, 72, input.showVerification === true);
   // Rich voice (field 20260911_*): the chat/transcript render uses a
   // verbose brief (200-char values) while the outcome headline keeps
   // the 140-char budget. Filler drops via the same briefValueContent
@@ -1083,6 +1098,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     140,
     RICH_FULL_VALUE_BUDGET,
     input.priorCompletionSummary,
+    true,
   );
   // Structured-long (field 2026-09-16): a section-structured Outcome
   // earns the full `### Summary` section on the terminal card (and the
@@ -1125,6 +1141,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   // and full text plus the machine layer.
   const richParts = buildRichTerminalParts({
     chat: true,
+    showVerification: input.showVerification,
     outcome: richBrief.outcome,
     details: withoutStaleNext(richDetails),
     countsLine,
@@ -1158,11 +1175,11 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
  * word-bounded values. This is the user-facing `✓ done` block — six short
  * facts that stay scannable in chat. The single-line projection remains
  * for width-bound surfaces (TUI widget card, external notifies). */
-export function completionSummaryLines(text: string | undefined, maxValueLength = 240, lineWidth?: number): string[] {
+export function completionSummaryLines(text: string | undefined, maxValueLength = 240, lineWidth?: number, includeTests = true): string[] {
   const source = completionSummaryBody(text ?? "").replace(/\s+/g, " ").trim();
   const lower = source.toLowerCase();
   const positions = labelPositions(lower);
-  return COMPLETION_SUMMARY_LABELS.map((label) => {
+  return (includeTests ? COMPLETION_SUMMARY_LABELS : COMPLETION_SUMMARY_LABELS.filter((label) => label !== "Tests:")).map((label) => {
     const name = label.slice(0, -1);
     const current = positions.find((entry) => entry.label === label);
     if (!source || !current) return `${name}: not recorded`;
@@ -1274,8 +1291,9 @@ export function compactTerminalCompletionSummary(
   facts: CompletionSummaryFacts,
   candidate = facts.goal.completionSummary,
   maxValueLength = 72,
+  includeTests = false,
 ): string {
-  return compactCompletionSummary(resolveCompletionSummary(facts, candidate).summary, maxValueLength);
+  return compactCompletionSummary(resolveCompletionSummary(facts, candidate).summary, maxValueLength, includeTests);
 }
 
 /** Brief twin of compactTerminalCompletionSummary for the `✓ done` chat
@@ -1284,7 +1302,7 @@ export function terminalHumanBrief(
   facts: CompletionSummaryFacts,
   candidate = facts.goal.completionSummary,
 ): HumanCompletionBrief {
-  return humanCompletionBrief(resolveCompletionSummary(facts, candidate).summary);
+  return humanCompletionBrief(resolveCompletionSummary(facts, candidate).summary, 140, 120, undefined, false);
 }
 
 /** Multi-line twin of compactTerminalCompletionSummary for the `✓ done`
@@ -1294,8 +1312,9 @@ export function terminalCompletionSummaryLines(
   candidate = facts.goal.completionSummary,
   maxValueLength = 240,
   lineWidth?: number,
+  includeTests = false,
 ): string[] {
-  return completionSummaryLines(resolveCompletionSummary(facts, candidate).summary, maxValueLength, lineWidth);
+  return completionSummaryLines(resolveCompletionSummary(facts, candidate).summary, maxValueLength, lineWidth, includeTests);
 }
 
 /**
@@ -1355,5 +1374,5 @@ export function compactLoopCompletionSummary(loop: {
       historyLength: loop.historyLength ?? 0,
     })
     : undefined);
-  return compactCompletionSummary(summary);
+  return compactCompletionSummary(summary, 72, false);
 }

@@ -494,6 +494,9 @@ export interface PendingCompletion {
    * Absent means the flat six-label render stays the fallback.
    */
   findingGroups?: FindingGroup[];
+  /** v0.38.98: opt in to a compact verification sentence in the human
+   * terminal summary. Full test/gate evidence always remains in the archive. */
+  showVerification?: boolean;
 /**
  * v0.38.52: agent-supplied verification gate rows for the widened
  * terminal table (complete_goal gateRows, sanitized at claim time).
@@ -2429,6 +2432,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     exhaustedChain: _exhaustedChain,
     auditorThinkingLevel: _auditorThinkingLevel,
     timeoutEscalation: _timeoutEscalation,
+    showVerification: _showVerification,
     ...canonicalOrUnknown
   } = raw;
   const phase = _phase === "quota-waiting" ? "retry-waiting" : _phase;
@@ -2501,6 +2505,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
   // at the boundary degrades to absent (mechanical fallback), never to a
   // half-structured projection.
   const sanitizedGates = sanitizeGateRows(raw.gateRows);
+  const showVerification = _showVerification === true ? true : undefined;
   return {
     ...canonicalOrUnknown,
     ...(auditorCandidateRefs !== undefined ? { auditorCandidateRefs } : {}),
@@ -2520,6 +2525,7 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     ...(timeoutEscalation !== undefined ? { timeoutEscalation } : {}),
     ...(sanitizedGroups ? { findingGroups: sanitizedGroups } : {}),
     ...(sanitizedGates ? { gateRows: sanitizedGates } : {}),
+    ...(showVerification ? { showVerification: true } : {}),
     ...(phase === "running" || phase === "recovery-pending" || phase === "retry-waiting" ? { phase } : {}),
     ...(typeof raw.retryAttempts === "number"
       ? { retryAttempts: raw.retryAttempts }

@@ -29,16 +29,16 @@ for (const example of screenshotCases) test(`screenshot-derived ${example.name} 
       for (const token of evidence) assert.ok(archive.includes(token), `archive retains ${token}`);
     }
   }
-  // Chat keeps verification as one aggregate; the archive retains each
+  // Chat hides technical verification by default; the archive retains each
   // historical gate note and command for auditability.
-  assert.match(chat, /^### Verification\n.+$/m);
+  assert.doesNotMatch(chat, /^### Verification/m);
   assert.doesNotMatch(chat, /\| Quality Gate/);
   for (const gate of example.gates) {
     assert.ok(archive.includes(gate.notes!));
     if (gate.command) assert.ok(archive.includes(gate.command));
   }
   if (example.gates.some((gate) => /\b[1-9]\d*\s+fail/.test(gate.notes ?? ""))) {
-    assert.match(chat, /^### Verification\n[^\n]*\bfailed\b/m);
+    assert.doesNotMatch(chat, /^### Verification/m);
   }
 });
 

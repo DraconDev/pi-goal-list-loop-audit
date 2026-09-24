@@ -149,7 +149,7 @@ test("gate and projectors share last-occurrence segmentation on stolen labels", 
   assert.match(compactCompletionSummary(stolen), /Next: not recorded/, "projector and gate agree on the missing label");
 });
 
-test("v0.36.0: compact recap projection keeps all six labels and bounds each value", () => {
+test("v0.36.0: compact recap projection keeps the five human labels and bounds each value", () => {
   const compact = compactCompletionSummary([
     "Outcome: shipped the durable terminal path",
     "Changed: extensions/loops/goal-tools.ts and tests/impossible-list-drop.test.ts",
@@ -158,7 +158,8 @@ test("v0.36.0: compact recap projection keeps all six labels and bounds each val
     "Unresolved: none",
     "Next: none",
   ].join("\\n"), 24);
-  for (const label of ["Outcome:", "Changed:", "Evidence:", "Tests:", "Unresolved:", "Next:"]) assert.match(compact, new RegExp(label));
+  for (const label of ["Outcome:", "Changed:", "Evidence:", "Unresolved:", "Next:"]) assert.match(compact, new RegExp(label));
+  assert.doesNotMatch(compact, /Tests:/, "technical Tests stays out of the default recap");
   assert.ok(compact.includes(" · "), "projection is one scannable line");
   assert.ok(compact.includes("…"), "long values are bounded");
 });
@@ -175,7 +176,8 @@ test("v0.36.0: terminal notification projection resolves generic claims from dur
     stopReason: "user cancelled",
     archivePath: ".pi-glla/archive/terminal-notification.md",
   });
-  for (const label of ["Outcome:", "Changed:", "Evidence:", "Tests:", "Unresolved:", "Next:"]) assert.match(compact, new RegExp(label));
+  for (const label of ["Outcome:", "Changed:", "Evidence:", "Unresolved:", "Next:"]) assert.match(compact, new RegExp(label));
+  assert.doesNotMatch(compact, /Tests:/, "technical Tests stays out of the default terminal recap");
   assert.match(compact, /user cancelled/);
   assert.match(compact, /not recorded/);
   assert.doesNotMatch(compact, /done/);

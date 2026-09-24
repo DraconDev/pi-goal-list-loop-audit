@@ -96,7 +96,7 @@ test("repair re-claim preserves the whole-work recap in the approved render", { 
   assert.match(chat, /^## Done — Shipped the search rollout end to end/);
   assert.match(chat, /• auditor approved/);
   assert.match(chat, /Shipped the search rollout end to end/, "the whole-work outcome leads the repair-approved render");
-  assert.match(chat, /### Verification\n2 passed\./, "the whole-work verification survives as a compact aggregate");
+  assert.doesNotMatch(chat, /### Verification/, "verification stays in the archive by default");
   assert.doesNotMatch(chat, /2223 pass/, "test counts are supporting evidence, not the main chat narrative");
   assert.match(chat, /rollout doc plus full suite/, "the whole-work evidence survives");
   // Archive parity: the durable record's rich terminal section must carry

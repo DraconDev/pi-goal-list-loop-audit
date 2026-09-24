@@ -71,8 +71,9 @@ for (const idle of [true, false]) test(`pending is nonterminal; approval deliver
   assert.equal(entries.length, 1);
   assert.match(entries[0].content, /^## Done — Fixed routing/);
   assert.match(entries[0].content, /1\. \*\*Changed\*\* — router\.ts/);
-  // Chat keeps verification as a compact aggregate; the archive retains the full table.
-  assert.match(entries[0].content, /### Verification\n1 passed\./);
+  // Technical verification stays in the archive by default; the human chat
+  // carries the change story and record pointer.
+  assert.doesNotMatch(entries[0].content, /### Verification/);
   assert.doesNotMatch(entries[0].content, /Next:|await audit|Acknowledge briefly/);
   assert.match(entries[0].content, /• auditor approved \(1 verdict\)\./);
   assert.ok(JSON.parse(fs.readFileSync(approvalRenderStorePath(cwd), "utf8"))[0].deliveredAt);
@@ -90,7 +91,7 @@ test("complete_goal leftOut renders the deliberate-non-do bullet end to end", as
   assert.equal(entries.length, 1);
   assert.match(entries[0].content, /- \*\*Left out\*\* — the walkthrough artifact surface/);
   const lines = entries[0].content.split("\n");
-  assert.ok(lines.every((l: string) => l.startsWith("## ") || l.startsWith("### ") || l.startsWith("• ") || l === "" || /^\d+\. \*\*/.test(l) || l.startsWith("- **") || l.startsWith("\u2014 ") || /^\d+ (?:passed|failed|reported)/.test(l)), "posted summary is one change-first voice with compact verification");
+  assert.ok(lines.every((l: string) => l.startsWith("## ") || l.startsWith("### ") || l.startsWith("• ") || l === "" || /^\d+\. \*\*/.test(l) || l.startsWith("- **") || l.startsWith("\u2014 ")), "posted summary is one change-first voice");
   const numbered = lines.filter((l: string) => /^\d+\. \*\*/.test(l));
   assert.ok(numbered.length >= 1 && numbered.length <= 8, `posted summary carries numbered findings plus the trailer, got ${numbered.length}`);
   assert.ok(lines[lines.length - 1]!.startsWith("• record:"), "record pointer stays last");

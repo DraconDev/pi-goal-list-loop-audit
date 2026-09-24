@@ -574,6 +574,9 @@ function registerAgentTools(pi: any): void {
           "Renders as the closing `• Left out:` bullet in the user-facing terminal summary. " +
           "Omit when nothing was deliberately left out — absent stays absent, never invented.",
       })),
+      showVerification: Type.Optional(Type.Boolean({
+        description: "v0.38.98: set true only when the user explicitly asks to see test/verification details in the human summary. The default chat summary stays focused on what changed and what remains; the archive always retains the full evidence.",
+      })),
       findingGroups: Type.Optional(Type.Array(Type.Object({
         title: Type.String({ maxLength: 120, description: "Work-area name (e.g. a subsystem, screen, or phase)" }),
         findings: Type.Array(Type.String({ maxLength: 500 }), { maxItems: 6, description: "Findings in this area as `Lead: body with path:line evidence` (max 6 per area)" }),
@@ -640,7 +643,7 @@ function registerAgentTools(pi: any): void {
         }
         return { content: [{ type: "text", text: `No active goal — it is ${state.goal.status}.` }], details: {} };
       }
-      const p = params as { completionSummary?: string; verificationSummary?: string; newObjective?: string; leftOut?: string; findingGroups?: unknown; gateRows?: unknown; requestFullAudit?: boolean };
+      const p = params as { completionSummary?: string; verificationSummary?: string; newObjective?: string; leftOut?: string; showVerification?: boolean; findingGroups?: unknown; gateRows?: unknown; requestFullAudit?: boolean };
       if (state.goal.repairTarget) {
         return {
           content: [{ type: "text", text: `This repair card cannot be completed yet. Redraft the original target as a confirmed task list with propose_task_list (include objective: ${state.goal.repairTarget.objective.slice(0, 180)}), then continue the real work.` }],
@@ -894,6 +897,7 @@ function registerAgentTools(pi: any): void {
         // v0.38.37: the deliberate non-do rides the pending claim into
         // the terminal render — the only source the summary may cite.
         ...(p.leftOut?.trim() ? { leftOut: p.leftOut.trim().slice(0, 500) } : {}),
+        ...(p.showVerification === true ? { showVerification: true } : {}),
         ...(sanitizedGroups ? { findingGroups: sanitizedGroups } : {}),
         ...(sanitizedGates ? { gateRows: sanitizedGates } : {}),
         ...(priorWholeWork ? { priorCompletionSummary: priorWholeWork } : {}),
@@ -1416,6 +1420,7 @@ function registerAgentTools(pi: any): void {
         const escLeftOut = state.goal.pendingCompletion?.leftOut;
         const escFindingGroups = state.goal.pendingCompletion?.findingGroups;
         const escGateRows = state.goal.pendingCompletion?.gateRows;
+        const escShowVerification = state.goal.pendingCompletion?.showVerification;
         updateGoal({ status: "active", auditHistory: history, pendingCompletion: undefined, pauseReason: "audit aborted by user (Esc)" }, ctx);
         const abortConfirmCtx = freshCtxForGeneration(auditGeneration);
         if (!abortConfirmCtx) return staleToolResult();
@@ -1459,6 +1464,7 @@ function registerAgentTools(pi: any): void {
             // v0.38.37: the claim was cleared pre-confirm; the non-do was
             // captured from it above.
             ...(escLeftOut ? { leftOut: escLeftOut } : {}),
+            ...(escShowVerification ? { showVerification: true } : {}),
             ...(escFindingGroups ? { findingGroups: escFindingGroups } : {}),
             ...(escGateRows ? { gateRows: escGateRows } : {}),
             ...(escRepoState ? { repoState: escRepoState } : {}),
@@ -1522,6 +1528,7 @@ function registerAgentTools(pi: any): void {
           record: manualArchiveRecord,
           // v0.38.37: the deliberate non-do rides the durable claim.
           ...(durableCompletionClaim.leftOut ? { leftOut: durableCompletionClaim.leftOut } : {}),
+          ...(durableCompletionClaim.showVerification ? { showVerification: true } : {}),
           // v0.38.50: agent-structured finding groups ride the same claim.
           // v0.38.52: same for the gate inventory.
           ...(durableCompletionClaim.findingGroups ? { findingGroups: durableCompletionClaim.findingGroups } : {}),
