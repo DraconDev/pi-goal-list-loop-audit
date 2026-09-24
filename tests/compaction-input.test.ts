@@ -173,3 +173,30 @@ test("returns no compaction result and tolerates a missing preparation", () => {
   assert.equal("compaction" in result, false);
   assert.equal("result" in result, false);
 });
+
+test("preserves both preparation-array identities when projection is a no-op", () => {
+  const messagesToSummarize = [{ role: "user", content: "short" }];
+  const turnPrefixMessages = [{ role: "assistant", content: "also short" }];
+  const prep = { messagesToSummarize, turnPrefixMessages };
+
+  const result = projectCompactionPreparation(prep);
+
+  assert.equal(result.changed, false);
+  assert.equal(result.messagesToSummarize, messagesToSummarize);
+  assert.equal(result.turnPrefixMessages, turnPrefixMessages);
+  assert.equal(prep.messagesToSummarize, messagesToSummarize);
+  assert.equal(prep.turnPrefixMessages, turnPrefixMessages);
+});
+
+test("preserves the untouched half when only one preparation array needs projection", () => {
+  const history = [{ role: "user", content: "A".repeat(12_000) }];
+  const prefix = [{ role: "user", content: "short" }];
+  const prep = { messagesToSummarize: history, turnPrefixMessages: prefix };
+
+  const result = projectCompactionPreparation(prep);
+
+  assert.equal(result.changed, true);
+  assert.notEqual(result.messagesToSummarize, history);
+  assert.equal(result.turnPrefixMessages, prefix);
+  assert.equal(prep.turnPrefixMessages, prefix);
+});

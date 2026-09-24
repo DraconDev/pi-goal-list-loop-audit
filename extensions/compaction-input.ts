@@ -468,6 +468,14 @@ function countChangedMessages(original: readonly unknown[], projected: readonly 
   return changed;
 }
 
+function sameMessageElements(left: readonly unknown[], right: readonly unknown[]): boolean {
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) return false;
+  }
+  return true;
+}
+
 function countProjectionFields(
   original: readonly unknown[],
   projected: readonly unknown[],
@@ -571,10 +579,18 @@ export function projectCompactionPreparation(
 
   const bounded = countChangedMessages(original, projected);
   const fieldStats = countProjectionFields(original, projected);
+  const projectedHistory = projected.slice(0, history.length);
+  const projectedPrefix = projected.slice(history.length);
+  // Keep each preparation array's identity when that half of the projection
+  // is a no-op. Pi and other extensions may retain references to these
+  // arrays while they inspect the shared preparation object.
+  const historyChanged = hasHistory && !sameMessageElements(history, projectedHistory);
+  const prefixChanged = hasPrefix && !sameMessageElements(prefix, projectedPrefix);
+  const changed = bounded > 0 || goalProjection.bounded > 0;
   const result: CompactionInputProjectionResult = {
-    changed: bounded > 0 || goalProjection.bounded > 0,
-    messagesToSummarize: projected.slice(0, history.length),
-    turnPrefixMessages: projected.slice(history.length),
+    changed,
+    messagesToSummarize: historyChanged ? projectedHistory : history,
+    turnPrefixMessages: prefixChanged ? projectedPrefix : prefix,
     inputCharsBefore: before,
     inputCharsAfter: after,
     boundedMessages: bounded,
@@ -585,7 +601,7 @@ export function projectCompactionPreparation(
     scale,
   };
 
-  if (hasHistory) preparation.messagesToSummarize = result.messagesToSummarize;
-  if (hasPrefix) preparation.turnPrefixMessages = result.turnPrefixMessages;
+  if (historyChanged) preparation.messagesToSummarize = result.messagesToSummarize;
+  if (prefixChanged) preparation.turnPrefixMessages = result.turnPrefixMessages;
   return result;
 }
