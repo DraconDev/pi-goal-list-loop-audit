@@ -3102,3 +3102,5 @@
 {"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-24T14:34:29.637Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":null,"contextUsage":{"tokens":null,"contextWindow":200000,"percent":null}},"at":"2026-09-24T14:37:30.759Z"}
 {"type":"compaction_inflight_start","value":{"generation":535},"at":"2026-09-24T15:04:45.983Z"}
+{"type":"session_compact_failed","value":{"reason":"threshold","error":"Auto-compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete","aborted":false,"willRetry":false,"fromExtension":false,"generation":535},"at":"2026-09-24T15:10:14.467Z"}
+{"type":"compaction_inflight_start","value":{"generation":535},"at":"2026-09-24T15:10:27.443Z"}
