@@ -70,6 +70,13 @@ test("redirect parks the goal but keeps the turn alive for the user's new task",
     assert.match(res.content[0]!.text, /same turn/i, "the result orders same-turn work");
     assert.match(res.content[0]!.text, /two Gmail links/, "the result echoes the redirect");
     assert.doesNotMatch(res.content[0]!.text, /do NOT continue working/, "no stop order on a redirect");
+    const reminder = pi.sent.find((entry) => entry.message.customType === "glla-action-reminder");
+    assert.equal(reminder?.message.display, true, "redirect gets a prominent reminder card");
+    assert.match(String(reminder?.message.content), /Goal safely parked — handling your new request now/);
+    assert.match(String(reminder?.message.content), /open the two Gmail links/);
+    assert.match(String(reminder?.message.content), /saved goal is held while the current turn handles the new request/);
+    assert.doesNotMatch(String(reminder?.message.content), /this turn stopped/);
+    assert.equal((reminder?.message as { details?: { parkState?: string } } | undefined)?.details?.parkState, "redirect");
   } finally {
     await pi.fire("session_shutdown", { reason: "quit" }, ctx);
   }

@@ -8,7 +8,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags } from "../extensions/loops/goal.js";
 import { state, replaceState } from "../extensions/goal-state.js";
-import { clearPauseAbort, markPauseAbort } from "../extensions/action-reminder.js";
+import { clearPauseAbort, markActionReminderTurnStart, markPauseAbort } from "../extensions/action-reminder.js";
 import { MockPi, makeMockCtx, tmpCwd, seedState, seedGoal } from "./harness/mock-pi.js";
 
 const GLOBAL_SETTINGS_PATH = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
@@ -86,6 +86,7 @@ test("integration: a GLLA pause abort becomes an actionable assistant message", 
   replaceState({ goal, list: [], loop: null } as any);
   const handler = pi.handlers.get("message_end");
   assert.ok(handler, "message_end handler registered");
+  markActionReminderTurnStart();
   markPauseAbort({
     ownerSession: ctx.sessionManager,
     goalId: String(goal.id),
@@ -115,6 +116,7 @@ test("integration: a marked pause without suggestedAction still replaces generic
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "no-action-sm", getSessionFile: () => path.join(cwd, "sm.jsonl"), getSessionId: () => "no-action-sm" } } as any);
   await pi.fire("session_start", { reason: "startup" }, ctx);
   const handler = pi.handlers.get("message_end");
+  markActionReminderTurnStart();
   markPauseAbort({
     ownerSession: ctx.sessionManager,
     goalId: String(goal.id),
@@ -127,6 +129,33 @@ test("integration: a marked pause without suggestedAction still replaces generic
   assert.match(text, /required local credential/);
   assert.match(text, /Next: \/goal resume/);
   assert.doesNotMatch(text, /Operation aborted/);
+});
+
+test("integration: starting a later turn invalidates an unconsumed pause marker", async () => {
+  __testOnlyResetStaleFlag();
+  __testOnlyResetTerminalFlags();
+  __testOnlyResetOwnerSession();
+  const pi = new MockPi();
+  activate(pi.api);
+  const cwd = tmpCwd();
+  const goal = seedGoal({ id: "new-turn-goal", status: "paused", pauseKind: "blocked", pauseReason: "A prior turn paused before its abort settled.", pauseSuggestedAction: "Complete the prior action." });
+  seedState(cwd, { goal });
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "new-turn-sm", getSessionFile: () => path.join(cwd, "sm.jsonl"), getSessionId: () => "new-turn-sm" } } as any);
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  const handler = pi.handlers.get("message_end");
+  assert.ok(handler, "message_end handler registered");
+  markActionReminderTurnStart();
+  markPauseAbort({
+    ownerSession: ctx.sessionManager,
+    goalId: String(goal.id),
+    kind: "blocked",
+    reason: String(goal.pauseReason),
+    action: typeof goal.pauseSuggestedAction === "string" ? goal.pauseSuggestedAction : undefined,
+    resumeCommand: "/goal resume",
+  });
+  await pi.fire("agent_start", {}, ctx);
+  const result: any = await (handler as any)({ message: { role: "assistant", stopReason: "aborted", errorMessage: "Operation aborted", content: [] } }, ctx);
+  assert.equal(result, undefined, "a new turn boundary invalidates the old pause marker");
 });
 
 test("integration: a stale pause marker cannot rewrite a later unrelated abort", async () => {

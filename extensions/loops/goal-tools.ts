@@ -2468,25 +2468,6 @@ function registerAgentTools(pi: any): void {
           : {}),
       }, ctx);
       if (p.kind === "decision" && p.options && p.options.length > 0) maybeDecisionPopup(ctx);
-      // v0.27.1: surface the FULL pause contract — reason AND suggested
-      // action. Before, the action only appeared in /goal status and the
-      // widget truncated both at ~60 chars, so decision-pauses ("choose a
-      // or b") reached the user as an unreadable fragment.
-      const reminder = buildActionReminder({
-        kind: p.kind ?? "blocked",
-        reason: safePauseReason,
-        action: safePauseAction,
-        resumeCommand: activeGoalSurfaceCommand("resume"),
-        resumeAt: storedResumeAt,
-      });
-      extensionApi?.sendMessage({
-        customType: ACTION_REMINDER_CUSTOM_TYPE,
-        content: reminder.content,
-        display: true,
-        details: reminder.details,
-      }, { triggerTurn: false });
-      ctx.ui.notify(`${goalNoun()} paused: ${safePauseReason}${safePauseAction ? `\n\n→ ${safePauseAction}` : ""}`, "info");
-      notifyExternal(ctx, `${goalNoun()} paused: ${(safePauseAction ? `${safePauseReason} → ${safePauseAction}` : safePauseReason).slice(0, 200)}`);
       // v0.34.70 — impossible list items auto-drop (note.md 2026-08-07:
       // "auto drop impossible ones i think or auto adjust instead of stopping").
       // DEFINED IMPOSSIBLE STATE: a /list item paused as kind="blocked" with
@@ -2591,6 +2572,29 @@ function registerAgentTools(pi: any): void {
       // Ledgered distinctly so redirect parks don't pollute abort
       // forensics. An impossible-drop still wins the result copy below.
       const redirect = (p.redirect ?? "").trim();
+      // v0.27.1: surface the FULL pause contract — reason AND suggested
+      // action. Emit the canonical card only after impossible-drop and
+      // redirect branching so a list handoff never claims a stopped turn,
+      // and a redirect clearly says the saved goal is held while this turn
+      // handles the new request.
+      if (!droppedImpossible) {
+        const reminder = buildActionReminder({
+          kind: p.kind ?? "blocked",
+          reason: safePauseReason,
+          action: redirect ? `Handle the new request now: ${redirect}` : safePauseAction,
+          resumeCommand: activeGoalSurfaceCommand("resume"),
+          resumeAt: storedResumeAt,
+          parkState: redirect ? "redirect" : undefined,
+        });
+        extensionApi?.sendMessage({
+          customType: ACTION_REMINDER_CUSTOM_TYPE,
+          content: reminder.content,
+          display: true,
+          details: reminder.details,
+        }, { triggerTurn: false });
+        ctx.ui.notify(`${goalNoun()} paused: ${safePauseReason}${safePauseAction ? `\n\n→ ${safePauseAction}` : ""}`, "info");
+        notifyExternal(ctx, `${goalNoun()} paused: ${(safePauseAction ? `${safePauseReason} → ${safePauseAction}` : safePauseReason).slice(0, 200)}`);
+      }
       if (!droppedImpossible && !redirect) {
         markPauseAbort({
           ownerSession: ctx.sessionManager,

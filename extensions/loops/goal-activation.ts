@@ -281,10 +281,11 @@ import {
   type ModelPickItem,
 } from "../model-picker.js";
 import { consumeRecoveryResume } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
-import { buildAbortedAssistantNotice, clearPauseAbort, consumePauseAbort } from "../action-reminder.js";
+import { buildAbortedAssistantNotice, clearPauseAbort, consumePauseAbort, markActionReminderTurnStart } from "../action-reminder.js";
 import { payloadGuardProjection } from "../payload-guard.js"; // v0.35.51 image-413 guard
 import { dropFailedErrorOnlyTurns, pruneCompactionPreparation } from "../context-hygiene.js"; // v0.35.52 error-turn hygiene
 import { projectCompactionPreparation } from "../compaction-input.js"; // bounded default-compactor input
+import { classifyCompactionFailure } from "../compaction-failure.js"; // public host failure lifecycle
 import { buildAuthoritativeContextCheckpoint, projectBoundedGllaContext } from "../context-checkpoint.js"; // v0.36.2 bounded continuation context
 import {
   createGoalHeartbeat,
@@ -1115,15 +1116,13 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
   }
 
 
-  // A failed compaction is a first-class lifecycle boundary. Pi emits this
-  // event for manual/threshold/overflow failures, but never emits
-  // session_compact and never retries the failed summary. Without this
-  // handler, compactionInFlightSince remains armed for up to 30 minutes and
-  // GLLA's watchdog narrates a phantom busy turn while the context is still
-  // over cap. Settle the marker, record the failure, and immediately walk a
-  // configured larger-context model; if none exists, park active work with
-  // the exact /new + resume recovery instead of leaving an unreachable ACTIVE
-  // goal behind.
+  // A failed compaction attempt is a first-class lifecycle boundary. Pi owns
+  // the compactor, cut point, persistence, and any retry. GLLA only consumes
+  // this public event: settle its current-attempt marker and observe the
+  // outcome. A willRetry attempt must remain entirely host-owned; terminal
+  // prompt-overflow failures may use the configured model fallback, while an
+  // output-capped or otherwise terminal summarization failure parks durable
+  // work instead of misclassifying the model as unable to hold the context.
   // Pi 0.87 added session_compact_failed after this package's minimum
   // peer contract. Register through a narrow compatibility cast so GLLA can
   // consume the event on new hosts while still compiling against 0.84.
@@ -1148,36 +1147,43 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     noteCompactionSettled();
     const raw = event.errorMessage ?? "compaction failed";
     const safe = sanitizeDisplayText(raw).replace(/\s+/g, " ").trim().slice(0, 300) || "compaction failed";
+    const failure = classifyCompactionFailure(event);
     appendLedger(ctx.cwd, "session_compact_failed", {
       reason: event.reason ?? "unknown",
       error: safe,
+      failureKind: failure.kind,
       aborted: event.aborted === true,
       willRetry: event.willRetry === true,
       fromExtension: event.fromExtension === true,
       generation: sessionGeneration,
     });
-    if (event.aborted === true || !isSupervising()) return;
+    if (failure.kind === "retry-owned" || failure.kind === "aborted" || failure.kind === "from-extension" || !isSupervising()) return;
 
-    // Failure is itself positive evidence that the current model could not
-    // summarize/serve the context. Use the same ordered fallback selector as
-    // a post-compaction context overflow; the selected model gets one bounded
-    // continuation probe below.
-    if (mainModelFallbackRefs(ctx).length > 0) {
-      const switched = await recoverFromContextOverflow(ctx, `${raw} — context compaction failed`);
+    // Only a terminal failure that specifically says the prompt still cannot
+    // fit justifies a model rotation. A truncated/incomplete summary is a
+    // summarization-output failure, not proof that a fallback has a larger
+    // effective context window.
+    if (failure.kind === "context-overflow" && mainModelFallbackRefs(ctx).length > 0) {
+      const switched = await recoverFromContextOverflow(ctx, `${failure.raw} — context compaction failed`);
       if (switched) {
-        ctx.ui.notify("glla: compaction failed — rotated to a larger-context backup model and queued one recovery probe.", "warning");
+        ctx.ui.notify("glla: context compaction failed — rotated to a configured fallback model and queued one durable recovery probe.", "warning");
+        // The immediate probe is only the fast path. Keep the established
+        // resume/resync debt armed until agent_start actually consumes it,
+        // so a busy/lost timer cannot strand the switched model idle.
+        postCompactResumeOwed = true;
+        postCompactResyncPending = true;
         if (isLoopActive()) scheduleLoopTick(ctx);
         else scheduleContinuation(ctx, true, 1_000);
         return;
       }
     }
 
-    // No usable backup: fail closed and durably. An ACTIVE goal/loop that
-    // cannot fit its own context must not masquerade as WORKING/IDLE while
-    // every automatic send is refused. The operator path is /new (fresh empty
-    // projection), then resume from this durable record.
-    const reason = `context overflow — compaction failed: ${safe}`;
-    const action = `Run /new, then ${activeGoalSurfaceCommand("resume")} to reload the durable goal/task state without a summarization pass${mainModelFallbackRefs(ctx).length > 0 ? "; if a larger-context fallback is configured, fix its model/auth first" : ""}.`;
+    // Terminal summarization/provider failure without a safe fallback: fail
+    // closed and durably. An ACTIVE goal/loop must not masquerade as
+    // WORKING/IDLE while every automatic send is refused. The operator path
+    // is /new (fresh empty projection), then resume from durable state.
+    const reason = `${failure.kind === "context-overflow" ? "context overflow" : failure.kind === "summarization-length" ? "summarization output limit" : "compaction failure"}: ${safe}`;
+    const action = `Run /new, then ${activeGoalSurfaceCommand("resume")} to reload the durable goal/task state without a summarization pass${failure.kind === "summarization-length" ? "; then retry compaction after increasing the summarizer/model output budget" : mainModelFallbackRefs(ctx).length > 0 ? "; if a fallback is configured, fix its model/auth first" : ""}.`;
     if (state.loop?.active) {
       clearLoopTimer();
       state.loop = { ...state.loop, active: false, stopReason: reason };
@@ -3017,6 +3023,7 @@ async function handleHotLengthExhaustion(
     }
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(ctx)) return;
     ensureAgentToolsReady(ctx, true);
+    markActionReminderTurnStart();
     lastStreamActivityAt = Date.now();
     lastTurnStartAt = lastStreamActivityAt;
     streamActivityObserved = true;
