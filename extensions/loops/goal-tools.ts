@@ -422,6 +422,7 @@ import {
 import { defineGoalRuntimeGlobal } from "./goal-runtime-globals.js";
 import { releaseAuditorSurface } from "./goal-auditor-surface.js";
 import { chooseObjectiveConflict, liveObjectives, type ObjectiveKind } from "../goal-objective-conflict.js";
+import { ACTION_REMINDER_CUSTOM_TYPE, buildActionReminder } from "../action-reminder.js";
 import { assessSuspiciousObjective, isSuspiciousObjectivePause } from "../faulty-objective-recovery.js";
 
 type AuditorModelCandidate = any;
@@ -2471,6 +2472,18 @@ function registerAgentTools(pi: any): void {
       // action. Before, the action only appeared in /goal status and the
       // widget truncated both at ~60 chars, so decision-pauses ("choose a
       // or b") reached the user as an unreadable fragment.
+      const reminder = buildActionReminder({
+        kind: p.kind ?? "blocked",
+        reason: safePauseReason,
+        action: safePauseAction,
+        resumeCommand: activeGoalSurfaceCommand("resume"),
+      });
+      extensionApi?.sendMessage({
+        customType: ACTION_REMINDER_CUSTOM_TYPE,
+        content: reminder.content,
+        display: true,
+        details: reminder.details,
+      }, { triggerTurn: false });
       ctx.ui.notify(`${goalNoun()} paused: ${safePauseReason}${safePauseAction ? `\n\n→ ${safePauseAction}` : ""}`, "info");
       notifyExternal(ctx, `${goalNoun()} paused: ${(safePauseAction ? `${safePauseReason} → ${safePauseAction}` : safePauseReason).slice(0, 200)}`);
       // v0.34.70 — impossible list items auto-drop (note.md 2026-08-07:

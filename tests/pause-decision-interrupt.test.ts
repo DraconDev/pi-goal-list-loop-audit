@@ -151,6 +151,10 @@ test("decision pause persists options AND aborts the turn so the picker owns an 
     "abort ledgered",
   );
   assert.match(res.content[0]!.text, /turn ends here/);
+  assert.ok(pi.sent.some((entry) => entry.message.customType === "glla-action-reminder" && entry.message.display === true), "the pause has a GLLA-owned actionable reminder");
+  const reminder = pi.sent.find((entry) => entry.message.customType === "glla-action-reminder");
+  assert.match(String(reminder?.message.content), /safely parked/);
+  assert.match(String(reminder?.message.content), /decision card/);
 });
 
 test("options without kind are inferred as decision — no silently dropped picker", async () => {

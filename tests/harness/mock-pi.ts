@@ -74,6 +74,7 @@ export class MockPi {
    * subscribes to pi-subagents lifecycle channels here; tests fire spawn
    * events via emitBus(). */
   eventHandlers = new Map<string, Array<(data: unknown) => void>>();
+  messageRenderers = new Map<string, (...args: any[]) => unknown>();
   readonly api: ExtensionAPI;
 
   constructor() {
@@ -84,6 +85,9 @@ export class MockPi {
       },
       registerCommand(name: string, spec: { handler: (args: string, ctx: unknown) => Promise<void> }): void {
         self.commands.set(name, spec.handler);
+      },
+      registerMessageRenderer(customType: string, renderer: (...args: any[]) => unknown): void {
+        self.messageRenderers.set(customType, renderer);
       },
       on(event: string, handler: (...args: never[]) => Promise<void>): void {
         self.handlers.set(event, handler);

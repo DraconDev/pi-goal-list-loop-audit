@@ -16,6 +16,7 @@ import "./goal-auditor-hooks.js";
 import "./goal-list-queue.js";
 import "./goal-tools.js";
 import "./goal-settings-ui.js";
+import { registerActionReminderRenderer } from "../action-reminder.js";
 import { abortZombieRun, enqueueFaultRepairTask, registerGoalRuntime, resetLengthExhaustionEpisodes, __testOnlyResetLengthExhaustionEpisodes, __testOnlyResetZombieAutoRetry } from "./goal-activation.js";
 // v0.38.88: members of the __testOnlyResetProcessState composite.
 import { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags, __testOnlyResetOwnershipRecheck } from "./goal-session.js";
@@ -449,6 +450,7 @@ createGoalHeartbeat(heartbeatFlags, heartbeatDeps);
 
 
 export default function (pi: ExtensionAPI): void {
+  registerActionReminderRenderer(pi);
   // Factory evaluation can also happen inside pi-subagents child sessions.
   // Registration must not claim the shared host API or start session timers;
   // the admitted host session_start below owns both lifecycle resources.
