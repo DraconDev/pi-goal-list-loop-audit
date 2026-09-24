@@ -3323,7 +3323,8 @@ test("/loop cancel: first-class alias stops the loop (stopReason recorded)", asy
   assert.equal(loop.stopReason, "stopped by user (/loop cancel)", "cancel verb recorded");
   assert.ok(ctx.ui.matching("Loop stopped").length >= 1, "stop summary shown");
   const recap = ctx.ui.notifies.find((notice) => notice.message.includes("Recap: Outcome:"));
-  assert.ok(recap, "loop cancel notification includes the compact six-label recap");
+  assert.ok(recap, "loop cancel notification includes the compact human recap");
+  assert.doesNotMatch(recap!.message, /Tests:/, "technical Tests stays out of default loop notification");
 });
 
 test("/loop finish persists and notifies the complete six-label recap", async () => {
@@ -3339,7 +3340,8 @@ test("/loop finish persists and notifies the complete six-label recap", async ()
   assert.equal(loop.stopReason, "completed: audit pass");
   for (const label of ["Outcome:", "Changed:", "Evidence:", "Tests:", "Unresolved:", "Next:"]) assert.match(loop.completionSummary ?? "", new RegExp(label));
   const recap = ctx.ui.notifies.find((notice) => notice.message.includes("Recap: Outcome:"));
-  assert.ok(recap, "finish notification includes the compact six-label recap");
+  assert.ok(recap, "finish notification includes the compact human recap");
+  assert.doesNotMatch(recap!.message, /Tests:/, "technical Tests stays out of default loop notification");
   assert.match(fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8"), /loop_completion_summary/);
 });
 
