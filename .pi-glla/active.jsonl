@@ -3336,3 +3336,6 @@
 {"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:40:59.280Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:41:05.158Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:41:10.487Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":5,"kept":1,"lastError":"JSON error injected into SSE stream","generation":537},"at":"2026-09-24T17:41:32.022Z"}
+{"type":"context_hygiene_compaction_input","value":{"dropped":5,"generation":537},"at":"2026-09-24T17:41:57.019Z"}
+{"type":"compaction_inflight_start","value":{"generation":537},"at":"2026-09-24T17:41:57.019Z"}

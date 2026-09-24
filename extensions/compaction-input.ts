@@ -29,6 +29,7 @@ export const DEFAULT_MAX_COMPACTION_USER_CHARS = 4_096;
 export const DEFAULT_MAX_COMPACTION_CUSTOM_CHARS = 4_096;
 export const DEFAULT_MAX_COMPACTION_BASH_OUTPUT_CHARS = 4_096;
 export const DEFAULT_MAX_COMPACTION_SUMMARY_CHARS = 8_192;
+export const DEFAULT_MAX_COMPACTION_PREVIOUS_SUMMARY_CHARS = 4_096;
 
 const TRUNCATION_MARKER = "\n[…glla compaction truncation; full content remains in the session transcript…]";
 const COMPACT_TRUNCATION_MARKER = "…";
@@ -52,6 +53,7 @@ export interface CompactionInputOptions {
   maxCustomChars?: number;
   maxBashOutputChars?: number;
   maxSummaryChars?: number;
+  maxPreviousSummaryChars?: number;
 }
 
 export interface CompactionInputStats {
@@ -102,6 +104,7 @@ interface ProjectionLimits {
   custom: number;
   bashOutput: number;
   summary: number;
+  previousSummary: number;
 }
 
 interface FieldProjection {
@@ -148,6 +151,7 @@ function baseLimits(options: CompactionInputOptions): ProjectionLimits {
     custom: positiveLimit(options.maxCustomChars, DEFAULT_MAX_COMPACTION_CUSTOM_CHARS),
     bashOutput: positiveLimit(options.maxBashOutputChars, DEFAULT_MAX_COMPACTION_BASH_OUTPUT_CHARS),
     summary: positiveLimit(options.maxSummaryChars, DEFAULT_MAX_COMPACTION_SUMMARY_CHARS),
+    previousSummary: positiveLimit(options.maxPreviousSummaryChars, DEFAULT_MAX_COMPACTION_PREVIOUS_SUMMARY_CHARS),
   };
 }
 
@@ -165,6 +169,7 @@ function scaleLimits(limits: ProjectionLimits, scale: number): ProjectionLimits 
     custom: scaledLimit(limits.custom, scale, MIN_SCALED_TEXT_CHARS),
     bashOutput: scaledLimit(limits.bashOutput, scale, MIN_SCALED_TEXT_CHARS),
     summary: scaledLimit(limits.summary, scale, MIN_SCALED_TEXT_CHARS),
+    previousSummary: scaledLimit(limits.previousSummary, scale, MIN_SCALED_TEXT_CHARS),
   };
 }
 
@@ -766,10 +771,15 @@ export function projectCompactionPreparation(
   const history = hasHistory ? preparation.messagesToSummarize as unknown[] : [];
   const prefix = hasPrefix ? preparation.turnPrefixMessages as unknown[] : [];
   const original = [...history, ...prefix];
-  const before = estimateMessagesChars(original);
+  const before = estimateMessagesChars(original) + (typeof preparation.previousSummary === "string" ? preparation.previousSummary.length : 0);
+  const previousSummary = typeof preparation.previousSummary === "string"
+    ? boundCompactionText(preparation.previousSummary, baseLimits(options).previousSummary)
+    : preparation.previousSummary;
+  const previousSummaryChars = typeof previousSummary === "string" ? previousSummary.length : 0;
   const goalProjection = boundOldGoalPayloads(original);
   const limits = baseLimits(options);
   const budget = positiveLimit(options.maxInputChars, DEFAULT_COMPACTION_INPUT_CHAR_BUDGET, 1);
+  const messageBudget = Math.max(1, budget - previousSummaryChars);
 
   let scale = 1;
   let fieldProjected = goalProjection.messages.map((message) => projectMessage(message, limits).value);
@@ -777,7 +787,7 @@ export function projectCompactionPreparation(
   // A descending pass is intentionally simple and deterministic. It avoids a
   // dependency on Pi's serializer and remains monotonic enough for the JSON
   // shaped values used by the preparation contract.
-  while (fieldProjectedAfter > budget && scale > 0.01) {
+  while (fieldProjectedAfter > messageBudget && scale > 0.01) {
     scale = Math.max(0.01, scale * 0.65);
     const scaled = scaleLimits(limits, scale);
     fieldProjected = goalProjection.messages.map((message) => projectMessage(message, scaled).value);
@@ -786,7 +796,7 @@ export function projectCompactionPreparation(
 
   const fieldStats = countProjectionFields(original, fieldProjected);
   const units = buildSemanticUnits(fieldProjected.slice(0, history.length), fieldProjected.slice(history.length));
-  const selection = selectBoundedUnits(units, budget);
+  const selection = selectBoundedUnits(units, messageBudget);
   const omittedByHalf = { history: 0, prefix: 0 };
   let omittedSourceMessages = 0;
   for (let index = 0; index < selection.omitted; index += 1) {
@@ -807,7 +817,7 @@ export function projectCompactionPreparation(
     else selectedHistory = [markerMessage, ...selectedHistory];
   }
   const projected = [...selectedHistory, ...selectedPrefix];
-  const after = selection.after;
+  const after = selection.after + previousSummaryChars;
   const bounded = countChangedMessages(original, projected);
   const boundedFields = fieldStats.fields + selection.selected.reduce((sum, unit) => sum + unit.omittedToolCalls + unit.boundedFields, 0);
   const boundedImages = fieldStats.images;
@@ -822,7 +832,7 @@ export function projectCompactionPreparation(
   // arrays while they inspect the shared preparation object.
   const historyChanged = hasHistory && !sameMessageElements(history, projectedHistory);
   const prefixChanged = hasPrefix && !sameMessageElements(prefix, projectedPrefix);
-  const changed = bounded > 0 || goalProjection.bounded > 0 || selection.omitted > 0;
+  const changed = bounded > 0 || goalProjection.bounded > 0 || selection.omitted > 0 || (typeof preparation.previousSummary === "string" && preparation.previousSummary !== previousSummary);
   const result: CompactionInputProjectionResult = {
     changed,
     messagesToSummarize: historyChanged ? projectedHistory : history,
@@ -846,5 +856,6 @@ export function projectCompactionPreparation(
 
   if (historyChanged) preparation.messagesToSummarize = result.messagesToSummarize;
   if (prefixChanged) preparation.turnPrefixMessages = result.turnPrefixMessages;
+  if (typeof preparation.previousSummary === "string" && preparation.previousSummary !== previousSummary) preparation.previousSummary = previousSummary;
   return result;
 }
