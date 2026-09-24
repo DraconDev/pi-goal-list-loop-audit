@@ -18,7 +18,8 @@ we def need a better interaction reminder than operation aborteer and some instr
 
 ##
 /home/dracon/Pictures/Screenshots/Screenshot_20260924_120430.png 
-auto compact fialed 
+/home/dracon/Pictures/Screenshots/Screenshot_20260924_124137.png 
+compact failed 
 
 # Later
 
