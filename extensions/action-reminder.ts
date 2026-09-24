@@ -133,7 +133,6 @@ export function buildActionReminder(input: {
   const parkState = input.parkState ?? (
     input.kind === "wait" || input.kind === "standby" ? "automatic" : "stopped"
   );
-  const automaticWake = parkState === "automatic";
   const presentation = buildPausePresentation({
     kind: input.kind,
     reason,
@@ -148,7 +147,9 @@ export function buildActionReminder(input: {
     `Why: ${presentation.why}`,
     parkState === "redirect"
       ? "The saved goal is held while the current turn handles the new request."
-      : "Your saved work is intact; this turn stopped before more work could be lost.",
+      : parkState === "automatic"
+        ? "Your saved work is intact; no manual action is needed."
+        : "Your saved work is intact; this turn stopped before more work could be lost.",
     presentation.next,
     ...(diagnostic ? [`Diagnostic: ${diagnostic}`] : []),
   ].join("\n");
@@ -253,7 +254,9 @@ export function registerActionReminderRenderer(pi: ExtensionAPI): void {
     if (presentation.next) box.addChild(new Text(theme.fg("accent", presentation.next), 0, 0));
     if (presentation.parkState === "redirect") {
       box.addChild(new Text(theme.fg("dim", "The saved goal is held while the current turn handles the new request."), 0, 0));
-    } else if (presentation.parkState === "stopped") {
+    } else if (presentation.parkState === "automatic") {
+      box.addChild(new Text(theme.fg("dim", "Your saved work is intact; no manual action is needed."), 0, 0));
+    } else {
       box.addChild(new Text(theme.fg("dim", "Your saved work is intact; this turn stopped before more work could be lost."), 0, 0));
     }
     if (presentation.resumeCommand && presentation.parkState !== "automatic") {

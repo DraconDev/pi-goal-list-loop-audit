@@ -29,6 +29,8 @@ test("standby renderer keeps the background-wake explanation visible", () => {
   }));
   assert.match(text, /GLLA Waiting/);
   assert.match(text, /background completion will wake/);
+  assert.match(text, /no manual action is needed/);
+  assert.doesNotMatch(text, /this turn stopped/);
   assert.doesNotMatch(text, /Next:/);
 });
 
@@ -128,6 +130,8 @@ test("timed wait is automatic and does not invent a manual action", () => {
   const text = renderReminder(reminder);
   assert.match(text, /GLLA Waiting — work is safely parked/);
   assert.match(text, /resumes automatically at 2026-09-24T23:59:00\.000Z/);
+  assert.match(text, /no manual action is needed/);
+  assert.doesNotMatch(text, /this turn stopped/);
   assert.doesNotMatch(text, /Next:/);
   assert.doesNotMatch(text, /Resume: \/list resume/);
   assert.equal(reminder.details.safelyParked, true);
