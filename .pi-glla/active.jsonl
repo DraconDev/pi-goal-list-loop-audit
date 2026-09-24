@@ -3100,3 +3100,4 @@
 {"type":"compaction_inflight_start","value":{"generation":535},"at":"2026-09-24T13:50:55.151Z"}
 {"type":"compaction_inflight_start","value":{"generation":535},"at":"2026-09-24T14:01:21.286Z"}
 {"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-24T14:34:29.637Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":null,"contextUsage":{"tokens":null,"contextWindow":200000,"percent":null}},"at":"2026-09-24T14:37:30.759Z"}
