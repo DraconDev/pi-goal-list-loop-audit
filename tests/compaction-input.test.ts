@@ -200,3 +200,117 @@ test("preserves the untouched half when only one preparation array needs project
   assert.equal(result.turnPrefixMessages, prefix);
   assert.equal(prep.turnPrefixMessages, prefix);
 });
+
+test("bounds every supported preparation shape and preserves pairing/order", () => {
+  const firstCall = id("first-");
+  const secondCall = id("second-");
+  const prep = {
+    messagesToSummarize: [
+      { role: "assistant", content: text("direct answer ", 12_000) },
+      { role: "user", content: text("user request ", 12_000) },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: text("user block ", 12_000) },
+          { type: "image", data: "B".repeat(20_000), mimeType: "image/png" },
+        ],
+      },
+      {
+        role: "assistant",
+        content: [
+          { type: "thinking", thinking: text("reasoning ", 12_000) },
+          { type: "toolCall", id: firstCall, name: "bash", arguments: { command: text("ls ", 8_000) } },
+        ],
+        stopReason: "toolUse",
+        timestamp: 1,
+      },
+      { role: "toolResult", toolCallId: firstCall, toolName: "bash", content: text("first output ", 12_000) },
+      { role: "custom", customType: "glla-note", content: text("custom payload ", 12_000), display: false, timestamp: 2 },
+      {
+        role: "custom",
+        customType: "glla-blocks",
+        content: [{ type: "text", text: text("custom block ", 12_000) }],
+        display: false,
+        timestamp: 3,
+      },
+    ],
+    turnPrefixMessages: [
+      {
+        role: "assistant",
+        content: [{ type: "toolCall", id: secondCall, name: "read", arguments: { path: "/repo/src/file.ts", nested: { value: text("x", 8_000) } } }],
+        stopReason: "toolUse",
+        timestamp: 4,
+      },
+      { role: "toolResult", toolCallId: secondCall, toolName: "read", content: [{ type: "text", text: text("second output ", 12_000) }] },
+      { role: "bashExecution", command: text("npm test ", 12_000), output: text("test output ", 12_000), exitCode: 0, cancelled: false, truncated: false, timestamp: 5 },
+      { role: "branchSummary", summary: text("branch checkpoint ", 20_000), fromId: "branch-1", timestamp: 6 },
+      { role: "compactionSummary", summary: text("compaction checkpoint ", 20_000), tokensBefore: 123, timestamp: 7 },
+    ],
+  };
+
+  const result = projectCompactionPreparation(prep);
+  const history = result.messagesToSummarize.map(asRecord);
+  const prefix = result.turnPrefixMessages.map(asRecord);
+
+  assert.equal(result.changed, true);
+  assert.deepEqual(
+    [...history, ...prefix].map((message) => message.role),
+    [...prep.messagesToSummarize, ...prep.turnPrefixMessages].map((message) => asRecord(message).role),
+  );
+  assert.equal(result.inputCharsAfter <= 64_000, true);
+  assert.equal((history[0]?.content as string).length <= 4_096, true);
+  assert.equal((history[1]?.content as string).length <= 4_096, true);
+  assert.equal((asBlocks(history[2])[0]?.text as string).length <= 4_096, true);
+  assert.equal((asBlocks(history[3])[1]?.type), "toolCall");
+  assert.equal(asRecord(asBlocks(history[3])[1]).id, firstCall);
+  assert.equal(history[4]?.toolCallId, firstCall);
+  assert.equal((prefix[0] && asRecord(asBlocks(prefix[0])[0]).id), secondCall);
+  assert.equal(prefix[1]?.toolCallId, secondCall);
+  assert.equal(typeof history[5]?.content, "string");
+  assert.equal((history[5]?.content as string).length <= 4_096, true);
+  assert.equal((asBlocks(history[6])[0]?.text as string).length <= 4_096, true);
+  assert.equal((prefix[2]?.command as string).length <= 4_096, true);
+  assert.equal((prefix[2]?.output as string).length <= 4_096, true);
+  assert.equal((prefix[3]?.summary as string).length <= 8_192, true);
+  assert.equal((prefix[4]?.summary as string).length <= 8_192, true);
+  assert.equal(result.replacedImages, 1);
+});
+
+test("second projection is idempotent", () => {
+  const prep = {
+    messagesToSummarize: [{ role: "assistant", content: text("repeated ", 12_000) }],
+    turnPrefixMessages: [{ role: "user", content: text("follow-up ", 12_000) }],
+  };
+
+  const first = projectCompactionPreparation(prep);
+  const historyAfterFirst = prep.messagesToSummarize;
+  const prefixAfterFirst = prep.turnPrefixMessages;
+  const second = projectCompactionPreparation(prep);
+
+  assert.equal(first.changed, true);
+  assert.equal(second.changed, false);
+  assert.equal(second.inputCharsBefore, first.inputCharsAfter);
+  assert.equal(second.inputCharsAfter, first.inputCharsAfter);
+  assert.equal(prep.messagesToSummarize, historyAfterFirst);
+  assert.equal(prep.turnPrefixMessages, prefixAfterFirst);
+});
+
+test("contains malformed preparation records without changing their positions", () => {
+  const prep = {
+    messagesToSummarize: [
+      null,
+      "invalid",
+      42,
+      { role: "assistant" },
+      { role: "assistant", content: [null, 42, { type: "text" }] },
+      { role: "custom", customType: "goal-event", content: "usable" },
+    ],
+    turnPrefixMessages: [{ role: "user", content: "short" }],
+  };
+
+  const result = projectCompactionPreparation(prep);
+
+  assert.equal(result.messagesToSummarize.length, 6);
+  assert.equal(result.turnPrefixMessages.length, 1);
+  assert.equal(Number.isFinite(result.inputCharsAfter), true);
+});
