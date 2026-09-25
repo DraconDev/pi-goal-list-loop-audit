@@ -89,6 +89,17 @@ re-running the auditor** (`audit_settlement_resumed`,
 `audit_settlement_completed`). A `settling` claim with no approval verdict is
 corrupt, not a settlement, and is parked honestly.
 
+**Both approval paths obey it.** The detached path lives in
+`goal-auditor-hooks.ts`; the inline `complete_goal` / `/goal verify` path in
+`goal-tools.ts` was a second settlement with the OLD shape (clear the claim,
+then archive; drop the claim if the archive failed). It now persists the
+verdict as `settling` first, keeps the approved claim on an archive failure,
+and gates its `notifyExternal` + `persistApprovalRender` behind
+`settlementAllowsTerminalRender`. The only remaining `archiveCurrentGoal(...,
+"complete", ...)` sites are those two settlements and the Esc "complete
+without audit (user choice)" path, which is a user decision, not an audit
+verdict. Every other archive call site is an explicit `aborted`/cancel/wipe.
+
 ## Restart and no-progress
 
 A cold session finds an attempt-owning claim (`starting` / `running` /
@@ -127,6 +138,8 @@ completion review" (the review already happened). The status line keeps its
 | `extensions/audit-lifecycle.ts` | **new** — pure lifecycle projection + settlement state machine |
 | `extensions/goal-loop-core.ts` | phase union (`starting`/`settling`), `lastActivityAt`/`verdictAt`, sanitizer, lifecycle-aware goal markdown, re-exports |
 | `extensions/loops/goal-auditor-hooks.ts` | `starting` at launch, durable activity heartbeat, settlement transaction + `settleApprovedCompletion` + `resumeSettlingCompletionAudit` |
+| `extensions/loops/goal-tools.ts` | the same settlement contract on the inline approval path (verdict persisted first, claim kept on archive failure, terminal gate) |
+| `extensions/goal-heartbeat.ts` | note that the parked-claim gate matches the STORED phase (`recovery-pending`), not the display word |
 | `extensions/loops/goal-activation.ts` | session-start settlement re-drive, before the interrupted-audit branch |
 | `extensions/goal-loop-display.ts` | durable lifecycle labels, durable last-activity age, no-progress segment |
 | `schemas/goal.schema.json` | phase enum + the two new timestamps |
@@ -135,16 +148,32 @@ completion review" (the review already happened). The status line keeps its
 
 ## Verification
 
-- `bun test tests/audit-lifecycle.test.ts tests/audit-settlement-restart.test.ts` — 19 pass, 0 fail.
+- `node scripts/run-tests.mjs` (fast suite, 277 files) — **2347 pass, 0 fail, 2 skip**.
+- `node scripts/run-tests.mjs --slow` (12 slow files) — **288 pass, 0 fail**.
 - `npx tsc --noEmit` — clean.
-- `node scripts/run-tests.mjs` (fast suite) — 2352 pass, 0 fail (277 files).
+- `node tests/repro-jiti-state-split.test.mjs`, `npm run test:auditor-extensions`,
+  `npm pack --dry-run`, `node scripts/release-pack-smoke.mjs` — all pass
+  (tarball 0.38.99, 111 files).
+- Fresh-context reviewer rehearsal (`reviewer`, read-only): **BLOCKERS: none**;
+  it independently confirmed the nonterminal `complete_goal` contract, the
+  shared settlement gate, the session-start re-drive ordering, and the
+  outbox replay path, and raised no defect. Its unverified remainder
+  (exhaustive terminal-surface fencing, re-drive idempotence, the four-test
+  matrix) was covered inline: every `archiveCurrentGoal` /
+  `persistApprovalRender` / `sendTerminalCompletionNotice` call site in
+  `extensions/` was enumerated and classified above, and
+  `settleApprovedCompletion` is synchronous (no interleaving point) with the
+  immutable same-id archive fence protecting cross-process double settlement.
 
 Source-shape pins updated where the refactor intentionally moved the code they
 named (`tests/retry-bounds.test.ts`, `tests/completion-summary-lines.test.ts`,
 `tests/terminal-approval-render.test.ts`,
-`tests/terminal-completion-notice.test.ts`); the contract each pinned is
+`tests/terminal-completion-notice.test.ts`,
+`tests/completion-communication.test.ts`); the contract each pinned is
 preserved, and `tests/retry-bounds.test.ts` now pins the stronger invariant
 (verdict persisted before archive) plus a negative pin on the old
 clear-then-archive shape. Behavioural `phase === "running"` pins became
 `auditPhaseOwnsAttempt(...)`, so they state the contract ("the claim is
-attempt-owning, not parked") instead of one hardcoded phase string.
+attempt-owning, not parked") instead of one hardcoded phase string — the
+durable phase is evidence-based, and an audit shorter than one progress poll
+never publishes `running` at all.
