@@ -3627,3 +3627,4 @@
 {"type":"main_model_recovery_wait","value":{"kind":"goal","retryAt":"2026-09-25T16:39:42.393Z","attempts":3,"reason":"main model unknown — This operation was aborted","diagnostic":"This operation was aborted","recoveryEpisodeKey":"2026-09-25T15:37:10.902Z:provider:this operation was aborted"},"at":"2026-09-25T15:39:42.408Z"}
 {"type":"hourly_probe_scheduled","value":{"fireAt":"2026-09-25T16:00:30.000Z","at":"2026-09-25T15:39:42.412Z"},"at":"2026-09-25T15:39:42.415Z"}
 {"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-25T15:39:49.343Z"}
+{"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-25T16:01:56.879Z"}
