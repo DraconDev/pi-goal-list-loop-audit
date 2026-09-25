@@ -34,6 +34,7 @@ const GLOBAL_LIMIT = 200_000;
 const HISTORICAL_TRIM_TOKENS = 165_000;
 const CONTINUATION_MARKER = "GLLA_POST_COMPACTION_CONTINUATION_OK";
 const MANUAL_MARKER = "GLLA_MANUAL_COMPACTION_CONTINUATION_OK";
+const MANUAL_SEED_CHARS = 120_000;
 const DEFAULT_AGENT_DIR = path.join(homedir(), ".pi", "agent");
 const DEFAULT_COMPACTION_SETTINGS = {
   enabled: true,
@@ -574,6 +575,11 @@ async function waitForTerminalCompaction(rpc, options, fromIndex, expectedReason
   throw new Error("host compaction exceeded the bounded retry-attempt ceiling");
 }
 
+function manualSeedPrompt() {
+  const unit = "Compaction smoke fixture: preserve the fact that the local Pi host owns cut selection, summarization, persistence, and retries. ";
+  return `Store this deterministic context for the manual-compaction portion of the isolated regression, then reply with SEEDED. ${unit.repeat(Math.ceil(MANUAL_SEED_CHARS / unit.length)).slice(0, MANUAL_SEED_CHARS)}`;
+}
+
 function formatCommand(source, provider, model) {
   return `PI_CODING_AGENT_DIR="$(mktemp -d)" node scripts/verify-compaction-live.mjs --session "${source}" --provider ${provider} --model ${model}`;
 }
@@ -598,6 +604,7 @@ function makeReport({
   manualPersisted,
   projection,
   continuation,
+  manualSeedChars,
 }) {
   const projectionValue = projection ?? {};
   const compact = (proof) => `- Attempts: \`${proof.attempts.length}\`; start reason: \`${proof.start.reason}\`; terminal aborted: \`${proof.end.aborted ? "yes" : "no"}\`; terminal willRetry: \`${proof.end.willRetry ? "yes" : "no"}\`; in-memory summary characters: \`${proof.end.result?.summaryChars ?? 0}\`; persisted summary characters: \`${proof.persisted?.summaryChars ?? 0}\`.`;
@@ -638,7 +645,7 @@ ${compact({ ...automatic, persisted: automaticPersisted })}
 
 ${compact({ ...manual, persisted: manualPersisted })}
 
-- The verifier called Pi RPC \`compact\`; command success alone was not accepted. A fresh ordered \`compaction_start\`/\`compaction_end\` pair and a newly persisted non-empty session record were both required.
+- The verifier seeded \`${manualSeedChars}\` deterministic input characters after the automatic recovery, called Pi RPC \`compact\`, and required a fresh ordered \`compaction_start\`/\`compaction_end\` pair plus a newly persisted non-empty session record. Command success alone was not accepted.
 
 ## Usable next turns
 
@@ -712,6 +719,7 @@ async function main() {
   let manualPersisted;
   let projection;
   const continuation = { automatic: false, manual: false, automaticChars: 0 };
+  let manualSeedChars = 0;
   const setStage = (value) => { verifierStage = value; };
 
   try {
@@ -813,12 +821,28 @@ async function main() {
     continuation.automaticChars = firstText.text.length;
     if (!continuation.automatic) throw new Error("automatic-compaction continuation did not return the expected marker");
 
+    setStage("manual_compaction_seed");
+    const seed = manualSeedPrompt();
+    manualSeedChars = seed.length;
+    await promptAndRead(rpc, deadline, seed, "manual compaction seed");
+
     setStage("manual_compaction");
     const persistedBeforeManual = persistedCompactions(copiedSession);
     const manualEventStart = rpc.events.length;
-    const manualPromise = waitForTerminalCompaction(rpc, deadline, manualEventStart, "manual");
-    const manualResult = assertSuccessfulResponse(await rpc.send({ type: "compact" }, Math.min(COMMAND_TIMEOUT_MS, deadline.remainingMs())), "compact");
-    manual = await manualPromise;
+    const manualPromise = waitForTerminalCompaction(rpc, deadline, manualEventStart, "manual")
+      .then((proof) => ({ proof }), (error) => ({ error }));
+    let manualResponse;
+    try {
+      manualResponse = await rpc.send({ type: "compact" }, Math.min(COMMAND_TIMEOUT_MS, deadline.remainingMs()));
+    } catch (error) {
+      const eventOutcome = await manualPromise;
+      if (eventOutcome.error) throw eventOutcome.error;
+      throw error;
+    }
+    const manualResult = assertSuccessfulResponse(manualResponse, "compact");
+    const manualOutcome = await manualPromise;
+    if (manualOutcome.error) throw manualOutcome.error;
+    manual = manualOutcome.proof;
     const manualSummaryChars = typeof manualResult?.summary === "string" ? manualResult.summary.length : 0;
     if (manualSummaryChars <= 0 || manual.end.result?.summaryChars !== manualSummaryChars) {
       throw new Error("manual RPC result and host event did not describe the same non-empty summary");
@@ -887,6 +911,7 @@ async function main() {
     manualPersisted,
     projection,
     continuation,
+    manualSeedChars,
   });
   fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true });
   const reportTmp = `${REPORT_PATH}.${process.pid}.tmp`;
