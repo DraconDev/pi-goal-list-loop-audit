@@ -73,7 +73,11 @@ process.stdin.on("data", async (chunk) => {
   return script;
 }
 
-async function waitUntil(predicate: () => boolean, timeoutMs = 30_000, label = ""): Promise<void> {
+// v0.38.99 (closure): loaded suites measured 31.8s against this 30s ceiling
+// (the escalation path spawns a real worker: boot alone runs seconds). 45s
+// restores the margin under the 60s runner cap; the assertions after the
+// wait are unchanged, and a wedged audit still times out loudly.
+async function waitUntil(predicate: () => boolean, timeoutMs = 45_000, label = ""): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (!predicate()) {
     if (Date.now() >= deadline) throw new Error(`timed out waiting for detached-auditor state ${label}`.trim());

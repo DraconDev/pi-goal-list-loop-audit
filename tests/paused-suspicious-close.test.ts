@@ -29,7 +29,10 @@ afterEach(async () => { await cleanup?.(); cleanup = undefined; });
 // RPC protocol + archive) legitimately takes ~9.4s unloaded, so the old 10s
 // ceiling flaked under any load. 30s keeps the failure signal (a wedged
 // audit still times out loudly) with real margin under the 60s runner cap.
-async function waitFor(check: () => boolean, timeout = 30000) {
+// v0.38.99 (closure): loaded suites measured 29.9s (pass) and 32.5s (fail)
+// against that 30s ceiling — the margin was gone. 45s restores it; the
+// assertions after the wait are unchanged.
+async function waitFor(check: () => boolean, timeout = 45000) {
   const until = Date.now() + timeout;
   while (!check()) { if (Date.now() > until) throw new Error("settlement timeout"); await new Promise(r => setTimeout(r, 20)); }
 }
