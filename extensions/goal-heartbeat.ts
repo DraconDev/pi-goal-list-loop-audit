@@ -23,7 +23,7 @@ import { randomUUID } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { state } from "./goal-state.js";
+import { state, replaceState, persistStateLine } from "./goal-state.js";
 import {
   DEFAULT_STALL_ESCALATION_REFIRES,
   appendLedger,
@@ -1351,6 +1351,10 @@ function heartbeatTick(): void {
   if (!isSupervising() && (flags.postCompactResumeOwed || flags.postCompactResyncPending)) {
     flags.postCompactResumeOwed = false;
     flags.postCompactResyncPending = false;
+    if (state.postCompactRecovery) {
+      replaceState({ ...state, postCompactRecovery: undefined });
+      persistStateLine(ctx.cwd, state);
+    }
   }
   // v0.32.1: post-compaction resume debt — retry on every heartbeat tick
   // past grace until a turn actually starts. Fixed-offset settles alone
@@ -1366,6 +1370,10 @@ function heartbeatTick(): void {
           scheduleContinuation(ctx, true);
         } else {
           flags.postCompactResumeOwed = false; // nothing to resume — discharge
+          if (state.postCompactRecovery) {
+            replaceState({ ...state, postCompactRecovery: undefined });
+            persistStateLine(ctx.cwd, state);
+          }
         }
       }
     } catch { /* next tick */ }

@@ -34,7 +34,8 @@ async function boot(cwd: string, settings: Record<string, unknown>, model = "pro
   __testOnlyResetStaleFlag();
   const pi = new MockPi();
   activate(pi.api);
-  const ctx = makeMockCtx(cwd, { sessionManager: { name: `compact-fail-${Date.now()}-${Math.random()}` } });
+  const sessionId = `compact-fail-${Date.now()}-${Math.random()}`;
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: sessionId, getSessionId: () => sessionId } });
   (ctx as any).model = { provider: model.split("/")[0], id: model.split("/")[1] };
   (ctx as any).modelRegistry = {
     find: (provider: string, id: string) => ({ provider, id }),
@@ -112,6 +113,51 @@ test("terminal prompt overflow rotates once and arms durable post-compact resume
   assert.equal(typeof probe?.value?.payloadChars, "number");
   assert.ok(Number(probe?.value?.payloadChars) > 0);
   assert.deepEqual(__testOnlyPostCompactDebt(), { resumeOwed: true, resyncPending: true }, "the fast probe cannot strand a switched model without heartbeat debt");
+  const persisted = readState(cwd) as { postCompactRecovery?: { sessionId?: string; resumeOwed?: boolean; resyncPending?: boolean } };
+  assert.match(String(persisted.postCompactRecovery?.sessionId), /^compact-fail-/, "fallback debt is session-fenced");
+  assert.equal(persisted.postCompactRecovery?.resumeOwed, true);
+  assert.equal(persisted.postCompactRecovery?.resyncPending, true, "the debt survives a crash before the fast probe starts");
+});
+
+test("same-session startup restores fallback debt, while a new session discards it", async () => {
+  const cwd = tmpCwd();
+  seedState(cwd, {
+    goal: seedGoal({ status: "active", objective: "restore post-compaction debt" }),
+    postCompactRecovery: { sessionId: "same-session", at: Date.now(), resumeOwed: true, resyncPending: true },
+  });
+  fs.writeFileSync(GLOBAL, JSON.stringify({ autoResume: true, aggressiveMode: false, mainModelFallbacks: [] }));
+  __testOnlyResetOwnerSession();
+  __testOnlyResetStaleFlag();
+  __testOnlyResetPostCompactDebt();
+  const pi = new MockPi();
+  activate(pi.api);
+  const ctx = makeMockCtx(cwd, {
+    sessionManager: {
+      name: "compact-fail-same",
+      getSessionId: () => "same-session",
+      getSessionFile: () => path.join(cwd, "historical.jsonl"),
+    },
+  });
+  (ctx as any).model = { provider: "provider", id: "small" };
+  (ctx as any).modelRegistry = { find: () => undefined, hasConfiguredAuth: () => true };
+
+  await pi.fire("session_start", { reason: "reload" }, ctx);
+  await tick(80);
+  assert.deepEqual(__testOnlyPostCompactDebt(), { resumeOwed: true, resyncPending: true });
+  assert.ok(ledger(cwd).some((e) => e.type === "post_compact_recovery_restored"));
+
+  __testOnlyResetPostCompactDebt();
+  (ctx as any).sessionManager = {
+    name: "compact-fail-new",
+    getSessionId: () => "new-session",
+    getSessionFile: () => path.join(cwd, "replacement.jsonl"),
+  };
+  await pi.fire("session_start", { reason: "new" }, ctx);
+  await tick(80);
+  assert.deepEqual(__testOnlyPostCompactDebt(), { resumeOwed: false, resyncPending: false });
+  assert.equal((readState(cwd) as { postCompactRecovery?: unknown }).postCompactRecovery, undefined);
+  assert.ok(ledger(cwd).some((e) => e.type === "post_compact_recovery_discarded"));
+  session = { pi, ctx };
 });
 
 test("terminal output-cap failure parks instead of misclassifying it as context overflow", async () => {
@@ -132,6 +178,7 @@ test("terminal output-cap failure parks instead of misclassifying it as context 
   assert.equal(goal.status, "paused");
   assert.match(goal.pauseReason ?? "", /summarization output limit/i);
   assert.ok(ledger(cwd).some((e) => e.type === "session_compact_failed" && e.value?.failureKind === "summarization-length"));
+  assert.equal((readState(cwd) as { postCompactRecovery?: unknown }).postCompactRecovery, undefined, "parking a failed summary does not leave automatic recovery debt");
 });
 
 test("failed compaction without a usable fallback parks an active goal durably", async () => {

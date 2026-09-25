@@ -899,6 +899,7 @@ function setGoal(goal: Goal, ctx: ExtensionContext, via = "user"): boolean {
   // and the new objective owns the runtime from here on.
   postCompactResumeOwed = false;
   postCompactResyncPending = false;
+  if (state.postCompactRecovery) replaceState({ ...state, postCompactRecovery: undefined });
   clearMainModelRecoveryTimer();
   state.mainModelRecovery = undefined;
   mainModelAbortForRecovery = false;
@@ -1309,6 +1310,7 @@ function archiveCurrentGoal(
   clearQueueStuckProbe();
   postCompactResumeOwed = false; // v0.33.1: the dead goal's compact debt/resync dies with it
   postCompactResyncPending = false;
+  if (state.postCompactRecovery) replaceState({ ...state, postCompactRecovery: undefined });
   // v0.34.120: archive is the durable history; a terminal goal must not
   // remain in the live slot and make the user cancel a finished card. Keep
   // the archive markdown (including completionSummary) as the final record,

@@ -1341,6 +1341,14 @@ export interface State {
    * reload — without it, the chip vanishes on reload and the user thinks
    * the compaction didn't happen (Screenshot_20260808_003007/003024). */
   lastCompactionAt?: number;
+  /** Crash-safe post-compaction recovery debt. `sessionId` prevents a prior
+   * session's compaction from resyncing a new session after restart. */
+  postCompactRecovery?: {
+    sessionId: string;
+    at: number;
+    resumeOwed: boolean;
+    resyncPending: boolean;
+  };
   /** v0.35.15: `/glla pause` epoch (ms). Presence = the supervisor's
    * automatic machinery (heartbeat re-arms, recovery probes, auto-resume,
    * continuation dispatch, proactive auditor quiet notifies) is FROZEN by
@@ -2358,10 +2366,22 @@ export function readState(cwd: string): State {
     mainModelRecovery: sanitizeMainModelRecovery(parsed.mainModelRecovery),
     lastModelRef: typeof parsed.lastModelRef === "string" ? parsed.lastModelRef : undefined,
     lastCompactionAt: typeof parsed.lastCompactionAt === "number" && Number.isFinite(parsed.lastCompactionAt) ? parsed.lastCompactionAt : undefined,
+    postCompactRecovery: sanitizePostCompactRecovery(parsed.postCompactRecovery),
     supervisorPausedAt: typeof parsed.supervisorPausedAt === "number" && Number.isFinite(parsed.supervisorPausedAt) && parsed.supervisorPausedAt > 0 ? parsed.supervisorPausedAt : undefined,
     loadHoldAt: typeof parsed.loadHoldAt === "number" && Number.isFinite(parsed.loadHoldAt) && parsed.loadHoldAt > 0 ? parsed.loadHoldAt : undefined,
     lastOutcome: sanitizeLastOutcome(parsed.lastOutcome),
   };
+}
+
+function sanitizePostCompactRecovery(value: unknown): State["postCompactRecovery"] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const raw = value as Record<string, unknown>;
+  if (typeof raw.sessionId !== "string" || !raw.sessionId || raw.sessionId === "unknown-session") return undefined;
+  if (typeof raw.at !== "number" || !Number.isFinite(raw.at) || raw.at <= 0) return undefined;
+  const resumeOwed = raw.resumeOwed === true;
+  const resyncPending = raw.resyncPending === true;
+  if (!resumeOwed && !resyncPending) return undefined;
+  return { sessionId: raw.sessionId.slice(0, 300), at: raw.at, resumeOwed, resyncPending };
 }
 
 /** v0.35.34: strict shape validation for the legacy last-outcome record —
@@ -2596,6 +2616,7 @@ export function stateLedgerValue(s: State): Record<string, unknown> {
     mainModelRecovery: s.mainModelRecovery ?? null,
     lastModelRef: s.lastModelRef,
     ...(typeof s.lastCompactionAt === "number" ? { lastCompactionAt: s.lastCompactionAt } : { lastCompactionAt: null }),
+    ...(s.postCompactRecovery ? { postCompactRecovery: s.postCompactRecovery } : { postCompactRecovery: null }),
     ...(typeof s.supervisorPausedAt === "number" ? { supervisorPausedAt: s.supervisorPausedAt } : { supervisorPausedAt: null }),
     ...(typeof s.loadHoldAt === "number" ? { loadHoldAt: s.loadHoldAt } : { loadHoldAt: null }),
     ...(s.lastOutcome ? { lastOutcome: s.lastOutcome } : { lastOutcome: null }),

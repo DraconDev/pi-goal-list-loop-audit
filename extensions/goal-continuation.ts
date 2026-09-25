@@ -29,7 +29,7 @@ import { deliverTerminalSummary } from "./terminal-summary-delivery.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { state, replaceState } from "./goal-state.js";
+import { state, replaceState, persistStateLine } from "./goal-state.js";
 import {
   appendLedger,
   readLedgerTail,
@@ -729,6 +729,17 @@ export function dispatchStartAcknowledged(ctx: ExtensionContext, source: string,
   lastContinuationSentAt = 0;
   if (record.resync) flags.postCompactResyncPending = false;
   noteActivity(true);
+  if (record.resync) {
+    const debt = state.postCompactRecovery;
+    if (debt?.resyncPending) {
+      const next = { ...debt, resyncPending: false };
+      if (next.resumeOwed) replaceState({ ...state, postCompactRecovery: next });
+      else {
+        replaceState({ ...state, postCompactRecovery: undefined });
+      }
+      persistStateLine(ctx.cwd, state);
+    }
+  }
   appendLedger(ctx.cwd, "continuation_start_acknowledged", dispatchLedgerValue(started, {
     acknowledgement: "accepted",
     startProofSource: source,

@@ -472,6 +472,29 @@ export function enqueueFaultRepairTask(ctx: ExtensionContext, objective: string,
  */
 const ZOMBIE_PAUSE_REASON = "automatic zero-stream abort — no provider activity was observed";
 
+function armDurablePostCompactRecovery(ctx: ExtensionContext, resumeOwed: boolean, resyncPending: boolean): void {
+  postCompactResumeOwed = resumeOwed;
+  postCompactResyncPending = resyncPending;
+  replaceState({
+    ...state,
+    postCompactRecovery: { sessionId: sessionManagerId(ctx), at: Date.now(), resumeOwed, resyncPending },
+  });
+  if (!persistState(ctx)) {
+    replaceState({ ...state, postCompactRecovery: undefined });
+    postCompactResumeOwed = false;
+    postCompactResyncPending = false;
+  }
+}
+
+function clearDurablePostCompactRecovery(ctx: ExtensionContext): void {
+  postCompactResumeOwed = false;
+  postCompactResyncPending = false;
+  if (!state.postCompactRecovery) return;
+  const prior = state.postCompactRecovery;
+  replaceState({ ...state, postCompactRecovery: undefined });
+  if (!persistState(ctx)) replaceState({ ...state, postCompactRecovery: prior });
+}
+
 // Streak state is process-memory by design (see the block comment above
 // scheduleZombieAutoRetry): a session restart inside the retry window leaves
 // the park standing for manual resume — an honest degradation.
@@ -1170,8 +1193,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
         // The immediate probe is only the fast path. Keep the established
         // resume/resync debt armed until agent_start actually consumes it,
         // so a busy/lost timer cannot strand the switched model idle.
-        postCompactResumeOwed = true;
-        postCompactResyncPending = true;
+        armDurablePostCompactRecovery(ctx, true, true);
         if (isLoopActive()) scheduleLoopTick(ctx);
         else scheduleContinuation(ctx, true, 1_000);
         return;
@@ -1255,8 +1277,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // v0.32.1: arm the resume debt + the resync block (the settle probes
     // below stay as the fast path; the heartbeat now retries the debt on
     // EVERY post-grace tick until agent_start discharges it).
-    postCompactResumeOwed = true;
-    postCompactResyncPending = true;
+    armDurablePostCompactRecovery(ctx, true, true);
     scheduleSessionTimeout(() => {
       const c = freshCtx();
       if (!c) return;
@@ -1576,8 +1597,6 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // confirm the new handle actually works.
     writeOwnerFile(ctx.cwd);
     sessionReplacementUntil = 0;
-    postCompactResumeOwed = false; // v0.33.1: a compact from a previous session must not resync THIS one
-    postCompactResyncPending = false;
     noteCompactionSettled(); // a fresh session rebind is never mid-compact
     appendLedger(ctx.cwd, "session_rebound", { reason: startReason });
     if (extensionApiStale) {
@@ -1589,6 +1608,24 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       }
     }
     replaceState(readState(ctx.cwd));
+    const restoredPostCompact = state.postCompactRecovery;
+    const samePostCompactSession = restoredPostCompact?.sessionId === sessionManagerId(ctx);
+    postCompactResumeOwed = samePostCompactSession && restoredPostCompact?.resumeOwed === true;
+    postCompactResyncPending = samePostCompactSession && restoredPostCompact?.resyncPending === true;
+    if (restoredPostCompact && (postCompactResumeOwed || postCompactResyncPending)) {
+      appendLedger(ctx.cwd, "post_compact_recovery_restored", {
+        sessionId: restoredPostCompact.sessionId,
+        resumeOwed: postCompactResumeOwed,
+        resyncPending: postCompactResyncPending,
+        at: restoredPostCompact.at,
+      });
+    } else if (restoredPostCompact) {
+      appendLedger(ctx.cwd, "post_compact_recovery_discarded", {
+        recordedSessionId: restoredPostCompact.sessionId,
+        currentSessionId: sessionManagerId(ctx),
+      });
+      clearDurablePostCompactRecovery(ctx);
+    }
     // v0.36.1: finish a terminal archive whose owner died between archive
     // publication, state persistence, and active-md cleanup. readState has
     // already overlaid the journal's terminal projection, so this boundary
@@ -3030,6 +3067,12 @@ async function handleHotLengthExhaustion(
     // v0.32.1: a real turn started — the post-compaction resume debt is
     // discharged (the heartbeat stops retrying it).
     postCompactResumeOwed = false;
+    if (state.postCompactRecovery?.resumeOwed) {
+      const next = { ...state.postCompactRecovery, resumeOwed: false };
+      if (next.resyncPending) replaceState({ ...state, postCompactRecovery: next });
+      else clearDurablePostCompactRecovery(ctx);
+      if (state.postCompactRecovery) persistState(ctx);
+    }
     noteCompactionSettled(); // a live turn proves the compaction is over
     dispatchStartAcknowledged(ctx, "agent_start");
   });
