@@ -1535,7 +1535,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     // — auditor X approved" card read as useless summary spam). The recap
     // is the agent's completionSummary when captured; the objective is the
     // fallback for legacy/aborted goals.
-    const terminalReason = `auditor ${result.model} approved (${origin})`;
+    const terminalReason = `completion audit ${result.model} approved (${origin})`;
     const approvalVia = `${origin === "manual" ? " on /goal verify" : origin === "agent" ? " after an agent resume" : origin === "session-recovery" ? " after session recovery" : " on the provider retry"}${fallbackUsed ? " after an auditor-model fallback" : ""}`;
     // v0.38.20: the chat record pointer. Computed pre-archive like the
     // render below (archiveCurrentGoal clears state.goal).
@@ -1560,7 +1560,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       // repair claim stays the substance the approval verdict covers.
       completionSummary: state.goal.completionSummary,
       priorCompletionSummary: claim.priorCompletionSummary,
-      approval: `— auditor ${result.model} approved${approvalVia}.`,
+      approval: `— completion audit approved${approvalVia}.`,
       record: approvalRecord,
       // v0.38.37: the deliberate non-do the agent claimed, if any.
       ...(claim.leftOut ? { leftOut: claim.leftOut } : {}),
@@ -1575,7 +1575,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
         : [],
     });
     const approvalObjective = state.goal.objective;
-    const archived = archiveCurrentGoal(liveCtx, "complete", `auditor ${result.model} approved (${origin})`, {}, { findingGroups: claim.findingGroups, gateRows: claim.gateRows, priorCompletionSummary: claim.priorCompletionSummary });
+    const archived = archiveCurrentGoal(liveCtx, "complete", `completion audit ${result.model} approved (${origin})`, {}, { findingGroups: claim.findingGroups, gateRows: claim.gateRows, priorCompletionSummary: claim.priorCompletionSummary });
     if (!archived) {
       // archiveCurrentGoal already preserved the live record and warned the
       // user. Keep the approved claim recoverable, but never emit a terminal
@@ -1606,7 +1606,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     } else {
       liveCtx.ui.notify("Goal archived, but its chat summary could not be persisted. Review the archived completion summary.", "warning");
     }
-    notifyExternal(liveCtx, `Goal complete (auditor approved, ${origin}): ${approvalRender.recap}`);
+    notifyExternal(liveCtx, `Goal complete (completion audit approved, ${origin}): ${approvalRender.recap}`);
     return;
   }
 

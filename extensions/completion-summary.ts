@@ -1013,8 +1013,9 @@ export function buildApprovalChatLines(notice: {
  * v0.38.42 (field 20260909_140404): the chat/transcript approval bullet
  * carries no model ID — the `provider/model` slug is machine trivia
  * outside an audit (the full model ID stays in the archive record).
- * The `auditor <model> approved` shape collapses to `auditor approved`;
- * any other approval voice passes through untouched. */
+ * The raw `auditor <model> approved` shape collapses to a model-free
+ * `completion audit approved`; any other approval voice passes through
+ * untouched. */
 function stripApprovalModel(line: string): string {
   return line
     .replace(/(?:auditor|completion audit)\s+\S+\s+approved/gi, "completion audit approved")
@@ -1050,7 +1051,7 @@ export interface TerminalApprovalRenderInput {
   stopReason?: string;
   archivePath?: string;
   completionSummary?: string;
-  /** Path-specific voice, e.g. `— auditor X approved …` or `— completed without audit (your choice).` */
+  /** Path-specific voice, e.g. `— completion audit approved …` or `— completed without a completion review (your choice).` */
   approval: string;
   /** Path-specific record pointer, e.g. `— record: <path>`. */
   record: string;

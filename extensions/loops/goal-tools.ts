@@ -1459,9 +1459,9 @@ function registerAgentTools(pi: any): void {
             status: "complete",
             stopReason: terminalReason,
             archivePath: escArchivePath,
-            approval: `— completed without audit (your choice).`,
+            approval: `— completed without a completion review (your choice).`,
             record: `— record: ${escArchivePath}`,
-            auditNote: "completed without audit (your choice)",
+            auditNote: "completed without a completion review (your choice)",
             // v0.38.37: the claim was cleared pre-confirm; the non-do was
             // captured from it above.
             ...(escLeftOut ? { leftOut: escLeftOut } : {}),
@@ -1481,7 +1481,7 @@ function registerAgentTools(pi: any): void {
           // record pointer like every other approval path.
           const briefBlock = escRender.transcriptLines.join("\n");
 
-          notifyExternal(ctx, `Goal complete without audit (user choice): ${escRender.recap}`);
+          notifyExternal(ctx, `Goal complete without completion review (user choice): ${escRender.recap}`);
           const persisted = persistApprovalRender(ctx.cwd, {
             goalId: terminalGoal.id,
             objective: terminalGoal.objective,
@@ -1509,7 +1509,7 @@ function registerAgentTools(pi: any): void {
         // already use the recap; the chat notify was the lone surface still
         // saying "auditor approved" — pure process, no information
         // (Screenshot_20260808_012905/013220/013515).
-        const terminalReason = `auditor ${result.model} approved`;
+        const terminalReason = `completion audit ${result.model} approved`;
         const manualArchivePath = path.relative(ctx.cwd, archivedGoalPath(ctx.cwd, state.goal.id)) || archivedGoalPath(ctx.cwd, state.goal.id);
         // v0.38.20: captured pre-archive — archiveCurrentGoal clears
         // state.goal, so the record pointer must be computed here.
@@ -1525,7 +1525,7 @@ function registerAgentTools(pi: any): void {
           completionSummary: state.goal.completionSummary,
           // 2026-09-16 whole-work recap: same merge as the detached path.
           ...(durableCompletionClaim.priorCompletionSummary ? { priorCompletionSummary: durableCompletionClaim.priorCompletionSummary } : {}),
-          approval: `— auditor ${result.model} approved.`,
+          approval: `— completion audit approved.`,
           record: manualArchiveRecord,
           // v0.38.37: the deliberate non-do rides the durable claim.
           ...(durableCompletionClaim.leftOut ? { leftOut: durableCompletionClaim.leftOut } : {}),
@@ -1560,7 +1560,7 @@ function registerAgentTools(pi: any): void {
         // pre-verdict `Next:` never reaches the chat.
         // PR #43: append the kept inspection-session pointer when present.
 
-        notifyExternal(ctx, `Goal complete (auditor approved): ${manualRender.recap}`);
+        notifyExternal(ctx, `Goal complete (completion audit approved): ${manualRender.recap}`);
         const persisted = persistApprovalRender(ctx.cwd, {
           goalId: manualGoalId,
           objective: manualObjective,

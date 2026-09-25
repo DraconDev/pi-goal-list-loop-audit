@@ -125,14 +125,14 @@ and the status/history surfaces. The human layer follows two different purposes:
   Verification Summary table (Quality Gate | Command | Scope | Status | Notes
   when supplied), and Final Repository State.
 
-Both surfaces retain the independent auditor verdict and the full six-label
+Both surfaces retain the independent completion review and the full six-label
 machine recap. A lone approval may be promoted to the chat headline because
-it is a durable verdict fact, not because tests passed. Width-bound and
+it is a durable review fact, not because tests passed. Width-bound and
 external surfaces use the compact single-line projection of all six labels.
 Every terminal goal notification, including version-bearing already-shipped
 claims and explicit cancellation, carries the change-first human view or the
 compact projection; loop notifications do the same. The executor recap and
-independent auditor verdict stay separate: an approval is not manufactured from
+independent completion review stay separate: an approval is not manufactured from
 the presence of a summary.
 
 Metric-loop stops use the same six-label contract in their durable loop state

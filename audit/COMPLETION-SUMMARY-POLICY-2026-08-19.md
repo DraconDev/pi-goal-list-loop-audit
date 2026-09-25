@@ -36,7 +36,7 @@ The surfaces intentionally stay separate. `renderGoalMarkdown()` has a
 The terminal status/widget says `done` plus duration/recap, while the verdict
 and any disapproval details remain in the archive, audit history, and status
 surfaces. Existing tests pin that a completed widget uses the recap rather than
-repeating the objective and does not fabricate an auditor verdict.
+repeating the objective and does not fabricate a completion review.
 
 The current gap is not missing storage or an incorrect terminal lifecycle: it
 is that `completionSummary` has no required internal shape. A caller can send a
@@ -79,9 +79,9 @@ Rules for the format:
   (slices 2–3). `Next` still names only the single immediate move
   (slice 1): length is permitted wherever clarity needs the room, never
   as a goal in itself.
-- Do not write “auditor approved” in the executor recap. The orchestrator adds
-  the independent verdict on its own surface, preserving the distinction
-  between an executor claim and an auditor decision.
+- Do not write “completion audit approved” in the executor recap. The orchestrator adds
+  the independent review on its own surface, preserving the distinction
+  between an executor claim and a review decision.
 
 This is a presentation/input contract, not a claim that the executor is
 trusted. The detached auditor must continue to inspect artifacts and reject
