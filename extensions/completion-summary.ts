@@ -500,8 +500,8 @@ function findingPresentation(finding: string, chat: boolean): { outcome: string;
   ].filter(Boolean);
   const normalizedReason = [...new Set(reasonParts)].join(" · ").trim();
   return {
-    outcome: chat ? chatNarrative(parsed.outcome) : sanitizeDisplayText(parsed.outcome),
-    reason: chat ? chatNarrative(normalizedReason) : sanitizeDisplayText(normalizedReason),
+    outcome: chatNarrative(parsed.outcome),
+    reason: chatNarrative(normalizedReason),
     evidence: parsed.evidence,
   };
 }
@@ -749,7 +749,7 @@ export function buildRichTerminalParts(args: {
   const groups = (args.groups ?? []).map(group => {
     const entries = group.findings
       .map((finding, i) => ({ finding, proof: group.tests?.[i] }))
-      .filter(({ finding, proof }) => !normalizeFindingLead(sanitizeDisplayText(finding)).technical && !isRepositoryReceipt(finding, proof));
+      .filter(({ finding, proof }) => !normalizeFindingLead(sanitizeDisplayText(finding)).technical && (args.chat === true ? !isRepositoryReceipt(finding, proof) : true));
     return { ...group, findings: entries.map(entry => entry.finding), tests: entries.map(entry => entry.proof ?? "") };
   }).filter(group => group.findings.length > 0);
   const useTable = !args.chat && groups.length >= RICH_TABLE_GROUP_THRESHOLD;
