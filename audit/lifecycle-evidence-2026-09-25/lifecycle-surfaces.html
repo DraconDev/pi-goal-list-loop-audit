@@ -1,0 +1,127 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>detached audit lifecycle — surfaces</title><style>
+body{background:#101014;color:#d4d4d4;font:12px/1.55 ui-monospace,Menlo,monospace;padding:22px;margin:0}
+h1{font-size:14px;color:#7fb3ff;margin:0 0 2px}
+.sub{color:#6b6b78;margin:0 0 18px;font-size:11px}
+section{border:1px solid #33333d;border-radius:8px;padding:12px 14px;margin:0 0 14px;background:#16161c}
+h2{font-size:12.5px;margin:0 0 6px;color:#b5bd68}
+.meta{color:#8a8a99;font-size:11px;margin:0 0 8px}
+.why{color:#7f8496;font-style:italic;margin:0 0 8px}
+label{display:block;color:#5f6b8a;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;margin:8px 0 2px}
+pre{margin:0;background:#1e1e24;border:1px solid #2b2b35;border-radius:6px;padding:9px 11px;white-space:pre-wrap;color:#cfd3e0}
+.next{color:#56d364;margin:0 0 2px}
+.key{color:#7fb3ff}
+</style></head><body>
+<h1>detached audit lifecycle — the five required states, on the real surfaces</h1>
+<p class="sub">rendered by tests/evidence/render-lifecycle-surfaces.ts from the shipped extension code · 2026-09-25T18:11:13.645Z</p>
+<section>
+  <h2>STARTING — the claim is durable, the worker has not reported yet</h2>
+  <p class="meta">state=starting phase=starting stale=false terminal=false lastEvent=claim-stored</p>
+  <p class="why">next action: detached worker starting — /goal cancel discards the claim</p>
+  <p class="next">why: The launch window is a real state, and a claim with no worker event never has its age back-filled into activity.</p>
+  <label>widget card</label><pre>⟡ detached audit lifecycle… · auditing · total 0s
+├─ auditor: starting · detached worker · last progress none yet
+│ next: completion review applying
+└─ waiting for completion review</pre>
+  <label>status line</label><pre>glla: MAIN HOST · SUPERVISING · auditor ✓ starting ▱▱▱▱▱</pre>
+  <label>/goal status</label><pre>(a detached worker owns this claim, so it only exists inside a live session; the same claim with no live worker is the recovery-needed panel below)</pre>
+</section>
+<section>
+  <h2>RUNNING — durable last activity, refined by the live worker</h2>
+  <p class="meta">state=running phase=running stale=false terminal=false lastEvent=worker-activity</p>
+  <p class="why">next action: completion review applies automatically</p>
+  <p class="next">why: A restarted session reads `lastActivityAt` from the ledger, not from a HUD that no longer exists.</p>
+  <label>widget card</label><pre>⟡ detached audit lifecycle… · auditing · total 0s
+├─ auditor: last observed tool · detached worker · last progress 22s ago
+│ last tool: bash
+│ next: completion review applies automatically
+├─ report stream muted — final text at completion review
+│  evidence: report stream observed
+└─ 22s in detached worker · worker activity 22s ago</pre>
+  <label>status line</label><pre>glla: MAIN HOST · SUPERVISING · auditor ▶ last observed tool ▰▰▰▰▱</pre>
+  <label>/goal status</label><pre>(a detached worker owns this claim, so it only exists inside a live session; the same claim with no live worker is the recovery-needed panel below)</pre>
+</section>
+<section>
+  <h2>SETTLING — the approval is durable, the terminal archive is owed</h2>
+  <p class="meta">state=settling phase=settling stale=false terminal=false lastEvent=verdict-applied</p>
+  <p class="why">next action: approved; the terminal archive is owed — /goal resume finishes it</p>
+  <p class="next">why: The worker-complete snapshot that used to rename this 'awaiting completion review' can no longer mask the durable phase.</p>
+  <label>widget card</label><pre>⟡ detached audit lifecycle… · auditing · total 0s
+├─ auditor: settling · detached worker · last progress 4s ago
+│ next: completion review applying
+├─ audits: 1 review · last approved 30s ago
+├─ latest: verdict applied
+│  evidence: final report
+└─ waiting for completion review · worker activity 4s ago</pre>
+  <label>status line</label><pre>glla: MAIN HOST · SUPERVISING · auditor ✓ settling ▰▰▰▰▰</pre>
+  <label>settlement (fresh session)</label><pre>archive:    test-1790359870252-y3z4cx.md (landed)
+claim:      released
+ledger:     audit_settlement_resumed, audit_settlement_completed, audit_settlement_restart_check
+queued terminal render (user-facing):
+  ## Done — shipped.
+  
+  — 0s elapsed · 1 audit
+  
+  ### What Changed
+  1. **lifecycle projection + settlement driver.**
+  2. **audit/DETACHED-AUDIT-LIFECYCLE-2026-09-25.md.**
+  
+  • completion audit approved after session recovery (1 review).
+  • record: .pi-glla/archive/test-1790359870252-y3z4cx.md</pre>
+</section>
+<section>
+  <h2>APPROVED — settlement durable; the summary is in .pi-glla/archive/</h2>
+  <p class="meta">state=approved phase=settling stale=false terminal=true lastEvent=verdict-applied</p>
+  <p class="why">next action: settlement durable — the summary is in .pi-glla/archive/</p>
+  <p class="next">why: Only the settlement driver may claim this state, and only after the archive landed.</p>
+  <label>widget card</label><pre>(none — the goal is archived; its user-facing surface is the terminal render below)</pre>
+  <label>status line</label><pre>(none — the goal is archived)</pre>
+  <label>settlement (fresh session)</label><pre>archive:    test-1790359871197-nir8bc.md (landed)
+claim:      released
+ledger:     audit_settlement_resumed, audit_settlement_completed, audit_settlement_restart_check
+queued terminal render (user-facing):
+  ## Done — shipped.
+  
+  — 0s elapsed · 1 audit
+  
+  ### What Changed
+  1. **lifecycle projection + settlement driver.**
+  2. **audit/DETACHED-AUDIT-LIFECYCLE-2026-09-25.md.**
+  
+  • completion audit approved after session recovery (1 review).
+  • record: .pi-glla/archive/test-1790359871197-nir8bc.md</pre>
+</section>
+<section>
+  <h2>RECOVERY NEEDED — an interrupted or unknown claim, with a real next action</h2>
+  <p class="meta">state=recovery-needed phase=recovery-pending stale=false terminal=false lastEvent=worker-activity</p>
+  <p class="why">next action: /goal resume retries the stored claim</p>
+  <p class="next">why: A stale attempt is never rendered as finished, and the surface names the command that unblocks it.</p>
+  <label>widget card</label><pre>⏸ detached audit lifecycle… · paused · total 0s
+├─ auditor: recovery needed
+└─ parked 9m 01s ago · /goal resume retries the stored claim</pre>
+  <label>status line</label><pre>glla: ⏸ recovery needed · /goal resume retries the stored claim · queue empty · safely parked · owner: manual resume · last host activity not observed · next: /goal resume</pre>
+  <label>/goal status</label><pre>/goal status → Completion audit: recovery needed — /goal resume retries the stored claim
+/glla status  → goal [goal] paused (audit recovery needed): detached audit lifecycle · five required states · one settlement</pre>
+</section>
+<section>
+  <h2>RECOVERY NEEDED — approved, but the terminal archive was refused</h2>
+  <p class="meta">state=settling phase=settling stale=false terminal=false lastEvent=parked</p>
+  <p class="why">next action: approved; the terminal archive is owed — /goal resume finishes it</p>
+  <p class="next">why: The promise in the pause text is real: /goal resume finishes the approved settlement, with no new audit.</p>
+  <label>widget card</label><pre>⏸ detached audit lifecycle… · paused · total 0s
+├─ auditor: settling
+│  verdict applied 46s ago · approved; the terminal archive is owed — /goal resume finishes it
+├─ lifecycle: safely parked · owner: manual action · queue empty
+│  last host activity not available · next: /goal resume
+├─ blocked — waiting for manual action
+├─ completion approved (openai/gpt-test), but the terminal
+│  archive failed — an existing archive refused the write
+├─ saved — 1 audit · resumes exactly here
+│  Fix .pi-glla disk access or resolve the archive fence, then
+│  /goal resume finishes the approved settlement. No new audit
+├─ is needed.
+└─ audits: 1 review · last approved 30s ago</pre>
+  <label>status line</label><pre>glla: ⏸ settling · approved; the terminal archive is owed — /goal resume finishes it · queue empty · safely parked · owner: manual action · last host activity not available · next: /goal resume · 1 review · last approved 30s ago</pre>
+  <label>/goal status</label><pre>/goal status → Completion audit: settling — approved; the terminal archive is owed — /goal resume finishes it
+/glla status  → goal [goal] paused (audit settling): detached audit lifecycle · five required states · one settlement — completion approved (openai/gpt-test), but the terminal archive failed — park-archive</pre>
+</section>
+</body></html>
