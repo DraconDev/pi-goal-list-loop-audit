@@ -340,8 +340,14 @@ let branchGuardRebind: (() => boolean) | null = null;
 async function parkLoopOnWrongBranch(ctx: ExtensionContext, loop: LoopState, where: string): Promise<boolean> {
   if (!loop.branchName) return false;
   const actual = await runGit(ctx, ["rev-parse", "--abbrev-ref", "HEAD"]);
-  if (branchGuardRebind && !branchGuardRebind()) return true;
+  // HEAD is ground truth: when we are still on the loop's branch there is
+  // nothing to park — return before consulting the in-flight tick guard.
+  // The guard's rebind fails whenever state.loop was replaced (a concurrent
+  // /loop stop spreads a new inactive object before its own finish), so
+  // consulting it first vetoes the stop's own branch restoration and strands
+  // the user on the scratch branch with a false "branch changed" park.
   if (actual.ok && actual.stdout === loop.branchName) return false;
+  if (branchGuardRebind && !branchGuardRebind()) return true;
   const reason = `branch changed — expected ${loop.branchName}, current ${actual.ok ? actual.stdout : "unknown"} (${where})`;
   loop.active = false;
   loop.stopReason = reason;

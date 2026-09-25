@@ -603,3 +603,25 @@ No new DECIDE finding remained: the auditor-bash confidentiality choice was alre
 The fresh scout fan-out was workflow `876cf269-f827-4de0-b166-e92a0175bea8`: one `runs.all` dispatch launched four `scout` children together. Durable launch metadata and all four reports are preserved under `audit/FRESH-AUDIT-2026-09-23/`; canonical gate totals and the bounded rerun of two load-timeout files are in `audit/FRESH-AUDIT-2026-09-23/VERIFICATION.md`.
 
 For the `/loop audit` selected-root line above, `50db98b5` changes `extensions/goal-loop-forever.ts` to resolve one absolute findings path and passes that path to target/measure construction; `fb83ab7f` and `82724893` update the adjacent source fixtures, while `tests/audit-loop-state-root.test.ts` in the same commit proves the sessionDir selected-root value against a cwd decoy.
+
+## Fresh project audit — 2026-09-25 (v0.38.100)
+
+Four parallel scout surveys (workflow `5f444583-df12-45b5-871c-06e3d1cd3ac8`):
+lifecycle/recovery, queue/orchestrator/tools/auditor, commands/settings/UI,
+tests/docs/packaging. Every candidate below was re-read against the current
+tree by the orchestrator before recording; duplicates and disproved claims
+were excluded. No DECIDE findings were found in this pass.
+
+- [ ] FIX: HIGH: in-flight loop tick vetoes `/loop stop` and `/glla wipe` branch restoration, stranding the user on the scratch branch (extensions/goal-loop.ts:343)
+- [ ] FIX: MEDIUM: archive banner claims a review was recorded when none exists — lowercase `no review` from error entries hits the `completion review recorded` fall-through (extensions/completion-summary.ts:689)
+- [ ] FIX: MEDIUM: `Verdict:`/`Audit:`-prefixed findings vanish from terminal card AND durable archive; group-embedded `Tests:` strings vanish from the archive (extensions/completion-summary.ts:760)
+- [ ] FIX: MEDIUM: result-time telemetry counters miss `name`-shaped tool_result events while the call-time path recorder handles both shapes, so `fileWrites` and `telemetry.files` contradict (extensions/loops/goal-activation.ts:1448)
+- [ ] FIX: MEDIUM: `decisionPauseBudget` is enforced and documented but invisible on every operator surface — missing from SETTINGS_KEYS, provenance, headless list, and menu (extensions/goal-settings.ts:675)
+- [ ] FIX: LOW: `stranded_audit_recovered` is ledgered before the persistence check it depends on, overstating recovery in post-mortem reads (extensions/goal-heartbeat.ts:1197)
+- [ ] FIX: LOW: durable post-compact debt discharge ignores persist failure at three sites while the arm path reverts, so a failed append resurrects debt on restart (extensions/goal-heartbeat.ts:1359)
+- [ ] FIX: LOW: detached audit prompt embeds the full change set uncapped (up to 100 paths) while the recap path caps at 20 (extensions/goal-loop-auditor.ts:213)
+- [ ] FIX: LOW: wall-feature revert left dead `Auditor exceeded` classification branches at four recovery sites plus the timeout predicate (extensions/loops/goal-auditor-hooks.ts:745)
+- [ ] FIX: LOW: settlement ordering guards are constant-folded dead code obscuring the live gate (extensions/loops/goal-tools.ts:1528)
+- [ ] FIX: LOW: transcript role label uses surrogate-unsafe `.slice(0, 40)` on untrusted child text (extensions/goal-agents-panel.ts:409)
+- [ ] FIX: LOW: tests/README claims schema validation is lightweight without Ajv, but the test compiles the schema with Ajv (tests/README.md:25)
+- [ ] FIX: LOW: smoke.sh requirements header omits python3 though cleanup and every ledger assertion run through it (scripts/smoke.sh:9)
