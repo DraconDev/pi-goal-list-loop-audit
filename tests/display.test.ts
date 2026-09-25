@@ -1030,7 +1030,7 @@ test("widget: auditing shows auditor progress", () => {
   assert.doesNotMatch(status, /grep|evidence:|elapsed|worker activity/);
 });
 
-test("widget: interrupted completion claims render recovery-pending, not auditor-running", () => {
+test("widget: interrupted completion claims render the named recovery-needed lifecycle, not auditor-running", () => {
   const claim = { at: "2026-07-21T11:59:00Z", completionSummary: "done" };
   const g = goalOf({ status: "auditing", pendingCompletion: claim }); // legacy claim has no phase
   const state = { goal: g, list: [] };
@@ -1038,8 +1038,12 @@ test("widget: interrupted completion claims render recovery-pending, not auditor
   assert.match(status, /audit recovery pending/);
   assert.doesNotMatch(status, /auditing…/);
   const lines = buildWidgetLines(state, null, NOW)!;
-  assert.ok(lines.some((l) => l.includes("recovery pending — previous audit was interrupted")));
-  assert.ok(lines.some((l) => l.includes("stored completion claim is safe")));
+  // v0.38.99: the card names the lifecycle state and its evidence instead of
+  // the old flat "previous audit was interrupted" line, and points at the real
+  // recovery command.
+  assert.ok(lines.some((l) => l.includes("auditor: recovery needed")), `lines:\n${lines.join("\n")}`);
+  assert.ok(lines.some((l) => /parked .* ago/.test(l)), `lines:\n${lines.join("\n")}`);
+  assert.ok(lines.some((l) => l.includes("/goal resume retries the stored claim")), `lines:\n${lines.join("\n")}`);
   assert.ok(!lines.some((l) => l.includes("auditor: running")));
 });
 

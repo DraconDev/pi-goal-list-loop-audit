@@ -13,7 +13,7 @@
 import { truncateToWidth as tuiTruncateToWidth, visibleWidth as tuiVisibleWidth, sliceByColumn as tuiSliceByColumn } from "@earendil-works/pi-tui";
 
 import type { DurableDeferRecommendationInput, Goal, MainModelRecovery, PendingCompletion, State } from "./goal-loop-core.js";
-import { auditVerdictLabel, bucketSilentMs, buildDurableDeferRecommendation, compactDisplayText, fmtDuration, formatMainModelRecoveryStatus, headLifesign, isMonitorGoal, isPersistenceDegraded, lastPersistenceFailure, sanitizeDisplayText, sanitizeProviderAuditReport, sanitizeProviderDisplayText, stripThinkBlocks, type LifesignRow } from "./goal-loop-core.js";
+import { auditVerdictLabel, auditLifecycleLine, auditLifecycleProjection, auditPhaseOwnsAttempt, bucketSilentMs, buildDurableDeferRecommendation, compactDisplayText, fmtDuration, formatMainModelRecoveryStatus, headLifesign, isMonitorGoal, isPersistenceDegraded, lastPersistenceFailure, sanitizeDisplayText, sanitizeProviderAuditReport, sanitizeProviderDisplayText, stripThinkBlocks, type LifesignRow } from "./goal-loop-core.js";
 
 export { isMonitorGoal };
 import { HELD_ON_RESTORE, type LoopState } from "./goal-loop-forever.js";
@@ -710,7 +710,12 @@ function interruptedForNoStart(g: Goal): boolean {
 /** A pending claim without the new `running` marker is a legacy or
  * replacement-interrupted audit. It must never render as an active auditor. */
 function auditRecoveryPending(g: Goal): boolean {
-  return g.status === "auditing" && !!g.pendingCompletion && g.pendingCompletion.phase !== "running";
+  // v0.38.99: ask the durable lifecycle, not a hardcoded phase string. An
+  // attempt-owning claim (`starting`/`running`/`settling`) is live; a parked
+  // one (`recovery-pending`/`retry-waiting`) is not. Previously ANY phase that
+  // was not literally "running" — including a legacy claim with no phase at
+  // all, and a settling approval — rendered as "recovery pending".
+  return g.status === "auditing" && !!g.pendingCompletion && !auditPhaseOwnsAttempt(g.pendingCompletion.phase);
 }
 
 // ---- status line (one-liner, always-on) ----
@@ -869,11 +874,17 @@ export function auditorDisplayPhase(g: Goal, audit: AuditDisplayProgress | null 
     return "quiet";
   }
   // Same lifecycle scope as above: a stale goal snapshot that still
-  // carries a running pendingCompletion must not project a wait either.
+  // carries an attempt-owning claim must not project a wait either.
   // (The archive strips pendingCompletion; this guards pre-archive
   // snapshots read after the close.)
-  if (!audit && g.status === "auditing" && g.pendingCompletion?.phase === "running") return "awaiting-verdict";
-  if (!audit && g.pendingCompletion?.phase === "running") return "quiet";
+  // v0.38.99: the durable lifecycle decides, not a hardcoded "running".
+  // `starting` is still a live attempt (it has not reported yet), and
+  // `settling` is a claim whose approval is durable and awaiting its
+  // archive — reporting either as "quiet" would misread a real settlement
+  // window after a restart.
+  const durable = auditLifecycleProjection(g.pendingCompletion, { now });
+  if (!audit && g.status === "auditing" && durable && (durable.phase === "running" || durable.phase === "starting" || durable.phase === "settling")) return "awaiting-verdict";
+  if (!audit && durable?.phase === "running") return "quiet";
   return "running";
 }
 
@@ -957,6 +968,21 @@ function auditorPhaseForDisplay(audit: AuditDisplayProgress | null | undefined, 
     return "last observed tool";
   }
   return auditorObservedPhase(audit, phase);
+}
+
+/** v0.38.99: a claim whose approval is durable and whose archive is owed is
+ * SETTLING, not "awaiting completion review" — the review already happened.
+ * With no in-process progress (the restart case) the durable phase is the only
+ * evidence, and mislabeling it hid a real settlement window behind a worker
+ * that no longer exists. */
+function durablePhaseLabel(claim: PendingCompletion | undefined, now: number): string | undefined {
+  const phase = claim?.phase;
+  if (phase === "settling") return "settling";
+  if (phase === "starting" && claim) {
+    const projection = auditLifecycleProjection(claim, { now });
+    return projection?.stale ? "starting · no worker event" : "starting";
+  }
+  return undefined;
 }
 
 function auditorHasLiveEvidence(audit: AuditDisplayProgress | null | undefined, phase: AuditorDisplayPhase, now: number): boolean {
@@ -1248,9 +1274,14 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
     // on — "auditor reading source…" names the work the coarse "thinking"
     // label hid. Opt-out via auditorProgressSignals.
     const signals = extras?.auditorProgressSignals !== false;
-    const observed = signals && phase === "running"
-      ? (auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, live))
-      : auditorPhaseForDisplay(audit, phase, live);
+    // v0.38.99: same durable-first naming as the card — with no in-process
+    // worker, a settling/starting claim says so instead of "awaiting
+    // completion review".
+    const durableLabel = audit ? undefined : durablePhaseLabel(g.pendingCompletion, now);
+    const observed = durableLabel
+      ?? (signals && phase === "running"
+        ? (auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, live))
+        : auditorPhaseForDisplay(audit, phase, live));
     // v0.35.15: leading phase glyph + draining activity meter — a glance
     // answers "is the audit alive?" without reading the sentence.
     const phaseText = `auditor ${auditorPhaseGlyph(phase)} ${observed}`;
@@ -1716,10 +1747,16 @@ function auditorNextAction(phase: AuditorDisplayPhase): string {
  * agree on phase words by construction. */
 function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefined, now: number, theme?: DisplayTheme, extras?: WidgetExtras): { lead: string[]; tail: string[] } {
   if (auditRecoveryPending(g)) {
+    // v0.38.99: a parked claim names its OWN durable state and evidence
+    // ("recovery needed · parked 5m 12s ago") instead of the one flat
+    // "previous audit was interrupted" line that could not distinguish a
+    // stale claim from a settling approval that merely lost its archive.
+    const parked = auditLifecycleProjection(g.pendingCompletion, { now });
+    const parkedLine = auditLifecycleLine(parked);
     return {
       lead: [
-        `├─ auditor: ${paint(theme, "warning", "recovery pending — previous audit was interrupted")}`,
-        `└─ ${paint(theme, "dim", "stored completion claim is safe; a fresh session will retry it")}`,
+        `├─ auditor: ${paint(theme, "warning", parked?.label ?? "recovery needed")}`,
+        `└─ ${paint(theme, "dim", `${parkedLine ? parkedLine.slice(parkedLine.indexOf(" · ") + 3) : "stored completion claim is safe; a fresh session will retry it"}${parked?.nextAction ? ` · ${parked.nextAction}` : ""}`)}`,
       ],
       tail: [],
     };
@@ -1733,6 +1770,10 @@ function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefin
   const phaseLabel = signals && phase === "running"
     ? (auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, phaseLive))
     : auditorPhaseForDisplay(audit, phase, phaseLive);
+  // v0.38.99: with no in-process worker, the durable lifecycle names the
+  // state (starting / settling) that the coarse display phase cannot.
+  const durableLabel = audit ? undefined : durablePhaseLabel(g.pendingCompletion, now);
+  const effectivePhaseLabel = durableLabel ?? phaseLabel;
   const detail = audit?.label && audit.label !== "queued" && audit.label !== "running"
     ? ` · ${truncate(audit.label, 30)}`
     : "";
@@ -1741,8 +1782,29 @@ function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefin
   // (worker rows insert before it) and a long-standing test pin — the
   // activity facts ride AFTER it, never before.
   const activity = auditorActivityAge(audit, now);
-  const ageSeg = activity !== undefined ? `last progress ${fmtElapsed(activity)} ago` : "last progress none yet";
-  const lead = [`├─ auditor: ${paint(theme, auditorPhaseTone(phase, phaseLive), phaseLabel)}${detail} · detached worker · ${ageSeg}`];
+  // v0.38.99: when this process has no in-process progress, the DURABLE
+  // `lastActivityAt` is the only liveness evidence that exists — exactly the
+  // restart case. It is read only when the worker actually reported (an
+  // explicit stamp), never back-filled from the claim's own age, so "no
+  // progress yet" still means no progress.
+  const durableActivityMs = typeof g.pendingCompletion?.lastActivityAt === "string"
+    && Number.isFinite(Date.parse(g.pendingCompletion.lastActivityAt))
+    && Date.parse(g.pendingCompletion.lastActivityAt) <= now
+    ? now - Date.parse(g.pendingCompletion.lastActivityAt)
+    : undefined;
+  const durable = auditLifecycleProjection(g.pendingCompletion, { now });
+  const ageSeg = activity !== undefined
+    ? `last progress ${fmtElapsed(activity)} ago`
+    : durableActivityMs !== undefined
+      ? `last progress ${fmtElapsed(durableActivityMs)} ago (durable)`
+      : "last progress none yet";
+  // A no-progress window on a claim this process owns is the durable signal
+  // that the live watchdog would kill: name it instead of rendering a stale
+  // age as if it were healthy.
+  const staleSeg = activity === undefined && durable?.stale && durable.idleMs !== undefined
+    ? ` · no progress ${fmtElapsed(durable.idleMs)}`
+    : "";
+  const lead = [`├─ auditor: ${paint(theme, auditorPhaseTone(phase, phaseLive), effectivePhaseLabel)}${detail} · detached worker · ${ageSeg}${staleSeg}`];
   // Lead row 2: current tool + time budget, effective model + thinking.
   // Absent facts are omitted, never invented. The tool observation lives
   // ONLY here (it moved out of the tail) so the card keeps its

@@ -125,7 +125,9 @@ test("v0.38.18 terminal notice: the done brief lands in the conversation exactly
 });
 
 test("v0.38.18 source: the detached-approval branch closes the transcript", () => {
-  assert.match(HOOKS_SRC, /sendTerminalCompletionNotice\(liveCtx, \{/);
+  // v0.38.99: the call lives in the shared settlement driver, whose
+  // context parameter is `ctx`.
+  assert.match(HOOKS_SRC, /sendTerminalCompletionNotice\(ctx, \{/);
   assert.match(HOOKS_SRC, /replayUndeliveredApprovalRenders/);
 });
 

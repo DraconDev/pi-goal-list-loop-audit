@@ -15,6 +15,31 @@ import { isDeterministicProviderError, normalizeProviderErrorText, providerError
 import { MAX_AUDITOR_CANDIDATE_REFS, MAX_MAIN_MODEL_FALLBACKS, normalizeBoundedModelRefs } from "./main-model-recovery.js";
 import { resolveGllaStateDir, stateRootPending } from "./glla-state-root.js";
 import { normalizeFindingLead } from "./finding-lead.js";
+import { auditLifecycleLine, auditLifecycleProjection } from "./audit-lifecycle.js";
+// Re-exported so display surfaces (which already import values from this
+// module) share ONE lifecycle import edge — the projection, its vocabulary,
+// and the settlement state machine can never drift apart.
+export {
+  AUDIT_ACTIVITY_PERSIST_MS,
+  AUDIT_NO_PROGRESS_MS,
+  auditLifecycleLine,
+  auditLifecycleProjection,
+  auditPhaseOwnsAttempt,
+  fmtAge,
+  isSettlingClaim,
+  LIFECYCLE_LABELS,
+  normalizeAuditPhase,
+  settlementAllowsTerminalRender,
+  settlementPark,
+  settlementStep,
+  type AuditClaimLike,
+  type AuditLifecycleProjection,
+  type AuditLifecycleState,
+  type DurableAuditPhase,
+  type SettlementOutcome,
+  type SettlementProgress,
+  type SettlementStep,
+} from "./audit-lifecycle.js";
 export { normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, sanitizeProviderAuditReport, sanitizeProviderDisplayText } from "./quota-retry.js";
 export { globalSettingsPath, resolveRuntimeSessionDir, setRuntimeSessionDir, setRuntimeSessionDirFromSessionManager, stateRootPending, type GllaStateRoot } from "./glla-state-root.js";
 
@@ -338,7 +363,23 @@ export function sumNewAssistantTokens(messages: unknown[], seen: Set<string>): n
   return total;
 }
 
-export type CompletionAuditPhase = "running" | "recovery-pending" | "retry-waiting" | "quota-waiting";
+/** Durable completion-audit lifecycle phases (see extensions/audit-lifecycle.ts
+ * for the state machine and the terminality rule).
+ *  - `starting`         claim persisted, no detached worker event yet
+ *  - `running`          a detached attempt is in flight (`lastActivityAt` moves)
+ *  - `settling`         an approval was applied durably; the archive is owed
+ *  - `recovery-pending` parked after an interruption/no-progress/failed settlement
+ *  - `retry-waiting`    one bounded automatic retry is armed and dated
+ *  Absent = pre-lifecycle claim, which reads as `recovery-pending`. There is
+ *  deliberately no `approved` phase: the terminal archive releases the claim,
+ *  so `approved` is a settlement state, never a persisted claim state. */
+export type CompletionAuditPhase =
+  | "starting"
+  | "running"
+  | "settling"
+  | "recovery-pending"
+  | "retry-waiting"
+  | "quota-waiting"; // v0.34.142 predecessor of `retry-waiting`, migrated on read
 export type AuditorRecoveryFailureClass = "transport" | "timeout" | "no-verdict" | "provider";
 
 /** Durable completion claim metadata. The claim itself is the user's exact
@@ -471,6 +512,15 @@ export interface PendingCompletion {
   at: string;
   /** Current audit lifecycle. Missing = legacy claim, treated as recovery-pending. */
   phase?: CompletionAuditPhase;
+  /** v0.38.99: freshest durable evidence that the attempt is alive (first
+   * worker event, tool call, report byte). Refreshed by the throttled
+   * progress writer while the attempt runs, and read after a restart to tell
+   * a live audit from a silent one. Absent = never observed, never invented. */
+  lastActivityAt?: string;
+  /** v0.38.99: when the approval became durable on this claim
+   * (`phase: "settling"`). The settlement window a crash used to leave
+   * unrepresented; a restart re-drives it from here. */
+  verdictAt?: string;
   /** Identifies the isolated-auditor attempt, not the goal. */
   attemptId?: string;
   /** Start time for the current isolated-auditor attempt. */
@@ -2441,6 +2491,8 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     retryFromUpstream: _retryFromUpstream,
     resetAt: _resetAt,
     phase: _phase,
+    lastActivityAt: _lastActivityAt,
+    verdictAt: _verdictAt,
     auditorCandidateRefs: _auditorCandidateRefs,
     auditorCandidateRef: _auditorCandidateRef,
     auditorRetryCandidateRef: _auditorRetryCandidateRef,
@@ -2460,6 +2512,16 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     ...canonicalOrUnknown
   } = raw;
   const phase = _phase === "quota-waiting" ? "retry-waiting" : _phase;
+  // v0.38.99: lifecycle timestamps are evidence, not decoration. A
+  // hand-edited or truncated value degrades to absent (the projection then
+  // falls back to startedAt/at) — never to an invented "now".
+  const lifecycleIso = (value: unknown): string | undefined => {
+    if (typeof value !== "string" || !value.trim()) return undefined;
+    const ms = Date.parse(value);
+    return Number.isFinite(ms) ? new Date(ms).toISOString() : undefined;
+  };
+  const lastActivityAt = lifecycleIso(_lastActivityAt);
+  const verdictAt = lifecycleIso(_verdictAt);
   const boundedRefs = (value: unknown): string[] | undefined => {
     if (!Array.isArray(value)) return undefined;
     return normalizeBoundedModelRefs(
@@ -2550,7 +2612,15 @@ function normalizePendingCompletion(value: unknown): PendingCompletion {
     ...(sanitizedGroups ? { findingGroups: sanitizedGroups } : {}),
     ...(sanitizedGates ? { gateRows: sanitizedGates } : {}),
     ...(showVerification ? { showVerification: true } : {}),
-    ...(phase === "running" || phase === "recovery-pending" || phase === "retry-waiting" ? { phase } : {}),
+    ...(phase === "starting"
+      || phase === "running"
+      || phase === "settling"
+      || phase === "recovery-pending"
+      || phase === "retry-waiting"
+      ? { phase }
+      : {}),
+    ...(lastActivityAt ? { lastActivityAt } : {}),
+    ...(verdictAt ? { verdictAt } : {}),
     ...(typeof raw.retryAttempts === "number"
       ? { retryAttempts: raw.retryAttempts }
       : typeof raw.quotaAttempts === "number" ? { retryAttempts: raw.quotaAttempts } : {}),
@@ -2865,9 +2935,15 @@ export function renderGoalMarkdown(goal: Goal): string {
     lines.push("");
   }
   if (goal.pendingCompletion) {
-    const phase = goal.pendingCompletion.phase ?? "recovery-pending";
-    lines.push(`**Completion audit**: ${phase}`);
+    // v0.38.99: the durable lifecycle is named here, not the raw phase, and
+    // it is projected from the same helper every live surface uses — so the
+    // durable record can never read "running" for a claim a restart will
+    // demote, or "recovery-pending" for one that is merely starting.
+    const lifecycle = auditLifecycleProjection(goal.pendingCompletion);
+    const phase = lifecycle?.phase ?? "recovery-pending";
+    lines.push(`**Completion audit**: ${auditLifecycleLine(lifecycle) ?? phase}`);
     if (goal.pendingCompletion.attemptId) lines.push(`**Completion audit attempt**: \`${goal.pendingCompletion.attemptId}\``);
+    if (lifecycle?.nextAction) lines.push(`**Completion audit next**: ${lifecycle.nextAction}`);
   }
   lines.push("");
   lines.push("## Objective");

@@ -332,6 +332,11 @@ import {
 import {
   ConfirmDraftComponent,
 } from "../confirm-draft.js";
+// v0.38.99: the settlement re-drive lives with the auditor hooks (one
+// driver, two callers). goal-auditor-hooks does not import goal-activation,
+// so this edge introduces no cycle.
+import { resumeSettlingCompletionAudit } from "./goal-auditor-hooks.js";
+import { isSettlingClaim } from "../audit-lifecycle.js";
 import {
   applyMeasurement,
   applyMetriclessTick,
@@ -2144,6 +2149,19 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // genuinely fresh session instead of requiring a second manual command.
     const storedCompletionGoal = state.goal;
     const storedCompletionClaim = storedCompletionGoal?.pendingCompletion;
+    // v0.38.99: an interrupted SETTLEMENT is the one stored-claim state a
+    // restart can finish without re-running the auditor — the approval is
+    // already durable, only the terminal archive was owed. It must be driven
+    // BEFORE the interrupted-audit branch below, which would otherwise demote
+    // a genuinely approved claim to recovery-pending and ask the user to
+    // re-verify work the auditor already approved.
+    if (storedCompletionGoal && isSettlingClaim(storedCompletionClaim)) {
+      const settlement = resumeSettlingCompletionAudit(ctx);
+      appendLedger(ctx.cwd, "audit_settlement_restart_check", { goalId: storedCompletionGoal.id, outcome: settlement });
+      if (settlement === "settled") {
+        ctx.ui.notify("Restored an interrupted approval: the archived summary for the approved goal is below.", "info");
+      }
+    }
     const interruptedCompletionAudit = !!storedCompletionGoal && !!storedCompletionClaim && (
       storedCompletionGoal.status === "auditing" ||
       (storedCompletionGoal.status === "paused" && (storedCompletionClaim.phase ?? "recovery-pending") === "recovery-pending")

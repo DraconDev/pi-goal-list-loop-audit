@@ -252,6 +252,7 @@ import {
 } from "../goal-loop-repetition.js";
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
 import { buildFinalRepoStateLines, buildTerminalApprovalRender, compactCompletionSummary, isGenericCompletionSummary, missingCompletionSummaryLabels } from "../completion-summary.js";
+import { AUDIT_ACTIVITY_PERSIST_MS, isSettlingClaim, settlementAllowsTerminalRender, settlementPark, settlementStep } from "../audit-lifecycle.js";
 import { persistApprovalRender, replayUndeliveredApprovalRenders } from "../approval-render-store.js";
 import {
   defaultAgentDir,
@@ -677,9 +678,15 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
       : claim;
   const pending: PendingCompletion = {
     ...claimForAttempt,
-    phase: "running",
+    // v0.38.99: the launch window is `starting`, not `running`. The claim is
+    // durable before the worker exists, and a crash inside this window used
+    // to leave a claim indistinguishable from a live audit. No
+    // `lastActivityAt` is written here: the first worker event is the first
+    // evidence of an attempt actually running.
+    phase: "starting",
     attemptId: newCompletionAuditAttemptId(),
     startedAt: new Date(startedMs).toISOString(),
+    lastActivityAt: undefined,
     recoveryAt: undefined,
     recoveryReason: undefined,
     recoveryRetryAt: undefined,
@@ -889,6 +896,203 @@ function auditorCandidateLabel(candidate: AuditorModelCandidate): string {
  * owns the current generation and logical claim. Returning false is a hard
  * stop for the fallback walker: launching or advancing without a durable
  * cursor would make a host restart repeat a provider call unpredictably. */
+/**
+ * v0.38.99: refresh the DURABLE lifecycle evidence of a live attempt.
+ *
+ * Called for every worker progress snapshot that carries `lastActivityAt` —
+ * the worker's own stamp for a real parsed RPC event. The first such event
+ * flips the stored claim from `starting` to `running`; later events refresh
+ * the stamp at most once per AUDIT_ACTIVITY_PERSIST_MS so a chatty auditor
+ * cannot turn every token into an append-only state line. The stamp is what
+ * makes "running with last activity" survive a restart: without it, a claim
+ * left `running` by a crashed host is indistinguishable from a live one until
+ * the in-process watchdog — which does not exist after a restart — notices.
+ *
+ * The `complete` snapshot counts as evidence too: the parent's poll can land
+ * after the worker finished, and the final snapshot still carries the last
+ * real event's stamp. Gating on an in-flight phase made the durable flip
+ * depend on catching a transient poll, which a fast worker can skip.
+ *
+ * Returns true when the durable claim actually moved. A failed write is not
+ * fatal here (the in-process watchdog still owns liveness); it is simply not
+ * claimed as progress.
+ */
+function persistAuditorActivity(
+  generation: number,
+  goalId: string,
+  attemptId: string,
+  at: number,
+): boolean {
+  const current = detachedAuditContext(generation, goalId, attemptId);
+  const claim = state.goal?.pendingCompletion;
+  if (!current || !claim || claim.attemptId !== attemptId) return false;
+  if (claim.phase !== "starting" && claim.phase !== "running") return false;
+  const iso = new Date(at).toISOString();
+  if (claim.phase === "running") {
+    const priorMs = claim.lastActivityAt ? Date.parse(claim.lastActivityAt) : Number.NaN;
+    if (Number.isFinite(priorMs) && at - priorMs < AUDIT_ACTIVITY_PERSIST_MS) return false;
+  }
+  return updateGoal({
+    pendingCompletion: { ...claim, phase: "running", lastActivityAt: iso },
+  }, current);
+}
+
+/**
+ * v0.38.99: the ONE approved-settlement driver.
+ *
+ * It is deliberately a separate function (not an inline block) because it has
+ * exactly two callers with the same obligations:
+ *  1. the live path, right after the approval was persisted as `settling`; and
+ *  2. the restart path, when a fresh session finds a durable `settling` claim
+ *     whose approval never reached its archive.
+ *
+ * Both must obey the same rules: never emit a terminal success before the
+ * archive landed, and on an archive failure KEEP the approved claim so the
+ * settlement can be re-driven (the old path dropped it, which turned a
+ * recoverable archive failure into a goal that looked approved forever).
+ */
+function settleApprovedCompletion(
+  ctx: ExtensionContext,
+  opts: {
+    goalId: string;
+    generation: number;
+    claim: PendingCompletion;
+    model: string;
+    origin: CompletionAuditOrigin;
+    fallbackUsed?: boolean;
+    inspectionSessionPath?: string;
+  },
+): boolean {
+  const { goalId, generation, claim, model, origin, fallbackUsed, inspectionSessionPath } = opts;
+  const goal = state.goal;
+  if (!goal || goal.id !== goalId) return false;
+  // v0.34.91: capture the recap BEFORE archiveCurrentGoal (it mutates
+  // state.goal). The end-of-goal message says WHAT HAPPENED, not
+  // "auditor approved" — that's process, not information (the field
+  // complaint across Screenshot_20260808_012905/013220/013515: three
+  // boilerplate "claim persisted/auditor queued" lines + a "Goal complete
+  // — auditor X approved" card read as useless summary spam). The recap
+  // is the agent's completionSummary when captured; the objective is the
+  // fallback for legacy/aborted goals.
+  const terminalReason = `completion audit ${model} approved (${origin})`;
+  const approvalVia = `${origin === "manual" ? " on /goal verify" : origin === "agent" ? " after an agent resume" : origin === "session-recovery" ? " after session recovery" : " on the provider retry"}${fallbackUsed ? " after an auditor-model fallback" : ""}`;
+  // v0.38.20: the chat record pointer. Computed pre-archive like the
+  // render below (archiveCurrentGoal clears state.goal).
+  const approvalRecord = `— record: ${path.relative(ctx.cwd, archivedGoalPath(ctx.cwd, goal.id)) || archivedGoalPath(ctx.cwd, goal.id)}`;
+  const approvalArchivePath = path.relative(ctx.cwd, archivedGoalPath(ctx.cwd, goal.id)) || archivedGoalPath(ctx.cwd, goal.id);
+  // v0.38.25: ONE canonical render for every approval surface (chat,
+  // transcript, external, persisted). Computed pre-archive — the fence
+  // clears state.goal — and persisted after the archive lands so a
+  // verdict that lands with no live turn is replayed on the next live
+  // contact instead of going silent (field 2026-09-07).
+  // v0.38.55 (full parity): final repository state closes the card.
+  // Best-effort — unreadable state keeps the section out.
+  const approvalRepoState = buildFinalRepoStateLines(ctx.cwd);
+  const approvalRender = buildTerminalApprovalRender({
+    goal,
+    status: "complete",
+    stopReason: terminalReason,
+    archivePath: approvalArchivePath,
+    // 2026-09-16 whole-work recap: after a repair re-claim the audited
+    // summary may be a delta-only correction; the FIRST claim's recap
+    // leads so the card still explains the whole work. The audited
+    // repair claim stays the substance the approval verdict covers.
+    completionSummary: goal.completionSummary,
+    priorCompletionSummary: claim.priorCompletionSummary,
+    approval: `— completion audit approved${approvalVia}.`,
+    record: approvalRecord,
+    // v0.38.37: the deliberate non-do the agent claimed, if any.
+    ...(claim.leftOut ? { leftOut: claim.leftOut } : {}),
+    ...(claim.showVerification ? { showVerification: true } : {}),
+    // v0.38.50: agent-structured finding groups ride the audited claim.
+    // v0.38.52: same for the gate inventory.
+    ...(claim.findingGroups ? { findingGroups: claim.findingGroups } : {}),
+    ...(claim.gateRows ? { gateRows: claim.gateRows } : {}),
+    ...(approvalRepoState ? { repoState: approvalRepoState } : {}),
+    extras: inspectionSessionPath
+      ? [`Auditor session kept for review: pi --session ${inspectionSessionPath} (or pi --fork ${inspectionSessionPath}).`]
+      : [],
+  });
+  const approvalObjective = goal.objective;
+  const archived = archiveCurrentGoal(ctx, "complete", terminalReason, {}, {
+    findingGroups: claim.findingGroups,
+    gateRows: claim.gateRows,
+    priorCompletionSummary: claim.priorCompletionSummary,
+  });
+  if (!archived) {
+    // archiveCurrentGoal already preserved the live record and warned the
+    // user. The APPROVED claim stays: it is the durable proof that a verdict
+    // landed, and it is what lets a restart finish this settlement.
+    const parked = settlementPark("archive");
+    updateGoal({
+      status: "paused",
+      pendingCompletion: { ...claim, phase: "recovery-pending", recoveryAt: nowIso(), recoveryReason: "approval-archive-failed" },
+      pauseKind: "blocked",
+      pauseReason: `completion approved (${model}), but the terminal archive failed — ${parked.step}`,
+      pauseSuggestedAction: `Fix .pi-glla disk access or resolve the archive fence, then ${activeGoalSurfaceCommand("resume")} finishes the approved settlement. No new audit is needed.`,
+    }, ctx);
+    appendLedger(ctx.cwd, "goal_archive_failed_after_approval", { goalId, attemptId: claim.attemptId, origin, stage: parked.step });
+    return false;
+  }
+  // The single terminal gate: a summary may only be queued once the verdict
+  // is durable AND the archive landed.
+  if (!settlementAllowsTerminalRender({ verdictPersisted: true, archived, renderPersisted: false, delivered: false })) return false;
+  const persisted = persistApprovalRender(ctx.cwd, {
+    goalId,
+    objective: approvalObjective,
+    chatLines: approvalRender.chatLines,
+  });
+  if (persisted) {
+    replayUndeliveredApprovalRenders(ctx, (entry) => sendTerminalCompletionNotice(ctx, {
+      goalId: entry.goalId,
+      generation,
+      outcome: entry.objective,
+      details: [],
+      chatLines: entry.chatLines,
+    }), goalId);
+  } else {
+    ctx.ui.notify("Goal archived, but its chat summary could not be persisted. Review the archived completion summary.", "warning");
+  }
+  appendLedger(ctx.cwd, "audit_settlement_completed", {
+    goalId,
+    attemptId: claim.attemptId,
+    origin,
+    model,
+    renderPersisted: persisted,
+  });
+  notifyExternal(ctx, `Goal complete (completion audit approved, ${origin}): ${approvalRender.recap}`);
+  return true;
+}
+
+/**
+ * v0.38.99: finish a settlement a crash interrupted. A durable `settling`
+ * claim means the approval WAS durable and the archive was owed — the one
+ * state a restart can complete without re-running the auditor. Returns the
+ * settlement outcome so session_start can report it truthfully.
+ */
+export function resumeSettlingCompletionAudit(ctx: ExtensionContext): "settled" | "parked" | "not-applicable" {
+  const goal = state.goal;
+  const claim = goal?.pendingCompletion;
+  if (!goal || !claim || goal.status !== "auditing" || !isSettlingClaim(claim)) return "not-applicable";
+  const approved = [...(goal.auditHistory ?? [])].reverse().find((entry) => entry.approved && entry.regressionShieldPassed !== false);
+  if (!approved) {
+    // A settling claim with no approval verdict is a corrupt/incomplete
+    // record, not a settlement. Park it honestly instead of archiving.
+    markCompletionAuditRecoveryPending(ctx, "settling-without-verdict");
+    return "parked";
+  }
+  appendLedger(ctx.cwd, "audit_settlement_resumed", { goalId: goal.id, attemptId: claim.attemptId, verdictAt: approved.at });
+  return settleApprovedCompletion(ctx, {
+    goalId: goal.id,
+    generation: sessionGeneration,
+    claim,
+    model: approved.model,
+    origin: "session-recovery",
+  })
+    ? "settled"
+    : "parked";
+}
+
 function persistDetachedAuditorCursor(
   generation: number,
   goalId: string,
@@ -1200,6 +1404,13 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
             // warning, and the card renders "tool: X · 4m / 20m budget".
             if (progress.sessionPath) inspectionSessionPath = progress.sessionPath;
             publishDetachedAuditProgress(generation, goalId, claim.attemptId!, { ...progress, toolTimeoutMs });
+            // v0.38.99: the same event is durable lifecycle evidence. Only a
+            // real worker activity stamp counts (the worker's `lastActivityAt`),
+            // never a boot/heartbeat resend, so a silent worker cannot keep a
+            // dead claim looking alive after a restart.
+            if (typeof progress.lastActivityAt === "number" && Number.isFinite(progress.lastActivityAt)) {
+              persistAuditorActivity(generation, goalId, claim.attemptId!, progress.lastActivityAt);
+            }
           },
           // v0.34.57: the parent-side heartbeat-without-progress watchdog
           // fired — persist the auditor_stalled ledger event so the recovery
@@ -1526,88 +1737,50 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   }
 
   if (result.approved && result.regressionShieldPassed !== false) {
-    updateGoal({ auditHistory: history, pendingCompletion: undefined }, liveCtx);
-    // v0.34.91: capture the recap BEFORE archiveCurrentGoal (it mutates
-    // state.goal). The end-of-goal message says WHAT HAPPENED, not
-    // "auditor approved" — that's process, not information (the field
-    // complaint across Screenshot_20260808_012905/013220/013515: three
-    // boilerplate "claim persisted/auditor queued" lines + a "Goal complete
-    // — auditor X approved" card read as useless summary spam). The recap
-    // is the agent's completionSummary when captured; the objective is the
-    // fallback for legacy/aborted goals.
-    const terminalReason = `completion audit ${result.model} approved (${origin})`;
-    const approvalVia = `${origin === "manual" ? " on /goal verify" : origin === "agent" ? " after an agent resume" : origin === "session-recovery" ? " after session recovery" : " on the provider retry"}${fallbackUsed ? " after an auditor-model fallback" : ""}`;
-    // v0.38.20: the chat record pointer. Computed pre-archive like the
-    // render below (archiveCurrentGoal clears state.goal).
-    const approvalRecord = `— record: ${path.relative(liveCtx.cwd, archivedGoalPath(liveCtx.cwd, state.goal.id)) || archivedGoalPath(liveCtx.cwd, state.goal.id)}`;
-    const approvalArchivePath = path.relative(liveCtx.cwd, archivedGoalPath(liveCtx.cwd, state.goal.id)) || archivedGoalPath(liveCtx.cwd, state.goal.id);
-    // v0.38.25: ONE canonical render for every approval surface (chat,
-    // transcript, external, persisted). Computed pre-archive — the fence
-    // clears state.goal — and persisted after the archive lands so a
-    // verdict that lands with no live turn is replayed on the next live
-    // contact instead of going silent (field 2026-09-07).
-    // v0.38.55 (full parity): final repository state closes the card.
-    // Best-effort — unreadable state keeps the section out.
-    const approvalRepoState = buildFinalRepoStateLines(liveCtx.cwd);
-    const approvalRender = buildTerminalApprovalRender({
-      goal: state.goal,
-      status: "complete",
-      stopReason: terminalReason,
-      archivePath: approvalArchivePath,
-      // 2026-09-16 whole-work recap: after a repair re-claim the audited
-      // summary may be a delta-only correction; the FIRST claim's recap
-      // leads so the card still explains the whole work. The audited
-      // repair claim stays the substance the approval verdict covers.
-      completionSummary: state.goal.completionSummary,
-      priorCompletionSummary: claim.priorCompletionSummary,
-      approval: `— completion audit approved${approvalVia}.`,
-      record: approvalRecord,
-      // v0.38.37: the deliberate non-do the agent claimed, if any.
-      ...(claim.leftOut ? { leftOut: claim.leftOut } : {}),
-      ...(claim.showVerification ? { showVerification: true } : {}),
-      // v0.38.50: agent-structured finding groups ride the audited claim.
-      // v0.38.52: same for the gate inventory.
-      ...(claim.findingGroups ? { findingGroups: claim.findingGroups } : {}),
-      ...(claim.gateRows ? { gateRows: claim.gateRows } : {}),
-      ...(approvalRepoState ? { repoState: approvalRepoState } : {}),
-      extras: inspectionSessionPath
-        ? [`Auditor session kept for review: pi --session ${inspectionSessionPath} (or pi --fork ${inspectionSessionPath}).`]
-        : [],
-    });
-    const approvalObjective = state.goal.objective;
-    const archived = archiveCurrentGoal(liveCtx, "complete", `completion audit ${result.model} approved (${origin})`, {}, { findingGroups: claim.findingGroups, gateRows: claim.gateRows, priorCompletionSummary: claim.priorCompletionSummary });
-    if (!archived) {
-      // archiveCurrentGoal already preserved the live record and warned the
-      // user. Keep the approved claim recoverable, but never emit a terminal
-      // success after the durable archive failed.
+    // v0.38.99 SETTLEMENT — an approval is a DURABLE TRANSACTION, not a
+    // sequence of hopeful writes. The old path cleared the claim and then
+    // archived; a crash (or a failed write) in between left a goal whose only
+    // durable trace was "auditing", with the approved verdict lost and the
+    // terminal card the only place it existed. The order is now fixed by
+    // settlementStep(): the verdict lands on the claim (`phase: "settling"`)
+    // BEFORE any archive is attempted, and nothing terminal is emitted until
+    // that write and the archive have both succeeded.
+    const settlementClaim = state.goal.pendingCompletion ?? claim;
+    const verdictAt = nowIso();
+    const progress = { verdictPersisted: false, archived: false, renderPersisted: false, delivered: false };
+    if (settlementStep(progress).step !== "persist-verdict") return; // unreachable: fresh progress always starts here
+    const verdictPersisted = updateGoal({
+      auditHistory: history,
+      pendingCompletion: {
+        ...settlementClaim,
+        phase: "settling",
+        verdictAt,
+        lastActivityAt: verdictAt,
+      },
+    }, liveCtx);
+    if (!verdictPersisted) {
+      // The approval exists in memory only. Say so, keep the claim, and
+      // surface the recovery path — a terminal success here would be a lie
+      // the restart could not reproduce.
       updateGoal({
         status: "paused",
-        pendingCompletion: undefined,
-        pauseKind: "blocked",
-        pauseReason: "completion approved but terminal archive persistence failed",
-        pauseSuggestedAction: `Fix .pi-glla disk access or resolve the archive fence, then ${activeGoalSurfaceCommand("resume")} and call complete_goal again.`,
+        pendingCompletion: { ...settlementClaim, phase: "recovery-pending", recoveryAt: verdictAt, recoveryReason: "approval-not-persisted" },
+        pauseKind: "error",
+        pauseReason: "auditor approved, but the approval could not be persisted — no archive was attempted",
+        pauseSuggestedAction: `Fix .pi-glla disk access, then ${activeGoalSurfaceCommand("resume")} to re-verify the stored claim.`,
       }, liveCtx);
-      appendLedger(liveCtx.cwd, "goal_archive_failed_after_approval", { goalId, attemptId: claim.attemptId, origin });
+      appendLedger(liveCtx.cwd, "audit_settlement_parked", { goalId, attemptId: settlementClaim.attemptId, origin, stage: settlementPark("verdict").step });
       return;
     }
-    const persisted = persistApprovalRender(liveCtx.cwd, {
+    settleApprovedCompletion(liveCtx, {
       goalId,
-      objective: approvalObjective,
-      chatLines: approvalRender.chatLines,
+      generation,
+      claim: { ...settlementClaim, phase: "settling", verdictAt },
+      model: result.model,
+      origin,
+      fallbackUsed,
+      inspectionSessionPath,
     });
-    if (persisted) {
-      replayUndeliveredApprovalRenders(liveCtx, (entry) => sendTerminalCompletionNotice(liveCtx, {
-        goalId: entry.goalId,
-        generation,
-        outcome: entry.objective,
-        details: [],
-        chatLines: entry.chatLines,
-      }), goalId);
-    } else {
-      liveCtx.ui.notify("Goal archived, but its chat summary could not be persisted. Review the archived completion summary.", "warning");
-    }
-    notifyExternal(liveCtx, `Goal complete (completion audit approved, ${origin}): ${approvalRender.recap}`);
-    return;
   }
 
   if (result.regressionShieldPassed === false) {

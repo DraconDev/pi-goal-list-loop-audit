@@ -260,10 +260,19 @@ test("v0.28.26: quota-blocked audits store the claim + the retry re-runs the AUD
   assert.match(SRC, /async function retryStoredCompletionAudit\(origin: CompletionAuditOrigin = "provider-retry", exemptLoadHold = false\): Promise<void> \{/);
   assert.match(SRC, /completionSummary: claim\.completionSummary,/);
   assert.match(SRC, /verificationSummary: claim\.verificationSummary,/);
-  // 4. approved → archive (cascade inside archiveCurrentGoal); claim cleared:
-  assert.match(SRC, /const archived = archiveCurrentGoal\(liveCtx, "complete", `completion audit \$\{result\.model\} approved \(\$\{origin\}\)`, \{\}, \{ findingGroups: claim\.findingGroups, gateRows: claim\.gateRows, priorCompletionSummary: claim\.priorCompletionSummary \}\)/, "v0.38.52: the audited claim's finding groups + gate rows ride into the archive");
+  // 4. approved → SETTLE (v0.38.99): the verdict becomes durable on the
+  //    claim (`phase: "settling"`) BEFORE any archive is attempted, and only
+  //    the shared settlement driver archives. Clearing the claim first (the
+  //    pre-v0.38.99 shape) left a crash in that window with a goal whose only
+  //    durable trace was "auditing" and a terminal card as the sole record.
+  assert.match(SRC, /const verdictPersisted = updateGoal\(\{[\s\S]*?phase: "settling",[\s\S]*?verdictAt,[\s\S]*?\}, liveCtx\)/, "the approved verdict is persisted on the claim before the archive");
+  assert.match(SRC, /settleApprovedCompletion\(liveCtx, \{/, "one settlement driver owns the archive + summary");
+  assert.doesNotMatch(SRC, /updateGoal\(\{ auditHistory: history, pendingCompletion: undefined \}, liveCtx\)/, "the claim is never cleared before the archive lands");
+  //    v0.38.52: the audited claim's finding groups + gate rows ride into
+  //    the archive (now inside the shared settlement driver).
+  assert.match(SRC, /const archived = archiveCurrentGoal\(ctx, "complete", terminalReason, \{\}, \{/, "the settlement driver archives with the shared reason");
+  assert.match(SRC, /findingGroups: claim\.findingGroups,[\s\S]*?gateRows: claim\.gateRows,[\s\S]*?priorCompletionSummary: claim\.priorCompletionSummary,/, "v0.38.52: the audited claim's finding groups + gate rows ride into the archive");
   assert.match(SRC, /if \(!archived\) \{[\s\S]*?goal_archive_failed_after_approval/);
-  assert.match(SRC, /updateGoal\(\{ auditHistory: history, pendingCompletion: undefined \}, liveCtx\)/);
   // 5. still-failing → re-pause with the claim PRESERVED + another scheduled retry:
   assert.match(SRC, /auditor retry: retry in \$\{plan\.retryAfterSec\}s \(uniform schedule\)/);
   assert.match(SRC, /retryUntil: plan\.autoRetryUntil/);
@@ -277,5 +286,11 @@ test("v0.28.26: pendingCompletion typed + schematized", () => {
   assert.match(CORE, /pendingCompletion\?: PendingCompletion;/);
   const SCHEMA = fs.readFileSync("schemas/goal.schema.json", "utf-8");
   assert.match(SCHEMA, /"pendingCompletion": \{ "\$ref": "#\/definitions\/pendingCompletion" \}/);
-  assert.match(SCHEMA, /"phase": \{ "type": "string", "enum": \["running", "recovery-pending", "retry-waiting", "quota-waiting"\]/);
+  // v0.38.99: the lifecycle phases are the schema's contract. `approved` is
+  // deliberately NOT a phase — the terminal archive releases the claim, so an
+  // approved claim cannot outlive its own settlement.
+  assert.match(SCHEMA, /"phase": \{ "type": "string", "enum": \["starting", "running", "settling", "recovery-pending", "retry-waiting", "quota-waiting"\]/);
+  assert.doesNotMatch(SCHEMA, /"enum": \[[^\]]*"approved"/, "no approved claim phase: the archive releases the claim");
+  assert.match(SCHEMA, /"lastActivityAt": \{ "type": "string", "format": "date-time"/, "the durable last-activity evidence is in the published schema");
+  assert.match(SCHEMA, /"verdictAt": \{ "type": "string", "format": "date-time"/, "the settlement window is in the published schema");
 });

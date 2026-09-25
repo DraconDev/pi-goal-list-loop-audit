@@ -44,9 +44,19 @@ function setGlobalSettings(value: Record<string, unknown>): void {
 }
 afterEach(() => setGlobalAutoResume(false));
 
-import { appendAuditLog, queueItemSidecarCount, readState, writeQueueItemFile } from "../extensions/goal-loop-core.js";
+import { appendAuditLog, auditPhaseOwnsAttempt, queueItemSidecarCount, readState, writeQueueItemFile } from "../extensions/goal-loop-core.js";
 import { MockPi, invalidateHostSession, makeMockCtx, tmpCwd, seedState, seedGoal, seedLoop, staleError, tick, type MockCtx } from "./harness/mock-pi.js";
 import { readGoalRuntimeSource } from "./harness/goal-source.js";
+
+/**
+ * v0.38.99: a LAUNCHED attempt owns its durable claim. The stored phase is
+ * `starting` until the first worker event proves the attempt is running, so
+ * the contract under test here is "this claim is attempt-owning, not parked",
+ * not one hardcoded phase string.
+ */
+function assertOwnsAttempt(claim: { phase?: string } | undefined, message: string): void {
+  assert.ok(claim && auditPhaseOwnsAttempt(claim.phase), `${message} (phase: ${claim?.phase ?? "absent"})`);
+}
 
 const GOAL_SRC = readGoalRuntimeSource();
 
@@ -3137,7 +3147,7 @@ test("v0.35.x: a successful main-model recovery gives a parked audit its one aut
       pendingCompletion?: { phase?: string; automaticRecoveryAttempted?: boolean; automaticRecoveryGeneration?: number };
     } | null;
     assert.equal(started?.status, "auditing");
-    assert.equal(started?.pendingCompletion?.phase, "running");
+    assertOwnsAttempt(started?.pendingCompletion, "the recovery attempt owns the durable claim");
     assert.equal(started?.pendingCompletion?.automaticRecoveryAttempted, true);
     assert.equal(typeof started?.pendingCompletion?.automaticRecoveryGeneration, "number");
     await waitUntil(() => {
@@ -3669,7 +3679,7 @@ test("goal-start notify has no (id: …) suffix (v0.28.24 source pin)", () => {
     const claimed = readState(cwd).goal as { status: string; pendingCompletion?: { completionSummary?: string; phase?: string; attemptId?: string } };
     assert.equal(claimed.status, "auditing", "the claim is persisted before the auditor starts");
     assert.ok(claimed.pendingCompletion?.completionSummary?.startsWith("The lifecycle regression is covered."), "the claim is persisted before the auditor starts (may carry NOTE for missing labels)");
-    assert.equal(claimed.pendingCompletion?.phase, "running", "the durable claim records an active audit attempt");
+    assertOwnsAttempt(claimed.pendingCompletion, "the durable claim records an active audit attempt");
     assert.ok(claimed.pendingCompletion?.attemptId, "the attempt has a durable id");
 
     const replacement = ownerCtx(cwd);
@@ -3680,7 +3690,13 @@ test("goal-start notify has no (id: …) suffix (v0.28.24 source pin)", () => {
     const after = readState(cwd).goal as { status: string; pendingCompletion?: { completionSummary?: string; phase?: string } };
     assert.ok(["auditing", "paused"].includes(after.status), "the replacement keeps the audit lifecycle recoverable");
     assert.ok(after.pendingCompletion?.completionSummary?.startsWith("The lifecycle regression is covered."), "the durable claim survived (may carry NOTE for missing labels)");
-    assert.ok(["running", "recovery-pending"].includes(after.pendingCompletion?.phase ?? ""), "the fresh lifecycle uses an explicit phase");
+    // v0.38.99: the replacement either relaunches the attempt (an
+    // attempt-owning phase) or parks it — never a bare/legacy phase.
+    assert.ok(
+      after.pendingCompletion?.phase !== undefined
+      && (auditPhaseOwnsAttempt(after.pendingCompletion.phase) || after.pendingCompletion.phase === "recovery-pending"),
+      `the fresh lifecycle uses an explicit phase (phase: ${after.pendingCompletion?.phase ?? "absent"})`,
+    );
     const ledger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
     assert.match(ledger, /"audit_recovery_pending"/, "replacement marks the old attempt as recovery-pending");
     assert.match(ledger, /"audit_recovery_started"/, "replacement starts a fresh stored-claim attempt immediately");
@@ -3748,7 +3764,7 @@ test("v0.34.22: complete_goal returns while a detached auditor finishes and arch
     assert.ok(!fs.existsSync(releaseFile), `tool returned before the verdict was released (${elapsed}ms)`);
     const claimed = readState(cwd).goal as { status: string; pendingCompletion?: { phase?: string } };
     assert.equal(claimed.status, "auditing", "claim is durable before the detached result");
-    assert.equal(claimed.pendingCompletion?.phase, "running");
+    assertOwnsAttempt(claimed.pendingCompletion, "claim is durable before the detached result");
     const queuedWidget = (ctx.ui.widgets["pi-glla"] as string[] | undefined) ?? [];
     assert.ok(queuedWidget.some((line) => line.includes("auditor: queued")), "the queued auditor phase is visible before worker progress");
     // A host render can run after the tool callback and restore the previous
@@ -4374,9 +4390,13 @@ test("v0.35.x: manual /list resume retries a parked list completion claim direct
     assert.equal(readLedger(cwd).filter((entry) => entry.type === "audit_recovery_started").length, 0, "cold startup does not spend the automatic retry");
 
     await pi.command("list", "resume", ctx);
+    // v0.38.99: the durable phase is EVIDENCE-based (`starting` until a
+    // worker event proves `running`), so a sub-poll-interval audit settles
+    // without ever publishing `running`. The contract here is "a fresh
+    // attempt was launched and owns the claim", not one phase string.
     await waitUntil(() => {
       const resumed = readState(cwd).goal as { status?: string; pendingCompletion?: { phase?: string; attemptId?: string } } | null;
-      return resumed?.status === "auditing" && resumed.pendingCompletion?.phase === "running";
+      return resumed?.status === "auditing" && auditPhaseOwnsAttempt(resumed.pendingCompletion?.phase);
     });
     const started = readState(cwd).goal as { pendingCompletion?: { attemptId?: string } };
     assert.notEqual(started.pendingCompletion?.attemptId, oldAttempt, "manual /list resume starts a fresh detached attempt");
@@ -4432,7 +4452,7 @@ test("v0.35.x: one automatic parked-audit retry is durable across repeated lifec
       pendingCompletion?: { phase?: string; attemptId?: string; automaticRecoveryAttempted?: boolean; automaticRecoveryGeneration?: number };
     } | null;
     assert.equal(started?.status, "auditing");
-    assert.equal(started?.pendingCompletion?.phase, "running");
+    assertOwnsAttempt(started?.pendingCompletion, "the fresh recovery attempt owns the claim");
     assert.notEqual(started?.pendingCompletion?.attemptId, oldAttempt);
     assert.equal(started?.pendingCompletion?.automaticRecoveryAttempted, true, "the durable marker is consumed with the fresh attempt");
     assert.equal(typeof started?.pendingCompletion?.automaticRecoveryGeneration, "number", "the consumed marker records the dispatch generation");
@@ -4456,9 +4476,11 @@ test("v0.35.x: one automatic parked-audit retry is durable across repeated lifec
     // Explicit manual resume remains a separate consent path after the
     // automatic one-shot has been consumed.
     await pi.command("goal", "resume", second);
+    // Same evidence-based-phase contract as above: attempt-owning, not a
+    // hardcoded phase string.
     await waitUntil(() => {
       const resumed = readState(cwd).goal as { status?: string; pendingCompletion?: { phase?: string; attemptId?: string } } | null;
-      return resumed?.status === "auditing" && resumed.pendingCompletion?.phase === "running";
+      return resumed?.status === "auditing" && auditPhaseOwnsAttempt(resumed.pendingCompletion?.phase);
     });
     const manualLedger = readLedger(cwd);
     assert.equal(manualLedger.filter((entry) => entry.type === "audit_recovery_started").length, 1, "manual resume does not masquerade as automatic recovery");
@@ -4568,7 +4590,7 @@ test("v0.35.x: healthy same-session heartbeat recovers a parked completion audit
 
     const retrying = readState(cwd).goal as { status?: string; pendingCompletion?: { phase?: string; automaticRecoveryAttempted?: boolean } } | null;
     assert.equal(retrying?.status, "auditing", "healthy heartbeat starts the bounded recovery audit");
-    assert.equal(retrying?.pendingCompletion?.phase, "running");
+    assertOwnsAttempt(retrying?.pendingCompletion, "healthy heartbeat starts an attempt-owning claim");
     assert.equal(retrying?.pendingCompletion?.automaticRecoveryAttempted, true);
     assert.equal(readLedger(cwd).filter((entry) => entry.type === "audit_recovery_auto_retry_claimed").length, 1);
 
@@ -4783,7 +4805,7 @@ test("v0.35.x: stale host loss releases an in-flight completion audit without a 
     await waitUntil(() => readLedger(cwd).some((entry) => entry.type === "audit_recovery_started"), 30_000);
     const afterSuccessor = readState(cwd).goal as { status: string; pendingCompletion?: { phase?: string; automaticRecoveryAttempted?: boolean } };
     assert.equal(afterSuccessor.status, "auditing", "successor starts the bounded no-verdict recovery audit");
-    assert.equal(afterSuccessor.pendingCompletion?.phase, "running");
+    assertOwnsAttempt(afterSuccessor.pendingCompletion, "successor starts an attempt-owning claim");
     assert.equal(afterSuccessor.pendingCompletion?.automaticRecoveryAttempted, true);
     const afterLedger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
     assert.equal((afterLedger.match(/"audit_recovery_started"/g) ?? []).length, 1, "successor launches one recovery retry");

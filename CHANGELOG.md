@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.38.99 — the detached audit has one legible lifecycle and one settlement (2026-09-25)
+
+- The isolated completion audit now names its state instead of guessing: **starting** (claim durable, worker not reporting yet), **running** with its last durable activity, **settling** (approved, archive owed), **approved** (settlement durable), and **recovery-needed** (parked, with a real `/goal resume` action). The widget, status line, goal markdown, and restart recovery all read the same projection, so a claim that a crash left mid-settlement no longer renders as “awaiting completion review” (audit/DETACHED-AUDIT-LIFECYCLE-2026-09-25.md).
+- An unresolved audit can no longer look finished. The approval path persists the verdict on the claim **before** any archive is attempted, keeps that approved claim when the archive fails (so the settlement stays re-drivable), and gates every terminal surface on a durable verdict plus a landed archive. A cold session that finds an approved-but-unarchived claim finishes it without re-running the auditor.
+- Last activity is durable now: the detached worker's real event stamps a throttled heartbeat on the claim, so after a restart a silent attempt is reported as no-progress instead of looking live — the in-process watchdog does not exist in a fresh session.
+
 ## 0.38.98 — audited lifecycle hardening and change-first completion (2026-09-24)
 
 - Fresh audit repairs make goal/list/loop state durable across persistence failures, session replacement, compaction failure, repair promotion, and branch-mode completion. Confirmed loop refinements now apply atomically instead of mutating live state before the spec is safely written.
