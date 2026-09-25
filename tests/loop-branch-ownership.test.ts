@@ -216,3 +216,81 @@ test("/loop stop on a branch-mode loop parked on a foreign branch attempts no re
     await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
   }
 });
+
+test("/loop stop mid-tick still restores the original branch (no false branch-changed park)", async () => {
+  const cwd = tmpCwd();
+  fs.writeFileSync(path.join(cwd, "seed.txt"), "seed\n");
+  git(cwd, "init", "-b", "main");
+  git(cwd, "config", "user.name", "Audit Test");
+  git(cwd, "config", "user.email", "audit@example.test");
+  git(cwd, "add", "seed.txt");
+  git(cwd, "commit", "-m", "init");
+  const branch = "pi-glla-loop/stop-mid-tick";
+  git(cwd, "checkout", "-b", branch);
+  fs.writeFileSync(path.join(cwd, ".gitignore"), ".pi-glla/\n");
+  git(cwd, "add", ".gitignore");
+  git(cwd, "commit", "-m", "ignore state");
+
+  seedState(cwd, {
+    loop: seedLoop({
+      branchName: branch,
+      originalBranch: "main",
+      measureCmd: "echo 2",
+      direction: "max",
+      bestValue: 1,
+      lastValue: 1,
+      iteration: 1,
+    }),
+  });
+  const calls: string[][] = [];
+  let measureInvoked = false;
+  let resolveMeasure!: (value: { code: number; stdout: string; stderr: string }) => void;
+  const measureGate = new Promise<{ code: number; stdout: string; stderr: string }>((res) => { resolveMeasure = res; });
+  pi.execHandler = (cmd, args, opts) => {
+    calls.push([cmd, ...args]);
+    if (cmd === "bash") {
+      measureInvoked = true;
+      return measureGate;
+    }
+    return realGitExec(cwd, calls)(cmd, args, opts);
+  };
+  const ctx = await boot(cwd);
+  try {
+    // Park the tick on its long measure await with the rebind guard armed,
+    // then stop the loop mid-tick: the stop's own finish must still restore
+    // the original branch instead of tripping the tick's guard.
+    const tick = pi.fire("agent_end", {
+      messages: [{
+        role: "assistant",
+        content: [{ type: "text", text: "HYPOTHESIS: improve the metric" }],
+        stopReason: "end_turn",
+      }],
+    }, ctx);
+    const deadline = Date.now() + 5000;
+    while (!measureInvoked && Date.now() < deadline) await new Promise((r) => setTimeout(r, 10));
+    assert.ok(measureInvoked, "the tick reached its measure await before the stop");
+    await pi.command("loop", "stop", ctx);
+    resolveMeasure({ code: 0, stdout: "2\n", stderr: "" });
+    await tick;
+
+    const loop = readState(cwd).loop as { active: boolean; stopReason?: string };
+    assert.equal(loop.active, false);
+    assert.match(loop.stopReason ?? "", /stopped by user/, "the stop reason is the user stop, not a branch-changed park");
+    assert.ok(calls.some(([cmd, ...args]) => cmd === "git" && args[0] === "checkout" && args[1] === "main"), "the original branch is restored");
+    assert.equal(git(cwd, "branch", "--show-current"), "main", "the user is not stranded on the scratch branch");
+  } finally {
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});
+
+test("parkLoopOnWrongBranch consults HEAD before the in-flight tick guard (source pin)", async () => {
+  const src = fs.readFileSync(path.join(__dirname, "..", "extensions", "goal-loop.ts"), "utf-8");
+  const fnStart = src.indexOf("async function parkLoopOnWrongBranch(");
+  assert.ok(fnStart >= 0, "parkLoopOnWrongBranch exists");
+  const fnEnd = src.indexOf("\n}\n", fnStart);
+  const body = src.slice(fnStart, fnEnd);
+  const headCheck = body.indexOf("actual.stdout === loop.branchName");
+  const guardCheck = body.indexOf("branchGuardRebind && !branchGuardRebind()");
+  assert.ok(headCheck >= 0 && guardCheck >= 0, "both the HEAD check and the tick-guard consult exist");
+  assert.ok(headCheck < guardCheck, "the HEAD-equality early return precedes the tick-guard consult");
+});
