@@ -1,12 +1,12 @@
 # Default compaction projection — live proof
 
 - **Result:** PASS
-- **Run (UTC):** 2026-09-25T01:44:21.613Z
-- **GLLA revision:** `684a7e9fba04ed5bb19013e2dea0b599b3a8e82b` (package `0.38.98`)
+- **Run (UTC):** 2026-09-25T01:46:28.288Z
+- **GLLA revision:** `04a67ef6bac227c58227a51c85b12828072beb53` (package `0.38.98`)
 - **Global-context revision:** `dc28c0efc1946899c6b9774cc5930e182ebcb241` (package `1.1.0`)
 - **Pi revision:** `0.87.1` (fresh child process)
 - **Provider/model:** `openrouter` / `stealth/space-bunny-alpha`
-- **Child PID:** `2178395`
+- **Child PID:** `2211866`
 - **Loaded local extensions:** GLLA `extensions/loops/goal.ts`; global cap `extensions/global-context-limit.ts`.
 
 ## Isolation and source integrity
@@ -16,7 +16,7 @@
 - SHA-256 before: `6431ba4b9fc3d13830349a8214b5605b177c38fc7e94fce2f5cc606cdf265307`
 - SHA-256 after: `6431ba4b9fc3d13830349a8214b5605b177c38fc7e94fce2f5cc606cdf265307`
 - Checksum match: **yes**; the original was not opened for writing.
-- Temporary copy: `/tmp/glla-compaction-live-frtfAt/historical-session.jsonl` (removed in the verifier's outer cleanup).
+- Temporary copy: `/tmp/glla-compaction-live-4s7Jlk/historical-session.jsonl` (removed in the verifier's outer cleanup).
 - Pi ran with a private temporary `PI_CODING_AGENT_DIR`; the source session and real agent directory were not used.
 - GLLA used isolated settings with automatic resume disabled.
 - Credentials were resolved by Pi from a private temporary copy of its configured auth store; the credential file was copied without inspection, logged, or written outside the disposable root.
@@ -24,16 +24,16 @@
 
 ## Automatic host compaction
 
-- Attempts: `1`; start reason: `threshold`; terminal aborted: `no`; terminal willRetry: `no`; in-memory summary characters: `14247`; persisted summary characters: `14247`.
+- Attempts: `1`; start reason: `threshold`; terminal aborted: `no`; terminal willRetry: `no`; in-memory summary characters: `13496`; persisted summary characters: `13496`.
 
 - GLLA bounded preparation projection: **observed**.
-- Estimated preparation characters: `39888` before → `13266` after (budget `16000`).
+- Estimated preparation characters: `39137` before → `13266` after (budget `16000`).
 - Projection scale: `0.42250000000000004`; bounded messages: `8`; bounded fields: `8`; replaced images: `0`; hard bound applied: `no`.
 - Pi remained authoritative for the threshold/overflow trigger, cut point, default summarizer, retries, persistence, and result.
 
 ## Manual host compaction
 
-- Attempts: `1`; start reason: `manual`; terminal aborted: `no`; terminal willRetry: `no`; in-memory summary characters: `14492`; persisted summary characters: `32372`.
+- Attempts: `1`; start reason: `manual`; terminal aborted: `no`; terminal willRetry: `no`; in-memory summary characters: `13773`; persisted summary characters: `13773`.
 
 - The verifier seeded `120119` deterministic input characters after the automatic recovery, called Pi RPC `compact`, and required a fresh ordered `compaction_start`/`compaction_end` pair plus a newly persisted non-empty session record. Command success alone was not accepted.
 
