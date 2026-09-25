@@ -934,6 +934,9 @@ function registerAgentTools(pi: any): void {
         settings.auditorToolTimeoutMs ?? DEFAULT_AUDITOR_TOOL_TIMEOUT_MS;
       const auditorStallBaseMs =
         settings.auditorStallMs ?? DEFAULT_AUDITOR_STALL_MS;
+      // v0.38.100: the wall is opt-in (undefined = off) and NEVER escalated —
+      // an explicit ceiling that silently doubled per retry would defeat it.
+      const auditorWallMs = settings.auditorWallMs;
       let dispatchTimeouts = {
         toolTimeoutMs: escalatedAuditorTimeout(
           auditorToolBaseMs,
@@ -943,6 +946,7 @@ function registerAgentTools(pi: any): void {
           auditorStallBaseMs,
           completionClaim.timeoutEscalation ?? 0,
         ),
+        wallMs: auditorWallMs,
       };
       const { model: auditorModel, error: modelError, via, fallbackModels } = resolveAuditorModel(ctx, settings.auditorModel, settings.auditorModelFallbacks, settings.auditorSameSessionSwap !== false);
       if (modelError) {
@@ -1021,7 +1025,7 @@ function registerAgentTools(pi: any): void {
         // v0.37.0: the worker gets the SAME budgets via env so its own
         // per-tool timer and inactivity brake agree with the parent
         // watchdogs instead of racing them at different values.
-        const { toolTimeoutMs, stallMs } = dispatchTimeouts;
+        const { toolTimeoutMs, stallMs, wallMs } = dispatchTimeouts;
         return runDetachedGoalCompletionAuditor({
           cwd: ctx.cwd,
           goal: auditGoal,
@@ -1061,6 +1065,10 @@ function registerAgentTools(pi: any): void {
             toolTimeoutMs,
             heartbeatNoProgressMs: stallMs,
             firstEventTimeoutMs: stallMs,
+            // v0.38.100: opt-in wall (undefined = off). No worker env: the
+            // ceiling is parent-enforced, so no per-process agreement is
+            // needed the way the tool/stall budgets need it.
+            ...(wallMs === undefined ? {} : { absoluteTimeoutMs: wallMs }),
             env: {
               GLLA_AUDITOR_TOOL_TIMEOUT_MS: String(toolTimeoutMs),
               GLLA_AUDITOR_STALL_MS: String(stallMs),
@@ -1144,6 +1152,7 @@ function registerAgentTools(pi: any): void {
                   auditorStallBaseMs,
                   priorEscalation,
                 ),
+                wallMs: auditorWallMs,
               };
               const persisted = updateGoal({
                 pendingCompletion: {

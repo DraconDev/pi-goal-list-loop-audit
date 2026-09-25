@@ -455,6 +455,17 @@ export function buildSettingsRows(
         "base silence/no-progress budget — no new tool call or output for this long aborts the audit; doubles per retried attempt (cap 4× base); an actively generating model never counts as silent",
     },
     {
+      id: "auditorWallMs",
+      section: "auditor",
+      label: "Auditor wall budget",
+      valueText: typeof settings.auditorWallMs === "number" && Number.isFinite(settings.auditorWallMs)
+        ? `${fmtTimeoutMs(settings.auditorWallMs)} hard ceiling · never escalated`
+        : "off — a live auditor is never time-capped",
+      sourceText: src("auditorWallMs"),
+      description:
+        "OPT-IN absolute ceiling for one audit attempt — elapsed time alone auto-cancels past this even while the worker keeps progressing; unset (default) preserves the historical no-ceiling behavior; never doubles per retry",
+    },
+    {
       id: "auditJobRetentionMs",
       section: "auditor",
       label: "Audit job retention",

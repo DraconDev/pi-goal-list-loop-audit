@@ -1327,6 +1327,9 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     settings.auditorToolTimeoutMs ?? DEFAULT_AUDITOR_TOOL_TIMEOUT_MS;
   const auditorStallBaseMs =
     settings.auditorStallMs ?? DEFAULT_AUDITOR_STALL_MS;
+  // v0.38.100: the wall is opt-in (undefined = off) and NEVER escalated —
+  // an explicit ceiling that silently doubled per retry would defeat it.
+  const auditorWallMs = settings.auditorWallMs;
   let dispatchTimeouts = {
     toolTimeoutMs: escalatedAuditorTimeout(
       auditorToolBaseMs,
@@ -1336,6 +1339,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       auditorStallBaseMs,
       claim.timeoutEscalation ?? 0,
     ),
+    wallMs: auditorWallMs,
   };
   const { model: auditorModel, error: modelError, via, fallbackModels } = resolveAuditorModel(liveCtx, settings.auditorModel, settings.auditorModelFallbacks, settings.auditorSameSessionSwap !== false);
   if (modelError) {
@@ -1413,7 +1417,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
         // v0.37.0: the worker gets the SAME budgets via env so the worker's
         // own per-tool timer and inactivity brake agree with the parent
         // watchdogs instead of racing them at different values.
-        const { toolTimeoutMs, stallMs } = dispatchTimeouts;
+        const { toolTimeoutMs, stallMs, wallMs } = dispatchTimeouts;
         return runDetachedGoalCompletionAuditor({
           cwd: liveCtx.cwd,
           goal: auditGoal,
@@ -1450,6 +1454,9 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
             toolTimeoutMs,
             heartbeatNoProgressMs: stallMs,
             firstEventTimeoutMs: stallMs,
+            // v0.38.100: opt-in wall (undefined = off). No worker env: the
+            // ceiling is parent-enforced.
+            ...(wallMs === undefined ? {} : { absoluteTimeoutMs: wallMs }),
             env: {
               GLLA_AUDITOR_TOOL_TIMEOUT_MS: String(toolTimeoutMs),
               GLLA_AUDITOR_STALL_MS: String(stallMs),
@@ -1506,6 +1513,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
               auditorStallBaseMs,
               priorEscalation,
             ),
+            wallMs: auditorWallMs,
           };
           return persistDetachedAuditorCursor(
             generation,
