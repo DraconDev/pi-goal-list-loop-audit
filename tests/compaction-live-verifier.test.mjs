@@ -9,8 +9,8 @@ const SOURCE = readFileSync(new URL("../scripts/verify-compaction-live.mjs", imp
 
 test("loads both local extension entrypoints and isolates Pi's agent directory", () => {
   assert.match(SOURCE, /extensions", "loops", "goal\.ts/);
-  assert.match(SOURCE, /GLOBAL_CONTEXT_LIMIT_ROOT/);
-  assert.match(SOURCE, /global-context-limit\.ts/);
+  assert.match(SOURCE, /CONTEXT_COMPACTION_CAP_ROOT/);
+  assert.match(SOURCE, /context-compaction-cap\.ts/);
   assert.match(SOURCE, /PI_CODING_AGENT_DIR: agentDir/);
   assert.match(SOURCE, /stageProviderConfiguration\(agentDir, options\.provider, options\.model\)/);
   assert.match(SOURCE, /copied without inspection/);

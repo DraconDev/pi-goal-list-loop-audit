@@ -3,7 +3,7 @@
  * Live, provider-backed proof for the local compaction coordinator stack.
  *
  * The verifier starts a fresh Pi RPC process, loads the two local activation
- * entrypoints (GLLA + pi-global-context-limit), and operates only on a copied
+ * entrypoints (GLLA + pi-context-compaction-cap), and operates only on a copied
  * historical session under a private PI_CODING_AGENT_DIR. Pi remains the host
  * compactor for both automatic and manual paths. Output is scalar-only: raw
  * prompts, summaries, provider diagnostics, environment values, and credentials
@@ -18,11 +18,11 @@ import * as path from "node:path";
 import { homedir } from "node:os";
 
 const REPO_ROOT = path.resolve(import.meta.dirname, "..");
-const GLOBAL_CONTEXT_LIMIT_ROOT = path.resolve(REPO_ROOT, "..", "extensions", "pi-global-context-limit");
+const CONTEXT_COMPACTION_CAP_ROOT = path.resolve(REPO_ROOT, "..", "extensions", "pi-context-compaction-cap");
 const REPORT_PATH = path.join(REPO_ROOT, "audit", "COMPACTION-DEFAULT-PROJECTION-LIVE-PROOF.md");
 const LOCAL_EXTENSION_PATHS = [
   path.join(REPO_ROOT, "extensions", "loops", "goal.ts"),
-  path.join(GLOBAL_CONTEXT_LIMIT_ROOT, "extensions", "global-context-limit.ts"),
+  path.join(CONTEXT_COMPACTION_CAP_ROOT, "extensions", "context-compaction-cap.ts"),
 ];
 const DEFAULT_TIMEOUT_MS = 15 * 60_000;
 const COMMAND_TIMEOUT_MS = 60_000;
@@ -674,7 +674,7 @@ function makeReport({
 - **Pi revision:** \`${pi}\` (fresh child process)
 - **Provider/model:** \`${provider}\` / \`${model}\`
 - **Child PID:** \`${processId}\`
-- **Loaded local extensions:** GLLA \`extensions/loops/goal.ts\`; global cap \`extensions/global-context-limit.ts\`.
+- **Loaded local extensions:** GLLA \`extensions/loops/goal.ts\`; explicit cap \`extensions/context-compaction-cap.ts\`.
 
 ## Isolation and source integrity
 
@@ -765,7 +765,7 @@ async function main() {
   const gllaRevision = safeCodeRevision(REPO_ROOT);
   const gllaVersion = packageVersion(REPO_ROOT);
   const globalRevision = safeCodeRevision("/home/dracon/Dev/pi-plugins");
-  const globalVersion = packageVersion(GLOBAL_CONTEXT_LIMIT_ROOT);
+  const globalVersion = packageVersion(CONTEXT_COMPACTION_CAP_ROOT);
   const beforeHash = sha256File(source);
   const sourceBytes = fs.statSync(source).size;
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "glla-compaction-live-"));
@@ -839,6 +839,9 @@ async function main() {
       throw new Error("Pi selected a different provider/model than requested");
     }
     if (state?.model?.contextWindow !== GLOBAL_LIMIT) {
+      if (process.env.GLLA_LIVE_DEBUG === "1") {
+        console.error(`DEBUG selected_context_window=${numberOrNull(state?.model?.contextWindow) ?? "unknown"} max_tokens=${numberOrNull(state?.model?.maxTokens) ?? "unknown"}`);
+      }
       throw new Error("Pi did not compose the isolated global context cap before the live prompt");
     }
 
