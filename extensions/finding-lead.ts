@@ -14,9 +14,10 @@ export interface FindingLead {
   technical: boolean;
 }
 
-const LEGACY_LEAD_PREFIX = /^\s*Lead(?:\s+[A-Za-z0-9_-]+)?\s*:\s*/i;
-const TECHNICAL_PREFIX = /^\s*(?:Tests?|Test Results|Verification|Verdict|Audit)\s*:\s*/i;
-const SEMANTIC_LABEL_PREFIX = /^\s*(?:Outcome|Changed|Changed behavior|Fix|Fixed|Result|Behavior|Improvement|Feature|Change|Error|Note|Reason|Evidence)\s*:\s*/i;
+const LABEL_SEPARATOR = String.raw`(?:\s*:\s*|\s+[–—-](?:\s+|$))`;
+const LEGACY_LEAD_PREFIX = new RegExp(String.raw`^\s*Lead(?:\s+[A-Za-z0-9_-]+)?` + LABEL_SEPARATOR, "i");
+const TECHNICAL_PREFIX = new RegExp(String.raw`^\s*(?:Tests?|Test Results|Verification|Verdict|Audit)` + LABEL_SEPARATOR, "i");
+const SEMANTIC_LABEL_PREFIX = new RegExp(String.raw`^\s*(?:Outcome|Changed|Changed behavior|Fix|Fixed|Result|Behavior|Improvement|Feature|Change|Error|Note|Reason|Evidence)` + LABEL_SEPARATOR, "i");
 const EXPLICIT_OUTCOME_REASON_SEPARATOR = /\s+[—–](?:\s+|$)/;
 const SAFE_LEAD_LABEL = /^[A-Za-z][A-Za-z0-9 /&()'.-]{0,71}$/;
 const EVIDENCE_TOKEN_PATTERN = /(?<![/~+\w])[\w.+][\w.+/-]*\.[A-Za-z0-9]{1,8}:\d+(?:[-–]\d+)?(?:,\s*\d+(?:[-–]\d+)?)*\b/g;

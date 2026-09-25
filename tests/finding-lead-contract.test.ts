@@ -140,3 +140,27 @@ test("normalization is raw-preserving and does not split path/version colons", (
   assert.equal(normalizeFindingLead("Gemini 3: users see the form (src/popup.ts:42)").outcome, "Gemini 3: users see the form");
   assert.deepEqual(normalizeFindingLead("Gemini 3: users see the form (src/popup.ts:42)").evidence, ["src/popup.ts:42"]);
 });
+
+test("normalization strips dash-separated label prefixes (Lead –/Tests –)", () => {
+  // Field case 2026-09-24: the model wrote "- Lead – ..." and the dash
+  // variant leaked into chat because only the colon form was recognized.
+  const lead = normalizeFindingLead("Lead – The popup is complete (src/popup.ts:42)");
+  assert.equal(lead.outcome, "The popup is complete");
+  assert.equal(lead.legacyLead, true);
+  assert.deepEqual(lead.evidence, ["src/popup.ts:42"]);
+  const em = normalizeFindingLead("Lead — The popup is complete");
+  assert.equal(em.outcome, "The popup is complete");
+  assert.equal(em.legacyLead, true);
+  const hyphen = normalizeFindingLead("Lead - The popup is complete");
+  assert.equal(hyphen.outcome, "The popup is complete");
+  const tests = normalizeFindingLead("Tests – 3 pass (src/popup.test.ts:1)");
+  assert.equal(tests.outcome, "3 pass");
+  assert.equal(tests.technical, true);
+  const nested = normalizeFindingLead("Lead – Tests – 3 pass");
+  assert.equal(nested.outcome, "3 pass");
+  assert.equal(nested.technical, true);
+  // Prose that merely starts with a label word is untouched: no separator,
+  // no strip. Hyphenated words are not separators either.
+  assert.equal(normalizeFindingLead("Lead with the summary (src/popup.ts:42)").outcome, "Lead with the summary");
+  assert.equal(normalizeFindingLead("Lead-up to the fix is complete").outcome, "Lead-up to the fix is complete");
+});
