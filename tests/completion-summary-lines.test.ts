@@ -162,7 +162,7 @@ test("the ✓ done chat notifies use the line block; external keeps the single l
   const tools = fs.readFileSync("extensions/loops/goal-tools.ts", "utf8");
   assert.equal(tools.match(/buildTerminalApprovalRender\(\{/g)?.length ?? 0, 2, "both tool ✓ done paths use the canonical render");
   assert.equal(tools.match(/persistApprovalRender\(/g)?.length ?? 0, 2, "both tool paths persist the render");
-  assert.match(tools, /notifyExternal\(ctx, `Goal complete \(auditor approved\): \$\{manualRender\.recap\}`\)/, "external notify keeps the compact line");
+  assert.match(tools, /notifyExternal\(ctx, `Goal complete \(completion audit approved\): \$\{manualRender\.recap\}`\)/, "external notify keeps the compact line");
 });
 
 test("audit-2026-09-06: completionSummaryLines honors the optional line-width budget", async () => {

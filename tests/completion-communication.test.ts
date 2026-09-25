@@ -70,13 +70,13 @@ for (const idle of [true, false]) test(`pending is nonterminal; approval deliver
   await waitFor(() => readState(cwd).goal === null);
   assert.equal(entries.length, 1);
   assert.match(entries[0].content, /^## Done — Fixed routing/);
-  assert.match(entries[0].content, /1\. \*\*Changed\*\* — router\.ts/);
+  assert.match(entries[0].content, /1\. \*\*router\.ts/);
   // Technical verification stays in the archive by default; the human chat
   // carries the change story and record pointer.
   assert.doesNotMatch(entries[0].content, /### Verification/);
   assert.doesNotMatch(entries[0].content, /^Tests:/m);
   assert.doesNotMatch(entries[0].content, /Next:|await audit|Acknowledge briefly/);
-  assert.match(entries[0].content, /• auditor approved \(1 verdict\)\./);
+  assert.match(entries[0].content, /• completion audit approved \(1 review\)\./);
   assert.ok(JSON.parse(fs.readFileSync(approvalRenderStorePath(cwd), "utf8"))[0].deliveredAt);
   assert.equal(ctx.ui.matching("## Done").length, 0, "no duplicate toast summary");
   await pi.fire("agent_settled", {}, ctx);
@@ -116,7 +116,7 @@ test("complete_goal findingGroups ride the claim into the grouped terminal rende
   await waitFor(() => entries.length === 1);
   assert.match(entries[0].content, /^## Done — Fixed routing\./);
   assert.ok(entries[0].content.includes("#### 1. Router"), "grouped area subsection reaches the chat");
-  assert.ok(entries[0].content.includes("- **Reroute** — pins the path"), "nested evidence bullet reaches the chat");
+  assert.ok(entries[0].content.includes("- **pins the path** — router.ts:12"), "nested evidence bullet reaches the chat");
 });
 
 test("disapproval remains unfinished, no final success is posted", async () => {

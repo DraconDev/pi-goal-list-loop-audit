@@ -32,7 +32,7 @@ test("v0.38.20 approval chat drops the stale pre-verdict Next line", () => {
     "✓ done — v0.38.19 answers the disapproval",
     "• Changed: sendContinuation bypass",
     "• Evidence: full gate 1917 pass",
-    "• auditor m approved on the provider retry.",
+    "• completion audit approved on the provider retry.",
     "• record: .pi-glla/archive/20260904162433-qm4iq0.md",
   ]);
 });
@@ -50,7 +50,7 @@ test("approval chat keeps every informing detail (Tests + meaningful Unresolved 
     "• Evidence: b",
     "• Tests: c",
     "• Unresolved: d",
-    "• auditor m approved.",
+    "• completion audit approved.",
     "• record: x.md",
   ]);
 });

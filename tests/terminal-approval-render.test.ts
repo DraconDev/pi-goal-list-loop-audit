@@ -115,7 +115,7 @@ test("standalone audit bullet survives only with news", () => {
   // Archive record still carries the full model ID (v0.38.42 contract:
   // the model leaves chat/transcript, never the record).
   const hooks = fs.readFileSync(path.resolve("extensions/loops/goal-auditor-hooks.ts"), "utf-8");
-  assert.ok(hooks.includes("auditor ${result.model} approved (${origin})"), "archive reason still interpolates the full model ID");
+  assert.ok(hooks.includes("completion audit ${result.model} approved (${origin})"), "archive reason still carries the model provenance");
 });
 
 test("counts line proofs the audit verdict from durable state only", () => {

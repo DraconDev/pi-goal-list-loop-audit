@@ -94,7 +94,7 @@ test("repair re-claim preserves the whole-work recap in the approved render", { 
   await waitFor(() => entries.length === 1);
   const chat = entries[0]!.content as string;
   assert.match(chat, /^## Done — Shipped the search rollout end to end/);
-  assert.match(chat, /• auditor approved/);
+  assert.match(chat, /• completion audit approved/);
   assert.match(chat, /Shipped the search rollout end to end/, "the whole-work outcome leads the repair-approved render");
   assert.doesNotMatch(chat, /### Verification/, "verification stays in the archive by default");
   assert.doesNotMatch(chat, /^Tests:/m, "technical Tests stays in the archive by default");

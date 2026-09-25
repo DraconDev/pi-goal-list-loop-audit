@@ -7,7 +7,7 @@ for (const example of screenshotCases) test(`screenshot-derived ${example.name} 
   const { chat, archive } = renderScreenshotCase(example);
   assert.match(chat, /^## Done — /);
   assert.doesNotMatch(chat, /\(\s*[,;]\s*\d|\(\s*\)|\| Area \| Finding|\| Command \||Final Repository State/);
-  assert.equal((chat.match(/auditor approved/g) ?? []).length, 1);
+  assert.equal((chat.match(/completion audit approved/g) ?? []).length, 1);
   assert.doesNotMatch(chat, /docs\/audits\/2026-09-16-project-audit\.md|Four fix entries were checked|closure record was corrected/);
   assert.ok(chat.includes(example.limitation));
   assert.ok(chat.includes(example.leftOut));
