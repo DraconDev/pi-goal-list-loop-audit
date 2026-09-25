@@ -744,6 +744,12 @@ export const MIN_AUDITOR_TOOL_TIMEOUT_MS = 30_000;
 export const MAX_AUDITOR_TOOL_TIMEOUT_MS = 6 * 3_600_000;
 export const MIN_AUDITOR_STALL_MS = 60_000;
 export const MAX_AUDITOR_STALL_MS = 24 * 3_600_000;
+/** v0.38.100: bounds for the opt-in absolute wall budget (`auditorWallMs`).
+ * The floor keeps a healthy boot (measured seconds loaded) from tripping a
+ * just-set wall; the ceiling matches the stall maximum — a 24h wall is "let
+ * the slow local model finish", not "no bound at all". Unset means off. */
+export const MIN_AUDITOR_WALL_MS = 60_000;
+export const MAX_AUDITOR_WALL_MS = 24 * 3_600_000;
 /** v0.37.0: adaptive timeout escalation. Each failed detached attempt that
  * gets retried doubles BOTH base budgets (per-tool and silence), saturating
  * after AUDITOR_TIMEOUT_ESCALATION_MAX_STEPS doublings (4× base). The
@@ -1288,10 +1294,20 @@ export interface AuditorProcessRuntime {
   pollIntervalMs?: number;
   /**
    * @deprecated Accepted for compatibility with older callers, but never
-   * used as a lifetime bound. Confirmed-silence, per-tool, and lifecycle
-   * cancellation are the only termination paths for an otherwise live audit.
+   * used as a lifetime bound. Confirmed-silence, per-tool, lifecycle
+   * cancellation — and the opt-in `absoluteTimeoutMs` below — are the only
+   * termination paths for an otherwise live audit.
    */
   wallTimeoutMs?: number;
+  /** v0.38.100: explicit absolute ceiling for one attempt, in milliseconds.
+   * Unset (the default) preserves the historical behavior: a live auditor
+   * is never terminated for elapsed time alone. When set, the attempt is
+   * auto-cancelled once elapsed time crosses the budget even while the
+   * worker keeps making real progress — the backstop for a productively
+   * looping auditor that no progress-relative watchdog can catch. This is
+   * deliberately a separate field from the legacy `wallTimeoutMs`, which
+   * stays ignored so older embedded metadata can never kill a live audit. */
+  absoluteTimeoutMs?: number;
   now?: () => number;
   attemptId?: () => string;
   /** v0.34.57: watchdog window — cancel the detached job when the worker's
@@ -1329,7 +1345,7 @@ export interface AuditorStalledInfo {
   /** When the watchdog fired. */
   at: number;
   /** Which independent watchdog fired. */
-  reason: "heartbeat-no-progress" | "tool-timeout" | "first-event-timeout" | "heartbeat-stale";
+  reason: "heartbeat-no-progress" | "tool-timeout" | "first-event-timeout" | "heartbeat-stale" | "wall-timeout";
   /** Age of the last worker heartbeat at detection (`now - lastActivityAt`).
    * For heartbeat-no-progress this is fresh (≤ heartbeatFreshMs); a
    * tool-timeout may deliberately have a stale heartbeat. */
