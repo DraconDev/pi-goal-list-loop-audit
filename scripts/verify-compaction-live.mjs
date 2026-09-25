@@ -852,6 +852,9 @@ async function main() {
       throw new Error("the observed compaction was not Pi's automatic threshold/overflow path");
     }
     automaticPersisted = await waitForPersistedCompaction(copiedSession, initialPersisted.at(-1)?.id ?? null, Math.min(PERSISTENCE_TIMEOUT_MS, deadline.remainingMs()));
+    if (automaticPersisted.summaryChars !== automatic.end.result.summaryChars) {
+      throw new Error("automatic RPC event and persisted session record described different summaries");
+    }
     await initialSettled;
 
     setStage("post_automatic_continuation");
@@ -887,6 +890,9 @@ async function main() {
       throw new Error("manual RPC result and host event did not describe the same non-empty summary");
     }
     manualPersisted = await waitForPersistedCompaction(copiedSession, persistedBeforeManual.at(-1)?.id ?? null, Math.min(PERSISTENCE_TIMEOUT_MS, deadline.remainingMs()));
+    if (manualPersisted.summaryChars !== manualSummaryChars) {
+      throw new Error("manual RPC result and persisted session record described different summaries");
+    }
 
     setStage("post_manual_continuation");
     const manualText = await promptAndRead(rpc, deadline, `Reply with exactly ${MANUAL_MARKER}.`, "post-manual continuation");
