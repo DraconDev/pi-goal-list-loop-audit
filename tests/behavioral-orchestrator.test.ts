@@ -2310,7 +2310,7 @@ test("v0.35.x: host loss keeps durable auditor disapproval feedback visible", as
     const widget = (first.ui.widgets["pi-glla"] as string[] | undefined) ?? [];
     const rendered = widget.join("\\n");
     assert.ok(rendered.includes("host session lost — waiting for fresh session_start"), rendered);
-    assert.ok(rendered.includes("auditor disapproved — durable required fixes"), rendered);
+    assert.ok(rendered.includes("completion review disapproved — durable required fixes"), rendered);
     assert.ok(rendered.includes("fix the pinned gap"), rendered);
   } finally {
     pi.sendMessageError = null;
@@ -4248,7 +4248,7 @@ test("v0.34.21 lifecycle: cold startup holds a recovered claim until explicit re
   const ledger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
   assert.doesNotMatch(ledger, /"audit_recovery_started"/, "no recovery starts without lifecycle/explicit consent");
   assert.ok(ctx.ui.matching("Completion audit blocked — no verdict").length >= 1, "the hold is explained");
-  assert.ok((ctx.ui.widgets["pi-glla"] as string[]).some((line) => line.includes("auditor: parked — no verdict")), "the widget names the parked auditor (v0.34.87 surface separation)");
+  assert.ok((ctx.ui.widgets["pi-glla"] as string[]).some((line) => line.includes("completion audit: parked — no review recorded")), "the widget names the parked completion review without claiming a verdict");
 });
 
 test("v0.35.x: validated session handoff auto-retries a parked completion audit", async () => {
