@@ -56,10 +56,16 @@ test("infra-flavored returns (no model / aborted) are not disapprovals", () => {
 
 test("auditor watchdog exits are infrastructure failures, never verdicts", () => {
   // Confirmed-silence and per-tool watchdogs remain infrastructure outcomes;
-  // elapsed time alone must not terminate an auditor with real progress.
+  // elapsed time alone must not terminate an auditor with real progress —
+  // UNLESS the operator explicitly opted into the absolute wall (v0.38.100:
+  // `absoluteTimeoutMs`, set solely from the `auditorWallMs` setting). The
+  // legacy wallTimeoutMs metadata is still never read as a bound, so an
+  // auditor with real progress and no explicit wall keeps no ceiling.
   assert.match(SRC, /event-derived/);
   assert.match(SRC, /lifecycle cancellation/);
-  assert.doesNotMatch(SRC, /return infra\([^\n]+wall-clock bound/);
+  assert.doesNotMatch(SRC, /runtime\.wallTimeoutMs/, "legacy wall metadata is never a bound");
+  assert.match(SRC, /if \(absoluteTimeoutMs !== undefined/, "the wall exit is gated on the explicit opt-in");
+  assert.match(SRC, /Auditor exceeded its .* wall-clock bound/, "the gated wall exit exists with the load-bearing wording");
   assert.match(SRC, /GLLA_AUDITOR_STALL_MS/, "worker stall brake env var honored");
   const worker = readFileSync(
     path.resolve(__dirname, "../scripts/goal-auditor-worker.mjs"),
