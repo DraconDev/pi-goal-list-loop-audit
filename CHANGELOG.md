@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.38.100 — the audit scopes itself to the recorded change set (2026-09-25)
+
+- Execution now records the touched paths behind the `fileWrites` counter (`telemetry.files`, first-seen order, deduped, capped at 100 with an overflow count), and the detached-audit brief opens with that change set: verify THESE first instead of exploring unboundedly. The list scopes the START of the audit, never its boundary — subagent writes, shell redirections, and deletions bypass capture, so the brief says so and the auditor still follows the evidence outward. The recorded-facts fallback summary names the paths too (bounded), replacing "changed paths were not captured" for tracked goals.
+
 ## 0.38.99 — the detached audit has one legible lifecycle and one settlement (2026-09-25)
 
 - The isolated completion audit now names its state instead of guessing: **starting** (claim durable, worker not reporting yet), **running** with its last durable activity, **settling** (approved, archive owed), **approved** (settlement durable), and **recovery-needed** (parked, with a real `/goal resume` action). The widget, status line, goal markdown, and restart recovery all read the same projection, so a claim that a crash left mid-settlement no longer renders as “awaiting completion review” (audit/DETACHED-AUDIT-LIFECYCLE-2026-09-25.md).
