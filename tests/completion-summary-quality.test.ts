@@ -191,7 +191,7 @@ test("v0.36.0: fallback never invents changed files or test results", () => {
   });
   assert.match(summary, /Changed: not recorded/);
   assert.match(summary, /Tests: not recorded/);
-  assert.match(summary, /no auditor verdict was recorded/);
+  assert.match(summary, /no completion review was recorded/);
   assert.doesNotMatch(summary, /commit [a-f0-9]{7,}/i);
 });
 

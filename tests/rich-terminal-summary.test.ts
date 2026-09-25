@@ -57,8 +57,8 @@ test("card opens with the outcome, then a change-first account and compact verif
   assert.equal(chatLines.filter(line => line.startsWith("## Done")).length, 1, "one outcome headline");
   const findingsIdx = chatLines.findIndex((l) => l === "### What Changed");
   assert.ok(findingsIdx > 0, "findings section present");
-  assert.match(chatLines[findingsIdx + 1] ?? "", /^1\. \*\*Changed\*\* — /, "numbered bold lead with em-dash body");
-  assert.match(chatLines[findingsIdx + 2] ?? "", /^2\. \*\*Evidence\*\* — /, "second finding numbered");
+  assert.match(chatLines[findingsIdx + 1] ?? "", /^1\. \*\*extensions\/completion-summary\.ts/, "numbered outcome first");
+  assert.match(chatLines[findingsIdx + 2] ?? "", /^2\. \*\*gate green/, "second finding numbered");
   assert.ok(chatLines.some((l) => /extensions\/completion-summary\.ts/.test(l)), "code refs ride the finding bodies");
 });
 
@@ -69,8 +69,8 @@ test("chat hides verification by default; the archive retains the full table", (
   assert.ok(!chat.some((l) => /^\| Tests \|/.test(l)), "gate-by-gate table stays archival");
   assert.ok(!chat.some((l) => /^Tests:/.test(l)), "technical Tests label stays out of default chat");
   const archive = buildRichArchiveSection(richGoal(), "complete", ".pi-glla/archive/20260911-rich-voice.md");
-  assert.ok(archive.includes("### Verification Summary"), "archive keeps the detailed verification record");
-  assert.ok(archive.some((l) => /^\| Tests \| PASS \|/.test(l)), "archive keeps the Tests row");
+  assert.ok(archive.includes("### Verification Evidence"), "archive keeps the detailed verification record");
+  assert.ok(archive.some((l) => /^\| Verification \| PASS \|/.test(l)), "archive keeps the verification row");
 });
 
 test("failed verification is archive-only unless explicitly requested", () => {
@@ -148,7 +148,7 @@ test("commit hashes stay in the archive, while chat keeps explanations", () => {
   const record = archive.join("\n");
   assert.ok(record.includes("02871aa6"), "the archive keeps the short hash");
   assert.ok(record.includes("a8f3fad5c9e2b1a4d6f8e0c2b4a6d8e0f1a3b5c7d9"), "the archive keeps the full SHA");
-  assert.ok(archive.includes("### Verification Summary"), "the archive keeps the full table");
+  assert.ok(archive.includes("### Verification Evidence"), "the archive keeps the full table");
 });
 
 test("Next section carries the concrete action; stale self-reference still drops", () => {
@@ -169,7 +169,7 @@ test("Next section carries the concrete action; stale self-reference still drops
 
 test("trailer contract holds: approval bullet, record pointer last", () => {
   const { chatLines } = render();
-  assert.ok(chatLines.includes("• auditor approved (1 verdict)."), "folded approval bullet survives");
+  assert.ok(chatLines.includes("• completion audit approved (1 review)."), "folded approval bullet survives");
   const recordIdx = chatLines.findIndex((l) => l.startsWith("• record:"));
   assert.equal(recordIdx, chatLines.length - 1, "record pointer is the final line");
 });
@@ -203,16 +203,16 @@ test("no audit history means no Audit row, approval voice still closes", () => {
     goal: seedGoal({ id: "20260911-rich-noaudit", objective: "x", completionSummary: SIX }) as unknown as Goal,
     approval: "— completed without audit (your choice).",
   });
-  assert.ok(!r.chatLines.some((l) => l.startsWith("| Audit |")), "no invented audit row");
-  assert.ok(r.chatLines.some((l) => /completed without audit/.test(l)), "path voice still closes the chat");
+  assert.ok(!r.chatLines.some((l) => l.startsWith("| Completion review |")), "no invented completion review row");
+  assert.ok(r.chatLines.some((l) => /completed without a completion review/.test(l)), "path voice still closes the chat");
 });
 
 test("archive section retains detailed findings and verification for complete, Aborted-headlined for aborted", () => {
   const done = buildRichArchiveSection(richGoal(), "complete", ".pi-glla/archive/20260911-rich-voice.md");
-  assert.equal(done[0], "## Done — auditor approved (1 verdict)", "verdict banner opens the archive too");
+  assert.equal(done[0], "## Done — completion audit approved (1 review)", "review banner opens the archive too");
   assert.ok(done[2]?.startsWith("## Done: restyle the terminal summary — "), "archive headline matches chat");
-  assert.ok(done.includes("### Key Findings & Remediation"), "archive carries findings");
-  assert.ok(done.includes("### Verification Summary"), "archive carries the table");
+  assert.ok(done.includes("### What Changed"), "archive carries findings");
+  assert.ok(done.includes("### Verification Evidence"), "archive carries the table");
   assert.ok(done.some((l) => l.startsWith("• record: .pi-glla/archive/20260911-rich-voice.md")), "archive record pointer last");
   const aborted = buildRichArchiveSection(richGoal(), "aborted", ".pi-glla/archive/20260911-rich-voice.md");
   assert.ok(aborted[0]?.startsWith("## Aborted — "), "aborted records never wear a Done banner");
@@ -240,7 +240,7 @@ test("fewer than four groups render as nested change subsections", () => {
   const findingsIdx = chatLines.findIndex((l) => l === "### What Changed");
   assert.ok(findingsIdx > 0, "findings section present");
   assert.equal(chatLines[findingsIdx + 1], "#### 1. Sound manager", "first area subsection");
-  assert.equal(chatLines[findingsIdx + 2], "- **Disable path** — mutes WebAudio", "explanation without archive-only evidence token");
+  assert.equal(chatLines[findingsIdx + 2], "- **mutes WebAudio** — soundManager.ts:333", "outcome and concrete evidence lead the bullet");
   assert.ok(!chatLines.some((l) => l.startsWith("| Area |")), "no table below the threshold");
   assert.deepEqual(transcriptLines.slice(0, 3), chatLines.slice(0, 3), "transcript shares headline and duration");
 });
@@ -257,17 +257,17 @@ test("four or more groups render as an Area | Finding | Evidence table", () => {
   assert.ok(chat.some(line => line === "#### 4. Screen B"));
   assert.ok(chat.includes("### What Changed"));
   assert.ok(!chat.some(line => line.startsWith("| Area |")));
-  const headerIdx = table.chatLines.findIndex((l) => l === "| Area | Finding | Evidence |");
+  const headerIdx = table.chatLines.findIndex((l) => l === "| Area | User-visible outcome | Evidence / reason |");
   assert.ok(headerIdx > 0, "findings table present");
   assert.equal(table.chatLines[headerIdx + 1], "| --- | --- | --- |", "table separator");
   const rows = table.chatLines.filter((l) => l.startsWith("| Sound manager |") || l.startsWith("| Simulation |") || l.startsWith("| Screen A |") || l.startsWith("| Screen B |"));
   assert.equal(rows.length, 5, `one row per finding, got: ${rows.join(" / ")}`);
-  assert.ok(rows.some((l) => /\| soundManager\.ts:333 \|$/.test(l)), "relative path:line lands in Evidence");
-  assert.ok(rows.some((l) => /\| sim\.ts:4505-4530 \|$/.test(l)), "line ranges land in Evidence");
-  assert.ok(rows.some((l) => /\+page\.svelte:260/.test(l) && /\| \+page\.svelte:260 \|$/.test(l)), "svelte evidence token");
+  assert.ok(rows.some((l) => /\| soundManager\.ts:333/.test(l)), "relative path:line lands in evidence");
+  assert.ok(rows.some((l) => /\| sim\.ts:4505-4530/.test(l)), "line ranges land in evidence");
+  assert.ok(rows.some((l) => /\+page\.svelte:260/.test(l)), "svelte evidence token");
   const probe = rows.find((l) => l.startsWith("| Screen B |") && /probe/.test(l));
   assert.ok(probe, "absolute-path finding still renders");
-  assert.ok(probe!.endsWith("| — |"), "absolute machine paths never become evidence");
+  assert.ok(probe!.endsWith("| not recorded |"), "absolute machine paths never become evidence");
   assert.ok(!table.chatLines.some((l) => l.startsWith("#### ")), "no nested subsections at table scale");
 });
 
@@ -287,9 +287,9 @@ test("v0.38.55: render path respects the sanitize trust boundary", () => {
     findings: [`Lead ${g}a: ${"x".repeat(500)}`, `Lead ${g}b: short`, `Lead ${g}c: short`, `Lead ${g}d: short`, `Lead ${g}e: short`],
   }));
   const crowded = render({ findingGroups: sanitizeFindingGroups(many) });
-  const bullets = crowded.chatLines.filter((l) => l.startsWith("- **Lead"));
-  assert.equal(bullets.length, 15, `every in-boundary finding renders, got ${bullets.length}`);
-  const long = bullets.find((l) => l.startsWith("- **Lead 0a**"));
+  const bullets = crowded.chatLines.filter((l) => l.startsWith("- **"));
+  assert.equal(bullets.length, 16, `every in-boundary finding renders, got ${bullets.length}`);
+  const long = bullets.find((l) => l.startsWith("- **"));
   assert.ok(long, "first finding present");
   // The renderer itself never clips values — the 500-char finding bound
   // is the trust boundary's doing (pinned by the sanitize test above).
@@ -353,16 +353,16 @@ test("v0.38.55: banner voices every audit outcome honestly", () => {
     countsLine: "",
     auditHistory,
   }).banner;
-  assert.equal(bannerFor([{ at: "t", approved: true, disapproved: false, model: "m", report: "r" }]), "## Done — auditor approved (1 verdict)");
+  assert.equal(bannerFor([{ at: "t", approved: true, disapproved: false, model: "m", report: "r" }]), "## Done — completion audit approved (1 review)");
   assert.equal(
     bannerFor([
       { at: "t", approved: false, disapproved: true, model: "m", report: "r" },
       { at: "t", approved: false, disapproved: true, model: "m", report: "r" },
     ]),
-    "## Done — auditor disapproved (2 verdicts)",
+    "## Done — completion audit disapproved (2 reviews)",
   );
-  assert.equal(bannerFor([{ at: "t", approved: false, disapproved: false, impossible: true, model: "m", report: "r" }]), "## Done — auditor ruled impossible");
-  assert.equal(bannerFor(undefined), "## Done — completed without a recorded verdict");
+  assert.equal(bannerFor([{ at: "t", approved: false, disapproved: false, impossible: true, model: "m", report: "r" }]), "## Done — completion audit ruled impossible");
+  assert.equal(bannerFor(undefined), "## Done — completed without a recorded completion review");
 });
 
 test("v0.38.55: gate commands render a Command column; absent keeps 4 cols", () => {

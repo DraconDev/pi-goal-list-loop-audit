@@ -46,7 +46,7 @@ for (const [notes, expected] of cases) {
         details: inventory ? [] : [`Tests: ${notes}`],
         gates: inventory ? [{ gate: "Verification", notes, command: "fixture-only command" }] : undefined,
       });
-      const row = parts.tableLines.find(line => line.startsWith(inventory ? "| Verification |" : "| Tests |"));
+      const row = parts.tableLines.find(line => line.startsWith("| Verification |") && line.includes(notes));
       assert.ok(row, "production verification row exists");
       const cells = row.split("|").map(cell => cell.trim());
       const status = cells[inventory ? (chat ? 3 : 4) : 2];

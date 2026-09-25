@@ -44,14 +44,14 @@ test("v0.38.52: gate rows widen the verification table with derived statuses", (
   assert.ok(rows.some((l) => l === "| Typecheck | svelte + ts | REPORTED | 0 errors, 0 warnings |"), "notes without a pass claim stay REPORTED — status is never claimed");
   assert.ok(rows.some((l) => l === "| Release Gate | — | REPORTED | Clean exit 0 |"), "bare-exit notes honestly stay REPORTED, absent scope renders —");
   assert.ok(rows.some((l) => l === "| E2E | playwright | FAIL | 1 failed, 9 passed |"), "nonzero failures derive FAIL");
-  assert.ok(!rows.some((l) => l.startsWith("| Tests |")), "the agent inventory supersedes the mechanical Tests rows — never duplicated");
-  assert.ok(rows.some((l) => /^\| Audit \| .* \| APPROVED ×1 \| /.test(l)), "the audit row rides the wide table");
+  assert.ok(!rows.some((l) => l.startsWith("| Tests |")), "the agent inventory supersedes the mechanical verification rows — never duplicated");
+  assert.ok(rows.some((l) => /^\| Completion review \| .* \| approved \(1 review\) \| /.test(l)), "the completion review row rides the wide table");
 });
 
 test("v0.38.52: without gates the 3-col mechanical table is byte-identical", () => {
   const bare = parts({});
-  assert.equal(bare.tableLines[0], "| Check | Status | Details |", "mechanical header preserved");
-  assert.ok(bare.tableLines.some((l) => /^\| Tests \| PASS \| bun test passed/.test(l)), "mechanical Tests row preserved");
+  assert.equal(bare.tableLines[0], "| Verification | Status | Details |", "mechanical header preserved");
+  assert.ok(bare.tableLines.some((l) => /^\| Verification \| PASS \| bun test passed/.test(l)), "mechanical verification row preserved");
   const empty: GateRow[] = [];
   assert.deepEqual(parts({ gates: empty }), bare, "an empty inventory is the same as absent");
 });
@@ -62,10 +62,10 @@ test("v0.38.52: nested findings render Test Results sub-bullets aligned by index
     { title: "Sim", findings: ["Spawn: sim.ts:100 waves"] },
   ];
   const p = parts({ groups, gates: [] });
-  assert.ok(p.findingLines.includes("  - Test Results: router suite 18/18"), "first proof rides its finding");
-  assert.ok(p.findingLines.includes("  - Test Results: edge suite 5/5"), "second proof stays aligned");
+  assert.ok(p.findingLines.includes("  - Evidence: router suite 18/18"), "first proof rides its finding");
+  assert.ok(p.findingLines.includes("  - Evidence: edge suite 5/5"), "second proof stays aligned");
   const simIdx = p.findingLines.findIndex((l) => l.includes("**Spawn**"));
-  assert.ok(!p.findingLines.slice(simIdx, simIdx + 2).some((l) => l.includes("Test Results")), "a finding without proof renders no sub-line");
+  assert.ok(!p.findingLines.slice(simIdx, simIdx + 2).some((l) => l.includes("Evidence")), "a finding without proof renders no sub-line");
 });
 
 test("v0.38.52: table-mode findings ride test proof in the Evidence cell", () => {
@@ -75,10 +75,10 @@ test("v0.38.52: table-mode findings ride test proof in the Evidence cell", () =>
     tests: [`suite ${n} green`],
   }));
   const p = parts({ groups, gates: [] });
-  assert.equal(p.findingLines[0], "| Area | Finding | Evidence |", "group table shape preserved");
+  assert.equal(p.findingLines[0], "| Area | User-visible outcome | Evidence / reason |", "group table shape preserved");
   const row = p.findingLines.find((l) => l.startsWith("| Area 1 |"));
   assert.ok(row?.includes("area.ts:1"), "mechanical evidence token still extracted");
-  assert.ok(row?.includes("Tests: suite 1 green"), `proof rides the cell, got: ${row}`);
+  assert.ok(row?.includes("Evidence: suite 1 green"), `proof rides the cell, got: ${row}`);
   assert.ok(!/(?<!\\)\|/.test(row!.slice(0, -2).split("|").slice(3).join("|")), "no raw pipes leak into the cell");
 });
 
@@ -107,8 +107,8 @@ test("v0.38.52: sanitizeFindingGroups parses parallel tests", () => {
 test("v0.38.52: old claims without tests render byte-identical to v0.38.50", () => {
   const legacy: FindingGroup[] = [{ title: "R", findings: ["Reroute: router.ts:12 pins the path"] }];
   const p = parts({ groups: legacy, gates: [] });
-  assert.ok(p.findingLines.includes("- **Reroute** — router.ts:12 pins the path"), "nested finding unchanged");
-  assert.ok(!p.findingLines.some((l) => l.includes("Test Results")), "no invented sub-line");
+  assert.ok(p.findingLines.includes("- **pins the path** — router.ts:12"), "legacy finding normalized to outcome/evidence");
+  assert.ok(!p.findingLines.some((l) => l.includes("Evidence:")), "no invented sub-line");
 });
 
 // ── claim-to-chat end to end ──────────────────────────────────────────
@@ -188,7 +188,7 @@ test("v0.38.52: complete_goal gateRows + tests ride the claim into the chat rend
   assert.equal(entries[0].content.includes("Tests:"), false, "technical Tests stay out of default chat");
   assert.ok(!entries[0].content.includes("| Quality Gate |"), "gate-by-gate table stays archival");
   assert.ok(!entries[0].content.includes("bun test tests/gate.test.ts"), "repro command stays in the archive");
-  assert.ok(!entries[0].content.includes("Test Results:"), "per-finding proof stays archival");
+  assert.ok(!entries[0].content.includes("Evidence:"), "per-finding proof stays archival");
   assert.ok(!entries[0].content.includes("02871aa6"), "commit hash stays archival");
   const record = /• record: (\S+\.md)/.exec(entries[0].content)?.[1];
   assert.ok(record, "record pointer supplied");

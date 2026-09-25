@@ -9,15 +9,17 @@ export interface FindingLead {
   normalized: string;
   outcome: string;
   reason: string;
+  evidence: string[];
   legacyLead: boolean;
   technical: boolean;
 }
 
-const LEGACY_LEAD_PREFIX = /^\s*Lead\s*:\s*/i;
+const LEGACY_LEAD_PREFIX = /^\s*Lead(?:\s+[A-Za-z0-9_-]+)?\s*:\s*/i;
 const TECHNICAL_PREFIX = /^\s*(?:Tests?|Test Results|Verification|Verdict|Audit)\s*:\s*/i;
 const SEMANTIC_LABEL_PREFIX = /^\s*(?:Outcome|Changed|Changed behavior|Fix|Fixed|Result|Behavior|Improvement|Feature|Change|Error|Note|Reason|Evidence)\s*:\s*/i;
-const EXPLICIT_OUTCOME_REASON_SEPARATOR = /\s+[—–]\s+/;
+const EXPLICIT_OUTCOME_REASON_SEPARATOR = /\s+[—–](?:\s+|$)/;
 const SAFE_LEAD_LABEL = /^[A-Za-z][A-Za-z0-9 /&()'.-]{0,71}$/;
+const EVIDENCE_TOKEN_PATTERN = /(?<![/~+\w])[\w.+][\w.+/-]*\.[A-Za-z0-9]{1,8}:\d+(?:[-–]\d+)?(?:,\s*\d+(?:[-–]\d+)?)*\b/g;
 
 function stripLabelPrefixes(text: string): string {
   let current = text.trim();
@@ -34,26 +36,36 @@ function stripLabelPrefixes(text: string): string {
   }
 }
 
+/** Extract repo-relative path:line tokens without interpreting their colons
+ * as label separators. Absolute paths are intentionally not evidence. */
+export function extractFindingEvidence(text: string): { text: string; evidence: string[] } {
+  const evidence: string[] = [];
+  const clean = text.replace(EVIDENCE_TOKEN_PATTERN, (match) => {
+    if (!evidence.includes(match) && evidence.length < 4) evidence.push(match);
+    return "";
+  })
+    .replace(/\(([^()]*)\)/g, (group, inner: string) => (/\w/.test(inner) ? group : ""))
+    .replace(/\s+([,.;:])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return { text: clean, evidence };
+}
+
+function hasRepoEvidence(text: string): boolean {
+  EVIDENCE_TOKEN_PATTERN.lastIndex = 0;
+  const found = EVIDENCE_TOKEN_PATTERN.test(text);
+  EVIDENCE_TOKEN_PATTERN.lastIndex = 0;
+  return found;
+}
+
 /** Split an outcome/reason pair without treating path:line or product-version
  * colons as a label boundary. The optional evidence flag permits an older
  * `Topic: explanation` form to migrate by dropping the topical label. */
 export function splitFindingLeadText(
   text: string,
-  hasEvidence = false,
+  hasEvidence = hasRepoEvidence(text),
 ): { outcome: string; reason: string } {
   const clean = text.trim();
-  const separator = clean.search(EXPLICIT_OUTCOME_REASON_SEPARATOR);
-  if (separator >= 0) {
-    const left = clean.slice(0, separator).trim();
-    const right = clean.slice(separator).replace(EXPLICIT_OUTCOME_REASON_SEPARATOR, "").trim();
-    // A legacy `Topic: outcome — proof` may put the delimiter inside the
-    // topical prefix. Only split when the left side is already a full,
-    // user-visible outcome; otherwise keep the full sentence and let the
-    // mechanically extracted evidence follow it.
-    if (!hasEvidence || left.length >= 24 || !/^[A-Za-z][A-Za-z0-9 /&()'.-]{0,71}$/.test(left) || /^[A-Za-z]+\s*:/.test(left)) {
-      return { outcome: left, reason: right };
-    }
-  }
 
   // Older callers used a short topical prefix (`Paragraph routing: ...`).
   // When the suffix contains real proof, the prefix is a category rather than
@@ -70,8 +82,16 @@ export function splitFindingLeadText(
       && !candidate.includes(".")
       && !/^(?:the|a|an)\b/i.test(candidate)
     ) {
-      return { outcome: suffix, reason: "" };
+      const nested = splitFindingLeadText(suffix, true);
+      return { outcome: nested.outcome || suffix, reason: nested.reason };
     }
+  }
+
+  const separator = clean.search(EXPLICIT_OUTCOME_REASON_SEPARATOR);
+  if (separator >= 0) {
+    const left = clean.slice(0, separator).trim();
+    const right = clean.slice(separator).replace(EXPLICIT_OUTCOME_REASON_SEPARATOR, "").trim();
+    return right ? { outcome: left, reason: right } : { outcome: left, reason: "" };
   }
 
   return { outcome: clean, reason: "" };
@@ -86,11 +106,15 @@ export function normalizeFindingLead(value: string): FindingLead {
   const technical = TECHNICAL_PREFIX.test(raw);
   const normalized = stripLabelPrefixes(raw);
   const split = splitFindingLeadText(normalized);
+  const outcomeParts = extractFindingEvidence(split.outcome);
+  const reasonParts = extractFindingEvidence(split.reason);
+  const evidence = [...outcomeParts.evidence, ...reasonParts.evidence].filter((token, index, all) => all.indexOf(token) === index);
   return {
     raw,
     normalized,
-    outcome: split.outcome,
-    reason: split.reason,
+    outcome: outcomeParts.text || split.outcome,
+    reason: reasonParts.text || split.reason,
+    evidence,
     legacyLead,
     technical,
   };

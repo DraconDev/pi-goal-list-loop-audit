@@ -184,6 +184,7 @@ function sanitizeEvent(record, sequence) {
       role: typeof record.message?.role === "string" ? record.message.role : null,
       stopReason: typeof record.message?.stopReason === "string" ? record.message.stopReason : null,
       textChars: textLength(record.message?.content),
+      errorClass: typeof record.message?.errorMessage === "string" ? redactClass(record.message.errorMessage) : null,
     };
   }
   if (type === "summarization_retry_scheduled") return { type, sequence, attempt: numberOrNull(record.attempt) };
@@ -651,6 +652,7 @@ async function main() {
           role: event.role ?? null,
           stopReason: event.stopReason ?? null,
           errorClass: event.errorClass ?? null,
+          textChars: event.textChars ?? null,
           willRetry: event.willRetry ?? null,
           summaryChars: event.result?.summaryChars ?? null,
         }));
@@ -681,6 +683,9 @@ async function main() {
       initialSettled.then(() => ({ kind: "settled" })),
     ]);
     if (automatic.kind !== "compaction") {
+      const failures = rpc.events.slice(automaticStartIndex).filter((event) => event.type === "message_end" && event.role === "assistant" && event.stopReason === "error");
+      const failure = failures.at(-1);
+      if (failure?.errorClass) throw new Error(`automatic request failed before host compaction (${failure.errorClass})`);
       // agent_settled can race the awaited event promise by one microtask even
       // though the ordered compaction event is already buffered. Prefer that
       // real host proof before declaring the historical session unchanged.
@@ -730,6 +735,7 @@ async function main() {
         role: event.role ?? null,
         stopReason: event.stopReason ?? null,
         errorClass: event.errorClass ?? null,
+        textChars: event.textChars ?? null,
         willRetry: event.willRetry ?? null,
         summaryChars: event.result?.summaryChars ?? null,
       }));

@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { sanitizeDisplayText, type FindingGroup, type GateRow, type Goal, type Status } from "./goal-loop-core.js";
 import { fmtElapsed, truncateCells } from "./goal-loop-display.js";
-import { normalizeFindingLead, splitFindingLeadText } from "./finding-lead.js";
+import { normalizeFindingLead } from "./finding-lead.js";
 
 /**
  * The durable, user-facing terminal recap contract. Keep this as a small
@@ -474,13 +474,13 @@ function testsRowStatus(value: string): string {
 function auditRowStatus(history: Goal["auditHistory"]): string {
   const entries = Array.isArray(history) ? history : [];
   const last = entries[entries.length - 1];
-  if (!last) return "NO VERDICT";
-  // v0.38.55 audit: count MATCHING verdicts — the old total-entries
+  if (!last) return "NO REVIEW";
+  // v0.38.55 audit: count MATCHING reviews — the old total-entries
   // count misattributed mixed approve+disapprove histories.
-  if (last.approved) return `APPROVED \u00d7${entries.filter((e) => e.approved).length}`;
-  if (last.disapproved) return `DISAPPROVED \u00d7${entries.filter((e) => e.disapproved).length}`;
-  if (last.impossible) return "IMPOSSIBLE";
-  return "NO VERDICT";
+  if (last.approved) return `approved (${entries.filter((e) => e.approved).length} review${entries.filter((e) => e.approved).length === 1 ? "" : "s"})`;
+  if (last.disapproved) return `disapproved (${entries.filter((e) => e.disapproved).length} review${entries.filter((e) => e.disapproved).length === 1 ? "" : "s"})`;
+  if (last.impossible) return "impossible";
+  return "no review";
 }
 
 /** Split a stale-filtered `Label: value` detail into a bold lead + body. */
@@ -493,15 +493,16 @@ function leadBody(detail: string): { lead: string; body: string } {
 
 /** Normalize a human finding without exposing the legacy `Lead:` marker. */
 function findingPresentation(finding: string, chat: boolean): { outcome: string; reason: string; evidence: string[] } {
-  const normalized = normalizeFindingLead(sanitizeDisplayText(finding));
-  const extracted = extractEvidenceTokens(normalized.normalized);
-  const split = splitFindingLeadText(extracted.text, extracted.evidence.length > 0);
-  const reason = split.reason || extracted.evidence.join(", ");
-  const normalizedReason = reason.trim();
+  const parsed = normalizeFindingLead(sanitizeDisplayText(finding));
+  const reasonParts = [
+    parsed.reason,
+    ...parsed.evidence,
+  ].filter(Boolean);
+  const normalizedReason = [...new Set(reasonParts)].join(" · ").trim();
   return {
-    outcome: split.outcome || "Outcome",
+    outcome: chat ? chatNarrative(parsed.outcome) : sanitizeDisplayText(parsed.outcome),
     reason: chat ? chatNarrative(normalizedReason) : sanitizeDisplayText(normalizedReason),
-    evidence: extracted.evidence,
+    evidence: parsed.evidence,
   };
 }
 
@@ -557,6 +558,10 @@ export function completionSummaryDensityNote(
   const pool = [summary, ...(groups ?? []).flatMap((group) => group.findings ?? [])].join("\n");
   const { evidence } = extractEvidenceTokens(pool);
   if (evidence.length > 0) return undefined;
+  if ((groups ?? []).some((group) => (group.findings ?? []).some((finding) => {
+    const parsed = normalizeFindingLead(finding);
+    return parsed.reason.trim().length > 0;
+  }))) return undefined;
   if ((gates ?? []).length > 0) return undefined;
   return "low evidence density: no path:line evidence tokens and no verification gate rows — add file:line pointers (e.g. extensions/goal-recovery.ts:847) or a gateRows inventory so the terminal render is verifiable";
 }
@@ -666,11 +671,12 @@ function isRepositoryReceipt(value: string, proof = ""): boolean {
 /** v0.38.55 (full parity): the verdict banner's second half, built from
  * the mechanically derived audit status — never agent-claimed. */
 function bannerVerdict(auditStatus: string): string {
-  const count = /\u00d7(\d+)/.exec(auditStatus)?.[1];
-  if (auditStatus.startsWith("APPROVED")) return `completion audit approved (${count ?? 1} review${count === "1" ? "" : "s"})`;
-  if (auditStatus.startsWith("DISAPPROVED")) return `completion audit disapproved (${count ?? 1} review${count === "1" ? "" : "s"})`;
-  if (auditStatus === "IMPOSSIBLE") return "completion audit ruled impossible";
-  return "completed without a recorded completion review";
+  if (auditStatus === "NO REVIEW") return "completed without a recorded completion review";
+  if (auditStatus.startsWith("approved")) return `completion audit approved (${auditStatus.match(/\d+/)?.[0] ?? 1} review${auditStatus.match(/\d+/)?.[0] === "1" ? "" : "s"})`;
+  if (auditStatus.startsWith("disapproved")) return `completion audit disapproved (${auditStatus.match(/\d+/)?.[0] ?? 1} review${auditStatus.match(/\d+/)?.[0] === "1" ? "" : "s"})`;
+  if (auditStatus === "impossible") return "completion audit ruled impossible";
+  if (auditStatus === "no review") return "completion review recorded";
+  return "completion review recorded";
 }
 
 /** v0.38.55 (full parity): final repository state for the terminal card —
@@ -740,11 +746,12 @@ export function buildRichTerminalParts(args: {
   const headline = args.chat ? `## ${kind} — ${outcome}` : requestEchoHeadline(kind, args.objective, outcome);
   const auditStatus = auditRowStatus(args.auditHistory);
   const banner = args.chat ? headline : `## ${kind} \u2014 ${bannerVerdict(auditStatus)}`;
-  const groups = args.chat ? (args.groups ?? []).map(group => {
-    const entries = group.findings.map((finding, i) => ({ finding, proof: group.tests?.[i] }))
-      .filter(({ finding, proof }) => !isRepositoryReceipt(finding, proof));
+  const groups = (args.groups ?? []).map(group => {
+    const entries = group.findings
+      .map((finding, i) => ({ finding, proof: group.tests?.[i] }))
+      .filter(({ finding, proof }) => !normalizeFindingLead(sanitizeDisplayText(finding)).technical && !isRepositoryReceipt(finding, proof));
     return { ...group, findings: entries.map(entry => entry.finding), tests: entries.map(entry => entry.proof ?? "") };
-  }).filter(group => group.findings.length > 0) : args.groups ?? [];
+  }).filter(group => group.findings.length > 0);
   const useTable = !args.chat && groups.length >= RICH_TABLE_GROUP_THRESHOLD;
   const findingLines: string[] = [];
   if (useTable) {
@@ -755,7 +762,10 @@ export function buildRichTerminalParts(args: {
         // v0.38.52: test proof rides the Evidence cell (tables have no
         // sub-bullets); cells stay pipe-escaped. v0.38.55: unclipped.
         const proof = group.tests?.[fi] ? sanitizeDisplayText(group.tests[fi]).trim() : "";
-        const evidenceCell = [reason || evidence.join(", ") || "not recorded", ...(proof ? [`Evidence: ${proof}`] : [])].join(" \u00b7 ");
+        const evidenceCell = [
+          [...new Set([reason, ...evidence].filter(Boolean))].join(" · ") || "not recorded",
+          ...(proof ? [`Evidence: ${proof}`] : []),
+        ].join(" \u00b7 ");
         findingLines.push(
           `| ${escapeTableCell(group.title)} | ${escapeTableCell(outcome)} | ${escapeTableCell(evidenceCell)} |`,
         );
@@ -765,7 +775,7 @@ export function buildRichTerminalParts(args: {
     groups.forEach((group, i) => {
       findingLines.push(`#### ${i + 1}. ${sanitizeDisplayText(group.title)}`);
       group.findings.forEach((finding, fi) => {
-        const bullet = findingBullet(finding, args.chat);
+        const bullet = findingBullet(finding, args.chat === true);
         if (bullet) findingLines.push(bullet);
         // Test proof is supporting evidence, not a second narrative. Keep it
         // on the archive's detailed finding; chat folds all gate outcomes into
@@ -777,8 +787,10 @@ export function buildRichTerminalParts(args: {
   } else {
     // v0.38.55: the flat fallback renders every detail — no cap.
     findings.filter(detail => !args.chat || !isRepositoryReceipt(detail)).forEach((detail, i) => {
-      const { lead, body } = leadBody(args.chat ? chatNarrative(detail) : detail);
-      findingLines.push(`${i + 1}. **${lead}** \u2014 ${body}`);
+    const normalized = normalizeFindingLead(args.chat ? chatNarrative(detail) : detail);
+    if (normalized.technical && args.chat) return;
+    const reason = [...new Set([normalized.reason, ...normalized.evidence].filter(Boolean))].join(" · ");
+    findingLines.push(reason ? `${i + 1}. **${normalized.outcome}** — ${reason}` : `${i + 1}. **${normalized.outcome}**`);
     });
   }
   const tableRows: string[] = [];
@@ -806,11 +818,11 @@ export function buildRichTerminalParts(args: {
     for (const detail of tests) {
       const { body } = leadBody(detail);
       const status = testsRowStatus(body);
-      tableRows.push(`| Tests | ${status} | ${escapeTableCell(args.chat ? chatNarrative(body) : sanitizeDisplayText(body))} |`);
+      tableRows.push(`| Verification | ${status} | ${escapeTableCell(args.chat ? chatNarrative(body) : sanitizeDisplayText(body))} |`);
     }
   }
-  if (!args.chat && auditStatus !== "NO VERDICT") {
-    const auditBody = sanitizeDisplayText(args.countsLine).replace(/^\u2014\s*/, "").replace(/\.\s*$/, "");
+  if (!args.chat && auditStatus !== "NO REVIEW") {
+    const auditBody = sanitizeDisplayText(args.countsLine).replace(/^\u2014\s*/, "").replace(/\.\s*$/, "").replace(/^completion review:\s*/i, "");
     // v0.38.55 audit: the Audit row's Scope names the row kind — the old
     // shape duplicated the counts text in Scope and Notes.
     if (gates.length > 0) {
@@ -845,7 +857,7 @@ export function buildRichTerminalParts(args: {
   const tableLines = tableRows.length > 0
     ? [(gates.length > 0
       ? (showCommand ? "| Quality Gate | Command | Scope | Status | Notes |" : "| Quality Gate | Scope | Status | Notes |")
-      : "| Check | Status | Details |"),
+      : "| Verification | Status | Details |"),
       (gates.length > 0 ? (showCommand ? "| --- | --- | --- | --- | --- |" : "| --- | --- | --- | --- |") : "| --- | --- | --- |"),
       ...tableRows]
     : [];
@@ -909,7 +921,7 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   if (parts.verificationSummaryLine) {
     lines.push("### Verification", sanitizeDisplayText(parts.verificationSummaryLine), "");
   } else if (!parts.chat && parts.tableLines.length > 0) {
-    lines.push("### Verification Summary", ...parts.tableLines.map((line) => sanitizeDisplayText(line)), "");
+    lines.push("### Verification Evidence", ...parts.tableLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.nextLines.length > 0) {
     lines.push("### Next", ...parts.nextLines.map((line) => sanitizeDisplayText(line)), "");
@@ -988,8 +1000,8 @@ export function buildApprovalChatLines(notice: {
     // (field 20260909_013733 — the `—` tail read as a second voice); the
     // record pointer stays last.
     ...withoutStaleNext(notice.details).map((detail) => `• ${detail}`),
-    trailerBullet(notice.approval),
-    ...(notice.counts ? [trailerBullet(notice.counts)] : []),
+    trailerBullet(stripApprovalModel(notice.approval)),
+    ...(notice.counts ? [trailerBullet(stripApprovalModel(notice.counts))] : []),
     trailerBullet(notice.record),
   ];
 }
@@ -1004,7 +1016,12 @@ export function buildApprovalChatLines(notice: {
  * The `auditor <model> approved` shape collapses to `auditor approved`;
  * any other approval voice passes through untouched. */
 function stripApprovalModel(line: string): string {
-  return line.replace(/auditor\s+\S+\s+approved/, "auditor approved");
+  return line
+    .replace(/(?:auditor|completion audit)\s+\S+\s+approved/gi, "completion audit approved")
+    .replace(/(?:auditor|completion audit)\s+\S+\s+disapproved/gi, "completion audit disapproved")
+    .replace(/completed without audit/gi, "completed without a completion review")
+    .replace(/\bauditor\b/gi, "completion audit")
+    .replace(/\bverdict(s)?\b/gi, "review$1");
 }
 function trailerBullet(line: string): string {
   return `• ${sanitizeDisplayText(line).replace(/^—\s*/, "")}`;
@@ -1018,11 +1035,11 @@ function trailerBullet(line: string): string {
 export function buildAuditCountsLine(goal: Goal, auditNote?: string): string {
   const history = goal.auditHistory ?? [];
   const latest = history.length > 0 ? history[history.length - 1] : undefined;
-  const audit = auditNote ?? (latest === undefined
-    ? "no completion review was recorded"
+  const audit = auditNote ? stripApprovalModel(auditNote) : (latest === undefined
+    ? "no review recorded"
     : (() => {
       const verdict = latest.approved ? "approved" : latest.impossible ? "impossible" : latest.disapproved ? "disapproved" : "no review";
-      return `completion audit ${verdict} (${history.length} review${history.length === 1 ? "" : "s"})`;
+      return `${verdict} (${history.length} review${history.length === 1 ? "" : "s"})`;
     })());
   return `— completion review: ${audit}.`;
 }
@@ -1144,7 +1161,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     && history[0]?.approved === true
     && /approved/.test(chatApproval);
   const approvalBullet = foldCounts
-    ? `• ${chatApproval.replace(/^—\s*/, "").replace(/\.\s*$/, "")} (${history.length} verdict).`
+    ? `• ${chatApproval.replace(/^—\s*/, "").replace(/\.\s*$/, "")} (${history.length} review${history.length === 1 ? "" : "s"}).`
     : trailerBullet(chatApproval);
   const recordBullet = trailerBullet(input.record);
   // Rich voice: banner + headline + change/remaining sections + Next,

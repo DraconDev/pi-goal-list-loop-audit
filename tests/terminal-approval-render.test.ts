@@ -72,12 +72,12 @@ test("canonical render folds a lone approval with the verdict count, model-free"
   const findingsIdx = render.chatLines.indexOf("### What Changed");
   const tableIdx = render.chatLines.indexOf("### Verification");
   const nextIdx = render.chatLines.indexOf("### Next");
-  const approvalIdx = render.chatLines.findIndex((l) => l.startsWith("\u2022 auditor approved"));
+  const approvalIdx = render.chatLines.findIndex((l) => l.startsWith("\u2022 completion audit approved"));
   assert.ok(findingsIdx !== -1 && findingsIdx < nextIdx && nextIdx < approvalIdx, "findings precede Next, which closes the card ahead of the trailer");
   // v0.38.42 (field 20260909_140404): a lone approval folds with the
   // verdict count — no model ID, no redundant standalone audit bullet.
   assert.ok(
-    render.chatLines.includes("• auditor approved on the provider retry (1 verdict)."),
+    render.chatLines.includes("• completion audit approved on the provider retry (1 review)."),
     "single approval folds with the count, via-retry news kept",
   );
   assert.ok(!render.chatLines.some((l) => l.startsWith("• audit:")), "no standalone audit bullet when it would repeat the approval");
@@ -85,7 +85,7 @@ test("canonical render folds a lone approval with the verdict count, model-free"
   const recordIdx = render.chatLines.findIndex((l) => l.startsWith("• record:"));
   assert.equal(recordIdx, render.chatLines.length - 1, "record pointer is the final line");
   assert.ok(!render.chatLines.some((l) => /^\s*Next\s*:/i.test(l)), "stale pre-verdict Next never reaches the chat");
-  assert.ok(render.transcriptLines.includes("• auditor approved on the provider retry (1 verdict)."), "transcript carries the same canonical bullet, model-free");
+  assert.ok(render.transcriptLines.includes("• completion audit approved on the provider retry (1 review)."), "transcript carries the same canonical bullet, model-free");
   assert.ok(!render.transcriptLines.some((l) => /auditor-model/.test(l)), "no model ID in the transcript either");
   assert.ok(!render.transcriptLines.some((l) => /^\s*Next\s*:/i.test(l)), "transcript strips the stale Next too");
   assert.equal(render.approval, "— auditor auditor-model approved on the provider retry.", "the shared approval field keeps the full string for archive/persist consumers");
@@ -105,13 +105,13 @@ test("standalone audit bullet survives only with news", () => {
   const two = richGoal();
   two.auditHistory = [...(two.auditHistory ?? []), { at: "2026-09-07T01:00:00.000Z", approved: true, disapproved: false, model: "m2" }];
   const multi = buildTerminalApprovalRender({ ...base, goal: two });
-  assert.ok(multi.chatLines.includes("• auditor approved."), "approval bullet still model-free");
-  assert.ok(multi.chatLines.includes("• audit: auditor approved (2 verdicts)."), "multi-verdict counts bullet survives");
+  assert.ok(multi.chatLines.includes("• completion audit approved."), "approval bullet still model-free");
+  assert.ok(multi.chatLines.includes("• completion review: approved (2 reviews)."), "multi-review counts bullet survives");
   // Lone disapproval: the counts bullet carries the disapproval news.
   const dis = richGoal();
   dis.auditHistory = [{ at: "2026-09-07T01:00:00.000Z", approved: false, disapproved: true, model: "m" }];
   const disRender = buildTerminalApprovalRender({ ...base, goal: dis, approval: "— auditor m disapproved." });
-  assert.ok(disRender.chatLines.some((l) => l.startsWith("• audit: auditor disapproved")), "disapproval counts bullet survives");
+  assert.ok(disRender.chatLines.some((l) => l.startsWith("• completion review: disapproved")), "disapproval counts bullet survives");
   // Archive record still carries the full model ID (v0.38.42 contract:
   // the model leaves chat/transcript, never the record).
   const hooks = fs.readFileSync(path.resolve("extensions/loops/goal-auditor-hooks.ts"), "utf-8");
@@ -121,20 +121,20 @@ test("standalone audit bullet survives only with news", () => {
 test("counts line proofs the audit verdict from durable state only", () => {
   assert.equal(
     buildAuditCountsLine(richGoal()),
-    "— audit: auditor approved (1 verdict).",
+    "— completion review: approved (1 review).",
   );
   const two = richGoal();
   two.auditHistory = [...(two.auditHistory ?? []), { at: "2026-09-07T01:00:00.000Z", approved: false, disapproved: true, model: "m2" }];
-  assert.match(buildAuditCountsLine(two), /auditor disapproved \(2 verdicts\)/, "latest verdict + plural count");
+  assert.match(buildAuditCountsLine(two), /disapproved \(2 reviews\)/, "latest review + plural count");
   const bare = seedGoal({ completionSummary: SIX }) as unknown as Goal;
   assert.equal(
     buildAuditCountsLine(bare),
-    "— audit: no auditor verdict was recorded.",
+    "— completion review: no review recorded.",
     "absent facts named as absent, never invented",
   );
   assert.match(
     buildAuditCountsLine(richGoal(), "completed without audit (your choice)"),
-    /completed without audit \(your choice\)/,
+    /completed without a completion review \(your choice\)/,
     "no-audit path says so honestly",
   );
   assert.doesNotMatch(

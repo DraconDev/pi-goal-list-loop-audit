@@ -2332,8 +2332,9 @@ function completionOutcomeForDisplay(summary: string): string {
   const matches = [...source.matchAll(/(?:^|\n)Outcome:\s*([\s\S]*?)(?=\n(?:Changed|Evidence|Tests|Unresolved|Next):|$)/gi)];
   const value = matches.at(-1)?.[1]?.trim() || source;
   const normalized = normalizeFindingLead(value);
-  return sanitizeDisplayText(normalized.outcome || value).replace(/\s+/g, " ").trim()
-    || source.replace(/\s+/g, " ").trim();
+  const primary = sanitizeDisplayText(normalized.outcome || value).replace(/\s+/g, " ").trim();
+  const reason = [...new Set([normalized.reason.trim(), ...normalized.evidence].filter(Boolean))].join(" · ");
+  return reason ? `${primary} — ${reason}` : primary || source.replace(/\s+/g, " ").trim();
 }
 
 function completedGoalLines(g: Goal, now: number, theme?: DisplayTheme, width?: number): string[] {
