@@ -130,6 +130,7 @@ function assertLivePiVersion(version) {
 
 function redactClass(value) {
   const text = String(value ?? "").toLowerCase();
+  if (/post-.*continuation|expected marker|no assistant text|exact marker/.test(text)) return "continuation_marker";
   if (/token cap|summary is incomplete|generation hit/.test(text)) return "summarization_length";
   if (/unauthori[sz]ed|forbidden|api key|authentication|credential/.test(text)) return "provider_auth";
   if (/rate limit|429|overloaded|503|502|timeout|timed out|terminated/.test(text)) return "provider_transient";
@@ -362,7 +363,18 @@ function assertSuccessfulResponse(response, command) {
 }
 
 function readProjectionLedger(agentDir) {
-  const file = path.join(agentDir, ".pi-glla", "active.jsonl");
+  const candidates = [
+    path.join(agentDir, ".pi-glla", "active.jsonl"),
+    path.join(path.dirname(agentDir), "cwd", ".pi-glla", "active.jsonl"),
+  ];
+  for (const candidate of candidates) {
+    const records = readProjectionLedgerFile(candidate);
+    if (records.length > 0) return records;
+  }
+  return [];
+}
+
+function readProjectionLedgerFile(file) {
   if (!fs.existsSync(file)) return [];
   const records = [];
   for (const line of fs.readFileSync(file, "utf8").split("\n")) {
@@ -714,7 +726,6 @@ function assistantTextSatisfies(text, marker) {
   // only a whitespace-normalized exact marker, never a fuzzy semantic match.
   return typeof text === "string" && text.replace(/\s+/g, "").includes(marker.replace(/\s+/g, ""));
 }
-}
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
@@ -762,6 +773,9 @@ async function main() {
       autoResume: false,
       auditorSameSessionSwap: false,
     })}\n`);
+    // GLLA's session cwd is the RPC process cwd, so stage its state root there
+    // while keeping all files inside the disposable temporary tree.
+    fs.mkdirSync(path.join(cwd, ".pi-glla"), { recursive: true });
     stageProviderConfiguration(agentDir, options.provider, options.model);
 
     const args = [
@@ -871,9 +885,9 @@ async function main() {
     if (!continuation.manual) throw new Error("manual-compaction continuation did not return the expected marker");
 
     projection = readProjectionLedger(cwd).at(-1);
-    if (!projection || numberOrNull(projection.inputCharsAfter) === null || projection.inputCharsAfter > INPUT_BUDGET) {
-      throw new Error("GLLA compaction projection evidence is missing or exceeds its bounded-input budget");
-    }
+    if (!projection) throw new Error("GLLA compaction projection evidence is missing");
+    if (numberOrNull(projection.inputCharsAfter) === null) throw new Error("GLLA compaction projection did not report a bounded input size");
+    if (projection.inputCharsAfter > INPUT_BUDGET) throw new Error("GLLA compaction projection exceeded its bounded-input budget");
     setStage("complete");
   } finally {
     if (process.env.GLLA_LIVE_DEBUG === "1") {
@@ -957,6 +971,6 @@ try {
   const message = error instanceof Error ? error.message : String(error);
   const category = redactClass(message);
   const stage = process.env.GLLA_LIVE_DEBUG === "1" ? verifierStage : "redacted";
-  console.error(`FAIL: ${category}${stage === "redacted" ? "" : ` (stage=${stage})`}`);
+  console.error(`FAIL: ${category}${stage === "redacted" ? "" : ` (stage=${stage})`}${process.env.GLLA_LIVE_DEBUG === "1" ? ` (${message.replace(/\s+/g, " ").slice(0, 180)})` : ""}`);
   process.exitCode = 1;
 }
