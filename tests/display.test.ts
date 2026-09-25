@@ -439,7 +439,7 @@ test("lifecycle interruption keeps durable auditor disapproval feedback visible"
     const widget = buildWidgetLines({ goal: g, list: [] }, null, NOW)!;
     const rendered = widget.join("\\n");
     assert.ok(rendered.includes(lifecycleText), `lifecycle marker missing: ${rendered}`);
-    assert.ok(rendered.includes("auditor disapproved — durable required fixes"), rendered);
+    assert.ok(rendered.includes("completion review disapproved — durable required fixes"), rendered);
     assert.ok(rendered.includes("required-fixes excerpt after lifecycle failure"), rendered);
     assert.ok(rendered.includes("/goal resume"), rendered);
   }
@@ -1043,13 +1043,13 @@ test("widget: interrupted completion claims render recovery-pending, not auditor
   assert.ok(!lines.some((l) => l.includes("auditor: running")));
 });
 
-test("widget: a durable running claim without observed progress says awaiting verdict", () => {
+test("widget: a durable running claim without observed progress says awaiting completion review", () => {
   const g = goalOf({ status: "auditing", pendingCompletion: { at: "2026-07-21T11:59:00Z", phase: "running", attemptId: "audit-2" } });
   const state = { goal: g, list: [] };
   const lines = buildWidgetLines(state, null, NOW)!;
-  assert.ok(lines.some((l) => l.includes("auditor: awaiting verdict")));
-  assert.ok(lines.some((l) => l.includes("waiting for detached verdict")));
-  assert.match(buildStatusText(state, null, NOW)!, /auditor ✓ awaiting verdict/);
+  assert.ok(lines.some((l) => l.includes("auditor: awaiting completion review")));
+  assert.ok(lines.some((l) => l.includes("waiting for completion review")));
+  assert.match(buildStatusText(state, null, NOW)!, /auditor ✓ awaiting completion review/);
   assert.ok(!lines.some((l) => l.includes("recovery pending")));
 });
 
@@ -1133,14 +1133,14 @@ test("detached auditor keeps compact footer liveness and detailed widget evidenc
     elapsedMs: 45_000,
   };
   const verdictStatus = buildStatusText({ goal: g, list: [] }, completeAudit, NOW)!;
-  assert.match(verdictStatus, /auditor ✓ awaiting verdict/);
+  assert.match(verdictStatus, /auditor ✓ awaiting completion review/);
   assert.doesNotMatch(verdictStatus, /next:|detached worker/, "footer is liveness-only");
   assert.doesNotMatch(verdictStatus, /last tool:|evidence:|elapsed|worker finished/);
   assert.doesNotMatch(verdictStatus, /paused/);
   const verdictWidget = buildWidgetLines({ goal: g, list: [] }, completeAudit, NOW)!.join("\\n");
-  assert.match(verdictWidget, /auditor: awaiting verdict · detached worker/);
+  assert.match(verdictWidget, /auditor: awaiting completion review · detached worker/);
   assert.match(verdictWidget, /last tool: grep/);
-  assert.match(verdictWidget, /waiting for detached verdict/);
+  assert.match(verdictWidget, /waiting for completion review/);
 });
 
 test("detached auditor elapsed time keeps ticking between worker progress events", () => {
@@ -1220,7 +1220,7 @@ test("v0.34.86: silent audits show a report byte-counter instead of a dead timer
   };
   const lines = buildWidgetLines({ goal: g, list: [] }, audit, NOW)!;
   assert.ok(
-    lines.some((l) => l.includes("report stream muted — 12.4 KB written · final text at verdict")),
+    lines.some((l) => l.includes("report stream muted — 12.4 KB written · final text at completion review")),
     "silent mode shows the growing byte counter: " + lines.join(" | "),
   );
   assert.ok(!lines.some((l) => l.includes("latest: Audit summary")), "the prose tail stays hidden in silent mode");
@@ -1239,7 +1239,7 @@ test("v0.34.86: auditorProgressSignals off restores the plain timer-only card", 
   const lines = buildWidgetLines({ goal: g, list: [] }, audit, NOW, undefined, undefined, extras)!;
   assert.ok(!lines.some((l) => l.includes("writing report…")), "no fine phase label when opted out");
   assert.ok(lines.some((l) => l.includes("auditor: producing report")), "the coarse label returns when opted out");
-  assert.ok(lines.some((l) => l.includes("report stream muted — final text at verdict")), "the pre-v0.34.86 silent line returns");
+  assert.ok(lines.some((l) => l.includes("report stream muted — final text at completion review")), "the pre-v0.34.86 silent line returns");
   const status = buildStatusText({ goal: g, list: [] }, audit, NOW, undefined, extras)!;
   assert.doesNotMatch(status, /reading source…|writing report…/, "status line opts out too");
 });
@@ -1323,7 +1323,7 @@ test("auditor widget shows concrete worker observations without exposing think b
   // v0.34.66: the stream is SILENT by default — no live tail while the
   // worker runs; the report text surfaces at the verdict.
   assert.doesNotMatch(joined, /latest: inspected README\.md/);
-  assert.match(joined, /report stream muted — final text at verdict/);
+  assert.match(joined, /report stream muted — final text at completion review/);
   assert.doesNotMatch(joined, /private reasoning|do not display this/);
   assert.match(joined, /worker activity 1s ago/);
 
@@ -1394,7 +1394,7 @@ test("v0.34.66: auditor stream is SILENT by default — no live tail, muted note
   }, NOW)!;
   const joined = lines.join("\n");
   assert.doesNotMatch(joined, /latest:/, "the live per-token tail is hidden by default");
-  assert.match(joined, /report stream muted — final text at verdict/);
+  assert.match(joined, /report stream muted — final text at completion review/);
 });
 
 test("v0.34.66: at the verdict the FINAL report shows even when silent", () => {
@@ -1650,11 +1650,11 @@ test("active auditor infrastructure failure is visible as blocked, not green pro
   });
   const state = { goal: g, list: [], loop: null };
   const w = buildWidgetLines(state as never)!;
-  assert.match(w[0]!, /auditor blocked — no verdict/);
+  assert.match(w[0]!, /completion audit blocked — no review recorded/);
   assert.ok(w.some((l) => l.includes("completion claim was not evaluated")), `widget: ${w.join("\n")}`);
   assert.ok(w.some((l) => l.includes("Fix the auditor model")), `action: ${w.join("\n")}`);
   const s = buildStatusText(state as never)!;
-  assert.match(s, /auditor blocked — no verdict/);
+  assert.match(s, /completion audit blocked — no review recorded/);
   assert.doesNotMatch(s, /glla: ●/);
 });
 
@@ -1673,7 +1673,7 @@ test("v0.34.87: paused auditor no-verdict is parked, not host-bearing (surface s
   });
   const state = { goal: g, list: [], loop: null };
   const widget = buildWidgetLines(state as never)!;
-  assert.ok(widget.some((line) => line.includes("auditor: parked — no verdict")), widget.join("\\n"));
+  assert.ok(widget.some((line) => line.includes("completion audit: parked — no review recorded")), widget.join("\\n"));
   assert.ok(widget.some((line) => line.includes("completion claim was not evaluated")), widget.join("\\n"));
   assert.ok(widget.some((line) => line.includes("/goal resume")), widget.join("\\n"));
   // v0.34.87: "blocked" read as live failure next to "⏸ paused"; "MAIN
@@ -1684,7 +1684,7 @@ test("v0.34.87: paused auditor no-verdict is parked, not host-bearing (surface s
   // Surface separation: the status line leads with the pause and names the
   // resume action — glla's "session idle, awaiting /goal resume" — and
   // never claims the MAIN host is supervising a parked item.
-  assert.match(status, /⏸ paused · auditor parked — no verdict · \/goal resume/);
+  assert.match(status, /⏸ paused · completion audit parked — no review recorded · \/goal resume/);
   assert.doesNotMatch(status, /MAIN HOST|DETACHED/);
 });
 
@@ -1702,7 +1702,7 @@ test("v0.34.87: a paused LIST item's parked line names /list resume and the queu
     },
   });
   const status = buildStatusText({ goal: g, list: [{ objective: "next queued item" }], loop: null } as never)!;
-  assert.match(status, /⏸ paused · auditor parked — no verdict · \/list resume · 1 queued/);
+  assert.match(status, /⏸ paused · completion audit parked — no review recorded · \/list resume · 1 queued/);
   assert.doesNotMatch(status, /SUPERVISING|working/);
 });
 
@@ -1757,7 +1757,7 @@ test("v0.34.57: MAIN host label is pinned to SUPERVISING by the MAIN_HOST_LABEL 
   });
   const noVerdictState = { goal: noVerdict, list: [], loop: null };
   const noVerdictStatus = buildStatusText(noVerdictState as never)!;
-  assert.match(noVerdictStatus, /⏸ paused · auditor parked — no verdict/);
+  assert.match(noVerdictStatus, /⏸ paused · completion audit parked — no review recorded/);
   assert.doesNotMatch(noVerdictStatus, /MAIN HOST/, "a parked item must not claim the host is supervising");
   assert.doesNotMatch(noVerdictStatus, /MAIN HOST · DETACHED/, "MAIN HOST must never render as DETACHED");
 
@@ -1776,7 +1776,7 @@ test("active auditor verdicts never masquerade as infrastructure no-verdict", ()
   const shieldState = { goal: shield, list: [], loop: null };
   const shieldWidget = buildWidgetLines(shieldState as never)!;
   assert.match(shieldWidget[0]!, /regression shield — evidence gap/);
-  assert.ok(shieldWidget.some((l) => l.includes("auditor approved; regression shield found missing evidence")), `shield: ${shieldWidget.join("\\n")}`);
+  assert.ok(shieldWidget.some((l) => l.includes("completion audit approved; regression shield found missing evidence")), `shield: ${shieldWidget.join("\\n")}`);
   assert.doesNotMatch(shieldWidget.join("\\n"), /no verdict|claim was not evaluated/);
   assert.match(buildStatusText(shieldState as never)!, /regression shield — evidence gap/);
 
@@ -1795,7 +1795,7 @@ test("active auditor verdicts never masquerade as infrastructure no-verdict", ()
   const disapprovalState = { goal: disapproved, list: [], loop: null };
   const disapprovalWidget = buildWidgetLines(disapprovalState as never)!;
   assert.match(disapprovalWidget[0]!, /auditor disapproved — fix the gap/);
-  assert.ok(disapprovalWidget.some((l) => l.includes("auditor verdict: disapproved")), `disapproval: ${disapprovalWidget.join("\\n")}`);
+  assert.ok(disapprovalWidget.some((l) => l.includes("completion review: disapproved")), `disapproval: ${disapprovalWidget.join("\\n")}`);
   assert.ok(disapprovalWidget.some((l) => l.includes("v1.0.0-image-regen")), `feedback: ${disapprovalWidget.join("\\n")}`);
   assert.doesNotMatch(disapprovalWidget.join("\\n"), /no verdict|claim was not evaluated/);
   assert.match(buildStatusText(disapprovalState as never)!, /auditor disapproved — fix the gap/);
