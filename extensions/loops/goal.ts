@@ -22,7 +22,7 @@ import { abortZombieRun, enqueueFaultRepairTask, registerGoalRuntime, resetLengt
 import { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags, __testOnlyResetOwnershipRecheck } from "./goal-session.js";
 import { __testOnlyResetStarvationGate, __testOnlyResetToolActivity, __testOnlyResetAuditorQuietWatch, __testOnlyResetPostCompactDebt } from "./goal-ui.js";
 import { __testOnlyResetAuditorSurface } from "./goal-auditor-surface.js";
-import { __testOnlyResetAuditorRecoveryRuntime } from "./goal-auditor-hooks.js";
+import { __testOnlyResetAuditorRecoveryRuntime, resumeStoredCompletionOrSettlement } from "./goal-auditor-hooks.js";
 import { __testOnlyResetOverdueWaitBackstop, __testOnlyResetZombieRunWatchdog, __testOnlyClearSubagentHangProbes } from "../goal-heartbeat.js";
 import { __testOnlyResetCompactor } from "../goal-compactor.js";
 import { __testOnlyResetOwnerHeartbeat, __testOnlyResetStandDownNotice } from "../state-root-owner.js";
@@ -183,6 +183,9 @@ const commandDeps: CommandDeps = {
   isCompletionAuditRecoveryPending,
   markCompletionAuditRecoveryPending,
   retryStoredCompletionAudit,
+  // v0.38.99: settlement-first resume — a blocked approved settlement is
+  // finished, never re-audited (see goal-commands.ts resume paths).
+  resumeStoredCompletionOrSettlement: (ctx, origin) => resumeStoredCompletionOrSettlement(ctx, origin, (o) => { void retryStoredCompletionAudit(o); }),
   probeMainModelRecovery,
   releaseContinuationDispatchStandDown,
   releaseInitialSessionLoadBarrier,

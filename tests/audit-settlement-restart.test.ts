@@ -241,7 +241,12 @@ test("restart: a refused archive keeps the approved claim and emits no terminal 
     await tick();
     const stored = readState(cwd).goal as any;
     assert.equal(stored?.status, "paused", "a refused archive parks instead of closing");
-    assert.equal(stored?.pendingCompletion?.phase, "recovery-pending", "the approved claim is retained, so settlement stays re-drivable");
+    // v0.38.99: the claim STAYS `settling` — the approval is durable and the
+    // archive is owed. Parking it as `recovery-pending` made the next resume
+    // launch a second auditor over already-approved work, and the session-start
+    // re-drive (which only accepts `settling`) skipped it entirely.
+    assert.equal(stored?.pendingCompletion?.phase, "settling", "the blocked settlement keeps its lifecycle phase");
+    assert.equal(stored?.pendingCompletion?.recoveryReason, "approval-archive-failed", "the blocker is named durably");
     assert.equal(stored?.pendingCompletion?.attemptId, "settle-attempt", "claim identity is preserved");
     assert.equal(renders(cwd).length, 0, "no terminal summary is produced for a settlement that did not land");
     assert.ok(!ledgerTypes(cwd).includes("audit_settlement_completed"), "completion is never claimed");
@@ -250,6 +255,80 @@ test("restart: a refused archive keeps the approved claim and emits no terminal 
   } finally {
     await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
   }
+});
+
+// ---- fault -> repair -> recovery: the promised path actually completes ----
+
+test("recovery: after the fault is repaired, /goal resume finishes the settlement WITHOUT re-auditing", async () => {
+  const cwd = tmpCwd();
+  const goal = settlingGoal();
+  seedState(cwd, { goal });
+  const goalId = (goal as { id: string }).id;
+  const fence = archivedGoalPath(cwd, goalId);
+  fs.mkdirSync(path.dirname(fence), { recursive: true });
+  fs.writeFileSync(fence, "# pre-existing archive\n");
+
+  const pi = new MockPi();
+  activate(pi.api);
+  const ctx = await boot(pi, cwd);
+  try {
+    await tick();
+    assert.equal((readState(cwd).goal as any)?.pendingCompletion?.phase, "settling", "the fault parks the settlement, not the audit");
+
+    // REPAIR: the conflicting archive is gone, so the terminal archive can
+    // land. The user then does exactly what the pause text promised.
+    fs.rmSync(fence);
+    await pi.command("goal", "resume", ctx as never);
+    await tick(200);
+
+    assert.equal(fs.existsSync(archivedGoalPath(cwd, goalId)), true, "the settlement completes on resume");
+    assert.match(
+      fs.readFileSync(archivedGoalPath(cwd, goalId), "utf8"),
+      /\*\*Status\*\*: complete/,
+      "the archive records the approved terminal state",
+    );
+    const types = ledgerTypes(cwd);
+    assert.ok(types.includes("audit_settlement_resumed"), "the re-drive is ledgered");
+    assert.ok(types.includes("audit_settlement_completed"), "the settlement reports completion");
+    assert.ok(!types.includes("audit_started"), "NO second auditor: approved work is never re-audited");
+    assert.equal(renders(cwd).length, 1, "the terminal summary is queued once the archive lands");
+    assert.equal(renders(cwd)[0]!.goalId, goalId);
+  } finally {
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});
+
+test("recovery: a restart after the fault is repaired also finishes the settlement without re-auditing", async () => {
+  const cwd = tmpCwd();
+  const goal = settlingGoal();
+  seedState(cwd, { goal });
+  const goalId = (goal as { id: string }).id;
+  const fence = archivedGoalPath(cwd, goalId);
+  fs.mkdirSync(path.dirname(fence), { recursive: true });
+  fs.writeFileSync(fence, "# pre-existing archive\n");
+
+  // First process: the fault parks the settlement.
+  const first = new MockPi();
+  activate(first.api);
+  const ctx = await boot(first, cwd);
+  await tick();
+  await first.fire("session_shutdown", { reason: "quit" }, ctx);
+  assert.equal((readState(cwd).goal as any)?.pendingCompletion?.phase, "settling");
+
+  // REPAIR, then a cold restart: session_start re-drives the owed archive.
+  fs.rmSync(fence);
+  const second = new MockPi();
+  activate(second.api);
+  __testOnlyResetOwnerSession();
+  __testOnlyResetStaleFlag();
+  const ctx2 = makeMockCtx(cwd, { sessionManager: { name: `lifecycle-restart-${Date.now()}` } });
+  await second.fire("session_start", { reason: "reload" }, ctx2);
+  await tick(200);
+
+  assert.equal(fs.existsSync(archivedGoalPath(cwd, goalId)), true, "the restart finishes the owed settlement");
+  assert.ok(ledgerTypes(cwd).includes("audit_settlement_resumed"), "the re-drive is ledgered");
+  assert.ok(!ledgerTypes(cwd).includes("audit_started"), "no auditor is launched for approved work");
+  await second.fire("session_shutdown", { reason: "test-end" }, ctx2);
 });
 
 // ---- the lifecycle evidence itself survives a round trip through disk ----

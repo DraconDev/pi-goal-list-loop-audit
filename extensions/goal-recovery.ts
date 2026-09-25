@@ -19,6 +19,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { state } from "./goal-state.js";
+import { auditPhaseOwnsAttempt } from "./audit-lifecycle.js";
 import { appendLedger, claimRecoveryNotice, nowIso, piGlaDir, isFreshPastTimestamp, isForbiddenModel, isStaleApiError, nextHourlyProbeMs, providerErrorFingerprint, providerErrorPresentation, resolveEffectiveAggressiveSettings, sanitizeProviderDisplayText, supervisorPaused, writeGoalMd, goalMdPath, writeGoalStateTransaction, clearGoalStateTransaction, MAX_AUDITOR_CANDIDATE_REFS, type Goal, type MainModelRecovery, type PendingCompletion } from "./goal-loop-core.js";
 import { persistStateLine, replaceState } from "./goal-state.js";
 import { cancelDetachedGoalCompletionAuditor } from "./goal-loop-auditor-process.js";
@@ -241,8 +242,21 @@ export function parkCompletionAuditRecovery(cwd: string, reason: string, cursorP
   return true;
 }
 
+/** v0.38.99: does this goal carry an audit lifecycle that still OWNS work and
+ * therefore needs a recovery action?
+ *
+ * The old test was `phase !== "running"`, which called a `starting` claim (the
+ * launch window) and a `settling` claim (an approval owed its archive) both
+ * "recovery pending" — the first is a live attempt, the second is a settlement
+ * whose next step is an archive, not a new audit. The rule is now the
+ * lifecycle's own: a claim counts as recovery-needed unless a LIVE attempt
+ * owns it.
+ */
 export function isCompletionAuditRecoveryPending(goal: Goal | null | undefined): boolean {
-  return !!goal?.pendingCompletion && goal.pendingCompletion.phase !== "running";
+  const claim = goal?.pendingCompletion;
+  if (!claim) return false;
+  if (goal?.status === "auditing" && auditPhaseOwnsAttempt(claim.phase)) return false;
+  return true;
 }
 
 /* ------------------------------------------------------------------ */

@@ -234,6 +234,11 @@ export interface AuditorProgress {
   currentTool?: string;
   currentToolArgs?: string;
   currentToolStartedAt?: number;
+  /** Effective per-tool budget the worker armed for the open call: the max
+   * of the configured base and the tool call's own granted timeout, capped
+   * at MAX_AUDITOR_TOOL_TIMEOUT_MS. The parent watchdog honors it so it
+   * cannot undercut a command the tool layer explicitly allowed. */
+  currentToolTimeoutMs?: number;
   /** v0.34.56: the toolCallId of the open start (undefined when the start
    * event carried none — the missing-toolCallId shape). */
   currentToolId?: string;
@@ -762,6 +767,19 @@ export function escalatedAuditorTimeout(
     : 0;
   return base * 2 ** steps;
 }
+/** Parent-side mirror of the worker's effective tool budget. The worker arms
+ * max(base, granted) for the open call and reports it as
+ * `currentToolTimeoutMs`; the watchdog must apply the same deadline, or it
+ * reintroduces the exact undercut the worker fix removes. An absent or
+ * unusable grant degrades to the base budget — never to unbounded. Pure so
+ * tests can pin the precedence. */
+export function effectiveToolTimeoutMs(baseMs: number, grantedMs?: unknown): number {
+  const base = Number.isFinite(baseMs) ? Math.max(50, Math.floor(baseMs)) : DEFAULT_AUDITOR_TOOL_TIMEOUT_MS;
+  const granted = typeof grantedMs === "number" && Number.isFinite(grantedMs) && grantedMs > 0
+    ? Math.floor(grantedMs)
+    : 0;
+  return Math.min(MAX_AUDITOR_TOOL_TIMEOUT_MS, Math.max(base, granted));
+}
 const DEFAULT_HEARTBEAT_NO_PROGRESS_MS = DEFAULT_AUDITOR_STALL_MS;
 const ATTEMPT_ID_RE = /^[A-Za-z0-9._-]{1,100}$/;
 const WORKER_SHUTDOWN_GRACE_MS = 1_000;
@@ -1250,6 +1268,8 @@ interface AuditorProgressFile {
   currentTool?: string;
   currentToolArgs?: string;
   currentToolStartedAt?: number;
+  /** Worker-armed effective budget for the open call (see AuditorProgress). */
+  currentToolTimeoutMs?: number;
   /** v0.34.56: explicitly unmatched tool telemetry facts (see
    * applyToolExecutionEvent in goal-loop-auditor.ts). */
   unmatchedToolStarts?: AuditorProgress["unmatchedToolStarts"];
@@ -1480,6 +1500,9 @@ function asProgress(file: AuditorProgressFile, startedAt: number): AuditorProgre
     ...(file.currentTool ? { currentTool: file.currentTool } : {}),
     ...(file.currentToolArgs ? { currentToolArgs: file.currentToolArgs } : {}),
     ...(file.currentToolStartedAt ? { currentToolStartedAt: file.currentToolStartedAt } : {}),
+    ...(typeof file.currentToolTimeoutMs === "number" && Number.isFinite(file.currentToolTimeoutMs) && file.currentToolTimeoutMs > 0
+      ? { currentToolTimeoutMs: Math.floor(file.currentToolTimeoutMs) }
+      : {}),
     ...(file.sessionPath ? { sessionPath: file.sessionPath } : {}),
     ...(file.unmatchedToolStarts ? { unmatchedToolStarts: file.unmatchedToolStarts } : {}),
     ...(file.unmatchedToolEnds ? { unmatchedToolEnds: file.unmatchedToolEnds } : {}),
@@ -1819,7 +1842,11 @@ async function runDetachedGoalCompletionAuditorInner(args: {
         // independently of the event-driven lifetime policy.
         if (lastProgress?.currentToolStartedAt !== undefined) {
           const toolAgeMs = Math.max(0, now() - lastProgress.currentToolStartedAt);
-          if (toolAgeMs >= toolTimeoutMs) {
+          // Honor the worker-armed effective budget (max of base and the
+          // tool call's own granted timeout): killing the worker before the
+          // deadline the tool layer granted discards a healthy audit.
+          const effectiveBudgetMs = effectiveToolTimeoutMs(toolTimeoutMs, lastProgress.currentToolTimeoutMs);
+          if (toolAgeMs >= effectiveBudgetMs) {
             args.onProgress?.({
               phase: "running",
               elapsedMs: now() - startedAt,
@@ -1828,9 +1855,9 @@ async function runDetachedGoalCompletionAuditorInner(args: {
               unmatchedToolStarts: lastProgress.unmatchedToolStarts ?? [],
               unmatchedToolEnds: lastProgress.unmatchedToolEnds ?? [],
             });
-            const toolLabel = toolTimeoutMs >= 60_000
-              ? `${Math.max(1, Math.round(toolTimeoutMs / 60_000))}m`
-              : `${Math.max(1, Math.round(toolTimeoutMs / 1_000))}s`;
+            const toolLabel = effectiveBudgetMs >= 60_000
+              ? `${Math.max(1, Math.round(effectiveBudgetMs / 60_000))}m`
+              : `${Math.max(1, Math.round(effectiveBudgetMs / 1_000))}s`;
             args.onStalled?.({
               at: now(),
               reason: "tool-timeout",

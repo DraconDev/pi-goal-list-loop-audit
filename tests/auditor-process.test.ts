@@ -12,6 +12,7 @@ import {
   AUDITOR_TOOLS,
   cancelDetachedGoalCompletionAuditor,
   detachedAuditorEnv,
+  effectiveToolTimeoutMs,
   inspectAuditJobHealth,
   requestHash,
   resolveWorkerCommand,
@@ -1211,6 +1212,106 @@ process.stdin.on("data", (chunk) => {
     assert.equal(result.approved, false);
     assert.equal(result.disapproved, false);
     assert.match(result.error ?? "", /tool read exceeded its 1s timeout/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("effective tool budget honors a granted timeout above the base", () => {
+  assert.equal(effectiveToolTimeoutMs(300_000, undefined), 300_000, "absent grant degrades to base");
+  assert.equal(effectiveToolTimeoutMs(300_000, 0), 300_000, "zero grant degrades to base");
+  assert.equal(effectiveToolTimeoutMs(300_000, -5), 300_000, "negative grant degrades to base");
+  assert.equal(effectiveToolTimeoutMs(300_000, Number.NaN), 300_000, "NaN grant degrades to base");
+  assert.equal(effectiveToolTimeoutMs(300_000, "600000" as unknown as number), 300_000, "non-number grant degrades to base");
+  assert.equal(effectiveToolTimeoutMs(300_000, 620_000), 620_000, "a larger grant wins (the 2026-09-25 620s field case)");
+  assert.equal(effectiveToolTimeoutMs(300_000, 60_000), 300_000, "a smaller grant never shrinks the base");
+  assert.equal(effectiveToolTimeoutMs(300_000, 24 * 3_600_000), 6 * 3_600_000, "an absurd grant caps at MAX_AUDITOR_TOOL_TIMEOUT_MS");
+});
+
+test("parent tool watchdog honors the worker-armed granted budget", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "glla-tool-timeout-granted-"));
+  const grantedWorker = path.join(dir, "granted-worker.mjs");
+  const stalled: AuditorStalledInfo[] = [];
+  await writeFile(grantedWorker, `
+import { readFile, writeFile } from "node:fs/promises";
+const dir = process.argv[process.argv.indexOf("--job-dir") + 1];
+const request = JSON.parse(await readFile(dir + "/request.json", "utf8"));
+// A tool open 10s with a 600s granted budget: past the 100ms base, inside
+// the grant. The watchdog must NOT fire; the worker then settles normally.
+await writeFile(dir + "/progress.json", JSON.stringify({
+  protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+  phase: "tool_executing", elapsedMs: 1, lastActivityAt: Date.now(),
+  recentOutput: [], toolCalls: [], currentTool: "bash", currentToolArgs: "{}",
+  currentToolStartedAt: Date.now() - 10_000, currentToolTimeoutMs: 600_000,
+}));
+await new Promise((resolve) => setTimeout(resolve, 400));
+await writeFile(dir + "/result.json", JSON.stringify({
+  protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+  ok: true, output: "<disapproved/>", model: request.model,
+  thinkingLevel: request.thinkingLevel, toolCalls: [],
+}));
+`);
+  try {
+    const result = await runDetachedGoalCompletionAuditor({
+      cwd: dir,
+      goal,
+      model: "test/provider-model",
+      thinkingLevel: "high",
+      onStalled: (info) => stalled.push(info),
+      runtime: {
+        workerPath: grantedWorker,
+        attemptId: () => "attempt-granted-budget",
+        pollIntervalMs: 10,
+        wallTimeoutMs: 10_000,
+        toolTimeoutMs: 100,
+      },
+    });
+    assert.equal(stalled.length, 0, "no tool-timeout stall while inside the granted budget");
+    assert.equal(result.disapproved, true, "the audit settles with its verdict instead of a stall");
+    assert.doesNotMatch(result.error ?? "", /exceeded its .* timeout/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("worker honors a bash call's granted timeout past the base budget", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "glla-tool-timeout-granted-worker-"));
+  const fakePi = path.join(dir, "granted-pi.mjs");
+  const worker = path.resolve(process.cwd(), "scripts/goal-auditor-worker.mjs");
+  await writeFile(fakePi, `#!/usr/bin/env node
+let handled = false;
+process.stdin.on("data", (chunk) => {
+  if (handled || !String(chunk).includes("\\n")) return;
+  handled = true;
+  // Granted 600s; the 80ms base budget must not kill it. The tool ends at
+  // ~200ms (past base, inside grant) and the audit settles with a verdict.
+  process.stdout.write(JSON.stringify({ type: "tool_execution_start", toolCallId: "bash-1", toolName: "bash", args: { command: "sleep 0.2", timeout: 600 } }) + "\\n");
+  setTimeout(() => {
+    process.stdout.write(JSON.stringify({ type: "tool_execution_end", toolCallId: "bash-1", toolName: "bash" }) + "\\n");
+    process.stdout.write(JSON.stringify({ type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "<disapproved/>" } }) + "\\n");
+    process.stdout.write(JSON.stringify({ type: "agent_settled" }) + "\\n");
+  }, 200);
+  setInterval(() => {}, 1_000);
+});
+`);
+  await chmod(fakePi, 0o700);
+  try {
+    const result = await runDetachedGoalCompletionAuditor({
+      cwd: dir,
+      goal,
+      model: "test/provider-model",
+      thinkingLevel: "high",
+      runtime: {
+        workerPath: worker,
+        env: { GLLA_PI_BINARY: fakePi, GLLA_AUDITOR_TOOL_TIMEOUT_MS: "80" },
+        attemptId: () => "attempt-worker-granted-budget",
+        pollIntervalMs: 10,
+        wallTimeoutMs: 10_000,
+      },
+    });
+    assert.equal(result.approved, false);
+    assert.equal(result.disapproved, true, "the audit survives past the base budget and settles");
+    assert.doesNotMatch(result.error ?? "", /exceeded its .* timeout/);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

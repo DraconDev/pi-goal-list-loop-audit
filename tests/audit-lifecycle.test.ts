@@ -35,27 +35,68 @@ function claim(overrides: Partial<AuditClaimLike> = {}): AuditClaimLike {
 // ---- the five objective states, each from its own durable evidence ----
 
 test("lifecycle: a fresh claim is STARTING, not running — the launch window is represented", () => {
-  const projection = auditLifecycleProjection(claim({ phase: "starting", startedAt: ago(8_000) }), { now: NOW })!;
+  const projection = auditLifecycleProjection(claim({ at: ago(30_000), phase: "starting", startedAt: ago(8_000) }), { now: NOW })!;
   assert.equal(projection.state, "starting");
   assert.equal(projection.phase, "starting");
   assert.equal(projection.terminal, false, "starting is never terminal");
   assert.equal(projection.stale, false);
-  // No worker event yet: the claim's own age is the evidence, never an
-  // invented "last activity now".
-  assert.equal(projection.lastActivityAt, ago(8_000).replace("Z", ".000Z").replace(".000.000Z", ".000Z"));
-  assert.match(auditLifecycleLine(projection)!, /^starting · claim stored /);
+  // v0.38.99: launch time is NOT worker evidence. A claim waiting for its
+  // first worker event has NO lastActivityAt, and the launch age is its own
+  // named fact. The previous shape back-filled `lastActivityAt` from
+  // `startedAt`, which made a launch look like auditor activity.
+  assert.equal(projection.lastActivityAt, undefined, "no worker event means no last activity");
+  assert.equal(projection.lastEvent, "claim-stored");
+  assert.equal(projection.claimRunMs, 8_000, "the launch age is exposed as its own fact");
+  assert.match(auditLifecycleLine(projection)!, /^starting · launched 8s ago, no worker event yet/);
 });
 
-test("lifecycle: a running claim reports its LAST ACTIVITY, and a quiet one reports no progress", () => {
-  const moving = auditLifecycleProjection(claim({ phase: "running", startedAt: ago(20 * 60_000), lastActivityAt: ago(45_000) }), { now: NOW })!;
+test("lifecycle: the launch window is reported as no-first-event once it passes the window", () => {
+  const stuck = auditLifecycleProjection(claim({ phase: "starting", startedAt: ago(AUDIT_NO_PROGRESS_MS + 120_000), at: ago(AUDIT_NO_PROGRESS_MS + 100_000) }), { now: NOW })!;
+  assert.equal(stuck.stale, true, "a claim with no worker event past the window is a stuck launch");
+  assert.equal(stuck.lastEvent, "claim-stored", "and the evidence kind stays honest");
+  assert.match(auditLifecycleLine(stuck)!, /no first event for 11m 40s/, "the no-first-event age is quoted from the launch, not rounded away");
+  assert.match(stuck.nextAction, /\/goal cancel discards the claim/, "the next action is still real");
+});
+
+test("lifecycle: a starting claim that HAS produced worker activity is running, with the worker's own stamp", () => {
+  const live = auditLifecycleProjection(claim({ at: ago(700_000), phase: "running", startedAt: ago(600_000), lastActivityAt: ago(20_000) }), { now: NOW })!;
+  assert.equal(live.lastActivityAt, ago(20_000), "the durable stamp is the worker's own event");
+  assert.equal(live.lastEvent, "worker-activity");
+  assert.equal(live.idleMs, 20_000);
+  assert.match(auditLifecycleLine(live)!, /last worker activity 20s ago/);
+});
+
+test("lifecycle: a park is a park, not worker activity", () => {
+  const parked = auditLifecycleProjection(claim({ at: ago(180_000), phase: "recovery-pending", recoveryAt: ago(30_000), startedAt: ago(120_000), lastActivityAt: ago(120_000) }), { now: NOW })!;
+  assert.equal(parked.state, "recovery-needed");
+  assert.equal(parked.lastEvent, "parked", "the park is newer than the last worker event, and is quoted as the park");
+  assert.equal(parked.idleMs, 30_000, "the park time is the freshest durable fact");
+  assert.match(auditLifecycleLine(parked)!, /^recovery needed · parked 30s ago/);
+});
+
+test("lifecycle: a settling claim reports the applied verdict, not a worker event", () => {
+  const settling = auditLifecycleProjection(claim({ at: ago(100_000), phase: "settling", verdictAt: ago(4_000), startedAt: ago(90_000) }), { now: NOW })!;
+  assert.equal(settling.state, "settling");
+  assert.equal(settling.lastActivityAt, undefined, "no worker event is invented for a settlement");
+  assert.equal(settling.lastEvent, "verdict-applied");
+  assert.equal(settling.sinceLastEventMs, 4_000);
+  assert.equal(settling.terminal, false, "an unresolved settlement is not a completion");
+  assert.equal(isSettlingClaim(claim({ phase: "settling" })), true);
+  assert.match(settling.nextAction, /archiving the approved goal/);
+  assert.match(auditLifecycleLine(settling)!, /^settling · verdict applied 4s ago/);
+});
+
+test("lifecycle: running with last activity, and a quiet one reported as no progress", () => {
+  const moving = auditLifecycleProjection(claim({ at: ago(25 * 60_000), phase: "running", startedAt: ago(20 * 60_000), lastActivityAt: ago(45_000) }), { now: NOW })!;
   assert.equal(moving.state, "running");
   assert.equal(moving.idleMs, 45_000);
   assert.equal(moving.stale, false);
-  assert.match(auditLifecycleLine(moving)!, /last activity 45s ago/);
+  assert.match(auditLifecycleLine(moving)!, /last worker activity 45s ago/);
 
-  const silent = auditLifecycleProjection(claim({ phase: "running", startedAt: ago(40 * 60_000), lastActivityAt: ago(AUDIT_NO_PROGRESS_MS + 60_000) }), { now: NOW })!;
+  // `at` older than the worker stamp, so the stamp is the freshest evidence.
+  const silent = auditLifecycleProjection(claim({ at: ago(45 * 60_000), phase: "running", startedAt: ago(40 * 60_000), lastActivityAt: ago(AUDIT_NO_PROGRESS_MS + 60_000) }), { now: NOW })!;
   assert.equal(silent.stale, true, "an attempt this process owns with no durable progress past the window is no-progress");
-  assert.match(auditLifecycleLine(silent)!, /no progress for 11m /);
+  assert.match(auditLifecycleLine(silent)!, /no progress for 11m/);
   // The next action must be a real command, not a promise.
   assert.match(silent.nextAction, /\/goal resume retries the stored claim/);
 });
@@ -67,9 +108,8 @@ test("lifecycle: the activity heartbeat is throttled, so a chatty auditor cannot
 
 test("lifecycle: an applied approval awaiting its archive is SETTLING — never terminal", () => {
   const projection = auditLifecycleProjection(claim({ phase: "settling", verdictAt: ago(4_000), startedAt: ago(90_000) }), { now: NOW })!;
-  assert.equal(projection.state, "settling");
+  assert.equal(projection.phase, "settling");
   assert.equal(projection.terminal, false, "an unresolved settlement is not a completion");
-  assert.equal(isSettlingClaim(claim({ phase: "settling" })), true);
   assert.match(projection.nextAction, /archiving the approved goal/);
 });
 
@@ -80,6 +120,7 @@ test("lifecycle: approved is a SETTLEMENT state, and only the settlement may cla
   assert.equal(settled.state, "approved");
   assert.equal(settled.terminal, true);
   assert.match(settled.nextAction, /settlement durable/);
+  assert.match(auditLifecycleLine(settled)!, /^approved · settled 4s ago/);
   // A claim can never carry `approved` as a durable phase: the archive
   // releases the claim, so an approved claim cannot outlive its settlement.
   assert.equal(normalizeAuditPhase("approved"), "recovery-pending", "no durable approved phase exists");
@@ -93,11 +134,12 @@ test("lifecycle: an interrupted or unknown claim is RECOVERY NEEDED with a real 
   assert.match(legacy.nextAction, /\/goal resume retries the stored claim/);
   assert.match(auditLifecycleLine(legacy)!, /^recovery needed · parked /);
 
-  const parked = auditLifecycleProjection(claim({ phase: "recovery-pending", recoveryAt: ago(30_000), startedAt: ago(120_000) }), { now: NOW })!;
+  const parked = auditLifecycleProjection(claim({ at: ago(180_000), phase: "recovery-pending", recoveryAt: ago(30_000), startedAt: ago(120_000) }), { now: NOW })!;
   assert.equal(parked.state, "recovery-needed");
   // The park time is the freshest durable fact for a parked claim — not the
   // start of the attempt that was interrupted.
   assert.equal(parked.idleMs, 30_000);
+  assert.equal(parked.lastEvent, "parked");
 });
 
 test("lifecycle: a retry-waiting claim is distinct, and names the armed retry", () => {
@@ -123,8 +165,9 @@ test("lifecycle: a claim with no usable timestamp never invents an age", () => {
   const projection = auditLifecycleProjection({ phase: "running" } as AuditClaimLike, { now: NOW })!;
   assert.equal(projection.idleMs, undefined);
   assert.equal(projection.ageMs, 0);
+  assert.equal(projection.lastEvent, "none");
   assert.equal(projection.stale, false, "no evidence is not evidence of a stall");
-  assert.match(auditLifecycleLine(projection)!, /no activity recorded/);
+  assert.match(auditLifecycleLine(projection)!, /no worker event recorded/);
 });
 
 test("lifecycle: a future activity stamp clamps instead of rendering a negative age", () => {

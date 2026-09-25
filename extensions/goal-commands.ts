@@ -21,6 +21,9 @@ import {
   writeQueueItemFile, type ModeCommand, type State, type AuditVerdict, type LedgerRecord, LIST_MUTATING_SUBCOMMANDS, SETTINGS_MUTATING_ACTIONS,
   clearLoadHold, stateRootPending,
 } from "./goal-loop-core.js";
+// v0.38.99: the status surfaces name the durable audit lifecycle from the one
+// projection the widget uses.
+import { auditLifecycleProjection, fmtAge } from "./audit-lifecycle.js";
 import { clearDispatchRecord, dispatchRecordExists } from "./goal-loop-dispatch.js";
 import type { AuditDisplayProgress } from "./goal-loop-display.js";
 import { auditorVerdictTally, fmtElapsed, formatVerdictTallySegment } from "./goal-loop-display.js";
@@ -109,6 +112,14 @@ export interface CommandDeps {
   isCompletionAuditRecoveryPending: (goal: Goal | null | undefined) => boolean;
   markCompletionAuditRecoveryPending: (ctx: ExtensionContext, reason: string) => boolean;
   retryStoredCompletionAudit: (origin?: "complete-goal" | "provider-retry" | "manual" | "session-recovery" | "agent") => Promise<void>;
+  /** v0.38.99: the ONE branch every "resume the stored claim" caller takes.
+   * An approved-but-unarchived claim is a blocked SETTLEMENT, not an
+   * unfinished audit: this finishes it instead of launching a second auditor
+   * over work the first one already approved. */
+  resumeStoredCompletionOrSettlement: (
+    ctx: ExtensionContext,
+    origin: "complete-goal" | "provider-retry" | "manual" | "session-recovery" | "agent",
+  ) => "settled" | "parked" | "retried" | "not-applicable";
   probeMainModelRecovery: (ctx: ExtensionContext) => Promise<void>;
   releaseContinuationDispatchStandDown: () => void;
   releaseInitialSessionLoadBarrier: () => void;
@@ -137,7 +148,7 @@ let flags: CommandFlags;
 let listQueue: CommandDeps["listQueue"], notifyExternal: CommandDeps["notifyExternal"], persistState: CommandDeps["persistState"], updateGoal: CommandDeps["updateGoal"], setGoal: CommandDeps["setGoal"],
     archiveCurrentGoal: CommandDeps["archiveCurrentGoal"], healGoalPolicy: CommandDeps["healGoalPolicy"], startDrafting: CommandDeps["startDrafting"], warnIfStaleAtEntry: CommandDeps["warnIfStaleAtEntry"], queuePendingListOperation: CommandDeps["queuePendingListOperation"], freshCtx: CommandDeps["freshCtx"],
     freshCtxForGeneration: CommandDeps["freshCtxForGeneration"], goStaleTerminal: CommandDeps["goStaleTerminal"], groupOpenChildren: CommandDeps["groupOpenChildren"], activateNextListItem: CommandDeps["activateNextListItem"], clearMainModelRecoveryTimer: CommandDeps["clearMainModelRecoveryTimer"], mainModelRecoveryTimerActive: CommandDeps["mainModelRecoveryTimerActive"], continuationDispatchPending: CommandDeps["continuationDispatchPending"], resetContinuationDispatchState: CommandDeps["resetContinuationDispatchState"],
-    isCompletionAuditRecoveryPending: CommandDeps["isCompletionAuditRecoveryPending"], markCompletionAuditRecoveryPending: CommandDeps["markCompletionAuditRecoveryPending"], retryStoredCompletionAudit: CommandDeps["retryStoredCompletionAudit"], probeMainModelRecovery: CommandDeps["probeMainModelRecovery"], releaseContinuationDispatchStandDown: CommandDeps["releaseContinuationDispatchStandDown"],
+    isCompletionAuditRecoveryPending: CommandDeps["isCompletionAuditRecoveryPending"], markCompletionAuditRecoveryPending: CommandDeps["markCompletionAuditRecoveryPending"], retryStoredCompletionAudit: CommandDeps["retryStoredCompletionAudit"], resumeStoredCompletionOrSettlement: CommandDeps["resumeStoredCompletionOrSettlement"], probeMainModelRecovery: CommandDeps["probeMainModelRecovery"], releaseContinuationDispatchStandDown: CommandDeps["releaseContinuationDispatchStandDown"],
     releaseInitialSessionLoadBarrier: CommandDeps["releaseInitialSessionLoadBarrier"], resolveCarryover: CommandDeps["resolveCarryover"], resetLengthExhaustionEpisodes: CommandDeps["resetLengthExhaustionEpisodes"], safeSteerUser: CommandDeps["safeSteerUser"], scheduleContinuation: CommandDeps["scheduleContinuation"], scheduleSessionTimeout: CommandDeps["scheduleSessionTimeout"],
     createGoal: CommandDeps["createGoal"], fireReviewer: CommandDeps["fireReviewer"], openSettingsUI: CommandDeps["openSettingsUI"], manuallyResumeMainModelRecovery: CommandDeps["manuallyResumeMainModelRecovery"], activeGoalCommand: CommandDeps["activeGoalCommand"],
     activeGoalStatusCommand: CommandDeps["activeGoalStatusCommand"], activeGoalSurfaceCommand: CommandDeps["activeGoalSurfaceCommand"], goalNoun: CommandDeps["goalNoun"], displaySlice: CommandDeps["displaySlice"], shortObj: CommandDeps["shortObj"];
@@ -147,7 +158,7 @@ export function createGoalCommands(d: CommandDeps): void {
   listQueue = d.listQueue; notifyExternal = d.notifyExternal; persistState = d.persistState; updateGoal = d.updateGoal; setGoal = d.setGoal;
   archiveCurrentGoal = d.archiveCurrentGoal; healGoalPolicy = d.healGoalPolicy; startDrafting = d.startDrafting; warnIfStaleAtEntry = d.warnIfStaleAtEntry; queuePendingListOperation = d.queuePendingListOperation; freshCtx = d.freshCtx;
   freshCtxForGeneration = d.freshCtxForGeneration; goStaleTerminal = d.goStaleTerminal; groupOpenChildren = d.groupOpenChildren; activateNextListItem = d.activateNextListItem; clearMainModelRecoveryTimer = d.clearMainModelRecoveryTimer; mainModelRecoveryTimerActive = d.mainModelRecoveryTimerActive; continuationDispatchPending = d.continuationDispatchPending; resetContinuationDispatchState = d.resetContinuationDispatchState;
-  isCompletionAuditRecoveryPending = d.isCompletionAuditRecoveryPending; markCompletionAuditRecoveryPending = d.markCompletionAuditRecoveryPending; retryStoredCompletionAudit = d.retryStoredCompletionAudit; probeMainModelRecovery = d.probeMainModelRecovery; releaseContinuationDispatchStandDown = d.releaseContinuationDispatchStandDown;
+  isCompletionAuditRecoveryPending = d.isCompletionAuditRecoveryPending; markCompletionAuditRecoveryPending = d.markCompletionAuditRecoveryPending; retryStoredCompletionAudit = d.retryStoredCompletionAudit; resumeStoredCompletionOrSettlement = d.resumeStoredCompletionOrSettlement; probeMainModelRecovery = d.probeMainModelRecovery; releaseContinuationDispatchStandDown = d.releaseContinuationDispatchStandDown;
   releaseInitialSessionLoadBarrier = d.releaseInitialSessionLoadBarrier; resolveCarryover = d.resolveCarryover; resetLengthExhaustionEpisodes = d.resetLengthExhaustionEpisodes; safeSteerUser = d.safeSteerUser; scheduleContinuation = d.scheduleContinuation; scheduleSessionTimeout = d.scheduleSessionTimeout;
   createGoal = d.createGoal; fireReviewer = d.fireReviewer; openSettingsUI = d.openSettingsUI; manuallyResumeMainModelRecovery = d.manuallyResumeMainModelRecovery; activeGoalCommand = d.activeGoalCommand;
   activeGoalStatusCommand = d.activeGoalStatusCommand; activeGoalSurfaceCommand = d.activeGoalSurfaceCommand; goalNoun = d.goalNoun; displaySlice = d.displaySlice; shortObj = d.shortObj;
@@ -247,7 +258,11 @@ async function cmdGoal(args: string, ctx: ExtensionContext): Promise<void> {
         },
       }, ctx);
       appendLedger(ctx.cwd, "manual_audit_requested", { goalId: state.goal.id });
-      void retryStoredCompletionAudit("manual");
+      // v0.38.99: a claim that still carries its approval is a settlement —
+      // finish it rather than auditing the same work again.
+      if (resumeStoredCompletionOrSettlement(ctx, "manual") === "not-applicable") {
+        void retryStoredCompletionAudit("manual");
+      }
       return;
     }
     if (route.name === "tweak") {
@@ -410,7 +425,13 @@ async function cmdStatus(ctx: ExtensionContext): Promise<void> {
     lines.push(`Audits: ${tallyText} (${statusTally.approvals} approved)`);
   }
   if (g.status === "auditing") {
-    lines.push(`Completion audit: ${isCompletionAuditRecoveryPending(g) ? `recovery pending — ${activeGoalSurfaceCommand("resume")} retries the stored claim` : flags.completionAuditInFlight && flags.latestAuditProgress?.label === "queued" ? "detached auditor queued" : flags.completionAuditInFlight ? "detached auditor running" : "awaiting lifecycle recovery"}`);
+    // v0.38.99: /goal status reads the SAME durable lifecycle projection the
+    // widget does. The old phrasing called every non-`running` phase
+    // "recovery pending", so a `starting` claim and a `settling` approval both
+    // read as a parked audit — and a `running` claim with no worker read as
+    // "awaiting lifecycle recovery". The durable phase now names itself and
+    // names the action that actually unblocks it.
+    lines.push(`Completion audit: ${formatStoredAuditLifecycle(g, { inFlight: flags.completionAuditInFlight, queued: flags.latestAuditProgress?.label === "queued" })}`);
   }
   if (g.pauseReason) lines.push(`Paused: ${sanitizeProviderDisplayText(g.pauseReason)}`);
   // v0.38.89: the timeline is the status card's slow twin — one pointer.
@@ -533,6 +554,14 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
     const staleEntry = warnIfStaleAtEntry(ctx, resumeCommand);
     if (staleEntry) return;
     releaseAuditorSurface();
+    // v0.38.99: an approved-but-unarchived claim is a blocked SETTLEMENT, not
+    // an unfinished audit (/goal resume and the resume re-kick). Promising "no
+    // new audit is needed" and then launching a second auditor was exactly the
+    // dishonesty the pause text was written to avoid.
+    if (resumeStoredCompletionOrSettlement(ctx, "manual") !== "not-applicable") {
+      flags.completionAuditRecoveryArmed = true;
+      return;
+    }
     markCompletionAuditRecoveryPending(ctx, "manual-resume");
     flags.completionAuditRecoveryArmed = true;
     ctx.ui.notify("Resuming the stored completion claim — starting a detached auditor (no agent turn needed).", "info");
@@ -600,8 +629,12 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
   // Keeping the claim while merely scheduling a continuation left manual
   // pause/resume with an ACTIVE goal that no timer would ever consume.
   if (storedCompletion) {
-    ctx.ui.notify("Resuming the stored completion claim — starting a detached auditor (no agent turn needed).", "info");
-    void retryStoredCompletionAudit("manual");
+    // v0.38.99: settlement-first. A claim whose approval is already durable
+    // only owes its terminal archive.
+    if (resumeStoredCompletionOrSettlement(ctx, "manual") === "not-applicable") {
+      ctx.ui.notify("Resuming the stored completion claim — starting a detached auditor (no agent turn needed).", "info");
+      void retryStoredCompletionAudit("manual");
+    }
     return;
   }
   // v0.22.5: say what was resumed — with a non-empty list this also resumes
@@ -2567,6 +2600,14 @@ async function cmdGllaResume(ctx: ExtensionContext): Promise<void> {
       ctx.ui.notify("The detached completion auditor is already running — wait for its verdict or /glla cancel to discard the pending claim.", "info");
       return;
     }
+    // v0.38.99: an approved-but-unarchived claim is a blocked SETTLEMENT, not
+    // an unfinished audit (/goal resume and the resume re-kick). Promising "no
+    // new audit is needed" and then launching a second auditor was exactly the
+    // dishonesty the pause text was written to avoid.
+    if (resumeStoredCompletionOrSettlement(ctx, "manual") !== "not-applicable") {
+      flags.completionAuditRecoveryArmed = true;
+      return;
+    }
     markCompletionAuditRecoveryPending(ctx, "manual-resume");
     flags.completionAuditRecoveryArmed = true;
     ctx.ui.notify("Resuming the stored completion claim — starting a detached auditor (no agent turn needed).", "info");
@@ -2854,6 +2895,49 @@ function cmdAgents(args: string, ctx: ExtensionContext): void {
 // for checking on whatever active process we have"). Read-only aggregate of
 // the ONE state — goal, list queue, loop, pending decisions — with pointers
 // to the deep surfaces.
+
+/**
+ * v0.38.99: ONE formatter for the stored audit lifecycle, shared by
+ * `/goal status`, `/glla status`, and anything else that has to name the
+ * durable state. It prefers the durable claim over process-local liveness
+ * flags: a claim's phase is what a restart will read, so a live-looking HUD
+ * must never rename it. An un-owned claim with no in-process progress falls
+ * back to the process-local words, which are the only facts left.
+ */
+function formatStoredAuditLifecycle(
+  goal: Goal,
+  opts: { inFlight?: boolean; queued?: boolean; compact?: boolean } = {},
+): string {
+  const claim = goal.pendingCompletion;
+  if (!claim) return "no stored claim";
+  const lifecycle = auditLifecycleProjection(claim, {
+    now: Date.now(),
+    resumeCommand: activeGoalSurfaceCommand("resume"),
+  });
+  if (!lifecycle) return "no stored claim";
+  if (opts.compact) return `${lifecycle.label}${lifecycle.stale ? " · no progress" : ""}`;
+  // A claim this process is actively driving is described by its phase plus
+  // the process fact; a parked one names its unblock action.
+  if (lifecycle.phase === "starting" && !opts.inFlight) {
+    return lifecycle.stale
+      ? `${lifecycle.label} — no worker event after ${fmtAge(lifecycle.idleMs ?? 0)}; ${lifecycle.nextAction}`
+      : `${lifecycle.label} — ${lifecycle.nextAction}`;
+  }
+  if (lifecycle.phase === "running" && !opts.inFlight) {
+    return lifecycle.stale
+      ? `${lifecycle.label} — ${lifecycle.nextAction}`
+      : `${lifecycle.label} — no worker event yet (detached worker, not yet reporting)`;
+  }
+  if (lifecycle.phase === "settling") {
+    return `${lifecycle.label} — the audit approved; the terminal archive is owed. ${lifecycle.nextAction}`;
+  }
+  if (lifecycle.phase === "recovery-pending" || lifecycle.phase === "retry-waiting") {
+    return `${lifecycle.label} — ${lifecycle.nextAction}`;
+  }
+  // running + in flight: keep the process facts, they are the richer truth.
+  return opts.queued ? "detached auditor queued" : "detached auditor running";
+}
+
 function cmdGllaStatus(ctx: ExtensionContext): void {
   const lines: string[] = [];
   // v0.35.15: name a frozen supervisor FIRST — it changes how every other
@@ -2864,8 +2948,11 @@ function cmdGllaStatus(ctx: ExtensionContext): void {
   const g = state.goal;
   if (g) {
     const tok = (g.usage?.tokensUsed ?? 0) > 0 ? ` · ${g.usage!.tokensUsed} tok` : "";
-    const audit = g.status === "auditing"
-      ? isCompletionAuditRecoveryPending(g) ? " (audit recovery pending)" : flags.completionAuditInFlight && flags.latestAuditProgress?.label === "queued" ? " (detached auditor queued)" : flags.completionAuditInFlight ? " (detached auditor running…)" : " (audit awaiting lifecycle recovery)"
+    // v0.38.99: same durable lifecycle as /goal status, compact form. A
+    // settling or paused settlement reads as "audit settlement owed", not as a
+    // generic recovery wait that sounds like a new audit is needed.
+    const audit = g.pendingCompletion && (g.status === "auditing" || g.status === "paused")
+      ? ` (audit ${formatStoredAuditLifecycle(g, { inFlight: flags.completionAuditInFlight, queued: flags.latestAuditProgress?.label === "queued", compact: true })})`
       : "";
     const pause = g.status === "paused" && g.pauseReason ? ` — ${displaySlice(sanitizeProviderDisplayText(g.pauseReason), 90)}` : "";
     lines.push(`goal [${g.policy}] ${g.status}${audit}${tok}: ${displaySlice(g.objective, 90)}${pause}`);

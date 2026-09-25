@@ -1047,13 +1047,17 @@ test("widget: interrupted completion claims render the named recovery-needed lif
   assert.ok(!lines.some((l) => l.includes("auditor: running")));
 });
 
-test("widget: a durable running claim without observed progress says awaiting completion review", () => {
+test("widget: a durable running claim without observed progress names its durable state", () => {
   const g = goalOf({ status: "auditing", pendingCompletion: { at: "2026-07-21T11:59:00Z", phase: "running", attemptId: "audit-2" } });
   const state = { goal: g, list: [] };
   const lines = buildWidgetLines(state, null, NOW)!;
-  assert.ok(lines.some((l) => l.includes("auditor: awaiting completion review")));
+  // v0.38.99: with no worker reporting, the durable phase is authoritative —
+  // a workerless claim must not borrow the healthy-looking "awaiting
+  // completion review" wait (auditor finding 2a); that wording is reserved
+  // for a worker-complete snapshot whose verdict application is pending.
+  assert.ok(lines.some((l) => l.includes("auditor: running · no worker event yet")));
   assert.ok(lines.some((l) => l.includes("waiting for completion review")));
-  assert.match(buildStatusText(state, null, NOW)!, /auditor ✓ awaiting completion review/);
+  assert.match(buildStatusText(state, null, NOW)!, /auditor ✓ running · no worker event yet/);
   assert.ok(!lines.some((l) => l.includes("recovery pending")));
 });
 

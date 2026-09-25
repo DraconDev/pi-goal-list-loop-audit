@@ -970,9 +970,41 @@ function auditorPhaseForDisplay(audit: AuditDisplayProgress | null | undefined, 
   return auditorObservedPhase(audit, phase);
 }
 
+/** v0.38.99: which surface names the state when the durable claim and the
+ * in-process progress DISAGREE.
+ *
+ * Compatibility, not blanket precedence: a real progress object speaks for
+ * itself UNLESS it positively contradicts the durable claim.
+ *  - `settling` always wins. The review already happened and the archive is
+ *    owed; a live progress object (including a worker-complete snapshot) must
+ *    never rename that as "awaiting completion review", which is materially
+ *    false.
+ *  - No progress object at all (the restart case): the durable claim is the
+ *    only evidence, so it names the state.
+ *  - `starting` + a worker-complete snapshot: a finished worker contradicts
+ *    "never started", so the snapshot cannot belong to this attempt's
+ *    lifecycle and the durable claim stands.
+ * Everything else is compatible: `queued` (pre-spawn), `starting` (booting),
+ * `blocked`/error (a real worker outcome), quiet-with-activity, a live
+ * tool, or a `complete` snapshot landing a `running` attempt (the verdict
+ * application genuinely is pending). Stomping any of those with the durable
+ * phase would deny fresher evidence the progress itself reports.
+ */
+function durablePhaseOverride(
+  claim: PendingCompletion | undefined,
+  audit: AuditDisplayProgress | null | undefined,
+  now: number,
+): string | undefined {
+  const phase = claim?.phase;
+  if (phase === "settling") return "settling";
+  if (!audit) return durablePhaseLabel(claim, now);
+  if (phase === "starting" && audit.phase === "complete") return durablePhaseLabel(claim, now);
+  return undefined;
+}
+
 /** v0.38.99: a claim whose approval is durable and whose archive is owed is
  * SETTLING, not "awaiting completion review" — the review already happened.
- * With no in-process progress (the restart case) the durable phase is the only
+ * With no live worker (the restart case) the durable phase is the only
  * evidence, and mislabeling it hid a real settlement window behind a worker
  * that no longer exists. */
 function durablePhaseLabel(claim: PendingCompletion | undefined, now: number): string | undefined {
@@ -981,6 +1013,9 @@ function durablePhaseLabel(claim: PendingCompletion | undefined, now: number): s
   if (phase === "starting" && claim) {
     const projection = auditLifecycleProjection(claim, { now });
     return projection?.stale ? "starting · no worker event" : "starting";
+  }
+  if (phase === "running") {
+    return "running · no worker event yet";
   }
   return undefined;
 }
@@ -1274,10 +1309,10 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
     // on — "auditor reading source…" names the work the coarse "thinking"
     // label hid. Opt-out via auditorProgressSignals.
     const signals = extras?.auditorProgressSignals !== false;
-    // v0.38.99: same durable-first naming as the card — with no in-process
-    // worker, a settling/starting claim says so instead of "awaiting
-    // completion review".
-    const durableLabel = audit ? undefined : durablePhaseLabel(g.pendingCompletion, now);
+    // v0.38.99: same precedence as the card — see durablePhaseOverride:
+    // settling, workerless, and contradicted-starting claims are named by
+    // their durable phase; any other real progress object speaks for itself.
+    const durableLabel = durablePhaseOverride(g.pendingCompletion, audit, now);
     const observed = durableLabel
       ?? (signals && phase === "running"
         ? (auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, live))
@@ -1770,9 +1805,10 @@ function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefin
   const phaseLabel = signals && phase === "running"
     ? (auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, phaseLive))
     : auditorPhaseForDisplay(audit, phase, phaseLive);
-  // v0.38.99: with no in-process worker, the durable lifecycle names the
-  // state (starting / settling) that the coarse display phase cannot.
-  const durableLabel = audit ? undefined : durablePhaseLabel(g.pendingCompletion, now);
+  // v0.38.99: the durable lifecycle names the state whenever in-process
+  // progress cannot (see durablePhaseOverride). The coarse display phase only
+  // speaks for a claim a LIVE worker is driving.
+  const durableLabel = durablePhaseOverride(g.pendingCompletion, audit, now);
   const effectivePhaseLabel = durableLabel ?? phaseLabel;
   const detail = audit?.label && audit.label !== "queued" && audit.label !== "running"
     ? ` · ${truncate(audit.label, 30)}`

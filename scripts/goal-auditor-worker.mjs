@@ -21,6 +21,10 @@ const PROTOCOL_VERSION = 1;
 // below still prevents one tool call from pinning the audit indefinitely.
 const AUDITOR_TOOLS = new Set(["read", "grep", "find", "ls", "bash"]);
 const DEFAULT_TOOL_TIMEOUT_MS = 5 * 60_000;
+// Mirror of MAX_AUDITOR_TOOL_TIMEOUT_MS in
+// extensions/goal-loop-auditor-process.ts: a granted tool timeout is honored,
+// but never beyond the same ceiling the user-facing setting enforces.
+const MAX_TOOL_TIMEOUT_MS = 6 * 3_600_000;
 // A cancelled worker must not leave a wedged RPC child holding stdout/stderr
 // pipes open. Give a cooperative SIGTERM a short grace period, then force
 // kill and destroy the pipes so this worker can finish and exit too.
@@ -472,17 +476,20 @@ async function main() {
   let currentTool;
   let currentToolArgs;
   let currentToolStartedAt;
+  let currentToolTimeoutMs;
   const setCurrentToolFromActive = () => {
     const active = [...activeTools.values()].at(-1);
     if (!active) {
       currentTool = undefined;
       currentToolArgs = undefined;
       currentToolStartedAt = undefined;
+      currentToolTimeoutMs = undefined;
       return;
     }
     currentTool = active.name;
     currentToolArgs = active.argsPrefix;
     currentToolStartedAt = active.startedAt;
+    currentToolTimeoutMs = active.timeoutMs;
   };
   let finalized = false;
   let streamError;
@@ -545,6 +552,7 @@ async function main() {
       ...(currentTool ? { currentTool } : {}),
       ...(currentToolArgs ? { currentToolArgs } : {}),
       ...(currentToolStartedAt ? { currentToolStartedAt } : {}),
+      ...(currentToolTimeoutMs !== undefined ? { currentToolTimeoutMs } : {}),
     };
     // Event handlers publish asynchronously. Serialize snapshots so a slow
     // older write can never overwrite a newer tool/report phase on disk.
@@ -618,14 +626,30 @@ async function main() {
     if (timer) clearTimeout(timer);
     toolTimers.delete(key);
   };
-  const toolTimeoutLabel = TOOL_TIMEOUT_MS >= 60_000
-    ? `${Math.max(1, Math.round(TOOL_TIMEOUT_MS / 60_000))}m`
-    : `${Math.max(1, Math.round(TOOL_TIMEOUT_MS / 1_000))}s`;
-  const armToolTimer = (key, name) => {
+  // The tool layer grants each call its own budget (pi bash `timeout` is
+  // seconds). A brake that fires before the granted budget expires would
+  // discard a healthy audit for running exactly the command it declared —
+  // the 2026-09-25 field case: a 620s full-suite run aborted at the 5m base,
+  // throwing away ~60m of completed audit work. Honor the granted budget,
+  // floored at the configured base and capped at the shared ceiling.
+  const grantedToolTimeoutMs = (args) => {
+    const seconds = args && typeof args === "object" ? args.timeout : undefined;
+    if (typeof seconds !== "number" || !Number.isFinite(seconds) || seconds <= 0) return undefined;
+    return Math.min(MAX_TOOL_TIMEOUT_MS, Math.floor(seconds * 1000));
+  };
+  const effectiveToolTimeoutMs = (args) => Math.min(
+    MAX_TOOL_TIMEOUT_MS,
+    Math.max(TOOL_TIMEOUT_MS, grantedToolTimeoutMs(args) ?? 0),
+  );
+  const toolTimeoutLabel = (budgetMs) => budgetMs >= 60_000
+    ? `${Math.max(1, Math.round(budgetMs / 60_000))}m`
+    : `${Math.max(1, Math.round(budgetMs / 1_000))}s`;
+  const armToolTimer = (key, name, budgetMs) => {
     clearToolTimer(key);
+    const budget = Math.min(MAX_TOOL_TIMEOUT_MS, Math.max(50, budgetMs));
     const timer = setTimeout(() => {
-      void finish(false, `Auditor stalled — tool ${name} exceeded its ${toolTimeoutLabel} timeout; the worker was aborted.`).catch(() => {});
-    }, TOOL_TIMEOUT_MS);
+      void finish(false, `Auditor stalled — tool ${name} exceeded its ${toolTimeoutLabel(budget)} timeout; the worker was aborted.`).catch(() => {});
+    }, budget);
     timer.unref?.();
     toolTimers.set(key, timer);
   };
@@ -886,9 +910,10 @@ async function main() {
       if (event.type === "tool_execution_start" && AUDITOR_TOOLS.has(event.toolName)) {
         const id = event.toolCallId === undefined || event.toolCallId === null ? undefined : String(event.toolCallId);
         const key = id !== undefined ? id : `${event.toolName}:${activeTools.size}:${Date.now()}`;
-        activeTools.set(key, { name: event.toolName, argsPrefix: toolArgsPrefix(event.args), startedAt: Date.now(), toolCallId: id });
+        const timeoutMs = effectiveToolTimeoutMs(event.args);
+        activeTools.set(key, { name: event.toolName, argsPrefix: toolArgsPrefix(event.args), startedAt: Date.now(), toolCallId: id, timeoutMs });
         if (id === undefined) anonymousStartKeys.add(key);
-        armToolTimer(key, event.toolName);
+        armToolTimer(key, event.toolName, timeoutMs);
         setCurrentToolFromActive();
         void progress(phase).catch(() => {});
         return;
@@ -904,7 +929,7 @@ async function main() {
         const active = key !== undefined ? activeTools.get(key) : undefined;
         if (active) {
           clearToolTimer(key);
-          const { startedAt: _startedAt, toolCallId: _toolCallId, ...toolCall } = active;
+          const { startedAt: _startedAt, toolCallId: _toolCallId, timeoutMs: _timeoutMs, ...toolCall } = active;
           toolCalls.push({ ...toolCall, finishedAt: Date.now() });
           while (toolCalls.length > MAX_TOOL_CALLS) toolCalls.shift();
           activeTools.delete(key);

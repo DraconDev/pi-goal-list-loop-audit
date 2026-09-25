@@ -156,13 +156,28 @@ export interface AuditLifecycleProjection {
   legacy: boolean;
   attemptId?: string;
   startedAt?: string;
-  /** The freshest durable activity evidence, normalized to ISO. */
+  /** WORKER activity only: the last real RPC/session event the detached
+   * auditor produced, taken straight from the claim's `lastActivityAt`.
+   * Absent means never observed — it is NEVER back-filled from `startedAt`
+   * (launch time is not worker evidence) or from the claim's own age. */
   lastActivityAt?: string;
   /** ms since that evidence; undefined when the claim has no usable
    * timestamp at all (never invented from the current clock). */
   idleMs?: number;
+  /** The freshest durable lifecycle EVENT of any kind (worker activity, park,
+   * verdict, claim creation) and which kind produced it. `lastActivityAt`
+   * stays the worker-activity fact; this is the honest "when did something
+   * last happen" fact for every phase. */
+  lastEventAt?: string;
+  lastEvent: "worker-activity" | "parked" | "verdict-applied" | "claim-stored" | "none";
+  /** ms since that event; undefined only when the claim carries no usable
+   * timestamp at all. */
+  sinceLastEventMs?: number;
   /** ms since the claim was stored. */
   ageMs: number;
+  /** ms since the attempt was launched (`startedAt`) — the launch-age fact,
+   * deliberately NOT presented as worker activity. */
+  claimRunMs?: number;
   /** An attempt this process owns with no durable progress past the window. */
   stale: boolean;
   /** Only a completed settlement is terminal. */
@@ -219,23 +234,48 @@ export function auditLifecycleProjection(
   // driver; a claim that merely says "settling" stays non-terminal.
   const state: AuditLifecycleState = opts.settled === true ? "approved" : PHASE_STATE[phase];
 
-  // Freshest durable evidence, in trust order: the last activity the attempt
-  // itself reported, when the claim was parked, when its verdict landed, then
-  // the attempt start, then the claim's own creation. A future timestamp
-  // (clock skew / hand-edited state) clamps to zero age instead of rendering
-  // a negative age.
-  const evidenceMs = [claim.lastActivityAt, claim.recoveryAt, claim.verdictAt, claim.startedAt, claim.at]
-    .map(parseAt)
-    .find((ms): ms is number => ms !== undefined);
+  // Evidence is split by KIND and never merged. Worker activity, the park
+  // event, the applied verdict, and claim creation are four different facts;
+  // collapsing them into one "last activity" made a LAUNCH read as a worker
+  // event, which is exactly the fabrication the schema forbids.
+  const workerActivityMs = parseAt(claim.lastActivityAt);
+  const parkMs = parseAt(claim.recoveryAt);
+  const verdictMs = parseAt(claim.verdictAt);
+  const startedMs = parseAt(claim.startedAt);
   const storedMs = parseAt(claim.at);
-  const idleMs = evidenceMs === undefined ? undefined : Math.max(0, now - evidenceMs);
+  // The freshest durable EVENT wins, whatever its kind: a park recorded after
+  // the last worker event is newer evidence than the worker event itself.
+  // Evidence is split by kind so a reader can always tell WHICH fact is being
+  // quoted — never merged, never back-filled.
+  const [lastEvent, lastEventMs] = ((): ["worker-activity" | "parked" | "verdict-applied" | "claim-stored" | "none", number | undefined] => {
+    type LifecycleEventKind = "worker-activity" | "parked" | "verdict-applied" | "claim-stored";
+    const candidates: Array<[LifecycleEventKind, number]> = [
+      ...(workerActivityMs === undefined ? [] : [["worker-activity", workerActivityMs] as [LifecycleEventKind, number]]),
+      ...(parkMs === undefined ? [] : [["parked", parkMs] as [LifecycleEventKind, number]]),
+      ...(verdictMs === undefined ? [] : [["verdict-applied", verdictMs] as [LifecycleEventKind, number]]),
+      ...(storedMs === undefined ? [] : [["claim-stored", storedMs] as [LifecycleEventKind, number]]),
+    ];
+    if (candidates.length === 0) return ["none", undefined];
+    return candidates.reduce((freshest, candidate) => (candidate[1] > freshest[1] ? candidate : freshest));
+  })();
+  // `idleMs` is the age of the freshest durable evidence: worker activity
+  // while an attempt is owned, otherwise the lifecycle event that parked or
+  // settled it. Absent when the claim carries no usable timestamp at all.
+  const idleMs = lastEventMs === undefined ? undefined : Math.max(0, now - lastEventMs);
   const ageMs = storedMs === undefined ? 0 : Math.max(0, now - storedMs);
+  const claimRunMs = startedMs === undefined ? undefined : Math.max(0, now - startedMs);
 
   const owns = auditPhaseOwnsAttempt(phase);
+  // No-progress is about durable evidence on a claim THIS PROCESS owns: a
+  // `starting` claim that has waited past the window for its first worker
+  // event is a stuck launch, and a `running` claim with no events is a silent
+  // worker. A parked or settling claim is not "no progress" — it waits on a
+  // decision or an archive, and its own surface says so.
   const stale = owns && idleMs !== undefined && idleMs >= noProgressMs;
   const retryInMs = parseAt(claim.recoveryRetryAt);
-  const evidenceIso = iso(evidenceMs);
-  const startedAtIso = iso(parseAt(claim.startedAt));
+  const evidenceIso = iso(workerActivityMs);
+  const startedAtIso = iso(startedMs);
+  const lastEventIso = iso(lastEventMs);
   const label = LIFECYCLE_LABELS[state];
   const nextAction = (() => {
     if (state === "approved") return "settlement durable — the summary is in .pi-glla/archive/";
@@ -261,10 +301,14 @@ export function auditLifecycleProjection(
     terminal: state === "approved",
     label,
     nextAction,
+    lastEvent,
     ...(typeof claim.attemptId === "string" && claim.attemptId ? { attemptId: claim.attemptId } : {}),
     ...(evidenceIso ? { lastActivityAt: evidenceIso } : {}),
     ...(startedAtIso ? { startedAt: startedAtIso } : {}),
+    ...(lastEventIso ? { lastEventAt: lastEventIso } : {}),
     ...(idleMs !== undefined ? { idleMs } : {}),
+    ...(lastEventMs !== undefined ? { sinceLastEventMs: idleMs ?? 0 } : {}),
+    ...(claimRunMs !== undefined ? { claimRunMs } : {}),
   };
 }
 
@@ -288,23 +332,38 @@ export function auditLifecycleLine(
   if (!projection) return undefined;
   const parts: string[] = [projection.label];
   const idle = projection.idleMs;
-  switch (projection.state) {
+  if (projection.state === "approved") {
+    parts.push(projection.sinceLastEventMs === undefined
+      ? "settlement durable"
+      : `settled ${fmtAge(projection.sinceLastEventMs)} ago`);
+    return parts.join(" · ");
+  }
+  switch (projection.phase) {
     case "starting":
-      parts.push(`claim stored ${fmtAge(projection.ageMs)} ago`);
+      // Launch age, named as launch age: a claim waiting for its first
+      // worker event is "no worker event yet", never "last activity 5m ago".
+      parts.push(projection.claimRunMs === undefined
+        ? "claim stored, no launch evidence"
+        : `launched ${fmtAge(projection.claimRunMs)} ago, no worker event yet`);
+      if (projection.stale) parts.push(`no first event for ${fmtAge(idle ?? 0)}`);
       break;
     case "running":
-    case "settling":
-      parts.push(idle === undefined ? "no activity recorded" : `last activity ${fmtAge(idle)} ago`);
+      parts.push(idle === undefined ? "no worker event recorded" : `last worker activity ${fmtAge(idle)} ago`);
       if (projection.stale) parts.push(`no progress for ${fmtAge(idle ?? 0)}`);
       break;
-    case "approved":
-      parts.push(idle === undefined ? "settlement durable" : `settled ${fmtAge(idle)} ago`);
+    case "settling":
+      parts.push(projection.sinceLastEventMs === undefined
+        ? "verdict applied"
+        : `verdict applied ${fmtAge(projection.sinceLastEventMs)} ago`);
+      if (projection.stale) parts.push(`archive not finished after ${fmtAge(idle ?? 0)}`);
       break;
     case "retry-waiting":
-      parts.push(idle === undefined ? "retry armed" : `last activity ${fmtAge(idle)} ago`);
+      parts.push(idle === undefined ? "retry armed" : `last worker activity ${fmtAge(idle)} ago`);
       break;
-    case "recovery-needed":
-      parts.push(`parked ${fmtAge(idle ?? projection.ageMs)} ago`);
+    case "recovery-pending":
+      parts.push(projection.sinceLastEventMs === undefined
+        ? "parked, no park evidence"
+        : `parked ${fmtAge(projection.sinceLastEventMs)} ago`);
       break;
   }
   return parts.join(" · ");

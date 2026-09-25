@@ -148,6 +148,7 @@ isGoalRevisionCurrent,
 // the detached path, so no terminal surface can be produced from an
 // unresolved claim.
 import { settlementAllowsTerminalRender, settlementPark, settlementStep } from "../audit-lifecycle.js";
+import { persistClaimWorkerActivity } from "./goal-auditor-hooks.js";
 import { dispatchAuditorAllowedExtensions } from "../auditor-extensions.js";
 import {
   applyValidatedBatch,
@@ -1071,6 +1072,14 @@ function registerAgentTools(pi: any): void {
             // warning, and the card renders "tool: X · 4m / 20m budget".
             if (progress.sessionPath) inspectionSessionPath = progress.sessionPath;
             publishDetachedAuditProgress(auditGeneration, auditGoalId, auditAttemptId, { ...progress, toolTimeoutMs });
+            // v0.38.99: this is the MAIN path every ordinary completion takes,
+            // and it must record durable lifecycle evidence too. Without it
+            // the claim stayed `starting` with no lastActivityAt for the whole
+            // run, so "running with last activity" only ever reached the
+            // ledger on a retry. Same throttled writer, same attempt fence.
+            if (typeof progress.lastActivityAt === "number" && Number.isFinite(progress.lastActivityAt)) {
+              persistClaimWorkerActivity(ctx, auditGoalId, auditAttemptId, progress.lastActivityAt);
+            }
           },
           // v0.34.57: the parent-side heartbeat-without-progress watchdog
           // fired — persist the auditor_stalled ledger event so the recovery

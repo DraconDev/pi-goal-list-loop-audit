@@ -563,8 +563,15 @@ function publishDetachedAuditProgress(
     unmatchedToolEnds: progress.unmatchedToolEnds?.length ?? 0,
     // v0.37.0: dispatch fact — the effective per-tool budget for this
     // attempt; the quiet watcher and the "tool: X · 4m / 20m budget" line
-    // consume it.
-    toolTimeoutMs: progress.toolTimeoutMs,
+    // consume it. A granted tool timeout extends the armed budget beyond
+    // the dispatch base, so the card quotes the max — otherwise a healthy
+    // in-budget long tool reads as over budget.
+    toolTimeoutMs: typeof progress.currentToolTimeoutMs === "number" && progress.currentToolTimeoutMs > 0
+      ? Math.max(
+        typeof progress.toolTimeoutMs === "number" && progress.toolTimeoutMs > 0 ? progress.toolTimeoutMs : 0,
+        progress.currentToolTimeoutMs,
+      )
+      : progress.toolTimeoutMs,
     // v0.38.3: live-inspection session file (undefined = --no-session spawn).
     sessionPath: progress.sessionPath,
     lastEventAt: Date.now(),

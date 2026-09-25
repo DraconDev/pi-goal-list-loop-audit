@@ -924,9 +924,35 @@ function persistAuditorActivity(
   at: number,
 ): boolean {
   const current = detachedAuditContext(generation, goalId, attemptId);
-  const claim = state.goal?.pendingCompletion;
-  if (!current || !claim || claim.attemptId !== attemptId) return false;
+  if (!current) return false;
+  return persistClaimWorkerActivity(current, goalId, attemptId, at);
+}
+
+/**
+ * v0.38.99: the durable activity writer, shared by BOTH detached-audit launch
+ * paths — the recovery path in this module and the direct `complete_goal` /
+ * `/goal verify` path in goal-tools.ts. Before this existed as a shared entry
+ * point, only the recovery path stamped the claim, so the MAIN path (every
+ * ordinary completion) stayed durably `starting` with no `lastActivityAt` for
+ * its entire run and the "running with last activity" state never reached the
+ * ledger except on retries.
+ *
+ * Ownership is fenced on the claim's own attempt id: a late snapshot from a
+ * replaced attempt can never stamp a newer claim. Only a REAL worker event
+ * (the worker's `lastActivityAt`) counts — a boot/heartbeat resend does not,
+ * so a silent worker cannot keep a dead claim looking alive across a restart.
+ */
+export function persistClaimWorkerActivity(
+  ctx: ExtensionContext,
+  goalId: string,
+  attemptId: string,
+  at: number,
+): boolean {
+  const goal = state.goal;
+  const claim = goal?.pendingCompletion;
+  if (!goal || goal.id !== goalId || !claim || claim.attemptId !== attemptId) return false;
   if (claim.phase !== "starting" && claim.phase !== "running") return false;
+  if (!Number.isFinite(at)) return false;
   const iso = new Date(at).toISOString();
   if (claim.phase === "running") {
     const priorMs = claim.lastActivityAt ? Date.parse(claim.lastActivityAt) : Number.NaN;
@@ -934,7 +960,7 @@ function persistAuditorActivity(
   }
   return updateGoal({
     pendingCompletion: { ...claim, phase: "running", lastActivityAt: iso },
-  }, current);
+  }, ctx);
 }
 
 /**
@@ -1021,12 +1047,16 @@ function settleApprovedCompletion(
   });
   if (!archived) {
     // archiveCurrentGoal already preserved the live record and warned the
-    // user. The APPROVED claim stays: it is the durable proof that a verdict
-    // landed, and it is what lets a restart finish this settlement.
+    // user. The claim STAYS `settling` on purpose: the approval is durable and
+    // the terminal archive is owed, so the honest state is "settlement
+    // blocked", not "needs a new audit". Flipping it to `recovery-pending`
+    // (the pre-v0.38.99 shape) made the next `/goal resume` launch a brand-new
+    // auditor over work the first one already approved — and the session-start
+    // re-drive, which only accepts `settling`, skipped it entirely.
     const parked = settlementPark("archive");
     updateGoal({
       status: "paused",
-      pendingCompletion: { ...claim, phase: "recovery-pending", recoveryAt: nowIso(), recoveryReason: "approval-archive-failed" },
+      pendingCompletion: { ...claim, phase: "settling", verdictAt: claim.verdictAt ?? nowIso(), recoveryAt: nowIso(), recoveryReason: "approval-archive-failed" },
       pauseKind: "blocked",
       pauseReason: `completion approved (${model}), but the terminal archive failed — ${parked.step}`,
       pauseSuggestedAction: `Fix .pi-glla disk access or resolve the archive fence, then ${activeGoalSurfaceCommand("resume")} finishes the approved settlement. No new audit is needed.`,
@@ -1065,15 +1095,20 @@ function settleApprovedCompletion(
 }
 
 /**
- * v0.38.99: finish a settlement a crash interrupted. A durable `settling`
- * claim means the approval WAS durable and the archive was owed — the one
- * state a restart can complete without re-running the auditor. Returns the
- * settlement outcome so session_start can report it truthfully.
+ * v0.38.99: finish a settlement that is owed, whether a crash or a refused
+ * archive left it behind. A durable `settling` claim means the approval WAS
+ * durable and the terminal archive is owed — the one stored state a session
+ * can finish without re-running the auditor.
+ *
+ * Accepted from `auditing` (a crash between the verdict write and the
+ * archive) AND from `paused` (a refused archive, where the claim deliberately
+ * stayed `settling`). Returns the outcome so session_start and an explicit
+ * resume can report it truthfully.
  */
-export function resumeSettlingCompletionAudit(ctx: ExtensionContext): "settled" | "parked" | "not-applicable" {
+export function resumeSettlingCompletionAudit(ctx: ExtensionContext, origin: CompletionAuditOrigin = "session-recovery"): "settled" | "parked" | "not-applicable" {
   const goal = state.goal;
   const claim = goal?.pendingCompletion;
-  if (!goal || !claim || goal.status !== "auditing" || !isSettlingClaim(claim)) return "not-applicable";
+  if (!goal || !claim || goal.status === "complete" || goal.status === "aborted" || !isSettlingClaim(claim)) return "not-applicable";
   const approved = [...(goal.auditHistory ?? [])].reverse().find((entry) => entry.approved && entry.regressionShieldPassed !== false);
   if (!approved) {
     // A settling claim with no approval verdict is a corrupt/incomplete
@@ -1081,16 +1116,38 @@ export function resumeSettlingCompletionAudit(ctx: ExtensionContext): "settled" 
     markCompletionAuditRecoveryPending(ctx, "settling-without-verdict");
     return "parked";
   }
-  appendLedger(ctx.cwd, "audit_settlement_resumed", { goalId: goal.id, attemptId: claim.attemptId, verdictAt: approved.at });
+  appendLedger(ctx.cwd, "audit_settlement_resumed", { goalId: goal.id, attemptId: claim.attemptId, verdictAt: approved.at, origin });
   return settleApprovedCompletion(ctx, {
     goalId: goal.id,
     generation: sessionGeneration,
     claim,
     model: approved.model,
-    origin: "session-recovery",
+    origin,
   })
     ? "settled"
     : "parked";
+}
+
+/**
+ * v0.38.99: the one branch every "resume the stored claim" caller must take.
+ *
+ * An approved-but-unarchived claim is a SETTLEMENT, and re-auditing it would
+ * throw away the approval the detached auditor already granted. Anything else
+ * (no claim, or an unresolved claim) is the ordinary direct-audit resume.
+ * Callers use this instead of calling retryStoredCompletionAudit directly, so
+ * the rule cannot be forgotten at one of the three call sites.
+ */
+export function resumeStoredCompletionOrSettlement(
+  ctx: ExtensionContext,
+  origin: "complete-goal" | "provider-retry" | "manual" | "session-recovery" | "agent",
+  retry: (origin: "complete-goal" | "provider-retry" | "manual" | "session-recovery" | "agent") => void,
+): "settled" | "parked" | "retried" | "not-applicable" {
+  if (isSettlingClaim(state.goal?.pendingCompletion)) {
+    return resumeSettlingCompletionAudit(ctx, origin === "complete-goal" ? "manual" : origin);
+  }
+  if (!state.goal?.pendingCompletion) return "not-applicable";
+  retry(origin);
+  return "retried";
 }
 
 function persistDetachedAuditorCursor(
