@@ -1150,6 +1150,9 @@ function heartbeatTick(): void {
   const terminalGoal = state.goal?.status === "complete" || state.goal?.status === "aborted";
   const staleRecoveryDebt = (!terminalGoal && state.goal?.interruptedReason?.startsWith("extension api stale"))
     || state.loop?.stopReason?.startsWith("extension api stale");
+  // v0.38.99: the STORED spelling stays `recovery-pending`; only the display
+  // word is "recovery needed" (extensions/audit-lifecycle.ts). Gates below
+  // match the durable phase, never the display label.
   const parkedCompletionAuditRecovery = state.goal?.status === "paused"
     && state.goal.pendingCompletion?.phase === "recovery-pending";
   // v0.35.28 (issue #16): a lapsed wait-pause is host-bound work too — the

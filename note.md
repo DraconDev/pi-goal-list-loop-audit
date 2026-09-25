@@ -24,9 +24,21 @@ we need a better way to showing auto compaction, not pause i think
 auditor should use session thinking level not arbitrarily lower, cur my session is max but auditor is high
 /home/dracon/Pictures/Screenshots/Screenshot_20260924_175934.png
 
+##
+the designer agent deosnt have a section in glla
+also in the subagents i coudlnt select thinking level
+
+##
+look over /glla ?
+
+
 
 
 # Later
+
+##
+https://github.com/DraconDev/pi-goal-list-loop-audit/issues
+we did this but never clsoed it 
 
 ##
 /home/dracon/Pictures/Screenshots/Screenshot_20260924_231547.png 
@@ -36,13 +48,19 @@ we need a better thumb for the pi plugin store
 /home/dracon/Pictures/Screenshots/Screenshot_20260925_004412.png 
 this is different cause in this case there is nothing for me to do just waiting for quota on the music model so this is closer to a monitoring situ
 
- 
+##
+all session fallbacks in all categories like auditor and designer should also inherint its thinking level like here max instead of doing high arbitrarily
+/home/dracon/Pictures/Screenshots/Screenshot_20260925_113200.png 
+
+##
+/home/dracon/Pictures/Screenshots/Screenshot_20260925_115331.png 
+we didnt resume at that time, but also we should have been relentlessly retrying it was probably fine if we kept trying  
 
 ##
 improve control ui ?
 
-##
-look over /glla ?
+
+
 
 # Testing
 

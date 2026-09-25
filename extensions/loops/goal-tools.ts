@@ -144,6 +144,10 @@ isGoalRevisionCurrent,
   clearLoadHold,
   isProviderRecoveryArmed,
 } from "../goal-loop-core.js";
+// v0.38.99: the tool-path approval settlement runs the same ordering gate as
+// the detached path, so no terminal surface can be produced from an
+// unresolved claim.
+import { settlementAllowsTerminalRender, settlementPark, settlementStep } from "../audit-lifecycle.js";
 import { dispatchAuditorAllowedExtensions } from "../auditor-extensions.js";
 import {
   applyValidatedBatch,
@@ -1501,7 +1505,35 @@ function registerAgentTools(pi: any): void {
       }
 
       if (result.approved && result.regressionShieldPassed !== false) {
-        updateGoal({ auditHistory: history, pendingCompletion: undefined }, ctx);
+        // v0.38.99 SETTLEMENT (same contract as the detached path in
+        // goal-auditor-hooks.ts): the approved verdict becomes DURABLE on the
+        // claim (`phase: "settling"`, `verdictAt`) BEFORE any archive is
+        // attempted, and the claim is KEPT when the archive fails. Clearing it
+        // first (the pre-v0.38.99 shape) meant a crash in that window — or a
+        // refused archive — lost the only durable trace of an approval the
+        // auditor had already granted, and left the goal looking like it was
+        // still awaiting a verdict. A kept `settling` claim is also what lets
+        // the session_start re-drive finish this settlement.
+        const settlementClaim = durableCompletionClaim;
+        const verdictAt = nowIso();
+        if (settlementStep({ verdictPersisted: false, archived: false, renderPersisted: false, delivered: false }).step !== "persist-verdict") return staleToolResult();
+        const verdictPersisted = updateGoal({
+          auditHistory: history,
+          pendingCompletion: { ...settlementClaim, phase: "settling", verdictAt, lastActivityAt: verdictAt },
+        }, ctx);
+        if (!verdictPersisted) {
+          // The approval exists in memory only. No archive, no success card:
+          // a terminal claim the restart could not reproduce would be a lie.
+          updateGoal({
+            status: "paused",
+            pendingCompletion: { ...settlementClaim, phase: "recovery-pending", recoveryAt: verdictAt, recoveryReason: "approval-not-persisted" },
+            pauseKind: "error",
+            pauseReason: "auditor approved, but the approval could not be persisted — no archive was attempted",
+            pauseSuggestedAction: `Fix .pi-glla disk access, then ${activeGoalSurfaceCommand("resume")} to re-verify the stored claim.`,
+          }, ctx);
+          appendLedger(ctx.cwd, "audit_settlement_parked", { goalId: state.goal?.id, attemptId: settlementClaim.attemptId, origin: "manual-verify", stage: settlementPark("verdict").step });
+          return { content: [{ type: "text", text: "The auditor approved, but the approval could not be persisted, so nothing was archived. Fix .pi-glla disk access and call complete_goal again." }], details: {} };
+        }
         // v0.34.91: the end-of-goal voice carries the recap (what happened)
         // on EVERY approve path — fresh complete_goal approval + provider retry
         // approve + manual-verify approve. Captured BEFORE archive (it
@@ -1544,22 +1576,29 @@ function registerAgentTools(pi: any): void {
         const archived = archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: durableCompletionClaim.findingGroups, gateRows: durableCompletionClaim.gateRows, priorCompletionSummary: durableCompletionClaim.priorCompletionSummary });
         if (!archived) {
           // The archive helper preserves the live objective and emits the
-          // persistence warning. Stop here: an approved verdict is not a
-          // terminal success until the archive and state transition land.
+          // persistence warning. The APPROVED claim stays: it is the durable
+          // proof a verdict landed, and what lets a restart (or /goal resume)
+          // finish this settlement without re-running the auditor.
+          const parkedStage = settlementPark("archive");
           updateGoal({
             status: "paused",
-            pendingCompletion: undefined,
+            pendingCompletion: { ...settlementClaim, phase: "recovery-pending", recoveryAt: nowIso(), recoveryReason: "approval-archive-failed" },
             pauseKind: "blocked",
-            pauseReason: "completion approved but terminal archive persistence failed",
-            pauseSuggestedAction: `Fix .pi-glla disk access or resolve the archive fence, then ${activeGoalSurfaceCommand("resume")} and call complete_goal again.`,
+            pauseReason: `completion approved (${result.model}), but the terminal archive failed — ${parkedStage.step}`,
+            pauseSuggestedAction: `Fix .pi-glla disk access or resolve the archive fence, then ${activeGoalSurfaceCommand("resume")} finishes the approved settlement. No new audit is needed.`,
           }, ctx);
-          appendLedger(ctx.cwd, "goal_archive_failed_after_approval", { goalId: state.goal?.id, origin: "manual-verify", model: result.model });
-          return { content: [{ type: "text", text: "The auditor approved, but the terminal archive could not be persisted. The goal is paused; fix persistence, resume, and retry complete_goal." }], details: {} };
+          appendLedger(ctx.cwd, "goal_archive_failed_after_approval", { goalId: state.goal?.id, origin: "manual-verify", model: result.model, stage: parkedStage.step });
+          return { content: [{ type: "text", text: "The auditor approved, but the terminal archive could not be persisted. The approved claim is kept; fix persistence, then resume to finish the settlement (no new audit is needed)." }], details: {} };
         }
         // v0.38.20: same approval voice as the detached path — the stale
         // pre-verdict `Next:` never reaches the chat.
         // PR #43: append the kept inspection-session pointer when present.
-
+        // v0.38.99: the single terminal gate — the durable verdict and the
+        // landed archive are both required before any completion surface.
+        if (!settlementAllowsTerminalRender({ verdictPersisted: true, archived, renderPersisted: false, delivered: false })) {
+          return { content: [{ type: "text", text: "The auditor approved and the settlement could not be completed durably, so no completion was published. Resume to retry the settlement." }], details: {} };
+        }
+        appendLedger(ctx.cwd, "audit_settlement_completed", { goalId: manualGoalId, attemptId: settlementClaim.attemptId, origin: "manual-verify", model: result.model });
         notifyExternal(ctx, `Goal complete (completion audit approved): ${manualRender.recap}`);
         const persisted = persistApprovalRender(ctx.cwd, {
           goalId: manualGoalId,
