@@ -20,7 +20,7 @@ import { registerActionReminderRenderer } from "../action-reminder.js";
 import { abortZombieRun, enqueueFaultRepairTask, registerGoalRuntime, resetLengthExhaustionEpisodes, __testOnlyResetLengthExhaustionEpisodes, __testOnlyResetZombieAutoRetry } from "./goal-activation.js";
 // v0.38.88: members of the __testOnlyResetProcessState composite.
 import { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags, __testOnlyResetOwnershipRecheck } from "./goal-session.js";
-import { __testOnlyResetStarvationGate, __testOnlyResetToolActivity, __testOnlyResetAuditorQuietWatch } from "./goal-ui.js";
+import { __testOnlyResetStarvationGate, __testOnlyResetToolActivity, __testOnlyResetAuditorQuietWatch, __testOnlyResetPostCompactDebt } from "./goal-ui.js";
 import { __testOnlyResetAuditorSurface } from "./goal-auditor-surface.js";
 import { __testOnlyResetAuditorRecoveryRuntime } from "./goal-auditor-hooks.js";
 import { __testOnlyResetOverdueWaitBackstop, __testOnlyResetZombieRunWatchdog, __testOnlyClearSubagentHangProbes } from "../goal-heartbeat.js";
@@ -265,6 +265,7 @@ export function __testOnlyResetProcessState(): void {
   __testOnlyResetOwnershipRecheck();
   __testOnlyResetStarvationGate();
   __testOnlyResetToolActivity();
+  __testOnlyResetPostCompactDebt();
   __testOnlyResetAuditorQuietWatch();
   __testOnlyResetAuditorSurface();
   __testOnlyResetAuditorRecoveryRuntime();

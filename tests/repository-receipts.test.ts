@@ -16,7 +16,7 @@ test("repository-only findings are archive-only, without empty chat groups", () 
   const chat = render(true, [receipt]);
   assert.doesNotMatch(chat, /Process|Ledger|Four fix entries|docs\/audits/);
   assert.match(chat, /#### 1\. Engine/);
-  assert.ok(render(false, [receipt]).includes(receipt.replace("Ledger:", "**Ledger** —")));
+  assert.ok(render(false, [receipt]).includes("Four fix entries were checked"));
   assert.match(chat, /4\/285\/1000/);
   assert.match(chat, /helpers\/contracts/);
 });
