@@ -33,6 +33,11 @@ const INPUT_BUDGET = 16_000;
 const CONTINUATION_MARKER = "GLLA_POST_COMPACTION_CONTINUATION_OK";
 const MANUAL_MARKER = "GLLA_MANUAL_COMPACTION_CONTINUATION_OK";
 const DEFAULT_AGENT_DIR = path.join(homedir(), ".pi", "agent");
+const DEFAULT_COMPACTION_SETTINGS = {
+  enabled: true,
+  reserveTokens: 16_384,
+  keepRecentTokens: 20_000,
+};
 
 let verifierStage = "startup";
 
@@ -404,17 +409,23 @@ async function waitForPersistedCompaction(sessionFile, afterId, timeoutMs = PERS
   throw new Error("host compaction result was not persisted as a non-empty session record");
 }
 
-function stageAuthentication(agentDir) {
+function stageProviderConfiguration(agentDir) {
   // PI_CODING_AGENT_DIR intentionally redirects all runtime state. Pi resolves
-  // credentials from that directory, so copy only the provider auth file into
-  // the disposable store. It is never parsed, logged, or included in reports;
-  // outer cleanup removes the copy with the rest of the temporary root.
-  const source = path.join(DEFAULT_AGENT_DIR, "auth.json");
-  const target = path.join(agentDir, "auth.json");
-  if (!fs.existsSync(source)) return false;
-  fs.copyFileSync(source, target, fs.constants.COPYFILE_EXCL);
-  fs.chmodSync(target, 0o600);
-  return true;
+  // credentials from that directory, so stage the provider auth file in the
+  // disposable store. It is never parsed, logged, or included in reports; outer
+  // cleanup removes the copy with the rest of the temporary root.
+  const authSource = path.join(DEFAULT_AGENT_DIR, "auth.json");
+  const authTarget = path.join(agentDir, "auth.json");
+  if (fs.existsSync(authSource)) {
+    fs.copyFileSync(authSource, authTarget, fs.constants.COPYFILE_EXCL);
+    fs.chmodSync(authTarget, 0o600);
+  }
+  // The host defaults for the regression case are part of the proof input.
+  // Stage them in the disposable agent dir rather than inheriting the real
+  // settings file, whose unrelated mutable state must remain untouched.
+  fs.writeFileSync(path.join(agentDir, "settings.json"), `${JSON.stringify({
+    compaction: DEFAULT_COMPACTION_SETTINGS,
+  }, null, 2)}\n`);
 }
 
 function copyHistoricalSession(source, tempRoot) {
@@ -615,7 +626,7 @@ async function main() {
       autoResume: false,
       auditorSameSessionSwap: false,
     })}\n`);
-    stageAuthentication(agentDir);
+    stageProviderConfiguration(agentDir);
 
     const args = [
       "--mode", "rpc",
