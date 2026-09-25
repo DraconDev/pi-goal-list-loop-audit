@@ -1263,7 +1263,7 @@ function auditEvidence(goal: Goal): string {
   const history = goal.auditHistory;
   const latest = history && history.length > 0 ? history[history.length - 1] : undefined;
   if (!latest) return "no completion review was recorded";
-  const verdict = latest.approved ? "approved" : latest.impossible ? "impossible" : latest.disapproved ? "disapproved" : "no verdict";
+  const verdict = latest.approved ? "approved" : latest.impossible ? "impossible" : latest.disapproved ? "disapproved" : "no review recorded";
   const model = safeFact(latest.model, "unknown model");
   return `latest completion review=${verdict} by ${model} at ${safeFact(latest.at)}`;
 }

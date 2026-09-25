@@ -1292,7 +1292,7 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
       const retry = Number.isFinite(retryAt)
         ? retryAt <= now ? "auto-retry due now" : `auto-retry in ${fmtElapsed(retryAt - now)}`
         : resume;
-      return `glla: ${paint(theme, "warning", "⏸ paused")} · ${paint(theme, "dim", "auditor parked — no verdict")} · ${retry}${pausedStatusSuffix(g, state, extras, now, true)}${heldSuffix}`;
+      return `glla: ${paint(theme, "warning", "⏸ paused")} · ${paint(theme, "dim", "completion audit parked — no review recorded")} · ${retry}${pausedStatusSuffix(g, state, extras, now, true)}${heldSuffix}`;
     }
     const kind = pauseKind(g);
     if (kind === "decision") return `glla: ${paint(theme, "accent", "⏸ decision needed")}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
@@ -1800,8 +1800,8 @@ function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefin
     // v0.34.86: silent-mode byte counter — progress evidence without prose.
     // "report stream muted — 12.4 KB written" beats a dead timer.
     else if (extras?.auditorProgressSignals !== false && typeof audit?.reportBytes === "number" && audit.reportBytes > 0)
-      observations.push(`report stream muted — ${fmtByteCount(audit.reportBytes)} written · final text at verdict`);
-    else observations.push("report stream muted — final text at verdict");
+      observations.push(`report stream muted — ${fmtByteCount(audit.reportBytes)} written · final text at completion review`);
+    else observations.push("report stream muted — final text at completion review");
   }
   // A complete snapshot may have no current tool, so retain a compact,
   // protocol-safe evidence summary beside the last tool/final report facts.
@@ -1823,7 +1823,7 @@ function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefin
   } else if (phase === "blocked") {
     tail.push(`└─ ${paint(theme, "warning", `auditor blocked${audit?.label ? ` — ${truncate(audit.label, 44)}` : ""}${last}`)}`);
   } else if (phase === "awaiting-verdict") {
-    tail.push(`└─ ${paint(theme, "dim", `waiting for detached verdict${last}`)}`);
+    tail.push(`└─ ${paint(theme, "dim", `waiting for completion review${last}`)}`);
   } else if (phase === "queued") {
     tail.push(`└─ ${paint(theme, "dim", "detached worker queued — completion claim is durable")}`);
   } else {
@@ -2071,7 +2071,7 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
       const retryNote = Number.isFinite(retryAt)
         ? retryAt <= now ? " · bounded retry due now" : " · bounded retry scheduled"
         : "";
-      lines.push(`├─ ${paint(theme, "warning", `auditor: parked — no verdict${retryNote}`)}`);
+      lines.push(`├─ ${paint(theme, "warning", `completion audit: parked — no review recorded${retryNote}`)}`);
       lines.push(`├─ ${paint(theme, "dim", "the stored completion claim was not evaluated — the audit waits while the item is paused")}`);
       const [lifecycle, transition] = pausedLifecycleLines(g, state, extras, now);
       lines.push(`├─ ${paint(theme, "dim", lifecycle)}`);
