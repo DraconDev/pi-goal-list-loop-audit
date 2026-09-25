@@ -264,7 +264,7 @@ export function tmpCwd(): string {
 }
 
 /** Seed a .pi-glla/active.jsonl with ONE state line (the restore-gate input). */
-export function seedState(cwd: string, value: { goal?: unknown; list?: unknown[]; loop?: unknown; lastCompactionAt?: number | null }): void {
+export function seedState(cwd: string, value: { goal?: unknown; list?: unknown[]; loop?: unknown; lastCompactionAt?: number | null; postCompactRecovery?: unknown }): void {
   fs.mkdirSync(path.join(cwd, ".pi-glla"), { recursive: true });
   const line = JSON.stringify({ type: "state", value: { goal: null, list: [], loop: null, ...value }, at: new Date().toISOString() });
   fs.writeFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), line + "\n");
