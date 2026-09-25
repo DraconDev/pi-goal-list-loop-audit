@@ -26,9 +26,7 @@ import {
   DEFAULT_AUDITOR_TOOL_TIMEOUT_MS,
   MAX_AUDIT_JOB_RETENTION_MS,
   MAX_AUDITOR_TOOL_TIMEOUT_MS,
-  MAX_AUDITOR_WALL_MS,
   MIN_AUDITOR_STALL_MS,
-  MIN_AUDITOR_WALL_MS,
   escalatedAuditorTimeout,
   progressSignature,
   runDetachedGoalCompletionAuditor,
@@ -123,39 +121,6 @@ test("v0.37.0: auditor timeout settings clamp into bounds on load", () => {
       restoreGlobal();
     }
   });
-});
-
-test("v0.38.100: auditorWallMs is off-by-default and clamps into bounds when set", () => {
-  withTmpCwd((cwd) => {
-    const existing = ORIGINAL_GLOBAL ? (JSON.parse(ORIGINAL_GLOBAL) as Record<string, unknown>) : {};
-    try {
-      fs.writeFileSync(GLOBAL_FILE, JSON.stringify({ ...existing, auditorWallMs: 999_999_999_999 }));
-      assert.equal(loadSettings(cwd).auditorWallMs, MAX_AUDITOR_WALL_MS, "ceiling clamps the wall");
-
-      fs.writeFileSync(GLOBAL_FILE, JSON.stringify({ ...existing, auditorWallMs: -5 }));
-      assert.equal(loadSettings(cwd).auditorWallMs, MIN_AUDITOR_WALL_MS, "floor clamps the wall");
-
-      fs.writeFileSync(GLOBAL_FILE, JSON.stringify({ ...existing, auditorWallMs: 3_600_000 }));
-      assert.equal(loadSettings(cwd).auditorWallMs, 3_600_000, "in-range values survive untouched");
-
-      fs.writeFileSync(GLOBAL_FILE, JSON.stringify({ ...existing, auditorWallMs: "soon" }));
-      assert.equal(loadSettings(cwd).auditorWallMs, undefined, "junk means off, never a defaulted duration");
-
-      fs.writeFileSync(GLOBAL_FILE, JSON.stringify(existing));
-      assert.equal(loadSettings(cwd).auditorWallMs, undefined, "unset means off — a live auditor keeps no ceiling");
-    } finally {
-      restoreGlobal();
-    }
-  });
-});
-
-test("v0.38.100: settings menu exposes the wall row with off/set branches in the auditor section", () => {
-  const off = buildSettingsRows({} as Settings, {}).find((r) => r.id === "auditorWallMs");
-  assert.ok(off, "auditorWallMs row exists");
-  assert.equal(off!.section, "auditor");
-  assert.match(off!.valueText, /off — a live auditor is never time-capped/);
-  const set = buildSettingsRows({ auditorWallMs: 3_600_000 } as Settings, {}).find((r) => r.id === "auditorWallMs");
-  assert.match(set!.valueText, /1h hard ceiling · never escalated/);
 });
 
 test("v0.37.0: /glla editor accepts plain-ms and s/m/h duration input for both keys", async () => {
@@ -364,25 +329,4 @@ test("v0.38.3: settings menu exposes the audit job retention row in the auditor 
   assert.ok(row, "auditJobRetentionMs row exists");
   assert.equal(row!.section, "auditor");
   assert.match(row!.valueText, /15m dead-dir window/);
-});
-
-test("v0.38.100: /glla editor accepts duration input for auditorWallMs (empty clears to off)", async () => {
-  // Drive the real editor against the real global file (snapshotted above).
-  const ctx = makeMockCtx(tmpCwd());
-  try {
-    ctx.ui.inputImpl = async () => "2h";
-    await handleSettingChoice("auditorWallMs", ctx as unknown as ExtensionContext);
-    assert.equal(readGlobal().auditorWallMs, 7_200_000, "duration string normalizes to ms");
-
-    ctx.ui.inputImpl = async () => "999999999999";
-    await handleSettingChoice("auditorWallMs", ctx as unknown as ExtensionContext);
-    assert.equal(readGlobal().auditorWallMs, 7_200_000, "out-of-range input leaves the previous value");
-
-    ctx.ui.inputImpl = async () => "";
-    await handleSettingChoice("auditorWallMs", ctx as unknown as ExtensionContext);
-    assert.equal(readGlobal().auditorWallMs, undefined, "empty clears back to off (unset), never a duration");
-  } finally {
-    restoreGlobal();
-    fs.rmSync(ctx.cwd, { recursive: true, force: true });
-  }
 });

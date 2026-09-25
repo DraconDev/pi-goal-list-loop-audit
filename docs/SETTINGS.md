@@ -57,7 +57,6 @@ copies are ignored (the recovery runtime reads the global file):
 | `auditorThinkingLevel` | unset (inherit) | Detached auditor reasoning level; picked with the model. |
 | `auditorToolTimeoutMs` | `300000` | Base budget per auditor tool call (30s–6h). Global-only. |
 | `auditorStallMs` | `600000` | Base silence budget for the detached auditor (1m–24h). Global-only. |
-| `auditorWallMs` | unset (off) | OPT-IN absolute ceiling for one audit attempt (1m–24h when set); elapsed time alone auto-cancels past it, even mid-progress. Never escalated per retry. Global-only. |
 | `auditJobRetentionMs` | `900000` | How long proven-dead audit job dirs are kept (0–7d, 0 = reap now). Global-only. |
 | `auditSpotCheckRate` | `0.1` | Fraction of light-tier audits silently escalated to full (0 = off, 1 = calibrate). Global-only. |
 | `auditorInspection` | `false` | Auditor runs as a persistent session you can tail/resume. Global-only. |

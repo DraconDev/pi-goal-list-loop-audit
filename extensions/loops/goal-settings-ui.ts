@@ -278,10 +278,8 @@ import {
   MAX_AUDIT_JOB_RETENTION_MS,
   MAX_AUDITOR_STALL_MS,
   MAX_AUDITOR_TOOL_TIMEOUT_MS,
-  MAX_AUDITOR_WALL_MS,
   MIN_AUDITOR_STALL_MS,
   MIN_AUDITOR_TOOL_TIMEOUT_MS,
-  MIN_AUDITOR_WALL_MS,
   type AuditorProgress,
 } from "../goal-loop-auditor-process.js";
 import {
@@ -1184,31 +1182,6 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
           ctx.ui.notify(`Saved ${id} = ${ms} ms.`);
         } else {
           ctx.ui.notify(`Rejected: enter ${min}-${max} ms (e.g. 15m). Allowed range: ${min / 60000}m-${max / 60000}m.`);
-        }
-      }
-      return;
-    }
-    case "auditorWallMs": {
-      // v0.38.100: opt-in absolute ceiling — empty clears back to OFF (unset),
-      // never to a default duration. A set value clamps into [1m, 24h].
-      const s = loadSettings(ctx.cwd);
-      const current = typeof s.auditorWallMs === "number" ? s.auditorWallMs : undefined;
-      const input = await ctx.ui.input(
-        `Auditor wall budget in ms (or s/m/h, e.g. 3600000 / 1h; empty = off)`,
-        current === undefined ? `current: off` : `current: ${current} ms`,
-      );
-      if (input === undefined) return;
-      const t = input.trim();
-      if (t === "") {
-        saveSettings("global", ctx.cwd, { auditorWallMs: undefined });
-        ctx.ui.notify(`Cleared: auditorWallMs (off — a live auditor is never time-capped).`);
-      } else {
-        const ms = parseSettingsDurationMs(t);
-        if (ms !== undefined && ms >= MIN_AUDITOR_WALL_MS && ms <= MAX_AUDITOR_WALL_MS) {
-          saveSettings("global", ctx.cwd, { auditorWallMs: ms });
-          ctx.ui.notify(`Saved auditorWallMs = ${ms} ms.`);
-        } else {
-          ctx.ui.notify(`Rejected: enter ${MIN_AUDITOR_WALL_MS}-${MAX_AUDITOR_WALL_MS} ms (e.g. 1h). Allowed range: ${MIN_AUDITOR_WALL_MS / 60000}m-${MAX_AUDITOR_WALL_MS / 60000}m.`);
         }
       }
       return;

@@ -41,10 +41,8 @@ import {
   MAX_AUDIT_JOB_RETENTION_MS,
   MAX_AUDITOR_STALL_MS,
   MAX_AUDITOR_TOOL_TIMEOUT_MS,
-  MAX_AUDITOR_WALL_MS,
   MIN_AUDITOR_STALL_MS,
   MIN_AUDITOR_TOOL_TIMEOUT_MS,
-  MIN_AUDITOR_WALL_MS,
 } from "./goal-loop-auditor-process.js";
 import {
   DEFAULT_ZOMBIE_RETRY_MAX_ATTEMPTS,
@@ -141,16 +139,6 @@ export interface Settings {
    * text, running a tool) never counts as silent. Bounds: 1m–24h.
    * Global-only for the same reason as auditorToolTimeoutMs. */
   auditorStallMs?: number;
-  /** v0.38.100: opt-in ABSOLUTE ceiling, in milliseconds, for one detached
-   * audit attempt — elapsed time alone, even while the worker keeps making
-   * real progress. Unset (the default) preserves the historical behavior: a
-   * live auditor is never terminated for elapsed time. When set, the
-   * attempt is auto-cancelled past the budget with the wall-timeout reason
-   * (recoveryReason `wall-timeout`, ledger `audit_wall_timeout`). Unlike
-   * the tool/stall bases this is NOT escalated per retry: an explicit
-   * ceiling that silently doubled would defeat its own purpose. Bounds
-   * when set: 1m–24h. Global-only: machine policy, not a project artifact. */
-  auditorWallMs?: number;
   /** v0.38.3: how long a PROVEN-DEAD audit job dir (.pi-glla/audit-jobs/<id>/)
    * is kept before explicit cleanup reaps it — the retention window during
    * which the finished audit's session log and result stay readable.
@@ -335,7 +323,6 @@ const GLOBAL_ONLY_KEYS: ReadonlySet<keyof Settings> = new Set([
   "auditorModelFallbacks",
   "auditorToolTimeoutMs",
   "auditorStallMs",
-  "auditorWallMs",
   "auditJobRetentionMs",
   "auditSpotCheckRate",
   "auditorInspection",
@@ -541,20 +528,6 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
       Math.max(MIN_AUDITOR_STALL_MS, Math.floor(settings.auditorStallMs)),
     );
   }
-  // v0.38.100: the wall is opt-in — unset or junk means OFF (deleted, never
-  // defaulted), so a live auditor keeps its historical no-ceiling behavior
-  // unless the operator explicitly set one. A set value clamps into bounds.
-  if (
-    typeof settings.auditorWallMs !== "number" ||
-    !Number.isFinite(settings.auditorWallMs)
-  ) {
-    delete settings.auditorWallMs;
-  } else {
-    settings.auditorWallMs = Math.min(
-      MAX_AUDITOR_WALL_MS,
-      Math.max(MIN_AUDITOR_WALL_MS, Math.floor(settings.auditorWallMs)),
-    );
-  }
   // v0.38.3: retention is a review window, not a watchdog budget — 0 means
   // "reap proven-dead dirs immediately", so the floor is 0, not a minute.
   if (
@@ -721,7 +694,6 @@ export const SETTINGS_KEYS: Array<keyof Settings> = [
   "auditorThinkingLevel",
   "auditorToolTimeoutMs",
   "auditorStallMs",
-  "auditorWallMs",
   "auditJobRetentionMs",
   "auditSpotCheckRate",
   "auditorInspection",

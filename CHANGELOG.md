@@ -1,9 +1,5 @@
 # Changelog
 
-## 0.38.100 — opt-in absolute wall budget for the detached auditor (2026-09-25)
-
-- New `auditorWallMs` setting (global-only, unset = off): an absolute ceiling for one audit attempt. Every previous watchdog is progress-relative, so a productively looping auditor — endless exploration, a chatty model, an auto-retry loop minting new tool calls — could run forever with no timer able to stop it. When set (1m–24h), elapsed time alone auto-cancels the attempt past the budget with the `wall-timeout` reason (`audit_wall_timeout` ledger event), one bounded retry, and the claim safely parked. The ceiling is never escalated per retry, and unset preserves the historical behavior (a live auditor is never time-capped) — pinned by the legacy-wall test alongside the new wall regression test.
-
 ## 0.38.99 — the detached audit has one legible lifecycle and one settlement (2026-09-25)
 
 - The isolated completion audit now names its state instead of guessing: **starting** (claim durable, worker not reporting yet), **running** with its last durable activity, **settling** (approved, archive owed), **approved** (settlement durable), and **recovery-needed** (parked, with a real `/goal resume` action). The widget, status line, goal markdown, and restart recovery all read the same projection, so a claim that a crash left mid-settlement no longer renders as “awaiting completion review” (audit/DETACHED-AUDIT-LIFECYCLE-2026-09-25.md).

@@ -744,12 +744,6 @@ export const MIN_AUDITOR_TOOL_TIMEOUT_MS = 30_000;
 export const MAX_AUDITOR_TOOL_TIMEOUT_MS = 6 * 3_600_000;
 export const MIN_AUDITOR_STALL_MS = 60_000;
 export const MAX_AUDITOR_STALL_MS = 24 * 3_600_000;
-/** v0.38.100: bounds for the opt-in absolute wall budget (`auditorWallMs`).
- * The floor keeps a healthy boot (measured seconds loaded) from tripping a
- * just-set wall; the ceiling matches the stall maximum — a 24h wall is "let
- * the slow local model finish", not "no bound at all". Unset means off. */
-export const MIN_AUDITOR_WALL_MS = 60_000;
-export const MAX_AUDITOR_WALL_MS = 24 * 3_600_000;
 /** v0.37.0: adaptive timeout escalation. Each failed detached attempt that
  * gets retried doubles BOTH base budgets (per-tool and silence), saturating
  * after AUDITOR_TIMEOUT_ESCALATION_MAX_STEPS doublings (4× base). The
@@ -1294,20 +1288,10 @@ export interface AuditorProcessRuntime {
   pollIntervalMs?: number;
   /**
    * @deprecated Accepted for compatibility with older callers, but never
-   * used as a lifetime bound. Confirmed-silence, per-tool, lifecycle
-   * cancellation — and the opt-in `absoluteTimeoutMs` below — are the only
-   * termination paths for an otherwise live audit.
+   * used as a lifetime bound. Confirmed-silence, per-tool, and lifecycle
+   * cancellation are the only termination paths for an otherwise live audit.
    */
   wallTimeoutMs?: number;
-  /** v0.38.100: explicit absolute ceiling for one attempt, in milliseconds.
-   * Unset (the default) preserves the historical behavior: a live auditor
-   * is never terminated for elapsed time alone. When set, the attempt is
-   * auto-cancelled once elapsed time crosses the budget even while the
-   * worker keeps making real progress — the backstop for a productively
-   * looping auditor that no progress-relative watchdog can catch. This is
-   * deliberately a separate field from the legacy `wallTimeoutMs`, which
-   * stays ignored so older embedded metadata can never kill a live audit. */
-  absoluteTimeoutMs?: number;
   now?: () => number;
   attemptId?: () => string;
   /** v0.34.57: watchdog window — cancel the detached job when the worker's
@@ -1345,7 +1329,7 @@ export interface AuditorStalledInfo {
   /** When the watchdog fired. */
   at: number;
   /** Which independent watchdog fired. */
-  reason: "heartbeat-no-progress" | "tool-timeout" | "first-event-timeout" | "heartbeat-stale" | "wall-timeout";
+  reason: "heartbeat-no-progress" | "tool-timeout" | "first-event-timeout" | "heartbeat-stale";
   /** Age of the last worker heartbeat at detection (`now - lastActivityAt`).
    * For heartbeat-no-progress this is fresh (≤ heartbeatFreshMs); a
    * tool-timeout may deliberately have a stale heartbeat. */
@@ -1621,12 +1605,7 @@ async function runDetachedGoalCompletionAuditorInner(args: {
   // `wallTimeoutMs` remains accepted on AuditorProcessRuntime for older
   // embedded callers, but a guessed duration must never terminate a live
   // auditor. Confirmed-silence, per-tool, result, and lifecycle cancellation
-  // are the bounded termination paths — plus the EXPLICIT opt-in
-  // `absoluteTimeoutMs`, which is the only elapsed-time bound and only
-  // exists when the operator set it.
-  const absoluteTimeoutMs = typeof runtime.absoluteTimeoutMs === "number" && Number.isFinite(runtime.absoluteTimeoutMs) && runtime.absoluteTimeoutMs > 0
-    ? Math.floor(runtime.absoluteTimeoutMs)
-    : undefined;
+  // are the bounded termination paths.
   const pollIntervalMs = Math.max(10, runtime.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS);
   const heartbeatFreshMs = Math.max(10, runtime.heartbeatFreshMs ?? DEFAULT_HEARTBEAT_FRESH_MS);
   const heartbeatNoProgressMs = Math.max(50, runtime.heartbeatNoProgressMs ?? DEFAULT_HEARTBEAT_NO_PROGRESS_MS);
@@ -1855,28 +1834,6 @@ async function runDetachedGoalCompletionAuditorInner(args: {
           return stampToken({ approved: parsed.approved, disapproved: parsed.disapproved, impossible: parsed.impossible, impossibleReason: parsed.impossibleReason, output, model, thinkingLevel, challenge }, capturedRevisionToken);
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code !== "ENOENT") return infra(model, thinkingLevel, `invalid auditor result: ${error instanceof Error ? error.message : String(error)}`, "", capturedRevisionToken, "no-verdict");
-        }
-        // v0.38.100: the opt-in absolute ceiling. Unlike every watchdog
-        // below, this fires on elapsed time ALONE — even with fresh
-        // heartbeats and new output. It runs after the result read so a
-        // verdict landing on the deadline still wins, and first among the
-        // watchdogs as the outermost bound. The error wording is
-        // load-bearing: downstream recovery keys "Auditor exceeded" to the
-        // wall-timeout reason and the audit_wall_timeout ledger event.
-        if (absoluteTimeoutMs !== undefined && now() - startedAt >= absoluteTimeoutMs) {
-          const elapsedMs = Math.max(0, now() - startedAt);
-          const wallLabel = absoluteTimeoutMs >= 60_000
-            ? `${Math.max(1, Math.round(absoluteTimeoutMs / 60_000))}m`
-            : `${Math.max(1, Math.round(absoluteTimeoutMs / 1_000))}s`;
-          args.onStalled?.({
-            at: now(),
-            reason: "wall-timeout",
-            heartbeatAgeMs: lastProgress?.lastActivityAt === undefined ? elapsedMs : Math.max(0, now() - lastProgress.lastActivityAt),
-            noProgressMs: elapsedMs,
-            phase: lastProgress?.phase ?? "starting",
-          });
-          if (child && childAlive(child)) await terminateWorker(child);
-          return infra(model, thinkingLevel, `Auditor exceeded its ${wallLabel} wall-clock bound; the detached job was auto-cancelled.`, "", capturedRevisionToken, "timeout");
         }
         // v0.34.130: a tool-open timeout is independent of both heartbeat
         // freshness and the worker's inactivity brake. A stuck read/grep/find/
