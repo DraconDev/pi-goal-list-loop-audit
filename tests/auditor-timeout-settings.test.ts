@@ -365,3 +365,24 @@ test("v0.38.3: settings menu exposes the audit job retention row in the auditor 
   assert.equal(row!.section, "auditor");
   assert.match(row!.valueText, /15m dead-dir window/);
 });
+
+test("v0.38.100: /glla editor accepts duration input for auditorWallMs (empty clears to off)", async () => {
+  // Drive the real editor against the real global file (snapshotted above).
+  const ctx = makeMockCtx(tmpCwd());
+  try {
+    ctx.ui.inputImpl = async () => "2h";
+    await handleSettingChoice("auditorWallMs", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().auditorWallMs, 7_200_000, "duration string normalizes to ms");
+
+    ctx.ui.inputImpl = async () => "999999999999";
+    await handleSettingChoice("auditorWallMs", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().auditorWallMs, 7_200_000, "out-of-range input leaves the previous value");
+
+    ctx.ui.inputImpl = async () => "";
+    await handleSettingChoice("auditorWallMs", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().auditorWallMs, undefined, "empty clears back to off (unset), never a duration");
+  } finally {
+    restoreGlobal();
+    fs.rmSync(ctx.cwd, { recursive: true, force: true });
+  }
+});
