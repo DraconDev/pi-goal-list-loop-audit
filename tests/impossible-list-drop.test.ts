@@ -88,7 +88,11 @@ process.stdin.on("data", (chunk) => {
   return script;
 }
 
-async function waitUntil(predicate: () => boolean, timeoutMs = 12_000): Promise<void> {
+// v0.38.99 (closure): the terminal-impossible archive path (auditor spawn +
+// RPC protocol + archive + notification) exceeds 12s under suite load (15.4s
+// observed). 30s follows the paused-suspicious-close precedent: a wedged
+// audit still times out loudly, with real margin under the 60s runner cap.
+async function waitUntil(predicate: () => boolean, timeoutMs = 30_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (!predicate()) {
     if (Date.now() >= deadline) throw new Error("timed out waiting for terminal impossible archive");

@@ -21,7 +21,11 @@ const pi = new MockPi(); activate(pi.api);
 let cleanup: (() => Promise<void>) | undefined;
 afterEach(async () => { await cleanup?.(); cleanup = undefined; });
 
-async function waitFor(check: () => boolean, timeout = 10000) {
+// v0.38.99 (closure): the re-claim settlement path (auditor spawn + RPC
+// protocol + archive) exceeds 10s under suite load (12.1s observed). 30s
+// follows the paused-suspicious-close precedent: a wedged audit still times
+// out loudly, with real margin under the 60s runner cap.
+async function waitFor(check: () => boolean, timeout = 30000) {
   const until = Date.now() + timeout;
   while (!check()) { if (Date.now() > until) throw new Error("settlement timeout"); await new Promise(r => setTimeout(r, 20)); }
 }
