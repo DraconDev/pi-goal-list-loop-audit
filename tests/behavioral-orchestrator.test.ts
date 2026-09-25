@@ -4046,7 +4046,7 @@ test("v0.34.91: detached approval notify carries the agent's completion recap, n
     await waitUntil(() => (readState(cwd).goal as { status?: string } | null) === null);
     const recapNotifs = MAIN_SM.entries.filter(e => e.content?.includes("Pinned the R-key/HUD retire parity")).map(e => ({ message: e.content }));
     assert.ok(recapNotifs.length > 0, "the settle notify carries the recap (what happened), not 'auditor approved' alone");
-    assert.ok(recapNotifs.some((n: { message: string }) => n.message.includes("**Changed**") && n.message.includes("\n")), "the recap arrives sectioned, not the single-line mash");
+    assert.ok(recapNotifs.some((n: { message: string }) => n.message.includes("**Pinned the R-key/HUD retire parity in 5 tests across 5 layers.**") && n.message.includes("\n")), "the recap arrives sectioned around the user-visible outcome");
     assert.equal(recapNotifs.length, 1, "the persisted summary is the single decisive end-of-goal voice");
     assert.match(recapNotifs[0]!.message, /^## Done — Pinned the R-key\/HUD retire parity/, "the briefing opens with the banner, then the outcome header");
     // The chat notify is outcome + informing details + approval
