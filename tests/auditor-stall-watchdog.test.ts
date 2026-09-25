@@ -264,6 +264,75 @@ process.on("SIGTERM", () => { clearInterval(timer); process.exit(0); });
   await cleanup();
 });
 
+test("wall: a live auditor that keeps progressing is cancelled at the explicit wall budget", { timeout: 20_000 }, async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "glla-wall-ceiling-"));
+  dirs.push(dir);
+  const sigtermMarker = path.join(dir, "sigterm-marker");
+  // Productively looping worker: novel output + fresh heartbeat every 20ms,
+  // FOREVER — no silence watchdog can catch this, by design. The explicit
+  // wall is the only bound. Honors SIGTERM so the kill stays observable.
+  const worker = path.join(dir, "endless-progress-worker.mjs");
+  await writeFile(worker, `
+import { readFile, writeFile } from "node:fs/promises";
+import { writeFileSync } from "node:fs";
+const dir = process.argv[process.argv.indexOf("--job-dir") + 1];
+const request = JSON.parse(await readFile(dir + "/request.json", "utf8"));
+const progressPath = dir + "/progress.json";
+let tick = 0;
+const timer = setInterval(() => {
+  tick++;
+  void writeFile(progressPath, JSON.stringify({
+    protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+    phase: "running", elapsedMs: tick * 20, lastActivityAt: Date.now(),
+    recentOutput: ["endless-progress-" + tick], toolCalls: [],
+  }));
+}, 20);
+process.on("SIGTERM", () => { clearInterval(timer); writeFileSync(${JSON.stringify(sigtermMarker)}, "killed"); process.exit(0); });
+`);
+  const stalled: AuditorStalledInfo[] = [];
+  const reports: AuditorProgress[] = [];
+  const started = Date.now();
+  const result = await runDetachedGoalCompletionAuditor({
+    cwd: dir,
+    goal,
+    model: "test/provider-model",
+    thinkingLevel: "high",
+    onProgress: (progress) => reports.push(progress),
+    onStalled: (info) => stalled.push(info),
+    runtime: {
+      workerPath: worker,
+      attemptId: () => "attempt-wall-ceiling",
+      pollIntervalMs: 10,
+      // The legacy field stays ignored even when it expires first — the
+      // explicit ceiling below is the only elapsed-time bound. If anyone
+      // revives the legacy field, the error pin below trips.
+      wallTimeoutMs: 100,
+      absoluteTimeoutMs: 800,
+      firstEventTimeoutMs: 30_000,
+      heartbeatNoProgressMs: 30_000,
+      heartbeatFreshMs: 1_000,
+    },
+  });
+  const elapsed = Date.now() - started;
+  assert.equal(result.approved, false, "a wall-cancelled audit is never a verdict");
+  assert.equal(result.disapproved, false, "a wall-cancelled audit is never a verdict");
+  assert.match(result.error ?? "", /Auditor exceeded its .* wall-clock bound/, "the load-bearing wall wording downstream recovery keys on");
+  assert.match(result.error ?? "", /auto-cancelled/);
+  assert.equal(result.infrastructureClass, "timeout", "the wall classifies as retryable infra, like every other watchdog");
+  assert.equal(stalled.length, 1, "the watchdog emits auditor_stalled exactly once");
+  assert.equal(stalled[0]!.reason, "wall-timeout");
+  assert.ok(reports.length > 0, "the worker was genuinely progressing when the wall fired");
+  assert.ok(elapsed >= 750, `the wall fired at its budget, not early: ${elapsed}ms`);
+  assert.ok(elapsed < 10_000, `the wall fired promptly at its budget: ${elapsed}ms`);
+  assert.ok(existsSync(sigtermMarker), "the progressing worker was SIGTERMed — the detached job was cancelled");
+  assert.equal(
+    existsSync(path.join(dir, ".pi-glla", "audit-jobs", "attempt-wall-ceiling")),
+    false,
+    "cancelled auditor job scratch is removed",
+  );
+  await cleanup();
+});
+
 test("stall: a running auditor tool is exempt — the per-tool timeout owns that axis", { timeout: 20_000 }, async () => {
   const dir = await mkdtemp(path.join(tmpdir(), "glla-tool-exempt-"));
   dirs.push(dir);

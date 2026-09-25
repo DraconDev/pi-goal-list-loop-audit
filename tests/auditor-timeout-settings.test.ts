@@ -26,7 +26,9 @@ import {
   DEFAULT_AUDITOR_TOOL_TIMEOUT_MS,
   MAX_AUDIT_JOB_RETENTION_MS,
   MAX_AUDITOR_TOOL_TIMEOUT_MS,
+  MAX_AUDITOR_WALL_MS,
   MIN_AUDITOR_STALL_MS,
+  MIN_AUDITOR_WALL_MS,
   escalatedAuditorTimeout,
   progressSignature,
   runDetachedGoalCompletionAuditor,
@@ -121,6 +123,39 @@ test("v0.37.0: auditor timeout settings clamp into bounds on load", () => {
       restoreGlobal();
     }
   });
+});
+
+test("v0.38.100: auditorWallMs is off-by-default and clamps into bounds when set", () => {
+  withTmpCwd((cwd) => {
+    const existing = ORIGINAL_GLOBAL ? (JSON.parse(ORIGINAL_GLOBAL) as Record<string, unknown>) : {};
+    try {
+      fs.writeFileSync(GLOBAL_FILE, JSON.stringify({ ...existing, auditorWallMs: 999_999_999_999 }));
+      assert.equal(loadSettings(cwd).auditorWallMs, MAX_AUDITOR_WALL_MS, "ceiling clamps the wall");
+
+      fs.writeFileSync(GLOBAL_FILE, JSON.stringify({ ...existing, auditorWallMs: -5 }));
+      assert.equal(loadSettings(cwd).auditorWallMs, MIN_AUDITOR_WALL_MS, "floor clamps the wall");
+
+      fs.writeFileSync(GLOBAL_FILE, JSON.stringify({ ...existing, auditorWallMs: 3_600_000 }));
+      assert.equal(loadSettings(cwd).auditorWallMs, 3_600_000, "in-range values survive untouched");
+
+      fs.writeFileSync(GLOBAL_FILE, JSON.stringify({ ...existing, auditorWallMs: "soon" }));
+      assert.equal(loadSettings(cwd).auditorWallMs, undefined, "junk means off, never a defaulted duration");
+
+      fs.writeFileSync(GLOBAL_FILE, JSON.stringify(existing));
+      assert.equal(loadSettings(cwd).auditorWallMs, undefined, "unset means off — a live auditor keeps no ceiling");
+    } finally {
+      restoreGlobal();
+    }
+  });
+});
+
+test("v0.38.100: settings menu exposes the wall row with off/set branches in the auditor section", () => {
+  const off = buildSettingsRows({} as Settings, {}).find((r) => r.id === "auditorWallMs");
+  assert.ok(off, "auditorWallMs row exists");
+  assert.equal(off!.section, "auditor");
+  assert.match(off!.valueText, /off — a live auditor is never time-capped/);
+  const set = buildSettingsRows({ auditorWallMs: 3_600_000 } as Settings, {}).find((r) => r.id === "auditorWallMs");
+  assert.match(set!.valueText, /1h hard ceiling · never escalated/);
 });
 
 test("v0.37.0: /glla editor accepts plain-ms and s/m/h duration input for both keys", async () => {
