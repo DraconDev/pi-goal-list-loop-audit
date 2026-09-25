@@ -137,7 +137,9 @@
       "properties": {
         "turns": { "type": "integer", "minimum": 0 },
         "fileWrites": { "type": "integer", "minimum": 0 },
-        "bashCalls": { "type": "integer", "minimum": 0 }
+        "bashCalls": { "type": "integer", "minimum": 0 },
+        "files": { "type": "array", "items": { "type": "string" }, "maxItems": 100, "description": "Touched paths behind the fileWrites counter (first-seen order, deduped, capped) for audit scoping." },
+        "filesOverflow": { "type": "integer", "minimum": 0, "description": "Touched paths dropped past the files cap." }
       },
       "description": "Bounded per-goal activity counters used by /glla stats."
     },

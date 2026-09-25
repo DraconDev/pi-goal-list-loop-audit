@@ -101,6 +101,8 @@ import {
   normalizeDraftContract,
   draftContractItemCount,
   extractVerificationContract,
+  extractTelemetryFilePath,
+  recordTelemetryFile,
   classifySessionCtx,
   readState,
   healCorruptedGoalPolicy,
@@ -2991,6 +2993,22 @@ async function handleHotLengthExhaustion(
     lastStreamActivityAt = Date.now();
     streamActivityObserved = true;
     noteToolCall(event); // v0.33.0
+    // v0.38.100: record the touched path behind the fileWrites counter so
+    // the detached audit can scope itself to the real change set. Call-time
+    // (not result-time): a failed write still names a file the work meant
+    // to touch, and for scoping, an extra path wastes a read while a
+    // missing one blinds the audit — err wide, never narrow.
+    if (state.goal && state.goal.status === "active") {
+      const writeTool = String(event?.toolName ?? event?.name ?? "");
+      if (isLoopWriteTool(writeTool)) {
+        const touched = extractTelemetryFilePath(event?.input ?? event?.args);
+        if (touched !== undefined) {
+          const t = state.goal.telemetry ?? { turns: 0, fileWrites: 0, bashCalls: 0 };
+          recordTelemetryFile(t, touched);
+          state.goal.telemetry = t;
+        }
+      }
+    }
     // v0.24.0: count loop-iteration tool calls (narration-only detection).
     if (isLoopActive()) {
       state.loop!.toolsThisTurn = (state.loop!.toolsThisTurn ?? 0) + 1;

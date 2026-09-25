@@ -1282,9 +1282,20 @@ function executionEvidence(goal: Goal): string {
 export function buildRecordedFactsCompletionSummary(facts: CompletionSummaryFacts): string {
   const { goal, status, stopReason, archivePath } = facts;
   const hasFileSignals = (goal.telemetry?.fileWrites ?? 0) > 0;
-  const changed = hasFileSignals
-    ? `${goal.telemetry!.fileWrites} file-write signal(s) were recorded; changed paths were not captured`
-    : "not recorded — no file-write signal was captured";
+  // v0.38.100: execution now records the touched paths behind the counter —
+  // name them (bounded) instead of reporting them missing. Pre-tracking
+  // goals keep the old sentence.
+  const changedFiles = (goal.telemetry?.files ?? []).filter((f): f is string => typeof f === "string" && f.length > 0);
+  const changedOverflow = goal.telemetry?.filesOverflow ?? 0;
+  const changed = !hasFileSignals
+    ? "not recorded — no file-write signal was captured"
+    : changedFiles.length === 0 && changedOverflow === 0
+      ? `${goal.telemetry!.fileWrites} file-write signal(s) were recorded; changed paths were not captured`
+      : (() => {
+          const shown = changedFiles.slice(0, 20).join(", ");
+          const extra = (changedFiles.length - Math.min(changedFiles.length, 20)) + changedOverflow;
+          return `${goal.telemetry!.fileWrites} file-write signal(s) touched: ${shown}${extra > 0 ? ` (+${extra} more)` : ""}`;
+        })();
   const tests = goal.verificationContract
     ? "not recorded — a verification contract was present, but no terminal test result was captured"
     : "not recorded — no terminal test result was captured";

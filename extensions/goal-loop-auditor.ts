@@ -15,7 +15,7 @@
  */
 
 import type { Goal } from "./goal-loop-core.js";
-import { renderGoalMarkdown } from "./goal-loop-core.js";
+import { MAX_TELEMETRY_FILES, renderGoalMarkdown } from "./goal-loop-core.js";
 
 // v0.36.x: visual goals need fresh evidence, not reused screenshots.
 const VISUAL_GOAL_RE = /(visual|screenshot|picture|image|chrome|\bui\b|page|render)/i;
@@ -159,6 +159,11 @@ export function buildGoalAuditorPrompt(goal: Goal, completionSummary: string | n
   // auditor quotes evidence for them explicitly and the loop converges
   // instead of repeating the same gap.
   const shieldGaps = [...(goal.auditHistory ?? [])].reverse().find((v) => v.regressionShieldPassed === false)?.regressionShieldMissing;
+  // v0.38.100: the recorded change set. Present only when execution touched
+  // tracked paths — older goals and read-only work keep the previous brief
+  // byte-shape.
+  const changedFiles = (goal.telemetry?.files ?? []).filter((f): f is string => typeof f === "string" && f.length > 0);
+  const changedOverflow = goal.telemetry?.filesOverflow ?? 0;
   return [
     "You are the independent completion auditor for pi-goal-list-loop-audit.",
     "The executor claims the goal is complete. Your job is to decide whether the user's objective is actually satisfied.",
@@ -200,6 +205,18 @@ export function buildGoalAuditorPrompt(goal: Goal, completionSummary: string | n
       "<verification_contract>",
       escapeXmlText(goal.verificationContract.trim()),
       "</verification_contract>",
+    ] : []),
+    ...((changedFiles.length > 0 || changedOverflow > 0) ? [
+      "",
+      `Changed files recorded during execution (${changedFiles.length} path${changedFiles.length === 1 ? "" : "s"}) — verify THESE first; this list is the work under review:`,
+      "<changed_files>",
+      ...changedFiles.map((f) => `- ${escapeXmlText(f)}`),
+      "</changed_files>",
+      ...(changedOverflow > 0 ? [
+        `${changedOverflow} further touched path${changedOverflow === 1 ? " was" : "s were"} recorded past the ${MAX_TELEMETRY_FILES}-path list cap — the work is larger than the list above.`,
+      ] : []),
+      "Start here, not with open-ended exploration: confirm each listed path carries the claimed change, then cross-check the verification summary against them.",
+      "Caveat: subagent file writes, shell redirections, and deletions bypass path capture, and a listed path may name an attempted write that failed — verify against the tree, and follow the evidence outward if the work under review is not visible in this list. This list scopes the START of the audit, never its boundary.",
     ] : []),
     ...(shieldGaps && shieldGaps.length > 0 ? [
       "",
