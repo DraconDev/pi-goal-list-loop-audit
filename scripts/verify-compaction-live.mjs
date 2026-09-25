@@ -41,6 +41,7 @@ const DEFAULT_COMPACTION_SETTINGS = {
   reserveTokens: 16_384,
   keepRecentTokens: 20_000,
 };
+const DEFAULT_COMPACTION_PERCENT = 0.8;
 
 let verifierStage = "startup";
 
@@ -412,7 +413,7 @@ async function waitForPersistedCompaction(sessionFile, afterId, timeoutMs = PERS
   throw new Error("host compaction result was not persisted as a non-empty session record");
 }
 
-function stageProviderConfiguration(agentDir) {
+function stageProviderConfiguration(agentDir, provider, model) {
   // PI_CODING_AGENT_DIR intentionally redirects all runtime state. Pi resolves
   // credentials from that directory, so stage the provider auth file in the
   // disposable store. It is never parsed, logged, or included in reports; outer
@@ -428,6 +429,23 @@ function stageProviderConfiguration(agentDir) {
   // settings file, whose unrelated mutable state must remain untouched.
   fs.writeFileSync(path.join(agentDir, "settings.json"), `${JSON.stringify({
     compaction: DEFAULT_COMPACTION_SETTINGS,
+    compactionPercent: DEFAULT_COMPACTION_PERCENT,
+    globalContextLimit: GLOBAL_LIMIT,
+  }, null, 2)}\n`);
+  // Apply the live cap from the first model composition, before extension
+  // startup can inspect or replace the current model. This is isolated test
+  // configuration; the extension itself owns the durable managed state.
+  fs.writeFileSync(path.join(agentDir, "models.json"), `${JSON.stringify({
+    providers: {
+      [provider]: {
+        modelOverrides: {
+          [model]: {
+            contextWindow: GLOBAL_LIMIT,
+            maxTokens: 32_768,
+          },
+        },
+      },
+    },
   }, null, 2)}\n`);
 }
 
@@ -732,7 +750,7 @@ async function main() {
       autoResume: false,
       auditorSameSessionSwap: false,
     })}\n`);
-    stageProviderConfiguration(agentDir);
+    stageProviderConfiguration(agentDir, options.provider, options.model);
 
     const args = [
       "--mode", "rpc",
@@ -784,6 +802,10 @@ async function main() {
     if (state?.autoCompactionEnabled !== true) throw new Error("Pi auto-compaction was not enabled for the proof");
     if (state?.model?.provider !== options.provider || !String(state?.model?.id ?? "").endsWith(options.model)) {
       throw new Error("Pi selected a different provider/model than requested");
+    }
+    if (state?.model?.contextWindow !== GLOBAL_LIMIT) {
+      const actual = numberOrNull(state?.model?.contextWindow);
+      throw new Error(`Pi did not compose the isolated global context cap before the live prompt (context_window_${actual ?? "unknown"})`);
     }
 
     setStage("awaiting_automatic_compaction");
