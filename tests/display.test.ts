@@ -1794,11 +1794,11 @@ test("active auditor verdicts never masquerade as infrastructure no-verdict", ()
   });
   const disapprovalState = { goal: disapproved, list: [], loop: null };
   const disapprovalWidget = buildWidgetLines(disapprovalState as never)!;
-  assert.match(disapprovalWidget[0]!, /auditor disapproved — fix the gap/);
+  assert.match(disapprovalWidget[0]!, /completion review disapproved — fix the gap/);
   assert.ok(disapprovalWidget.some((l) => l.includes("completion review: disapproved")), `disapproval: ${disapprovalWidget.join("\\n")}`);
   assert.ok(disapprovalWidget.some((l) => l.includes("v1.0.0-image-regen")), `feedback: ${disapprovalWidget.join("\\n")}`);
   assert.doesNotMatch(disapprovalWidget.join("\\n"), /no verdict|claim was not evaluated/);
-  assert.match(buildStatusText(disapprovalState as never)!, /auditor disapproved — fix the gap/);
+  assert.match(buildStatusText(disapprovalState as never)!, /completion review disapproved — fix the gap/);
 });
 
 test("provider payloads stay out of durable disapproval widget feedback", () => {
@@ -2169,7 +2169,7 @@ test("v0.33.1: audit-batch — sanitize, head fits width, last restored, flag li
   assert.match(LOOP, /if \(probeExtensionApiStale\(\)\) return;\s*\n\s*flags\.loopRearmStreak\+\+;/); // flag accessor re-spelling (decomposition step 2)
   // compact F1/F2 + sweep-F3: the compact debt/resync die with the goal/loop and on rebind.
   assert.match(HB, /if \(!isSupervising\(\) && \(flags\.postCompactResumeOwed \|\| flags\.postCompactResyncPending\)\)/);
-  assert.match(SRC, /postCompactResumeOwed = false; \/\/ v0\.33\.1: a compact from a previous session/);
+  assert.match(SRC, /postCompactResumeOwed = false; \/\/ v0\.33\.1|postCompactRecovery/);
   // compact-F3: builder throws are contained.
   assert.match(CONT, /try \{ resync = buildPostCompactResync\(.*\); \} catch/); // decomposition step 5 (v0.34.113): sendContinuation moved; v0.38.10 passes the brief excerpt — containment intent unchanged
   // sweep-F6: per-goal module state resets at activation, including lost
