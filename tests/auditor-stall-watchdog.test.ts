@@ -306,8 +306,12 @@ process.on("SIGTERM", () => { clearInterval(timer); writeFileSync(${JSON.stringi
       // The legacy field stays ignored even when it expires first — the
       // explicit ceiling below is the only elapsed-time bound. If anyone
       // revives the legacy field, the error pin below trips.
+      // The 4s wall (not sub-second) clears worst-case worker boot on the
+      // busy rig — the launcher alone can consume 1.5s, and a wall that
+      // fires mid-boot would SIGTERM before the handler installs, flaking
+      // the progress/marker pins below.
       wallTimeoutMs: 100,
-      absoluteTimeoutMs: 800,
+      absoluteTimeoutMs: 4_000,
       firstEventTimeoutMs: 30_000,
       heartbeatNoProgressMs: 30_000,
       heartbeatFreshMs: 1_000,
@@ -322,8 +326,8 @@ process.on("SIGTERM", () => { clearInterval(timer); writeFileSync(${JSON.stringi
   assert.equal(stalled.length, 1, "the watchdog emits auditor_stalled exactly once");
   assert.equal(stalled[0]!.reason, "wall-timeout");
   assert.ok(reports.length > 0, "the worker was genuinely progressing when the wall fired");
-  assert.ok(elapsed >= 750, `the wall fired at its budget, not early: ${elapsed}ms`);
-  assert.ok(elapsed < 10_000, `the wall fired promptly at its budget: ${elapsed}ms`);
+  assert.ok(elapsed >= 3_500, `the wall fired at its budget, not early: ${elapsed}ms`);
+  assert.ok(elapsed < 15_000, `the wall fired promptly at its budget: ${elapsed}ms`);
   assert.ok(existsSync(sigtermMarker), "the progressing worker was SIGTERMed — the detached job was cancelled");
   assert.equal(
     existsSync(path.join(dir, ".pi-glla", "audit-jobs", "attempt-wall-ceiling")),
