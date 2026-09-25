@@ -30,6 +30,8 @@ const PERSISTENCE_TIMEOUT_MS = 5_000;
 const STOP_TIMEOUT_MS = 15_000;
 const MAX_COMPACTION_ATTEMPTS = 3;
 const INPUT_BUDGET = 16_000;
+const GLOBAL_LIMIT = 200_000;
+const HISTORICAL_TRIM_TOKENS = 165_000;
 const CONTINUATION_MARKER = "GLLA_POST_COMPACTION_CONTINUATION_OK";
 const MANUAL_MARKER = "GLLA_MANUAL_COMPACTION_CONTINUATION_OK";
 const DEFAULT_AGENT_DIR = path.join(homedir(), ".pi", "agent");
@@ -428,18 +430,113 @@ function stageProviderConfiguration(agentDir) {
   }, null, 2)}\n`);
 }
 
+function sessionContentChars(content) {
+  if (typeof content === "string") return content.length;
+  if (!Array.isArray(content)) return 0;
+  return content.reduce((sum, block) => sum + (typeof block?.text === "string" ? block.text.length : 0), 0);
+}
+
+function messageEstimatedTokens(message) {
+  let chars = 0;
+  if (message?.role === "system") chars = sessionContentChars(message.content);
+  else if (message?.role === "user" || message?.role === "toolResult") chars = sessionContentChars(message.content);
+  else if (message?.role === "assistant") {
+    if (typeof message.content === "string") chars = message.content.length;
+    else if (Array.isArray(message.content)) {
+      for (const block of message.content) {
+        if (block?.type === "text" && typeof block.text === "string") chars += block.text.length;
+        else if (block?.type === "thinking" && typeof block.thinking === "string") chars += block.thinking.length;
+        else if (block?.type === "toolCall") {
+          try { chars += JSON.stringify(block.arguments ?? {}).length; } catch { chars += 1_024; }
+        }
+      }
+    }
+  }
+  return Math.ceil(chars / 4);
+}
+
+/**
+ * The source incident session's final branch is already below Pi's own
+ * threshold estimate because later recovery turns removed earlier failed
+ * attempts. For this smoke we need a deterministic near-cap branch without
+ * mutating the source: keep a recent run of assistant messages and prune older
+ * semantic units from the copied branch. The final user prompt is appended
+ * fresh by the verifier. This changes only the disposable fixture, never the
+ * source transcript, and gives the real host threshold compactor a substantive
+ * input near the 200k regression boundary. The selected historical
+ * checkpoint is itself a real Pi compaction record, so Pi's active projection
+ * remains structurally valid.
+ */
+function prepareHistoricalBranch(target, keepRecentTokens) {
+  const raw = fs.readFileSync(target, "utf8");
+  const lines = raw.split("\n");
+  const records = lines.filter(Boolean).map((line) => JSON.parse(line));
+  const header = records[0];
+  if (header?.type !== "session" || typeof header.id !== "string") throw new Error("historical session header is malformed");
+  const byId = new Map(records.filter((record) => typeof record.id === "string").map((record) => [record.id, record]));
+  let leafId = records.at(-1)?.id;
+  if (typeof leafId !== "string") throw new Error("historical session has no leaf entry");
+  const branch = [];
+  const seen = new Set();
+  while (leafId) {
+    if (seen.has(leafId)) throw new Error("historical session contains a parent cycle");
+    seen.add(leafId);
+    const record = byId.get(leafId);
+    if (!record) throw new Error("historical session parent is missing");
+    branch.push(record);
+    leafId = typeof record.parentId === "string" ? record.parentId : null;
+  }
+  branch.reverse();
+  const compactionIndices = branch
+    .map((record, index) => record.type === "compaction" ? index : -1)
+    .filter((index) => index >= 0);
+  if (compactionIndices.length === 0) throw new Error("historical session has no compaction checkpoint");
+  // Pick the newest compaction projection large enough to cross Pi's normal
+  // reserve threshold, without carrying later failed recovery leaves.
+  let selectedCompactionIndex = -1;
+  let projectionMessages = [];
+  let retainedTokens = 0;
+  for (const candidateIndex of compactionIndices.toReversed()) {
+    const nextCompactionIndex = compactionIndices.find((index) => index > candidateIndex) ?? branch.length;
+    const messages = branch.slice(candidateIndex + 1, nextCompactionIndex).filter((record) => record.type === "message");
+    const tokens = messages.reduce((sum, record) => sum + messageEstimatedTokens(record.message), 0);
+    if (tokens >= keepRecentTokens) {
+      selectedCompactionIndex = candidateIndex;
+      projectionMessages = messages;
+      retainedTokens = tokens;
+      break;
+    }
+  }
+  if (selectedCompactionIndex < 0) throw new Error("historical session has no near-cap compaction projection for the smoke");
+  const checkpoint = structuredClone(branch[selectedCompactionIndex]);
+  header.cwd = path.dirname(target);
+  const output = [header, checkpoint];
+  let previousId = checkpoint.id;
+  let emitted = 0;
+  for (const record of projectionMessages) {
+    // Pi's projection retains a trailing assistant length/error response until
+    // its context_edit removes it. That orphan is not useful semantic input and
+    // can make the copied branch unrepeatable; skip it in the disposable fixture.
+    if (record.message?.role === "assistant" && record.message?.stopReason === "length") continue;
+    const copy = structuredClone(record);
+    copy.parentId = previousId;
+    output.push(copy);
+    previousId = copy.id;
+    emitted += 1;
+  }
+  fs.writeFileSync(target, output.map((record) => JSON.stringify(record)).join("\n") + "\n");
+  return {
+    retainedMessages: emitted,
+    retainedTokens,
+    checkpointSummaryChars: typeof checkpoint.summary === "string" ? checkpoint.summary.length : 0,
+  };
+}
+
 function copyHistoricalSession(source, tempRoot) {
   const target = path.join(tempRoot, "historical-session.jsonl");
   fs.copyFileSync(source, target);
-  const raw = fs.readFileSync(target, "utf8");
-  const lines = raw.split("\n");
-  if (!lines[0]) throw new Error("historical session has no JSONL header");
-  const header = JSON.parse(lines[0]);
-  if (!header || typeof header !== "object") throw new Error("historical session header is malformed");
-  header.cwd = tempRoot;
-  lines[0] = JSON.stringify(header);
-  fs.writeFileSync(target, lines.join("\n"));
-  return target;
+  const prepared = prepareHistoricalBranch(target, HISTORICAL_TRIM_TOKENS);
+  return { target, prepared };
 }
 
 async function waitForTerminalCompaction(rpc, options, fromIndex, expectedReason) {
@@ -618,7 +715,8 @@ async function main() {
   const setStage = (value) => { verifierStage = value; };
 
   try {
-    copiedSession = copyHistoricalSession(source, tempRoot);
+    const copied = copyHistoricalSession(source, tempRoot);
+    copiedSession = copied.target;
     const initialPersisted = persistedCompactions(copiedSession);
     const settingsPath = path.join(agentDir, "glla-settings.json");
     fs.writeFileSync(settingsPath, `${JSON.stringify({
