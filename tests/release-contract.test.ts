@@ -101,7 +101,19 @@ test("release contract: package is discoverable as a Pi extension and skill", ()
   assert.ok(manifest.keywords?.includes("pi-package"), "pi-package makes the release eligible for the Pi gallery");
   assert.deepEqual(manifest.pi?.extensions, ["extensions/loops/goal.ts"]);
   assert.deepEqual(manifest.pi?.skills, ["skills/glla-delegate"]);
-  assert.match(manifest.pi?.image ?? "", /^https:\/\/raw\.githubusercontent\.com\/.+\/media\/glla2\.png$/);
+  // v0.38.99: the gallery image is derived from the manifest instead of a
+  // pinned filename — commit 917949e7 repointed `pi.image` at the new
+  // thumbnail and this test kept asserting the old one, so the release gate
+  // went red for a rename. The contract that actually matters is stronger
+  // than the filename: the URL must be the raw gallery form, the file it
+  // names must exist, be a real image (not a placeholder), and SHIP in the
+  // tarball (a manifest pointing at an unshipped file breaks the gallery).
+  const imageUrl = manifest.pi?.image ?? "";
+  assert.match(imageUrl, /^https:\/\/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/(?:main|master)\/media\/[A-Za-z0-9._-]+\.png$/, `the gallery image must be the raw main-branch media URL: ${imageUrl}`);
+  const imagePath = imageUrl.replace(/^https:\/\/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/(?:main|master)\//, "");
+  assert.ok(fs.existsSync(imagePath), `${imagePath} must exist in the repository`);
+  assert.ok(fs.statSync(imagePath).size > 10_000, `${imagePath} must be a real image, not a placeholder`);
+  assert.ok(dryRunFiles().has(imagePath), `${imagePath} must ship in the npm tarball`);
 });
 
 test("release contract: README package contents claim matches the files allowlist", () => {

@@ -82,7 +82,7 @@ test("lifecycle: a settling claim reports the applied verdict, not a worker even
   assert.equal(settling.sinceLastEventMs, 4_000);
   assert.equal(settling.terminal, false, "an unresolved settlement is not a completion");
   assert.equal(isSettlingClaim(claim({ phase: "settling" })), true);
-  assert.match(settling.nextAction, /archiving the approved goal/);
+  assert.match(settling.nextAction, /the terminal archive is owed — \/goal resume finishes it/);
   assert.match(auditLifecycleLine(settling)!, /^settling · verdict applied 4s ago/);
 });
 
@@ -110,7 +110,7 @@ test("lifecycle: an applied approval awaiting its archive is SETTLING — never 
   const projection = auditLifecycleProjection(claim({ phase: "settling", verdictAt: ago(4_000), startedAt: ago(90_000) }), { now: NOW })!;
   assert.equal(projection.phase, "settling");
   assert.equal(projection.terminal, false, "an unresolved settlement is not a completion");
-  assert.match(projection.nextAction, /archiving the approved goal/);
+  assert.match(projection.nextAction, /the terminal archive is owed — \/goal resume finishes it/);
 });
 
 test("lifecycle: approved is a SETTLEMENT state, and only the settlement may claim it", () => {

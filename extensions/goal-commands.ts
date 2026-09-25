@@ -424,13 +424,18 @@ async function cmdStatus(ctx: ExtensionContext): Promise<void> {
     const tallyText = formatVerdictTallySegment(statusTally);
     lines.push(`Audits: ${tallyText} (${statusTally.approvals} approved)`);
   }
-  if (g.status === "auditing") {
+  if (g.pendingCompletion && (g.status === "auditing" || g.status === "paused")) {
     // v0.38.99: /goal status reads the SAME durable lifecycle projection the
     // widget does. The old phrasing called every non-`running` phase
     // "recovery pending", so a `starting` claim and a `settling` approval both
     // read as a parked audit — and a `running` claim with no worker read as
     // "awaiting lifecycle recovery". The durable phase now names itself and
     // names the action that actually unblocks it.
+    // v0.38.99 (closure): a PAUSED goal can still own the claim — a parked
+    // review, or an approved settlement whose terminal archive never landed.
+    // This line used to require `auditing`, so `/goal status` said nothing at
+    // all about either while `/glla status` named both: the same obligation
+    // had two answers. The condition is now the one `/glla status` uses.
     lines.push(`Completion audit: ${formatStoredAuditLifecycle(g, { inFlight: flags.completionAuditInFlight, queued: flags.latestAuditProgress?.label === "queued" })}`);
   }
   if (g.pauseReason) lines.push(`Paused: ${sanitizeProviderDisplayText(g.pauseReason)}`);
@@ -2929,7 +2934,9 @@ function formatStoredAuditLifecycle(
       : `${lifecycle.label} — no worker event yet (detached worker, not yet reporting)`;
   }
   if (lifecycle.phase === "settling") {
-    return `${lifecycle.label} — the audit approved; the terminal archive is owed. ${lifecycle.nextAction}`;
+    // One vocabulary: the projection's own action sentence, which already
+    // names the approval, the owed archive, and the command that finishes it.
+    return `${lifecycle.label} — ${lifecycle.nextAction}`;
   }
   if (lifecycle.phase === "recovery-pending" || lifecycle.phase === "retry-waiting") {
     return `${lifecycle.label} — ${lifecycle.nextAction}`;

@@ -1409,6 +1409,20 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
       }
       return `glla: ${paint(theme, "dim", `⏳ auto-retrying${when}`)}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
     }
+    // v0.38.99 (closure): a paused goal can still owe an audit outcome — most
+    // visibly an APPROVED settlement whose terminal archive never landed. The
+    // status line used to fall through to the generic legacy pause chip here,
+    // so the owed state and the command that finishes it were absent while
+    // `/glla status` named both. It sits AFTER the pause-class branches on
+    // purpose: a decision/error/timed-retry pause already names its own
+    // action, and an armed retry must keep its countdown (151113).
+    const owedPauseKind = pauseKind(g);
+    if (g.pendingCompletion && owedPauseKind !== "decision" && owedPauseKind !== "error" && !Number.isFinite(g.pauseResumeAt ? Date.parse(g.pauseResumeAt) : Number.NaN)) {
+      const owed = auditLifecycleProjection(g.pendingCompletion, { now, resumeCommand: g.policy === "list" ? "/list resume" : "/goal resume" });
+      if (owed && !owed.terminal) {
+        return `glla: ${paint(theme, "warning", `⏸ ${owed.label}`)} · ${paint(theme, "dim", owed.nextAction)}${pausedStatusSuffix(g, state, extras, now, true)}${heldSuffix}`;
+      }
+    }
     const label = `paused ⏸ ${truncate(displayPauseReason(g.pauseReason ?? ""), 40)}`;
     return `glla: ${paint(theme, pauseIsError(g) ? "error" : "warning", label)}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
   }
@@ -2051,6 +2065,20 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
     const block = auditingCardBlock(g, audit, now, theme, extras);
     lines.push(...block.lead);
     auditTail = block.tail;
+  } else if (g.pendingCompletion && !isCompletionAuditNoVerdict(g)) {
+    // v0.38.99 (closure): a PAUSED goal can still OWN an audit obligation —
+    // an approved settlement whose terminal archive never landed, or a claim
+    // parked under a pause that is not the parked-verdict case. The card said
+    // nothing about either, while `/glla status` named it: the obligation (and
+    // its real recovery action) was invisible exactly when it was owed. Same
+    // projection, same vocabulary, same next action as the auditing card.
+    const owed = auditLifecycleProjection(g.pendingCompletion, { now, resumeCommand: isList ? "/list resume" : "/goal resume" });
+    if (owed) {
+      const evidence = auditLifecycleLine(owed);
+      const detail = evidence ? evidence.slice(evidence.indexOf(" · ") + 3) : "";
+      lines.push(`├─ ${paint(theme, owed.terminal ? "success" : "warning", `auditor: ${owed.label}`)}`);
+      lines.push(`│  ${paint(theme, "dim", [detail, owed.nextAction].filter(Boolean).join(" · "))}`);
+    }
   }
   // v0.38.8: durable verdict tally as a first-class card row — the widget
   // is the glance surface, and stored verdicts are the progress evidence

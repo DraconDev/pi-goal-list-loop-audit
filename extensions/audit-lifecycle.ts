@@ -284,7 +284,11 @@ export function auditLifecycleProjection(
       case "running": return stale
         ? `no progress for ${fmtAge(idleMs ?? 0)} — ${resumeCommand} retries the stored claim`
         : "completion review applies automatically";
-      case "settling": return "verdict applied — archiving the approved goal";
+      // The label and the evidence line already say "verdict applied", so the
+      // action sentence names only what is OWED and which command finishes it.
+      // The old wording repeated the state ("verdict applied 46s ago · verdict
+      // applied — archiving the approved goal") and named no action at all.
+      case "settling": return `approved; the terminal archive is owed — ${resumeCommand} finishes it`;
       case "retry-waiting": return retryInMs !== undefined && retryInMs > now
         ? `auto-retry in ${fmtAge(retryInMs - now)} — ${resumeCommand} retries now`
         : `${resumeCommand} retries now`;

@@ -60,7 +60,13 @@ afterEach(() => {
 
 test("durable: an ordinary complete_goal records phase running + lastActivityAt before the verdict", async () => {
   const cwd = tmpCwd();
-  const binary = slowFakeAuditor(cwd, "disapproved", 1_200);
+  // v0.38.99 (closure): the worker hold is the RUNNING window the sampler
+  // must land in, and the sampler deadline must cover dispatch boot. Worker
+  // cold-start alone measured 0.8–6.9s isolated, so an 8s deadline with a
+  // 1.2s hold flaked ~50% (starting sampled until the budget expired). A 5s
+  // window with a 30s budget keeps the assertion — durable running BEFORE the
+  // verdict — while surviving loaded-suite scheduling.
+  const binary = slowFakeAuditor(cwd, "disapproved", 5_000);
   const previous = process.env.GLLA_PI_BINARY;
   process.env.GLLA_PI_BINARY = binary;
   const pi = new MockPi();
@@ -74,7 +80,7 @@ test("durable: an ordinary complete_goal records phase running + lastActivityAt 
     // While the worker is alive the DURABLE claim must already say running and
     // carry the worker's own activity stamp. Sampling the ledger (not RAM) is
     // the point: a restart reads this, not the HUD.
-    const deadline = Date.now() + 8_000;
+    const deadline = Date.now() + 30_000;
     let seen: { phase?: string; lastActivityAt?: string } = {};
     while (Date.now() < deadline) {
       const claim = (readState(cwd).goal as { pendingCompletion?: { phase?: string; lastActivityAt?: string } } | null)?.pendingCompletion;
@@ -84,7 +90,14 @@ test("durable: an ordinary complete_goal records phase running + lastActivityAt 
     assert.equal(seen.phase, "running", "the main complete_goal path persists phase running");
     assert.ok(seen.lastActivityAt, "and the worker's own activity stamp — never a back-filled claim age");
 
-    await tick(1_500);
+    // Drain the worker to settlement so the ledger assertion reads the final
+    // durable history, not a mid-flight snapshot.
+    const drainDeadline = Date.now() + 15_000;
+    while (Date.now() < drainDeadline) {
+      const claim = (readState(cwd).goal as { pendingCompletion?: { phase?: string } } | null)?.pendingCompletion;
+      if (!claim || (claim.phase !== "running" && claim.phase !== "starting")) break;
+      await tick(100);
+    }
     const ledger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
     assert.match(ledger, /"lastActivityAt"/, "the durable lifecycle evidence reaches the ledger");
   } finally {
@@ -97,6 +110,12 @@ test("durable: an ordinary complete_goal records phase running + lastActivityAt 
 
 function stateFor(claim: Record<string, unknown>): State {
   return { goal: seedGoal({ status: "auditing", objective: "surface authority — done when pinned", pendingCompletion: claim }) as unknown as Goal, list: [], loop: null } as unknown as State;
+}
+
+/** The same shape, PAUSED: the state a park, a blocked archive, or a manual
+ * decision leaves behind — and the state that still owns a claim. */
+function pausedFor(claim: Record<string, unknown>): State {
+  return { goal: seedGoal({ status: "paused", objective: "owed obligation — done when pinned", pendingCompletion: claim }) as unknown as Goal, list: [], loop: null } as unknown as State;
 }
 
 /** A worker-complete snapshot — the exact progress object the auditor used to
@@ -136,4 +155,52 @@ test("the durable projection is the single source for all three surfaces", () =>
   const lines = (buildWidgetLines(stateFor(claim), null, NOW) ?? []).join("\n");
   assert.ok(lines.includes(projection.label), "the widget uses the projection's label");
   assert.match(lines, /parked 5m 00s ago/, "and the projection's park age");
+});
+
+// ---- 3. a PAUSED goal can still own an audit obligation ----
+
+/** v0.38.99 (closure): the approved-but-unarchived case. A paused goal whose
+ * claim is `settling` still OWNS a terminal obligation, and before this the
+ * card said nothing about it, the status line fell through to the generic
+ * pause chips, and `/goal status` printed no completion-audit line at all —
+ * while `/glla status` named it. Three surfaces, three answers, and the
+ * obligation invisible on the two a user actually looks at.
+ */
+const OWED_SETTLEMENT = {
+  at: "2026-09-25T11:00:00.000Z",
+  startedAt: "2026-09-25T11:00:00.000Z",
+  phase: "settling",
+  lastActivityAt: "2026-09-25T11:50:00.000Z",
+  verdictAt: "2026-09-25T11:58:00.000Z",
+  recoveryAt: "2026-09-25T11:59:00.000Z",
+  recoveryReason: "approval-archive-failed",
+  attemptId: "audit-owed",
+};
+
+test("a paused goal that still owes a settlement names it on card and status line", () => {
+  const lines = (buildWidgetLines(pausedFor(OWED_SETTLEMENT), null, NOW) ?? []).join("\n");
+  assert.match(lines, /auditor: settling/, "the card names the durable phase, not a generic pause");
+  assert.match(lines, /verdict applied 1m 00s ago/, "and the freshest durable event — the park, 1m before the snapshot");
+  assert.match(lines, /the terminal archive is owed/, "and the obligation that is still open");
+  assert.match(lines, /\/goal resume finishes it/, "and the command that finishes it — no new audit");
+  const status = buildStatusText(pausedFor(OWED_SETTLEMENT), null, NOW) ?? "";
+  assert.match(status, /settling/, "the status line names the same state");
+  assert.match(status, /the terminal archive is owed/, "with the same obligation");
+  assert.match(status, /\/goal resume finishes it/, "and the same recovery action");
+});
+
+test("a paused parked claim names recovery-needed on card and status line", () => {
+  const state = pausedFor({ at: "2026-09-25T11:00:00.000Z", phase: "recovery-pending", recoveryAt: "2026-09-25T11:50:00.000Z" });
+  const lines = (buildWidgetLines(state, null, NOW) ?? []).join("\n");
+  assert.match(lines, /auditor: recovery needed/, "the card names the parked state");
+  assert.match(lines, /parked 10m 00s ago/, "with its park age");
+  assert.match(lines, /\/goal resume retries the stored claim/, "and the real next action");
+  assert.match(buildStatusText(state, null, NOW) ?? "", /recovery needed/);
+});
+
+test("a list item names its own resume command, never /goal resume", () => {
+  const goal = seedGoal({ status: "paused", policy: "list", objective: "queued obligation — done when pinned", pendingCompletion: OWED_SETTLEMENT }) as unknown as Goal;
+  const lines = (buildWidgetLines({ goal, list: [], loop: null } as unknown as State, null, NOW) ?? []).join("\n");
+  assert.match(lines, /\/list resume finishes it/, "a list obligation is finished from the list surface");
+  assert.ok(!/\/goal resume finishes it/.test(lines), "and never names the goal surface");
 });
