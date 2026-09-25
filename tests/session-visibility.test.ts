@@ -52,7 +52,7 @@ test("tally segment stays silent with no verdicts", () => {
     total: 3, approvals: 1, disapprovals: 1,
     lastAt: Date.parse("2026-09-03T08:00:00.000Z"), lastLabel: "disapproved",
   }, now);
-  assert.match(seg, /3 verdicts/);
+  assert.match(seg, /3 reviews/);
   assert.match(seg, /1 disapproved/);
   assert.match(seg, /last disapproved 2h/);
 });
@@ -158,5 +158,5 @@ test("future verdict timestamp suppresses the age instead of printing 0s ago", (
   assert.equal(future.lastAt, null, "future lastAt is suppressed");
   const seg = formatVerdictTallySegment({ ...future, lastLabel: "approved" });
   assert.doesNotMatch(seg, /0s ago/, "no confabulated recency");
-  assert.match(seg, /1 verdict/, "the count itself survives");
+  assert.match(seg, /1 review/, "the count itself survives");
 });

@@ -482,7 +482,7 @@ test("v0.32.1: post-compaction resume debt + deterministic resync (pi-goal-x's l
   const SRC = readGoalRuntimeSource();
   assert.match(SRC, /let postCompactResumeOwed = false;/);
   assert.match(SRC, /let postCompactResyncPending = false;/);
-  assert.match(SRC, /postCompactResumeOwed = true;/); // armed in session_compact
+  assert.match(SRC, /postCompactRecovery|armDurablePostCompactRecovery/); // durable compaction debt owns the arm
   assert.match(HEARTBEAT_SRC, /compaction_resume_owed_refire/); // heartbeat retries the debt every post-grace tick
   assert.match(CONT, /\[POST-COMPACTION RESYNC\]/); // deterministic re-anchor block (decomposition step 5: buildPostCompactResync moved)
   assert.match(CONT, /content: resync \+ continuationPrompt/); // goal path prepends (decomposition step 5: sendContinuation moved)
@@ -492,10 +492,11 @@ test("v0.32.1: post-compaction resume debt + deterministic resync (pi-goal-x's l
   // discharged by a real turn start (agent_start), not by the send itself.
   // v0.34.27 may absorb a file-backed replacement before the stream clock;
   // pin the behavior inside the handler rather than obsolete adjacency.
-  const agentStart = SRC.slice(SRC.indexOf('pi.on("agent_start"'), SRC.indexOf('pi.on("agent_start"') + 1_200);
+  const agentStart = SRC.slice(SRC.indexOf('pi.on("agent_start"'), SRC.indexOf('pi.on("agent_start"') + 3_000);
   assert.match(agentStart, /lastStreamActivityAt = Date\.now\(\);/, "agent_start updates the stream clock");
-  assert.match(agentStart, /postCompactResumeOwed = false;/, "agent_start discharges compaction debt");
+  assert.match(agentStart, /postCompactRecovery|postCompactResumeOwed = false/, "agent_start discharges compaction debt");
   assert.match(agentStart, /dispatchStartAcknowledged\(ctx, "agent_start"\)/, "agent_start acknowledges an accepted dispatch");
+  assert.match(agentStart, /noteCompactionSettled\(\)/, "agent_start settles the compaction lifecycle");
 });
 
 // ---------- v0.34.5: subagent-aware wedge alert ----------

@@ -37,7 +37,7 @@ test("widget carries the audits row only with history", () => {
   const withH = buildWidgetLines({ goal: goalWithHistory(), list: [] } as any, null, NOW)!;
   const row = withH.find((l) => l.includes("audits:"));
   assert.ok(row, "audits row present");
-  assert.match(row!, /2 verdicts/);
+  assert.match(row!, /2 reviews/);
   assert.match(row!, /1 disapproved/);
   assert.match(row!, /last disapproved/);
   const clean = goalWithHistory();
@@ -61,7 +61,7 @@ test("paused status carries the tally", () => {
   assert.match(text, /last disapproved/);
   const clean = { ...g, auditHistory: [] } as unknown as Goal;
   const cleanText = buildStatusText({ goal: clean, list: [] } as any, null, NOW)!;
-  assert.equal(/verdicts/.test(cleanText), false, "no history means no tally noise");
+  assert.equal(/reviews/.test(cleanText), false, "no history means no tally noise");
 });
 
 test("ladder is one recovery per line", () => {

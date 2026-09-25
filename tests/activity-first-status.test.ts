@@ -146,12 +146,12 @@ test("activity-first: awaiting-verdict card and footer agree on the phase words"
   };
   const lines = buildWidgetLines({ goal: g, list: [] }, audit, NOW, undefined, 120)!;
   const text = lines.join("\n");
-  assert.match(lines[1]!, /auditor: awaiting verdict · detached worker · last progress/, `verdict phase leads:\n${text}`);
+  assert.match(lines[1]!, /auditor: awaiting completion review · detached worker · last progress/, `review phase leads:\n${text}`);
   assert.match(lines[2]!, /test-auditor\/model · thinking high/, "model + thinking in the lead");
-  assert.match(lines[3]!, /next: verdict applying/, "verdict next action");
+  assert.match(lines[3]!, /next: completion review applying/, "completion review next action");
   const footer = buildStatusText({ goal: g, list: [] }, audit, NOW)!;
-  assert.match(footer, /auditor ✓ awaiting verdict/, "footer names the same phase");
-  assert.ok(text.includes("awaiting verdict") && footer.includes("awaiting verdict"), "card and footer agree: awaiting verdict");
+  assert.match(footer, /auditor ✓ awaiting completion review/, "footer names the same phase");
+  assert.ok(text.includes("awaiting completion review") && footer.includes("awaiting completion review"), "card and footer agree: awaiting completion review");
   assert.doesNotMatch(footer, /next:|detached worker/, "footer stays liveness-only");
 });
 
@@ -200,7 +200,7 @@ test("activity-first: live running card carries tool elapsed/budget in the lead"
   const text = lines.join("\n");
   assert.match(lines[1]!, /auditor: tool executing · detached worker · last progress/, `live phase leads:\n${text}`);
   assert.match(lines[2]!, /tool: read → .*README\.md.*\/ 20m 00s budget/, "tool elapsed + budget in the lead");
-  assert.match(lines[3]!, /next: verdict applies automatically/, "running next action");
+  assert.match(lines[3]!, /next: completion review applies automatically/, "running next action");
   const narrow = buildWidgetLines(
     { goal: g, list: [] },
     {
@@ -217,7 +217,7 @@ test("activity-first: live running card carries tool elapsed/budget in the lead"
     undefined,
     80,
   )!;
-  assert.ok(narrow.some((l) => /next: verdict applies automatically/.test(l)), "the next action survives an 80-column terminal");
+  assert.ok(narrow.some((l) => /next: completion review applies automatically/.test(l)), "the next action survives an 80-column terminal");
 });
 
 // ---- legacy claims: absent stays absent ----
