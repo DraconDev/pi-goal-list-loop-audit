@@ -3656,3 +3656,4 @@
 {"type":"hourly_probe_scheduled","value":{"fireAt":"2026-09-25T20:00:30.000Z","at":"2026-09-25T19:32:11.554Z"},"at":"2026-09-25T19:32:11.559Z"}
 {"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-25T19:33:35.634Z"}
 {"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-25T19:34:17.912Z"}
+{"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-25T20:00:29.153Z"}
