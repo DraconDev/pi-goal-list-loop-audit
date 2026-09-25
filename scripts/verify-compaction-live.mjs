@@ -414,14 +414,31 @@ function persistedCompactions(sessionFile) {
   return records;
 }
 
+function latestSessionLeafId(sessionFile) {
+  const records = [];
+  for (const line of fs.readFileSync(sessionFile, "utf8").split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const record = JSON.parse(line);
+      if (typeof record?.id === "string") records.push(record);
+    } catch {
+      // The final appended record may still be flushing; caller polls.
+    }
+  }
+  return records.at(-1)?.id ?? null;
+}
+
 async function waitForPersistedCompaction(sessionFile, afterId, timeoutMs = PERSISTENCE_TIMEOUT_MS) {
   const deadline = Date.now() + timeoutMs;
   let latest = [];
   let candidates = [];
   do {
     latest = persistedCompactions(sessionFile);
-    candidates = latest.filter((entry) => entry.id !== afterId && entry.id !== null);
-    const exact = candidates.find((entry) => entry.summaryChars > 0);
+    const leafId = latestSessionLeafId(sessionFile);
+    const candidatesOnLeaf = latest.filter((entry) => entry.id !== afterId && entry.id !== null);
+    const exact = candidatesOnLeaf.find((entry) => entry.id === leafId && entry.summaryChars > 0)
+      ?? candidatesOnLeaf.find((entry) => entry.summaryChars > 0);
+    candidates = candidatesOnLeaf;
     if (exact) return exact;
     await new Promise((resolve) => setTimeout(resolve, 100));
   } while (Date.now() < deadline);
