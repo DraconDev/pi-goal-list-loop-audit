@@ -13,7 +13,7 @@ test("loads both local extension entrypoints and isolates Pi's agent directory",
   assert.match(SOURCE, /global-context-limit\.ts/);
   assert.match(SOURCE, /PI_CODING_AGENT_DIR: agentDir/);
   assert.match(SOURCE, /stageProviderConfiguration\(agentDir, options\.provider, options\.model\)/);
-  assert.match(SOURCE, /never parsed, logged, or included in reports/);
+  assert.match(SOURCE, /copied without inspection/);
   assert.match(SOURCE, /compaction: DEFAULT_COMPACTION_SETTINGS/);
   assert.match(SOURCE, /contextWindow: GLOBAL_LIMIT/);
   assert.match(SOURCE, /state\?\.model\?\.contextWindow !== GLOBAL_LIMIT/);

@@ -424,9 +424,9 @@ function stageProviderConfiguration(agentDir, provider, model) {
     fs.copyFileSync(authSource, authTarget, fs.constants.COPYFILE_EXCL);
     fs.chmodSync(authTarget, 0o600);
   }
-  // The host defaults for the regression case are part of the proof input.
-  // Stage them in the disposable agent dir rather than inheriting the real
-  // settings file, whose unrelated mutable state must remain untouched.
+  // Stage only read-only provider/auth inputs required to compose the selected
+  // model in the disposable agent dir. The real settings/models files remain
+  // untouched, and the temporary copies are removed with the verifier root.
   fs.writeFileSync(path.join(agentDir, "settings.json"), `${JSON.stringify({
     compaction: DEFAULT_COMPACTION_SETTINGS,
     compactionPercent: DEFAULT_COMPACTION_PERCENT,
@@ -435,6 +435,10 @@ function stageProviderConfiguration(agentDir, provider, model) {
   // Apply the live cap from the first model composition, before extension
   // startup can inspect or replace the current model. This is isolated test
   // configuration; the extension itself owns the durable managed state.
+  const sourceModelsPath = path.join(DEFAULT_AGENT_DIR, "models-store.json");
+  if (fs.existsSync(sourceModelsPath)) {
+    fs.copyFileSync(sourceModelsPath, path.join(agentDir, "models-store.json"), fs.constants.COPYFILE_EXCL);
+  }
   fs.writeFileSync(path.join(agentDir, "models.json"), `${JSON.stringify({
     providers: {
       [provider]: {
@@ -647,7 +651,7 @@ function makeReport({
 - Temporary copy: \`${copiedSession}\` (removed in the verifier's outer cleanup).
 - Pi ran with a private temporary \`PI_CODING_AGENT_DIR\`; the source session and real agent directory were not used.
 - GLLA used isolated settings with automatic resume disabled.
-- Credentials were resolved by Pi's configured provider store and were never read, copied, or printed.
+- Credentials were resolved by Pi from a private temporary copy of its configured auth store; the credential file was copied without inspection, logged, or written outside the disposable root.
 - No raw prompt, summary, environment value, or provider diagnostic is included in this report or verifier stdout.
 
 ## Automatic host compaction
@@ -702,6 +706,14 @@ async function promptAndRead(rpc, deadline, message, label) {
   const result = assertSuccessfulResponse(await rpc.send({ type: "get_last_assistant_text" }, Math.min(COMMAND_TIMEOUT_MS, deadline.remainingMs())), "get_last_assistant_text");
   if (typeof result?.text !== "string" || result.text.length === 0) throw new Error(`${label} returned no assistant text`);
   return result;
+}
+
+function assistantTextSatisfies(text, marker) {
+  if (typeof text === "string" && text.includes(marker)) return true;
+  // Models occasionally add punctuation/spacing around an exact marker. Accept
+  // only a whitespace-normalized exact marker, never a fuzzy semantic match.
+  return typeof text === "string" && text.replace(/\s+/g, "").includes(marker.replace(/\s+/g, ""));
+}
 }
 
 async function main() {
@@ -778,23 +790,6 @@ async function main() {
     rpc.start();
     processId = String(rpc.child.pid ?? "unknown");
 
-    if (process.env.GLLA_LIVE_DEBUG === "1") {
-      const debugTimer = setTimeout(() => {
-        const recent = rpc.events.slice(-12).map((event) => ({
-          type: event.type,
-          sequence: event.sequence,
-          reason: event.reason ?? null,
-          role: event.role ?? null,
-          stopReason: event.stopReason ?? null,
-          errorClass: event.errorClass ?? null,
-          textChars: event.textChars ?? null,
-          willRetry: event.willRetry ?? null,
-          summaryChars: event.result?.summaryChars ?? null,
-        }));
-        console.error(`DEBUG stage=${verifierStage} events=${JSON.stringify(recent)}`);
-      }, 2_000);
-      debugTimer.unref();
-    }
 
     setStage("state");
     const state = assertSuccessfulResponse(await rpc.send({ type: "get_state" }, Math.min(COMMAND_TIMEOUT_MS, deadline.remainingMs())), "get_state");
@@ -804,8 +799,7 @@ async function main() {
       throw new Error("Pi selected a different provider/model than requested");
     }
     if (state?.model?.contextWindow !== GLOBAL_LIMIT) {
-      const actual = numberOrNull(state?.model?.contextWindow);
-      throw new Error(`Pi did not compose the isolated global context cap before the live prompt (context_window_${actual ?? "unknown"})`);
+      throw new Error("Pi did not compose the isolated global context cap before the live prompt");
     }
 
     setStage("awaiting_automatic_compaction");
@@ -839,7 +833,7 @@ async function main() {
 
     setStage("post_automatic_continuation");
     const firstText = await promptAndRead(rpc, deadline, `Reply with exactly ${CONTINUATION_MARKER}.`, "post-automatic continuation");
-    continuation.automatic = firstText.text.includes(CONTINUATION_MARKER);
+    continuation.automatic = assistantTextSatisfies(firstText.text, CONTINUATION_MARKER);
     continuation.automaticChars = firstText.text.length;
     if (!continuation.automatic) throw new Error("automatic-compaction continuation did not return the expected marker");
 
@@ -873,7 +867,7 @@ async function main() {
 
     setStage("post_manual_continuation");
     const manualText = await promptAndRead(rpc, deadline, `Reply with exactly ${MANUAL_MARKER}.`, "post-manual continuation");
-    continuation.manual = manualText.text.includes(MANUAL_MARKER);
+    continuation.manual = assistantTextSatisfies(manualText.text, MANUAL_MARKER);
     if (!continuation.manual) throw new Error("manual-compaction continuation did not return the expected marker");
 
     projection = readProjectionLedger(cwd).at(-1);
@@ -882,8 +876,8 @@ async function main() {
     }
     setStage("complete");
   } finally {
-    if (process.env.GLLA_LIVE_DEBUG === "1" && rpc?.child) {
-      const recent = rpc.events.slice(-20).map((event) => ({
+    if (process.env.GLLA_LIVE_DEBUG === "1") {
+      const recent = rpc?.events.slice(-20).map((event) => ({
         type: event.type,
         sequence: event.sequence,
         reason: event.reason ?? null,
@@ -893,7 +887,7 @@ async function main() {
         textChars: event.textChars ?? null,
         willRetry: event.willRetry ?? null,
         summaryChars: event.result?.summaryChars ?? null,
-      }));
+      })) ?? [];
       console.error(`DEBUG final-stage=${verifierStage} events=${JSON.stringify(recent)}`);
     }
     let stopError;
