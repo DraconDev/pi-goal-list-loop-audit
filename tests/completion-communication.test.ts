@@ -136,7 +136,13 @@ test("archive write failure never emits a terminal success", async () => {
   // Block the archive-intent write while leaving live state writable.
   fs.mkdirSync(archiveIntentPath(cwd));
   await waitFor(() => readState(cwd).goal?.status === "paused");
-  assert.match(readState(cwd).goal?.pauseReason ?? "", /archive persistence failed/);
+  // v0.38.99: the approval landed but the archive did not. The pause names
+  // the stage, and the APPROVED claim is KEPT so the settlement stays
+  // re-drivable (a restart finishes it without re-running the auditor).
+  const parked = readState(cwd).goal;
+  assert.match(parked?.pauseReason ?? "", /terminal archive failed — park-archive/);
+  assert.equal(parked?.pendingCompletion?.phase, "recovery-pending");
+  assert.match(parked?.pauseSuggestedAction ?? "", /No new audit is needed/);
   assert.equal(entries.length, 0);
   assert.equal(fs.existsSync(approvalRenderStorePath(cwd)), false);
 });
