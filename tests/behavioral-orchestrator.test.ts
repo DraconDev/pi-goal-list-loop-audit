@@ -4051,10 +4051,8 @@ test("v0.34.91: detached approval notify carries the agent's completion recap, n
     // + record pointer (five 120-char label lines scan as soup, not a
     // summary — field 2026-09-04). Substance lives in the transcript
     // notice + archive; the chat stays glanceable but never boilerplate.
-    for (const label of ["Changed", "Evidence"]) {
-      // Rich voice: informing details arrive as numbered findings.
-      assert.ok(recapNotifs[0]!.message.split("\n").some((line: string) => new RegExp(`^\\d+\\. \\*\\*${label}\\*\\*`).test(line)), `approved briefing keeps informing label ${label}`);
-    }
+    assert.ok(recapNotifs[0]!.message.includes("Pinned the R-key/HUD retire parity in 5 tests across 5 layers."), "approved briefing keeps the durable outcome");
+    assert.ok(recapNotifs[0]!.message.includes("extensions/goal-loop-display.ts"), "approved briefing keeps concrete change evidence");
     // Technical verification is archive evidence by default; the human
     // briefing stays focused on what changed and the record pointer.
     assert.doesNotMatch(recapNotifs[0]!.message, /^### Verification/m, "verification is hidden by default");
@@ -4064,7 +4062,7 @@ test("v0.34.91: detached approval notify carries the agent's completion recap, n
     // v0.38.42 (field 20260909_140404): a lone approval folds with the
     // verdict count — one canonical bullet, no model ID, no redundant
     // standalone audit bullet.
-    assert.match(recapNotifs[0]!.message, /• auditor approved \(1 verdict\)\./, "chat notify carries the folded approval-with-count bullet");
+    assert.match(recapNotifs[0]!.message, /• completion audit approved \(1 review\)\./, "chat notify carries the folded approval-with-count bullet");
     assert.match(recapNotifs[0]!.message, /• record: \.pi-glla\/archive\/.*\.md/, "chat notify points at the archived record");
     for (const label of ["Unresolved:", "Next:"]) {
       assert.ok(!recapNotifs[0]!.message.split("\n").some((line: string) => line.startsWith(label)), `filler ${label} none is dropped from the briefing`);
