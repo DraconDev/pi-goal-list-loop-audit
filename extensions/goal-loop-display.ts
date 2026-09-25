@@ -573,7 +573,7 @@ interface ActiveAttention {
 }
 
 interface LatestAuditFeedback {
-  label: "auditor disapproved" | "regression shield";
+  label: "completion review disapproved" | "regression shield";
   text: string;
 }
 
@@ -595,7 +595,7 @@ function latestAuditFeedback(g: Goal): LatestAuditFeedback | undefined {
     .trim();
   if (!report) return undefined;
   return {
-    label: verdict.disapproved ? "auditor disapproved" : "regression shield",
+    label: verdict.disapproved ? "completion review disapproved" : "regression shield",
     text: truncate(report, 320),
   };
 }
@@ -641,7 +641,7 @@ export function formatVerdictTallySegment(t: AuditorVerdictTally, now = Date.now
   if (t.total <= 0) return "";
   const dis = t.disapprovals > 0 ? ` · ${t.disapprovals} disapproved` : "";
   const age = t.lastAt !== null && t.lastLabel ? ` · last ${t.lastLabel} ${fmtElapsed(now - t.lastAt)} ago` : "";
-  return `${t.total} verdict${t.total === 1 ? "" : "s"}${dis}${age}`;
+  return `${t.total} review${t.total === 1 ? "" : "s"}${dis}${age}`;
 }
 /** v0.38.7: the load-hold recovery banner — objective + next task + verdict
  * tally + resume command, all from durable disk state (never transcript
@@ -674,21 +674,21 @@ function activeAttention(g: Goal): ActiveAttention | undefined {
     return {
       label: "regression shield — evidence gap",
       color: "error",
-      detail: "auditor approved; regression shield found missing evidence",
+      detail: "completion audit approved; regression shield found missing evidence",
       feedback: latestAuditFeedback(g)?.text,
     };
   }
   if (/auditor disapproved/i.test(g.pauseReason)) {
     return {
-      label: "auditor disapproved — fix the gap",
+      label: "completion review disapproved — fix the gap",
       color: "error",
-      detail: "auditor verdict: disapproved",
+      detail: "completion review: disapproved",
       feedback: latestAuditFeedback(g)?.text,
     };
   }
   if (/auditor|completion audit/i.test(g.pauseReason)) {
     return {
-      label: "auditor blocked — no verdict",
+      label: "completion audit blocked — no review recorded",
       color: "error",
       detail: "completion claim was not evaluated",
     };
@@ -906,7 +906,7 @@ function auditorPhaseLabel(phase: AuditorDisplayPhase): string {
     case "running": return "running";
     case "quiet": return "quiet";
     case "blocked": return "blocked";
-    case "awaiting-verdict": return "awaiting verdict";
+    case "awaiting-verdict": return "awaiting completion review";
   }
 }
 
@@ -945,7 +945,7 @@ function auditorObservedPhase(audit: AuditDisplayProgress | null | undefined, ph
     case "tool_executing": return "tool executing";
     case "producing_report": return "producing report";
     case "challenging": return "challenging report";
-    case "complete": return "awaiting verdict";
+    case "complete": return "awaiting completion review";
     default: return "running";
   }
 }
@@ -1702,9 +1702,9 @@ function auditorCardModelRef(audit: AuditDisplayProgress | null | undefined, cla
 function auditorNextAction(phase: AuditorDisplayPhase): string {
   if (phase === "quiet") return "/goal cancel discards the claim";
   if (phase === "blocked") return "/goal resume retries the claim";
-  if (phase === "awaiting-verdict") return "verdict applying";
+  if (phase === "awaiting-verdict") return "completion review applying";
   if (phase === "queued") return "worker starting";
-  return "verdict applies automatically";
+  return "completion review applies automatically";
 }
 
 /** Split the auditing card into activity-first rows: `lead` (phase,
@@ -2032,7 +2032,7 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
     // its required-fixes excerpt is the work the user must act on next.
     const feedback = latestAuditFeedback(g);
     if (feedback) {
-      const feedbackColor: DisplayColor = feedback.label === "auditor disapproved" ? "error" : "warning";
+      const feedbackColor: DisplayColor = feedback.label === "completion review disapproved" ? "error" : "warning";
       lines.push(`├─ ${paint(theme, feedbackColor, `${feedback.label} — durable required fixes`)}`);
       wrap(`latest audit feedback: ${feedback.text}`, budgetFor(width, 3, 60), 3).forEach((w) => {
         lines.push(`│  ${paint(theme, feedbackColor, w)}`);
