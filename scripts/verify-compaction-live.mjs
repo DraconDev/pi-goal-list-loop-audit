@@ -365,6 +365,7 @@ function assertSuccessfulResponse(response, command) {
 function readProjectionLedger(agentDir) {
   const candidates = [
     path.join(agentDir, ".pi-glla", "active.jsonl"),
+    path.join(path.dirname(agentDir), ".pi-glla", "active.jsonl"),
     path.join(path.dirname(agentDir), "cwd", ".pi-glla", "active.jsonl"),
   ];
   for (const candidate of candidates) {
@@ -416,12 +417,17 @@ function persistedCompactions(sessionFile) {
 async function waitForPersistedCompaction(sessionFile, afterId, timeoutMs = PERSISTENCE_TIMEOUT_MS) {
   const deadline = Date.now() + timeoutMs;
   let latest = [];
+  let candidates = [];
   do {
     latest = persistedCompactions(sessionFile);
-    const fresh = latest.find((entry) => entry.id !== afterId && entry.id !== null);
-    if (fresh) return fresh;
+    candidates = latest.filter((entry) => entry.id !== afterId && entry.id !== null);
+    const exact = candidates.find((entry) => entry.summaryChars > 0);
+    if (exact) return exact;
     await new Promise((resolve) => setTimeout(resolve, 100));
   } while (Date.now() < deadline);
+  if (candidates.length > 0) {
+    throw new Error("host compaction persisted an empty or unusable summary record");
+  }
   throw new Error("host compaction result was not persisted as a non-empty session record");
 }
 
@@ -775,7 +781,10 @@ async function main() {
     })}\n`);
     // GLLA's session cwd is the RPC process cwd, so stage its state root there
     // while keeping all files inside the disposable temporary tree.
-    fs.mkdirSync(path.join(cwd, ".pi-glla"), { recursive: true });
+    // GLLA resolves workingDir state relative to the copied session header's
+    // cwd (tempRoot), not the RPC process cwd. Pre-create its private root so
+    // restore and compaction ledgers stay in the disposable tree.
+    fs.mkdirSync(path.join(tempRoot, ".pi-glla"), { recursive: true });
     stageProviderConfiguration(agentDir, options.provider, options.model);
 
     const args = [
@@ -884,7 +893,7 @@ async function main() {
     continuation.manual = assistantTextSatisfies(manualText.text, MANUAL_MARKER);
     if (!continuation.manual) throw new Error("manual-compaction continuation did not return the expected marker");
 
-    projection = readProjectionLedger(cwd).at(-1);
+    projection = readProjectionLedger(agentDir).at(-1);
     if (!projection) throw new Error("GLLA compaction projection evidence is missing");
     if (numberOrNull(projection.inputCharsAfter) === null) throw new Error("GLLA compaction projection did not report a bounded input size");
     if (projection.inputCharsAfter > INPUT_BUDGET) throw new Error("GLLA compaction projection exceeded its bounded-input budget");
