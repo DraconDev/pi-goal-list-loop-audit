@@ -485,12 +485,12 @@ test("v0.36.0: aborted detached audit can complete without audit only after arch
     controller.abort();
     await queued;
     await waitUntil(() => readState(cwd).goal === null);
-    const briefings = MAIN_SM.entries.filter((e) => typeof e.content === "string" && e.content.includes("completed without audit (your choice)"));
+    const briefings = MAIN_SM.entries.filter((e) => typeof e.content === "string" && e.content.includes("completed without a completion review (your choice)"));
     assert.ok(briefings.length > 0, "the no-audit briefing reached the visible session");
     const notice = briefings[0].content as string;
     assert.equal(confirmationTitle, "Audit aborted", "the explicit audit-abort choice was presented");
     assert.match(notice, /^## Done — Objective "complete without audit target/, "the briefing opens with the verdict banner, then the archived objective");
-    assert.match(notice, /• completed without audit \(your choice\)\./, "the no-audit trailer closes the briefing as a bullet (v0.38.39 uniform voice)");
+    assert.match(notice, /• completed without a completion review \(your choice\)\./, "the no-audit trailer closes the briefing as a bullet (v0.38.39 uniform voice)");
     assert.doesNotMatch(notice, /not recorded/, "system placeholders never reach the briefing");
     assert.ok(fs.readdirSync(path.join(cwd, ".pi-glla", "archive")).length > 0, "archive landed before success was reported");
   } finally {
@@ -3864,7 +3864,9 @@ test("v0.35.x: /glla audits full sanitizes active and global reports", async () 
   await pi.command("glla", "audits full all", ctx);
   const globalFull = ctx.ui.notifies.at(-1)?.message ?? "";
   assert.match(globalFull, /Safe global finding/);
-  assert.doesNotMatch(globalFull, /429|Token Plan|quota-sensitive-id/);
+  // The timestamp is metadata, not provider payload: match the payload
+  // phrases rather than any incidental `429` substring in an ISO clock.
+  assert.doesNotMatch(globalFull, /Token Plan|quota-sensitive-id|upstream denied|request_id/);
   assert.match(globalFull, /provider diagnostic redacted/);
   await pi.fire("session_shutdown", { reason: "quit" }, ctx);
 });
