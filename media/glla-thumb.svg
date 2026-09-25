@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Lifted Dark Slate Interior Background -->
+    <radialGradient id="bg-radial" cx="50%" cy="38%" r="70%">
+      <stop offset="0%" stop-color="#1e2c3f" />
+      <stop offset="60%" stop-color="#172334" />
+      <stop offset="100%" stop-color="#131c28" />
+    </radialGradient>
+    <linearGradient id="arc-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#238636" />
+      <stop offset="50%" stop-color="#3fb950" />
+      <stop offset="100%" stop-color="#56d364" />
+    </linearGradient>
+    <filter id="glow-green" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="9" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="glow-amber" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="border-glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Base Canvas Background (Lifted Dark Slate) -->
+  <rect width="1024" height="1024" fill="url(#bg-radial)" />
+
+  <!-- Mission Control Grid Texture -->
+  <g opacity="0.65">
+    <line x1="64" y1="0" x2="64" y2="1024" stroke="#233247" stroke-width="1.5" />
+<line x1="128" y1="0" x2="128" y2="1024" stroke="#233247" stroke-width="1.5" />
+<line x1="192" y1="0" x2="192" y2="1024" stroke="#233247" stroke-width="1.5" />
+<line x1="256" y1="0" x2="256" y2="1024" stroke="#233247" stroke-width="1.5" />
+<line x1="320" y1="0" x2="320" y2="1024" stroke="#233247" stroke-width="1.5" />
+<line x1="384" y1="0" x2="384" y2="1024" stroke="#233247" stroke-width="1.5" />
+<line x1="448" y1="0" x2="448" y2="1024" stroke="#233247" stroke-width="1.5" />
+<line x1="512" y1="0" x2="512" y2="1024" stroke="#233247" stroke-width="1.5" />
+<line x1="576" y1="0" x2="576" y2="1024" stroke="#233247" stroke-width="1.5" />
+<line x1="640" y1="0" x2="640" y2="1024" stroke="#233247" stroke-width="1.5" />
+<line x1="704" y1="0" x2="704" y2="1024" stroke="#233247" stroke-width="1.5" />
+<line x1="768" y1="0" x2="768" y2="1024" stroke="#233247" stroke-width="1.5" />
+<line x1="832" y1="0" x2="832" y2="1024" stroke="#233247" stroke-width="1.5" />
+<line x1="896" y1="0" x2="896" y2="1024" stroke="#233247" stroke-width="1.5" />
+<line x1="960" y1="0" x2="960" y2="1024" stroke="#233247" stroke-width="1.5" />
+<line x1="0" y1="64" x2="1024" y2="64" stroke="#233247" stroke-width="1.5" />
+<line x1="0" y1="128" x2="1024" y2="128" stroke="#233247" stroke-width="1.5" />
+<line x1="0" y1="192" x2="1024" y2="192" stroke="#233247" stroke-width="1.5" />
+<line x1="0" y1="256" x2="1024" y2="256" stroke="#233247" stroke-width="1.5" />
+<line x1="0" y1="320" x2="1024" y2="320" stroke="#233247" stroke-width="1.5" />
+<line x1="0" y1="384" x2="1024" y2="384" stroke="#233247" stroke-width="1.5" />
+<line x1="0" y1="448" x2="1024" y2="448" stroke="#233247" stroke-width="1.5" />
+<line x1="0" y1="512" x2="1024" y2="512" stroke="#233247" stroke-width="1.5" />
+<line x1="0" y1="576" x2="1024" y2="576" stroke="#233247" stroke-width="1.5" />
+<line x1="0" y1="640" x2="1024" y2="640" stroke="#233247" stroke-width="1.5" />
+<line x1="0" y1="704" x2="1024" y2="704" stroke="#233247" stroke-width="1.5" />
+<line x1="0" y1="768" x2="1024" y2="768" stroke="#233247" stroke-width="1.5" />
+<line x1="0" y1="832" x2="1024" y2="832" stroke="#233247" stroke-width="1.5" />
+<line x1="0" y1="896" x2="1024" y2="896" stroke="#233247" stroke-width="1.5" />
+<line x1="0" y1="960" x2="1024" y2="960" stroke="#233247" stroke-width="1.5" />
+  </g>
+
+  <!-- Tactical Corner HUD Brackets -->
+  <path d="M 48 96 L 48 48 L 96 48" fill="none" stroke="#2ea043" stroke-width="3.5" stroke-linecap="square" />
+<path d="M 928 48 L 976 48 L 976 96" fill="none" stroke="#2ea043" stroke-width="3.5" stroke-linecap="square" />
+<path d="M 48 928 L 48 976 L 96 976" fill="none" stroke="#2ea043" stroke-width="3.5" stroke-linecap="square" />
+<path d="M 928 976 L 976 976 L 976 928" fill="none" stroke="#2ea043" stroke-width="3.5" stroke-linecap="square" />
+
+  <!-- Radar Reticle Rings -->
+  <circle cx="512" cy="405" r="220" fill="none" stroke="#238636" stroke-width="1.5" stroke-dasharray="6 8" opacity="0.35" />
+  <circle cx="512" cy="405" r="250" fill="none" stroke="#3b4b5e" stroke-width="1" stroke-dasharray="3 12" opacity="0.38" />
+  
+  <!-- Radar Axis Crosshair Marks -->
+  <line x1="270" y1="405" x2="300" y2="405" stroke="#3fb950" stroke-width="2.5" opacity="0.45" />
+  <line x1="724" y1="405" x2="754" y2="405" stroke="#3fb950" stroke-width="2.5" opacity="0.45" />
+  <line x1="512" y1="163" x2="512" y2="193" stroke="#3fb950" stroke-width="2.5" opacity="0.45" />
+
+  <!-- Dial Plate Base & Inactive Track -->
+  <circle cx="512" cy="405" r="175" fill="#0f1622" stroke="#223043" stroke-width="30" />
+
+  <!-- Active Goal Loop Arc (Phosphor Green) -->
+  <path d="M 512.00 230.00 A 175.00 175.00 0 1 1 349.74 339.44" fill="none" stroke="url(#arc-grad)" stroke-width="30" stroke-linecap="round" filter="url(#glow-green)" />
+
+  <!-- Warm Amber Active Audit Node (Telemetry Frontier) -->
+  <circle cx="349.74282545081223" cy="339.44384615221543" r="19" fill="#d29922" stroke="#f0883e" stroke-width="4" filter="url(#glow-amber)" />
+  <circle cx="349.74282545081223" cy="339.44384615221543" r="7.5" fill="#ffffff" />
+
+  <!-- Verified Audit Checkmark -->
+  <path d="M 426 410 L 484 468 L 598 354" fill="none" stroke="#3fb950" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow-green)" />
+
+  <!-- Wordmark GLLA -->
+  <text x="512" y="810" text-anchor="middle"
+        fill="#f0f6fc"
+        font-family="'DejaVu Sans', 'Liberation Sans', 'Segoe UI', system-ui, sans-serif"
+        font-weight="900"
+        font-size="230"
+        letter-spacing="14">GLLA</text>
+
+  <!-- Green-Tinted Glow Frame Behind Border -->
+  <rect x="3.0" y="3.0" width="1018" height="1018" rx="24"
+        fill="none" stroke="#3fb950" stroke-width="10" opacity="0.4" filter="url(#border-glow)" />
+
+  <!-- Crisp Rounded-Corner Tile Border in Light Slate -->
+  <rect x="3.0" y="3.0" width="1018" height="1018" rx="24"
+        fill="none" stroke="#94a3b8" stroke-width="6" opacity="0.95" />
+</svg>

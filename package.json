@@ -50,7 +50,7 @@
 		"skills": [
 			"skills/glla-delegate"
 		],
-		"image": "https://raw.githubusercontent.com/DraconDev/pi-goal-list-loop-audit/main/media/glla2.png"
+		"image": "https://raw.githubusercontent.com/DraconDev/pi-goal-list-loop-audit/main/media/glla-thumb.png"
 	},
 	"scripts": {
 		"check": "tsc --noEmit",
