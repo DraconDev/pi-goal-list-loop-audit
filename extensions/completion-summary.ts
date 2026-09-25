@@ -480,7 +480,10 @@ function auditRowStatus(history: Goal["auditHistory"]): string {
   if (last.approved) return `approved (${entries.filter((e) => e.approved).length} review${entries.filter((e) => e.approved).length === 1 ? "" : "s"})`;
   if (last.disapproved) return `disapproved (${entries.filter((e) => e.disapproved).length} review${entries.filter((e) => e.disapproved).length === 1 ? "" : "s"})`;
   if (last.impossible) return "impossible";
-  return "no review";
+  // Error entries (infra abort/auth/no-model) carry no verdict flag — they are
+  // the absence of a review, reported in the same uppercase shape as the
+  // empty-history case so the banner and the archive gate treat them alike.
+  return "NO REVIEW";
 }
 
 /** Split a non-finding detail (`Next:`, `Unresolved:`, `Left out:`) into a
@@ -686,8 +689,9 @@ function bannerVerdict(auditStatus: string): string {
   if (auditStatus.startsWith("approved")) return `completion audit approved (${auditStatus.match(/\d+/)?.[0] ?? 1} review${auditStatus.match(/\d+/)?.[0] === "1" ? "" : "s"})`;
   if (auditStatus.startsWith("disapproved")) return `completion audit disapproved (${auditStatus.match(/\d+/)?.[0] ?? 1} review${auditStatus.match(/\d+/)?.[0] === "1" ? "" : "s"})`;
   if (auditStatus === "impossible") return "completion audit ruled impossible";
-  if (auditStatus === "no review") return "completion review recorded";
-  return "completion review recorded";
+  // Any unrecognized status is the absence of a recorded review — never
+  // claim a review was recorded.
+  return "completed without a recorded completion review";
 }
 
 /** v0.38.55 (full parity): final repository state for the terminal card —

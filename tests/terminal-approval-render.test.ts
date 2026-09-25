@@ -17,6 +17,7 @@ import { ledgerPath } from "../extensions/goal-loop-core.js";
 import {
   buildApprovalChatLines,
   buildAuditCountsLine,
+  buildRichArchiveSection,
   buildTerminalApprovalRender,
   chatSafeDetailValue,
   clipSummaryValue,
@@ -269,4 +270,19 @@ test("second approval for the same goal after delivery queues a fresh render", (
   );
   assert.equal(replayUndeliveredApprovalRenders(ctx, () => true), 1, "the fresh render replays");
   assert.equal(ctx.ui.notifies.length, 0, "confirmed deliveries stay silent");
+});
+
+test("error-only audit history renders an honest archive banner with no review row", () => {
+  const goal = seedGoal({
+    id: "20260925-no-review-banner",
+    objective: "prove the banner never claims an unrecorded review",
+    completionSummary: "Outcome: nothing shipped. Changed: none. Evidence: none. Tests: none. Unresolved: none. Next: none.",
+    auditHistory: [
+      { at: "2026-09-25T00:00:00.000Z", approved: false, disapproved: false, model: "auditor-model", error: "provider wall: no model available" },
+    ],
+  }) as unknown as Goal;
+  const lines = buildRichArchiveSection(goal, "complete", ".pi-glla/archive/20260925-no-review.md");
+  assert.ok(lines.some((l) => l.includes("completed without a recorded completion review")), "banner names the absence");
+  assert.ok(!lines.some((l) => /completion review recorded/.test(l)), "no false recorded-review claim");
+  assert.ok(!lines.some((l) => /^\| Completion review \| no review \|/.test(l)), "no lowercase review row leaks into the archive table");
 });
