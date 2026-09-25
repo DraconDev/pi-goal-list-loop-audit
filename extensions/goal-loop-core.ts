@@ -808,8 +808,12 @@ export interface Goal {
   recoveryNoticeKeys?: string[];
   /** v0.25.2: per-goal telemetry for /glla stats premature-success
    * detection. Bumped live: turns on agent_end, fileWrites/bashCalls on
-   * tool_result while the goal is active. */
-  telemetry?: { turns: number; fileWrites: number; bashCalls: number };
+   * tool_result while the goal is active.
+   * v0.38.100: `files` records the touched paths behind the fileWrites
+   * counter (first-seen order, deduped, capped) so the detached audit can
+   * scope itself to the real change set instead of exploring unboundedly;
+   * `filesOverflow` counts paths dropped past the cap. */
+  telemetry?: { turns: number; fileWrites: number; bashCalls: number; files?: string[]; filesOverflow?: number };
   /** v0.34.59: focus token / revision counter on every goal mutation.
    * Persisted alongside the goal; bumped on every persistState. Detached
    * workers capture (goalId, revision) at dispatch and refuse to apply
@@ -821,6 +825,48 @@ export interface Goal {
   /** v0.35.x: original/user-supplied intent retained for repair after a
    * reviewer fragment or stale state overwrites the live objective. */
   objectiveProvenance?: ObjectiveProvenance;
+}
+
+/** v0.38.100: bounds for the telemetry change set. 100 unique paths cover
+ * any honest single-goal diff (the audit tiers treat >12 writes as big);
+ * past the cap the counter keeps count while the list stays stable, so a
+ * runaway writer cannot bloat durable state. Paths over 512 chars are
+ * dropped, never truncated — a truncated path would misdirect the audit. */
+export const MAX_TELEMETRY_FILES = 100;
+export const MAX_TELEMETRY_PATH_CHARS = 512;
+
+/**
+ * v0.38.100: extract the touched path from a tool-call input, if any. Pure
+ * so tests can pin the shapes. Only `file_path`/`path` string args count —
+ * a command or pattern is not a touched path. Callers gate on
+ * isLoopWriteTool first (the one source of truth for which tools write);
+ * this parses. Control characters are stripped (the path lands in the
+ * ledger and the audit brief, where a raw newline would forge list items);
+ * empty and over-long paths are dropped, never mangled.
+ */
+export function extractTelemetryFilePath(input: unknown): string | undefined {
+  if (!input || typeof input !== "object") return undefined;
+  const raw = (input as Record<string, unknown>).file_path ?? (input as Record<string, unknown>).path;
+  if (typeof raw !== "string") return undefined;
+  const cleaned = raw.replace(/[\x00-\x1f\x7f-\x9f]/g, "").trim();
+  if (cleaned.length === 0 || cleaned.length > MAX_TELEMETRY_PATH_CHARS) return undefined;
+  return cleaned;
+}
+
+/**
+ * v0.38.100: record one touched path on goal telemetry. First-seen order,
+ * deduped; past MAX_TELEMETRY_FILES the path is dropped and filesOverflow
+ * counts it, so the audit scope stays stable and honest about the gap.
+ */
+export function recordTelemetryFile(telemetry: NonNullable<Goal["telemetry"]>, filePath: string): void {
+  const files = telemetry.files ?? [];
+  if (files.includes(filePath)) return;
+  if (files.length >= MAX_TELEMETRY_FILES) {
+    telemetry.filesOverflow = (telemetry.filesOverflow ?? 0) + 1;
+    return;
+  }
+  files.push(filePath);
+  telemetry.files = files;
 }
 
 /**
