@@ -17,6 +17,7 @@ import { auditVerdictLabel, bucketSilentMs, buildDurableDeferRecommendation, com
 
 export { isMonitorGoal };
 import { HELD_ON_RESTORE, type LoopState } from "./goal-loop-forever.js";
+import { normalizeFindingLead } from "./finding-lead.js";
 import { auditorSurfaceSuppressed } from "./loops/goal-auditor-surface.js";
 
 /** v0.34.57 (OPEN-ISSUES bug #1.8 / tasklist item #2): the MAIN host is
@@ -2330,7 +2331,9 @@ function completionOutcomeForDisplay(summary: string): string {
   const source = summary.replace(/\r/g, "").trim();
   const matches = [...source.matchAll(/(?:^|\n)Outcome:\s*([\s\S]*?)(?=\n(?:Changed|Evidence|Tests|Unresolved|Next):|$)/gi)];
   const value = matches.at(-1)?.[1]?.trim() || source;
-  return sanitizeDisplayText(value).replace(/\s+/g, " ").trim() || source.replace(/\s+/g, " ").trim();
+  const normalized = normalizeFindingLead(value);
+  return sanitizeDisplayText(normalized.outcome || value).replace(/\s+/g, " ").trim()
+    || source.replace(/\s+/g, " ").trim();
 }
 
 function completedGoalLines(g: Goal, now: number, theme?: DisplayTheme, width?: number): string[] {

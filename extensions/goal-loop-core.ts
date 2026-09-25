@@ -14,6 +14,7 @@ import { execSync } from "node:child_process";
 import { isDeterministicProviderError, normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, quotaSignal, sanitizeProviderAuditReport, sanitizeProviderDisplayText, type QuotaSignal } from "./quota-retry.js";
 import { MAX_AUDITOR_CANDIDATE_REFS, MAX_MAIN_MODEL_FALLBACKS, normalizeBoundedModelRefs } from "./main-model-recovery.js";
 import { resolveGllaStateDir, stateRootPending } from "./glla-state-root.js";
+import { normalizeFindingLead } from "./finding-lead.js";
 export { normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, sanitizeProviderAuditReport, sanitizeProviderDisplayText } from "./quota-retry.js";
 export { globalSettingsPath, resolveRuntimeSessionDir, setRuntimeSessionDir, setRuntimeSessionDirFromSessionManager, stateRootPending, type GllaStateRoot } from "./glla-state-root.js";
 
@@ -394,7 +395,10 @@ export function sanitizeFindingGroups(value: unknown): FindingGroup[] | undefine
       if (findings.length >= MAX_GROUP_FINDINGS) break;
       if (typeof finding !== "string") continue;
       const text = finding.trim().slice(0, MAX_GROUP_FINDING_CHARS);
-      if (text) findings.push(text);
+      // Keep the raw claim for provenance, but require a non-empty semantic
+      // outcome after the legacy `Lead:` marker is normalized at the trust
+      // boundary. Display surfaces perform the same migration for old claims.
+      if (text && normalizeFindingLead(text).outcome) findings.push(text);
     }
     if (findings.length === 0) continue;
     // v0.38.52: optional test-result lines ride parallel to findings.

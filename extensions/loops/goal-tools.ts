@@ -580,13 +580,13 @@ function registerAgentTools(pi: any): void {
       })),
       findingGroups: Type.Optional(Type.Array(Type.Object({
         title: Type.String({ maxLength: 120, description: "Work-area name (e.g. a subsystem, screen, or phase)" }),
-        findings: Type.Array(Type.String({ maxLength: 500 }), { maxItems: 6, description: "Findings in this area as `Lead: body with path:line evidence` (max 6 per area)" }),
+        findings: Type.Array(Type.String({ maxLength: 500 }), { maxItems: 6, description: "Findings in this area as `<primary user-visible outcome> — <concrete evidence/reason>`; do not prefix with `Lead:`, `Tests:`, or `Verdict:` (max 6 per area)" }),
         tests: Type.Optional(Type.Array(Type.String({ maxLength: 500 }), { maxItems: 6, description: "v0.38.52: optional per-finding test-result lines, aligned by index with findings (tests[i] proves findings[i]); retained as detailed archive support and never added to default chat copy" })),
       }), {
         maxItems: 6,
         description:
           "v0.38.50: optional finding groups for the terminal summary. Group multi-area work by area " +
-          "(subsystem, screen, phase); each finding is `Lead: body` with repo-relative `path:line` evidence tokens. " +
+          "(subsystem, screen, phase); each finding leads with the primary user-visible outcome, then uses ` — ` for a concrete evidence/reason (repo-relative `path:line`, count/version, or explicit reason); never prefix a finding with `Lead:`, `Tests:`, or `Verdict:`. " +
           "Chat uses nested area sections; the archive uses an Area | Finding | Evidence table for 4+ groups. " +
           "Presentation only — the six-label completionSummary stays the audited substance, and file:line tokens are never invented. " +
           "Omit for single-area work — the flat six-label render stays the fallback.",

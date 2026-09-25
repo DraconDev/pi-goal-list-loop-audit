@@ -1093,6 +1093,17 @@ export function isCompactionInFlight(nowMs = Date.now()): boolean {
 }
 /** Test-only: arm/clear the in-flight marker without firing compaction
  * events. Pass null to clear. */
+/** Test-only view of the existing post-compaction continuation debt. */
+export function __testOnlyPostCompactDebt(): { resumeOwed: boolean; resyncPending: boolean } {
+  return { resumeOwed: postCompactResumeOwed, resyncPending: postCompactResyncPending };
+}
+
+/** Test-only reset so one lifecycle test cannot leak fallback debt. */
+export function __testOnlyResetPostCompactDebt(): void {
+  postCompactResumeOwed = false;
+  postCompactResyncPending = false;
+}
+
 export function __testOnlySetCompactionInFlight(since: number | null): void {
   compactionInFlightSince = since;
 }

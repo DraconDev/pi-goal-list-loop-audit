@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { sanitizeDisplayText, type FindingGroup, type GateRow, type Goal, type Status } from "./goal-loop-core.js";
 import { fmtElapsed, truncateCells } from "./goal-loop-display.js";
+import { normalizeFindingLead, splitFindingLeadText } from "./finding-lead.js";
 
 /**
  * The durable, user-facing terminal recap contract. Keep this as a small
@@ -490,6 +491,27 @@ function leadBody(detail: string): { lead: string; body: string } {
   return { lead: safeDetail.slice(0, separator).trim() || "Note", body: safeDetail.slice(separator + 1).trim() };
 }
 
+/** Normalize a human finding without exposing the legacy `Lead:` marker. */
+function findingPresentation(finding: string, chat: boolean): { outcome: string; reason: string; evidence: string[] } {
+  const normalized = normalizeFindingLead(sanitizeDisplayText(finding));
+  const extracted = extractEvidenceTokens(normalized.normalized);
+  const split = splitFindingLeadText(extracted.text, extracted.evidence.length > 0);
+  const reason = split.reason || extracted.evidence.join(", ");
+  const normalizedReason = reason.trim();
+  return {
+    outcome: split.outcome || "Outcome",
+    reason: chat ? chatNarrative(normalizedReason) : sanitizeDisplayText(normalizedReason),
+    evidence: extracted.evidence,
+  };
+}
+
+function findingBullet(finding: string, chat: boolean): string {
+  const semantic = normalizeFindingLead(sanitizeDisplayText(finding));
+  const { outcome, reason } = findingPresentation(finding, chat);
+  if (semantic.technical && chat) return "";
+  return reason ? `- **${outcome}** — ${reason}` : `- **${outcome}**`;
+}
+
 /**
  * v0.38.50: repo-relative `path:line` evidence tokens (soundManager.ts:333,
  * sim.ts:4505-4530). Absolute paths, home-dir paths, and machine temp
@@ -645,10 +667,10 @@ function isRepositoryReceipt(value: string, proof = ""): boolean {
  * the mechanically derived audit status — never agent-claimed. */
 function bannerVerdict(auditStatus: string): string {
   const count = /\u00d7(\d+)/.exec(auditStatus)?.[1];
-  if (auditStatus.startsWith("APPROVED")) return `auditor approved (${count ?? 1} verdict${count === "1" ? "" : "s"})`;
-  if (auditStatus.startsWith("DISAPPROVED")) return `auditor disapproved (${count ?? 1} verdict${count === "1" ? "" : "s"})`;
-  if (auditStatus === "IMPOSSIBLE") return "auditor ruled impossible";
-  return "completed without a recorded verdict";
+  if (auditStatus.startsWith("APPROVED")) return `completion audit approved (${count ?? 1} review${count === "1" ? "" : "s"})`;
+  if (auditStatus.startsWith("DISAPPROVED")) return `completion audit disapproved (${count ?? 1} review${count === "1" ? "" : "s"})`;
+  if (auditStatus === "IMPOSSIBLE") return "completion audit ruled impossible";
+  return "completed without a recorded completion review";
 }
 
 /** v0.38.55 (full parity): final repository state for the terminal card —
@@ -726,17 +748,16 @@ export function buildRichTerminalParts(args: {
   const useTable = !args.chat && groups.length >= RICH_TABLE_GROUP_THRESHOLD;
   const findingLines: string[] = [];
   if (useTable) {
-    findingLines.push("| Area | Finding | Evidence |", "| --- | --- | --- |");
+    findingLines.push("| Area | User-visible outcome | Evidence / reason |", "| --- | --- | --- |");
     for (const group of groups) {
       group.findings.forEach((finding, fi) => {
-        const { text, evidence } = extractEvidenceTokens(sanitizeDisplayText(finding));
-        const { lead, body } = leadBody(text);
+        const { outcome, reason, evidence } = findingPresentation(finding, false);
         // v0.38.52: test proof rides the Evidence cell (tables have no
         // sub-bullets); cells stay pipe-escaped. v0.38.55: unclipped.
         const proof = group.tests?.[fi] ? sanitizeDisplayText(group.tests[fi]).trim() : "";
-        const evidenceCell = [evidence.join(", ") || "\u2014", ...(proof ? [`Tests: ${proof}`] : [])].join(" \u00b7 ");
+        const evidenceCell = [reason || evidence.join(", ") || "not recorded", ...(proof ? [`Evidence: ${proof}`] : [])].join(" \u00b7 ");
         findingLines.push(
-          `| ${escapeTableCell(group.title)} | ${escapeTableCell(`**${lead}** \u2014 ${body}`)} | ${escapeTableCell(evidenceCell)} |`,
+          `| ${escapeTableCell(group.title)} | ${escapeTableCell(outcome)} | ${escapeTableCell(evidenceCell)} |`,
         );
       });
     }
@@ -744,13 +765,13 @@ export function buildRichTerminalParts(args: {
     groups.forEach((group, i) => {
       findingLines.push(`#### ${i + 1}. ${sanitizeDisplayText(group.title)}`);
       group.findings.forEach((finding, fi) => {
-        const { lead, body } = leadBody(args.chat ? chatNarrative(extractEvidenceTokens(finding).text) : sanitizeDisplayText(finding));
-        findingLines.push(`- **${lead}** \u2014 ${body}`);
+        const bullet = findingBullet(finding, args.chat);
+        if (bullet) findingLines.push(bullet);
         // Test proof is supporting evidence, not a second narrative. Keep it
         // on the archive's detailed finding; chat folds all gate outcomes into
         // the compact Verification section below.
         const proof = group.tests?.[fi] ? sanitizeDisplayText(group.tests[fi]).trim() : "";
-        if (proof && !args.chat) findingLines.push(`  - Test Results: ${proof}`);
+        if (proof && !args.chat) findingLines.push(`  - Evidence: ${proof}`);
       });
     });
   } else {
@@ -794,10 +815,10 @@ export function buildRichTerminalParts(args: {
     // shape duplicated the counts text in Scope and Notes.
     if (gates.length > 0) {
       tableRows.push(showCommand
-        ? `| Audit | \u2014 | auditor verdict | ${auditStatus} | ${escapeTableCell(auditBody)} |`
-        : `| Audit | auditor verdict | ${auditStatus} | ${escapeTableCell(auditBody)} |`);
+        ? `| Completion review | \u2014 | review status | ${auditStatus} | ${escapeTableCell(auditBody)} |`
+        : `| Completion review | review status | ${auditStatus} | ${escapeTableCell(auditBody)} |`);
     } else {
-      tableRows.push(`| Audit | ${auditStatus} | ${escapeTableCell(auditBody)} |`);
+      tableRows.push(`| Completion review | ${auditStatus} | ${escapeTableCell(auditBody)} |`);
     }
   }
   // Chat is an account of what happened, not a test-run transcript. Keep
@@ -879,11 +900,11 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
     lines.push("### Summary", ...parts.summaryLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.findingLines.length > 0) {
-    const heading = parts.chat ? "### What Changed" : "### Key Findings & Remediation";
+    const heading = "### What Changed";
     lines.push(heading, ...parts.findingLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.remainingLines.length > 0) {
-    lines.push(parts.chat ? "### Remaining" : "### Key Findings & Remediation", ...parts.remainingLines.map((line) => sanitizeDisplayText(line)), "");
+    lines.push(parts.chat ? "### Remaining" : "### Remaining", ...parts.remainingLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.verificationSummaryLine) {
     lines.push("### Verification", sanitizeDisplayText(parts.verificationSummaryLine), "");
@@ -917,8 +938,8 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
   const history = goal.auditHistory ?? [];
   const latest = history[history.length - 1];
   const approval = latest
-    ? `\u2014 auditor ${latest.approved ? "approved" : latest.disapproved ? "disapproved" : latest.impossible ? "impossible" : "left no verdict"}.`
-    : "\u2014 completed without a recorded auditor verdict.";
+    ? `\u2014 completion audit ${latest.approved ? "approved" : latest.disapproved ? "disapproved" : latest.impossible ? "impossible" : "left no review"}.`
+    : "\u2014 completed without a recorded completion review.";
   const countsLine = buildAuditCountsLine(goal);
   const parts = buildRichTerminalParts({
     outcome: brief.outcome,
@@ -998,12 +1019,12 @@ export function buildAuditCountsLine(goal: Goal, auditNote?: string): string {
   const history = goal.auditHistory ?? [];
   const latest = history.length > 0 ? history[history.length - 1] : undefined;
   const audit = auditNote ?? (latest === undefined
-    ? "no auditor verdict was recorded"
+    ? "no completion review was recorded"
     : (() => {
-      const verdict = latest.approved ? "approved" : latest.impossible ? "impossible" : latest.disapproved ? "disapproved" : "no verdict";
-      return `auditor ${verdict} (${history.length} verdict${history.length === 1 ? "" : "s"})`;
+      const verdict = latest.approved ? "approved" : latest.impossible ? "impossible" : latest.disapproved ? "disapproved" : "no review";
+      return `completion audit ${verdict} (${history.length} review${history.length === 1 ? "" : "s"})`;
     })());
-  return `— audit: ${audit}.`;
+  return `— completion review: ${audit}.`;
 }
 
 export interface TerminalApprovalRenderInput {
@@ -1207,10 +1228,10 @@ function stopReasonExcerpt(reason: string | undefined): string {
 function auditEvidence(goal: Goal): string {
   const history = goal.auditHistory;
   const latest = history && history.length > 0 ? history[history.length - 1] : undefined;
-  if (!latest) return "no auditor verdict was recorded";
+  if (!latest) return "no completion review was recorded";
   const verdict = latest.approved ? "approved" : latest.impossible ? "impossible" : latest.disapproved ? "disapproved" : "no verdict";
   const model = safeFact(latest.model, "unknown model");
-  return `latest auditor verdict=${verdict} by ${model} at ${safeFact(latest.at)}`;
+  return `latest completion review=${verdict} by ${model} at ${safeFact(latest.at)}`;
 }
 
 function executionEvidence(goal: Goal): string {

@@ -32,6 +32,10 @@ auditor should use session thinking level not arbitrarily lower, cur my session 
 /home/dracon/Pictures/Screenshots/Screenshot_20260924_231547.png 
 we need a better thumb for the pi plugin store 
 
+##
+/home/dracon/Pictures/Screenshots/Screenshot_20260925_004412.png 
+this is different cause in this case there is nothing for me to do just waiting for quota on the music model so this is closer to a monitoring situ
+
  
 
 ##

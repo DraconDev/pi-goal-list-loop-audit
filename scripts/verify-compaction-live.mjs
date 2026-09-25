@@ -1,17 +1,13 @@
 #!/usr/bin/env node
 /**
- * Live, provider-backed proof for GLLA's bounded compaction preparation hook.
+ * Live, provider-backed proof for the local compaction coordinator stack.
  *
- * This verifier deliberately uses a fresh Pi process and a temporary copy of
- * the requested historical session.  It does not ask Pi to use a custom
- * compactor: the only loaded extension is GLLA, whose session_before_compact
- * handler mutates the preparation and returns undefined.  The copied session is
- * already over the selected model's context window, so the first prompt causes
- * Pi's normal threshold/overflow path to run the default summarizer.
- *
- * stdout is intentionally limited to scalar proof data.  Pi's raw message and
- * summary payloads stay inside this process and are never printed or written to
- * the report.  The source session is checksummed before and after the run.
+ * The verifier starts a fresh Pi RPC process, loads the two local activation
+ * entrypoints (GLLA + pi-global-context-limit), and operates only on a copied
+ * historical session under a private PI_CODING_AGENT_DIR. Pi remains the host
+ * compactor for both automatic and manual paths. Output is scalar-only: raw
+ * prompts, summaries, provider diagnostics, environment values, and credentials
+ * never leave this process.
  */
 
 import { execFileSync, spawn } from "node:child_process";
@@ -19,12 +15,25 @@ import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { homedir } from "node:os";
 
 const REPO_ROOT = path.resolve(import.meta.dirname, "..");
+const GLOBAL_CONTEXT_LIMIT_ROOT = path.resolve(REPO_ROOT, "..", "extensions", "pi-global-context-limit");
 const REPORT_PATH = path.join(REPO_ROOT, "audit", "COMPACTION-DEFAULT-PROJECTION-LIVE-PROOF.md");
-const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;
+const LOCAL_EXTENSION_PATHS = [
+  path.join(REPO_ROOT, "extensions", "loops", "goal.ts"),
+  path.join(GLOBAL_CONTEXT_LIMIT_ROOT, "extensions", "global-context-limit.ts"),
+];
+const DEFAULT_TIMEOUT_MS = 15 * 60_000;
+const COMMAND_TIMEOUT_MS = 60_000;
+const PERSISTENCE_TIMEOUT_MS = 5_000;
+const STOP_TIMEOUT_MS = 15_000;
+const MAX_COMPACTION_ATTEMPTS = 3;
 const INPUT_BUDGET = 16_000;
 const CONTINUATION_MARKER = "GLLA_POST_COMPACTION_CONTINUATION_OK";
+const MANUAL_MARKER = "GLLA_MANUAL_COMPACTION_CONTINUATION_OK";
+const DEFAULT_AGENT_DIR = path.join(homedir(), ".pi", "agent");
+
 let verifierStage = "startup";
 
 function usage() {
@@ -68,10 +77,10 @@ function sha256File(file) {
   return hash.digest("hex");
 }
 
-function safeCodeRevision() {
+function safeCodeRevision(repoRoot = REPO_ROOT) {
   try {
     return execFileSync("git", ["rev-parse", "HEAD"], {
-      cwd: REPO_ROOT,
+      cwd: repoRoot,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     }).trim();
@@ -80,9 +89,9 @@ function safeCodeRevision() {
   }
 }
 
-function packageVersion() {
+function packageVersion(packageRoot) {
   try {
-    return JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8")).version ?? "unknown";
+    return JSON.parse(fs.readFileSync(path.join(packageRoot, "package.json"), "utf8")).version ?? "unknown";
   } catch {
     return "unknown";
   }
@@ -107,9 +116,6 @@ function assertLivePiVersion(version) {
   if (!match) throw new Error("could not determine the installed Pi version");
   const major = Number(match[1]);
   const minor = Number(match[2]);
-  // Pi 0.87 added the explicit length-stop failure path used as the live
-  // non-incomplete-summary assertion.  Do not silently use an older runtime
-  // whose successful result cannot prove that property.
   if (major < 1 && minor < 87) throw new Error(`live proof requires Pi >= 0.87.0 (found ${version})`);
 }
 
@@ -126,54 +132,65 @@ function numberOrNull(value) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
-function summarizeCompactionEvent(event) {
-  const result = event?.result;
+function summarizeCompactionResult(result) {
   const usage = result?.usage;
   return {
-    type: event?.type,
-    reason: typeof event?.reason === "string" ? event.reason : null,
-    aborted: event?.aborted === true,
-    willRetry: event?.willRetry === true,
-    errorClass: event?.errorMessage ? redactClass(event.errorMessage) : null,
-    result: result && typeof result === "object" ? {
-      summaryChars: typeof result.summary === "string" ? result.summary.length : 0,
-      firstKeptEntryIdPresent: typeof result.firstKeptEntryId === "string" && result.firstKeptEntryId.length > 0,
-      tokensBefore: numberOrNull(result.tokensBefore),
-      estimatedTokensAfter: numberOrNull(result.estimatedTokensAfter),
-      usageInput: numberOrNull(usage?.input),
-      usageOutput: numberOrNull(usage?.output),
-      usageTotal: numberOrNull(usage?.totalTokens),
-    } : null,
+    summaryChars: typeof result?.summary === "string" ? result.summary.length : 0,
+    firstKeptEntryIdPresent: typeof result?.firstKeptEntryId === "string" && result.firstKeptEntryId.length > 0,
+    tokensBefore: numberOrNull(result?.tokensBefore),
+    estimatedTokensAfter: numberOrNull(result?.estimatedTokensAfter),
+    usageInput: numberOrNull(usage?.input),
+    usageOutput: numberOrNull(usage?.output),
+    usageTotal: numberOrNull(usage?.totalTokens),
   };
 }
 
-function sanitizeEvent(record) {
+function summarizeCompactionEvent(event, sequence) {
+  return {
+    ...event,
+    sequence,
+    result: event?.result && typeof event.result === "object" ? summarizeCompactionResult(event.result) : null,
+  };
+}
+
+function textLength(content) {
+  if (typeof content === "string") return content.length;
+  if (!Array.isArray(content)) return 0;
+  return content.reduce((sum, block) => sum + (typeof block?.text === "string" ? block.text.length : 0), 0);
+}
+
+function sanitizeEvent(record, sequence) {
   const type = typeof record?.type === "string" ? record.type : "unknown";
   if (type === "compaction_start") {
-    return { type, reason: typeof record.reason === "string" ? record.reason : null };
+    return { type, sequence, reason: typeof record.reason === "string" ? record.reason : null };
   }
-  if (type === "compaction_end") return summarizeCompactionEvent(record);
-  if (type === "agent_end") return { type, willRetry: record.willRetry === true };
+  if (type === "compaction_end") {
+    return summarizeCompactionEvent({
+      type,
+      reason: typeof record.reason === "string" ? record.reason : null,
+      aborted: record.aborted === true,
+      willRetry: record.willRetry === true,
+      errorClass: record.errorMessage ? redactClass(record.errorMessage) : null,
+      result: record.result,
+    }, sequence);
+  }
+  if (type === "agent_end" || type === "agent_settled") {
+    return { type, sequence, willRetry: record.willRetry === true };
+  }
   if (type === "message_end") {
-    const message = record.message;
-    const content = message?.content;
-    let textChars = 0;
-    if (typeof content === "string") textChars = content.length;
-    else if (Array.isArray(content)) {
-      textChars = content.reduce((sum, block) => sum + (typeof block?.text === "string" ? block.text.length : 0), 0);
-    }
     return {
       type,
-      role: typeof message?.role === "string" ? message.role : null,
-      stopReason: typeof message?.stopReason === "string" ? message.stopReason : null,
-      textChars,
+      sequence,
+      role: typeof record.message?.role === "string" ? record.message.role : null,
+      stopReason: typeof record.message?.stopReason === "string" ? record.message.stopReason : null,
+      textChars: textLength(record.message?.content),
     };
   }
-  if (type === "summarization_retry_scheduled") return { type, attempt: numberOrNull(record.attempt) };
-  if (type === "summarization_retry_attempt_start") return { type, source: record.source === "compaction" ? "compaction" : null };
-  if (type === "extension_error") return { type, event: typeof record.event === "string" ? record.event : null };
-  if (type === "extension_ui_request") return { type, method: typeof record.method === "string" ? record.method : null };
-  return { type };
+  if (type === "summarization_retry_scheduled") return { type, sequence, attempt: numberOrNull(record.attempt) };
+  if (type === "summarization_retry_attempt_start") return { type, sequence, source: record.source === "compaction" ? "compaction" : null };
+  if (type === "extension_error") return { type, sequence, event: typeof record.event === "string" ? record.event : null };
+  if (type === "extension_ui_request") return { type, sequence, method: typeof record.method === "string" ? record.method : null };
+  return { type, sequence };
 }
 
 class JsonRpcProcess {
@@ -191,6 +208,7 @@ class JsonRpcProcess {
     this.exitCode = null;
     this.exitSignal = null;
     this.nextId = 0;
+    this.nextSequence = 0;
   }
 
   start() {
@@ -203,7 +221,7 @@ class JsonRpcProcess {
     this.child.stdout.setEncoding("utf8");
     this.child.stdout.on("data", (chunk) => this.consumeStdout(chunk));
     this.child.stderr.on("data", (chunk) => {
-      // Never forward provider diagnostics: they can contain request material.
+      // Provider stderr may include prompts, request material, or credentials.
       this.stderrBytes += Buffer.byteLength(chunk);
     });
     this.child.once("error", (error) => {
@@ -229,8 +247,7 @@ class JsonRpcProcess {
       try {
         record = JSON.parse(line);
       } catch {
-        // A malformed protocol record is a failed proof, but do not echo it.
-        this.emit({ type: "__malformed_rpc_record__" });
+        this.emit({ type: "__malformed_rpc_record__", sequence: ++this.nextSequence });
         continue;
       }
       if (record?.type === "response" && typeof record.id === "string" && this.pending.has(record.id)) {
@@ -240,7 +257,7 @@ class JsonRpcProcess {
         pending.resolve(record);
         continue;
       }
-      this.emit(sanitizeEvent(record));
+      this.emit(sanitizeEvent(record, ++this.nextSequence));
     }
   }
 
@@ -263,7 +280,7 @@ class JsonRpcProcess {
     this.pending.clear();
   }
 
-  send(command, timeoutMs = 60_000) {
+  send(command, timeoutMs = COMMAND_TIMEOUT_MS) {
     if (!this.child || this.exited || !this.child.stdin.writable) {
       return Promise.reject(new Error("Pi RPC process is not writable"));
     }
@@ -309,15 +326,17 @@ class JsonRpcProcess {
     if (!child.stdin.destroyed) child.stdin.end();
     if (child.exitCode !== null || child.signalCode !== null) return;
     await new Promise((resolve) => {
-      let timer = setTimeout(() => {
+      let killTimer;
+      const graceTimer = setTimeout(() => {
         try { child.kill("SIGTERM"); } catch { /* already gone */ }
-        timer = setTimeout(() => {
+        killTimer = setTimeout(() => {
           try { child.kill("SIGKILL"); } catch { /* already gone */ }
           resolve();
         }, 2_000);
-      }, 15_000);
+      }, STOP_TIMEOUT_MS);
       child.once("exit", () => {
-        clearTimeout(timer);
+        clearTimeout(graceTimer);
+        if (killTimer) clearTimeout(killTimer);
         resolve();
       });
     });
@@ -332,8 +351,8 @@ function assertSuccessfulResponse(response, command) {
   return response.data;
 }
 
-function readProjectionLedger(tempRoot) {
-  const file = path.join(tempRoot, ".pi-glla", "active.jsonl");
+function readProjectionLedger(agentDir) {
+  const file = path.join(agentDir, ".pi-glla", "active.jsonl");
   if (!fs.existsSync(file)) return [];
   const records = [];
   for (const line of fs.readFileSync(file, "utf8").split("\n")) {
@@ -342,11 +361,59 @@ function readProjectionLedger(tempRoot) {
       const record = JSON.parse(line);
       if (record?.type === "compaction_input_projection") records.push(record.value ?? {});
     } catch {
-      // A torn final ledger line is not needed for the proof; other evidence
-      // (the compaction event and checksum) remains authoritative.
+      // Projection evidence is checked separately from persisted compaction.
     }
   }
   return records;
+}
+
+function persistedCompactions(sessionFile) {
+  if (!fs.existsSync(sessionFile)) return [];
+  const records = [];
+  for (const line of fs.readFileSync(sessionFile, "utf8").split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const record = JSON.parse(line);
+      if (record?.type === "compaction" && typeof record.summary === "string" && record.summary.trim()) {
+        records.push({
+          id: typeof record.id === "string" ? record.id : null,
+          parentId: typeof record.parentId === "string" ? record.parentId : null,
+          timestamp: typeof record.timestamp === "string" ? record.timestamp : null,
+          summaryChars: record.summary.length,
+          tokensBefore: numberOrNull(record.tokensBefore),
+          fromHook: record.fromHook === true,
+        });
+      }
+    } catch {
+      // A torn final session line is retried by the bounded persistence poll.
+    }
+  }
+  return records;
+}
+
+async function waitForPersistedCompaction(sessionFile, afterId, timeoutMs = PERSISTENCE_TIMEOUT_MS) {
+  const deadline = Date.now() + timeoutMs;
+  let latest = [];
+  do {
+    latest = persistedCompactions(sessionFile);
+    const fresh = latest.find((entry) => entry.id !== afterId && entry.id !== null);
+    if (fresh) return fresh;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  } while (Date.now() < deadline);
+  throw new Error("host compaction result was not persisted as a non-empty session record");
+}
+
+function stageAuthentication(agentDir) {
+  // PI_CODING_AGENT_DIR intentionally redirects all runtime state. Pi resolves
+  // credentials from that directory, so copy only the provider auth file into
+  // the disposable store. It is never parsed, logged, or included in reports;
+  // outer cleanup removes the copy with the rest of the temporary root.
+  const source = path.join(DEFAULT_AGENT_DIR, "auth.json");
+  const target = path.join(agentDir, "auth.json");
+  if (!fs.existsSync(source)) return false;
+  fs.copyFileSync(source, target, fs.constants.COPYFILE_EXCL);
+  fs.chmodSync(target, 0o600);
+  return true;
 }
 
 function copyHistoricalSession(source, tempRoot) {
@@ -357,16 +424,49 @@ function copyHistoricalSession(source, tempRoot) {
   if (!lines[0]) throw new Error("historical session has no JSONL header");
   const header = JSON.parse(lines[0]);
   if (!header || typeof header !== "object") throw new Error("historical session header is malformed");
-  // The transcript remains historical; only the copied header's working
-  // directory is redirected so GLLA cannot claim or mutate the real state root.
   header.cwd = tempRoot;
   lines[0] = JSON.stringify(header);
   fs.writeFileSync(target, lines.join("\n"));
   return target;
 }
 
+async function waitForTerminalCompaction(rpc, options, fromIndex, expectedReason) {
+  let index = fromIndex;
+  const attempts = [];
+  while (attempts.length < MAX_COMPACTION_ATTEMPTS) {
+    const start = await rpc.waitForEvent(
+      (event) => event.type === "compaction_start" && (!expectedReason || event.reason === expectedReason),
+      `${expectedReason ?? "any"} compaction_start`,
+      options.remainingMs(),
+      index,
+    );
+    const startIndex = rpc.events.indexOf(start);
+    const end = await rpc.waitForEvent(
+      (event) => event.type === "compaction_end" && event.sequence > start.sequence,
+      `${expectedReason ?? "any"} compaction_end`,
+      options.remainingMs(),
+      startIndex + 1,
+    );
+    const attempt = { start, end };
+    attempts.push(attempt);
+    if (!end.aborted && end.result && end.result.summaryChars > 0) {
+      // On a successful automatic overflow compaction, willRetry means Pi
+      // will retry the interrupted *agent turn*. The compaction itself is
+      // already terminal and persisted; waiting for a second compaction would
+      // incorrectly turn a healthy recovery into a timeout.
+      return { attempts, start, end };
+    }
+    if (end.willRetry) {
+      index = rpc.events.indexOf(end) + 1;
+      continue;
+    }
+    throw new Error(`host compaction failed (${end.errorClass ?? "unknown"})`);
+  }
+  throw new Error("host compaction exceeded the bounded retry-attempt ceiling");
+}
+
 function formatCommand(source, provider, model) {
-  return `node scripts/verify-compaction-live.mjs --session "${source}" --provider ${provider} --model ${model}`;
+  return `PI_CODING_AGENT_DIR="$(mktemp -d)" node scripts/verify-compaction-live.mjs --session "${source}" --provider ${provider} --model ${model}`;
 }
 
 function makeReport({
@@ -379,23 +479,29 @@ function makeReport({
   pi,
   gllaRevision,
   gllaVersion,
+  globalRevision,
+  globalVersion,
   processId,
   copiedSession,
-  compactionStart,
-  compactionEnd,
+  automatic,
+  manual,
+  automaticPersisted,
+  manualPersisted,
   projection,
   continuation,
 }) {
-  const exactCommand = formatCommand(source, provider, model);
   const projectionValue = projection ?? {};
+  const compact = (proof) => `- Attempts: \`${proof.attempts.length}\`; start reason: \`${proof.start.reason}\`; terminal aborted: \`${proof.end.aborted ? "yes" : "no"}\`; terminal willRetry: \`${proof.end.willRetry ? "yes" : "no"}\`; in-memory summary characters: \`${proof.end.result?.summaryChars ?? 0}\`; persisted summary characters: \`${proof.persisted?.summaryChars ?? 0}\`.`;
   return `# Default compaction projection — live proof
 
 - **Result:** PASS
 - **Run (UTC):** ${new Date().toISOString()}
 - **GLLA revision:** \`${gllaRevision}\` (package \`${gllaVersion}\`)
-- **Pi revision:** \`${pi}\` (fresh child process; only GLLA was explicitly loaded)
+- **Global-context revision:** \`${globalRevision}\` (package \`${globalVersion}\`)
+- **Pi revision:** \`${pi}\` (fresh child process)
 - **Provider/model:** \`${provider}\` / \`${model}\`
 - **Child PID:** \`${processId}\`
+- **Loaded local extensions:** GLLA \`extensions/loops/goal.ts\`; global cap \`extensions/global-context-limit.ts\`.
 
 ## Isolation and source integrity
 
@@ -404,75 +510,116 @@ function makeReport({
 - SHA-256 before: \`${beforeHash}\`
 - SHA-256 after: \`${afterHash}\`
 - Checksum match: **yes**; the original was not opened for writing.
-- Temporary copy used for the run: \`${copiedSession}\` (removed after verification).
-- The copy's session header was redirected to an isolated temporary working directory; its historical entries were otherwise retained.
-- The verifier uses isolated GLLA settings with automatic resume disabled; the real working-directory state root and real session file were not used.
-- No credentials or raw transcript/summary text are included in this report or verifier stdout.
+- Temporary copy: \`${copiedSession}\` (removed in the verifier's outer cleanup).
+- Pi ran with a private temporary \`PI_CODING_AGENT_DIR\`; the source session and real agent directory were not used.
+- GLLA used isolated settings with automatic resume disabled.
+- Credentials were resolved by Pi's configured provider store and were never read, copied, or printed.
+- No raw prompt, summary, environment value, or provider diagnostic is included in this report or verifier stdout.
 
-## Compaction path and bounded hook evidence
+## Automatic host compaction
 
-- Automatic compaction start: \`${compactionStart?.reason ?? "unknown"}\`.
-- Compaction ended successfully: **yes**; aborted: \`${compactionEnd?.aborted === true ? "yes" : "no"}\`; Pi-reported retry: \`${compactionEnd?.willRetry === true ? "yes" : "no"}\`.
-- Summary length observed in memory: \`${compactionEnd?.result?.summaryChars ?? 0}\` characters (content intentionally not recorded).
-- Summary length-stop/incomplete error: **none**. Pi 0.87+ rejects a summarizer response with \`stopReason=length\`; a successful non-aborted \`compaction_end\` is therefore the live proof that the default summarizer did not stop for length.
-- GLLA hook projection: **observed**.
+${compact({ ...automatic, persisted: automaticPersisted })}
+
+- GLLA bounded preparation projection: **observed**.
 - Estimated preparation characters: \`${projectionValue.inputCharsBefore ?? "unknown"}\` before → \`${projectionValue.inputCharsAfter ?? "unknown"}\` after (budget \`${INPUT_BUDGET}\`).
-- Projection scale: \`${projectionValue.scale ?? "unknown"}\`; bounded messages: \`${projectionValue.boundedMessages ?? 0}\`; bounded fields: \`${projectionValue.boundedFields ?? 0}\`; replaced images: \`${projectionValue.replacedImages ?? 0}\`; bounded GLLA payloads: \`${projectionValue.boundedGoalPayloads ?? 0}\`; retained GLLA payloads: \`${projectionValue.retainedGoalPayloads ?? 0}\`.
-- Structural boundedness: hard bound applied: \`${projectionValue.hardBoundApplied === true ? "yes" : "no"}\`; retained messages: \`${projectionValue.retainedMessages ?? 0}\`; omitted messages: \`${projectionValue.omittedMessages ?? 0}\`; retained tool groups: \`${projectionValue.retainedToolGroups ?? 0}\`; omitted tool groups: \`${projectionValue.omittedToolGroups ?? 0}\`; omitted tool calls: \`${projectionValue.omittedToolCalls ?? 0}\`; omission markers: \`${projectionValue.omissionMarkers ?? 0}\`.
-- The hook returned no custom compaction result; Pi remained responsible for cut-point selection, summarization, persistence, retries, and the final result.
+- Projection scale: \`${projectionValue.scale ?? "unknown"}\`; bounded messages: \`${projectionValue.boundedMessages ?? 0}\`; bounded fields: \`${projectionValue.boundedFields ?? 0}\`; replaced images: \`${projectionValue.replacedImages ?? 0}\`; hard bound applied: \`${projectionValue.hardBoundApplied === true ? "yes" : "no"}\`.
+- Pi remained authoritative for the threshold/overflow trigger, cut point, default summarizer, retries, persistence, and result.
 
-## Continuation
+## Manual host compaction
 
-- Post-compaction continuation: **passed**.
-- Continuation marker returned by the model: \`${CONTINUATION_MARKER}\` (only a boolean/length check was retained).
-- A second prompt after compaction also completed and returned a non-empty assistant response.
+${compact({ ...manual, persisted: manualPersisted })}
+
+- The verifier called Pi RPC \`compact\`; command success alone was not accepted. A fresh ordered \`compaction_start\`/\`compaction_end\` pair and a newly persisted non-empty session record were both required.
+
+## Usable next turns
+
+- Automatic-compaction continuation: **${continuation.automatic ? "passed" : "failed"}**; assistant text characters: \`${continuation.automaticChars}\`.
+- Manual-compaction continuation: **${continuation.manual ? "passed" : "failed"}**; expected marker: \`${MANUAL_MARKER}\`.
+- Both paths left Pi able to accept and answer a new prompt after its persisted compaction.
 
 ## Reproduction
 
 \`\`\`sh
-${exactCommand}
+${formatCommand(source, provider, model)}
 \`\`\`
 
 ## Scope and remaining risk
 
-This is one real provider-backed run against the selected model and the copied historical session. It demonstrates the fixed path for that model/context shape; it is not a provider-wide guarantee. Other providers/models can have different context accounting, output caps, or transient availability, so the same verifier should be rerun when the selected model or Pi runtime changes. The verifier does not change provider/model/reserve/thinking settings, does not retry compaction recursively, and does not tag or publish anything.
+This is one real provider-backed run against the selected model, copied historical session shape, and installed Pi version. It is not a provider-wide guarantee. The verifier never supplies a custom compaction result, recursively retries a failed summary, edits model/provider/reserve settings, or writes the source session.
 `;
+}
+
+function addDeadline(timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  return {
+    remainingMs() {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) throw new Error("live proof exceeded its overall timeout");
+      return remaining;
+    },
+  };
+}
+
+async function promptAndRead(rpc, deadline, message, label) {
+  const fromIndex = rpc.events.length;
+  const settled = rpc.waitForEvent((event) => event.type === "agent_settled", `${label} agent_settled`, deadline.remainingMs(), fromIndex);
+  assertSuccessfulResponse(await rpc.send({ type: "prompt", message }, Math.min(COMMAND_TIMEOUT_MS, deadline.remainingMs())), "prompt");
+  await settled;
+  const result = assertSuccessfulResponse(await rpc.send({ type: "get_last_assistant_text" }, Math.min(COMMAND_TIMEOUT_MS, deadline.remainingMs())), "get_last_assistant_text");
+  if (typeof result?.text !== "string" || result.text.length === 0) throw new Error(`${label} returned no assistant text`);
+  return result;
 }
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
+  const deadline = addDeadline(options.timeoutMs);
   const source = path.resolve(options.session);
   if (!fs.existsSync(source) || !fs.statSync(source).isFile()) throw new Error("session path is not a readable file");
+  for (const extensionPath of LOCAL_EXTENSION_PATHS) {
+    if (!fs.existsSync(extensionPath)) throw new Error("required local extension entrypoint is missing");
+  }
 
   const piBinary = process.env.PI_BIN || "pi";
   const pi = piVersion(piBinary);
   assertLivePiVersion(pi);
-  const gllaRevision = safeCodeRevision();
-  const gllaVersion = packageVersion();
+  const gllaRevision = safeCodeRevision(REPO_ROOT);
+  const gllaVersion = packageVersion(REPO_ROOT);
+  const globalRevision = safeCodeRevision("/home/dracon/Dev/pi-plugins");
+  const globalVersion = packageVersion(GLOBAL_CONTEXT_LIMIT_ROOT);
   const beforeHash = sha256File(source);
   const sourceBytes = fs.statSync(source).size;
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "glla-compaction-live-"));
+  const agentDir = path.join(tempRoot, "agent");
+  const cwd = path.join(tempRoot, "cwd");
+  fs.mkdirSync(agentDir, { recursive: true });
+  fs.mkdirSync(cwd, { recursive: true });
+
   let rpc;
   let copiedSession;
   let processId = "unknown";
-  let compactionStart;
-  let compactionEnd;
-  let continuation = false;
+  let automatic;
+  let manual;
+  let automaticPersisted;
+  let manualPersisted;
+  let projection;
+  const continuation = { automatic: false, manual: false, automaticChars: 0 };
   const setStage = (value) => { verifierStage = value; };
 
   try {
     copiedSession = copyHistoricalSession(source, tempRoot);
-    const settingsPath = path.join(tempRoot, "glla-settings.json");
+    const initialPersisted = persistedCompactions(copiedSession);
+    const settingsPath = path.join(agentDir, "glla-settings.json");
     fs.writeFileSync(settingsPath, `${JSON.stringify({
       stateRoot: "workingDir",
       autoResume: false,
       auditorSameSessionSwap: false,
     })}\n`);
+    stageAuthentication(agentDir);
 
     const args = [
       "--mode", "rpc",
       "--no-extensions",
-      "--extension", path.join(REPO_ROOT, "extensions", "loops", "goal.ts"),
+      ...LOCAL_EXTENSION_PATHS.flatMap((extensionPath) => ["--extension", extensionPath]),
       "--no-skills",
       "--no-prompt-templates",
       "--no-themes",
@@ -484,9 +631,10 @@ async function main() {
       "--model", options.model,
     ];
     rpc = new JsonRpcProcess(piBinary, args, {
-      cwd: tempRoot,
+      cwd,
       env: {
         ...process.env,
+        PI_CODING_AGENT_DIR: agentDir,
         GLLA_GLOBAL_SETTINGS_PATH: settingsPath,
         NO_COLOR: "1",
       },
@@ -494,102 +642,134 @@ async function main() {
     rpc.start();
     processId = String(rpc.child.pid ?? "unknown");
 
+    if (process.env.GLLA_LIVE_DEBUG === "1") {
+      const debugTimer = setTimeout(() => {
+        const recent = rpc.events.slice(-12).map((event) => ({
+          type: event.type,
+          sequence: event.sequence,
+          reason: event.reason ?? null,
+          role: event.role ?? null,
+          stopReason: event.stopReason ?? null,
+          errorClass: event.errorClass ?? null,
+          willRetry: event.willRetry ?? null,
+          summaryChars: event.result?.summaryChars ?? null,
+        }));
+        console.error(`DEBUG stage=${verifierStage} events=${JSON.stringify(recent)}`);
+      }, 2_000);
+      debugTimer.unref();
+    }
+
     setStage("state");
-    const state = assertSuccessfulResponse(await rpc.send({ type: "get_state" }, 60_000), "get_state");
+    const state = assertSuccessfulResponse(await rpc.send({ type: "get_state" }, Math.min(COMMAND_TIMEOUT_MS, deadline.remainingMs())), "get_state");
     if (state?.sessionFile !== copiedSession) throw new Error("Pi did not open the isolated session copy");
     if (state?.autoCompactionEnabled !== true) throw new Error("Pi auto-compaction was not enabled for the proof");
     if (state?.model?.provider !== options.provider || !String(state?.model?.id ?? "").endsWith(options.model)) {
       throw new Error("Pi selected a different provider/model than requested");
     }
 
-    // Subscribe before sending the prompt: threshold/overflow compaction can
-    // begin before the prompt command's response is written.
-    setStage("awaiting_compaction");
-    const eventStart = rpc.events.length;
-    const compactionEndPromise = rpc.waitForEvent(
-      (event) => event.type === "compaction_end",
-      "automatic compaction_end",
-      options.timeoutMs,
-      eventStart,
-    );
-    const settledPromise = rpc.waitForEvent(
-      (event) => event.type === "agent_settled",
-      "post-compaction agent_settled",
-      options.timeoutMs,
-      eventStart,
-    );
-    assertSuccessfulResponse(await rpc.send({
+    setStage("awaiting_automatic_compaction");
+    const automaticStartIndex = rpc.events.length;
+    const initialSettled = rpc.waitForEvent((event) => event.type === "agent_settled", "automatic prompt agent_settled", deadline.remainingMs(), automaticStartIndex);
+    const promptAccepted = assertSuccessfulResponse(await rpc.send({
       type: "prompt",
-      message: "Reply with a short acknowledgement that the default compaction continuation is available.",
-    }, 60_000), "prompt");
-
-    const firstBoundary = await Promise.race([
-      compactionEndPromise.then((event) => ({ kind: "compaction", event })),
-      settledPromise.then(() => ({ kind: "settled" })),
+      message: "Reply with a short acknowledgement that automatic compaction recovery is available.",
+    }, Math.min(COMMAND_TIMEOUT_MS, deadline.remainingMs())), "prompt");
+    void promptAccepted;
+    const automaticProofPromise = waitForTerminalCompaction(rpc, deadline, automaticStartIndex, null);
+    automatic = await Promise.race([
+      automaticProofPromise.then((proof) => ({ kind: "compaction", proof })),
+      initialSettled.then(() => ({ kind: "settled" })),
     ]);
-    if (firstBoundary.kind !== "compaction") {
-      throw new Error("historical session reached agent_settled without an automatic compaction event");
+    if (automatic.kind !== "compaction") {
+      // agent_settled can race the awaited event promise by one microtask even
+      // though the ordered compaction event is already buffered. Prefer that
+      // real host proof before declaring the historical session unchanged.
+      automatic = { kind: "compaction", proof: await automaticProofPromise };
     }
-    compactionEnd = firstBoundary.event;
-    compactionStart = rpc.events.slice(eventStart).find((event) => event.type === "compaction_start") ?? null;
-    if (compactionEnd.aborted || !compactionEnd.result || compactionEnd.result.summaryChars <= 0) {
-      throw new Error(`automatic default compaction did not produce a complete result (${compactionEnd.errorClass ?? "unknown"})`);
-    }
-    if (!compactionStart || !["threshold", "overflow"].includes(compactionStart.reason)) {
+    automatic = automatic.proof;
+    if (!["threshold", "overflow"].includes(automatic.start.reason ?? "")) {
       throw new Error("the observed compaction was not Pi's automatic threshold/overflow path");
     }
-    setStage("post_compaction_response");
-    await settledPromise;
-    const firstText = assertSuccessfulResponse(await rpc.send({ type: "get_last_assistant_text" }, 60_000), "get_last_assistant_text");
-    if (typeof firstText?.text !== "string" || firstText.text.length === 0) {
-      throw new Error("no assistant response followed the successful compaction");
-    }
+    automaticPersisted = await waitForPersistedCompaction(copiedSession, initialPersisted.at(-1)?.id ?? null, Math.min(PERSISTENCE_TIMEOUT_MS, deadline.remainingMs()));
+    await initialSettled;
 
-    setStage("explicit_continuation");
-    const postStart = rpc.events.length;
-    const postSettledPromise = rpc.waitForEvent(
-      (event) => event.type === "agent_settled",
-      "explicit post-compaction agent_settled",
-      options.timeoutMs,
-      postStart,
-    );
-    assertSuccessfulResponse(await rpc.send({
-      type: "prompt",
-      message: `Reply with exactly ${CONTINUATION_MARKER}.`,
-    }, 60_000), "post-compaction prompt");
-    await postSettledPromise;
-    const postText = assertSuccessfulResponse(await rpc.send({ type: "get_last_assistant_text" }, 60_000), "get_last_assistant_text");
-    if (typeof postText?.text !== "string" || !postText.text.includes(CONTINUATION_MARKER)) {
-      throw new Error("post-compaction continuation did not return the expected marker");
+    setStage("post_automatic_continuation");
+    const firstText = await promptAndRead(rpc, deadline, `Reply with exactly ${CONTINUATION_MARKER}.`, "post-automatic continuation");
+    continuation.automatic = firstText.text.includes(CONTINUATION_MARKER);
+    continuation.automaticChars = firstText.text.length;
+    if (!continuation.automatic) throw new Error("automatic-compaction continuation did not return the expected marker");
+
+    setStage("manual_compaction");
+    const persistedBeforeManual = persistedCompactions(copiedSession);
+    const manualEventStart = rpc.events.length;
+    const manualPromise = waitForTerminalCompaction(rpc, deadline, manualEventStart, "manual");
+    const manualResult = assertSuccessfulResponse(await rpc.send({ type: "compact" }, Math.min(COMMAND_TIMEOUT_MS, deadline.remainingMs())), "compact");
+    manual = await manualPromise;
+    const manualSummaryChars = typeof manualResult?.summary === "string" ? manualResult.summary.length : 0;
+    if (manualSummaryChars <= 0 || manual.end.result?.summaryChars !== manualSummaryChars) {
+      throw new Error("manual RPC result and host event did not describe the same non-empty summary");
     }
-    continuation = true;
+    manualPersisted = await waitForPersistedCompaction(copiedSession, persistedBeforeManual.at(-1)?.id ?? null, Math.min(PERSISTENCE_TIMEOUT_MS, deadline.remainingMs()));
+
+    setStage("post_manual_continuation");
+    const manualText = await promptAndRead(rpc, deadline, `Reply with exactly ${MANUAL_MARKER}.`, "post-manual continuation");
+    continuation.manual = manualText.text.includes(MANUAL_MARKER);
+    if (!continuation.manual) throw new Error("manual-compaction continuation did not return the expected marker");
+
+    projection = readProjectionLedger(cwd).at(-1);
+    if (!projection || numberOrNull(projection.inputCharsAfter) === null || projection.inputCharsAfter > INPUT_BUDGET) {
+      throw new Error("GLLA compaction projection evidence is missing or exceeds its bounded-input budget");
+    }
     setStage("complete");
   } finally {
-    await rpc?.stop();
+    if (process.env.GLLA_LIVE_DEBUG === "1" && rpc?.child) {
+      const recent = rpc.events.slice(-20).map((event) => ({
+        type: event.type,
+        sequence: event.sequence,
+        reason: event.reason ?? null,
+        role: event.role ?? null,
+        stopReason: event.stopReason ?? null,
+        errorClass: event.errorClass ?? null,
+        willRetry: event.willRetry ?? null,
+        summaryChars: event.result?.summaryChars ?? null,
+      }));
+      console.error(`DEBUG final-stage=${verifierStage} events=${JSON.stringify(recent)}`);
+    }
+    let stopError;
+    let integrityError;
+    try {
+      await rpc?.stop();
+    } catch (error) {
+      stopError = error;
+    }
+    try {
+      if (sha256File(source) !== beforeHash) integrityError = new Error("original historical session checksum changed");
+    } catch (error) {
+      integrityError = error;
+    }
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+    if (stopError) throw stopError;
+    if (integrityError) throw integrityError;
   }
-
-  const afterHash = sha256File(source);
-  if (beforeHash !== afterHash) throw new Error("original historical session checksum changed");
-  const projection = readProjectionLedger(tempRoot).at(-1);
-  if (!projection || numberOrNull(projection.inputCharsAfter) === null || projection.inputCharsAfter > INPUT_BUDGET) {
-    throw new Error("GLLA compaction projection evidence is missing or exceeds its bounded-input budget");
-  }
-  if (!continuation) throw new Error("post-compaction continuation was not proven");
 
   const report = makeReport({
     source,
     sourceBytes,
     beforeHash,
-    afterHash,
+    afterHash: sha256File(source),
     provider: options.provider,
     model: options.model,
     pi,
     gllaRevision,
     gllaVersion,
+    globalRevision,
+    globalVersion,
     processId,
     copiedSession,
-    compactionStart,
-    compactionEnd,
+    automatic,
+    manual,
+    automaticPersisted,
+    manualPersisted,
     projection,
     continuation,
   });
@@ -602,10 +782,14 @@ async function main() {
     pi,
     provider: options.provider,
     model: options.model,
-    compactionReason: compactionStart.reason,
+    extensionsLoaded: 2,
+    automaticReason: automatic.start.reason,
+    automaticSummaryChars: automatic.end.result.summaryChars,
+    automaticPersistedSummaryChars: automaticPersisted.summaryChars,
+    manualSummaryChars: manual.end.result.summaryChars,
+    manualPersistedSummaryChars: manualPersisted.summaryChars,
     inputCharsBefore: projection.inputCharsBefore,
     inputCharsAfter: projection.inputCharsAfter,
-    summaryChars: compactionEnd.result.summaryChars,
     continuation: true,
     originalChecksumMatch: true,
   }));
@@ -614,8 +798,6 @@ async function main() {
 try {
   await main();
 } catch (error) {
-  // Keep diagnostics categorical: provider errors and RPC payloads may contain
-  // credentials or raw conversation material.
   const message = error instanceof Error ? error.message : String(error);
   const category = redactClass(message);
   const stage = process.env.GLLA_LIVE_DEBUG === "1" ? verifierStage : "redacted";

@@ -1,7 +1,8 @@
-// Field 2026-09-23: Pi emits session_compact_failed when a summary hits the
-// output cap. GLLA must settle its in-flight marker immediately, rotate a
-// configured larger-context model, or durably park work with /new + resume.
-// Leaving the marker armed makes the UI claim WORKING/BUSY for up to 30m.
+// Field 2026-09-23: Pi emits session_compact_failed when compaction cannot
+// finish. GLLA settles only its current-attempt marker, leaves willRetry to
+// Pi, rotates only explicit terminal prompt overflow, and durably parks other
+// terminal failures with /new + resume. Leaving the marker armed makes the UI
+// claim WORKING/BUSY for up to 30 minutes.
 
 import { test, afterEach } from "node:test";
 import * as assert from "node:assert/strict";
@@ -9,7 +10,9 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import activate, {
+  __testOnlyPostCompactDebt,
   __testOnlyResetOwnerSession,
+  __testOnlyResetPostCompactDebt,
   __testOnlyResetStaleFlag,
   __testOnlySetCompactionInFlight,
 } from "../extensions/loops/goal.js";
@@ -49,12 +52,37 @@ afterEach(async () => {
     const current = session;
     session = null;
     __testOnlySetCompactionInFlight(null);
+    __testOnlyResetPostCompactDebt();
     await current.pi.fire("session_shutdown", { reason: "test-end" }, current.ctx).catch(() => {});
   }
   fs.writeFileSync(GLOBAL, original);
 });
 
-test("failed compaction settles in-flight state and rotates before any phantom rearm", async () => {
+test("host-owned failed compaction retries without model rotation, park, or competing continuation", async () => {
+  const cwd = tmpCwd();
+  seedState(cwd, { goal: seedGoal({ status: "active", objective: "let Pi retry the failed compaction" }) });
+  const { pi, ctx } = await boot(cwd, { mainModelFallbacks: ["provider/large"] });
+  const sendsBeforeFailure = pi.sent.length;
+
+  await pi.fire("session_before_compact", {}, ctx);
+  await pi.fire("session_compact_failed", {
+    reason: "overflow",
+    errorMessage: "generation hit the token cap and the summary is incomplete",
+    aborted: false,
+    willRetry: true,
+    fromExtension: false,
+  }, ctx);
+  await tick(80);
+
+  assert.equal(pi.modelSelections.length, 0, "Pi remains the retry owner");
+  assert.equal(readState(cwd).goal?.status, "active", "host retry does not park supervised work");
+  assert.equal(pi.sent.length, sendsBeforeFailure, "GLLA does not dispatch a competing recovery probe");
+  const failure = ledger(cwd).find((entry) => entry.type === "session_compact_failed");
+  assert.equal(failure?.value?.failureKind, "retry-owned");
+  assert.equal(failure?.value?.willRetry, true);
+});
+
+test("terminal prompt overflow rotates once and arms durable post-compact resume debt", async () => {
   const cwd = tmpCwd();
   seedState(cwd, { goal: seedGoal({ status: "active", objective: "survive failed compaction" }) });
   const { pi, ctx } = await boot(cwd, { mainModelFallbacks: ["provider/large"] });
@@ -62,7 +90,7 @@ test("failed compaction settles in-flight state and rotates before any phantom r
   await pi.fire("session_before_compact", {}, ctx);
   await pi.fire("session_compact_failed", {
     reason: "overflow",
-    errorMessage: "Context overflow recovery failed: Summarization failed: generation hit the token cap",
+    errorMessage: "Context overflow recovery failed: maximum context length is 200000 tokens",
     aborted: false,
     willRetry: false,
     fromExtension: false,
@@ -70,12 +98,40 @@ test("failed compaction settles in-flight state and rotates before any phantom r
   await tick(80);
 
   assert.ok(pi.modelSelections.length > 0, "configured larger-context fallback is selected");
-  assert.ok(ledger(cwd).some((e) => e.type === "session_compact_failed"));
+  assert.ok(ledger(cwd).some((e) => e.type === "session_compact_failed" && e.value?.failureKind === "context-overflow"));
   assert.equal(ledger(cwd).filter((e) => e.type === "compaction_inflight_start").length, 1);
   assert.equal(ledger(cwd).filter((e) => e.type === "compaction_refire").length, 0, "no session_compact resume path was faked");
   const ctxAfter = (ctx as any);
   assert.equal(ctxAfter.isIdle(), true, "host returns idle after the failed compaction");
   assert.equal(readState(cwd).goal?.status, "active", "successful fallback keeps work moving");
+  // The fast-path probe must be a non-empty post-compact resync, not a bare or
+  // empty continuation. Its ledger payloadChars is bounded by the normal
+  // continuation assembler and proves GLLA retained durable resume debt.
+  const probe = ledger(cwd).find((e) => e.type === "goal_continuation_sent");
+  assert.ok(probe, "fallback queues the bounded recovery probe");
+  assert.equal(typeof probe?.value?.payloadChars, "number");
+  assert.ok(Number(probe?.value?.payloadChars) > 0);
+  assert.deepEqual(__testOnlyPostCompactDebt(), { resumeOwed: true, resyncPending: true }, "the fast probe cannot strand a switched model without heartbeat debt");
+});
+
+test("terminal output-cap failure parks instead of misclassifying it as context overflow", async () => {
+  const cwd = tmpCwd();
+  seedState(cwd, { goal: seedGoal({ status: "active", objective: "park an incomplete summary" }) });
+  const { pi, ctx } = await boot(cwd, { mainModelFallbacks: ["provider/large"] });
+
+  await pi.fire("session_before_compact", {}, ctx);
+  await pi.fire("session_compact_failed", {
+    reason: "threshold",
+    errorMessage: "Auto-compaction failed: generation hit the token cap and the summary is incomplete",
+    aborted: false,
+    willRetry: false,
+  }, ctx);
+
+  const goal = readState(cwd).goal as { status?: string; pauseReason?: string };
+  assert.equal(pi.modelSelections.length, 0, "an output-capped summary is not evidence of an undersized context window");
+  assert.equal(goal.status, "paused");
+  assert.match(goal.pauseReason ?? "", /summarization output limit/i);
+  assert.ok(ledger(cwd).some((e) => e.type === "session_compact_failed" && e.value?.failureKind === "summarization-length"));
 });
 
 test("failed compaction without a usable fallback parks an active goal durably", async () => {
@@ -95,7 +151,7 @@ test("failed compaction without a usable fallback parks an active goal durably",
   const goal = readState(cwd).goal as { status?: string; pauseKind?: string; pauseReason?: string; pauseSuggestedAction?: string };
   assert.equal(goal.status, "paused");
   assert.equal(goal.pauseKind, "blocked");
-  assert.match(goal.pauseReason ?? "", /compaction failed/i);
+  assert.match(goal.pauseReason ?? "", /summarization output limit/i);
   assert.match(goal.pauseSuggestedAction ?? "", /\/new[\s\S]*\/goal resume/);
   assert.equal(
     pi.sent.slice(sendsBeforeFailure).filter((s) => String(s.message.content ?? "").includes("[GOAL CHECKPOINT")).length,
@@ -119,7 +175,7 @@ test("failed compaction parks a branch loop instead of leaving it active", async
 
   const loop = readState(cwd).loop as { active?: boolean; stopReason?: string; iteration?: number };
   assert.equal(loop.active, false);
-  assert.match(loop.stopReason ?? "", /compaction failed/i);
+  assert.match(loop.stopReason ?? "", /summarization output limit/i);
   assert.equal(loop.iteration, 4, "history is preserved for /loop resume");
   assert.ok(ledger(cwd).some((e) => e.type === "loop_stopped" && e.value?.cause === "compaction_failed"));
 });
