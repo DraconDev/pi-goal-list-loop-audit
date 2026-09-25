@@ -44,8 +44,8 @@ test("chat summary leads with durable change facts and hides verification by def
   assert.ok(changes >= 0, "change account has its own primary section");
   assert.ok(risks > changes, "remaining risks follow changes");
   assert.equal(verification, -1, "technical verification is not shown unless requested");
-  assert.ok(lines.join("\n").includes("Save ordering"));
-  assert.ok(lines.join("\n").includes("Packaging"));
+  assert.ok(lines.join("\n").includes("overlapping saves no longer discard confirmed revisions"));
+  assert.ok(lines.join("\n").includes("Chrome and Firefox archives now contain matching version manifests"));
   assert.doesNotMatch(lines.join("\n"), /747 passed|Quality Gate|bun test|wxt build|Tests:/);
 });
 

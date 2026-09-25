@@ -24,7 +24,9 @@ for (const example of screenshotCases) test(`screenshot-derived ${example.name} 
         assert.ok(archive.includes(narrative), "archive retains repository receipt");
       } else {
         const explanation = narrative.replace(/\s*\([^()]*\.(?:ts|md)\)\.?$/, "");
-        assert.ok(chat.includes(explanation), `complete explanatory clause retained: ${explanation}`);
+        const [outcome, reason] = explanation.split(/\s+[—–]\s+/, 2);
+        assert.ok(chat.includes(outcome.trim()), `primary user-visible outcome retained: ${outcome}`);
+        if (reason) assert.ok(chat.includes(reason.trim()), `concrete reason retained: ${reason}`);
       }
       for (const token of evidence) assert.ok(archive.includes(token), `archive retains ${token}`);
     }

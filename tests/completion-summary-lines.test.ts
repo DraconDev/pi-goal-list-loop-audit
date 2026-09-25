@@ -156,7 +156,7 @@ test("the ✓ done chat notifies use the line block; external keeps the single l
   assert.match(hooks, /persistApprovalRender\(/);
   assert.match(hooks, /replayUndeliveredApprovalRenders\(/);
   assert.doesNotMatch(hooks, /isApprovalContextIdle\(/);
-  assert.match(hooks, /— auditor \$\{result\.model\} approved/);
+  assert.match(hooks, /completion audit \$\{result\.model\} approved/);
   const brief = fs.readFileSync("extensions/completion-summary.ts", "utf8");
   assert.match(brief, /✓ done — \$\{notice\.outcome\}/);
   const tools = fs.readFileSync("extensions/loops/goal-tools.ts", "utf8");

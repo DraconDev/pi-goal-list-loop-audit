@@ -483,7 +483,9 @@ function auditRowStatus(history: Goal["auditHistory"]): string {
   return "no review";
 }
 
-/** Split a stale-filtered `Label: value` detail into a bold lead + body. */
+/** Split a non-finding detail (`Next:`, `Unresolved:`, `Left out:`) into a
+ * bold label and body. Finding details use `normalizeFindingLead` instead so
+ * topical labels never masquerade as user-visible outcomes. */
 function leadBody(detail: string): { lead: string; body: string } {
   const safeDetail = sanitizeDisplayText(detail);
   const separator = safeDetail.indexOf(":");
@@ -500,8 +502,10 @@ function findingPresentation(finding: string, chat: boolean): { outcome: string;
   ].filter(Boolean);
   const normalizedReason = [...new Set(reasonParts)].join(" · ").trim();
   return {
-    outcome: chatNarrative(parsed.outcome),
-    reason: chatNarrative(normalizedReason),
+    // Chat removes machine receipts; the archive keeps the full evidence
+    // prose. The outcome/reason split itself is shared by both surfaces.
+    outcome: chat ? chatNarrative(parsed.outcome) : sanitizeDisplayText(parsed.outcome),
+    reason: chat ? chatNarrative(normalizedReason) : sanitizeDisplayText(normalizedReason),
     evidence: parsed.evidence,
   };
 }
@@ -602,8 +606,15 @@ export function partitionRichDetails(details: string[]): { findings: string[]; t
   const tests: string[] = [];
   const next: string[] = [];
   for (const detail of details) {
-    if (/^\s*Tests\s*:/i.test(detail)) push(tests, detail);
-    else if (/^\s*(Next|Unresolved|Left out)\s*:/i.test(detail)) push(next, detail);
+    const semantic = normalizeFindingLead(detail);
+    if (semantic.technical) {
+      // Tests/verification belong in the evidence table, never in a Lead.
+      // Verdict/audit details are represented by the independent review
+      // trailer and are not a second human-facing finding.
+      if (/^\s*(?:Tests?|Test Results|Verification)\s*:/i.test(detail)) push(tests, detail);
+      continue;
+    }
+    if (/^\s*(Next|Unresolved|Left out)\s*:/i.test(detail)) push(next, detail);
     else push(findings, detail);
   }
   return { findings, tests, next };
@@ -749,7 +760,12 @@ export function buildRichTerminalParts(args: {
   const groups = (args.groups ?? []).map(group => {
     const entries = group.findings
       .map((finding, i) => ({ finding, proof: group.tests?.[i] }))
-      .filter(({ finding, proof }) => !normalizeFindingLead(sanitizeDisplayText(finding)).technical && (args.chat === true ? !isRepositoryReceipt(finding, proof) : true));
+      .filter(({ finding, proof }) => {
+        const semantic = normalizeFindingLead(sanitizeDisplayText(finding));
+        // Technical-only claims are evidence, not Leads. Repository receipts
+        // remain in the archive but are suppressed from the compact chat.
+        return !semantic.technical && (args.chat === true ? !isRepositoryReceipt(finding, proof) : true);
+      });
     return { ...group, findings: entries.map(entry => entry.finding), tests: entries.map(entry => entry.proof ?? "") };
   }).filter(group => group.findings.length > 0);
   const useTable = !args.chat && groups.length >= RICH_TABLE_GROUP_THRESHOLD;
@@ -788,7 +804,7 @@ export function buildRichTerminalParts(args: {
     // v0.38.55: the flat fallback renders every detail — no cap.
     findings.filter(detail => !args.chat || !isRepositoryReceipt(detail)).forEach((detail, i) => {
     const normalized = normalizeFindingLead(args.chat ? chatNarrative(detail) : detail);
-    if (normalized.technical && args.chat) return;
+    if (normalized.technical) return;
     const reason = [...new Set([normalized.reason, ...normalized.evidence].filter(Boolean))].join(" · ");
     findingLines.push(reason ? `${i + 1}. **${normalized.outcome}** — ${reason}` : `${i + 1}. **${normalized.outcome}**`);
     });

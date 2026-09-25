@@ -36,6 +36,22 @@ function stripLabelPrefixes(text: string): string {
   }
 }
 
+/** Detect a technical label after a legacy/semantic wrapper as well as at
+ * the raw start. `Lead: Tests: ...` is still technical even though the raw
+ * string does not begin with `Tests:`. */
+function hasTechnicalPrefix(text: string): boolean {
+  let current = text.trim();
+  for (;;) {
+    if (TECHNICAL_PREFIX.test(current)) return true;
+    const next = current
+      .replace(LEGACY_LEAD_PREFIX, "")
+      .replace(SEMANTIC_LABEL_PREFIX, "")
+      .trim();
+    if (next === current) return false;
+    current = next;
+  }
+}
+
 /** Extract repo-relative path:line tokens without interpreting their colons
  * as label separators. Absolute paths are intentionally not evidence. */
 export function extractFindingEvidence(text: string): { text: string; evidence: string[] } {
@@ -68,10 +84,11 @@ export function splitFindingLeadText(
   const clean = text.trim();
 
   // Older callers used a short topical prefix (`Paragraph routing: ...`).
-  // When the suffix contains real proof, the prefix is a category rather than
-  // the user-visible outcome, so drop it. Version/path phrases are protected.
+  // When the suffix is prose, the prefix is a category rather than the
+  // user-visible outcome, so drop it even when the legacy string has no
+  // path:line token. Version/path phrases remain protected.
   const colon = clean.indexOf(":");
-  if (hasEvidence && colon > 0 && colon <= 72) {
+  if (colon > 0 && colon <= 72) {
     const candidate = clean.slice(0, colon).trim();
     const suffix = clean.slice(colon + 1).trim();
     if (
@@ -81,8 +98,9 @@ export function splitFindingLeadText(
       && !candidate.includes("/")
       && !candidate.includes(".")
       && !/^(?:the|a|an)\b/i.test(candidate)
+      && (hasEvidence || /\s+/.test(suffix))
     ) {
-      const nested = splitFindingLeadText(suffix, true);
+      const nested = splitFindingLeadText(suffix, hasEvidence);
       return { outcome: nested.outcome || suffix, reason: nested.reason };
     }
   }
@@ -103,7 +121,7 @@ export function splitFindingLeadText(
 export function normalizeFindingLead(value: string): FindingLead {
   const raw = value.trim();
   const legacyLead = LEGACY_LEAD_PREFIX.test(raw);
-  const technical = TECHNICAL_PREFIX.test(raw);
+  const technical = hasTechnicalPrefix(raw);
   const normalized = stripLabelPrefixes(raw);
   const split = splitFindingLeadText(normalized);
   const outcomeParts = extractFindingEvidence(split.outcome);
