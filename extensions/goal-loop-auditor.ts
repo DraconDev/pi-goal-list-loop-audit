@@ -164,6 +164,11 @@ export function buildGoalAuditorPrompt(goal: Goal, completionSummary: string | n
   // byte-shape.
   const changedFiles = (goal.telemetry?.files ?? []).filter((f): f is string => typeof f === "string" && f.length > 0);
   const changedOverflow = goal.telemetry?.filesOverflow ?? 0;
+  // The recap path shows 20 paths with an overflow count; the per-attempt
+  // audit prompt follows the same bound so a 100-path change set stays a
+  // verifiable starting list instead of ~50 KB of unactionable inventory.
+  const shownChangedFiles = changedFiles.slice(0, 20);
+  const hiddenChangedCount = changedFiles.length - shownChangedFiles.length;
   return [
     "You are the independent completion auditor for pi-goal-list-loop-audit.",
     "The executor claims the goal is complete. Your job is to decide whether the user's objective is actually satisfied.",
@@ -210,10 +215,13 @@ export function buildGoalAuditorPrompt(goal: Goal, completionSummary: string | n
       "",
       `Changed files recorded during execution (${changedFiles.length} path${changedFiles.length === 1 ? "" : "s"}) — verify THESE first; this list is the work under review:`,
       "<changed_files>",
-      ...changedFiles.map((f) => `- ${escapeXmlText(f)}`),
+      ...shownChangedFiles.map((f) => `- ${escapeXmlText(f)}`),
       "</changed_files>",
       ...(changedOverflow > 0 ? [
         `${changedOverflow} further touched path${changedOverflow === 1 ? " was" : "s were"} recorded past the ${MAX_TELEMETRY_FILES}-path list cap — the work is larger than the list above.`,
+      ] : []),
+      ...(hiddenChangedCount > 0 ? [
+        `${hiddenChangedCount} listed path${hiddenChangedCount === 1 ? " was" : "s were"} omitted past the 20-path prompt cap — verify the 20 above first, then follow the evidence outward.`,
       ] : []),
       "Start here, not with open-ended exploration: confirm each listed path carries the claimed change, then cross-check the verification summary against them.",
       "Caveat: subagent file writes, shell redirections, and deletions bypass path capture, and a listed path may name an attempted write that failed — verify against the tree, and follow the evidence outward if the work under review is not visible in this list. This list scopes the START of the audit, never its boundary.",

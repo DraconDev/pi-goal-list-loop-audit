@@ -1835,11 +1835,9 @@ function registerAgentTools(pi: any): void {
             ...durableCompletionClaim,
             phase: "recovery-pending",
             recoveryAt: nowIso(),
-            recoveryReason: result.error.startsWith("Auditor exceeded")
-              ? "wall-timeout"
-              : result.error.startsWith("Auditor stalled")
-                ? "inactivity-timeout"
-                : "auditor-no-verdict",
+            recoveryReason: result.error.startsWith("Auditor stalled")
+              ? "inactivity-timeout"
+              : "auditor-no-verdict",
             providerErrorDiagnostic: failureCopy.diagnostic,
             recoveryEpisodeKey,
             recoveryNoticeKeys: durableCompletionClaim.recoveryNoticeKeys ?? [],
@@ -1851,7 +1849,7 @@ function registerAgentTools(pi: any): void {
             pending = scheduleParkedCompletionAuditRecovery(ctx, pending, pending.recoveryReason ?? "auditor-timeout");
           }
           const notifyTimeout = claimRecoveryNotice(pending, `${recoveryEpisodeKey}:timeout`);
-          const timeoutInfrastructure = result.infrastructureClass === "timeout" || /^Auditor (?:exceeded|stalled)\b/i.test(result.error);
+          const timeoutInfrastructure = result.infrastructureClass === "timeout" || /^Auditor stalled\b/i.test(result.error);
           updateGoal({
             status: "paused",
             auditHistory: history,
@@ -1869,11 +1867,9 @@ function registerAgentTools(pi: any): void {
               : `The claim is stored. Check long-running verification commands, then ${activeGoalSurfaceCommand("resume")} to retry the isolated auditor.`,
           }, ctx);
           appendLedger(ctx.cwd,
-            result.error.startsWith("Auditor exceeded")
-              ? "audit_wall_timeout"
-              : result.error.startsWith("Auditor stalled")
-                ? "audit_inactivity_timeout"
-                : "audit_no_verdict_infrastructure",
+            result.error.startsWith("Auditor stalled")
+              ? "audit_inactivity_timeout"
+              : "audit_no_verdict_infrastructure",
             { goalId: auditGoalId, attemptId: auditAttemptId, error: failureCopy.diagnostic.slice(0, 240), diagnostic: failureCopy.diagnostic, recoveryEpisodeKey },
           );
           if (notifyTimeout) {

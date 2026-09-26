@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -78,4 +78,26 @@ test("semantic verdict-quality failures and shield blocks keep distinct categori
   assert.match(shield, /disapproved:\s*false/);
   assert.match(shield, /regressionShieldPassed:\s*false/);
   assert.doesNotMatch(shield, /error:/, "a shield block is not infrastructure failure");
+});
+
+test("audit 2026-09-25: the reverted wall-clock bound leaves no dead classification branches", () => {
+  // The opt-in auditor wall (auditorWallMs/absoluteTimeoutMs) was reverted —
+  // no emitter produces "Auditor exceeded" anymore, so the recovery
+  // classifiers must not contain unreachable branches for it.
+  const hits: string[] = [];
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (/\.(ts|mjs|js)$/.test(entry.name)) {
+        const text = readFileSync(full, "utf-8");
+        text.split("\n").forEach((line, i) => {
+          if (line.includes("Auditor exceeded")) hits.push(`${full}:${i + 1}: ${line.trim()}`);
+        });
+      }
+    }
+  };
+  walk(path.resolve(__dirname, "../extensions"));
+  walk(path.resolve(__dirname, "../scripts"));
+  assert.deepEqual(hits, [], `dead wall-bound references remain:\n${hits.join("\n")}`);
 });

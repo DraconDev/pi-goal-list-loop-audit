@@ -156,3 +156,15 @@ test("change-scope: the fallback summary names recorded paths, bounded", () => {
   });
   assert.match(legacy, /changed paths were not captured/, "pre-tracking goals keep the old sentence");
 });
+
+test("change-scope: the audit brief caps the prompt list at 20 with an omission line", () => {
+  const goal = seedGoal({
+    objective: "huge change set — done when pinned",
+    telemetry: { turns: 9, fileWrites: 130, bashCalls: 0, files: Array.from({ length: 100 }, (_, i) => `f${i}.ts`) },
+  }) as unknown as Goal;
+  const brief = buildGoalAuditorPrompt(goal, "Outcome: x.\nChanged: y.\nEvidence: z.\nTests: t.\nUnresolved: none.\nNext: none.", undefined);
+  assert.match(brief, /- f0\.ts/);
+  assert.match(brief, /- f19\.ts/);
+  assert.doesNotMatch(brief, /- f20\.ts/, "paths past 20 leave the prompt list");
+  assert.match(brief, /80 listed paths were omitted past the 20-path prompt cap/);
+});

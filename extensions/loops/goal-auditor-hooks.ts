@@ -742,7 +742,9 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
 // markCompletionAuditRecoveryPending moved to extensions/goal-recovery.ts (decomposition step 3, v0.34.111, cluster C).
 
 function isAuditorTimeoutError(error: string | undefined): boolean {
-  return !!error && (/^Auditor exceeded its .* wall-clock bound/i.test(error) || /^Auditor stalled —/i.test(error));
+  // The opt-in wall-clock bound was reverted — only the stall watchdog
+  // still produces timeout-class errors.
+  return !!error && /^Auditor stalled —/i.test(error);
 }
 
 /** Errors proving the detached worker failed to produce a semantic verdict.
@@ -1968,11 +1970,9 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       ...durableClaim,
       phase: "recovery-pending",
       recoveryAt: nowIso(),
-      recoveryReason: result.error.startsWith("Auditor exceeded")
-        ? "wall-timeout"
-        : result.error.startsWith("Auditor stalled")
-          ? "inactivity-timeout"
-          : "auditor-no-verdict",
+      recoveryReason: result.error.startsWith("Auditor stalled")
+        ? "inactivity-timeout"
+        : "auditor-no-verdict",
       providerErrorDiagnostic: failureCopy.diagnostic,
       recoveryEpisodeKey,
       recoveryNoticeKeys: durableClaim.recoveryNoticeKeys ?? [],
@@ -1985,7 +1985,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     }
     const persistentRecovery = pending.recoveryRetryAt !== undefined && aggressiveAuditorRecoveryEnabled(liveCtx.cwd);
     const notifyTimeout = claimRecoveryNotice(pending, `${recoveryEpisodeKey}:timeout`);
-    const timeoutInfrastructure = result.infrastructureClass === "timeout" || /^Auditor (?:exceeded|stalled)\b/i.test(result.error);
+    const timeoutInfrastructure = result.infrastructureClass === "timeout" || /^Auditor stalled\b/i.test(result.error);
     updateGoal({
       status: "paused",
       auditHistory: history,
@@ -2003,11 +2003,9 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
         : `The claim is stored. Check long-running verification commands, then ${activeGoalSurfaceCommand("resume")} to retry the isolated auditor.`,
     }, liveCtx);
     appendLedger(liveCtx.cwd,
-      result.error.startsWith("Auditor exceeded")
-        ? "audit_wall_timeout"
-        : result.error.startsWith("Auditor stalled")
-          ? "audit_inactivity_timeout"
-          : "audit_no_verdict_infrastructure",
+      result.error.startsWith("Auditor stalled")
+        ? "audit_inactivity_timeout"
+        : "audit_no_verdict_infrastructure",
       { goalId, attemptId: claim.attemptId, error: failureCopy.diagnostic.slice(0, 240), diagnostic: failureCopy.diagnostic, recoveryEpisodeKey },
     );
     if (notifyTimeout) liveCtx.ui.notify(
