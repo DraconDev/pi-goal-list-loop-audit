@@ -3214,6 +3214,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
       `auditJobRetentionMs: ${((effectiveSettings.auditJobRetentionMs ?? AUDIT_JOB_CLEANUP_MIN_AGE_MS) / 60000).toString()}m  [${prov.auditJobRetentionMs?.source ?? "default"}]`,
       fmt("auditSpotCheckRate", "auditSpotCheckRate"),
       fmt("auditorInspection", "auditorInspection"),
+      fmt("auditorMirrorSessionExtensions", "auditorMirrorSessionExtensions"),
       fmt("hourlyRetryProbe", "hourlyRetryProbe"),
       fmt("subagentModelStrategy", "subagentModelStrategy"),
       fmt("subagentModelOverrides", "subagentModelOverrides"),

@@ -654,3 +654,15 @@ test("audit 2026-09-26: subagent thinking editor pins, inherits, and rejects gar
     restoreGlobal();
   }
 });
+
+test("audit 2026-09-26: headless /glla fallback covers every SETTINGS_KEYS entry", async () => {
+  // The 2026-09-26 /glla completeness review found auditorMirrorSessionExtensions
+  // invisible headlessly. This gate fails on the next omission instead of the
+  // next field report. Legacy `reviewer` is an alias by design (see SETTINGS_KEYS).
+  const { SETTINGS_KEYS } = await import("../extensions/goal-settings.ts");
+  const src = fs.readFileSync("extensions/goal-commands.ts", "utf-8");
+  const headless = src.slice(src.indexOf("Headless fallback"));
+  assert.ok(headless.length > 1000, "headless block anchors the review");
+  const missing = (SETTINGS_KEYS as string[]).filter((key) => key !== "reviewer" && !headless.includes(key));
+  assert.deepEqual(missing, [], `headless drift: ${missing.join(", ")}`);
+});
