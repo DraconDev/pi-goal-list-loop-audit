@@ -519,10 +519,10 @@ process.on("SIGTERM", () => { clearTimeout(next); process.exit(0); });
 `);
   const stalled: AuditorStalledInfo[] = [];
   // Controlled clock: every observed snapshot advances the parent's view of
-  // time by a full second, so the 300ms no-progress window is crossed six
-  // times over in fake time while the fixture only needs a few beats. The
-  // audit must survive all of it: an open, in-budget tool is work, not
-  // silence. (Without the exemption the watchdog fires on the first jump.)
+  // time by a full second, so the 300ms no-progress window is crossed again
+  // and again in fake time while the fixture only needs six beats. The audit
+  // must survive all of it: an open, in-budget tool is work, not silence.
+  // (Without the exemption the watchdog fires on the very first jump.)
   let clock = Date.now();
   const started = Date.now();
   const result = await runDetachedGoalCompletionAuditor({
