@@ -366,8 +366,8 @@ setInterval(() => {}, 1_000);
     thinkingLevel: "high",
     onProgress: (progress) => {
       // Controlled clock: jump the parent's view of time past the silence
-      // bound on the first observed snapshot. Everything else (worker, poll
-      // loop, SIGTERM teardown) still runs for real.
+      // bound on the first observed snapshot. Everything else (the worker, the
+      // poll loop, the cancellation and scratch cleanup) still runs for real.
       if (progress.lastActivityAt) clock = Math.max(clock, progress.lastActivityAt) + 4_000;
     },
     onStalled: (info) => stalled.push(info),
