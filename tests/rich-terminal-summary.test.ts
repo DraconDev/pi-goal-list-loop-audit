@@ -6,6 +6,7 @@
 
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
+import * as fs from "node:fs";
 import { sanitizeFindingGroups, type FindingGroup, type Goal } from "../extensions/goal-loop-core.js";
 import {
   buildDurationLine,
@@ -291,7 +292,7 @@ test("v0.38.55: render path respects the sanitize trust boundary", () => {
   assert.equal(bullets.length, 16, `every in-boundary finding renders, got ${bullets.length}`);
   const long = bullets.find((l) => l.startsWith("- **"));
   assert.ok(long, "first finding present");
-  // The renderer itself never clips values — the 500-char finding bound
+  // The renderer itself never clips values — the 10k-char finding bound
   // is the trust boundary's doing (pinned by the sanitize test above).
   assert.ok(long!.includes("x".repeat(400)), `value substantially present, got ${long!.length}`);
   assert.ok(crowded.chatLines.some((l) => l.startsWith("#### 3.")), "later groups keep their headers");
@@ -332,7 +333,7 @@ test("sanitizeFindingGroups bounds shape at the trust boundary", () => {
   assert.equal(sanitizeFindingGroups("nope"), undefined, "non-array degrades to absent");
   assert.equal(sanitizeFindingGroups([]), undefined, "empty degrades to absent");
   const clean = sanitizeFindingGroups([
-    { title: "  Good  ", findings: ["  Lead: body  ", "", 42, "x".repeat(600)] },
+    { title: "  Good  ", findings: ["  Lead: body  ", "", 42, "x".repeat(600), "y".repeat(10500)] },
     { title: "   ", findings: ["blank title drops"] },
     { title: "Empty", findings: [] },
     "junk",
@@ -340,8 +341,9 @@ test("sanitizeFindingGroups bounds shape at the trust boundary", () => {
   ]);
   assert.equal(clean?.length, 1, "only the valid group survives");
   assert.equal(clean?.[0]?.title, "Good", "titles trim");
-  assert.equal(clean?.[0]?.findings.length, 2, "blank/non-string findings drop");
-  assert.equal(clean?.[0]?.findings[1]?.length, 500, "findings clip at 500");
+  assert.equal(clean?.[0]?.findings.length, 3, "blank/non-string findings drop");
+  assert.equal(clean?.[0]?.findings[1]?.length, 600, "in-guard findings pass through untouched");
+  assert.equal(clean?.[0]?.findings[2]?.length, 10000, "pathological findings clip at the 10k guard");
   const capped = sanitizeFindingGroups(Array.from({ length: 15 }, (_, i) => ({ title: `t${i}`, findings: ["f"] })));
   assert.equal(capped?.length, 12, "groups capped at 12");
 });
@@ -415,4 +417,20 @@ test("v0.38.55: final repository state closes the card when readable", () => {
   const archiveParts = buildRichTerminalParts({ outcome: "shipped", details: [], countsLine: "", repoState });
   assert.deepEqual(archiveParts.repoLines, repoState, "archive projection retains full repository evidence");
   assert.equal(buildFinalRepoStateLines("/nonexistent-dir-xyz"), undefined, "unreadable state degrades to absent");
+});
+
+test("audit 2026-09-26: complete_goal accepts long free-prose values instead of refusing them", () => {
+  // Field follow-up (endless-td screenshots): a >500-char leftOut was
+  // refused at the tool boundary while the prompt promises uncapped values
+  // under a 10k-char guard. Schema, handler, and sanitizer must agree.
+  const src = fs.readFileSync("extensions/loops/goal-tools.ts", "utf-8");
+  assert.match(src, /leftOut: Type\.Optional\(Type\.String\(\{\s*maxLength: 10000,/, "leftOut schema matches the documented 10k guard");
+  assert.doesNotMatch(src, /leftOut\?\.trim\(\) \? \{ leftOut: p\.leftOut\.trim\(\)\.slice\(0, 500\)/, "no mid-word 500-slice on leftOut");
+  assert.match(src, /clipSummaryValue\(p\.leftOut\.trim\(\), 10000\)/, "over-guard leftOut clips at a clause boundary");
+  // The same class on findingGroups strings: a 1500-char finding (the shape
+  // that would have been refused) survives the trust boundary intact.
+  const long = `Users can complete the fill — ${"detail ".repeat(300)}src/popup.ts:42`;
+  assert.ok(long.length > 1500, "fixture exceeds the old 500 cap");
+  const kept = sanitizeFindingGroups([{ title: "Area", findings: [long] }]);
+  assert.equal(kept?.[0]?.findings[0], long.replace(/\s+/g, " ").trim(), "in-guard findings pass through untouched");
 });

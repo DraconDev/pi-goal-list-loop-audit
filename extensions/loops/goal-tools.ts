@@ -281,7 +281,7 @@ import {
   pushCapped as pushRepetitionCapped,
 } from "../goal-loop-repetition.js";
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
-import { buildFinalRepoStateLines, buildTerminalApprovalRender, compactCompletionSummary, compactTerminalCompletionSummary, completionSummaryDensityNote } from "../completion-summary.js";
+import { buildFinalRepoStateLines, buildTerminalApprovalRender, clipSummaryValue, compactCompletionSummary, compactTerminalCompletionSummary, completionSummaryDensityNote } from "../completion-summary.js";
 import { persistApprovalRender, replayUndeliveredApprovalRenders } from "../approval-render-store.js";
 import { resolveAuditorThinkingLevel } from "../auditor-thinking.js";
 import {
@@ -574,10 +574,11 @@ function registerAgentTools(pi: any): void {
       })),
       newObjective: Type.Optional(Type.String({ description: "v0.25.0 (contract item 15): when the work has legitimately shifted, pass the new objective here — it atomically replaces the goal objective AND the audit proceeds against the NEW objective in this same call. Do not use to dodge a legitimate disapproval; the auditor sees the change." })),
       leftOut: Type.Optional(Type.String({
-        maxLength: 500,
+        maxLength: 10000,
         description:
           "v0.38.37: what this turn deliberately left out (scope cut, deferred item + why, in plain words). " +
           "Renders under `### Remaining` in the user-facing terminal summary. " +
+          "Bounds match the documented 10k-char value guard — longer input clips at a clause boundary, never a refusal. " +
           "Omit when nothing was deliberately left out — absent stays absent, never invented.",
       })),
       showVerification: Type.Optional(Type.Boolean({
@@ -585,8 +586,8 @@ function registerAgentTools(pi: any): void {
       })),
       findingGroups: Type.Optional(Type.Array(Type.Object({
         title: Type.String({ maxLength: 120, description: "Work-area name (e.g. a subsystem, screen, or phase)" }),
-        findings: Type.Array(Type.String({ maxLength: 500 }), { maxItems: 6, description: "Findings in this area as `<primary user-visible outcome> — <concrete evidence/reason>`; do not prefix with `Lead:`, `Tests:`, or `Verdict:` (max 6 per area)" }),
-        tests: Type.Optional(Type.Array(Type.String({ maxLength: 500 }), { maxItems: 6, description: "v0.38.52: optional per-finding test-result lines, aligned by index with findings (tests[i] proves findings[i]); retained as detailed archive support and never added to default chat copy" })),
+        findings: Type.Array(Type.String({ maxLength: 10000 }), { maxItems: 6, description: "Findings in this area as `<primary user-visible outcome> — <concrete evidence/reason>`; do not prefix with `Lead:`, `Tests:`, or `Verdict:` (max 6 per area). Bounds match the documented 10k-char value guard." }),
+        tests: Type.Optional(Type.Array(Type.String({ maxLength: 10000 }), { maxItems: 6, description: "v0.38.52: optional per-finding test-result lines, aligned by index with findings (tests[i] proves findings[i]); retained as detailed archive support and never added to default chat copy. Bounds match the documented 10k-char value guard." })),
       }), {
         maxItems: 6,
         description:
@@ -902,7 +903,9 @@ function registerAgentTools(pi: any): void {
         verificationSummary: p.verificationSummary,
         // v0.38.37: the deliberate non-do rides the pending claim into
         // the terminal render — the only source the summary may cite.
-        ...(p.leftOut?.trim() ? { leftOut: p.leftOut.trim().slice(0, 500) } : {}),
+        // 2026-09-26: clause-aware bound at the documented 10k-char guard —
+        // the schema accepts it, so the handler clips (never refuses).
+        ...(p.leftOut?.trim() ? { leftOut: clipSummaryValue(p.leftOut.trim(), 10000) } : {}),
         ...(p.showVerification === true ? { showVerification: true } : {}),
         ...(sanitizedGroups ? { findingGroups: sanitizedGroups } : {}),
         ...(sanitizedGates ? { gateRows: sanitizedGates } : {}),

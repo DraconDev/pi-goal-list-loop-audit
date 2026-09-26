@@ -1,7 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { sanitizeDisplayText, type FindingGroup, type GateRow, type Goal, type Status } from "./goal-loop-core.js";
 import { fmtElapsed, truncateCells } from "./goal-loop-display.js";
-import { normalizeFindingLead } from "./finding-lead.js";
+import { normalizeFindingLead, clipSummaryValue } from "./finding-lead.js";
+export { clipSummaryValue };
 
 /**
  * The durable, user-facing terminal recap contract. Keep this as a small
@@ -79,42 +80,6 @@ export function isUsefulCompletionSummary(text: string | undefined): boolean {
  * as `not recorded` so a compact notification cannot imply evidence that the
  * durable recap did not contain.
  */
-/** Cut a summary value at a clause boundary, never mid-word (field
- * complaints 2026-09-03 `0 o…` and 2026-09-08 `playlist auto-add,…`:
- * a word-boundary cut that strands dangling punctuation still reads as
- * clipping, not summarizing). Prefer the last clause boundary
- * (`, ; : · — – ( [`) past a floor so the cut reads intentional; fall
- * back to the word break, then to a hard cut only when the head holds
- * no space past the halfway mark — a long token such as a commit hash
- * must not eviscerate the whole value. Trailing punctuation is stripped
- * `npm version…+ latest` cut inside a `+`-joined list). */
-export function clipSummaryValue(value: string, limit: number): string {
-  const clean = value.replace(/\s+/g, " ").trim();
-  const capped = Number.isFinite(limit) ? Math.max(8, Math.floor(limit)) : 72;
-  // v0.38.45 audit: code-point-safe — UTF-16 slice split surrogate pairs.
-  const units = [...clean];
-  if (units.length <= capped) return clean;
-  const headUnits = units.slice(0, capped - 1);
-  const head = headUnits.join("");
-  const floor = Math.max(16, Math.floor((capped - 1) * 0.4));
-  let boundary = -1;
-  headUnits.forEach((unit, i) => {
-    if (/[,;:·—–(+[\[]/u.test(unit)) boundary = i;
-  });
-  if (boundary >= floor) {
-    const cut = headUnits.slice(0, boundary).join("").replace(/[,;:·—–(+[\[\s]+$/u, "");
-    if ([...cut].length >= Math.min(floor, 16)) return `${cut}…`;
-  }
-  let space = -1;
-  headUnits.forEach((unit, i) => {
-    if (unit === " ") space = i;
-  });
-  const kept = (space > capped / 2 ? headUnits.slice(0, space).join("") : head)
-    .trimEnd()
-    .replace(/[,;:·—–(+\[]$/u, "");
-  return `${kept}…`;
-}
-
 /** v0.38.45 audit: LAST-occurrence label search — first-occurrence
  * indexOf let a label named inside an earlier label's VALUE steal the
  * segmentation of every later label ("Outcome: see Tests: x. Tests: y"

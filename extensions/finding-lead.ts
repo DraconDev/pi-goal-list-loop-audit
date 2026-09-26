@@ -141,3 +141,41 @@ export function normalizeFindingLead(value: string): FindingLead {
 
 /** Compatibility alias for callers that prefer the verb used by the schema. */
 export const parseFindingLead = normalizeFindingLead;
+
+/** Cut a summary value at a clause boundary, never mid-word (field
+ * complaints 2026-09-03 `0 o…` and 2026-09-08 `playlist auto-add,…`:
+ * a word-boundary cut that strands dangling punctuation still reads as
+ * clipping, not summarizing). Prefer the last clause boundary
+ * (`, ; : · — – ( [`) past a floor so the cut reads intentional; fall
+ * back to the word break, then to a hard cut only when the head holds
+ * no space past the halfway mark — a long token such as a commit hash
+ * must not eviscerate the whole value. Trailing punctuation is stripped
+ * `npm version…+ latest` cut inside a `+`-joined list). Lives here (leaf
+ * module, no imports) so both the renderer and the trust-boundary
+ * sanitizer share one cutter without an import cycle. */
+export function clipSummaryValue(value: string, limit: number): string {
+  const clean = value.replace(/\s+/g, " ").trim();
+  const capped = Number.isFinite(limit) ? Math.max(8, Math.floor(limit)) : 72;
+  // v0.38.45 audit: code-point-safe — UTF-16 slice split surrogate pairs.
+  const units = [...clean];
+  if (units.length <= capped) return clean;
+  const headUnits = units.slice(0, capped - 1);
+  const head = headUnits.join("");
+  const floor = Math.max(16, Math.floor((capped - 1) * 0.4));
+  let boundary = -1;
+  headUnits.forEach((unit, i) => {
+    if (/[,;:·—–(+[\[]/u.test(unit)) boundary = i;
+  });
+  if (boundary >= floor) {
+    const cut = headUnits.slice(0, boundary).join("").replace(/[,;:·—–(+[\[\s]+$/u, "");
+    if ([...cut].length >= Math.min(floor, 16)) return `${cut}…`;
+  }
+  let space = -1;
+  headUnits.forEach((unit, i) => {
+    if (unit === " ") space = i;
+  });
+  const kept = (space > capped / 2 ? headUnits.slice(0, space).join("") : head)
+    .trimEnd()
+    .replace(/[,;:·—–(+\[]$/u, "");
+  return `${kept}…`;
+}
