@@ -27,7 +27,9 @@ test("item 3: write/edit/multi_edit/write_file are the write-signal tools", () =
 });
 
 test("item 3: the tool_result handler bumps fileWrites via isLoopWriteTool", () => {
-  assert.match(goalSrc, /if \(isLoopWriteTool\(String\(event\?\.toolName \?\? ""\)\)\) \{/);
+  // Both event shapes are attested (toolName and name) — the counter reads
+  // either, matching the call-time path recorder.
+  assert.match(goalSrc, /if \(isLoopWriteTool\(String\(event\?\.toolName \?\? event\?\.name \?\? ""\)\)\) \{/);
   assert.match(goalSrc, /metrics\.fileWrites\+\+/);
 });
 
