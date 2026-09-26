@@ -8,7 +8,7 @@ import { test, afterEach } from "node:test";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 
-import activate from "../extensions/loops/goal.js";
+import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from "../extensions/loops/goal.js";
 import { MockPi, makeMockCtx, tmpCwd } from "./harness/mock-pi.js";
 
 const GLOBAL_SETTINGS_PATH = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
@@ -31,6 +31,14 @@ function headlessCtx(cwd: string): any {
   return ctx;
 }
 
+async function boot(cwd: string): Promise<any> {
+  __testOnlyResetOwnerSession();
+  __testOnlyResetStaleFlag();
+  const ctx = headlessCtx(cwd);
+  await pi.fire("session_start", { reason: "reload" }, ctx);
+  return ctx;
+}
+
 afterEach(() => {
   fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ aggressiveMode: false }));
 });
@@ -42,16 +50,18 @@ function headlessText(ctx: any): string {
 
 test("headless /glla shows the effective auditor thinking level with its why", async () => {
   const cwd = tmpCwd();
-  const ctx = headlessCtx(cwd);
+  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ aggressiveMode: false, auditorModel: "agnes/agnes-3.0-flash" }));
+  const ctx = await boot(cwd);
   await pi.command("glla", "", ctx);
   const text = headlessText(ctx);
   assert.match(text, /auditorThinkingEffective: high \(requested max \[session-inherit\]; capped by agnes\/agnes-3\.0-flash support\)/);
+  await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
 });
 
 test("headless /glla honors an explicit thinking setting and unknown models", async () => {
   const cwd = tmpCwd();
-  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ aggressiveMode: false, auditorThinkingLevel: "medium" }));
-  const ctx = headlessCtx(cwd);
+  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ aggressiveMode: false, auditorThinkingLevel: "medium", auditorModel: "agnes/agnes-3.0-flash" }));
+  const ctx = await boot(cwd);
   await pi.command("glla", "", ctx);
   assert.match(
     headlessText(ctx),
@@ -64,9 +74,14 @@ test("headless /glla honors an explicit thinking setting and unknown models", as
   ctx2.thinkingLevel = "max";
   ctx2.model = { provider: "openrouter", id: "stealth/space-bunny-alpha" };
   ctx2.modelRegistry = { getAvailable: () => [] };
+  __testOnlyResetOwnerSession();
+  __testOnlyResetStaleFlag();
+  await pi.fire("session_start", { reason: "reload" }, ctx2);
   await pi.command("glla", "", ctx2);
   assert.match(
     headlessText(ctx2),
     /auditorThinkingEffective: max \(requested max \[session-inherit\]; .* capabilities unknown\)/,
   );
+  await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  await pi.fire("session_shutdown", { reason: "test-end" }, ctx2);
 });
