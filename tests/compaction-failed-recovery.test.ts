@@ -249,8 +249,10 @@ test("a failed debt-discharge append keeps RAM debt instead of diverging from di
   await pi.fire("session_start", { reason: "reload" }, ctx);
   await tick(80);
   assert.deepEqual(__testOnlyPostCompactDebt(), { resumeOwed: true, resyncPending: true }, "same-session restore arms the debt flags");
-  // Break persistence: every .pi-glla append now fails.
-  fs.chmodSync(path.join(cwd, ".pi-glla"), 0o555);
+  // Break persistence: the state append now fails (an existing file appends
+  // fine under a read-only dir, so the file itself goes read-only).
+  const ledgerFile = path.join(cwd, ".pi-glla", "active.jsonl");
+  fs.chmodSync(ledgerFile, 0o444);
   try {
     await pi.fire("agent_start", {}, ctx);
     assert.deepEqual(
@@ -259,7 +261,7 @@ test("a failed debt-discharge append keeps RAM debt instead of diverging from di
       "RAM keeps the debt the disk still holds",
     );
   } finally {
-    fs.chmodSync(path.join(cwd, ".pi-glla"), 0o755);
+    fs.chmodSync(ledgerFile, 0o644);
   }
   assert.equal(
     (readState(cwd) as { postCompactRecovery?: { resumeOwed?: boolean } }).postCompactRecovery?.resumeOwed,
