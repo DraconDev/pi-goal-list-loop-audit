@@ -2,7 +2,7 @@
 
 # Now
 
-# Next
+# Next (closed 2026-09-26 — all seven wishes done, see # Done)
 
 ##
 we def need a better interaction reminder than operation aborteer and some instruciton in gray
@@ -33,6 +33,17 @@ look over /glla ?
 
 
 
+
+# Done (2026-09-26 — UX polish goal, all 7 wishes closed)
+
+- interaction reminder → verified already-fixed: the abort-rewrite card ("GLLA paused this turn safely") replaces the red error; pinned
+- Lead wording → verified already-fixed: finding-lead strip on all card paths; pinned
+- audit not finishing → verified by design: cap→TODOs/pause + repeated-objection stop + stall auto-cancel; pinned
+- compaction display → verified already-fixed: distinct ⏳ chip, never pause; pinned
+- auditor thinking level → implemented headless effective-resolution line with why
+- Designer section + subagent thinking → implemented subagentThinkingOverrides end to end
+- /glla review → 1 real gap fixed (auditorMirrorSessionExtensions headless) + drift gate test
+- behavioral-orchestrator rerun → green 151/151 (earlier failures were rig-load flakes)
 
 # Later
 
