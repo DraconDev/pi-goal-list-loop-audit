@@ -256,6 +256,9 @@ function normalizeErrorText(...values) {
 // disapproval flips the verdict while a re-confirm preserves it — and the
 // shield keeps reading round-1's evidence block (first match wins).
 const CHALLENGE_SEPARATOR = "\n\n--- auditor challenge round (falsification pass) ---\n\n";
+// v0.38.99: marks the resume point after a cancelled tool call, so the report
+// stream shows where the abort happened instead of reading as one run.
+const CONTINUATION_SEPARATOR = "\n\n--- auditor continuation (tool call cancelled at its budget) ---\n\n";
 
 // Mirror of parseAuditorVerdict's final-line gate (goal-loop-shield.ts).
 // The worker needs the round-1 verdict to decide whether to challenge;
@@ -480,6 +483,19 @@ async function main() {
   let currentToolArgs;
   let currentToolStartedAt;
   let currentToolTimeoutMs;
+  // v0.38.99 non-destructive tool timeout. A verification step that blows its
+  // budget (a full `npm test` on a starved host) used to kill the whole
+  // attempt, discarding every tool call already completed — the goal then
+  // restarted the audit from zero and, under the same load, blew the budget
+  // again. Now the offending tool is cancelled and the audit continues.
+  //
+  // Audit integrity: a cancelled tool's result is UNKNOWN, so the attempt is
+  // flagged `verificationIncomplete` and the parent refuses to let it approve
+  // (see verificationIncompleteResult). One cancellation per attempt: a
+  // second one finishes the attempt failed rather than looping forever.
+  const cancelledToolCalls = [];
+  let verificationIncomplete = false;
+  let awaitingContinuation = false;
   const setCurrentToolFromActive = () => {
     const active = [...activeTools.values()].at(-1);
     if (!active) {
@@ -616,6 +632,11 @@ async function main() {
       // (verdict comes from output's final line); it exists for forensics
       // and future surfacing.
       challenge: challengeState,
+      // v0.38.99: a cancelled tool call means verification is incomplete, so
+      // this attempt must never be treated as a clean approval. The parent
+      // refuses to apply an approving verdict from such an attempt.
+      ...(verificationIncomplete ? { verificationIncomplete: true } : {}),
+      ...(cancelledToolCalls.length > 0 ? { cancelledToolCalls } : {}),
       ...(error ? { error: error.slice(0, 500) } : {}),
     };
     // Publish the terminal worker phase before the result. The parent polls
@@ -648,11 +669,75 @@ async function main() {
   const toolTimeoutLabel = (budgetMs) => budgetMs >= 60_000
     ? `${Math.max(1, Math.round(budgetMs / 60_000))}m`
     : `${Math.max(1, Math.round(budgetMs / 1_000))}s`;
+  // The brief the auditor resumes with. `--no-session` is the default spawn,
+  // so there is no persisted session to resume — the continuation carries its
+  // own context exactly like the challenge round does (buildChallengePrompt).
+  const buildContinuationPrompt = (cancelled) => [
+    "AUDITOR CONTINUATION AFTER A CANCELLED TOOL CALL.",
+    "",
+    "Your previous turn was cut short: a tool call exceeded its time budget and was cancelled. Everything you had already verified in that turn is still valid and listed below — do not redo it.",
+    "",
+    "ORIGINAL AUDIT BRIEF (verbatim):",
+    request.prompt,
+    "",
+    "TOOL CALLS YOU COMPLETED BEFORE THE CANCELLATION:",
+    toolCalls.length > 0
+      ? toolCalls.map((call) => `- ${call.name}: ${call.argsPrefix}`).join("\n")
+      : "(none)",
+    "",
+    "CANCELLED TOOL CALL:",
+    `- ${cancelled.name}: ${cancelled.argsPrefix} (cancelled after ${toolTimeoutLabel(cancelled.budgetMs)})`,
+    "",
+    "RULES:",
+    "- The cancelled call produced NO usable result. Treat that specific piece of verification as UNKNOWN — say so plainly; never assert what it would have shown.",
+    "- Re-run that one check yourself with a bounded, cheaper command (target the single test, or a short timeout) if you need its result to decide.",
+    "- Everything else you already established stands. Do not restart the whole audit from scratch.",
+    "- End with a single final line exactly: <approved/> or <disapproved/> as your evidence supports. That final non-empty line is the ONLY authoritative verdict location.",
+  ].join("\n");
+
+  // Cancel the open tool and let the audit continue. The RPC `abort` cancels
+  // the current operation; the turn then settles without a usable tool result
+  // and we re-prompt with a brief that preserves the completed work.
+  const cancelOpenTool = async (key, name, budget) => {
+    if (finalized || awaitingContinuation) return;
+    const active = activeTools.get(key);
+    const record = {
+      name,
+      argsPrefix: active?.argsPrefix ?? "",
+      toolCallId: active?.toolCallId,
+      startedAt: active?.startedAt ?? Date.now(),
+      budgetMs: budget,
+      cancelledAt: Date.now(),
+    };
+    if (verificationIncomplete) {
+      // A second cancellation means the audit is not converging. Finish
+      // failed rather than granting an unbounded chain of retries.
+      void finish(false, `Auditor stalled — a second tool exceeded its ${toolTimeoutLabel(budget)} timeout after a cancelled-tool continuation; the worker was aborted.`).catch(() => {});
+      return;
+    }
+    verificationIncomplete = true;
+    awaitingContinuation = true;
+    cancelledToolCalls.push(record);
+    clearToolTimer(key);
+    // The tool is abandoned, not completed: drop it from the open set without
+    // recording a finished call, so the cost record never shows a tool that
+    // never returned a result.
+    activeTools.delete(key);
+    if (record.toolCallId === undefined) anonymousStartKeys.delete(key);
+    setCurrentToolFromActive();
+    await progress("tool_cancelled").catch(() => {});
+    // Abort the in-flight turn. Best effort: if the child is already gone the
+    // exit path finalizes the attempt on its own.
+    try {
+      if (pi && childRunning(pi)) pi.stdin.write(`${JSON.stringify({ type: "abort" })}\n`, "utf8");
+    } catch { /* the child will exit and fail the attempt on its own */ }
+  };
+
   const armToolTimer = (key, name, budgetMs) => {
     clearToolTimer(key);
     const budget = Math.min(MAX_TOOL_TIMEOUT_MS, Math.max(50, budgetMs));
     const timer = setTimeout(() => {
-      void finish(false, `Auditor stalled — tool ${name} exceeded its ${toolTimeoutLabel(budget)} timeout; the worker was aborted.`).catch(() => {});
+      void cancelOpenTool(key, name, budget).catch(() => {});
     }, budget);
     timer.unref?.();
     toolTimers.set(key, timer);
@@ -954,6 +1039,28 @@ async function main() {
         return;
       }
       if (event.type === "agent_settled") {
+        // v0.38.99: a settled turn that we aborted to cancel a slow tool is
+        // not a verdict — resume the audit instead of finalizing it. The
+        // cancelled tool's result is UNKNOWN; the resumed brief says so and
+        // `verificationIncomplete` keeps the attempt from ever approving.
+        if (awaitingContinuation) {
+          awaitingContinuation = false;
+          const cancelled = cancelledToolCalls.at(-1);
+          challengeState = challengeState === "not-applicable" ? "not-applicable" : challengeState;
+          const continuationPrompt = buildContinuationPrompt(cancelled);
+          outputParts.push(CONTINUATION_SEPARATOR);
+          streamError = undefined;
+          drainActiveTools();
+          clearRoundTimers();
+          void progress("continuing").catch(() => {});
+          void (async () => {
+            await detachRoundChild();
+            await startRound(continuationPrompt, "continuing");
+          })().catch((error) => {
+            void finish(false, `Auditor continuation after a cancelled tool failed: ${error instanceof Error ? error.message : String(error)}`).catch(() => {});
+          });
+          return;
+        }
         settledSeen = true;
         const output = outputParts.join("");
         const hasVerdict = /<(?:approved\/|disapproved\/|impossible>)/i.test(output);
