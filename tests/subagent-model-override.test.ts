@@ -147,3 +147,24 @@ test("drift: every current built-in ships without a hidden model pin", () => {
   assert.equal(SCOUT_DEFAULT_DESCRIPTION, "Fast codebase recon that returns compressed context for handoff");
   assert.equal(SCOUT_DEFAULT_TOOLS, "read, grep, find, ls, bash, write");
 });
+
+test("build+sync: a thinking pin writes a thinking-only override that inherits the model", () => {
+  const md = buildAgentOverrideMd("scout", undefined, "high");
+  assert.match(md, /^thinking: high$/m, "the thinking key lands in frontmatter");
+  assert.equal(/^model:/m.test(md), false, "no model pin — the session model is inherited");
+  assert.match(md, /thinking pinned to high by glla subagentThinkingOverrides/, "the managed note names the source");
+
+  const dir = tmpAgentDir();
+  const first = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", thinking: { Designer: "high" } });
+  assert.ok(first.written.includes("Designer"), "a thinking-only Designer pin materializes");
+  const designer = readOverride(dir, "Designer")!;
+  assert.match(designer, /^thinking: high$/m);
+  assert.equal(/^model:/m.test(designer), false, "Designer still inherits the session model");
+
+  const second = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", thinking: { Designer: "high" } });
+  assert.equal(second.written.length, 0, "re-sync is idempotent");
+
+  const cleared = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent" });
+  assert.ok(cleared.written.includes("Designer"), "clearing the pin rewrites the inherit-model file");
+  assert.doesNotMatch(readOverride(dir, "Designer")!, /^thinking:/m, "the thinking key is gone");
+});

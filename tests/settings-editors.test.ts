@@ -630,3 +630,27 @@ test("audit 2026-09-25: decisionPauseBudget is visible on every operator surface
     restoreGlobal();
   }
 });
+
+test("audit 2026-09-26: subagent thinking editor pins, inherits, and rejects garbage", async () => {
+  try {
+    const ctx = makeMockCtx(tmpCwd());
+    ctx.ui.selectImpl = async () => "high — ";
+    await handleSettingChoice("subagentThinkingOverrides.Designer", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().subagentThinkingOverrides?.Designer, "high", "the Designer thinking pin saves");
+
+    ctx.ui.selectImpl = async () => "session — inherit current session level (default)";
+    await handleSettingChoice("subagentThinkingOverrides.Designer", ctx as unknown as ExtensionContext);
+    assert.ok(!("subagentThinkingOverrides" in readGlobal()), "inherit clears the map when empty");
+
+    ctx.ui.selectImpl = async () => "ultra — ";
+    await handleSettingChoice("subagentThinkingOverrides.scout", ctx as unknown as ExtensionContext);
+    assert.ok(!("subagentThinkingOverrides" in readGlobal()), "garbage leaves storage untouched");
+    assert.ok(ctx.ui.matching("not a thinking level").length >= 1, "validation failure is loud");
+
+    ctx.ui.selectImpl = async () => "low — ";
+    await handleSettingChoice("subagentThinkingOverrides.Nope", ctx as unknown as ExtensionContext);
+    assert.ok(!("subagentThinkingOverrides" in readGlobal()), "unknown agent types never save");
+  } finally {
+    restoreGlobal();
+  }
+});
