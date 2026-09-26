@@ -465,3 +465,18 @@ test("audit-2026-09-06: --tail with an ambiguous prefix lists candidates instead
     hb.__testOnlyClearSubagentHangProbes();
   }
 });
+
+test("audit 2026-09-25: transcript role labels never split surrogate pairs", () => {
+  // 39 ASCII cells plus emoji: a 40-unit slice lands mid-pair and leaves a
+  // lone surrogate; the shared cell-aware helper keeps whole code points.
+  const emojiRole = `${"a".repeat(39)}🤖🤖`;
+  const out = formatTranscriptEntry(JSON.stringify({ role: emojiRole, content: "hello" }))!;
+  assert.ok(out.startsWith("["), "role renders in brackets");
+  assert.doesNotMatch(out, /�/, "no replacement characters from split surrogates");
+  for (let i = 0; i < out.length; i++) {
+    const cu = out.charCodeAt(i);
+    if (cu >= 0xd800 && cu <= 0xdbff) assert.ok(i + 1 < out.length && out.charCodeAt(i + 1) >= 0xdc00 && out.charCodeAt(i + 1) <= 0xdfff, "no lone high surrogate");
+    else if (cu >= 0xdc00 && cu <= 0xdfff) assert.ok(i > 0 && out.charCodeAt(i - 1) >= 0xd800 && out.charCodeAt(i - 1) <= 0xdbff, "no lone low surrogate");
+  }
+  assert.match(formatTranscriptEntry('{"role":"user","content":"hello"}')!, /^\[user\] hello$/);
+});

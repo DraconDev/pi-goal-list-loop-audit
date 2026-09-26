@@ -6,7 +6,7 @@
 # loop (goal → agent work → complete_goal → isolated auditor → archive) with
 # real models, which unit tests cannot do.
 #
-# Requirements: tmux, pi, a built-in provider with quota. The session runs
+# Requirements: tmux, pi, python3, a built-in provider with quota. The session runs
 # on MAIN_MODEL (env-overridable); the auditor uses the same pi session model
 # — the plugin never picks models, so there is no separate auditor model to
 # configure here.

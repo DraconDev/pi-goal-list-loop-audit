@@ -352,3 +352,18 @@ test("lifecycle evidence survives the durable state boundary (sanitized, not dro
   assert.equal(claim.lastActivityAt, undefined, "garbage activity evidence degrades to absent, never to a fake stamp");
   assert.equal(claim.startedAt, new Date(startedAt).toISOString());
 });
+
+test("audit 2026-09-25: no constant-folded settlement guard obscures the live gate", () => {
+  // settlementStep() of a hardcoded all-false progress is always
+  // "persist-verdict" — a check that can never fire. The live protection is
+  // settlementAllowsTerminalRender with the real persisted/archived values.
+  for (const file of ["extensions/loops/goal-tools.ts", "extensions/loops/goal-auditor-hooks.ts"]) {
+    const src = fs.readFileSync(path.join(process.cwd(), file), "utf-8");
+    assert.doesNotMatch(
+      src,
+      /settlementStep\(\{\s*verdictPersisted:\s*false,\s*archived:\s*false/,
+      `${file} must not constant-fold the settlement ordering guard`,
+    );
+    assert.match(src, /settlementAllowsTerminalRender/, `${file} keeps the live terminal-render gate`);
+  }
+});

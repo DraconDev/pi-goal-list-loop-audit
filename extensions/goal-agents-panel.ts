@@ -406,10 +406,9 @@ export function formatTranscriptEntry(line: string): string | undefined {
       content?: unknown;
     };
     if (!entry || typeof entry !== "object" || Array.isArray(entry)) return `[raw] ${truncate(sanitizeDisplayText(trimmed), 120)}`;
-    const role = sanitizeDisplayText(String(entry.message?.role ?? entry.role ?? entry.type ?? "?"))
+    const role = truncate(sanitizeDisplayText(String(entry.message?.role ?? entry.role ?? entry.type ?? "?"))
       .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 40) || "?";
+      .trim(), 40) || "?";
     const content = entry.message?.content ?? entry.content;
     const text = extractText(content);
     if (!text) return undefined;

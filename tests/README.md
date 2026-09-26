@@ -22,8 +22,9 @@ counts.
 - **goal-loop-core.test.ts**: id generator, status labels, BFS next-pending-task,
   task summary, markdown rendering, file persistence, ledger append/read,
   token accumulation (`sumNewAssistantTokens` incl. dedup).
-- **goal.schema.test.ts**: shape validation (lightweight; full JSON Schema
-  validation would add a dependency — the schema itself is in `schemas/`).
+- **goal.schema.test.ts**: full JSON Schema validation with Ajv (a direct
+  devDependency) — real fixtures against `schemas/goal.schema.json` itself,
+  never a second hand-written shape that can drift.
 - **extract-verification.test.ts**: contract extraction — line-start markers,
   inline one-liner markers, multi-line contracts.
 - **list-queue.test.ts**: `/list` queue persistence + restore, v0.1.0-ledger
