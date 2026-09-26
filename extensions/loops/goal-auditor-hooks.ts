@@ -252,7 +252,7 @@ import {
 } from "../goal-loop-repetition.js";
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
 import { buildFinalRepoStateLines, buildTerminalApprovalRender, compactCompletionSummary, isGenericCompletionSummary, missingCompletionSummaryLabels } from "../completion-summary.js";
-import { AUDIT_ACTIVITY_PERSIST_MS, isSettlingClaim, settlementAllowsTerminalRender, settlementPark, settlementStep } from "../audit-lifecycle.js";
+import { AUDIT_ACTIVITY_PERSIST_MS, isSettlingClaim, settlementAllowsTerminalRender, settlementPark } from "../audit-lifecycle.js";
 import { persistApprovalRender, replayUndeliveredApprovalRenders } from "../approval-render-store.js";
 import {
   defaultAgentDir,
@@ -1806,8 +1806,8 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     // that write and the archive have both succeeded.
     const settlementClaim = state.goal.pendingCompletion ?? claim;
     const verdictAt = nowIso();
-    const progress = { verdictPersisted: false, archived: false, renderPersisted: false, delivered: false };
-    if (settlementStep(progress).step !== "persist-verdict") return; // unreachable: fresh progress always starts here
+    // The live ordering gate is settlementAllowsTerminalRender with the
+    // real persisted/archived values below — no constant first check.
     const verdictPersisted = updateGoal({
       auditHistory: history,
       pendingCompletion: {

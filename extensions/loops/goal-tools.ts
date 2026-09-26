@@ -147,7 +147,7 @@ isGoalRevisionCurrent,
 // v0.38.99: the tool-path approval settlement runs the same ordering gate as
 // the detached path, so no terminal surface can be produced from an
 // unresolved claim.
-import { settlementAllowsTerminalRender, settlementPark, settlementStep } from "../audit-lifecycle.js";
+import { settlementAllowsTerminalRender, settlementPark } from "../audit-lifecycle.js";
 import { persistClaimWorkerActivity } from "./goal-auditor-hooks.js";
 import { dispatchAuditorAllowedExtensions } from "../auditor-extensions.js";
 import {
@@ -1525,7 +1525,8 @@ function registerAgentTools(pi: any): void {
         // the session_start re-drive finish this settlement.
         const settlementClaim = durableCompletionClaim;
         const verdictAt = nowIso();
-        if (settlementStep({ verdictPersisted: false, archived: false, renderPersisted: false, delivered: false }).step !== "persist-verdict") return staleToolResult();
+        // The live ordering gate is settlementAllowsTerminalRender with the
+        // real persisted/archived values below — no constant first check.
         const verdictPersisted = updateGoal({
           auditHistory: history,
           pendingCompletion: { ...settlementClaim, phase: "settling", verdictAt, lastActivityAt: verdictAt },
