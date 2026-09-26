@@ -334,7 +334,6 @@ setInterval(() => {}, 1_000);
 test("stall: a silent-past-bound attempt fails fast WITH its cost record (controlled clock)", { timeout: 20_000 }, async () => {
   const dir = await mkdtemp(path.join(tmpdir(), "glla-stall-evidence-"));
   dirs.push(dir);
-  const sigtermMarker = path.join(dir, "sigterm-marker");
   // One heartbeat + two finished tool calls (one of them an image read, i.e.
   // vision work), then total silence — the field shape. The parent never
   // burns the real wall: the injected clock jumps past the silence bound as
@@ -343,7 +342,6 @@ test("stall: a silent-past-bound attempt fails fast WITH its cost record (contro
   const worker = path.join(dir, "costed-then-silent-worker.mjs");
   await writeFile(worker, `
 import { readFile, writeFile } from "node:fs/promises";
-import { writeFileSync } from "node:fs";
 const dir = process.argv[process.argv.indexOf("--job-dir") + 1];
 const request = JSON.parse(await readFile(dir + "/request.json", "utf8"));
 const finished = Date.now();
@@ -356,7 +354,6 @@ await writeFile(dir + "/progress.json", JSON.stringify({
     { name: "read", argsPrefix: "{\\"path\\":\\"shots/01-home.png\\"}", finishedAt: finished },
   ],
 }));
-process.on("SIGTERM", () => { writeFileSync(${JSON.stringify(sigtermMarker)}, "killed"); process.exit(0); });
 setInterval(() => {}, 1_000);
 `);
   let clock = Date.now();
@@ -402,7 +399,11 @@ setInterval(() => {}, 1_000);
   assert.equal(stall.cost?.visionInputs, 1, "the image read is recorded as vision work");
   assert.equal(stall.cost?.reportBytes, 789);
   assert.equal(stall.cost?.elapsedMs, 42_000, "worker-measured elapsed survives into the evidence");
-  assert.ok(existsSync(sigtermMarker), "the silent worker was SIGTERMed");
+  assert.equal(
+    existsSync(path.join(dir, ".pi-glla", "audit-jobs", "attempt-stall-evidence")),
+    false,
+    "the stalled job was cancelled and its scratch removed",
+  );
   await cleanup();
 });
 
@@ -444,8 +445,12 @@ setInterval(() => {}, 1_000);
       attemptId: () => "attempt-worker-brake",
       pollIntervalMs: 10,
       wallTimeoutMs: 20_000,
-      heartbeatNoProgressMs: 1_200,
-      firstEventTimeoutMs: 1_200,
+      // The parent watchdogs are deliberately DISARMED here: this test pins
+      // the result path (the worker winning the shared window), so the
+      // result must be the first thing the parent sees. Both files are
+      // published back-to-back, so the parent consumes them in one poll.
+      heartbeatNoProgressMs: 20_000,
+      firstEventTimeoutMs: 20_000,
       heartbeatFreshMs: 500,
     },
   });
@@ -469,7 +474,8 @@ test("stall: an open in-budget tool is not silence — the no-progress bound spa
   // Fresh heartbeats, no progress signature change, an OPEN tool well inside
   // its own budget. That is a long test suite, not a wedged worker: the
   // per-tool watchdog owns this axis, so the audit must survive the
-  // no-progress window elapsing (10x) and settle on its verdict.
+  // no-progress window elapsing again and again and still settle on its
+  // verdict.
   const worker = path.join(dir, "long-tool-worker.mjs");
   await writeFile(worker, `
 import { readFile, writeFile, rename } from "node:fs/promises";
@@ -495,7 +501,7 @@ async function beat() {
     recentOutput: [], toolCalls: [],
   }));
   await rename(dir + "/progress.tmp", dir + "/progress.json");
-  if (tick >= 60) {
+  if (tick >= 6) {
     await writeFile(dir + "/result.json", JSON.stringify({
       protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
       ok: true, output: "<evidence>long suite finished</evidence>\\n<approved/>",
@@ -512,19 +518,29 @@ async function beat() {
 process.on("SIGTERM", () => { clearTimeout(next); process.exit(0); });
 `);
   const stalled: AuditorStalledInfo[] = [];
+  // Controlled clock: every observed snapshot advances the parent's view of
+  // time by a full second, so the 300ms no-progress window is crossed six
+  // times over in fake time while the fixture only needs a few beats. The
+  // audit must survive all of it: an open, in-budget tool is work, not
+  // silence. (Without the exemption the watchdog fires on the first jump.)
+  let clock = Date.now();
   const started = Date.now();
   const result = await runDetachedGoalCompletionAuditor({
     cwd: dir,
     goal: { ...goal, verificationContract: undefined },
     model: "test/provider-model",
     thinkingLevel: "high",
+    onProgress: (progress) => {
+      if (progress.lastActivityAt) clock = Math.max(clock, progress.lastActivityAt) + 1_000;
+    },
     onStalled: (info) => stalled.push(info),
     runtime: {
+      now: () => clock,
       workerPath: worker,
       attemptId: () => "attempt-tool-silence",
       pollIntervalMs: 10,
       wallTimeoutMs: 30_000,
-      // Ten times smaller than the tool's own 60s grant: without the open-tool
+      // Far smaller than the tool's own 60s grant: without the open-tool
       // exemption the no-progress watchdog cut a healthy audit in half.
       heartbeatNoProgressMs: 300,
       firstEventTimeoutMs: 30_000,
@@ -534,6 +550,6 @@ process.on("SIGTERM", () => { clearTimeout(next); process.exit(0); });
   });
   assert.deepEqual(stalled, [], "an in-budget open tool is exempt from the no-progress bound");
   assert.equal(result.approved, true, result.error ?? "the long-tool audit did not settle");
-  assert.ok(Date.now() - started >= 1_000, "the audit outlived the no-progress window many times over");
+  assert.ok(Date.now() - started < 10_000, "the audit outlived several no-progress windows without burning the wall");
   await cleanup();
 });

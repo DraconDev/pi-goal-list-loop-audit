@@ -1773,7 +1773,12 @@ test("slow-audit hardening: attempt cost summarizes prompt, tools, vision, and e
   assert.equal(cost.elapsedMs, 60000);
 
   const procSrc = (await import("node:fs")).readFileSync("extensions/goal-loop-auditor-process.ts", "utf-8");
-  assert.match(procSrc, /cost: summarizeAttemptCost\(\{/, "asProgress attaches the cost record to every progress snapshot");
+  assert.match(procSrc, /cost: snapshotCost\(file\)/, "asProgress attaches the cost record to every progress snapshot");
+  assert.match(
+    procSrc,
+    /function snapshotCost\(file: AuditorProgressFile\): AttemptCost \{\s*return summarizeAttemptCost\(\{/,
+    "one shared cost record per raw worker snapshot feeds the HUD and the stall evidence",
+  );
   const workerSrc = (await import("node:fs")).readFileSync("scripts/goal-auditor-worker.mjs", "utf-8");
   assert.match(workerSrc, /promptBytes,\n\s*(\.\.\.\(sessionPath|elapsedMs)/, "worker progress carries measured prompt bytes");
 });
