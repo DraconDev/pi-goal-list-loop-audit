@@ -2983,6 +2983,34 @@ function cmdGllaStatus(ctx: ExtensionContext): void {
   ctx.ui.notify(`glla status\n${lines.join("\n")}`, "info");
 }
 
+/** 2026-09-26 (field: session max, auditor high): resolve the EFFECTIVE
+ * auditor thinking level for the headless list — requested setting with
+ * session-inherit, then the per-model support fallback. The raw thinking
+ * row shows the setting; this line shows what the auditor will run and why. */
+function auditorThinkingEffectiveLine(
+  ctx: ExtensionContext,
+  effectiveSettings: Settings,
+  sessionModel: string,
+  sessionThinking: string,
+  thinkingSource: string,
+): string {
+  const requested = effectiveSettings.auditorThinkingLevel ?? sessionThinking;
+  const requestedSource = effectiveSettings.auditorThinkingLevel !== undefined ? thinkingSource : "session-inherit";
+  const ref = effectiveSettings.auditorModel?.trim() || (sessionModel === "(unknown)" ? "" : sessionModel);
+  if (!ref) return `auditorThinkingEffective: ${requested} (requested ${requested} [${requestedSource}]; no auditor model resolved)`;
+  let meta: { reasoning?: boolean; thinkingLevelMap?: Record<string, string | null> } | undefined;
+  try {
+    const available = (ctx as unknown as { modelRegistry?: { getAvailable?: () => unknown[] } }).modelRegistry?.getAvailable?.() ?? [];
+    meta = available.find((m) => modelRef(m)?.toLowerCase() === ref.toLowerCase()) as typeof meta;
+  } catch {
+    meta = undefined;
+  }
+  if (!meta) return `auditorThinkingEffective: ${requested} (requested ${requested} [${requestedSource}]; ${ref} capabilities unknown)`;
+  const effective = resolveAuditorThinkingLevel(meta, requested);
+  const why = effective === requested ? "as requested" : `capped by ${ref} support`;
+  return `auditorThinkingEffective: ${effective} (requested ${requested} [${requestedSource}]; ${why})`;
+}
+
 async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   // v0.34.52: settings entry probe — mirror of cmdList's stale gate. Bare
   // /glla is a settings surface every choice of which writes state, and
