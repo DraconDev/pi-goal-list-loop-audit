@@ -315,6 +315,11 @@ setInterval(() => {}, 1_000);
       // independent per-tool watchdog owns this axis.
       wallTimeoutMs: 250,
       toolTimeoutMs: 800,
+      // v0.38.99: the parent now grants the worker a bounded window to cancel
+      // the over-budget tool and resume before it falls back to the hard kill.
+      // A zero grace keeps this test on the pre-grace semantics: the kill is
+      // the only way the run can end.
+      toolCancelGraceMs: 0,
       heartbeatNoProgressMs: 1_200,
       firstEventTimeoutMs: 20_000,
       heartbeatFreshMs: 500,
@@ -551,5 +556,205 @@ process.on("SIGTERM", () => { clearTimeout(next); process.exit(0); });
   assert.deepEqual(stalled, [], "an in-budget open tool is exempt from the no-progress bound");
   assert.equal(result.approved, true, result.error ?? "the long-tool audit did not settle");
   assert.ok(Date.now() - started < 10_000, "the audit outlived several no-progress windows without burning the wall");
+  await cleanup();
+});
+
+// ---------------------------------------------------------------------------
+// v0.38.99 — non-destructive tool timeout.
+//
+// Field evidence: on a host at load 48-95 across 16 cores, the auditor's
+// verification step (`npm test` / `tsc`) blew the 5m per-tool budget, and the
+// watchdog killed the WHOLE attempt — discarding up to 64 completed tool
+// calls. The goal then re-audited from zero, hit the same slow step, and
+// blew the budget again. That is what "audits not landing" looked like from
+// the outside. The worker now cancels the offending tool and resumes, and the
+// parent holds its hard kill for a bounded grace window so it cannot race
+// that resume.
+//
+// Audit integrity: a cancelled tool produced NO result, so an approval from
+// such an attempt rests on evidence the auditor never saw. The approval is
+// refused and the attempt fails as retryable infrastructure — never a
+// disapproval (the goal did not regress) and never an approval.
+// ---------------------------------------------------------------------------
+
+test("v0.38.99: an over-budget tool is NOT fatal — the worker cancels it, resumes, and its result still lands", { timeout: 25_000 }, async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "glla-tool-cancel-continue-"));
+  dirs.push(dir);
+  // The worker opens a tool whose budget is already blown, then — instead of
+  // dying — publishes a verdict. Under the old semantics the parent killed it
+  // at the budget and this result never arrived.
+  const worker = path.join(dir, "cancel-continue-worker.mjs");
+  await writeFile(worker, `
+import { readFile, writeFile, rename } from "node:fs/promises";
+const dir = process.argv[process.argv.indexOf("--job-dir") + 1];
+const request = JSON.parse(await readFile(dir + "/request.json", "utf8"));
+const openedAt = Date.now() - 5_000; // already past the 800ms budget
+await writeFile(dir + "/progress.json", JSON.stringify({
+  protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+  phase: "running", elapsedMs: 5_000, lastActivityAt: openedAt,
+  currentTool: "bash", currentToolArgs: "{\\"command\\":\\"bun test\\"}",
+  currentToolStartedAt: openedAt, currentToolTimeoutMs: 800,
+  recentOutput: [], toolCalls: [],
+}));
+process.on("SIGTERM", () => process.exit(7));
+// Survive well past the budget, then land a DISAPPROVED verdict: the
+// cancelled verification is not evidence for an approval, so the auditor
+// rejects instead of certifying what it never saw.
+setTimeout(async () => {
+  await writeFile(dir + "/progress.tmp", JSON.stringify({
+    protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+    phase: "continuing", elapsedMs: 9_000, lastActivityAt: Date.now(),
+    currentTool: undefined, recentOutput: ["resumed"], toolCalls: [],
+    verificationIncomplete: true,
+  }));
+  await rename(dir + "/progress.tmp", dir + "/progress.json");
+  await writeFile(dir + "/result.json", JSON.stringify({
+    protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+    ok: true, output: "<evidence>suite result unknown; re-ran one targeted test</evidence>\\n<disapproved/>",
+    model: request.model, thinkingLevel: request.thinkingLevel,
+    toolCalls: [{ name: "bash", argsPrefix: "{\\"command\\":\\"bun test src/x\\"}", finishedAt: Date.now() }],
+    verificationIncomplete: true,
+    cancelledToolCalls: [{ name: "bash", argsPrefix: "{\\"command\\":\\"bun test\\"}", budgetMs: 800 }],
+  }));
+  process.exit(0);
+}, 2_500);
+setInterval(() => {}, 1_000);
+`);
+  const stalled: AuditorStalledInfo[] = [];
+  const result = await runDetachedGoalCompletionAuditor({
+    cwd: dir,
+    goal: { ...goal, verificationContract: "" },
+    model: "test/provider-model",
+    thinkingLevel: "high",
+    onStalled: (info) => stalled.push(info),
+    runtime: {
+      workerPath: worker,
+      attemptId: () => "attempt-cancel-continue",
+      pollIntervalMs: 10,
+      toolTimeoutMs: 800,
+      toolCancelGraceMs: 10_000, // wide enough that only the worker can end this
+      heartbeatNoProgressMs: 10_000,
+      firstEventTimeoutMs: 20_000,
+      heartbeatFreshMs: 10_000,
+    },
+  });
+  assert.equal(stalled.length, 1, "the over-budget tool is recorded as one stall");
+  assert.equal(stalled[0]?.reason, "tool-timeout");
+  assert.equal(stalled[0]?.toolName, "bash");
+  assert.equal(result.approved, false, "a cancelled verification must never approve");
+  assert.equal(result.disapproved, true, "the auditor's own disapproval still lands");
+  assert.equal(result.error, undefined, "the attempt was not killed mid-flight");
+  assert.equal(result.verificationIncomplete, true, "the attempt is flagged for the audit trail");
+  await cleanup();
+});
+
+test("v0.38.99 approval guard: an approving verdict from a verification-incomplete attempt is refused, not applied", { timeout: 25_000 }, async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "glla-approval-guard-"));
+  dirs.push(dir);
+  // The auditor says <approved/> even though one tool call was cancelled and
+  // produced no result. That approval rests on evidence the auditor never
+  // saw, so it must be refused as retryable infrastructure — NOT applied, and
+  // NOT laundered into a disapproval (which would send the agent into
+  // pointless rework for a load problem).
+  const worker = path.join(dir, "approve-with-cancelled-tool.mjs");
+  await writeFile(worker, `
+import { readFile, writeFile } from "node:fs/promises";
+const dir = process.argv[process.argv.indexOf("--job-dir") + 1];
+const request = JSON.parse(await readFile(dir + "/request.json", "utf8"));
+const openedAt = Date.now() - 5_000;
+await writeFile(dir + "/progress.json", JSON.stringify({
+  protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+  phase: "running", elapsedMs: 5_000, lastActivityAt: Date.now(),
+  currentTool: "bash", currentToolArgs: "{\\"command\\":\\"bun test\\"}",
+  currentToolStartedAt: openedAt, currentToolTimeoutMs: 800,
+  recentOutput: [], toolCalls: [],
+}));
+setTimeout(async () => {
+  await writeFile(dir + "/result.json", JSON.stringify({
+    protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+    ok: true, output: "<evidence>looks fine to me</evidence>\\n<approved/>",
+    model: request.model, thinkingLevel: request.thinkingLevel,
+    toolCalls: [{ name: "read", argsPrefix: "{}", finishedAt: Date.now() }],
+    verificationIncomplete: true,
+    cancelledToolCalls: [{ name: "bash", argsPrefix: "{\\"command\\":\\"bun test\\"}", budgetMs: 800 }],
+  }));
+  process.exit(0);
+}, 1_500);
+setInterval(() => {}, 1_000);
+`);
+  const stalled: AuditorStalledInfo[] = [];
+  const result = await runDetachedGoalCompletionAuditor({
+    cwd: dir,
+    goal: { ...goal, verificationContract: "" },
+    model: "test/provider-model",
+    thinkingLevel: "high",
+    onStalled: (info) => stalled.push(info),
+    runtime: {
+      workerPath: worker,
+      attemptId: () => "attempt-approval-guard",
+      pollIntervalMs: 10,
+      toolTimeoutMs: 800,
+      toolCancelGraceMs: 10_000,
+      heartbeatNoProgressMs: 10_000,
+      firstEventTimeoutMs: 20_000,
+      heartbeatFreshMs: 10_000,
+    },
+  });
+  assert.equal(result.approved, false, "the approval is refused");
+  assert.equal(result.disapproved, false, "and is not laundered into a disapproval");
+  assert.equal(result.infrastructureClass, "timeout", "it fails as retryable so the ladder re-audits");
+  assert.match(result.error ?? "", /verification is incomplete/);
+  assert.match(result.error ?? "", /must be retried/);
+  assert.ok(
+    stalled.some((info) => info.reason === "tool-timeout"),
+    "the refusal carries the tool-timeout evidence",
+  );
+  await cleanup();
+});
+
+test("v0.38.99: a genuinely wedged tool still fails fast once the grace expires", { timeout: 25_000 }, async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "glla-grace-expiry-"));
+  dirs.push(dir);
+  // A tool that never returns and a worker that never recovers: the grace
+  // window must not become an unbounded lease. The hard kill still lands.
+  const worker = path.join(dir, "wedged-tool-worker.mjs");
+  await writeFile(worker, `
+import { readFile, writeFile } from "node:fs/promises";
+const dir = process.argv[process.argv.indexOf("--job-dir") + 1];
+const request = JSON.parse(await readFile(dir + "/request.json", "utf8"));
+const openedAt = Date.now() - 5_000;
+await writeFile(dir + "/progress.json", JSON.stringify({
+  protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+  phase: "running", elapsedMs: 5_000, lastActivityAt: openedAt,
+  currentTool: "bash", currentToolArgs: "{\\"command\\":\\"sleep 9999\\"}",
+  currentToolStartedAt: openedAt, currentToolTimeoutMs: 800,
+  recentOutput: [], toolCalls: [],
+}));
+process.on("SIGTERM", () => process.exit(0));
+setInterval(() => {}, 1_000);
+`);
+  const stalled: AuditorStalledInfo[] = [];
+  const result = await runDetachedGoalCompletionAuditor({
+    cwd: dir,
+    goal,
+    model: "test/provider-model",
+    thinkingLevel: "high",
+    onStalled: (info) => stalled.push(info),
+    runtime: {
+      workerPath: worker,
+      attemptId: () => "attempt-grace-expiry",
+      pollIntervalMs: 10,
+      toolTimeoutMs: 800,
+      toolCancelGraceMs: 400,
+      heartbeatNoProgressMs: 20_000,
+      firstEventTimeoutMs: 20_000,
+      heartbeatFreshMs: 20_000,
+    },
+  });
+  assert.equal(stalled.length, 1, "one stall event, recorded at first expiry");
+  assert.equal(result.approved, false);
+  assert.equal(result.disapproved, false);
+  assert.equal(result.infrastructureClass, "timeout");
+  assert.ok(Date.now() > 0);
   await cleanup();
 });
