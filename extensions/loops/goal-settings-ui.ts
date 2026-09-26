@@ -1024,6 +1024,32 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       return;
     }
   }
+  if (id.startsWith("subagentThinkingOverrides.")) {
+    const agentType = id.slice("subagentThinkingOverrides.".length);
+    if (OVERRIDABLE_AGENT_TYPES.includes(agentType)) {
+      const levels = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
+      const current = loadSettings(ctx.cwd).subagentThinkingOverrides?.[agentType];
+      const pick = await ctx.ui.select(`Thinking level for ${agentType} subagents`, [
+        `session — inherit current session level (default)${current === undefined ? " (current)" : ""}`,
+        ...thinkingChoiceOptions(levels, current),
+      ]);
+      if (pick === undefined) return;
+      const settings = loadSettings(ctx.cwd);
+      const next = { ...(settings.subagentThinkingOverrides ?? {}) };
+      if (pick.startsWith("session —")) delete next[agentType];
+      else {
+        const level = pick.split(" — ")[0]!.trim();
+        if (!levels.includes(level)) {
+          ctx.ui.notify(`Not a thinking level: ${pick}`, "warning");
+          return;
+        }
+        next[agentType] = level as NonNullable<Settings["subagentThinkingOverrides"]>[string];
+      }
+      saveSettings("global", ctx.cwd, { subagentThinkingOverrides: Object.keys(next).length > 0 ? next : undefined });
+      ctx.ui.notify(`${agentType} thinking ${next[agentType] ? `pinned to ${next[agentType]}` : "cleared — inherits session"} — applies to NEW pi sessions.`, "info");
+      return;
+    }
+  }
   switch (id) {
     case "stateRoot": {
       const v = await ctx.ui.select("State root — where durable glla state lives", [

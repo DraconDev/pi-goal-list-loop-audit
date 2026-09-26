@@ -1759,6 +1759,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
         agentDir: defaultAgentDir(),
         strategy: s.subagentModelStrategy ?? "inherit-parent",
         overrides: mergedOverrides,
+        thinking: s.subagentThinkingOverrides,
       });
       for (const skip of sync.skipped) {
         const overrideFailureCopy = providerErrorPresentation(skip.reason, "recovery");

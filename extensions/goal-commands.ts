@@ -3217,6 +3217,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
       fmt("hourlyRetryProbe", "hourlyRetryProbe"),
       fmt("subagentModelStrategy", "subagentModelStrategy"),
       fmt("subagentModelOverrides", "subagentModelOverrides"),
+      fmt("subagentThinkingOverrides", "subagentThinking"),
       fmt("subagentFallbacks", "subagentFallbacks"),
       fmt("toolOverrides", "toolOverrides"),
       fmt("auditCap", "auditCap"),

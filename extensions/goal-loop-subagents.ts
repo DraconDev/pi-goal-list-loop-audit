@@ -246,12 +246,13 @@ export function syncSubagentModelOverrides(opts: {
       continue;
     }
     const overrideModel = overrides[name];
+    const thinkingPin = thinking[name];
     const file = path.join(opts.agentDir, "agents", `${name}.md`);
     const exists = fs.existsSync(file);
     const current = exists ? fs.readFileSync(file, "utf-8") : undefined;
     const def = EMBEDDED_DEFAULTS[name];
 
-    if (overrideModel !== undefined && !def) {
+    if ((overrideModel !== undefined || thinkingPin !== undefined) && !def) {
       if (exists && hasManagedMarker(current!)) {
         fs.unlinkSync(file);
         result.removed.push(name);
@@ -265,10 +266,11 @@ export function syncSubagentModelOverrides(opts: {
     }
 
     // Explicit pins are the only reason to copy a current built-in. Designer
-    // remains a GLLA-owned role regardless of strategy.
+    // remains a GLLA-owned role regardless of strategy. A thinking-only pin
+    // writes a model-inheriting file so the level applies without a model.
     const desired = overrideModel !== undefined
       ? (() => {
-        try { return buildAgentOverrideMd(name, overrideModel); }
+        try { return buildAgentOverrideMd(name, overrideModel, thinkingPin); }
         catch (error) {
           result.skipped.push({ name, reason: error instanceof Error ? error.message : String(error) });
           return undefined;
@@ -276,13 +278,21 @@ export function syncSubagentModelOverrides(opts: {
       })()
       : name === "Designer"
         ? (() => {
-          try { return buildAgentOverrideMd(name); }
+          try { return buildAgentOverrideMd(name, undefined, thinkingPin); }
           catch (error) {
             result.skipped.push({ name, reason: error instanceof Error ? error.message : String(error) });
             return undefined;
           }
         })()
-        : undefined;
+        : thinkingPin !== undefined && def
+          ? (() => {
+            try { return buildAgentOverrideMd(name, undefined, thinkingPin); }
+            catch (error) {
+              result.skipped.push({ name, reason: error instanceof Error ? error.message : String(error) });
+              return undefined;
+            }
+          })()
+          : undefined;
 
     if (desired === undefined) {
       if (exists && hasManagedMarker(current!)) {

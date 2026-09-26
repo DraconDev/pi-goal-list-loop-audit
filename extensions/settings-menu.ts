@@ -602,6 +602,16 @@ export function buildSettingsRows(
       description: "provider/model pin; always wins over strategy",
     });
   }
+  for (const name of OVERRIDABLE_AGENT_TYPES) {
+    rows.push({
+      id: `subagentThinkingOverrides.${name}`,
+      section: "subagents",
+      label: `Subagent ${name} thinking`,
+      valueText: settings.subagentThinkingOverrides?.[name] ?? "inherits session",
+      sourceText: settings.subagentThinkingOverrides?.[name] !== undefined ? src("subagentThinkingOverrides") : "default",
+      description: "thinking-level pin for this subagent type; unset inherits the session level",
+    });
+  }
   rows.push({
     id: "subagentResolved",
     section: "subagents",
