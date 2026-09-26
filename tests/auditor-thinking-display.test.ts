@@ -69,6 +69,7 @@ test("headless /glla honors an explicit thinking setting and unknown models", as
   );
 
   const cwd2 = tmpCwd();
+  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ aggressiveMode: false }));
   const ctx2: any = makeMockCtx(cwd2);
   ctx2.hasUI = false;
   ctx2.thinkingLevel = "max";
