@@ -3801,3 +3801,4 @@
 {"type":"terminal_approval_render_persisted","value":{"goalId":"20260926014418-p6es73","delivered":false,"lines":20},"at":"2026-09-26T03:36:46.631Z"}
 {"type":"terminal_completion_notice_sent","value":{"goalId":"20260926014418-p6es73","payloadChars":973},"at":"2026-09-26T03:36:46.651Z"}
 {"type":"terminal_approval_render_replayed","value":{"goalId":"20260926014418-p6es73","createdAt":"2026-09-26T03:36:46.598Z"},"at":"2026-09-26T03:36:46.651Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"meta","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":348,"outputTokens":266,"cacheReadTokens":419825,"cacheWriteTokens":0,"totalTokens":420439},"contextUsage":{"tokens":420439,"contextWindow":1048576,"percent":40.096187591552734}},"at":"2026-09-26T09:19:19.224Z"}

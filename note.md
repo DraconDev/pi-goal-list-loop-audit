@@ -37,6 +37,10 @@ look over /glla ?
 # Later
 
 ##
+/home/dracon/Pictures/Screenshots/Screenshot_20260926_101629.png 
+want a more detailed summary
+
+##
 /home/dracon/Pictures/Screenshots/Screenshot_20260924_231547.png 
 we need a better thumb for the pi plugin store 
 
