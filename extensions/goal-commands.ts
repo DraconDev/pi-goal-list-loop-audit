@@ -3186,6 +3186,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
       fmt("subagentFallbacks", "subagentFallbacks"),
       fmt("toolOverrides", "toolOverrides"),
       fmt("auditCap", "auditCap"),
+      fmt("decisionPauseBudget", "decisionPauseBudget"),
       fmt("auditFeedbackChars", "auditFeedbackChars"),
       fmt("aggressiveMode", "aggressiveMode"),
       fmt("stuckMaxInterventions", "stuckMaxInterventions"),

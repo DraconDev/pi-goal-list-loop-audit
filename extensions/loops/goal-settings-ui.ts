@@ -1603,6 +1603,17 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       }
       return;
     }
+    case "decisionPauseBudget": {
+      const v = await ctx.ui.input("Max agent-authored decision pauses per goal before auto-default", "non-negative integer; 0 = relentless from the first, empty = pause every time (unset)");
+      if (v !== undefined) {
+        const raw = v.trim();
+        const n = parseSettingsInteger(raw);
+        if (n !== undefined && n >= 0) saveSettings("global", ctx.cwd, { decisionPauseBudget: n });
+        else if (!raw) saveSettings("global", ctx.cwd, { decisionPauseBudget: undefined });
+        else ctx.ui.notify(`Not a non-negative integer: ${v}`, "warning");
+      }
+      return;
+    }
     case "auditFeedbackChars": {
       const v = await ctx.ui.input("Auditor feedback returned to the executor (characters)", "non-negative integer cap; 0 or empty = full report (default)");
       if (v !== undefined) {

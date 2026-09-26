@@ -702,6 +702,7 @@ export const SETTINGS_KEYS: Array<keyof Settings> = [
   "wedgeAlertMinutes",
   "autoResume",
   "decisionPopup",
+  "decisionPauseBudget",
   "carryover",
   "autoAcceptDrafts",
   "auditCap",

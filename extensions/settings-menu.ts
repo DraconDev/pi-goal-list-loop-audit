@@ -216,6 +216,15 @@ export function buildSettingsRows(
         "new goal over stale paused work — pause: one summary, archive the stale goal, keep list+loop · clear: drop the stale queue too · resume: silent stack",
     },
     {
+      id: "decisionPauseBudget",
+      section: "keep-going",
+      label: "Decision pause budget",
+      valueText: show("decisionPauseBudget", "unset (pause every time)"),
+      sourceText: src("decisionPauseBudget"),
+      description:
+        "max agent-authored decision pauses per goal before auto-default (0 = relentless from the first; unset = pause every time)",
+    },
+    {
       id: "autoAcceptDrafts",
       section: "keep-going",
       label: "Auto-accept drafts",
