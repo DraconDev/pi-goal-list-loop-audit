@@ -4,6 +4,10 @@
 
 # Later
 
+#
+/home/dracon/Pictures/Screenshots/Screenshot_20260926_104457.png 
+suggested action cut off
+
 ##
 /home/dracon/Pictures/Screenshots/Screenshot_20260926_101629.png 
 want a more detailed summary
