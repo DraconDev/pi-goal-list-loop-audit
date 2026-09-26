@@ -37,10 +37,6 @@ look over /glla ?
 # Later
 
 ##
-https://github.com/DraconDev/pi-goal-list-loop-audit/issues
-we did this but never clsoed it 
-
-##
 /home/dracon/Pictures/Screenshots/Screenshot_20260924_231547.png 
 we need a better thumb for the pi plugin store 
 
