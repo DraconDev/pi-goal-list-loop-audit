@@ -737,7 +737,12 @@ export function dispatchStartAcknowledged(ctx: ExtensionContext, source: string,
       else {
         replaceState({ ...state, postCompactRecovery: undefined });
       }
-      persistStateLine(ctx.cwd, state);
+      if (!persistStateLine(ctx.cwd, state)) {
+        // A failed append leaves the debt durable — roll the in-memory
+        // discharge back so a restart does not resurrect settled resync work.
+        replaceState({ ...state, postCompactRecovery: debt });
+        flags.postCompactResyncPending = true;
+      }
     }
   }
   appendLedger(ctx.cwd, "continuation_start_acknowledged", dispatchLedgerValue(started, {

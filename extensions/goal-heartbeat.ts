@@ -1353,11 +1353,20 @@ function heartbeatTick(): void {
   // block or a spurious forced refire (the old in-guard `else` was
   // unreachable — isSupervising() ≡ isLoopActive() || isActionableGoal()).
   if (!isSupervising() && (flags.postCompactResumeOwed || flags.postCompactResyncPending)) {
+    const priorOwed = flags.postCompactResumeOwed;
+    const priorPending = flags.postCompactResyncPending;
     flags.postCompactResumeOwed = false;
     flags.postCompactResyncPending = false;
     if (state.postCompactRecovery) {
+      const priorDebt = state.postCompactRecovery;
       replaceState({ ...state, postCompactRecovery: undefined });
-      persistStateLine(ctx.cwd, state);
+      if (!persistStateLine(ctx.cwd, state)) {
+        // A failed append must not discharge RAM while disk keeps the debt —
+        // a restart would resurrect resume/resync work claimed as done.
+        replaceState({ ...state, postCompactRecovery: priorDebt });
+        flags.postCompactResumeOwed = priorOwed;
+        flags.postCompactResyncPending = priorPending;
+      }
     }
   }
   // v0.32.1: post-compaction resume debt — retry on every heartbeat tick
@@ -1373,10 +1382,19 @@ function heartbeatTick(): void {
           appendLedger(ctx.cwd, "compaction_resume_owed_refire", { kind: "goal" });
           scheduleContinuation(ctx, true);
         } else {
-          flags.postCompactResumeOwed = false; // nothing to resume — discharge
+          // nothing to resume — discharge, but roll back when the append
+          // fails so RAM and disk agree on the debt.
+          const priorOwed = flags.postCompactResumeOwed;
+          const priorPending = flags.postCompactResyncPending;
+          flags.postCompactResumeOwed = false;
           if (state.postCompactRecovery) {
+            const priorDebt = state.postCompactRecovery;
             replaceState({ ...state, postCompactRecovery: undefined });
-            persistStateLine(ctx.cwd, state);
+            if (!persistStateLine(ctx.cwd, state)) {
+              replaceState({ ...state, postCompactRecovery: priorDebt });
+              flags.postCompactResumeOwed = priorOwed;
+              flags.postCompactResyncPending = priorPending;
+            }
           }
         }
       }

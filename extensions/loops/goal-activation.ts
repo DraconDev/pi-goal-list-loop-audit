@@ -3107,10 +3107,15 @@ async function handleHotLengthExhaustion(
     // discharged (the heartbeat stops retrying it).
     postCompactResumeOwed = false;
     if (state.postCompactRecovery?.resumeOwed) {
-      const next = { ...state.postCompactRecovery, resumeOwed: false };
+      const priorDebt = state.postCompactRecovery;
+      const next = { ...priorDebt, resumeOwed: false };
       if (next.resyncPending) replaceState({ ...state, postCompactRecovery: next });
       else clearDurablePostCompactRecovery(ctx);
-      if (state.postCompactRecovery) persistState(ctx);
+      if (state.postCompactRecovery && !persistState(ctx)) {
+        // A failed persist leaves the debt durable — roll the discharge back.
+        replaceState({ ...state, postCompactRecovery: priorDebt });
+        postCompactResumeOwed = true;
+      }
     }
     noteCompactionSettled(); // a live turn proves the compaction is over
     dispatchStartAcknowledged(ctx, "agent_start");
