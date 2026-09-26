@@ -2,49 +2,6 @@
 
 # Now
 
-# Next (closed 2026-09-26 — all seven wishes done, see # Done)
-
-##
-we def need a better interaction reminder than operation aborteer and some instruciton in gray
-/home/dracon/Pictures/Screenshots/Screenshot_20260924_111756.png
-
-##
-/home/dracon/Pictures/Screenshots/Screenshot_20260924_122337.png
-what is lead?, we removed tests and verdict but we need to update teh rest of it so not jsut a previous minus what we removed
-
-##
-last uadit not finishing
-/home/dracon/Pictures/Screenshots/Screenshot_20260924_171648.png /home/dracon/Pictures/Screenshots/Screenshot_20260924_171624.png 
-
-##
-/home/dracon/Pictures/Screenshots/Screenshot_20260924_171935.png /home/dracon/Pictures/Screenshots/Screenshot_20260924_171930.png 
-we need a better way to showing auto compaction, not pause i think 
-
-##
-auditor should use session thinking level not arbitrarily lower, cur my session is max but auditor is high
-/home/dracon/Pictures/Screenshots/Screenshot_20260924_175934.png
-
-##
-the designer agent deosnt have a section in glla
-also in the subagents i coudlnt select thinking level
-
-##
-look over /glla ?
-
-
-
-
-# Done (2026-09-26 — UX polish goal, all 7 wishes closed)
-
-- interaction reminder → verified already-fixed: the abort-rewrite card ("GLLA paused this turn safely") replaces the red error; pinned
-- Lead wording → verified already-fixed: finding-lead strip on all card paths; pinned
-- audit not finishing → verified by design: cap→TODOs/pause + repeated-objection stop + stall auto-cancel; pinned
-- compaction display → verified already-fixed: distinct ⏳ chip, never pause; pinned
-- auditor thinking level → implemented headless effective-resolution line with why
-- Designer section + subagent thinking → implemented subagentThinkingOverrides end to end
-- /glla review → 1 real gap fixed (auditorMirrorSessionExtensions headless) + drift gate test
-- behavioral-orchestrator rerun → green 151/151 (earlier failures were rig-load flakes)
-
 # Later
 
 ##
