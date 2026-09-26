@@ -636,7 +636,7 @@ test("audit 2026-09-26: subagent thinking editor pins, inherits, and rejects gar
     const ctx = makeMockCtx(tmpCwd());
     ctx.ui.selectImpl = async () => "high — ";
     await handleSettingChoice("subagentThinkingOverrides.Designer", ctx as unknown as ExtensionContext);
-    assert.equal(readGlobal().subagentThinkingOverrides?.Designer, "high", "the Designer thinking pin saves");
+    assert.equal((readGlobal() as { subagentThinkingOverrides?: Record<string, string> }).subagentThinkingOverrides?.Designer, "high", "the Designer thinking pin saves");
 
     ctx.ui.selectImpl = async () => "session — inherit current session level (default)";
     await handleSettingChoice("subagentThinkingOverrides.Designer", ctx as unknown as ExtensionContext);

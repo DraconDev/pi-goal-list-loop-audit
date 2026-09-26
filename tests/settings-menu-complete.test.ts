@@ -259,7 +259,7 @@ test("rows map 1:1 to dispatchable ids (every id can drive a handler)", () => {
   let covered = 0;
   for (const r of rowIds) {
     if (readOnly.has(r)) continue;
-    const currentSubagentId = r.startsWith("subagentModelOverrides.") || r.startsWith("subagentFallbacks:");
+    const currentSubagentId = r.startsWith("subagentModelOverrides.") || r.startsWith("subagentFallbacks:") || r.startsWith("subagentThinkingOverrides.");
     if (currentSubagentId) {
       assert.match(dispatcher, /OVERRIDABLE_AGENT_TYPES\.includes\(agentType\)/, `row id "${r}" has no current-role dispatcher guard`);
     } else {
