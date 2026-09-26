@@ -1409,8 +1409,12 @@ export type AuditorProgressCallback = (progress: AuditorProgress) => void;
 export interface AuditorStalledInfo {
   /** When the watchdog fired. */
   at: number;
-  /** Which independent watchdog fired. */
-  reason: "heartbeat-no-progress" | "tool-timeout" | "first-event-timeout" | "heartbeat-stale";
+  /** Which independent watchdog fired. `worker-brake` means the DETACHED
+   * WORKER's own stall brake (inactivity / per-tool / process-group) won the
+   * race against the parent watchdogs and published an atomic stall result —
+   * the parent never detected it, it only reclassified the worker's own
+   * report. 2026-09-26 slow-audit hardening. */
+  reason: "heartbeat-no-progress" | "tool-timeout" | "first-event-timeout" | "heartbeat-stale" | "worker-brake";
   /** Age of the last worker heartbeat at detection (`now - lastActivityAt`).
    * For heartbeat-no-progress this is fresh (≤ heartbeatFreshMs); a
    * tool-timeout may deliberately have a stale heartbeat. */
@@ -1422,6 +1426,17 @@ export interface AuditorStalledInfo {
   /** Present when the tool-timeout watchdog fired. */
   toolName?: string;
   toolAgeMs?: number;
+  /** 2026-09-26 slow-audit hardening: the worker's own stall headline,
+   * present only for `worker-brake` (the parent's watchdogs generate their
+   * own message). Bounded — this lands in the `auditor_stalled` ledger. */
+  workerError?: string;
+  /** 2026-09-26 slow-audit hardening: the attempt's cost record at the
+   * moment the stall was detected (prompt bytes, tool calls, vision inputs,
+   * elapsed) so a slow audit NAMES ITS DRIVER instead of reading as a
+   * generic stall. Absent only when the worker never published a snapshot —
+   * the parent falls back to a request-measured prompt size so even that
+   * case is never evidence-free. */
+  cost?: AttemptCost;
 }
 
 /** Return a stable JSON representation for request-hash validation. */
@@ -1550,6 +1565,20 @@ export async function writeAtomicJson(file: string, value: unknown): Promise<voi
   }
 }
 
+/** 2026-09-26 slow-audit hardening: parent-measured prompt bytes for stall
+ * evidence. `writeAtomicJson` writes `JSON.stringify(value)` plus exactly one
+ * trailing newline, so the request file size minus one IS the byte length the
+ * worker re-serializes. Used only when no worker snapshot exists to report its
+ * own measurement (a worker that died before its first publish). */
+function requestPromptBytes(requestPath: string): number | undefined {
+  try {
+    const bytes = statSync(requestPath).size;
+    return bytes > 1 ? bytes - 1 : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function acquireLock(lockPath: string, attemptId: string): Promise<void> {
   const handle = await fs.open(lockPath, fsConstants.O_CREAT | fsConstants.O_EXCL | fsConstants.O_WRONLY, 0o600);
   try {
@@ -1566,6 +1595,18 @@ function defaultWorkerPath(): string {
 function childAlive(child: ChildProcess): boolean {
   // ChildProcess.killed means a signal was sent, not that the process exited.
   return child.exitCode === null && child.signalCode === null;
+}
+
+/** 2026-09-26 slow-audit hardening: one cost record per raw worker snapshot.
+ * Shared by the live progress callback and every stall watchdog so the HUD,
+ * the ledger, and a fail-fast all name the same driver. */
+function snapshotCost(file: AuditorProgressFile): AttemptCost {
+  return summarizeAttemptCost({
+    promptBytes: file.promptBytes,
+    toolCalls: file.toolCalls,
+    reportBytes: file.reportBytes,
+    elapsedMs: file.elapsedMs,
+  });
 }
 
 function asProgress(file: AuditorProgressFile, startedAt: number): AuditorProgress {
@@ -1587,12 +1628,7 @@ function asProgress(file: AuditorProgressFile, startedAt: number): AuditorProgre
     ...(file.sessionPath ? { sessionPath: file.sessionPath } : {}),
     ...(file.unmatchedToolStarts ? { unmatchedToolStarts: file.unmatchedToolStarts } : {}),
     ...(file.unmatchedToolEnds ? { unmatchedToolEnds: file.unmatchedToolEnds } : {}),
-    cost: summarizeAttemptCost({
-      promptBytes: file.promptBytes,
-      toolCalls: file.toolCalls,
-      reportBytes: file.reportBytes,
-      elapsedMs: file.elapsedMs,
-    }),
+    cost: snapshotCost(file),
   };
 }
 
@@ -1612,6 +1648,18 @@ export function progressSignature(file: AuditorProgressFile): string {
 
 function infra(model: string, thinkingLevel: string, error: string, output = "", capturedToken?: GoalRevisionToken, infrastructureClass: AuditorInfrastructureClass = "transport"): GoalAuditorResult {
   return { approved: false, disapproved: false, output, model, thinkingLevel, error, infrastructureClass, ...(capturedToken ? { goalRevision: capturedToken } : {}) };
+}
+
+/** 2026-09-26 slow-audit hardening: the worker's own stall brakes
+ * (inactivity, per-tool, process-group) publish an atomic result whose
+ * headline starts with "Auditor stalled". Those failures are already
+ * classified `timeout` by `failedResultClass`, but they arrived through the
+ * RESULT path, so no parent watchdog ever fired and the attempt produced no
+ * `auditor_stalled` evidence. The worker and the parent share one silence
+ * window, so this is the common shape of a silent-past-bound failure — not a
+ * rare one. Exported so the classification is pinnable on its own. */
+export function isWorkerStallError(error: string | undefined): boolean {
+  return /^Auditor stalled\b/i.test(error ?? "");
 }
 
 function failedResultClass(error: string | undefined): AuditorInfrastructureClass {
@@ -1735,6 +1783,34 @@ async function runDetachedGoalCompletionAuditorInner(args: {
   let lastProgressAt = startedAt;
   let lastProgressSignature = "";
   let lastProgress: AuditorProgressFile | undefined;
+  // 2026-09-26 slow-audit hardening: at most ONE `auditor_stalled` event per
+  // attempt. Parent watchdogs and the worker-brake reclassification below are
+  // independent detectors for the same failure; the ledger must not record
+  // the same stall twice.
+  let stallReported = false;
+  /** Fail fast WITH evidence: every stall event carries the attempt's cost
+   * record (prompt bytes, tool calls, vision inputs, elapsed) so the next
+   * slow audit names its driver instead of a bare "Auditor stalled". Falls
+   * back to the parent-measured request size when the worker never published
+   * a progress snapshot (a worker that died before its first publish is the
+   * first-event stall — the one case with no worker-side telemetry at all). */
+  const reportStall = (info: Omit<AuditorStalledInfo, "cost">): void => {
+    if (stallReported) return;
+    stallReported = true;
+    const measured: AttemptCost = lastProgress
+      ? snapshotCost(lastProgress)
+      : { toolCallsTotal: 0, toolCallsByName: {}, visionInputs: 0 };
+    // A worker that died before its first publish has no worker-measured
+    // prompt bytes and no elapsed; the parent measured both for the request
+    // it wrote and the clock it started, so the evidence is never vacuous.
+    const promptBytes = measured.promptBytes ?? requestPromptBytes(requestPath);
+    const cost: AttemptCost = {
+      ...measured,
+      ...(promptBytes !== undefined ? { promptBytes } : {}),
+      elapsedMs: measured.elapsedMs ?? Math.max(0, now() - startedAt),
+    };
+    args.onStalled?.({ ...info, cost });
+  };
 
   try {
     // A fresh host has no in-memory activeChildren map. Reap only durable
@@ -1889,7 +1965,30 @@ async function runDetachedGoalCompletionAuditorInner(args: {
           const challenge = typeof result.challenge === "string" && result.challenge ? result.challenge.slice(0, 140) : undefined;
           if (!result.ok) {
             const error = result.error || "detached auditor failed";
-            return infra(model, thinkingLevel, error, output, capturedRevisionToken, failedResultClass(error));
+            const failureClass = failedResultClass(error);
+            // 2026-09-26 slow-audit hardening: the worker and the parent share
+            // one silence window, so the WORKER's own brake can win the race
+            // and publish an atomic "Auditor stalled" result instead of leaving
+            // a parent watchdog to fire. That path already classified as
+            // `timeout`, but it produced NO `auditor_stalled` evidence at all
+            // — the most common silent-past-bound failure was the one shape
+            // with no record of what it cost. Reclassify the worker's own
+            // report as the stall it is, carrying the worker's headline and
+            // the attempt's cost record.
+            if (failureClass === "timeout" && isWorkerStallError(error)) {
+              const silenceMs = lastProgress?.lastActivityAt !== undefined
+                ? Math.max(0, now() - lastProgress.lastActivityAt)
+                : Math.max(0, now() - startedAt);
+              reportStall({
+                at: now(),
+                reason: "worker-brake",
+                heartbeatAgeMs: silenceMs,
+                noProgressMs: silenceMs,
+                phase: lastProgress?.phase ?? "running",
+                workerError: error.slice(0, 200),
+              });
+            }
+            return infra(model, thinkingLevel, error, output, capturedRevisionToken, failureClass);
           }
           if (!output.trim()) return infra(model, thinkingLevel, "auditor produced no output", output, capturedRevisionToken, "no-verdict");
           const parsed = parseAuditorVerdict(output);
@@ -1945,7 +2044,7 @@ async function runDetachedGoalCompletionAuditorInner(args: {
             const toolLabel = effectiveBudgetMs >= 60_000
               ? `${Math.max(1, Math.round(effectiveBudgetMs / 60_000))}m`
               : `${Math.max(1, Math.round(effectiveBudgetMs / 1_000))}s`;
-            args.onStalled?.({
+            reportStall({
               at: now(),
               reason: "tool-timeout",
               heartbeatAgeMs: lastProgress.lastActivityAt === undefined ? toolAgeMs : Math.max(0, now() - lastProgress.lastActivityAt),
@@ -1965,7 +2064,14 @@ async function runDetachedGoalCompletionAuditorInner(args: {
         // updates, a hung tool — refreshes `lastActivityAt` forever without
         // delivering any new tool call or report output. That is the 1h50m
         // "alive but wedged" class: fail fast instead.
-        if (lastProgress && lastProgress.lastActivityAt !== undefined && now() - lastProgress.lastActivityAt <= heartbeatFreshMs) {
+        // 2026-09-26 slow-audit hardening: an OPEN tool is exempt here, like
+        // on the silence axes below and in the worker's own brake. A tool
+        // that is inside its own (possibly far larger, user-granted) budget
+        // is not "wedged without progress" — a long `bun test` is silence by
+        // design, and the per-tool watchdog above owns that axis. Without
+        // this exemption a config with a small stall window and a large tool
+        // budget killed healthy audits mid-tool.
+        if (lastProgress && lastProgress.lastActivityAt !== undefined && now() - lastProgress.lastActivityAt <= heartbeatFreshMs && lastProgress.currentToolStartedAt === undefined) {
           const signature = progressSignature(lastProgress);
           if (signature !== lastProgressSignature) {
             lastProgressSignature = signature;
@@ -1987,7 +2093,7 @@ async function runDetachedGoalCompletionAuditorInner(args: {
             const stallLabel = heartbeatNoProgressMs >= 60_000
               ? `${Math.max(1, Math.round(heartbeatNoProgressMs / 60_000))}m`
               : `${Math.max(1, Math.round(heartbeatNoProgressMs / 1_000))}s`;
-            args.onStalled?.({
+            reportStall({
               at: now(),
               reason: "heartbeat-no-progress",
               heartbeatAgeMs: now() - lastProgress.lastActivityAt,
@@ -2032,7 +2138,7 @@ async function runDetachedGoalCompletionAuditorInner(args: {
                 unmatchedToolStarts: lastProgress.unmatchedToolStarts ?? [],
                 unmatchedToolEnds: lastProgress.unmatchedToolEnds ?? [],
               });
-              args.onStalled?.({
+              reportStall({
                 at: now(),
                 reason: "heartbeat-stale",
                 heartbeatAgeMs: staleMs,
@@ -2054,7 +2160,7 @@ async function runDetachedGoalCompletionAuditorInner(args: {
             const stallLabel = firstEventTimeoutMs >= 60_000
               ? `${Math.max(1, Math.round(firstEventTimeoutMs / 60_000))}m`
               : `${Math.max(1, Math.round(firstEventTimeoutMs / 1_000))}s`;
-            args.onStalled?.({
+            reportStall({
               at: now(),
               reason: "first-event-timeout",
               heartbeatAgeMs: silenceMs,

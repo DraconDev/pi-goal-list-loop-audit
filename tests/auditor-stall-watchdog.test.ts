@@ -10,6 +10,16 @@
  * pin the two complementary axes: no first event ever, and a heartbeat that
  * went stale. Both must fail fast into the eager retry ladder instead of the
  * wall.
+ *
+ * 2026-09-26 (slow-audit hardening): failing fast is only half of it — the
+ * fail-fast must carry EVIDENCE, and every silence shape must reach it. The
+ * worker's own brake shares the parent's silence window, so it often wins the
+ * race and returns an atomic "Auditor stalled" RESULT: classified `timeout`,
+ * but with no `auditor_stalled` event and no cost record. These tests pin
+ * (a) the evidence every stall event carries, under a controlled clock, so a
+ * slow audit names its driver; (b) the worker-brake path reporting the same
+ * way; and (c) that "silence" still means silence — an open, in-budget tool is
+ * exempt from the no-progress bound, exactly as it is from the silence axes.
  */
 import assert from "node:assert/strict";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -19,6 +29,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import {
+  isWorkerStallError,
   runDetachedGoalCompletionAuditor,
   type AuditorProgress,
   type AuditorStalledInfo,
@@ -317,5 +328,212 @@ setInterval(() => {}, 1_000);
   assert.equal(stalled[0]?.reason, "tool-timeout");
   assert.ok(toolTimedOut, "the run ended on the per-tool safety bound, not the legacy wall");
   assert.equal(result.infrastructureClass, "timeout");
+  await cleanup();
+});
+
+test("stall: a silent-past-bound attempt fails fast WITH its cost record (controlled clock)", { timeout: 20_000 }, async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "glla-stall-evidence-"));
+  dirs.push(dir);
+  const sigtermMarker = path.join(dir, "sigterm-marker");
+  // One heartbeat + two finished tool calls (one of them an image read, i.e.
+  // vision work), then total silence — the field shape. The parent never
+  // burns the real wall: the injected clock jumps past the silence bound as
+  // soon as the snapshot is observed, so the watchdog's DECISION is pinned
+  // while the test pays milliseconds.
+  const worker = path.join(dir, "costed-then-silent-worker.mjs");
+  await writeFile(worker, `
+import { readFile, writeFile } from "node:fs/promises";
+import { writeFileSync } from "node:fs";
+const dir = process.argv[process.argv.indexOf("--job-dir") + 1];
+const request = JSON.parse(await readFile(dir + "/request.json", "utf8"));
+const finished = Date.now();
+await writeFile(dir + "/progress.json", JSON.stringify({
+  protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+  phase: "running", elapsedMs: 42_000, promptBytes: 123_456, reportBytes: 789,
+  lastActivityAt: finished, recentOutput: ["partial report"],
+  toolCalls: [
+    { name: "read", argsPrefix: "{\\"path\\":\\"src/a.ts\\"}", finishedAt: finished },
+    { name: "read", argsPrefix: "{\\"path\\":\\"shots/01-home.png\\"}", finishedAt: finished },
+  ],
+}));
+process.on("SIGTERM", () => { writeFileSync(${JSON.stringify(sigtermMarker)}, "killed"); process.exit(0); });
+setInterval(() => {}, 1_000);
+`);
+  let clock = Date.now();
+  const stalled: AuditorStalledInfo[] = [];
+  const started = Date.now();
+  const result = await runDetachedGoalCompletionAuditor({
+    cwd: dir,
+    goal,
+    model: "test/provider-model",
+    thinkingLevel: "high",
+    onProgress: (progress) => {
+      // Controlled clock: jump the parent's view of time past the silence
+      // bound on the first observed snapshot. Everything else (worker, poll
+      // loop, SIGTERM teardown) still runs for real.
+      if (progress.lastActivityAt) clock = Math.max(clock, progress.lastActivityAt) + 4_000;
+    },
+    onStalled: (info) => stalled.push(info),
+    runtime: {
+      now: () => clock,
+      workerPath: worker,
+      attemptId: () => "attempt-stall-evidence",
+      pollIntervalMs: 10,
+      wallTimeoutMs: 20_000,
+      heartbeatNoProgressMs: 1_200,
+      firstEventTimeoutMs: 20_000,
+      heartbeatFreshMs: 500,
+    },
+  });
+  assert.equal(result.infrastructureClass, "timeout", "silence past the bound is still retryable infra");
+  assert.match(result.error ?? "", /Auditor stalled — no session activity for/);
+  assert.equal(stalled.length, 1, "one stall event per attempt");
+  const stall = stalled[0]!;
+  assert.equal(stall.reason, "heartbeat-stale");
+  assert.ok(stall.heartbeatAgeMs >= 1_200, `silence reached the window: ${stall.heartbeatAgeMs}ms`);
+  assert.ok(
+    Date.now() - started < 10_000,
+    "the controlled clock tripped the watchdog — the doomed attempt burns no real wall",
+  );
+  // The evidence: a slow audit must be able to name its driver.
+  assert.equal(stall.cost?.promptBytes, 123_456, "prompt bytes are the worker's own measurement");
+  assert.equal(stall.cost?.toolCallsTotal, 2);
+  assert.deepEqual(stall.cost?.toolCallsByName, { read: 2 });
+  assert.equal(stall.cost?.visionInputs, 1, "the image read is recorded as vision work");
+  assert.equal(stall.cost?.reportBytes, 789);
+  assert.equal(stall.cost?.elapsedMs, 42_000, "worker-measured elapsed survives into the evidence");
+  assert.ok(existsSync(sigtermMarker), "the silent worker was SIGTERMed");
+  await cleanup();
+});
+
+test("stall: a worker-reported brake is reclassified with the same evidence", { timeout: 20_000 }, async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "glla-worker-brake-"));
+  dirs.push(dir);
+  // The worker wins the shared silence window: it publishes its own atomic
+  // stall result (exactly what scripts/goal-auditor-worker.mjs writes when
+  // GLLA_AUDITOR_STALL_MS elapses with no tool running) instead of leaving a
+  // parent watchdog to fire.
+  const worker = path.join(dir, "self-braked-worker.mjs");
+  await writeFile(worker, `
+import { readFile, writeFile } from "node:fs/promises";
+const dir = process.argv[process.argv.indexOf("--job-dir") + 1];
+const request = JSON.parse(await readFile(dir + "/request.json", "utf8"));
+const stamp = Date.now();
+await writeFile(dir + "/progress.json", JSON.stringify({
+  protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+  phase: "running", elapsedMs: 600_000, promptBytes: 98_765, lastActivityAt: stamp,
+  recentOutput: [], toolCalls: [{ name: "bash", argsPrefix: "{\\"command\\":\\"bun test\\"}", finishedAt: stamp }],
+}));
+await writeFile(dir + "/result.json", JSON.stringify({
+  protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+  ok: false, output: "", model: request.model, thinkingLevel: request.thinkingLevel,
+  error: "Auditor stalled — no session activity for 10m while no auditor tool was running, so it was aborted.",
+  toolCalls: [],
+}));
+setInterval(() => {}, 1_000);
+`);
+  const stalled: AuditorStalledInfo[] = [];
+  const result = await runDetachedGoalCompletionAuditor({
+    cwd: dir,
+    goal,
+    model: "test/provider-model",
+    thinkingLevel: "high",
+    onStalled: (info) => stalled.push(info),
+    runtime: {
+      workerPath: worker,
+      attemptId: () => "attempt-worker-brake",
+      pollIntervalMs: 10,
+      wallTimeoutMs: 20_000,
+      heartbeatNoProgressMs: 1_200,
+      firstEventTimeoutMs: 1_200,
+      heartbeatFreshMs: 500,
+    },
+  });
+  assert.equal(result.infrastructureClass, "timeout", "the worker's own brake stays retryable infra");
+  assert.equal(stalled.length, 1, "a worker-reported stall produces the same evidence event");
+  const stall = stalled[0]!;
+  assert.equal(stall.reason, "worker-brake", "the event says the WORKER braked, not a parent watchdog");
+  assert.match(stall.workerError ?? "", /no session activity for 10m/, "the worker's own headline is preserved");
+  assert.equal(stall.cost?.promptBytes, 98_765);
+  assert.equal(stall.cost?.toolCallsTotal, 1);
+  assert.equal(stall.cost?.visionInputs, 0);
+  assert.equal(stall.cost?.elapsedMs, 600_000, "a 10-minute stall carries its own elapsed evidence");
+  assert.equal(isWorkerStallError(stall.workerError), true);
+  assert.equal(isWorkerStallError("worker produced no verdict"), false);
+  await cleanup();
+});
+
+test("stall: an open in-budget tool is not silence — the no-progress bound spares it", { timeout: 20_000 }, async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "glla-tool-silence-"));
+  dirs.push(dir);
+  // Fresh heartbeats, no progress signature change, an OPEN tool well inside
+  // its own budget. That is a long test suite, not a wedged worker: the
+  // per-tool watchdog owns this axis, so the audit must survive the
+  // no-progress window elapsing (10x) and settle on its verdict.
+  const worker = path.join(dir, "long-tool-worker.mjs");
+  await writeFile(worker, `
+import { readFile, writeFile, rename } from "node:fs/promises";
+const dir = process.argv[process.argv.indexOf("--job-dir") + 1];
+const request = JSON.parse(await readFile(dir + "/request.json", "utf8"));
+const openedAt = Date.now();
+await writeFile(dir + "/progress.json", JSON.stringify({
+  protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+  phase: "running", elapsedMs: 10, lastActivityAt: openedAt,
+  currentTool: "bash", currentToolArgs: "{\\"command\\":\\"bun test\\"}",
+  currentToolStartedAt: openedAt, currentToolTimeoutMs: 60_000,
+  recentOutput: [], toolCalls: [],
+}));
+let tick = 0;
+let next = setTimeout(() => { void beat(); }, 20);
+async function beat() {
+  tick++;
+  await writeFile(dir + "/progress.tmp", JSON.stringify({
+    protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+    phase: "running", elapsedMs: 10 + tick * 20, lastActivityAt: Date.now(),
+    currentTool: "bash", currentToolArgs: "{\\"command\\":\\"bun test\\"}",
+    currentToolStartedAt: openedAt, currentToolTimeoutMs: 60_000,
+    recentOutput: [], toolCalls: [],
+  }));
+  await rename(dir + "/progress.tmp", dir + "/progress.json");
+  if (tick >= 60) {
+    await writeFile(dir + "/result.json", JSON.stringify({
+      protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+      ok: true, output: "<evidence>long suite finished</evidence>\\n<approved/>",
+      model: request.model, thinkingLevel: request.thinkingLevel,
+      toolCalls: [{ name: "read", argsPrefix: "{}", finishedAt: Date.now() }],
+    }));
+    return;
+  }
+  // Serialized recursion: overlapping ticks would race on progress.tmp and
+  // kill the worker with an ENOENT rename, which is a fixture bug, not a
+  // product signal.
+  next = setTimeout(() => { void beat(); }, 20);
+}
+process.on("SIGTERM", () => { clearTimeout(next); process.exit(0); });
+`);
+  const stalled: AuditorStalledInfo[] = [];
+  const started = Date.now();
+  const result = await runDetachedGoalCompletionAuditor({
+    cwd: dir,
+    goal: { ...goal, verificationContract: undefined },
+    model: "test/provider-model",
+    thinkingLevel: "high",
+    onStalled: (info) => stalled.push(info),
+    runtime: {
+      workerPath: worker,
+      attemptId: () => "attempt-tool-silence",
+      pollIntervalMs: 10,
+      wallTimeoutMs: 30_000,
+      // Ten times smaller than the tool's own 60s grant: without the open-tool
+      // exemption the no-progress watchdog cut a healthy audit in half.
+      heartbeatNoProgressMs: 300,
+      firstEventTimeoutMs: 30_000,
+      heartbeatFreshMs: 5_000,
+      toolTimeoutMs: 60_000,
+    },
+  });
+  assert.deepEqual(stalled, [], "an in-budget open tool is exempt from the no-progress bound");
+  assert.equal(result.approved, true, result.error ?? "the long-tool audit did not settle");
+  assert.ok(Date.now() - started >= 1_000, "the audit outlived the no-progress window many times over");
   await cleanup();
 });
