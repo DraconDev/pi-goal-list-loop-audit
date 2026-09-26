@@ -3722,3 +3722,5 @@
 {"type":"terminal_approval_render_persisted","value":{"goalId":"20260925234427-qvs1jd","delivered":false,"lines":25},"at":"2026-09-26T00:55:20.313Z"}
 {"type":"terminal_completion_notice_sent","value":{"goalId":"20260925234427-qvs1jd","payloadChars":1550},"at":"2026-09-26T00:55:20.319Z"}
 {"type":"terminal_approval_render_replayed","value":{"goalId":"20260925234427-qvs1jd","createdAt":"2026-09-26T00:55:20.308Z"},"at":"2026-09-26T00:55:20.320Z"}
+{"type":"session_shutdown","value":{"reason":"reload"},"at":"2026-09-26T01:01:50.991Z"}
+{"type":"session_rebound","value":{"reason":"reload"},"at":"2026-09-26T01:01:57.020Z"}
