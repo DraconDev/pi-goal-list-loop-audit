@@ -1194,13 +1194,14 @@ function heartbeatTick(): void {
     // for state/UI mutation: a stale ctx can throw halfway through the park.
     const current = freshCtx();
     if (current) {
-      appendLedger(current.cwd, "stranded_audit_recovered", { goalId: state.goal.id, via: "stale-latch" });
       if (!markCompletionAuditRecoveryPending(current, "stale-latch-recovery")) {
         try {
           current.ui.notify(`Completion audit recovery could not be persisted; the claim remains auditing. Fix .pi-glla storage and retry ${activeGoalSurfaceCommand("resume")}.`, "warning");
         } catch { /* notification is best-effort */ }
         return;
       }
+      // The recovery projection landed — only now claim it in the ledger.
+      appendLedger(current.cwd, "stranded_audit_recovered", { goalId: state.goal.id, via: "stale-latch" });
       try {
         current.ui.notify(`Completion audit blocked — no verdict (stale session). The stored claim is safe; ${activeGoalSurfaceCommand("resume")} starts exactly one fresh auditor.`, "warning");
       } catch {
@@ -1214,12 +1215,12 @@ function heartbeatTick(): void {
     let cwd: string | null = null;
     try { cwd = knownCtx.cwd; } catch { /* no durable path available */ }
     if (!cwd) return;
-    appendLedger(cwd, "stranded_audit_recovered", { goalId: state.goal.id, via: "stale-latch" });
     if (!parkCompletionAuditRecovery(cwd, "stale-latch-recovery")) {
       // Context-free parking owns its transaction now. A false return means
       // no durable recovery projection landed; do not claim the claim is safe.
       return;
     }
+    appendLedger(cwd, "stranded_audit_recovered", { goalId: state.goal.id, via: "stale-latch" });
     return;
   }
   const rawApiStale = probeExtensionApiStaleRaw();

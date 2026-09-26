@@ -597,3 +597,36 @@ test("audit 2026-09-07 (LOW, finding 400): typing the displayed `auto` in the no
   await handleSettingChoice("notifyCmd", ctx as unknown as ExtensionContext);
   assert.equal(loadSettings(cwd).notifyCmd, "my-notify $1", "a real command still saves");
 });
+
+test("audit 2026-09-25: decisionPauseBudget is visible on every operator surface", async () => {
+  const { SETTINGS_KEYS } = await import("../extensions/goal-settings.ts");
+  assert.ok((SETTINGS_KEYS as string[]).includes("decisionPauseBudget"), "provenance-tracked keys include the budget");
+  const { buildSettingsRows } = await import("../extensions/settings-menu.ts");
+  const rows = buildSettingsRows({} as never, {});
+  assert.ok(rows.some((r) => r.id === "decisionPauseBudget"), "the interactive menu renders a budget row");
+  const src = fs.readFileSync("extensions/goal-commands.ts", "utf-8");
+  assert.match(src, /fmt\("decisionPauseBudget", "decisionPauseBudget"\)/, "headless /glla list shows the budget row");
+  try {
+    const cwd = tmpCwd();
+    fs.mkdirSync(path.dirname(projectSettingsPath(cwd)), { recursive: true });
+    fs.writeFileSync(projectSettingsPath(cwd), JSON.stringify({ decisionPauseBudget: 2 }));
+    assert.equal(settingsProvenance(cwd).decisionPauseBudget?.source, "project", "a JSON-set budget reports its source");
+    assert.equal(settingsProvenance(cwd).decisionPauseBudget?.value, 2, "a JSON-set budget reports its value");
+    assert.equal(loadSettings(cwd).decisionPauseBudget, 2, "the JSON-set budget is effective");
+
+    const ctx = makeMockCtx(tmpCwd());
+    ctx.ui.inputImpl = async () => "3";
+    await handleSettingChoice("decisionPauseBudget", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().decisionPauseBudget, 3, "the editor saves integers");
+
+    ctx.ui.inputImpl = async () => "abc";
+    await handleSettingChoice("decisionPauseBudget", ctx as unknown as ExtensionContext);
+    assert.equal(readGlobal().decisionPauseBudget, 3, "invalid input leaves the saved value untouched");
+
+    ctx.ui.inputImpl = async () => "";
+    await handleSettingChoice("decisionPauseBudget", ctx as unknown as ExtensionContext);
+    assert.ok(!("decisionPauseBudget" in readGlobal()), "empty input restores the default");
+  } finally {
+    restoreGlobal();
+  }
+});

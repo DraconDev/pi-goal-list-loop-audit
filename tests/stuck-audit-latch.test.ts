@@ -70,3 +70,26 @@ test("Fix B: the park requires the exact stuck signature (auditing, no in-flight
   assert.match(RECOVERY, /writeGoalStateTransaction\(cwd, \{ \.\.\.state, goal: nextGoal \}\)/, "context-free park writes the durable recovery transaction");
   assert.match(RECOVERY, /const stateLanded = persistStateLine\(cwd, state\);/, "context-free park checks the state append result");
 });
+
+test("audit 2026-09-25: stranded_audit_recovered is ledgered only after the park lands", () => {
+  // Both stale-latch branches (fresh-ctx and context-free) must persist the
+  // recovery projection BEFORE claiming "recovered" — on a failed park the
+  // claim is still auditing and the ledger must not overstate it.
+  for (const persistCall of [
+    'markCompletionAuditRecoveryPending(current, "stale-latch-recovery")',
+    'parkCompletionAuditRecovery(cwd, "stale-latch-recovery")',
+  ]) {
+    const callIdx = HB.indexOf(persistCall);
+    assert.ok(callIdx >= 0, `${persistCall} exists`);
+    // The ledger for THIS branch is the next stranded_audit_recovered after
+    // the persist call (branches are sequential in the function body).
+    const ledgerIdx = HB.indexOf('"stranded_audit_recovered"', callIdx);
+    assert.ok(ledgerIdx > callIdx, `the recovered ledger follows ${persistCall}`);
+    const between = HB.slice(callIdx, ledgerIdx);
+    assert.match(between, /return;/, "the failure path exits before the ledger claim");
+    assert.ok(
+      between.includes("could not be persisted") || between.includes("no durable recovery projection landed"),
+      "the failure path names the unlanded park",
+    );
+  }
+});
