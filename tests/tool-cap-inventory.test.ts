@@ -8,7 +8,7 @@ import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 
-import { sanitizeGateRows, buildDurableChoiceRecord } from "../extensions/goal-loop-core.js";
+import { sanitizeGateRows, sanitizeFindingGroups, buildDurableChoiceRecord } from "../extensions/goal-loop-core.js";
 
 const TOOLS_SRC = fs.readFileSync("extensions/loops/goal-tools.ts", "utf-8");
 
@@ -50,4 +50,20 @@ test("judgment and resume values clip at handlers instead of refusing", () => {
   assert.doesNotMatch(record.reason, /\s$/, "clause-aware cut, never a dangling break");
   assert.ok(!TOOLS_SRC.includes('(p.reason ?? "").slice(0, 200)'), "no mid-word ledger slice on resume reason");
   assert.ok(TOOLS_SRC.includes('clipSummaryValue(p.reason ?? "", 200)'), "resume ledger excerpt clips clause-aware");
+});
+
+test("cap audit gaps: judgment record and group titles clip clause-aware", () => {
+  // 2026-09-26 auditor repair: buildDurableChoiceRecord and the group-title
+  // sanitizer kept mid-word slices while every twin went clause-aware.
+  const words = `fix the card: ${"word ".repeat(200)}done.`;
+  const record = buildDurableChoiceRecord("inline", words, undefined);
+  assert.ok(record.reason.length <= 500, "ledger record stays bounded");
+  assert.ok(record.reason.endsWith("…"), "over-long reasons end at a clause cut, not mid-word");
+
+  const longTitle = `Area with many words ${"word ".repeat(40)}end`;
+  const groups = sanitizeFindingGroups([{ title: longTitle, findings: ["Lead: body"] }]);
+  const title = groups?.[0]?.title ?? "";
+  assert.ok(title.length <= 120, "display-label bound kept");
+  assert.ok(title.endsWith("…"), "over-long titles end at a clause cut, not mid-word");
+  assert.doesNotMatch(title, /word $/, "no dangling partial word");
 });

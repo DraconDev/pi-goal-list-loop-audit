@@ -2785,7 +2785,7 @@ function registerAgentTools(pi: any): void {
         ...(usage ? { usage } : {}),
       }, ctx);
       releaseAuditorSurface();
-      appendLedger(ctx.cwd, "goal_resumed", { via: "resume_goal", goalId: resumedId, reason: clipSummaryValue(p.reason ?? "", 200) });
+      appendLedger(ctx.cwd, "goal_resumed", { via: "resume_goal", goalId: resumedId, reason: clipSummaryValue(p.reason ?? "", 200) }); // 2026-09-26 cap audit: ledger excerpt kept at 200 (abuse guard on the resumed line) with clause-aware clip — over-long reasons still resume.
       // A stored completion claim is a direct-audit resume, not an agent
       // turn — same law as the manual path: re-fire the detached auditor
       // instead of leaving an ACTIVE goal no timer would ever consume.

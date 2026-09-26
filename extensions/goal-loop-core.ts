@@ -408,8 +408,16 @@ export interface FindingGroup {
 /** v0.38.55 audit (DECIDED 2026-09-15): raised from 6x6 so large work
  * actually renders uncapped per the full-parity promise — abuse still
  * bounded, legitimate big goals no longer clipped at the boundary. */
+/** 2026-09-26 cap audit: COUNT bounds are kept (abuse guard against
+ * thousand-row claims blowing up chat/archive renders) AND they clip,
+ * never refuse — extra rows drop at the sanitizer, so no count can
+ * strand a claim the way length caps did. */
 export const MAX_FINDING_GROUPS = 12;
 export const MAX_GROUP_FINDINGS = 20;
+/** 2026-09-26 cap audit: TITLE stays 120 because it is a display label
+ * (table column / section header), not prose — 120 cannot strand a
+ * legitimate area name, and over-long titles clip clause-aware at the
+ * trust boundary instead of refusing the claim. */
 export const MAX_GROUP_TITLE_CHARS = 120;
 /** 2026-09-26 field follow-up (endless-td 500-char complete_goal refusal):
  * free-prose finding budgets match the documented 10k-char guard — the tool
@@ -432,7 +440,7 @@ export function sanitizeFindingGroups(value: unknown): FindingGroup[] | undefine
     if (groups.length >= MAX_FINDING_GROUPS) break;
     if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
     const raw = entry as Record<string, unknown>;
-    const title = typeof raw.title === "string" ? raw.title.trim().slice(0, MAX_GROUP_TITLE_CHARS) : "";
+    const title = typeof raw.title === "string" ? clipSummaryValue(raw.title.trim(), MAX_GROUP_TITLE_CHARS) : "";
     if (!title) continue;
     if (!Array.isArray(raw.findings)) continue;
     const findings: string[] = [];
@@ -482,6 +490,8 @@ export interface GateRow {
 }
 
 export const MAX_GATE_ROWS = 10;
+/** 2026-09-26 cap audit: COUNT bound kept (abuse guard on table rows)
+ * with clip-not-refuse semantics — extra rows drop, claims never refuse. */
 export const MAX_GATE_GATE_CHARS = 120;
 /** 2026-09-26 cap audit (darklord gateRows.7.notes refusal): free-prose gate
  * fields match the documented 10k-char guard — the schema accepts, the
@@ -3282,13 +3292,16 @@ export interface DurableChoiceRecord {
 
 /** Build the bounded payload used by the explicit durable-vs-defer ledger
  * tool. Keep model-authored rationale single-line and small: ledger entries
- * are durable diagnostics, not a second transcript. */
+ * are durable diagnostics, not a second transcript. 2026-09-26 cap audit:
+ * the 500 bound is kept (abuse guard on ever-growing ledger lines) AND it
+ * clips clause-aware instead of refusing — an over-long reason still
+ * records, so no judgment can strand the way schema caps did. */
 export function buildDurableChoiceRecord(
   choice: DurableChoice,
   reason: string,
   followUp?: string,
 ): DurableChoiceRecord {
-  const compact = (value: string): string => value.replace(/\s+/g, " ").trim().slice(0, 500);
+  const compact = (value: string): string => clipSummaryValue(value, 500);
   const cleanReason = compact(reason);
   const cleanFollowUp = followUp ? compact(followUp) : "";
   return {
