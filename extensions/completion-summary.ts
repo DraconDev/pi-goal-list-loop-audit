@@ -756,6 +756,14 @@ export function buildRichTerminalParts(args: {
   showVerification?: boolean;
 }): RichTerminalParts {
   const { findings, tests, next } = partitionRichDetails(args.details);
+  if (!args.chat) {
+    // The archive preserves technical Verdict:/Audit: details in the evidence
+    // table instead of dropping them — partitionRichDetails routes only
+    // Tests:/Verification: lines to `tests` and discards the rest.
+    for (const detail of args.details ?? []) {
+      if (/^\s*(?:Verdict|Audit)\s*[:\-\u2013\u2014]/i.test(detail) && !tests.includes(detail)) tests.push(detail);
+    }
+  }
   const outcome = sanitizeDisplayText(args.outcome);
   const kind = args.kind ?? "Done";
   const headline = args.chat ? `## ${kind} — ${outcome}` : requestEchoHeadline(kind, args.objective, outcome);
@@ -766,6 +774,13 @@ export function buildRichTerminalParts(args: {
       .map((finding, i) => ({ finding, proof: group.tests?.[i] }))
       .filter(({ finding, proof }) => {
         const semantic = normalizeFindingLead(sanitizeDisplayText(finding));
+        if (semantic.technical && args.chat !== true) {
+          // Technical-only claims are evidence, not Leads — but the archive
+          // preserves them in the evidence table instead of dropping them.
+          // Chat keeps the compact filter.
+          tests.push(finding);
+          return false;
+        }
         // Technical-only claims are evidence, not Leads. Repository receipts
         // remain in the archive but are suppressed from the compact chat.
         return !semantic.technical && (args.chat === true ? !isRepositoryReceipt(finding, proof) : true);
@@ -808,7 +823,11 @@ export function buildRichTerminalParts(args: {
     // v0.38.55: the flat fallback renders every detail — no cap.
     findings.filter(detail => !args.chat || !isRepositoryReceipt(detail)).forEach((detail, i) => {
     const normalized = normalizeFindingLead(args.chat ? chatNarrative(detail) : detail);
-    if (normalized.technical) return;
+    if (normalized.technical) {
+      // Archive preserves flat Verdict:/Audit: details in the evidence table
+      // (already routed above — this guards the fallback path); chat drops.
+      return;
+    }
     const reason = [...new Set([normalized.reason, ...normalized.evidence].filter(Boolean))].join(" · ");
     findingLines.push(reason ? `${i + 1}. **${normalized.outcome}** — ${reason}` : `${i + 1}. **${normalized.outcome}**`);
     });

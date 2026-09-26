@@ -1445,15 +1445,18 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
       }
       // v0.25.1: file-write progress signal for the multi-signal stuck
       // gate — a loop that is WRITING files is shipping, not stuck.
-      if (isLoopWriteTool(String(event?.toolName ?? ""))) {
+      // Both event shapes are attested (toolName and name); the call-time
+      // path recorder already reads both, so the counters must too.
+      if (isLoopWriteTool(String(event?.toolName ?? event?.name ?? ""))) {
         const metrics = loop.iterMetrics ?? { fileWrites: 0 };
         metrics.fileWrites++;
         loop.iterMetrics = metrics;
       }
     }
     // v0.25.2: per-goal tool telemetry (/glla stats premature detection).
+    // Both event shapes are attested (toolName and name).
     if (state.goal && state.goal.status === "active") {
-      const toolName = String(event?.toolName ?? "");
+      const toolName = String(event?.toolName ?? event?.name ?? "");
       if (isLoopWriteTool(toolName) || toolName === "bash") {
         const t = state.goal.telemetry ?? { turns: 0, fileWrites: 0, bashCalls: 0 };
         if (isLoopWriteTool(toolName)) t.fileWrites++;
@@ -1464,7 +1467,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     // A failed subagent result is surfaced as a generic provider/runtime
     // failure. Recovery deliberately does not inspect status or quota
     // wording before deciding what to do.
-    if (isSubagentProviderFailure(String(event?.toolName ?? ""), Boolean(event?.isError ?? event?.error), event?.output ?? event?.result ?? event?.details ?? "")) {
+    if (isSubagentProviderFailure(String(event?.toolName ?? event?.name ?? ""), Boolean(event?.isError ?? event?.error), event?.output ?? event?.result ?? event?.details ?? "")) {
       const errText = typeof (event?.output ?? event?.result) === "string" ? (event?.output ?? event?.result) : JSON.stringify(event?.output ?? event?.result ?? event?.details ?? "");
       const current = currentToolContext(eventCtx);
       if (current) {

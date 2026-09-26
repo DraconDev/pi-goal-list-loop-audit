@@ -164,3 +164,36 @@ test("normalization strips dash-separated label prefixes (Lead –/Tests –)", 
   assert.equal(normalizeFindingLead("Lead with the summary (src/popup.ts:42)").outcome, "Lead with the summary");
   assert.equal(normalizeFindingLead("Lead-up to the fix is complete").outcome, "Lead-up to the fix is complete");
 });
+
+test("archive preserves technical group findings and Verdict details as evidence instead of dropping them", () => {
+  const parts = buildRichTerminalParts({
+    outcome: "done",
+    details: ["Verdict: the auditor approved after a retry"],
+    countsLine: "",
+    groups: [
+      { title: "Proof", findings: ["Tests: 12 passed, 0 failed"] },
+      { title: "Review", findings: ["Audit: manual spot-check of the queue"] },
+    ],
+  });
+  const text = composeRichTerminalLines(parts).join("\n");
+  assert.match(text, /12 passed, 0 failed/, "group Tests finding preserved in the archive evidence");
+  assert.match(text, /manual spot-check/, "group Audit finding preserved in the archive evidence");
+  assert.match(text, /auditor approved after a retry/, "flat Verdict detail preserved in the archive evidence");
+});
+
+test("chat still suppresses technical findings after the archive-preservation fix", () => {
+  const parts = buildRichTerminalParts({
+    chat: true,
+    outcome: "done",
+    details: ["Verdict: the auditor approved after a retry"],
+    countsLine: "",
+    groups: [
+      { title: "Proof", findings: ["Tests: 12 passed, 0 failed"] },
+      { title: "Review", findings: ["Audit: manual spot-check of the queue"] },
+    ],
+  });
+  const text = composeRichTerminalLines(parts).join("\n");
+  assert.doesNotMatch(text, /12 passed/);
+  assert.doesNotMatch(text, /manual spot-check/);
+  assert.doesNotMatch(text, /auditor approved after a retry/);
+});
