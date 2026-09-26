@@ -81,6 +81,10 @@ export interface GoalAuditorResult {
    * legacy workers. Never affects verdict semantics — the final-line
    * rule already composed the challenge into approved/disapproved. */
   challenge?: string;
+  /** v0.38.99: this attempt had a tool call cancelled at its time budget, so
+   * verification is incomplete and the attempt cannot approve. Recorded on
+   * the verdict for audit trails; absent when no tool was cancelled. */
+  verificationIncomplete?: boolean;
   /** v0.38.81: the risk tier this attempt ran under (stamped by the
    * public wrapper from dispatch args). Absent on legacy callers. */
   auditTier?: AuditTierName;
@@ -225,7 +229,7 @@ export function resolveClaimAuditTier(
 
 export interface AuditorProgress {
   recentOutput: string[];
-  phase: "starting" | "running" | "thinking" | "tool_executing" | "producing_report" | "challenging" | "complete";
+  phase: "starting" | "running" | "thinking" | "tool_executing" | "producing_report" | "challenging" | "tool_cancelled" | "continuing" | "complete";
   elapsedMs: number;
   /** v0.34.86: monotonic report-stream byte count (text_delta chars). */
   reportBytes?: number;
@@ -748,6 +752,12 @@ export const MIN_AUDITOR_TOOL_TIMEOUT_MS = 30_000;
 export const MAX_AUDITOR_TOOL_TIMEOUT_MS = 6 * 3_600_000;
 export const MIN_AUDITOR_STALL_MS = 60_000;
 export const MAX_AUDITOR_STALL_MS = 24 * 3_600_000;
+/** v0.38.99: how long the parent waits for the worker to cancel an
+ * over-budget tool and resume the audit before falling back to the hard
+ * kill. Sized for the worker to abort the RPC turn, publish progress, and
+ * re-prompt — seconds, not minutes. A genuinely wedged tool still fails
+ * fast, one grace window later. */
+export const TOOL_CANCEL_GRACE_MS = 60_000;
 /** v0.37.0: adaptive timeout escalation. Each failed detached attempt that
  * gets retried doubles BOTH base budgets (per-tool and silence), saturating
  * after AUDITOR_TIMEOUT_ESCALATION_MAX_STEPS doublings (4× base). The
@@ -1324,6 +1334,13 @@ interface AuditorResultFile {
   /** v0.38.80: what the worker wrote in result.challenge (see the worker's
    * challengeState). Declared so the parent can thread it to the verdict. */
   challenge?: string;
+  /** v0.38.99: the worker cancelled a tool call that blew its budget and
+   * resumed the audit, so one piece of verification has NO result. The
+   * parent refuses to apply an approving verdict from such an attempt — the
+   * auditor may not certify what it never saw. */
+  verificationIncomplete?: boolean;
+  /** v0.38.99: the cancelled tool calls, for forensics/stall evidence. */
+  cancelledToolCalls?: { name: string; argsPrefix?: string; budgetMs?: number; cancelledAt?: number }[];
 }
 
 interface AuditorProgressFile {
@@ -1783,6 +1800,13 @@ async function runDetachedGoalCompletionAuditorInner(args: {
   let lastProgressAt = startedAt;
   let lastProgressSignature = "";
   let lastProgress: AuditorProgressFile | undefined;
+  // v0.38.99 non-destructive tool timeout (parent side). The worker cancels
+  // the over-budget tool itself and resumes the audit, so the parent must NOT
+  // terminate it at the same instant — that race is exactly what used to
+  // throw the completed work away. The parent records the stall once, then
+  // grants a bounded grace window for the worker to cancel + continue, and
+  // only falls back to the hard kill if the tool is still wedged after it.
+  let toolCancelGraceUntil: number | undefined;
   // 2026-09-26 slow-audit hardening: at most ONE `auditor_stalled` event per
   // attempt. Parent watchdogs and the worker-brake reclassification below are
   // independent detectors for the same failure; the ledger must not record
@@ -1998,6 +2022,36 @@ async function runDetachedGoalCompletionAuditorInner(args: {
             return infra(model, thinkingLevel, `Auditor reported unsupported tool: ${disallowedTool.name}`, output, capturedRevisionToken, "no-verdict");
           }
           const usedAuditTool = result.toolCalls.some((call) => (AUDITOR_TOOLS as readonly string[]).includes(call.name));
+          // v0.38.99 approval guard. The worker cancels a tool call that blows
+          // its budget and resumes the audit (v0.38.99 non-destructive tool
+          // timeout) so the completed tool calls are not thrown away. The
+          // cancelled call produced NO result, so an approval from that
+          // attempt rests on evidence the auditor never saw. Refuse the
+          // approval and fail the attempt as retryable infrastructure rather
+          // than faking a disapproval — the goal did not regress, the audit
+          // simply cannot certify it. The retry ladder then re-audits, and a
+          // later attempt that completes its verification can approve.
+          if (parsed.approved && result.verificationIncomplete === true) {
+            const cancelled = (result.cancelledToolCalls ?? []).at(-1);
+            const detail = cancelled ? ` (cancelled tool: ${cancelled.name}${cancelled.budgetMs ? ` after ${Math.round(cancelled.budgetMs / 1000)}s` : ""})` : "";
+            reportStall({
+              at: now(),
+              reason: "tool-timeout",
+              heartbeatAgeMs: 0,
+              noProgressMs: 0,
+              phase: lastProgress?.phase ?? "running",
+              ...(cancelled?.name ? { toolName: cancelled.name } : {}),
+              ...(cancelled?.budgetMs !== undefined ? { toolAgeMs: cancelled.budgetMs } : {}),
+            });
+            return infra(
+              model,
+              thinkingLevel,
+              `Auditor approved, but verification is incomplete — a tool call was cancelled at its time budget${detail}, so the approval was refused and the audit must be retried.`,
+              output,
+              capturedRevisionToken,
+              "timeout",
+            );
+          }
           if (parsed.approved && !usedAuditTool) {
             return stampToken({ approved: false, disapproved: true, output, model, thinkingLevel, challenge, error: "Auditor approved without calling any audit tool; treated as disapproved." }, capturedRevisionToken);
           }
@@ -2017,7 +2071,7 @@ async function runDetachedGoalCompletionAuditorInner(args: {
             return stampToken({ approved: true, disapproved: false, output, model, thinkingLevel, challenge, regressionShieldPassed: true }, capturedRevisionToken);
           }
           args.onProgress?.({ phase: "complete", elapsedMs: now() - startedAt, recentOutput: output.split("\n").filter(Boolean).slice(-8), toolCalls: result.toolCalls, unmatchedToolStarts: [], unmatchedToolEnds: [] });
-          return stampToken({ approved: parsed.approved, disapproved: parsed.disapproved, impossible: parsed.impossible, impossibleReason: parsed.impossibleReason, output, model, thinkingLevel, challenge }, capturedRevisionToken);
+          return stampToken({ approved: parsed.approved, disapproved: parsed.disapproved, impossible: parsed.impossible, impossibleReason: parsed.impossibleReason, output, model, thinkingLevel, challenge, ...(result.verificationIncomplete === true ? { verificationIncomplete: true } : {}) }, capturedRevisionToken);
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code !== "ENOENT") return infra(model, thinkingLevel, `invalid auditor result: ${error instanceof Error ? error.message : String(error)}`, "", capturedRevisionToken, "no-verdict");
         }
@@ -2032,7 +2086,18 @@ async function runDetachedGoalCompletionAuditorInner(args: {
           // tool call's own granted timeout): killing the worker before the
           // deadline the tool layer granted discards a healthy audit.
           const effectiveBudgetMs = effectiveToolTimeoutMs(toolTimeoutMs, lastProgress.currentToolTimeoutMs);
-          if (toolAgeMs >= effectiveBudgetMs) {
+          if (toolAgeMs < effectiveBudgetMs) {
+            // The tool is inside its budget (or was re-armed after the
+            // worker's cancel); any earlier grace window is stale.
+            toolCancelGraceUntil = undefined;
+          } else if (toolCancelGraceUntil !== undefined && now() < toolCancelGraceUntil) {
+            // v0.38.99: the worker is cancelling this tool and resuming the
+            // audit. Killing now would discard every tool call it already
+            // completed, so hold the hard kill until the grace expires.
+          } else {
+            if (toolCancelGraceUntil === undefined) {
+              toolCancelGraceUntil = now() + TOOL_CANCEL_GRACE_MS;
+            }
             args.onProgress?.({
               phase: "running",
               elapsedMs: now() - startedAt,
