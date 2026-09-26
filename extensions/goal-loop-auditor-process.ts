@@ -253,6 +253,10 @@ export interface AuditorProgress {
    * display layer renders "tool: X · 4m / 20m budget" and exempts an
    * in-budget long tool from the 3m quiet warning. */
   toolTimeoutMs?: number;
+  /** 2026-09-26 slow-audit hardening: per-attempt cost breakdown so the
+   * next slow audit names its driver (prompt bytes, tool-call volume,
+   * image inputs, elapsed) instead of reading as a generic stall. */
+  cost?: AttemptCost;
   /** v0.38.3: worker telemetry — the deterministic session file the
    * auditor's pi persists when the request enabled live inspection
    * (<jobDir>/session.jsonl). Absent = the original --no-session spawn. */
@@ -971,6 +975,18 @@ function auditDirHasResult(dir: string): boolean {
   }
 }
 
+/** 2026-09-26 slow-audit hardening (hellhunter 23-day progress-only dir):
+ * a launch record proves a launch was attempted (interrupted creation stays
+ * ambiguous per the retention pins); its absence proves nothing launchable. */
+function auditDirHasRequest(dir: string): boolean {
+  try {
+    statSync(path.join(dir, "request.json"));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export type AuditJobHealthStatus = "live" | "dead" | "ambiguous";
 
 export interface AuditJobHealthEntry {
@@ -1087,6 +1103,20 @@ export function inspectAuditJobHealth(
         if ((lockErr as NodeJS.ErrnoException).code === "ENOENT" && auditDirHasResult(dir)) {
           status = "dead";
           reason = "no worker lock; finished result on file";
+        } else if (
+          (lockErr as NodeJS.ErrnoException).code === "ENOENT" &&
+          !auditDirHasResult(dir) &&
+          !auditDirHasRequest(dir) &&
+          ageMs >= maxAgeMs
+        ) {
+          // 2026-09-26 slow-audit hardening: no lock, no launch record, no
+          // result — no worker identity can exist and nothing launchable or
+          // finished remains to inspect. A live worker always holds its lock
+          // (written before any progress), so only age gates this: fresh
+          // dirs stay ambiguous for the creation race. Present-but-corrupt
+          // locks and request-bearing dirs keep their pinned ambiguity below.
+          status = "dead";
+          reason = "no worker lock, launch record, or finished result — unowned debris";
         }
       }
     }
@@ -1228,6 +1258,46 @@ interface AuditorToolCall {
   finishedAt: number;
 }
 
+/** 2026-09-26 slow-audit hardening: per-attempt cost breakdown. Pure
+ * summary over a worker progress snapshot — prompt bytes (request JSON
+ * size, worker-measured), finished tool-call volume by name, image-file
+ * tool inputs (vision work proxy: args referencing image files), plus the
+ * already-tracked report bytes and elapsed. */
+export interface AttemptCost {
+  promptBytes?: number;
+  toolCallsTotal: number;
+  toolCallsByName: Record<string, number>;
+  visionInputs: number;
+  reportBytes?: number;
+  elapsedMs?: number;
+}
+
+const IMAGE_INPUT_PATTERN = /\.(png|jpe?g|gif|webp|bmp)(?:["'\s]|$)/i;
+
+export function summarizeAttemptCost(input: {
+  promptBytes?: number;
+  toolCalls?: Array<{ name?: string; argsPrefix?: string }>;
+  reportBytes?: number;
+  elapsedMs?: number;
+}): AttemptCost {
+  const calls = Array.isArray(input.toolCalls) ? input.toolCalls : [];
+  const byName: Record<string, number> = {};
+  let visionInputs = 0;
+  for (const call of calls) {
+    const name = typeof call?.name === "string" && call.name ? call.name : "unknown";
+    byName[name] = (byName[name] ?? 0) + 1;
+    if (typeof call?.argsPrefix === "string" && IMAGE_INPUT_PATTERN.test(call.argsPrefix)) visionInputs += 1;
+  }
+  return {
+    ...(typeof input.promptBytes === "number" && Number.isFinite(input.promptBytes) ? { promptBytes: Math.max(0, Math.floor(input.promptBytes)) } : {}),
+    toolCallsTotal: calls.length,
+    toolCallsByName: byName,
+    visionInputs,
+    ...(typeof input.reportBytes === "number" && Number.isFinite(input.reportBytes) ? { reportBytes: Math.max(0, Math.floor(input.reportBytes)) } : {}),
+    ...(typeof input.elapsedMs === "number" && Number.isFinite(input.elapsedMs) ? { elapsedMs: Math.max(0, Math.floor(input.elapsedMs)) } : {}),
+  };
+}
+
 interface AuditorResultFile {
   protocolVersion: number;
   attemptId: string;
@@ -1252,6 +1322,9 @@ interface AuditorProgressFile {
   protocolVersion: number;
   attemptId: string;
   requestHash: string;
+  /** 2026-09-26 slow-audit hardening: request JSON byte size, measured
+   * once by the worker — the prompt-cost half of the attempt cost record. */
+  promptBytes?: number;
   phase: AuditorProgress["phase"];
   elapsedMs: number;
   /** v0.38.3: set when the request enabled live inspection — the session
@@ -1506,6 +1579,12 @@ function asProgress(file: AuditorProgressFile, startedAt: number): AuditorProgre
     ...(file.sessionPath ? { sessionPath: file.sessionPath } : {}),
     ...(file.unmatchedToolStarts ? { unmatchedToolStarts: file.unmatchedToolStarts } : {}),
     ...(file.unmatchedToolEnds ? { unmatchedToolEnds: file.unmatchedToolEnds } : {}),
+    cost: summarizeAttemptCost({
+      promptBytes: file.promptBytes,
+      toolCalls: file.toolCalls,
+      reportBytes: file.reportBytes,
+      elapsedMs: file.elapsedMs,
+    }),
   };
 }
 

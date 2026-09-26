@@ -449,6 +449,9 @@ async function main() {
   await atomicJson(lockPath, { protocolVersion: PROTOCOL_VERSION, attemptId, pid: process.pid, role: "worker", workerPath: path.resolve(process.argv[1]) });
 
   const startedAt = Date.now();
+  // 2026-09-26 slow-audit hardening: request JSON byte size, measured once
+  // — the prompt-cost half of the per-attempt cost record.
+  const promptBytes = Buffer.byteLength(JSON.stringify(request), "utf8");
   const toolCalls = [];
   // v0.34.56: tool starts/ends that provably never paired are recorded as
   // EXPLICIT unmatched facts — never dropped, never falsely paired with a
@@ -537,6 +540,7 @@ async function main() {
       requestHash: request.requestHash,
       phase,
       elapsedMs: Date.now() - startedAt,
+      promptBytes,
       ...(sessionPath ? { sessionPath } : {}),
       ...(reportBytes > 0 ? { reportBytes } : {}),
       ...(lastActivityAt !== undefined ? { lastActivityAt } : {}),

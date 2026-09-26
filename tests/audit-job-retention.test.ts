@@ -127,3 +127,24 @@ test("retention: proven-dead workers reap past the window, live pids never reap"
   assert.equal(fs.existsSync(live), true, "alive pid never reaps even when ancient");
   assert.equal(cleaned.total, 1);
 });
+
+test("retention: aged lockless dirs with neither request nor result reap as unowned debris", () => {
+  // 2026-09-26 slow-audit hardening: hellhunter accumulated a 23-day-old
+  // progress.json-only dir (no lock, no launch record, no result). No live
+  // worker can exist without its lock (written before any progress), and
+  // nothing launchable or finished remains — age-gated dead, not ambiguous.
+  const cwd = tmpdir();
+  const old = jobDir(cwd, "audit-old-debris");
+  fs.writeFileSync(path.join(old, "progress.json"), JSON.stringify({ phase: "running" }), "utf8");
+  ageDir(old, 10 * DAY_MS);
+  const fresh = jobDir(cwd, "audit-fresh-debris");
+  fs.writeFileSync(path.join(fresh, "progress.json"), JSON.stringify({ phase: "running" }), "utf8");
+
+  const health = inspectAuditJobHealth(cwd, Date.now(), RETENTION_MS);
+  assert.equal(health.entries.find((e) => e.attemptId === "audit-old-debris")?.status, "dead");
+  assert.equal(health.entries.find((e) => e.attemptId === "audit-fresh-debris")?.status, "ambiguous", "fresh dirs keep the creation-race ambiguity");
+  const cleaned = cleanupDeadAuditJobs(cwd, RETENTION_MS);
+  assert.equal(fs.existsSync(old), false, "aged unowned debris reaps");
+  assert.equal(fs.existsSync(fresh), true, "fresh debris survives until the window passes");
+  assert.equal(cleaned.total, 1);
+});
