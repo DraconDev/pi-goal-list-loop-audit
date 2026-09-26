@@ -226,3 +226,45 @@ test("failed compaction parks a branch loop instead of leaving it active", async
   assert.equal(loop.iteration, 4, "history is preserved for /loop resume");
   assert.ok(ledger(cwd).some((e) => e.type === "loop_stopped" && e.value?.cause === "compaction_failed"));
 });
+
+test("a failed debt-discharge append keeps RAM debt instead of diverging from disk", async () => {
+  const cwd = tmpCwd();
+  seedState(cwd, {
+    goal: seedGoal({ status: "active", objective: "debt discharge under disk failure" }),
+    postCompactRecovery: { sessionId: "debt-kept", at: Date.now(), resumeOwed: true, resyncPending: true },
+  });
+  fs.writeFileSync(GLOBAL, JSON.stringify({ autoResume: true, aggressiveMode: false }));
+  __testOnlyResetOwnerSession();
+  __testOnlyResetStaleFlag();
+  __testOnlyResetPostCompactDebt();
+  const pi = new MockPi();
+  activate(pi.api);
+  const ctx = makeMockCtx(cwd, {
+    sessionManager: {
+      name: "debt-kept-sm",
+      getSessionId: () => "debt-kept",
+      getSessionFile: () => path.join(cwd, "debt.jsonl"),
+    },
+  });
+  await pi.fire("session_start", { reason: "reload" }, ctx);
+  await tick(80);
+  assert.deepEqual(__testOnlyPostCompactDebt(), { resumeOwed: true, resyncPending: true }, "same-session restore arms the debt flags");
+  // Break persistence: every .pi-glla append now fails.
+  fs.chmodSync(path.join(cwd, ".pi-glla"), 0o555);
+  try {
+    await pi.fire("agent_start", {}, ctx);
+    assert.deepEqual(
+      __testOnlyPostCompactDebt(),
+      { resumeOwed: true, resyncPending: true },
+      "RAM keeps the debt the disk still holds",
+    );
+  } finally {
+    fs.chmodSync(path.join(cwd, ".pi-glla"), 0o755);
+  }
+  assert.equal(
+    (readState(cwd) as { postCompactRecovery?: { resumeOwed?: boolean } }).postCompactRecovery?.resumeOwed,
+    true,
+    "the disk debt was never discharged",
+  );
+  session = { pi, ctx };
+});
