@@ -625,3 +625,13 @@ were excluded. No DECIDE findings were found in this pass.
 - [x] FIX: LOW: transcript role label uses surrogate-unsafe `.slice(0, 40)` on untrusted child text (extensions/goal-agents-panel.ts:409) — fixed in 9228af52 (shared cell-aware truncate; mid-pair regression in agents-panel)
 - [x] FIX: LOW: tests/README claims schema validation is lightweight without Ajv, but the test compiles the schema with Ajv (tests/README.md:25) — fixed in 9228af52 (docs now describe the Ajv-backed contract)
 - [x] FIX: LOW: smoke.sh requirements header omits python3 though cleanup and every ledger assertion run through it (scripts/smoke.sh:9) — fixed in 9228af52 (header lists python3)
+
+## Field follow-up — 2026-09-26 (user screenshots, endless-td session)
+
+A `complete_goal` call with a >500-char `leftOut` was refused at the tool
+boundary: `leftOut: must not have more than 500 characters`. The executor had
+followed the continuation prompt's own guidance ("write full values, not
+clipped stubs") and was stranded at the finish line. Re-verified against the
+tree before recording.
+
+- [ ] FIX: MEDIUM: `complete_goal` rejects over-long `leftOut` at the schema boundary instead of clipping — `leftOut: Type.String({ maxLength: 500 })` (extensions/loops/goal-tools.ts:576) makes Pi refuse the whole claim, while the handler's own `p.leftOut.trim().slice(0, 500)` (extensions/loops/goal-tools.ts:905) proves the intent was clip-not-reject (dead code for over-long input: validation fires first), and the continuation prompt promises uncapped values under a 10k-char guard (RICH_FULL_VALUE_BUDGET = 10_000, extensions/completion-summary.ts:294) with clause-boundary cuts, never mid-word slices. Sibling 500-caps on findingGroups findings/tests strings (goal-tools.ts:588-589) are the same arbitrary class — a big multi-area claim can trip those next.
