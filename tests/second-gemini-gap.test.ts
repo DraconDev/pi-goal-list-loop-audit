@@ -87,9 +87,9 @@ test("v0.38.52: sanitizeGateRows drops garbage, clips, caps", () => {
   assert.equal(sanitizeGateRows([]), undefined, "empty degrades to absent");
   assert.equal(sanitizeGateRows([null, 42, { title: "no gate key" }, { gate: "   " }]), undefined, "blank gates drop");
   const clipped = sanitizeGateRows([{ gate: `g${"x".repeat(200)}`, scope: `s${"y".repeat(300)}`, notes: `n${"z".repeat(500)}`, extra: "dropped" }]);
-  assert.equal(clipped?.[0]?.gate.length, 120, "gate clipped");
-  assert.equal(clipped?.[0]?.scope?.length, 200, "scope clipped");
-  assert.equal(clipped?.[0]?.notes?.length, 400, "notes clipped");
+  assert.equal(clipped?.[0]?.gate.length, 120, "gate display labels clip at 120");
+  assert.equal(clipped?.[0]?.scope?.length, 301, "in-guard scope passes through untouched");
+  assert.equal(clipped?.[0]?.notes?.length, 501, "in-guard notes pass through untouched");
   assert.ok(!("extra" in (clipped?.[0] ?? {})), "unknown keys never survive the boundary");
   const many = Array.from({ length: 11 }, (_, i) => ({ gate: `gate ${i}` }));
   assert.equal(sanitizeGateRows(many)?.length, 10, "rows capped");

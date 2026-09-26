@@ -483,9 +483,13 @@ export interface GateRow {
 
 export const MAX_GATE_ROWS = 10;
 export const MAX_GATE_GATE_CHARS = 120;
-export const MAX_GATE_COMMAND_CHARS = 200;
-export const MAX_GATE_SCOPE_CHARS = 200;
-export const MAX_GATE_NOTES_CHARS = 400;
+/** 2026-09-26 cap audit (darklord gateRows.7.notes refusal): free-prose gate
+ * fields match the documented 10k-char guard — the schema accepts, the
+ * trust boundary clips clause-aware, and no value ever refuses a claim.
+ * Gate NAME stays 120: it is a display label, justified at the renderer. */
+export const MAX_GATE_COMMAND_CHARS = 10000;
+export const MAX_GATE_SCOPE_CHARS = 10000;
+export const MAX_GATE_NOTES_CHARS = 10000;
 
 /**
  * Bound agent-supplied gate rows at the trust boundary. Drops blank
@@ -499,11 +503,11 @@ export function sanitizeGateRows(value: unknown): GateRow[] | undefined {
     if (rows.length >= MAX_GATE_ROWS) break;
     if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
     const raw = entry as Record<string, unknown>;
-    const gate = typeof raw.gate === "string" ? raw.gate.trim().slice(0, MAX_GATE_GATE_CHARS) : "";
+    const gate = typeof raw.gate === "string" ? clipSummaryValue(raw.gate.trim(), MAX_GATE_GATE_CHARS) : "";
     if (!gate) continue;
-    const command = typeof raw.command === "string" ? raw.command.trim().slice(0, MAX_GATE_COMMAND_CHARS) : "";
-    const scope = typeof raw.scope === "string" ? raw.scope.trim().slice(0, MAX_GATE_SCOPE_CHARS) : "";
-    const notes = typeof raw.notes === "string" ? raw.notes.trim().slice(0, MAX_GATE_NOTES_CHARS) : "";
+    const command = typeof raw.command === "string" ? clipSummaryValue(raw.command.trim(), MAX_GATE_COMMAND_CHARS) : "";
+    const scope = typeof raw.scope === "string" ? clipSummaryValue(raw.scope.trim(), MAX_GATE_SCOPE_CHARS) : "";
+    const notes = typeof raw.notes === "string" ? clipSummaryValue(raw.notes.trim(), MAX_GATE_NOTES_CHARS) : "";
     rows.push({ gate, ...(command ? { command } : {}), ...(scope ? { scope } : {}), ...(notes ? { notes } : {}) });
   }
   return rows.length > 0 ? rows : undefined;
@@ -3325,7 +3329,7 @@ export interface DurableDeferRecommendation {
 }
 
 function compactDurableDeferText(value: string): string {
-  return value.replace(/\s+/g, " ").trim().slice(0, 500);
+  return clipSummaryValue(value, 500);
 }
 
 /** Normalize the bounded facts persisted with a goal and projected into the

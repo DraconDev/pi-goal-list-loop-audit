@@ -585,11 +585,10 @@ function registerAgentTools(pi: any): void {
         description: "v0.38.98: set true only when the user explicitly asks to see test/verification details in the human summary. The default chat summary stays focused on what changed and what remains; the archive always retains the full evidence.",
       })),
       findingGroups: Type.Optional(Type.Array(Type.Object({
-        title: Type.String({ maxLength: 120, description: "Work-area name (e.g. a subsystem, screen, or phase)" }),
-        findings: Type.Array(Type.String({ maxLength: 10000 }), { maxItems: 6, description: "Findings in this area as `<primary user-visible outcome> — <concrete evidence/reason>`; do not prefix with `Lead:`, `Tests:`, or `Verdict:` (max 6 per area). Bounds match the documented 10k-char value guard." }),
-        tests: Type.Optional(Type.Array(Type.String({ maxLength: 10000 }), { maxItems: 6, description: "v0.38.52: optional per-finding test-result lines, aligned by index with findings (tests[i] proves findings[i]); retained as detailed archive support and never added to default chat copy. Bounds match the documented 10k-char value guard." })),
+        title: Type.String({ description: "Work-area name (e.g. a subsystem, screen, or phase). The trust boundary clips display labels; the schema never refuses a claim over one." }),
+        findings: Type.Array(Type.String({ maxLength: 10000 }), { description: "Findings in this area as `<primary user-visible outcome> — <concrete evidence/reason>`; do not prefix with `Lead:`, `Tests:`, or `Verdict:` (bounds match the documented 10k-char value guard; the trust boundary caps count)." }),
+        tests: Type.Optional(Type.Array(Type.String({ maxLength: 10000 }), { description: "v0.38.52: optional per-finding test-result lines, aligned by index with findings (tests[i] proves findings[i]); retained as detailed archive support and never added to default chat copy. Bounds match the documented 10k-char value guard." })),
       }), {
-        maxItems: 6,
         description:
           "v0.38.50: optional finding groups for the terminal summary. Group multi-area work by area " +
           "(subsystem, screen, phase); each finding leads with the primary user-visible outcome, then uses ` — ` for a concrete evidence/reason (repo-relative `path:line`, count/version, or explicit reason); never prefix a finding with `Lead:`, `Tests:`, or `Verdict:`. " +
@@ -603,12 +602,11 @@ function registerAgentTools(pi: any): void {
           "Escalation only: the agent can demand full, never light. Omit or pass false for the default risk-tiered dispatch.",
       })),
       gateRows: Type.Optional(Type.Array(Type.Object({
-        gate: Type.String({ maxLength: 120, description: "Gate name (e.g. Unit Tests, Typecheck, E2E, Production Build)" }),
-        command: Type.Optional(Type.String({ maxLength: 200, description: "Repro command for this gate (e.g. bun test src/). Retained in the archive Command column, omitted from compact chat." })),
-        scope: Type.Optional(Type.String({ maxLength: 200, description: "What the gate covered (e.g. suites, tiers, invariants)" })),
-        notes: Type.Optional(Type.String({ maxLength: 400, description: "Outcome notes with counts (e.g. 743 passed, 0 failed). Status is DERIVED from these notes — PASS only when they say pass with zero failures, never claimed." })),
+        gate: Type.String({ description: "Gate name (e.g. Unit Tests, Typecheck, E2E, Production Build). The trust boundary clips display labels; the schema never refuses a claim over one." }),
+        command: Type.Optional(Type.String({ maxLength: 10000, description: "Repro command for this gate (e.g. bun test src/). Retained in the archive Command column, omitted from compact chat. Bounds match the documented 10k-char value guard." })),
+        scope: Type.Optional(Type.String({ maxLength: 10000, description: "What the gate covered (e.g. suites, tiers, invariants). Bounds match the documented 10k-char value guard." })),
+        notes: Type.Optional(Type.String({ maxLength: 10000, description: "Outcome notes with counts (e.g. 743 passed, 0 failed). Status is DERIVED from these notes — PASS only when they say pass with zero failures, never claimed. Bounds match the documented 10k-char value guard." })),
       }), {
-        maxItems: 10,
         description:
           "v0.38.52: optional verification gate inventory for the terminal summary. " +
           "The archive widens its Verification table to Quality Gate | Scope | Status | Notes (plus a Command column when any row carries one) " +
@@ -2269,10 +2267,10 @@ function registerAgentTools(pi: any): void {
     description: "Record the explicit durable-vs-defer implementation choice in the ledger without pausing the goal. Use choice=inline when implementing the maintainable root-cause fix now. Use choice=deferred only when that fix is genuinely unsafe, impossible, or currently blocked; include the reason and, when applicable, the durable follow-up. Do not use this to defer an obvious durable fix.",
     parameters: Type.Object({
       choice: Type.Union([Type.Literal("inline"), Type.Literal("deferred")], { description: "Whether the durable fix is being implemented now or intentionally deferred" }),
-      reason: Type.String({ maxLength: 500, description: "Concise reason for the durable-vs-defer choice" }),
-      followUp: Type.Optional(Type.String({ maxLength: 500, description: "For a deferred choice, the bounded durable follow-up" })),
-      durableFix: Type.Optional(Type.String({ maxLength: 500, description: "The maintainable root-cause action to show in the goal card" })),
-      deferRecommendations: Type.Optional(Type.Array(Type.String({ maxLength: 500 }), { maxItems: 8, description: "Earlier bounded workaround/defer recommendations to retain as UI evidence" })),
+      reason: Type.String({ description: "Concise reason for the durable-vs-defer choice. The ledger record bounds length clause-aware; the schema never refuses a judgment over it." }),
+      followUp: Type.Optional(Type.String({ description: "For a deferred choice, the bounded durable follow-up" })),
+      durableFix: Type.Optional(Type.String({ description: "The maintainable root-cause action to show in the goal card" })),
+      deferRecommendations: Type.Optional(Type.Array(Type.String(), { description: "Earlier bounded workaround/defer recommendations to retain as UI evidence (the ledger record bounds count and length; the schema never refuses a judgment over them)." })),
       durableBlocked: Type.Optional(Type.Boolean({ description: "True only when the durable action is unsafe, impossible, or blocked for this turn" })),
       taskId: Type.Optional(Type.String({ description: "v0.38.48: with choice=deferred, attach this deferral to a task so the complete_goal pending-task gate exempts it. Only valid with choice=deferred." })),
     }),
@@ -2690,8 +2688,7 @@ function registerAgentTools(pi: any): void {
     description: "Resume the paused goal or list item yourself when the user has authorized continuation in this conversation (answered a decision, waived the blocker, supplied the missing input, or the wait time arrived). This is the agent-side equivalent of the user's resume command: it clears the pause and reactivates the goal, then returns — you MUST keep working in this same turn (work the objective, call complete_goal, or pause_goal again). It schedules nothing by itself. A cold-load hold releases like any explicit work command; a supervisor freeze stays user-typed (the tool refuses while frozen). This covers every paused list item and recovery-timer wait you hold — including auditor-retry and main-model-recovery waits: resume them yourself instead of asking the user to run a resume command. Never call it to bypass a pause whose blocker is still outstanding.",
     parameters: Type.Object({
       reason: Type.Optional(Type.String({
-        maxLength: 500,
-        description: "Why resuming now — the user's authorization in their words (e.g. 'user waived the live demo; will submit a tweaked claim'). Ledgered for auditability.",
+        description: "Why resuming now — the user's authorization in their words (e.g. 'user waived the live demo; will submit a tweaked claim'). Ledgered for auditability (ledger excerpt bounds length; the schema never refuses a resume over it).",
       })),
     }),
     async execute(_id, params, _signal, _onUpdate, execCtx) {
@@ -2788,7 +2785,7 @@ function registerAgentTools(pi: any): void {
         ...(usage ? { usage } : {}),
       }, ctx);
       releaseAuditorSurface();
-      appendLedger(ctx.cwd, "goal_resumed", { via: "resume_goal", goalId: resumedId, reason: (p.reason ?? "").slice(0, 200) });
+      appendLedger(ctx.cwd, "goal_resumed", { via: "resume_goal", goalId: resumedId, reason: clipSummaryValue(p.reason ?? "", 200) });
       // A stored completion claim is a direct-audit resume, not an agent
       // turn — same law as the manual path: re-fire the detached auditor
       // instead of leaving an ACTIVE goal no timer would ever consume.
