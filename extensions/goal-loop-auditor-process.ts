@@ -758,6 +758,15 @@ export const MAX_AUDITOR_STALL_MS = 24 * 3_600_000;
  * re-prompt — seconds, not minutes. A genuinely wedged tool still fails
  * fast, one grace window later. */
 export const TOOL_CANCEL_GRACE_MS = 60_000;
+/** v0.38.99: how long a torn/unreadable progress.json is tolerated before the
+ * attempt is failed. progress.json is telemetry — the verdict comes from
+ * result.json — so a partial read must never cost a healthy audit. Time-
+ * bounded, not count-bounded: a writer republishing every few ms under heavy
+ * load can be caught mid-write many times in a row, and each of those is the
+ * same transient condition. A genuinely corrupt file still fails here, so
+ * real corruption is never masked — and the other watchdogs keep bounding the
+ * attempt meanwhile. */
+export const PROGRESS_READ_TOLERANCE_MS = 30_000;
 /** v0.37.0: adaptive timeout escalation. Each failed detached attempt that
  * gets retried doubles BOTH base budgets (per-tool and silence), saturating
  * after AUDITOR_TIMEOUT_ESCALATION_MAX_STEPS doublings (4× base). The
@@ -1396,6 +1405,10 @@ export interface AuditorProcessRuntime {
    * heartbeat stays fresh but no new tool call or report output arrives for
    * this long (default 10m). Tests shrink this. */
   heartbeatNoProgressMs?: number;
+  /** v0.38.99: grace the parent waits for the worker to cancel an
+   * over-budget tool and resume the audit before falling back to the hard
+   * kill (default: {@link TOOL_CANCEL_GRACE_MS}). Tests shrink this. */
+  toolCancelGraceMs?: number;
   /** v0.35.49: budget for the worker's FIRST RPC event, armed from spawn
    * (default: heartbeatNoProgressMs — production boot is seconds, the window
    * is minutes). Separate knob so watchdog tests can arm one silence axis
@@ -1766,6 +1779,11 @@ async function runDetachedGoalCompletionAuditorInner(args: {
   const toolTimeoutMs = configuredToolTimeoutMs === undefined || !Number.isFinite(configuredToolTimeoutMs)
     ? DEFAULT_TOOL_TIMEOUT_MS
     : Math.max(50, configuredToolTimeoutMs);
+  // v0.38.99: how long to let the worker cancel an over-budget tool and
+  // resume before the parent falls back to the hard kill.
+  const toolCancelGraceMs = runtime.toolCancelGraceMs === undefined || !Number.isFinite(runtime.toolCancelGraceMs)
+    ? TOOL_CANCEL_GRACE_MS
+    : Math.max(0, runtime.toolCancelGraceMs);
   const attemptId = runtime.attemptId?.() ?? `${Date.now().toString(36)}-${randomUUID()}`;
   const logicalAttemptId = runtime.logicalAttemptId ?? attemptId;
   // v0.34.59: capture the focus revision token at dispatch. Every result
@@ -1807,6 +1825,10 @@ async function runDetachedGoalCompletionAuditorInner(args: {
   // grants a bounded grace window for the worker to cancel + continue, and
   // only falls back to the hard kill if the tool is still wedged after it.
   let toolCancelGraceUntil: number | undefined;
+  // v0.38.99: when the current run of unreadable progress.json snapshots
+  // began (undefined = the last read was clean). See
+  // PROGRESS_READ_TOLERANCE_MS.
+  let progressUnreadableSince: number | undefined;
   // 2026-09-26 slow-audit hardening: at most ONE `auditor_stalled` event per
   // attempt. Parent watchdogs and the worker-brake reclassification below are
   // independent detectors for the same failure; the ledger must not record
@@ -1948,13 +1970,28 @@ async function runDetachedGoalCompletionAuditorInner(args: {
             return infra(model, thinkingLevel, "auditor progress identity/request-hash mismatch", "", capturedRevisionToken, "no-verdict");
           }
           lastProgress = progress;
+          progressUnreadableSince = undefined;
           const serialized = stableJson(progress);
           if (serialized !== lastProgressSerialized) {
             lastProgressSerialized = serialized;
             args.onProgress?.(asProgress(progress, startedAt));
           }
         } catch (error) {
-          if ((error as NodeJS.ErrnoException).code !== "ENOENT") return infra(model, thinkingLevel, `invalid auditor progress: ${error instanceof Error ? error.message : String(error)}`, "", capturedRevisionToken, "no-verdict");
+          // v0.38.99: progress.json is TELEMETRY, not the verdict — the
+          // verdict arrives in result.json. A torn read (a writer caught
+          // mid-write, which a busy host makes routine) must not fail an
+          // otherwise healthy audit; that is its own "the audit never
+          // landed" class. Tolerate a bounded number of consecutive torn
+          // reads and keep polling; a persistently unreadable file still
+          // fails, so real corruption is never masked.
+          if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+            progressUnreadableSince ??= now();
+            // Fall through (do NOT skip the result read): a torn telemetry
+            // snapshot must not delay a verdict that is already on disk.
+            if (now() - progressUnreadableSince > PROGRESS_READ_TOLERANCE_MS) {
+              return infra(model, thinkingLevel, `invalid auditor progress: ${error instanceof Error ? error.message : String(error)}`, "", capturedRevisionToken, "no-verdict");
+            }
+          }
         }
         try {
           const result = await readJson<AuditorResultFile>(resultPath);
@@ -1967,8 +2004,17 @@ async function runDetachedGoalCompletionAuditorInner(args: {
           // worker's last live tool/report telemetry (the result protocol
           // is ordered after progress publication). A missing snapshot is
           // tolerated for legacy/result-only test workers.
+          // v0.38.99: this final snapshot is cosmetic telemetry; the verdict in
+          // `result` is already durable and validated. A torn read here must
+          // not throw away a good verdict, so the snapshot is best-effort:
+          // on any read failure the audit proceeds on the validated result.
+          let finalProgress: AuditorProgressFile | undefined;
           try {
-            const finalProgress = await readJson<AuditorProgressFile>(progressPath);
+            finalProgress = await readJson<AuditorProgressFile>(progressPath);
+          } catch {
+            finalProgress = undefined;
+          }
+          if (finalProgress) {
             if (finalProgress.protocolVersion !== PROTOCOL_VERSION || finalProgress.attemptId !== attemptId || finalProgress.requestHash !== request.requestHash) {
               return infra(model, thinkingLevel, "auditor progress identity/request-hash mismatch", "", capturedRevisionToken, "no-verdict");
             }
@@ -1977,10 +2023,6 @@ async function runDetachedGoalCompletionAuditorInner(args: {
             if (serializedFinalProgress !== lastProgressSerialized) {
               lastProgressSerialized = serializedFinalProgress;
               args.onProgress?.(asProgress(finalProgress, startedAt));
-            }
-          } catch (progressError) {
-            if ((progressError as NodeJS.ErrnoException).code !== "ENOENT") {
-              return infra(model, thinkingLevel, `invalid auditor progress: ${progressError instanceof Error ? progressError.message : String(progressError)}`, "", capturedRevisionToken, "no-verdict");
             }
           }
           const output = stripThinkBlocks(result.output);
@@ -2090,14 +2132,35 @@ async function runDetachedGoalCompletionAuditorInner(args: {
             // The tool is inside its budget (or was re-armed after the
             // worker's cancel); any earlier grace window is stale.
             toolCancelGraceUntil = undefined;
-          } else if (toolCancelGraceUntil !== undefined && now() < toolCancelGraceUntil) {
-            // v0.38.99: the worker is cancelling this tool and resuming the
-            // audit. Killing now would discard every tool call it already
-            // completed, so hold the hard kill until the grace expires.
+          } else if (toolCancelGraceUntil === undefined) {
+            // v0.38.99 FIRST expiry: record the evidence and open the grace
+            // window, but do NOT terminate. The worker cancels the tool
+            // itself and resumes the audit from its completed tool calls;
+            // killing here is what used to throw that work away. The stall
+            // event is one-shot per attempt, so the evidence is recorded
+            // exactly once here.
+            toolCancelGraceUntil = now() + toolCancelGraceMs;
+            args.onProgress?.({
+              phase: lastProgress.phase,
+              elapsedMs: now() - startedAt,
+              recentOutput: lastProgress.recentOutput,
+              toolCalls: lastProgress.toolCalls,
+              unmatchedToolStarts: lastProgress.unmatchedToolStarts ?? [],
+              unmatchedToolEnds: lastProgress.unmatchedToolEnds ?? [],
+            });
+            reportStall({
+              at: now(),
+              reason: "tool-timeout",
+              heartbeatAgeMs: lastProgress.lastActivityAt === undefined ? toolAgeMs : Math.max(0, now() - lastProgress.lastActivityAt),
+              noProgressMs: toolAgeMs,
+              phase: lastProgress.phase,
+              toolName: lastProgress.currentTool,
+              toolAgeMs,
+            });
+          } else if (now() < toolCancelGraceUntil) {
+            // Inside the grace window: the worker is aborting the tool and
+            // re-prompting. Hold the hard kill so its completed work lands.
           } else {
-            if (toolCancelGraceUntil === undefined) {
-              toolCancelGraceUntil = now() + TOOL_CANCEL_GRACE_MS;
-            }
             args.onProgress?.({
               phase: "running",
               elapsedMs: now() - startedAt,
