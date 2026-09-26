@@ -1749,3 +1749,31 @@ test("v0.38.81: spot-check stamps true; legacy callers see no tier fields", asyn
     await cleanup(dir);
   }
 });
+
+test("slow-audit hardening: attempt cost summarizes prompt, tools, vision, and elapsed", async () => {
+  const { summarizeAttemptCost } = await import("../extensions/goal-loop-auditor-process.ts");
+  const empty = summarizeAttemptCost({});
+  assert.deepEqual(empty, { toolCallsTotal: 0, toolCallsByName: {}, visionInputs: 0 }, "empty input degrades to zeros");
+  const cost = summarizeAttemptCost({
+    promptBytes: 123456,
+    toolCalls: [
+      { name: "read", argsPrefix: '{"path":"src/a.ts"}' },
+      { name: "read", argsPrefix: '{"path":"shots/01-home.png"}' },
+      { name: "bash", argsPrefix: '{"command":"bun test"}' },
+      { name: "", argsPrefix: "" },
+    ],
+    reportBytes: 789,
+    elapsedMs: 60000,
+  });
+  assert.equal(cost.promptBytes, 123456);
+  assert.equal(cost.toolCallsTotal, 4);
+  assert.deepEqual(cost.toolCallsByName, { read: 2, bash: 1, unknown: 1 });
+  assert.equal(cost.visionInputs, 1, "only the image-file tool input counts as vision");
+  assert.equal(cost.reportBytes, 789);
+  assert.equal(cost.elapsedMs, 60000);
+
+  const procSrc = (await import("node:fs")).readFileSync("extensions/goal-loop-auditor-process.ts", "utf-8");
+  assert.match(procSrc, /cost: summarizeAttemptCost\(\{/, "asProgress attaches the cost record to every progress snapshot");
+  const workerSrc = (await import("node:fs")).readFileSync("scripts/goal-auditor-worker.mjs", "utf-8");
+  assert.match(workerSrc, /promptBytes,\n\s*(\.\.\.\(sessionPath|elapsedMs)/, "worker progress carries measured prompt bytes");
+});
