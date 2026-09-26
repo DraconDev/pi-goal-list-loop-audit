@@ -243,7 +243,7 @@ test("v0.29.1: completion lifecycle survives the wedged-queue window (storm supp
   // between the stale-probe check and the stranded-audit watchdog — the
   // pending_latch_stuck event the assertion targets has grown further into
   // the heartbeatTick body as new features land.
-  const hb = HEARTBEAT_SRC.slice(hbIdx, hbIdx + 24000); // v0.35.x: heartbeat releases stranded audits before latch handling
+  const hb = HEARTBEAT_SRC.slice(hbIdx, hbIdx + 27000); // v0.35.x: heartbeat releases stranded audits before latch handling; 2026-09-25: L2/L3 durability additions moved the latch watchdog past the old 24000 window
   assert.match(hb, /stranded_audit_recovered/);
   assert.match(hb, /state\.goal\?\.status === "auditing" &&\s*\n\s*!flags\.completionAuditInFlight/);
   assert.match(hb, /Completion audit blocked — no verdict/);
