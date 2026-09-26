@@ -33,6 +33,8 @@ import { ProjectRollup, discoverGllaProjects, filterPremature, formatChallengesJ
 import { OVERRIDABLE_AGENT_TYPES, resolveEffectiveSubagentModel } from "./goal-loop-subagents.js";
 import { Settings, globalSettingsPath, loadSettings, projectSettingsPath, saveSettings, settingsProvenance } from "./goal-settings.js";
 import { resolveGllaStateDir } from "./glla-state-root.js";
+import { resolveAuditorThinkingLevel } from "./auditor-thinking.js";
+import { modelRef } from "./main-model-recovery.js";
 import { formatMainModelFallbacks, normalizeMainModelFallbackRefs } from "./main-model-recovery.js";
 import { ReviewerConfig, normalizeObjective, resolveReviewerConfig, reviewerMenuOptions } from "./reviewer.js";
 import type { SettingsSectionId } from "./settings-menu.js";
@@ -3156,6 +3158,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
       fmt("visionAssist", "visionAssist"),
       fmt("auditorModel", "auditorModel"),
       fmt("auditorThinkingLevel", "thinking"),
+      auditorThinkingEffectiveLine(ctx, effectiveSettings, sessionModel, sessionThinking, prov.auditorThinkingLevel?.source ?? "default"),
       // Audit 2026-09-06: the headless fallback omitted these — headless
       // operators could not see the compactor chain or display richness.
       fmt("compactorModel", "compactorModel"),
