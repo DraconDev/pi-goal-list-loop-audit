@@ -3125,6 +3125,9 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   // Headless fallback: read-only effective values with provenance. Writes
   // require the interactive settings table so the command namespace stays
   // unambiguous and action-oriented.
+  // 2026-09-26 (field: session max, auditor high): the raw thinking row
+  // shows the setting, never what the auditor will actually run — the
+  // per-model fallback is invisible headlessly. Resolve it here.
   const prov = settingsProvenance(ctx.cwd);
   const formatSettingValue = (value: unknown): string => {
     if (value === undefined) return "(unset)";
