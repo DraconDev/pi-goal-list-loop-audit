@@ -282,6 +282,10 @@ export interface Settings {
    * Always wins over subagentModelStrategy — the managed override is written
    * WITH this pin regardless of strategy. */
   subagentModelOverrides?: Record<string, string>;
+  /** Per-agent-type thinking pin, e.g. { "Designer": "high" }. Unset per
+   * type (or wholly) means session inherit — the managed override carries no
+   * `thinking:` key and pi-subagents runs the child at the session level. */
+  subagentThinkingOverrides?: Record<string, "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max">;
   /** v0.27.9: per-tool overrides — allowlist (force tools visible despite
    * an external modlist), hidden (force tools hidden even when allowed by
    * the session), and per-tool config (Record<toolName, Record<key, value>>
@@ -449,6 +453,16 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
       else delete (settings.subagentFallbacks as Record<string, string[]>)[key];
     }
     if (Object.keys(settings.subagentFallbacks).length === 0) delete (settings as any).subagentFallbacks;
+  }
+  // Per-type thinking pins: keep only known levels; unknown strings and
+  // non-string values drop so a hand-edited typo can never reach an agent
+  // file as a bogus `thinking:` key (unset = session inherit).
+  if (settings.subagentThinkingOverrides && typeof settings.subagentThinkingOverrides === "object") {
+    const levels = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
+    for (const [key, level] of Object.entries(settings.subagentThinkingOverrides)) {
+      if (typeof level !== "string" || !levels.includes(level)) delete (settings.subagentThinkingOverrides as Record<string, unknown>)[key];
+    }
+    if (Object.keys(settings.subagentThinkingOverrides).length === 0) delete (settings as any).subagentThinkingOverrides;
   }
   // Hand-edited policy arrays must not reach `.length`/`.join` consumers as
   // strings or objects. Keep only bounded, non-empty string entries; an
@@ -712,6 +726,7 @@ export const SETTINGS_KEYS: Array<keyof Settings> = [
   "hourlyRetryProbe",
   "subagentModelStrategy",
   "subagentModelOverrides",
+  "subagentThinkingOverrides",
   "subagentFallbacks",
   "subagentDisplayRichness",
   "aggressiveMode",

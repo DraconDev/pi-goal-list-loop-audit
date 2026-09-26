@@ -153,22 +153,25 @@ function installedAgentDefinition(name: string): string {
  * without, the file falls through to the parent session model. The complete
  * current role definition is retained so a model-only override cannot turn a
  * worker/scout into an accidentally empty agent. */
-export function buildAgentOverrideMd(name: string, model?: string): string {
+export function buildAgentOverrideMd(name: string, model?: string, thinking?: string): string {
   const def = EMBEDDED_DEFAULTS[name];
   if (!def) throw new Error(`no embedded default config for agent "${name}"`);
   const source = def.upstream ? installedAgentDefinition(name) : designerDefinition();
   const match = source.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/);
   if (!match) throw new Error(`installed pi-subagents agent definition for "${name}" has invalid frontmatter`);
   const frontmatter = match[1]!.split(/\r?\n/).filter((line) =>
-    !/^model:\s*/.test(line) && !/^x-managed-by:\s*/.test(line) && !/^x-glla-note:\s*/.test(line));
+    !/^model:\s*/.test(line) && !/^thinking:\s*/.test(line) && !/^x-managed-by:\s*/.test(line) && !/^x-glla-note:\s*/.test(line));
   const body = match[2]!.replace(/^\r?\n/, "").replace(/\s*$/, "");
   const lines = ["---", ...frontmatter];
   if (model) lines.push(`model: ${model}`);
+  if (thinking) lines.push(`thinking: ${thinking}`);
   lines.push(
     `x-managed-by: ${SUBAGENT_MANAGED_MARKER}`,
     model
-      ? `x-glla-note: model pinned to ${model} by glla subagentModelOverrides. Remove the file or clear the /glla ${name} pin to restore the upstream model behavior.`
-      : "x-glla-note: model pin omitted so this agent inherits the parent session model. Managed by glla; clear the override or switch /glla subagent strategy to agent-default to remove this file.",
+      ? `x-glla-note: model pinned to ${model} by glla subagentModelOverrides${thinking ? `, thinking ${thinking} by subagentThinkingOverrides` : ""}. Remove the file or clear the /glla ${name} pin to restore the upstream model behavior.`
+      : thinking
+        ? `x-glla-note: thinking pinned to ${thinking} by glla subagentThinkingOverrides (model inherits the parent session). Managed by glla; clear the override to remove this file.`
+        : "x-glla-note: model pin omitted so this agent inherits the parent session model. Managed by glla; clear the override or switch /glla subagent strategy to agent-default to remove this file.",
     "---",
     "",
     body || def.systemPrompt || "(no system-prompt override)",
@@ -212,9 +215,11 @@ export function syncSubagentModelOverrides(opts: {
   agentDir: string;
   strategy: SubagentModelStrategy;
   overrides?: Record<string, string>;
+  thinking?: Record<string, string>;
 }): SubagentSyncResult {
   const result: SubagentSyncResult = { written: [], removed: [], skipped: [], repaired: [] };
   const overrides = opts.overrides ?? {};
+  const thinking = opts.thinking ?? {};
   const managedNow = new Set<string>();
   let prevWritten: string[] = [];
   try {
@@ -232,6 +237,7 @@ export function syncSubagentModelOverrides(opts: {
     ...LEGACY_MANAGED_AGENT_NAMES,
     ...prevWritten,
     ...Object.keys(overrides),
+    ...Object.keys(thinking),
   ]);
 
   for (const name of names) {

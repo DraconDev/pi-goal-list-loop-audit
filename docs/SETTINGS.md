@@ -75,6 +75,7 @@ copies are ignored (the recovery runtime reads the global file):
 | `hourlyRetryProbe` | `true` | Extra blind retry at :00:30 every hour while parked. Global-only. |
 | `subagentModelStrategy` | `"inherit-parent"` | Default subagent model policy for new sessions. |
 | `subagentModelOverrides` | unset | Per-agent-type model pin; always wins over strategy. |
+| `subagentThinkingOverrides` | unset | Per-agent-type thinking pin (`off`–`max`); unset per type = session inherit. |
 | `subagentFallbacks` | unset | Per-role fallback chains (first eligible ref wins). |
 | `subagentDisplayRichness` | `"quiet"` | Ambient worker UI: `"quiet"` (default, troubled workers + count line) / `"compact"` / `"rich"`. |
 | `aggressiveMode` | `true` | Keep-going defaults (`false` = pause-first policy). |
