@@ -53,3 +53,4 @@
 {"type":"terminal_completion_notice_sent","value":{"goalId":"20260926102404-7dzyzj","payloadChars":656},"at":"2026-09-26T11:50:23.067Z"}
 {"type":"terminal_approval_render_replayed","value":{"goalId":"20260926102404-7dzyzj","createdAt":"2026-09-26T11:50:23.042Z"},"at":"2026-09-26T11:50:23.067Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"meta","model":"muse-spark-1.3-contributor","providerUsage":{"inputTokens":1430,"outputTokens":1294,"cacheReadTokens":510321,"cacheWriteTokens":0,"totalTokens":513045},"contextUsage":{"tokens":513045,"contextWindow":1048576,"percent":48.92778396606445}},"at":"2026-09-26T14:07:54.363Z"}
+{"type":"payload_guard_eviction","value":{"evicted":3,"bytesFreed":900796,"remainingImageBytes":1022364,"remainingImageCount":4,"generation":556},"at":"2026-09-26T15:09:03.976Z"}
