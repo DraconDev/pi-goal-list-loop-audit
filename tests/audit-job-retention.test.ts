@@ -148,3 +148,17 @@ test("retention: aged lockless dirs with neither request nor result reap as unow
   assert.equal(fs.existsSync(fresh), true, "fresh debris survives until the window passes");
   assert.equal(cleaned.total, 1);
 });
+
+test("retention: unowned debris younger than the identity-free floor stays ambiguous", () => {
+  // Same shape as above but 12 hours old: no pid exists to verify
+  // liveness, so only deep age proves non-liveness — even an explicit
+  // maxAgeMs=0 sweep must not reap it.
+  const cwd = tmpdir();
+  const dir = jobDir(cwd, "audit-young-debris");
+  fs.writeFileSync(path.join(dir, "progress.json"), JSON.stringify({ phase: "running" }), "utf8");
+  ageDir(dir, 12 * 60 * 60_000);
+  const health = inspectAuditJobHealth(cwd, Date.now(), 0);
+  assert.equal(health.entries[0]?.status, "ambiguous");
+  cleanupDeadAuditJobs(cwd, 0);
+  assert.equal(fs.existsSync(dir), true, "young unknown dirs survive explicit sweeps");
+});

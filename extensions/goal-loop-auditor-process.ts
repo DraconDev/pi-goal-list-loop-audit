@@ -1018,6 +1018,13 @@ export interface AuditJobHealthReport {
  * the `auditJobRetentionMs` setting (goal-settings.ts), threaded into
  * inspectAuditJobHealth / cleanupDeadAuditJobs at the call site. */
 export const AUDIT_JOB_CLEANUP_MIN_AGE_MS = 15 * 60_000;
+/** 2026-09-26 slow-audit hardening: floor for the unowned-debris rule
+ * below. Every other dead classification carries an identity (dead pid,
+ * dead parent, finished result) that proves non-liveness; a lockless,
+ * requestless, resultless dir carries none, so only deep age proves no
+ * live worker can own it — a same-day unknown dir (user scratch, slow
+ * creation race) stays ambiguous even under an explicit maxAgeMs=0 sweep. */
+export const UNOWNED_DEBRIS_MIN_AGE_MS = 24 * 60 * 60_000;
 /** v0.38.3: upper bound for the `auditJobRetentionMs` setting — 7 days.
  * Retention is a review window for finished audit logs, not storage:
  * anything older than a week is noise the reaper should take. */
@@ -1107,7 +1114,8 @@ export function inspectAuditJobHealth(
           (lockErr as NodeJS.ErrnoException).code === "ENOENT" &&
           !auditDirHasResult(dir) &&
           !auditDirHasRequest(dir) &&
-          ageMs >= maxAgeMs
+          ageMs >= maxAgeMs &&
+          ageMs >= UNOWNED_DEBRIS_MIN_AGE_MS
         ) {
           // 2026-09-26 slow-audit hardening: no lock, no launch record, no
           // result — no worker identity can exist and nothing launchable or
