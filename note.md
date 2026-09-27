@@ -3,6 +3,8 @@
 ##
 /home/dracon/Pictures/Screenshots/Screenshot_20260927_115857.png
 we should make hte summary clear, like in the remaining sectinion we can just indent a list instead of duming everything into the left out parag
+and now hte enxt section is kind of hte same 
+but smae for what change we write details which is fine but the jist of it is getting lost in it so we would either old it or put the details indented 
 
 # Now
 
@@ -34,9 +36,6 @@ we didnt resume at that time, but also we should have been relentlessly retrying
 
 ##
 improve control ui ?
-
-
-
 
 # Testing
 
