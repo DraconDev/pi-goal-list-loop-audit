@@ -248,3 +248,4 @@
 {"type":"payload_guard_eviction","value":{"evicted":3,"bytesFreed":851652,"remainingImageBytes":1828692,"remainingImageCount":4,"generation":566},"at":"2026-09-27T02:51:39.421Z"}
 {"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-27T03:18:35.785Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":null,"contextUsage":{"tokens":229674,"contextWindow":1000000,"percent":22.967399999999998}},"at":"2026-09-27T04:06:50.675Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":{"inputTokens":10,"outputTokens":2013,"cacheReadTokens":229678,"cacheWriteTokens":0,"totalTokens":231701},"contextUsage":{"tokens":231701,"contextWindow":1000000,"percent":23.170099999999998}},"at":"2026-09-27T04:07:23.668Z"}
