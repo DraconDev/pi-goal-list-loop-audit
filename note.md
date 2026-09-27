@@ -6,21 +6,15 @@ we should make hte summary clear, like in the remaining sectinion we can just in
 and now hte enxt section is kind of hte same 
 but smae for what change we write details which is fine but the jist of it is getting lost in it so we would either old it or put the details indented 
 
+##
+/home/dracon/Pictures/Screenshots/Screenshot_20260924231547.png 
+we need a better thumb for the pi plugin store 
+
+and update the pi version, do generate a fitting image with codex image
+
 # Now
 
 # Later
-
-#
-/home/dracon/Pictures/Screenshots/Screenshot_20260926_104457.png 
-suggested action cut off
-
-##
-/home/dracon/Pictures/Screenshots/Screenshot_20260926_101629.png 
-want a more detailed summary
-
-##
-/home/dracon/Pictures/Screenshots/Screenshot_20260924_231547.png 
-we need a better thumb for the pi plugin store 
 
 ##
 /home/dracon/Pictures/Screenshots/Screenshot_20260925_004412.png 
@@ -29,10 +23,6 @@ this is different cause in this case there is nothing for me to do just waiting 
 ##
 all session fallbacks in all categories like auditor and designer should also inherint its thinking level like here max instead of doing high arbitrarily
 /home/dracon/Pictures/Screenshots/Screenshot_20260925_113200.png 
-
-##
-/home/dracon/Pictures/Screenshots/Screenshot_20260925_115331.png 
-we didnt resume at that time, but also we should have been relentlessly retrying it was probably fine if we kept trying  
 
 ##
 improve control ui ?

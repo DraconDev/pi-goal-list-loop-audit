@@ -241,7 +241,12 @@ test("fewer than four groups render as nested change subsections", () => {
   const findingsIdx = chatLines.findIndex((l) => l === "### What Changed");
   assert.ok(findingsIdx > 0, "findings section present");
   assert.equal(chatLines[findingsIdx + 1], "#### 1. Sound manager", "first area subsection");
-  assert.equal(chatLines[findingsIdx + 2], "- **mutes WebAudio** — soundManager.ts:333", "outcome and concrete evidence lead the bullet");
+  // v0.38.102: the GIST is the bullet and the evidence rides indented beneath
+  // it. Field 2026-09-27: a long `outcome — reason` line buried the outcome in
+  // its own evidence, so the reader had to parse the whole sentence to learn
+  // what actually changed.
+  assert.equal(chatLines[findingsIdx + 2], "- **mutes WebAudio**", "the gist is the bullet");
+  assert.equal(chatLines[findingsIdx + 3], "  - soundManager.ts:333", "evidence is indented beneath it");
   assert.ok(!chatLines.some((l) => l.startsWith("| Area |")), "no table below the threshold");
   assert.deepEqual(transcriptLines.slice(0, 3), chatLines.slice(0, 3), "transcript shares headline and duration");
 });
@@ -433,4 +438,80 @@ test("audit 2026-09-26: complete_goal accepts long free-prose values instead of 
   assert.ok(long.length > 1500, "fixture exceeds the old 500 cap");
   const kept = sanitizeFindingGroups([{ title: "Area", findings: [long] }]);
   assert.equal(kept?.[0]?.findings[0], long.replace(/\s+/g, " ").trim(), "in-guard findings pass through untouched");
+});
+
+/** Compose the card from an explicit detail list — the layer the v0.38.102
+ * expander actually lives in. `buildTerminalApprovalRender` additionally
+ * SYNTHESES its own Unresolved/Next rows from the terminal facts (stop reason,
+ * archive path), which would shadow the payload under test here. */
+function compose(details: string[]): string[] {
+  return composeRichTerminalLines(buildRichTerminalParts({
+    goal: seedGoal({ id: "20260927-enum", objective: "the billing kill-switch runbook", verificationContract: "" }),
+    status: "complete",
+    chat: true,
+    outcome: "shipped the kill-switch runbook",
+    kind: "Done",
+    auditHistory: [],
+    groups: [],
+    details,
+  }));
+}
+
+// v0.38.102 — readability of Remaining / Next / What Changed.
+//
+// Field 2026-09-27 (Ghosty, billing kill-switch, 4 audits): a `leftOut` field
+// carrying seven distinct scope decisions rendered as ONE ~900-character
+// bullet, so the reasons were unreadable. And in What Changed a long
+// `outcome — reason` line buried the outcome inside its own evidence — the
+// reader had to parse the whole sentence to learn what actually changed.
+//
+// Both are the same mistake: detail competing with gist on one line.
+test("v0.38.102 an inline enumeration renders as an indented list", () => {
+  const chatLines = compose([
+    "Changed: the kill-switch runbook",
+    "Left out: Deliberately not done, and why: (1) The runbook's probes target production URLs and were not executed live here. (2) No on-call rota was invented; the runbook keeps one marked TODO(owner). (3) No production configuration or toggle file was created — the switch ships fail-open and inert. (4) Not attempted: a dedicated ops-only endpoint reporting the switch state.",
+  ]);
+  const idx = chatLines.findIndex((l) => l === "### Remaining");
+  assert.ok(idx > 0, "Remaining section present");
+  assert.equal(
+    chatLines[idx + 1],
+    "- **Left out** — Deliberately not done, and why:",
+    "the lead sentence stays on the bullet, the enumeration moves down",
+  );
+  assert.equal(chatLines[idx + 2], "  - The runbook's probes target production URLs and were not executed live here.");
+  assert.equal(chatLines[idx + 3], "  - No on-call rota was invented; the runbook keeps one marked TODO(owner).");
+  assert.equal(chatLines[idx + 4], "  - No production configuration or toggle file was created — the switch ships fail-open and inert.");
+  assert.equal(chatLines[idx + 5], "  - Not attempted: a dedicated ops-only endpoint reporting the switch state.");
+  // No line may still carry the whole inventory.
+  assert.ok(
+    chatLines.every((l) => l.length < 400),
+    `no single line should hold the whole enumeration: longest ${Math.max(...chatLines.map((l) => l.length))}`,
+  );
+});
+
+test("v0.38.102 a single (1) marker is prose, not a list, and is left intact", () => {
+  // Guard the expander against mangling a sentence that merely contains a
+  // parenthetical. Two or more markers are required before splitting.
+  const chatLines = compose([
+    "Changed: the runbook",
+    "Unresolved: the only named owner is TODO(owner) and the count is off by (1) unit.",
+  ]);
+  const idx = chatLines.findIndex((l) => l === "### Remaining");
+  assert.equal(chatLines[idx + 1], "- **Unresolved** — the only named owner is TODO(owner) and the count is off by (1) unit.");
+  assert.ok(
+    !chatLines.slice(idx + 1).some((l) => l.startsWith("  - ")),
+    "a lone (1) must not produce a sub-bullet",
+  );
+});
+
+test("v0.38.102 Next gets the same treatment as Remaining", () => {
+  const chatLines = compose([
+    "Changed: the runbook",
+    "Next: finish the handoff, and note: (1) claim the owner name. (2) record it in the runbook.",
+  ]);
+  const idx = chatLines.findIndex((l) => l === "### Next");
+  assert.ok(idx > 0, "Next section present");
+  assert.equal(chatLines[idx + 1], "- **Next** — finish the handoff, and note:");
+  assert.equal(chatLines[idx + 2], "  - claim the owner name.");
+  assert.equal(chatLines[idx + 3], "  - record it in the runbook.");
 });

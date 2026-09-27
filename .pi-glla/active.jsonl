@@ -255,3 +255,4 @@
 {"type":"payload_guard_eviction","value":{"evicted":5,"bytesFreed":1334612,"remainingImageBytes":1797828,"remainingImageCount":4,"generation":566},"at":"2026-09-27T13:01:20.767Z"}
 {"type":"payload_guard_eviction","value":{"evicted":6,"bytesFreed":1833268,"remainingImageBytes":1527592,"remainingImageCount":4,"generation":566},"at":"2026-09-27T13:01:31.261Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":{"inputTokens":135,"outputTokens":1565,"cacheReadTokens":282321,"cacheWriteTokens":0,"totalTokens":284021},"contextUsage":{"tokens":284021,"contextWindow":1000000,"percent":28.4021}},"at":"2026-09-27T13:03:12.433Z"}
+{"type":"payload_guard_eviction","value":{"evicted":7,"bytesFreed":2680344,"remainingImageBytes":1007964,"remainingImageCount":4,"generation":566},"at":"2026-09-27T14:39:47.126Z"}

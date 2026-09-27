@@ -461,6 +461,34 @@ function leadBody(detail: string): { lead: string; body: string } {
   return { lead: safeDetail.slice(0, separator).trim() || "Note", body: safeDetail.slice(separator + 1).trim() };
 }
 
+/** v0.38.102: an enumeration written INLINE — "(1) … (2) … (3) …" — as one
+ * unbroken line, rendered as an indented list instead.
+ *
+ * Field 2026-09-27 (Ghosty, billing kill-switch): a `leftOut` field carrying
+ * seven distinct scope decisions arrived as a single 900-character bullet, so
+ * the reasons were unreadable in the terminal card. The same shape hit `Next`.
+ *
+ * Two or more markers are required. A single "(1)" is prose that happens to
+ * contain a parenthetical, not a list, and splitting it would mangle the
+ * sentence. The lead sentence before the first marker is kept as the bullet
+ * head so the gist still reads first. */
+function expandInlineList(body: string, indent = "  "): string[] {
+  const text = sanitizeDisplayText(body).trim();
+  if (!text) return [];
+  const markers = [...text.matchAll(/\((\d{1,2})\)\s+/g)];
+  if (markers.length < 2) return [text];
+  const lines: string[] = [];
+  const lead = text.slice(0, markers[0]!.index!).trim();
+  if (lead) lines.push(lead);
+  for (let i = 0; i < markers.length; i++) {
+    const start = markers[i]!.index! + markers[i]![0].length;
+    const end = i + 1 < markers.length ? markers[i + 1]!.index! : text.length;
+    const item = text.slice(start, end).trim();
+    if (item) lines.push(`${indent}- ${item}`);
+  }
+  return lines;
+}
+
 /** Normalize a human finding without exposing the legacy `Lead:` marker. */
 function findingPresentation(finding: string, chat: boolean): { outcome: string; reason: string; evidence: string[] } {
   const parsed = normalizeFindingLead(sanitizeDisplayText(finding));
@@ -478,11 +506,16 @@ function findingPresentation(finding: string, chat: boolean): { outcome: string;
   };
 }
 
-function findingBullet(finding: string, chat: boolean): string {
+/** v0.38.102: the GIST is the finding; the evidence rides indented beneath it.
+ * Field 2026-09-27: a long `outcome — reason` line buried the outcome in its
+ * own evidence, so the reader had to parse the whole sentence to learn what
+ * actually changed. Now the outcome is the bullet and the reasoning is one
+ * level down, where it supports rather than competes. */
+function findingBullet(finding: string, chat: boolean): string[] {
   const semantic = normalizeFindingLead(sanitizeDisplayText(finding));
   const { outcome, reason } = findingPresentation(finding, chat);
-  if (semantic.technical && chat) return "";
-  return reason ? `- **${outcome}** — ${reason}` : `- **${outcome}**`;
+  if (semantic.technical && chat) return [];
+  return reason ? [`- **${outcome}**`, `  - ${reason}`] : [`- **${outcome}**`];
 }
 
 /**
@@ -775,8 +808,7 @@ export function buildRichTerminalParts(args: {
     groups.forEach((group, i) => {
       findingLines.push(`#### ${i + 1}. ${sanitizeDisplayText(group.title)}`);
       group.findings.forEach((finding, fi) => {
-        const bullet = findingBullet(finding, args.chat === true);
-        if (bullet) findingLines.push(bullet);
+        findingLines.push(...findingBullet(finding, args.chat === true));
         // Test proof is supporting evidence, not a second narrative. Keep it
         // on the archive's detailed finding; chat folds all gate outcomes into
         // the compact Verification section below.
@@ -794,7 +826,9 @@ export function buildRichTerminalParts(args: {
       return;
     }
     const reason = [...new Set([normalized.reason, ...normalized.evidence].filter(Boolean))].join(" · ");
-    findingLines.push(reason ? `${i + 1}. **${normalized.outcome}** — ${reason}` : `${i + 1}. **${normalized.outcome}**`);
+    // v0.38.102: gist bold on the bullet, evidence indented under it.
+    findingLines.push(`${i + 1}. **${normalized.outcome}**`);
+    if (reason) findingLines.push(`   - ${reason}`);
     });
   }
   const tableRows: string[] = [];
@@ -867,18 +901,20 @@ export function buildRichTerminalParts(args: {
     : [];
   // v0.38.55: every concrete Next renders — no cap. Unresolved and Left out
   // are change-impact facts, not a second technical next step.
-  const nextLines = next
-    .filter((detail) => !/^\s*(?:Left out|Unresolved)\s*:/i.test(detail))
-    .map((detail) => {
-      const { lead, body } = leadBody(detail);
-      return `- **${lead}** \u2014 ${body}`;
-    });
-  const remainingLines = next
-    .filter((detail) => /^\s*(?:Left out|Unresolved)\s*:/i.test(detail))
-    .map((detail) => {
-      const { lead, body } = leadBody(args.chat ? chatNarrative(detail) : detail);
-      return `- **${lead}** \u2014 ${body}`;
-    });
+  const nextLines: string[] = [];
+  for (const detail of next.filter((d) => !/^\s*(?:Left out|Unresolved)\s*:/i.test(d))) {
+    const { lead, body } = leadBody(detail);
+    const [head, ...rest] = expandInlineList(body);
+    nextLines.push(`- **${lead}** — ${head ?? ""}`.trimEnd());
+    nextLines.push(...rest);
+  }
+  const remainingLines: string[] = [];
+  for (const detail of next.filter((d) => /^\s*(?:Left out|Unresolved)\s*:/i.test(d))) {
+    const { lead, body } = leadBody(args.chat ? chatNarrative(detail) : detail);
+    const [head, ...rest] = expandInlineList(body);
+    remainingLines.push(`- **${lead}** — ${head ?? ""}`.trimEnd());
+    remainingLines.push(...rest);
+  }
   return {
     banner,
     headline,
