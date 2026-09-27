@@ -92,10 +92,23 @@ test("v0.38.101 the obvious fix was measured and REJECTED — do not re-add it b
   );
   assert.ok(progressEntirelyNew < 0.4, `a wholly new finding does separate: ${progressEntirelyNew.toFixed(3)}`);
 
-  // The blind spot that forced the symmetric form: each containment direction
-  // alone scores a one-sided change as perfect repetition.
-  assert.equal(auditDisapprovalContainment(superset, older), 1, "a superset fully contains the older round");
-  assert.equal(auditDisapprovalContainment(older, superset), 1, "a shrunk set is fully contained the other way");
+  // The blind spot that forced the symmetric form. auditDisapprovalContainment
+  // divides by its FIRST argument, so whenever that argument's tokens are a
+  // subset of the other side it scores a perfect 1.00 — which reads as
+  // "repetition" for a change that was actually one-sided progress.
+  const threeFindings = "## Required fixes\n1. Anchor the index rows.\n2. Delete the stale loadout files.\n3. Add a buildable-state test.";
+  const oneRemaining = "## Required fixes\n3. Add a buildable-state test.";
+  assert.equal(
+    auditDisapprovalContainment(oneRemaining, threeFindings),
+    1,
+    "a shrunk set is a subset of the older round and scores a perfect 1.00 on its own",
+  );
+  // The symmetric form is what rescues it: the reverse direction divides by the
+  // larger set and drops well below the threshold.
+  assert.ok(
+    auditDisapprovalSimilarity(oneRemaining, threeFindings) < 0.6,
+    "min-of-both-directions reads a shrunk set as progress",
+  );
 });
 
 test("v0.38.101 the tokenizer is a useful diagnostic even though it cannot decide", () => {
