@@ -13,6 +13,9 @@ audit policy). The next pass owns the durable policy artifacts and
 the open notes (`note.md` host lifecycle / completion recap /
 long-term preferences).
 
+**Most recent (2026-09-26):**
+- `NON-DESTRUCTIVE-AUDIT-TOOL-TIMEOUT-2026-09-26.md` — why audits stopped landing: measured 612 attempts fleet-wide (median 102s; 22% failure in the last 48h), dominant class being a `bash` verification step blowing the 5m per-tool budget and the watchdog killing the **whole** attempt — one died at 23min holding 64 completed tool calls. Worker now cancels the over-budget tool, resumes with a brief carrying the completed calls, and the parent holds its hard kill for `TOOL_CANCEL_GRACE_MS`. Approval guard refuses an approving verdict from a verification-incomplete attempt as retryable infra (never a fake disapproval). Also fixed torn `progress.json` telemetry reads failing healthy audits (3/6 → 10/10 on the pinned flaky test); gate 2396 pass / 0 fail, `tsc` clean
+
 **Most recent (2026-09-13):**
 - `GLLA-DELEGATE-AND-DRAFT-STAGING-2026-09-13.md` — v0.38.53: packaged consent-safe `glla-delegate` skill, supplied-list handling, verified draft staging, real packed-tarball Pi loader probe, and release gate evidence
 
