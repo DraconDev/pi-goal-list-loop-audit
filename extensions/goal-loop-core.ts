@@ -1704,6 +1704,40 @@ export function auditDisapprovalSimilarity(newerReport: string | undefined, olde
   );
 }
 
+/** v0.38.101 MEASUREMENT (field 2026-09-27) — the open defect, and why the
+ * obvious fix is the wrong one.
+ *
+ * `countTrailingRepeatedDisapprovals` is the only stop that is STATE-based
+ * rather than round-count-based, and the only one that correctly overrides
+ * aggressiveMode (`MAX_REPEATED_AUDIT_NO_PROGRESS`). It is also dead in
+ * production: it compared the first 2 000 characters for EXACT equality, which
+ * requires an LLM to emit byte-identical reports three rounds running. A real
+ * auditor rephrases, so `repeatedNoProgress` was permanently 1. Observed:
+ * goals at 20x, 20x and 14x consecutive disapprovals, all reporting
+ * "(cap 10)" while running.
+ *
+ * A token-similarity replacement was implemented and measured
+ * ({@link auditDisapprovalSimilarity}). It was REJECTED. On short free text:
+ *
+ *   identical report ................. 1.00   repetition
+ *   restated in new words ........... 0.70   repetition
+ *   same finding + ONE new finding .. 0.73   PROGRESS  <- scores above the
+ *   one of three findings closed .... 0.42   progress       restatement case
+ *   entirely new finding ............ 0.25   progress
+ *
+ * The progress case outscores the repetition case, because on a one-or-two
+ * finding report, adding a finding and rewording are the same size of change.
+ * Token overlap is the wrong instrument. The correct comparison is over the
+ * STRUCTURED objection set — the `## Required fixes` lines GLLA already
+ * extracts via `durableObjectionsForDisapproval` — where "same set",
+ * "proper subset", and "has a new member" are decidable rather than fuzzy.
+ * That plumbing is the real fix and is not in this change.
+ *
+ * Kept for reference:
+ *
+ * The original, and still-current, comparison: */
+export const AUDIT_NO_PROGRESS_NOTE = true;
+
 /** v0.38.101 (field 2026-09-27): `countTrailingRepeatedDisapprovals` compared
  * the first 2 000 characters for EXACT equality, so it only ever fired when an
  * LLM emitted byte-identical reports three rounds running. A real auditor
@@ -1718,31 +1752,40 @@ export function auditDisapprovalSimilarity(newerReport: string | undefined, olde
  * findings, so it stays well below; a stuck goal re-raises the same material
  * in new words and lands at 1.0. Pinned by tests in
  * tests/audit-no-progress-detection.test.ts. */
+/** v0.38.101: REJECTED threshold, kept only to document the measurement that
+ * rejected it. See AUDIT_NO_PROGRESS_FINDINGS below. Do not wire this into a
+ * decision — token overlap cannot separate a restated objection from a
+ * restatement that also adds a finding. */
 export const AUDIT_NO_PROGRESS_CONTAINMENT = 0.6;
 
 export function countTrailingRepeatedDisapprovals(history: AuditVerdict[]): number {
   let n = 0;
-  let previousReport: string | undefined;
+  let fingerprint: string | undefined;
   let revision: number | undefined;
   for (let i = history.length - 1; i >= 0; i--) {
     const verdict = history[i]!;
     if (verdict.error && !verdict.approved && !verdict.disapproved) continue;
     if (!verdict.disapproved) break;
-    const report = verdict.report;
-    if (!report || !report.trim()) break;
-    if (previousReport === undefined) {
-      previousReport = report;
+    const currentFingerprint = auditDisapprovalFingerprint(verdict.report);
+    if (!currentFingerprint) break;
+    if (fingerprint === undefined) {
+      fingerprint = currentFingerprint;
       revision = verdict.revision;
       n = 1;
       continue;
     }
-    // v0.38.101: paraphrases count as repetition. Exact-text equality is
-    // unreachable for a natural-language auditor, so it made this detector
-    // dead code; containment asks the decidable question instead — did this
-    // round surface any material the previous one had not?
-    if (auditDisapprovalSimilarity(previousReport, report) < AUDIT_NO_PROGRESS_CONTAINMENT) break;
+    // v0.38.101: EXACT text equality is retained deliberately. A token-
+    // similarity replacement was implemented and measured
+    // (auditDisapprovalSimilarity, documented above) and REJECTED: on short
+    // free text, "the same finding reworded" (0.70) and "the same finding plus
+    // one genuinely new one" (0.73) overlap, so no threshold separates
+    // repetition from progress. A false stop parks a goal that is advancing;
+    // exact equality never fires and therefore never causes that. The real fix
+    // compares the STRUCTURED objection set (`## Required fixes` lines, already
+    // extracted by durableObjectionsForDisapproval), where "same set",
+    // "proper subset" and "has a new member" are decidable.
+    if (currentFingerprint !== fingerprint) break;
     if (typeof revision === "number" && typeof verdict.revision === "number" && verdict.revision !== revision) break;
-    previousReport = report;
     n++;
   }
   return n;
