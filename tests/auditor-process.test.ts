@@ -1181,7 +1181,7 @@ process.stdin.on("data", (chunk) => {
   }
 });
 
-test("worker-side tool timeout aborts an audit tool that never emits an end event", async () => {
+test("worker-side tool timeout cancels a tool that never emits an end event, and still fails fast", async () => {
   const dir = await mkdtemp(path.join(tmpdir(), "glla-tool-timeout-worker-"));
   const fakePi = path.join(dir, "stuck-read-pi.mjs");
   const worker = path.resolve(process.cwd(), "scripts/goal-auditor-worker.mjs");
@@ -1191,6 +1191,9 @@ process.stdin.on("data", (chunk) => {
   if (handled || !String(chunk).includes("\\n")) return;
   handled = true;
   process.stdout.write(JSON.stringify({ type: "tool_execution_start", toolCallId: "read-1", toolName: "read", args: { path: "artifact" } }) + "\\n");
+  // v0.38.99: the worker cancels this tool with an RPC abort, but a wedged
+  // child can ignore it. Nothing else is emitted, so the attempt must still
+  // end on the bounded abort-settle window rather than parking.
   setInterval(() => {}, 1_000);
 });
 `);
@@ -1203,7 +1206,7 @@ process.stdin.on("data", (chunk) => {
       thinkingLevel: "high",
       runtime: {
         workerPath: worker,
-        env: { GLLA_PI_BINARY: fakePi, GLLA_AUDITOR_TOOL_TIMEOUT_MS: "80" },
+        env: { GLLA_PI_BINARY: fakePi, GLLA_AUDITOR_TOOL_TIMEOUT_MS: "80", GLLA_AUDITOR_ABORT_SETTLE_MS: "1500" },
         attemptId: () => "attempt-worker-tool-timeout",
         pollIntervalMs: 10,
         wallTimeoutMs: 10_000,
@@ -1211,7 +1214,10 @@ process.stdin.on("data", (chunk) => {
     });
     assert.equal(result.approved, false);
     assert.equal(result.disapproved, false);
-    assert.match(result.error ?? "", /tool read exceeded its 1s timeout/);
+    // v0.38.99: the tool is cancelled rather than killing the whole attempt
+    // outright, so the headline names the cancel-then-fail-fast path. The
+    // attempt is still bounded — an ignored abort does not park the goal.
+    assert.match(result.error ?? "", /tool was cancelled at its 1s budget but the session never resumed/);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

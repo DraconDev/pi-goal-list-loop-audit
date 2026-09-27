@@ -496,6 +496,13 @@ async function main() {
   const cancelledToolCalls = [];
   let verificationIncomplete = false;
   let awaitingContinuation = false;
+  // v0.38.99: bounds the wait for the aborted turn to settle before the
+  // attempt is failed. Sized for abort + republish + re-prompt.
+  let continuationDeadlineTimer;
+  const configuredAbortSettleMs = Number(process.env.GLLA_AUDITOR_ABORT_SETTLE_MS ?? 30_000);
+  const ABORT_SETTLE_TIMEOUT_MS = Number.isFinite(configuredAbortSettleMs) && configuredAbortSettleMs > 0
+    ? Math.floor(configuredAbortSettleMs)
+    : 30_000;
   const setCurrentToolFromActive = () => {
     const active = [...activeTools.values()].at(-1);
     if (!active) {
@@ -605,6 +612,7 @@ async function main() {
     if (inactivityTimer) clearInterval(inactivityTimer);
     if (processGroupTimer) clearInterval(processGroupTimer);
     if (rpcCloseGraceTimer) clearTimeout(rpcCloseGraceTimer);
+    if (continuationDeadlineTimer) clearTimeout(continuationDeadlineTimer);
     for (const timer of toolTimers.values()) clearTimeout(timer);
     toolTimers.clear();
     // Wait for the nested RPC child to settle before publishing the terminal
@@ -740,6 +748,16 @@ async function main() {
     try {
       if (pi && childRunning(pi)) pi.stdin.write(`${JSON.stringify({ type: "abort" })}\n`, "utf8");
     } catch { /* the child will exit and fail the attempt on its own */ }
+    // The abort is advisory: a wedged RPC child can ignore it and simply
+    // stop emitting events, which would leave the attempt with no open tool
+    // (so the parent's per-tool watchdog stands down) and no result — parked
+    // until the parent's much longer silence bound. Bound the wait here so a
+    // child that does not honour the abort still fails fast.
+    if (continuationDeadlineTimer) clearTimeout(continuationDeadlineTimer);
+    continuationDeadlineTimer = setTimeout(() => {
+      void finish(false, `Auditor stalled — the tool was cancelled at its ${toolTimeoutLabel(budget)} budget but the session never resumed; the worker was aborted.`).catch(() => {});
+    }, ABORT_SETTLE_TIMEOUT_MS);
+    continuationDeadlineTimer.unref?.();
   };
 
   const armToolTimer = (key, name, budgetMs) => {
@@ -1054,6 +1072,10 @@ async function main() {
         // `verificationIncomplete` keeps the attempt from ever approving.
         if (awaitingContinuation) {
           awaitingContinuation = false;
+          if (continuationDeadlineTimer) {
+            clearTimeout(continuationDeadlineTimer);
+            continuationDeadlineTimer = undefined;
+          }
           const cancelled = cancelledToolCalls.at(-1);
           const continuationPrompt = buildContinuationPrompt(cancelled);
           outputParts.push(CONTINUATION_SEPARATOR);
