@@ -159,6 +159,10 @@ export function buildGoalAuditorPrompt(goal: Goal, completionSummary: string | n
   // auditor quotes evidence for them explicitly and the loop converges
   // instead of repeating the same gap.
   const shieldGaps = [...(goal.auditHistory ?? [])].reverse().find((v) => v.regressionShieldPassed === false)?.regressionShieldMissing;
+  // v0.38.101: how many times this claim was already disapproved. A rework
+  // round asks a different question (are the PRIOR objections closed?) than a
+  // first round (is this change sound?), and the brief says so.
+  const priorDisapprovals = (goal.auditHistory ?? []).filter((v) => v.disapproved === true).length;
   // v0.38.100: the recorded change set. Present only when execution touched
   // tracked paths — older goals and read-only work keep the previous brief
   // byte-shape.
@@ -182,6 +186,35 @@ export function buildGoalAuditorPrompt(goal: Goal, completionSummary: string | n
     "A completion_summary is executor-authored evidence, not permission to change scope.",
     "If it describes work different from the current <goal> objective, disapprove unless the current goal markdown already reflects an atomic newObjective transition.",
     "Only the durable objective and verification contract supplied in this audit define scope; do not approve a shifted claim merely because the summary says the pivot was justified.",
+    "",
+    // v0.38.101 — convergence contract. The auditor is an unbounded adversary:
+    // with no stated scope it keeps finding new objections in a repository
+    // that never becomes defect-free, so approval is unreachable and the goal
+    // re-audits forever (observed 8/8, 13/13 and 4/4 consecutive disapprovals
+    // at 63h elapsed). Two things cause that: objections are not scoped to
+    // the work under review, and "approved" has no reachable definition. Both
+    // are stated here. The adversarial posture is unchanged — only its target
+    // is bounded.
+    "CHANGE SCOPE — what may and may not block approval (read before hunting; this narrows the SCOPE GUARD below, which bounds the repository — this bounds the WORK):",
+    changedFiles.length > 0
+      ? "- The work under review is THE CHANGE: the paths in <changed_files> plus the goal's verification contract. Judge the change, not the repository's accumulated history."
+      : "- The work under review is THE CHANGE this claim describes, plus the goal's verification contract. Judge the change, not the repository's accumulated history.",
+    "- BLOCKING: (a) a defect introduced by, or left unfixed in, the changed paths; (b) a verification-contract item that is missing, weakly verified, or contradicted by evidence you inspected; (c) a regression this change causes outside them.",
+    "- NON-BLOCKING — report as advisory, but do NOT disapprove for it: pre-existing conditions, defects or tech debt that predate this change and sit outside the changed paths; style, naming, or speculative hardening; anything you cannot tie to a specific changed path or a specific contract item.",
+    "- Your own prior audit findings are inputs to re-check, not new targets. Do not treat an audit ledger, a documented non-pass you have already raised, or a consciously deferred item as fresh objections.",
+    "- Do not expand the goal. Noticing a real problem outside the reviewed change is not a reason to block; record it in one line and move on.",
+    "",
+    "WHAT APPROVED MEANS — this bar is reachable, and reaching it is the correct outcome when the evidence supports it:",
+    "- every verification-contract item is verified by evidence you personally inspected (quote the file:line, command output, or artifact that shows it), AND",
+    "- you found no defect inside the changed paths.",
+    "If both hold, approve. Do not withhold approval hunting for a hypothetical defect outside the reviewed change — that is not scepticism, it is an unreachable bar.",
+    ...(priorDisapprovals > 0 ? [
+      "",
+      `REWORK ROUND — this claim was disapproved ${priorDisapprovals} time${priorDisapprovals === 1 ? "" : "s"} before.`,
+      "- Your primary question is whether the PRIOR objections are now closed. Re-verify those first; they are the reason you are here.",
+      "- The prior objections are listed in the goal markdown's audit history below.",
+      "- A genuinely new defect in the change is still valid and still blocks. But a new objection must clear the same CHANGE SCOPE bar above — a fresh finding is not a licence to re-audit the repository.",
+    ] : []),
     "Return a concise audit report. The final line MUST be exactly one of:",
     "<approved/>",
     "<disapproved/>",
