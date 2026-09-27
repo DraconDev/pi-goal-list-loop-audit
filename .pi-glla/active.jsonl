@@ -271,3 +271,4 @@
 {"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-27T22:00:30.839Z"}
 {"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-27T22:15:58.258Z"}
 {"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-27T22:25:37.195Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":{"inputTokens":91,"outputTokens":762,"cacheReadTokens":323610,"cacheWriteTokens":0,"totalTokens":324463},"contextUsage":{"tokens":324463,"contextWindow":1000000,"percent":32.4463}},"at":"2026-09-27T22:34:39.415Z"}
