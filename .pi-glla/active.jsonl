@@ -229,3 +229,12 @@
 {"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-27T01:56:44.431Z"}
 {"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-27T02:21:53.642Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":{"inputTokens":131,"outputTokens":1167,"cacheReadTokens":200387,"cacheWriteTokens":0,"totalTokens":201685},"contextUsage":{"tokens":201685,"contextWindow":1000000,"percent":20.1685}},"at":"2026-09-27T02:29:16.884Z"}
+{"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-27T02:44:51.477Z"}
+{"type":"audit_jobs_retention_sweep","value":{"reaped":1,"remaining":1},"at":"2026-09-27T02:44:56.622Z"}
+{"type":"session_rebound","value":{"reason":"startup"},"at":"2026-09-27T02:44:56.623Z"}
+{"type":"id_invalidation","value":{"oldId":"01a0e000-68e5-7525-86ad-47c5230c45f8","newId":"01a0e0c0-485d-74ac-9177-9d2c447c0ce4","reason":"session_shutdown","shutdownReason":"quit","at":"2026-09-27T02:44:56.636Z"},"at":"2026-09-27T02:44:56.636Z"}
+{"type":"session_waiting_for_load","value":{"reason":"startup"},"at":"2026-09-27T02:44:56.636Z"}
+{"type":"session_shutdown","value":{"reason":"resume"},"at":"2026-09-27T02:46:02.326Z"}
+{"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-27T02:46:02.968Z"}
+{"type":"id_invalidation","value":{"oldId":"01a0e0c0-485d-74ac-9177-9d2c447c0ce4","newId":"01a0e000-68e5-7525-86ad-47c5230c45f8","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-27T02:46:02.973Z"},"at":"2026-09-27T02:46:02.973Z"}
+{"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-27T02:46:05.904Z"}
