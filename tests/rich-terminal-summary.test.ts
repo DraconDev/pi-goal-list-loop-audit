@@ -446,9 +446,9 @@ test("audit 2026-09-26: complete_goal accepts long free-prose values instead of 
  * archive path), which would shadow the payload under test here. */
 function compose(details: string[]): string[] {
   return composeRichTerminalLines(buildRichTerminalParts({
-    goal: seedGoal({ id: "20260927-enum", objective: "the billing kill-switch runbook", verificationContract: "" }),
     status: "complete",
     chat: true,
+    countsLine: "completion review: approved (1 review).",
     outcome: "shipped the kill-switch runbook",
     kind: "Done",
     auditHistory: [],
