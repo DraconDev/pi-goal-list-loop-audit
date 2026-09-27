@@ -709,6 +709,15 @@ async function main() {
       budgetMs: budget,
       cancelledAt: Date.now(),
     };
+    // Round 2 is the falsification pass. Its whole contract is "re-verify
+    // the load-bearing claims and try to prove the approval wrong", and its
+    // settle handler composes a verdict by final line. Resuming it with a
+    // round-1 continuation brief would blur that, so round 2 keeps the
+    // original hard-fail behavior: the attempt fails and the ladder retries.
+    if (round !== 1) {
+      void finish(false, `Auditor stalled — tool ${name} exceeded its ${toolTimeoutLabel(budget)} timeout during the challenge round; the worker was aborted.`).catch(() => {});
+      return;
+    }
     if (verificationIncomplete) {
       // A second cancellation means the audit is not converging. Finish
       // failed rather than granting an unbounded chain of retries.
@@ -1046,7 +1055,6 @@ async function main() {
         if (awaitingContinuation) {
           awaitingContinuation = false;
           const cancelled = cancelledToolCalls.at(-1);
-          challengeState = challengeState === "not-applicable" ? "not-applicable" : challengeState;
           const continuationPrompt = buildContinuationPrompt(cancelled);
           outputParts.push(CONTINUATION_SEPARATOR);
           streamError = undefined;
