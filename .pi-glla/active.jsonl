@@ -262,3 +262,10 @@
 {"type":"payload_guard_eviction","value":{"evicted":11,"bytesFreed":3688308,"remainingImageBytes":2869496,"remainingImageCount":4,"generation":566},"at":"2026-09-27T14:56:13.409Z"}
 {"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-27T15:01:57.002Z"}
 {"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-27T15:15:13.390Z"}
+{"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-27T21:40:23.170Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":null,"contextUsage":{"tokens":317679,"contextWindow":1000000,"percent":31.767899999999997}},"at":"2026-09-27T21:57:12.948Z"}
+{"type":"session_shutdown","value":{"reason":"reload"},"at":"2026-09-27T21:57:16.067Z"}
+{"type":"session_rebound","value":{"reason":"reload"},"at":"2026-09-27T21:57:20.538Z"}
+{"type":"payload_guard_eviction","value":{"evicted":11,"bytesFreed":3688308,"remainingImageBytes":2869496,"remainingImageCount":4,"generation":567},"at":"2026-09-27T21:57:28.083Z"}
+{"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-27T22:00:18.686Z"}
+{"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-27T22:00:30.839Z"}
