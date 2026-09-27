@@ -244,3 +244,5 @@
 {"type":"session_shutdown","value":{"reason":"resume"},"at":"2026-09-27T02:48:00.093Z"}
 {"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-27T02:48:01.138Z"}
 {"type":"id_invalidation","value":{"oldId":"01a0e0c1-6b3d-7043-bd01-101273458f4e","newId":"01a0e000-68e5-7525-86ad-47c5230c45f8","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-27T02:48:01.150Z"},"at":"2026-09-27T02:48:01.150Z"}
+{"type":"payload_guard_eviction","value":{"evicted":2,"bytesFreed":533224,"remainingImageBytes":1300044,"remainingImageCount":4,"generation":566},"at":"2026-09-27T02:51:26.926Z"}
+{"type":"payload_guard_eviction","value":{"evicted":3,"bytesFreed":851652,"remainingImageBytes":1828692,"remainingImageCount":4,"generation":566},"at":"2026-09-27T02:51:39.421Z"}
