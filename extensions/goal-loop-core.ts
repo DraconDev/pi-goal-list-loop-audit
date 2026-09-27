@@ -1606,24 +1606,88 @@ export function auditDisapprovalFingerprint(report: string | undefined): string 
     .slice(0, 2_000);
 }
 
+/** v0.38.101: tokens that carry no signal about WHICH objection a round
+ * raised. Without this, "the auditor reported a report" scores near-identical
+ * across two unrelated rounds and the no-progress detector fires on a goal
+ * that is genuinely moving. */
+const AUDIT_FINGERPRINT_STOPWORDS = new Set([
+  "the", "and", "for", "that", "this", "with", "from", "was", "were", "are", "but", "not",
+  "you", "your", "its", "it", "in", "on", "to", "of", "a", "an", "is", "be", "by", "as", "at",
+  "or", "if", "so", "no", "not", "has", "have", "had", "do", "does", "did", "can", "will",
+  "would", "should", "could", "there", "their", "them", "they", "then", "than", "when", "which",
+  "what", "each", "every", "any", "all", "also", "into", "over", "than", "because", "about",
+]);
+
+/** v0.38.101: the significant-token set of an audit report, used to compare
+ * two rounds for "did this round say anything the previous one did not?".
+ * Short tokens are dropped: they collide constantly across reports. */
+export function auditDisapprovalTokens(report: string | undefined): Set<string> {
+  const text = typeof report === "string" ? report : "";
+  const tokens = new Set<string>();
+  for (const raw of text.toLowerCase().split(/[^a-z0-9_]+/)) {
+    if (raw.length < 4) continue;
+    if (AUDIT_FINGERPRINT_STOPWORDS.has(raw)) continue;
+    tokens.add(raw);
+  }
+  return tokens;
+}
+
+/** v0.38.101: how much of `next` was already said by `previous`, as a
+ * fraction of `next`'s own size. 1.0 = the newer round introduced nothing new.
+ *
+ * Asymmetric on purpose. A later round legitimately carries a preamble (a
+ * rework banner, a continuation marker, more evidence quoted), so symmetric
+ * similarity under-reads "same objection, reworded". Containment asks the
+ * question that actually matters: did this round surface any material the
+ * previous one had not? */
+export function auditDisapprovalContainment(previous: string | undefined, next: string | undefined): number {
+  const prev = auditDisapprovalTokens(previous);
+  const curr = auditDisapprovalTokens(next);
+  if (curr.size === 0) return 0;
+  let shared = 0;
+  for (const token of curr) if (prev.has(token)) shared++;
+  return shared / curr.size;
+}
+
+/** v0.38.101 (field 2026-09-27): `countTrailingRepeatedDisapprovals` compared
+ * the first 2 000 characters for EXACT equality, so it only ever fired when an
+ * LLM emitted byte-identical reports three rounds running. A real auditor
+ * rephrases — "the last seven documented non-passes were avoidable" /
+ * "resolve the finding at its actual cause" are the same stuckness, never the
+ * same string — so `repeatedNoProgress` was permanently 1 and the one
+ * mechanism that correctly overrides aggressiveMode never fired. Observed:
+ * goals at 20x, 20x and 14x consecutive disapprovals.
+ *
+ * The threshold is containment, not a round count: it asks whether a round
+ * introduced any material the previous one had not. Genuine progress adds new
+ * findings, so it stays well below; a stuck goal re-raises the same material
+ * in new words and lands at 1.0. Pinned by tests in
+ * tests/audit-no-progress-detection.test.ts. */
+export const AUDIT_NO_PROGRESS_CONTAINMENT = 0.9;
+
 export function countTrailingRepeatedDisapprovals(history: AuditVerdict[]): number {
   let n = 0;
-  let fingerprint: string | undefined;
+  let previousReport: string | undefined;
   let revision: number | undefined;
   for (let i = history.length - 1; i >= 0; i--) {
     const verdict = history[i]!;
     if (verdict.error && !verdict.approved && !verdict.disapproved) continue;
     if (!verdict.disapproved) break;
-    const currentFingerprint = auditDisapprovalFingerprint(verdict.report);
-    if (!currentFingerprint) break;
-    if (fingerprint === undefined) {
-      fingerprint = currentFingerprint;
+    const report = verdict.report;
+    if (!report || !report.trim()) break;
+    if (previousReport === undefined) {
+      previousReport = report;
       revision = verdict.revision;
       n = 1;
       continue;
     }
-    if (currentFingerprint !== fingerprint) break;
+    // v0.38.101: paraphrases count as repetition. Exact-text equality is
+    // unreachable for a natural-language auditor, so it made this detector
+    // dead code; containment asks the decidable question instead — did this
+    // round surface any material the previous one had not?
+    if (auditDisapprovalContainment(previousReport, report) < AUDIT_NO_PROGRESS_CONTAINMENT) break;
     if (typeof revision === "number" && typeof verdict.revision === "number" && verdict.revision !== revision) break;
+    previousReport = report;
     n++;
   }
   return n;
