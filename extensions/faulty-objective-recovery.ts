@@ -122,7 +122,21 @@ export function assessSuspiciousObjective(objective: unknown, verificationContra
     || EVIDENCE_SUMMARY.test(text)
     || (!IMPERATIVE_START.test(text) && REVIEWER_VOCABULARY.test(text));
   if (explicitReviewerMarker || reviewerReport) reasons.push("verification-fragment");
-  if (/^#{1,6}\s+\S/.test(text)) reasons.push("heading");
+  // v0.38.101 (field 2026-09-27, monster-minecraft): a leading markdown
+  // heading is NOT on its own evidence of a pasted report. A user-authored
+  // goal title ("# MONSTER MINECRAFT — a first-person voxel survival game")
+  // trips a bare /^#{1,6}\s+\S/ check, and the resulting suspicious pause
+  // livelocks: the queued repair task never rewrites the objective, so every
+  // resume re-trips the same heuristic — resume, detect, pause, forever.
+  //
+  // A pasted audit report has structure: SEVERAL headings, or a heading
+  // followed by report sections. Require that corroboration. A single
+  // heading line that reads as a title stays a legitimate objective; the
+  // other heuristics still catch a heading that arrives with report prose.
+  const headingLines = text.match(/^#{1,6}\s+\S.*$/gm) ?? [];
+  if (headingLines.length > 0 && (headingLines.length > 1 || /^#{1,6}\s+\S[\s\S]*(?:^#{1,6}\s+\S|##\s|Required fixes|Evidence)/m.test(text))) {
+    reasons.push("heading");
+  }
   if (isAuditLikeNumberedText(text)) reasons.push("numbered-audit-fragment");
   if (SEMANTIC_REVIEW_FRAGMENT.test(text)) reasons.push("reviewer-fragment");
   if (DANGling_END.test(text)) reasons.push("dangling-fragment");
