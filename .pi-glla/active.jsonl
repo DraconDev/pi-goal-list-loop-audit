@@ -226,3 +226,4 @@
 {"type":"session_shutdown","value":{"reason":"reload"},"at":"2026-09-27T01:40:05.828Z"}
 {"type":"session_rebound","value":{"reason":"reload"},"at":"2026-09-27T01:40:10.544Z"}
 {"type":"payload_guard_eviction","value":{"evicted":2,"bytesFreed":533224,"remainingImageBytes":1300044,"remainingImageCount":4,"generation":560},"at":"2026-09-27T01:42:29.966Z"}
+{"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-27T01:56:44.431Z"}
