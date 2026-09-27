@@ -214,6 +214,16 @@ export interface Settings {
   /** v0.24.2: pause the goal after N consecutive auditor disapprovals (0 = unlimited).
    * Default 5 (raised from 3 in v0.25.0, contract item 7). */
   auditCap?: number;
+  /** v0.38.103: hard ceiling on consecutive auditor disapprovals — pauses
+   * with a decision even under aggressiveMode (whose soft cap converts to
+   * keep-going TODOs instead of pausing). Default 8: three grace rounds
+   * past the soft cap 5, then a human looks. 0 = unlimited (legacy).
+   * Global-only: treadmill policy belongs to the rig. */
+  auditCapHard?: number;
+  /** v0.38.103: scale mechanical pre-audit gate budgets with host load
+   * (1× at load ≤ cpu count, linear to 2× past it). Default true; false
+   * restores fixed budgets. Global-only: it describes machine speed. */
+  mechanicalLoadScale?: boolean;
   /** Maximum auditor-report characters returned to the executor after a
    * disapproval (0 = full report). Default 0 (full report). */
   auditFeedbackChars?: number;
@@ -586,6 +596,12 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   if (typeof settings.auditCap !== "number" || !Number.isInteger(settings.auditCap) || settings.auditCap < 0) {
     delete settings.auditCap;
   }
+  if (typeof settings.auditCapHard !== "number" || !Number.isInteger(settings.auditCapHard) || settings.auditCapHard < 0) {
+    delete settings.auditCapHard;
+  }
+  if (typeof settings.mechanicalLoadScale !== "boolean") {
+    delete settings.mechanicalLoadScale;
+  }
   if (typeof settings.stuckMaxInterventions !== "number" || !Number.isInteger(settings.stuckMaxInterventions) || settings.stuckMaxInterventions < 0) {
     delete settings.stuckMaxInterventions;
   }
@@ -720,6 +736,8 @@ export const SETTINGS_KEYS: Array<keyof Settings> = [
   "carryover",
   "autoAcceptDrafts",
   "auditCap",
+  "auditCapHard",
+  "mechanicalLoadScale",
   "auditFeedbackChars",
   "auditorSilent",
   "auditorProgressSignals",

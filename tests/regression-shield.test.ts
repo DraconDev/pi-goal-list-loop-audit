@@ -410,7 +410,9 @@ test("v0.35.16: mechanical checks keep the TAIL of failed output and banner a ti
   // The timeout-kill path banners honestly instead of masquerading as a
   // test failure (the field failure looked like 'exit code 1' with no
   // failing test anywhere).
-  const slow = await runMechanicalPreAuditChecks(process.cwd(), ["sleep 5"], 1000);
+  // v0.38.103: pin exact-budget behavior — load scaling stays off here so the
+  // 1s banner assertion is hermetic (scaling math is pinned separately).
+  const slow = await runMechanicalPreAuditChecks(process.cwd(), ["sleep 5"], 1000, undefined, undefined, { loadScale: false });
   assert.equal(slow.passed, false);
   assert.match(slow.output!, /mechanical check killed after 1s/, "a timeout kill is named as such");
   fs.rmSync(dir, { recursive: true, force: true });

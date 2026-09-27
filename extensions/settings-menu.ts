@@ -30,6 +30,7 @@ import {
 } from "@earendil-works/pi-tui";
 
 import {
+  AUDIT_CAP_HARD_DEFAULT,
   DEFAULT_AUDIT_FEEDBACK_CHARS,
   DEFAULT_STALL_ESCALATION_REFIRES,
   resolveEffectiveAggressiveSettings,
@@ -497,6 +498,22 @@ export function buildSettingsRows(
       valueText: show("auditCap", `${effective.auditCap}`),
       sourceText: src("auditCap"),
       description: "pause the goal after N consecutive disapprovals (0 = unlimited; unset = 10 in aggressive mode, otherwise 5)",
+    },
+    {
+      id: "auditCapHard",
+      section: "auditor",
+      label: "Audit hard cap",
+      valueText: show("auditCapHard", `${settings.auditCapHard ?? AUDIT_CAP_HARD_DEFAULT}`),
+      sourceText: src("auditCapHard"),
+      description: "hard ceiling on consecutive disapprovals — pauses with a decision even in aggressive mode (0 = unlimited; unset = 8)",
+    },
+    {
+      id: "mechanicalLoadScale",
+      section: "auditor",
+      label: "Mechanical load scaling",
+      valueText: show("mechanicalLoadScale", "on"),
+      sourceText: src("mechanicalLoadScale"),
+      description: "on: mechanical gate budgets scale with host load up to 2× (default) · off: fixed budgets",
     },
     {
       id: "auditFeedbackChars",

@@ -14,7 +14,7 @@ import { renderAgentsPanel, tailChildTranscript, TRANSCRIPT_HEADER_SCAN_MAX_BYTE
 import { state, replaceState } from "./goal-state.js";
 import {
   DEFAULT_TOKEN_LIMIT, Goal, ListItem, Status, appendLedger, archiveDir, archivedGoalPath, auditVerdictLabel, bumpGoalRevision, sanitizeProviderDisplayText,
-  computeListDepthFromLedger, clearQueueItemFiles, deleteQueueItemFile, deleteQueueItemFileResult, extractVerificationContract, stripTweakProceduralTail, formatAuditLog, formatGoalAuditHistory, formatMainModelRecoveryStatus, queueItemSidecarCount,
+  computeListDepthFromLedger, clearQueueItemFiles, deleteQueueItemFile, deleteQueueItemFileResult, extractVerificationContract, stripTweakProceduralTail, formatAuditLog, formatGoalAuditHistory, formatMainModelRecoveryStatus, queueItemSidecarCount, countTrailingDisapprovals,
   formatListDepth, goalArgsNeedDrafting, ledgerPath, newGoalId, nowIso, parseListImport, parseListItemDeclaration, readLedgerTail,
   assignQueueOrder, compareQueueItems, readAuditLog, readQueueFromDisk, routeGoalArgs, routeListText, sanitizeDisplayText, sanitizeProviderAuditReport, statusLabel,
   visibleListPosition, visibleListPositions,
@@ -690,6 +690,42 @@ async function cmdCancel(ctx: ExtensionContext): Promise<void> {
   ctx.abort();
 }
 
+/** v0.38.103: accept-with-followups — the treadmill exit. Archives a
+ * cap-paused goal as COMPLETE with residuals instead of approving work the
+ * auditor never approved: the stop reason names the streak, and
+ * archiveCurrentGoal fires the reviewer, which mines the disapproval
+ * reports into /list follow-ups. Reachable only from the disapproval-cap
+ * decision picker (no standalone command surface). */
+async function cmdAcceptWithFollowups(ctx: ExtensionContext): Promise<void> {
+  if (warnIfStaleAtEntry(ctx, "/goal accept")) return;
+  if (stateRootPending()) {
+    ctx.ui.notify("Accept deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.", "warning");
+    return;
+  }
+  if (!state.goal) {
+    ctx.ui.notify("No goal to accept.", "info");
+    return;
+  }
+  if (state.goal.status !== "paused") {
+    ctx.ui.notify("Accept with follow-ups is for a cap-paused goal — this goal is still active. It appears as a decision option when disapprovals hit the cap.", "warning");
+    return;
+  }
+  const noun = goalNoun();
+  const acceptedGoal = state.goal;
+  const trailing = countTrailingDisapprovals(acceptedGoal.auditHistory ?? []);
+  const acceptStopReason = `accepted with follow-ups after ${trailing} consecutive disapprovals (user decision at disapproval cap)`;
+  const acceptArchiveTarget = archivedGoalPath(ctx.cwd, acceptedGoal.id);
+  const acceptRecap = compactTerminalCompletionSummary({
+    goal: acceptedGoal,
+    status: "complete",
+    stopReason: acceptStopReason,
+    archivePath: path.relative(ctx.cwd, acceptArchiveTarget) || acceptArchiveTarget,
+  });
+  if (!archiveCurrentGoal(ctx, "complete", acceptStopReason)) return;
+  ctx.ui.notify(`${noun} archived as complete with residuals routed to follow-ups.\nRecap: ${acceptRecap}`, "info");
+  ctx.abort();
+}
+
 // ---- v0.28.23: decision picker popup ----
 // A decision pause is ACTIONABLE — the widget card summarizes (and
 // truncates) it, but picking from a truncated wall was the user's
@@ -731,6 +767,7 @@ async function showDecisionPrompt(ctx: ExtensionContext): Promise<boolean> {
       const [, group, verb] = cmdMatch;
       if (group === "goal" && verb === "resume") await cmdResume(ctx);
       else if (group === "goal" && verb === "cancel") await cmdCancel(ctx);
+      else if (group === "goal" && verb === "accept") await cmdAcceptWithFollowups(ctx);
       else if (group === "loop" && verb === "stop") await cmdLoop("stop", ctx);
       else if (group === "loop" && verb === "resume") await cmdLoop("resume", ctx);
       else {
@@ -3222,6 +3259,8 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
       fmt("subagentFallbacks", "subagentFallbacks"),
       fmt("toolOverrides", "toolOverrides"),
       fmt("auditCap", "auditCap"),
+      fmt("auditCapHard", "auditCapHard"),
+      fmt("mechanicalLoadScale", "mechanicalLoadScale"),
       fmt("decisionPauseBudget", "decisionPauseBudget"),
       fmt("auditFeedbackChars", "auditFeedbackChars"),
       fmt("aggressiveMode", "aggressiveMode"),

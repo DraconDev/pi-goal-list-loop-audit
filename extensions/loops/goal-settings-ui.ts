@@ -1629,6 +1629,28 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       }
       return;
     }
+    case "auditCapHard": {
+      const v = await ctx.ui.input("Hard ceiling on consecutive auditor disapprovals (pauses even in aggressive mode)", "non-negative integer; 0 = unlimited, empty = default 8");
+      if (v !== undefined) {
+        const raw = v.trim();
+        const n = parseSettingsInteger(raw);
+        if (n !== undefined && n >= 0) saveSettings("global", ctx.cwd, { auditCapHard: n });
+        else if (!raw) saveSettings("global", ctx.cwd, { auditCapHard: undefined });
+        else ctx.ui.notify(`Not a non-negative integer: ${v}`, "warning");
+      }
+      return;
+    }
+    case "mechanicalLoadScale": {
+      const v = await ctx.ui.select("Mechanical load scaling — scale gate budgets with host load (up to 2×)", [
+        "on — scale budgets with load (default)",
+        "off — fixed budgets",
+      ]);
+      if (v) {
+        saveSettings("global", ctx.cwd, { mechanicalLoadScale: v.startsWith("off") ? false : undefined });
+        ctx.ui.notify(v.startsWith("off") ? "Mechanical load scaling OFF — fixed gate budgets." : "Mechanical load scaling ON — budgets scale to 2× under saturation.", "info");
+      }
+      return;
+    }
     case "decisionPauseBudget": {
       const v = await ctx.ui.input("Max agent-authored decision pauses per goal before auto-default", "non-negative integer; 0 = relentless from the first, empty = pause every time (unset)");
       if (v !== undefined) {

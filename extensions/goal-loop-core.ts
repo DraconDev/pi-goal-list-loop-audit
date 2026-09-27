@@ -3987,6 +3987,9 @@ export const BASE_STUCK_MAX_INTERVENTIONS = 5;
  * always win over these — aggressiveMode flips DEFAULTS, not user choices. */
 export const AGGRESSIVE_AUDIT_CAP = 10;
 export const AGGRESSIVE_STUCK_MAX_INTERVENTIONS = 10;
+/** v0.38.103: hard ceiling on consecutive disapprovals — binds every mode
+ * including aggressive keep-going. 8 = soft cap 5 + three grace rounds. */
+export const AUDIT_CAP_HARD_DEFAULT = 8;
 
 export interface EffectiveAggressiveSettings {
   auditCap: number;
@@ -4056,6 +4059,33 @@ export function extractPendingTasks(report: string, cap = 5): string[] {
  * objection, not generic effort. The aggressive gate keeps only the
  * cap-keep-going / no-progress-stop behaviors, never the TODOs.
  */
+export type RequiredFixSeverity = "HIGH" | "MED" | "LOW";
+
+export interface RequiredFix {
+  text: string;
+  severity: RequiredFixSeverity | null;
+}
+
+/** v0.38.103: parse the `## Required fixes` tail into items with leading
+ * [HIGH]/[MED]/[LOW] tags (the brief mandates the format). Strict: the tag
+ * must LEAD the item text; a tag buried mid-sentence or a missing section
+ * yields untagged (null), never a guess — severity gates must not rest on
+ * parsed vibes. Pure. */
+export function extractRequiredFixSeverities(report: string): RequiredFix[] {
+  const section = (report.split(/^##\s+Required fixes\s*$/im)[1] ?? "").split(/^##\s+/m)[0] ?? "";
+  const out: RequiredFix[] = [];
+  for (const raw of section.split("\n")) {
+    const line = raw.trim();
+    const m = line.match(/^(?:[-*•]|\d+[.)])\s+(.+)$/);
+    if (!m) continue;
+    const text = m[1]!.trim();
+    if (text.length === 0) continue;
+    const tag = text.match(/^\[(HIGH|MED|LOW)\]\s+/);
+    out.push({ text, severity: tag ? (tag[1] as RequiredFixSeverity) : null });
+  }
+  return out;
+}
+
 export function durableObjectionsForDisapproval(report: string, statusCommand = "/goal status"): string[] {
   const extracted = extractPendingTasks(report, 5);
   return extracted.length > 0

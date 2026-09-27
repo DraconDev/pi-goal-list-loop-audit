@@ -69,6 +69,8 @@ copies are ignored (the recovery runtime reads the global file):
 | `carryover` | `"pause"` | Stale carryover on new activation: `"pause"` / `"clear"` / `"resume"`. |
 | `autoAcceptDrafts` | `false` | Drafts activate without the Confirm dialog (unattended rigs). |
 | `auditCap` | `5` (10 aggressive) | Pause after N consecutive auditor disapprovals (`0` = unlimited). |
+| `auditCapHard` | `8` | Hard ceiling on consecutive disapprovals — pauses with a decision even in aggressive mode (`0` = unlimited). Global-only. |
+| `mechanicalLoadScale` | `true` | Scale mechanical gate budgets with host load up to 2× (`false` = fixed budgets). Global-only. |
 | `auditFeedbackChars` | `0` (full) | Max auditor-report chars returned after disapproval (`0` = full). |
 | `auditorSilent` | `true` | Auditor report renders final-only, no word-by-word HUD. |
 | `auditorProgressSignals` | `true` | Silent audits show phase label + byte counter. |

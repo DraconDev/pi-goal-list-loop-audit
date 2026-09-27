@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.38.103 — the treadmill gets a ceiling: inconclusive gates and a hard disapproval cap (2026-09-27)
+
+- **A mechanical gate the host kills is no longer a disapproval.** Timeout/kill/output-limit/abort outcomes now classify `inconclusive` and enter the durable infra-retry plan instead of the rework loop — a killed gate is evidence of nothing about the work. Gate budgets also scale with host load (1× at load ≤ cpus, capped 2× past it; `mechanicalLoadScale`, default on, global-only).
+- **Consecutive disapprovals hit a hard ceiling in every mode.** `auditCapHard` (default 8: soft cap 5 + three grace rounds, `0` = unlimited) pauses with a decision even under aggressiveMode keep-going. Cap pauses now offer **Accept with follow-ups** first: archives complete with residuals while the reviewer mines the disapproval reports into `/list` items (`(/goal accept)` in the decision picker).
+- **Required fixes carry severity.** The brief mandates leading `[HIGH]`/`[MED]`/`[LOW]` tags per item plus a severity-honesty rule; each disapproval records a severity census on its objections ledger event. Advisory this release — automatic severity gating follows once field label distribution is measured.
+
 ## 0.38.102 — audits converge, and the card stops burying its own gist (2026-09-27)
 
 - **The audit brief now bounds what may block approval and defines a reachable bar.** `CHANGE SCOPE` separates blocking defects (in the changed paths, an unverified contract item, a regression this change causes) from non-blocking ones (pre-existing debt outside the change, style, anything untied to a changed path); it also states that the auditor's own prior findings are inputs to re-check, not new targets — that line breaks the self-feeding loop where each round grew the 148KB findings ledger the next round then audited. `WHAT APPROVED MEANS` gives the checkable bar. `REWORK ROUND` reframes round N as “are the PRIOR objections closed?”, with a new in-scope defect still blocking. Measured 612 attempts fleet-wide: the loop was non-terminating (8/8, 13/13, and 20× consecutive disapprovals at 63h elapsed), not slow. (audit/ENDLESS-AUDIT-CONVERGENCE-2026-09-27.md)

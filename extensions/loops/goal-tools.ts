@@ -89,6 +89,8 @@ extractPendingTasks,
   countTrailingDisapprovals,
   countTrailingRepeatedDisapprovals,
   MAX_REPEATED_AUDIT_NO_PROGRESS,
+  AUDIT_CAP_HARD_DEFAULT,
+  extractRequiredFixSeverities,
   goalArgsNeedDrafting,
   buildSeedGrillMessage,
   askUserQuestionAnswered,
@@ -270,6 +272,7 @@ import {
 } from "../goal-loop-auditor-process.js";
 import {
   extractMechanicalCheckCommands,
+  mechanicalPreAuditVerdict,
   runMechanicalPreAuditChecks,
 } from "../goal-loop-shield.js";
 import {
@@ -509,6 +512,8 @@ async function verifyTaskMilestone(
     extractMechanicalCheckCommands(verificationContract),
     undefined,
     signal,
+    undefined,
+    { loadScale: loadSettings(ctx.cwd).mechanicalLoadScale !== false },
   );
   return result.passed ? null : result;
 }
@@ -1106,13 +1111,29 @@ function registerAgentTools(pi: any): void {
       // the main pi event loop or strand descendants on timeout.
       try {
         const mechanicalCmds = extractMechanicalCheckCommands(auditGoal.verificationContract ?? "");
-        const mechanicalResult = await runMechanicalPreAuditChecks(ctx.cwd, mechanicalCmds, undefined, signal);
+        const mechanicalResult = await runMechanicalPreAuditChecks(ctx.cwd, mechanicalCmds, undefined, signal, undefined, {
+          loadScale: settings.mechanicalLoadScale !== false,
+        });
         if (!mechanicalResult.passed) {
+        // v0.38.103: fail verdicts keep the historical fast-fail; inconclusive
+        // (killed/limited gates) becomes an infra error — it enters the
+        // durable retry plan below instead of the rework loop. A gate the
+        // host killed is evidence of nothing about the work.
+        const preVerdict = mechanicalPreAuditVerdict(mechanicalResult);
+        if (!preVerdict.disapproved) {
+          appendLedger(ctx.cwd, "mechanical_inconclusive", {
+            goalId: auditGoalId,
+            attemptId: auditAttemptId,
+            command: mechanicalResult.failedCommand,
+            reason: mechanicalResult.inconclusiveReason,
+          });
+        }
         result = {
-          approved: false,
-          disapproved: true,
-          impossible: false,
-          output: `<disapproved/>\n\nDeterministic Pre-Audit Fast-Fail: Mechanical contract check failed: \`${mechanicalResult.failedCommand}\` (exit code ${mechanicalResult.exitCode})\n\n<evidence>\n${mechanicalResult.output}\n</evidence>`,
+          approved: preVerdict.approved,
+          disapproved: preVerdict.disapproved,
+          impossible: preVerdict.impossible,
+          error: preVerdict.error,
+          output: preVerdict.output,
           model: "deterministic-pre-audit",
           regressionShieldPassed: true,
           goalRevision: captureGoalRevision(auditGoal) ?? undefined,
@@ -2095,11 +2116,22 @@ function registerAgentTools(pi: any): void {
         // TODO projection, not only the post-cap case. Replacing (rather than
         // appending) the bounded list makes repeated identical reports
         // idempotent while the full report remains in auditHistory.
+        // v0.38.103: severity census of the required-fixes tail — the
+        // convergence record. Advisory this release (labels + counts only);
+        // automatic severity gating follows once field label distribution
+        // is measured.
+        const fixSeverities = extractRequiredFixSeverities(safeAuditOutput);
         appendLedger(ctx.cwd, "audit_objections_todo", {
           goalId: auditGoalId,
           attemptId: auditAttemptId,
           pendingTasks: durableObjections,
           source: "auditor-disapproval",
+          severityCounts: {
+            high: fixSeverities.filter((f) => f.severity === "HIGH").length,
+            med: fixSeverities.filter((f) => f.severity === "MED").length,
+            low: fixSeverities.filter((f) => f.severity === "LOW").length,
+            untagged: fixSeverities.filter((f) => f.severity === null).length,
+          },
         });
       }
       const trailingDisapprovals = countTrailingDisapprovals(history);
@@ -2128,6 +2160,34 @@ function registerAgentTools(pi: any): void {
         maybeDecisionPopup(ctx);
         return {
           content: [{ type: "text", text: `Automatic auditor work paused on a state-based no-progress signal: ${stopReason}. The latest objections are durable TODOs. Investigate the report, then ${activeGoalSurfaceCommand("resume")} or ${activeGoalSurfaceCommand("tweak")} the objective.` }],
+          details: {},
+        };
+      }
+      // v0.38.103: hard ceiling — binds every mode including aggressive
+      // keep-going. A streak this long with a fresh objection every round
+      // is the audit treadmill, not convergence; a human picks the way out.
+      // 0 = unlimited (legacy unbounded cycling).
+      const hardCap = settings.auditCapHard ?? AUDIT_CAP_HARD_DEFAULT;
+      if (hardCap > 0 && trailingDisapprovals >= hardCap) {
+        updateGoal({
+          status: "paused",
+          auditHistory: history,
+          pendingCompletion: undefined,
+          pauseKind: "decision",
+          pauseOptions: [`Accept with follow-ups — archive complete, route findings to /list (/goal accept)`, `Fix the disapproval gap, then continue (${activeGoalSurfaceCommand("resume")})`, `Tweak the objective — ${activeGoalSurfaceCommand("tweak")} <new text>`, `Cancel the goal (${activeGoalSurfaceCommand("cancel")})`],
+          pauseRecommended: 1,
+          pauseReason: `auditor disapproved ${trailingDisapprovals}× consecutively (hard cap ${hardCap})`,
+          pauseSuggestedAction: `Streak-${trailingDisapprovals} disapprovals with no approval in sight is the audit treadmill — each round raises new objections instead of converging. Accept archives the work done and routes the findings to follow-ups; ${activeGoalSurfaceCommand("resume")} continues only after changing the work or contract. Raise Audit hard cap in /glla settings.`,
+        }, ctx);
+        ctx.ui.notify(`${goalNoun()} paused: auditor disapproved ${trailingDisapprovals}× consecutively (hard cap ${hardCap}, binds aggressive mode). ${activeGoalStatusCommand()} for the reports; pick accept / resume / tweak / cancel.`, "warning");
+        maybeDecisionPopup(ctx);
+        appendLedger(ctx.cwd, "goal_paused", { reason: `disapproval hard cap: ${trailingDisapprovals} consecutive (cap ${hardCap})` });
+        notifyExternal(ctx, `Goal paused: ${trailingDisapprovals} consecutive auditor disapprovals (hard cap)`);
+        return {
+          content: [{
+            type: "text",
+            text: `The auditor has now disapproved ${trailingDisapprovals} times in a row (hard cap ${hardCap}). The goal is PAUSED — this streak shape is the audit treadmill: new objections every round instead of convergence, each round burning evidence runs that deepen host load.\n\nThe user picks the way out (recommended first): accept with follow-ups (archive the shipped work, route findings to /list), resume after a real work/contract change, tweak a drifted objective, or cancel.\n\nLatest report (${auditFeedbackLabel}):\n${auditFeedback}\n\nDo not call complete_goal again until the user decides.`,
+          }],
           details: {},
         };
       }
@@ -2166,7 +2226,7 @@ function registerAgentTools(pi: any): void {
           auditHistory: history,
           pendingCompletion: undefined,
           pauseKind: "decision",
-          pauseOptions: [`Fix the disapproval gap, then continue (${activeGoalSurfaceCommand("resume")})`, `Tweak the objective — ${activeGoalSurfaceCommand("tweak")} <new text>`, `Cancel the goal (${activeGoalSurfaceCommand("cancel")})`],
+          pauseOptions: [`Accept with follow-ups — archive complete, route findings to /list (/goal accept)`, `Fix the disapproval gap, then continue (${activeGoalSurfaceCommand("resume")})`, `Tweak the objective — ${activeGoalSurfaceCommand("tweak")} <new text>`, `Cancel the goal (${activeGoalSurfaceCommand("cancel")})`],
           pauseRecommended: 1,
           pauseReason: `auditor disapproved ${trailingDisapprovals}× consecutively (cap ${auditCap})`,
           pauseSuggestedAction: `Read the audit history (${activeGoalStatusCommand()}), fix the actual gap or ${activeGoalSurfaceCommand("tweak")} the objective, then ${activeGoalSurfaceCommand("resume")}. Raise Audit cap in /glla settings.`,

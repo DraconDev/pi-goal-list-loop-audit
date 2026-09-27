@@ -19,6 +19,7 @@
 import { resolveCanonicalRunnerCommand } from "./goal-loop-backoff.js";
 import { spawn, type ChildProcess } from "node:child_process";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 
 /** Split a verification contract into its individual checkable items. */
@@ -212,12 +213,73 @@ function isPlausibleBareMechanicalCandidate(candidate: string): boolean {
 
 export interface MechanicalCheckResult {
   passed: boolean;
+  /** v0.38.103: pass = green; fail = the gate ran and the work is red;
+   * inconclusive = containment (timeout/kill/limits/abort) — the gate never
+   * produced a verdict on the work. `passed` stays true iff pass, so
+   * existing boolean consumers keep their meaning. */
+  outcome: MechanicalCheckOutcome;
+  /** Set exactly when outcome is inconclusive — which containment fired. */
+  inconclusiveReason?: MechanicalInconclusiveReason;
   failedCommand?: string;
   output?: string;
   exitCode?: number;
   /** v0.35.20: set when the first attempt failed transiently and the single
    * bounded retry passed — honest evidence of the wobble, not a silent mask. */
   recoveredRetryNote?: string;
+}
+
+/** v0.38.103: mechanical outcome classes. A killed gate is evidence of
+ * nothing about the product — callers must route `inconclusive` to the
+ * infra path, never to a disapproval verdict. */
+export type MechanicalCheckOutcome = "pass" | "fail" | "inconclusive";
+
+/** v0.38.103: which containment produced an inconclusive outcome. */
+export type MechanicalInconclusiveReason =
+  | "timeout"
+  | "aborted"
+  | "output-limit"
+  | "process-group-limit"
+  | "filter-incomplete";
+
+export function containmentReason(run: {
+  timedOut: boolean;
+  aborted: boolean;
+  outputLimit: boolean;
+  processGroupLimit: boolean;
+}): MechanicalInconclusiveReason | null {
+  if (run.timedOut) return "timeout";
+  if (run.aborted) return "aborted";
+  if (run.outputLimit) return "output-limit";
+  if (run.processGroupLimit) return "process-group-limit";
+  return null;
+}
+
+/** v0.38.103: load-scaling ceiling for mechanical gate budgets. A gate that
+ * needs 10 minutes idle gets at most 20 under saturation — beyond that the
+ * run is inconclusive promptly instead of holding a worker for an hour. */
+export const MECHANICAL_LOAD_SCALE_MAX = 2;
+
+/** v0.38.103: pure load-scaling math (pinned by unit test): 1× while
+ * 1-minute load is at or under cpu count, linear to MECHANICAL_LOAD_SCALE_MAX
+ * past it. Unusable inputs degrade to the base budget, never to unbounded. */
+export function loadScaledTimeoutMs(baseMs: number, load1: number, cpuCount: number): number {
+  const base = Number.isFinite(baseMs) && baseMs > 0 ? Math.floor(baseMs) : DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS;
+  const cpus = Number.isFinite(cpuCount) && cpuCount > 0 ? Math.floor(cpuCount) : 1;
+  const load = Number.isFinite(load1) && load1 >= 0 ? load1 : 0;
+  const factor = Math.min(MECHANICAL_LOAD_SCALE_MAX, Math.max(1, load / cpus));
+  return Math.round(base * factor);
+}
+
+/** v0.38.103: host-aware wrapper — reads os.loadavg/os.cpus once. Any read
+ * failure degrades to the base budget. */
+export function scaledMechanicalTimeoutMs(baseMs: number): number {
+  try {
+    const load = os.loadavg()[0] ?? 0;
+    const cpus = os.cpus()?.length ?? 1;
+    return loadScaledTimeoutMs(baseMs, load, cpus);
+  } catch {
+    return Number.isFinite(baseMs) && baseMs > 0 ? Math.floor(baseMs) : DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS;
+  }
 }
 
 /**
@@ -358,6 +420,7 @@ async function runMechanicalPipeline(
   if (process.platform === "win32") {
     return {
       passed: false,
+      outcome: "fail",
       failedCommand: rawCommand,
       output: "Mechanical pipelines need POSIX coreutils (tail/head/grep) and are not supported on Windows; reword the contract line to a bare runner invocation.",
       exitCode: 126,
@@ -365,7 +428,7 @@ async function runMechanicalPipeline(
   }
   const { program, args } = resolveCanonicalRunnerCommand(pipeline.head, scripts);
   if (!program) {
-    return { passed: false, failedCommand: rawCommand, output: "Empty mechanical command.", exitCode: 126 };
+    return { passed: false, outcome: "fail", failedCommand: rawCommand, output: "Empty mechanical command.", exitCode: 126 };
   }
   // ONE bounded automatic retry for the whole pipeline on a plain head
   // failure (mirrors the single-command v0.35.20 retry); containment
@@ -374,7 +437,7 @@ async function runMechanicalPipeline(
   for (let attempt = 1; attempt <= 2; attempt++) {
     const head = await runMechanicalCommand(cwd, program, args, effectiveTimeoutMs, signal, effectiveProcessGroupSize);
     if (head.timedOut || head.aborted || head.outputLimit || head.processGroupLimit) {
-      return { passed: false, failedCommand: rawCommand, ...formatMechanicalFailure(head, effectiveTimeoutMs) };
+      return { passed: false, outcome: "inconclusive", inconclusiveReason: containmentReason(head) ?? "timeout", failedCommand: rawCommand, ...formatMechanicalFailure(head, effectiveTimeoutMs) };
     }
     let stageInput = head.output;
     let stageFailed: { output: string; exitCode: number } | null = null;
@@ -390,10 +453,10 @@ async function runMechanicalPipeline(
       stageInput = stage.output;
     }
     if (stageFailed) {
-      return { passed: false, failedCommand: rawCommand, ...stageFailed };
+      return { passed: false, outcome: "inconclusive", inconclusiveReason: "filter-incomplete", failedCommand: rawCommand, ...stageFailed };
     }
     if (head.exitCode === 0) {
-      return { passed: true };
+      return { passed: true, outcome: "pass" };
     }
     const evidence = [`[pipeline head exited ${head.exitCode}]`, stageInput || "(no output survived the filters)"]
       .join("\n")
@@ -403,15 +466,16 @@ async function runMechanicalPipeline(
     } else {
       return {
         passed: false,
+        outcome: "fail",
         failedCommand: rawCommand,
         output: `[mechanical pipeline retried once after a failed first attempt (head exit ${firstFailure!.exitCode}); second attempt also failed — output tail below]\n` + evidence,
       };
     }
   }
-  return { passed: false, failedCommand: rawCommand, output: firstFailure?.output ?? "", exitCode: firstFailure?.exitCode ?? 1 };
+  return { passed: false, outcome: "fail", failedCommand: rawCommand, output: firstFailure?.output ?? "", exitCode: firstFailure?.exitCode ?? 1 };
 }
 
-const DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS = 600_000;
+export const DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS = 600_000;
 const MECHANICAL_MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 const MECHANICAL_OUTPUT_TAIL_CHARS = 64 * 1024;
 const MECHANICAL_CHILD_SHUTDOWN_GRACE_MS = 1_000;
@@ -779,11 +843,16 @@ export async function runMechanicalPreAuditChecks(
   timeoutMs = DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS,
   signal?: AbortSignal,
   maxProcessGroupSize = MAX_MECHANICAL_PROCESS_GROUP_SIZE,
+  opts?: { loadScale?: boolean },
 ): Promise<MechanicalCheckResult> {
-  if (!commands || commands.length === 0) return { passed: true };
-  const effectiveTimeoutMs = Number.isFinite(timeoutMs) && timeoutMs > 0
+  if (!commands || commands.length === 0) return { passed: true, outcome: "pass" };
+  const baseTimeoutMs = Number.isFinite(timeoutMs) && timeoutMs > 0
     ? timeoutMs
     : DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS;
+  // v0.38.103: scale the budget with host load (capped 2×) unless the
+  // caller disables it — a gate that needs 10 minutes idle must not be
+  // killed at 10:00 sharp on a saturated host and then read as a verdict.
+  const effectiveTimeoutMs = opts?.loadScale === false ? baseTimeoutMs : scaledMechanicalTimeoutMs(baseTimeoutMs);
   const effectiveProcessGroupSize = normalizeMechanicalProcessGroupLimit(maxProcessGroupSize);
   const recoveredRetries: string[] = [];
   let scripts: Record<string, string> = {};
@@ -799,7 +868,9 @@ export async function runMechanicalPreAuditChecks(
       // the conjunction. Keep the original compound text in a failure result
       // so the auditor sees which contract item failed.
       for (const step of compound) {
-        const stepResult = await runMechanicalPreAuditChecks(cwd, [step], effectiveTimeoutMs, signal, effectiveProcessGroupSize);
+        // Pass the caller's base (not the scaled value): scaling applies
+        // once per check, never compounded per recursion level.
+        const stepResult = await runMechanicalPreAuditChecks(cwd, [step], baseTimeoutMs, signal, effectiveProcessGroupSize, opts);
         if (!stepResult.passed) return { ...stepResult, failedCommand: rawCommand };
       }
       continue;
@@ -815,6 +886,7 @@ export async function runMechanicalPreAuditChecks(
     if (!isSafeMechanicalCommand(cmd)) {
       return {
         passed: false,
+        outcome: "fail",
         failedCommand: rawCommand,
         output: cmd.includes("|")
           ? "Rejected unsafe mechanical pipeline syntax; only `command | tail -n N`, `command | head -n N`, and `command | grep <literal>` are allowed (no redirects except a trailing 2>&1, no second program)."
@@ -831,7 +903,7 @@ export async function runMechanicalPreAuditChecks(
     // (scripts are loaded once above the loop so the pipeline path shares them.)
     const { program, args } = resolveCanonicalRunnerCommand(cmd, scripts);
     if (!program) {
-      return { passed: false, failedCommand: rawCommand, output: "Empty mechanical command.", exitCode: 126 };
+      return { passed: false, outcome: "fail", failedCommand: rawCommand, output: "Empty mechanical command.", exitCode: 126 };
     }
     // v0.35.20: ONE bounded automatic retry per failed mechanical command.
     // Field (sixth audit round, 2026-08-21): the gate died MID-RUN under
@@ -853,9 +925,14 @@ export async function runMechanicalPreAuditChecks(
       // A timeout, caller abort, or output-limit breach is a containment
       // event, not a transient test wobble. Retrying would immediately start
       // another untrusted process tree and can recreate the incident.
+      // v0.38.103: containment is INCONCLUSIVE, not failure — the gate never
+      // produced evidence about the work. Callers route this to infra retry,
+      // never to a disapproval verdict.
       if (run.timedOut || run.aborted || run.outputLimit || run.processGroupLimit) {
         return {
           passed: false,
+          outcome: "inconclusive",
+          inconclusiveReason: containmentReason(run) ?? "timeout",
           failedCommand: rawCommand,
           output: failure.output,
           exitCode: failure.exitCode,
@@ -866,6 +943,7 @@ export async function runMechanicalPreAuditChecks(
       } else {
         return {
           passed: false,
+          outcome: "fail",
           failedCommand: rawCommand,
           output: firstFailure
             ? `[mechanical check retried once after a failed first attempt (exit ${firstFailure.exitCode}); second attempt also failed — output tail below]\n` + failure.output
@@ -881,5 +959,38 @@ export async function runMechanicalPreAuditChecks(
       recoveredRetries.push(`[mechanical check ${rawProgram}: first attempt failed (exit ${firstFailure.exitCode}); automatic retry passed]`);
     }
   }
-  return { passed: true, ...(recoveredRetries.length ? { recoveredRetryNote: recoveredRetries.join(" ") } : {}) };
+  return { passed: true, outcome: "pass", ...(recoveredRetries.length ? { recoveredRetryNote: recoveredRetries.join(" ") } : {}) };
+}
+
+/** v0.38.103: shaped verdict for a non-passing mechanical result — pure so
+ * the pre-audit call site and its test share it. `fail` becomes the
+ * historical fast-fail disapproval; `inconclusive` becomes an infra error
+ * (approved:false, disapproved:false) that enters the durable retry plan
+ * instead of the rework loop. */
+export interface MechanicalPreAuditVerdict {
+  approved: boolean;
+  disapproved: boolean;
+  impossible: false;
+  error?: string;
+  output: string;
+}
+
+export function mechanicalPreAuditVerdict(result: MechanicalCheckResult): MechanicalPreAuditVerdict {
+  const evidence = result.output ?? "";
+  if (result.outcome === "inconclusive") {
+    const reason = result.inconclusiveReason ?? "unknown";
+    return {
+      approved: false,
+      disapproved: false,
+      impossible: false,
+      error: `mechanical gate inconclusive (${reason}): \`${result.failedCommand ?? "contract command"}\` could not complete — not a verdict on the work`,
+      output: `Deterministic Pre-Audit Inconclusive: Mechanical contract check ${reason}: \`${result.failedCommand ?? "contract command"}\`\n\n<evidence>\n${evidence}\n</evidence>`,
+    };
+  }
+  return {
+    approved: false,
+    disapproved: true,
+    impossible: false,
+    output: `<disapproved/>\n\nDeterministic Pre-Audit Fast-Fail: Mechanical contract check failed: \`${result.failedCommand}\` (exit code ${result.exitCode})\n\n<evidence>\n${evidence}\n</evidence>`,
+  };
 }
