@@ -99,22 +99,26 @@ test("v0.38.101 a shrinking objection set is progress", () => {
 });
 
 test("v0.38.101 containment is asymmetric — a later preamble does not mask repetition", () => {
-  // The newer round carries extra wrapper text (a rework banner / continuation
-  // marker) that the previous one lacked. Symmetric similarity would under-read
-  // this as progress; containment correctly reads it as the same objection.
-  const previous = "## Required fixes\n1. Resolve the strike-registration finding at its actual cause.";
-  const next =
+  // The newer round carries extra wrapper text (a goal id, a "round 4" banner)
+  // that the older one lacked. Symmetric similarity would under-read this as
+  // progress; containment (denominated by the OLDER report) correctly reads it
+  // as the same objection. Argument order is (newer, older).
+  const older = "## Required fixes\n1. Resolve the strike-registration finding at its actual cause.";
+  const newer =
     "Goal: 20260927013024-3nxfx (round 4 of rework). ## Required fixes\n1. Resolve the strike-registration finding at its actual cause.";
-  const score = auditDisapprovalContainment(previous, next);
+  const score = auditDisapprovalContainment(newer, older);
   assert.ok(score >= AUDIT_NO_PROGRESS_CONTAINMENT, `expected repetition, got ${score.toFixed(3)}`);
+  // And the reverse direction is deliberately not the measure: the older round
+  // IS fully contained in the newer, so this also reads 1.0.
+  assert.equal(auditDisapprovalContainment(older, newer), 1);
 });
 
 test("v0.38.101 containment ignores prose that carries no signal", () => {
   // Two unrelated rounds that share only function words must NOT score as
   // repetition — otherwise the detector fires on a moving goal.
-  const a = "## Required fixes\n1. Guard the stale resume path in the dispatcher.";
-  const b = "## Required fixes\n1. Document the process-group containment fence.";
-  const score = auditDisapprovalContainment(a, b);
+  const older = "## Required fixes\n1. Guard the stale resume path in the dispatcher.";
+  const newer = "## Required fixes\n1. Document the process-group containment fence.";
+  const score = auditDisapprovalContainment(newer, older);
   assert.ok(
     score < AUDIT_NO_PROGRESS_CONTAINMENT,
     `unrelated findings must not read as repetition, got ${score.toFixed(3)}`,

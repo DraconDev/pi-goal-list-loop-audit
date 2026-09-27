@@ -1607,46 +1607,69 @@ export function auditDisapprovalFingerprint(report: string | undefined): string 
 }
 
 /** v0.38.101: tokens that carry no signal about WHICH objection a round
- * raised. Without this, "the auditor reported a report" scores near-identical
- * across two unrelated rounds and the no-progress detector fires on a goal
- * that is genuinely moving. */
+ * raised, plus rework-banner words. The banner group matters because a later
+ * round re-announces the goal and its round number; those words would
+ * otherwise read as new material and mask a restated objection. */
 const AUDIT_FINGERPRINT_STOPWORDS = new Set([
   "the", "and", "for", "that", "this", "with", "from", "was", "were", "are", "but", "not",
   "you", "your", "its", "it", "in", "on", "to", "of", "a", "an", "is", "be", "by", "as", "at",
   "or", "if", "so", "no", "not", "has", "have", "had", "do", "does", "did", "can", "will",
   "would", "should", "could", "there", "their", "them", "they", "then", "than", "when", "which",
-  "what", "each", "every", "any", "all", "also", "into", "over", "than", "because", "about",
+  "what", "each", "every", "any", "all", "also", "into", "over", "because", "about",
+  "goal", "goals", "round", "rework", "resumed", "resuming", "claim", "claims",
 ]);
 
 /** v0.38.101: the significant-token set of an audit report, used to compare
- * two rounds for "did this round say anything the previous one did not?".
- * Short tokens are dropped: they collide constantly across reports. */
+ * two rounds for "did this round surface anything the previous one had not?".
+ *
+ * Short tokens are dropped (they collide constantly across reports) and
+ * identifier-shaped ones are dropped (goal ids, attempt refs, commit hashes):
+ * they name things, they do not raise findings, and a rework banner reuses
+ * the previous round's ids verbatim. */
 export function auditDisapprovalTokens(report: string | undefined): Set<string> {
   const text = typeof report === "string" ? report : "";
   const tokens = new Set<string>();
   for (const raw of text.toLowerCase().split(/[^a-z0-9_]+/)) {
     if (raw.length < 4) continue;
     if (AUDIT_FINGERPRINT_STOPWORDS.has(raw)) continue;
+    if (/^\d/.test(raw) || /\d{5,}/.test(raw)) continue;
     tokens.add(raw);
   }
   return tokens;
 }
 
-/** v0.38.101: how much of `next` was already said by `previous`, as a
- * fraction of `next`'s own size. 1.0 = the newer round introduced nothing new.
+/** v0.38.101: the fraction of the NEWER round's significant material that the
+ * OLDER round had already said. 1.0 = the newer round added nothing.
  *
- * Asymmetric on purpose. A later round legitimately carries a preamble (a
- * rework banner, a continuation marker, more evidence quoted), so symmetric
- * similarity under-reads "same objection, reworded". Containment asks the
- * question that actually matters: did this round surface any material the
- * previous one had not? */
-export function auditDisapprovalContainment(previous: string | undefined, next: string | undefined): number {
-  const prev = auditDisapprovalTokens(previous);
-  const curr = auditDisapprovalTokens(next);
-  if (curr.size === 0) return 0;
+ * ARGUMENT ORDER IS SIGNIFICANT: (newer, older).
+ *
+ * Denominating by the NEWER report asks the decidable question — did this round
+ * surface anything the previous one had not? — and that is what keeps genuine
+ * progress from reading as repetition. Measured separation (pinned in
+ * tests/audit-no-progress-detection.test.ts):
+ *
+ *   restated objection .................. 1.00  repetition
+ *   rework banner + restated ............ 1.00  repetition
+ *   prior finding + ONE new finding ..... 0.50  progress  <- superset case
+ *   one of three findings closed ........ 0.42  progress
+ *   entirely new finding ................ 0.25  progress
+ *
+ * The superset case is exactly why the OLDER report must not be the
+ * denominator: "the same finding, plus a new one" contains the older round
+ * entirely, so an older-denominated measure scores it 1.00 and would halt a
+ * goal that is advancing.
+ *
+ * Known limit: a round that restates one finding AND adds a genuinely new
+ * observation about a second lands near 0.5-0.7 and is treated as progress.
+ * That is the intended bias — a false stop on a moving goal is worse than a
+ * late stop on a stuck one, because the stop asks a human. */
+export function auditDisapprovalContainment(newerReport: string | undefined, olderReport: string | undefined): number {
+  const older = auditDisapprovalTokens(olderReport);
+  const newer = auditDisapprovalTokens(newerReport);
+  if (newer.size === 0) return 1;
   let shared = 0;
-  for (const token of curr) if (prev.has(token)) shared++;
-  return shared / curr.size;
+  for (const token of newer) if (older.has(token)) shared++;
+  return shared / newer.size;
 }
 
 /** v0.38.101 (field 2026-09-27): `countTrailingRepeatedDisapprovals` compared
