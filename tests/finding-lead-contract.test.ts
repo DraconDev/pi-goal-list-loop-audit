@@ -49,7 +49,9 @@ test("canonical and legacy Lead inputs render the same outcome/evidence", () => 
     groups: [{ title: "Popup", findings: ["Lead: Users can complete a browser-action fill — src/popup.ts:120-184"] }],
   });
   assert.deepEqual(canonical.findingLines, legacy.findingLines);
-  assert.equal(canonical.findingLines[1], "- **Users can complete a browser-action fill** — src/popup.ts:120-184");
+  // v0.38.102: the gist is the bullet; evidence is indented beneath it.
+  assert.equal(canonical.findingLines[1], "- **Users can complete a browser-action fill**");
+  assert.equal(canonical.findingLines[2], "  - src/popup.ts:120-184");
   assert.doesNotMatch(canonical.findingLines.join("\n"), /Lead/);
 });
 
@@ -68,7 +70,10 @@ test("legacy topical and semantic labels are not exposed as finding labels", () 
     const line = parts.findingLines.find((l) => l.startsWith("- "));
     assert.ok(line, `rendered ${input}`);
     assert.doesNotMatch(line, /\*\*Lead\*\*|\*\*Paragraph routing\*\*|\*\*Outcome\*\*|\*\*Fix\*\*/);
-    assert.match(line, /— .*src\//, `evidence retained for ${input}`);
+    // v0.38.102: evidence rides indented beneath the gist rather than trailing
+    // it on the same line, so a long reason cannot bury the outcome.
+    const evidence = parts.findingLines[parts.findingLines.indexOf(line) + 1] ?? "";
+    assert.match(evidence, /^ {2}- .*src\//, `evidence retained for ${input}`);
   }
 });
 

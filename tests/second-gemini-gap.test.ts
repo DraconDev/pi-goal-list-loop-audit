@@ -107,7 +107,9 @@ test("v0.38.52: sanitizeFindingGroups parses parallel tests", () => {
 test("v0.38.52: old claims without tests render byte-identical to v0.38.50", () => {
   const legacy: FindingGroup[] = [{ title: "R", findings: ["Reroute: router.ts:12 pins the path"] }];
   const p = parts({ groups: legacy, gates: [] });
-  assert.ok(p.findingLines.includes("- **pins the path** — router.ts:12"), "legacy finding normalized to outcome/evidence");
+  // v0.38.102: gist on the bullet, evidence indented beneath.
+  assert.ok(p.findingLines.includes("- **pins the path**"), "legacy finding normalized to an outcome headline");
+  assert.ok(p.findingLines.includes("  - router.ts:12"), "evidence rides indented beneath it");
   assert.ok(!p.findingLines.some((l) => l.includes("Evidence:")), "no invented sub-line");
 });
 
