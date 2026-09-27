@@ -238,3 +238,9 @@
 {"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-27T02:46:02.968Z"}
 {"type":"id_invalidation","value":{"oldId":"01a0e0c0-485d-74ac-9177-9d2c447c0ce4","newId":"01a0e000-68e5-7525-86ad-47c5230c45f8","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-27T02:46:02.973Z"},"at":"2026-09-27T02:46:02.973Z"}
 {"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-27T02:46:05.904Z"}
+{"type":"session_rebound","value":{"reason":"startup"},"at":"2026-09-27T02:46:14.247Z"}
+{"type":"id_invalidation","value":{"oldId":"01a0e000-68e5-7525-86ad-47c5230c45f8","newId":"01a0e0c1-6b3d-7043-bd01-101273458f4e","reason":"session_shutdown","shutdownReason":"quit","at":"2026-09-27T02:46:14.260Z"},"at":"2026-09-27T02:46:14.260Z"}
+{"type":"session_waiting_for_load","value":{"reason":"startup"},"at":"2026-09-27T02:46:14.260Z"}
+{"type":"session_shutdown","value":{"reason":"resume"},"at":"2026-09-27T02:48:00.093Z"}
+{"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-27T02:48:01.138Z"}
+{"type":"id_invalidation","value":{"oldId":"01a0e0c1-6b3d-7043-bd01-101273458f4e","newId":"01a0e000-68e5-7525-86ad-47c5230c45f8","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-27T02:48:01.150Z"},"at":"2026-09-27T02:48:01.150Z"}
