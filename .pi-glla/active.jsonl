@@ -275,3 +275,4 @@
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":null,"contextUsage":{"tokens":324466,"contextWindow":1000000,"percent":32.4466}},"at":"2026-09-27T23:52:29.033Z"}
 {"type":"session_shutdown","value":{"reason":"reload"},"at":"2026-09-27T23:52:35.195Z"}
 {"type":"session_rebound","value":{"reason":"reload"},"at":"2026-09-27T23:52:38.849Z"}
+{"type":"payload_guard_eviction","value":{"evicted":11,"bytesFreed":3688308,"remainingImageBytes":2869496,"remainingImageCount":4,"generation":568},"at":"2026-09-27T23:54:19.143Z"}
