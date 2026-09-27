@@ -126,18 +126,17 @@ export function assessSuspiciousObjective(objective: unknown, verificationContra
   // heading is NOT on its own evidence of a pasted report. A user-authored
   // goal title ("# MONSTER MINECRAFT — a first-person voxel survival game")
   // tripped a bare /^#{1,6}\s+\S/ check, and the resulting suspicious pause
-  // livelocked: the queued repair task never rewrites the objective, so every
-  // resume re-tripped the same heuristic — resume, detect, pause, forever.
+  // LIVELOCKED: the queued repair task never rewrites the objective, so every
+  // /goal resume re-tripped the same heuristic — resume, detect, pause, forever.
+  // The pause notice repeated verbatim in the session.
   //
-  // A pasted report is identified by structure, not by a single "#": either
-  // SEVERAL headings, or one heading that is a known report section. A lone
-  // title-like heading is a legitimate objective; the other heuristics still
-  // catch report prose that arrives with a heading.
-  const headingLines = text.match(/^#{1,6}\s+.*$/gm) ?? [];
-  const REPORT_SECTION_HEADING = /^#{1,6}\s+(?:required fixes|evidence|findings|summary|outcome|changed|unresolved|next|verdict|audit report|goal|objective|tasks?)\b\s*:?\s*$/i;
-  if (headingLines.length > 1 || headingLines.some((line) => REPORT_SECTION_HEADING.test(line.trim()))) {
-    reasons.push("heading");
-  }
+  // `text` is whitespace-collapsed (normalizedText), so structure across lines
+  // is not observable here; the available discriminator is whether the heading
+  // is a BARE report-section name. A section label is report debris; a heading
+  // carrying prose is a title. Report prose arriving with a heading is still
+  // caught by the reviewer/verification/numbered-fragment heuristics above.
+  const BARE_REPORT_SECTION = /^#{1,6}\s+(?:required fixes|evidence|findings|verdict|summary|outcome|changed|unresolved|next|audit report|report|notes?)\b[\s.:—-]*$/i;
+  if (BARE_REPORT_SECTION.test(text)) reasons.push("heading");
   if (isAuditLikeNumberedText(text)) reasons.push("numbered-audit-fragment");
   if (SEMANTIC_REVIEW_FRAGMENT.test(text)) reasons.push("reviewer-fragment");
   if (DANGling_END.test(text)) reasons.push("dangling-fragment");

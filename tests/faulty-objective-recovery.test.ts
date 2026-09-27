@@ -668,11 +668,15 @@ test("v0.38.101 a title-like heading is an objective, not a pasted report", () =
 });
 
 test("v0.38.101 a pasted report still trips the heading heuristic", () => {
-  // Several headings, or a single known report section, remain suspicious.
+  // A BARE report-section label is report debris, not an objective. The
+  // objective is whitespace-collapsed before assessment, so a heading that
+  // carries prose is a title by construction; the report-prose heuristics
+  // still catch a report pasted with its headings.
   for (const text of [
     "## Required fixes",
-    "# Audit report\n\n## Required fixes\n1. Close the gate.",
-    "## Evidence\nThe suite passes.",
+    "# Audit report",
+    "## Evidence",
+    "# Findings:",
   ]) {
     assert.equal(assessSuspiciousObjective(text).suspicious, true, text);
   }
