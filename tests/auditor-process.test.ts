@@ -1130,6 +1130,10 @@ setInterval(() => {}, 1_000);
         pollIntervalMs: 10,
         wallTimeoutMs: 10_000,
         toolTimeoutMs: 100,
+        // v0.38.99: the parent grants the worker a window to cancel the
+        // over-budget tool and resume before the hard kill. Zero grace keeps
+        // this test on the watchdog-only path: the kill is the only exit.
+        toolCancelGraceMs: 0,
       },
     });
     assert.equal(result.approved, false);
