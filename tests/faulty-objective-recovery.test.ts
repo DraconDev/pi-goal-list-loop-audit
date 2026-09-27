@@ -646,3 +646,34 @@ test("audit-2026-09-06: archivedPath inside the archive dir still fences", async
   assert.equal(guardGoalBeforeContinuation(ctx as any, "fence-test", String((g as any).id)), false);
   assert.match(ledger(cwd), /"faulty_objective_archive_fence"/);
 });
+
+// v0.38.101 — field 2026-09-27, monster-minecraft.
+//
+// A goal titled "# MONSTER MINECRAFT — a first-person voxel survival game"
+// tripped the bare heading heuristic, and the suspicious pause it produced
+// LIVELOCKED: the queued repair task never rewrites the objective, so every
+// /goal resume re-tripped the same check — resume, detect, pause, forever.
+// The pause message repeated verbatim in the session.
+//
+// A pasted report is identified by structure (several headings, or one
+// heading that is a known report section), not by a single "#".
+test("v0.38.101 a title-like heading is an objective, not a pasted report", () => {
+  for (const text of [
+    "# MONSTER MINECRAFT — a first-person voxel survival game where you are",
+    "# GLLA — harden the audit landing path",
+    "## Notes\nAdd a short design note describing the choice and its tradeoffs",
+  ]) {
+    assert.equal(assessSuspiciousObjective(text).suspicious, false, text);
+  }
+});
+
+test("v0.38.101 a pasted report still trips the heading heuristic", () => {
+  // Several headings, or a single known report section, remain suspicious.
+  for (const text of [
+    "## Required fixes",
+    "# Audit report\n\n## Required fixes\n1. Close the gate.",
+    "## Evidence\nThe suite passes.",
+  ]) {
+    assert.equal(assessSuspiciousObjective(text).suspicious, true, text);
+  }
+});

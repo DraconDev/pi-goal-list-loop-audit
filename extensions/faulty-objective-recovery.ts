@@ -125,16 +125,17 @@ export function assessSuspiciousObjective(objective: unknown, verificationContra
   // v0.38.101 (field 2026-09-27, monster-minecraft): a leading markdown
   // heading is NOT on its own evidence of a pasted report. A user-authored
   // goal title ("# MONSTER MINECRAFT — a first-person voxel survival game")
-  // trips a bare /^#{1,6}\s+\S/ check, and the resulting suspicious pause
-  // livelocks: the queued repair task never rewrites the objective, so every
-  // resume re-trips the same heuristic — resume, detect, pause, forever.
+  // tripped a bare /^#{1,6}\s+\S/ check, and the resulting suspicious pause
+  // livelocked: the queued repair task never rewrites the objective, so every
+  // resume re-tripped the same heuristic — resume, detect, pause, forever.
   //
-  // A pasted audit report has structure: SEVERAL headings, or a heading
-  // followed by report sections. Require that corroboration. A single
-  // heading line that reads as a title stays a legitimate objective; the
-  // other heuristics still catch a heading that arrives with report prose.
-  const headingLines = text.match(/^#{1,6}\s+\S.*$/gm) ?? [];
-  if (headingLines.length > 0 && (headingLines.length > 1 || /^#{1,6}\s+\S[\s\S]*(?:^#{1,6}\s+\S|##\s|Required fixes|Evidence)/m.test(text))) {
+  // A pasted report is identified by structure, not by a single "#": either
+  // SEVERAL headings, or one heading that is a known report section. A lone
+  // title-like heading is a legitimate objective; the other heuristics still
+  // catch report prose that arrives with a heading.
+  const headingLines = text.match(/^#{1,6}\s+.*$/gm) ?? [];
+  const REPORT_SECTION_HEADING = /^#{1,6}\s+(?:required fixes|evidence|findings|summary|outcome|changed|unresolved|next|verdict|audit report|goal|objective|tasks?)\b\s*:?\s*$/i;
+  if (headingLines.length > 1 || headingLines.some((line) => REPORT_SECTION_HEADING.test(line.trim()))) {
     reasons.push("heading");
   }
   if (isAuditLikeNumberedText(text)) reasons.push("numbered-audit-fragment");
