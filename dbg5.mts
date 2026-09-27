@@ -1,0 +1,11 @@
+import { auditDisapprovalSimilarity } from "./extensions/goal-loop-core.ts";
+const S = (n: string, o: string, x: string) => console.log(auditDisapprovalSimilarity(x, o).toFixed(3), n);
+const strike = "## Required fixes\n1. Resolve the strike-registration finding at its actual cause.";
+S("restated strike", strike, "## Required fixes\n1. The strike-registration finding must be resolved at its actual cause, not at the probe.");
+S("superset +1", strike, strike + "\n2. Add the buildable-state test.");
+S("new unrelated", strike, "## Required fixes\n1. Document the process-group containment fence.");
+const fb1 = "## Required fixes\n1. Close L31, L32, L33 and L117 with real two-sided anchored index rows, and delete the 'no anchor exists' rows.";
+const fb2 = "## Required fixes\n1. The seven documented non-passes were avoidable; close L31, L32, L33 and L117 with real anchored index rows instead of documenting them.";
+const fb3 = "## Required fixes\n1. Seven documented non-passes remain avoidable. Close L31, L32, L33 and L117 with genuine two-sided anchored index rows.";
+S("football r1->r2", fb1, fb2);
+S("football r2->r3", fb2, fb3);

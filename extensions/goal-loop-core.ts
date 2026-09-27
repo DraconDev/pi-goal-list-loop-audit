@@ -1672,6 +1672,38 @@ export function auditDisapprovalContainment(newerReport: string | undefined, old
   return shared / newer.size;
 }
 
+/** v0.38.101: symmetric similarity for "did this round say anything new?".
+ *
+ * Each containment direction alone has a blind spot, and both were observed:
+ *   - denominator = OLDER  -> a superset ("same finding, plus a new one")
+ *     scores 1.00 and would halt a goal that is advancing.
+ *   - denominator = NEWER  -> a shrinking set (three findings closed down to
+ *     one) scores 1.00 for the same reason.
+ *
+ * Taking the MINIMUM of the two directions removes both blind spots: progress
+ * in either direction lowers the score, and only a genuine restatement keeps
+ * both high.
+ *
+ * Measured separation — every case is pinned in
+ * tests/audit-no-progress-detection.test.ts, and the threshold sits in the gap:
+ *
+ *   identical report ................. 1.00   repetition
+ *   restated in new words ........... 0.70   repetition
+ *   rework banner + restated ......... 1.00   repetition
+ *   ---------------------------------------------
+ *   old finding + ONE new finding ... 0.50   progress   (superset)
+ *   one of three findings closed .... 0.42   progress   (shrunk set)
+ *   entirely new finding ............ 0.25   progress
+ *
+ * ARGUMENT ORDER IS (newer, older) to match auditDisapprovalContainment; the
+ * minimum makes it immaterial. */
+export function auditDisapprovalSimilarity(newerReport: string | undefined, olderReport: string | undefined): number {
+  return Math.min(
+    auditDisapprovalContainment(newerReport, olderReport),
+    auditDisapprovalContainment(olderReport, newerReport),
+  );
+}
+
 /** v0.38.101 (field 2026-09-27): `countTrailingRepeatedDisapprovals` compared
  * the first 2 000 characters for EXACT equality, so it only ever fired when an
  * LLM emitted byte-identical reports three rounds running. A real auditor
@@ -1686,7 +1718,7 @@ export function auditDisapprovalContainment(newerReport: string | undefined, old
  * findings, so it stays well below; a stuck goal re-raises the same material
  * in new words and lands at 1.0. Pinned by tests in
  * tests/audit-no-progress-detection.test.ts. */
-export const AUDIT_NO_PROGRESS_CONTAINMENT = 0.9;
+export const AUDIT_NO_PROGRESS_CONTAINMENT = 0.6;
 
 export function countTrailingRepeatedDisapprovals(history: AuditVerdict[]): number {
   let n = 0;
@@ -1708,7 +1740,7 @@ export function countTrailingRepeatedDisapprovals(history: AuditVerdict[]): numb
     // unreachable for a natural-language auditor, so it made this detector
     // dead code; containment asks the decidable question instead — did this
     // round surface any material the previous one had not?
-    if (auditDisapprovalContainment(previousReport, report) < AUDIT_NO_PROGRESS_CONTAINMENT) break;
+    if (auditDisapprovalSimilarity(previousReport, report) < AUDIT_NO_PROGRESS_CONTAINMENT) break;
     if (typeof revision === "number" && typeof verdict.revision === "number" && verdict.revision !== revision) break;
     previousReport = report;
     n++;
