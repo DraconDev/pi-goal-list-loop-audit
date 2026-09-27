@@ -1,5 +1,9 @@
 # Prio
 
+##
+/home/dracon/Pictures/Screenshots/Screenshot_20260927_115857.png
+we should make hte summary clear, like in the remaining sectinion we can just indent a list instead of duming everything into the left out parag
+
 # Now
 
 # Later
