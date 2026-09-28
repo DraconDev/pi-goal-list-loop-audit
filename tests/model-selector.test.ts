@@ -360,9 +360,12 @@ test("retryDelayMs returns the same value as mainModelFailureDelayMs (default ba
   const fromSel = sel.retryDelayMs(SESSION, failure, attempt, nowMs);
   const fromRaw = mainModelFailureDelayMs(failure, attempt, 15, nowMs);
   assert.equal(fromSel, fromRaw);
-  // Retry-after prose is deliberately ignored: every first provider retry is
-  // eager and uniform.
-  assert.equal(sel.retryDelayMs(SESSION, failure, 1, nowMs), 5_000);
+  // v0.38.105: an upstream reset hint outranks the eager first-retry quantum —
+  // the hint is the provider telling us when it will accept requests again.
+  // The eager 5s remains for every failure WITHOUT a hint.
+  assert.equal(sel.retryDelayMs(SESSION, failure, 1, nowMs), 2 * 60 * 60_000, "attempt 1 honors the named reset");
+  const hintless = classifyMainModelFailure("the provider closed the stream");
+  assert.equal(sel.retryDelayMs(SESSION, hintless, 1, nowMs), 5_000, "a hintless first failure is still eager");
   // Scope does not change the outcome (currently scope-agnostic):
   assert.equal(sel.retryDelayMs(EXPLORE, failure, attempt, nowMs), fromSel);
   // Default nowMs is also wired:
