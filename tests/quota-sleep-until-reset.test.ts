@@ -9,9 +9,10 @@
 //      explicit upstream reset hint sleep exactly until reset.
 //   2. The eager first retry stays eager (5s) even with a hint present.
 //   3. Hints never widen the envelope: capped at the 5h per-attempt max.
-//   4. Non-quota signals (transient, billing, unknown) ignore hints and keep
-//      the blind ladder — error prose still cannot choose a cadence there,
-//      and billing still heads for the park.
+//   4. Non-quota signals (transient, billing, unknown) ignore hints.
+//      v0.38.109: transient no longer keeps the blind ladder either — it
+//      retries eagerly (operator direction: transient weather hammers).
+//      Billing/unknown still ladder; billing still heads for the park.
 //   5. The classifier stays opaque (kind/quotaSignal pins untouched).
 
 import { test } from "node:test";
@@ -57,7 +58,9 @@ test("quota sleep-until-reset: hintless quota failures keep the blind ladder", (
 
 test("quota sleep-until-reset: non-quota signals ignore hints", () => {
   const transient = classifyMainModelFailure("503 Service Unavailable; retry in 2 hours");
-  assert.equal(mainModelFailureDelayMs(transient, 2, 15), 30 * 60_000, "transient keeps the ladder");
+  // v0.38.109: the hint prose is still ignored (no quota signal), but the
+  // transient kind now retries eagerly instead of laddering to 30m.
+  assert.equal(mainModelFailureDelayMs(transient, 2, 15), 5_000, "transient ignores the hint AND stays eager");
   const billing = classifyMainModelFailure("insufficient credits — buy credits; retry in 2 hours");
   assert.equal(mainModelFailureDelayMs(billing, 2, 15), 30 * 60_000, "billing keeps the ladder toward its park");
 });
