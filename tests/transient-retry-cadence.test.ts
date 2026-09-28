@@ -30,7 +30,10 @@ import {
   TRANSIENT_LADDER_CAP_MINUTES,
 } from "../extensions/main-model-recovery.js";
 import {
+  currentSubagentObservations,
   describeSubagentTerminal,
+  observeCurrentSubagentComplete,
+  observeCurrentSubagentProgress,
   observeCurrentSubagentTerminal,
   subagentTerminalAlreadyRecorded,
   __testOnlyClearSubagentHangProbes,
@@ -126,6 +129,13 @@ test("describeSubagentTerminal: transient text is eager, walls and aborts are no
   assert.equal(clean.failed, false);
   assert.equal(clean.eager, false);
 
+  // Audit: numeric-string codes read exactly like the observer's loose check.
+  const stringCode = describeSubagentTerminal({ id: "run-strcode", exitCode: "137" })!;
+  assert.equal(stringCode.failed, true);
+  assert.equal(stringCode.eager, true);
+  const stringZero = describeSubagentTerminal({ id: "run-strzero", exitCode: "0" })!;
+  assert.equal(stringZero.failed, false);
+
   assert.equal(describeSubagentTerminal({}), undefined, "no record id, no decision");
 
   const long = describeSubagentTerminal({ id: "run-long", hasError: true, error: `boom: ${"x".repeat(500)}` })!;
@@ -139,6 +149,26 @@ test("subagentTerminalAlreadyRecorded: the nudge fires once per run", () => {
   observeCurrentSubagentTerminal(data);
   assert.equal(subagentTerminalAlreadyRecorded(data), true);
   assert.equal(subagentTerminalAlreadyRecorded({}), true, "no id records nothing");
+});
+
+test("audit: terminal precedence holds in every event order", () => {
+  const stamp = Date.now();
+  const failedFirst = `prec-fc-${stamp}`;
+  observeCurrentSubagentTerminal({ id: failedFirst, hasError: true, error: "boom" });
+  observeCurrentSubagentComplete({ id: failedFirst });
+  assert.equal(currentSubagentObservations.get(failedFirst)?.status, "failed", "late complete never rewrites a failure");
+  assert.equal(currentSubagentObservations.get(failedFirst)?.terminal, true);
+
+  const completeFirst = `prec-cf-${stamp}`;
+  observeCurrentSubagentComplete({ id: completeFirst });
+  observeCurrentSubagentTerminal({ id: completeFirst, hasError: true, error: "boom" });
+  assert.equal(currentSubagentObservations.get(completeFirst)?.status, "failed", "failed always applies, even after complete");
+
+  const progressLate = `prec-pl-${stamp}`;
+  observeCurrentSubagentTerminal({ id: progressLate, exitCode: 0 });
+  observeCurrentSubagentProgress({ id: progressLate });
+  assert.equal(currentSubagentObservations.get(progressLate)?.status, "stopped");
+  assert.equal(currentSubagentObservations.get(progressLate)?.terminal, true, "late progress never clears a terminal flag");
 });
 
 test("wiring: the process-terminal handler ledger-nudges eager child failures", () => {

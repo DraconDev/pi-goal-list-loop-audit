@@ -614,7 +614,7 @@ function observeCurrentSubagent(data: unknown, terminalStatus?: string): void {
     ...(parentWorkflowRunId !== undefined ? { parentAgentId: parentWorkflowRunId } : {}),
     ...(eventNumber(data, "startedAt") !== undefined ? { startedAt: eventNumber(data, "startedAt") } : {}),
     ...(eventNumber(data, "lastActivityAt") !== undefined ? { lastActivityAt: eventNumber(data, "lastActivityAt") } : {}),
-    ...(terminalStatus ? { status: terminalStatus, terminal: true } : { status: prior?.status ?? "running", terminal: false }),
+    ...terminalPatch,
   };
   currentSubagentObservations.set(id, next);
 }
