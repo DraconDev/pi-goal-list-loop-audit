@@ -254,7 +254,18 @@ export const RESUMABLE_STOP = (r?: string): boolean =>
   // v0.38.27 (ported from Bjynt's PR #46): /loop pause is a soft-hold
   // parallel to /goal pause. The loop stays resumable; finishLoopGit
   // was skipped, so resume picks up iteration/best/history verbatim.
-  !!r?.startsWith("paused by user (/loop pause)");
+  !!r?.startsWith("paused by user (/loop pause)") ||
+  // v0.38.108 (audit finding): parkLoopOnWrongBranch parks with
+  // "branch changed — expected X, current Y (where)" and its notification
+  // promises the resume path ("check out X explicitly, then resume"). This
+  // predicate never matched that prefix, so /loop resume answered "No held
+  // loop to resume" and the loop's iteration/best/history were unreachable
+  // without a fresh /loop start — the same drift class already fixed for
+  // the "metric never moved" and "automatic zero-stream abort" prefixes.
+  // Resuming is safe: /loop resume refuses while HEAD is off the scratch
+  // branch, which is the exact order the park message tells the user to
+  // follow.
+  !!r?.startsWith("branch changed —");
 
 async function resolveLoopStartConflict(ctx: ExtensionContext, target: string): Promise<boolean> {
   const current = liveObjectives(state);
@@ -364,7 +375,11 @@ async function parkLoopOnWrongBranch(ctx: ExtensionContext, loop: LoopState, whe
     actual: actual.ok ? actual.stdout : "unknown",
     where,
   });
-  ctx.ui.notify(`Loop parked: ${reason}. No add, commit, reset, or checkout was attempted. Check out ${loop.branchName} explicitly, then ${activeGoalSurfaceCommand("resume")}.`, "warning");
+  // v0.38.108: this is a LOOP park, so it must name the LOOP surface. The
+  // goal-keyed helper renders /goal resume or /list resume, and in a
+  // loop-only session that command answers "Nothing to resume"; the repo
+  // already carries recoverySurfaceCommand("loop", …) for exactly this.
+  ctx.ui.notify(`Loop parked: ${reason}. No add, commit, reset, or checkout was attempted. Check out ${loop.branchName} explicitly, then /loop resume.`, "warning");
   notifyExternal(ctx, `Loop parked after HEAD changed: ${reason}`);
   announceQueuedListAfterLoopEnd(ctx);
   return true;

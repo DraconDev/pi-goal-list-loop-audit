@@ -392,3 +392,53 @@ test("parkLoopOnWrongBranch consults HEAD before the in-flight tick guard (sourc
   assert.ok(headCheck >= 0 && guardCheck >= 0, "both the HEAD check and the tick-guard consult exist");
   assert.ok(headCheck < guardCheck, "the HEAD-equality early return precedes the tick-guard consult");
 });
+
+test("a branch-changed park is resumable: /loop resume on the scratch branch keeps the loop's history", async () => {
+  const cwd = tmpCwd();
+  fs.writeFileSync(path.join(cwd, "seed.txt"), "seed\n");
+  git(cwd, "init", "-b", "main");
+  git(cwd, "config", "user.name", "Audit Test");
+  git(cwd, "config", "user.email", "audit@example.test");
+  git(cwd, "add", "seed.txt");
+  git(cwd, "commit", "-m", "init");
+  const branch = "pi-glla-loop/resumable-park";
+  git(cwd, "checkout", "-b", branch);
+  seedState(cwd, {
+    loop: seedLoop({
+      branchName: branch,
+      originalBranch: "main",
+      active: false,
+      iteration: 7,
+      stopReason: `branch changed — expected ${branch}, current main (loop tick git add)`,
+      history: [{ iteration: 6, value: 3, at: new Date().toISOString() }],
+    }),
+  });
+  // The park message tells the user to check the scratch branch out again.
+  git(cwd, "checkout", "main");
+  git(cwd, "checkout", branch);
+  pi.execHandler = realGitExec(cwd, []);
+  const ctx = await boot(cwd);
+  try {
+    await pi.command("loop", "resume", ctx);
+    const loop = readState(cwd).loop as { active: boolean; iteration: number; stopReason?: string; history: unknown[] };
+    assert.equal(loop.active, true, "the held loop resumes — the park is not a dead end");
+    assert.equal(loop.iteration, 7, "iteration count survives the park");
+    assert.equal(loop.history.length, 1, "history survives the park");
+    assert.equal(loop.stopReason, undefined, "the resume clears the park reason");
+  } finally {
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});
+
+test("v0.38.108: the branch-changed park names the loop surface and is in RESUMABLE_STOP (source pins)", async () => {
+  const src = fs.readFileSync(path.join(__dirname, "..", "extensions", "goal-loop.ts"), "utf-8");
+  const fnStart = src.indexOf("async function parkLoopOnWrongBranch(");
+  const body = src.slice(fnStart, src.indexOf("\n}\n", fnStart));
+  assert.match(body, /then \/loop resume\./, "the park promises the LOOP resume, not the goal/list surface");
+  assert.doesNotMatch(body, /activeGoalSurfaceCommand\("resume"\)/, "a loop park never names the goal-keyed resume command");
+  assert.match(
+    src,
+    /RESUMABLE_STOP[\s\S]{0,4000}startsWith\("branch changed —"\)/,
+    "the park reason is resumable, so the command it names actually resumes",
+  );
+});
