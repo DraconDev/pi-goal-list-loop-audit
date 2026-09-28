@@ -341,14 +341,20 @@ export function isEmptyProviderResponse(raw: string | undefined): boolean {
   return EMPTY_PROVIDER_RESPONSE.test(raw);
 }
 
-/** Failures that read as transient weather rather than a wall: the
- * classifier's transient kind, plus empty responses (which classify as
- * unknown but walk like a blip — v0.38.104). Everything else — quota and
- * billing walls, auth, unknown prose, deterministic rejections — keeps the
- * configured ladder. */
+/** Failures that retry eagerly rather than climbing the wall ladder.
+ * v0.38.109 covered transient weather plus empty blips; v0.38.111 fails
+ * OPEN (operator direction 2026-09-28: retry any error aggressively, most
+ * are transient): unclassified prose retries eagerly too. What stays on
+ * the ladder is exactly what hammering cannot help — auth failures,
+ * user aborts and policy refusals (non-recoverable), context overflow —
+ * plus anything carrying an explicit quota signal, hinted or not: when
+ * the provider says "slow down", 5s probes would be backpressure
+ * violation, not diligence. */
 export function isEagerRetryFailure(failure: MainModelFailure | undefined): boolean {
   if (!failure) return false;
-  return failure.kind === "transient" || isEmptyProviderResponse(failure.raw);
+  if (failure.kind !== "transient" && failure.kind !== "unknown" && !isEmptyProviderResponse(failure.raw)) return false;
+  if (quotaSignal(failure.raw)) return false;
+  return true;
 }
 
 /** Post-eager cadence for transient failures. The rung rebases at the end
@@ -380,6 +386,8 @@ export function mainModelFailureDelayMs(failure: MainModelFailure, attempt: numb
   // v0.38.109: transient weather hammers eagerly, then backs off on the
   // short ladder — never the 15m-base wall ladder. Attempt 2 of a 503 used
   // to sleep 30m; the field reads that as "gave up on a blip".
+  // v0.38.111: fails open to unclassified prose too (see
+  // isEagerRetryFailure); explicit quota signals still veto eager.
   if (isEagerRetryFailure(failure)) {
     if (attempt <= TRANSIENT_EAGER_ATTEMPTS) return 5_000;
     return transientRetryDelayMs(attempt, baseMinutes);
@@ -390,9 +398,10 @@ export function mainModelFailureDelayMs(failure: MainModelFailure, attempt: numb
 /** v0.38.109: kind-aware delay for recovery PROBES, which only carry the
  * episode's durable diagnostic text (no live failure object). The probe
  * path used the blind wall ladder for everything — 7 empty responses
- * parked our own repo goal 300m. An empty/missing diagnostic classifies
- * unknown and keeps the historical ladder, so probes without signal behave
- * exactly as before. */
+ * parked our own repo goal 300m. v0.38.111: an empty/missing diagnostic
+ * fails open to eager like any unclassified error — a probe with no
+ * evidence of a wall is a cheap local re-check, and a mid-flight config
+ * fix recovers in minutes instead of hours. */
 export function probeRetryDelayMs(diagnostic: string | undefined, attempt: number, baseMinutes = 15, nowMs = Date.now()): number {
   const raw = typeof diagnostic === "string" ? diagnostic : "";
   const failure = raw.trim() ? classifyMainModelFailure(raw) : { kind: "unknown", raw: "" } as MainModelFailure;

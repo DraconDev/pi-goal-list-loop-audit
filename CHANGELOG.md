@@ -6,6 +6,39 @@ Untagged work since 0.38.103. It stays under this heading until the release
 commit renames it (docs/RELEASING.md); these are descriptive milestones, not
 invented version headers.
 
+### The audit cap covers every round that failed to settle the goal
+
+- The regression shield (auditor approved, evidence contract unmet) and an
+  aggressive `IMPOSIBLE(partial)` verdict both re-activate the goal without
+  disapproving it, so the v0.38.107 hard cap — which counts `disapproved`
+  rounds — returned 0 for both and let them cycle forever. They now pause on
+  the same `auditCapHard`, offering accept / resume / tweak / cancel.
+- `countTrailingUnsettledRounds` is the shared primitive: every trailing round
+  that failed to *settle* the goal, across all verdict classes. An approval and
+  an infra error break the streak; mechanical pre-audit gate rows stay
+  transparent.
+- An alternating primary/fallback auditor ladder no longer defeats the cap by
+  re-baselining the comparable streak to 1 every round. The guard that detects
+  this (`trailingStreakGraderStable`) had no production caller; it is wired
+  now, and the pause reason says which count it used.
+
+### Honesty fixes found by the same pass
+
+- `/goal timeline` counted objections with a raw `superseded` filter while the
+  runtime reads them through a migrate-on-read backfill, so it could tell the
+  user to re-submit work the loop had already accepted.
+- The continuation self-heal budget could never be refilled: the turn-start
+  reset was gated on a live timer, but exhaustion nulls the timer without
+  clearing the counter — so the next stuck episode reported an already-spent
+  budget with zero re-probes.
+- A blank subtask title reached `taskList` persistence and made the goal's own
+  state file fail the published schema. Rejected at the boundary now.
+- `INSTALL.md` said the auditor runs extension-less by default; the mirror is
+  on by default, as `README.md` correctly said.
+- The published schema now types the five completion-claim fields the terminal
+  render actually writes, plus the task deferral stamp, and drops
+  `wallDeadlineAt` — a field no GLLA code has ever written.
+
 ### Provider walls: honest classification and bounded redaction
 
 - An empty provider response is a transient glitch, not a quota wall, and a

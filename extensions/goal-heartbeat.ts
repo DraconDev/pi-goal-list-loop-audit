@@ -33,7 +33,7 @@ import {
   type Goal,
 } from "./goal-loop-core.js";
 import { loadSettings } from "./goal-settings.js";
-import { isCompactionInFlightSince, classifyMainModelFailure, isEmptyProviderResponse, type MainModelFailureKind } from "./main-model-recovery.js";
+import { isCompactionInFlightSince, classifyMainModelFailure, isEagerRetryFailure, type MainModelFailureKind } from "./main-model-recovery.js";
 import {
   HEARTBEAT_STALL_MS,
   PENDING_LATCH_STUCK_MS,
@@ -656,10 +656,11 @@ export interface SubagentTerminalDescription {
   failed: boolean;
   agent?: string;
   /** Classified failure kind; "unknown" when the event carries no text. */
-  kind: MainModelFailureKind | "unknown";
-  /** True when the parent should re-dispatch immediately: transient weather
-   * or an empty blip — never a user abort, policy refusal, auth/billing
-   * wall, or an opaque exit (SIGTERM especially: it may be the user's Esc). */
+  kind: MainModelFailureKind;
+  /** True when the parent should re-dispatch immediately, via the shared
+   * eager predicate (v0.38.111 fails open: unclassified child errors nudge
+   * too). Never a blind SIGTERM (it may be the user's Esc), a user abort,
+   * a policy refusal, auth, or explicit quota backpressure. */
   eager: boolean;
   /** Bounded one-line excerpt for ledger/notify forensics. */
   detail: string;
@@ -697,10 +698,14 @@ export function describeSubagentTerminal(data: unknown): SubagentTerminalDescrip
       || (subagentTerminalExitCode(data) !== undefined && subagentTerminalExitCode(data) !== 0));
   const text = subagentTerminalErrorText(data);
   const exitCode = subagentTerminalExitCode(data);
-  const kind: MainModelFailureKind | "unknown" = text
+  const kind: MainModelFailureKind = text
     ? classifyMainModelFailure(text).kind
     : exitCode === 137 ? "transient" : "unknown";
-  const eager = failed && (kind === "transient" || (!!text && isEmptyProviderResponse(text)));
+  // v0.38.111: the child lane shares the main lane's eager predicate, plus
+  // the SIGTERM guard — a textless 143 may be the user's Esc, and a
+  // re-dispatch nag after an abort would violate stand-down.
+  const sigtermBlind = exitCode === 143 && !text;
+  const eager = failed && !sigtermBlind && isEagerRetryFailure({ kind, raw: text ?? "" });
   const detail = (text ?? (exitCode !== undefined ? `exit code ${exitCode}` : "no detail"))
     .replace(/\s+/g, " ").trim().slice(0, 160);
   const agent = eventString(data, "agent");
@@ -1181,8 +1186,35 @@ function scheduleHeartbeatPoll(generation: number, delayMs?: number): void {
   const cycle = continuousSupervisor.check(state, subagentHangProbes.size);
   const delay = delayMs ?? cycle.pollMs;
   const timer = setTimeout(() => {
-    if (generation !== flags.sessionGeneration || flags.heartbeatTimer !== timer) return;
+    // v0.38.110: release the handle BEFORE the generation check, and re-arm
+    // for the current generation on a mismatch.
+    //
+    // The stale-terminal path deliberately PRESERVES this timer across a
+    // sessionGeneration bump (goal-orchestrator.ts: `if
+    // (!preserveStaleRecovery && heartbeatTimer)`), so that a same-process
+    // handle which becomes healthy again can self-heal without /reload. But
+    // the old order returned on the generation mismatch while still holding
+    // the handle: the timer had fired and was dead, yet `flags.heartbeatTimer`
+    // still pointed at it. Every re-arm site is guarded by `if
+    // (flags.heartbeatTimer) return` (scheduleHeartbeatPoll here, and
+    // startHeartbeat), so the heartbeat could never be re-armed again — the
+    // zombie-abort, wedge, stall, pending-latch, stranded-audit and
+    // subagent-hang watchdogs all went silently dead. Recovery depended on an
+    // unrelated supervision event arriving, which is exactly what the stale
+    // scenario (a silent host, no session_start) does not deliver.
+    //
+    // Releasing the handle first makes the mismatch recoverable; re-arming
+    // under the CURRENT generation is what the preserve path was asking for.
+    // A real session_shutdown still clears and nulls the handle, so this
+    // branch is reachable only on the preserve path.
+    if (flags.heartbeatTimer !== timer) return; // a newer poll owns the handle
     flags.heartbeatTimer = null;
+    if (generation !== flags.sessionGeneration) {
+      // A tick minted for a dead generation must not act, but the watchdog
+      // must survive: re-arm for the live generation.
+      scheduleHeartbeatPoll(flags.sessionGeneration);
+      return;
+    }
     heartbeatExecuting = true;
     try {
       heartbeatTick();

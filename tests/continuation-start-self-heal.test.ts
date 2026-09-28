@@ -109,8 +109,48 @@ test("v0.38.106: an unacknowledged turn start self-heals instead of demanding a 
     const settle = src.slice(src.indexOf("function dispatchStartUnacknowledged"), src.indexOf("function armContinuationStartWatchdog"));
     assert.match(settle, /armContinuationStartSelfHeal\(ctx, record\)/, "the settle arms the self-heal");
     const acked = src.slice(src.indexOf("export function dispatchStartAcknowledged"));
-    assert.match(acked.slice(0, 1_200), /clearContinuationStartSelfHeal\(\)/, "a turn-start proof clears the self-heal and resets the budget");
+    assert.match(acked.slice(0, 2_400), /clearContinuationStartSelfHeal\(\)/, "a turn-start proof clears the self-heal and resets the budget");
   } finally {
     await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
   }
+});
+
+// v0.38.110: the reset was gated on `continuationStartSelfHealTimer` being
+// live. Both terminal paths null the timer WITHOUT clearing the counter —
+// the exhaustion branch and the "lane moved on" cancel — so after the first
+// episode spent its budget the counter stayed pinned at the max. The next
+// stuck episode then armed at the longest delay and immediately reported an
+// already-spent budget with ZERO re-probes, killing the lane's automatic
+// recovery for the rest of the session and blaming a budget spent on a
+// long-resolved episode.
+test("v0.38.110: a turn-start proof resets the budget even when no timer is armed", () => {
+  const src = fs.readFileSync(path.join(__dirname, "..", "extensions", "goal-continuation.ts"), "utf8");
+  const acked = src.slice(src.indexOf("export function dispatchStartAcknowledged"), src.indexOf("export function releaseContinuationDispatchStandDown"));
+  const block = acked;
+
+  // The reset must not sit behind a "timer is live" guard — that guard is
+  // exactly what made the reset unreachable after an exhaustion.
+  assert.doesNotMatch(
+    block,
+    /if \(continuationStartSelfHealTimer\) \{\s*\n\s*appendLedger\([^;]*\);\s*\n\s*clearContinuationStartSelfHeal\(\);\s*\n\s*\}/,
+    "the budget reset must not be conditional on an armed timer",
+  );
+  assert.match(
+    block,
+    /continuationStartSelfHealProbes > 0[\s\S]{0,200}clearContinuationStartSelfHeal\(\)/,
+    "an exhausted counter (timer already null) is still reset on a turn-start proof",
+  );
+  assert.ok(
+    block.indexOf("continuationStartSelfHealProbes > 0") !== -1 && block.indexOf("continuationStartSelfHealProbes > 0") < block.indexOf("clearContinuationStartSelfHeal()"),
+    "the exhausted-counter check must gate the reset call, not follow it",
+  );
+
+  // And the two paths that null the timer must leave the counter consistent:
+  // the exhaustion branch is the one that strands it.
+  const arm = src.slice(src.indexOf("function armContinuationStartSelfHeal"));
+  assert.match(
+    arm,
+    /continuationStartSelfHealTimer = null;[\s\S]{0,900}probe > continuationStartSelfHealMaxProbes/,
+    "exhaustion still nulls the timer first — which is why the reset must not depend on it",
+  );
 });

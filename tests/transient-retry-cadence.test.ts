@@ -76,21 +76,36 @@ test("post-eager transient ladder: 1m base doubling to the 30m cap", () => {
 });
 
 test("walls keep the historical ladder; a reset hint outranks the eager window", () => {
-  for (const raw of ["insufficient credits — buy credits", "401 invalid API key", "mysterious prose"]) {
+  for (const raw of ["insufficient credits — buy credits", "401 invalid API key"]) {
     assert.equal(mainModelFailureDelayMs(transient(raw), 2, 15, nowMs), 30 * 60_000, raw);
   }
   assert.equal(mainModelFailureDelayMs(transient("429 usage limit"), 2, 15, nowMs), 30 * 60_000, "hintless quota still ladders");
+  // v0.38.111: explicit backpressure vetoes eager even for transient kinds —
+  // hammering a named rate limit is violation, not diligence.
+  assert.equal(mainModelFailureDelayMs(transient("503 rate limit exceeded"), 2, 15, nowMs), 30 * 60_000, "hintless signal + transient kind ladders");
   const hinted = transient("503 rate limit exceeded, retry in 300 seconds");
   assert.equal(hinted.kind, "transient");
   assert.equal(mainModelFailureDelayMs(hinted, 2, 15, nowMs), 300_000, "an explicit reset hint beats eager even for transient");
+});
+
+test("v0.38.111: unclassified errors fail open to eager", () => {
+  for (const raw of ["mysterious prose", "something odd happened", "Error: kablam"]) {
+    const f = transient(raw);
+    assert.equal(f.kind, "unknown");
+    assert.ok(isEagerRetryFailure(f), `${raw} must read eager`);
+    assert.equal(mainModelFailureDelayMs(f, 2, 15, nowMs), 5_000, raw);
+    assert.equal(mainModelFailureDelayMs(f, 10, 15, nowMs), 5_000, `${raw} holds the full window`);
+    assert.equal(mainModelFailureDelayMs(f, 11, 15, nowMs), 60_000, `${raw} joins the short ladder after`);
+  }
 });
 
 test("recovery probes use the kind-aware delay (the 300m park)", () => {
   // Our own repo goal: 7 empty responses parked 300m on the blind ladder.
   assert.equal(probeRetryDelayMs("Provider returned an empty response", 7, 15, nowMs), 5_000);
   assert.equal(probeRetryDelayMs("503 upstream overloaded", 2, 15, nowMs), 5_000);
-  assert.equal(probeRetryDelayMs("", 2, 15, nowMs), 30 * 60_000, "no signal keeps the historical ladder");
-  assert.equal(probeRetryDelayMs(undefined, 2, 15, nowMs), 30 * 60_000);
+  // v0.38.111: even a signal-less probe fails open — no evidence of a wall.
+  assert.equal(probeRetryDelayMs("", 2, 15, nowMs), 5_000, "empty diagnostic retries eagerly");
+  assert.equal(probeRetryDelayMs(undefined, 2, 15, nowMs), 5_000);
   assert.equal(probeRetryDelayMs("insufficient credits", 2, 15, nowMs), 30 * 60_000, "walls keep the ladder");
 });
 
@@ -120,10 +135,15 @@ test("describeSubagentTerminal: transient text is eager, walls and aborts are no
   const auth = describeSubagentTerminal({ id: "run-auth", hasError: true, error: "401 invalid API key" })!;
   assert.equal(auth.eager, false, "auth walls are not re-dispatch prompts");
 
+  // v0.38.111: unclassified child failures fail open — the parent gets the
+  // re-dispatch nudge for anything that is not positively a wall/abort.
   const opaque = describeSubagentTerminal({ id: "run-opaque", hasError: true })!;
   assert.equal(opaque.failed, true);
   assert.equal(opaque.kind, "unknown");
-  assert.equal(opaque.eager, false);
+  assert.equal(opaque.eager, true);
+
+  const childQuota = describeSubagentTerminal({ id: "run-cquota", hasError: true, error: "429 Too Many Requests" })!;
+  assert.equal(childQuota.eager, false, "explicit quota backpressure vetoes the child nudge too");
 
   const clean = describeSubagentTerminal({ id: "run-clean", exitCode: 0 })!;
   assert.equal(clean.failed, false);

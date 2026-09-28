@@ -397,11 +397,13 @@ test("main model recovery backs off without giving up", () => {
   for (const raw of [
     "insufficient credits — buy credits",
     "401 invalid API key",
-    "mysterious provider prose with no hint",
   ]) {
     assert.equal(mainModelFailureDelayMs(classifyMainModelFailure(raw), 1, 15, nowMs), 5_000, raw);
     assert.equal(mainModelFailureDelayMs(classifyMainModelFailure(raw), 2, 15, nowMs), 30 * 60_000, raw);
   }
+  // v0.38.111: unclassified prose fails open to eager (operator direction:
+  // retry any error aggressively) — only walls and quota signals ladder.
+  assert.equal(mainModelFailureDelayMs(classifyMainModelFailure("mysterious provider prose with no hint"), 2, 15, nowMs), 5_000);
   // v0.38.109 (operator direction 2026-09-28: transient errors retry
   // aggressively): "503 temporarily unavailable" classifies transient, so
   // attempt 2 is eager 5s now, not the 30m/90m ladder rung. Walls keep the
