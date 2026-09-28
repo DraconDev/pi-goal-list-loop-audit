@@ -1098,11 +1098,19 @@ async function main() {
         // other round-1 outcome finishes exactly as the historical
         // single-shot flow. Round-2 verdicts compose by final line.
         if (round === 1 && (!streamError || hasVerdict) && finalLineIsApproval(output)) {
-          // v0.38.81: light-tier dispatches skip the falsification pass —
+          // v0.38.81: dispatches that skip the falsification pass are
           // recorded as skipped (round 2 never ran), never silent. Falls
           // through to the historical single-shot finish below.
+          //
+          // v0.38.105: name the reason. The parent skips for two different
+          // causes — a light-tier dispatch, or a full-tier one whose rework
+          // streak is past the challenge limit — and labelling both
+          // "light-tier audit" made a full-tier skip look like a tier
+          // decision in /glla stats challenges and the audit history. An
+          // older request carries no reason and keeps the light-tier default.
           if (request.challenge === false) {
-            challengeState = "skipped: light-tier audit";
+            const reason = request.challengeSkip === "rework-streak" ? "rework-streak convergence" : "light-tier audit";
+            challengeState = `skipped: ${reason}`;
           } else {
             void startChallengeRound(output).catch((error) => abandonChallenge(error instanceof Error ? error.message : String(error)));
             return;

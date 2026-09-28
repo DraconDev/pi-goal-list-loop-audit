@@ -1285,6 +1285,14 @@ interface AuditorRequest {
    * the worker skips the falsification pass). Absent = full tier =
    * today's challenge behavior. Part of the request hash. */
   challenge?: boolean;
+  /** v0.38.105: WHY the falsification pass is skipped. The parent sends
+   * `challenge: false` for two different reasons (light tier, or a rework
+   * streak past the challenge limit on a FULL-tier dispatch), and the worker
+   * used to label both "skipped: light-tier audit" — so a full-tier audit that
+   * skipped falsification was durably recorded as a light-tier one and a later
+   * convergence diagnosis read the wrong cause. Optional: an older request (or
+   * an older worker) keeps today's default. Part of the request hash. */
+  challengeSkip?: "light-tier" | "rework-streak";
 }
 
 interface AuditorToolCall {
@@ -1917,7 +1925,10 @@ async function runDetachedGoalCompletionAuditorInner(args: {
       // two disapprovals), not against a goal on its fifth rework. Skipping it
       // lets the single round actually re-verify the objections it raised
       // last time, which is the converging question.
-      ...(args.auditTier === "light" || reworkStreak >= AUDITOR_CHALLENGE_STREAK_LIMIT ? { challenge: false } : {}),
+      const challengeSkip: "light-tier" | "rework-streak" = args.auditTier === "light" ? "light-tier" : "rework-streak";
+      ...(args.auditTier === "light" || reworkStreak >= AUDITOR_CHALLENGE_STREAK_LIMIT
+        ? { challenge: false, challengeSkip }
+        : {}),
     };
     const request: AuditorRequest = { ...requestWithoutHash, requestHash: requestHash(requestWithoutHash) };
     await writeAtomicJson(requestPath, request);

@@ -192,3 +192,35 @@ test("challenge: a light-tier request skips round 2 and records the skip", async
     await cleanup();
   }
 });
+
+test("challenge: a rework-streak skip is NOT recorded as a light-tier audit (v0.38.105)", async () => {
+  // The parent sends `challenge: false` for two different reasons. A full-tier
+  // dispatch whose rework streak passed the challenge limit used to be
+  // recorded as "skipped: light-tier audit", so /glla stats challenges and the
+  // audit history read a convergence decision as a tier decision.
+  const { result, cleanup } = await runWorker(
+    { FAKE_AUDIT_OUTPUT: AUDIT_OUTPUT, FAKE_CHALLENGE_MODE: "confirm" },
+    { challenge: false, challengeSkip: "rework-streak" },
+  );
+  try {
+    assert.equal(result.ok, true);
+    assert.equal(result.challenge, "skipped: rework-streak convergence", "the recorded reason is the real one");
+    assert.ok(!/light-tier/.test(result.challenge ?? ""), "a full-tier skip never claims the light tier");
+    assert.ok(!result.output.includes("challenge round"), "no second spawn for a rework-streak skip");
+  } finally {
+    await cleanup();
+  }
+});
+
+test("challenge: a request with no reason keeps the light-tier default (v0.38.105)", async () => {
+  // An older request (or an older worker pairing) carries only the boolean.
+  const { result, cleanup } = await runWorker(
+    { FAKE_AUDIT_OUTPUT: AUDIT_OUTPUT, FAKE_CHALLENGE_MODE: "confirm" },
+    { challenge: false },
+  );
+  try {
+    assert.equal(result.challenge, "skipped: light-tier audit", "the pre-existing reason is unchanged");
+  } finally {
+    await cleanup();
+  }
+});
