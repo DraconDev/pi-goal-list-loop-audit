@@ -96,6 +96,6 @@ test("continuation prompt carries both policies so active execution sees them", 
   // skeleton no longer carries the phrasing and the two asserts that pinned it
   // were redundant with the assembled-prompt ones. One place states the rule.
   const md = fs.readFileSync(path.resolve("prompts/goal-loop-continuation.md"), "utf8");
-  assert.match(md, /see LONG-RUNNING JUDGMENT POLICY above/i, "EXECUTION DISCIPLINE points at the canonical policy");
-  assert.match(md, /see ACTIVE-EXECUTION QUESTION DISCIPLINE above/i, "and at the canonical question discipline");
+  assert.match(md, /see the judgment policy above/i, "EXECUTION DISCIPLINE points at the canonical policy");
+  assert.match(md, /see the question discipline above/i, "and at the canonical question discipline");
 });

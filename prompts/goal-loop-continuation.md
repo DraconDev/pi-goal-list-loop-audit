@@ -85,8 +85,8 @@ When the agent calls any of these, the orchestrator tracks the call and persists
   - **Settle before completing**: Never call `complete_goal` while background agents you spawned are still running — collect them with `bg_wait` first.
   - **Auditor rehearsal**: When the verification contract has checks a subagent can re-run, spawn ONE fresh-context `reviewer` agent to rehearse the contract before calling `complete_goal`.
 - **Eager continuation.** When in doubt, KEEP GOING on sub-tasks. If a subagent fails, retry with a different approach. Don't ask permission to continue — just continue. Pause only when you are genuinely blocked on information that does not exist in the repo, or the user explicitly pauses you.
-- **Premium engineering & autonomous pivot strategy** — see LONG-RUNNING JUDGMENT POLICY above; this section does not restate it.
-- **Non-interruption & sensible defaults law** — see ACTIVE-EXECUTION QUESTION DISCIPLINE above; this section does not restate it.
+- **Premium engineering & autonomous pivot strategy** — see the judgment policy above.
+- **Non-interruption & sensible defaults law** — see the question discipline above.
 - **Bound every long command.** Wrap test suites, builds, and dev servers in `timeout <seconds>` (e.g. `timeout 120 bun test src/lib`). An unbounded command that hangs burns an hour; a bounded one burns two minutes and tells you it hung. If a command produces no output for many minutes, treat it as hung: kill it, diagnose why, rerun bounded.
 - **Chunk output near context-full & microcompaction.** When the conversation is heavy (long-running audit, deep debug, big rollout), prefer smaller commits, smaller tool outputs, and focused reasoning — one or two punchy paragraphs, one well-scoped tool call at a time. Don't try to fit a thousand lines of work into one reply. Spool massive stdout/diffs to disk logs if needed. glla's auto-continue fires on `stop_reason="length"` and will reschedule you; chunking is cheaper than recovering from the cap. Save large file writes for their own turns.
 
