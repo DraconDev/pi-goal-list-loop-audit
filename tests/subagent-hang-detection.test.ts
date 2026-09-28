@@ -659,9 +659,12 @@ test("v0.38.105 releasing the RPC host unsubscribes the readiness listeners it i
   releaseSubagentRpcHost(bus);
   assert.equal(liveListeners, 0, "a released host leaves no listener behind on the bus");
 
-  // A rebound session re-observing the same bus installs exactly one fresh pair.
+  // A rebound session re-observes and re-binds the same bus: exactly one fresh
+  // pair, and the next release takes it down again (no accumulation).
   observeSubagentRpcReadiness(bus);
   assert.equal(liveListeners, 2, "re-observation after release installs exactly one pair");
+  bindSubagentRpcHost(bus, 8);
+  assert.equal(liveListeners, 2, "rebinding does not stack a second pair");
   releaseSubagentRpcHost(bus);
-  assert.equal(liveListeners, 0, "and releases it again");
+  assert.equal(liveListeners, 0, "and the next release takes it down again");
 });
