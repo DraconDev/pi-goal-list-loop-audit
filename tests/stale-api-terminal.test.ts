@@ -256,3 +256,55 @@ test("v0.34.94: heartbeat only self-heals when the API and context are fresh", (
   assert.match(heartbeatRegion, /rememberCtx\(knownCtx\)/, "same-session recovery gate is reused");
   assert.match(heartbeatRegion, /if \(flags\.staleTerminalDone \|\| flags\.extensionApiStale\) return;/, "ambiguous recovery remains parked");
 });
+
+// v0.38.110 — the stale-recovery heartbeat could never re-arm.
+//
+// The stale-terminal path bumps sessionGeneration but deliberately PRESERVES
+// the heartbeat timer (goal-orchestrator: `if (!preserveStaleRecovery &&
+// heartbeatTimer)`), so a same-process handle that becomes healthy again can
+// self-heal without /reload. But the timer callback checked the generation
+// BEFORE releasing the handle:
+//
+//     if (generation !== flags.sessionGeneration || flags.heartbeatTimer !== timer) return;
+//     flags.heartbeatTimer = null;
+//
+// The preserved timer was armed under the OLD generation, so it always took
+// the early return — still holding a handle to a timer that had already
+// fired and was dead. Every re-arm site is guarded by `if (flags.heartbeatTimer)
+// return` (scheduleHeartbeatPoll and startHeartbeat), so the heartbeat was
+// dead for the rest of the process: the zombie-abort, wedge, stall,
+// pending-latch, stranded-audit and subagent-hang watchdogs all silently
+// stopped. Recovery depended on an unrelated supervision event arriving —
+// exactly what the silent-handle-death scenario does not deliver.
+test("v0.38.110: the preserved heartbeat releases its handle and re-arms across a generation bump", () => {
+  const start = HB.indexOf("function scheduleHeartbeatPoll");
+  const end = HB.indexOf("function heartbeatTick", start);
+  assert.ok(start > 0 && end > start, "scheduleHeartbeatPoll is in scope");
+  const region = HB.slice(start, end);
+
+  // The handle must be released BEFORE the generation comparison, otherwise
+  // the mismatch strands a dead handle that blocks every future re-arm.
+  const releaseAt = region.indexOf("flags.heartbeatTimer = null;");
+  const generationAt = region.indexOf("generation !== flags.sessionGeneration");
+  assert.ok(releaseAt > 0, "the callback releases the handle");
+  assert.ok(generationAt > 0, "the callback still fences on the generation");
+  assert.ok(
+    releaseAt < generationAt,
+    "the handle is released before the generation check — the old order stranded it",
+  );
+
+  // A stale-generation fire must not run a tick minted for a dead generation…
+  assert.match(
+    region,
+    /if \(generation !== flags\.sessionGeneration\) \{[\s\S]{0,200}scheduleHeartbeatPoll\(flags\.sessionGeneration\);[\s\S]{0,80}return;/,
+    "a generation mismatch re-arms for the live generation instead of dying",
+  );
+  assert.doesNotMatch(
+    region,
+    /if \(generation !== flags\.sessionGeneration \|\| flags\.heartbeatTimer !== timer\) return;/,
+    "the combined guard is what stranded the handle",
+  );
+
+  // And the guard that protects a genuinely superseded poll stays.
+  assert.match(region, /if \(flags\.heartbeatTimer !== timer\) return;/, "a newer poll still owns its own handle");
+});
