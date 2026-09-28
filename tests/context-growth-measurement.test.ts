@@ -183,6 +183,8 @@ test("fixture: repeated real continuation payloads grow context linearly and are
   assert.ok(twelve.gllaTextChars >= one.gllaTextChars * 12, "each continuation remains in the effective context");
   assert.ok(twelve.repeatedGllaSerializedBytes >= one.gllaSerializedBytes * 10, "repeated GLLA bytes dominate the marginal growth");
   assert.equal(twelve.failedErrorOnlyCount, 0);
+  assert.ok(twelve.repeatedGllaSerializedBytes >= one.gllaSerializedBytes * 10, "repeated GLLA bytes dominate the marginal growth");
+  assert.equal(twelve.failedErrorOnlyCount, 0);
   assert.deepEqual(twelve, {
     messageCount: 14,
     serializedBytes: 296_247,
@@ -195,35 +197,6 @@ test("fixture: repeated real continuation payloads grow context linearly and are
     uniqueGllaPayloadCount: 1,
     repeatedGllaPayloadCount: 11,
     repeatedGllaSerializedBytes: 271_392,
-    failedErrorOnlyCount: 0,
-    unserializableMessageCount: 0,
-    provider: {
-      sampleCount: 12,
-      inputTokens: 228_000,
-      outputTokens: 1_266,
-      cacheReadTokens: 660,
-      cacheWriteTokens: 12,
-      totalTokens: 229_938,
-      firstInputTokens: 8_000,
-      latestInputTokens: 30_000,
-      inputTokenDelta: 22_000,
-      incompleteSampleCount: 0,
-    },
-  });
-  assert.ok(twelve.repeatedGllaSerializedBytes >= one.gllaSerializedBytes * 10, "repeated GLLA bytes dominate the marginal growth");
-  assert.equal(twelve.failedErrorOnlyCount, 0);
-  assert.deepEqual(twelve, {
-    messageCount: 14,
-    serializedBytes: 311_163,
-    textChars: 305_464,
-    estimatedTokens: 76_366,
-    gllaMessageCount: 12,
-    gllaSerializedBytes: 310_980,
-    gllaTextChars: 305_412,
-    gllaEstimatedTokens: 76_353,
-    uniqueGllaPayloadCount: 1,
-    repeatedGllaPayloadCount: 11,
-    repeatedGllaSerializedBytes: 285_065,
     failedErrorOnlyCount: 0,
     unserializableMessageCount: 0,
     provider: {
