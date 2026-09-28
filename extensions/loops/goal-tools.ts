@@ -88,7 +88,6 @@ extractPendingTasks,
   takeAt,
   countTrailingDisapprovals,
   countTrailingComparableDisapprovals,
-  trailingStreakGraderStable,
   countTrailingRepeatedDisapprovals,
   MAX_REPEATED_AUDIT_NO_PROGRESS,
   AUDIT_CAP_HARD_DEFAULT,
@@ -2170,21 +2169,21 @@ function registerAgentTools(pi: any): void {
       // is the audit treadmill, not convergence; a human picks the way out.
       // 0 = unlimited (legacy unbounded cycling).
       //
-      // v0.38.103: counted on COMPARABLE rounds only. A mechanical
-      // fast-fail verdict is a gate, not a judgment, so mixing it into the
-      // streak would let a cap fire on evidence that never concerned the
-      // auditor (field hellhunter: 3 of 8 trailing "disapprovals" were
-      // `deterministic-pre-audit`). When the streak also spans more than one
-      // grader, the count cannot distinguish a treadmill from grader noise, so
-      // the goal pauses as NOT-CONFIRMED rather than as a treadmill.
+      // v0.38.103: counted on COMPARABLE rounds, all by the SAME auditor.
+      //
+      // Mechanical fast-fail verdicts are transparent: a gate failing says
+      // nothing about whether the auditor is unconvinced (field hellhunter: 3
+      // of 8 trailing "disapprovals" were `deterministic-pre-audit`).
+      //
+      // A grader CHANGE re-baselines rather than accumulating. This is not
+      // pinning -- when a pinned auditor dies we must fall back, or the goal
+      // can never be audited -- but the dead grader's rounds are not evidence
+      // against its replacement, so the new auditor earns its own streak from
+      // 1. A quota death mid-streak therefore costs the goal one fresh streak,
+      // which is the honest price of grading by two different standards.
       const hardCap = settings.auditCapHard ?? AUDIT_CAP_HARD_DEFAULT;
       const comparableStreak = countTrailingComparableDisapprovals(history);
-      const graderStable = trailingStreakGraderStable(history);
       if (hardCap > 0 && comparableStreak >= hardCap) {
-        const unconfirmed = !graderStable;
-        const streakShape = unconfirmed
-          ? `${comparableStreak} consecutive auditor disapprovals (not confirmed as a treadmill: this streak was graded by more than one auditor, so the rounds are not comparable)`
-          : `${comparableStreak} consecutive auditor disapprovals`;
         updateGoal({
           status: "paused",
           auditHistory: history,
@@ -2192,14 +2191,12 @@ function registerAgentTools(pi: any): void {
           pauseKind: "decision",
           pauseOptions: [`Accept with follow-ups — archive complete, route findings to /list (/goal accept)`, `Fix the disapproval gap, then continue (${activeGoalSurfaceCommand("resume")})`, `Tweak the objective — ${activeGoalSurfaceCommand("tweak")} <new text>`, `Cancel the goal (${activeGoalSurfaceCommand("cancel")})`],
           pauseRecommended: 1,
-          pauseReason: unconfirmed
-            ? `auditor disapproved ${comparableStreak}× consecutively (hard cap ${hardCap}) — unconfirmed, mixed graders`
-            : `auditor disapproved ${comparableStreak}× consecutively (hard cap ${hardCap})`,
-          pauseSuggestedAction: `Hard cap reached on comparable auditor rounds. ${unconfirmed ? "This streak spans multiple auditors, so the rounds are not comparable — re-measure under one pinned auditor (/glla → Auditor model) before treating it as a treadmill. " : "A streak this long with a fresh objection every round is the audit treadmill. "}Accept archives the work done and routes the findings to follow-ups; ${activeGoalSurfaceCommand("resume")} continues only after changing the work or contract. Raise Audit hard cap in /glla settings.`,
+          pauseReason: `auditor disapproved ${comparableStreak}× consecutively (hard cap ${hardCap})`,
+          pauseSuggestedAction: `One auditor rejected this ${comparableStreak} rounds running (comparable rounds only — gates and earlier auditors do not count). A streak this long with a fresh objection every round is the audit treadmill. Accept archives the work done and routes the findings to follow-ups; ${activeGoalSurfaceCommand("resume")} continues only after changing the work or contract. Raise Audit hard cap in /glla settings.`,
         }, ctx);
-        ctx.ui.notify(`${goalNoun()} paused: ${streakShape} (hard cap ${hardCap}, binds aggressive mode). ${activeGoalStatusCommand()} for the reports; pick accept / resume / tweak / cancel.`, "warning");
+        ctx.ui.notify(`${goalNoun()} paused: one auditor disapproved ${comparableStreak}× consecutively (hard cap ${hardCap}, binds aggressive mode). ${activeGoalStatusCommand()} for the reports; pick accept / resume / tweak / cancel.`, "warning");
         maybeDecisionPopup(ctx);
-        appendLedger(ctx.cwd, "goal_paused", { reason: `disapproval hard cap: ${comparableStreak} comparable consecutive (cap ${hardCap})`, graderStable, rawStreak: trailingDisapprovals });
+        appendLedger(ctx.cwd, "goal_paused", { reason: `disapproval hard cap: ${comparableStreak} comparable consecutive (cap ${hardCap})`, rawStreak: trailingDisapprovals });
         notifyExternal(ctx, `Goal paused: ${comparableStreak} consecutive auditor disapprovals (hard cap)`);
         return {
           content: [{
