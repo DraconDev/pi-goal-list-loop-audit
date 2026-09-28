@@ -590,6 +590,21 @@ function observeCurrentSubagent(data: unknown, terminalStatus?: string): void {
   if (!id) return;
   const prior = currentSubagentObservations.get(id);
   const parentWorkflowRunId = eventString(data, "parentWorkflowRunId");
+  // Audit 2026-09-28: terminal precedence. Event order across the
+  // completion/terminal events is not guaranteed: failed/stopped always
+  // apply (the terminal event carries the authoritative detail, and a
+  // failure must survive a late or premature async-complete either way),
+  // "completed" never rewrites a failed/stopped terminal, and non-terminal
+  // events never clear a terminal flag (late progress after termination).
+  // The retry nudge's once-per-run guard reads prior.terminal, so a flipped
+  // flag would double-notify on redelivery.
+  const terminalPatch = terminalStatus === "failed" || terminalStatus === "stopped"
+    ? { status: terminalStatus, terminal: true }
+    : prior?.terminal
+      ? {}
+      : terminalStatus
+        ? { status: terminalStatus, terminal: true }
+        : { status: prior?.status ?? "running", terminal: false };
   const next: CurrentSubagentObservation = {
     ...(prior ?? {}),
     ownerGeneration: ownerGeneration(),
