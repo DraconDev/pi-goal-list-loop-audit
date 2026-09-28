@@ -303,7 +303,38 @@ export function hourAlignedRetryDelayMs(nowMs = Date.now()): number {
  * Every other recoverable failure gets the same eager first retry, then
  * the bounded configured ladder; the separate hourly retry adds the
  * :00:30 slot. */
+/** v0.38.104: an EMPTY provider response is a transient glitch, not a wall.
+ *
+ * Field 2026-09-27 (darklord): `Provider returned an empty response` matched
+ * no quota signal and no deterministic-client marker, so it fell to the blind
+ * ladder — 15m, then 30m, then 60m. The goal sat at 0/29 tasks with
+ * "last host activity 49m 21s ago" and looked completely unretried, which is
+ * the field report this fixes. An empty completion typically succeeds on an
+ * IMMEDIATE retry, so it gets the eager quantum for a few attempts instead of
+ * the exponential wall.
+ *
+ * Markers are narrow on purpose: a message merely CONTAINING the word
+ * "empty" ("empty array", "empty test fixture") is not a provider glitch. */
+const EMPTY_PROVIDER_RESPONSE = /(?:returned|produces?|gave|sent)\s+(?:an?\s+)?empty\s+(?:response|completion|result|message|output)|empty\s+(?:response|completion)\s+from\s+(?:the\s+)?(?:provider|api|model)|no\s+(?:response|completion)\s+(?:was\s+)?(?:returned|received)|zero[- ]token\s+(?:response|completion)/i;
+
+/** Attempts that get the eager quantum for an empty-response glitch before
+ * the normal ladder takes over. Enough to ride out a transient blip without
+ * hammering a genuinely broken endpoint. */
+export const EMPTY_RESPONSE_EAGER_ATTEMPTS = 3;
+
+export function isEmptyProviderResponse(raw: string | undefined): boolean {
+  if (typeof raw !== "string" || !raw.trim()) return false;
+  return EMPTY_PROVIDER_RESPONSE.test(raw);
+}
+
 export function mainModelFailureDelayMs(failure: MainModelFailure, attempt: number, baseMinutes = 15, nowMs = Date.now()): number {
+  // v0.38.104: an empty response is a glitch, not a quota wall — retry it
+  // eagerly for a few attempts instead of parking the goal behind the
+  // exponential ladder. Without this, the first probe was 5s and the SECOND
+  // was 15m, which is backwards for a failure that usually clears instantly.
+  if (attempt > 0 && attempt <= EMPTY_RESPONSE_EAGER_ATTEMPTS && isEmptyProviderResponse(failure?.raw)) {
+    return 5_000;
+  }
   if (attempt <= 1) return 5_000;
   const resetSleep = quotaResetSleepMs(failure, nowMs);
   if (resetSleep !== undefined) return resetSleep;
