@@ -2280,8 +2280,14 @@ function timelineNextAction(
   if (goal.status === "paused") return `Next: /goal resume to continue${goal.pauseReason ? ` (${goal.pauseReason.slice(0, 80)})` : ""}.`;
   if (goal.status === "auditing") return "Next: audit in flight — wait for the verdict.";
   if (goal.pendingCompletion) return "Next: claim submitted — the audit is starting.";
-  const live = (goal.auditHistory ?? []).filter((a) => a.disapproved === true && a.superseded !== true).length;
-  if (live > 0) return `Next: address ${live} open objection${live === 1 ? "" : "s"}, then re-submit.`;
+  // v0.38.110: count live objections through `liveDisapproval`'s migrate-on-read
+  // backfill, not a raw filter. A raw `superseded !== true` test treats every
+  // pre-v0.38.21 round as live, so a goal settled by a later approval still
+  // displayed "address N open objections" while the runtime — which reads
+  // through the backfill — considered the set empty. The display was telling
+  // the user to re-submit work the loop had already accepted.
+  const liveObjections = countLiveDisapprovals(goal.auditHistory ?? []);
+  if (liveObjections > 0) return `Next: address ${liveObjections} open objection${liveObjections === 1 ? "" : "s"}, then re-submit.`;
   if (goal.status === "complete") return "Next: nothing — complete.";
   if (goal.status === "aborted") return "Next: nothing — aborted.";
   return "Next: working toward the contract.";

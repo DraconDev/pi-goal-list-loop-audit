@@ -665,8 +665,18 @@ export function dispatchStartAcknowledged(ctx: ExtensionContext, source: string,
   // self-heal budget resets. The stuck episode is over — the next one gets a
   // fresh bounded budget instead of inheriting an exhausted one.
   if (source === "before_agent_start" || source === "agent_start" || source === "turn_start") {
+    // v0.38.110: reset the budget UNCONDITIONALLY on a turn-start proof, not
+    // only when a timer is live. The exhaustion branch and the "lane moved on"
+    // cancel both null the timer without clearing the counter, so gating on
+    // the timer left `probes` stuck at the max: the next stuck episode armed
+    // at the longest delay and then reported an already-spent budget with
+    // zero re-probes, killing the lane's automatic recovery for the rest of
+    // the session. The ledger row is only emitted when a timer was actually
+    // armed, so the record keeps meaning "an armed self-heal was cleared".
     if (continuationStartSelfHealTimer) {
       appendLedger(ctx.cwd, "continuation_start_self_heal_cleared", { source, probes: continuationStartSelfHealProbes });
+    }
+    if (continuationStartSelfHealTimer || continuationStartSelfHealProbes > 0) {
       clearContinuationStartSelfHeal();
     }
   }
