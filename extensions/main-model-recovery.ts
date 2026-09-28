@@ -315,7 +315,7 @@ export function hourAlignedRetryDelayMs(nowMs = Date.now()): number {
  *
  * Markers are narrow on purpose: a message merely CONTAINING the word
  * "empty" ("empty array", "empty test fixture") is not a provider glitch. */
-const EMPTY_PROVIDER_RESPONSE = /(?:returned|produces?|gave|sent)\s+(?:an?\s+)?empty\s+(?:response|completion|result|message|output)|empty\s+(?:response|completion)\s+from\s+(?:the\s+)?(?:provider|api|model)|no\s+(?:response|completion)\s+(?:was\s+)?(?:returned|received)|zero[- ]token\s+(?:response|completion)/i;
+const EMPTY_PROVIDER_RESPONSE = /(?:returned|produces?|produced|gave|sent|got)\s+(?:an?\s+)?empty\s+(?:response|completion|result|message|output|content)|empty\s+(?:response|completion)\s+from\s+(?:the\s+)?(?:provider|api|model)|no\s+(?:response|completion)\s+(?:was\s+)?(?:returned|received)|zero[- ]token\s+(?:response|completion)/i;
 
 /** Attempts that get the eager quantum for an empty-response glitch before
  * the normal ladder takes over. Enough to ride out a transient blip without
@@ -328,16 +328,21 @@ export function isEmptyProviderResponse(raw: string | undefined): boolean {
 }
 
 export function mainModelFailureDelayMs(failure: MainModelFailure, attempt: number, baseMinutes = 15, nowMs = Date.now()): number {
-  // v0.38.104: an empty response is a glitch, not a quota wall — retry it
-  // eagerly for a few attempts instead of parking the goal behind the
-  // exponential ladder. Without this, the first probe was 5s and the SECOND
-  // was 15m, which is backwards for a failure that usually clears instantly.
+  if (attempt <= 1) return 5_000;
+  // v0.38.104: a real wall outranks the eager glitch path. An upstream reset
+  // hint means the provider told us when it will accept requests again;
+  // shortening that to 5s would hammer a rate-limited endpoint, which is the
+  // opposite of what this branch is for. Checked BEFORE the eager rule, never
+  // after.
+  const resetSleep = quotaResetSleepMs(failure, nowMs);
+  if (resetSleep !== undefined) return resetSleep;
+  // An empty response is a glitch, not a wall — retry it eagerly for a few
+  // attempts instead of parking the goal behind the exponential ladder.
+  // Without this, attempt 1 was 5s and attempt 2 was 15m, which is backwards
+  // for a failure that usually clears on the very next call.
   if (attempt > 0 && attempt <= EMPTY_RESPONSE_EAGER_ATTEMPTS && isEmptyProviderResponse(failure?.raw)) {
     return 5_000;
   }
-  if (attempt <= 1) return 5_000;
-  const resetSleep = quotaResetSleepMs(failure, nowMs);
-  if (resetSleep !== undefined) return resetSleep;
   return mainModelRetryDelayMs(attempt, baseMinutes);
 }
 
