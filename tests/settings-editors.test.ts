@@ -686,3 +686,24 @@ test("v0.38.108: the main-recovery row does not promise a 24h stop the default m
   assert.match(description, /aggressive/i, "the copy must name the mode that removes the horizon");
   assert.doesNotMatch(description, /stops after 24h$/, "an unconditional 24h promise is the drift the fix removes");
 });
+
+test("v0.38.108: every 'Global-only.' annotation in docs/SETTINGS.md is true in code", async () => {
+  const { GLOBAL_ONLY_KEYS } = await import("../extensions/goal-settings.ts");
+  const doc = fs.readFileSync(path.join(import.meta.dirname, "..", "docs", "SETTINGS.md"), "utf-8");
+  const claimed = [...doc.matchAll(/^\|\s*`([A-Za-z]+)`\s*\|[^|]*\|([^|]*)\|/gm)]
+    .filter((m) => /Global-only\./.test(m[2] ?? ""))
+    .map((m) => m[1]);
+  assert.ok(claimed.length > 0, "the reference still documents global-only keys");
+  const wrong = claimed.filter((key) => !GLOBAL_ONLY_KEYS.has(key as never));
+  assert.deepEqual(wrong, [], `doc claims Global-only for keys the runtime lets a project set: ${wrong.join(", ")}`);
+});
+
+test("v0.38.108: the superseded DESIGN.md table does not mark files that do not exist as shipped", () => {
+  const doc = fs.readFileSync(path.join(import.meta.dirname, "..", "docs", "DESIGN.md"), "utf-8");
+  const start = doc.indexOf("### Decision 7");
+  const table = doc.slice(start, doc.indexOf("\n### ", start + 10));
+  const rows = [...table.matchAll(/^\|\s*`([^`]+)`\s*\|[^|]*\|\s*shipped\s*\|/gm)].map((m) => m[1]);
+  assert.ok(rows.length > 0, "the historical table still has shipped rows");
+  const missing = rows.filter((rel) => !fs.existsSync(path.join(import.meta.dirname, "..", rel)));
+  assert.deepEqual(missing, [], `a superseded table marks non-existent paths as shipped: ${missing.join(", ")}`);
+});

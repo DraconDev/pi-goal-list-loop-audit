@@ -326,8 +326,11 @@ export interface Settings {
 /** These settings describe global provider-recovery policy, not a project
  * artifact. The recovery runtime intentionally reads the global file for
  * them; ignoring project copies keeps the settings table and behavior
- * honest instead of showing a project value that the retry path cannot use. */
-const GLOBAL_ONLY_KEYS: ReadonlySet<keyof Settings> = new Set([
+ * honest instead of showing a project value that the retry path cannot use.
+ * v0.38.108: exported so docs/SETTINGS.md's "Global-only." annotations can be
+ * pinned against the real set — two rows claimed it for keys that are NOT
+ * in it, so a hand-edited project file silently overrode global policy. */
+export const GLOBAL_ONLY_KEYS: ReadonlySet<keyof Settings> = new Set([
   "stateRoot",
   "mainModelFallbacks",
   "mainModelRetryMinutes",

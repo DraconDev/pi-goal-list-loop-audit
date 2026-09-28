@@ -32,6 +32,11 @@ copies are ignored (the recovery runtime reads the global file):
 `auditorModelFallbacks`, `auditorToolTimeoutMs`, `auditorStallMs`,
 `auditJobRetentionMs`, `auditSpotCheckRate`, `auditorInspection`.
 
+This list is `GLOBAL_ONLY_KEYS` in `extensions/goal-settings.ts`, and a
+project-scope write to any of them is stripped on read. Every other key —
+including `auditCapHard` and `mechanicalLoadScale` — is project-settable and
+a project file wins over the global one.
+
 ## Keys
 
 | Key | Default | Meaning |
@@ -69,8 +74,8 @@ copies are ignored (the recovery runtime reads the global file):
 | `carryover` | `"pause"` | Stale carryover on new activation: `"pause"` / `"clear"` / `"resume"`. |
 | `autoAcceptDrafts` | `false` | Drafts activate without the Confirm dialog (unattended rigs). |
 | `auditCap` | `5` (10 aggressive) | Pause after N consecutive auditor disapprovals (`0` = unlimited). |
-| `auditCapHard` | `8` | Hard ceiling on consecutive disapprovals — pauses with a decision even in aggressive mode (`0` = unlimited). Global-only. |
-| `mechanicalLoadScale` | `true` | Scale mechanical gate budgets with host load up to 2× (`false` = fixed budgets). Global-only. |
+| `auditCapHard` | `8` | Hard ceiling on consecutive disapprovals — pauses with a decision even in aggressive mode (`0` = unlimited). Project-settable. |
+| `mechanicalLoadScale` | `true` | Scale mechanical gate budgets with host load up to 2× (`false` = fixed budgets). Project-settable. |
 | `auditFeedbackChars` | `0` (full) | Max auditor-report chars returned after disapproval (`0` = full). |
 | `auditorSilent` | `true` | Auditor report renders final-only, no word-by-word HUD. |
 | `auditorProgressSignals` | `true` | Silent audits show phase label + byte counter. |

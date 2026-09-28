@@ -499,20 +499,24 @@ This is a **clean break** by decision of the user. We do not interop with `pi-go
 > **Superseded by consolidation (v0.8.0).** The planned per-loop files below
 > never shipped: loops 1+2 live together in `extensions/loops/goal.ts`
 > (one state machine, one loop driver), loop 3's helpers in
-> `extensions/loops/forever.ts`, rendering in `goal-loop-display.ts`,
-> drafting inline in `goal.ts` + `prompts/`. Kept for history.
+> `extensions/goal-loop-forever.ts`, rendering in `goal-loop-display.ts`,
+> drafting inline in `goal.ts` + `prompts/`. Kept for history. v0.38.108: the
+> "Lines" column below is a snapshot of that plan, not a claim about today's
+> tree — where the plan and the shipped path disagree, the shipped path is
+> `extensions/goal-loop-forever.ts` and the auditor prompt is built in
+> `extensions/goal-loop-auditor.ts` (there is no prompt file).
 
 | File | Purpose | Lines |
 |---|---|---|
 | `extensions/loops/goal.ts` | Loops 1+2 (single goal + list of goals) | shipped |
-| `extensions/loops/forever.ts` | Loop 3 (metric loop helpers) | shipped |
+| `extensions/loops/forever.ts` | Loop 3 (metric loop helpers) — plan name; shipped as `extensions/goal-loop-forever.ts` | planned |
 | `extensions/goal-loop-core.ts` | Shared state machine, types, JSONL | shipped |
 | `extensions/goal-loop-auditor.ts` | Auditor prompt + compatibility helper | shipped |
 | `extensions/goal-loop-auditor-process.ts` | Detached worker protocol, IPC, and shield revalidation | shipped |
 | `scripts/goal-auditor-worker.mjs` | Extension-less RPC auditor child | shipped |
 | `extensions/goal-loop-display.ts` | Status line + /goal status rendering | shipped |
 | `prompts/goal-loop-continuation.md` | Templated continuation prompt | ~80 |
-| `prompts/goal-loop-auditor.md` | Templated auditor prompt | ~80 |
+| `prompts/goal-loop-auditor.md` | Templated auditor prompt — never shipped; the prompt is built in `extensions/goal-loop-auditor.ts` | planned |
 | `prompts/goal-loop-draft.md` | Templated drafting prompt | v0.2.0 |
 | `schemas/goal.schema.json` | JSON Schema for goal state | ~50 |
 
