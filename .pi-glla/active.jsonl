@@ -402,3 +402,33 @@
 {"type":"id_invalidation","value":{"oldId":"01a0e58d-c075-7698-95b6-a18f14e6f374","newId":"01a0e000-68e5-7525-86ad-47c5230c45f8","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-28T01:07:58.988Z"},"at":"2026-09-28T01:07:58.988Z"}
 {"type":"payload_guard_eviction","value":{"evicted":11,"bytesFreed":3688308,"remainingImageBytes":2869496,"remainingImageCount":4,"generation":571},"at":"2026-09-28T01:08:33.611Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":{"inputTokens":253,"outputTokens":1922,"cacheReadTokens":360177,"cacheWriteTokens":0,"totalTokens":362352},"contextUsage":{"tokens":362352,"contextWindow":1000000,"percent":36.2352}},"at":"2026-09-28T01:09:07.640Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","toRef":"openai-codex/gpt-5.6-luna","reason":"ok"},"at":"2026-09-28T01:13:10.169Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","toRef":"minimax/MiniMax-M3","reason":"ok"},"at":"2026-09-28T01:13:10.174Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","reason":"exhausted"},"at":"2026-09-28T01:13:10.175Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","toRef":"openai-codex/gpt-5.6-luna","reason":"ok"},"at":"2026-09-28T01:13:10.179Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","reason":"exhausted"},"at":"2026-09-28T01:13:10.179Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","toRef":"ghost/nope-9000","reason":"unregistered"},"at":"2026-09-28T01:13:10.186Z"}
+{"type":"auditor_model_fallback","value":{"configured":"ghost/nope-9000","reason":"model not found"},"at":"2026-09-28T01:13:10.186Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","toRef":"openai-codex/gpt-5.6-luna","reason":"ok"},"at":"2026-09-28T01:13:10.189Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","reason":"exhausted"},"at":"2026-09-28T01:13:10.189Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","toRef":"openai-codex/gpt-5.6-luna","reason":"ok"},"at":"2026-09-28T01:13:10.191Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","reason":"exhausted"},"at":"2026-09-28T01:13:10.191Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","toRef":"openai-codex/gpt-5.6-luna","reason":"ok"},"at":"2026-09-28T01:13:10.194Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","reason":"exhausted"},"at":"2026-09-28T01:13:10.194Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","reason":"exhausted"},"at":"2026-09-28T01:13:10.194Z"}
+{"type":"auditor_model_same_as_session","value":{"model":"openrouter/space-bunny-alpha","fallback":null},"at":"2026-09-28T01:13:10.195Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","toRef":"openai-codex/gpt-5.6-luna","reason":"ok"},"at":"2026-09-28T01:13:23.148Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","toRef":"minimax/MiniMax-M3","reason":"ok"},"at":"2026-09-28T01:13:23.148Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","reason":"exhausted"},"at":"2026-09-28T01:13:23.148Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","toRef":"openai-codex/gpt-5.6-luna","reason":"ok"},"at":"2026-09-28T01:13:23.148Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","reason":"exhausted"},"at":"2026-09-28T01:13:23.149Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","toRef":"ghost/nope-9000","reason":"unregistered"},"at":"2026-09-28T01:13:23.152Z"}
+{"type":"auditor_model_fallback","value":{"configured":"ghost/nope-9000","reason":"model not found"},"at":"2026-09-28T01:13:23.152Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","toRef":"openai-codex/gpt-5.6-luna","reason":"ok"},"at":"2026-09-28T01:13:23.152Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","reason":"exhausted"},"at":"2026-09-28T01:13:23.152Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","toRef":"openai-codex/gpt-5.6-luna","reason":"ok"},"at":"2026-09-28T01:13:23.152Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","reason":"exhausted"},"at":"2026-09-28T01:13:23.152Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","toRef":"openai-codex/gpt-5.6-luna","reason":"ok"},"at":"2026-09-28T01:13:23.153Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","reason":"exhausted"},"at":"2026-09-28T01:13:23.153Z"}
+{"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","reason":"exhausted"},"at":"2026-09-28T01:13:23.153Z"}
+{"type":"auditor_model_same_as_session","value":{"model":"openrouter/space-bunny-alpha","fallback":null},"at":"2026-09-28T01:13:23.153Z"}
