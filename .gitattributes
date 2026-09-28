@@ -1,6 +1,56 @@
 # --- BEGIN DRACON MANAGED BLOCK ---
 # managed by dracon-warden
 * filter=dracon
+*.png -filter
+*.PNG -filter
+*.jpg -filter
+*.JPG -filter
+*.jpeg -filter
+*.JPEG -filter
+*.gif -filter
+*.GIF -filter
+*.webp -filter
+*.WEBP -filter
+*.avif -filter
+*.bmp -filter
+*.tiff -filter
+*.tif -filter
+*.ico -filter
+*.ICO -filter
+*.heic -filter
+*.psd -filter
+*.mp4 -filter
+*.mov -filter
+*.mkv -filter
+*.webm -filter
+*.avi -filter
+*.mp3 -filter
+*.wav -filter
+*.flac -filter
+*.ogg -filter
+*.m4a -filter
+*.zip -filter
+*.gz -filter
+*.tgz -filter
+*.bz2 -filter
+*.xz -filter
+*.7z -filter
+*.tar -filter
+*.zst -filter
+*.pdf -filter
+*.wasm -filter
+*.so -filter
+*.dylib -filter
+*.dll -filter
+*.exe -filter
+*.bin -filter
+*.o -filter
+*.a -filter
+*.class -filter
+*.jar -filter
+*.pyc -filter
+*.sqlite -filter
+*.db -filter
 **/creds.json filter=dracon diff=dracon merge=dracon
 **/keys.json filter=dracon diff=dracon merge=dracon
 *.age filter=dracon diff=dracon merge=dracon
