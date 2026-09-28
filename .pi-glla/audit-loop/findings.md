@@ -693,3 +693,11 @@ findings.
 - [x] FIX: LOW: `tests/completion-communication.test.ts` still asserted the pre-v0.38.102 one-line `- **outcome** — evidence` bullet after the gist/evidence split landed, so the grouped-render test was permanently red — fixed in 8110b39a (asserts the shipped shape: gist as the bullet, repo-relative evidence indented beneath)
 - [x] FIX: LOW: `tests/stale-delayed-context.test.ts` pinned the tick-local `commitPendingTerminalWork` closure this pass hoisted, so the v0.34.20 rebind contract test could never pass again — fixed in 8110b39a (pins the thin `commitTerminalWork` wrapper and the new `finishLoopGit` choke point)
 - [x] FIX: LOW: three recovery tests pinned "the first retry is always eager", the rule the v0.38.105 reset-hint ordering deliberately replaced (tests/quota-sleep-until-reset.test.ts, tests/model-selector.test.ts, tests/main-model-recovery.test.ts) — fixed in 8110b39a (the hint wins from attempt 1; the hintless-first-retry eager case is still pinned in all three)
+
+## Cross-project stuck-at-last-part pass (2026-09-28) — the detached hard cap
+
+The 2026-09-28 field survey (`audit/STUCK-AT-LAST-PART-2026-09-28.md`, 35
+GLLA projects) found one GLLA-owned cause of "stuck at the last part": the
+hard cap existed but was unreachable. One finding, one fix.
+
+- [x] FIX: HIGH: the disapproval hard cap (v0.38.103) was wired only into `complete_goal`'s INLINE settlement, which the field never takes — every real audit settles through the detached driver `retryStoredCompletionAudit`, which had no cap check, so under aggressiveMode (the default) the soft-cap branch converted every hit into TODOs and the goal ground forever (hellhunter 12 rounds, junk-runner 9, zero cap pauses) — fixed in ff24a47e (the detached path now pauses on the same comparable-disapproval streak before the soft-cap TODO conversion, with accept-with-follow-ups as the first decision option; regression `hard cap binds the detached settlement path` drives a parked claim with 7 comparable priors to a pause at the 8th)
