@@ -277,3 +277,4 @@
 {"type":"session_rebound","value":{"reason":"reload"},"at":"2026-09-27T23:52:38.849Z"}
 {"type":"payload_guard_eviction","value":{"evicted":11,"bytesFreed":3688308,"remainingImageBytes":2869496,"remainingImageCount":4,"generation":568},"at":"2026-09-27T23:54:19.143Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":null,"contextUsage":{"tokens":333891,"contextWindow":1000000,"percent":33.3891}},"at":"2026-09-28T00:13:11.494Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":{"inputTokens":317,"outputTokens":966,"cacheReadTokens":334364,"cacheWriteTokens":0,"totalTokens":335647},"contextUsage":{"tokens":335647,"contextWindow":1000000,"percent":33.564699999999995}},"at":"2026-09-28T00:13:42.762Z"}
