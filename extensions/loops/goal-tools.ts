@@ -65,7 +65,9 @@ extractPendingTasks,
   formatAuditLog,
   formatGoalAuditHistory,
   readAuditLog,
-  bumpGoalRevision,
+  // v0.38.105: bumpGoalRevision is no longer used here — the newObjective path
+  // passes an explicit `revision` to updateGoal so the bump lands only when the
+  // write is durable (cmdTweak remains the other revision site).
   captureGoalRevision,
   stripThinkBlocks,
   type AuditLogEntry,

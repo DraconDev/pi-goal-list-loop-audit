@@ -259,8 +259,63 @@ export function makeMockCtx(cwd: string, opts: { sessionManager?: unknown; idle?
   } as unknown as MockCtx;
 }
 
+/** Temp cwds this process created, removed when it exits.
+ *
+ * `tmpCwd` gives every behavioural test its own directory and 134 test
+ * files call it, so a run that never tears them down leaves one
+ * directory per test in the host /tmp. Over 11,000 had accumulated:
+ * the cost is directory-scan time, not bytes, and it made a depth-1 du
+ * of /tmp exceed 300s.
+ *
+ * Exit-time removal covers a normal run. A killed or timed-out run
+ * leaves its directories behind, so the first call also sweeps any
+ * older than STALE_CWD_MS -- an age no live test's directory reaches. */
+const createdCwds: string[] = [];
+const STALE_CWD_MS = 6 * 60 * 60 * 1000;
+let staleSwept = false;
+
+function sweepStaleCwds(): void {
+  if (staleSwept) {
+    return;
+  }
+  staleSwept = true;
+  const cutoff = Date.now() - STALE_CWD_MS;
+  let entries: string[];
+  try {
+    entries = fs.readdirSync(os.tmpdir());
+  } catch {
+    return;
+  }
+  for (const entry of entries) {
+    if (!entry.startsWith("glla-behavioral-")) {
+      continue;
+    }
+    const full = path.join(os.tmpdir(), entry);
+    try {
+      if (fs.statSync(full).mtimeMs < cutoff) {
+        fs.rmSync(full, { recursive: true, force: true });
+      }
+    } catch {
+      // A concurrent sweep, or an owner still holding it, got there first.
+    }
+  }
+}
+
+process.on("exit", () => {
+  for (const dir of createdCwds) {
+    try {
+      fs.rmSync(dir, { recursive: true, force: true });
+    } catch {
+      // Best effort; the age sweep reclaims anything that survives.
+    }
+  }
+});
+
 export function tmpCwd(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "glla-behavioral-"));
+  sweepStaleCwds();
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-behavioral-"));
+  createdCwds.push(dir);
+  return dir;
 }
 
 /** Seed a .pi-glla/active.jsonl with ONE state line (the restore-gate input). */
