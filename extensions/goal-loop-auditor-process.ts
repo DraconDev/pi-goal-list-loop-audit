@@ -22,6 +22,7 @@ import {
   isRetriableInfraError,
   isUnresolvableAuditorModelRefError,
   isForbiddenModel,
+  countTrailingComparableDisapprovals,
   type Goal,
   type GoalRevisionToken,
   type PendingCompletion,
@@ -767,6 +768,13 @@ export const TOOL_CANCEL_GRACE_MS = 60_000;
  * real corruption is never masked — and the other watchdogs keep bounding the
  * attempt meanwhile. */
 export const PROGRESS_READ_TOLERANCE_MS = 30_000;
+/** v0.38.103: after this many comparable rework rounds the falsification
+ * (challenge) round is skipped. It is a second adversarial pass designed to
+ * catch what round 1 missed; run repeatedly on an already-iterated goal it
+ * produces a NEW objection every round instead of closing the old ones, which
+ * is what a 13/13 or 20/20 streak looks like. Two rounds is where it has
+ * already paid for itself. */
+export const AUDITOR_CHALLENGE_STREAK_LIMIT = 2;
 /** v0.37.0: adaptive timeout escalation. Each failed detached attempt that
  * gets retried doubles BOTH base budgets (per-tool and silence), saturating
  * after AUDITOR_TIMEOUT_ESCALATION_MAX_STEPS doublings (4× base). The
@@ -1874,6 +1882,9 @@ async function runDetachedGoalCompletionAuditorInner(args: {
     // offline, wrong base dir for relative paths). Doing this in the
     // process layer means every dispatch path is covered.
     const allowedExtensions = resolveAuditorAllowedExtensions(args.allowedExtensions, runtime.homeDir ?? os.homedir(), args.cwd);
+    // v0.38.103: how many comparable rounds this goal has already been
+    // reworked through. Gates the falsification round below.
+    const reworkStreak = countTrailingComparableDisapprovals(args.goal.auditHistory ?? []);
     const requestWithoutHash: Omit<AuditorRequest, "requestHash"> = {
       protocolVersion: PROTOCOL_VERSION,
       attemptId,
@@ -1896,7 +1907,17 @@ async function runDetachedGoalCompletionAuditorInner(args: {
       // v0.38.81: only present when light so full-tier dispatches hash
       // byte-identically to pre-feature workers. Old workers ignore the
       // flag (always challenge — the safe direction).
-      ...(args.auditTier === "light" ? { challenge: false } : {}),
+      //
+      // v0.38.103: also present once the goal has been reworked enough times.
+      // The falsification round is a SECOND adversarial pass whose job is to
+      // find what round 1 missed — so against an already-iterated goal it
+      // MANUFACTURES a fresh objection every round by construction instead of
+      // closing the previous ones. That is the amplifier behind the observed
+      // 13/13 and 20/20 streaks. It earns its keep against a near-miss (one or
+      // two disapprovals), not against a goal on its fifth rework. Skipping it
+      // lets the single round actually re-verify the objections it raised
+      // last time, which is the converging question.
+      ...(args.auditTier === "light" || reworkStreak >= AUDITOR_CHALLENGE_STREAK_LIMIT ? { challenge: false } : {}),
     };
     const request: AuditorRequest = { ...requestWithoutHash, requestHash: requestHash(requestWithoutHash) };
     await writeAtomicJson(requestPath, request);
