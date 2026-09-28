@@ -1523,17 +1523,35 @@ export function isMechanicalPreAuditVerdict(verdict: Pick<AuditVerdict, "model">
 }
 
 /** v0.38.103: the trailing streak counted by a cap should be rounds an
- * auditor actually JUDGED. Mechanical fast-fail entries are transparent — the
- * streak passes through them rather than counting them, so a goal blocked by a
- * gate is not mistaken for a goal the auditor keeps rejecting.
+ * auditor actually JUDGED, and all by the SAME auditor.
  *
- * hellhunter: 8 raw disapprovals -> 5 comparable semantic rounds. */
+ * Two filters, both from the field:
+ *
+ * 1. Mechanical fast-fail entries are transparent — the streak passes through
+ *    them. hellhunter's trailing streak read as 8, but three were
+ *    `deterministic-pre-audit`: a gate, not a judgment. 5 comparable rounds.
+ *
+ * 2. The streak stops at a grader CHANGE. This is NOT pinning: when a pinned
+ *    auditor dies we MUST fall back, or the goal can never be audited. What
+ *    we must not do is count the dead grader's rounds as evidence against its
+ *    replacement — they were judged to a different standard and prove
+ *    nothing. A fallback therefore RE-BASELINES: the new grader starts at 1
+ *    and earns its own streak, while the old rounds stay in the history for
+ *    the trail.
+ *
+ * So the counter answers a question a cap can act on: "how many comparable
+ * rounds has THIS auditor rejected in a row?"
+ */
 export function countTrailingComparableDisapprovals(history: AuditVerdict[]): number {
   let n = 0;
+  let grader: string | undefined;
   for (let i = history.length - 1; i >= 0; i--) {
     const v = history[i]!;
     if (v.disapproved) {
       if (isMechanicalPreAuditVerdict(v)) continue; // a gate, not a judgment
+      const current = v.model ?? "";
+      if (grader === undefined) grader = current;
+      else if (current !== grader) break; // fallback re-baselines the streak
       n++;
       continue;
     }
