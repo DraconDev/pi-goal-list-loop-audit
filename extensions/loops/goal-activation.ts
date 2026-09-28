@@ -297,6 +297,8 @@ import {
   observeCurrentSubagentProgress,
   observeCurrentSubagentComplete,
   observeCurrentSubagentTerminal,
+  describeSubagentTerminal,
+  subagentTerminalAlreadyRecorded,
   releaseSubagentRpcHost,
   releaseZombieAbortKey,
   endSubagentHangProbe,
@@ -3215,9 +3217,34 @@ async function handleHotLengthExhaustion(
   });
   pi.events.on("subagent:process-terminal", (data: unknown) => {
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown) return;
+    // v0.38.109: read the retry decision BEFORE observing — the nudge must
+    // fire once per run even if the terminal event redelivers.
+    const terminal = describeSubagentTerminal(data);
+    const alreadyTerminal = subagentTerminalAlreadyRecorded(data);
     observeCurrentSubagentTerminal(data);
     if (!freshCtx()) return;
     signalSupervisionEvent({ plane: "subagent", kind: "complete", source: "subagent:process-terminal" });
+    if (terminal?.failed && !alreadyTerminal) {
+      const nudgeCtx = freshCtx();
+      if (!nudgeCtx) return;
+      appendLedger(nudgeCtx.cwd, "subagent_terminal_failure", {
+        recordId: terminal.id,
+        ...(terminal.agent ? { agent: terminal.agent } : {}),
+        kind: terminal.kind,
+        eager: terminal.eager,
+        detail: terminal.detail,
+      });
+      // A transient child failure is a re-dispatch prompt, not a brake rung:
+      // surface it now so the parent retries in seconds instead of whenever
+      // it next looks. Scoped to supervised work — ad-hoc sessions never nag.
+      // Deliberately notify-only: GLLA must not schedule turns behind a live
+      // parent, and aborts/auth/billing/opaque exits stay silent by kind.
+      const supervised = (state.goal && (state.goal.status === "active" || state.goal.status === "auditing")) || state.loop?.active;
+      if (terminal.eager && supervised) {
+        const who = terminal.agent ? ` (${terminal.agent})` : "";
+        nudgeCtx.ui.notify(`Subagent run${who} failed transiently (${terminal.detail}) — safe to re-dispatch now.`, "info");
+      }
+    }
   });
   pi.events.on("subagent:foreground-complete", (data: unknown) => {
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown) return;
