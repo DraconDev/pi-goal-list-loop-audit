@@ -9,7 +9,8 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import * as path from "node:path";
 import { readFile } from "node:fs/promises";
 
 import { SLOW_TEST_FILES } from "./slow-files.mjs";
@@ -133,4 +134,29 @@ test("v0.38.108: the release gate runs the hardened runner, and CI bounds both j
   for (const job of jobs) {
     assert.match(job, /timeout-minutes: \d+/, `${job.split("\n")[0]} bounds its own runtime`);
   }
+});
+
+test("v0.38.108: no test file gates itself on a package no dependency can provide", () => {
+  const pkg = JSON.parse(readFileSync("package.json", "utf-8"));
+  const declared = [...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.devDependencies ?? {})];
+  const offenders: string[] = [];
+  for (const file of existsSync("tests") ? readdirSync("tests") : []) {
+    if (!/\.test\.(ts|mjs)$/.test(file)) continue;
+    const text = readFileSync(path.join("tests", file), "utf-8");
+    // node_modules/<scope?>/<name>/ inside a skip gate is a hard dependency
+    // on that exact installed layout.
+    for (const match of text.matchAll(/node_modules\/(@[a-z0-9-]+\/)?([a-z0-9-]+)\//g)) {
+      const name = `${match[1] ?? ""}${match[2]}`;
+      if (!declared.includes(name)) offenders.push(`${file} -> ${name}`);
+    }
+  }
+  assert.deepEqual(offenders, [], `tests gate on packages nothing installs (permanently skipped coverage): ${offenders.join(", ")}`);
+});
+
+test("v0.38.108: tests/README.md does not claim npm test runs the whole suite", () => {
+  const readme = readFileSync(path.join("tests", "README.md"), "utf-8");
+  assert.doesNotMatch(readme, /npm test\s+# runs: bun test/, "the old line claimed bare bun test");
+  assert.match(readme, /slow-files\.mjs/, "the fast/slow split is documented");
+  assert.match(readme, /npm run test:slow/, "the slow run is documented");
+  assert.match(readme, /not the whole suite/, "a green fast run is explicitly not full coverage");
 });
