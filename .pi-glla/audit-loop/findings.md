@@ -679,3 +679,17 @@ call (see the closing note).
   sweep (schemas vs runtime writes, `.github/workflows/publish.yml`,
   `prompts/*.md` tool-grant claims, the `tests/` vacuity scan) did not run —
   the tools-state-docs scout hit its tool budget on the code half.
+
+### Final-gate follow-up — pre-existing red suite (2026-09-28)
+
+`npm run test:all` surfaced 3 failures that were **already red before this
+pass** (reproduced identically at 3d7d4cab, the commit before the audit
+started). None was introduced by the v0.38.105 work; each was a stale
+expectation left behind by an earlier pass, and each is fixed here so the pass
+ends on a green suite. They are recorded as a follow-up, not as scout
+findings.
+
+- [x] FIX: MEDIUM: `tests/context-growth-measurement.test.ts` re-baselined its payload constants to 24_221 chars in the same commit that slimmed the continuation prompt, and was never re-run — the constant was 90 chars off from the moment it landed (4 assertions across 2 tests red) — fixed in 8110b39a (re-based to the 24_131 chars / 24_243 bytes the shipped prompt actually emits; the linear-growth shape and isolation assertions are unchanged)
+- [x] FIX: LOW: `tests/completion-communication.test.ts` still asserted the pre-v0.38.102 one-line `- **outcome** — evidence` bullet after the gist/evidence split landed, so the grouped-render test was permanently red — fixed in 8110b39a (asserts the shipped shape: gist as the bullet, repo-relative evidence indented beneath)
+- [x] FIX: LOW: `tests/stale-delayed-context.test.ts` pinned the tick-local `commitPendingTerminalWork` closure this pass hoisted, so the v0.34.20 rebind contract test could never pass again — fixed in 8110b39a (pins the thin `commitTerminalWork` wrapper and the new `finishLoopGit` choke point)
+- [x] FIX: LOW: three recovery tests pinned "the first retry is always eager", the rule the v0.38.105 reset-hint ordering deliberately replaced (tests/quota-sleep-until-reset.test.ts, tests/model-selector.test.ts, tests/main-model-recovery.test.ts) — fixed in 8110b39a (the hint wins from attempt 1; the hintless-first-retry eager case is still pinned in all three)
