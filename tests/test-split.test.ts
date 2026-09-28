@@ -136,21 +136,19 @@ test("v0.38.108: the release gate runs the hardened runner, and CI bounds both j
   }
 });
 
-test("v0.38.108: no test file gates itself on a package no dependency can provide", () => {
-  const pkg = JSON.parse(readFileSync("package.json", "utf-8"));
-  const declared = [...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.devDependencies ?? {})];
-  const offenders: string[] = [];
-  for (const file of existsSync("tests") ? readdirSync("tests") : []) {
+test("v0.38.108: no test gates itself on the removed @tintinweb fork", () => {
+  assert.equal(
+    existsSync(path.join("tests", "subagent-stop-rpc.integration.test.mjs")),
+    false,
+    "the permanently-skipped real-host fixture is gone, not left to report 'skipped' forever",
+  );
+  for (const file of readdirSync("tests")) {
     if (!/\.test\.(ts|mjs)$/.test(file)) continue;
     const text = readFileSync(path.join("tests", file), "utf-8");
-    // node_modules/<scope?>/<name>/ inside a skip gate is a hard dependency
-    // on that exact installed layout.
-    for (const match of text.matchAll(/node_modules\/(@[a-z0-9-]+\/)?([a-z0-9-]+)\//g)) {
-      const name = `${match[1] ?? ""}${match[2]}`;
-      if (!declared.includes(name)) offenders.push(`${file} -> ${name}`);
-    }
+    // A bare mention is fine (the no-provider smoke blocks the import);
+    // a node_modules PATH is a hard dependency on an installed layout.
+    assert.doesNotMatch(text, /node_modules\/@tintinweb/, `${file} gates on a fork no dependency installs`);
   }
-  assert.deepEqual(offenders, [], `tests gate on packages nothing installs (permanently skipped coverage): ${offenders.join(", ")}`);
 });
 
 test("v0.38.108: tests/README.md does not claim npm test runs the whole suite", () => {
