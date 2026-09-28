@@ -704,6 +704,6 @@ test("v0.38.108: the superseded DESIGN.md table does not mark files that do not 
   const table = doc.slice(start, doc.indexOf("\n### ", start + 10));
   const rows = [...table.matchAll(/^\|\s*`([^`]+)`\s*\|[^|]*\|\s*shipped\s*\|/gm)].map((m) => m[1]);
   assert.ok(rows.length > 0, "the historical table still has shipped rows");
-  const missing = rows.filter((rel) => !fs.existsSync(path.join(import.meta.dirname, "..", rel)));
+  const missing = rows.filter((rel) => !rel || !fs.existsSync(path.join(import.meta.dirname, "..", rel)));
   assert.deepEqual(missing, [], `a superseded table marks non-existent paths as shipped: ${missing.join(", ")}`);
 });
