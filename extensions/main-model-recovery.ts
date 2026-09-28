@@ -317,14 +317,50 @@ export function hourAlignedRetryDelayMs(nowMs = Date.now()): number {
  * "empty" ("empty array", "empty test fixture") is not a provider glitch. */
 const EMPTY_PROVIDER_RESPONSE = /(?:returned|produces?|produced|gave|sent|got)\s+(?:an?\s+)?empty\s+(?:response|completion|result|message|output|content)|empty\s+(?:response|completion)\s+from\s+(?:the\s+)?(?:provider|api|model)|no\s+(?:response|completion)\s+(?:was\s+)?(?:returned|received)|zero[- ]token\s+(?:response|completion)/i;
 
-/** Attempts that get the eager quantum for an empty-response glitch before
- * the normal ladder takes over. Enough to ride out a transient blip without
- * hammering a genuinely broken endpoint. */
-export const EMPTY_RESPONSE_EAGER_ATTEMPTS = 3;
+/** v0.38.109: transient failures retry EAGERLY, not on the 15-minute
+ * ladder. Field direction (operator 2026-09-28): most errors are transient
+ * — a 5xx/timeout/empty blip must be hammered for ~a minute before any
+ * backoff, on the main lane and every retry lane that shares this function
+ * (auditor fallback, model selector, recovery probes). Attempts that get
+ * the eager quantum before any ladder takes over. Bounded on purpose: ten
+ * 5s probes ride out a transient burst without spinning forever against a
+ * genuinely dead endpoint — the short ladder, the 24h horizon, and the
+ * error-brake backstops below still terminate a real wall. */
+export const TRANSIENT_EAGER_ATTEMPTS = 10;
+/** Compat alias: the v0.38.104 empty-response window is now the general
+ * transient window. */
+export const EMPTY_RESPONSE_EAGER_ATTEMPTS = TRANSIENT_EAGER_ATTEMPTS;
+/** Post-eager ladder for transient failures: 1m base (never above the
+ * configured base), doubling, capped well below the 5h wall envelope — a
+ * flaky provider gets probed every few minutes, not parked for hours. */
+export const TRANSIENT_LADDER_BASE_MINUTES = 1;
+export const TRANSIENT_LADDER_CAP_MINUTES = 30;
 
 export function isEmptyProviderResponse(raw: string | undefined): boolean {
   if (typeof raw !== "string" || !raw.trim()) return false;
   return EMPTY_PROVIDER_RESPONSE.test(raw);
+}
+
+/** Failures that read as transient weather rather than a wall: the
+ * classifier's transient kind, plus empty responses (which classify as
+ * unknown but walk like a blip — v0.38.104). Everything else — quota and
+ * billing walls, auth, unknown prose, deterministic rejections — keeps the
+ * configured ladder. */
+export function isEagerRetryFailure(failure: MainModelFailure | undefined): boolean {
+  if (!failure) return false;
+  return failure.kind === "transient" || isEmptyProviderResponse(failure.raw);
+}
+
+/** Post-eager cadence for transient failures. The rung rebases at the end
+ * of the eager window (attempt 11 is rung 1 = 1m), so a blip that survives
+ * the hammering backs off from minutes, not from wherever the wall ladder
+ * would have put attempt 11. Honors a sub-1m configured base; never
+ * exceeds the transient cap. */
+export function transientRetryDelayMs(attempt: number, baseMinutes = 15): number {
+  const base = Number.isFinite(baseMinutes) && baseMinutes > 0 ? Math.min(baseMinutes, TRANSIENT_LADDER_BASE_MINUTES) : TRANSIENT_LADDER_BASE_MINUTES;
+  const rung = Math.max(1, attempt - TRANSIENT_EAGER_ATTEMPTS);
+  const minutes = Math.min(base * 2 ** (rung - 1), TRANSIENT_LADDER_CAP_MINUTES);
+  return Math.round(minutes * 60_000);
 }
 
 export function mainModelFailureDelayMs(failure: MainModelFailure, attempt: number, baseMinutes = 15, nowMs = Date.now()): number {
@@ -341,14 +377,26 @@ export function mainModelFailureDelayMs(failure: MainModelFailure, attempt: numb
   const resetSleep = quotaResetSleepMs(failure, nowMs);
   if (resetSleep !== undefined) return resetSleep;
   if (attempt <= 1) return 5_000;
-  // An empty response is a glitch, not a wall — retry it eagerly for a few
-  // attempts instead of parking the goal behind the exponential ladder.
-  // Without this, attempt 1 was 5s and attempt 2 was 15m, which is backwards
-  // for a failure that usually clears on the very next call.
-  if (attempt > 0 && attempt <= EMPTY_RESPONSE_EAGER_ATTEMPTS && isEmptyProviderResponse(failure?.raw)) {
-    return 5_000;
+  // v0.38.109: transient weather hammers eagerly, then backs off on the
+  // short ladder — never the 15m-base wall ladder. Attempt 2 of a 503 used
+  // to sleep 30m; the field reads that as "gave up on a blip".
+  if (isEagerRetryFailure(failure)) {
+    if (attempt <= TRANSIENT_EAGER_ATTEMPTS) return 5_000;
+    return transientRetryDelayMs(attempt, baseMinutes);
   }
   return mainModelRetryDelayMs(attempt, baseMinutes);
+}
+
+/** v0.38.109: kind-aware delay for recovery PROBES, which only carry the
+ * episode's durable diagnostic text (no live failure object). The probe
+ * path used the blind wall ladder for everything — 7 empty responses
+ * parked our own repo goal 300m. An empty/missing diagnostic classifies
+ * unknown and keeps the historical ladder, so probes without signal behave
+ * exactly as before. */
+export function probeRetryDelayMs(diagnostic: string | undefined, attempt: number, baseMinutes = 15, nowMs = Date.now()): number {
+  const raw = typeof diagnostic === "string" ? diagnostic : "";
+  const failure = raw.trim() ? classifyMainModelFailure(raw) : { kind: "unknown", raw: "" } as MainModelFailure;
+  return mainModelFailureDelayMs(failure, attempt, baseMinutes, nowMs);
 }
 
 /** v0.38.69 (Antigravity port): quota waits never park at the horizon.
