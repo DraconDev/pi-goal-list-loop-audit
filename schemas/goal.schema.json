@@ -207,7 +207,6 @@
         "verdictAt": { "type": "string", "format": "date-time", "description": "v0.38.99: when the approval became durable on this claim (phase: settling)." },
         "attemptId": { "type": "string", "minLength": 1 },
         "startedAt": { "type": "string", "format": "date-time" },
-        "wallDeadlineAt": { "type": "string", "format": "date-time" },
         "recoveryAt": { "type": "string", "format": "date-time" },
         "recoveryReason": { "type": "string" },
         "recoveryRetryAt": { "type": "string", "format": "date-time" },
@@ -221,6 +220,40 @@
         "automaticRecoveryFirstAt": { "type": "string", "format": "date-time" },
         "automaticRecoveryUntil": { "type": "string", "format": "date-time" },
         "priorCompletionSummary": { "type": "string" },
+        "leftOut": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "v0.38.37: what the agent deliberately left out of this turn's work. Renders as the closing non-do bullet in the terminal summary."
+        },
+        "showVerification": { "type": "boolean", "description": "v0.38.98: opt in to a compact verification sentence in the human terminal summary. Full evidence stays in the archive." },
+        "findingGroups": {
+          "type": "array",
+          "description": "v0.38.50: agent-structured finding groups for the grouped terminal render. Absent keeps the flat six-label fallback.",
+          "items": {
+            "type": "object",
+            "required": ["title", "findings"],
+            "properties": {
+              "title": { "type": "string" },
+              "findings": { "type": "array", "items": { "type": "string" } },
+              "tests": { "type": "array", "items": { "type": "string" }, "description": "v0.38.55: per-finding test-result lines, aligned by index with findings." }
+            }
+          }
+        },
+        "gateRows": {
+          "type": "array",
+          "description": "v0.38.52: agent-supplied verification gate rows for the widened terminal table. Absent keeps the mechanical 3-col table.",
+          "items": {
+            "type": "object",
+            "required": ["gate"],
+            "properties": {
+              "gate": { "type": "string" },
+              "command": { "type": "string" },
+              "scope": { "type": "string" },
+              "notes": { "type": "string" }
+            }
+          }
+        },
+        "timeoutEscalation": { "type": "integer", "minimum": 0, "maximum": 100, "description": "v0.37.0: adaptive-timeout escalation index, clamped to [0, 100] on load. A slow model is a machine fact, so a retried claim keeps its position." },
         "requestFullAudit": { "type": "boolean", "description": "v0.38.81: the agent asked for a full-tier audit on this claim. Escalation only." },
         "retryAttempts": { "type": "integer", "minimum": 0 },
         "retryFirstAt": { "type": "string", "format": "date-time" },
@@ -257,6 +290,16 @@
         "status": { "type": "string", "enum": ["pending", "in_progress", "complete"] },
         "agentRole": { "type": "string", "enum": ["designer"] },
         "verificationContract": { "type": "string" },
+        "deferred": {
+          "type": "object",
+          "description": "Durable deferral stamp (record_goal_judgment choice=deferred + taskId). Exempts this task from the complete_goal pending-task gate.",
+          "required": ["reason", "followUp", "at"],
+          "properties": {
+            "reason": { "type": "string", "minLength": 1 },
+            "followUp": { "type": "string", "minLength": 1 },
+            "at": { "type": "string", "format": "date-time" }
+          }
+        },
         "subtasks": {
           "type": "array",
           "maxItems": 5,
