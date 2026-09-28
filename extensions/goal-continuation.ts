@@ -897,16 +897,35 @@ function retryContinuationDispatch(ctx: ExtensionContext, record: ContinuationDi
     }
     return false; // the retry itself failed — genuine stall, fail closed now
   }
-  record.retryCount = 1;
-  record.retrySentAt = Date.now();
-  record.timeoutMs = continuationRetryBackoffMs();
-  persistDispatchRecord(ctx.cwd, record);
-  appendLedger(ctx.cwd, "continuation_retry_sent", dispatchLedgerValue(record, {
-    retrySentAt: record.retrySentAt,
-    nextTimeoutMs: record.timeoutMs,
-    totalWaitMs: record.retrySentAt - record.sentAt + record.timeoutMs,
+  // v0.38.105: build the retried record as a COPY and adopt it only after it
+  // is durable. This used to mutate the live pendingContinuationDispatch in
+  // place and discard persistDispatchRecord's boolean, so a failed sidecar
+  // write left RAM saying retryCount=1 while disk said 0 — a reload re-armed
+  // the start watchdog and re-sent the identical payload. Same fail-closed
+  // contract as dispatchPrepare (:587) and dispatchAccepted (:931).
+  const retried: ContinuationDispatch = {
+    ...record,
+    retryCount: 1,
+    retrySentAt: Date.now(),
+    timeoutMs: continuationRetryBackoffMs(),
+  };
+  if (!persistDispatchRecord(ctx.cwd, retried)) {
+    appendLedger(ctx.cwd, "continuation_retry_persist_failed", {
+      id: record.id,
+      kind: record.kind,
+      retryWasSent: true,
+      generation: retried.generation,
+    });
+    ctx.ui.notify("glla: the continuation retry was sent but its dispatch record could not be persisted, so no further automatic retry is scheduled. Fix .pi-glla storage, then resume explicitly.", "error");
+    return false;
+  }
+  pendingContinuationDispatch = retried;
+  appendLedger(ctx.cwd, "continuation_retry_sent", dispatchLedgerValue(retried, {
+    retrySentAt: retried.retrySentAt,
+    nextTimeoutMs: retried.timeoutMs,
+    totalWaitMs: retried.retrySentAt - retried.sentAt + retried.timeoutMs,
   }));
-  armContinuationStartWatchdog(ctx, record);
+  armContinuationStartWatchdog(ctx, retried);
   return true;
 }
 
