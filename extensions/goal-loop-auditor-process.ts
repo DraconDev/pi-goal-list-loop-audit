@@ -1024,6 +1024,11 @@ export interface AuditJobHealthEntry {
   status: AuditJobHealthStatus;
   pid?: number;
   reason?: string;
+  /** v0.38.105: set when `status === "dead"` was proven by a result.json on
+   * file rather than by a dead pid. The worker had already exited, so the
+   * `pid` beside it is a PARENT identity (or a reused pid) and re-verifying its
+   * liveness before a reap would protect nothing. */
+  provenFinished?: boolean;
 }
 
 export interface AuditJobHealthReport {
@@ -1096,6 +1101,7 @@ export function inspectAuditJobHealth(
     const bytes = auditJobDirectoryBytes(dir);
     let status: AuditJobHealthStatus = "ambiguous";
     let pid: number | undefined;
+    let provenFinished = false;
     let reason: string | undefined = "missing or unreadable worker lock";
     try {
       const lock = JSON.parse(readFileSync(path.join(dir, "lock"), "utf8")) as Record<string, unknown>;
@@ -1126,6 +1132,7 @@ export function inspectAuditJobHealth(
         // transcript) leaked past the retention ceiling.
         if (auditDirHasResult(dir)) {
           status = "dead";
+          provenFinished = true;
           reason = "finished result on file; the parent lock is not a live worker identity";
         } else if (!processAlive(pid)) {
           status = "dead";
@@ -1148,6 +1155,7 @@ export function inspectAuditJobHealth(
       } catch (lockErr) {
         if ((lockErr as NodeJS.ErrnoException).code === "ENOENT" && auditDirHasResult(dir)) {
           status = "dead";
+          provenFinished = true;
           reason = "no worker lock; finished result on file";
         } else if (
           (lockErr as NodeJS.ErrnoException).code === "ENOENT" &&
@@ -1167,7 +1175,7 @@ export function inspectAuditJobHealth(
         }
       }
     }
-    entries.push({ attemptId: entry.name, dir, ageMs, bytes, status, ...(pid !== undefined ? { pid } : {}), ...(reason ? { reason } : {}) });
+    entries.push({ attemptId: entry.name, dir, ageMs, bytes, status, ...(pid !== undefined ? { pid } : {}), ...(provenFinished ? { provenFinished: true } : {}), ...(reason ? { reason } : {}) });
   }
   const live = entries.filter((entry) => entry.status === "live").length;
   const dead = entries.filter((entry) => entry.status === "dead").length;
@@ -1187,7 +1195,12 @@ export function cleanupDeadAuditJobs(cwd: string, maxAgeMs = AUDIT_JOB_CLEANUP_M
     // between scan and reap). A dead entry WITHOUT a pid is only reachable
     // via the no-lock+result path above — provably finished, no pid to
     // re-verify — so it reaps on age alone.
-    if (entry.pid !== undefined && (processAlive(entry.pid) || workerProcessMatches(cwd, entry.pid, entry.dir))) continue;
+      if (entry.provenFinished) {
+        // v0.38.105: proven finished by a result on file. The pid here is a
+        // parent identity that may well have been reused by an unrelated live
+        // process — re-verifying it would protect nothing and leaked the dir
+        // past the retention ceiling forever.
+      } else if (entry.pid !== undefined && (processAlive(entry.pid) || workerProcessMatches(cwd, entry.pid, entry.dir))) continue;
     try { rmSync(entry.dir, { recursive: true, force: true }); } catch { /* preserve the next health report */ }
   }
   return inspectAuditJobHealth(cwd, nowMs, maxAgeMs);
