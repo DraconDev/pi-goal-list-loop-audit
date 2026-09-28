@@ -81,6 +81,7 @@ extractPendingTasks,
   takeAt,
   countTrailingDisapprovals,
   countTrailingComparableDisapprovals,
+  countTrailingUnsettledRounds,
   AUDIT_CAP_HARD_DEFAULT,
   countTrailingRepeatedDisapprovals,
   MAX_REPEATED_AUDIT_NO_PROGRESS,
@@ -1889,6 +1890,30 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     const detail = missing.length > 0
       ? `its evidence did not reference these contract items:\n${missing.map((item) => `- ${item}`).join("\n")}`
       : "its report did not include a valid <evidence> block";
+    // v0.38.110: this branch re-activates the goal, so it is a treadmill
+    // round like any disapproval — and the disapproval cap could not see it
+    // (the row is `approved`, not `disapproved`). Bound it on the same
+    // all-classes counter so a shield that never satisfies its evidence
+    // contract stops for a human instead of cycling forever.
+    const shieldCap = settings.auditCapHard ?? AUDIT_CAP_HARD_DEFAULT;
+    const shieldStreak = countTrailingUnsettledRounds(history);
+    if (shieldCap > 0 && shieldStreak >= shieldCap) {
+      updateGoal({
+        status: "paused",
+        auditHistory: history,
+        pendingCompletion: undefined,
+        pauseKind: "decision",
+        pauseOptions: [`Accept with follow-ups — archive complete, route findings to /list (/goal accept)`, `Fix the evidence contract, then continue (${activeGoalSurfaceCommand("resume")})`, `Tweak the objective — ${activeGoalSurfaceCommand("tweak")} <new text>`, `Cancel the goal (${activeGoalSurfaceCommand("cancel")})`],
+        pauseRecommended: 1,
+        pauseReason: `auditor left the goal unsettled ${shieldStreak}× consecutively (hard cap ${shieldCap})`,
+        pauseSuggestedAction: `The last ${shieldStreak} audit rounds each approved the work but failed the evidence contract, so the goal never settled. That is the audit treadmill. Accept archives the work done and routes the findings to follow-ups; ${activeGoalSurfaceCommand("resume")} continues only after changing the contract or the evidence. Raise Audit hard cap in /glla settings.`,
+      }, liveCtx);
+      liveCtx.ui.notify(`Regression shield blocked completion ${shieldStreak}× consecutively (hard cap ${shieldCap}). ${activeGoalStatusCommand()} for the reports; pick accept / resume / tweak / cancel.`, "warning");
+      maybeDecisionPopup(liveCtx);
+      appendLedger(liveCtx.cwd, "goal_paused", { reason: `regression shield hard cap: ${shieldStreak} consecutive unsettled rounds (cap ${shieldCap})` });
+      notifyExternal(liveCtx, `Goal paused: ${shieldStreak} consecutive rounds blocked by the regression shield (hard cap)`);
+      return;
+    }
     updateGoal({
       status: "active",
       auditHistory: history,
@@ -2199,6 +2224,29 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     const reason = result.impossibleReason || "(no reason given)";
     const aggressive = aggressiveAuditorRecoveryEnabled(liveCtx.cwd);
     if (aggressive && classifyImpossibleReason(reason) === "partial") {
+      // v0.38.110: same treadmill as the shield branch above — this row is
+      // `impossible`, not `disapproved`, so the disapproval cap never saw it.
+      // An agent that narrows one axis per round while the auditor finds a
+      // new impossible axis would otherwise cycle forever with no cap.
+      const partialCap = settings.auditCapHard ?? AUDIT_CAP_HARD_DEFAULT;
+      const partialStreak = countTrailingUnsettledRounds(history);
+      if (partialCap > 0 && partialStreak >= partialCap) {
+        updateGoal({
+          status: "paused",
+          auditHistory: history,
+          pendingCompletion: undefined,
+          pauseKind: "decision",
+          pauseOptions: [`Accept with follow-ups — archive complete, route findings to /list (/goal accept)`, `Tweak the objective — ${activeGoalSurfaceCommand("tweak")} <new text>`, `Cancel the goal (${activeGoalSurfaceCommand("cancel")})`],
+          pauseRecommended: 1,
+          pauseReason: `auditor verdict: IMPOSSIBLE (partial) on ${partialStreak} consecutive rounds (hard cap ${partialCap}) — ${reason}`,
+          pauseSuggestedAction: `The last ${partialStreak} rounds each found a new impossible part, so narrowing one axis at a time is not converging. ${activeGoalSurfaceCommand("tweak")} the objective to remove the impossible part in one edit, or accept the work done and route the rest to follow-ups. Raise Audit hard cap in /glla settings.`,
+        }, liveCtx);
+        liveCtx.ui.notify(`Auditor (${origin}): IMPOSSIBLE (partial) on ${partialStreak} consecutive rounds (hard cap ${partialCap}). ${activeGoalStatusCommand()} for the reports; pick accept / tweak / cancel.`, "warning");
+        maybeDecisionPopup(liveCtx);
+        appendLedger(liveCtx.cwd, "goal_paused", { reason: `impossible-partial hard cap: ${partialStreak} consecutive unsettled rounds (cap ${partialCap})`, origin });
+        notifyExternal(liveCtx, `Goal paused: ${partialStreak} consecutive IMPOSSIBLE(partial) verdicts (hard cap)`);
+        return;
+      }
       updateGoal({
         status: "active",
         auditHistory: history,
