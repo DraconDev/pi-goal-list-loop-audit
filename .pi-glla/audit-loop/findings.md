@@ -777,3 +777,34 @@ reviewed runtime is the contract; the reasoning is recorded on that finding.
 - The prior pass's re-baselined test constants and stale expectations were
   re-checked: `npm run test:all` is green on this range (see the gate rows in
   the goal ledger).
+
+## Corrections to the 2026-09-28 pass record (independent reviewer rehearsal)
+
+An independent fresh-context reviewer rehearsed this pass's verification
+contract and found three accuracy problems in the record above. Findings are
+append-only, so these corrections are appended rather than edited in.
+
+- **CORRECTION (commit attribution):** the HIGH finding's "fixed in 31ec945b"
+  is off by one commit. `31ec945b` is the pair (the new
+  `tests/approved-audit-settles.test.ts` plus the settlement comment); the
+  `return;` itself is the `+1/-0` commit `0eaa72a8`. Both are real, both are on
+  `main`, and the fix is verified present in the current source
+  (extensions/loops/goal-auditor-hooks.ts:1875-1884). Correct attribution:
+  `31ec945b` + `0eaa72a8`.
+- **CORRECTION (retraction count):** the section intro says "three reported
+  items were RETRACTED" while the honesty list below it holds 2 RETRACTED + 1
+  NOT A FINDING + 2 NOT REPORTED = 5 dismissed items, and the recording commit
+  message says "4 claims retracted". The list of five is the accurate one; the
+  other two counts were loose. The substance (all five were verified against
+  the current source and none is a live defect) is unchanged.
+- **CORRECTION (line-number drift in two retractions):** the
+  `blockForbiddenModelSwitches` read is at extensions/loops/goal-settings-ui.ts:1913
+  (not :1909), and the resumable-hold contract text is at
+  extensions/goal-loop.ts:1458-1462 (the cited :883-890 now holds a different
+  comment). Both retractions still hold; only the line numbers moved.
+- **NOTE (reflog):** the reflog shows two `reset: moving to HEAD` no-op
+  entries inside the fix range. Those are the main model's own
+  `git checkout HEAD -- <file>` steps used to prove each new regression FAILS
+  against the pre-fix source. No commit was rewritten, no history rewritten,
+  no worktree content discarded; every reverted change was re-applied
+  immediately and the post-fix state is what is committed.
