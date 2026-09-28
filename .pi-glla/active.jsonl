@@ -517,3 +517,5 @@
 {"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","reason":"exhausted"},"at":"2026-09-28T01:44:54.873Z"}
 {"type":"auditor_model_same_as_session","value":{"model":"openrouter/space-bunny-alpha","fallback":null},"at":"2026-09-28T01:44:54.874Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T01:48:04.654Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T01:48:22.018Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":{"inputTokens":232,"outputTokens":654,"cacheReadTokens":385050,"cacheWriteTokens":0,"totalTokens":385936},"contextUsage":{"tokens":385936,"contextWindow":1000000,"percent":38.5936}},"at":"2026-09-28T01:48:32.229Z"}
