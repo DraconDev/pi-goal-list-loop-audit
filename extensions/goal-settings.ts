@@ -468,7 +468,7 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   // non-string values drop so a hand-edited typo can never reach an agent
   // file as a bogus `thinking:` key (unset = session inherit).
   if (settings.subagentThinkingOverrides && typeof settings.subagentThinkingOverrides === "object") {
-    const levels = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
+    const levels = THINKING_LEVELS;
     for (const [key, level] of Object.entries(settings.subagentThinkingOverrides)) {
       if (typeof level !== "string" || !levels.includes(level)) delete (settings.subagentThinkingOverrides as Record<string, unknown>)[key];
     }
@@ -598,6 +598,30 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   }
   if (typeof settings.auditCapHard !== "number" || !Number.isInteger(settings.auditCapHard) || settings.auditCapHard < 0) {
     delete settings.auditCapHard;
+  }
+  // v0.38.105: two more members of the same family that had no guard, so a
+  // hand-edited junk value was rendered as effective by provenance, the menu
+  // and the headless /glla row while the RUNTIME silently substituted its
+  // default (mainModelRetryDelayMs requires a finite number > 0;
+  // auditFeedbackChars requires a non-negative integer). An operator setting
+  // 30 minutes and watching a 15-minute ladder had no way to see the value
+  // was dead.
+  if (typeof settings.mainModelRetryMinutes !== "number" || !Number.isFinite(settings.mainModelRetryMinutes) || settings.mainModelRetryMinutes < 1) {
+    delete settings.mainModelRetryMinutes;
+  }
+  if (typeof settings.auditFeedbackChars !== "number" || !Number.isInteger(settings.auditFeedbackChars) || settings.auditFeedbackChars < 0) {
+    delete settings.auditFeedbackChars;
+  }
+  // v0.38.105: the same enum hole. subagentThinkingOverrides is pruned against
+  // the ladder above; these two scalar pins were not, so a hand-edited
+  // "turbo" survived load, printed as the current level in the menu, and was
+  // stringified straight into a drafter/auditor agent file's thinking: key.
+  const thinkingLadder = THINKING_LEVELS;
+  if (settings.drafterThinkingLevel !== undefined && (typeof settings.drafterThinkingLevel !== "string" || !thinkingLadder.includes(settings.drafterThinkingLevel))) {
+    delete settings.drafterThinkingLevel;
+  }
+  if (settings.auditorThinkingLevel !== undefined && (typeof settings.auditorThinkingLevel !== "string" || !thinkingLadder.includes(settings.auditorThinkingLevel))) {
+    delete settings.auditorThinkingLevel;
   }
   if (typeof settings.mechanicalLoadScale !== "boolean") {
     delete settings.mechanicalLoadScale;
