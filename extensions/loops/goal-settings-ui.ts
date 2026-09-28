@@ -597,6 +597,8 @@ export function resolveAuditorModel(
     ...(primaryRef ? [primaryRef] : []),
     ...normalizedFallbackRefs.filter((candidate) => candidate.toLowerCase() !== primaryRef?.toLowerCase()),
   ];
+  const settings = loadSettings(ctx.cwd);
+  const forbidden = (candidate: string): boolean => isForbiddenModel(candidate, settings.forbiddenModels);
   // v0.38.103 (field 2026-09-27): with nothing configured there is no chain
   // to walk. ModelSelector was being asked to select from an EMPTY list on
   // every audit, which it reports as `exhausted` — 828 ledger events on
@@ -616,9 +618,7 @@ export function resolveAuditorModel(
     }
     return { model: undefined, error: "no session model and no auditorModel configured — set one with /glla → Auditor model" };
   }
-  const settings = loadSettings(ctx.cwd);
-  const forbidden = (candidate: string): boolean => isForbiddenModel(candidate, settings.forbiddenModels);
-  const selector = new ModelSelector({
+  const settings2 = undefined;
     getChain: () => configuredRefs,
     resolve: (candidate) => tryRef(candidate).model,
     isForbidden: forbidden,
