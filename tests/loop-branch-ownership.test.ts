@@ -283,6 +283,104 @@ test("/loop stop mid-tick still restores the original branch (no false branch-ch
   }
 });
 
+test("/loop stop mid-tick commits the in-flight iteration instead of resetting it away", async () => {
+  // v0.38.105: `/loop stop` and `/loop finish` reach finishLoopGit WITHOUT
+  // passing through runLoopTick, so a tick-local commit helper could not
+  // protect them: the scratch branch's uncommitted diff was hard-reset away
+  // and the user was still told "work is on branch <scratch>".
+  const cwd = tmpCwd();
+  fs.writeFileSync(path.join(cwd, "seed.txt"), "seed\n");
+  git(cwd, "init", "-b", "main");
+  git(cwd, "config", "user.name", "Audit Test");
+  git(cwd, "config", "user.email", "audit@example.test");
+  git(cwd, "add", "seed.txt");
+  git(cwd, "commit", "-m", "init");
+  const branch = "pi-glla-loop/stop-commit-inflight";
+  git(cwd, "checkout", "-b", branch);
+  fs.writeFileSync(path.join(cwd, ".gitignore"), ".pi-glla/\n");
+  git(cwd, "add", ".gitignore");
+  git(cwd, "commit", "-m", "ignore state");
+
+  seedState(cwd, {
+    loop: seedLoop({
+      branchName: branch,
+      originalBranch: "main",
+      measureCmd: "echo 2",
+      direction: "max",
+      bestValue: 1,
+      lastValue: 1,
+      iteration: 1,
+    }),
+  });
+  // The iteration's uncommitted output, written while the tick is parked on
+  // the measure await — exactly what the destructive reset used to erase.
+  fs.writeFileSync(path.join(cwd, "inflight.txt"), "iteration 1 work\n");
+  const calls: string[][] = [];
+  let measureInvoked = false;
+  let resolveMeasure!: (value: { code: number; stdout: string; stderr: string }) => void;
+  const measureGate = new Promise<{ code: number; stdout: string; stderr: string }>((res) => { resolveMeasure = res; });
+  pi.execHandler = (cmd, args, opts) => {
+    calls.push([cmd, ...args]);
+    if (cmd === "bash") {
+      measureInvoked = true;
+      return measureGate;
+    }
+    return realGitExec(cwd, calls)(cmd, args, opts);
+  };
+  const ctx = await boot(cwd);
+  try {
+    const tick = pi.fire("agent_end", {
+      messages: [{
+        role: "assistant",
+        content: [{ type: "text", text: "HYPOTHESIS: improve the metric" }],
+        stopReason: "end_turn",
+      }],
+    }, ctx);
+    const deadline = Date.now() + 5000;
+    while (!measureInvoked && Date.now() < deadline) await new Promise((r) => setTimeout(r, 10));
+    assert.ok(measureInvoked, "the tick reached its measure await before the stop");
+    await pi.command("loop", "stop", ctx);
+    resolveMeasure({ code: 0, stdout: "2\n", stderr: "" });
+    await tick;
+
+    assert.equal(
+      git(cwd, "show", `${branch}:inflight.txt`),
+      "iteration 1 work",
+      "the in-flight iteration's work is committed on the scratch branch, not destroyed",
+    );
+    assert.equal(git(cwd, "branch", "--show-current"), "main", "the user is restored to the original branch");
+    const commitAt = calls.findIndex(([cmd, ...a]) => cmd === "git" && a[0] === "commit");
+    const resetAt = calls.findIndex(([cmd, ...a]) => cmd === "git" && a[0] === "reset" && a[1] === "--hard");
+    assert.ok(commitAt >= 0, "the stop commits the pending terminal work");
+    assert.ok(resetAt > commitAt, "the destructive reset runs after the commit, never before it");
+    const ledger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
+    assert.match(ledger, /"action":"commit-terminal"/, "the terminal commit is auditable in the ledger");
+  } finally {
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});
+
+test("commitPendingTerminalWork is module scope and finishLoopGit commits before its reset (source pin)", async () => {
+  // A tick-local helper is the exact shape that let the two out-of-tick
+  // terminal routes skip the commit; pin the choke point so it cannot move
+  // back inside runLoopTick.
+  const src = fs.readFileSync(path.join(__dirname, "..", "extensions", "goal-loop.ts"), "utf-8");
+  const helper = src.indexOf("\nasync function commitPendingTerminalWork(");
+  assert.ok(helper >= 0, "commitPendingTerminalWork is declared at module scope (column 0)");
+  const tick = src.indexOf("async function runLoopTick(");
+  assert.ok(tick >= 0);
+  const between = src.slice(tick, helper >= tick ? helper : tick);
+  assert.ok(
+    !between.includes("const commitPendingTerminalWork"),
+    "runLoopTick declares no tick-local shadow of the terminal-commit helper",
+  );
+  const finish = src.indexOf("async function finishLoopGit(");
+  const finishBody = src.slice(finish, src.indexOf("\n}\n", finish));
+  const commitAt = finishBody.indexOf("commitPendingTerminalWork(ctx, loop)");
+  const resetAt = finishBody.indexOf('"reset", "--hard", "HEAD"');
+  assert.ok(commitAt >= 0 && resetAt > commitAt, "finishLoopGit commits the pending diff before the hard reset");
+});
+
 test("parkLoopOnWrongBranch consults HEAD before the in-flight tick guard (source pin)", async () => {
   const src = fs.readFileSync(path.join(__dirname, "..", "extensions", "goal-loop.ts"), "utf-8");
   const fnStart = src.indexOf("async function parkLoopOnWrongBranch(");

@@ -779,49 +779,12 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
     }
     persistState(ctx);
   }
-  // v0.35.4: a terminal stop never destroys the last iteration's work.
-  // The continue-gate above means plateau/bounds/stuck stops skipped the
-  // commit; finishLoopGit's unconditional reset --hard then erased the
-  // final iteration — including an IMPROVING one stopped by maxIterations.
-  // Commit any pending diff before the git-finish so the scratch branch
-  // carries the terminal iteration.
-  const parkLoopOnGitFailure = async (action: string, result: { ok: boolean; stderr?: string }): Promise<boolean> => {
-    if (result.ok || !loop.branchName) return false;
-    const reason = `git ${action} failed during loop finish — terminal work remains uncommitted on ${loop.branchName}: ${(result.stderr || "unknown git error").replace(/\s+/g, " ").trim().slice(0, 160)}`;
-    loop.active = false;
-    loop.stopReason = reason;
-    clearToolActivityState();
-    persistState(ctx);
-    appendLedger(ctx.cwd, "loop_git_finish_failed", { action, branch: loop.branchName, iteration: loop.iteration, error: reason });
-    ctx.ui.notify(`Loop parked: ${reason}. No destructive reset or checkout was attempted; inspect and commit the branch manually.`, "warning");
-    notifyExternal(ctx, `Loop parked after ${action} failed; terminal work remains on ${loop.branchName}.`);
-    return true;
-  };
-  const commitPendingTerminalWork = async (): Promise<boolean> => {
-    if (!loop.branchName) return true;
-    if (await parkLoopOnWrongBranch(ctx, loop, "terminal commit")) return false;
-    const pending = await runGit(ctx, ["status", "--porcelain"]);
-    if (!rebindLoop()) return false;
-    if (!pending.ok) {
-      await parkLoopOnGitFailure("status", pending);
-      return false;
-    }
-    if (pending.stdout.length === 0) return true;
-    const added = await runGit(ctx, ["add", "-A"]);
-    if (!rebindLoop()) return false;
-    if (!added.ok) {
-      await parkLoopOnGitFailure("add", added);
-      return false;
-    }
-    const committed = await runGit(ctx, ["commit", "-m", `pi-glla-loop: iteration ${loop.iteration} (${loop.direction ?? "spec"}=${loop.bestValue ?? "n/a"})`]);
-    if (!rebindLoop()) return false;
-    appendLedger(ctx.cwd, "loop_git", { action: "commit-terminal", iteration: loop.iteration, ok: committed.ok });
-    if (!committed.ok) {
-      await parkLoopOnGitFailure("terminal commit", committed);
-      return false;
-    }
-    return true;
-  };
+  // v0.38.105: the tick-local wrappers are gone — the terminal commit now
+  // lives at module scope (commitPendingTerminalWork) so EVERY route into
+  // finishLoopGit commits first, not just the two in-tick stops that used to
+  // call it. The tick still revalidates between every await via the guard.
+  const commitTerminalWork = async (): Promise<boolean> =>
+    commitPendingTerminalWork(ctx, loop, { stillValid: rebindLoop, ctx: () => ctx });
   // v0.24.0: the top of the stuck ladder — bounded and surfaced, same
   // philosophy as a plateau stop. The loop ends WITH the reason, not in silence.
   // v0.25.0: aggressiveMode raises the ladder (default 5 → 10, explicit wins).
@@ -831,7 +794,7 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
     clearToolActivityState();
     loop.stopReason = `stuck — ${loop.lastStuckReason} (${loop.consecutiveStuck} consecutive interventions)`;
     persistState(ctx);
-    if (!await commitPendingTerminalWork()) return;
+    if (!await commitTerminalWork()) return;
     if (await finishLoopGit(ctx, loop)) return;
     if (!rebindLoop()) return;
     const recap = compactLoopCompletionSummary({ ...loop, historyLength: loop.history.length });
@@ -874,7 +837,7 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
         outcome = { kind: "stop", reason: honest };
       }
     }
-    if (!await commitPendingTerminalWork()) return;
+    if (!await commitTerminalWork()) return;
     if (await finishLoopGit(ctx, loop)) return;
     if (!rebindLoop()) return;
     const recap = compactLoopCompletionSummary({ ...loop, historyLength: loop.history.length });
@@ -909,12 +872,78 @@ export function announceQueuedListAfterLoopEnd(ctx: ExtensionContext): void {
   );
 }
 
+/** v0.35.4 / v0.38.105: a terminal stop never destroys the last iteration's
+ * work. The continue-gate means plateau/bounds/stuck stops skip the commit,
+ * and finishLoopGit's unconditional `reset --hard` would then erase the
+ * final iteration — including an IMPROVING one stopped by maxIterations, or
+ * the iteration still in flight when the user typed `/loop stop`.
+ *
+ * Module scope, not a tick closure: `/loop stop`, `/loop finish` and
+ * `/glla wipe` all reach finishLoopGit WITHOUT going through runLoopTick, so
+ * a tick-local helper could never protect them (v0.38.105 finding). The tick
+ * passes a guard so it still revalidates `state.loop` between every await. */
+async function commitPendingTerminalWork(
+  ctx: ExtensionContext,
+  loop: LoopState,
+  tick?: { stillValid: () => boolean; ctx: () => ExtensionContext },
+): Promise<boolean> {
+  if (!loop.branchName) return true;
+  // The tick's live ctx can be rebound across an await; out-of-tick callers
+  // keep the ctx they were handed.
+  const liveCtx = () => (tick ? tick.ctx() : ctx);
+  const stillValid = () => (tick ? tick.stillValid() : true);
+  if (await parkLoopOnWrongBranch(liveCtx(), loop, "terminal commit")) return false;
+  if (!stillValid()) return false;
+  const pending = await runGit(liveCtx(), ["status", "--porcelain"]);
+  if (!stillValid()) return false;
+  if (!pending.ok) {
+    await parkLoopOnGitFailure(liveCtx(), loop, "status", pending);
+    return false;
+  }
+  if (pending.stdout.length === 0) return true;
+  const added = await runGit(liveCtx(), ["add", "-A"]);
+  if (!stillValid()) return false;
+  if (!added.ok) {
+    await parkLoopOnGitFailure(liveCtx(), loop, "add", added);
+    return false;
+  }
+  const committed = await runGit(liveCtx(), ["commit", "-m", `pi-glla-loop: iteration ${loop.iteration} (${loop.direction ?? "spec"}=${loop.bestValue ?? "n/a"})`]);
+  if (!stillValid()) return false;
+  appendLedger(liveCtx().cwd, "loop_git", { action: "commit-terminal", iteration: loop.iteration, ok: committed.ok });
+  if (!committed.ok) {
+    await parkLoopOnGitFailure(liveCtx(), loop, "terminal commit", committed);
+    return false;
+  }
+  return true;
+}
+
+/** Park (never force-finish) when a terminal git step fails, so uncommitted
+ * work is left on the scratch branch for the operator instead of being reset. */
+async function parkLoopOnGitFailure(ctx: ExtensionContext, loop: LoopState, action: string, result: { ok: boolean; stderr?: string }): Promise<boolean> {
+  if (result.ok || !loop.branchName) return false;
+  const reason = `git ${action} failed during loop finish — terminal work remains uncommitted on ${loop.branchName}: ${(result.stderr || "unknown git error").replace(/\s+/g, " ").trim().slice(0, 160)}`;
+  loop.active = false;
+  loop.stopReason = reason;
+  clearToolActivityState();
+  persistState(ctx);
+  appendLedger(ctx.cwd, "loop_git_finish_failed", { action, branch: loop.branchName, iteration: loop.iteration, error: reason });
+  ctx.ui.notify(`Loop parked: ${reason}. No destructive reset or checkout was attempted; inspect and commit the branch manually.`, "warning");
+  notifyExternal(ctx, `Loop parked after ${action} failed; terminal work remains on ${loop.branchName}.`);
+  return true;
+}
+
 /** On loop stop (any reason): return to the original branch, tell the user
  * where the work lives and how to merge it. Scratch branch is never deleted. */
 async function finishLoopGit(ctx: ExtensionContext, loop: LoopState): Promise<boolean> {
   if (!loop.branchName) return false;
   const generation = flags.sessionGeneration;
   if (await parkLoopOnWrongBranch(ctx, loop, "finish")) return true;
+  // v0.38.105: the single choke point. Every terminal route — the tick's own
+  // stops, `/loop stop`, `/loop finish`, `/glla wipe` — commits the pending
+  // diff here, so the `reset --hard` below can only ever discard what git
+  // already recorded. A parked commit (git failure, HEAD moved, or a tick
+  // that lost its loop) returns true: finish without the destructive reset.
+  if (!(await commitPendingTerminalWork(ctx, loop))) return true;
   // Uncommitted remnants (final stalled iterations were reset already, but be safe).
   const reset = await runGit(ctx, ["reset", "--hard", "HEAD"]);
   if (!reset.ok) {
