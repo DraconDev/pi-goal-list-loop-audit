@@ -21,9 +21,14 @@ auto-committer had landed.
 
 ## Result
 
-**14 findings: 3 HIGH, 6 MEDIUM, 5 LOW — all fixed, all pinned by a test.**
-No DECIDE findings: every candidate had one durable fix, so nothing needed a
-direction call from the user.
+**11 findings fixed and pinned: 3 HIGH, 6 MEDIUM, 2 LOW**, plus one stale-test
+correction. No DECIDE findings: every candidate had one durable fix, so nothing
+needed a direction call from the user.
+
+Four further LOW candidates were verified real but **deliberately not fixed**
+this pass; they are listed with their disposition under "Left open" rather
+than quietly dropped, because a fix that is not made should not be counted as
+a fix.
 
 The three HIGH findings are the same defect class as the field incident this
 repo recorded on 2026-09-28 (`STUCK-AT-LAST-PART-2026-09-28.md`): **goals
@@ -173,6 +178,40 @@ Recorded because a pass that only confirms is not a pass.
   `mainModelFailureDelayMs(classify("503"), n, 15)` for n=1..32: `5000 ×10`,
   then 60s/120s/240s/480s/960s/1800s and flat. Strictly monotonic, terminating,
   and the cap holds. The transient window is bounded at 10 requests over 50s.
+
+## Left open — verified real, not fixed this pass
+
+Recorded so a later pass inherits the evidence instead of re-deriving it.
+
+- **LOW — the approval card is lost if the process dies between the archive
+  and the outbox write** (`goal-auditor-hooks.ts`). `archiveCurrentGoal`
+  clears `state.goal`, so a crash in the ms window before
+  `persistApprovalRender` leaves no outbox row for
+  `replayUndeliveredApprovalRenders` to replay, and the terminal completion
+  card is never delivered. The goal record itself survives in the archive; only
+  the notification is lost. Left open because the fix is a reordering of a
+  durable settlement transaction, and this repo has already had one bad
+  reordering in this exact function — it deserves its own change with its own
+  crash test, not a drive-by inside an audit pass.
+- **LOW — the context-starvation one-shot latch clears only on a tick that
+  would have refired anyway** (`goal-heartbeat.ts:1728`). The reset sits after
+  the `fire` / stand-down / starvation gates, so a second starvation episode
+  inside a busy window gets no notification. The *refusal* is unaffected
+  (`isContextStarvedRefused` does not read the latch), so this is a lost
+  warning, not a disabled recovery, and it clears on any later idle tick.
+- **LOW — a hang probe from a dead session generation keeps standing down the
+  new session's zombie watchdog** (`goal-heartbeat.ts:1023`). Unlike
+  `requestSubagentHangAction`, `hasHealthySubagentHangProbe` does not check
+  `probe.ownerGeneration`, and `subagentHangProbes` is not cleared on rebind.
+  Bounded by the 20-minute event-only window, so it delays an abort rather
+  than disabling it.
+- **LOW — `formatGoalAuditHistory` renders an unclamped `durationMs` and
+  raw-`.slice()`s report text** (`goal-loop-core.ts`). No live path produces a
+  negative or NaN duration (every writer is `Date.now() - auditStartMs`), so
+  this is a guard inconsistency rather than a defect. Left open deliberately:
+  adding a clamp to a value that cannot be wrong is noise, and the real fix is
+  to route the text through `truncateCells` the way the rest of the display
+  does — a cosmetic change that deserves its own diff.
 
 ## Retracted by the scouts themselves
 

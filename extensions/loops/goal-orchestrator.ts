@@ -240,7 +240,7 @@ import {
   textFingerprint,
   pushCapped as pushRepetitionCapped,
 } from "../goal-loop-repetition.js";
-import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
+import { buildStatusText, buildWidgetLines, truncateCells, type AuditDisplayProgress } from "../goal-loop-display.js";
 import {
   buildLoopCompletionSummary,
   buildRichArchiveSection,
@@ -784,11 +784,8 @@ let persistenceDegradedNotified = false;
 /** v0.28.11 (U9): objective-first notifies — truncate long objectives.
  * v0.34.24: this is a display projection; persisted objective text stays raw.
  */
-const shortObj = (s: string): string => {
-  const safe = compactDisplayText(s);
-  return safe.length > 90 ? `${safe.slice(0, 87)}…` : safe;
-};
-const displaySlice = (s: string, max: number): string => compactDisplayText(s).slice(0, max);
+const shortObj = (s: string): string => truncateCells(compactDisplayText(s), 90);
+const displaySlice = (s: string, max: number): string => truncateCells(compactDisplayText(s), max);
 /** v0.28.30: terminology — a list item is not a goal (user note: "we seem
  * to call everything goal"). User-facing pause/abort notifies name the policy. */
 const goalNoun = (): string => (state.goal?.policy === "list" ? "List item" : "Goal");
