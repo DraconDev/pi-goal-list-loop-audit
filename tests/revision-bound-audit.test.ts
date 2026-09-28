@@ -691,3 +691,41 @@ test("v0.34.96: a NORMAL completionSummary still runs the auditor (no false-posi
     delete process.env.GLLA_PI_BINARY;
   }
 });
+
+test("v0.38.105: an unpersistable newObjective refuses the claim and never advances the revision", async () => {
+  // The pivot path used to pre-bump the in-memory revision, ignore
+  // updateGoal's false, then ledger goal_tweaked and notify "Objective
+  // updated" — so an unwritable .pi-glla advanced the audited revision (which
+  // permanently invalidates any existing approval through the revision-bound
+  // gate) while the claim ran against the OLD objective.
+  const cwd = tmpCwd();
+  seedRevisionedGoal(cwd, 4, 4, true);
+  // A directory where the goal transaction belongs makes the atomic
+  // temp+rename fail, so updateGoal returns false without touching the goal.
+  const transaction = path.join(cwd, ".pi-glla", "goal-state.transaction.json");
+  fs.rmSync(transaction, { force: true });
+  fs.mkdirSync(transaction, { recursive: true });
+
+  const pi = new MockPi();
+  activate(pi.api);
+  __testOnlyRegisterAgentTools(pi.api);
+  rememberCtxFor(cwd);
+  const validRecap = "Outcome: Test claim. Changed: none. Evidence: harness. Tests: not run — harness. Unresolved: none. Next: none.";
+  try {
+    const res = await pi.runTool(
+      "complete_goal",
+      { completionSummary: validRecap, verificationSummary: "Evidence", newObjective: "shifted objective that cannot be stored" },
+      ownerCtx(cwd),
+    );
+    assert.match(res.content[0]!.text, /NOT persisted/i, "the tool refuses honestly instead of claiming the shift");
+    const st = readState(cwd);
+    assert.equal(st.goal?.objective, seedGoal({}).objective, "the objective on disk is untouched");
+    assert.equal(st.goal?.revision, 4, "no phantom revision bump beside an unchanged objective");
+    const ledgerTypes = readLedger(cwd).map((l) => l.type);
+    assert.ok(ledgerTypes.includes("complete_goal_new_objective_not_persisted"), "the refusal is auditable");
+    assert.ok(!ledgerTypes.includes("goal_tweaked"), "no false 'tweaked' entry for a shift that never happened");
+    assert.ok(!ledgerTypes.includes("completion_accepted"), "the claim was never accepted");
+  } finally {
+    fs.rmSync(transaction, { recursive: true, force: true });
+  }
+});
