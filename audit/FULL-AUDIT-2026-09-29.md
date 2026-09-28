@@ -21,16 +21,18 @@ auto-committer had landed.
 
 ## Result
 
-**12 findings: 2 HIGH, 6 MEDIUM, 4 LOW — all fixed, all pinned by a test.**
+**14 findings: 3 HIGH, 6 MEDIUM, 5 LOW — all fixed, all pinned by a test.**
 No DECIDE findings: every candidate had one durable fix, so nothing needed a
 direction call from the user.
 
-The two HIGH findings are the same defect class as the field incident this
+The three HIGH findings are the same defect class as the field incident this
 repo recorded on 2026-09-28 (`STUCK-AT-LAST-PART-2026-09-28.md`): **goals
 stuck at the last part because the audit gate never opens.** That doc closed
 the primary cause (a hard cap wired only into the inline settlement path,
-v0.38.107). This pass found the cap still has two holes, and that the hole is
-structural rather than incidental.
+v0.38.107). This pass found the cap still has two holes, that the holes are
+structural rather than incidental, and — in the region the first four scouts
+did not reach — a third mechanism that silently disables every watchdog at
+once.
 
 ## HIGH 1 — the regression shield is an uncapped re-continuation treadmill
 
@@ -225,14 +227,12 @@ assumed:
 
 Recorded so silence is not read as cleanliness:
 
-- `goal-heartbeat.ts` (1921 lines) was read only in targeted regions; the
-  zombie-run watchdog, the context-starvation latch, and the
-  `continuousSupervisor.check` backoff ladder are unreviewed. This is the
-  largest gap.
-- `goal-tools.ts` (4100 lines), `goal-activation.ts` (3484) and
-  `goal-commands.ts` (3407) were read at their tool-registration, persistence
-  and display seams, not paged end to end.
-- `goal-loop-shield.ts` (996) was not read at all.
+- `goal-heartbeat.ts` and `goal-loop-backoff.ts` were read by a follow-up scout
+  after the first four reported them as gaps; that scout found HIGH 3. The
+  first four lanes' own gaps remain: `goal-tools.ts` (4100 lines),
+  `goal-activation.ts` (3484) and `goal-commands.ts` (3407) were read at their
+  tool-registration, persistence and display seams, not paged end to end, and
+  `goal-loop-shield.ts` (996) was not read at all.
 - The two HIGH findings are **structural, not field-observed**: both need a
   repeated same-class verdict to spin. No ledger in this repo or the fleet was
   checked for a goal that actually hit them. That is the honest limit of this
