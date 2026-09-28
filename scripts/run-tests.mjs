@@ -95,7 +95,14 @@ function main() {
   const startedAt = Date.now();
   log(`mode=${mode} slow_files=${SLOW_TEST_FILES.length} stall_timeout=${Math.round(stallLimit / 1000)}s heartbeat=${Math.round(beat / 1000)}s`);
 
-  const child = spawn("bun", ["test", ...bunArgs], { stdio: ["inherit", "pipe", "pipe"] });
+  // v0.38.108: `detached: true` is what makes the group-kill below real.
+  // Without it the child stays in THIS process's group, so
+  // process.kill(-child.pid) targets a pgid that does not exist, throws
+  // ESRCH, and takeDown silently degrades to signalling the direct child —
+  // leaving the detached auditor/worker grandchildren (the 26-hour orphan
+  // this wrapper exists to prevent) running. The spawn option, not the
+  // kill, was the missing half of the guarantee.
+  const child = spawn("bun", ["test", ...bunArgs], { stdio: ["inherit", "pipe", "pipe"], detached: true });
   let bytes = 0;
   let lastOutputAt = Date.now();
   let settled = false;
@@ -118,7 +125,15 @@ function main() {
   };
   // Own the child's process group so detached auditor workers spawned by the
   // suite die with it — the 26-hour orphan was exactly this failure mode.
-  try { process.kill(-child.pid, 0); child.unref?.(); } catch { /* no group */ }
+  // v0.38.108: this probe used to swallow its own ESRCH, so when the group
+  // did not exist (the pre-fix spawn) the wrapper claimed a guarantee it
+  // never had and never even unref'd. A failed probe is now loud.
+  try {
+    process.kill(-child.pid, 0);
+    child.unref?.();
+  } catch (error) {
+    log(`WARNING: the suite child is not its own process group (${error?.code ?? error?.message}) — takeDown can only signal the direct child, so orphaned grandchildren may survive the run.`);
+  }
 
   const onSignal = (signal) => {
     log(`received ${signal} — taking the suite down with it (no orphan)`);

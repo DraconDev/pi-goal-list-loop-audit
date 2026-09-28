@@ -10,6 +10,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 
 import { SLOW_TEST_FILES } from "./slow-files.mjs";
 import {
@@ -111,5 +112,25 @@ test("runner: the hand-written .d.mts declares every runtime export (drift guard
   assert.ok(names.length >= 7, `the runtime export surface is discovered, found ${names.length}`);
   for (const name of names) {
     assert.match(declared, new RegExp(`\\b${name}\\b`), `scripts/run-tests.d.mts must declare ${name}`);
+  }
+});
+
+test("v0.38.108: the suite child is detached so the documented group-kill is real", async () => {
+  const src = await readFile(new URL("../scripts/run-tests.mjs", import.meta.url), "utf8");
+  const spawnLine = src.slice(src.indexOf("const child = spawn(\"bun\""), src.indexOf("const child = spawn(\"bun\"") + 200);
+  assert.match(spawnLine, /detached: true/, "without detached the negative-pid kill is a silent no-op");
+  // The probe must not swallow its own failure again.
+  assert.doesNotMatch(src, /catch \{ \/\* no group \*\/ \}/, "a missing process group is reported, not swallowed");
+  assert.match(src, /is not its own process group/, "the wrapper names the degraded guarantee");
+});
+
+test("v0.38.108: the release gate runs the hardened runner, and CI bounds both jobs", async () => {
+  const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+  assert.match(pkg.scripts["test:all"], /^node scripts\/run-tests\.mjs --all/, "test:all goes through the stall-proof, orphan-free wrapper");
+  const workflow = await readFile(new URL("../.github/workflows/publish.yml", import.meta.url), "utf8");
+  const jobs = workflow.split(/\n  (?=quality:|publish:)/).slice(1);
+  assert.equal(jobs.length, 2, "both workflow jobs are inspected");
+  for (const job of jobs) {
+    assert.match(job, /timeout-minutes: \d+/, `${job.split("\n")[0]} bounds its own runtime`);
   }
 });

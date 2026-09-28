@@ -31,6 +31,11 @@ jobs:
   quality:
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    # v0.38.108: the suite is serialized and can go silent on a loaded
+    # runner. GitHub's 6-hour default is a 6-hour burn; the hardened runner
+    # now kills a stalled run, and this bounds the job even if the runner
+    # itself wedges.
+    timeout-minutes: 45
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -63,6 +68,9 @@ jobs:
       contents: read
       id-token: write
     runs-on: ubuntu-latest
+    # v0.38.108: same bound as the quality lane — a hung release contract
+    # must fail fast, not hold the publish lane for GitHub's 6-hour default.
+    timeout-minutes: 45
     steps:
       - name: Check out the released tag
         uses: actions/checkout@v4
