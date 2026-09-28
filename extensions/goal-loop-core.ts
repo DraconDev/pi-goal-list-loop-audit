@@ -1514,6 +1514,35 @@ export function countTrailingDisapprovals(history: AuditVerdict[]): number {
   return n;
 }
 
+/** v0.38.110: consecutive audit rounds that did NOT let the goal leave the
+ * audit treadmill, counted across EVERY verdict class.
+ *
+ * The v0.38.107 hard cap counts `disapproved` rounds only, so two
+ * re-continuation branches sat outside it entirely and could cycle forever
+ * (audit/FRESH-AUDIT-2026-09-29): a regression-shield block (auditor
+ * approved, evidence contract unmet) and an aggressive IMPOSSIBLE(partial)
+ * verdict. Both append a history row that is not a disapproval, so
+ * `countTrailingComparableDisapprovals` returns 0 and the cap cannot see
+ * them — the same structural blindness that let hellhunter climb to round 14.
+ *
+ * This counts every trailing round that failed to settle the goal: a
+ * disapproval, a shield block, or an impossible verdict. An approval (the
+ * only round that ends the loop) and infra errors (not a verdict) both break
+ * the streak. Mechanical pre-audit gate rows are skipped, as elsewhere: a
+ * failing contract command is not the auditor disagreeing.
+ */
+export function countTrailingUnsettledRounds(history: AuditVerdict[]): number {
+  let n = 0;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const v = history[i]!;
+    if (v.error && !v.approved) continue; // infra: not a verdict
+    if (v.approved && v.regressionShieldPassed !== false) break; // settled
+    if (v.disapproved && isMechanicalPreAuditVerdict(v)) continue; // a gate
+    n++;
+  }
+  return n;
+}
+
 /** v0.38.103: the deterministic mechanical fast-fail gate records its verdict
  * under this model id. It is a GATE, not a judgment — `bun run ci:gates` or a
  * contract check failing says nothing about whether the auditor is unconvinced.
