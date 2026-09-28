@@ -182,7 +182,7 @@ test("v0.38.105 retention: a finished result settles a LIVE parent lock (PID reu
 
   const cleaned = cleanupDeadAuditJobs(cwd, RETENTION_MS);
   assert.equal(fs.existsSync(finished), false, "the leaked dir finally reaps past the window");
-  assert.equal(cleaned.total, 1);
+  assert.equal(cleaned.total, 0, "nothing is left behind after the reap");
 });
 
 test("v0.38.105 retention: a LIVE parent lock with no result is still ambiguous (unchanged)", () => {
