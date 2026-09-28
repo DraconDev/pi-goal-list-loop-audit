@@ -112,7 +112,7 @@ test("an approved stored claim settles and never falls into the residual-failure
       !types.includes("provider_retry_audit_verdict"),
       `an approval writes no residual-failure verdict record (types=${JSON.stringify(types.filter((t) => t.includes("verdict") || t.includes("settlement")))})`,
     );
-    const notices = ctx.ui.notifies.map((entry) => `${entry.level ?? ""} ${entry.message}`).join("\n");
+    const notices = ctx.ui.notifies.map((entry) => `${entry.type ?? ""} ${entry.message}`).join("\n");
     assert.doesNotMatch(notices, /infrastructure error/i, "an approved audit never warns about an infrastructure error");
     assert.equal(readState(cwd).goal, null, "the archive is terminal — the goal is gone, not revived");
   } finally {
