@@ -393,3 +393,10 @@
 {"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","reason":"exhausted"},"at":"2026-09-28T00:52:08.562Z"}
 {"type":"auditor_model_same_as_session","value":{"model":"openrouter/space-bunny-alpha","fallback":null},"at":"2026-09-28T00:52:08.563Z"}
 {"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":{"inputTokens":54,"outputTokens":706,"cacheReadTokens":357080,"cacheWriteTokens":0,"totalTokens":357840},"contextUsage":{"tokens":357840,"contextWindow":1000000,"percent":35.784}},"at":"2026-09-28T00:55:06.218Z"}
+{"type":"session_shutdown","value":{"reason":"quit"},"at":"2026-09-28T01:07:45.291Z"}
+{"type":"session_rebound","value":{"reason":"startup"},"at":"2026-09-28T01:07:52.929Z"}
+{"type":"id_invalidation","value":{"oldId":"01a0e000-68e5-7525-86ad-47c5230c45f8","newId":"01a0e58d-c075-7698-95b6-a18f14e6f374","reason":"session_shutdown","shutdownReason":"quit","at":"2026-09-28T01:07:52.955Z"},"at":"2026-09-28T01:07:52.956Z"}
+{"type":"session_waiting_for_load","value":{"reason":"startup"},"at":"2026-09-28T01:07:52.956Z"}
+{"type":"session_shutdown","value":{"reason":"resume"},"at":"2026-09-28T01:07:58.401Z"}
+{"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-28T01:07:58.982Z"}
+{"type":"id_invalidation","value":{"oldId":"01a0e58d-c075-7698-95b6-a18f14e6f374","newId":"01a0e000-68e5-7525-86ad-47c5230c45f8","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-28T01:07:58.988Z"},"at":"2026-09-28T01:07:58.988Z"}
