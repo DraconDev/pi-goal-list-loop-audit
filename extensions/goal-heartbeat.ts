@@ -33,7 +33,7 @@ import {
   type Goal,
 } from "./goal-loop-core.js";
 import { loadSettings } from "./goal-settings.js";
-import { isCompactionInFlightSince } from "./main-model-recovery.js";
+import { isCompactionInFlightSince, classifyMainModelFailure, isEmptyProviderResponse, type MainModelFailureKind } from "./main-model-recovery.js";
 import {
   HEARTBEAT_STALL_MS,
   PENDING_LATCH_STUCK_MS,
@@ -634,6 +634,65 @@ export function observeCurrentSubagentTerminal(data: unknown): void {
   const failed = data && typeof data === "object" && ((data as any).hasError === true || (data as any).exitCode !== undefined && (data as any).exitCode !== 0);
   observeCurrentSubagent(data, failed ? "failed" : "stopped");
   endSubagentHangProbe(id);
+}
+
+export interface SubagentTerminalDescription {
+  id: string;
+  failed: boolean;
+  agent?: string;
+  /** Classified failure kind; "unknown" when the event carries no text. */
+  kind: MainModelFailureKind | "unknown";
+  /** True when the parent should re-dispatch immediately: transient weather
+   * or an empty blip — never a user abort, policy refusal, auth/billing
+   * wall, or an opaque exit (SIGTERM especially: it may be the user's Esc). */
+  eager: boolean;
+  /** Bounded one-line excerpt for ledger/notify forensics. */
+  detail: string;
+}
+
+function subagentTerminalExitCode(data: unknown): number | undefined {
+  if (!data || typeof data !== "object") return undefined;
+  const code = (data as Record<string, unknown>).exitCode;
+  return typeof code === "number" && Number.isFinite(code) ? code : undefined;
+}
+
+function subagentTerminalErrorText(data: unknown): string | undefined {
+  return eventString(data, "error")
+    ?? eventString(data, "errorMessage")
+    ?? eventString(data, "message")
+    ?? eventString(data, "reason")
+    ?? eventString(data, "detail");
+}
+
+/** v0.38.109: read a process-terminal event as a retry decision. Pure —
+ * observation stays in observeCurrentSubagentTerminal; this only classifies.
+ * Exit 137 (OOM-killed, the signature of a child dying under host load)
+ * reads transient even without text; every other textless exit stays
+ * unknown because SIGTERM routinely IS the user. */
+export function describeSubagentTerminal(data: unknown): SubagentTerminalDescription | undefined {
+  const id = eventRecordId(data);
+  if (!id) return undefined;
+  const failed = !!data && typeof data === "object"
+    && ((data as Record<string, unknown>).hasError === true
+      || (subagentTerminalExitCode(data) !== undefined && subagentTerminalExitCode(data) !== 0));
+  const text = subagentTerminalErrorText(data);
+  const exitCode = subagentTerminalExitCode(data);
+  const kind: MainModelFailureKind | "unknown" = text
+    ? classifyMainModelFailure(text).kind
+    : exitCode === 137 ? "transient" : "unknown";
+  const eager = failed && (kind === "transient" || (!!text && isEmptyProviderResponse(text)));
+  const detail = (text ?? (exitCode !== undefined ? `exit code ${exitCode}` : "no detail"))
+    .replace(/\s+/g, " ").trim().slice(0, 160);
+  const agent = eventString(data, "agent");
+  return { id, failed, ...(agent ? { agent } : {}), kind, eager, detail };
+}
+
+/** True when this run already reached a terminal observation — the process-
+ * terminal event may redeliver, and the retry nudge must fire once. */
+export function subagentTerminalAlreadyRecorded(data: unknown): boolean {
+  const id = eventRecordId(data);
+  if (!id) return true;
+  return currentSubagentObservations.get(id)?.terminal === true;
 }
 
 function subagentManagerPoller(): SubagentManagerPoll {
