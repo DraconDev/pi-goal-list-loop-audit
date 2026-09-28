@@ -82,6 +82,7 @@ extractPendingTasks,
   countTrailingDisapprovals,
   countTrailingComparableDisapprovals,
   countTrailingUnsettledRounds,
+  trailingStreakGraderStable,
   AUDIT_CAP_HARD_DEFAULT,
   countTrailingRepeatedDisapprovals,
   MAX_REPEATED_AUDIT_NO_PROGRESS,
@@ -2360,7 +2361,18 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   // pause. 0 = unlimited (legacy unbounded cycling).
   const hardCap = settings.auditCapHard ?? AUDIT_CAP_HARD_DEFAULT;
   const comparableStreak = countTrailingComparableDisapprovals(history);
-  if (result.disapproved && hardCap > 0 && comparableStreak >= hardCap) {
+  // v0.38.110: an alternating primary/fallback ladder re-baselines the
+  // comparable streak on every round (`break` on grader change in
+  // countTrailingComparableDisapprovals), pinning it at 1 forever — so a goal
+  // whose pinned auditor infra-fails on alternating rounds could grind
+  // indefinitely with the cap blind. `trailingStreakGraderStable` exists to
+  // detect exactly this and had no production caller. When the streak is NOT
+  // from one grader, the comparable count is measuring noise, so fall back to
+  // the all-classes count: the goal is still being rejected round after round,
+  // and the cap must not be defeated by which rung of the ladder ran.
+  const graderStable = trailingStreakGraderStable(history);
+  const effectiveStreak = graderStable ? comparableStreak : countTrailingUnsettledRounds(history);
+  if (result.disapproved && hardCap > 0 && effectiveStreak >= hardCap) {
     updateGoal({
       status: "paused",
       auditHistory: history,
@@ -2368,13 +2380,15 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       pauseKind: "decision",
       pauseOptions: [`Accept with follow-ups — archive complete, route findings to /list (/goal accept)`, `Fix the disapproval gap, then continue (${activeGoalSurfaceCommand("resume")})`, `Tweak the objective — ${activeGoalSurfaceCommand("tweak")} <new text>`, `Cancel the goal (${activeGoalSurfaceCommand("cancel")})`],
       pauseRecommended: 1,
-      pauseReason: `auditor disapproved ${comparableStreak}× consecutively (hard cap ${hardCap})`,
-      pauseSuggestedAction: `One auditor rejected this ${comparableStreak} rounds running (comparable rounds only — gates and earlier auditors do not count). A streak this long with a fresh objection every round is the audit treadmill. Accept archives the work done and routes the findings to follow-ups; ${activeGoalSurfaceCommand("resume")} continues only after changing the work or contract. Raise Audit hard cap in /glla settings.`,
+      pauseReason: `auditor disapproved ${effectiveStreak}× consecutively (hard cap ${hardCap})`,
+      pauseSuggestedAction: graderStable
+        ? `One auditor rejected this ${effectiveStreak} rounds running (comparable rounds only — gates and earlier auditors do not count). A streak this long with a fresh objection every round is the audit treadmill. Accept archives the work done and routes the findings to follow-ups; ${activeGoalSurfaceCommand("resume")} continues only after changing the work or contract. Raise Audit hard cap in /glla settings.`
+        : `The last ${effectiveStreak} rounds were rejected across more than one auditor in the ladder, so the per-auditor comparable count (${comparableStreak}) understates the real streak. Accept archives the work done and routes the findings to follow-ups; ${activeGoalSurfaceCommand("resume")} continues only after changing the work or contract. Raise Audit hard cap in /glla settings.`,
     }, liveCtx);
-    liveCtx.ui.notify(`Auditor disapproved ${comparableStreak}× consecutively (hard cap ${hardCap}, binds aggressive mode). ${activeGoalStatusCommand()} for the reports; pick accept / resume / tweak / cancel.`, "warning");
+    liveCtx.ui.notify(`Auditor disapproved ${effectiveStreak}× consecutively (hard cap ${hardCap}, binds aggressive mode)${graderStable ? "" : " — across alternating ladder rungs"}. ${activeGoalStatusCommand()} for the reports; pick accept / resume / tweak / cancel.`, "warning");
     maybeDecisionPopup(liveCtx);
-    appendLedger(liveCtx.cwd, "goal_paused", { reason: `disapproval hard cap: ${comparableStreak} comparable consecutive (cap ${hardCap})`, rawStreak: trailingDisapprovals });
-    notifyExternal(liveCtx, `Goal paused: ${comparableStreak} consecutive auditor disapprovals (hard cap)`);
+    appendLedger(liveCtx.cwd, "goal_paused", { reason: `disapproval hard cap: ${effectiveStreak} consecutive (cap ${hardCap})`, rawStreak: trailingDisapprovals, comparableStreak, graderStable });
+    notifyExternal(liveCtx, `Goal paused: ${effectiveStreak} consecutive auditor disapprovals (hard cap)`);
     return;
   }
   if (result.disapproved && auditCap > 0 && trailingDisapprovals >= auditCap) {
