@@ -133,17 +133,25 @@ test("fixture: repeated real continuation payloads grow context linearly and are
   // single-payload bytes.
   // Chat/archive guidance parity adds 23 ASCII bytes per payload.
   // Lead-contract wording refreshes the deterministic fixture by +176 chars / +178 serialized bytes.
-  assert.equal(payload.length, 25_451);
-  assert.equal(new TextEncoder().encode(payload).byteLength, 25_565);
+  // v0.38.105: the prompt file's leading `//` author comment is stripped at
+  // assembly (extensions/prompt-layers.ts). It is maintainer/editor metadata,
+  // not prompt content, and it was being re-sent every continuation — the
+  // 2026-09-28 "SKELETON, NOT THE PROMPT" header alone added ~700 bytes per
+  // payload. Combined with folding the EXECUTION DISCIPLINE restatements of the
+  // judgment policy into pointers: 25_451 -> 24_221 chars per payload
+  // (-1_230; -1_216 serialized), ~1_230 chars and ~308 estimated tokens saved
+  // on EVERY continuation.
+  assert.equal(payload.length, 24_221);
+  assert.equal(new TextEncoder().encode(payload).byteLength, 24_333);
   assert.deepEqual(one, {
     messageCount: 3,
-    serializedBytes: 26_098,
-    textChars: 25_503,
-    estimatedTokens: 6_376,
+    serializedBytes: 24_855,
+    textChars: 24_273,
+    estimatedTokens: 6_069,
     gllaMessageCount: 1,
-    gllaSerializedBytes: 25_915,
-    gllaTextChars: 25_451,
-    gllaEstimatedTokens: 6_363,
+    gllaSerializedBytes: 24_672,
+    gllaTextChars: 24_221,
+    gllaEstimatedTokens: 6_056,
     uniqueGllaPayloadCount: 1,
     repeatedGllaPayloadCount: 0,
     repeatedGllaSerializedBytes: 0,
@@ -173,6 +181,35 @@ test("fixture: repeated real continuation payloads grow context linearly and are
   assert.equal(twelve.uniqueGllaPayloadCount, 1);
   assert.equal(twelve.repeatedGllaPayloadCount, 11);
   assert.ok(twelve.gllaTextChars >= one.gllaTextChars * 12, "each continuation remains in the effective context");
+  assert.ok(twelve.repeatedGllaSerializedBytes >= one.gllaSerializedBytes * 10, "repeated GLLA bytes dominate the marginal growth");
+  assert.equal(twelve.failedErrorOnlyCount, 0);
+  assert.deepEqual(twelve, {
+    messageCount: 14,
+    serializedBytes: 296_247,
+    textChars: 290_704,
+    estimatedTokens: 72_676,
+    gllaMessageCount: 12,
+    gllaSerializedBytes: 296_064,
+    gllaTextChars: 290_652,
+    gllaEstimatedTokens: 72_663,
+    uniqueGllaPayloadCount: 1,
+    repeatedGllaPayloadCount: 11,
+    repeatedGllaSerializedBytes: 271_392,
+    failedErrorOnlyCount: 0,
+    unserializableMessageCount: 0,
+    provider: {
+      sampleCount: 12,
+      inputTokens: 228_000,
+      outputTokens: 1_266,
+      cacheReadTokens: 660,
+      cacheWriteTokens: 12,
+      totalTokens: 229_938,
+      firstInputTokens: 8_000,
+      latestInputTokens: 30_000,
+      inputTokenDelta: 22_000,
+      incompleteSampleCount: 0,
+    },
+  });
   assert.ok(twelve.repeatedGllaSerializedBytes >= one.gllaSerializedBytes * 10, "repeated GLLA bytes dominate the marginal growth");
   assert.equal(twelve.failedErrorOnlyCount, 0);
   assert.deepEqual(twelve, {
