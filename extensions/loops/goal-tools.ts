@@ -3778,12 +3778,20 @@ function registerAgentTools(pi: any): void {
     label: "Activate list item",
     description: "Activate a specific item from the /list queue by position (1-based). Order is the default, not the law: use this when a different item should be worked next (e.g. you want to research item 5 while item 1 waits). If a live objective is running you choose update / replace / cancel first (replace archives it); a paused objective is handled as carryover, not a live conflict.",
     parameters: Type.Object({
-      n: Type.Number({ description: "1-based position in the queue (1 = head)" }),
+      // v0.38.105: accept the dotted child label the queue itself prints
+      // (`1.1`) and this handler's own error text names. A JSON number cannot
+      // carry a label token, and schema validation runs BEFORE execute, so a
+      // Number-only schema rejected the exact form the guidance told the agent
+      // to use — the same class as the 500-char leftOut refusal. `list_status`
+      // and `/list show` hand out these labels, so the type must accept them.
+      n: Type.Union([Type.Number(), Type.String()], {
+        description: "1-based position in the queue (1 = head), or a child item's dotted label such as \"1.1\"",
+      }),
     }),
     async execute(_id, params, _signal, _onUpdate, execCtx) {
       const foreign6 = foreignToolGuard(execCtx);
       if (foreign6) return { content: [{ type: "text", text: foreign6 }], details: {} };
-      const p = params as { n: number };
+      const p = params as { n: number | string };
       const liveCtx = currentToolContext(execCtx);
       if (!liveCtx) return staleToolResult();
       if (listMutationBlocked(draftingTarget)) {
