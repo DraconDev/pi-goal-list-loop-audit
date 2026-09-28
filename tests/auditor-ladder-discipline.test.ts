@@ -112,6 +112,7 @@ import {
 
 const LLM = "openrouter/stealth/space-bunny-alpha";
 const LUNA = "openai-codex/gpt-5.6-luna";
+const LLL_PLACEHOLDER = "minimax/MiniMax-M3";
 
 function round(model: string, disapproved = true, extra: Partial<AuditVerdict> = {}): AuditVerdict {
   return { at: "2026-09-27T00:00:00.000Z", approved: !disapproved, disapproved, model, report: "r", ...extra };
@@ -144,18 +145,29 @@ test("v0.38.103 infrastructure entries stay transparent", () => {
   assert.equal(countTrailingComparableDisapprovals(history), 2, "an infra entry is not a verdict");
 });
 
-test("v0.38.103 a mixed-grader streak is reported as not comparable", () => {
-  // The measurement problem: round 3 and round 4 were graded by different
-  // models with different rigour, so "4 in a row" is not a streak of like
-  // judgments. The cap uses this to refuse to call it a treadmill.
+test("v0.38.103 a grader fallback RE-BASELINES the streak instead of pinning", () => {
+  // The user's correction, implemented: we must NOT pin. When a pinned
+  // auditor dies we have to fall back or the goal can never be audited. What
+  // we must not do is count the dead grader's rounds as evidence against its
+  // replacement — they were judged to a different standard.
+  //
+  // So a fallback starts the new auditor's streak at 1, and the old rounds
+  // stay in the history for the trail without counting toward the cap.
   const mixed = [round(LLM), round(LLM), round(LUNA), round(LUNA)];
-  assert.equal(countTrailingComparableDisapprovals(mixed), 4);
-  assert.equal(trailingStreakGraderStable(mixed), false, "two graders means the rounds are not comparable");
+  assert.equal(countTrailingComparableDisapprovals(mixed), 2, "only LUNA's two rounds count");
+  assert.equal(countTrailingDisapprovals(mixed), 4, "the raw history still holds all four");
+
+  // Needing the cap to still fire is the point: enough post-fallback rounds
+  // build a new streak, and a short one never trips it.
+  const longAfterFallback = [round(LLM), round(LLM), round(LLL_PLACEHOLDER)];
+  assert.equal(countTrailingComparableDisapprovals(longAfterFallback), 1);
 
   const single = [round(LLM), round(LLM), round(LLM)];
   assert.equal(trailingStreakGraderStable(single), true, "one grader throughout is comparable");
+  assert.equal(countTrailingComparableDisapprovals(single), 3);
 
   // A mechanical gate does not make the streak mixed — it is transparent.
   const withGate = [round(LLM), round(MECHANICAL_PRE_AUDIT_MODEL), round(LLM)];
   assert.equal(trailingStreakGraderStable(withGate), true);
+  assert.equal(countTrailingComparableDisapprovals(withGate), 2);
 });
