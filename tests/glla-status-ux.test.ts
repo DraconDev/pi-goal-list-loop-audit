@@ -28,6 +28,7 @@ import {
   __testOnlyLastAuditorQuietStretch,
   __testOnlyLoadState,
   __testOnlyResetAuditorQuietWatch,
+  summarizeToolArg,
 } from "../extensions/loops/goal-ui.js";
 import { MockPi, makeMockCtx, tmpCwd, seedState, tick, type MockCtx } from "./harness/mock-pi.js";
 
@@ -261,4 +262,30 @@ test("v0.35.15: /glla resume clears the freeze, reports the frozen duration, and
   assert.equal(readState(cwd).supervisorPausedAt, undefined, "the flag is cleared on disk");
   const misleading = ctx.ui.matching("Nothing to resume");
   assert.equal(misleading.length, 0, "clearing ONLY the pause is not 'nothing'");
+});
+
+// v0.38.105: the working-card tool argument is provider/child-controlled text
+// (file_path/path/command/pattern/query/url/title). The length cut was UTF-16
+// (`base.slice(0, 23)`), so a multi-code-unit glyph at index 23 painted a
+// broken surrogate into the card for the rest of the turn.
+test("v0.38.105: the working-card tool argument is cut cell-aware, never mid-surrogate", () => {
+  const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+  // 22 ASCII chars, then an emoji whose two code units straddle the old
+  // index-23 cut.
+  const command = `git commit -m ${"x".repeat(13)}🚀 done`;
+  const shown = summarizeToolArg("bash", { command })!;
+  assert.doesNotMatch(shown, loneSurrogate, "no unpaired surrogate in the card");
+  assert.ok(shown.length <= 24, `the card stays one line wide, got ${shown.length}`);
+
+  // A wide glyph is measured in cells, so the cut never overruns the budget.
+  const wide = summarizeToolArg("bash", { command: `echo ${"字".repeat(40)}` })!;
+  assert.doesNotMatch(wide, loneSurrogate);
+  assert.ok([...wide].length <= 24, "the cut respects the cell budget");
+
+  // The pre-existing contract is unchanged: control bytes are stripped, and
+  // short values pass through untouched.
+  assert.equal(summarizeToolArg("bash", { command: "ls -la" }), "ls -la");
+  assert.equal(summarizeToolArg("bash", { command: "printf 'a\\nb'" }), "printf 'a b'", "control bytes never break the card layout");
+  assert.equal(summarizeToolArg("bash", { command: "" }), undefined);
+  assert.equal(summarizeToolArg("read", { file_path: "/a/b/c/deep/file.ts" }), "file.ts", "a path keeps only its basename");
 });

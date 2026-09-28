@@ -626,7 +626,7 @@ function hasCurrentToolActivity(scope: string | undefined, startedAt: string | u
   }
   return false;
 }
-function summarizeToolArg(name: string, input: any): string | undefined {
+export function summarizeToolArg(name: string, input: any): string | undefined {
   if (!input || typeof input !== "object") return undefined;
   const v = input.file_path ?? input.path ?? input.command ?? input.pattern ?? input.query ?? input.url ?? input.title;
   if (typeof v !== "string" || v.length === 0) return undefined;

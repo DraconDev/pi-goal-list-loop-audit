@@ -259,3 +259,29 @@ test("completion summary audit doc exists and inventories archives", () => {
   assert.match(txt, /Usefulness assessment/);
   assert.match(txt, /six-label/);
 });
+
+// v0.38.105: two excerpts still cut UTF-16 code units on untrusted goal text
+// while the module's own clipSummaryValue had already been converted to the
+// code-point-safe clause-bound cutter. An emoji straddling the cut index put a
+// lone surrogate into the durable archive line.
+test("v0.38.105: the recorded-facts archive summary never emits a lone surrogate", () => {
+  // Build an objective whose 🚀 straddles the old index-217 cut.
+  const objective = `${"a".repeat(214)}🚀 tail that continues well past the old cut index and must be clipped somewhere sane`;
+  const summary = buildRecordedFactsCompletionSummary({
+    goal: { id: "goal-105", objective } as never,
+    status: "complete" as never,
+    stopReason: `${"b".repeat(252)}🚀 a terminal reason long enough to be clipped by the old index-257 cut`,
+  } as never);
+  const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+  assert.doesNotMatch(summary, loneSurrogate, "no unpaired UTF-16 surrogate reaches the archive");
+  assert.match(summary, /archived with status=/, "the fallback still renders");
+  assert.ok(summary.includes("🚀") || summary.length < objective.length, "either the glyph survived whole or the value was clipped cleanly");
+
+  // A short objective is untouched by the clipper (the old code also passed it
+  // through) and the long one is shortened at a clause/space boundary.
+  const short = buildRecordedFactsCompletionSummary({
+    goal: { id: "goal-105b", objective: "ship the 🚀 release" } as never,
+    status: "complete" as never,
+  } as never);
+  assert.match(short, /ship the 🚀 release/, "a short objective is never clipped");
+});
