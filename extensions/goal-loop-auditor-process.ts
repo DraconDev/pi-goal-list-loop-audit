@@ -1893,6 +1893,11 @@ async function runDetachedGoalCompletionAuditorInner(args: {
     // v0.38.103: how many comparable rounds this goal has already been
     // reworked through. Gates the falsification round below.
     const reworkStreak = countTrailingComparableDisapprovals(args.goal.auditHistory ?? []);
+    // v0.38.105: the falsification pass is skipped for two DIFFERENT reasons
+    // (light tier, or a full-tier dispatch whose rework streak is past the
+    // challenge limit). Name the one that applies so the worker records the
+    // real cause instead of calling every skip a light-tier audit.
+    const challengeSkip: AuditorRequest["challengeSkip"] = args.auditTier === "light" ? "light-tier" : "rework-streak";
     const requestWithoutHash: Omit<AuditorRequest, "requestHash"> = {
       protocolVersion: PROTOCOL_VERSION,
       attemptId,
@@ -1925,7 +1930,6 @@ async function runDetachedGoalCompletionAuditorInner(args: {
       // two disapprovals), not against a goal on its fifth rework. Skipping it
       // lets the single round actually re-verify the objections it raised
       // last time, which is the converging question.
-      const challengeSkip: "light-tier" | "rework-streak" = args.auditTier === "light" ? "light-tier" : "rework-streak";
       ...(args.auditTier === "light" || reworkStreak >= AUDITOR_CHALLENGE_STREAK_LIMIT
         ? { challenge: false, challengeSkip }
         : {}),
