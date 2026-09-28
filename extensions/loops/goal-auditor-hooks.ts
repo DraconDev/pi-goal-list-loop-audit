@@ -1863,6 +1863,15 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       appendLedger(liveCtx.cwd, "audit_settlement_parked", { goalId, attemptId: settlementClaim.attemptId, origin, stage: settlementPark("verdict").step });
       return;
     }
+    // v0.38.108: the approval branch TERMINATES here. The v0.38.99
+    // extraction dropped this `return` with the function body, so every
+    // approved stored claim fell through the remaining branches — all gated
+    // on error/impossible/disapproved, all false for a clean approval — into
+    // the residual-failure tail: a false "infrastructure error" warning
+    // after the "Goal complete" card, and a durable
+    // provider_retry_audit_verdict {approved:false} record contradicting the
+    // archived verdict. Both the archived goal and the settlement ledger
+    // said approved; the evidence trail said it failed.
     settleApprovedCompletion(liveCtx, {
       goalId,
       generation,
@@ -1872,6 +1881,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       fallbackUsed,
       inspectionSessionPath,
     });
+    return;
   }
 
   if (result.regressionShieldPassed === false) {
