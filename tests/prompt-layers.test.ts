@@ -16,6 +16,7 @@ import {
   loadPromptWhole,
   parsePromptLayers,
   promptDetailIds,
+  stripPromptAuthorComment,
 } from "../extensions/prompt-layers.ts";
 import { continuationPrompt } from "../extensions/goal-continuation.ts";
 
@@ -38,8 +39,10 @@ function stripMarkers(src: string): string {
 
 for (const name of PROMPTS) {
   test(`full assembly of ${name} is byte-identical to source minus markers`, () => {
+    // v0.38.105: assembly also drops the leading `//` author comment, so the
+    // comparison is against the comment-stripped source, not the raw file.
     const raw = fs.readFileSync(`prompts/${name}`, "utf-8");
-    assert.equal(assemblePromptFull(name), stripMarkers(raw));
+    assert.equal(assemblePromptFull(name), stripMarkers(stripPromptAuthorComment(raw)));
   });
 }
 
@@ -176,4 +179,25 @@ test("live disapproval loads the auditor playbook detail", () => {
 test("padRight helper keeps fixture objectives length-neutral", () => {
   const x = padRight("short", 10);
   assert.equal(x.length, 10);
+});
+
+// v0.38.105 — the author comment must not ship to the model.
+//
+// The header of a prompts/*.md file is maintainer/editor metadata. It was
+// being copied verbatim into the prompt and re-sent on EVERY continuation, so
+// writing better file-level documentation made every turn more expensive — the
+// 2026-09-28 "SKELETON, NOT THE PROMPT" header added ~700 bytes per payload.
+test("v0.38.105 the leading `//` author comment is stripped at assembly", () => {
+  const assembled = assemblePrompt("goal-loop-continuation.md", []);
+  assert.doesNotMatch(assembled, /^\/\//m, "no author comment reaches the prompt");
+  assert.doesNotMatch(assembled, /SKELETON, NOT THE PROMPT/);
+  assert.match(assembled, /^# Goal Continuation/, "the prompt starts at real content");
+});
+
+test("v0.38.105 a `//` line in the BODY is never stripped", () => {
+  // Only a leading run of comment lines is removed. A `//` inside the prompt's
+  // own content (a code example, a URL) must survive.
+  assert.equal(stripPromptAuthorComment("// a\n// b\n\n# Title\n\nsee // example\n"), "# Title\n\nsee // example\n");
+  assert.equal(stripPromptAuthorComment("# Title\n// not a header\n"), "# Title\n// not a header\n", "no leading comment -> unchanged");
+  assert.equal(stripPromptAuthorComment("// only comments\n"), "", "a comment-only file reduces to empty rather than lying");
 });

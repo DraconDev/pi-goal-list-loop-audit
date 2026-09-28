@@ -89,7 +89,13 @@ test("continuation prompt carries both policies so active execution sees them", 
   assert.match(prompt, /ACTIVE-EXECUTION QUESTION DISCIPLINE/);
   assert.match(prompt, /Compensate for zero mid-run questions by asking MORE up front/);
   assert.match(prompt, /Drafting is the ONLY place/);
+  // v0.38.105: the drafting-batch rule is asserted on the ASSEMBLED prompt
+  // above ("Compensate for zero mid-run questions by asking MORE up front" /
+  // "Drafting is the ONLY place"). EXECUTION DISCIPLINE used to restate the
+  // same rule with different wording; that duplicate is now a pointer, so the
+  // skeleton no longer carries the phrasing and the two asserts that pinned it
+  // were redundant with the assembled-prompt ones. One place states the rule.
   const md = fs.readFileSync(path.resolve("prompts/goal-loop-continuation.md"), "utf8");
-  assert.match(md, /Batch 2[–-]4 sharp questions UP FRONT in drafting/i);
-  assert.match(md, /zero further clarification/i);
+  assert.match(md, /see LONG-RUNNING JUDGMENT POLICY above/i, "EXECUTION DISCIPLINE points at the canonical policy");
+  assert.match(md, /see ACTIVE-EXECUTION QUESTION DISCIPLINE above/i, "and at the canonical question discipline");
 });
