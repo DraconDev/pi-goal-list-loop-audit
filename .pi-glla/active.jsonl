@@ -582,3 +582,7 @@
 {"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T03:56:30.015Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T03:56:39.085Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T03:56:44.308Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T03:56:49.556Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T03:56:54.562Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T03:57:00.189Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T03:57:14.971Z"}
