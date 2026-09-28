@@ -701,3 +701,79 @@ GLLA projects) found one GLLA-owned cause of "stuck at the last part": the
 hard cap existed but was unreachable. One finding, one fix.
 
 - [x] FIX: HIGH: the disapproval hard cap (v0.38.103) was wired only into `complete_goal`'s INLINE settlement, which the field never takes — every real audit settles through the detached driver `retryStoredCompletionAudit`, which had no cap check, so under aggressiveMode (the default) the soft-cap branch converted every hit into TODOs and the goal ground forever (hellhunter 12 rounds, junk-runner 9, zero cap pauses) — fixed in ff24a47e (the detached path now pauses on the same comparable-disapproval streak before the soft-cap TODO conversion, with accept-with-follow-ups as the first decision option; regression `hard cap binds the detached settlement path` drives a parked claim with 7 comparable priors to a pause at the 8th)
+
+---
+
+# Full-project audit pass — 2026-09-28 (v0.38.108, branch main)
+
+Fresh pass after the cross-project "stuck at the last part" survey. Four
+parallel scout surveys (loop core + dispatch, claim/auditor/settlement,
+recovery/quota/settings/UI, tests/docs/CI), each with a ~30-40 tool budget and
+a 150-line report cap. Every reported item was re-verified against the source
+before it entered this list; three reported items were RETRACTED (see the
+honesty notes) and one was downgraded from the scout's severity. Append-only.
+Every FIX below has a real fix commit on `main` and a regression that fails
+against the pre-fix code.
+
+## FIX findings (2026-09-28 pass, 9 findings: 1 HIGH, 5 MEDIUM, 3 LOW)
+
+- [x] FIX: HIGH: the approval branch of `retryStoredCompletionAudit` calls `settleApprovedCompletion` with NO `return` (extensions/loops/goal-auditor-hooks.ts:1875) — every clean approval through the stored-claim detached path (session-recovery, `/goal verify` resume, provider-retry) fell through the remaining branches, all gated on `result.error` / `impossible` / `disapproved`, into the residual-failure tail: a false "Auditor hit an infrastructure error — resuming" warning right after the "Goal complete" card, plus a durable `provider_retry_audit_verdict {approved:false}` evidence record contradicting the archived verdict and the `audit_settlement_completed` ledger. The v0.38.99 extraction (9c74d7a6e) dropped the terminator that the pre-refactor code had — fixed in 31ec945b (the branch terminates after the settlement driver; `tests/approved-audit-settles.test.ts` drives a real fake auditor worker end to end and pins the absence of the residual verdict and the false warning; both cases fail against the pre-fix tail)
+- [x] FIX: MEDIUM: `/goal verify` wrote its manual claim BEFORE calling `resumeStoredCompletionOrSettlement` (extensions/goal-commands.ts:256-267), and the overwrite drops `phase` / `verdictAt` / `attemptId` — so the v0.38.99 settlement check could no longer see the claim it exists to protect. The one reachable state is the archive-failed park (status `paused` + a claim still `settling`, goal-auditor-hooks.ts:1093): the user asked to verify work the detached auditor had already approved, and the command destroyed that durable approval and launched a brand-new audit over it — precisely the dishonesty the helper's own comment forbids. The other three call sites (resume, list resume, `/glla resume`) all check first — fixed in 474da80d (settlement-first check before the claim write; the manual request is ledgered as `settlement: "approved-claim-owed-archive"`; regression seeds that parked shape and fails against the pre-fix tail)
+- [x] FIX: MEDIUM: the branch-changed loop park named a resume command that could never resume, on the wrong surface (extensions/goal-loop.ts:357-367) — `parkLoopOnWrongBranch` promised `activeGoalSurfaceCommand("resume")`, which renders `/goal` or `/list` resume (the repo already carries `recoverySurfaceCommand("loop", …)` for exactly this trap), and `RESUMABLE_STOP` never matched the `branch changed —` prefix, so even `/loop resume` answered "No held loop to resume". A branch-mode loop's iteration, best value and history were unreachable without a fresh `/loop start` — the drift class already fixed twice for the `metric never moved` and zero-stream-abort prefixes — fixed in e839a93a (the park names `/loop resume`, and the prefix is resumable; `/loop resume` already refuses while HEAD is off the scratch branch, which is the order the park message gives; regression resumes a parked branch loop and keeps its counters)
+- [x] FIX: MEDIUM: the test runner's documented "orphan-free" guarantee was a no-op (scripts/run-tests.mjs:98,117,121) — the suite child was spawned WITHOUT `detached: true`, so it stayed in the wrapper's process group, `process.kill(-child.pid, …)` always threw ESRCH, and the swallowed `catch` degraded every group-kill to signalling the direct child only, leaving the detached auditor/worker grandchildren alive — the exact 26-hour orphan the wrapper was written for. Compounding it, `test:all` called `bun test` directly so CI and `release:check` never ran the hardened runner, and no workflow job set `timeout-minutes` — fixed in 1f6063c4 (child spawned detached, a missing process group is reported instead of swallowed, `test:all` routes through the wrapper, both jobs bounded at 45 minutes)
+- [x] FIX: MEDIUM: `docs/SETTINGS.md` appended "Global-only." to `auditCapHard` and `mechanicalLoadScale`, but neither is in the 18-entry `GLOBAL_ONLY_KEYS` — `loadSettings` only strips the real set from the project layer, so a hand-edited `<cwd>/.pi-glla/settings.json` silently overrode global policy while the reference promised the opposite. The doc's own prose list matched the code exactly; only the two table rows drifted — fixed in c42512aa (rows state the real scope, the prose names the set, and `GLOBAL_ONLY_KEYS` is exported so the annotation is pinnable; a regression walks every "Global-only." cell in the doc). Decision recorded: the code is the reviewed behavior, so the DOC was corrected — making the keys global-only would be a separate behavior change with real cost to projects that set them today
+- [x] FIX: MEDIUM: `CHANGELOG.md` had no `## Unreleased` section while five untagged milestones (v0.38.104 onward, including the detached hard cap) were already stamped across `extensions/` and `scripts/` — `docs/RELEASING.md` states untagged work lives under `## Unreleased` and the release commit renames it, so the documented release step had nothing to promote and four versions of fixes would have shipped with no changelog entry — fixed in d153cde9 (descriptive `###` milestones under a restored `## Unreleased` — no invented version headers, per the same rule — plus a release-contract regression that fails when the source tree carries work newer than `package.json` and there is no Unreleased heading to promote)
+- [x] FIX: LOW: the settings menu promised a recovery ceiling the default configuration removes (extensions/settings-menu.ts:295) — the `mainModelRetryMinutes` row said "automatic recovery stops after 24h", but `aggressiveMode` (the DEFAULT) clears `autoRetryUntil` and disables the horizon (goal-recovery.ts:815-846), so an operator could leave a rig running against a dead provider on a guarantee that cannot fire; and `fmtTimeoutMs` rendered the LEGAL `auditJobRetentionMs: 0` as `"?"` although the setting floors at 0 ("reap proven-dead audit dirs immediately") and the editor accepts it — "?" read as an unknown value in the one configuration where the user's intent matters most — fixed in b2aa87fc (the row names the mode that removes the horizon; 0 renders as `0s`; both regressions fail against the pre-fix menu)
+- [x] FIX: LOW: two test-harness surfaces reported coverage that did not exist — `tests/subagent-stop-rpc.integration.test.mjs` gated itself on `node_modules/@tintinweb/pi-subagents`, which nothing installs (zero references in `package.json`/`package-lock.json`; the dir is empty; the installed `pi-subagents@0.62.0` has no `AgentManager`/`registerRpcHandlers` seam), so the "real-host child-stop" test skipped on every machine and in CI while an earlier audit entry still credited it with coverage; and `tests/README.md` said `npm test` "runs: bun test" although the runner executes the fast set only (`tests/slow-files.mjs`, 12 files) and never mentioned `npm run test:slow` — fixed in 688e5ac8 (the dead fixture is removed rather than left to report "skipped" forever — the GLLA-side stop contract stays covered by `tests/subagent-hang-detection.test.ts` — the README documents the split and the removed coverage, and a guard keeps the fork path from coming back)
+- [x] FIX: LOW: dead code in the auditor model path — `const settings2 = undefined;` (extensions/loops/goal-settings-ui.ts:621) was a leftover from a half-applied rename that read as a second settings layer — fixed in abfa3070 (removed, with a guard against reintroducing dead undefined bindings in that file)
+
+## Retracted / not-a-finding (recorded so a later pass does not re-raise them)
+
+- **RETRACTED — `blockForbiddenModelSwitches` is a dead setting (scout claim).** The
+  scout reported zero runtime consumers. False: `observeModelChange`
+  (extensions/loops/goal-settings-ui.ts:1909) reads it, reverts or allows the
+  switch, and ledgers `forbidden_model_switch` with `blocked`; it is wired from
+  the live model-change observer at extensions/loops/goal-activation.ts:3086 and
+  pinned by tests/model-switch.test.ts:211. No finding.
+- **RETRACTED — the provider-error / user-abort cap stop skips `finishLoopGit`
+  (scout claim).** extensions/loops/goal-activation.ts:2656-2687 stops the loop
+  without the terminal-commit choke point, which looked like the
+  v0.38.105 write-discipline hole. It is the documented contract for a
+  RESUMABLE hold (goal-loop.ts:883-890: `/loop pause` and the bound stops skip
+  `finishLoopGit` precisely so a resume continues the branch and the history),
+  and the stop reasons it writes ARE in `RESUMABLE_STOP`. Deliberate, not a
+  defect.
+- **NOT A FINDING — `schemas/goal.schema.json` lacks `additionalProperties: false`.**
+  The declared surface was verified to be an exact bidirectional match with the
+  runtime `Goal` interface (50 properties, matching status/policy/pauseKind
+  enums). Tightening the schema is a hardening idea with no live mismatch behind
+  it, so it is out of scope for a findings pass.
+- **NOT REPORTED — `settingsProvenance`'s `normalizeLayer` injects defaults into
+  layers that never set them (scout claim).** No mis-attribution is observable
+  today (the `hasOwnProperty` guards below it hold); a comment or a
+  layer-scoped variant is a refactor suggestion, not a defect.
+- **NOT REPORTED — `mainModelFallbackRefs(ctx)` ignores its `ctx` argument
+  (scout claim).** Style nit; `loadGlobalSettings()` is the intended read.
+
+## DECIDE findings
+
+None. Every finding in this pass is a defect with one durable fix, so there is
+no direction call to raise. The one genuine two-sided judgment — whether
+`auditCapHard` / `mechanicalLoadScale` should BECOME global-only (behavior
+change) or whether the doc should be corrected (no behavior change) — was
+decided toward the code, because the options do not have comparable cost and the
+reviewed runtime is the contract; the reasoning is recorded on that finding.
+
+## Coverage and honesty notes for this pass
+
+- 9 findings: 1 HIGH, 5 MEDIUM, 3 LOW. Every one is fixed, committed, and
+  covered by a regression verified to FAIL against the pre-fix code.
+- Surveys the four scouts did NOT cover, recorded so silence is not read as
+  cleanliness: `extensions/goal-tools.ts` (245 KB), `extensions/goal-commands.ts`
+  (172 KB) and `extensions/loops/goal-session.ts` (94 KB) were grep-sampled, not
+  read end to end; the orchestrator/auditor scout grep-sampled
+  `goal-loop-auditor-process.ts`; the settings scout checked row↔case parity
+  exhaustively but not each editor's accepted range against its normalizer clamp.
+- The prior pass's re-baselined test constants and stale expectations were
+  re-checked: `npm run test:all` is green on this range (see the gate rows in
+  the goal ledger).
