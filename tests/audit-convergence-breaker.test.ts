@@ -19,7 +19,7 @@ import activate, {
   __testOnlyResetStaleFlag,
 } from "../extensions/loops/goal.js";
 import { readState, AUDIT_CAP_HARD_DEFAULT, extractRequiredFixSeverities } from "../extensions/goal-loop-core.js";
-import { normalizeLoadedSettings } from "../extensions/goal-settings.js";
+import { normalizeLoadedSettings, THINKING_LEVELS } from "../extensions/goal-settings.js";
 import { buildSettingsRows } from "../extensions/settings-menu.js";
 import { buildGoalAuditorPrompt } from "../extensions/goal-loop-auditor.js";
 import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd, type MockCtx } from "./harness/mock-pi.js";
@@ -195,6 +195,54 @@ describe("audit-convergence-breaker — settings", () => {
     assert.equal(normalizeLoadedSettings({ mechanicalLoadScale: false } as any).mechanicalLoadScale, false);
     assert.equal(normalizeLoadedSettings({ mechanicalLoadScale: "yes" } as any).mechanicalLoadScale, undefined);
     assert.equal(normalizeLoadedSettings({} as any).mechanicalLoadScale, undefined, "unset = default-on via !== false");
+  });
+
+  test("v0.38.105: mainModelRetryMinutes and auditFeedbackChars drop junk instead of displaying a dead value", () => {
+    // Both are SETTINGS_KEYS members, so provenance, the menu and the headless
+    // /glla row render whatever the file carries — while the RUNTIME guard
+    // (Number.isFinite(base) && base > 0 / Number.isInteger && >= 0) silently
+    // substituted its default. A quoted "30" is the likeliest hand-edit.
+    assert.equal(normalizeLoadedSettings({ mainModelRetryMinutes: 30 } as any).mainModelRetryMinutes, 30);
+    for (const junk of ["30", 0, -5, Number.NaN, Number.POSITIVE_INFINITY, null, {}]) {
+      assert.equal(
+        normalizeLoadedSettings({ mainModelRetryMinutes: junk } as any).mainModelRetryMinutes,
+        undefined,
+        `mainModelRetryMinutes must drop ${JSON.stringify(junk)}`,
+      );
+    }
+    assert.equal(normalizeLoadedSettings({ auditFeedbackChars: 0 } as any).auditFeedbackChars, 0, "0 is the legal 'no tail' value");
+    assert.equal(normalizeLoadedSettings({ auditFeedbackChars: 4000 } as any).auditFeedbackChars, 4000);
+    for (const junk of ["2000", -1, 1.5, Number.NaN, null, []]) {
+      assert.equal(
+        normalizeLoadedSettings({ auditFeedbackChars: junk } as any).auditFeedbackChars,
+        undefined,
+        `auditFeedbackChars must drop ${JSON.stringify(junk)}`,
+      );
+    }
+  });
+
+  test("v0.38.105: drafter/auditor thinking levels are pruned against the one ladder", () => {
+    for (const level of THINKING_LEVELS) {
+      assert.equal(normalizeLoadedSettings({ drafterThinkingLevel: level } as any).drafterThinkingLevel, level);
+      assert.equal(normalizeLoadedSettings({ auditorThinkingLevel: level } as any).auditorThinkingLevel, level);
+    }
+    for (const junk of ["turbo", "OFF", "", 3, null, {}]) {
+      assert.equal(
+        normalizeLoadedSettings({ drafterThinkingLevel: junk } as any).drafterThinkingLevel,
+        undefined,
+        `drafterThinkingLevel must drop ${JSON.stringify(junk)}`,
+      );
+      assert.equal(
+        normalizeLoadedSettings({ auditorThinkingLevel: junk } as any).auditorThinkingLevel,
+        undefined,
+        `auditorThinkingLevel must drop ${JSON.stringify(junk)}`,
+      );
+    }
+    // The per-agent override map keeps using the same ladder.
+    assert.equal(
+      (normalizeLoadedSettings({ subagentThinkingOverrides: { Explore: "turbo", Plan: "high" } } as any).subagentThinkingOverrides as any).Explore,
+      undefined,
+    );
   });
 
   test("menu rows exist for both keys", () => {
