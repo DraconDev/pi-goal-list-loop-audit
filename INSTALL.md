@@ -193,11 +193,12 @@ re-fired behind your back.
 
 ## Auditor model requirement
 
-The completion auditor runs in a detached fresh pi RPC process with no
-extensions, skills, prompt templates, themes, or context files by default. Its
-model therefore needs to work with a built-in pi provider in an extension-less
-session. If your normal session model comes from an extension provider, select
-a compatible model in `/glla` under the Auditor settings.
+The completion auditor runs in a detached fresh pi RPC process. By default it
+mirrors your session's extension packages (so an extension-provided model
+works in the auditor too), but it loads no skills, prompt templates, themes, or
+context files. If you would rather the auditor run against only built-in pi
+providers, set **Auditor mirror session extensions** to off in `/glla` and then
+select a compatible model under the Auditor settings.
 
 The worker resolves `pi` from `PATH` and inherits normal provider configuration.
 If required, point it at a specific binary:
