@@ -622,8 +622,13 @@ gateRows?: GateRow[];
   auditorEvictedRefs?: string[];
   /** v0.38.63 (audit-stuck batch): stable fingerprint of the last infra
    * failure that parked the claim, plus the consecutive-identical streak.
-   * At AUDITOR_IDENTICAL_FAILURE_PARK_THRESHOLD the claim parks blocked
-   * with the dead chain named and no further retry scheduled. */
+   * At AUDITOR_IDENTICAL_FAILURE_PARK_THRESHOLD the claim parks blocked with
+   * the dead chain named.
+   * v0.38.106 (field 20260928 171804): that park is no longer terminal. It
+   * arms the shared self-re-arming recovery cadence (a slow, bounded
+   * re-probe derived from the retry plan), so the auditor lane keeps trying
+   * on its own instead of waiting for a human `/goal resume` — the parity the
+   * main lane has always had. The streak keeps counting as evidence. */
   auditorLastFailureFingerprint?: string;
   auditorConsecutiveIdenticalFailures?: number;
   /** 0 = first call in flight, 1 = first failure/retry in flight, 2 = a
@@ -4611,7 +4616,11 @@ export function filterEvictedAuditorRefs(refs: string[], evicted?: string[]): st
 
 /** v0.38.63 (audit-stuck batch): N consecutive identical infra failures
  * park the claim blocked-with-action instead of re-arming the ladder
- * forever. Matches the repo's 3-strike history (retry-bounds). */
+ * forever. Matches the repo's 3-strike history (retry-bounds).
+ * v0.38.106: "park" now means "drop to the slow re-probe cadence", not
+ * "stop forever" — the park sites arm the shared self-re-arming recovery
+ * cadence, so the threshold still bounds the hot ladder without creating a
+ * dead end the main lane would never have. */
 export const AUDITOR_IDENTICAL_FAILURE_PARK_THRESHOLD = 3;
 
 /** v0.38.63: fold one infra failure fingerprint into the claim's identical

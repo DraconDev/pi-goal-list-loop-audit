@@ -301,3 +301,92 @@ test("124541: re-seed filters evicted refs so the next episode starts live", () 
   assert.deepEqual(filterEvictedAuditorRefs(configured, undefined), configured);
   assert.deepEqual(filterEvictedAuditorRefs(configured, []), configured);
 });
+
+// ---------------------------------------------------------------------------
+// v0.38.106 (field 20260928 171804): the identical-failure park must not be a
+// dead end. Screenshot evidence: "Auditor parked blocked after 3 identical
+// infra failures (openrouter/stealth/space-bunny-alpha) — no further automatic
+// retry; the claim stays stored." The main lane kept probing the same wall;
+// the auditor lane stopped dead and needed a human. The park now arms the
+// shared self-re-arming recovery cadence, so the claim settles on its own.
+// ---------------------------------------------------------------------------
+
+test("v0.38.106: the identical-failure park arms a bounded self-healing probe, never a dead end", async () => {
+  const {
+    auditorIdenticalParkProbeDelayMs,
+    humanizeAuditorProbeCadence,
+    AUDITOR_IDENTICAL_PARK_PROBE_MIN_MS,
+    AUDITOR_IDENTICAL_PARK_PROBE_MAX_MS,
+  } = await import("../extensions/loops/goal-auditor-hooks.ts");
+  const {
+    scheduleParkedCompletionAuditRecovery,
+    __testOnlySetAuditorRecoveryRetryDelay,
+  } = await import("../extensions/loops/goal-auditor-hooks.ts");
+
+  // The cadence is bounded on both sides: a named provider wall is never
+  // re-probed on a 5s blip cadence, and a dead wall is not probed forever.
+  assert.equal(auditorIdenticalParkProbeDelayMs(5), AUDITOR_IDENTICAL_PARK_PROBE_MIN_MS, "a 5s plan delay floors at a minute");
+  assert.equal(auditorIdenticalParkProbeDelayMs(900), AUDITOR_IDENTICAL_PARK_PROBE_MAX_MS, "a 15m plan delay caps at 15 minutes");
+  assert.equal(auditorIdenticalParkProbeDelayMs(300), 300_000, "a plan delay inside the band is honoured verbatim");
+  assert.equal(auditorIdenticalParkProbeDelayMs(undefined), AUDITOR_IDENTICAL_PARK_PROBE_MIN_MS);
+  assert.equal(humanizeAuditorProbeCadence(60_000), "minute");
+  assert.equal(humanizeAuditorProbeCadence(900_000), "15 minutes");
+
+  // Behaviorally: parking arms recoveryRetryAt, and the timer actually runs —
+  // the property the old park lacked entirely.
+  __testOnlySetAuditorRecoveryRetryDelay(20);
+  const cwd = tmpCwd();
+  seedState(cwd, {
+    goal: seedGoal({
+      status: "paused",
+      pauseKind: "blocked",
+      pauseReason: "auditor blocked: 3 identical infra failures (provider error)",
+      pendingCompletion: {
+        at: new Date().toISOString(),
+        phase: "recovery-pending",
+        completionSummary: "Stored fixture claim",
+        verificationSummary: "Fixture only",
+        auditorFallbackExhausted: true,
+        auditorLastFailureFingerprint: "provider:fp-a",
+        auditorConsecutiveIdenticalFailures: 3,
+      },
+    } as unknown as Parameters<typeof seedGoal>[0]),
+  });
+  const pi = new MockPi();
+  activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: `identical-park-probe-${Date.now()}-${Math.random()}` } });
+  __testOnlyResetOwnerSession();
+  __testOnlyResetStaleFlag();
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  try {
+    const claim = readState(cwd).goal?.pendingCompletion as Record<string, unknown> | undefined;
+    assert.ok(claim, "the claim is loaded");
+    // The harness MockCtx is structurally close but not assignable to the
+    // production ExtensionContext (same note as the repo's other suites).
+    const armed = scheduleParkedCompletionAuditRecovery(ctx as never, claim as never, "auditor-identical-failures", { delayMs: 60_000 });
+    const retryAt = Date.parse(String(armed.recoveryRetryAt));
+    assert.ok(Number.isFinite(retryAt), "the park leaves a durable recoveryRetryAt — there is no dead end");
+    assert.ok(retryAt > Date.now(), "the probe is scheduled in the future, not immediately");
+    const ledger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
+    assert.match(ledger, /"audit_recovery_retry_scheduled"/, "arming the probe is auditable");
+  } finally {
+    __testOnlySetAuditorRecoveryRetryDelay(null);
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});
+
+test("v0.38.106: no operator-facing string promises the auditor stopped for good", () => {
+  // The promise in the old notify ("no further automatic retry") is the
+  // user's complaint verbatim. No surface may claim it again.
+  const surfaces = [
+    "extensions/loops/goal-auditor-hooks.ts",
+    "extensions/loops/goal-tools.ts",
+  ];
+  for (const file of surfaces) {
+    const src = fs.readFileSync(path.join(__dirname, "..", file), "utf8");
+    assert.doesNotMatch(src, /no further automatic retry/, `${file} must not claim the auditor stopped retrying`);
+    assert.doesNotMatch(src, /Automatic retries stopped/, `${file} must not claim retries stopped`);
+  }
+  const hooks = fs.readFileSync(path.join(__dirname, "..", "extensions/loops/goal-auditor-hooks.ts"), "utf8");
+  assert.match(hooks, /re-probes itself every/, "the park states the self-healing cadence instead");
+});

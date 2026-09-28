@@ -153,7 +153,7 @@ isGoalRevisionCurrent,
 // the detached path, so no terminal surface can be produced from an
 // unresolved claim.
 import { settlementAllowsTerminalRender, settlementPark } from "../audit-lifecycle.js";
-import { persistClaimWorkerActivity } from "./goal-auditor-hooks.js";
+import { persistClaimWorkerActivity, scheduleParkedCompletionAuditRecovery, auditorIdenticalParkProbeDelayMs, humanizeAuditorProbeCadence } from "./goal-auditor-hooks.js";
 import {
   compactorFiredMarkerPath,
   shouldCompactBetweenTasks,
@@ -2016,23 +2016,30 @@ function registerAgentTools(pi: any): void {
               auditorFallbackExhausted: true,
             };
             const notifyIdentical = claimRecoveryNotice(identicalParked, `${recoveryEpisodeKey}:identical-parked`);
+            // v0.38.106: same self-healing contract as the loop's park site —
+            // this path used to tell the operator that retries had stopped
+            // and left the stored claim for a human. It now arms the shared
+            // self-re-arming recovery cadence on the plan's own backoff.
+            const probeDelayMs = auditorIdenticalParkProbeDelayMs(plan.requestedSec);
+            const armed = scheduleParkedCompletionAuditRecovery(ctx, identicalParked, "auditor-identical-failures", { delayMs: probeDelayMs });
+            const cadence = humanizeAuditorProbeCadence(probeDelayMs);
             updateGoal({
               status: "paused",
               auditHistory: history,
               auditInfraStreak: undefined,
-              pendingCompletion: identicalParked,
+              pendingCompletion: armed,
               providerErrorDiagnostic: failureCopy.diagnostic,
               recoveryEpisodeKey,
               recoveryNoticeKeys: identicalParked.recoveryNoticeKeys,
               pauseKind: "blocked",
               pauseResumeAt: undefined,
-              pauseReason: `auditor blocked: ${identical.auditorConsecutiveIdenticalFailures} identical infra failures (${failureCopy.display}) · chain: ${deadChain}`,
-              pauseSuggestedAction: `The completion claim is stored. The auditor chain failed identically ${identical.auditorConsecutiveIdenticalFailures} times — check the auditor/model setup, then ${activeGoalSurfaceCommand("resume")} to start a fresh bounded window with re-resolved models.`,
+              pauseReason: `auditor blocked: ${identical.auditorConsecutiveIdenticalFailures} identical infra failures (${failureCopy.display}) · chain: ${deadChain} · re-probing every ${cadence}`,
+              pauseSuggestedAction: `The completion claim is stored and re-probes itself every ${cadence}, so nothing is needed once the provider answers. Fix the auditor/model setup to make the next attempt land, or ${activeGoalSurfaceCommand("resume")} to retry now with re-resolved models.`,
             }, ctx);
-            appendLedger(ctx.cwd, "auditor_retry_identical_parked", { count: identical.auditorConsecutiveIdenticalFailures, fingerprint: failureCopy.fingerprint, chain: deadChain, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey });
-            if (notifyIdentical) ctx.ui.notify(`Auditor parked blocked after ${identical.auditorConsecutiveIdenticalFailures} identical infra failures (${deadChain}) — no further automatic retry; the claim stays stored. Check the auditor/model setup, then ${activeGoalSurfaceCommand("resume")}.`, "warning");
+            appendLedger(ctx.cwd, "auditor_retry_identical_parked", { count: identical.auditorConsecutiveIdenticalFailures, fingerprint: failureCopy.fingerprint, chain: deadChain, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey, probeDelayMs, selfHealing: true });
+            if (notifyIdentical) ctx.ui.notify(`Auditor slowed to a ${cadence} re-probe after ${identical.auditorConsecutiveIdenticalFailures} identical infra failures (${deadChain}) — the claim stays stored and retries on its own. Fix the auditor/model setup to make the next attempt land, or ${activeGoalSurfaceCommand("resume")} to retry now.`, "warning");
             return {
-              content: [{ type: "text", text: `The auditor hit the same infrastructure wall ${identical.auditorConsecutiveIdenticalFailures} times in a row (NOT a verdict): ${failureCopy.display} · chain: ${deadChain}. Automatic retries stopped — the exact completion claim is stored. Check the auditor/model setup, then ${activeGoalSurfaceCommand("resume")} for a fresh bounded window with re-resolved models.` }],
+              content: [{ type: "text", text: `The auditor hit the same infrastructure wall ${identical.auditorConsecutiveIdenticalFailures} times in a row (NOT a verdict): ${failureCopy.display} · chain: ${deadChain}. The exact completion claim is stored and re-probes itself every ${cadence} — it settles on its own once the provider answers. Fix the auditor/model setup to make the next attempt land, or ${activeGoalSurfaceCommand("resume")} to retry now.` }],
               details: {},
             };
           }

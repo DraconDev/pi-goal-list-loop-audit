@@ -544,6 +544,28 @@ function auditorRecoveryRetryDelayMs(): number {
   return auditorRecoveryRetryDelayOverrideMs ?? (Number.isFinite(AUDITOR_RECOVERY_RETRY_DELAY_MS) ? Math.max(1_000, AUDITOR_RECOVERY_RETRY_DELAY_MS) : 60_000);
 }
 
+/** v0.38.106: how long the self-healing auditor lane waits before re-probing
+ * after an identical-failure park. Floored at a minute (a named provider wall
+ * is not a 5s blip) and capped at 15 minutes so a long outage still settles
+ * promptly once the provider answers, instead of probing a dead wall hundreds
+ * of times. The retry plan's own requested backoff is honoured inside that
+ * band. */
+export const AUDITOR_IDENTICAL_PARK_PROBE_MIN_MS = 60_000;
+export const AUDITOR_IDENTICAL_PARK_PROBE_MAX_MS = 15 * 60_000;
+
+export function auditorIdenticalParkProbeDelayMs(requestedSec?: number): number {
+  const fromPlan = Number.isFinite(requestedSec) && (requestedSec as number) > 0
+    ? Math.floor((requestedSec as number) * 1000)
+    : AUDITOR_IDENTICAL_PARK_PROBE_MIN_MS;
+  return Math.min(AUDITOR_IDENTICAL_PARK_PROBE_MAX_MS, Math.max(AUDITOR_IDENTICAL_PARK_PROBE_MIN_MS, fromPlan));
+}
+
+/** Operator-facing cadence for the notice and the pause banner. */
+export function humanizeAuditorProbeCadence(delayMs: number): string {
+  const minutes = Math.max(1, Math.round(delayMs / 60_000));
+  return minutes === 1 ? "minute" : `${minutes} minutes`;
+}
+
 /** Test-only: shrink the bounded no-verdict recovery delay without changing
  * production defaults. Null restores the one-minute retry window. */
 export function __testOnlySetAuditorRecoveryRetryDelay(delayMs: number | null): void {
@@ -556,7 +578,7 @@ export function __testOnlySetAuditorRecoveryRetryDelay(delayMs: number | null): 
  * re-arming the claim while state-based stop rules permit it. This remains
  * separate from the provider retry ladder: no-verdict recovery never guesses
  * a provider reason for a dead worker. */
-export function scheduleParkedCompletionAuditRecovery(ctx: ExtensionContext, pending: PendingCompletion, reason: string): PendingCompletion {
+export function scheduleParkedCompletionAuditRecovery(ctx: ExtensionContext, pending: PendingCompletion, reason: string, options?: { delayMs?: number }): PendingCompletion {
   // Note: pending.auditorFallbackExhausted is a legacy diagnostic marker
   // only — it no longer blocks the shared ladder. The cursor is cleared at
   // park time, so the next episode re-walks a fresh chain.
@@ -568,9 +590,17 @@ export function scheduleParkedCompletionAuditRecovery(ctx: ExtensionContext, pen
     return { ...pending, recoveryRetryAt: undefined, automaticRecoveryFirstAt: window.firstAt, automaticRecoveryUntil: window.until };
   }
   const storedRetryMs = pending.recoveryRetryAt ? Date.parse(pending.recoveryRetryAt) : Number.NaN;
+  // v0.38.106: a caller-chosen cadence. The identical-infra-failure park
+  // re-arms through this same scheduler, but on the retry plan's own backoff
+  // instead of the 60s no-verdict tick — the claim must keep trying without
+  // re-probing a named provider wall every minute.
+  const requestedDelayMs = options?.delayMs;
+  const cadenceMs = Number.isFinite(requestedDelayMs) && (requestedDelayMs as number) >= 1_000
+    ? Math.floor(requestedDelayMs as number)
+    : auditorRecoveryRetryDelayMs();
   const retryAt = Number.isFinite(storedRetryMs) && storedRetryMs > now
     ? pending.recoveryRetryAt!
-    : new Date(now + auditorRecoveryRetryDelayMs()).toISOString();
+    : new Date(now + cadenceMs).toISOString();
   const next = {
     ...pending,
     recoveryRetryAt: retryAt,
@@ -2061,20 +2091,30 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
         auditorFallbackExhausted: true,
       };
       const notifyIdentical = claimRecoveryNotice(identicalParked, `${recoveryEpisodeKey}:identical-parked`);
+      // v0.38.106 (field 20260928 171804): this park used to be a DEAD END.
+      // It armed no probe, so nothing re-drove the stored claim until a human
+      // ran /goal resume — while the main lane kept probing through the very
+      // same provider wall. Park slower, not forever: re-arm the existing
+      // self-re-arming recovery cadence on the retry plan's own backoff, so
+      // the auditor lane is as persistent as the main lane and the stored
+      // claim settles on its own the moment the provider answers.
+      const probeDelayMs = auditorIdenticalParkProbeDelayMs(plan.requestedSec);
+      const armed = scheduleParkedCompletionAuditRecovery(liveCtx, identicalParked, "auditor-identical-failures", { delayMs: probeDelayMs });
+      const cadence = humanizeAuditorProbeCadence(probeDelayMs);
       updateGoal({
         status: "paused",
         auditHistory: history,
-        pendingCompletion: { ...identicalParked, ...(exhaustedChain ? { exhaustedChain } : {}) },
+        pendingCompletion: { ...armed, ...(exhaustedChain ? { exhaustedChain } : {}) },
         providerErrorDiagnostic: failureCopy.diagnostic,
         recoveryEpisodeKey,
         recoveryNoticeKeys: identicalParked.recoveryNoticeKeys,
         pauseKind: "blocked",
         pauseResumeAt: undefined,
-        pauseReason: `auditor blocked: ${identical.auditorConsecutiveIdenticalFailures} identical infra failures (${failureCopy.display}) · chain: ${deadChain}`,
-        pauseSuggestedAction: `The completion claim is stored. The auditor chain failed identically ${identical.auditorConsecutiveIdenticalFailures} times — check the auditor/model setup, then ${activeGoalSurfaceCommand("resume")} to start a fresh bounded window with re-resolved models.`,
+        pauseReason: `auditor blocked: ${identical.auditorConsecutiveIdenticalFailures} identical infra failures (${failureCopy.display}) · chain: ${deadChain} · re-probing every ${cadence}`,
+        pauseSuggestedAction: `The completion claim is stored and re-probes itself every ${cadence}, so nothing is needed once the provider answers. Fix the auditor/model setup to make the next attempt land, or ${activeGoalSurfaceCommand("resume")} to retry now with re-resolved models.`,
       }, liveCtx);
-      appendLedger(liveCtx.cwd, "auditor_retry_identical_parked", { count: identical.auditorConsecutiveIdenticalFailures, fingerprint: failureCopy.fingerprint, chain: deadChain, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey });
-      if (notifyIdentical) liveCtx.ui.notify(`Auditor parked blocked after ${identical.auditorConsecutiveIdenticalFailures} identical infra failures (${deadChain}) — no further automatic retry; the claim stays stored. Check the auditor/model setup, then ${activeGoalSurfaceCommand("resume")}.`, "warning");
+      appendLedger(liveCtx.cwd, "auditor_retry_identical_parked", { count: identical.auditorConsecutiveIdenticalFailures, fingerprint: failureCopy.fingerprint, chain: deadChain, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey, probeDelayMs, selfHealing: true });
+      if (notifyIdentical) liveCtx.ui.notify(`Auditor slowed to a ${cadence} re-probe after ${identical.auditorConsecutiveIdenticalFailures} identical infra failures (${deadChain}) — the claim stays stored and retries on its own. Fix the auditor/model setup to make the next attempt land, or ${activeGoalSurfaceCommand("resume")} to retry now.`, "warning");
       return;
     }
     if (!plan.automatic) {
