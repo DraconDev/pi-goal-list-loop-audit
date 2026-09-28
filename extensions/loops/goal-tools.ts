@@ -738,11 +738,18 @@ function registerAgentTools(pi: any): void {
         const rawNewObjective = p.newObjective.trim();
         const { objective: cleanObj, verificationContract } = extractVerificationContract(rawNewObjective);
         const priorProvenance = state.goal.objectiveProvenance;
-        // v0.34.61: contract-scoped revision bump — one of exactly two
-        // sites (the other: cmdTweak). persistState no longer bumps, so
-        // the settle writes of THIS call keep the audited revision stable.
-        state.goal = bumpGoalRevision(state.goal);
-        updateGoal({
+        // v0.38.105: the objective shift must be DURABLE before anything
+        // claims it happened. This used to pre-bump the in-memory revision,
+        // ignore updateGoal's boolean, then ledger goal_tweaked and notify
+        // "Objective updated" — so an unwritable .pi-glla advanced the
+        // audited revision (permanently invalidating any existing approval
+        // through the revision-bound gate) while the claim ran against the
+        // OLD objective on disk. Same contract as propose_task_list.
+        const persistedObjective = updateGoal({
+          // v0.34.61: contract-scoped revision bump — one of exactly two
+          // sites (the other: cmdTweak). persistState no longer bumps, so
+          // the settle writes of THIS call keep the audited revision stable.
+          revision: (state.goal.revision ?? 0) + 1,
           objective: cleanObj,
           ...(verificationContract ? { verificationContract } : {}),
           objectiveProvenance: {
@@ -761,6 +768,14 @@ function registerAgentTools(pi: any): void {
             ...(priorProvenance?.userSeeds?.length ? { userSeeds: priorProvenance.userSeeds } : {}),
           },
         }, ctx);
+        if (!persistedObjective) {
+          appendLedger(ctx.cwd, "complete_goal_new_objective_not_persisted", { goalId: state.goal.id });
+          return {
+            content: [{ type: "text", text: "The new objective was NOT persisted, so nothing changed and the claim was not submitted. Fix .pi-glla storage and retry with newObjective again." }],
+            details: {},
+            isError: true,
+          };
+        }
         appendLedger(ctx.cwd, "goal_tweaked", { via: "complete_goal.newObjective", from: oldObjective.slice(0, 200), to: cleanObj.slice(0, 200) });
         ctx.ui.notify(`Objective updated (complete_goal newObjective): ${cleanObj.slice(0, 80)}`, "info");
       }
