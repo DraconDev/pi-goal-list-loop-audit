@@ -49,6 +49,12 @@ import {
   MAX_ZOMBIE_RETRY_ATTEMPTS,
 } from "./goal-loop-backoff.js";
 
+/** v0.38.105: the one thinking ladder. normalizeLoadedSettings prunes every
+ * level-bearing setting against this list — the per-agent override map and the
+ * two scalar pins — so a hand-edited value can never reach an agent file as a
+ * bogus `thinking:` key. */
+export const THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
+
 export interface Settings {
   /** Where glla's durable state directory lives. This is global-only because
    * project settings.json lives inside the selected state root. The historical
@@ -468,7 +474,7 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   // non-string values drop so a hand-edited typo can never reach an agent
   // file as a bogus `thinking:` key (unset = session inherit).
   if (settings.subagentThinkingOverrides && typeof settings.subagentThinkingOverrides === "object") {
-    const levels = THINKING_LEVELS;
+    const levels: readonly string[] = THINKING_LEVELS;
     for (const [key, level] of Object.entries(settings.subagentThinkingOverrides)) {
       if (typeof level !== "string" || !levels.includes(level)) delete (settings.subagentThinkingOverrides as Record<string, unknown>)[key];
     }
@@ -616,7 +622,7 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   // the ladder above; these two scalar pins were not, so a hand-edited
   // "turbo" survived load, printed as the current level in the menu, and was
   // stringified straight into a drafter/auditor agent file's thinking: key.
-  const thinkingLadder = THINKING_LEVELS;
+  const thinkingLadder: readonly string[] = THINKING_LEVELS;
   if (settings.drafterThinkingLevel !== undefined && (typeof settings.drafterThinkingLevel !== "string" || !thinkingLadder.includes(settings.drafterThinkingLevel))) {
     delete settings.drafterThinkingLevel;
   }
