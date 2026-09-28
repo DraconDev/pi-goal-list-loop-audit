@@ -138,7 +138,7 @@ test("v0.38.103 an approval still ends the comparable streak", () => {
 test("v0.38.103 infrastructure entries stay transparent", () => {
   const history = [
     round(LLM),
-    round(LLM, true, { error: "Auditor stalled — no session activity for 10m", report: undefined }),
+    { at: "2026-09-27T00:00:00.000Z", approved: false, disapproved: false, model: LLM, report: undefined, error: "Auditor stalled — no session activity for 10m" },
     round(LLM),
   ];
   assert.equal(countTrailingComparableDisapprovals(history), 2, "an infra entry is not a verdict");
@@ -152,10 +152,10 @@ test("v0.38.103 a mixed-grader streak is reported as not comparable", () => {
   assert.equal(countTrailingComparableDisapprovals(mixed), 4);
   assert.equal(trailingStreakGraderStable(mixed), false, "two graders means the rounds are not comparable");
 
-  const single = [round(LLM), round(LLM), round(LLL)];
+  const single = [round(LLM), round(LLM), round(LLM)];
   assert.equal(trailingStreakGraderStable(single), true, "one grader throughout is comparable");
 
   // A mechanical gate does not make the streak mixed — it is transparent.
-  const withGate = [round(LLL), round(MECHANICAL_PRE_AUDIT_MODEL), round(LLL)];
+  const withGate = [round(LLM), round(MECHANICAL_PRE_AUDIT_MODEL), round(LLM)];
   assert.equal(trailingStreakGraderStable(withGate), true);
 });
