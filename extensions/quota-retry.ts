@@ -108,7 +108,12 @@ export interface ProviderErrorPresentation {
 // Provider payloads frequently contain account names, request ids, nested JSON,
 // and raw HTTP text. These markers only decide whether raw text must be
 // redacted; they never decide whether or when recovery retries.
-const PROVIDER_SENSITIVE_MARKER = /\b(?:401|403|408|409|429|5\d\d)\b|api[\s_-]*key|authorization|token[\s_-]*plan|rate[\s_-]*limit|too[\s_-]+many[\s_-]+requests|usage[\s_-]*limit|quota|insufficient[\s_-]+(?:credits?|balance)|key[\s_-]*limit|retry[\s_-]*after|request[\s_-]*(?:id|identifier)/i;
+// v0.38.104: the bare `5\d\d` was far too loose — it matches ANY number from
+// 500 to 599, so an auditor report quoting `{"y":520.07}` or a byte count was
+// treated as a provider payload line by line. A 5xx is only a sensitive marker
+// with HTTP/status context around it. 401/403/408/409/429 are specific enough
+// to keep standing alone (and are the ones that actually carry secrets).
+const PROVIDER_SENSITIVE_MARKER = /\b(?:401|403|408|409|429)\b|api[\s_-]*key|authorization|token[\s_-]*plan|rate[\s_-]*limit|too[\s_-]+many[\s_-]+requests|usage[\s_-]*limit|quota|insufficient[\s_-]+(?:credits?|balance)|key[\s_-]*limit|retry[\s_-]*after|request[\s_-]*(?:id|identifier)|\b(?:https?\s*\/?\s*|status(?:[_\s-]?code)?\s*[:=]?\s*|code\s*[:=]\s*)(5\d\d)\b|\b5\d\d\s+(?:internal\s+server|server\s+error|bad\s+gateway|gateway\s+timeout|service\s+unavailable)\b/i;
 
 /** v0.38.104: redaction cascade budget, as a fraction of the report's lines
  * with a small absolute floor. A provider payload redacts in full; a report
@@ -264,19 +269,28 @@ export function sanitizeProviderAuditReport(report: string | undefined): string 
     const beginsJson = /^[{[]/.test(trimmed);
     const inJson = jsonDepth > 0;
     const entersPendingJson = pendingJsonLines > 0 && beginsJson;
-    let marked = inJson || providerMarked || structuredMarked || entersPendingJson;
-    // Past the budget only a DIRECT marker still redacts; a line is never
-    // swallowed because it followed something else.
-    if (budgetExhausted) marked = providerMarked;
-    if (marked) {
-      if (redactedLines >= redactionBudget) {
-        budgetExhausted = true;
+    // A DIRECT marker (a real provider secret/request id/rate-limit) ALWAYS
+    // redacts. The budget bounds the CASCADE -- a line swallowed only because
+    // it followed something else -- and never a direct marker. The first
+    // version conflated the two and released live secrets past the budget.
+    const direct = providerMarked;
+    let marked = direct;
+    if (!direct) {
+      if (budgetExhausted) {
+        marked = false;
         jsonDepth = 0;
         pendingJsonLines = 0;
-        return sanitizeDisplayText(line);
+      } else {
+        marked = inJson || structuredMarked || entersPendingJson;
+        if (marked && redactedLines >= redactionBudget) {
+          budgetExhausted = true;
+          jsonDepth = 0;
+          pendingJsonLines = 0;
+          marked = false;
+        }
       }
-      redactedLines++;
     }
+    if (marked) redactedLines++;
 
     if (!marked) {
       // Permit a blank line or a fenced-code opener between a standalone
