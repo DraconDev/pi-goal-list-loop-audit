@@ -747,3 +747,4 @@
 {"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":572},"at":"2026-09-28T11:43:43.591Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":572},"at":"2026-09-28T11:43:58.122Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":572},"at":"2026-09-28T11:44:10.104Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":572},"at":"2026-09-28T11:44:28.035Z"}
