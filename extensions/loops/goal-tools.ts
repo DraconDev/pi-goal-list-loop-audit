@@ -152,6 +152,12 @@ isGoalRevisionCurrent,
 // unresolved claim.
 import { settlementAllowsTerminalRender, settlementPark } from "../audit-lifecycle.js";
 import { persistClaimWorkerActivity } from "./goal-auditor-hooks.js";
+import {
+  compactorFiredMarkerPath,
+  shouldCompactBetweenTasks,
+  GOAL_COMPACT_TOKEN_THRESHOLD,
+  runGoalCompactionIfDue,
+} from "../goal-compactor.js";
 import { dispatchAuditorAllowedExtensions } from "../auditor-extensions.js";
 import {
   applyValidatedBatch,
@@ -523,6 +529,43 @@ async function verifyTaskMilestone(
  * The explicit tool choice is itself the current judgment; optional fields
  * let the agent name the durable action and preserve the exact prior defer
  * alternatives instead of making refreshUI infer them from prose. */
+/** v0.38.104: proactive between-tasks compaction.
+ *
+ * Fire-and-forget by design: the task is already durably complete, so nothing
+ * here may block or fail the tool call. A preference, never a hard stop — the
+ * goal, task list and durable state are untouched; only the transcript is
+ * compacted, plus a handoff brief so the goal's shape survives the trim.
+ *
+ * One compaction per episode. The marker is shared with the starvation path on
+ * purpose: after any real compaction the transcript is small again, so it
+ * re-arms naturally as the goal grows back toward the threshold. */
+async function maybeCompactBetweenTasks(
+  ctx: ExtensionContext,
+  deps: Record<string, unknown> = {},
+): Promise<void> {
+  try {
+    if (!state.goal) return;
+    let tokens: number | undefined;
+    try {
+      const usage = (ctx as unknown as { getContextUsage?: () => { tokens?: number } }).getContextUsage?.();
+      if (usage && typeof usage.tokens === "number" && Number.isFinite(usage.tokens)) tokens = usage.tokens;
+    } catch { /* usage is best effort — an unknown count must not compact blindly */ }
+    let alreadyFired = false;
+    try { alreadyFired = fs.existsSync(compactorFiredMarkerPath(ctx.cwd)); } catch { alreadyFired = false; }
+    const decision = shouldCompactBetweenTasks({ tokens, alreadyFired });
+    if (!decision.compact) return;
+    const result = await runGoalCompactionIfDue(ctx as never, true, deps as never);
+    if (result.fired) {
+      ctx.ui.notify(
+        `glla: compacted between tasks (${decision.reason}). The goal, its tasks and durable state are untouched.`,
+        "info",
+      );
+    }
+  } catch {
+    // A compaction that cannot start is never a task-completion failure.
+  }
+}
+
 function durableDeferFactsForGoal(
   goal: Goal,
   choice: DurableChoiceRecord,
