@@ -597,6 +597,25 @@ export function resolveAuditorModel(
     ...(primaryRef ? [primaryRef] : []),
     ...normalizedFallbackRefs.filter((candidate) => candidate.toLowerCase() !== primaryRef?.toLowerCase()),
   ];
+  // v0.38.103 (field 2026-09-27): with nothing configured there is no chain
+  // to walk. ModelSelector was being asked to select from an EMPTY list on
+  // every audit, which it reports as `exhausted` — 828 ledger events on
+  // neonbreak, 247 on hellhunter, 182 on doomtap — before falling through to
+  // the session model anyway via the `session-fallback` seed below. Pure
+  // per-round overhead: latency spent proving there was nothing to try, and
+  // `auditorAttemptedRefs` churn for no benefit.
+  //
+  // The default is simply the session model, which is what the user gets
+  // anyway. A ladder exists to serve a CONFIGURED choice; with no choice
+  // configured there is nothing to fall back FROM. Session-model-only also
+  // keeps the grader constant round-to-round, which is the precondition for
+  // any convergence measurement.
+  if (configuredRefs.length === 0) {
+    if (sessionModel && currentRef && !forbidden(currentRef)) {
+      return { model: sessionModel, via: "session", fallbackModels: [] };
+    }
+    return { model: undefined, error: "no session model and no auditorModel configured — set one with /glla → Auditor model" };
+  }
   const settings = loadSettings(ctx.cwd);
   const forbidden = (candidate: string): boolean => isForbiddenModel(candidate, settings.forbiddenModels);
   const selector = new ModelSelector({
