@@ -666,3 +666,23 @@ test("audit 2026-09-26: headless /glla fallback covers every SETTINGS_KEYS entry
   const missing = (SETTINGS_KEYS as string[]).filter((key) => key !== "reviewer" && !headless.includes(key));
   assert.deepEqual(missing, [], `headless drift: ${missing.join(", ")}`);
 });
+
+test("v0.38.108: the audit-dir retention row renders a legal 0 instead of the unknown-value '?'", async () => {
+  const { buildSettingsRows } = await import("../extensions/settings-menu.ts");
+  const rows = buildSettingsRows({ auditJobRetentionMs: 0 } as never, {} as never);
+  const row = rows.find((r: { id: string }) => r.id === "auditJobRetentionMs");
+  assert.ok(row, "the retention row exists");
+  assert.match(String(row.valueText), /0s dead-dir window/, "0 means reap immediately and must read as a value");
+  assert.doesNotMatch(String(row.valueText), /\?/, "a set 0 is never rendered as an unknown value");
+});
+
+test("v0.38.108: the main-recovery row does not promise a 24h stop the default mode removes", async () => {
+  const { buildSettingsRows } = await import("../extensions/settings-menu.ts");
+  const rows = buildSettingsRows({} as never, {} as never);
+  const row = rows.find((r: { id: string }) => r.id === "mainModelRetryMinutes");
+  assert.ok(row, "the main-recovery row exists");
+  const description = String(row.description);
+  assert.match(description, /24h/, "the horizon is still documented for non-aggressive mode");
+  assert.match(description, /aggressive/i, "the copy must name the mode that removes the horizon");
+  assert.doesNotMatch(description, /stops after 24h$/, "an unconditional 24h promise is the drift the fix removes");
+});

@@ -180,7 +180,12 @@ export function buildSettingsRows(
   const auditorThinking = settings.auditorThinkingLevel ?? sessionThinking;
   // v0.37.0: compact ms duration for the auditor timeout rows ("5m" / "90s").
   const fmtTimeoutMs = (ms?: number): string => {
-    if (typeof ms !== "number" || !Number.isFinite(ms) || ms <= 0) return "?";
+    if (typeof ms !== "number" || !Number.isFinite(ms) || ms < 0) return "?";
+    // v0.38.108: 0 is a LEGAL value, not a missing one — auditJobRetentionMs
+    // floors at 0 ("reap proven-dead audit dirs immediately") and the editor
+    // accepts it. Rendering it "?" told the operator the value was unknown
+    // while the runtime acted on it, precisely where their intent mattered.
+    if (ms === 0) return "0s";
     if (ms % 3_600_000 === 0) return `${Math.round(ms / 3_600_000)}h`;
     if (ms % 60_000 === 0) return `${Math.round(ms / 60_000)}m`;
     if (ms % 1_000 === 0) return `${Math.round(ms / 1_000)}s`;
@@ -292,7 +297,7 @@ export function buildSettingsRows(
       label: "Main recovery base minutes",
       valueText: show("mainModelRetryMinutes", "15"),
       sourceText: src("mainModelRetryMinutes"),
-      description: "first retry is eager, later retries use this bounded ladder; an extra :00:30 probe runs after each hour starts; automatic recovery stops after 24h"
+      description: "first retry is eager, later retries use this bounded ladder; an extra :00:30 probe runs after each hour starts; automatic recovery stops after 24h when aggressive mode is OFF — aggressive mode (the default) has no wall-clock expiry, and only a deterministic provider error still stops it"
     },
     {
       id: "hourlyRetryProbe",
