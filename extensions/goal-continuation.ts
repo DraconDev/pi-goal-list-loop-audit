@@ -909,6 +909,8 @@ function retryContinuationDispatch(ctx: ExtensionContext, record: ContinuationDi
     retrySentAt: Date.now(),
     timeoutMs: continuationRetryBackoffMs(),
   };
+  const retriedAt = retried.retrySentAt as number;
+  const retriedTimeoutMs = retried.timeoutMs as number;
   if (!persistDispatchRecord(ctx.cwd, retried)) {
     appendLedger(ctx.cwd, "continuation_retry_persist_failed", {
       id: record.id,
@@ -921,9 +923,9 @@ function retryContinuationDispatch(ctx: ExtensionContext, record: ContinuationDi
   }
   pendingContinuationDispatch = retried;
   appendLedger(ctx.cwd, "continuation_retry_sent", dispatchLedgerValue(retried, {
-    retrySentAt: retried.retrySentAt,
-    nextTimeoutMs: retried.timeoutMs,
-    totalWaitMs: retried.retrySentAt - retried.sentAt + retried.timeoutMs,
+    retrySentAt: retriedAt,
+    nextTimeoutMs: retriedTimeoutMs,
+    totalWaitMs: retriedAt - retried.sentAt + retriedTimeoutMs,
   }));
   armContinuationStartWatchdog(ctx, retried);
   return true;

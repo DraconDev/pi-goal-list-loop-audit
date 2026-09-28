@@ -24,7 +24,10 @@ afterEach(() => {
   fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ aggressiveMode: false }));
 });
 
-async function tickWithMeasureResult(result: unknown, loopPatch: Record<string, unknown> = {}) {
+async function tickWithMeasureResult(
+  result: { code?: number; stdout?: string; stderr?: string },
+  loopPatch: Record<string, unknown> = {},
+) {
   const cwd = tmpCwd();
   fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ autoResume: true, aggressiveMode: false }));
   __testOnlyResetOwnerSession();
@@ -41,11 +44,14 @@ async function tickWithMeasureResult(result: unknown, loopPatch: Record<string, 
     }),
   });
   const measureCalls: string[][] = [];
-  pi.execHandler = (cmd, args) => {
+  // The cast is the point: a measure killed by MEASURE_TIMEOUT_MS yields an
+  // envelope with NO numeric code at all, which the harness's return type
+  // cannot express.
+  pi.execHandler = ((cmd: string, args: string[]) => {
     measureCalls.push([cmd, ...args]);
-    if (cmd === "bash") return result;
+    if (cmd === "bash") return result as { code: number; stdout: string; stderr: string };
     return { code: 0, stdout: "", stderr: "" };
-  };
+  }) as typeof pi.execHandler;
   const ctx = makeMockCtx(cwd, { sessionManager: { name: `measure-fail-closed-${Date.now()}-${Math.random()}` } });
   await pi.fire("session_start", { reason: "reload" }, ctx);
   try {
@@ -65,6 +71,8 @@ async function tickWithMeasureResult(result: unknown, loopPatch: Record<string, 
 }
 
 test("a measure result with no exit code is a NULL measure, not a reading", async () => {
+  // v0.38.105: the envelope carries stdout but NO numeric code at all — the
+  // shape a killed measure produces. runMeasure must treat it as a failure.
   const { loop, measureCalls } = await tickWithMeasureResult({ stdout: "42\n" });
   assert.ok(measureCalls.some(([cmd]) => cmd === "bash"), "the measure actually ran");
   assert.equal(loop.lastValue, null, "an exit-code-less measure is recorded as null, never as 42");
