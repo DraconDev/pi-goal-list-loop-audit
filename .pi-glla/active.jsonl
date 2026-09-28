@@ -706,3 +706,4 @@
 {"type":"auditor_model_same_as_session","value":{"model":"openrouter/space-bunny-alpha","fallback":null},"at":"2026-09-28T10:26:45.157Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T10:29:34.389Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T10:29:50.575Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":{"inputTokens":55,"outputTokens":689,"cacheReadTokens":453055,"cacheWriteTokens":0,"totalTokens":453799},"contextUsage":{"tokens":453799,"contextWindow":1000000,"percent":45.3799}},"at":"2026-09-28T10:30:04.089Z"}
