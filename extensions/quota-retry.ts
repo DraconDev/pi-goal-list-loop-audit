@@ -110,6 +110,12 @@ export interface ProviderErrorPresentation {
 // redacted; they never decide whether or when recovery retries.
 const PROVIDER_SENSITIVE_MARKER = /\b(?:401|403|408|409|429|5\d\d)\b|api[\s_-]*key|authorization|token[\s_-]*plan|rate[\s_-]*limit|too[\s_-]+many[\s_-]+requests|usage[\s_-]*limit|quota|insufficient[\s_-]+(?:credits?|balance)|key[\s_-]*limit|retry[\s_-]*after|request[\s_-]*(?:id|identifier)/i;
 
+/** v0.38.104: redaction cascade budget, as a fraction of the report's lines
+ * with a small absolute floor. A provider payload redacts in full; a report
+ * that merely QUOTES one must not be deleted to satisfy a leak check. */
+export const SANITIZE_MAX_REDACTION_RATIO = 0.15;
+export const SANITIZE_MIN_REDACTION_LINES = 12;
+
 function providerFingerprintText(error: string): string {
   return error
     .toLowerCase()
@@ -228,14 +234,49 @@ export function sanitizeProviderAuditReport(report: string | undefined): string 
 
   let jsonDepth = 0;
   let pendingJsonLines = 0;
-  return report.split(/\r?\n/).map((line) => {
+  const reportLines = report.split(/\r?\n/);
+  // v0.38.104: bound the redaction cascade.
+  //
+  // Field 2026-09-28 (hellhunter): `structuredLine` matches `reason:`,
+  // `message:`, `detail:`, `error:` — vocabulary an auditor report is FULL of
+  // when it quotes test output — and once a line is marked, `jsonDepth` follows
+  // braces through the rest of the document. A REPORT was therefore treated as
+  // if it WERE a provider payload: one 23 659-character report sanitized down
+  // to 12 614 with 185 redaction tags, destroying the two real [HIGH] required
+  // fixes the agent was supposed to act on.
+  //
+  // A genuine provider payload is small and its JSON closes. A report does not.
+  // So once redaction has consumed its budget the cascade stops and the
+  // remaining text is passed through the display sanitizer (which still
+  // strips control bytes) rather than deleted. The marked LINE is always still
+  // redacted, so the leak the budget exists to prevent — a raw provider payload
+  // — is still prevented.
+  const redactionBudget = Math.max(
+    SANITIZE_MIN_REDACTION_LINES,
+    Math.floor(reportLines.length * SANITIZE_MAX_REDACTION_RATIO),
+  );
+  let redactedLines = 0;
+  let budgetExhausted = false;
+  return reportLines.map((line) => {
     const trimmed = line.trim();
     const providerMarked = providerLine.test(line);
     const structuredMarked = structuredLine.test(line);
     const beginsJson = /^[{[]/.test(trimmed);
     const inJson = jsonDepth > 0;
     const entersPendingJson = pendingJsonLines > 0 && beginsJson;
-    const marked = inJson || providerMarked || structuredMarked || entersPendingJson;
+    let marked = inJson || providerMarked || structuredMarked || entersPendingJson;
+    // Past the budget only a DIRECT marker still redacts; a line is never
+    // swallowed because it followed something else.
+    if (budgetExhausted) marked = providerMarked;
+    if (marked) {
+      if (redactedLines >= redactionBudget) {
+        budgetExhausted = true;
+        jsonDepth = 0;
+        pendingJsonLines = 0;
+        return sanitizeDisplayText(line);
+      }
+      redactedLines++;
+    }
 
     if (!marked) {
       // Permit a blank line or a fenced-code opener between a standalone
