@@ -678,7 +678,13 @@ type SubagentRpcBinding = {
 
 const SUBAGENT_RPC_STOP_TIMEOUT_MS = 2_000;
 let subagentRpcBinding: SubagentRpcBinding | null = null;
-const observedSubagentRpcBuses = new Set<SubagentRpcEventBus>();
+// v0.38.105: bus -> the disposers for the listeners we installed on it. The
+// registry used to be a bare Set that was only ever added to, so every
+// rebound session's bus (and the two closures it retained) stayed reachable
+// for the life of the process. Releasing the host now unsubscribes too — and
+// the entry still doubles as the "already observed" guard, so a re-observed
+// bus installs exactly one pair of listeners.
+const observedSubagentRpcBuses = new Map<SubagentRpcEventBus, () => void>();
 const readySubagentRpcBuses = new Map<SubagentRpcEventBus, Set<"legacy" | "v1">>();
 
 /**
@@ -689,9 +695,9 @@ const readySubagentRpcBuses = new Map<SubagentRpcEventBus, Set<"legacy" | "v1">>
  */
 export function observeSubagentRpcReadiness(events: SubagentRpcEventBus): void {
   if (observedSubagentRpcBuses.has(events)) return;
-  observedSubagentRpcBuses.add(events);
+  const disposers: (() => void)[] = [];
   try {
-    events.on("subagents:ready", () => {
+    disposers.push(events.on("subagents:ready", () => {
       const protocols = readySubagentRpcBuses.get(events) ?? new Set<"legacy" | "v1">();
       protocols.add("legacy");
       readySubagentRpcBuses.set(events, protocols);
@@ -699,8 +705,8 @@ export function observeSubagentRpcReadiness(events: SubagentRpcEventBus): void {
         subagentRpcBinding.ready = true;
         if (subagentRpcBinding.protocol !== "v1") subagentRpcBinding.protocol = "legacy";
       }
-    });
-    events.on("subagents:rpc:v1:ready", () => {
+    }));
+    disposers.push(events.on("subagents:rpc:v1:ready", () => {
       const protocols = readySubagentRpcBuses.get(events) ?? new Set<"legacy" | "v1">();
       protocols.add("v1");
       readySubagentRpcBuses.set(events, protocols);
@@ -708,11 +714,16 @@ export function observeSubagentRpcReadiness(events: SubagentRpcEventBus): void {
         subagentRpcBinding.ready = true;
         subagentRpcBinding.protocol = "v1";
       }
-    });
+    }));
   } catch {
     // A factory-time event bus can be unavailable on older hosts; control will
     // remain fail-closed and produce the durable unavailable escalation.
   }
+  observedSubagentRpcBuses.set(events, () => {
+    for (const dispose of disposers.reverse()) {
+      try { dispose(); } catch { /* the host already dropped this listener */ }
+    }
+  });
 }
 
 /** Bind the RPC stop capability to an admitted MAIN host generation. */
@@ -734,7 +745,15 @@ export function releaseSubagentRpcHost(events?: SubagentRpcEventBus): void {
   if (events && subagentRpcBinding?.events !== events) return;
   const boundEvents = subagentRpcBinding?.events ?? events;
   subagentRpcBinding = null;
-  if (boundEvents) readySubagentRpcBuses.delete(boundEvents);
+  if (boundEvents) {
+    readySubagentRpcBuses.delete(boundEvents);
+    // v0.38.105: observation had the same lifetime problem as readiness.
+    // Release the listeners this module installed too, so the released bus is
+    // no longer retained by our closures.
+    const disposeObserved = observedSubagentRpcBuses.get(boundEvents);
+    observedSubagentRpcBuses.delete(boundEvents);
+    try { disposeObserved?.(); } catch { /* the host already dropped them */ }
+  }
   currentSubagentObservations.clear();
 }
 
