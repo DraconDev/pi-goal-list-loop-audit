@@ -653,7 +653,12 @@ export interface SubagentTerminalDescription {
 function subagentTerminalExitCode(data: unknown): number | undefined {
   if (!data || typeof data !== "object") return undefined;
   const code = (data as Record<string, unknown>).exitCode;
-  return typeof code === "number" && Number.isFinite(code) ? code : undefined;
+  if (typeof code === "number" && Number.isFinite(code)) return code;
+  // Audit 2026-09-28: the observer's failed check is loose (`!== 0`), so a
+  // numeric string must read the same here or the retry decision disagrees
+  // with the recorded terminal state.
+  if (typeof code === "string" && /^-?\d+$/.test(code.trim())) return parseInt(code.trim(), 10);
+  return undefined;
 }
 
 function subagentTerminalErrorText(data: unknown): string | undefined {
