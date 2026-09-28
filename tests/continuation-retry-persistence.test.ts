@@ -44,11 +44,13 @@ function context(cwd: string, name: string): MockCtx {
   return makeMockCtx(cwd, { sessionManager: { name } });
 }
 
+let lastCwd = "";
+
 afterEach(() => {
   fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ aggressiveMode: false }));
   __testOnlyResetOwnerSession();
   __testOnlyResetStaleFlag();
-  resetContinuationDispatchState();
+  resetContinuationDispatchState(lastCwd);
   __testOnlySetContinuationStartTimeout(null);
   __testOnlySetContinuationRetryBackoff(null);
   pi.sent.length = 0;
@@ -56,11 +58,12 @@ afterEach(() => {
 
 test("v0.38.105 a retry that cannot be persisted is reported, not recorded as durable", async () => {
   __testOnlyResetStaleFlag();
-  resetContinuationDispatchState();
+  resetContinuationDispatchState(cwd);
   __testOnlySetContinuationStartTimeout(250);
   __testOnlySetContinuationRetryBackoff(250);
   const cwd = tmpCwd();
   fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ autoResume: true, aggressiveMode: false }));
+  lastCwd = cwd;
   const ctx = context(cwd, `retry-persist-${Date.now()}-${Math.random()}`);
   await pi.fire("session_start", { reason: "startup" }, ctx);
   try {
@@ -99,11 +102,12 @@ test("v0.38.105 a retry that cannot be persisted is reported, not recorded as du
 
 test("v0.38.105 a persistable retry still records retryCount durably", async () => {
   __testOnlyResetStaleFlag();
-  resetContinuationDispatchState();
+  resetContinuationDispatchState(cwd);
   __testOnlySetContinuationStartTimeout(250);
   __testOnlySetContinuationRetryBackoff(250);
   const cwd = tmpCwd();
   fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ autoResume: true, aggressiveMode: false }));
+  lastCwd = cwd;
   const ctx = context(cwd, `retry-durable-${Date.now()}-${Math.random()}`);
   await pi.fire("session_start", { reason: "startup" }, ctx);
   const sidecar = path.join(cwd, ".pi-glla", "continuation-dispatch.json");
