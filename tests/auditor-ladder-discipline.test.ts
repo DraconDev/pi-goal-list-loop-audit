@@ -93,3 +93,69 @@ test("v0.38.103 with no session model and nothing configured, the error stays ac
   assert.equal(r.model, undefined);
   assert.match(r.error ?? "", /no session model and no auditorModel configured/);
 });
+
+// v0.38.103 — a cap must count comparable rounds.
+//
+// Field 2026-09-27 (hellhunter): the trailing streak read as 8 disapprovals,
+// but three were `deterministic-pre-audit` — the mechanical fast-fail gate, not
+// a judgment. A gate failing says nothing about whether the auditor is
+// unconvinced, so counting it as a round of disagreement is two kinds of
+// evidence added together.
+
+import {
+  countTrailingDisapprovals,
+  countTrailingComparableDisapprovals,
+  trailingStreakGraderStable,
+  MECHANICAL_PRE_AUDIT_MODEL,
+  type AuditVerdict,
+} from "../extensions/goal-loop-core.ts";
+
+const LLM = "openrouter/stealth/space-bunny-alpha";
+const LUNA = "openai-codex/gpt-5.6-luna";
+
+function round(model: string, disapproved = true, extra: Partial<AuditVerdict> = {}): AuditVerdict {
+  return { at: "2026-09-27T00:00:00.000Z", approved: !disapproved, disapproved, model, report: "r", ...extra };
+}
+
+test("v0.38.103 a mechanical fast-fail verdict is not an auditor round", () => {
+  const history = [round(LLM), round(MECHANICAL_PRE_AUDIT_MODEL), round(LLM), round(MECHANICAL_PRE_AUDIT_MODEL), round(LLM)];
+  assert.equal(countTrailingDisapprovals(history), 5, "the raw counter sees five disapprovals");
+  assert.equal(countTrailingComparableDisapprovals(history), 3, "only three were an auditor judging");
+});
+
+test("v0.38.103 the streak passes THROUGH a mechanical gate rather than stopping", () => {
+  // hellhunter's shape: LLM, mechanical, LLM, mechanical, LLM. The comparable
+  // streak is 3, not 1 — a gate in the middle must not break the run.
+  const history = [round(LLM), round(MECHANICAL_PRE_AUDIT_MODEL), round(LLM), round(MECHANICAL_PRE_AUDIT_MODEL), round(LLM)];
+  assert.equal(countTrailingComparableDisapprovals(history), 3);
+});
+
+test("v0.38.103 an approval still ends the comparable streak", () => {
+  const history = [round(LLM), round(LLM), round(LLM, false)];
+  assert.equal(countTrailingComparableDisapprovals(history), 0);
+});
+
+test("v0.38.103 infrastructure entries stay transparent", () => {
+  const history = [
+    round(LLM),
+    round(LLM, true, { error: "Auditor stalled — no session activity for 10m", report: undefined }),
+    round(LLM),
+  ];
+  assert.equal(countTrailingComparableDisapprovals(history), 2, "an infra entry is not a verdict");
+});
+
+test("v0.38.103 a mixed-grader streak is reported as not comparable", () => {
+  // The measurement problem: round 3 and round 4 were graded by different
+  // models with different rigour, so "4 in a row" is not a streak of like
+  // judgments. The cap uses this to refuse to call it a treadmill.
+  const mixed = [round(LLM), round(LLM), round(LUNA), round(LUNA)];
+  assert.equal(countTrailingComparableDisapprovals(mixed), 4);
+  assert.equal(trailingStreakGraderStable(mixed), false, "two graders means the rounds are not comparable");
+
+  const single = [round(LLM), round(LLM), round(LLL)];
+  assert.equal(trailingStreakGraderStable(single), true, "one grader throughout is comparable");
+
+  // A mechanical gate does not make the streak mixed — it is transparent.
+  const withGate = [round(LLL), round(MECHANICAL_PRE_AUDIT_MODEL), round(LLL)];
+  assert.equal(trailingStreakGraderStable(withGate), true);
+});
