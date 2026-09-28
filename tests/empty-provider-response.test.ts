@@ -95,3 +95,28 @@ test("v0.38.104 a quota wall still wins over the eager empty-response path", () 
   assert.ok(delay > 60_000, `a reset hint must still be honoured, got ${delay}ms`);
   assert.equal(delay, 600_000, "and it must be the provider's own window, not the eager 5s");
 });
+
+test("v0.38.105 the FIRST attempt honours the upstream reset hint too (no 5s probe of a named wall)", () => {
+  // The `attempt <= 1` eager return used to sit ABOVE the hint check, so the
+  // very first 429 with `Retry-After` slept 5s and immediately probed the
+  // wall the provider had just named — exactly the hammering the branch was
+  // written to prevent, and a direct contradiction of its own comment.
+  const hinted: MainModelFailure = {
+    kind: "provider" as any,
+    raw: "HTTP 429 Too Many Requests\nRetry-After: 14400",
+  };
+  assert.equal(mainModelFailureDelayMs(hinted, 1), 14_400_000, "attempt 1 sleeps to the provider's own reset");
+
+  const floor: MainModelFailure = {
+    kind: "provider" as any,
+    raw: "rate limit reached, resets at 2026-09-28T12:00:00Z",
+  };
+  const nowMs = Date.parse("2026-09-28T11:00:00Z");
+  const floored = mainModelFailureDelayMs(floor, 1, 15, nowMs);
+  assert.ok(floored > 60_000, `an absolute reset must not be shortened, got ${floored}ms`);
+  assert.equal(floored, Math.min(Math.max(3_600_000, 5_000), 5 * 3_600_000), "and it is the remaining window");
+
+  // The eager quantum still applies when there is no upstream hint.
+  const plain = failure("Provider returned an empty response");
+  assert.equal(mainModelFailureDelayMs(plain, 1), 5_000, "an unhinted first failure is still eager");
+});

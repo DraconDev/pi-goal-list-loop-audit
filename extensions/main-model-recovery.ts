@@ -328,14 +328,19 @@ export function isEmptyProviderResponse(raw: string | undefined): boolean {
 }
 
 export function mainModelFailureDelayMs(failure: MainModelFailure, attempt: number, baseMinutes = 15, nowMs = Date.now()): number {
-  if (attempt <= 1) return 5_000;
   // v0.38.104: a real wall outranks the eager glitch path. An upstream reset
   // hint means the provider told us when it will accept requests again;
   // shortening that to 5s would hammer a rate-limited endpoint, which is the
   // opposite of what this branch is for. Checked BEFORE the eager rule, never
   // after.
+  //
+  // v0.38.105: the order was a lie — `attempt <= 1` returned 5s above this
+  // check, so the FIRST failure carrying "429 … Retry-After: 14400" slept 5
+  // seconds and probed the wall the provider had just named. The hint now
+  // wins for every attempt; the eager quantum remains for everything else.
   const resetSleep = quotaResetSleepMs(failure, nowMs);
   if (resetSleep !== undefined) return resetSleep;
+  if (attempt <= 1) return 5_000;
   // An empty response is a glitch, not a wall — retry it eagerly for a few
   // attempts instead of parking the goal behind the exponential ladder.
   // Without this, attempt 1 was 5s and attempt 2 was 15m, which is backwards
