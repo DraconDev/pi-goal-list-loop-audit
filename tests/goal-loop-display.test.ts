@@ -200,9 +200,11 @@ test("v0.38.110: objective truncation never splits a surrogate pair", () => {
   const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
   // 'a' x10 then 🎨 (U+1F3A8, a surrogate pair in UTF-16).
   const objective = "aaaaaaaaaa🎨bbbbbbbbbb";
-  // Sanity: the old raw slice really did split the pair at this boundary,
-  // so the pin below is testing a real hazard and not a hypothetical.
-  assert.ok(LONE_SURROGATE.test(objective.slice(0, 12)), "raw slice(0,12) splits the pair — the hazard is real");
+  // Sanity: the old raw slice really did split the pair at this boundary
+  // (index 11 lands between the high and low surrogate), so the pin below is
+  // testing a real hazard and not a hypothetical.
+  assert.ok(LONE_SURROGATE.test(objective.slice(0, 11)), "raw slice(0,11) splits the pair — the hazard is real");
+  assert.equal(objective.slice(0, 12).length, 12, "index 12 is the pair boundary");
 
   for (let max = 1; max <= 24; max++) {
     const out = truncateCells(objective, max);
