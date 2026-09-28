@@ -401,3 +401,4 @@
 {"type":"session_rebound","value":{"reason":"resume"},"at":"2026-09-28T01:07:58.982Z"}
 {"type":"id_invalidation","value":{"oldId":"01a0e58d-c075-7698-95b6-a18f14e6f374","newId":"01a0e000-68e5-7525-86ad-47c5230c45f8","reason":"session_shutdown","shutdownReason":"resume","at":"2026-09-28T01:07:58.988Z"},"at":"2026-09-28T01:07:58.988Z"}
 {"type":"payload_guard_eviction","value":{"evicted":11,"bytesFreed":3688308,"remainingImageBytes":2869496,"remainingImageCount":4,"generation":571},"at":"2026-09-28T01:08:33.611Z"}
+{"type":"context_usage_sample","value":{"goalId":null,"provider":"openrouter","model":"stealth/space-bunny-alpha","providerUsage":{"inputTokens":253,"outputTokens":1922,"cacheReadTokens":360177,"cacheWriteTokens":0,"totalTokens":362352},"contextUsage":{"tokens":362352,"contextWindow":1000000,"percent":36.2352}},"at":"2026-09-28T01:09:07.640Z"}
