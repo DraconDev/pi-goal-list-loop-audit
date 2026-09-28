@@ -1,10 +1,19 @@
-import { test } from "node:test";
+import { test, type TestContext } from "node:test";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
-const tmpRoot = () => fs.mkdtempSync(path.join(os.tmpdir(), "glla-version-audit-"));
+/** A temp directory removed when the test finishes, pass or fail.
+ * `mkdtempSync` on its own leaks a directory into the host /tmp on every
+ * run, which is how this suite accumulated thousands of them. */
+function scratchDir(t: TestContext, prefix: string): string {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  t.after(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+  return dir;
+}
 
 import { compareVersions, formatGllaVersion, readGllaVersionInfo, updateCheckPath } from "../extensions/glla-version.js";
 
@@ -24,8 +33,8 @@ test("/glla version reads the installed package metadata and exposes a registry 
   assert.match(formatGllaVersion(undefined, info), /npm view pi-goal-list-loop-audit version/);
 });
 
-test("/glla version names staleness and the update path when the sidecar proves it", () => {
-  const dir = fs.mkdtempSync("/tmp/glla-version-cmd-");
+test("/glla version names staleness and the update path when the sidecar proves it", (t) => {
+  const dir = scratchDir(t, "glla-version-cmd-");
   fs.mkdirSync(`${dir}/.pi-glla`, { recursive: true });
   fs.writeFileSync(`${dir}/.pi-glla/update-check.json`, JSON.stringify({ latest: "99.0.0", checkedAt: Date.now() }));
   const out = formatGllaVersion(dir, { name: PACKAGE.name, version: "0.0.0" });
@@ -50,8 +59,8 @@ test("/glla version is registered, autocompleted, and read-only routed", () => {
   assert.match(COMMANDS, /ctx\.ui\.notify\(formatGllaVersion\(ctx\.cwd\), "info"\)/);
 });
 
-test("unknown running version makes no staleness claim either way", () => {
-  const cwd = tmpRoot();
+test("unknown running version makes no staleness claim either way", (t) => {
+  const cwd = scratchDir(t, "glla-version-audit-");
   fs.mkdirSync(path.join(cwd, ".pi-glla"), { recursive: true });
   fs.writeFileSync(
     path.join(cwd, ".pi-glla", "update-check.json"),
