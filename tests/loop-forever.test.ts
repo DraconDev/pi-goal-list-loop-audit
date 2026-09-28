@@ -586,7 +586,10 @@ test("applyMetriclessTick: time and token bounds still stop the loop", () => {
 
 test("v0.35.72: all loop measure entry points are bounded and reject failed numeric output", () => {
   const runMeasure = LOOP_RUNTIME.slice(LOOP_RUNTIME.indexOf("async function runMeasure"), LOOP_RUNTIME.indexOf("function loopPrompt"));
-  assert.match(runMeasure, /const code = typeof r\?\.code === "number" \? r\.code : \(typeof r\?\.exitCode === "number" \? r\.exitCode : 0\)/);
+  // v0.38.105: a result with no numeric code/exitCode now FAILS CLOSED (1),
+  // matching runGit, so a measure killed by its own timeout can never be
+  // parsed as a reading and freeze the plateau stop.
+  assert.match(runMeasure, /const code = typeof r\?\.code === "number" \? r\.code : \(typeof r\?\.exitCode === "number" \? r\.exitCode : 1\)/);
   assert.match(runMeasure, /if \(code !== 0\) return null/);
   assert.match(runMeasure, /timeout: MEASURE_TIMEOUT_MS/);
 

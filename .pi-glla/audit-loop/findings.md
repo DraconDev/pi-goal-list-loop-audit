@@ -635,3 +635,47 @@ clipped stubs") and was stranded at the finish line. Re-verified against the
 tree before recording.
 
 - [x] FIX: MEDIUM: `complete_goal` rejects over-long `leftOut` at the schema boundary instead of clipping — `leftOut: Type.String({ maxLength: 500 })` (extensions/loops/goal-tools.ts:576) makes Pi refuse the whole claim, while the handler's own `p.leftOut.trim().slice(0, 500)` (extensions/loops/goal-tools.ts:905) proves the intent was clip-not-reject (dead code for over-long input: validation fires first), and the continuation prompt promises uncapped values under a 10k-char guard (RICH_FULL_VALUE_BUDGET = 10_000, extensions/completion-summary.ts:294) with clause-boundary cuts, never mid-word slices. Sibling 500-caps on findingGroups findings/tests strings (goal-tools.ts:588-589) are the same arbitrary class — a big multi-area claim can trip those next. — fixed in 00c721da (schema + sanitizer bounds raised to the documented 10k guard; clipSummaryValue moved to the leaf finding-lead module and shared by renderer, sanitizer, and claim handler; mid-word slices gone; schema-acceptance + long-finding regression in rich-terminal-summary)
+
+## Fresh project audit — 2026-09-28 (v0.38.103, branch main)
+
+Five parallel read-only `scout` surveys (one workflow, five children launched
+together: loop-engine, continuation-recovery, auditor, ui, tools-state-docs),
+~35 tool uses and a ~150-line cap each. Every candidate below was re-read and
+confirmed against the current tree by the orchestrator before recording;
+duplicates and disproved claims were dropped. No DECIDE findings were found in
+this pass — every candidate was a defect with one durable fix, not a direction
+call (see the closing note).
+
+### FIX findings (2026-09-28 pass)
+
+- [x] FIX: HIGH: `/loop stop` and `/loop finish` destroy the in-flight iteration's uncommitted scratch-branch work — both call `finishLoopGit` directly (extensions/goal-loop.ts:1390, :1460) and its unconditional `git reset --hard HEAD` (extensions/goal-loop.ts:919) erases the diff, while the tick's own terminal stops call `commitPendingTerminalWork` first (extensions/goal-loop.ts:800-822, :834, :877) with the comment "a terminal stop never destroys the last iteration's work"; a user stop during `runMeasure` (up to a 10 min measure timeout) abandons the tick via `rebindLoop()` (extensions/goal-loop.ts:609-621) and the work is silently deleted, then the user is told "Loop work is on branch `<scratch>` … Merge with: git merge" (extensions/goal-loop.ts:944-948) — fixed in 816866a0 (commitPendingTerminalWork hoisted to module scope and called at the head of finishLoopGit, so /loop stop, /loop finish and /glla wipe all commit the pending diff before the destructive reset; the tick keeps its rebind guard; regression proves the mid-tick stop commits inflight.txt on the scratch branch and the commit precedes the reset)
+- [ ] FIX: MEDIUM: `runMeasure` fails OPEN when the exec result carries no numeric `code`/`exitCode` (defaults to 0) while its sibling `runGit` fails closed (defaults to 1) (extensions/goal-loop.ts:304 vs :319) — a measure killed by its timeout can be recorded as a real reading, can set `bestValue` and permanently suppress the plateau stop
+- [ ] FIX: MEDIUM: `mainModelFailureDelayMs` returns the 5 s eager quantum for attempt 1 BEFORE the upstream reset-hint check its own comment says must come first ("Checked BEFORE the eager rule, never after") (extensions/main-model-recovery.ts:330-338 vs the v0.38.104 comment at :332-336 and `quotaResetSleepMs` at :369-378) — a 429 carrying `Retry-After: 14400` is probed 5 seconds later instead of sleeping to the provider's own reset
+- [ ] FIX: MEDIUM: `retryContinuationDispatch` mutates the live `pendingContinuationDispatch` record in RAM (`retryCount`/`retrySentAt`/`timeoutMs`) and discards `persistDispatchRecord`'s boolean (extensions/goal-continuation.ts:900-904) — unlike `dispatchAccepted` (extensions/goal-continuation.ts:931-934) and `dispatchPrepare` (extensions/goal-continuation.ts:585) — so a failed sidecar write leaves durable `retryCount = 0` and a reload re-sends the identical payload
+- [ ] FIX: LOW: `observedSubagentRpcBuses` is add-only for the life of the process (extensions/goal-heartbeat.ts:681, :691-692) — `releaseSubagentRpcHost` deletes only the ready-protocol map entry (extensions/goal-heartbeat.ts:737-738), so every rebound session's bus and its two registered listeners stay retained forever
+- [ ] FIX: LOW: the detached auditor worker records EVERY `challenge:false` dispatch as "skipped: light-tier audit" (scripts/goal-auditor-worker.mjs:1104-1105) although the parent sends that same flag for a full-tier rework-streak skip too (extensions/goal-loop-auditor-process.ts:1920) — a full-tier audit that skipped falsification is durably recorded with the wrong cause
+- [ ] FIX: LOW: an audit job dir holding a finished `result.json` but a `role:"parent"` lock whose PID is now alive (reused) classifies `ambiguous` (extensions/goal-loop-auditor-process.ts:1104-1112) and `cleanupDeadAuditJobs` reaps only `dead` (extensions/goal-loop-auditor-process.ts:1170-1180), so the dir (full prompt + transcript) leaks past the retention ceiling forever
+- [ ] FIX: MEDIUM: `mainModelRetryMinutes` and `auditFeedbackChars` are the only numeric policy knobs with no guard in `normalizeLoadedSettings` (extensions/goal-settings.ts:448-643 guards its siblings; these two are absent) although both are in `SETTINGS_KEYS` (:327, :741) and rendered by the menu (extensions/settings-menu.ts:290-295, :519-526) — a hand-edited `"mainModelRetryMinutes": "30"` is shown as effective while the runtime's guard silently falls back to 15
+- [ ] FIX: LOW: `drafterThinkingLevel` / `auditorThinkingLevel` are unvalidated while the sibling `subagentThinkingOverrides` map is pruned against the same ladder (extensions/goal-settings.ts:465-472) — a hand-edited `"turbo"` survives load, is displayed (extensions/settings-menu.ts:172, :180) and is stringified into a drafter agent file (extensions/loops/goal-list-queue.ts:451)
+- [ ] FIX: LOW: `objectiveExcerpt` / `stopReasonExcerpt` still cut UTF-16 code units on untrusted goal text (extensions/completion-summary.ts:1276-1278, :1281-1283) although the module's own `clipSummaryValue` was converted to the code-point-safe clause-bound cutter in extensions/finding-lead.ts:150-180 — an emoji straddling the cut index renders a lone surrogate in the archive
+- [ ] FIX: LOW: `summarizeToolArg` truncates a provider/child-controlled tool argument by code units in the live widget card (extensions/loops/goal-ui.ts:637) although the sibling panel routes through the shared cell-aware helper (extensions/goal-agents-panel.ts:97-100)
+- [ ] FIX: MEDIUM: `complete_goal`'s `newObjective` path discards `updateGoal`'s `false` (extensions/loops/goal-tools.ts:748) and pre-bumps the in-memory revision (:743) — an unwritable `.pi-glla` still ledgers `goal_tweaked`, notifies "Objective updated" and claims against the OLD objective, while the settle writes persist a phantom `revision+1` that permanently invalidates any existing approval (the correct pattern is extensions/loops/goal-tools.ts:3938-3950)
+- [ ] FIX: LOW: `list_activate` types `n` as `Type.Number` (extensions/loops/goal-tools.ts:3764) while its own error text tells the agent to pass `"1.1"` (:3781) and the position grammar accepts a dotted child label (extensions/goal-loop-core.ts:3404-3412) — schema validation rejects the very form the handler was written to explain
+
+### Coverage and honesty notes for this pass
+
+- 13 findings: 1 HIGH, 5 MEDIUM, 7 LOW. Every one is a defect with a single
+  durable fix, so nothing in this pass was classified `- [?] DECIDE` — there is
+  no direction call to raise with the user from these five surveys.
+- The scouts' own "checked and clean" lists were re-sampled by the
+  orchestrator on the highest-risk items (tick rebinding, `/loop audit` state
+  root, `parseLoopStartArgs`, subagent agent-name traversal, the detached
+  auditor env allowlist, `list_activate`/queue batch write discipline,
+  `complete_goal` 10k value bounds, `SETTINGS_KEYS` surface parity) and all
+  still hold.
+- Survey limits, recorded so a later pass does not mistake silence for
+  cleanliness: `goal-loop-auditor-process.ts` and `loops/goal-auditor-hooks.ts`
+  were grep-sampled rather than read end to end; the priority-2 docs/packaging
+  sweep (schemas vs runtime writes, `.github/workflows/publish.yml`,
+  `prompts/*.md` tool-grant claims, the `tests/` vacuity scan) did not run —
+  the tools-state-docs scout hit its tool budget on the code half.
