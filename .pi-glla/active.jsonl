@@ -534,3 +534,6 @@
 {"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T02:29:15.772Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T02:29:23.463Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T02:29:30.127Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T02:29:38.567Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T02:29:43.772Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T02:29:54.346Z"}
