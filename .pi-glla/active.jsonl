@@ -595,3 +595,5 @@
 {"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T03:57:56.577Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T03:58:05.531Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T03:58:55.935Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T03:59:22.905Z"}
+{"type":"context_hygiene_dropped","value":{"dropped":2,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T03:59:43.734Z"}
