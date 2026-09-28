@@ -2926,6 +2926,18 @@ function registerAgentTools(pi: any): void {
         if (!updateGoal({ taskList: withTaskStatus(tl, p.id, "complete") }, ctx)) {
           return { content: [{ type: "text", text: `Task ${p.id} could not be marked complete — the persist failed and no state changed. Retry.` }], details: {} };
         }
+        // v0.38.104: between-tasks compaction. This is the cheapest moment
+        // there is: the task is durably complete, nothing is mid-tool-call and
+        // no audit is in flight. PREFERENCE, never a hard stop -- the goal,
+        // its task list and durable state are untouched; only the transcript
+        // is compacted, plus a handoff brief so the goal's shape survives.
+        //
+        // The 200k the user set as a rule was never a trigger: it sized the
+        // compactor MODEL (PLAN_B_FALLBACK_NEED) and gated nothing. A token
+        // count is used rather than a percentage because a percentage moves
+        // with the model -- on a 1M window 85% is ~850k, and compacting at 1M
+        // is exactly the case to avoid.
+        void maybeCompactBetweenTasks(ctx);
         return { content: [{ type: "text", text: `Task ${p.id} marked complete.` }], details: {} };
       }
     },
