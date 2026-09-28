@@ -172,3 +172,41 @@ test("release contract: changelog has one heading for the current package versio
   const headings = changelog.split(/\r?\n/).filter((line) => line.startsWith(`## ${version} `));
   assert.equal(headings.length, 1, `${version} release notes must have one unambiguous heading`);
 });
+
+test("release contract: untagged source work has an Unreleased changelog section to promote", () => {
+  const version = (JSON.parse(fs.readFileSync("package.json", "utf-8")) as { version: string }).version;
+  const [major, minor, patch] = version.split(".").map(Number) as [number, number, number];
+  const rank = (m: number, n: number, p: number): number => m * 1_000_000 + n * 1_000 + p;
+  const current = rank(major, minor, patch);
+  const sources = [
+    ...fs.readdirSync("extensions").filter((f) => f.endsWith(".ts")).map((f) => `extensions/${f}`),
+    ...fs.readdirSync("extensions/loops").filter((f) => f.endsWith(".ts")).map((f) => `extensions/loops/${f}`),
+    ...fs.readdirSync("scripts").filter((f) => f.endsWith(".mjs") || f.endsWith(".mts")).map((f) => `scripts/${f}`),
+  ];
+  let newest = current;
+  let newestAt = "";
+  for (const file of sources) {
+    const text = fs.readFileSync(file, "utf-8");
+    for (const match of text.matchAll(/\bv?(\d+)\.(\d+)\.(\d+)\b/g)) {
+      const found = rank(Number(match[1]), Number(match[2]), Number(match[3]));
+      // Only the same major.minor line counts: an unrelated pinned
+      // dependency version in a comment is not untagged work.
+      if (match[1] === String(major) && match[2] === String(minor) && found > newest) {
+        newest = found;
+        newestAt = `${file}:${match[0]}`;
+      }
+    }
+  }
+  const changelog = fs.readFileSync("CHANGELOG.md", "utf-8");
+  if (newest > current) {
+    assert.ok(
+      changelog.includes("## Unreleased"),
+      `source carries untagged work newer than ${version} (${newestAt}) but CHANGELOG.md has no '## Unreleased' section for the release commit to promote`,
+    );
+  }
+  assert.equal(
+    changelog.split(/\r?\n/).filter((line) => line.startsWith("## Unreleased")).length,
+    1,
+    "there is exactly one Unreleased section to rename",
+  );
+});

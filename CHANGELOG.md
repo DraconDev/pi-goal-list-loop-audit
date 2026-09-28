@@ -1,5 +1,76 @@
 # Changelog
 
+## Unreleased
+
+Untagged work since 0.38.103. It stays under this heading until the release
+commit renames it (docs/RELEASING.md); these are descriptive milestones, not
+invented version headers.
+
+### Provider walls: honest classification and bounded redaction
+
+- An empty provider response is a transient glitch, not a quota wall, and a
+  real `Retry-After` reset outranks the eager first-retry path instead of being
+  shortened to 5s.
+- The numeric `5xx` match is anchored, and the redaction cascade is bounded by
+  a fraction of the report's lines so sanitising cannot destroy the evidence.
+- The between-tasks compaction threshold is a named token budget
+  (`runProactiveCompactionIfDue`), not an "emergency" that could fire on any
+  threshold.
+
+### Durable state: writes that either land or say they did not
+
+- A retried continuation dispatch is built as a copy and adopted only after
+  `persistDispatchRecord` succeeds, so an unwritable `.pi-glla` can no longer
+  re-send an identical payload from a durable `retryCount = 0`.
+- The subagent RPC registry releases its listeners instead of retaining every
+  rebound session's bus for the life of the process.
+- A finished `result.json` classifies its job dir as dead even when the parent
+  PID was reused, so a proven-finished dir is reaped instead of leaking.
+- `mainModelRetryMinutes`, `auditFeedbackChars` and the thinking-level pins are
+  normalized at load, so no surface can display a value the runtime ignores.
+- Summary and widget clipping is code-point safe, and `complete_goal`'s
+  `newObjective` path goes through `updateGoal` with an explicit revision.
+
+### A park is not terminal
+
+- The bounded-horizon and identical-failure auditor parks re-probe themselves
+  instead of dead-ending the goal.
+- An unacknowledged continuation turn start self-heals on a doubling,
+  probe-bounded cadence; the loop's live event log is no longer tracked.
+
+### The treadmill ceiling reaches the path the field actually takes
+
+- The disapproval hard cap (0.38.103) was wired only into `complete_goal`'s
+  inline settlement. Real audits settle through the detached driver minutes or
+  hours later, which had no cap — under aggressive mode (the default) every hit
+  became a TODO and the goal ground forever (hellhunter 12 rounds, junk-runner
+  9, zero cap pauses). The detached path now pauses on the same
+  comparable-disapproval streak. See `audit/STUCK-AT-LAST-PART-2026-09-28.md`.
+
+### Tests: observable, hang-proof, orphan-free
+
+- `scripts/run-tests.mjs` wraps the serialized suite with a progress
+  heartbeat, a bounded stall watchdog, and a teardown that takes the suite
+  down with it instead of leaving a runaway. The suite child is spawned
+  detached, so the documented process-group kill is real rather than an
+  ESRCH-swallowed no-op; `test:all` and both CI jobs run through the wrapper
+  and are bounded by `timeout-minutes`.
+
+### Audit pass 2026-09-28 (findings + fixes in this section's range)
+
+- An approved audit no longer falls through the settlement driver into the
+  residual-failure tail, which wrote a false "infrastructure error" warning and
+  a contradictory `approved: false` evidence record after a successful
+  completion.
+- `/goal verify` checks for an owed settlement before writing its manual claim,
+  so an approved-but-unarchived goal keeps its approval instead of being
+  re-audited from scratch.
+- A branch-changed loop park names the loop surface and is resumable, so the
+  loop's iteration, best value and history stay reachable.
+- The settings menu no longer promises a 24h recovery ceiling the default
+  aggressive mode removes, and renders the legal retention value `0` as a value
+  instead of "?".
+
 ## 0.38.103 — the treadmill gets a ceiling: inconclusive gates and a hard disapproval cap (2026-09-27)
 
 - **A mechanical gate the host kills is no longer a disapproval.** Timeout/kill/output-limit/abort outcomes now classify `inconclusive` and enter the durable infra-retry plan instead of the rework loop — a killed gate is evidence of nothing about the work. Gate budgets also scale with host load (1× at load ≤ cpus, capped 2× past it; `mechanicalLoadScale`, default on, global-only).
