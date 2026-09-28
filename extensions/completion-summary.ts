@@ -1279,11 +1279,13 @@ function objectiveExcerpt(objective: string): string {
   // surrogate into the durable archive line. clipSummaryValue is code-point
   // safe and cuts at a clause boundary, and one implementation now owns every
   // length cut in this module.
-  return clipSummaryValue(objective, 220);
+  const clean = safeFact(objective);
+  return clean.length > 220 ? `${clean.slice(0, 217)}\u2026` : clean;
 }
 
 function stopReasonExcerpt(reason: string | undefined): string {
-  return clipSummaryValue(reason ?? "", 260) || "not recorded";
+  const clean = safeFact(reason);
+  return clean.length > 260 ? `${clean.slice(0, 257)}\u2026` : clean;
 }
 
 function auditEvidence(goal: Goal): string {

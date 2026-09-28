@@ -285,7 +285,7 @@ test("v0.38.105: the working-card tool argument is cut cell-aware, never mid-sur
   // The pre-existing contract is unchanged: control bytes are stripped, and
   // short values pass through untouched.
   assert.equal(summarizeToolArg("bash", { command: "ls -la" }), "ls -la");
-  assert.equal(summarizeToolArg("bash", { command: "printf 'a\\nb'" }), "printf 'a b'", "control bytes never break the card layout");
+  assert.equal(summarizeToolArg("bash", { command: "printf 'a\nb'" }), "printf 'a b'", "control bytes never break the card layout");
   assert.equal(summarizeToolArg("bash", { command: "" }), undefined);
   assert.equal(summarizeToolArg("read", { file_path: "/a/b/c/deep/file.ts" }), "file.ts", "a path keeps only its basename");
 });
