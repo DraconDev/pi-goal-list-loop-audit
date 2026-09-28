@@ -554,3 +554,4 @@
 {"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T02:37:31.921Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T02:37:55.634Z"}
 {"type":"context_hygiene_dropped","value":{"dropped":1,"kept":1,"lastError":"This operation was aborted","generation":571},"at":"2026-09-28T02:38:15.315Z"}
+{"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-28T02:41:32.945Z"}
