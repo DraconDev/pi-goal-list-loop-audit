@@ -640,7 +640,7 @@ export function summarizeToolArg(name: string, input: any): string | undefined {
   // split surrogate pairs, painting a broken glyph into the WORKING card for
   // the rest of the turn — the same defect the agents panel fixed by routing
   // through the shared helper. The control-byte strip above is unchanged.
-  return base.length <= 24 ? base : base.slice(0, 23) + "\u2026";
+  return truncateCells(base, 24);
 }
 function noteToolCall(event: any): void {
   const name = String(event?.toolName ?? "?");
