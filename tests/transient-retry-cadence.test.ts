@@ -79,6 +79,15 @@ test("walls keep the historical ladder; a reset hint outranks the eager window",
   for (const raw of ["insufficient credits — buy credits", "401 invalid API key"]) {
     assert.equal(mainModelFailureDelayMs(transient(raw), 2, 15, nowMs), 30 * 60_000, raw);
   }
+  // Carve-out audit 2026-09-28: aborts and context starvation were
+  // implemented-but-unpinned — a regression here would hammer Esc or a
+  // blown context at 5s intervals.
+  const abort = transient("turn aborted: user interrupt");
+  assert.equal(abort.kind, "non-recoverable");
+  assert.equal(mainModelFailureDelayMs(abort, 2, 15, nowMs), 30 * 60_000, "user aborts never go eager");
+  const starved = classifyMainModelFailure("context compacted twice, still starved", { isContextOverflow: true });
+  assert.equal(starved.kind, "context-overflow");
+  assert.equal(mainModelFailureDelayMs(starved, 2, 15, nowMs), 30 * 60_000, "context overflow needs compaction, not retries");
   assert.equal(mainModelFailureDelayMs(transient("429 usage limit"), 2, 15, nowMs), 30 * 60_000, "hintless quota still ladders");
   // v0.38.111: explicit backpressure vetoes eager even for transient kinds —
   // hammering a named rate limit is violation, not diligence.
