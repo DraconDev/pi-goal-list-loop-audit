@@ -249,6 +249,16 @@ export function __testOnlySetContinuationRetryBackoff(backoffMs: number | null):
 
 let pendingContinuationDispatch: ContinuationDispatch | null = null;
 let continuationStartTimer: NodeJS.Timeout | null = null;
+// v0.38.106 (field: neonbreak 20260928 174457 — "continuation was accepted,
+// but pi did not start a turn … automatic re-sends are stopped · /list resume
+// to retry once", list item left `interrupted` for 26m): an unacknowledged
+// turn-start used to be a permanent dead end. The main lane re-probes through
+// the same class of stall; the continuation lane demanded a human. The lane
+// now self-heals on a bounded, slowing cadence and only parks for real when
+// the bounded budget is spent. The stand-down still holds between probes, so
+// no other lane can storm pi's queue while this one waits.
+let continuationStartSelfHealTimer: NodeJS.Timeout | null = null;
+let continuationStartSelfHealProbes = 0;
 let continuationDispatchStoodDown = false;
 // v0.34.88: the EXACT payload of the last accepted dispatch send. The retry
 // re-sends this verbatim (same customType/content/display) — no per-kind
@@ -651,6 +661,15 @@ export function dispatchStartAcknowledged(ctx: ExtensionContext, source: string,
   // pending — the rearm milestone uses it to tell an open-but-silent turn
   // from a turn that never started.
   if (source === "turn_start" || source === "agent_start") lastObservedTurnStartAt = Date.now();
+  // v0.38.106: a real turn-start proof means the lane is moving again, so the
+  // self-heal budget resets. The stuck episode is over — the next one gets a
+  // fresh bounded budget instead of inheriting an exhausted one.
+  if (source === "before_agent_start" || source === "agent_start" || source === "turn_start") {
+    if (continuationStartSelfHealTimer) {
+      appendLedger(ctx.cwd, "continuation_start_self_heal_cleared", { source, probes: continuationStartSelfHealProbes });
+      clearContinuationStartSelfHeal();
+    }
+  }
   // v0.34.104 ([Image-#1]): any real agent activity during the
   // post-list-completion settle window means pi woke up on its own — the
   // deferred continuation must be cancelled so we don't double-dispatch.
@@ -788,10 +807,84 @@ function dispatchStartUnacknowledged(ctx: ExtensionContext, record: Continuation
     updateGoal({ interruptedAt: nowIso(), interruptedReason: reason }, ctx);
   }
   resetRepairReplanBootstrap(ctx, "start-unacknowledged");
-  const msg = `glla: pi accepted the ${dispatchLabel(record)} continuation, but no observable turn-start event arrived within ${Math.round((Date.now() - record.sentAt) / 1000)}s despite one automatic retry. Automatic re-sends are stopped to avoid a blind queue storm. The work is safe in .pi-glla; start a fresh session or use /goal resume, /list resume, or /loop resume to retry explicitly.`;
+  // v0.38.106: warn AND keep going. The one-automatic-retry cap still stops a
+  // blind queue storm; it no longer decides the lane's fate.
+  armContinuationStartSelfHeal(ctx, record);
+  const selfHeal = continuationStartSelfHealDelayMs(continuationStartSelfHealProbes);
+  const msg = `glla: pi accepted the ${dispatchLabel(record)} continuation, but no observable turn-start event arrived within ${Math.round((Date.now() - record.sentAt) / 1000)}s despite one automatic retry. Automatic re-sends are paused to avoid a blind queue storm; the lane re-probes itself in ${Math.round(selfHeal / 1000)}s and keeps doing so on a slowing cadence, so nothing is needed if the host recovers. The work is safe in .pi-glla — use ${activeGoalSurfaceCommand("resume")} to retry immediately, or start a fresh session.`;
   ctx.ui.notify(msg, "warning");
   notifyExternal(ctx, sanitizeDisplayText(msg));
   refreshUI(ctx);
+}
+
+/** v0.38.106: the self-heal cadence. Doubling from 2 minutes, capped at 15 —
+ * a host that is genuinely gone is not polled 30 times an hour, and a host
+ * that recovers lands the retry within a couple of minutes. */
+export const CONTINUATION_START_SELF_HEAL_MIN_MS = 2 * 60_000;
+export const CONTINUATION_START_SELF_HEAL_MAX_MS = 15 * 60_000;
+/** Bounded budget. Past this the lane parks for real and asks for a human —
+ * the main lane's own horizon has the same shape. */
+export const CONTINUATION_START_SELF_HEAL_MAX_PROBES = 6;
+
+export function continuationStartSelfHealDelayMs(probe: number): number {
+  const index = Math.max(0, Math.floor(probe));
+  const scaled = CONTINUATION_START_SELF_HEAL_MIN_MS * 2 ** index;
+  return Math.min(CONTINUATION_START_SELF_HEAL_MAX_MS, scaled);
+}
+
+export function clearContinuationStartSelfHeal(): void {
+  if (continuationStartSelfHealTimer) {
+    clearTimeout(continuationStartSelfHealTimer);
+    continuationStartSelfHealTimer = null;
+  }
+  continuationStartSelfHealProbes = 0;
+}
+
+export function __testOnlySetContinuationStartSelfHealMaxProbes(value: number): void {
+  continuationStartSelfHealMaxProbes = Math.max(1, Math.floor(value));
+}
+let continuationStartSelfHealMaxProbes = CONTINUATION_START_SELF_HEAL_MAX_PROBES;
+
+/** Arm (or re-arm) the self-heal for a settled unacknowledged dispatch. The
+ * timer is generation-fenced and self-cancelling: any newer dispatch, any
+ * turn-start proof, or any pause clears it, so it can only ever help the lane
+ * that is actually stuck. */
+function armContinuationStartSelfHeal(ctx: ExtensionContext, record: ContinuationDispatch): void {
+  if (continuationStartSelfHealTimer) clearTimeout(continuationStartSelfHealTimer);
+  const dispatchId = record.id;
+  const generation = record.generation;
+  const delayMs = continuationStartSelfHealDelayMs(continuationStartSelfHealProbes);
+  const timer = scheduleSessionTimeout(() => {
+    if (continuationStartSelfHealTimer !== timer) return;
+    continuationStartSelfHealTimer = null;
+    const live = freshCtxForGeneration(generation);
+    if (!live) return;
+    const settled = pendingContinuationDispatch;
+    if (!settled || settled.id !== dispatchId || (settled.phase ?? "") !== "unacknowledged") {
+      // The lane moved on (a turn started, a resume re-dispatched, or another
+      // lane settled it). Self-heal is no longer this record's job.
+      appendLedger(live.cwd, "continuation_start_self_heal_cancelled", { id: dispatchId, reason: "no longer the settled dispatch" });
+      return;
+    }
+    const probe = continuationStartSelfHealProbes + 1;
+    if (probe > continuationStartSelfHealMaxProbes) {
+      appendLedger(live.cwd, "continuation_start_self_heal_exhausted", { id: dispatchId, probes: continuationStartSelfHealProbes });
+      const msg = `glla: the continuation lane spent its self-heal budget (${continuationStartSelfHealMaxProbes} bounded re-probes) without a turn start. The work is safe in .pi-glla; ${activeGoalSurfaceCommand("resume")} retries it explicitly, or start a fresh session.`;
+      ctx.ui.notify(msg, "warning");
+      notifyExternal(ctx, sanitizeDisplayText(msg));
+      return;
+    }
+    continuationStartSelfHealProbes = probe;
+    appendLedger(live.cwd, "continuation_start_self_heal_fired", { id: dispatchId, probe, delayMs: continuationStartSelfHealDelayMs(probe - 1) });
+    // A fresh, fully guarded dispatch beats a blind re-send: it re-runs every
+    // goal/loop guard, re-resolves the model chain, and gets its own start
+    // watchdog. The stand-down is released for this one dispatch only; if it
+    // misses again, dispatchStartUnacknowledged re-arms the next probe.
+    clearContinuationStartWatchdog();
+    releaseContinuationDispatchStandDown();
+    scheduleContinuation(live, true, 0);
+  }, delayMs);
+  continuationStartSelfHealTimer = timer;
 }
 
 function armContinuationStartWatchdog(ctx: ExtensionContext, record: ContinuationDispatch): void {
@@ -1835,6 +1928,9 @@ export function setContinuationRearmSince(v: number): void {
 export function resetContinuationDispatchState(cwd: string): boolean {
   clearContinuationTimer();
   clearContinuationStartWatchdog();
+  // v0.38.106: a reset (fresh session, /glla wipe, manual repair) is a clean
+  // slate for the self-heal budget too — never inherit a half-spent one.
+  clearContinuationStartSelfHeal();
   clearQueueStuckProbe();
   continuationDispatchStoodDown = false;
   continuationRearmStreak = 0;
