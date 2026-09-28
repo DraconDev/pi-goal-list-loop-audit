@@ -208,6 +208,18 @@ describe("regression shield — the branch the cap could not see", () => {
         verificationSummary: "e1.",
         verificationContract: "<evidence>1. item 1</evidence>",
         auditHistory: priors,
+        // A seeded parked claim is what drives the DETACHED settlement — the
+        // path where the v0.38.107 cap actually lives. resume_goal re-fires it.
+        pendingCompletion: {
+          at: new Date().toISOString(),
+          phase: "recovery-pending",
+          startedAt: new Date(Date.now() - 60_000).toISOString(),
+          attemptId: "shield-cap-attempt",
+          completionSummary: "Outcome: shipped. Changed: one file. Evidence: test. Tests: pass. Unresolved: none. Next: none.",
+          verificationSummary: "e1.",
+        },
+        pauseKind: "blocked",
+        pauseReason: "seeded parked claim with shield-block priors",
       }),
     });
 
@@ -216,7 +228,7 @@ describe("regression shield — the branch the cap could not see", () => {
     process.env.GLLA_PI_BINARY = writeFakeAuditor(cwd, "Looks fine.\n<approved/>");
     const { pi, ctx } = await boot(cwd);
     try {
-      await pi.runTool("resume_goal", {}, ctx);
+      await pi.runTool("resume_goal", { reason: "retry the stored claim" }, ctx);
       await waitUntil(() => {
         const goal = readState(cwd).goal as GoalView | null;
         return !!goal && !goal.pendingCompletion && (goal.auditHistory?.length ?? 0) >= priors.length + 1;
