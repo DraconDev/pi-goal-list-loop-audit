@@ -1509,6 +1509,61 @@ export function countTrailingDisapprovals(history: AuditVerdict[]): number {
   return n;
 }
 
+/** v0.38.103: the deterministic mechanical fast-fail gate records its verdict
+ * under this model id. It is a GATE, not a judgment — `bun run ci:gates` or a
+ * contract check failing says nothing about whether the auditor is unconvinced.
+ *
+ * Field 2026-09-27 (hellhunter): three of its eight trailing "disapprovals"
+ * were `deterministic-pre-audit`. Any cap counting those is adding two
+ * different kinds of evidence into one streak. */
+export const MECHANICAL_PRE_AUDIT_MODEL = "deterministic-pre-audit";
+
+export function isMechanicalPreAuditVerdict(verdict: Pick<AuditVerdict, "model">): boolean {
+  return verdict.model === MECHANICAL_PRE_AUDIT_MODEL;
+}
+
+/** v0.38.103: the trailing streak counted by a cap should be rounds an
+ * auditor actually JUDGED. Mechanical fast-fail entries are transparent — the
+ * streak passes through them rather than counting them, so a goal blocked by a
+ * gate is not mistaken for a goal the auditor keeps rejecting.
+ *
+ * hellhunter: 8 raw disapprovals -> 5 comparable semantic rounds. */
+export function countTrailingComparableDisapprovals(history: AuditVerdict[]): number {
+  let n = 0;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const v = history[i]!;
+    if (v.disapproved) {
+      if (isMechanicalPreAuditVerdict(v)) continue; // a gate, not a judgment
+      n++;
+      continue;
+    }
+    if (v.error && !v.approved) continue; // infra: not a verdict
+    break;
+  }
+  return n;
+}
+
+/** v0.38.103: does the trailing comparable streak come from ONE grader? A
+ * streak that alternates auditors is not comparable round-to-round, so a cap
+ * resting on it is measuring noise. Reported so the cap can re-measure under a
+ * pinned auditor before parking instead of trusting the count. */
+export function trailingStreakGraderStable(history: AuditVerdict[]): boolean {
+  let grader: string | undefined;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const v = history[i]!;
+    if (v.disapproved) {
+      if (isMechanicalPreAuditVerdict(v)) continue;
+      const current = v.model ?? "";
+      if (grader === undefined) grader = current;
+      else if (current !== grader) return false;
+      continue;
+    }
+    if (v.error && !v.approved) continue;
+    break;
+  }
+  return true;
+}
+
 /** Consecutive identical semantic objections are a state-based no-progress
  * signal. Infrastructure entries are transparent, but a changed contract
  * revision breaks the comparison because the auditor may now be judging new
