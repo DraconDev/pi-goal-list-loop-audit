@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 
-import { buildWidgetLines, truncateObjective } from "../extensions/goal-loop-display.ts";
+import { buildWidgetLines, truncateCells, truncateObjective } from "../extensions/goal-loop-display.ts";
 import type { Goal, State } from "../extensions/goal-loop-core.ts";
 
 const NOW = Date.parse("2026-08-17T20:10:00Z");
@@ -188,4 +188,27 @@ test("active card with an action row closes the tree", () => {
   const rendered = lines.join("\n");
   assert.doesNotMatch(rendered, /model: primary/, "steady-state model row is dropped");
   assert.match(lines.at(-1)!, /^└─ ✓ bash/, "the action row closes the card instead of promising more");
+});
+
+// v0.38.110 — the objective-first notifies truncated with a raw `.slice()`,
+// which cuts UTF-16 code units and can split a surrogate pair. The same file
+// already had the code-point-safe helper one import away, so this was an
+// inconsistency rather than a missing capability: a user objective containing
+// an emoji at the truncation boundary rendered a U+FFFD replacement glyph
+// mid-notification.
+test("v0.38.110: objective truncation never splits a surrogate pair", () => {
+  const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+  // 'a' x10 then 🎨 (U+1F3A8, a surrogate pair in UTF-16).
+  const objective = "aaaaaaaaaa🎨bbbbbbbbbb";
+  // Sanity: the old raw slice really did split the pair at this boundary,
+  // so the pin below is testing a real hazard and not a hypothetical.
+  assert.ok(LONE_SURROGATE.test(objective.slice(0, 12)), "raw slice(0,12) splits the pair — the hazard is real");
+
+  for (let max = 1; max <= 24; max++) {
+    const out = truncateCells(objective, max);
+    assert.ok(!LONE_SURROGATE.test(out), `max=${max} emitted a lone surrogate: ${JSON.stringify(out)}`);
+  }
+  // A string that fits is returned untouched, so short objectives are
+  // byte-identical to before this change.
+  assert.equal(truncateCells("short 🎨 objective", 100), "short 🎨 objective");
 });
