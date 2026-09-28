@@ -1,8 +1,8 @@
-# Prio
+<0;18;11M# Prio
 
 # Now
 
-# Later
+# Next
 
 ##
 /home/dracon/Pictures/Screenshots/Screenshot_20260925_004412.png 
@@ -10,6 +10,8 @@ this is different cause in this case there is nothing for me to do just waiting 
 
 ##
 improve control ui ?
+
+# later
 
 ##
 /home/dracon/Pictures/Screenshots/Screenshot_20260928_132645-1.png
