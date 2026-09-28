@@ -65,10 +65,12 @@ anyway: hellhunter climbed to round 13 and junk-runner to round 9.
 
 Root cause, verified in source: the v0.38.103 ceiling was added only to the
 *inline* settlement inside `complete_goal` (`extensions/loops/goal-tools.ts`).
-The field never settles inline — `complete_goal` returns AUDIT PENDING and
-real verdicts land minutes/hours later through the detached driver
+Long audits effectively never settle inline — `complete_goal` returns AUDIT
+PENDING and real verdicts land minutes/hours later through the detached driver
 (`retryStoredCompletionAudit` in `extensions/loops/goal-auditor-hooks.ts`),
-which had no hard-cap check at all. There the soft cap converts to TODOs
+which had no hard-cap check at all. (Correction 20:30: hellhunter round 14
+*did* settle inline after a ~46 min await — rare, not impossible. The 13
+prior rounds and all 9 junk-runner rounds still prove the detached gap.) There the soft cap converts to TODOs
 under aggressive mode (the default: `aggressiveMode !== false`), and the
 no-progress stop only fires on *identical* objections — so a fresh-objection
 treadmill loops forever by construction. Ledger evidence: zero cap-pause
@@ -200,6 +202,30 @@ both would settle the same attempt. Worth a uniqueness guard or a documented
    `audits.jsonl`.
 6. **Heartbeat honesty**: if the parent cannot poll (starved), say so;
    do not let the UI show "no progress 60m" for a live worker.
+
+## Re-audit 20:30 — is it fixed?
+
+Yes for the infinity; the remaining red is different, bounded causes:
+
+- **hellhunter: RESOLVED.** Round 14 settled inline, the v0.38.103 cap fired
+  ("disapproved 9×, hard cap 8"), user accepted with follow-ups → complete.
+  New goal already auditing. This is the cap design proven end-to-end.
+- **junk-runner: reworking, not audit-stuck.** No claim in 9.5 h because the
+  worker is grinding e2e redness + a live whole-suite run (471/444 with
+  retries at 20:29). Session booted 19:30, after the v0.38.107 deploy
+  (19:25) — so its next verdict, approve or disapprove, terminates the loop
+  (streak already 9 ≥ 8 → cap pause). Genuine bind remains: contract item 6
+  clause 1 (built-artifact default) contradicts e2e reality — expect the
+  cap pause to surface a user decision, which is the correct end state.
+- **capture-anime-girls: provider exhaustion, bounded.** Two instant auditor
+  deaths (`'\x07'`), ladder exhausted, paused with 15 m auto-retry. The
+  mechanism is right; the error message is still lost (open bug §4).
+- **Fleet: converging.** 6+ approvals in ~2 h (come-get-me, freeport,
+  neonbreak, polis, eve, db-gateway). No goal anywhere sits on a growing
+  disapproval streak. dracon-log (7 audits) and monster-minecraft (5) are
+  mid-rework with streak 1.
+- **Detached-cap field proof still pending:** no detached settlement at
+  streak ≥ 8 has run since the 19:25 deploy. junk-runner will be the first.
 
 ## Raw pointers
 
