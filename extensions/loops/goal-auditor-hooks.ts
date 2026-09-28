@@ -2119,20 +2119,26 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     }
     if (!plan.automatic) {
       const notifyCapped = claimRecoveryNotice(pending, `${recoveryEpisodeKey}:retry-capped`);
+      // v0.38.106: the horizon is a Ladder bound, not a lane end. The main
+      // lane keeps its hourly probe past its own horizon, so the auditor lane
+      // does too — same shared cadence, same bounded probe delay.
+      const probeDelayMs = auditorIdenticalParkProbeDelayMs(plan.requestedSec);
+      const armed = scheduleParkedCompletionAuditRecovery(liveCtx, pending, "auditor-retry-horizon", { delayMs: probeDelayMs });
+      const cadence = humanizeAuditorProbeCadence(probeDelayMs);
       updateGoal({
         status: "paused",
         auditHistory: history,
-        pendingCompletion: { ...pending, ...(exhaustedChain ? { exhaustedChain } : {}) },
+        pendingCompletion: { ...armed, ...(exhaustedChain ? { exhaustedChain } : {}) },
         providerErrorDiagnostic: failureCopy.diagnostic,
         recoveryEpisodeKey,
         recoveryNoticeKeys: pending.recoveryNoticeKeys,
         pauseKind: "blocked",
         pauseResumeAt: undefined,
-        pauseReason: `auditor retry: ${exhaustedNotice}automatic retry horizon reached (${plan.attempt} attempts)`,
-        pauseSuggestedAction: `The completion claim is stored, but automatic auditor retries are stopped. Check the auditor/model setup, then ${activeGoalSurfaceCommand("resume")} to start a fresh bounded window.`,
+        pauseReason: `auditor retry: ${exhaustedNotice}automatic retry horizon reached (${plan.attempt} attempts) · re-probing every ${cadence}`,
+        pauseSuggestedAction: `The completion claim is stored and re-probes itself every ${cadence}, so nothing is needed once the provider answers. Fix the auditor/model setup to make the next attempt land, or ${activeGoalSurfaceCommand("resume")} to retry now.`,
       }, liveCtx);
-      appendLedger(liveCtx.cwd, "auditor_retry_capped", { streak: plan.attempt, autoRetryUntil: plan.autoRetryUntil, requestedSec: plan.requestedSec, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey });
-      if (notifyCapped) liveCtx.ui.notify(`Automatic auditor retries stopped after ${plan.attempt} bounded attempts — the claim stays stored; check the provider, then ${activeGoalSurfaceCommand("resume")}.`, "warning");
+      appendLedger(liveCtx.cwd, "auditor_retry_capped", { streak: plan.attempt, autoRetryUntil: plan.autoRetryUntil, requestedSec: plan.requestedSec, diagnostic: failureCopy.diagnostic, recoveryEpisodeKey, probeDelayMs, selfHealing: true });
+      if (notifyCapped) liveCtx.ui.notify(`Auditor ladder horizon reached after ${plan.attempt} bounded attempts — the claim stays stored and re-probes itself every ${cadence}. Fix the provider, or ${activeGoalSurfaceCommand("resume")} to retry now.`, "warning");
       return;
     }
     const notifyRetry = claimRecoveryNotice(pending, `${recoveryEpisodeKey}:retry-wait`);

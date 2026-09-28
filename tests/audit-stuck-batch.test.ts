@@ -389,4 +389,24 @@ test("v0.38.106: no operator-facing string promises the auditor stopped for good
   }
   const hooks = fs.readFileSync(path.join(__dirname, "..", "extensions/loops/goal-auditor-hooks.ts"), "utf8");
   assert.match(hooks, /re-probes itself every/, "the park states the self-healing cadence instead");
+
+  // Every PROVIDER-wall park must arm the shared cadence — there are three per
+  // file (identical-failure park, bounded-horizon park) and each previously
+  // left the stored claim for a human. The state-based no-progress park is
+  // deliberately NOT one of them: a repeated identical objection is a decision
+  // for the operator, not a wall to re-probe.
+  for (const [file, label] of [
+    ["extensions/loops/goal-auditor-hooks.ts", "loop ladder"],
+    ["extensions/loops/goal-tools.ts", "complete_goal ladder"],
+  ] as const) {
+    const src = fs.readFileSync(path.join(__dirname, "..", file), "utf8");
+    const arms = src.match(/scheduleParkedCompletionAuditRecovery\(/g) ?? [];
+    // one import + one per provider-wall park (identical + horizon)
+    assert.ok(arms.length >= 3, `${label} (${file}) arms the cadence at every provider-wall park, found ${arms.length}`);
+    assert.equal(
+      (src.match(/auditorIdenticalParkProbeDelayMs\(plan\.requestedSec\)/g) ?? []).length,
+      2,
+      `${label} derives both park cadences from the retry plan`,
+    );
+  }
 });
