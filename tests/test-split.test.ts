@@ -9,10 +9,18 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import { SLOW_TEST_FILES } from "./slow-files.mjs";
-import { SERIAL_FLAGS, buildRunnerArgs } from "../scripts/run-tests.mjs";
+import {
+  DEFAULT_HEARTBEAT_MS,
+  DEFAULT_STALL_TIMEOUT_MS,
+  SERIAL_FLAGS,
+  buildRunnerArgs,
+  heartbeatMs,
+  isStalled,
+  stallTimeoutMs,
+} from "../scripts/run-tests.mjs";
 
 test("test-split: every slow-listed file exists and is a test file", () => {
   assert.ok(SLOW_TEST_FILES.length > 0, "the slow list is populated from timing evidence");
@@ -53,4 +61,40 @@ test("test-split: slow mode names the files; all mode passes through", () => {
   const filtered = buildRunnerArgs(["-t", "foo"], ["tests/a.test.ts"]);
   assert.equal(filtered.mode, "fast", "a -t value is not an explicit path");
   assert.ok(filtered.bunArgs.some((a) => a.includes("ignore-patterns")), "filtered fast keeps the exclusion");
+});
+
+// ---------------------------------------------------------------------------
+// v0.38.107: the runner must be observable and hang-proof. Field evidence: a
+// suite that printed nothing for 37 minutes, and a 26-hour-old `bun test`
+// still burning a core — a runner you cannot see is a runner you cannot trust.
+// ---------------------------------------------------------------------------
+
+test("runner: the stall window is bounded and overridable", () => {
+  assert.ok(DEFAULT_STALL_TIMEOUT_MS >= 60_000, "the default stall window is generous enough for a slow host");
+  assert.equal(stallTimeoutMs({}), DEFAULT_STALL_TIMEOUT_MS, "unset env uses the default");
+  assert.equal(stallTimeoutMs({ GLLA_TEST_STALL_TIMEOUT_MS: "5000" }), DEFAULT_STALL_TIMEOUT_MS, "an absurdly small window is refused");
+  assert.equal(stallTimeoutMs({ GLLA_TEST_STALL_TIMEOUT_MS: "nonsense" }), DEFAULT_STALL_TIMEOUT_MS, "junk env is refused");
+  assert.equal(stallTimeoutMs({ GLLA_TEST_STALL_TIMEOUT_MS: "45000" }), 45_000, "a sane override is honoured");
+  assert.equal(heartbeatMs({}), DEFAULT_HEARTBEAT_MS);
+  assert.equal(heartbeatMs({ GLLA_TEST_HEARTBEAT_MS: "2000" }), 2_000);
+});
+
+test("runner: silence past the window stalls, progress resets the clock", () => {
+  assert.equal(isStalled({ silentMs: 10_000, limitMs: 30_000 }), false, "a working suite is never stalled");
+  assert.equal(isStalled({ silentMs: 30_000, limitMs: 30_000 }), true, "exactly at the limit is a stall");
+  assert.equal(isStalled({ silentMs: 31_000, limitMs: 30_000 }), true);
+  // The regression that matters: a hung run is TERMINATED, never left to sit
+  // there consuming a core (the 26-hour orphan).
+  assert.equal(isStalled({ silentMs: 3_600_000, limitMs: DEFAULT_STALL_TIMEOUT_MS }), true, "an hour of silence stalls");
+  assert.equal(isStalled({ silentMs: Number.NaN, limitMs: 30_000 }), false, "an unknown clock never stalls on a guess");
+});
+
+test("runner: the wrapper owns its child (no orphan on abort)", () => {
+  const src = readFileSync(new URL("../scripts/run-tests.mjs", import.meta.url), "utf8");
+  assert.match(src, /process\.on\("SIGINT"/, "SIGINT takes the child down");
+  assert.match(src, /process\.on\("SIGTERM"/, "SIGTERM takes the child down");
+  assert.match(src, /process\.on\("exit"/, "an exiting wrapper takes the child down");
+  assert.match(src, /process\.kill\(-child\.pid, signal\)/, "the whole child process group is signalled, not just the runner");
+  assert.match(src, /STALLED: no suite output for/, "a stall is reported, not silent");
+  assert.match(src, /progress: .*since last output/, "progress is observable while it runs");
 });
