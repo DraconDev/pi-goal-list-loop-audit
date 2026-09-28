@@ -1274,13 +1274,16 @@ function safeFact(value: unknown, fallback = "not recorded"): string {
 }
 
 function objectiveExcerpt(objective: string): string {
-  const clean = safeFact(objective);
-  return clean.length > 220 ? `${clean.slice(0, 217)}…` : clean;
+  // v0.38.105: route through the shared cutter. The local `clean.slice(0, 217)`
+  // cut UTF-16 code units, so an emoji straddling the index emitted a lone
+  // surrogate into the durable archive line. clipSummaryValue is code-point
+  // safe and cuts at a clause boundary, and one implementation now owns every
+  // length cut in this module.
+  return clipSummaryValue(objective, 220);
 }
 
 function stopReasonExcerpt(reason: string | undefined): string {
-  const clean = safeFact(reason);
-  return clean.length > 260 ? `${clean.slice(0, 257)}…` : clean;
+  return clipSummaryValue(reason ?? "", 260) || "not recorded";
 }
 
 function auditEvidence(goal: Goal): string {
