@@ -528,7 +528,15 @@ test("v0.34.11: unanswered-continuation watchdog (accepted send, no turn — hel
   assert.match(g, /dispatchStartAcknowledged\(ctx, "before_agent_start", event\?\.prompt\)/, "prompt-specific start proof");
   assert.match(CONT, /dispatchStartUnacknowledged\(current, record\)/, "missing proof fails closed (decomposition step 5: watchdog moved)");
   assert.match(CONT, /continuation_start_unacknowledged/);
-  assert.match(CONT, /Automatic re-sends are stopped/, "no blind resend storm (decomposition step 5: moved)");
+  // v0.38.106: the lane no longer DEAD-ENDS here ("Automatic re-sends are
+  // stopped" is gone) — but the anti-storm invariant is unchanged and in fact
+  // stronger: exactly one automatic retry, then a bounded self-heal that
+  // re-dispatches on a capped, capped-count cadence instead of a blind loop.
+  assert.doesNotMatch(CONT, /Automatic re-sends are stopped/, "the lane must not promise to stop retrying for good");
+  assert.match(CONT, /Automatic re-sends are paused to avoid a blind queue storm/, "re-sends stay paused between self-heal probes");
+  assert.match(CONT, /armContinuationStartSelfHeal\(ctx, record\)/, "the settle arms the bounded self-heal");
+  assert.match(CONT, /const CONTINUATION_START_SELF_HEAL_MAX_PROBES = 6;/, "the self-heal probe budget is bounded");
+  assert.match(CONT, /const CONTINUATION_START_SELF_HEAL_MAX_MS = 15 \* 60_000;/, "the self-heal cadence is capped");
 });
 
 // ---------- v0.34.12: eager-continuation settle + wait countdown ----------
