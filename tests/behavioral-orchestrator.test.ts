@@ -1862,7 +1862,11 @@ test("v0.34.24: missing start proof stands down durably and explicit resume send
     assert.equal(stoodDown.phase, "unacknowledged", "the failed proof is durable");
     // v0.34.88: exactly one automatic retry fired before the stand-down.
     assert.equal(pi.sent.length, 2, "the watchdog re-arms exactly one retry, then stops");
-    assert.ok(ctx.ui.matching("Automatic re-sends are stopped").length >= 1, "the stand-down is loud");
+    // v0.38.106: the lane no longer dead-ends, so the wording changed — the
+    // invariant is unchanged and still proven above (pi.sent.length === 2:
+    // one automatic retry, no storm). The operator must still be told loudly,
+    // now including the self-heal cadence.
+    assert.ok(ctx.ui.matching("Automatic re-sends are paused").length >= 1, "the stand-down is loud");
     const timedOut = ledgerEvent(cwd, "continuation_start_unacknowledged").value;
     assert.equal(timedOut.id, stoodDown.id, "timeout settles the same dispatch identity");
     assert.equal(timedOut.acknowledgement, "accepted", "timeout preserves the enqueue acknowledgement");
@@ -1963,7 +1967,11 @@ test("v0.34.88: a genuine stall fires unacknowledged after the retry backoff —
     const goal = readState(cwd).goal as { status: string; interruptedAt?: string };
     assert.equal(goal.status, "active", "an unacknowledged dispatch remains active but interrupted");
     assert.ok(goal.interruptedAt, "the goal exposes its explicit-recovery marker after both windows");
-    assert.ok(ctx.ui.matching("Automatic re-sends are stopped").length >= 1, "the stand-down is loud");
+    // v0.38.106: the lane no longer dead-ends, so the wording changed — the
+    // invariant is unchanged and still proven above (pi.sent.length === 2:
+    // one automatic retry, no storm). The operator must still be told loudly,
+    // now including the self-heal cadence.
+    assert.ok(ctx.ui.matching("Automatic re-sends are paused").length >= 1, "the stand-down is loud");
     await pi.command("goal", "pause", ctx);
   } finally {
     __testOnlySetContinuationStartTimeout(null);

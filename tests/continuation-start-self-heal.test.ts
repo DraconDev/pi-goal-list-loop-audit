@@ -93,8 +93,8 @@ test("v0.38.106: an unacknowledged turn start self-heals instead of demanding a 
     assert.equal(pi.sent.length, 2, "the one automatic retry still happened — no storm");
 
     // The dead end is gone: the lane arms a self-heal instead of stopping.
-    const armed = await waitUntil(() => fs.readFileSync(path.join(cwd, ".pi-glla", "continuation-dispatch.json"), "utf8")).then(() => true).catch(() => false);
-    assert.ok(armed, "the dispatch sidecar exists for the settle to re-drive");
+    const sidecar = path.join(cwd, ".pi-glla", "continuation-dispatch.json");
+    assert.ok(fs.existsSync(sidecar), "the dispatch sidecar exists for the settle to re-drive");
     const record = JSON.parse(fs.readFileSync(path.join(cwd, ".pi-glla", "continuation-dispatch.json"), "utf8")) as { phase?: string };
     assert.equal(record.phase, "unacknowledged", "the claim is settled, not lost");
 

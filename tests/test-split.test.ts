@@ -98,3 +98,18 @@ test("runner: the wrapper owns its child (no orphan on abort)", () => {
   assert.match(src, /STALLED: no suite output for/, "a stall is reported, not silent");
   assert.match(src, /progress: .*since last output/, "progress is observable while it runs");
 });
+
+test("runner: the hand-written .d.mts declares every runtime export (drift guard)", () => {
+  // scripts/run-tests.d.mts is hand-maintained: TypeScript sees the .mjs
+  // through it, so a new export that is not declared there fails the typecheck
+  // with a confusing "has no exported member" instead of "you forgot the .d.mts".
+  const runtime = readFileSync(new URL("../scripts/run-tests.mjs", import.meta.url), "utf8");
+  const declared = readFileSync(new URL("../scripts/run-tests.d.mts", import.meta.url), "utf8");
+  const names = [
+    ...runtime.matchAll(/^export (?:const|function) ([A-Za-z0-9_]+)/gm),
+  ].map((m) => m[1]);
+  assert.ok(names.length >= 7, `the runtime export surface is discovered, found ${names.length}`);
+  for (const name of names) {
+    assert.match(declared, new RegExp(`\\b${name}\\b`), `scripts/run-tests.d.mts must declare ${name}`);
+  }
+});
