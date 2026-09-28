@@ -162,3 +162,39 @@ test("retention: unowned debris younger than the identity-free floor stays ambig
   cleanupDeadAuditJobs(cwd, 0);
   assert.equal(fs.existsSync(dir), true, "young unknown dirs survive explicit sweeps");
 });
+
+test("v0.38.105 retention: a finished result settles a LIVE parent lock (PID reuse no longer pins it)", () => {
+  // The parent writes its lock before the worker launch and rewrites it with
+  // role:"worker" once the attempt settles. A host crash inside that window
+  // plus a later reuse of the parent PID left the dir classified `ambiguous`
+  // forever — and cleanupDeadAuditJobs reaps only `dead`, so the full prompt +
+  // transcript leaked past the retention ceiling.
+  const cwd = tmpdir();
+  const finished = jobDir(cwd, "audit-result-live-parent");
+  parentLock(finished, process.pid); // a live pid, reused or not
+  fs.writeFileSync(path.join(finished, "result.json"), JSON.stringify({ approved: true }), "utf8");
+  ageDir(finished, 10 * DAY_MS);
+
+  const health = inspectAuditJobHealth(cwd, Date.now(), RETENTION_MS);
+  const entry = health.entries.find((e) => e.attemptId === "audit-result-live-parent");
+  assert.equal(entry?.status, "dead", "a result on file is proof the worker already exited");
+  assert.match(entry?.reason ?? "", /finished result/);
+
+  const cleaned = cleanupDeadAuditJobs(cwd, RETENTION_MS);
+  assert.equal(fs.existsSync(finished), false, "the leaked dir finally reaps past the window");
+  assert.equal(cleaned.total, 1);
+});
+
+test("v0.38.105 retention: a LIVE parent lock with no result is still ambiguous (unchanged)", () => {
+  // The new branch must not weaken the real pre-worker case: a live parent may
+  // still be mid-launch, so nothing is provable until the result lands.
+  const cwd = tmpdir();
+  const launching = jobDir(cwd, "audit-live-parent-no-result");
+  parentLock(launching, process.pid);
+  ageDir(launching, 10 * DAY_MS);
+
+  const health = inspectAuditJobHealth(cwd, Date.now(), RETENTION_MS);
+  assert.equal(health.entries.find((e) => e.attemptId === "audit-live-parent-no-result")?.status, "ambiguous");
+  cleanupDeadAuditJobs(cwd, RETENTION_MS);
+  assert.equal(fs.existsSync(launching), true, "a launch in flight is never reaped");
+});

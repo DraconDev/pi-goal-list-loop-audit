@@ -1115,7 +1115,19 @@ export function inspectAuditJobHealth(
         // before the worker takes ownership, the directory is provably not a
         // live worker job once the parent PID is gone. No child can exist yet:
         // spawn happens only after request/progress are durable.
-        if (!processAlive(pid)) {
+        //
+        // v0.38.105: a finished result settles the question regardless of
+        // parent liveness. A live parent can only be READING a result.json it
+        // is about to apply — it never writes one — so "PID is alive" cannot
+        // mean a worker is still running. Without this, a crash in the window
+        // between the worker's result write and its lock rewrite plus a later
+        // PID reuse pinned the directory `ambiguous` forever, and
+        // cleanupDeadAuditJobs reaps only `dead`: the dir (full prompt +
+        // transcript) leaked past the retention ceiling.
+        if (auditDirHasResult(dir)) {
+          status = "dead";
+          reason = "finished result on file; the parent lock is not a live worker identity";
+        } else if (!processAlive(pid)) {
           status = "dead";
           reason = "parent PID is not alive; worker launch was never proven";
         } else {
