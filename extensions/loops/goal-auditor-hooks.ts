@@ -80,6 +80,8 @@ extractPendingTasks,
   sumNewAssistantTokens,
   takeAt,
   countTrailingDisapprovals,
+  countTrailingComparableDisapprovals,
+  AUDIT_CAP_HARD_DEFAULT,
   countTrailingRepeatedDisapprovals,
   MAX_REPEATED_AUDIT_NO_PROGRESS,
   goalArgsNeedDrafting,
@@ -2285,6 +2287,36 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     });
     liveCtx.ui.notify(`Auditor automation paused: ${stopReason}. The objection is preserved as TODOs; inspect it before ${activeGoalSurfaceCommand("resume")}.`, "warning");
     maybeDecisionPopup(liveCtx);
+    return;
+  }
+  // v0.38.107: hard ceiling on the DETACHED path — the same treadmill
+  // breaker complete_goal's inline settlement got in v0.38.103. The inline
+  // check never fires in the field: real audits settle here, minutes or
+  // hours after complete_goal returned AUDIT PENDING. Without this, the
+  // soft-cap branch below converts every hit into TODOs under aggressive
+  // mode (the default) and the goal grinds forever — field 2026-09-28:
+  // hellhunter 12, junk-runner 9 comparable rounds, zero cap pauses.
+  // Counted on COMPARABLE rounds (same auditor; gates and infra errors
+  // transparent). Gated on disapproved like the sibling branches: an infra
+  // round landing on a mature streak keeps infra handling, not a verdict
+  // pause. 0 = unlimited (legacy unbounded cycling).
+  const hardCap = settings.auditCapHard ?? AUDIT_CAP_HARD_DEFAULT;
+  const comparableStreak = countTrailingComparableDisapprovals(history);
+  if (result.disapproved && hardCap > 0 && comparableStreak >= hardCap) {
+    updateGoal({
+      status: "paused",
+      auditHistory: history,
+      pendingCompletion: undefined,
+      pauseKind: "decision",
+      pauseOptions: [`Accept with follow-ups — archive complete, route findings to /list (/goal accept)`, `Fix the disapproval gap, then continue (${activeGoalSurfaceCommand("resume")})`, `Tweak the objective — ${activeGoalSurfaceCommand("tweak")} <new text>`, `Cancel the goal (${activeGoalSurfaceCommand("cancel")})`],
+      pauseRecommended: 1,
+      pauseReason: `auditor disapproved ${comparableStreak}× consecutively (hard cap ${hardCap})`,
+      pauseSuggestedAction: `One auditor rejected this ${comparableStreak} rounds running (comparable rounds only — gates and earlier auditors do not count). A streak this long with a fresh objection every round is the audit treadmill. Accept archives the work done and routes the findings to follow-ups; ${activeGoalSurfaceCommand("resume")} continues only after changing the work or contract. Raise Audit hard cap in /glla settings.`,
+    }, liveCtx);
+    liveCtx.ui.notify(`Auditor disapproved ${comparableStreak}× consecutively (hard cap ${hardCap}, binds aggressive mode). ${activeGoalStatusCommand()} for the reports; pick accept / resume / tweak / cancel.`, "warning");
+    maybeDecisionPopup(liveCtx);
+    appendLedger(liveCtx.cwd, "goal_paused", { reason: `disapproval hard cap: ${comparableStreak} comparable consecutive (cap ${hardCap})`, rawStreak: trailingDisapprovals });
+    notifyExternal(liveCtx, `Goal paused: ${comparableStreak} consecutive auditor disapprovals (hard cap)`);
     return;
   }
   if (result.disapproved && auditCap > 0 && trailingDisapprovals >= auditCap) {
