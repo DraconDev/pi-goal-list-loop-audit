@@ -185,6 +185,16 @@ export function validateTaskProposal(tasks: TaskProposal[]): string | null {
   }
   for (const t of tasks) {
     if (!t.title || !t.title.trim()) return "Every task needs a non-empty title.";
+    // v0.38.110: subtask titles get the same check. `buildTaskList` writes
+    // `s.trim()` with no guard, so a blank subtask (trivial to produce — a
+    // stray newline in the JSON array) reached `taskList` persistence and made
+    // the goal's own state file fail the published schema's
+    // `title: minLength: 1`. Reject at the boundary instead of writing state
+    // the contract cannot describe.
+    const blankSubtask = (t.subtasks ?? []).findIndex((s) => typeof s !== "string" || !s.trim());
+    if (blankSubtask >= 0) {
+      return `Task "${t.title}" has an empty subtask at position ${blankSubtask + 1}. Every subtask needs a non-empty title.`;
+    }
     const n = t.subtasks?.length ?? 0;
     if (n > MAX_SUBTASKS_PER_TASK) {
       return `Task "${t.title}" has ${n} subtasks; max ${MAX_SUBTASKS_PER_TASK}. Merge or split into coarser tasks.`;

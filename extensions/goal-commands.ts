@@ -15,7 +15,7 @@ import { state, replaceState } from "./goal-state.js";
 import {
   DEFAULT_TOKEN_LIMIT, Goal, ListItem, Status, appendLedger, archiveDir, archivedGoalPath, auditVerdictLabel, bumpGoalRevision, sanitizeProviderDisplayText,
   computeListDepthFromLedger, clearQueueItemFiles, deleteQueueItemFile, deleteQueueItemFileResult, extractVerificationContract, stripTweakProceduralTail, formatAuditLog, formatGoalAuditHistory, formatMainModelRecoveryStatus, queueItemSidecarCount, countTrailingDisapprovals,
-  formatListDepth, goalArgsNeedDrafting, ledgerPath, newGoalId, nowIso, parseListImport, parseListItemDeclaration, readLedgerTail,
+  formatListDepth, goalArgsNeedDrafting, ledgerPath, newGoalId, nowIso, parseListImport, parseListItemDeclaration, readLedgerTail, countLiveDisapprovals,
   assignQueueOrder, compareQueueItems, readAuditLog, readQueueFromDisk, routeGoalArgs, routeListText, sanitizeDisplayText, sanitizeProviderAuditReport, statusLabel,
   visibleListPosition, visibleListPositions,
   writeQueueItemFile, type ModeCommand, type State, type AuditVerdict, type LedgerRecord, LIST_MUTATING_SUBCOMMANDS, SETTINGS_MUTATING_ACTIONS,
