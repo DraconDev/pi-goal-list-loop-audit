@@ -30,13 +30,13 @@ import {
   TRANSIENT_LADDER_CAP_MINUTES,
 } from "../extensions/main-model-recovery.js";
 import {
-  currentSubagentObservations,
   describeSubagentTerminal,
   observeCurrentSubagentComplete,
   observeCurrentSubagentProgress,
   observeCurrentSubagentTerminal,
   subagentTerminalAlreadyRecorded,
   __testOnlyClearSubagentHangProbes,
+  __testOnlySubagentObservation,
 } from "../extensions/goal-heartbeat.js";
 
 const nowMs = Date.parse("2026-09-28T12:00:00Z");
@@ -156,19 +156,19 @@ test("audit: terminal precedence holds in every event order", () => {
   const failedFirst = `prec-fc-${stamp}`;
   observeCurrentSubagentTerminal({ id: failedFirst, hasError: true, error: "boom" });
   observeCurrentSubagentComplete({ id: failedFirst });
-  assert.equal(currentSubagentObservations.get(failedFirst)?.status, "failed", "late complete never rewrites a failure");
-  assert.equal(currentSubagentObservations.get(failedFirst)?.terminal, true);
+  assert.equal(__testOnlySubagentObservation(failedFirst)?.status, "failed", "late complete never rewrites a failure");
+  assert.equal(__testOnlySubagentObservation(failedFirst)?.terminal, true);
 
   const completeFirst = `prec-cf-${stamp}`;
   observeCurrentSubagentComplete({ id: completeFirst });
   observeCurrentSubagentTerminal({ id: completeFirst, hasError: true, error: "boom" });
-  assert.equal(currentSubagentObservations.get(completeFirst)?.status, "failed", "failed always applies, even after complete");
+  assert.equal(__testOnlySubagentObservation(completeFirst)?.status, "failed", "failed always applies, even after complete");
 
   const progressLate = `prec-pl-${stamp}`;
   observeCurrentSubagentTerminal({ id: progressLate, exitCode: 0 });
   observeCurrentSubagentProgress({ id: progressLate });
-  assert.equal(currentSubagentObservations.get(progressLate)?.status, "stopped");
-  assert.equal(currentSubagentObservations.get(progressLate)?.terminal, true, "late progress never clears a terminal flag");
+  assert.equal(__testOnlySubagentObservation(progressLate)?.status, "stopped");
+  assert.equal(__testOnlySubagentObservation(progressLate)?.terminal, true, "late progress never clears a terminal flag");
 });
 
 test("wiring: the process-terminal handler ledger-nudges eager child failures", () => {

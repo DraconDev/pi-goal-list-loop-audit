@@ -476,7 +476,7 @@ type SubagentManagerPoll = {
  * public async lifecycle event includes an asyncDir whose status.json is the
  * durable, read-only source for live counters and ownership. Keep only the
  * minimal observed metadata here; never import the provider's internals. */
-type CurrentSubagentObservation = SubagentRecordPoll & {
+export type CurrentSubagentObservation = SubagentRecordPoll & {
   ownerGeneration: number;
   terminal?: boolean;
 };
@@ -1938,4 +1938,9 @@ export function __testOnlyClearSubagentHangProbes(): void {
   subagentHangProbes.clear();
   currentSubagentObservations.clear();
   subagentHangEscalationMsOverride = null;
+}
+
+/** Test-only observation reader. Never called by production code. */
+export function __testOnlySubagentObservation(id: string): CurrentSubagentObservation | undefined {
+  return currentSubagentObservations.get(id);
 }
