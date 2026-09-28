@@ -201,9 +201,35 @@ test("auditor retries the same ref, then walks the next untried ref with bounded
   assert.equal(outcome.fallbackUsed, true);
   assert.deepEqual(calls, ["test/primary", "test/primary", "other/fallback-1"]);
   assert.deepEqual(fallbacks, ["test/primary->other/fallback-1"]);
-  assert.deepEqual(waits, [5_000, 120_000]);
+  // v0.38.110: this expectation was stale, not the code. The v0.38.109
+  // transient window made the SHARED delay function eager for transient
+  // failures (operator direction 2026-09-28 named the auditor fallback lane
+  // explicitly), so a 503 now takes the 5s eager rung for both the same-ref
+  // retry and the walk to the next ref — previously [5s, 2m]. The WIP changed
+  // this and left the test asserting the old ladder, so the gate was red
+  // before this pass ever ran. Pinned here so the eagerness stays BOUNDED:
+  // the ladder is chain-bounded (at most two calls per candidate), and a wall
+  // still takes the real ladder — asserted below.
+  assert.deepEqual(waits, [5_000, 5_000], "transient failures take the eager rung on both the retry and the fallback walk");
   assert.ok(waits.every((delay) => delay >= 1_000 && delay <= MAIN_MODEL_MAX_RETRY_DELAY_MS));
   assert.deepEqual(selections, ["ok:test/primary", "ok:other/fallback-1"]);
+
+  // The mirror case: a WALL must not inherit the transient eagerness. This is
+  // the half of the contract that keeps the change honest — only transient
+  // weather is hammered, a real wall still climbs the ladder.
+  const wallWaits: number[] = [];
+  const wallOutcome = await runAuditorFallbackWithPolicy(candidates, async (candidate) => {
+    const ref = candidate.ref!;
+    return ref === "test/primary"
+      ? result({ error: "insufficient credits — buy credits", model: ref })
+      : result({ approved: true, model: ref });
+  }, {
+    retryBaseMinutes: 1,
+    sleep: async (ms) => { wallWaits.push(ms); },
+    shouldRetry: () => true,
+  });
+  assert.equal(wallOutcome.result.approved, true);
+  assert.deepEqual(wallWaits, [5_000, 120_000], "a billing wall keeps the bounded ladder, not the eager window");
 });
 
 test("auditor forbidden and duplicate refs are skipped before retry ordering", async () => {
