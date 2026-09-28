@@ -315,3 +315,4 @@
 {"type":"model_fallback_select","value":{"scope":"auditor","reason":"exhausted"},"at":"2026-09-28T00:33:00.304Z"}
 {"type":"model_fallback_select","value":{"scope":"auditor","fromRef":"openrouter/space-bunny-alpha","reason":"exhausted"},"at":"2026-09-28T00:33:00.306Z"}
 {"type":"auditor_model_same_as_session","value":{"model":"openrouter/space-bunny-alpha","fallback":null},"at":"2026-09-28T00:33:00.307Z"}
+{"type":"pitfalls_consulted","value":{"goalId":"20260919000000-pitfall01"},"at":"2026-09-28T00:35:59.114Z"}
