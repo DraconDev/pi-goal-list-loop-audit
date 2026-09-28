@@ -214,6 +214,7 @@ import {
   type MockCtx,
 } from "./harness/mock-pi.js";
 import { readGoalRuntimeSource } from "./harness/goal-source.js";
+import { readState } from "../extensions/goal-loop-core.js";
 
 const pi = new MockPi();
 activate(pi.api);
@@ -508,4 +509,63 @@ test("audit-2026-09-06: auto-advance head-group skip is ledgered, not silent", a
   assert.equal(skips.length, 1, "exactly one skip event for the head group");
   assert.match(String(skips[0]!.value.landedOn), /.+/, "landing item recorded");
   assert.equal(skips[0]!.value.skippedGroups, 1);
+});
+
+test("v0.38.105: list_activate accepts the dotted child label the queue prints", async () => {
+  // `list_status` and `/list show` hand the agent labels like `1.1`, and this
+  // tool's own error text names that form — but the schema typed `n` as
+  // Type.Number, so validation rejected it BEFORE execute could explain it.
+  // A JSON number cannot carry a label token at all.
+  setGlobalAutoResume(false);
+  const cwd = tmpCwd();
+  // An ACTIVE goal blocks enqueue auto-activation, so parent + child stay
+  // queued and inspectable while the label is exercised.
+  fs.mkdirSync(path.join(cwd, ".pi-glla"), { recursive: true });
+  const seedLine = JSON.stringify({
+    type: "state",
+    value: {
+      goal: {
+        id: "seed-active",
+        objective: "seeded active blocker",
+        status: "active",
+        policy: "goal",
+        autoContinue: true,
+        usage: { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, cost: 0, turns: 0 },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      list: [],
+      loop: null,
+    },
+    at: new Date().toISOString(),
+  });
+  fs.writeFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), seedLine + "\n");
+  const ctx = await freshSession(cwd);
+  try {
+    await pi.command(
+      "list",
+      "add Label parent. Done when: foo\n" +
+        "Subtask of: Label parent — label child. Done when: bar",
+      ctx,
+    );
+    const queued = readState(cwd).list ?? [];
+    const child = queued.find((item) => item.objective.includes("label child"));
+    assert.ok(child, "the child is queued under its parent");
+    assert.deepEqual(visibleListPositions(queued).map((entry) => entry.label), ["1", "1.1"], "the queue prints the 1.1 label");
+
+    // The active goal is a live conflict, so the pick goes through the same
+    // update/replace/cancel choice the number form needs.
+    ctx.ui.selectImpl = async (_title, options) => options.find((option) => option === "Update current objective");
+    ctx.ui.confirmImpl = async () => true;
+    const result = await pi.runTool("list_activate", { n: "1.1" }, ctx);
+    assert.ok(
+      !/must be a visible list position/.test(result.content[0]?.text ?? ""),
+      `the child label must be accepted, got: ${result.content[0]?.text}`,
+    );
+    const goal = readState(cwd).goal;
+    assert.equal(goal?.objective, child.objective, "the child item became the active objective");
+    assert.equal(goal?.parentId, child.parentId, "and it keeps its parent link");
+  } finally {
+    await pi.fire("session_shutdown", { reason: "quit" }, ctx);
+  }
 });
