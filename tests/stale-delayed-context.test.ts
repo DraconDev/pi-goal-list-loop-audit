@@ -108,10 +108,16 @@ test("v0.34.20: loop measurement and branch cleanup rebind after async work", ()
   // v0.35.4: branch=1 terminal stops must not erase the final iteration's
   // work (finishLoopGit resets --hard), and flat/null measures are not
   // regressions (v0.29.10/E5) — only worse-than-best values hard-reset.
-  assert.match(tick, /const commitPendingTerminalWork = async \(\): Promise<boolean> =>/);
+  // v0.38.105: the commit helper moved to MODULE scope so the two
+  // out-of-tick terminal routes (/loop stop, /loop finish, /glla wipe) commit
+  // too; the tick keeps a thin wrapper that passes its rebind guard.
+  assert.match(tick, /const commitTerminalWork = async \(\): Promise<boolean> =>\n\s*commitPendingTerminalWork\(ctx, loop, \{ stillValid: rebindLoop, ctx: \(\) => ctx \}\);/);
   assert.match(tick, /} else if \(value !== null && value !== loop\.bestValue\) \{/);
-  assert.match(tick, /if \(!await commitPendingTerminalWork\(\)\) return;\n    if \(await finishLoopGit\(ctx, loop\)\) return;/);
+  assert.match(tick, /if \(!await commitTerminalWork\(\)\) return;\n    if \(await finishLoopGit\(ctx, loop\)\) return;/);
   const finish = between(LOOP, "async function finishLoopGit", "interface LoopConfig");
+  // The choke point: finishLoopGit commits before its destructive reset, so
+  // every terminal route is covered by construction.
+  assert.match(finish, /if \(!\(await commitPendingTerminalWork\(ctx, loop\)\)\) return true;/);
   assert.match(finish, /const afterReset = freshCtxForGeneration\(generation\)/);
   assert.match(finish, /const afterCheckout = freshCtxForGeneration\(generation\)/);
   assert.match(GOAL, /let completionAuditGeneration: number \| null = null/);
