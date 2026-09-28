@@ -9,6 +9,8 @@
 //     identity intact and no auditor launched.
 //  3. /goal verify on a healthy pending audit reports the truthful
 //     awaiting state instead of overwriting the claim and relaunching.
+//  4. /goal verify on an APPROVED-but-unarchived claim finishes the owed
+//     settlement instead of destroying the approval (v0.38.108).
 
 import { test, afterEach } from "node:test";
 import * as assert from "node:assert/strict";
@@ -21,7 +23,7 @@ import activate, {
   __testOnlyResetStaleFlag,
 } from "../extensions/loops/goal.js";
 import { __testOnlyResetAuditorSurface } from "../extensions/loops/goal-auditor-surface.js";
-import { readState } from "../extensions/goal-loop-core.js";
+import { archivedGoalPath, readState } from "../extensions/goal-loop-core.js";
 import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd, type MockCtx } from "./harness/mock-pi.js";
 
 function ledger(cwd: string): string {
@@ -82,6 +84,57 @@ test("/goal verify on a healthy pending audit reports the awaiting state without
     const after = ledgerTypes(cwd);
     assert.ok(!after.includes("manual_audit_requested"), "no synthesized-claim seed is ledgered");
     assert.equal(after.filter((t) => t === "audit_started").length, before.filter((t) => t === "audit_started").length, "no auditor is relaunched");
+  } finally {
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});
+
+test("/goal verify on an approved-but-unarchived claim settles it instead of re-auditing", async () => {
+  const pi = new MockPi();
+  activate(pi.api);
+  const cwd = tmpCwd();
+  const ctx = await boot(pi, cwd);
+  try {
+    // The archive-failed park (v0.38.99): the approval is DURABLE on the
+    // claim and only the terminal archive is owed. status paused, phase
+    // settling — exactly what /goal verify used to overwrite.
+    const goal = seedGoal({
+      status: "paused",
+      objective: "approved work whose archive is owed — done when pinned",
+      completionSummary: "Outcome: shipped. Changed: one file. Evidence: test. Tests: pass. Unresolved: none. Next: none.",
+      auditHistory: [{
+        at: new Date().toISOString(),
+        approved: true,
+        disapproved: false,
+        model: "openai/gpt-test",
+        revision: 0,
+        regressionShieldPassed: true,
+        durationMs: 1000,
+        report: "<approved/>",
+      }],
+      pendingCompletion: {
+        completionSummary: "Outcome: shipped. Changed: one file. Evidence: test. Tests: pass. Unresolved: none. Next: none.",
+        verificationSummary: "evidence",
+        at: new Date().toISOString(),
+        phase: "settling",
+        verdictAt: new Date().toISOString(),
+        attemptId: "owed-archive-attempt",
+      } as any,
+      pauseKind: "blocked",
+      pauseReason: "completion approved, but the terminal archive failed",
+    } as any);
+    seedState(cwd, { goal });
+    __testOnlyLoadState(cwd);
+    const goalId = (goal as { id: string }).id;
+    const before = ledgerTypes(cwd);
+    await pi.command("goal", "verify", ctx);
+    await tick(200);
+    const after = ledgerTypes(cwd);
+    assert.ok(after.includes("audit_settlement_completed"), "verify finishes the owed settlement");
+    assert.ok(fs.existsSync(archivedGoalPath(cwd, goalId)), "the approved work is archived, not re-audited");
+    assert.equal(after.filter((t) => t === "audit_started").length, before.filter((t) => t === "audit_started").length, "no new auditor is launched over approved work");
+    const requested = after.filter((t) => t === "manual_audit_requested").length - before.filter((t) => t === "manual_audit_requested").length;
+    assert.equal(requested, 1, "the manual request is still recorded, flagged as a settlement");
   } finally {
     await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
   }
