@@ -1881,6 +1881,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       fallbackUsed,
       inspectionSessionPath,
     });
+    return;
   }
 
   if (result.regressionShieldPassed === false) {
