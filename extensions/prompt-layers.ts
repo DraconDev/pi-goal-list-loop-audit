@@ -88,7 +88,36 @@ export function loadPromptSegments(name: string): PromptSegment[] {
         "Refusing to render lean — restore the file, do not proceed without it.",
     );
   }
-  return parsePromptLayers(source, name);
+  return parsePromptLayers(stripPromptAuthorComment(source, name), name);
+}
+
+/** v0.38.105: strip the leading `//` author-comment block from a prompt file.
+ *
+ * The header of a prompts/*.md file is authoring metadata — who wrote it, what
+ * the slots mean, where the real constants live. It is written for the
+ * maintainer and their editor, NOT for the model, but it was being copied
+ * verbatim into the prompt and re-sent on EVERY continuation.
+ *
+ * That is a per-turn token cost for documentation the model can never act on,
+ * and it silently punishes writing good file-level docs: the 2026-09-28
+ * "SKELETON, NOT THE PROMPT" header made every continuation ~700 bytes
+ * LARGER. Strip it here, at the single read point, so header documentation is
+ * free and can be as long as it needs to be.
+ *
+ * Only a leading run of `//` lines is removed, and only before any non-comment
+ * content — so a `//` line inside the body (a code example the prompt wants)
+ * is never touched. */
+export function stripPromptAuthorComment(source: string, name = "prompt"): string {
+  const lines = source.split(/\r?\n/);
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i]!.trim();
+    if (line === "") { i++; continue; }
+    if (line.startsWith("//")) { i++; continue; }
+    break;
+  }
+  if (i === 0) return source;
+  return lines.slice(i).join("\n");
 }
 
 /** Raw whole-file read. Throws (loud) when unreadable. Use for
