@@ -267,11 +267,15 @@ export function makeMockCtx(cwd: string, opts: { sessionManager?: unknown; idle?
  * the cost is directory-scan time, not bytes, and it made a depth-1 du
  * of /tmp exceed 300s.
  *
- * Exit-time removal covers a normal run. A killed or timed-out run
- * leaves its directories behind, so the first call also sweeps any
- * older than STALE_CWD_MS -- an age no live test's directory reaches. */
+ * Exit-time removal covers a normal run. The suite is driven under a
+ * hard `timeout`, so a killed run never reaches the exit handler and its
+ * directories survive; the first call therefore also sweeps any older
+ * than STALE_CWD_MS. The runner allows 60s per test (see
+ * scripts/run-tests.mjs), so an hour is an order of magnitude of margin
+ * while still capping the backlog at one run's residue rather than a
+ * full day of it. */
 const createdCwds: string[] = [];
-const STALE_CWD_MS = 6 * 60 * 60 * 1000;
+const STALE_CWD_MS = 60 * 60 * 1000;
 let staleSwept = false;
 
 function sweepStaleCwds(): void {
