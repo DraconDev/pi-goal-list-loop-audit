@@ -1,13 +1,26 @@
 // pi-goal-list-loop-audit
 // prompts/goal-loop-continuation.md
 //
-// This file is exported as a raw string. We don't use string-concat in TS for
-// prompts — we keep them as .md files so editors (and humans) can render them
-// properly. The orchestrator reads this file at runtime.
+// SKELETON, NOT THE PROMPT. The orchestrator reads this file at runtime via
+// assemblePrompt(), which substitutes `${SLOT}` placeholders and injects
+// conditional on-demand layers (auditor-disapproval, survey-pivot,
+// session-restart) — see extensions/prompt-layers.ts.
 //
-// Variable substitution uses `${goal.id}` etc. as in the existing
-// pi-goal-x/extensions/prompts/goal-prompts.ts, but we keep the JS string
-// interpolation in the consuming function (not here).
+// The header used to claim: "We don't use string-concat in TS for prompts — we
+// keep them as .md files so editors (and humans) can render them properly."
+// That stopped being true (audit finding, 2026-09-28). The largest invariant
+// policy blocks now live in TypeScript constants and appear here only as
+// slots — LONG_RUNNING_JUDGMENT_POLICY, VISION_ASSIST_POLICY,
+// MODEL_SWITCH_GATE, ACTIVE_EXECUTION_QUESTION_DISCIPLINE. Editing policy in
+// this file for those is a SILENT NO-OP: no agent ever sees your edit.
+//
+// If you are here to change one of those policies, edit its constant:
+//   LONG_RUNNING_JUDGMENT_POLICY          -> extensions/goal-loop-core.ts
+//   ACTIVE_EXECUTION_QUESTION_DISCIPLINE  -> extensions/goal-loop-core.ts
+//   VISION_ASSIST / MODEL_SWITCH_GATE     -> extensions/goal-continuation.ts
+//   injected layers                       -> extensions/goal-continuation.ts
+// To render the real prompt, send one a goal continuation and look at what the
+// agent actually received.
 
 # Goal Continuation — pi-goal-list-loop-audit
 
