@@ -58,10 +58,10 @@ afterEach(() => {
 
 test("v0.38.105 a retry that cannot be persisted is reported, not recorded as durable", async () => {
   __testOnlyResetStaleFlag();
-  resetContinuationDispatchState(cwd);
   __testOnlySetContinuationStartTimeout(250);
   __testOnlySetContinuationRetryBackoff(250);
   const cwd = tmpCwd();
+  resetContinuationDispatchState(cwd);
   fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ autoResume: true, aggressiveMode: false }));
   lastCwd = cwd;
   const ctx = context(cwd, `retry-persist-${Date.now()}-${Math.random()}`);
@@ -102,10 +102,10 @@ test("v0.38.105 a retry that cannot be persisted is reported, not recorded as du
 
 test("v0.38.105 a persistable retry still records retryCount durably", async () => {
   __testOnlyResetStaleFlag();
-  resetContinuationDispatchState(cwd);
   __testOnlySetContinuationStartTimeout(250);
   __testOnlySetContinuationRetryBackoff(250);
   const cwd = tmpCwd();
+  resetContinuationDispatchState(cwd);
   fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ autoResume: true, aggressiveMode: false }));
   lastCwd = cwd;
   const ctx = context(cwd, `retry-durable-${Date.now()}-${Math.random()}`);

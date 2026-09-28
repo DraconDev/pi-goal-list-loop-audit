@@ -31,6 +31,8 @@ import {
   __testOnlySetSubagentHangEscalationMs,
   __testOnlyHeartbeatTick,
   __testOnlySubagentHangProbes,
+  bindSubagentRpcHost,
+  observeSubagentRpcReadiness,
   releaseSubagentRpcHost,
 } from "../extensions/goal-heartbeat.js";
 import {
@@ -621,4 +623,45 @@ test("v0.34.105 source pin: subagent scan precedes the main-model-recovery early
   assert.ok(scanAt > -1, "the subagent scan lives in heartbeatTick");
   assert.ok(recoveryGateAt > -1, "the recovery early-return lives in heartbeatTick");
   assert.ok(scanAt < recoveryGateAt, "the scan runs BEFORE the recovery gate — a quota wall can no longer blind it");
+});
+
+// v0.38.105: readiness observation had the same lifetime problem as readiness
+// state. observedSubagentRpcBuses was a bare Set that was only ever added to,
+// so every rebound session's event bus — and the two listeners registered on
+// it — stayed reachable for the life of the process.
+test("v0.38.105 releasing the RPC host unsubscribes the readiness listeners it installed", () => {
+  type Handler = (data: unknown) => void;
+  const handlers = new Map<string, Set<Handler>>();
+  let liveListeners = 0;
+  const bus = {
+    on(event: string, handler: Handler): () => void {
+      const set = handlers.get(event) ?? new Set<Handler>();
+      set.add(handler);
+      handlers.set(event, set);
+      liveListeners++;
+      return () => {
+        if (set.delete(handler)) liveListeners--;
+      };
+    },
+    emit(event: string, data: unknown): void {
+      for (const handler of [...(handlers.get(event) ?? [])]) handler(data);
+    },
+  };
+
+  observeSubagentRpcReadiness(bus);
+  assert.equal(liveListeners, 2, "both readiness listeners are registered once");
+  observeSubagentRpcReadiness(bus);
+  assert.equal(liveListeners, 2, "re-observing the same bus must not double-register");
+
+  bindSubagentRpcHost(bus, 7);
+  assert.equal(liveListeners, 2, "binding a host re-observes without re-registering");
+
+  releaseSubagentRpcHost(bus);
+  assert.equal(liveListeners, 0, "a released host leaves no listener behind on the bus");
+
+  // A rebound session re-observing the same bus installs exactly one fresh pair.
+  observeSubagentRpcReadiness(bus);
+  assert.equal(liveListeners, 2, "re-observation after release installs exactly one pair");
+  releaseSubagentRpcHost(bus);
+  assert.equal(liveListeners, 0, "and releases it again");
 });
