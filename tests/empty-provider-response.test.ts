@@ -84,12 +84,14 @@ test("v0.38.104 other failures keep the historical ladder untouched", () => {
 
 test("v0.38.104 a quota wall still wins over the eager empty-response path", () => {
   // A reset hint must not be shortened by the eager branch: a real wall needs
-  // to sleep until the provider says it is allowed again.
-  const f: MainModelFailure = {
+  // to sleep until the provider says it is allowed again. The hint must be in
+  // the RAW TEXT -- quotaResetSleepMs parses upstream hints from the provider
+  // message, and the legacy `resetAt` field is explicitly never consulted.
+  const wall: MainModelFailure = {
     kind: "provider" as any,
-    raw: "429 rate limit — provider returned an empty response as well",
-    resetAt: new Date(Date.now() + 600_000).toISOString(),
+    raw: "429 Too Many Requests. retry after 600 seconds -- provider returned an empty response",
   };
-  const delay = mainModelFailureDelayMs(f, 2);
+  const delay = mainModelFailureDelayMs(wall, 2);
   assert.ok(delay > 60_000, `a reset hint must still be honoured, got ${delay}ms`);
+  assert.equal(delay, 600_000, "and it must be the provider's own window, not the eager 5s");
 });
