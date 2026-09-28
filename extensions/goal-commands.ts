@@ -23,7 +23,7 @@ import {
 } from "./goal-loop-core.js";
 // v0.38.99: the status surfaces name the durable audit lifecycle from the one
 // projection the widget uses.
-import { auditLifecycleProjection, fmtAge } from "./audit-lifecycle.js";
+import { auditLifecycleProjection, fmtAge, isSettlingClaim } from "./audit-lifecycle.js";
 import { clearDispatchRecord, dispatchRecordExists } from "./goal-loop-dispatch.js";
 import type { AuditDisplayProgress } from "./goal-loop-display.js";
 import { auditorVerdictTally, fmtElapsed, formatVerdictTallySegment } from "./goal-loop-display.js";
@@ -253,6 +253,22 @@ async function cmdGoal(args: string, ctx: ExtensionContext): Promise<void> {
         ctx.ui.notify(`A completion audit is already awaiting its verdict — wait for it or ${activeGoalSurfaceCommand("cancel")} to discard the pending claim and start over.`, "info");
         return;
       }
+      // v0.38.108: settlement-first, and the check MUST run before the
+      // manual claim is written. resumeStoredCompletionOrSettlement reads
+      // the claim's durable phase, and a fresh manual claim drops
+      // phase / verdictAt / attemptId — so an approved-but-unarchived goal
+      // (the archive-failed park leaves status paused + a claim still
+      // `settling`) lost its durable approval and was re-audited from
+      // scratch: the exact dishonesty v0.38.99 added this helper to
+      // prevent, and the exact out-of-order shape the other three call
+      // sites (resume, list resume, /glla resume) avoid.
+      if (isSettlingClaim(state.goal.pendingCompletion)) {
+        appendLedger(ctx.cwd, "manual_audit_requested", { goalId: state.goal.id, settlement: "approved-claim-owed-archive" });
+        if (resumeStoredCompletionOrSettlement(ctx, "manual") === "not-applicable") {
+          void retryStoredCompletionAudit("manual");
+        }
+        return;
+      }
       updateGoal({
         pendingCompletion: {
           completionSummary: "Manual audit requested by the user via /goal verify (no agent completion claim). Verify the objective against the repo directly.",
@@ -260,11 +276,7 @@ async function cmdGoal(args: string, ctx: ExtensionContext): Promise<void> {
         },
       }, ctx);
       appendLedger(ctx.cwd, "manual_audit_requested", { goalId: state.goal.id });
-      // v0.38.99: a claim that still carries its approval is a settlement —
-      // finish it rather than auditing the same work again.
-      if (resumeStoredCompletionOrSettlement(ctx, "manual") === "not-applicable") {
-        void retryStoredCompletionAudit("manual");
-      }
+      void retryStoredCompletionAudit("manual");
       return;
     }
     if (route.name === "tweak") {
