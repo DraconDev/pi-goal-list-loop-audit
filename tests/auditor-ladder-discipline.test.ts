@@ -171,3 +171,38 @@ test("v0.38.103 a grader fallback RE-BASELINES the streak instead of pinning", (
   assert.equal(trailingStreakGraderStable(withGate), true);
   assert.equal(countTrailingComparableDisapprovals(withGate), 2);
 });
+
+// v0.38.103 — gate the falsification round on the rework streak.
+//
+// The challenge round is a SECOND adversarial pass whose purpose is to find
+// what round 1 missed. Run repeatedly against an already-iterated goal it
+// manufactures a fresh objection every round by construction instead of
+// closing the previous ones — the amplifier behind the observed 13/13 and
+// 20/20 streaks. It earns its keep against a near-miss, not against a goal on
+// its fifth rework.
+
+import { AUDITOR_CHALLENGE_STREAK_LIMIT } from "../extensions/goal-loop-auditor-process.ts";
+import type { Goal } from "../extensions/goal-loop-core.ts";
+
+test("v0.38.103 the challenge-round limit is a small, finite number", () => {
+  assert.equal(AUDITOR_CHALLENGE_STREAK_LIMIT, 2, "two reworks is where the second pass has paid for itself");
+  assert.ok(AUDITOR_CHALLENGE_STREAK_LIMIT > 0, "the challenge round still runs on a first-round near-miss");
+});
+
+test("v0.38.103 streak counting is what the challenge gate reads", () => {
+  // The gate reads the SAME comparable counter the cap uses, so a goal held up
+  // by mechanical gates does not silently lose its falsification pass.
+  const LLM2 = "openrouter/stealth/space-bunny-alpha";
+  const history = [
+    { at: "t", approved: false, disapproved: true, model: LLM2, report: "a" },
+    { at: "t", approved: false, disapproved: true, model: LLM2, report: "b" },
+  ];
+  assert.equal(countTrailingComparableDisapprovals(history as any), AUDITOR_CHALLENGE_STREAK_LIMIT);
+
+  // Gates in the middle stay transparent, so they do not buy back a pass.
+  const withGates = [
+    { at: "t", approved: false, disapproved: true, model: MECHANICAL_PRE_AUDIT_MODEL, report: "g" },
+    ...(history as any),
+  ];
+  assert.equal(countTrailingComparableDisapprovals(withGates), AUDITOR_CHALLENGE_STREAK_LIMIT);
+});
