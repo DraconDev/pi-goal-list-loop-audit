@@ -69,6 +69,39 @@ transparent, as everywhere else. Both branches now pause on the same
 `auditCapHard` the disapproval path uses, offering accept / resume / tweak /
 cancel.
 
+## HIGH 3 — the stale-recovery heartbeat could never re-arm
+
+Found by a follow-up scout sent specifically at the gap this pass had left
+(`goal-heartbeat.ts`, previously unread).
+
+`extensions/goal-heartbeat.ts:1188` — `scheduleHeartbeatPoll` checks the
+session generation **before** releasing its handle:
+
+```ts
+if (generation !== flags.sessionGeneration || flags.heartbeatTimer !== timer) return;
+flags.heartbeatTimer = null;
+```
+
+The stale-terminal path bumps `sessionGeneration` but deliberately *preserves*
+the timer (`goal-orchestrator.ts:466`, `if (!preserveStaleRecovery && …)`) so
+a same-process handle that becomes healthy again can self-heal without
+`/reload`. That preserved timer was armed under the **old** generation, so it
+always took the early return — while still holding a handle to a timer that
+had already fired and was dead.
+
+Every re-arm site is guarded by `if (flags.heartbeatTimer) return`
+(`scheduleHeartbeatPoll` and `startHeartbeat`), so one stale terminal killed
+the heartbeat for the rest of the process: the zombie-abort, wedge, stall,
+pending-latch, stranded-audit and subagent-hang watchdogs all went silently
+dead. Recovery depended on an unrelated supervision event arriving — precisely
+what the silent-handle-death scenario it exists for does not deliver.
+
+The handle is now released first, and a generation mismatch re-arms for the
+**current** generation instead of dying. A real `session_shutdown` still
+clears and nulls the handle, so the new branch is reachable only on the
+preserve path. Proved fail-before: reverting the ordering makes the new pin
+fail on the stranded-handle assertion.
+
 ## MEDIUM — an alternating ladder defeated the cap that did exist
 
 `countTrailingComparableDisapprovals` `break`s on a grader change so a
@@ -168,6 +201,25 @@ The HIGH 1 behavioural test was proved fail-before: against a worktree at
 shield round leaves the goal `active` (`'active' !== 'paused'`). The other
 unit pins fail against the pre-fix source by construction (the exports did not
 exist).
+
+## A note on the gate: this repo is edited while it is audited
+
+Worth recording because it changes how a red gate must be read. The
+auto-committer daemon and at least one other session were both writing to
+`main` throughout this pass. Two consequences, both observed rather than
+assumed:
+
+- A `test:all` result is only authoritative for the commit it ran against. The
+  run recorded here started at a HEAD that a concurrent session then moved
+  (v0.38.111 landed in the same window), and reported a failure in
+  `main-model-recovery.test.ts` that does not reproduce on the current tree —
+  a torn read across a moving checkout, not a real defect. The final numbers
+  below are from a run pinned to a recorded commit SHA.
+- The v0.38.109 → v0.38.111 WIP chain was never reviewed by anyone before it
+  reached `main`, which is how a red gate shipped twice. The lesson generalises
+  past this repo: on a watched repo, the daemon will happily publish
+  unreviewed work that fails its own gate, and "the tests were green last
+  time" is not evidence about the current tree.
 
 ## What this pass did not cover
 
