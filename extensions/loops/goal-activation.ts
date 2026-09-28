@@ -2728,7 +2728,37 @@ async function handleHotLengthExhaustion(
         goalId: state.goal?.id ?? null,
         contextPercent: contextUsage?.percent ?? null,
       });
-      ctx.ui.notify(`glla: context at ${contextUsage!.percent!.toFixed(1)}% — run /compact now while summarization still fits. Below 90% the compact succeeds; past it you get the over-cap ladder (retry /compact, larger model, or /new + resume).`, "info");
+      // v0.38.104: this COMPACTS. It used to only notify ("run /compact now"),
+      // which meant the upper band was a suggestion nobody had to act on — and
+      // by the time a human read it and typed /compact, the context was past
+      // the point where summarization fits and the over-cap ladder took over.
+      // At this height the transcript is the problem; compacting it is the
+      // fix, not a message about compacting it.
+      //
+      // The notify is kept alongside: past 90% the compact can FAIL, and the
+      // user needs to know the over-cap ladder is now in play rather than
+      // silently retrying.
+      const percent = contextUsage!.percent!;
+      void runGoalCompactionIfDue(ctx, true, {
+        settings: { ...loadGlobalSettings() },
+        notify: () => {},
+        page: () => {},
+      }).then((result) => {
+        appendLedger(ctx.cwd, "context_compact_first_compacted", {
+          goalId: state.goal?.id ?? null,
+          contextPercent: percent,
+          fired: result.fired,
+          via: result.via ?? null,
+        });
+        ctx.ui.notify(
+          result.fired
+            ? `glla: compacted at ${percent.toFixed(1)}% context — transcript trimmed, goal and tasks untouched.`
+            : `glla: context at ${percent.toFixed(1)}% and compaction could not start. Past 90% this is the over-cap ladder (retry /compact, larger model, or /new + resume).`,
+          result.fired ? "info" : "warning",
+        );
+      }).catch(() => {
+        ctx.ui.notify(`glla: context at ${percent.toFixed(1)}% — compaction failed. Run /compact, or expect the over-cap ladder past 90%.`, "warning");
+      });
     }
 
     const last = [...(event.messages as any[])].reverse().find((m) => m.role === "assistant");
