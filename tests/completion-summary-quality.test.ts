@@ -266,11 +266,15 @@ test("completion summary audit doc exists and inventories archives", () => {
 // lone surrogate into the durable archive line.
 test("v0.38.105: the recorded-facts archive summary never emits a lone surrogate", () => {
   // Build an objective whose 🚀 straddles the old index-217 cut.
-  const objective = `${"a".repeat(214)}🚀 tail that continues well past the old cut index and must be clipped somewhere sane`;
+  // 216 ASCII chars, so the emoji's HIGH surrogate lands exactly on index 217
+  // and the old `slice(0, 217)` emitted half of it.
+  const objective = `${"a".repeat(216)}🚀 tail that continues well past the old cut index and must be clipped somewhere sane`;
   const summary = buildRecordedFactsCompletionSummary({
     goal: { id: "goal-105", objective } as never,
     status: "complete" as never,
-    stopReason: `${"b".repeat(252)}🚀 a terminal reason long enough to be clipped by the old index-257 cut`,
+    // 256 ASCII chars put the high surrogate on index 257 — the old
+    // `slice(0, 257)` cut emitted half of it.
+    stopReason: `${"b".repeat(256)}🚀 a terminal reason long enough to be clipped by the old index-257 cut`,
   } as never);
   const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
   assert.doesNotMatch(summary, loneSurrogate, "no unpaired UTF-16 surrogate reaches the archive");

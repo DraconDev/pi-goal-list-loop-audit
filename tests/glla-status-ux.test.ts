@@ -270,9 +270,9 @@ test("v0.35.15: /glla resume clears the freeze, reports the frozen duration, and
 // broken surrogate into the card for the rest of the turn.
 test("v0.38.105: the working-card tool argument is cut cell-aware, never mid-surrogate", () => {
   const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
-  // 22 ASCII chars, then an emoji whose two code units straddle the old
-  // index-23 cut.
-  const command = `git commit -m ${"x".repeat(13)}🚀 done`;
+  // Exactly 22 ASCII chars, so the emoji's high surrogate lands on index 22 and
+  // the old `slice(0, 23)` emitted half of it.
+  const command = `${"x".repeat(22)}🚀 done`;
   const shown = summarizeToolArg("bash", { command })!;
   assert.doesNotMatch(shown, loneSurrogate, "no unpaired surrogate in the card");
   assert.ok(shown.length <= 24, `the card stays one line wide, got ${shown.length}`);
