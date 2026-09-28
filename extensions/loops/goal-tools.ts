@@ -87,6 +87,8 @@ extractPendingTasks,
   sumNewAssistantTokens,
   takeAt,
   countTrailingDisapprovals,
+  countTrailingComparableDisapprovals,
+  trailingStreakGraderStable,
   countTrailingRepeatedDisapprovals,
   MAX_REPEATED_AUDIT_NO_PROGRESS,
   AUDIT_CAP_HARD_DEFAULT,
@@ -2167,8 +2169,22 @@ function registerAgentTools(pi: any): void {
       // keep-going. A streak this long with a fresh objection every round
       // is the audit treadmill, not convergence; a human picks the way out.
       // 0 = unlimited (legacy unbounded cycling).
+      //
+      // v0.38.103: counted on COMPARABLE rounds only. A mechanical
+      // fast-fail verdict is a gate, not a judgment, so mixing it into the
+      // streak would let a cap fire on evidence that never concerned the
+      // auditor (field hellhunter: 3 of 8 trailing "disapprovals" were
+      // `deterministic-pre-audit`). When the streak also spans more than one
+      // grader, the count cannot distinguish a treadmill from grader noise, so
+      // the goal pauses as NOT-CONFIRMED rather than as a treadmill.
       const hardCap = settings.auditCapHard ?? AUDIT_CAP_HARD_DEFAULT;
-      if (hardCap > 0 && trailingDisapprovals >= hardCap) {
+      const comparableStreak = countTrailingComparableDisapprovals(history);
+      const graderStable = trailingStreakGraderStable(history);
+      if (hardCap > 0 && comparableStreak >= hardCap) {
+        const unconfirmed = !graderStable;
+        const streakShape = unconfirmed
+          ? `${comparableStreak} consecutive auditor disapprovals (not confirmed as a treadmill: this streak was graded by more than one auditor, so the rounds are not comparable)`
+          : `${comparableStreak} consecutive auditor disapprovals`;
         updateGoal({
           status: "paused",
           auditHistory: history,
@@ -2176,13 +2192,15 @@ function registerAgentTools(pi: any): void {
           pauseKind: "decision",
           pauseOptions: [`Accept with follow-ups — archive complete, route findings to /list (/goal accept)`, `Fix the disapproval gap, then continue (${activeGoalSurfaceCommand("resume")})`, `Tweak the objective — ${activeGoalSurfaceCommand("tweak")} <new text>`, `Cancel the goal (${activeGoalSurfaceCommand("cancel")})`],
           pauseRecommended: 1,
-          pauseReason: `auditor disapproved ${trailingDisapprovals}× consecutively (hard cap ${hardCap})`,
-          pauseSuggestedAction: `Streak-${trailingDisapprovals} disapprovals with no approval in sight is the audit treadmill — each round raises new objections instead of converging. Accept archives the work done and routes the findings to follow-ups; ${activeGoalSurfaceCommand("resume")} continues only after changing the work or contract. Raise Audit hard cap in /glla settings.`,
+          pauseReason: unconfirmed
+            ? `auditor disapproved ${comparableStreak}× consecutively (hard cap ${hardCap}) — unconfirmed, mixed graders`
+            : `auditor disapproved ${comparableStreak}× consecutively (hard cap ${hardCap})`,
+          pauseSuggestedAction: `Hard cap reached on comparable auditor rounds. ${unconfirmed ? "This streak spans multiple auditors, so the rounds are not comparable — re-measure under one pinned auditor (/glla → Auditor model) before treating it as a treadmill. " : "A streak this long with a fresh objection every round is the audit treadmill. "}Accept archives the work done and routes the findings to follow-ups; ${activeGoalSurfaceCommand("resume")} continues only after changing the work or contract. Raise Audit hard cap in /glla settings.`,
         }, ctx);
-        ctx.ui.notify(`${goalNoun()} paused: auditor disapproved ${trailingDisapprovals}× consecutively (hard cap ${hardCap}, binds aggressive mode). ${activeGoalStatusCommand()} for the reports; pick accept / resume / tweak / cancel.`, "warning");
+        ctx.ui.notify(`${goalNoun()} paused: ${streakShape} (hard cap ${hardCap}, binds aggressive mode). ${activeGoalStatusCommand()} for the reports; pick accept / resume / tweak / cancel.`, "warning");
         maybeDecisionPopup(ctx);
-        appendLedger(ctx.cwd, "goal_paused", { reason: `disapproval hard cap: ${trailingDisapprovals} consecutive (cap ${hardCap})` });
-        notifyExternal(ctx, `Goal paused: ${trailingDisapprovals} consecutive auditor disapprovals (hard cap)`);
+        appendLedger(ctx.cwd, "goal_paused", { reason: `disapproval hard cap: ${comparableStreak} comparable consecutive (cap ${hardCap})`, graderStable, rawStreak: trailingDisapprovals });
+        notifyExternal(ctx, `Goal paused: ${comparableStreak} consecutive auditor disapprovals (hard cap)`);
         return {
           content: [{
             type: "text",
