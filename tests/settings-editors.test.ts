@@ -707,3 +707,10 @@ test("v0.38.108: the superseded DESIGN.md table does not mark files that do not 
   const missing = rows.filter((rel) => !rel || !fs.existsSync(path.join(import.meta.dirname, "..", rel)));
   assert.deepEqual(missing, [], `a superseded table marks non-existent paths as shipped: ${missing.join(", ")}`);
 });
+
+test("v0.38.108: the auditor model path carries no dead settings placeholders", () => {
+  const src = fs.readFileSync(path.join(import.meta.dirname, "..", "extensions", "loops", "goal-settings-ui.ts"), "utf-8");
+  assert.doesNotMatch(src, /const settings2 = /, "a half-applied rename left a dead second settings layer");
+  const bindings = [...src.matchAll(/^\s*const (\w+) = undefined;$/gm)].map((m) => m[1]);
+  assert.deepEqual(bindings, [], `dead undefined bindings: ${bindings.join(", ")}`);
+});

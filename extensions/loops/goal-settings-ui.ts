@@ -618,7 +618,6 @@ export function resolveAuditorModel(
     }
     return { model: undefined, error: "no session model and no auditorModel configured — set one with /glla → Auditor model" };
   }
-  const settings2 = undefined;
   const selector = new ModelSelector({
     getChain: () => configuredRefs,
     resolve: (candidate) => tryRef(candidate).model,
