@@ -569,3 +569,15 @@ test("v0.38.105: list_activate accepts the dotted child label the queue prints",
     await pi.fire("session_shutdown", { reason: "quit" }, ctx);
   }
 });
+
+test("v0.38.105 (schema pin): list_activate's `n` accepts the child-label string form", () => {
+  // The behavioral test above cannot catch a schema regression: the MockPi
+  // harness passes params straight to execute, while the real host validates
+  // against the tool schema BEFORE the handler runs. So pin the declared type
+  // and the description that names the form the error text teaches.
+  const src = readGoalRuntimeSource();
+  const tool = src.slice(src.indexOf('name: "list_activate"'), src.indexOf('name: "list_status"'));
+  assert.match(tool, /n: Type\.Union\(\[Type\.Number\(\), Type\.String\(\)\]/, "n accepts a number or a child-label string");
+  assert.match(tool, /1\.1/, "the description names the dotted child label");
+  assert.match(tool, /const p = params as \{ n: number \| string \}/, "the handler types the widened parameter");
+});
