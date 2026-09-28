@@ -142,7 +142,7 @@ import {
   transitionDispatch,
   type ContinuationDispatch,
 } from "../goal-loop-dispatch.js";
-import { readHandoffBriefExcerpt, runEmergencyCompactorIfDue } from "../goal-compactor.js";
+import { readHandoffBriefExcerpt, runGoalCompactionIfDue } from "../goal-compactor.js";
 import {
   createGoalContinuation,
   scheduleContinuation,
@@ -2319,7 +2319,7 @@ async function handleHotLengthExhaustion(
     const yielded = noteContextStarvedYield();
     appendLedger(ctx.cwd, "length_exhausted_compact_pending", { consecutive, contextPercent: percent, starvedStreak: yielded.streak, recentCompact });
     ctx.ui.notify(`glla: response truncated ${LENGTH_CONTINUE_MAX}× at ${percent !== null ? `${percent.toFixed(1)}%` : "near-full"} context — the prompt no longer fits this model. Yielding to pi auto-compaction; work stays active and resumes with a fresh truncation budget after compaction lands.${recentCompact ? " A compact-and-retry already failed within the last 90s, so the fallback rotation above is the next recourse." : ""}`, "info");
-    void runEmergencyCompactorIfDue(ctx, yielded.shouldRefuse, {
+    void runGoalCompactionIfDue(ctx, yielded.shouldRefuse, {
       notify: (message) => ctx.ui.notify(message, "info"),
       page: (message) => notifyExternal(ctx, message),
     });
@@ -2447,7 +2447,7 @@ async function handleHotLengthExhaustion(
       // Ladder banner (v0.38.6; v0.38.9 skips stale step 1 after a failed compact-and-retry).
       ctx.ui.notify(buildStarvationLadderMessage({ percent: typeof contextUsage?.percent === "number" ? contextUsage.percent : null, streak: starved.streak, recentCompact: sinceLastCompactMs < COMPACTION_GRACE_MS }), "info");
       // v0.38.10: emergency compactor, one shot per episode (fire-and-forget).
-      void runEmergencyCompactorIfDue(ctx, starved.shouldRefuse, {
+      void runGoalCompactionIfDue(ctx, starved.shouldRefuse, {
         notify: (message) => ctx.ui.notify(message, "info"),
         page: (message) => notifyExternal(ctx, message),
       });

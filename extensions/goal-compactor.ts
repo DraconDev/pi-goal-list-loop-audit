@@ -51,6 +51,47 @@ export function compactorBriefPath(cwd: string): string {
 /** Fallback need when usage is unreadable: assume a full 200k window. */
 export const PLAN_B_FALLBACK_NEED = 200_000;
 
+/** v0.38.104: the proactive between-tasks compaction threshold, in TOKENS.
+ *
+ * Field 2026-09-27: this number was believed to be a compaction trigger. It is
+ * not — `PLAN_B_FALLBACK_NEED` above only sizes the compactor MODEL for a
+ * session that large. Nothing gated on it, so nothing fired. The two paths that
+ * did exist were an 85%-of-context band that only NOTIFIED (\"run /compact
+ * now\"), and a starvation path that needed the context already dead.
+ *
+ * This is the missing third path, and it is a TOKEN count on purpose: a
+ * percentage moves with the model, so on a 1M window 85% is ~850k. Compacting
+ * at 1M is the outcome to avoid — summarization gets worse exactly when the
+ * transcript is largest, and a long goal that only compacts at exhaustion is
+ * the deathmarch this replaces.
+ *
+ * It fires BETWEEN tasks, at a moment with no half-finished tool call and no
+ * in-flight audit, which is the cheapest compaction there is. */
+export const GOAL_COMPACT_TOKEN_THRESHOLD = 200_000;
+
+/** v0.38.104: pure decision for the between-tasks compaction.
+ *
+ * Preference, never a hard stop: the caller compacts the transcript and the
+ * goal, its task list and durable state are untouched. `alreadyFired` keeps
+ * it to one compaction per episode — after one the transcript is small again,
+ * so it re-arms naturally as the goal grows back toward the threshold. */
+export function shouldCompactBetweenTasks(input: {
+  tokens?: number | null;
+  threshold?: number;
+  alreadyFired?: boolean;
+}): { compact: boolean; reason: string } {
+  const threshold = typeof input.threshold === "number" && input.threshold > 0
+    ? input.threshold
+    : GOAL_COMPACT_TOKEN_THRESHOLD;
+  if (input.alreadyFired) return { compact: false, reason: "already compacted this episode" };
+  const tokens = input.tokens;
+  if (typeof tokens !== "number" || !Number.isFinite(tokens) || tokens <= 0) {
+    return { compact: false, reason: "no context usage available" };
+  }
+  if (tokens < threshold) return { compact: false, reason: `below threshold (${Math.round(tokens)} < ${threshold})` };
+  return { compact: true, reason: `between tasks at ${Math.round(tokens)} tokens (threshold ${threshold})` };
+}
+
 export function compactorJobDir(cwd: string, attemptId: string): string {
   return path.join(piGlaDir(cwd), "compactor-jobs", attemptId);
 }
@@ -215,11 +256,16 @@ export function compactorFiredMarkerPath(cwd: string): string {
   return path.join(piGlaDir(cwd), "compactor-fired.json");
 }
 
-export async function runEmergencyCompactorIfDue(
+export async function runGoalCompactionIfDue(
   ctx: Pick<ExtensionContext, "cwd" | "model" | "modelRegistry" | "getContextUsage">,
   shouldRefuseNow: boolean,
   deps: CompactorDeps = {},
 ): Promise<{ fired: boolean; briefChars?: number; via?: string }> {
+  // v0.38.104: renamed from runEmergencyCompactorIfDue. "Emergency" was a
+  // misleading name — it is the same goal-aware compaction used
+  // PROACTIVELY between tasks at a token threshold, and the starvation path
+  // is just a late caller. Keeping the emergency framing is how this came to be
+  // wired only to context exhaustion and nowhere else.
   if (!shouldRefuseNow) {
     claimCompactorRefuseTransition(false);
     try { fs.rmSync(compactorFiredMarkerPath(ctx.cwd), { force: true }); } catch { /* re-arm best effort */ }
@@ -239,7 +285,7 @@ export async function runEmergencyCompactorIfDue(
     fs.writeFileSync(compactorFiredMarkerPath(ctx.cwd), JSON.stringify({ at: new Date().toISOString() }) + "\n");
   } catch { /* marker write is best effort; in-memory one-shot still holds this process */ }
   try {
-    return await runEmergencyCompactor(ctx, deps);
+    return await runGoalCompaction(ctx, deps);
   } catch (error) {
     try {
       appendLedger(ctx.cwd, "compactor_failed", { error: String(error).slice(0, 300) });
@@ -248,7 +294,7 @@ export async function runEmergencyCompactorIfDue(
   }
 }
 
-async function runEmergencyCompactor(
+async function runGoalCompaction(
   ctx: Pick<ExtensionContext, "cwd" | "model" | "modelRegistry" | "getContextUsage">,
   deps: CompactorDeps,
 ): Promise<{ fired: boolean; briefChars?: number; via?: string }> {

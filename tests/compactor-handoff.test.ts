@@ -13,7 +13,7 @@ import {
   buildBriefPacket,
   claimCompactorRefuseTransition,
   readHandoffBriefExcerpt,
-  runEmergencyCompactorIfDue,
+  runGoalCompactionIfDue,
 } from "../extensions/goal-compactor.js";
 import {
   MAX_COMPACTOR_FALLBACKS,
@@ -121,20 +121,20 @@ test("audit 2026-09-06: compactor one-shot survives a restart mid-episode", asyn
     needTokens: 10,
     spawnWorker: async () => { spawns++; return { ok: true, brief: "brief words" }; },
   } as any;
-  const first = await runEmergencyCompactorIfDue(ctx, true, deps);
+  const first = await runGoalCompactionIfDue(ctx, true, deps);
   assert.equal(first.fired, true, "first refuse of the episode fires");
   assert.equal(spawns, 1);
   // Simulate a restart: in-memory state is fresh (armed) but the disk
   // marker says this episode already fired.
   __testOnlyResetCompactor();
-  const second = await runEmergencyCompactorIfDue(ctx, true, deps);
+  const second = await runGoalCompactionIfDue(ctx, true, deps);
   assert.equal(second.fired, false, "restart mid-episode stays silent");
   assert.equal(spawns, 1, "no second spawn");
   // Recovery re-arms the next episode (marker removed).
-  const rearm = await runEmergencyCompactorIfDue(ctx, false, deps);
+  const rearm = await runGoalCompactionIfDue(ctx, false, deps);
   assert.equal(rearm.fired, false);
   __testOnlyResetCompactor();
-  const third = await runEmergencyCompactorIfDue(ctx, true, deps);
+  const third = await runGoalCompactionIfDue(ctx, true, deps);
   assert.equal(third.fired, true, "next episode fires again");
   assert.equal(spawns, 2);
 });
