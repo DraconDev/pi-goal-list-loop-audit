@@ -141,17 +141,22 @@ test("fixture: repeated real continuation payloads grow context linearly and are
   // judgment policy into pointers: 25_451 -> 24_221 chars per payload
   // (-1_230; -1_216 serialized), ~1_230 chars and ~308 estimated tokens saved
   // on EVERY continuation.
-  assert.equal(payload.length, 24_221);
-  assert.equal(new TextEncoder().encode(payload).byteLength, 24_333);
+  //
+  // v0.38.105 (audit follow-up): the tree measures 24_131 chars / 24_243
+  // bytes — 90 fewer than the 2026-09-24 re-baseline, which was recorded in
+  // the same commit as the prompt slimming and never re-run. Constants
+  // re-based to what the shipped prompt actually emits.
+  assert.equal(payload.length, 24_131);
+  assert.equal(new TextEncoder().encode(payload).byteLength, 24_243);
   assert.deepEqual(one, {
     messageCount: 3,
-    serializedBytes: 24_855,
-    textChars: 24_273,
-    estimatedTokens: 6_069,
+    serializedBytes: 24_765,
+    textChars: 24_183,
+    estimatedTokens: 6_046,
     gllaMessageCount: 1,
-    gllaSerializedBytes: 24_672,
-    gllaTextChars: 24_221,
-    gllaEstimatedTokens: 6_056,
+    gllaSerializedBytes: 24_582,
+    gllaTextChars: 24_131,
+    gllaEstimatedTokens: 6_033,
     uniqueGllaPayloadCount: 1,
     repeatedGllaPayloadCount: 0,
     repeatedGllaSerializedBytes: 0,
@@ -187,16 +192,16 @@ test("fixture: repeated real continuation payloads grow context linearly and are
   assert.equal(twelve.failedErrorOnlyCount, 0);
   assert.deepEqual(twelve, {
     messageCount: 14,
-    serializedBytes: 296_247,
-    textChars: 290_704,
-    estimatedTokens: 72_676,
+    serializedBytes: 295_167,
+    textChars: 289_624,
+    estimatedTokens: 72_406,
     gllaMessageCount: 12,
-    gllaSerializedBytes: 296_064,
-    gllaTextChars: 290_652,
-    gllaEstimatedTokens: 72_663,
+    gllaSerializedBytes: 294_984,
+    gllaTextChars: 289_572,
+    gllaEstimatedTokens: 72_393,
     uniqueGllaPayloadCount: 1,
     repeatedGllaPayloadCount: 11,
-    repeatedGllaSerializedBytes: 271_392,
+    repeatedGllaSerializedBytes: 270_402,
     failedErrorOnlyCount: 0,
     unserializableMessageCount: 0,
     provider: {
@@ -263,16 +268,19 @@ test("reported checkpoint shape stays pinned across all probe sizes", () => {
     };
   });
 
-  // v0.38.105: refreshed for the author-comment strip + the folded
-  // EXECUTION DISCIPLINE policy pointers. Per-payload growth is unchanged in
-  // SHAPE (linear, same multipliers) — only the per-payload constant moved:
-  // 25_451 -> 24_221 chars.
+  // v0.38.105 (audit follow-up): re-baselined to the values the CURRENT tree
+  // actually produces. The previous row set claimed 24_221 chars per payload,
+  // but the prompt measures 24_131 — the 2026-09-24 pass re-baselined this
+  // fixture in the same commit that slimmed the continuation prompt and never
+  // re-ran it, so the constant was 90 chars off from the moment it landed.
+  // Per-payload growth is unchanged in SHAPE (linear, same multipliers); only
+  // the per-payload constant moved: 25_451 -> 24_221 -> 24_131 chars.
   assert.deepEqual(rows, [
-    { continuations: 0,  messageCount: 2,  serializedBytes: 183,      textChars: 52,       estimatedTokens: 13,     gllaMessageCount: 0,  gllaSerializedBytes: 0,      gllaTextChars: 0,      gllaEstimatedTokens: 0,      repeatedGllaPayloadCount: 0,  repeatedGllaSerializedBytes: 0,      provider: { sampleCount: 0,  inputTokens: 0,          outputTokens: 0,   cacheReadTokens: 0,   cacheWriteTokens: 0, totalTokens: 0,          firstInputTokens: null, latestInputTokens: null,    inputTokenDelta: null, incompleteSampleCount: 0 } },
-    { continuations: 1,  messageCount: 3,  serializedBytes: 24_855,   textChars: 24_273,   estimatedTokens: 6_069,  gllaMessageCount: 1,  gllaSerializedBytes: 24_672,  gllaTextChars: 24_221,  gllaEstimatedTokens: 6_056,  repeatedGllaPayloadCount: 0,  repeatedGllaSerializedBytes: 0,      provider: { sampleCount: 1,  inputTokens: 8_000,      outputTokens: 100, cacheReadTokens: 0, cacheWriteTokens: 0, totalTokens: 8_100,    firstInputTokens: 8_000, latestInputTokens: 8_000,    inputTokenDelta: 0,     incompleteSampleCount: 0 } },
-    { continuations: 5,  messageCount: 7,  serializedBytes: 123_543,  textChars: 121_157,  estimatedTokens: 30_290, gllaMessageCount: 5,  gllaSerializedBytes: 123_360, gllaTextChars: 121_105, gllaEstimatedTokens: 30_277, repeatedGllaPayloadCount: 4,  repeatedGllaSerializedBytes: 98_688, provider: { sampleCount: 5,  inputTokens: 60_000,    outputTokens: 510, cacheReadTokens: 100, cacheWriteTokens: 4, totalTokens: 60_614,  firstInputTokens: 8_000, latestInputTokens: 16_000,   inputTokenDelta: 8_000, incompleteSampleCount: 0 } },
-    { continuations: 12, messageCount: 14, serializedBytes: 296_247,  textChars: 290_704,  estimatedTokens: 72_676, gllaMessageCount: 12, gllaSerializedBytes: 296_064, gllaTextChars: 290_652, gllaEstimatedTokens: 72_663, repeatedGllaPayloadCount: 11, repeatedGllaSerializedBytes: 271_392, provider: { sampleCount: 12, inputTokens: 228_000,  outputTokens: 1_266, cacheReadTokens: 660, cacheWriteTokens: 12, totalTokens: 229_938, firstInputTokens: 8_000, latestInputTokens: 30_000, inputTokenDelta: 22_000, incompleteSampleCount: 0 } },
-    { continuations: 25, messageCount: 27, serializedBytes: 616_983,  textChars: 605_577,  estimatedTokens: 151_395, gllaMessageCount: 25, gllaSerializedBytes: 616_800, gllaTextChars: 605_525, gllaEstimatedTokens: 151_382, repeatedGllaPayloadCount: 24, repeatedGllaSerializedBytes: 592_128, provider: { sampleCount: 25, inputTokens: 800_000, outputTokens: 2_800, cacheReadTokens: 3_000, cacheWriteTokens: 24, totalTokens: 805_824, firstInputTokens: 8_000, latestInputTokens: 56_000, inputTokenDelta: 48_000, incompleteSampleCount: 0 } },
+    { continuations: 0,  messageCount: 2,  serializedBytes: 183,  textChars: 52,  estimatedTokens: 13,  gllaMessageCount: 0,  gllaSerializedBytes: 0,  gllaTextChars: 0,  gllaEstimatedTokens: 0,  repeatedGllaPayloadCount: 0,  repeatedGllaSerializedBytes: 0,  provider: { sampleCount: 0,  inputTokens: 0,  outputTokens: 0,  cacheReadTokens: 0,  cacheWriteTokens: 0,  totalTokens: 0,  firstInputTokens: null,  latestInputTokens: null,    inputTokenDelta: null, incompleteSampleCount: 0 } },
+    { continuations: 1,  messageCount: 3,  serializedBytes: 24_765,  textChars: 24_183,  estimatedTokens: 6_046,  gllaMessageCount: 1,  gllaSerializedBytes: 24_582,  gllaTextChars: 24_131,  gllaEstimatedTokens: 6_033,  repeatedGllaPayloadCount: 0,  repeatedGllaSerializedBytes: 0,  provider: { sampleCount: 1,  inputTokens: 8_000,  outputTokens: 100,  cacheReadTokens: 0,  cacheWriteTokens: 0,  totalTokens: 8_100,  firstInputTokens: 8_000,  latestInputTokens: 8_000,    inputTokenDelta: 0, incompleteSampleCount: 0 } },
+    { continuations: 5,  messageCount: 7,  serializedBytes: 123_093,  textChars: 120_707,  estimatedTokens: 30_177,  gllaMessageCount: 5,  gllaSerializedBytes: 122_910,  gllaTextChars: 120_655,  gllaEstimatedTokens: 30_164,  repeatedGllaPayloadCount: 4,  repeatedGllaSerializedBytes: 98_328,  provider: { sampleCount: 5,  inputTokens: 60_000,  outputTokens: 510,  cacheReadTokens: 100,  cacheWriteTokens: 4,  totalTokens: 60_614,  firstInputTokens: 8_000,  latestInputTokens: 16_000,    inputTokenDelta: 8_000, incompleteSampleCount: 0 } },
+    { continuations: 12,  messageCount: 14,  serializedBytes: 295_167,  textChars: 289_624,  estimatedTokens: 72_406,  gllaMessageCount: 12,  gllaSerializedBytes: 294_984,  gllaTextChars: 289_572,  gllaEstimatedTokens: 72_393,  repeatedGllaPayloadCount: 11,  repeatedGllaSerializedBytes: 270_402,  provider: { sampleCount: 12,  inputTokens: 228_000,  outputTokens: 1_266,  cacheReadTokens: 660,  cacheWriteTokens: 12,  totalTokens: 229_938,  firstInputTokens: 8_000,  latestInputTokens: 30_000,    inputTokenDelta: 22_000, incompleteSampleCount: 0 } },
+    { continuations: 25,  messageCount: 27,  serializedBytes: 614_733,  textChars: 603_327,  estimatedTokens: 150_832,  gllaMessageCount: 25,  gllaSerializedBytes: 614_550,  gllaTextChars: 603_275,  gllaEstimatedTokens: 150_819,  repeatedGllaPayloadCount: 24,  repeatedGllaSerializedBytes: 589_968,  provider: { sampleCount: 25,  inputTokens: 800_000,  outputTokens: 2_800,  cacheReadTokens: 3_000,  cacheWriteTokens: 24,  totalTokens: 805_824,  firstInputTokens: 8_000,  latestInputTokens: 56_000,    inputTokenDelta: 48_000, incompleteSampleCount: 0 } },
   ]);
 });
 
