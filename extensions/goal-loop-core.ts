@@ -1668,6 +1668,20 @@ export function liveDisapproval(history: AuditVerdict[]): AuditVerdict | undefin
   return undefined;
 }
 
+/** v0.38.110: how many objections are still live. Same selection rule as
+ * `liveDisapproval` (including the migrate-on-read backfill), for surfaces
+ * that need a count rather than the newest entry. Any display counting
+ * "open objections" with a raw `superseded !== true` filter disagrees with the
+ * runtime on pre-v0.38.21 histories — it reports settled work as open. */
+export function countLiveDisapprovals(history: AuditVerdict[]): number {
+  backfillSupersededObjections(history);
+  let n = 0;
+  for (const v of history) {
+    if (v.disapproved && !v.superseded) n++;
+  }
+  return n;
+}
+
 /** v0.38.21: retire every live disapproval in place. Returns the count
  * retired. Infrastructure entries are transparent (never verdicts, never
  * retired); approvals and impossibles are left for their own paths. */
