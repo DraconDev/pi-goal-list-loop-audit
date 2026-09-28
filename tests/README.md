@@ -3,11 +3,23 @@
 Run the current suite with:
 
 ```bash
-npm test                 # runs: bun test
+npm test                 # the fast set: bun test minus tests/slow-files.mjs
 ```
 
-For the release gate (suite, typecheck, jiti regression, and the mandatory
-hermetic auditor-extension boundary check), run:
+`npm test` runs `node scripts/run-tests.mjs`, which wraps `bun test` with a
+progress heartbeat, a bounded stall watchdog, and a teardown that takes the
+suite down with it (the raw `bun test` command is what the field reported as
+silent for 37 minutes and, once, as a 26-hour orphan). The heavy files live in
+`tests/slow-files.mjs` and are EXCLUDED from the fast run — a green `npm test`
+is not the whole suite:
+
+```bash
+npm run test:slow        # only the slow files
+node scripts/run-tests.mjs --all tests/some-file.test.ts   # run one file, ignore patterns dropped
+```
+
+For the release gate (the WHOLE suite through that wrapper, typecheck, jiti
+regression, and the mandatory hermetic auditor-extension boundary check), run:
 
 ```bash
 npm run test:all
@@ -16,6 +28,19 @@ npm run test:all
 The suite is intentionally discovered by Bun rather than a hard-coded glob or
 fixed test count; use the runner's summary for the current file and test
 counts.
+
+### Removed coverage (2026-09-28)
+
+`tests/subagent-stop-rpc.integration.test.mjs` drove the real upstream
+`AgentManager` child-stop RPC through the legacy `@tintinweb/pi-subagents`
+fork. The dependency was replaced by unscoped `pi-subagents@0.62.0`, whose
+published surface has no `AgentManager` / `registerRpcHandlers` seam (and the
+file refused to patch the external package to keep itself runnable), so the
+test skipped itself on every machine and in CI while an older audit entry
+still credited it with real-host coverage. The dead fixture is gone rather
+than left to report "skipped" forever. The GLLA-side stop contract — old
+generation, unavailable, and one-shot outcomes — remains covered by
+`tests/subagent-hang-detection.test.ts`.
 
 ## What is covered
 
