@@ -43,6 +43,7 @@ import {
   assignQueueOrder,
   visibleListPosition,
   visibleListPositions,
+  providerErrorFingerprint,
   providerErrorPresentation,
   sanitizeProviderAuditReport,
   sanitizeProviderDisplayText,
@@ -294,6 +295,7 @@ import {
   pushCapped as pushRepetitionCapped,
 } from "../goal-loop-repetition.js";
 import { buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
+import { selectQuotaWaitReroute } from "../quota-retry.js";
 import { buildFinalRepoStateLines, buildTerminalApprovalRender, clipSummaryValue, compactCompletionSummary, compactTerminalCompletionSummary, completionSummaryDensityNote } from "../completion-summary.js";
 import { persistApprovalRender, replayUndeliveredApprovalRenders } from "../approval-render-store.js";
 import { resolveAuditorThinkingLevel } from "../auditor-thinking.js";
@@ -2520,7 +2522,7 @@ function registerAgentTools(pi: any): void {
   pi.registerTool(defineTool({
     name: "pause_goal",
     label: "Pause goal",
-    description: "Pause the active goal with a reason and suggested action. Use when blocked on user input or unable to make progress. Pausing ABORTS the current turn immediately — after this call, stop; never keep working. When the user interrupts with a NEW task ('do X first'), pass redirect=\"<their request>\" instead: the goal parks but the turn CONTINUES so you work X immediately — a plain pause strands the redirect until the user nudges. Never use redirect to dodge a real blocker, decision, or wait. When the user must CHOOSE between options, pass kind=\"decision\" with the options list (recommended = 1-based index of the best one) — decision pauses render as a prominent DECISION NEEDED card and pop a picker for the user. Time-gated waits (retry at a specific time) use kind=\"wait\" with resumeAt (ISO). Operational failures use kind=\"error\". Pauses that only wait on a running background subagent — its native completion wakes the goal, no manual action exists — use kind=\"standby\" so the card waits instead of demanding action. VOCABULARY (v0.28.24): decision options and reasons must reference REAL commands only — /goal resume, /goal cancel, /goal tweak \"<new text>\", /list remove N, /list next, /list resume, /loop stop, /loop resume. These all act on the ACTIVE goal/item: there is NO /goal drop and NO command takes a goal id. Never show goal ids to the user — name the thing ('the active goal', 'list item \"<short name>\"'); ids are internal plumbing the user cannot act on.",
+    description: "Pause the active goal with a reason and suggested action. Use when blocked on user input or unable to make progress. Pausing ABORTS the current turn immediately — after this call, stop; never keep working. When the user interrupts with a NEW task ('do X first'), pass redirect=\"<their request>\" instead: the goal parks but the turn CONTINUES so you work X immediately — a plain pause strands the redirect until the user nudges. Never use redirect to dodge a real blocker, decision, or wait. When the user must CHOOSE between options, pass kind=\"decision\" with the options list (recommended = 1-based index of the best one) — decision pauses render as a prominent DECISION NEEDED card and pop a picker for the user. Time-gated waits (retry at a specific time) use kind=\"wait\" with resumeAt (ISO). Quota-caused parks (rate-limit/plan-quota/billing wording in the reason, or a recent subagent quota error) are automatically converted to monitored auto-retry waits — park normally and the reset wait re-fires on its own. Operational failures use kind=\"error\". Pauses that only wait on a running background subagent — its native completion wakes the goal, no manual action exists — use kind=\"standby\" so the card waits instead of demanding action. VOCABULARY (v0.28.24): decision options and reasons must reference REAL commands only — /goal resume, /goal cancel, /goal tweak \"<new text>\", /list remove N, /list next, /list resume, /loop stop, /loop resume. These all act on the ACTIVE goal/item: there is NO /goal drop and NO command takes a goal id. Never show goal ids to the user — name the thing ('the active goal', 'list item \"<short name>\"'); ids are internal plumbing the user cannot act on.",
     parameters: Type.Object({
       reason: Type.String({ description: "Why the work is paused" }),
       suggestedAction: Type.Optional(Type.String({ description: "What the user should do next" })),
@@ -2588,7 +2590,47 @@ function registerAgentTools(pi: any): void {
       const MAX_AGENT_WAIT_MS = 60 * 60 * 1000;
       let waitClampNotice = "";
       let storedResumeAt: string | undefined;
-      if (p.kind === "wait" && p.resumeAt) {
+      // v0.38.105 (note.md Next: quota-wait is monitoring): a quota-caused
+      // park is a reset wait, not a manual-action stop. Field 2026-09-24
+      // (ai-auto-music wave 11): MiniMax quota 0% + GMI 402 parked the
+      // goal kind=blocked with "waiting for manual action" although no
+      // user action existed — only a reset clock the user cannot hurry.
+      // The cause is the reason's own quota wording or fresh observed
+      // subagent-quota evidence, never a guess. Rerouted parks become
+      // supervised waits (recoveryEpisodeKey) so the card reads auto-retry
+      // and the due-wait backstop re-fires at the reset window.
+      // Unset stays unset when no reroute fires — an undefined pauseKind is
+      // display-distinct from "blocked" ("waiting for you" vs manual action).
+      let effectiveKind = p.kind;
+      let quotaRerouteNotice = "";
+      let quotaEpisodeKey: string | undefined;
+      const quotaCause = (parkKind === "blocked" || parkKind === "error" || parkKind === "wait")
+        ? selectQuotaWaitReroute(p.reason, state.goal.subagentQuotaEvidence)
+        : undefined;
+      if (quotaCause && !(p.kind === "wait" && p.resumeAt)) {
+        effectiveKind = "wait";
+        const resetMs = quotaCause.resetAt ? Date.parse(quotaCause.resetAt) : Number.NaN;
+        const wantMs = Number.isFinite(resetMs) && resetMs > Date.now()
+          ? resetMs
+          : Date.now() + quotaCause.retryAfterSec * 1000;
+        const cappedMs = Math.min(wantMs, Date.now() + MAX_AGENT_WAIT_MS);
+        storedResumeAt = new Date(cappedMs).toISOString();
+        if (cappedMs < wantMs) {
+          waitClampNotice = ` The quota reset is further out than the 1h wait horizon; the wait auto-continues hourly to re-check — re-wait if quota is still out, resume if it cleared.`;
+        }
+        // A live key (error-brake retry armed) stays — the wait is supervised
+        // either way, and overwriting would orphan the armed retry.
+        quotaEpisodeKey = state.goal.recoveryEpisodeKey
+          ?? `${state.goal.createdAt}:quota:${providerErrorFingerprint(p.reason ?? quotaCause.signal)}`;
+        quotaRerouteNotice = ` Quota-caused park (${quotaCause.signal}, via ${quotaCause.source}) rerouted to a monitored auto-retry wait at ${storedResumeAt} — no manual action needed; the wait re-fires on its own.`;
+        appendLedger(ctx.cwd, "pause_quota_rerouted_to_wait", {
+          goalId: state.goal.id,
+          fromKind: parkKind,
+          signal: quotaCause.signal,
+          source: quotaCause.source,
+          storedResumeAt,
+        });
+      } else if (p.kind === "wait" && p.resumeAt) {
         const requestedMs = Date.parse(p.resumeAt);
         if (Number.isFinite(requestedMs) && requestedMs - Date.now() > MAX_AGENT_WAIT_MS) {
           storedResumeAt = new Date(Date.now() + MAX_AGENT_WAIT_MS).toISOString();
@@ -2600,6 +2642,22 @@ function registerAgentTools(pi: any): void {
           });
         } else {
           storedResumeAt = p.resumeAt;
+        }
+        // An explicit agent wait keeps its own time, but a quota cause
+        // still upgrades it to supervised monitoring (same auto-retry
+        // card and backstop as a reroute).
+        if (quotaCause) {
+          quotaEpisodeKey = state.goal.recoveryEpisodeKey
+            ?? `${state.goal.createdAt}:quota:${providerErrorFingerprint(p.reason ?? quotaCause.signal)}`;
+          quotaRerouteNotice = ` Quota cause noted (${quotaCause.signal}, via ${quotaCause.source}) — this wait is monitored and re-fires on its own.`;
+          appendLedger(ctx.cwd, "pause_quota_rerouted_to_wait", {
+            goalId: state.goal.id,
+            fromKind: "wait",
+            signal: quotaCause.signal,
+            source: quotaCause.source,
+            storedResumeAt,
+            keptAgentTime: true,
+          });
         }
       }
       // v0.38.69 (Antigravity port): mid-run interruption budget with
@@ -2670,10 +2728,14 @@ function registerAgentTools(pi: any): void {
         status: "paused",
         pauseReason: safePauseReason,
         pauseSuggestedAction: safePauseAction,
-        pauseKind: p.kind,
+        pauseKind: effectiveKind,
         pauseOptions: p.kind === "decision" && p.options && p.options.length > 0 ? p.options : undefined,
         pauseRecommended: p.kind === "decision" && p.recommended && p.recommended >= 1 ? Math.floor(p.recommended) : undefined,
         pauseResumeAt: storedResumeAt,
+        // Quota reroute only: the wait is supervised (auto-retry card +
+        // backstop) and the consumed evidence cannot reroute a later,
+        // unrelated park.
+        ...(quotaEpisodeKey ? { recoveryEpisodeKey: quotaEpisodeKey, subagentQuotaEvidence: undefined } : {}),
         // v0.38.69 (Antigravity port): every agent-authored decision
         // pause counts against the mid-run interruption budget, in-budget
         // or not, so the counter survives reloads on the goal itself.
@@ -2695,7 +2757,7 @@ function registerAgentTools(pi: any): void {
       let droppedImpossible = false;
       if (
         state.goal.policy === "list"
-        && p.kind === "blocked"
+        && effectiveKind === "blocked"
         && !(p.suggestedAction && p.suggestedAction.trim())
       ) {
         const impossible = state.goal;
@@ -2750,8 +2812,9 @@ function registerAgentTools(pi: any): void {
       // user the choice to tweak the objective, cancel the pause, or
       // wait as planned. No auto-apply — the user keeps full control.
       const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
-      const kind = p.kind ?? "blocked";
-      const resumeAtMs = p.resumeAt ? Date.parse(p.resumeAt) : Number.NaN;
+      const kind = effectiveKind ?? "blocked";
+      const effectiveResumeAt = p.resumeAt ?? storedResumeAt;
+      const resumeAtMs = effectiveResumeAt ? Date.parse(effectiveResumeAt) : Number.NaN;
       const longWait = (kind === "wait" || kind === "blocked") && Number.isFinite(resumeAtMs) && (resumeAtMs - Date.now()) > SIX_HOURS_MS;
       if (longWait) {
         try {
@@ -2793,7 +2856,7 @@ function registerAgentTools(pi: any): void {
       // handles the new request.
       if (!droppedImpossible) {
         const reminder = buildActionReminder({
-          kind: p.kind ?? "blocked",
+          kind: effectiveKind ?? "blocked",
           reason: safePauseReason,
           action: redirect ? `Handle the new request now: ${redirect}` : safePauseAction,
           resumeCommand: activeGoalSurfaceCommand("resume"),
@@ -2813,7 +2876,7 @@ function registerAgentTools(pi: any): void {
         markPauseAbort({
           ownerSession: ctx.sessionManager,
           goalId: state.goal.id,
-          kind: p.kind ?? "blocked",
+          kind: effectiveKind ?? "blocked",
           reason: safePauseReason,
           action: safePauseAction,
           resumeCommand: activeGoalSurfaceCommand("resume"),
@@ -2821,19 +2884,19 @@ function registerAgentTools(pi: any): void {
         });
         try {
           ctx.abort();
-          appendLedger(ctx.cwd, "pause_goal_aborted_turn", { goalId: state.goal.id, kind: p.kind ?? "blocked" });
+          appendLedger(ctx.cwd, "pause_goal_aborted_turn", { goalId: state.goal.id, kind: effectiveKind ?? "blocked" });
         } catch (abortError) {
           clearPauseAbort();
           appendLedger(ctx.cwd, "pause_goal_abort_failed", { goalId: state.goal.id, error: abortError instanceof Error ? abortError.message : String(abortError) });
         }
       } else if (redirect && !droppedImpossible) {
-        appendLedger(ctx.cwd, "pause_goal_redirect", { goalId: state.goal?.id, kind: p.kind ?? "blocked" });
+        appendLedger(ctx.cwd, "pause_goal_redirect", { goalId: state.goal?.id, kind: effectiveKind ?? "blocked" });
       }
       if (redirect && !droppedImpossible) {
         return {
           content: [{
             type: "text",
-            text: `Goal parked for a user redirect — do NOT work the goal. Work this NOW in the same turn, without ending the turn: ${redirect}. When it is done, ${activeGoalSurfaceCommand("resume")} the goal (or resume_goal) and continue.${waitClampNotice}`,
+            text: `Goal parked for a user redirect — do NOT work the goal. Work this NOW in the same turn, without ending the turn: ${redirect}. When it is done, ${activeGoalSurfaceCommand("resume")} the goal (or resume_goal) and continue.${waitClampNotice}${quotaRerouteNotice}`,
           }],
           details: {},
         };
@@ -2843,7 +2906,7 @@ function registerAgentTools(pi: any): void {
           type: "text",
           text: droppedImpossible
             ? "The list item was auto-dropped as impossible (blocked with no resume path) — the list moved on instead of stopping."
-            : `Goal paused. The turn ends here — do NOT continue working. ${activeGoalSurfaceCommand("resume")} to continue.${waitClampNotice}`,
+            : `Goal paused. The turn ends here — do NOT continue working. ${activeGoalSurfaceCommand("resume")} to continue.${waitClampNotice}${quotaRerouteNotice}`,
         }],
         details: {},
       };

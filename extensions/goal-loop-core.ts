@@ -11,7 +11,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { createHash } from "node:crypto";
 import { execSync } from "node:child_process";
-import { isDeterministicProviderError, normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, quotaSignal, sanitizeProviderAuditReport, sanitizeProviderDisplayText, type QuotaSignal } from "./quota-retry.js";
+import { isDeterministicProviderError, normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, quotaSignal, sanitizeProviderAuditReport, sanitizeProviderDisplayText, type QuotaSignal, type SubagentQuotaEvidence } from "./quota-retry.js";
 import { MAX_AUDITOR_CANDIDATE_REFS, MAX_MAIN_MODEL_FALLBACKS, normalizeBoundedModelRefs } from "./main-model-recovery.js";
 import { resolveGllaStateDir, stateRootPending } from "./glla-state-root.js";
 import { normalizeFindingLead, clipSummaryValue } from "./finding-lead.js";
@@ -837,6 +837,13 @@ export interface Goal {
   providerErrorDiagnostic?: string;
   /** Stable provider recovery episode identity for goal-level error brakes. */
   recoveryEpisodeKey?: string;
+  /** v0.38.105 (note.md Next: quota-wait is monitoring): the latest
+   * subagent-provider quota evidence observed on this goal's tool results.
+   * Consumed by pause_goal: an agent-authored blocked/error park with a
+   * quota cause becomes a supervised auto-retry wait instead of a
+   * "waiting for manual action" park. Stale evidence (older than
+   * SUBAGENT_QUOTA_EVIDENCE_FRESH_MS) never reroutes. */
+  subagentQuotaEvidence?: SubagentQuotaEvidence;
   /** Durable per-episode notice fence for goal-level recovery messages. */
   recoveryNoticeKeys?: string[];
   /** v0.25.2: per-goal telemetry for /glla stats premature-success

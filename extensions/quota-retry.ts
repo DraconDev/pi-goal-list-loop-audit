@@ -1,9 +1,11 @@
 // pi-goal-list-loop-audit — provider diagnostics and bounded retry helpers.
 //
-// Provider errors are deliberately opaque to recovery policy. This module
-// keeps safe diagnostic projections and a generic timer; legacy quota parser
-// exports remain below for reading old records/tests, but runtime scheduling
-// never uses them.
+// Provider errors are deliberately opaque to recovery policy, with one
+// narrow exception (v0.38.105): a quota signal may select a monitored WAIT
+// (pause_goal reroutes a quota-caused park to a supervised auto-retry wait),
+// never an immediate retry. This module keeps safe diagnostic projections
+// and a generic timer; legacy quota parser exports remain below for reading
+// old records/tests.
 
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { sanitizeDisplayText } from "./goal-loop-core.js";
@@ -497,6 +499,67 @@ export function capProviderRetrySeconds(seconds: number): number {
 export function providerRetryDelaySeconds(attempt: number, baseMinutes = 60): number {
   const base = Number.isFinite(baseMinutes) && baseMinutes > 0 ? baseMinutes * 60 : DEFAULT_PROVIDER_RETRY_SEC;
   return capProviderRetrySeconds(base * 2 ** Math.max(0, attempt - 1));
+}
+
+/** v0.38.105 (note.md Next: quota-wait is monitoring): the compact quota
+ * evidence a subagent tool error leaves on the goal. Consumed once by
+ * pause_goal to reroute a quota-caused park into a supervised wait. */
+export interface SubagentQuotaEvidence {
+  signal: QuotaSignal;
+  retryAfterSec: number;
+  resetAt?: string;
+  /** ISO timestamp of the tool error that produced this evidence. */
+  at: string;
+}
+
+/** Evidence older than this never reroutes a park — the quota window it
+ * described has long passed or the park is about something else. */
+export const SUBAGENT_QUOTA_EVIDENCE_FRESH_MS = 30 * 60 * 1000;
+
+export interface QuotaWaitReroute {
+  /** Seconds until retry: upstream reset when known, else the parsed hint. */
+  retryAfterSec: number;
+  /** Absolute reset when the provider supplied one and it is still future. */
+  resetAt?: string;
+  /** "reason" when the pause reason itself carried the quota signal,
+   * "evidence" when fresh subagent evidence supplied it. */
+  source: "reason" | "evidence";
+  signal: QuotaSignal;
+}
+
+/** v0.38.105: quota cause for a park — the pause reason's own quota wording
+ * wins; otherwise fresh subagent evidence (observed, not guessed) supplies
+ * it. Returns undefined when neither speaks quota, so ordinary parks are
+ * untouched. Pure — pinned in tests/quota-retry.test.ts. */
+export function selectQuotaWaitReroute(
+  reason: string | undefined,
+  evidence: SubagentQuotaEvidence | undefined,
+  nowMs = Date.now(),
+): QuotaWaitReroute | undefined {
+  const reasonSignal = quotaSignal(reason);
+  if (reasonSignal) {
+    const parsed = parseQuotaError(reason ?? "", DEFAULT_QUOTA_RETRY_SEC, nowMs);
+    const resetMs = parsed.resetAt ? Date.parse(parsed.resetAt) : Number.NaN;
+    return {
+      retryAfterSec: parsed.retryAfterSec,
+      ...(Number.isFinite(resetMs) && resetMs > nowMs ? { resetAt: parsed.resetAt } : {}),
+      source: "reason",
+      signal: reasonSignal,
+    };
+  }
+  if (evidence) {
+    const ageMs = nowMs - Date.parse(evidence.at);
+    if (Number.isFinite(ageMs) && ageMs >= 0 && ageMs <= SUBAGENT_QUOTA_EVIDENCE_FRESH_MS) {
+      const resetMs = evidence.resetAt ? Date.parse(evidence.resetAt) : Number.NaN;
+      if (Number.isFinite(resetMs) && resetMs > nowMs) {
+        return { retryAfterSec: Math.ceil((resetMs - nowMs) / 1000), resetAt: evidence.resetAt, source: "evidence", signal: evidence.signal };
+      }
+      // No (future) absolute reset: the remaining window shrinks as the
+      // evidence ages — never re-wait the full original window.
+      return { retryAfterSec: Math.max(60, evidence.retryAfterSec - Math.floor(ageMs / 1000)), source: "evidence", signal: evidence.signal };
+    }
+  }
+  return undefined;
 }
 
 let providerRetryTimer: NodeJS.Timeout | null = null;

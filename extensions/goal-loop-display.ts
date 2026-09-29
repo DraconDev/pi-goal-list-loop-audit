@@ -1290,12 +1290,29 @@ function truncateStatusToWidth(line: string | undefined, width?: number): string
   return tuiTruncateToWidth(line, width, "…");
 }
 
+/** v0.38.105 (note.md Next: "looks frozen"): the loop's cadence countdown.
+ * Between iterations the scheduler honors minimumIterationIntervalMs after
+ * lastIterationCompletedAt — up to minutes of intentional quiet that used to
+ * render as a bare QUEUED with no next-tick signal, so users (and the loop
+ * agent itself) read a healthy cadence gap as a wedge. Mirrors the
+ * scheduleLoopTickWithUrgency gap computation; /loop status already shows
+ * the same countdown, this puts it on the always-visible surfaces. */
+export function loopCadenceCountdown(l: { minimumIterationIntervalMs?: number; lastIterationCompletedAt?: string }, now = Date.now()): string | undefined {
+  const intervalMs = l.minimumIterationIntervalMs;
+  const completedAt = l.lastIterationCompletedAt ? Date.parse(l.lastIterationCompletedAt) : Number.NaN;
+  if (intervalMs === undefined || !Number.isFinite(completedAt)) return undefined;
+  const remaining = completedAt + intervalMs - now;
+  return remaining > 0 ? `next tick in ${fmtElapsed(remaining)}` : undefined;
+}
+
 function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, extras?: WidgetExtras, width?: number): string | undefined {
   if (state.loop?.active) {
     const l = state.loop;
     // v0.26.1: surface the refire streak — a spinning supervisor is the
     // zombie signature (hegemon incident: 619 refires, 0 turns).
     const stallSuffix = (extras?.stalls ?? 0) > 0 ? ` · ${paint(theme, "warning", `stalls:${extras!.stalls}`)}` : "";
+    const cadence = loopCadenceCountdown(l, now);
+    const cadenceSuffix = cadence ? ` · ${paint(theme, "dim", cadence)}` : "";
     // v0.36.1: loop-only supervision now receives the same evidence-backed
     // state marker as goals. Without this, a loop's iteration counter moved
     // while the user still had to infer whether pi was working or waiting.
@@ -1303,12 +1320,12 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
     const activityPrefix = activityMarker ? `${activityMarker} ${paint(theme, "dim", "·")} ` : "";
     // v0.23.0: metricless spec loop — no arrow/best/stall, no plateau.
     if (!l.measureCmd) {
-      return `glla: ${activityPrefix}loop ${paint(theme, "accent", "∞")} iter ${l.iteration}${l.maxIterations > 0 ? `/${l.maxIterations}` : ""} · metricless${stallSuffix}`;
+      return `glla: ${activityPrefix}loop ${paint(theme, "accent", "∞")} iter ${l.iteration}${l.maxIterations > 0 ? `/${l.maxIterations}` : ""} · metricless${stallSuffix}${cadenceSuffix}`;
     }
     const arrow = paint(theme, "accent", l.direction === "min" ? "↓" : "↑");
     const stallText = `stall ${l.stallCount}/${l.plateauWindow}`;
     const stall = l.stallCount >= l.plateauWindow - 1 ? paint(theme, "warning", stallText) : stallText;
-    return `glla: ${activityPrefix}loop ${arrow} iter ${l.iteration}/${l.maxIterations > 0 ? l.maxIterations : "∞"} · best ${l.bestValue ?? "n/a"} · ${stall}${stallSuffix}`;
+    return `glla: ${activityPrefix}loop ${arrow} iter ${l.iteration}/${l.maxIterations > 0 ? l.maxIterations : "∞"} · best ${l.bestValue ?? "n/a"} · ${stall}${stallSuffix}${cadenceSuffix}`;
   }
   const g = state.goal;
   const held = heldLoop(state);
@@ -2523,6 +2540,8 @@ function loopLines(l: LoopState, now: number, theme?: DisplayTheme, width?: numb
   const segs: string[] = [];
   segs.push(`iter ${l.iteration}${l.maxIterations > 0 ? `/${l.maxIterations} ${paint(theme, "dim", meter(l.iteration / l.maxIterations))}` : ""}`);
   segs.push(fmtElapsed(now - Date.parse(l.startedAt)));
+  const cadence = loopCadenceCountdown(l, now);
+  if (cadence) segs.push(paint(theme, "dim", cadence));
   if (l.measureCmd) {
     segs.push(`best ${paint(theme, "success", `${l.bestValue ?? "n/a"}`)}`);
     segs.push(`last ${l.lastValue ?? "n/a"}`); // v0.33.1: a plateauing loop's current reading stays visible

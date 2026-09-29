@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 
-import { buildLoadHoldRecoveryLines, buildWidgetLines, selectLoadHoldRecoverySummary, truncateCells, truncateObjective } from "../extensions/goal-loop-display.ts";
+import { buildLoadHoldRecoveryLines, buildStatusText, buildWidgetLines, loopCadenceCountdown, selectLoadHoldRecoverySummary, truncateCells, truncateObjective } from "../extensions/goal-loop-display.ts";
 import type { Goal, State } from "../extensions/goal-loop-core.ts";
 import type { LoopState } from "../extensions/goal-loop-forever.ts";
 
@@ -247,6 +247,41 @@ test("v0.38.105: recovery banner shows the loop target for loop-only state", () 
   const head = lines[0]!;
   assert.ok(head.includes("Mean sd of all 16 block tiles"), `banner lost the loop target: ${head}`);
   assert.ok(!head.includes("(no objective recorded)"), `banner claims no objective: ${head}`);
+});
+
+// v0.38.105 (note.md Next "looks frozen", Screenshot_20260929_120722): a
+// loop in its cadence gap rendered a bare QUEUED with no next-tick signal,
+// so a healthy 5-minute maturity gap read as a wedge. The countdown now
+// rides the status line and the widget header.
+function cadenceLoop(): LoopState {
+  return {
+    ...loopOnlyState().loop!,
+    target: "Ship queued gameplay features",
+    active: true,
+    lastIterationCompletedAt: new Date(NOW - 60_000).toISOString(),
+    minimumIterationIntervalMs: 5 * 60_000,
+  };
+}
+
+test("v0.38.105: loop surfaces show the cadence countdown during the gap", () => {
+  const state: State = { goal: null, list: [], loop: cadenceLoop() };
+  assert.equal(loopCadenceCountdown(state.loop!, NOW), "next tick in 4m 00s");
+  const status = buildStatusText(state, null, NOW)!;
+  assert.ok(status.includes("next tick in 4m 00s"), `status hides the countdown: ${status}`);
+  const lines = buildWidgetLines(state, null, NOW, undefined, 120, {}) ?? [];
+  assert.ok(lines.some((l) => l.includes("next tick in 4m 00s")), `widget hides the countdown: ${lines.join(" | ")}`);
+});
+
+test("v0.38.105: no countdown once the gap elapsed or cadence unset", () => {
+  const elapsed: State = {
+    goal: null, list: [],
+    loop: { ...cadenceLoop(), lastIterationCompletedAt: new Date(NOW - 10 * 60_000).toISOString() },
+  };
+  assert.equal(loopCadenceCountdown(elapsed.loop!, NOW), undefined);
+  assert.ok(!buildStatusText(elapsed, null, NOW)!.includes("next tick in"));
+  const unset: State = { goal: null, list: [], loop: { ...cadenceLoop(), minimumIterationIntervalMs: undefined, lastIterationCompletedAt: undefined } };
+  assert.equal(loopCadenceCountdown(unset.loop!, NOW), undefined);
+  assert.ok(!buildStatusText(unset, null, NOW)!.includes("next tick in"));
 });
 
 // The goal/list paths are byte-identical to the old inline selection.

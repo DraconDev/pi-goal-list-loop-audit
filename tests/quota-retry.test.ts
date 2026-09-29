@@ -29,6 +29,8 @@ import {
   sanitizeProviderAuditReport,
   sanitizeProviderDisplayText,
   resetQuotaRetryNoticeDedup,
+  selectQuotaWaitReroute,
+  SUBAGENT_QUOTA_EVIDENCE_FRESH_MS,
 } from "../extensions/quota-retry.ts";
 import { formatAuditLog, formatGoalAuditHistory } from "../extensions/goal-loop-core.ts";
 
@@ -294,4 +296,42 @@ test("cancelQuotaRetry: a pending retry does not fire (item 12 test 4 core)", as
   assert.equal(isQuotaRetryPending(), false);
   await new Promise((r) => setTimeout(r, 1300));
   assert.equal(fired, 0);
+});
+
+// v0.38.105 (note.md Next: quota-wait is monitoring): quota cause for a
+// park — the reason's own wording wins, else fresh observed evidence.
+test("selectQuotaWaitReroute: reason wording wins with its parsed hint", () => {
+  const now = Date.now();
+  const r = selectQuotaWaitReroute("429 rate limit exceeded, retry after 90 seconds", undefined, now)!;
+  assert.equal(r.source, "reason");
+  assert.equal(r.signal, "rate-limit");
+  assert.equal(r.retryAfterSec, 90);
+  assert.equal(r.resetAt, undefined);
+});
+
+test("selectQuotaWaitReroute: absolute reset survives only while future", () => {
+  const now = Date.now();
+  const future = new Date(now + 20 * 60 * 1000).toISOString();
+  const r = selectQuotaWaitReroute(`quota exhausted, resets at ${future}`, undefined, now)!;
+  assert.equal(r.resetAt, future);
+  const past = new Date(now - 60 * 1000).toISOString();
+  const r2 = selectQuotaWaitReroute(`quota exhausted, resets at ${past}`, undefined, now)!;
+  assert.equal(r2.resetAt, undefined, "a lapsed reset is not a future wait");
+});
+
+test("selectQuotaWaitReroute: fresh evidence supplies the cause; stale never does", () => {
+  const now = Date.now();
+  const fresh = selectQuotaWaitReroute("provider error", {
+    signal: "billing", retryAfterSec: 3600, at: new Date(now - 5 * 60 * 1000).toISOString(),
+  }, now)!;
+  assert.equal(fresh.source, "evidence");
+  assert.equal(fresh.signal, "billing");
+  // No absolute reset: the remaining window shrinks as evidence ages.
+  assert.ok(fresh.retryAfterSec < 3600 && fresh.retryAfterSec > 3000, `remaining window shrinks, got ${fresh.retryAfterSec}`);
+  const stale = selectQuotaWaitReroute("provider error", {
+    signal: "billing", retryAfterSec: 3600, at: new Date(now - SUBAGENT_QUOTA_EVIDENCE_FRESH_MS - 1000).toISOString(),
+  }, now);
+  assert.equal(stale, undefined, "stale evidence never reroutes");
+  assert.equal(selectQuotaWaitReroute("waiting on user credential", undefined, now), undefined);
+  assert.equal(selectQuotaWaitReroute(undefined, undefined, now), undefined);
 });
