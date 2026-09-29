@@ -1,10 +1,6 @@
 # Changelog
 
-## Unreleased
-
-Untagged work since 0.38.103. It stays under this heading until the release
-commit renames it (docs/RELEASING.md); these are descriptive milestones, not
-invented version headers.
+## 0.38.104 — prose stops grinding the audit (2026-09-29)
 
 ### The audit cap covers every round that failed to settle the goal
 
@@ -88,6 +84,24 @@ invented version headers.
   detached, so the documented process-group kill is real rather than an
   ESRCH-swallowed no-op; `test:all` and both CI jobs run through the wrapper
   and are bounded by `timeout-minutes`.
+
+### Prose stops grinding the audit (field bugs 2026-09-29)
+
+- A verification contract with list structure now defines its checkable items
+  by the list: a wrapped prose preamble is commentary, not criteria. The
+  dracon-log contract's parenthetical preamble had split into "items" no
+  evidence could reference, so the shield blocked two genuine approvals
+  forever. Shapeless contracts keep the every-line behavior.
+- Mechanical extraction no longer gates on prohibited commands: backticked
+  commands under negation ("no longer uses `bun run dev`") are skipped, and
+  never-exiting server-mode commands (`bun run dev`, `npm run serve`,
+  `*server.py`, …) are rejected at extraction instead of burning the round's
+  time budget. The AI auditor judges those items instead.
+- The detached worker's stderr capture accumulates instead of last-chunk-wins
+  and strips control characters, so a trailing BEL flush can no longer
+  overwrite the real failure — the 90+ field errors recorded as `error: BEL`
+  will carry their true cause next time
+  (`scripts/auditor-stderr-diagnostic.mjs`).
 
 ### Audit pass 2026-09-28 (findings + fixes in this section's range)
 
