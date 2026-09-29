@@ -14,6 +14,7 @@ import { constants as fsConstants, readdirSync, readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { buildAuditorPiSpawnSpec, renameWithWindowsRetry } from "./goal-auditor-launch.mjs";
+import { accumulateStderrDiagnostic } from "./auditor-stderr-diagnostic.mjs";
 
 const PROTOCOL_VERSION = 1;
 // Power-oriented auditor mode: bash is intentionally available so the model
@@ -1157,8 +1158,9 @@ async function main() {
     });
 
     pi.stderr.on("data", (chunk) => {
-      const text = String(chunk).trim();
-      if (text) streamError = text.slice(-500);
+      // Accumulate, never last-chunk-wins: a trailing lone BEL flush used to
+      // overwrite the real failure with error BEL (90+ field audit errors).
+      streamError = accumulateStderrDiagnostic(streamError, chunk);
     });
     const handlePiStreamError = (stream, error) => {
       if (finalized) return;
