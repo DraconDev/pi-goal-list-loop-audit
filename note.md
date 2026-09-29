@@ -2,31 +2,7 @@
 
 # Next
 
-##
-/home/dracon/Pictures/Screenshots/Screenshot_20260925_004412.png 
-this is different cause in this case there is nothing for me
- to do just waiting for quota on the music model so this is 
-closer to a monitoring situ
-
-##
-are we progressing
-looks frozen
-/home/dracon/Pictures/Screenshots/Screenshot_20260929_120722.png
-
-##
-/home/dracon/Pictures/Screenshots/Screenshot_20260928_132645-1.png
-who owns this ui us or the subagents plugin
-
-## respec
-to refine the respec idea, we can start respect with a big draft 
-
-also respec is not frozen, anything that is not a rule is updated 
-
 # later
-
-##
-i wonder if we cut the question reliance and instead we jsut make a detailed free flow answer 
-that is less arbitrary and we have most space for drawing too what do you think
 
 ##
 improve control ui ?
