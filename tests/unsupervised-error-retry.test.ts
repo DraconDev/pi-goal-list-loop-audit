@@ -170,11 +170,27 @@ test("hinted quota sleeps until the provider reset; hintless quota ladders", asy
 });
 
 test("an active goal owns error turns — the unsupervised lane stays silent", async () => {
+  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ autoResume: true }));
   const ctx = await boot({ goal: seedGoal({ status: "active", objective: "supervised work — done when done" }) });
   __testOnlySetUnsupervisedErrorRetryDelay(20);
   await pi.fire("agent_end", errTurn("Provider returned an empty response"), ctx);
   await tick(150);
   assert.ok(!ledger().some((e) => e.type.startsWith("unsupervised_error_retry_")), "supervised sessions never touch this lane");
+  assert.equal(sentRetries().length, 0);
+});
+
+test("a load-held session refuses instead of promising a retry it cannot send", async () => {
+  // Without autoResume the seeded goal loads load-held: supervisorPaused()
+  // covers the hold, so scheduling refuses rather than notifying
+  // "retrying automatically" and standing down at fire time.
+  const ctx = await boot({ goal: seedGoal({ status: "active", objective: "held work — done when done" }) });
+  __testOnlySetUnsupervisedErrorRetryDelay(20);
+  await pi.fire("agent_end", errTurn("Provider returned an empty response"), ctx);
+  const refused = ledger().filter((e) => e.type === "unsupervised_error_retry_refused").at(-1);
+  assert.equal(refused?.value.reason, "supervisor-paused");
+  assert.ok(!ledger().some((e) => e.type === "unsupervised_error_retry_scheduled"));
+  assert.ok(ctx.ui.matching("retrying automatically").length === 0, "no promise the hold cannot keep");
+  await tick(150);
   assert.equal(sentRetries().length, 0);
 });
 
