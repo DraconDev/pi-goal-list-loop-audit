@@ -18,10 +18,11 @@ import * as path from "node:path";
 
 import { resolveAuditorModel } from "../extensions/loops/goal-settings-ui.ts";
 
-// Field 2026-09-29: this file used `cwd: process.cwd()` with ledger recording
-// on, so every suite run appended ~13 model_fallback_select events (including
-// the ghost/nope-9000 fixture ref) to the repo's real .pi-glla/active.jsonl.
-// Resolution is cwd-independent; tests use a throwaway dir.
+// Field 2026-09-29: this file pointed the mock ctx at the repo root with
+// ledger recording on, so every suite run appended ~13 model_fallback_select
+// events (including the ghost/nope-9000 fixture ref) to the real
+// .pi-glla/active.jsonl. Resolution is cwd-independent; tests use a
+// throwaway dir.
 function scratchCwd(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "glla-ladder-"));
 }
