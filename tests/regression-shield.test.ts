@@ -36,6 +36,52 @@ test("contractItems: drops empty lines", () => {
   assert.deepEqual(items, ["one", "two"]);
 });
 
+// dracon-log field bug (2026-09-29): a wrapped parenthetical preamble above a
+// numbered contract split into "items" no evidence could ever reference, so
+// the shield blocked two genuine approvals forever. A contract with list
+// structure defines its items by the list; surrounding prose is commentary.
+const PREAMBLE_CONTRACT = [
+  "(Contract edited only to make its commands mechanically runnable and literally",
+  "true, and to stop pinning a line number that moves whenever the README grows.",
+  "Every criterion below is otherwise the original, unchanged. 1: the truncation",
+  "flag is spelled `tail -n 40` so the check can execute. 3: the original",
+  "`[ ! -e $D ]` can never hold because `mktemp -d` has already created `$D`, so",
+  '"creates nothing" is asserted as what it means: the data directory is still',
+  "empty. 7: the paragraph is located by its `## Product boundaries` heading",
+  "instead of a line number, which drifted as the README grew.)",
+  "",
+  "1. `cargo test 2>&1 | tail -n 40` → 0 failed across every target.",
+  "2. `cargo test --test scheduler` → green on a bounded fake clock.",
+].join("\n");
+
+test("contractItems: skips wrapped prose preamble in list-shaped contracts", () => {
+  const items = contractItems(PREAMBLE_CONTRACT);
+  assert.deepEqual(items, [
+    "`cargo test 2>&1 | tail -n 40` → 0 failed across every target.",
+    "`cargo test --test scheduler` → green on a bounded fake clock.",
+  ]);
+});
+
+test("contractItems: shapeless contracts keep every-line behavior", () => {
+  const items = contractItems("First do the thing\nThen verify the other");
+  assert.deepEqual(items, ["First do the thing", "Then verify the other"]);
+});
+
+test("passes: preamble fragments are not required in evidence", () => {
+  const report = [
+    "<evidence>",
+    "Item: `cargo test 2>&1 | tail -n 40` → 0 failed across every target.",
+    "Output: test result: ok. 200 passed; 0 failed",
+    "Item: `cargo test --test scheduler` → green on a bounded fake clock.",
+    "Output: test result: ok. 14 passed; 0 failed",
+    "</evidence>",
+    "<approved/>",
+  ].join("\n");
+  const r = checkRegressionShield(report, PREAMBLE_CONTRACT);
+  assert.equal(r.passed, true);
+  assert.deepEqual(r.missingItems, []);
+});
+
 // ---- checkRegressionShield ----
 
 const CONTRACT = "Done when:\n- curl returns 200 from /healthz\n- npm test exits 0";
