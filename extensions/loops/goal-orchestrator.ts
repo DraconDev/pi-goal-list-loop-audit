@@ -1406,7 +1406,10 @@ function archiveCurrentGoal(
       postCompletionSettleUntil = 0;
     }
     // v0.26.0: the queue just EMPTIED on a completion → list-complete.
-    if (!advanced && !isListAuditCollect) {
+    // v0.38.105 (field 2026-09-29, dracon-system): a REFUSED activation is
+    // not an empty queue — without the length check a blocked head (repair
+    // promoted, retry exhausted) cried "List complete" with items waiting.
+    if (!advanced && !isListAuditCollect && listQueue().length === 0) {
       fireReviewer(ctx, { kind: "list", goalId: goal.id, objective: goal.objective, terminal: "goal-complete" });
       // v0.29.0: the well ran dry — point at the project-audit loop. A
       // suggestion, not an action: consent, never auto-start (v0.28.28).
