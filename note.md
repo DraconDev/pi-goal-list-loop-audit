@@ -4,12 +4,9 @@
 
 ##
 /home/dracon/Pictures/Screenshots/Screenshot_20260925_004412.png 
-this is different cause in this case there is nothing for me to do just waiting for quota on the music model so this is closer to a monitoring situ
-
-##
-improve control ui ?
-
-# later
+this is different cause in this case there is nothing for me
+ to do just waiting for quota on the music model so this is 
+closer to a monitoring situ
 
 ##
 are we progressing
@@ -24,6 +21,11 @@ who owns this ui us or the subagents plugin
 to refine the respec idea, we can start respect with a big draft 
 
 also respec is not frozen, anything that is not a rule is updated 
+
+# later
+
+##
+improve control ui ?
 
 # Testing
 
