@@ -1,8 +1,9 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 
-import { buildWidgetLines, truncateCells, truncateObjective } from "../extensions/goal-loop-display.ts";
+import { buildLoadHoldRecoveryLines, buildWidgetLines, selectLoadHoldRecoverySummary, truncateCells, truncateObjective } from "../extensions/goal-loop-display.ts";
 import type { Goal, State } from "../extensions/goal-loop-core.ts";
+import type { LoopState } from "../extensions/goal-loop-forever.ts";
 
 const NOW = Date.parse("2026-08-17T20:10:00Z");
 

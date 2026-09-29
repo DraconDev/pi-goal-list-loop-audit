@@ -656,6 +656,31 @@ export interface LoadHoldRecoverySummary {
   /** v0.38.10: emergency compactor handoff excerpt — appended when present. */
   briefExcerpt?: string;
 }
+/** v0.38.105: loop-aware field selection for the load-hold recovery banner.
+ * Field 2026-09-29 (monster-minecraft): a loop-only state painted
+ * "(no objective recorded)" after a model switch + reload — the old inline
+ * selection ignored state.loop, so the user read a live loop as a lost
+ * objective. The loop target is the objective; loop progress is the next
+ * line. Pure — covered in tests/goal-loop-display.test.ts. */
+export function selectLoadHoldRecoverySummary(
+  state: Pick<State, "goal" | "list" | "loop">,
+): LoadHoldRecoverySummary & { pendingCount: number } {
+  const tasks = state.goal?.taskList?.tasks ?? [];
+  const pendingTasks = tasks.filter((t) => t.status === "pending" || t.status === "in_progress");
+  const listCount = state.list?.length ?? 0;
+  return {
+    objective: state.goal?.objective
+      ?? (listCount > 0 ? `${listCount} queued list items` : state.loop?.target ?? null),
+    status: state.goal?.status ?? (state.loop ? "loop" : "held"),
+    nextTask: pendingTasks[0]?.title ?? (state.loop ? `loop iteration ${state.loop.iteration}` : null),
+    tally: auditorVerdictTally(state.goal?.auditHistory),
+    resumeCommand: state.goal
+      ? (state.goal.policy === "list" ? "/list resume" : "/goal resume")
+      : listCount > 0 ? "/list resume" : state.loop ? "/loop resume" : "/goal resume",
+    listWaiting: state.goal?.policy === "list" ? undefined : listCount,
+    pendingCount: pendingTasks.length,
+  };
+}
 export function buildLoadHoldRecoveryLines(s: LoadHoldRecoverySummary, now = Date.now()): string[] {
   const lines = [
     `glla: recovered from disk — "${truncate((s.objective ?? "").trim() || "(no objective recorded)", 120)}" (${s.status ?? "held"})`,

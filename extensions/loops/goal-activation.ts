@@ -257,7 +257,7 @@ import {
   textFingerprint,
   pushCapped as pushRepetitionCapped,
 } from "../goal-loop-repetition.js";
-import { auditorVerdictTally, buildLoadHoldRecoveryLines, buildStatusText, buildWidgetLines, type AuditDisplayProgress } from "../goal-loop-display.js";
+import { buildLoadHoldRecoveryLines, buildStatusText, buildWidgetLines, selectLoadHoldRecoverySummary, type AuditDisplayProgress } from "../goal-loop-display.js";
 import { compactLoopCompletionSummary } from "../completion-summary.js";
 import {
   defaultAgentDir,
@@ -2255,19 +2255,12 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
         // empty in exactly the sessions that need this, so nothing here
         // may depend on in-memory progress. Fires with the fresh hold
         // (guarded above), never as a timer re-arm.
-        const tasks = state.goal?.taskList?.tasks ?? [];
-        const pendingTasks = tasks.filter((t) => t.status === "pending" || t.status === "in_progress");
-        const tally = auditorVerdictTally(state.goal?.auditHistory);
-        const resumeCommand = state.goal
-          ? (state.goal.policy === "list" ? "/list resume" : "/goal resume")
-          : (state.list?.length ?? 0) > 0 ? "/list resume" : state.loop ? "/loop resume" : "/goal resume";
+        // v0.38.105: field selection is loop-aware and unit-pinned in
+        // selectLoadHoldRecoverySummary — a loop-only state used to paint
+        // "(no objective recorded)" here.
+        const { pendingCount, ...summary } = selectLoadHoldRecoverySummary(state);
         const banner = buildLoadHoldRecoveryLines({
-          objective: state.goal?.objective ?? ((state.list?.length ?? 0) > 0 ? `${state.list!.length} queued list items` : null),
-          status: state.goal?.status ?? (state.loop ? "loop" : "held"),
-          nextTask: pendingTasks[0]?.title ?? null,
-          tally,
-          resumeCommand,
-          listWaiting: state.goal?.policy === "list" ? undefined : state.list?.length ?? 0,
+          ...summary,
           // v0.38.10: the emergency compactor's handoff, when one exists —
           // the /new + resume path lands warm instead of cold.
           briefExcerpt: readHandoffBriefExcerpt(ctx.cwd),
@@ -2275,9 +2268,10 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
         appendLedger(ctx.cwd, "load_hold_recovery_banner", {
           goalId: state.goal?.id ?? null,
           status: state.goal?.status ?? null,
-          pendingTasks: pendingTasks.length,
-          totalVerdicts: tally.total,
-          disapprovals: tally.disapprovals,
+          pendingTasks: pendingCount,
+          loopIteration: state.loop?.iteration ?? null,
+          totalVerdicts: summary.tally.total,
+          disapprovals: summary.tally.disapprovals,
         });
         ctx.ui.notify(banner.join("\n"), "info");
       }
