@@ -168,7 +168,7 @@ export function parseAuditorVerdict(output: string): { approved: boolean; disapp
  * candidate, so an affirmed "passes ..." tail is not vetoed by its own
  * wording ("npm test passes without warnings"). */
 const MECHANICAL_NEGATION = /\b(?:no\s+longer|never|not|cannot|uses?\s+no|avoids?|removes?|drops?|prohibits?|forbids?|bans?|without|instead\sof|must\s+not|does?\s+not)\b|n't\b/i;
-const MECHANICAL_NEGATION_TRAILING = /\b(?:is|are|was|were)\s+not\b|\b(?:is|are)\s+never\b|\bno\s+longer\b/i;
+const MECHANICAL_NEGATION_TRAILING = /\b(?:is|are|was|were)\s+(?:not|never|no\s+longer)\b/i;
 const MECHANICAL_NEGATION_WINDOW = 48;
 const MECHANICAL_NEGATION_TRAILING_WINDOW = 40;
 

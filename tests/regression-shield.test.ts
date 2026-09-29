@@ -462,6 +462,7 @@ test("extractMechanicalCheckCommands: skips commands under negation", async () =
   assert.deepEqual(extractMechanicalCheckCommands("Run `npm test` and ensure 0 failures"), ["npm test"]);
   assert.deepEqual(extractMechanicalCheckCommands("`tsc --noEmit` passes with zero errors"), ["tsc --noEmit"]);
   assert.deepEqual(extractMechanicalCheckCommands("`npm test` passes cleanly"), ["npm test"]);
+  assert.deepEqual(extractMechanicalCheckCommands("`npm test` passes, no longer flaky"), ["npm test"]);
   assert.deepEqual(extractMechanicalCheckCommands("npm test passes without warnings"), ["npm test"]);
 });
 
