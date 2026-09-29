@@ -460,7 +460,7 @@ test("extractMechanicalCheckCommands: rejects never-exiting server commands", as
   const { extractMechanicalCheckCommands } = await import("../extensions/goal-loop-shield.ts");
   assert.deepEqual(extractMechanicalCheckCommands("`bun run dev` starts the dev server"), []);
   assert.deepEqual(extractMechanicalCheckCommands("npm run serve passes"), []);
-  assert.deepEqual(extractMechanicalCheckCommands("bun run watch stays green"), []);
+  assert.deepEqual(extractMechanicalCheckCommands("`bun run watch` stays green"), []);
   assert.deepEqual(extractMechanicalCheckCommands("`python3 server.py` serves the API"), []);
   // One-shot scripts are unaffected.
   assert.deepEqual(extractMechanicalCheckCommands("bun run build passes"), ["bun run build"]);
