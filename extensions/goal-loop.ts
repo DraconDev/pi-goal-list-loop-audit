@@ -1571,14 +1571,24 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     // bounds exist on /loop start for whoever wants them.
     const specs = resolveSpecFiles(ctx.cwd);
     if (specs.length === 0) {
-      // No spec → the target is undetermined; grill instead of dead-ending
-      // on an error (v0.24.4).
-      ctx.ui.notify("No SPEC.md / spec.md in the project root — drafting the loop target with you (or bootstrap a spec first).", "info");
-      await startDrafting(
-        ctx,
-        "loop",
-        "reconcile the codebase against the project spec — but NO SPEC.md / spec.md exists in the root. Grill the user: should the first work be bootstrapping a SPEC.md from the current code (then reconcile against it), or is the reconciliation target better stated in prose? Challenge vague answers.",
-      );
+      // v0.38.105 (note.md Next: respec refinement): no spec → start with
+      // the big draft, no grill. The loop's phase 1 writes the comprehensive
+      // SPEC.md from the current code, then reconciles against it. specFile
+      // points at the canonical name so drift/checkbox tracking attaches
+      // the moment the draft lands (a missing file hashes null and seeds
+      // silently — no false external-drift event).
+      const specPath = join(ctx.cwd, RESPEC_SPEC_CANDIDATES[0]!);
+      ctx.ui.notify("No SPEC.md / spec.md in the project root — starting with the big draft: the loop writes the comprehensive SPEC.md first, then reconciles against it.", "info");
+      await startLoopFromConfig(ctx, {
+        target: respecTarget(path.basename(specPath), { bootstrapping: true }),
+        measureCmd: "",
+        direction: undefined,
+        plateauWindow: LOOP_DEFAULTS.plateauWindow,
+        maxIterations: 0,
+        branch: false,
+        force: false,
+        specFile: specPath,
+      });
       return;
     }
     let specPath = specs[0]!;
