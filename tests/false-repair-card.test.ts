@@ -123,9 +123,12 @@ test("behavioral: a legacy empty-objective item with NO contract still takes the
   await pi.command("list", "next", ctx);
   await tick(80);
   const after = readState(cwd);
-  assert.equal(after.goal, null, "nothing activated");
-  assert.equal(after.list?.[0]?.objective, "Repair the blocked list item from saved intent", "the true broken-objective path fires");
+  // v0.38.105: the true repair path still fires, but the safe repair now
+  // auto-activates on the same command instead of idling the queue.
+  assert.equal(after.goal?.objective, "Repair the blocked list item from saved intent", "the repair auto-activates");
+  assert.equal(after.list?.[0]?.objective, "", "the broken original stays queued behind the repair");
   assert.match(ledger(cwd), /"faulty_objective_list_activation_blocked"/);
+  assert.match(ledger(cwd), /"faulty_objective_repair_auto_activate"/);
 });
 
 test("behavioral: a fresh batch item written from the field text activates directly — the writer fix end-to-end", async () => {
