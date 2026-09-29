@@ -1,6 +1,3 @@
-/gl//gl/ga<0;18;11M# Prio
-/gl//gl/ga<0;18;11M# Prio
-
 # Now
 
 # Next

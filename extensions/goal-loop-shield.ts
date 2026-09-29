@@ -29,15 +29,19 @@ export function contractItems(contract: string): string[] {
   const stripped = contract
     .split("\n")
     .map((l) => l.trim())
-    .map((l) => l.replace(/^(?:done when|verify|verified when|verification|done)\s*:\s*/i, ""));
+    .map((l) => {
+      const m = /^(?:done when|verify|verified when|verification|done)\s*:\s*/i.exec(l);
+      return { text: m ? l.slice(m[0].length) : l, criterion: m !== null };
+    });
   // A contract with list structure defines its checkable items by the list:
   // surrounding prose (a wrapped parenthetical preamble, a trailer) is
   // commentary, not criteria (dracon-log field bug 2026-09-29: preamble
   // fragments became unmatchable "items" and the shield blocked genuine
-  // approvals forever). Shapeless contracts keep the old every-line behavior.
-  const hasListItems = stripped.some((l) => LIST_ITEM_PREFIX.test(l));
+  // approvals forever). A done-when line is itself a criterion, not prose.
+  // Shapeless contracts keep the old every-line behavior.
+  const hasListItems = stripped.some((l) => LIST_ITEM_PREFIX.test(l.text));
   return stripped
-    .map((l) => ({ text: l.replace(/^[-*•]\s+/, "").replace(/^\d+[.)]\s+/, ""), listed: LIST_ITEM_PREFIX.test(l) }))
+    .map((l) => ({ text: l.text.replace(/^[-*•]\s+/, "").replace(/^\d+[.)]\s+/, ""), listed: l.criterion || LIST_ITEM_PREFIX.test(l.text) }))
     .filter((l) => l.text.length > 0)
     .filter((l) => !hasListItems || l.listed)
     .map((l) => l.text)
@@ -159,22 +163,35 @@ export function parseAuditorVerdict(output: string): { approved: boolean; disapp
 
 /** A command under negation ("no longer uses `bun run dev`") is prohibited or
  * illustrative, not an affirmed gate. Checked in the text immediately before
- * a backticked command, or anywhere in a bare command-first item. */
-const MECHANICAL_NEGATION = /\b(?:no\s+longer|never|not|n't|without|instead\sof|must\s+not|does?\s+not|uses?\s+no|avoids?|removes?|drops?|prohibits?|forbids?|bans?)\b/i;
+ * a backticked command; the trailing set covers negation after the command
+ * ("`npm test` is not run in CI"). Bare items test the qualifier-stripped
+ * candidate, so an affirmed "passes ..." tail is not vetoed by its own
+ * wording ("npm test passes without warnings"). */
+const MECHANICAL_NEGATION = /\b(?:no\s+longer|never|not|cannot|uses?\s+no|avoids?|removes?|drops?|prohibits?|forbids?|bans?|without|instead\sof|must\s+not|does?\s+not)\b|n't\b/i;
+const MECHANICAL_NEGATION_TRAILING = /\b(?:is|are|was|were)\s+not\b|\b(?:is|are)\s+never\b|\bno\s+longer\b/i;
 const MECHANICAL_NEGATION_WINDOW = 48;
+const MECHANICAL_NEGATION_TRAILING_WINDOW = 40;
 
 /** Run-script names that never exit by convention (dev servers, watchers).
  * An exit-0 gate on one of these can only burn the round's time budget, so
  * extraction rejects them and the AI auditor judges server behavior instead. */
-const MECHANICAL_SERVER_RUN_SCRIPT = /^(?:npm|bun|pnpm|yarn)\s+run\s+(?:dev|serve|watch|daemon|preview|start)\b/i;
+const MECHANICAL_SERVER_RUN_SCRIPT = /^(?:(?:npm|bun|pnpm|yarn)\s+run\s+|yarn\s+)(?:dev|serve|watch|daemon|preview|start)\b/i;
 const MECHANICAL_SERVER_SCRIPT_NAME = /(?:^|[._-])(?:server|serve|daemon|watch)(?:[._-]|$)/i;
+/** `python -m` modules that never exit (denylist — `-m unittest`, `-m pytest`
+ * and friends are legitimate one-shot gates). */
+const MECHANICAL_SERVER_PYTHON_MODULES = new Set(["http.server", "SimpleHTTPServer"]);
 
 function isServerModeMechanicalCommand(part: string): boolean {
   if (MECHANICAL_SERVER_RUN_SCRIPT.test(part)) return true;
-  const pythonScript = /^python3?\s+(\S+)/i.exec(part)?.[1] ?? "";
-  const base = pythonScript.split("/").at(-1) ?? "";
-  if (base && MECHANICAL_SERVER_SCRIPT_NAME.test(base)) return true;
-  return false;
+  if (!/^python3?\s+/i.test(part)) return false;
+  // Skip interpreter flags (`-u`, `-W ...`) to the script or `-m` module.
+  const tokens = part.trim().split(/\s+/).slice(1);
+  let i = 0;
+  while (i < tokens.length && tokens[i]!.startsWith("-") && tokens[i] !== "-m" && tokens[i] !== "-c") i++;
+  if (tokens[i] === "-m") return MECHANICAL_SERVER_PYTHON_MODULES.has(tokens[i + 1] ?? "");
+  if (tokens[i] === "-c") return false;
+  const base = (tokens[i] ?? "").split("/").at(-1) ?? "";
+  return base !== "" && MECHANICAL_SERVER_SCRIPT_NAME.test(base);
 }
 
 /**
@@ -192,6 +209,8 @@ export function extractMechanicalCheckCommands(contract: string): string[] {
       for (const m of backtickMatches) {
         const before = item.slice(Math.max(0, (m.index ?? 0) - MECHANICAL_NEGATION_WINDOW), m.index ?? 0);
         if (MECHANICAL_NEGATION.test(before)) continue;
+        const after = item.slice((m.index ?? 0) + m[0]!.length, (m.index ?? 0) + m[0]!.length + MECHANICAL_NEGATION_TRAILING_WINDOW);
+        if (MECHANICAL_NEGATION_TRAILING.test(after)) continue;
         const inner = m[1]!.trim();
         const parts = inner.split(/\s*&&\s*|\s*;\s*/);
         for (let part of parts) {
@@ -204,9 +223,9 @@ export function extractMechanicalCheckCommands(contract: string): string[] {
       }
       continue;
     }
-    if (MECHANICAL_NEGATION.test(item)) continue;
     let candidate = item.trim();
     candidate = candidate.replace(/\s+(?:passes(?:\s+cleanly|\s+with\s+zero\s+errors)?|exits\s+0|returns\s+0|cleanly|completes(?:\s+successfully)?|succeeds(?:\s+cleanly)?|successfully).*$/i, "").trim();
+    if (MECHANICAL_NEGATION.test(candidate)) continue;
     if (/^(?:npm\s+(?:test|run\s+[\w:-]+)|bun\s+(?:test|run\s+[\w:-]+)|pnpm\s+(?:test|run\s+[\w:-]+)|yarn\s+(?:test|[\w:-]+)|tsc\b|cargo\s+(?:test|check|build)|pytest\b|python3?\s+-m\s+unittest|python3?\s+[^\s]+|go\s+test|vitest\b|jest\b|make\s+test|git\s+diff|test\s+-[a-z])/i.test(candidate)) {
       if (!isPlausibleBareMechanicalCandidate(candidate)) continue;
       const parts = candidate.split(/\s*&&\s*|\s*;\s*/);
