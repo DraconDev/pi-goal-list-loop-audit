@@ -52,6 +52,7 @@ import {
   loopFinishStopReason,
   parseLoopStartArgs,
   parseMetric,
+  RESPEC_SPEC_CANDIDATES,
   resolveSpecFiles,
   respecTarget,
   specFileHash,
@@ -1577,7 +1578,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       // points at the canonical name so drift/checkbox tracking attaches
       // the moment the draft lands (a missing file hashes null and seeds
       // silently — no false external-drift event).
-      const specPath = join(ctx.cwd, RESPEC_SPEC_CANDIDATES[0]!);
+      const specPath = path.join(ctx.cwd, RESPEC_SPEC_CANDIDATES[0]!);
       ctx.ui.notify("No SPEC.md / spec.md in the project root — starting with the big draft: the loop writes the comprehensive SPEC.md first, then reconciles against it.", "info");
       await startLoopFromConfig(ctx, {
         target: respecTarget(path.basename(specPath), { bootstrapping: true }),
