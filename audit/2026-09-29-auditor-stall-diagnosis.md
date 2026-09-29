@@ -41,4 +41,16 @@ Repair direction: preserve structured RPC errors separately from stderr, strip t
 
 ## Scope and validation
 
+## Follow-up: live processes and main-session transcripts at 02:55–02:57 local
+
+Earlier approvals alone do not establish present liveness. Follow-up inspection read the owning Pi session transcripts and `/proc` process trees:
+
+- **eve / Muse:** the next goal's executor invoked `timeout --kill-after=5s 3200s bash scripts/verify.sh 2>&1 | tail -12` at 02:45:08. At 02:56 the live descendants were cargo, an eve-soak test executable, and fixture-good. The outer deadline is 53m20s and tail suppresses intermediate output. This explains the quiet main session; one process snapshot cannot establish whether the soak test itself is hung. Its prior completion auditor had settled.
+- **polis:** after its prior approval, the session switched to opencode-go/space-bunny-free and started a new survey. It invoked `bg_wait` with `timeoutMs: 900000` at 02:44:05. At 02:56, one scout had finished at 02:52:28, two had recent tool results (02:56:31 and 02:56:40), and another had a live find process. There was real scout work behind the waiting parent.
+- **darklord / Muse:** the executor wrote a feedback-copy test, completed tasks at 02:53:23, received a build/browser result at 02:55:55, and issued another investigation call with a result at 02:56:13. It was actively working on its next goal.
+- **dracon-log / MiniMax:** the current detached auditor had a live cargo build in `/tmp/audit-clone-dracon-log`, with gcc/cc1/rustc descendants. The current quiet interval included real mutation-copy compilation; the earlier shield rejection still caused unnecessary repeat auditing.
+- **football-forever / opencode-go Space Bunny:** the detached auditor was running `timeout 1800 bun test --timeout 30000 src/lib scripts 2>&1 | tail -12`, with a live bun child. This route also performs real work; it is not equivalent to the repeatedly failing OpenRouter route.
+
+Conclusion: the symptoms are not exclusive to Space Bunny and do not show a universal auditor deadlock. They include repeated OpenRouter attempt failures, a GLLA shield loop on MiniMax, silent long verification commands, and a parent waiting for active scouts. External command/scout behavior is observed only; no changes to those projects, Pi, or other plugins were made.
+
 This investigation read existing evidence and source; it did not run project tests, modify goal state, switch live models, restart sessions, or alter implementation. Repairs to preamble parsing and error retention belong to GLLA. Provider/Pi behavior remains outside this repository's repair scope.
