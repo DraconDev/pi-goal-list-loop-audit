@@ -215,3 +215,53 @@ test("v0.38.110: objective truncation never splits a surrogate pair", () => {
   // byte-identical to before this change.
   assert.equal(truncateCells("short 🎨 objective", 100), "short 🎨 objective");
 });
+
+function loopOnlyState(): State {
+  const loop: LoopState = {
+    target: "Mean sd of all 16 block tiles",
+    iteration: 1,
+    maxIterations: 100,
+    plateauWindow: 8,
+    stallCount: 0,
+    bestValue: 25.0125,
+    lastValue: 36.4125,
+    active: false,
+    history: [],
+    startedAt: "2026-09-29T11:50:23.573Z",
+  };
+  return { goal: null, list: [], loop };
+}
+
+// v0.38.105, field 2026-09-29 (monster-minecraft): a loop-only state painted
+// "(no objective recorded)" in the load-hold recovery banner after a model
+// switch + reload — the selector ignored state.loop, so a live loop read as
+// a lost objective. The loop target is the objective now.
+test("v0.38.105: recovery banner shows the loop target for loop-only state", () => {
+  const { pendingCount, ...summary } = selectLoadHoldRecoverySummary(loopOnlyState());
+  assert.equal(summary.objective, "Mean sd of all 16 block tiles");
+  assert.equal(summary.status, "loop");
+  assert.equal(summary.nextTask, "loop iteration 1");
+  assert.equal(summary.resumeCommand, "/loop resume");
+  assert.equal(pendingCount, 0);
+  const lines = buildLoadHoldRecoveryLines(summary);
+  assert.ok(lines[0].includes("Mean sd of all 16 block tiles"), `banner lost the loop target: ${lines[0]}`);
+  assert.ok(!lines[0].includes("(no objective recorded)"), `banner claims no objective: ${lines[0]}`);
+});
+
+// The goal/list paths are byte-identical to the old inline selection.
+test("v0.38.105: recovery selector preserves goal and list precedence", () => {
+  const withGoal = selectLoadHoldRecoverySummary({ goal: goal(), list: [] });
+  assert.equal(withGoal.objective, "Show model provenance on the active goal");
+  assert.equal(withGoal.status, "active");
+  assert.equal(withGoal.resumeCommand, "/list resume");
+  const withList = selectLoadHoldRecoverySummary({
+    goal: null,
+    list: [{ objective: "a" } as never, { objective: "b" } as never],
+  });
+  assert.equal(withList.objective, "2 queued list items");
+  assert.equal(withList.resumeCommand, "/list resume");
+  const empty = selectLoadHoldRecoverySummary({ goal: null, list: [] });
+  assert.equal(empty.objective, null);
+  assert.equal(empty.status, "held");
+  assert.equal(empty.nextTask, null);
+});
