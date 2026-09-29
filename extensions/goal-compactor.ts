@@ -103,10 +103,12 @@ export function shouldCompactBetweenTasks(input: {
  *
  * The handoff brief still goes first (best effort — the compaction must not
  * depend on a spare model being available for the brief). One firing per
- * episode via the shared fired marker; below-threshold boundaries re-arm.
- * Post-compact resume (session_compact → refire) owns the next turn, so the
- * caller skips its eager continuation when this returns true. Returns false
- * when nothing fired (or when this host has no compact trigger). */
+ * episode via the boundary's OWN marker with hysteresis (fire at the
+ * threshold, re-arm below half of it); the starvation path's shared brief
+ * marker is never touched here. Post-compact resume (session_compact →
+ * refire) owns the next turn, so the caller skips its eager continuation
+ * when this returns true. Returns false when nothing fired (or when this
+ * host has no compact trigger). */
 export async function maybeCompactTranscriptAtBoundary(
   ctx: Pick<ExtensionContext, "cwd" | "getContextUsage" | "compact" | "ui"> & { isIdle(): boolean; hasPendingMessages(): boolean },
   flags: { supervising: boolean; auditInFlight: boolean; paused: boolean },
@@ -129,25 +131,28 @@ export async function maybeCompactTranscriptAtBoundary(
     // An unknown count never compacts blindly.
     return false;
   }
+  if (tokens === undefined) return false;
+  const markerPath = compactorBoundaryMarkerPath(ctx.cwd);
   let alreadyFired = false;
   try {
-    alreadyFired = fs.existsSync(compactorFiredMarkerPath(ctx.cwd));
+    alreadyFired = fs.existsSync(markerPath);
   } catch {
     alreadyFired = false;
   }
-  const decision = shouldCompactBetweenTasks({ tokens, alreadyFired });
-  if (!decision.compact) {
-    // Below the threshold with a stale marker: re-arm so the next growth
-    // episode can fire again. (Unknown counts returned above.)
-    if (tokens !== undefined && tokens < GOAL_COMPACT_TOKEN_THRESHOLD) {
+  if (alreadyFired) {
+    // Hysteresis re-arm: the transcript genuinely shrank (compaction
+    // landed), so the next growth episode may fire again.
+    if (tokens < GOAL_COMPACT_TOKEN_THRESHOLD / 2) {
       try {
-        await runGoalCompactionIfDue(ctx as never, false);
+        fs.rmSync(markerPath, { force: true });
       } catch {
         // Re-arm is best effort.
       }
     }
     return false;
   }
+  const decision = shouldCompactBetweenTasks({ tokens, alreadyFired: false });
+  if (!decision.compact) return false;
   if (typeof (ctx as { compact?: unknown }).compact !== "function") {
     try {
       appendLedger(ctx.cwd, "compactor_transcript_unavailable", { tokens: Math.round(tokens ?? 0) });
@@ -155,6 +160,13 @@ export async function maybeCompactTranscriptAtBoundary(
       // Ledger best effort.
     }
     return false;
+  }
+  try {
+    fs.mkdirSync(piGlaDir(ctx.cwd), { recursive: true });
+    fs.writeFileSync(markerPath, JSON.stringify({ at: new Date().toISOString(), tokens: Math.round(tokens) }) + "\n");
+  } catch {
+    // Marker write is best effort; without it this boundary still fires
+    // once (a repeat next boundary is the only cost).
   }
   // Brief first, best effort — unawaited (the worker runs up to 3 minutes;
   // the marker claim inside already ran synchronously). The real trigger
@@ -210,6 +222,18 @@ export async function maybeCompactTranscriptAtBoundary(
     }
   }
   return true;
+}
+
+/** v0.38.105: the boundary path's own episode marker. Deliberately SEPARATE
+ * from compactor-fired.json: that marker is the starvation path's brief
+ * one-shot, and the boundary must never re-arm it (a starvation fire at
+ * 190k sits below the 200k boundary threshold — clearing it there would
+ * break the starvation one-shot the compactor-handoff tests pin). The
+ * boundary respects the shared marker only through runGoalCompactionIfDue
+ * (no double brief); its own fire/re-arm cycle lives here with hysteresis
+ * (fire at the threshold, re-arm below half of it). */
+export function compactorBoundaryMarkerPath(cwd: string): string {
+  return path.join(piGlaDir(cwd), "compactor-boundary.json");
 }
 
 export function compactorJobDir(cwd: string, attemptId: string): string {
