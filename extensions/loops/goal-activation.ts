@@ -193,7 +193,7 @@ import {
   tickLengthContinue,
   type LengthExhaustionDecision,
 } from "../length-continue.js";
-import { isSubagentProviderFailure, parseQuotaError, quotaSignal } from "../quota-retry.js";
+import { isSubagentProviderFailure, subagentQuotaEvidenceFrom } from "../quota-retry.js";
 import { captureProviderTokenUsage } from "../context-growth.js";
 import { noteOwnershipStanding, refreshOwnerHeartbeat, supersedeLiveOwnerRoot } from "../state-root-owner.js";
 import {
@@ -1476,29 +1476,21 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     if (isSubagentProviderFailure(String(event?.toolName ?? event?.name ?? ""), Boolean(event?.isError ?? event?.error), event?.output ?? event?.result ?? event?.details ?? "")) {
       const errText = typeof (event?.output ?? event?.result) === "string" ? (event?.output ?? event?.result) : JSON.stringify(event?.output ?? event?.result ?? event?.details ?? "");
       const current = currentToolContext(eventCtx);
-      const signal = quotaSignal(String(errText));
-      if (signal && state.goal && (state.goal.status === "active" || state.goal.status === "paused")) {
-        const parsed = parseQuotaError(String(errText), undefined, Date.now());
-        updateGoal({
-          subagentQuotaEvidence: {
-            signal,
-            retryAfterSec: parsed.retryAfterSec,
-            ...(parsed.resetAt ? { resetAt: parsed.resetAt } : {}),
-            at: new Date().toISOString(),
-          },
-        }, eventCtx);
+      const quotaEvidence = subagentQuotaEvidenceFrom(String(errText));
+      if (quotaEvidence && state.goal && (state.goal.status === "active" || state.goal.status === "paused")) {
+        updateGoal({ subagentQuotaEvidence: quotaEvidence }, eventCtx);
         appendLedger(eventCtx.cwd, "subagent_quota_signal", {
           goalId: state.goal.id,
-          signal,
-          retryAfterSec: parsed.retryAfterSec,
-          ...(parsed.resetAt ? { resetAt: parsed.resetAt } : {}),
+          signal: quotaEvidence.signal,
+          retryAfterSec: quotaEvidence.retryAfterSec,
+          ...(quotaEvidence.resetAt ? { resetAt: quotaEvidence.resetAt } : {}),
         });
       }
       if (current) {
         appendLedger(current.cwd, "subagent_provider_error", { error: String(errText).slice(0, 200) });
         current.ui.notify(
-          signal
-            ? `Subagent quota signal (${signal}). Parking on this provider error auto-retries at the reset window instead of waiting for manual action — keep working if any non-quota work remains, else pause and the wait re-fires on its own.`
+          quotaEvidence
+            ? `Subagent quota signal (${quotaEvidence.signal}). Parking on this provider error auto-retries at the reset window instead of waiting for manual action — keep working if any non-quota work remains, else pause and the wait re-fires on its own.`
             : "Subagent provider/runtime error. Retry the subagent, choose a configured model if needed, or do the work inline.",
           "warning",
         );

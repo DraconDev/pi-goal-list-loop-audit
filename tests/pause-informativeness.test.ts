@@ -75,7 +75,10 @@ test("pause_goal tool: structured kind/options/recommended/resumeAt persist to t
   // Source pin — the behavioral harness's runTool writes through the
   // registration ctx, not the test ctx, so a full e2e persistence assert
   // is order-fragile. The rendering half is pinned in display.test.ts.
-  assert.match(SRC, /pauseKind: p\.kind,/);
+  // v0.38.105: the kind flows through the quota reroute — unset stays
+  // unset and non-quota parks keep the requested kind verbatim.
+  assert.match(SRC, /pauseKind: effectiveKind,/);
+  assert.match(SRC, /let effectiveKind = p\.kind;/);
   assert.match(SRC, /pauseOptions: p\.kind === "decision" && p\.options && p\.options\.length > 0 \? p\.options : undefined,/);
   assert.match(SRC, /pauseRecommended: p\.kind === "decision" && p\.recommended && p\.recommended >= 1 \? Math\.floor\(p\.recommended\) : undefined,/);
   // v0.38.63 (153404): agent-authored waits are clamped to the hourly
