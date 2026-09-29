@@ -155,12 +155,6 @@ isGoalRevisionCurrent,
 // unresolved claim.
 import { settlementAllowsTerminalRender, settlementPark } from "../audit-lifecycle.js";
 import { persistClaimWorkerActivity, scheduleParkedCompletionAuditRecovery, auditorIdenticalParkProbeDelayMs, humanizeAuditorProbeCadence } from "./goal-auditor-hooks.js";
-import {
-  compactorFiredMarkerPath,
-  shouldCompactBetweenTasks,
-  GOAL_COMPACT_TOKEN_THRESHOLD,
-  runGoalCompactionIfDue,
-} from "../goal-compactor.js";
 import { dispatchAuditorAllowedExtensions } from "../auditor-extensions.js";
 import {
   applyValidatedBatch,
