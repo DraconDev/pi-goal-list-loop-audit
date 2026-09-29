@@ -13,13 +13,21 @@
 // This is the missing third path: a TOKEN count, fired BETWEEN tasks, which
 // actually compacts and writes a handoff brief.
 
-import { test } from "node:test";
+import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 
 import {
   shouldCompactBetweenTasks,
+  maybeCompactTranscriptAtBoundary,
+  compactorBoundaryMarkerPath,
+  compactorFiredMarkerPath,
   GOAL_COMPACT_TOKEN_THRESHOLD,
   PLAN_B_FALLBACK_NEED,
+  __testOnlyResetCompactor,
+  __testOnlySetSpawnWorker,
 } from "../extensions/goal-compactor.ts";
 
 test("v0.38.104 the 200k rule is a token threshold, and it is distinct from the model-size hint", () => {
@@ -63,4 +71,133 @@ test("v0.38.104 the threshold is overridable but must be positive", () => {
   assert.equal(shouldCompactBetweenTasks({ tokens: 50_000, threshold: 40_000 }).compact, true);
   assert.equal(shouldCompactBetweenTasks({ tokens: 500_000, threshold: 0 }).compact, true,
     "a non-positive override falls back to the default rather than disabling the safety net");
+});
+
+// ---- v0.38.105: the boundary fires a REAL transcript compaction ----
+//
+// Field 2026-09-29: 600-900k-token sessions never compacted. The v0.38.104
+// trigger only wrote a handoff brief and asked for a manual /new, and pi
+// auto-compaction only fires near exhaustion. The extension API owns
+// ctx.compact — the turn boundary now uses it.
+
+function mkBoundaryCwd(): string {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "glla-compact-boundary-"));
+}
+
+function boundaryCtx(cwd: string, opts: {
+  tokens?: number;
+  idle?: boolean;
+  pending?: boolean;
+  compact?: ((options?: unknown) => void) | null;
+} = {}) {
+  const compacts: unknown[] = [];
+  const notifies: string[] = [];
+  const ctx = {
+    cwd,
+    getContextUsage: opts.tokens === undefined ? undefined : () => ({ tokens: opts.tokens }),
+    isIdle: () => opts.idle ?? true,
+    hasPendingMessages: () => opts.pending ?? false,
+    ui: { notify: (message: string) => { notifies.push(message); } },
+    ...(opts.compact === null ? {} : { compact: opts.compact ?? ((options?: unknown) => { compacts.push(options); }) }),
+  };
+  return { ctx: ctx as never, compacts, notifies };
+}
+
+function ledgerTypes(cwd: string): string[] {
+  const file = path.join(cwd, ".pi-glla", "active.jsonl");
+  if (!fs.existsSync(file)) return [];
+  return fs.readFileSync(file, "utf8").split("\n").filter(Boolean)
+    .map((line) => (JSON.parse(line) as { type: string }).type);
+}
+
+// The handoff brief worker is deliberately unawaited (the transcript trigger
+// never waits on it); let it land before tmp cleanup so no write races rmSync.
+function settleBrief(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 100));
+}
+
+afterEach(() => {
+  __testOnlyResetCompactor();
+  __testOnlySetSpawnWorker(undefined);
+});
+
+const LIVE_FLAGS = { supervising: true, auditInFlight: false, paused: false };
+
+test("v0.38.105 the boundary fires ctx.compact past 200k and ledgers it", async () => {
+  const cwd = mkBoundaryCwd();
+  try {
+    __testOnlySetSpawnWorker(async () => ({ ok: true, brief: "Objective: x.\nNext task: y.\nVerdicts: none.\nWatch-outs: none." }));
+    const { ctx, compacts } = boundaryCtx(cwd, { tokens: 250_000 });
+    const fired = await maybeCompactTranscriptAtBoundary(ctx, LIVE_FLAGS);
+    assert.equal(fired, true);
+    assert.equal(compacts.length, 1, "the transcript trigger fires exactly once");
+    assert.ok(ledgerTypes(cwd).includes("compactor_transcript_firing"), "the firing is ledgered");
+    assert.ok(fs.existsSync(compactorBoundaryMarkerPath(cwd)), "the episode marker lands");
+    await settleBrief();
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test("v0.38.105 one firing per episode; a shrunk transcript re-arms", async () => {
+  const cwd = mkBoundaryCwd();
+  try {
+    __testOnlySetSpawnWorker(async () => ({ ok: true, brief: "Objective: x.\nNext task: y.\nVerdicts: none.\nWatch-outs: none." }));
+    const first = boundaryCtx(cwd, { tokens: 250_000 });
+    assert.equal(await maybeCompactTranscriptAtBoundary(first.ctx, LIVE_FLAGS), true);
+    const second = boundaryCtx(cwd, { tokens: 240_000 });
+    assert.equal(await maybeCompactTranscriptAtBoundary(second.ctx, LIVE_FLAGS), false, "no refire while still large");
+    assert.equal(second.compacts.length, 0);
+    const shrunk = boundaryCtx(cwd, { tokens: 50_000 });
+    assert.equal(await maybeCompactTranscriptAtBoundary(shrunk.ctx, LIVE_FLAGS), false, "a shrunk transcript only re-arms");
+    assert.ok(!fs.existsSync(compactorBoundaryMarkerPath(cwd)), "hysteresis cleared the marker");
+    const regrown = boundaryCtx(cwd, { tokens: 210_000 });
+    assert.equal(await maybeCompactTranscriptAtBoundary(regrown.ctx, LIVE_FLAGS), true, "the next growth episode fires again");
+    assert.equal(regrown.compacts.length, 1);
+    await settleBrief();
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test("v0.38.105 quiet boundaries: below threshold, busy, unsupervised, audit, paused, unknown, no trigger", async () => {
+  const cwd = mkBoundaryCwd();
+  try {
+    __testOnlySetSpawnWorker(async () => ({ ok: true, brief: "Objective: x.\nNext task: y.\nVerdicts: none.\nWatch-outs: none." }));
+    const cases: Array<[string, Parameters<typeof maybeCompactTranscriptAtBoundary>[1], Parameters<typeof boundaryCtx>[1]]> = [
+      ["below threshold", LIVE_FLAGS, { tokens: 150_000 }],
+      ["busy host", LIVE_FLAGS, { tokens: 250_000, idle: false }],
+      ["pending messages", LIVE_FLAGS, { tokens: 250_000, pending: true }],
+      ["nothing supervised", { supervising: false, auditInFlight: false, paused: false }, { tokens: 250_000 }],
+      ["audit in flight", { supervising: true, auditInFlight: true, paused: false }, { tokens: 250_000 }],
+      ["supervisor paused", { supervising: true, auditInFlight: false, paused: true }, { tokens: 250_000 }],
+      ["unknown tokens", LIVE_FLAGS, {}],
+      ["no compact trigger", LIVE_FLAGS, { tokens: 250_000, compact: null }],
+    ];
+    for (const [name, flags, opts] of cases) {
+      const { ctx, compacts } = boundaryCtx(cwd, opts);
+      assert.equal(await maybeCompactTranscriptAtBoundary(ctx, flags), false, name);
+      assert.equal(compacts.length, 0, `${name}: no trigger`);
+    }
+    assert.ok(!fs.existsSync(compactorBoundaryMarkerPath(cwd)), "no episode marker from quiet boundaries");
+    assert.ok(!ledgerTypes(cwd).includes("compactor_transcript_firing"), "no firing ledgered");
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test("v0.38.105 the boundary never re-arms the starvation path's brief one-shot", async () => {
+  // A starvation fire at 190k sits below the 200k boundary threshold. The
+  // boundary must not clear that marker while evaluating — doing so would
+  // break the one-shot the compactor-handoff tests pin.
+  const cwd = mkBoundaryCwd();
+  try {
+    fs.mkdirSync(path.join(cwd, ".pi-glla"), { recursive: true });
+    fs.writeFileSync(compactorFiredMarkerPath(cwd), JSON.stringify({ at: new Date().toISOString() }) + "\n");
+    const { ctx } = boundaryCtx(cwd, { tokens: 190_000 });
+    assert.equal(await maybeCompactTranscriptAtBoundary(ctx, LIVE_FLAGS), false);
+    assert.ok(fs.existsSync(compactorFiredMarkerPath(cwd)), "the starvation marker survives the boundary");
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
 });
