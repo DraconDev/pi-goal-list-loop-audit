@@ -1159,7 +1159,7 @@ async function main() {
 
     pi.stderr.on("data", (chunk) => {
       // Accumulate, never last-chunk-wins: a trailing lone BEL flush used to
-      // overwrite the real failure with error BEL (90+ field audit errors).
+      // overwrite the real failure with a lone BEL (90+ field audit errors).
       streamError = accumulateStderrDiagnostic(streamError, chunk);
     });
     const handlePiStreamError = (stream, error) => {
