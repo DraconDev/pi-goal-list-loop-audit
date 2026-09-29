@@ -212,7 +212,7 @@ export function extractMechanicalCheckCommands(contract: string): string[] {
       const parts = candidate.split(/\s*&&\s*|\s*;\s*/);
       for (let part of parts) {
         part = part.trim();
-        if (!part) continue;
+        if (!part || isServerModeMechanicalCommand(part)) continue;
         if (/^(?:npm\s+(?:test|run\s+[\w:-]+)|bun\s+(?:test|run\s+[\w:-]+)|pnpm\s+(?:test|run\s+[\w:-]+)|yarn\s+(?:test|[\w:-]+)|tsc\b|cargo\s+(?:test|check|build)|pytest\b|python3?\s+-m\s+unittest|python3?\s+[^\s]+|go\s+test|vitest\b|jest\b|make\s+test|git\s+diff|test\s+-[a-z])/i.test(part)) {
           commands.push(part);
         }
