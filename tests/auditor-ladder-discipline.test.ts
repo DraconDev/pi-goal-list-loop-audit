@@ -12,8 +12,19 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 
 import { resolveAuditorModel } from "../extensions/loops/goal-settings-ui.ts";
+
+// Field 2026-09-29: this file used `cwd: process.cwd()` with ledger recording
+// on, so every suite run appended ~13 model_fallback_select events (including
+// the ghost/nope-9000 fixture ref) to the repo's real .pi-glla/active.jsonl.
+// Resolution is cwd-independent; tests use a throwaway dir.
+function scratchCwd(): string {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "glla-ladder-"));
+}
 
 const session: any = { id: "space-bunny-alpha", provider: "openrouter", name: "space-bunny-alpha" };
 const luna: any = { id: "gpt-5.6-luna", provider: "openai-codex", name: "gpt-5.6-luna" };
@@ -29,7 +40,7 @@ function ctx(model: any = session) {
       getAvailable: () => all,
     },
     ui: { notify: () => {} },
-    cwd: process.cwd(),
+    cwd: scratchCwd(),
   } as any;
 }
 
@@ -87,7 +98,7 @@ test("v0.38.103 with no session model and nothing configured, the error stays ac
     model: undefined,
     modelRegistry: { find: () => undefined, hasConfiguredAuth: () => false, getAvailable: () => [] },
     ui: { notify: () => {} },
-    cwd: process.cwd(),
+    cwd: scratchCwd(),
   } as any;
   const r = resolveAuditorModel(bare, undefined, undefined, true);
   assert.equal(r.model, undefined);
