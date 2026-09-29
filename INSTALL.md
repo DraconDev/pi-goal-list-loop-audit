@@ -247,9 +247,11 @@ user installation you intended.
 
 ### The auditor cannot authenticate
 
-The detached auditor does not inherit extension-registered providers. Choose a
-built-in-provider model in `/glla` under Auditor settings and verify it in a
-clean directory if necessary:
+The detached auditor mirrors your session's extension packages by default, so
+an extension-provided model normally works (see Auditor model requirement
+above). If you turned **Auditor mirror session extensions** off, or the
+auditor still cannot authenticate, choose a built-in-provider model in `/glla`
+under Auditor settings and verify it in a clean directory if necessary:
 
 ```bash
 PI_CODING_AGENT_DIR=/tmp/bare-agent pi -p "say ok" --model "provider/model-id"

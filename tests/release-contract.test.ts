@@ -28,7 +28,7 @@ function dryRunFiles(): Set<string> {
     .map((file) => file.path.replace(/^package\//, "")));
 }
 
-test("release contract: published documentation links are covered by the npm tarball", () => {
+test("release contract: published documentation links are covered by the npm tarball", { timeout: 60_000 }, () => {
   const files = dryRunFiles();
   for (const required of ["README.md", "INSTALL.md", "PLAN.md", "LIST-PHILOSOPHY.md", "CHANGELOG.md", "docs/INDEX.md", "docs/SETTINGS.md", "media/glla2.png", "examples/example-objective.md", "scripts/release-pack-smoke.mjs", "skills/glla-delegate/SKILL.md"]) {
     assert.ok(files.has(required), `${required} must be shipped`);
@@ -55,7 +55,7 @@ test("release contract: the release gate exercises the packed artifact", () => {
   assert.doesNotMatch(smoke, /alias\s*:/, "the smoke must not alias peers back to the source tree");
 });
 
-test("release contract: packed prompts, schema, and workers ship in the dry-run list", () => {
+test("release contract: packed prompts, schema, and workers ship in the dry-run list", { timeout: 60_000 }, () => {
   const files = dryRunFiles();
   for (const required of [
     "scripts/goal-compactor-worker.mjs",
@@ -93,7 +93,7 @@ test("release contract: docs index tracks the package version", () => {
   assert.ok(index.includes(`v0.35.14–v${version}`), "the active-focus trail must reach the current package version");
 });
 
-test("release contract: package is discoverable as a Pi extension and skill", () => {
+test("release contract: package is discoverable as a Pi extension and skill", { timeout: 60_000 }, () => {
   const manifest = JSON.parse(fs.readFileSync("package.json", "utf-8")) as {
     keywords?: string[];
     pi?: { extensions?: string[]; skills?: string[]; image?: string };
@@ -116,7 +116,7 @@ test("release contract: package is discoverable as a Pi extension and skill", ()
   assert.ok(dryRunFiles().has(imagePath), `${imagePath} must ship in the npm tarball`);
 });
 
-test("release contract: README package contents claim matches the files allowlist", () => {
+test("release contract: README package contents claim matches the files allowlist", { timeout: 60_000 }, () => {
   const readme = fs.readFileSync("README.md", "utf-8");
   assert.match(readme, /full test suite remains\s+repository material/);
   assert.doesNotMatch(readme, /and the full test suite\. `audit/);

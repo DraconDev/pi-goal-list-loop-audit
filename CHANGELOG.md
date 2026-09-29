@@ -11,8 +11,8 @@ invented version headers.
 ### The audit cap covers every round that failed to settle the goal
 
 - The regression shield (auditor approved, evidence contract unmet) and an
-  aggressive `IMPOSIBLE(partial)` verdict both re-activate the goal without
-  disapproving it, so the v0.38.107 hard cap — which counts `disapproved`
+  aggressive `IMPOSSIBLE(partial)` verdict both re-activate the goal without
+  disapproving it, so the detached hard cap — which counts `disapproved`
   rounds — returned 0 for both and let them cycle forever. They now pause on
   the same `auditCapHard`, offering accept / resume / tweak / cancel.
 - `countTrailingUnsettledRounds` is the shared primitive: every trailing round
