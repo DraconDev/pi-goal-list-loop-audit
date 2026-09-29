@@ -142,7 +142,7 @@ import {
   transitionDispatch,
   type ContinuationDispatch,
 } from "../goal-loop-dispatch.js";
-import { readHandoffBriefExcerpt, runGoalCompactionIfDue } from "../goal-compactor.js";
+import { maybeCompactTranscriptAtBoundary, readHandoffBriefExcerpt, runGoalCompactionIfDue } from "../goal-compactor.js";
 import {
   createGoalContinuation,
   scheduleContinuation,
@@ -2981,6 +2981,20 @@ async function handleHotLengthExhaustion(
     // No wall-clock cap by design: a goal ends via completion, explicit
     // pause/cancel, the stall watchdog, the 5-consecutive-errors pause, or
     // the token guard — never via an elapsed-time cutoff.
+
+    // v0.38.105 (field 2026-09-29: 600-900k-token sessions never compacted):
+    // the turn just ended — fire a real transcript compaction when the 200k
+    // rule is due. Post-compact resume owns the next turn, so a firing
+    // boundary skips the eager continuation below.
+    try {
+      if (await maybeCompactTranscriptAtBoundary(ctx, {
+        supervising: isSupervising(),
+        auditInFlight: completionAuditInFlight,
+        paused: supervisorPaused(state),
+      })) return;
+    } catch {
+      // A compaction check never breaks the turn boundary.
+    }
 
     // v0.34.12: NOT immediately — agent_end is the blackhole boundary.
     scheduleContinuation(ctx, false, EAGER_CONTINUATION_SETTLE_MS);

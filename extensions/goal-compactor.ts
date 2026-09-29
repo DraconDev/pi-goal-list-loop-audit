@@ -92,6 +92,126 @@ export function shouldCompactBetweenTasks(input: {
   return { compact: true, reason: `between tasks at ${Math.round(tokens)} tokens (threshold ${threshold})` };
 }
 
+/** v0.38.105 (field 2026-09-29: 600-900k-token sessions never compacted):
+ * fire a REAL transcript compaction at the turn boundary.
+ *
+ * The v0.38.104 between-tasks trigger only wrote a handoff brief and asked
+ * for a manual /new — nobody runs /new mid-goal, and pi auto-compaction
+ * only fires near exhaustion (on a 1M window that is ~850k+). The extension
+ * API owns a real trigger (ctx.compact), so use it here, where the turn has
+ * ended: idle, nothing pending, no audit in flight, supervision live.
+ *
+ * The handoff brief still goes first (best effort — the compaction must not
+ * depend on a spare model being available for the brief). One firing per
+ * episode via the shared fired marker; below-threshold boundaries re-arm.
+ * Post-compact resume (session_compact → refire) owns the next turn, so the
+ * caller skips its eager continuation when this returns true. Returns false
+ * when nothing fired (or when this host has no compact trigger). */
+export async function maybeCompactTranscriptAtBoundary(
+  ctx: Pick<ExtensionContext, "cwd" | "getContextUsage" | "compact" | "ui"> & { isIdle(): boolean; hasPendingMessages(): boolean },
+  flags: { supervising: boolean; auditInFlight: boolean; paused: boolean },
+): Promise<boolean> {
+  if (!flags.supervising || flags.auditInFlight || flags.paused) return false;
+  let idle = false;
+  let pending = true;
+  try {
+    idle = ctx.isIdle();
+    pending = ctx.hasPendingMessages();
+  } catch {
+    return false;
+  }
+  if (!idle || pending) return false;
+  let tokens: number | undefined;
+  try {
+    const usage = ctx.getContextUsage?.();
+    if (usage && typeof usage.tokens === "number" && Number.isFinite(usage.tokens)) tokens = usage.tokens;
+  } catch {
+    // An unknown count never compacts blindly.
+    return false;
+  }
+  let alreadyFired = false;
+  try {
+    alreadyFired = fs.existsSync(compactorFiredMarkerPath(ctx.cwd));
+  } catch {
+    alreadyFired = false;
+  }
+  const decision = shouldCompactBetweenTasks({ tokens, alreadyFired });
+  if (!decision.compact) {
+    // Below the threshold with a stale marker: re-arm so the next growth
+    // episode can fire again. (Unknown counts returned above.)
+    if (tokens !== undefined && tokens < GOAL_COMPACT_TOKEN_THRESHOLD) {
+      try {
+        await runGoalCompactionIfDue(ctx as never, false);
+      } catch {
+        // Re-arm is best effort.
+      }
+    }
+    return false;
+  }
+  if (typeof (ctx as { compact?: unknown }).compact !== "function") {
+    try {
+      appendLedger(ctx.cwd, "compactor_transcript_unavailable", { tokens: Math.round(tokens ?? 0) });
+    } catch {
+      // Ledger best effort.
+    }
+    return false;
+  }
+  // Brief first, best effort — unawaited (the worker runs up to 3 minutes;
+  // the marker claim inside already ran synchronously). The real trigger
+  // below never waits on a spare model being available for the brief.
+  try {
+    void runGoalCompactionIfDue(ctx as never, true);
+  } catch {
+    // The brief worker is a bonus; the transcript compaction is the point.
+  }
+  try {
+    appendLedger(ctx.cwd, "compactor_transcript_firing", { tokens: Math.round(tokens ?? 0), reason: decision.reason });
+  } catch {
+    // Ledger best effort.
+  }
+  try {
+    ctx.ui.notify(
+      `glla: compacting the transcript (${decision.reason}). Work resumes automatically after compaction lands.`,
+      "info",
+    );
+  } catch {
+    // Stale ctx best effort.
+  }
+  try {
+    (ctx as ExtensionContext).compact({
+      onComplete: () => {
+        try {
+          appendLedger(ctx.cwd, "compactor_transcript_done", {});
+        } catch {
+          // Ledger best effort.
+        }
+      },
+      onError: (error) => {
+        // One attempt per episode stands (marker stays): a failing compact
+        // must not grind once per turn. The warning below is the recourse.
+        const detail = error instanceof Error ? error.message : String(error);
+        try {
+          appendLedger(ctx.cwd, "compactor_transcript_error", { error: detail.slice(0, 200) });
+        } catch {
+          // Ledger best effort.
+        }
+        try {
+          ctx.ui.notify(`glla: automatic transcript compaction failed (${detail.slice(0, 160)}). Run /compact manually, then resume.`, "warning");
+        } catch {
+          // Stale ctx best effort.
+        }
+      },
+    });
+  } catch (error) {
+    try {
+      appendLedger(ctx.cwd, "compactor_transcript_error", { error: `throw: ${String(error).slice(0, 160)}` });
+    } catch {
+      // Ledger best effort.
+    }
+  }
+  return true;
+}
+
 export function compactorJobDir(cwd: string, attemptId: string): string {
   return path.join(piGlaDir(cwd), "compactor-jobs", attemptId);
 }
