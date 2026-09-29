@@ -15,6 +15,11 @@ improve control ui ?
 # later
 
 ##
+are we progressing
+looks frozen
+/home/dracon/Pictures/Screenshots/Screenshot_20260929_120722.png
+
+##
 /home/dracon/Pictures/Screenshots/Screenshot_20260928_132645-1.png
 who owns this ui us or the subagents plugin
 
