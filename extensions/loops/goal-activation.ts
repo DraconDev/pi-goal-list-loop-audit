@@ -193,12 +193,13 @@ import {
   tickLengthContinue,
   type LengthExhaustionDecision,
 } from "../length-continue.js";
-import { isSubagentProviderFailure, subagentQuotaEvidenceFrom } from "../quota-retry.js";
+import { isBillingError, isDeterministicProviderError, isSubagentProviderFailure, normalizeProviderErrorText, providerErrorPresentation, subagentQuotaEvidenceFrom } from "../quota-retry.js";
 import { captureProviderTokenUsage } from "../context-growth.js";
 import { noteOwnershipStanding, refreshOwnerHeartbeat, supersedeLiveOwnerRoot } from "../state-root-owner.js";
 import {
   classifyInBandProviderFailure,
   classifyMainModelFailure,
+  isContextOverflowError,
   isMainModelFallbackFailure,
   requiresMainModelRecovery,
   mainModelAutoRetryUntil,
@@ -672,6 +673,49 @@ export function __testOnlySetZombieRetryDelay(ms: number | null): void {
  * settings file. Null restores the loaded setting/default. */
 export function __testOnlySetZombieRetryMaxAttempts(attempts: number | null): void {
   zombieRetryMaxAttemptsOverride = attempts;
+}
+
+// v0.38.105 (field 2026-09-30, ai-auto-video): a provider error in a session
+// with no active goal/loop/list used to end the turn with nothing but a
+// ledger line — the session idled at the prompt until the user noticed.
+// Transient failures now retry on the uniform cadence; the carve-outs match
+// the supervised lanes exactly (aborts/policy never, auth/billing/
+// deterministic/overflow never blind-retry, quota sleeps). Process-memory
+// by design, like the zombie streak: a restart leaves the session standing
+// for manual resume — an honest degradation.
+let unsupervisedErrorStreak = 0;
+let unsupervisedErrorRetryTimer: NodeJS.Timeout | null = null;
+let unsupervisedErrorRetryDelayOverride: number | null = null;
+
+/** The follow-up that re-drives a failed unsupervised turn. The failed turn's
+ * transcript (including any tool results before the error) is intact, so the
+ * model continues from where it stopped instead of repeating successes. */
+function unsupervisedErrorRetryText(display: string): string {
+  return `glla: the previous turn failed with a provider error (${display}). Continue from where it stopped — do not repeat tool calls that already succeeded.`;
+}
+
+function clearUnsupervisedErrorRetryTimer(): void {
+  if (unsupervisedErrorRetryTimer) {
+    clearTimeout(unsupervisedErrorRetryTimer);
+    unsupervisedErrorRetryTimer = null;
+  }
+}
+
+function clearUnsupervisedErrorRetry(): void {
+  clearUnsupervisedErrorRetryTimer();
+  unsupervisedErrorStreak = 0;
+}
+
+/** Test-only: reset the streak/timer/delay state. */
+export function __testOnlyResetUnsupervisedErrorRetry(): void {
+  clearUnsupervisedErrorRetry();
+  unsupervisedErrorRetryDelayOverride = null;
+}
+
+/** Test-only: shrink the retry delay (null restores the uniform cadence).
+ * Never called by production code. */
+export function __testOnlySetUnsupervisedErrorRetryDelay(ms: number | null): void {
+  unsupervisedErrorRetryDelayOverride = ms;
 }
 
 /** v0.35.x: terminate one confirmed zero-stream host turn and park the
