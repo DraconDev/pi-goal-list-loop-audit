@@ -217,3 +217,11 @@ test("v0.38.103 streak counting is what the challenge gate reads", () => {
   ];
   assert.equal(countTrailingComparableDisapprovals(withGates), AUDITOR_CHALLENGE_STREAK_LIMIT);
 });
+
+test("ladder tests never write to the repo ledger: no ctx cwd points at process.cwd()", () => {
+  // Regression for the 2026-09-29 pollution (578+ model_fallback_select events
+  // in .pi-glla/active.jsonl from suite runs). Recording is on in these tests,
+  // so a repo-root cwd writes fixture refs into the production goal ledger.
+  const src = fs.readFileSync(new URL(import.meta.url).pathname, "utf-8");
+  assert.doesNotMatch(src, /cwd:\s*process\.cwd\(\)/, "use scratchCwd(), not the repo root");
+});
