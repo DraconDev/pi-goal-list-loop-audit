@@ -553,43 +553,6 @@ async function verifyTaskMilestone(
  * The explicit tool choice is itself the current judgment; optional fields
  * let the agent name the durable action and preserve the exact prior defer
  * alternatives instead of making refreshUI infer them from prose. */
-/** v0.38.104: proactive between-tasks compaction.
- *
- * Fire-and-forget by design: the task is already durably complete, so nothing
- * here may block or fail the tool call. A preference, never a hard stop — the
- * goal, task list and durable state are untouched; only the transcript is
- * compacted, plus a handoff brief so the goal's shape survives the trim.
- *
- * One compaction per episode. The marker is shared with the starvation path on
- * purpose: after any real compaction the transcript is small again, so it
- * re-arms naturally as the goal grows back toward the threshold. */
-async function maybeCompactBetweenTasks(
-  ctx: ExtensionContext,
-  deps: Record<string, unknown> = {},
-): Promise<void> {
-  try {
-    if (!state.goal) return;
-    let tokens: number | undefined;
-    try {
-      const usage = (ctx as unknown as { getContextUsage?: () => { tokens?: number } }).getContextUsage?.();
-      if (usage && typeof usage.tokens === "number" && Number.isFinite(usage.tokens)) tokens = usage.tokens;
-    } catch { /* usage is best effort — an unknown count must not compact blindly */ }
-    let alreadyFired = false;
-    try { alreadyFired = fs.existsSync(compactorFiredMarkerPath(ctx.cwd)); } catch { alreadyFired = false; }
-    const decision = shouldCompactBetweenTasks({ tokens, alreadyFired });
-    if (!decision.compact) return;
-    const result = await runGoalCompactionIfDue(ctx as never, true, deps as never);
-    if (result.fired) {
-      ctx.ui.notify(
-        `glla: compacted between tasks (${decision.reason}). The goal, its tasks and durable state are untouched.`,
-        "info",
-      );
-    }
-  } catch {
-    // A compaction that cannot start is never a task-completion failure.
-  }
-}
-
 function durableDeferFactsForGoal(
   goal: Goal,
   choice: DurableChoiceRecord,
@@ -3082,18 +3045,11 @@ function registerAgentTools(pi: any): void {
         if (!updateGoal({ taskList: withTaskStatus(tl, p.id, "complete") }, ctx)) {
           return { content: [{ type: "text", text: `Task ${p.id} could not be marked complete — the persist failed and no state changed. Retry.` }], details: {} };
         }
-        // v0.38.104: between-tasks compaction. This is the cheapest moment
-        // there is: the task is durably complete, nothing is mid-tool-call and
-        // no audit is in flight. PREFERENCE, never a hard stop -- the goal,
-        // its task list and durable state are untouched; only the transcript
-        // is compacted, plus a handoff brief so the goal's shape survives.
-        //
-        // The 200k the user set as a rule was never a trigger: it sized the
-        // compactor MODEL (PLAN_B_FALLBACK_NEED) and gated nothing. A token
-        // count is used rather than a percentage because a percentage moves
-        // with the model -- on a 1M window 85% is ~850k, and compacting at 1M
-        // is exactly the case to avoid.
-        void maybeCompactBetweenTasks(ctx);
+        // v0.38.105: the 200k between-tasks compaction moved to the agent_end
+        // turn boundary (maybeCompactTranscriptAtBoundary) — one path for
+        // goals, loops and lists, firing a REAL transcript compaction via
+        // ctx.compact instead of a brief plus a manual-/new ask. Nothing
+        // fires here mid-tool-call: compact() aborts the active turn.
         return { content: [{ type: "text", text: `Task ${p.id} marked complete.` }], details: {} };
       }
     },
