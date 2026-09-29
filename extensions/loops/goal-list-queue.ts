@@ -688,7 +688,7 @@ function queueRepairAheadOfListItem(ctx: ExtensionContext, item: ListItem, asses
   appendLedger(ctx.cwd, "faulty_objective_repair_promoted", { goalId: repair.id, targetId: item.id, position: 1, source: "list-activation", reasons: assessment.reasons, queueOrder: repair.queueOrder });
 }
 
-function activateNextListItem(ctx: ExtensionContext, n = 1, opts?: { explicit?: boolean; displayLabel?: string }): boolean {
+function activateNextListItem(ctx: ExtensionContext, n = 1, opts?: { explicit?: boolean; displayLabel?: string; repairRetried?: boolean }): boolean {
   // An explicit list activation is user consent even when pi initially
   // reported a blank startup context; automatic restore never reaches here.
   releaseInitialSessionLoadBarrier();
@@ -780,6 +780,17 @@ function activateNextListItem(ctx: ExtensionContext, n = 1, opts?: { explicit?: 
         reasons: assessment.reasons,
       });
       queueRepairAheadOfListItem(ctx, candidate, assessment);
+      // v0.38.105 (field 2026-09-29, dracon-system): the promoted repair is
+      // safe and actionable BY CONSTRUCTION (fixed imperative text) —
+      // activate it now instead of idling the queue until a manual resume.
+      // One bounded retry: the repair passes the screen, so a second
+      // refusal means something genuinely new, not the item just queued
+      // around. The repair rides the head (position 1); the requested
+      // display label stays with the original pick.
+      if (!opts?.repairRetried) {
+        appendLedger(ctx.cwd, "faulty_objective_repair_auto_activate", { targetId: candidate.id, reasons: assessment.reasons });
+        if (activateNextListItem(ctx, 1, { explicit: opts?.explicit, repairRetried: true })) return true;
+      }
       ctx.ui.notify("The queued item looks like reviewer/verification text, so it was not activated; a safe repair item is next in the list.", "warning");
       return false;
     }
