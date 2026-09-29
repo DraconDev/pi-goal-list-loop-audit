@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+Untagged work since 0.38.104. It stays under this heading until the release
+commit renames it (docs/RELEASING.md); these are descriptive milestones, not
+invented version headers.
+
 ## 0.38.104 — prose stops grinding the audit (2026-09-29)
 
 ### The audit cap covers every round that failed to settle the goal
