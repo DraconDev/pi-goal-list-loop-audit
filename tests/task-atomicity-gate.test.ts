@@ -24,6 +24,7 @@ import {
   validateTaskBatch,
   withTaskStatus,
 } from "../extensions/task-batch.ts";
+import { milestoneCheckFailureText } from "../extensions/loops/goal-tools.ts";
 
 function batchFixture(): TaskList {
   return {
@@ -225,6 +226,35 @@ test("batch milestone failure leaves the whole batch unapplied (mid-batch kill)"
     { "1": "pending", "2": "in_progress", "2.1": "pending", "3": "pending" },
     "no partial application survives a mid-batch failure",
   );
+});
+
+test("milestone failure text: a failed gate names the red command", () => {
+  const text = milestoneCheckFailureText("3", {
+    passed: false,
+    outcome: "fail",
+    failedCommand: "test -f dist/out.js",
+    output: "missing",
+    exitCode: 1,
+  }, "pending");
+  assert.match(text, /Task 3 milestone verification FAILED for command `test -f dist\/out\.js` \(exit code 1\)/);
+  assert.match(text, /Task 3 remains pending\. Fix the failure before marking complete\./);
+});
+
+test("milestone failure text: an inconclusive gate never claims FAILED", () => {
+  // A killed/timed-out gate produced no verdict on the work — the milestone
+  // stays put pending a retry instead of accusing the work.
+  const text = milestoneCheckFailureText("3", {
+    passed: false,
+    outcome: "inconclusive",
+    inconclusiveReason: "timeout",
+    failedCommand: "bun run dev",
+    output: "killed after budget",
+  }, "pending");
+  assert.doesNotMatch(text, /FAILED/);
+  assert.doesNotMatch(text, /Fix the failure/);
+  assert.match(text, /could not be verified/);
+  assert.match(text, /timeout/);
+  assert.match(text, /Task 3 remains pending\./);
 });
 
 test("single tools keep their pinned messages on the copy-swap path", async () => {

@@ -283,6 +283,7 @@ import {
   extractMechanicalCheckCommands,
   mechanicalPreAuditVerdict,
   runMechanicalPreAuditChecks,
+  type MechanicalCheckResult,
 } from "../goal-loop-shield.js";
 import {
   REPETITION,
@@ -510,11 +511,30 @@ async function resolveDraftActivationConflict(ctx: ExtensionContext, incoming: O
   return "proceed";
 }
 
+/** Render a failed milestone check honestly: a failed gate names the red
+ * command, but an inconclusive gate (timeout/kill) never claims FAILED —
+ * the gate produced no verdict on the work, so the task stays put pending
+ * a retry. A null remains clause renders the head only (batch context). */
+export function milestoneCheckFailureText(
+  taskId: string,
+  check: MechanicalCheckResult,
+  remainsClause: string | null,
+): string {
+  const head = check.outcome === "inconclusive"
+    ? `Task ${taskId} milestone could not be verified — gate \`${check.failedCommand ?? "contract command"}\` ${check.inconclusiveReason ?? "unknown reason"}: the gate never produced a verdict on the work, so nothing is marked; retry the gate.`
+    : `Task ${taskId} milestone verification FAILED for command \`${check.failedCommand}\` (exit code ${check.exitCode}):\n\n${check.output}`;
+  if (remainsClause === null) return head;
+  const tail = check.outcome === "inconclusive"
+    ? `Task ${taskId} remains ${remainsClause}.`
+    : `Task ${taskId} remains ${remainsClause}. Fix the failure before marking complete.`;
+  return `${head}\n\n${tail}`;
+}
+
 async function verifyTaskMilestone(
   ctx: ExtensionContext,
   verificationContract?: string,
   signal?: AbortSignal,
-): Promise<{ failedCommand?: string; output?: string; exitCode?: number } | null> {
+): Promise<MechanicalCheckResult | null> {
   if (!verificationContract?.trim()) return null;
   const result = await runMechanicalPreAuditChecks(
     ctx.cwd,
@@ -2991,7 +3011,7 @@ function registerAgentTools(pi: any): void {
           return {
             content: [{
               type: "text",
-              text: `Task ${p.id} milestone verification FAILED for command \`${checkRes.failedCommand}\` (exit code ${checkRes.exitCode}):\n\n${checkRes.output}\n\nTask ${p.id} remains in_progress. Fix the failure before marking complete.`,
+              text: milestoneCheckFailureText(p.id, checkRes, "in_progress"),
             }],
             details: {},
           };
@@ -3048,7 +3068,7 @@ function registerAgentTools(pi: any): void {
             return {
               content: [{
                 type: "text",
-                text: `Task ${p.id} milestone verification FAILED for command \`${checkRes.failedCommand}\` (exit code ${checkRes.exitCode}):\n\n${checkRes.output}\n\nTask ${p.id} remains ${t.status}. Fix the failure before marking complete.`,
+                text: milestoneCheckFailureText(p.id, checkRes, t.status),
               }],
               details: {},
             };
@@ -3096,7 +3116,7 @@ function registerAgentTools(pi: any): void {
         if (e.status === "complete" && e.task.status !== "complete") {
           const checkRes = await verifyTaskMilestone(ctx, e.task.verificationContract, signal);
           if (checkRes) {
-            failures.push(`Task ${e.task.id} milestone verification FAILED for command \`${checkRes.failedCommand}\` (exit code ${checkRes.exitCode}):\n\n${checkRes.output}`);
+            failures.push(milestoneCheckFailureText(e.task.id, checkRes, null));
           }
         }
       }
@@ -3104,7 +3124,7 @@ function registerAgentTools(pi: any): void {
         return {
           content: [{
             type: "text",
-            text: `Task batch rejected — ${failures.length} milestone verification${failures.length === 1 ? "" : "s"} failed. No task was changed:\n\n${failures.join("\n\n")}`,
+            text: `Task batch rejected — ${failures.length} milestone check${failures.length === 1 ? "" : "s"} did not pass. No task was changed:\n\n${failures.join("\n\n")}`,
           }],
           details: {},
         };
