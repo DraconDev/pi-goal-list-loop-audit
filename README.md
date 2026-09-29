@@ -486,7 +486,7 @@ npm run release:check
 ```
 
 `npm test` runs the fast set (the full serialized suite minus the 12
-slowest files — ~4 minutes instead of ~7). `npm run test:slow` runs
+slowest files listed in `tests/slow-files.mjs`). `npm run test:slow` runs
 those slow files, `npm run test:changed` runs only git-affected files,
 and `npm run test:all` runs everything. `npm run release:check` runs
 the serialized Bun suite, TypeScript, the jiti reproduction, offline
