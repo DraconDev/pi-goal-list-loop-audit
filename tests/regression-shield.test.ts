@@ -67,6 +67,12 @@ test("contractItems: shapeless contracts keep every-line behavior", () => {
   assert.deepEqual(items, ["First do the thing", "Then verify the other"]);
 });
 
+test("contractItems: a Done-when criterion survives alongside bullets", () => {
+  // The done-when line is a criterion, not preamble — list mode must keep it.
+  const items = contractItems("Done when: npm test passes\n- tsc clean");
+  assert.deepEqual(items, ["npm test passes", "tsc clean"]);
+});
+
 test("passes: preamble fragments are not required in evidence", () => {
   const report = [
     "<evidence>",
@@ -448,9 +454,15 @@ test("extractMechanicalCheckCommands: skips commands under negation", async () =
   assert.deepEqual(extractMechanicalCheckCommands("bun run dev is no longer used"), []);
   assert.deepEqual(extractMechanicalCheckCommands("never runs `npm test` in CI"), []);
   assert.deepEqual(extractMechanicalCheckCommands("verifies the tree without `cargo build` noise"), []);
-  // Affirmed commands still extract.
+  assert.deepEqual(extractMechanicalCheckCommands("doesn't run `npm test` ever"), []);
+  assert.deepEqual(extractMechanicalCheckCommands("`npm test` is not run in CI"), []);
+  assert.deepEqual(extractMechanicalCheckCommands("`cargo build` is never invoked here"), []);
+  // Affirmed commands still extract — including bare items whose qualifier
+  // tail mentions a negation word after the command already passed.
   assert.deepEqual(extractMechanicalCheckCommands("Run `npm test` and ensure 0 failures"), ["npm test"]);
   assert.deepEqual(extractMechanicalCheckCommands("`tsc --noEmit` passes with zero errors"), ["tsc --noEmit"]);
+  assert.deepEqual(extractMechanicalCheckCommands("`npm test` passes cleanly"), ["npm test"]);
+  assert.deepEqual(extractMechanicalCheckCommands("npm test passes without warnings"), ["npm test"]);
 });
 
 // A dev server never exits, so even an affirmed server-mode command can never
@@ -462,6 +474,13 @@ test("extractMechanicalCheckCommands: rejects never-exiting server commands", as
   assert.deepEqual(extractMechanicalCheckCommands("npm run serve passes"), []);
   assert.deepEqual(extractMechanicalCheckCommands("`bun run watch` stays green"), []);
   assert.deepEqual(extractMechanicalCheckCommands("bun run dev passes"), []);
+  assert.deepEqual(extractMechanicalCheckCommands("`yarn dev` starts it"), []);
+  assert.deepEqual(extractMechanicalCheckCommands("yarn serve passes"), []);
+  assert.deepEqual(extractMechanicalCheckCommands("`python3 -u server.py` serves"), []);
+  assert.deepEqual(extractMechanicalCheckCommands("`python3 -m http.server` serves"), []);
+  // Non-server python forms are unaffected.
+  assert.deepEqual(extractMechanicalCheckCommands("`python3 -m unittest` passes"), ["python3 -m unittest"]);
+  assert.deepEqual(extractMechanicalCheckCommands("python3 scripts/check.py exits 0"), ["python3 scripts/check.py"]);
   assert.deepEqual(extractMechanicalCheckCommands("`python3 server.py` serves the API"), []);
   // One-shot scripts are unaffected.
   assert.deepEqual(extractMechanicalCheckCommands("bun run build passes"), ["bun run build"]);
