@@ -157,6 +157,26 @@ export function parseAuditorVerdict(output: string): { approved: boolean; disapp
   };
 }
 
+/** A command under negation ("no longer uses `bun run dev`") is prohibited or
+ * illustrative, not an affirmed gate. Checked in the text immediately before
+ * a backticked command, or anywhere in a bare command-first item. */
+const MECHANICAL_NEGATION = /\b(?:no\s+longer|never|not|n't|without|instead\sof|must\s+not|does?\s+not|uses?\s+no|avoids?|removes?|drops?|prohibits?|forbids?|bans?)\b/i;
+const MECHANICAL_NEGATION_WINDOW = 48;
+
+/** Run-script names that never exit by convention (dev servers, watchers).
+ * An exit-0 gate on one of these can only burn the round's time budget, so
+ * extraction rejects them and the AI auditor judges server behavior instead. */
+const MECHANICAL_SERVER_RUN_SCRIPT = /^(?:npm|bun|pnpm|yarn)\s+run\s+(?:dev|serve|watch|daemon|preview|start)\b/i;
+const MECHANICAL_SERVER_SCRIPT_NAME = /(?:^|[._-])(?:server|serve|daemon|watch)(?:[._-]|$)/i;
+
+function isServerModeMechanicalCommand(part: string): boolean {
+  if (MECHANICAL_SERVER_RUN_SCRIPT.test(part)) return true;
+  const pythonScript = /^python3?\s+(\S+)/i.exec(part)?.[1] ?? "";
+  const base = pythonScript.split("/").at(-1) ?? "";
+  if (base && MECHANICAL_SERVER_SCRIPT_NAME.test(base)) return true;
+  return false;
+}
+
 /**
  * v0.35.7: Extract mechanical shell command gates from a verification contract.
  * Captures explicit commands (e.g. `npm test`, `tsc --noEmit`, `cargo test`)
@@ -170,11 +190,13 @@ export function extractMechanicalCheckCommands(contract: string): string[] {
     const backtickMatches = [...item.matchAll(/`([^`]+)`/g)];
     if (backtickMatches.length > 0) {
       for (const m of backtickMatches) {
+        const before = item.slice(Math.max(0, (m.index ?? 0) - MECHANICAL_NEGATION_WINDOW), m.index ?? 0);
+        if (MECHANICAL_NEGATION.test(before)) continue;
         const inner = m[1]!.trim();
         const parts = inner.split(/\s*&&\s*|\s*;\s*/);
         for (let part of parts) {
           part = part.trim();
-          if (!part) continue;
+          if (!part || isServerModeMechanicalCommand(part)) continue;
           if (/^(?:npm\s+(?:test|run\s+[\w:-]+)|bun\s+(?:test|run\s+[\w:-]+)|pnpm\s+(?:test|run\s+[\w:-]+)|yarn\s+(?:test|[\w:-]+)|tsc\b|cargo\s+(?:test|check|build)|pytest\b|python3?\s+-m\s+unittest|python3?\s+[^\s]+|go\s+test|vitest\b|jest\b|make\s+test|git\s+diff|test\s+-[a-z])/i.test(part)) {
             commands.push(part);
           }
@@ -182,6 +204,7 @@ export function extractMechanicalCheckCommands(contract: string): string[] {
       }
       continue;
     }
+    if (MECHANICAL_NEGATION.test(item)) continue;
     let candidate = item.trim();
     candidate = candidate.replace(/\s+(?:passes(?:\s+cleanly|\s+with\s+zero\s+errors)?|exits\s+0|returns\s+0|cleanly|completes(?:\s+successfully)?|succeeds(?:\s+cleanly)?|successfully).*$/i, "").trim();
     if (/^(?:npm\s+(?:test|run\s+[\w:-]+)|bun\s+(?:test|run\s+[\w:-]+)|pnpm\s+(?:test|run\s+[\w:-]+)|yarn\s+(?:test|[\w:-]+)|tsc\b|cargo\s+(?:test|check|build)|pytest\b|python3?\s+-m\s+unittest|python3?\s+[^\s]+|go\s+test|vitest\b|jest\b|make\s+test|git\s+diff|test\s+-[a-z])/i.test(candidate)) {
