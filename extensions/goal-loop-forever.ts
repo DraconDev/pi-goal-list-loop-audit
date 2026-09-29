@@ -549,14 +549,24 @@ export function resolveSpecFile(cwd: string): string | null {
 }
 
 /**
- * The respec target. The spec is DATA, not gospel: the loop reconciles code
- * against it but reports stale/contradictory requirements instead of forcing
- * the code to match a bad spec. Rotation keeps it honest: implement one
- * iteration, audit the next (the doorknob failure is implementing nothing
- * while claiming polish).
+ * The respec target. v0.38.105 (note.md Next: respec refinement): the spec
+ * is NOT frozen — only its `## Rules` section is binding. Rules are
+ * normative: close rule/code gaps by changing the CODE (a genuine rule
+ * conflict with reality is reported, never silently forced). Everything
+ * outside Rules is descriptive: when it disagrees with code reality, update
+ * the SPEC itself to match (spec follows code) instead of churning code to
+ * match stale prose. Rotation keeps it honest: implement one iteration,
+ * audit the next (the doorknob failure is implementing nothing while
+ * claiming polish). `bootstrapping` starts with the big draft: the first
+ * work is writing the comprehensive spec from the current codebase
+ * (binding requirements under `## Rules`, the rest descriptive), then the
+ * loop reconciles against what it drafted.
  */
-export function respecTarget(specName: string): string {
-  return `Reconcile the codebase against ${specName} (the project spec in the root). Read the spec critically first: if a requirement is stale, contradictory, or wrong for the current codebase, report the discrepancy and move on — never force the code to match a bad spec. Otherwise pick the next gap between spec and code and close it. Rotate: one iteration implements a missing or outdated spec item, the next audits something already "implemented" against the spec and fixes what drifted.`;
+export function respecTarget(specName: string, opts?: { bootstrapping?: boolean }): string {
+  const draft = opts?.bootstrapping
+    ? `No ${specName} exists yet — phase 1 is the big draft: write the comprehensive ${specName} from the current codebase first (binding requirements under a \`## Rules\` section, everything else as descriptive sections), then reconcile. `
+    : "";
+  return `${draft}Reconcile the codebase against ${specName} (the project spec in the root). The spec is not frozen: its \`## Rules\` section is binding — close rule/code gaps by changing the code, and report a genuine rule conflict with reality instead of forcing it. Anything outside Rules is descriptive — when it disagrees with the code, update ${specName} itself to match reality rather than churning code to match stale prose. Otherwise pick the next gap between spec and code and close it. Rotate: one iteration implements a missing or outdated spec item, the next audits something already "implemented" against the spec and fixes what drifted.`;
 }
 
 // ---- /loop audit (v0.29.0) ----
