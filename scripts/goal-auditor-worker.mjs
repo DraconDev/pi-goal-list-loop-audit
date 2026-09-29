@@ -1165,8 +1165,9 @@ async function main() {
     const handlePiStreamError = (stream, error) => {
       if (finalized) return;
       const message = error instanceof Error ? error.message : String(error);
-      streamError = message.slice(-500);
-      failRound(`RPC ${stream} stream failed: ${streamError}`);
+      // Accumulate: a stream failure must not discard stderr already kept.
+      streamError = accumulateStderrDiagnostic(streamError, `RPC ${stream} stream failed: ${message}`);
+      failRound(`RPC ${stream} stream failed: ${message.slice(-500)}`);
     };
     // A provider/auth failure can make pi close RPC stdin before the prompt
     // write completes. Without an error listener, Node treats EPIPE as an

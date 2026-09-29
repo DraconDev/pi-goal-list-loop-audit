@@ -71,6 +71,21 @@ test("auditor watchdog exits are infrastructure failures, never verdicts", () =>
   assert.match(worker.slice(stallIdx, stallIdx + 300), /aborted|no session activity/i);
 });
 
+test("worker stream failures accumulate onto stderr, never overwrite it", () => {
+  // A stream 'error' event must not discard stderr text already kept: the
+  // handler folds its message into the accumulator (unit-pinned in
+  // auditor-stderr-diagnostic.test.ts) instead of assigning over it.
+  const worker = readFileSync(
+    path.resolve(__dirname, "../scripts/goal-auditor-worker.mjs"),
+    "utf-8",
+  );
+  const handlerIdx = worker.indexOf("const handlePiStreamError");
+  assert.ok(handlerIdx >= 0, "handlePiStreamError exists");
+  const handler = worker.slice(handlerIdx, handlerIdx + 600);
+  assert.match(handler, /accumulateStderrDiagnostic\(streamError,/);
+  assert.doesNotMatch(handler, /streamError = message\.slice/);
+});
+
 test("semantic verdict-quality failures and shield blocks keep distinct categories", () => {
   assert.match(SRC, /treated as disapproved\./, "approval without evidence tools is a semantic disapproval");
   const shield = SRC.slice(SRC.indexOf("if (!shield.passed)"), SRC.indexOf("progress.phase = \"complete\"", SRC.indexOf("if (!shield.passed)")));

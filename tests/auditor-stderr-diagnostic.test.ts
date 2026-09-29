@@ -32,8 +32,10 @@ test("stderr chunks accumulate in order", () => {
 });
 
 test("OSC sequences and control bytes are stripped, printable text kept", () => {
-  assert.equal(stripStderrControlChars(`${ESC}]9;notify${BEL}real message`), "]9;notifyreal message");
+  assert.equal(stripStderrControlChars(`${ESC}]9;notify${BEL}real message`), "real message");
+  assert.equal(stripStderrControlChars(`${ESC}]9;notify${ESC}\\real message`), "real message");
   assert.equal(stripStderrControlChars(`a${DEL}b`), "ab");
+  assert.equal(stripStderrControlChars(`a${String.fromCharCode(133)}b`), "ab");
 });
 
 test("tab, LF, and CR survive; other C0 controls do not", () => {
