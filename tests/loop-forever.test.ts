@@ -637,12 +637,24 @@ test("resolveSpecFile: spec.md fallback; null when absent; root only (no subdir 
   }
 });
 
-test("respecTarget: names the spec, reads critically, rotates implement/audit", () => {
+test("respecTarget: names the spec, Rules binding, rest follows code, rotates implement/audit", () => {
+  // v0.38.105 supersedes the v0.24.3 "report and move on" doctrine: only
+  // ## Rules is binding on code; descriptive spec content is updated to
+  // match reality (note.md Next respec refinement, operator-confirmed).
   const t = respecTarget("SPEC.md");
   assert.ok(t.includes("SPEC.md"), "names the resolved spec file");
-  assert.ok(/critically/.test(t), "spec-suck protection: read critically");
-  assert.ok(/never force the code to match a bad spec/.test(t), "bad-spec escape");
+  assert.ok(/## Rules.*binding/.test(t), "Rules section is binding on code");
+  assert.ok(/update SPEC\.md itself to match reality/.test(t), "non-rules follow code");
+  assert.ok(/report a genuine rule conflict/.test(t), "rule conflicts are reported, not forced");
   assert.ok(/one iteration implements/.test(t) && /the next audits/.test(t), "implement/audit rotation");
+});
+
+test("respecTarget bootstrapping: big draft first, then reconcile", () => {
+  const t = respecTarget("SPEC.md", { bootstrapping: true });
+  assert.ok(/big draft/i.test(t), "phase 1 is the big draft");
+  assert.ok(t.includes("## Rules"), "the draft puts binding requirements under Rules");
+  assert.ok(/then reconcile/.test(t), "reconcile follows the draft");
+  assert.ok(!/big draft/i.test(respecTarget("SPEC.md")), "reconcile-only target has no draft phase");
 });
 
 test("resolveSpecFiles: returns all root specs in priority order (v0.24.4)", () => {
