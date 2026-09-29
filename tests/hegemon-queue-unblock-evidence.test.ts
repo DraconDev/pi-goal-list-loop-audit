@@ -69,6 +69,11 @@ async function boot(pi: MockPi, cwd: string): Promise<ReturnType<typeof makeMock
 }
 
 test("REAL SHAPE: 12 empty head items block list activation exactly as in the hegemon ledger", async () => {
+  // v0.38.105 (field 2026-09-29, dracon-system "list doesnt auto progress"):
+  // the safe repair still queues ahead of the blocked head, but it now
+  // AUTO-ACTIVATES on the same command instead of idling the queue until a
+  // second manual /list next. The blocked event and the repair binding are
+  // unchanged; only the idle wait is gone.
   pinNoAutoResume();
   const cwd = tmpCwd();
   const empties = EMPTY_IDS.map((id) => ({ id, objective: "", addedAt: "2026-08-11T12:04:17.974Z" }));
@@ -80,13 +85,14 @@ test("REAL SHAPE: 12 empty head items block list activation exactly as in the he
   await pi.command("list", "next", ctx);
   await tick(100);
   const s = readState(cwd);
-  assert.equal(s.goal, null, "a blocked activation must not create a goal");
-  assert.equal(s.list?.length, 44, "repair item is queued ahead of the 43");
-  assert.equal(s.list?.[0]?.objective, "Repair the blocked list item from saved intent");
+  assert.equal(s.goal?.objective, "Repair the blocked list item from saved intent", "the safe repair auto-activates");
+  assert.equal(s.goal?.status, "active");
+  assert.equal(s.goal?.policy, "list");
+  assert.equal(s.list?.length, 43, "repair taken out; the original 43 still queued behind it");
   assert.match(ledger(cwd), /"faulty_objective_list_activation_blocked"/);
-  // repaired target binding survives onto the repair item
-  assert.equal(s.list?.[0]?.repairTarget?.id, "20260811120417-t12dn0");
-  assert.deepEqual(s.list?.[0]?.repairTarget?.reasons, ["empty"]);
+  assert.match(ledger(cwd), /"faulty_objective_repair_auto_activate"/);
+  // repaired target binding carries onto the activated repair goal
+  assert.equal((s.goal as unknown as Record<string, { id: string }>)?.repairTarget?.id, "20260811120417-t12dn0");
   fs.rmSync(cwd, { recursive: true, force: true });
 });
 
