@@ -22,14 +22,25 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
+const LIST_ITEM_PREFIX = /^(?:[-*•]\s+|\d+[.)]\s+)/;
+
 /** Split a verification contract into its individual checkable items. */
 export function contractItems(contract: string): string[] {
-  return contract
+  const stripped = contract
     .split("\n")
     .map((l) => l.trim())
-    .map((l) => l.replace(/^(?:done when|verify|verified when|verification|done)\s*:\s*/i, ""))
-    .map((l) => l.replace(/^[-*•]\s+/, "").replace(/^\d+[.)]\s+/, ""))
-    .filter((l) => l.length > 0)
+    .map((l) => l.replace(/^(?:done when|verify|verified when|verification|done)\s*:\s*/i, ""));
+  // A contract with list structure defines its checkable items by the list:
+  // surrounding prose (a wrapped parenthetical preamble, a trailer) is
+  // commentary, not criteria (dracon-log field bug 2026-09-29: preamble
+  // fragments became unmatchable "items" and the shield blocked genuine
+  // approvals forever). Shapeless contracts keep the old every-line behavior.
+  const hasListItems = stripped.some((l) => LIST_ITEM_PREFIX.test(l));
+  return stripped
+    .map((l) => ({ text: l.replace(/^[-*•]\s+/, "").replace(/^\d+[.)]\s+/, ""), listed: LIST_ITEM_PREFIX.test(l) }))
+    .filter((l) => l.text.length > 0)
+    .filter((l) => !hasListItems || l.listed)
+    .map((l) => l.text)
     // Boundary lines ("Out of scope: ...") constrain the auditor's judgment;
     // they are not deliverables and have no evidence to quote (v0.22.6).
     .filter((l) => !/^out of scope\b/i.test(l))
