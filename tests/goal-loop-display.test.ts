@@ -244,8 +244,9 @@ test("v0.38.105: recovery banner shows the loop target for loop-only state", () 
   assert.equal(summary.resumeCommand, "/loop resume");
   assert.equal(pendingCount, 0);
   const lines = buildLoadHoldRecoveryLines(summary);
-  assert.ok(lines[0].includes("Mean sd of all 16 block tiles"), `banner lost the loop target: ${lines[0]}`);
-  assert.ok(!lines[0].includes("(no objective recorded)"), `banner claims no objective: ${lines[0]}`);
+  const head = lines[0]!;
+  assert.ok(head.includes("Mean sd of all 16 block tiles"), `banner lost the loop target: ${head}`);
+  assert.ok(!head.includes("(no objective recorded)"), `banner claims no objective: ${head}`);
 });
 
 // The goal/list paths are byte-identical to the old inline selection.
