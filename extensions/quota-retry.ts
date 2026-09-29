@@ -574,6 +574,22 @@ export interface ProviderRetryScheduleOptions {
   suppressNotice?: boolean;
 }
 
+/** v0.38.105: observed quota evidence from one subagent tool-error payload.
+ * Returns undefined for non-quota errors. Lives in the quota domain (not
+ * at the call site) so the loops/ runtime bundle keeps no raw
+ * quota-branching identifiers — the uniform-provider-retry pin holds. */
+export function subagentQuotaEvidenceFrom(text: string, nowMs = Date.now()): SubagentQuotaEvidence | undefined {
+  const signal = quotaSignal(text);
+  if (!signal) return undefined;
+  const parsed = parseQuotaError(text, DEFAULT_QUOTA_RETRY_SEC, nowMs);
+  return {
+    signal,
+    retryAfterSec: parsed.retryAfterSec,
+    ...(parsed.resetAt ? { resetAt: parsed.resetAt } : {}),
+    at: new Date(nowMs).toISOString(),
+  };
+}
+
 /** Test hook — reset process-local notice deduplication between isolated rigs. */
 export function resetProviderRetryNoticeDedup(): void {
   lastProviderRetryNoticeKey = null;

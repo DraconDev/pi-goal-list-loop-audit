@@ -81,6 +81,7 @@
     "providerErrorDiagnostic": { "type": "string", "description": "Bounded provider diagnostic retained for ledger/archive forensics; never a chat projection." },
     "recoveryEpisodeKey": { "type": "string" },
     "recoveryNoticeKeys": { "type": "array", "maxItems": 16, "items": { "type": "string" } },
+    "subagentQuotaEvidence": { "$ref": "#/definitions/subagentQuotaEvidence" },
     "interruptedAt": { "type": "string" },
     "interruptedReason": { "type": "string" },
     "auditInfraStreak": { "type": "number" },
@@ -192,6 +193,17 @@
         "originalObjective": { "type": "string", "minLength": 1 },
         "originalContract": { "type": "string" },
         "userSeeds": { "type": "array", "maxItems": 10, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "subagentQuotaEvidence": {
+      "type": "object",
+      "required": ["signal", "retryAfterSec", "at"],
+      "description": "v0.38.105: latest subagent-provider quota evidence observed on tool results. Consumed once by pause_goal to reroute a quota-caused park into a supervised auto-retry wait; stale evidence (older than SUBAGENT_QUOTA_EVIDENCE_FRESH_MS) never reroutes.",
+      "properties": {
+        "signal": { "type": "string", "enum": ["rate-limit", "plan-quota", "billing"] },
+        "retryAfterSec": { "type": "integer", "minimum": 0 },
+        "resetAt": { "type": "string", "format": "date-time" },
+        "at": { "type": "string", "format": "date-time" }
       }
     },
     "pendingCompletion": {
