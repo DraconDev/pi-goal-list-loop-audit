@@ -718,6 +718,100 @@ export function __testOnlySetUnsupervisedErrorRetryDelay(ms: number | null): voi
   unsupervisedErrorRetryDelayOverride = ms;
 }
 
+/** Decide the unsupervised error-turn retry: classify once, refuse the
+ * carve-outs with a reason, otherwise arm one timer on the uniform cadence.
+ * The timer re-checks ownership and idleness at fire time; a new turn, a
+ * clean turn, or an abort stands it down. */
+function maybeScheduleUnsupervisedErrorRetry(
+  pi: ExtensionAPI,
+  ctx: ExtensionContext,
+  rawLastA: unknown,
+  text: string,
+): void {
+  const raw = normalizeProviderErrorText(rawLastA, text);
+  const presentation = providerErrorPresentation(raw, "main");
+  const display = presentation.display;
+  if (supervisorPaused(state)) {
+    appendLedger(ctx.cwd, "unsupervised_error_retry_refused", { reason: "supervisor-paused", display });
+    return;
+  }
+  // Carve-out: context overflow needs compaction, not a re-send of the same
+  // prompt. The starvation path owns length stops; this covers the same wall
+  // arriving as an explicit error stop.
+  if (isContextOverflowError(raw)) {
+    appendLedger(ctx.cwd, "unsupervised_error_retry_refused", { reason: "context-overflow", display });
+    void runGoalCompactionIfDue(ctx, true, {
+      notify: (message) => ctx.ui.notify(message, "info"),
+      page: (message) => notifyExternal(ctx, message),
+    });
+    ctx.ui.notify("glla: provider reports context overflow — compacting instead of retrying the same prompt.", "info");
+    return;
+  }
+  const failure = classifyMainModelFailure(raw);
+  // Carve-out: aborts and policy refusals never retry.
+  if (failure.kind === "non-recoverable") {
+    appendLedger(ctx.cwd, "unsupervised_error_retry_refused", { reason: "non-recoverable", kind: failure.kind, display });
+    return;
+  }
+  // Carve-out: a deterministic 400 can never succeed on an identical retry.
+  if (isDeterministicProviderError(raw)) {
+    appendLedger(ctx.cwd, "unsupervised_error_retry_refused", { reason: "deterministic", kind: failure.kind, display });
+    ctx.ui.notify("glla: the provider refused the request itself (deterministic client error). Switch model or trim the request, then reply to retry.", "warning");
+    return;
+  }
+  // Carve-out: auth walks the supervised fallback ladder; blind retries
+  // cannot heal credentials.
+  if (failure.kind === "auth") {
+    appendLedger(ctx.cwd, "unsupervised_error_retry_refused", { reason: "auth", kind: failure.kind, display });
+    ctx.ui.notify(`glla: provider auth failed (${display}) — fix the key or switch model; not retrying blindly.`, "warning");
+    return;
+  }
+  // Carve-out: billing is an account wall, not a transient.
+  if (isBillingError(raw)) {
+    appendLedger(ctx.cwd, "unsupervised_error_retry_refused", { reason: "billing", kind: failure.kind, display });
+    ctx.ui.notify(`glla: provider billing wall (${display}) — manual action needed; not retrying.`, "warning");
+    return;
+  }
+  unsupervisedErrorStreak += 1;
+  const attempt = unsupervisedErrorStreak;
+  const delay = unsupervisedErrorRetryDelayOverride
+    ?? Math.max(EAGER_CONTINUATION_SETTLE_MS, mainModelFailureDelayMs(failure, attempt, loadGlobalSettings().mainModelRetryMinutes));
+  clearUnsupervisedErrorRetryTimer();
+  const generation = sessionGeneration;
+  appendLedger(ctx.cwd, "unsupervised_error_retry_scheduled", { attempt, delayMs: delay, kind: failure.kind, display });
+  if (attempt === 1) {
+    ctx.ui.notify(
+      delay >= 90_000
+        ? `glla: provider error (${display}) — retrying automatically in ${Math.max(1, Math.round(delay / 60_000))}m.`
+        : `glla: provider error (${display}) — retrying automatically.`,
+      "info",
+    );
+  }
+  // scheduleSessionTimeout carries the generation/stale/zombie fences — an
+  // old session's callback can never re-arm work after stale/shutdown/reload.
+  unsupervisedErrorRetryTimer = scheduleSessionTimeout(() => {
+    unsupervisedErrorRetryTimer = null;
+    if (supervisorPaused(state)) return;
+    const fresh = freshCtxForGeneration(generation);
+    if (!fresh) return;
+    // Ownership changed while waiting — a supervised lane owns the session
+    // now, so this retry stands down instead of double-driving it.
+    if ((state.goal && (state.goal.status === "active" || state.goal.status === "auditing")) || isLoopActive() || state.mainModelRecovery) return;
+    if (draftingTarget !== null) return;
+    if (state.supervisorPausedAt || state.loadHoldAt || !fresh.isIdle() || fresh.hasPendingMessages?.()) return;
+    try {
+      if (warnIfStaleAtEntry(fresh, "unsupervised error retry")) return;
+      appendLedger(fresh.cwd, "unsupervised_error_retry_dispatched", { attempt, kind: failure.kind });
+      pi.sendMessage(
+        { customType: "unsupervised-error-retry", content: unsupervisedErrorRetryText(display), display: false },
+        { triggerTurn: true, deliverAs: "followUp" },
+      );
+    } catch {
+      fresh.ui.notify("glla: automatic retry could not be delivered. Reply to retry.", "warning");
+    }
+  }, delay);
+}
+
 /** v0.35.x: terminate one confirmed zero-stream host turn and park the
  * owning goal/list item before asking pi to abort. This is deliberately an
  * activation-owned operation: it can clear the durable continuation sidecar,
