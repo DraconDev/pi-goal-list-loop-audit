@@ -30,6 +30,7 @@ import {
   sanitizeProviderDisplayText,
   resetQuotaRetryNoticeDedup,
   selectQuotaWaitReroute,
+  subagentQuotaEvidenceFrom,
   SUBAGENT_QUOTA_EVIDENCE_FRESH_MS,
 } from "../extensions/quota-retry.ts";
 import { formatAuditLog, formatGoalAuditHistory } from "../extensions/goal-loop-core.ts";
@@ -334,4 +335,14 @@ test("selectQuotaWaitReroute: fresh evidence supplies the cause; stale never doe
   assert.equal(stale, undefined, "stale evidence never reroutes");
   assert.equal(selectQuotaWaitReroute("waiting on user credential", undefined, now), undefined);
   assert.equal(selectQuotaWaitReroute(undefined, undefined, now), undefined);
+});
+
+test("subagentQuotaEvidenceFrom: quota payloads become evidence, plain errors do not", () => {
+  const now = Date.now();
+  const ev = subagentQuotaEvidenceFrom("subagent failed: 429 Too Many Requests, retry after 300 seconds", now)!;
+  assert.equal(ev.signal, "rate-limit");
+  assert.equal(ev.retryAfterSec, 300);
+  assert.equal(ev.at, new Date(now).toISOString());
+  assert.equal(subagentQuotaEvidenceFrom("subagent failed: exit code 1", now), undefined);
+  assert.equal(subagentQuotaEvidenceFrom("", now), undefined);
 });
