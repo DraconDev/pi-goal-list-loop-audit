@@ -319,6 +319,10 @@ test("manual resume blocks a suspicious paused objective before dispatch", async
 });
 
 test("list activation blocks a suspicious queued objective and leaves its repair task actionable", async () => {
+  // v0.38.105 (field 2026-09-29, dracon-system "list doesnt auto progress"):
+  // the safe repair auto-activates on the SAME /list next instead of idling
+  // the queue until a second manual command. The blocked event, the repair
+  // binding, and the one-bootstrap-turn latch are unchanged.
   const cwd = tmpCwd();
   const queued = seedGoal({ policy: "list" });
   const item = {
@@ -332,17 +336,13 @@ test("list activation blocks a suspicious queued objective and leaves its repair
   const ctx = await boot(pi, cwd);
   await pi.command("list", "next", ctx);
   await tick(80);
-  const state = readState(cwd);
-  assert.equal(state.goal, null);
-  assert.equal(state.list?.[0]?.objective, "Repair the blocked list item from saved intent");
-  assert.equal(state.list?.[1]?.objective, item.objective);
-  assert.match(ledger(cwd), /"faulty_objective_list_activation_blocked"/);
-  await pi.command("list", "next", ctx);
-  await tick(80);
   const repaired = readState(cwd);
   assert.equal(repaired.goal?.objective, "Repair the blocked list item from saved intent");
   assert.equal(repaired.goal?.repairTarget?.id, item.id);
   assert.equal(repaired.goal?.repairTarget?.objective, item.objective);
+  assert.equal(repaired.list?.[0]?.objective, item.objective, "the original stays queued behind the repair");
+  assert.match(ledger(cwd), /"faulty_objective_list_activation_blocked"/);
+  assert.match(ledger(cwd), /"faulty_objective_repair_auto_activate"/);
   assert.equal(typeof repaired.goal?.repairTarget?.replanPromptedAt, "string", "the one bounded replan turn is durable");
   assert.equal(pi.sent.length, 1, "the repair card gets one bootstrap turn so the model can propose the confirmed redraft");
   const firstPrompt = pi.sent[0]?.message.content ?? "";
