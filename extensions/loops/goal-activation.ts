@@ -2568,6 +2568,11 @@ async function handleHotLengthExhaustion(
     // starved stop does NOT (the wedge persists); error stops route to the
     // recovery paths which own the next turn.
     if (lastA?.stopReason !== "length" && lastA?.stopReason !== "error" && !contextStarvedLength) lengthExhaustionEpisodes = 0;
+    // Unsupervised error retry: any turn that is not a provider error proves
+    // the provider answers (clean, aborted, and length-capped alike), so the
+    // streak and any pending retry die here. A later in-band synthesis can
+    // still re-mark THIS turn as an error and schedule fresh below.
+    if (lastA?.stopReason !== "error") clearUnsupervisedErrorRetry();
     const lc = tickLengthContinue(lengthStopped);
     if (contextStarvedLength) {
       const starved = noteContextStarvedYield();
@@ -2862,6 +2867,19 @@ async function handleHotLengthExhaustion(
           fresh.ui.notify("Draft handoff correction could not be delivered. Reply to continue drafting.", "warning");
         }
       }, EAGER_CONTINUATION_SETTLE_MS);
+    }
+    // Unsupervised error-turn retry: with no goal, loop, drafting interview,
+    // or recovery owning the session, a provider error used to idle at the
+    // prompt. Retry it on the uniform cadence instead.
+    if (
+      lastA?.stopReason === "error" &&
+      draftingTarget === null &&
+      !(state.goal && (state.goal.status === "active" || state.goal.status === "auditing")) &&
+      !isLoopActive() &&
+      !state.mainModelRecovery
+    ) {
+      maybeScheduleUnsupervisedErrorRetry(pi, ctx, rawLastA, lastA?.text ?? "");
+      return;
     }
     if (!state.goal) return;
     if (state.goal.status !== "active") return;
@@ -3326,6 +3344,10 @@ async function handleHotLengthExhaustion(
     lastStreamActivityAt = Date.now();
     lastTurnStartAt = lastStreamActivityAt;
     streamActivityObserved = true;
+    // A fresh turn supersedes any pending unsupervised error retry — the
+    // user's (or an already-dispatched) turn IS the retry. The streak itself
+    // resets on the turn's agent_end outcome, not here.
+    clearUnsupervisedErrorRetryTimer();
     dispatchStartAcknowledged(ctx, "turn_start");
   });
 
