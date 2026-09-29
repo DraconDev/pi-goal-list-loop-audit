@@ -1,4 +1,5 @@
-<0;18;11M# Prio
+/gl//gl/ga<0;18;11M# Prio
+/gl//gl/ga<0;18;11M# Prio
 
 # Now
 
@@ -16,6 +17,11 @@ improve control ui ?
 ##
 /home/dracon/Pictures/Screenshots/Screenshot_20260928_132645-1.png
 who owns this ui us or the subagents plugin
+
+## respec
+to refine the respec idea, we can start respect with a big draft 
+
+also respec is not frozen, anything that is not a rule is updated 
 
 # Testing
 
