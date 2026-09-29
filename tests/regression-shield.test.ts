@@ -426,6 +426,47 @@ test("extractMechanicalCheckCommands: extracts backticked and raw shell commands
   assert.doesNotMatch(unsafeCompound.output!, /boom/);
 });
 
+// junk-runner field bug (2026-09-29): the extractor pulled `bun run dev` out
+// of "which no longer uses `bun run dev`" and ran the prohibited dev server
+// as a must-exit-0 gate — 647-1200s burned per round for 18 rounds. Commands
+// under negation are not gates; the AI auditor judges those items instead.
+test("extractMechanicalCheckCommands: skips commands under negation", async () => {
+  const { extractMechanicalCheckCommands } = await import("../extensions/goal-loop-shield.ts");
+  const contract = [
+    "bunx svelte-check --tsconfig ./tsconfig.json reports \"found 0 errors\"",
+    "bunx vitest --run reports 0 failed across the full suite",
+    "src/lib/game/market-broadcast-economics.test.ts asserts a measured buy-air-sell cycle's net return lands inside the target band",
+    "a new engine spec asserts the T6.1 mechanic",
+    "bunx playwright test tests/e2e/market-news-dispatch.e2e.ts tests/e2e/smuggling-patrol.e2e.ts passes against the configured webServer, which no longer uses `bun run dev`",
+    "playwright.config.ts's webServer serves a BUILT artifact",
+    "python3 scripts/lib/guard-append-only.py --file .pi-glla/audit-loop/findings.md --baseline-file .pi-glla/audit-loop/findings.baseline.md exits 0",
+  ].join("\n");
+  assert.deepEqual(extractMechanicalCheckCommands(contract), [
+    "python3 scripts/lib/guard-append-only.py --file .pi-glla/audit-loop/findings.md --baseline-file .pi-glla/audit-loop/findings.baseline.md",
+  ]);
+
+  assert.deepEqual(extractMechanicalCheckCommands("bun run dev is no longer used"), []);
+  assert.deepEqual(extractMechanicalCheckCommands("never runs `npm test` in CI"), []);
+  assert.deepEqual(extractMechanicalCheckCommands("verifies the tree without `cargo build` noise"), []);
+  // Affirmed commands still extract.
+  assert.deepEqual(extractMechanicalCheckCommands("Run `npm test` and ensure 0 failures"), ["npm test"]);
+  assert.deepEqual(extractMechanicalCheckCommands("`tsc --noEmit` passes with zero errors"), ["tsc --noEmit"]);
+});
+
+// A dev server never exits, so even an affirmed server-mode command can never
+// pass an exit-0 gate — running it only burns the round's time budget. Reject
+// at extraction; the AI auditor judges server behavior instead.
+test("extractMechanicalCheckCommands: rejects never-exiting server commands", async () => {
+  const { extractMechanicalCheckCommands } = await import("../extensions/goal-loop-shield.ts");
+  assert.deepEqual(extractMechanicalCheckCommands("`bun run dev` starts the dev server"), []);
+  assert.deepEqual(extractMechanicalCheckCommands("npm run serve passes"), []);
+  assert.deepEqual(extractMechanicalCheckCommands("bun run watch stays green"), []);
+  assert.deepEqual(extractMechanicalCheckCommands("`python3 server.py` serves the API"), []);
+  // One-shot scripts are unaffected.
+  assert.deepEqual(extractMechanicalCheckCommands("bun run build passes"), ["bun run build"]);
+  assert.deepEqual(extractMechanicalCheckCommands("`npm test` exits 0"), ["npm test"]);
+});
+
 test("v0.35.16: mechanical checks keep the TAIL of failed output and banner a timeout kill", async () => {
   const { runMechanicalPreAuditChecks } = await import("../extensions/goal-loop-shield.ts");
   const fs = await import("node:fs");
