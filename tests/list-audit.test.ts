@@ -105,7 +105,7 @@ test("/list audit route: builds the collect target and enqueues it", () => {
 test("completion fan-out: collect items fan out + suppress the list-complete noise", () => {
   assert.match(SRC, /const isListAuditCollect = goal\.objective\.includes\(LIST_AUDIT_COLLECT_MARKER\);/);
   assert.match(SRC, /if \(isListAuditCollect\) \{[\s\S]*?void fanOutListAuditFindings\(fanoutCwd, fanoutGeneration\)\.catch\(/, "v0.34.20: the detached fan-out carries a catch and immutable handoff inputs");
-  assert.match(SRC, /if \(!advanced && !isListAuditCollect\) \{/, "no spurious 'List complete' while the fan-out is still Confirm-gated");
+  assert.match(SRC, /if \(!advanced && !isListAuditCollect && listQueue\(\)\.length === 0\) \{/, "no spurious 'List complete' while the fan-out is still Confirm-gated, or while a refused head still waits (v0.38.105)");
   assert.match(SRC, /async function fanOutListAuditFindings\(cwd: string, generation: number\): Promise<void> \{/);
 });
 
