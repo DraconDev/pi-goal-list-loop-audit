@@ -25,6 +25,10 @@ also respec is not frozen, anything that is not a rule is updated
 # later
 
 ##
+i wonder if we cut the question reliance and instead we jsut make a detailed free flow answer 
+that is less arbitrary and we have most space for drawing too what do you think
+
+##
 improve control ui ?
 
 # Testing
