@@ -1,0 +1,1 @@
+export function createCanaryBudget(options?: { maxUsd?: number; maxOutputTokens?: number; maxPayloadBytes?: number }): (payload: any, model: { cost?: { input?: number; output?: number } } | undefined) => any;
