@@ -14,6 +14,7 @@ import { spawn } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { buildAuditorPiSpawnSpec } from "./goal-auditor-launch.mjs";
+import { terminateContainedChild } from "./contained-child.mjs";
 
 function fail(resultPath, error) {
   try {
@@ -69,6 +70,7 @@ const child = spawn(launch.file, launch.args, {
   cwd: request.cwd || process.cwd(),
   env: process.env,
   stdio: ["ignore", "pipe", "pipe"],
+  detached: process.platform !== "win32",
   ...launch.options,
 });
 
@@ -83,17 +85,26 @@ child.stderr?.on("data", (chunk) => {
 });
 
 const timeoutMs = typeof request.timeoutMs === "number" && request.timeoutMs > 0 ? request.timeoutMs : 180_000;
+let stopping = false;
+async function stop(reason) {
+  if (stopping) return;
+  stopping = true;
+  clearTimeout(timer);
+  await terminateContainedChild(child, { graceMs: 2000 });
+  fail(resultPath, reason);
+}
 const timer = setTimeout(() => {
-  try { child.kill("SIGTERM"); } catch {}
-  setTimeout(() => {
-    try { child.kill("SIGKILL"); } catch {}
-  }, 2_000).unref?.();
+  void stop("compactor Pi timed out");
 }, timeoutMs);
-timer.unref?.();
+process.once("SIGTERM", () => { void stop("compactor worker interrupted by SIGTERM"); });
+process.once("SIGINT", () => { void stop("compactor worker interrupted by SIGINT"); });
 
 child.on("error", (error) => fail(resultPath, `pi spawn failed: ${error}`));
-child.on("close", (code) => {
+child.on("close", async (code) => {
+  if (stopping) return;
+  stopping = true;
   clearTimeout(timer);
+  await terminateContainedChild(child, { graceMs: 2000 });
   const brief = stdout.trim();
   if (code !== 0 || !brief) {
     fail(resultPath, `pi exited ${code ?? "?"} with no brief${stderr.trim() ? `: ${stderr.trim().slice(0, 300)}` : ""}`);
