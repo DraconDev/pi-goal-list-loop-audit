@@ -2258,3 +2258,10 @@ Switched to branch 'main'
 (pass) /goal decide: no pending decision → notify, no picker [611.00ms]
 (pass) /goal status + /goal pause: no goal id in user-facing text (v0.28.24) [359.26ms]
 (pass) goal-start notify has no (id: …) suffix (v0.28.24 source pin) [173.39ms]
+(pass) v0.34.21 lifecycle: completion audit from a replaced generation leaves the stored claim intact [879.03ms]
+(pass) v0.34.119: impossible completion counts reach the durable auditor claim before the worker starts [4251.79ms]
+(pass) v0.34.22: complete_goal returns while a detached auditor finishes and archives approval [6000.22ms]
+[run-tests] progress: 660s elapsed · 7s since last output · 221 KiB of suite output
+(pass) v0.35.x: provider-wall diagnostics stay durable while completion surfaces remain sanitized and deduplicated [24096.62ms]
+(pass) v0.35.x: /glla audits full sanitizes active and global reports [78.30ms]
+(pass) v0.35.x: bare 403 main recovery sanitizes live surfaces while retaining diagnostics [879.32ms]
