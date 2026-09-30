@@ -1,3 +1,4 @@
+import { archiveCurrentGoal as settleGoal } from "../extensions/loops/goal-orchestrator.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -217,7 +218,7 @@ test("v0.36.0: archive boundary replaces a validator annotation with recorded fa
     const pending = readState(cwd).goal?.completionSummary ?? "";
     assert.match(pending, /NOTE:/);
     assert.equal(isUsefulCompletionSummary(pending), false, "the pending annotation remains incomplete");
-    const archive = (globalThis as any).archiveCurrentGoal as ((ctx: unknown, status: string, reason: string) => boolean) | undefined;
+    const archive = settleGoal as ((ctx: unknown, status: string, reason: string) => boolean) | undefined;
     assert.equal(archive?.(ownerCtx(cwd), "aborted", "test archive annotation fallback"), true);
     const files = fs.readdirSync(path.join(cwd, ".pi-glla", "archive"));
     assert.equal(files.length, 1);
@@ -234,7 +235,7 @@ test("v0.36.0: archive boundary replaces a validator annotation with recorded fa
 test("v0.36.0: archiveCurrentGoal writes a recap for complete and abort-derived terminal paths", () => {
   assert.match(SRC, /resolveCompletionSummary\(\{[\s\S]*source: "durable-terminal-state"/);
   assert.match(SRC, /completionSummary: summaryResolution\.summary/);
-  const archive = (globalThis as any).archiveCurrentGoal as ((ctx: unknown, status: string, reason: string) => boolean) | undefined;
+  const archive = settleGoal as ((ctx: unknown, status: string, reason: string) => boolean) | undefined;
   assert.equal(typeof archive, "function", "the central archive boundary is available to the behavioral harness");
   for (const [status, reason] of [["complete", "auditor approved"], ["aborted", "auto-dropped after impossible recovery"]] as const) {
     const cwd = tmpCwd();

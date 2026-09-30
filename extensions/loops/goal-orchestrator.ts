@@ -918,7 +918,10 @@ function setGoal(goal: Goal, ctx: ExtensionContext, via = "user"): boolean {
   return true;
 }
 
-function updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): boolean {
+function updateGoal(patch: Partial<Goal>, ctx: ExtensionContext  persistence: SettlementPersistence = settlementPersistence,
+): boolean {
+  const { writeArchiveIntent, clearArchiveIntent, updateArchiveIntentPhase,
+    finalizeArchiveIntent, persistApprovalRender, persistState } = persistence;
   if (!state.goal) return false;
   const statusChanged = patch.status !== undefined && patch.status !== state.goal.status;
   const next: Goal = { ...state.goal, ...patch, updatedAt: nowIso() };
@@ -1100,7 +1103,26 @@ async function fanOutListAuditFindings(cwd: string, generation: number): Promise
   );
 }
 
-function archiveCurrentGoal(
+/** Durable settlement operations are injectable without copying the state owner. */
+export interface SettlementPersistence {
+  writeArchiveIntent: typeof writeArchiveIntent;
+  clearArchiveIntent: typeof clearArchiveIntent;
+  updateArchiveIntentPhase: typeof updateArchiveIntentPhase;
+  finalizeArchiveIntent: typeof finalizeArchiveIntent;
+  persistApprovalRender: typeof persistApprovalRender;
+  persistState: (ctx: ExtensionContext) => boolean;
+}
+
+const settlementPersistence: SettlementPersistence = {
+  writeArchiveIntent, clearArchiveIntent, updateArchiveIntentPhase,
+  finalizeArchiveIntent, persistApprovalRender, persistState,
+};
+
+export interface GoalSettlementBoundary {
+  archiveCurrentGoal: typeof archiveCurrentGoal;
+}
+
+export function archiveCurrentGoal(
   ctx: ExtensionContext,
   status: Status,
   stopReason?: string,
@@ -1526,5 +1548,4 @@ defineGoalRuntimeGlobal("setGoal", { get: () => setGoal });
 defineGoalRuntimeGlobal("updateGoal", { get: () => updateGoal });
 defineGoalRuntimeGlobal("autoArbitrateStackedState", { get: () => autoArbitrateStackedState });
 defineGoalRuntimeGlobal("fanOutListAuditFindings", { get: () => fanOutListAuditFindings });
-defineGoalRuntimeGlobal("archiveCurrentGoal", { get: () => archiveCurrentGoal });
 defineGoalRuntimeGlobal("terminalizeImpossibleGoal", { get: () => terminalizeImpossibleGoal });

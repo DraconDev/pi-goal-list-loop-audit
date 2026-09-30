@@ -166,7 +166,6 @@ export const GOAL_RUNTIME_GLOBAL_NAMES = [
   "updateGoal",
   "autoArbitrateStackedState",
   "fanOutListAuditFindings",
-  "archiveCurrentGoal",
   "terminalizeImpossibleGoal",
   "clearDetachedAuditRuntime",
   "validateCompletionSummary",
@@ -485,7 +484,6 @@ declare global {
   var updateGoal: GoalRuntimeGlobals["updateGoal"];
   var autoArbitrateStackedState: GoalRuntimeGlobals["autoArbitrateStackedState"];
   var fanOutListAuditFindings: GoalRuntimeGlobals["fanOutListAuditFindings"];
-  var archiveCurrentGoal: GoalRuntimeGlobals["archiveCurrentGoal"];
   var terminalizeImpossibleGoal: GoalRuntimeGlobals["terminalizeImpossibleGoal"];
   var clearDetachedAuditRuntime: GoalRuntimeGlobals["clearDetachedAuditRuntime"];
   var validateCompletionSummary: GoalRuntimeGlobals["validateCompletionSummary"];

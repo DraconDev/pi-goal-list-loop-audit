@@ -1,3 +1,4 @@
+import { archiveCurrentGoal as settleGoal } from "../extensions/loops/goal-orchestrator.js";
 // pi-goal-list-loop-audit — v0.36.0
 // tests/list-stall-reproduction.test.ts
 //
@@ -86,7 +87,7 @@ test("completed standalone goal automatically hands off to the waiting list", as
   // This is the same terminal archive fence used after an approved detached
   // auditor result. A successful standalone goal must hand off to a list that
   // was already waiting; the user should not need to type `/list next`.
-  const archiveCurrentGoal = (globalThis as any).archiveCurrentGoal as (
+  const archiveCurrentGoal = settleGoal as (
     context: unknown,
     status: "complete",
     reason: string,
@@ -155,7 +156,7 @@ test("list-sourced completion promotes the successor and records the settle tran
   assert.equal(readState(cwd).goal?.objective, "head list item — done when pinned");
   assert.equal(readState(cwd).list?.length, 1);
 
-  const archiveCurrentGoal = (globalThis as any).archiveCurrentGoal as (
+  const archiveCurrentGoal = settleGoal as (
     context: unknown,
     status: "complete",
     reason: string,

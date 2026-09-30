@@ -1,3 +1,4 @@
+import { archiveCurrentGoal } from "./goal-orchestrator.js";
 /**
  * pi-goal-list-loop-audit — v0.1.0
  * extensions/loops/goal.ts

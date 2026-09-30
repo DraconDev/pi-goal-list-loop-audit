@@ -11,7 +11,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import "./goal-runtime-globals.js";
 import "./goal-session.js";
 import "./goal-ui.js";
-import "./goal-orchestrator.js";
+import { archiveCurrentGoal, type GoalSettlementBoundary } from "./goal-orchestrator.js";
 import "./goal-auditor-hooks.js";
 import "./goal-list-queue.js";
 import "./goal-tools.js";
@@ -156,6 +156,8 @@ const loopFlags: LoopFlags = {
   get compactionInFlightSince() { return compactionInFlightSince; },
 };
 
+const settlement: GoalSettlementBoundary = { archiveCurrentGoal };
+
 const commandDeps: CommandDeps = {
   flags: commandFlags,
   listQueue,
@@ -166,7 +168,7 @@ const commandDeps: CommandDeps = {
   // v0.35.29 (issue #15): /glla agents reads the heartbeat's tracked-subagent
   // snapshot via injection (goal-commands must not import goal-heartbeat).
   agentsSnapshot: () => getSubagentAgentsSnapshot(),
-  archiveCurrentGoal,
+  archiveCurrentGoal: settlement.archiveCurrentGoal,
   healGoalPolicy,
   startDrafting,
   warnIfStaleAtEntry,
@@ -224,7 +226,7 @@ const loopDeps: LoopDeps = {
   manuallyResumeMainModelRecovery,
   notifyExternal,
   persistState,
-  archiveCurrentGoal,
+  archiveCurrentGoal: settlement.archiveCurrentGoal,
   probeExtensionApiStale,
   probeMainModelRecovery,
   releaseContinuationDispatchStandDown,
