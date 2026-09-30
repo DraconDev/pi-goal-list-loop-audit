@@ -1,3 +1,4 @@
+import { registerOwnedTestProcess } from "../scripts/test-process-registry.mjs";
 /**
  * Detached completion-auditor transport.
  *
@@ -1540,6 +1541,8 @@ const AUDITOR_ENV_PASSTHROUGH = new Set([
   "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY",
   "http_proxy", "https_proxy", "all_proxy", "no_proxy",
   "PI_CODING_AGENT_DIR", "PI_OFFLINE", "PI_SHARE_VIEWER_URL",
+  "GLLA_TEST_PROCESS_REGISTRY", "GLLA_TEST_PROCESS_TOKEN",
+  "GLLA_TEST_ROOT_PROCESS_REGISTRY", "GLLA_TEST_ROOT_PROCESS_TOKEN",
   "GLLA_PI_BINARY", "GLLA_AUDITOR_TOOL_TIMEOUT_MS", "GLLA_AUDITOR_STALL_MS",
   "GLLA_AUDITOR_CHILD_SHUTDOWN_MS", "GLLA_AUDITOR_MAX_PROCESS_GROUP_SIZE",
 ]);
@@ -1980,6 +1983,7 @@ async function runDetachedGoalCompletionAuditorInner(args: {
       stdio: "ignore",
       env,
     } satisfies SpawnOptions);
+    registerOwnedTestProcess(child, env);
     // The first-event watchdog is a worker-silence budget, not a dispatch
     // setup budget. Anchor it to Node's successful spawn event so filesystem
     // setup, extension resolution, and scheduler delay cannot consume the

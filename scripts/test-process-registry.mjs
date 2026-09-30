@@ -39,6 +39,14 @@ function registry(env) {
  * Keep records after leader exit so the runner can own surviving group
  * members. Birth ticks fence each PID; no basename/process-name sweeping. */
 export function registerOwnedTestProcess(child, env = process.env) {
+  // Nested runner fixtures keep an outer registry as well as their local
+  // one: killing the nested wrapper must not orphan its detached suite.
+  if (env.GLLA_TEST_ROOT_PROCESS_REGISTRY && env.GLLA_TEST_ROOT_PROCESS_REGISTRY !== env.GLLA_TEST_PROCESS_REGISTRY) {
+    registerOwnedTestProcess(child, {
+      GLLA_TEST_PROCESS_REGISTRY: env.GLLA_TEST_ROOT_PROCESS_REGISTRY,
+      GLLA_TEST_PROCESS_TOKEN: env.GLLA_TEST_ROOT_PROCESS_TOKEN,
+    });
+  }
   const owner = registry(env);
   if (!owner || !child?.pid || typeof child.once !== "function") return;
   const file = path.join(owner.dir, `process-${child.pid}-${randomUUID()}.json`);

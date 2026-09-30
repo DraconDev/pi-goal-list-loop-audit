@@ -10,6 +10,7 @@
  *   <dir>/result.json   { ok: true, brief } | { ok: false, error }
  */
 
+import { registerOwnedTestProcess } from "./test-process-registry.mjs";
 import { spawn } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -73,6 +74,8 @@ const child = spawn(launch.file, launch.args, {
   detached: process.platform !== "win32",
   ...launch.options,
 });
+
+registerOwnedTestProcess(child);
 
 let stdout = "";
 let stderr = "";

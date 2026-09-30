@@ -1,3 +1,4 @@
+import { registerOwnedTestProcess } from "../scripts/test-process-registry.mjs";
 // Emergency compactor handoff (v0.38.10).
 //
 // Fires once per starvation episode, from the agent_end refuse path: resolve
@@ -336,6 +337,7 @@ function defaultSpawnWorker(script: string, jobDir: string, request: Record<stri
       return;
     }
     const child = nodeSpawn(process.execPath, [script, "--job-dir", jobDir], { stdio: "ignore" });
+    registerOwnedTestProcess(child);
     const timer = setTimeout(() => {
       // Audit 2026-09-06: SIGTERM first, SIGKILL fallback — a stuck worker
       // must not survive the timeout as a zombie holding the job dir.

@@ -1,3 +1,4 @@
+import { registerOwnedTestProcess } from "../scripts/test-process-registry.mjs";
 /**
  * pi-goal-list-loop-audit — v0.2.0
  * extensions/goal-loop-shield.ts
@@ -428,6 +429,7 @@ function runMechanicalFilterStage(
         detached: process.platform !== "win32",
         stdio: ["pipe", "pipe", "pipe"],
       });
+      registerOwnedTestProcess(child);
     } catch (error) {
       resolve({ output: "", exitCode: 1, timedOut: false, launchError: error instanceof Error ? error.message : String(error) });
       return;
@@ -758,6 +760,7 @@ function runMechanicalCommand(
         // does for every script it executes.
         env: mechanicalCheckEnv(cwd),
       });
+      registerOwnedTestProcess(child);
     } catch (error) {
       resolve({
         output: error instanceof Error ? error.message : String(error),

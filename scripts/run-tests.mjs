@@ -25,8 +25,12 @@
 // The heartbeat goes to stderr so piping stdout still gives clean test output.
 
 import { spawn, spawnSync } from "node:child_process";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import { terminateContainedChild } from "./contained-child.mjs";
+import { createTestProcessRegistry, registerOwnedTestProcess, reapOwnedTestProcesses } from "./test-process-registry.mjs";
 import { SLOW_TEST_FILES } from "../tests/slow-files.mjs";
 
 export const SERIAL_FLAGS = ["--parallel=1", "--max-concurrency=1", "--timeout=60000"];
@@ -98,7 +102,12 @@ function main() {
   log(`mode=${mode} slow_files=${SLOW_TEST_FILES.length} stall_timeout=${Math.round(stallLimit / 1000)}s heartbeat=${Math.round(beat / 1000)}s`);
 
   // Give the suite a group we can terminate without signalling this wrapper.
-  const child = spawn("bun", ["test", ...bunArgs], { stdio: ["inherit", "pipe", "pipe"], detached: true });
+  const registryDir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-test-processes-"));
+  const testEnv = { ...process.env, ...createTestProcessRegistry(registryDir) };
+  testEnv.GLLA_TEST_ROOT_PROCESS_REGISTRY ??= testEnv.GLLA_TEST_PROCESS_REGISTRY;
+  testEnv.GLLA_TEST_ROOT_PROCESS_TOKEN ??= testEnv.GLLA_TEST_PROCESS_TOKEN;
+  const child = spawn("bun", ["test", ...bunArgs], { stdio: ["inherit", "pipe", "pipe"], detached: true, env: testEnv });
+  registerOwnedTestProcess(child, testEnv);
   let bytes = 0;
   let lastOutputAt = Date.now();
   let settled = false;
@@ -164,13 +173,16 @@ function main() {
     clearInterval(watch);
     clearTimeout(exitCleanupTimer);
     await cleanup();
+    const detached = await reapOwnedTestProcesses(testEnv);
+    if (detached.reaped || detached.unverified) log(`detached cleanup: ${detached.reaped} owned groups; ${detached.unverified} unverified survivors/records`);
+    fs.rmSync(registryDir, { recursive: true, force: true });
     const elapsed = Math.round((Date.now() - startedAt) / 1000);
     if (stallFired) {
       log(`FAILED: suite stalled and was terminated after ${elapsed}s`);
       process.exit(1);
     }
     log(`finished in ${elapsed}s (exit ${code}${signal ? `, signal ${signal}` : ""})`);
-    process.exit(interruptedExitCode ?? code ?? 1);
+    process.exit(interruptedExitCode ?? (detached.unverified ? 1 : code ?? 1));
   };
   child.on("error", (error) => {
     log(`could not start bun: ${error.message}`);
