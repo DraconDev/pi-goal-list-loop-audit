@@ -3409,3 +3409,137 @@ tests/subagent-session-ledger.test.ts:
 (pass) malformed payloads are dropped, not crashy [1028.50ms]
 
 tests/approved-audit-settles.test.ts:
+[run-tests] progress: 1140s elapsed · 2s since last output · 304 KiB of suite output
+(pass) an approved stored claim settles and never falls into the residual-failure tail [3553.99ms]
+(pass) v0.38.104: the approval branch terminates after the settlement driver [148.72ms]
+
+tests/empty-provider-response.test.ts:
+(pass) v0.38.104 the field error is recognised as an empty response [0.44ms]
+(pass) v0.38.104 a message that merely CONTAINS 'empty' is not a provider glitch [0.04ms]
+(pass) v0.38.104 an empty response is neither a quota wall nor a deterministic client error [0.06ms]
+(pass) v0.38.104 an empty response retries EAGERLY, not on the 15-minute ladder [0.43ms]
+(pass) v0.38.104 the eager window is bounded, then the normal ladder takes over [1.84ms]
+(pass) v0.38.104 other failures keep the historical ladder untouched [1.17ms]
+(pass) v0.38.104 a quota wall still wins over the eager empty-response path [0.11ms]
+(pass) v0.38.104 the FIRST attempt honours the upstream reset hint too (no 5s probe of a named wall) [0.16ms]
+
+tests/structured-summary.test.ts:
+(pass) renderer removes empty evidence parentheses without losing the finding [112.75ms]
+(pass) headline echo uses the Outcome lead paragraph, never flattened headers [7.92ms]
+(pass) detector: two ##/### headers earn the structured path, one does not [0.28ms]
+(pass) extractor preserves newlines and tables, segments other labels [1.01ms]
+(pass) extractor: last line-anchored restatement wins [0.13ms]
+(pass) card: structured Outcome renders a full ### Summary section, headline stays short [1.86ms]
+(pass) card: unstructured summaries keep today's shape — no Summary section [8.48ms]
+(pass) card: one-action Next survives the structured body [3.17ms]
+(pass) card: machine paths stay archive-only inside structured lines [8.76ms]
+(pass) guard: pathological structured values end with an honest pointer [18.66ms]
+(pass) doctrine: horizon lives in Summary, Next names only the immediate move [5.83ms]
+(pass) archive human layer carries the same Summary section [2.57ms]
+
+tests/pause-informativeness.test.ts:
+(pass) wrap: short text stays one line; long text wraps at width; cap ellipsizes [89.39ms]
+(pass) paused card wraps the reason over multiple lines instead of truncating at 60 [4.95ms]
+(pass) paused card answers 'did I lose the work?' with a saved line [1.67ms]
+(pass) paused card wraps the suggested action and closes the branch on its last line [0.67ms]
+(pass) pause_goal tool notification carries the FULL reason AND suggested action [18.24ms]
+(pass) pause_goal tool: structured kind/options/recommended/resumeAt persist to the goal (v0.28.22) [20.94ms]
+(pass) pause_goal description: teaches the real command surface + no-id vocabulary (v0.28.24) [1.09ms]
+(pass) late pause calls cannot overwrite a paused or auditing lifecycle [4.66ms]
+(pass) v0.28.30: pause/abort notifies name the policy (List item vs Goal) via goalNoun [17.65ms]
+(pass) v0.34.98: long-wait pause (> 6h) surfaces a tweak-prompt notification + ledger entry [14.41ms]
+(pass) v0.34.98: short-wait pause (≤ 6h) does NOT trigger the tweak offer [18.82ms]
+
+tests/adaptive-wait.test.mjs:
+(pass) estimateDurationFromHistory uses median with headroom and fallback bounds [1.23ms]
+(pass) nextPollMs doubles each attempt capped at 1s [0.32ms]
+(pass) waitForDurableEvent works with adaptive poll intervals [1.14ms]
+(pass) smoke wait_for uses adaptive polling (check-if-done, 250->1000) [4.36ms]
+
+tests/ui-polish.test.ts:
+(pass) v0.38.89: unknownStatsArg strips the known stats tokens [5.47ms]
+(pass) v0.38.89: stats header and unknown-arg usage share the /glla prefix [0.65ms]
+(pass) v0.38.91: tool descriptions enumerate plan/audit/verify/add [0.44ms]
+(pass) v0.38.89: /goal status card points at /goal timeline [307.85ms]
+
+tests/list-parallel.test.ts:
+(pass) extractParallelFlag: truthy values mark the item parallel-safe [0.42ms]
+(pass) extractParallelFlag: falsy values explicitly opt out [0.19ms]
+(pass) extractParallelFlag: no marker → undefined (unknown, not false) [0.05ms]
+(pass) extractParallelFlag: inline marker mid-line, case-insensitive [0.04ms]
+(pass) parseListItemDeclaration: marker stripped BEFORE the contract split [0.23ms]
+(pass) parseListItemDeclaration: a parallel marker after Done when: still strips cleanly [0.14ms]
+(pass) parseListItemDeclaration: parallel marker inside a multi-line objective is consumed [1.35ms]
+(pass) queue sidecar round-trips the parallelSafe flag [1.70ms]
+(pass) list_add parses the declaration into the queue state + disk + status [348.00ms]
+(pass) a declared item activating into a goal carries the CLEAN objective (no marker leak) [651.23ms]
+
+tests/stale-continuation-integration.test.ts:
+(pass) integration: stale goal continuation is sanitized at message_end and ledgered, raw source dropped [165.91ms]
+(pass) integration: a GLLA pause abort becomes an actionable assistant message [13.31ms]
+(pass) integration: a marked pause without suggestedAction still replaces generic abort text [9.75ms]
+(pass) integration: starting a later turn invalidates an unconsumed pause marker [15.96ms]
+(pass) integration: a stale pause marker cannot rewrite a later unrelated abort [14.06ms]
+(pass) integration: a later same-owner abort after a silent prior marker is not rewritten [81.19ms]
+(pass) integration: an unrelated owner abort is not rewritten [52.25ms]
+(pass) integration: a foreign assistant abort is not rewritten [24.96ms]
+(pass) integration: fresh continuation for active goal is NOT sanitized [32.16ms]
+(pass) integration: foreign ctx never sanitizes (subagent isolation) [259.23ms]
+
+tests/audit-no-progress-detection.test.ts:
+(pass) v0.38.101 the no-progress stop is DEAD in production — this pins the defect [90.12ms]
+(pass) v0.38.101 the obvious fix was measured and REJECTED — do not re-add it blind [0.76ms]
+(pass) v0.38.101 the tokenizer is a useful diagnostic even though it cannot decide [0.19ms]
+(pass) v0.38.101 the exact-text fingerprint is unchanged [0.03ms]
+
+tests/last-outcome-retention.test.ts:
+(pass) v0.35.72: a legacy approved lastOutcome never repaints a completed row [2.03ms]
+(pass) v0.35.72: a legacy aborted lastOutcome also stays hidden [0.69ms]
+(pass) v0.35.72: a live goal remains the only rendered surface [4.64ms]
+(pass) v0.35.72: source pins — slot close clears lastOutcome; wipe remains a clean slate [3.44ms]
+(pass) v0.35.34: lastOutcome round-trips through persistStateLine → readState (durable across restarts) [137.73ms]
+(pass) v0.35.34: corrupt lastOutcome lines degrade to absent, never throw [4.14ms]
+
+tests/model-selector.test.ts:
+(pass) chainFor returns the configured chain for a scope [83.63ms]
+(pass) selectNext walks the chain in order and skips current + attempted [0.19ms]
+(pass) selectNextValid returns the first registered, non-forbidden ref in chain order [0.14ms]
+(pass) selectNextValid skips refs already in the attempted list [0.13ms]
+(pass) selectNextValid also skips current when it would otherwise be a candidate [0.07ms]
+(pass) selectNextValid does not mutate the caller's attempted list [0.10ms]
+(pass) selectNextValid skips forbidden refs and records each rejection [0.10ms]
+(pass) selectNextValid records forbidden rejections until a valid ref is found [0.06ms]
+(pass) selectNextValid skips refs missing from the resolver and records each rejection [0.06ms]
+(pass) selectNextValid records forbidden before unregistered when both fail [0.07ms]
+(pass) selectNextValid returns reason=exhausted when the chain runs out [0.05ms]
+(pass) selectNextValid returns exhausted when every ref is forbidden [0.10ms]
+(pass) selectNextValid returns exhausted on an empty chain [0.04ms]
+(pass) selectNextValid records one event per ref visited plus a final outcome [0.08ms]
+(pass) selectNextValid tags subagent scope on every recorded event [0.05ms]
+(pass) selectNextValid does not throw when no recorder is supplied [0.06ms]
+(pass) canUseRef is true only when a ref is not forbidden and resolves [0.06ms]
+(pass) classifyFailure is scope-agnostic — same input returns same output for any scope [0.18ms]
+(pass) retryDelayMs returns the same value as mainModelFailureDelayMs (default base) [1.00ms]
+(pass) audit 2026-09-06: retryDelayMs honors the injected retry base minutes [0.14ms]
+(pass) selectNextValid composes nextUntriedModelRef — manual loop yields the same answer [0.15ms]
+
+tests/action-reminder.test.ts:
+(pass) standby renderer keeps the background-wake explanation visible [4.08ms]
+(pass) registers a dedicated GLLA reminder renderer [0.18ms]
+(pass) blocked reminder is actionable and says the work is safely parked [1.59ms]
+(pass) decision reminder is prominent, safely parked, and names the exact picker action [0.93ms]
+(pass) redirect reminder says the goal is held while the new request runs [0.41ms]
+(pass) diagnostics trail the actionable reminder as subordinate text [0.46ms]
+(pass) standby reminder says background completion wakes the work [0.21ms]
+(pass) timed wait is automatic and does not invent a manual action [0.26ms]
+(pass) assistant abort notice is a GLLA explanation, not generic transport text [0.10ms]
+(pass) wait abort notice uses the same automatic-wake explanation as its card [0.10ms]
+
+tests/wait-overdue-backstop.test.ts:
+(pass) v0.35.28 #16: a wait 30min past its pauseResumeAt is resumed by the heartbeat backstop [496.82ms]
+(pass) v0.35.28 #16: not-yet-due and already-fired waits do not double-dispatch [300.08ms]
+(pass) v0.35.28 #16: under the load hold (stock consent-less boot) an overdue wait stays frozen [350.24ms]
+(pass) v0.35.28 #16: manual /goal resume clears the recovery stamp (user-driven, no notice needed) [22.63ms]
+(pass) v0.35.28 #16: the pause_goal wait copy is now backed by machinery (source pin) [3.58ms]
+(pass) v0.35.28 #16: once consent exists on reload, the overdue wait resumes through the backstop [944.83ms]
+(pass) v0.35.48: the backstop stays parked during a session handoff window [245.73ms]
