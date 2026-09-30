@@ -1,0 +1,19 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/auditor-process.test.ts -t worker launches pi|allow-listed extensions load|Windows worker shutdown|malformed allowedExtensions|wedged
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/auditor-process.test.ts:
+(pass) Windows worker shutdown kills the cmd/pi process tree [502.13ms]
+(pass) worker launches pi with the exact auditor RPC contract and one LF JSONL prompt [941.27ms]
+(pass) worker force-kills a wedged RPC child before it exits [907.50ms]
+(pass) v0.36.0: allow-listed extensions load via --extension while isolation flags stay intact [677.15ms]
+(pass) v0.36.0: a malformed allowedExtensions request fails closed as an identity error [211.58ms]
+
+ 5 pass
+ 41 filtered out
+ 0 fail
+Ran 5 tests across 1 file. [4.50s]
+[run-tests] finished in 5s (exit 0)

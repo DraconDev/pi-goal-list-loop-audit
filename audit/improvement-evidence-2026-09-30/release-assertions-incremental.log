@@ -1,0 +1,125 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/completion-communication.test.ts tests/auditor-process.test.ts tests/glla-status-ux.test.ts tests/recap-preservation.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/completion-communication.test.ts:
+(pass) pending is nonterminal; approval delivers durable concrete summary (idle=true) [13359.19ms]
+14 | let cleanup: (() => Promise<void>) | undefined;
+15 | afterEach(async () => { await cleanup?.(); cleanup = undefined; });
+16 | const summary = "Outcome: Fixed routing.\nChanged: router.ts.\nEvidence: routing fixture.\nTests: routing suite passed.\nUnresolved: none.\nNext: await audit.";
+17 | async function waitFor(check: () => boolean, timeout = 10000) {
+18 |   const until = Date.now() + timeout;
+19 |   while (!check()) { if (Date.now() > until) throw new Error("settlement timeout"); await new Promise(r => setTimeout(r, 20)); }
+                                                            ^
+error: settlement timeout
+      at waitFor (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/completion-communication.test.ts:19:56)
+      at async <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/completion-communication.test.ts:70:9)
+(fail) pending is nonterminal; approval delivers durable concrete summary (idle=false) [10321.01ms]
+[run-tests] progress: 30s elapsed · 2s since last output · 1 KiB of suite output
+(pass) complete_goal leftOut renders the deliberate-non-do bullet end to end [4329.85ms]
+(pass) complete_goal findingGroups ride the claim into the grouped terminal render [3529.38ms]
+(pass) disapproval remains unfinished, no final success is posted [2009.67ms]
+(pass) archive write failure never emits a terminal success [2901.78ms]
+(pass) approval summary does not replace independent next-item continuation [18609.26ms]
+[run-tests] progress: 60s elapsed · 1s since last output · 2 KiB of suite output
+(pass) outbox write failure warns without claiming summary delivery [8909.02ms]
+
+tests/auditor-process.test.ts:
+(pass) compiled Pi hosts fall back to a JavaScript runtime while explicit commands remain available [7.11ms]
+(pass) v0.35.27 (PR #17): bare tokens pass unquoted for .CMD shims, unsafe-arg gate still covers EVERY arg [6.82ms]
+(pass) Windows worker shutdown kills the cmd/pi process tree [9.88ms]
+(pass) Windows atomic protocol retries transient rename locks without unlinking the old snapshot [0.63ms]
+(pass) transport failures carry an explicit no-verdict classification [1494.27ms]
+(pass) fake worker setup stays in per-test temp storage [2.55ms]
+(pass) detached parent accepts an identity-checked result and applies regression_shield [1997.53ms]
+[run-tests] progress: 90s elapsed · 15s since last output · 2 KiB of suite output
+(pass) detached parent keeps a regression-shield block distinct from disapproval and infrastructure [24370.31ms]
+(pass) detached parent forwards live worker telemetry to its progress callback [12778.52ms]
+(pass) v0.34.57: heartbeat-without-progress watchdog emits auditor_stalled and cancels the detached job [730.64ms]
+(pass) parent abort escalates a detached TERM-ignoring worker and removes its job [1539.29ms]
+(pass) the real worker forwards ordered tool and report phases to the parent [2320.73ms]
+(pass) real worker preserves structured HTTP 429 diagnostics for the parent [843.78ms]
+(pass) real worker persists the auditor session when inspection is enabled (spawn spec + progress shape) [1556.76ms]
+(pass) detached auditor env keeps runtime necessities and selected provider auth, not unrelated secrets [3.16ms]
+[run-tests] progress: 120s elapsed · 1s since last output · 3 KiB of suite output
+(pass) real worker keeps the original --no-session spawn when inspection is unset (default unchanged) [1573.96ms]
+(pass) worker assembles streamed report fragments into cumulative display lines without changing the exact result [1656.29ms]
+(pass) parent rejects a result that reports an unsupported tool [349.11ms]
+(pass) approval without an audit tool is a semantic disapproval [679.61ms]
+(pass) a verdict marker inside a think block is not accepted [363.91ms]
+(pass) failed setup preserves a pre-existing attempt directory it does not own [3.51ms]
+(pass) detached retry identities remain unique while completed job dirs persist for the retention window [1329.94ms]
+(pass) cancel keeps a finished audit's transcript dir but reaps incomplete scratch [208.83ms]
+(pass) a mismatched result hash fails closed as infrastructure [5461.38ms]
+(pass) request hashing is stable and excludes no runtime secret or API key field [0.62ms]
+[run-tests] progress: 150s elapsed · 19s since last output · 4 KiB of suite output
+(pass) EOF before exit preserves process and stream diagnostics without accepting a partial verdict [26457.60ms]
+[run-tests] progress: 180s elapsed · 23s since last output · 4 KiB of suite output
+(pass) EOF from a live RPC child gets a bounded close grace then TERM-to-KILL cleanup [35640.55ms]
+(pass) detached worker treats silent provider time as infrastructure, not a verdict [3633.86ms]
+(pass) parent tool watchdog cancels a tool with no follow-up RPC events [2527.24ms]
+(pass) worker aborts an unsupported tool event instead of treating it as an audit tool [793.99ms]
+(pass) worker-side tool timeout cancels a tool that never emits an end event, and still fails fast [3925.00ms]
+(pass) effective tool budget honors a granted timeout above the base [0.50ms]
+(pass) parent tool watchdog honors the worker-armed granted budget [1712.08ms]
+(pass) worker honors a bash call's granted timeout past the base budget [3111.47ms]
+[run-tests] progress: 211s elapsed · 2s since last output · 5 KiB of suite output
+(pass) real worker stops a runaway RPC process group before it becomes a storm [4520.02ms]
+1423 |       stdio: "ignore",
+1424 |       detached: true,
+1425 |     });
+1426 |     const resultPath = path.join(jobDir, "result.json");
+1427 |     await new Promise<void>((resolve, reject) => {
+1428 |       const timer = setTimeout(() => reject(new Error("worker test timed out")), 2_000);
+                                                       ^
+error: worker test timed out
+      at <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/auditor-process.test.ts:1428:49)
+(fail) worker launches pi with the exact auditor RPC contract and one LF JSONL prompt [2652.34ms]
+(pass) worker force-kills a wedged RPC child before it exits [1056.83ms]
+1570 |       stdio: "ignore",
+1571 |       detached: true,
+1572 |     });
+1573 |     const resultPath = path.join(jobDir, "result.json");
+1574 |     await new Promise<void>((resolve, reject) => {
+1575 |       const timer = setTimeout(() => reject(new Error("worker test timed out")), 2_000);
+                                                       ^
+error: worker test timed out
+      at <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/auditor-process.test.ts:1575:49)
+(fail) v0.36.0: allow-listed extensions load via --extension while isolation flags stay intact [3414.14ms]
+(pass) v0.36.0: the process layer resolves raw specs to install paths before the worker sees them [14474.03ms]
+(pass) v0.36.0: a malformed allowedExtensions request fails closed as an identity error [224.78ms]
+(pass) v0.38.80: the worker's challenge outcome threads through to the auditor result [382.32ms]
+(pass) v0.38.80: an absent challenge stays undefined for legacy workers [829.03ms]
+(pass) strict challenge: the parent refuses a legacy or skipped approval [1403.01ms]
+(pass) v0.38.81: the dispatch-decided tier stamps onto the result [550.85ms]
+(pass) v0.38.81: spot-check stamps true; legacy callers see no tier fields [1066.00ms]
+(pass) slow-audit hardening: attempt cost summarizes prompt, tools, vision, and elapsed [8.69ms]
+
+tests/glla-status-ux.test.ts:
+[run-tests] progress: 241s elapsed · 1s since last output · 7 KiB of suite output
+(pass) v0.35.15: auditing footer carries a distinct phase glyph AND an activity meter element for every auditor phase [24.59ms]
+(pass) v0.35.15: activity meter drains as worker silence grows (full at fresh, empty past the quiet threshold) [0.68ms]
+(pass) v0.35.15: ⏸ supervisor chip leads the footer in every lifecycle branch when paused [0.83ms]
+(pass) v0.35.15: a recently ended quiet stretch shows 'silent Xm then resumed' in the widget; stale stretches stay hidden [9.41ms]
+(pass) v0.35.15: quiet watcher notifies EXACTLY ONCE on entering the quiet phase, records the stretch on resume [808.35ms]
+(pass) v0.35.15: quiet watcher stays silent while the supervisor is paused (it IS automatic machinery) [4.30ms]
+(pass) v0.35.15: every automatic dispatch point gates on supervisorPaused [423.48ms]
+(pass) v0.35.15: /glla pause persists a durable flag, leaves the active goal untouched, and survives a disk reload [1178.52ms]
+(pass) v0.35.15: /glla resume clears the freeze, reports the frozen duration, and never lies 'Nothing to resume' [603.67ms]
+(pass) v0.38.104: the working-card tool argument is cut cell-aware, never mid-surrogate [35.04ms]
+
+tests/recap-preservation.test.ts:
+(pass) repair re-claim preserves the whole-work recap in the approved render [16704.43ms]
+
+3 tests failed:
+(fail) pending is nonterminal; approval delivers durable concrete summary (idle=false) [10321.01ms]
+(fail) worker launches pi with the exact auditor RPC contract and one LF JSONL prompt [2652.34ms]
+(fail) v0.36.0: allow-listed extensions load via --extension while isolation flags stay intact [3414.14ms]
+
+ 62 pass
+ 3 fail
+Ran 65 tests across 4 files. [261.61s]
+[run-tests] finished in 262s (exit 1)
