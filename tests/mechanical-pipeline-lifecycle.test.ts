@@ -10,9 +10,13 @@ test("Node callers survive noisy early-closing filters and retain head failure/c
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "glla-pipeline-lifecycle-"));
   try {
     fs.writeFileSync(path.join(cwd, "noisy.cjs"), "process.stdout.write('x'.repeat(65536)); process.exitCode=Number(process.argv[2]||0);");
+    const bin = path.join(cwd, "filter-bin");
+    const marker = path.join(cwd, "filter-ready");
+    fs.mkdirSync(bin);
+    fs.writeFileSync(path.join(bin, "head"), `#!/usr/bin/env node\nrequire('node:fs').writeFileSync(${JSON.stringify(marker)},'ready');process.stdin.resume();setInterval(()=>{},1000);`, { mode: 0o755 });
     const jiti = pathToFileURL(path.resolve("node_modules/jiti/lib/jiti.mjs")).href;
     const modulePath = path.resolve("extensions/goal-loop-shield.ts");
-    const source = `import assert from 'node:assert/strict';
+    const source = `import assert from 'node:assert/strict'; import fs from 'node:fs';
       import {createJiti} from ${JSON.stringify(jiti)};
       const {runMechanicalPreAuditChecks}=await createJiti(import.meta.url).import(${JSON.stringify(modulePath)});
       for(const filter of ['head -n 0','head -n 1','grep -q x']) {
@@ -24,6 +28,17 @@ test("Node callers survive noisy early-closing filters and retain head failure/c
       const controller=new AbortController(); controller.abort();
       const cancelled=await runMechanicalPreAuditChecks(${JSON.stringify(cwd)},['node noisy.cjs | head -n 0'],5000,controller.signal);
       assert.equal(cancelled.outcome,'inconclusive'); assert.equal(cancelled.inconclusiveReason,'aborted');
+      process.env.PATH=${JSON.stringify(bin + path.delimiter)}+process.env.PATH;
+      const activeController=new AbortController();
+      const active=runMechanicalPreAuditChecks(${JSON.stringify(cwd)},['node noisy.cjs | head -n 0'],5000,activeController.signal);
+      const deadline=Date.now()+10000;
+      while(!fs.existsSync(${JSON.stringify(marker)})) {
+        if(Date.now()>deadline) throw new Error('filter never started');
+        await new Promise(resolve=>setTimeout(resolve,10));
+      }
+      activeController.abort();
+      const activeCancelled=await active;
+      assert.equal(activeCancelled.outcome,'inconclusive'); assert.equal(activeCancelled.inconclusiveReason,'aborted');
       console.log('verified noisy filter lifecycle');`;
     const child = spawn("node", ["--input-type=module", "-e", source], { stdio: ["ignore", "pipe", "pipe"] });
     let output = "";

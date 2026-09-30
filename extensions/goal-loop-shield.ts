@@ -550,6 +550,7 @@ async function runMechanicalPipeline(
         outcome: "fail",
         failedCommand: rawCommand,
         output: `[mechanical pipeline retried once after a failed first attempt (head exit ${firstFailure!.exitCode}); second attempt also failed — output tail below]\n` + evidence,
+        exitCode: head.exitCode,
       };
     }
   }
