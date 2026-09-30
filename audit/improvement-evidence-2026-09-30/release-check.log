@@ -2669,3 +2669,32 @@ tests/run-to-done.test.ts:
 (pass) run-to-done: batch drafts refuse the flag instead of dropping it [722.85ms]
 (pass) run-to-done: decisions auto-default immediately with no budget set [510.76ms]
 (pass) run-to-done: the audit cap parks instead of converting to TODOs [4410.31ms]
+(pass) run-to-done: aggressive cap conversion is preserved without the flag [7914.67ms]
+(pass) run-to-done: session start resumes held work without global autoResume; blocked parks stay parked [560.88ms]
+(pass) run-to-done: held work stays held without the flag or global consent [816.67ms]
+(pass) run-to-done: the status line names the mode [0.74ms]
+
+tests/durable-wait.test.mjs:
+(pass) durable wait succeeds before its deadline and reports elapsed polling [387.46ms]
+(pass) durable wait returns a real timeout instead of treating elapsed time as success [188.49ms]
+(pass) a late done observation after the deadline is a timeout, not success [0.58ms]
+(pass) archive-count waits use the same durable deadline and return the observed count [116.77ms]
+(pass) a restarted waiter observes the same durable file without an old timer [348.60ms]
+(pass) provider recovery is a terminal reason, never a false approval or timeout [2.65ms]
+(pass) smoke harness uses the durable wait CLI for durable outcomes [0.82ms]
+
+tests/autoresume-default.test.ts:
+(pass) /glla settings persists explicit auto-resume off (tri-state, not undefined) [75.71ms]
+(pass) settings table shows the tri-state honestly [3.77ms]
+(pass) hold-on-load text offers the explicit resume + the on opt-in [0.48ms]
+
+tests/interrupt-didnt-continue.test.ts:
+(pass) FIX A: a never-set revision (undefined) + captured 0 is CURRENT, not stale [67.79ms]
+(pass) FIX A: captured 0 against a genuinely bumped goal is still refused [0.20ms]
+(pass) FIX A: equal non-zero revisions stay current; bumps refuse [0.07ms]
+(pass) FIX A pin: the refusal guard uses isGoalRevisionCurrent, not raw !== on undefined [12.37ms]
+(pass) FIX B pin: the refusal branch restores status active so the loop continues [10.60ms]
+(pass) behavior preserved: a GENUINE orphaned audit still parks with the same message [10.05ms]
+
+tests/objection-pinning.test.ts:
+[run-tests] progress: 930s elapsed · 0s since last output · 254 KiB of suite output
