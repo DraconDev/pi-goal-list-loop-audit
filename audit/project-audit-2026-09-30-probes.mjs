@@ -117,6 +117,16 @@ try {
     fs.writeSync(firstFd, JSON.stringify({ pid: process.pid, instanceId: 'first-owner', at: Date.now() }));
     console.log(JSON.stringify({ probe: 'fresh-owner-claim-window', contender: JSON.parse(result.output), firstDescriptorStillNamesOwnerFile: fs.fstatSync(firstFd).ino === fs.statSync(ownerFile).ino }));
   } finally { fs.closeSync(firstFd); }
+
+  const noisyFixture = path.join(scratch, 'noisy-check.cjs');
+  fs.writeFileSync(noisyFixture, "process.stdout.write('x'.repeat(65536));\n");
+  const pipelineSource = `import {createJiti} from ${JSON.stringify(import.meta.resolve('jiti'))};
+    const jiti=createJiti(import.meta.url);
+    const {runMechanicalPreAuditChecks}=await jiti.import(${JSON.stringify(path.join(root, 'extensions/goal-loop-shield.ts'))});
+    for(let i=0;i<10;i++) await runMechanicalPreAuditChecks(${JSON.stringify(scratch)},[${JSON.stringify(`${process.execPath} ${noisyFixture} | head -n 0`)}],5000);
+    console.log('all pipeline calls settled');`;
+  const pipeline = start(process.execPath, ['--input-type=module', '-e', pipelineSource], {});
+  console.log(JSON.stringify({ probe: 'early-exit-pipeline-filter', ...await pipeline.closed }));
 } finally {
   for (const pid of owned) {
     try { process.kill(pid, 'SIGKILL'); } catch { /* already exited */ }
