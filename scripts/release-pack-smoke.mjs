@@ -54,6 +54,7 @@ try {
     // the entry points — a files-narrowing that drops a prompt, the schema,
     // or a spawned worker must fail here, not at draft time in the field.
     "scripts/goal-compactor-worker.mjs",
+    "scripts/contained-child.mjs",
     "scripts/durable-wait.mjs",
     "scripts/release-pack-smoke.mjs",
     "prompts/goal-loop-continuation.md",

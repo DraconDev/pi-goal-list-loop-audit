@@ -86,11 +86,15 @@ child.stderr?.on("data", (chunk) => {
 
 const timeoutMs = typeof request.timeoutMs === "number" && request.timeoutMs > 0 ? request.timeoutMs : 180_000;
 let stopping = false;
+let cleanupPromise;
+let exitCleanupTimer;
+const cleanup = () => cleanupPromise ??= terminateContainedChild(child, { graceMs: 2000 });
 async function stop(reason) {
   if (stopping) return;
   stopping = true;
   clearTimeout(timer);
-  await terminateContainedChild(child, { graceMs: 2000 });
+  clearTimeout(exitCleanupTimer);
+  await cleanup();
   fail(resultPath, reason);
 }
 const timer = setTimeout(() => {
@@ -99,12 +103,18 @@ const timer = setTimeout(() => {
 process.once("SIGTERM", () => { void stop("compactor worker interrupted by SIGTERM"); });
 process.once("SIGINT", () => { void stop("compactor worker interrupted by SIGINT"); });
 
-child.on("error", (error) => fail(resultPath, `pi spawn failed: ${error}`));
+child.on("error", (error) => { clearTimeout(timer); fail(resultPath, `pi spawn failed: ${error}`); });
+child.once("exit", () => {
+  // A descendant may inherit stdout and prevent `close` after Pi exits.
+  // Let ordinary pipe data drain first, then reap the owned group.
+  exitCleanupTimer = setTimeout(() => { if (!stopping) void cleanup(); }, 100);
+});
 child.on("close", async (code) => {
   if (stopping) return;
   stopping = true;
   clearTimeout(timer);
-  await terminateContainedChild(child, { graceMs: 2000 });
+  clearTimeout(exitCleanupTimer);
+  await cleanup();
   const brief = stdout.trim();
   if (code !== 0 || !brief) {
     fail(resultPath, `pi exited ${code ?? "?"} with no brief${stderr.trim() ? `: ${stderr.trim().slice(0, 300)}` : ""}`);
