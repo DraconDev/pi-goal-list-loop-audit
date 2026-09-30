@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createJiti } from 'jiti';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -65,6 +65,13 @@ try {
   fs.writeFileSync(path.join(bin, 'bun'), `#!${process.execPath}\nprocess.stdout.write('stub suite failed\\n');setTimeout(()=>process.exit(1),100);\n`, { mode: 0o755 });
   const failedRunner = start(process.execPath, ['scripts/run-tests.mjs', '--all'], { PATH: `${bin}${path.delimiter}${process.env.PATH}` });
   console.log(JSON.stringify({ probe: 'failed-child-runner-exit', expectedChildExit: 1, ...await failedRunner.closed }));
+  const referencedRunnerPath = path.join(scratch, 'referenced-runner.mjs');
+  const referencedRunnerSource = fs.readFileSync(path.join(root, 'scripts/run-tests.mjs'), 'utf8')
+    .replace('../tests/slow-files.mjs', pathToFileURL(path.join(root, 'tests/slow-files.mjs')).href)
+    .replace('child.unref?.();', '/* audit control: keep the child referenced */');
+  fs.writeFileSync(referencedRunnerPath, referencedRunnerSource);
+  const referencedRunner = start(process.execPath, [referencedRunnerPath, '--all'], { PATH: `${bin}${path.delimiter}${process.env.PATH}` });
+  console.log(JSON.stringify({ probe: 'failed-child-runner-referenced-control', expectedChildExit: 1, ...await referencedRunner.closed }));
 
   const job = path.join(scratch, 'compactor-job');
   fs.mkdirSync(job);
