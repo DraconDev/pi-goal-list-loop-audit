@@ -1009,6 +1009,7 @@ export function buildRichArchiveSection(goal: Goal, status: Status, archivePath:
   return [
     ...composeRichTerminalLines(parts),
     trailerBullet(stripApprovalModel(approval)),
+    ...challengeDisclosure(goal),
     trailerBullet(countsLine),
     trailerBullet(`\u2014 record: ${archivePath}`),
     ...(priorWholeWork ? ["", "## Original completion claim (verbatim)", "", priorWholeWork] : []),
@@ -1083,6 +1084,15 @@ export function buildAuditCountsLine(goal: Goal, auditNote?: string): string {
       return `${verdict} (${history.length} review${history.length === 1 ? "" : "s"})`;
     })());
   return `— completion review: ${audit}.`;
+}
+
+function challengeDisclosure(goal: Goal): string[] {
+  const outcome = goal.auditHistory?.at(-1)?.challenge;
+  if (!outcome?.startsWith("skipped:")) return [];
+  const reason = outcome === "skipped: light-tier audit" ? "light-tier audit"
+    : outcome === "skipped: rework-streak convergence" ? "rework-streak convergence"
+      : "challenge could not be completed";
+  return [`• Falsification pass skipped (${reason}).`];
 }
 
 export interface TerminalApprovalRenderInput {
@@ -1228,12 +1238,13 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
     chatLines: [
       ...chatBody,
       approvalBullet,
+      ...challengeDisclosure(input.goal),
       ...(foldCounts ? [] : [trailerBullet(countsLine)]),
       recordBullet,
       ...(input.extras ?? []),
     ],
     recap,
-    transcriptLines: [...transcriptBody, approvalBullet],
+    transcriptLines: [...transcriptBody, approvalBullet, ...challengeDisclosure(input.goal)],
     countsLine,
     outcome: richBrief.outcome,
     approval: input.approval,

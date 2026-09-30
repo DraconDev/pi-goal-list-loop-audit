@@ -167,6 +167,24 @@ test("challenge: a failed challenge falls back to byte-identical round-1 output"
   }
 });
 
+test("strict challenge: a failed falsification pass is infrastructure/no-verdict", async () => {
+  const { result, cleanup } = await runWorker({ FAKE_AUDIT_OUTPUT: AUDIT_OUTPUT, FAKE_CHALLENGE_MODE: "crash" }, { strictChallenge: true });
+  try {
+    assert.equal(result.ok, false);
+    assert.match(result.error ?? "", /Required auditor challenge failed.*no verdict/);
+    assert.match(result.challenge ?? "", /^skipped:/);
+    assert.equal(result.output, AUDIT_OUTPUT, "the first report remains evidence, not an accepted verdict");
+  } finally { await cleanup(); }
+});
+
+test("strict challenge: an explicit requirement overrides a policy skip", async () => {
+  const { result, cleanup } = await runWorker({ FAKE_AUDIT_OUTPUT: AUDIT_OUTPUT, FAKE_CHALLENGE_MODE: "confirm" }, { strictChallenge: true, challenge: false, challengeSkip: "rework-streak" });
+  try {
+    assert.equal(result.ok, true);
+    assert.equal(result.challenge, "confirmed");
+  } finally { await cleanup(); }
+});
+
 test("challenge: a failed round 1 still fails without challenging", async () => {
   const { result, cleanup } = await runWorker({ FAKE_AUDIT_OUTPUT: AUDIT_OUTPUT, FAKE_CHALLENGE_MODE: "confirm", FAKE_ROUND1_CRASH: "yes" });
   try {
