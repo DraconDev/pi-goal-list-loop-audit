@@ -3005,3 +3005,105 @@ tests/session-identity-refusal.test.ts:
 tests/loop-error-exemption.test.ts:
 (pass) v0.29.19: provider-error turns are NOT iterations — no measure, no stall, no stuck; loop stays active [5849.26ms]
 (pass) v0.35.x: repeated in-band provider tool output parks recovery without loop stuck accounting [1649.39ms]
+(pass) explicit in-band prompt-policy refusal stops a loop on its first pane [410.31ms]
+(pass) v0.29.19: a real turn after errors clears the streak and measures normally [631.94ms]
+(pass) v0.35.x: recoverable provider failures use the same durable recovery envelope [0.25ms]
+(pass) v0.34.31: extended quota errors enter durable main-model recovery [1918.97ms]
+(pass) v0.34.26: loop output-token exhaustion persists and notifies the compact recap [1697.67ms]
+(pass) v0.29.19: 3 consecutive user aborts stop the loop — user aborts mean STOP [883.07ms]
+(pass) v0.29.19: audit plateau with OPEN findings stands down (reprieve), then stops honestly when reprieves run out [2716.71ms]
+(pass) v0.29.20: a plain plateau stop is resumable (pre-gate false plateaus recover) [694.30ms]
+(pass) v0.29.19: audit plateau with ZERO open findings stops normally — the well is dry [494.78ms]
+
+tests/list-subtasks.test.ts:
+(pass) v0.35.72: visible hierarchical positions map to flat queue indexes [79.59ms]
+(pass) v0.34.81: SUBTASK_MARKER is line-start + case-insensitive [0.30ms]
+(pass) v0.34.81: extractSubtaskParent — no marker → undefined parent [0.18ms]
+(pass) v0.34.81: extractSubtaskParent — em-dash splits parent/child [0.16ms]
+(pass) v0.34.81: extractSubtaskParent — en-dash and hyphen-separator both work [0.11ms]
+(pass) v0.34.81: extractSubtaskParent — hyphen WITHOUT spaces does NOT split [0.06ms]
+(pass) v0.34.81: extractSubtaskParent — no separator captures parent only, empty child [0.68ms]
+(pass) v0.34.81: extractSubtaskParent — multi-line child objective survives marker strip [0.11ms]
+(pass) v0.34.81: parseListItemDeclaration — child objective keeps its own Parallel + Done when [0.64ms]
+(pass) v0.34.81: parseListItemDeclaration — no marker means parentObjective is undefined [2.08ms]
+(pass) v0.34.81: parentId round-trips through writeQueueItemFile → readQueueFromDisk [11.71ms]
+(pass) v0.34.81: readQueueFromDisk ignores malformed parentId (non-string) [0.61ms]
+(pass) v0.34.81: wiring — parse in core, resolve/refuse/cascade in goal.ts [14.67ms]
+[run-tests] progress: 1050s elapsed · 0s since last output · 278 KiB of suite output
+(pass) v0.34.81 (behavioral): list_add with a subtask binds parentId to the matching queue item [436.65ms]
+(pass) v0.34.81 (behavioral): unresolved parent refuses that child, other items still land [339.47ms]
+(pass) v0.34.81 (behavioral): explicit pick on a group refuses loudly (no silent jump) [1170.12ms]
+(pass) v0.34.81 (behavioral): auto-advance skips a head group and lands on its first open child [291.48ms]
+(pass) audit-2026-09-06: auto-advance head-group skip is ledgered, not silent [404.36ms]
+(pass) v0.38.104: list_activate accepts the dotted child label the queue prints [108.28ms]
+(pass) v0.38.104 (schema pin): list_activate's `n` accepts the child-label string form [27.39ms]
+
+tests/repair-source-consume-durability.test.ts:
+(pass) failed repair-source deletion restores the durable repair link [213.29ms]
+
+tests/loop-refine-transaction.test.ts:
+(pass) failed spec refinement leaves loop state unchanged [1370.23ms]
+
+tests/auditor-ladder-discipline.test.ts:
+(pass) v0.38.103 nothing configured: session model, and NO ladder to exhaust [1.69ms]
+(pass) v0.38.103 an explicit auditor is tried FIRST and the session model is the last resort [11.76ms]
+(pass) v0.38.103 a configured auditor with no fallbacks still keeps the session model reachable [2.95ms]
+(pass) v0.38.103 an unavailable primary escalates immediately and still ends at the session model [85.05ms]
+(pass) v0.38.103 same-session-swap does not change the ordering contract [2.91ms]
+(pass) v0.38.103 an auditor pinned to the session model is the session model, with no invented ladder [0.62ms]
+(pass) v0.38.103 with no session model and nothing configured, the error stays actionable [0.95ms]
+(pass) v0.38.103 a mechanical fast-fail verdict is not an auditor round [0.23ms]
+(pass) v0.38.103 the streak passes THROUGH a mechanical gate rather than stopping [0.04ms]
+(pass) v0.38.103 an approval still ends the comparable streak [0.17ms]
+(pass) v0.38.103 infrastructure entries stay transparent [0.05ms]
+(pass) v0.38.103 a grader fallback RE-BASELINES the streak instead of pinning [0.17ms]
+(pass) v0.38.103 the challenge-round limit is a small, finite number [0.15ms]
+(pass) v0.38.103 streak counting is what the challenge gate reads [0.03ms]
+(pass) ladder tests never write to the repo ledger: no ctx cwd points at process.cwd() [0.49ms]
+
+tests/mid-objective-park-refusal.test.ts:
+(pass) 200751-shape: blocked self-park while the brake retry is armed is refused, goal stays active [692.19ms]
+(pass) kind error and kind-unset parks are refused while armed [383.69ms]
+(pass) decision picker while armed is still allowed (user deliberating) [326.02ms]
+(pass) time-gated wait while armed is still allowed (bounded by the clamp) [470.32ms]
+(pass) blocked park with no armed recovery is still allowed (genuine blocker) [636.94ms]
+
+tests/goal-route.test.ts:
+(pass) empty args → draft [75.73ms]
+(pass) exact subcommands route [1.21ms]
+(pass) subcommands are case-insensitive [0.06ms]
+(pass) tweak takes args [0.06ms]
+(pass) archive routes with or without args [0.03ms]
+(pass) CRITICAL: objective starting with 'pause' is a goal, not a subcommand [0.02ms]
+(pass) CRITICAL: objective starting with 'status' is a goal [0.03ms]
+(pass) objective starting with 'cancel' is a goal [0.03ms]
+(pass) plain objectives set [0.02ms]
+(pass) quoted objectives set (quote stripping happens downstream) [0.02ms]
+(pass) goalArgsNeedDrafting: vague objective needs drafting [0.09ms]
+(pass) goalArgsNeedDrafting: explicit contract activates instantly [0.06ms]
+(pass) goalArgsNeedDrafting: empty is the no-args drafting path [0.02ms]
+(pass) buildSeedGrillMessage: seed + tool + gate notice + grilling protocol [0.53ms]
+(pass) draftProposalBlock: 0 replies → block with instructions, ≥1 → null [0.15ms]
+(pass) draftProposalBlock: escape hatch after 3 blocked proposals (v0.15.1) [0.14ms]
+(pass) askUserQuestionAnswered: answered dialog counts, cancel/esc does not (v0.15.1) [0.14ms]
+(pass) /goal start routes as a subcommand with the objective as rest (v0.16.0) [0.06ms]
+(pass) normalizeDraftContract: drops bare 'Done when:' introducer lines [0.28ms]
+(pass) normalizeDraftContract: drops 'Done when ALL of the following are true:' preamble [0.07ms]
+(pass) normalizeDraftContract: strips glued 'Done when: ' prefix on content line [0.06ms]
+(pass) normalizeDraftContract: renumbers mixed bullets and existing numbers sequentially [0.20ms]
+(pass) normalizeDraftContract: prose lines pass through untouched [0.07ms]
+(pass) draftContractItemCount counts numbered items only [0.09ms]
+(pass) classifySessionCtx: no owner yet → claim [0.03ms]
+(pass) classifySessionCtx: owner stale → claim (session replaced via /new) [0.02ms]
+(pass) classifySessionCtx: same sessionManager → refresh (main session event) [0.02ms]
+(pass) classifySessionCtx: different sessionManager → foreign (subagent session) [0.02ms]
+
+tests/gettick-tool-visibility.test.ts:
+(pass) v0.35.60: glla tools are reactivated at the pre-turn boundary [216.22ms]
+
+tests/list-stall-reproduction.test.ts:
+(pass) completed standalone goal automatically hands off to the waiting list [939.20ms]
+(pass) /glla resume starts a waiting-only list instead of reporting nothing [329.92ms]
+(pass) list-sourced completion promotes the successor and records the settle transition [723.53ms]
+
+tests/goal-state.test.ts:
