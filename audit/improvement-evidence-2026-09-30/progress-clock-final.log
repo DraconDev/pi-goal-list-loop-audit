@@ -1,0 +1,24 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/auditor-stall-watchdog.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/auditor-stall-watchdog.test.ts:
+(pass) stall: worker that never emits a first event is failed fast, not left for the wall [5107.18ms]
+(pass) stall: first-event budget starts after successful spawn, not pre-spawn setup [6596.25ms]
+(pass) stall: worker whose single boot heartbeat goes stale is failed fast, not left for the wall [1455.49ms]
+(pass) progress: a live auditor outlives the legacy wall metadata and settles on its result [406.07ms]
+(pass) stall: a running auditor tool is exempt — the per-tool timeout owns that axis [1138.38ms]
+(pass) stall: a silent-past-bound attempt fails fast WITH its cost record (controlled clock) [179.86ms]
+(pass) stall: a worker-reported brake is reclassified with the same evidence [342.71ms]
+(pass) stall: an open in-budget tool is not silence — the no-progress bound spares it [450.48ms]
+(pass) v0.38.99: an over-budget tool is NOT fatal — the worker cancels it, resumes, and its result still lands [2701.36ms]
+(pass) v0.38.99 approval guard: an approving verdict from a verification-incomplete attempt is refused, not applied [1655.82ms]
+(pass) v0.38.99: a genuinely wedged tool still fails fast once the grace expires [612.36ms]
+
+ 11 pass
+ 0 fail
+Ran 11 tests across 1 file. [22.00s]
+[run-tests] finished in 22s (exit 0)

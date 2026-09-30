@@ -1,0 +1,15 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/auditor-stall-watchdog.test.ts -t a live auditor outlives
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/auditor-stall-watchdog.test.ts:
+(pass) progress: a live auditor outlives the legacy wall metadata and settles on its result [5382.03ms]
+
+ 1 pass
+ 10 filtered out
+ 0 fail
+Ran 1 test across 1 file. [8.03s]
+[run-tests] finished in 8s (exit 0)
