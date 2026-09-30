@@ -1935,3 +1935,118 @@ tests/quota-retry.test.ts:
 (pass) parseQuotaError: digit-leading Retry-After ISO date is not truncated as seconds [0.06ms]
 (pass) quota retry cadence caps at five hours instead of retrying for a week [0.09ms]
 (pass) isQuotaError: wild-caught shapes [0.06ms]
+(pass) scheduleQuotaRetry: fires the callback after the window (item 12 test 3 core) [1352.84ms]
+[run-tests] progress: 450s elapsed · 1s since last output · 195 KiB of suite output
+(pass) cancelQuotaRetry: a pending retry does not fire (item 12 test 4 core) [1303.03ms]
+(pass) selectQuotaWaitReroute: reason wording wins with its parsed hint [40.45ms]
+(pass) selectQuotaWaitReroute: absolute reset survives only while future [0.20ms]
+(pass) selectQuotaWaitReroute: fresh evidence supplies the cause; stale never does [0.17ms]
+(pass) subagentQuotaEvidenceFrom: quota payloads become evidence, plain errors do not [0.06ms]
+
+tests/screenshot-completion.test.ts:
+(pass) screenshot-derived GLLA keeps explanations and truthful checks [109.86ms]
+(pass) screenshot-derived Deathrun keeps explanations and truthful checks [5.83ms]
+(pass) screenshot-derived Neonbreak keeps explanations and truthful checks [2.11ms]
+(pass) multi-line citation extraction consumes the complete reference, not just its first line [2.10ms]
+
+tests/durable-defer-production-ui.test.ts:
+(pass) production record_goal_judgment persists facts and refreshUI renders durable first [574.32ms]
+
+tests/auditor-extensions.test.ts:
+(pass) normalizeAuditorAllowedExtensions is bounded, deduped, deterministic [56.31ms]
+(pass) discovery resolves settings packages/extensions to concrete install paths [374.88ms]
+(pass) resolveAuditorExtensionSpec maps npm/git/local specs to existing paths [208.79ms]
+(pass) resolveAuditorAllowedExtensions drops unresolvable entries fail-closed [2.02ms]
+(pass) v0.35.72: project-relative auditor extensions resolve from the project settings base [46.60ms]
+(pass) request allowedExtensions rides the hashed payload with resolved paths [2.32ms]
+(pass) auditorExtensionArgs only emits args for a non-empty allowlist [0.34ms]
+(pass) audit 2026-09-06: auditorExtensionArgs drops raw npm: specs fail-closed [0.12ms]
+(pass) audit 2026-09-06: allowlist normalize dedups case-insensitively [0.04ms]
+(pass) v0.35.72: offline auditor validation uses Node timeout support, not POSIX timeout [4.64ms]
+(pass) mandatory hermetic auditor-extension validation loads the resolved allowlist path [2201.55ms]
+(pass) settings round-trip: menu pick persists, load normalizes, clear removes [1039.75ms]
+(pass) saveSettings writes the allowlist and hand-edited junk is normalized on load [75.82ms]
+
+tests/long-running-discipline.test.ts:
+(pass) long-running supervision is event-driven with 250ms→15s fallback, not duration-guessed [143.78ms]
+(pass) monitor goals are display-only — scheduling is event-driven for every plane [15.18ms]
+(pass) drafting batches 2–4 questions up front via one ask_user_question picker [0.63ms]
+(pass) long-running policies compensate zero mid-run questions with more upfront [0.50ms]
+(pass) continuation prompt carries both policies so active execution sees them [6.86ms]
+
+tests/auditor-error-paths.test.ts:
+(pass) catch block never returns disapproved: true [127.30ms]
+(pass) infra-flavored returns (no model / aborted) are not disapprovals [0.57ms]
+(pass) auditor watchdog exits are infrastructure failures, never verdicts [4.63ms]
+(pass) worker stream failures accumulate onto stderr, never overwrite it [0.60ms]
+(pass) semantic verdict-quality failures and shield blocks keep distinct categories [0.20ms]
+(pass) audit 2026-09-25: the reverted wall-clock bound leaves no dead classification branches [180.37ms]
+
+tests/objective-loss-lifecycle.test.ts:
+(pass) production session_start registers the host session root before restore [341.94ms]
+(pass) fresh processes reload session-root state across a cwd switch [484.64ms]
+(pass) cancel and wipe defer safely while sessionDir is unresolved [7.19ms]
+(pass) cancel and wipe archive live state under the registered session root [210.41ms]
+
+tests/uniform-provider-retry.test.ts:
+(pass) the first provider retry is eager for every failure family [36.76ms]
+(pass) later provider retries use one bounded configured ladder [0.18ms]
+(pass) main-model recovery has no quota-derived policy branch [7.13ms]
+(pass) the auditor durable plan is generic and keeps safe diagnostic copy [9.76ms]
+(pass) display surfaces identify generic recovery, not a guessed quota state [0.54ms]
+
+tests/lifesign.test.ts:
+(pass) bands: fresh <5m, aging to 30m, stale past it, hung on classification [49.37ms]
+(pass) head: empty/ended rows invent nothing [0.09ms]
+(pass) head: band follows the worst row, readout follows the freshest; breath rides evidence counters [0.58ms]
+(pass) card head: active goal with workers breathes + reads out evidence age [6.80ms]
+(pass) card head: hung row triangles the head; paused keeps its own glyph; no rows means no readout [1.87ms]
+(pass) rows: band colors ride the glyph; unpainted rows keep shape + number [0.66ms]
+(pass) lifesign card fits 80 columns and is key-stable within a bucket [0.43ms]
+
+tests/mode-command-guidance.test.ts:
+(pass) mode-aware helpers exist and route by policy [44.13ms]
+(pass) no hardcoded /goal <cmd> literals remain in generated guidance (goal.ts) [34.16ms]
+(pass) loop-policy recovery guidance interpolates recoverySurfaceCommand (v0.34.108) [17.97ms]
+(pass) widget resume hints are mode-aware ternaries (display.ts) [0.41ms]
+(pass) goal-policy pause notifies with /goal resume [645.53ms]
+(pass) list-policy pause notifies with /list resume [448.48ms]
+(pass) widget wait countdown is uniform auto-retrying (no manual resume hint — v0.34.64) [1.08ms]
+(pass) widget no-verdict fallback action is mode-aware [0.50ms]
+
+tests/provider-report-redaction-budget.test.ts:
+(pass) v0.38.104 an auditor report survives sanitizing instead of being deleted [45.05ms]
+(pass) v0.38.104 the required-fixes section is always recoverable [0.66ms]
+(pass) v0.38.104 a genuine provider payload still redacts IN FULL [0.17ms]
+(pass) v0.38.104 a payload-heavy blob redacts in full regardless of length [6.22ms]
+(pass) v0.38.104 the budget is a real fraction with an absolute floor [0.14ms]
+(pass) v0.38.104 a marked line is always redacted, even after the budget [2.00ms]
+(pass) v0.38.104 a bare 5xx-shaped number is not a provider marker [0.54ms]
+(pass) v0.38.104 a 5xx WITH http context still redacts [0.15ms]
+
+tests/agents-panel.test.ts:
+(pass) v0.35.29 #15: the panel ranks hung > running > ended and caps at 20 rows with a notice [49.87ms]
+(pass) v0.35.29 #15: empty state explains where evidence comes from [0.06ms]
+(pass) v0.35.64: the panel makes a child-specific abort request visible [0.13ms]
+(pass) v0.35.29 #15: the compact worker summary hides at zero and warns on the least-live child [0.21ms]
+(pass) v0.38.23: detailed widget rows are single-line glyph-first with age, plus a command-free overflow [0.28ms]
+(pass) v0.35.66: --tail matches the exact child identity and formats entries tolerantly [7.64ms]
+(pass) v0.35.66: --tail selects the exact persisted child identity among same-type transcripts [1.50ms]
+(pass) v0.37.1: --tail uses the persisted session id to find an older transcript [0.53ms]
+(pass) v0.35.66: --tail refuses a same-type transcript without exact child identity [0.31ms]
+(pass) v0.36.0: --tail rejects a message that merely mentions the target identity [0.50ms]
+(pass) v0.35.29 #15: --tail is LOUD when nothing matches or the dir is unreadable [0.45ms]
+(pass) v0.35.29 #15: formatTranscriptEntry survives shape drift without throwing [0.08ms]
+(pass) v0.35.29 #15: end-to-end — /glla agents renders real probe data; widget segment rides the goal card [392.93ms]
+(pass) v0.35.65: buildWidgetLines places detailed worker rows before the card footer and supports an agent-only card [13.65ms]
+(pass) v0.35.45: formatTranscriptEntry strips ANSI escapes and control chars on ALL paths [0.29ms]
+(pass) v0.35.45: the candidate scan reads a bounded tail per file, not full transcripts [17.08ms]
+(pass) audit-2026-09-06: panel renders the doc-promised blocks row and Recent hangs footer [18.91ms]
+(pass) audit-2026-09-06: snapshot labels live rows with the observed parent wait only [1.59ms]
+(pass) audit-2026-09-06: --tail with an ambiguous prefix lists candidates instead of picking silently [405.72ms]
+(pass) audit 2026-09-25: transcript role labels never split surrogate pairs [1.19ms]
+
+tests/compaction-containment.test.ts:
+(pass) session_before_compact returns nothing — another extension's compaction must survive [2545.98ms]
+(pass) pure: in-flight marker is armed-signal plus timeout, never silence [0.49ms]
+(pass) compaction in flight suppresses send-storm escalation (no park, no recovery) [1179.65ms]
