@@ -1,0 +1,42 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/test-runner-lifecycle.test.ts tests/test-split.test.ts tests/mechanical-pipeline-lifecycle.test.ts tests/compactor-worker-lifecycle.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/compactor-worker-lifecycle.test.ts:
+(pass) compactor cleans its Pi tree on SIGTERM, including inherited pipes and TERM-ignoring children [2172.59ms]
+(pass) compactor cleans its Pi tree on timeout, including inherited pipes and TERM-ignoring children [3212.12ms]
+(pass) compactor cleans its Pi tree on normal, including inherited pipes and TERM-ignoring children [642.13ms]
+(pass) compactor cleans its Pi tree on result-write-failure, including inherited pipes and TERM-ignoring children [697.77ms]
+
+tests/test-split.test.ts:
+(pass) test-split: every slow-listed file exists and is a test file [14.85ms]
+(pass) test-split: fast mode excludes via one ignore pattern per slow file [0.40ms]
+(pass) test-split: explicit paths drop the ignore patterns [0.09ms]
+(pass) test-split: slow mode names the files; all mode passes through [0.13ms]
+(pass) runner: the stall window is bounded and overridable [0.21ms]
+(pass) runner: silence past the window stalls, progress resets the clock [0.09ms]
+(pass) runner: the wrapper owns its child (no orphan on abort) [0.18ms]
+(pass) runner: the hand-written .d.mts declares every runtime export (drift guard) [2.02ms]
+(pass) v0.38.104: the suite child is detached so the documented group-kill is real [4.00ms]
+(pass) v0.38.104: the release gate runs the hardened runner, and CI bounds both jobs [5.89ms]
+(pass) v0.38.104: no test gates itself on the removed @tintinweb fork [214.67ms]
+(pass) v0.38.104: tests/README.md does not claim npm test runs the whole suite [2.33ms]
+
+tests/mechanical-pipeline-lifecycle.test.ts:
+(pass) Node callers survive noisy early-closing filters and retain head failure/cancellation [2858.41ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [957.52ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [614.93ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [500.06ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5586.44ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [1525.31ms]
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [427.34ms]
+
+ 23 pass
+ 0 fail
+Ran 23 tests across 4 files. [21.36s]
+[run-tests] finished in 22s (exit 0)

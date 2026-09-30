@@ -13,6 +13,15 @@ silent for 37 minutes and, once, as a 26-hour orphan). The heavy files live in
 `tests/slow-files.mjs` and are EXCLUDED from the fast run — a green `npm test`
 is not the whole suite:
 
+On Linux, GLLA subprocess launch sites also register detached test workers
+with process start identities. The wrapper reaps verified session groups
+after the suite exits, including TERM-ignoring descendants. Nested runner
+fixtures retain an outer ownership record. An unverified survivor or stale
+identity fails the run and retains the registry directory for inspection.
+This registry is enabled only by the test wrapper's environment and does
+not sweep other host processes. macOS/Windows registry cleanup is not yet
+validated; their platform checks remain part of the compatibility work.
+
 ```bash
 npm run test:slow        # only the slow files
 node scripts/run-tests.mjs --all tests/some-file.test.ts   # run one file, ignore patterns dropped

@@ -1,0 +1,35 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/test-runner-lifecycle.test.ts tests/auditor-process.test.ts tests/compactor-worker-lifecycle.test.ts -t runner|registry refuses|compactor cleans|parent abort escalates|worker force-kills|real worker stops a runaway|real worker forwards ordered
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/compactor-worker-lifecycle.test.ts:
+(pass) compactor cleans its Pi tree on SIGTERM, including inherited pipes and TERM-ignoring children [314.86ms]
+(pass) compactor cleans its Pi tree on timeout, including inherited pipes and TERM-ignoring children [3211.57ms]
+(pass) compactor cleans its Pi tree on normal, including inherited pipes and TERM-ignoring children [605.36ms]
+(pass) compactor cleans its Pi tree on result-write-failure, including inherited pipes and TERM-ignoring children [590.59ms]
+
+tests/auditor-process.test.ts:
+(pass) parent abort escalates a detached TERM-ignoring worker and removes its job [2893.76ms]
+(pass) the real worker forwards ordered tool and report phases to the parent [1109.23ms]
+(pass) real worker stops a runaway RPC process group before it becomes a storm [2573.19ms]
+(pass) worker force-kills a wedged RPC child before it exits [540.39ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [596.07ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [381.75ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [591.49ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5435.75ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [915.48ms]
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [370.64ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on normal exit [2132.32ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on signal exit [2183.67ms]
+(pass) registry refuses to signal a record naming a reused leader identity [140.27ms]
+
+ 17 pass
+ 41 filtered out
+ 0 fail
+Ran 17 tests across 3 files. [27.83s]
+[run-tests] finished in 28s (exit 0)

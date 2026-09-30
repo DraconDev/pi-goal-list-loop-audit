@@ -49,12 +49,24 @@
     {
       "path": "audit/improvement-evidence-2026-09-30/typecheck-final-focused.log",
       "sha256": "6fd20b7dbb02896b46917c0f35da26dddbdcf2d2fc1eafe5c74e5e6e945b9c1b"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/detached-registry-final.log",
+      "sha256": "81a22aa5072740a8d200a4cd4e8900ca42422ce5f55b9ef28f99b4c9464db127"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/registry-lifecycle.log",
+      "sha256": "8a8f91e2f08455e4e8ed79371123c38d9c02b0825cf5be9085413b588939628d"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/registry-typecheck-final.log",
+      "sha256": "6fd20b7dbb02896b46917c0f35da26dddbdcf2d2fc1eafe5c74e5e6e945b9c1b"
     }
   ],
   "sourceSha256": {
-    "scripts/run-tests.mjs": "80b060dfc25b01a37d313f69c7842f9065057e2f9c0dbb3d2b2e1e9360bafe8b",
+    "scripts/run-tests.mjs": "622c12e422c8cc3d4dbd61189a582250bd10b7d76386a8b8c483a11ea2357aef",
     "scripts/contained-child.mjs": "c2e7acba14febdeb70db796b2e8afa8b45da5ae7fa460a199c6628d4696a978f",
-    "scripts/goal-compactor-worker.mjs": "ff6f2e75f831bcdbe9ed212d2c5db40bfd385337866f322e192050d2d7621d32",
+    "scripts/goal-compactor-worker.mjs": "b85dee788caea38f98afba66fa7ad3bce38995d72ac4330845afa1dc5267f127",
     "scripts/goal-auditor-worker.mjs": "1d0f93db2892253741eb2ad0102b7d3c6bfcfdfa5b78561fc6ca47d368fca04c",
     "extensions/owner-file-protocol.ts": "6183f47a2fc110b1f8a254bc4fbd34f632d418f03419496834269bf8ccf641b1",
     "extensions/goal-loop-core.ts": "0327d47e22d80321fb13b9a4d68b4cc63b3d67bd123921d741199da3a18bdf4b",
@@ -64,15 +76,19 @@
     "extensions/loops/goal-tools.ts": "c366700cc0f67486b6dc17295867f8bc31442c138167f6d1cdd0af469c4d886d",
     "extensions/loops/goal-orchestrator.ts": "2d47a9b80434e5c6eebc84038d88ff3c9a8eb57867cef9164e79609bcc6680ef",
     "extensions/goal-heartbeat.ts": "7da0f16f4256c177308fe5545d33e48a4da1e2f386758929a30d84a14d6323b6",
-    "extensions/goal-loop-shield.ts": "6e7d647819c1345a9979145d6ad0a55d21d0bd82fb354a23aa38efd130149e7c",
+    "extensions/goal-loop-shield.ts": "0da56912620ca1435d312707f2be9efd4988a1017a14d7a8f706a1fe6703e34c",
     "extensions/approval-render-store.ts": "1462f816b8e6266455b3e143fe62b34bb12a27d283fceafa94c5f2bc0e6eb57c",
     "extensions/terminal-summary-delivery.ts": "0da52507bf893ceb5093282aa6ac923558c3614a9a84e90aa24be507e0eea160",
-    "extensions/terminal-summary-limits.ts": "955ec843d1cc45b21ac7f437a24e3d609a88d26f70d6bdbc637b7b45090fc270"
+    "extensions/terminal-summary-limits.ts": "955ec843d1cc45b21ac7f437a24e3d609a88d26f70d6bdbc637b7b45090fc270",
+    "scripts/test-process-registry.mjs": "01104fd10f33ab02f3d41b5ea8104817bb10dfa1ad8bede1b06368e19dab30a2",
+    "scripts/test-process-registry.d.mts": "35ff5b7821f57346ac6a19c6540dc076804aa269902b250859d28a181d25923e",
+    "extensions/goal-loop-auditor-process.ts": "59ede7538f5ae46ed6d2310cea96c4d71e60b580ef910aeaeea62ca2dd2ad4a8",
+    "extensions/goal-compactor.ts": "731c5f8629f74b74b1d13a0cd51c97160e9448f255e1510df20fb1e2d44b5ab1"
   },
   "limits": [
     "Log checks span incremental edits; hashes record current implementation, not proof every log ran on exactly these hashes.",
     "Linux Node/Bun execution only; no real provider or other-platform validation.",
-    "Detached suite-group cleanup does not yet own separately detached workers.",
-    "Architecture, compatibility, dependencies, canaries, audit policy, durability, performance and operator surfaces still require further work."
+    "Architecture, compatibility, dependencies, canaries, audit policy, durability, performance and operator surfaces still require further work.",
+    "Owned detached process registry validated on Linux only; other platforms remain pending."
   ]
 }

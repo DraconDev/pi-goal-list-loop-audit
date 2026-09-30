@@ -4,26 +4,26 @@ Every shipped change carries an audit doc here (named `<TOPIC>-<date>.md`,
 plus a `v0.34.x-<TOPIC>.md` symlink for versioned docs). Older docs
 (≤ 2026-08-06) live in `audit/archive/`.
 
-## Active focus (2026-08-17 → 2026-08-21)
+## Current implementation (2026-09-30)
 
 **Project review (2026-09-30):**
 [FULL-PROJECT-AUDIT-2026-09-30.md](FULL-PROJECT-AUDIT-2026-09-30.md)
 reviews the actual v0.38.105 source tree, reproduces ownership, cleanup,
 runner-interruption, and receipt-size defects, and prioritizes improvements
 across runtime architecture, test isolation, compatibility, dependencies,
-operator documentation, and release evidence. Findings remain open; this
-entry does not claim runtime fixes or a green release gate. The report's
-verification section records the command results and review limits.
+operator documentation, and release evidence. The report preserves the
+audited baseline; current implementation status and targeted evidence are in
+[IMPROVEMENT-IMPLEMENTATION-2026-09-30.md](IMPROVEMENT-IMPLEMENTATION-2026-09-30.md).
+The full release gate and broader improvement plan remain pending.
 
-The seven follow-up categories from the most recent full audit are
-closed (host lifecycle, continuation dispatch, objective integrity,
-explore retention, completion summaries, long-term preferences,
-audit policy). The next pass owns the durable policy artifacts and
-the open notes (`note.md` host lifecycle / completion recap /
-long-term preferences).
-
-**Most recent (2026-09-29):**
-- `FULL-AUDIT-2026-09-29.md` — four parallel read-only scouts (loop engine/auditor, continuation/recovery, tools/state/docs, UI) plus a deep review of the unreviewed v0.38.109 WIP. **12 findings, all fixed and pinned: 2 HIGH, 6 MEDIUM, 4 LOW.** The two HIGH are the same defect class as `STUCK-AT-LAST-PART-2026-09-28.md` — the v0.38.107 hard cap counts `disapproved` rounds only, so the regression-shield branch and the aggressive IMPOSSIBLE(partial) branch (both re-activate the goal without disapproving it) sat **structurally outside** it and could cycle forever. New `countTrailingUnsettledRounds` counts every round that failed to *settle* the goal, across all verdict classes, and both branches now pause on the same `auditCapHard`. Also: an alternating primary/fallback ladder defeated the existing cap via grader re-baselining (`trailingStreakGraderStable` had no production caller — now wired); `/goal timeline` counted objections the runtime had already settled; the continuation self-heal budget could never be refilled after exhaustion; blank subtask titles reached persistence against the published schema; `INSTALL.md` stated the opposite of the code on the auditor mirror default. **The gate was already red on arrival** — the v0.38.109 WIP shipped a stale expectation in `auditor-fallback-unification.test.ts` (proven: passes at `e1e2c905`, failed at HEAD); the test now pins the eager rung *and* that a billing wall still ladders. Two scout claims disproved before recording (no `additionalProperties` in the schema; the 503 ladder is monotonic). Gate 2821 pass / 0 fail, `tsc` clean. `goal-heartbeat.ts`'s watchdog/supervisor ladder and `goal-loop-shield.ts` remain unread
+**Historical review (2026-09-29):**
+[FULL-AUDIT-2026-09-29.md](FULL-AUDIT-2026-09-29.md) reports 11 fixed
+findings (3 HIGH, 6 MEDIUM, 2 LOW), one stale-test correction, and four LOW
+findings explicitly left open. It includes a follow-up heartbeat review and
+lists remaining coverage gaps, including the shield. Its v0.38.109 → v0.38.110
+label does not match the manifest audited on September 30; its result is
+historical context and cannot certify the current tree. The report itself is
+preserved unchanged.
 
 **Most recent (2026-09-27):**
 - `ENDLESS-AUDIT-CONVERGENCE-2026-09-27.md` — why goals never converged: hellhunter 8 reviews / 8 disapproved at 63h 39m, neonbreak 13/13, football 4/4 (load 112.26). Non-terminating, not slow. The brief scoped objections to the **repository** instead of the **change**, and the surface was self-feeding (each disapproval grew the 148KB findings ledger that the next round then audited — football's round-4 demand was "close L31, L32, L33, L117"). Fix: `CHANGE SCOPE` (blocking = defect in changed paths / unverified contract item / regression from this change; pre-existing debt advisory only; the auditor's own prior findings are inputs to re-check, not new targets), `WHAT APPROVED MEANS` (a reachable, checkable bar), `REWORK ROUND` (round N asks whether the PRIOR objections are closed; a new in-scope defect still blocks). Tier resolver deliberately left alone — the falsification round is where the real defects were caught. 167/167 across 12 auditor suites, `tsc` clean. Not yet proven against the field; no circuit breaker yet

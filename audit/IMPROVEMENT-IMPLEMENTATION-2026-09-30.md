@@ -11,7 +11,7 @@ Historical audit evidence remains immutable. This register describes current wor
 |---|---|---|---|
 | F1 | Race-safe owner acquisition/reclaim/refresh/takeover | Implemented; final gate pending | 6-process/90-mutation, SIGKILL, malformed/stale observations; 32 integration checks |
 | F2 | Interrupted runner always fails after cleanup | Implemented; final gate pending | Real SIGINT/SIGTERM tests, including cooperative exit 0 |
-| F3 | Test-owned detached workers and descendants are reaped | Partial | Suite-group escalation and inherited-pipe checks pass; detached-worker registry remains |
+| F3 | Test-owned detached workers and descendants are reaped | Implemented on Linux; final gate/platform checks pending | Owned registry, normal/abort escalation, stale-identity refusal; 17 worker integration checks |
 | F4 | Compactor subprocess lifecycle cleans up on timeout/signals | Implemented; final gate pending | 4 real compactor lifecycle cases plus auditor cleanup checks |
 | F5 | Every supported serialized summary receipt can be acknowledged | Implemented; final gate pending | Maximum ASCII/Unicode/control/backslash receipt checks |
 | F6 | Crash-safe archive and summary delivery obligation | Implemented; final gate pending | 48 persistence checks; cold Node SIGKILL at 3 boundaries; journal-to-outbox transfer |
