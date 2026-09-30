@@ -3107,3 +3107,64 @@ tests/list-stall-reproduction.test.ts:
 (pass) list-sourced completion promotes the successor and records the settle transition [723.53ms]
 
 tests/goal-state.test.ts:
+(pass) goal-state.ts owns the state singleton (single source of truth) [99.54ms]
+(pass) wholesale state replacement goes through replaceState() only [11.84ms]
+(pass) the persistence core lives in goal-state.ts (persistStateLine) [1.00ms]
+(pass) replaceState is used at the moved wholesale sites [0.64ms]
+
+tests/list-audit-state-root.test.ts:
+(pass) list-audit fan-out reads findings from the configured sessionDir root [196.01ms]
+
+tests/list-stale-context.test.ts:
+(pass) v0.34.51: /list add on a stale handle is refused — honest recovery result, zero state mutation [783.30ms]
+(pass) v0.34.51: /list remove, clear, cancel, next, tweak, pause, resume are all refused on a stale handle [495.94ms]
+(pass) v0.34.51: the natural-language dump fallthrough is refused on a stale handle — drafting never starts [611.52ms]
+(pass) v0.34.51: /list show and /list depth stay usable on a stale handle (inspect, don't mutate) [606.62ms]
+(pass) v0.34.51: the honest recovery result — the refreshed session owns the command and the add lands [1231.65ms]
+(pass) v0.34.51: list_add and list_activate tools return the stale-context recovery result without mutating [502.61ms]
+(pass) v0.34.51: source — cmdList captures the entry probe and gates every mutating path [24.33ms]
+
+tests/terminal-completion-notice.test.ts:
+(pass) v0.38.18 terminal notice: the done brief lands in the conversation exactly once [232.24ms]
+(pass) v0.38.18 source: the detached-approval branch closes the transcript [0.37ms]
+(pass) audit-2026-09-06: a stale-generation notice never fires into the successor session [21.82ms]
+
+tests/aggressive-mode.test.ts:
+(pass) aggressiveMode persists through the settings file (item 8) [82.95ms]
+(pass) effective settings: aggressiveMode ON flips the defaults (items 5+7) [0.11ms]
+(pass) effective settings: missing aggressiveMode uses the production keep-going default [0.05ms]
+(pass) effective settings: explicit OFF keeps base defaults; auditCap base is 5 [0.06ms]
+(pass) explicit per-key settings WIN over aggressiveMode (advisor semantics) [0.03ms]
+(pass) autoResume is global-only in the effective settings and provenance [16.49ms]
+(pass) obsolete quota policy files cannot change the generic retry settings [2.91ms]
+
+tests/task-list.test.ts:
+(pass) accepts a reasonable breakdown [0.58ms]
+(pass) rejects empty list [0.17ms]
+(pass) rejects too many top-level tasks [0.14ms]
+(pass) rejects too many subtasks (the anti-drift cap) [0.16ms]
+(pass) accepts exactly at the cap [0.08ms]
+(pass) rejects empty titles [0.03ms]
+(pass) assigns hierarchical ids and pending statuses [0.30ms]
+(pass) trims titles [0.03ms]
+
+tests/objective-loss-state-root.test.ts:
+(pass) workingDir default: cwd switch makes old objective invisible from new cwd (expected) [3.11ms]
+(pass) sessionDir opt-in: same cwd switch keeps objective visible via shared sessionDir [1.27ms]
+(pass) evidence: no destructive migration and pending defers writes — Wez crash / version switch does not delete old root [1.43ms]
+
+tests/resume-goal-tool.test.ts:
+(pass) resume_goal reactivates a paused goal and clears every pause marker [1137.47ms]
+(pass) resume_goal on an already-active goal answers instead of churning state [605.55ms]
+(pass) resume_goal with no goal answers instead of swallowing the verb [333.97ms]
+(pass) a held-on-restore loop does not block resume_goal (only a LIVE loop does) [402.34ms]
+(pass) resume_goal refuses while the supervisor is frozen [431.95ms]
+(pass) resume_goal probes pending main-model recovery inline instead of bouncing (124544) [560.16ms]
+(pass) resume_goal refuses a terminal goal with the real recovery path [321.69ms]
+(pass) resume_goal keeps its live-loop refusal (source-pinned defense-in-depth) [0.76ms]
+[run-tests] progress: 1080s elapsed · 3s since last output · 286 KiB of suite output
+(pass) paused → resume_goal → complete_goal flows without a manual resume [3771.42ms]
+(pass) resume_goal re-fires a stored completion claim through the agent origin [3555.06ms]
+
+tests/hegemon-queue-unblock-evidence.test.ts:
+(pass) REAL SHAPE: 12 empty head items block list activation exactly as in the hegemon ledger [590.86ms]
