@@ -51,3 +51,29 @@ test("runner escalates a child that ignores TERM and still reports interruption"
   const result = await runStub("process.on('SIGTERM', () => {}); console.log('STUB_READY'); setInterval(() => {}, 1000);", "SIGTERM");
   assert.equal(result.code, 143);
 });
+
+for (const scenario of ["normal", "signal"] as const) {
+  test(`runner reaps a TERM-ignoring group descendant after ${scenario} leader exit`, { skip: process.platform !== "linux", timeout: 30_000 }, async () => {
+    const descendant = "process.on('SIGTERM',()=>{});console.log('DESCENDANT_PID='+process.pid);console.log('STUB_READY');setInterval(()=>{},1000);";
+    let pid: number | undefined;
+    try {
+      const result = await runStub(`
+        const {spawn}=require('node:child_process');
+        process.on('SIGTERM',()=>process.exit(0));
+        spawn(process.execPath,['-e',${JSON.stringify(descendant)}],{stdio:['ignore','inherit','inherit']});
+        ${scenario === "normal" ? "setTimeout(()=>process.exit(0),500);" : "setInterval(()=>{},1000);"}
+      `, scenario === "signal" ? "SIGTERM" : undefined);
+      pid = Number(result.output.match(/DESCENDANT_PID=(\d+)/)?.[1]);
+      assert.ok(pid > 1, result.output);
+      assert.equal(result.code, scenario === "normal" ? 0 : 143);
+      let executing = false;
+      try {
+        const stat = fs.readFileSync(`/proc/${pid}/stat`, "utf8");
+        executing = stat.slice(stat.lastIndexOf(")") + 2).split(" ")[0] !== "Z";
+      } catch {}
+      assert.equal(executing, false, "the descendant stopped despite the leader already exiting");
+    } finally {
+      if (pid && pid > 1) { try { process.kill(pid, "SIGKILL"); } catch {} }
+    }
+  });
+}

@@ -105,7 +105,12 @@ function main() {
   let stallFired = false;
   let interruptedExitCode;
   let cleanupPromise;
+  let exitCleanupTimer;
   const cleanup = () => cleanupPromise ??= terminateContainedChild(child, { graceMs: 5000 });
+  child.once("exit", () => {
+    // A descendant retaining a pipe must not prevent close/status delivery.
+    exitCleanupTimer = setTimeout(() => { void cleanup(); }, 100);
+  });
 
   const forward = (stream, sink) => {
     stream.on("data", (chunk) => {
@@ -157,6 +162,7 @@ function main() {
     if (settled) return;
     settled = true;
     clearInterval(watch);
+    clearTimeout(exitCleanupTimer);
     await cleanup();
     const elapsed = Math.round((Date.now() - startedAt) / 1000);
     if (stallFired) {
