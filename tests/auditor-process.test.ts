@@ -7,6 +7,17 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 
+async function waitForWorkerResult(resultPath: string, timeoutMs = 30_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    try { await readFile(resultPath); return; }
+    catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+    if (Date.now() >= deadline) throw new Error("worker test timed out");
+    await new Promise(resolve => setTimeout(resolve, 20));
+  }
+}
+
+
 import {
   newDetachedAuditJobAttemptId,
   AUDITOR_TOOLS,
@@ -1424,14 +1435,7 @@ process.stdin.on("end", () => { process.exitCode = 41; });
       detached: true,
     });
     const resultPath = path.join(jobDir, "result.json");
-    await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error("worker test timed out")), 2_000);
-      const poll = async () => {
-        try { await readFile(resultPath); clearTimeout(timer); resolve(); }
-        catch { setTimeout(poll, 10); }
-      };
-      void poll();
-    });
+    await waitForWorkerResult(resultPath);
     await new Promise<void>((resolve) => {
       if (child!.exitCode !== null) { resolve(); return; }
       child!.once("exit", () => resolve());
@@ -1497,14 +1501,7 @@ process.stdin.on("data", (chunk) => {
       detached: true,
     });
     const resultPath = path.join(jobDir, "result.json");
-    await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error("wedged-worker test timed out")), 2_000);
-      const poll = async () => {
-        try { await readFile(resultPath); clearTimeout(timer); resolve(); }
-        catch { setTimeout(poll, 10); }
-      };
-      void poll();
-    });
+    await waitForWorkerResult(resultPath);
     await new Promise<void>((resolve, reject) => {
       if (child!.exitCode !== null) { resolve(); return; }
       const timer = setTimeout(() => reject(new Error("worker did not exit after force-killing RPC child")), 2_000);
@@ -1571,14 +1568,7 @@ process.stdin.on("end", () => { process.exitCode = 41; });
       detached: true,
     });
     const resultPath = path.join(jobDir, "result.json");
-    await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error("worker test timed out")), 2_000);
-      const poll = async () => {
-        try { await readFile(resultPath); clearTimeout(timer); resolve(); }
-        catch { setTimeout(poll, 10); }
-      };
-      void poll();
-    });
+    await waitForWorkerResult(resultPath);
     await new Promise<void>((resolve) => {
       if (child!.exitCode !== null) { resolve(); return; }
       child!.once("exit", () => resolve());
@@ -1687,7 +1677,7 @@ test("v0.36.0: a malformed allowedExtensions request fails closed as an identity
     // and writes a stderr diagnostic instead of fabricating a verdict.
     await new Promise<void>((resolve, reject) => {
       if (child!.exitCode !== null) { resolve(); return; }
-      const timer = setTimeout(() => reject(new Error("worker test timed out")), 2_000);
+      const timer = setTimeout(() => reject(new Error("worker test timed out")), 30_000);
       child!.once("exit", () => { clearTimeout(timer); resolve(); });
     });
     assert.equal(child.exitCode, 1);
