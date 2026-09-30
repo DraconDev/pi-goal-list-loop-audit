@@ -39,7 +39,7 @@ function stripMarkers(src: string): string {
 
 for (const name of PROMPTS) {
   test(`full assembly of ${name} is byte-identical to source minus markers`, () => {
-    // v0.38.105: assembly also drops the leading `//` author comment, so the
+    // v0.38.104: assembly also drops the leading `//` author comment, so the
     // comparison is against the comment-stripped source, not the raw file.
     const raw = fs.readFileSync(`prompts/${name}`, "utf-8");
     assert.equal(assemblePromptFull(name), stripMarkers(stripPromptAuthorComment(raw)));
@@ -181,20 +181,20 @@ test("padRight helper keeps fixture objectives length-neutral", () => {
   assert.equal(x.length, 10);
 });
 
-// v0.38.105 — the author comment must not ship to the model.
+// v0.38.104 — the author comment must not ship to the model.
 //
 // The header of a prompts/*.md file is maintainer/editor metadata. It was
 // being copied verbatim into the prompt and re-sent on EVERY continuation, so
 // writing better file-level documentation made every turn more expensive — the
 // 2026-09-28 "SKELETON, NOT THE PROMPT" header added ~700 bytes per payload.
-test("v0.38.105 the leading `//` author comment is stripped at assembly", () => {
+test("v0.38.104 the leading `//` author comment is stripped at assembly", () => {
   const assembled = assemblePrompt("goal-loop-continuation.md", []);
   assert.doesNotMatch(assembled, /^\/\//m, "no author comment reaches the prompt");
   assert.doesNotMatch(assembled, /SKELETON, NOT THE PROMPT/);
   assert.match(assembled, /^# Goal Continuation/, "the prompt starts at real content");
 });
 
-test("v0.38.105 a `//` line in the BODY is never stripped", () => {
+test("v0.38.104 a `//` line in the BODY is never stripped", () => {
   // Only a leading run of comment lines is removed. A `//` inside the prompt's
   // own content (a code example, a URL) must survive.
   assert.equal(stripPromptAuthorComment("// a\n// b\n\n# Title\n\nsee // example\n"), "# Title\n\nsee // example\n");

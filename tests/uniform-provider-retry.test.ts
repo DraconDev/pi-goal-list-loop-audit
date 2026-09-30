@@ -32,10 +32,10 @@ test("later provider retries use one bounded configured ladder", () => {
   for (const raw of ["billing required"]) {
     assert.equal(mainModelFailureDelayMs(classifyMainModelFailure(raw), 2, 15, nowMs), 30 * 60_000, raw);
   }
-  // v0.38.111: unclassified prose fails open to eager (operator direction:
+  // v0.38.104: unclassified prose fails open to eager (operator direction:
   // retry any error aggressively) — only explicit quota signals veto.
   assert.equal(mainModelFailureDelayMs(classifyMainModelFailure("unknown failure"), 2, 15, nowMs), 5_000);
-  // v0.38.109 (operator direction 2026-09-28: transient errors retry
+  // v0.38.104 (operator direction 2026-09-28: transient errors retry
   // aggressively): "503 unavailable" classifies transient, so it left this
   // ladder — attempt 2 is the eager 5s quantum at any configured base.
   assert.equal(mainModelFailureDelayMs(classifyMainModelFailure("503 unavailable"), 2, 15, nowMs), 5_000);

@@ -1,4 +1,4 @@
-// v0.38.105: a measure whose exec result carries NO numeric exit code must
+// v0.38.104: a measure whose exec result carries NO numeric exit code must
 // fail closed. It used to default to 0 — success — so partial stdout from a
 // measure killed by MEASURE_TIMEOUT_MS was parsed as a real reading, could
 // set bestValue, and permanently suppressed the plateau stop.
@@ -71,7 +71,7 @@ async function tickWithMeasureResult(
 }
 
 test("a measure result with no exit code is a NULL measure, not a reading", async () => {
-  // v0.38.105: the envelope carries stdout but NO numeric code at all — the
+  // v0.38.104: the envelope carries stdout but NO numeric code at all — the
   // shape a killed measure produces. runMeasure must treat it as a failure.
   const { loop, measureCalls } = await tickWithMeasureResult({ stdout: "42\n" });
   assert.ok(measureCalls.some(([cmd]) => cmd === "bash"), "the measure actually ran");

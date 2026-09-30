@@ -284,7 +284,7 @@ test("/loop stop mid-tick still restores the original branch (no false branch-ch
 });
 
 test("/loop stop mid-tick commits the in-flight iteration instead of resetting it away", async () => {
-  // v0.38.105: `/loop stop` and `/loop finish` reach finishLoopGit WITHOUT
+  // v0.38.104: `/loop stop` and `/loop finish` reach finishLoopGit WITHOUT
   // passing through runLoopTick, so a tick-local commit helper could not
   // protect them: the scratch branch's uncommitted diff was hard-reset away
   // and the user was still told "work is on branch <scratch>".
@@ -430,7 +430,7 @@ test("a branch-changed park is resumable: /loop resume on the scratch branch kee
   }
 });
 
-test("v0.38.108: the branch-changed park names the loop surface and is in RESUMABLE_STOP (source pins)", async () => {
+test("v0.38.104: the branch-changed park names the loop surface and is in RESUMABLE_STOP (source pins)", async () => {
   const src = fs.readFileSync(path.join(__dirname, "..", "extensions", "goal-loop.ts"), "utf-8");
   const fnStart = src.indexOf("async function parkLoopOnWrongBranch(");
   const body = src.slice(fnStart, src.indexOf("\n}\n", fnStart));

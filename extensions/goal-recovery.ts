@@ -1425,7 +1425,7 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
     appendLedger(ctx.cwd, "main_model_fallback_unavailable", { ref: effectivePendingTarget, reason: "pending switch target not in registry" });
     state.mainModelRecovery = next;
     persistState(ctx);
-    // v0.38.109: the episode diagnostic picks the cadence — transient
+    // v0.38.104: the episode diagnostic picks the cadence — transient
     // weather retries eagerly instead of climbing the blind wall ladder.
     const delay = probeRetryDelayMs(next.providerErrorDiagnostic, next.attempts, loadGlobalSettings().mainModelRetryMinutes);
     if (setMainModelRecoveryPause(ctx, next, delay)) scheduleMainModelRecoveryTimer(ctx, delay);
@@ -1470,7 +1470,7 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
   recovery.skipped = skipped.slice(-16);
   if (!target) {
     if (!current) {
-      // v0.38.109: kind-aware probe cadence (see above).
+      // v0.38.104: kind-aware probe cadence (see above).
       const delay = probeRetryDelayMs(recovery.providerErrorDiagnostic, recovery.attempts + 1, loadGlobalSettings().mainModelRetryMinutes);
       const next = { ...withMainModelRecoveryWindow(recovery), attempts: recovery.attempts + 1, attempted };
       if (setMainModelRecoveryPause(ctx, next, delay)) scheduleMainModelRecoveryTimer(ctx, delay);
@@ -1529,7 +1529,7 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
     const next = { ...recovery, pendingModelSwitch: undefined, skipped: recovery.skipped, attempted, attempts: recovery.attempts + 1 };
     state.mainModelRecovery = next;
     persistState(ctx);
-    // v0.38.109: kind-aware probe cadence (see above).
+    // v0.38.104: kind-aware probe cadence (see above).
     const delay = probeRetryDelayMs(next.providerErrorDiagnostic, next.attempts, loadGlobalSettings().mainModelRetryMinutes);
     if (setMainModelRecoveryPause(ctx, next, delay)) scheduleMainModelRecoveryTimer(ctx, delay);
     return;

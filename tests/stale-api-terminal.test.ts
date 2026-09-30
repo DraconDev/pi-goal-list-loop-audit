@@ -257,7 +257,7 @@ test("v0.34.94: heartbeat only self-heals when the API and context are fresh", (
   assert.match(heartbeatRegion, /if \(flags\.staleTerminalDone \|\| flags\.extensionApiStale\) return;/, "ambiguous recovery remains parked");
 });
 
-// v0.38.110 — the stale-recovery heartbeat could never re-arm.
+// v0.38.104 — the stale-recovery heartbeat could never re-arm.
 //
 // The stale-terminal path bumps sessionGeneration but deliberately PRESERVES
 // the heartbeat timer (goal-orchestrator: `if (!preserveStaleRecovery &&
@@ -276,7 +276,7 @@ test("v0.34.94: heartbeat only self-heals when the API and context are fresh", (
 // pending-latch, stranded-audit and subagent-hang watchdogs all silently
 // stopped. Recovery depended on an unrelated supervision event arriving —
 // exactly what the silent-handle-death scenario does not deliver.
-test("v0.38.110: the preserved heartbeat releases its handle and re-arms across a generation bump", () => {
+test("v0.38.104: the preserved heartbeat releases its handle and re-arms across a generation bump", () => {
   const start = HB.indexOf("function scheduleHeartbeatPoll");
   const end = HB.indexOf("function heartbeatTick", start);
   assert.ok(start > 0 && end > start, "scheduleHeartbeatPoll is in scope");

@@ -163,7 +163,7 @@ test("retention: unowned debris younger than the identity-free floor stays ambig
   assert.equal(fs.existsSync(dir), true, "young unknown dirs survive explicit sweeps");
 });
 
-test("v0.38.105 retention: a finished result settles a LIVE parent lock (PID reuse no longer pins it)", () => {
+test("v0.38.104 retention: a finished result settles a LIVE parent lock (PID reuse no longer pins it)", () => {
   // The parent writes its lock before the worker launch and rewrites it with
   // role:"worker" once the attempt settles. A host crash inside that window
   // plus a later reuse of the parent PID left the dir classified `ambiguous`
@@ -185,7 +185,7 @@ test("v0.38.105 retention: a finished result settles a LIVE parent lock (PID reu
   assert.equal(cleaned.total, 0, "nothing is left behind after the reap");
 });
 
-test("v0.38.105 retention: a LIVE parent lock with no result is still ambiguous (unchanged)", () => {
+test("v0.38.104 retention: a LIVE parent lock with no result is still ambiguous (unchanged)", () => {
   // The new branch must not weaken the real pre-worker case: a live parent may
   // still be mid-launch, so nothing is provable until the result lands.
   const cwd = tmpdir();

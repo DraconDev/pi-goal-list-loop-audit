@@ -264,11 +264,11 @@ test("v0.35.15: /glla resume clears the freeze, reports the frozen duration, and
   assert.equal(misleading.length, 0, "clearing ONLY the pause is not 'nothing'");
 });
 
-// v0.38.105: the working-card tool argument is provider/child-controlled text
+// v0.38.104: the working-card tool argument is provider/child-controlled text
 // (file_path/path/command/pattern/query/url/title). The length cut was UTF-16
 // (`base.slice(0, 23)`), so a multi-code-unit glyph at index 23 painted a
 // broken surrogate into the card for the rest of the turn.
-test("v0.38.105: the working-card tool argument is cut cell-aware, never mid-surrogate", () => {
+test("v0.38.104: the working-card tool argument is cut cell-aware, never mid-surrogate", () => {
   const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
   // Exactly 22 ASCII chars, so the emoji's high surrogate lands on index 22 and
   // the old `slice(0, 23)` emitted half of it.

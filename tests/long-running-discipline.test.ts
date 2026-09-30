@@ -89,7 +89,7 @@ test("continuation prompt carries both policies so active execution sees them", 
   assert.match(prompt, /ACTIVE-EXECUTION QUESTION DISCIPLINE/);
   assert.match(prompt, /Compensate for zero mid-run questions by asking MORE up front/);
   assert.match(prompt, /Drafting is the ONLY place/);
-  // v0.38.105: the drafting-batch rule is asserted on the ASSEMBLED prompt
+  // v0.38.104: the drafting-batch rule is asserted on the ASSEMBLED prompt
   // above ("Compensate for zero mid-run questions by asking MORE up front" /
   // "Drafting is the ONLY place"). EXECUTION DISCIPLINE used to restate the
   // same rule with different wording; that duplicate is now a pointer, so the

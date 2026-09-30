@@ -1,4 +1,4 @@
-// pi-goal-list-loop-audit — v0.38.110 full-audit follow-ups.
+// pi-goal-list-loop-audit — v0.38.104 full-audit follow-ups.
 // tests/audit-followup-contract.test.ts
 //
 // The smaller defects this pass fixed alongside the two uncapped treadmills in

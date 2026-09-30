@@ -133,7 +133,7 @@ test("fixture: repeated real continuation payloads grow context linearly and are
   // single-payload bytes.
   // Chat/archive guidance parity adds 23 ASCII bytes per payload.
   // Lead-contract wording refreshes the deterministic fixture by +176 chars / +178 serialized bytes.
-  // v0.38.105: the prompt file's leading `//` author comment is stripped at
+  // v0.38.104: the prompt file's leading `//` author comment is stripped at
   // assembly (extensions/prompt-layers.ts). It is maintainer/editor metadata,
   // not prompt content, and it was being re-sent every continuation — the
   // 2026-09-28 "SKELETON, NOT THE PROMPT" header alone added ~700 bytes per
@@ -142,7 +142,7 @@ test("fixture: repeated real continuation payloads grow context linearly and are
   // (-1_230; -1_216 serialized), ~1_230 chars and ~308 estimated tokens saved
   // on EVERY continuation.
   //
-  // v0.38.105 (audit follow-up): the tree measures 24_131 chars / 24_243
+  // v0.38.104 (audit follow-up): the tree measures 24_131 chars / 24_243
   // bytes — 90 fewer than the 2026-09-24 re-baseline, which was recorded in
   // the same commit as the prompt slimming and never re-run. Constants
   // re-based to what the shipped prompt actually emits.
@@ -268,7 +268,7 @@ test("reported checkpoint shape stays pinned across all probe sizes", () => {
     };
   });
 
-  // v0.38.105 (audit follow-up): re-baselined to the values the CURRENT tree
+  // v0.38.104 (audit follow-up): re-baselined to the values the CURRENT tree
   // actually produces. The previous row set claimed 24_221 chars per payload,
   // but the prompt measures 24_131 — the 2026-09-24 pass re-baselined this
   // fixture in the same commit that slimmed the continuation prompt and never

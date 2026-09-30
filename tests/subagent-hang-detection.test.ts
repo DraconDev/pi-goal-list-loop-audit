@@ -625,11 +625,11 @@ test("v0.34.105 source pin: subagent scan precedes the main-model-recovery early
   assert.ok(scanAt < recoveryGateAt, "the scan runs BEFORE the recovery gate — a quota wall can no longer blind it");
 });
 
-// v0.38.105: readiness observation had the same lifetime problem as readiness
+// v0.38.104: readiness observation had the same lifetime problem as readiness
 // state. observedSubagentRpcBuses was a bare Set that was only ever added to,
 // so every rebound session's event bus — and the two listeners registered on
 // it — stayed reachable for the life of the process.
-test("v0.38.105 releasing the RPC host unsubscribes the readiness listeners it installed", () => {
+test("v0.38.104 releasing the RPC host unsubscribes the readiness listeners it installed", () => {
   type Handler = (data: unknown) => void;
   const handlers = new Map<string, Set<Handler>>();
   let liveListeners = 0;

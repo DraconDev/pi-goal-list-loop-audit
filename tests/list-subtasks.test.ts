@@ -511,7 +511,7 @@ test("audit-2026-09-06: auto-advance head-group skip is ledgered, not silent", a
   assert.equal(skips[0]!.value.skippedGroups, 1);
 });
 
-test("v0.38.105: list_activate accepts the dotted child label the queue prints", async () => {
+test("v0.38.104: list_activate accepts the dotted child label the queue prints", async () => {
   // `list_status` and `/list show` hand the agent labels like `1.1`, and this
   // tool's own error text names that form — but the schema typed `n` as
   // Type.Number, so validation rejected it BEFORE execute could explain it.
@@ -570,7 +570,7 @@ test("v0.38.105: list_activate accepts the dotted child label the queue prints",
   }
 });
 
-test("v0.38.105 (schema pin): list_activate's `n` accepts the child-label string form", () => {
+test("v0.38.104 (schema pin): list_activate's `n` accepts the child-label string form", () => {
   // The behavioral test above cannot catch a schema regression: the MockPi
   // harness passes params straight to execute, while the real host validates
   // against the tool schema BEFORE the handler runs. So pin the declared type

@@ -181,7 +181,7 @@ export function buildSettingsRows(
   // v0.37.0: compact ms duration for the auditor timeout rows ("5m" / "90s").
   const fmtTimeoutMs = (ms?: number): string => {
     if (typeof ms !== "number" || !Number.isFinite(ms) || ms < 0) return "?";
-    // v0.38.108: 0 is a LEGAL value, not a missing one — auditJobRetentionMs
+    // v0.38.104: 0 is a LEGAL value, not a missing one — auditJobRetentionMs
     // floors at 0 ("reap proven-dead audit dirs immediately") and the editor
     // accepts it. Rendering it "?" told the operator the value was unknown
     // while the runtime acted on it, precisely where their intent mattered.

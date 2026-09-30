@@ -91,7 +91,7 @@ export function loadPromptSegments(name: string): PromptSegment[] {
   return parsePromptLayers(stripPromptAuthorComment(source, name), name);
 }
 
-/** v0.38.105: strip the leading `//` author-comment block from a prompt file.
+/** v0.38.104: strip the leading `//` author-comment block from a prompt file.
  *
  * The header of a prompts/*.md file is authoring metadata — who wrote it, what
  * the slots mean, where the real constants live. It is written for the

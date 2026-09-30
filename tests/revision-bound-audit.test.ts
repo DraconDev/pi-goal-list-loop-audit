@@ -692,7 +692,7 @@ test("v0.34.96: a NORMAL completionSummary still runs the auditor (no false-posi
   }
 });
 
-test("v0.38.105: an unpersistable newObjective refuses the claim and never advances the revision", async () => {
+test("v0.38.104: an unpersistable newObjective refuses the claim and never advances the revision", async () => {
   // The pivot path used to pre-bump the in-memory revision, ignore
   // updateGoal's false, then ledger goal_tweaked and notify "Objective
   // updated" — so an unwritable .pi-glla advanced the audited revision (which

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// pi-goal-list-loop-audit — v0.38.107
+// pi-goal-list-loop-audit — v0.38.104
 // scripts/run-tests.mjs
 //
 // Fast/slow suite split. The full serialized suite takes ~7 minutes —
@@ -12,7 +12,7 @@
 // An explicit test path in the extras always wins: ignore patterns are
 // dropped so `npm test -- tests/some-slow.test.ts` runs that file.
 //
-// v0.38.107 — observable, hang-proof, orphan-free. The field reported a
+// v0.38.104 — observable, hang-proof, orphan-free. The field reported a
 // suite that produced nothing for 37 minutes and a 26-hour-old `bun test`
 // still burning a core: a runner you cannot see is a runner you cannot trust.
 // So this wrapper now:
@@ -29,7 +29,7 @@ import { SLOW_TEST_FILES } from "../tests/slow-files.mjs";
 
 export const SERIAL_FLAGS = ["--parallel=1", "--max-concurrency=1", "--timeout=60000"];
 
-/** v0.38.107: how long the suite may print NOTHING before we call it hung.
+/** v0.38.104: how long the suite may print NOTHING before we call it hung.
  * Generous on purpose — a serialized suite on a loaded host still emits
  * output every few seconds, and bun's own --timeout=60000 only bounds a
  * single test, not a runner that stops making progress. */
@@ -95,7 +95,7 @@ function main() {
   const startedAt = Date.now();
   log(`mode=${mode} slow_files=${SLOW_TEST_FILES.length} stall_timeout=${Math.round(stallLimit / 1000)}s heartbeat=${Math.round(beat / 1000)}s`);
 
-  // v0.38.108: `detached: true` is what makes the group-kill below real.
+  // v0.38.104: `detached: true` is what makes the group-kill below real.
   // Without it the child stays in THIS process's group, so
   // process.kill(-child.pid) targets a pgid that does not exist, throws
   // ESRCH, and takeDown silently degrades to signalling the direct child —
@@ -125,7 +125,7 @@ function main() {
   };
   // Own the child's process group so detached auditor workers spawned by the
   // suite die with it — the 26-hour orphan was exactly this failure mode.
-  // v0.38.108: this probe used to swallow its own ESRCH, so when the group
+  // v0.38.104: this probe used to swallow its own ESRCH, so when the group
   // did not exist (the pre-fix spawn) the wrapper claimed a guarantee it
   // never had and never even unref'd. A failed probe is now loud.
   try {

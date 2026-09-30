@@ -635,7 +635,7 @@ export function summarizeToolArg(name: string, input: any): string | undefined {
   // the TUI. The objective path was already whitespace-collapsed; this
   // path was the gap.
   const base = (name === "bash" ? v : v.split("/").pop() || v).replace(/[\x00-\x1f\x7f-\x9f]/g, " ").replace(/\s+/g, " ").trim();
-  // v0.38.105: cell-aware cut. The argument is provider/child-controlled text
+  // v0.38.104: cell-aware cut. The argument is provider/child-controlled text
   // (file_path/path/command/pattern/query/url/title) and `base.slice(0, 23)`
   // split surrogate pairs, painting a broken glyph into the WORKING card for
   // the rest of the turn — the same defect the agents panel fixed by routing

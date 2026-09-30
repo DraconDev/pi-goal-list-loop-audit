@@ -260,11 +260,11 @@ test("completion summary audit doc exists and inventories archives", () => {
   assert.match(txt, /six-label/);
 });
 
-// v0.38.105: two excerpts still cut UTF-16 code units on untrusted goal text
+// v0.38.104: two excerpts still cut UTF-16 code units on untrusted goal text
 // while the module's own clipSummaryValue had already been converted to the
 // code-point-safe clause-bound cutter. An emoji straddling the cut index put a
 // lone surrogate into the durable archive line.
-test("v0.38.105: the recorded-facts archive summary never emits a lone surrogate", () => {
+test("v0.38.104: the recorded-facts archive summary never emits a lone surrogate", () => {
   // Build an objective whose 🚀 straddles the old index-217 cut.
   // 216 ASCII chars, so the emoji's HIGH surrogate lands exactly on index 217
   // and the old `slice(0, 217)` emitted half of it.

@@ -49,7 +49,7 @@ import {
   MAX_ZOMBIE_RETRY_ATTEMPTS,
 } from "./goal-loop-backoff.js";
 
-/** v0.38.105: the one thinking ladder. normalizeLoadedSettings prunes every
+/** v0.38.104: the one thinking ladder. normalizeLoadedSettings prunes every
  * level-bearing setting against this list — the per-agent override map and the
  * two scalar pins — so a hand-edited value can never reach an agent file as a
  * bogus `thinking:` key. */
@@ -327,7 +327,7 @@ export interface Settings {
  * artifact. The recovery runtime intentionally reads the global file for
  * them; ignoring project copies keeps the settings table and behavior
  * honest instead of showing a project value that the retry path cannot use.
- * v0.38.108: exported so docs/SETTINGS.md's "Global-only." annotations can be
+ * v0.38.104: exported so docs/SETTINGS.md's "Global-only." annotations can be
  * pinned against the real set — two rows claimed it for keys that are NOT
  * in it, so a hand-edited project file silently overrode global policy. */
 export const GLOBAL_ONLY_KEYS: ReadonlySet<keyof Settings> = new Set([
@@ -608,7 +608,7 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   if (typeof settings.auditCapHard !== "number" || !Number.isInteger(settings.auditCapHard) || settings.auditCapHard < 0) {
     delete settings.auditCapHard;
   }
-  // v0.38.105: two more members of the same family that had no guard, so a
+  // v0.38.104: two more members of the same family that had no guard, so a
   // hand-edited junk value was rendered as effective by provenance, the menu
   // and the headless /glla row while the RUNTIME silently substituted its
   // default (mainModelRetryDelayMs requires a finite number > 0;
@@ -621,7 +621,7 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   if (typeof settings.auditFeedbackChars !== "number" || !Number.isInteger(settings.auditFeedbackChars) || settings.auditFeedbackChars < 0) {
     delete settings.auditFeedbackChars;
   }
-  // v0.38.105: the same enum hole. subagentThinkingOverrides is pruned against
+  // v0.38.104: the same enum hole. subagentThinkingOverrides is pruned against
   // the ladder above; these two scalar pins were not, so a hand-edited
   // "turbo" survived load, printed as the current level in the menu, and was
   // stringified straight into a drafter/auditor agent file's thinking: key.

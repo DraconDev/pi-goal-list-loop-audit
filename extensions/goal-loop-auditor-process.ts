@@ -1024,7 +1024,7 @@ export interface AuditJobHealthEntry {
   status: AuditJobHealthStatus;
   pid?: number;
   reason?: string;
-  /** v0.38.105: set when `status === "dead"` was proven by a result.json on
+  /** v0.38.104: set when `status === "dead"` was proven by a result.json on
    * file rather than by a dead pid. The worker had already exited, so the
    * `pid` beside it is a PARENT identity (or a reused pid) and re-verifying its
    * liveness before a reap would protect nothing. */
@@ -1122,7 +1122,7 @@ export function inspectAuditJobHealth(
         // live worker job once the parent PID is gone. No child can exist yet:
         // spawn happens only after request/progress are durable.
         //
-        // v0.38.105: a finished result settles the question regardless of
+        // v0.38.104: a finished result settles the question regardless of
         // parent liveness. A live parent can only be READING a result.json it
         // is about to apply — it never writes one — so "PID is alive" cannot
         // mean a worker is still running. Without this, a crash in the window
@@ -1196,7 +1196,7 @@ export function cleanupDeadAuditJobs(cwd: string, maxAgeMs = AUDIT_JOB_CLEANUP_M
     // via the no-lock+result path above — provably finished, no pid to
     // re-verify — so it reaps on age alone.
       if (entry.provenFinished) {
-        // v0.38.105: proven finished by a result on file. The pid here is a
+        // v0.38.104: proven finished by a result on file. The pid here is a
         // parent identity that may well have been reused by an unrelated live
         // process — re-verifying it would protect nothing and leaked the dir
         // past the retention ceiling forever.
@@ -1310,7 +1310,7 @@ interface AuditorRequest {
    * the worker skips the falsification pass). Absent = full tier =
    * today's challenge behavior. Part of the request hash. */
   challenge?: boolean;
-  /** v0.38.105: WHY the falsification pass is skipped. The parent sends
+  /** v0.38.104: WHY the falsification pass is skipped. The parent sends
    * `challenge: false` for two different reasons (light tier, or a rework
    * streak past the challenge limit on a FULL-tier dispatch), and the worker
    * used to label both "skipped: light-tier audit" — so a full-tier audit that
@@ -1918,7 +1918,7 @@ async function runDetachedGoalCompletionAuditorInner(args: {
     // v0.38.103: how many comparable rounds this goal has already been
     // reworked through. Gates the falsification round below.
     const reworkStreak = countTrailingComparableDisapprovals(args.goal.auditHistory ?? []);
-    // v0.38.105: the falsification pass is skipped for two DIFFERENT reasons
+    // v0.38.104: the falsification pass is skipped for two DIFFERENT reasons
     // (light tier, or a full-tier dispatch whose rework streak is past the
     // challenge limit). Name the one that applies so the worker records the
     // real cause instead of calling every skip a light-tier audit.

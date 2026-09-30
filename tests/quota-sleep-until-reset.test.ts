@@ -10,7 +10,7 @@
 //   2. The eager first retry stays eager (5s) even with a hint present.
 //   3. Hints never widen the envelope: capped at the 5h per-attempt max.
 //   4. Non-quota signals (transient, billing, unknown) ignore hints.
-//      v0.38.109: transient no longer keeps the blind ladder either — it
+//      v0.38.104: transient no longer keeps the blind ladder either — it
 //      retries eagerly (operator direction: transient weather hammers).
 //      Billing/unknown still ladder; billing still heads for the park.
 //   5. The classifier stays opaque (kind/quotaSignal pins untouched).
@@ -26,10 +26,10 @@ import {
 
 const HOUR_MS = 60 * 60_000;
 
-test("quota sleep-until-reset: explicit upstream hint sleeps to reset, on the FIRST attempt too (v0.38.105)", () => {
+test("quota sleep-until-reset: explicit upstream hint sleeps to reset, on the FIRST attempt too (v0.38.104)", () => {
   const raw = "429 Too Many Requests — quota resets in 2 hours; retry in 2 hours";
   const failure = classifyMainModelFailure(raw);
-  // v0.38.105: the `attempt <= 1` eager return used to sit ABOVE the hint
+  // v0.38.104: the `attempt <= 1` eager return used to sit ABOVE the hint
   // check, so the first failure carrying a named reset slept 5s and probed the
   // wall the provider had just described — the exact hammering the branch's own
   // comment ("Checked BEFORE the eager rule, never after") exists to prevent.
@@ -58,7 +58,7 @@ test("quota sleep-until-reset: hintless quota failures keep the blind ladder", (
 
 test("quota sleep-until-reset: non-quota signals ignore hints", () => {
   const transient = classifyMainModelFailure("503 Service Unavailable; retry in 2 hours");
-  // v0.38.109: the hint prose is still ignored (no quota signal), but the
+  // v0.38.104: the hint prose is still ignored (no quota signal), but the
   // transient kind now retries eagerly instead of laddering to 30m.
   assert.equal(mainModelFailureDelayMs(transient, 2, 15), 5_000, "transient ignores the hint AND stays eager");
   const billing = classifyMainModelFailure("insufficient credits — buy credits; retry in 2 hours");

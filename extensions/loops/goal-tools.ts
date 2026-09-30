@@ -66,7 +66,7 @@ extractPendingTasks,
   formatAuditLog,
   formatGoalAuditHistory,
   readAuditLog,
-  // v0.38.105: bumpGoalRevision is no longer used here — the newObjective path
+  // v0.38.104: bumpGoalRevision is no longer used here — the newObjective path
   // passes an explicit `revision` to updateGoal so the bump lands only when the
   // write is durable (cmdTweak remains the other revision site).
   captureGoalRevision,
@@ -719,7 +719,7 @@ function registerAgentTools(pi: any): void {
         const rawNewObjective = p.newObjective.trim();
         const { objective: cleanObj, verificationContract } = extractVerificationContract(rawNewObjective);
         const priorProvenance = state.goal.objectiveProvenance;
-        // v0.38.105: the objective shift must be DURABLE before anything
+        // v0.38.104: the objective shift must be DURABLE before anything
         // claims it happened. This used to pre-bump the in-memory revision,
         // ignore updateGoal's boolean, then ledger goal_tweaked and notify
         // "Objective updated" — so an unwritable .pi-glla advanced the
@@ -1995,7 +1995,7 @@ function registerAgentTools(pi: any): void {
               auditorFallbackExhausted: true,
             };
             const notifyIdentical = claimRecoveryNotice(identicalParked, `${recoveryEpisodeKey}:identical-parked`);
-            // v0.38.106: same self-healing contract as the loop's park site —
+            // v0.38.104: same self-healing contract as the loop's park site —
             // this path used to tell the operator that retries had stopped
             // and left the stored claim for a human. It now arms the shared
             // self-re-arming recovery cadence on the plan's own backoff.
@@ -2024,7 +2024,7 @@ function registerAgentTools(pi: any): void {
           }
           if (!plan.automatic) {
             const notifyCapped = claimRecoveryNotice(pending, `${recoveryEpisodeKey}:retry-capped`);
-            // v0.38.106: the horizon bounds the LADDER, not the lane — the
+            // v0.38.104: the horizon bounds the LADDER, not the lane — the
             // main lane keeps its hourly probe past its own horizon. Arm the
             // same shared self-healing cadence here.
             const probeDelayMs = auditorIdenticalParkProbeDelayMs(plan.requestedSec);
@@ -3824,7 +3824,7 @@ function registerAgentTools(pi: any): void {
     label: "Activate list item",
     description: "Activate a specific item from the /list queue by position (1-based). Order is the default, not the law: use this when a different item should be worked next (e.g. you want to research item 5 while item 1 waits). If a live objective is running you choose update / replace / cancel first (replace archives it); a paused objective is handled as carryover, not a live conflict.",
     parameters: Type.Object({
-      // v0.38.105: accept the dotted child label the queue itself prints
+      // v0.38.104: accept the dotted child label the queue itself prints
       // (`1.1`) and this handler's own error text names. A JSON number cannot
       // carry a label token, and schema validation runs BEFORE execute, so a
       // Number-only schema rejected the exact form the guidance told the agent

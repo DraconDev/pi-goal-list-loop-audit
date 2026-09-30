@@ -317,7 +317,7 @@ export function hourAlignedRetryDelayMs(nowMs = Date.now()): number {
  * "empty" ("empty array", "empty test fixture") is not a provider glitch. */
 const EMPTY_PROVIDER_RESPONSE = /(?:returned|produces?|produced|gave|sent|got)\s+(?:an?\s+)?empty\s+(?:response|completion|result|message|output|content)|empty\s+(?:response|completion)\s+from\s+(?:the\s+)?(?:provider|api|model)|no\s+(?:response|completion)\s+(?:was\s+)?(?:returned|received)|zero[- ]token\s+(?:response|completion)/i;
 
-/** v0.38.109: transient failures retry EAGERLY, not on the 15-minute
+/** v0.38.104: transient failures retry EAGERLY, not on the 15-minute
  * ladder. Field direction (operator 2026-09-28): most errors are transient
  * — a 5xx/timeout/empty blip must be hammered for ~a minute before any
  * backoff, on the main lane and every retry lane that shares this function
@@ -342,7 +342,7 @@ export function isEmptyProviderResponse(raw: string | undefined): boolean {
 }
 
 /** Failures that retry eagerly rather than climbing the wall ladder.
- * v0.38.109 covered transient weather plus empty blips; v0.38.111 fails
+ * v0.38.104 covered transient weather plus empty blips; v0.38.104 fails
  * OPEN (operator direction 2026-09-28: retry any error aggressively, most
  * are transient): unclassified prose retries eagerly too. What stays on
  * the ladder is exactly what hammering cannot help — auth failures,
@@ -376,17 +376,17 @@ export function mainModelFailureDelayMs(failure: MainModelFailure, attempt: numb
   // opposite of what this branch is for. Checked BEFORE the eager rule, never
   // after.
   //
-  // v0.38.105: the order was a lie — `attempt <= 1` returned 5s above this
+  // v0.38.104: the order was a lie — `attempt <= 1` returned 5s above this
   // check, so the FIRST failure carrying "429 … Retry-After: 14400" slept 5
   // seconds and probed the wall the provider had just named. The hint now
   // wins for every attempt; the eager quantum remains for everything else.
   const resetSleep = quotaResetSleepMs(failure, nowMs);
   if (resetSleep !== undefined) return resetSleep;
   if (attempt <= 1) return 5_000;
-  // v0.38.109: transient weather hammers eagerly, then backs off on the
+  // v0.38.104: transient weather hammers eagerly, then backs off on the
   // short ladder — never the 15m-base wall ladder. Attempt 2 of a 503 used
   // to sleep 30m; the field reads that as "gave up on a blip".
-  // v0.38.111: fails open to unclassified prose too (see
+  // v0.38.104: fails open to unclassified prose too (see
   // isEagerRetryFailure); explicit quota signals still veto eager.
   if (isEagerRetryFailure(failure)) {
     if (attempt <= TRANSIENT_EAGER_ATTEMPTS) return 5_000;
@@ -395,10 +395,10 @@ export function mainModelFailureDelayMs(failure: MainModelFailure, attempt: numb
   return mainModelRetryDelayMs(attempt, baseMinutes);
 }
 
-/** v0.38.109: kind-aware delay for recovery PROBES, which only carry the
+/** v0.38.104: kind-aware delay for recovery PROBES, which only carry the
  * episode's durable diagnostic text (no live failure object). The probe
  * path used the blind wall ladder for everything — 7 empty responses
- * parked our own repo goal 300m. v0.38.111: an empty/missing diagnostic
+ * parked our own repo goal 300m. v0.38.104: an empty/missing diagnostic
  * fails open to eager like any unclassified error — a probe with no
  * evidence of a wall is a cheap local re-check, and a mid-flight config
  * fix recovers in minutes instead of hours. */

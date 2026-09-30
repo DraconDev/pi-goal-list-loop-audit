@@ -96,7 +96,7 @@ test("v0.38.104 a quota wall still wins over the eager empty-response path", () 
   assert.equal(delay, 600_000, "and it must be the provider's own window, not the eager 5s");
 });
 
-test("v0.38.105 the FIRST attempt honours the upstream reset hint too (no 5s probe of a named wall)", () => {
+test("v0.38.104 the FIRST attempt honours the upstream reset hint too (no 5s probe of a named wall)", () => {
   // The `attempt <= 1` eager return used to sit ABOVE the hint check, so the
   // very first 429 with `Retry-After` slept 5s and immediately probed the
   // wall the provider had just named — exactly the hammering the branch was

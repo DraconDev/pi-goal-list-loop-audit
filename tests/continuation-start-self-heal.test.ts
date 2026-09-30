@@ -1,4 +1,4 @@
-// v0.38.106 (field: neonbreak, Screenshot 20260928 174457): the continuation
+// v0.38.104 (field: neonbreak, Screenshot 20260928 174457): the continuation
 // lane's unacknowledged-turn-start path was a permanent dead end.
 //
 //   "continuation was accepted, but pi did not start a turn"
@@ -67,7 +67,7 @@ afterEach(() => {
   pi.sent.length = 0;
 });
 
-test("v0.38.106: the self-heal cadence is bounded on both sides", () => {
+test("v0.38.104: the self-heal cadence is bounded on both sides", () => {
   assert.equal(continuationStartSelfHealDelayMs(0), CONTINUATION_START_SELF_HEAL_MIN_MS, "the first probe is quick enough to matter");
   assert.equal(continuationStartSelfHealDelayMs(1), 2 * CONTINUATION_START_SELF_HEAL_MIN_MS, "then it doubles");
   assert.equal(continuationStartSelfHealDelayMs(99), CONTINUATION_START_SELF_HEAL_MAX_MS, "and it is capped — no 30×/hour polling");
@@ -75,7 +75,7 @@ test("v0.38.106: the self-heal cadence is bounded on both sides", () => {
   assert.ok(CONTINUATION_START_SELF_HEAL_MAX_PROBES > 0, "the probe budget is a real bound");
 });
 
-test("v0.38.106: an unacknowledged turn start self-heals instead of demanding a human", async () => {
+test("v0.38.104: an unacknowledged turn start self-heals instead of demanding a human", async () => {
   __testOnlyResetStaleFlag();
   __testOnlySetContinuationStartTimeout(250);
   __testOnlySetContinuationRetryBackoff(250);
@@ -115,7 +115,7 @@ test("v0.38.106: an unacknowledged turn start self-heals instead of demanding a 
   }
 });
 
-// v0.38.110: the reset was gated on `continuationStartSelfHealTimer` being
+// v0.38.104: the reset was gated on `continuationStartSelfHealTimer` being
 // live. Both terminal paths null the timer WITHOUT clearing the counter —
 // the exhaustion branch and the "lane moved on" cancel — so after the first
 // episode spent its budget the counter stayed pinned at the max. The next
@@ -123,7 +123,7 @@ test("v0.38.106: an unacknowledged turn start self-heals instead of demanding a 
 // already-spent budget with ZERO re-probes, killing the lane's automatic
 // recovery for the rest of the session and blaming a budget spent on a
 // long-resolved episode.
-test("v0.38.110: a turn-start proof resets the budget even when no timer is armed", () => {
+test("v0.38.104: a turn-start proof resets the budget even when no timer is armed", () => {
   const src = fs.readFileSync(path.join(__dirname, "..", "extensions", "goal-continuation.ts"), "utf8");
   const acked = src.slice(src.indexOf("export function dispatchStartAcknowledged"), src.indexOf("export function releaseContinuationDispatchStandDown"));
   const block = acked;

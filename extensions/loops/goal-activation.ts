@@ -3401,7 +3401,7 @@ async function handleHotLengthExhaustion(
   });
   pi.events.on("subagent:process-terminal", (data: unknown) => {
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown) return;
-    // v0.38.109: read the retry decision BEFORE observing — the nudge must
+    // v0.38.104: read the retry decision BEFORE observing — the nudge must
     // fire once per run even if the terminal event redelivers.
     const terminal = describeSubagentTerminal(data);
     const alreadyTerminal = subagentTerminalAlreadyRecorded(data);

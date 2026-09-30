@@ -548,7 +548,7 @@ function auditorRecoveryRetryDelayMs(): number {
   return auditorRecoveryRetryDelayOverrideMs ?? (Number.isFinite(AUDITOR_RECOVERY_RETRY_DELAY_MS) ? Math.max(1_000, AUDITOR_RECOVERY_RETRY_DELAY_MS) : 60_000);
 }
 
-/** v0.38.106: how long the self-healing auditor lane waits before re-probing
+/** v0.38.104: how long the self-healing auditor lane waits before re-probing
  * after an identical-failure park. Floored at a minute (a named provider wall
  * is not a 5s blip) and capped at 15 minutes so a long outage still settles
  * promptly once the provider answers, instead of probing a dead wall hundreds
@@ -594,7 +594,7 @@ export function scheduleParkedCompletionAuditRecovery(ctx: ExtensionContext, pen
     return { ...pending, recoveryRetryAt: undefined, automaticRecoveryFirstAt: window.firstAt, automaticRecoveryUntil: window.until };
   }
   const storedRetryMs = pending.recoveryRetryAt ? Date.parse(pending.recoveryRetryAt) : Number.NaN;
-  // v0.38.106: a caller-chosen cadence. The identical-infra-failure park
+  // v0.38.104: a caller-chosen cadence. The identical-infra-failure park
   // re-arms through this same scheduler, but on the retry plan's own backoff
   // instead of the 60s no-verdict tick — the claim must keep trying without
   // re-probing a named provider wall every minute.
@@ -1865,7 +1865,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       appendLedger(liveCtx.cwd, "audit_settlement_parked", { goalId, attemptId: settlementClaim.attemptId, origin, stage: settlementPark("verdict").step });
       return;
     }
-    // v0.38.108: the approval branch TERMINATES here. The v0.38.99
+    // v0.38.104: the approval branch TERMINATES here. The v0.38.99
     // extraction dropped this `return` with the function body, so every
     // approved stored claim fell through the remaining branches — all gated
     // on error/impossible/disapproved, all false for a clean approval — into
@@ -1891,7 +1891,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     const detail = missing.length > 0
       ? `its evidence did not reference these contract items:\n${missing.map((item) => `- ${item}`).join("\n")}`
       : "its report did not include a valid <evidence> block";
-    // v0.38.110: this branch re-activates the goal, so it is a treadmill
+    // v0.38.104: this branch re-activates the goal, so it is a treadmill
     // round like any disapproval — and the disapproval cap could not see it
     // (the row is `approved`, not `disapproved`). Bound it on the same
     // all-classes counter so a shield that never satisfies its evidence
@@ -2129,7 +2129,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
         auditorFallbackExhausted: true,
       };
       const notifyIdentical = claimRecoveryNotice(identicalParked, `${recoveryEpisodeKey}:identical-parked`);
-      // v0.38.106 (field 20260928 171804): this park used to be a DEAD END.
+      // v0.38.104 (field 20260928 171804): this park used to be a DEAD END.
       // It armed no probe, so nothing re-drove the stored claim until a human
       // ran /goal resume — while the main lane kept probing through the very
       // same provider wall. Park slower, not forever: re-arm the existing
@@ -2157,7 +2157,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     }
     if (!plan.automatic) {
       const notifyCapped = claimRecoveryNotice(pending, `${recoveryEpisodeKey}:retry-capped`);
-      // v0.38.106: the horizon is a Ladder bound, not a lane end. The main
+      // v0.38.104: the horizon is a Ladder bound, not a lane end. The main
       // lane keeps its hourly probe past its own horizon, so the auditor lane
       // does too — same shared cadence, same bounded probe delay.
       const probeDelayMs = auditorIdenticalParkProbeDelayMs(plan.requestedSec);
@@ -2225,7 +2225,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     const reason = result.impossibleReason || "(no reason given)";
     const aggressive = aggressiveAuditorRecoveryEnabled(liveCtx.cwd);
     if (aggressive && classifyImpossibleReason(reason) === "partial") {
-      // v0.38.110: same treadmill as the shield branch above — this row is
+      // v0.38.104: same treadmill as the shield branch above — this row is
       // `impossible`, not `disapproved`, so the disapproval cap never saw it.
       // An agent that narrows one axis per round while the auditor finds a
       // new impossible axis would otherwise cycle forever with no cap.
@@ -2348,7 +2348,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     maybeDecisionPopup(liveCtx);
     return;
   }
-  // v0.38.107: hard ceiling on the DETACHED path — the same treadmill
+  // v0.38.104: hard ceiling on the DETACHED path — the same treadmill
   // breaker complete_goal's inline settlement got in v0.38.103. The inline
   // check never fires in the field: real audits settle here, minutes or
   // hours after complete_goal returned AUDIT PENDING. Without this, the
@@ -2361,7 +2361,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
   // pause. 0 = unlimited (legacy unbounded cycling).
   const hardCap = settings.auditCapHard ?? AUDIT_CAP_HARD_DEFAULT;
   const comparableStreak = countTrailingComparableDisapprovals(history);
-  // v0.38.110: an alternating primary/fallback ladder re-baselines the
+  // v0.38.104: an alternating primary/fallback ladder re-baselines the
   // comparable streak on every round (`break` on grader change in
   // countTrailingComparableDisapprovals), pinning it at 1 forever — so a goal
   // whose pinned auditor infra-fails on alternating rounds could grind

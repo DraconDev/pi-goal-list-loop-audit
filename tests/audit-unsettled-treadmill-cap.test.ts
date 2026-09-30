@@ -1,7 +1,7 @@
-// pi-goal-list-loop-audit — v0.38.110 audit-treadmill convergence, part 2.
+// pi-goal-list-loop-audit — v0.38.104 audit-treadmill convergence, part 2.
 // tests/audit-unsettled-treadmill-cap.test.ts
 //
-// The v0.38.107 hard cap counts `disapproved` rounds only. Two branches
+// The v0.38.104 hard cap counts `disapproved` rounds only. Two branches
 // re-activate the goal without disapproving it, so they sat outside the cap
 // entirely and could cycle forever:
 //
@@ -10,7 +10,7 @@
 //   2. an aggressive IMPOSSIBLE(partial) verdict — `impossible: true,
 //      disapproved: false`.
 //
-// Both are the same shape as the hellhunter treadmill v0.38.107 bounded: the
+// Both are the same shape as the hellhunter treadmill v0.38.104 bounded: the
 // goal is re-continued round after round with no cap, no ledger counter, and
 // no user-visible stop. countTrailingComparableDisapprovals returns 0 for
 // both, so the existing cap is structurally blind to them.
@@ -125,7 +125,7 @@ describe("countTrailingUnsettledRounds — all verdict classes", () => {
       verdict({ approved: true, disapproved: false, regressionShieldPassed: false, regressionShieldMissing: ["item 1"] }),
       verdict({ approved: true, disapproved: false, regressionShieldPassed: false, regressionShieldMissing: ["item 1"] }),
     ];
-    assert.equal(countTrailingComparableDisapprovals(history), 0, "the v0.38.107 cap sees nothing here");
+    assert.equal(countTrailingComparableDisapprovals(history), 0, "the v0.38.104 cap sees nothing here");
     assert.equal(countTrailingUnsettledRounds(history), 3, "the disapproval plus both shield blocks are unsettled rounds");
   });
 
@@ -209,7 +209,7 @@ describe("regression shield — the branch the cap could not see", () => {
         verificationContract: "<evidence>1. item 1</evidence>",
         auditHistory: priors,
         // A seeded parked claim is what drives the DETACHED settlement — the
-        // path where the v0.38.107 cap actually lives. resume_goal re-fires it.
+        // path where the v0.38.104 cap actually lives. resume_goal re-fires it.
         pendingCompletion: {
           at: new Date().toISOString(),
           phase: "recovery-pending",

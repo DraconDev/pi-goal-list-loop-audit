@@ -528,7 +528,7 @@ test("v0.34.11: unanswered-continuation watchdog (accepted send, no turn — hel
   assert.match(g, /dispatchStartAcknowledged\(ctx, "before_agent_start", event\?\.prompt\)/, "prompt-specific start proof");
   assert.match(CONT, /dispatchStartUnacknowledged\(current, record\)/, "missing proof fails closed (decomposition step 5: watchdog moved)");
   assert.match(CONT, /continuation_start_unacknowledged/);
-  // v0.38.106: the lane no longer DEAD-ENDS here ("Automatic re-sends are
+  // v0.38.104: the lane no longer DEAD-ENDS here ("Automatic re-sends are
   // stopped" is gone) — but the anti-storm invariant is unchanged and in fact
   // stronger: exactly one automatic retry, then a bounded self-heal that
   // re-dispatches on a capped, capped-count cadence instead of a blind loop.

@@ -401,10 +401,10 @@ test("main model recovery backs off without giving up", () => {
     assert.equal(mainModelFailureDelayMs(classifyMainModelFailure(raw), 1, 15, nowMs), 5_000, raw);
     assert.equal(mainModelFailureDelayMs(classifyMainModelFailure(raw), 2, 15, nowMs), 30 * 60_000, raw);
   }
-  // v0.38.111: unclassified prose fails open to eager (operator direction:
+  // v0.38.104: unclassified prose fails open to eager (operator direction:
   // retry any error aggressively) — only walls and quota signals ladder.
   assert.equal(mainModelFailureDelayMs(classifyMainModelFailure("mysterious provider prose with no hint"), 2, 15, nowMs), 5_000);
-  // v0.38.109 (operator direction 2026-09-28: transient errors retry
+  // v0.38.104 (operator direction 2026-09-28: transient errors retry
   // aggressively): "503 temporarily unavailable" classifies transient, so
   // attempt 2 is eager 5s now, not the 30m/90m ladder rung. Walls keep the
   // ladder; weather does not.
@@ -412,7 +412,7 @@ test("main model recovery backs off without giving up", () => {
   // The setting controls the later ladder; the first retry stays eager.
   assert.equal(mainModelFailureDelayMs(classifyMainModelFailure("503 temporarily unavailable"), 1, 45, nowMs), 5_000);
   assert.equal(mainModelFailureDelayMs(classifyMainModelFailure("503 temporarily unavailable"), 2, 45, nowMs), 5_000, "eager ignores the configured base");
-  // v0.38.105: a hint that names a reset is NOT a hintless first failure —
+  // v0.38.104: a hint that names a reset is NOT a hintless first failure —
   // attempt 1 sleeps the provider's own 3h window instead of probing at 5s.
   assert.equal(mainModelFailureDelayMs(classifyMainModelFailure("Token Plan rate limit reached (2062); retry after 3 hours"), 1, 15, nowMs), 3 * 60 * 60_000);
   assert.equal(mainModelAutoRetryUntil(Date.parse("2026-08-03T00:00:00Z")), "2026-08-04T00:00:00.000Z");

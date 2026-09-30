@@ -303,7 +303,7 @@ test("124541: re-seed filters evicted refs so the next episode starts live", () 
 });
 
 // ---------------------------------------------------------------------------
-// v0.38.106 (field 20260928 171804): the identical-failure park must not be a
+// v0.38.104 (field 20260928 171804): the identical-failure park must not be a
 // dead end. Screenshot evidence: "Auditor parked blocked after 3 identical
 // infra failures (openrouter/stealth/space-bunny-alpha) — no further automatic
 // retry; the claim stays stored." The main lane kept probing the same wall;
@@ -311,7 +311,7 @@ test("124541: re-seed filters evicted refs so the next episode starts live", () 
 // shared self-re-arming recovery cadence, so the claim settles on its own.
 // ---------------------------------------------------------------------------
 
-test("v0.38.106: the identical-failure park arms a bounded self-healing probe, never a dead end", async () => {
+test("v0.38.104: the identical-failure park arms a bounded self-healing probe, never a dead end", async () => {
   const {
     auditorIdenticalParkProbeDelayMs,
     humanizeAuditorProbeCadence,
@@ -375,7 +375,7 @@ test("v0.38.106: the identical-failure park arms a bounded self-healing probe, n
   }
 });
 
-test("v0.38.106: no operator-facing string promises the auditor stopped for good", () => {
+test("v0.38.104: no operator-facing string promises the auditor stopped for good", () => {
   // The promise in the old notify ("no further automatic retry") is the
   // user's complaint verbatim. No surface may claim it again.
   const surfaces = [

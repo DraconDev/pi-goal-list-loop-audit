@@ -116,7 +116,7 @@ test("complete_goal findingGroups ride the claim into the grouped terminal rende
   await waitFor(() => entries.length === 1);
   assert.match(entries[0].content, /^## Done — Fixed routing\./);
   assert.ok(entries[0].content.includes("#### 1. Router"), "grouped area subsection reaches the chat");
-  // v0.38.105: the bullet shape is the v0.38.102 gist/evidence split — the
+  // v0.38.104: the bullet shape is the v0.38.102 gist/evidence split — the
   // finding is the bullet, the repo-relative evidence rides indented beneath
   // it. This assertion still described the pre-v0.38.102 one-line
   // `- **outcome** — evidence` form, which is why it was the one test the

@@ -1,4 +1,4 @@
-// v0.38.105: the single automatic continuation retry must not claim a durable
+// v0.38.104: the single automatic continuation retry must not claim a durable
 // state it could not write. It used to mutate the live pending dispatch in RAM
 // and discard persistDispatchRecord's boolean, so an unwritable .pi-glla left
 // RAM saying retryCount=1 while the sidecar said 0 — a reload then re-armed
@@ -56,7 +56,7 @@ afterEach(() => {
   pi.sent.length = 0;
 });
 
-test("v0.38.105 a retry that cannot be persisted is reported, not recorded as durable", async () => {
+test("v0.38.104 a retry that cannot be persisted is reported, not recorded as durable", async () => {
   __testOnlyResetStaleFlag();
   __testOnlySetContinuationStartTimeout(250);
   __testOnlySetContinuationRetryBackoff(250);
@@ -100,7 +100,7 @@ test("v0.38.105 a retry that cannot be persisted is reported, not recorded as du
   }
 });
 
-test("v0.38.105 a persistable retry still records retryCount durably", async () => {
+test("v0.38.104 a persistable retry still records retryCount durably", async () => {
   __testOnlyResetStaleFlag();
   __testOnlySetContinuationStartTimeout(250);
   __testOnlySetContinuationRetryBackoff(250);

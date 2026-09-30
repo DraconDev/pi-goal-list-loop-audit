@@ -1274,7 +1274,7 @@ function safeFact(value: unknown, fallback = "not recorded"): string {
 }
 
 function objectiveExcerpt(objective: string): string {
-  // v0.38.105: route through the shared cutter. The local `clean.slice(0, 217)`
+  // v0.38.104: route through the shared cutter. The local `clean.slice(0, 217)`
   // cut UTF-16 code units, so an emoji straddling the index emitted a lone
   // surrogate into the durable archive line. clipSummaryValue is code-point
   // safe and cuts at a clause boundary, and one implementation now owns every

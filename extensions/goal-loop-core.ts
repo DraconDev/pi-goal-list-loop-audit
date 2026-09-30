@@ -185,7 +185,7 @@ export function validateTaskProposal(tasks: TaskProposal[]): string | null {
   }
   for (const t of tasks) {
     if (!t.title || !t.title.trim()) return "Every task needs a non-empty title.";
-    // v0.38.110: subtask titles get the same check. `buildTaskList` writes
+    // v0.38.104: subtask titles get the same check. `buildTaskList` writes
     // `s.trim()` with no guard, so a blank subtask (trivial to produce — a
     // stray newline in the JSON array) reached `taskList` persistence and made
     // the goal's own state file fail the published schema's
@@ -634,7 +634,7 @@ gateRows?: GateRow[];
    * failure that parked the claim, plus the consecutive-identical streak.
    * At AUDITOR_IDENTICAL_FAILURE_PARK_THRESHOLD the claim parks blocked with
    * the dead chain named.
-   * v0.38.106 (field 20260928 171804): that park is no longer terminal. It
+   * v0.38.104 (field 20260928 171804): that park is no longer terminal. It
    * arms the shared self-re-arming recovery cadence (a slow, bounded
    * re-probe derived from the retry plan), so the auditor lane keeps trying
    * on its own instead of waiting for a human `/goal resume` — the parity the
@@ -1531,10 +1531,10 @@ export function countTrailingDisapprovals(history: AuditVerdict[]): number {
   return n;
 }
 
-/** v0.38.110: consecutive audit rounds that did NOT let the goal leave the
+/** v0.38.104: consecutive audit rounds that did NOT let the goal leave the
  * audit treadmill, counted across EVERY verdict class.
  *
- * The v0.38.107 hard cap counts `disapproved` rounds only, so two
+ * The v0.38.104 hard cap counts `disapproved` rounds only, so two
  * re-continuation branches sat outside it entirely and could cycle forever
  * (audit/FRESH-AUDIT-2026-09-29): a regression-shield block (auditor
  * approved, evidence contract unmet) and an aggressive IMPOSSIBLE(partial)
@@ -1685,7 +1685,7 @@ export function liveDisapproval(history: AuditVerdict[]): AuditVerdict | undefin
   return undefined;
 }
 
-/** v0.38.110: how many objections are still live. Same selection rule as
+/** v0.38.104: how many objections are still live. Same selection rule as
  * `liveDisapproval` (including the migrate-on-read backfill), for surfaces
  * that need a count rather than the newest entry. Any display counting
  * "open objections" with a raw `superseded !== true` filter disagrees with the
@@ -4677,7 +4677,7 @@ export function filterEvictedAuditorRefs(refs: string[], evicted?: string[]): st
 /** v0.38.63 (audit-stuck batch): N consecutive identical infra failures
  * park the claim blocked-with-action instead of re-arming the ladder
  * forever. Matches the repo's 3-strike history (retry-bounds).
- * v0.38.106: "park" now means "drop to the slow re-probe cadence", not
+ * v0.38.104: "park" now means "drop to the slow re-probe cadence", not
  * "stop forever" — the park sites arm the shared self-re-arming recovery
  * cadence, so the threshold still bounds the hot ladder without creating a
  * dead end the main lane would never have. */

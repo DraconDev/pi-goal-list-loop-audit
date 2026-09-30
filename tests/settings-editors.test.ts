@@ -667,7 +667,7 @@ test("audit 2026-09-26: headless /glla fallback covers every SETTINGS_KEYS entry
   assert.deepEqual(missing, [], `headless drift: ${missing.join(", ")}`);
 });
 
-test("v0.38.108: the audit-dir retention row renders a legal 0 instead of the unknown-value '?'", async () => {
+test("v0.38.104: the audit-dir retention row renders a legal 0 instead of the unknown-value '?'", async () => {
   const { buildSettingsRows } = await import("../extensions/settings-menu.ts");
   const rows = buildSettingsRows({ auditJobRetentionMs: 0 } as never, {} as never);
   const row = rows.find((r: { id: string }) => r.id === "auditJobRetentionMs");
@@ -676,7 +676,7 @@ test("v0.38.108: the audit-dir retention row renders a legal 0 instead of the un
   assert.doesNotMatch(String(row.valueText), /\?/, "a set 0 is never rendered as an unknown value");
 });
 
-test("v0.38.108: the main-recovery row does not promise a 24h stop the default mode removes", async () => {
+test("v0.38.104: the main-recovery row does not promise a 24h stop the default mode removes", async () => {
   const { buildSettingsRows } = await import("../extensions/settings-menu.ts");
   const rows = buildSettingsRows({} as never, {} as never);
   const row = rows.find((r: { id: string }) => r.id === "mainModelRetryMinutes");
@@ -687,7 +687,7 @@ test("v0.38.108: the main-recovery row does not promise a 24h stop the default m
   assert.doesNotMatch(description, /stops after 24h$/, "an unconditional 24h promise is the drift the fix removes");
 });
 
-test("v0.38.108: every 'Global-only.' annotation in docs/SETTINGS.md is true in code", async () => {
+test("v0.38.104: every 'Global-only.' annotation in docs/SETTINGS.md is true in code", async () => {
   const { GLOBAL_ONLY_KEYS } = await import("../extensions/goal-settings.ts");
   const doc = fs.readFileSync(path.join(import.meta.dirname, "..", "docs", "SETTINGS.md"), "utf-8");
   const claimed = [...doc.matchAll(/^\|\s*`([A-Za-z]+)`\s*\|[^|]*\|([^|]*)\|/gm)]
@@ -698,7 +698,7 @@ test("v0.38.108: every 'Global-only.' annotation in docs/SETTINGS.md is true in 
   assert.deepEqual(wrong, [], `doc claims Global-only for keys the runtime lets a project set: ${wrong.join(", ")}`);
 });
 
-test("v0.38.108: the superseded DESIGN.md table does not mark files that do not exist as shipped", () => {
+test("v0.38.104: the superseded DESIGN.md table does not mark files that do not exist as shipped", () => {
   const doc = fs.readFileSync(path.join(import.meta.dirname, "..", "docs", "DESIGN.md"), "utf-8");
   const start = doc.indexOf("### Decision 7");
   const table = doc.slice(start, doc.indexOf("\n### ", start + 10));
@@ -708,7 +708,7 @@ test("v0.38.108: the superseded DESIGN.md table does not mark files that do not 
   assert.deepEqual(missing, [], `a superseded table marks non-existent paths as shipped: ${missing.join(", ")}`);
 });
 
-test("v0.38.108: the auditor model path carries no dead settings placeholders", () => {
+test("v0.38.104: the auditor model path carries no dead settings placeholders", () => {
   const src = fs.readFileSync(path.join(import.meta.dirname, "..", "extensions", "loops", "goal-settings-ui.ts"), "utf-8");
   assert.doesNotMatch(src, /const settings2 = /, "a half-applied rename left a dead second settings layer");
   const bindings = [...src.matchAll(/^\s*const (\w+) = undefined;$/gm)].map((m) => m[1]);

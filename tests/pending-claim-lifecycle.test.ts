@@ -10,7 +10,7 @@
 //  3. /goal verify on a healthy pending audit reports the truthful
 //     awaiting state instead of overwriting the claim and relaunching.
 //  4. /goal verify on an APPROVED-but-unarchived claim finishes the owed
-//     settlement instead of destroying the approval (v0.38.108).
+//     settlement instead of destroying the approval (v0.38.104).
 
 import { test, afterEach } from "node:test";
 import * as assert from "node:assert/strict";

@@ -1,4 +1,4 @@
-// pi-goal-list-loop-audit — v0.38.109 transient aggressive retry.
+// pi-goal-list-loop-audit — v0.38.104 transient aggressive retry.
 //
 // Operator direction 2026-09-28: most errors are transient, so the main lane
 // AND the subagent lane retry them eagerly instead of parking behind the
@@ -89,7 +89,7 @@ test("walls keep the historical ladder; a reset hint outranks the eager window",
   assert.equal(starved.kind, "context-overflow");
   assert.equal(mainModelFailureDelayMs(starved, 2, 15, nowMs), 30 * 60_000, "context overflow needs compaction, not retries");
   assert.equal(mainModelFailureDelayMs(transient("429 usage limit"), 2, 15, nowMs), 30 * 60_000, "hintless quota still ladders");
-  // v0.38.111: explicit backpressure vetoes eager even for transient kinds —
+  // v0.38.104: explicit backpressure vetoes eager even for transient kinds —
   // hammering a named rate limit is violation, not diligence.
   assert.equal(mainModelFailureDelayMs(transient("503 rate limit exceeded"), 2, 15, nowMs), 30 * 60_000, "hintless signal + transient kind ladders");
   const hinted = transient("503 rate limit exceeded, retry in 300 seconds");
@@ -97,7 +97,7 @@ test("walls keep the historical ladder; a reset hint outranks the eager window",
   assert.equal(mainModelFailureDelayMs(hinted, 2, 15, nowMs), 300_000, "an explicit reset hint beats eager even for transient");
 });
 
-test("v0.38.111: unclassified errors fail open to eager", () => {
+test("v0.38.104: unclassified errors fail open to eager", () => {
   for (const raw of ["mysterious prose", "something odd happened", "Error: kablam"]) {
     const f = transient(raw);
     assert.equal(f.kind, "unknown");
@@ -112,7 +112,7 @@ test("recovery probes use the kind-aware delay (the 300m park)", () => {
   // Our own repo goal: 7 empty responses parked 300m on the blind ladder.
   assert.equal(probeRetryDelayMs("Provider returned an empty response", 7, 15, nowMs), 5_000);
   assert.equal(probeRetryDelayMs("503 upstream overloaded", 2, 15, nowMs), 5_000);
-  // v0.38.111: even a signal-less probe fails open — no evidence of a wall.
+  // v0.38.104: even a signal-less probe fails open — no evidence of a wall.
   assert.equal(probeRetryDelayMs("", 2, 15, nowMs), 5_000, "empty diagnostic retries eagerly");
   assert.equal(probeRetryDelayMs(undefined, 2, 15, nowMs), 5_000);
   assert.equal(probeRetryDelayMs("insufficient credits", 2, 15, nowMs), 30 * 60_000, "walls keep the ladder");
@@ -144,7 +144,7 @@ test("describeSubagentTerminal: transient text is eager, walls and aborts are no
   const auth = describeSubagentTerminal({ id: "run-auth", hasError: true, error: "401 invalid API key" })!;
   assert.equal(auth.eager, false, "auth walls are not re-dispatch prompts");
 
-  // v0.38.111: unclassified child failures fail open — the parent gets the
+  // v0.38.104: unclassified child failures fail open — the parent gets the
   // re-dispatch nudge for anything that is not positively a wall/abort.
   const opaque = describeSubagentTerminal({ id: "run-opaque", hasError: true })!;
   assert.equal(opaque.failed, true);

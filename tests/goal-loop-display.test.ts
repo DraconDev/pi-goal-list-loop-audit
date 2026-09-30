@@ -191,13 +191,13 @@ test("active card with an action row closes the tree", () => {
   assert.match(lines.at(-1)!, /^└─ ✓ bash/, "the action row closes the card instead of promising more");
 });
 
-// v0.38.110 — the objective-first notifies truncated with a raw `.slice()`,
+// v0.38.104 — the objective-first notifies truncated with a raw `.slice()`,
 // which cuts UTF-16 code units and can split a surrogate pair. The same file
 // already had the code-point-safe helper one import away, so this was an
 // inconsistency rather than a missing capability: a user objective containing
 // an emoji at the truncation boundary rendered a U+FFFD replacement glyph
 // mid-notification.
-test("v0.38.110: objective truncation never splits a surrogate pair", () => {
+test("v0.38.104: objective truncation never splits a surrogate pair", () => {
   const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
   // 'a' x10 then 🎨 (U+1F3A8, a surrogate pair in UTF-16).
   const objective = "aaaaaaaaaa🎨bbbbbbbbbb";

@@ -108,7 +108,7 @@ test("v0.34.20: loop measurement and branch cleanup rebind after async work", ()
   // v0.35.4: branch=1 terminal stops must not erase the final iteration's
   // work (finishLoopGit resets --hard), and flat/null measures are not
   // regressions (v0.29.10/E5) — only worse-than-best values hard-reset.
-  // v0.38.105: the commit helper moved to MODULE scope so the two
+  // v0.38.104: the commit helper moved to MODULE scope so the two
   // out-of-tick terminal routes (/loop stop, /loop finish, /glla wipe) commit
   // too; the tick keeps a thin wrapper that passes its rebind guard.
   assert.match(tick, /const commitTerminalWork = async \(\): Promise<boolean> =>\n\s*commitPendingTerminalWork\(ctx, loop, \{ stillValid: rebindLoop, ctx: \(\) => ctx \}\);/);

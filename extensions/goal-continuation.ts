@@ -249,7 +249,7 @@ export function __testOnlySetContinuationRetryBackoff(backoffMs: number | null):
 
 let pendingContinuationDispatch: ContinuationDispatch | null = null;
 let continuationStartTimer: NodeJS.Timeout | null = null;
-// v0.38.106 (field: neonbreak 20260928 174457 — "continuation was accepted,
+// v0.38.104 (field: neonbreak 20260928 174457 — "continuation was accepted,
 // but pi did not start a turn … automatic re-sends are stopped · /list resume
 // to retry once", list item left `interrupted` for 26m): an unacknowledged
 // turn-start used to be a permanent dead end. The main lane re-probes through
@@ -661,11 +661,11 @@ export function dispatchStartAcknowledged(ctx: ExtensionContext, source: string,
   // pending — the rearm milestone uses it to tell an open-but-silent turn
   // from a turn that never started.
   if (source === "turn_start" || source === "agent_start") lastObservedTurnStartAt = Date.now();
-  // v0.38.106: a real turn-start proof means the lane is moving again, so the
+  // v0.38.104: a real turn-start proof means the lane is moving again, so the
   // self-heal budget resets. The stuck episode is over — the next one gets a
   // fresh bounded budget instead of inheriting an exhausted one.
   if (source === "before_agent_start" || source === "agent_start" || source === "turn_start") {
-    // v0.38.110: reset the budget UNCONDITIONALLY on a turn-start proof, not
+    // v0.38.104: reset the budget UNCONDITIONALLY on a turn-start proof, not
     // only when a timer is live. The exhaustion branch and the "lane moved on"
     // cancel both null the timer without clearing the counter, so gating on
     // the timer left `probes` stuck at the max: the next stuck episode armed
@@ -817,7 +817,7 @@ function dispatchStartUnacknowledged(ctx: ExtensionContext, record: Continuation
     updateGoal({ interruptedAt: nowIso(), interruptedReason: reason }, ctx);
   }
   resetRepairReplanBootstrap(ctx, "start-unacknowledged");
-  // v0.38.106: warn AND keep going. The one-automatic-retry cap still stops a
+  // v0.38.104: warn AND keep going. The one-automatic-retry cap still stops a
   // blind queue storm; it no longer decides the lane's fate.
   armContinuationStartSelfHeal(ctx, record);
   const selfHeal = continuationStartSelfHealDelayMs(continuationStartSelfHealProbes);
@@ -827,7 +827,7 @@ function dispatchStartUnacknowledged(ctx: ExtensionContext, record: Continuation
   refreshUI(ctx);
 }
 
-/** v0.38.106: the self-heal cadence. Doubling from 2 minutes, capped at 15 —
+/** v0.38.104: the self-heal cadence. Doubling from 2 minutes, capped at 15 —
  * a host that is genuinely gone is not polled 30 times an hour, and a host
  * that recovers lands the retry within a couple of minutes. */
 export const CONTINUATION_START_SELF_HEAL_MIN_MS = 2 * 60_000;
@@ -1000,7 +1000,7 @@ function retryContinuationDispatch(ctx: ExtensionContext, record: ContinuationDi
     }
     return false; // the retry itself failed — genuine stall, fail closed now
   }
-  // v0.38.105: build the retried record as a COPY and adopt it only after it
+  // v0.38.104: build the retried record as a COPY and adopt it only after it
   // is durable. This used to mutate the live pendingContinuationDispatch in
   // place and discard persistDispatchRecord's boolean, so a failed sidecar
   // write left RAM saying retryCount=1 while disk said 0 — a reload re-armed
@@ -1938,7 +1938,7 @@ export function setContinuationRearmSince(v: number): void {
 export function resetContinuationDispatchState(cwd: string): boolean {
   clearContinuationTimer();
   clearContinuationStartWatchdog();
-  // v0.38.106: a reset (fresh session, /glla wipe, manual repair) is a clean
+  // v0.38.104: a reset (fresh session, /glla wipe, manual repair) is a clean
   // slate for the self-heal budget too — never inherit a half-spent one.
   clearContinuationStartSelfHeal();
   clearQueueStuckProbe();

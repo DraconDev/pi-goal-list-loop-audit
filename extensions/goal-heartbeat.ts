@@ -658,7 +658,7 @@ export interface SubagentTerminalDescription {
   /** Classified failure kind; "unknown" when the event carries no text. */
   kind: MainModelFailureKind;
   /** True when the parent should re-dispatch immediately, via the shared
-   * eager predicate (v0.38.111 fails open: unclassified child errors nudge
+   * eager predicate (v0.38.104 fails open: unclassified child errors nudge
    * too). Never a blind SIGTERM (it may be the user's Esc), a user abort,
    * a policy refusal, auth, or explicit quota backpressure. */
   eager: boolean;
@@ -685,7 +685,7 @@ function subagentTerminalErrorText(data: unknown): string | undefined {
     ?? eventString(data, "detail");
 }
 
-/** v0.38.109: read a process-terminal event as a retry decision. Pure —
+/** v0.38.104: read a process-terminal event as a retry decision. Pure —
  * observation stays in observeCurrentSubagentTerminal; this only classifies.
  * Exit 137 (OOM-killed, the signature of a child dying under host load)
  * reads transient even without text; every other textless exit stays
@@ -701,7 +701,7 @@ export function describeSubagentTerminal(data: unknown): SubagentTerminalDescrip
   const kind: MainModelFailureKind = text
     ? classifyMainModelFailure(text).kind
     : exitCode === 137 ? "transient" : "unknown";
-  // v0.38.111: the child lane shares the main lane's eager predicate, plus
+  // v0.38.104: the child lane shares the main lane's eager predicate, plus
   // the SIGTERM guard — a textless 143 may be the user's Esc, and a
   // re-dispatch nag after an abort would violate stand-down.
   const sigtermBlind = exitCode === 143 && !text;
@@ -762,7 +762,7 @@ type SubagentRpcBinding = {
 
 const SUBAGENT_RPC_STOP_TIMEOUT_MS = 2_000;
 let subagentRpcBinding: SubagentRpcBinding | null = null;
-// v0.38.105: bus -> the disposers for the listeners we installed on it. The
+// v0.38.104: bus -> the disposers for the listeners we installed on it. The
 // registry used to be a bare Set that was only ever added to, so every
 // rebound session's bus (and the two closures it retained) stayed reachable
 // for the life of the process. Releasing the host now unsubscribes too — and
@@ -831,7 +831,7 @@ export function releaseSubagentRpcHost(events?: SubagentRpcEventBus): void {
   subagentRpcBinding = null;
   if (boundEvents) {
     readySubagentRpcBuses.delete(boundEvents);
-    // v0.38.105: observation had the same lifetime problem as readiness.
+    // v0.38.104: observation had the same lifetime problem as readiness.
     // Release the listeners this module installed too, so the released bus is
     // no longer retained by our closures.
     const disposeObserved = observedSubagentRpcBuses.get(boundEvents);
@@ -1186,7 +1186,7 @@ function scheduleHeartbeatPoll(generation: number, delayMs?: number): void {
   const cycle = continuousSupervisor.check(state, subagentHangProbes.size);
   const delay = delayMs ?? cycle.pollMs;
   const timer = setTimeout(() => {
-    // v0.38.110: release the handle BEFORE the generation check, and re-arm
+    // v0.38.104: release the handle BEFORE the generation check, and re-arm
     // for the current generation on a mismatch.
     //
     // The stale-terminal path deliberately PRESERVES this timer across a

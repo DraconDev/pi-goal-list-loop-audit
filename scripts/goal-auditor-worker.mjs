@@ -1103,7 +1103,7 @@ async function main() {
           // recorded as skipped (round 2 never ran), never silent. Falls
           // through to the historical single-shot finish below.
           //
-          // v0.38.105: name the reason. The parent skips for two different
+          // v0.38.104: name the reason. The parent skips for two different
           // causes — a light-tier dispatch, or a full-tier one whose rework
           // streak is past the challenge limit — and labelling both
           // "light-tier audit" made a full-tier skip look like a tier

@@ -253,7 +253,7 @@ async function cmdGoal(args: string, ctx: ExtensionContext): Promise<void> {
         ctx.ui.notify(`A completion audit is already awaiting its verdict — wait for it or ${activeGoalSurfaceCommand("cancel")} to discard the pending claim and start over.`, "info");
         return;
       }
-      // v0.38.108: settlement-first, and the check MUST run before the
+      // v0.38.104: settlement-first, and the check MUST run before the
       // manual claim is written. resumeStoredCompletionOrSettlement reads
       // the claim's durable phase, and a fresh manual claim drops
       // phase / verdictAt / attemptId — so an approved-but-unarchived goal
@@ -2280,7 +2280,7 @@ function timelineNextAction(
   if (goal.status === "paused") return `Next: /goal resume to continue${goal.pauseReason ? ` (${goal.pauseReason.slice(0, 80)})` : ""}.`;
   if (goal.status === "auditing") return "Next: audit in flight — wait for the verdict.";
   if (goal.pendingCompletion) return "Next: claim submitted — the audit is starting.";
-  // v0.38.110: count live objections through `liveDisapproval`'s migrate-on-read
+  // v0.38.104: count live objections through `liveDisapproval`'s migrate-on-read
   // backfill, not a raw filter. A raw `superseded !== true` test treats every
   // pre-v0.38.21 round as live, so a goal settled by a later approval still
   // displayed "address N open objections" while the runtime — which reads

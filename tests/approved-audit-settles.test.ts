@@ -1,4 +1,4 @@
-// pi-goal-list-loop-audit — v0.38.108
+// pi-goal-list-loop-audit — v0.38.104
 // tests/approved-audit-settles.test.ts
 //
 // An APPROVAL through the stored-claim detached path must terminate in the
@@ -120,7 +120,7 @@ test("an approved stored claim settles and never falls into the residual-failure
   }
 });
 
-test("v0.38.108: the approval branch terminates after the settlement driver", () => {
+test("v0.38.104: the approval branch terminates after the settlement driver", () => {
   const SRC = fs.readFileSync("extensions/loops/goal-auditor-hooks.ts", "utf8");
   assert.match(
     SRC,

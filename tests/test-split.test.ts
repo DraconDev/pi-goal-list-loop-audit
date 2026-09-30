@@ -66,7 +66,7 @@ test("test-split: slow mode names the files; all mode passes through", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v0.38.107: the runner must be observable and hang-proof. Field evidence: a
+// v0.38.104: the runner must be observable and hang-proof. Field evidence: a
 // suite that printed nothing for 37 minutes, and a 26-hour-old `bun test`
 // still burning a core — a runner you cannot see is a runner you cannot trust.
 // ---------------------------------------------------------------------------
@@ -116,7 +116,7 @@ test("runner: the hand-written .d.mts declares every runtime export (drift guard
   }
 });
 
-test("v0.38.108: the suite child is detached so the documented group-kill is real", async () => {
+test("v0.38.104: the suite child is detached so the documented group-kill is real", async () => {
   const src = await readFile(new URL("../scripts/run-tests.mjs", import.meta.url), "utf8");
   const spawnLine = src.slice(src.indexOf("const child = spawn(\"bun\""), src.indexOf("const child = spawn(\"bun\"") + 200);
   assert.match(spawnLine, /detached: true/, "without detached the negative-pid kill is a silent no-op");
@@ -125,7 +125,7 @@ test("v0.38.108: the suite child is detached so the documented group-kill is rea
   assert.match(src, /is not its own process group/, "the wrapper names the degraded guarantee");
 });
 
-test("v0.38.108: the release gate runs the hardened runner, and CI bounds both jobs", async () => {
+test("v0.38.104: the release gate runs the hardened runner, and CI bounds both jobs", async () => {
   const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
   assert.match(pkg.scripts["test:all"], /^node scripts\/run-tests\.mjs --all/, "test:all goes through the stall-proof, orphan-free wrapper");
   const workflow = await readFile(new URL("../.github/workflows/publish.yml", import.meta.url), "utf8");
@@ -136,7 +136,7 @@ test("v0.38.108: the release gate runs the hardened runner, and CI bounds both j
   }
 });
 
-test("v0.38.108: no test gates itself on the removed @tintinweb fork", () => {
+test("v0.38.104: no test gates itself on the removed @tintinweb fork", () => {
   assert.equal(
     existsSync(path.join("tests", "subagent-stop-rpc.integration.test.mjs")),
     false,
@@ -151,7 +151,7 @@ test("v0.38.108: no test gates itself on the removed @tintinweb fork", () => {
   }
 });
 
-test("v0.38.108: tests/README.md does not claim npm test runs the whole suite", () => {
+test("v0.38.104: tests/README.md does not claim npm test runs the whole suite", () => {
   const readme = readFileSync(path.join("tests", "README.md"), "utf-8");
   assert.doesNotMatch(readme, /npm test\s+# runs: bun test/, "the old line claimed bare bun test");
   assert.match(readme, /slow-files\.mjs/, "the fast/slow split is documented");

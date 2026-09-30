@@ -201,7 +201,7 @@ test("auditor retries the same ref, then walks the next untried ref with bounded
   assert.equal(outcome.fallbackUsed, true);
   assert.deepEqual(calls, ["test/primary", "test/primary", "other/fallback-1"]);
   assert.deepEqual(fallbacks, ["test/primary->other/fallback-1"]);
-  // v0.38.110: this expectation was stale, not the code. The v0.38.109
+  // v0.38.104: this expectation was stale, not the code. The v0.38.104
   // transient window made the SHARED delay function eager for transient
   // failures (operator direction 2026-09-28 named the auditor fallback lane
   // explicitly), so a 503 now takes the 5s eager rung for both the same-ref

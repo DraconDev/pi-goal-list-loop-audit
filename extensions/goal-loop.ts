@@ -256,7 +256,7 @@ export const RESUMABLE_STOP = (r?: string): boolean =>
   // parallel to /goal pause. The loop stays resumable; finishLoopGit
   // was skipped, so resume picks up iteration/best/history verbatim.
   !!r?.startsWith("paused by user (/loop pause)") ||
-  // v0.38.108 (audit finding): parkLoopOnWrongBranch parks with
+  // v0.38.104 (audit finding): parkLoopOnWrongBranch parks with
   // "branch changed — expected X, current Y (where)" and its notification
   // promises the resume path ("check out X explicitly, then resume"). This
   // predicate never matched that prefix, so /loop resume answered "No held
@@ -313,7 +313,7 @@ async function runMeasure(ctx: ExtensionContext, cmd: string): Promise<number | 
   try {
     const result = await flags.extensionApi.exec("bash", ["-c", cmd], { cwd: ctx.cwd, timeout: MEASURE_TIMEOUT_MS });
     const r = result as any;
-    // v0.38.105: fail CLOSED like runGit below. A result envelope with no
+    // v0.38.104: fail CLOSED like runGit below. A result envelope with no
     // numeric code/exitCode (a measure killed by MEASURE_TIMEOUT_MS, a
     // non-standard envelope) used to default to 0 — success — so partial
     // stdout from a hung measure was parsed as a real reading, could set
@@ -376,7 +376,7 @@ async function parkLoopOnWrongBranch(ctx: ExtensionContext, loop: LoopState, whe
     actual: actual.ok ? actual.stdout : "unknown",
     where,
   });
-  // v0.38.108: this is a LOOP park, so it must name the LOOP surface. The
+  // v0.38.104: this is a LOOP park, so it must name the LOOP surface. The
   // goal-keyed helper renders /goal resume or /list resume, and in a
   // loop-only session that command answers "Nothing to resume"; the repo
   // already carries recoverySurfaceCommand("loop", …) for exactly this.
@@ -801,7 +801,7 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
     }
     persistState(ctx);
   }
-  // v0.38.105: the tick-local wrappers are gone — the terminal commit now
+  // v0.38.104: the tick-local wrappers are gone — the terminal commit now
   // lives at module scope (commitPendingTerminalWork) so EVERY route into
   // finishLoopGit commits first, not just the two in-tick stops that used to
   // call it. The tick still revalidates between every await via the guard.
@@ -894,7 +894,7 @@ export function announceQueuedListAfterLoopEnd(ctx: ExtensionContext): void {
   );
 }
 
-/** v0.35.4 / v0.38.105: a terminal stop never destroys the last iteration's
+/** v0.35.4 / v0.38.104: a terminal stop never destroys the last iteration's
  * work. The continue-gate means plateau/bounds/stuck stops skip the commit,
  * and finishLoopGit's unconditional `reset --hard` would then erase the
  * final iteration — including an IMPROVING one stopped by maxIterations, or
@@ -902,7 +902,7 @@ export function announceQueuedListAfterLoopEnd(ctx: ExtensionContext): void {
  *
  * Module scope, not a tick closure: `/loop stop`, `/loop finish` and
  * `/glla wipe` all reach finishLoopGit WITHOUT going through runLoopTick, so
- * a tick-local helper could never protect them (v0.38.105 finding). The tick
+ * a tick-local helper could never protect them (v0.38.104 finding). The tick
  * passes a guard so it still revalidates `state.loop` between every await. */
 async function commitPendingTerminalWork(
   ctx: ExtensionContext,
@@ -960,7 +960,7 @@ async function finishLoopGit(ctx: ExtensionContext, loop: LoopState): Promise<bo
   if (!loop.branchName) return false;
   const generation = flags.sessionGeneration;
   if (await parkLoopOnWrongBranch(ctx, loop, "finish")) return true;
-  // v0.38.105: the single choke point. Every terminal route — the tick's own
+  // v0.38.104: the single choke point. Every terminal route — the tick's own
   // stops, `/loop stop`, `/loop finish`, `/glla wipe` — commits the pending
   // diff here, so the `reset --hard` below can only ever discard what git
   // already recorded. A parked commit (git failure, HEAD moved, or a tick

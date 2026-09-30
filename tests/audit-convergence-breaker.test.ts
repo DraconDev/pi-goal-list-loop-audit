@@ -138,7 +138,7 @@ describe("audit-convergence-breaker — hard cap", () => {
     assert.ok(ledgerTypes(cwd).includes("audit_cap_keep_going"), "soft-cap conversion untouched");
   });
 
-  // v0.38.107: the field never settles inline — real audits land minutes or
+  // v0.38.104: the field never settles inline — real audits land minutes or
   // hours after complete_goal returned AUDIT PENDING, through the detached
   // retry driver. The v0.38.103 ceiling was wired only into the inline path,
   // so aggressive mode ground forever (hellhunter 12, junk-runner 9). This
@@ -270,7 +270,7 @@ describe("audit-convergence-breaker — settings", () => {
     assert.equal(normalizeLoadedSettings({} as any).mechanicalLoadScale, undefined, "unset = default-on via !== false");
   });
 
-  test("v0.38.105: mainModelRetryMinutes and auditFeedbackChars drop junk instead of displaying a dead value", () => {
+  test("v0.38.104: mainModelRetryMinutes and auditFeedbackChars drop junk instead of displaying a dead value", () => {
     // Both are SETTINGS_KEYS members, so provenance, the menu and the headless
     // /glla row render whatever the file carries — while the RUNTIME guard
     // (Number.isFinite(base) && base > 0 / Number.isInteger && >= 0) silently
@@ -294,7 +294,7 @@ describe("audit-convergence-breaker — settings", () => {
     }
   });
 
-  test("v0.38.105: drafter/auditor thinking levels are pruned against the one ladder", () => {
+  test("v0.38.104: drafter/auditor thinking levels are pruned against the one ladder", () => {
     for (const level of THINKING_LEVELS) {
       assert.equal(normalizeLoadedSettings({ drafterThinkingLevel: level } as any).drafterThinkingLevel, level);
       assert.equal(normalizeLoadedSettings({ auditorThinkingLevel: level } as any).auditorThinkingLevel, level);
