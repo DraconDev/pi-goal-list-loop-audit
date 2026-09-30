@@ -258,7 +258,7 @@ process.on("SIGTERM", () => { clearInterval(timer); process.exit(0); });
     thinkingLevel: "high",
     onProgress: (progress) => {
       reports.push(progress);
-      if (progress.phase === "running") eventClock = Math.max(eventClock, progress.lastActivityAt);
+      if (progress.phase === "running" && typeof progress.lastActivityAt === "number") eventClock = Math.max(eventClock, progress.lastActivityAt);
     },
     runtime: {
       workerPath: worker,
