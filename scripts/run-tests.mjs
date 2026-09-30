@@ -107,6 +107,7 @@ function main() {
   let lastOutputAt = Date.now();
   let settled = false;
   let stallFired = false;
+  let interruptedExitCode;
 
   const forward = (stream, sink) => {
     stream.on("data", (chunk) => {
@@ -130,12 +131,14 @@ function main() {
   // never had and never even unref'd. A failed probe is now loud.
   try {
     process.kill(-child.pid, 0);
-    child.unref?.();
+    // Keep the exit-status obligation referenced. Pipe EOF can precede
+    // ChildProcess.close; unref here let a failed suite become exit 0.
   } catch (error) {
     log(`WARNING: the suite child is not its own process group (${error?.code ?? error?.message}) — takeDown can only signal the direct child, so orphaned grandchildren may survive the run.`);
   }
 
   const onSignal = (signal) => {
+    interruptedExitCode ??= signal === "SIGINT" ? 130 : 143;
     log(`received ${signal} — taking the suite down with it (no orphan)`);
     takeDown("SIGTERM");
     setTimeout(() => takeDown("SIGKILL"), 5_000).unref?.();
@@ -169,7 +172,7 @@ function main() {
       process.exit(1);
     }
     log(`finished in ${elapsed}s (exit ${code}${signal ? `, signal ${signal}` : ""})`);
-    process.exit(code ?? 1);
+    process.exit(interruptedExitCode ?? code ?? 1);
   };
   child.on("error", (error) => {
     log(`could not start bun: ${error.message}`);
