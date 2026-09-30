@@ -1,0 +1,19 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/test-runner-lifecycle.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [2215.28ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [371.41ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [141.18ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5320.87ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [823.77ms]
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [209.84ms]
+
+ 6 pass
+ 0 fail
+Ran 6 tests across 1 file. [9.27s]
+[run-tests] finished in 9s (exit 0)

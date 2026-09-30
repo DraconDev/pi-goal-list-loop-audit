@@ -1,0 +1,71 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/terminal-summary-delivery.test.ts tests/subagent-hang-detection.test.ts tests/auditor-extensions.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/terminal-summary-delivery.test.ts:
+(pass) visible summary persists without an LLM turn (idle=true) [1424.68ms]
+(pass) visible summary persists without an LLM turn (idle=false) [0.26ms]
+(pass) branch-before-persist failure stays pending, suppresses duplicate, later persistence confirms [0.33ms]
+(pass) no-file session never acknowledges but does not repeat the visible summary [1.29ms]
+(pass) outbox survives failed delivery and restart; acknowledged render never replays [5.72ms]
+(pass) failed outbox acknowledgement does not duplicate an existing persisted branch summary [3.63ms]
+(pass) confirmation requires exact identity/content and complete JSONL, tolerates malformed tail [0.37ms]
+(pass) bounded confirmation fails conservatively when receipt is outside tail [157.63ms]
+(pass) maximum supported outbox receipt is acknowledged ("x") [95.29ms]
+(pass) maximum supported outbox receipt is acknowledged ("😀") [3116.04ms]
+(pass) maximum supported outbox receipt is acknowledged ("\u0000") [538.19ms]
+(pass) maximum supported outbox receipt is acknowledged ("\\") [237.43ms]
+(pass) failed outbox acknowledgement write retries without resending the visible message [7.27ms]
+(pass) current settlement is not starved by older unconfirmed renders [6.47ms]
+(pass) persistently unconfirmed head rotates so a later render is attempted [3.16ms]
+
+tests/subagent-hang-detection.test.ts:
+(pass) v0.35.65: snapshots use live manager counters and expose honest phase/elapsed data [12.73ms]
+(pass) v0.35.65: queued manager records stay queued and do not masquerade as active work [0.11ms]
+(pass) current pi-subagents async lifecycle and status.json drive live counters [1132.51ms]
+(pass) current v1 stop RPC is selected after the status artifact proves top-level ownership [487.54ms]
+(pass) classify: a running subagent with no new progress for 5m is hung [0.24ms]
+(pass) classify: sub-5m silence is not hung (5m floor, shorter than the auditor's 10m) [0.06ms]
+(pass) classify: a NEW tool use refreshes the streak (working, not wedged) [0.10ms]
+(pass) classify: NEW output tokens refresh the streak (long think, still alive) [0.05ms]
+(pass) classify: ended / non-running records are not hung (watch stops) [0.06ms]
+(pass) v0.34.102: a vanished/unreachable record falls back to event-only evidence (field: pully 118m wedge) [0.07ms]
+(pass) hang detection surfaces ui.notify + ledger `subagent_hang_detected` via the heartbeat scan [503.41ms]
+(pass) hang warning is throttled — one alert per 5m streak window, not per tick [652.48ms]
+(pass) long frozen tracked child requests one bounded child-specific abort after the warning window [663.97ms]
+(pass) progress arriving before escalation cancels the action and starts a fresh episode [459.93ms]
+(pass) event-only child reaches an honest unavailable-action record, never a guessed abort [659.55ms]
+(pass) nested child is not eligible for top-level automatic abort [471.03ms]
+(pass) v0.35.65: an old-generation child cannot receive a stop RPC after host rebind [542.29ms]
+(pass) host rebind retires healthy event-only evidence and admits fresh same-generation progress [534.32ms]
+(pass) v0.34.102: event-only hang surfaces `subagent_hang_detected` with evidence=event-only when no manager record exists [516.81ms]
+(pass) completed/failed events end the watch — no hang alert after completion [624.76ms]
+(pass) compacted/steered events refresh the streak (secondary progress evidence) [646.09ms]
+(pass) malformed hang inputs are dropped, not crashy [321.94ms]
+(pass) source pins: constants, watchdog wiring, and ledger key [18.33ms]
+(pass) v0.34.105: hang scan runs during main-model recovery (quota wall blinds the watchdog before the fix) [1033.37ms]
+(pass) v0.34.105 source pin: subagent scan precedes the main-model-recovery early return in heartbeatTick [0.33ms]
+(pass) v0.38.104 releasing the RPC host unsubscribes the readiness listeners it installed [0.39ms]
+
+tests/auditor-extensions.test.ts:
+(pass) normalizeAuditorAllowedExtensions is bounded, deduped, deterministic [31.61ms]
+(pass) discovery resolves settings packages/extensions to concrete install paths [13.56ms]
+(pass) resolveAuditorExtensionSpec maps npm/git/local specs to existing paths [3.26ms]
+(pass) resolveAuditorAllowedExtensions drops unresolvable entries fail-closed [6.87ms]
+(pass) v0.35.72: project-relative auditor extensions resolve from the project settings base [2.27ms]
+(pass) request allowedExtensions rides the hashed payload with resolved paths [0.61ms]
+(pass) auditorExtensionArgs only emits args for a non-empty allowlist [0.51ms]
+(pass) audit 2026-09-06: auditorExtensionArgs drops raw npm: specs fail-closed [1.12ms]
+(pass) audit 2026-09-06: allowlist normalize dedups case-insensitively [0.06ms]
+(pass) v0.35.72: offline auditor validation uses Node timeout support, not POSIX timeout [0.53ms]
+(pass) mandatory hermetic auditor-extension validation loads the resolved allowlist path [3573.97ms]
+(pass) settings round-trip: menu pick persists, load normalizes, clear removes [1657.04ms]
+(pass) saveSettings writes the allowlist and hand-edited junk is normalized on load [12.04ms]
+
+ 54 pass
+ 0 fail
+Ran 54 tests across 3 files. [25.80s]
+[run-tests] finished in 26s (exit 0)

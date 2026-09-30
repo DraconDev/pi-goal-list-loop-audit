@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: jiti: /list audit enqueues, persists the item, and ACTIVATES (state binding not split)
+ok 1 - jiti: /list audit enqueues, persists the item, and ACTIVATES (state binding not split)
+  ---
+  duration_ms: 38033.911235
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 41939.119111

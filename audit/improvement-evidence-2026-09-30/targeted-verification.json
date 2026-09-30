@@ -1,0 +1,78 @@
+{
+  "stage": "targeted implementation checks; full release gate pending",
+  "recordedHead": "3d7b98a090a21d21715c7c5a5b794835fa8341eb",
+  "logs": [
+    {
+      "path": "audit/improvement-evidence-2026-09-30/worker-check2.log",
+      "sha256": "e1c146f88fa10732f61e3e22206f5e25f40c8dc2070701216bed305244634e4a"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/runner-groups.log",
+      "sha256": "a5e0d48031eafff5bab2fef9adee8907bfcc9c48fcf1b1167d0032d096e08b91"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/settlement.log",
+      "sha256": "88b3e7f86f804d4c631d9b6ddbd3a741f59cdff6d43bc3f06f5741487f537bd9"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/settlement-cold.log",
+      "sha256": "923f1539c2785b5c3f35c4bf7c63e23702dd70853c8e750ff8e2adeb4f1c4229"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/owner-integration.log",
+      "sha256": "fd843cc4bfbc1e8b609549acde3e0d591785fb5c78dc507e85532ed24f61f882"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/owner-final-focused.log",
+      "sha256": "f8c0f091936ec37ca7ce56e3835100d78b495388662d3e742294756932824fb7"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/final-focused.log",
+      "sha256": "0c31078280010a11e80f5b4f90ece886d97b1bebfb98f9dd764edc63823bf0a7"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/receipts-probes.log",
+      "sha256": "93a4123320ed29f8701dd0720a27d676cf0965365444357747911ad450c38373"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/second-check.log",
+      "sha256": "5ec015992bb928fd4aa559df188cc88f6e49f7e88532a594a71bfbe8f88f9867"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/starvation.log",
+      "sha256": "2ef2966655b73d77c83e6e33b3931038ad644e685c53d7e34a91aad9b4e0f9eb"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/jiti.log",
+      "sha256": "2347e4f59f9539a4617ba27cfbf3f95ef669007218dd89c001ad8c8a29bb600e"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/typecheck-final-focused.log",
+      "sha256": "6fd20b7dbb02896b46917c0f35da26dddbdcf2d2fc1eafe5c74e5e6e945b9c1b"
+    }
+  ],
+  "sourceSha256": {
+    "scripts/run-tests.mjs": "80b060dfc25b01a37d313f69c7842f9065057e2f9c0dbb3d2b2e1e9360bafe8b",
+    "scripts/contained-child.mjs": "c2e7acba14febdeb70db796b2e8afa8b45da5ae7fa460a199c6628d4696a978f",
+    "scripts/goal-compactor-worker.mjs": "ff6f2e75f831bcdbe9ed212d2c5db40bfd385337866f322e192050d2d7621d32",
+    "scripts/goal-auditor-worker.mjs": "1d0f93db2892253741eb2ad0102b7d3c6bfcfdfa5b78561fc6ca47d368fca04c",
+    "extensions/owner-file-protocol.ts": "6183f47a2fc110b1f8a254bc4fbd34f632d418f03419496834269bf8ccf641b1",
+    "extensions/goal-loop-core.ts": "0327d47e22d80321fb13b9a4d68b4cc63b3d67bd123921d741199da3a18bdf4b",
+    "extensions/loops/goal-session.ts": "1013b8101e160bb25c4b35f26ba30bda54edd0e83907aff2aa72c639476965d4",
+    "extensions/loops/goal-activation.ts": "8fa697f714240ea45f2c259247792122a75b5540c48e1607ba229ad2e1431844",
+    "extensions/loops/goal-auditor-hooks.ts": "8a13e14cab9fb060e0b9f4d1a56df7f40825e4aa9510a43d18865783cb8b9087",
+    "extensions/loops/goal-tools.ts": "c366700cc0f67486b6dc17295867f8bc31442c138167f6d1cdd0af469c4d886d",
+    "extensions/loops/goal-orchestrator.ts": "2d47a9b80434e5c6eebc84038d88ff3c9a8eb57867cef9164e79609bcc6680ef",
+    "extensions/goal-heartbeat.ts": "7da0f16f4256c177308fe5545d33e48a4da1e2f386758929a30d84a14d6323b6",
+    "extensions/goal-loop-shield.ts": "6e7d647819c1345a9979145d6ad0a55d21d0bd82fb354a23aa38efd130149e7c",
+    "extensions/approval-render-store.ts": "1462f816b8e6266455b3e143fe62b34bb12a27d283fceafa94c5f2bc0e6eb57c",
+    "extensions/terminal-summary-delivery.ts": "0da52507bf893ceb5093282aa6ac923558c3614a9a84e90aa24be507e0eea160",
+    "extensions/terminal-summary-limits.ts": "955ec843d1cc45b21ac7f437a24e3d609a88d26f70d6bdbc637b7b45090fc270"
+  },
+  "limits": [
+    "Log checks span incremental edits; hashes record current implementation, not proof every log ran on exactly these hashes.",
+    "Linux Node/Bun execution only; no real provider or other-platform validation.",
+    "Detached suite-group cleanup does not yet own separately detached workers.",
+    "Architecture, compatibility, dependencies, canaries, audit policy, durability, performance and operator surfaces still require further work."
+  ]
+}

@@ -1,0 +1,49 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/last-wins.test.ts tests/state-root-consumers.test.ts tests/state-root-owner.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/last-wins.test.ts:
+(pass) last-wins: a main host steals a live root — the old owner is never signaled [3657.01ms]
+(pass) last-wins: a worker contact never steals — the main session keeps the root [375.18ms]
+(pass) last-wins: quiet paths still reclaim without supersede noise [462.21ms]
+(pass) last-wins: the dethroned session stands down once, then recovers when the holder dies [912.38ms]
+(pass) last-wins wiring: session_start supersedes under hostLifecycleStart, agent_end notes standing [227.65ms]
+(pass) last-wins: an archive fence no longer refuses the new objective — old is ledgered, new starts [979.91ms]
+(pass) last-wins control: without a fence the old objective still archives honestly [845.11ms]
+(pass) last-wins source pins: setGoal preserves-then-proceeds, refusal text gone [553.43ms]
+(pass) audit-2026-09-06: same-session lineage reclaims quietly — no steal event [676.40ms]
+(pass) audit-2026-09-06: anonymous claimant cannot dethrone a live owner [198.32ms]
+
+tests/state-root-owner.test.ts:
+(pass) normalizeOwnerAt tolerates number and ISO, rejects garbage [381.51ms]
+(pass) looksLikePi admits pi hosts, refuses sleep, abstains on unknown [216.82ms]
+(pass) classifyOwner covers the full matrix [206.88ms]
+(pass) describeOwner returns null for self, shape for foreign [166.77ms]
+(pass) takeover with no record claims silently [5379.98ms]
+(pass) takeover of a dead owner reclaims without signaling [233.03ms]
+(pass) takeover of self reclaims (same-process sessions always win) [229.94ms]
+(pass) live owner without confirm returns needs-confirm and touches nothing [309.39ms]
+(pass) confirmed takeover of a non-pi process is refused, survivor unclaimed [741.35ms]
+(pass) confirmed takeover SIGTERMs a pi-shaped owner, verifies exit, claims [710.31ms]
+(pass) owner surviving SIGTERM is never claimed [637.65ms]
+(pass) recycled pid is unlinked without signaling the innocent occupant [952.88ms]
+(pass) heartbeat refresh is throttled and owner-scoped [477.03ms]
+(pass) /glla owner reports unclaimed / self / live holder [551.10ms]
+(pass) /glla takeover end to end reclaims a dead root via command [626.60ms]
+(pass) /glla takeover aborts on dismissed confirm without signaling [523.98ms]
+(pass) source pins the new escape hatches on both read-only warnings [187.40ms]
+(pass) audit-2026-09-06: takeover re-verifies the occupant at signal time [436.51ms]
+
+tests/state-root-consumers.test.ts:
+(pass) resolved consumers follow the selected root — dispatch, stats, audit findings [51.59ms]
+(pass) pending sessionDir defers dispatch, reviewer, and audit writes — no cwd fallback tree [38.63ms]
+(pass) workingDir fallback and PI_SESSION_FILE fallback behave correctly [13.55ms]
+(pass) source pins: raw cwd/.pi-glla hardcodings are gone from consumers [45.94ms]
+
+ 32 pass
+ 0 fail
+Ran 32 tests across 3 files. [28.23s]
+[run-tests] finished in 28s (exit 0)

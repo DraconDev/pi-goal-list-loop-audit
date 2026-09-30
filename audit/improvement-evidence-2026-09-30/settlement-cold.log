@@ -1,0 +1,32 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/persistence-recovery.test.ts tests/audit-settlement-restart.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/persistence-recovery.test.ts:
+(pass) archive summary obligation survives every projection boundary and outbox failure [94.68ms]
+(pass) SIGKILL before outbox transfer recovers the summary in a cold Node process [4969.42ms]
+(pass) archive intent prevents a published archive from resurrecting its active goal [52.19ms]
+(pass) a prepared archive intent without an archive is safe to discard [6.32ms]
+(pass) ledger rotation keeps a bounded active snapshot and retains forensic history [7.35ms]
+(pass) readState recovers when a process dies after segment rename but before active rewrite [13.14ms]
+(pass) queue deletion distinguishes absent sidecars from failed destructive cleanup [5.60ms]
+(pass) audit-job health reports proven-dead workers and preserves ambiguous scratch [15.66ms]
+
+tests/audit-settlement-restart.test.ts:
+(pass) restart: a running claim whose worker is gone parks as recovery-needed and never looks complete [2361.19ms]
+(pass) restart: a claim whose worker never reported is recovery-needed, with no invented activity [151.15ms]
+(pass) restart: a settling claim completes its archive without re-running the auditor [519.71ms]
+(pass) restart: a finished settlement is approved once — one render, and the render follows the archive [643.49ms]
+(pass) restart: a refused archive keeps the approved claim and emits no terminal success [529.17ms]
+(pass) recovery: after the fault is repaired, /goal resume finishes the settlement WITHOUT re-auditing [1163.24ms]
+(pass) recovery: a restart after the fault is repaired also finishes the settlement without re-auditing [978.21ms]
+(pass) lifecycle evidence survives the durable state boundary (sanitized, not dropped) [1.17ms]
+(pass) audit 2026-09-25: no constant-folded settlement guard obscures the live gate [21.99ms]
+
+ 17 pass
+ 0 fail
+Ran 17 tests across 2 files. [17.31s]
+[run-tests] finished in 18s (exit 0)

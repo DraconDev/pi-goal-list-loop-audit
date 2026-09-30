@@ -1,0 +1,21 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/owner-file-protocol.test.ts tests/owner-fence.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/owner-fence.test.ts:
+(pass) v0.35.72: a live foreign process cannot claim the workingDir owner file [2274.81ms]
+(pass) v0.35.72: mutating goal and loop commands use the stale admission fence [0.70ms]
+(pass) owner acquisition and refresh preserve malformed records for explicit repair [946.97ms]
+(pass) takeover compares the complete record inside the owner mutation [9.50ms]
+
+tests/owner-file-protocol.test.ts:
+(pass) competing Node processes serialize owner mutations and publish only complete records [4045.58ms]
+(pass) a live mutation times out contenders; SIGKILL recovery never removes a successor lock [726.12ms]
+
+ 6 pass
+ 0 fail
+Ran 6 tests across 2 files. [12.97s]
+[run-tests] finished in 13s (exit 0)

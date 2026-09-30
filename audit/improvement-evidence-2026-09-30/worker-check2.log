@@ -1,0 +1,37 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/test-runner-lifecycle.test.ts tests/test-split.test.ts tests/compactor-worker-lifecycle.test.ts tests/auditor-process.test.ts -t runner|compactor cleans|parent abort escalates|worker force-kills|real worker stops a runaway|real worker forwards ordered
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/compactor-worker-lifecycle.test.ts:
+(pass) compactor cleans its Pi tree on SIGTERM, including inherited pipes and TERM-ignoring children [1756.87ms]
+(pass) compactor cleans its Pi tree on timeout, including inherited pipes and TERM-ignoring children [3114.61ms]
+(pass) compactor cleans its Pi tree on normal, including inherited pipes and TERM-ignoring children [588.76ms]
+(pass) compactor cleans its Pi tree on result-write-failure, including inherited pipes and TERM-ignoring children [560.37ms]
+
+tests/auditor-process.test.ts:
+(pass) parent abort escalates a detached TERM-ignoring worker and removes its job [1677.41ms]
+(pass) the real worker forwards ordered tool and report phases to the parent [998.38ms]
+(pass) real worker stops a runaway RPC process group before it becomes a storm [2442.77ms]
+(pass) worker force-kills a wedged RPC child before it exits [906.33ms]
+
+tests/test-split.test.ts:
+(pass) runner: the stall window is bounded and overridable [0.30ms]
+(pass) runner: silence past the window stalls, progress resets the clock [0.12ms]
+(pass) runner: the wrapper owns its child (no orphan on abort) [0.35ms]
+(pass) runner: the hand-written .d.mts declares every runtime export (drift guard) [1.10ms]
+(pass) v0.38.104: the release gate runs the hardened runner, and CI bounds both jobs [3.40ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [565.31ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [252.47ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [173.90ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5203.56ms]
+
+ 17 pass
+ 48 filtered out
+ 0 fail
+Ran 17 tests across 4 files. [19.98s]
+[run-tests] finished in 20s (exit 0)

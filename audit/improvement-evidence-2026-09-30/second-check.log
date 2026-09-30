@@ -1,0 +1,32 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/mechanical-pipeline-lifecycle.test.ts tests/unsupervised-error-retry.test.ts tests/process-state-reset.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/mechanical-pipeline-lifecycle.test.ts:
+(pass) Node callers survive noisy early-closing filters and retain head failure/cancellation [2362.27ms]
+
+tests/process-state-reset.test.ts:
+(pass) v0.38.88: composite clears a poisoned starvation streak [0.74ms]
+(pass) v0.38.88: composite releases the session-owner claim [535.59ms]
+(pass) v0.38.88: composite invokes every exported latch reset [109.13ms]
+
+tests/unsupervised-error-retry.test.ts:
+(pass) empty provider response with no goal schedules and dispatches a retry [314.41ms]
+(pass) consecutive errors advance the streak; a clean turn clears it [334.49ms]
+(pass) composite isolation clears a poisoned unsupervised retry streak, timer, and override [31.25ms]
+(pass) user aborts never retry [165.68ms]
+(pass) policy refusals, auth, billing, and deterministic 400s refuse with a reason [252.69ms]
+(pass) context overflow compacts instead of retrying [275.54ms]
+(pass) hinted quota sleeps until the provider reset; hintless quota ladders [31.74ms]
+(pass) an active goal owns error turns — the unsupervised lane stays silent [396.47ms]
+(pass) a load-held session refuses instead of promising a retry it cannot send [264.53ms]
+(pass) a fresh turn stands down the pending retry [184.72ms]
+(pass) a busy session at fire time stands down instead of double-driving [180.39ms]
+
+ 15 pass
+ 0 fail
+Ran 15 tests across 3 files. [6.59s]
+[run-tests] finished in 7s (exit 0)
