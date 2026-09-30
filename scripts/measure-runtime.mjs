@@ -83,6 +83,7 @@ try {
     const start = performance.now();
     if (core.rotateLedgerIfNeeded(cwd, latestStateLine) !== true) throw new Error("rotation benchmark did not rotate");
     rotationSamples.push(performance.now() - start);
+    if (core.readState(cwd).goal?.id !== goal.id) throw new Error("rotation lost the fixture state");
   }
   const outboxCwd = path.join(scratch, "outbox");
   const chatLines = Array.from({ length: limits.MAX_RENDER_CHAT_LINES }, () => "x".repeat(limits.MAX_RENDER_LINE_CHARS));
