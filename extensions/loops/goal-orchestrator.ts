@@ -918,10 +918,7 @@ function setGoal(goal: Goal, ctx: ExtensionContext, via = "user"): boolean {
   return true;
 }
 
-function updateGoal(patch: Partial<Goal>, ctx: ExtensionContext  persistence: SettlementPersistence = settlementPersistence,
-): boolean {
-  const { writeArchiveIntent, clearArchiveIntent, updateArchiveIntentPhase,
-    finalizeArchiveIntent, persistApprovalRender, persistState } = persistence;
+function updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): boolean {
   if (!state.goal) return false;
   const statusChanged = patch.status !== undefined && patch.status !== state.goal.status;
   const next: Goal = { ...state.goal, ...patch, updatedAt: nowIso() };
@@ -1131,7 +1128,10 @@ export function archiveCurrentGoal(
   // the archive rich section only — abort/wip paths omit it (flat fallback).
   // v0.38.52: same for the gate inventory.
   opts?: { findingGroups?: FindingGroup[]; gateRows?: GateRow[]; priorCompletionSummary?: string; terminalRender?: { goalId: string; objective: string; chatLines: string[] } },
+  persistence: SettlementPersistence = settlementPersistence,
 ): boolean {
+  const { writeArchiveIntent, clearArchiveIntent, updateArchiveIntentPhase,
+    finalizeArchiveIntent, persistApprovalRender, persistState } = persistence;
   if (!state.goal) return false;
   if (status !== "complete" && status !== "aborted") return false;
   if (stateRootPending()) {
