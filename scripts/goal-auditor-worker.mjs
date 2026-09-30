@@ -15,6 +15,7 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { buildAuditorPiSpawnSpec, renameWithWindowsRetry } from "./goal-auditor-launch.mjs";
 import { accumulateStderrDiagnostic } from "./auditor-stderr-diagnostic.mjs";
+import { terminateContainedChild } from "./contained-child.mjs";
 
 const PROTOCOL_VERSION = 1;
 // Power-oriented auditor mode: bash is intentionally available so the model
@@ -114,81 +115,17 @@ function signalPosixChildTree(child, signal) {
   signalPosixProcessGroup(childGroup, signal);
 }
 
-function destroyChildStreams(child) {
-  for (const stream of [child.stdin, child.stdout, child.stderr]) {
-    try { stream?.destroy(); } catch {}
-  }
-}
-
-function waitForChildExit(child, timeoutMs) {
-  if (!childRunning(child)) return Promise.resolve();
-  return new Promise((resolve) => {
-    let timer;
-    const done = () => {
-      if (timer) clearTimeout(timer);
-      child.removeListener("exit", done);
-      child.removeListener("close", done);
-      child.removeListener("error", done);
-      resolve();
-    };
-    child.once("exit", done);
-    child.once("close", done);
-    child.once("error", done);
-    timer = setTimeout(done, timeoutMs);
-    timer.unref?.();
-  });
-}
-
-async function terminateWindowsProcessTree(child) {
-  if (!child.pid) return;
-  let killer;
-  try {
-    // The Windows launch is a cmd.exe shim boundary. taskkill /T is needed to
-    // terminate the npm shim and the Node/pi descendants as one tree; killing
-    // only cmd.exe can leave the RPC child alive with the worker's pipes gone.
-    killer = spawn("taskkill", ["/pid", String(child.pid), "/t", "/f"], {
-      stdio: "ignore",
-      windowsHide: true,
-    });
-  } catch {
-    return;
-  }
-  await waitForChildExit(killer, configuredDuration("GLLA_AUDITOR_CHILD_SHUTDOWN_MS", DEFAULT_CHILD_SHUTDOWN_GRACE_MS));
-}
-
 async function terminateChild(child) {
-  if (!childRunning(child)) {
-    destroyChildStreams(child);
-    return;
-  }
-  if (process.platform === "win32") {
-    await terminateWindowsProcessTree(child);
-    // If taskkill was unavailable or raced the process exit, retain the direct
-    // finite fallback so worker shutdown remains bounded.
-    if (childRunning(child)) {
-      try { child.kill(); } catch {}
-      await waitForChildExit(child, FORCE_KILL_SETTLE_MS);
-    }
-    destroyChildStreams(child);
-    return;
-  }
-  const childGroup = process.platform === "linux" && child.pid !== undefined
-    ? linuxProcessGroupId(child.pid)
-    : undefined;
-  signalPosixChildTree(child, "SIGTERM");
-  await waitForChildExit(child, configuredDuration("GLLA_AUDITOR_CHILD_SHUTDOWN_MS", DEFAULT_CHILD_SHUTDOWN_GRACE_MS));
-  if (childRunning(child)) {
-    signalPosixChildTree(child, "SIGKILL");
-  } else {
-    // The direct RPC child may exit after TERM while a nested shell/browser
-    // ignores it. Reuse the captured group identity so those descendants still
-    // receive the finite KILL escalation.
-    signalPosixProcessGroup(childGroup, "SIGKILL");
-  }
-  // SIGKILL should settle a direct child promptly; keep a second finite
-  // bound so a broken pipe/close event can never hold the worker forever.
-  await waitForChildExit(child, FORCE_KILL_SETTLE_MS);
-  destroyChildStreams(child);
+  const group = process.platform === "linux" && child.pid !== undefined
+    ? linuxProcessGroupId(child.pid) : undefined;
+  await terminateContainedChild(child, {
+    graceMs: configuredDuration("GLLA_AUDITOR_CHILD_SHUTDOWN_MS", DEFAULT_CHILD_SHUTDOWN_GRACE_MS),
+    forceMs: FORCE_KILL_SETTLE_MS,
+    signalTree: (signal) => {
+      signalPosixChildTree(child, signal);
+      signalPosixProcessGroup(group, signal);
+    },
+  });
 }
 
 function stableJson(value) {
