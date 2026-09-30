@@ -2439,3 +2439,73 @@ tests/completion-trailing-space.test.ts:
 (pass) /glla completions stay concise: actions only; settings live in the table [0.75ms]
 
 tests/post-drafting-stuck.test.ts:
+(pass) post-drafting: complete_goal storage failure returns an error, never a wait narrative [6775.79ms]
+(pass) post-drafting: resume_goal resumes a paused auditor-retry list item [785.04ms]
+(pass) post-drafting: auditor retry waits after the eager probe are capped at 15 minutes [0.95ms]
+(pass) post-drafting: recovery-wait surfaces name resume_goal as the agent path [8.75ms]
+
+tests/same-process-successor-resume.test.ts:
+[run-tests] progress: 810s elapsed · 0s since last output · 235 KiB of suite output
+(pass) same-process successor resumes a held ACTIVE goal — the list/goal asymmetry fix [656.16ms]
+(pass) same-process successor auto-retries a parked completion-audit claim — auditor consent parity [735.62ms]
+(pass) different-pid crash successor still HOLDS the goal — the cold-load law stands [634.44ms]
+
+tests/model-switch.test.ts:
+(pass) v0.34.57: persistState carries lastModelRef on the state line for a fresh process to restore [347.33ms]
+(pass) v0.34.57: a fresh process with a changed default model ledgeres turn-boundary drift (cross-session detection) [16.02ms]
+(pass) v0.34.57: modelSwitch() builds the canonical ledger payload [0.32ms]
+(pass) v0.34.57: isForbiddenModel matches refs, case-insensitively; v0.34.115: empty default forbids nothing [0.36ms]
+(pass) v0.34.57: the model_select hook ledgeres every provider/model change [5.16ms]
+(pass) v0.34.57: the turn-boundary check ledgeres drift that arrives without a model_select event [26.11ms]
+(pass) v0.34.57: the forbidden gate blocks a forbidden selection, emits forbidden_model_switch, and reverts [41.90ms]
+(pass) v0.34.57: blockForbiddenModelSwitches off allows the switch but records the violation [1.23ms]
+(pass) v0.34.93: isForbiddenModel flags sonnet/opus/gpt-5.5 refs the gate must skip [0.17ms]
+(pass) v0.34.93: empty / undefined ref is never forbidden (the empty-list semantic); v0.34.115: default is empty [0.08ms]
+(pass) v0.34.93: a forbidden candidate is silently skipped by the recovery gate (the recovery-envelope gate skips the candidate without rotation or verdict change) [0.17ms]
+(pass) v0.34.57: turn-boundary drift into a forbidden model records the violation without blocking [3.32ms]
+(pass) v0.34.57: /glla switchlog renders the last N entries of the model-switch trail [17.70ms]
+
+tests/length-continue.test.ts:
+(pass) tracker: fires up to MAX consecutive, gives up once, resets on a normal turn [62.66ms]
+(pass) continue text carries the root-cause mitigation (split large writes) [0.34ms]
+(pass) v0.34.19: tiny-output length at a nearly full context is context starvation, not a real output cap [0.27ms]
+(pass) v0.38.36: explicit provider context-overflow errors (stopReason=error) are context starvation when context usage >= 90% [0.33ms]
+(pass) agent_end: length path runs BEFORE nudge accounting, telemetry, and goal gating [0.61ms]
+(pass) sendLengthContinue: stale-api terminal guard + admitted-session reset [1.40ms]
+(pass) sendLengthContinue: active goals get completion-aware recovery guidance [1.17ms]
+
+tests/context-overflow-recovery.test.ts:
+(pass) v0.34.116: classifyMainModelFailure accepts an isContextOverflow override [0.71ms]
+(pass) v0.34.116: context-overflow override routes to a context-overflow kind, not non-recoverable [0.09ms]
+(pass) v0.34.116: helper isContextOverflowError covers the same surface as the legacy non-recoverable regex [0.16ms]
+(pass) v0.34.116: recoverFromContextOverflow is exported and routes through tryMainModelFallback [0.15ms]
+(pass) v0.34.116: observeCompactFailure is the one-liner surface (notify + ledger) [0.13ms]
+(pass) v0.34.116: tryMainModelFallback opens context-overflow (it is the only rotation kind beyond provider failures) [0.12ms]
+(pass) v0.34.116: agent_end context-starved branch detects recent compaction and walks the chain [0.65ms]
+
+tests/paused-suspicious-close.test.ts:
+(pass) 032245: the field objective trips verification-fragment through the real classifier [6.31ms]
+(pass) 032245: a paused suspicious goal can submit complete_goal and close on auditor approval [5835.14ms]
+(pass) stored-completion-audit retry settles a suspicious claim instead of re-pausing it [426.53ms]
+(pass) narrowness: paused-by-user and paused repair cards still refuse complete_goal [614.93ms]
+(pass) narrowness: a paused repair card cannot skip its replan via the suspicious close path [245.79ms]
+
+tests/extract-verification.test.ts:
+(pass) inline one-liner: 'Done when:' mid-line is extracted [0.42ms]
+(pass) inline one-liner: trailing period stripped from objective [0.07ms]
+(pass) ordinary verify imperative before Done when is not mistaken for a marker [88.76ms]
+(pass) no marker anywhere returns full text as objective [0.29ms]
+(pass) line-based extraction wins over inline when both present [0.15ms]
+(pass) multi-line verification contract preserved [0.19ms]
+(pass) line marker: 'Done when ALL of the following are true:' starts the contract [0.04ms]
+(pass) inline marker: 'Done when ALL of the following are true:' mid-line [0.03ms]
+(pass) goalArgsNeedDrafting: 'Done when ALL of the following' counts as a contract (no interview) [0.07ms]
+(pass) round-trip: normalized draft survives storage and yields clean shield items [2.14ms]
+
+tests/pending-claim-lifecycle.test.ts:
+(pass) /goal verify on a healthy pending audit reports the awaiting state without touching the claim [3564.10ms]
+(pass) /goal verify on an approved-but-unarchived claim settles it instead of re-auditing [1360.31ms]
+(pass) a durable pending audit survives cold reload parked with its identity and no submission [736.81ms]
+
+tests/pause-anti-confabulation.test.ts:
+(pass) claimed-missing matches absence language only [109.13ms]
