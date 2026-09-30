@@ -2698,3 +2698,65 @@ tests/interrupt-didnt-continue.test.ts:
 
 tests/objection-pinning.test.ts:
 [run-tests] progress: 930s elapsed · 0s since last output · 254 KiB of suite output
+(pass) v0.38.21 two disapproval rounds: R1 retired with its objections attached, prompt argues R2 only [15613.75ms]
+(pass) v0.38.21 appendAuditVerdict: clean approval clears the pin, shield-clear counts, errors never touch flags [100.59ms]
+
+tests/completion-density-lint.test.ts:
+(pass) density lint: evidence tokens in the summary pass [0.89ms]
+(pass) density lint: tokens inside finding groups count [0.20ms]
+(pass) density lint: gate rows count as density without tokens [0.06ms]
+(pass) density lint: zero tokens and zero gates is annotated [0.67ms]
+
+tests/stuck-audit-latch.test.ts:
+(pass) Fix A: the apply gate defers + parks instead of silently dropping a completed verdict [96.70ms]
+(pass) Fix B: the stale-latch stranded park runs BEFORE the extensionApiStale early return [0.53ms]
+(pass) Fix B: the park requires the exact stuck signature (auditing, no in-flight, claim, 90s silence) [1.11ms]
+(pass) audit 2026-09-25: stranded_audit_recovered is ledgered only after the park lands [0.42ms]
+
+tests/regression-shield.test.ts:
+(pass) contractItems: strips the 'Done when:' marker line [188.56ms]
+(pass) contractItems: handles inline single-line contracts [0.13ms]
+(pass) contractItems: strips bullets and numbering [0.12ms]
+(pass) contractItems: drops empty lines [0.06ms]
+(pass) contractItems: skips wrapped prose preamble in list-shaped contracts [0.15ms]
+(pass) contractItems: shapeless contracts keep every-line behavior [0.07ms]
+(pass) contractItems: a Done-when criterion survives alongside bullets [0.12ms]
+(pass) passes: preamble fragments are not required in evidence [3.35ms]
+(pass) passes: evidence block present, all items referenced [0.20ms]
+(pass) rejects: approval without an evidence block [0.07ms]
+(pass) rejects: evidence block but an item is not addressed [0.08ms]
+(pass) rejects: bamboozle-style empty evidence block [0.08ms]
+(pass) rejects: contract prose outside evidence cannot satisfy the shield [0.07ms]
+(pass) distinctive-token matching: references the item by a filename [0.10ms]
+(pass) case-insensitive matching [0.06ms]
+(pass) contractItems: excludes 'Out of scope' boundary lines [1.82ms]
+(pass) compound tokens match via segments (left-cropped → left + cropped) [0.25ms]
+(pass) prose punctuation glued to tokens does not break matching (file/element.) [0.12ms]
+(pass) top-3 candidate matching tolerates contract-only vocabulary [0.08ms]
+(pass) still rejects: bamboozle report that never touches the item's vocabulary [0.08ms]
+(pass) CJK: a verbatim-quoted Chinese item passes (token is one CJK word, not delimiters) [6.34ms]
+(pass) CJK: a quote that drops the trailing full-width colon still matches [0.23ms]
+(pass) CJK: a Chinese line with no ASCII letters is one candidate token [0.04ms]
+(pass) CJK: an English-only paraphrase of a Chinese item is still rejected (strict shield) [3.66ms]
+(pass) CJK: mixed item matches on its ASCII token even when CJK words are not quoted [0.16ms]
+(pass) ASCII behavior is unchanged: distinctive-token + compound matching still work [0.13ms]
+(pass) contractItems: 'Done when ALL of the following are true:' preamble is dropped [0.17ms]
+(pass) contractItems: preamble without trailing colon is also dropped [0.06ms]
+(pass) shield passes a genuine approval that a preamble-only false positive used to block [0.10ms]
+(pass) extractMechanicalCheckCommands: extracts backticked and raw shell commands [1019.44ms]
+(pass) extractMechanicalCheckCommands: skips commands under negation [1.13ms]
+(pass) extractMechanicalCheckCommands: rejects never-exiting server commands [0.50ms]
+(pass) v0.35.16: mechanical checks keep the TAIL of failed output and banner a timeout kill [1548.40ms]
+(pass) mechanical checks stay async and kill descendant processes on timeout [3291.79ms]
+(pass) mechanical checks stop a runaway process group before the wall timeout [878.28ms]
+(pass) v0.35.18: resolveCanonicalRunnerCommand maps raw runners to their canonical package script [110.21ms]
+(pass) v0.35.20: runMechanicalPreAuditChecks retries a transiently failing check exactly once, honestly bannered [1050.21ms]
+(pass) v0.38.23: mechanical checks resolve project-local node_modules/.bin (bare tsc ENOENT field fix) [209.32ms]
+
+tests/auditor-challenge.test.ts:
+(pass) challenge: approval earns a falsification round; re-confirm preserves the verdict [1366.56ms]
+[run-tests] progress: 960s elapsed · 1s since last output · 258 KiB of suite output
+(pass) challenge: a challenge disapproval flips the verdict by final line [1088.24ms]
+(pass) challenge: round-1 disapprovals run single-round [1062.00ms]
+(pass) challenge: a failed challenge falls back to byte-identical round-1 output [1254.33ms]
+(pass) strict challenge: a failed falsification pass is infrastructure/no-verdict [1462.34ms]
