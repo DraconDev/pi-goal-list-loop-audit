@@ -5236,6 +5236,9 @@ test("v0.35.4: context-starved warning is one-shot per refusal episode", async (
 
     // Compaction lands → the refusal clears → no warning while cleared.
     (globalThis as any).onCompactionLanded();
+    // The healthy window need not be long enough to reach the refire path.
+    // Recent work used to leave the warning latched across both episodes.
+    (globalThis as any).lastActivityAt = Date.now();
     __testOnlyHeartbeatTick();
     assert.equal(readLedger(cwd).filter((entry) => entry.type === "continuation_refused_context_starved").length, 1, "cleared episode does not re-fire");
     // That tick's refire path re-armed a continuation timer; clear the

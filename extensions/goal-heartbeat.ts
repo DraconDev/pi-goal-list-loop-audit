@@ -1266,6 +1266,10 @@ export function signalSupervisionEvent(signal: SupervisionSignal = { plane: "que
 }
 
 function heartbeatTick(): void {
+  // Recovery rearms the warning even when this tick cannot refire (busy,
+  // paused, a pending dispatch, or recent activity). Otherwise a short
+  // healthy window between two episodes can suppress the second warning.
+  if (!isContextStarvedRefused()) starvedRefusedNotified = false;
   // The checker consumes lifecycle/durable signals before the existing
   // plane-specific safety/recovery handlers run. It never turns a live
   // progress signal into a timeout; it only selects event/immediate versus
@@ -1773,9 +1777,6 @@ function heartbeatTick(): void {
     }
     return;
   }
-  // v0.35.4: the refusal cleared (compaction landed or the window lapsed) —
-  // re-arm the one-shot so the NEXT episode gets its single warning.
-  starvedRefusedNotified = false;
   // v0.26.6: the 0.25.0 "recent ship (<5m)" suppression was REMOVED. It fed
   // lastShippedAtMs, which read the state-file MTIME — and the heartbeat's
   // own suppressed-tick ledger writes refreshed that mtime every 15s,
