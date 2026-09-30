@@ -414,8 +414,13 @@ function runMechanicalFilterStage(
   input: string,
   filter: string,
   timeoutMs: number,
-): Promise<{ output: string; exitCode: number; timedOut: boolean; launchError?: string }> {
+  signal?: AbortSignal,
+): Promise<{ output: string; exitCode: number; timedOut: boolean; aborted?: boolean; launchError?: string }> {
   return new Promise((resolve) => {
+    if (signal?.aborted) {
+      resolve({ output: "", exitCode: 1, timedOut: false, aborted: true });
+      return;
+    }
     const [program = "", ...args] = filter.split(/[ \t]+/);
     let child: ChildProcess;
     try {
@@ -429,12 +434,29 @@ function runMechanicalFilterStage(
     }
     let output = "";
     let settled = false;
-    const timer = setTimeout(() => {
+    const kill = () => {
+      try {
+        if (process.platform !== "win32" && child.pid) process.kill(-child.pid, "SIGKILL");
+        else child.kill("SIGKILL");
+      } catch { /* already gone */ }
+    };
+    const finish = (result: { output: string; exitCode: number; timedOut: boolean; aborted?: boolean; launchError?: string }) => {
       if (settled) return;
       settled = true;
-      try { child.kill("SIGKILL"); } catch { /* already gone */ }
-      resolve({ output: output.slice(-MECHANICAL_OUTPUT_TAIL_CHARS), exitCode: 1, timedOut: true });
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
+      resolve(result);
+    };
+    const onAbort = () => {
+      kill();
+      finish({ output: output.slice(-MECHANICAL_OUTPUT_TAIL_CHARS), exitCode: 1, timedOut: false, aborted: true });
+    };
+    const timer = setTimeout(() => {
+      if (settled) return;
+      kill();
+      finish({ output: output.slice(-MECHANICAL_OUTPUT_TAIL_CHARS), exitCode: 1, timedOut: true });
     }, timeoutMs);
+    signal?.addEventListener("abort", onAbort, { once: true });
     child.stdout?.on("data", (chunk: Buffer) => {
       output += chunk.toString("utf8");
       if (output.length > MECHANICAL_OUTPUT_TAIL_CHARS * 2) {
@@ -443,16 +465,19 @@ function runMechanicalFilterStage(
     });
     child.stderr?.on("data", () => { /* filter diagnostics never enter evidence */ });
     child.on("error", (error) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      resolve({ output: "", exitCode: 1, timedOut: false, launchError: error.message });
+      finish({ output: "", exitCode: 1, timedOut: false, launchError: error.message });
     });
     child.on("close", (code) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      resolve({ output: output.slice(-MECHANICAL_OUTPUT_TAIL_CHARS), exitCode: code ?? 1, timedOut: false });
+      finish({ output: output.slice(-MECHANICAL_OUTPUT_TAIL_CHARS), exitCode: code ?? 1, timedOut: false });
+    });
+    // head/grep may intentionally close stdin before all buffered evidence
+    // arrives. Writable errors are asynchronous and escape a try/catch.
+    // Expected pipe closure still waits for the filter's bounded exit;
+    // other transport failures make the stage inconclusive.
+    child.stdin?.on("error", (error: NodeJS.ErrnoException) => {
+      if (error.code === "EPIPE" || error.code === "ERR_STREAM_DESTROYED") return;
+      kill();
+      finish({ output: "", exitCode: 1, timedOut: false, launchError: error.message });
     });
     try {
       child.stdin?.write(input);
@@ -495,7 +520,10 @@ async function runMechanicalPipeline(
     let stageInput = head.output;
     let stageFailed: { output: string; exitCode: number } | null = null;
     for (const filter of pipeline.filters) {
-      const stage = await runMechanicalFilterStage(stageInput, filter, MECHANICAL_FILTER_STAGE_TIMEOUT_MS);
+      const stage = await runMechanicalFilterStage(stageInput, filter, MECHANICAL_FILTER_STAGE_TIMEOUT_MS, signal);
+      if (stage.aborted) {
+        return { passed: false, outcome: "inconclusive", inconclusiveReason: "aborted", failedCommand: rawCommand, output: stage.output, exitCode: 1 };
+      }
       if (stage.timedOut || stage.launchError) {
         stageFailed = {
           output: `[pipeline filter '${filter}' did not complete: ${stage.timedOut ? "timed out" : stage.launchError}]`,
