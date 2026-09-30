@@ -4031,3 +4031,28 @@ tests/length-exhaustion-relentless.test.ts:
 (pass) unknown context heat degrades to fresh-budget, never rotate [0.05ms]
 
 tests/loops/goal.test.ts:
+(pass) v0.34.57: a compaction inside the watchdog window pauses the watchdog instead of firing the unacknowledged warning [8922.63ms]
+(pass) v0.34.57: compaction rearm cap goes directly to unacknowledged without a retry [2145.61ms]
+(pass) v0.34.124: a recovery resume inside the watchdog window pauses the watchdog instead of firing the unacknowledged warning [1533.30ms]
+(pass) v0.34.124: recovery rearm counters clear when the dispatch watchdog settles [501.14ms]
+[run-tests] progress: 1500s elapsed · 1s since last output · 351 KiB of suite output
+(pass) v0.34.124: a recovery resume OUTSIDE the grace window does not pause the watchdog [2320.63ms]
+(pass) v0.34.57: a genuine stall (no compaction in the window) still fires the unacknowledged warning [1465.95ms]
+
+1 tests skipped:
+(skip) commit survives the auto-committer daemon (item 32, env-gated watched repo)
+
+
+5 tests failed:
+(fail) archive write failure never emits a terminal success [2061.57ms]
+(fail) outbox write failure warns without claiming summary delivery [10326.99ms]
+(fail) Windows worker shutdown kills the cmd/pi process tree [24.90ms]
+(fail) v0.35.15: every automatic dispatch point gates on supervisorPaused [123.48ms]
+(fail) repair re-claim preserves the whole-work recap in the approved render [25150.96ms]
+  ^ this test timed out after 25000ms, before its done callback was called. If a done callback was not intended, remove the last parameter from the test callback function
+
+ 2923 pass
+ 1 skip
+ 5 fail
+Ran 2929 tests across 319 files. [1502.47s]
+[run-tests] finished in 1505s (exit 1)
