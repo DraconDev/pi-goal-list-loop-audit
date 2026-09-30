@@ -3941,3 +3941,15 @@ tests/owner-file-protocol.test.ts:
 (pass) Windows participant read retries denial but preserves malformed-record refusal [150.51ms]
 
 tests/recap-preservation.test.ts:
+[run-tests] progress: 1320s elapsed · 24s since last output · 344 KiB of suite output
+killed 1 dangling process
+(fail) repair re-claim preserves the whole-work recap in the approved render [25150.96ms]
+  ^ this test timed out after 25000ms, before its done callback was called. If a done callback was not intended, remove the last parameter from the test callback function
+
+tests/impossible-list-drop.test.ts:
+(pass) rule: blocked + no resume path on a /list item → auto-dropped (ledgered) and the queue advances [9992.15ms]
+(pass) guard: blocked WITH a resume path stays paused — never overridden [847.31ms]
+(pass) guard: blocked + no resume path on a plain GOAL is not a list drop [1150.17ms]
+(pass) last item: drop still ledgered, list goes empty, no advance possible [1586.86ms]
+(pass) full auditor IMPOSSIBLE result is terminalized with a durable recap and notification [9787.81ms]
+[run-tests] progress: 1350s elapsed · 1s since last output · 345 KiB of suite output
