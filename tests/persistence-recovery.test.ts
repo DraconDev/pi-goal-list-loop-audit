@@ -37,6 +37,7 @@ import {
   cleanupDeadAuditJobs,
   inspectAuditJobHealth,
 } from "../extensions/goal-loop-auditor-process.ts";
+import { persistApprovalRender, replayUndeliveredApprovalRenders } from "../extensions/approval-render-store.js";
 
 function tmpdir(prefix = "glla-recovery-"): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -59,6 +60,48 @@ function goal(id: string, status: Goal["status"] = "active"): Goal {
 function state(g: Goal | null): State {
   return { goal: g, list: [] };
 }
+
+test("archive summary obligation survives every projection boundary and outbox failure", () => {
+  for (const boundary of ["prepared", "published", "state-persisted", "live-cleared", "outbox-written"] as const) {
+    const cwd = tmpdir();
+    try {
+      const live = goal(`summary-${boundary}`);
+      const terminal = { ...live, status: "complete" as const };
+      const render = { goalId: live.id, objective: live.objective, chatLines: ["Approved work", "Evidence: verified"] };
+      assert.equal(appendStateSnapshot(cwd, state(live)), true);
+      writeGoalMd(cwd, live);
+      assert.equal(writeArchiveIntent(cwd, {
+        goalId: live.id, status: "complete", terminalGoal: terminal,
+        phase: boundary === "prepared" ? "prepared" : "published", terminalRender: render,
+      }), true);
+      const enqueue = (entry: typeof render) => persistApprovalRender(cwd, entry);
+      if (boundary === "prepared") {
+        assert.equal(finalizeArchiveIntent(cwd, live.id, enqueue), false);
+        assert.equal(replayUndeliveredApprovalRenders({ cwd }, () => { throw new Error("unpublished summary"); }), 0);
+        assert.ok(fs.existsSync(goalMdPath(cwd, live.id)));
+        continue;
+      }
+      fs.writeFileSync(archivedGoalPath(cwd, live.id), "# published terminal archive\n");
+      if (boundary === "state-persisted") appendStateSnapshot(cwd, state(terminal));
+      if (boundary === "live-cleared") appendStateSnapshot(cwd, state(null));
+      if (boundary === "outbox-written") assert.equal(enqueue(render), true);
+      // Drop all caller state: recover only the journal a new process reads.
+      const recovered = readArchiveIntent(cwd)!;
+      assert.deepEqual(recovered.terminalRender, render);
+      assert.equal(finalizeArchiveIntent(cwd, live.id, () => false), false);
+      assert.ok(fs.existsSync(archiveIntentPath(cwd)), "failed transfer retains the obligation");
+      assert.ok(fs.existsSync(goalMdPath(cwd, live.id)), "failed transfer retains the active projection");
+      assert.equal(finalizeArchiveIntent(cwd, live.id, enqueue), true);
+      assert.equal(fs.existsSync(archiveIntentPath(cwd)), false);
+      let delivered = 0;
+      assert.equal(replayUndeliveredApprovalRenders({ cwd }, entry => {
+        assert.deepEqual(entry.chatLines, render.chatLines); delivered++; return true;
+      }), 1);
+      assert.equal(replayUndeliveredApprovalRenders({ cwd }, () => { delivered++; return true; }), 0);
+      assert.equal(delivered, 1, "transfer retry never duplicates delivery");
+    } finally { fs.rmSync(cwd, { recursive: true, force: true }); }
+  }
+});
 
 test("archive intent prevents a published archive from resurrecting its active goal", () => {
   const cwd = tmpdir();
