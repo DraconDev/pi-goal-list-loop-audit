@@ -16,6 +16,14 @@ function members(group) {
     .filter(p => p && !p.zombie && p.group === group && p.session === group);
 }
 
+function descendants(pid, seen = new Set()) {
+  if (seen.has(pid)) return [];
+  seen.add(pid);
+  let children = [];
+  try { children = fs.readFileSync(`/proc/${pid}/task/${pid}/children`, "utf8").trim().split(/\s+/).filter(Boolean).map(Number); } catch {}
+  return [identity(pid), ...children.flatMap(child => descendants(child, seen))].filter(Boolean);
+}
+
 function registry(env) {
   if (process.platform !== "linux") return null;
   const dir = env.GLLA_TEST_PROCESS_REGISTRY;
@@ -36,11 +44,12 @@ export function registerOwnedTestProcess(child, env = process.env) {
   const file = path.join(owner.dir, `process-${child.pid}-${randomUUID()}.json`);
   let leader;
   let anchors = [];
-  const snapshot = () => {
+  const snapshot = (exited = false) => {
     const current = identity(child.pid);
     leader ??= current;
     if (!leader || leader.group !== child.pid || leader.session !== child.pid) return;
-    const live = members(child.pid);
+    const live = (exited ? members(child.pid) : descendants(child.pid))
+      .filter(p => !p.zombie && p.group === child.pid && p.session === child.pid);
     for (const member of live) {
       if (!anchors.some(p => p.pid === member.pid && p.birth === member.birth)) anchors.push(member);
     }
@@ -51,10 +60,10 @@ export function registerOwnedTestProcess(child, env = process.env) {
     } catch { /* runner diagnoses missing/unreadable records */ }
   };
   snapshot();
-  child.once("spawn", snapshot);
-  const timer = setInterval(snapshot, 100);
+  child.once("spawn", () => snapshot());
+  const timer = setInterval(snapshot, 500);
   timer.unref();
-  child.once("exit", () => { snapshot(); clearInterval(timer); });
+  child.once("exit", () => { snapshot(true); clearInterval(timer); });
   child.once("error", () => clearInterval(timer));
 }
 
