@@ -81,3 +81,13 @@ test("takeover compares the complete record inside the owner mutation", () => {
   assert.equal(replaceProcessOwner(cwd, successor), true, "an authorized current observation replaces without a removal gap");
   assert.equal(readOwnerFile(cwd)?.pid, process.pid);
 });
+
+test("a stale instance refresh cannot overwrite a same-process successor", () => {
+  const cwd = tmpCwd();
+  assert.equal(claimProcessOwner(cwd), true);
+  const successor = { ...readOwnerFile(cwd)!, instanceId: "successor-instance" };
+  const file = path.join(cwd, ".pi-glla", "owner.json");
+  fs.writeFileSync(file, JSON.stringify(successor));
+  writeOwnerFile(cwd);
+  assert.deepEqual(readOwnerFile(cwd), successor);
+});
