@@ -31,9 +31,7 @@ test("v0.35.72: a live foreign process cannot claim the workingDir owner file", 
       instanceId: "foreign-live-process",
       at: Date.now(),
     }));
-    const claim = (globalThis as { claimProcessOwner?: (root: string) => boolean }).claimProcessOwner;
-    assert.equal(typeof claim, "function", "the process owner claim is exposed to the runtime wiring");
-    assert.equal(claim!(cwd), false, "a live foreign pid keeps the shared root read-only");
+    assert.equal(claimProcessOwner(cwd), false, "a live foreign pid keeps the shared root read-only");
   } finally {
     child.kill("SIGTERM");
   }

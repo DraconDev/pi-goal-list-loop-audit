@@ -239,7 +239,7 @@ import {
   type ProjectRollup,
 } from "../goal-loop-stats.js";
 import { releaseAuditorSurface, suppressAuditorSurfaceAfterColdRestore } from "./goal-auditor-surface.js";
-import { shouldSkipApprovalRenderReplay } from "./goal-session.js";
+import { shouldSkipApprovalRenderReplay, claimProcessOwner as defaultClaimProcessOwner, writeOwnerFile as defaultWriteOwnerFile } from "./goal-session.js";
 import {
   cancelDetachedGoalCompletionAuditor,
   cleanupDeadAuditJobs,
@@ -956,7 +956,16 @@ function replayApprovalSummariesOnContact(ctx: ExtensionContext): void {
   }));
 }
 
-export function registerGoalRuntime(pi: ExtensionAPI): void {
+export interface ProcessOwnerBoundary {
+  claimProcessOwner(cwd: string): boolean;
+  writeOwnerFile(cwd: string): void;
+}
+
+export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBoundary = {
+  claimProcessOwner: defaultClaimProcessOwner,
+  writeOwnerFile: defaultWriteOwnerFile,
+}): void {
+  const { claimProcessOwner, writeOwnerFile } = ownership;
   // Factories run before lifecycle events, so observe readiness now; the
   // admitted session_start below decides which bus/generation may control a
   // child. Worker factories can never claim this binding.

@@ -28,9 +28,6 @@ export const GOAL_RUNTIME_GLOBAL_NAMES = [
   "sessionReplacementUntil",
   "instanceId",
   "zombieStoodDown",
-  "writeOwnerFile",
-  "readOwnerFile",
-  "claimProcessOwner",
   "processOwnerDeniedCwd",
   "absorbStaleIfSuperseded",
   "goStaleTerminal",
@@ -350,9 +347,6 @@ declare global {
   var sessionReplacementUntil: GoalRuntimeGlobals["sessionReplacementUntil"];
   var instanceId: GoalRuntimeGlobals["instanceId"];
   var zombieStoodDown: GoalRuntimeGlobals["zombieStoodDown"];
-  var writeOwnerFile: GoalRuntimeGlobals["writeOwnerFile"];
-  var readOwnerFile: GoalRuntimeGlobals["readOwnerFile"];
-  var claimProcessOwner: GoalRuntimeGlobals["claimProcessOwner"];
   var processOwnerDeniedCwd: GoalRuntimeGlobals["processOwnerDeniedCwd"];
   var absorbStaleIfSuperseded: GoalRuntimeGlobals["absorbStaleIfSuperseded"];
   var goStaleTerminal: GoalRuntimeGlobals["goStaleTerminal"];

@@ -1967,9 +1967,6 @@ defineGoalRuntimeGlobal("SESSION_REBIND_GRACE_MS", { get: () => SESSION_REBIND_G
 defineGoalRuntimeGlobal("sessionReplacementUntil", { get: () => sessionReplacementUntil, set: (v) => { sessionReplacementUntil = v as any; } });
 defineGoalRuntimeGlobal("instanceId", { get: () => instanceId });
 defineGoalRuntimeGlobal("zombieStoodDown", { get: () => zombieStoodDown, set: (v) => { zombieStoodDown = v as any; } });
-defineGoalRuntimeGlobal("writeOwnerFile", { get: () => writeOwnerFile });
-defineGoalRuntimeGlobal("readOwnerFile", { get: () => readOwnerFile });
-defineGoalRuntimeGlobal("claimProcessOwner", { get: () => claimProcessOwner });
 defineGoalRuntimeGlobal("processOwnerDeniedCwd", { get: () => processOwnerDeniedCwd, set: (v) => { processOwnerDeniedCwd = v as any; } });
 defineGoalRuntimeGlobal("absorbStaleIfSuperseded", { get: () => absorbStaleIfSuperseded });
 defineGoalRuntimeGlobal("goStaleTerminal", { get: () => goStaleTerminal });
