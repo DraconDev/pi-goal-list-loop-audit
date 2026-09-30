@@ -22,6 +22,7 @@ async function until(predicate) {
 function start(file, args, env) {
   const child = spawn(file, args, { cwd: root, env: { ...process.env, ...env }, stdio: ['ignore', 'pipe', 'pipe'] });
   owned.add(child.pid);
+  child.once('exit', () => owned.delete(child.pid));
   let output = '';
   child.stdout.on('data', chunk => { output += chunk; });
   child.stderr.on('data', chunk => { output += chunk; });
