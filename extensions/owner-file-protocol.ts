@@ -82,10 +82,10 @@ export function withOwnerMutation<T>(file: string, action: () => T, timeoutMs = 
     .filter(name => name.endsWith(".json"))
     .flatMap(name => {
       let p: Participant;
-      try { p = JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")); }
+      try { p = JSON.parse(retryWindowsMutation(() => fs.readFileSync(path.join(dir, name), "utf8"))); }
       catch (err) {
         if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
-        throw new Error("ambiguous owner mutation participant");
+        throw new Error("ambiguous owner mutation participant", { cause: err });
       }
       if (!Number.isInteger(p.pid) || p.pid <= 0 || typeof p.choosing !== "boolean"
         || !Number.isSafeInteger(p.ticket) || p.ticket < 0

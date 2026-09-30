@@ -19,8 +19,9 @@ after the suite exits, including TERM-ignoring descendants. Nested runner
 fixtures retain an outer ownership record. An unverified survivor or stale
 identity fails the run and retains the registry directory for inspection.
 This registry is enabled only by the test wrapper's environment and does
-not sweep other host processes. macOS/Windows registry cleanup is not yet
-validated; their platform checks remain part of the compatibility work.
+not sweep other host processes. The detached registry is Linux-specific;
+actual macOS/Windows child-tree and persistence boundary checks run separately
+in the compatibility matrix, with limits in docs/COMPATIBILITY.md.
 
 ```bash
 npm run test:slow        # only the slow files

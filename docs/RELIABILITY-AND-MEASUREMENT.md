@@ -1,7 +1,7 @@
 # Reliability, measurements, and canaries
 
 `/glla stats reliability` reports ledger-derived audit starts, retries, open
-failure age, and challenge outcomes. Add `--json` for structured output.
+failure age, and challenge outcomes. Add `json` for structured output.
 A semantic verdict or terminal archive resolves an earlier infrastructure
 failure. Missing or future timestamps produce unknown age. Counts deduplicate
 attempts; challenge elapsed time is the entire recorded attempt, not isolated
