@@ -5,6 +5,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import "../extensions/loops/goal.js";
+import { claimProcessOwner, readOwnerFile, replaceProcessOwner, writeOwnerFile } from "../extensions/loops/goal-session.js";
 import { tmpCwd } from "./harness/mock-pi.js";
 
 const GOAL_SESSION = fs.readFileSync("extensions/loops/goal-session.ts", "utf8");
@@ -54,4 +55,29 @@ test("v0.35.72: mutating goal and loop commands use the stale admission fence", 
   assert.match(GOAL_SESSION, /withOwnerMutation\(ownerFilePath\(cwd\),/);
   assert.match(GOAL_SESSION, /publishOwnerRecord\(ownerFilePath\(cwd\),/);
   assert.match(GOAL_SESSION, /process\.kill\(pid, 0\)/);
+});
+
+test("owner acquisition and refresh preserve malformed records for explicit repair", () => {
+  const cwd = tmpCwd();
+  fs.mkdirSync(path.join(cwd, ".pi-glla"), { recursive: true });
+  const file = path.join(cwd, ".pi-glla", "owner.json");
+  for (const malformed of ["", "{", "{}", "null"]) {
+    fs.writeFileSync(file, malformed);
+    assert.equal(claimProcessOwner(cwd), false);
+    writeOwnerFile(cwd);
+    assert.equal(fs.readFileSync(file, "utf8"), malformed);
+  }
+});
+
+test("takeover compares the complete record inside the owner mutation", () => {
+  const cwd = tmpCwd();
+  assert.equal(claimProcessOwner(cwd), true);
+  const old = readOwnerFile(cwd)!;
+  const file = path.join(cwd, ".pi-glla", "owner.json");
+  const successor = { ...old, at: "later", ownerSessionId: "new-main" };
+  fs.writeFileSync(file, JSON.stringify(successor));
+  assert.equal(replaceProcessOwner(cwd, old), false, "a stale observation cannot replace a refreshed or successor record");
+  assert.deepEqual(readOwnerFile(cwd), successor);
+  assert.equal(replaceProcessOwner(cwd, successor), true, "an authorized current observation replaces without a removal gap");
+  assert.equal(readOwnerFile(cwd)?.pid, process.pid);
 });
