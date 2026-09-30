@@ -128,7 +128,7 @@ isGoalRevisionCurrent,
   type ModelSwitchRecord,
   type ListItem,
 } from "../goal-loop-core.js";
-import { replayUndeliveredApprovalRenders } from "../approval-render-store.js";
+import { persistApprovalRender, replayUndeliveredApprovalRenders } from "../approval-render-store.js";
 import { refreshUpdateCheck } from "../glla-update-check.js"; // v0.38.44 stale-version nudge
 import {
   createContinuationDispatch,
@@ -1803,7 +1803,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     if (archiveRecovery) {
       if (fs.existsSync(archiveRecovery.archivePath)) {
         if (state.goal?.id === archiveRecovery.goalId && (state.goal.status === "complete" || state.goal.status === "aborted")) {
-          if (persistState(ctx) && finalizeArchiveIntent(ctx.cwd, archiveRecovery.goalId)) {
+          if (persistState(ctx) && finalizeArchiveIntent(ctx.cwd, archiveRecovery.goalId, render => persistApprovalRender(ctx.cwd, render))) {
             appendLedger(ctx.cwd, "archive_recovered", { goalId: archiveRecovery.goalId, phase: archiveRecovery.phase, via: "session-start" });
             ctx.ui.notify(`glla: recovered terminal archive for ${archiveRecovery.goalId} after an interrupted cleanup.`, "info");
           } else {
@@ -1813,7 +1813,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
           // A successor state proves the terminal snapshot was followed by a
           // different live objective. Finish only the old archive's cleanup;
           // never let a stale one-record journal block every later archive.
-          if (finalizeArchiveIntent(ctx.cwd, archiveRecovery.goalId)) {
+          if (finalizeArchiveIntent(ctx.cwd, archiveRecovery.goalId, render => persistApprovalRender(ctx.cwd, render))) {
             appendLedger(ctx.cwd, "archive_recovered", { goalId: archiveRecovery.goalId, phase: archiveRecovery.phase, via: "successor-state" });
           } else {
             ctx.ui.notify(`glla: prior terminal archive ${archiveRecovery.goalId} is durable but its old active projection is still present; cleanup will retry safely.`, "warning");

@@ -1044,7 +1044,7 @@ function settleApprovedCompletion(
   const approvalArchivePath = path.relative(ctx.cwd, archivedGoalPath(ctx.cwd, goal.id)) || archivedGoalPath(ctx.cwd, goal.id);
   // v0.38.25: ONE canonical render for every approval surface (chat,
   // transcript, external, persisted). Computed pre-archive — the fence
-  // clears state.goal — and persisted after the archive lands so a
+  // clears state.goal — and journaled before archival so a
   // verdict that lands with no live turn is replayed on the next live
   // contact instead of going silent (field 2026-09-07).
   // v0.38.55 (full parity): final repository state closes the card.
@@ -1080,6 +1080,7 @@ function settleApprovedCompletion(
     findingGroups: claim.findingGroups,
     gateRows: claim.gateRows,
     priorCompletionSummary: claim.priorCompletionSummary,
+    terminalRender: { goalId, objective: approvalObjective, chatLines: approvalRender.chatLines },
   });
   if (!archived) {
     // archiveCurrentGoal already preserved the live record and warned the

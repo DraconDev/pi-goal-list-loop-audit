@@ -2046,6 +2046,12 @@ export function ledgerFiles(cwd: string): string[] {
  * idempotent, so startup can finish a published archive without guessing. */
 export type ArchiveIntentPhase = "prepared" | "published" | "state-persisted";
 
+export interface ArchiveTerminalRender {
+  goalId: string;
+  objective: string;
+  chatLines: string[];
+}
+
 export interface ArchiveIntent {
   schema: 1;
   at: string;
@@ -2055,6 +2061,7 @@ export interface ArchiveIntent {
   archivePath: string;
   terminalGoal: Goal;
   phase: ArchiveIntentPhase;
+  terminalRender?: ArchiveTerminalRender;
 }
 
 export function archiveIntentPath(cwd: string): string {
@@ -2084,6 +2091,10 @@ export function readArchiveIntent(cwd: string): ArchiveIntent | null {
     ) return null;
     const goal = terminalGoal as Goal;
     if (goal.id !== raw.goalId || goal.status !== raw.status) return null;
+    const render = raw.terminalRender as ArchiveTerminalRender | undefined;
+    if (render !== undefined && (!render || render.goalId !== raw.goalId
+      || typeof render.objective !== "string" || !Array.isArray(render.chatLines)
+      || !render.chatLines.every(line => typeof line === "string"))) return null;
     return {
       schema: 1,
       at: raw.at,
@@ -2093,6 +2104,7 @@ export function readArchiveIntent(cwd: string): ArchiveIntent | null {
       archivePath: archivedGoalPath(cwd, raw.goalId),
       terminalGoal: goal,
       phase: raw.phase,
+      ...(render ? { terminalRender: render } : {}),
     };
   } catch {
     return null;
@@ -2104,7 +2116,7 @@ export function readArchiveIntent(cwd: string): ArchiveIntent | null {
  * caller must leave the live goal untouched. */
 export function writeArchiveIntent(
   cwd: string,
-  intent: Pick<ArchiveIntent, "goalId" | "status" | "stopReason" | "terminalGoal" | "phase">,
+  intent: Pick<ArchiveIntent, "goalId" | "status" | "stopReason" | "terminalGoal" | "phase" | "terminalRender">,
 ): boolean {
   if (stateRootPending() || !isSafePersistedId(intent.goalId)) return false;
   const file = archiveIntentPath(cwd);
@@ -2130,6 +2142,7 @@ export function writeArchiveIntent(
     archivePath,
     terminalGoal: intent.terminalGoal,
     phase: intent.phase,
+    ...(intent.terminalRender ? { terminalRender: intent.terminalRender } : {}),
   };
   const temp = `${file}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2, 8)}.tmp`;
   const landed = runPersistStep("writeArchiveIntent", () => {
@@ -2154,9 +2167,22 @@ export function updateArchiveIntentPhase(cwd: string, phase: ArchiveIntentPhase)
 /** Remove the old active markdown and then the intent. Missing markdown is a
  * successful cleanup; any other unlink or journal failure keeps the intent so
  * a later lifecycle boundary can retry it. */
-export function finalizeArchiveIntent(cwd: string, goalId: string): boolean {
+export function finalizeArchiveIntent(
+  cwd: string,
+  goalId: string,
+  persistTerminalRender?: (render: ArchiveTerminalRender) => boolean,
+): boolean {
   const intent = readArchiveIntent(cwd);
   if (!intent || intent.goalId !== goalId) return false;
+  // The journal owns the notification obligation before the live goal can
+  // disappear. Transfer it only after archive publication, and retain it
+  // on outbox failure so a fresh process can retry without a live goal.
+  if (!fs.existsSync(intent.archivePath)) return false;
+  if (intent.terminalRender) {
+    try {
+      if (!persistTerminalRender?.(intent.terminalRender)) return false;
+    } catch { return false; }
+  }
   const active = goalMdPath(cwd, goalId);
   try {
     fs.unlinkSync(active);

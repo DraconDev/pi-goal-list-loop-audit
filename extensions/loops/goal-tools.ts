@@ -1545,7 +1545,7 @@ function registerAgentTools(pi: any): void {
             ...(escGateRows ? { gateRows: escGateRows } : {}),
             ...(escRepoState ? { repoState: escRepoState } : {}),
           });
-          if (!archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: escFindingGroups, gateRows: escGateRows, priorCompletionSummary: durableCompletionClaim.priorCompletionSummary })) {
+          if (!archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: escFindingGroups, gateRows: escGateRows, priorCompletionSummary: durableCompletionClaim.priorCompletionSummary, terminalRender: { goalId: terminalGoal.id, objective: terminalGoal.objective, chatLines: escRender.chatLines } })) {
             return {
               content: [{ type: "text", text: "The audit was aborted, but the terminal archive could not be persisted. The goal remains active; fix persistence and retry." }],
               details: {},
@@ -1645,7 +1645,7 @@ function registerAgentTools(pi: any): void {
         });
         const manualObjective = state.goal.objective;
         const manualGoalId = state.goal.id;
-        const archived = archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: durableCompletionClaim.findingGroups, gateRows: durableCompletionClaim.gateRows, priorCompletionSummary: durableCompletionClaim.priorCompletionSummary });
+        const archived = archiveCurrentGoal(ctx, "complete", terminalReason, {}, { findingGroups: durableCompletionClaim.findingGroups, gateRows: durableCompletionClaim.gateRows, priorCompletionSummary: durableCompletionClaim.priorCompletionSummary, terminalRender: { goalId: manualGoalId, objective: manualObjective, chatLines: manualRender.chatLines } });
         if (!archived) {
           // The archive helper preserves the live objective and emits the
           // persistence warning. The APPROVED claim stays: it is the durable
@@ -1654,7 +1654,7 @@ function registerAgentTools(pi: any): void {
           const parkedStage = settlementPark("archive");
           updateGoal({
             status: "paused",
-            pendingCompletion: { ...settlementClaim, phase: "recovery-pending", recoveryAt: nowIso(), recoveryReason: "approval-archive-failed" },
+            pendingCompletion: { ...settlementClaim, phase: "settling", verdictAt, recoveryAt: nowIso(), recoveryReason: "approval-archive-failed" },
             pauseKind: "blocked",
             pauseReason: `completion approved (${result.model}), but the terminal archive failed — ${parkedStage.step}`,
             pauseSuggestedAction: `Fix .pi-glla disk access or resolve the archive fence, then ${activeGoalSurfaceCommand("resume")} finishes the approved settlement. No new audit is needed.`,

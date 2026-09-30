@@ -16,6 +16,7 @@
 
 import { randomUUID } from "node:crypto";
 import * as fs from "node:fs";
+import { persistApprovalRender } from "../approval-render-store.js";
 import * as os from "node:os";
 import * as path from "node:path";
 
@@ -1107,7 +1108,7 @@ function archiveCurrentGoal(
   // v0.38.50: agent-structured finding groups ride the audited claim into
   // the archive rich section only — abort/wip paths omit it (flat fallback).
   // v0.38.52: same for the gate inventory.
-  opts?: { findingGroups?: FindingGroup[]; gateRows?: GateRow[]; priorCompletionSummary?: string },
+  opts?: { findingGroups?: FindingGroup[]; gateRows?: GateRow[]; priorCompletionSummary?: string; terminalRender?: { goalId: string; objective: string; chatLines: string[] } },
 ): boolean {
   if (!state.goal) return false;
   if (status !== "complete" && status !== "aborted") return false;
@@ -1181,6 +1182,7 @@ function archiveCurrentGoal(
     stopReason,
     terminalGoal,
     phase: "prepared",
+    ...(opts?.terminalRender ? { terminalRender: opts.terminalRender } : {}),
   })) {
     ctx.ui.notify(`Could not archive ${goal.policy === "list" ? "the list item" : "the goal"} — the durable archive intent could not be written, so the live objective was kept open.`, "warning");
     return false;
@@ -1297,7 +1299,7 @@ function archiveCurrentGoal(
   // not activated. Drop a lost tool call before any successor can inherit it.
   clearToolActivityState();
   updateArchiveIntentPhase(ctx.cwd, "state-persisted");
-  if (!finalizeArchiveIntent(ctx.cwd, goal.id)) {
+  if (!finalizeArchiveIntent(ctx.cwd, goal.id, render => persistApprovalRender(ctx.cwd, render))) {
     ctx.ui.notify(`Archive committed for ${goal.policy === "list" ? "the list item" : "the goal"}, but active-file cleanup is pending. The durable intent remains for the next recovery boundary.`, "warning");
   }
   releaseContinuationDispatchStandDown();
