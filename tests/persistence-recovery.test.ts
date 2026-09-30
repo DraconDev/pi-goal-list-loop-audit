@@ -7,6 +7,8 @@ import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { spawnSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
 
 import {
   appendLedger,
@@ -99,6 +101,40 @@ test("archive summary obligation survives every projection boundary and outbox f
       }), 1);
       assert.equal(replayUndeliveredApprovalRenders({ cwd }, () => { delivered++; return true; }), 0);
       assert.equal(delivered, 1, "transfer retry never duplicates delivery");
+    } finally { fs.rmSync(cwd, { recursive: true, force: true }); }
+  }
+});
+
+test("SIGKILL before outbox transfer recovers the summary in a cold Node process", { skip: process.platform === "win32", timeout: 60_000 }, () => {
+  const jiti = pathToFileURL(path.resolve("node_modules/jiti/lib/jiti.mjs")).href;
+  for (const boundary of ["archive-published", "live-cleared", "outbox-written"]) {
+    const cwd = tmpdir();
+    try {
+      const load = `import fs from 'node:fs'; import {createJiti} from ${JSON.stringify(jiti)};
+        const jiti=createJiti(import.meta.url); const core=await jiti.import(${JSON.stringify(path.resolve("extensions/goal-loop-core.ts"))});
+        const outbox=await jiti.import(${JSON.stringify(path.resolve("extensions/approval-render-store.ts"))});
+        const cwd=${JSON.stringify(cwd)};`;
+      const live = goal(`cold-${boundary}`);
+      const producer = spawnSync("node", ["--input-type=module", "-e", `${load}
+        const live=${JSON.stringify(live)}; const terminal={...live,status:'complete'};
+        const render={goalId:live.id,objective:live.objective,chatLines:['Durable summary']};
+        if(!core.appendStateSnapshot(cwd,{goal:live,list:[]})) throw new Error('seed failed');
+        core.writeGoalMd(cwd,live);
+        if(!core.writeArchiveIntent(cwd,{goalId:live.id,status:'complete',terminalGoal:terminal,phase:'published',terminalRender:render})) throw new Error('intent failed');
+        fs.writeFileSync(core.archivedGoalPath(cwd,live.id),'# durable archive');
+        ${boundary === "live-cleared" ? "core.appendStateSnapshot(cwd,{goal:null,list:[]});" : ""}
+        ${boundary === "outbox-written" ? "if(!outbox.persistApprovalRender(cwd,render)) throw new Error('outbox failed');" : ""}
+        process.kill(process.pid,'SIGKILL');`], { encoding: "utf8", timeout: 15_000 });
+      assert.equal(producer.signal, "SIGKILL", producer.stderr);
+      const recovery = spawnSync("node", ["--input-type=module", "-e", `${load}
+        const intent=core.readArchiveIntent(cwd);
+        if(!intent || !core.finalizeArchiveIntent(cwd,intent.goalId,render=>outbox.persistApprovalRender(cwd,render))) throw new Error('recovery failed');
+        let count=0; outbox.replayUndeliveredApprovalRenders({cwd},()=>{count++;return true;});
+        outbox.replayUndeliveredApprovalRenders({cwd},()=>{count++;return true;});
+        if(count!==1 || fs.existsSync(core.archiveIntentPath(cwd))) throw new Error('duplicated or lost obligation');
+        console.log('recovered exactly once');`], { encoding: "utf8", timeout: 15_000 });
+      assert.equal(recovery.status, 0, recovery.stderr);
+      assert.match(recovery.stdout, /recovered exactly once/);
     } finally { fs.rmSync(cwd, { recursive: true, force: true }); }
   }
 });
