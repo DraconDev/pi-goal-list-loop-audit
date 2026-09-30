@@ -3,7 +3,6 @@
   "headAtVerification": "0b14843aa76d0cc15361b2194e702b4e5ea88d08",
   "verifiedAtUtc": "2026-09-30T14:07:32.681351+00:00",
   "sourceDiffFromBaselineEmpty": true,
-  "reviewedFilesSha256": "a604fbad5fc7219290b785f9ef425019ebd459d190d4202627e1692dd812e775",
   "packageVersion": "0.38.105",
   "releaseCheckExitCode": 0,
   "fullSuite": {
@@ -52,5 +51,6 @@
     "reset-rerun.log": "39804cdcc82d0839382de0030789045bf662ac6fe56ee7a1589c2fb7826ed98f",
     "resume-solo.log": "6afbd23fd74d527818cf74ee25fdabe2464d765d821d5a8a004e254d58b7a7e7",
     "typecheck.log": "6fd20b7dbb02896b46917c0f35da26dddbdcf2d2fc1eafe5c74e5e6e945b9c1b"
-  }
+  },
+  "runtimeAndTestFilesSha256": "a604fbad5fc7219290b785f9ef425019ebd459d190d4202627e1692dd812e775"
 }
