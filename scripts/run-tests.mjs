@@ -186,7 +186,7 @@ function main() {
   };
   child.on("error", (error) => {
     log(`could not start bun: ${error.message}`);
-    process.exit(1);
+    void done(1);
   });
   child.on("close", done);
 }

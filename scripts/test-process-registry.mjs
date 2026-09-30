@@ -10,11 +10,13 @@ function identity(pid) {
   } catch { return null; }
 }
 
-function members(group) {
+function allMembers() {
   return fs.readdirSync("/proc").filter(name => /^\d+$/.test(name))
     .map(name => identity(Number(name)))
-    .filter(p => p && !p.zombie && p.group === group && p.session === group);
+    .filter(p => p && !p.zombie && p.group === p.session);
 }
+
+const members = group => allMembers().filter(p => p.group === group);
 
 function descendants(pid, seen = new Set()) {
   if (seen.has(pid)) return [];
@@ -88,6 +90,11 @@ export async function reapOwnedTestProcesses(env, { graceMs = 1000 } = {}) {
   const owner = registry(env);
   if (!owner) return { reaped: 0, unverified: 0 };
   const groups = new Map();
+  const liveGroups = new Map();
+  for (const p of allMembers()) {
+    if (!liveGroups.has(p.group)) liveGroups.set(p.group, []);
+    liveGroups.get(p.group).push(p);
+  }
   let unverified = 0;
   for (const name of fs.readdirSync(owner.dir).filter(name => name.startsWith("process-") && name.endsWith(".json"))) {
     try {
@@ -96,7 +103,7 @@ export async function reapOwnedTestProcesses(env, { graceMs = 1000 } = {}) {
         || !Number.isInteger(record.leader?.pid) || record.leader.pid <= 1) { unverified++; continue; }
       const group = record.leader.pid;
       const occupant = identity(group);
-      const live = members(group);
+      const live = liveGroups.get(group) ?? [];
       if (live.length === 0) continue;
       if ((occupant && occupant.birth !== record.leader.birth)
         || !live.some(p => record.anchors.some(a => a.pid === p.pid && a.birth === p.birth))) { unverified++; continue; }
