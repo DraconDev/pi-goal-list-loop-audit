@@ -2124,10 +2124,13 @@ async function runDetachedGoalCompletionAuditorInner(args: {
                 workerError: error.slice(0, 200),
               });
             }
-            return infra(model, thinkingLevel, error, output, capturedRevisionToken, failureClass);
+            return { ...infra(model, thinkingLevel, error, output, capturedRevisionToken, failureClass), ...(challenge ? { challenge } : {}) };
           }
           if (!output.trim()) return infra(model, thinkingLevel, "auditor produced no output", output, capturedRevisionToken, "no-verdict");
           const parsed = parseAuditorVerdict(output);
+          if (strictChallenge && parsed.approved && challenge !== "confirmed") {
+            return { ...infra(model, thinkingLevel, "Required auditor challenge was not confirmed — no verdict; resume to retry the audit.", output, capturedRevisionToken, "no-verdict"), ...(challenge ? { challenge } : {}) };
+          }
           if (!parsed.approved && !parsed.disapproved && !parsed.impossible) return infra(model, thinkingLevel, "auditor produced no verdict marker", output, capturedRevisionToken, "no-verdict");
           const disallowedTool = result.toolCalls.find((call) => !(AUDITOR_TOOLS as readonly string[]).includes(call.name));
           if (disallowedTool) {

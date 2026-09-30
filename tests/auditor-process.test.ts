@@ -1723,6 +1723,24 @@ test("v0.38.80: an absent challenge stays undefined for legacy workers", async (
   }
 });
 
+test("strict challenge: the parent refuses a legacy or skipped approval", async () => {
+  for (const challenge of [undefined, "skipped: transport failure", "confirmed"]) {
+    const dir = await setup();
+    try {
+      const result = await runDetachedGoalCompletionAuditor({
+        cwd: dir, goal, model: "test/provider-model", thinkingLevel: "high",
+        auditTier: "full", strictChallenge: true,
+        runtime: { workerPath: workerPathFor(dir), attemptId: () => "attempt-strict-challenge", pollIntervalMs: 10,
+          env: { FAKE_AUDIT_OUTPUT: "<approved/>", FAKE_TOOL: "yes", ...(challenge ? { FAKE_CHALLENGE: challenge } : {}) } },
+      });
+      assert.equal(result.approved, challenge === "confirmed");
+      assert.equal(result.disapproved, false, "challenge infrastructure is not a work rejection");
+      if (challenge !== "confirmed") assert.match(result.error ?? "", /Required auditor challenge.*no verdict/);
+      assert.equal(result.challenge, challenge);
+    } finally { await cleanup(dir); }
+  }
+});
+
 test("v0.38.81: the dispatch-decided tier stamps onto the result", async () => {
   const dir = await setup();
   try {
