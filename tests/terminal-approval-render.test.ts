@@ -50,6 +50,19 @@ function richGoal(): Goal {
   }) as unknown as Goal;
 }
 
+test("skipped challenges are disclosed in chat, transcript, and archive evidence", () => {
+  for (const challenge of ["skipped: light-tier audit", "skipped: rework-streak convergence", "skipped: transport error with internal details"]) {
+    const goal = richGoal();
+    goal.auditHistory![0]!.challenge = challenge;
+    const render = buildTerminalApprovalRender({ goal, status: "complete", approval: "— completion audit approved.", record: "— record: archive.md" });
+    const archive = buildRichArchiveSection(goal, "complete", "archive.md");
+    for (const lines of [render.chatLines, render.transcriptLines, archive]) {
+      assert.ok(lines.some(line => line.includes("Falsification pass skipped")));
+      assert.ok(lines.every(line => !line.includes("internal details")), "raw transport diagnostics stay in the audit record");
+    }
+  }
+});
+
 test("canonical render folds a lone approval with the verdict count, model-free", () => {
   const render = buildTerminalApprovalRender({
     goal: richGoal(),
