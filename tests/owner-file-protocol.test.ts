@@ -44,7 +44,7 @@ test("competing Node processes serialize owner mutations and publish only comple
         if(!result) throw new Error('mutation refused');
       }`));
     const codes = await Promise.all(workers.map(worker => worker.done));
-    codes.forEach((code, i) => assert.equal(code, 0, workers[i].output()));
+    codes.forEach((code, i) => assert.equal(code, 0, workers[i]!.output()));
     assert.equal(JSON.parse(fs.readFileSync(file, "utf8")).count, 90);
     assert.equal(fs.readdirSync(`${file}.mutations`).filter(name => name.endsWith(".json")).length, 0);
   } finally {

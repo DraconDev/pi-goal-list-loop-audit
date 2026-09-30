@@ -533,6 +533,7 @@ function writeOwnerFile(cwd: string): void {
     withOwnerMutation(ownerFilePath(cwd), () => {
       const current = readOwnerFile(cwd);
       if (!current && fs.existsSync(ownerFilePath(cwd))) return;
+      if (current?.pid === process.pid && current.instanceId && current.instanceId !== instanceId) return;
       if (current?.pid !== undefined && current.pid !== process.pid && isProcessAlive(current.pid) && !current.shutdownAt) return;
       publishOwnerRecord(ownerFilePath(cwd), { ...current, instanceId, pid: process.pid, at: Date.now() });
     });

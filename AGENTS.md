@@ -72,8 +72,13 @@ This repo hosts the pi-goal-loop audit machinery (`.pi-glla/`). The loop:
 
 Rules:
 
-- Commit after every goal-state change; never let `.pi-glla/` drift.
+- Persist every goal-state change through GLLA's journal; never let live
+  state drift from its durable projection. `.pi-glla/` is intentionally
+  ignored machine-local runtime state (the v0.34.115 release contract), so
+  do not force-add it or expect the sync daemon to checkpoint it in git.
+  Keep reviewable audit contracts, implementation registers, and selected
+  verification evidence in tracked `audit/` files instead.
 - Archive terminal goals to `.pi-glla/archive/` rather than deleting.
-- The daemon owns the commit; do not hand-commit `.pi-glla` deltas
-  unless the daemon is paused (then commit with the repo-local
-  `<repo>-dev` identity).
+- The daemon owns source/evidence commits. If it is paused, checkpoint
+  tracked changes with the repo-local `<repo>-dev` identity. Runtime
+  journals and archives still stay outside git.
