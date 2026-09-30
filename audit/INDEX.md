@@ -14,7 +14,13 @@ across runtime architecture, test isolation, compatibility, dependencies,
 operator documentation, and release evidence. The report preserves the
 audited baseline; current implementation status and targeted evidence are in
 [IMPROVEMENT-IMPLEMENTATION-2026-09-30.md](IMPROVEMENT-IMPLEMENTATION-2026-09-30.md) — completed; release check: 2,928 pass, one skip, zero failures.
-The full release gate and broader improvement plan remain pending.
+The complete release gate passed against that implementation. A fresh
+[POST-IMPLEMENTATION-AUDIT-2026-09-30.md](POST-IMPLEMENTATION-AUDIT-2026-09-30.md)
+reproduces three remaining owned defects (two HIGH, one MEDIUM): canary
+rejections do not abort requests, failed process registration can report clean
+cleanup, and an unreadable outbox can lose an earlier pending summary.
+Reproduction scripts, observations, fresh focused checks and repair acceptance
+criteria are retained with that report. Those findings remain open.
 
 **Historical review (2026-09-29):**
 [FULL-AUDIT-2026-09-29.md](FULL-AUDIT-2026-09-29.md) reports 11 fixed

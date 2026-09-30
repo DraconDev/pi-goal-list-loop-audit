@@ -1,0 +1,34 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/owner-file-protocol.test.ts tests/settlement-boundary-faults.test.ts tests/stats-reliability.test.ts tests/canary-budget.test.ts tests/real-host-canary.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/real-host-canary.test.ts:
+(pass) real-host canary reports an explicit skip without opt-in or spawning Pi [271.34ms]
+(pass) opt-in canary installs its request guard and records bounded host evidence (stub host) [726.20ms]
+
+tests/canary-budget.test.ts:
+(pass) canary bounds output and requests, removes tools, and preserves the caller payload [1.32ms]
+(pass) canary refuses unsupported caps, unknown prices, oversized input, and excessive estimated spend before sending [14.32ms]
+
+tests/stats-reliability.test.ts:
+(pass) reliability derives an open failure episode and elapsed audit cost without counting repeated snapshots [9.13ms]
+(pass) successful semantic review or terminal archive resolves failure age; missing samples stay unknown [1.61ms]
+(pass) recovery-only state preserves failure age and future/malformed timestamps remain unknown [0.35ms]
+
+tests/settlement-boundary-faults.test.ts:
+(pass) typed settlement refuses success before its intent can be persisted [4750.97ms]
+(pass) failed receipt transfer retains the terminal obligation across live-slot cleanup [61.79ms]
+
+tests/owner-file-protocol.test.ts:
+(pass) Windows replacement retries a sharing violation without unlinking the previous owner [13.28ms]
+(pass) competing Node processes serialize owner mutations and publish only complete records [1525.66ms]
+(pass) a live mutation times out contenders; SIGKILL recovery never removes a successor lock [230.90ms]
+(pass) Windows participant read retries denial but preserves malformed-record refusal [1.17ms]
+
+ 13 pass
+ 0 fail
+Ran 13 tests across 5 files. [11.57s]
+[run-tests] finished in 12s (exit 0)

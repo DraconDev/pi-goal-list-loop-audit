@@ -1,0 +1,67 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/auditor-challenge.test.ts tests/auditor-challenge-record.test.ts tests/stats-challenges.test.ts tests/terminal-approval-render.test.ts tests/repository-receipts.test.ts tests/test-runner-lifecycle.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/auditor-challenge-record.test.ts:
+(pass) challenge-record: a confirmed approval records challenge=confirmed on the verdict [11034.03ms]
+(pass) challenge-record: a single-round disapproval records challenge=not-applicable [6979.06ms]
+
+tests/stats-challenges.test.ts:
+(pass) challenges: confirmed/flipped/skipped counts over all verdicts, legacy ignored [1.89ms]
+(pass) challenges: empty ledgers zero out, flip rate renders em-dash without challenged runs [3.48ms]
+(pass) challenges: table and JSON formats mirror the schema [1.43ms]
+(pass) challenges: light-tier verdicts and spot-check flips count separately [0.25ms]
+
+tests/repository-receipts.test.ts:
+(pass) repository-only findings are archive-only, without empty chat groups [19.71ms]
+(pass) repository receipt stays archival while substantive ledger fixes remain visible [0.39ms]
+(pass) flat receipts are archive-only while limitations remain visible [24.44ms]
+(pass) mixed receipt vocabulary never deletes repairs or unperformed checks [1.81ms]
+(pass) archive keeps unknown proof; chat keeps the detailed narrative focused [2.16ms]
+
+tests/auditor-challenge.test.ts:
+(pass) challenge: approval earns a falsification round; re-confirm preserves the verdict [2268.91ms]
+(pass) challenge: a challenge disapproval flips the verdict by final line [2746.16ms]
+[run-tests] progress: 30s elapsed · 1s since last output · 1 KiB of suite output
+(pass) challenge: round-1 disapprovals run single-round [1178.23ms]
+(pass) challenge: a failed challenge falls back to byte-identical round-1 output [1075.59ms]
+(pass) strict challenge: a failed falsification pass is infrastructure/no-verdict [1066.66ms]
+(pass) strict challenge: an explicit requirement overrides a policy skip [1311.45ms]
+(pass) challenge: a failed round 1 still fails without challenging [821.79ms]
+(pass) challenge: a light-tier request skips round 2 and records the skip [630.37ms]
+(pass) challenge: a rework-streak skip is NOT recorded as a light-tier audit (v0.38.104) [1043.12ms]
+(pass) challenge: a request with no reason keeps the light-tier default (v0.38.104) [980.66ms]
+
+tests/terminal-approval-render.test.ts:
+(pass) skipped challenges are disclosed in chat, transcript, and archive evidence [119.03ms]
+(pass) canonical render folds a lone approval with the verdict count, model-free [1.25ms]
+(pass) standalone audit bullet survives only with news [8.36ms]
+(pass) counts line proofs the audit verdict from durable state only [0.72ms]
+(pass) buildApprovalChatLines stays backward compatible without counts [0.24ms]
+(pass) v0.38.37 posted summary carries verifiable-result bullets plus the deliberate non-do [7.18ms]
+(pass) idle-persisted render replays once on the next live contact [1335.31ms]
+(pass) render with confirmed delivery never replays [6.03ms]
+(pass) corrupt store degrades to zero replays, never throws [8.96ms]
+(pass) v0.38.39 chat brief strips machine paths but the archive keeps them [7.05ms]
+(pass) v0.38.39 clause cut respects +-joined lists [0.21ms]
+(pass) second approval for the same goal after delivery queues a fresh render [19.97ms]
+(pass) error-only audit history renders an honest archive banner with no review row [1.39ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [1589.89ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [573.22ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [505.30ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5730.67ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [1665.79ms]
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [1307.79ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on normal exit [3119.00ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on signal exit [2364.19ms]
+(pass) registry refuses to signal a record naming a reused leader identity [152.01ms]
+
+ 43 pass
+ 0 fail
+Ran 43 tests across 6 files. [57.88s]
+[run-tests] finished in 58s (exit 0)

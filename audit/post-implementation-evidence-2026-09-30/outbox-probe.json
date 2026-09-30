@@ -1,0 +1,10 @@
+{
+  "scenario": "unreadable-existing-outbox",
+  "firstPersist": true,
+  "readError": "EACCES",
+  "secondPersist": true,
+  "pendingGoalIds": [
+    "second"
+  ],
+  "firstObligationLost": true
+}

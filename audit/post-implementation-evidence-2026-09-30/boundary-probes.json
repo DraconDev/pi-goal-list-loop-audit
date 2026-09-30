@@ -1,0 +1,38 @@
+[
+  {
+    "scenario": "unknown-price",
+    "hookErrors": [
+      "canary needs model price metadata; no request sent"
+    ],
+    "returnedOriginal": true,
+    "returnedOutputCap": 4096,
+    "returnedTools": 1
+  },
+  {
+    "scenario": "over-budget",
+    "hookErrors": [
+      "canary estimated ceiling 1.2288003200000002 exceeds budget 0.01; no request sent"
+    ],
+    "returnedOriginal": true,
+    "returnedOutputCap": 4096,
+    "returnedTools": 1
+  },
+  {
+    "scenario": "second-request",
+    "hookErrors": [
+      "canary permits exactly one provider request; retries are refused"
+    ],
+    "returnedOriginal": true,
+    "returnedOutputCap": 4096,
+    "returnedTools": 1
+  },
+  {
+    "scenario": "unwritable-registry",
+    "registeredRecords": 0,
+    "cleanup": {
+      "reaped": 0,
+      "unverified": 0
+    },
+    "childStillLive": true
+  }
+]
