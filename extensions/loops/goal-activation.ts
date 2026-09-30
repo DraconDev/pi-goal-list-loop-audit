@@ -307,6 +307,7 @@ import {
   signalSupervisionEvent,
   startHeartbeat,
   upsertSubagentHangProbe,
+  retireSupersededSubagentHangProbes,
   type HeartbeatDeps,
   type HeartbeatFlags,
 } from "../goal-heartbeat.js"; // decomposition step 4 (v0.34.112)
@@ -1942,6 +1943,7 @@ export function registerGoalRuntime(pi: ExtensionAPI): void {
     const recoveryResume = consumeRecoveryResume(ctx.cwd);
     const ownerClaim = claimSessionOwnerAndDetectRebind(ctx.cwd, sessionGeneration, sessionManagerId(ctx));
     sessionGeneration = ownerClaim.generation;
+    retireSupersededSubagentHangProbes(ctx.cwd, sessionGeneration);
     // v0.34.73 (OPEN-ISSUES 1.12): forced rewrite/handoff — the previous
     // owner recorded a different session id in the owner sidecar (or the
     // recorded in-memory owner was invalidated). Record the old/new id pair

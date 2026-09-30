@@ -922,6 +922,22 @@ function ownerGeneration(): number {
   try { return flags?.sessionGeneration ?? 0; } catch { return 0; }
 }
 
+/** A host rebind retires the old host's evidence, without signalling any
+ * child. A fresh observed start may explicitly admit that record again. */
+export function retireSupersededSubagentHangProbes(cwd: string, generation: number): void {
+  for (const [id, probe] of subagentHangProbes) {
+    if (probe.ownerGeneration === generation) continue;
+    subagentHangProbes.delete(id);
+    appendLedger(cwd, "subagent_probe_retired", {
+      recordId: id, ownerGeneration: probe.ownerGeneration, generation,
+      reason: "evidence belongs to an older host generation",
+    });
+  }
+  for (const [id, observation] of currentSubagentObservations) {
+    if (observation.ownerGeneration !== generation) currentSubagentObservations.delete(id);
+  }
+}
+
 export function upsertSubagentHangProbe(recordId: string, agentType: string | undefined, summary: string | undefined, now = Date.now(), sessionId?: string): void {
   const existing = subagentHangProbes.get(recordId);
   if (existing) {
@@ -1028,6 +1044,7 @@ function isLiveSubagentRecord(rec: SubagentRecordPoll | undefined): boolean {
 function hasHealthySubagentHangProbe(now = Date.now()): boolean {
   const poll = subagentManagerPoller();
   for (const probe of subagentHangProbes.values()) {
+    if (probe.ownerGeneration !== ownerGeneration()) continue;
     if (probe.endedAt !== undefined || probe.hangActionAt !== undefined) continue;
     const rec = poll.getRecord?.(probe.recordId);
     if (rec && isLiveSubagentRecord(rec)) {
@@ -1046,6 +1063,7 @@ function hasHealthySubagentHangProbe(now = Date.now()): boolean {
 function hasStaleSubagentHangProbe(now = Date.now()): boolean {
   const poll = subagentManagerPoller();
   for (const probe of subagentHangProbes.values()) {
+    if (probe.ownerGeneration !== ownerGeneration()) continue;
     if (probe.endedAt !== undefined || probe.hangActionAt !== undefined) continue;
     const rec = poll.getRecord?.(probe.recordId);
     if (rec && isLiveSubagentRecord(rec) && now - probe.lastProgressAt >= SUBAGENT_HANG_NO_PROGRESS_MS) return true;
@@ -1870,6 +1888,7 @@ export function getSubagentAgentsSnapshot(now = Date.now()): { agents: SubagentA
   const managerAvailable = typeof poll.getRecord === "function";
   const agents: SubagentAgentView[] = [];
   for (const probe of subagentHangProbes.values()) {
+    if (probe.ownerGeneration !== ownerGeneration()) continue;
     const ended = probe.endedAt !== undefined;
     let status: AgentStatus = "running";
     let phase: AgentPhase = "active";

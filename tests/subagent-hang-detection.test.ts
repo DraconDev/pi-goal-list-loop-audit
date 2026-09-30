@@ -470,11 +470,27 @@ test("v0.35.65: an old-generation child cannot receive a stop RPC after host reb
   await tick();
 
   assert.equal(aborts, 0, "the replacement host never stops the old-generation child");
-  const unavailable = readLedger(cwd).filter((entry) => entry.type === "subagent_hang_action_unavailable");
-  assert.equal(unavailable.length, 1, "the old-generation escalation is durable and one-shot");
-  assert.equal(unavailable[0]!.value.recordId, "sub-old-generation");
-  assert.match(unavailable[0]!.value.reason, /older host generation/);
-  assert.ok(unavailable[0]!.value.ownerGeneration < unavailable[0]!.value.generation, "the durable record preserves the old/new generation boundary");
+  const retired = readLedger(cwd).filter((entry) => entry.type === "subagent_probe_retired");
+  assert.equal(retired.length, 1, "retirement is durable and one-shot without pretending to request a stop");
+  assert.equal(retired[0]!.value.recordId, "sub-old-generation");
+  assert.match(retired[0]!.value.reason, /older host generation/);
+  assert.ok(retired[0]!.value.ownerGeneration < retired[0]!.value.generation, "the durable record preserves the old/new generation boundary");
+  assert.equal(__testOnlySubagentHangProbes().length, 0);
+});
+
+test("host rebind retires healthy event-only evidence and admits fresh same-generation progress", async () => {
+  const { cwd, ctx } = await spawnFixture();
+  pi.emitBus("subagents:started", { id: "old-healthy", type: "Explore", description: "old healthy child" });
+  await tick();
+  assert.equal(getSubagentAgentsSnapshot().agents.length, 1);
+  await pi.fire("session_shutdown", { reason: "reload" }, ctx);
+  await freshSession(cwd, "reload");
+  assert.equal(__testOnlySubagentHangProbes().length, 0, "old evidence cannot stand down the new watchdog");
+  assert.equal(getSubagentAgentsSnapshot().agents.length, 0);
+  pi.emitBus("subagents:started", { id: "new-healthy", type: "Explore", description: "current child" });
+  await tick();
+  assert.equal(getSubagentAgentsSnapshot().agents.length, 1, "current evidence is still visible");
+  assert.equal(__testOnlySubagentHangProbes()[0]?.recordId, "new-healthy");
 });
 
 test("v0.34.102: event-only hang surfaces `subagent_hang_detected` with evidence=event-only when no manager record exists", async () => {
