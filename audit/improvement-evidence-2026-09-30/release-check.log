@@ -2112,3 +2112,36 @@ tests/list-audit.test.ts:
 (pass) v0.33.3: one-shot audit raises DECIDE findings as questions before completing [0.10ms]
 
 tests/release-contract.test.ts:
+[run-tests] progress: 510s elapsed · 2s since last output · 207 KiB of suite output
+(pass) release contract: published documentation links are covered by the npm tarball [4828.09ms]
+(pass) release contract: the release gate exercises the packed artifact [3.75ms]
+(pass) release contract: packed prompts, schema, and workers ship in the dry-run list [1439.66ms]
+(pass) release contract: glla-delegate skill loads without diagnostics (source-tree fast tier) [27.94ms]
+(pass) release contract: docs index tracks the package version [0.22ms]
+(pass) release contract: package is discoverable as a Pi extension and skill [1624.00ms]
+(pass) release contract: README package contents claim matches the files allowlist [2501.60ms]
+(pass) release contract: first-use README guidance matches current behavior [0.71ms]
+(pass) release contract: smoke waits use durable or literal transition markers [0.35ms]
+(pass) release workflow scopes trusted-publishing OIDC to the publish job [1.79ms]
+(pass) v0.38.32: release runs never share the push-churn concurrency group [0.66ms]
+(pass) release contract: changelog has one heading for the current package version [13.45ms]
+(pass) release contract: untagged source work has an Unreleased changelog section to promote [41.93ms]
+
+tests/subagent-display-richness.test.ts:
+(pass) audit 2026-09-07 richness defaults to quiet (exceptions-only) and normalizes junk [57.40ms]
+(pass) v0.38.23 rich assembles single-line glyph rows, no header; compact keeps the line; quiet hides healthy workers [3.71ms]
+(pass) v0.38.22 detailed lines bucket silence — identical output seconds apart [0.78ms]
+(pass) v0.38.22 hasHungWorker covers hung + aborting, ignores ended [0.13ms]
+(pass) audit 2026-09-07 count line flags trouble on ANY child, not just the stalest [0.14ms]
+(pass) v0.38.23 every rich line is width-safe; long summaries truncate cell-aware [0.20ms]
+
+tests/behavioral-orchestrator.test.ts:
+(pass) T3a: active goal + human load (startup) + default settings → HELD for explicit resume [2619.91ms]
+(pass) v0.34.18: blank startup waits for the transcript before autoresume, while explicit resume and loaded history still work [1477.41ms]
+(pass) v0.34.121: blank startup closes a legacy terminal slot when its archive exists [135.34ms]
+(pass) T3c (v0.28.21): interrupted goal HELDS by default — the 0.28.3 exemption is superseded; autoresume=on auto-resumes [625.08ms]
+(pass) T3b (v0.28.21): active goal + reload → HELD by default; autoresume=on → auto-resumes [959.47ms]
+(pass) v0.35.x: list cancel archives the active item, does not relabel it as active, and preserves its audit history [742.91ms]
+(pass) v0.36.0: /goal cancel archives a standalone goal with a compact six-label recap [232.97ms]
+(pass) v0.36.0: /list next archives the skipped active item with a compact recap [549.28ms]
+(pass) v0.36.1: bare /goal start uses one clear active-branch request [90.28ms]
