@@ -3567,3 +3567,46 @@ tests/glla-update-check.test.ts:
 (pass) future-dated cache suppresses the spawn instead of causing one per contact [2.51ms]
 
 tests/revision-counter.test.ts:
+(pass) bumpGoalRevision increments revision by exactly 1 [0.66ms]
+(pass) bumpGoalRevision treats undefined revision as 0 [0.85ms]
+(pass) captureGoalRevision returns null for null goal [0.11ms]
+(pass) captureGoalRevision tokens match by value, not identity [0.17ms]
+(pass) isGoalRevisionCurrent: matches when revision is unchanged [0.16ms]
+(pass) isGoalRevisionCurrent: refuses when revision bumped [0.11ms]
+(pass) isGoalRevisionCurrent: refuses when goal replaced [0.04ms]
+(pass) isGoalRevisionCurrent: refuses when current goal is null [0.03ms]
+(pass) isGoalRevisionCurrent: null token passes through (legacy compat) [0.02ms]
+(pass) end-to-end: capture → mutate → refuse [3.00ms]
+(pass) GoalRevisionToken shape carries only goalId+revision [0.26ms]
+
+tests/model-selector-parity.test.ts:
+(pass) model selector parity — fallback set and ordering > subagent-like raw chains are normalized like main (cap 10, case-insensitive dedup, order retained) [1.06ms]
+(pass) model selector parity — fallback set and ordering > selectors share fallback ordering and forbidden/unregistered walk [0.71ms]
+
+tests/start-context.test.ts:
+(pass) bare-start inference accepts one clear current request [4.13ms]
+(pass) bare-start inference ignores assistant text and generic acknowledgements [0.25ms]
+(pass) bare-start inference deduplicates a repeated request [4.00ms]
+(pass) bare-start inference fails closed for two distinct requests [4.98ms]
+(pass) bare-start inference falls back for vague or command-only context [5.92ms]
+(pass) bare-start inference marks a multi-task request ambiguous [0.33ms]
+(pass) bare-start inference preserves multiline task boundaries [0.09ms]
+(pass) session reader uses only a bounded active-branch tail [232.38ms]
+(pass) session reader fails closed when the host branch cannot be read [0.25ms]
+(pass) field 2026-09-16: chatter shapes divert, real objectives pass through [0.21ms]
+(pass) field 2026-09-16: tweak chatter resolves to the discussed objective (VidPro replay) [0.19ms]
+(pass) audit 2026-09-16: explicit compound tweak never substitutes an older request [0.05ms]
+(pass) field 2026-09-16: tweak chatter with no discussed objective is unresolvable, never verbatim [0.06ms]
+(pass) field 2026-09-16: tweak chatter over competing requests surfaces candidates [0.14ms]
+
+tests/auditor-stall-watchdog.test.ts:
+(pass) stall: worker that never emits a first event is failed fast, not left for the wall [6075.96ms]
+(pass) stall: first-event budget starts after successful spawn, not pre-spawn setup [6850.03ms]
+(pass) stall: worker whose single boot heartbeat goes stale is failed fast, not left for the wall [1704.56ms]
+(pass) progress: a live auditor outlives the legacy wall metadata and settles on its result [667.69ms]
+[run-tests] progress: 1200s elapsed · 1s since last output · 318 KiB of suite output
+(pass) stall: a running auditor tool is exempt — the per-tool timeout owns that axis [1872.70ms]
+(pass) stall: a silent-past-bound attempt fails fast WITH its cost record (controlled clock) [812.20ms]
+(pass) stall: a worker-reported brake is reclassified with the same evidence [912.31ms]
+(pass) stall: an open in-budget tool is not silence — the no-progress bound spares it [576.82ms]
+(pass) v0.38.99: an over-budget tool is NOT fatal — the worker cancels it, resumes, and its result still lands [2977.19ms]
