@@ -799,3 +799,82 @@ AssertionError: Expected values to be strictly equal:
       at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/completion-communication.test.ts:150:10
       at processTicksAndRejections (native:7:39)
 (fail) archive write failure never emits a terminal success [2061.57ms]
+(pass) approval summary does not replace independent next-item continuation [17285.70ms]
+[run-tests] progress: 210s elapsed · 10s since last output · 59 KiB of suite output
+14 | let cleanup: (() => Promise<void>) | undefined;
+15 | afterEach(async () => { await cleanup?.(); cleanup = undefined; });
+16 | const summary = "Outcome: Fixed routing.\nChanged: router.ts.\nEvidence: routing fixture.\nTests: routing suite passed.\nUnresolved: none.\nNext: await audit.";
+17 | async function waitFor(check: () => boolean, timeout = 10000) {
+18 |   const until = Date.now() + timeout;
+19 |   while (!check()) { if (Date.now() > until) throw new Error("settlement timeout"); await new Promise(r => setTimeout(r, 20)); }
+                                                            ^
+error: settlement timeout
+      at waitFor (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/completion-communication.test.ts:19:56)
+      at async <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/completion-communication.test.ts:172:9)
+(fail) outbox write failure warns without claiming summary delivery [10326.99ms]
+
+tests/list-invisible-restart.test.ts:
+(pass) v0.35.21: session_start converges a disk-sidecar queue the state ledger lost, and the widget renders it [668.37ms]
+(pass) v0.35.61: a waiting-only queue is visible and startable without a reload [245.07ms]
+(pass) v0.35.61: silent host replacement rehydrates a sidecar-only waiting queue before repaint [219.47ms]
+(pass) v0.35.72: a newer known sidecar reconciles the in-memory queue item [291.03ms]
+(pass) v0.35.72: activation refuses when the durable sidecar cannot be removed [273.13ms]
+(pass) v0.35.21: convergence is idempotent — an item present in BOTH state and sidecar is not duplicated [234.72ms]
+
+tests/audit-loop-state-root.test.ts:
+(pass) sessionDir audit target, measure, and findings helper name the selected file [111.57ms]
+
+tests/prompt-layers.test.ts:
+(pass) full assembly of goal-loop-continuation.md is byte-identical to source minus markers [70.84ms]
+(pass) full assembly of goal-loop-forever.md is byte-identical to source minus markers [4.19ms]
+(pass) full assembly of goal-loop-forever-metricless.md is byte-identical to source minus markers [3.25ms]
+(pass) full assembly of goal-loop-draft.md is byte-identical to source minus markers [4.86ms]
+(pass) full assembly of goal-loop-forever-draft.md is byte-identical to source minus markers [1.18ms]
+(pass) full assembly of goal-loop-plan.md is byte-identical to source minus markers [5.92ms]
+(pass) full assembly of goal-loop-plan-loop.md is byte-identical to source minus markers [3.69ms]
+(pass) continuation declares exactly the three conditional details [0.51ms]
+(pass) the other six prompts are skeleton-only (whole file is the skeleton) [1.20ms]
+(pass) missing prompt file fails loudly, never lean [0.73ms]
+(pass) unknown detail id fails loudly [0.35ms]
+(pass) parser defects fail loudly [0.31ms]
+(pass) assembly order is file order regardless of request order (same every turn) [1.22ms]
+(pass) normal-turn render omits all three details; token cost lower by the deferred bodies [8.38ms]
+(pass) survey-pivot delta is EXACTLY the deferred body (equal-length objectives) [2.19ms]
+(pass) session-restart delta is EXACTLY the deferred body (opts flag only) [1.73ms]
+(pass) autoResumedAt goals get the restart detail without opts [0.81ms]
+(pass) live disapproval loads the auditor playbook detail [5.30ms]
+(pass) padRight helper keeps fixture objectives length-neutral [0.14ms]
+(pass) v0.38.104 the leading `//` author comment is stripped at assembly [0.45ms]
+(pass) v0.38.104 a `//` line in the BODY is never stripped [0.07ms]
+
+tests/auditor-screenshot-disapproval.test.ts:
+(pass) screenshot-shaped non-literal Done when contract proof stays an actionable disapproval [3.83ms]
+(pass) screenshot-shaped inverted title/score hierarchy stays an actionable disapproval [1.46ms]
+
+tests/list-philosophy.test.ts:
+(pass) contract 1+2: /goal+/list draft prompt has short-item AND multi-hour framing [54.14ms]
+(pass) contract 3: /loop draft prompt has metric-driven framing [0.21ms]
+(pass) contract 4: all draft prompts open with a Long-running philosophy block [0.62ms]
+(pass) contract 5: LIST-PHILOSOPHY.md exists with the three-mode table [0.56ms]
+(pass) contract 6: INSTALL.md references LIST-PHILOSOPHY.md in a Modes section [3.16ms]
+(pass) contract 7: /list depth headline format [1.24ms]
+(pass) contract 8+11: cross-recommend catches the 76-weak-points wrapper seed [0.20ms]
+(pass) contract 12: cross-recommend catches the 40-findings tasklist seed [0.07ms]
+(pass) contract 8: multi-hour seed in /list mode suggests /goal or break-up [0.17ms]
+(pass) contract 8: five-minute seed in /goal mode suggests /list [0.26ms]
+(pass) contract 8: open-ended seed in /goal or /list mode suggests /loop [0.16ms]
+(pass) contract 8: bounded-until beats recurring vocabulary (still a goal) [0.04ms]
+(pass) contract 8: aggregate beats recurring (per-item work wins) [0.04ms]
+(pass) contract 8: recurring beats five-minute (cadence changes the loop) [0.05ms]
+
+tests/execution-discipline.test.ts:
+(pass) mid-run question steps are violations, naming the step [0.48ms]
+(pass) ask_user_question subtasks are violations too [7.43ms]
+(pass) manual-check steps are violations unless the contract mandates them [0.25ms]
+(pass) contract-mandated gates are exempt, not violations [0.19ms]
+(pass) clean plans pass with no violations [0.06ms]
+(pass) propose_task_list validation refuses mid-run steps [0.12ms]
+(pass) goal/list drafting prompt pins never-schedule-mid-run plus manual-only-when-mandatory [0.25ms]
+(pass) plan prompt pins milestone shape: no mid-run question or manual-check milestones [0.10ms]
+
+tests/zombie-resume.test.ts:
