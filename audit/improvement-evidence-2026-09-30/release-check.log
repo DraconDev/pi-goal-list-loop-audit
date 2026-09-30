@@ -3543,3 +3543,27 @@ tests/wait-overdue-backstop.test.ts:
 (pass) v0.35.28 #16: the pause_goal wait copy is now backed by machinery (source pin) [3.58ms]
 (pass) v0.35.28 #16: once consent exists on reload, the overdue wait resumes through the backstop [944.83ms]
 (pass) v0.35.48: the backstop stays parked during a session handoff window [245.73ms]
+(pass) v0.35.48: an agent-authored wait stays parked while main-model recovery is active [363.09ms]
+(pass) v0.35.48: the backstop's dispatch-surface gates sit before the one-shot latch [2.09ms]
+
+tests/list-draft-handoff.test.ts:
+(pass) 125335: fresh commentary-only draft end delivers exactly one bounded correction [8367.77ms]
+[run-tests] progress: 1170s elapsed · 3s since last output · 314 KiB of suite output
+(pass) stated next dependent question is a legal drafting end: no correction [2857.92ms]
+(pass) short ack without a question is not commentary: no correction [2836.41ms]
+(pass) tool-unavailable fallback: the correction directs prose asking [0.42ms]
+(pass) confirmation gate untouched: correction never earns a proposal [2916.02ms]
+
+tests/glla-update-check.test.ts:
+(pass) compareVersions orders semver-ish strings and shrugs at garbage [119.77ms]
+(pass) staleUpdateNudge fires only when the cache proves the registry is ahead [0.38ms]
+(pass) buildVersionTail always names the running version, nudges only when stale [0.08ms]
+(pass) readUpdateCheck returns null for missing, malformed, and future-dated caches [1.09ms]
+(pass) refreshUpdateCheck skips spawn while the cache is within TTL [2.07ms]
+(pass) refreshUpdateCheck shells npm view when stale and caches the latest [0.77ms]
+(pass) refreshUpdateCheck never throws and never writes on registry failure [0.93ms]
+(pass) async spawn error is swallowed, never crashes, never writes [0.25ms]
+(pass) non-version npm stdout never poisons the sidecar [0.30ms]
+(pass) future-dated cache suppresses the spawn instead of causing one per contact [2.51ms]
+
+tests/revision-counter.test.ts:
