@@ -62,6 +62,10 @@ try {
   process.kill(descendant, 'SIGKILL');
   owned.delete(descendant);
 
+  fs.writeFileSync(path.join(bin, 'bun'), `#!${process.execPath}\nprocess.stdout.write('stub suite failed\\n');setTimeout(()=>process.exit(1),100);\n`, { mode: 0o755 });
+  const failedRunner = start(process.execPath, ['scripts/run-tests.mjs', '--all'], { PATH: `${bin}${path.delimiter}${process.env.PATH}` });
+  console.log(JSON.stringify({ probe: 'failed-child-runner-exit', expectedChildExit: 1, ...await failedRunner.closed }));
+
   const job = path.join(scratch, 'compactor-job');
   fs.mkdirSync(job);
   const piPidFile = path.join(scratch, 'pi-pid');
