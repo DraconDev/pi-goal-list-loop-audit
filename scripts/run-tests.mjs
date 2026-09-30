@@ -12,7 +12,7 @@
 // An explicit test path in the extras always wins: ignore patterns are
 // dropped so `npm test -- tests/some-slow.test.ts` runs that file.
 //
-// v0.38.104 — observable, hang-proof, orphan-free. The field reported a
+// Observable progress and bounded suite-group cleanup. The field reported a
 // suite that produced nothing for 37 minutes and a 26-hour-old `bun test`
 // still burning a core: a runner you cannot see is a runner you cannot trust.
 // So this wrapper now:
@@ -20,11 +20,13 @@
 //   2. fails LOUDLY instead of hanging when the suite goes silent past a
 //      bounded stall window, and
 //   3. always takes its child down with it (SIGINT/SIGTERM/exit), so an
-//      aborted run can never leave a runaway behind.
+//      interrupted run cleans its suite group before reporting failure.
+// Separately detached workers require their own ownership cleanup (F3).
 // The heartbeat goes to stderr so piping stdout still gives clean test output.
 
 import { spawn, spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
+import { terminateContainedChild } from "./contained-child.mjs";
 import { SLOW_TEST_FILES } from "../tests/slow-files.mjs";
 
 export const SERIAL_FLAGS = ["--parallel=1", "--max-concurrency=1", "--timeout=60000"];
@@ -95,19 +97,15 @@ function main() {
   const startedAt = Date.now();
   log(`mode=${mode} slow_files=${SLOW_TEST_FILES.length} stall_timeout=${Math.round(stallLimit / 1000)}s heartbeat=${Math.round(beat / 1000)}s`);
 
-  // v0.38.104: `detached: true` is what makes the group-kill below real.
-  // Without it the child stays in THIS process's group, so
-  // process.kill(-child.pid) targets a pgid that does not exist, throws
-  // ESRCH, and takeDown silently degrades to signalling the direct child —
-  // leaving the detached auditor/worker grandchildren (the 26-hour orphan
-  // this wrapper exists to prevent) running. The spawn option, not the
-  // kill, was the missing half of the guarantee.
+  // Give the suite a group we can terminate without signalling this wrapper.
   const child = spawn("bun", ["test", ...bunArgs], { stdio: ["inherit", "pipe", "pipe"], detached: true });
   let bytes = 0;
   let lastOutputAt = Date.now();
   let settled = false;
   let stallFired = false;
   let interruptedExitCode;
+  let cleanupPromise;
+  const cleanup = () => cleanupPromise ??= terminateContainedChild(child, { graceMs: 5000 });
 
   const forward = (stream, sink) => {
     stream.on("data", (chunk) => {
@@ -121,14 +119,9 @@ function main() {
 
   /** Take the child down, escalating, so nothing survives this wrapper. */
   const takeDown = (signal) => {
-    if (child.exitCode !== null || child.signalCode !== null) return;
     try { process.kill(-child.pid, signal); } catch { try { child.kill(signal); } catch { /* already gone */ } }
   };
-  // Own the child's process group so detached auditor workers spawned by the
-  // suite die with it — the 26-hour orphan was exactly this failure mode.
-  // v0.38.104: this probe used to swallow its own ESRCH, so when the group
-  // did not exist (the pre-fix spawn) the wrapper claimed a guarantee it
-  // never had and never even unref'd. A failed probe is now loud.
+  // Probe the suite group; detached grandchildren do not belong to it.
   try {
     process.kill(-child.pid, 0);
     // Keep the exit-status obligation referenced. Pipe EOF can precede
@@ -139,9 +132,8 @@ function main() {
 
   const onSignal = (signal) => {
     interruptedExitCode ??= signal === "SIGINT" ? 130 : 143;
-    log(`received ${signal} — taking the suite down with it (no orphan)`);
-    takeDown("SIGTERM");
-    setTimeout(() => takeDown("SIGKILL"), 5_000).unref?.();
+    log(`received ${signal} — cleaning up the suite group`);
+    void cleanup();
   };
   process.on("SIGINT", () => { onSignal("SIGINT"); });
   process.on("SIGTERM", () => { onSignal("SIGTERM"); });
@@ -150,22 +142,22 @@ function main() {
   const watch = setInterval(() => {
     const silentMs = Date.now() - lastOutputAt;
     const elapsed = Date.now() - startedAt;
-    if (isStalled({ silentMs, limitMs: stallLimit })) {
+    if (!stallFired && isStalled({ silentMs, limitMs: stallLimit })) {
       stallFired = true;
       log(`STALLED: no suite output for ${Math.round(silentMs / 1000)}s (limit ${Math.round(stallLimit / 1000)}s) after ${Math.round(elapsed / 1000)}s — killing the run instead of hanging.`);
       log(`hint: a hung run is usually CPU starvation (host load) or a test awaiting a child that exited; rerun that file alone, or raise GLLA_TEST_STALL_TIMEOUT_MS if the host is simply slow.`);
-      takeDown("SIGTERM");
-      setTimeout(() => takeDown("SIGKILL"), 5_000).unref?.();
+      void cleanup();
       return;
     }
     log(`progress: ${Math.round(elapsed / 1000)}s elapsed · ${Math.round(silentMs / 1000)}s since last output · ${(bytes / 1024).toFixed(0)} KiB of suite output`);
   }, beat);
   watch.unref?.();
 
-  const done = (code, signal) => {
+  const done = async (code, signal) => {
     if (settled) return;
     settled = true;
     clearInterval(watch);
+    await cleanup();
     const elapsed = Math.round((Date.now() - startedAt) / 1000);
     if (stallFired) {
       log(`FAILED: suite stalled and was terminated after ${elapsed}s`);

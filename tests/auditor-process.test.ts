@@ -425,8 +425,9 @@ process.on("SIGTERM", () => {});
 setInterval(() => {}, 1_000);
 `);
   const controller = new AbortController();
+  let pending: ReturnType<typeof runDetachedGoalCompletionAuditor> | undefined;
   try {
-    const pending = runDetachedGoalCompletionAuditor({
+    pending = runDetachedGoalCompletionAuditor({
       cwd: dir,
       goal,
       model: "test/provider-model",
@@ -439,7 +440,8 @@ setInterval(() => {}, 1_000);
         // seconds, so give it real headroom.
         wallTimeoutMs: 30_000 },
     });
-    for (let i = 0; i < 500; i++) {
+    const startupDeadline = Date.now() + 20_000;
+    while (Date.now() < startupDeadline) {
       try { await readFile(pidMarker); break; }
       catch { await new Promise((resolve) => setTimeout(resolve, 10)); }
     }
@@ -454,6 +456,8 @@ setInterval(() => {}, 1_000);
     assert.throws(() => process.kill(workerPid, 0), /ESRCH|不存在|not found/i, "the detached worker is gone after parent abort");
     assert.equal(existsSync(path.join(dir, ".pi-glla", "audit-jobs", "attempt-parent-abort")), false, "aborted job scratch is removed");
   } finally {
+    controller.abort();
+    await pending;
     await rm(dir, { recursive: true, force: true });
   }
 });
