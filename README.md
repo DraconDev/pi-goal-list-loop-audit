@@ -526,3 +526,7 @@ repository material, not first-use package content.
 ## License
 
 GNU Affero General Public License v3.0-only; see [LICENSE](LICENSE).
+
+Compatibility and process limits: [COMPATIBILITY.md](docs/COMPATIBILITY.md).
+Reliability metrics and opt-in canaries: [RELIABILITY-AND-MEASUREMENT.md](docs/RELIABILITY-AND-MEASUREMENT.md).
+Generated runtime inventory: [RUNTIME-INVENTORY.md](docs/RUNTIME-INVENTORY.md).

@@ -1,0 +1,19 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/real-host-canary.test.ts tests/canary-budget.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/real-host-canary.test.ts:
+(pass) real-host canary reports an explicit skip without opt-in or spawning Pi [132.98ms]
+(pass) opt-in canary installs its request guard and records bounded host evidence (stub host) [299.88ms]
+
+tests/canary-budget.test.ts:
+(pass) canary bounds output and requests, removes tools, and preserves the caller payload [1.56ms]
+(pass) canary refuses unsupported caps, unknown prices, oversized input, and excessive estimated spend before sending [0.40ms]
+
+ 4 pass
+ 0 fail
+Ran 4 tests across 2 files. [3.09s]
+[run-tests] finished in 3s (exit 0)

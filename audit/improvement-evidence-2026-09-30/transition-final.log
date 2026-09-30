@@ -1,0 +1,38 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/settlement-boundary-faults.test.ts tests/revision-bound-audit.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/revision-bound-audit.test.ts:
+(pass) v0.34.60: /goal tweak bumps the goal revision (a contract change) [11523.14ms]
+(pass) v0.34.60: complete_goal with newObjective bumps the revision and audits the new contract in the same call [6300.09ms]
+(pass) v0.35.36: complete_goal newObjective does NOT launder the agent-authored objective into userSeeds [97.94ms]
+(pass) repair replan bumps the contract revision and invalidates an older approval [28.74ms]
+(pass) v0.34.60: complete_goal REJECTS when the contract revision moved past the last audited revision [27.24ms]
+(pass) direct complete_goal refuses an approval when the contract revision changes during the detached audit [7928.39ms]
+[run-tests] progress: 30s elapsed · 0s since last output · 1 KiB of suite output
+(pass) v0.34.60: complete_goal passes when the last audit matches the current revision [2037.26ms]
+(pass) v0.34.60: legacy audit entries without a revision never trip the gate [1574.78ms]
+(pass) v0.34.61: a settled audit never invalidates its own verdict — a second complete_goal on the same contract proceeds [6008.83ms]
+(pass) v0.34.61: the documented escape works — tweak, then /goal verify, then complete_goal proceeds [14449.14ms]
+[run-tests] progress: 60s elapsed · 6s since last output · 1 KiB of suite output
+(pass) v0.34.60: the gate skips when the call itself carries newObjective (its audit covers the new contract) [11439.55ms]
+(pass) v0.34.96: complete_goal routes to aborted when completionSummary says 'already shipped' [25.55ms]
+(pass) v0.34.96: already-shipped abort binds the version attached to the claim [11.94ms]
+(pass) v0.35.x: already-shipped completion honors an existing archive fence [7.73ms]
+(pass) v0.35.x: archiveCurrentGoal preserves a same-id archive on cancel [29.82ms]
+(pass) v0.34.128: a version-less 'no new work shipped' claim routes to the NORMAL audit and completes on approval [3056.79ms]
+(pass) v0.34.128: a version-less 'already shipped' claim disapproved by the auditor leaves the finding queued (no abort) [2200.73ms]
+(pass) v0.34.96: a NORMAL completionSummary still runs the auditor (no false-positive abort) [4038.59ms]
+(pass) v0.38.104: an unpersistable newObjective refuses the claim and never advances the revision [25.95ms]
+
+tests/settlement-boundary-faults.test.ts:
+(pass) typed settlement refuses success before its intent can be persisted [181.50ms]
+(pass) failed receipt transfer retains the terminal obligation across live-slot cleanup [48.99ms]
+
+ 21 pass
+ 0 fail
+Ran 21 tests across 2 files. [77.22s]
+[run-tests] finished in 78s (exit 0)

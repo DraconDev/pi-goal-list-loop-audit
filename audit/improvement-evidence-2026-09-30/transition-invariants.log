@@ -1,0 +1,149 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/settlement-boundary-faults.test.ts tests/runtime-globals-contract.test.ts tests/revision-bound-audit.test.ts tests/audit-settlement-restart.test.ts tests/compaction-survival.test.ts tests/stale-interrupt-resume.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/stale-interrupt-resume.test.ts:
+(pass) Goal type + schema carry the interrupt marker fields [5.77ms]
+(pass) S3 probe: side-effect-free getSessionName() probe caches the positive [0.11ms]
+(pass) S3 warn helper: honest 'state is safe' messaging + ledger [0.21ms]
+(pass) S3: probes wired at cmdSet / cmdResume / cmdList / propose_goal_draft entry [15.03ms]
+(pass) S3: stale creation marks the interrupt and tells the truth (no 'starting now' lie) [5.10ms]
+(pass) S1: stale resume persists active+marker, skips the misleading notify and the doomed send [0.18ms]
+(pass) S2: restore gate clears the marker on auto-resume and names the recovery [0.44ms]
+(pass) S2 (v0.28.21): the 0.28.3 interrupt exemption is SUPERSEDED — only autoresume=on auto-resumes [0.79ms]
+(pass) S1/S2: widget surfaces the interrupt on ACTIVE goals [0.30ms]
+(pass) E6: drafting-seed send failure is loud and stale-aware (was silent) [0.47ms]
+(pass) T1: stale Confirm is NOT a rejection — both single and batch paths [1.41ms]
+(pass) v0.28.27: stale handle silences ALL stall machinery — refiring into a dead process misleads, and the stall escalation would PAUSE an interrupted goal (killing restart auto-resume) [0.19ms]
+(pass) v0.28.27/0.29.8: /goal verify (renamed from /goal audit) — manual auditor invocation with a synthesized claim, wired into the pendingCompletion machinery [3.66ms]
+(pass) v0.29.8: /goal audit [focus] — the one-shot project audit; /glla status — the unified view [0.74ms]
+(pass) v0.34.2: cmdResume clears interruptedAt/interruptedReason on a fresh-session resume [0.21ms]
+(pass) v0.34.7: safeSteerUser wraps every orchestrator sendUserMessage (darklord crash) [8.74ms]
+(pass) v0.34.7: the fan-out float carries a catch (rejection ≠ process exit) [7.93ms]
+(pass) v0.34.7: re-kick clears the stale-handle marker (banner must not survive a working session) [0.51ms]
+
+tests/compaction-survival.test.ts:
+(pass) compaction survival: three mid-run compacts, then the goal still completes approved [3142.33ms]
+(pass) compaction survival: a compact around an in-flight audit still completes [1360.11ms]
+
+tests/revision-bound-audit.test.ts:
+(pass) v0.34.60: /goal tweak bumps the goal revision (a contract change) [333.17ms]
+(pass) v0.34.60: complete_goal with newObjective bumps the revision and audits the new contract in the same call [4130.66ms]
+(pass) v0.35.36: complete_goal newObjective does NOT launder the agent-authored objective into userSeeds [183.32ms]
+(pass) repair replan bumps the contract revision and invalidates an older approval [66.14ms]
+(pass) v0.34.60: complete_goal REJECTS when the contract revision moved past the last audited revision [759.34ms]
+122 |   // hardened 2026-08-11: a load-58 spike stretched the detached-auditor
+123 |   // subprocess past the old 4s wall (revision-bound-audit timed out while
+124 |   // the rest of the suite was green; standalone run also failed at load 58).
+125 |   const deadline = Date.now() + timeoutMs;
+126 |   while (!predicate()) {
+127 |     if (Date.now() >= deadline) throw new Error("timed out waiting for detached-auditor state");
+                                                ^
+error: timed out waiting for detached-auditor state
+      at waitUntil (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/revision-bound-audit.test.ts:127:43)
+      at async <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/revision-bound-audit.test.ts:332:11)
+(fail) direct complete_goal refuses an approval when the contract revision changes during the detached audit [10603.28ms]
+[run-tests] progress: 30s elapsed · 5s since last output · 4 KiB of suite output
+(pass) v0.34.60: complete_goal passes when the last audit matches the current revision [8557.97ms]
+(pass) v0.34.60: legacy audit entries without a revision never trip the gate [16120.20ms]
+[run-tests] progress: 60s elapsed · 10s since last output · 4 KiB of suite output
+(pass) v0.34.61: a settled audit never invalidates its own verdict — a second complete_goal on the same contract proceeds [13324.17ms]
+(pass) v0.34.61: the documented escape works — tweak, then /goal verify, then complete_goal proceeds [2193.67ms]
+(pass) v0.34.60: the gate skips when the call itself carries newObjective (its audit covers the new contract) [3639.67ms]
+(pass) v0.34.96: complete_goal routes to aborted when completionSummary says 'already shipped' [14.46ms]
+(pass) v0.34.96: already-shipped abort binds the version attached to the claim [6.92ms]
+(pass) v0.35.x: already-shipped completion honors an existing archive fence [6.79ms]
+(pass) v0.35.x: archiveCurrentGoal preserves a same-id archive on cancel [19.05ms]
+(pass) v0.34.128: a version-less 'no new work shipped' claim routes to the NORMAL audit and completes on approval [2100.38ms]
+(pass) v0.34.128: a version-less 'already shipped' claim disapproved by the auditor leaves the finding queued (no abort) [1219.78ms]
+(pass) v0.34.96: a NORMAL completionSummary still runs the auditor (no false-positive abort) [806.28ms]
+(pass) v0.38.104: an unpersistable newObjective refuses the claim and never advances the revision [49.61ms]
+
+tests/audit-settlement-restart.test.ts:
+(pass) restart: a running claim whose worker is gone parks as recovery-needed and never looks complete [867.07ms]
+(pass) restart: a claim whose worker never reported is recovery-needed, with no invented activity [381.17ms]
+(pass) restart: a settling claim completes its archive without re-running the auditor [640.91ms]
+(pass) restart: a finished settlement is approved once — one render, and the render follows the archive [979.74ms]
+(pass) restart: a refused archive keeps the approved claim and emits no terminal success [510.55ms]
+(pass) recovery: after the fault is repaired, /goal resume finishes the settlement WITHOUT re-auditing [946.72ms]
+(pass) recovery: a restart after the fault is repaired also finishes the settlement without re-auditing [994.32ms]
+(pass) lifecycle evidence survives the durable state boundary (sanitized, not dropped) [7.20ms]
+(pass) audit 2026-09-25: no constant-folded settlement guard obscures the live gate [60.95ms]
+
+tests/settlement-boundary-faults.test.ts:
+[run-tests] progress: 90s elapsed · 10s since last output · 6 KiB of suite output
+(pass) typed settlement refuses success before its intent can be persisted [11115.86ms]
+28 |   const {cwd,goal,ctx}=fixture();
+29 |   const render={goalId:goal.id, objective:goal.objective,chatLines:['Approved with evidence']};
+30 |   const settlement=createGoalSettlementBoundary({persistApprovalRender:()=>false});
+31 |   assert.equal(settlement.archiveCurrentGoal(ctx as any,'complete','approved',{}, {terminalRender:render}),true);
+32 |   const archive=fs.readFileSync(archivedGoalPath(cwd,goal.id),'utf8');
+33 |   assert.equal(readState(cwd).goal,null);
+              ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ {
++   archivedPath: '.pi-glla/archive/test-1790786128735-l2hx1w.md',
++   autoContinue: true,
++   completionSummary: 'Outcome: Objective "durable terminal obligation" archived with status=complete.\n' +
++     'Changed: not recorded — no file-write signal was captured.\n' +
++     'Evidence: goal test-1790786128735-l2hx1w; no execution telemetry was recorded; no completion review was recorded.\n' +
++     'Tests: not recorded — no terminal test result was captured.\n' +
++     'Unresolved: terminal reason: approved.\n' +
++     'Next: review the durable record at .pi-glla/archive/test-1790786128735-l2hx1w.md.',
++   createdAt: '2026-09-30T16:35:28.735Z',
++   id: 'test-1790786128735-l2hx1w',
++   objective: 'durable terminal obligation',
++   policy: 'goal',
++   status: 'complete',
++   stopReason: 'approved',
++   updatedAt: '2026-09-30T16:35:28.735Z',
++   usage: {
++     cacheReadTokens: 0,
++     cacheWriteTokens: 0,
++     cost: 0,
++     inputTokens: 0,
++     outputTokens: 0,
++     turns: 0
++   }
++ }
+- null
+
+ generatedMessage: true,
+     actual: {
+  id: "test-1790786128735-l2hx1w",
+  objective: "durable terminal obligation",
+  status: "complete",
+  policy: "goal",
+  autoContinue: true,
+  usage: [Object ...],
+  createdAt: "2026-09-30T16:35:28.735Z",
+  updatedAt: "2026-09-30T16:35:28.735Z",
+  archivedPath: ".pi-glla/archive/test-1790786128735-l2hx1w.md",
+  stopReason: "approved",
+  completionSummary: "Outcome: Objective \"durable terminal obligation\" archived with status=complete.\nChanged: not recorded — no file-write signal was captured.\nEvidence: goal test-1790786128735-l2hx1w; no execution telemetry was recorded; no completion review was recorded.\nTests: not recorded — no terminal test result was captured.\nUnresolved: terminal reason: approved.\nNext: review the durable record at .pi-glla/archive/test-1790786128735-l2hx1w.md.",
+},
+   expected: null,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/settlement-boundary-faults.test.ts:33:10
+      at fn (node:test:215:18)
+(fail) failed receipt transfer retains the terminal obligation across live-slot cleanup [75.49ms]
+
+tests/runtime-globals-contract.test.ts:
+(pass) runtime global bridge has one typed declaration for every registration [39.03ms]
+(pass) audit-2026-09-06: runtime globals register exactly once per process [0.44ms]
+
+2 tests failed:
+(fail) direct complete_goal refuses an approval when the contract revision changes during the detached audit [10603.28ms]
+(fail) failed receipt transfer retains the terminal obligation across live-slot cleanup [75.49ms]
+
+ 50 pass
+ 2 fail
+Ran 52 tests across 6 files. [93.31s]
+[run-tests] finished in 94s (exit 1)

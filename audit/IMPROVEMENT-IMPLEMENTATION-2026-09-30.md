@@ -11,7 +11,7 @@ Historical audit evidence remains immutable. This register describes current wor
 |---|---|---|---|
 | F1 | Race-safe owner acquisition/reclaim/refresh/takeover | Implemented; final gate pending | 6-process/90-mutation, SIGKILL, malformed/stale observations; 32 integration checks |
 | F2 | Interrupted runner always fails after cleanup | Implemented; final gate pending | Real SIGINT/SIGTERM tests, including cooperative exit 0 |
-| F3 | Test-owned detached workers and descendants are reaped | Implemented on Linux; final gate/platform checks pending | Owned registry, normal/abort escalation, stale-identity refusal; 17 worker integration checks |
+| F3 | Test-owned detached workers and descendants are reaped | Implemented on Linux; final gate pending; other platform limits documented | Owned registry, normal/abort escalation, stale-identity refusal; 17 worker integration checks |
 | F4 | Compactor subprocess lifecycle cleans up on timeout/signals | Implemented; final gate pending | 4 real compactor lifecycle cases plus auditor cleanup checks |
 | F5 | Every supported serialized summary receipt can be acknowledged | Implemented; final gate pending | Maximum ASCII/Unicode/control/backslash receipt checks |
 | F6 | Crash-safe archive and summary delivery obligation | Implemented; final gate pending | 48 persistence checks; cold Node SIGKILL at 3 boundaries; journal-to-outbox transfer |
@@ -26,17 +26,17 @@ Historical audit evidence remains immutable. This register describes current wor
 
 | Area | Required result | Status |
 |---|---|---|
-| Architecture | Typed dependency interfaces for settlement, ownership, continuation, supervision; fewer ambient globals; explicit durable transition obligations | Open |
-| Behavioral coverage | Deterministic lifecycle sequences and crash/persistence fault injection preserve the documented invariants | Open |
-| Compatibility | Supported peer range and version matrix, genuine platform coverage with explicit limits | Open |
-| Dependencies | Evaluate supported manifest/lock update, preserve upstream-only dispositions, validate advisory outcome | Open |
-| Canaries | Opt-in real-host checks with recorded versions and bounded spend, distinct from hermetic release validation | Open |
+| Architecture | Typed dependency interfaces for settlement, ownership, continuation, supervision; fewer ambient globals; explicit durable transition obligations | Implemented; final gate pending: typed owner/settlement persistence seams plus ContinuationDeps/HeartbeatDeps; 183 → 179 bridge names; one state owner |
+| Behavioral coverage | Deterministic lifecycle sequences and crash/persistence fault injection preserve the documented invariants | Implemented; final gate pending: concurrent owners, cold SIGKILL, injected intent/outbox faults, rebind/compaction/restart sequences, gated delayed-verdict revision race |
+| Compatibility | Supported peer range and version matrix, genuine platform coverage with explicit limits | Implemented: six actual Pi/platform boundary lanes passed; detached registry remains Linux-specific |
+| Dependencies | Evaluate supported manifest/lock update, preserve upstream-only dispositions, validate advisory outcome | Implemented; final gate pending: pinned Pi 0.99.1; affected entries 3 → 1; upstream brace-expansion shrinkwrap disposition retained |
+| Canaries | Opt-in real-host checks with recorded versions and bounded spend, distinct from hermetic release validation | Implemented: disabled-by-default weekly/manual workflow; one-request token/payload/metadata-cost guard; stub tests pass; paid provider execution not requested |
 | Audit policy | Visible skipped challenges, calibrated challenge metrics, explicit high-risk strictness option | Implemented; final gate pending: strict full-tier option, skipped disclosure, existing ledger flip/skip metrics |
-| Durability | Document and implement chosen process-crash/storage-loss semantics; verify relevant writes | Open |
-| Performance | Reproducible cold-load/rotation/heartbeat/outbox/context/audit-cost measurements | Runtime/context baseline measured; ledger cost reporting remains |
-| Operator surfaces | Clear work/progress/retry/pause/action state; ledger-derived failure-age and challenge outcomes | Open |
+| Durability | Document and implement chosen process-crash/storage-loss semantics; verify relevant writes | Implemented: chosen process-crash recovery level, explicit power/storage-loss exclusion; cold process boundary tests |
+| Performance | Reproducible cold-load/rotation/heartbeat/outbox/context/audit-cost measurements | Implemented: versioned synthetic runtime/context baselines; ledger retry counts, challenge outcomes, attempt elapsed cost; paid-provider costs not inferred |
+| Operator surfaces | Clear work/progress/retry/pause/action state; ledger-derived failure-age and challenge outcomes | Implemented; final gate pending: existing status plus /glla stats reliability table/JSON, no additional polling |
 | Starvation warning | Notification latch rearms between episodes even during busy windows | Implemented; final gate pending |
-| Documentation | Generated small inventories, authoritative settings/compatibility description, coherent audit index | Open |
+| Documentation | Generated small inventories, authoritative settings/compatibility description, coherent audit index | Implemented; final gate pending: generated inventory with release drift check; settings, compatibility, reliability references; corrected index |
 | Runtime-state policy | Reconcile AGENTS instructions with intentional exclusion of machine-local runtime state | Implemented |
 | Final gate | Full release check succeeds on recorded current source with meaningful test coverage and no false success | Open |
 
@@ -53,7 +53,9 @@ protocols and their platform/storage limits are described in
 [OWNERSHIP-AND-SETTLEMENT.md](../docs/OWNERSHIP-AND-SETTLEMENT.md).
 
 Ownership now enters activation through `ProcessOwnerBoundary`; the bridge
-registry was reduced from 183 to 180 names. Continuation, supervision, and
-settlement bridge retirement still require further work. The strict challenge
+registry was reduced from 183 to 179 names. Settlement now has a lexical
+operation and injectable typed persistence context; continuation and supervision
+retain their typed dependency interfaces. Other legacy subsystems still use the
+bridge; this is a measured retirement step, not a claim of zero ambient state. The strict challenge
 option preserves the default, requires confirmed full-tier approval when
 enabled, and refuses unconfirmed legacy-worker approvals at the parent.

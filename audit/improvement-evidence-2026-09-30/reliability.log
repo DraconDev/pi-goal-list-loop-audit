@@ -1,0 +1,28 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/stats-reliability.test.ts tests/stats-challenges.test.ts tests/stats-outcomes.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/stats-outcomes.test.ts:
+(pass) outcomes: completed/aborted/open counts with the run-to-done split [1.52ms]
+(pass) outcomes: rounds, wall-clock, and tokens average over known data only [0.18ms]
+(pass) outcomes: unknown archive statuses are ignored, empty ledgers are zeroed [0.14ms]
+(pass) outcomes: table and JSON formats mirror the schema [5.37ms]
+
+tests/stats-challenges.test.ts:
+(pass) challenges: confirmed/flipped/skipped counts over all verdicts, legacy ignored [0.93ms]
+(pass) challenges: empty ledgers zero out, flip rate renders em-dash without challenged runs [0.52ms]
+(pass) challenges: table and JSON formats mirror the schema [0.40ms]
+(pass) challenges: light-tier verdicts and spot-check flips count separately [0.57ms]
+
+tests/stats-reliability.test.ts:
+(pass) reliability derives an open failure episode and elapsed audit cost without counting repeated snapshots [1.84ms]
+(pass) successful semantic review or terminal archive resolves failure age; missing samples stay unknown [0.31ms]
+(pass) recovery-only state preserves failure age and future/malformed timestamps remain unknown [0.31ms]
+
+ 11 pass
+ 0 fail
+Ran 11 tests across 3 files. [1.89s]
+[run-tests] finished in 2s (exit 0)

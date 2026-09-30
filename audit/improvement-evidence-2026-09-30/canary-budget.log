@@ -1,0 +1,15 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/canary-budget.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/canary-budget.test.ts:
+(pass) canary bounds output and requests, removes tools, and preserves the caller payload [1.75ms]
+(pass) canary refuses unsupported caps, unknown prices, oversized input, and excessive estimated spend before sending [1.41ms]
+
+ 2 pass
+ 0 fail
+Ran 2 tests across 1 file. [5.71s]
+[run-tests] finished in 10s (exit 0)

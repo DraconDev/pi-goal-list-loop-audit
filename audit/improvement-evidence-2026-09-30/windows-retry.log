@@ -1,0 +1,21 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/owner-file-protocol.test.ts tests/stats-reliability.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/stats-reliability.test.ts:
+(pass) reliability derives an open failure episode and elapsed audit cost without counting repeated snapshots [1.53ms]
+(pass) successful semantic review or terminal archive resolves failure age; missing samples stay unknown [0.54ms]
+(pass) recovery-only state preserves failure age and future/malformed timestamps remain unknown [0.72ms]
+
+tests/owner-file-protocol.test.ts:
+(pass) Windows replacement retries a sharing violation without unlinking the previous owner [2.06ms]
+(pass) competing Node processes serialize owner mutations and publish only complete records [1930.65ms]
+(pass) a live mutation times out contenders; SIGKILL recovery never removes a successor lock [320.17ms]
+
+ 6 pass
+ 0 fail
+Ran 6 tests across 2 files. [4.21s]
+[run-tests] finished in 4s (exit 0)

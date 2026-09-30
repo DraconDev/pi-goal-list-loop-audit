@@ -1,0 +1,18 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/contained-child-platform.test.ts tests/canary-budget.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/canary-budget.test.ts:
+(pass) canary bounds output and requests, removes tools, and preserves the caller payload [19.72ms]
+(pass) canary refuses unsupported caps, unknown prices, oversized input, and excessive estimated spend before sending [1.94ms]
+
+tests/contained-child-platform.test.ts:
+(pass) real linux cleanup stops a live owned Node tree and inherited pipes [1708.32ms]
+
+ 3 pass
+ 0 fail
+Ran 3 tests across 2 files. [6.12s]
+[run-tests] finished in 7s (exit 0)
