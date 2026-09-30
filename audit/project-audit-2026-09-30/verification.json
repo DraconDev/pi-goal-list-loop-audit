@@ -1,0 +1,56 @@
+{
+  "reviewedSourceCommit": "d959206a8cf4dd978405c1195206e4ce8120b357",
+  "headAtVerification": "0b14843aa76d0cc15361b2194e702b4e5ea88d08",
+  "verifiedAtUtc": "2026-09-30T14:07:32.681351+00:00",
+  "sourceDiffFromBaselineEmpty": true,
+  "reviewedFilesSha256": "a604fbad5fc7219290b785f9ef425019ebd459d190d4202627e1692dd812e775",
+  "packageVersion": "0.38.105",
+  "releaseCheckExitCode": 0,
+  "fullSuite": {
+    "passed": 2876,
+    "skipped": 1,
+    "failed": 9,
+    "files": 310,
+    "tests": 2886,
+    "elapsedSeconds": 1940.84
+  },
+  "focusedRerun": {
+    "exitCode": 1,
+    "passed": 7,
+    "failed": 1
+  },
+  "resetRerun": {
+    "runnerReportedExitCode": 1,
+    "passed": 0,
+    "failed": 1
+  },
+  "resumeSolo": {
+    "exitCode": 0,
+    "passed": 1,
+    "failed": 0
+  },
+  "independentGatesExitZero": [
+    "typecheck",
+    "jiti",
+    "extensions",
+    "pack",
+    "context",
+    "pack-inventory",
+    "probes"
+  ],
+  "evidenceSha256": {
+    "context.log": "65dd28a36d8aa60b5860a45ea875a4d5cd6a7f64a7c83d96d149550533f3bd62",
+    "dependencies.json": "f8a1d9263501d02033e2f93263cfdb0b6df8de297568cc4cc64a2293a486e18b",
+    "dev-dependencies.json": "f294769b99d758de2132b6f09be9f31a300ba2d7e0e08de2cab1e67c10b400fa",
+    "extensions.log": "b77d4d0e9fa8818128c252482ede0c9f2e74deb6135122340ac38700154e7c4e",
+    "focused-rerun.log": "7f1626ebab545b9d9d3b0ea73cff9e56fd38c302a43a5eccee5111c63cf808de",
+    "jiti.log": "38f602f78faa5e99d3a650c6d6f7c8e5da40726830d2f5926d88c448472cb2a2",
+    "pack-inventory.json": "d55947ba0f72ff86a8676b5721a1b697a024c6eaeac1ac1e6a1e8fe862e7d507",
+    "pack.log": "31439fd5568f1e403cd3a4b3fe7d10c2edac6af759acf4eacd4d148f11c1da94",
+    "probes.log": "4e06f790afcf11017baa340df9e480787d4b91cb94c164962fc317d24d983523",
+    "release.log": "570e8f33741e050f905c5ab2c75926294e08d50a7ffb5df3342c04c9135ca3fd",
+    "reset-rerun.log": "39804cdcc82d0839382de0030789045bf662ac6fe56ee7a1589c2fb7826ed98f",
+    "resume-solo.log": "6afbd23fd74d527818cf74ee25fdabe2464d765d821d5a8a004e254d58b7a7e7",
+    "typecheck.log": "6fd20b7dbb02896b46917c0f35da26dddbdcf2d2fc1eafe5c74e5e6e945b9c1b"
+  }
+}

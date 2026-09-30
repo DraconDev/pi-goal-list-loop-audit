@@ -1,0 +1,15 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/resume-goal-tool.test.ts -t paused → resume_goal → complete_goal flows without a manual resume
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/resume-goal-tool.test.ts:
+(pass) paused → resume_goal → complete_goal flows without a manual resume [7983.23ms]
+
+ 1 pass
+ 9 filtered out
+ 0 fail
+Ran 1 test across 1 file. [10.33s]
+[run-tests] finished in 10s (exit 0)

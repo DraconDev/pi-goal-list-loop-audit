@@ -1,0 +1,38 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/completion-communication.test.ts tests/auditor-process.test.ts tests/behavioral-orchestrator.test.ts tests/resume-goal-tool.test.ts -t outbox write failure warns|worker launches pi with the exact|allow-listed extensions load via|stale host recovery absorbs the first|successful main-model recovery gives a parked|exhausted no-verdict auditor chain enters|initial aggressive completion preserves|paused → resume_goal → complete_goal
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/completion-communication.test.ts:
+(pass) outbox write failure warns without claiming summary delivery [2870.49ms]
+
+tests/auditor-process.test.ts:
+(pass) worker launches pi with the exact auditor RPC contract and one LF JSONL prompt [366.57ms]
+(pass) v0.36.0: allow-listed extensions load via --extension while isolation flags stay intact [360.15ms]
+
+tests/behavioral-orchestrator.test.ts:
+(pass) v0.34.27: stale host recovery absorbs the first replacement contact across lifecycle and stream boundaries [4176.74ms]
+(pass) v0.35.x: a successful main-model recovery gives a parked audit its one automatic retry [1119.21ms]
+(pass) v0.36.0: exhausted no-verdict auditor chain enters the shared ladder with an automatic retry timer [6248.02ms]
+[run-tests] progress: 30s elapsed · 12s since last output · 1 KiB of suite output
+(pass) bounded recovery: initial aggressive completion preserves its horizon and exhausted chain [14065.91ms]
+
+tests/resume-goal-tool.test.ts:
+276 |     assert.match(claimed.content[0]!.text, /AUDIT PENDING — nonterminal/);
+277 |     assert.equal(readState(cwd).goal?.status, "auditing");
+278 |     const claimId = (readState(cwd).goal as { id: string }).id;
+279 |     const until = Date.now() + 10000;
+280 |     while (readState(cwd).goal !== null) {
+281 |       if (Date.now() > until) throw new Error("settlement timeout");
+                                              ^
+error: settlement timeout
+      at <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/resume-goal-tool.test.ts:281:41)
+(fail) paused → resume_goal → complete_goal flows without a manual resume [10959.88ms]
+
+ 7 pass
+ 206 filtered out
+ 1 fail
+Ran 8 tests across 4 files. [43.26s]
+[run-tests] finished in 43s (exit 1)

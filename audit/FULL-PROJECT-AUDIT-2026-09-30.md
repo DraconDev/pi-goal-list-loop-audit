@@ -202,19 +202,35 @@ extension mirroring, opt-out, and OS permissions consistently across README,
 INSTALL, settings UI, and architecture docs. **Acceptance:** one executable
 default-behavior fixture supports all operator-facing descriptions.
 
-### F9 — P1 verification issue: the current release gate is not green
+### F9 — P1: the release gate can falsely pass a failing suite
 
-The full `npm run release:check` run has recorded failures. Retain its first
-result, distinguish isolated reruns from whole-suite evidence, and diagnose
-timing/shared-state failures rather than relabeling a later pass as proof
-that the original gate passed. Final totals and isolated dispositions are
-recorded in the verification section below.
+**Observed in the full gate and independently reproduced with a control.**
+`npm run release:check` exited **0** after Bun reported **2,876 pass,
+1 skip, 9 fail across 310 files**. It continued into typechecking, jiti,
+extension verification, packing, and the installed-tarball smoke. This is
+false release evidence, not just a timeout problem.
 
-**Improve:** real event/receipt synchronization for worker tests, explicit
-process-state reset per behavioral fixture, and actionable failure artifacts.
-Several failing worker assertions use fixed two-second observation deadlines.
-Host load was observed at 97.34 during this audit; it is context, not proof
-that every failure is caused by scheduling.
+`scripts/run-tests.mjs` calls `child.unref()` after the process-group probe;
+the watchdog and heartbeat timers are also unreferenced. When pipes drain,
+the wrapper can exit naturally with its default zero status before `close`
+delivers the child's failing result. The full-run log has no wrapper
+“finished” line before the next gate starts.
+
+The probe runs the real wrapper with a stub Bun child that exits 1: the
+wrapper exits **0**. A disposable copy whose sole lifecycle change removes
+`child.unref()` exits **1** and prints the expected finished line. Repository
+runtime source was not changed for this control.
+
+**Improve:** keep the child/exit-status obligation referenced until settlement,
+then clean up; retain explicit nonzero interruption handling from F2. Test
+normal failing exits and pipe-close/child-exit ordering as real subprocesses.
+**Acceptance:** every child failure makes the wrapper and `release:check`
+fail, so later packaging/publishing steps cannot run on failed tests.
+
+Separately diagnose timing/shared-state failures with event/receipt
+synchronization, complete fixture resets (F11), and failure artifacts.
+Several worker assertions have two-second observation deadlines. Host load
+was observed at 97.34; it is context, not proof of every failure's cause.
 
 ### F10 — P2 evidence quality: prior audit summaries are not dependable baselines
 
@@ -367,7 +383,7 @@ audit side effect.
 
 ## Recommended sequence
 
-1. **Establish trustworthy ownership and validation:** F12, F1, F2, F11, diagnose F9.
+1. **Establish trustworthy ownership and validation:** F9, F12, F1, F2, F11.
    Completion criterion: competing-process and cancellation regressions pass,
    with a clean full gate on a recorded source tree.
 2. **Close lifecycle leaks and delivery gaps:** F3–F7, then F8.
@@ -392,12 +408,40 @@ Independent gates completed:
 | `node scripts/release-pack-smoke.mjs` | Exit 0; installed tarball imports, launcher/RPC worker challenge, and Pi skill loading passed. |
 | `npm pack --dry-run --json` | Exit 0; 115 entries, 1,533,517 packed bytes / 4,305,098 unpacked bytes. |
 | `bun scripts/measure-context-growth.mjs` | Exit 0; synthetic measurement completed. |
-| Disposable audit probes | Wrapper exit 0; F1–F5 and F12 reproduced, including the small-card receipt control. The contained F12 child exits 1 with unhandled EPIPE. |
+| Disposable audit probes | Wrapper exit 0; F1–F5, F9, and F12 reproduced. Small-card receipt and referenced-runner controls behaved correctly. The contained F12 child exits 1 with unhandled EPIPE. |
 | Dependency advisory checks | Production subset clean; full installed tree has 3 affected package entries. |
 
-Full-suite totals and focused reruns are pending the existing live release
-process. This report must not be treated as finished release evidence until
-that process is terminal and its result is recorded here.
+The full `npm run release:check` process is terminal, **exit 0**, but its
+suite reported **2,876 pass / 1 skip / 9 fail** (2,886 tests, 310 files,
+1,940.84 seconds). F9 explains why the command status is not trustworthy.
+This checkout is **not validated for release** by that result.
+
+The nine failed assertions were:
+
+| File | Failed assertion(s) | Follow-up evidence |
+|---|---|---|
+| `completion-communication.test.ts` | Outbox write failure warning/delivery | Passed in the focused rerun. |
+| `auditor-process.test.ts` | Exact RPC launch; allow-listed extension loading | Both passed in the focused rerun. |
+| `behavioral-orchestrator.test.ts` | Successor recovery ledger; parked-audit recovery; exhausted no-verdict ladder; aggressive completion horizon | All four passed in the focused rerun. |
+| `process-state-reset.test.ts` | Composite reset membership | Failed independently again; source confirms F11. |
+| `resume-goal-tool.test.ts` | Pause → resume → completion settlement | Failed again in the focused four-file rerun, then passed alone. |
+
+The eight selected lifecycle/worker cases produced **7 pass / 1 fail**
+in the focused rerun (exit 1). The remaining case passed alone (exit 0).
+The reset membership case independently produced **0 pass / 1 fail**;
+the runner logged its exit 1. Thus eight original failures did not reproduce
+in their final filtered/solo checks, while one is deterministic. This does
+not establish a clean whole-suite run or prove a common cause for the eight.
+
+Raw results are retained under
+[project-audit-2026-09-30/](project-audit-2026-09-30/):
+[full release log](project-audit-2026-09-30/release.log),
+[focused rerun](project-audit-2026-09-30/focused-rerun.log),
+[reset rerun](project-audit-2026-09-30/reset-rerun.log),
+[solo resume rerun](project-audit-2026-09-30/resume-solo.log),
+[probes](project-audit-2026-09-30/probes.log), and independent-gate/advisory
+outputs. Source unchanged from the baseline is checked separately from the
+daemon's audit-artifact commits; final provenance is in `verification.json`.
 
 No live-provider, real-Pi interactive session, Windows/macOS runtime,
 power-loss, published registry/remote-history reconciliation, or fleet
