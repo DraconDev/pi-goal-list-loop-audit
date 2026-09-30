@@ -2050,3 +2050,65 @@ tests/compaction-containment.test.ts:
 (pass) session_before_compact returns nothing — another extension's compaction must survive [2545.98ms]
 (pass) pure: in-flight marker is armed-signal plus timeout, never silence [0.49ms]
 (pass) compaction in flight suppresses send-storm escalation (no park, no recovery) [1179.65ms]
+(pass) post-compact settle owns exactly one bounded probe (no duplicates) [3270.62ms]
+[run-tests] progress: 480s elapsed · 1s since last output · 203 KiB of suite output
+(pass) escalation proceeds after settle — the gate is compaction-scoped, not a blanket disable [3696.79ms]
+(pass) scheduleContinuation defers while in flight and the settle still sends once [3470.15ms]
+
+tests/audit-settlement-restart.test.ts:
+(pass) restart: a running claim whose worker is gone parks as recovery-needed and never looks complete [2320.78ms]
+(pass) restart: a claim whose worker never reported is recovery-needed, with no invented activity [416.30ms]
+(pass) restart: a settling claim completes its archive without re-running the auditor [415.48ms]
+(pass) restart: a finished settlement is approved once — one render, and the render follows the archive [1158.29ms]
+(pass) restart: a refused archive keeps the approved claim and emits no terminal success [1455.32ms]
+(pass) recovery: after the fault is repaired, /goal resume finishes the settlement WITHOUT re-auditing [1367.10ms]
+(pass) recovery: a restart after the fault is repaired also finishes the settlement without re-auditing [741.51ms]
+(pass) lifecycle evidence survives the durable state boundary (sanitized, not dropped) [1.76ms]
+(pass) audit 2026-09-25: no constant-folded settlement guard obscures the live gate [8.89ms]
+
+tests/draft-staging.test.ts:
+(pass) v0.38.53: proposal stages stale and interview gates before Confirm [43.76ms]
+(pass) v0.38.53: list batch conflict handling follows confirmation and precedes enqueue [0.13ms]
+(pass) v0.38.53: single list confirmation precedes post-confirm conflict handling [0.12ms]
+(pass) v0.38.53: prompt construction precedes the drafting gate, then model lease and steering [0.11ms]
+
+tests/second-gemini-gap.test.ts:
+(pass) v0.38.52: gate rows widen the verification table with derived statuses [87.02ms]
+(pass) v0.38.52: without gates the 3-col mechanical table is byte-identical [0.95ms]
+(pass) v0.38.52: nested findings render Test Results sub-bullets aligned by index [1.81ms]
+(pass) v0.38.52: table-mode findings ride test proof in the Evidence cell [2.63ms]
+(pass) v0.38.52: sanitizeGateRows drops garbage, clips, caps [1.13ms]
+(pass) v0.38.52: sanitizeFindingGroups parses parallel tests [0.24ms]
+(pass) v0.38.52: old claims without tests render byte-identical to v0.38.50 [0.26ms]
+(pass) v0.38.52: complete_goal gateRows + tests ride the claim into the chat render [7242.78ms]
+
+tests/owner-fence.test.ts:
+(pass) v0.35.72: a live foreign process cannot claim the workingDir owner file [301.83ms]
+(pass) v0.35.72: mutating goal and loop commands use the stale admission fence [8.01ms]
+(pass) owner acquisition and refresh preserve malformed records for explicit repair [15.36ms]
+(pass) takeover compares the complete record inside the owner mutation [9.46ms]
+(pass) a stale instance refresh cannot overwrite a same-process successor [6.68ms]
+
+tests/auditor-fallback-thinking.test.ts:
+(pass) non-empty fallback save is followed by the auditor thinking select [582.04ms]
+(pass) typing the session model into the fallback input names the slot-0 exclusion [6.18ms]
+(pass) clearing the fallback chain skips the thinking prompt [11.57ms]
+
+tests/list-audit.test.ts:
+(pass) parseAuditFindingsForFanout: open boxes actionable, [?] boxes decisions, checked boxes ignored [87.58ms]
+(pass) parseAuditFindingsForFanout: tolerates the /loop audit format (no FIX: prefix) [2.27ms]
+(pass) parseAuditFindingsForFanout: accepts aligned open checkbox spacing [0.14ms]
+(pass) parseAuditFindingsForFanout: empty / missing content yields nothing [0.05ms]
+(pass) listAuditFanoutItemText: checkable Done when tied to the findings file [0.25ms]
+(pass) listAuditCollectTarget: collect-only — marker, no-fix law, honest-empty law, Done when [0.31ms]
+(pass) /list audit route: builds the collect target and enqueues it [0.21ms]
+(pass) completion fan-out: collect items fan out + suppress the list-complete noise [0.94ms]
+(pass) fan-out: canonical dedupe, cap accounting, optional auto-accept, and decline keeps findings open [1.53ms]
+(pass) help surface: /list audit appears in the command description + completions [0.49ms]
+(pass) markers: the built targets still contain what the guards match on [0.70ms]
+(pass) /loop audit warns when a one-shot audit goal exists (paused or active) [0.28ms]
+(pass) /goal audit + /list audit warn when an audit loop is already running [0.41ms]
+(pass) restore-hold names the supersession in the widget surface [0.62ms]
+(pass) v0.33.3: one-shot audit raises DECIDE findings as questions before completing [0.10ms]
+
+tests/release-contract.test.ts:
