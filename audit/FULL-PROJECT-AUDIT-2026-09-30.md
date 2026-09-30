@@ -231,6 +231,23 @@ immutable and label their applicability instead of rewriting old evidence.
 **Acceptance:** every “fixed” entry points to a current regression or durable
 verification result; the index agrees with the report it summarizes.
 
+### F11 — P2: the test isolation composite omits a newly added retry reset
+
+**Full-suite failure and direct source confirmation.**
+`goal-activation.ts` exports `__testOnlyResetUnsupervisedErrorRetry`, which
+clears its unsupervised retry timer, streak, and delay override. The per-file
+reset composite in `loops/goal.ts` neither imports nor invokes it, although
+the harness relies on that composite to restore process-local state.
+`process-state-reset.test.ts` catches the missing member.
+
+This is a deterministic membership defect, not merely a slow-host timeout.
+It establishes incomplete fixture isolation; it does not establish that
+this omitted reset caused the other failures in this run.
+**Improve:** include the reset and a behavioral poison/reset proof; make new
+runtime latches register their reset obligation at the owning boundary.
+**Acceptance:** the membership gate and a poisoned unsupervised retry fixture
+both pass in isolation and in the full serialized suite.
+
 ## Further improvements, separated from defects
 
 ### Runtime architecture
@@ -329,7 +346,7 @@ audit side effect.
 
 ## Recommended sequence
 
-1. **Establish trustworthy ownership and validation:** F1, F2, diagnose F9.
+1. **Establish trustworthy ownership and validation:** F1, F2, F11, diagnose F9.
    Completion criterion: competing-process and cancellation regressions pass,
    with a clean full gate on a recorded source tree.
 2. **Close lifecycle leaks and delivery gaps:** F3–F7, then F8.
