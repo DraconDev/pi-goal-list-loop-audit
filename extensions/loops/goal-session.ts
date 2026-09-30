@@ -15,6 +15,7 @@
  */
 
 import * as fs from "node:fs";
+import { publishOwnerRecord, withOwnerMutation } from "../owner-file-protocol.js";
 import * as os from "node:os";
 import * as path from "node:path";
 
@@ -529,22 +530,12 @@ function ownerFilePath(cwd: string): string {
 function writeOwnerFile(cwd: string): void {
   try {
     if (stateRootPending()) return;
-    const current = readOwnerFile(cwd);
-    if (current?.pid !== undefined && current.pid !== process.pid && isProcessAlive(current.pid) && !current.shutdownAt) return;
-    fs.mkdirSync(piGlaDir(cwd), { recursive: true });
-    // Audit 2026-09-07 (MEDIUM): compare-and-swap the refresh. Re-read
-    // immediately before writing and abort when the record now names a
-    // LIVE foreign pid — a claimant that won the race after our first
-    // read must not be clobbered by a stale refresh. A dead foreign
-    // record still refreshes: the heartbeat reclaims over dead holders
-    // through this path (refreshOwnerHeartbeat), and dead records have
-    // no active writer to clobber.
-    const latest = readOwnerFile(cwd);
-    if (latest?.pid !== undefined && latest.pid !== process.pid && isProcessAlive(latest.pid) && !latest.shutdownAt) return;
-    fs.writeFileSync(ownerFilePath(cwd), JSON.stringify({ instanceId, pid: process.pid, at: Date.now() }));
-  } catch {
-    /* owner file is advisory — never block activation on it */
-  }
+    withOwnerMutation(ownerFilePath(cwd), () => {
+      const current = readOwnerFile(cwd);
+      if (current?.pid !== undefined && current.pid !== process.pid && isProcessAlive(current.pid) && !current.shutdownAt) return;
+      publishOwnerRecord(ownerFilePath(cwd), { ...current, instanceId, pid: process.pid, at: Date.now() });
+    });
+  } catch { /* advisory refresh fails closed */ }
 }
 
 function readOwnerFile(cwd: string): SessionOwnerRecord | null {
@@ -565,52 +556,49 @@ function isProcessAlive(pid: number): boolean {
   }
 }
 
-/** Atomically claim the working-directory owner file. A live foreign PID or
- * a malformed-but-recent record blocks this process; a dead/shutdown owner
- * may be replaced, with open(wx) deciding the final winner if two successors
- * race to recover the same root. */
+/** Serialize acquisition with refresh, release, and consented replacement.
+ * The complete record is published atomically; malformed records are
+ * ambiguous ownership and require operator repair rather than deletion. */
 function claimProcessOwner(cwd: string): boolean {
   if (stateRootPending()) return true;
-  const file = ownerFilePath(cwd);
-  try { fs.mkdirSync(path.dirname(file), { recursive: true }); } catch { return false; }
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const fd = fs.openSync(file, "wx");
-      try {
-        fs.writeSync(fd, JSON.stringify({ instanceId, pid: process.pid, at: Date.now() }));
-      } finally {
-        fs.closeSync(fd);
-      }
-      return true;
-    } catch (err) {
-      const code = (err as NodeJS.ErrnoException).code;
-      if (code !== "EEXIST") return false;
+  try {
+    return withOwnerMutation(ownerFilePath(cwd), () => {
       const owner = readOwnerFile(cwd);
-      if (owner?.pid === process.pid) {
-        writeOwnerFile(cwd);
-        return true;
-      }
+      if (!owner && fs.existsSync(ownerFilePath(cwd))) return false;
       const released = !!owner?.shutdownAt || owner?.shutdownReason !== undefined;
-      if (released || !owner || typeof owner.pid !== "number" || !isProcessAlive(owner.pid)) {
-        try { fs.unlinkSync(file); } catch { return false; }
-        continue;
-      }
-      return false;
-    }
-  }
-  return false;
+      if (owner?.pid !== undefined && owner.pid !== process.pid && !released && isProcessAlive(owner.pid)) return false;
+      publishOwnerRecord(ownerFilePath(cwd), { instanceId, pid: process.pid, at: Date.now() });
+      return true;
+    }) === true;
+  } catch { return false; }
 }
 
-/** v0.38.11: unlink the owner file. Only the consented takeover path
- * (extensions/state-root-owner.ts, after its dead/recycled/live-verified
- * guards) calls this — never call it to pre-empt a live owner. */
-function removeOwnerFile(cwd: string): boolean {
+/** Replace only the exact record whose takeover policy was checked. The
+ * comparison and publication share one mutation interval; a refresh or a
+ * successor that wins first cannot be destroyed by the old observation. */
+function replaceProcessOwner(cwd: string, expected: SessionOwnerRecord): boolean {
+  if (stateRootPending()) return false;
   try {
-    fs.unlinkSync(ownerFilePath(cwd));
-    return true;
-  } catch {
-    return false;
-  }
+    return withOwnerMutation(ownerFilePath(cwd), () => {
+      const current = readOwnerFile(cwd);
+      if (!current || JSON.stringify(current) !== JSON.stringify(expected)) return false;
+      publishOwnerRecord(ownerFilePath(cwd), { instanceId, pid: process.pid, at: Date.now() });
+      return true;
+    }) === true;
+  } catch { return false; }
+}
+
+/** Removal also needs the observation that authorized it. Production
+ * takeover uses replaceProcessOwner, avoiding a remove/claim gap. */
+function removeOwnerFile(cwd: string, expected?: SessionOwnerRecord): boolean {
+  if (!expected || stateRootPending()) return false;
+  try {
+    return withOwnerMutation(ownerFilePath(cwd), () => {
+      if (JSON.stringify(readOwnerFile(cwd)) !== JSON.stringify(expected)) return false;
+      fs.unlinkSync(ownerFilePath(cwd));
+      return true;
+    }) === true;
+  } catch { return false; }
 }
 
 /** A stale probe is terminal only for ORPHANS. Returns true when the
@@ -1049,10 +1037,12 @@ function markSessionOwnerShutdown(cwd: string, reason: string): void {
     }
   } catch { /* advisory sidecar — lifecycle cleanup must not throw */ }
   try {
-    const owner = readOwnerFile(cwd);
-    if (owner?.pid === process.pid) {
-      fs.writeFileSync(ownerFilePath(cwd), JSON.stringify({ ...owner, shutdownReason: reason, shutdownAt }));
-    }
+    withOwnerMutation(ownerFilePath(cwd), () => {
+      const owner = readOwnerFile(cwd);
+      if (owner?.pid === process.pid && (!owner.instanceId || owner.instanceId === instanceId)) {
+        publishOwnerRecord(ownerFilePath(cwd), { ...owner, shutdownReason: reason, shutdownAt });
+      }
+    });
   } catch { /* advisory lock marker — lifecycle cleanup must not throw */ }
 }
 function claimSessionOwnerAndDetectRebind(
@@ -2036,5 +2026,6 @@ export {
   isProcessAlive,
   claimProcessOwner,
   removeOwnerFile,
+  replaceProcessOwner,
   type SessionOwnerRecord,
 };

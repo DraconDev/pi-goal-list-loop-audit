@@ -28,7 +28,7 @@ import {
   isProcessAlive,
   readOwnerFile,
   refreshOwnershipStanding,
-  removeOwnerFile,
+  replaceProcessOwner,
   sessionManagerId,
   writeOwnerFile,
   __testOnlyResetOwnershipRecheck,
@@ -305,8 +305,7 @@ export async function takeoverOwnerRoot(opts: {
   // younger than the claim). Unlink without signaling — the occupant is
   // some unrelated process that must never receive our SIGTERM.
   if (cls === "recycled") {
-    removeOwnerFile(opts.cwd);
-    if (!claimProcessOwner(opts.cwd)) {
+    if (!opts.record || !replaceProcessOwner(opts.cwd, opts.record)) {
       return { outcome: "refused", reason: "claim-lost", detail: "the root changed under us (a successor claimed first) — inspect with /glla owner and retry." };
     }
     appendLedger(opts.cwd, "owner_takeover", { via: "recycled", signaled: false, pid: process.pid, prevPid: opts.record?.pid });
@@ -433,8 +432,7 @@ export function supersedeLiveOwnerRoot(
       appendLedger(cwd, "owner_supersede_refused", { reason: "record-changed", prevPid });
       return "refused";
     }
-    removeOwnerFile(cwd);
-    if (!claimProcessOwner(cwd)) return "refused";
+    if (!record || !replaceProcessOwner(cwd, record)) return "refused";
     appendLedger(cwd, "owner_takeover", { via: "same-session", signaled: false, pid: process.pid, prevPid });
     return "reclaimed";
   }
@@ -446,8 +444,7 @@ export function supersedeLiveOwnerRoot(
     appendLedger(cwd, "owner_supersede_refused", { reason: "record-changed", prevPid });
     return "refused";
   }
-  removeOwnerFile(cwd);
-  if (!claimProcessOwner(cwd)) return "refused";
+  if (!record || !replaceProcessOwner(cwd, record)) return "refused";
   appendLedger(cwd, "owner_superseded", {
     prevPid,
     prevAt: record?.at ?? null,

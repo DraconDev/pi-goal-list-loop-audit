@@ -51,6 +51,7 @@ test("v0.35.72: mutating goal and loop commands use the stale admission fence", 
   assert.match(GOAL_ACTIVATION, /let ownsRoot = claimProcessOwner\(ctx\.cwd\);/);
   assert.match(GOAL_ACTIVATION, /supersedeLiveOwnerRoot\(ctx\.cwd, \{ isMainHost: true/);
   assert.match(GOAL_ACTIVATION, /if \(!ownsRoot\) \{/);
-  assert.match(GOAL_SESSION, /fs\.openSync\(file, "wx"\)/);
+  assert.match(GOAL_SESSION, /withOwnerMutation\(ownerFilePath\(cwd\),/);
+  assert.match(GOAL_SESSION, /publishOwnerRecord\(ownerFilePath\(cwd\),/);
   assert.match(GOAL_SESSION, /process\.kill\(pid, 0\)/);
 });
