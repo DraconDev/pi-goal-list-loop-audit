@@ -24,6 +24,18 @@ function retryWindowsMutation<T>(action: () => T, platform = process.platform, s
   }
 }
 
+/** Read a complete protocol record; retry only Windows sharing errors. */
+export function readOwnerProtocolRecord(file: string, options: {
+  platform?: NodeJS.Platform;
+  read?: (file: string) => string;
+  sleep?: (ms: number) => void;
+} = {}): unknown {
+  return JSON.parse(retryWindowsMutation(
+    () => (options.read ?? (target => fs.readFileSync(target, "utf8")))(file),
+    options.platform, options.sleep,
+  ));
+}
+
 function birth(pid: number): string | null {
   if (process.platform !== "linux") return null;
   try {
@@ -82,7 +94,7 @@ export function withOwnerMutation<T>(file: string, action: () => T, timeoutMs = 
     .filter(name => name.endsWith(".json"))
     .flatMap(name => {
       let p: Participant;
-      try { p = JSON.parse(retryWindowsMutation(() => fs.readFileSync(path.join(dir, name), "utf8"))); }
+      try { p = readOwnerProtocolRecord(path.join(dir, name)) as Participant; }
       catch (err) {
         if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
         throw new Error("ambiguous owner mutation participant", { cause: err });

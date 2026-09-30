@@ -1,3 +1,4 @@
+import { readOwnerProtocolRecord } from "../extensions/owner-file-protocol.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -105,4 +106,21 @@ test("a live mutation times out contenders; SIGKILL recovery never removes a suc
     await holder.done;
     fs.rmSync(cwd, { recursive: true, force: true });
   }
+});
+
+test("Windows participant read retries denial but preserves malformed-record refusal", () => {
+  let reads = 0;
+  const waits: number[] = [];
+  const record = readOwnerProtocolRecord("participant.json", {
+    platform: "win32", sleep: ms => waits.push(ms),
+    read: () => {
+      if (++reads < 3) throw Object.assign(new Error("sharing"), {code: "EPERM"});
+      return '{"pid":123,"ticket":1,"choosing":false,"birth":null}';
+    },
+  });
+  assert.deepEqual(record, {pid:123,ticket:1,choosing:false,birth:null});
+  assert.deepEqual(waits,[25,50]);
+  assert.throws(() => readOwnerProtocolRecord("bad.json", {
+    platform:"win32", sleep:()=>assert.fail("malformed JSON must not be retried"), read:()=>'{',
+  }), SyntaxError);
 });

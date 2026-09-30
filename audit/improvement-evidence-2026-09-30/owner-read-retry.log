@@ -1,0 +1,17 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/owner-file-protocol.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/owner-file-protocol.test.ts:
+(pass) Windows replacement retries a sharing violation without unlinking the previous owner [248.41ms]
+(pass) competing Node processes serialize owner mutations and publish only complete records [3506.82ms]
+(pass) a live mutation times out contenders; SIGKILL recovery never removes a successor lock [1512.60ms]
+(pass) Windows participant read retries denial but preserves malformed-record refusal [5.34ms]
+
+ 4 pass
+ 0 fail
+Ran 4 tests across 1 file. [5.75s]
+[run-tests] finished in 6s (exit 0)
