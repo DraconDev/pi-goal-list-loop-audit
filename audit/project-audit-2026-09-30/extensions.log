@@ -1,0 +1,3 @@
+OK: -e <resolved-path> registered 1 glla-auditor-fixture models offline (PI_OFFLINE=1)
+OK: no temporary extension install directory created
+VERIFIED offline auditor extension loading via resolved path: /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/scripts/auditor-extension-fixture.mjs

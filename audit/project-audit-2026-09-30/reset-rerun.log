@@ -1,0 +1,31 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/process-state-reset.test.ts -t composite invokes every exported latch reset
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/process-state-reset.test.ts:
+68 |     }
+69 |   }
+70 |   const expected = [...new Set(members)].filter((m) => m !== "__testOnlyResetProcessState");
+71 |   assert.ok(expected.length >= 17, `expected >=17 member resets, got ${expected.length}`);
+72 |   for (const name of expected) {
+73 |     assert.ok(body.includes(`${name}()`), `${name} is invoked by the composite`);
+                ^
+AssertionError: __testOnlyResetUnsupervisedErrorRetry is invoked by the composite
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/process-state-reset.test.ts:73:12
+      at fn (node:test:215:18)
+(fail) v0.38.88: composite invokes every exported latch reset [15.20ms]
+
+ 0 pass
+ 2 filtered out
+ 1 fail
+Ran 1 test across 1 file. [2.99s]
+[run-tests] finished in 4s (exit 1)

@@ -6,6 +6,15 @@ plus a `v0.34.x-<TOPIC>.md` symlink for versioned docs). Older docs
 
 ## Active focus (2026-08-17 → 2026-08-21)
 
+**Project review (2026-09-30):**
+[FULL-PROJECT-AUDIT-2026-09-30.md](FULL-PROJECT-AUDIT-2026-09-30.md)
+reviews the actual v0.38.105 source tree, reproduces ownership, cleanup,
+runner-interruption, and receipt-size defects, and prioritizes improvements
+across runtime architecture, test isolation, compatibility, dependencies,
+operator documentation, and release evidence. Findings remain open; this
+entry does not claim runtime fixes or a green release gate. The report's
+verification section records the command results and review limits.
+
 The seven follow-up categories from the most recent full audit are
 closed (host lifecycle, continuation dispatch, objective integrity,
 explore retention, completion summaries, long-term preferences,

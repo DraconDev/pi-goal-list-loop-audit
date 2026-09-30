@@ -1,0 +1,591 @@
+[
+  {
+    "id": "pi-goal-list-loop-audit@0.38.105",
+    "name": "pi-goal-list-loop-audit",
+    "version": "0.38.105",
+    "size": 1533517,
+    "unpackedSize": 4305098,
+    "shasum": "24ce68a30d6e33ada5df7b0c82be872821aaf4e2",
+    "integrity": "sha512-IZG8kb6LuvZJV8HVjEbb/tRcUpgXzh9fuZmbX4fgzXtzYocswY5HCynxbPVCi7VAsmi61HwSBVCZlhIWelR/BQ==",
+    "filename": "pi-goal-list-loop-audit-0.38.105.tgz",
+    "files": [
+      {
+        "path": "CHANGELOG.md",
+        "size": 616253,
+        "mode": 420
+      },
+      {
+        "path": "INSTALL.md",
+        "size": 10261,
+        "mode": 420
+      },
+      {
+        "path": "LICENSE",
+        "size": 34572,
+        "mode": 420
+      },
+      {
+        "path": "LIST-PHILOSOPHY.md",
+        "size": 4972,
+        "mode": 420
+      },
+      {
+        "path": "PLAN.md",
+        "size": 20114,
+        "mode": 420
+      },
+      {
+        "path": "README.md",
+        "size": 25179,
+        "mode": 420
+      },
+      {
+        "path": "docs/ARCHITECTURE.md",
+        "size": 5737,
+        "mode": 420
+      },
+      {
+        "path": "docs/DESIGN-long-running-supervision.md",
+        "size": 8846,
+        "mode": 420
+      },
+      {
+        "path": "docs/DESIGN-subagent-visibility.md",
+        "size": 5484,
+        "mode": 420
+      },
+      {
+        "path": "docs/DESIGN.md",
+        "size": 48758,
+        "mode": 420
+      },
+      {
+        "path": "docs/GLLA-POSITIONING-AND-DECOMPOSITION-2026-08-08.md",
+        "size": 12834,
+        "mode": 420
+      },
+      {
+        "path": "docs/INDEX.md",
+        "size": 4618,
+        "mode": 420
+      },
+      {
+        "path": "docs/PROMOTION-CONTRACT.md",
+        "size": 4854,
+        "mode": 420
+      },
+      {
+        "path": "docs/RELEASING.md",
+        "size": 2380,
+        "mode": 420
+      },
+      {
+        "path": "docs/SETTINGS.md",
+        "size": 8205,
+        "mode": 420
+      },
+      {
+        "path": "docs/VISION-ASSIST.md",
+        "size": 3575,
+        "mode": 420
+      },
+      {
+        "path": "examples/example-objective.md",
+        "size": 5038,
+        "mode": 420
+      },
+      {
+        "path": "extensions/action-reminder.ts",
+        "size": 9337,
+        "mode": 420
+      },
+      {
+        "path": "extensions/approval-render-store.ts",
+        "size": 8305,
+        "mode": 420
+      },
+      {
+        "path": "extensions/audit-lifecycle.ts",
+        "size": 20837,
+        "mode": 420
+      },
+      {
+        "path": "extensions/auditor-extensions.ts",
+        "size": 17787,
+        "mode": 420
+      },
+      {
+        "path": "extensions/auditor-thinking.ts",
+        "size": 904,
+        "mode": 420
+      },
+      {
+        "path": "extensions/compaction-failure.ts",
+        "size": 2835,
+        "mode": 420
+      },
+      {
+        "path": "extensions/compaction-input.ts",
+        "size": 39593,
+        "mode": 420
+      },
+      {
+        "path": "extensions/compactor-model.ts",
+        "size": 7585,
+        "mode": 420
+      },
+      {
+        "path": "extensions/completion-summary.ts",
+        "size": 72863,
+        "mode": 420
+      },
+      {
+        "path": "extensions/confirm-draft.ts",
+        "size": 4543,
+        "mode": 420
+      },
+      {
+        "path": "extensions/context-checkpoint.ts",
+        "size": 18018,
+        "mode": 420
+      },
+      {
+        "path": "extensions/context-growth.ts",
+        "size": 13446,
+        "mode": 420
+      },
+      {
+        "path": "extensions/context-hygiene.ts",
+        "size": 5627,
+        "mode": 420
+      },
+      {
+        "path": "extensions/continuous-supervision.ts",
+        "size": 6931,
+        "mode": 420
+      },
+      {
+        "path": "extensions/drafter-model.ts",
+        "size": 4766,
+        "mode": 420
+      },
+      {
+        "path": "extensions/drafting-handoff.ts",
+        "size": 3367,
+        "mode": 420
+      },
+      {
+        "path": "extensions/drafting-interview.ts",
+        "size": 24063,
+        "mode": 420
+      },
+      {
+        "path": "extensions/faulty-objective-recovery.ts",
+        "size": 19395,
+        "mode": 420
+      },
+      {
+        "path": "extensions/finding-lead.ts",
+        "size": 7564,
+        "mode": 420
+      },
+      {
+        "path": "extensions/glla-state-root.ts",
+        "size": 3982,
+        "mode": 420
+      },
+      {
+        "path": "extensions/glla-update-check.ts",
+        "size": 4991,
+        "mode": 420
+      },
+      {
+        "path": "extensions/glla-version.ts",
+        "size": 5467,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-agents-panel.ts",
+        "size": 21062,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-commands.ts",
+        "size": 177880,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-compactor.ts",
+        "size": 23338,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-continuation.ts",
+        "size": 103689,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-heartbeat.ts",
+        "size": 98535,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-loop-auditor-process.ts",
+        "size": 125264,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-loop-auditor.ts",
+        "size": 22138,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-loop-backoff.ts",
+        "size": 16125,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-loop-core.ts",
+        "size": 235922,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-loop-dispatch.ts",
+        "size": 6609,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-loop-display.ts",
+        "size": 144841,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-loop-forever.ts",
+        "size": 46399,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-loop-repetition.ts",
+        "size": 14968,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-loop-shield.ts",
+        "size": 48684,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-loop-stats.ts",
+        "size": 19012,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-loop-subagents.ts",
+        "size": 16281,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-loop.ts",
+        "size": 88933,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-objective-conflict.ts",
+        "size": 4401,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-recovery.ts",
+        "size": 90038,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-settings.ts",
+        "size": 47906,
+        "mode": 420
+      },
+      {
+        "path": "extensions/goal-state.ts",
+        "size": 3978,
+        "mode": 420
+      },
+      {
+        "path": "extensions/length-continue.ts",
+        "size": 9419,
+        "mode": 420
+      },
+      {
+        "path": "extensions/loops/goal-activation.ts",
+        "size": 205456,
+        "mode": 420
+      },
+      {
+        "path": "extensions/loops/goal-auditor-hooks.ts",
+        "size": 131837,
+        "mode": 420
+      },
+      {
+        "path": "extensions/loops/goal-auditor-surface.ts",
+        "size": 1274,
+        "mode": 420
+      },
+      {
+        "path": "extensions/loops/goal-list-queue.ts",
+        "size": 47324,
+        "mode": 420
+      },
+      {
+        "path": "extensions/loops/goal-orchestrator.ts",
+        "size": 70021,
+        "mode": 420
+      },
+      {
+        "path": "extensions/loops/goal-runtime-globals.ts",
+        "size": 24172,
+        "mode": 420
+      },
+      {
+        "path": "extensions/loops/goal-session.ts",
+        "size": 96087,
+        "mode": 420
+      },
+      {
+        "path": "extensions/loops/goal-settings-ui.ts",
+        "size": 96047,
+        "mode": 420
+      },
+      {
+        "path": "extensions/loops/goal-tools.ts",
+        "size": 254019,
+        "mode": 420
+      },
+      {
+        "path": "extensions/loops/goal-ui.ts",
+        "size": 61120,
+        "mode": 420
+      },
+      {
+        "path": "extensions/loops/goal.ts",
+        "size": 20813,
+        "mode": 420
+      },
+      {
+        "path": "extensions/main-model-recovery.ts",
+        "size": 24946,
+        "mode": 420
+      },
+      {
+        "path": "extensions/model-picker.ts",
+        "size": 11178,
+        "mode": 420
+      },
+      {
+        "path": "extensions/model-selector.ts",
+        "size": 7987,
+        "mode": 420
+      },
+      {
+        "path": "extensions/multi-model-picker.ts",
+        "size": 21869,
+        "mode": 420
+      },
+      {
+        "path": "extensions/payload-guard.ts",
+        "size": 8148,
+        "mode": 420
+      },
+      {
+        "path": "extensions/proactive-pre-read.ts",
+        "size": 4719,
+        "mode": 420
+      },
+      {
+        "path": "extensions/prompt-layers.ts",
+        "size": 6940,
+        "mode": 420
+      },
+      {
+        "path": "extensions/quota-retry.ts",
+        "size": 33424,
+        "mode": 420
+      },
+      {
+        "path": "extensions/reviewer.ts",
+        "size": 25576,
+        "mode": 420
+      },
+      {
+        "path": "extensions/settings-menu.ts",
+        "size": 43916,
+        "mode": 420
+      },
+      {
+        "path": "extensions/start-context.ts",
+        "size": 14124,
+        "mode": 420
+      },
+      {
+        "path": "extensions/state-root-owner.ts",
+        "size": 26531,
+        "mode": 420
+      },
+      {
+        "path": "extensions/task-batch.ts",
+        "size": 5905,
+        "mode": 420
+      },
+      {
+        "path": "extensions/terminal-summary-delivery.ts",
+        "size": 2573,
+        "mode": 420
+      },
+      {
+        "path": "extensions/vision-assist.ts",
+        "size": 8133,
+        "mode": 420
+      },
+      {
+        "path": "media/glla-thumb.png",
+        "size": 265094,
+        "mode": 420
+      },
+      {
+        "path": "media/glla-thumb.svg",
+        "size": 6612,
+        "mode": 420
+      },
+      {
+        "path": "media/glla2.png",
+        "size": 46374,
+        "mode": 420
+      },
+      {
+        "path": "package.json",
+        "size": 2594,
+        "mode": 420
+      },
+      {
+        "path": "prompts/goal-loop-continuation.md",
+        "size": 22257,
+        "mode": 420
+      },
+      {
+        "path": "prompts/goal-loop-draft.md",
+        "size": 9930,
+        "mode": 420
+      },
+      {
+        "path": "prompts/goal-loop-forever-draft.md",
+        "size": 5986,
+        "mode": 420
+      },
+      {
+        "path": "prompts/goal-loop-forever-metricless.md",
+        "size": 3277,
+        "mode": 420
+      },
+      {
+        "path": "prompts/goal-loop-forever.md",
+        "size": 3345,
+        "mode": 420
+      },
+      {
+        "path": "prompts/goal-loop-plan-loop.md",
+        "size": 1540,
+        "mode": 420
+      },
+      {
+        "path": "prompts/goal-loop-plan.md",
+        "size": 4771,
+        "mode": 420
+      },
+      {
+        "path": "schemas/goal.schema.json",
+        "size": 21460,
+        "mode": 420
+      },
+      {
+        "path": "scripts/auditor-extension-fixture.mjs",
+        "size": 655,
+        "mode": 420
+      },
+      {
+        "path": "scripts/auditor-stderr-diagnostic.d.mts",
+        "size": 250,
+        "mode": 420
+      },
+      {
+        "path": "scripts/auditor-stderr-diagnostic.mjs",
+        "size": 2573,
+        "mode": 420
+      },
+      {
+        "path": "scripts/durable-wait.mjs",
+        "size": 10262,
+        "mode": 420
+      },
+      {
+        "path": "scripts/goal-auditor-launch.d.mts",
+        "size": 525,
+        "mode": 420
+      },
+      {
+        "path": "scripts/goal-auditor-launch.mjs",
+        "size": 4306,
+        "mode": 420
+      },
+      {
+        "path": "scripts/goal-auditor-worker.mjs",
+        "size": 58608,
+        "mode": 420
+      },
+      {
+        "path": "scripts/goal-compactor-worker.mjs",
+        "size": 3642,
+        "mode": 420
+      },
+      {
+        "path": "scripts/measure-context-growth.mjs",
+        "size": 3623,
+        "mode": 420
+      },
+      {
+        "path": "scripts/release-pack-smoke.mjs",
+        "size": 8789,
+        "mode": 420
+      },
+      {
+        "path": "scripts/run-tests.d.mts",
+        "size": 604,
+        "mode": 420
+      },
+      {
+        "path": "scripts/run-tests.mjs",
+        "size": 8545,
+        "mode": 420
+      },
+      {
+        "path": "scripts/smoke.sh",
+        "size": 16818,
+        "mode": 493
+      },
+      {
+        "path": "scripts/verify-auditor-extensions-offline.mjs",
+        "size": 3018,
+        "mode": 420
+      },
+      {
+        "path": "scripts/verify-compaction-live.mjs",
+        "size": 42881,
+        "mode": 493
+      },
+      {
+        "path": "skills/glla-delegate/SKILL.md",
+        "size": 3312,
+        "mode": 420
+      }
+    ],
+    "entryCount": 115,
+    "bundled": []
+  }
+]

@@ -1,0 +1,5 @@
+{"probe":"interrupted-runner","code":0,"signal":null,"output":"[run-tests] mode=all slow_files=12 stall_timeout=180s heartbeat=30s\n[run-tests] received SIGTERM — taking the suite down with it (no orphan)\n","detachedDescendantSurvived":true}
+{"probe":"terminated-compactor-worker","workerSignal":"SIGTERM","piChildSurvived":true}
+{"probe":"durable-summary-receipt","chars":1000,"acceptedByOutbox":true,"fileBytes":1147,"confirmed":true,"sends":0}
+{"probe":"durable-summary-receipt","chars":280000,"acceptedByOutbox":true,"fileBytes":280427,"confirmed":false,"sends":0}
+{"probe":"fresh-owner-claim-window","contender":{"claimed":true},"firstDescriptorStillNamesOwnerFile":false}
