@@ -97,13 +97,19 @@ process.stdin.on("data", async (chunk) => {
 function writeDelayedApprovedAuditor(cwd: string): string {
   const script = path.join(cwd, "delayed-approved-auditor-pi.mjs");
   fs.writeFileSync(script, `#!/usr/bin/env node
+import fs from "node:fs";
+const ready = ${JSON.stringify(path.join(cwd, "auditor-ready"))};
+const release = ${JSON.stringify(path.join(cwd, "auditor-release"))};
 let input = "";
 let handled = false;
 process.stdin.on("data", (chunk) => {
   input += chunk;
   if (handled || !input.includes("\\n")) return;
   handled = true;
-  setTimeout(() => {
+  fs.writeFileSync(ready, "ready");
+  const gate = setInterval(() => {
+    if (!fs.existsSync(release)) return;
+    clearInterval(gate);
     const emit = (event) => process.stdout.write(JSON.stringify(event) + "\\n");
     const report = "<evidence>\\npinned\\n</evidence>\\n<approved/>";
     emit({ type: "tool_execution_start", toolCallId: "fake-read", toolName: "read", args: { path: "README.md" } });
@@ -111,7 +117,7 @@ process.stdin.on("data", (chunk) => {
     emit({ type: "message_update", assistantMessageEvent: { type: "text_delta", delta: report } });
     emit({ type: "agent_settled" });
     process.exit(0);
-  }, 300);
+  }, 20);
 });
 `);
   fs.chmodSync(script, 0o700);
@@ -325,14 +331,15 @@ test("direct complete_goal refuses an approval when the contract revision change
     rememberCtxFor(cwd);
     const res = await pi.runTool("complete_goal", { completionSummary: "Claim", verificationSummary: "Evidence" }, ownerCtx(cwd));
     assert.match(res.content[0]!.text, /auditor queued|detached/i);
-    await waitUntil(() => readState(cwd).goal?.pendingCompletion?.auditorCandidateRef !== undefined, 10_000);
+    await waitUntil(() => fs.existsSync(path.join(cwd, "auditor-ready")) && readState(cwd).goal?.pendingCompletion?.auditorCandidateRef !== undefined);
     assert.ok(state.goal, "the in-memory goal is available for the concurrent contract mutation");
     state.goal = bumpGoalRevision(state.goal!);
     persistStateLine(cwd, state);
+    fs.writeFileSync(path.join(cwd, "auditor-release"), "release");
     await waitUntil(() => {
       const current = readState(cwd).goal;
       return current?.status === "active" && !current.pendingCompletion;
-    }, 10_000);
+    });
     const current = readState(cwd);
     assert.equal(current.goal?.status, "active");
     assert.equal(current.goal?.revision, 2, "the concurrent contract revision is preserved");
@@ -340,6 +347,7 @@ test("direct complete_goal refuses an approval when the contract revision change
     assert.ok(readLedger(cwd).some((entry) => entry.type === "stale_revision_refused"), "the stale direct result is durably refused");
     assert.equal(fs.readdirSync(path.join(cwd, ".pi-glla", "archive")).length, 0, "a stale approval cannot archive the changed contract");
   } finally {
+    fs.writeFileSync(path.join(cwd, "auditor-release"), "release");
     delete process.env.GLLA_PI_BINARY;
   }
 });

@@ -97,12 +97,13 @@ complete_goal → claim → dispatch (tier) → worker (round 1 [+ challenge]) �
 
 ## 5. The test suite (3 min)
 
-- ~260 files, must run **serialized** (`--parallel=1
+- The [generated inventory](RUNTIME-INVENTORY.md) tracks test/module counts.
+  Run **serialized** (`--parallel=1
   --max-concurrency=1`): parallel files trip Bun's nesting guard.
 - `npm test` = fast set (minus the 12 slowest, see
   `tests/slow-files.mjs`); `npm run test:slow`, `test:changed`,
   `test:all` cover the rest. `release:check` = full suite + tsc +
-  jiti repro + offline auditor-extension check + pack + smoke.
+  jiti repro + offline auditor-extension check + inventory check + pack + smoke.
 - Two test kinds: **behavioral** (MockPi harness drives real code)
   and **source pins** (`assert.match` on runtime source — order and
   presence guards for load-bearing structure). Pins are curated; if
