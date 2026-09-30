@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { MAX_TERMINAL_RECEIPT_BYTES } from "./terminal-summary-limits.js";
 
 /** Pi can mutate the branch before a session write fails, and sendMessage's
  * void API is not a persistence acknowledgement. Read only the bounded tail
@@ -10,7 +11,7 @@ function persistedEntry(sessionFile: string | undefined, expected: { id: string;
   try {
     fd = fs.openSync(sessionFile, "r");
     const size = fs.fstatSync(fd).size;
-    const start = Math.max(0, size - 256 * 1024);
+    const start = Math.max(0, size - MAX_TERMINAL_RECEIPT_BYTES);
     const buffer = Buffer.alloc(size - start);
     fs.readSync(fd, buffer, 0, buffer.length, start);
     const lines = buffer.toString("utf8").split("\n");

@@ -273,9 +273,12 @@ When the agent calls `complete_goal`, GLLA:
    disapproval instead of silently archiving it.
 
 The auditor is intentionally isolated from the implementing conversation and
-GLLA extension state. By default it runs without extensions, skills, prompt
-templates, themes, or context files, so its model must be usable in a plain pi
-session. It is independent verification, not an OS sandbox: the auditor's
+GLLA extension state. It mirrors the session's extension packages by default
+so provider-extension models remain available; GLLA itself is excluded.
+Disable extension mirroring in `/glla` for an extension-less auditor and
+choose a model usable in that configuration. Skills, prompt templates,
+themes, and context files remain disabled. It is independent verification,
+not an OS sandbox: the auditor's
 `bash` tool can still change files if a prompt or verifier tells it to. Keep
 verification commands bounded and treat repository permissions accordingly.
 On Linux, both direct contract checks and the detached auditor enforce a

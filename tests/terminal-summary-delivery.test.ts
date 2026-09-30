@@ -5,6 +5,7 @@ import * as path from "node:path";
 import { deliverTerminalSummary } from "../extensions/terminal-summary-delivery.js";
 import { approvalRenderStorePath, persistApprovalRender, replayUndeliveredApprovalRenders } from "../extensions/approval-render-store.js";
 import { tmpCwd } from "./harness/mock-pi.js";
+import { MAX_RENDER_CHAT_LINES, MAX_RENDER_LINE_CHARS, MAX_TERMINAL_RECEIPT_BYTES } from "../extensions/terminal-summary-limits.js";
 
 function host(cwd = tmpCwd()) {
   const file = path.join(cwd, "session.jsonl");
@@ -89,10 +90,22 @@ test("confirmation requires exact identity/content and complete JSONL, tolerates
 
 test("bounded confirmation fails conservatively when receipt is outside tail", () => {
   const h = host(); assert.equal(h.deliver(), true);
-  fs.appendFileSync(h.file, "x".repeat(300 * 1024) + "\n");
+  fs.appendFileSync(h.file, "x".repeat(MAX_TERMINAL_RECEIPT_BYTES + 1) + "\n");
   assert.equal(h.deliver(), false);
   assert.equal(h.calls.length, 1);
 });
+
+for (const character of ["x", "😀", "\u0000", "\\"]) {
+  test(`maximum supported outbox receipt is acknowledged (${JSON.stringify(character)})`, () => {
+    const h = host();
+    const chatLines = Array(MAX_RENDER_CHAT_LINES).fill(character.repeat(MAX_RENDER_LINE_CHARS));
+    assert.equal(persistApprovalRender(h.cwd, { goalId: "maximum-card", objective: "receipt", chatLines }), true);
+    assert.equal(replayUndeliveredApprovalRenders(h.ctx, e => h.deliver(e.goalId, e.chatLines.join("\n"))), 1);
+    assert.ok(fs.statSync(h.file).size < MAX_TERMINAL_RECEIPT_BYTES);
+    assert.equal(replayUndeliveredApprovalRenders(h.ctx, e => h.deliver(e.goalId, e.chatLines.join("\n"))), 0);
+    assert.equal(h.calls.length, 1);
+  });
+}
 
 test("failed outbox acknowledgement write retries without resending the visible message", () => {
   const h = host();

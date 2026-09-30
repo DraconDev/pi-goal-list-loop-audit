@@ -2,6 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { appendLedger, ensureDirs, nowIso, piGlaDir, runPersistStep } from "./goal-loop-core.js";
 import { stateRootPending } from "./glla-state-root.js";
+import { MAX_RENDER_CHAT_LINES, MAX_RENDER_LINE_CHARS } from "./terminal-summary-limits.js";
 
 /** Durable terminal-summary outbox. A toast or a live host is not delivery:
  * only a confirmed visible session message acknowledges a render. */
@@ -23,8 +24,6 @@ const MAX_REPLAY_PER_CONTACT = 5;
 // v0.38.55 audit: raised for the uncapped full-parity card (findings +
 // full table + repo state routinely exceed 60 lines) — a stored render
 // must replay verbatim, so the store bound stays above realistic cards.
-const MAX_RENDER_CHAT_LINES = 150;
-const MAX_RENDER_LINE_CHARS = 2000;
 
 export function approvalRenderStorePath(cwd: string): string {
   return path.join(piGlaDir(cwd), "pending-approval-renders.json");
@@ -191,4 +190,3 @@ export function replayUndeliveredApprovalRenders(
   if (replayed > 0 || rotated) writeRenders(ctx.cwd, renders);
   return replayed;
 }
-
