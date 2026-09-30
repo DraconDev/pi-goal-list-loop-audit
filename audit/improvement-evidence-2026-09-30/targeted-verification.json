@@ -64,7 +64,7 @@
     },
     {
       "path": "audit/improvement-evidence-2026-09-30/platform-compatibility-final.log",
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "sha256": "45ffaf0636d2022943ddb267a76de83d99a8a31d9387a713003501e23810572e"
     },
     {
       "path": "audit/improvement-evidence-2026-09-30/platform-compatibility-read-retry.log",
@@ -655,5 +655,12 @@
     "pass": 2928,
     "skip": 1,
     "fail": 0
+  },
+  "compatibility": {
+    "path": "audit/improvement-evidence-2026-09-30/platform-compatibility-final.json",
+    "headSha": "6b372a8cd383314f66769ab33f54b7af212aab3c",
+    "conclusion": "success",
+    "passedLanes": 6,
+    "url": "https://github.com/DraconDev/pi-goal-list-loop-audit/actions/runs/36755234525"
   }
 }
