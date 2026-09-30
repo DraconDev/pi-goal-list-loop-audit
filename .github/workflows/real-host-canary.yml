@@ -1,0 +1,32 @@
+name: Opt-in real host canary
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 8 * * 1"
+permissions:
+  contents: read
+jobs:
+  canary:
+    if: vars.ENABLE_GLLA_REAL_CANARY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: npm
+      - run: npm ci
+      - name: Run one bounded provider request with GLLA loaded
+        env:
+          GLLA_RUN_REAL_CANARY: "1"
+          GLLA_CANARY_MODEL: ${{ vars.GLLA_CANARY_MODEL }}
+          GLLA_CANARY_MAX_USD: ${{ vars.GLLA_CANARY_MAX_USD || '0.1' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/real-host-canary.mjs --output real-host-canary.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: real-host-canary
+          path: real-host-canary.json

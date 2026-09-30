@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-30T16:03:41.849Z",
+  "node": "v22.22.2",
+  "platform": "linux",
+  "status": "skipped",
+  "reason": "explicit opt-in GLLA_RUN_REAL_CANARY=1 is required; no provider request sent"
+}
