@@ -32,7 +32,8 @@ export interface GoalRollupSource {
   createdAt?: string;
   updatedAt?: string;
   usage?: { tokensUsed?: number };
-  auditHistory?: Array<{ approved?: boolean; disapproved?: boolean; error?: string; challenge?: string; auditTier?: string; spotCheck?: boolean }>;
+  auditHistory?: Array<{ at?: string; approved?: boolean; disapproved?: boolean; impossible?: boolean; error?: string; durationMs?: number; challenge?: string; auditTier?: string; spotCheck?: boolean }>;
+  pendingCompletion?: { phase?: string; recoveryAt?: string };
   telemetry?: GoalTelemetry;
   runToDone?: boolean;
 }
@@ -95,6 +96,18 @@ export interface ProjectRollup {
   outcomes: GoalOutcomes;
   /** v0.38.80: falsification-round metrics (see ChallengeOutcomes). */
   challenges: ChallengeOutcomes;
+  reliability?: AuditReliability;
+}
+
+export interface AuditReliability {
+  startsObserved: number;
+  retryEventsObserved: number;
+  openFailureEpisodes: number;
+  oldestOpenFailureAt: string | null;
+  durationSamples: number;
+  durationMs: number;
+  challengedAttemptDurationMs: number;
+  skippedAttemptDurationMs: number;
 }
 
 /** Premature-success thresholds (spec-driven verifier design §3): an
@@ -144,10 +157,13 @@ interface RollupAccumulator {
   finalGoal: Map<string, GoalRollupSource>;
   archived: Map<string, { status: string; at: string }>;
   firstSeen: Map<string, string>;
+  starts: Set<string>;
+  retries: number;
+  failures: Map<string, string>;
 }
 
 function newRollupAccumulator(): RollupAccumulator {
-  return { goalsCreated: 0, lastActive: "", finalGoal: new Map(), archived: new Map(), firstSeen: new Map() };
+  return { goalsCreated: 0, lastActive: "", finalGoal: new Map(), archived: new Map(), firstSeen: new Map(), starts: new Set(), retries: 0, failures: new Map() };
 }
 
 function entryGoalId(e: LedgerEntry): string | undefined {
@@ -165,9 +181,25 @@ function addRollupEntry(acc: RollupAccumulator, e: LedgerEntry): void {
     acc.finalGoal.set(String(e.value.goal.id), e.value.goal as GoalRollupSource);
   }
   const gid = entryGoalId(e);
+  if (e.type === "audit_started") acc.starts.add(`${gid ?? "unknown"}:${e.value?.attemptId ?? e.at ?? acc.starts.size}`);
+  if (e.type === "audit_infra_retry" || e.type === "audit_recovery_auto_retry_claimed") acc.retries++;
+  const validAt = typeof e.at === "string" && Number.isFinite(Date.parse(e.at));
+  if (gid && validAt && ["auditor_stalled", "audit_infra_retry", "audit_recovery_exception", "audit_infra_waiting", "audit_dispatch_persistence_failed", "audit_settlement_parked"].includes(e.type)) {
+    if (!acc.failures.has(gid)) acc.failures.set(gid, e.at!);
+  }
+  if (gid && e.type === "state") {
+    const g = e.value.goal as GoalRollupSource;
+    const recoveryAt = g.pendingCompletion?.recoveryAt;
+    if (g.pendingCompletion?.phase === "recovery-pending" && recoveryAt && Number.isFinite(Date.parse(recoveryAt)) && !acc.failures.has(gid)) acc.failures.set(gid, recoveryAt);
+    const lastSemantic = g.auditHistory?.filter(a => a.approved || a.disapproved || a.impossible).at(-1)?.at;
+    const failedAt = acc.failures.get(gid);
+    if (failedAt && lastSemantic && Date.parse(lastSemantic) >= Date.parse(failedAt)) acc.failures.delete(gid);
+    if (g.status === "complete" || g.status === "aborted") acc.failures.delete(gid);
+  }
   if (gid && e.at && !acc.firstSeen.has(gid)) acc.firstSeen.set(gid, e.at);
   if (e.type === "goal_archived" && gid && e.at && typeof e.value?.status === "string") {
     acc.archived.set(gid, { status: e.value.status, at: e.at });
+    acc.failures.delete(gid);
   }
 }
 
@@ -198,6 +230,16 @@ function finishRollup(project: string, acc: RollupAccumulator): ProjectRollup {
   }
   const outcomes = finishOutcomes(acc);
   const challenges = finishChallenges(acc);
+  const reliability: AuditReliability = { startsObserved: acc.starts.size, retryEventsObserved: acc.retries,
+    openFailureEpisodes: acc.failures.size, oldestOpenFailureAt: [...acc.failures.values()].sort((a, b) => Date.parse(a) - Date.parse(b))[0] ?? null,
+    durationSamples: 0, durationMs: 0, challengedAttemptDurationMs: 0, skippedAttemptDurationMs: 0 };
+  for (const g of acc.finalGoal.values()) for (const a of g.auditHistory ?? []) {
+    if (typeof a.durationMs !== "number" || !Number.isFinite(a.durationMs) || a.durationMs < 0) continue;
+    reliability.durationSamples++;
+    reliability.durationMs += a.durationMs;
+    if (a.challenge === "confirmed" || a.challenge === "flipped") reliability.challengedAttemptDurationMs += a.durationMs;
+    else if (a.challenge?.startsWith("skipped:")) reliability.skippedAttemptDurationMs += a.durationMs;
+  }
   return {
     project,
     goalsCreated: acc.goalsCreated,
@@ -211,7 +253,29 @@ function finishRollup(project: string, acc: RollupAccumulator): ProjectRollup {
     lastActive: acc.lastActive,
     outcomes,
     challenges,
+    reliability,
   };
+}
+
+/** Age is computed at display time from ledger evidence, with no polling.
+ * Duration covers entire attempts, including retries/challenge overhead;
+ * it is not isolated round-two latency or a dollar/token estimate. */
+export function formatReliabilityJson(rollups: ProjectRollup[], now = Date.now()): string {
+  return JSON.stringify(rollups.map(r => {
+    const metrics = r.reliability;
+    const at = metrics?.oldestOpenFailureAt ? Date.parse(metrics.oldestOpenFailureAt) : Number.NaN;
+    return { project: r.project, ...(metrics ?? {}),
+      oldestOpenFailureAgeMs: Number.isFinite(at) && at <= now ? now - at : null,
+      meanObservedAuditDurationMs: metrics?.durationSamples ? metrics.durationMs / metrics.durationSamples : null,
+      challengeConfirmed: r.challenges.confirmed, challengeFlipped: r.challenges.flipped, challengeSkipped: r.challenges.skipped,
+      scope: "Observed ledger events and final goal histories; entire-attempt elapsed cost. Missing durations/ages are unknown; no provider dollar-cost inference." };
+  }), null, 2);
+}
+
+export function formatReliabilityTable(rollups: ProjectRollup[], now = Date.now()): string {
+  const rows = JSON.parse(formatReliabilityJson(rollups, now)) as Array<Record<string, unknown>>;
+  return ["| project | starts | retries | open failures | oldest failure | mean audit | confirmed/flipped/skipped |",
+    "|---|---|---|---|---|---|---|", ...rows.map(r => `| ${shortProject(String(r.project))} | ${r.startsObserved ?? "—"} | ${r.retryEventsObserved ?? "—"} | ${r.openFailureEpisodes ?? "—"} | ${typeof r.oldestOpenFailureAgeMs === "number" ? `${Math.floor(r.oldestOpenFailureAgeMs / 1000)}s` : "—"} | ${typeof r.meanObservedAuditDurationMs === "number" ? `${Math.round(r.meanObservedAuditDurationMs / 1000)}s` : "—"} | ${r.challengeConfirmed}/${r.challengeFlipped}/${r.challengeSkipped} |`)].join("\n");
 }
 
 function finishChallenges(acc: RollupAccumulator): ChallengeOutcomes {
