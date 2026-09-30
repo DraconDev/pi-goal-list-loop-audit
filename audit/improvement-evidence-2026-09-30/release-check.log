@@ -2920,3 +2920,88 @@ tests/stale-continuation.test.ts:
 (pass) helper: raw continuation source is correctly identified as stale when archived [0.28ms]
 
 tests/mechanical-pipeline.test.ts:
+(pass) parseMechanicalPipeline: accepts the narrow pipeline shape [10.10ms]
+(pass) parseMechanicalPipeline: rejects everything outside the shape [0.20ms]
+(pass) extraction delivers the field pipeline string to the runner [0.92ms]
+(pass) pipeline runs shell-free: green head passes, evidence truncated [345.08ms]
+(pass) pipeline exit follows the head, never the filter [509.08ms]
+(pass) unsafe pipeline stages never execute: 126 with no side effects [132.32ms]
+(pass) grep filter reads stdin only: no file operand, no leak [221.34ms]
+
+tests/paused-overdue-display.test.ts:
+(pass) v0.38.31: overdue wait names the recovery timer, never resuming now [3.42ms]
+(pass) v0.38.31: overdue wait status bar reads retry overdue [0.43ms]
+(pass) v0.38.31: in-grace wait keeps resuming now [1.37ms]
+(pass) v0.38.31: future wait keeps the countdown [0.58ms]
+(pass) v0.38.31: wait card drops the generic tail and closes the tree [0.60ms]
+(pass) v0.38.31: error pause keeps suggested action and saved tail [1.13ms]
+
+tests/goal-loop-dispatch.test.ts:
+(pass) dispatch starts prepared and only accepted records can time out [79.52ms]
+(pass) start proof is generation/owner-bound and prompt matching is exact to the attempt marker [0.19ms]
+(pass) dispatch sidecar is atomic and recoverable across a session boundary [4.25ms]
+(pass) corrupt or unknown sidecar records are ignored [0.28ms]
+
+tests/drafting-questionnaire.test.ts:
+[run-tests] progress: 1020s elapsed · 0s since last output · 271 KiB of suite output
+(pass) seeded drafting requires tool-first choices and a concrete next handoff [2.13ms]
+(pass) goal-loop-draft.md: carries the roadmap-then-stages rule [5.14ms]
+(pass) goal-loop-draft.md: carries the rich-option standard [0.22ms]
+(pass) goal-loop-draft.md: invites the Esc correction explicitly [0.20ms]
+(pass) goal-loop-forever-draft.md: carries the roadmap-then-stages rule [1.04ms]
+(pass) goal-loop-forever-draft.md: carries the rich-option standard [0.21ms]
+(pass) goal-loop-forever-draft.md: invites the Esc correction explicitly [0.14ms]
+(pass) goal-loop-plan.md: carries the roadmap-then-stages rule [0.26ms]
+(pass) goal-loop-plan.md: carries the rich-option standard [0.13ms]
+(pass) goal-loop-plan.md: invites the Esc correction explicitly [0.05ms]
+(pass) goal-loop-draft.md: pasted list-like seeds use supplied wording without an exactness choice [0.47ms]
+(pass) goal-loop-plan.md: pasted list-like seeds use supplied wording without an exactness choice [0.50ms]
+
+tests/completion-summary-quality.test.ts:
+(pass) completion summary quality: validator requires six labels [0.84ms]
+(pass) completion summary quality: generic prose and missing labels ledger and NOTE [564.24ms]
+(pass) completion summary quality: valid six-label recap passes without missing-label ledger [76.63ms]
+(pass) v0.36.0: every terminal outcome gets a six-label recorded-facts fallback [4.26ms]
+(pass) v0.36.0: validation annotations cannot satisfy recap-label validation [0.50ms]
+(pass) v0.36.0: valid recap is preserved while generic prose is replaced [0.29ms]
+(pass) gate and projectors share last-occurrence segmentation on stolen labels [0.50ms]
+(pass) v0.36.0: compact recap projection keeps the five human labels and bounds each value [0.45ms]
+(pass) v0.36.0: terminal notification projection resolves generic claims from durable facts [6.52ms]
+(pass) v0.36.0: fallback never invents changed files or test results [0.39ms]
+(pass) v0.36.0: archive boundary replaces a validator annotation with recorded facts [62.89ms]
+(pass) v0.36.0: archiveCurrentGoal writes a recap for complete and abort-derived terminal paths [39.02ms]
+(pass) completion summary audit doc exists and inventories archives [4.51ms]
+(pass) v0.38.104: the recorded-facts archive summary never emits a lone surrogate [1.30ms]
+
+tests/auditor-polish.test.ts:
+(pass) stripThinkBlocks removes think bodies, fragments, and artifacts [83.97ms]
+(pass) audit log: append + read round-trip, malformed lines skipped [8.25ms]
+(pass) audit log bounded tail scans large records from the end [2.54ms]
+(pass) formatAuditLog: one line per verdict with glyph, goal, model, first report line [0.93ms]
+(pass) tail-aware excerpt: capped output keeps the Required-fixes tail [0.97ms]
+(pass) audit feedback excerpts redact provider payloads before executor output [3.19ms]
+(pass) disapproval feedback is surfaced even when the continuation turn never starts [14.93ms]
+(pass) infra errors are transparent to the disapproval streak (not breakers) [0.43ms]
+(pass) widget flags auditor-quiet stalls after 3 minutes [2.12ms]
+(pass) auditor prompt requires the Required-fixes tail + no think blocks [2.16ms]
+(pass) isRetriableInfraError: aborts and missing-model are NOT retried [2.28ms]
+(pass) runWithInfraRetry: retriable infra failure retried exactly once [0.94ms]
+(pass) runWithInfraRetry: provider Retry-After does not suppress the uniform backoff [0.62ms]
+(pass) runWithInfraRetry: lifecycle guard prevents a second attempt [0.33ms]
+(pass) formatGoalAuditHistory: one line per verdict with elapsed [1.12ms]
+
+tests/stale-event-context.test.ts:
+(pass) late agent_settled events with stale contexts are ignored safely [1145.58ms]
+
+tests/durable-choice-ledger.test.ts:
+(pass) durable-vs-defer judgment is an explicit bounded ledger choice [570.57ms]
+(pass) durable-choice payload compacts model-authored rationale [0.19ms]
+
+tests/session-identity-refusal.test.ts:
+(pass) 195237: same session id on a new manager object is the owner, not a subagent [1017.26ms]
+(pass) v0.38.92: a dethroned main is told about the lost root, never called a subagent [756.34ms]
+(pass) 195237: a genuinely different session is still refused [1001.92ms]
+
+tests/loop-error-exemption.test.ts:
+(pass) v0.29.19: provider-error turns are NOT iterations — no measure, no stall, no stuck; loop stays active [5849.26ms]
+(pass) v0.35.x: repeated in-band provider tool output parks recovery without loop stuck accounting [1649.39ms]
