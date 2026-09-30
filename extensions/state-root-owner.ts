@@ -23,9 +23,11 @@ import * as path from "node:path";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { appendLedger } from "./goal-loop-core.js";
 import { stateRootPending } from "./glla-state-root.js";
+import { withOwnerMutation } from "./owner-file-protocol.js";
 import {
   claimProcessOwner,
   isProcessAlive,
+  ownerFilePath,
   readOwnerFile,
   refreshOwnershipStanding,
   replaceProcessOwner,
@@ -342,7 +344,18 @@ export async function takeoverOwnerRoot(opts: {
     return { outcome: "refused", reason: "claim-lost", detail: `pid ${owner.pid} changed between verification and signal (now "${cmdlineComm(verifyCmdline)}") — refusing to signal a stranger. Inspect with /glla owner and retry.` };
   }
   try {
-    d.signal(owner.pid, "SIGTERM");
+    const signalled = withOwnerMutation(ownerFilePath(opts.cwd), () => {
+      if (JSON.stringify(readOwnerFile(opts.cwd)) !== JSON.stringify(opts.record)) return false;
+      // The owner comparison and signal belong to the same serialized
+      // mutation, so a successor cannot replace the consented record here.
+      const latestCmdline = d.readCmdline(owner.pid);
+      if (latestCmdline !== verifyCmdline || !looksLikePi(latestCmdline)) return false;
+      d.signal(owner.pid, "SIGTERM");
+      return true;
+    });
+    if (!signalled) {
+      return { outcome: "refused", reason: "claim-lost", detail: "The owner changed before the signal, or its mutation was busy. Inspect with /glla owner and retry." };
+    }
   } catch (err) {
     // Signal failed (already exited, or permission): re-read — an exited
     // owner means the quiet path now applies.

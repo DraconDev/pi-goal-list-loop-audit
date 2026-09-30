@@ -69,7 +69,11 @@ export function withOwnerMutation<T>(file: string, action: () => T, timeoutMs = 
       if (!Number.isInteger(p.pid) || p.pid <= 0 || typeof p.choosing !== "boolean"
         || !Number.isSafeInteger(p.ticket) || p.ticket < 0
         || !(p.birth === null || typeof p.birth === "string")) throw new Error("invalid owner mutation participant");
-      return active(p) ? [[name, p] as [string, Participant]] : [];
+      if (active(p)) return [[name, p] as [string, Participant]];
+      // This unique participant name will never be reused by a successor.
+      // Removing a proven-dead record cannot unlink a shared live lock.
+      try { fs.unlinkSync(path.join(dir, name)); } catch {}
+      return [];
     });
   try {
     publishOwnerRecord(own, me);
