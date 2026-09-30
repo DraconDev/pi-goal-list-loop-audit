@@ -91,7 +91,9 @@ test("empty provider response with no goal schedules and dispatches a retry", as
   assert.ok(ctx.ui.matching("retrying automatically").length > 0, "attempt 1 notifies");
   await tick(150);
   assert.equal(sentRetries().length, 1, "one follow-up re-drives the turn");
-  assert.deepEqual((sentRetries()[0].options as { triggerTurn: boolean }).triggerTurn, true);
+  const only = sentRetries()[0];
+  assert.ok(only);
+  assert.deepEqual((only.options as { triggerTurn: boolean }).triggerTurn, true);
   assert.ok(ledger().some((e) => e.type === "unsupervised_error_retry_dispatched"), "dispatch is ledgered");
 });
 
