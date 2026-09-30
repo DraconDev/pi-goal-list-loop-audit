@@ -1,0 +1,17 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/auditor-process.test.ts -t strict challenge|worker.s challenge outcome|absent challenge
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/auditor-process.test.ts:
+(pass) v0.38.80: the worker's challenge outcome threads through to the auditor result [424.43ms]
+(pass) v0.38.80: an absent challenge stays undefined for legacy workers [327.47ms]
+(pass) strict challenge: the parent refuses a legacy or skipped approval [1815.81ms]
+
+ 3 pass
+ 43 filtered out
+ 0 fail
+Ran 3 tests across 1 file. [6.86s]
+[run-tests] finished in 7s (exit 0)

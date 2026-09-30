@@ -31,9 +31,9 @@ Historical audit evidence remains immutable. This register describes current wor
 | Compatibility | Supported peer range and version matrix, genuine platform coverage with explicit limits | Open |
 | Dependencies | Evaluate supported manifest/lock update, preserve upstream-only dispositions, validate advisory outcome | Open |
 | Canaries | Opt-in real-host checks with recorded versions and bounded spend, distinct from hermetic release validation | Open |
-| Audit policy | Visible skipped challenges, calibrated challenge metrics, explicit high-risk strictness option | Open |
+| Audit policy | Visible skipped challenges, calibrated challenge metrics, explicit high-risk strictness option | Implemented; final gate pending: strict full-tier option, skipped disclosure, existing ledger flip/skip metrics |
 | Durability | Document and implement chosen process-crash/storage-loss semantics; verify relevant writes | Open |
-| Performance | Reproducible cold-load/rotation/heartbeat/outbox/context/audit-cost measurements | Open |
+| Performance | Reproducible cold-load/rotation/heartbeat/outbox/context/audit-cost measurements | Runtime/context baseline measured; ledger cost reporting remains |
 | Operator surfaces | Clear work/progress/retry/pause/action state; ledger-derived failure-age and challenge outcomes | Open |
 | Starvation warning | Notification latch rearms between episodes even during busy windows | Implemented; final gate pending |
 | Documentation | Generated small inventories, authoritative settings/compatibility description, coherent audit index | Open |
@@ -51,3 +51,9 @@ contains saved logs and current source hashes. These are incremental targeted
 checks; they are not a full release result. The ownership and settlement
 protocols and their platform/storage limits are described in
 [OWNERSHIP-AND-SETTLEMENT.md](../docs/OWNERSHIP-AND-SETTLEMENT.md).
+
+Ownership now enters activation through `ProcessOwnerBoundary`; the bridge
+registry was reduced from 183 to 180 names. Continuation, supervision, and
+settlement bridge retirement still require further work. The strict challenge
+option preserves the default, requires confirmed full-tier approval when
+enabled, and refuses unconfirmed legacy-worker approvals at the parent.
