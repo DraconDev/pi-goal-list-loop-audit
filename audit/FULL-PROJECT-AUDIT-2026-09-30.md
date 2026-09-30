@@ -1,8 +1,8 @@
 # Full project audit — 2026-09-30
 
 GLLA has substantial recovery and verification machinery, but its strongest
-claims are ahead of a few implementation boundaries. Prioritize ownership,
-process cleanup, and truthful release results before adding more autonomous
+claims are ahead of a few implementation boundaries. Prioritize pipeline
+crash containment, ownership, process cleanup, and truthful release results before adding more autonomous
 behavior. Then simplify the runtime and improve the quality of lifecycle tests.
 
 This is an audit and improvement plan. Runtime fixes, dependency upgrades,
@@ -248,6 +248,27 @@ runtime latches register their reset obligation at the owning boundary.
 **Acceptance:** the membership gate and a poisoned unsupervised retry fixture
 both pass in isolation and in the full serialized suite.
 
+### F12 — P1: a permitted mechanical pipeline can crash its hosting process
+
+**Executed reproduction.** `runMechanicalFilterStage` in
+`goal-loop-shield.ts` writes the head's buffered output into a child stdin
+without an `error` listener on that writable stream. Its synchronous
+try/catch does not catch asynchronous stream errors. A permitted filter such
+as `head -n 0` exits without consuming input; a noisy head then raises an
+unhandled `EPIPE`, terminating the process running the mechanical check.
+
+The probe invokes the real `runMechanicalPreAuditChecks` in a disposable
+Node process with a 65,536-character output fixture and `| head -n 0`.
+That process exits 1 with an unhandled `write EPIPE` at the filter's stdin
+write. No Pi process or provider was needed. Any Pi-host-specific global
+error handler was not tested; the helper itself fails to contain the error.
+
+**Improve:** handle filter-stdin errors before writing and settle the stage
+once; treat expected early pipe closure consistently with head-exit semantics.
+Preserve actual head failures, cancellation, and diagnostic containment.
+**Acceptance:** noisy checks through early-closing `head`/`grep` filters cannot
+terminate the caller; failing heads remain failures and cancellation stays bounded.
+
 ## Further improvements, separated from defects
 
 ### Runtime architecture
@@ -346,7 +367,7 @@ audit side effect.
 
 ## Recommended sequence
 
-1. **Establish trustworthy ownership and validation:** F1, F2, F11, diagnose F9.
+1. **Establish trustworthy ownership and validation:** F12, F1, F2, F11, diagnose F9.
    Completion criterion: competing-process and cancellation regressions pass,
    with a clean full gate on a recorded source tree.
 2. **Close lifecycle leaks and delivery gaps:** F3–F7, then F8.
@@ -371,7 +392,7 @@ Independent gates completed:
 | `node scripts/release-pack-smoke.mjs` | Exit 0; installed tarball imports, launcher/RPC worker challenge, and Pi skill loading passed. |
 | `npm pack --dry-run --json` | Exit 0; 115 entries, 1,533,517 packed bytes / 4,305,098 unpacked bytes. |
 | `bun scripts/measure-context-growth.mjs` | Exit 0; synthetic measurement completed. |
-| Disposable audit probes | Exit 0; F1–F5 reproduced, including the small-card receipt control. |
+| Disposable audit probes | Wrapper exit 0; F1–F5 and F12 reproduced, including the small-card receipt control. The contained F12 child exits 1 with unhandled EPIPE. |
 | Dependency advisory checks | Production subset clean; full installed tree has 3 affected package entries. |
 
 Full-suite totals and focused reruns are pending the existing live release
