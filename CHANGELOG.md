@@ -2,9 +2,74 @@
 
 ## Unreleased
 
-Untagged work since 0.38.104. It stays under this heading until the release
+Untagged work since 0.38.105. It stays under this heading until the release
 commit renames it (docs/RELEASING.md); these are descriptive milestones, not
 invented version headers.
+
+## 0.38.105 — every turn retries, and the version says so (2026-09-30)
+
+### Unsupervised turns retry instead of idling
+
+- A provider error in a session with no active goal, loop, or list used to
+  end the turn with nothing but a ledger line — the session idled at the
+  prompt until the user noticed (ai-auto-video field 2026-09-30: `Provider
+  returned an empty response` on a stealth model, then silence).
+- Transient failures now re-drive the failed turn on the uniform cadence
+  (`mainModelFailureDelayMs`, same as every supervised lane): 5s eager
+  probes, short ladder to a 30m cap, quota sleeps until the provider's
+  reset hint. The follow-up tells the model to continue from where the
+  turn stopped without repeating succeeded tool calls.
+- The carve-outs match the supervised lanes exactly: aborts and policy
+  refusals never retry; auth, billing, deterministic 400s, and context
+  overflow never blind-retry (each refuses with its reason; overflow
+  compacts instead). A fresh turn stands down a pending retry, clean and
+  aborted turns clear the streak, and `/glla pause` plus the load hold
+  freeze scheduling (a held session refuses rather than promising a
+  retry it cannot send).
+
+### Quota waits are monitoring, not manual action
+
+- `pause_goal` blocked/error outcomes carrying quota evidence reroute to a
+  supervised wait (`selectQuotaWaitReroute` + `subagentQuotaEvidenceFrom`)
+  instead of parking for manual resume. Evidence is consumed once, stale
+  evidence (>30m) never reroutes, and the wait clamps at 1h.
+- The loop's frozen look is gone: `loopCadenceCountdown` mirrors the
+  scheduler gap on the status line and the widget while a loop waits.
+
+### Lists progress and compact honestly
+
+- List repair auto-activates the head (single retry) instead of parking on
+  a fixable failure, and List-complete now requires a genuinely empty
+  queue — a repaired item can no longer be silently skipped.
+- Between-tasks compaction fires the real `ctx.compact()` at the
+  `agent_end` boundary with its own marker and hysteresis, instead of
+  marking a threshold it never acted on.
+
+### Audit follow-through from the 0.38.104 pass
+
+- Shield hardening: `contractItems` list-mode handling, mechanical
+  negation forms, and the server-mode guard for mechanical commands.
+- Milestone-inconclusive claims route to retry language instead of a
+  FAILED verdict they did not earn.
+- Auditor stderr diagnostics: OSC sequences stripped as a unit and
+  stream errors accumulated instead of replacing each other.
+- The loop-objective display is loop-aware again (model switches keep
+  the loop's iteration in the recovery banner), and respec follows the
+  operator's picks: big drafts auto-start, `## Rules` stays binding,
+  and the loop edits SPEC.md.
+
+### Versions tell the truth
+
+- The source carried `v0.38.106`–`v0.38.111` stamps for releases that
+  were never cut — all of that work actually shipped in 0.38.104.
+  Corrected to `v0.38.104` by per-commit tag ancestry (106–111 blanket,
+  mixed 105 lines by blame); `v0.38.105` remains only on genuinely
+  unreleased lines. Historical audit reports keep their contemporary
+  numbers.
+- Suite hygiene: the auditor-ladder tests pointed their mock ctx at the
+  repo root with ledger recording on, so every run appended fixture
+  fallback events to the production `.pi-glla/active.jsonl`. They use a
+  scratch dir now, with a guard against recurrence.
 
 ## 0.38.104 — prose stops grinding the audit (2026-09-29)
 
