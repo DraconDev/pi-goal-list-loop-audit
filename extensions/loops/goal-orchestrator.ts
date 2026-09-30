@@ -1119,6 +1119,14 @@ export interface GoalSettlementBoundary {
   archiveCurrentGoal: typeof archiveCurrentGoal;
 }
 
+export function createGoalSettlementBoundary(overrides: Partial<SettlementPersistence> = {}): GoalSettlementBoundary {
+  const persistence = { ...settlementPersistence, ...overrides };
+  return {
+    archiveCurrentGoal: (ctx, status, reason, patch, opts) =>
+      archiveCurrentGoal(ctx, status, reason, patch, opts, persistence),
+  };
+}
+
 export function archiveCurrentGoal(
   ctx: ExtensionContext,
   status: Status,

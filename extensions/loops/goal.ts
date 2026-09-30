@@ -11,7 +11,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import "./goal-runtime-globals.js";
 import "./goal-session.js";
 import "./goal-ui.js";
-import { archiveCurrentGoal, type GoalSettlementBoundary } from "./goal-orchestrator.js";
+import { createGoalSettlementBoundary, type GoalSettlementBoundary } from "./goal-orchestrator.js";
 import "./goal-auditor-hooks.js";
 import "./goal-list-queue.js";
 import "./goal-tools.js";
@@ -156,7 +156,7 @@ const loopFlags: LoopFlags = {
   get compactionInFlightSince() { return compactionInFlightSince; },
 };
 
-const settlement: GoalSettlementBoundary = { archiveCurrentGoal };
+const settlement: GoalSettlementBoundary = createGoalSettlementBoundary();
 
 const commandDeps: CommandDeps = {
   flags: commandFlags,

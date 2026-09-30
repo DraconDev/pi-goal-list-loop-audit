@@ -7,7 +7,7 @@ failure. Missing or future timestamps produce unknown age. Counts deduplicate
 attempts; challenge elapsed time is the entire recorded attempt, not isolated
 round-two time or billed provider cost. The existing status card shows current
 work, real progress, pause/retry reason, and the available action without
-additional polling. `/glla stats challenge` remains the detailed flip/skip view.
+additional polling. `/glla stats challenges` remains the detailed flip/skip view.
 
 The global `auditorStrictChallenge` setting defaults to false. For full-tier
 contracts, enabling it requires confirmed challenge approval; a failed/skipped
