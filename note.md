@@ -6,7 +6,7 @@
 
 ##
 improve control ui ?
-
+:f6f6/c1c1/7777\
 ##
 we need to update the readme and the docs like for one we are not pinning subagents 
 
@@ -21,4 +21,5 @@ https://github.com/xai-org/grok-build
 https://github.com/anthropics/claude-code
 https://github.com/deepseek-ai/deepseek-harness & its plugins
 https://github.com/MoonshotAI/kimi-code
+
 
