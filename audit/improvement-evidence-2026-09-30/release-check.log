@@ -2509,3 +2509,163 @@ tests/pending-claim-lifecycle.test.ts:
 
 tests/pause-anti-confabulation.test.ts:
 (pass) claimed-missing matches absence language only [109.13ms]
+(pass) pause claiming a missing tool is refused with a correction, goal stays active [682.20ms]
+(pass) pause quoting pi's own not-found error is accepted as a genuine outage [711.13ms]
+(pass) ordinary pauses are untouched by the guard [837.71ms]
+
+tests/failover-primary-probe.test.ts:
+(pass) failover stamps the primary reset while fallback-chain work proceeds [131.72ms]
+(pass) hintless primary failure stamps no reset [1.06ms]
+(pass) background primary probe fires at reset, not on the generic cadence [1.18ms]
+(pass) no reset keeps the generic probe cadence [0.50ms]
+
+tests/stats-reliability.test.ts:
+(pass) reliability derives an open failure episode and elapsed audit cost without counting repeated snapshots [2.30ms]
+(pass) successful semantic review or terminal archive resolves failure age; missing samples stay unknown [0.45ms]
+(pass) recovery-only state preserves failure age and future/malformed timestamps remain unknown [0.27ms]
+
+tests/pending-latch.test.ts:
+(pass) watchdog fires on the field-observed shape: supervising + idle + pending + no timers + silent >= threshold [101.77ms]
+(pass) watchdog does NOT fire when any guard fails [0.07ms]
+(pass) threshold is 3 minutes (post-compaction settle is 2s; legit queue latency is seconds) [0.02ms]
+(pass) heartbeat wiring: idle/pending split, watchdog branch, ledger event, wedge uses !idle, shared escalation [4.12ms]
+(pass) the exact 'ℹ todo 0' junk line (enqueued as a /list item by the 0.26.2 reviewer) never classifies [0.53ms]
+
+tests/repository-receipts.test.ts:
+[run-tests] progress: 840s elapsed · 0s since last output · 242 KiB of suite output
+(pass) repository-only findings are archive-only, without empty chat groups [5.33ms]
+(pass) repository receipt stays archival while substantive ledger fixes remain visible [0.63ms]
+(pass) flat receipts are archive-only while limitations remain visible [0.93ms]
+(pass) mixed receipt vocabulary never deletes repairs or unperformed checks [9.26ms]
+(pass) archive keeps unknown proof; chat keeps the detailed narrative focused [1.04ms]
+
+tests/audit-change-scope.test.ts:
+(pass) change-scope: extractor reads file_path/path and drops everything else [0.48ms]
+(pass) change-scope: recorder keeps first-seen order, dedupes, and counts overflow [1.55ms]
+(pass) change-scope: write tool calls record their paths on the active goal [1269.87ms]
+(pass) change-scope: reads, bash, junk, and inactive goals record nothing [1040.08ms]
+(pass) change-scope: the audit brief names the recorded paths first [217.80ms]
+(pass) change-scope: the brief reports overflow and escapes paths as data [0.30ms]
+(pass) change-scope: no recorded paths keeps the previous brief shape [0.19ms]
+(pass) change-scope: the fallback summary names recorded paths, bounded [13.29ms]
+(pass) change-scope: the audit brief caps the prompt list at 20 with an omission line [0.48ms]
+
+tests/commit-survival-e2e.test.ts:
+(skip) commit survives the auto-committer daemon (item 32, env-gated watched repo)
+
+tests/compaction-input.test.ts:
+(pass) bounds successful assistant, tool-call, and tool-result content while preserving pairing [8.30ms]
+(pass) retains the newest goal payload and marks older payloads without changing message order [4.06ms]
+(pass) replaces image blocks while retaining the surrounding message structure [1.65ms]
+(pass) keeps the total bounded for a tiny caller budget with a previous summary [8.16ms]
+(pass) bounds a previous compaction summary without changing the preparation contract [0.28ms]
+(pass) leaves preparation metadata and fileOps untouched [0.47ms]
+(pass) applies one coordinated budget to summarize and turn-prefix arrays [6.87ms]
+(pass) returns no compaction result and tolerates a missing preparation [424.21ms]
+(pass) preserves both preparation-array identities when projection is a no-op [0.58ms]
+(pass) preserves the untouched half when only one preparation array needs projection [0.44ms]
+(pass) bounds every supported preparation shape and preserves pairing/order [7.26ms]
+(pass) second projection is idempotent [0.37ms]
+(pass) contains malformed preparation records without changing their positions [0.30ms]
+(pass) keeps malformed interleaved tool results paired with their calls [0.25ms]
+(pass) enforces a hard bound for arbitrarily many tiny messages [4275.09ms]
+(pass) keeps complete tool groups when high message counts force omission [209.66ms]
+
+tests/vision-assist.test.ts:
+(pass) VISION_ASSIST_GUIDANCE prefers native vision without assuming MMX [90.80ms]
+(pass) docs/VISION-ASSIST.md documents native-first guidance and the preapproval gate [1.60ms]
+(pass) visionDescribeCommand builds the exact mmx call [24.28ms]
+(pass) routeVisionCheck: a forbidden target stays on the current model [0.52ms]
+(pass) routeVisionCheck: confirmed MMX is an optional external fallback [0.08ms]
+(pass) routeVisionCheck: native vision is the default and no external tool is assumed [0.08ms]
+(pass) routeVisionCheck: known unavailable native vision fails closed [0.14ms]
+(pass) routeVisionCheck: model switch requires explicit opt-in [0.10ms]
+(pass) isForbiddenModel: v0.34.115 default is empty — no model is forbidden by default [0.14ms]
+(pass) visionAssistLedger builds a native-model audit payload [0.17ms]
+(pass) continuation prompts carry native-first VISION-ASSIST guidance by default [1165.77ms]
+(pass) visionAssist off → the directive is dropped from continuation prompts (gate still ships) [247.95ms]
+(pass) a forbidden switch at runtime records the vision_assist routing entry [4.68ms]
+(pass) visionAssist off → the forbidden switch records no vision_assist entry (gate still fires) [9.03ms]
+
+tests/audit-convergence-breaker.test.ts:
+(pass) audit-convergence-breaker — hard cap > hard cap pauses even under aggressive keep-going [5278.92ms]
+[run-tests] progress: 870s elapsed · 10s since last output · 246 KiB of suite output
+(pass) audit-convergence-breaker — hard cap > below the hard cap, aggressive keep-going is preserved [15653.88ms]
+(pass) audit-convergence-breaker — hard cap > hard cap binds the detached settlement path [5793.21ms]
+(pass) audit-convergence-breaker — hard cap > soft-cap pause offers accept-with-followups first [15301.13ms]
+[run-tests] progress: 900s elapsed · 4s since last output · 246 KiB of suite output
+(pass) audit-convergence-breaker — hard cap > severity census lands on the objections ledger event [3602.80ms]
+(pass) audit-convergence-breaker — severity extraction > tags parse per item; missing section yields nothing [0.49ms]
+(pass) audit-convergence-breaker — severity extraction > only leading tags count; buried tags and bare items are untagged [0.15ms]
+(pass) audit-convergence-breaker — severity extraction > auditor brief mandates severity tags [0.69ms]
+(pass) audit-convergence-breaker — settings > hard-cap default is 8 (soft 5 + three grace rounds) [0.14ms]
+(pass) audit-convergence-breaker — settings > normalize keeps valid values, drops garbage [0.61ms]
+(pass) audit-convergence-breaker — settings > v0.38.104: mainModelRetryMinutes and auditFeedbackChars drop junk instead of displaying a dead value [0.54ms]
+(pass) audit-convergence-breaker — settings > v0.38.104: drafter/auditor thinking levels are pruned against the one ladder [1.18ms]
+(pass) audit-convergence-breaker — settings > menu rows exist for both keys [5.66ms]
+
+tests/id-invalidation.test.ts:
+(pass) classifyIdInvalidationReason: each mechanism maps to its reason [110.10ms]
+(pass) forced rewrite: a fresh session with a different sidecar id ledgeres id_invalidation [717.74ms]
+(pass) clean shutdown: the sidecar shutdownReason flows into the event [372.82ms]
+(pass) same id (plain reload): no id_invalidation [519.43ms]
+(pass) first boot (no sidecar): no id_invalidation [307.00ms]
+(pass) successor absorption also emits id_invalidation (source-level pin) [44.91ms]
+(pass) unknown-session ids are not emitted (the mock default has no getSessionId) [347.18ms]
+
+tests/durable-wait-prewritten.test.mjs:
+(pass) prewritten durable state: completion [64.74ms]
+(pass) prewritten durable state: provider failure [61.32ms]
+(pass) prewritten durable state: failure takes precedence over approval [0.72ms]
+
+tests/reviewer-source-curation.test.ts:
+(pass) stripCodeSpans removes fenced blocks and inline spans [0.85ms]
+(pass) the 4 junk lines from the 0.26.3 misfire extract NOTHING through the curated pipeline [0.78ms]
+(pass) brace-led and quote-led lines are code-ish, never findings [0.65ms]
+(pass) fireReviewer only mines disapproved/error audit reports, never approved ones [0.57ms]
+(pass) v0.35.72: postaudit proposal counts only when safeSteerUser delivers [0.26ms]
+(pass) automatic postaudit excludes archived objective/contract metadata; manual review retains it [0.28ms]
+(pass) a DISAPPROVED report's required-fixes extract as findings; an APPROVED meta-report is inert [2.18ms]
+(pass) superseded-disapproval curation: a disapproval answered by a later approval is NOT re-mined [0.49ms]
+(pass) real prose findings still classify after curation [0.15ms]
+
+tests/long-term-preferences-boundary.test.ts:
+(pass) continuation prompt has no auto-injected preference section [0.92ms]
+(pass) no extension auto-prefers a remembered prose value [80.15ms]
+(pass) Settings has no opaque free-form text field (typed boundary) [0.70ms]
+(pass) saveSettings is the only writer to the settings JSON files [18.23ms]
+(pass) goal-settings.ts header documents the long-term-preferences policy [0.34ms]
+
+tests/defer-durable-ordering.test.ts:
+(pass) defer vs durable — semantic recommendation ordering > v0.38.71: imperative fix verbs do not double against the plaque verb (field UI-SURVEY-2026-09-20) [0.59ms]
+(pass) defer vs durable — semantic recommendation ordering > three defer recommendations still select the safe durable action first [0.31ms]
+(pass) defer vs durable — semantic recommendation ordering > only an explicit blocked fact selects the reversible defer plaque [0.12ms]
+(pass) defer vs durable — semantic recommendation ordering > the policy is generated from the same semantic three-defer path [6.02ms]
+
+tests/retry-armed-display.test.ts:
+(pass) 151113: supervised auditor wait with armed retry renders recovering, not paused [4.22ms]
+(pass) 151113: status line keeps the auto-retrying countdown for the armed wait [0.66ms]
+(pass) 151113: bare user wait with no armed retry still renders paused, never recovering [111.46ms]
+
+tests/reviewer-extraction-hardening.test.ts:
+(pass) the 3 live false-positive lines extract NOTHING [0.56ms]
+(pass) code lines are skipped (test/it/assert/const/import/…) [0.08ms]
+(pass) markdown table rows are skipped [0.04ms]
+(pass) reviewer-report vocabulary is skipped (self-match prevention) [0.10ms]
+(pass) real architectural + strategic text still classifies [0.08ms]
+(pass) v0.34.83: the bare word 'issue' is REMOVED from the bug regex — GitHub issue references and prose don't classify as bugs [0.12ms]
+(pass) v0.34.83: a completion summary referencing GitHub issues enqueues zero bug findings through the curated pipeline [5.60ms]
+(pass) full runReviewer over 0.26.2-style source text produces zero architectural findings [0.81ms]
+(pass) extraction dedupe + cap still work after hardening [0.20ms]
+(pass) hard-wrapped finding joins into ONE full-sentence finding (hellhunter regression) [0.30ms]
+(pass) uppercase-start lines do NOT join — punctuation-less items stay separate [0.04ms]
+(pass) dangling-connector fragments are rejected [0.04ms]
+(pass) completedObjective prefix-dedupe: a finding restating the completed goal is skipped [0.09ms]
+(pass) cutAtClauseBoundary: long findings cut at a clause, never mid-word [0.12ms]
+
+tests/run-to-done.test.ts:
+(pass) run-to-done: draft consent sets the flag, shows the notice, ledgers consent [2033.66ms]
+(pass) run-to-done: drafts without the flag stay supervised [519.64ms]
+(pass) run-to-done: batch drafts refuse the flag instead of dropping it [722.85ms]
+(pass) run-to-done: decisions auto-default immediately with no budget set [510.76ms]
+(pass) run-to-done: the audit cap parks instead of converting to TODOs [4410.31ms]
