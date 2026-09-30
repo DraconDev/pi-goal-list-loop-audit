@@ -187,7 +187,7 @@ function addRollupEntry(acc: RollupAccumulator, e: LedgerEntry): void {
   if (gid && validAt && ["auditor_stalled", "audit_infra_retry", "audit_recovery_exception", "audit_infra_waiting", "audit_dispatch_persistence_failed", "audit_settlement_parked"].includes(e.type)) {
     if (!acc.failures.has(gid)) acc.failures.set(gid, e.at!);
   }
-  if (gid && e.type === "state") {
+  if (gid && e.type === "state" && e.value?.goal?.id) {
     const g = e.value.goal as GoalRollupSource;
     const recoveryAt = g.pendingCompletion?.recoveryAt;
     if (g.pendingCompletion?.phase === "recovery-pending" && recoveryAt && Number.isFinite(Date.parse(recoveryAt)) && !acc.failures.has(gid)) acc.failures.set(gid, recoveryAt);

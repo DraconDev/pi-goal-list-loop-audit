@@ -29,7 +29,7 @@ import type { AuditDisplayProgress } from "./goal-loop-display.js";
 import { auditorVerdictTally, fmtElapsed, formatVerdictTallySegment } from "./goal-loop-display.js";
 import { AUDIT_FINDINGS_REL, HELD_ON_RESTORE, LOOP_AUDIT_MARKER, listAuditCollectTarget, projectAuditTarget } from "./goal-loop-forever.js";
 import { buildLoopCompletionSummary, compactCompletionSummary, compactTerminalCompletionSummary } from "./completion-summary.js";
-import { ProjectRollup, discoverGllaProjects, filterPremature, formatChallengesJson, formatChallengesTable, formatOutcomesJson, formatOutcomesTable, formatRollupJson, formatRollupTable, rollupProject } from "./goal-loop-stats.js";
+import { ProjectRollup, discoverGllaProjects, filterPremature, formatChallengesJson, formatChallengesTable, formatReliabilityJson, formatReliabilityTable, formatOutcomesJson, formatOutcomesTable, formatRollupJson, formatRollupTable, rollupProject } from "./goal-loop-stats.js";
 import { OVERRIDABLE_AGENT_TYPES, resolveEffectiveSubagentModel } from "./goal-loop-subagents.js";
 import { Settings, globalSettingsPath, loadSettings, projectSettingsPath, saveSettings, settingsProvenance } from "./goal-settings.js";
 import { resolveGllaStateDir } from "./glla-state-root.js";
@@ -2101,6 +2101,7 @@ export function unknownStatsArg(args: string): string | null {
     .replace(/\bpremature\b/g, "")
     .replace(/\boutcomes\b/g, "")
     .replace(/\bchallenges\b/g, "")
+    .replace(/\breliability\b/g, "")
     .replace(/project=\S+/g, "")
     .trim();
   return rest === "" ? null : rest.slice(0, 60);
@@ -2111,12 +2112,13 @@ function cmdStats(args: string, ctx: ExtensionContext): void {
   const prematureOnly = /\bpremature\b/.test(args);
   const outcomes = /\boutcomes\b/.test(args);
   const challenges = /\bchallenges\b/.test(args);
+  const reliability = /\breliability\b/.test(args);
   const projectMatch = args.match(/project=(\S+)/);
   // v0.38.89: unknown args teach the usage instead of silently rendering
   // the default view. The JSON path stays total (machine readers).
   const unknown = asJson ? null : unknownStatsArg(args);
   if (unknown) {
-    ctx.ui.notify(`Unknown /glla stats argument "${unknown}". Use: outcomes | challenges | premature | json | project=<path>.`, "warning");
+    ctx.ui.notify(`Unknown /glla stats argument "${unknown}". Use: outcomes | challenges | reliability | premature | json | project=<path>.`, "warning");
     return;
   }
   let rollups: ProjectRollup[] = [];
@@ -2140,8 +2142,10 @@ function cmdStats(args: string, ctx: ExtensionContext): void {
     }
   }
   if (prematureOnly) rollups = filterPremature(rollups);
-  const view = challenges ? "challenges" : outcomes ? "outcomes" : "";
-  const out = challenges
+  const view = reliability ? "reliability" : challenges ? "challenges" : outcomes ? "outcomes" : "";
+  const out = reliability
+    ? (asJson ? formatReliabilityJson(rollups) : formatReliabilityTable(rollups))
+    : challenges
     ? (asJson ? formatChallengesJson(rollups) : formatChallengesTable(rollups))
     : outcomes
       ? (asJson ? formatOutcomesJson(rollups) : formatOutcomesTable(rollups))
