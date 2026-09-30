@@ -9,6 +9,21 @@ interface Participant {
   ticket: number;
 }
 
+function retryWindowsMutation<T>(action: () => T, platform = process.platform, sleep = (ms: number) => {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}): T {
+  const delays = [25, 50, 100, 200];
+  for (let attempt = 0; ; attempt++) {
+    try { return action(); }
+    catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      const delay = platform === "win32" && ["EACCES", "EBUSY", "ENOTEMPTY", "EPERM"].includes(code ?? "") ? delays[attempt] : undefined;
+      if (delay === undefined) throw err;
+      sleep(delay);
+    }
+  }
+}
+
 function birth(pid: number): string | null {
   if (process.platform !== "linux") return null;
   try {
@@ -34,11 +49,17 @@ function active(p: Participant): boolean {
 
 /** Publish a complete record. All owner.json replacements run under the
  * mutation protocol; readers never see a newly-created empty placeholder. */
-export function publishOwnerRecord(file: string, record: unknown): void {
+export function publishOwnerRecord(file: string, record: unknown, options: {
+  platform?: NodeJS.Platform;
+  rename?: typeof fs.renameSync;
+  sleep?: (ms: number) => void;
+} = {}): void {
   const temp = `${file}.${process.pid}.${randomUUID()}.tmp`;
   try {
     fs.writeFileSync(temp, JSON.stringify(record), { flag: "wx" });
-    fs.renameSync(temp, file);
+    // Windows readers/antivirus can briefly deny replacement. Retry the
+    // complete temp file; never unlink the prior owner to make room.
+    retryWindowsMutation(() => (options.rename ?? fs.renameSync)(temp, file), options.platform, options.sleep);
   } finally { try { fs.unlinkSync(temp); } catch {} }
 }
 
@@ -91,6 +112,6 @@ export function withOwnerMutation<T>(file: string, action: () => T, timeoutMs = 
   } finally {
     // Only our unique participant is removed. A crash leaves a provably
     // dead record that future contenders can ignore without an unlink race.
-    try { fs.unlinkSync(own); } catch {}
+    try { retryWindowsMutation(() => fs.unlinkSync(own)); } catch {}
   }
 }

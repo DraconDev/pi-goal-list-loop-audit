@@ -23,6 +23,29 @@ function launch(source: string) {
   return { child, done, output: () => output };
 }
 
+test("Windows replacement retries a sharing violation without unlinking the previous owner", () => {
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "glla-owner-sharing-"));
+  const file = path.join(cwd, "owner.json");
+  try {
+    publishOwnerRecord(file, { prior: true });
+    let attempts = 0;
+    const sleeps: number[] = [];
+    publishOwnerRecord(file, { successor: true }, {
+      platform: "win32", sleep: ms => { sleeps.push(ms); assert.deepEqual(JSON.parse(fs.readFileSync(file, "utf8")), { prior: true }); },
+      rename: (temp, target) => {
+        if (++attempts < 3) throw Object.assign(new Error("sharing violation"), { code: "EPERM" });
+        fs.renameSync(temp, target);
+      },
+    });
+    assert.deepEqual(sleeps, [25, 50]);
+    assert.deepEqual(JSON.parse(fs.readFileSync(file, "utf8")), { successor: true });
+    assert.throws(() => publishOwnerRecord(file, { lost: true }, {
+      platform: "win32", sleep: () => {}, rename: () => { throw Object.assign(new Error("permanent failure"), { code: "EPERM" }); },
+    }), /permanent failure/);
+    assert.deepEqual(JSON.parse(fs.readFileSync(file, "utf8")), { successor: true });
+  } finally { fs.rmSync(cwd, { recursive: true, force: true }); }
+});
+
 test("competing Node processes serialize owner mutations and publish only complete records", { timeout: 30_000 }, async () => {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "glla-owner-contention-"));
   const file = path.join(cwd, "owner.json");
