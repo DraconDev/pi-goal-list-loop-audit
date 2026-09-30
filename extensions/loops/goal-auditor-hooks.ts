@@ -1458,6 +1458,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           verificationSummary: claim.verificationSummary,
           // v0.38.81: the dispatch-decided tier (stamped onto the result).
           auditTier: tierDecision.tier,
+          strictChallenge: settings.auditorStrictChallenge,
           ...(tierDecision.spotCheck ? { spotCheck: true } : {}),
           model: candidate.model,
           // Unset follows the parent session dial, matching the Auditor

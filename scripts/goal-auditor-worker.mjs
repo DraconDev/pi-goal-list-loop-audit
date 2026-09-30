@@ -781,7 +781,9 @@ async function main() {
       clearRoundTimers();
       // Round 1 settled ok with an approval (the only path here) — finish
       // true on the preserved output.
-      await finish(true, "");
+      await finish(request.strictChallenge !== true, request.strictChallenge === true
+        ? `Required auditor challenge failed — no verdict: ${String(reason ?? "unknown").slice(0, 200)}`
+        : "");
     } catch (error) {
       await finish(false, `challenge abandon failed: ${error instanceof Error ? error.message : String(error)}`).catch(() => {});
     }
@@ -1046,7 +1048,7 @@ async function main() {
           // "light-tier audit" made a full-tier skip look like a tier
           // decision in /glla stats challenges and the audit history. An
           // older request carries no reason and keeps the light-tier default.
-          if (request.challenge === false) {
+          if (request.challenge === false && request.strictChallenge !== true) {
             const reason = request.challengeSkip === "rework-streak" ? "rework-streak convergence" : "light-tier audit";
             challengeState = `skipped: ${reason}`;
           } else {

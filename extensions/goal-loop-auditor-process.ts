@@ -1311,6 +1311,7 @@ interface AuditorRequest {
    * the worker skips the falsification pass). Absent = full tier =
    * today's challenge behavior. Part of the request hash. */
   challenge?: boolean;
+  strictChallenge?: boolean;
   /** v0.38.104: WHY the falsification pass is skipped. The parent sends
    * `challenge: false` for two different reasons (light tier, or a rework
    * streak past the challenge limit on a FULL-tier dispatch), and the worker
@@ -1783,6 +1784,8 @@ async function runDetachedGoalCompletionAuditorInner(args: {
    * sends `challenge: false` in the worker request (single-round
    * audit); absent/full keeps today's challenge behavior. */
   auditTier?: AuditTierName;
+  /** Full-tier approvals require a successful challenge when enabled. */
+  strictChallenge?: boolean;
   /** v0.38.81: marks this full-tier run as a silent spot-check. Read
    * only by the public wrapper (stamped onto the result); the worker
    * never sees it — a spot-check IS a full audit. */
@@ -1925,6 +1928,7 @@ async function runDetachedGoalCompletionAuditorInner(args: {
     // (light tier, or a full-tier dispatch whose rework streak is past the
     // challenge limit). Name the one that applies so the worker records the
     // real cause instead of calling every skip a light-tier audit.
+    const strictChallenge = args.strictChallenge === true && args.auditTier !== "light";
     const challengeSkip: AuditorRequest["challengeSkip"] = args.auditTier === "light" ? "light-tier" : "rework-streak";
     const requestWithoutHash: Omit<AuditorRequest, "requestHash"> = {
       protocolVersion: PROTOCOL_VERSION,
@@ -1958,7 +1962,8 @@ async function runDetachedGoalCompletionAuditorInner(args: {
       // two disapprovals), not against a goal on its fifth rework. Skipping it
       // lets the single round actually re-verify the objections it raised
       // last time, which is the converging question.
-      ...(args.auditTier === "light" || reworkStreak >= AUDITOR_CHALLENGE_STREAK_LIMIT
+      ...(strictChallenge ? { strictChallenge: true } : {}),
+      ...(!strictChallenge && (args.auditTier === "light" || reworkStreak >= AUDITOR_CHALLENGE_STREAK_LIMIT)
         ? { challenge: false, challengeSkip }
         : {}),
     };

@@ -1294,6 +1294,18 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       }
       return;
     }
+    case "auditorStrictChallenge": {
+      const value = await ctx.ui.select("Full-tier approval challenge policy", [
+        "off — preserve round-one approval when the challenge fails (default)",
+        "on — require successful falsification for full-tier approvals, including rework rounds",
+      ]);
+      if (value) {
+        const on = value.startsWith("on");
+        saveSettings("global", ctx.cwd, { auditorStrictChallenge: on ? true : undefined });
+        ctx.ui.notify(on ? "Full-tier approvals now require a successful challenge." : "Default challenge policy restored.", "info");
+      }
+      return;
+    }
     case "hourlyRetryProbe": {
       const v = await ctx.ui.select("Hourly main-model retry — an extra blind :00:30 attempt while recovery is parked (the normal retry ladder is separate)", [
         "on — fire an extra probe at :00:30 every hour while parked (default)",

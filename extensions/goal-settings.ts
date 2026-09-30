@@ -157,6 +157,9 @@ export interface Settings {
    * not the project. Tune from the spot flip rate in
    * /glla stats challenges. */
   auditSpotCheckRate?: number;
+  /** Require a successful falsification pass on full-tier approvals.
+   * Opt-in for high-risk work; a failed challenge is infrastructure/no-verdict. */
+  auditorStrictChallenge?: boolean;
   /** v0.38.3: on → the detached auditor's pi runs as a normal persistent
    * session (--session <jobDir>/session.jsonl) instead of --no-session, so
    * you can `tail -f` it live or resume it interactively after the audit.
@@ -348,6 +351,7 @@ export const GLOBAL_ONLY_KEYS: ReadonlySet<keyof Settings> = new Set([
   "auditorStallMs",
   "auditJobRetentionMs",
   "auditSpotCheckRate",
+  "auditorStrictChallenge",
   "auditorInspection",
 ]);
 
@@ -410,6 +414,7 @@ export const DEFAULT_SETTINGS: Settings = {
   auditorInspection: false,
   // v0.38.81: 1-in-10 light audits silently run full (spot-checks).
   auditSpotCheckRate: 0.1,
+  auditorStrictChallenge: false,
   // v0.34.142: an extra blind retry at :00:30 after every hour starts.
   // It never checks provider state; it simply gives parked recovery another
   // opportunity to make progress.
@@ -584,6 +589,7 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   ) {
     settings.auditSpotCheckRate = 0.1;
   }
+  settings.auditorStrictChallenge = settings.auditorStrictChallenge === true;
   // v0.34.142: these old policy knobs no longer control recovery. Drop
   // them from the effective object so stale files cannot resurrect the old
   // behavior or make the settings UI imply that quota inspection exists.
@@ -759,6 +765,7 @@ export const SETTINGS_KEYS: Array<keyof Settings> = [
   "auditorStallMs",
   "auditJobRetentionMs",
   "auditSpotCheckRate",
+  "auditorStrictChallenge",
   "auditorInspection",
   "notifyCmd",
   "tokenLimit",

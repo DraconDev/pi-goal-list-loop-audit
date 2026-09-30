@@ -497,6 +497,14 @@ export function buildSettingsRows(
         "on: the auditor's pi runs as a normal persistent session (--session <jobDir>/session.jsonl) you can tail -f live or resume after the audit · off: the original --no-session spawn (default)",
     },
     {
+      id: "auditorStrictChallenge",
+      section: "auditor",
+      label: "Require full audit challenge",
+      valueText: show("auditorStrictChallenge", "off"),
+      sourceText: src("auditorStrictChallenge"),
+      description: "on: full-tier approvals require a successful falsification pass, including rework rounds; a failed challenge leaves no verdict · off: preserve round-one approval on challenge failure (default)",
+    },
+    {
       id: "auditCap",
       section: "auditor",
       label: "Audit cap",
