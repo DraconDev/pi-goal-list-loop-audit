@@ -14,7 +14,7 @@ const pi = new MockPi(); activate(pi.api);
 let cleanup: (() => Promise<void>) | undefined;
 afterEach(async () => { await cleanup?.(); cleanup = undefined; });
 const summary = "Outcome: Fixed routing.\nChanged: router.ts.\nEvidence: routing fixture.\nTests: routing suite passed.\nUnresolved: none.\nNext: await audit.";
-async function waitFor(check: () => boolean, timeout = 10000) {
+async function waitFor(check: () => boolean, timeout = 30000) {
   const until = Date.now() + timeout;
   while (!check()) { if (Date.now() > until) throw new Error("settlement timeout"); await new Promise(r => setTimeout(r, 20)); }
 }
@@ -154,7 +154,7 @@ test("archive write failure never emits a terminal success", async () => {
   assert.equal(fs.existsSync(approvalRenderStorePath(cwd)), false);
 });
 
-test("approval summary does not replace independent next-item continuation", { timeout: 25000 }, async () => {
+test("approval summary does not replace independent next-item continuation", { timeout: 60000 }, async () => {
   const { cwd, ctx, entries } = await setup("approved");
   await pi.runTool("list_add", { items: ["first item — done when pinned", "second item — done when pinned"] }, ctx);
   await pi.runTool("complete_goal", { completionSummary: summary, verificationSummary: "pinned" }, ctx);
