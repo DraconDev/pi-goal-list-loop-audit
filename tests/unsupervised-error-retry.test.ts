@@ -18,6 +18,7 @@ import activate, {
   __testOnlyResetOwnerSession,
   __testOnlyResetStaleFlag,
   __testOnlyResetTerminalFlags,
+  __testOnlyResetProcessState,
 } from "../extensions/loops/goal.js";
 import {
   __testOnlyResetUnsupervisedErrorRetry,
@@ -117,6 +118,21 @@ test("consecutive errors advance the streak; a clean turn clears it", async () =
   await pi.fire("agent_end", errTurn("socket hang up"), ctx);
   const last = ledger().filter((e) => e.type === "unsupervised_error_retry_scheduled").at(-1)!;
   assert.equal(last.value.attempt, 1, "the streak restarts after a clean turn");
+});
+
+test("composite isolation clears a poisoned unsupervised retry streak, timer, and override", async () => {
+  const ctx = await boot();
+  __testOnlySetUnsupervisedErrorRetryDelay(30_000);
+  await pi.fire("agent_end", errTurn("Provider returned an empty response"), ctx);
+  await pi.fire("agent_end", errTurn("Provider returned an empty response"), ctx);
+  assert.equal(ledger().filter(e => e.type === "unsupervised_error_retry_scheduled").at(-1)?.value.attempt, 2);
+  __testOnlyResetProcessState();
+  const nextCtx = await boot();
+  await pi.fire("agent_end", errTurn("Provider returned an empty response"), nextCtx);
+  const scheduled = ledger().find(e => e.type === "unsupervised_error_retry_scheduled");
+  assert.equal(scheduled?.value.attempt, 1);
+  assert.notEqual(scheduled?.value.delayMs, 30_000, "the test override cannot leak into a new fixture");
+  assert.equal(sentRetries().length, 0, "the poisoned timer did not dispatch during reset");
 });
 
 test("user aborts never retry", async () => {
