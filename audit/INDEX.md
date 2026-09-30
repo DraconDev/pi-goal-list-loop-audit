@@ -13,7 +13,7 @@ runner-interruption, and receipt-size defects, and prioritizes improvements
 across runtime architecture, test isolation, compatibility, dependencies,
 operator documentation, and release evidence. The report preserves the
 audited baseline; current implementation status and targeted evidence are in
-[IMPROVEMENT-IMPLEMENTATION-2026-09-30.md](IMPROVEMENT-IMPLEMENTATION-2026-09-30.md).
+[IMPROVEMENT-IMPLEMENTATION-2026-09-30.md](IMPROVEMENT-IMPLEMENTATION-2026-09-30.md) — completed; release check: 2,928 pass, one skip, zero failures.
 The full release gate and broader improvement plan remain pending.
 
 **Historical review (2026-09-29):**

@@ -1,6 +1,6 @@
 {
-  "stage": "Targeted implementation evidence; checks span incremental source versions. Full release provenance is recorded separately.",
-  "recordedHead": "c1e08dae643bb69f7fda663ca05937999144410f",
+  "stage": "Complete implementation; successful full release gate with unchanged source. Incremental failed logs remain historical evidence.",
+  "recordedHead": "6b372a8cd383314f66769ab33f54b7af212aab3c",
   "logs": [
     {
       "path": "audit/improvement-evidence-2026-09-30/canary-budget.log",
@@ -9,6 +9,18 @@
     {
       "path": "audit/improvement-evidence-2026-09-30/canary-runner.log",
       "sha256": "4ee2a4a9af587f4aa9eb5312e695cc37a3df7991c2aa1647d7a9767ceacd1e30"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/communication-final.log",
+      "sha256": "6e4551a49f03dbf4e788806cc022cf1b878e730325c7918b36ce059034f2c738"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/compaction-stall-isolated.log",
+      "sha256": "53e62d535b61c15332cb2a11579b760588767669cd642abe740f7171f91909ed"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/compaction-stall-sequence.log",
+      "sha256": "8e29600cb4cb66268a6e6cfd5788353b725ce2360cb7b99f62375bc163c18d64"
     },
     {
       "path": "audit/improvement-evidence-2026-09-30/context-growth.log",
@@ -35,6 +47,10 @@
       "sha256": "fd843cc4bfbc1e8b609549acde3e0d591785fb5c78dc507e85532ed24f61f882"
     },
     {
+      "path": "audit/improvement-evidence-2026-09-30/owner-read-retry.log",
+      "sha256": "1ca92370dd466d165b981910139e822437892b0d7ca8662a65a695fdb3594dde"
+    },
+    {
       "path": "audit/improvement-evidence-2026-09-30/ownership-di-typecheck.log",
       "sha256": "6fd20b7dbb02896b46917c0f35da26dddbdcf2d2fc1eafe5c74e5e6e945b9c1b"
     },
@@ -47,12 +63,28 @@
       "sha256": "f2dfa2a4f3a404ef7277cb244e60bf10c6ebd7abc1daf4ec064fe63f18db36d3"
     },
     {
+      "path": "audit/improvement-evidence-2026-09-30/platform-compatibility-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/platform-compatibility-read-retry.log",
+      "sha256": "b727fc946c10cd7604fada0779008d172e3533060f5cc539a30644282d038ab0"
+    },
+    {
       "path": "audit/improvement-evidence-2026-09-30/platform-compatibility.log",
       "sha256": "fb84d54088c1c9dedc9c803c39d7a14e8e5162cfc3da6bc5608bbf56d9fb41be"
     },
     {
       "path": "audit/improvement-evidence-2026-09-30/pre-release-types.log",
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/progress-clock-final.log",
+      "sha256": "8952a22f63df652af4908b89d1b776e4f0f28ca59e90a9dde603980b2fd83a17"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/progress-clock-focused.log",
+      "sha256": "c0e19a7fcd47ec3b5689775c461ddd1ec0506306f3fd6c3e1ef5d50356cde956"
     },
     {
       "path": "audit/improvement-evidence-2026-09-30/receipts-probes.log",
@@ -65,6 +97,30 @@
     {
       "path": "audit/improvement-evidence-2026-09-30/registry-typecheck-final.log",
       "sha256": "6fd20b7dbb02896b46917c0f35da26dddbdcf2d2fc1eafe5c74e5e6e945b9c1b"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/release-assertions-incremental.log",
+      "sha256": "aa379d92a2b13eb6865d63971a4360843ed3a7c5e0373721ce39b0a3577ee136"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/release-check-before-assertion-updates.log",
+      "sha256": "fe5bbb51ad07fe329cf543cca370fb80a3d5fee12333db7b240d7eecb4e5374c"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/release-check-before-progress-clock.log",
+      "sha256": "910852f4a0befa0bae66ca52d9ea60f293e56c25995486ee11a29c0cad42d152"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/release-check-interrupted.log",
+      "sha256": "818258ec629a8e651991df829a737bd4ad12ea7c102e3ed9a030137052d5c52b"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/release-check-stalled.log",
+      "sha256": "86895de7442776931c03582422e500903b30ca4281137c9247ddd3f55b67e146"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/release-check.log",
+      "sha256": "ad161044149c59b49f91a58177e9e7c996a7b4ae1892dd4e859bf218408362a2"
     },
     {
       "path": "audit/improvement-evidence-2026-09-30/reliability.log",
@@ -129,6 +185,10 @@
     {
       "path": "audit/improvement-evidence-2026-09-30/worker-check2.log",
       "sha256": "e1c146f88fa10732f61e3e22206f5e25f40c8dc2070701216bed305244634e4a"
+    },
+    {
+      "path": "audit/improvement-evidence-2026-09-30/worker-fixture-final.log",
+      "sha256": "9b186e447f50f8f835ba26a2f39da228b1cea455e53817cf836bf56f82222045"
     }
   ],
   "sourceSha256": {
@@ -219,7 +279,7 @@
     "extensions/model-picker.ts": "2c4cbdd7481e852f067f3d09c2794631dfc782105024f15c75367f1a207857e2",
     "extensions/model-selector.ts": "852d9aa9433952c4231d9b2ab12c5a8b20fea256c7e94a2270d3b1c30f172f15",
     "extensions/multi-model-picker.ts": "d2f69a2877c7c7ecb9e4184cd485577742df31591f651ae158f3d2d02170cc75",
-    "extensions/owner-file-protocol.ts": "7e4473270418d5e3ab34ff9b35ab9ed64478c912aa2581cce9e41dba597781d7",
+    "extensions/owner-file-protocol.ts": "3f3dc9d1fdf93aedb1cb6eeb1507f95bd611b5e1a571568b6714b628abfb94d5",
     "extensions/payload-guard.ts": "6f0dc1a341f3587ede963ee5f0a2e2e3827f2b0f3bc87a1ce2a68702f42a8469",
     "extensions/proactive-pre-read.ts": "73779d05a35042c563619f85bd5ff034f4039d192a869f3ff4911b351cf72bb0",
     "extensions/prompt-layers.ts": "0dfd1bb9e22297c44ee8b0cc9503b0651ae93b5df68df4ce7f73fa048464e05d",
@@ -233,11 +293,15 @@
     "extensions/terminal-summary-limits.ts": "955ec843d1cc45b21ac7f437a24e3d609a88d26f70d6bdbc637b7b45090fc270",
     "extensions/vision-assist.ts": "3f96dacc8862c6c7f0c91ed4dc981ea54063c27260a6fa2eb532b3df1a4d8f33",
     "scripts/auditor-extension-fixture.mjs": "b837defa47c975a64e91a702521f47ce648900d920d47ff1d76faaf90dfa45c1",
+    "scripts/auditor-stderr-diagnostic.d.mts": "7e96915075a4edac1b590977f53d0ab89e443427f4c4c43194db91b0d7af8bed",
     "scripts/auditor-stderr-diagnostic.mjs": "72d175dec9779d0f294b03c83eb8037dccb22a9e7ae235809de8c7a589559ad3",
+    "scripts/canary-budget.d.mts": "9dcb2d663df84f1d5b24dfd739fdc8fe89afa76ffc82eaa47d4babf5b908eed7",
     "scripts/canary-budget.mjs": "6a45f54420f46def3d079e3ff0de860fd87915ff2c3eca84f00b23a6ef31ce67",
+    "scripts/contained-child.d.mts": "06243f824e3077e789bbbc0232857c4755b989ec50e564c2b0968535802f4862",
     "scripts/contained-child.mjs": "c2e7acba14febdeb70db796b2e8afa8b45da5ae7fa460a199c6628d4696a978f",
     "scripts/durable-wait.mjs": "f8dd86fc5bb74da94f9aacb82f3ce8306618863b659a8fc9fd38e53adc01a7ca",
     "scripts/generate-inventory.mjs": "3b6ba46793b520b0baa25fbd25f70c9bbfca654a50e85a6c2d770068b888f444",
+    "scripts/goal-auditor-launch.d.mts": "099e17ea644eecb7efdad580524402226408ba818fd6a248dbba78738aec91a6",
     "scripts/goal-auditor-launch.mjs": "3664a3f637b5965b575d045ff71b3a3dfe8b5a7fdb0a37ab3a5cbf2d34dab610",
     "scripts/goal-auditor-worker.mjs": "25167ec6a3ad3c20cd48f6ed25800d01a3ef7ceb0c2ad16bafcf088217716f94",
     "scripts/goal-compactor-worker.mjs": "b85dee788caea38f98afba66fa7ad3bce38995d72ac4330845afa1dc5267f127",
@@ -245,10 +309,14 @@
     "scripts/measure-runtime.mjs": "ad3424717237a3a72cbd91934a162f29edd20cffbc9de72ec71556f8f6a4437a",
     "scripts/real-host-canary.mjs": "e0c9efc7a1d7f3152d89ee3a1c16dcc4ddb2cbfff57b6484d01dd108716cd6d2",
     "scripts/release-pack-smoke.mjs": "81821f87d3f45c68e2357c00072499282898bcdfb2dbdceb6a52fc7517eac583",
+    "scripts/run-tests.d.mts": "3069a20dd6581e78bc0805a0f9c321c598e615ee8526bd90bb17917a889e5eb3",
     "scripts/run-tests.mjs": "622c12e422c8cc3d4dbd61189a582250bd10b7d76386a8b8c483a11ea2357aef",
+    "scripts/smoke.sh": "0b0ad52ba59948fb62b70b872ac321a12c2dbb2da650a720480b5b1f308b56e2",
+    "scripts/test-process-registry.d.mts": "35ff5b7821f57346ac6a19c6540dc076804aa269902b250859d28a181d25923e",
     "scripts/test-process-registry.mjs": "01104fd10f33ab02f3d41b5ea8104817bb10dfa1ad8bede1b06368e19dab30a2",
     "scripts/verify-auditor-extensions-offline.mjs": "ef3fffce61bc727fe13d078802eba32d7b6d90bfd6df06e35989dc0669f63cba",
     "scripts/verify-compaction-live.mjs": "f040056a07e25d89d930e18c8043553eada5b4f92a740f28be745ca45cd64a15",
+    "tests/README.md": "e43eac28dd4e070675fd001c92a052783711e3eff870cc1fbe392380724eae4d",
     "tests/action-reminder.test.ts": "26099cb2ad0de859369eeee07f733055bbbed98f192c9ff6465e09f64e603f05",
     "tests/activity-first-status.test.ts": "b781f12cdab0233159790ae05aa1608f7566055a236e6a9c9cb9a645c5f2a63e",
     "tests/adaptive-wait.test.mjs": "b82401961ca81de0636e8969c5807b5c8d8fa39f317ae3cd8af2dcef512827c5",
@@ -288,14 +356,14 @@
     "tests/auditor-payload-escaping.test.ts": "01b3b69fd654c355455a72c0d4b74c642f120dfddf9ebb6ac9d2f647dad0c727",
     "tests/auditor-picker-parity.test.ts": "651d726dd5e2a70233cda5906341774ac943490eb42926d35af705cbca10eb75",
     "tests/auditor-polish.test.ts": "c028ae23ec52928624da378814da6a5ea24f2727ce77430d472d0dd55fb24448",
-    "tests/auditor-process.test.ts": "40cf2a06d4b29093f97b780f8631a27ba214563e70c40642854db8106179b066",
+    "tests/auditor-process.test.ts": "c78db211ac81b577a20cd59a1a49fd197ad97269c9bad1bdc3e2523769b402a4",
     "tests/auditor-quota-identical.test.ts": "bb4e9c4af6602cbc65e2c8d143c7f67cc055dedc4c98b92d872214d2a2ee12cd",
     "tests/auditor-retry-callback.test.ts": "b60505ede3f7586a2bbaef7078a31169845213e0e11efb6b5d25c0dcc6230e67",
     "tests/auditor-scope-guard.test.ts": "3ba053450c369dc0452723a96d4e77e8fe7de3d44d2e9f0fb7875cffaae966b4",
     "tests/auditor-screenshot-disapproval.test.ts": "1b5e212bb009a76ad4e61732a2423b250c999dba152544cbf33687e6a564f52b",
     "tests/auditor-session-mirror.test.ts": "d164fd5692131944f695629186289486dfb46ad7eeeaf2f91b6955b832f012fd",
     "tests/auditor-shift-acceptance.test.ts": "2b0fee11bd0d56086c459f478bab8c639802726815d7ed9503e0049bc1f6e933",
-    "tests/auditor-stall-watchdog.test.ts": "5447a43b87832845d7b791a7b9718bf84780f1b2126262cad4851b9f250c2bab",
+    "tests/auditor-stall-watchdog.test.ts": "87c27b8eb54c7c8e3d6a925bb5489a385cd70bd994e1d5e118e05f4bc1b17471",
     "tests/auditor-stderr-diagnostic.test.ts": "0c5b7fcdea3d886382fa515680cc6b2e42142867e57cdd1d29d8b0a2a40e1743",
     "tests/auditor-thinking-display.test.ts": "3bb16fe8c08a92fc52a7cabe3da6b5e65407fd5d648cb3b2ebb230e22f392474",
     "tests/auditor-thinking.test.ts": "dcb400261e803925dfbd770a7c904069c716ebbb3d2851231175d1c1ddd4c283",
@@ -317,7 +385,7 @@
     "tests/compaction-survival.test.ts": "c9d1342d4170fb6ac3d4847aab9d34f848a4ec89e44d7b5b5f41009f3ae9ffc2",
     "tests/compactor-handoff.test.ts": "2af5cffae4d3b03dfcc9ab62112d1bd877a6cb46f6795f95129d3abb32368682",
     "tests/compactor-worker-lifecycle.test.ts": "0ea60bd9667d0932f5fcb8afe81b41ab7aab8412d963178048d9c977ab7f6444",
-    "tests/completion-communication.test.ts": "349614e7c1b47c1c6558ae4e0b37bc642f5959f0babed326d8f9450221e0e7ca",
+    "tests/completion-communication.test.ts": "36429492a803542b944abf49c24d603d8dae20f5963eb2de796ddecf784bbf1b",
     "tests/completion-density-lint.test.ts": "68ccd1ef07045147ee69437fbf85a9bf11d32b2b5262cf94ec38f94fa0339a0a",
     "tests/completion-recap-shape.test.ts": "f39790d7d37f7c2624679c49a469f6e1d972e17621d5bcc8d380136c11a6cada",
     "tests/completion-summary-lines.test.ts": "5d9e6c42db619b46361eda56099e843b521b6e17243be1482037171c94868308",
@@ -358,13 +426,15 @@
     "tests/false-repair-card.test.ts": "68168cec86d7bae9e9f95e7198f0037848b72d40932f0872b986aba70be96b3e",
     "tests/faulty-objective-recovery.test.ts": "f799451eecdcd690c0469abdeadc9842e2bff680dbd612f81f29196d4731c414",
     "tests/finding-lead-contract.test.ts": "1fddc8ba9b2891a25518b0a3a787721bb4363833eb346e8925cbb549405c2096",
+    "tests/fixtures/auditor-disapproval-inverted-title-score.md": "555646cc8692f8801a5bd53bb9b2209ddd6334cca24c94edb0ec369b16e7e211",
+    "tests/fixtures/auditor-disapproval-nonliteral-done-when.md": "5c943342dd4847fb9e8690d28e48fcdb89649049a42c3d56a145f57eff5c923e",
     "tests/fixtures/screenshot-completion.ts": "a1729ba4743f5637ea3d501799d1dd2ee663f1831ef43681e38018c96f74d9dd",
     "tests/fresh-session-auto-recovery.test.ts": "af21a53e2ba707a1cc0e59d57f3eac8574f3f7cf46635c57d8ec8bd208278b6e",
     "tests/future-sidecar-freshness.test.ts": "a6c6ef9e1c1890a12a9e4ae32083f4e0ff7cbe20693af7964f6cb4b7f7cacfcb",
     "tests/gettick-tool-visibility.test.ts": "2aa9196e4e9d4b25101f6edb4e9c4728f85281883fcc315ddaa0e18dfd358f7a",
     "tests/glla-bug-capture.test.ts": "4e5bd61d415ed6a28b75c0bfc7a74540836442f1bfdd86ec6edee059502ba612",
     "tests/glla-stale-context.test.ts": "5e39ba4051bea86631c5a817775db5c2b2bbadccd78ce4d5925d8920bcb9d59c",
-    "tests/glla-status-ux.test.ts": "b4996da992da2be7f8c33c3398c2ef733eaf824bb1f2ea6f7b91417b4846cad8",
+    "tests/glla-status-ux.test.ts": "c03ce5bb8f3de4e3446a2e3ee51a28b8bb4efecdc2992133c129d2bb23402f43",
     "tests/glla-table-menu.test.ts": "fa9b2c28a959a16f6bc2e0f7213329f4f1aa1f8e6d914ca478769a97f6323402",
     "tests/glla-update-check.test.ts": "10957fd7c543bf3d0d714a4d97574021dfc9530c24f3308d6067875fb3d61b12",
     "tests/glla-version.test.ts": "c58813701b97f9ef63f79c203ef7230eef02f0532c300b5a653fa3c2a0da7d96",
@@ -450,7 +520,7 @@
     "tests/outcome-first-chat.test.ts": "0eb00f3d3ce926486a21e7e2901ab9bf8090be08ce9c428813ad202dcef98a01",
     "tests/overcap-strategy.test.ts": "8a22fd44f2a89e8345e31a462fa940ffde8d8b8a679c55fa55460ebb49cff9d3",
     "tests/owner-fence.test.ts": "4cca95ea50054c218315bbedfb7c2efb54a069b5284a8418eaad6e2c0fc0a6a3",
-    "tests/owner-file-protocol.test.ts": "2d683c60697a67e9202c79422efe20db09ba821146c7dcc134b699d58ab34623",
+    "tests/owner-file-protocol.test.ts": "45eaa3e3bfde3a5eeeeb7597905ee3981b1057ba8d132985b4066006bb493e18",
     "tests/pause-anti-confabulation.test.ts": "ec05432c66ff30655e7c0b61cafc56734e8a22b419cce0b7dc07acb45410f5fe",
     "tests/pause-auto-commit.test.ts": "5e2674ff617ea488015eb13b7543dc2fb4182a2cbb6cf8db3a42e26f944509e0",
     "tests/pause-decision-interrupt.test.ts": "b37df3ae3dade283f4a713bbbbec9bf64ff7b7d7dc884e96635cdf4a7917656e",
@@ -486,7 +556,7 @@
     "tests/quota-sleep-until-reset.test.ts": "841f35603cb957d33354a284a3863043f0effc54b191cfb6527737a381c40a06",
     "tests/quota-wall-engagement.test.ts": "69a33ab5f075486e87272ade3c8ca7ecf3e9f11df1485028d1936efa81337c41",
     "tests/real-host-canary.test.ts": "f72b7925799b84aac4dab18deda1c8e11e87acf1f8cf12e85f412369e0993892",
-    "tests/recap-preservation.test.ts": "3866c93f21c3d9616ac0e14cdc6ed4cc7860f951490ff3851ca23bb6c7de72a0",
+    "tests/recap-preservation.test.ts": "65ae1b3743829b365a8350c84bf24357267041c125e1da0193b4661ee8c25b55",
     "tests/recovery-restore-after-restart.test.ts": "e07fcbfbca746a372c1fee378f4108df5103d8b355c9ece62d6434acfb7d85d1",
     "tests/recovery-status-format.test.ts": "51bce894a0247f1658d4e54e32f3396ca099d2cf63aa16650aeea00a013774b3",
     "tests/refine-spec-rebaseline.test.ts": "66299cd5668efaf473c8ab32607390861051dcd8cf1723c91e2e858c3f156be1",
@@ -522,6 +592,7 @@
     "tests/settings-editors.test.ts": "43fe814a3c42c90221ca3d6088c3288d579f06db3cbe5fe8d24548d75df24339",
     "tests/settings-menu-complete.test.ts": "4a6df9b76a56a1f3cb71c80619ecbd2ee49f16bbbb799bee9855c60a884ceb22",
     "tests/settlement-boundary-faults.test.ts": "8ec0933c3c2e073808ded1139f534fb0b6edc2b43dd196933e09eb5df081ded3",
+    "tests/slow-files.d.mts": "5a47cfb03bb474953c762b9d51f0883a670bb9400f8f439bcf8102b85eebf44d",
     "tests/slow-files.mjs": "812c12557bcf96b3cd5512caaa8d74e10912070ba0bce6b23ebe544dfd82f1f5",
     "tests/stale-api-terminal.test.ts": "fd98e233c15203562d9fae31f2d17c11f2cd7c02171f69f8b1444b0033df375c",
     "tests/stale-continuation-integration.test.ts": "ada4d6fc3828eca7b315f899058b4589e1c33f8077249bf56da4008a1781ab5d",
@@ -576,5 +647,13 @@
     "tests/zombie-resume.test.ts": "329cd9722fd5363734e62ebe6470c2e1015f5611016331a425d2670ab040d480",
     "tests/zombie-subagent-tool-name.test.ts": "efa9813908021ebf5679fd4916bf955434aeea328399fa923bd52460ef473007",
     "tests/zombie-user-input-standdown.test.ts": "6c1d9beaef110d870372ac0db314affb3d7c62049f9ff19ae416da17b6fae47f"
+  },
+  "release": {
+    "path": "audit/improvement-evidence-2026-09-30/release-check.json",
+    "exitCode": 0,
+    "sourceDigest": "d12d84e1962cbdc9335531b35dbf1dec5e0861f0a26a9eb1d30f0f538925349c",
+    "pass": 2928,
+    "skip": 1,
+    "fail": 0
   }
 }
