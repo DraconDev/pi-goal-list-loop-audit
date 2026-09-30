@@ -82,16 +82,40 @@ try {
   await worker.closed;
 
   const jiti = createJiti(import.meta.url);
+  process.env.GLLA_GLOBAL_SETTINGS_PATH = path.join(scratch, 'global-settings.json');
   const { deliverTerminalSummary } = await jiti.import(path.join(root, 'extensions/terminal-summary-delivery.ts'));
+  const { persistApprovalRender, approvalRenderStorePath } = await jiti.import(path.join(root, 'extensions/approval-render-store.ts'));
   const sessionFile = path.join(scratch, 'session.jsonl');
   for (const chars of [1000, 280_000]) {
-    const content = 'x'.repeat(chars);
-    const entry = { type: 'custom_message', id: 'receipt', customType: 'goal-complete', display: true, content, details: { terminalApprovalGoalId: 'goal-1' } };
+    const chatLines = chars === 1000 ? ['x'.repeat(chars)] : Array(140).fill('x'.repeat(2000));
+    const goalId = `goal-${chars}`;
+    const accepted = persistApprovalRender(scratch, { goalId, objective: 'probe', chatLines });
+    const stored = JSON.parse(fs.readFileSync(approvalRenderStorePath(scratch), 'utf8')).find(entry => entry.goalId === goalId);
+    const content = stored.chatLines.join('\n');
+    const entry = { type: 'custom_message', id: 'receipt', customType: 'goal-complete', display: true, content, details: { terminalApprovalGoalId: goalId } };
     fs.writeFileSync(sessionFile, JSON.stringify(entry) + '\n');
     let sends = 0;
-    const confirmed = deliverTerminalSummary({ sessionManager: { getBranch: () => [entry], getSessionFile: () => sessionFile } }, { sendMessage: () => { sends++; } }, entry.customType, 'goal-1', content);
-    console.log(JSON.stringify({ probe: 'durable-summary-receipt', chars, fileBytes: fs.statSync(sessionFile).size, confirmed, sends }));
+    const confirmed = deliverTerminalSummary({ sessionManager: { getBranch: () => [entry], getSessionFile: () => sessionFile } }, { sendMessage: () => { sends++; } }, entry.customType, goalId, content);
+    console.log(JSON.stringify({ probe: 'durable-summary-receipt', chars, acceptedByOutbox: accepted, fileBytes: fs.statSync(sessionFile).size, confirmed, sends }));
   }
+
+  // Model claimant A's real open(wx)-before-write window; B runs the real
+  // claim function in a separate process while A still holds its descriptor.
+  const ownerRoot = path.join(scratch, 'owner-race');
+  fs.mkdirSync(path.join(ownerRoot, '.pi-glla'), { recursive: true });
+  const ownerFile = path.join(ownerRoot, '.pi-glla', 'owner.json');
+  const firstFd = fs.openSync(ownerFile, 'wx');
+  try {
+    const childSource = `import {createJiti} from ${JSON.stringify(import.meta.resolve('jiti'))};
+      const jiti=createJiti(import.meta.url);
+      const {claimProcessOwner}=await jiti.import(${JSON.stringify(path.join(root, 'extensions/loops/goal-session.ts'))});
+      console.log(JSON.stringify({claimed:claimProcessOwner(${JSON.stringify(ownerRoot)})}));`;
+    const contender = start(process.execPath, ['--input-type=module', '-e', childSource], { GLLA_GLOBAL_SETTINGS_PATH: path.join(scratch, 'global-settings.json') });
+    const result = await contender.closed;
+    if (result.code !== 0) throw new Error(result.output);
+    fs.writeSync(firstFd, JSON.stringify({ pid: process.pid, instanceId: 'first-owner', at: Date.now() }));
+    console.log(JSON.stringify({ probe: 'fresh-owner-claim-window', contender: JSON.parse(result.output), firstDescriptorStillNamesOwnerFile: fs.fstatSync(firstFd).ino === fs.statSync(ownerFile).ino }));
+  } finally { fs.closeSync(firstFd); }
 } finally {
   for (const pid of owned) {
     try { process.kill(pid, 'SIGKILL'); } catch { /* already exited */ }
