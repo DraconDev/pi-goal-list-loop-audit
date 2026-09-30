@@ -7,6 +7,9 @@
 ##
 improve control ui ?
 
+##
+we need to update the readme and the docs like for one we are not pinning subagents 
+
 # Testing
 
 # Research
