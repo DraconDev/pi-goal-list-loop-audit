@@ -56,10 +56,12 @@ export function registerOwnedTestProcess(child, env = process.env) {
   let anchors = [];
   const snapshot = (exited = false) => {
     const current = identity(child.pid);
-    leader ??= current;
+    if (!leader && current?.group === child.pid && current.session === child.pid) leader = current;
     if (!leader || leader.group !== child.pid || leader.session !== child.pid) return;
+    if (current && current.birth !== leader.birth) return;
     const live = (exited ? members(child.pid) : descendants(child.pid))
       .filter(p => !p.zombie && p.group === child.pid && p.session === child.pid);
+    if (exited && !current && !live.some(p => anchors.some(a => a.pid === p.pid && a.birth === p.birth))) return;
     for (const member of live) {
       if (!anchors.some(p => p.pid === member.pid && p.birth === member.birth)) anchors.push(member);
     }
