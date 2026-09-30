@@ -60,8 +60,9 @@
 		"test:changed": "bun test --parallel=1 --max-concurrency=1 --timeout=60000 --changed",
 		"test:auditor-extensions": "node scripts/verify-auditor-extensions-offline.mjs",
 		"test:all": "node scripts/run-tests.mjs --all && tsc --noEmit && node tests/repro-jiti-state-split.test.mjs && npm run test:auditor-extensions",
-		"release:check": "npm run test:all && npm pack --dry-run && node scripts/release-pack-smoke.mjs",
-		"test:jiti": "node tests/repro-jiti-state-split.test.mjs"
+		"release:check": "npm run test:all && npm run check:inventory && npm pack --dry-run && node scripts/release-pack-smoke.mjs",
+		"test:jiti": "node tests/repro-jiti-state-split.test.mjs",
+		"check:inventory": "node scripts/generate-inventory.mjs --check"
 	},
 	"peerDependencies": {
 		"@earendil-works/pi-agent-core": ">=0.84.2 <0.100.0",

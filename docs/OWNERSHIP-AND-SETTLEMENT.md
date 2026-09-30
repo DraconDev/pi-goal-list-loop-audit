@@ -35,11 +35,26 @@ idempotent.
 
 These are process-crash guarantees. Atomic file publication does not promise
 survival of power loss or storage-controller failure: the current writes do
-not fsync files and parent directories. Storage-loss semantics remain a
-separate implementation item in the improvement register.
+not fsync files and parent directories. The chosen durability level is process-crash recovery. Power-loss/storage-loss
+durability is outside this contract; a future fsync policy would require separate
+filesystem/platform testing.
 
 Executable checks cover competing Node processes, live-holder timeout,
 SIGKILL recovery, stale takeover observations, archive/outbox boundaries,
-cold-process recovery, and existing takeover and last-wins behavior. Linux
-execution does not establish macOS or Windows correctness; platform validation
-remains in the compatibility plan.
+cold-process recovery, and existing takeover and last-wins behavior. The
+[compatibility matrix](COMPATIBILITY.md) records actual platform coverage and
+its explicit limits.
+
+`ProcessOwnerBoundary`, `GoalSettlementBoundary`, `SettlementPersistence`,
+`ContinuationDeps`/`ContinuationFlags`, and `HeartbeatDeps` make the ownership,
+settlement, continuation, and supervision seams typed. Settlement persistence
+can be fault-injected without copying the state singleton. The archive operation
+is now a lexical import, rather than an ambient callable; all consumers use the
+same implementation. The compatibility bridge remains for other subsystems;
+its measured reduction is recorded in [RUNTIME-INVENTORY.md](RUNTIME-INVENTORY.md).
+
+Transition obligations: prepare the terminal projection and delivery obligation;
+publish the immutable archive; persist terminal state; transfer the receipt;
+clear active projections; admit a successor. A failed publication preserves
+the live goal. A failure after publication retains a recovery journal. Stale
+workers never acquire authority over a successor revision or generation.
