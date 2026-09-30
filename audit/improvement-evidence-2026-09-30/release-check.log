@@ -3614,3 +3614,137 @@ tests/auditor-stall-watchdog.test.ts:
 (pass) v0.38.99: a genuinely wedged tool still fails fast once the grace expires [791.31ms]
 
 tests/auditor-retry-callback.test.ts:
+[run-tests] progress: 1230s elapsed · 21s since last output · 319 KiB of suite output
+(pass) manual audit exhaustion retries through timer with fresh candidates and unchanged envelope [20730.06ms]
+
+tests/goal.schema.test.ts:
+unknown format "date-time" ignored in schema at path "#/properties/deferred/properties/at"
+unknown format "date-time" ignored in schema at path "#/properties/deferred/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/auditVerdict/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/auditVerdict/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/lastActivityAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/lastActivityAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/verdictAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/verdictAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/startedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/startedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryRetryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryRetryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaAutoRetryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaAutoRetryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorRetryAttemptStartedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorRetryAttemptStartedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorFailureAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorFailureAt"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepair/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepair/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepairTarget/properties/replanPromptedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepairTarget/properties/replanPromptedAt"
+unknown format "date-time" ignored in schema at path "#/properties/createdAt"
+unknown format "date-time" ignored in schema at path "#/properties/createdAt"
+unknown format "date-time" ignored in schema at path "#/properties/updatedAt"
+unknown format "date-time" ignored in schema at path "#/properties/updatedAt"
+(pass) schema accepts active goal and queued-list goal fixtures [1.31ms]
+(pass) schema rejects invalid status and missing required usage [111.68ms]
+(pass) schema validates nested task and audit-verdict required fields [0.53ms]
+
+tests/glla-table-menu.test.ts:
+(pass) render: title row [3.48ms]
+(pass) grouped entry points can open a specific settings section [0.80ms]
+(pass) render: tabs row lists all 8 sections [2.86ms]
+(pass) main agent tab starts with the current agent and drills in [1.25ms]
+(pass) render: at width=120, the keep-going section renders its rows (v0.28.23: +decisionPopup) [1.85ms]
+(pass) render: active row uses a full-width selected background [0.32ms]
+(pass) render: compact header row has KEY, VALUE, SOURCE columns [0.42ms]
+(pass) render: compact mode never exceeds terminal width even with a long VALUE in another section [0.57ms]
+(pass) render: footer pin includes the optional details toggle [0.27ms]
+(pass) nav: Enter on the first row emits that row's id [0.10ms]
+(pass) nav: Down arrow moves to the next visible row [0.14ms]
+(pass) nav: Down wrapping at the end of a section wraps to 0 [0.19ms]
+(pass) nav: Esc emits undefined (close) [0.05ms]
+(pass) nav: Tab advances to the next section [0.05ms]
+(pass) nav: Back-tab (\x1b[Z) retreats to the previous section [0.03ms]
+(pass) nav: Right-arrow CSI sequence (\x1b[C) advances section [0.04ms]
+(pass) nav: Left-arrow CSI sequence (\x1b[D) retreats section [0.03ms]
+(pass) details toggle: descriptions can be shown and truncated when requested [0.69ms]
+(pass) details toggle: at width=120 the description column shows most of the row text [0.49ms]
+(pass) cache: identical renders at the same width return the same array reference [0.27ms]
+(pass) cache: state change invalidates cache (move → next render produces new lines) [0.40ms]
+(pass) compact view expands VALUE so model + thinking are visible [2.70ms]
+(pass) structural: Class implements Component (has render + invalidate + handleInput) [0.08ms]
+(pass) structural: buildSettingsRows returns ≥20 rows across all 8 sections (coverage) [0.26ms]
+(pass) render: tab bar is color-only (v0.28.19: brackets dropped), all sections present [0.40ms]
+(pass) render: a header rule with ┼ junctions follows the header row [99.51ms]
+(pass) render: column separators align across header, rule, and every row (prefix counted) [0.94ms]
+(pass) render: a too-long VALUE is truncated with … — it must NOT break the grid [0.33ms]
+(pass) render: column widths are stable across tab switches (no grid reflow) [5.37ms]
+
+tests/goal-loop-stats.test.ts:
+(pass) empty rig: no .pi-glla anywhere → empty discovery + no rollup [123.57ms]
+(pass) single project with one approved goal: all counters correct [5.27ms]
+(pass) premature-success detection fires on low turns + 0 writes + few bash [0.16ms]
+(pass) JSON output schema matches the table columns [1.17ms]
+(pass) premature filter: only flagged projects, ratio-sorted [0.19ms]
+(pass) discovery finds nested projects and dedupes via cwd [1.05ms]
+(pass) parseLedgerEntries skips malformed lines [1.18ms]
+
+tests/compaction-failed-recovery.test.ts:
+(pass) host-owned failed compaction retries without model rotation, park, or competing continuation [4106.66ms]
+(pass) terminal prompt overflow rotates once and arms durable post-compact resume debt [852.24ms]
+(pass) same-session startup restores fallback debt, while a new session discards it [701.43ms]
+(pass) terminal output-cap failure parks instead of misclassifying it as context overflow [1284.98ms]
+(pass) failed compaction without a usable fallback parks an active goal durably [686.41ms]
+(pass) failed compaction parks a branch loop instead of leaving it active [359.36ms]
+(pass) a failed debt-discharge append keeps RAM debt instead of diverging from disk [627.60ms]
+
+tests/auditor-unmatched-telemetry.test.ts:
+(pass) v0.34.56: a serial id'd start+end pairs into toolCalls with zero unmatched facts [143.82ms]
+(pass) v0.34.56: an end with the WRONG id never pairs — it is an explicit unmatched fact and the open start stays open [0.07ms]
+(pass) v0.34.56: an end with an id can never close an ANONYMOUS start (missing-toolCallId shape) [0.05ms]
+(pass) v0.34.56: an ANONYMOUS end can never close an id'd start (the id would be present on a true end) [0.04ms]
+(pass) v0.34.56: a serial ANONYMOUS stream (both sides missing toolCallId) still pairs truthfully [0.04ms]
+(pass) v0.34.56: an anonymous end closes the CURRENT anonymous start; a replaced anonymous start stays an explicit unmatched fact [0.38ms]
+(pass) v0.34.56: a new start replacing an open start records the ORPHANED start explicitly (name, args, id preserved) [0.09ms]
+(pass) v0.34.56: same-id restart updates the slot without an unmatched fact; an end with no open start is an unmatched end [0.17ms]
+(pass) v0.34.56/0.34.108: the detached path forwards pairing data untouched (no inline slot mutation) [0.42ms]
+(pass) v0.34.56: worker — anonymous ends pair only with the SOLE anonymous start; everything else is an explicit unmatched fact [0.19ms]
+(pass) v0.34.56: worker — in-flight starts at session end become explicit unmatched starts (finish sweep) [0.07ms]
+(pass) v0.34.56: progress file + asProgress + HUD mapping + display all carry the unmatched facts [0.26ms]
+
+tests/settlement-boundary-faults.test.ts:
+(pass) typed settlement refuses success before its intent can be persisted [179.83ms]
+(pass) failed receipt transfer retains the terminal obligation across live-slot cleanup [26.75ms]
+
+tests/state-root.test.ts:
+(pass) workingDir remains the default root and persists under cwd [118.49ms]
+(pass) sessionDir opt-in resolves to the registered top-level session directory [1.29ms]
+(pass) pending sessionDir defers every core write and does not migrate the old cwd tree [1.83ms]
+(pass) PI_SESSION_FILE provides a worker-safe session-root fallback [0.37ms]
+(pass) stateRoot is typed/global-only and project settings cannot override it [21.81ms]
+
+tests/auditor-payload-escaping.test.ts:
+(pass) auditor payload escaping keeps XML-like delimiters inside untrusted data [149.37ms]
+
+tests/goal-loop-core.test.ts:
