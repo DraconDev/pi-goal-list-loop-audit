@@ -195,9 +195,11 @@ test("v0.35.27 (PR #17): bare tokens pass unquoted for .CMD shims, unsafe-arg ga
 
 test("Windows worker shutdown kills the cmd/pi process tree", async () => {
   const workerSource = await readFile(path.resolve(process.cwd(), "scripts/goal-auditor-worker.mjs"), "utf8");
-  assert.match(workerSource, /taskkill/);
-  assert.ok(workerSource.includes('"/t"'), "process-tree termination uses /t");
-  assert.match(workerSource, /process\.platform === "win32"/);
+  assert.match(workerSource, /await terminateContainedChild\(child/);
+  const containmentSource = await readFile(path.resolve(process.cwd(), "scripts/contained-child.mjs"), "utf8");
+  assert.match(containmentSource, /taskkill/);
+  assert.ok(containmentSource.includes('"/t"'), "process-tree termination uses /t");
+  assert.match(containmentSource, /process\.platform === "win32"/);
 });
 
 test("Windows atomic protocol retries transient rename locks without unlinking the old snapshot", async () => {

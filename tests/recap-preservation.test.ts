@@ -24,7 +24,8 @@ afterEach(async () => { await cleanup?.(); cleanup = undefined; });
 // v0.38.99 (closure): the re-claim settlement path (auditor spawn + RPC
 // protocol + archive) exceeds 10s under suite load (12.1s observed). 30s
 // follows the paused-suspicious-close precedent: a wedged audit still times
-// out loudly, with real margin under the 60s runner cap.
+// out loudly. Three audits share the 60s outer deadline; a 25s outer
+// timeout would interrupt otherwise valid 30s per-transition waits.
 async function waitFor(check: () => boolean, timeout = 30000) {
   const until = Date.now() + timeout;
   while (!check()) { if (Date.now() > until) throw new Error("settlement timeout"); await new Promise(r => setTimeout(r, 20)); }
@@ -48,7 +49,7 @@ emit({type:"agent_settled"});
   return binary;
 }
 
-test("repair re-claim preserves the whole-work recap in the approved render", { timeout: 25000 }, async () => {
+test("repair re-claim preserves the whole-work recap in the approved render", { timeout: 60000 }, async () => {
   __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); __testOnlyResetTerminalFlags();
   __testOnlyResetZombieAutoRetry(); __testOnlyResetZombieRunWatchdog();
   const cwd = tmpCwd(); resetContinuationDispatchState(cwd);

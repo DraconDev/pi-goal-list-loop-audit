@@ -10,7 +10,7 @@ The compatibility workflow exercises both Pi 0.84.2 and 0.99.1 on actual
 Linux, macOS, and Windows runners with Node 22.19 and Bun 1.3.14. It checks
 TypeScript, competing owner processes, child-tree cleanup, persisted receipts,
 archive recovery, and the Node/jiti state singleton. All six lanes passed
-[run 36743705551](https://github.com/DraconDev/pi-goal-list-loop-audit/actions/runs/36743705551).
+[run 36746020362](https://github.com/DraconDev/pi-goal-list-loop-audit/actions/runs/36746020362).
 This is boundary coverage, not the entire release suite on every platform.
 Linux SIGKILL cases explicitly skip on Windows; these skips do not establish
 Windows abrupt-power-loss recovery.

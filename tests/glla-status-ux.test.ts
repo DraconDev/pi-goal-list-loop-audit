@@ -1,3 +1,4 @@
+import ts from "typescript";
 // pi-goal-list-loop-audit — v0.35.15
 // tests/glla-status-ux.test.ts
 //
@@ -192,11 +193,16 @@ test("v0.35.15: every automatic dispatch point gates on supervisorPaused", () =>
     ["extensions/goal-continuation.ts", "sendContinuation (armed-timer race)", /export function sendContinuation\(goalId: string\): void \{[\s\S]{0,400}?if \(supervisorPaused\(state\)\) return;/],
     ["extensions/goal-loop.ts", "scheduleLoopTick", /function scheduleLoopTick\(ctx: ExtensionContext\): void \{[\s\S]{0,300}?if \(supervisorPaused\(state\)\) return;/],
     ["extensions/goal-loop.ts", "sendLoopTurn (armed-timer race)", /function sendLoopTurn\(\): void \{[\s\S]{0,200}?if \(supervisorPaused\(state\)\) return;/],
-    ["extensions/goal-heartbeat.ts", "heartbeatTick (re-arms/probes/zombie cleanup; manual pause only — the v0.35.23 load hold keeps host supervision alive)", /function heartbeatTick\(\): void \{[\s\S]{0,1400}typeof state\.supervisorPausedAt === "number"\) return;/],
     ["extensions/goal-recovery.ts", "main-model recovery probe timer", /export function scheduleMainModelRecoveryTimer[\s\S]{0,500}?if \(supervisorPaused\(state\)\) return;/],
     ["extensions/loops/goal-auditor-hooks.ts", "automatic audit recovery (non-manual)", /async function retryStoredCompletionAudit[\s\S]{0,1400}?origin !== "manual" && supervisorPaused\(state\)/],
     ["extensions/loops/goal-ui.ts", "proactive quiet notify", /__auditorQuietWatchTick[\s\S]{0,600}?supervisorPaused\(state\)/],
   ];
+  // Inspect the function rather than a character window sensitive to comments.
+  const source = ts.createSourceFile("heartbeat.ts", fs.readFileSync("extensions/goal-heartbeat.ts", "utf8"), ts.ScriptTarget.Latest, true);
+  const heartbeat = source.statements.find((node): node is ts.FunctionDeclaration => ts.isFunctionDeclaration(node) && node.name?.text === "heartbeatTick");
+  assert.ok(heartbeat?.body);
+  const guard = heartbeat.body.statements.find(node => ts.isIfStatement(node) && node.expression.getText(source) === 'typeof state.supervisorPausedAt === "number"');
+  assert.ok(guard && ts.isIfStatement(guard) && ts.isReturnStatement(guard.thenStatement), "heartbeat must return for a manual supervisor pause");
   for (const [file, point, re] of gates) {
     const src = fs.readFileSync(file, "utf-8");
     assert.ok(re.test(src), `${file}: ${point} must freeze under /glla pause`);

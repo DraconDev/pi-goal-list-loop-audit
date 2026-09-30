@@ -6,7 +6,7 @@ import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __test
 import { __testOnlyResetZombieAutoRetry } from "../extensions/loops/goal-activation.js";
 import { __testOnlyResetZombieRunWatchdog } from "../extensions/goal-heartbeat.js";
 import { resetContinuationDispatchState } from "../extensions/goal-continuation.js";
-import { readState, archiveIntentPath } from "../extensions/goal-loop-core.js";
+import { readState, readArchiveIntent, archivedGoalPath, archiveIntentPath } from "../extensions/goal-loop-core.js";
 import { approvalRenderStorePath } from "../extensions/approval-render-store.js";
 import { MockPi, makeMockCtx, tmpCwd } from "./harness/mock-pi.js";
 
@@ -147,7 +147,8 @@ test("archive write failure never emits a terminal success", async () => {
   // re-drivable (a restart finishes it without re-running the auditor).
   const parked = readState(cwd).goal;
   assert.match(parked?.pauseReason ?? "", /terminal archive failed — park-archive/);
-  assert.equal(parked?.pendingCompletion?.phase, "recovery-pending");
+  assert.equal(parked?.pendingCompletion?.phase, "settling");
+  assert.ok(parked?.pendingCompletion?.verdictAt, "approved settlement retains its durable verdict");
   assert.match(parked?.pauseSuggestedAction ?? "", /No new audit is needed/);
   assert.equal(entries.length, 0);
   assert.equal(fs.existsSync(approvalRenderStorePath(cwd)), false);
@@ -169,8 +170,11 @@ test("outbox write failure warns without claiming summary delivery", async () =>
   await pi.command("goal", "fix routing — done when pinned", ctx);
   fs.mkdirSync(approvalRenderStorePath(cwd));
   await pi.runTool("complete_goal", { completionSummary: summary, verificationSummary: "pinned" }, ctx);
-  await waitFor(() => readState(cwd).goal === null);
+  await waitFor(() => ctx.ui.matching("chat summary could not be persisted").length > 0);
+  const intent = readArchiveIntent(cwd);
+  assert.ok(intent?.terminalRender, "failed delivery retains the durable summary obligation");
+  assert.equal(intent.status, "complete");
+  assert.equal(fs.existsSync(archivedGoalPath(cwd, intent.goalId)), true);
   assert.equal(entries.length, 0);
-  assert.ok(ctx.ui.matching("chat summary could not be persisted").length > 0);
   assert.doesNotMatch(fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8"), /"terminal_completion_notice_sent"/);
 });
