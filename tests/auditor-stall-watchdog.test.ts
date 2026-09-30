@@ -217,7 +217,7 @@ setInterval(() => {}, 1_000);
   await cleanup();
 });
 
-test("progress: a live auditor outlives the legacy wall metadata and settles on its result", { timeout: 20_000 }, async () => {
+test("progress: a live auditor outlives the legacy wall metadata and settles on its result", { timeout: 60_000 }, async () => {
   const dir = await mkdtemp(path.join(tmpdir(), "glla-live-progress-") );
   dirs.push(dir);
   const worker = path.join(dir, "progress-worker.mjs");
@@ -250,16 +250,24 @@ process.on("SIGTERM", () => { clearInterval(timer); process.exit(0); });
 `);
   const reports: AuditorProgress[] = [];
   const started = Date.now();
+  let eventClock = started;
   const result = await runDetachedGoalCompletionAuditor({
     cwd: dir,
     goal: { ...goal, verificationContract: undefined },
     model: "test/provider-model",
     thinkingLevel: "high",
-    onProgress: (progress) => reports.push(progress),
+    onProgress: (progress) => {
+      reports.push(progress);
+      if (progress.phase === "running") eventClock = Math.max(eventClock, progress.lastActivityAt);
+    },
     runtime: {
       workerPath: worker,
       attemptId: () => "attempt-live-progress",
       pollIntervalMs: 10,
+      // This test owns the progress/wall axis, not subprocess cold-start.
+      // Advance the clock on received child events; a missing worker still
+      // fails at the bounded outer test deadline. Separate tests own boot silence.
+      now: () => eventClock,
       // This deliberately expires before the worker's first result. It is
       // legacy metadata only; real progress and the result must win.
       wallTimeoutMs: 100,
@@ -272,6 +280,7 @@ process.on("SIGTERM", () => { clearInterval(timer); process.exit(0); });
   assert.equal(result.error, undefined);
   assert.ok(Date.now() - started >= 180, "the worker remained alive beyond the ignored legacy wall metadata");
   assert.ok(reports.some((progress) => (progress.recentOutput.at(-1) ?? "").startsWith("live-progress-")), "real child progress reached the parent");
+  assert.ok(eventClock - started > 100, "accepted progress crossed the legacy wall deadline");
   await cleanup();
 });
 
