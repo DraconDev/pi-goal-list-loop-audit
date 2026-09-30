@@ -4011,3 +4011,23 @@ tests/test-runner-lifecycle.test.ts:
 (pass) registry refuses to signal a record naming a reused leader identity [558.03ms]
 
 tests/recovery-restore-after-restart.test.ts:
+(pass) v0.34.63 — quit → blank startup → resume (new manager, same session id) restores the recovery probe [10407.19ms]
+(pass) blank restart paints the durable list objective, recovery owner, and next action before transcript load [73.96ms]
+(pass) v0.34.63 — a lifecycle start with a DIFFERENT session id stays refused while the barrier pends [912.13ms]
+(pass) v0.34.63 — source guard: the barrier-completing resume gate is wired before the foreign-session return [78.91ms]
+
+tests/load-wait-bound.test.ts:
+[run-tests] progress: 1470s elapsed · 4s since last output · 349 KiB of suite output
+(pass) 153404: a 4.5h load wait is clamped to the hourly horizon with a re-check notice [14227.91ms]
+(pass) 153404: a short wait inside the horizon is stored as requested [582.62ms]
+
+tests/length-exhaustion-relentless.test.ts:
+(pass) hot context with fallback refs rotates to a larger-context model [131.08ms]
+(pass) hot context at the 90% boundary still rotates [0.08ms]
+(pass) hot context without fallback refs defers to auto-compaction [0.08ms]
+(pass) roomy context grants one fresh budget, never an immediate manual park [0.07ms]
+(pass) exhaustion episodes: first wedge stays relentless, second parks [1.82ms]
+(pass) exhaustion episodes degrade garbage to a fresh first episode [0.06ms]
+(pass) unknown context heat degrades to fresh-budget, never rotate [0.05ms]
+
+tests/loops/goal.test.ts:
