@@ -532,6 +532,7 @@ function writeOwnerFile(cwd: string): void {
     if (stateRootPending()) return;
     withOwnerMutation(ownerFilePath(cwd), () => {
       const current = readOwnerFile(cwd);
+      if (!current && fs.existsSync(ownerFilePath(cwd))) return;
       if (current?.pid !== undefined && current.pid !== process.pid && isProcessAlive(current.pid) && !current.shutdownAt) return;
       publishOwnerRecord(ownerFilePath(cwd), { ...current, instanceId, pid: process.pid, at: Date.now() });
     });
@@ -540,7 +541,9 @@ function writeOwnerFile(cwd: string): void {
 
 function readOwnerFile(cwd: string): SessionOwnerRecord | null {
   try {
-    return JSON.parse(fs.readFileSync(ownerFilePath(cwd), "utf8")) as SessionOwnerRecord;
+    const record = JSON.parse(fs.readFileSync(ownerFilePath(cwd), "utf8")) as SessionOwnerRecord;
+    if (!record || !Number.isInteger(record.pid) || (record.pid ?? 0) <= 0) return null;
+    return record;
   } catch {
     return null;
   }

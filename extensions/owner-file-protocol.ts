@@ -22,7 +22,14 @@ function active(p: Participant): boolean {
   catch (err) { return (err as NodeJS.ErrnoException).code !== "ESRCH"; }
   // A reused PID cannot keep a dead contender's ticket alive on Linux.
   // Elsewhere, an ambiguous live PID conservatively blocks the mutation.
-  return p.birth === null || birth(p.pid) === p.birth;
+  if (process.platform === "linux") {
+    try {
+      const stat = fs.readFileSync(`/proc/${p.pid}/stat`, "utf8");
+      if (stat.slice(stat.lastIndexOf(")") + 2).split(" ")[0] === "Z") return false;
+    } catch { /* inaccessible process identity remains ambiguous/live */ }
+  }
+  const current = birth(p.pid);
+  return p.birth === null || current === null || current === p.birth;
 }
 
 /** Publish a complete record. All owner.json replacements run under the
