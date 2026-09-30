@@ -78,9 +78,10 @@ try {
   for (let i = 0; i < 3; i++) {
     const cwd = path.join(scratch, `rotation-${i}`);
     core.appendStateSnapshot(cwd, { goal, list: [] });
+    const latestStateLine = fs.readFileSync(core.ledgerPath(cwd), "utf8").trim().split("\n").at(-1);
     fs.appendFileSync(core.ledgerPath(cwd), line.repeat(Math.ceil(rotationBytes / line.length)));
     const start = performance.now();
-    if (core.rotateLedgerIfNeeded(cwd) !== true) throw new Error("rotation benchmark did not rotate");
+    if (core.rotateLedgerIfNeeded(cwd, latestStateLine) !== true) throw new Error("rotation benchmark did not rotate");
     rotationSamples.push(performance.now() - start);
   }
   const outboxCwd = path.join(scratch, "outbox");

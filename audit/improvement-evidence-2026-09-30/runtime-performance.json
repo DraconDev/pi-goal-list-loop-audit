@@ -1,0 +1,92 @@
+{
+  "recordedAt": "2026-09-30T15:52:48.328Z",
+  "node": "v22.22.2",
+  "platform": "linux",
+  "arch": "x64",
+  "head": "aee192eed909b11760cb4271f34fa23ae1c0d942",
+  "sourceDigest": "314e4e07d92866fdfea414f949c91484c838f6501dd7a6a8debab96d569cc09f",
+  "loadAverage": [
+    68.72,
+    65.87,
+    62.85
+  ],
+  "fixtures": {
+    "queuedItems": 500,
+    "goalTasks": 100,
+    "rotationBytes": 8389632,
+    "pendingOutboxEntries": 10,
+    "outboxBytes": 3016322,
+    "linesPerRender": 150,
+    "codePointsPerLine": 2000
+  },
+  "coldProcessLoadWithoutJitiDiskCache": {
+    "n": 3,
+    "minMs": 11496.45606,
+    "medianMs": 14141.949516,
+    "p95Ms": 23430.845375999997,
+    "maxMs": 23430.845375999997,
+    "meanMs": 16356.416984000001,
+    "rssBytes": [
+      287772672,
+      311562240,
+      312799232
+    ]
+  },
+  "idleHeartbeat": {
+    "n": 1000,
+    "minMs": 0.00240499999927124,
+    "medianMs": 0.0033170000024256296,
+    "p95Ms": 0.005579999997280538,
+    "maxMs": 1.4521240000030957,
+    "meanMs": 0.005452308000079938
+  },
+  "unboundActiveHeartbeat": {
+    "n": 1000,
+    "minMs": 0.08874800000194227,
+    "medianMs": 0.11059899999963818,
+    "p95Ms": 0.16435099999944214,
+    "maxMs": 4.017880999999761,
+    "meanMs": 0.1491090719999993
+  },
+  "auditPromptConstruction": {
+    "n": 200,
+    "minMs": 0.01689200000691926,
+    "medianMs": 0.02552799999830313,
+    "p95Ms": 0.04293099999631522,
+    "maxMs": 1.0934960000013234,
+    "meanMs": 0.04522642500021903
+  },
+  "ownerMutation": {
+    "n": 100,
+    "minMs": 0.3698789999980363,
+    "medianMs": 0.5111259999976028,
+    "p95Ms": 17.031110000003537,
+    "maxMs": 70.88901299999998,
+    "meanMs": 3.5378903199998604
+  },
+  "ledgerRotation": {
+    "n": 3,
+    "minMs": 0.6301210000019637,
+    "medianMs": 0.7572110000037355,
+    "p95Ms": 1.0561149999994086,
+    "maxMs": 1.0561149999994086,
+    "meanMs": 0.814482333335036
+  },
+  "outboxReadDedup": {
+    "n": 20,
+    "minMs": 9.429395999999542,
+    "medianMs": 11.515237999999954,
+    "p95Ms": 21.006180999997014,
+    "maxMs": 22.987914999997884,
+    "meanMs": 12.631597599999804
+  },
+  "outboxUnconfirmedReplayRotation": {
+    "n": 10,
+    "minMs": 28.78639100000146,
+    "medianMs": 41.48338199999853,
+    "p95Ms": 78.27480800000194,
+    "maxMs": 78.27480800000194,
+    "meanMs": 42.450153500000305
+  },
+  "scope": "Local synthetic fixtures; unbound heartbeat has no host. No paid-provider token/cost measurements or real host correctness claims. Context-growth and ledger-derived audit cost/flip/skip measurements are separate tools."
+}
