@@ -1,0 +1,56 @@
+{
+  "at": "2026-10-01T11:00:41.209129+00:00",
+  "savedProbesRerun": true,
+  "AF-1": {
+    "scenario": "unreadable-state-root-selector",
+    "before": "/tmp/glla-audit-root-selection-cFp7Hf/session/pi-glla",
+    "during": "/tmp/glla-audit-root-selection-cFp7Hf/cwd/.pi-glla",
+    "after": "/tmp/glla-audit-root-selection-cFp7Hf/session/pi-glla",
+    "beforeGoalId": "root-goal",
+    "duringGoalId": null,
+    "afterGoalId": "root-goal",
+    "pending": false,
+    "firstPersist": true,
+    "secondPersist": true,
+    "selectedPendingGoalIds": [
+      "first"
+    ],
+    "unintendedCwdGoalIds": [
+      "second"
+    ]
+  },
+  "AF-2": {
+    "scenario": "registration-stat-read-failure",
+    "registrationError": null,
+    "records": 0,
+    "expectations": 0,
+    "cleanup": {
+      "reaped": 0,
+      "unverified": 0
+    },
+    "childStillLive": true
+  },
+  "AF-3": {
+    "scenario": "enqueue-during-delivery",
+    "firstPersist": true,
+    "nestedPersist": true,
+    "replayed": 1,
+    "records": [
+      {
+        "goalId": "first",
+        "objective": "first",
+        "chatLines": [
+          "first"
+        ],
+        "createdAt": "2026-10-01T11:00:40.974Z",
+        "deliveredAt": "2026-10-01T11:00:40.978Z"
+      }
+    ],
+    "secondPendingLost": true
+  },
+  "unchangedBehaviorFiles": 478,
+  "focusedTestExit": 0,
+  "typeExit": 0,
+  "inventoryExit": 0,
+  "scope": "Observed defects remain open; audit documentation/evidence only."
+}

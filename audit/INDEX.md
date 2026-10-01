@@ -4,7 +4,17 @@ Every shipped change carries an audit doc here (named `<TOPIC>-<date>.md`,
 plus a `v0.34.x-<TOPIC>.md` symlink for versioned docs). Older docs
 (≤ 2026-08-06) live in `audit/archive/`.
 
-## Current implementation (2026-09-30)
+## Current implementation and audits
+
+**Current follow-up review (2026-10-01):**
+[POST-FIX-AUDIT-2026-10-01.md](POST-FIX-AUDIT-2026-10-01.md)
+reproduces three open paths (one HIGH, two MEDIUM): unreadable settings switch
+the state root, a missing process identity bypasses cleanup accounting, and
+replay can overwrite an enqueue from its delivery callback. Fresh checks pass
+102 tests, TypeScript and inventory; standalone probes expose the uncovered
+paths. The prior trigger-specific fixes still pass. Cleanup accounting is
+reopened for identity-read failure. Evidence and repair criteria are retained
+in the new report; no runtime repair is included in this audit.
 
 **Project review (2026-09-30):**
 [FULL-PROJECT-AUDIT-2026-09-30.md](FULL-PROJECT-AUDIT-2026-09-30.md)
@@ -20,8 +30,9 @@ reproduces three remaining owned defects (two HIGH, one MEDIUM): canary
 rejections do not abort requests, failed process registration can report clean
 cleanup, and an unreadable outbox can lose an earlier pending summary.
 Reproduction scripts, observations, fresh focused checks and repair acceptance
-criteria are retained with that report. All three follow-up findings are closed
-in [ACTIONABLES-IMPLEMENTATION-2026-10-01.md](ACTIONABLES-IMPLEMENTATION-2026-10-01.md):
+criteria are retained with that report. The three original trigger-specific
+repairs are recorded in
+[ACTIONABLES-IMPLEMENTATION-2026-10-01.md](ACTIONABLES-IMPLEMENTATION-2026-10-01.md):
 2,948 tests pass, one skip, zero failures, and the complete release gate passes
 against unchanged source, including the installed-tarball smoke. The upstream
 Pi dependency advisory remains separately recorded.
