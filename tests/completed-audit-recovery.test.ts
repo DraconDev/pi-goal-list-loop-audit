@@ -2,7 +2,7 @@ import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyLoadState } from "../extensions/loops/goal.js";
+import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyLoadState, __testOnlySetLastActivityAt } from "../extensions/loops/goal.js";
 import { __testOnlyHeartbeatTick } from "../extensions/goal-heartbeat.js";
 import { __testOnlyResetAuditorSurface } from "../extensions/loops/goal-auditor-surface.js";
 import { archivedGoalPath, readState, type Goal, type State } from "../extensions/goal-loop-core.js";
@@ -42,6 +42,33 @@ async function boot(pi: MockPi, cwd: string) {
   await pi.fire("session_start", { reason: "startup" }, ctx); await tick(120); return ctx;
 }
 afterEach(() => { __testOnlyResetAuditorSurface(); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); });
+
+for (const verdict of ["approved", "disapproved", "missing"] as const) {
+  test(`healthy host heartbeat reconciles an unarmed orphan: ${verdict}`, async () => {
+    const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+    const g = goal(); seedState(cwd, { goal: g });
+    if (verdict !== "missing") job(cwd, g, { output: `<evidence>\nartifact exists\n</evidence>\n<${verdict}/>` });
+    __testOnlyLoadState(cwd);
+    __testOnlyResetAuditorSurface(); // no in-flight poller and no recovery-armed flag
+    __testOnlySetLastActivityAt(Date.now() - 100_000);
+    try {
+      __testOnlyHeartbeatTick(); await tick(120);
+      const restored = readState(cwd).goal;
+      assert.notEqual(restored?.status, "auditing", "an unowned audit cannot remain auditing forever");
+      assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0, "heartbeat never launches another worker");
+      if (verdict === "approved") {
+        assert.ok(fs.existsSync(archivedGoalPath(cwd, g.id)));
+      } else if (verdict === "disapproved") {
+        assert.equal(restored?.auditHistory?.at(-1)?.disapproved, true);
+      } else {
+        assert.equal(restored?.pendingCompletion?.phase, "recovery-pending");
+        assert.equal(restored?.pauseKind, "blocked");
+      }
+      __testOnlyHeartbeatTick(); await tick(20);
+      assert.equal(events(cwd).filter(e => e.type === "audit_completed_result_recovered").length, verdict === "missing" ? 0 : 1);
+    } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+  });
+}
 
 // Real detached worker publishes its result; deliberately omit the parent
 // application, then restore from durable state in a new session.
