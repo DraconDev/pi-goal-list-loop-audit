@@ -74,17 +74,24 @@ for (const verdict of ["approved", "disapproved"] as const) {
   });
 }
 
-test("manual resume consumes a completed parked claim instead of launching another auditor", async () => {
+for (const surface of ["manual", "agent"] as const) {
+test(`${surface} resume consumes a completed parked claim instead of launching another auditor`, async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
   const g = goal(); g.status = "paused"; g.pendingCompletion!.phase = "recovery-pending";
   seedState(cwd, { goal: g }); job(cwd, g); __testOnlyLoadState(cwd);
   try {
-    await pi.command("goal", "resume", ctx); await tick(120);
+    if (surface === "manual") await pi.command("goal", "resume", ctx);
+    else {
+      const response = await pi.runTool("resume_goal", { reason: "continue the stored claim" }, ctx);
+      assert.doesNotMatch(response.content[0]!.text, /auditor is now running/);
+    }
+    await tick(120);
     assert.ok(fs.existsSync(archivedGoalPath(cwd, g.id)));
     assert.equal(events(cwd).filter(e => e.type === "audit_completed_result_recovered").length, 1);
     assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0);
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
+}
 
 test("silent file-backed successor applies a finished verdict from the dead generation", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);

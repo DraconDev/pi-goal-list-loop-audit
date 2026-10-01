@@ -119,11 +119,15 @@ architectural decisions that changed the SHAPE of the system:
   state and is treated as recovery-pending after a fresh lifecycle event.
   The isolated attempt id prevents an old generation from finalizing a newer
   attempt; legacy wall-deadline metadata is not a lifetime bound.
-- **Rebind recovery is immediate but consent-aware**: a replacement
-  `session_start` converts an old running claim to recovery-pending and
-  retries it immediately when the lifecycle handoff or global `autoResume`
-  supplies consent. A cold startup with autoResume off paints the pending
-  claim and waits for `/goal resume`.
+- **Rebind recovery is immediate but consent-aware**: before relaunching an
+  interrupted claim, a fresh session or host successor checks its newest
+  detached job for a completed result. The request hash, logical claim,
+  immutable claim payload, and goal revision must match; the normal verdict,
+  challenge, tool floor, and regression shield still apply. A completed
+  approval settles its archive, while a cold-load disapproval remains held
+  for explicit resume. An unfinished or unsafe job becomes recovery-pending
+  and retries only when lifecycle consent or global `autoResume` permits.
+  Manual and agent resumes use the same completed-result-first path.
 - **Auditor liveness has event-derived layers**: no-event inactivity aborts
   after 10m only when no auditor tool is active; a live verification tool may
   finish, and the complete isolated run has no unconditional wall-clock cap.
@@ -148,9 +152,11 @@ architectural decisions that changed the SHAPE of the system:
   under `.pi-glla/audit-jobs/<attemptId>/`. Requests and results are hashed and
   atomically written. The parent validates attempt/request identity, verdict
   markers, read-tool use, and `regression_shield` before applying any result.
-  A result from a stale generation is ignored; fresh lifecycle recovery creates
-  a new attempt. Cancellation clears the pending claim and best-effort stops
-  the worker.
+  A stale generation cannot apply its result directly. Fresh lifecycle
+  recovery may reconcile a validated completed result for the same durable
+  claim; otherwise it creates a new attempt under the existing consent gates.
+  An older candidate's completed result cannot supersede a newer unfinished
+  job. Cancellation clears the claim and best-effort stops the worker.
 - **Windows launch and rename safety**: Windows npm installations expose the
   `pi.cmd` shim rather than a directly executable `pi` binary. The worker uses
   an explicitly quoted `cmd.exe /d /s /c` boundary with verbatim arguments,
@@ -161,6 +167,8 @@ architectural decisions that changed the SHAPE of the system:
   `audit recovery pending` are distinct. The main session can continue
   rendering and accepting input while the worker audits; completion/archive or
   disapproval/continuation happens only after durable result consumption.
+  Worker snapshots retain the verification round independently of the live
+  thinking/tool/report phase, so the second audit pass remains visible.
 - **Event-derived worker liveness**: no session event for 10 minutes while
   no auditor tool is active aborts the worker; a five-minute per-tool ceiling
   remains armed while a tool is open. There is no unconditional wall-clock

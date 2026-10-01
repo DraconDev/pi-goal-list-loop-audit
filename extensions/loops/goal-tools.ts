@@ -155,7 +155,7 @@ isGoalRevisionCurrent,
 // the detached path, so no terminal surface can be produced from an
 // unresolved claim.
 import { settlementAllowsTerminalRender, settlementPark } from "../audit-lifecycle.js";
-import { persistClaimWorkerActivity, scheduleParkedCompletionAuditRecovery, auditorIdenticalParkProbeDelayMs, humanizeAuditorProbeCadence } from "./goal-auditor-hooks.js";
+import { resumeStoredCompletionOrSettlement, persistClaimWorkerActivity, scheduleParkedCompletionAuditRecovery, auditorIdenticalParkProbeDelayMs, humanizeAuditorProbeCadence } from "./goal-auditor-hooks.js";
 import { dispatchAuditorAllowedExtensions } from "../auditor-extensions.js";
 import {
   applyValidatedBatch,
@@ -2980,8 +2980,13 @@ function registerAgentTools(pi: any): void {
       // turn — same law as the manual path: re-fire the detached auditor
       // instead of leaving an ACTIVE goal no timer would ever consume.
       if (storedCompletion) {
+        const outcome = resumeStoredCompletionOrSettlement(ctx, "agent", (origin) => { void retryStoredCompletionAudit(origin); });
+        if (outcome !== "retried") {
+          return { content: [{ type: "text", text: outcome === "parked"
+            ? "The approved completion claim remains stored; its archive settlement is blocked. No new auditor was launched."
+            : "The stored completion verdict was recovered and applied. No new auditor was launched; use goal status to see the outcome." }], details: {} };
+        }
         ctx.ui.notify("Resuming the stored completion claim — starting a detached auditor (no agent turn needed).", "info");
-        void retryStoredCompletionAudit("agent");
         return { content: [{ type: "text", text: `Resumed the ${noun} with its stored completion claim — a detached auditor is now running. Return without waiting or polling; GLLA delivers the verdict.` }], details: {} };
       }
       const queued = listQueue().length;
