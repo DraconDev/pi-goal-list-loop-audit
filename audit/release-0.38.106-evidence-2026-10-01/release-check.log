@@ -1825,3 +1825,135 @@ tests/draft-staging.test.ts:
 (pass) v0.38.53: prompt construction precedes the drafting gate, then model lease and steering [0.05ms]
 
 tests/second-gemini-gap.test.ts:
+(pass) v0.38.52: gate rows widen the verification table with derived statuses [1.79ms]
+(pass) v0.38.52: without gates the 3-col mechanical table is byte-identical [0.51ms]
+(pass) v0.38.52: nested findings render Test Results sub-bullets aligned by index [0.53ms]
+(pass) v0.38.52: table-mode findings ride test proof in the Evidence cell [0.42ms]
+(pass) v0.38.52: sanitizeGateRows drops garbage, clips, caps [0.35ms]
+(pass) v0.38.52: sanitizeFindingGroups parses parallel tests [0.18ms]
+(pass) v0.38.52: old claims without tests render byte-identical to v0.38.50 [0.36ms]
+(pass) v0.38.52: complete_goal gateRows + tests ride the claim into the chat render [1584.11ms]
+
+tests/owner-fence.test.ts:
+(pass) v0.35.72: a live foreign process cannot claim the workingDir owner file [113.79ms]
+(pass) v0.35.72: mutating goal and loop commands use the stale admission fence [1.02ms]
+(pass) owner acquisition and refresh preserve malformed records for explicit repair [7.69ms]
+(pass) takeover compares the complete record inside the owner mutation [9.45ms]
+(pass) a stale instance refresh cannot overwrite a same-process successor [1.28ms]
+
+tests/auditor-fallback-thinking.test.ts:
+(pass) non-empty fallback save is followed by the auditor thinking select [116.51ms]
+(pass) typing the session model into the fallback input names the slot-0 exclusion [11.77ms]
+(pass) clearing the fallback chain skips the thinking prompt [11.21ms]
+
+tests/list-audit.test.ts:
+(pass) parseAuditFindingsForFanout: open boxes actionable, [?] boxes decisions, checked boxes ignored [0.82ms]
+(pass) parseAuditFindingsForFanout: tolerates the /loop audit format (no FIX: prefix) [0.71ms]
+(pass) parseAuditFindingsForFanout: accepts aligned open checkbox spacing [0.09ms]
+(pass) parseAuditFindingsForFanout: empty / missing content yields nothing [0.02ms]
+(pass) listAuditFanoutItemText: checkable Done when tied to the findings file [0.15ms]
+(pass) listAuditCollectTarget: collect-only — marker, no-fix law, honest-empty law, Done when [52.43ms]
+(pass) /list audit route: builds the collect target and enqueues it [0.72ms]
+(pass) completion fan-out: collect items fan out + suppress the list-complete noise [0.69ms]
+(pass) fan-out: canonical dedupe, cap accounting, optional auto-accept, and decline keeps findings open [1.23ms]
+(pass) help surface: /list audit appears in the command description + completions [0.39ms]
+(pass) markers: the built targets still contain what the guards match on [0.31ms]
+(pass) /loop audit warns when a one-shot audit goal exists (paused or active) [0.15ms]
+(pass) /goal audit + /list audit warn when an audit loop is already running [0.19ms]
+(pass) restore-hold names the supersession in the widget surface [0.63ms]
+(pass) v0.33.3: one-shot audit raises DECIDE findings as questions before completing [0.13ms]
+
+tests/release-contract.test.ts:
+(pass) release contract: published documentation links are covered by the npm tarball [1210.99ms]
+(pass) release contract: the release gate exercises the packed artifact [0.40ms]
+(pass) release contract: packed prompts, schema, and workers ship in the dry-run list [576.75ms]
+(pass) release contract: glla-delegate skill loads without diagnostics (source-tree fast tier) [9.54ms]
+88 | });
+89 | 
+90 | test("release contract: docs index tracks the package version", () => {
+91 |   const version = (JSON.parse(fs.readFileSync("package.json", "utf-8")) as { version: string }).version;
+92 |   const index = fs.readFileSync("docs/INDEX.md", "utf-8");
+93 |   assert.ok(index.includes(`v0.35.14–v${version}`), "the active-focus trail must reach the current package version");
+              ^
+AssertionError: the active-focus trail must reach the current package version
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/release-contract.test.ts:93:10
+      at fn (node:test:215:18)
+(fail) release contract: docs index tracks the package version [1.85ms]
+(pass) release contract: package is discoverable as a Pi extension and skill [566.11ms]
+(pass) release contract: README package contents claim matches the files allowlist [545.23ms]
+(pass) release contract: first-use README guidance matches current behavior [0.28ms]
+(pass) release contract: smoke waits use durable or literal transition markers [0.13ms]
+(pass) release workflow scopes trusted-publishing OIDC to the publish job [0.28ms]
+(pass) v0.38.32: release runs never share the push-churn concurrency group [0.07ms]
+(pass) release contract: changelog has one heading for the current package version [3.09ms]
+202 |     assert.ok(
+203 |       changelog.includes("## Unreleased"),
+204 |       `source carries untagged work newer than ${version} (${newestAt}) but CHANGELOG.md has no '## Unreleased' section for the release commit to promote`,
+205 |     );
+206 |   }
+207 |   assert.equal(
+               ^
+AssertionError: there is exactly one Unreleased section to rename
+
+0 !== 1
+
+ generatedMessage: false,
+     actual: 0,
+   expected: 1,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/release-contract.test.ts:207:10
+      at fn (node:test:215:18)
+(fail) release contract: untagged source work has an Unreleased changelog section to promote [12.14ms]
+
+tests/subagent-display-richness.test.ts:
+(pass) audit 2026-09-07 richness defaults to quiet (exceptions-only) and normalizes junk [0.35ms]
+(pass) v0.38.23 rich assembles single-line glyph rows, no header; compact keeps the line; quiet hides healthy workers [29.26ms]
+(pass) v0.38.22 detailed lines bucket silence — identical output seconds apart [0.25ms]
+(pass) v0.38.22 hasHungWorker covers hung + aborting, ignores ended [0.08ms]
+(pass) audit 2026-09-07 count line flags trouble on ANY child, not just the stalest [0.11ms]
+(pass) v0.38.23 every rich line is width-safe; long summaries truncate cell-aware [0.23ms]
+
+tests/behavioral-orchestrator.test.ts:
+(pass) T3a: active goal + human load (startup) + default settings → HELD for explicit resume [93.20ms]
+(pass) v0.34.18: blank startup waits for the transcript before autoresume, while explicit resume and loaded history still work [872.88ms]
+(pass) v0.34.121: blank startup closes a legacy terminal slot when its archive exists [7.79ms]
+(pass) T3c (v0.28.21): interrupted goal HELDS by default — the 0.28.3 exemption is superseded; autoresume=on auto-resumes [376.22ms]
+(pass) T3b (v0.28.21): active goal + reload → HELD by default; autoresume=on → auto-resumes [374.53ms]
+(pass) v0.35.x: list cancel archives the active item, does not relabel it as active, and preserves its audit history [218.67ms]
+(pass) v0.36.0: /goal cancel archives a standalone goal with a compact six-label recap [91.97ms]
+(pass) v0.36.0: /list next archives the skipped active item with a compact recap [418.59ms]
+(pass) v0.36.1: bare /goal start uses one clear active-branch request [108.40ms]
+(pass) v0.36.1: bare /list start activates the hydrated queue head [51.77ms]
+(pass) v0.36.1: bare /loop start infers only a target and uses the metricless path [38.12ms]
+(pass) v0.36.0: aborted detached audit can complete without audit only after archive success [1023.55ms]
+(pass) v0.34.119: /glla cancel archives the active list item and drops the waiting objective queue [189.58ms]
+(pass) v0.34.121: /glla cancel stops an active loop before touching an unrelated waiting queue [19.13ms]
+(pass) v0.34.119: /glla cancel also aborts an auditing list objective and clears its waiting queue [205.25ms]
+(pass) v0.35.0 (v0.38.12 last-wins): /goal start replaces without dialog; plain /goal still offers update/cancel [57.06ms]
+(pass) v0.35.x: same-mode list conflict updates the whole objective, never individual tasks [76.95ms]
+(pass) v0.35.x: auditing list conflict cancels the stale audit before whole-objective update [35.57ms]
+(pass) v0.35.x: list_activate uses the same whole-objective conflict update [21.95ms]
+(pass) v0.35.x: failed conflict update retries the same whole-objective prompt [22.21ms]
+(pass) v0.35.0: a cross-mode replacement confirms before replacing a live loop [32.60ms]
+Switched to a new branch 'pi-glla-loop/20261001115914-refusal-target'
+cat: /definitely-not-here-xyz: No such file or directory
+Switched to branch 'main'
+(pass) v0.35.4: a refused branch-mode loop start restores the original branch [647.42ms]
+(pass) v0.35.0: a direct /loop start also confirms before replacing a live goal [28.14ms]
+(pass) v0.34.121: one confirmed /glla wipe clears recovery and dispatch artifacts too [86.77ms]
+(pass) v0.35.x: /list tweak amends a paused list item without activating it or changing waiting entries [318.50ms]
+(pass) field 2026-09-16 (VidPro park): /goal tweak amends a paused goal without waking it [623.20ms]
+(pass) field 2026-09-16: /goal tweak with no goal names the real path [179.73ms]
+(pass) field 2026-09-16 (VidPro replay): tweak chatter adopts the discussed objective, never the chatter [195.71ms]
+(pass) audit 2026-09-16: inferred tweak rejection leaves objective and ledger unchanged [194.87ms]
+(pass) field 2026-09-16: tweak chatter with no discussed objective guides and changes nothing [195.10ms]
+(pass) field 2026-09-16: plain-/goal update with an explicit contract stays verbatim (explicit intent wins) [182.14ms]
+(pass) field 2026-09-16: chatter typed into the bare-tweak dialog guides, never adopts [237.04ms]
