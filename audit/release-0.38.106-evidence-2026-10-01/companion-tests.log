@@ -1,0 +1,73 @@
+
+> pi-goal-list-loop-audit@0.38.106 test
+> node scripts/run-tests.mjs tests/subagent-model-override.test.ts tests/subagent-polish.test.ts tests/subagent-hang-detection.test.ts tests/glla-version.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/subagent-hang-detection.test.ts:
+(pass) v0.35.65: snapshots use live manager counters and expose honest phase/elapsed data [2.18ms]
+(pass) v0.35.65: queued manager records stay queued and do not masquerade as active work [0.33ms]
+(pass) current pi-subagents async lifecycle and status.json drive live counters [544.09ms]
+(pass) current v1 stop RPC is selected after the status artifact proves top-level ownership [460.92ms]
+(pass) classify: a running subagent with no new progress for 5m is hung [0.17ms]
+(pass) classify: sub-5m silence is not hung (5m floor, shorter than the auditor's 10m) [0.04ms]
+(pass) classify: a NEW tool use refreshes the streak (working, not wedged) [0.07ms]
+(pass) classify: NEW output tokens refresh the streak (long think, still alive) [0.06ms]
+(pass) classify: ended / non-running records are not hung (watch stops) [0.05ms]
+(pass) v0.34.102: a vanished/unreachable record falls back to event-only evidence (field: pully 118m wedge) [0.07ms]
+(pass) hang detection surfaces ui.notify + ledger `subagent_hang_detected` via the heartbeat scan [456.08ms]
+(pass) hang warning is throttled — one alert per 5m streak window, not per tick [611.20ms]
+(pass) long frozen tracked child requests one bounded child-specific abort after the warning window [608.49ms]
+(pass) progress arriving before escalation cancels the action and starts a fresh episode [455.62ms]
+(pass) event-only child reaches an honest unavailable-action record, never a guessed abort [609.12ms]
+(pass) nested child is not eligible for top-level automatic abort [455.45ms]
+(pass) v0.35.65: an old-generation child cannot receive a stop RPC after host rebind [460.89ms]
+(pass) host rebind retires healthy event-only evidence and admits fresh same-generation progress [475.36ms]
+(pass) v0.34.102: event-only hang surfaces `subagent_hang_detected` with evidence=event-only when no manager record exists [463.06ms]
+(pass) completed/failed events end the watch — no hang alert after completion [609.28ms]
+(pass) compacted/steered events refresh the streak (secondary progress evidence) [607.32ms]
+(pass) malformed hang inputs are dropped, not crashy [304.75ms]
+(pass) source pins: constants, watchdog wiring, and ledger key [5.28ms]
+(pass) v0.34.105: hang scan runs during main-model recovery (quota wall blinds the watchdog before the fix) [931.73ms]
+(pass) v0.34.105 source pin: subagent scan precedes the main-model-recovery early return in heartbeatTick [0.16ms]
+(pass) v0.38.104 releasing the RPC host unsubscribes the readiness listeners it installed [0.17ms]
+
+tests/glla-version.test.ts:
+(pass) /glla version reads the installed package metadata and exposes a registry check [2.10ms]
+(pass) /glla version names staleness and the update path when the sidecar proves it [0.76ms]
+(pass) package and lock metadata stay synchronized for version reporting [0.06ms]
+(pass) /glla version is registered, autocompleted, and read-only routed [0.29ms]
+(pass) unknown running version makes no staleness claim either way [0.34ms]
+(pass) compareVersions is strictly numeric: prereleases never equal releases [0.10ms]
+(pass) updateCheckPath defaults to the cwd state dir [0.06ms]
+
+tests/subagent-polish.test.ts:
+(pass) current pi-subagents roles expose complete model-pin definitions [6.57ms]
+(pass) strategy-driven sync writes only the GLLA-owned Designer role [1.13ms]
+(pass) managed sync rejects path traversal from settings and corrupt sync state [1.05ms]
+(pass) repair detection: externally deleted/altered Designer files are re-written and flagged [0.71ms]
+(pass) effective resolution: per-type pin > inherit-parent > current agent default [0.09ms]
+(pass) subagent provider failure: any failed Agent payload, without classification [0.06ms]
+(pass) v0.38.16: failed current-tool spawns take the provider-failure path too [0.02ms]
+(pass) v0.38.16: model-facing text speaks the current subagent dialect [0.87ms]
+
+tests/subagent-model-override.test.ts:
+(pass) current package roles are the model override surface [0.16ms]
+(pass) build: current scout definition is preserved and uses current frontmatter names [0.52ms]
+(pass) build: an explicit worker pin preserves its complete upstream definition [0.46ms]
+(pass) build: unknown agent name throws [0.35ms]
+(pass) sync: no upstream model pin means only the GLLA Designer role is created [0.60ms]
+(pass) sync: explicit current-role pin wins over strategy and is idempotent [5.18ms]
+(pass) sync: clearing a current-role pin removes only GLLA-owned content [0.63ms]
+(pass) sync: user-owned current role is never overwritten [0.38ms]
+(pass) sync: legacy managed files are cleaned only when marked [0.31ms]
+(pass) sync: missing or altered Designer definitions are repaired and flagged [0.37ms]
+(pass) defaultAgentDir follows PI_CODING_AGENT_DIR when the host overrides it [0.15ms]
+(pass) drift: every current built-in ships without a hidden model pin [0.62ms]
+(pass) build+sync: a thinking pin writes a thinking-only override that inherits the model [0.64ms]
+
+ 54 pass
+ 0 fail
+Ran 54 tests across 4 files. [9.54s]
+[run-tests] finished in 10s (exit 0)

@@ -55,7 +55,12 @@ test("build: an explicit worker pin preserves its complete upstream definition",
   const md = buildAgentOverrideMd("worker", "minimax/MiniMax-M3");
   assert.match(md, /^name: worker$/m);
   assert.match(md, /^model: minimax\/MiniMax-M3$/m);
-  assert.match(md, /^defaultContext: fork$/m);
+  const source = installedAgent("worker");
+  const frontmatter = source.split("---\n")[1]!;
+  for (const line of frontmatter.split("\n").filter(line => line && !/^(model|thinking):/.test(line))) {
+    assert.ok(md.split("\n").includes(line), `upstream frontmatter is preserved: ${line}`);
+  }
+  assert.ok(md.includes(source.split("---\n").slice(2).join("---\n").trim()), "the complete upstream worker prompt is preserved");
   assert.match(md, /^tools: read, grep, find, ls, bash, edit, write, contact_supervisor$/m);
   assert.ok(md.includes(`x-managed-by: ${SUBAGENT_MANAGED_MARKER}`));
 });

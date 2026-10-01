@@ -1,12 +1,38 @@
 # Changelog
 
-## Unreleased
+## 0.38.106 — durable audit repairs and clearer companion guidance (2026-10-01)
 
-Untagged work since 0.38.105. It stays under this heading until the release
-commit renames it (docs/RELEASING.md); these are descriptive milestones, not
-invented version headers.
+### Companion installation and store presentation
 
-## 0.38.105 — every turn retries, and the version says so (2026-09-30)
+- README, install, design and compatibility docs recommend versionless
+  `pi install npm:pi-subagents`. The companion remains optional and separately
+  installed; the development manifest is versionless and its lockfile records
+  the tested 0.74.0 environment.
+- Rebuilt the store thumbnail from its SVG source: a bold mint goal loop,
+  white verification check and amber progress node, readable at small sizes.
+  The package image URL names the new asset to avoid stale thumbnail caching.
+
+### Audited persistence and cleanup
+
+- Unreadable or invalid root settings preserve the last validated read root,
+  defer mutations, and report cold uncertainty explicitly. Persistence uses
+  a coherent root snapshot and retries in the selected root after recovery.
+- Test-child registration declares cleanup obligations before identity reads.
+  Unknown live identity refuses registration and retains failure accounting;
+  independently proven process absence handles host exit-status races.
+- Outbox mutations merge current queue state under the ownership protocol.
+  Reentrant enqueues and nested acknowledgements survive replay and rotation;
+  host delivery runs outside the mutation lock.
+- Audit follow-through also hardens owner mutation and terminal settlement,
+  process containment, retry guards, bounded canary requests, receipt
+  confirmation, compatibility documentation and installed-package checks.
+
+### Earlier source changes included in this release
+
+The 0.38.105 work below was present in source but had no published npm/GitHub
+release; it ships together with these changes in 0.38.106.
+
+### Changes formerly grouped as 0.38.105 — every turn retries
 
 ### Unsupervised turns retry instead of idling
 

@@ -20,7 +20,10 @@ test("current pi-subagents roles expose complete model-pin definitions", () => {
   const worker = buildAgentOverrideMd("worker", "minimax/MiniMax-M3");
   assert.match(worker, /model: minimax\/MiniMax-M3/);
   assert.match(worker, /systemPromptMode: replace/);
-  assert.match(worker, /defaultContext: fork/);
+  const source = fs.readFileSync(path.resolve("node_modules/pi-subagents/agents/worker.md"), "utf8");
+  const context = source.split("\n").find(line => line.startsWith("defaultContext:"));
+  assert.ok(context, "upstream declares its context policy");
+  assert.ok(worker.split("\n").includes(context!), "model override preserves the installed companion context policy");
   assert.match(worker, /x-managed-by: pi-goal-list-loop-audit/);
 });
 

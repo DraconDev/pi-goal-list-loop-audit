@@ -9,8 +9,9 @@ appears here, so the table cannot silently drift.
 
 ## Files and precedence
 
-- Global file: `~/.pi/agent/glla/settings.json` (machine/provider policy).
-- Project file: `<cwd>/.pi-glla/settings.json` (project artifact).
+- Global file: `~/.pi/agent/pi-goal-list-loop-audit.settings.json` (machine/provider policy).
+- Project file: `<selected-state-root>/settings.json` (defaults to
+  `<cwd>/.pi-glla/settings.json`).
 - Effective value: project wins over global wins over built-in default.
 - `/glla` shows per-key provenance (`project` / `global` / `default`).
 - Hand-edited files are normalized on every load
@@ -36,6 +37,13 @@ This list is `GLOBAL_ONLY_KEYS` in `extensions/goal-settings.ts`, and a
 project-scope write to any of them is stripped on read. Every other key —
 including `auditCapHard` and `mechanicalLoadScale` — is project-settable and
 a project file wins over the global one.
+
+The root selector distinguishes a missing settings file (normal defaults) from
+an unreadable or invalid existing file. The latter defers mutations and keeps
+reads on the last validated root; without one, selection is explicitly
+unresolved. Restoring valid settings permits retry. A persistence operation
+uses one root snapshot, and root changes never migrate or delete old state.
+This authority boundary applies before settings-value normalization.
 
 ## Keys
 

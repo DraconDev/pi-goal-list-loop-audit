@@ -29,11 +29,22 @@ commit.
 ```bash
 npm version <major.minor.patch> --no-git-tag-version
 npm run release:check
-# review the diff, then commit package.json + package-lock.json + changelog
+# review package.json + package-lock.json + changelog; let dracon-sync checkpoint
+# verify the tested tree is committed before tagging (AGENTS.md history rules)
 # create and push the matching tag, for example:
 git tag v<major.minor.patch>
 git push origin main v<major.minor.patch>
 ```
+
+The sync daemon owns source/evidence commits. Do not amend, reset or rebase
+its commits; a release tag must point at the reviewed, validated source. If the
+daemon is paused, follow AGENTS.md's repo-local checkpoint identity rule.
+
+When changing the Pi store thumbnail, update the SVG source and its PNG,
+point `package.json`'s `pi.image` at the public asset, and inspect it at small
+sizes. Use a new asset URL when replacing cached artwork. README and metadata
+changes reach the store through the published npm tarball; a git push alone
+does not update that package metadata.
 
 Create a GitHub Release from that tag. Publishing happens only after the
 release is marked **published**; the workflow checks that the tag equals the
