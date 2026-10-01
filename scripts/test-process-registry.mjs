@@ -106,8 +106,20 @@ export function registerOwnedTestProcess(child, env = process.env) {
         publish(expectation, { token: env.GLLA_TEST_PROCESS_TOKEN, launchPid: child.pid, pending: true, anchors: [] });
         declared = true;
       }
-      const provenExited = child.exitCode !== null || child.signalCode !== null;
-      const current = identity(child.pid, !provenExited);
+      const provenExited = exited || child.exitCode !== null || child.signalCode !== null;
+      let current;
+      try { current = identity(child.pid, !provenExited); }
+      catch (error) {
+        // Proc disappearance can precede the host's exit event/status.
+        // ENOENT alone is unknown; ESRCH independently proves absence.
+        let absent = false;
+        if (error.code === "ENOENT") {
+          try { process.kill(child.pid, 0); }
+          catch (probe) { absent = probe.code === "ESRCH"; }
+        }
+        if (!absent) throw error;
+        current = null;
+      }
       if (!leader && current?.group === child.pid && current.session === child.pid) leader = current;
       const owner = registry(env);
       // A launch error or already-exited child has no live cleanup duty.
