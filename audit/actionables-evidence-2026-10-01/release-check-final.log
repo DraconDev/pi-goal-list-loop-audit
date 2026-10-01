@@ -427,3 +427,164 @@ tests/audit-stuck-batch.test.ts:
 (pass) v0.38.104: no operator-facing string promises the auditor stopped for good [3.62ms]
 
 tests/disk-first-queue.test.ts:
+(pass) writeQueueItemFile: atomic, lands in .pi-glla/goals/<id>.queue.json [3.75ms]
+(pass) writeQueueItemFile: idempotent on retry (no overwrite) [0.38ms]
+(pass) writeQueueItemFile: refuses to follow symlinks (symlink-safety) [6.03ms]
+(pass) writeQueueItemFile: survives an existing temp residual [58.85ms]
+(pass) deleteQueueItemFile: returns true when present, false when missing [0.73ms]
+(pass) clearQueueItemFiles: removes orphaned sidecars and is idempotent [5.66ms]
+(pass) readQueueFromDisk: returns queue items, in id order, skipping garbage [2.14ms]
+(pass) readQueueFromDisk: excludeIds removes ids that are active or archived [3.08ms]
+(pass) readQueueFromDisk: missing goals/ dir returns [] (not throw) [3.50ms]
+(pass) round-trip: write then read returns identical items [0.76ms]
+(pass) queueItemPath: stable relative shape [0.14ms]
+(pass) v0.34.61: addSingleItem is disk-first (sidecar before state mutation) [0.33ms]
+(pass) v0.34.61: list-draft path is disk-first (sidecar before state mutation) [0.28ms]
+(pass) v0.35.0: remove/clear/cancel/glla_wipe clear queue sidecars [4.59ms]
+(pass) v0.34.61: crash-simulation — sidecar survives state death and reload finds it [0.56ms]
+(pass) v0.35.4: queue metadata round-trips and recovery uses durable order [0.68ms]
+(pass) v0.35.4: failed sidecar writes are reported without leaving temp files [0.31ms]
+(pass) v0.35.4: queue recovery and carryover clear use durable sidecars [0.42ms]
+
+tests/stuck-detection-rework.test.ts:
+(pass) trigramSimilarity: identity = 1, disjoint = 0, empties [13.61ms]
+(pass) trigramSimilarity: similar but not identical [0.20ms]
+(pass) isNudgeTurn: tool use resets the brake even on empty text [0.03ms]
+(pass) isNudgeTurn: short no-tool turn is always a nudge [0.07ms]
+(pass) isNudgeTurn: substantive paragraph (≥15 words, novel) is NOT a nudge (the polis incident) [0.28ms]
+(pass) isNudgeTurn: long + repetitive text IS a nudge [0.33ms]
+(pass) isNudgeTurn: long text with no prior (first turn in a streak) is NOT a nudge [0.08ms]
+(pass) isNudgeTurn: tunable thresholds [0.15ms]
+(pass) accountTurnForNudgesRich: three substantive no-tool turns → stays 0 (the fix) [0.43ms]
+(pass) accountTurnForNudgesRich: three short repetitive replies → reaches max [0.04ms]
+(pass) defaults [0.02ms]
+
+tests/auditor-challenge-record.test.ts:
+(pass) challenge-record: a confirmed approval records challenge=confirmed on the verdict [646.15ms]
+(pass) challenge-record: a single-round disapproval records challenge=not-applicable [512.61ms]
+
+tests/audit-2026-09-08.test.ts:
+(pass) v0.38.30: closed parent with nested grandchildren counts fully done [14.09ms]
+(pass) v0.38.30: glance head strips headers, links, quotes, single-emphasis [0.34ms]
+(pass) v0.38.30: kind:loop recovery does not hijack the active goal card [0.22ms]
+(pass) v0.38.30: blank-primary recovery falls back to provenance [0.23ms]
+(pass) v0.38.30: narrow width keeps provenance inner-truncated, not mid-token cut [0.30ms]
+(pass) v0.38.30: completion-summary width truncation is ANSI-free [0.27ms]
+(pass) v0.38.30: topOpenAuditFinding strips aligned boxes [0.69ms]
+(pass) v0.38.30: parseLoopStartArgs keeps junk time= in unquoted prose [0.58ms]
+(pass) approval store preserves corrupt bytes and refuses enqueue until explicit recovery [44.76ms]
+(pass) v0.38.30: approval store truncates by code points and caps chat lines [10.56ms]
+(pass) v0.38.30: stale/worker replay guard skips worker sessions [0.15ms]
+
+tests/revision-bound-audit.test.ts:
+(pass) v0.34.60: /goal tweak bumps the goal revision (a contract change) [64.58ms]
+(pass) v0.34.60: complete_goal with newObjective bumps the revision and audits the new contract in the same call [570.14ms]
+(pass) v0.35.36: complete_goal newObjective does NOT launder the agent-authored objective into userSeeds [10.28ms]
+(pass) repair replan bumps the contract revision and invalidates an older approval [3.11ms]
+(pass) v0.34.60: complete_goal REJECTS when the contract revision moved past the last audited revision [1.54ms]
+(pass) direct complete_goal refuses an approval when the contract revision changes during the detached audit [614.70ms]
+(pass) v0.34.60: complete_goal passes when the last audit matches the current revision [312.15ms]
+(pass) v0.34.60: legacy audit entries without a revision never trip the gate [325.52ms]
+(pass) v0.34.61: a settled audit never invalidates its own verdict — a second complete_goal on the same contract proceeds [1174.26ms]
+(pass) v0.34.61: the documented escape works — tweak, then /goal verify, then complete_goal proceeds [454.67ms]
+(pass) v0.34.60: the gate skips when the call itself carries newObjective (its audit covers the new contract) [639.44ms]
+(pass) v0.34.96: complete_goal routes to aborted when completionSummary says 'already shipped' [7.65ms]
+(pass) v0.34.96: already-shipped abort binds the version attached to the claim [4.46ms]
+(pass) v0.35.x: already-shipped completion honors an existing archive fence [1.76ms]
+(pass) v0.35.x: archiveCurrentGoal preserves a same-id archive on cancel [3.44ms]
+(pass) v0.34.128: a version-less 'no new work shipped' claim routes to the NORMAL audit and completes on approval [672.74ms]
+(pass) v0.34.128: a version-less 'already shipped' claim disapproved by the auditor leaves the finding queued (no abort) [692.36ms]
+(pass) v0.34.96: a NORMAL completionSummary still runs the auditor (no false-positive abort) [409.59ms]
+(pass) v0.38.104: an unpersistable newObjective refuses the claim and never advances the revision [2.85ms]
+
+tests/auditor-blank-until-resume.test.ts:
+(pass) cold auditor gate hides only the report, not the durable objective UI [30.32ms]
+(pass) cold restore shows the objective and sends nothing until explicit resume [435.36ms]
+(pass) rejected stale /goal resume leaves the auditor surface suppressed [179.42ms]
+(pass) explicit /goal resume releases the auditor surface for admitted main-model recovery [274.39ms]
+(pass) configured auto-resume is continuation consent and restores auditor context [323.64ms]
+
+tests/delegate-skill.test.ts:
+(pass) glla-delegate skill has valid discoverable frontmatter [13.71ms]
+(pass) package exposes the skill directory and pi.skills manifest entry [0.09ms]
+(pass) skill documents consent and auto-activation boundaries [0.12ms]
+(pass) skill states propose_goal_draft needs an open drafting session [0.10ms]
+(pass) skill treats pasted list-like input as supplied, not an exactness choice [0.12ms]
+
+tests/draft-template-failure.test.ts:
+(pass) drafting gate is claimed only after prompt construction [14.91ms]
+(pass) the post-claim model failure still clears drafting state before rethrow [0.37ms]
+
+tests/summary-purpose.test.ts:
+(pass) chat summary leads with durable change facts and hides verification by default [45.16ms]
+(pass) explicit verification opt-in adds one aggregate tail, not a gate table [1.02ms]
+(pass) behavioral limitation belongs under Remaining, not a second technical Next [3.60ms]
+
+tests/stats-challenges.test.ts:
+[run-tests] progress: 60s elapsed · 0s since last output · 38 KiB of suite output
+(pass) challenges: confirmed/flipped/skipped counts over all verdicts, legacy ignored [0.71ms]
+(pass) challenges: empty ledgers zero out, flip rate renders em-dash without challenged runs [27.17ms]
+(pass) challenges: table and JSON formats mirror the schema [0.93ms]
+(pass) challenges: light-tier verdicts and spot-check flips count separately [0.28ms]
+
+tests/hourly-quota-probe.test.ts:
+(pass) v0.34.92: nextHourlyProbeMs returns :00:30 of the NEXT hour [23.46ms]
+(pass) v0.34.92: nextHourlyProbeMs at :00:29 jumps to THIS hour's :00:30 [0.05ms]
+(pass) v0.34.92: nextHourlyProbeMs at :00:31 jumps to NEXT hour [0.07ms]
+(pass) v0.34.92: nextHourlyProbeMs strictly > now [0.18ms]
+(pass) v0.34.92: nextHourlyPromptMs (legacy) still returns :00:00 — kept for callers that pin it [0.06ms]
+(pass) v0.34.92: scheduleHourlyProbe / fireHourlyProbe / cancelHourlyProbe are wired in goal-recovery.ts [0.31ms]
+(pass) v0.34.92: parkMainModelAfterFailure schedules the hourly ticker alongside the recovery timer [0.12ms]
+(pass) v0.34.92: mainModelRecoverySucceeded cancels the hourly ticker [0.08ms]
+(pass) v0.34.92: clearMainModelRecoveryTimer cancels the hourly ticker in lockstep [0.03ms]
+(pass) v0.34.131: a failed hourly probe re-arms only after the async recovery settles [0.24ms]
+(pass) v0.34.132: executable runtime regression covers failure re-arm, opt-out, and generation fencing [274.25ms]
+(pass) v0.34.92: session_start re-arms the hourly ticker when recovery is parked [28.74ms]
+(pass) fresh pause fences cover the hourly auditor backstop too [0.17ms]
+(pass) v0.34.142: hourlyRetryProbe setting exists and defaults to ON [0.06ms]
+(pass) v0.34.142: the /glla menu exposes hourlyRetryProbe with on/off options [0.68ms]
+(pass) v0.34.92: v0.34.58/v0.34.90 quota-prompt machinery is REMOVED from goal.ts and core.ts [8.66ms]
+(pass) v0.34.92: nextHourlyProbeMs is exported from goal-loop-core.ts [0.15ms]
+
+tests/telemetry-event-shapes.test.ts:
+(pass) name-shaped write results count fileWrites on goal telemetry [119.71ms]
+(pass) name-shaped write results count fileWrites on loop iterMetrics [9.94ms]
+
+tests/prompt-daemon-investigation.test.ts:
+(pass) continuation prompt has the DETACHED COMMIT DETECTION section (item 30) [0.37ms]
+(pass) daemon guidance includes the filter-branch inspection command [0.06ms]
+
+tests/loop-branch-ownership.test.ts:
+Switched to a new branch 'pi-glla-loop/test'
+Switched to branch 'main'
+(pass) active branch loop parks before commit when HEAD moved to the user's branch [350.42ms]
+Switched to a new branch 'pi-glla-loop/commit-fail'
+(pass) terminal commit failure preserves the uncommitted iteration and skips destructive finish [297.69ms]
+Switched to a new branch 'pi-glla-loop/reset-fail'
+(pass) reset failure during finish keeps the terminal branch and never attempts checkout [375.59ms]
+Switched to a new branch 'pi-glla-loop/stop-guard'
+Switched to branch 'main'
+(pass) /loop stop on a branch-mode loop parked on a foreign branch attempts no reset or checkout [288.24ms]
+Switched to a new branch 'pi-glla-loop/stop-mid-tick'
+Switched to branch 'main'
+(pass) /loop stop mid-tick still restores the original branch (no false branch-changed park) [643.31ms]
+Switched to a new branch 'pi-glla-loop/stop-commit-inflight'
+Switched to branch 'main'
+(pass) /loop stop mid-tick commits the in-flight iteration instead of resetting it away [589.82ms]
+(pass) commitPendingTerminalWork is module scope and finishLoopGit commits before its reset (source pin) [0.47ms]
+(pass) parkLoopOnWrongBranch consults HEAD before the in-flight tick guard (source pin) [0.41ms]
+Switched to a new branch 'pi-glla-loop/resumable-park'
+Switched to branch 'main'
+Switched to branch 'pi-glla-loop/resumable-park'
+(pass) a branch-changed park is resumable: /loop resume on the scratch branch keeps the loop's history [262.99ms]
+(pass) v0.38.104: the branch-changed park names the loop surface and is in RESUMABLE_STOP (source pins) [0.42ms]
+
+tests/waiting-on-subagent-pause.test.ts:
+(pass) 021655: standby pause does not render 'waiting for manual action' [20.76ms]
+(pass) 021655: standby pause names the background agent as owner, not manual action [1.37ms]
+(pass) 021655: standby status line waits instead of demanding action [0.32ms]
+(pass) v0.38.90: standby reason renders dim (monitoring narration, not a call to action) [0.65ms]
+(pass) v0.38.90: standby reason caps at 2 wrapped rows like decisions/waits [0.55ms]
+(pass) 021655: neighboring kinds keep their manual-action rendering [0.70ms]
+
+tests/audit-job-retention.test.ts:
