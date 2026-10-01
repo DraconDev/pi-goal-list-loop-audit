@@ -3341,3 +3341,13 @@ tests/start-context.test.ts:
 (pass) field 2026-09-16: tweak chatter over competing requests surfaces candidates [0.19ms]
 
 tests/auditor-stall-watchdog.test.ts:
+[run-tests] progress: 600s elapsed · 5s since last output · 249 KiB of suite output
+(pass) stall: worker that never emits a first event is failed fast, not left for the wall [5368.14ms]
+(pass) stall: first-event budget starts after successful spawn, not pre-spawn setup [6545.04ms]
+(pass) stall: worker whose single boot heartbeat goes stale is failed fast, not left for the wall [1375.00ms]
+(pass) progress: a live auditor outlives the legacy wall metadata and settles on its result [653.21ms]
+(pass) stall: a running auditor tool is exempt — the per-tool timeout owns that axis [972.41ms]
+(pass) stall: a silent-past-bound attempt fails fast WITH its cost record (controlled clock) [203.21ms]
+(pass) stall: a worker-reported brake is reclassified with the same evidence [270.06ms]
+(pass) stall: an open in-budget tool is not silence — the no-progress bound spares it [324.59ms]
+(pass) v0.38.99: an over-budget tool is NOT fatal — the worker cancels it, resumes, and its result still lands [2741.48ms]
