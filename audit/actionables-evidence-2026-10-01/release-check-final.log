@@ -3345,3 +3345,236 @@ tests/auditor-stall-watchdog.test.ts:
 
 tests/auditor-retry-callback.test.ts:
 [run-tests] progress: 750s elapsed · 11s since last output · 249 KiB of suite output
+(pass) manual audit exhaustion retries through timer with fresh candidates and unchanged envelope [20749.58ms]
+
+tests/goal.schema.test.ts:
+unknown format "date-time" ignored in schema at path "#/properties/deferred/properties/at"
+unknown format "date-time" ignored in schema at path "#/properties/deferred/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/auditVerdict/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/auditVerdict/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/lastActivityAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/lastActivityAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/verdictAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/verdictAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/startedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/startedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryRetryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryRetryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaAutoRetryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaAutoRetryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorRetryAttemptStartedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorRetryAttemptStartedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorFailureAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorFailureAt"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepair/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepair/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepairTarget/properties/replanPromptedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepairTarget/properties/replanPromptedAt"
+unknown format "date-time" ignored in schema at path "#/properties/createdAt"
+unknown format "date-time" ignored in schema at path "#/properties/createdAt"
+unknown format "date-time" ignored in schema at path "#/properties/updatedAt"
+unknown format "date-time" ignored in schema at path "#/properties/updatedAt"
+(pass) schema accepts active goal and queued-list goal fixtures [119.07ms]
+(pass) schema rejects invalid status and missing required usage [0.62ms]
+(pass) schema validates nested task and audit-verdict required fields [0.96ms]
+
+tests/glla-table-menu.test.ts:
+(pass) render: title row [115.66ms]
+(pass) grouped entry points can open a specific settings section [1.36ms]
+(pass) render: tabs row lists all 8 sections [0.63ms]
+(pass) main agent tab starts with the current agent and drills in [0.63ms]
+(pass) render: at width=120, the keep-going section renders its rows (v0.28.23: +decisionPopup) [0.34ms]
+(pass) render: active row uses a full-width selected background [0.34ms]
+(pass) render: compact header row has KEY, VALUE, SOURCE columns [0.32ms]
+(pass) render: compact mode never exceeds terminal width even with a long VALUE in another section [0.38ms]
+(pass) render: footer pin includes the optional details toggle [0.23ms]
+(pass) nav: Enter on the first row emits that row's id [0.09ms]
+(pass) nav: Down arrow moves to the next visible row [0.10ms]
+(pass) nav: Down wrapping at the end of a section wraps to 0 [0.11ms]
+(pass) nav: Esc emits undefined (close) [0.05ms]
+(pass) nav: Tab advances to the next section [0.06ms]
+(pass) nav: Back-tab (\x1b[Z) retreats to the previous section [0.04ms]
+(pass) nav: Right-arrow CSI sequence (\x1b[C) advances section [0.07ms]
+(pass) nav: Left-arrow CSI sequence (\x1b[D) retreats section [0.03ms]
+(pass) details toggle: descriptions can be shown and truncated when requested [0.72ms]
+(pass) details toggle: at width=120 the description column shows most of the row text [0.64ms]
+(pass) cache: identical renders at the same width return the same array reference [0.51ms]
+(pass) cache: state change invalidates cache (move → next render produces new lines) [0.66ms]
+(pass) compact view expands VALUE so model + thinking are visible [2.61ms]
+(pass) structural: Class implements Component (has render + invalidate + handleInput) [0.05ms]
+(pass) structural: buildSettingsRows returns ≥20 rows across all 8 sections (coverage) [0.26ms]
+(pass) render: tab bar is color-only (v0.28.19: brackets dropped), all sections present [0.28ms]
+(pass) render: a header rule with ┼ junctions follows the header row [0.42ms]
+(pass) render: column separators align across header, rule, and every row (prefix counted) [0.29ms]
+(pass) render: a too-long VALUE is truncated with … — it must NOT break the grid [0.35ms]
+(pass) render: column widths are stable across tab switches (no grid reflow) [0.81ms]
+
+tests/goal-loop-stats.test.ts:
+(pass) empty rig: no .pi-glla anywhere → empty discovery + no rollup [91.22ms]
+(pass) single project with one approved goal: all counters correct [2.00ms]
+(pass) premature-success detection fires on low turns + 0 writes + few bash [0.11ms]
+(pass) JSON output schema matches the table columns [4.10ms]
+(pass) premature filter: only flagged projects, ratio-sorted [0.38ms]
+(pass) discovery finds nested projects and dedupes via cwd [1.07ms]
+(pass) parseLedgerEntries skips malformed lines [0.38ms]
+
+tests/compaction-failed-recovery.test.ts:
+(pass) host-owned failed compaction retries without model rotation, park, or competing continuation [594.09ms]
+(pass) terminal prompt overflow rotates once and arms durable post-compact resume debt [389.01ms]
+(pass) same-session startup restores fallback debt, while a new session discards it [466.28ms]
+(pass) terminal output-cap failure parks instead of misclassifying it as context overflow [300.33ms]
+(pass) failed compaction without a usable fallback parks an active goal durably [255.66ms]
+(pass) failed compaction parks a branch loop instead of leaving it active [446.28ms]
+(pass) a failed debt-discharge append keeps RAM debt instead of diverging from disk [314.68ms]
+
+tests/auditor-unmatched-telemetry.test.ts:
+(pass) v0.34.56: a serial id'd start+end pairs into toolCalls with zero unmatched facts [2.74ms]
+(pass) v0.34.56: an end with the WRONG id never pairs — it is an explicit unmatched fact and the open start stays open [0.12ms]
+(pass) v0.34.56: an end with an id can never close an ANONYMOUS start (missing-toolCallId shape) [0.07ms]
+(pass) v0.34.56: an ANONYMOUS end can never close an id'd start (the id would be present on a true end) [0.07ms]
+(pass) v0.34.56: a serial ANONYMOUS stream (both sides missing toolCallId) still pairs truthfully [0.05ms]
+(pass) v0.34.56: an anonymous end closes the CURRENT anonymous start; a replaced anonymous start stays an explicit unmatched fact [0.08ms]
+(pass) v0.34.56: a new start replacing an open start records the ORPHANED start explicitly (name, args, id preserved) [0.09ms]
+(pass) v0.34.56: same-id restart updates the slot without an unmatched fact; an end with no open start is an unmatched end [1.12ms]
+(pass) v0.34.56/0.34.108: the detached path forwards pairing data untouched (no inline slot mutation) [0.37ms]
+(pass) v0.34.56: worker — anonymous ends pair only with the SOLE anonymous start; everything else is an explicit unmatched fact [0.14ms]
+(pass) v0.34.56: worker — in-flight starts at session end become explicit unmatched starts (finish sweep) [0.08ms]
+(pass) v0.34.56: progress file + asProgress + HUD mapping + display all carry the unmatched facts [0.23ms]
+
+tests/settlement-boundary-faults.test.ts:
+(pass) typed settlement refuses success before its intent can be persisted [204.90ms]
+(pass) failed receipt transfer retains the terminal obligation across live-slot cleanup [19.84ms]
+(pass) unreadable old outbox retains new archive intent until both summaries can be queued [11.75ms]
+
+tests/state-root.test.ts:
+(pass) workingDir remains the default root and persists under cwd [7.21ms]
+(pass) sessionDir opt-in resolves to the registered top-level session directory [6.12ms]
+(pass) pending sessionDir defers every core write and does not migrate the old cwd tree [195.07ms]
+(pass) PI_SESSION_FILE provides a worker-safe session-root fallback [0.53ms]
+(pass) stateRoot is typed/global-only and project settings cannot override it [103.24ms]
+
+tests/auditor-payload-escaping.test.ts:
+(pass) auditor payload escaping keeps XML-like delimiters inside untrusted data [0.98ms]
+
+tests/goal-loop-core.test.ts:
+(pass) piGlaDir returns the canonical path [114.30ms]
+(pass) newGoalId format [6.76ms]
+(pass) v0.36.0: repeated identical auditor objections are a state-based no-progress signal [0.47ms]
+(pass) statusLabel covers all states [0.05ms]
+(pass) audit display classification keeps semantic verdicts separate from infra and shield outcomes [3.46ms]
+(pass) list policy and aborted status remain separate display facts [0.44ms]
+(pass) findNextPendingTask BFSes subtasks [0.19ms]
+(pass) findNextPendingTask returns subtask when no sibling pending [0.05ms]
+(pass) buildTaskSummary counts complete [0.20ms]
+(pass) renderGoalMarkdown renders sections [0.12ms]
+(pass) v0.34.91: renderGoalMarkdown includes the completion recap section [1.37ms]
+(pass) writeGoalMd persists + readGoalMd returns [0.77ms]
+(pass) readState returns default when no ledger [2.11ms]
+(pass) appendLedger + readState roundtrip [1.18ms]
+(pass) readState sanitizes a saved main-model recovery without dropping its retry plan [5.68ms]
+(pass) sumNewAssistantTokens accumulates assistant usage only [1.22ms]
+(pass) sumNewAssistantTokens dedupes replayed messages [0.10ms]
+(pass) sumNewAssistantTokens ignores zero/negative/invalid usage [0.04ms]
+(pass) mergeSettings: later layers win per key [0.07ms]
+(pass) mergeSettings: undefined in a layer means 'not set here' [0.21ms]
+(pass) mergeSettings: null/missing layers are skipped [0.04ms]
+(pass) mergeSettings: does not mutate the base [0.05ms]
+(pass) auditFeedbackExcerpt: bounds executor feedback at the configured character count [0.65ms]
+(pass) auditFeedbackExcerpt: zero returns the full auditor report [0.11ms]
+(pass) ensureDirs creates the .pi-glla tree [0.37ms]
+(pass) sumNewAssistantTokens counts input+output, not cache reads (v0.12.0) [0.07ms]
+(pass) sumNewAssistantTokens falls back to totalTokens when no split [0.03ms]
+(pass) DEFAULT_TOKEN_LIMIT is 0 — the guard is opt-in (v0.12.0) [0.02ms]
+(pass) piGlaDir migrates a legacy .pi-gla dir exactly once (v0.17.0) [0.80ms]
+(pass) restore gate (v0.28.21 default): NOTHING auto-resumes on session load — the item loads HELD [0.11ms]
+(pass) restore gate: autoresume=on auto-resumes everywhere (unattended rigs) [0.06ms]
+(pass) restore gate: autoresume=off never auto-resumes [0.05ms]
+(pass) v0.24.5 missingGllaTools: empty active set returns all glla tool names [0.11ms]
+(pass) v0.24.5 missingGllaTools: only glla tool names are tracked (no false positives on base tools) [0.06ms]
+(pass) v0.24.5 missingGllaTools: modlist-snapshot example (the real bug) [0.04ms]
+(pass) v0.24.5 missingGllaTools: all tools present → empty missing list [0.05ms]
+(pass) v0.24.5 missingGllaTools: missing just one tool → that single name [0.09ms]
+
+tests/terminal-approval-render.test.ts:
+(pass) skipped challenges are disclosed in chat, transcript, and archive evidence [21.49ms]
+(pass) canonical render folds a lone approval with the verdict count, model-free [1.02ms]
+(pass) standalone audit bullet survives only with news [4.95ms]
+(pass) counts line proofs the audit verdict from durable state only [3.11ms]
+(pass) buildApprovalChatLines stays backward compatible without counts [0.45ms]
+(pass) v0.38.37 posted summary carries verifiable-result bullets plus the deliberate non-do [4.44ms]
+(pass) idle-persisted render replays once on the next live contact [112.64ms]
+(pass) render with confirmed delivery never replays [0.94ms]
+(pass) corrupt store degrades to zero replays, never throws [0.38ms]
+(pass) v0.38.39 chat brief strips machine paths but the archive keeps them [0.83ms]
+(pass) v0.38.39 clause cut respects +-joined lists [0.17ms]
+(pass) second approval for the same goal after delivery queues a fresh render [1.76ms]
+(pass) error-only audit history renders an honest archive banner with no review row [3.53ms]
+(pass) unreadable outbox refuses enqueue without replacing an earlier pending render [4.05ms]
+(pass) malformed and partially invalid stores preserve bytes and refuse mutations [5.04ms]
+
+tests/prompt-disagreement-guidance.test.ts:
+(pass) continuation prompt has the WHEN THE AUDITOR DISAPPROVES section (item 18) [0.48ms]
+(pass) disagreement guidance names the audit history as the source [0.07ms]
+
+tests/long-running-modes-parked.test.ts:
+(pass) fireReviewer emits a SECOND notify with the review file path after the cascade [156.21ms]
+(pass) surface-notify branch is preceded by the existing manual-suppressed notify [0.21ms]
+(pass) postaudit settings key takes precedence over legacy reviewer key (fireReviewer) [0.19ms]
+(pass) Settings type accepts both reviewer and postaudit keys [0.26ms]
+(pass) SETTINGS_KEYS includes postaudit and toolOverrides [0.06ms]
+(pass) /glla postaudit opens the same menu as /glla reviewer (no behavioral split) [0.05ms]
+(pass) /glla routes reviewer (legacy) and postaudit (new) without completion rows [0.21ms]
+(pass) resolveReviewerConfig: postaudit and reviewer blocks merge equivalently [0.15ms]
+(pass) goal-loop-continuation prompt carries the 0.27.5 chunk-near-context-full hint [0.23ms]
+
+tests/main-model-recovery.test.ts:
+(pass) main model refs preserve order, dedupe, and support nested model ids [0.96ms]
+(pass) main model fallback candidates are ordered and never retried in a cycle [0.33ms]
+(pass) main fallback settings dedupe case-insensitively and cap the chain at ten [0.65ms]
+(pass) runtime fallback walk uses one supervised model at a time and preserves left-to-right order [15.46ms]
+(pass) successful fallback turns keep the preferred primary and fail back after a supervised probe [6.44ms]
+(pass) sticky failback preserves the old fallback-settles behavior [1.37ms]
+(pass) in-band provider output is recognized only for strong repeated-pane markers [0.20ms]
+(pass) the explicit Codex prompt-policy event is terminal, while lookalike text remains generic [0.29ms]
+(pass) main model errors stay opaque to the recovery policy [0.31ms]
+(pass) main model recovery backs off without giving up [0.73ms]
+(pass) main recovery requirements are generic across provider wording [0.07ms]
+
+tests/context-hygiene.test.ts:
+(pass) predicate: error-only turns are droppable; tool-carrying, aborted, and healthy turns are not [136.49ms]
+(pass) drop rule: keeps the most recent failed turn, drops older ones, preserves everything else [0.73ms]
+(pass) drop rule: identity preserved when at or under the keep window; window is configurable [0.14ms]
+(pass) drop rule: SEADED BLOAT — 60 failed turns collapse to the keep window; normal turns survive verbatim [0.55ms]
+(pass) compaction pruning: reassigns both message arrays in place and counts drops [0.19ms]
+(pass) wiring: the context event drops accumulated error turns and ledgeres the hygiene pass [127.04ms]
+(pass) wiring: session_before_compact prunes and bounds the preparation the runner will summarize [9.04ms]
+(pass) wiring: every default session_before_compact path receives the bounded projection and an undefined hook result [2.69ms]
+
+tests/loop-start-proof-fallback.test.ts:
+(pass) v0.37.3 (issue #40) — start proof accepts agent_start fallback for followUp continuations [108.53ms]
+(pass) v0.37.3 (issue #40) — retry backoff is env-configurable independently [1.48ms]
+(pass) v0.37.3 (issue #40) — activation wires agent_start and turn_start fallbacks [8.07ms]
+
+tests/stall-handling.test.ts:
