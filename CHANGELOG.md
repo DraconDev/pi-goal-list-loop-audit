@@ -13,6 +13,9 @@
 - A stale main-model recovery remnant (no live timer, switch, or hold) no
   longer claims card ownership; the pause kind owns the card so the next
   action reads coherently.
+- Paused status lines that need the user (decision/error/blocked) now lead
+  with the next action, so the resume command survives narrow-terminal
+  truncation. Waits keep lifecycle-first order.
 
 ### Loop respec
 
