@@ -1,0 +1,22 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/real-host-canary.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/real-host-canary.test.ts:
+(pass) real-host canary reports an explicit skip without opt-in or spawning Pi [47.83ms]
+(pass) opt-in canary installs its request guard and records bounded host evidence (stub host) [177.80ms]
+(pass) generated canary uses actual Pi dispatcher and allowed transport behavior [1907.95ms]
+(pass) generated canary uses actual Pi dispatcher and unknown-price transport behavior [1194.45ms]
+(pass) generated canary uses actual Pi dispatcher and over-budget transport behavior [1182.80ms]
+(pass) generated canary uses actual Pi dispatcher and unsupported-cap transport behavior [982.18ms]
+(pass) generated canary uses actual Pi dispatcher and oversized transport behavior [1093.80ms]
+(pass) generated canary uses actual Pi dispatcher and second-request transport behavior [1017.41ms]
+(pass) generated canary uses actual Pi dispatcher and receipt-write transport behavior [438.16ms]
+
+ 9 pass
+ 0 fail
+Ran 9 tests across 1 file. [8.77s]
+[run-tests] finished in 9s (exit 0)

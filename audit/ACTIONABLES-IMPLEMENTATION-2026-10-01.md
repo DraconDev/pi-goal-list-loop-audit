@@ -11,7 +11,7 @@ were not modified. The sync daemon owns the source and evidence commits.
 | Finding | Implemented behavior | Authoritative regression coverage |
 |---|---|---|
 | PA-3: pending-summary loss | Only `ENOENT` means an empty queue. Other read errors, malformed JSON and partially invalid arrays refuse enqueue/replay and preserve original bytes. Archive intent remains pending until the existing queue can safely accept the new summary. | `terminal-approval-render.test.ts` verifies unreadable-file byte preservation, retry, two summaries delivered once, partially invalid data preservation and explicit recovery. `settlement-boundary-faults.test.ts` exercises unreadable old queue through actual settlement/finalization and proves new intent retention. |
-| PA-1: canary rejection | The generated request hook catches guard and receipt-write errors and synchronously exits its disposable child with code 78. It records attempts, permitted requests and refusals separately. Parent success requires a zero exit, exactly one permitted/attempted request, no refusal and the expected reply. | `real-host-canary.test.ts` runs the generated hook through the installed Pi 0.99.1 extension dispatcher followed by a local fake transport. Unknown prices, excessive estimates, unsupported caps, oversized payload, a second request and receipt-write failure exit before the rejected dispatch. Accepted payload has cap 32 and no tools. Parent harness pass/fail is checked with the local dispatcher fixture. |
+| PA-1: canary rejection | The generated request hook catches guard and receipt-write errors and synchronously exits its disposable child with code 78. It records attempts, permitted requests and refusals separately. Parent success requires a zero exit, exactly one permitted/attempted request, no refusal and the expected reply. Private Pi settings disable agent/provider retries, compaction and cache warming. | `real-host-canary.test.ts` runs the generated hook through the installed Pi 0.99.1 extension dispatcher followed by a local fake transport. Unknown prices, excessive estimates, unsupported caps, oversized payload, a second request and receipt-write failure exit before the rejected dispatch. Accepted payload has cap 32 and no tools. Parent harness pass/fail is checked with the local dispatcher fixture. Actual Pi SettingsManager and provider retry helper verify zero provider retries and disabled background work. |
 | PA-2: false cleanup success | A sibling obligation record precedes the primary process record. Refusals are retained in either writable channel and in launcher memory, kill the known child/group with birth fencing, and propagate an error. The reaper diagnoses missing records, explicit failures and unreadable configured owners; it can recover a missing primary record from its independent captured anchor. Runner failures retain evidence; successful cleanup removes both directories. | `process-registration-faults.test.ts` covers first write, rename, initial/later owner loss, refresh, missing primary record, obligation-write failure and obligation-owner loss. Each checks nonzero cleanup failure accounting, stopped owned child and a surviving unrelated child. `test-runner-lifecycle.test.ts` proves the parent returns 1 even when a fixture swallows either channel's registration refusal and exits 0, and retains existing normal/signal/reused-PID checks. |
 
 Relevant implementations are `extensions/approval-render-store.ts`,
@@ -26,7 +26,7 @@ includes the new helper and test file.
 - Focused corrected run: **41 pass, zero fail** across five files,
   [focused-node.log](actionables-evidence-2026-10-01/focused-node.log).
 - Expanded canary dispatcher plus parent harness: **9 pass, zero fail**,
-  [canary-dispatch-harness.log](actionables-evidence-2026-10-01/canary-dispatch-harness.log).
+  [canary-final.log](actionables-evidence-2026-10-01/canary-final.log).
 - Final registry tests including both parent refusal paths: **19 pass, zero
   fail** across two files,
   [registry-verified.log](actionables-evidence-2026-10-01/registry-verified.log).
@@ -67,12 +67,13 @@ That attempt also reported Bun-internal `epoll_ctl EEXIST` and a subsequent
 test-registration error; the focused retention/outbox rerun passed. These
 runtime observations do not authorize changes to Bun or the operating system.
 
-Two later gate attempts were deliberately stopped for source-review fixes:
+Three later gate attempts were deliberately stopped for source-review fixes:
 capture the child's group identity before reading a potentially lost owner,
-and retain refusal evidence in the primary channel when the independent
-channel is unwritable. They each exited 143 with unchanged source during
+retain refusal evidence in the primary channel when the independent
+channel is unwritable; and disable SDK retries/background requests in the
+private canary settings. They each exited 143 with unchanged source during
 the run. Their distinct `release-check-review.*` and
-`release-check-channel-review.*` artifacts are preserved. None is a pass.
+`release-check-channel-review.*` and `release-check-provider-review.*` artifacts are preserved. None is a pass.
 
 ## External disposition
 
