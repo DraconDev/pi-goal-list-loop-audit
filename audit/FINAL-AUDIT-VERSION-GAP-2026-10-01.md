@@ -1,5 +1,10 @@
 # Final-audit "still stuck" report — SUPERSEDED (2026-10-01)
 
+> Follow-up October 2: the watched attempt settled, but that does not close
+> other stuck audits. SEO still carries the completed September 25 orphan
+> with no living host owner. A separate healthy-host heartbeat gap is now
+> reproduced and repaired; see `FINAL-AUDIT-ORPHAN-BACKSTOP-2026-10-02.md`.
+
 > ⚠ CORRECTION (22:30 UTC): the version-gap conclusion below is WRONG.
 > pi loads GLLA from the repo checkout itself (`../../Dev/pi-plugins/
 > pi-goal-list-loop-audit` in `~/.pi/agent/settings.json`), NOT from the
