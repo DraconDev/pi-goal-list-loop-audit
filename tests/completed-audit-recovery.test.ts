@@ -50,11 +50,14 @@ for (const verdict of ["approved", "disapproved"] as const) {
     const cwd = tmpCwd(), g = goal(); seedState(cwd, { goal: g });
     const fakePi = path.join(cwd, "fake-pi.mjs");
     fs.writeFileSync(fakePi, `#!/usr/bin/env node\nlet input=''; process.stdin.on('data',chunk=>{ input+=chunk; if(!input.includes('\\n'))return; const emit=e=>process.stdout.write(JSON.stringify(e)+'\\n'); emit({type:'tool_execution_start',toolName:'read',toolCallId:'one',args:{path:'artifact'}}); emit({type:'tool_execution_end',toolName:'read',toolCallId:'one'}); emit({type:'message_update',assistantMessageEvent:{type:'text_delta',delta:'<evidence>\\nartifact exists\\n</evidence>\\n<${verdict}/>'}}); emit({type:'agent_settled'}); });`, { mode: 0o700 });
+    const snapshots: Array<{ round?: 1 | 2; phase: string }> = [];
     const result = await runDetachedGoalCompletionAuditor({ cwd, goal: g, model: "test/model", thinkingLevel: "off",
       completionSummary: g.pendingCompletion!.completionSummary, verificationSummary: g.pendingCompletion!.verificationSummary,
+      onProgress: progress => snapshots.push(progress),
       runtime: { piBinary: fakePi, logicalAttemptId: "saved-claim", attemptId: () => "saved-claim-real-worker", pollIntervalMs: 10 },
     });
     assert.equal(result[verdict], true, result.error ?? "worker verdict");
+    if (verdict === "approved") assert.ok(snapshots.some(p => p.round === 2), "real worker round identity survives transport snapshots");
     assert.ok(readCompletedCompletionAudit(cwd, g), "the result is durable before any parent applies it");
     const pi = new MockPi(); activate(pi.api); let ctx = await boot(pi, cwd);
     try {
@@ -122,11 +125,12 @@ test("newer unfinished candidate prevents replay of an older completed result", 
   assert.equal(readCompletedCompletionAudit(cwd, g), null);
 });
 
-for (const change of ["revision", "claim", "hash", "result-identity", "cancelled-tool", "strict-challenge", "unsupported-tool"] as const) {
+for (const change of ["revision", "claim", "structured-claim", "hash", "result-identity", "cancelled-tool", "strict-challenge", "unsupported-tool"] as const) {
   test(`saved result refuses unsafe recovery: ${change}`, () => {
     const cwd = tmpCwd(); let g = goal(); const saved = job(cwd, g);
     if (change === "revision") g = { ...g, revision: 1 };
     if (change === "claim") g = { ...g, pendingCompletion: { ...g.pendingCompletion!, verificationSummary: "changed" } };
+    if (change === "structured-claim") g = { ...g, pendingCompletion: { ...g.pendingCompletion!, leftOut: "different residual" } };
     if (change === "hash") fs.writeFileSync(path.join(saved.dir, "request.json"), JSON.stringify({ ...saved.request, model: "other/model" }));
     if (change === "result-identity") saved.result.attemptId = "another-job";
     if (change === "cancelled-tool") Object.assign(saved.result, { verificationIncomplete: true });
@@ -136,6 +140,13 @@ for (const change of ["revision", "claim", "hash", "result-identity", "cancelled
     assert.equal(readCompletedCompletionAudit(cwd, g, change === "strict-challenge"), null);
   });
 }
+
+test("corrupt final progress identity refuses recovery without consuming the claim", () => {
+  const cwd = tmpCwd(), g = goal(), saved = job(cwd, g);
+  fs.writeFileSync(path.join(saved.dir, "progress.json"), JSON.stringify({ protocolVersion: 1, attemptId: saved.request.attemptId, requestHash: "wrong-hash" }));
+  assert.equal(readCompletedCompletionAudit(cwd, g), null);
+  assert.equal(g.pendingCompletion?.attemptId, "saved-claim");
+});
 
 test("saved approval still enforces the audit-tool floor and regression shield", () => {
   const cwd = tmpCwd(), g = goal(); const saved = job(cwd, g, { extra: { toolCalls: [] } });
