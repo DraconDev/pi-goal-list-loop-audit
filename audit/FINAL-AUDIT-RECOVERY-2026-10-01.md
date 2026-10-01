@@ -64,6 +64,6 @@ The complete pre-version release contract passed: **2984 passed, 1 skipped,
 extensions, inventory, npm pack inspection, and real packed RPC/skill/import
 smokes. Raw log: `final-audit-recovery-evidence-2026-10-01/pre-version-release-check.log`.
 
-The same release contract is running against prepared version **0.38.107**;
-publishing and registry verification will be recorded before release closure. Existing running hosts must load
+The version **0.38.107** release contract also passed with the same test counts.
+Publishing and registry verification are tracked in `RELEASE-0.38.107-2026-10-01.md`. Existing running hosts must load
 these updated main-session modules to use the recovery path.

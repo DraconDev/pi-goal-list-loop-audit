@@ -1,0 +1,15 @@
+{
+  "version": "0.38.107",
+  "localReleaseCheck": "passed",
+  "tests": {
+    "passed": 2984,
+    "skipped": 1,
+    "failed": 0,
+    "files": 322
+  },
+  "testedSourceFiles": 482,
+  "sourceCommitBeforeEvidence": "ad3e00a1314898cb67d6bc3c504af2a26b4a433f",
+  "sourceManifestMatchesWorktreeAndCommit": true,
+  "releaseCheckSha256": "22181ac8dcb0904839da3f566b9feef689f2591ac7a732ff727edebaf275dc93",
+  "verifiedAt": "2026-10-01T15:52:48.648453+00:00"
+}
