@@ -15,6 +15,9 @@ Read-only survey around 22:57–23:03 UTC on October 1:
   recorded worker and recorded main-session owner PIDs are dead. There is
   no current owner to execute recovery. This is unresolved runtime debt;
   updating this checkout alone cannot execute code in a dead session.
+  The current read-only `readCompletedCompletionAudit` validator accepts
+  that exact job as disapproved (482132 ms); it requires rework, not an
+  invented approval or another audit of the unchanged claim.
 - Strategy, Endless TD, and Doomtap have live resultless workers with recent
   activity. Doomtap is in its second pass. These snapshots do not prove
   those attempts will finish; they do distinguish them from SEO's orphan.
