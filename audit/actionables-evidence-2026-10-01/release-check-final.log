@@ -1123,3 +1123,136 @@ REFINE RESULT: Refinement confirmed and applied. Continue improving against the 
 (pass) v0.35.x: recoverable bound-stopped loops accept a confirmed refinement without auto-starting [15.28ms]
 
 tests/lifecycle-recovery.test.ts:
+(pass) v0.35.x: a mutating /list command during handoff is replayed once by the successor [458.42ms]
+(pass) v0.35.x: a mismatched handoff discards a deferred list command without replay [389.21ms]
+(pass) v0.34.54: /list show before rebind — honest stale result: the recovery warning accompanies the read [354.16ms]
+(pass) v0.34.54: settings before rebind — bare /glla refused, read-only /glla status usable, both honest [536.58ms]
+(pass) v0.34.54: /list show after a fresh session_start — renders clean, zero stale residue [698.88ms]
+(pass) v0.34.54: settings after a fresh session_start — the table opens AND a real write lands [889.79ms]
+(pass) v0.34.54: source — read-only surfaces are never in the mutating sets; the gates are the honest refusal, not silence [17.76ms]
+
+tests/image1-list-stall-and-count-fix.test.ts:
+(pass) v0.34.104 [Image-#1] Problem 1: LIST_COMPLETION_SETTLE_MS constant + flag exist [0.81ms]
+(pass) v0.34.104 [Image-#1] Problem 1: archiveCurrentGoal arms the settle window BEFORE activating the next item [0.30ms]
+(pass) v0.34.104 [Image-#1] Problem 1: scheduleContinuation honours the settle window [0.19ms]
+(pass) v0.34.104 [Image-#1] Problem 1: agent activity during settle cancels the deferred send [0.18ms]
+(pass) v0.34.104 [Image-#1] Problem 1: sendContinuation honors an early settle callback [0.55ms]
+(pass) v0.34.104 [Image-#1] Problem 2: validateCompletionSummary exists and is wired into complete_goal capture [1.90ms]
+(pass) v0.34.104 [Image-#1] Problem 2: impossible X/Y pass counts match the field regex (29/28) [0.20ms]
+(pass) v0.34.104 [Image-#1] Problem 2: ledger event `completion_summary_impossible_count` is the canonical key [0.27ms]
+(pass) v0.34.104 [Image-#1] Problem 2: clean input early-returns before any ledger work [0.16ms]
+
+tests/metric-never-moved-resumable.test.ts:
+(pass) behavioral: a loop parked by 'metric never moved' resumes via /loop resume — history kept, counters re-armed [291.45ms]
+[run-tests] progress: 180s elapsed · 0s since last output · 85 KiB of suite output
+(pass) v0.35.x: time and token bound stops resume as fresh windows without discarding history [329.74ms]
+(pass) v0.35.x: metricless cadence delays automatic re-wakes but explicit start is urgent [613.80ms]
+(pass) negative pin: a bounded stop ('max iterations reached') is still not resumable [234.04ms]
+
+tests/test-split.test.ts:
+(pass) test-split: every slow-listed file exists and is a test file [0.62ms]
+(pass) test-split: fast mode excludes via one ignore pattern per slow file [0.26ms]
+(pass) test-split: explicit paths drop the ignore patterns [0.12ms]
+(pass) test-split: slow mode names the files; all mode passes through [0.18ms]
+(pass) runner: the stall window is bounded and overridable [0.16ms]
+(pass) runner: silence past the window stalls, progress resets the clock [0.07ms]
+(pass) runner: the wrapper owns its child (no orphan on abort) [0.19ms]
+(pass) runner: the hand-written .d.mts declares every runtime export (drift guard) [2.19ms]
+(pass) v0.38.104: the suite child is detached so the documented group-kill is real [0.41ms]
+(pass) v0.38.104: the release gate runs the hardened runner, and CI bounds both jobs [1.20ms]
+(pass) v0.38.104: no test gates itself on the removed @tintinweb fork [92.60ms]
+(pass) v0.38.104: tests/README.md does not claim npm test runs the whole suite [3.02ms]
+
+tests/delta-only-continuation.test.ts:
+(pass) marker is tiny and carries the dispatch marker [0.38ms]
+(pass) clean goal needs no full — repair/recovery/audit/designer do [3.04ms]
+(pass) builder: steady-state marker, resync+marker, dirty full [62.16ms]
+(pass) v0.38.94: consecutive sends go full once, then marker (field: 909 full sends) [484.20ms]
+(pass) v0.38.94: rebind reset re-arms the one full brief (fresh context) [627.04ms]
+(pass) sendContinuation wires the delta-only branch with kind ledger [1.12ms]
+
+tests/loop-measure-fail-closed.test.ts:
+(pass) a measure result with no exit code is a NULL measure, not a reading [143.63ms]
+(pass) an empty result envelope is also a NULL measure [15.47ms]
+(pass) a genuinely successful measure still records its number [18.12ms]
+(pass) a nonzero exit code with a parseable number is still rejected [11.11ms]
+
+tests/prompt-subagent-guidance.test.ts:
+(pass) goal-loop-continuation.md: contains subagent fan-out guidance (item 4) [33.81ms]
+(pass) goal-loop-draft.md: contains subagent fan-out guidance (item 4) [0.24ms]
+(pass) goal-loop-forever.md: contains subagent fan-out guidance (item 4) [0.03ms]
+(pass) goal-loop-forever-metricless.md: contains subagent fan-out guidance (item 4) [0.10ms]
+(pass) continuation prompt — single-trunk execution with bounded fan-out [0.16ms]
+(pass) v0.34.0: forever prompts carry the ROI law + untrusted-output hygiene [0.13ms]
+(pass) v0.34.0: audit templates demand the parallel fan-out shape (both) [0.23ms]
+(pass) v0.34.0: divergence bail — 3+ trailing regressions append a reassessment note [7.86ms]
+(pass) continuation prompt — brief discipline law [0.29ms]
+(pass) v0.34.4/0.34.6: token-limit death handling — resume first; split/absorb, never respawn wide [0.18ms]
+(pass) v0.34.4: audit templates carry brief discipline in the fan-out clause (both) [0.22ms]
+(pass) v0.34.4: forever prompts carry the one-line brief law [0.12ms]
+(pass) v0.34.6: subagent failure law is RESUME, DON'T RESPAWN (session survives death) [0.11ms]
+(pass) v0.34.6: the restart law — in-process agents die silently, goals survive [0.15ms]
+
+tests/starvation-ladder.test.ts:
+(pass) compact-first band sits below the starvation line [0.33ms]
+(pass) ladder message names all three recoveries plus the backstop [0.29ms]
+(pass) compact-first nudge fires once per episode [0.07ms]
+(pass) refuse stays sticky while physically over cap [0.14ms]
+(pass) sendContinuation consults the starvation choke point [0.27ms]
+(pass) starved boot refuses the automatic send instead of truncating [261.36ms]
+
+tests/auditor-dispatch-horizon.test.ts:
+(pass) expired stored horizon blocks automatic dispatch without a launch [206.83ms]
+(pass) expired dispatch preserves the exhausted-chain diagnostic [29.86ms]
+(pass) hourly backstop skips blocked capped claims before dispatch [0.59ms]
+
+tests/outcome-first-chat.test.ts:
+(pass) whole-work recap takes precedence for every plain/structured repair combination [35.98ms]
+(pass) four-area chat is outcome-first and grouped; archive retains detailed evidence [1.66ms]
+
+tests/objection-attached-retries.test.ts:
+(pass) objection-attached retries: objection bullets extracted [35.16ms]
+(pass) objection-attached retries: no extractable objections still yields one TODO [0.08ms]
+(pass) objection-attached retries: both disapproval sites attach unconditionally [0.80ms]
+
+tests/persistence-recovery.test.ts:
+(pass) archive summary obligation survives every projection boundary and outbox failure [158.70ms]
+(pass) SIGKILL before outbox transfer recovers the summary in a cold Node process [1695.75ms]
+(pass) archive intent prevents a published archive from resurrecting its active goal [4.64ms]
+(pass) a prepared archive intent without an archive is safe to discard [1.30ms]
+(pass) ledger rotation keeps a bounded active snapshot and retains forensic history [3.97ms]
+(pass) readState recovers when a process dies after segment rename but before active rewrite [0.71ms]
+(pass) queue deletion distinguishes absent sidecars from failed destructive cleanup [0.74ms]
+(pass) audit-job health reports proven-dead workers and preserves ambiguous scratch [1.39ms]
+
+tests/context-checkpoint.test.ts:
+(pass) authoritative checkpoint carries stable state only — no dynamic fields [1.58ms]
+(pass) real continuation payload growth is bounded after checkpoint projection [48.45ms]
+(pass) projection removes old goal events, inserts one checkpoint, and keeps newest payload [0.28ms]
+(pass) one goal event is a no-op and does not inject a checkpoint [0.06ms]
+(pass) zero-retention mode resynchronizes from the checkpoint without retaining payloads [0.07ms]
+(pass) loop-only projection bounds repeated payloads and carries loop authority [0.81ms]
+(pass) loop checkpoint is byte-stable across volatile loop progress (prefix-cache stability) [0.21ms]
+(pass) context hook projects loop-only state and records loop authority [60.79ms]
+(pass) paused goal plus active loop preserves both authorities in the checkpoint [1.10ms]
+(pass) oversized paused goal plus active loop reserves required checkpoint fields [0.72ms]
+(pass) context hook uses current durable state and records the projection [1.37ms]
+(pass) audit-2026-09-06: marker text without customType is content, never control plane [0.14ms]
+(pass) v0.38.54: context hook leaves the transcript alone by default (prefix-cache continuity) [0.42ms]
+(pass) v0.38.54: junk contextCheckpointProjection normalizes to unset (default off) [0.19ms]
+(pass) v0.38.54: settings menu carries the opt-in row, off by default [0.48ms]
+
+tests/auditor-picker-parity.test.ts:
+(pass) v0.35.24: the auditor picker persists its selection where resolveAuditorModel reads it [38.54ms]
+(pass) v0.35.24: a typed forbidden ref is REFUSED by the auditor picker, never persisted [0.59ms]
+(pass) v0.36.0: the ordered auditor fallback picker applies the same filtering [0.79ms]
+(pass) v0.36.0: the ordered auditor fallback picker keeps the first ten refs in typed order [2.81ms]
+(pass) v0.35.24: buildModelPickItems excludes forbidden refs for the auditor slot (list-level filter) [1.34ms]
+
+tests/loop-pause.test.ts:
+(pass) v0.38.27: /loop pause is routed in cmdLoop and clears the tick [29.48ms]
+(pass) v0.38.27: /loop pause is registered in the help completions [0.21ms]
+(pass) v0.38.27: RESUMABLE_STOP matches the pause stopReason so /loop resume picks it up [0.05ms]
+
+tests/continuation-retry-persistence.test.ts:
+(pass) v0.38.104 a retry that cannot be persisted is reported, not recorded as durable [1122.10ms]
