@@ -71,6 +71,7 @@ export function registerOwnedTestProcess(child, env = process.env) {
   const expectation = path.join(obligationsDir(env.GLLA_TEST_PROCESS_REGISTRY), path.basename(file));
   let leader, timer;
   let declared = false;
+  let retired = false;
   let anchors = [];
   let failed = false;
   const fail = error => {
@@ -98,7 +99,7 @@ export function registerOwnedTestProcess(child, env = process.env) {
     throw new Error(`test process registration failed: ${error instanceof Error ? error.message : error}`);
   };
   const snapshot = (exited = false) => {
-    if (failed) return;
+    if (failed || retired) return;
     try {
       // A declared launch exists before any fallible identity discovery.
       if (!declared) {
@@ -114,6 +115,7 @@ export function registerOwnedTestProcess(child, env = process.env) {
         // Only a proven non-detached or already-exited child can retire
         // the declaration without a separate group cleanup obligation.
         fs.unlinkSync(expectation);
+        retired = true;
         return;
       }
       if (current && current.birth !== leader.birth) throw new Error("child PID identity changed");
@@ -127,6 +129,7 @@ export function registerOwnedTestProcess(child, env = process.env) {
     } catch (error) { fail(error); }
   };
   snapshot(); // synchronous launch refusal; caller cannot trust the launch
+  if (retired) return;
   const refresh = exited => {
     try { snapshot(exited); } catch (error) {
       process.stderr.write(`${error.message}\n`);
