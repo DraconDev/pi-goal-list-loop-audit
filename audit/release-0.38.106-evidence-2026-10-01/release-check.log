@@ -10,3 +10,68 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/glla-stale-context.test.ts:
+(pass) v0.34.52: bare /glla on a stale handle is refused — standard recovery message, UI never opens, settings untouched [2918.33ms]
+(pass) v0.34.52: mutating /glla actions (wipe, cancel, resume, reviewer, postaudit, tooloverride) are all refused on a stale handle [331.38ms]
+(pass) v0.34.52: /glla status, log, stats, audits stay usable on a stale handle (inspect, don't mutate) [5067.92ms]
+(pass) audit 2026-09-07 (LOW, finding 399): bare `/glla fallbacks` is a read-only display — allowed on a stale handle; `fallbacks clear` still mutates and is refused [468.21ms]
+(pass) v0.34.52: the standard recovery — a fresh session reopens the settings UI and owns the next /glla [631.87ms]
+(pass) v0.35.72: source — settings rechecks admission after the menu and before saves [0.57ms]
+(pass) v0.34.52: source — cmdSettings captures the entry probe and gates the settings entry + mutating actions [4.02ms]
+
+tests/terminal-summary-delivery.test.ts:
+(pass) visible summary persists without an LLM turn (idle=true) [484.57ms]
+(pass) visible summary persists without an LLM turn (idle=false) [0.14ms]
+(pass) branch-before-persist failure stays pending, suppresses duplicate, later persistence confirms [0.23ms]
+(pass) no-file session never acknowledges but does not repeat the visible summary [0.09ms]
+(pass) outbox survives failed delivery and restart; acknowledged render never replays [5.56ms]
+(pass) failed outbox acknowledgement does not duplicate an existing persisted branch summary [2.34ms]
+(pass) confirmation requires exact identity/content and complete JSONL, tolerates malformed tail [0.40ms]
+(pass) bounded confirmation fails conservatively when receipt is outside tail [16.15ms]
+(pass) maximum supported outbox receipt is acknowledged ("x") [19.28ms]
+(pass) maximum supported outbox receipt is acknowledged ("😀") [86.62ms]
+(pass) maximum supported outbox receipt is acknowledged ("\u0000") [80.18ms]
+(pass) maximum supported outbox receipt is acknowledged ("\\") [28.08ms]
+(pass) failed outbox acknowledgement write retries without resending the visible message [10.79ms]
+(pass) current settlement is not starved by older unconfirmed renders [11.37ms]
+(pass) persistently unconfirmed head rotates so a later render is attempted [5.32ms]
+(pass) host sendMessage reentrant enqueue remains pending after confirmed session delivery [2.96ms]
+
+tests/blocked-pause-autoclear.test.ts:
+(pass) v0.34.64 — blocked pause owned by recovery auto-clears when the probe succeeds [1112.65ms]
+(pass) v0.34.64 — blocked pause with a NON-recovery reason stays blocked [1045.85ms]
+(pass) v0.34.64 — wait pause owned by recovery still auto-clears [1031.66ms]
+(pass) v0.34.64 — source guard: only main-model recovery owns the auto-clear [1.79ms]
+
+tests/list-bare-draft.test.ts:
+(pass) v0.38.51: bare /list enters list drafting — agent list_add is gated [569.87ms]
+(pass) v0.38.51: /list show still renders the queue (viewer preserved) [627.30ms]
+(pass) v0.38.51: stale bare /list latches no drafting gate — a later list_add lands [492.63ms]
+
+tests/stale-interrupt-resume.test.ts:
+(pass) Goal type + schema carry the interrupt marker fields [0.43ms]
+(pass) S3 probe: side-effect-free getSessionName() probe caches the positive [0.51ms]
+(pass) S3 warn helper: honest 'state is safe' messaging + ledger [0.21ms]
+(pass) S3: probes wired at cmdSet / cmdResume / cmdList / propose_goal_draft entry [0.40ms]
+(pass) S3: stale creation marks the interrupt and tells the truth (no 'starting now' lie) [0.18ms]
+(pass) S1: stale resume persists active+marker, skips the misleading notify and the doomed send [0.06ms]
+(pass) S2: restore gate clears the marker on auto-resume and names the recovery [0.45ms]
+(pass) S2 (v0.28.21): the 0.28.3 interrupt exemption is SUPERSEDED — only autoresume=on auto-resumes [0.99ms]
+(pass) S1/S2: widget surfaces the interrupt on ACTIVE goals [0.13ms]
+(pass) E6: drafting-seed send failure is loud and stale-aware (was silent) [0.29ms]
+(pass) T1: stale Confirm is NOT a rejection — both single and batch paths [0.53ms]
+(pass) v0.28.27: stale handle silences ALL stall machinery — refiring into a dead process misleads, and the stall escalation would PAUSE an interrupted goal (killing restart auto-resume) [0.12ms]
+(pass) v0.28.27/0.29.8: /goal verify (renamed from /goal audit) — manual auditor invocation with a synthesized claim, wired into the pendingCompletion machinery [0.68ms]
+(pass) v0.29.8: /goal audit [focus] — the one-shot project audit; /glla status — the unified view [1.33ms]
+(pass) v0.34.2: cmdResume clears interruptedAt/interruptedReason on a fresh-session resume [0.17ms]
+(pass) v0.34.7: safeSteerUser wraps every orchestrator sendUserMessage (darklord crash) [3.61ms]
+(pass) v0.34.7: the fan-out float carries a catch (rejection ≠ process exit) [17.62ms]
+(pass) v0.34.7: re-kick clears the stale-handle marker (banner must not survive a working session) [0.29ms]
+
+tests/between-tasks-compaction.test.ts:
+(pass) v0.38.104 the 200k rule is a token threshold, and it is distinct from the model-size hint [5.03ms]
+(pass) v0.38.104 compaction is due past the threshold, not below it [0.16ms]
+(pass) v0.38.104 a token count, not a percentage — the same goal on a 1M window still fires at 200k [0.19ms]
+(pass) v0.38.104 it fires ONCE per episode and re-arms as the goal grows back [0.04ms]
+(pass) v0.38.104 an unknown context count never compacts blindly [0.08ms]
+(pass) v0.38.104 the threshold is overridable but must be positive [0.10ms]
+(pass) v0.38.105 the boundary fires ctx.compact past 200k and ledgers it [109.30ms]
