@@ -3351,3 +3351,7 @@ tests/auditor-stall-watchdog.test.ts:
 (pass) stall: a worker-reported brake is reclassified with the same evidence [270.06ms]
 (pass) stall: an open in-budget tool is not silence — the no-progress bound spares it [324.59ms]
 (pass) v0.38.99: an over-budget tool is NOT fatal — the worker cancels it, resumes, and its result still lands [2741.48ms]
+(pass) v0.38.99 approval guard: an approving verdict from a verification-incomplete attempt is refused, not applied [1636.76ms]
+(pass) v0.38.99: a genuinely wedged tool still fails fast once the grace expires [658.96ms]
+
+tests/auditor-retry-callback.test.ts:
