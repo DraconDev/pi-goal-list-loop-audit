@@ -1,0 +1,43 @@
+
+> pi-goal-list-loop-audit@0.38.106 test
+> node scripts/run-tests.mjs tests/behavioral-orchestrator.test.ts -t stale|successor|replacement
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/behavioral-orchestrator.test.ts:
+(pass) v0.35.x: auditing list conflict cancels the stale audit before whole-objective update [1661.48ms]
+(pass) v0.35.0: a cross-mode replacement confirms before replacing a live loop [21.71ms]
+(pass) v0.35.x: a successor auto-resumes lifecycle-held loops intact but preserves deliberate stops [47.63ms]
+(pass) v0.34.16: lifecycle handoff resumes same-process replacement but quit does not bypass restore consent [838.07ms]
+(pass) stale list work survives invalidation and resumes only through a fresh file-backed session [676.18ms]
+(pass) v0.34.49: fresh MAIN session_start resets stale state and rejects the old dispatch generation [345.98ms]
+(pass) v0.34.23: host replacement with a new SessionManager is not rejected as foreign [628.40ms]
+(pass) v0.34.20: registered tools use the replacement invocation context without session_shutdown [360.33ms]
+(pass) v0.36.3: live activity is scoped across lost results, host replacement, timestamps, timers, and pending dispatch [32.25ms]
+(pass) T2: a stale send on agent_end continuation → goal ACTIVE + interrupt marker + loud notify [334.64ms]
+(pass) T2b: stale before compaction → no late rebind, refire, or misleading active UI [2542.73ms]
+(pass) v0.35.x: stale terminal keeps a recovery probe and self-heals without reload [500.94ms]
+(pass) v0.34.48: host-session loss without replacement session_start parks durably and rejects late callbacks [2378.19ms]
+(pass) v0.34.25: silent swap — live file-backed successor is absorbed via a tool call and the work auto-resumes [560.28ms]
+(pass) v0.34.25: the field ordering — stale before compaction, then the successor's compact event absorbs in place [555.77ms]
+(pass) v0.34.27: stale host recovery absorbs the first replacement contact across lifecycle and stream boundaries [3816.70ms]
+(pass) v0.34.27: plain startup from a dead file-backed successor is not rejected as a subagent [373.22ms]
+(pass) T1a: stale Confirm in propose_goal_draft → NOT-a-rejection guidance, no goal created [20.85ms]
+(pass) T1b: stale /goal start → goal persisted to .pi-glla with honest notify [20.72ms]
+(pass) drafting state is not left behind by a stale seed, and old confirmations cannot mutate a replacement session [244.57ms]
+(pass) carryover pause (default): new goal over stale paused goal+list+held loop → ONE summary, goal archived, list+loop kept [322.10ms]
+(pass) carryover via /list next (pause): summary fires BEFORE the stale item activates; paused goal archived, held loop kept [235.69ms]
+(pass) carryover via /list next (clear): the stale queue is dropped BEFORE activation — nothing activates [220.28ms]
+(pass) v0.34.22: an old detached result cannot archive after session replacement [1225.07ms]
+(pass) v0.35.x: stale host replacement session_start auto-recovers the parked audit [1697.00ms]
+(pass) v0.35.x: stale host loss releases an in-flight completion audit without a verdict [6760.88ms]
+(pass) v0.34.20 lifecycle: fan-out confirmation from the old generation cannot queue into its replacement [37.89ms]
+(pass) v0.34.20 lifecycle: loop measurement abandons the old generation after replacement [116.23ms]
+(pass) v0.35.64: a stale subagent probe no longer shields unrelated parent cleanup [74.83ms]
+
+ 29 pass
+ 122 filtered out
+ 0 fail
+Ran 29 tests across 1 file. [29.19s]
+[run-tests] finished in 29s (exit 0)
