@@ -2589,13 +2589,15 @@ test("v0.34.27: stale host recovery absorbs the first replacement contact across
     await acknowledgeLastContinuation(ctx);
     pi.sent.length = 0;
     pi.sendMessageError = staleError();
-    // The predecessor is actually unusable. A healthy old isIdle API lets
-    // the heartbeat legitimately recover before the successor contact,
-    // which would test a different boundary and depend on timer ordering.
-    (ctx as any).isIdle = () => { throw staleError(); };
+    pi.sessionNameError = staleError(); // keep the captured API stale until replacement
     await pi.fire("agent_end", { messages: [{ role: "assistant", content: [{ type: "text", text: "boundary" }], stopReason: "end_turn" }] }, ctx);
     await tick();
+    // Once the stale send is observed, the predecessor stays unusable even
+    // when the replacement restores the shared API. A healthy old context
+    // would let heartbeat self-heal race the intended successor boundary.
+    (ctx as any).isIdle = () => { throw staleError(); };
     pi.sendMessageError = null;
+    pi.sessionNameError = null;
     const successorCtx = makeMockCtx(cwd, {
       sessionManager: {
         name: `successor-${contact.via}`,
