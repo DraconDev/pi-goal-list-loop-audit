@@ -40,3 +40,25 @@ test('failed receipt transfer retains the terminal obligation across live-slot c
   assert.equal(outbox.filter((r:any)=>r.goalId===goal.id).length,1);
   assert.equal(fs.readFileSync(archivedGoalPath(cwd,goal.id),'utf8'),archive);
 });
+
+test('unreadable old outbox retains new archive intent until both summaries can be queued', {
+  skip: process.platform === 'win32' || process.getuid?.() === 0,
+}, () => {
+  const {cwd,goal,ctx}=fixture();
+  assert.equal(persistApprovalRender(cwd,{goalId:'older',objective:'older',chatLines:['older summary']}),true);
+  const file=path.join(cwd,'.pi-glla','pending-approval-renders.json');
+  const oldBytes=fs.readFileSync(file,'utf8');
+  const render={goalId:goal.id,objective:goal.objective,chatLines:['new summary']};
+  fs.chmodSync(file,0);
+  try {
+    const settlement=createGoalSettlementBoundary();
+    assert.equal(settlement.archiveCurrentGoal(ctx as any,'complete','approved',{}, {terminalRender:render}),true);
+    assert.deepEqual(readArchiveIntent(cwd)?.terminalRender,render);
+    assert.equal(finalizeArchiveIntent(cwd,goal.id,r=>persistApprovalRender(cwd,r)),false);
+  } finally {fs.chmodSync(file,0o600)}
+  assert.equal(fs.readFileSync(file,'utf8'),oldBytes);
+  assert.equal(finalizeArchiveIntent(cwd,goal.id,r=>persistApprovalRender(cwd,r)),true);
+  assert.equal(readArchiveIntent(cwd),null);
+  const ids=JSON.parse(fs.readFileSync(file,'utf8')).map((r:any)=>r.goalId);
+  assert.deepEqual(ids,['older',goal.id]);
+});

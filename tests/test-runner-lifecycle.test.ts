@@ -137,5 +137,28 @@ test("registry refuses to signal a record naming a reused leader identity", { sk
   } finally {
     child.kill("SIGKILL");
     fs.rmSync(dir, { recursive: true, force: true });
+    fs.rmSync(`${dir}.obligations`, { recursive: true, force: true });
   }
+});
+
+test('runner refuses a green suite after a swallowed registration write failure', {
+  skip: process.platform !== 'linux' || process.getuid?.() === 0, timeout: 30_000,
+}, async () => {
+  const registry = pathToFileURL(path.resolve('scripts/test-process-registry.mjs')).href;
+  const result = await runStub(`(async()=>{
+    const fs=require('node:fs');const {spawn}=require('node:child_process');
+    const {registerOwnedTestProcess}=await import(${JSON.stringify(registry)});
+    const worker=spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{detached:true,stdio:'ignore'});
+    await new Promise(r=>worker.once('spawn',r));
+    fs.chmodSync(process.env.GLLA_TEST_PROCESS_REGISTRY,0o500);
+    try{registerOwnedTestProcess(worker)}catch{}
+    fs.chmodSync(process.env.GLLA_TEST_PROCESS_REGISTRY,0o700);
+    worker.once('exit',()=>process.exit(0));
+  })();`);
+  assert.equal(result.code, 1, result.output);
+  assert.match(result.output, /unverified survivors\/records/);
+  const retained = result.output.match(/cleanup evidence retained at (.+)/)?.[1];
+  assert.ok(retained, result.output);
+  fs.rmSync(retained, { recursive: true, force: true });
+  fs.rmSync(`${retained}.obligations`, { recursive: true, force: true });
 });

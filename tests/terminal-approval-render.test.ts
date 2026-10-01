@@ -299,3 +299,40 @@ test("error-only audit history renders an honest archive banner with no review r
   assert.ok(!lines.some((l) => /completion review recorded/.test(l)), "no false recorded-review claim");
   assert.ok(!lines.some((l) => /^\| Completion review \| no review \|/.test(l)), "no lowercase review row leaks into the archive table");
 });
+
+test('unreadable outbox refuses enqueue without replacing an earlier pending render', {
+  skip: process.platform === 'win32' || process.getuid?.() === 0,
+}, () => {
+  const cwd = tmpCwd();
+  const first = { goalId: 'preserved-first', objective: 'first', chatLines: ['first summary'] };
+  const second = { goalId: 'preserved-second', objective: 'second', chatLines: ['second summary'] };
+  assert.equal(persistApprovalRender(cwd, first), true);
+  const file = approvalRenderStorePath(cwd);
+  const original = fs.readFileSync(file, 'utf8');
+  fs.chmodSync(file, 0);
+  try {
+    assert.equal(persistApprovalRender(cwd, second), false);
+    assert.equal(replayUndeliveredApprovalRenders({ cwd }, () => { throw new Error('must not deliver an unreadable queue'); }), 0);
+  } finally { fs.chmodSync(file, 0o600); }
+  assert.equal(fs.readFileSync(file, 'utf8'), original);
+  assert.equal(persistApprovalRender(cwd, second), true);
+  const delivered: string[] = [];
+  assert.equal(replayUndeliveredApprovalRenders({ cwd }, entry => { delivered.push(entry.goalId); return true; }), 2);
+  assert.deepEqual(delivered, [first.goalId, second.goalId]);
+  assert.equal(replayUndeliveredApprovalRenders({ cwd }, () => true), 0);
+});
+
+test('malformed and partially invalid stores preserve bytes and refuse mutations', () => {
+  const cwd = tmpCwd();
+  persistApprovalRender(cwd, { goalId: 'valid', objective: 'valid', chatLines: ['pending'] });
+  const file = approvalRenderStorePath(cwd);
+  const valid = JSON.parse(fs.readFileSync(file, 'utf8'))[0];
+  for (const bytes of ['{not json', JSON.stringify([valid, { goalId: 'broken' }])]) {
+    fs.writeFileSync(file, bytes);
+    let sends = 0;
+    assert.equal(replayUndeliveredApprovalRenders({ cwd }, () => { sends++; return true; }), 0);
+    assert.equal(persistApprovalRender(cwd, { goalId: 'new', objective: 'new', chatLines: ['new'] }), false);
+    assert.equal(fs.readFileSync(file, 'utf8'), bytes);
+    assert.equal(sends, 0);
+  }
+});
