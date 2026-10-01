@@ -3352,3 +3352,4 @@ tests/auditor-stall-watchdog.test.ts:
 (pass) v0.38.99: a genuinely wedged tool still fails fast once the grace expires [933.41ms]
 
 tests/auditor-retry-callback.test.ts:
+[run-tests] progress: 540s elapsed · 4s since last output · 250 KiB of suite output
