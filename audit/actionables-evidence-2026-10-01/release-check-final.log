@@ -2056,3 +2056,128 @@ tests/state-root-owner.test.ts:
 (pass) audit-2026-09-06: takeover re-verifies the occupant at signal time [297.01ms]
 
 tests/auditing-standstill.test.ts:
+(pass) agent turns during a pending audit stay silent instead of escalating [4280.68ms]
+
+tests/repair-card-loop-block.test.ts:
+(pass) v0.35.22: activating a queued item under a LIVE loop refuses LOUDLY — warning names the queued item and the way out [540.92ms]
+(pass) v0.35.22: when the loop ends, the blocked item becomes startable — /loop stop advances the queue [1050.58ms]
+(pass) v0.35.41: the stuck-ladder stop also announces queued-list resumption [557.72ms]
+(pass) v0.35.41: the provider-error cap stop also announces queued-list resumption [1159.86ms]
+
+tests/zombie-subagent-tool-name.test.ts:
+(pass) v0.35.26 #13: an in-flight 'subagent' call stands down the zombie abort until it settles [2287.95ms]
+(pass) v0.35.26 #13: the blocking 'subagent_wait' tool gets the same stand-down [26.17ms]
+(pass) v0.35.26 #13: both watchdog sites consume the shared isSubagentWaitCall name set [7.54ms]
+
+tests/tool-overrides.test.ts:
+(pass) Settings type accepts toolOverrides (allow / hide / perToolConfig) [43.62ms]
+(pass) SETTINGS_KEYS includes toolOverrides for provenance tracking [0.20ms]
+(pass) goal.ts ensureAgentToolsActive applies toolOverrides.allow and .hide [25.78ms]
+(pass) /glla tooloverride keyword routes to cmdToolOverride [2.32ms]
+(pass) cmdToolOverride supports allow / hide / unallow / unhide / set / unset / list [1.24ms]
+(pass) parseToolOverrideValue coerces booleans, numbers, JSON; else string [1.46ms]
+(pass) reviewer 4-mode set (off | on | auto | aggressive) is the contract surface [0.49ms]
+(pass) legacy 'default' and 'report' modes auto-migrate to 'on' in resolveReviewerConfig [0.44ms]
+(pass) paused widget renders `awaiting first turn` for zero-telemetry (literal contract) [6.42ms]
+(pass) auditor prompt (extensions/goal-loop-auditor.ts) carries the chunk-near-context-full hint [0.71ms]
+
+tests/subagent-host-boundary.test.ts:
+(pass) v0.35.62: a worker cannot be the first claimant, while host telemetry still records Explore [1960.91ms]
+(pass) v0.35.62: foreign slash commands cannot mutate the host list [55.41ms]
+(pass) v0.35.62: persistent workers cannot masquerade as silent host successors [66.61ms]
+(pass) v0.35.72: state-root read-only denial hints at sessionDir via the MAIN-owner refusal [91.50ms]
+
+tests/mechanical-pipeline-lifecycle.test.ts:
+(pass) Node callers survive noisy early-closing filters and retain head failure/cancellation [2002.48ms]
+
+tests/heartbeat-suppression-rework.test.ts:
+(pass) lastShippedAtMs ignores the state-file mtime (the self-sustaining term) [70.64ms]
+(pass) lastShippedAtMs source has no active.jsonl mtime term [0.41ms]
+(pass) heartbeat never calls the suppression check; audit-in-flight flag guards the only real window [1.20ms]
+(pass) the deprecated pure fn remains exported (API compat) but marked deprecated [0.13ms]
+(pass) no heartbeat_suppressed ledger writes remain in the heartbeat path [1.03ms]
+
+tests/prompt-subagent-retry-guidance.test.ts:
+(pass) continuation prompt treats provider wording as generic retryable failure (item 38) [0.47ms]
+(pass) continuation prompt resumes or retries a failed subagent without a reset wait [0.16ms]
+
+tests/settings-editors.test.ts:
+(pass) T4: select editor — stateRoot writes the global workingDir/sessionDir choice [171.81ms]
+(pass) T4: select editor — autoResume writes on/off/default with the right key [59.05ms]
+(pass) T4: select editor — auditorInspection is opt-in on (writes true), off clears to default [17.93ms]
+(pass) removed request-rate fallback setting has no editor or persistence path [0.61ms]
+(pass) T4: select editor — aggressiveMode writes the boolean + notifies [17.53ms]
+(pass) T4: select editor — contextCheckpointProjection writes true, off removes the key (v0.38.54) [13.34ms]
+(pass) T4: select editor — carryover writes clear/resume, pause removes the key (v0.34.25) [22.50ms]
+(pass) T4: select options stay concise — rationale lives in the title, not the option rows (v0.34.25) [0.87ms]
+(pass) main recovery settings are global-only and project copies cannot create a UI/runtime mismatch [4.01ms]
+(pass) scope-aware settings editing updates a project override instead of a hidden global baseline [34.33ms]
+(pass) forbidden-model editing excludes drafter and auditor fallback chains [7.07ms]
+(pass) numeric settings reject malformed integer prefixes instead of truncating them [0.63ms]
+(pass) RPC custom stub falls back to typed main-backup editing instead of silently canceling [7.59ms]
+(pass) main failback policy and primary-probe cadence are global settings [15.21ms]
+(pass) T4: input editor — main model backups preserve order and retry cadence [46.36ms]
+(pass) main backup editor refuses the 11th typed model and keeps the first ten in order [11.36ms]
+(pass) main-model fallback reload preserves explicit order and does not reintroduce a cleared key [37.87ms]
+(pass) v0.34.118: backup and forbidden editors enforce mutual exclusion even in headless input mode [54.56ms]
+(pass) T4: input editor — auditorModel set / cleared on empty [22.08ms]
+(pass) v0.36.0: auditor fallback editor preserves ordered refs, caps at ten, and clears [25.37ms]
+(pass) v0.36.0: the singular auditor fallback setting migrates to the ordered chain [10.05ms]
+(pass) drafter agent picker immediately offers model-specific thinking and persists both choices [33.79ms]
+(pass) T4: input editor validation — auditCap rejects garbage loudly, accepts integers, clears on empty [18.68ms]
+(pass) v0.35.64: subagent hang action accepts warning-only/long thresholds and rejects unsafe values [17.17ms]
+(pass) v0.35.x: zero-stream retry budget persists and rejects values outside 0..10 [10.88ms]
+(pass) v0.35.x: hand-edited zero-stream retry budgets normalize to the safe default [0.51ms]
+(pass) T4: a dismissed editor (Esc → undefined) writes NOTHING [0.53ms]
+(pass) settings editor failures notify loudly and return to the menu [0.61ms]
+(pass) T4: the switch has no confirm-class editors (select + input only) [0.24ms]
+(pass) v0.28.34: notify folds a default IN — auto-detect notify-send/osascript, 'off' silences, custom overrides [12.55ms]
+(pass) audit-2026-09-06: headless /glla fallback shows compactor + display-richness rows [1.24ms]
+(pass) audit 2026-09-06: docs/SETTINGS.md covers every SETTINGS_KEYS entry [2.38ms]
+(pass) audit 2026-09-07 (LOW, finding 400): typing the displayed `auto` in the notify editor round-trips to unset, not a literal shell command [27.01ms]
+(pass) audit 2026-09-25: decisionPauseBudget is visible on every operator surface [15.01ms]
+(pass) audit 2026-09-26: subagent thinking editor pins, inherits, and rejects garbage [9.58ms]
+(pass) audit 2026-09-26: headless /glla fallback covers every SETTINGS_KEYS entry [3.46ms]
+(pass) v0.38.104: the audit-dir retention row renders a legal 0 instead of the unknown-value '?' [0.77ms]
+(pass) v0.38.104: the main-recovery row does not promise a 24h stop the default mode removes [3.37ms]
+(pass) v0.38.104: every 'Global-only.' annotation in docs/SETTINGS.md is true in code [6.44ms]
+(pass) v0.38.104: the superseded DESIGN.md table does not mark files that do not exist as shipped [1.72ms]
+(pass) v0.38.104: the auditor model path carries no dead settings placeholders [1.04ms]
+
+tests/contained-child-platform.test.ts:
+[run-tests] progress: 480s elapsed · 2s since last output · 163 KiB of suite output
+(pass) real linux cleanup stops a live owned Node tree and inherited pipes [1374.35ms]
+
+tests/task-list-persistence.test.ts:
+(pass) normal task-list proposal reports failure and stores no task list [154.56ms]
+(pass) repair proposal preserves the source sidecar and queue when the task list cannot persist [19.36ms]
+
+tests/auditor-eager-retry.test.ts:
+(pass) eager: first attempt is 5s for every provider failure family [78.82ms]
+(pass) hourly: later attempts keep the slot diagnostic but cap the wait at 15m [0.35ms]
+(pass) hourly: rate-limit, billing, and transient-shaped failures share the same later schedule [0.44ms]
+(pass) eager: an upstream Retry-After hint does not suppress the uniform retry [0.11ms]
+(pass) eager: detached auditor retries an account-shaped failure once before durable parking [5.61ms]
+(pass) eager: a second recoverable provider error remains infrastructure after the one retry [0.82ms]
+(pass) eager: conservative attempts remain bounded by the existing durable safety window [0.12ms]
+(pass) unified: no auditor-only attempt cap inside the shared horizon [0.06ms]
+(pass) aggressive auditor recovery respects the fixed recovery horizon [0.04ms]
+(pass) manual-started timer retries preserve automatic provenance and clear exhausted cycle state [2.73ms]
+(pass) automatic plans advance counters while preserving their original envelope [0.19ms]
+(pass) source pins: uniform eager retry and hourly probe wording are present at both dispatch sites [3.46ms]
+
+tests/completion-trailing-space.test.ts:
+(pass) subcommand items get a trailing space in value, label stays clean [75.52ms]
+(pass) key=value items get NO trailing space (user types the value right after the =) [0.40ms]
+(pass) mixed list (bare commands + key=value) — the asymmetric rule [0.36ms]
+(pass) filter still prefix-based (no other behavior change) [0.73ms]
+(pass) registerCommand: /goal, /glla, /list, /loop all use the shared factory [1.72ms]
+(pass) /glla completions stay concise: actions only; settings live in the table [0.67ms]
+
+tests/post-drafting-stuck.test.ts:
+(pass) post-drafting: complete_goal storage failure returns an error, never a wait narrative [210.35ms]
+(pass) post-drafting: resume_goal resumes a paused auditor-retry list item [594.20ms]
+(pass) post-drafting: auditor retry waits after the eager probe are capped at 15 minutes [3.03ms]
+(pass) post-drafting: recovery-wait surfaces name resume_goal as the agent path [2.32ms]
+
+tests/same-process-successor-resume.test.ts:
