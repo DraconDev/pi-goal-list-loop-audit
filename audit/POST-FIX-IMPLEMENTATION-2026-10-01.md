@@ -68,8 +68,25 @@ are preserved as `release-check-exit-race.*`. The corrected code independently
 requires ESRCH before retiring a disappeared PID when exit status is pending;
 live injected ENOENT still refuses registration.
 
-Full `npm run release:check` is in progress. Closure remains unproven until
-that gate completes and its source manifest is checked.
+Full `npm run release:check` exited **zero** in **646.664 seconds**:
+**2,965 pass, one skip, zero failures across 321 files**. TypeScript,
+Node/jiti singleton, offline auditor extension checks, inventory and package
+checks passed. The actual packed tarball passed its bounded worker RPC probe,
+loaded the delegate skill with zero diagnostics, and installed/imported.
+All **479 source/configuration/test/documentation files** in the captured
+manifest remained unchanged during the gate and still match the final tree.
+Machine-local runtime and audit evidence are excluded; the separate operator
+`note.md` is excluded explicitly.
+
+[Release record](post-fix-implementation-evidence-2026-10-01/release-check.json),
+[full log](post-fix-implementation-evidence-2026-10-01/release-check.log) and
+[requirement-by-requirement completion audit](post-fix-implementation-evidence-2026-10-01/completion-audit.json)
+retain the commands, hashes and each passing acceptance test.
+Log SHA-256: `c967ec8799ce1a989cc096264f53c2c3d556666dcf2e69d230af5cecb0343bda`.
+
+**AF-1, AF-2 and AF-3 are closed by this implementation and verification.**
+This closure applies to the reproduced GLLA-owned failure paths and their
+stated acceptance criteria, not an exhaustive guarantee about external hosts.
 
 Limits: this verification is local Linux, Node 22.22.2 and Bun 1.3.14.
 No paid provider calls or new Windows/macOS execution are claimed. The earlier

@@ -6,15 +6,16 @@ plus a `v0.34.x-<TOPIC>.md` symlink for versioned docs). Older docs
 
 ## Current implementation and audits
 
-**Current follow-up review (2026-10-01):**
+**Current follow-up implementation (2026-10-01):**
+[POST-FIX-IMPLEMENTATION-2026-10-01.md](POST-FIX-IMPLEMENTATION-2026-10-01.md)
+closes AF-1, AF-2 and AF-3: selector failures retain authority and defer writes,
+identity failures retain cleanup obligations, and replay merges acknowledgements
+without erasing reentrant enqueues. Full release check passed: 2,965 pass,
+one skip, zero failures across 321 files, including installed-tarball checks.
+All 479 captured source files remained unchanged. The historical
 [POST-FIX-AUDIT-2026-10-01.md](POST-FIX-AUDIT-2026-10-01.md)
-reproduces three open paths (one HIGH, two MEDIUM): unreadable settings switch
-the state root, a missing process identity bypasses cleanup accounting, and
-replay can overwrite an enqueue from its delivery callback. Fresh checks pass
-102 tests, TypeScript and inventory; standalone probes expose the uncovered
-paths. The prior trigger-specific fixes still pass. Cleanup accounting is
-reopened for identity-read failure. Evidence and repair criteria are retained
-in the new report; no runtime repair is included in this audit.
+and its original evidence remain unchanged; the new implementation report
+records acceptance coverage, the exit-race correction and verification limits.
 
 **Project review (2026-09-30):**
 [FULL-PROJECT-AUDIT-2026-09-30.md](FULL-PROJECT-AUDIT-2026-09-30.md)

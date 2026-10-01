@@ -1,0 +1,44 @@
+{
+  "command": "npm run release:check",
+  "exitCode": 0,
+  "pass": 2965,
+  "skip": 1,
+  "fail": 0,
+  "files": 321,
+  "elapsedSeconds": 646.664,
+  "sourceManifestFiles": 479,
+  "sourceUnchanged": true,
+  "currentSourcesMatch": true,
+  "logSha256": "c967ec8799ce1a989cc096264f53c2c3d556666dcf2e69d230af5cecb0343bda",
+  "acceptancePassed": {
+    "AF-1": [
+      "known session root remains readable and mutations defer on permission",
+      "known session root remains readable and mutations defer on malformed",
+      "known session root remains readable and mutations defer on invalid-selector",
+      "cold unreadable selector does not authorize a fallback root",
+      "cold invalid-json selector does not authorize a fallback root",
+      "absent selector uses the default, while a persistence operation pins a validated root"
+    ],
+    "AF-2": [
+      "process registration stat-denied failure is visible and stops the owned child",
+      "process registration stat-malformed failure is visible and stops the owned child",
+      "process registration stat-missing failure is visible and stops the owned child",
+      "proven already-exited child retires its declaration without a cleanup failure",
+      "proven proc-disappeared child retires its declaration without a cleanup failure",
+      "proven suite-group child retires its declaration without a cleanup failure",
+      "parent runner fails after swallowed initial identity denial and restored reads",
+      "registry refuses to signal a record naming a reused leader identity"
+    ],
+    "AF-3": [
+      "delivery callback enqueue survives acknowledgement and replays on next contact",
+      "nested replay neither repeats the in-flight render nor restores acknowledged entries",
+      "refusal rotation preserves callback enqueues and makes them reachable next contact",
+      "host sendMessage reentrant enqueue remains pending after confirmed session delivery"
+    ]
+  },
+  "historicalReportsUnchanged": [
+    "audit/POST-FIX-AUDIT-2026-10-01.md",
+    "audit/ACTIONABLES-IMPLEMENTATION-2026-10-01.md"
+  ],
+  "externalDisposition": "Upstream Pi bundled dependency finding remains outside GLLA scope; no new external remediation claimed."
+}
