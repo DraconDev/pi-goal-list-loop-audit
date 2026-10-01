@@ -297,7 +297,7 @@ GLLA is the supervisor. These companions add capabilities around it:
 
 ### Recommended for power: parallel orchestration (`pi-subagents`)
 
-- **`pi-subagents` 0.62.0 (pinned): the power-max choice for GLLA.** Use it
+- **`pi-subagents`: the optional parallel-orchestration companion for GLLA.** Use it
   when you want the best automation and quality: `runs.all` parallel fan-out,
   `runs.lanes` worker→review→fix chains, `outputSchema` + `acceptance` structured
   verification, `runs.host` gated shell, worktree isolation, model routing
@@ -325,11 +325,16 @@ GLLA is the supervisor. These companions add capabilities around it:
   `compact` (count line), `rich` (all worker rows). Upstream triple-render report:
   nicobailon/pi-subagents#1931.
 
-Install (or keep pinned):
+Install the current companion (GLLA does not require a pinned version):
 
 ```bash
-pi install npm:pi-subagents@0.62.0
+pi install npm:pi-subagents
 ```
+
+The companion is installed separately; it is not a GLLA runtime dependency.
+Our development lockfile records the version used for reproducible checks,
+not a version requirement for your Pi session. See
+[compatibility boundaries](docs/COMPATIBILITY.md).
 
 Do not install the older `@tintinweb/pi-subagents` provider alongside this
 recommendation in the same session. Existing Tintin-era agent files are

@@ -637,17 +637,18 @@ shapes (details in CHANGELOG.md; each is pinned by tests):
   that NEVER moves gets its own loud bounded stop. Audit loops keep their
   purpose-built deferred-baseline + reprieve semantics verbatim.
 
-## Addendum v0.36.3 (subagent orchestration — power-max pin)
+## Subagent orchestration (updated 2026-10-01)
 
-- **One pinned orchestrator**: `pi-subagents@0.62.0` is the power-max companion
+- **One optional orchestrator**: `pi-subagents` is the power-max companion
   for GLLA. Capability ceiling chosen over minimalism: `runs.all` parallel
   fan-out, `runs.lanes` worker→review→fix chains, `outputSchema` +
   `acceptance` structured verification, `runs.host` gated shell, worktree
   isolation, model routing (`subagents.defaultModel` / `subagentModelOverrides`
   / `modelScope`), missions/schedules, and durable recovery. GLLA supervises
   via `subagent:async-started` + durable `status.json` + versioned stop RPC
-  (ownership/generation-checked). The 0.x pin is exact because the 93k-line
-  surface moves fast; upgrades run a compatibility canary.
+  (ownership/generation-checked). GLLA does not pin the installed companion version. The development
+  lockfile fixes the version used for checks; it is not a runtime requirement.
+  Companion upgrades should run the GLLA compatibility checks.
 - **One owner, no stacking**: `@tintinweb/pi-subagents` (legacy),
   `@narumitw/pi-subagents` (minimal without durable status/workflow), and
   `@quintinshaw/pi-dynamic-workflows` (complement-only LLM-vote helpers) are

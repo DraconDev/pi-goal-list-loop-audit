@@ -60,11 +60,15 @@ and confirmation UX:
 pi install npm:@juicesharp/rpiv-ask-user-question
 ```
 
-For best automation and quality, add the **pinned parallel-orchestration companion** (`pi-subagents` 0.62.0): GLLA's power-max choice for `runs.all` fan-out, `runs.lanes` worker→review→fix chains, structured verification, worktree isolation, and durable recovery:
+For best automation and quality, add the **optional parallel-orchestration companion** (`pi-subagents`): GLLA's power-max choice for `runs.all` fan-out, `runs.lanes` worker→review→fix chains, structured verification, worktree isolation, and durable recovery:
 
 ```bash
-pi install npm:pi-subagents@0.62.0
+pi install npm:pi-subagents
 ```
+
+GLLA does not pin the companion version or install it as a runtime dependency.
+The development lockfile fixes the test environment only. Install and update
+the companion independently; see [compatibility boundaries](docs/COMPATIBILITY.md).
 
 GLLA's main continuation, queue, recovery, and detached auditor work without
 it, but parallelism pays for its coordination when a goal has independent

@@ -6,6 +6,14 @@ TypeBox is `>=1.3.14 <1.4.0`; Node requires 22.19 or newer.
 Development dependencies pin Pi 0.99.1. Intermediate Pi releases are covered
 by the range but are not individually certified.
 
+`pi-subagents` is an optional, separately installed companion. GLLA imposes no
+companion version pin and does not import it as a runtime dependency. Install
+with `pi install npm:pi-subagents`. Development uses a versionless manifest
+entry and a lockfile for reproducibility; this release was checked with 0.74.0.
+The GLLA tests exercise lifecycle events, persisted status and ownership-fenced
+stop handling, plus the installed companion's role definitions. They do not
+certify every upstream version or replace a real-host upgrade canary.
+
 The compatibility workflow exercises both Pi 0.84.2 and 0.99.1 on actual
 Linux, macOS, and Windows runners with Node 22.19 and Bun 1.3.14. It checks
 TypeScript, competing owner processes, child-tree cleanup, persisted receipts,

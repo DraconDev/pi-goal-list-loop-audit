@@ -43,7 +43,8 @@ counts.
 
 `tests/subagent-stop-rpc.integration.test.mjs` drove the real upstream
 `AgentManager` child-stop RPC through the legacy `@tintinweb/pi-subagents`
-fork. The dependency was replaced by unscoped `pi-subagents@0.62.0`, whose
+fork. The dependency was replaced by unscoped `pi-subagents` (0.62.0 at
+the time), whose
 published surface has no `AgentManager` / `registerRpcHandlers` seam (and the
 file refused to patch the external package to keep itself runnable), so the
 test skipped itself on every machine and in CI while an older audit entry
