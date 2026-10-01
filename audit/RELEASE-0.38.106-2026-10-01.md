@@ -36,4 +36,8 @@ were installed; the runner now arms settlement before registration and routes
 refusal through cleanup/evidence rather than an uncaught exception. Local release validation
 is in progress;
 tag publication, GitHub workflow success and npm availability remain pending.
+The second attempt caught the docs-index version trail and the required empty
+Unreleased section; its unchanged-source evidence is retained as
+`release-check-doc-contract.*`. Both release documents were corrected before
+re-running the release contract.
 Evidence: [release directory](release-0.38.106-evidence-2026-10-01/).

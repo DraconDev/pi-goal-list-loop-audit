@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+No unreleased changes.
+
 ## 0.38.106 — durable audit repairs and clearer companion guidance (2026-10-01)
 
 ### Companion installation and store presentation

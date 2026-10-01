@@ -21,8 +21,9 @@ Accumulated changes since the last release live under an `## Unreleased`
 section at the top of `CHANGELOG.md`; each milestone gets its own
 `## <version> — <one-line title> (<date>)` header plus `###` topic
 subsections (e.g. `## 0.35.3 — live auditor clock and clearer recovery
-timing (2026-08-15)`). The release commit renames the `Unreleased` section
-to the released version. Do not invent version headers for work that was
+timing (2026-08-15)`). The release commit promotes the `Unreleased` section
+to the released version and leaves one empty `Unreleased` section for future
+work. Update docs/INDEX.md to the new package version at the same time. Do not invent version headers for work that was
 never tagged — untagged work stays under `Unreleased` until the release
 commit.
 
