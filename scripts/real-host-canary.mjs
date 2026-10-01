@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import { spawn, execFileSync } from "node:child_process";
-import { pathToFileURL } from "node:url";
+import { buildCanaryExtensionSource } from "./canary-extension.mjs";
 import { terminateContainedChild } from "./contained-child.mjs";
 import { buildAuditorPiSpawnSpec } from "./goal-auditor-launch.mjs";
 
@@ -31,21 +31,7 @@ if (process.env.GLLA_RUN_REAL_CANARY !== "1") {
     const settings = path.join(scratch, "glla-settings.json");
     fs.writeFileSync(settings, '{"autoResume":false,"aggressiveMode":false}');
     const hook = path.join(scratch, "canary-budget-extension.mjs");
-    fs.writeFileSync(hook, `import fs from 'node:fs';
-      import {createCanaryBudget} from ${JSON.stringify(pathToFileURL(path.join(root, "scripts/canary-budget.mjs")).href)};
-      export default function(pi) {
-        const guard=createCanaryBudget({maxUsd:${maxUsd},maxOutputTokens:32,maxPayloadBytes:8192});
-        pi.on('before_provider_request',(event,ctx)=>{
-          const capped=guard(event.payload,ctx.model);
-          fs.writeFileSync(${JSON.stringify(receipt)},JSON.stringify({provider:ctx.model?.provider,model:ctx.model?.id,priceMetadata:ctx.model?.cost,maxOutputTokens:32,maxPayloadBytes:8192,requests:1}));
-          return capped;
-        });
-        pi.on('agent_end',event=>{
-          const last=event.messages?.filter(message=>message.role==='assistant').at(-1);
-          const text=(last?.content??[]).filter(part=>part.type==='text').map(part=>part.text).join('').trim();
-          fs.writeFileSync(${JSON.stringify(outcome)},JSON.stringify({matched:text==='GLLA_CANARY_OK',usage:last?.usage,stopReason:last?.stopReason}));
-        });
-      }`);
+    fs.writeFileSync(hook, buildCanaryExtensionSource({ maxUsd, receipt, outcome }));
     const binary = process.env.GLLA_PI_BINARY ?? path.join(root, "node_modules/.bin", process.platform === "win32" ? "pi.cmd" : "pi");
     const versionSpec = buildAuditorPiSpawnSpec(binary, ["--version"]);
     const piVersion = execFileSync(versionSpec.file, versionSpec.args, { ...versionSpec.options, encoding: "utf8", timeout: 10_000 }).trim();
@@ -66,7 +52,7 @@ if (process.env.GLLA_RUN_REAL_CANARY !== "1") {
     await terminateContainedChild(child);
     const request = fs.existsSync(receipt) ? JSON.parse(fs.readFileSync(receipt, "utf8")) : undefined;
     const final = fs.existsSync(outcome) ? JSON.parse(fs.readFileSync(outcome, "utf8")) : undefined;
-    const passed = code === 0 && !timedOut && request?.requests === 1 && final?.matched === true;
+    const passed = code === 0 && !timedOut && request?.requests === 1 && request?.attempts === 1 && request?.refused === false && final?.matched === true;
     report({ status: passed ? "passed" : "failed", piVersion, gllaVersion: JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).version,
       model, code, timedOut, estimatedSpendBudgetUsd: maxUsd, request, outcome: final,
       scope: "One real-host activation and provider reply with GLLA loaded. Output cap 32 tokens; one request; 8192-byte payload cap. Price metadata preflight is an estimate, not a billing guarantee. This is not a completion-audit or live-compaction certification.",
