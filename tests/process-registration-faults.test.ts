@@ -6,7 +6,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
-for (const scenario of ['first-write', 'rename', 'owner-loss', 'refresh', 'primary-loss', 'obligation-write', 'obligation-owner-loss', 'initial-owner-loss'] as const) {
+for (const scenario of ['first-write', 'rename', 'owner-loss', 'refresh', 'primary-loss', 'obligation-write', 'obligation-owner-loss', 'initial-owner-loss', 'stat-denied', 'stat-malformed', 'stat-missing'] as const) {
   test(`process registration ${scenario} failure is visible and stops the owned child`, {
     skip: process.platform !== 'linux' || process.getuid?.() === 0, timeout: 30_000,
   }, () => {
@@ -22,7 +22,7 @@ for (const scenario of ['first-write', 'rename', 'owner-loss', 'refresh', 'prima
       const owned=spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{detached:true,stdio:'ignore'});
       const foreign=spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{detached:true,stdio:'ignore'});
       await Promise.all([once(owned,'spawn'),once(foreign,'spawn')]);
-      const oldRename=fs.renameSync;
+      const oldRename=fs.renameSync, oldRead=fs.readFileSync;
       let refused=false;
       owned.on('error',()=>{refused=true});
       try {
@@ -33,18 +33,28 @@ for (const scenario of ['first-write', 'rename', 'owner-loss', 'refresh', 'prima
           fs.renameSync=(from,to)=>{if(to.startsWith(dir+'/process-')) throw new Error('injected rename refusal');return oldRename(from,to)};
           syncBuiltinESMExports();
         }
+        if (['stat-denied','stat-malformed','stat-missing'].includes(${JSON.stringify(scenario)})) {
+          fs.readFileSync=(file,...args)=>{
+            if(String(file)==='/proc/'+owned.pid+'/stat') {
+              if(${JSON.stringify(scenario)}==='stat-malformed')return 'malformed stat';
+              throw Object.assign(new Error('injected identity refusal'),{code:${JSON.stringify(scenario)}==='stat-denied'?'EACCES':'ENOENT'});
+            }
+            return oldRead(file,...args);
+          };syncBuiltinESMExports();
+        }
         try {registerOwnedTestProcess(owned,env)} catch {refused=true}
+        fs.readFileSync=oldRead;syncBuiltinESMExports();
         if (${JSON.stringify(scenario)}==='owner-loss') fs.unlinkSync(dir+'/owner.json');
         if (${JSON.stringify(scenario)}==='obligation-owner-loss') fs.unlinkSync(dir+'.obligations/owner.json');
         if (${JSON.stringify(scenario)}==='primary-loss') for(const file of fs.readdirSync(dir).filter(f=>f.startsWith('process-'))) fs.unlinkSync(dir+'/'+file);
         if (${JSON.stringify(scenario)}==='refresh') fs.chmodSync(dir,0o500);
         if (['owner-loss','refresh'].includes(${JSON.stringify(scenario)})) await new Promise(r=>setTimeout(r,800));
-        fs.chmodSync(dir,0o700);fs.chmodSync(dir+'.obligations',0o700);fs.renameSync=oldRename;syncBuiltinESMExports();
+        fs.chmodSync(dir,0o700);fs.chmodSync(dir+'.obligations',0o700);fs.renameSync=oldRename;fs.readFileSync=oldRead;syncBuiltinESMExports();
         const cleanup=await reapOwnedTestProcesses(env,{graceMs:10});
         if(owned.exitCode===null&&owned.signalCode===null) await once(owned,'exit');
         console.log(JSON.stringify({refused,cleanup,ownedStopped:owned.exitCode!==null||owned.signalCode!==null,foreignLive:foreign.kill(0)}));
       } finally {
-        fs.chmodSync(dir,0o700);fs.chmodSync(dir+'.obligations',0o700);fs.renameSync=oldRename;syncBuiltinESMExports();
+        fs.chmodSync(dir,0o700);fs.chmodSync(dir+'.obligations',0o700);fs.renameSync=oldRename;fs.readFileSync=oldRead;syncBuiltinESMExports();
         for (const child of [owned,foreign]) {
           if(child.exitCode===null&&child.signalCode===null) {child.kill('SIGKILL');await once(child,'exit')}
         }
