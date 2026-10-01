@@ -76,3 +76,23 @@ JOBS
   * Post Set up Node.js
   * Post Check out the released tag
 - quality in 0s (ID 110403769832)
+Refreshing run status every 30 seconds. Press Ctrl+C to quit.
+
+* v0.38.106 Publish npm package · 36872564036
+Triggered via release about 2 minutes ago
+
+JOBS
+* publish (ID 110403768255)
+  ✓ Set up job
+  ✓ Check out the released tag
+  ✓ Set up Node.js
+  ✓ Install the test runner
+  ✓ Use the pinned trusted-publishing npm
+  ✓ Verify the tag matches package.json
+  ✓ Install project dependencies
+  * Test and inspect the package
+  * Publish with npm trusted publishing
+  * Post Install the test runner
+  * Post Set up Node.js
+  * Post Check out the released tag
+- quality in 0s (ID 110403769832)
