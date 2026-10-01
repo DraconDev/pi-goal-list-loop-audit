@@ -2097,8 +2097,14 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
   // carry the freshest-evidence age as the last segment. Any other status
   // keeps its own glyph language (⏸/⟡/⚠/⏳) — the lifesign never fights
   // the status semantics, and without tracked rows no readout is invented.
+  // Host stream evidence for the head-lifesign fallback (main-model work
+  // has no tracked rows). Freshest survivor wins; future timestamps are
+  // clock skew, never evidence (matches the auditor tally's guard).
+  const streamCandidates = [extras?.lastStreamActivityAt, extras?.lastActivityAt]
+    .filter((t): t is number => t !== undefined && Number.isFinite(t) && t <= now);
+  const streamSilentMs = streamCandidates.length > 0 ? now - Math.max(...streamCandidates) : undefined;
   const headLive = g.status === "active" && !interrupted && !attention && !recovering
-    ? headLifesign(extras?.agentRows)
+    ? headLifesign(extras?.agentRows, streamSilentMs)
     : undefined;
   if (headLive) {
     // Audit 2026-09-07: the fresh age text rides the documented success
@@ -2448,7 +2454,13 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
   const act = goalScopedActions;
   const mid: string[] = [];
   if (act) {
-    mid.push(`${paint(theme, act.ok ? "success" : "error", act.ok ? "✓" : "✗")} ${act.name}${act.arg ? ` ${paint(theme, "dim", truncate(act.arg, 24))}` : ""}${act.ms > 0 ? ` ${paint(theme, "dim", `(${fmtElapsed(act.ms)})`)}` : ""}`);
+    // Stamped actions carry bucketed recency (a 3h-old ✓ must not read like
+    // a fresh one). Bucketed like the head age so the render key never churns
+    // per second; unstamped legacy entries and future stamps stay bare.
+    const recency = act.at !== undefined && Number.isFinite(act.at) && act.at <= now
+      ? ` ${paint(theme, "dim", `· ${fmtElapsed(bucketSilentMs(now - act.at))} ago`)}`
+      : "";
+    mid.push(`${paint(theme, act.ok ? "success" : "error", act.ok ? "✓" : "✗")} ${act.name}${act.arg ? ` ${paint(theme, "dim", truncate(act.arg, 24))}` : ""}${act.ms > 0 ? ` ${paint(theme, "dim", `(${fmtElapsed(act.ms)})`)}` : ""}${recency}`);
   }
   const next = nextPending(g);
   if (next) mid.push(`next: ${truncate(next, budgetFor(width, 9, 40))}`);

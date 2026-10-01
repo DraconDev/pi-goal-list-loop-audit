@@ -4911,9 +4911,19 @@ export interface HeadLifesign {
  * counters, never on time. */
 const LIFESIGN_SEVERITY: Record<LifesignBand, number> = { fresh: 0, aging: 1, stale: 2, hung: 3 };
 
-export function headLifesign(rows: LifesignRow[] | undefined): HeadLifesign | undefined {
+export function headLifesign(rows: LifesignRow[] | undefined, fallbackSilentMs?: number): HeadLifesign | undefined {
   const active = (rows ?? []).filter((r) => r.status !== "ended");
-  if (active.length === 0) return undefined;
+  if (active.length === 0) {
+    // Main-model fallback: no tracked rows, but host stream evidence exists
+    // (the "looks stuck" gap — without this, main-model work had no liveness
+    // readout anywhere). Same age bands, never hung (that requires row
+    // evidence), static breath (the breather advances on evidence counters
+    // that do not exist here — no fake animation).
+    if (fallbackSilentMs === undefined || !Number.isFinite(fallbackSilentMs) || fallbackSilentMs < 0) return undefined;
+    const freshestMs = Math.max(0, fallbackSilentMs);
+    const band: LifesignBand = freshestMs < LIFESIGN_FRESH_MS ? "fresh" : freshestMs < LIFESIGN_STALE_MS ? "aging" : "stale";
+    return { band, freshestMs, breath: "●" };
+  }
   const freshestMs = Math.min(...active.map((r) => Math.max(0, r.silentMs)));
   // Audit 2026-09-07: triangle on failed/unavailable too — the rows render
   // them as red hung, so a breathing head would contradict the card.
