@@ -183,7 +183,7 @@ test("v0.38.30: parseLoopStartArgs keeps junk time= in unquoted prose", () => {
 });
 
 // FIX: approval-render store hardens corrupt reads, surrogate slicing, line caps.
-test("v0.38.30: approval store repairs corrupt file after one ledger entry", () => {
+test("approval store preserves corrupt bytes and refuses enqueue until explicit recovery", () => {
   const cwd = tmpCwd();
   try {
     mkdirSync(join(cwd, ".pi-glla"), { recursive: true });
@@ -191,9 +191,10 @@ test("v0.38.30: approval store repairs corrupt file after one ledger entry", () 
     const ctx = makeMockCtx(cwd);
     assert.equal(replayUndeliveredApprovalRenders(ctx as never), 0);
     const after = fs.readFileSync(approvalRenderStorePath(cwd), "utf-8");
-    assert.deepEqual(JSON.parse(after), [], "corrupt file repaired to empty array");
-    // second read ledgers nothing new (file is clean now):
+    assert.equal(after, "{ corrupt", "corrupt bytes remain available for recovery");
+    assert.equal(persistApprovalRender(cwd, {goalId:"new",objective:"new",chatLines:["new"]}), false);
     assert.equal(replayUndeliveredApprovalRenders(ctx as never), 0);
+    assert.equal(fs.readFileSync(approvalRenderStorePath(cwd), "utf-8"), after);
   } finally {
     rmSync(cwd, { recursive: true, force: true });
   }
