@@ -1420,3 +1420,6 @@ tests/drafting-handoff.test.ts:
 [run-tests] progress: 210s elapsed · 2s since last output · 106 KiB of suite output
 (pass) cancelled or missing answer suppresses stale handoff evidence: {} [2813.41ms]
 (pass) cancelled or missing answer suppresses stale handoff evidence: {"cancelled":false,"answers":[]} [2834.25ms]
+(pass) pending draft correction stands down on cancel [2817.61ms]
+(pass) pending draft correction stands down on user [2817.96ms]
+(pass) pending draft correction stands down on busy [2829.78ms]
