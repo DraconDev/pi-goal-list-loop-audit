@@ -2,7 +2,22 @@
 
 ## Unreleased
 
-No unreleased changes.
+### Dynamic basic draft
+
+- `/goal <seed>` activates directly when the seed already carries enough
+  detail alone or with the bounded recent conversation; thin seeds still
+  interview at dynamic length. `/goal plan` always forces the full draft.
+
+### Paused-card owner honesty
+
+- A stale main-model recovery remnant (no live timer, switch, or hold) no
+  longer claims card ownership; the pause kind owns the card so the next
+  action reads coherently.
+
+### Loop respec
+
+- New spec-only `audit/TASK-AUDIT-CYCLE-RESPEC-2026-10-01.md`: a proposed
+  `task-audit` loop kind cycling tasklist → work → detached audit → replan.
 
 ## 0.38.107 — completed audit recovery and landscape store artwork (2026-10-01)
 
