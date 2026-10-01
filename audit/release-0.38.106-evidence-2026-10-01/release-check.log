@@ -202,3 +202,149 @@ tests/subagent-hang-detection.test.ts:
 (pass) classify: ended / non-running records are not hung (watch stops) [0.11ms]
 (pass) v0.34.102: a vanished/unreachable record falls back to event-only evidence (field: pully 118m wedge) [0.08ms]
 (pass) hang detection surfaces ui.notify + ledger `subagent_hang_detected` via the heartbeat scan [466.75ms]
+(pass) hang warning is throttled — one alert per 5m streak window, not per tick [627.45ms]
+(pass) long frozen tracked child requests one bounded child-specific abort after the warning window [615.93ms]
+(pass) progress arriving before escalation cancels the action and starts a fresh episode [463.12ms]
+(pass) event-only child reaches an honest unavailable-action record, never a guessed abort [628.64ms]
+(pass) nested child is not eligible for top-level automatic abort [462.10ms]
+(pass) v0.35.65: an old-generation child cannot receive a stop RPC after host rebind [478.45ms]
+(pass) host rebind retires healthy event-only evidence and admits fresh same-generation progress [475.86ms]
+(pass) v0.34.102: event-only hang surfaces `subagent_hang_detected` with evidence=event-only when no manager record exists [468.52ms]
+(pass) completed/failed events end the watch — no hang alert after completion [624.63ms]
+(pass) compacted/steered events refresh the streak (secondary progress evidence) [624.55ms]
+(pass) malformed hang inputs are dropped, not crashy [314.10ms]
+(pass) source pins: constants, watchdog wiring, and ledger key [5.20ms]
+(pass) v0.34.105: hang scan runs during main-model recovery (quota wall blinds the watchdog before the fix) [997.95ms]
+(pass) v0.34.105 source pin: subagent scan precedes the main-model-recovery early return in heartbeatTick [0.19ms]
+(pass) v0.38.104 releasing the RPC host unsubscribes the readiness listeners it installed [0.26ms]
+
+tests/reviewer-modes.test.ts:
+(pass) E4: a failed proposal send is NOT counted or reported (phantom-reviewer hole closed) [1.18ms]
+(pass) E4: clean-completion branch also gates on delivery — default AND aggressive modes [1.13ms]
+(pass) auto mode: architectural findings enqueue to /list — proposeGoal NEVER called [17.10ms]
+(pass) auto mode: clean completion enqueues the audit as a /list item (no Confirm) [0.39ms]
+(pass) report mode: REMOVED in 0.27.9 (the 4-mode set `off | on | auto | aggressive` has no report branch) [2.20ms]
+(pass) improvement-class extraction: 'consider adding X' / 'could be improved' enqueue without Confirm [0.49ms]
+(pass) auto mode: refire window skipped for list-complete, enforced for goal-complete and in default mode [0.41ms]
+(pass) auto mode: the per-day cap still bounds everything [0.18ms]
+(pass) menu: Mode option lists the 4 modes (off, on, auto, aggressive) [0.23ms]
+(pass) /review accepts all 4 modes and rejects unknown modes [0.13ms]
+(pass) config: mode defaults to 'on' and merges from project settings [0.03ms]
+(pass) config: legacy 'default' and 'report' modes auto-migrate to 'on' [0.02ms]
+(pass) report-mode test removed: the 4-mode postaudit surface (`off | on | auto | aggressive`) has no report branch anymore (0.27.9) [0.12ms]
+(pass) off mode: reviewer NEVER fires (equivalent to enabled=false, exposed via postaudit menu) [0.11ms]
+(pass) aggressive mode: architectural findings enqueue AND the first one relaunches as /goal [0.30ms]
+(pass) aggressive mode: clean completion → relaunch audit /goal (no Confirm) [0.25ms]
+(pass) goal.ts fireReviewer opts.mode now accepts the 4-mode ReviewerMode union [0.24ms]
+
+tests/approval-notify.test.ts:
+(pass) v0.38.20 approval chat drops the stale pre-verdict Next line [0.44ms]
+(pass) approval chat keeps every informing detail (Tests + meaningful Unresolved preserved) [0.11ms]
+(pass) v0.38.39 withoutStaleNext keeps one concrete next action, still strips stale ones [0.07ms]
+
+tests/migrate-on-read.test.ts:
+(pass) v0.38.32: legacy disapprovals settled by a later approval are never live again [0.26ms]
+(pass) v0.38.32: later legacy disapproval supersedes the earlier round only [0.04ms]
+(pass) v0.38.32: lone legacy disapproval stays live [0.04ms]
+(pass) v0.38.32: error entries neither settle nor get settled [0.04ms]
+(pass) v0.38.32: backfill is idempotent and a no-op on flagged histories [0.05ms]
+
+tests/pause-decision-interrupt.test.ts:
+(pass) decision pause persists options AND aborts the turn so the picker owns an idle surface [413.36ms]
+(pass) options without kind are inferred as decision — no silently dropped picker [329.36ms]
+(pass) every agent-authored pause ends the turn (blocked/error/wait), not just decisions [975.24ms]
+(pass) impossible-drop auto-advance does NOT abort — the next item's continuation owns the turn [336.92ms]
+(pass) source pins: decision picker wiring + abort ordering survive refactors [0.74ms]
+
+tests/audit-tier.test.ts:
+(pass) tier: a small quiet claim with no history audits light [9.84ms]
+(pass) tier: draft-time full-audit consent escalates [0.19ms]
+(pass) tier: the agent's own full-audit request escalates [0.09ms]
+(pass) tier: any prior disapproval escalates (rework proved risky once) [0.09ms]
+(pass) tier: missing telemetry escalates (unknown activity, conservative floor) [0.09ms]
+(pass) tier: activity above any ceiling escalates, at-ceiling stays light [0.11ms]
+(pass) tier: high-stakes language escalates and names the match [0.49ms]
+(pass) tier: ordinary objectives do not trip the keyword list [0.10ms]
+(pass) tier: spot-check rate 1 escalates every light claim and marks it [0.09ms]
+(pass) tier: spot-check never marks a claim that was already full [0.08ms]
+(pass) tier: injected random decides the draw (seeded, no flakes) [0.15ms]
+(pass) tier: rates clamp to [0, 1]; junk restores the default [0.12ms]
+(pass) tier: spot-check rate ships at 0.1 and normalizes junk to default [0.64ms]
+(pass) tier: claim mapper counts disapprovals and carries both escalation flags [0.21ms]
+(pass) tier: settings menu exposes the spot-check rate row in the auditor section [0.47ms]
+
+tests/auditor-timeout-settings.test.ts:
+(pass) v0.37.0: escalatedAuditorTimeout doubles per prior attempt and saturates at 4x base [0.23ms]
+(pass) v0.37.0: auditor timeout settings clamp into bounds on load [73.36ms]
+(pass) v0.37.0: /glla editor accepts plain-ms and s/m/h duration input for both keys [35.23ms]
+(pass) v0.37.0: settings menu exposes both auditor timeout rows in the auditor section [1.18ms]
+(pass) v0.37.0: dispatch env reaches the worker process so parent and worker budgets agree [394.39ms]
+(pass) v0.37.0: progress signature counts streamed report bytes [0.18ms]
+(pass) v0.37.0: an in-budget live tool exempts the audit card from the quiet phase [0.09ms]
+(pass) v0.37.0: durable claims preserve the timeout escalation index across loads [2.04ms]
+(pass) v0.38.3: auditJobRetentionMs clamps into [0, 7d] on load [0.46ms]
+(pass) v0.38.3: /glla editor accepts duration input for auditJobRetentionMs (0 is legal) [19.35ms]
+(pass) v0.38.3: settings menu exposes the audit job retention row in the auditor section [0.38ms]
+
+tests/compaction-survival.test.ts:
+(pass) compaction survival: three mid-run compacts, then the goal still completes approved [799.12ms]
+(pass) compaction survival: a compact around an in-flight audit still completes [406.64ms]
+
+tests/stats-outcomes.test.ts:
+(pass) outcomes: completed/aborted/open counts with the run-to-done split [5.67ms]
+(pass) outcomes: rounds, wall-clock, and tokens average over known data only [0.15ms]
+(pass) outcomes: unknown archive statuses are ignored, empty ledgers are zeroed [0.08ms]
+(pass) outcomes: table and JSON formats mirror the schema [0.43ms]
+
+tests/stale-delayed-context.test.ts:
+(pass) v0.34.20: registered agent tools resolve the invocation context [7.55ms]
+(pass) v0.34.20: provider retry timers have one session-boundary adapter [0.78ms]
+(pass) v0.34.20: detached fan-out revalidates after user confirmation [0.35ms]
+(pass) v0.34.22: detached completion audits persist lifecycle claims and stop applying after replacement [0.94ms]
+(pass) v0.34.20: generic infra retry supports a lifecycle guard before and after backoff [0.15ms]
+(pass) v0.34.20: manual resume consumes a stored completion claim directly [0.09ms]
+(pass) v0.34.20: loop measurement and branch cleanup rebind after async work [0.35ms]
+
+tests/auditor-shift-acceptance.test.ts:
+(pass) auditor prompt treats completion summaries as untrusted scope claims [7.31ms]
+(pass) scope changes require the durable objective and contract [0.13ms]
+
+tests/tui-density.test.ts:
+(pass) widget carries the audits row only with history [1.11ms]
+(pass) widget fits 80 columns at width 80 [0.25ms]
+(pass) paused status carries the tally [0.17ms]
+(pass) ladder is one recovery per line [0.19ms]
+(pass) settings tab labels carry row counts [0.07ms]
+
+tests/audit-unsettled-treadmill-cap.test.ts:
+(pass) countTrailingUnsettledRounds — all verdict classes > counts disapprovals, and an approval breaks the streak [0.29ms]
+(pass) countTrailingUnsettledRounds — all verdict classes > counts a regression-shield block, which the disapproval cap cannot see [0.14ms]
+(pass) countTrailingUnsettledRounds — all verdict classes > counts an IMPOSSIBLE(partial) verdict [0.08ms]
+(pass) countTrailingUnsettledRounds — all verdict classes > an infra error is transparent; a clean approval of a shielded round is NOT [0.07ms]
+(pass) countTrailingUnsettledRounds — all verdict classes > a mechanical pre-audit gate row stays transparent [0.07ms]
+(pass) grader alternation no longer defeats the hard cap > an alternating primary/fallback streak is detected as unstable [0.09ms]
+(pass) grader alternation no longer defeats the hard cap > a single-grader streak is still reported stable [0.05ms]
+(pass) regression shield — the branch the cap could not see > shield blocks pause at the hard cap instead of re-continuing forever [365.34ms]
+
+tests/loop-measure-probe-exit.test.ts:
+(pass) propose_loop_draft rejects non-zero measure output even when stdout is numeric [83.21ms]
+(pass) propose_loop_refine rejects non-zero measure output and leaves the live loop unchanged [2.34ms]
+
+tests/pause-redirect.test.ts:
+(pass) redirect parks the goal but keeps the turn alive for the user's new task [186.23ms]
+(pass) control: a plain pause still aborts the turn (v0.35.15 contract) [139.69ms]
+
+tests/auditor-quota-identical.test.ts:
+(pass) rate-limit and plan-quota walls are exempt from the identical park [0.15ms]
+(pass) billing walls keep the park — retries cannot fix a paywall [0.02ms]
+(pass) non-quota infra failures keep the identical park [0.02ms]
+(pass) freshAuditorCycleClaim reseeds the dead chain and restarts the streak [0.11ms]
+
+tests/prompt-pivot-detection.test.ts:
+(pass) continuation prompt has the PIVOT DETECTION section (item 26) [0.34ms]
+(pass) isFullAuditObjective classifies survey pivots (item 28) [0.05ms]
+(pass) orchestrator injects the FULL-AUDIT directive conditionally (item 28) [1.42ms]
+(pass) continuation prompt includes the latest auditor report verbatim [0.41ms]
+(pass) stale-approval directive mirrors the numeric-revision gate, never legacy entries [0.39ms]
+
+tests/state-root-failure.test.ts:
