@@ -72,3 +72,32 @@ for (const scenario of ['first-write', 'rename', 'owner-loss', 'refresh', 'prima
     } finally { fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(`${dir}.obligations`, { recursive: true, force: true }); }
   });
 }
+
+for (const scenario of ['already-exited', 'suite-group'] as const) {
+  test(`proven ${scenario} child retires its declaration without a cleanup failure`, { skip: process.platform !== 'linux' }, () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'glla-registry-retired-'));
+    const registry = pathToFileURL(path.resolve('scripts/test-process-registry.mjs')).href;
+    const source = path.join(dir, 'fixture.mjs');
+    fs.writeFileSync(source, `
+      import fs from 'node:fs';import {spawn} from 'node:child_process';import {once} from 'node:events';
+      import {createTestProcessRegistry,registerOwnedTestProcess,reapOwnedTestProcesses} from ${JSON.stringify(registry)};
+      const env=createTestProcessRegistry(${JSON.stringify(dir)});
+      const child=spawn(process.execPath,['-e',${JSON.stringify(scenario === 'already-exited' ? '' : 'setInterval(()=>{},1000)')}],{detached:${scenario === 'already-exited'},stdio:'ignore'});
+      await once(child,${JSON.stringify(scenario === 'already-exited' ? 'exit' : 'spawn')});
+      try {
+        registerOwnedTestProcess(child,env);
+        const cleanup=await reapOwnedTestProcesses(env,{graceMs:10});
+        console.log(JSON.stringify({cleanup,records:fs.readdirSync(env.GLLA_TEST_PROCESS_REGISTRY).filter(f=>f.startsWith('process-')).length,expectations:fs.readdirSync(env.GLLA_TEST_PROCESS_REGISTRY+'.obligations').filter(f=>f.startsWith('process-')).length,live:child.exitCode===null&&child.signalCode===null}));
+      }finally{if(child.exitCode===null&&child.signalCode===null){child.kill('SIGKILL');await once(child,'exit')}}
+    `);
+    try {
+      const result = spawnSync('node', [source], { encoding: 'utf8', timeout: 10_000 });
+      assert.equal(result.status, 0, result.stderr);
+      const observed = JSON.parse(result.stdout);
+      assert.deepEqual(observed.cleanup, { reaped: 0, unverified: 0 });
+      assert.equal(observed.records, 0);
+      assert.equal(observed.expectations, 0);
+      assert.equal(observed.live, scenario === 'suite-group');
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(`${dir}.obligations`, { recursive: true, force: true }); }
+  });
+}

@@ -40,6 +40,19 @@ or explicitly repair the preserved JSON array before retrying; do not discard
 pending entries to clear the error. Successful delivery alone acknowledges a
 summary.
 
+Outbox enqueues, acknowledgements and rotation use the same mutation protocol,
+with a fresh queue read inside each mutation. Acknowledgements match stable
+render identity and preserve entries queued during delivery. Host callbacks run
+outside the mutation lock. Nested replay excludes in-flight renders and checks
+fresh delivery flags before sending subsequent entries.
+
+State-root selection distinguishes missing settings (the working-directory
+default) from unreadable or invalid existing settings. During selector failure,
+reads retain the last validated root and mutations defer until recovery. Cold
+startup without a validated root reports unresolved selection explicitly. Each
+synchronous persistence operation pins its selector and session directory;
+recovery never migrates or deletes an authority tree.
+
 These are process-crash guarantees. Atomic file publication does not promise
 survival of power loss or storage-controller failure: the current writes do
 not fsync files and parent directories. The chosen durability level is process-crash recovery. Power-loss/storage-loss
