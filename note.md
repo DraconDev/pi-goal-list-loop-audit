@@ -12,6 +12,14 @@ do a release after
 # Next
 
 ##
+we seem to be still stuck on the final audit in some projects 
+
+##
+basic draft cna be dynamic so if i type /goal as long as we have enough info from context it can jsut use that
+then otherwise dynamic length, only
+/goal plan forces a draft everytime 
+
+##
 improve control ui ?
 
 ##
