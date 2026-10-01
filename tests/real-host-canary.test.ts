@@ -54,11 +54,23 @@ for (const scenario of ['allowed', 'unknown-price', 'over-budget', 'unsupported-
       const dispatcher = path.resolve('node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/runner.js');
       const source = path.join(dir, 'host.mjs');
       fs.writeFileSync(source, `#!/usr/bin/env node
-        import fs from 'node:fs';import {pathToFileURL} from 'node:url';
+        import fs from 'node:fs';import assert from 'node:assert/strict';import {pathToFileURL} from 'node:url';
         if(process.argv.includes('--version')) {console.log('local-dispatch-fixture');process.exit(0)}
         const {ExtensionRunner}=await import(pathToFileURL(${JSON.stringify(dispatcher)}).href);
         const handlers=new Map();
         const generatedHook=process.argv.flatMap((arg,i)=>arg==='-e'?[process.argv[i+1]]:[]).find(file=>file.endsWith('canary-budget-extension.mjs'))??${JSON.stringify(hook)};
+        if(generatedHook!==${JSON.stringify(hook)}) {
+          const {SettingsManager}=await import(pathToFileURL(${JSON.stringify(path.resolve('node_modules/@earendil-works/pi-coding-agent/dist/core/settings-manager.js'))}).href);
+          const settings=SettingsManager.create(process.cwd(),process.env.PI_CODING_AGENT_DIR);
+          assert.equal(settings.getRetryEnabled(),false);
+          assert.equal(settings.getProviderRetrySettings().maxRetries,0);
+          assert.equal(settings.getCompactionEnabled(),false);
+          assert.equal(settings.getCacheWarmingMode(),'off');
+          const {retryProviderRequest}=await import(pathToFileURL(${JSON.stringify(path.resolve('node_modules/@earendil-works/pi-ai/dist/utils/provider-retry.js'))}).href);
+          let retries=0;
+          await assert.rejects(retryProviderRequest(async()=>{retries++;throw Object.assign(new Error('local retryable refusal'),{status:429,headers:new Headers()})},settings.getProviderRetrySettings()));
+          assert.equal(retries,1);
+        }
         (await import(pathToFileURL(generatedHook).href)).default({on:(event,handler)=>handlers.set(event,[handler])});
         const model={cost:${scenario === 'unknown-price' ? 'undefined' : scenario === 'over-budget' ? '{input:100,output:100}' : '{input:0.01,output:0.01}'}};
         const runner={extensions:[{path:'glla-canary',handlers}],createContext:()=>({model}),emitError:e=>{throw new Error('guard failure escaped into swallowed hook path: '+e.error)}};

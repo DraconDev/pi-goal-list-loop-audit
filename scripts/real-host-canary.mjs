@@ -30,6 +30,14 @@ if (process.env.GLLA_RUN_REAL_CANARY !== "1") {
     const outcome = path.join(scratch, "outcome.json");
     const settings = path.join(scratch, "glla-settings.json");
     fs.writeFileSync(settings, '{"autoResume":false,"aggressiveMode":false}');
+    // Provider retries can occur after onPayload, bypassing our hook count.
+    // Keep this policy private to the disposable canary host.
+    const agentDir = path.join(scratch, "agent");
+    fs.mkdirSync(agentDir);
+    fs.writeFileSync(path.join(agentDir, "settings.json"), JSON.stringify({
+      retry: { enabled: false, provider: { maxRetries: 0 } },
+      compaction: { enabled: false }, cacheWarming: "off",
+    }));
     const hook = path.join(scratch, "canary-budget-extension.mjs");
     fs.writeFileSync(hook, buildCanaryExtensionSource({ maxUsd, receipt, outcome }));
     const binary = process.env.GLLA_PI_BINARY ?? path.join(root, "node_modules/.bin", process.platform === "win32" ? "pi.cmd" : "pi");
@@ -39,7 +47,7 @@ if (process.env.GLLA_RUN_REAL_CANARY !== "1") {
       "-e", path.join(root, "extensions/loops/goal.ts"), "-e", hook, "--model", model, "--thinking", "off", "--system-prompt", "Reply exactly with the requested word. Do not call tools.", "--", "Reply GLLA_CANARY_OK"];
     const launch = buildAuditorPiSpawnSpec(binary, args);
     child = spawn(launch.file, launch.args, { ...launch.options, cwd: scratch, detached: process.platform !== "win32",
-      env: { ...process.env, GLLA_GLOBAL_SETTINGS_PATH: settings, PI_CODING_AGENT_DIR: path.join(scratch, "agent") }, stdio: ["ignore", "pipe", "pipe"] });
+      env: { ...process.env, GLLA_GLOBAL_SETTINGS_PATH: settings, PI_CODING_AGENT_DIR: agentDir }, stdio: ["ignore", "pipe", "pipe"] });
     let stderr = "";
     child.stdout.on("data", () => {});
     child.stderr.on("data", data => { stderr = (stderr + data).slice(-2000); });

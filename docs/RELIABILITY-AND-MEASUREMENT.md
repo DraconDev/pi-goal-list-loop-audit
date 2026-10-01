@@ -37,7 +37,9 @@ and estimates exceeding the configured budget are refused before dispatch.
 Rejection exits the dedicated canary child with code 78, because Pi logs and
 swallows ordinary request-hook exceptions. Receipts distinguish attempted,
 permitted and refused requests; a refused or additional attempt fails the
-harness. Receipt-write failure also exits before dispatch. Tests run the generated
+harness. Its private Pi settings disable agent/provider retries, automatic
+compaction and cache warming, so secondary requests cannot bypass the hook's
+attempt counter. Receipt-write failure also exits before dispatch. Tests run the generated
 hook through the installed Pi dispatcher with a local fake transport, including
 parent-harness pass/fail checks; these make no provider request.
 The metadata estimate is a guard, not a billing guarantee; usage is recorded
