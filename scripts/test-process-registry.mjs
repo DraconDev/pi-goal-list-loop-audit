@@ -1,13 +1,16 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { randomUUID } from "node:crypto";
+import { ChildProcess } from "node:child_process";
 
-function identity(pid) {
+function identity(pid, strict = false) {
   try {
     const stat = fs.readFileSync(`/proc/${pid}/stat`, "utf8");
     const fields = stat.slice(stat.lastIndexOf(")") + 2).split(" ");
-    return { pid, group: Number(fields[2]), session: Number(fields[3]), birth: fields[19], zombie: fields[0] === "Z" };
-  } catch { return null; }
+    const result = { pid, group: Number(fields[2]), session: Number(fields[3]), birth: fields[19], zombie: fields[0] === "Z" };
+    if (!Number.isInteger(result.group) || result.group <= 0 || !Number.isInteger(result.session) || result.session <= 0 || !/^\d+$/.test(result.birth ?? "")) throw new Error("invalid process identity");
+    return result;
+  } catch (error) { if (strict) throw error; return null; }
 }
 
 function allMembers() {
@@ -55,6 +58,8 @@ function publish(file, record) {
  * every live detached launch. Failure kills the known child and propagates;
  * an independent expectation lets the runner detect missing records. */
 export function registerOwnedTestProcess(child, env = process.env) {
+  // Injected transport mocks are not launched OS children.
+  if (!(child instanceof ChildProcess) || !child.spawnfile) return;
   if (env.GLLA_TEST_ROOT_PROCESS_REGISTRY && env.GLLA_TEST_ROOT_PROCESS_REGISTRY !== env.GLLA_TEST_PROCESS_REGISTRY) {
     registerOwnedTestProcess(child, {
       GLLA_TEST_PROCESS_REGISTRY: env.GLLA_TEST_ROOT_PROCESS_REGISTRY,
@@ -62,7 +67,10 @@ export function registerOwnedTestProcess(child, env = process.env) {
     });
   }
   if (!configured(env) || !child?.pid || typeof child.once !== "function") return;
-  let leader, file, expectation, timer;
+  const file = path.join(env.GLLA_TEST_PROCESS_REGISTRY, `process-${child.pid}-${randomUUID()}.json`);
+  const expectation = path.join(obligationsDir(env.GLLA_TEST_PROCESS_REGISTRY), path.basename(file));
+  let leader, timer;
+  let declared = false;
   let anchors = [];
   let failed = false;
   const fail = error => {
@@ -92,12 +100,20 @@ export function registerOwnedTestProcess(child, env = process.env) {
   const snapshot = (exited = false) => {
     if (failed) return;
     try {
-      const current = identity(child.pid);
+      // A declared launch exists before any fallible identity discovery.
+      if (!declared) {
+        publish(expectation, { token: env.GLLA_TEST_PROCESS_TOKEN, launchPid: child.pid, pending: true, anchors: [] });
+        declared = true;
+      }
+      const provenExited = child.exitCode !== null || child.signalCode !== null;
+      const current = identity(child.pid, !provenExited);
       if (!leader && current?.group === child.pid && current.session === child.pid) leader = current;
       const owner = registry(env);
       // A launch error or already-exited child has no live cleanup duty.
       if (!leader) {
-        // Non-detached children are already covered by the suite group.
+        // Only a proven non-detached or already-exited child can retire
+        // the declaration without a separate group cleanup obligation.
+        fs.unlinkSync(expectation);
         return;
       }
       if (current && current.birth !== leader.birth) throw new Error("child PID identity changed");
@@ -106,12 +122,7 @@ export function registerOwnedTestProcess(child, env = process.env) {
       if (exited && !current && !live.some(p => anchors.some(a => a.pid === p.pid && a.birth === p.birth))) return;
       for (const member of live) if (!anchors.some(p => p.pid === member.pid && p.birth === member.birth)) anchors.push(member);
       const record = { token: owner.token, leader, anchors };
-      if (!file) {
-        file = path.join(owner.dir, `process-${child.pid}-${randomUUID()}.json`);
-        expectation = path.join(obligationsDir(owner.dir), path.basename(file));
-        // Publish the obligation before the fallible primary record write.
-        publish(expectation, record);
-      }
+      publish(expectation, record);
       publish(file, record);
     } catch (error) { fail(error); }
   };
@@ -184,7 +195,13 @@ export async function reapOwnedTestProcesses(env, { graceMs = 1000 } = {}) {
     const group = record.leader.pid;
     const occupant = identity(group);
     const live = liveGroups.get(group) ?? [];
-    if (live.length === 0) continue;
+    if (live.length === 0) {
+      if ([record.leader, ...record.anchors].some(a => {
+        if (identity(a.pid)) return false;
+        try { process.kill(a.pid, 0); return true; } catch (error) { return error.code !== "ESRCH"; }
+      })) unverified++;
+      continue;
+    }
     if ((occupant && occupant.birth !== record.leader.birth)
       || !live.some(p => record.anchors.some(a => a.pid === p.pid && a.birth === p.birth))) { unverified++; continue; }
     groups.set(group, live);
