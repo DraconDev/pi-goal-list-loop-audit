@@ -14,5 +14,17 @@
   "typescript": {
     "command": "npx tsc --noEmit",
     "exitCode": 0
+  },
+  "registrationFinal": {
+    "command": "npm test -- tests/process-registration-faults.test.ts",
+    "exitCode": 0,
+    "pass": 14,
+    "fail": 0
+  },
+  "exitRace": {
+    "command": "npm test -- tests/subagent-hang-detection.test.ts tests/process-registration-faults.test.ts tests/test-runner-lifecycle.test.ts",
+    "exitCode": 0,
+    "pass": 51,
+    "fail": 0
   }
 }

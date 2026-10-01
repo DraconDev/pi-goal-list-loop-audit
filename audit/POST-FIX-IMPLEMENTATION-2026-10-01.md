@@ -37,7 +37,7 @@ Registration regressions inject EACCES, malformed stat and ENOENT, restore
 reads before cleanup, and verify nonzero unverified accounting, stopped owned
 children and surviving unrelated children. An end-to-end nested runner catches
 the registration error and exits zero; its parent still exits one and retains
-failure evidence. Separate tests confirm already-exited and suite-group
+failure evidence. Separate tests confirm already-exited, independently absent (ESRCH), and suite-group
 behavior, and the existing stale/reused-PID test remains in the focused run.
 
 ## AF-3: merge replay acknowledgements into the current queue
@@ -58,9 +58,15 @@ acknowledgement failure, receipt matching and fair-rotation tests also pass.
 ## Verification
 
 Focused checks: **63 pass, zero failures across five files** and TypeScript
-exit zero. The final registration run adds two retirement cases:
-**13 pass, zero failures**. Logs and command statuses are retained in
+exit zero. The final registration run adds three retirement cases:
+**14 pass, zero failures**. Exit-race checks pass **51 tests across three files**. Logs and command statuses are retained in
 [the evidence directory](post-fix-implementation-evidence-2026-10-01/).
+
+The first full attempt was stopped after a normal-exit proc/status race
+produced a false registration refusal. Its log and unchanged-source manifest
+are preserved as `release-check-exit-race.*`. The corrected code independently
+requires ESRCH before retiring a disappeared PID when exit status is pending;
+live injected ENOENT still refuses registration.
 
 Full `npm run release:check` is in progress. Closure remains unproven until
 that gate completes and its source manifest is checked.
