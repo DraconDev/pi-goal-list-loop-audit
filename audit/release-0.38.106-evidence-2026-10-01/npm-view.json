@@ -1,0 +1,36 @@
+{
+  "version": "0.38.106",
+  "gitHead": "3dad5f27675d5bd8b3530af9c3af54d2c1f539da",
+  "dist": {
+    "shasum": "dd83fabca12468af495a3691f47caca9d2673037",
+    "tarball": "https://registry.npmjs.org/pi-goal-list-loop-audit/-/pi-goal-list-loop-audit-0.38.106.tgz",
+    "fileCount": 133,
+    "integrity": "sha512-CoIzS3XspcaTzgMdKD/ZfBmSR8DefbX29mqSf1JOKGYFrFADW43eURlHTqL6JBSr7ud8Ezk6KslgEGh2/p4WpA==",
+    "signatures": [
+      {
+        "sig": "MEUCIGCwZ3fyeThXJhBPDFLX3D4vE09fHbU4rGNp7pyPBh1LAiEA+CJEUJts2fEy71f4guHkmJdrO7/25PnVp/5AaH6ktw4=",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+        "sig": "MEQCIEVBUTfxBlhxSGjls1n4IjmLORv/5wZ7sPCD1coFJ5MvAiBd+MXR7uhZP5CXOgkyt/szHYbs5PqPfubrFJCzcyeXCw=="
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/pi-goal-list-loop-audit@0.38.106",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 4425367
+  },
+  "pi": {
+    "image": "https://raw.githubusercontent.com/DraconDev/pi-goal-list-loop-audit/main/media/glla-icon.png",
+    "skills": [
+      "skills/glla-delegate"
+    ],
+    "extensions": [
+      "extensions/loops/goal.ts"
+    ]
+  }
+}

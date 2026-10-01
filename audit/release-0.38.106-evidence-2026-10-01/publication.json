@@ -5,8 +5,11 @@
   "githubRelease": "https://github.com/DraconDev/pi-goal-list-loop-audit/releases/tag/v0.38.106",
   "workflowId": 36872564036,
   "workflowUrl": "https://github.com/DraconDev/pi-goal-list-loop-audit/actions/runs/36872564036",
-  "status": "GitHub workflow success; npm accepted signed provenance, registry processing",
+  "status": "published and registry verified",
   "localReleaseCheck": "passed",
   "githubReleaseCheck": "passed",
-  "publicIconMatchesReviewedAsset": true
+  "publicIconMatchesReviewedAsset": true,
+  "npmLatest": "0.38.106",
+  "npmUrl": "https://www.npmjs.com/package/pi-goal-list-loop-audit/v/0.38.106",
+  "publishedTarballMatchesReviewedTree": true
 }
