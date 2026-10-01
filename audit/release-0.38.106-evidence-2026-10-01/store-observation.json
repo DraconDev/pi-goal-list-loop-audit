@@ -1,0 +1,9 @@
+{
+  "observedAt": "2026-10-01T14:17:42.418057+00:00",
+  "storeUrl": "https://pi.dev/packages/pi-goal-list-loop-audit",
+  "observedStoreVersion": "0.38.104",
+  "observedStoreImageUrl": "https://raw.githubusercontent.com/DraconDev/pi-goal-list-loop-audit/main/media/glla-thumb.png",
+  "storeImageUrlServesReviewedNewIcon": true,
+  "npmLatest": "0.38.106",
+  "disposition": "Pi store index still caches previous package metadata/README. Both existing and new public image URLs serve the refreshed icon; published npm README/metadata verified. Store indexing is external-only; no upstream repair or cache-refresh guarantee claimed."
+}
