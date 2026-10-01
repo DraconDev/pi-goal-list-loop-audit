@@ -16,6 +16,10 @@
 - Paused status lines that need the user (decision/error/blocked) now lead
   with the next action, so the resume command survives narrow-terminal
   truncation. Waits keep lifecycle-first order.
+- Active-goal liveness for main-model work: the card head falls back to host
+  stream evidence (`stream {age}`, same fresh/aging/stale bands) when no
+  subagent rows are tracked, and stamped last-actions carry bucketed
+  recency — a stale goal is now visibly stale instead of ambiguously idle.
 
 ### Loop respec
 
