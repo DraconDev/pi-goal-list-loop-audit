@@ -1246,7 +1246,7 @@ function pausedLifecycleLines(g: Goal, state: State, extras: WidgetExtras | unde
   ];
 }
 
-function pausedStatusSuffix(g: Goal, state: State, extras: WidgetExtras | undefined, now: number, queueFirst = false): string {
+function pausedStatusSuffix(g: Goal, state: State, extras: WidgetExtras | undefined, now: number, queueFirst = false, attentionFirst = false): string {
   const [lifecycle, transition] = pausedLifecycleLines(g, state, extras, now);
   const queueLabel = (state.list?.length ?? 0) > 0 ? `${state.list!.length} queued` : "queue empty";
   const lifecycleText = lifecycle.replace(/^lifecycle: /, "");
@@ -1257,6 +1257,14 @@ function pausedStatusSuffix(g: Goal, state: State, extras: WidgetExtras | undefi
   const verdict = tallyText ? ` · ${tallyText}` : "";
   if (queueFirst) {
     return ` · ${queueLabel} · ${lifecycleText.replace(` · ${queueLabel}`, "")} · ${transition}${repair}${verdict}`;
+  }
+  // Attention states (decision/error/blocked) lead with the next action:
+  // narrow terminals truncate the status tail, so the resume command must
+  // survive truncation while lifecycle/activity/tally (all duplicated on
+  // the card) are what gets cut. Waits keep lifecycle-first order —
+  // nobody's move is on nobody's glance path.
+  if (attentionFirst) {
+    return ` · next: ${pausedNextTransition(g, state, now)} · ${lifecycleText} · ${pausedLastActivity(g, extras, now)}${repair}${verdict}`;
   }
   return ` · ${lifecycleText} · ${transition}${repair}${verdict}`;
 }
@@ -1423,8 +1431,8 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
       return `glla: ${paint(theme, "warning", "⏸ paused")} · ${paint(theme, "dim", "completion audit parked — no review recorded")} · ${retry}${pausedStatusSuffix(g, state, extras, now, true)}${heldSuffix}`;
     }
     const kind = pauseKind(g);
-    if (kind === "decision") return `glla: ${paint(theme, "accent", "⏸ decision needed")}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
-    if (kind === "error") return `glla: ${paint(theme, "error", `⏸ action needed — ${truncate(displayPauseReason(g.pauseReason ?? ""), 30)}`)}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
+    if (kind === "decision") return `glla: ${paint(theme, "accent", "⏸ decision needed")}${pausedStatusSuffix(g, state, extras, now, false, true)}${heldSuffix}`;
+    if (kind === "error") return `glla: ${paint(theme, "error", `⏸ action needed — ${truncate(displayPauseReason(g.pauseReason ?? ""), 30)}`)}${pausedStatusSuffix(g, state, extras, now, false, true)}${heldSuffix}`;
     // v0.38.64 (021655): standby joins this gate so its waiting label
     // renders here instead of falling through to the generic paused line.
     if (kind === "wait" || kind === "blocked" || kind === "standby") {
@@ -1447,7 +1455,7 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
         const label = state.mainModelRecovery?.manualResumeRequired === true
           ? "⏸ manual recovery hold"
           : `⏸ action needed${when}`;
-        return `glla: ${paint(theme, "warning", label)}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
+        return `glla: ${paint(theme, "warning", label)}${pausedStatusSuffix(g, state, extras, now, false, true)}${heldSuffix}`;
       }
       // v0.38.64 (021655): standby waits on a background agent — dim
       // waiting label, never the warning "action needed".
