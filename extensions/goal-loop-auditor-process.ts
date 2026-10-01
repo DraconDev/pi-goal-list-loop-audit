@@ -230,6 +230,8 @@ export function resolveClaimAuditTier(
 }
 
 export interface AuditorProgress {
+  /** Persistent verification pass, independent of thinking/tool/report phase. */
+  round?: 1 | 2;
   recentOutput: string[];
   phase: "starting" | "running" | "thinking" | "tool_executing" | "producing_report" | "challenging" | "tool_cancelled" | "continuing" | "complete";
   elapsedMs: number;
@@ -1400,6 +1402,8 @@ interface AuditorResultFile {
 }
 
 interface AuditorProgressFile {
+  /** Persistent verification pass, independent of thinking/tool/report phase. */
+  round?: 1 | 2;
   protocolVersion: number;
   attemptId: string;
   requestHash: string;
@@ -1691,6 +1695,7 @@ function snapshotCost(file: AuditorProgressFile): AttemptCost {
 function asProgress(file: AuditorProgressFile, startedAt: number): AuditorProgress {
   return {
     phase: file.phase,
+    ...(file.round === 1 || file.round === 2 ? { round: file.round } : {}),
     elapsedMs: Math.max(file.elapsedMs, Date.now() - startedAt),
     ...(file.reportBytes !== undefined ? { reportBytes: file.reportBytes } : {}),
     ...(file.lastActivityAt !== undefined ? { lastActivityAt: file.lastActivityAt } : {}),

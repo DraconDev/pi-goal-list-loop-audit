@@ -746,6 +746,8 @@ function auditRecoveryPending(g: Goal): boolean {
 // ---- status line (one-liner, always-on) ----
 
 export interface AuditDisplayProgress {
+  /** Persistent verification pass, independent of thinking/tool/report phase. */
+  round?: 1 | 2;
   /** Model reference selected for the currently running detached attempt. */
   model?: string;
   /** Candidate provenance: pinned setting, ordered fallback, or session fallback. */
@@ -920,6 +922,7 @@ export function auditorDisplayPhase(g: Goal, audit: AuditDisplayProgress | null 
  * only applied while the coarse phase is running (quiet/blocked/awaiting
  * verdict keep their single state label). */
 function auditorProgressPhaseLabel(audit: AuditDisplayProgress | null | undefined): string | undefined {
+  if (audit?.round === 2 && !["tool_cancelled", "continuing", "complete"].includes(audit.phase ?? "")) return "second audit pass…";
   switch (audit?.phase) {
     case "thinking": return "reading source…";
     case "producing_report": return "writing report…";
@@ -977,6 +980,7 @@ function auditorActivityMeter(audit: AuditDisplayProgress | null | undefined, ph
  * observed sub-phase so `running` does not look like a frozen icon/timer. */
 function auditorObservedPhase(audit: AuditDisplayProgress | null | undefined, phase: AuditorDisplayPhase): string {
   if (phase !== "running") return auditorPhaseLabel(phase);
+  if (audit?.round === 2 && !["tool_cancelled", "continuing", "complete"].includes(audit.phase ?? "")) return `second audit pass${audit.phase === "tool_executing" ? " · tool executing" : audit.phase === "producing_report" ? " · writing report" : ""}`;
   switch (audit?.phase) {
     case "starting": return "starting";
     case "thinking": return "thinking";

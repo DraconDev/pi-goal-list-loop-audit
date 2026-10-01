@@ -500,6 +500,7 @@ async function main() {
       attemptId,
       requestHash: request.requestHash,
       phase,
+      round,
       elapsedMs: Date.now() - startedAt,
       promptBytes,
       ...(sessionPath ? { sessionPath } : {}),

@@ -64,6 +64,8 @@ export interface GoalAuditorResult {
 // =================================================================
 
 export interface AuditProgress {
+  /** Persistent verification pass, independent of thinking/tool/report phase. */
+  round?: 1 | 2;
   recentOutput: string[];
   phase: "starting" | "running" | "thinking" | "tool_executing" | "producing_report" | "challenging" | "tool_cancelled" | "continuing" | "complete";
   elapsedMs: number;

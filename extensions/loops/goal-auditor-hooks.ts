@@ -1698,17 +1698,17 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       completionAuditGeneration = null;
     }
   }
-  applyCompletedCompletionAudit({ generation, goalId, claim, liveCtx, result, origin, auditStartMs, retriedOnce, fallbackUsed, settings });
+  applyCompletedCompletionAudit({ generation, goalId, claim, liveCtx, result, origin, auditStartMs, retriedOnce, fallbackUsed, settings, inspectionSessionPath });
 }
 
 function applyCompletedCompletionAudit(args: {
   generation: number; goalId: string; claim: PendingCompletion;
   liveCtx: ExtensionContext; result: DetachedAuditResult; origin: CompletionAuditOrigin;
   auditStartMs: number; retriedOnce: boolean; fallbackUsed: boolean;
-  settings: ReturnType<typeof loadSettings>;
+  settings: ReturnType<typeof loadSettings>; inspectionSessionPath?: string;
 }): void {
   let { liveCtx, result } = args;
-  const { generation, goalId, claim, origin, auditStartMs, retriedOnce, fallbackUsed, settings } = args;
+  const { generation, goalId, claim, origin, auditStartMs, retriedOnce, fallbackUsed, settings, inspectionSessionPath } = args;
   const currentAfterAudit = freshCtxForGeneration(generation);
   if (!currentAfterAudit || !state.goal || state.goal.id !== goalId) {
     // v0.34.80 (field: 2026-08-07): NEVER drop a completed verdict silently.
@@ -2465,7 +2465,7 @@ function applyCompletedCompletionAudit(args: {
     error: result.error?.slice(0, 160),
   });
   scheduleContinuation(liveCtx, true);
- }
+}
 
 /** Reconcile a finished exact-claim job before parking/relaunching its auditor.
  * Synchronous validation/application fences a successor from racing a new attempt. */
