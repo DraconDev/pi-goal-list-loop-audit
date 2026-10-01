@@ -2839,3 +2839,98 @@ tests/goal-route.test.ts:
 (pass) classifySessionCtx: different sessionManager → foreign (subagent session) [0.03ms]
 
 tests/gettick-tool-visibility.test.ts:
+(pass) v0.35.60: glla tools are reactivated at the pre-turn boundary [98.50ms]
+
+tests/list-stall-reproduction.test.ts:
+(pass) completed standalone goal automatically hands off to the waiting list [276.62ms]
+(pass) /glla resume starts a waiting-only list instead of reporting nothing [123.07ms]
+[run-tests] progress: 450s elapsed · 0s since last output · 214 KiB of suite output
+(pass) list-sourced completion promotes the successor and records the settle transition [170.64ms]
+
+tests/goal-state.test.ts:
+(pass) goal-state.ts owns the state singleton (single source of truth) [32.40ms]
+(pass) wholesale state replacement goes through replaceState() only [2.86ms]
+(pass) the persistence core lives in goal-state.ts (persistStateLine) [0.29ms]
+(pass) replaceState is used at the moved wholesale sites [0.34ms]
+
+tests/list-audit-state-root.test.ts:
+(pass) list-audit fan-out reads findings from the configured sessionDir root [117.00ms]
+
+tests/list-stale-context.test.ts:
+(pass) v0.34.51: /list add on a stale handle is refused — honest recovery result, zero state mutation [506.73ms]
+(pass) v0.34.51: /list remove, clear, cancel, next, tweak, pause, resume are all refused on a stale handle [383.05ms]
+(pass) v0.34.51: the natural-language dump fallthrough is refused on a stale handle — drafting never starts [410.29ms]
+(pass) v0.34.51: /list show and /list depth stay usable on a stale handle (inspect, don't mutate) [419.06ms]
+(pass) v0.34.51: the honest recovery result — the refreshed session owns the command and the add lands [740.70ms]
+(pass) v0.34.51: list_add and list_activate tools return the stale-context recovery result without mutating [190.53ms]
+(pass) v0.34.51: source — cmdList captures the entry probe and gates every mutating path [1.14ms]
+
+tests/terminal-completion-notice.test.ts:
+(pass) v0.38.18 terminal notice: the done brief lands in the conversation exactly once [113.26ms]
+(pass) v0.38.18 source: the detached-approval branch closes the transcript [0.32ms]
+(pass) audit-2026-09-06: a stale-generation notice never fires into the successor session [17.96ms]
+
+tests/aggressive-mode.test.ts:
+(pass) aggressiveMode persists through the settings file (item 8) [44.39ms]
+(pass) effective settings: aggressiveMode ON flips the defaults (items 5+7) [0.06ms]
+(pass) effective settings: missing aggressiveMode uses the production keep-going default [0.07ms]
+(pass) effective settings: explicit OFF keeps base defaults; auditCap base is 5 [0.04ms]
+(pass) explicit per-key settings WIN over aggressiveMode (advisor semantics) [0.04ms]
+(pass) autoResume is global-only in the effective settings and provenance [2.68ms]
+(pass) obsolete quota policy files cannot change the generic retry settings [0.27ms]
+
+tests/task-list.test.ts:
+(pass) accepts a reasonable breakdown [0.59ms]
+(pass) rejects empty list [0.15ms]
+(pass) rejects too many top-level tasks [0.09ms]
+(pass) rejects too many subtasks (the anti-drift cap) [0.09ms]
+(pass) accepts exactly at the cap [0.06ms]
+(pass) rejects empty titles [0.03ms]
+(pass) assigns hierarchical ids and pending statuses [0.15ms]
+(pass) trims titles [0.03ms]
+
+tests/objective-loss-state-root.test.ts:
+(pass) workingDir default: cwd switch makes old objective invisible from new cwd (expected) [2.27ms]
+(pass) sessionDir opt-in: same cwd switch keeps objective visible via shared sessionDir [0.87ms]
+(pass) evidence: no destructive migration and pending defers writes — Wez crash / version switch does not delete old root [0.65ms]
+
+tests/resume-goal-tool.test.ts:
+(pass) resume_goal reactivates a paused goal and clears every pause marker [298.54ms]
+(pass) resume_goal on an already-active goal answers instead of churning state [308.85ms]
+(pass) resume_goal with no goal answers instead of swallowing the verb [153.30ms]
+(pass) a held-on-restore loop does not block resume_goal (only a LIVE loop does) [204.78ms]
+(pass) resume_goal refuses while the supervisor is frozen [311.97ms]
+(pass) resume_goal probes pending main-model recovery inline instead of bouncing (124544) [370.84ms]
+(pass) resume_goal refuses a terminal goal with the real recovery path [161.09ms]
+(pass) resume_goal keeps its live-loop refusal (source-pinned defense-in-depth) [0.36ms]
+(pass) paused → resume_goal → complete_goal flows without a manual resume [1685.38ms]
+(pass) resume_goal re-fires a stored completion claim through the agent origin [2160.65ms]
+
+tests/hegemon-queue-unblock-evidence.test.ts:
+(pass) REAL SHAPE: 12 empty head items block list activation exactly as in the hegemon ledger [612.32ms]
+(pass) REAL SHAPE: the clean 31-item queue (empties removed) activates main-menu without any blocked event [368.91ms]
+
+tests/quota-horizon-exemption.test.ts:
+(pass) quota wait survives the horizon instead of parking [3.49ms]
+(pass) billing and non-quota failures still park at the horizon [5.46ms]
+(pass) deterministic classifier: 400 markers hold, everything else passes through [0.12ms]
+(pass) deterministic 400 holds even aggressive and fresh — identical retries cannot succeed [96.36ms]
+(pass) deterministic hold names the fix directions [0.63ms]
+(pass) transient wall still schedules under aggressive (control) [0.74ms]
+
+tests/reviewer.test.ts:
+(pass) fires on goal-complete + list-complete; NOT on aborted/paused [59.79ms]
+(pass) leverage: bug/TODO findings enqueue to /list WITHOUT any Confirm (no proposeGoal) [0.72ms]
+(pass) architectural findings are proposed as /goal (Confirm path) [2.32ms]
+(pass) classification order: strategic > architectural > bug > refactor [0.08ms]
+(pass) clean completion fires the audit step; strategic-only notifies [0.95ms]
+(pass) runaway prevention: a reviewer fire in the last 5 minutes suppresses re-firing [0.30ms]
+(pass) per-day cap: the 21st fire is suppressed with a ledger entry [0.34ms]
+(pass) manual /review bypasses the trigger gates [0.38ms]
+(pass) review report written to .pi-glla/reviews/<goal-id>-<timestamp>.md [0.44ms]
+(pass) menu options reflect the config [0.16ms]
+(pass) no /loop triggering: the loop stop path never calls runReviewer [3.66ms]
+(pass) config block: partial project settings merge over defaults [0.22ms]
+(pass) v0.28.16 duplicate-scan dedupe: completing a regression scan does NOT propose another scan (report-only) [0.81ms]
+
+tests/list-settings-route.test.ts:
