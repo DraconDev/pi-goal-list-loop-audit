@@ -22,7 +22,7 @@ import { abortZombieRun, enqueueFaultRepairTask, registerGoalRuntime, resetLengt
 import { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags, __testOnlyResetOwnershipRecheck } from "./goal-session.js";
 import { __testOnlyResetStarvationGate, __testOnlyResetToolActivity, __testOnlyResetAuditorQuietWatch, __testOnlyResetPostCompactDebt } from "./goal-ui.js";
 import { __testOnlyResetAuditorSurface } from "./goal-auditor-surface.js";
-import { __testOnlyResetAuditorRecoveryRuntime, resumeStoredCompletionOrSettlement } from "./goal-auditor-hooks.js";
+import { __testOnlyResetAuditorRecoveryRuntime, resumeStoredCompletionOrSettlement, resumeCompletedCompletionAudit, resumeSettlingCompletionAudit } from "./goal-auditor-hooks.js";
 import { __testOnlyResetOverdueWaitBackstop, __testOnlyResetZombieRunWatchdog, __testOnlyClearSubagentHangProbes } from "../goal-heartbeat.js";
 import { __testOnlyResetCompactor } from "../goal-compactor.js";
 import { __testOnlyResetOwnerHeartbeat, __testOnlyResetStandDownNotice } from "../state-root-owner.js";
@@ -449,6 +449,12 @@ const heartbeatDeps: HeartbeatDeps = {
   tryAbsorbHostSuccessor,
   updateGoal,
   parkCompletionAuditRecovery,
+  reconcileOrphanedCompletionAudit: (ctx) => {
+    if (state.goal?.pendingCompletion?.phase === "settling") {
+      return resumeSettlingCompletionAudit(ctx) !== "not-applicable";
+    }
+    return resumeCompletedCompletionAudit(ctx, { continueWork: !supervisorPaused(state) });
+  },
   continuationUnansweredMs: CONTINUATION_UNANSWERED_MS,
   continuationUnansweredThrottleMs: CONTINUATION_UNANSWERED_THROTTLE_MS,
   abortZombieRun,

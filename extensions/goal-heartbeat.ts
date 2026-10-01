@@ -106,6 +106,8 @@ export interface HeartbeatDeps {
   updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): void;
   /** Park durable completion debt without touching a retained stale context. */
   parkCompletionAuditRecovery(cwd: string, reason: string): boolean;
+  /** Apply a durable verdict for an unowned claim, without launching a worker. */
+  reconcileOrphanedCompletionAudit(ctx: ExtensionContext): boolean;
   isSupervising(): boolean;
   isActionableGoal(): boolean;
   scheduleContinuation(ctx: ExtensionContext, force?: boolean, delayMs?: number): void;
@@ -132,6 +134,7 @@ let activeGoalSurfaceCommand: HeartbeatDeps["activeGoalSurfaceCommand"];
 let notifyExternal: HeartbeatDeps["notifyExternal"];
 let updateGoal: HeartbeatDeps["updateGoal"];
 let parkCompletionAuditRecovery: HeartbeatDeps["parkCompletionAuditRecovery"];
+let reconcileOrphanedCompletionAudit: HeartbeatDeps["reconcileOrphanedCompletionAudit"];
 let isSupervising: HeartbeatDeps["isSupervising"];
 let isActionableGoal: HeartbeatDeps["isActionableGoal"];
 let scheduleContinuation: HeartbeatDeps["scheduleContinuation"];
@@ -155,6 +158,7 @@ export function createGoalHeartbeat(flagsArg: HeartbeatFlags, d: HeartbeatDeps):
   notifyExternal = d.notifyExternal;
   updateGoal = d.updateGoal;
   parkCompletionAuditRecovery = d.parkCompletionAuditRecovery;
+  reconcileOrphanedCompletionAudit = d.reconcileOrphanedCompletionAudit;
   isSupervising = d.isSupervising;
   isActionableGoal = d.isActionableGoal;
   scheduleContinuation = d.scheduleContinuation;
@@ -1660,12 +1664,15 @@ function heartbeatTick(): void {
   if (
     state.goal?.status === "auditing" &&
     !flags.completionAuditInFlight &&
-    (!state.goal.pendingCompletion || flags.completionAuditRecoveryArmed) &&
     Date.now() - flags.lastActivityAt >= 90_000
   ) {
-    appendLedger(ctx.cwd, "stranded_audit_recovered", { goalId: state.goal.id, via: state.goal.pendingCompletion ? "stored-claim" : "resume-active" });
+    // The retry-armed flag is not ownership: a dropped first attempt can
+    // leave it false forever. Reconcile the exact saved verdict before
+    // declaring no verdict; the ordinary validator and settlement still bind.
+    if (state.goal.pendingCompletion && reconcileOrphanedCompletionAudit(ctx)) return;
     if (state.goal.pendingCompletion) {
-      markCompletionAuditRecoveryPending(ctx, "heartbeat-recovery");
+      if (!markCompletionAuditRecoveryPending(ctx, "heartbeat-recovery")) return;
+      appendLedger(ctx.cwd, "stranded_audit_recovered", { goalId: state.goal.id, via: "stored-claim" });
       ctx.ui.notify(`Completion audit blocked — no verdict. The stored claim is safe; ${activeGoalSurfaceCommand("resume")} starts exactly one fresh auditor.`, "warning");
     } else {
       updateGoal({
@@ -1674,6 +1681,7 @@ function heartbeatTick(): void {
         pauseReason: "completion audit interrupted — no verdict",
         pauseSuggestedAction: `The completion attempt was not evaluated. ${activeGoalSurfaceCommand("resume")} returns to the work so it can call complete_goal again.`,
       }, ctx);
+      appendLedger(ctx.cwd, "stranded_audit_recovered", { goalId: state.goal.id, via: "resume-active" });
       ctx.ui.notify(`Completion audit interrupted — no verdict. MAIN released; ${activeGoalSurfaceCommand("resume")} to continue.`, "warning");
     }
     return;

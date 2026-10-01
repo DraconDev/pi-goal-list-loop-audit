@@ -49,7 +49,7 @@ for (const verdict of ["approved", "disapproved", "missing"] as const) {
     const g = goal(); seedState(cwd, { goal: g });
     if (verdict !== "missing") job(cwd, g, { output: `<evidence>\nartifact exists\n</evidence>\n<${verdict}/>` });
     __testOnlyLoadState(cwd);
-    __testOnlyResetAuditorSurface(); // no in-flight poller and no recovery-armed flag
+    // Fresh empty host: no in-flight poller and no recovery-armed flag.
     __testOnlySetLastActivityAt(Date.now() - 100_000);
     try {
       __testOnlyHeartbeatTick(); await tick(120);
