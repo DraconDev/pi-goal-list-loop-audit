@@ -73,7 +73,7 @@ for (const scenario of ['first-write', 'rename', 'owner-loss', 'refresh', 'prima
   });
 }
 
-for (const scenario of ['already-exited', 'suite-group'] as const) {
+for (const scenario of ['already-exited', 'proc-disappeared', 'suite-group'] as const) {
   test(`proven ${scenario} child retires its declaration without a cleanup failure`, { skip: process.platform !== 'linux' }, () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'glla-registry-retired-'));
     const registry = pathToFileURL(path.resolve('scripts/test-process-registry.mjs')).href;
@@ -82,10 +82,13 @@ for (const scenario of ['already-exited', 'suite-group'] as const) {
       import fs from 'node:fs';import {spawn} from 'node:child_process';import {once} from 'node:events';
       import {createTestProcessRegistry,registerOwnedTestProcess,reapOwnedTestProcesses} from ${JSON.stringify(registry)};
       const env=createTestProcessRegistry(${JSON.stringify(dir)});
-      const child=spawn(process.execPath,['-e',${JSON.stringify(scenario === 'already-exited' ? '' : 'setInterval(()=>{},1000)')}],{detached:${scenario === 'already-exited'},stdio:'ignore'});
-      await once(child,${JSON.stringify(scenario === 'already-exited' ? 'exit' : 'spawn')});
+      const child=spawn(process.execPath,['-e',${JSON.stringify(scenario !== 'suite-group' ? '' : 'setInterval(()=>{},1000)')}],{detached:${scenario !== 'suite-group'},stdio:'ignore'});
+      await once(child,${JSON.stringify(scenario !== 'suite-group' ? 'exit' : 'spawn')});
+      const exitCode=child.exitCode,signalCode=child.signalCode;
+      if(${scenario === 'proc-disappeared'}){child.exitCode=null;child.signalCode=null}
       try {
         registerOwnedTestProcess(child,env);
+        child.exitCode=exitCode;child.signalCode=signalCode;
         const cleanup=await reapOwnedTestProcesses(env,{graceMs:10});
         console.log(JSON.stringify({cleanup,records:fs.readdirSync(env.GLLA_TEST_PROCESS_REGISTRY).filter(f=>f.startsWith('process-')).length,expectations:fs.readdirSync(env.GLLA_TEST_PROCESS_REGISTRY+'.obligations').filter(f=>f.startsWith('process-')).length,live:child.exitCode===null&&child.signalCode===null}));
       }finally{if(child.exitCode===null&&child.signalCode===null){child.kill('SIGKILL');await once(child,'exit')}}
