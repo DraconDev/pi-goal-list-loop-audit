@@ -2,12 +2,13 @@ import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from "../extensions/loops/goal.js";
+import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyLoadState } from "../extensions/loops/goal.js";
+import { __testOnlyHeartbeatTick } from "../extensions/goal-heartbeat.js";
 import { __testOnlyResetAuditorSurface } from "../extensions/loops/goal-auditor-surface.js";
 import { archivedGoalPath, readState, type Goal, type State } from "../extensions/goal-loop-core.js";
 import { buildWidgetLines, buildStatusText } from "../extensions/goal-loop-display.js";
 import { completionAuditRecoveryIdentity, requestHash, readCompletedCompletionAudit, runDetachedGoalCompletionAuditor, buildGoalAuditorPrompt } from "../extensions/goal-loop-auditor-process.js";
-import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd } from "./harness/mock-pi.js";
+import { MockPi, makeMockCtx, invalidateHostSession, seedGoal, seedState, tick, tmpCwd } from "./harness/mock-pi.js";
 
 function goal(): Goal {
   return seedGoal({ status: "auditing", objective: "verify the artifact", verificationContract: "artifact exists", revision: 0,
@@ -72,6 +73,34 @@ for (const verdict of ["approved", "disapproved"] as const) {
     } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
   });
 }
+
+test("manual resume consumes a completed parked claim instead of launching another auditor", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+  const g = goal(); g.status = "paused"; g.pendingCompletion!.phase = "recovery-pending";
+  seedState(cwd, { goal: g }); job(cwd, g); __testOnlyLoadState(cwd);
+  try {
+    await pi.command("goal", "resume", ctx); await tick(120);
+    assert.ok(fs.existsSync(archivedGoalPath(cwd, g.id)));
+    assert.equal(events(cwd).filter(e => e.type === "audit_completed_result_recovered").length, 1);
+    assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0);
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});
+
+test("silent file-backed successor applies a finished verdict from the dead generation", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+  const g = goal(); seedState(cwd, { goal: g }); job(cwd, g); __testOnlyLoadState(cwd);
+  invalidateHostSession(pi, ctx); __testOnlyHeartbeatTick(); await tick(120);
+  pi.sendMessageError = null; pi.sessionNameError = null;
+  const successor = makeMockCtx(cwd, { sessionManager: {
+    getSessionFile: () => path.join(cwd, "successor-session.jsonl"), getSessionId: () => "completed-audit-successor",
+  } });
+  try {
+    await pi.runTool("list_add", { items: ["follow-up after handoff"] }, successor); await tick(120);
+    assert.ok(fs.existsSync(archivedGoalPath(cwd, g.id)), "the replacement settles the old worker's approval");
+    assert.equal(events(cwd).filter(e => e.type === "audit_completed_result_recovered").length, 1);
+    assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0);
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, successor); }
+});
 
 test("legacy completed jobs bind the original goal, contract, and claim without new metadata", () => {
   const cwd = tmpCwd(), g = goal(); job(cwd, g, { legacy: true, output: "missing artifact\n<disapproved/>" });
