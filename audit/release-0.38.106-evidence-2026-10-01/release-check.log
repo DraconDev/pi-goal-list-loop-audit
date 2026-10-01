@@ -3355,3 +3355,440 @@ tests/auditor-stall-watchdog.test.ts:
 (pass) v0.38.99: a genuinely wedged tool still fails fast once the grace expires [658.96ms]
 
 tests/auditor-retry-callback.test.ts:
+[run-tests] progress: 630s elapsed · 14s since last output · 250 KiB of suite output
+(pass) manual audit exhaustion retries through timer with fresh candidates and unchanged envelope [19509.76ms]
+
+tests/goal.schema.test.ts:
+unknown format "date-time" ignored in schema at path "#/properties/deferred/properties/at"
+unknown format "date-time" ignored in schema at path "#/properties/deferred/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/auditVerdict/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/auditVerdict/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/lastActivityAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/lastActivityAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/verdictAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/verdictAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/startedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/startedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryRetryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryRetryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaAutoRetryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaAutoRetryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorRetryAttemptStartedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorRetryAttemptStartedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorFailureAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorFailureAt"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepair/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepair/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepairTarget/properties/replanPromptedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepairTarget/properties/replanPromptedAt"
+unknown format "date-time" ignored in schema at path "#/properties/createdAt"
+unknown format "date-time" ignored in schema at path "#/properties/createdAt"
+unknown format "date-time" ignored in schema at path "#/properties/updatedAt"
+unknown format "date-time" ignored in schema at path "#/properties/updatedAt"
+(pass) schema accepts active goal and queued-list goal fixtures [62.79ms]
+(pass) schema rejects invalid status and missing required usage [0.46ms]
+(pass) schema validates nested task and audit-verdict required fields [0.56ms]
+
+tests/glla-table-menu.test.ts:
+(pass) render: title row [51.89ms]
+(pass) grouped entry points can open a specific settings section [0.58ms]
+(pass) render: tabs row lists all 8 sections [4.57ms]
+(pass) main agent tab starts with the current agent and drills in [0.90ms]
+(pass) render: at width=120, the keep-going section renders its rows (v0.28.23: +decisionPopup) [0.40ms]
+(pass) render: active row uses a full-width selected background [0.23ms]
+(pass) render: compact header row has KEY, VALUE, SOURCE columns [0.20ms]
+(pass) render: compact mode never exceeds terminal width even with a long VALUE in another section [0.35ms]
+(pass) render: footer pin includes the optional details toggle [0.27ms]
+(pass) nav: Enter on the first row emits that row's id [0.05ms]
+(pass) nav: Down arrow moves to the next visible row [0.26ms]
+(pass) nav: Down wrapping at the end of a section wraps to 0 [0.10ms]
+(pass) nav: Esc emits undefined (close) [0.04ms]
+(pass) nav: Tab advances to the next section [0.05ms]
+(pass) nav: Back-tab (\x1b[Z) retreats to the previous section [0.04ms]
+(pass) nav: Right-arrow CSI sequence (\x1b[C) advances section [0.03ms]
+(pass) nav: Left-arrow CSI sequence (\x1b[D) retreats section [0.03ms]
+(pass) details toggle: descriptions can be shown and truncated when requested [0.38ms]
+(pass) details toggle: at width=120 the description column shows most of the row text [0.45ms]
+(pass) cache: identical renders at the same width return the same array reference [0.18ms]
+(pass) cache: state change invalidates cache (move → next render produces new lines) [0.67ms]
+(pass) compact view expands VALUE so model + thinking are visible [3.98ms]
+(pass) structural: Class implements Component (has render + invalidate + handleInput) [0.23ms]
+(pass) structural: buildSettingsRows returns ≥20 rows across all 8 sections (coverage) [0.36ms]
+(pass) render: tab bar is color-only (v0.28.19: brackets dropped), all sections present [0.46ms]
+(pass) render: a header rule with ┼ junctions follows the header row [0.33ms]
+(pass) render: column separators align across header, rule, and every row (prefix counted) [0.32ms]
+(pass) render: a too-long VALUE is truncated with … — it must NOT break the grid [0.31ms]
+(pass) render: column widths are stable across tab switches (no grid reflow) [0.54ms]
+
+tests/goal-loop-stats.test.ts:
+(pass) empty rig: no .pi-glla anywhere → empty discovery + no rollup [1.23ms]
+(pass) single project with one approved goal: all counters correct [2.77ms]
+(pass) premature-success detection fires on low turns + 0 writes + few bash [0.13ms]
+(pass) JSON output schema matches the table columns [2.92ms]
+(pass) premature filter: only flagged projects, ratio-sorted [0.24ms]
+(pass) discovery finds nested projects and dedupes via cwd [109.11ms]
+(pass) parseLedgerEntries skips malformed lines [0.68ms]
+
+tests/compaction-failed-recovery.test.ts:
+(pass) host-owned failed compaction retries without model rotation, park, or competing continuation [544.49ms]
+(pass) terminal prompt overflow rotates once and arms durable post-compact resume debt [376.28ms]
+(pass) same-session startup restores fallback debt, while a new session discards it [398.90ms]
+(pass) terminal output-cap failure parks instead of misclassifying it as context overflow [196.17ms]
+(pass) failed compaction without a usable fallback parks an active goal durably [167.06ms]
+(pass) failed compaction parks a branch loop instead of leaving it active [272.78ms]
+(pass) a failed debt-discharge append keeps RAM debt instead of diverging from disk [265.83ms]
+
+tests/auditor-unmatched-telemetry.test.ts:
+(pass) v0.34.56: a serial id'd start+end pairs into toolCalls with zero unmatched facts [52.93ms]
+(pass) v0.34.56: an end with the WRONG id never pairs — it is an explicit unmatched fact and the open start stays open [0.06ms]
+(pass) v0.34.56: an end with an id can never close an ANONYMOUS start (missing-toolCallId shape) [0.04ms]
+(pass) v0.34.56: an ANONYMOUS end can never close an id'd start (the id would be present on a true end) [0.14ms]
+(pass) v0.34.56: a serial ANONYMOUS stream (both sides missing toolCallId) still pairs truthfully [0.07ms]
+(pass) v0.34.56: an anonymous end closes the CURRENT anonymous start; a replaced anonymous start stays an explicit unmatched fact [0.06ms]
+(pass) v0.34.56: a new start replacing an open start records the ORPHANED start explicitly (name, args, id preserved) [0.06ms]
+(pass) v0.34.56: same-id restart updates the slot without an unmatched fact; an end with no open start is an unmatched end [0.06ms]
+(pass) v0.34.56/0.34.108: the detached path forwards pairing data untouched (no inline slot mutation) [0.23ms]
+(pass) v0.34.56: worker — anonymous ends pair only with the SOLE anonymous start; everything else is an explicit unmatched fact [0.15ms]
+(pass) v0.34.56: worker — in-flight starts at session end become explicit unmatched starts (finish sweep) [0.13ms]
+(pass) v0.34.56: progress file + asProgress + HUD mapping + display all carry the unmatched facts [0.17ms]
+
+tests/settlement-boundary-faults.test.ts:
+(pass) typed settlement refuses success before its intent can be persisted [82.44ms]
+(pass) failed receipt transfer retains the terminal obligation across live-slot cleanup [9.72ms]
+(pass) unreadable old outbox retains new archive intent until both summaries can be queued [7.94ms]
+
+tests/state-root.test.ts:
+(pass) workingDir remains the default root and persists under cwd [2.60ms]
+(pass) sessionDir opt-in resolves to the registered top-level session directory [1.16ms]
+(pass) pending sessionDir defers every core write and does not migrate the old cwd tree [1.24ms]
+(pass) PI_SESSION_FILE provides a worker-safe session-root fallback [0.65ms]
+(pass) stateRoot is typed/global-only and project settings cannot override it [17.36ms]
+
+tests/auditor-payload-escaping.test.ts:
+(pass) auditor payload escaping keeps XML-like delimiters inside untrusted data [0.50ms]
+
+tests/goal-loop-core.test.ts:
+(pass) piGlaDir returns the canonical path [0.35ms]
+(pass) newGoalId format [1.19ms]
+(pass) v0.36.0: repeated identical auditor objections are a state-based no-progress signal [0.18ms]
+(pass) statusLabel covers all states [0.04ms]
+(pass) audit display classification keeps semantic verdicts separate from infra and shield outcomes [0.67ms]
+(pass) list policy and aborted status remain separate display facts [0.13ms]
+(pass) findNextPendingTask BFSes subtasks [67.22ms]
+(pass) findNextPendingTask returns subtask when no sibling pending [0.10ms]
+(pass) buildTaskSummary counts complete [0.06ms]
+(pass) renderGoalMarkdown renders sections [0.12ms]
+(pass) v0.34.91: renderGoalMarkdown includes the completion recap section [0.08ms]
+(pass) writeGoalMd persists + readGoalMd returns [0.64ms]
+(pass) readState returns default when no ledger [0.38ms]
+(pass) appendLedger + readState roundtrip [1.05ms]
+(pass) readState sanitizes a saved main-model recovery without dropping its retry plan [0.95ms]
+(pass) sumNewAssistantTokens accumulates assistant usage only [0.17ms]
+(pass) sumNewAssistantTokens dedupes replayed messages [0.07ms]
+(pass) sumNewAssistantTokens ignores zero/negative/invalid usage [0.04ms]
+(pass) mergeSettings: later layers win per key [0.10ms]
+(pass) mergeSettings: undefined in a layer means 'not set here' [0.05ms]
+(pass) mergeSettings: null/missing layers are skipped [0.04ms]
+(pass) mergeSettings: does not mutate the base [0.03ms]
+(pass) auditFeedbackExcerpt: bounds executor feedback at the configured character count [0.64ms]
+(pass) auditFeedbackExcerpt: zero returns the full auditor report [0.08ms]
+(pass) ensureDirs creates the .pi-glla tree [0.32ms]
+(pass) sumNewAssistantTokens counts input+output, not cache reads (v0.12.0) [0.09ms]
+(pass) sumNewAssistantTokens falls back to totalTokens when no split [0.06ms]
+(pass) DEFAULT_TOKEN_LIMIT is 0 — the guard is opt-in (v0.12.0) [0.04ms]
+(pass) piGlaDir migrates a legacy .pi-gla dir exactly once (v0.17.0) [0.43ms]
+(pass) restore gate (v0.28.21 default): NOTHING auto-resumes on session load — the item loads HELD [0.11ms]
+(pass) restore gate: autoresume=on auto-resumes everywhere (unattended rigs) [0.05ms]
+(pass) restore gate: autoresume=off never auto-resumes [0.06ms]
+(pass) v0.24.5 missingGllaTools: empty active set returns all glla tool names [0.09ms]
+(pass) v0.24.5 missingGllaTools: only glla tool names are tracked (no false positives on base tools) [0.08ms]
+(pass) v0.24.5 missingGllaTools: modlist-snapshot example (the real bug) [0.08ms]
+(pass) v0.24.5 missingGllaTools: all tools present → empty missing list [0.05ms]
+(pass) v0.24.5 missingGllaTools: missing just one tool → that single name [0.08ms]
+
+tests/terminal-approval-render.test.ts:
+(pass) skipped challenges are disclosed in chat, transcript, and archive evidence [50.46ms]
+(pass) canonical render folds a lone approval with the verdict count, model-free [0.82ms]
+(pass) standalone audit bullet survives only with news [0.77ms]
+(pass) counts line proofs the audit verdict from durable state only [0.60ms]
+(pass) buildApprovalChatLines stays backward compatible without counts [0.13ms]
+(pass) v0.38.37 posted summary carries verifiable-result bullets plus the deliberate non-do [0.96ms]
+(pass) idle-persisted render replays once on the next live contact [60.94ms]
+(pass) render with confirmed delivery never replays [1.56ms]
+(pass) corrupt store degrades to zero replays, never throws [0.36ms]
+(pass) v0.38.39 chat brief strips machine paths but the archive keeps them [0.59ms]
+(pass) v0.38.39 clause cut respects +-joined lists [0.13ms]
+(pass) second approval for the same goal after delivery queues a fresh render [2.66ms]
+(pass) error-only audit history renders an honest archive banner with no review row [0.53ms]
+(pass) unreadable outbox refuses enqueue without replacing an earlier pending render [2.86ms]
+(pass) malformed and partially invalid stores preserve bytes and refuse mutations [4.31ms]
+(pass) delivery callback enqueue survives acknowledgement and replays on next contact [2.67ms]
+(pass) nested replay neither repeats the in-flight render nor restores acknowledged entries [2.70ms]
+(pass) refusal rotation preserves callback enqueues and makes them reachable next contact [8.41ms]
+
+tests/prompt-disagreement-guidance.test.ts:
+(pass) continuation prompt has the WHEN THE AUDITOR DISAPPROVES section (item 18) [49.74ms]
+(pass) disagreement guidance names the audit history as the source [0.05ms]
+
+tests/long-running-modes-parked.test.ts:
+(pass) fireReviewer emits a SECOND notify with the review file path after the cascade [44.40ms]
+(pass) surface-notify branch is preceded by the existing manual-suppressed notify [0.12ms]
+(pass) postaudit settings key takes precedence over legacy reviewer key (fireReviewer) [0.14ms]
+(pass) Settings type accepts both reviewer and postaudit keys [0.19ms]
+(pass) SETTINGS_KEYS includes postaudit and toolOverrides [0.03ms]
+(pass) /glla postaudit opens the same menu as /glla reviewer (no behavioral split) [0.05ms]
+(pass) /glla routes reviewer (legacy) and postaudit (new) without completion rows [0.13ms]
+(pass) resolveReviewerConfig: postaudit and reviewer blocks merge equivalently [0.14ms]
+(pass) goal-loop-continuation prompt carries the 0.27.5 chunk-near-context-full hint [0.12ms]
+
+tests/main-model-recovery.test.ts:
+(pass) main model refs preserve order, dedupe, and support nested model ids [0.61ms]
+(pass) main model fallback candidates are ordered and never retried in a cycle [0.22ms]
+(pass) main fallback settings dedupe case-insensitively and cap the chain at ten [0.21ms]
+(pass) runtime fallback walk uses one supervised model at a time and preserves left-to-right order [4.90ms]
+(pass) successful fallback turns keep the preferred primary and fail back after a supervised probe [3.44ms]
+(pass) sticky failback preserves the old fallback-settles behavior [0.45ms]
+(pass) in-band provider output is recognized only for strong repeated-pane markers [0.46ms]
+(pass) the explicit Codex prompt-policy event is terminal, while lookalike text remains generic [0.21ms]
+(pass) main model errors stay opaque to the recovery policy [0.14ms]
+(pass) main model recovery backs off without giving up [0.39ms]
+(pass) main recovery requirements are generic across provider wording [0.05ms]
+
+tests/context-hygiene.test.ts:
+(pass) predicate: error-only turns are droppable; tool-carrying, aborted, and healthy turns are not [0.38ms]
+(pass) drop rule: keeps the most recent failed turn, drops older ones, preserves everything else [0.22ms]
+(pass) drop rule: identity preserved when at or under the keep window; window is configurable [0.05ms]
+(pass) drop rule: SEADED BLOAT — 60 failed turns collapse to the keep window; normal turns survive verbatim [0.40ms]
+(pass) compaction pruning: reassigns both message arrays in place and counts drops [0.12ms]
+(pass) wiring: the context event drops accumulated error turns and ledgeres the hygiene pass [137.41ms]
+(pass) wiring: session_before_compact prunes and bounds the preparation the runner will summarize [3.86ms]
+(pass) wiring: every default session_before_compact path receives the bounded projection and an undefined hook result [2.73ms]
+
+tests/loop-start-proof-fallback.test.ts:
+(pass) v0.37.3 (issue #40) — start proof accepts agent_start fallback for followUp continuations [55.48ms]
+(pass) v0.37.3 (issue #40) — retry backoff is env-configurable independently [0.20ms]
+(pass) v0.37.3 (issue #40) — activation wires agent_start and turn_start fallbacks [0.38ms]
+
+tests/stall-handling.test.ts:
+(pass) escalation gate: threshold semantics (0 = never, N = fire at streak N) [38.86ms]
+(pass) send paths are ledgered: sent AND failed, loop and goal [0.35ms]
+(pass) refire streak: incremented on refire, ledgered, reset only on REAL activity [1.25ms]
+(pass) escalation: streak at threshold stops the loop / pauses the goal, loudly [0.46ms]
+(pass) session_compact hook: re-arms the chain when idle with no timer pending [0.50ms]
+(pass) widget + status surface the streak only while nonzero [0.49ms]
+(pass) settings: stallEscalationRefires round-trips through save/load [61.00ms]
+(pass) /glla surface: bare command opens settings; arguments are actions [1.38ms]
+(pass) P1: graduated stall escalation entry before the brake (sender + wiring) [0.89ms]
+(pass) P2: every continuation carries the unclosed-status block [0.16ms]
+(pass) P3: post-restore grace — armed on restore resume, skips accounting, ledgered [0.78ms]
+(pass) v0.28.24: session_compact resets the send-rearm storm streaks + opens the post-compaction grace [0.44ms]
+(pass) v0.34.82: heartbeat refuses to refire a continuation while pi is context-starved (no compaction landing) [1.94ms]
+(pass) v0.29.21: session_compact arms a SECOND settle refire at grace expiry [0.45ms]
+(pass) v0.29.1: completion lifecycle survives the wedged-queue window (storm suppression + stranded recovery + brake cap) [3.69ms]
+(pass) v0.29.9: hourly top-of-hour probe — the park keeps retrying on clock-hour boundaries [5.22ms]
+(pass) v0.34.142: nextHourlyProbeMs selects the next :00:30 slot [0.24ms]
+(pass) v0.29.1: zombie-twin guard — drafts/enqueues duplicating a goal completed <24h ago are refused loudly [4.74ms]
+(pass) v0.29.2: git discipline law — no invented identities or branches, in every execution prompt [3.16ms]
+(pass) v0.29.3/0.29.6: no empty allowlist warning; stacked states AUTO-ARBITRATE (picker superseded) [4.34ms]
+(pass) v0.29.4: user aborts stand the chain down and never count toward stalls (the Esc-spam loop) [5.02ms]
+(pass) v0.29.5: the stand-down survives the heartbeat + autoResume is GLOBAL-only [7.69ms]
+(pass) audit 2026-09-07 HIGH: zombie retry routes on the abort owner, cycle-reset consumes budget and honors the horizon [0.32ms]
+(pass) v0.35.x — zombie-run watchdog: busy + zero stream events gets bounded abort and recovery guidance [6.24ms]
+(pass) v0.35.x — a rejected zombie cleanup does not consume the abort latch [0.28ms]
+(pass) v0.32.1: post-compaction resume debt + deterministic resync (pi-goal-x's lesson) [8.32ms]
+(pass) v0.34.5: wedge alert names a subagent wait when the in-flight call is one [6.92ms]
+(pass) v0.34.11: unanswered-continuation watchdog (accepted send, no turn — hellhunter list-transition wedge) [11.88ms]
+(pass) v0.34.12: eager continuation settles 2.5s past agent_end (hellhunter 60s-per-turn blackhole tax) [6.74ms]
+(pass) v0.34.12 + v0.34.64: wait-pause status line counts down live + ticker survives the wait (pully field request) [5.82ms]
+(pass) v0.34.16: wedges hand off through pi lifecycle — no terminal self-reload [5.72ms]
+(pass) v0.34.14: /reload rebind resumes mid-work — the 'list is not continuing' fix (hellhunter) [6.19ms]
+(pass) v0.34.51: the hanging-verification cause is named by the timeout branch (pully ssh/sudo stall) [5.31ms]
+(pass) v0.34.15: errorBrakeStreak persists ON THE GOAL — the 6-brake park survives /reload (hegemon 429 churn) [9.47ms]
+(pass) provider failures use one generic recovery card [8.56ms]
+(pass) v0.34.16: queue-stuck probe — a send queued-without-a-turn is reported without terminal injection [6.19ms]
+(pass) audit 2026-09-07 MEDIUM: fallback ack refuses when a user message arrived after the send [0.21ms]
+
+tests/loop-write-signal.test.ts:
+(pass) item 3: write/edit/multi_edit/write_file are the write-signal tools [0.43ms]
+(pass) item 3: the tool_result handler bumps fileWrites via isLoopWriteTool [1.98ms]
+(pass) item 2: the stuck dispatch calls isActuallyStuck (not detectLoopStuck directly) [0.24ms]
+(pass) item 4: git commits are counted once per iteration from HEAD advance [0.08ms]
+(pass) item 6: spec_item_progress events are counted from the ledger since iteration start [0.07ms]
+
+tests/mechanical-inconclusive.test.ts:
+(pass) loadScaledTimeoutMs: 1× at or under cpu count [73.10ms]
+(pass) loadScaledTimeoutMs: linear past cpu count, capped at 2× [0.04ms]
+(pass) loadScaledTimeoutMs: unusable inputs degrade to base, never unbounded [0.09ms]
+(pass) scaledMechanicalTimeoutMs: live-load wrapper stays within [base, 2×base] [0.32ms]
+(pass) containmentReason: maps flags in timeout-first order [0.07ms]
+(pass) mechanicalPreAuditVerdict: fail keeps the historical fast-fail shape [0.13ms]
+(pass) mechanicalPreAuditVerdict: inconclusive becomes infra error, never disapproval [0.07ms]
+(pass) mechanical run: green command passes [47.23ms]
+(pass) mechanical run: red command fails (not inconclusive) [209.62ms]
+(pass) mechanical run: unsafe syntax fails (not inconclusive) [68.39ms]
+(pass) mechanical run: killed gate is inconclusive with reason [220.52ms]
+(pass) mechanical run: empty command list passes [0.49ms]
+
+tests/glla-status-ux.test.ts:
+(pass) v0.35.15: auditing footer carries a distinct phase glyph AND an activity meter element for every auditor phase [53.33ms]
+(pass) v0.35.15: activity meter drains as worker silence grows (full at fresh, empty past the quiet threshold) [0.16ms]
+(pass) v0.35.15: ⏸ supervisor chip leads the footer in every lifecycle branch when paused [0.48ms]
+(pass) v0.35.15: a recently ended quiet stretch shows 'silent Xm then resumed' in the widget; stale stretches stay hidden [3.86ms]
+(pass) v0.35.15: quiet watcher notifies EXACTLY ONCE on entering the quiet phase, records the stretch on resume [82.53ms]
+(pass) v0.35.15: quiet watcher stays silent while the supervisor is paused (it IS automatic machinery) [0.79ms]
+(pass) v0.35.15: every automatic dispatch point gates on supervisorPaused [56.12ms]
+(pass) v0.35.15: /glla pause persists a durable flag, leaves the active goal untouched, and survives a disk reload [655.30ms]
+(pass) v0.35.15: /glla resume clears the freeze, reports the frozen duration, and never lies 'Nothing to resume' [390.97ms]
+(pass) v0.38.104: the working-card tool argument is cut cell-aware, never mid-surrogate [4.33ms]
+
+tests/owner-file-protocol.test.ts:
+(pass) Windows replacement retries a sharing violation without unlinking the previous owner [1.84ms]
+(pass) competing Node processes serialize owner mutations and publish only complete records [1267.85ms]
+(pass) a live mutation times out contenders; SIGKILL recovery never removes a successor lock [151.89ms]
+(pass) Windows participant read retries denial but preserves malformed-record refusal [0.57ms]
+
+tests/recap-preservation.test.ts:
+(pass) repair re-claim preserves the whole-work recap in the approved render [4122.14ms]
+
+tests/impossible-list-drop.test.ts:
+(pass) rule: blocked + no resume path on a /list item → auto-dropped (ledgered) and the queue advances [712.15ms]
+(pass) guard: blocked WITH a resume path stays paused — never overridden [494.31ms]
+(pass) guard: blocked + no resume path on a plain GOAL is not a list drop [547.24ms]
+(pass) last item: drop still ledgered, list goes empty, no advance possible [496.13ms]
+(pass) full auditor IMPOSSIBLE result is terminalized with a durable recap and notification [1221.22ms]
+(pass) stored-claim full IMPOSSIBLE retry also terminalizes with its recap [600.25ms]
+(pass) loop hold: drop ledgered but NO advance while a loop owns the surface [225.86ms]
+
+tests/context-growth-measurement.test.ts:
+[run-tests] progress: 660s elapsed · 0s since last output · 276 KiB of suite output
+(pass) fixture: repeated real continuation payloads grow context linearly and are isolated [9.62ms]
+(pass) reported checkpoint shape stays pinned across all probe sizes [79.61ms]
+(pass) provider capture preserves exact pi-ai usage and rejects partial data [0.25ms]
+(pass) measurement: failed turns and ordinary conversation remain separate from GLLA payload bytes [1.21ms]
+
+tests/command-registration-collisions.test.ts:
+(pass) v0.34.55: model — a collided name is suffixed for EVERY registrant; the bare name becomes unowned [0.35ms]
+(pass) v0.34.55: model — within-extension re-registration is last-wins (Map.set), no self-collision [0.09ms]
+(pass) v0.34.138: routing scan follows local imports and keeps winner paths portable [1.40ms]
+(pass) v0.34.55: live rig — the routing table records duplicate-command routing and identifies the winning registration [3195.23ms]
+(pass) v0.35.47: every handled /list and /loop subcommand has a completion entry [1.02ms]
+
+tests/state-root-consumers.test.ts:
+(pass) resolved consumers follow the selected root — dispatch, stats, audit findings [2.56ms]
+(pass) pending sessionDir defers dispatch, reviewer, and audit writes — no cwd fallback tree [1.27ms]
+(pass) workingDir fallback and PI_SESSION_FILE fallback behave correctly [0.39ms]
+(pass) source pins: raw cwd/.pi-glla hardcodings are gone from consumers [74.08ms]
+
+tests/session-visibility.test.ts:
+(pass) tally classifies like auditVerdictLabel [0.57ms]
+(pass) tally segment stays silent with no verdicts [0.37ms]
+(pass) recovery banner pins objective, next task, audits, resume [0.84ms]
+(pass) v0.38.55: auditing status line is liveness-only — the tally lives on the card (Screenshot 20260914) [3.99ms]
+(pass) reload with a held goal paints the recovery banner from disk [309.29ms]
+(pass) future verdict timestamp suppresses the age instead of printing 0s ago [0.29ms]
+
+tests/completion-recap-shape.test.ts:
+(pass) structured completion recap survives archive rendering and the terminal widget [12.66ms]
+(pass) auditor receives completionSummary and verificationSummary independently [0.60ms]
+(pass) complete_goal tool schema references the six-label policy [0.30ms]
+
+tests/rich-summary-dedup.test.ts:
+(pass) 172705: exact-duplicate details render once per bucket [56.65ms]
+(pass) 172705: zero turns omitted, elapsed and audits kept [0.69ms]
+
+tests/runtime-globals-contract.test.ts:
+(pass) runtime global bridge has one typed declaration for every registration [6.38ms]
+(pass) audit-2026-09-06: runtime globals register exactly once per process [0.51ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [795.88ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [264.99ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [395.23ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5346.77ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [824.70ms]
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [278.73ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on normal exit [1773.20ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on signal exit [1559.91ms]
+(pass) registry refuses to signal a record naming a reused leader identity [32.13ms]
+162 |   })();`);
+163 |   assert.equal(result.code, 1, result.output);
+164 |   assert.match(result.output, /unverified survivors\/records/);
+165 |   const retained = result.output.match(/cleanup evidence retained at (.+)/)?.[1];
+166 |   assert.ok(retained, result.output);
+167 |   fs.rmSync(retained, { recursive: true, force: true });
+           ^
+EACCES: permission denied, rm '/tmp/glla-test-processes-hVC3Rp'
+    path: "/tmp/glla-test-processes-hVC3Rp",
+ syscall: "rm",
+   errno: -13,
+    code: "EACCES"
+
+      at <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/test-runner-lifecycle.test.ts:167:6)
+(fail) runner refuses a green suite after a swallowed primary registration write failure [259.76ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [231.16ms]
+(pass) parent runner fails after swallowed initial identity denial and restored reads [241.57ms]
+(pass) runner retains cleanup evidence when its own initial registration refuses [135.22ms]
+
+tests/recovery-restore-after-restart.test.ts:
+(pass) v0.34.63 — quit → blank startup → resume (new manager, same session id) restores the recovery probe [1170.07ms]
+(pass) blank restart paints the durable list objective, recovery owner, and next action before transcript load [9.83ms]
+(pass) v0.34.63 — a lifecycle start with a DIFFERENT session id stays refused while the barrier pends [539.77ms]
+(pass) v0.34.63 — source guard: the barrier-completing resume gate is wired before the foreign-session return [5.12ms]
+
+tests/load-wait-bound.test.ts:
+(pass) 153404: a 4.5h load wait is clamped to the hourly horizon with a re-check notice [505.90ms]
+(pass) 153404: a short wait inside the horizon is stored as requested [193.09ms]
+
+tests/length-exhaustion-relentless.test.ts:
+(pass) hot context with fallback refs rotates to a larger-context model [0.15ms]
+(pass) hot context at the 90% boundary still rotates [0.05ms]
+(pass) hot context without fallback refs defers to auto-compaction [0.03ms]
+(pass) roomy context grants one fresh budget, never an immediate manual park [0.02ms]
+(pass) exhaustion episodes: first wedge stays relentless, second parks [0.09ms]
+(pass) exhaustion episodes degrade garbage to a fresh first episode [0.02ms]
+(pass) unknown context heat degrades to fresh-budget, never rotate [0.02ms]
+
+tests/loops/goal.test.ts:
+(pass) v0.34.57: a compaction inside the watchdog window pauses the watchdog instead of firing the unacknowledged warning [508.50ms]
+(pass) v0.34.57: compaction rearm cap goes directly to unacknowledged without a retry [470.82ms]
+(pass) v0.34.124: a recovery resume inside the watchdog window pauses the watchdog instead of firing the unacknowledged warning [481.48ms]
+(pass) v0.34.124: recovery rearm counters clear when the dispatch watchdog settles [1.30ms]
+(pass) v0.34.124: a recovery resume OUTSIDE the grace window does not pause the watchdog [713.57ms]
+(pass) v0.34.57: a genuine stall (no compaction in the window) still fires the unacknowledged warning [762.96ms]
+
+1 tests skipped:
+(skip) commit survives the auto-committer daemon (item 32, env-gated watched repo)
+
+
+1 tests failed:
+(fail) runner refuses a green suite after a swallowed primary registration write failure [259.76ms]
+
+ 2965 pass
+ 1 skip
+ 1 fail
+Ran 2967 tests across 321 files. [686.23s]
+[run-tests] detached cleanup: 1 owned groups; 1 unverified survivors/records
+[run-tests] cleanup evidence retained at /tmp/glla-test-processes-ZC7ifm
+[run-tests] finished in 688s (exit 1)
