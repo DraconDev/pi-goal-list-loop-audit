@@ -1,0 +1,12 @@
+
+> pi-goal-list-loop-audit@0.38.106 release:check
+> npm run test:all && npm run check:inventory && npm pack --dry-run && node scripts/release-pack-smoke.mjs
+
+
+> pi-goal-list-loop-audit@0.38.106 test:all
+> node scripts/run-tests.mjs --all && tsc --noEmit && node tests/repro-jiti-state-split.test.mjs && npm run test:auditor-extensions
+
+[run-tests] mode=all slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-stale-context.test.ts:

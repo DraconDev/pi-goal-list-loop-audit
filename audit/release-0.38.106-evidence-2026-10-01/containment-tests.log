@@ -1,0 +1,48 @@
+
+> pi-goal-list-loop-audit@0.38.106 test
+> node scripts/run-tests.mjs tests/compactor-worker-lifecycle.test.ts tests/process-registration-faults.test.ts tests/test-runner-lifecycle.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/compactor-worker-lifecycle.test.ts:
+(pass) compactor cleans its Pi tree on SIGTERM, including inherited pipes and TERM-ignoring children [2068.43ms]
+(pass) compactor cleans its Pi tree on timeout, including inherited pipes and TERM-ignoring children [4118.11ms]
+(pass) compactor cleans its Pi tree on normal, including inherited pipes and TERM-ignoring children [1627.75ms]
+(pass) compactor cleans its Pi tree on result-write-failure, including inherited pipes and TERM-ignoring children [950.00ms]
+
+tests/process-registration-faults.test.ts:
+(pass) process registration first-write failure is visible and stops the owned child [3677.53ms]
+(pass) process registration rename failure is visible and stops the owned child [4351.12ms]
+(pass) process registration owner-loss failure is visible and stops the owned child [2533.54ms]
+(pass) process registration refresh failure is visible and stops the owned child [3395.79ms]
+(pass) process registration primary-loss failure is visible and stops the owned child [2605.74ms]
+(pass) process registration obligation-write failure is visible and stops the owned child [2367.99ms]
+[run-tests] progress: 30s elapsed · 2s since last output · 1 KiB of suite output
+(pass) process registration obligation-owner-loss failure is visible and stops the owned child [2130.52ms]
+(pass) process registration initial-owner-loss failure is visible and stops the owned child [895.22ms]
+(pass) process registration stat-denied failure is visible and stops the owned child [713.54ms]
+(pass) process registration stat-malformed failure is visible and stops the owned child [420.17ms]
+(pass) process registration stat-missing failure is visible and stops the owned child [492.77ms]
+(pass) proven already-exited child retires its declaration without a cleanup failure [145.89ms]
+(pass) proven proc-disappeared child retires its declaration without a cleanup failure [115.14ms]
+(pass) proven suite-group child retires its declaration without a cleanup failure [65.50ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [451.78ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [135.48ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [147.57ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5155.59ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [700.79ms]
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [135.96ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on normal exit [1493.54ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on signal exit [1322.66ms]
+(pass) registry refuses to signal a record naming a reused leader identity [17.58ms]
+(pass) runner refuses a green suite after a swallowed primary registration write failure [149.30ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [164.76ms]
+(pass) parent runner fails after swallowed initial identity denial and restored reads [120.32ms]
+
+ 30 pass
+ 0 fail
+Ran 30 tests across 3 files. [43.36s]
+[run-tests] finished in 43s (exit 0)
