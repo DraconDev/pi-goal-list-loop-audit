@@ -2256,3 +2256,81 @@ tests/pause-anti-confabulation.test.ts:
 (pass) claimed-missing matches absence language only [8.30ms]
 (pass) pause claiming a missing tool is refused with a correction, goal stays active [726.19ms]
 (pass) pause quoting pi's own not-found error is accepted as a genuine outage [623.76ms]
+(pass) ordinary pauses are untouched by the guard [562.83ms]
+
+tests/failover-primary-probe.test.ts:
+(pass) failover stamps the primary reset while fallback-chain work proceeds [77.38ms]
+(pass) hintless primary failure stamps no reset [1.73ms]
+(pass) background primary probe fires at reset, not on the generic cadence [0.73ms]
+(pass) no reset keeps the generic probe cadence [0.42ms]
+
+tests/stats-reliability.test.ts:
+(pass) reliability derives an open failure episode and elapsed audit cost without counting repeated snapshots [136.16ms]
+(pass) successful semantic review or terminal archive resolves failure age; missing samples stay unknown [0.62ms]
+(pass) recovery-only state preserves failure age and future/malformed timestamps remain unknown [0.20ms]
+
+tests/pending-latch.test.ts:
+(pass) watchdog fires on the field-observed shape: supervising + idle + pending + no timers + silent >= threshold [65.26ms]
+(pass) watchdog does NOT fire when any guard fails [0.06ms]
+(pass) threshold is 3 minutes (post-compaction settle is 2s; legit queue latency is seconds) [0.02ms]
+(pass) heartbeat wiring: idle/pending split, watchdog branch, ledger event, wedge uses !idle, shared escalation [0.73ms]
+(pass) the exact 'ℹ todo 0' junk line (enqueued as a /list item by the 0.26.2 reviewer) never classifies [0.47ms]
+
+tests/repository-receipts.test.ts:
+(pass) repository-only findings are archive-only, without empty chat groups [8.59ms]
+(pass) repository receipt stays archival while substantive ledger fixes remain visible [95.80ms]
+(pass) flat receipts are archive-only while limitations remain visible [0.84ms]
+(pass) mixed receipt vocabulary never deletes repairs or unperformed checks [4.66ms]
+(pass) archive keeps unknown proof; chat keeps the detailed narrative focused [4.33ms]
+
+tests/audit-change-scope.test.ts:
+(pass) change-scope: extractor reads file_path/path and drops everything else [0.43ms]
+(pass) change-scope: recorder keeps first-seen order, dedupes, and counts overflow [111.26ms]
+(pass) change-scope: write tool calls record their paths on the active goal [315.77ms]
+[run-tests] progress: 360s elapsed · 0s since last output · 174 KiB of suite output
+(pass) change-scope: reads, bash, junk, and inactive goals record nothing [1578.97ms]
+(pass) change-scope: the audit brief names the recorded paths first [112.14ms]
+(pass) change-scope: the brief reports overflow and escapes paths as data [0.39ms]
+(pass) change-scope: no recorded paths keeps the previous brief shape [0.24ms]
+(pass) change-scope: the fallback summary names recorded paths, bounded [0.58ms]
+(pass) change-scope: the audit brief caps the prompt list at 20 with an omission line [0.26ms]
+
+tests/commit-survival-e2e.test.ts:
+(skip) commit survives the auto-committer daemon (item 32, env-gated watched repo)
+
+tests/compaction-input.test.ts:
+(pass) bounds successful assistant, tool-call, and tool-result content while preserving pairing [4.02ms]
+(pass) retains the newest goal payload and marks older payloads without changing message order [0.66ms]
+(pass) replaces image blocks while retaining the surrounding message structure [0.39ms]
+(pass) keeps the total bounded for a tiny caller budget with a previous summary [0.68ms]
+(pass) bounds a previous compaction summary without changing the preparation contract [0.11ms]
+(pass) leaves preparation metadata and fileOps untouched [0.26ms]
+(pass) applies one coordinated budget to summarize and turn-prefix arrays [1.67ms]
+(pass) returns no compaction result and tolerates a missing preparation [0.06ms]
+(pass) preserves both preparation-array identities when projection is a no-op [0.07ms]
+(pass) preserves the untouched half when only one preparation array needs projection [0.14ms]
+(pass) bounds every supported preparation shape and preserves pairing/order [1.30ms]
+(pass) second projection is idempotent [0.18ms]
+(pass) contains malformed preparation records without changing their positions [0.16ms]
+(pass) keeps malformed interleaved tool results paired with their calls [0.13ms]
+(pass) enforces a hard bound for arbitrarily many tiny messages [2567.35ms]
+(pass) keeps complete tool groups when high message counts force omission [171.16ms]
+
+tests/vision-assist.test.ts:
+(pass) VISION_ASSIST_GUIDANCE prefers native vision without assuming MMX [57.02ms]
+(pass) docs/VISION-ASSIST.md documents native-first guidance and the preapproval gate [0.43ms]
+(pass) visionDescribeCommand builds the exact mmx call [10.45ms]
+(pass) routeVisionCheck: a forbidden target stays on the current model [0.24ms]
+(pass) routeVisionCheck: confirmed MMX is an optional external fallback [0.13ms]
+(pass) routeVisionCheck: native vision is the default and no external tool is assumed [0.10ms]
+(pass) routeVisionCheck: known unavailable native vision fails closed [0.20ms]
+(pass) routeVisionCheck: model switch requires explicit opt-in [0.10ms]
+(pass) isForbiddenModel: v0.34.115 default is empty — no model is forbidden by default [0.14ms]
+(pass) visionAssistLedger builds a native-model audit payload [0.17ms]
+(pass) continuation prompts carry native-first VISION-ASSIST guidance by default [512.64ms]
+(pass) visionAssist off → the directive is dropped from continuation prompts (gate still ships) [307.58ms]
+(pass) a forbidden switch at runtime records the vision_assist routing entry [11.88ms]
+(pass) visionAssist off → the forbidden switch records no vision_assist entry (gate still fires) [6.79ms]
+
+tests/audit-convergence-breaker.test.ts:
+(pass) audit-convergence-breaker — hard cap > hard cap pauses even under aggressive keep-going [3395.55ms]
