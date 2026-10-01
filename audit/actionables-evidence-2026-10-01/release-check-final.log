@@ -3697,3 +3697,29 @@ tests/session-visibility.test.ts:
 (pass) future verdict timestamp suppresses the age instead of printing 0s ago [0.62ms]
 
 tests/completion-recap-shape.test.ts:
+(pass) structured completion recap survives archive rendering and the terminal widget [151.57ms]
+(pass) auditor receives completionSummary and verificationSummary independently [2.06ms]
+(pass) complete_goal tool schema references the six-label policy [2.78ms]
+
+tests/rich-summary-dedup.test.ts:
+(pass) 172705: exact-duplicate details render once per bucket [0.71ms]
+(pass) 172705: zero turns omitted, elapsed and audits kept [0.54ms]
+
+tests/runtime-globals-contract.test.ts:
+(pass) runtime global bridge has one typed declaration for every registration [23.09ms]
+(pass) audit-2026-09-06: runtime globals register exactly once per process [0.47ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [822.69ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [753.52ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [974.68ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5658.15ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [861.06ms]
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [528.37ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on normal exit [2129.17ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on signal exit [1978.57ms]
+(pass) registry refuses to signal a record naming a reused leader identity [142.03ms]
+(pass) runner refuses a green suite after a swallowed primary registration write failure [738.83ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [825.44ms]
+
+tests/recovery-restore-after-restart.test.ts:
