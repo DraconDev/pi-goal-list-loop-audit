@@ -80,6 +80,7 @@ test("unreadable session context fails closed without throwing", () => {
 
 test("countDetailAnchors counts distinct evidence classes, not repeats", () => {
   assert.equal(countDetailAnchors("fix the login thing"), 0);
+  assert.equal(countDetailAnchors("decide before/after the release whether to keep it"), 0);
   assert.equal(countDetailAnchors("fix it in tests/a.test.ts and tests/b.test.ts"), 1);
   assert.equal(
     countDetailAnchors("Fix tests/a.test.ts; verify with `bun test` in under 30s:\n- [ ] repro\n- [ ] fix"),
