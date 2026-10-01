@@ -1,0 +1,18 @@
+{
+  "focused": {
+    "command": "npm test -- tests/state-root-failure.test.ts tests/process-registration-faults.test.ts tests/test-runner-lifecycle.test.ts tests/terminal-approval-render.test.ts tests/terminal-summary-delivery.test.ts",
+    "exitCode": 0,
+    "pass": 63,
+    "fail": 0
+  },
+  "registration": {
+    "command": "npm test -- tests/process-registration-faults.test.ts",
+    "exitCode": 0,
+    "pass": 13,
+    "fail": 0
+  },
+  "typescript": {
+    "command": "npx tsc --noEmit",
+    "exitCode": 0
+  }
+}

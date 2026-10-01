@@ -38,3 +38,118 @@ tests/terminal-summary-delivery.test.ts:
 
 tests/blocked-pause-autoclear.test.ts:
 (pass) v0.34.64 — blocked pause owned by recovery auto-clears when the probe succeeds [1117.82ms]
+(pass) v0.34.64 — blocked pause with a NON-recovery reason stays blocked [1035.17ms]
+(pass) v0.34.64 — wait pause owned by recovery still auto-clears [1024.19ms]
+(pass) v0.34.64 — source guard: only main-model recovery owns the auto-clear [2.83ms]
+
+tests/list-bare-draft.test.ts:
+(pass) v0.38.51: bare /list enters list drafting — agent list_add is gated [562.57ms]
+(pass) v0.38.51: /list show still renders the queue (viewer preserved) [624.09ms]
+(pass) v0.38.51: stale bare /list latches no drafting gate — a later list_add lands [483.18ms]
+
+tests/stale-interrupt-resume.test.ts:
+(pass) Goal type + schema carry the interrupt marker fields [0.34ms]
+(pass) S3 probe: side-effect-free getSessionName() probe caches the positive [0.11ms]
+(pass) S3 warn helper: honest 'state is safe' messaging + ledger [0.37ms]
+(pass) S3: probes wired at cmdSet / cmdResume / cmdList / propose_goal_draft entry [0.39ms]
+(pass) S3: stale creation marks the interrupt and tells the truth (no 'starting now' lie) [0.12ms]
+(pass) S1: stale resume persists active+marker, skips the misleading notify and the doomed send [0.07ms]
+(pass) S2: restore gate clears the marker on auto-resume and names the recovery [0.41ms]
+(pass) S2 (v0.28.21): the 0.28.3 interrupt exemption is SUPERSEDED — only autoresume=on auto-resumes [0.63ms]
+(pass) S1/S2: widget surfaces the interrupt on ACTIVE goals [0.09ms]
+(pass) E6: drafting-seed send failure is loud and stale-aware (was silent) [0.24ms]
+(pass) T1: stale Confirm is NOT a rejection — both single and batch paths [0.46ms]
+(pass) v0.28.27: stale handle silences ALL stall machinery — refiring into a dead process misleads, and the stall escalation would PAUSE an interrupted goal (killing restart auto-resume) [0.10ms]
+(pass) v0.28.27/0.29.8: /goal verify (renamed from /goal audit) — manual auditor invocation with a synthesized claim, wired into the pendingCompletion machinery [0.78ms]
+(pass) v0.29.8: /goal audit [focus] — the one-shot project audit; /glla status — the unified view [0.29ms]
+(pass) v0.34.2: cmdResume clears interruptedAt/interruptedReason on a fresh-session resume [0.12ms]
+(pass) v0.34.7: safeSteerUser wraps every orchestrator sendUserMessage (darklord crash) [3.89ms]
+(pass) v0.34.7: the fan-out float carries a catch (rejection ≠ process exit) [3.54ms]
+(pass) v0.34.7: re-kick clears the stale-handle marker (banner must not survive a working session) [0.35ms]
+
+tests/between-tasks-compaction.test.ts:
+(pass) v0.38.104 the 200k rule is a token threshold, and it is distinct from the model-size hint [0.21ms]
+(pass) v0.38.104 compaction is due past the threshold, not below it [0.08ms]
+(pass) v0.38.104 a token count, not a percentage — the same goal on a 1M window still fires at 200k [0.16ms]
+(pass) v0.38.104 it fires ONCE per episode and re-arms as the goal grows back [0.04ms]
+(pass) v0.38.104 an unknown context count never compacts blindly [0.07ms]
+(pass) v0.38.104 the threshold is overridable but must be positive [0.08ms]
+(pass) v0.38.105 the boundary fires ctx.compact past 200k and ledgers it [110.85ms]
+(pass) v0.38.105 one firing per episode; a shrunk transcript re-arms [101.87ms]
+(pass) v0.38.105 quiet boundaries: below threshold, busy, unsupervised, audit, paused, unknown, no trigger [1.16ms]
+(pass) v0.38.105 the boundary never re-arms the starvation path's brief one-shot [0.56ms]
+
+tests/auditor-scope-guard.test.ts:
+(pass) auditor scope guard — project at hand only > auditor prompt contains outside-scope guard [2.70ms]
+(pass) auditor scope guard — project at hand only > outside-scope findings are recorded but not auto-queued [24.87ms]
+(pass) auditor convergence contract — the change, not the repository > brief bounds blocking objections to the change and defines a reachable approval bar [0.47ms]
+(pass) auditor convergence contract — the change, not the repository > a first round carries no rework framing [6.04ms]
+(pass) auditor convergence contract — the change, not the repository > a rework round asks whether the PRIOR objections are closed [0.46ms]
+
+tests/finding-lead-contract.test.ts:
+(pass) canonical and legacy Lead inputs render the same outcome/evidence [2.27ms]
+(pass) legacy topical and semantic labels are not exposed as finding labels [0.64ms]
+(pass) technical-only legacy claims stay out of default chat [0.48ms]
+(pass) archive table uses outcome/evidence columns and keeps proof [0.42ms]
+(pass) widget projects the normalized outcome without legacy Lead or technical labels [0.46ms]
+(pass) terminal and archive human sections share the What Changed contract [1.70ms]
+(pass) normalization is raw-preserving and does not split path/version colons [0.17ms]
+(pass) normalization strips dash-separated label prefixes (Lead –/Tests –) [0.15ms]
+(pass) archive preserves technical group findings and Verdict details as evidence instead of dropping them [0.27ms]
+(pass) chat still suppresses technical findings after the archive-preservation fix [0.11ms]
+
+tests/real-host-canary.test.ts:
+(pass) real-host canary reports an explicit skip without opt-in or spawning Pi [51.47ms]
+(pass) opt-in canary installs its request guard and records bounded host evidence (stub host) [128.35ms]
+(pass) generated canary uses actual Pi dispatcher and allowed transport behavior [989.71ms]
+(pass) generated canary uses actual Pi dispatcher and unknown-price transport behavior [994.10ms]
+(pass) generated canary uses actual Pi dispatcher and over-budget transport behavior [918.26ms]
+(pass) generated canary uses actual Pi dispatcher and unsupported-cap transport behavior [1193.59ms]
+(pass) generated canary uses actual Pi dispatcher and oversized transport behavior [1212.14ms]
+(pass) generated canary uses actual Pi dispatcher and second-request transport behavior [920.68ms]
+(pass) generated canary uses actual Pi dispatcher and receipt-write transport behavior [346.38ms]
+
+tests/glla-bug-capture.test.ts:
+(pass) /glla bug writes to dedicated bugs artifact and leaves durable goal state untouched [401.94ms]
+(pass) /glla bug without message still captures and does not mutate state [327.74ms]
+(pass) source: cmdGllaBug exists and writes to bugs/ without persistState [4.08ms]
+(pass) source: /glla bug is registered in completions and handler [0.35ms]
+
+tests/recovery-status-format.test.ts:
+(pass) trajectory: attempts and failing-since render when present [0.58ms]
+(pass) trajectory: absent counters render no row [0.11ms]
+(pass) cause: deterministic class is named, transients stay unlabeled [0.10ms]
+(pass) existing rows keep their shape [0.07ms]
+
+tests/pause-auto-commit.test.ts:
+(pass) pauseAutoCommit writes the sentinel; isAutoCommitPaused sees it (item 31) [1.33ms]
+(pass) resumeAutoCommit removes the sentinel (item 31) [0.41ms]
+
+tests/canary-budget.test.ts:
+(pass) canary bounds output and requests, removes tools, and preserves the caller payload [2.09ms]
+(pass) canary refuses unsupported caps, unknown prices, oversized input, and excessive estimated spend before sending [0.78ms]
+
+tests/goal-loop-display.test.ts:
+(pass) active goal card pins primary, ordered fallbacks, skipped forbidden refs, and handled models [21.38ms]
+(pass) v0.38.28: duplicate handled-turn provenance is omitted; lone inherited row is dropped [0.76ms]
+(pass) v0.38.29: active recovery is a compact model row, not a duplicate report [0.39ms]
+(pass) v0.38.29: settled recovery does not leave Markdown noise in the head [0.28ms]
+(pass) card head cuts the objective at a clause boundary, never mid-word [0.34ms]
+(pass) truncateObjective keeps clause boundaries with emoji and CJK prefixes [0.62ms]
+(pass) truncateObjective falls back to a character cut with no usable boundary [0.06ms]
+(pass) active card with an action row closes the tree [0.28ms]
+(pass) v0.38.104: objective truncation never splits a surrogate pair [0.35ms]
+(pass) v0.38.105: recovery banner shows the loop target for loop-only state [0.15ms]
+(pass) v0.38.105: loop surfaces show the cadence countdown during the gap [0.61ms]
+(pass) v0.38.105: no countdown once the gap elapsed or cadence unset [0.12ms]
+(pass) v0.38.105: recovery selector preserves goal and list precedence [0.16ms]
+
+tests/plan-mode.test.ts:
+(pass) v0.35.33: /goal plan routes as a sub with the seed as rest [14.88ms]
+(pass) v0.35.33: plain objectives are NOT captured by the plan verb [0.67ms]
+(pass) v0.35.33: draftingTemplateFile swaps prompts per target × depth [0.21ms]
+(pass) v0.35.33: both plan prompt files exist, carry the drafting markers, and mandate Confirm-gated proposals [0.62ms]
+(pass) v0.35.44: source pins — the draftingDepth dead-state global is GONE (audit fix) [1.37ms]
+(pass) v0.35.33: source pins — all three verbs dispatch with depth plan [0.28ms]
+(pass) v0.35.33: /list plan is gated as a mutating subcommand on stale handles [0.04ms]
+(pass) v0.35.33: completions advertise the plan verb on all three commands [0.46ms]
