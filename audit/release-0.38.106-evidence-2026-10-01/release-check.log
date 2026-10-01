@@ -2412,3 +2412,100 @@ tests/run-to-done.test.ts:
 (pass) run-to-done: batch drafts refuse the flag instead of dropping it [721.46ms]
 (pass) run-to-done: decisions auto-default immediately with no budget set [229.70ms]
 [run-tests] progress: 390s elapsed · 0s since last output · 183 KiB of suite output
+(pass) run-to-done: the audit cap parks instead of converting to TODOs [3778.52ms]
+(pass) run-to-done: aggressive cap conversion is preserved without the flag [3112.00ms]
+(pass) run-to-done: session start resumes held work without global autoResume; blocked parks stay parked [394.38ms]
+(pass) run-to-done: held work stays held without the flag or global consent [485.50ms]
+(pass) run-to-done: the status line names the mode [0.42ms]
+
+tests/durable-wait.test.mjs:
+(pass) durable wait succeeds before its deadline and reports elapsed polling [61.89ms]
+(pass) durable wait returns a real timeout instead of treating elapsed time as success [2.90ms]
+(pass) a late done observation after the deadline is a timeout, not success [0.17ms]
+(pass) archive-count waits use the same durable deadline and return the observed count [1.99ms]
+(pass) a restarted waiter observes the same durable file without an old timer [0.88ms]
+(pass) provider recovery is a terminal reason, never a false approval or timeout [0.68ms]
+(pass) smoke harness uses the durable wait CLI for durable outcomes [4.88ms]
+
+tests/autoresume-default.test.ts:
+(pass) /glla settings persists explicit auto-resume off (tri-state, not undefined) [59.02ms]
+(pass) settings table shows the tri-state honestly [0.83ms]
+(pass) hold-on-load text offers the explicit resume + the on opt-in [0.44ms]
+
+tests/interrupt-didnt-continue.test.ts:
+(pass) FIX A: a never-set revision (undefined) + captured 0 is CURRENT, not stale [61.65ms]
+(pass) FIX A: captured 0 against a genuinely bumped goal is still refused [0.15ms]
+(pass) FIX A: equal non-zero revisions stay current; bumps refuse [0.05ms]
+(pass) FIX A pin: the refusal guard uses isGoalRevisionCurrent, not raw !== on undefined [9.94ms]
+(pass) FIX B pin: the refusal branch restores status active so the loop continues [3.37ms]
+(pass) behavior preserved: a GENUINE orphaned audit still parks with the same message [8.00ms]
+
+tests/objection-pinning.test.ts:
+(pass) v0.38.21 two disapproval rounds: R1 retired with its objections attached, prompt argues R2 only [2967.93ms]
+(pass) v0.38.21 appendAuditVerdict: clean approval clears the pin, shield-clear counts, errors never touch flags [0.48ms]
+
+tests/completion-density-lint.test.ts:
+(pass) density lint: evidence tokens in the summary pass [0.59ms]
+(pass) density lint: tokens inside finding groups count [0.15ms]
+(pass) density lint: gate rows count as density without tokens [0.05ms]
+(pass) density lint: zero tokens and zero gates is annotated [0.31ms]
+
+tests/stuck-audit-latch.test.ts:
+(pass) Fix A: the apply gate defers + parks instead of silently dropping a completed verdict [46.89ms]
+(pass) Fix B: the stale-latch stranded park runs BEFORE the extensionApiStale early return [0.38ms]
+(pass) Fix B: the park requires the exact stuck signature (auditing, no in-flight, claim, 90s silence) [2.18ms]
+(pass) audit 2026-09-25: stranded_audit_recovered is ledgered only after the park lands [0.51ms]
+
+tests/regression-shield.test.ts:
+(pass) contractItems: strips the 'Done when:' marker line [58.56ms]
+(pass) contractItems: handles inline single-line contracts [0.05ms]
+(pass) contractItems: strips bullets and numbering [0.12ms]
+(pass) contractItems: drops empty lines [0.05ms]
+(pass) contractItems: skips wrapped prose preamble in list-shaped contracts [0.11ms]
+(pass) contractItems: shapeless contracts keep every-line behavior [0.03ms]
+(pass) contractItems: a Done-when criterion survives alongside bullets [0.07ms]
+(pass) passes: preamble fragments are not required in evidence [0.44ms]
+(pass) passes: evidence block present, all items referenced [0.10ms]
+(pass) rejects: approval without an evidence block [0.08ms]
+(pass) rejects: evidence block but an item is not addressed [0.08ms]
+(pass) rejects: bamboozle-style empty evidence block [0.05ms]
+(pass) rejects: contract prose outside evidence cannot satisfy the shield [0.09ms]
+(pass) distinctive-token matching: references the item by a filename [0.04ms]
+(pass) case-insensitive matching [0.03ms]
+(pass) contractItems: excludes 'Out of scope' boundary lines [0.04ms]
+(pass) compound tokens match via segments (left-cropped → left + cropped) [0.10ms]
+(pass) prose punctuation glued to tokens does not break matching (file/element.) [0.08ms]
+(pass) top-3 candidate matching tolerates contract-only vocabulary [0.11ms]
+(pass) still rejects: bamboozle report that never touches the item's vocabulary [0.08ms]
+(pass) CJK: a verbatim-quoted Chinese item passes (token is one CJK word, not delimiters) [2.94ms]
+(pass) CJK: a quote that drops the trailing full-width colon still matches [0.13ms]
+(pass) CJK: a Chinese line with no ASCII letters is one candidate token [0.04ms]
+(pass) CJK: an English-only paraphrase of a Chinese item is still rejected (strict shield) [0.27ms]
+(pass) CJK: mixed item matches on its ASCII token even when CJK words are not quoted [0.19ms]
+(pass) ASCII behavior is unchanged: distinctive-token + compound matching still work [0.09ms]
+(pass) contractItems: 'Done when ALL of the following are true:' preamble is dropped [0.04ms]
+(pass) contractItems: preamble without trailing colon is also dropped [0.02ms]
+(pass) shield passes a genuine approval that a preamble-only false positive used to block [0.06ms]
+(pass) extractMechanicalCheckCommands: extracts backticked and raw shell commands [504.57ms]
+(pass) extractMechanicalCheckCommands: skips commands under negation [1.24ms]
+(pass) extractMechanicalCheckCommands: rejects never-exiting server commands [0.48ms]
+(pass) v0.35.16: mechanical checks keep the TAIL of failed output and banner a timeout kill [1368.22ms]
+(pass) mechanical checks stay async and kill descendant processes on timeout [2967.49ms]
+(pass) mechanical checks stop a runaway process group before the wall timeout [299.83ms]
+(pass) v0.35.18: resolveCanonicalRunnerCommand maps raw runners to their canonical package script [57.79ms]
+(pass) v0.35.20: runMechanicalPreAuditChecks retries a transiently failing check exactly once, honestly bannered [736.62ms]
+(pass) v0.38.23: mechanical checks resolve project-local node_modules/.bin (bare tsc ENOENT field fix) [104.69ms]
+
+tests/auditor-challenge.test.ts:
+(pass) challenge: approval earns a falsification round; re-confirm preserves the verdict [678.39ms]
+(pass) challenge: a challenge disapproval flips the verdict by final line [788.12ms]
+(pass) challenge: round-1 disapprovals run single-round [514.06ms]
+(pass) challenge: a failed challenge falls back to byte-identical round-1 output [780.73ms]
+(pass) strict challenge: a failed falsification pass is infrastructure/no-verdict [438.55ms]
+(pass) strict challenge: an explicit requirement overrides a policy skip [577.58ms]
+(pass) challenge: a failed round 1 still fails without challenging [304.71ms]
+(pass) challenge: a light-tier request skips round 2 and records the skip [458.64ms]
+(pass) challenge: a rework-streak skip is NOT recorded as a light-tier audit (v0.38.104) [687.27ms]
+(pass) challenge: a request with no reason keeps the light-tier default (v0.38.104) [283.71ms]
+
+tests/multi-model-picker.test.ts:
