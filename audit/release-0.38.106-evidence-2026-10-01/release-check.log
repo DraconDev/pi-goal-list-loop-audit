@@ -3712,3 +3712,51 @@ tests/completion-recap-shape.test.ts:
 (pass) complete_goal tool schema references the six-label policy [0.56ms]
 
 tests/rich-summary-dedup.test.ts:
+(pass) 172705: exact-duplicate details render once per bucket [0.60ms]
+(pass) 172705: zero turns omitted, elapsed and audits kept [0.41ms]
+
+tests/runtime-globals-contract.test.ts:
+(pass) runtime global bridge has one typed declaration for every registration [125.30ms]
+(pass) audit-2026-09-06: runtime globals register exactly once per process [0.94ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [535.81ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [207.02ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [219.77ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5206.95ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [779.36ms]
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [294.83ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on normal exit [1585.67ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on signal exit [1440.95ms]
+(pass) registry refuses to signal a record naming a reused leader identity [18.13ms]
+(pass) runner refuses a green suite after a swallowed primary registration write failure [132.85ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [238.05ms]
+(pass) parent runner fails after swallowed initial identity denial and restored reads [297.25ms]
+(pass) runner retains cleanup evidence when its own initial registration refuses [131.91ms]
+
+tests/recovery-restore-after-restart.test.ts:
+(pass) v0.34.63 — quit → blank startup → resume (new manager, same session id) restores the recovery probe [1266.99ms]
+(pass) blank restart paints the durable list objective, recovery owner, and next action before transcript load [5.95ms]
+[run-tests] progress: 600s elapsed · 0s since last output · 280 KiB of suite output
+(pass) v0.34.63 — a lifecycle start with a DIFFERENT session id stays refused while the barrier pends [579.62ms]
+(pass) v0.34.63 — source guard: the barrier-completing resume gate is wired before the foreign-session return [5.74ms]
+
+tests/load-wait-bound.test.ts:
+(pass) 153404: a 4.5h load wait is clamped to the hourly horizon with a re-check notice [371.83ms]
+(pass) 153404: a short wait inside the horizon is stored as requested [246.33ms]
+
+tests/length-exhaustion-relentless.test.ts:
+(pass) hot context with fallback refs rotates to a larger-context model [0.18ms]
+(pass) hot context at the 90% boundary still rotates [0.03ms]
+(pass) hot context without fallback refs defers to auto-compaction [0.02ms]
+(pass) roomy context grants one fresh budget, never an immediate manual park [0.03ms]
+(pass) exhaustion episodes: first wedge stays relentless, second parks [0.08ms]
+(pass) exhaustion episodes degrade garbage to a fresh first episode [0.03ms]
+(pass) unknown context heat degrades to fresh-budget, never rotate [0.02ms]
+
+tests/loops/goal.test.ts:
+(pass) v0.34.57: a compaction inside the watchdog window pauses the watchdog instead of firing the unacknowledged warning [741.55ms]
+(pass) v0.34.57: compaction rearm cap goes directly to unacknowledged without a retry [1018.35ms]
+(pass) v0.34.124: a recovery resume inside the watchdog window pauses the watchdog instead of firing the unacknowledged warning [426.51ms]
+(pass) v0.34.124: recovery rearm counters clear when the dispatch watchdog settles [4.13ms]
+(pass) v0.34.124: a recovery resume OUTSIDE the grace window does not pause the watchdog [941.04ms]
