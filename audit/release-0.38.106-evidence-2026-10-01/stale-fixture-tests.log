@@ -1,0 +1,15 @@
+
+> pi-goal-list-loop-audit@0.38.106 test
+> node scripts/run-tests.mjs tests/behavioral-orchestrator.test.ts -t stale host recovery absorbs
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/behavioral-orchestrator.test.ts:
+(pass) v0.34.27: stale host recovery absorbs the first replacement contact across lifecycle and stream boundaries [4062.62ms]
+
+ 1 pass
+ 150 filtered out
+ 0 fail
+Ran 1 test across 1 file. [4.85s]
+[run-tests] finished in 5s (exit 0)
