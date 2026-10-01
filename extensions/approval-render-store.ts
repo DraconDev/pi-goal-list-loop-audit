@@ -1,7 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { appendLedger, ensureDirs, nowIso, piGlaDir, runPersistStep } from "./goal-loop-core.js";
-import { stateRootPending } from "./glla-state-root.js";
+import { stateRootPending, withStateRootSnapshot } from "./glla-state-root.js";
+import { withOwnerMutation } from "./owner-file-protocol.js";
 import { MAX_RENDER_CHAT_LINES, MAX_RENDER_LINE_CHARS } from "./terminal-summary-limits.js";
 
 /** Durable terminal-summary outbox. A toast or a live host is not delivery:
@@ -84,15 +85,31 @@ function writeRenders(cwd: string, renders: PendingApprovalRender[]): boolean {
   return landed === true;
 }
 
+/** Only pure queue mutations run under the cross-process protocol. */
+function mutateRenders(cwd: string, action: (current: PendingApprovalRender[]) => boolean): boolean {
+  if (stateRootPending()) return false;
+  return runPersistStep("mutateApprovalRenders", () => {
+    ensureDirs(cwd);
+    return withOwnerMutation(approvalRenderStorePath(cwd), () => {
+      const current = readRenders(cwd);
+      return current !== null && action(current);
+    }) === true;
+  }) === true;
+}
+
+function renderIdentity(entry: PendingApprovalRender): string {
+  return JSON.stringify([entry.goalId, entry.createdAt, entry.objective, entry.chatLines]);
+}
+const inFlightRenders = new Map<string, Set<string>>();
+
 /** Enqueue before attempting delivery. Only replay can acknowledge it. */
 export function persistApprovalRender(cwd: string, render: {
   goalId: string;
   objective: string;
   chatLines: string[];
 }): boolean {
+  return withStateRootSnapshot(() => mutateRenders(cwd, existing => {
   const at = nowIso();
-  const existing = readRenders(cwd);
-  if (existing === null) return false;
   // v0.38.30 truncation (also code-point-safe): compare what WOULD be
   // stored, so an identical re-persist of long lines still dedups.
   const incomingLines = render.chatLines.slice(0, MAX_RENDER_CHAT_LINES)
@@ -131,6 +148,7 @@ export function persistApprovalRender(cwd: string, render: {
     lines: render.chatLines.length,
   });
   return true;
+  }));
 }
 
 /** Replay oldest first through the ownership-fenced sender, with bounded
@@ -142,48 +160,56 @@ export function replayUndeliveredApprovalRenders(
   deliver: (entry: PendingApprovalRender) => boolean = () => false,
   onlyGoalId?: string,
 ): number {
-  const renders = readRenders(ctx.cwd);
-  if (renders === null || renders.length === 0) return 0;
-  const inScope = (e: PendingApprovalRender) => !e.deliveredAt && (!onlyGoalId || e.goalId === onlyGoalId);
-  const pending = renders.filter(inScope).slice(0, MAX_REPLAY_PER_CONTACT);
-  if (pending.length === 0) return 0;
-  const at = nowIso();
-  let replayed = 0;
-  for (const entry of pending) {
+  return withStateRootSnapshot(() => {
+    if (stateRootPending()) return 0;
+    const renders = readRenders(ctx.cwd);
+    if (renders === null || renders.length === 0) return 0;
+    const file = approvalRenderStorePath(ctx.cwd);
+    const inFlight = inFlightRenders.get(file) ?? new Set<string>();
+    inFlightRenders.set(file, inFlight);
+    const inScope = (e: PendingApprovalRender) => !e.deliveredAt && (!onlyGoalId || e.goalId === onlyGoalId);
+    const pending = renders.filter(e => inScope(e) && !inFlight.has(renderIdentity(e))).slice(0, MAX_REPLAY_PER_CONTACT);
+    const attempted = new Set<string>();
+    let replayed = 0;
     try {
-      if (!deliver(entry)) continue;
-      entry.deliveredAt = at;
-      replayed += 1;
-      appendLedger(ctx.cwd, "terminal_approval_render_replayed", {
-        goalId: entry.goalId,
-        createdAt: entry.createdAt,
+      for (const entry of pending) {
+        const key = renderIdentity(entry);
+        // Nested replay may have acknowledged a later entry already.
+        const current = readRenders(ctx.cwd);
+        if (current === null) break;
+        if (!current.some(e => renderIdentity(e) === key && inScope(e)) || inFlight.has(key)) continue;
+        attempted.add(key);
+        inFlight.add(key);
+        try {
+          // Host delivery is deliberately outside the mutation lock.
+          if (!deliver(entry)) continue;
+          replayed++;
+          const at = nowIso();
+          mutateRenders(ctx.cwd, latest => {
+            const match = latest.find(e => renderIdentity(e) === key);
+            if (!match || match.deliveredAt) return true;
+            match.deliveredAt = at;
+            return writeRenders(ctx.cwd, latest);
+          });
+          appendLedger(ctx.cwd, "terminal_approval_render_replayed", { goalId: entry.goalId, createdAt: entry.createdAt });
+        } catch { break; }
+        finally { inFlight.delete(key); }
+      }
+      // Rotate only attempted entries still pending in the CURRENT queue.
+      // This retains callback enqueues and nested replay acknowledgements.
+      if (attempted.size) mutateRenders(ctx.cwd, latest => {
+        const stalled = latest.filter(e => inScope(e) && attempted.has(renderIdentity(e)));
+        if (!stalled.length || latest.filter(inScope).length <= stalled.length) return true;
+        const moved = new Set(stalled);
+        const rest = latest.filter(e => !moved.has(e));
+        let insertAt = rest.length;
+        rest.forEach((e, i) => { if (inScope(e)) insertAt = i + 1; });
+        rest.splice(insertAt, 0, ...stalled);
+        return writeRenders(ctx.cwd, rest);
       });
-    } catch {
-      // Leave undelivered for the next live contact; never break the
-      // command that triggered the replay.
-      break;
+      return replayed;
+    } finally {
+      if (inFlight.size === 0) inFlightRenders.delete(file);
     }
-  }
-  // Fair rotation: the window above always takes the oldest pending
-  // entries, so persistently unconfirmed receipts used to pin the head
-  // forever and a later render was never attempted in that session.
-  // Attempted-but-still-pending entries rotate behind the unattempted
-  // in-scope tail — stable within each group, delivered and out-of-scope
-  // entries untouched — so every pending render is attempted within
-  // ceil(n/MAX_REPLAY_PER_CONTACT) contacts. No entry is dropped and the
-  // confirmation rules are unchanged; rotation alone never acknowledges.
-  const stalled = pending.filter((e) => !e.deliveredAt);
-  let rotated = false;
-  if (stalled.length > 0 && renders.filter(inScope).length > pending.length) {
-    const moved = new Set(stalled);
-    const rest = renders.filter((e) => !moved.has(e));
-    let insertAt = rest.length;
-    rest.forEach((e, i) => { if (inScope(e)) insertAt = i + 1; });
-    rest.splice(insertAt, 0, ...stalled);
-    renders.length = 0;
-    renders.push(...rest);
-    rotated = true;
-  }
-  if (replayed > 0 || rotated) writeRenders(ctx.cwd, renders);
-  return replayed;
+  });
 }
