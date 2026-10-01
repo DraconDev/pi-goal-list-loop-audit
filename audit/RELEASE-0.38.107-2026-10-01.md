@@ -31,7 +31,9 @@ https://github.com/DraconDev/pi-goal-list-loop-audit/releases/tag/v0.38.107 .
 Publishing workflow `36887869040` completed successfully, including the tagged
 release contract: **2984 passed, 1 skipped, 0 failed**, plus the remaining checks.
 npm accepted trusted publishing with signed provenance and reports asynchronous
-package processing. Registry availability is still pending; this report does
-not yet claim that version/latest are available. Existing Pi hosts
+package processing. At 16:18:23 UTC (15 minutes after acceptance), the exact
+version endpoint still returned 404 and latest remained 0.38.106. Registry
+availability and published-tarball verification remain pending; the successful
+publish workflow is not evidence of public availability. Existing Pi hosts
 must load the updated plugin to use the recovery path. SEO's saved result is a
 disapproval, so reconciliation exposes rework rather than declaring completion.

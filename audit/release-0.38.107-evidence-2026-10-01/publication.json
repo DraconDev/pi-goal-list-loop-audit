@@ -9,5 +9,9 @@
   "workflowStatus": "completed",
   "npmStatus": "accepted-processing",
   "verifiedAt": "2026-10-01T16:07:04.812419+00:00",
-  "workflowConclusion": "success"
+  "workflowConclusion": "success",
+  "registryVersionStatus": 404,
+  "registryLatest": "0.38.106",
+  "registryVerifiedAt": "2026-10-01T16:18:23.491828+00:00",
+  "remainingVerification": "Wait for npm asynchronous processing, then verify exact version/latest, tag gitHead, tarball integrity and all shipped files."
 }
