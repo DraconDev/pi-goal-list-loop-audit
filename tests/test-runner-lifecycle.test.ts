@@ -7,13 +7,16 @@ import { spawn } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { createTestProcessRegistry, reapOwnedTestProcesses } from "../scripts/test-process-registry.mjs";
 
-async function runStub(source: string, signal?: NodeJS.Signals): Promise<{ code: number | null; output: string }> {
+async function runStub(source: string, signal?: NodeJS.Signals, preload?: string): Promise<{ code: number | null; output: string }> {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "glla-runner-lifecycle-"));
   let child: ReturnType<typeof spawn> | undefined;
   try {
     fs.writeFileSync(path.join(cwd, "bun"), `#!/usr/bin/env node\n${source}\n`, { mode: 0o755 });
-    child = spawn("node", [path.resolve("scripts/run-tests.mjs"), "--all"], {
-      env: { ...process.env, PATH: `${cwd}${path.delimiter}${process.env.PATH}`, GLLA_TEST_RUNNER_QUIET: "0" },
+    const bootstrap = path.join(cwd, "preload.mjs");
+    if (preload) fs.writeFileSync(bootstrap, preload);
+    child = spawn("node", [...(preload ? ["--import", bootstrap] : []), path.resolve("scripts/run-tests.mjs"), "--all"], {
+      env: { ...process.env, PATH: `${cwd}${path.delimiter}${process.env.PATH}`, GLLA_TEST_RUNNER_QUIET: "0",
+        ...(preload ? { GLLA_TEST_ROOT_PROCESS_REGISTRY: "", GLLA_TEST_ROOT_PROCESS_TOKEN: "" } : {}) },
       stdio: ["ignore", "pipe", "pipe"],
     });
     let output = "";
@@ -190,6 +193,28 @@ test('parent runner fails after swallowed initial identity denial and restored r
     worker.once('exit',()=>process.exit(0));
   })();`);
   assert.equal(result.code, 1, result.output);
+  assert.match(result.output, /unverified survivors\/records/);
+  const retained = result.output.match(/cleanup evidence retained at (.+)/)?.[1];
+  assert.ok(retained, result.output);
+  fs.rmSync(retained, { recursive: true, force: true });
+  fs.rmSync(`${retained}.obligations`, { recursive: true, force: true });
+});
+
+test('runner retains cleanup evidence when its own initial registration refuses', {
+  skip: process.platform !== 'linux', timeout: 30_000,
+}, async () => {
+  const result = await runStub('setInterval(()=>{},1000);', undefined, `
+    import fs from 'node:fs';import {syncBuiltinESMExports} from 'node:module';
+    const read=fs.readFileSync;let refused=false;
+    fs.readFileSync=(file,...args)=>{
+      if(!refused && /^\\/proc\\/\\d+\\/stat$/.test(String(file))){
+        refused=true;throw Object.assign(new Error('initial identity denied'),{code:'EACCES'});
+      }
+      return read(file,...args);
+    };syncBuiltinESMExports();
+  `);
+  assert.equal(result.code, 1, result.output);
+  assert.match(result.output, /could not register bun/);
   assert.match(result.output, /unverified survivors\/records/);
   const retained = result.output.match(/cleanup evidence retained at (.+)/)?.[1];
   assert.ok(retained, result.output);
