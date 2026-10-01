@@ -1,0 +1,13 @@
+{
+  "source": "media/glla-thumb.svg",
+  "asset": "media/glla-icon.png",
+  "width": 1024,
+  "height": 1024,
+  "bytes": 155611,
+  "sha256": "e4886e0801c05d5131d00e8ee8331536189f13efe5fd71c9ffaf38e6139b0166",
+  "publicUrl": "https://raw.githubusercontent.com/DraconDev/pi-goal-list-loop-audit/main/media/glla-icon.png",
+  "visualReview": "96px preview checked for readable loop, check and progress node; no external font dependency",
+  "companionManifest": "*",
+  "companionLock": "0.74.0",
+  "version": "0.38.106"
+}
