@@ -1,0 +1,56 @@
+{
+  "verifiedAt": "2026-10-01T09:22:52.314180+00:00",
+  "head": "fb057fe07a941b7be5c701d4c5b0d3be61034bcc",
+  "releaseExitCode": 0,
+  "sourceDigest": "0026c8d170f69d5a847c8f5a068d10f5c9a118d6d4e79651198d2dd1192a5522",
+  "sourceFilesVerified": 479,
+  "mismatches": [],
+  "tests": {
+    "pass": 2948,
+    "skip": 1,
+    "fail": 0,
+    "files": 320
+  },
+  "requirementChecks": {
+    "PA-1": [
+      "generated canary uses actual Pi dispatcher and allowed transport behavior",
+      "generated canary uses actual Pi dispatcher and unknown-price transport behavior",
+      "generated canary uses actual Pi dispatcher and over-budget transport behavior",
+      "generated canary uses actual Pi dispatcher and unsupported-cap transport behavior",
+      "generated canary uses actual Pi dispatcher and oversized transport behavior",
+      "generated canary uses actual Pi dispatcher and second-request transport behavior",
+      "generated canary uses actual Pi dispatcher and receipt-write transport behavior"
+    ],
+    "PA-2": [
+      "process registration first-write failure is visible and stops the owned child",
+      "process registration rename failure is visible and stops the owned child",
+      "process registration owner-loss failure is visible and stops the owned child",
+      "process registration refresh failure is visible and stops the owned child",
+      "process registration primary-loss failure is visible and stops the owned child",
+      "process registration obligation-write failure is visible and stops the owned child",
+      "process registration obligation-owner-loss failure is visible and stops the owned child",
+      "process registration initial-owner-loss failure is visible and stops the owned child",
+      "runner refuses a green suite after a swallowed primary registration write failure",
+      "runner refuses a green suite after a swallowed obligation registration write failure",
+      "registry refuses to signal a record naming a reused leader identity"
+    ],
+    "PA-3": [
+      "unreadable outbox refuses enqueue without replacing an earlier pending render",
+      "malformed and partially invalid stores preserve bytes and refuse mutations",
+      "unreadable old outbox retains new archive intent until both summaries can be queued",
+      "approval store preserves corrupt bytes and refuses enqueue until explicit recovery"
+    ],
+    "package": [
+      "OK: packed launcher loaded and worker completed its bounded RPC probe (challenge confirmed)",
+      "OK: packed glla-delegate skill loads with zero diagnostics",
+      "OK: installed and imported pi-goal-list-loop-audit@0.38.105 from its packed tarball"
+    ]
+  },
+  "historicalReportsUnchanged": {
+    "audit/POST-IMPLEMENTATION-AUDIT-2026-09-30.md": "9c1573f0b821f40b792382745eee1ed8e9d4df04",
+    "audit/FULL-PROJECT-AUDIT-2026-09-30.md": "dad79faad2e638edc8d07f7ddb6b573d2e695dc2",
+    "audit/IMPROVEMENT-IMPLEMENTATION-2026-09-30.md": "dad79faad2e638edc8d07f7ddb6b573d2e695dc2"
+  },
+  "paidProviderRequests": 0,
+  "upstreamDisposition": "Pi bundled brace-expansion advisory retained; no upstream component changed"
+}
