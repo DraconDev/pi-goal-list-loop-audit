@@ -1,9 +1,15 @@
-# Final-audit "still stuck" report — version gap, not a new bug (2026-10-01)
+# Final-audit "still stuck" report — SUPERSEDED (2026-10-01)
 
-> Read-only field inspection ~20:43–20:50 UTC, prompted by the operator
-> reporting the final-audit bug unfixed and projects showing only "working"
-> with no visible progress. No project source, journals, processes, or claims
-> modified.
+> ⚠ CORRECTION (22:30 UTC): the version-gap conclusion below is WRONG.
+> pi loads GLLA from the repo checkout itself (`../../Dev/pi-plugins/
+> pi-goal-list-loop-audit` in `~/.pi/agent/settings.json`), NOT from the
+> stale `~/.npm-global` 0.38.104 copy. Sessions run 0.38.107 + unreleased
+> working-tree changes (as of their start time). The per-case liveness
+> observations stand; the "upgrade to fix" recommendation does not — the
+> operator's "says latest but doesnt work" report is against CURRENT code
+> and remains open. See follow-up inspection below.
+
+> Original inspection ~20:43–20:50 UTC (read-only; nothing modified).
 
 ## Top finding
 
