@@ -370,6 +370,7 @@ import {
   type LoopDeps,
   type LoopFlags,
 } from "../goal-loop.js";
+import { resumeCompletedCompletionAudit } from "./goal-auditor-hooks.js";
 import { defineGoalRuntimeGlobal } from "./goal-runtime-globals.js";
 
 // =================================================================
@@ -1673,7 +1674,8 @@ function tryAbsorbHostSuccessor(ctx: ExtensionContext, via: string): boolean {
   clearDraftingState(); // the old interview belongs to the disposed generation
   appendLedger(ctx.cwd, "session_rebind_via_live_ctx", { via, generation: sessionGeneration });
   let auditRetryStarted = false;
-  if (completionAuditNeedsRecovery && state.goal?.status === "auditing") {
+  const completedAuditRecovered = completionAuditNeedsRecovery && resumeCompletedCompletionAudit(ctx);
+  if (!completedAuditRecovered && completionAuditNeedsRecovery && state.goal?.status === "auditing") {
     // The old generation's detached worker/result handler is now stale. Do
     // not let its finally block leave completionAuditInFlight latched in the
     // successor; release the MAIN and preserve the exact claim.
@@ -1684,14 +1686,14 @@ function tryAbsorbHostSuccessor(ctx: ExtensionContext, via: string): boolean {
   // silent replacement was absorbed but a parked no-verdict claim still
   // waited forever for a manual /goal|/list resume.
   if (
-    completionAuditNeedsRecovery
+    !completedAuditRecovered && completionAuditNeedsRecovery
     && state.goal?.status === "paused"
     && state.goal.pendingCompletion?.phase === "recovery-pending"
     && typeof maybeAutoRetryParkedCompletionAudit === "function"
   ) {
     auditRetryStarted = maybeAutoRetryParkedCompletionAudit("host-rebind");
   }
-  if (completionAuditNeedsRecovery) {
+  if (completionAuditNeedsRecovery && !completedAuditRecovered) {
     ctx.ui.notify(
       auditRetryStarted
         ? "glla: detached completion auditor lost with the old host — no verdict was reached; the live replacement is retrying the stored claim once."

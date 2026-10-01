@@ -240,6 +240,7 @@ import {
   normalizeAuditorInfrastructureResult,
   resolveClaimAuditTier,
   runDetachedGoalCompletionAuditor,
+  readCompletedCompletionAudit,
   DEFAULT_AUDITOR_STALL_MS,
   DEFAULT_AUDITOR_TOOL_TIMEOUT_MS,
   type AuditorFallbackAttemptInfo,
@@ -1697,6 +1698,17 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
       completionAuditGeneration = null;
     }
   }
+  applyCompletedCompletionAudit({ generation, goalId, claim, liveCtx, result, origin, auditStartMs, retriedOnce, fallbackUsed, settings });
+}
+
+function applyCompletedCompletionAudit(args: {
+  generation: number; goalId: string; claim: PendingCompletion;
+  liveCtx: ExtensionContext; result: DetachedAuditResult; origin: CompletionAuditOrigin;
+  auditStartMs: number; retriedOnce: boolean; fallbackUsed: boolean;
+  settings: ReturnType<typeof loadSettings>;
+}): void {
+  let { liveCtx, result } = args;
+  const { generation, goalId, claim, origin, auditStartMs, retriedOnce, fallbackUsed, settings } = args;
   const currentAfterAudit = freshCtxForGeneration(generation);
   if (!currentAfterAudit || !state.goal || state.goal.id !== goalId) {
     // v0.34.80 (field: 2026-08-07): NEVER drop a completed verdict silently.
@@ -2453,6 +2465,30 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
     error: result.error?.slice(0, 160),
   });
   scheduleContinuation(liveCtx, true);
+ }
+
+/** Reconcile a finished exact-claim job before parking/relaunching its auditor.
+ * Synchronous validation/application fences a successor from racing a new attempt. */
+export function resumeCompletedCompletionAudit(ctx: ExtensionContext): boolean {
+  const goal = state.goal;
+  const claim = goal?.pendingCompletion;
+  if (!goal || !claim || !claim.attemptId || isSettlingClaim(claim)
+    || (goal.status !== "auditing" && (goal.status !== "paused" || claim.phase !== "recovery-pending"))) return false;
+  if (!freshCtxForGeneration(sessionGeneration)) return false;
+  const settings = loadSettings(ctx.cwd);
+  const saved = readCompletedCompletionAudit(ctx.cwd, goal, settings.auditorStrictChallenge === true);
+  if (!saved) return false;
+  cancelDetachedGoalCompletionAuditor(ctx.cwd, claim.attemptId);
+  clearDetachedAuditRuntime();
+  appendLedger(ctx.cwd, "audit_completed_result_recovered", {
+    goalId: goal.id, attemptId: claim.attemptId, jobAttemptId: saved.jobAttemptId,
+  });
+  applyCompletedCompletionAudit({
+    generation: sessionGeneration, goalId: goal.id, claim, liveCtx: ctx,
+    result: saved.result, origin: "session-recovery",
+    auditStartMs: Date.now() - saved.durationMs, retriedOnce: false, fallbackUsed: false, settings,
+  });
+  return true;
 }
 
 /**

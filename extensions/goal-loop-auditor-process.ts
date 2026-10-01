@@ -1307,6 +1307,10 @@ interface AuditorRequest {
    * before applying the verdict. Mismatch → stale-refusal, not a silent
    * overwrite. */
   goalRevision?: GoalRevisionToken;
+  logicalAttemptId?: string;
+  recoveryIdentity?: string;
+  auditTier?: AuditTierName;
+  spotCheck?: boolean;
   /** v0.38.81: `false` on light-tier dispatches (single-round audit —
    * the worker skips the falsification pass). Absent = full tier =
    * today's challenge behavior. Part of the request hash. */
@@ -1757,6 +1761,196 @@ function stampToken<T extends GoalAuditorResult>(result: T, capturedToken: GoalR
   return { ...result, goalRevision: capturedToken };
 }
 
+/** Apply the same verdict, tool, challenge, and evidence gates to live and saved results. */
+function validateCompletedAuditorResult(args: {
+  result: AuditorResultFile;
+  goal: Goal;
+  model: string;
+  thinkingLevel: string;
+  capturedRevisionToken?: GoalRevisionToken;
+  strictChallenge: boolean;
+  startedAt: number;
+  nowMs: number;
+  lastProgress?: AuditorProgressFile;
+  onProgress?: AuditorProgressCallback;
+  reportStall: (info: Omit<AuditorStalledInfo, "attemptId" | "cost">) => void;
+}): GoalAuditorResult {
+  const { result, goal, model, thinkingLevel, capturedRevisionToken, strictChallenge, startedAt, nowMs, lastProgress, onProgress, reportStall } = args;
+  const output = stripThinkBlocks(result.output);
+  // v0.38.80: thread the falsification outcome (bounded — the
+  // worker already caps at ~130 chars; the parent trusts nothing).
+  const challenge = typeof result.challenge === "string" && result.challenge ? result.challenge.slice(0, 140) : undefined;
+  if (!result.ok) {
+    const error = result.error || "detached auditor failed";
+    const failureClass = failedResultClass(error);
+    // 2026-09-26 slow-audit hardening: the worker and the parent share
+    // one silence window, so the WORKER's own brake can win the race
+    // and publish an atomic "Auditor stalled" result instead of leaving
+    // a parent watchdog to fire. That path already classified as
+    // `timeout`, but it produced NO `auditor_stalled` evidence at all
+    // — the most common silent-past-bound failure was the one shape
+    // with no record of what it cost. Reclassify the worker's own
+    // report as the stall it is, carrying the worker's headline and
+    // the attempt's cost record.
+    if (failureClass === "timeout" && isWorkerStallError(error)) {
+      const silenceMs = lastProgress?.lastActivityAt !== undefined
+        ? Math.max(0, nowMs - lastProgress.lastActivityAt)
+        : Math.max(0, nowMs - startedAt);
+      reportStall({
+        at: nowMs,
+        reason: "worker-brake",
+        heartbeatAgeMs: silenceMs,
+        noProgressMs: silenceMs,
+        phase: lastProgress?.phase ?? "running",
+        workerError: error.slice(0, 200),
+      });
+    }
+    return { ...infra(model, thinkingLevel, error, output, capturedRevisionToken, failureClass), ...(challenge ? { challenge } : {}) };
+  }
+  if (!output.trim()) return infra(model, thinkingLevel, "auditor produced no output", output, capturedRevisionToken, "no-verdict");
+  const parsed = parseAuditorVerdict(output);
+  if (strictChallenge && parsed.approved && challenge !== "confirmed") {
+    return { ...infra(model, thinkingLevel, "Required auditor challenge was not confirmed — no verdict; resume to retry the audit.", output, capturedRevisionToken, "no-verdict"), ...(challenge ? { challenge } : {}) };
+  }
+  if (!parsed.approved && !parsed.disapproved && !parsed.impossible) return infra(model, thinkingLevel, "auditor produced no verdict marker", output, capturedRevisionToken, "no-verdict");
+  const disallowedTool = result.toolCalls.find((call) => !(AUDITOR_TOOLS as readonly string[]).includes(call.name));
+  if (disallowedTool) {
+    return infra(model, thinkingLevel, `Auditor reported unsupported tool: ${disallowedTool.name}`, output, capturedRevisionToken, "no-verdict");
+  }
+  const usedAuditTool = result.toolCalls.some((call) => (AUDITOR_TOOLS as readonly string[]).includes(call.name));
+  // v0.38.99 approval guard. The worker cancels a tool call that blows
+  // its budget and resumes the audit (v0.38.99 non-destructive tool
+  // timeout) so the completed tool calls are not thrown away. The
+  // cancelled call produced NO result, so an approval from that
+  // attempt rests on evidence the auditor never saw. Refuse the
+  // approval and fail the attempt as retryable infrastructure rather
+  // than faking a disapproval — the goal did not regress, the audit
+  // simply cannot certify it. The retry ladder then re-audits, and a
+  // later attempt that completes its verification can approve.
+  if (parsed.approved && result.verificationIncomplete === true) {
+    const cancelled = (result.cancelledToolCalls ?? []).at(-1);
+    const detail = cancelled ? ` (cancelled tool: ${cancelled.name}${cancelled.budgetMs ? ` after ${Math.round(cancelled.budgetMs / 1000)}s` : ""})` : "";
+    reportStall({
+      at: nowMs,
+      reason: "tool-timeout",
+      heartbeatAgeMs: 0,
+      noProgressMs: 0,
+      phase: lastProgress?.phase ?? "running",
+      ...(cancelled?.name ? { toolName: cancelled.name } : {}),
+      ...(cancelled?.budgetMs !== undefined ? { toolAgeMs: cancelled.budgetMs } : {}),
+    });
+    return infra(
+      model,
+      thinkingLevel,
+      `Auditor approved, but verification is incomplete — a tool call was cancelled at its time budget${detail}, so the approval was refused and the audit must be retried.`,
+      output,
+      capturedRevisionToken,
+      "timeout",
+    );
+  }
+  if (parsed.approved && !usedAuditTool) {
+    return stampToken({ approved: false, disapproved: true, output, model, thinkingLevel, challenge, error: "Auditor approved without calling any audit tool; treated as disapproved." }, capturedRevisionToken);
+  }
+  if (parsed.approved && goal.verificationContract?.trim()) {
+    const shield = checkRegressionShield(output, goal.verificationContract);
+    if (!shield.passed) {
+      // The auditor's semantic verdict was approval; the separate
+      // regression shield blocked acceptance because the report did
+      // not cite every contract item. Keep that outcome distinct from
+      // both a work disapproval and infrastructure failure.
+      return stampToken({
+        approved: true, disapproved: false, output, model, thinkingLevel, challenge,
+        regressionShieldPassed: false, regressionShieldMissing: shield.missingItems,
+      }, capturedRevisionToken);
+    }
+    onProgress?.({ phase: "complete", elapsedMs: nowMs - startedAt, recentOutput: output.split("\n").filter(Boolean).slice(-8), toolCalls: result.toolCalls, unmatchedToolStarts: [], unmatchedToolEnds: [] });
+    return stampToken({ approved: true, disapproved: false, output, model, thinkingLevel, challenge, regressionShieldPassed: true }, capturedRevisionToken);
+  }
+  onProgress?.({ phase: "complete", elapsedMs: nowMs - startedAt, recentOutput: output.split("\n").filter(Boolean).slice(-8), toolCalls: result.toolCalls, unmatchedToolStarts: [], unmatchedToolEnds: [] });
+  return stampToken({ approved: parsed.approved, disapproved: parsed.disapproved, impossible: parsed.impossible, impossibleReason: parsed.impossibleReason, output, model, thinkingLevel, challenge, ...(result.verificationIncomplete === true ? { verificationIncomplete: true } : {}) }, capturedRevisionToken);
+}
+
+/** Claim payload identity survives status/progress updates and recovery parking. */
+export function completionAuditRecoveryIdentity(goal: Goal): string {
+  const claim = goal.pendingCompletion;
+  return createHash("sha256").update(stableJson({
+    goalId: goal.id, revision: goal.revision ?? 0, objective: goal.objective,
+    verificationContract: goal.verificationContract ?? null,
+    claimAt: claim?.at ?? null,
+    completionSummary: claim?.completionSummary ?? null,
+    verificationSummary: claim?.verificationSummary ?? null,
+  })).digest("hex");
+}
+
+function legacyRequestMatchesClaim(request: AuditorRequest, goal: Goal): boolean {
+  const escape = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const block = (name: string): string | undefined => {
+    const opening = `<${name}>\n`, closing = `\n</${name}>`;
+    const start = request.prompt.indexOf(opening);
+    if (start < 0 || request.prompt.indexOf(opening, start + opening.length) >= 0) return undefined;
+    const end = request.prompt.indexOf(closing, start + opening.length);
+    return end < 0 ? undefined : request.prompt.slice(start + opening.length, end);
+  };
+  const claim = goal.pendingCompletion;
+  const goalBlock = block("goal");
+  const objective = goalBlock?.split("\n## Objective\n\n")[1]?.split("\n\n## ")[0];
+  return objective === escape(`> ${goal.objective}`)
+    && block("completion_summary") === escape(claim?.completionSummary?.trim() || "(none provided)")
+    && block("verification_summary") === (claim?.verificationSummary?.trim() ? escape(claim.verificationSummary.trim()) : undefined)
+    && block("verification_contract") === (goal.verificationContract?.trim() ? escape(goal.verificationContract.trim()) : undefined);
+}
+
+/** Recover only the newest physical job of this exact logical claim. Never
+ * fall back to an older candidate's result when the newest job is incomplete. */
+export function readCompletedCompletionAudit(cwd: string, goal: Goal, strictChallenge = false): {
+  result: GoalAuditorResult; jobAttemptId: string; startedAt: number; durationMs: number;
+} | null {
+  const logicalId = goal.pendingCompletion?.attemptId;
+  if (!logicalId || !ATTEMPT_ID_RE.test(logicalId)) return null;
+  const root = path.join(piGlaDir(cwd), "audit-jobs");
+  try {
+    const jobs = readdirSync(root, { withFileTypes: true })
+      .filter(entry => entry.isDirectory() && (entry.name === logicalId || entry.name.startsWith(`${logicalId}-`)))
+      .map(entry => {
+        const dir = path.join(root, entry.name);
+        const request = JSON.parse(readFileSync(path.join(dir, "request.json"), "utf8")) as AuditorRequest;
+        const startedAt = Date.parse(request.createdAt);
+        if (!Number.isFinite(startedAt)) throw new Error("invalid saved audit timestamp");
+        return { dir, request, startedAt, name: entry.name };
+      }).sort((a, b) => b.startedAt - a.startedAt);
+    const job = jobs[0];
+    if (!job || (jobs[1] && jobs[1].startedAt === job.startedAt)) return null;
+    const { request, dir, startedAt, name } = job;
+    const { requestHash: hash, ...unsigned } = request;
+    const token = captureGoalRevision(goal);
+    if (request.protocolVersion !== PROTOCOL_VERSION || request.attemptId !== name
+      || requestHash(unsigned) !== hash || path.resolve(request.cwd) !== path.resolve(cwd)
+      || !token || request.goalRevision?.goalId !== token.goalId || request.goalRevision?.revision !== token.revision
+      || (request.logicalAttemptId !== undefined && request.logicalAttemptId !== logicalId)
+      || (request.recoveryIdentity !== undefined
+        ? request.recoveryIdentity !== completionAuditRecoveryIdentity(goal)
+        : !legacyRequestMatchesClaim(request, goal))) return null;
+    const result = JSON.parse(readFileSync(path.join(dir, "result.json"), "utf8")) as AuditorResultFile;
+    if (result.protocolVersion !== PROTOCOL_VERSION || result.attemptId !== name || result.requestHash !== hash
+      || result.goalRevision?.goalId !== token.goalId || result.goalRevision?.revision !== token.revision
+      || typeof result.output !== "string" || !Array.isArray(result.toolCalls)
+      || typeof result.ok !== "boolean") return null;
+    let progress: AuditorProgressFile | undefined;
+    try { progress = JSON.parse(readFileSync(path.join(dir, "progress.json"), "utf8")); } catch { /* result-only legacy job */ }
+    if (progress && (progress.protocolVersion !== PROTOCOL_VERSION || progress.attemptId !== name || progress.requestHash !== hash)) return null;
+    const validated = validateCompletedAuditorResult({
+      result, goal, model: request.model, thinkingLevel: request.thinkingLevel,
+      capturedRevisionToken: token, strictChallenge: strictChallenge || request.strictChallenge === true,
+      startedAt, nowMs: Date.now(), lastProgress: progress, reportStall: () => {},
+    });
+    // Infrastructure results belong to retry recovery, never semantic settlement.
+    if (!validated.approved && !validated.disapproved && !validated.impossible) return null;
+    const durationMs = typeof progress?.elapsedMs === "number" && Number.isFinite(progress.elapsedMs)
+      ? Math.max(0, progress.elapsedMs) : Math.max(0, statSync(path.join(dir, "result.json")).mtimeMs - startedAt);
+    return { result: { ...validated, ...(request.auditTier ? { auditTier: request.auditTier } : {}), ...(request.spotCheck ? { spotCheck: true } : {}) }, jobAttemptId: name, startedAt, durationMs };
+  } catch { return null; }
+}
+
 const JAVASCRIPT_RUNTIME_BASENAMES = new Set(["node", "nodejs", "bun", "deno"]);
 
 /** Resolve the runtime that can execute the extension-less worker module.
@@ -1943,6 +2137,10 @@ async function runDetachedGoalCompletionAuditorInner(args: {
       // applying the verdict. A stale-handle ghost can no longer silently
       // overwrite a goal that moved on.
       goalRevision: capturedRevisionToken,
+      logicalAttemptId: runtime.logicalAttemptId ?? attemptId,
+      recoveryIdentity: completionAuditRecoveryIdentity(args.goal),
+      ...(args.auditTier ? { auditTier: args.auditTier } : {}),
+      ...(args.spotCheck ? { spotCheck: true } : {}),
       // v0.36.0: only present when non-empty so historical requests hash
       // byte-identically to pre-feature workers.
       ...(allowedExtensions.length ? { allowedExtensions } : {}),
@@ -2095,98 +2293,11 @@ async function runDetachedGoalCompletionAuditorInner(args: {
               args.onProgress?.(asProgress(finalProgress, startedAt));
             }
           }
-          const output = stripThinkBlocks(result.output);
-          // v0.38.80: thread the falsification outcome (bounded — the
-          // worker already caps at ~130 chars; the parent trusts nothing).
-          const challenge = typeof result.challenge === "string" && result.challenge ? result.challenge.slice(0, 140) : undefined;
-          if (!result.ok) {
-            const error = result.error || "detached auditor failed";
-            const failureClass = failedResultClass(error);
-            // 2026-09-26 slow-audit hardening: the worker and the parent share
-            // one silence window, so the WORKER's own brake can win the race
-            // and publish an atomic "Auditor stalled" result instead of leaving
-            // a parent watchdog to fire. That path already classified as
-            // `timeout`, but it produced NO `auditor_stalled` evidence at all
-            // — the most common silent-past-bound failure was the one shape
-            // with no record of what it cost. Reclassify the worker's own
-            // report as the stall it is, carrying the worker's headline and
-            // the attempt's cost record.
-            if (failureClass === "timeout" && isWorkerStallError(error)) {
-              const silenceMs = lastProgress?.lastActivityAt !== undefined
-                ? Math.max(0, now() - lastProgress.lastActivityAt)
-                : Math.max(0, now() - startedAt);
-              reportStall({
-                at: now(),
-                reason: "worker-brake",
-                heartbeatAgeMs: silenceMs,
-                noProgressMs: silenceMs,
-                phase: lastProgress?.phase ?? "running",
-                workerError: error.slice(0, 200),
-              });
-            }
-            return { ...infra(model, thinkingLevel, error, output, capturedRevisionToken, failureClass), ...(challenge ? { challenge } : {}) };
-          }
-          if (!output.trim()) return infra(model, thinkingLevel, "auditor produced no output", output, capturedRevisionToken, "no-verdict");
-          const parsed = parseAuditorVerdict(output);
-          if (strictChallenge && parsed.approved && challenge !== "confirmed") {
-            return { ...infra(model, thinkingLevel, "Required auditor challenge was not confirmed — no verdict; resume to retry the audit.", output, capturedRevisionToken, "no-verdict"), ...(challenge ? { challenge } : {}) };
-          }
-          if (!parsed.approved && !parsed.disapproved && !parsed.impossible) return infra(model, thinkingLevel, "auditor produced no verdict marker", output, capturedRevisionToken, "no-verdict");
-          const disallowedTool = result.toolCalls.find((call) => !(AUDITOR_TOOLS as readonly string[]).includes(call.name));
-          if (disallowedTool) {
-            return infra(model, thinkingLevel, `Auditor reported unsupported tool: ${disallowedTool.name}`, output, capturedRevisionToken, "no-verdict");
-          }
-          const usedAuditTool = result.toolCalls.some((call) => (AUDITOR_TOOLS as readonly string[]).includes(call.name));
-          // v0.38.99 approval guard. The worker cancels a tool call that blows
-          // its budget and resumes the audit (v0.38.99 non-destructive tool
-          // timeout) so the completed tool calls are not thrown away. The
-          // cancelled call produced NO result, so an approval from that
-          // attempt rests on evidence the auditor never saw. Refuse the
-          // approval and fail the attempt as retryable infrastructure rather
-          // than faking a disapproval — the goal did not regress, the audit
-          // simply cannot certify it. The retry ladder then re-audits, and a
-          // later attempt that completes its verification can approve.
-          if (parsed.approved && result.verificationIncomplete === true) {
-            const cancelled = (result.cancelledToolCalls ?? []).at(-1);
-            const detail = cancelled ? ` (cancelled tool: ${cancelled.name}${cancelled.budgetMs ? ` after ${Math.round(cancelled.budgetMs / 1000)}s` : ""})` : "";
-            reportStall({
-              at: now(),
-              reason: "tool-timeout",
-              heartbeatAgeMs: 0,
-              noProgressMs: 0,
-              phase: lastProgress?.phase ?? "running",
-              ...(cancelled?.name ? { toolName: cancelled.name } : {}),
-              ...(cancelled?.budgetMs !== undefined ? { toolAgeMs: cancelled.budgetMs } : {}),
-            });
-            return infra(
-              model,
-              thinkingLevel,
-              `Auditor approved, but verification is incomplete — a tool call was cancelled at its time budget${detail}, so the approval was refused and the audit must be retried.`,
-              output,
-              capturedRevisionToken,
-              "timeout",
-            );
-          }
-          if (parsed.approved && !usedAuditTool) {
-            return stampToken({ approved: false, disapproved: true, output, model, thinkingLevel, challenge, error: "Auditor approved without calling any audit tool; treated as disapproved." }, capturedRevisionToken);
-          }
-          if (parsed.approved && args.goal.verificationContract?.trim()) {
-            const shield = checkRegressionShield(output, args.goal.verificationContract);
-            if (!shield.passed) {
-              // The auditor's semantic verdict was approval; the separate
-              // regression shield blocked acceptance because the report did
-              // not cite every contract item. Keep that outcome distinct from
-              // both a work disapproval and infrastructure failure.
-              return stampToken({
-                approved: true, disapproved: false, output, model, thinkingLevel, challenge,
-                regressionShieldPassed: false, regressionShieldMissing: shield.missingItems,
-              }, capturedRevisionToken);
-            }
-            args.onProgress?.({ phase: "complete", elapsedMs: now() - startedAt, recentOutput: output.split("\n").filter(Boolean).slice(-8), toolCalls: result.toolCalls, unmatchedToolStarts: [], unmatchedToolEnds: [] });
-            return stampToken({ approved: true, disapproved: false, output, model, thinkingLevel, challenge, regressionShieldPassed: true }, capturedRevisionToken);
-          }
-          args.onProgress?.({ phase: "complete", elapsedMs: now() - startedAt, recentOutput: output.split("\n").filter(Boolean).slice(-8), toolCalls: result.toolCalls, unmatchedToolStarts: [], unmatchedToolEnds: [] });
-          return stampToken({ approved: parsed.approved, disapproved: parsed.disapproved, impossible: parsed.impossible, impossibleReason: parsed.impossibleReason, output, model, thinkingLevel, challenge, ...(result.verificationIncomplete === true ? { verificationIncomplete: true } : {}) }, capturedRevisionToken);
+          return validateCompletedAuditorResult({
+            result, goal: args.goal, model, thinkingLevel, capturedRevisionToken,
+            strictChallenge, startedAt, nowMs: now(), lastProgress,
+            onProgress: args.onProgress, reportStall,
+          });
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code !== "ENOENT") return infra(model, thinkingLevel, `invalid auditor result: ${error instanceof Error ? error.message : String(error)}`, "", capturedRevisionToken, "no-verdict");
         }

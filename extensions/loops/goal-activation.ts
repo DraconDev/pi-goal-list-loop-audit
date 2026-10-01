@@ -341,7 +341,7 @@ import {
 // v0.38.99: the settlement re-drive lives with the auditor hooks (one
 // driver, two callers). goal-auditor-hooks does not import goal-activation,
 // so this edge introduces no cycle.
-import { resumeSettlingCompletionAudit } from "./goal-auditor-hooks.js";
+import { resumeSettlingCompletionAudit, resumeCompletedCompletionAudit } from "./goal-auditor-hooks.js";
 import { isSettlingClaim } from "../audit-lifecycle.js";
 import {
   applyMeasurement,
@@ -2320,7 +2320,8 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // parked as recovery-pending is the durable form produced by a stale
     // host/session boundary; it must receive the same policy on the first
     // genuinely fresh session instead of requiring a second manual command.
-    const storedCompletionGoal = state.goal;
+    const completedAuditRecovered = resumeCompletedCompletionAudit(ctx);
+    const storedCompletionGoal = completedAuditRecovered ? null : state.goal;
     const storedCompletionClaim = storedCompletionGoal?.pendingCompletion;
     // v0.38.99: an interrupted SETTLEMENT is the one stored-claim state a
     // restart can finish without re-running the auditor — the approval is
