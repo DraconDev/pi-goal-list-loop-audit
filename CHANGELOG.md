@@ -23,6 +23,8 @@
 - Outbox mutations merge current queue state under the ownership protocol.
   Reentrant enqueues and nested acknowledgements survive replay and rotation;
   host delivery runs outside the mutation lock.
+- Compactor signal handlers are installed before Pi launch and registry
+  discovery, closing the immediate-interruption cleanup window.
 - Audit follow-through also hardens owner mutation and terminal settlement,
   process containment, retry guards, bounded canary requests, receipt
   confirmation, compatibility documentation and installed-package checks.

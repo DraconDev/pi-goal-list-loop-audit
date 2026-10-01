@@ -33,14 +33,16 @@ for (const scenario of ["SIGTERM", "timeout", "normal", "result-write-failure"] 
       fs.writeFileSync(path.join(cwd, "request.json"), JSON.stringify({ model: "stub/model", prompt: "brief", timeoutMs: scenario === "timeout" ? 1000 : 15_000 }));
       if (scenario === "result-write-failure") fs.mkdirSync(path.join(cwd, "result.json"));
       const bootstrap = path.join(cwd, "registration-window.mjs");
+      const held = path.join(cwd, "registration-held");
+      const signalSent = path.join(cwd, "signal-sent");
       if (scenario === "SIGTERM") fs.writeFileSync(bootstrap, `
         import fs from 'node:fs'; import {syncBuiltinESMExports} from 'node:module';
         const read=fs.readFileSync;let held=false;
         fs.readFileSync=(file,...args)=>{
           if(!held && /^\\/proc\\/\\d+\\/stat$/.test(String(file))){
-            held=true;const deadline=Date.now()+3000;
-            while(!fs.existsSync(${JSON.stringify(ready)}) && Date.now()<deadline){}
-            const settle=Date.now()+500;while(Date.now()<settle){}
+            held=true;fs.writeFileSync(${JSON.stringify(held)},'held');
+            const deadline=Date.now()+5000;
+            while(!fs.existsSync(${JSON.stringify(signalSent)}) && Date.now()<deadline){}
           }
           return read(file,...args);
         };syncBuiltinESMExports();
@@ -60,7 +62,11 @@ for (const scenario of ["SIGTERM", "timeout", "normal", "result-write-failure"] 
         await new Promise(resolve => setTimeout(resolve, 10));
       }
       pids = [Number(fs.readFileSync(piPid, "utf8")), Number(fs.readFileSync(ready, "utf8"))];
-      if (scenario === "SIGTERM") worker.kill("SIGTERM");
+      if (scenario === "SIGTERM") {
+        assert.ok(fs.existsSync(held), "signal arrives during registry discovery");
+        worker.kill("SIGTERM");
+        fs.writeFileSync(signalSent, "sent");
+      }
       const code = await closed;
       assert.equal(code, scenario === "normal" ? 0 : 1);
       for (const pid of pids) assert.equal(alive(pid), false, `owned descendant ${pid} stopped`);
