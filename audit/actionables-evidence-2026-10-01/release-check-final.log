@@ -2766,3 +2766,135 @@ tests/list-subtasks.test.ts:
 (pass) v0.34.81 (behavioral): explicit pick on a group refuses loudly (no silent jump) [531.15ms]
 (pass) v0.34.81 (behavioral): auto-advance skips a head group and lands on its first open child [374.78ms]
 (pass) audit-2026-09-06: auto-advance head-group skip is ledgered, not silent [361.79ms]
+(pass) v0.38.104: list_activate accepts the dotted child label the queue prints [136.59ms]
+(pass) v0.38.104 (schema pin): list_activate's `n` accepts the child-label string form [84.00ms]
+
+tests/repair-source-consume-durability.test.ts:
+(pass) failed repair-source deletion restores the durable repair link [310.20ms]
+
+tests/loop-refine-transaction.test.ts:
+(pass) failed spec refinement leaves loop state unchanged [504.68ms]
+
+tests/auditor-ladder-discipline.test.ts:
+(pass) v0.38.103 nothing configured: session model, and NO ladder to exhaust [82.54ms]
+(pass) v0.38.103 an explicit auditor is tried FIRST and the session model is the last resort [2.09ms]
+(pass) v0.38.103 a configured auditor with no fallbacks still keeps the session model reachable [0.48ms]
+(pass) v0.38.103 an unavailable primary escalates immediately and still ends at the session model [0.97ms]
+(pass) v0.38.103 same-session-swap does not change the ordering contract [2.70ms]
+(pass) v0.38.103 an auditor pinned to the session model is the session model, with no invented ladder [0.49ms]
+(pass) v0.38.103 with no session model and nothing configured, the error stays actionable [0.47ms]
+(pass) v0.38.103 a mechanical fast-fail verdict is not an auditor round [0.27ms]
+(pass) v0.38.103 the streak passes THROUGH a mechanical gate rather than stopping [0.03ms]
+(pass) v0.38.103 an approval still ends the comparable streak [0.02ms]
+(pass) v0.38.103 infrastructure entries stay transparent [0.04ms]
+(pass) v0.38.103 a grader fallback RE-BASELINES the streak instead of pinning [0.16ms]
+(pass) v0.38.103 the challenge-round limit is a small, finite number [0.12ms]
+(pass) v0.38.103 streak counting is what the challenge gate reads [0.04ms]
+(pass) ladder tests never write to the repo ledger: no ctx cwd points at process.cwd() [0.13ms]
+
+tests/mid-objective-park-refusal.test.ts:
+(pass) 200751-shape: blocked self-park while the brake retry is armed is refused, goal stays active [799.63ms]
+(pass) kind error and kind-unset parks are refused while armed [369.67ms]
+(pass) decision picker while armed is still allowed (user deliberating) [268.58ms]
+(pass) time-gated wait while armed is still allowed (bounded by the clamp) [399.91ms]
+(pass) blocked park with no armed recovery is still allowed (genuine blocker) [298.45ms]
+
+tests/goal-route.test.ts:
+(pass) empty args → draft [0.56ms]
+(pass) exact subcommands route [0.08ms]
+(pass) subcommands are case-insensitive [0.03ms]
+(pass) tweak takes args [0.05ms]
+(pass) archive routes with or without args [0.03ms]
+(pass) CRITICAL: objective starting with 'pause' is a goal, not a subcommand [0.03ms]
+(pass) CRITICAL: objective starting with 'status' is a goal [0.02ms]
+(pass) objective starting with 'cancel' is a goal [0.23ms]
+(pass) plain objectives set [0.05ms]
+(pass) quoted objectives set (quote stripping happens downstream) [0.02ms]
+(pass) goalArgsNeedDrafting: vague objective needs drafting [0.14ms]
+(pass) goalArgsNeedDrafting: explicit contract activates instantly [0.06ms]
+(pass) goalArgsNeedDrafting: empty is the no-args drafting path [0.02ms]
+(pass) buildSeedGrillMessage: seed + tool + gate notice + grilling protocol [0.78ms]
+(pass) draftProposalBlock: 0 replies → block with instructions, ≥1 → null [0.22ms]
+(pass) draftProposalBlock: escape hatch after 3 blocked proposals (v0.15.1) [0.13ms]
+(pass) askUserQuestionAnswered: answered dialog counts, cancel/esc does not (v0.15.1) [0.18ms]
+(pass) /goal start routes as a subcommand with the objective as rest (v0.16.0) [0.06ms]
+(pass) normalizeDraftContract: drops bare 'Done when:' introducer lines [0.77ms]
+(pass) normalizeDraftContract: drops 'Done when ALL of the following are true:' preamble [0.08ms]
+(pass) normalizeDraftContract: strips glued 'Done when: ' prefix on content line [0.05ms]
+(pass) normalizeDraftContract: renumbers mixed bullets and existing numbers sequentially [0.21ms]
+(pass) normalizeDraftContract: prose lines pass through untouched [0.04ms]
+(pass) draftContractItemCount counts numbered items only [0.07ms]
+(pass) classifySessionCtx: no owner yet → claim [0.03ms]
+(pass) classifySessionCtx: owner stale → claim (session replaced via /new) [0.03ms]
+(pass) classifySessionCtx: same sessionManager → refresh (main session event) [0.02ms]
+(pass) classifySessionCtx: different sessionManager → foreign (subagent session) [0.05ms]
+
+tests/gettick-tool-visibility.test.ts:
+(pass) v0.35.60: glla tools are reactivated at the pre-turn boundary [121.74ms]
+
+tests/list-stall-reproduction.test.ts:
+(pass) completed standalone goal automatically hands off to the waiting list [636.50ms]
+(pass) /glla resume starts a waiting-only list instead of reporting nothing [328.12ms]
+(pass) list-sourced completion promotes the successor and records the settle transition [434.39ms]
+
+tests/goal-state.test.ts:
+(pass) goal-state.ts owns the state singleton (single source of truth) [108.91ms]
+(pass) wholesale state replacement goes through replaceState() only [6.48ms]
+(pass) the persistence core lives in goal-state.ts (persistStateLine) [0.50ms]
+(pass) replaceState is used at the moved wholesale sites [0.65ms]
+
+tests/list-audit-state-root.test.ts:
+(pass) list-audit fan-out reads findings from the configured sessionDir root [284.36ms]
+
+tests/list-stale-context.test.ts:
+(pass) v0.34.51: /list add on a stale handle is refused — honest recovery result, zero state mutation [798.60ms]
+(pass) v0.34.51: /list remove, clear, cancel, next, tweak, pause, resume are all refused on a stale handle [486.67ms]
+(pass) v0.34.51: the natural-language dump fallthrough is refused on a stale handle — drafting never starts [415.28ms]
+(pass) v0.34.51: /list show and /list depth stay usable on a stale handle (inspect, don't mutate) [362.28ms]
+(pass) v0.34.51: the honest recovery result — the refreshed session owns the command and the add lands [918.39ms]
+(pass) v0.34.51: list_add and list_activate tools return the stale-context recovery result without mutating [343.76ms]
+(pass) v0.34.51: source — cmdList captures the entry probe and gates every mutating path [9.75ms]
+
+tests/terminal-completion-notice.test.ts:
+(pass) v0.38.18 terminal notice: the done brief lands in the conversation exactly once [305.78ms]
+(pass) v0.38.18 source: the detached-approval branch closes the transcript [0.35ms]
+(pass) audit-2026-09-06: a stale-generation notice never fires into the successor session [24.69ms]
+
+tests/aggressive-mode.test.ts:
+(pass) aggressiveMode persists through the settings file (item 8) [19.28ms]
+(pass) effective settings: aggressiveMode ON flips the defaults (items 5+7) [0.12ms]
+(pass) effective settings: missing aggressiveMode uses the production keep-going default [0.09ms]
+(pass) effective settings: explicit OFF keeps base defaults; auditCap base is 5 [0.07ms]
+(pass) explicit per-key settings WIN over aggressiveMode (advisor semantics) [0.07ms]
+(pass) autoResume is global-only in the effective settings and provenance [101.69ms]
+(pass) obsolete quota policy files cannot change the generic retry settings [0.47ms]
+
+tests/task-list.test.ts:
+(pass) accepts a reasonable breakdown [0.57ms]
+(pass) rejects empty list [0.47ms]
+(pass) rejects too many top-level tasks [0.31ms]
+(pass) rejects too many subtasks (the anti-drift cap) [0.20ms]
+(pass) accepts exactly at the cap [0.12ms]
+(pass) rejects empty titles [0.05ms]
+(pass) assigns hierarchical ids and pending statuses [0.47ms]
+(pass) trims titles [0.08ms]
+
+tests/objective-loss-state-root.test.ts:
+(pass) workingDir default: cwd switch makes old objective invisible from new cwd (expected) [87.11ms]
+(pass) sessionDir opt-in: same cwd switch keeps objective visible via shared sessionDir [1.35ms]
+(pass) evidence: no destructive migration and pending defers writes — Wez crash / version switch does not delete old root [0.88ms]
+
+tests/resume-goal-tool.test.ts:
+(pass) resume_goal reactivates a paused goal and clears every pause marker [567.06ms]
+(pass) resume_goal on an already-active goal answers instead of churning state [881.89ms]
+(pass) resume_goal with no goal answers instead of swallowing the verb [293.67ms]
+(pass) a held-on-restore loop does not block resume_goal (only a LIVE loop does) [329.10ms]
+(pass) resume_goal refuses while the supervisor is frozen [472.44ms]
+(pass) resume_goal probes pending main-model recovery inline instead of bouncing (124544) [886.96ms]
+(pass) resume_goal refuses a terminal goal with the real recovery path [493.40ms]
+(pass) resume_goal keeps its live-loop refusal (source-pinned defense-in-depth) [4.77ms]
+(pass) paused → resume_goal → complete_goal flows without a manual resume [4923.78ms]
+[run-tests] progress: 630s elapsed · 0s since last output · 217 KiB of suite output
+(pass) resume_goal re-fires a stored completion claim through the agent origin [3864.24ms]
+
+tests/hegemon-queue-unblock-evidence.test.ts:
