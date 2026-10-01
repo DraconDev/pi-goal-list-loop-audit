@@ -6,6 +6,13 @@ plus a `v0.34.x-<TOPIC>.md` symlink for versioned docs). Older docs
 
 ## Current implementation and audits
 
+**Current release (2026-10-01):**
+[RELEASE-0.38.106-2026-10-01.md](RELEASE-0.38.106-2026-10-01.md)
+records versionless companion guidance, the refreshed store icon and npm/GitHub
+publication. Local and GitHub full gates both passed 2,966 tests, one skip,
+zero failures; all 133 published files match the reviewed source. The Pi store's
+cached version/README is separately recorded as external indexing behavior.
+
 **Current follow-up implementation (2026-10-01):**
 [POST-FIX-IMPLEMENTATION-2026-10-01.md](POST-FIX-IMPLEMENTATION-2026-10-01.md)
 closes AF-1, AF-2 and AF-3: selector failures retain authority and defer writes,
