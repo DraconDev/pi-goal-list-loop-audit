@@ -2,7 +2,7 @@ import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyLoadState } from "../extensions/loops/goal.js";
+import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from "../extensions/loops/goal.js";
 import { __testOnlyResetAuditorSurface } from "../extensions/loops/goal-auditor-surface.js";
 import { archivedGoalPath, readState, type Goal, type State } from "../extensions/goal-loop-core.js";
 import { buildWidgetLines, buildStatusText } from "../extensions/goal-loop-display.js";
@@ -60,7 +60,7 @@ for (const verdict of ["approved", "disapproved"] as const) {
       assert.equal(readState(cwd).goal?.pendingCompletion, undefined, "the orphaned claim is consumed");
       assert.equal(events(cwd).filter(e => e.type === "audit_completed_result_recovered").length, 1);
       assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0, "no replacement worker launches");
-      if (verdict === "approved") assert.ok(fs.existsSync(archivedGoalPath(cwd, g.id)), "approval passes the normal archive settlement");
+      if (verdict === "approved") assert.ok(fs.existsSync(archivedGoalPath(cwd, g.id)), `approval passes the normal archive settlement: ${JSON.stringify({ state: readState(cwd), notices: ctx.ui.notifies })}`);
       else assert.equal(readState(cwd).goal?.auditHistory?.at(-1)?.disapproved, true, "disapproval reaches the normal history/rework path");
       await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
       ctx = await boot(pi, cwd);
