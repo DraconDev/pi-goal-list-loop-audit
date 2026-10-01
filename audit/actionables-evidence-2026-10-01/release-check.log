@@ -810,3 +810,7 @@ tests/auditor-session-mirror.test.ts:
 (pass) settings round-trip: mirror opt-out persists, on clears, junk normalizes [100.44ms]
 
 tests/decision-budget.test.ts:
+(pass) decision budget: in-budget pauses behave as today, over-budget auto-defaults without pausing [247.01ms]
+(pass) decision budget: unset budget keeps legacy pause-every-time behavior [153.64ms]
+
+tests/completion-communication.test.ts:
