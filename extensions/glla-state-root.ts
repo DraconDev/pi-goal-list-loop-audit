@@ -69,31 +69,64 @@ export function resolveRuntimeSessionDir(): string | undefined {
   return parent && parent !== "." ? parent : undefined;
 }
 
-function readStateRootSetting(): GllaStateRoot {
+interface RootSelection { root?: GllaStateRoot; unresolved: boolean; sessionDir?: string }
+const validatedSelections = new Map<string, GllaStateRoot>();
+let operationSelection: RootSelection | undefined;
+
+function readRootSelection(): RootSelection {
+  const file = configuredGlobalSettingsPath();
+  let root: GllaStateRoot;
   try {
-    const raw = JSON.parse(fs.readFileSync(configuredGlobalSettingsPath(), "utf8")) as Record<string, unknown>;
-    return raw.stateRoot === "sessionDir" ? "sessionDir" : "workingDir";
-  } catch {
-    return "workingDir";
+    const raw: unknown = JSON.parse(fs.readFileSync(file, "utf8"));
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) throw new Error("invalid settings object");
+    const value = (raw as Record<string, unknown>).stateRoot;
+    if (value !== undefined && value !== "sessionDir" && value !== "workingDir") throw new Error("invalid state root selector");
+    root = value === "sessionDir" ? "sessionDir" : "workingDir";
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      // Keep known reads on their established root, but refuse mutations
+      // until the selector is readable and valid again. Cold uncertainty
+      // must never invent a working-directory authority tree.
+      return { root: validatedSelections.get(file), unresolved: true, sessionDir: resolveRuntimeSessionDir() };
+    }
+    root = "workingDir";
   }
+  validatedSelections.set(file, root);
+  if (validatedSelections.size > 64) validatedSelections.delete(validatedSelections.keys().next().value!);
+  return { root, unresolved: false, sessionDir: resolveRuntimeSessionDir() };
+}
+
+/** Pin selector and session directory for one synchronous persistence operation.
+ * Nested persistence shares that view; no external callback runs under an I/O
+ * lock. A subsequent operation observes any newly selected root. */
+export function withStateRootSnapshot<T>(action: () => T): T {
+  if (operationSelection) return action();
+  operationSelection = readRootSelection();
+  try { return action(); } finally { operationSelection = undefined; }
+}
+
+function selection(): RootSelection {
+  return operationSelection ?? readRootSelection();
 }
 
 export function configuredStateRoot(): GllaStateRoot {
-  return readStateRootSetting();
+  const root = selection().root;
+  if (!root) throw new Error("GLLA state root unresolved: settings selector is unreadable or invalid");
+  return root;
 }
 
-/** True when sessionDir is selected but the lifecycle has not registered a
- * session root yet. Reads may fall back for compatibility; write callers must
- * defer so startup cannot recreate state under an ambiguous cwd. */
+/** An unknown selector or missing selected session directory defers writes.
+ * Only a genuinely absent settings file authorizes the historical default. */
 export function stateRootPending(): boolean {
-  return readStateRootSetting() === "sessionDir" && !resolveRuntimeSessionDir();
+  const selected = selection();
+  return selected.unresolved || (selected.root === "sessionDir" && !selected.sessionDir);
 }
 
-/** Resolve the selected root without performing migration or filesystem I/O. */
+/** Known roots remain readable during selector failure. A cold unknown root
+ * raises an explicit error rather than returning an empty fallback state. */
 export function resolveGllaStateDir(cwd: string): string {
-  if (readStateRootSetting() === "sessionDir") {
-    const sessionDir = resolveRuntimeSessionDir();
-    if (sessionDir) return path.join(sessionDir, "pi-glla");
-  }
+  const selected = selection();
+  if (!selected.root) throw new Error("GLLA state root unresolved: settings selector is unreadable or invalid");
+  if (selected.root === "sessionDir" && selected.sessionDir) return path.join(selected.sessionDir, "pi-glla");
   return path.join(cwd, ".pi-glla");
 }

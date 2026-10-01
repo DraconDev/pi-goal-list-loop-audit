@@ -13,7 +13,7 @@ import { createHash } from "node:crypto";
 import { execSync } from "node:child_process";
 import { isDeterministicProviderError, normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, quotaSignal, sanitizeProviderAuditReport, sanitizeProviderDisplayText, type QuotaSignal, type SubagentQuotaEvidence } from "./quota-retry.js";
 import { MAX_AUDITOR_CANDIDATE_REFS, MAX_MAIN_MODEL_FALLBACKS, normalizeBoundedModelRefs } from "./main-model-recovery.js";
-import { resolveGllaStateDir, stateRootPending } from "./glla-state-root.js";
+import { resolveGllaStateDir, stateRootPending, withStateRootSnapshot } from "./glla-state-root.js";
 import { normalizeFindingLead, clipSummaryValue } from "./finding-lead.js";
 import { auditLifecycleLine, auditLifecycleProjection } from "./audit-lifecycle.js";
 // Re-exported so display surfaces (which already import values from this
@@ -2453,7 +2453,7 @@ export function lastPersistenceFailure(): PersistenceFailure | null {
  * On success: clear the flag — a landing write means the disk is back. */
 export function runPersistStep<T>(what: string, fn: () => T): T | undefined {
   try {
-    const out = fn();
+    const out = withStateRootSnapshot(fn);
     if (persistenceDegraded) {
       persistenceDegraded = false;
       lastFailure = null;
