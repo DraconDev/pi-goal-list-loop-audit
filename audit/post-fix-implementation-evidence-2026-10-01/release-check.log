@@ -2381,3 +2381,113 @@ tests/long-term-preferences-boundary.test.ts:
 (pass) goal-settings.ts header documents the long-term-preferences policy [0.31ms]
 
 tests/defer-durable-ordering.test.ts:
+(pass) defer vs durable — semantic recommendation ordering > v0.38.71: imperative fix verbs do not double against the plaque verb (field UI-SURVEY-2026-09-20) [0.77ms]
+(pass) defer vs durable — semantic recommendation ordering > three defer recommendations still select the safe durable action first [0.47ms]
+(pass) defer vs durable — semantic recommendation ordering > only an explicit blocked fact selects the reversible defer plaque [0.10ms]
+(pass) defer vs durable — semantic recommendation ordering > the policy is generated from the same semantic three-defer path [0.25ms]
+
+tests/retry-armed-display.test.ts:
+(pass) 151113: supervised auditor wait with armed retry renders recovering, not paused [1.99ms]
+(pass) 151113: status line keeps the auto-retrying countdown for the armed wait [2.84ms]
+(pass) 151113: bare user wait with no armed retry still renders paused, never recovering [1.40ms]
+
+tests/reviewer-extraction-hardening.test.ts:
+(pass) the 3 live false-positive lines extract NOTHING [43.01ms]
+(pass) code lines are skipped (test/it/assert/const/import/…) [0.06ms]
+(pass) markdown table rows are skipped [0.02ms]
+(pass) reviewer-report vocabulary is skipped (self-match prevention) [0.03ms]
+(pass) real architectural + strategic text still classifies [0.05ms]
+(pass) v0.34.83: the bare word 'issue' is REMOVED from the bug regex — GitHub issue references and prose don't classify as bugs [0.05ms]
+(pass) v0.34.83: a completion summary referencing GitHub issues enqueues zero bug findings through the curated pipeline [1.01ms]
+(pass) full runReviewer over 0.26.2-style source text produces zero architectural findings [0.38ms]
+(pass) extraction dedupe + cap still work after hardening [0.22ms]
+(pass) hard-wrapped finding joins into ONE full-sentence finding (hellhunter regression) [0.43ms]
+(pass) uppercase-start lines do NOT join — punctuation-less items stay separate [0.04ms]
+(pass) dangling-connector fragments are rejected [0.03ms]
+(pass) completedObjective prefix-dedupe: a finding restating the completed goal is skipped [0.05ms]
+(pass) cutAtClauseBoundary: long findings cut at a clause, never mid-word [0.10ms]
+
+tests/run-to-done.test.ts:
+(pass) run-to-done: draft consent sets the flag, shows the notice, ledgers consent [279.22ms]
+(pass) run-to-done: drafts without the flag stay supervised [191.16ms]
+(pass) run-to-done: batch drafts refuse the flag instead of dropping it [191.85ms]
+(pass) run-to-done: decisions auto-default immediately with no budget set [245.33ms]
+[run-tests] progress: 420s elapsed · 2s since last output · 183 KiB of suite output
+(pass) run-to-done: the audit cap parks instead of converting to TODOs [2547.65ms]
+(pass) run-to-done: aggressive cap conversion is preserved without the flag [1555.31ms]
+(pass) run-to-done: session start resumes held work without global autoResume; blocked parks stay parked [418.04ms]
+(pass) run-to-done: held work stays held without the flag or global consent [432.24ms]
+(pass) run-to-done: the status line names the mode [0.73ms]
+
+tests/durable-wait.test.mjs:
+(pass) durable wait succeeds before its deadline and reports elapsed polling [197.97ms]
+(pass) durable wait returns a real timeout instead of treating elapsed time as success [1.21ms]
+(pass) a late done observation after the deadline is a timeout, not success [0.16ms]
+(pass) archive-count waits use the same durable deadline and return the observed count [2.79ms]
+(pass) a restarted waiter observes the same durable file without an old timer [1.01ms]
+(pass) provider recovery is a terminal reason, never a false approval or timeout [1.25ms]
+(pass) smoke harness uses the durable wait CLI for durable outcomes [1.82ms]
+
+tests/autoresume-default.test.ts:
+(pass) /glla settings persists explicit auto-resume off (tri-state, not undefined) [54.41ms]
+(pass) settings table shows the tri-state honestly [0.68ms]
+(pass) hold-on-load text offers the explicit resume + the on opt-in [0.64ms]
+
+tests/interrupt-didnt-continue.test.ts:
+(pass) FIX A: a never-set revision (undefined) + captured 0 is CURRENT, not stale [0.22ms]
+(pass) FIX A: captured 0 against a genuinely bumped goal is still refused [0.05ms]
+(pass) FIX A: equal non-zero revisions stay current; bumps refuse [0.03ms]
+(pass) FIX A pin: the refusal guard uses isGoalRevisionCurrent, not raw !== on undefined [7.29ms]
+(pass) FIX B pin: the refusal branch restores status active so the loop continues [55.64ms]
+(pass) behavior preserved: a GENUINE orphaned audit still parks with the same message [3.75ms]
+
+tests/objection-pinning.test.ts:
+(pass) v0.38.21 two disapproval rounds: R1 retired with its objections attached, prompt argues R2 only [2173.54ms]
+(pass) v0.38.21 appendAuditVerdict: clean approval clears the pin, shield-clear counts, errors never touch flags [0.69ms]
+
+tests/completion-density-lint.test.ts:
+(pass) density lint: evidence tokens in the summary pass [54.72ms]
+(pass) density lint: tokens inside finding groups count [0.14ms]
+(pass) density lint: gate rows count as density without tokens [0.07ms]
+(pass) density lint: zero tokens and zero gates is annotated [0.58ms]
+
+tests/stuck-audit-latch.test.ts:
+(pass) Fix A: the apply gate defers + parks instead of silently dropping a completed verdict [30.18ms]
+(pass) Fix B: the stale-latch stranded park runs BEFORE the extensionApiStale early return [0.31ms]
+(pass) Fix B: the park requires the exact stuck signature (auditing, no in-flight, claim, 90s silence) [0.24ms]
+(pass) audit 2026-09-25: stranded_audit_recovered is ledgered only after the park lands [0.21ms]
+
+tests/regression-shield.test.ts:
+(pass) contractItems: strips the 'Done when:' marker line [28.42ms]
+(pass) contractItems: handles inline single-line contracts [0.04ms]
+(pass) contractItems: strips bullets and numbering [0.02ms]
+(pass) contractItems: drops empty lines [0.02ms]
+(pass) contractItems: skips wrapped prose preamble in list-shaped contracts [0.09ms]
+(pass) contractItems: shapeless contracts keep every-line behavior [0.03ms]
+(pass) contractItems: a Done-when criterion survives alongside bullets [0.04ms]
+(pass) passes: preamble fragments are not required in evidence [0.30ms]
+(pass) passes: evidence block present, all items referenced [0.10ms]
+(pass) rejects: approval without an evidence block [0.06ms]
+(pass) rejects: evidence block but an item is not addressed [0.04ms]
+(pass) rejects: bamboozle-style empty evidence block [0.04ms]
+(pass) rejects: contract prose outside evidence cannot satisfy the shield [0.09ms]
+(pass) distinctive-token matching: references the item by a filename [0.04ms]
+(pass) case-insensitive matching [0.04ms]
+(pass) contractItems: excludes 'Out of scope' boundary lines [0.02ms]
+(pass) compound tokens match via segments (left-cropped → left + cropped) [0.09ms]
+(pass) prose punctuation glued to tokens does not break matching (file/element.) [0.07ms]
+(pass) top-3 candidate matching tolerates contract-only vocabulary [0.04ms]
+(pass) still rejects: bamboozle report that never touches the item's vocabulary [0.03ms]
+(pass) CJK: a verbatim-quoted Chinese item passes (token is one CJK word, not delimiters) [2.95ms]
+(pass) CJK: a quote that drops the trailing full-width colon still matches [0.21ms]
+(pass) CJK: a Chinese line with no ASCII letters is one candidate token [0.08ms]
+(pass) CJK: an English-only paraphrase of a Chinese item is still rejected (strict shield) [3.30ms]
+(pass) CJK: mixed item matches on its ASCII token even when CJK words are not quoted [0.09ms]
+(pass) ASCII behavior is unchanged: distinctive-token + compound matching still work [0.08ms]
+(pass) contractItems: 'Done when ALL of the following are true:' preamble is dropped [0.05ms]
+(pass) contractItems: preamble without trailing colon is also dropped [0.06ms]
+(pass) shield passes a genuine approval that a preamble-only false positive used to block [0.08ms]
+(pass) extractMechanicalCheckCommands: extracts backticked and raw shell commands [285.52ms]
+(pass) extractMechanicalCheckCommands: skips commands under negation [31.98ms]
+(pass) extractMechanicalCheckCommands: rejects never-exiting server commands [0.30ms]
+(pass) v0.35.16: mechanical checks keep the TAIL of failed output and banner a timeout kill [1185.58ms]
