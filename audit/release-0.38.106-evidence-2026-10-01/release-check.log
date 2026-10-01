@@ -791,3 +791,174 @@ tests/completion-communication.test.ts:
 (pass) disapproval remains unfinished, no final success is posted [1104.44ms]
 (pass) archive write failure never emits a terminal success [1413.36ms]
 [run-tests] progress: 90s elapsed · 8s since last output · 59 KiB of suite output
+(pass) approval summary does not replace independent next-item continuation [16874.36ms]
+(pass) outbox write failure warns without claiming summary delivery [1590.08ms]
+
+tests/list-invisible-restart.test.ts:
+(pass) v0.35.21: session_start converges a disk-sidecar queue the state ledger lost, and the widget renders it [436.28ms]
+(pass) v0.35.61: a waiting-only queue is visible and startable without a reload [255.69ms]
+(pass) v0.35.61: silent host replacement rehydrates a sidecar-only waiting queue before repaint [416.15ms]
+(pass) v0.35.72: a newer known sidecar reconciles the in-memory queue item [239.45ms]
+(pass) v0.35.72: activation refuses when the durable sidecar cannot be removed [198.97ms]
+(pass) v0.35.21: convergence is idempotent — an item present in BOTH state and sidecar is not duplicated [198.73ms]
+
+tests/audit-loop-state-root.test.ts:
+(pass) sessionDir audit target, measure, and findings helper name the selected file [44.02ms]
+
+tests/prompt-layers.test.ts:
+(pass) full assembly of goal-loop-continuation.md is byte-identical to source minus markers [1.61ms]
+(pass) full assembly of goal-loop-forever.md is byte-identical to source minus markers [0.44ms]
+(pass) full assembly of goal-loop-forever-metricless.md is byte-identical to source minus markers [0.43ms]
+(pass) full assembly of goal-loop-draft.md is byte-identical to source minus markers [31.43ms]
+(pass) full assembly of goal-loop-forever-draft.md is byte-identical to source minus markers [0.54ms]
+(pass) full assembly of goal-loop-plan.md is byte-identical to source minus markers [0.90ms]
+(pass) full assembly of goal-loop-plan-loop.md is byte-identical to source minus markers [0.36ms]
+(pass) continuation declares exactly the three conditional details [0.99ms]
+(pass) the other six prompts are skeleton-only (whole file is the skeleton) [2.24ms]
+(pass) missing prompt file fails loudly, never lean [1.11ms]
+(pass) unknown detail id fails loudly [0.57ms]
+(pass) parser defects fail loudly [0.38ms]
+(pass) assembly order is file order regardless of request order (same every turn) [1.02ms]
+(pass) normal-turn render omits all three details; token cost lower by the deferred bodies [3.49ms]
+(pass) survey-pivot delta is EXACTLY the deferred body (equal-length objectives) [4.34ms]
+(pass) session-restart delta is EXACTLY the deferred body (opts flag only) [2.93ms]
+(pass) autoResumedAt goals get the restart detail without opts [2.04ms]
+(pass) live disapproval loads the auditor playbook detail [3.77ms]
+(pass) padRight helper keeps fixture objectives length-neutral [0.11ms]
+(pass) v0.38.104 the leading `//` author comment is stripped at assembly [0.44ms]
+(pass) v0.38.104 a `//` line in the BODY is never stripped [0.07ms]
+
+tests/auditor-screenshot-disapproval.test.ts:
+(pass) screenshot-shaped non-literal Done when contract proof stays an actionable disapproval [0.89ms]
+(pass) screenshot-shaped inverted title/score hierarchy stays an actionable disapproval [1.31ms]
+
+tests/list-philosophy.test.ts:
+(pass) contract 1+2: /goal+/list draft prompt has short-item AND multi-hour framing [0.54ms]
+(pass) contract 3: /loop draft prompt has metric-driven framing [0.16ms]
+(pass) contract 4: all draft prompts open with a Long-running philosophy block [0.27ms]
+(pass) contract 5: LIST-PHILOSOPHY.md exists with the three-mode table [1.16ms]
+(pass) contract 6: INSTALL.md references LIST-PHILOSOPHY.md in a Modes section [0.31ms]
+(pass) contract 7: /list depth headline format [0.79ms]
+(pass) contract 8+11: cross-recommend catches the 76-weak-points wrapper seed [0.20ms]
+(pass) contract 12: cross-recommend catches the 40-findings tasklist seed [0.08ms]
+(pass) contract 8: multi-hour seed in /list mode suggests /goal or break-up [0.14ms]
+(pass) contract 8: five-minute seed in /goal mode suggests /list [1.33ms]
+(pass) contract 8: open-ended seed in /goal or /list mode suggests /loop [0.86ms]
+(pass) contract 8: bounded-until beats recurring vocabulary (still a goal) [0.07ms]
+(pass) contract 8: aggregate beats recurring (per-item work wins) [0.09ms]
+(pass) contract 8: recurring beats five-minute (cadence changes the loop) [0.04ms]
+
+tests/execution-discipline.test.ts:
+(pass) mid-run question steps are violations, naming the step [0.92ms]
+(pass) ask_user_question subtasks are violations too [0.07ms]
+(pass) manual-check steps are violations unless the contract mandates them [0.19ms]
+(pass) contract-mandated gates are exempt, not violations [0.12ms]
+(pass) clean plans pass with no violations [0.07ms]
+(pass) propose_task_list validation refuses mid-run steps [0.12ms]
+(pass) goal/list drafting prompt pins never-schedule-mid-run plus manual-only-when-mandatory [0.25ms]
+(pass) plan prompt pins milestone shape: no mid-run question or manual-check milestones [0.11ms]
+
+tests/zombie-resume.test.ts:
+(pass) v0.35.25 #14: /loop resume honors the zero-stream abort park and preserves iteration/history [279.81ms]
+(pass) v0.35.25 #14: control — a non-resumable stop reason is still refused [305.78ms]
+
+tests/loop-refine-parity.test.ts:
+(pass) parked loops are refinable on both surfaces [19.18ms]
+(pass) terminal stops are refinable on neither surface [0.80ms]
+(pass) broken measure is the deliberate divergence: tool fixes, slash will not resume [0.31ms]
+
+tests/verification-status.test.ts:
+(pass) verification status FAIL: Unit tests: 10 passed, 0 failed; integration: 2 failed, 3 passed. [1.22ms]
+(pass) verification status REPORTED: Integration did not pass; credentials are unavailable and validation remains incomplete. [0.24ms]
+(pass) verification status FAIL: 3 passed, 1 failed; rerun 4 passed, 0 failed. [0.28ms]
+(pass) verification status PASS: 10 passed, 0 failed. [0.18ms]
+(pass) verification status FAIL: 10 passed, 0 failures; integration 2 failures. [0.12ms]
+(pass) verification status REPORTED: 4 skipped, 0 failed. [0.12ms]
+(pass) verification status REPORTED: Not run: credentials unavailable. [0.14ms]
+(pass) verification status REPORTED: The suite never passed. [0.11ms]
+(pass) verification status REPORTED: The suite hasn't passed. [0.15ms]
+(pass) verification status REPORTED: No tests passed. [0.12ms]
+(pass) verification status REPORTED: 0 passed, 0 failed. [0.15ms]
+(pass) verification status REPORTED: Validation will pass after credentials arrive. [0.10ms]
+(pass) verification status REPORTED: PASS expected, validation pending. [0.10ms]
+(pass) verification status PASS: 10 passed, 2 skipped, 0 failed. [0.12ms]
+(pass) verification status PASS: Password checks: 10 passed, 0 failed. [0.10ms]
+(pass) verification status REPORTED: Clean exit 0. [0.15ms]
+(pass) verification status REPORTED: Credentials missing; suite unable to pass. [0.12ms]
+(pass) verification status REPORTED: Suite refused to pass. [0.13ms]
+(pass) verification status PASS: PASS [0.10ms]
+(pass) verification status PASS: All tests passed. [0.13ms]
+(pass) verification status REPORTED: 0 fail [0.12ms]
+(pass) verification status REPORTED: Unit tests: 10 passed, 0 failed; integration suite unable to pass because credentials are missing. [0.35ms]
+(pass) verification status FAIL: 10 passed, 0 failed; integration exited with code 1. [0.15ms]
+(pass) verification status FAIL: 10 passed, 0 failed; integration: 2 errors. [0.11ms]
+(pass) verification status REPORTED: 10 passed, 0 failed; integration status is unknown. [0.14ms]
+(pass) verification status REPORTED: 10 passed, 0 failed; integration awaits credentials. [0.14ms]
+(pass) verification status REPORTED: 10 passed because the results were fabricated, 0 failed. [0.21ms]
+(pass) verification status REPORTED: 10 passed, 0 failed (integration was omitted). [0.35ms]
+(pass) verification status PASS: 10 passed, 0 failed; integration: 3 passed, 0 failed. [0.20ms]
+(pass) verification status PASS: integration: 3 passed, 0 failed; unit tests: 10 passed, 0 failed. [0.14ms]
+(pass) verification status REPORTED: 10 passed, 0 failed; integration exited with code 0. [0.11ms]
+(pass) verification status FAIL: 10 passed, 0 failed; 1 error, 0 errors on rerun. [0.08ms]
+(pass) verification status FAIL: 10 passed, 0 failed; integration exited with code -1. [0.10ms]
+
+tests/repetition.test.ts:
+(pass) normalizeForPrint strips ANSI, collapses whitespace, lowercases [0.23ms]
+(pass) textFingerprint is stable and case/whitespace-insensitive [0.18ms]
+(pass) trigramSimilarity: identical texts → 1, disjoint → 0, near-dup → high [0.27ms]
+(pass) trigramSimilarity: digits are volatile — 'port 8081' ≈ 'port 8082' [22.66ms]
+(pass) pushCapped keeps the window at cap, most recent last [0.18ms]
+(pass) findDegenerateRepeat: repeated sentence inside one reply [0.61ms]
+(pass) findDegenerateRepeat: repeated single word run [0.62ms]
+(pass) findDegenerateRepeat: normal prose passes [0.07ms]
+(pass) findDegenerateRepeat: short text is never degenerate [0.03ms]
+(pass) detectLoopStuck: healthy iteration → undefined [0.12ms]
+(pass) detectLoopStuck: narration-only streak [0.04ms]
+(pass) detectLoopStuck: exact repeat of previous iteration [0.07ms]
+(pass) detectLoopStuck: near-duplicate of previous iteration [0.13ms]
+(pass) detectLoopStuck: A-B-A-B window repetition [0.10ms]
+(pass) repeated in-band provider pane is distinct from ordinary repeated tool output [0.16ms]
+(pass) detectLoopStuck: same tool error three times [0.08ms]
+(pass) detectLoopStuck: same tool result (no new information) [0.06ms]
+(pass) detectLoopStuck: first hit wins — narration beats everything (most certain) [0.06ms]
+(pass) loopInterventionDirective: rotates strategy per consecutive count [0.13ms]
+(pass) loopInterventionDirective: hard reset from rung 3 with banned openings [0.14ms]
+(pass) loopInterventionDirective: rotation wraps after all strategies [0.04ms]
+(pass) continueVariant: rotates by iteration, never empty [0.09ms]
+
+tests/compaction-live-verifier.test.mjs:
+(pass) loads both local extension entrypoints and isolates Pi's agent directory [0.73ms]
+(pass) accepts only ordered host compaction events plus persisted non-empty records [0.11ms]
+(pass) exercises manual RPC compaction and both post-compaction continuations [0.13ms]
+
+tests/compactor-worker-lifecycle.test.ts:
+(pass) compactor cleans its Pi tree on SIGTERM, including inherited pipes and TERM-ignoring children [307.94ms]
+(pass) compactor cleans its Pi tree on timeout, including inherited pipes and TERM-ignoring children [3171.58ms]
+(pass) compactor cleans its Pi tree on normal, including inherited pipes and TERM-ignoring children [510.08ms]
+(pass) compactor cleans its Pi tree on result-write-failure, including inherited pipes and TERM-ignoring children [536.98ms]
+
+tests/auditor-thinking.test.ts:
+(pass) supported requested level is used verbatim [0.50ms]
+(pass) unsupported xhigh/max fall downwards; mapped nulls are skipped [0.08ms]
+(pass) non-reasoning and unknown requests degrade safely [0.06ms]
+
+tests/never-streamed-standdown.test.ts:
+(pass) v0.38.18 zombieRetryDecision: a turn that never streamed refuses at once [101.23ms]
+(pass) v0.38.18 rearm milestone: an open-but-silent turn is named, not denied [2.09ms]
+(pass) v0.38.18 rearm milestone: with no open turn the legacy wording stays [0.57ms]
+(pass) v0.38.18 behavioral: a never-streamed turn aborts once and stays parked [431.48ms]
+
+tests/visual-auditor-fresh.test.ts:
+(pass) isVisualGoal detects UI/screenshot/visual goals [0.24ms]
+(pass) visual auditor prompt injects fresh native/external capture guidance before verdict [0.51ms]
+(pass) non-visual goals keep the original prompt without fresh capture [0.29ms]
+(pass) visual prompt fixture does not assume an external vision command [0.15ms]
+
+tests/proactive-pre-read.test.ts:
+(pass) gatherProactivePreRead surfaces bounded file evidence and seed excerpt before questioning [98.67ms]
+(pass) gatherProactivePreRead notes image references without assuming an external tool [0.33ms]
+(pass) gatherProactivePreRead still emits a seed-excerpt block when no files match [0.15ms]
+(pass) drafting injects proactive pre-read before the first question [16.58ms]
+(pass) constants retain bounded shape (max 3 files, 800 chars each) [0.13ms]
+
+tests/transient-retry-cadence.test.ts:
