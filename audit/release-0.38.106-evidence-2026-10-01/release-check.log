@@ -494,3 +494,121 @@ tests/revision-bound-audit.test.ts:
 (pass) direct complete_goal refuses an approval when the contract revision changes during the detached audit [607.55ms]
 (pass) v0.34.60: complete_goal passes when the last audit matches the current revision [322.73ms]
 (pass) v0.34.60: legacy audit entries without a revision never trip the gate [354.87ms]
+(pass) v0.34.61: a settled audit never invalidates its own verdict — a second complete_goal on the same contract proceeds [1454.77ms]
+(pass) v0.34.61: the documented escape works — tweak, then /goal verify, then complete_goal proceeds [626.25ms]
+[run-tests] progress: 60s elapsed · 0s since last output · 36 KiB of suite output
+(pass) v0.34.60: the gate skips when the call itself carries newObjective (its audit covers the new contract) [604.08ms]
+(pass) v0.34.96: complete_goal routes to aborted when completionSummary says 'already shipped' [6.66ms]
+(pass) v0.34.96: already-shipped abort binds the version attached to the claim [3.63ms]
+(pass) v0.35.x: already-shipped completion honors an existing archive fence [1.84ms]
+(pass) v0.35.x: archiveCurrentGoal preserves a same-id archive on cancel [3.37ms]
+(pass) v0.34.128: a version-less 'no new work shipped' claim routes to the NORMAL audit and completes on approval [749.58ms]
+(pass) v0.34.128: a version-less 'already shipped' claim disapproved by the auditor leaves the finding queued (no abort) [435.65ms]
+(pass) v0.34.96: a NORMAL completionSummary still runs the auditor (no false-positive abort) [500.82ms]
+(pass) v0.38.104: an unpersistable newObjective refuses the claim and never advances the revision [2.06ms]
+
+tests/auditor-blank-until-resume.test.ts:
+(pass) cold auditor gate hides only the report, not the durable objective UI [63.78ms]
+(pass) cold restore shows the objective and sends nothing until explicit resume [474.91ms]
+(pass) rejected stale /goal resume leaves the auditor surface suppressed [168.87ms]
+(pass) explicit /goal resume releases the auditor surface for admitted main-model recovery [225.63ms]
+(pass) configured auto-resume is continuation consent and restores auditor context [368.88ms]
+
+tests/delegate-skill.test.ts:
+(pass) glla-delegate skill has valid discoverable frontmatter [0.73ms]
+(pass) package exposes the skill directory and pi.skills manifest entry [0.08ms]
+(pass) skill documents consent and auto-activation boundaries [0.12ms]
+(pass) skill states propose_goal_draft needs an open drafting session [0.10ms]
+(pass) skill treats pasted list-like input as supplied, not an exactness choice [0.13ms]
+
+tests/draft-template-failure.test.ts:
+(pass) drafting gate is claimed only after prompt construction [0.94ms]
+(pass) the post-claim model failure still clears drafting state before rethrow [0.19ms]
+
+tests/summary-purpose.test.ts:
+(pass) chat summary leads with durable change facts and hides verification by default [16.60ms]
+(pass) explicit verification opt-in adds one aggregate tail, not a gate table [2.05ms]
+(pass) behavioral limitation belongs under Remaining, not a second technical Next [0.99ms]
+
+tests/stats-challenges.test.ts:
+(pass) challenges: confirmed/flipped/skipped counts over all verdicts, legacy ignored [0.57ms]
+(pass) challenges: empty ledgers zero out, flip rate renders em-dash without challenged runs [0.53ms]
+(pass) challenges: table and JSON formats mirror the schema [0.30ms]
+(pass) challenges: light-tier verdicts and spot-check flips count separately [0.19ms]
+
+tests/hourly-quota-probe.test.ts:
+(pass) v0.34.92: nextHourlyProbeMs returns :00:30 of the NEXT hour [12.74ms]
+(pass) v0.34.92: nextHourlyProbeMs at :00:29 jumps to THIS hour's :00:30 [0.04ms]
+(pass) v0.34.92: nextHourlyProbeMs at :00:31 jumps to NEXT hour [0.03ms]
+(pass) v0.34.92: nextHourlyProbeMs strictly > now [0.19ms]
+(pass) v0.34.92: nextHourlyPromptMs (legacy) still returns :00:00 — kept for callers that pin it [0.06ms]
+(pass) v0.34.92: scheduleHourlyProbe / fireHourlyProbe / cancelHourlyProbe are wired in goal-recovery.ts [0.31ms]
+(pass) v0.34.92: parkMainModelAfterFailure schedules the hourly ticker alongside the recovery timer [0.12ms]
+(pass) v0.34.92: mainModelRecoverySucceeded cancels the hourly ticker [0.09ms]
+(pass) v0.34.92: clearMainModelRecoveryTimer cancels the hourly ticker in lockstep [0.05ms]
+(pass) v0.34.131: a failed hourly probe re-arms only after the async recovery settles [0.25ms]
+(pass) v0.34.132: executable runtime regression covers failure re-arm, opt-out, and generation fencing [235.22ms]
+(pass) v0.34.92: session_start re-arms the hourly ticker when recovery is parked [0.73ms]
+(pass) fresh pause fences cover the hourly auditor backstop too [0.18ms]
+(pass) v0.34.142: hourlyRetryProbe setting exists and defaults to ON [0.16ms]
+(pass) v0.34.142: the /glla menu exposes hourlyRetryProbe with on/off options [2.15ms]
+(pass) v0.34.92: v0.34.58/v0.34.90 quota-prompt machinery is REMOVED from goal.ts and core.ts [4.61ms]
+(pass) v0.34.92: nextHourlyProbeMs is exported from goal-loop-core.ts [0.16ms]
+
+tests/telemetry-event-shapes.test.ts:
+(pass) name-shaped write results count fileWrites on goal telemetry [95.54ms]
+(pass) name-shaped write results count fileWrites on loop iterMetrics [8.28ms]
+
+tests/prompt-daemon-investigation.test.ts:
+(pass) continuation prompt has the DETACHED COMMIT DETECTION section (item 30) [13.27ms]
+(pass) daemon guidance includes the filter-branch inspection command [0.06ms]
+
+tests/loop-branch-ownership.test.ts:
+Switched to a new branch 'pi-glla-loop/test'
+Switched to branch 'main'
+(pass) active branch loop parks before commit when HEAD moved to the user's branch [230.92ms]
+Switched to a new branch 'pi-glla-loop/commit-fail'
+(pass) terminal commit failure preserves the uncommitted iteration and skips destructive finish [202.53ms]
+Switched to a new branch 'pi-glla-loop/reset-fail'
+(pass) reset failure during finish keeps the terminal branch and never attempts checkout [237.50ms]
+Switched to a new branch 'pi-glla-loop/stop-guard'
+Switched to branch 'main'
+(pass) /loop stop on a branch-mode loop parked on a foreign branch attempts no reset or checkout [110.72ms]
+Switched to a new branch 'pi-glla-loop/stop-mid-tick'
+Switched to branch 'main'
+(pass) /loop stop mid-tick still restores the original branch (no false branch-changed park) [214.85ms]
+Switched to a new branch 'pi-glla-loop/stop-commit-inflight'
+Switched to branch 'main'
+(pass) /loop stop mid-tick commits the in-flight iteration instead of resetting it away [295.81ms]
+(pass) commitPendingTerminalWork is module scope and finishLoopGit commits before its reset (source pin) [0.48ms]
+(pass) parkLoopOnWrongBranch consults HEAD before the in-flight tick guard (source pin) [0.27ms]
+Switched to a new branch 'pi-glla-loop/resumable-park'
+Switched to branch 'main'
+Switched to branch 'pi-glla-loop/resumable-park'
+(pass) a branch-changed park is resumable: /loop resume on the scratch branch keeps the loop's history [91.84ms]
+(pass) v0.38.104: the branch-changed park names the loop surface and is in RESUMABLE_STOP (source pins) [0.47ms]
+
+tests/waiting-on-subagent-pause.test.ts:
+(pass) 021655: standby pause does not render 'waiting for manual action' [19.70ms]
+(pass) 021655: standby pause names the background agent as owner, not manual action [0.47ms]
+(pass) 021655: standby status line waits instead of demanding action [0.20ms]
+(pass) v0.38.90: standby reason renders dim (monitoring narration, not a call to action) [0.32ms]
+(pass) v0.38.90: standby reason caps at 2 wrapped rows like decisions/waits [0.28ms]
+(pass) 021655: neighboring kinds keep their manual-action rendering [0.30ms]
+
+tests/audit-job-retention.test.ts:
+(pass) retention: pre-convention finished dirs (no lock, result on file) reap past the window [16.11ms]
+(pass) retention: lockless UNFINISHED dirs stay ambiguous (interrupted creation) [0.43ms]
+(pass) retention: corrupt (present-but-unparseable) locks stay ambiguous [0.31ms]
+(pass) retention: crash before worker ownership reaps only when the parent is dead [0.57ms]
+(pass) retention: proven-dead workers reap past the window, live pids never reap [0.51ms]
+(pass) retention: aged lockless dirs with neither request nor result reap as unowned debris [0.57ms]
+(pass) retention: unowned debris younger than the identity-free floor stays ambiguous [0.37ms]
+(pass) v0.38.104 retention: a finished result settles a LIVE parent lock (PID reuse no longer pins it) [0.65ms]
+(pass) v0.38.104 retention: a LIVE parent lock with no result is still ambiguous (unchanged) [0.43ms]
+
+tests/audit-tier-record.test.ts:
+(pass) tier-record: a small quiet claim audits light and records the tier [573.59ms]
+(pass) tier-record: spot-check rate 1 forces full and marks the verdict [857.11ms]
+(pass) tier-record: complete_goal requestFullAudit escalates one claim [532.63ms]
+(pass) tier-record: draft consent sets fullAudit, shows the notice, ledgers consent [153.00ms]
