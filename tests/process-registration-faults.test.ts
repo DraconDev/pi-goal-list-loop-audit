@@ -6,7 +6,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
-for (const scenario of ['first-write', 'rename', 'owner-loss', 'refresh', 'primary-loss', 'obligation-write', 'obligation-owner-loss'] as const) {
+for (const scenario of ['first-write', 'rename', 'owner-loss', 'refresh', 'primary-loss', 'obligation-write', 'obligation-owner-loss', 'initial-owner-loss'] as const) {
   test(`process registration ${scenario} failure is visible and stops the owned child`, {
     skip: process.platform !== 'linux' || process.getuid?.() === 0, timeout: 30_000,
   }, () => {
@@ -26,6 +26,7 @@ for (const scenario of ['first-write', 'rename', 'owner-loss', 'refresh', 'prima
       let refused=false;
       owned.on('error',()=>{refused=true});
       try {
+        if (${JSON.stringify(scenario)}==='initial-owner-loss') fs.unlinkSync(dir+'/owner.json');
         if (${JSON.stringify(scenario)}==='first-write') fs.chmodSync(dir,0o500);
         if (${JSON.stringify(scenario)}==='obligation-write') fs.chmodSync(dir+'.obligations',0o500);
         if (${JSON.stringify(scenario)}==='rename') {

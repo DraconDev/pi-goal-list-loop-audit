@@ -88,9 +88,9 @@ export function registerOwnedTestProcess(child, env = process.env) {
   const snapshot = (exited = false) => {
     if (failed) return;
     try {
-      const owner = registry(env);
       const current = identity(child.pid);
       if (!leader && current?.group === child.pid && current.session === child.pid) leader = current;
+      const owner = registry(env);
       // A launch error or already-exited child has no live cleanup duty.
       if (!leader) {
         // Non-detached children are already covered by the suite group.
