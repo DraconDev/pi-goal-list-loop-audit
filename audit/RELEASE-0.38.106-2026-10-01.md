@@ -41,3 +41,9 @@ Unreleased section; its unchanged-source evidence is retained as
 `release-check-doc-contract.*`. Both release documents were corrected before
 re-running the release contract.
 Evidence: [release directory](release-0.38.106-evidence-2026-10-01/).
+
+The third attempt exposed a stale-host fixture whose old context still answered
+healthy liveness probes, allowing legitimate heartbeat self-heal before the
+successor contact. The fixture now keeps the predecessor unusable so it tests
+the intended first replacement boundary. Runtime recovery was not changed;
+`release-check-stale-fixture.*` retains that attempt's unchanged-source evidence.
