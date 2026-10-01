@@ -2064,3 +2064,6 @@ Switched to branch 'main'
 [run-tests] progress: 300s elapsed · 1s since last output · 156 KiB of suite output
 (pass) v0.35.x: stale host replacement session_start auto-recovers the parked audit [1308.04ms]
 (pass) v0.35.x: healthy same-session heartbeat recovers a parked completion audit without manual resume [1278.21ms]
+(pass) v0.36.0: exhausted no-verdict auditor chain enters the shared ladder with an automatic retry timer [5963.85ms]
+[run-tests] received SIGTERM — cleaning up the suite group
+[run-tests] finished in 313s (exit null, signal SIGTERM)
