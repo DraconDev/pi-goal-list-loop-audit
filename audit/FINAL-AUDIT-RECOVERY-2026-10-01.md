@@ -53,6 +53,12 @@ No new ambient runtime bridge slots or settings were added.
   disapproved for `audit-muhbedy5-xzsys5-muhbee0g-84839178`, duration 482132 ms.
   No live project's goal state, source, model, or owning host was changed.
 
+The pre-fix cases fail on the old source; the current focused checks pass:
+36 tests across the recovery regression and the two existing source pins.
+The original broad run found two source-pin assumptions invalidated by the
+refactor. The retry-provenance assertion is now scoped to automatic verdict
+handling; the revision-refusal pin follows the continuation wrapper and checks
+its cold-consent gate. No protected runtime behavior or verdict gate was removed.
 Full validation is running. This report will be completed with its result
 before implementation closure is claimed. Existing running hosts must load
 these updated main-session modules to use the recovery path.

@@ -1,0 +1,47 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/auditor-eager-retry.test.ts:
+(pass) eager: first attempt is 5s for every provider failure family [0.26ms]
+(pass) hourly: later attempts keep the slot diagnostic but cap the wait at 15m [0.17ms]
+(pass) hourly: rate-limit, billing, and transient-shaped failures share the same later schedule [0.10ms]
+(pass) eager: an upstream Retry-After hint does not suppress the uniform retry [0.04ms]
+(pass) eager: detached auditor retries an account-shaped failure once before durable parking [2.51ms]
+(pass) eager: a second recoverable provider error remains infrastructure after the one retry [0.31ms]
+(pass) eager: conservative attempts remain bounded by the existing durable safety window [0.05ms]
+(pass) unified: no auditor-only attempt cap inside the shared horizon [0.03ms]
+(pass) aggressive auditor recovery respects the fixed recovery horizon [0.02ms]
+(pass) manual-started timer retries preserve automatic provenance and clear exhausted cycle state [0.34ms]
+(pass) automatic plans advance counters while preserving their original envelope [0.06ms]
+(pass) source pins: uniform eager retry and hourly probe wording are present at both dispatch sites [0.67ms]
+
+tests/interrupt-didnt-continue.test.ts:
+(pass) FIX A: a never-set revision (undefined) + captured 0 is CURRENT, not stale [0.16ms]
+(pass) FIX A: captured 0 against a genuinely bumped goal is still refused [0.03ms]
+(pass) FIX A: equal non-zero revisions stay current; bumps refuse [3.87ms]
+(pass) FIX A pin: the refusal guard uses isGoalRevisionCurrent, not raw !== on undefined [2.61ms]
+(pass) FIX B pin: the refusal branch restores status active so the loop continues [3.03ms]
+(pass) behavior preserved: a GENUINE orphaned audit still parks with the same message [2.89ms]
+
+tests/completed-audit-recovery.test.ts:
+(pass) finished real worker, lost parent: restart applies approved exactly once without re-auditing [618.66ms]
+(pass) finished real worker, lost parent: restart applies disapproved exactly once without re-auditing [457.10ms]
+(pass) manual resume consumes a completed parked claim instead of launching another auditor [267.33ms]
+(pass) agent resume consumes a completed parked claim instead of launching another auditor [260.96ms]
+(pass) silent file-backed successor applies a finished verdict from the dead generation [388.41ms]
+(pass) legacy completed jobs bind the original goal, contract, and claim without new metadata [1.39ms]
+(pass) newer unfinished candidate prevents replay of an older completed result [0.90ms]
+(pass) saved result refuses unsafe recovery: revision [0.70ms]
+(pass) saved result refuses unsafe recovery: claim [0.60ms]
+(pass) saved result refuses unsafe recovery: structured-claim [0.44ms]
+(pass) saved result refuses unsafe recovery: hash [0.44ms]
+(pass) saved result refuses unsafe recovery: result-identity [0.45ms]
+(pass) saved result refuses unsafe recovery: cancelled-tool [0.65ms]
+(pass) saved result refuses unsafe recovery: strict-challenge [0.50ms]
+(pass) saved result refuses unsafe recovery: unsupported-tool [0.46ms]
+(pass) corrupt final progress identity refuses recovery without consuming the claim [0.53ms]
+(pass) saved approval still enforces the audit-tool floor and regression shield [0.88ms]
+(pass) second audit pass remains visible through thinking, tools, and report generation [0.77ms]
+
+ 36 pass
+ 0 fail
+Ran 36 tests across 3 files. [2.75s]
