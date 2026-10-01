@@ -59,6 +59,11 @@ The original broad run found two source-pin assumptions invalidated by the
 refactor. The retry-provenance assertion is now scoped to automatic verdict
 handling; the revision-refusal pin follows the continuation wrapper and checks
 its cold-consent gate. No protected runtime behavior or verdict gate was removed.
-Full validation is running. This report will be completed with its result
-before implementation closure is claimed. Existing running hosts must load
+The complete pre-version release contract passed: **2984 passed, 1 skipped,
+0 failed**, followed by TypeScript, singleton-state import, offline auditor
+extensions, inventory, npm pack inspection, and real packed RPC/skill/import
+smokes. Raw log: `final-audit-recovery-evidence-2026-10-01/pre-version-release-check.log`.
+
+The same release contract is running against prepared version **0.38.107**;
+publishing and registry verification will be recorded before release closure. Existing running hosts must load
 these updated main-session modules to use the recovery path.
