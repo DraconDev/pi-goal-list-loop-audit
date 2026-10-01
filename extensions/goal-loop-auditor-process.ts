@@ -1884,6 +1884,9 @@ export function completionAuditRecoveryIdentity(goal: Goal): string {
     claimAt: claim?.at ?? null,
     completionSummary: claim?.completionSummary ?? null,
     verificationSummary: claim?.verificationSummary ?? null,
+    leftOut: claim?.leftOut ?? null, findingGroups: claim?.findingGroups ?? null,
+    gateRows: claim?.gateRows ?? null, priorCompletionSummary: claim?.priorCompletionSummary ?? null,
+    requestFullAudit: claim?.requestFullAudit ?? false,
   })).digest("hex");
 }
 
@@ -1945,7 +1948,7 @@ export function readCompletedCompletionAudit(cwd: string, goal: Goal, strictChal
     if (progress && (progress.protocolVersion !== PROTOCOL_VERSION || progress.attemptId !== name || progress.requestHash !== hash)) return null;
     const validated = validateCompletedAuditorResult({
       result, goal, model: request.model, thinkingLevel: request.thinkingLevel,
-      capturedRevisionToken: token, strictChallenge: strictChallenge || request.strictChallenge === true,
+      capturedRevisionToken: token, strictChallenge: (strictChallenge && request.auditTier !== "light") || request.strictChallenge === true,
       startedAt, nowMs: Date.now(), lastProgress: progress, reportStall: () => {},
     });
     // Infrastructure results belong to retry recovery, never semantic settlement.
