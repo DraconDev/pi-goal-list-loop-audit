@@ -1,0 +1,84 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/state-root-failure.test.ts tests/process-registration-faults.test.ts tests/test-runner-lifecycle.test.ts tests/terminal-approval-render.test.ts tests/terminal-summary-delivery.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/terminal-summary-delivery.test.ts:
+(pass) visible summary persists without an LLM turn (idle=true) [74.97ms]
+(pass) visible summary persists without an LLM turn (idle=false) [0.21ms]
+(pass) branch-before-persist failure stays pending, suppresses duplicate, later persistence confirms [0.30ms]
+(pass) no-file session never acknowledges but does not repeat the visible summary [0.16ms]
+(pass) outbox survives failed delivery and restart; acknowledged render never replays [5.43ms]
+(pass) failed outbox acknowledgement does not duplicate an existing persisted branch summary [1.70ms]
+(pass) confirmation requires exact identity/content and complete JSONL, tolerates malformed tail [0.37ms]
+(pass) bounded confirmation fails conservatively when receipt is outside tail [7.67ms]
+(pass) maximum supported outbox receipt is acknowledged ("x") [15.58ms]
+(pass) maximum supported outbox receipt is acknowledged ("😀") [86.72ms]
+(pass) maximum supported outbox receipt is acknowledged ("\u0000") [64.39ms]
+(pass) maximum supported outbox receipt is acknowledged ("\\") [35.40ms]
+(pass) failed outbox acknowledgement write retries without resending the visible message [3.70ms]
+(pass) current settlement is not starved by older unconfirmed renders [10.58ms]
+(pass) persistently unconfirmed head rotates so a later render is attempted [13.03ms]
+(pass) host sendMessage reentrant enqueue remains pending after confirmed session delivery [5.81ms]
+
+tests/state-root-failure.test.ts:
+(pass) known session root remains readable and mutations defer on permission [8.11ms]
+(pass) known session root remains readable and mutations defer on malformed [2.49ms]
+(pass) known session root remains readable and mutations defer on invalid-selector [2.18ms]
+(pass) cold unreadable selector does not authorize a fallback root [1.70ms]
+(pass) cold invalid-json selector does not authorize a fallback root [0.37ms]
+(pass) absent selector uses the default, while a persistence operation pins a validated root [0.89ms]
+
+tests/process-registration-faults.test.ts:
+(pass) process registration first-write failure is visible and stops the owned child [132.65ms]
+(pass) process registration rename failure is visible and stops the owned child [128.56ms]
+(pass) process registration owner-loss failure is visible and stops the owned child [950.73ms]
+(pass) process registration refresh failure is visible and stops the owned child [923.89ms]
+(pass) process registration primary-loss failure is visible and stops the owned child [371.77ms]
+(pass) process registration obligation-write failure is visible and stops the owned child [86.40ms]
+(pass) process registration obligation-owner-loss failure is visible and stops the owned child [266.47ms]
+(pass) process registration initial-owner-loss failure is visible and stops the owned child [149.38ms]
+(pass) process registration stat-denied failure is visible and stops the owned child [105.79ms]
+(pass) process registration stat-malformed failure is visible and stops the owned child [104.15ms]
+(pass) process registration stat-missing failure is visible and stops the owned child [103.52ms]
+
+tests/terminal-approval-render.test.ts:
+(pass) skipped challenges are disclosed in chat, transcript, and archive evidence [41.31ms]
+(pass) canonical render folds a lone approval with the verdict count, model-free [1.77ms]
+(pass) standalone audit bullet survives only with news [2.01ms]
+(pass) counts line proofs the audit verdict from durable state only [0.38ms]
+(pass) buildApprovalChatLines stays backward compatible without counts [0.54ms]
+(pass) v0.38.37 posted summary carries verifiable-result bullets plus the deliberate non-do [1.52ms]
+(pass) idle-persisted render replays once on the next live contact [230.93ms]
+(pass) render with confirmed delivery never replays [5.30ms]
+(pass) corrupt store degrades to zero replays, never throws [0.89ms]
+(pass) v0.38.39 chat brief strips machine paths but the archive keeps them [1.12ms]
+(pass) v0.38.39 clause cut respects +-joined lists [0.17ms]
+(pass) second approval for the same goal after delivery queues a fresh render [12.11ms]
+(pass) error-only audit history renders an honest archive banner with no review row [0.74ms]
+(pass) unreadable outbox refuses enqueue without replacing an earlier pending render [7.47ms]
+(pass) malformed and partially invalid stores preserve bytes and refuse mutations [26.52ms]
+(pass) delivery callback enqueue survives acknowledgement and replays on next contact [8.40ms]
+(pass) nested replay neither repeats the in-flight render nor restores acknowledged entries [10.74ms]
+(pass) refusal rotation preserves callback enqueues and makes them reachable next contact [20.32ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [627.66ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [225.87ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [205.18ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5223.37ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [760.65ms]
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [186.54ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on normal exit [1850.41ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on signal exit [1813.02ms]
+(pass) registry refuses to signal a record naming a reused leader identity [57.86ms]
+(pass) runner refuses a green suite after a swallowed primary registration write failure [268.69ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [248.29ms]
+(pass) parent runner fails after swallowed initial identity denial and restored reads [453.73ms]
+
+ 63 pass
+ 0 fail
+Ran 63 tests across 5 files. [18.83s]
+[run-tests] finished in 19s (exit 0)

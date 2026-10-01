@@ -1,0 +1,40 @@
+
+> pi-goal-list-loop-audit@0.38.105 release:check
+> npm run test:all && npm run check:inventory && npm pack --dry-run && node scripts/release-pack-smoke.mjs
+
+
+> pi-goal-list-loop-audit@0.38.105 test:all
+> node scripts/run-tests.mjs --all && tsc --noEmit && node tests/repro-jiti-state-split.test.mjs && npm run test:auditor-extensions
+
+[run-tests] mode=all slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-stale-context.test.ts:
+(pass) v0.34.52: bare /glla on a stale handle is refused — standard recovery message, UI never opens, settings untouched [385.49ms]
+(pass) v0.34.52: mutating /glla actions (wipe, cancel, resume, reviewer, postaudit, tooloverride) are all refused on a stale handle [332.11ms]
+(pass) v0.34.52: /glla status, log, stats, audits stay usable on a stale handle (inspect, don't mutate) [2547.56ms]
+(pass) audit 2026-09-07 (LOW, finding 399): bare `/glla fallbacks` is a read-only display — allowed on a stale handle; `fallbacks clear` still mutates and is refused [464.23ms]
+(pass) v0.34.52: the standard recovery — a fresh session reopens the settings UI and owns the next /glla [641.28ms]
+(pass) v0.35.72: source — settings rechecks admission after the menu and before saves [0.42ms]
+(pass) v0.34.52: source — cmdSettings captures the entry probe and gates the settings entry + mutating actions [10.36ms]
+
+tests/terminal-summary-delivery.test.ts:
+(pass) visible summary persists without an LLM turn (idle=true) [68.31ms]
+(pass) visible summary persists without an LLM turn (idle=false) [0.20ms]
+(pass) branch-before-persist failure stays pending, suppresses duplicate, later persistence confirms [0.28ms]
+(pass) no-file session never acknowledges but does not repeat the visible summary [0.11ms]
+(pass) outbox survives failed delivery and restart; acknowledged render never replays [144.99ms]
+(pass) failed outbox acknowledgement does not duplicate an existing persisted branch summary [84.79ms]
+(pass) confirmation requires exact identity/content and complete JSONL, tolerates malformed tail [0.55ms]
+(pass) bounded confirmation fails conservatively when receipt is outside tail [26.21ms]
+(pass) maximum supported outbox receipt is acknowledged ("x") [14.53ms]
+(pass) maximum supported outbox receipt is acknowledged ("😀") [111.37ms]
+(pass) maximum supported outbox receipt is acknowledged ("\u0000") [107.80ms]
+(pass) maximum supported outbox receipt is acknowledged ("\\") [42.11ms]
+(pass) failed outbox acknowledgement write retries without resending the visible message [4.32ms]
+(pass) current settlement is not starved by older unconfirmed renders [6.61ms]
+(pass) persistently unconfirmed head rotates so a later render is attempted [8.59ms]
+(pass) host sendMessage reentrant enqueue remains pending after confirmed session delivery [3.30ms]
+
+tests/blocked-pause-autoclear.test.ts:
+(pass) v0.34.64 — blocked pause owned by recovery auto-clears when the probe succeeds [1117.82ms]
