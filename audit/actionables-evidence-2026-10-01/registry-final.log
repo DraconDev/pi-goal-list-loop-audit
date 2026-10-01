@@ -1,0 +1,33 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/process-registration-faults.test.ts tests/test-runner-lifecycle.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/process-registration-faults.test.ts:
+(pass) process registration first-write failure is visible and stops the owned child [74.96ms]
+(pass) process registration rename failure is visible and stops the owned child [83.01ms]
+(pass) process registration owner-loss failure is visible and stops the owned child [882.19ms]
+(pass) process registration refresh failure is visible and stops the owned child [879.26ms]
+(pass) process registration primary-loss failure is visible and stops the owned child [275.53ms]
+(pass) process registration obligation-write failure is visible and stops the owned child [85.93ms]
+(pass) process registration obligation-owner-loss failure is visible and stops the owned child [306.77ms]
+(pass) process registration initial-owner-loss failure is visible and stops the owned child [78.04ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [473.18ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [136.11ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [157.78ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5183.61ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [915.55ms]
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [457.39ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on normal exit [1871.80ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on signal exit [1599.92ms]
+(pass) registry refuses to signal a record naming a reused leader identity [96.89ms]
+(pass) runner refuses a green suite after a swallowed registration write failure [381.42ms]
+
+ 18 pass
+ 0 fail
+Ran 18 tests across 2 files. [14.98s]
+[run-tests] finished in 15s (exit 0)

@@ -1,0 +1,52 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/audit-2026-09-08.test.ts tests/audit-job-retention.test.ts tests/terminal-approval-render.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/audit-2026-09-08.test.ts:
+(pass) v0.38.30: closed parent with nested grandchildren counts fully done [10.87ms]
+(pass) v0.38.30: glance head strips headers, links, quotes, single-emphasis [0.30ms]
+(pass) v0.38.30: kind:loop recovery does not hijack the active goal card [0.23ms]
+(pass) v0.38.30: blank-primary recovery falls back to provenance [0.39ms]
+(pass) v0.38.30: narrow width keeps provenance inner-truncated, not mid-token cut [0.48ms]
+(pass) v0.38.30: completion-summary width truncation is ANSI-free [0.85ms]
+(pass) v0.38.30: topOpenAuditFinding strips aligned boxes [0.82ms]
+(pass) v0.38.30: parseLoopStartArgs keeps junk time= in unquoted prose [0.45ms]
+(pass) approval store preserves corrupt bytes and refuses enqueue until explicit recovery [85.05ms]
+(pass) v0.38.30: approval store truncates by code points and caps chat lines [14.14ms]
+(pass) v0.38.30: stale/worker replay guard skips worker sessions [0.29ms]
+
+tests/audit-job-retention.test.ts:
+(pass) retention: pre-convention finished dirs (no lock, result on file) reap past the window [21.54ms]
+(pass) retention: lockless UNFINISHED dirs stay ambiguous (interrupted creation) [3.69ms]
+(pass) retention: corrupt (present-but-unparseable) locks stay ambiguous [0.71ms]
+(pass) retention: crash before worker ownership reaps only when the parent is dead [1.23ms]
+(pass) retention: proven-dead workers reap past the window, live pids never reap [3.79ms]
+(pass) retention: aged lockless dirs with neither request nor result reap as unowned debris [0.77ms]
+(pass) retention: unowned debris younger than the identity-free floor stays ambiguous [0.43ms]
+(pass) v0.38.104 retention: a finished result settles a LIVE parent lock (PID reuse no longer pins it) [0.56ms]
+(pass) v0.38.104 retention: a LIVE parent lock with no result is still ambiguous (unchanged) [4.67ms]
+
+tests/terminal-approval-render.test.ts:
+(pass) skipped challenges are disclosed in chat, transcript, and archive evidence [12.44ms]
+(pass) canonical render folds a lone approval with the verdict count, model-free [0.69ms]
+(pass) standalone audit bullet survives only with news [0.63ms]
+(pass) counts line proofs the audit verdict from durable state only [0.27ms]
+(pass) buildApprovalChatLines stays backward compatible without counts [0.12ms]
+(pass) v0.38.37 posted summary carries verifiable-result bullets plus the deliberate non-do [0.96ms]
+(pass) idle-persisted render replays once on the next live contact [79.48ms]
+(pass) render with confirmed delivery never replays [0.88ms]
+(pass) corrupt store degrades to zero replays, never throws [0.43ms]
+(pass) v0.38.39 chat brief strips machine paths but the archive keeps them [0.74ms]
+(pass) v0.38.39 clause cut respects +-joined lists [0.12ms]
+(pass) second approval for the same goal after delivery queues a fresh render [1.36ms]
+(pass) error-only audit history renders an honest archive banner with no review row [0.42ms]
+(pass) unreadable outbox refuses enqueue without replacing an earlier pending render [1.04ms]
+(pass) malformed and partially invalid stores preserve bytes and refuse mutations [1.77ms]
+
+ 35 pass
+ 0 fail
+Ran 35 tests across 3 files. [1.98s]
+[run-tests] finished in 2s (exit 0)

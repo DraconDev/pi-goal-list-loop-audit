@@ -1,0 +1,20 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/process-registration-faults.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/process-registration-faults.test.ts:
+(pass) process registration first-write failure is visible and stops the owned child [93.45ms]
+(pass) process registration rename failure is visible and stops the owned child [86.41ms]
+(pass) process registration owner-loss failure is visible and stops the owned child [876.72ms]
+(pass) process registration refresh failure is visible and stops the owned child [891.97ms]
+(pass) process registration primary-loss failure is visible and stops the owned child [265.28ms]
+(pass) process registration obligation-write failure is visible and stops the owned child [84.66ms]
+(pass) process registration obligation-owner-loss failure is visible and stops the owned child [266.74ms]
+
+ 7 pass
+ 0 fail
+Ran 7 tests across 1 file. [3.01s]
+[run-tests] finished in 3s (exit 0)

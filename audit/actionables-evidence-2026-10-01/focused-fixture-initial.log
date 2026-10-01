@@ -1,0 +1,44 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/terminal-approval-render.test.ts tests/settlement-boundary-faults.test.ts tests/process-registration-faults.test.ts tests/real-host-canary.test.ts tests/test-runner-lifecycle.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/real-host-canary.test.ts:
+(pass) real-host canary reports an explicit skip without opt-in or spawning Pi [55.41ms]
+(pass) opt-in canary installs its request guard and records bounded host evidence (stub host) [175.38ms]
+(pass) generated canary uses actual Pi dispatcher and allowed transport behavior [1183.37ms]
+(pass) generated canary uses actual Pi dispatcher and unknown-price transport behavior [371.69ms]
+(pass) generated canary uses actual Pi dispatcher and over-budget transport behavior [402.18ms]
+(pass) generated canary uses actual Pi dispatcher and unsupported-cap transport behavior [409.21ms]
+(pass) generated canary uses actual Pi dispatcher and oversized transport behavior [384.20ms]
+(pass) generated canary uses actual Pi dispatcher and second-request transport behavior [434.16ms]
+(pass) generated canary uses actual Pi dispatcher and receipt-write transport behavior [449.23ms]
+
+tests/process-registration-faults.test.ts:
+(pass) process registration first-write failure is visible and stops the owned child [188.70ms]
+49 |     `);
+50 |     try {
+51 |       const result = spawnSync(process.execPath, [source], { encoding: 'utf8', timeout: 20_000 });
+52 |       assert.equal(result.status, 0, result.stderr);
+53 |       const observed = JSON.parse(result.stdout);
+54 |       assert.equal(observed.refused, true);
+                  ^
+AssertionError: Expected values to be strictly equal:
+
+false !== true
+
+ generatedMessage: true,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/process-registration-faults.test.ts:54:14
+      at fn (node:test:215:18)
+(fail) process registration rename failure is visible and stops the owned child [359.48ms]
+[run-tests] progress: 30s elapsed · 25s since last output · 2 KiB of suite output
+[run-tests] progress: 60s elapsed · 55s since last output · 2 KiB of suite output
+[run-tests] received SIGTERM — cleaning up the suite group
+[run-tests] finished in 86s (exit null, signal SIGKILL)

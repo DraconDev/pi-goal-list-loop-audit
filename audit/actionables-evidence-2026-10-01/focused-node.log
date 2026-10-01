@@ -1,0 +1,62 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/terminal-approval-render.test.ts tests/settlement-boundary-faults.test.ts tests/process-registration-faults.test.ts tests/real-host-canary.test.ts tests/test-runner-lifecycle.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/real-host-canary.test.ts:
+(pass) real-host canary reports an explicit skip without opt-in or spawning Pi [54.58ms]
+(pass) opt-in canary installs its request guard and records bounded host evidence (stub host) [156.34ms]
+(pass) generated canary uses actual Pi dispatcher and allowed transport behavior [2503.39ms]
+(pass) generated canary uses actual Pi dispatcher and unknown-price transport behavior [553.44ms]
+(pass) generated canary uses actual Pi dispatcher and over-budget transport behavior [613.41ms]
+(pass) generated canary uses actual Pi dispatcher and unsupported-cap transport behavior [424.27ms]
+(pass) generated canary uses actual Pi dispatcher and oversized transport behavior [414.99ms]
+(pass) generated canary uses actual Pi dispatcher and second-request transport behavior [357.15ms]
+(pass) generated canary uses actual Pi dispatcher and receipt-write transport behavior [397.41ms]
+
+tests/process-registration-faults.test.ts:
+(pass) process registration first-write failure is visible and stops the owned child [88.78ms]
+(pass) process registration rename failure is visible and stops the owned child [93.55ms]
+(pass) process registration owner-loss failure is visible and stops the owned child [886.08ms]
+(pass) process registration refresh failure is visible and stops the owned child [874.69ms]
+
+tests/settlement-boundary-faults.test.ts:
+(pass) typed settlement refuses success before its intent can be persisted [497.98ms]
+(pass) failed receipt transfer retains the terminal obligation across live-slot cleanup [39.40ms]
+(pass) unreadable old outbox retains new archive intent until both summaries can be queued [8.53ms]
+
+tests/terminal-approval-render.test.ts:
+(pass) skipped challenges are disclosed in chat, transcript, and archive evidence [16.90ms]
+(pass) canonical render folds a lone approval with the verdict count, model-free [0.84ms]
+(pass) standalone audit bullet survives only with news [1.03ms]
+(pass) counts line proofs the audit verdict from durable state only [0.45ms]
+(pass) buildApprovalChatLines stays backward compatible without counts [0.18ms]
+(pass) v0.38.37 posted summary carries verifiable-result bullets plus the deliberate non-do [1.37ms]
+(pass) idle-persisted render replays once on the next live contact [53.27ms]
+(pass) render with confirmed delivery never replays [0.76ms]
+(pass) corrupt store degrades to zero replays, never throws [0.51ms]
+(pass) v0.38.39 chat brief strips machine paths but the archive keeps them [0.75ms]
+(pass) v0.38.39 clause cut respects +-joined lists [0.12ms]
+(pass) second approval for the same goal after delivery queues a fresh render [2.54ms]
+(pass) error-only audit history renders an honest archive banner with no review row [0.39ms]
+(pass) unreadable outbox refuses enqueue without replacing an earlier pending render [2.20ms]
+(pass) malformed and partially invalid stores preserve bytes and refuse mutations [0.91ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [452.89ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [163.06ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [194.13ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5178.62ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [793.61ms]
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [280.46ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on normal exit [1629.88ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on signal exit [1374.45ms]
+(pass) registry refuses to signal a record naming a reused leader identity [17.92ms]
+(pass) runner refuses a green suite after a swallowed registration write failure [204.86ms]
+
+ 41 pass
+ 0 fail
+Ran 41 tests across 5 files. [19.52s]
+[run-tests] finished in 20s (exit 0)
