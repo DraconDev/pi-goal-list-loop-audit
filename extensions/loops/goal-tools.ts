@@ -2984,7 +2984,7 @@ function registerAgentTools(pi: any): void {
         if (outcome !== "retried") {
           return { content: [{ type: "text", text: outcome === "parked"
             ? "The approved completion claim remains stored; its archive settlement is blocked. No new auditor was launched."
-            : "The stored completion verdict was recovered and applied. No new auditor was launched; use goal status to see the outcome." }], details: {} };
+            : "The stored completion verdict was recovered. No new auditor was launched; goal status shows approval, rework, or any blocked settlement." }], details: {} };
         }
         ctx.ui.notify("Resuming the stored completion claim — starting a detached auditor (no agent turn needed).", "info");
         return { content: [{ type: "text", text: `Resumed the ${noun} with its stored completion claim — a detached auditor is now running. Return without waiting or polling; GLLA delivers the verdict.` }], details: {} };
