@@ -2658,3 +2658,111 @@ tests/mechanical-pipeline.test.ts:
 (pass) pipeline runs shell-free: green head passes, evidence truncated [143.61ms]
 (pass) pipeline exit follows the head, never the filter [423.12ms]
 (pass) unsafe pipeline stages never execute: 126 with no side effects [61.60ms]
+(pass) grep filter reads stdin only: no file operand, no leak [176.71ms]
+
+tests/paused-overdue-display.test.ts:
+(pass) v0.38.31: overdue wait names the recovery timer, never resuming now [58.66ms]
+(pass) v0.38.31: overdue wait status bar reads retry overdue [0.62ms]
+(pass) v0.38.31: in-grace wait keeps resuming now [0.62ms]
+(pass) v0.38.31: future wait keeps the countdown [0.37ms]
+(pass) v0.38.31: wait card drops the generic tail and closes the tree [0.30ms]
+(pass) v0.38.31: error pause keeps suggested action and saved tail [0.96ms]
+
+tests/goal-loop-dispatch.test.ts:
+(pass) dispatch starts prepared and only accepted records can time out [0.27ms]
+(pass) start proof is generation/owner-bound and prompt matching is exact to the attempt marker [0.17ms]
+(pass) dispatch sidecar is atomic and recoverable across a session boundary [5.69ms]
+(pass) corrupt or unknown sidecar records are ignored [61.55ms]
+
+tests/drafting-questionnaire.test.ts:
+(pass) seeded drafting requires tool-first choices and a concrete next handoff [0.68ms]
+(pass) goal-loop-draft.md: carries the roadmap-then-stages rule [0.36ms]
+(pass) goal-loop-draft.md: carries the rich-option standard [0.12ms]
+(pass) goal-loop-draft.md: invites the Esc correction explicitly [0.08ms]
+(pass) goal-loop-forever-draft.md: carries the roadmap-then-stages rule [0.39ms]
+(pass) goal-loop-forever-draft.md: carries the rich-option standard [0.14ms]
+(pass) goal-loop-forever-draft.md: invites the Esc correction explicitly [0.10ms]
+(pass) goal-loop-plan.md: carries the roadmap-then-stages rule [0.18ms]
+(pass) goal-loop-plan.md: carries the rich-option standard [0.08ms]
+(pass) goal-loop-plan.md: invites the Esc correction explicitly [0.02ms]
+(pass) goal-loop-draft.md: pasted list-like seeds use supplied wording without an exactness choice [0.19ms]
+(pass) goal-loop-plan.md: pasted list-like seeds use supplied wording without an exactness choice [0.12ms]
+
+tests/completion-summary-quality.test.ts:
+(pass) completion summary quality: validator requires six labels [72.57ms]
+(pass) completion summary quality: generic prose and missing labels ledger and NOTE [254.72ms]
+(pass) completion summary quality: valid six-label recap passes without missing-label ledger [24.91ms]
+(pass) v0.36.0: every terminal outcome gets a six-label recorded-facts fallback [0.78ms]
+(pass) v0.36.0: validation annotations cannot satisfy recap-label validation [0.38ms]
+(pass) v0.36.0: valid recap is preserved while generic prose is replaced [0.26ms]
+(pass) gate and projectors share last-occurrence segmentation on stolen labels [0.42ms]
+(pass) v0.36.0: compact recap projection keeps the five human labels and bounds each value [0.54ms]
+(pass) v0.36.0: terminal notification projection resolves generic claims from durable facts [0.66ms]
+(pass) v0.36.0: fallback never invents changed files or test results [0.15ms]
+(pass) v0.36.0: archive boundary replaces a validator annotation with recorded facts [38.40ms]
+(pass) v0.36.0: archiveCurrentGoal writes a recap for complete and abort-derived terminal paths [20.24ms]
+(pass) completion summary audit doc exists and inventories archives [2.99ms]
+(pass) v0.38.104: the recorded-facts archive summary never emits a lone surrogate [0.54ms]
+
+tests/auditor-polish.test.ts:
+(pass) stripThinkBlocks removes think bodies, fragments, and artifacts [87.38ms]
+(pass) audit log: append + read round-trip, malformed lines skipped [4.97ms]
+(pass) audit log bounded tail scans large records from the end [1.84ms]
+(pass) formatAuditLog: one line per verdict with glyph, goal, model, first report line [0.83ms]
+(pass) tail-aware excerpt: capped output keeps the Required-fixes tail [1.70ms]
+(pass) audit feedback excerpts redact provider payloads before executor output [0.48ms]
+(pass) disapproval feedback is surfaced even when the continuation turn never starts [6.52ms]
+(pass) infra errors are transparent to the disapproval streak (not breakers) [0.30ms]
+(pass) widget flags auditor-quiet stalls after 3 minutes [2.60ms]
+(pass) auditor prompt requires the Required-fixes tail + no think blocks [1.40ms]
+(pass) isRetriableInfraError: aborts and missing-model are NOT retried [1.13ms]
+(pass) runWithInfraRetry: retriable infra failure retried exactly once [0.77ms]
+(pass) runWithInfraRetry: provider Retry-After does not suppress the uniform backoff [0.28ms]
+(pass) runWithInfraRetry: lifecycle guard prevents a second attempt [0.23ms]
+(pass) formatGoalAuditHistory: one line per verdict with elapsed [0.79ms]
+
+tests/stale-event-context.test.ts:
+(pass) late agent_settled events with stale contexts are ignored safely [153.61ms]
+
+tests/durable-choice-ledger.test.ts:
+(pass) durable-vs-defer judgment is an explicit bounded ledger choice [417.79ms]
+(pass) durable-choice payload compacts model-authored rationale [0.10ms]
+
+tests/session-identity-refusal.test.ts:
+(pass) 195237: same session id on a new manager object is the owner, not a subagent [1068.38ms]
+(pass) v0.38.92: a dethroned main is told about the lost root, never called a subagent [317.26ms]
+(pass) 195237: a genuinely different session is still refused [206.35ms]
+
+tests/loop-error-exemption.test.ts:
+(pass) v0.29.19: provider-error turns are NOT iterations — no measure, no stall, no stuck; loop stays active [955.20ms]
+(pass) v0.35.x: repeated in-band provider tool output parks recovery without loop stuck accounting [1337.23ms]
+(pass) explicit in-band prompt-policy refusal stops a loop on its first pane [755.94ms]
+(pass) v0.29.19: a real turn after errors clears the streak and measures normally [1620.88ms]
+(pass) v0.35.x: recoverable provider failures use the same durable recovery envelope [0.21ms]
+(pass) v0.34.31: extended quota errors enter durable main-model recovery [1468.24ms]
+(pass) v0.34.26: loop output-token exhaustion persists and notifies the compact recap [1582.24ms]
+(pass) v0.29.19: 3 consecutive user aborts stop the loop — user aborts mean STOP [637.95ms]
+(pass) v0.29.19: audit plateau with OPEN findings stands down (reprieve), then stops honestly when reprieves run out [2549.34ms]
+(pass) v0.29.20: a plain plateau stop is resumable (pre-gate false plateaus recover) [475.00ms]
+[run-tests] progress: 600s elapsed · 0s since last output · 207 KiB of suite output
+(pass) v0.29.19: audit plateau with ZERO open findings stops normally — the well is dry [336.51ms]
+
+tests/list-subtasks.test.ts:
+(pass) v0.35.72: visible hierarchical positions map to flat queue indexes [78.24ms]
+(pass) v0.34.81: SUBTASK_MARKER is line-start + case-insensitive [0.31ms]
+(pass) v0.34.81: extractSubtaskParent — no marker → undefined parent [0.20ms]
+(pass) v0.34.81: extractSubtaskParent — em-dash splits parent/child [0.13ms]
+(pass) v0.34.81: extractSubtaskParent — en-dash and hyphen-separator both work [0.10ms]
+(pass) v0.34.81: extractSubtaskParent — hyphen WITHOUT spaces does NOT split [0.06ms]
+(pass) v0.34.81: extractSubtaskParent — no separator captures parent only, empty child [0.09ms]
+(pass) v0.34.81: extractSubtaskParent — multi-line child objective survives marker strip [0.09ms]
+(pass) v0.34.81: parseListItemDeclaration — child objective keeps its own Parallel + Done when [0.35ms]
+(pass) v0.34.81: parseListItemDeclaration — no marker means parentObjective is undefined [0.13ms]
+(pass) v0.34.81: parentId round-trips through writeQueueItemFile → readQueueFromDisk [4.95ms]
+(pass) v0.34.81: readQueueFromDisk ignores malformed parentId (non-string) [0.69ms]
+(pass) v0.34.81: wiring — parse in core, resolve/refuse/cascade in goal.ts [17.18ms]
+(pass) v0.34.81 (behavioral): list_add with a subtask binds parentId to the matching queue item [566.56ms]
+(pass) v0.34.81 (behavioral): unresolved parent refuses that child, other items still land [396.65ms]
+(pass) v0.34.81 (behavioral): explicit pick on a group refuses loudly (no silent jump) [531.15ms]
+(pass) v0.34.81 (behavioral): auto-advance skips a head group and lands on its first open child [374.78ms]
+(pass) audit-2026-09-06: auto-advance head-group skip is ledgered, not silent [361.79ms]
