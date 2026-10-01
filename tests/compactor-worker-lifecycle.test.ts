@@ -32,7 +32,21 @@ for (const scenario of ["SIGTERM", "timeout", "normal", "result-write-failure"] 
       fs.writeFileSync(pi, piSource, { mode: 0o755 });
       fs.writeFileSync(path.join(cwd, "request.json"), JSON.stringify({ model: "stub/model", prompt: "brief", timeoutMs: scenario === "timeout" ? 1000 : 15_000 }));
       if (scenario === "result-write-failure") fs.mkdirSync(path.join(cwd, "result.json"));
-      worker = spawn("node", [path.resolve("scripts/goal-compactor-worker.mjs"), "--job-dir", cwd], {
+      const bootstrap = path.join(cwd, "registration-window.mjs");
+      if (scenario === "SIGTERM") fs.writeFileSync(bootstrap, `
+        import fs from 'node:fs'; import {syncBuiltinESMExports} from 'node:module';
+        const read=fs.readFileSync;let held=false;
+        fs.readFileSync=(file,...args)=>{
+          if(!held && /^\\/proc\\/\\d+\\/stat$/.test(String(file))){
+            held=true;const deadline=Date.now()+3000;
+            while(!fs.existsSync(${JSON.stringify(ready)}) && Date.now()<deadline){}
+            const settle=Date.now()+500;while(Date.now()<settle){}
+          }
+          return read(file,...args);
+        };syncBuiltinESMExports();
+      `);
+      const args = scenario === "SIGTERM" ? ["--import", bootstrap] : [];
+      worker = spawn("node", [...args, path.resolve("scripts/goal-compactor-worker.mjs"), "--job-dir", cwd], {
         env: { ...process.env, GLLA_PI_BINARY: pi }, stdio: "ignore",
       });
       const closed = new Promise<number | null>((resolve, reject) => {

@@ -67,6 +67,11 @@ try {
   fail(resultPath, error);
 }
 
+// Arm native signal handling before launch/registration: a child can become
+// ready while synchronous registry discovery still occupies this process.
+process.once("SIGTERM", () => { void stop("compactor worker interrupted by SIGTERM"); });
+process.once("SIGINT", () => { void stop("compactor worker interrupted by SIGINT"); });
+
 const child = spawn(launch.file, launch.args, {
   cwd: request.cwd || process.cwd(),
   env: process.env,
@@ -103,8 +108,6 @@ async function stop(reason) {
 const timer = setTimeout(() => {
   void stop("compactor Pi timed out");
 }, timeoutMs);
-process.once("SIGTERM", () => { void stop("compactor worker interrupted by SIGTERM"); });
-process.once("SIGINT", () => { void stop("compactor worker interrupted by SIGINT"); });
 
 child.on("error", (error) => { clearTimeout(timer); fail(resultPath, `pi spawn failed: ${error}`); });
 child.once("exit", () => {
