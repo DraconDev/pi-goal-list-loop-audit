@@ -352,7 +352,7 @@ export function resolveTweakReplacement(raw: string, sessionManager: unknown): T
 const DETAIL_ANCHOR_RES = [
   // The path class refuses prose connectors ("before/after", "either/or"):
   // a slash between English words is not a file path.
-  /\b(?!(?:before|after|either|neither|up|down|left|right|and|or|on|off|per|versus|vs?)\/)(?:[\w.-]+\/[\w./-]*[\w.-]+\.(?:ts|tsx|js|mjs|cjs|py|rs|go|md|json|yaml|yml|toml|sh|sql)\b|[\w.-]+\/[\w.-]{4,}[\w./-]*\b)/,
+  /\b(?!(?:before|after|either|neither|up|down|left|right|and|or|on|off|per|versus|vs?)\/)(?:[\w.-]+\/[\w./-]*[\w.-]+\.(?:ts|tsx|js|mjs|cjs|py|rs|go|md|json|yaml|yml|toml|sh|sql)\b|[\w.-]+\/[\w.-]{4,}[\w./-]*\b)/i,
   /`[^`\n]{2,}`|\b(?:npm|bun|node|cargo|git|pi|make|docker|pytest|go test)\s+\S+/,
   /"[^"\n]{3,}"/,
   /\b(?:should|must|needs?\s+to|verify|acceptance\s+(?:criterion|criteria)|done\s+when)\b/i,
