@@ -53,11 +53,13 @@ for (const scenario of ['allowed', 'unknown-price', 'over-budget', 'unsupported-
       fs.writeFileSync(hook, buildCanaryExtensionSource({ maxUsd: 0.01, receipt, outcome: path.join(dir, 'outcome.json') }));
       const dispatcher = path.resolve('node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/runner.js');
       const source = path.join(dir, 'host.mjs');
-      fs.writeFileSync(source, `
+      fs.writeFileSync(source, `#!/usr/bin/env node
         import fs from 'node:fs';import {pathToFileURL} from 'node:url';
+        if(process.argv.includes('--version')) {console.log('local-dispatch-fixture');process.exit(0)}
         const {ExtensionRunner}=await import(pathToFileURL(${JSON.stringify(dispatcher)}).href);
         const handlers=new Map();
-        (await import(pathToFileURL(${JSON.stringify(hook)}).href)).default({on:(event,handler)=>handlers.set(event,[handler])});
+        const generatedHook=process.argv.flatMap((arg,i)=>arg==='-e'?[process.argv[i+1]]:[]).find(file=>file.endsWith('canary-budget-extension.mjs'))??${JSON.stringify(hook)};
+        (await import(pathToFileURL(generatedHook).href)).default({on:(event,handler)=>handlers.set(event,[handler])});
         const model={cost:${scenario === 'unknown-price' ? 'undefined' : scenario === 'over-budget' ? '{input:100,output:100}' : '{input:0.01,output:0.01}'}};
         const runner={extensions:[{path:'glla-canary',handlers}],createContext:()=>({model}),emitError:e=>{throw new Error('guard failure escaped into swallowed hook path: '+e.error)}};
         const payload=${scenario === 'unsupported-cap' ? '{input:"test"}' : scenario === 'oversized' ? '{max_tokens:4096,input:"x".repeat(9000)}' : '{max_tokens:4096,tools:[{name:"complete_goal"}],tool_choice:"auto"}'};
@@ -68,7 +70,8 @@ for (const scenario of ['allowed', 'unknown-price', 'over-budget', 'unsupported-
         };
         await transport();
         ${scenario === 'second-request' ? 'await transport();' : ''}
-      `);
+        handlers.get('agent_end')[0]({messages:[{role:'assistant',content:[{type:'text',text:'GLLA_CANARY_OK'}]}]});
+      `, {mode:0o755});
       const result = spawnSync("node", [source], { encoding: 'utf8', timeout: 20_000 });
       const transportFile = path.join(dir, 'transport.jsonl');
       const calls = fs.existsSync(transportFile) ? fs.readFileSync(transportFile, 'utf8').trim().split('\n').map(line => JSON.parse(line)) : [];
@@ -78,6 +81,16 @@ for (const scenario of ['allowed', 'unknown-price', 'over-budget', 'unsupported-
         assert.equal(calls[0].max_tokens, 32);
         assert.deepEqual(calls[0].tools, []);
         assert.equal(calls[0].tool_choice, undefined);
+      }
+      if (process.platform !== 'win32' && scenario !== 'receipt-write') {
+        fs.rmSync(transportFile, {force:true});
+        const harness = spawnSync('node', ['scripts/real-host-canary.mjs'], {
+          encoding:'utf8',timeout:20_000,env:{...process.env,GLLA_RUN_REAL_CANARY:'1',GLLA_CANARY_MODEL:'local/fixture',GLLA_CANARY_MAX_USD:'0.01',GLLA_PI_BINARY:source},
+        });
+        assert.equal(harness.status, scenario === 'allowed' ? 0 : 1, harness.stderr);
+        assert.equal(JSON.parse(harness.stdout).status, scenario === 'allowed' ? 'passed' : 'failed');
+        const dispatched = fs.existsSync(transportFile) ? fs.readFileSync(transportFile,'utf8').trim().split('\n').length : 0;
+        assert.equal(dispatched, scenario === 'allowed' || scenario === 'second-request' ? 1 : 0);
       }
       if (scenario !== 'receipt-write') {
         const recorded = JSON.parse(fs.readFileSync(receipt, 'utf8'));
