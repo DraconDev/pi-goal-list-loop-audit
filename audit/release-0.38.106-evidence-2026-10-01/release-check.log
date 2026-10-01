@@ -790,3 +790,4 @@ tests/completion-communication.test.ts:
 (pass) complete_goal findingGroups ride the claim into the grouped terminal render [1466.46ms]
 (pass) disapproval remains unfinished, no final success is posted [1104.44ms]
 (pass) archive write failure never emits a terminal success [1413.36ms]
+[run-tests] progress: 90s elapsed · 8s since last output · 59 KiB of suite output
