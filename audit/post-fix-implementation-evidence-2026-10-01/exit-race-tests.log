@@ -1,0 +1,68 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/subagent-hang-detection.test.ts tests/process-registration-faults.test.ts tests/test-runner-lifecycle.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/subagent-hang-detection.test.ts:
+(pass) v0.35.65: snapshots use live manager counters and expose honest phase/elapsed data [15.38ms]
+(pass) v0.35.65: queued manager records stay queued and do not masquerade as active work [0.19ms]
+(pass) current pi-subagents async lifecycle and status.json drive live counters [1146.29ms]
+(pass) current v1 stop RPC is selected after the status artifact proves top-level ownership [471.18ms]
+(pass) classify: a running subagent with no new progress for 5m is hung [0.46ms]
+(pass) classify: sub-5m silence is not hung (5m floor, shorter than the auditor's 10m) [0.11ms]
+(pass) classify: a NEW tool use refreshes the streak (working, not wedged) [0.46ms]
+(pass) classify: NEW output tokens refresh the streak (long think, still alive) [0.15ms]
+(pass) classify: ended / non-running records are not hung (watch stops) [0.12ms]
+(pass) v0.34.102: a vanished/unreachable record falls back to event-only evidence (field: pully 118m wedge) [0.21ms]
+(pass) hang detection surfaces ui.notify + ledger `subagent_hang_detected` via the heartbeat scan [462.95ms]
+(pass) hang warning is throttled — one alert per 5m streak window, not per tick [614.92ms]
+(pass) long frozen tracked child requests one bounded child-specific abort after the warning window [616.81ms]
+(pass) progress arriving before escalation cancels the action and starts a fresh episode [462.63ms]
+(pass) event-only child reaches an honest unavailable-action record, never a guessed abort [616.22ms]
+(pass) nested child is not eligible for top-level automatic abort [459.24ms]
+(pass) v0.35.65: an old-generation child cannot receive a stop RPC after host rebind [478.82ms]
+(pass) host rebind retires healthy event-only evidence and admits fresh same-generation progress [473.83ms]
+(pass) v0.34.102: event-only hang surfaces `subagent_hang_detected` with evidence=event-only when no manager record exists [465.67ms]
+(pass) completed/failed events end the watch — no hang alert after completion [610.76ms]
+(pass) compacted/steered events refresh the streak (secondary progress evidence) [615.13ms]
+(pass) malformed hang inputs are dropped, not crashy [310.30ms]
+(pass) source pins: constants, watchdog wiring, and ledger key [7.74ms]
+(pass) v0.34.105: hang scan runs during main-model recovery (quota wall blinds the watchdog before the fix) [990.52ms]
+(pass) v0.34.105 source pin: subagent scan precedes the main-model-recovery early return in heartbeatTick [0.19ms]
+(pass) v0.38.104 releasing the RPC host unsubscribes the readiness listeners it installed [0.31ms]
+
+tests/process-registration-faults.test.ts:
+(pass) process registration first-write failure is visible and stops the owned child [113.93ms]
+(pass) process registration rename failure is visible and stops the owned child [78.79ms]
+(pass) process registration owner-loss failure is visible and stops the owned child [914.69ms]
+(pass) process registration refresh failure is visible and stops the owned child [902.71ms]
+(pass) process registration primary-loss failure is visible and stops the owned child [337.97ms]
+(pass) process registration obligation-write failure is visible and stops the owned child [120.58ms]
+(pass) process registration obligation-owner-loss failure is visible and stops the owned child [317.77ms]
+(pass) process registration initial-owner-loss failure is visible and stops the owned child [86.92ms]
+(pass) process registration stat-denied failure is visible and stops the owned child [108.36ms]
+(pass) process registration stat-malformed failure is visible and stops the owned child [99.19ms]
+(pass) process registration stat-missing failure is visible and stops the owned child [87.66ms]
+(pass) proven already-exited child retires its declaration without a cleanup failure [155.19ms]
+(pass) proven suite-group child retires its declaration without a cleanup failure [83.20ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [468.60ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [182.05ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [206.56ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5204.59ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [880.46ms]
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [415.58ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on normal exit [2024.98ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on signal exit [1479.64ms]
+(pass) registry refuses to signal a record naming a reused leader identity [59.83ms]
+(pass) runner refuses a green suite after a swallowed primary registration write failure [216.95ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [206.07ms]
+(pass) parent runner fails after swallowed initial identity denial and restored reads [188.49ms]
+
+ 51 pass
+ 0 fail
+Ran 51 tests across 3 files. [26.00s]
+[run-tests] finished in 26s (exit 0)

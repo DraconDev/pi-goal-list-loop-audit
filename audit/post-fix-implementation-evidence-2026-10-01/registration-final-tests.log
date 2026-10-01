@@ -1,0 +1,27 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/process-registration-faults.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/process-registration-faults.test.ts:
+(pass) process registration first-write failure is visible and stops the owned child [167.55ms]
+(pass) process registration rename failure is visible and stops the owned child [114.65ms]
+(pass) process registration owner-loss failure is visible and stops the owned child [1016.57ms]
+(pass) process registration refresh failure is visible and stops the owned child [958.22ms]
+(pass) process registration primary-loss failure is visible and stops the owned child [370.31ms]
+(pass) process registration obligation-write failure is visible and stops the owned child [169.50ms]
+(pass) process registration obligation-owner-loss failure is visible and stops the owned child [392.65ms]
+(pass) process registration initial-owner-loss failure is visible and stops the owned child [114.00ms]
+(pass) process registration stat-denied failure is visible and stops the owned child [169.04ms]
+(pass) process registration stat-malformed failure is visible and stops the owned child [156.81ms]
+(pass) process registration stat-missing failure is visible and stops the owned child [127.44ms]
+(pass) proven already-exited child retires its declaration without a cleanup failure [192.69ms]
+(pass) proven proc-disappeared child retires its declaration without a cleanup failure [132.27ms]
+(pass) proven suite-group child retires its declaration without a cleanup failure [96.50ms]
+
+ 14 pass
+ 0 fail
+Ran 14 tests across 1 file. [5.09s]
+[run-tests] finished in 5s (exit 0)
