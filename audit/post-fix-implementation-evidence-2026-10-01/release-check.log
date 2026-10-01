@@ -1422,3 +1422,7 @@ tests/replace-resume-intent.test.ts:
 
 tests/drafting-handoff.test.ts:
 [run-tests] progress: 150s elapsed · 0s since last output · 106 KiB of suite output
+(pass) draft-only handoff: a real question waits without an autonomous retry [2994.28ms]
+(pass) field screenshot: answered promise-only draft delivers exactly one corrective follow-up [5635.75ms]
+(pass) cancelled or missing answer suppresses stale handoff evidence: {"cancelled":true,"answers":[]} [2928.51ms]
+(pass) cancelled or missing answer suppresses stale handoff evidence: {} [2844.75ms]
