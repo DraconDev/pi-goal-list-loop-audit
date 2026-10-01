@@ -2,10 +2,17 @@
 
 # Next
 
-# later
-
 ##
 improve control ui ?
+
+##
+not sure what i am expected to do here
+/home/dracon/Pictures/Screenshots/Screenshot_20261001_120159.png
+
+
+# later
+
+
 ##
 we need to update the readme and the docs like for one we are not pinning subagents 
 
