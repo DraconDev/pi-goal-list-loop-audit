@@ -1,0 +1,76 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/completed-audit-recovery.test.ts:
+52 |     __testOnlyResetAuditorSurface(); // no in-flight poller and no recovery-armed flag
+53 |     __testOnlySetLastActivityAt(Date.now() - 100_000);
+54 |     try {
+55 |       __testOnlyHeartbeatTick(); await tick(120);
+56 |       const restored = readState(cwd).goal;
+57 |       assert.notEqual(restored?.status, "auditing", "an unowned audit cannot remain auditing forever");
+                  ^
+AssertionError: an unowned audit cannot remain auditing forever
+ generatedMessage: false,
+     actual: "auditing",
+   expected: "auditing",
+   operator: "notStrictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/completed-audit-recovery.test.ts:57:14
+      at processTicksAndRejections (native:7:39)
+(fail) healthy host heartbeat reconciles an unarmed orphan: approved [3073.26ms]
+52 |     __testOnlyResetAuditorSurface(); // no in-flight poller and no recovery-armed flag
+53 |     __testOnlySetLastActivityAt(Date.now() - 100_000);
+54 |     try {
+55 |       __testOnlyHeartbeatTick(); await tick(120);
+56 |       const restored = readState(cwd).goal;
+57 |       assert.notEqual(restored?.status, "auditing", "an unowned audit cannot remain auditing forever");
+                  ^
+AssertionError: an unowned audit cannot remain auditing forever
+ generatedMessage: false,
+     actual: "auditing",
+   expected: "auditing",
+   operator: "notStrictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/completed-audit-recovery.test.ts:57:14
+      at processTicksAndRejections (native:7:39)
+(fail) healthy host heartbeat reconciles an unarmed orphan: disapproved [268.08ms]
+52 |     __testOnlyResetAuditorSurface(); // no in-flight poller and no recovery-armed flag
+53 |     __testOnlySetLastActivityAt(Date.now() - 100_000);
+54 |     try {
+55 |       __testOnlyHeartbeatTick(); await tick(120);
+56 |       const restored = readState(cwd).goal;
+57 |       assert.notEqual(restored?.status, "auditing", "an unowned audit cannot remain auditing forever");
+                  ^
+AssertionError: an unowned audit cannot remain auditing forever
+ generatedMessage: false,
+     actual: "auditing",
+   expected: "auditing",
+   operator: "notStrictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/completed-audit-recovery.test.ts:57:14
+      at processTicksAndRejections (native:7:39)
+(fail) healthy host heartbeat reconciles an unarmed orphan: missing [284.88ms]
+(pass) finished real worker, lost parent: restart applies approved exactly once without re-auditing [927.03ms]
+(pass) finished real worker, lost parent: restart applies disapproved exactly once without re-auditing [751.05ms]
+(pass) manual resume consumes a completed parked claim instead of launching another auditor [386.47ms]
+(pass) agent resume consumes a completed parked claim instead of launching another auditor [390.48ms]
+(pass) silent file-backed successor applies a finished verdict from the dead generation [502.87ms]
+(pass) legacy completed jobs bind the original goal, contract, and claim without new metadata [4.26ms]
+(pass) newer unfinished candidate prevents replay of an older completed result [4.80ms]
+(pass) saved result refuses unsafe recovery: revision [1.05ms]
+(pass) saved result refuses unsafe recovery: claim [0.75ms]
+(pass) saved result refuses unsafe recovery: structured-claim [0.72ms]
+(pass) saved result refuses unsafe recovery: hash [0.70ms]
+(pass) saved result refuses unsafe recovery: result-identity [0.68ms]
+(pass) saved result refuses unsafe recovery: cancelled-tool [0.82ms]
+(pass) saved result refuses unsafe recovery: strict-challenge [0.84ms]
+(pass) saved result refuses unsafe recovery: unsupported-tool [0.82ms]
+(pass) corrupt final progress identity refuses recovery without consuming the claim [0.82ms]
+(pass) saved approval still enforces the audit-tool floor and regression shield [1.31ms]
+(pass) second audit pass remains visible through thinking, tools, and report generation [1.26ms]
+
+ 18 pass
+ 3 fail
+Ran 21 tests across 1 file. [7.71s]

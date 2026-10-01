@@ -1,0 +1,52 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/audit-settlement-restart.test.ts:
+(pass) restart: a running claim whose worker is gone parks as recovery-needed and never looks complete [844.03ms]
+(pass) restart: a claim whose worker never reported is recovery-needed, with no invented activity [187.53ms]
+(pass) restart: a settling claim completes its archive without re-running the auditor [480.20ms]
+(pass) restart: a finished settlement is approved once — one render, and the render follows the archive [634.58ms]
+(pass) restart: a refused archive keeps the approved claim and emits no terminal success [409.75ms]
+(pass) recovery: after the fault is repaired, /goal resume finishes the settlement WITHOUT re-auditing [617.36ms]
+(pass) recovery: a restart after the fault is repaired also finishes the settlement without re-auditing [611.86ms]
+(pass) lifecycle evidence survives the durable state boundary (sanitized, not dropped) [1.00ms]
+(pass) audit 2026-09-25: no constant-folded settlement guard obscures the live gate [1.02ms]
+
+tests/auditing-standstill.test.ts:
+(pass) agent turns during a pending audit stay silent instead of escalating [861.27ms]
+
+tests/stuck-audit-latch.test.ts:
+(pass) Fix A: the apply gate defers + parks instead of silently dropping a completed verdict [20.43ms]
+(pass) Fix B: the stale-latch stranded park runs BEFORE the extensionApiStale early return [0.44ms]
+(pass) Fix B: the park requires the exact stuck signature (auditing, no in-flight, claim, 90s silence) [1.33ms]
+(pass) audit 2026-09-25: stranded_audit_recovered is ledgered only after the park lands [0.36ms]
+
+tests/completed-audit-recovery.test.ts:
+(pass) healthy host heartbeat reconciles an unarmed orphan: approved [634.89ms]
+(pass) healthy host heartbeat reconciles an unarmed orphan: disapproved [314.76ms]
+(pass) healthy host heartbeat reconciles an unarmed orphan: missing [357.80ms]
+(pass) heartbeat orphan recovery respects in-flight [397.49ms]
+(pass) heartbeat orphan recovery respects recent [341.55ms]
+(pass) heartbeat orphan recovery respects frozen [335.87ms]
+(pass) heartbeat orphan recovery respects cold-held [353.39ms]
+(pass) finished real worker, lost parent: restart applies approved exactly once without re-auditing [2025.97ms]
+(pass) finished real worker, lost parent: restart applies disapproved exactly once without re-auditing [1719.09ms]
+(pass) manual resume consumes a completed parked claim instead of launching another auditor [406.75ms]
+(pass) agent resume consumes a completed parked claim instead of launching another auditor [349.18ms]
+(pass) silent file-backed successor applies a finished verdict from the dead generation [593.52ms]
+(pass) legacy completed jobs bind the original goal, contract, and claim without new metadata [9.68ms]
+(pass) newer unfinished candidate prevents replay of an older completed result [13.83ms]
+(pass) saved result refuses unsafe recovery: revision [10.39ms]
+(pass) saved result refuses unsafe recovery: claim [0.81ms]
+(pass) saved result refuses unsafe recovery: structured-claim [11.85ms]
+(pass) saved result refuses unsafe recovery: hash [0.96ms]
+(pass) saved result refuses unsafe recovery: result-identity [3.89ms]
+(pass) saved result refuses unsafe recovery: cancelled-tool [3.53ms]
+(pass) saved result refuses unsafe recovery: strict-challenge [0.85ms]
+(pass) saved result refuses unsafe recovery: unsupported-tool [2.47ms]
+(pass) corrupt final progress identity refuses recovery without consuming the claim [1.30ms]
+(pass) saved approval still enforces the audit-tool floor and regression shield [5.54ms]
+(pass) second audit pass remains visible through thinking, tools, and report generation [1.14ms]
+
+ 39 pass
+ 0 fail
+Ran 39 tests across 4 files. [15.22s]
