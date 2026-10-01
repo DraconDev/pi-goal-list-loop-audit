@@ -1,19 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
   <title id="title">GLLA — verified goal loop</title>
-  <desc id="desc">A mint green goal loop surrounds a white verification check. An amber node marks work in progress on a deep navy tile.</desc>
+  <desc id="desc">A wide navy store thumbnail pairs a mint goal loop and white verification check with the GLLA wordmark. An amber node marks work in progress.</desc>
   <defs>
-    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#182b3f"/><stop offset="1" stop-color="#08121f"/>
-    </linearGradient>
-    <linearGradient id="loop" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#85f4c2"/><stop offset="1" stop-color="#20cdb6"/>
-    </linearGradient>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#182b3f"/><stop offset="1" stop-color="#08121f"/></linearGradient>
+    <linearGradient id="loop" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#85f4c2"/><stop offset="1" stop-color="#20cdb6"/></linearGradient>
   </defs>
-  <rect width="1024" height="1024" rx="208" fill="url(#tile)"/>
-  <rect x="24" y="24" width="976" height="976" rx="184" fill="none" stroke="#284155" stroke-width="4"/>
-  <circle cx="512" cy="512" r="240" fill="#0c1b29"/>
-  <circle cx="512" cy="512" r="320" fill="none" stroke="#243e4d" stroke-width="76"/>
-  <path d="M512 192 A320 320 0 1 1 235 352" fill="none" stroke="url(#loop)" stroke-width="76" stroke-linecap="round"/>
-  <circle cx="235" cy="352" r="43" fill="#ffbd69" stroke="#112333" stroke-width="14"/>
-  <path d="M366 514 L466 614 L660 412" fill="none" stroke="#f2fff9" stroke-width="88" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect width="1600" height="1000" fill="url(#tile)"/>
+  <rect x="22" y="22" width="1556" height="956" rx="36" fill="none" stroke="#284155" stroke-width="4"/>
+  <g transform="translate(25 125) scale(.732421875)">
+    <circle cx="512" cy="512" r="240" fill="#0c1b29"/>
+    <circle cx="512" cy="512" r="320" fill="none" stroke="#243e4d" stroke-width="76"/>
+    <path d="M512 192 A320 320 0 1 1 235 352" fill="none" stroke="url(#loop)" stroke-width="76" stroke-linecap="round"/>
+    <circle cx="235" cy="352" r="43" fill="#ffbd69" stroke="#112333" stroke-width="14"/>
+    <path d="M366 514 L466 614 L660 412" fill="none" stroke="#f2fff9" stroke-width="88" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g fill="#f2fff9" aria-label="GLLA">
+    <path transform="translate(745.000 575) scale(0.10009766 -0.10009766)" d="M1530 111Q1386 41 1231.0 6.0Q1076 -29 911 -29Q538 -29 320.0 179.5Q102 388 102 745Q102 1106 324.0 1313.0Q546 1520 932 1520Q1081 1520 1217.5 1492.0Q1354 1464 1475 1409V1100Q1350 1171 1226.5 1206.0Q1103 1241 979 1241Q749 1241 624.5 1112.5Q500 984 500 745Q500 508 620.0 379.0Q740 250 961 250Q1021 250 1072.5 257.5Q1124 265 1165 281V571H930V829H1530Z"/>
+    <path transform="translate(913.264 575) scale(0.10009766 -0.10009766)" d="M188 1493H573V291H1249V0H188Z"/>
+    <path transform="translate(1043.892 575) scale(0.10009766 -0.10009766)" d="M188 1493H573V291H1249V0H188Z"/>
+    <path transform="translate(1174.519 575) scale(0.10009766 -0.10009766)" d="M1094 272H492L397 0H10L563 1493H1022L1575 0H1188ZM588 549H997L793 1143Z"/>
+  </g>
 </svg>
