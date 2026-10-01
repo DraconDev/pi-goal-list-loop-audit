@@ -1420,3 +1420,24 @@ tests/drafting-handoff.test.ts:
 [run-tests] progress: 210s elapsed · 1s since last output · 106 KiB of suite output
 (pass) cancelled or missing answer suppresses stale handoff evidence: {} [2922.02ms]
 (pass) cancelled or missing answer suppresses stale handoff evidence: {"cancelled":false,"answers":[]} [3287.35ms]
+(pass) pending draft correction stands down on cancel [2849.73ms]
+(pass) pending draft correction stands down on user [2953.54ms]
+(pass) pending draft correction stands down on busy [2908.93ms]
+(pass) pending draft correction stands down on pending [3027.96ms]
+(pass) pending draft correction stands down on shutdown [3326.81ms]
+(pass) pending draft correction stands down on new-draft [2865.22ms]
+
+tests/pitfall-registry.test.ts:
+(pass) pitfall registry: absent file reads as absent [0.86ms]
+(pass) pitfall registry: present file is returned bounded [0.40ms]
+(pass) pitfall registry: brief rides the continuation prompt [47.21ms]
+(pass) pitfall registry: no brief means no section [1.11ms]
+
+tests/tweak-procedural-tail.test.ts:
+(pass) 184316: trailing filing instruction with embedded command is stripped [0.48ms]
+(pass) single-sentence input passes through untouched [2.95ms]
+(pass) non-instructional trailing mention of a command is kept [0.11ms]
+(pass) trailing 'then resume' instruction without filing nouns is stripped [0.04ms]
+(pass) plain multi-sentence objective with no tail is unchanged [0.02ms]
+
+tests/transcript-replay.test.ts:
