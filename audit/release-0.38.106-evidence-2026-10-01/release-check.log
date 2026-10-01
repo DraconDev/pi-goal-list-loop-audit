@@ -1422,3 +1422,8 @@ tests/replace-resume-intent.test.ts:
 (pass) v0.34.103 (issue #6): the ledger key survives in goal-loop-core round-trips [0.26ms]
 
 tests/drafting-handoff.test.ts:
+(pass) draft-only handoff: a real question waits without an autonomous retry [2969.80ms]
+(pass) field screenshot: answered promise-only draft delivers exactly one corrective follow-up [5632.85ms]
+(pass) cancelled or missing answer suppresses stale handoff evidence: {"cancelled":true,"answers":[]} [2848.15ms]
+(pass) cancelled or missing answer suppresses stale handoff evidence: {} [2817.63ms]
+(pass) cancelled or missing answer suppresses stale handoff evidence: {"cancelled":false,"answers":[]} [2816.54ms]
