@@ -35,11 +35,18 @@ includes the new helper and test file.
 - The initial TypeScript run passed. The final release gate reruns TypeScript,
   all serialized tests, singleton checks, offline extension loading, inventory,
   package dry-run and installed-tarball loader/RPC/skill smoke.
-- **Final full release gate: running.** Its exact source manifest, exit status,
-  elapsed time and log hash will be recorded in
+- **Final full release gate: passed, exit 0.** It completed in 926.886 seconds
+  with **2,948 pass, one skip, zero failures across 320 test files**. TypeScript,
+  singleton, offline extension loading, inventory, package dry-run and the
+  installed-tarball RPC/skill/import smoke all passed. The source manifest was
+  identical before and after the run. Its exact manifest, exit status,
+  elapsed time and log hash are recorded in
   [release-check-final.json](actionables-evidence-2026-10-01/release-check-final.json),
   with raw [output](actionables-evidence-2026-10-01/release-check-final.log).
-  Completion requires exit 0 and unchanged source across that run.
+  Both completion requirements are satisfied. Current-source verification and
+  each finding's regression results are recorded in
+  [completion-verification.json](actionables-evidence-2026-10-01/completion-verification.json).
+  **PA-1, PA-2 and PA-3 are closed in the verified current source.**
 
 Counts above overlap; they are independent runs, not an additive test total.
 Permission and detached-registry faults run on Linux as a non-root user.

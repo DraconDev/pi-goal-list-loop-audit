@@ -20,7 +20,11 @@ reproduces three remaining owned defects (two HIGH, one MEDIUM): canary
 rejections do not abort requests, failed process registration can report clean
 cleanup, and an unreadable outbox can lose an earlier pending summary.
 Reproduction scripts, observations, fresh focused checks and repair acceptance
-criteria are retained with that report. Those findings remain open.
+criteria are retained with that report. All three follow-up findings are closed
+in [ACTIONABLES-IMPLEMENTATION-2026-10-01.md](ACTIONABLES-IMPLEMENTATION-2026-10-01.md):
+2,948 tests pass, one skip, zero failures, and the complete release gate passes
+against unchanged source, including the installed-tarball smoke. The upstream
+Pi dependency advisory remains separately recorded.
 
 **Historical review (2026-09-29):**
 [FULL-AUDIT-2026-09-29.md](FULL-AUDIT-2026-09-29.md) reports 11 fixed
