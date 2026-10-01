@@ -58,9 +58,27 @@ does not chase a phantom manual intervention. Not changed in this audit.
 
 ## Fix-forward
 
-1. Upgrade the global install to ≥0.38.107 (published; `npm view`
-   confirms): the audit fixes go live for new sessions. Running sessions
-   keep the loaded .104 until restarted — do NOT restart mid-audit.
+1. ~~Upgrade the global install to ≥0.38.107~~ — MOOT: sessions load the
+   repo checkout, so they already run current code (as of session start).
 2. Cut the next release with the unreleased UI/liveness work (note.md
-   already queues "do a release after"), then upgrade again.
+   already queues "do a release after") for npm users.
 3. Optional: relabel the `manual-verify` settlement origin.
+
+## Follow-up: "never settles" on current code (22:25–22:35 UTC)
+
+Operator report with screenshot: v0.38.107 session, list-item audit just
+started, "says latest but doesnt work", symptom "never settles". Findings:
+
+- Audit-history sweep (dracon-platform root): 19.4 min APPROVED→settled,
+  14.6 min APPROVED→settled, 10.8 min DISAPPROVED (legit false-green
+  finding, repaired, resubmitted). One 21:30 attempt died WITH its session
+  (worker dead, no result) but was properly cancelled
+  (`audit_worker_cancelled` reason quit + `audit_recovery_pending`), and a
+  successor attempt settled. Zero orphaned results, zero unsettled
+  approvals. The settle mechanism is NOT broken in evidence.
+- Live audit at inspection: round 1, 26→35 tool calls across snapshots,
+  ≤9s activity silence, worker process alive. Progressing normally.
+- Open: no evidence yet for what "doesnt work" refers to on current code.
+  Leading hypotheses: (a) 11–19 min full-tier thinking-max audits feel
+  endless; (b) a stall later in this attempt (round 2 / settlement);
+  (c) an unreconstructed display freeze. Operator asked which to pursue.
