@@ -1,5 +1,11 @@
 # Now
 
+##
+we need to update the readme and the docs like for one we are not pinning subagents 
+
+##
+do a release after
+
 # Next
 
 ##
@@ -11,10 +17,6 @@ not sure what i am expected to do here
 
 
 # later
-
-
-##
-we need to update the readme and the docs like for one we are not pinning subagents 
 
 # Testing
 
