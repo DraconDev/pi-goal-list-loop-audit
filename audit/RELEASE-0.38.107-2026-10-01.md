@@ -28,7 +28,10 @@ working tree and its committed projection. Evidence lives in
 Tag `v0.38.107` points at `b2503325805eed76784ef524470873c7786be721`.
 All 482 tested source/metadata files match that tag. GitHub Release:
 https://github.com/DraconDev/pi-goal-list-loop-audit/releases/tag/v0.38.107 .
-Publishing workflow `36887869040` is in progress; npm availability verification
-is pending. This report does not yet claim registry availability. Existing Pi hosts
+Publishing workflow `36887869040` completed successfully, including the tagged
+release contract: **2984 passed, 1 skipped, 0 failed**, plus the remaining checks.
+npm accepted trusted publishing with signed provenance and reports asynchronous
+package processing. Registry availability is still pending; this report does
+not yet claim that version/latest are available. Existing Pi hosts
 must load the updated plugin to use the recovery path. SEO's saved result is a
 disapproval, so reconciliation exposes rework rather than declaring completion.

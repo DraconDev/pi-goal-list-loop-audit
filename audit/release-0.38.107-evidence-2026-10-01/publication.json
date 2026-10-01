@@ -6,7 +6,8 @@
   "releaseUrl": "https://github.com/DraconDev/pi-goal-list-loop-audit/releases/tag/v0.38.107",
   "workflowRunId": 36887869040,
   "workflowUrl": "https://github.com/DraconDev/pi-goal-list-loop-audit/actions/runs/36887869040",
-  "workflowStatus": "in_progress",
-  "npmStatus": "pending",
-  "verifiedAt": "2026-10-01T15:55:41.078173+00:00"
+  "workflowStatus": "completed",
+  "npmStatus": "accepted-processing",
+  "verifiedAt": "2026-10-01T16:07:04.812419+00:00",
+  "workflowConclusion": "success"
 }

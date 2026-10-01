@@ -1,0 +1,5 @@
+publish	Publish with npm trusted publishing	﻿2026-10-01T16:03:05.4694511Z ##[group]Run npm publish --provenance --access public
+publish	Publish with npm trusted publishing	2026-10-01T16:03:05.4694919Z ^[[36;1mnpm publish --provenance --access public^[[0m
+publish	Publish with npm trusted publishing	2026-10-01T16:03:07.8308613Z npm notice Publishing to https://registry.npmjs.org/ with tag latest and public access
+publish	Publish with npm trusted publishing	2026-10-01T16:03:08.9295528Z npm notice publish Signed provenance statement with source and build information from GitHub Actions
+publish	Publish with npm trusted publishing	2026-10-01T16:03:11.2040319Z + pi-goal-list-loop-audit@0.38.107
