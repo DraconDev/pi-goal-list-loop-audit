@@ -19,8 +19,8 @@ function sessionWith(...texts: Array<{ role: "user" | "assistant"; text: string 
 const EMPTY_SESSION = sessionWith();
 
 test("rich seed alone is sufficient with no session context", () => {
-  const seed = "Fix the flaky login test in tests/auth/login.test.ts — it times out after 30s on CI; "
-    + "verify with `bun test tests/auth` and keep the suite under 60s";
+  const seed = "Fix the flaky login check in tests/auth/login.test.ts — it times out after 30s on CI. "
+    + "Verify with `bun test tests/auth`. Keep the suite under 60s";
   assert.equal(countDetailAnchors(seed) >= 3, true, "seed carries 3+ anchor classes");
   assert.equal(seedPlusContextSufficient(seed, EMPTY_SESSION), true);
 });
