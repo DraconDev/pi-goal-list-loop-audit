@@ -1765,3 +1765,63 @@ tests/process-registration-faults.test.ts:
 (pass) process registration rename failure is visible and stops the owned child [61.10ms]
 (pass) process registration owner-loss failure is visible and stops the owned child [862.69ms]
 (pass) process registration refresh failure is visible and stops the owned child [888.75ms]
+(pass) process registration primary-loss failure is visible and stops the owned child [236.76ms]
+(pass) process registration obligation-write failure is visible and stops the owned child [57.80ms]
+(pass) process registration obligation-owner-loss failure is visible and stops the owned child [216.50ms]
+(pass) process registration initial-owner-loss failure is visible and stops the owned child [56.61ms]
+(pass) process registration stat-denied failure is visible and stops the owned child [58.66ms]
+(pass) process registration stat-malformed failure is visible and stops the owned child [52.32ms]
+(pass) process registration stat-missing failure is visible and stops the owned child [59.95ms]
+(pass) proven already-exited child retires its declaration without a cleanup failure [103.67ms]
+(pass) proven proc-disappeared child retires its declaration without a cleanup failure [100.93ms]
+(pass) proven suite-group child retires its declaration without a cleanup failure [63.80ms]
+
+tests/agents-panel.test.ts:
+(pass) v0.35.29 #15: the panel ranks hung > running > ended and caps at 20 rows with a notice [42.25ms]
+(pass) v0.35.29 #15: empty state explains where evidence comes from [0.14ms]
+(pass) v0.35.64: the panel makes a child-specific abort request visible [0.45ms]
+(pass) v0.35.29 #15: the compact worker summary hides at zero and warns on the least-live child [0.27ms]
+(pass) v0.38.23: detailed widget rows are single-line glyph-first with age, plus a command-free overflow [0.29ms]
+(pass) v0.35.66: --tail matches the exact child identity and formats entries tolerantly [1.12ms]
+(pass) v0.35.66: --tail selects the exact persisted child identity among same-type transcripts [0.36ms]
+(pass) v0.37.1: --tail uses the persisted session id to find an older transcript [0.34ms]
+(pass) v0.35.66: --tail refuses a same-type transcript without exact child identity [0.23ms]
+(pass) v0.36.0: --tail rejects a message that merely mentions the target identity [0.15ms]
+(pass) v0.35.29 #15: --tail is LOUD when nothing matches or the dir is unreadable [0.35ms]
+(pass) v0.35.29 #15: formatTranscriptEntry survives shape drift without throwing [0.17ms]
+(pass) v0.35.29 #15: end-to-end — /glla agents renders real probe data; widget segment rides the goal card [113.27ms]
+(pass) v0.35.65: buildWidgetLines places detailed worker rows before the card footer and supports an agent-only card [12.91ms]
+(pass) v0.35.45: formatTranscriptEntry strips ANSI escapes and control chars on ALL paths [0.36ms]
+(pass) v0.35.45: the candidate scan reads a bounded tail per file, not full transcripts [1.09ms]
+(pass) audit-2026-09-06: panel renders the doc-promised blocks row and Recent hangs footer [1.09ms]
+(pass) audit-2026-09-06: snapshot labels live rows with the observed parent wait only [0.56ms]
+(pass) audit-2026-09-06: --tail with an ambiguous prefix lists candidates instead of picking silently [29.98ms]
+(pass) audit 2026-09-25: transcript role labels never split surrogate pairs [8.52ms]
+
+tests/compaction-containment.test.ts:
+(pass) session_before_compact returns nothing — another extension's compaction must survive [85.04ms]
+(pass) pure: in-flight marker is armed-signal plus timeout, never silence [0.29ms]
+(pass) compaction in flight suppresses send-storm escalation (no park, no recovery) [540.91ms]
+(pass) post-compact settle owns exactly one bounded probe (no duplicates) [3029.00ms]
+[run-tests] progress: 210s elapsed · 2s since last output · 134 KiB of suite output
+(pass) escalation proceeds after settle — the gate is compaction-scoped, not a blanket disable [3005.68ms]
+(pass) scheduleContinuation defers while in flight and the settle still sends once [3186.82ms]
+
+tests/audit-settlement-restart.test.ts:
+(pass) restart: a running claim whose worker is gone parks as recovery-needed and never looks complete [385.23ms]
+(pass) restart: a claim whose worker never reported is recovery-needed, with no invented activity [165.26ms]
+(pass) restart: a settling claim completes its archive without re-running the auditor [319.65ms]
+(pass) restart: a finished settlement is approved once — one render, and the render follows the archive [600.05ms]
+(pass) restart: a refused archive keeps the approved claim and emits no terminal success [335.47ms]
+(pass) recovery: after the fault is repaired, /goal resume finishes the settlement WITHOUT re-auditing [547.97ms]
+(pass) recovery: a restart after the fault is repaired also finishes the settlement without re-auditing [559.92ms]
+(pass) lifecycle evidence survives the durable state boundary (sanitized, not dropped) [4.34ms]
+(pass) audit 2026-09-25: no constant-folded settlement guard obscures the live gate [0.64ms]
+
+tests/draft-staging.test.ts:
+(pass) v0.38.53: proposal stages stale and interview gates before Confirm [0.21ms]
+(pass) v0.38.53: list batch conflict handling follows confirmation and precedes enqueue [0.10ms]
+(pass) v0.38.53: single list confirmation precedes post-confirm conflict handling [0.08ms]
+(pass) v0.38.53: prompt construction precedes the drafting gate, then model lease and steering [0.05ms]
+
+tests/second-gemini-gap.test.ts:
