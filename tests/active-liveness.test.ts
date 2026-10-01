@@ -61,12 +61,12 @@ test("stale main-model stream paints the head error, aging paints warning", () =
     { goal: goalOf(), list: [] } as State, null, NOW, theme, undefined,
     { activity: "busy", lastStreamActivityAt: NOW - 47 * 60_000 },
   )!;
-  assert.match(stale[0]!, /<error>stream 47m00s<\/error>/);
+  assert.match(stale[0]!, /<error>stream 47m00s<\/>/);
   const aging = buildWidgetLines(
     { goal: goalOf(), list: [] } as State, null, NOW, theme, undefined,
     { activity: "busy", lastStreamActivityAt: NOW - 12 * 60_000 },
   )!;
-  assert.match(aging[0]!, /<warning>stream 12m00s<\/warning>/);
+  assert.match(aging[0]!, /<warning>stream 12m00s<\/>/);
 });
 
 test("future or missing stream evidence invents no head readout", () => {
@@ -84,7 +84,7 @@ test("stamped last action carries bucketed recency", () => {
     { goal: goalOf(), list: [] } as State, null, NOW, undefined, 120,
     { recent: [{ name: "edit", arg: "goal.ts", ms: 12_000, ok: true, at: NOW - 185_000 }] },
   )!;
-  assert.match(lines.join("\n"), /✓ edit goal\.ts \(12s\) · 3m 05s ago/);
+  assert.match(lines.join("\n"), /✓ edit goal\.ts \(12s\) · 3m 00s ago/);
 });
 
 test("unstamped or future-stamped actions carry no recency", () => {
