@@ -12,3 +12,100 @@ bun test v1.3.14 (0d9b296a) 1x PARALLEL
 tests/glla-stale-context.test.ts:
 (pass) v0.34.52: bare /glla on a stale handle is refused — standard recovery message, UI never opens, settings untouched [420.30ms]
 (pass) v0.34.52: mutating /glla actions (wipe, cancel, resume, reviewer, postaudit, tooloverride) are all refused on a stale handle [333.65ms]
+(pass) v0.34.52: /glla status, log, stats, audits stay usable on a stale handle (inspect, don't mutate) [3544.55ms]
+(pass) audit 2026-09-07 (LOW, finding 399): bare `/glla fallbacks` is a read-only display — allowed on a stale handle; `fallbacks clear` still mutates and is refused [460.32ms]
+(pass) v0.34.52: the standard recovery — a fresh session reopens the settings UI and owns the next /glla [657.31ms]
+(pass) v0.35.72: source — settings rechecks admission after the menu and before saves [0.47ms]
+(pass) v0.34.52: source — cmdSettings captures the entry probe and gates the settings entry + mutating actions [0.84ms]
+
+tests/terminal-summary-delivery.test.ts:
+(pass) visible summary persists without an LLM turn (idle=true) [168.16ms]
+(pass) visible summary persists without an LLM turn (idle=false) [0.23ms]
+(pass) branch-before-persist failure stays pending, suppresses duplicate, later persistence confirms [0.30ms]
+(pass) no-file session never acknowledges but does not repeat the visible summary [0.17ms]
+(pass) outbox survives failed delivery and restart; acknowledged render never replays [6.31ms]
+(pass) failed outbox acknowledgement does not duplicate an existing persisted branch summary [4.50ms]
+(pass) confirmation requires exact identity/content and complete JSONL, tolerates malformed tail [0.70ms]
+(pass) bounded confirmation fails conservatively when receipt is outside tail [11.41ms]
+(pass) maximum supported outbox receipt is acknowledged ("x") [20.94ms]
+(pass) maximum supported outbox receipt is acknowledged ("😀") [60.88ms]
+(pass) maximum supported outbox receipt is acknowledged ("\u0000") [126.22ms]
+(pass) maximum supported outbox receipt is acknowledged ("\\") [30.31ms]
+(pass) failed outbox acknowledgement write retries without resending the visible message [2.33ms]
+(pass) current settlement is not starved by older unconfirmed renders [4.03ms]
+(pass) persistently unconfirmed head rotates so a later render is attempted [4.17ms]
+
+tests/blocked-pause-autoclear.test.ts:
+(pass) v0.34.64 — blocked pause owned by recovery auto-clears when the probe succeeds [1113.82ms]
+(pass) v0.34.64 — blocked pause with a NON-recovery reason stays blocked [1056.54ms]
+(pass) v0.34.64 — wait pause owned by recovery still auto-clears [1040.70ms]
+(pass) v0.34.64 — source guard: only main-model recovery owns the auto-clear [0.72ms]
+
+tests/list-bare-draft.test.ts:
+(pass) v0.38.51: bare /list enters list drafting — agent list_add is gated [656.48ms]
+(pass) v0.38.51: /list show still renders the queue (viewer preserved) [697.53ms]
+(pass) v0.38.51: stale bare /list latches no drafting gate — a later list_add lands [582.77ms]
+
+tests/stale-interrupt-resume.test.ts:
+(pass) Goal type + schema carry the interrupt marker fields [4.35ms]
+(pass) S3 probe: side-effect-free getSessionName() probe caches the positive [0.11ms]
+(pass) S3 warn helper: honest 'state is safe' messaging + ledger [0.15ms]
+(pass) S3: probes wired at cmdSet / cmdResume / cmdList / propose_goal_draft entry [0.40ms]
+(pass) S3: stale creation marks the interrupt and tells the truth (no 'starting now' lie) [0.38ms]
+(pass) S1: stale resume persists active+marker, skips the misleading notify and the doomed send [0.07ms]
+(pass) S2: restore gate clears the marker on auto-resume and names the recovery [0.45ms]
+(pass) S2 (v0.28.21): the 0.28.3 interrupt exemption is SUPERSEDED — only autoresume=on auto-resumes [0.66ms]
+(pass) S1/S2: widget surfaces the interrupt on ACTIVE goals [0.12ms]
+(pass) E6: drafting-seed send failure is loud and stale-aware (was silent) [0.28ms]
+(pass) T1: stale Confirm is NOT a rejection — both single and batch paths [0.63ms]
+(pass) v0.28.27: stale handle silences ALL stall machinery — refiring into a dead process misleads, and the stall escalation would PAUSE an interrupted goal (killing restart auto-resume) [0.18ms]
+(pass) v0.28.27/0.29.8: /goal verify (renamed from /goal audit) — manual auditor invocation with a synthesized claim, wired into the pendingCompletion machinery [0.69ms]
+(pass) v0.29.8: /goal audit [focus] — the one-shot project audit; /glla status — the unified view [0.37ms]
+(pass) v0.34.2: cmdResume clears interruptedAt/interruptedReason on a fresh-session resume [0.18ms]
+(pass) v0.34.7: safeSteerUser wraps every orchestrator sendUserMessage (darklord crash) [4.77ms]
+(pass) v0.34.7: the fan-out float carries a catch (rejection ≠ process exit) [4.91ms]
+(pass) v0.34.7: re-kick clears the stale-handle marker (banner must not survive a working session) [0.33ms]
+
+tests/between-tasks-compaction.test.ts:
+(pass) v0.38.104 the 200k rule is a token threshold, and it is distinct from the model-size hint [1.46ms]
+(pass) v0.38.104 compaction is due past the threshold, not below it [0.18ms]
+(pass) v0.38.104 a token count, not a percentage — the same goal on a 1M window still fires at 200k [0.23ms]
+(pass) v0.38.104 it fires ONCE per episode and re-arms as the goal grows back [0.07ms]
+(pass) v0.38.104 an unknown context count never compacts blindly [0.09ms]
+(pass) v0.38.104 the threshold is overridable but must be positive [0.13ms]
+(pass) v0.38.105 the boundary fires ctx.compact past 200k and ledgers it [111.32ms]
+(pass) v0.38.105 one firing per episode; a shrunk transcript re-arms [106.58ms]
+(pass) v0.38.105 quiet boundaries: below threshold, busy, unsupervised, audit, paused, unknown, no trigger [1.31ms]
+(pass) v0.38.105 the boundary never re-arms the starvation path's brief one-shot [0.40ms]
+
+tests/auditor-scope-guard.test.ts:
+(pass) auditor scope guard — project at hand only > auditor prompt contains outside-scope guard [0.75ms]
+(pass) auditor scope guard — project at hand only > outside-scope findings are recorded but not auto-queued [4.76ms]
+(pass) auditor convergence contract — the change, not the repository > brief bounds blocking objections to the change and defines a reachable approval bar [0.35ms]
+(pass) auditor convergence contract — the change, not the repository > a first round carries no rework framing [0.33ms]
+(pass) auditor convergence contract — the change, not the repository > a rework round asks whether the PRIOR objections are closed [0.29ms]
+
+tests/finding-lead-contract.test.ts:
+(pass) canonical and legacy Lead inputs render the same outcome/evidence [4.12ms]
+(pass) legacy topical and semantic labels are not exposed as finding labels [0.41ms]
+(pass) technical-only legacy claims stay out of default chat [0.31ms]
+(pass) archive table uses outcome/evidence columns and keeps proof [0.32ms]
+(pass) widget projects the normalized outcome without legacy Lead or technical labels [0.36ms]
+(pass) terminal and archive human sections share the What Changed contract [1.27ms]
+(pass) normalization is raw-preserving and does not split path/version colons [0.12ms]
+(pass) normalization strips dash-separated label prefixes (Lead –/Tests –) [0.12ms]
+(pass) archive preserves technical group findings and Verdict details as evidence instead of dropping them [0.19ms]
+(pass) chat still suppresses technical findings after the archive-preservation fix [0.08ms]
+
+tests/real-host-canary.test.ts:
+(pass) real-host canary reports an explicit skip without opt-in or spawning Pi [41.40ms]
+(pass) opt-in canary installs its request guard and records bounded host evidence (stub host) [121.28ms]
+(pass) generated canary uses actual Pi dispatcher and allowed transport behavior [737.51ms]
+(pass) generated canary uses actual Pi dispatcher and unknown-price transport behavior [686.02ms]
+(pass) generated canary uses actual Pi dispatcher and over-budget transport behavior [782.10ms]
+(pass) generated canary uses actual Pi dispatcher and unsupported-cap transport behavior [693.36ms]
+(pass) generated canary uses actual Pi dispatcher and oversized transport behavior [735.21ms]
+(pass) generated canary uses actual Pi dispatcher and second-request transport behavior [714.96ms]
+(pass) generated canary uses actual Pi dispatcher and receipt-write transport behavior [309.23ms]
+
+tests/glla-bug-capture.test.ts:
