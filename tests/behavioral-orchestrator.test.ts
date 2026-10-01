@@ -3926,12 +3926,15 @@ test("v0.35.x: bare 403 main recovery sanitizes live surfaces while retaining di
     ...ctx.ui.notifies.map((notice) => notice.message),
     ...Object.values(ctx.ui.widgets).map((lines) => JSON.stringify(lines)),
   ].filter(Boolean).join("\\n");
-  assert.doesNotMatch(liveCopy, /403|upstream denied|auth-sensitive-id/, "live notifications/cards never expose the raw 403 payload");
+  // Retry timestamps can legitimately contain `.403Z`; exclude clock
+  // metadata while retaining the raw status-code/payload leak check.
+  const withoutIsoClocks = (text: string) => text.replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z/g, "[timestamp]");
+  assert.doesNotMatch(withoutIsoClocks(liveCopy), /403|upstream denied|auth-sensitive-id/, "live notifications/cards never expose the raw 403 payload");
   assert.match(parked.goal.providerErrorDiagnostic ?? "", /403|auth-sensitive-id/, "goal diagnostics remain durable");
   assert.match(parked.mainModelRecovery?.providerErrorDiagnostic ?? "", /403|auth-sensitive-id/, "recovery diagnostics remain durable");
 
   await pi.command("glla", "status", ctx);
-  assert.doesNotMatch(ctx.ui.notifies.at(-1)?.message ?? "", /403|upstream denied|auth-sensitive-id/, "status remains sanitized");
+  assert.doesNotMatch(withoutIsoClocks(ctx.ui.notifies.at(-1)?.message ?? ""), /403|upstream denied|auth-sensitive-id/, "status remains sanitized");
   await pi.fire("session_shutdown", { reason: "quit" }, ctx);
 });
 
