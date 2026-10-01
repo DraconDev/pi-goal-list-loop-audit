@@ -550,6 +550,7 @@ function publishDetachedAuditProgress(
     currentToolArgs: progress.currentToolArgs,
     currentToolStartedAt: progress.currentToolStartedAt,
     phase: progress.phase,
+    round: progress.round,
     elapsedMs: progress.elapsedMs,
     // Progress files only change on worker events. Preserve an inferred start
     // epoch so the UI ticker can advance the elapsed counter during a long
