@@ -2026,3 +2026,7 @@ AssertionError: turn_start: rebind is ledgered
 (pass) v0.34.21 lifecycle: completion audit from a replaced generation leaves the stored claim intact [239.02ms]
 (pass) v0.34.119: impossible completion counts reach the durable auditor claim before the worker starts [1203.20ms]
 [run-tests] progress: 300s elapsed · 0s since last output · 163 KiB of suite output
+(pass) v0.34.22: complete_goal returns while a detached auditor finishes and archives approval [841.29ms]
+(pass) v0.35.x: provider-wall diagnostics stay durable while completion surfaces remain sanitized and deduplicated [6210.52ms]
+(pass) v0.35.x: /glla audits full sanitizes active and global reports [13.39ms]
+(pass) v0.35.x: bare 403 main recovery sanitizes live surfaces while retaining diagnostics [516.48ms]
