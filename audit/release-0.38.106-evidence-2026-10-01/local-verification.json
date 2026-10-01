@@ -1,0 +1,14 @@
+{
+  "version": "0.38.106",
+  "tagCommit": "3dad5f27675d5bd8b3530af9c3af54d2c1f539da",
+  "exitCode": 0,
+  "pass": 2966,
+  "skip": 1,
+  "fail": 0,
+  "testFiles": 321,
+  "elapsedSeconds": 644.689,
+  "sourceUnchanged": true,
+  "currentTreeAndTagMatchManifest": true,
+  "manifestFiles": 480,
+  "logSha256": "4a97c2f2ef1c834d5fc13475e700a7d3fb157a66daa77f8f0803c4550263a6d6"
+}
