@@ -120,8 +120,8 @@ export function registerOwnedTestProcess(child, env = process.env) {
     try { snapshot(exited); } catch (error) {
       process.stderr.write(`${error.message}\n`);
       // Propagate through the launcher's existing child-error path so the
-      // runner still awaits containment cleanup. With no listener Node
-      // fails the worker; the independent failed obligation survives it.
+      // runner still awaits containment cleanup. The failed obligation
+      // survives even if the caller handles this child error.
       child.emit("error", error);
     }
   };
