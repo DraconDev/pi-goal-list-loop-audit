@@ -1,0 +1,17 @@
+{
+  "package": "@earendil-works/pi-coding-agent",
+  "version": "0.84.2",
+  "archiveSha256": "95b899cd7b1a0c1f0174c7bf33ab427435e3553a7d1f4756661aa9c7f1a68ffa",
+  "sourceHashes": {
+    "runner.js": "b39d59b8f86693b9aca15f13e14f367fce9a0ad8ed7ce9ad17950906f226951d",
+    "settings-manager.js": "c6e42331bcced8f2ab06c01e78ce77229773c44d7c0fa501fc497b4eb51c6c52",
+    "sdk.js": "225053853f1a0bee80419001e24cb6676b43cb5cc8f111d60770641bff4370be",
+    "package.json": "820f4adc6d61f2cefbc29ce17e9dfd9aa482248d54be5d0dfa2a868ca000c7b0"
+  },
+  "observations": [
+    "before_provider_request dispatcher exists and catches hook exceptions",
+    "getProviderRetrySettings reads retry.provider.maxRetries",
+    "SDK forwards provider retry settings into request maxRetries"
+  ],
+  "scope": "Read-only npm package/source review; no old-host runtime or provider request executed. No new incompatibility finding established."
+}

@@ -1,0 +1,133 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/process-registration-faults.test.ts tests/test-runner-lifecycle.test.ts tests/terminal-approval-render.test.ts tests/settlement-boundary-faults.test.ts tests/real-host-canary.test.ts tests/state-root.test.ts tests/regression-shield.test.ts tests/auditor-challenge.test.ts tests/stats-reliability.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/real-host-canary.test.ts:
+(pass) real-host canary reports an explicit skip without opt-in or spawning Pi [68.30ms]
+(pass) opt-in canary installs its request guard and records bounded host evidence (stub host) [194.18ms]
+(pass) generated canary uses actual Pi dispatcher and allowed transport behavior [1390.43ms]
+(pass) generated canary uses actual Pi dispatcher and unknown-price transport behavior [1032.47ms]
+(pass) generated canary uses actual Pi dispatcher and over-budget transport behavior [1224.89ms]
+(pass) generated canary uses actual Pi dispatcher and unsupported-cap transport behavior [1128.48ms]
+(pass) generated canary uses actual Pi dispatcher and oversized transport behavior [1381.27ms]
+(pass) generated canary uses actual Pi dispatcher and second-request transport behavior [1196.91ms]
+(pass) generated canary uses actual Pi dispatcher and receipt-write transport behavior [377.78ms]
+
+tests/process-registration-faults.test.ts:
+(pass) process registration first-write failure is visible and stops the owned child [228.57ms]
+(pass) process registration rename failure is visible and stops the owned child [210.45ms]
+(pass) process registration owner-loss failure is visible and stops the owned child [913.19ms]
+(pass) process registration refresh failure is visible and stops the owned child [924.66ms]
+(pass) process registration primary-loss failure is visible and stops the owned child [323.79ms]
+(pass) process registration obligation-write failure is visible and stops the owned child [133.81ms]
+(pass) process registration obligation-owner-loss failure is visible and stops the owned child [299.96ms]
+(pass) process registration initial-owner-loss failure is visible and stops the owned child [100.16ms]
+
+tests/stats-reliability.test.ts:
+(pass) reliability derives an open failure episode and elapsed audit cost without counting repeated snapshots [19.62ms]
+(pass) successful semantic review or terminal archive resolves failure age; missing samples stay unknown [2.96ms]
+(pass) recovery-only state preserves failure age and future/malformed timestamps remain unknown [0.29ms]
+
+tests/regression-shield.test.ts:
+(pass) contractItems: strips the 'Done when:' marker line [0.50ms]
+(pass) contractItems: handles inline single-line contracts [0.05ms]
+(pass) contractItems: strips bullets and numbering [0.04ms]
+(pass) contractItems: drops empty lines [0.03ms]
+(pass) contractItems: skips wrapped prose preamble in list-shaped contracts [0.09ms]
+(pass) contractItems: shapeless contracts keep every-line behavior [8.25ms]
+(pass) contractItems: a Done-when criterion survives alongside bullets [0.12ms]
+(pass) passes: preamble fragments are not required in evidence [2.07ms]
+(pass) passes: evidence block present, all items referenced [0.31ms]
+(pass) rejects: approval without an evidence block [0.15ms]
+(pass) rejects: evidence block but an item is not addressed [0.07ms]
+(pass) rejects: bamboozle-style empty evidence block [0.08ms]
+(pass) rejects: contract prose outside evidence cannot satisfy the shield [0.08ms]
+(pass) distinctive-token matching: references the item by a filename [0.04ms]
+(pass) case-insensitive matching [0.03ms]
+(pass) contractItems: excludes 'Out of scope' boundary lines [0.03ms]
+(pass) compound tokens match via segments (left-cropped → left + cropped) [0.17ms]
+(pass) prose punctuation glued to tokens does not break matching (file/element.) [0.07ms]
+(pass) top-3 candidate matching tolerates contract-only vocabulary [0.07ms]
+(pass) still rejects: bamboozle report that never touches the item's vocabulary [0.05ms]
+(pass) CJK: a verbatim-quoted Chinese item passes (token is one CJK word, not delimiters) [0.71ms]
+(pass) CJK: a quote that drops the trailing full-width colon still matches [0.06ms]
+(pass) CJK: a Chinese line with no ASCII letters is one candidate token [0.04ms]
+(pass) CJK: an English-only paraphrase of a Chinese item is still rejected (strict shield) [0.17ms]
+(pass) CJK: mixed item matches on its ASCII token even when CJK words are not quoted [0.06ms]
+(pass) ASCII behavior is unchanged: distinctive-token + compound matching still work [0.08ms]
+(pass) contractItems: 'Done when ALL of the following are true:' preamble is dropped [0.05ms]
+(pass) contractItems: preamble without trailing colon is also dropped [0.05ms]
+(pass) shield passes a genuine approval that a preamble-only false positive used to block [0.07ms]
+(pass) extractMechanicalCheckCommands: extracts backticked and raw shell commands [196.01ms]
+(pass) extractMechanicalCheckCommands: skips commands under negation [0.91ms]
+(pass) extractMechanicalCheckCommands: rejects never-exiting server commands [0.45ms]
+(pass) v0.35.16: mechanical checks keep the TAIL of failed output and banner a timeout kill [1200.07ms]
+(pass) mechanical checks stay async and kill descendant processes on timeout [2770.35ms]
+(pass) mechanical checks stop a runaway process group before the wall timeout [187.20ms]
+(pass) v0.35.18: resolveCanonicalRunnerCommand maps raw runners to their canonical package script [0.50ms]
+(pass) v0.35.20: runMechanicalPreAuditChecks retries a transiently failing check exactly once, honestly bannered [228.18ms]
+(pass) v0.38.23: mechanical checks resolve project-local node_modules/.bin (bare tsc ENOENT field fix) [36.38ms]
+
+tests/auditor-challenge.test.ts:
+(pass) challenge: approval earns a falsification round; re-confirm preserves the verdict [785.97ms]
+(pass) challenge: a challenge disapproval flips the verdict by final line [596.65ms]
+(pass) challenge: round-1 disapprovals run single-round [217.81ms]
+(pass) challenge: a failed challenge falls back to byte-identical round-1 output [703.32ms]
+(pass) strict challenge: a failed falsification pass is infrastructure/no-verdict [291.20ms]
+(pass) strict challenge: an explicit requirement overrides a policy skip [270.76ms]
+(pass) challenge: a failed round 1 still fails without challenging [137.71ms]
+(pass) challenge: a light-tier request skips round 2 and records the skip [190.68ms]
+(pass) challenge: a rework-streak skip is NOT recorded as a light-tier audit (v0.38.104) [187.57ms]
+(pass) challenge: a request with no reason keeps the light-tier default (v0.38.104) [596.34ms]
+
+tests/settlement-boundary-faults.test.ts:
+[run-tests] progress: 30s elapsed · 8s since last output · 6 KiB of suite output
+(pass) typed settlement refuses success before its intent can be persisted [22798.68ms]
+(pass) failed receipt transfer retains the terminal obligation across live-slot cleanup [75.75ms]
+(pass) unreadable old outbox retains new archive intent until both summaries can be queued [15.81ms]
+
+tests/state-root.test.ts:
+(pass) workingDir remains the default root and persists under cwd [2.19ms]
+(pass) sessionDir opt-in resolves to the registered top-level session directory [3.64ms]
+(pass) pending sessionDir defers every core write and does not migrate the old cwd tree [1.65ms]
+(pass) PI_SESSION_FILE provides a worker-safe session-root fallback [1.78ms]
+(pass) stateRoot is typed/global-only and project settings cannot override it [32.93ms]
+
+tests/terminal-approval-render.test.ts:
+(pass) skipped challenges are disclosed in chat, transcript, and archive evidence [8.36ms]
+(pass) canonical render folds a lone approval with the verdict count, model-free [1.88ms]
+(pass) standalone audit bullet survives only with news [6.29ms]
+(pass) counts line proofs the audit verdict from durable state only [0.75ms]
+(pass) buildApprovalChatLines stays backward compatible without counts [0.27ms]
+(pass) v0.38.37 posted summary carries verifiable-result bullets plus the deliberate non-do [4.74ms]
+(pass) idle-persisted render replays once on the next live contact [6318.25ms]
+(pass) render with confirmed delivery never replays [0.76ms]
+(pass) corrupt store degrades to zero replays, never throws [0.42ms]
+(pass) v0.38.39 chat brief strips machine paths but the archive keeps them [1.12ms]
+(pass) v0.38.39 clause cut respects +-joined lists [0.12ms]
+(pass) second approval for the same goal after delivery queues a fresh render [2.28ms]
+(pass) error-only audit history renders an honest archive banner with no review row [0.41ms]
+(pass) unreadable outbox refuses enqueue without replacing an earlier pending render [1.68ms]
+(pass) malformed and partially invalid stores preserve bytes and refuse mutations [1.66ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [516.18ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [219.50ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [161.21ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5257.06ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [798.54ms]
+[run-tests] progress: 60s elapsed · 0s since last output · 9 KiB of suite output
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [376.97ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on normal exit [1798.96ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on signal exit [1554.42ms]
+(pass) registry refuses to signal a record naming a reused leader identity [51.33ms]
+(pass) runner refuses a green suite after a swallowed primary registration write failure [344.12ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [282.21ms]
+
+ 102 pass
+ 0 fail
+Ran 102 tests across 9 files. [64.19s]
+[run-tests] finished in 64s (exit 0)

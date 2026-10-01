@@ -1,0 +1,29 @@
+{
+  "at": "2026-10-01T10:54:05.539439+00:00",
+  "checks": {
+    "types": {
+      "command": [
+        "npx",
+        "tsc",
+        "--noEmit"
+      ],
+      "exitCode": 0
+    },
+    "inventory": {
+      "command": [
+        "node",
+        "scripts/generate-inventory.mjs",
+        "--check"
+      ],
+      "exitCode": 0
+    },
+    "dependencies": {
+      "command": [
+        "npm",
+        "audit",
+        "--json"
+      ],
+      "exitCode": 1
+    }
+  }
+}

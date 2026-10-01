@@ -1,0 +1,18 @@
+{
+  "scenario": "enqueue-during-delivery",
+  "firstPersist": true,
+  "nestedPersist": true,
+  "replayed": 1,
+  "records": [
+    {
+      "goalId": "first",
+      "objective": "first",
+      "chatLines": [
+        "first"
+      ],
+      "createdAt": "2026-10-01T10:48:55.627Z",
+      "deliveredAt": "2026-10-01T10:48:55.628Z"
+    }
+  ],
+  "secondPendingLost": true
+}

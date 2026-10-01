@@ -1,0 +1,18 @@
+{
+  "scenario": "unreadable-state-root-selector",
+  "before": "/tmp/glla-audit-root-selection-wlaa79/session/pi-glla",
+  "during": "/tmp/glla-audit-root-selection-wlaa79/cwd/.pi-glla",
+  "after": "/tmp/glla-audit-root-selection-wlaa79/session/pi-glla",
+  "beforeGoalId": "root-goal",
+  "duringGoalId": null,
+  "afterGoalId": "root-goal",
+  "pending": false,
+  "firstPersist": true,
+  "secondPersist": true,
+  "selectedPendingGoalIds": [
+    "first"
+  ],
+  "unintendedCwdGoalIds": [
+    "second"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "scenario": "registration-stat-read-failure",
+  "registrationError": null,
+  "records": 0,
+  "expectations": 0,
+  "cleanup": {
+    "reaped": 0,
+    "unverified": 0
+  },
+  "childStillLive": true
+}
