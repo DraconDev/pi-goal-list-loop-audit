@@ -18,6 +18,9 @@ not sure what i am expected to do here
 
 # later
 
+##
+we also need a better icon on the pi plugin store
+
 # Testing
 
 # Research
