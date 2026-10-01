@@ -1,0 +1,25 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/audit-recovery-persistence.test.ts:
+(pass) context-free audit recovery returns false and leaves restart state auditing when append fails [360.95ms]
+
+tests/audit-settlement-restart.test.ts:
+(pass) restart: a running claim whose worker is gone parks as recovery-needed and never looks complete [451.28ms]
+(pass) restart: a claim whose worker never reported is recovery-needed, with no invented activity [131.77ms]
+(pass) restart: a settling claim completes its archive without re-running the auditor [343.81ms]
+(pass) restart: a finished settlement is approved once — one render, and the render follows the archive [589.59ms]
+(pass) restart: a refused archive keeps the approved claim and emits no terminal success [300.24ms]
+(pass) recovery: after the fault is repaired, /goal resume finishes the settlement WITHOUT re-auditing [522.98ms]
+(pass) recovery: a restart after the fault is repaired also finishes the settlement without re-auditing [524.36ms]
+(pass) lifecycle evidence survives the durable state boundary (sanitized, not dropped) [1.17ms]
+(pass) audit 2026-09-25: no constant-folded settlement guard obscures the live gate [0.91ms]
+
+tests/stuck-audit-latch.test.ts:
+(pass) Fix A: the apply gate defers + parks instead of silently dropping a completed verdict [0.91ms]
+(pass) Fix B: the stale-latch stranded park runs BEFORE the extensionApiStale early return [0.42ms]
+(pass) Fix B: the park requires the exact stuck signature (auditing, no in-flight, claim, 90s silence) [0.39ms]
+(pass) audit 2026-09-25: stranded_audit_recovered is ledgered only after the park lands [0.30ms]
+
+ 14 pass
+ 0 fail
+Ran 14 tests across 3 files. [5.27s]
