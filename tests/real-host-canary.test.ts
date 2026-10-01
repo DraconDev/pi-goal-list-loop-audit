@@ -69,7 +69,7 @@ for (const scenario of ['allowed', 'unknown-price', 'over-budget', 'unsupported-
         await transport();
         ${scenario === 'second-request' ? 'await transport();' : ''}
       `);
-      const result = spawnSync(process.execPath, [source], { encoding: 'utf8', timeout: 20_000 });
+      const result = spawnSync("node", [source], { encoding: 'utf8', timeout: 20_000 });
       const transportFile = path.join(dir, 'transport.jsonl');
       const calls = fs.existsSync(transportFile) ? fs.readFileSync(transportFile, 'utf8').trim().split('\n').map(line => JSON.parse(line)) : [];
       assert.equal(result.status, scenario === 'allowed' ? 0 : 78, result.stderr);
