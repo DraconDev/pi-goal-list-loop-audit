@@ -166,3 +166,33 @@ test(`runner refuses a green suite after a swallowed ${channel} registration wri
 });
 
 }
+
+test('parent runner fails after swallowed initial identity denial and restored reads', {
+  skip: process.platform !== 'linux', timeout: 30_000,
+}, async () => {
+  const registry = pathToFileURL(path.resolve('scripts/test-process-registry.mjs')).href;
+  const result = await runStub(`(async()=>{
+    const fs=require('node:fs');const {syncBuiltinESMExports}=require('node:module');
+    const {spawn}=require('node:child_process');
+    const {registerOwnedTestProcess}=await import(${JSON.stringify(registry)});
+    const worker=spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{detached:true,stdio:'ignore'});
+    await new Promise(r=>worker.once('spawn',r));
+    const oldRead=fs.readFileSync;
+    fs.readFileSync=(file,...args)=>{
+      if(String(file)==='/proc/'+worker.pid+'/stat')throw Object.assign(new Error('identity denied'),{code:'EACCES'});
+      return oldRead(file,...args);
+    };syncBuiltinESMExports();
+    try{registerOwnedTestProcess(worker,{
+      GLLA_TEST_PROCESS_REGISTRY:process.env.GLLA_TEST_PROCESS_REGISTRY,
+      GLLA_TEST_PROCESS_TOKEN:process.env.GLLA_TEST_PROCESS_TOKEN,
+    })}catch{}
+    fs.readFileSync=oldRead;syncBuiltinESMExports();
+    worker.once('exit',()=>process.exit(0));
+  })();`);
+  assert.equal(result.code, 1, result.output);
+  assert.match(result.output, /unverified survivors\/records/);
+  const retained = result.output.match(/cleanup evidence retained at (.+)/)?.[1];
+  assert.ok(retained, result.output);
+  fs.rmSync(retained, { recursive: true, force: true });
+  fs.rmSync(`${retained}.obligations`, { recursive: true, force: true });
+});

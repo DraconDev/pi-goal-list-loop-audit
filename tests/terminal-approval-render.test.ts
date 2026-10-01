@@ -342,3 +342,54 @@ test('malformed and partially invalid stores preserve bytes and refuse mutations
   assert.equal(replayUndeliveredApprovalRenders({ cwd }, entry => { ids.push(entry.goalId); return true; }), 2);
   assert.deepEqual(ids, ['valid', 'new']);
 });
+
+test('delivery callback enqueue survives acknowledgement and replays on next contact', () => {
+  const cwd = tmpCwd();
+  const enqueue = (goalId: string) => persistApprovalRender(cwd, { goalId, objective: goalId, chatLines: [goalId] });
+  assert.equal(enqueue('first'), true);
+  const delivered: string[] = [];
+  assert.equal(replayUndeliveredApprovalRenders({ cwd }, entry => {
+    delivered.push(entry.goalId);
+    assert.equal(enqueue('second'), true);
+    return true;
+  }), 1);
+  const stored = JSON.parse(fs.readFileSync(approvalRenderStorePath(cwd), 'utf8'));
+  assert.equal(stored.length, 2);
+  assert.ok(stored.find((e: any) => e.goalId === 'first').deliveredAt);
+  assert.equal(stored.find((e: any) => e.goalId === 'second').deliveredAt, undefined);
+  const deliver = (entry: { goalId: string }) => { delivered.push(entry.goalId); return true; };
+  assert.equal(replayUndeliveredApprovalRenders({ cwd }, deliver), 1);
+  assert.equal(replayUndeliveredApprovalRenders({ cwd }, deliver), 0);
+  assert.deepEqual(delivered, ['first', 'second']);
+});
+
+test('nested replay neither repeats the in-flight render nor restores acknowledged entries', () => {
+  const cwd = tmpCwd();
+  for (const goalId of ['first', 'second']) assert.equal(persistApprovalRender(cwd, { goalId, objective: goalId, chatLines: [goalId] }), true);
+  const delivered: string[] = [];
+  assert.equal(replayUndeliveredApprovalRenders({ cwd }, entry => {
+    delivered.push(entry.goalId);
+    assert.equal(replayUndeliveredApprovalRenders({ cwd }, nested => { delivered.push(nested.goalId); return true; }), 1);
+    return true;
+  }), 1);
+  assert.deepEqual(delivered, ['first', 'second']);
+  assert.equal(replayUndeliveredApprovalRenders({ cwd }, () => true), 0);
+  assert.ok(JSON.parse(fs.readFileSync(approvalRenderStorePath(cwd), 'utf8')).every((e: any) => e.deliveredAt));
+});
+
+test('refusal rotation preserves callback enqueues and makes them reachable next contact', () => {
+  const cwd = tmpCwd();
+  for (let i = 0; i < 6; i++) persistApprovalRender(cwd, { goalId: `g${i}`, objective: 'rotation', chatLines: [`g${i}`] });
+  assert.equal(replayUndeliveredApprovalRenders({ cwd }, entry => {
+    if (entry.goalId === 'g0') assert.equal(persistApprovalRender(cwd, { goalId: 'new', objective: 'new', chatLines: ['new'] }), true);
+    return false;
+  }), 0);
+  const stored = JSON.parse(fs.readFileSync(approvalRenderStorePath(cwd), 'utf8'));
+  assert.equal(stored.length, 7);
+  assert.ok(stored.every((e: any) => !e.deliveredAt));
+  const delivered: string[] = [];
+  assert.equal(replayUndeliveredApprovalRenders({ cwd }, entry => { delivered.push(entry.goalId); return true; }), 5);
+  assert.deepEqual(delivered.slice(0, 2), ['g5', 'new']);
+  assert.equal(replayUndeliveredApprovalRenders({ cwd }, entry => { delivered.push(entry.goalId); return true; }), 2);
+  assert.equal(new Set(delivered).size, 7);
+});

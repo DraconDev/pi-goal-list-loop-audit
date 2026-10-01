@@ -149,3 +149,26 @@ test("persistently unconfirmed head rotates so a later render is attempted", () 
   assert.ok(stored.find((e: { goalId: string }) => e.goalId === "g5").deliveredAt !== undefined);
   assert.equal(stored.filter((e: { deliveredAt?: string }) => e.deliveredAt === undefined).length, 5);
 });
+
+test('host sendMessage reentrant enqueue remains pending after confirmed session delivery', () => {
+  const h = host();
+  persistApprovalRender(h.cwd, { goalId: 'first', objective: 'first', chatLines: ['first'] });
+  const send = h.pi.sendMessage;
+  let enqueued = false;
+  h.pi.sendMessage = (message, options) => {
+    if (!enqueued) {
+      enqueued = true;
+      assert.equal(persistApprovalRender(h.cwd, { goalId: 'second', objective: 'second', chatLines: ['second'] }), true);
+    }
+    send(message, options);
+  };
+  const replay = () => replayUndeliveredApprovalRenders(h.ctx, entry => h.deliver(entry.goalId, entry.chatLines.join('\n')));
+  assert.equal(replay(), 1);
+  const stored = JSON.parse(fs.readFileSync(approvalRenderStorePath(h.cwd), 'utf8'));
+  assert.equal(stored.length, 2);
+  assert.equal(stored.find((e: any) => e.goalId === 'second').deliveredAt, undefined);
+  assert.equal(replay(), 1);
+  assert.equal(replay(), 0);
+  assert.equal(h.calls.length, 2);
+  assert.deepEqual(h.calls.map(c => c.message.content), ['first', 'second']);
+});
