@@ -2032,3 +2032,42 @@ Switched to branch 'main'
 (pass) v0.35.x: healthy same-session heartbeat recovers a parked completion audit without manual resume [1311.33ms]
 (pass) v0.36.0: exhausted no-verdict auditor chain enters the shared ladder with an automatic retry timer [6524.08ms]
 (pass) bounded recovery: initial aggressive completion preserves its horizon and exhausted chain [6588.23ms]
+[run-tests] progress: 360s elapsed · 4s since last output · 155 KiB of suite output
+(pass) v0.35.x: stale host loss releases an in-flight completion audit without a verdict [7581.29ms]
+(pass) v0.34.29: audit fan-out honors autoAcceptDrafts without opening confirmation [15.02ms]
+(pass) v0.34.129: fan-out dedupe does not drop a finding whose prefix appears inside another queue item [12.73ms]
+(pass) v0.34.129: fan-out reports cap-deferred findings separately from true queue dedupes [21.38ms]
+(pass) v0.34.20 lifecycle: fan-out confirmation from the old generation cannot queue into its replacement [16.36ms]
+(pass) v0.34.20 lifecycle: loop measurement abandons the old generation after replacement [41.49ms]
+(pass) v0.34.25: a resolved auditor model failure advances to the session fallback without a verdict [138.48ms]
+(pass) v0.35.x: zero-stream zombie auto-aborts and parks a list item without a retry storm [498.75ms]
+(pass) v0.35.x: zero-stream loop termination preserves and notifies its recap [15.81ms]
+(pass) v0.35.4: zombie watchdog stands down while a subagent wait is in flight [26.89ms]
+(pass) v0.35.64: a stale subagent probe no longer shields unrelated parent cleanup [43.95ms]
+(pass) v0.35.4: context-starved warning is one-shot per refusal episode [30.53ms]
+(pass) audit-2026-09-06: measure test-run dialogs disclose the pre-confirm exec [0.79ms]
+
+tests/state-root-owner.test.ts:
+(pass) normalizeOwnerAt tolerates number and ISO, rejects garbage [160.98ms]
+(pass) looksLikePi admits pi hosts, refuses sleep, abstains on unknown [69.80ms]
+(pass) classifyOwner covers the full matrix [70.94ms]
+(pass) describeOwner returns null for self, shape for foreign [68.75ms]
+(pass) takeover with no record claims silently [332.92ms]
+(pass) takeover of a dead owner reclaims without signaling [84.22ms]
+(pass) takeover of self reclaims (same-process sessions always win) [70.64ms]
+(pass) live owner without confirm returns needs-confirm and touches nothing [264.27ms]
+(pass) confirmed takeover of a non-pi process is refused, survivor unclaimed [246.85ms]
+(pass) confirmed takeover SIGTERMs a pi-shaped owner, verifies exit, claims [677.72ms]
+(pass) owner surviving SIGTERM is never claimed [649.24ms]
+(pass) recycled pid is unlinked without signaling the innocent occupant [176.24ms]
+(pass) heartbeat refresh is throttled and owner-scoped [222.69ms]
+(pass) /glla owner reports unclaimed / self / live holder [314.88ms]
+(pass) /glla takeover end to end reclaims a dead root via command [90.99ms]
+(pass) /glla takeover aborts on dismissed confirm without signaling [219.73ms]
+(pass) source pins the new escape hatches on both read-only warnings [92.02ms]
+(pass) audit-2026-09-06: takeover re-verifies the occupant at signal time [206.14ms]
+
+tests/auditing-standstill.test.ts:
+(pass) agent turns during a pending audit stay silent instead of escalating [910.48ms]
+
+tests/repair-card-loop-block.test.ts:
