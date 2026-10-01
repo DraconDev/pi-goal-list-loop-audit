@@ -1,0 +1,21 @@
+{
+  "verifiedAt": "2026-10-01T16:01:06.055299+00:00",
+  "images": [
+    {
+      "file": "media/glla-icon.png",
+      "url": "https://raw.githubusercontent.com/DraconDev/pi-goal-list-loop-audit/main/media/glla-icon.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "0dd41b0bec981c067fb014774cf671ceb7d1c9992f270eabdefc7cd018887df6",
+      "publicBytesMatch": true
+    },
+    {
+      "file": "media/glla-thumb.png",
+      "url": "https://raw.githubusercontent.com/DraconDev/pi-goal-list-loop-audit/main/media/glla-thumb.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "0dd41b0bec981c067fb014774cf671ceb7d1c9992f270eabdefc7cd018887df6",
+      "publicBytesMatch": true
+    }
+  ]
+}
