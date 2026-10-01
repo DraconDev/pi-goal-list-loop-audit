@@ -12,7 +12,7 @@ import { MockPi, makeMockCtx, seedGoal, seedState, tick, tmpCwd } from "./harnes
 function goal(): Goal {
   return seedGoal({ status: "auditing", objective: "verify the artifact", verificationContract: "artifact exists", revision: 0,
     pendingCompletion: { at: new Date(Date.now() - 5000).toISOString(), phase: "running", attemptId: "saved-claim", completionSummary: "artifact delivered", verificationSummary: "artifact exists" },
-  }) as Goal;
+  }) as unknown as Goal;
 }
 function job(cwd: string, g: Goal, options: { name?: string; at?: number; output?: string; legacy?: boolean; result?: boolean; extra?: Record<string, unknown> } = {}) {
   const name = options.name ?? "saved-claim-physical";
@@ -25,7 +25,7 @@ function job(cwd: string, g: Goal, options: { name?: string; at?: number; output
   };
   const request = { ...unsigned, requestHash: requestHash(unsigned) };
   const result = { protocolVersion: 1, attemptId: name, requestHash: request.requestHash, ok: true,
-    output: options.output ?? "artifact exists\n<approved/>", model: "test/model", thinkingLevel: "off", goalRevision: request.goalRevision,
+    output: options.output ?? "<evidence>\nartifact exists\n</evidence>\n<approved/>", model: "test/model", thinkingLevel: "off", goalRevision: request.goalRevision,
     toolCalls: [{ name: "read", argsPrefix: "artifact", finishedAt: Date.now() - 1000 }], challenge: "confirmed", ...options.extra,
   };
   fs.writeFileSync(path.join(dir, "request.json"), JSON.stringify(request));
@@ -48,12 +48,12 @@ for (const verdict of ["approved", "disapproved"] as const) {
   test(`finished real worker, lost parent: restart applies ${verdict} exactly once without re-auditing`, async () => {
     const cwd = tmpCwd(), g = goal(); seedState(cwd, { goal: g });
     const fakePi = path.join(cwd, "fake-pi.mjs");
-    fs.writeFileSync(fakePi, `#!/usr/bin/env node\nlet input=''; process.stdin.on('data',chunk=>{ input+=chunk; if(!input.includes('\\n'))return; const emit=e=>process.stdout.write(JSON.stringify(e)+'\\n'); emit({type:'tool_execution_start',toolName:'read',toolCallId:'one',args:{path:'artifact'}}); emit({type:'tool_execution_end',toolName:'read',toolCallId:'one'}); emit({type:'message_update',assistantMessageEvent:{type:'text_delta',delta:'artifact exists\\n<${verdict}/>'}}); emit({type:'agent_settled'}); });`, { mode: 0o700 });
+    fs.writeFileSync(fakePi, `#!/usr/bin/env node\nlet input=''; process.stdin.on('data',chunk=>{ input+=chunk; if(!input.includes('\\n'))return; const emit=e=>process.stdout.write(JSON.stringify(e)+'\\n'); emit({type:'tool_execution_start',toolName:'read',toolCallId:'one',args:{path:'artifact'}}); emit({type:'tool_execution_end',toolName:'read',toolCallId:'one'}); emit({type:'message_update',assistantMessageEvent:{type:'text_delta',delta:'<evidence>\\nartifact exists\\n</evidence>\\n<${verdict}/>'}}); emit({type:'agent_settled'}); });`, { mode: 0o700 });
     const result = await runDetachedGoalCompletionAuditor({ cwd, goal: g, model: "test/model", thinkingLevel: "off",
       completionSummary: g.pendingCompletion!.completionSummary, verificationSummary: g.pendingCompletion!.verificationSummary,
       runtime: { piBinary: fakePi, logicalAttemptId: "saved-claim", attemptId: () => "saved-claim-real-worker", pollIntervalMs: 10 },
     });
-    assert.equal(result[verdict], true, result.error);
+    assert.equal(result[verdict], true, result.error ?? "worker verdict");
     assert.ok(readCompletedCompletionAudit(cwd, g), "the result is durable before any parent applies it");
     const pi = new MockPi(); activate(pi.api); let ctx = await boot(pi, cwd);
     try {
