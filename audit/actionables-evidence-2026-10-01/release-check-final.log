@@ -3723,3 +3723,38 @@ tests/test-runner-lifecycle.test.ts:
 (pass) runner refuses a green suite after a swallowed obligation registration write failure [825.44ms]
 
 tests/recovery-restore-after-restart.test.ts:
+(pass) v0.34.63 — quit → blank startup → resume (new manager, same session id) restores the recovery probe [2102.21ms]
+(pass) blank restart paints the durable list objective, recovery owner, and next action before transcript load [5.26ms]
+(pass) v0.34.63 — a lifecycle start with a DIFFERENT session id stays refused while the barrier pends [657.57ms]
+(pass) v0.34.63 — source guard: the barrier-completing resume gate is wired before the foreign-session return [15.44ms]
+
+tests/load-wait-bound.test.ts:
+(pass) 153404: a 4.5h load wait is clamped to the hourly horizon with a re-check notice [1461.75ms]
+(pass) 153404: a short wait inside the horizon is stored as requested [196.83ms]
+
+tests/length-exhaustion-relentless.test.ts:
+(pass) hot context with fallback refs rotates to a larger-context model [0.28ms]
+(pass) hot context at the 90% boundary still rotates [0.02ms]
+(pass) hot context without fallback refs defers to auto-compaction [0.02ms]
+(pass) roomy context grants one fresh budget, never an immediate manual park [0.02ms]
+(pass) exhaustion episodes: first wedge stays relentless, second parks [1.01ms]
+(pass) exhaustion episodes degrade garbage to a fresh first episode [148.37ms]
+(pass) unknown context heat degrades to fresh-budget, never rotate [0.26ms]
+
+tests/loops/goal.test.ts:
+[run-tests] progress: 840s elapsed · 0s since last output · 280 KiB of suite output
+(pass) v0.34.57: a compaction inside the watchdog window pauses the watchdog instead of firing the unacknowledged warning [2742.86ms]
+(pass) v0.34.57: compaction rearm cap goes directly to unacknowledged without a retry [1254.95ms]
+(pass) v0.34.124: a recovery resume inside the watchdog window pauses the watchdog instead of firing the unacknowledged warning [985.68ms]
+(pass) v0.34.124: recovery rearm counters clear when the dispatch watchdog settles [1.24ms]
+(pass) v0.34.124: a recovery resume OUTSIDE the grace window does not pause the watchdog [1670.37ms]
+(pass) v0.34.57: a genuine stall (no compaction in the window) still fires the unacknowledged warning [1332.11ms]
+
+1 tests skipped:
+(skip) commit survives the auto-committer daemon (item 32, env-gated watched repo)
+
+ 2948 pass
+ 1 skip
+ 0 fail
+Ran 2949 tests across 320 files. [848.43s]
+[run-tests] finished in 851s (exit 0)
