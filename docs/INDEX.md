@@ -16,7 +16,7 @@ Policy contracts and recent changes live in the `audit/` directory of the
   failback; v0.35.9 hardened cross-version npm tarball checks; v0.35.10
   handles multi-entry npm dry-run reports; v0.35.11 accepts both npm report
   shapes; v0.35.12 supports npm 12's keyed pack reports; v0.35.13 fixes stale-API recovery loops.
-  v0.35.14–v0.38.106 continue through the supervisor freeze (`/glla pause`),
+  v0.35.14–v0.38.107 continue through the supervisor freeze (`/glla pause`),
   load hold, auditor picker parity, Windows launch fix, zombie-watchdog
   subagent carve-out, due-wait backstop, the `/glla agents` visibility panel,
   durable state-root selection, blank-until-resume auditor context, frozen
@@ -31,7 +31,9 @@ Policy contracts and recent changes live in the `audit/` directory of the
   projection (prompt-cache continuity, issue #53), and the v0.38.55 full-parity
   terminal card, unified auditor-retry envelope, and agent-side resume_goal;
   and the v0.38.106 audit repairs, versionless companion guidance and refreshed
-  store icon. See CHANGELOG.md for the full trail.
+  store icon; v0.38.107 recovers completed detached audit results before retry,
+  preserves second-pass visibility, and fits the store thumbnail to its 8:5 card.
+  See CHANGELOG.md for the full trail.
 - `../README.md`: what the plugin is, install, quickstart, and the
   architectural guarantee (drafting + confirm + detached auditor).
 - `../INSTALL.md`: source install / local development setup and the

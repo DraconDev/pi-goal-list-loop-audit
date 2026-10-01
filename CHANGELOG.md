@@ -2,12 +2,20 @@
 
 ## Unreleased
 
+No unreleased changes.
+
+## 0.38.107 — completed audit recovery and landscape store artwork (2026-10-01)
+
+### Final audit recovery
+
 - Reconcile the newest completed detached audit with its saved claim on restart,
   host replacement, and manual or agent resume. Identity, revision, tool,
   challenge, and evidence checks still apply; unsafe or unfinished jobs retry.
   Cold restores record disapprovals without silently resuming executor work.
 - Keep the second audit pass visible while it thinks, runs tools, and writes
   its report, rather than showing a fresh generic running phase.
+### Store presentation
+
 - Use an 8:5 landscape store thumbnail with a complete loop and GLLA wordmark.
 
 ## 0.38.106 — durable audit repairs and clearer companion guidance (2026-10-01)
