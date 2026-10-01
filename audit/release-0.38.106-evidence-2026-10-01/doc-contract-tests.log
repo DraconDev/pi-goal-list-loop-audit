@@ -1,0 +1,35 @@
+
+> pi-goal-list-loop-audit@0.38.106 test
+> node scripts/run-tests.mjs tests/release-contract.test.ts tests/glla-version.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-version.test.ts:
+(pass) /glla version reads the installed package metadata and exposes a registry check [2.01ms]
+(pass) /glla version names staleness and the update path when the sidecar proves it [0.95ms]
+(pass) package and lock metadata stay synchronized for version reporting [0.06ms]
+(pass) /glla version is registered, autocompleted, and read-only routed [0.29ms]
+(pass) unknown running version makes no staleness claim either way [0.31ms]
+(pass) compareVersions is strictly numeric: prereleases never equal releases [0.05ms]
+(pass) updateCheckPath defaults to the cwd state dir [0.04ms]
+
+tests/release-contract.test.ts:
+(pass) release contract: published documentation links are covered by the npm tarball [577.35ms]
+(pass) release contract: the release gate exercises the packed artifact [0.31ms]
+(pass) release contract: packed prompts, schema, and workers ship in the dry-run list [623.03ms]
+(pass) release contract: glla-delegate skill loads without diagnostics (source-tree fast tier) [10.56ms]
+(pass) release contract: docs index tracks the package version [0.11ms]
+(pass) release contract: package is discoverable as a Pi extension and skill [560.80ms]
+(pass) release contract: README package contents claim matches the files allowlist [567.25ms]
+(pass) release contract: first-use README guidance matches current behavior [0.32ms]
+(pass) release contract: smoke waits use durable or literal transition markers [0.14ms]
+(pass) release workflow scopes trusted-publishing OIDC to the publish job [0.13ms]
+(pass) v0.38.32: release runs never share the push-churn concurrency group [0.08ms]
+(pass) release contract: changelog has one heading for the current package version [4.45ms]
+(pass) release contract: untagged source work has an Unreleased changelog section to promote [13.61ms]
+
+ 20 pass
+ 0 fail
+Ran 20 tests across 2 files. [3.01s]
+[run-tests] finished in 3s (exit 0)
