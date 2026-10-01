@@ -6,7 +6,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
-for (const scenario of ['first-write', 'rename', 'owner-loss', 'refresh'] as const) {
+for (const scenario of ['first-write', 'rename', 'owner-loss', 'refresh', 'primary-loss', 'obligation-write', 'obligation-owner-loss'] as const) {
   test(`process registration ${scenario} failure is visible and stops the owned child`, {
     skip: process.platform !== 'linux' || process.getuid?.() === 0, timeout: 30_000,
   }, () => {
@@ -27,20 +27,23 @@ for (const scenario of ['first-write', 'rename', 'owner-loss', 'refresh'] as con
       owned.on('error',()=>{refused=true});
       try {
         if (${JSON.stringify(scenario)}==='first-write') fs.chmodSync(dir,0o500);
+        if (${JSON.stringify(scenario)}==='obligation-write') fs.chmodSync(dir+'.obligations',0o500);
         if (${JSON.stringify(scenario)}==='rename') {
           fs.renameSync=(from,to)=>{if(to.startsWith(dir+'/process-')) throw new Error('injected rename refusal');return oldRename(from,to)};
           syncBuiltinESMExports();
         }
         try {registerOwnedTestProcess(owned,env)} catch {refused=true}
         if (${JSON.stringify(scenario)}==='owner-loss') fs.unlinkSync(dir+'/owner.json');
+        if (${JSON.stringify(scenario)}==='obligation-owner-loss') fs.unlinkSync(dir+'.obligations/owner.json');
+        if (${JSON.stringify(scenario)}==='primary-loss') for(const file of fs.readdirSync(dir).filter(f=>f.startsWith('process-'))) fs.unlinkSync(dir+'/'+file);
         if (${JSON.stringify(scenario)}==='refresh') fs.chmodSync(dir,0o500);
         if (['owner-loss','refresh'].includes(${JSON.stringify(scenario)})) await new Promise(r=>setTimeout(r,800));
-        fs.chmodSync(dir,0o700);fs.renameSync=oldRename;syncBuiltinESMExports();
+        fs.chmodSync(dir,0o700);fs.chmodSync(dir+'.obligations',0o700);fs.renameSync=oldRename;syncBuiltinESMExports();
         const cleanup=await reapOwnedTestProcesses(env,{graceMs:10});
         if(owned.exitCode===null&&owned.signalCode===null) await once(owned,'exit');
-        console.log(JSON.stringify({refused,cleanup,ownedStopped:owned.signalCode==='SIGKILL',foreignLive:foreign.kill(0)}));
+        console.log(JSON.stringify({refused,cleanup,ownedStopped:owned.exitCode!==null||owned.signalCode!==null,foreignLive:foreign.kill(0)}));
       } finally {
-        fs.chmodSync(dir,0o700);fs.renameSync=oldRename;syncBuiltinESMExports();
+        fs.chmodSync(dir,0o700);fs.chmodSync(dir+'.obligations',0o700);fs.renameSync=oldRename;syncBuiltinESMExports();
         for (const child of [owned,foreign]) {
           if(child.exitCode===null&&child.signalCode===null) {child.kill('SIGKILL');await once(child,'exit')}
         }
@@ -51,7 +54,7 @@ for (const scenario of ['first-write', 'rename', 'owner-loss', 'refresh'] as con
       const result = spawnSync("node", [source], { encoding: 'utf8', timeout: 20_000 });
       assert.equal(result.status, 0, result.stderr);
       const observed = JSON.parse(result.stdout);
-      assert.equal(observed.refused, true);
+      assert.equal(observed.refused, !['primary-loss','obligation-owner-loss'].includes(scenario));
       assert.ok(observed.cleanup.unverified > 0);
       assert.equal(observed.ownedStopped, true);
       assert.equal(observed.foreignLive, true);
