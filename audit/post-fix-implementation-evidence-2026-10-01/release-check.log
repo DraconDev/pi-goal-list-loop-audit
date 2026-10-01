@@ -1072,3 +1072,140 @@ tests/closed-goal-clears-waiting.test.ts:
 (pass) v0.38.19 a closed goal clears awaiting-verdict even with a stale complete progress [16.71ms]
 
 tests/eager-continuation-core.test.ts:
+(pass) extractPendingTasks: pulls objection bullets, skips evidence (item 22) [0.81ms]
+(pass) extractPendingTasks: caps at 5 and dedupes [0.11ms]
+(pass) classifyImpossibleReason: partial vs full (item 23) [0.09ms]
+(pass) audit-cap branch: aggressiveMode keeps ACTIVE + pendingTasks; OFF pauses (item 24 tests 1-2) [1.12ms]
+(pass) IMPOSSIBLE branch: aggressive partial continues, full terminalizes (item 24 tests 3-4) [0.48ms]
+(pass) shouldSuppressHeartbeatForRecentShip: recent ship suppresses, stale does not (item 27) [18.57ms]
+(pass) heartbeat ship-suppression was removed in v0.26.6 (self-sustaining via ledger mtime) [0.91ms]
+
+tests/postaudit-surface.test.ts:
+(pass) fireReviewer emits a SECOND notify with the review file path after the cascade [22.16ms]
+(pass) surface-notify branch is preceded by the existing manual-suppressed notify [0.10ms]
+(pass) postaudit settings key takes precedence over legacy reviewer key (fireReviewer) [0.14ms]
+(pass) Settings type accepts both reviewer and postaudit keys [0.15ms]
+(pass) SETTINGS_KEYS includes postaudit and toolOverrides [0.03ms]
+(pass) /glla postaudit opens the same menu as /glla reviewer (no behavioral split) [0.05ms]
+(pass) /glla routes reviewer (legacy) and postaudit (new) without completion rows [0.13ms]
+(pass) resolveReviewerConfig: postaudit and reviewer blocks merge equivalently [0.12ms]
+(pass) goal-loop-continuation prompt carries the 0.27.5 chunk-near-context-full hint [0.11ms]
+
+tests/quota-sleep-until-reset.test.ts:
+(pass) quota sleep-until-reset: explicit upstream hint sleeps to reset, on the FIRST attempt too (v0.38.104) [0.56ms]
+(pass) quota sleep-until-reset: hint never widens the 5h envelope [0.03ms]
+(pass) quota sleep-until-reset: hintless quota failures keep the blind ladder [0.04ms]
+(pass) quota sleep-until-reset: non-quota signals ignore hints [0.04ms]
+
+tests/auditor-stderr-diagnostic.test.ts:
+(pass) a lone BEL flush contributes nothing (field bug: 90+ errors recorded only BEL) [13.38ms]
+(pass) stderr chunks accumulate in order [0.10ms]
+(pass) OSC sequences and control bytes are stripped, printable text kept [0.08ms]
+(pass) tab, LF, and CR survive; other C0 controls do not [0.04ms]
+(pass) accumulation is bounded, keeping the tail [0.53ms]
+
+tests/contract-text-semantics.test.ts:
+(pass) parser: supplied clause yields replacement data [0.32ms]
+(pass) parser: omitted clause yields no contract and no clear signal [0.08ms]
+(pass) parser: bare line-marker is an explicit clear [0.06ms]
+(pass) parser: bare inline marker is an explicit clear and is stripped from the objective [0.15ms]
+(pass) parser: bare marker followed by content still captures the contract block [0.07ms]
+(pass) goal tweak: supplied clause replaces the stored contract [278.49ms]
+(pass) goal tweak: omitted clause preserves the stored contract [165.70ms]
+(pass) goal tweak: bare 'Done when:' clears the stored contract [191.63ms]
+(pass) list tweak: supplied clause replaces the stored contract [191.95ms]
+(pass) list tweak: omitted clause preserves the stored contract [193.53ms]
+(pass) list tweak: bare 'Done when:' clears the stored contract [200.63ms]
+
+tests/continuation-start-self-heal.test.ts:
+(pass) v0.38.104: the self-heal cadence is bounded on both sides [41.86ms]
+(pass) v0.38.104: an unacknowledged turn start self-heals instead of demanding a human [657.08ms]
+(pass) v0.38.104: a turn-start proof resets the budget even when no timer is armed [0.50ms]
+
+tests/no-provider-smoke.test.mjs:
+(pass) GLLA loads without the optional pi-subagents provider [766.81ms]
+
+tests/refine-spec-rebaseline.test.ts:
+REFINE RESULT: Refinement confirmed and applied. Continue improving against the NEW spec — one small change per turn.
+(pass) v0.35.43: a confirmed respec with newly checked boxes re-baselines specChecked — no unearned progress [105.49ms]
+(pass) v0.35.x: recoverable bound-stopped loops accept a confirmed refinement without auto-starting [6.97ms]
+
+tests/lifecycle-recovery.test.ts:
+(pass) v0.35.x: a mutating /list command during handoff is replayed once by the successor [496.78ms]
+(pass) v0.35.x: a mismatched handoff discards a deferred list command without replay [376.88ms]
+(pass) v0.34.54: /list show before rebind — honest stale result: the recovery warning accompanies the read [321.30ms]
+(pass) v0.34.54: settings before rebind — bare /glla refused, read-only /glla status usable, both honest [512.90ms]
+(pass) v0.34.54: /list show after a fresh session_start — renders clean, zero stale residue [703.67ms]
+(pass) v0.34.54: settings after a fresh session_start — the table opens AND a real write lands [923.66ms]
+(pass) v0.34.54: source — read-only surfaces are never in the mutating sets; the gates are the honest refusal, not silence [5.25ms]
+
+tests/image1-list-stall-and-count-fix.test.ts:
+(pass) v0.34.104 [Image-#1] Problem 1: LIST_COMPLETION_SETTLE_MS constant + flag exist [0.49ms]
+(pass) v0.34.104 [Image-#1] Problem 1: archiveCurrentGoal arms the settle window BEFORE activating the next item [0.64ms]
+(pass) v0.34.104 [Image-#1] Problem 1: scheduleContinuation honours the settle window [0.30ms]
+(pass) v0.34.104 [Image-#1] Problem 1: agent activity during settle cancels the deferred send [0.20ms]
+(pass) v0.34.104 [Image-#1] Problem 1: sendContinuation honors an early settle callback [0.23ms]
+(pass) v0.34.104 [Image-#1] Problem 2: validateCompletionSummary exists and is wired into complete_goal capture [3.40ms]
+(pass) v0.34.104 [Image-#1] Problem 2: impossible X/Y pass counts match the field regex (29/28) [0.22ms]
+(pass) v0.34.104 [Image-#1] Problem 2: ledger event `completion_summary_impossible_count` is the canonical key [0.24ms]
+(pass) v0.34.104 [Image-#1] Problem 2: clean input early-returns before any ledger work [0.17ms]
+
+tests/metric-never-moved-resumable.test.ts:
+(pass) behavioral: a loop parked by 'metric never moved' resumes via /loop resume — history kept, counters re-armed [432.08ms]
+(pass) v0.35.x: time and token bound stops resume as fresh windows without discarding history [654.99ms]
+(pass) v0.35.x: metricless cadence delays automatic re-wakes but explicit start is urgent [627.29ms]
+(pass) negative pin: a bounded stop ('max iterations reached') is still not resumable [194.83ms]
+
+tests/test-split.test.ts:
+(pass) test-split: every slow-listed file exists and is a test file [30.52ms]
+(pass) test-split: fast mode excludes via one ignore pattern per slow file [0.24ms]
+(pass) test-split: explicit paths drop the ignore patterns [0.07ms]
+(pass) test-split: slow mode names the files; all mode passes through [0.10ms]
+(pass) runner: the stall window is bounded and overridable [0.10ms]
+(pass) runner: silence past the window stalls, progress resets the clock [0.05ms]
+(pass) runner: the wrapper owns its child (no orphan on abort) [0.19ms]
+(pass) runner: the hand-written .d.mts declares every runtime export (drift guard) [0.62ms]
+(pass) v0.38.104: the suite child is detached so the documented group-kill is real [52.16ms]
+(pass) v0.38.104: the release gate runs the hardened runner, and CI bounds both jobs [144.15ms]
+(pass) v0.38.104: no test gates itself on the removed @tintinweb fork [65.03ms]
+(pass) v0.38.104: tests/README.md does not claim npm test runs the whole suite [0.59ms]
+
+tests/delta-only-continuation.test.ts:
+(pass) marker is tiny and carries the dispatch marker [1.55ms]
+(pass) clean goal needs no full — repair/recovery/audit/designer do [1.99ms]
+(pass) builder: steady-state marker, resync+marker, dirty full [51.07ms]
+(pass) v0.38.94: consecutive sends go full once, then marker (field: 909 full sends) [513.48ms]
+(pass) v0.38.94: rebind reset re-arms the one full brief (fresh context) [739.90ms]
+(pass) sendContinuation wires the delta-only branch with kind ledger [1.03ms]
+
+tests/loop-measure-fail-closed.test.ts:
+(pass) a measure result with no exit code is a NULL measure, not a reading [77.57ms]
+(pass) an empty result envelope is also a NULL measure [10.65ms]
+(pass) a genuinely successful measure still records its number [11.42ms]
+(pass) a nonzero exit code with a parseable number is still rejected [8.60ms]
+
+tests/prompt-subagent-guidance.test.ts:
+(pass) goal-loop-continuation.md: contains subagent fan-out guidance (item 4) [0.42ms]
+(pass) goal-loop-draft.md: contains subagent fan-out guidance (item 4) [0.07ms]
+(pass) goal-loop-forever.md: contains subagent fan-out guidance (item 4) [0.03ms]
+(pass) goal-loop-forever-metricless.md: contains subagent fan-out guidance (item 4) [0.04ms]
+(pass) continuation prompt — single-trunk execution with bounded fan-out [0.17ms]
+(pass) v0.34.0: forever prompts carry the ROI law + untrusted-output hygiene [0.14ms]
+(pass) v0.34.0: audit templates demand the parallel fan-out shape (both) [35.70ms]
+(pass) v0.34.0: divergence bail — 3+ trailing regressions append a reassessment note [3.02ms]
+(pass) continuation prompt — brief discipline law [0.21ms]
+(pass) v0.34.4/0.34.6: token-limit death handling — resume first; split/absorb, never respawn wide [0.09ms]
+(pass) v0.34.4: audit templates carry brief discipline in the fan-out clause (both) [0.14ms]
+(pass) v0.34.4: forever prompts carry the one-line brief law [0.07ms]
+(pass) v0.34.6: subagent failure law is RESUME, DON'T RESPAWN (session survives death) [0.15ms]
+(pass) v0.34.6: the restart law — in-process agents die silently, goals survive [0.11ms]
+
+tests/starvation-ladder.test.ts:
+(pass) compact-first band sits below the starvation line [2.35ms]
+(pass) ladder message names all three recoveries plus the backstop [0.37ms]
+(pass) compact-first nudge fires once per episode [0.10ms]
+(pass) refuse stays sticky while physically over cap [0.18ms]
+(pass) sendContinuation consults the starvation choke point [0.24ms]
+(pass) starved boot refuses the automatic send instead of truncating [257.01ms]
+
+tests/auditor-dispatch-horizon.test.ts:
