@@ -5,5 +5,8 @@
   "githubRelease": "https://github.com/DraconDev/pi-goal-list-loop-audit/releases/tag/v0.38.106",
   "workflowId": 36872564036,
   "workflowUrl": "https://github.com/DraconDev/pi-goal-list-loop-audit/actions/runs/36872564036",
-  "status": "workflow in progress; npm unverified"
+  "status": "GitHub workflow success; npm accepted signed provenance, registry processing",
+  "localReleaseCheck": "passed",
+  "githubReleaseCheck": "passed",
+  "publicIconMatchesReviewedAsset": true
 }
