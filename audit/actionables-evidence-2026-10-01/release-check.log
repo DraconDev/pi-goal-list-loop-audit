@@ -1,0 +1,16 @@
+
+> pi-goal-list-loop-audit@0.38.105 release:check
+> npm run test:all && npm run check:inventory && npm pack --dry-run && node scripts/release-pack-smoke.mjs
+
+
+> pi-goal-list-loop-audit@0.38.105 test:all
+> node scripts/run-tests.mjs --all && tsc --noEmit && node tests/repro-jiti-state-split.test.mjs && npm run test:auditor-extensions
+
+[run-tests] mode=all slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-stale-context.test.ts:
+(pass) v0.34.52: bare /glla on a stale handle is refused — standard recovery message, UI never opens, settings untouched [405.32ms]
+(pass) v0.34.52: mutating /glla actions (wipe, cancel, resume, reviewer, postaudit, tooloverride) are all refused on a stale handle [338.54ms]
+(pass) v0.34.52: /glla status, log, stats, audits stay usable on a stale handle (inspect, don't mutate) [2869.41ms]
+(pass) audit 2026-09-07 (LOW, finding 399): bare `/glla fallbacks` is a read-only display — allowed on a stale handle; `fallbacks clear` still mutates and is refused [462.48ms]

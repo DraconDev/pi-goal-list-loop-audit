@@ -18,7 +18,12 @@ Windows abrupt-power-loss recovery.
 POSIX children use owned process groups; Windows cleanup uses `taskkill /T`
 while the leader is identifiable. Linux test cleanup additionally records
 process birth ticks and session/group membership to reclaim registered detached
-workers after a leader exits. That detached-worker registry is Linux-specific.
+workers after a leader exits. Each launch first publishes an independent
+obligation in a sibling `.obligations` directory. Failed record writes stop the
+known child and propagate a launch error; missing records, failed refreshes and
+unreadable configured registry owners make the runner fail and retain evidence.
+Successful cleanup removes both directories. Non-detached children remain
+covered by their suite group. That detached-worker registry is Linux-specific.
 Windows descendant reclamation after an unregistered leader disappears is not
 promised; it would require a Job Object or equivalent durable identity seam.
 Owner publication retries bounded Windows sharing violations without deleting

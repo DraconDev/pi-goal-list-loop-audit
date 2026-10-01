@@ -33,6 +33,13 @@ Prepared intents without a published archive cannot transfer a summary. Outbox
 deduplication and persisted session receipts make transfer and delivery retries
 idempotent.
 
+Only a missing outbox is an empty queue. An unreadable, malformed or partially
+invalid existing outbox refuses enqueue and replay and preserves its original
+bytes. The new archive intent remains available for retry. Restore readability
+or explicitly repair the preserved JSON array before retrying; do not discard
+pending entries to clear the error. Successful delivery alone acknowledges a
+summary.
+
 These are process-crash guarantees. Atomic file publication does not promise
 survival of power loss or storage-controller failure: the current writes do
 not fsync files and parent directories. The chosen durability level is process-crash recovery. Power-loss/storage-loss

@@ -34,6 +34,12 @@ extensions, and requests one short reply. It permits exactly one provider
 request, at most 32 output tokens and 8192 payload bytes, and a 45-second child
 deadline. Unsupported provider cap fields, unknown prices, repeated requests,
 and estimates exceeding the configured budget are refused before dispatch.
+Rejection exits the dedicated canary child with code 78, because Pi logs and
+swallows ordinary request-hook exceptions. Receipts distinguish attempted,
+permitted and refused requests; a refused or additional attempt fails the
+harness. Receipt-write failure also exits before dispatch. Tests run the generated
+hook through the installed Pi dispatcher with a local fake transport, including
+parent-harness pass/fail checks; these make no provider request.
 The metadata estimate is a guard, not a billing guarantee; usage is recorded
 when the provider returns it. Fixture tests use a stub host and do not count as
 live-provider success.

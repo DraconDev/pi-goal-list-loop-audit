@@ -335,4 +335,10 @@ test('malformed and partially invalid stores preserve bytes and refuse mutations
     assert.equal(fs.readFileSync(file, 'utf8'), bytes);
     assert.equal(sends, 0);
   }
+  // Explicit repair of the preserved bytes restores delivery without loss.
+  fs.writeFileSync(file, JSON.stringify([valid]));
+  assert.equal(persistApprovalRender(cwd, { goalId: 'new', objective: 'new', chatLines: ['new'] }), true);
+  const ids: string[] = [];
+  assert.equal(replayUndeliveredApprovalRenders({ cwd }, entry => { ids.push(entry.goalId); return true; }), 2);
+  assert.deepEqual(ids, ['valid', 'new']);
 });
