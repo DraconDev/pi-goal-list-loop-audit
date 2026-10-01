@@ -107,7 +107,6 @@ function main() {
   testEnv.GLLA_TEST_ROOT_PROCESS_REGISTRY ??= testEnv.GLLA_TEST_PROCESS_REGISTRY;
   testEnv.GLLA_TEST_ROOT_PROCESS_TOKEN ??= testEnv.GLLA_TEST_PROCESS_TOKEN;
   const child = spawn("bun", ["test", ...bunArgs], { stdio: ["inherit", "pipe", "pipe"], detached: true, env: testEnv });
-  registerOwnedTestProcess(child, testEnv);
   let bytes = 0;
   let lastOutputAt = Date.now();
   let settled = false;
@@ -193,6 +192,14 @@ function main() {
     void done(1);
   });
   child.on("close", done);
+  // Registration can fail while the newly launched suite is already running.
+  // Install containment and settlement handlers first, then retain/reap its
+  // failed obligation through the same exit path as every other launch error.
+  try { registerOwnedTestProcess(child, testEnv); }
+  catch (error) {
+    log(`could not register bun: ${error.message}`);
+    void done(1);
+  }
 }
 
 // Kept for a caller that explicitly wants a blocking run (tests).

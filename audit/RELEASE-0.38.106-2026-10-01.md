@@ -30,7 +30,10 @@ the compactor installed signal handlers after synchronous child registration.
 The attempt was stopped and its unchanged-source evidence is retained as
 `release-check-signal-window.*`. GLLA now installs handlers before child launch;
 the regression deliberately holds registry discovery until the parent signals,
-then verifies failure receipt and descendant cleanup. Local release validation
+then verifies failure receipt and descendant cleanup. The nested runner's
+permission fixture also exposed a registration refusal before its own handlers
+were installed; the runner now arms settlement before registration and routes
+refusal through cleanup/evidence rather than an uncaught exception. Local release validation
 is in progress;
 tag publication, GitHub workflow success and npm availability remain pending.
 Evidence: [release directory](release-0.38.106-evidence-2026-10-01/).

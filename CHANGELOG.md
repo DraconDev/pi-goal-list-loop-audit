@@ -24,7 +24,9 @@
   Reentrant enqueues and nested acknowledgements survive replay and rotation;
   host delivery runs outside the mutation lock.
 - Compactor signal handlers are installed before Pi launch and registry
-  discovery, closing the immediate-interruption cleanup window.
+  discovery, closing the immediate-interruption cleanup window. The test
+  runner installs containment handlers before registration and settles launch
+  refusal through its cleanup/evidence path.
 - Audit follow-through also hardens owner mutation and terminal settlement,
   process containment, retry guards, bounded canary requests, receipt
   confirmation, compatibility documentation and installed-package checks.
