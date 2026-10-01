@@ -816,3 +816,5 @@ tests/decision-budget.test.ts:
 tests/completion-communication.test.ts:
 [run-tests] progress: 90s elapsed · 14s since last output · 60 KiB of suite output
 [run-tests] progress: 120s elapsed · 44s since last output · 60 KiB of suite output
+[run-tests] received SIGTERM — cleaning up the suite group
+[run-tests] finished in 137s (exit null, signal SIGKILL)
