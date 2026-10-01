@@ -2320,7 +2320,9 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // parked as recovery-pending is the durable form produced by a stale
     // host/session boundary; it must receive the same policy on the first
     // genuinely fresh session instead of requiring a second manual command.
-    const completedAuditRecovered = resumeCompletedCompletionAudit(ctx);
+    const completedAuditRecovered = resumeCompletedCompletionAudit(ctx, {
+      continueWork: explicitRecovery || autoResume || sameProcessContinuityResume,
+    });
     const storedCompletionGoal = completedAuditRecovered ? null : state.goal;
     const storedCompletionClaim = storedCompletionGoal?.pendingCompletion;
     // v0.38.99: an interrupted SETTLEMENT is the one stored-claim state a

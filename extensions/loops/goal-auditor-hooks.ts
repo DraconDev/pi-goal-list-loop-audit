@@ -1180,7 +1180,8 @@ export function resumeStoredCompletionOrSettlement(
   ctx: ExtensionContext,
   origin: "complete-goal" | "provider-retry" | "manual" | "session-recovery" | "agent",
   retry: (origin: "complete-goal" | "provider-retry" | "manual" | "session-recovery" | "agent") => void,
-): "settled" | "parked" | "retried" | "not-applicable" {
+): "settled" | "parked" | "retried" | "recovered" | "not-applicable" {
+  if (resumeCompletedCompletionAudit(ctx, { origin })) return "recovered";
   if (isSettlingClaim(state.goal?.pendingCompletion)) {
     return resumeSettlingCompletionAudit(ctx, origin === "complete-goal" ? "manual" : origin);
   }
@@ -1706,9 +1707,13 @@ function applyCompletedCompletionAudit(args: {
   liveCtx: ExtensionContext; result: DetachedAuditResult; origin: CompletionAuditOrigin;
   auditStartMs: number; retriedOnce: boolean; fallbackUsed: boolean;
   settings: ReturnType<typeof loadSettings>; inspectionSessionPath?: string;
+  continueWork?: boolean;
 }): void {
   let { liveCtx, result } = args;
   const { generation, goalId, claim, origin, auditStartMs, retriedOnce, fallbackUsed, settings, inspectionSessionPath } = args;
+  const continueCompletion = (ctx: ExtensionContext, force: boolean) => {
+    if (args.continueWork !== false) scheduleContinuation(ctx, force);
+  };
   const currentAfterAudit = freshCtxForGeneration(generation);
   if (!currentAfterAudit || !state.goal || state.goal.id !== goalId) {
     // v0.34.80 (field: 2026-08-07): NEVER drop a completed verdict silently.
@@ -1787,7 +1792,7 @@ function applyCompletedCompletionAudit(args: {
     // interrupted — no verdict" until a manual resume (the 2026-08-07
     // junk-runner incident).
     updateGoal({ ...(state.goal?.status === "auditing" ? { status: "active" } : {}), pendingCompletion: undefined }, liveCtx);
-    scheduleContinuation(liveCtx, true);
+    continueCompletion(liveCtx, true);
     return;
   }
 
@@ -1942,7 +1947,7 @@ function applyCompletedCompletionAudit(args: {
       "warning",
     );
     appendLedger(liveCtx.cwd, "audit_shield_blocked", { goalId, attemptId: claim.attemptId, missing });
-    scheduleContinuation(liveCtx, true);
+    continueCompletion(liveCtx, true);
     return;
   }
 
@@ -2272,7 +2277,7 @@ function applyCompletedCompletionAudit(args: {
       }, liveCtx);
       liveCtx.ui.notify(`Auditor (${origin}): part of the goal is IMPOSSIBLE — ${reason.slice(0, 140)}. aggressiveMode: narrowing and continuing.`, "warning");
       appendLedger(liveCtx.cwd, "impossible_partial_continue", { reason: reason.slice(0, 240), origin });
-      scheduleContinuation(liveCtx, true);
+      continueCompletion(liveCtx, true);
       return;
     }
     if (classifyImpossibleReason(reason) === "partial") {
@@ -2420,7 +2425,7 @@ function applyCompletedCompletionAudit(args: {
       }, liveCtx);
       appendLedger(liveCtx.cwd, "audit_cap_keep_going", { trailingDisapprovals, auditCap, pendingTasks: durableObjections, origin });
       liveCtx.ui.notify(`Auditor disapproved ${trailingDisapprovals}× (cap); aggressive mode keeps the goal active with durable TODOs.`, "warning");
-      scheduleContinuation(liveCtx, true);
+      continueCompletion(liveCtx, true);
       return;
     }
     updateGoal({
@@ -2464,12 +2469,12 @@ function applyCompletedCompletionAudit(args: {
     impossible: result.impossible,
     error: result.error?.slice(0, 160),
   });
-  scheduleContinuation(liveCtx, true);
+  continueCompletion(liveCtx, true);
 }
 
 /** Reconcile a finished exact-claim job before parking/relaunching its auditor.
  * Synchronous validation/application fences a successor from racing a new attempt. */
-export function resumeCompletedCompletionAudit(ctx: ExtensionContext): boolean {
+export function resumeCompletedCompletionAudit(ctx: ExtensionContext, opts: { origin?: CompletionAuditOrigin; continueWork?: boolean } = {}): boolean {
   const goal = state.goal;
   const claim = goal?.pendingCompletion;
   if (!goal || !claim || !claim.attemptId || isSettlingClaim(claim)
@@ -2485,9 +2490,16 @@ export function resumeCompletedCompletionAudit(ctx: ExtensionContext): boolean {
   });
   applyCompletedCompletionAudit({
     generation: sessionGeneration, goalId: goal.id, claim, liveCtx: ctx,
-    result: saved.result, origin: "session-recovery",
+    result: saved.result, origin: opts.origin ?? "session-recovery", continueWork: opts.continueWork,
     auditStartMs: Date.now() - saved.durationMs, retriedOnce: false, fallbackUsed: false, settings,
   });
+  if (opts.continueWork === false && state.goal?.id === goal.id && state.goal.status === "active") {
+    updateGoal({
+      status: "paused", pauseKind: "blocked",
+      pauseReason: "completion audit verdict recovered — held on restore for explicit resume",
+      pauseSuggestedAction: `Read the recovered audit report in ${activeGoalStatusCommand()}, then ${activeGoalSurfaceCommand("resume")} to continue.`,
+    }, ctx);
+  }
   return true;
 }
 

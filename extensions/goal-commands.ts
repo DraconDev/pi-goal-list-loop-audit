@@ -121,7 +121,7 @@ export interface CommandDeps {
   resumeStoredCompletionOrSettlement: (
     ctx: ExtensionContext,
     origin: "complete-goal" | "provider-retry" | "manual" | "session-recovery" | "agent",
-  ) => "settled" | "parked" | "retried" | "not-applicable";
+  ) => "settled" | "parked" | "retried" | "recovered" | "not-applicable";
   probeMainModelRecovery: (ctx: ExtensionContext) => Promise<void>;
   releaseContinuationDispatchStandDown: () => void;
   releaseInitialSessionLoadBarrier: () => void;

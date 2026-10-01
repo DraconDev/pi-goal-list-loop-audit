@@ -61,7 +61,11 @@ for (const verdict of ["approved", "disapproved"] as const) {
       assert.equal(events(cwd).filter(e => e.type === "audit_completed_result_recovered").length, 1);
       assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0, "no replacement worker launches");
       if (verdict === "approved") assert.ok(fs.existsSync(archivedGoalPath(cwd, g.id)), `approval passes the normal archive settlement: ${JSON.stringify({ state: readState(cwd), notices: ctx.ui.notifies })}`);
-      else assert.equal(readState(cwd).goal?.auditHistory?.at(-1)?.disapproved, true, "disapproval reaches the normal history/rework path");
+      else {
+        assert.equal(readState(cwd).goal?.auditHistory?.at(-1)?.disapproved, true, "disapproval reaches the normal history/rework path");
+        assert.equal(readState(cwd).goal?.status, "paused", "cold restore holds rework for consent");
+        assert.equal(pi.sent.length, 0, "recovering a verdict is not permission to dispatch executor work");
+      }
       await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
       ctx = await boot(pi, cwd);
       assert.equal(events(cwd).filter(e => e.type === "audit_completed_result_recovered").length, 1, "repeated restore cannot replay the verdict");
