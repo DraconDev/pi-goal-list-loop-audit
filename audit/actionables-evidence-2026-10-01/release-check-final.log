@@ -782,3 +782,156 @@ tests/completion-communication.test.ts:
 (pass) disapproval remains unfinished, no final success is posted [1266.63ms]
 [run-tests] progress: 90s elapsed · 1s since last output · 58 KiB of suite output
 (pass) archive write failure never emits a terminal success [1632.05ms]
+(pass) approval summary does not replace independent next-item continuation [16903.31ms]
+(pass) outbox write failure warns without claiming summary delivery [2145.19ms]
+
+tests/list-invisible-restart.test.ts:
+(pass) v0.35.21: session_start converges a disk-sidecar queue the state ledger lost, and the widget renders it [626.35ms]
+(pass) v0.35.61: a waiting-only queue is visible and startable without a reload [217.57ms]
+(pass) v0.35.61: silent host replacement rehydrates a sidecar-only waiting queue before repaint [224.87ms]
+(pass) v0.35.72: a newer known sidecar reconciles the in-memory queue item [200.49ms]
+(pass) v0.35.72: activation refuses when the durable sidecar cannot be removed [170.48ms]
+(pass) v0.35.21: convergence is idempotent — an item present in BOTH state and sidecar is not duplicated [182.77ms]
+
+tests/audit-loop-state-root.test.ts:
+(pass) sessionDir audit target, measure, and findings helper name the selected file [95.32ms]
+
+tests/prompt-layers.test.ts:
+(pass) full assembly of goal-loop-continuation.md is byte-identical to source minus markers [37.13ms]
+(pass) full assembly of goal-loop-forever.md is byte-identical to source minus markers [0.42ms]
+(pass) full assembly of goal-loop-forever-metricless.md is byte-identical to source minus markers [0.45ms]
+(pass) full assembly of goal-loop-draft.md is byte-identical to source minus markers [1.06ms]
+(pass) full assembly of goal-loop-forever-draft.md is byte-identical to source minus markers [3.35ms]
+(pass) full assembly of goal-loop-plan.md is byte-identical to source minus markers [0.32ms]
+(pass) full assembly of goal-loop-plan-loop.md is byte-identical to source minus markers [0.28ms]
+(pass) continuation declares exactly the three conditional details [0.35ms]
+(pass) the other six prompts are skeleton-only (whole file is the skeleton) [1.03ms]
+(pass) missing prompt file fails loudly, never lean [1.71ms]
+(pass) unknown detail id fails loudly [0.38ms]
+(pass) parser defects fail loudly [0.33ms]
+(pass) assembly order is file order regardless of request order (same every turn) [0.91ms]
+(pass) normal-turn render omits all three details; token cost lower by the deferred bodies [2.48ms]
+(pass) survey-pivot delta is EXACTLY the deferred body (equal-length objectives) [1.78ms]
+(pass) session-restart delta is EXACTLY the deferred body (opts flag only) [2.14ms]
+(pass) autoResumedAt goals get the restart detail without opts [6.09ms]
+(pass) live disapproval loads the auditor playbook detail [4.30ms]
+(pass) padRight helper keeps fixture objectives length-neutral [0.16ms]
+(pass) v0.38.104 the leading `//` author comment is stripped at assembly [0.53ms]
+(pass) v0.38.104 a `//` line in the BODY is never stripped [0.08ms]
+
+tests/auditor-screenshot-disapproval.test.ts:
+(pass) screenshot-shaped non-literal Done when contract proof stays an actionable disapproval [9.55ms]
+(pass) screenshot-shaped inverted title/score hierarchy stays an actionable disapproval [2.13ms]
+
+tests/list-philosophy.test.ts:
+(pass) contract 1+2: /goal+/list draft prompt has short-item AND multi-hour framing [0.58ms]
+(pass) contract 3: /loop draft prompt has metric-driven framing [0.11ms]
+(pass) contract 4: all draft prompts open with a Long-running philosophy block [0.20ms]
+(pass) contract 5: LIST-PHILOSOPHY.md exists with the three-mode table [3.13ms]
+(pass) contract 6: INSTALL.md references LIST-PHILOSOPHY.md in a Modes section [0.38ms]
+(pass) contract 7: /list depth headline format [0.84ms]
+(pass) contract 8+11: cross-recommend catches the 76-weak-points wrapper seed [0.22ms]
+(pass) contract 12: cross-recommend catches the 40-findings tasklist seed [0.08ms]
+(pass) contract 8: multi-hour seed in /list mode suggests /goal or break-up [0.15ms]
+(pass) contract 8: five-minute seed in /goal mode suggests /list [0.22ms]
+(pass) contract 8: open-ended seed in /goal or /list mode suggests /loop [0.28ms]
+(pass) contract 8: bounded-until beats recurring vocabulary (still a goal) [0.05ms]
+(pass) contract 8: aggregate beats recurring (per-item work wins) [3.64ms]
+(pass) contract 8: recurring beats five-minute (cadence changes the loop) [0.10ms]
+
+tests/execution-discipline.test.ts:
+(pass) mid-run question steps are violations, naming the step [33.90ms]
+(pass) ask_user_question subtasks are violations too [0.10ms]
+(pass) manual-check steps are violations unless the contract mandates them [0.09ms]
+(pass) contract-mandated gates are exempt, not violations [0.11ms]
+(pass) clean plans pass with no violations [0.05ms]
+(pass) propose_task_list validation refuses mid-run steps [0.09ms]
+(pass) goal/list drafting prompt pins never-schedule-mid-run plus manual-only-when-mandatory [0.18ms]
+(pass) plan prompt pins milestone shape: no mid-run question or manual-check milestones [0.10ms]
+
+tests/zombie-resume.test.ts:
+(pass) v0.35.25 #14: /loop resume honors the zero-stream abort park and preserves iteration/history [790.84ms]
+(pass) v0.35.25 #14: control — a non-resumable stop reason is still refused [335.17ms]
+
+tests/loop-refine-parity.test.ts:
+(pass) parked loops are refinable on both surfaces [22.82ms]
+(pass) terminal stops are refinable on neither surface [0.10ms]
+(pass) broken measure is the deliberate divergence: tool fixes, slash will not resume [0.04ms]
+
+tests/verification-status.test.ts:
+(pass) verification status FAIL: Unit tests: 10 passed, 0 failed; integration: 2 failed, 3 passed. [51.71ms]
+(pass) verification status REPORTED: Integration did not pass; credentials are unavailable and validation remains incomplete. [0.34ms]
+(pass) verification status FAIL: 3 passed, 1 failed; rerun 4 passed, 0 failed. [0.70ms]
+(pass) verification status PASS: 10 passed, 0 failed. [0.17ms]
+(pass) verification status FAIL: 10 passed, 0 failures; integration 2 failures. [0.45ms]
+(pass) verification status REPORTED: 4 skipped, 0 failed. [0.22ms]
+(pass) verification status REPORTED: Not run: credentials unavailable. [0.13ms]
+(pass) verification status REPORTED: The suite never passed. [0.10ms]
+(pass) verification status REPORTED: The suite hasn't passed. [0.09ms]
+(pass) verification status REPORTED: No tests passed. [0.30ms]
+(pass) verification status REPORTED: 0 passed, 0 failed. [0.15ms]
+(pass) verification status REPORTED: Validation will pass after credentials arrive. [0.11ms]
+(pass) verification status REPORTED: PASS expected, validation pending. [0.10ms]
+(pass) verification status PASS: 10 passed, 2 skipped, 0 failed. [0.15ms]
+(pass) verification status PASS: Password checks: 10 passed, 0 failed. [0.13ms]
+(pass) verification status REPORTED: Clean exit 0. [0.22ms]
+(pass) verification status REPORTED: Credentials missing; suite unable to pass. [0.09ms]
+(pass) verification status REPORTED: Suite refused to pass. [0.09ms]
+(pass) verification status PASS: PASS [0.11ms]
+(pass) verification status PASS: All tests passed. [0.10ms]
+(pass) verification status REPORTED: 0 fail [0.17ms]
+(pass) verification status REPORTED: Unit tests: 10 passed, 0 failed; integration suite unable to pass because credentials are missing. [0.22ms]
+(pass) verification status FAIL: 10 passed, 0 failed; integration exited with code 1. [0.14ms]
+(pass) verification status FAIL: 10 passed, 0 failed; integration: 2 errors. [0.13ms]
+(pass) verification status REPORTED: 10 passed, 0 failed; integration status is unknown. [0.11ms]
+(pass) verification status REPORTED: 10 passed, 0 failed; integration awaits credentials. [0.16ms]
+(pass) verification status REPORTED: 10 passed because the results were fabricated, 0 failed. [0.16ms]
+(pass) verification status REPORTED: 10 passed, 0 failed (integration was omitted). [0.35ms]
+(pass) verification status PASS: 10 passed, 0 failed; integration: 3 passed, 0 failed. [0.16ms]
+(pass) verification status PASS: integration: 3 passed, 0 failed; unit tests: 10 passed, 0 failed. [0.14ms]
+(pass) verification status REPORTED: 10 passed, 0 failed; integration exited with code 0. [0.16ms]
+(pass) verification status FAIL: 10 passed, 0 failed; 1 error, 0 errors on rerun. [0.13ms]
+(pass) verification status FAIL: 10 passed, 0 failed; integration exited with code -1. [0.10ms]
+
+tests/repetition.test.ts:
+(pass) normalizeForPrint strips ANSI, collapses whitespace, lowercases [0.23ms]
+(pass) textFingerprint is stable and case/whitespace-insensitive [0.28ms]
+(pass) trigramSimilarity: identical texts → 1, disjoint → 0, near-dup → high [0.38ms]
+(pass) trigramSimilarity: digits are volatile — 'port 8081' ≈ 'port 8082' [0.26ms]
+(pass) pushCapped keeps the window at cap, most recent last [0.11ms]
+(pass) findDegenerateRepeat: repeated sentence inside one reply [0.18ms]
+(pass) findDegenerateRepeat: repeated single word run [0.82ms]
+(pass) findDegenerateRepeat: normal prose passes [0.10ms]
+(pass) findDegenerateRepeat: short text is never degenerate [0.04ms]
+(pass) detectLoopStuck: healthy iteration → undefined [0.13ms]
+(pass) detectLoopStuck: narration-only streak [0.06ms]
+(pass) detectLoopStuck: exact repeat of previous iteration [0.10ms]
+(pass) detectLoopStuck: near-duplicate of previous iteration [0.17ms]
+(pass) detectLoopStuck: A-B-A-B window repetition [0.14ms]
+(pass) repeated in-band provider pane is distinct from ordinary repeated tool output [0.26ms]
+(pass) detectLoopStuck: same tool error three times [0.14ms]
+(pass) detectLoopStuck: same tool result (no new information) [0.10ms]
+(pass) detectLoopStuck: first hit wins — narration beats everything (most certain) [0.13ms]
+(pass) loopInterventionDirective: rotates strategy per consecutive count [0.17ms]
+(pass) loopInterventionDirective: hard reset from rung 3 with banned openings [0.15ms]
+(pass) loopInterventionDirective: rotation wraps after all strategies [0.05ms]
+(pass) continueVariant: rotates by iteration, never empty [0.08ms]
+
+tests/compaction-live-verifier.test.mjs:
+(pass) loads both local extension entrypoints and isolates Pi's agent directory [0.94ms]
+(pass) accepts only ordered host compaction events plus persisted non-empty records [52.57ms]
+(pass) exercises manual RPC compaction and both post-compaction continuations [0.32ms]
+
+tests/compactor-worker-lifecycle.test.ts:
+(pass) compactor cleans its Pi tree on SIGTERM, including inherited pipes and TERM-ignoring children [268.59ms]
+[run-tests] progress: 120s elapsed · 2s since last output · 68 KiB of suite output
+(pass) compactor cleans its Pi tree on timeout, including inherited pipes and TERM-ignoring children [3202.78ms]
+(pass) compactor cleans its Pi tree on normal, including inherited pipes and TERM-ignoring children [618.50ms]
+(pass) compactor cleans its Pi tree on result-write-failure, including inherited pipes and TERM-ignoring children [631.11ms]
+
+tests/auditor-thinking.test.ts:
+(pass) supported requested level is used verbatim [0.37ms]
+(pass) unsupported xhigh/max fall downwards; mapped nulls are skipped [0.07ms]
+(pass) non-reasoning and unknown requests degrade safely [0.04ms]
+
+tests/never-streamed-standdown.test.ts:
