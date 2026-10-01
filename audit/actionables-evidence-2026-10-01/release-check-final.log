@@ -2005,3 +2005,10 @@ Switched to branch 'main'
 (pass) v0.36.2: approved standalone completion automatically activates a pre-queued list head [1109.16ms]
 (pass) v0.34.91: detached approval notify carries the agent's completion recap, not process boilerplate [689.21ms]
 (pass) v0.34.87: complete_goal on a paused item names the pause + resume verb, not a flat 'No active goal' [187.76ms]
+(pass) v0.34.22: detached disapproval resumes the goal with a durable report [665.07ms]
+(pass) v0.35.x: a detached approval blocked by the regression shield is not relabeled [662.14ms]
+(pass) v0.34.22: an old detached result cannot archive after session replacement [1222.48ms]
+(pass) v0.34.21 lifecycle: cold startup holds a recovered claim until explicit resume [194.32ms]
+[run-tests] received SIGTERM — cleaning up the suite group
+[run-tests] detached cleanup: 2 owned groups; 0 unverified survivors/records
+[run-tests] finished in 357s (exit null, signal SIGTERM)
