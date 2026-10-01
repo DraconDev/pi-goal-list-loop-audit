@@ -2589,6 +2589,10 @@ test("v0.34.27: stale host recovery absorbs the first replacement contact across
     await acknowledgeLastContinuation(ctx);
     pi.sent.length = 0;
     pi.sendMessageError = staleError();
+    // The predecessor is actually unusable. A healthy old isIdle API lets
+    // the heartbeat legitimately recover before the successor contact,
+    // which would test a different boundary and depend on timer ordering.
+    (ctx as any).isIdle = () => { throw staleError(); };
     await pi.fire("agent_end", { messages: [{ role: "assistant", content: [{ type: "text", text: "boundary" }], stopReason: "end_turn" }] }, ctx);
     await tick();
     pi.sendMessageError = null;
