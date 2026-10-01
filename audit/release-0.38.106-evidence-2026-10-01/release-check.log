@@ -2057,3 +2057,10 @@ Switched to branch 'main'
 (pass) v0.35.x: a detached approval blocked by the regression shield is not relabeled [653.01ms]
 (pass) v0.34.22: an old detached result cannot archive after session replacement [1114.46ms]
 (pass) v0.34.21 lifecycle: cold startup holds a recovered claim until explicit resume [193.75ms]
+(pass) v0.35.x: validated session handoff auto-retries a parked completion audit [1057.82ms]
+(pass) v0.35.x: explicit Auto-resume retries a parked claim on cold startup [1125.89ms]
+(pass) v0.35.x: manual /list resume retries a parked list completion claim directly [965.83ms]
+(pass) v0.35.x: one automatic parked-audit retry is durable across repeated lifecycle events [135.29ms]
+[run-tests] progress: 300s elapsed · 1s since last output · 156 KiB of suite output
+(pass) v0.35.x: stale host replacement session_start auto-recovers the parked audit [1308.04ms]
+(pass) v0.35.x: healthy same-session heartbeat recovers a parked completion audit without manual resume [1278.21ms]
