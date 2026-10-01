@@ -814,3 +814,4 @@ tests/decision-budget.test.ts:
 (pass) decision budget: unset budget keeps legacy pause-every-time behavior [153.64ms]
 
 tests/completion-communication.test.ts:
+[run-tests] progress: 90s elapsed · 14s since last output · 60 KiB of suite output
