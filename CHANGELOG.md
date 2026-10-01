@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Final-audit orphan backstop
+
+- A healthy host now reconciles a stranded final audit even when its retry
+  flag was never armed. It consumes the validated saved verdict before
+  parking a missing verdict, preserving live-worker ownership and consent
+  gates without launching a duplicate auditor.
+
 ### Dynamic basic draft
 
 - `/goal <seed>` activates directly when the seed already carries enough
