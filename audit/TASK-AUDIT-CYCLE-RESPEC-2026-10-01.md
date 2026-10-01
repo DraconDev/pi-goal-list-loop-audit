@@ -29,6 +29,24 @@ Every cycle ends in an audit (scope vote 2026-10-01: task-audit cycle, not
 periodic audits). The audit verdict is the cycle's only exit signal; the
 replan step turns findings into the next cycle's tasklist.
 
+### 2.1 Prior art (audit 2026-10-01)
+
+Three existing loop shapes already orbit this space; `task-audit` complements,
+not replaces, them:
+
+- `/loop audit` (v0.29.0): a METRIC loop counting closed findings
+  (direction=max). Verifies finding throughput, never task completion.
+- `/loop respec` + metricless spec loops: iterate toward a spec file with NO
+  verdict at all. `task-audit` is the semantic sibling: same freedom from
+  numbers, but every cycle audited.
+- `/loop plan` (v0.35.33): the extended loop draft — reused unchanged as the
+  forced-draft path for task-audit starts (mirrors `/goal plan`).
+
+Command routing is collision-free: `task-audit` matches no existing `/loop`
+verb, and unknown first words today fall through to a natural-language draft,
+so the new branch slots in before the fallthrough with no behavior change to
+existing verbs.
+
 ## 3. Non-goals
 
 - Replacing the metric loop: `measure`/`direction` loops keep working
