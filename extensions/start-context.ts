@@ -345,3 +345,93 @@ export function resolveTweakReplacement(raw: string, sessionManager: unknown): T
   }
   return { kind: "unresolvable", reason: "none", candidates: [] };
 }
+
+/** Concrete-evidence classes a seed or context turn can carry. Each class
+ * counts once no matter how often it repeats — three file paths are still
+ * one class of evidence. */
+const DETAIL_ANCHOR_RES = [
+  /\b[\w.-]+\/[\w./-]*[\w.-]+\.(?:ts|tsx|js|mjs|cjs|py|rs|go|md|json|yaml|yml|toml|sh|sql)\b|\b[\w.-]+\/[\w.-]{4,}[\w./-]*\b/,
+  /`[^`\n]{2,}`|\b(?:npm|bun|node|cargo|git|pi|make|docker|pytest|go test)\s+\S+/,
+  /"[^"\n]{3,}"/,
+  /\b(?:should|must|needs?\s+to|verify|acceptance\s+(?:criterion|criteria)|done\s+when)\b/i,
+  /^\s*(?:-\s*\[[ xX]\]|[-*•]\s+|\d+[.)]\s+)/m,
+  /\b\d+\s*(?:ms|s\b|%|tests?|files?|items?|rows?)\b/i,
+] as const;
+
+/** How many distinct evidence classes `text` carries (0-6). Deterministic
+ * and length-independent: callers apply their own length floors. */
+export function countDetailAnchors(text: string): number {
+  const source = (text ?? "").replace(/\r\n?/g, "\n");
+  if (!source.trim()) return 0;
+  return DETAIL_ANCHOR_RES.reduce((n, re) => n + (re.test(source) ? 1 : 0), 0);
+}
+
+/** Words too common to prove a context turn is ABOUT the seed. */
+const SHARED_WORD_STOP = new Set([
+  "about", "after", "and", "are", "because", "been", "before", "being", "between",
+  "cannot", "could", "doing", "done", "during", "error", "failed", "failing", "fix",
+  "fixed", "for", "from", "have", "into", "please", "should", "that", "there",
+  "these", "they", "thing", "those", "through", "under", "update", "using",
+  "want", "with", "would", "your",
+]);
+
+function contentWords(text: string): Set<string> {
+  const words = new Set<string>();
+  for (const raw of text.toLocaleLowerCase().split(/[^a-z0-9]+/)) {
+    if (raw.length >= 5 && !SHARED_WORD_STOP.has(raw)) words.add(raw);
+  }
+  return words;
+}
+
+/** A seed too thin to ever activate without an interview: chatter shapes,
+ * pure questions, and explanation requests. Deliberately NOT action-gated:
+ * a rich declarative seed ("Materialise views-per-hour into a stored
+ * column …") names no ACTION_WORD yet is perfectly activatable. */
+function isThinSeed(text: string): boolean {
+  if (GENERIC_REPLY_RE.test(text) || PRONOUN_ONLY_RE.test(text) || VAGUE_ACTION_RE.test(text)) return true;
+  const stripped = text.replace(REQUEST_PREFIX_RE, "").trim();
+  if (stripped !== text && (!stripped || VAGUE_ACTION_RE.test(stripped))) return true;
+  // Ack-opener chatter ("ok adjust it") points at the context but names
+  // nothing — it interviews even when the context is rich.
+  const unacked = text.replace(ACK_PREFIX_RE, "").trim();
+  if (unacked !== text && (!unacked || isVagueCandidate(unacked)
+    || /^(?:do|adjust|adjsut)\s+(?:it|this|that)\s*[.!?]*$/i.test(unacked))) return true;
+  if (QUESTION_ONLY_RE.test(text) && !REQUIREMENT_RE.test(text)) return true;
+  if (EXPLANATION_REQUEST_RE.test(text)) return true;
+  return false;
+}
+
+/** Dynamic basic draft: does a `/goal <seed>` carry enough to activate
+ * directly, alone or together with the bounded recent conversation?
+ * Fail-closed everywhere: any doubt routes to the drafting interview.
+ * A Done-when seed never reaches here (goalArgsNeedDrafting already
+ * activates it); multi-task seeds always draft so scope is confirmed. */
+export function seedPlusContextSufficient(seed: string, sessionManager: unknown): boolean {
+  try {
+    const source = (seed ?? "").replace(/\r\n?/g, "\n").trim();
+    const text = normalizeWhitespace(source);
+    if (!text || text.length > START_CONTEXT_MAX_CANDIDATE_CHARS || isSlashCommand(text)) return false;
+    if (isThinSeed(text)) return false;
+    if (hasMultipleTasks(source)) return false;
+    const seedAnchors = countDetailAnchors(text);
+    if (seedAnchors >= 3) return true;
+    if (text.length < 12) return false;
+    if (seedAnchors >= 2 && text.length >= 60) return true;
+    // The seed names the task; the recent USER turns must supply detail
+    // about THIS task — assistant text is never authority, and unrelated
+    // detail does not count (shared content word required).
+    const window = readBoundedStartContext(sessionManager);
+    const contextText = window.recent.filter((turn) => turn.role === "user").map((turn) => turn.text).join("\n");
+    if (!contextText.trim()) return false;
+    if (countDetailAnchors(contextText) < 1) return false;
+    const seedWords = contentWords(text);
+    if (seedWords.size === 0) return false;
+    const contextWords = contentWords(contextText);
+    for (const word of seedWords) {
+      if (contextWords.has(word)) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}

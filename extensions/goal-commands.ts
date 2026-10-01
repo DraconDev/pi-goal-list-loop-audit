@@ -44,7 +44,7 @@ import { formatGllaVersion } from "./glla-version.js";
 import { cmdGllaOwner, cmdGllaTakeover } from "./state-root-owner.js";
 import { AUDIT_JOB_CLEANUP_MIN_AGE_MS, cancelDetachedGoalCompletionAuditor, cleanupDeadAuditJobs, inspectAuditJobHealth, DEFAULT_AUDITOR_STALL_MS, DEFAULT_AUDITOR_TOOL_TIMEOUT_MS } from "./goal-loop-auditor-process.js";
 import { releaseAuditorSurface } from "./loops/goal-auditor-surface.js";
-import { inferStartFromSession, resolveTweakReplacement, type StartContextInference } from "./start-context.js";
+import { inferStartFromSession, resolveTweakReplacement, seedPlusContextSufficient, type StartContextInference } from "./start-context.js";
 
 /** Child pi sessions live under the shared session store, munged by cwd
  * (verified layout: ~/.pi/agent/sessions/--home-user-proj--/*.jsonl). */
@@ -386,8 +386,15 @@ async function cmdSet(args: string, ctx: ExtensionContext, skipDraft = false, ex
   // v0.16.0: /goal start bypasses this by explicit user command.
   if (!skipDraft && goalArgsNeedDrafting(raw)) {
     if (staleEntry) return;
-    await startDrafting(ctx, "goal", raw);
-    return;
+    // Dynamic basic draft: a seed that already carries enough detail —
+    // alone or with the bounded recent conversation — activates directly.
+    // /goal plan always drafts; thin seeds interview at dynamic length.
+    if (seedPlusContextSufficient(raw, ctx.sessionManager)) {
+      ctx.ui.notify("Seed + recent context carry enough detail — activating directly (no interview). /goal plan forces the full draft.", "info");
+    } else {
+      await startDrafting(ctx, "goal", raw);
+      return;
+    }
   }
   if (!(await resolveGoalStartConflict(ctx, raw, explicitReplace))) return;
   flags.draftingTarget = null; // explicit objective cancels any drafting session

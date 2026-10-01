@@ -1115,9 +1115,21 @@ function goalDisplayActivity(g: Goal, extras?: WidgetExtras, now = Date.now()): 
  * blank state: users need to know who owns recovery, whether queue work is
  * parked safely, when the host last made progress, and what happens next.
  * These helpers are display-only; they never infer or mutate lifecycle state. */
+/** Live recovery evidence: a retry timer, an in-flight model switch, or an
+ * explicit manual hold. A recovery REMNANT (object present, none of these)
+ * is stale state, not an owner — the gate mirrors the two recovery banners
+ * in the paused card body, so owner and banner can never contradict. */
+function hasLiveMainModelRecovery(state: State): boolean {
+  const recovery = state.mainModelRecovery;
+  if (!recovery) return false;
+  return Number.isFinite(Date.parse(recovery.retryAt ?? ""))
+    || !!recovery.pendingModelSwitch
+    || recovery.manualResumeRequired === true;
+}
+
 function pausedRecoveryOwner(g: Goal, state: State): string {
   if (isCompletionAuditNoVerdict(g)) return "detached auditor recovery";
-  if (state.mainModelRecovery) {
+  if (hasLiveMainModelRecovery(state)) {
     return "main-model recovery";
   }
   // 2026-09-16: a bare timed wait without recovery evidence is the user's
