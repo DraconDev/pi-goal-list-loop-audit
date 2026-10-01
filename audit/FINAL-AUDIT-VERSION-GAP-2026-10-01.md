@@ -81,4 +81,15 @@ started, "says latest but doesnt work", symptom "never settles". Findings:
 - Open: no evidence yet for what "doesnt work" refers to on current code.
   Leading hypotheses: (a) 11–19 min full-tier thinking-max audits feel
   endless; (b) a stall later in this attempt (round 2 / settlement);
-  (c) an unreconstructed display freeze. Operator asked which to pursue.
+  (c) an unreconstructed display freeze. Operator chose: watch this audit.
+
+## Watch outcome: settled clean (22:47–22:53 UTC)
+
+- 22:49 round 2 (64 tools, 11 KB report) → 22:51 producing_report (24 KB)
+  → ~22:52 result published: APPROVED with full `<evidence>`.
+- 22:52:15 `audit_settlement_completed`, goal archived complete,
+  terminal notice posted, queue advanced 8→7 with the next item active.
+- Total ~28 min from claim. Mechanism fully healthy; "never settles" is
+  disproved for this attempt. Remaining cost is latency (11–28 min per
+  full-tier thinking-max audit), which is a rigor-vs-speed product call,
+  not a settle bug.
