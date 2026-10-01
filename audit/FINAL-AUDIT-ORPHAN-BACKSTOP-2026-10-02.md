@@ -66,8 +66,21 @@ consent, and launch grace remain binding.
   exactly-once recovery, live ownership, launch grace, supervisor freeze,
   and cold-held disapproval with no executor dispatch.
   `final-audit-orphan-backstop-evidence-2026-10-02/focused-tests.log`.
-- TypeScript check passed. Full release contract is running; its result will
-  be recorded here before completion.
+- Full suite completed: 3016 passed, 1 skipped, 1 failed across 326 files.
+  The sole failure was a pre-existing test assertion matching `403` inside
+  the retry timestamp `2026-10-01T23:10:50.403Z`, not a leaked provider
+  payload. The assertion now removes ISO timestamps before checking the
+  status code and sensitive payload. The entire behavioral-orchestrator
+  file then passed: 151 passed, 0 failed. The focused retry passed as well.
+  Logs: `full-suite.log` and `behavioral-retry.log` in the evidence directory.
+- TypeScript, singleton-state import, and offline auditor-extension checks
+  passed. Inventory initially needed regeneration for shifted source
+  references; regenerated inventory check passed, followed by npm pack
+  inspection and real packed RPC/skill/import smoke checks. Logs:
+  `release-remaining.log` and `package-check.log` in the evidence directory.
+  The original `npm run release:check` exited 1 on the timestamp assertion;
+  its remaining stages and the corrected failing file were checked separately.
+  No release was published.
 
 Existing hosts must load the updated modules. SEO requires a normal Pi
 session in its project so the existing startup reconciliation can consume

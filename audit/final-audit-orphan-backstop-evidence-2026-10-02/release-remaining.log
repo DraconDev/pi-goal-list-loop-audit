@@ -1,0 +1,36 @@
+
+> pi-goal-list-loop-audit@0.38.107 check
+> tsc --noEmit
+
+
+> pi-goal-list-loop-audit@0.38.107 test:jiti
+> node tests/repro-jiti-state-split.test.mjs
+
+TAP version 13
+# Subtest: jiti: /list audit enqueues, persists the item, and ACTIVATES (state binding not split)
+ok 1 - jiti: /list audit enqueues, persists the item, and ACTIVATES (state binding not split)
+  ---
+  duration_ms: 20379.001809
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 22212.897701
+
+> pi-goal-list-loop-audit@0.38.107 test:auditor-extensions
+> node scripts/verify-auditor-extensions-offline.mjs
+
+OK: -e <resolved-path> registered 1 glla-auditor-fixture models offline (PI_OFFLINE=1)
+OK: no temporary extension install directory created
+VERIFIED offline auditor extension loading via resolved path: /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/scripts/auditor-extension-fixture.mjs
+
+> pi-goal-list-loop-audit@0.38.107 check:inventory
+> node scripts/generate-inventory.mjs --check
+
+Runtime inventory is stale; run node scripts/generate-inventory.mjs
