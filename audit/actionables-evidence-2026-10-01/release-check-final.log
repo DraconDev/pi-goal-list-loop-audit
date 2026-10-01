@@ -3331,3 +3331,11 @@ tests/start-context.test.ts:
 
 tests/auditor-stall-watchdog.test.ts:
 [run-tests] progress: 720s elapsed · 3s since last output · 248 KiB of suite output
+(pass) stall: worker that never emits a first event is failed fast, not left for the wall [5428.57ms]
+(pass) stall: first-event budget starts after successful spawn, not pre-spawn setup [6540.61ms]
+(pass) stall: worker whose single boot heartbeat goes stale is failed fast, not left for the wall [1553.46ms]
+(pass) progress: a live auditor outlives the legacy wall metadata and settles on its result [721.76ms]
+(pass) stall: a running auditor tool is exempt — the per-tool timeout owns that axis [976.30ms]
+(pass) stall: a silent-past-bound attempt fails fast WITH its cost record (controlled clock) [284.83ms]
+(pass) stall: a worker-reported brake is reclassified with the same evidence [298.16ms]
+(pass) stall: an open in-budget tool is not silence — the no-progress bound spares it [295.90ms]
