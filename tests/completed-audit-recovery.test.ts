@@ -70,6 +70,37 @@ for (const verdict of ["approved", "disapproved", "missing"] as const) {
   });
 }
 
+for (const guard of ["in-flight", "recent", "frozen", "cold-held"] as const) {
+  test(`heartbeat orphan recovery respects ${guard}`, async () => {
+    const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+    const g = goal();
+    const savedState = { goal: g, ...(guard === "frozen" ? { supervisorPausedAt: Date.now() } : {}),
+      ...(guard === "cold-held" ? { loadHoldAt: Date.now() } : {}) };
+    seedState(cwd, savedState);
+    job(cwd, g, { output: "artifact missing\n<disapproved/>" }); __testOnlyLoadState(cwd);
+    __testOnlySetLastActivityAt(guard === "recent" ? Date.now() : Date.now() - 100_000);
+    // Use the existing runtime ownership slot to model a live poller.
+    const runtime = globalThis as typeof globalThis & { completionAuditInFlight: boolean };
+    runtime.completionAuditInFlight = guard === "in-flight";
+    pi.sent.length = 0;
+    try {
+      __testOnlyHeartbeatTick(); await tick(120);
+      const restored = readState(cwd).goal;
+      if (guard === "cold-held") {
+        assert.equal(restored?.auditHistory?.at(-1)?.disapproved, true);
+        assert.equal(restored?.status, "paused", "reconcile evidence without permission to execute");
+        assert.equal(pi.sent.length, 0);
+      } else {
+        assert.equal(restored?.status, "auditing");
+        assert.equal(events(cwd).filter(e => e.type === "audit_completed_result_recovered").length, 0);
+      }
+    } finally {
+      runtime.completionAuditInFlight = false;
+      await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+    }
+  });
+}
+
 // Real detached worker publishes its result; deliberately omit the parent
 // application, then restore from durable state in a new session.
 for (const verdict of ["approved", "disapproved"] as const) {

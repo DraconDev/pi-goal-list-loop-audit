@@ -1652,13 +1652,14 @@ function heartbeatTick(): void {
     notifyExternal(ctx, msg);
   }
   // v0.29.1: stranded-audit recovery. A goal left in "auditing" with NO
-  // in-flight audit means the auditor's result never landed (wedged queue
+  // in-flight audit means the auditor's result may not have landed (wedged queue
   // ate the tool result; compaction/restart mid-audit). Field-observed in
   // pully: 12h+ stuck "auditing" while the model had already confabulated
   // the closure narrative. The audit silence is expected ONLY while
   // flags.completionAuditInFlight — its absence here means the run is orphaned.
-  // Release a stranded completion claim to the MAIN as infrastructure/no-
-  // verdict. A heartbeat must never silently launch another detached worker;
+  // Consume a validated saved verdict first; otherwise release the stranded
+  // completion claim to the MAIN as infrastructure/no-verdict. A heartbeat
+  // must never silently launch another detached worker;
   // /goal resume (or the mode-correct list/loop resume route) is the explicit
   // one-fresh-dispatch gate.
   if (
