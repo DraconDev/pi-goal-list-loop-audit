@@ -99,7 +99,8 @@ test("FIX B pin: the refusal branch restores status active so the loop continues
   assert.ok(refusalIdx > 0, "refusal branch exists");
   const tail = src.slice(refusalIdx, refusalIdx + 2600);
   assert.match(tail, /updateGoal\(\{ \.\.\.\(state\.goal\?\.status === "auditing" \? \{ status: "active" \} : \{\}\), pendingCompletion: undefined \}, liveCtx\)/);
-  assert.match(tail, /scheduleContinuation\(liveCtx, true\)/, "continuation still re-scheduled");
+  assert.match(tail, /continueCompletion\(liveCtx, true\)/, "the refusal still requests continuation");
+  assert.match(src, /const continueCompletion = \(ctx: ExtensionContext, force: boolean\) => \{\s*if \(args\.continueWork !== false\) scheduleContinuation\(ctx, force\);/, "live continuations still schedule; a cold recovered verdict holds for consent");
 });
 
 test("behavior preserved: a GENUINE orphaned audit still parks with the same message", () => {

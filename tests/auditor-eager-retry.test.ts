@@ -170,8 +170,14 @@ test("aggressive auditor recovery respects the fixed recovery horizon", () => {
 });
 
 test("manual-started timer retries preserve automatic provenance and clear exhausted cycle state", () => {
-  assert.doesNotMatch(SRC, /retryStoredCompletionAudit\(origin\);/);
-  assert.match(SRC, /retryStoredCompletionAudit\("provider-retry"\);/);
+  // This protects the automatic retry timer, not explicit manual/agent
+  // resumes, whose shared settlement helper correctly forwards their origin.
+  const start = SRC.indexOf("function applyCompletedCompletionAudit(");
+  const end = SRC.indexOf("export function resumeCompletedCompletionAudit(", start);
+  assert.ok(start >= 0 && end > start, "the automatic verdict/retry handler exists");
+  const automaticHandler = SRC.slice(start, end);
+  assert.doesNotMatch(automaticHandler, /retryStoredCompletionAudit\(origin\);/);
+  assert.match(automaticHandler, /retryStoredCompletionAudit\("provider-retry"\);/);
   const burnedCycle = SRC.slice(SRC.indexOf('const burnCopy ='), SRC.indexOf('chainExhaustedToLadder = true;'));
   for (const field of ['auditorAttemptedRefs', 'auditorRetryAttemptStartedAt', 'auditorFailureCount']) {
     assert.ok(burnedCycle.includes(`${field}: undefined`), `fresh cycle clears ${field}`);
