@@ -3226,3 +3226,68 @@ tests/stale-continuation-integration.test.ts:
 (pass) integration: foreign ctx never sanitizes (subagent isolation) [15.33ms]
 
 tests/audit-no-progress-detection.test.ts:
+(pass) v0.38.101 the no-progress stop is DEAD in production — this pins the defect [44.17ms]
+(pass) v0.38.101 the obvious fix was measured and REJECTED — do not re-add it blind [0.68ms]
+(pass) v0.38.101 the tokenizer is a useful diagnostic even though it cannot decide [0.18ms]
+(pass) v0.38.101 the exact-text fingerprint is unchanged [0.04ms]
+
+tests/last-outcome-retention.test.ts:
+(pass) v0.35.72: a legacy approved lastOutcome never repaints a completed row [0.71ms]
+(pass) v0.35.72: a legacy aborted lastOutcome also stays hidden [0.06ms]
+(pass) v0.35.72: a live goal remains the only rendered surface [0.49ms]
+(pass) v0.35.72: source pins — slot close clears lastOutcome; wipe remains a clean slate [0.24ms]
+(pass) v0.35.34: lastOutcome round-trips through persistStateLine → readState (durable across restarts) [2.14ms]
+(pass) v0.35.34: corrupt lastOutcome lines degrade to absent, never throw [2.09ms]
+
+tests/model-selector.test.ts:
+(pass) chainFor returns the configured chain for a scope [51.55ms]
+(pass) selectNext walks the chain in order and skips current + attempted [0.27ms]
+(pass) selectNextValid returns the first registered, non-forbidden ref in chain order [0.14ms]
+(pass) selectNextValid skips refs already in the attempted list [0.08ms]
+(pass) selectNextValid also skips current when it would otherwise be a candidate [0.05ms]
+(pass) selectNextValid does not mutate the caller's attempted list [0.09ms]
+(pass) selectNextValid skips forbidden refs and records each rejection [0.10ms]
+(pass) selectNextValid records forbidden rejections until a valid ref is found [0.09ms]
+(pass) selectNextValid skips refs missing from the resolver and records each rejection [0.10ms]
+(pass) selectNextValid records forbidden before unregistered when both fail [0.07ms]
+(pass) selectNextValid returns reason=exhausted when the chain runs out [0.07ms]
+(pass) selectNextValid returns exhausted when every ref is forbidden [0.09ms]
+(pass) selectNextValid returns exhausted on an empty chain [0.07ms]
+(pass) selectNextValid records one event per ref visited plus a final outcome [0.08ms]
+(pass) selectNextValid tags subagent scope on every recorded event [0.09ms]
+(pass) selectNextValid does not throw when no recorder is supplied [0.07ms]
+(pass) canUseRef is true only when a ref is not forbidden and resolves [0.08ms]
+(pass) classifyFailure is scope-agnostic — same input returns same output for any scope [0.12ms]
+(pass) retryDelayMs returns the same value as mainModelFailureDelayMs (default base) [0.27ms]
+(pass) audit 2026-09-06: retryDelayMs honors the injected retry base minutes [0.09ms]
+(pass) selectNextValid composes nextUntriedModelRef — manual loop yields the same answer [0.13ms]
+
+tests/action-reminder.test.ts:
+(pass) standby renderer keeps the background-wake explanation visible [49.33ms]
+(pass) registers a dedicated GLLA reminder renderer [0.12ms]
+(pass) blocked reminder is actionable and says the work is safely parked [0.34ms]
+(pass) decision reminder is prominent, safely parked, and names the exact picker action [0.56ms]
+(pass) redirect reminder says the goal is held while the new request runs [0.26ms]
+(pass) diagnostics trail the actionable reminder as subordinate text [0.23ms]
+(pass) standby reminder says background completion wakes the work [0.05ms]
+(pass) timed wait is automatic and does not invent a manual action [0.11ms]
+(pass) assistant abort notice is a GLLA explanation, not generic transport text [0.05ms]
+(pass) wait abort notice uses the same automatic-wake explanation as its card [0.05ms]
+
+tests/wait-overdue-backstop.test.ts:
+(pass) v0.35.28 #16: a wait 30min past its pauseResumeAt is resumed by the heartbeat backstop [345.29ms]
+(pass) v0.35.28 #16: not-yet-due and already-fired waits do not double-dispatch [200.65ms]
+(pass) v0.35.28 #16: under the load hold (stock consent-less boot) an overdue wait stays frozen [362.69ms]
+(pass) v0.35.28 #16: manual /goal resume clears the recovery stamp (user-driven, no notice needed) [3.06ms]
+(pass) v0.35.28 #16: the pause_goal wait copy is now backed by machinery (source pin) [0.37ms]
+(pass) v0.35.28 #16: once consent exists on reload, the overdue wait resumes through the backstop [233.69ms]
+(pass) v0.35.48: the backstop stays parked during a session handoff window [198.73ms]
+(pass) v0.35.48: an agent-authored wait stays parked while main-model recovery is active [218.17ms]
+(pass) v0.35.48: the backstop's dispatch-surface gates sit before the one-shot latch [0.40ms]
+
+tests/list-draft-handoff.test.ts:
+(pass) 125335: fresh commentary-only draft end delivers exactly one bounded correction [5832.51ms]
+(pass) stated next dependent question is a legal drafting end: no correction [2824.79ms]
+[run-tests] progress: 510s elapsed · 3s since last output · 245 KiB of suite output
+(pass) short ack without a question is not commentary: no correction [2824.42ms]
+(pass) tool-unavailable fallback: the correction directs prose asking [0.66ms]
