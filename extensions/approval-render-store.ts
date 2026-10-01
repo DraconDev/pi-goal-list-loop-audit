@@ -40,32 +40,28 @@ function isValidRender(entry: unknown): entry is PendingApprovalRender {
     && (e.deliveredAt === undefined || typeof e.deliveredAt === "string");
 }
 
-function readRenders(cwd: string): PendingApprovalRender[] {
+/** null means an existing store could not be recovered. Only ENOENT is
+ * an empty queue: replacing an unreadable/corrupt queue loses obligations. */
+function readRenders(cwd: string): PendingApprovalRender[] | null {
   let raw: string;
   try {
     raw = fs.readFileSync(approvalRenderStorePath(cwd), "utf-8");
-  } catch {
-    return [];
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    appendLedger(cwd, "terminal_approval_render_store_unreadable", {
+      code: (error as NodeJS.ErrnoException).code ?? "unknown",
+    });
+    return null;
   }
   try {
     const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) throw new Error("not an array");
-    const valid = parsed.filter(isValidRender);
-    if (valid.length !== parsed.length) {
-      appendLedger(cwd, "terminal_approval_render_store_invalid", {
-        dropped: parsed.length - valid.length,
-        kept: valid.length,
-      });
-      // v0.38.30 audit: repair the file after ledgering once — otherwise
-      // every user command re-appended the same ledger while the file
-      // stayed corrupt. Best-effort; a failed rewrite simply ledgers again.
-      writeRenders(cwd, valid);
-    }
-    return valid;
+    if (!Array.isArray(parsed) || !parsed.every(isValidRender)) throw new Error("invalid render store");
+    return parsed;
   } catch {
-    appendLedger(cwd, "terminal_approval_render_store_invalid", { dropped: "all", kept: 0 });
-    writeRenders(cwd, []);
-    return [];
+    // Preserve all original bytes, including valid entries in a partially
+    // invalid array. Recovery must not silently acknowledge their delivery.
+    appendLedger(cwd, "terminal_approval_render_store_invalid", { preserved: true });
+    return null;
   }
 }
 
@@ -96,6 +92,7 @@ export function persistApprovalRender(cwd: string, render: {
 }): boolean {
   const at = nowIso();
   const existing = readRenders(cwd);
+  if (existing === null) return false;
   // v0.38.30 truncation (also code-point-safe): compare what WOULD be
   // stored, so an identical re-persist of long lines still dedups.
   const incomingLines = render.chatLines.slice(0, MAX_RENDER_CHAT_LINES)
@@ -146,7 +143,7 @@ export function replayUndeliveredApprovalRenders(
   onlyGoalId?: string,
 ): number {
   const renders = readRenders(ctx.cwd);
-  if (renders.length === 0) return 0;
+  if (renders === null || renders.length === 0) return 0;
   const inScope = (e: PendingApprovalRender) => !e.deliveredAt && (!onlyGoalId || e.goalId === onlyGoalId);
   const pending = renders.filter(inScope).slice(0, MAX_REPLAY_PER_CONTACT);
   if (pending.length === 0) return 0;
