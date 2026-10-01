@@ -7,6 +7,8 @@
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { state } from "../goal-state.js";
+import { supervisorPaused } from "../goal-loop-core.js";
 
 import "./goal-runtime-globals.js";
 import "./goal-session.js";
