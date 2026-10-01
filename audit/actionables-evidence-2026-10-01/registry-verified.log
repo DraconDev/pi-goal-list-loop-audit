@@ -1,0 +1,34 @@
+
+> pi-goal-list-loop-audit@0.38.105 test
+> node scripts/run-tests.mjs tests/process-registration-faults.test.ts tests/test-runner-lifecycle.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/process-registration-faults.test.ts:
+(pass) process registration first-write failure is visible and stops the owned child [181.41ms]
+(pass) process registration rename failure is visible and stops the owned child [138.46ms]
+(pass) process registration owner-loss failure is visible and stops the owned child [951.14ms]
+(pass) process registration refresh failure is visible and stops the owned child [1020.60ms]
+(pass) process registration primary-loss failure is visible and stops the owned child [304.03ms]
+(pass) process registration obligation-write failure is visible and stops the owned child [127.48ms]
+(pass) process registration obligation-owner-loss failure is visible and stops the owned child [317.03ms]
+(pass) process registration initial-owner-loss failure is visible and stops the owned child [69.35ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [544.95ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [221.15ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [162.65ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5181.02ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [818.53ms]
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [253.24ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on normal exit [1638.07ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on signal exit [1370.56ms]
+(pass) registry refuses to signal a record naming a reused leader identity [24.61ms]
+(pass) runner refuses a green suite after a swallowed primary registration write failure [172.21ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [167.96ms]
+
+ 19 pass
+ 0 fail
+Ran 19 tests across 2 files. [14.48s]
+[run-tests] finished in 15s (exit 0)

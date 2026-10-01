@@ -1,0 +1,6 @@
+{
+  "command": "npm audit --json",
+  "at": "2026-10-01T08:56:51.734613+00:00",
+  "exitCode": 1,
+  "stderr": ""
+}
