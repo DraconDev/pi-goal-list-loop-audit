@@ -47,3 +47,11 @@ healthy liveness probes, allowing legitimate heartbeat self-heal before the
 successor contact. The fixture now keeps the predecessor unusable so it tests
 the intended first replacement boundary. Runtime recovery was not changed;
 `release-check-stale-fixture.*` retains that attempt's unchanged-source evidence.
+
+The fourth gate completed with one permission-fixture failure. Fault injection
+could race the nested parent's initial suite registration, stop its fixture
+before permission restoration, and leave an expected failure in the outer
+registry. The fault fixture now waits for startup acknowledgement, isolates its
+own registry, and restores its own directory permissions before removing test
+resources. No live GLLA state or host permissions were changed.
+`release-check-permission-fixture.*` preserves the terminal run and source hashes.

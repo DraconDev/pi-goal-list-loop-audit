@@ -1,0 +1,26 @@
+
+> pi-goal-list-loop-audit@0.38.106 test
+> node scripts/run-tests.mjs tests/test-runner-lifecycle.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [447.44ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [130.84ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [130.19ms]
+(pass) runner escalates a child that ignores TERM and still reports interruption [5120.40ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [689.95ms]
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [141.99ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on normal exit [1493.18ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on signal exit [1316.85ms]
+(pass) registry refuses to signal a record naming a reused leader identity [16.69ms]
+(pass) runner refuses a green suite after a swallowed primary registration write failure [101.59ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [100.14ms]
+(pass) parent runner fails after swallowed initial identity denial and restored reads [110.80ms]
+(pass) runner retains cleanup evidence when its own initial registration refuses [54.23ms]
+
+ 13 pass
+ 0 fail
+Ran 13 tests across 1 file. [10.17s]
+[run-tests] finished in 10s (exit 0)

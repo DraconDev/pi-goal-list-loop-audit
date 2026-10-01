@@ -1,0 +1,52 @@
+
+> pi-goal-list-loop-audit@0.38.106 test
+> node scripts/run-tests.mjs tests/test-runner-lifecycle.test.ts -t swallowed.*registration write failure --rerun-each 10
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/test-runner-lifecycle.test.ts: (run #1)
+(pass) runner refuses a green suite after a swallowed primary registration write failure [136.45ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [125.74ms]
+
+tests/test-runner-lifecycle.test.ts: (run #2)
+(pass) runner refuses a green suite after a swallowed primary registration write failure [132.34ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [142.25ms]
+
+tests/test-runner-lifecycle.test.ts: (run #3)
+(pass) runner refuses a green suite after a swallowed primary registration write failure [158.51ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [181.33ms]
+
+tests/test-runner-lifecycle.test.ts: (run #4)
+(pass) runner refuses a green suite after a swallowed primary registration write failure [347.32ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [207.50ms]
+
+tests/test-runner-lifecycle.test.ts: (run #5)
+(pass) runner refuses a green suite after a swallowed primary registration write failure [212.64ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [215.02ms]
+
+tests/test-runner-lifecycle.test.ts: (run #6)
+(pass) runner refuses a green suite after a swallowed primary registration write failure [240.59ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [217.82ms]
+
+tests/test-runner-lifecycle.test.ts: (run #7)
+(pass) runner refuses a green suite after a swallowed primary registration write failure [170.12ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [169.09ms]
+
+tests/test-runner-lifecycle.test.ts: (run #8)
+(pass) runner refuses a green suite after a swallowed primary registration write failure [180.28ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [154.00ms]
+
+tests/test-runner-lifecycle.test.ts: (run #9)
+(pass) runner refuses a green suite after a swallowed primary registration write failure [114.35ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [225.80ms]
+
+tests/test-runner-lifecycle.test.ts: (run #10)
+(pass) runner refuses a green suite after a swallowed primary registration write failure [180.80ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [256.77ms]
+
+ 20 pass
+ 110 filtered out
+ 0 fail
+Ran 20 tests across 1 file. [4.23s]
+[run-tests] finished in 4s (exit 0)

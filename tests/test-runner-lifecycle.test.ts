@@ -7,7 +7,7 @@ import { spawn } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { createTestProcessRegistry, reapOwnedTestProcesses } from "../scripts/test-process-registry.mjs";
 
-async function runStub(source: string, signal?: NodeJS.Signals, preload?: string): Promise<{ code: number | null; output: string }> {
+async function runStub(source: string, signal?: NodeJS.Signals, preload?: string, isolateRegistry = false): Promise<{ code: number | null; output: string }> {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "glla-runner-lifecycle-"));
   let child: ReturnType<typeof spawn> | undefined;
   try {
@@ -16,7 +16,7 @@ async function runStub(source: string, signal?: NodeJS.Signals, preload?: string
     if (preload) fs.writeFileSync(bootstrap, preload);
     child = spawn("node", [...(preload ? ["--import", bootstrap] : []), path.resolve("scripts/run-tests.mjs"), "--all"], {
       env: { ...process.env, PATH: `${cwd}${path.delimiter}${process.env.PATH}`, GLLA_TEST_RUNNER_QUIET: "0",
-        ...(preload ? { GLLA_TEST_ROOT_PROCESS_REGISTRY: "", GLLA_TEST_ROOT_PROCESS_TOKEN: "" } : {}) },
+        ...(preload || isolateRegistry ? { GLLA_TEST_ROOT_PROCESS_REGISTRY: "", GLLA_TEST_ROOT_PROCESS_TOKEN: "" } : {}) },
       stdio: ["ignore", "pipe", "pipe"],
     });
     let output = "";
@@ -152,6 +152,17 @@ test(`runner refuses a green suite after a swallowed ${channel} registration wri
   const result = await runStub(`(async()=>{
     const fs=require('node:fs');const {spawn}=require('node:child_process');
     const {registerOwnedTestProcess}=await import(${JSON.stringify(registry)});
+    // Refuse a worker launch, after the suite's own startup is acknowledged.
+    // Otherwise chmod races the parent's initial suite registration instead.
+    const dir=process.env.GLLA_TEST_PROCESS_REGISTRY;
+    const deadline=Date.now()+10000;
+    while(!fs.readdirSync(dir).some(file=>{
+      if(!file.startsWith('process-'+process.pid+'-')||!file.endsWith('.json'))return false;
+      try{return JSON.parse(fs.readFileSync(dir+'/'+file,'utf8')).leader?.pid===process.pid}catch{return false}
+    })){
+      if(Date.now()>deadline)throw new Error('suite registration not acknowledged');
+      await new Promise(r=>setTimeout(r,10));
+    }
     const worker=spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{detached:true,stdio:'ignore'});
     await new Promise(r=>worker.once('spawn',r));
     const faultDir=process.env.GLLA_TEST_PROCESS_REGISTRY+${JSON.stringify(channel === 'primary' ? '' : '.obligations')};
@@ -159,11 +170,14 @@ test(`runner refuses a green suite after a swallowed ${channel} registration wri
     try{registerOwnedTestProcess(worker)}catch{}
     fs.chmodSync(faultDir,0o700);
     worker.once('exit',()=>process.exit(0));
-  })();`);
+  })();`, undefined, undefined, true);
   assert.equal(result.code, 1, result.output);
   assert.match(result.output, /unverified survivors\/records/);
   const retained = result.output.match(/cleanup evidence retained at (.+)/)?.[1];
   assert.ok(retained, result.output);
+  // A launch refusal may stop the fixture before its permission restoration.
+  fs.chmodSync(retained, 0o700);
+  fs.chmodSync(`${retained}.obligations`, 0o700);
   fs.rmSync(retained, { recursive: true, force: true });
   fs.rmSync(`${retained}.obligations`, { recursive: true, force: true });
 });

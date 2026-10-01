@@ -1,0 +1,23 @@
+{
+  "expectation": {
+    "token": "4eacc7f7-4879-40b5-866d-6d72419244e4",
+    "leader": {
+      "pid": 2129873,
+      "group": 2129873,
+      "session": 2129873,
+      "birth": "57024544",
+      "zombie": false
+    },
+    "anchors": [
+      {
+        "pid": 2129873,
+        "group": 2129873,
+        "session": 2129873,
+        "birth": "57024544",
+        "zombie": false
+      }
+    ]
+  },
+  "primaryPresent": false,
+  "observed": "process absent"
+}
