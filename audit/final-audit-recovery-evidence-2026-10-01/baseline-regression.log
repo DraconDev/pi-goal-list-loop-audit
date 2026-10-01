@@ -1,0 +1,108 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/completed-audit-recovery.test.ts:
+57 |       runtime: { piBinary: fakePi, logicalAttemptId: "saved-claim", attemptId: () => "saved-claim-real-worker", pollIntervalMs: 10 },
+58 |     });
+59 |     assert.equal(result[verdict], true, result.error ?? "worker verdict");
+60 |     const pi = new MockPi(); activate(pi.api); let ctx = await boot(pi, cwd);
+61 |     try {
+62 |       assert.equal(readState(cwd).goal?.pendingCompletion, undefined, "the orphaned claim is consumed");
+                  ^
+AssertionError: the orphaned claim is consumed
++ actual - expected
+
++ {
++   at: '2026-10-01T15:17:25.698Z',
++   attemptId: 'saved-claim',
++   automaticRecoveryAttempted: false,
++   completionSummary: 'artifact delivered',
++   phase: 'recovery-pending',
++   quotaAttempts: undefined,
++   quotaAutoRetryUntil: undefined,
++   quotaFirstAt: undefined,
++   recoveryAt: '2026-10-01T15:17:31.057Z',
++   recoveryEpisodeKey: '2026-10-01T15:17:25.698Z:provider:session start startup',
++   recoveryNoticeKeys: [],
++   recoveryReason: 'session_start:startup',
++   verificationSummary: 'artifact exists'
++ }
+- undefined
+
+ generatedMessage: false,
+     actual: {
+  at: "2026-10-01T15:17:25.698Z",
+  attemptId: "saved-claim",
+  completionSummary: "artifact delivered",
+  verificationSummary: "artifact exists",
+  recoveryAt: "2026-10-01T15:17:31.057Z",
+  recoveryReason: "session_start:startup",
+  recoveryEpisodeKey: "2026-10-01T15:17:25.698Z:provider:session start startup",
+  recoveryNoticeKeys: [],
+  automaticRecoveryAttempted: false,
+  phase: "recovery-pending",
+  quotaAttempts: undefined,
+  quotaFirstAt: undefined,
+  quotaAutoRetryUntil: undefined,
+},
+   expected: undefined,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-before-final-audit-recovery-yfpmjcvx/tests/completed-audit-recovery.test.ts:62:14
+      at processTicksAndRejections (native:7:39)
+(fail) finished real worker, lost parent: restart applies approved exactly once without re-auditing [600.56ms]
+57 |       runtime: { piBinary: fakePi, logicalAttemptId: "saved-claim", attemptId: () => "saved-claim-real-worker", pollIntervalMs: 10 },
+58 |     });
+59 |     assert.equal(result[verdict], true, result.error ?? "worker verdict");
+60 |     const pi = new MockPi(); activate(pi.api); let ctx = await boot(pi, cwd);
+61 |     try {
+62 |       assert.equal(readState(cwd).goal?.pendingCompletion, undefined, "the orphaned claim is consumed");
+                  ^
+AssertionError: the orphaned claim is consumed
++ actual - expected
+
++ {
++   at: '2026-10-01T15:17:26.225Z',
++   attemptId: 'saved-claim',
++   automaticRecoveryAttempted: false,
++   completionSummary: 'artifact delivered',
++   phase: 'recovery-pending',
++   quotaAttempts: undefined,
++   quotaAutoRetryUntil: undefined,
++   quotaFirstAt: undefined,
++   recoveryAt: '2026-10-01T15:17:31.510Z',
++   recoveryEpisodeKey: '2026-10-01T15:17:26.225Z:provider:session start startup',
++   recoveryNoticeKeys: [],
++   recoveryReason: 'session_start:startup',
++   verificationSummary: 'artifact exists'
++ }
+- undefined
+
+ generatedMessage: false,
+     actual: {
+  at: "2026-10-01T15:17:26.225Z",
+  attemptId: "saved-claim",
+  completionSummary: "artifact delivered",
+  verificationSummary: "artifact exists",
+  recoveryAt: "2026-10-01T15:17:31.510Z",
+  recoveryReason: "session_start:startup",
+  recoveryEpisodeKey: "2026-10-01T15:17:26.225Z:provider:session start startup",
+  recoveryNoticeKeys: [],
+  automaticRecoveryAttempted: false,
+  phase: "recovery-pending",
+  quotaAttempts: undefined,
+  quotaFirstAt: undefined,
+  quotaAutoRetryUntil: undefined,
+},
+   expected: undefined,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-before-final-audit-recovery-yfpmjcvx/tests/completed-audit-recovery.test.ts:62:14
+      at processTicksAndRejections (native:7:39)
+(fail) finished real worker, lost parent: restart applies disapproved exactly once without re-auditing [416.00ms]
+
+ 0 pass
+ 16 filtered out
+ 2 fail
+Ran 2 tests across 1 file. [1.70s]

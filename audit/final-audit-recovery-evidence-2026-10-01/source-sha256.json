@@ -1,0 +1,13 @@
+{
+  "extensions/goal-loop-auditor-process.ts": "bb5271b047271701ca66f379fc50156f358f173fcc12cfd7cda31eab951ecf31",
+  "extensions/loops/goal-auditor-hooks.ts": "f000dc08a9b32ab28c5f0886041623a02bf4dc1e4d52b3945824bff8e75f754b",
+  "extensions/loops/goal-activation.ts": "2fc5e4dc84ff517b9e7e03dddc8183b5ac20acf4ef18d0617043f0a719c8f071",
+  "extensions/loops/goal-session.ts": "53642ec6d06747d00859b5f1c90f8eae2feb27e202c2738935185b51836d94f7",
+  "extensions/loops/goal-tools.ts": "98eb354d0a840e04b84209e9c9b2f50320b5954f5fc73974e175bdab77ae3d00",
+  "extensions/loops/goal-ui.ts": "0f29e7378f850f34ed5de20fef31474a8950ac4ff4b5da0aca2a191b2ff4671a",
+  "extensions/goal-commands.ts": "796342dfad0a4cae51052fbd58887f01b6531aa1c38ee30480878079924020bf",
+  "extensions/goal-loop-auditor.ts": "ff9c0bba24aba0a4f4eaefaebc573f6bc1ccbba6fb483b7524fa5b9eaf320dec",
+  "extensions/goal-loop-display.ts": "e30896eea5e9b9872003ef1d5ba506581e8a326d7e5ea236c6808f8641e15651",
+  "scripts/goal-auditor-worker.mjs": "45b48256599bb1e81fbce27824a5399f28790785bf2c87fbc01eb5758f2de7bd",
+  "tests/completed-audit-recovery.test.ts": "4bcf93f61bde7d045b1234dac1518b5ad0cbfcedf03d58f4f9066c529176f870"
+}
