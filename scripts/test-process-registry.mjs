@@ -70,8 +70,12 @@ export function registerOwnedTestProcess(child, env = process.env) {
     failed = true;
     clearInterval(timer);
     registrationFailures.set(failureKey(env), (registrationFailures.get(failureKey(env)) ?? 0) + 1);
-    if (expectation) {
-      try { publish(expectation, { token: env.GLLA_TEST_PROCESS_TOKEN, leader, anchors, failed: true }); } catch {}
+    const refusal = { token: env.GLLA_TEST_PROCESS_TOKEN, leader,
+      anchors: anchors.length ? anchors : leader ? [leader] : [], failed: true };
+    // Either channel can retain a refusal if the other cannot be written.
+    // If both fail, stop the known child and propagate the launch error.
+    for (const target of [expectation, file]) {
+      if (target) { try { publish(target, refusal); } catch {} }
     }
     // Signal only the child we launched or a group with captured birth
     // identity. Never discover ownership through a name or reused PID.
@@ -174,6 +178,7 @@ export async function reapOwnedTestProcesses(env, { graceMs = 1000 } = {}) {
     if (!records.has(name)) records.set(name, expected);
   }
   for (const record of records.values()) {
+    if (record.failed) unverified++;
     if (record.token !== owner.token || !Array.isArray(record.anchors)
       || !Number.isInteger(record.leader?.pid) || record.leader.pid <= 1) { unverified++; continue; }
     const group = record.leader.pid;
