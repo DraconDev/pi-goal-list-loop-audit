@@ -93,7 +93,7 @@ export function registerOwnedTestProcess(child, env = process.env) {
       if (!leader && current?.group === child.pid && current.session === child.pid) leader = current;
       // A launch error or already-exited child has no live cleanup duty.
       if (!leader) {
-        if (current && !current.zombie) throw new Error("child is not a detached session leader");
+        // Non-detached children are already covered by the suite group.
         return;
       }
       if (current && current.birth !== leader.birth) throw new Error("child PID identity changed");
@@ -115,8 +115,10 @@ export function registerOwnedTestProcess(child, env = process.env) {
   const refresh = exited => {
     try { snapshot(exited); } catch (error) {
       process.stderr.write(`${error.message}\n`);
-      // A timer/listener failure cannot become an ignored rejected promise.
-      process.exit(1);
+      // Propagate through the launcher's existing child-error path so the
+      // runner still awaits containment cleanup. With no listener Node
+      // fails the worker; the independent failed obligation survives it.
+      child.emit("error", error);
     }
   };
   child.once("spawn", () => refresh(false));
