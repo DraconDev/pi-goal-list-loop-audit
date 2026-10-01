@@ -1,0 +1,73 @@
+{
+  "observedAt": "2026-10-01T15:24:06.563267+00:00",
+  "projects": [
+    {
+      "project": "/home/dracon/Dev/browser-extensions-shared/extensions/standalones/clean-web",
+      "latestAudits": [
+        {
+          "at": "2026-10-01T14:10:16.977Z",
+          "goalId": "20261001133023-dsyiv1",
+          "verdict": "disapproved",
+          "durationMs": 603854
+        },
+        {
+          "at": "2026-10-01T15:05:12.563Z",
+          "goalId": "20261001133023-dsyiv1",
+          "verdict": "approved",
+          "durationMs": 2894947
+        }
+      ]
+    },
+    {
+      "project": "/home/dracon/Dev/dracon-log",
+      "latestAudits": [
+        {
+          "at": "2026-10-01T14:28:41.179Z",
+          "goalId": "20261001134803-9cs87d",
+          "verdict": "disapproved",
+          "durationMs": 1023436
+        },
+        {
+          "at": "2026-10-01T14:35:36.336Z",
+          "goalId": "20261001134803-9cs87d",
+          "verdict": "approved",
+          "durationMs": 184081
+        }
+      ]
+    },
+    {
+      "project": "/home/dracon/Dev/dracon-platform/web/games/wip/darklord",
+      "latestAudits": [
+        {
+          "at": "2026-10-01T14:55:53.468Z",
+          "goalId": "20261001132536-a6u1p9",
+          "verdict": "disapproved",
+          "durationMs": 1503747
+        },
+        {
+          "at": "2026-10-01T15:21:52.587Z",
+          "goalId": "20261001132536-a6u1p9",
+          "verdict": "disapproved",
+          "durationMs": 384501
+        }
+      ]
+    },
+    {
+      "project": "/home/dracon/Dev/dracon-platform/seo",
+      "latestAudits": [
+        {
+          "at": "2026-09-25T14:15:57.100Z",
+          "goalId": "20260924180311-jok0tk",
+          "verdict": "disapproved",
+          "durationMs": 392
+        },
+        {
+          "at": "2026-09-25T14:31:50.261Z",
+          "goalId": "20260924180311-jok0tk",
+          "verdict": "disapproved",
+          "durationMs": 602002
+        }
+      ]
+    }
+  ]
+}
