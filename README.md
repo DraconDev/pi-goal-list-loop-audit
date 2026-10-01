@@ -386,7 +386,9 @@ canonical top-level session directory. The session root must be admitted by
 the host lifecycle first. If it is unresolved, GLLA fails closed rather than
 recreating ambiguous state under whichever directory happens to be current.
 Changing the root does not silently migrate or delete the old working-directory
-tree.
+tree. Unreadable or invalid root settings defer writes and keep reads on the
+last validated root; cold startup reports unresolved selection explicitly.
+Restoring valid settings lets persistence retry in the selected root.
 
 The state is inspectable: active JSONL, goal markdown, queue state, audit jobs,
 ledger history, and archived goals are kept under `.pi-glla/` (or the selected
