@@ -3760,3 +3760,13 @@ tests/loops/goal.test.ts:
 (pass) v0.34.124: a recovery resume inside the watchdog window pauses the watchdog instead of firing the unacknowledged warning [426.51ms]
 (pass) v0.34.124: recovery rearm counters clear when the dispatch watchdog settles [4.13ms]
 (pass) v0.34.124: a recovery resume OUTSIDE the grace window does not pause the watchdog [941.04ms]
+(pass) v0.34.57: a genuine stall (no compaction in the window) still fires the unacknowledged warning [797.59ms]
+
+1 tests skipped:
+(skip) commit survives the auto-committer daemon (item 32, env-gated watched repo)
+
+ 2966 pass
+ 1 skip
+ 0 fail
+Ran 2967 tests across 321 files. [606.20s]
+[run-tests] finished in 607s (exit 0)
