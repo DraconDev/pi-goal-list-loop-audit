@@ -176,7 +176,10 @@ function main() {
     const detached = await reapOwnedTestProcesses(testEnv);
     if (detached.reaped || detached.unverified) log(`detached cleanup: ${detached.reaped} owned groups; ${detached.unverified} unverified survivors/records`);
     if (detached.unverified) log(`cleanup evidence retained at ${registryDir}`);
-    else fs.rmSync(registryDir, { recursive: true, force: true });
+    else {
+      fs.rmSync(registryDir, { recursive: true, force: true });
+      fs.rmSync(`${registryDir}.obligations`, { recursive: true, force: true });
+    }
     const elapsed = Math.round((Date.now() - startedAt) / 1000);
     if (stallFired) {
       log(`FAILED: suite stalled and was terminated after ${elapsed}s`);
