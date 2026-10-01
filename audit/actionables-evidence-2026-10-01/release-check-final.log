@@ -2181,3 +2181,305 @@ tests/post-drafting-stuck.test.ts:
 (pass) post-drafting: recovery-wait surfaces name resume_goal as the agent path [2.32ms]
 
 tests/same-process-successor-resume.test.ts:
+(pass) same-process successor resumes a held ACTIVE goal — the list/goal asymmetry fix [676.60ms]
+(pass) same-process successor auto-retries a parked completion-audit claim — auditor consent parity [633.03ms]
+(pass) different-pid crash successor still HOLDS the goal — the cold-load law stands [556.25ms]
+
+tests/model-switch.test.ts:
+(pass) v0.34.57: persistState carries lastModelRef on the state line for a fresh process to restore [155.03ms]
+(pass) v0.34.57: a fresh process with a changed default model ledgeres turn-boundary drift (cross-session detection) [28.23ms]
+(pass) v0.34.57: modelSwitch() builds the canonical ledger payload [0.29ms]
+(pass) v0.34.57: isForbiddenModel matches refs, case-insensitively; v0.34.115: empty default forbids nothing [0.15ms]
+(pass) v0.34.57: the model_select hook ledgeres every provider/model change [0.92ms]
+(pass) v0.34.57: the turn-boundary check ledgeres drift that arrives without a model_select event [6.47ms]
+(pass) v0.34.57: the forbidden gate blocks a forbidden selection, emits forbidden_model_switch, and reverts [12.98ms]
+(pass) v0.34.57: blockForbiddenModelSwitches off allows the switch but records the violation [1.63ms]
+(pass) v0.34.93: isForbiddenModel flags sonnet/opus/gpt-5.5 refs the gate must skip [0.15ms]
+(pass) v0.34.93: empty / undefined ref is never forbidden (the empty-list semantic); v0.34.115: default is empty [0.09ms]
+(pass) v0.34.93: a forbidden candidate is silently skipped by the recovery gate (the recovery-envelope gate skips the candidate without rotation or verdict change) [0.17ms]
+(pass) v0.34.57: turn-boundary drift into a forbidden model records the violation without blocking [6.96ms]
+(pass) v0.34.57: /glla switchlog renders the last N entries of the model-switch trail [16.03ms]
+
+tests/length-continue.test.ts:
+(pass) tracker: fires up to MAX consecutive, gives up once, resets on a normal turn [55.13ms]
+(pass) continue text carries the root-cause mitigation (split large writes) [1.67ms]
+(pass) v0.34.19: tiny-output length at a nearly full context is context starvation, not a real output cap [0.22ms]
+(pass) v0.38.36: explicit provider context-overflow errors (stopReason=error) are context starvation when context usage >= 90% [1.14ms]
+(pass) agent_end: length path runs BEFORE nudge accounting, telemetry, and goal gating [0.63ms]
+(pass) sendLengthContinue: stale-api terminal guard + admitted-session reset [2.74ms]
+(pass) sendLengthContinue: active goals get completion-aware recovery guidance [2.72ms]
+
+tests/context-overflow-recovery.test.ts:
+(pass) v0.34.116: classifyMainModelFailure accepts an isContextOverflow override [0.83ms]
+(pass) v0.34.116: context-overflow override routes to a context-overflow kind, not non-recoverable [0.18ms]
+(pass) v0.34.116: helper isContextOverflowError covers the same surface as the legacy non-recoverable regex [3.63ms]
+(pass) v0.34.116: recoverFromContextOverflow is exported and routes through tryMainModelFallback [0.29ms]
+(pass) v0.34.116: observeCompactFailure is the one-liner surface (notify + ledger) [0.48ms]
+(pass) v0.34.116: tryMainModelFallback opens context-overflow (it is the only rotation kind beyond provider failures) [0.22ms]
+(pass) v0.34.116: agent_end context-starved branch detects recent compaction and walks the chain [7.93ms]
+
+tests/paused-suspicious-close.test.ts:
+(pass) 032245: the field objective trips verification-fragment through the real classifier [0.60ms]
+(pass) 032245: a paused suspicious goal can submit complete_goal and close on auditor approval [3701.95ms]
+(pass) stored-completion-audit retry settles a suspicious claim instead of re-pausing it [229.74ms]
+(pass) narrowness: paused-by-user and paused repair cards still refuse complete_goal [202.74ms]
+(pass) narrowness: a paused repair card cannot skip its replan via the suspicious close path [182.62ms]
+
+tests/extract-verification.test.ts:
+(pass) inline one-liner: 'Done when:' mid-line is extracted [0.50ms]
+(pass) inline one-liner: trailing period stripped from objective [0.09ms]
+(pass) ordinary verify imperative before Done when is not mistaken for a marker [0.05ms]
+(pass) no marker anywhere returns full text as objective [0.03ms]
+(pass) line-based extraction wins over inline when both present [0.16ms]
+(pass) multi-line verification contract preserved [3.05ms]
+(pass) line marker: 'Done when ALL of the following are true:' starts the contract [0.07ms]
+(pass) inline marker: 'Done when ALL of the following are true:' mid-line [0.07ms]
+(pass) goalArgsNeedDrafting: 'Done when ALL of the following' counts as a contract (no interview) [0.06ms]
+(pass) round-trip: normalized draft survives storage and yields clean shield items [0.89ms]
+
+tests/pending-claim-lifecycle.test.ts:
+(pass) /goal verify on a healthy pending audit reports the awaiting state without touching the claim [520.00ms]
+(pass) /goal verify on an approved-but-unarchived claim settles it instead of re-auditing [571.59ms]
+(pass) a durable pending audit survives cold reload parked with its identity and no submission [466.11ms]
+
+tests/pause-anti-confabulation.test.ts:
+(pass) claimed-missing matches absence language only [58.96ms]
+(pass) pause claiming a missing tool is refused with a correction, goal stays active [528.27ms]
+(pass) pause quoting pi's own not-found error is accepted as a genuine outage [524.89ms]
+(pass) ordinary pauses are untouched by the guard [456.39ms]
+
+tests/failover-primary-probe.test.ts:
+(pass) failover stamps the primary reset while fallback-chain work proceeds [194.49ms]
+(pass) hintless primary failure stamps no reset [1.86ms]
+(pass) background primary probe fires at reset, not on the generic cadence [1.35ms]
+(pass) no reset keeps the generic probe cadence [0.55ms]
+
+tests/stats-reliability.test.ts:
+(pass) reliability derives an open failure episode and elapsed audit cost without counting repeated snapshots [82.98ms]
+(pass) successful semantic review or terminal archive resolves failure age; missing samples stay unknown [1.46ms]
+(pass) recovery-only state preserves failure age and future/malformed timestamps remain unknown [0.59ms]
+
+tests/pending-latch.test.ts:
+(pass) watchdog fires on the field-observed shape: supervising + idle + pending + no timers + silent >= threshold [62.30ms]
+(pass) watchdog does NOT fire when any guard fails [0.06ms]
+(pass) threshold is 3 minutes (post-compaction settle is 2s; legit queue latency is seconds) [0.02ms]
+(pass) heartbeat wiring: idle/pending split, watchdog branch, ledger event, wedge uses !idle, shared escalation [0.74ms]
+(pass) the exact 'ℹ todo 0' junk line (enqueued as a /list item by the 0.26.2 reviewer) never classifies [0.47ms]
+
+tests/repository-receipts.test.ts:
+(pass) repository-only findings are archive-only, without empty chat groups [86.77ms]
+(pass) repository receipt stays archival while substantive ledger fixes remain visible [0.40ms]
+(pass) flat receipts are archive-only while limitations remain visible [0.77ms]
+(pass) mixed receipt vocabulary never deletes repairs or unperformed checks [1.70ms]
+(pass) archive keeps unknown proof; chat keeps the detailed narrative focused [0.98ms]
+
+tests/audit-change-scope.test.ts:
+(pass) change-scope: extractor reads file_path/path and drops everything else [0.52ms]
+(pass) change-scope: recorder keeps first-seen order, dedupes, and counts overflow [0.48ms]
+(pass) change-scope: write tool calls record their paths on the active goal [424.16ms]
+(pass) change-scope: reads, bash, junk, and inactive goals record nothing [601.22ms]
+(pass) change-scope: the audit brief names the recorded paths first [4.77ms]
+(pass) change-scope: the brief reports overflow and escapes paths as data [0.47ms]
+(pass) change-scope: no recorded paths keeps the previous brief shape [3.49ms]
+(pass) change-scope: the fallback summary names recorded paths, bounded [8.97ms]
+(pass) change-scope: the audit brief caps the prompt list at 20 with an omission line [0.55ms]
+
+tests/commit-survival-e2e.test.ts:
+(skip) commit survives the auto-committer daemon (item 32, env-gated watched repo)
+
+tests/compaction-input.test.ts:
+(pass) bounds successful assistant, tool-call, and tool-result content while preserving pairing [79.00ms]
+(pass) retains the newest goal payload and marks older payloads without changing message order [0.55ms]
+(pass) replaces image blocks while retaining the surrounding message structure [0.30ms]
+(pass) keeps the total bounded for a tiny caller budget with a previous summary [0.33ms]
+(pass) bounds a previous compaction summary without changing the preparation contract [0.12ms]
+(pass) leaves preparation metadata and fileOps untouched [0.76ms]
+(pass) applies one coordinated budget to summarize and turn-prefix arrays [0.96ms]
+(pass) returns no compaction result and tolerates a missing preparation [0.12ms]
+(pass) preserves both preparation-array identities when projection is a no-op [0.14ms]
+(pass) preserves the untouched half when only one preparation array needs projection [0.17ms]
+(pass) bounds every supported preparation shape and preserves pairing/order [2.07ms]
+(pass) second projection is idempotent [0.32ms]
+(pass) contains malformed preparation records without changing their positions [0.28ms]
+(pass) keeps malformed interleaved tool results paired with their calls [0.18ms]
+(pass) enforces a hard bound for arbitrarily many tiny messages [4381.10ms]
+(pass) keeps complete tool groups when high message counts force omission [287.51ms]
+
+tests/vision-assist.test.ts:
+[run-tests] progress: 510s elapsed · 1s since last output · 175 KiB of suite output
+(pass) VISION_ASSIST_GUIDANCE prefers native vision without assuming MMX [0.97ms]
+(pass) docs/VISION-ASSIST.md documents native-first guidance and the preapproval gate [0.54ms]
+(pass) visionDescribeCommand builds the exact mmx call [16.46ms]
+(pass) routeVisionCheck: a forbidden target stays on the current model [0.52ms]
+(pass) routeVisionCheck: confirmed MMX is an optional external fallback [0.08ms]
+(pass) routeVisionCheck: native vision is the default and no external tool is assumed [0.07ms]
+(pass) routeVisionCheck: known unavailable native vision fails closed [0.21ms]
+(pass) routeVisionCheck: model switch requires explicit opt-in [0.06ms]
+(pass) isForbiddenModel: v0.34.115 default is empty — no model is forbidden by default [0.10ms]
+(pass) visionAssistLedger builds a native-model audit payload [0.13ms]
+(pass) continuation prompts carry native-first VISION-ASSIST guidance by default [441.07ms]
+(pass) visionAssist off → the directive is dropped from continuation prompts (gate still ships) [312.32ms]
+(pass) a forbidden switch at runtime records the vision_assist routing entry [5.72ms]
+(pass) visionAssist off → the forbidden switch records no vision_assist entry (gate still fires) [1.90ms]
+
+tests/audit-convergence-breaker.test.ts:
+(pass) audit-convergence-breaker — hard cap > hard cap pauses even under aggressive keep-going [2988.99ms]
+(pass) audit-convergence-breaker — hard cap > below the hard cap, aggressive keep-going is preserved [2892.03ms]
+(pass) audit-convergence-breaker — hard cap > hard cap binds the detached settlement path [1142.79ms]
+(pass) audit-convergence-breaker — hard cap > soft-cap pause offers accept-with-followups first [2878.93ms]
+(pass) audit-convergence-breaker — hard cap > severity census lands on the objections ledger event [2344.96ms]
+(pass) audit-convergence-breaker — severity extraction > tags parse per item; missing section yields nothing [0.45ms]
+(pass) audit-convergence-breaker — severity extraction > only leading tags count; buried tags and bare items are untagged [0.14ms]
+(pass) audit-convergence-breaker — severity extraction > auditor brief mandates severity tags [0.44ms]
+(pass) audit-convergence-breaker — settings > hard-cap default is 8 (soft 5 + three grace rounds) [0.06ms]
+(pass) audit-convergence-breaker — settings > normalize keeps valid values, drops garbage [1.36ms]
+(pass) audit-convergence-breaker — settings > v0.38.104: mainModelRetryMinutes and auditFeedbackChars drop junk instead of displaying a dead value [0.38ms]
+(pass) audit-convergence-breaker — settings > v0.38.104: drafter/auditor thinking levels are pruned against the one ladder [0.86ms]
+(pass) audit-convergence-breaker — settings > menu rows exist for both keys [5.08ms]
+
+tests/id-invalidation.test.ts:
+(pass) classifyIdInvalidationReason: each mechanism maps to its reason [67.62ms]
+(pass) forced rewrite: a fresh session with a different sidecar id ledgeres id_invalidation [403.53ms]
+(pass) clean shutdown: the sidecar shutdownReason flows into the event [289.01ms]
+(pass) same id (plain reload): no id_invalidation [407.29ms]
+(pass) first boot (no sidecar): no id_invalidation [295.66ms]
+(pass) successor absorption also emits id_invalidation (source-level pin) [29.81ms]
+(pass) unknown-session ids are not emitted (the mock default has no getSessionId) [509.11ms]
+
+tests/durable-wait-prewritten.test.mjs:
+(pass) prewritten durable state: completion [250.71ms]
+(pass) prewritten durable state: provider failure [2.06ms]
+(pass) prewritten durable state: failure takes precedence over approval [0.63ms]
+
+tests/reviewer-source-curation.test.ts:
+(pass) stripCodeSpans removes fenced blocks and inline spans [96.99ms]
+(pass) the 4 junk lines from the 0.26.3 misfire extract NOTHING through the curated pipeline [0.81ms]
+(pass) brace-led and quote-led lines are code-ish, never findings [0.29ms]
+(pass) fireReviewer only mines disapproved/error audit reports, never approved ones [0.54ms]
+(pass) v0.35.72: postaudit proposal counts only when safeSteerUser delivers [0.30ms]
+(pass) automatic postaudit excludes archived objective/contract metadata; manual review retains it [0.20ms]
+(pass) a DISAPPROVED report's required-fixes extract as findings; an APPROVED meta-report is inert [2.97ms]
+(pass) superseded-disapproval curation: a disapproval answered by a later approval is NOT re-mined [0.42ms]
+(pass) real prose findings still classify after curation [0.08ms]
+
+tests/long-term-preferences-boundary.test.ts:
+(pass) continuation prompt has no auto-injected preference section [0.44ms]
+(pass) no extension auto-prefers a remembered prose value [200.10ms]
+(pass) Settings has no opaque free-form text field (typed boundary) [2.22ms]
+(pass) saveSettings is the only writer to the settings JSON files [37.36ms]
+(pass) goal-settings.ts header documents the long-term-preferences policy [0.33ms]
+
+tests/defer-durable-ordering.test.ts:
+(pass) defer vs durable — semantic recommendation ordering > v0.38.71: imperative fix verbs do not double against the plaque verb (field UI-SURVEY-2026-09-20) [131.95ms]
+(pass) defer vs durable — semantic recommendation ordering > three defer recommendations still select the safe durable action first [0.82ms]
+(pass) defer vs durable — semantic recommendation ordering > only an explicit blocked fact selects the reversible defer plaque [0.09ms]
+(pass) defer vs durable — semantic recommendation ordering > the policy is generated from the same semantic three-defer path [0.18ms]
+
+tests/retry-armed-display.test.ts:
+(pass) 151113: supervised auditor wait with armed retry renders recovering, not paused [3.99ms]
+(pass) 151113: status line keeps the auto-retrying countdown for the armed wait [0.66ms]
+(pass) 151113: bare user wait with no armed retry still renders paused, never recovering [6.85ms]
+
+tests/reviewer-extraction-hardening.test.ts:
+(pass) the 3 live false-positive lines extract NOTHING [0.25ms]
+(pass) code lines are skipped (test/it/assert/const/import/…) [0.11ms]
+(pass) markdown table rows are skipped [0.21ms]
+(pass) reviewer-report vocabulary is skipped (self-match prevention) [0.04ms]
+(pass) real architectural + strategic text still classifies [0.55ms]
+(pass) v0.34.83: the bare word 'issue' is REMOVED from the bug regex — GitHub issue references and prose don't classify as bugs [0.07ms]
+(pass) v0.34.83: a completion summary referencing GitHub issues enqueues zero bug findings through the curated pipeline [1.81ms]
+(pass) full runReviewer over 0.26.2-style source text produces zero architectural findings [0.59ms]
+(pass) extraction dedupe + cap still work after hardening [0.25ms]
+(pass) hard-wrapped finding joins into ONE full-sentence finding (hellhunter regression) [0.33ms]
+(pass) uppercase-start lines do NOT join — punctuation-less items stay separate [0.06ms]
+(pass) dangling-connector fragments are rejected [0.03ms]
+(pass) completedObjective prefix-dedupe: a finding restating the completed goal is skipped [0.06ms]
+(pass) cutAtClauseBoundary: long findings cut at a clause, never mid-word [0.14ms]
+
+tests/run-to-done.test.ts:
+(pass) run-to-done: draft consent sets the flag, shows the notice, ledgers consent [1071.96ms]
+(pass) run-to-done: drafts without the flag stay supervised [383.66ms]
+(pass) run-to-done: batch drafts refuse the flag instead of dropping it [816.77ms]
+(pass) run-to-done: decisions auto-default immediately with no budget set [459.90ms]
+(pass) run-to-done: the audit cap parks instead of converting to TODOs [3850.05ms]
+[run-tests] progress: 540s elapsed · 3s since last output · 182 KiB of suite output
+(pass) run-to-done: aggressive cap conversion is preserved without the flag [4320.48ms]
+(pass) run-to-done: session start resumes held work without global autoResume; blocked parks stay parked [513.69ms]
+(pass) run-to-done: held work stays held without the flag or global consent [466.94ms]
+(pass) run-to-done: the status line names the mode [3.42ms]
+
+tests/durable-wait.test.mjs:
+(pass) durable wait succeeds before its deadline and reports elapsed polling [80.95ms]
+(pass) durable wait returns a real timeout instead of treating elapsed time as success [6.33ms]
+(pass) a late done observation after the deadline is a timeout, not success [0.32ms]
+(pass) archive-count waits use the same durable deadline and return the observed count [2.33ms]
+(pass) a restarted waiter observes the same durable file without an old timer [1.42ms]
+(pass) provider recovery is a terminal reason, never a false approval or timeout [135.56ms]
+(pass) smoke harness uses the durable wait CLI for durable outcomes [178.74ms]
+
+tests/autoresume-default.test.ts:
+(pass) /glla settings persists explicit auto-resume off (tri-state, not undefined) [76.63ms]
+(pass) settings table shows the tri-state honestly [2.57ms]
+(pass) hold-on-load text offers the explicit resume + the on opt-in [0.71ms]
+
+tests/interrupt-didnt-continue.test.ts:
+(pass) FIX A: a never-set revision (undefined) + captured 0 is CURRENT, not stale [0.23ms]
+(pass) FIX A: captured 0 against a genuinely bumped goal is still refused [0.14ms]
+(pass) FIX A: equal non-zero revisions stay current; bumps refuse [0.05ms]
+(pass) FIX A pin: the refusal guard uses isGoalRevisionCurrent, not raw !== on undefined [118.03ms]
+(pass) FIX B pin: the refusal branch restores status active so the loop continues [15.37ms]
+(pass) behavior preserved: a GENUINE orphaned audit still parks with the same message [9.67ms]
+
+tests/objection-pinning.test.ts:
+(pass) v0.38.21 two disapproval rounds: R1 retired with its objections attached, prompt argues R2 only [3717.93ms]
+(pass) v0.38.21 appendAuditVerdict: clean approval clears the pin, shield-clear counts, errors never touch flags [0.46ms]
+
+tests/completion-density-lint.test.ts:
+(pass) density lint: evidence tokens in the summary pass [0.73ms]
+(pass) density lint: tokens inside finding groups count [0.18ms]
+(pass) density lint: gate rows count as density without tokens [0.56ms]
+(pass) density lint: zero tokens and zero gates is annotated [0.42ms]
+
+tests/stuck-audit-latch.test.ts:
+(pass) Fix A: the apply gate defers + parks instead of silently dropping a completed verdict [60.78ms]
+(pass) Fix B: the stale-latch stranded park runs BEFORE the extensionApiStale early return [0.41ms]
+(pass) Fix B: the park requires the exact stuck signature (auditing, no in-flight, claim, 90s silence) [3.05ms]
+(pass) audit 2026-09-25: stranded_audit_recovered is ledgered only after the park lands [0.48ms]
+
+tests/regression-shield.test.ts:
+(pass) contractItems: strips the 'Done when:' marker line [63.58ms]
+(pass) contractItems: handles inline single-line contracts [0.06ms]
+(pass) contractItems: strips bullets and numbering [0.04ms]
+(pass) contractItems: drops empty lines [0.04ms]
+(pass) contractItems: skips wrapped prose preamble in list-shaped contracts [0.16ms]
+(pass) contractItems: shapeless contracts keep every-line behavior [0.07ms]
+(pass) contractItems: a Done-when criterion survives alongside bullets [0.11ms]
+(pass) passes: preamble fragments are not required in evidence [0.96ms]
+(pass) passes: evidence block present, all items referenced [0.57ms]
+(pass) rejects: approval without an evidence block [0.11ms]
+(pass) rejects: evidence block but an item is not addressed [0.83ms]
+(pass) rejects: bamboozle-style empty evidence block [0.10ms]
+(pass) rejects: contract prose outside evidence cannot satisfy the shield [0.16ms]
+(pass) distinctive-token matching: references the item by a filename [0.07ms]
+(pass) case-insensitive matching [0.08ms]
+(pass) contractItems: excludes 'Out of scope' boundary lines [0.09ms]
+(pass) compound tokens match via segments (left-cropped → left + cropped) [0.17ms]
+(pass) prose punctuation glued to tokens does not break matching (file/element.) [0.18ms]
+(pass) top-3 candidate matching tolerates contract-only vocabulary [0.07ms]
+(pass) still rejects: bamboozle report that never touches the item's vocabulary [0.06ms]
+(pass) CJK: a verbatim-quoted Chinese item passes (token is one CJK word, not delimiters) [5.13ms]
+(pass) CJK: a quote that drops the trailing full-width colon still matches [0.30ms]
+(pass) CJK: a Chinese line with no ASCII letters is one candidate token [0.06ms]
+(pass) CJK: an English-only paraphrase of a Chinese item is still rejected (strict shield) [0.65ms]
+(pass) CJK: mixed item matches on its ASCII token even when CJK words are not quoted [0.09ms]
+(pass) ASCII behavior is unchanged: distinctive-token + compound matching still work [0.13ms]
+(pass) contractItems: 'Done when ALL of the following are true:' preamble is dropped [0.09ms]
+(pass) contractItems: preamble without trailing colon is also dropped [0.03ms]
+(pass) shield passes a genuine approval that a preamble-only false positive used to block [0.13ms]
+(pass) extractMechanicalCheckCommands: extracts backticked and raw shell commands [547.90ms]
+(pass) extractMechanicalCheckCommands: skips commands under negation [48.60ms]
+(pass) extractMechanicalCheckCommands: rejects never-exiting server commands [0.34ms]
+(pass) v0.35.16: mechanical checks keep the TAIL of failed output and banner a timeout kill [1384.06ms]
+(pass) mechanical checks stay async and kill descendant processes on timeout [3027.79ms]
+(pass) mechanical checks stop a runaway process group before the wall timeout [319.92ms]
+(pass) v0.35.18: resolveCanonicalRunnerCommand maps raw runners to their canonical package script [0.56ms]
