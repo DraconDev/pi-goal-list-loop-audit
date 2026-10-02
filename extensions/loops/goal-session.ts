@@ -703,6 +703,7 @@ function goStaleTerminal(ctx: ExtensionContext, where: string): void {
   // same host can become healthy again without delivering session_start.
   // Stale gates still forbid all continuation/auditor sends.
   clearSessionOwnedTimers(true);
+  refreshSessionOwnerGeneration(ctx.cwd, sessionManagerId(ctx)); // S3: the stale-terminal bump must publish too
   if (isLoopActive()) {
     clearLoopTimer();
     state.loop = { ...state.loop!, active: false, stopReason: `extension api stale: ${guidance}` };
