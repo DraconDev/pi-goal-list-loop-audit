@@ -64,7 +64,11 @@ test("Fix B: the park requires the stuck signature (auditing, claim, 90s silence
   assert.match(HB, /\(!flags\.completionAuditInFlight \|\| staleWorkerlessInFlight\)/, "S5: workerless in-flight parks too");
   assert.match(HB, /!auditorWorkerLiveForAttempt\(/, "S5: worker liveness decides workerless");
   assert.match(HB, /state\.goal\.pendingCompletion/);
-  assert.match(HB, /Date\.now\(\) - flags\.lastActivityAt >= 90_000/);
+  // S7 (contract change): the 90s stranded clock measures REAL activity —
+  // lastActivityAt is refreshed by the heartbeat's own refires (deliberate
+  // re-arm), which kept pushing stranded recovery out while refires landed.
+  assert.match(HB, /strandedQuietMs\(\) >= 90_000/);
+  assert.match(HB, /flags\.lastRealActivityAt > 0 \? flags\.lastRealActivityAt : flags\.lastActivityAt/, "honest clock with fresh-session fallback");
   // the pre-existing (non-stale) stranded block keeps its stored-claim path:
   assert.match(HB, /markCompletionAuditRecoveryPending\(ctx, "heartbeat-recovery"\)/);
   const RECOVERY = fs.readFileSync("extensions/goal-recovery.ts", "utf-8");
