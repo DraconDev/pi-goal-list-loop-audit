@@ -13,7 +13,7 @@ import { renderAgentsPanel, tailChildTranscript, TRANSCRIPT_HEADER_SCAN_MAX_BYTE
 
 import { state, replaceState } from "./goal-state.js";
 import {
-  DEFAULT_TOKEN_LIMIT, DEFAULT_COMPACTION_TOKEN_THRESHOLD, Goal, ListItem, Status, appendLedger, archiveDir, archivedGoalPath, auditVerdictLabel, bumpGoalRevision, sanitizeProviderDisplayText,
+  DEFAULT_TOKEN_LIMIT, DEFAULT_COMPACTION_TOKEN_THRESHOLD, Goal, ListItem, Status, appendLedger, archiveDir, archivedGoalPath, auditVerdictLabel, sanitizeProviderDisplayText,
   computeListDepthFromLedger, clearQueueItemFiles, deleteQueueItemFile, deleteQueueItemFileResult, extractVerificationContract, stripTweakProceduralTail, formatAuditLog, formatGoalAuditHistory, formatMainModelRecoveryStatus, queueItemSidecarCount, countTrailingDisapprovals,
   formatListDepth, goalArgsNeedDrafting, ledgerPath, newGoalId, nowIso, parseListImport, parseListItemDeclaration, readLedgerTail, countLiveDisapprovals,
   assignQueueOrder, compareQueueItems, readAuditLog, readQueueFromDisk, routeGoalArgs, routeListText, sanitizeDisplayText, sanitizeProviderAuditReport, statusLabel,
