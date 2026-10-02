@@ -713,7 +713,8 @@ export function specFileHash(p: string): string | null {
 /** v0.33.2: checked checkbox count in a spec file (spec_item_progress). */
 export function countCheckedSpecItems(p: string): number | null {
   try {
-    return readFileSync(p, "utf-8").split("\n").filter((l) => /^- \[x\]/i.test(l)).length;
+    // L7: match the sibling open-item matchers — indented boxes count too.
+    return readFileSync(p, "utf-8").split("\n").filter((l) => /^\s*-\s*\[x\]/i.test(l)).length;
   } catch {
     return null;
   }

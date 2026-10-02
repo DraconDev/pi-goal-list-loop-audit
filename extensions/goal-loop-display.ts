@@ -110,7 +110,7 @@ export function truncateObjective(s: string, max: number): string {
   }
   if (boundaryLen > 0) {
     const cut = out.slice(0, boundaryLen).replace(/[:;·—–(\[\s]+$/u, "");
-    if (tuiVisibleWidth(cut) >= Math.min(floor, 16)) return `${cut}…`;
+    if (tuiVisibleWidth(cut) >= floor) return `${cut}…`;
   }
   return `${out}…`;
 }

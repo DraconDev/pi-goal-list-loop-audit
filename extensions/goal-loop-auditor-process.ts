@@ -1606,7 +1606,10 @@ function modelLabel(model: AuditorModel | undefined): string {
 const AUDITOR_ENV_PASSTHROUGH = new Set([
   "PATH", "Path", "PATHEXT", "SystemRoot", "SYSTEMROOT", "WINDIR", "COMSPEC",
   "TEMP", "TMP", "TMPDIR", "HOME", "USERPROFILE", "HOMEDRIVE", "HOMEPATH",
-  "LANG", "LC_ALL", "LC_CTYPE", "NODE_OPTIONS", "NODE_PATH",
+  // A10: NODE_OPTIONS is NOT inherited — a host --require/--inspect flag
+  // must not alter (or hook) the detached worker. TLS stays via
+  // NODE_EXTRA_CA_CERTS/SSL_* below.
+  "LANG", "LC_ALL", "LC_CTYPE", "NODE_PATH",
   "NODE_EXTRA_CA_CERTS", "SSL_CERT_FILE", "SSL_CERT_DIR",
   "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY",
   "http_proxy", "https_proxy", "all_proxy", "no_proxy",

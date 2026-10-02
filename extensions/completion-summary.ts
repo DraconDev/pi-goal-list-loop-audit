@@ -195,7 +195,8 @@ export function humanCompletionBrief(
       .filter((l) => l.trim() && !/^#{1,4}\s/.test(l.trim()))
       .join(" ")
     : "";
-  const outcome = clipSummaryValue(briefValueContent(lead || outcomeSource) ?? "done", outcomeBudget);
+  // D8: no invented "done" — an empty outcome says so honestly.
+  const outcome = clipSummaryValue(briefValueContent(lead || outcomeSource) ?? "(outcome not recorded)", outcomeBudget);
   const details: string[] = [];
   for (const line of mergedDetails) {
     const separator = line.indexOf(":");
