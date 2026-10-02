@@ -2589,9 +2589,20 @@ function loopLines(l: LoopState, now: number, theme?: DisplayTheme, width?: numb
     ? Math.max(16, width - WIDGET_HORIZONTAL_MARGIN - 2 - 3 - visibleLen(segsText) - visibleLen(stallNote))
     : 44;
   const lines = [`${icon} ${truncate(sanitizeDisplayText(l.target), targetBudget)} ${paint(theme, "dim", "·")} ${segsText}${stallNote}`];
-  const act = extras?.recent?.[extras.recent.length - 1];
+  // Loop-scoped twin of the v0.34.124 goal fix above: the ring is
+  // process-global, so without scoping a live loop card wears the last
+  // action of whatever ran before it. Same 5s activation grace, same
+  // bucketed recency so a stale ✓ never reads as fresh.
+  const loopStart = Date.parse(l.startedAt);
+  const act = [...(extras?.recent ?? [])].reverse().find((a) => {
+    if (a.at === undefined) return true;
+    return !Number.isFinite(loopStart) || a.at >= loopStart - 5_000;
+  });
   if (act) {
-    lines.push(`├─ ${paint(theme, act.ok ? "success" : "error", act.ok ? "✓" : "✗")} ${act.name}${act.arg ? ` ${paint(theme, "dim", truncate(act.arg, 24))}` : ""}${act.ms > 0 ? ` ${paint(theme, "dim", `(${fmtElapsed(act.ms)})`)}` : ""}`);
+    const recency = act.at !== undefined && Number.isFinite(act.at) && act.at <= now
+      ? ` ${paint(theme, "dim", `· ${fmtElapsed(bucketSilentMs(now - act.at))} ago`)}`
+      : "";
+    lines.push(`├─ ${paint(theme, act.ok ? "success" : "error", act.ok ? "✓" : "✗")} ${act.name}${act.arg ? ` ${paint(theme, "dim", truncate(act.arg, 24))}` : ""}${act.ms > 0 ? ` ${paint(theme, "dim", `(${fmtElapsed(act.ms)})`)}` : ""}${recency}`);
   }
   const footer = !l.measureCmd
     ? "metricless (no plateau) · /loop stop · /loop refine" // v0.33.2: the verb exists now
