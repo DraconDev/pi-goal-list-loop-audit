@@ -59,9 +59,11 @@ survival, containment, failed-compaction recovery, continuation payloads,
 revision fences, and answered-decision dispatch.
 
 Additional actual settled/send entrypoint checks cover paused, auditing,
-supervisor-frozen, and user-aborted work. Broader behavioral lifecycle and
-TypeScript checks are running; final outcomes will be recorded here.
-Selected logs belong in `compaction-settled-evidence-2026-10-02/`.
+supervisor-frozen, and user-aborted work: **6 passed, 0 failed** in the final
+boundary file. Broader behavioral lifecycle: **151 passed, 0 failed**.
+TypeScript passed; runtime inventory was regenerated for shifted source
+references and its check passed. Selected logs are in
+`compaction-settled-evidence-2026-10-02/`. No release was published.
 
 This is a tested implementation fix. The live strategy session has not yet
 loaded and demonstrated the new code producing a durable compaction entry.
