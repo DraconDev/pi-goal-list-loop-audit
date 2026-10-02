@@ -291,23 +291,49 @@ function overdueWaitBackstop(ctx: ExtensionContext): void {
   if (!overdueWaitDue()) return;
   const goal = state.goal!;
   const reason = goal.pauseReason ?? "";
-  lastOverdueWaitKey = `${goal.id}:${goal.pauseResumeAt}`;
-  appendLedger(ctx.cwd, "wait_pause_overdue_resume", {
-    goalId: goal.id,
-    pauseResumeAt: goal.pauseResumeAt,
-    overdueMs: Date.now() - Date.parse(goal.pauseResumeAt!),
-    reason: reason.slice(0, 160),
-    route: reason.startsWith("main model recovery") ? "main-model-probe" : "continuation",
-  });
+  const parkedResumeAt = goal.pauseResumeAt!;
+  const overdueKey = `${goal.id}:${parkedResumeAt}`;
   if (reason.startsWith("main model recovery")) {
-    void probeMainModelRecovery(ctx).catch(() => { /* re-parks with a fresh resumeAt on failure */ });
+    lastOverdueWaitKey = overdueKey;
+    appendLedger(ctx.cwd, "wait_pause_overdue_resume", {
+      goalId: goal.id,
+      pauseResumeAt: parkedResumeAt,
+      overdueMs: Date.now() - Date.parse(parkedResumeAt),
+      reason: reason.slice(0, 160),
+      route: "main-model-probe",
+    });
+    // S8: the probe route is async and may no-op (no recovery state) or
+    // throw before re-parking — either leaves the SAME wait parked under a
+    // latched key, which the backstop would then never retry (the only
+    // production re-arm is a pauseResumeAt rewrite). On settle, release the
+    // latch when our key is still latched and the same wait is still
+    // parked, so the next tick retries. A re-park (fresh resumeAt) or a
+    // resume (goal active) keeps the latch — both re-arm naturally.
+    void probeMainModelRecovery(ctx)
+      .catch(() => { /* re-parks with a fresh resumeAt on failure */ })
+      .finally(() => {
+        const current = state.goal;
+        if (
+          lastOverdueWaitKey === overdueKey
+          && current?.id === goal.id
+          && current.status === "paused"
+          && current.pauseKind === "wait"
+          && current.pauseResumeAt === parkedResumeAt
+        ) {
+          lastOverdueWaitKey = "";
+        }
+      });
     return;
   }
   // Agent-authored waits and error-brake cooldowns alike: the stated wait
   // condition's deadline has passed — clear the park and re-dispatch, with
   // a recovery stamp so the continuation prompt tells the agent it was
   // ITSELF that was recovered (issue #16 part 2).
-  updateGoal({
+  // S9: prove the park-clear landed BEFORE latching or ledgering. A failed
+  // write under a latched key (and a "resumed" ledger line) would park the
+  // wait forever with the evidence claiming it resumed — the file's own
+  // "never latched as already done" principle, applied to the write itself.
+  const parkCleared = updateGoal({
     status: "active",
     pauseKind: undefined,
     pauseResumeAt: undefined,
@@ -316,12 +342,34 @@ function overdueWaitBackstop(ctx: ExtensionContext): void {
     autoResumedAt: new Date().toISOString(),
     autoResumedEvent: `overdue wait resumed (${reason.slice(0, 80) || "time-gated wait"})`,
   }, ctx);
+  if (!parkCleared) return;
+  lastOverdueWaitKey = overdueKey;
+  appendLedger(ctx.cwd, "wait_pause_overdue_resume", {
+    goalId: goal.id,
+    pauseResumeAt: parkedResumeAt,
+    overdueMs: Date.now() - Date.parse(parkedResumeAt),
+    reason: reason.slice(0, 160),
+    route: "continuation",
+  });
   scheduleContinuation(ctx, true);
 }
 
 /** Test-only: reset the due-wait backstop latch between isolated rigs. */
 export function __testOnlyResetOverdueWaitBackstop(): void {
   lastOverdueWaitKey = "";
+}
+
+// S7: stranded silence must measure REAL agent activity. The heartbeat's
+// own refires and latch-watchdog notes refresh flags.lastActivityAt (a
+// deliberate re-arm cadence), so a stranded clock on lastActivityAt
+// measures silence-since-last-refire — refires landing inside the 90s
+// window keep pushing a genuinely stranded audit's recovery out.
+// flags.lastRealActivityAt only moves on real turns (agent_end /
+// tool_call); fall back to lastActivityAt only when no real turn was ever
+// observed (a fresh session that stranded before its first turn).
+function strandedQuietMs(): number {
+  const honest = flags.lastRealActivityAt > 0 ? flags.lastRealActivityAt : flags.lastActivityAt;
+  return Date.now() - honest;
 }
 
 function zombieRunSilentMs(): number {
