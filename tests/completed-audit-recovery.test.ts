@@ -353,7 +353,7 @@ test("unreadable saved transcript returns null but ledgers the reason", () => {
   seedState(cwd, { goal: g });
   const saved = job(cwd, g);
   fs.writeFileSync(path.join(saved.dir, "result.json"), "{truncated");
-  assert.equal(readCompletedCompletionAudit(cwd, g as State["goal"] & Goal), null);
+  assert.equal(readCompletedCompletionAudit(cwd, g), null);
   const hit = events(cwd).filter(e => e.type === "completed_audit_recovery_unreadable");
   assert.equal(hit.length, 1);
   assert.equal((hit[0].value as { logicalAttemptId?: string }).logicalAttemptId, "saved-claim");
