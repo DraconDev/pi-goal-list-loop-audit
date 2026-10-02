@@ -1237,6 +1237,7 @@ export async function runDetachedCompletionWithFallback(
   opts: {
     shouldRetry?: () => boolean;
     sleep?: (ms: number) => Promise<void>;
+    signal?: AbortSignal;
     resumeCandidateRef?: string;
     attemptedRefs?: readonly string[];
     retryCandidateRef?: string;
@@ -1255,6 +1256,7 @@ export async function runDetachedCompletionWithFallback(
     forbiddenRefs: opts.forbiddenRefs,
     shouldRetry: opts.shouldRetry,
     sleep: opts.sleep,
+    signal: opts.signal,
     retryBaseMinutes: opts.retryBaseMinutes,
     onSelection: opts.onSelection,
     resumeCandidateRef: opts.resumeCandidateRef,

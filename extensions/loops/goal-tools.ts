@@ -1184,6 +1184,9 @@ function registerAgentTools(pi: any): void {
         } else {
           ({ result, retriedOnce, fallbackUsed } = await runDetachedCompletionWithFallback(auditorCandidates, runAudit, {
             shouldRetry: () => detachedAuditContext(auditGeneration, auditGoalId, auditAttemptId) !== null,
+            // A8: the host abort is the user-stop boundary for the ladder
+            // delays too — without it Esc strands the claim in a sleep.
+            signal,
             forbiddenRefs: settings.forbiddenModels,
             retryBaseMinutes: settings.mainModelRetryMinutes,
             onSelection: (event: { scope: { kind: string }; fromRef?: string; toRef?: string; reason: string }) => appendLedger(ctx.cwd, "model_fallback_select", { scope: "auditor", fromRef: event.fromRef, toRef: event.toRef, reason: event.reason }),
