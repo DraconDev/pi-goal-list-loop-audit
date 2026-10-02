@@ -832,6 +832,24 @@ test("v0.38.33: topOpenAuditFinding strips the indent, never the text", () => {
   }
 });
 
+test("L7: countCheckedSpecItems counts indented boxes like its siblings", () => {
+  const cwd = mkdtempSync(join(tmpdir(), "glla-speccheck-"));
+  try {
+    const spec = join(cwd, "SPEC.md");
+    writeFileSync(spec, ["- [x] flat done", "  - [x] nested done", "- [ ] flat open", "  - [ ] nested open", ""].join("\n"));
+    assert.equal(countCheckedSpecItems(spec), 2, "flat + nested checked boxes count");
+    assert.equal(countCheckedSpecItems(join(cwd, "missing.md")), null, "missing file stays null");
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test("L5 (pin): the loop-turn send and retry payload share one prompt build", () => {
+  assert.match(LOOP_RUNTIME, /const loopTurnContent = loopResync \+ loopPrompt\(/, "single build site");
+  assert.match(LOOP_RUNTIME, /content: loopTurnContent,\n      display: false,\n    \}, \{ triggerTurn: true/, "the send uses the shared build");
+  assert.match(LOOP_RUNTIME, /lastContinuationSentPayload = \{ content: loopTurnContent/, "the retry payload shares the build");
+});
+
 test("v0.35.4: parseLoopStartArgs keeps =-bearing text inside quotes and restores unknown keys", () => {
   const quoted = parseLoopStartArgs('"make a=b work" measure="echo 1" direction=min');
   assert.equal(quoted.target, "make a=b work", "an = pair inside the quoted target is not consumed as a key");

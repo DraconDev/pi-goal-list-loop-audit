@@ -1905,3 +1905,10 @@ process.stdin.on("data", async (chunk) => {
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("A10: the detached worker does not inherit NODE_OPTIONS", () => {
+  const env = detachedAuditorEnv({ PATH: "/bin", NODE_OPTIONS: "--require /tmp/evil.js", NODE_EXTRA_CA_CERTS: "/certs/ca.pem" });
+  assert.equal(env.NODE_OPTIONS, undefined, "host node flags stay out of the worker");
+  assert.equal(env.PATH, "/bin", "safe passthrough intact");
+  assert.equal(env.NODE_EXTRA_CA_CERTS, "/certs/ca.pem", "TLS stays via the explicit cert var");
+});
