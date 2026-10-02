@@ -138,10 +138,12 @@ test("draft prompt carries the stuck-ladder intervention note", async () => {
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-intervention" } });
   await pi.fire("session_start", { reason: "startup" }, ctx);
   try {
-    await pi.command("loop", "respec", ctx); await tick(100);
-    // Simulate a stuck rung reached during drafting.
-    const st = readState(cwd);
-    seedState(cwd, { goal: null, loop: { ...st.loop!, consecutiveStuck: 1, lastStuckReason: "INTERVENTION-PROBE: same coverage twice" } });
+    // A draft loop that already reached a stuck rung.
+    seedState(cwd, { goal: null, loop: { target: "Draft the comprehensive SPEC.md from the current codebase before reconciliation",
+      specFile: path.join(cwd, "SPEC.md"), respecPhase: "draft",
+      active: true, iteration: 3, maxIterations: 0, plateauWindow: 5, stallCount: 0,
+      consecutiveStuck: 1, lastStuckReason: "INTERVENTION-PROBE: same coverage twice",
+      bestValue: null, lastValue: null, history: [], startedAt: new Date().toISOString() } });
     __testOnlyLoadState(cwd);
     pi.sent.length = 0;
     const turn = (text: string) => ({ messages: [{ role: "assistant", content: [{ type: "text", text }] }] });
