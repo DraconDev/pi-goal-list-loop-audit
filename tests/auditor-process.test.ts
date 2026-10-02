@@ -1808,3 +1808,24 @@ test("slow-audit hardening: attempt cost summarizes prompt, tools, vision, and e
   const workerSrc = (await import("node:fs")).readFileSync("scripts/goal-auditor-worker.mjs", "utf-8");
   assert.match(workerSrc, /promptBytes,\n\s*(\.\.\.\(sessionPath|elapsedMs)/, "worker progress carries measured prompt bytes");
 });
+
+test("audit-tool floor: no-tool approval is a disapproval, not infrastructure", () => {
+  const goal = { id: "g", verificationContract: "" } as unknown as import("../extensions/goal-loop-core.ts").Goal;
+  const result = validateCompletedAuditorResult({
+    result: {
+      protocolVersion: 1, attemptId: "a", requestHash: "h", ok: true,
+      output: "looks good\n<approved/>", model: "m", thinkingLevel: "low", toolCalls: [],
+    },
+    goal, model: "m", thinkingLevel: "low", strictChallenge: false,
+    startedAt: Date.now() - 1000, nowMs: Date.now(),
+    reportStall: () => {},
+  });
+  assert.equal(result.disapproved, true);
+  assert.equal(result.approved, false);
+  assert.equal(result.error, undefined, "no error flag: this is a verdict, not infra");
+  assert.match(result.output, /without calling any audit tool/);
+  assert.match(result.output.trimEnd(), /<disapproved\/>$/, "transcript closes under the final-line rule");
+  const normalized = normalizeAuditorInfrastructureResult(result);
+  assert.equal(normalized.disapproved, true, "normalize must not wipe the floor disapproval into the retry ladder");
+  assert.equal(normalized.error, undefined);
+});
