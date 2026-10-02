@@ -21,6 +21,7 @@ test("busy agent_end defers the 200k trigger to agent_settled, then work resumes
   seedState(cwd, { goal: g }); __testOnlyLoadState(cwd); pi.sent.length = 0;
   try {
     idle = false; // Pi's run remains active while emitting agent_end.
+    await pi.fire("tool_call", { toolName: "read", input: { path: "artifact.txt" } }, ctx);
     await pi.fire("agent_end", { messages: [{ role: "assistant", content: [{ type: "text", text: "checkpoint" }], stopReason: "end_turn" }] }, ctx);
     assert.equal(compacts, 0, "never compact a running host");
     idle = true;
