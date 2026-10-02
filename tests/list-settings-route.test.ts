@@ -161,7 +161,7 @@ test("C5: /list add of a just-finished objective is skipped, not resurrected", a
     path.join(cwd, ".pi-glla", "active.jsonl"),
     JSON.stringify({ type: "goal_archived", value: { goalId: "g1", status: "complete", objective: "polish the widget" }, at: new Date().toISOString() }) + "\n",
   );
-  await pi.command("list", "add polish the widget", ctx);
+  await pi.command("list", "add polish the widget — done when: tests pass", ctx);
   await tick();
   const state = readState(cwd) as { goal: unknown; list: unknown[] };
   assert.equal(state.goal, null, "no zombie goal activated");
