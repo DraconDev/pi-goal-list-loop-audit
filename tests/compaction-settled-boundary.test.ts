@@ -7,6 +7,31 @@ import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd, tick } from "./harnes
 
 afterEach(() => { __testOnlyResetCompactor(); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); });
 
+for (const guard of ["paused", "auditing", "frozen", "aborted"] as const) {
+  test(`settled and idle-send compaction preserve ${guard}`, async () => {
+    const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+    __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
+    const ctx = makeMockCtx(cwd, { sessionManager: { name: `compact-guard-${guard}` } });
+    await pi.fire("session_start", { reason: "startup" }, ctx);
+    const g = seedGoal({ status: guard === "paused" || guard === "auditing" ? guard : "active", autoContinue: true });
+    seedState(cwd, { goal: g, ...(guard === "frozen" ? { supervisorPausedAt: Date.now() } : {}) });
+    __testOnlyLoadState(cwd);
+    let compacts = 0;
+    ctx.getContextUsage = () => ({ tokens: 315_000, contextWindow: 1_000_000, percent: 31.5 });
+    ctx.compact = () => { compacts++; };
+    const runtime = globalThis as typeof globalThis & { abortedStandDown: boolean };
+    runtime.abortedStandDown = guard === "aborted";
+    try {
+      await pi.fire("agent_settled", {}, ctx);
+      sendContinuation(String(g.id));
+      assert.equal(compacts, 0, "compaction cannot bypass the work owner's hold");
+    } finally {
+      runtime.abortedStandDown = false;
+      await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+    }
+  });
+}
+
 test("idle list advancement checks compaction before dispatching the next task", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
   __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
