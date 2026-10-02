@@ -138,11 +138,13 @@ test("draft prompt carries the stuck-ladder intervention note", async () => {
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-intervention" } });
   await pi.fire("session_start", { reason: "startup" }, ctx);
   try {
-    // A draft loop that already reached a stuck rung.
+    // A draft loop mid-stuck-ladder; the incoming turn repeats the same
+    // text so the classifier keeps it stuck and the dispatch intervenes.
     seedState(cwd, { goal: null, loop: { target: "Draft the comprehensive SPEC.md from the current codebase before reconciliation",
       specFile: path.join(cwd, "SPEC.md"), respecPhase: "draft",
       active: true, iteration: 3, maxIterations: 0, plateauWindow: 5, stallCount: 0,
-      consecutiveStuck: 1, lastStuckReason: "INTERVENTION-PROBE: same coverage twice",
+      consecutiveStuck: 1, lastStuckReason: "same coverage twice",
+      recentTexts: ["Researching.", "Researching."],
       bestValue: null, lastValue: null, history: [], startedAt: new Date().toISOString() } });
     __testOnlyLoadState(cwd);
     pi.sent.length = 0;
@@ -152,7 +154,8 @@ test("draft prompt carries the stuck-ladder intervention note", async () => {
     clearLoopTimer();
     const draft = pi.sent.find(s => s.message.content?.includes("[RESPEC BIG DRAFT]"));
     assert.ok(draft, "draft dispatched");
-    assert.ok(draft.message.content?.includes("INTERVENTION-PROBE"), "intervention survives into the draft prompt");
+    assert.ok(!draft.message.content?.includes("${INTERVENTION_NOTE}"), "placeholder is replaced");
+    assert.ok(/Abandon the current angle|genuinely different approach/i.test(draft.message.content ?? ""), "intervention survives into the draft prompt");
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
 
