@@ -1,0 +1,50 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/compaction-settled-boundary.test.ts:
+18 |   ctx.getContextUsage = () => ({ tokens: 315_000, contextWindow: 1_000_000, percent: 31.5 });
+19 |   ctx.compact = () => { compacts++; };
+20 |   __testOnlySetSpawnWorker(async () => ({ ok: true, brief: "Objective: x. Next task: y." }));
+21 |   try {
+22 |     sendContinuation(String(g.id));
+23 |     assert.equal(compacts, 1, "a queue advance has no new agent_end/agent_settled event to trigger compaction");
+                ^
+AssertionError: a queue advance has no new agent_end/agent_settled event to trigger compaction
+
+0 !== 1
+
+ generatedMessage: false,
+     actual: 0,
+   expected: 1,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-compaction-baseline-jgm3eum7/tests/compaction-settled-boundary.test.ts:23:12
+      at processTicksAndRejections (native:7:39)
+(fail) idle list advancement checks compaction before dispatching the next task [1920.30ms]
+42 |     await pi.fire("tool_call", { toolName: "read", input: { path: "artifact.txt" } }, ctx);
+43 |     await pi.fire("agent_end", { messages: [{ role: "assistant", content: [{ type: "text", text: "checkpoint" }], stopReason: "end_turn" }] }, ctx);
+44 |     assert.equal(compacts, 0, "never compact a running host");
+45 |     idle = true;
+46 |     await pi.fire("agent_settled", {}, ctx);
+47 |     assert.equal(compacts, 1, "the settled host actually runs the 200k trigger");
+                ^
+AssertionError: the settled host actually runs the 200k trigger
+
+0 !== 1
+
+ generatedMessage: false,
+     actual: 0,
+   expected: 1,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-compaction-baseline-jgm3eum7/tests/compaction-settled-boundary.test.ts:47:12
+      at processTicksAndRejections (native:7:39)
+      at done (unknown:1:1)
+      at endTest (node:test:209:13)
+      at processTicksAndRejections (native:7:39)
+(fail) busy agent_end defers the 200k trigger to agent_settled, then work resumes after compaction [232.48ms]
+
+ 0 pass
+ 2 fail
+Ran 2 tests across 1 file. [9.34s]

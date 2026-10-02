@@ -1,0 +1,13 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/compaction-settled-boundary.test.ts:
+(pass) settled and idle-send compaction preserve paused [3563.76ms]
+(pass) settled and idle-send compaction preserve auditing [2166.63ms]
+(pass) settled and idle-send compaction preserve frozen [1239.12ms]
+(pass) settled and idle-send compaction preserve aborted [591.15ms]
+(pass) idle list advancement checks compaction before dispatching the next task [357.60ms]
+(pass) busy agent_end defers the 200k trigger to agent_settled, then work resumes after compaction [3955.28ms]
+
+ 6 pass
+ 0 fail
+Ran 6 tests across 1 file. [14.90s]

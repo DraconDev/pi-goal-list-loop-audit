@@ -1,0 +1,76 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/between-tasks-compaction.test.ts:
+(pass) v0.38.104 the 200k rule is a token threshold, and it is distinct from the model-size hint [2.92ms]
+(pass) v0.38.104 compaction is due past the threshold, not below it [0.11ms]
+(pass) v0.38.104 a token count, not a percentage — the same goal on a 1M window still fires at 200k [0.17ms]
+(pass) v0.38.104 it fires ONCE per episode and re-arms as the goal grows back [0.04ms]
+(pass) v0.38.104 an unknown context count never compacts blindly [0.15ms]
+(pass) v0.38.104 the threshold is overridable but must be positive [0.03ms]
+(pass) v0.38.105 the boundary fires ctx.compact past 200k and ledgers it [1401.47ms]
+(pass) v0.38.105 one firing per episode; a shrunk transcript re-arms [167.61ms]
+(pass) v0.38.105 quiet boundaries: below threshold, busy, unsupervised, audit, paused, unknown, no trigger [6.29ms]
+(pass) v0.38.105 the boundary never re-arms the starvation path's brief one-shot [0.71ms]
+
+tests/compaction-settled-boundary.test.ts:
+(pass) idle list advancement checks compaction before dispatching the next task [11352.67ms]
+(pass) busy agent_end defers the 200k trigger to agent_settled, then work resumes after compaction [751.74ms]
+
+tests/compaction-survival.test.ts:
+(pass) compaction survival: three mid-run compacts, then the goal still completes approved [10658.35ms]
+(pass) compaction survival: a compact around an in-flight audit still completes [14973.78ms]
+
+tests/revision-bound-audit.test.ts:
+(pass) v0.34.60: /goal tweak bumps the goal revision (a contract change) [2782.47ms]
+(pass) v0.34.60: complete_goal with newObjective bumps the revision and audits the new contract in the same call [8294.16ms]
+(pass) v0.35.36: complete_goal newObjective does NOT launder the agent-authored objective into userSeeds [149.70ms]
+(pass) repair replan bumps the contract revision and invalidates an older approval [47.14ms]
+(pass) v0.34.60: complete_goal REJECTS when the contract revision moved past the last audited revision [27.47ms]
+(pass) direct complete_goal refuses an approval when the contract revision changes during the detached audit [7385.23ms]
+(pass) v0.34.60: complete_goal passes when the last audit matches the current revision [3544.59ms]
+(pass) v0.34.60: legacy audit entries without a revision never trip the gate [3344.17ms]
+(pass) v0.34.61: a settled audit never invalidates its own verdict — a second complete_goal on the same contract proceeds [16633.60ms]
+(pass) v0.34.61: the documented escape works — tweak, then /goal verify, then complete_goal proceeds [5845.72ms]
+(pass) v0.34.60: the gate skips when the call itself carries newObjective (its audit covers the new contract) [1714.58ms]
+(pass) v0.34.96: complete_goal routes to aborted when completionSummary says 'already shipped' [31.27ms]
+(pass) v0.34.96: already-shipped abort binds the version attached to the claim [17.29ms]
+(pass) v0.35.x: already-shipped completion honors an existing archive fence [8.46ms]
+(pass) v0.35.x: archiveCurrentGoal preserves a same-id archive on cancel [43.17ms]
+(pass) v0.34.128: a version-less 'no new work shipped' claim routes to the NORMAL audit and completes on approval [3238.01ms]
+(pass) v0.34.128: a version-less 'already shipped' claim disapproved by the auditor leaves the finding queued (no abort) [2391.43ms]
+(pass) v0.34.96: a NORMAL completionSummary still runs the auditor (no false-positive abort) [2901.89ms]
+(pass) v0.38.104: an unpersistable newObjective refuses the claim and never advances the revision [4.38ms]
+
+tests/delta-only-continuation.test.ts:
+(pass) marker is tiny and carries the dispatch marker [3.55ms]
+(pass) clean goal needs no full — repair/recovery/audit/designer do [3.92ms]
+(pass) builder: steady-state marker, resync+marker, dirty full [33.55ms]
+(pass) v0.38.94: consecutive sends go full once, then marker (field: 909 full sends) [1296.82ms]
+(pass) v0.38.94: rebind reset re-arms the one full brief (fresh context) [800.35ms]
+(pass) sendContinuation wires the delta-only branch with kind ledger [1.44ms]
+
+tests/compaction-containment.test.ts:
+(pass) session_before_compact returns nothing — another extension's compaction must survive [1147.60ms]
+(pass) pure: in-flight marker is armed-signal plus timeout, never silence [5.05ms]
+(pass) compaction in flight suppresses send-storm escalation (no park, no recovery) [752.43ms]
+(pass) post-compact settle owns exactly one bounded probe (no duplicates) [3347.84ms]
+(pass) escalation proceeds after settle — the gate is compaction-scoped, not a blanket disable [3388.84ms]
+(pass) scheduleContinuation defers while in flight and the settle still sends once [3855.22ms]
+
+tests/answered-question-dispatch.test.ts:
+(pass) v0.38.19 answered ask_user_question dispatches a continuation turn from a phantom-busy session [5557.39ms]
+(pass) v0.38.19 fresh stream keeps the wait path: no bypass into live thinking [693.75ms]
+(pass) v0.38.19 a loaded followUp queue keeps the wait path even when silent [670.13ms]
+
+tests/compaction-failed-recovery.test.ts:
+(pass) host-owned failed compaction retries without model rotation, park, or competing continuation [2201.27ms]
+(pass) terminal prompt overflow rotates once and arms durable post-compact resume debt [874.74ms]
+(pass) same-session startup restores fallback debt, while a new session discards it [1074.54ms]
+(pass) terminal output-cap failure parks instead of misclassifying it as context overflow [674.61ms]
+(pass) failed compaction without a usable fallback parks an active goal durably [445.32ms]
+(pass) failed compaction parks a branch loop instead of leaving it active [317.74ms]
+(pass) a failed debt-discharge append keeps RAM debt instead of diverging from disk [479.99ms]
+
+ 55 pass
+ 0 fail
+Ran 55 tests across 8 files. [141.35s]

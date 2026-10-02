@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Preventive compaction at the idle boundary
+
+- Recheck the 200k-token compaction trigger after the host settles and before
+  dispatching a queued list item's next turn. `agent_end` can still report a
+  busy host and previously skipped the trigger indefinitely. Queued work now
+  yields to due compaction while the existing ownership and consent guards
+  remain in force.
+
 ### Final-audit orphan backstop
 
 - A healthy host now reconciles a stranded final audit even when its retry
