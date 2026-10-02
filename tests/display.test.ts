@@ -806,7 +806,7 @@ test("v0.38.70: paused action card leads with the action, history rides after (f
   )!;
   const text = widget.join("\n");
   const actionAt = widget.findIndex((l) => l.includes("Bring your own Google key"));
-  const blockedAt = widget.findIndex((l) => l.includes("blocked — waiting for manual action"));
+  const blockedAt = widget.findIndex((l) => l.includes("blocked — resume to continue"));
   const judgmentAt = widget.findIndex((l) => l.includes("judgment:"));
   assert.ok(blockedAt >= 0, `blocked banner missing:\n${text}`);
   assert.ok(actionAt >= 0, `suggested action missing:\n${text}`);

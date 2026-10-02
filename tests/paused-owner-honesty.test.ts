@@ -1,7 +1,7 @@
 // Paused-card owner honesty (screenshot 2026-10-01): a goal parked on a
 // mainModelRecovery REMNANT — the object exists but no retry timer, model
 // switch, or manual hold is live — must not claim "owner: main-model
-// recovery" while the banner says "blocked — waiting for manual action".
+// recovery" while the banner says "blocked — resume to continue".
 // The owner names live recovery only; otherwise the pause kind owns the
 // card, so the user sees one coherent next action.
 
@@ -49,7 +49,7 @@ test("stale recovery remnant does not own a blocked pause", () => {
   const text = buildWidgetLines(state, null, NOW)!.join("\n");
   assert.doesNotMatch(text, /owner: main-model recovery/, `no stale owner claim:\n${text}`);
   assert.match(text, /owner: manual action/, `pause kind owns the card:\n${text}`);
-  assert.match(text, /blocked — waiting for manual action/, `banner unchanged:\n${text}`);
+  assert.match(text, /blocked — resume to continue/, `banner names the action:\n${text}`);
 });
 
 test("live recovery timer still owns a blocked pause", () => {

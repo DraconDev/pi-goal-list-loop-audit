@@ -69,10 +69,10 @@ test("v0.38.90: standby reason caps at 2 wrapped rows like decisions/waits", () 
   assert.ok(reasonRows.length <= 2, `reason capped at 2 rows, got ${reasonRows.length}:\\n${reasonRows.join("\\n")}`);
 });
 
-test("021655: neighboring kinds keep their manual-action rendering", () => {
+test("021655: neighboring kinds keep their action rendering", () => {
   const blocked = buildWidgetLines(
     stateOf(standbyGoal({ pauseKind: "blocked", pauseReason: "provider 429, manual retry" })), null, Date.now(), undefined, 100)!;
-  assert.ok(blocked.some((l) => l.includes("waiting for manual action")), "blocked still names manual action");
+  assert.ok(blocked.some((l) => l.includes("blocked — resume to continue")), "blocked names resume, not a phantom manual action");
   const err = buildStatusText(
     stateOf(standbyGoal({ pauseKind: "error", pauseReason: "operation failed" })), null, Date.now(), undefined, undefined, 100)!;
   assert.match(err, /action needed/, "error still demands action");
