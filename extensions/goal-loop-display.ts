@@ -1103,12 +1103,18 @@ function lastAuditorTool(audit: AuditDisplayProgress | null | undefined): string
   return typeof name === "string" && name.trim() ? truncate(name, 30) : undefined;
 }
 
+/** Watching folds into QUEUED on every surface: producers attest
+ * queued/working/busy, never external watching — objective keywords and an
+ * accepted turn never prove a monitor exists. The goal head and the loop
+ * status line share this one mapping (D2). */
+function foldWatchingActivity(activity: GoalDisplayActivity | undefined): GoalDisplayActivity | undefined {
+  return activity === "monitoring" ? "queued" : activity;
+}
+
 function goalDisplayActivity(g: Goal, extras?: WidgetExtras, now = Date.now()): GoalDisplayActivity {
   if (g.status !== "active") return "active";
   const activity = extras?.activity ?? "active";
-  // Goal activity producers attest queued/working/busy, not external watching.
-  // Objective keywords and an accepted turn never prove a monitor exists.
-  return activity === "monitoring" ? "queued" : activity;
+  return foldWatchingActivity(activity) ?? "active";
 }
 
 /** Paused-state lifecycle projection. Pausing is durable, but it is not a
@@ -1340,7 +1346,7 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
     // v0.36.1: loop-only supervision now receives the same evidence-backed
     // state marker as goals. Without this, a loop's iteration counter moved
     // while the user still had to infer whether pi was working or waiting.
-    const activityMarker = activityStatusMarker(extras?.activity, now, theme);
+    const activityMarker = activityStatusMarker(foldWatchingActivity(extras?.activity), now, theme);
     const activityPrefix = activityMarker ? `${activityMarker} ${paint(theme, "dim", "·")} ` : "";
     // v0.23.0: metricless spec loop — no arrow/best/stall, no plateau.
     if (!l.measureCmd) {
