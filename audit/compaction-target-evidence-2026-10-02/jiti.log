@@ -1,0 +1,20 @@
+
+> pi-goal-list-loop-audit@0.38.107 test:jiti
+> node tests/repro-jiti-state-split.test.mjs
+
+TAP version 13
+# Subtest: jiti: /list audit enqueues, persists the item, and ACTIVATES (state binding not split)
+ok 1 - jiti: /list audit enqueues, persists the item, and ACTIVATES (state binding not split)
+  ---
+  duration_ms: 10636.084722
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11625.615775

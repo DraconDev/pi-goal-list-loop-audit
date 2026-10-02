@@ -23,6 +23,13 @@ appears here, so the table cannot silently drift.
 
 ## Global-only keys
 
+For opportunistic transcript compaction, open `/glla` → **Compactor** →
+**Compaction token target**. Enter a positive count such as `300000`,
+`300,000`, or `300k` (or `1m` for one million). Empty restores 200,000.
+Saving the target does not compact immediately: crossing it makes compaction
+due at the next safe idle boundary between work turns or queued list items.
+The configured target also controls rearming once usage drops below half.
+
 These describe machine/provider/session policy, not a project artifact. Project
 copies are ignored (GLLA reads the global file for these policies):
 

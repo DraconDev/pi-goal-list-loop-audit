@@ -1,0 +1,45 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/delta-only-continuation.test.ts:
+(pass) marker is tiny and carries the dispatch marker [29.60ms]
+(pass) clean goal needs no full — repair/recovery/audit/designer do [10.61ms]
+(pass) builder: steady-state marker, resync+marker, dirty full [6.30ms]
+(pass) v0.38.94: consecutive sends go full once, then marker (field: 909 full sends) [2907.78ms]
+(pass) v0.38.94: rebind reset re-arms the one full brief (fresh context) [541.33ms]
+(pass) sendContinuation wires the delta-only branch with kind ledger [0.67ms]
+
+tests/compactor-handoff.test.ts:
+(pass) plan B picks verified free big-context, largest first, max two [2.23ms]
+(pass) plan B disqualifies unknown metadata, paid, unauthed, forbidden, stuck [0.28ms]
+(pass) plan B returns [] when the registry throws [0.22ms]
+(pass) compactor chain normalizes and caps 0-10 exactly like drafter [148.72ms]
+(pass) compactor chain never leases the stuck session model [0.34ms]
+(pass) refuse transition fires exactly once per episode [0.11ms]
+(pass) audit 2026-09-06: compactor one-shot survives a restart mid-episode [14.88ms]
+(pass) audit 2026-09-06: worker timeout escalates SIGTERM to SIGKILL [0.57ms]
+(pass) brief scope: packet bounded, sections present, worker tool-less [0.87ms]
+(pass) resync carries the brief excerpt only when present [0.34ms]
+(pass) recovery banner quotes the handoff excerpt [0.42ms]
+(pass) refuse engages the compactor once with the chain model + packet scope [596.17ms]
+(pass) chain empty falls back to the verified free registry model [350.88ms]
+(pass) no model anywhere skips silently with ledger, ladder still paints [649.01ms]
+(pass) notifyCmd off keeps the brief, drops the page [364.07ms]
+(pass) reload with a brief on disk quotes the handoff in the banner [136.71ms]
+(pass) resolveCompactorModel end to end prefers chain over plan B [0.92ms]
+
+tests/list-settings-route.test.ts:
+(pass) v0.34.53: /list settings redirects to /glla explicitly — no drafting, no state mutation [582.97ms]
+(pass) v0.34.53: /list settings is read-only — it still redirects on a stale extension handle [369.96ms]
+(pass) v0.34.53: /list add settings… still adds a literal item — the explicit verb is the only way in [392.30ms]
+(pass) v0.34.53: source — /list help documents /glla as the settings command and the branch precedes the dump fallthrough [33.62ms]
+
+tests/compaction-target-settings.test.ts:
+(pass) /glla token-target editor persists shorthand, cancellation, validation, and reset [260.36ms]
+(pass) global-only target, defaults, provenance and menu describe the effective policy [12.69ms]
+(pass) configured target reaches the actual trigger, idle guard, and hysteresis [124.33ms]
+(pass) hand-edited invalid targets safely fall back at runtime [122.43ms]
+(pass) headless /glla exposes the chosen token target and source [138.42ms]
+
+ 32 pass
+ 0 fail
+Ran 32 tests across 4 files. [11.13s]
