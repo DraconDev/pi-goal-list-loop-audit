@@ -136,7 +136,10 @@ for (const guard of ["in-flight", "recent", "frozen", "cold-held"] as const) {
     if (stub?.child.pid) writeWorkerLock(saved.dir, "saved-claim-physical", stub.child.pid);
     pi.sent.length = 0;
     try {
-      if (guard === "in-flight") assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), true, "the stub models a live worker");
+      if (guard === "in-flight") {
+        assert.equal(await waitForWorkerStub(cwd, stub!.child.pid!, saved.dir), true, "the stub is observable before the liveness check");
+        assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), true, "the stub models a live worker");
+      }
       __testOnlyHeartbeatTick(); await tick(120);
       const restored = readState(cwd).goal;
       if (guard === "cold-held") {
@@ -321,6 +324,19 @@ test("workerless in-flight claim with a saved verdict reconciles without launchi
 
 test("S5: workerless in-flight claim parks under the stale latch via stale-latch-workerless", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+  // The stale-latch stranded block only runs while the latch is ALREADY
+  // held: goStaleTerminal parks an already-auditing goal directly
+  // (audit_recovery_pending/context-free-stale-latch), so a single tick
+  // after invalidate never reaches it. Trip the latch first with a
+  // non-auditing goal, then land the auditing claim while latched — the
+  // v0.34.80 field shape (the tool path dispatched an audit after transient
+  // probe failures latched the session stale).
+  const idle = seedGoal({ status: "active", autoContinue: false }) as unknown as Goal;
+  seedState(cwd, { goal: idle });
+  __testOnlyLoadState(cwd);
+  invalidateHostSession(pi, ctx);
+  __testOnlyHeartbeatTick(); await tick(120);
+  assert.ok(events(cwd).some(e => e.type === "extension_api_stale"), "tick 1 trips the stale latch");
   const g = goal();
   g.pendingCompletion = { ...g.pendingCompletion!, phase: "starting" };
   seedState(cwd, { goal: g });
@@ -328,7 +344,7 @@ test("S5: workerless in-flight claim parks under the stale latch via stale-latch
   // must not mask that: the park still lands, attributed to the latch.
   __testOnlyLoadState(cwd);
   __testOnlySetLastActivityAt(Date.now() - 100_000);
-  invalidateHostSession(pi, ctx);
+  __testOnlySetLastRealActivityAt(Date.now() - 100_000);
   const runtime = globalThis as typeof globalThis & { completionAuditInFlight: boolean };
   runtime.completionAuditInFlight = true;
   try {
