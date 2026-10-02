@@ -5,34 +5,10 @@
 # later
 
 ##
-/home/dracon/Pictures/Screenshots/Screenshot_20261002_132826.png
-we did a draft but didnt start looping
-
-here it seems active but only becuase i started after respec was called complete
-
-/home/dracon/Pictures/Screenshots/Screenshot_20261002_134626.png
-/home/dracon/Pictures/Screenshots/Screenshot_20261002_135517.png
-
-
-##
-we need to update the readme we are far more free flowing 
-
-/goal "Improve the login flow.
-
-Done when:
-- failed logins return a useful, safe error;
-- the relevant tests cover the new behavior and pass;
-- the change is documented and committed."
-
-this is wya to rigin i never use it like that, just 
-
-/goal do this do that 
-
-that leads into a draft
-
-##
 
 Next and reamining is pretty muc teh same no? but also i needed a clearer way to see what is important
+
+so this is a question about hte summary
 
  ### Remaining
 
