@@ -3,11 +3,14 @@
 // Field 20260918_172705: the Done card showed duplicated rows (Changed×2,
 // Tests×2, Unresolved×2 from repeated claim details) and a "0 turns"
 // duration segment from untracked telemetry. Pins:
-//   1. Exact-duplicate detail lines collapse to one per bucket (near-
-//      duplicates with different wording still render — that prose belongs
-//      to the agent's claim, not the renderer).
+//   1. Exact-duplicate detail lines collapse to one per bucket (findings
+//      near-duplicates with different wording still render — that prose
+//      belongs to the agent's claim, not the renderer).
 //   2. A zero turns count is omitted (untracked, not known) while elapsed
 //      and audit counts still render.
+//   3. Field 2026-10-02: same-label near-duplicates in the next/remaining
+//      bucket collapse to their first occurrence; a problem and its action
+//      (different labels) always both render.
 
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
