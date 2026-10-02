@@ -11,6 +11,13 @@
 - Restore accepts saved verdicts for older parked completion claims whose
   phase field is absent, matching the existing recovery-pending default.
   The normal claim, request hash, revision and challenge checks still apply.
+- An existing spec file that is structurally incomplete (no title, empty
+  Rules, or Rules-only) enters the draft phase instead of reconciling
+  against a partial target; the partial file stays as draft input.
+- Heartbeat recovery for days-old auditing orphans and launch-window
+  `starting` claims without a worker is pinned: saved verdicts apply
+  exactly once with no new auditor, and workerless claims park for a
+  bounded retry.
 
 ### Configurable opportunistic compaction target
 
