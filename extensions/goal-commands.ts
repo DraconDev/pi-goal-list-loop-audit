@@ -341,6 +341,7 @@ async function resolveGoalStartConflict(ctx: ExtensionContext, objective: string
   // The choice is still ledgered so forensics can trace the handoff.
   if (explicitReplace) {
     appendLedger(ctx.cwd, "objective_conflict_resolved", { incoming: "goal", choice: "replace", via: "start-explicit", current: current.map((item) => item.id) });
+    await stopConflictingLoops(ctx, current);
     return true;
   }
   const choice = await chooseObjectiveConflict(ctx, "goal", objective, current);
@@ -361,10 +362,14 @@ async function resolveGoalStartConflict(ctx: ExtensionContext, objective: string
   }
   // Replacement is explicit. Stop a loop first; setGoal archives a live
   // goal/list item before installing the new one.
+  await stopConflictingLoops(ctx, current);
+  return true;
+}
+
+async function stopConflictingLoops(ctx: ExtensionContext, current: LiveObjective[]): Promise<void> {
   for (const item of current) {
     if (item.kind === "loop" && isLoopActive()) await cmdLoop("stop", ctx);
   }
-  return true;
 }
 
 // =================================================================
