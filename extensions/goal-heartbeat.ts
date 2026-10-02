@@ -302,13 +302,14 @@ function overdueWaitBackstop(ctx: ExtensionContext): void {
       reason: reason.slice(0, 160),
       route: "main-model-probe",
     });
-    // S8: the probe route is async and may no-op (no recovery state) or
-    // throw before re-parking — either leaves the SAME wait parked under a
-    // latched key, which the backstop would then never retry (the only
-    // production re-arm is a pauseResumeAt rewrite). On settle, release the
-    // latch when our key is still latched and the same wait is still
-    // parked, so the next tick retries. A re-park (fresh resumeAt) or a
-    // resume (goal active) keeps the latch — both re-arm naturally.
+    // S9 (probe route): the probe is async and may no-op (no recovery
+    // state) or throw before re-parking — either leaves the SAME wait
+    // parked under a latched key, which the backstop would then never
+    // retry (the only production re-arm is a pauseResumeAt rewrite). On
+    // settle, release the latch when our key is still latched and the same
+    // wait is still parked, so the next tick retries. A re-park (fresh
+    // resumeAt) or a resume (goal active) keeps the latch — both re-arm
+    // naturally.
     void probeMainModelRecovery(ctx)
       .catch(() => { /* re-parks with a fresh resumeAt on failure */ })
       .finally(() => {
@@ -329,10 +330,11 @@ function overdueWaitBackstop(ctx: ExtensionContext): void {
   // condition's deadline has passed — clear the park and re-dispatch, with
   // a recovery stamp so the continuation prompt tells the agent it was
   // ITSELF that was recovered (issue #16 part 2).
-  // S9: prove the park-clear landed BEFORE latching or ledgering. A failed
-  // write under a latched key (and a "resumed" ledger line) would park the
-  // wait forever with the evidence claiming it resumed — the file's own
-  // "never latched as already done" principle, applied to the write itself.
+  // S9 (continuation route): prove the park-clear landed BEFORE latching
+  // or ledgering. A failed write under a latched key (and a "resumed"
+  // ledger line) would park the wait forever with the evidence claiming it
+  // resumed — the file's own "never latched as already done" principle,
+  // applied to the write itself.
   const parkCleared = updateGoal({
     status: "active",
     pauseKind: undefined,
