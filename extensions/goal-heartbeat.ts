@@ -104,7 +104,9 @@ export interface HeartbeatDeps {
   freshCtx(): ExtensionContext | null;
   activeGoalSurfaceCommand(command: string): string;
   notifyExternal(ctx: ExtensionContext, message: string): void;
-  updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): void;
+  // S9: boolean — the overdue backstop must prove its park-clear landed
+  // before latching (goal.ts injects the real updateGoal, already boolean).
+  updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): boolean;
   /** Park durable completion debt without touching a retained stale context. */
   parkCompletionAuditRecovery(cwd: string, reason: string): boolean;
   /** Apply a durable verdict for an unowned claim, without launching a worker. */
