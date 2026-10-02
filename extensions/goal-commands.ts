@@ -269,6 +269,16 @@ async function cmdGoal(args: string, ctx: ExtensionContext): Promise<void> {
         }
         return;
       }
+      // A parked recovery-pending claim owns a bounded retry cursor. A
+      // fresh manual claim would drop phase / attemptId / retry state, so
+      // verify resumes the parked claim instead of overwriting it.
+      if (state.goal.pendingCompletion && isCompletionAuditRecoveryPending(state.goal)) {
+        appendLedger(ctx.cwd, "manual_audit_requested", { goalId: state.goal.id, settlement: "recovery-pending-resume" });
+        if (resumeStoredCompletionOrSettlement(ctx, "manual") === "not-applicable") {
+          void retryStoredCompletionAudit("manual");
+        }
+        return;
+      }
       updateGoal({
         pendingCompletion: {
           completionSummary: "Manual audit requested by the user via /goal verify (no agent completion claim). Verify the objective against the repo directly.",
