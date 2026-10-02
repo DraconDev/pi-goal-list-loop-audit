@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyLoadState, __testOnlySetLastActivityAt } from "../extensions/loops/goal.js";
+import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyLoadState, __testOnlySetLastActivityAt, __testOnlySetLastRealActivityAt } from "../extensions/loops/goal.js";
 import { __testOnlyHeartbeatTick } from "../extensions/goal-heartbeat.js";
 import { __testOnlyResetAuditorSurface } from "../extensions/loops/goal-auditor-surface.js";
 import { archivedGoalPath, readState, type Goal, type State } from "../extensions/goal-loop-core.js";
