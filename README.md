@@ -81,8 +81,21 @@ the recommended experience.
 
 ## Your first goal
 
-Start pi in the project you want it to work on, then give it an outcome with a
-verifiable finish line:
+Start pi in the project you want it to work on, then just say what you want:
+
+```text
+/goal fix the login flow, failed logins should return a useful error
+```
+
+There is no required format. A plain `do this, do that` seed leads into a
+draft: GLLA researches the ambiguity, asks focused questions at dynamic
+length — a word or two for a clear ask, more for a vague one — and shows a
+Confirm dialog before anything activates. If your seed already carries
+enough detail (alone or with the recent conversation), it skips the
+questions and goes straight to confirmation.
+
+When you already know the finish line, spell it out — a `Done when:`
+contract starts directly and is independently audited at the end:
 
 ```text
 /goal "Improve the login flow.
@@ -93,14 +106,9 @@ Done when:
 - the change is documented and committed."
 ```
 
-The contract is the important part. Replace the example with the result you
-actually want and checks that another person (or another agent) could inspect.
-
-For an objective that needs shaping, start with bare `/goal` and answer the
-interview. GLLA will research the ambiguity, ask focused questions, and show a
-Confirm dialog before activation. A complete `Done when:` clause starts
-immediately. `/goal start "..."` is the explicit shortcut when skipping the
-interview is intentional.
+Bare `/goal` always interviews, `/goal plan "..."` always forces the full
+research-first draft, and `/goal start "..."` is the explicit shortcut for
+skipping the interview when that is intentional.
 
 ### What happens next
 
@@ -136,6 +144,7 @@ forcing every problem into a loop.
 
 ```text
 /goal                                      # interview + Confirm
+/goal do this, do that                     # free-form seed → dynamic draft + Confirm
 /goal "... Done when: ..."                 # direct contract start
 /goal start "..."                          # explicit no-interview start
 /goal start                                  # use one clear recent request, or draft safely
