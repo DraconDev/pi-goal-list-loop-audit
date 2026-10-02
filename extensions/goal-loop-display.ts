@@ -1975,7 +1975,10 @@ function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefin
   // session pinned inside the job dir. Point the user at it: tail -f it
   // read-only while the audit runs; attach interactively only after.
   if (audit?.sessionPath) {
-    observations.push(`session: ${audit.sessionPath} — tail -f it live`);
+    // D4: the worker-reported path is sanitized and bounded like every
+    // other row — a raw unbounded path breaks narrow terminals and leaks
+    // control bytes into the card.
+    observations.push(`session: ${truncate(sanitizeDisplayText(audit.sessionPath), 80)} — tail -f it live`);
   }
   const stretch = extras?.auditorQuietStretch;
   if (stretch && Number.isFinite(stretch.ms) && stretch.ms >= AUDITOR_QUIET_MS
