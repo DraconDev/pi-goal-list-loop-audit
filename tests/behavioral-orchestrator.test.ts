@@ -2628,6 +2628,25 @@ test("v0.34.25: dead owner + ephemeral ctx cannot claim the plane (subagent lock
   __testOnlyResetOwnerSession(); // restore the MAIN_SM claim invariant for later tests
 });
 
+test("S4: a transient lastCtx probe glitch fails one tool call closed without dropping the context", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  const ctx = await freshSession(cwd, "startup");
+  // A same-owner invocation whose own probe is stale, forcing the
+  // currentToolContext fallback onto lastCtx.
+  const staleExec = makeMockCtx(cwd, { sessionManager: MAIN_SM });
+  (staleExec as any).isIdle = () => { throw staleError(); };
+  const realIsIdle = (ctx as any).isIdle.bind(ctx);
+  let probes = 0;
+  (ctx as any).isIdle = () => { probes++; if (probes === 1) throw new Error("transient probe glitch"); return realIsIdle(); };
+  const params = { completionSummary: "s4", verificationSummary: "s4" };
+  const first = await pi.runTool("complete_goal", params, staleExec);
+  assert.match(first.content[0]!.text, /crossed a session replacement/, "the glitched call fails closed");
+  const second = await pi.runTool("complete_goal", params, staleExec);
+  assert.match(second.content[0]!.text, /No active goal/, "the kept context serves the next call instead of stale-refusing again");
+  await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+});
+
 // v0.34.27 — every real successor contact can rebind after a stale terminal.
 
 test("v0.34.27: stale host recovery absorbs the first replacement contact across lifecycle and stream boundaries", async () => {
