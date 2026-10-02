@@ -844,6 +844,21 @@ test("L7: countCheckedSpecItems counts indented boxes like its siblings", () => 
   }
 });
 
+test("L6 (pin): a fired loop timer clears its handle before any early return", () => {
+  // The handle must die first: any early return below would otherwise leave
+  // a dead handle behind and loopTimerPending() would suppress legitimate
+  // sends elsewhere. Pre-fix, the clear sat after the guard returns.
+  assert.match(
+    LOOP_RUNTIME,
+    /function sendLoopTurn\(\): void \{\n(\s*\/\/[^\n]*\n)*\s*loopTimer = null;/,
+    "loopTimer = null is the first statement (comments aside)",
+  );
+  const fn = LOOP_RUNTIME.indexOf("function sendLoopTurn()");
+  const cleared = LOOP_RUNTIME.indexOf("loopTimer = null;", fn);
+  const firstGuard = LOOP_RUNTIME.indexOf("if (supervisorPaused(state)) return;", fn);
+  assert.ok(cleared > 0 && firstGuard > 0 && cleared < firstGuard, "the clear precedes the first early return");
+});
+
 test("L5 (pin): the loop-turn send and retry payload share one prompt build", () => {
   assert.match(LOOP_RUNTIME, /const loopTurnContent = loopResync \+ loopPrompt\(/, "single build site");
   assert.match(LOOP_RUNTIME, /content: loopTurnContent,\n      display: false,\n    \}, \{ triggerTurn: true/, "the send uses the shared build");
