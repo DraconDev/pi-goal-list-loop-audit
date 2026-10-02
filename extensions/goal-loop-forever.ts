@@ -591,10 +591,17 @@ export function respecSpecComplete(specFile: string): boolean {
   } catch { return false; }
 }
 
+/** The explicit end-of-turn handoff line. Factored so the orchestrator can
+ * record a marker seen on an earlier turn (sticky handoff) instead of
+ * requiring marker + complete spec to coincide in one message. */
+export function respecDraftMarkerPresent(assistantText: string): boolean {
+  return /^\[RESPEC DRAFT COMPLETE\]\s*$/m.test(assistantText);
+}
+
 /** A file alone may be an incremental draft. Require the explicit end-of-turn
  * handoff plus structural completeness before the orchestrator changes phase. */
 export function respecDraftReady(specFile: string, assistantText: string): boolean {
-  if (!/^\[RESPEC DRAFT COMPLETE\]\s*$/m.test(assistantText)) return false;
+  if (!respecDraftMarkerPresent(assistantText)) return false;
   return respecSpecComplete(specFile);
 }
 
