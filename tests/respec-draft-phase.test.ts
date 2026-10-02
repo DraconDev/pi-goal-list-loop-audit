@@ -110,6 +110,29 @@ test("respec with a structurally incomplete spec enters draft instead of reconci
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
 
+test("sticky handoff: marker one turn, finished spec the next, still reconciles", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-sticky" } });
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  try {
+    await pi.command("loop", "respec", ctx); await tick(100);
+    const specFile = path.join(cwd, "SPEC.md");
+    const turn = (text: string) => ({ messages: [{ role: "assistant", content: [{ type: "text", text }] }] });
+    // Turn N: agent declares done early with only a partial spec on disk.
+    fs.writeFileSync(specFile, "# Project\n\n## Rules\n\n");
+    await runLoopTick(ctx as unknown as ExtensionContext, turn("[RESPEC DRAFT COMPLETE]"));
+    await tick(100); clearLoopTimer();
+    assert.equal(readState(cwd).loop?.respecPhase, "draft", "partial spec cannot hand off");
+    assert.equal(readState(cwd).loop?.respecMarkerSeen, true, "early marker is remembered");
+    // Turn N+1: agent finishes the spec without re-emitting the marker.
+    fs.writeFileSync(specFile, SPEC);
+    await runLoopTick(ctx as unknown as ExtensionContext, turn("Finished the Architecture section."));
+    await tick(100); clearLoopTimer();
+    assert.equal(readState(cwd).loop?.respecPhase, "reconcile", "sticky marker plus late spec hands off");
+    assert.equal(readState(cwd).loop?.respecMarkerSeen, undefined, "marker clears on handoff");
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});
+
 test("respecSpecComplete: title plus nonempty Rules plus another section", () => {
   const dir = tmpCwd(), file = path.join(dir, "SPEC.md");
   assert.equal(respecSpecComplete(file), false, "missing file is incomplete");
