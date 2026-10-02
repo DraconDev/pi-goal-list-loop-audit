@@ -24,6 +24,7 @@ import {
   terminalHumanBrief,
   withoutStaleNext,
 } from "../extensions/completion-summary.js";
+import type { Goal } from "../extensions/goal-loop-core.js";
 import { seedGoal } from "./harness/mock-pi.js";
 
 const SIX = [
@@ -264,8 +265,8 @@ test("D7 audit: approval-chat lines sanitize their inputs at the trust boundary"
 });
 
 test("D7 audit: the counts line sanitizes the auditNote override at the source", () => {
-  const goal = seedGoal({ status: "complete", auditHistory: [] });
-  const line = buildAuditCountsLine(goal as never, "auditor note[31m");
+  const goal = seedGoal({ status: "complete", auditHistory: [] }) as unknown as Goal;
+  const line = buildAuditCountsLine(goal, "auditor note[31m");
   assert.ok(!line.includes("") && !line.includes(""), "override text is sanitized");
   assert.match(line, /completion review:/);
 });
