@@ -866,6 +866,10 @@ export interface ConflictTweakOptions {
    * whole-objective transaction. The user already chose "Update current
    * objective" in the conflict picker; normal `/list tweak` remains paused-only. */
   allowLiveList?: boolean;
+  /** C7 out-signal: set when the user EXPLICITLY refused (cancelled the
+   * input or declined the confirm). Reset at every cmdTweak entry; the
+   * conflict retry loop must never re-prompt after an explicit no. */
+  cancelled?: boolean;
 }
 
 export async function cmdTweak(
