@@ -776,6 +776,15 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
     return undefined;
   }
   appendLedger(ctx.cwd, "audit_started", { goalId: state.goal?.id, attemptId: pending.attemptId, origin });
+  // A2: rotation orphans the prior worker — cancel it now (best-effort;
+  // the pre-dispatch reap re-covers it crash-safely from the durable
+  // priorAttemptId). A live old worker's late verdict could never apply
+  // (result application is attempt-gated), so killing it only saves
+  // tokens and its leaked job dir.
+  if (priorAttemptId && priorAttemptId !== pending.attemptId) {
+    cancelDetachedGoalCompletionAuditor(ctx.cwd, priorAttemptId);
+    appendLedger(ctx.cwd, "audit_prior_worker_cancelled", { goalId: state.goal?.id, priorAttemptId, attemptId: pending.attemptId, origin });
+  }
   return pending;
 }
 
@@ -1488,6 +1497,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
           runtime: {
             attemptId: () => newDetachedAuditJobAttemptId(claim.attemptId!),
             logicalAttemptId: claim.attemptId!,
+            ...(claim.priorAttemptId ? { priorAttemptId: claim.priorAttemptId } : {}),
             // v0.37.0: escalated budgets — per-tool ceiling, silence/
             // no-progress window, and first-event window all derive from the
             // same escalated pair (the first-event window keeps aliasing the

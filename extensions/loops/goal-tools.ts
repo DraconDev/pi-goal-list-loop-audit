@@ -1103,6 +1103,7 @@ function registerAgentTools(pi: any): void {
           runtime: {
             attemptId: () => newDetachedAuditJobAttemptId(completionClaim.attemptId!),
             logicalAttemptId: completionClaim.attemptId!,
+            ...(completionClaim.priorAttemptId ? { priorAttemptId: completionClaim.priorAttemptId } : {}),
             // v0.37.0: escalated budgets — per-tool ceiling, silence/
             // no-progress window, and first-event window all derive from the
             // same escalated pair.

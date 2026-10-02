@@ -207,3 +207,41 @@ test("/goal verify on a recovery-pending claim resumes it instead of overwriting
     await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
   }
 });
+
+test("A2: a retry rotates the attempt but keeps priorAttemptId lineage and reaps the old job dir", async () => {
+  const pi = new MockPi();
+  activate(pi.api);
+  const cwd = tmpCwd();
+  const ctx = await boot(pi, cwd);
+  try {
+    // Forge the old worker's durable job dir: a worker-owned lock with a
+    // dead pid and no result. workerProcessMatches gates any live kill,
+    // so even a pid collision is safe; the dead pid takes the rmSync path.
+    const oldDir = path.join(cwd, ".pi-glla", "audit-jobs", "a2-old-attempt-deadbeef");
+    fs.mkdirSync(oldDir, { recursive: true });
+    fs.writeFileSync(path.join(oldDir, "lock"), JSON.stringify({ role: "worker", pid: 4000000 }));
+    seedState(cwd, {
+      goal: seedGoal({
+        status: "paused",
+        objective: "parked rotation — done when pinned",
+        pendingCompletion: {
+          completionSummary: "agent claim parked",
+          at: new Date().toISOString(),
+          phase: "recovery-pending",
+          attemptId: "a2-old-attempt",
+          recoveryRetryAt: new Date(Date.now() + 600_000).toISOString(),
+        } as any,
+      }),
+    });
+    __testOnlyLoadState(cwd);
+    await pi.command("goal", "verify", ctx);
+    await tick();
+    const goal = readState(cwd).goal as any;
+    assert.notEqual(goal.pendingCompletion?.attemptId, "a2-old-attempt", "the retry mints a fresh attempt");
+    assert.equal(goal.pendingCompletion?.priorAttemptId, "a2-old-attempt", "the rotated-away id stays on the claim");
+    assert.ok(ledger(cwd).includes("audit_prior_worker_cancelled"), "the rotation-time cancel is ledgered");
+    assert.equal(fs.existsSync(oldDir), false, "the old job dir is reaped, not orphaned");
+  } finally {
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});

@@ -312,6 +312,10 @@ export interface AuditorFallbackPolicyOptions {
   forbiddenRefs?: readonly string[];
   /** Lifecycle fence checked before and after each delayed attempt. */
   shouldRetry?: () => boolean;
+  /** A8: host abort (Esc / user stop). The fallback/retry delays run to
+   * minutes; without this the sleeps below are uninterruptible and the
+   * claim strands until the delay elapses. */
+  signal?: AbortSignal;
   sleep?: (ms: number) => Promise<void>;
   retryBaseMinutes?: number;
   /** Resume an in-flight candidate after a host restart. */
@@ -416,10 +420,27 @@ export async function runAuditorFallbackWithPolicy(
     }
   };
   const isLive = (): boolean => {
+    if (opts.signal?.aborted) return false;
     if (!opts.shouldRetry) return true;
     try { return opts.shouldRetry(); } catch { return false; }
   };
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+  // A8: race every ladder delay against the host abort so cancellation
+  // lands promptly. The existing post-sleep isLive() checks then return
+  // the current result — the same shape as a lifecycle fence trip.
+  const abortableSleep = (ms: number): Promise<void> => {
+    const signal = opts.signal;
+    if (!signal) return sleep(ms);
+    if (signal.aborted) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      const done = (): void => {
+        signal.removeEventListener("abort", done);
+        resolve();
+      };
+      signal.addEventListener("abort", done, { once: true });
+      void sleep(ms).then(done);
+    });
+  };
   const sameRef = (left: string | undefined, right: string | undefined): boolean =>
     !!left && !!right && left.toLowerCase() === right.toLowerCase();
   const candidateRefs = refs.slice();
@@ -539,7 +560,7 @@ export async function runAuditorFallbackWithPolicy(
       }
       if (!isLive()) return { result: unknownResult, retriedOnce, fallbackUsed, via: candidate.via };
       fallbackDelayMs = retryInfo.delayMs;
-      await sleep(fallbackDelayMs);
+      await abortableSleep(fallbackDelayMs);
       if (!isLive()) return { result: unknownResult, retriedOnce, fallbackUsed, via: candidate.via };
       fallbackFrom = candidate;
       fallbackError = syntheticError;
@@ -618,7 +639,7 @@ export async function runAuditorFallbackWithPolicy(
       if (!callbackAccepted(opts.onRetry?.(candidate, first.error, retryDelayMs, retryInfo))) {
         return { result: cursorPersistenceFailure(candidate), retriedOnce, fallbackUsed, via: candidate.via };
       }
-      await sleep(retryDelayMs);
+      await abortableSleep(retryDelayMs);
       if (!isLive()) return { result: first, retriedOnce, fallbackUsed, via: candidate.via };
 
       const secondInfo: AuditorFallbackAttemptInfo = {
@@ -664,7 +685,7 @@ export async function runAuditorFallbackWithPolicy(
         return { result: markExhausted(second, failureClass(second)), retriedOnce, fallbackUsed, via: candidate.via };
       }
       if (!isLive()) return { result: second, retriedOnce, fallbackUsed, via: candidate.via };
-      await sleep(fallbackDelayMs);
+      await abortableSleep(fallbackDelayMs);
       if (!isLive()) return { result: second, retriedOnce, fallbackUsed, via: candidate.via };
       fallbackFrom = candidate;
       fallbackError = second.error;
@@ -693,7 +714,7 @@ export async function runAuditorFallbackWithPolicy(
     }
     if (!isLive()) return { result: first, retriedOnce, fallbackUsed, via: candidate.via };
     fallbackDelayMs = exhaustedInfo.delayMs;
-    await sleep(fallbackDelayMs);
+    await abortableSleep(fallbackDelayMs);
     if (!isLive()) return { result: first, retriedOnce, fallbackUsed, via: candidate.via };
     fallbackFrom = candidate;
     fallbackError = first.error;
@@ -1512,6 +1533,9 @@ export interface AuditorProcessRuntime {
   /** Logical completion claim id shared by unique retry attempt directories.
    * Used to reap a worker whose owning pi host died before cleanup. */
   logicalAttemptId?: string;
+  /** A2: rotated-away attempt id — the pre-dispatch reap covers it too,
+   * so a crash between rotation and cancel cannot orphan the old worker. */
+  priorAttemptId?: string;
 }
 
 export type AuditorProgressCallback = (progress: AuditorProgress) => void;
@@ -2160,6 +2184,11 @@ async function runDetachedGoalCompletionAuditorInner(args: {
     // A fresh host has no in-memory activeChildren map. Reap only durable
     // worker-owned locks for this claim before creating the next attempt.
     reapDurableWorkers(args.cwd, logicalAttemptId);
+    // A2: rotation renames the claim — also reap the durable workers of
+    // the rotated-away attempt, which no prefix of the new id reaches.
+    if (runtime.priorAttemptId && runtime.priorAttemptId !== logicalAttemptId) {
+      reapDurableWorkers(args.cwd, runtime.priorAttemptId);
+    }
     await fs.mkdir(jobsRoot, { recursive: true, mode: 0o700 });
     await fs.mkdir(jobDir, { mode: 0o700 });
     jobDirCreated = true;

@@ -1829,3 +1829,21 @@ test("audit-tool floor: no-tool approval is a disapproval, not infrastructure", 
   assert.equal(normalized.disapproved, true, "normalize must not wipe the floor disapproval into the retry ladder");
   assert.equal(normalized.error, undefined);
 });
+
+test("A2 (pin): the crash-safe pre-dispatch reap covers the rotated-away attempt", async () => {
+  // The lifecycle test proves the rotation-time cancel reaps the old dir.
+  // This pins the second layer: the durable priorAttemptId must flow from
+  // both dispatch sites into the pre-dispatch reap, so a crash between
+  // rotation and cancel still cannot orphan the old worker.
+  const fs = await import("node:fs");
+  const procSrc = fs.readFileSync("extensions/goal-loop-auditor-process.ts", "utf-8");
+  assert.match(
+    procSrc,
+    /reapDurableWorkers\(args\.cwd, runtime\.priorAttemptId\)/,
+    "pre-dispatch reaps the prior id alongside the new logical id",
+  );
+  const hooksSrc = fs.readFileSync("extensions/loops/goal-auditor-hooks.ts", "utf-8");
+  assert.match(hooksSrc, /priorAttemptId: claim\.priorAttemptId/, "hooks dispatch forwards the durable lineage");
+  const toolsSrc = fs.readFileSync("extensions/loops/goal-tools.ts", "utf-8");
+  assert.match(toolsSrc, /priorAttemptId: completionClaim\.priorAttemptId/, "tools dispatch forwards the durable lineage");
+});
