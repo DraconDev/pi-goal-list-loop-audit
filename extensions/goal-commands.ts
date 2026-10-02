@@ -13,7 +13,7 @@ import { renderAgentsPanel, tailChildTranscript, TRANSCRIPT_HEADER_SCAN_MAX_BYTE
 
 import { state, replaceState } from "./goal-state.js";
 import {
-  DEFAULT_TOKEN_LIMIT, Goal, ListItem, Status, appendLedger, archiveDir, archivedGoalPath, auditVerdictLabel, bumpGoalRevision, sanitizeProviderDisplayText,
+  DEFAULT_TOKEN_LIMIT, DEFAULT_COMPACTION_TOKEN_THRESHOLD, Goal, ListItem, Status, appendLedger, archiveDir, archivedGoalPath, auditVerdictLabel, bumpGoalRevision, sanitizeProviderDisplayText,
   computeListDepthFromLedger, clearQueueItemFiles, deleteQueueItemFile, deleteQueueItemFileResult, extractVerificationContract, stripTweakProceduralTail, formatAuditLog, formatGoalAuditHistory, formatMainModelRecoveryStatus, queueItemSidecarCount, countTrailingDisapprovals,
   formatListDepth, goalArgsNeedDrafting, ledgerPath, newGoalId, nowIso, parseListImport, parseListItemDeclaration, readLedgerTail, countLiveDisapprovals,
   assignQueueOrder, compareQueueItems, readAuditLog, readQueueFromDisk, routeGoalArgs, routeListText, sanitizeDisplayText, sanitizeProviderAuditReport, statusLabel,
@@ -3259,7 +3259,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
       // Audit 2026-09-06: the headless fallback omitted these — headless
       // operators could not see the compactor chain or display richness.
       fmt("compactorModel", "compactorModel"),
-      fmt("compactionTokenThreshold", "compactionTokenThreshold (tokens; next idle boundary)"),
+      `compactionTokenThreshold: ${effectiveSettings.compactionTokenThreshold ?? DEFAULT_COMPACTION_TOKEN_THRESHOLD} tokens · next idle boundary  [${prov.compactionTokenThreshold?.source ?? "default"}]`,
       `compactorModelFallbacks: ${formatMainModelFallbacks(effectiveSettings.compactorModelFallbacks)}  [${prov.compactorModelFallbacks?.source ?? "default"}]`,
       fmt("subagentDisplayRichness", "subagentDisplayRichness"),
       // Audit 2026-09-15: the headless fallback omitted this — headless
