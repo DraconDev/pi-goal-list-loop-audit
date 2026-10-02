@@ -141,7 +141,7 @@ test("draft prompt carries the stuck-ladder intervention note", async () => {
     await pi.command("loop", "respec", ctx); await tick(100);
     // Simulate a stuck rung reached during drafting.
     const st = readState(cwd);
-    seedState(cwd, { goal: null, loop: { ...st.loop!, auditReprieveNote: "INTERVENTION-PROBE: vary the coverage strategy" } });
+    seedState(cwd, { goal: null, loop: { ...st.loop!, consecutiveStuck: 2, lastStuckReason: "INTERVENTION-PROBE: same coverage twice" } });
     __testOnlyLoadState(cwd);
     pi.sent.length = 0;
     const turn = (text: string) => ({ messages: [{ role: "assistant", content: [{ type: "text", text }] }] });
