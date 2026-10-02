@@ -23,13 +23,14 @@ appears here, so the table cannot silently drift.
 
 ## Global-only keys
 
-These describe machine/provider policy, not a project artifact. Project
-copies are ignored (the recovery runtime reads the global file):
+These describe machine/provider/session policy, not a project artifact. Project
+copies are ignored (GLLA reads the global file for these policies):
 
 `stateRoot`, `mainModelFallbacks`, `mainModelRetryMinutes`,
 `mainModelFailback`, `mainModelPrimaryProbeMinutes`, `hourlyRetryProbe`,
 `autoResume`, `drafterModel`, `drafterThinkingLevel`,
 `drafterModelFallbacks`, `compactorModel`, `compactorModelFallbacks`,
+`compactionTokenThreshold`,
 `auditorModelFallbacks`, `auditorToolTimeoutMs`, `auditorStallMs`,
 `auditJobRetentionMs`, `auditSpotCheckRate`, `auditorStrictChallenge`, `auditorInspection`.
 
@@ -56,6 +57,7 @@ This authority boundary applies before settings-value normalization.
 | `drafterModelFallbacks` | `[]` | Ordered drafting fallbacks; session model is final. Global-only. |
 | `compactorModel` | unset (plan B) | Emergency-compactor primary; never the session model. Global-only. |
 | `compactorModelFallbacks` | `[]` | Ordered compactor fallbacks; no session last resort. Global-only. |
+| `compactionTokenThreshold` | `200000` | Positive context-token target for opportunistic transcript compaction at the next idle boundary, between work turns or list items. Waits while tools, audits, or queued messages own the host; respects pause and abort. Global-only. |
 | `mainModelRetryMinutes` | `15` | Base minutes before main-session recovery; doubles per attempt, caps 5h. Global-only. |
 | `mainModelFailback` | `"auto"` | `"auto"` re-probes the primary; `"sticky"` keeps the fallback. Global-only. |
 | `mainModelPrimaryProbeMinutes` | `15` | Minutes between preferred-primary health probes. Global-only. |

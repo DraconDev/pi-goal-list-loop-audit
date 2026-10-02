@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Configurable opportunistic compaction target
+
+- `/glla` → Compactor → **Compaction token target** sets the global context
+  target (default 200,000 tokens). Enter a count such as `300000` or `300k`;
+  empty restores the default. Crossing the target makes compaction due at
+  the next safe idle boundary, with the same tool, audit, pause, and abort
+  guards. The configured target also governs hysteresis and appears in
+  headless `/glla` with its source.
+
 ### Preventive compaction at the idle boundary
 
 - Recheck the 200k-token compaction trigger after the host settles and before
