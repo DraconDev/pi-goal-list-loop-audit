@@ -316,8 +316,7 @@ function overdueWaitBackstop(ctx: ExtensionContext): void {
         const current = state.goal;
         if (
           lastOverdueWaitKey === overdueKey
-          && current !== null
-          && current !== undefined
+          && current
           && current.id === goal.id
           && current.status === "paused"
           && current.pauseKind === "wait"
