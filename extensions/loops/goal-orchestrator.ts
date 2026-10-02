@@ -492,12 +492,15 @@ function freshCtx(): ExtensionContext | null {
   if (sessionHandoffPending || initialSessionLoadPending) return null;
   // A captured ctx throws "stale" after session replacement. Probe cheaply;
   // on stale, drop it and wait for the next event to hand us a fresh one.
+  // S4: only a STALE-class throw drops the context — a transient probe
+  // glitch must fail closed for this caller without nuking lastCtx for
+  // every one-shot timer behind it (the v0.34.62 heartbeat precedent).
   if (!lastCtx) return null;
   try {
     lastCtx.isIdle();
     return lastCtx;
-  } catch {
-    lastCtx = null;
+  } catch (err) {
+    if (isStaleApiError(err)) lastCtx = null;
     return null;
   }
 }
