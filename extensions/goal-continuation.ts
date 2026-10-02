@@ -83,7 +83,7 @@ const MONITOR_CHECK_INTERVAL_MS = Number.isFinite(configuredMonitorIntervalMs) &
   : DEFAULT_MONITOR_CHECK_INTERVAL_MS;
 void MONITOR_CHECK_INTERVAL_MS; // deprecated throttle — scheduling is now event-driven
 import { VISION_ASSIST_GUIDANCE } from "./vision-assist.js";
-import { readHandoffBriefExcerpt } from "./goal-compactor.js";
+import { maybeCompactTranscriptAtBoundary, readHandoffBriefExcerpt } from "./goal-compactor.js";
 import { loadSettings } from "./goal-settings.js";
 import { clearLoopTimer, isLoopActive } from "./goal-loop.js";
 import { attemptFreshSessionRecovery, mainModelRecoveryActive, recoverMainModelFromSendStorm } from "./goal-recovery.js";
@@ -1512,6 +1512,20 @@ export function sendContinuation(goalId: string): void {
     }
   }
   if (!flags.extensionApi || flags.extensionApiStale) return;
+  // Queue advancement may happen after the previous host has settled, with
+  // no further agent_end event before this send. Use the idle dispatch
+  // boundary too, so every new work turn yields to a due compaction.
+  // The decision is synchronous: never yield between ownership checks and
+  // dispatch preparation. Busy-bypass sends remain exempt via the idle guard.
+  try {
+    if (maybeCompactTranscriptAtBoundary(ctx, {
+      supervising: isSupervising(),
+      auditInFlight: flags.completionAuditInFlight,
+      paused: supervisorPaused(state),
+    })) return;
+  } catch {
+    // Preventive compaction must not break the ordinary continuation path.
+  }
   try {
     let resync = "";
     // v0.33.1: a builder throw (corrupt restored state) must not masquerade

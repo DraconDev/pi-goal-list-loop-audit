@@ -110,10 +110,10 @@ export function shouldCompactBetweenTasks(input: {
  * refire) owns the next turn, so the caller skips its eager continuation
  * when this returns true. Returns false when nothing fired (or when this
  * host has no compact trigger). */
-export async function maybeCompactTranscriptAtBoundary(
+export function maybeCompactTranscriptAtBoundary(
   ctx: Pick<ExtensionContext, "cwd" | "getContextUsage" | "compact" | "ui"> & { isIdle(): boolean; hasPendingMessages(): boolean },
   flags: { supervising: boolean; auditInFlight: boolean; paused: boolean },
-): Promise<boolean> {
+): boolean {
   if (!flags.supervising || flags.auditInFlight || flags.paused) return false;
   let idle = false;
   let pending = true;

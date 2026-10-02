@@ -7,6 +7,24 @@ import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd, tick } from "./harnes
 
 afterEach(() => { __testOnlyResetCompactor(); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); });
 
+test("idle list advancement checks compaction before dispatching the next task", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "compact-next-list-item" } });
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  const g = seedGoal({ status: "active", autoContinue: true, policy: "list", objective: "next queued work — done when pinned" });
+  seedState(cwd, { goal: g }); __testOnlyLoadState(cwd); pi.sent.length = 0;
+  let compacts = 0;
+  ctx.getContextUsage = () => ({ tokens: 315_000, contextWindow: 1_000_000, percent: 31.5 });
+  ctx.compact = () => { compacts++; };
+  __testOnlySetSpawnWorker(async () => ({ ok: true, brief: "Objective: x. Next task: y." }));
+  try {
+    sendContinuation(String(g.id));
+    assert.equal(compacts, 1, "a queue advance has no new agent_end/agent_settled event to trigger compaction");
+    assert.equal(pi.sent.filter(s => (s.options as { triggerTurn?: boolean })?.triggerTurn === true).length, 0);
+  } finally { await tick(100); await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});
+
 test("busy agent_end defers the 200k trigger to agent_settled, then work resumes after compaction", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
   __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
