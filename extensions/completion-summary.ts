@@ -618,6 +618,32 @@ function restatementHead(detail: string): { lead: string; words: Set<string> } {
   return { lead, words: new Set(words.slice(0, 12)) };
 }
 
+/** Content words for cross-lead problem→action pairing (field 2026-10-02,
+ * note.md). Full body, not the restatement head window: the shared topic
+ * ("release cut") often sits at the tail of a long problem body. */
+function pairingWords(detail: string): Set<string> {
+  const body = detail.replace(/^\s*(?:Next|Unresolved)\s*:?/i, "");
+  const words = body.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/)
+    .filter((w) => w.length > 2 && !RESTATEMENT_STOPWORDS.has(w));
+  return new Set(words.slice(0, 60));
+}
+
+/** Shared-topic score for one problem/action pair. A pair needs ≥2 shared
+ * content words with at least one long (≥5 chars) token, so generic
+ * overlaps never attach an action to the wrong problem. Returns 0 when
+ * the pair must not render together. */
+function pairingScore(problem: Set<string>, action: Set<string>): number {
+  let shared = 0;
+  let longShared = 0;
+  for (const word of action) {
+    if (problem.has(word)) {
+      shared++;
+      if (word.length >= 5) longShared++;
+    }
+  }
+  return shared >= 2 && longShared >= 1 ? shared : 0;
+}
+
 /** True when `detail` restates an already-kept same-label next detail:
  * same lead, ≥2 shared head words, head-word Dice ≥ 0.5. */
 function isNextRestatement(kept: Array<{ lead: string; words: Set<string> }>, detail: string): boolean {
@@ -957,8 +983,36 @@ export function buildRichTerminalParts(args: {
     : [];
   // v0.38.55: every concrete Next renders — no cap. Unresolved and Left out
   // are change-impact facts, not a second technical next step.
+  // Field 2026-10-02 (note.md): a Next action that resolves an Unresolved
+  // problem renders inline under that problem (`→ Next:`) — the card used
+  // to state the same fact twice (problem under Remaining, its fix under
+  // Next), burying what mattered. ### Next keeps only standalone actions.
+  // Left out is decided scope, never a problem, so it never pairs. The
+  // archive machine layer keeps the verbatim recap; only this human
+  // projection pairs.
+  const unresolvedDetails = next.filter((d) => /^\s*Unresolved\s*:/i.test(d));
+  const nextDetails = next.filter((d) => /^\s*Next\s*:/i.test(d));
+  const problemWords = unresolvedDetails.map(pairingWords);
+  const pairedByProblem = new Map<number, number[]>();
+  const consumedActions = new Set<number>();
+  nextDetails.forEach((action, actionIdx) => {
+    const actionWords = pairingWords(action);
+    let best = -1;
+    let bestScore = 0;
+    problemWords.forEach((words, problemIdx) => {
+      const score = pairingScore(words, actionWords);
+      if (score > bestScore) { bestScore = score; best = problemIdx; }
+    });
+    if (best >= 0) {
+      consumedActions.add(actionIdx);
+      const list = pairedByProblem.get(best) ?? [];
+      list.push(actionIdx);
+      pairedByProblem.set(best, list);
+    }
+  });
   const nextLines: string[] = [];
-  for (const detail of next.filter((d) => !/^\s*(?:Left out|Unresolved)\s*:/i.test(d))) {
+  for (const [actionIdx, detail] of nextDetails.entries()) {
+    if (consumedActions.has(actionIdx)) continue;
     const { lead, body } = leadBody(detail);
     const [head, ...rest] = expandInlineList(body);
     nextLines.push(`- **${lead}** — ${head ?? ""}`.trimEnd());
@@ -970,6 +1024,18 @@ export function buildRichTerminalParts(args: {
     const [head, ...rest] = expandInlineList(body);
     remainingLines.push(`- **${lead}** — ${head ?? ""}`.trimEnd());
     remainingLines.push(...rest);
+    if (/^\s*Unresolved\s*:/i.test(detail)) {
+      // Paired actions relocate verbatim (the ### Next rendering, moved
+      // under their problem) — pairing is co-location, not re-voicing.
+      const problemIdx = unresolvedDetails.indexOf(detail);
+      for (const actionIdx of pairedByProblem.get(problemIdx) ?? []) {
+        const actionDetail = nextDetails[actionIdx] ?? "";
+        const { lead: actionLead, body: actionBody } = leadBody(actionDetail);
+        const [actionHead, ...actionRest] = expandInlineList(actionBody);
+        remainingLines.push(`  → ${actionLead}: ${actionHead ?? ""}`.trimEnd());
+        remainingLines.push(...actionRest);
+      }
+    }
   }
   return {
     banner,
