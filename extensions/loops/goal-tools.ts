@@ -1435,7 +1435,9 @@ function registerAgentTools(pi: any): void {
       // NEVER engaged: pully 2026-08-01 looped 10-min stall cycles for 4h
       // (the auditor hung on an ssh/sudo verification every attempt).
       if (auditorRan && !result.error && (state.goal.auditInfraStreak ?? 0) > 0) updateGoal({ auditInfraStreak: undefined }, ctx);
-      const history = state.goal.auditHistory ?? [];
+      // A9: copy before append — same phantom-verdict hazard as the detached
+      // site (the Esc-complete updateGoal below can fail after the push).
+      const history = (state.goal.auditHistory ?? []).map((v) => ({ ...v }));
       if (auditorRan) {
         // v0.25.4: strip think-block leakage (MiniMax-M3 `</think>`
         // fragments + reasoning spillover) before anything stores or

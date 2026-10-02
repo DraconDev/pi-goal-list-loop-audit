@@ -4,6 +4,7 @@ import fs from "node:fs";
 import { appendAuditVerdict, type AuditVerdict } from "../extensions/goal-loop-core.js";
 
 const HOOKS = fs.readFileSync("extensions/loops/goal-auditor-hooks.ts", "utf-8");
+const TOOLS = fs.readFileSync("extensions/loops/goal-tools.ts", "utf-8");
 
 function verdict(overrides: Partial<AuditVerdict> = {}): AuditVerdict {
   return { at: "2026-10-02T00:00:00Z", ...overrides } as AuditVerdict;
