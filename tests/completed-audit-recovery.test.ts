@@ -385,7 +385,7 @@ test("workerless in-flight claim without a verdict parks via workerless-in-fligh
   }
 });
 
-test("auditorWorkerLiveForAttempt: only a matching live worker counts", () => {
+test("auditorWorkerLiveForAttempt: only a matching live worker counts", async () => {
   const cwd = tmpCwd(), g = goal();
   assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), false, "no job dirs, no worker");
   const saved = job(cwd, g, { result: false });
@@ -397,6 +397,7 @@ test("auditorWorkerLiveForAttempt: only a matching live worker counts", () => {
   const stub = spawnWorkerStub(cwd, saved.dir);
   try {
     if (stub.child.pid) writeWorkerLock(saved.dir, "saved-claim-physical", stub.child.pid);
+    assert.equal(await waitForWorkerStub(cwd, stub.child.pid!, saved.dir), true, "the stub is observable before the liveness check");
     assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), true, "a matching live process is a live worker");
     assert.equal(auditorWorkerLiveForAttempt(cwd, "other-claim"), false, "other attempts do not match");
   } finally { stub.cleanup(); }
@@ -413,7 +414,7 @@ test("unreadable saved transcript returns null but ledgers the reason", () => {
   assert.equal((hit[0].value as { logicalAttemptId?: string }).logicalAttemptId, "saved-claim");
 });
 
-test("workerProcessMatches darwin branch reads identity via ps", () => {
+test("workerProcessMatches darwin branch reads identity via ps", async () => {
   // The darwin branch shells to `ps -o command=`, which also exists on
   // Linux, so inject the platform to exercise it anywhere.
   const cwd = tmpCwd(), g = goal();
@@ -422,6 +423,7 @@ test("workerProcessMatches darwin branch reads identity via ps", () => {
   const stub = spawnWorkerStub(cwd, saved.dir);
   try {
     if (stub.child.pid) writeWorkerLock(saved.dir, "saved-claim-physical", stub.child.pid);
+    assert.equal(await waitForWorkerStub(cwd, stub.child.pid!, saved.dir, "darwin"), true, "the stub is observable before the identity check");
     assert.equal(workerProcessMatches(cwd, stub.child.pid!, saved.dir, "darwin"), true, "live stub matches via ps cmdline");
     const other = job(cwd, g, { name: "saved-claim-other-physical", result: false });
     if (stub.child.pid) writeWorkerLock(other.dir, "saved-claim-other-physical", stub.child.pid);
