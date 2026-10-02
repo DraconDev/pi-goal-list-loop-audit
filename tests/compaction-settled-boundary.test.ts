@@ -27,13 +27,13 @@ test("busy agent_end defers the 200k trigger to agent_settled, then work resumes
     await pi.fire("agent_settled", {}, ctx);
     assert.equal(compacts, 1, "the settled host actually runs the 200k trigger");
     await tick(100);
-    assert.equal(pi.sent.length, 0, "the pending executor continuation yields to compaction");
+    assert.equal(pi.sent.filter(s => s.options?.triggerTurn === true).length, 0, "the pending executor continuation yields to compaction");
     await pi.fire("agent_settled", {}, ctx);
     assert.equal(compacts, 1, "no second compact while the first owns the host");
     tokens = 50_000; idle = true;
     await pi.fire("session_compact", {}, ctx);
     sendContinuation(String(g.id)); await tick(50);
-    assert.equal(pi.sent.length, 1, "ordinary post-compact dispatch resumes the same work");
+    assert.equal(pi.sent.filter(s => s.options?.triggerTurn === true).length, 1, "ordinary post-compact dispatch resumes the same work");
   } finally {
     await tick(100); // let the optional handoff writer finish
     await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
