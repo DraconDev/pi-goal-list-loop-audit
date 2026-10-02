@@ -40,6 +40,7 @@ import {
   AUDIT_PLATEAU_MAX_REPRIEVES,
   GOAL_AUDIT_ONESHOT_MARKER,
   HELD_ON_RESTORE,
+  isLifecycleHeldLoopReason,
   LoopState,
   LoopTickOutcome,
   applyMeasurement,
@@ -1080,6 +1081,38 @@ interface LoopConfig {
 
 /** Shared loop-start path: /loop start AND propose_loop_draft (after Confirm). */
 async function startLoopFromConfig(ctx: ExtensionContext, cfg: LoopConfig): Promise<boolean> {
+  // A lifecycle-held loop is parked awaiting a decision, not gone — never
+  // silently replace it with a fresh start (field 2026-10-02: a held respec
+  // draft loop was discarded by a fresh /loop respec after reload; the held
+  // loop's history was lost). Explicit stops/pauses keep today's behavior:
+  // the user already decided those. Runs BEFORE the load-hold release so a
+  // cancel leaves the hold (and the held loop) untouched.
+  const held = state.loop;
+  if (held && !held.active && isLifecycleHeldLoopReason(held.stopReason)) {
+    if (!ctx.hasUI) {
+      ctx.ui.notify(`A loop is held (${displaySlice(held.target, 80)} — ${held.stopReason}); headless start refused — resume it explicitly with /loop resume.`, "warning");
+      appendLedger(ctx.cwd, "loop_fresh_start_refused_held", { target: held.target.slice(0, 120), stopReason: held.stopReason });
+      return false;
+    }
+    let choice: string | undefined;
+    try {
+      choice = await ctx.ui.select(
+        `A loop is held: ${displaySlice(held.target, 80)} (iteration ${held.iteration} — ${held.stopReason}). Resume it instead of starting fresh?`,
+        ["Resume the held loop", "Start fresh (discards the held loop)", "Cancel"],
+      );
+    } catch {
+      choice = undefined;
+    }
+    if (choice === undefined || choice === "Cancel") {
+      ctx.ui.notify("New loop cancelled; the held loop is unchanged.", "info");
+      return false;
+    }
+    if (choice.startsWith("Resume")) {
+      await cmdLoop("resume", ctx);
+      return true;
+    }
+    appendLedger(ctx.cwd, "loop_held_discarded", { target: held.target.slice(0, 120), stopReason: held.stopReason, via: "explicit-fresh-start" });
+  }
   releaseInitialSessionLoadBarrier();
   // v0.35.23 (note.md Next #2): explicitly starting a loop is the decision
   // a load hold waits for — release it or the first tick would be frozen.
