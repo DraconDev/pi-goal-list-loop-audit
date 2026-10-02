@@ -1788,11 +1788,11 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
     // resurrect them. One Confirm for the whole batch; a live child goal
     // blocks the remove instead of going out from under it.
     const cascade = queue.filter((c) => c.parentId === removed.id);
+    if (state.goal?.parentId === removed.id && state.goal.status !== "complete" && state.goal.status !== "aborted") {
+      ctx.ui.notify(`Remove refused — "${displaySlice(removed.objective, 60)}" owns the live goal. Finish or park it first.`, "warning");
+      return;
+    }
     if (cascade.length > 0) {
-      if (state.goal?.parentId === removed.id && state.goal.status !== "complete" && state.goal.status !== "aborted") {
-        ctx.ui.notify(`Remove refused — "${displaySlice(removed.objective, 60)}" owns the live goal. Finish or park it first.`, "warning");
-        return;
-      }
       let confirmed = false;
       try {
         confirmed = await ctx.ui.confirm(

@@ -581,3 +581,61 @@ test("v0.38.104 (schema pin): list_activate's `n` accepts the child-label string
   assert.match(tool, /1\.1/, "the description names the dotted child label");
   assert.match(tool, /const p = params as \{ n: number \| string \}/, "the handler types the widened parameter");
 });
+
+test("C4 (behavioral): /list remove on a group cascades to its queued children", async () => {
+  setGlobalAutoResume(false);
+  const cwd = tmpCwd();
+  // Active blocker so the add does not auto-activate a child (which would
+  // take the live-child refusal path instead of the cascade path).
+  fs.mkdirSync(path.join(cwd, ".pi-glla"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), JSON.stringify({
+    type: "state",
+    value: {
+      goal: { id: "seed-active", objective: "seeded active blocker", status: "active", policy: "goal", autoContinue: true,
+        usage: { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, cost: 0, turns: 0 },
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      list: [], loop: null,
+    },
+    at: new Date().toISOString(),
+  }) + "\n");
+  const ctx = await freshSession(cwd);
+  try {
+    await pi.command("list",
+      "add Cascade parent. Done when: foo\n" +
+      "Subtask of: Cascade parent — cascade child a. Done when: bar\n" +
+      "Subtask of: Cascade parent — cascade child b. Done when: baz",
+      ctx);
+    assert.deepEqual(visibleListPositions(readState(cwd).list ?? []).map((e) => e.label), ["1", "1.1", "1.2"], "precondition: the group is queued");
+    ctx.ui.confirmImpl = async () => true;
+    await pi.command("list", "remove 1", ctx);
+    await tick();
+    assert.deepEqual(readState(cwd).list ?? [], [], "no orphaned children stay queued");
+    assert.deepEqual(fs.readdirSync(dir(cwd)).filter((n) => n.endsWith(".queue.json")), [], "children sidecars cannot resurrect them");
+    const removed = readLedger(cwd).find((e) => e.type === "list_removed");
+    assert.deepEqual((removed?.value.cascaded as string[] ?? []).length, 2, "the cascade is ledgered");
+  } finally {
+    await pi.fire("session_shutdown", { reason: "quit" }, ctx);
+  }
+});
+
+test("C4 (behavioral): /list remove on a group with a live child is refused", async () => {
+  setGlobalAutoResume(false);
+  const cwd = tmpCwd();
+  const ctx = await freshSession(cwd);
+  try {
+    // No blocker: the add auto-activates the first child, so the group
+    // owns the live goal.
+    await pi.command("list",
+      "add Live parent. Done when: foo\n" +
+      "Subtask of: Live parent — live child. Done when: bar",
+      ctx);
+    await tick();
+    assert.ok(readState(cwd).goal?.parentId, "precondition: a child is the live goal");
+    await pi.command("list", "remove 1", ctx);
+    await tick();
+    assert.equal((readState(cwd).list ?? []).length, 1, "the group stays queued");
+    assert.ok(ctx.ui.notifies.some((n) => n.message.includes("owns the live goal")), "the refusal names the live child");
+  } finally {
+    await pi.fire("session_shutdown", { reason: "quit" }, ctx);
+  }
+});
