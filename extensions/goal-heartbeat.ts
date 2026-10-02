@@ -1396,7 +1396,7 @@ function heartbeatTick(): void {
   let staleWorkerlessInFlight = false;
   try {
     staleWorkerlessInFlight = !!knownCtx
-      && Date.now() - flags.lastActivityAt >= 90_000
+      && strandedQuietMs() >= 90_000
       && !!state.goal?.pendingCompletion?.attemptId
       && flags.completionAuditInFlight
       && !auditorWorkerLiveForAttempt(knownCtx.cwd, state.goal.pendingCompletion.attemptId);
@@ -1407,7 +1407,7 @@ function heartbeatTick(): void {
     state.goal?.status === "auditing" &&
     (!flags.completionAuditInFlight || staleWorkerlessInFlight) &&
     state.goal.pendingCompletion &&
-    Date.now() - flags.lastActivityAt >= 90_000
+    strandedQuietMs() >= 90_000
   ) {
     // The retained context is probe-only after a stale terminal. Never use it
     // for state/UI mutation: a stale ctx can throw halfway through the park.
@@ -1734,13 +1734,13 @@ function heartbeatTick(): void {
   // Gate the filesystem liveness probe on the same grace as the recovery:
   // a healthy dispatch creates its job dir in milliseconds, so probing on
   // every 15s tick while activity is fresh would only tax healthy audits.
-  const strandedQuietMs = state.goal?.status === "auditing" ? Date.now() - flags.lastActivityAt : 0;
-  const strandedWorkerlessInFlight = strandedQuietMs >= 90_000 && !!strandedClaim?.attemptId && flags.completionAuditInFlight
+  const strandedSilentMs = state.goal?.status === "auditing" ? strandedQuietMs() : 0;
+  const strandedWorkerlessInFlight = strandedSilentMs >= 90_000 && !!strandedClaim?.attemptId && flags.completionAuditInFlight
     && !auditorWorkerLiveForAttempt(ctx.cwd, strandedClaim.attemptId);
   if (
     state.goal?.status === "auditing" &&
     (!flags.completionAuditInFlight || strandedWorkerlessInFlight) &&
-    strandedQuietMs >= 90_000
+    strandedSilentMs >= 90_000
   ) {
     // The retry-armed flag is not ownership: a dropped first attempt can
     // leave it false forever. Reconcile the exact saved verdict before
