@@ -75,7 +75,6 @@ test("fresh start over a held loop: dismiss keeps the held loop untouched", asyn
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
   seedState(cwd, { loop: seedLoop({ active: false, stopReason: HELD_ON_RESTORE, target: "held respec draft", iteration: 7 }) });
   const ctx = await boot(pi, cwd);
-  __testOnlyLoadState(cwd);
   ctx.ui.selectImpl = async () => undefined;
   try {
     await pi.command("loop", "start fresh target", ctx);
