@@ -133,6 +133,27 @@ test("sticky handoff: marker one turn, finished spec the next, still reconciles"
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
 
+test("draft prompt carries the stuck-ladder intervention note", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-intervention" } });
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  try {
+    await pi.command("loop", "respec", ctx); await tick(100);
+    // Simulate a stuck rung reached during drafting.
+    const st = readState(cwd);
+    seedState(cwd, { goal: null, loop: { ...st.loop!, auditReprieveNote: "INTERVENTION-PROBE: vary the coverage strategy" } });
+    __testOnlyLoadState(cwd);
+    pi.sent.length = 0;
+    const turn = (text: string) => ({ messages: [{ role: "assistant", content: [{ type: "text", text }] }] });
+    await runLoopTick(ctx as unknown as ExtensionContext, turn("Researching."));
+    await tick(150);
+    clearLoopTimer();
+    const draft = pi.sent.find(s => s.message.content?.includes("[RESPEC BIG DRAFT]"));
+    assert.ok(draft, "draft dispatched");
+    assert.ok(draft.message.content?.includes("INTERVENTION-PROBE"), "intervention survives into the draft prompt");
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});
+
 test("draft phase without a spec file degrades instead of throwing", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-corrupt" } });
