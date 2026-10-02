@@ -577,17 +577,25 @@ export function respecNeedsDraftPhase(loop: LoopState): boolean {
     && loop.target.startsWith(`No ${loop.specFile.split(/[\\/]/).pop()} exists yet — phase 1 is the big draft:`));
 }
 
-/** A file alone may be an incremental draft. Require the explicit end-of-turn
- * handoff and a nonempty Rules section before the orchestrator changes phase.
+/** Structural completeness for a respec spec: a top-level title, a nonempty
+ * `## Rules` section, and at least one other `##` section. Used both to gate
+ * the draft→reconcile handoff (with the explicit marker) and to decide
+ * whether an existing spec file is worth reconciling against (without it).
  * This is a structural gate, not proof that the draft is comprehensive. */
-export function respecDraftReady(specFile: string, assistantText: string): boolean {
-  if (!/^\[RESPEC DRAFT COMPLETE\]\s*$/m.test(assistantText)) return false;
+export function respecSpecComplete(specFile: string): boolean {
   try {
     const text = readFileSync(specFile, "utf8");
     const rules = text.match(/^## Rules[^\S\r\n]*\r?\n([\s\S]*?)(?=^#{1,2}\s|$(?![\s\S]))/m)?.[1];
     return /^#\s+\S/m.test(text) && !!rules?.trim()
       && [...text.matchAll(/^##\s+(.+)$/gm)].some(m => m[1]!.trim() !== "Rules");
   } catch { return false; }
+}
+
+/** A file alone may be an incremental draft. Require the explicit end-of-turn
+ * handoff plus structural completeness before the orchestrator changes phase. */
+export function respecDraftReady(specFile: string, assistantText: string): boolean {
+  if (!/^\[RESPEC DRAFT COMPLETE\]\s*$/m.test(assistantText)) return false;
+  return respecSpecComplete(specFile);
 }
 
 // ---- /loop audit (v0.29.0) ----
