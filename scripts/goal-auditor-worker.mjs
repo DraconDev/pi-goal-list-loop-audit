@@ -771,6 +771,16 @@ async function main() {
     if (finalized || abandoning) return;
     abandoning = true;
     try {
+      // A5: the abandoned round-2 prose is falsification evidence — a
+      // challenge that wrote objections but no verdict line must not
+      // vanish silently. Preserve it (bounded) beside the result; the
+      // published output below stays byte-exact round-1.
+      try {
+        const abandoned = outputParts.slice(round1EndParts).join("").slice(0, 8000);
+        if (abandoned.trim()) {
+          await writeFile(path.join(jobDir, "challenge-abandoned.md"), abandoned, { encoding: "utf8", mode: 0o600 });
+        }
+      } catch { /* evidence is best-effort; the verdict path owns failure */ }
       // Byte-exact fallback: the published output is indistinguishable from
       // a run where the challenge never happened. recentOutput (bounded
       // display telemetry) is intentionally not rewound.
