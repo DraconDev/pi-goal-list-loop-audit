@@ -2015,6 +2015,28 @@ test("main-model recovery manual hold does not claim a non-quota block", () => {
   assert.doesNotMatch(status, /action needed/);
 });
 
+test("blocked card carries one directive: timer names itself, otherwise resume", () => {
+  // With a pending retry timer nothing is needed from the user, so the
+  // chip must not say "action needed"; without one, both banner and chip
+  // agree the action is resume (never a phantom "manual action").
+  const timed = {
+    goal: goalOf({ status: "paused", pauseKind: "blocked", pauseReason: "provider 429", pauseResumeAt: new Date(NOW + 5 * 60_000).toISOString() }),
+    list: [], loop: null,
+  };
+  const timedStatus = buildStatusText(timed as never, null, NOW)!;
+  assert.doesNotMatch(timedStatus, /action needed/, `timer pending, no action needed:\n${timedStatus}`);
+  assert.match(timedStatus, /⏸ (auto-retry|auto-continue) in /, `chip names the timer:\n${timedStatus}`);
+  const manual = {
+    goal: goalOf({ status: "paused", pauseKind: "blocked", pauseReason: "provider 429" }),
+    list: [], loop: null,
+  };
+  const manualCard = buildWidgetLines(manual as never, null, NOW)!.join("\n");
+  assert.match(manualCard, /blocked — resume to continue/, `banner names resume:\n${manualCard}`);
+  assert.doesNotMatch(manualCard, /waiting for manual action/, `no phantom manual action:\n${manualCard}`);
+  const manualStatus = buildStatusText(manual as never, null, NOW)!;
+  assert.match(manualStatus, /⏸ action needed/, `chipless timer keeps action needed:\n${manualStatus}`);
+});
+
 test("v0.34.51: a passed quota resumeAt says resuming…, never the old 'retrying now'", () => {
   // v0.38.31: "resuming…" is grace-bounded (field 2026-09-08 180721 — an
   // hour-overdue retry claimed "resuming now" forever on a held host). A
