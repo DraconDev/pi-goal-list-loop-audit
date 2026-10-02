@@ -1370,7 +1370,7 @@ function heartbeatTick(): void {
         return;
       }
       // The recovery projection landed — only now claim it in the ledger.
-      appendLedger(current.cwd, "stranded_audit_recovered", { goalId: state.goal.id, via: "stale-latch" });
+      appendLedger(current.cwd, "stranded_audit_recovered", { goalId: state.goal.id, via: staleWorkerlessInFlight ? "stale-latch-workerless" : "stale-latch" });
       try {
         current.ui.notify(`Completion audit blocked — no verdict (stale session). The stored claim is safe; ${activeGoalSurfaceCommand("resume")} starts exactly one fresh auditor.`, "warning");
       } catch {
@@ -1389,7 +1389,7 @@ function heartbeatTick(): void {
       // no durable recovery projection landed; do not claim the claim is safe.
       return;
     }
-    appendLedger(cwd, "stranded_audit_recovered", { goalId: state.goal.id, via: "stale-latch" });
+    appendLedger(cwd, "stranded_audit_recovered", { goalId: state.goal.id, via: staleWorkerlessInFlight ? "stale-latch-workerless" : "stale-latch" });
     return;
   }
   const rawApiStale = probeExtensionApiStaleRaw();
