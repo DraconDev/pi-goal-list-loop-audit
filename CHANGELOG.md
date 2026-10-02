@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Auditor recovery: dead cursor no longer poisons the next attempt
+
+- Parking a workerless completion claim now drops the dead attempt's
+  auditor cursor (candidate/attempted refs). Field 2026-10-02: the next
+  session-recovery inherited the dead refs, so the model walker found
+  every candidate already tried and exhausted in milliseconds with "no
+  auditor model" — consuming the one-shot auto retry and parking again
+  until a manual resume. Recovery now re-walks instead.
+- Verdict reconcile names its rejecting gate in the ledger
+  (`completed_audit_recovery_rejected` with the gate: request-identity,
+  result-revision, no-verdict, …). A complete on-disk verdict that
+  recovery refuses is now a readable cause instead of a silent null.
+
 ## 0.38.108 — full-audit fixes plus held-loop protection (2026-10-02)
 
 ### Held loop is never silently discarded
