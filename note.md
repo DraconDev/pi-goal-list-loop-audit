@@ -11,6 +11,7 @@ we did a draft but didnt start looping
 here it seems active but only becuase i started after respec was called complete
 
 /home/dracon/Pictures/Screenshots/Screenshot_20261002_134626.png
+/home/dracon/Pictures/Screenshots/Screenshot_20261002_135517.png
 
 
 ##
