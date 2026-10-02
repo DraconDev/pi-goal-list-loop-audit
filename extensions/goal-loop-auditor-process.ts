@@ -1797,7 +1797,7 @@ function stampToken<T extends GoalAuditorResult>(result: T, capturedToken: GoalR
 }
 
 /** Apply the same verdict, tool, challenge, and evidence gates to live and saved results. */
-function validateCompletedAuditorResult(args: {
+export function validateCompletedAuditorResult(args: {
   result: AuditorResultFile;
   goal: Goal;
   model: string;
