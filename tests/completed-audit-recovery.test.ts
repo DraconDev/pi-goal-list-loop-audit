@@ -239,3 +239,43 @@ test("second audit pass remains visible through thinking, tools, and report gene
     assert.match(buildStatusText(state, progress, now) ?? "", /second audit pass/);
   }
 });
+
+test("days-old auditing orphan with a saved verdict recovers via heartbeat (SEO field case)", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+  const g = goal();
+  // Field 2026-10-02: auditing/running since Sept 25, worker and owner PIDs
+  // dead, completed disapproved result on disk. Age must not block recovery.
+  const weekAgo = Date.now() - 7 * 86_400_000;
+  g.pendingCompletion = { ...g.pendingCompletion!, at: new Date(weekAgo).toISOString(), lastActivityAt: new Date(weekAgo).toISOString() };
+  seedState(cwd, { goal: g });
+  job(cwd, g, { at: weekAgo + 482_132, output: "<evidence>\nartifact inspected\n</evidence>\n<disapproved/>" });
+  __testOnlyLoadState(cwd);
+  __testOnlySetLastActivityAt(weekAgo);
+  try {
+    __testOnlyHeartbeatTick(); await tick(120);
+    const restored = readState(cwd).goal;
+    assert.notEqual(restored?.status, "auditing", "a week-old orphan cannot remain auditing");
+    assert.equal(restored?.auditHistory?.at(-1)?.disapproved, true, "saved disapproval reaches history");
+    assert.equal(events(cwd).filter(e => e.type === "audit_completed_result_recovered").length, 1);
+    assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0, "heartbeat never launches another worker");
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});
+
+test("auditing claim stuck in starting with no worker parks for recovery via heartbeat", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+  const g = goal();
+  // Crash inside the launch window: phase starting, no lastActivityAt (no
+  // worker event ever arrived), no job dir, no in-flight owner.
+  g.pendingCompletion = { ...g.pendingCompletion!, phase: "starting", lastActivityAt: undefined };
+  seedState(cwd, { goal: g });
+  __testOnlyLoadState(cwd);
+  __testOnlySetLastActivityAt(Date.now() - 100_000);
+  try {
+    __testOnlyHeartbeatTick(); await tick(120);
+    const restored = readState(cwd).goal;
+    assert.equal(restored?.status, "paused", "a workerless starting claim parks");
+    assert.equal(restored?.pendingCompletion?.phase, "recovery-pending");
+    assert.equal(restored?.pauseKind, "blocked");
+    assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0);
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});
