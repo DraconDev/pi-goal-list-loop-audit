@@ -306,6 +306,31 @@ test("workerless in-flight claim with a saved verdict reconciles without launchi
   }
 });
 
+test("S5: workerless in-flight claim parks under the stale latch via stale-latch-workerless", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+  const g = goal();
+  g.pendingCompletion = { ...g.pendingCompletion!, phase: "starting" };
+  seedState(cwd, { goal: g });
+  // No job dir: the launch never created one — workerless. The stale latch
+  // must not mask that: the park still lands, attributed to the latch.
+  __testOnlyLoadState(cwd);
+  __testOnlySetLastActivityAt(Date.now() - 100_000);
+  invalidateHostSession(pi, ctx);
+  const runtime = globalThis as typeof globalThis & { completionAuditInFlight: boolean };
+  runtime.completionAuditInFlight = true;
+  try {
+    __testOnlyHeartbeatTick(); await tick(120);
+    const restored = readState(cwd).goal;
+    assert.equal(restored?.status, "paused");
+    assert.equal(restored?.pendingCompletion?.phase, "recovery-pending");
+    assert.ok(events(cwd).some(e => e.type === "stranded_audit_recovered" && (e.value as { via?: string }).via === "stale-latch-workerless"));
+    assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0);
+  } finally {
+    runtime.completionAuditInFlight = false;
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});
+
 test("workerless in-flight claim without a verdict parks via workerless-in-flight", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
   // Field 2026-10-02 (clean-web): auditing/starting, in-flight latched, but

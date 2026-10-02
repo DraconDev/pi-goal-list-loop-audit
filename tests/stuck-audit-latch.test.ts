@@ -46,7 +46,7 @@ test("Fix B: the stale-latch stranded park runs BEFORE the extensionApiStale ear
   const parked = HB.indexOf("stranded_audit_recovered");
   assert.ok(staleBranch > 0 && parked > 0, "both branches exist");
   assert.ok(parked < staleBranch, "the stale-latch park is ordered BEFORE the stale probe branch — the backstop is reachable while latched");
-  assert.match(HB, /via: "stale-latch"/, "the park is attributed to the stale latch");
+  assert.match(HB, /via: staleWorkerlessInFlight \? "stale-latch-workerless" : "stale-latch"/, "the park is attributed to the stale latch, naming workerless (S5)");
   assert.match(HB, /const current = freshCtx\(\);/, "the retained stale context is not used for mutation");
   assert.match(HB, /if \(!markCompletionAuditRecoveryPending\(current, "stale-latch-recovery"\)\)/, "fresh-context success is checked before the safe-claim notice");
   assert.match(HB, /if \(!parkCompletionAuditRecovery\(cwd, "stale-latch-recovery"\)\)/, "the context-free fallback reports persistence failure honestly");
