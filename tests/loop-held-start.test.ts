@@ -58,7 +58,6 @@ test("fresh start over a held loop offers resume and preserves the loop", async 
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
   seedState(cwd, { loop: seedLoop({ active: false, stopReason: HELD_ON_RESTORE, target: "held respec draft", iteration: 7, respecPhase: "draft", specFile: "SPEC.md" }) });
   const ctx = await boot(pi, cwd);
-  __testOnlyLoadState(cwd);
   ctx.ui.selectImpl = async (_title, options) => options.find((o) => o.startsWith("Resume"));
   try {
     await pi.command("loop", "start fresh target", ctx);
