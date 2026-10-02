@@ -3198,6 +3198,24 @@ async function handleHotLengthExhaustion(
     if (tryAbsorbHostSuccessor(ctx, "agent_settled")) return;
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(ctx)) return;
     replayApprovalSummariesOnContact(ctx);
+    // agent_end is emitted while Pi's run still owns the host. Its idle
+    // guard can therefore skip the 200k check on every turn. Recheck at
+    // the actual settled boundary before the queued continuation starts.
+    if (!abortedStandDown && !mainModelRecoveryActive()) {
+      try {
+        if (await maybeCompactTranscriptAtBoundary(ctx, {
+          supervising: isSupervising(),
+          auditInFlight: completionAuditInFlight,
+          paused: supervisorPaused(state),
+        })) {
+          clearContinuationTimer();
+          if (isLoopActive()) clearLoopTimer();
+          return;
+        }
+      } catch {
+        // A failed preventive check must not break the settled recovery path.
+      }
+    }
     if (!state.mainModelRecovery || state.mainModelRecovery.retryAt || !lastMainModelFailure) return;
     if (!isSupervising()) return;
     lastMainModelFailure = null;
