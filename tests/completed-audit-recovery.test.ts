@@ -418,3 +418,23 @@ test("auditing claim stuck in starting with no worker parks for recovery via hea
     assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0);
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
+
+test("S7: stranded recovery measures real activity, not the heartbeat's own refire notes", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+  const g = goal();
+  g.pendingCompletion = { ...g.pendingCompletion!, phase: "starting" };
+  seedState(cwd, { goal: g });
+  __testOnlyLoadState(cwd);
+  // A refire just noted activity (the OLD stranded clock reads fresh), but
+  // no REAL turn has run for 100s — the audit is genuinely stranded.
+  __testOnlySetLastActivityAt(Date.now());
+  __testOnlySetLastRealActivityAt(Date.now() - 100_000);
+  try {
+    __testOnlyHeartbeatTick(); await tick(120);
+    const restored = readState(cwd).goal;
+    assert.equal(restored?.status, "paused", "stranded claim parks despite the fresh refire note");
+    assert.equal(restored?.pendingCompletion?.phase, "recovery-pending");
+    assert.ok(events(cwd).some(e => e.type === "stranded_audit_recovered" && (e.value as { via?: string }).via === "stored-claim"));
+    assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0);
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});
