@@ -59,7 +59,9 @@ test("configured target reaches the actual trigger, idle guard, and hysteresis",
   ctx.isIdle = () => idle;
   ctx.compact = () => { compacts++; };
   __testOnlySetSpawnWorker(async () => ({ ok: true, brief: "Objective: test. Next task: verify." }));
-  saveSettings("global", cwd, { compactionTokenThreshold: 300_000 });
+  ctx.ui.inputImpl = async () => "300k";
+  await handleSettingChoice("compactionTokenThreshold", asHost(ctx));
+  assert.equal(compacts, 0, "editing the target never compacts immediately");
   const flags = { supervising: true, auditInFlight: false, paused: false };
   assert.equal(maybeCompactTranscriptAtBoundary(asHost(ctx), flags), false, "250k is below the chosen 300k target");
   tokens = 320_000; idle = false;
