@@ -8,6 +8,8 @@
 /home/dracon/Pictures/Screenshots/Screenshot_20261002_132826.png
 we did a draft but didnt start looping
 
+here it seems active but only becuase i started after respec was called complete
+
 ##
 we need to update the readme we are far more free flowing 
 
