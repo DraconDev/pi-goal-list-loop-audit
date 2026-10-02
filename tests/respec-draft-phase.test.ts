@@ -133,6 +133,26 @@ test("sticky handoff: marker one turn, finished spec the next, still reconciles"
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
 
+test("draft phase without a spec file degrades instead of throwing", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-corrupt" } });
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  try {
+    // Corrupt/hand-migrated state: draft phase but no specFile.
+    seedState(cwd, { goal: null, loop: { target: "Draft the comprehensive SPEC.md", specFile: undefined, respecPhase: "draft",
+      active: true, iteration: 3, maxIterations: 0, plateauWindow: 5, stallCount: 0,
+      bestValue: null, lastValue: null, history: [], startedAt: new Date().toISOString() } });
+    __testOnlyLoadState(cwd);
+    pi.sent.length = 0;
+    const turn = (text: string) => ({ messages: [{ role: "assistant", content: [{ type: "text", text }] }] });
+    await runLoopTick(ctx as unknown as ExtensionContext, turn("Working."));
+    await tick(150);
+    clearLoopTimer();
+    assert.ok(pi.sent.length > 0, "dispatch still fires");
+    assert.ok(pi.sent.every(s => !s.message.content?.includes("[RESPEC BIG DRAFT]")), "no draft prompt without a target file");
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});
+
 test("respecSpecComplete: title plus nonempty Rules plus another section", () => {
   const dir = tmpCwd(), file = path.join(dir, "SPEC.md");
   assert.equal(respecSpecComplete(file), false, "missing file is incomplete");
