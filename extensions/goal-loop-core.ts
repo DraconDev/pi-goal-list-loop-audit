@@ -1933,6 +1933,8 @@ export function countTrailingRepeatedDisapprovals(history: AuditVerdict[]): numb
  * "big goal" threshold — real research/feature goals legitimately burn 2-4M.
  * Loop 3 doesn't rely on this cap (it has max-iterations + plateau brakes). */
 export const DEFAULT_TOKEN_LIMIT = 0; // 0 = opt-in guard, off by default (v0.12.0)
+/** Context token target for compaction at the next safe idle boundary. */
+export const DEFAULT_COMPACTION_TOKEN_THRESHOLD = 200_000;
 
 export const DEFAULT_STATE: State = {
   goal: null,

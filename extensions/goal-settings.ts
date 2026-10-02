@@ -21,6 +21,7 @@ import { globalSettingsPath, stateRootPending } from "./glla-state-root.js";
 
 import {
   DEFAULT_AUDIT_FEEDBACK_CHARS,
+  DEFAULT_COMPACTION_TOKEN_THRESHOLD,
   DEFAULT_FORBIDDEN_MODELS,
   mergeSettings,
   piGlaDir,
@@ -91,6 +92,8 @@ export interface Settings {
   compactorModel?: string;
   /** Global-only ordered emergency-compactor fallback agents; walked exactly like Main/drafter/auditor. No session last resort. */
   compactorModelFallbacks?: string[];
+  /** Global-only positive context-token target; compact opportunistically when idle. */
+  compactionTokenThreshold?: number;
   /** v0.34.115: per-subagent fallback chains. Keyed by current pi-subagents
    * role name (scout, researcher, worker, reviewer, oracle, delegate, …). When set, the subagent sync uses
    * the FIRST eligible ref in the chain via ModelSelector.selectNextValid;
@@ -346,6 +349,7 @@ export const GLOBAL_ONLY_KEYS: ReadonlySet<keyof Settings> = new Set([
   "drafterModelFallbacks",
   "compactorModel",
   "compactorModelFallbacks",
+  "compactionTokenThreshold",
   "auditorModelFallbacks",
   "auditorToolTimeoutMs",
   "auditorStallMs",
@@ -377,6 +381,7 @@ export const DEFAULT_SETTINGS: Settings = {
   // Unset = inherit the session thinking level while the temporary drafter
   // agent is active; the original session level is restored afterward.
   drafterThinkingLevel: undefined,
+  compactionTokenThreshold: DEFAULT_COMPACTION_TOKEN_THRESHOLD,
   // v0.36.0: the default is the fully isolated auditor — no extension is
   // loaded unless the user explicitly allow-lists it (GitHub issue:
   // extension-based model providers otherwise cannot run in the detached
@@ -466,6 +471,9 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   settings.mainModelFallbacks = normalizeMainModelFallbackRefs(settings.mainModelFallbacks);
   settings.drafterModelFallbacks = normalizeMainModelFallbackRefs(settings.drafterModelFallbacks);
   settings.compactorModelFallbacks = normalizeMainModelFallbackRefs(settings.compactorModelFallbacks);
+  if (!Number.isSafeInteger(settings.compactionTokenThreshold) || (settings.compactionTokenThreshold ?? 0) <= 0) {
+    delete settings.compactionTokenThreshold;
+  }
   settings.auditorModelFallbacks = normalizeMainModelFallbackRefs(settings.auditorModelFallbacks);
   // v0.35.115 parity: subagent fallback chains use the same bounded,
   // case-insensitive dedup as the main chain so ordering/fallback
@@ -749,6 +757,7 @@ export const SETTINGS_KEYS: Array<keyof Settings> = [
   "drafterModelFallbacks",
   "compactorModel",
   "compactorModelFallbacks",
+  "compactionTokenThreshold",
   "mainModelRetryMinutes",
   "mainModelFailback",
   "mainModelPrimaryProbeMinutes",

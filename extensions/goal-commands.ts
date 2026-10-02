@@ -3259,6 +3259,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
       // Audit 2026-09-06: the headless fallback omitted these — headless
       // operators could not see the compactor chain or display richness.
       fmt("compactorModel", "compactorModel"),
+      fmt("compactionTokenThreshold", "compactionTokenThreshold (tokens; next idle boundary)"),
       `compactorModelFallbacks: ${formatMainModelFallbacks(effectiveSettings.compactorModelFallbacks)}  [${prov.compactorModelFallbacks?.source ?? "default"}]`,
       fmt("subagentDisplayRichness", "subagentDisplayRichness"),
       // Audit 2026-09-15: the headless fallback omitted this — headless

@@ -32,6 +32,7 @@ import {
 import {
   AUDIT_CAP_HARD_DEFAULT,
   DEFAULT_AUDIT_FEEDBACK_CHARS,
+  DEFAULT_COMPACTION_TOKEN_THRESHOLD,
   DEFAULT_STALL_ESCALATION_REFIRES,
   resolveEffectiveAggressiveSettings,
 } from "./goal-loop-core.ts";
@@ -349,6 +350,14 @@ export function buildSettingsRows(
 
   // ── Compactor (v0.38.10) ──
   rows.push(
+    {
+      id: "compactionTokenThreshold",
+      section: "compactor",
+      label: "Compaction token target",
+      valueText: `${(settings.compactionTokenThreshold ?? DEFAULT_COMPACTION_TOKEN_THRESHOLD).toLocaleString("en-US")} tokens · next idle boundary`,
+      sourceText: src("compactionTokenThreshold"),
+      description: "global context-token target; above it, compact opportunistically between work turns or list items, with no tool or audit running; work resumes afterward",
+    },
     {
       id: "compactorModel",
       section: "compactor",

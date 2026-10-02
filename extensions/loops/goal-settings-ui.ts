@@ -53,6 +53,7 @@ import {
   DEFAULT_AUDIT_FEEDBACK_CHARS,
   DEFAULT_STALL_ESCALATION_REFIRES,
   DEFAULT_TOKEN_LIMIT,
+  DEFAULT_COMPACTION_TOKEN_THRESHOLD,
   classifyImpossibleReason,
   extractPendingTasks,
   isFullAuditObjective,
@@ -1396,6 +1397,29 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (refs === undefined) return;
       saveSettings("global", ctx.cwd, { drafterModelFallbacks: refs.length ? refs : undefined });
       ctx.ui.notify(refs.length ? `Drafter fallback models saved: ${refs.join(" → ")}.` : "Drafter fallback models cleared — the session model remains the last resort.", "info");
+      return;
+    }
+    case "compactionTokenThreshold": {
+      const current = loadGlobalSettings().compactionTokenThreshold ?? DEFAULT_COMPACTION_TOKEN_THRESHOLD;
+      const input = await ctx.ui.input(
+        `Compaction token target (e.g. 200000 or 200k; empty = default ${DEFAULT_COMPACTION_TOKEN_THRESHOLD}). Waits for an idle boundary; never interrupts a tool or audit.`,
+        String(current),
+      );
+      if (input === undefined) return;
+      const raw = input.trim().toLowerCase();
+      if (!raw) {
+        saveSettings("global", ctx.cwd, { compactionTokenThreshold: undefined });
+        ctx.ui.notify(`Compaction token target reset to ${DEFAULT_COMPACTION_TOKEN_THRESHOLD.toLocaleString("en-US")} tokens; compact at the next safe idle boundary.`, "info");
+        return;
+      }
+      const match = /^(\d+(?:,\d{3})*)([km])?$/.exec(raw);
+      const tokens = match ? Number(match[1].replace(/,/g, "")) * (match[2] === "k" ? 1000 : match[2] === "m" ? 1_000_000 : 1) : NaN;
+      if (!Number.isSafeInteger(tokens) || tokens <= 0) {
+        ctx.ui.notify("Enter a positive whole token count, such as 200000 or 200k, or leave empty to restore the default.", "warning");
+        return;
+      }
+      saveSettings("global", ctx.cwd, { compactionTokenThreshold: tokens });
+      ctx.ui.notify(`Compaction token target: ${tokens.toLocaleString("en-US")} tokens. Compaction becomes due above this target and waits for the next safe idle boundary.`, "info");
       return;
     }
     case "compactorModel": {

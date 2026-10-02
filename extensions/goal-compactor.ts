@@ -19,6 +19,7 @@ import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 import {
   appendLedger,
+  DEFAULT_COMPACTION_TOKEN_THRESHOLD,
   auditVerdictLabel,
   findNextPendingTask,
   ledgerPath,
@@ -68,7 +69,7 @@ export const PLAN_B_FALLBACK_NEED = 200_000;
  *
  * It fires BETWEEN tasks, at a moment with no half-finished tool call and no
  * in-flight audit, which is the cheapest compaction there is. */
-export const GOAL_COMPACT_TOKEN_THRESHOLD = 200_000;
+export const GOAL_COMPACT_TOKEN_THRESHOLD = DEFAULT_COMPACTION_TOKEN_THRESHOLD;
 
 /** v0.38.104: pure decision for the between-tasks compaction.
  *
@@ -133,6 +134,7 @@ export function maybeCompactTranscriptAtBoundary(
     return false;
   }
   if (tokens === undefined) return false;
+  const threshold = loadGlobalSettings().compactionTokenThreshold ?? GOAL_COMPACT_TOKEN_THRESHOLD;
   const markerPath = compactorBoundaryMarkerPath(ctx.cwd);
   let alreadyFired = false;
   try {
@@ -143,7 +145,7 @@ export function maybeCompactTranscriptAtBoundary(
   if (alreadyFired) {
     // Hysteresis re-arm: the transcript genuinely shrank (compaction
     // landed), so the next growth episode may fire again.
-    if (tokens < GOAL_COMPACT_TOKEN_THRESHOLD / 2) {
+    if (tokens < threshold / 2) {
       try {
         fs.rmSync(markerPath, { force: true });
       } catch {
@@ -152,7 +154,7 @@ export function maybeCompactTranscriptAtBoundary(
     }
     return false;
   }
-  const decision = shouldCompactBetweenTasks({ tokens, alreadyFired: false });
+  const decision = shouldCompactBetweenTasks({ tokens, threshold, alreadyFired: false });
   if (!decision.compact) return false;
   if (typeof (ctx as { compact?: unknown }).compact !== "function") {
     try {
