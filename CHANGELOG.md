@@ -2,6 +2,40 @@
 
 ## Unreleased
 
+### Full-audit implementation pass (2026-10-02 tasklist)
+
+- Stranded-audit recovery now measures real agent activity instead of the
+  heartbeat's own refire notes, so refires landing inside the 90s window
+  can no longer push a genuinely stranded audit's recovery out (S7).
+- The overdue-wait backstop proves its park-clear landed before latching
+  or ledgering, and the probe route releases the latch at settle when
+  the same wait is still parked — a failed write or a no-op probe stays
+  retriable instead of parking the wait forever (S9).
+- Unhealable goal-mode corruption now notifies the true cause instead of
+  falling through to a misleading surface refusal (S10).
+- The objective-conflict retry no longer re-prompts after an explicit
+  cancel or declined confirm (C7).
+- `/review <id>` with an ambiguous substring refuses with the candidate
+  list instead of silently reviewing the first filesystem match (C8).
+- A settings save refused by the stale-session probe now fails loudly
+  through the menu's NOT-saved report instead of claiming "saved" (C9).
+- Hand-edited settings values that normalize away are ledgered as
+  `settings_invalid_ignored` (once per distinct value; no per-tick spam),
+  so a dead value is visible instead of silently degraded (C10).
+- The audit-history push path copies before appending at both the
+  detached and inline/Esc sites, so a failed write can no longer leave
+  phantom verdicts in RAM (A9).
+- Downgraded with traces (no change): the stale-continuation rearm
+  ordering (S8 — every consume site schedules or is already scheduled),
+  IDLE/BUSY freshness (D9 — decided: the card head owns liveness),
+  `verificationIncomplete` lifetime (A6 — attempt-scoped by the worker
+  child process; fail-closed kept), and mid-tick rebind vs the respec
+  handoff (L3 — dead mechanism: the rebind sits sync-immediately before
+  the write).
+- Terminal-recap sanitization audit: approval-chat lines and the counts
+  line now sanitize at their own trust boundary, and the manual-path
+  inspection-session extras route through the shared quoted builder (D7).
+
 ### Respec drafting phase and legacy audit recovery
 
 - Missing-spec `/loop respec` now enters a persisted big-draft phase with a
