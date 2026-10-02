@@ -1116,6 +1116,10 @@ export async function updateWholeObjectiveFromConflict(
 ): Promise<boolean> {
   const options: ConflictTweakOptions = mode === "list" ? { allowLiveList: true } : {};
   if (await cmdTweak(objective, ctx, mode, options)) return true;
+  // C7: an explicit user no (cancelled input, declined confirm) ends the
+  // whole-objective update — the retry below launches an interactive input
+  // prompt, which must never re-prompt after the user already refused.
+  if (options.cancelled) return false;
   for (let attempt = 1; attempt <= 2; attempt++) {
     appendLedger(ctx.cwd, "objective_conflict_update_retry", {
       mode,
@@ -1123,6 +1127,7 @@ export async function updateWholeObjectiveFromConflict(
       wholeObjective: true,
     });
     if (await cmdTweak("", ctx, mode, options)) return true;
+    if (options.cancelled) return false;
   }
   return false;
 }
