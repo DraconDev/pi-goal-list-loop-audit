@@ -1043,14 +1043,17 @@ export function buildApprovalChatLines(notice: {
   record: string;
   counts?: string;
 }): string[] {
+  // D7 audit: this projection owns its trust boundary — sanitize inputs
+  // here (idempotent for already-sanitized brief parts) instead of
+  // trusting every caller to pre-sanitize.
   return [
-    `✓ done — ${notice.outcome}`,
+    `✓ done — ${sanitizeDisplayText(notice.outcome)}`,
     // v0.38.37 (audit 2026-09-08): one verifiable-result bullet per
     // informing detail — the Codex closing shape.
     // v0.38.39: the approval/counts/record trailer rides as bullets too
     // (field 20260909_013733 — the `—` tail read as a second voice); the
     // record pointer stays last.
-    ...withoutStaleNext(notice.details).map((detail) => `• ${detail}`),
+    ...withoutStaleNext(notice.details).map((detail) => `• ${sanitizeDisplayText(detail)}`),
     trailerBullet(stripApprovalModel(notice.approval)),
     ...(notice.counts ? [trailerBullet(stripApprovalModel(notice.counts))] : []),
     trailerBullet(notice.record),
@@ -1093,7 +1096,9 @@ export function buildAuditCountsLine(goal: Goal, auditNote?: string): string {
       const verdict = latest.approved ? "approved" : latest.impossible ? "impossible" : latest.disapproved ? "disapproved" : "no review";
       return `${verdict} (${history.length} review${history.length === 1 ? "" : "s"})`;
     })());
-  return `— completion review: ${audit}.`;
+  // D7 audit: the auditNote override is caller text — sanitize at the
+  // source so every trailer/compose consumer inherits a clean line.
+  return `— completion review: ${sanitizeDisplayText(audit)}.`;
 }
 
 function challengeDisclosure(goal: Goal): string[] {

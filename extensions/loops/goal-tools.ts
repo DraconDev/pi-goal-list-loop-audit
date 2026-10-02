@@ -155,7 +155,7 @@ isGoalRevisionCurrent,
 // the detached path, so no terminal surface can be produced from an
 // unresolved claim.
 import { settlementAllowsTerminalRender, settlementPark } from "../audit-lifecycle.js";
-import { resumeStoredCompletionOrSettlement, persistClaimWorkerActivity, scheduleParkedCompletionAuditRecovery, auditorIdenticalParkProbeDelayMs, humanizeAuditorProbeCadence } from "./goal-auditor-hooks.js";
+import { resumeStoredCompletionOrSettlement, persistClaimWorkerActivity, scheduleParkedCompletionAuditRecovery, auditorIdenticalParkProbeDelayMs, humanizeAuditorProbeCadence, inspectionSessionExtras } from "./goal-auditor-hooks.js";
 import { dispatchAuditorAllowedExtensions } from "../auditor-extensions.js";
 import {
   applyValidatedBatch,
