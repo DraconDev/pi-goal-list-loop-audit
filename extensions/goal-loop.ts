@@ -390,7 +390,10 @@ async function parkLoopOnWrongBranch(ctx: ExtensionContext, loop: LoopState, whe
 }
 
 function loopPrompt(loop: LoopState, regressionNote: string, strategyNote: string, boundsNote: string, interventionNote = "", variantNote = "", hypothesisNote = "", refineHintNote = ""): string {
-  if (respecNeedsDraftPhase(loop)) {
+  // A bare draft phase without a spec file (corrupt/hand-migrated state)
+  // cannot draft to nowhere: fall through to the standard prompt instead
+  // of throwing on path.basename(undefined) and killing the dispatch.
+  if (respecNeedsDraftPhase(loop) && loop.specFile) {
     return loadPromptWhole("goal-loop-respec-draft.md")
       .replace(/\$\{SPEC_FILE\}/g, loop.specFile!)
       .replace(/\$\{ITERATION\}/g, String(loop.iteration + 1))
