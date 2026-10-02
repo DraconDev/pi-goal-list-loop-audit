@@ -993,6 +993,20 @@ function durableWorkerPids(cwd: string, logicalAttemptId: string): Array<{ pid: 
   return out;
 }
 
+/** True when a live detached-worker process owns a job dir for this logical
+ * attempt. Used by the heartbeat to distinguish a healthy in-flight audit
+ * (worker alive — hands off, no wall) from a workerless in-flight hang (no
+ * worker — orphan recovery). A finished job (result.json present) is not
+ * live: the verdict path owns it, and racing its application is safe
+ * (the second apply is a no-op on the cleared claim). */
+export function auditorWorkerLiveForAttempt(cwd: string, logicalAttemptId: string): boolean {
+  for (const { pid, dir } of durableWorkerPids(cwd, logicalAttemptId)) {
+    if (auditDirHasResult(dir)) continue;
+    if (workerProcessMatches(cwd, pid, dir)) return true;
+  }
+  return false;
+}
+
 /** v0.38.3: a finished audit leaves a readable transcript behind — a job dir
  * holding result.json belongs to the retention policy (/glla audits health
  * cleanup + auditJobRetentionMs), not to any kill/reap path. */

@@ -1,5 +1,6 @@
 import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
+import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyLoadState, __testOnlySetLastActivityAt } from "../extensions/loops/goal.js";
@@ -7,8 +8,23 @@ import { __testOnlyHeartbeatTick } from "../extensions/goal-heartbeat.js";
 import { __testOnlyResetAuditorSurface } from "../extensions/loops/goal-auditor-surface.js";
 import { archivedGoalPath, readState, type Goal, type State } from "../extensions/goal-loop-core.js";
 import { buildWidgetLines, buildStatusText } from "../extensions/goal-loop-display.js";
-import { completionAuditRecoveryIdentity, requestHash, readCompletedCompletionAudit, runDetachedGoalCompletionAuditor, buildGoalAuditorPrompt } from "../extensions/goal-loop-auditor-process.js";
+import { auditorWorkerLiveForAttempt, completionAuditRecoveryIdentity, requestHash, readCompletedCompletionAudit, runDetachedGoalCompletionAuditor, buildGoalAuditorPrompt } from "../extensions/goal-loop-auditor-process.js";
 import { MockPi, makeMockCtx, invalidateHostSession, seedGoal, seedState, tick, tmpCwd } from "./harness/mock-pi.js";
+
+/** Spawn a stub whose cmdline passes workerProcessMatches for this job dir:
+ * a live `node` process whose argv carries the --job-dir marker and the dir,
+ * running with the test cwd. Returns the child plus a cleanup. */
+function spawnWorkerStub(cwd: string, dir: string): { child: ChildProcess; cleanup: () => void } {
+  // workerProcessMatches compares against the resolved dir; interpolate it
+  // resolved so symlinked tmp roots (macOS /tmp) still match.
+  const resolved = fs.realpathSync(dir);
+  const child = spawn("node", ["-e", `setInterval(()=>{},60000) // --job-dir ${resolved}`], { cwd, stdio: "ignore" });
+  child.unref?.();
+  return { child, cleanup: () => { try { child.kill("SIGTERM"); } catch {} } };
+}
+function writeWorkerLock(dir: string, attemptId: string, pid: number): void {
+  fs.writeFileSync(path.join(dir, "lock"), JSON.stringify({ protocolVersion: 1, attemptId, pid, role: "worker", workerPath: "node" }));
+}
 
 function goal(): Goal {
   return seedGoal({ status: "auditing", objective: "verify the artifact", verificationContract: "artifact exists", revision: 0,
@@ -95,13 +111,19 @@ for (const guard of ["in-flight", "recent", "frozen", "cold-held"] as const) {
     const savedState = { goal: g, ...(guard === "frozen" ? { supervisorPausedAt: Date.now() } : {}),
       ...(guard === "cold-held" ? { loadHoldAt: Date.now() } : {}) };
     seedState(cwd, savedState);
-    job(cwd, g, { output: "artifact missing\n<disapproved/>" }); __testOnlyLoadState(cwd);
+    const saved = job(cwd, g, { output: "artifact missing\n<disapproved/>", ...(guard === "in-flight" ? { result: false } : {}) });
+    __testOnlyLoadState(cwd);
     __testOnlySetLastActivityAt(guard === "recent" ? Date.now() : Date.now() - 100_000);
     // Use the existing runtime ownership slot to model a live poller.
     const runtime = globalThis as typeof globalThis & { completionAuditInFlight: boolean };
     runtime.completionAuditInFlight = guard === "in-flight";
+    // A live in-flight worker owns a worker-role lock for a running process;
+    // without it the claim is workerless and heartbeat must recover it.
+    const stub = guard === "in-flight" ? spawnWorkerStub(cwd, saved.dir) : null;
+    if (stub?.child.pid) writeWorkerLock(saved.dir, "saved-claim-physical", stub.child.pid);
     pi.sent.length = 0;
     try {
+      if (guard === "in-flight") assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), true, "the stub models a live worker");
       __testOnlyHeartbeatTick(); await tick(120);
       const restored = readState(cwd).goal;
       if (guard === "cold-held") {
@@ -113,6 +135,7 @@ for (const guard of ["in-flight", "recent", "frozen", "cold-held"] as const) {
         assert.equal(events(cwd).filter(e => e.type === "audit_completed_result_recovered").length, 0);
       }
     } finally {
+      stub?.cleanup();
       runtime.completionAuditInFlight = false;
       await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
     }
@@ -259,6 +282,70 @@ test("days-old auditing orphan with a saved verdict recovers via heartbeat (SEO 
     assert.equal(events(cwd).filter(e => e.type === "audit_completed_result_recovered").length, 1);
     assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0, "heartbeat never launches another worker");
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});
+
+test("workerless in-flight claim with a saved verdict reconciles without launching", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+  const g = goal(); seedState(cwd, { goal: g });
+  // Finished worker transcript on disk, but the parent-side poller is gone:
+  // in-flight is latched with no live worker behind it.
+  job(cwd, g, { output: "<evidence>\nartifact exists\n</evidence>\n<approved/>" });
+  __testOnlyLoadState(cwd);
+  __testOnlySetLastActivityAt(Date.now() - 100_000);
+  const runtime = globalThis as typeof globalThis & { completionAuditInFlight: boolean };
+  runtime.completionAuditInFlight = true;
+  try {
+    assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), false, "a finished transcript is not a live worker");
+    __testOnlyHeartbeatTick(); await tick(120);
+    assert.ok(fs.existsSync(archivedGoalPath(cwd, g.id)), "saved approval settles through durable archive");
+    assert.equal(events(cwd).filter(e => e.type === "audit_completed_result_recovered").length, 1);
+    assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0);
+  } finally {
+    runtime.completionAuditInFlight = false;
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});
+
+test("workerless in-flight claim without a verdict parks via workerless-in-flight", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+  // Field 2026-10-02 (clean-web): auditing/starting, in-flight latched, but
+  // the launch never created a job dir — no worker, no result, no error.
+  const g = goal();
+  g.pendingCompletion = { ...g.pendingCompletion!, phase: "starting" };
+  seedState(cwd, { goal: g });
+  __testOnlyLoadState(cwd);
+  __testOnlySetLastActivityAt(Date.now() - 100_000);
+  const runtime = globalThis as typeof globalThis & { completionAuditInFlight: boolean };
+  runtime.completionAuditInFlight = true;
+  try {
+    assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), false, "no job dir means no worker");
+    __testOnlyHeartbeatTick(); await tick(120);
+    const restored = readState(cwd).goal;
+    assert.equal(restored?.status, "paused");
+    assert.equal(restored?.pendingCompletion?.phase, "recovery-pending");
+    assert.ok(events(cwd).some(e => e.type === "stranded_audit_recovered" && (e.value as { via?: string }).via === "workerless-in-flight"));
+    assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0);
+  } finally {
+    runtime.completionAuditInFlight = false;
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});
+
+test("auditorWorkerLiveForAttempt: only a matching live worker counts", () => {
+  const cwd = tmpCwd(), g = goal();
+  assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), false, "no job dirs, no worker");
+  const saved = job(cwd, g, { result: false });
+  assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), false, "a lockless job dir is not a live worker");
+  fs.writeFileSync(path.join(saved.dir, "lock"), JSON.stringify({ protocolVersion: 1, attemptId: "saved-claim-physical", pid: process.pid, role: "parent" }));
+  assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), false, "a parent-role lock is not a worker");
+  writeWorkerLock(saved.dir, "saved-claim-physical", 999_999_999);
+  assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), false, "a dead pid is not a live worker");
+  const stub = spawnWorkerStub(cwd, saved.dir);
+  try {
+    if (stub.child.pid) writeWorkerLock(saved.dir, "saved-claim-physical", stub.child.pid);
+    assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), true, "a matching live process is a live worker");
+    assert.equal(auditorWorkerLiveForAttempt(cwd, "other-claim"), false, "other attempts do not match");
+  } finally { stub.cleanup(); }
 });
 
 test("auditing claim stuck in starting with no worker parks for recovery via heartbeat", async () => {

@@ -18,6 +18,12 @@
   `starting` claims without a worker is pinned: saved verdicts apply
   exactly once with no new auditor, and workerless claims park for a
   bounded retry.
+- The in-flight flag no longer masks stranded-audit recovery when no live
+  worker exists for the attempt (field: a launch hung before creating its
+  job dir left `auditing` + in-flight with no worker and no error). The
+  heartbeat verifies worker liveness and reconciles a saved verdict or
+  parks the claim (`workerless-in-flight`); live workers keep the no-wall
+  guarantee and are never touched.
 
 ### Configurable opportunistic compaction target
 

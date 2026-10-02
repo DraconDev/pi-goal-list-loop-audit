@@ -43,6 +43,7 @@ import {
   shouldWedgeAlert,
 } from "./goal-loop-backoff.js";
 import { isLoopActive, loopTimerPending, scheduleLoopTick } from "./goal-loop.js";
+import { auditorWorkerLiveForAttempt } from "./goal-loop-auditor-process.js";
 import { mainModelRecoveryActive, markCompletionAuditRecoveryPending, probeMainModelRecovery } from "./goal-recovery.js";
 import type { ContinuationDispatch } from "./goal-loop-dispatch.js";
 import type { AgentPhase, AgentStatus } from "./goal-agents-panel.js";
@@ -1657,14 +1658,22 @@ function heartbeatTick(): void {
   // pully: 12h+ stuck "auditing" while the model had already confabulated
   // the closure narrative. The audit silence is expected ONLY while
   // flags.completionAuditInFlight — its absence here means the run is orphaned.
+  // Field 2026-10-02 (clean-web): the flag is set before spawn, so a launch
+  // that hangs before creating its job dir leaves auditing + in-flight with
+  // no live worker — and the flag then masks this very recovery forever.
+  // Verify worker liveness for the attempt: a workerless in-flight claim is
+  // orphaned too. Live workers keep their no-wall guarantee (hands off).
   // Consume a validated saved verdict first; otherwise release the stranded
   // completion claim to the MAIN as infrastructure/no-verdict. A heartbeat
   // must never silently launch another detached worker;
   // /goal resume (or the mode-correct list/loop resume route) is the explicit
   // one-fresh-dispatch gate.
+  const strandedClaim = state.goal?.status === "auditing" ? state.goal.pendingCompletion : undefined;
+  const strandedWorkerlessInFlight = !!strandedClaim?.attemptId && flags.completionAuditInFlight
+    && !auditorWorkerLiveForAttempt(ctx.cwd, strandedClaim.attemptId);
   if (
     state.goal?.status === "auditing" &&
-    !flags.completionAuditInFlight &&
+    (!flags.completionAuditInFlight || strandedWorkerlessInFlight) &&
     Date.now() - flags.lastActivityAt >= 90_000
   ) {
     // The retry-armed flag is not ownership: a dropped first attempt can
@@ -1673,7 +1682,7 @@ function heartbeatTick(): void {
     if (state.goal.pendingCompletion && reconcileOrphanedCompletionAudit(ctx)) return;
     if (state.goal.pendingCompletion) {
       if (!markCompletionAuditRecoveryPending(ctx, "heartbeat-recovery")) return;
-      appendLedger(ctx.cwd, "stranded_audit_recovered", { goalId: state.goal.id, via: "stored-claim" });
+      appendLedger(ctx.cwd, "stranded_audit_recovered", { goalId: state.goal.id, via: strandedWorkerlessInFlight ? "workerless-in-flight" : "stored-claim" });
       ctx.ui.notify(`Completion audit blocked — no verdict. The stored claim is safe; ${activeGoalSurfaceCommand("resume")} starts exactly one fresh auditor.`, "warning");
     } else {
       updateGoal({
