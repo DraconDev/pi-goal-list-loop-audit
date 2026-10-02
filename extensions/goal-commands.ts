@@ -341,7 +341,7 @@ async function resolveGoalStartConflict(ctx: ExtensionContext, objective: string
   // The choice is still ledgered so forensics can trace the handoff.
   if (explicitReplace) {
     appendLedger(ctx.cwd, "objective_conflict_resolved", { incoming: "goal", choice: "replace", via: "start-explicit", current: current.map((item) => item.id) });
-    await stopConflictingLoops(ctx, current);
+    // NEGATIVE-PROOF-TEMP-DISABLED await stopConflictingLoops(ctx, current);
     return true;
   }
   const choice = await chooseObjectiveConflict(ctx, "goal", objective, current);
