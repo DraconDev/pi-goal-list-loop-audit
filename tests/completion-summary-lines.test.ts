@@ -13,6 +13,8 @@ import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import {
   briefValueContent,
+  buildApprovalChatLines,
+  buildAuditCountsLine,
   chatSafeDetailValue,
   clipSummaryValue,
   compactCompletionSummary,
@@ -248,4 +250,28 @@ test("D8: an empty outcome says so instead of inventing done", () => {
   assert.equal(brief.outcome, "(outcome not recorded)");
   const blank = humanCompletionBrief("   ");
   assert.equal(blank.outcome, "(outcome not recorded)");
+});
+
+test("D7 audit: approval-chat lines sanitize their inputs at the trust boundary", () => {
+  const lines = buildApprovalChatLines({
+    outcome: "shipped[31m redbell",
+    details: ["Changed: xy"],
+    approval: "— done",
+    record: "— record: r",
+  });
+  assert.doesNotMatch(lines.join("\n"), //, "outcome/details strip escapes");
+  assert.ok(!lines.join("\n").includes(""), "outcome/details strip control bytes");
+});
+
+test("D7 audit: the counts line sanitizes the auditNote override at the source", () => {
+  const goal = seedGoal({ status: "complete", auditHistory: [] });
+  const line = buildAuditCountsLine(goal as never, "auditor note[31m");
+  assert.ok(!line.includes("") && !line.includes(""), "override text is sanitized");
+  assert.match(line, /completion review:/);
+});
+
+test("D7 audit (pin): manual-path extras route through the shared quoted builder", () => {
+  const tools = fs.readFileSync("extensions/loops/goal-tools.ts", "utf-8");
+  assert.doesNotMatch(tools, /pi --session \$\{inspectionSessionPath\}/, "no raw inline twin remains");
+  assert.match(tools, /extras: inspectionSessionExtras\(inspectionSessionPath\)/, "the sanitizing builder owns the line");
 });
