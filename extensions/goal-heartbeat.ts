@@ -867,6 +867,13 @@ export function observeSubagentRpcReadiness(events: SubagentRpcEventBus): void {
   });
 }
 
+/** Test-only: the generation the RPC stop capability is currently bound to
+ * (null when unbound). S6 pins this against the claimed session generation:
+ * a claim-raised generation must re-bind, or stop-via-RPC reads stale. */
+export function __testOnlyGetSubagentRpcGeneration(): number | null {
+  return subagentRpcBinding?.generation ?? null;
+}
+
 /** Bind the RPC stop capability to an admitted MAIN host generation. */
 export function bindSubagentRpcHost(events: SubagentRpcEventBus, generation: number): void {
   observeSubagentRpcReadiness(events);
