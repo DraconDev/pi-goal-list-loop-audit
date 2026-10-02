@@ -330,7 +330,7 @@ test("D4: the auditor session row is sanitized and bounded", () => {
   const g = goalOf({ pendingCompletion: claimOf({ phase: "running" }) });
   const lines = buildWidgetLines(
     { goal: g, list: [] },
-    { phase: "running", elapsedMs: 60_000, sessionPath: `/tmp/${"x".repeat(200)}/session.jsonl` },
+    { phase: "running", elapsedMs: 60_000, sessionPath: `/tmp/${"x".repeat(200)}/session.jsonl\u0007` },
     NOW,
   )!;
   const row = lines.find((line) => line.includes("session: "));
