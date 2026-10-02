@@ -27,7 +27,7 @@ function waitGoal(pauseReason: string): Goal {
 }
 afterEach(() => { __testOnlyResetAuditorSurface(); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); __testOnlyResetOverdueWaitBackstop(); });
 
-test("S9: overdue agent wait resumes exactly once — park-clear lands, then latch + ledger", async () => {
+test("S9 (continuation route): overdue agent wait resumes exactly once — park-clear lands, then latch + ledger", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
   __testOnlyResetOverdueWaitBackstop();
   seedState(cwd, { goal: waitGoal("agent wait — test cooldown") });
@@ -44,7 +44,7 @@ test("S9: overdue agent wait resumes exactly once — park-clear lands, then lat
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
 
-test("S8: probe-route no-op releases the overdue latch so the next tick retries", async () => {
+test("S9 (probe route): probe no-op releases the overdue latch so the next tick retries", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
   __testOnlyResetOverdueWaitBackstop();
   // A recovery-reasoned wait with NO state.mainModelRecovery: the probe
