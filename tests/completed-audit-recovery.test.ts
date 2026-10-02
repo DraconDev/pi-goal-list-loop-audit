@@ -8,7 +8,7 @@ import { __testOnlyHeartbeatTick } from "../extensions/goal-heartbeat.js";
 import { __testOnlyResetAuditorSurface } from "../extensions/loops/goal-auditor-surface.js";
 import { archivedGoalPath, readState, type Goal, type State } from "../extensions/goal-loop-core.js";
 import { buildWidgetLines, buildStatusText } from "../extensions/goal-loop-display.js";
-import { auditorWorkerLiveForAttempt, completionAuditRecoveryIdentity, requestHash, readCompletedCompletionAudit, runDetachedGoalCompletionAuditor, buildGoalAuditorPrompt } from "../extensions/goal-loop-auditor-process.js";
+import { auditorWorkerLiveForAttempt, completionAuditRecoveryIdentity, requestHash, readCompletedCompletionAudit, runDetachedGoalCompletionAuditor, buildGoalAuditorPrompt, workerProcessMatches } from "../extensions/goal-loop-auditor-process.js";
 import { MockPi, makeMockCtx, invalidateHostSession, seedGoal, seedState, tick, tmpCwd } from "./harness/mock-pi.js";
 
 /** Spawn a stub whose cmdline passes workerProcessMatches for this job dir:
