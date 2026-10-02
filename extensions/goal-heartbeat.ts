@@ -1339,11 +1339,23 @@ function heartbeatTick(): void {
   // another worker directly; the park is the durable recovery gate, and a
   // later healthy same-session heartbeat may hand it to the one-shot recovery
   // path. Explicit resume remains available when no healthy host returns.
+  // S5: the stale latch must not mask workerless-in-flight — an in-flight
+  // flag with a dead worker is orphaned too (mirror of the healthy-path
+  // gate below). The cwd read is guarded: a stale ctx may throw on any
+  // property access.
+  let staleWorkerlessInFlight = false;
+  try {
+    staleWorkerlessInFlight = !!knownCtx
+      && Date.now() - flags.lastActivityAt >= 90_000
+      && !!state.goal?.pendingCompletion?.attemptId
+      && flags.completionAuditInFlight
+      && !auditorWorkerLiveForAttempt(knownCtx.cwd, state.goal.pendingCompletion.attemptId);
+  } catch { staleWorkerlessInFlight = false; }
   if (
     flags.extensionApiStale &&
     knownCtx &&
     state.goal?.status === "auditing" &&
-    !flags.completionAuditInFlight &&
+    (!flags.completionAuditInFlight || staleWorkerlessInFlight) &&
     state.goal.pendingCompletion &&
     Date.now() - flags.lastActivityAt >= 90_000
   ) {
