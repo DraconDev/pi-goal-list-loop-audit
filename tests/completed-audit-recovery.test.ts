@@ -438,3 +438,45 @@ test("S7: stranded recovery measures real activity, not the heartbeat's own refi
     assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0);
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
+
+test("workerless park drops the dead attempt's auditor cursor so recovery re-walks (clean-web field)", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+  const g = goal();
+  // The dead worker's cursor: every configured candidate already "tried".
+  // Without clearing, the next session-recovery begin inherits it and the
+  // walker exhausts in milliseconds with "no auditor model", consuming the
+  // one-shot auto retry and parking again until a manual resume.
+  g.pendingCompletion = { ...g.pendingCompletion!, phase: "starting",
+    auditorCandidateRefs: ["dead/model"], auditorCandidateRef: "dead/model",
+    auditorAttemptedRefs: ["dead/model"], auditorFailureCount: 1 };
+  seedState(cwd, { goal: g });
+  __testOnlyLoadState(cwd);
+  __testOnlySetLastActivityAt(Date.now() - 100_000);
+  const runtime = globalThis as typeof globalThis & { completionAuditInFlight: boolean };
+  runtime.completionAuditInFlight = true;
+  try {
+    __testOnlyHeartbeatTick(); await tick(120);
+    const restored = readState(cwd).goal;
+    assert.equal(restored?.status, "paused");
+    assert.equal(restored?.pendingCompletion?.phase, "recovery-pending");
+    assert.equal(restored?.pendingCompletion?.auditorAttemptedRefs, undefined, "dead attempted refs are cleared");
+    assert.equal(restored?.pendingCompletion?.auditorCandidateRefs, undefined, "dead candidate refs are cleared");
+    assert.equal(restored?.pendingCompletion?.auditorCandidateRef, undefined);
+    assert.equal(restored?.pendingCompletion?.auditorFailureCount, undefined);
+    assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0);
+  } finally {
+    runtime.completionAuditInFlight = false;
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});
+
+test("reconcile names its rejecting gate in the ledger", () => {
+  const cwd = tmpCwd(), g = goal();
+  seedState(cwd, { goal: g });
+  job(cwd, g, { output: "artifact inspected, but no verdict marker here" });
+  assert.equal(readCompletedCompletionAudit(cwd, g), null);
+  const hit = events(cwd).filter(e => e.type === "completed_audit_recovery_rejected");
+  assert.equal(hit.length, 1);
+  assert.equal((hit[0].value as { gate?: string }).gate, "no-verdict");
+  assert.equal((hit[0].value as { logicalAttemptId?: string }).logicalAttemptId, "saved-claim");
+});
