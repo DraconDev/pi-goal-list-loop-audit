@@ -1,0 +1,875 @@
+Muse Code Conversation Export
+=============================
+
+Exported At: 2026-10-02 18:15:41 UTC
+Session: 01a0fd99-98a1-72c3-a544-14d86325f459
+Workspace: /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit
+
+## Conversation
+
+  Model set to muse-spark-1.3-contributor
+  ⎿  Your content, including inter-session messages, may be used for product
+     improvement.
+
+❯ To continue this session, run muse resume 01a0fbf4-d838-79e2-86de-568c20fa764c
+  dracon@nixos:~/Dev/pi-plugins/pi-goal-list-loop-audit (main) % bun test
+  tests/completed-audit-recovery.test.ts
+  bun test v1.3.14 (0d9b296a)
+
+  tests/completed-audit-recovery.test.ts:
+  ✓ legacy parked claim without phase consumes saved approved on the first
+  restore [366.51ms]
+  ✓ legacy parked claim without phase consumes saved disapproved on the first
+  restore [136.55ms]
+  ✓ healthy host heartbeat reconciles an unarmed orphan: approved [284.42ms]
+  ✓ healthy host heartbeat reconciles an unarmed orphan: disapproved [273.10ms]
+  ✓ healthy host heartbeat reconciles an unarmed orphan: missing [271.63ms]
+  ✓ heartbeat orphan recovery respects in-flight [261.34ms]
+  ✓ heartbeat orphan recovery respects recent [249.95ms]
+  ✓ heartbeat orphan recovery respects frozen [250.54ms]
+  ✓ heartbeat orphan recovery respects cold-held [253.94ms]
+  ✓ finished real worker, lost parent: restart applies approved exactly once
+  without re-auditing [508.69ms]
+  ✓ finished real worker, lost parent: restart applies disapproved exactly once
+  without re-auditing [454.80ms]
+  ✓ manual resume consumes a completed parked claim instead of launching another
+  auditor [265.13ms]
+  ✓ agent resume consumes a completed parked claim instead of launching another
+  auditor [262.88ms]
+  ✓ silent file-backed successor applies a finished verdict from the dead
+  generation [390.54ms]
+  ✓ legacy completed jobs bind the original goal, contract, and claim without
+  new metadata [1.58ms]
+  ✓ newer unfinished candidate prevents replay of an older completed result
+  [0.83ms]
+  ✓ saved result refuses unsafe recovery: revision [0.57ms]
+  ✓ saved result refuses unsafe recovery: claim [0.63ms]
+  ✓ saved result refuses unsafe recovery: structured-claim [0.47ms]
+  ✓ saved result refuses unsafe recovery: hash [0.49ms]
+  ✓ saved result refuses unsafe recovery: result-identity [0.53ms]
+  ✓ saved result refuses unsafe recovery: cancelled-tool [0.81ms]
+  ✓ saved result refuses unsafe recovery: strict-challenge [0.62ms]
+  ✓ saved result refuses unsafe recovery: unsupported-tool [0.55ms]
+  ✓ corrupt final progress identity refuses recovery without consuming the claim
+  [0.74ms]
+  ✓ saved approval still enforces the audit-tool floor and regression shield
+  [0.97ms]
+  ✓ second audit pass remains visible through thinking, tools, and report
+  generation [0.91ms]
+  ✓ days-old auditing orphan with a saved verdict recovers via heartbeat (SEO
+  field case) [251.14ms]
+  ✓ workerless in-flight claim with a saved verdict reconciles without launching
+  [262.52ms]
+  321 | try {
+  322 | __testOnlyHeartbeatTick(); await tick(120);
+  323 | const restored = readState(cwd).goal;
+  324 | assert.equal(restored?.status, "paused");
+  325 | assert.equal(restored?.pendingCompletion?.phase, "recovery-pending");
+  326 | assert.ok(events(cwd).some(e => e.type === "stranded_audit_recovered" &&
+  (e.value as { via?: string }).via === "stale-latch-workerless"));
+  ^
+  AssertionError: false == true
+  generatedMessage: true,
+  actual: false,
+  expected: true,
+  operator: "==",
+  code: "ERR_ASSERTION"
+
+  at
+  /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/completed-audit-reco
+  very.test.ts:326:12
+  at processTicksAndRejections (native:7:39)
+  ✗ S5: workerless in-flight claim parks under the stale latch via
+  stale-latch-workerless [250.40ms]
+  ✓ workerless in-flight claim without a verdict parks via workerless-in-flight
+  [249.46ms]
+  366 | writeWorkerLock(saved.dir, "saved-claim-physical", 999_999_999);
+  367 | assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), false, "a
+  dead pid is not a live worker");
+  368 | const stub = spawnWorkerStub(cwd, saved.dir);
+  369 | try {
+  370 | if (stub.child.pid) writeWorkerLock(saved.dir, "saved-claim-physical",
+  stub.child.pid);
+  371 | assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), true, "a
+… output capped
+
+  Read tests/completed-audit-recovery.test.ts
+  Read tests/completed-audit-recovery.test.ts
+  Searched "stale-latch-workerless|workerless-in-flight" (no matches)
+  Searched "function auditorWorkerLiveForAttempt|function workerProcessMatches" (no matches)
+
+◆ Ran command · List workspace layout · ✓ · 0.2s
+├ ls -la; echo ---; ls extensions | head -n 80
+├ exit 0
+└ total 323792
+  drwxr-xr-x 22 dracon users      4096 Oct  2 10:31 .
+  drwxr-xr-x 18 dracon users      4096 Sep 28 12:08 ..
+  drwxr-xr-x  2 dracon users      4096 Aug 20 11:42 .agents
+  -rw-r--r--  1 dracon users      4240 Sep 30 16:23 AGENTS.md
+  drwxr-xr-x 24 dracon users     20480 Oct  2 12:07 audit
+  -rw-r--r--  1 dracon users       165 Jul 29 03:14 bunfig.toml
+  -rw-r--r--  1 dracon users    625851 Oct  2 17:12 CHANGELOG.md
+  … 93 lines omitted
+  reviewer.ts
+  settings-menu.ts
+  start-context.ts
+  state-root-owner.ts
+  task-batch.ts
+  terminal-summary-delivery.ts
+  terminal-summary-limits.ts
+  vision-assist.ts
+
+◆ Ran command · Grep recovery symbols in extensions · ✓ · 0.1s
+├ grep -rn "
+│ stale-latch-workerless\|workerless-in-flight\|auditorWorkerLiveForAttempt\|wor
+│ kerProcessMatches" extensions --include="*.ts" | head -n 60
+├ exit 0
+└ extensions/goal-loop-auditor-process.ts:947:export function workerProcessMatc…
+  extensions/goal-loop-auditor-process.ts:1046:export function auditorWorkerLiv…
+  extensions/goal-loop-auditor-process.ts:1049:    if (workerProcessMatches(cwd…
+  extensions/goal-loop-auditor-process.ts:1171:        if (workerProcessMatches…
+  extensions/goal-loop-auditor-process.ts:1264:      } else if (entry.pid !== u…
+  extensions/goal-loop-auditor-process.ts:1279:    if (!workerProcessMatches(cw…
+  extensions/goal-loop-auditor-process.ts:1297:          if (!workerProcessMatc…
+  extensions/goal-loop-auditor-process.ts:1310:        if (workerProcessMatches…
+  extensions/goal-loop-auditor-process.ts:1316:      if (workerProcessMatches(c…
+  extensions/goal-heartbeat.ts:46:import { auditorWorkerLiveForAttempt } from "…
+  extensions/goal-heartbeat.ts:1402:  // S5: the stale latch must not mask work…
+  extensions/goal-heartbeat.ts:1412:      && !auditorWorkerLiveForAttempt(known…
+  extensions/goal-heartbeat.ts:1433:      appendLedger(current.cwd, "stranded_a…
+  extensions/goal-heartbeat.ts:1452:    appendLedger(cwd, "stranded_audit_recov…
+  extensions/goal-heartbeat.ts:1749:    && !auditorWorkerLiveForAttempt(ctx.cwd…
+  extensions/goal-heartbeat.ts:1761:      appendLedger(ctx.cwd, "stranded_audit…
+
+  Read extensions/goal-loop-auditor-process.ts
+  Read extensions/goal-heartbeat.ts
+
+◆ Ran command · Locate quiet clock and harness helpers · ✓ · 19s
+├ grep -n "
+│ strandedQuietMs\|__testOnlySetLastRealActivityAt\|lastRealActivityAt\|function
+│  invalidateHostSession\|function tmpCwd\|function tick"
+│ extensions/goal-heartbeat.ts tests/harness/mock-pi.ts | head -n 40
+├ exit 0
+└ extensions/goal-heartbeat.ts:84:  get lastRealActivityAt(): number;
+  extensions/goal-heartbeat.ts:370:// flags.lastRealActivityAt only moves on re…
+  extensions/goal-heartbeat.ts:373:function strandedQuietMs(): number {
+  extensions/goal-heartbeat.ts:374:  const honest = flags.lastRealActivityAt > …
+  extensions/goal-heartbeat.ts:1409:      && strandedQuietMs() >= 90_000
+  extensions/goal-heartbeat.ts:1420:    strandedQuietMs() >= 90_000
+  extensions/goal-heartbeat.ts:1716:    flags.lastRealActivityAt < flags.lastCo…
+  extensions/goal-heartbeat.ts:1747:  const strandedSilentMs = state.goal?.stat…
+  tests/harness/mock-pi.ts:38:export function invalidateHostSession(pi: MockPi,…
+  tests/harness/mock-pi.ts:318:export function tmpCwd(): string {
+  tests/harness/mock-pi.ts:368:export function tick(ms = 150): Promise<void> {
+
+◆ Ran command · Check recent history for touched files · ✓ · 20s
+├ git log --oneline -8 -- extensions/goal-heartbeat.ts
+│ extensions/goal-loop-auditor-process.ts tests/completed-audit-recovery.test.ts
+│ ; echo ---; git log --oneline -5; echo ---; git status --short | head -n 20
+├ exit 0
+└ bbbe2816 1 file(s) in tests/completed-audit-recovery.test.ts DELTA:+42/-0 | E…
+  70499742 1 file(s) in extensions/goal-loop-auditor-process.ts DELTA:+31/-14 |…
+  9619beb3 1 file(s) in extensions/goal-heartbeat.ts DELTA:+1/-2 | EXT:ts
+  484fd381 1 file(s) in extensions/goal-heartbeat.ts DELTA:+3/-1 | EXT:ts
+  e522bbc9 2 file(s) in extensions,tests [tests/session-rpc-rebind.test.ts, ext…
+  6d117d1f 1 file(s) in extensions/goal-heartbeat.ts DELTA:+13/-11 | EXT:ts
+  93dc27b2 2 file(s) in tests [tests/overdue-backstop.test.ts, tests/completed-…
+  2f30893c 1 file(s) in tests/completed-audit-recovery.test.ts DELTA:+1/-1 | EX…
+  ---
+  ce907a6d 1 file(s) in audit/FULL-AUDIT-2026-10-02.md DELTA:+37/-0 | EXT:md DO…
+  90a2743a 1 file(s) [CHANGELOG.md] DELTA:+15/-0 | EXT:md DOCSONLY:CHANGELOG.md
+  bbbe2816 1 file(s) in tests/completed-audit-recovery.test.ts DELTA:+42/-0 | E…
+  70499742 1 file(s) in extensions/goal-loop-auditor-process.ts DELTA:+31/-14 |…
+  a8b3da9a 1 file(s) in extensions/goal-recovery.ts DELTA:+23/-0 | EXT:ts
+  ---
+
+◆ Ran command · Inspect latest commits touching failing tests · ✓ · 6.8s
+├ git show 70499742 --stat; echo =====; git show 70499742 --
+│ extensions/goal-loop-auditor-process.ts | head -n 80; echo =====; git show
+│ bbbe2816 --stat | head; echo =====; git show bbbe2816 | head -n 100
+├ exit 0
+└ commit 70499742d1b38f380761d9cc334b041ea87901d8
+  Author: DraconDev <dracsharp@gmail.com>
+  Date:   Fri Oct 2 17:11:16 2026 +0100
+
+      1 file(s) in extensions/goal-loop-auditor-process.ts DELTA:+31/-14 | EXT:…
+
+   extensions/goal-loop-auditor-process.ts | 45 +++++++++++++++++++++++--------…
+   1 file changed, 31 insertions(+), 14 deletions(-)
+  … 139 lines omitted
+  +  seedState(cwd, { goal: g });
+  +  job(cwd, g, { output: "artifact inspected, but no verdict marker here" });
+  +  assert.equal(readCompletedCompletionAudit(cwd, g), null);
+  +  const hit = events(cwd).filter(e => e.type === "completed_audit_recovery_r…
+  +  assert.equal(hit.length, 1);
+  +  assert.equal((hit[0].value as { gate?: string }).gate, "no-verdict");
+  +  assert.equal((hit[0].value as { logicalAttemptId?: string }).logicalAttemp…
+  +});
+
+  Read tests/harness/mock-pi.ts
+  Read extensions/goal-heartbeat.ts
+
+◆ Ran command · Probe stub process identity via procfs · ✓ · 0.5s
+├ cat > /tmp/probe-worker.mjs <<'EOF'
+│ import { spawn } from "node:child_process";
+│ import fs from "node:fs";
+│ import os from "node:os";
+│ import path from "node:path";
+│ const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-probe-"));
+│ const jobDir = path.join(dir, ".pi-glla", "audit-jobs", "saved-claim-physical"
+│ );
+│ fs.mkdirSync(jobDir, { recursive: true });
+│ const resolved = fs.realpathSync(jobDir);
+│ console.log("cwd:", dir, "real:", fs.realpathSync(dir));
+│ console.log("jobDir:", jobDir, "resolved:", resolved);
+│ const child = spawn("node", ["-e", `setInterval(()=>{},60000) // --job-dir ${
+│ resolved}`], { cwd: dir, stdio: "ignore" });
+│ console.log("pid:", child.pid);
+│ await new Promise(r => setTimeout(r, 300));
+│ try {
+│   const cmd = fs.readFileSync(`/proc/${child.pid}/cmdline`, "utf8").replaceAll
+│ ("\0", " ");
+│   console.log("cmdline:", JSON.stringify(cmd.slice(0, 300)));
+│   console.log("cwd link:", fs.readlinkSync(`/proc/${child.pid}/cwd`));
+│   console.log("includes --job-dir:", cmd.includes("--job-dir"));
+│   console.log("includes workerDir(path.resolve):",
+│ cmd.includes(path.resolve(jobDir)));
+│   console.log("includes node:", cmd.includes("node"));
+│ } catch (e) { console.log("read err:", String(e)); }
+│ child.kill("SIGTERM");
+│ EOF
+│ node /tmp/probe-worker.mjs; echo "exit=$?"; which node; node --version
+├ exit 0
+└ cwd: /tmp/glla-probe-KQhAdy real: /tmp/glla-probe-KQhAdy
+  jobDir: /tmp/glla-probe-KQhAdy/.pi-glla/audit-jobs/saved-claim-physical resol…
+  pid: 1269195
+  cmdline: "node -e setInterval(()=>{},60000) // --job-dir /tmp/glla-probe-KQhA…
+  cwd link: /tmp/glla-probe-KQhAdy
+  includes --job-dir: true
+  includes workerDir(path.resolve): true
+  includes node: true
+  exit=0
+  /etc/profiles/per-user/dracon/bin/node
+  v24.18.0
+
+◆ Ran command · Test immediate post-spawn cmdline race · ✓ · 4.3s
+├ cat > /tmp/probe-race.mjs <<'EOF'
+│ import { spawn } from "node:child_process";
+│ import fs from "node:fs";
+│ import os from "node:os";
+│ import path from "node:path";
+│ for (let i = 0; i < 10; i++) {
+│   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-race-"));
+│   const resolved = fs.realpathSync(dir);
+│   const child = spawn("node", ["-e", `setInterval(()=>{},60000) // --job-dir $
+│ {resolved}`], { cwd: dir, stdio: "ignore" });
+│   child.unref?.();
+│   let immediate = "";
+│   try { immediate = fs.readFileSync(`/proc/${child.pid}/cmdline`, "utf8"
+│ ).replaceAll("\0", " ").slice(0, 80); } catch (e) { immediate = "ERR " +
+│ e.code; }
+│   await new Promise(r => setTimeout(r, 200));
+│   let later = "";
+│   try { later = fs.readFileSync(`/proc/${child.pid}/cmdline`, "utf8"
+│ ).replaceAll("\0", " ").slice(0, 80); } catch (e) { later = "ERR " + e.code; }
+│   console.log(`iter${i} pid=${child.pid} immediate=${JSON.stringify(immediate)
+│ } later=${JSON.stringify(later)}`);
+│   try { child.kill("SIGTERM"); } catch {}
+│   fs.rmSync(dir, { recursive: true, force: true });
+│ }
+│ EOF
+│ node /tmp/probe-race.mjs
+├ exit 0
+└ iter0 pid=1272971 immediate="node -e setInterval(()=>{},60000) // --job-dir /…
+  iter1 pid=1273060 immediate="node -e setInterval(()=>{},60000) // --job-dir /…
+  iter2 pid=1273147 immediate="node -e setInterval(()=>{},60000) // --job-dir /…
+  iter3 pid=1273271 immediate="node -e setInterval(()=>{},60000) // --job-dir /…
+  iter4 pid=1273361 immediate="node -e setInterval(()=>{},60000) // --job-dir /…
+  iter5 pid=1273415 immediate="node -e setInterval(()=>{},60000) // --job-dir /…
+  iter6 pid=1273481 immediate="node -e setInterval(()=>{},60000) // --job-dir /…
+  iter7 pid=1273615 immediate="node -e setInterval(()=>{},60000) // --job-dir /…
+  iter8 pid=1273716 immediate="node -e setInterval(()=>{},60000) // --job-dir /…
+  iter9 pid=1273803 immediate="node -e setInterval(()=>{},60000) // --job-dir /…
+
+◆ Ran command · Run worker-liveness test in isolation · ✓ · 4.3s
+├ bun test tests/completed-audit-recovery.test.ts -t "only a matching live
+│ worker counts" 2>&1 | tail -n 12
+├ exit 0
+└ bun test v1.3.14 (0d9b296a)
+
+  tests/completed-audit-recovery.test.ts:
+  (pass) auditorWorkerLiveForAttempt: only a matching live worker counts [84.45…
+
+   1 pass
+   37 filtered out
+   0 fail
+  Ran 1 test across 1 file. [1.57s]
+
+◆ Ran command · Run S5 test in isolation · ✓ · 1.3s
+├ bun test tests/completed-audit-recovery.test.ts -t "S5" 2>&1 | tail -n 12
+├ exit 0
+└    expected: true,
+     operator: "==",
+         code: "ERR_ASSERTION"
+
+        at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/completed-…
+        at processTicksAndRejections (native:7:39)
+  (fail) S5: workerless in-flight claim parks under the stale latch via stale-l…
+
+   0 pass
+   37 filtered out
+   1 fail
+  Ran 1 test across 1 file. [959.00ms]
+
+◆ Ran command · Test spawn race under bun runtime · ✓ · 1.5s
+├ cat > /tmp/probe-race-bun.mjs <<'EOF'
+│ import { spawn } from "node:child_process";
+│ import fs from "node:fs";
+│ import os from "node:os";
+│ import path from "node:path";
+│ for (let i = 0; i < 15; i++) {
+│   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-bunrace-"));
+│   const resolved = fs.realpathSync(dir);
+│   const child = spawn("node", ["-e", `setInterval(()=>{},60000) // --job-dir $
+│ {resolved}`], { cwd: dir, stdio: "ignore" });
+│   child.unref?.();
+│   let immediate = "";
+│   try { immediate = fs.readFileSync(`/proc/${child.pid}/cmdline`, "utf8"
+│ ).replaceAll("\0", " ").slice(0, 60); } catch (e) { immediate = "ERR " +
+│ e.code; }
+│   const ok = immediate.includes("--job-dir");
+│   console.log(`iter${i} pid=${child.pid} match=${ok} immediate=${
+│ JSON.stringify(immediate)}`);
+│   try { child.kill("SIGTERM"); } catch {}
+│   fs.rmSync(dir, { recursive: true, force: true });
+│ }
+│ EOF
+│ bun /tmp/probe-race-bun.mjs
+├ exit 0
+└ iter0 pid=1292507 match=true immediate="node -e setInterval(()=>{},60000) // …
+  iter1 pid=1292509 match=false immediate=""
+  iter2 pid=1292510 match=true immediate="node -e setInterval(()=>{},60000) // …
+  iter3 pid=1292512 match=true immediate="node -e setInterval(()=>{},60000) // …
+  iter4 pid=1292513 match=true immediate="node -e setInterval(()=>{},60000) // …
+  iter5 pid=1292514 match=false immediate=""
+  iter6 pid=1292515 match=false immediate=""
+  iter7 pid=1292516 match=true immediate="node -e setInterval(()=>{},60000) // …
+  iter8 pid=1292517 match=true immediate="node -e setInterval(()=>{},60000) // …
+  iter9 pid=1292518 match=false immediate=""
+  iter10 pid=1292520 match=false immediate=""
+  iter11 pid=1292523 match=true immediate="node -e setInterval(()=>{},60000) //…
+  iter12 pid=1292524 match=false immediate=""
+  iter13 pid=1292525 match=true immediate="node -e setInterval(()=>{},60000) //…
+  iter14 pid=1292526 match=false immediate=""
+
+◆ Ran command · Dump S5 scenario ledger events · ✓ · 1.5s
+├ cat > /tmp/probe-s5.test.ts <<'EOF'
+│ import { test } from "node:test";
+│ import fs from "node:fs";
+│ import path from "node:path";
+│ import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag,
+│ __testOnlyLoadState, __testOnlySetLastActivityAt } from "
+│ /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/extensions/loops/goal.js";
+│ import { __testOnlyHeartbeatTick } from "
+│ /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/extensions/goal-heartbeat.
+│ js";
+│ import { MockPi, makeMockCtx, invalidateHostSession, seedGoal, seedState, tick
+│ , tmpCwd } from "
+│ /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/harness/mock-pi.js";
+│ import { readState, type Goal } from "
+│ /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/extensions/goal-loop-core.
+│ js";
+│
+│ test("probe S5 ledger", async () => {
+│   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+│   __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
+│   const ctx = makeMockCtx(cwd, { sessionManager: { name: `probe-s5` } });
+│   await pi.fire("session_start", { reason: "startup" }, ctx); await tick(120);
+│   const g = seedGoal({ status: "auditing", objective: "verify the artifact",
+│ verificationContract: "artifact exists", revision: 0,
+│     pendingCompletion: { at: new Date(Date.now() - 5000).toISOString(), phase:
+│  "starting", attemptId: "saved-claim", completionSummary: "artifact delivered"
+│ , verificationSummary: "artifact exists" },
+│   }) as unknown as Goal;
+│   seedState(cwd, { goal: g });
+│   __testOnlyLoadState(cwd);
+│   __testOnlySetLastActivityAt(Date.now() - 100_000);
+│   invalidateHostSession(pi, ctx);
+│   const runtime = globalThis as typeof globalThis & { completionAuditInFlight:
+│  boolean };
+│   runtime.completionAuditInFlight = true;
+│   try {
+│     __testOnlyHeartbeatTick(); await tick(120);
+│     const restored = readState(cwd).goal;
+│     console.log("status:", restored?.status, "phase:", (restored?
+│ .pendingCompletion as any)?.phase);
+│     const lines = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"),
+│ "utf8").split("\n").filter(Boolean).map(l => JSON.parse(l));
+│     for (const e of lines) {
+│       if (e.type === "state") continue;
+│       console.log("EVT:", e.type, JSON.stringify(e.value));
+│     }
+│   } finally {
+│     runtime.completionAuditInFlight = false;
+│     await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+│   }
+│ });
+│ EOF
+│ bun test /tmp/probe-s5.test.ts 2>&1 | head -n 40
+├ exit 0
+└ bun test v1.3.14 (0d9b296a)
+
+  ../../../../../tmp/probe-s5.test.ts:
+  status: paused phase: recovery-pending
+  EVT: extension_api_stale {"where":"heartbeat probe","kind":"goal"}
+  EVT: session_handle_invalidated {"where":"heartbeat probe","kind":"goal","rea…
+  EVT: audit_recovery_pending {"goalId":"test-1790961236639-ll8grp","attemptId"…
+  (pass) probe S5 ledger [378.35ms]
+
+   1 pass
+   0 fail
+  Ran 1 test across 1 file. [1009.00ms]
+
+◆ Ran command · Locate context-free stale latch emission · ✓ · 5.2s
+├ grep -rn "context-free-stale-latch" extensions --include="*.ts" | head; echo
+│ =====; grep -rn "audit_recovery_pending" extensions --include="*.ts" | head -n
+│  20
+├ exit 0
+└ extensions/goal-recovery.ts:264:    via: "context-free-stale-latch",
+  =====
+  extensions/goal-recovery.ts:188:  appendLedger(ctx.cwd, "audit_recovery_pendi…
+  extensions/goal-recovery.ts:256:  appendLedger(cwd, "audit_recovery_pending",…
+
+◆ Ran command · Trace history of both via spellings · ✓ · 5.2s
+├ git log --oneline -6 -S "stale-latch-workerless" -- extensions tests; echo
+│ =====; git log --oneline -6 -S "context-free-stale-latch" -- extensions tests
+├ exit 0
+└ ec7a5648 2 file(s) in tests [tests/completed-audit-recovery.test.ts, tests/st…
+  2623b625 1 file(s) in extensions/goal-heartbeat.ts DELTA:+2/-2 | EXT:ts
+  =====
+  675a193c fix: recover lost hosts and parked audits
+
+◆ Ran command · Inspect commit that introduced S5 expectation · ✓ · 0.3s
+├ git show ec7a5648 --stat | head -n 10; echo =====; git show ec7a5648 | head -n
+│  120
+├ exit 0
+└ commit ec7a5648f6c94d2fc25f6c25d4ff3f64d9658a1d
+  Author: DraconDev <dracsharp@gmail.com>
+  Date:   Fri Oct 2 13:39:27 2026 +0100
+
+      2 file(s) in tests [tests/completed-audit-recovery.test.ts, tests/stuck-a…
+
+   tests/completed-audit-recovery.test.ts | 25 +++++++++++++++++++++++++
+   tests/stuck-audit-latch.test.ts        |  2 +-
+  … 49 lines omitted
+     const parked = HB.indexOf("stranded_audit_recovered");
+     assert.ok(staleBranch > 0 && parked > 0, "both branches exist");
+     assert.ok(parked < staleBranch, "the stale-latch park is ordered BEFORE th…
+  -  assert.match(HB, /via: "stale-latch"/, "the park is attributed to the stal…
+  +  assert.match(HB, /via: staleWorkerlessInFlight \? "stale-latch-workerless"…
+     assert.match(HB, /const current = freshCtx\(\);/, "the retained stale cont…
+     assert.match(HB, /if \(!markCompletionAuditRecoveryPending\(current, "stal…
+     assert.match(HB, /if \(!parkCompletionAuditRecovery\(cwd, "stale-latch-rec…
+
+  Read extensions/goal-recovery.ts
+
+◆ Ran command · Show S5 code commit and invalidate helper · ✓ · 0.5s
+├ git show 2623b625 | head -n 60; echo =====; sed -n '30,70p'
+│ tests/harness/mock-pi.ts
+├ exit 0
+└ commit 2623b625e76b5a5bb99f9572b56cd1d32b64b8f0
+  Author: DraconDev <dracsharp@gmail.com>
+  Date:   Fri Oct 2 13:37:13 2026 +0100
+
+      1 file(s) in extensions/goal-heartbeat.ts DELTA:+2/-2 | EXT:ts
+
+  diff --git a/extensions/goal-heartbeat.ts b/extensions/goal-heartbeat.ts
+  index 286adc32..c2a86ce7 100644
+  … 54 lines omitted
+    /** v0.29.19: programmable exec (loop measure commands). Default keeps
+     * the historical empty-stdout behavior so existing tests are unaffected.
+     * A Promise result lets lifecycle tests suspend an async measure while a
+     * replacement session is delivered. */
+    execHandler: ((cmd: string, args: string[], opts: unknown) => { code: numbe…
+    /** v0.34.57: models passed to api.setModel() — the forbidden-gate revert
+     * path records its selections here. */
+    modelSelections: unknown[] = [];
+
+◆ Ran command · List code changes since S5 test added · ✓ · 0.5s
+├ git log --oneline ec7a5648..HEAD -- extensions/goal-heartbeat.ts
+│ extensions/goal-recovery.ts extensions/loops/goal.ts
+│ extensions/goal-loop-auditor-process.ts tests/harness/mock-pi.ts
+│ tests/stuck-audit-latch.test.ts
+├ exit 0
+└ 70499742 1 file(s) in extensions/goal-loop-auditor-process.ts DELTA:+31/-14 |…
+  a8b3da9a 1 file(s) in extensions/goal-recovery.ts DELTA:+23/-0 | EXT:ts
+  9619beb3 1 file(s) in extensions/goal-heartbeat.ts DELTA:+1/-2 | EXT:ts
+  484fd381 1 file(s) in extensions/goal-heartbeat.ts DELTA:+3/-1 | EXT:ts
+  e522bbc9 2 file(s) in extensions,tests [tests/session-rpc-rebind.test.ts, ext…
+  33633f20 1 file(s) in tests/stuck-audit-latch.test.ts DELTA:+2/-2 | EXT:ts TE…
+  6d117d1f 1 file(s) in extensions/goal-heartbeat.ts DELTA:+13/-11 | EXT:ts
+  b1b039f2 2 file(s) in tests [tests/stuck-audit-latch.test.ts, tests/overdue-b…
+  73ba6a38 1 file(s) in tests/stuck-audit-latch.test.ts DELTA:+5/-1 | EXT:ts TE…
+  4bc8af01 1 file(s) in extensions/goal-heartbeat.ts DELTA:+5/-5 | EXT:ts
+  c08295bf 1 file(s) in extensions/goal-heartbeat.ts DELTA:+58/-10 | EXT:ts
+  620ea159 1 file(s) in extensions/goal-heartbeat.ts DELTA:+3/-1 | EXT:ts
+  0148a528 2 file(s) in extensions,tests [extensions/loops/goal-auditor-hooks.t…
+
+◆ Ran command · Run S5 test at commit that added it · ✓ · 2.6s
+├ git worktree add /tmp/glla-s5check ec7a5648 2>&1 | tail -n 2 && cd
+│ /tmp/glla-s5check && ln -s
+│ /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/node_modules node_modules
+│ 2>/dev/null; bun test tests/completed-audit-recovery.test.ts -t "S5" 2>&1 |
+│ tail -n 8
+├ exit 0
+└ Preparing worktree (detached HEAD ec7a5648)
+  HEAD is now at ec7a5648 2 file(s) in tests [tests/completed-audit-recovery.te…
+        at /tmp/glla-s5check/tests/completed-audit-recovery.test.ts:326:12
+        at processTicksAndRejections (native:7:39)
+  (fail) S5: workerless in-flight claim parks under the stale latch via stale-l…
+
+   0 pass
+   34 filtered out
+   1 fail
+  Ran 1 test across 1 file. [1158.00ms]
+
+◆ Ran command · Clean worktree and locate stale terminal · ✓ · 0.5s
+├ git worktree remove --force /tmp/glla-s5check; grep -n "function
+│ goStaleTerminal\|function
+│ probeExtensionApiStaleRaw\|heartbeatStaleDebounce\s*="
+│ extensions/goal-heartbeat.ts extensions/loops/goal.ts extensions/*.ts 2>
+│ /dev/null | head
+├ exit 0
+└ extensions/goal-heartbeat.ts:427:let heartbeatStaleDebounce = HEARTBEAT_STALE…
+  extensions/goal-heartbeat.ts:1920:  heartbeatStaleDebounce = 1; // v0.34.62: …
+  extensions/goal-heartbeat.ts:1922:  heartbeatStaleDebounce = prev;
+  extensions/goal-heartbeat.ts:1935:  heartbeatStaleDebounce = n ?? HEARTBEAT_S…
+  extensions/goal-heartbeat.ts:427:let heartbeatStaleDebounce = HEARTBEAT_STALE…
+  extensions/goal-heartbeat.ts:1920:  heartbeatStaleDebounce = 1; // v0.34.62: …
+  extensions/goal-heartbeat.ts:1922:  heartbeatStaleDebounce = prev;
+  extensions/goal-heartbeat.ts:1935:  heartbeatStaleDebounce = n ?? HEARTBEAT_S…
+
+◆ Ran command · Find stale terminal implementation file · ✓ · 0.2s
+├ grep -rn "goStaleTerminal\|probeExtensionApiStaleRaw" extensions --include="
+│ *.ts" -l; echo =====; grep -n "goStaleTerminal" extensions/loops/goal.ts |
+│ head
+├ exit 0
+└ extensions/goal-continuation.ts
+  extensions/length-continue.ts
+  extensions/goal-heartbeat.ts
+  extensions/goal-loop.ts
+  extensions/loops/goal.ts
+  extensions/loops/goal-session.ts
+  extensions/loops/goal-runtime-globals.ts
+  extensions/goal-commands.ts
+  =====
+  180:  goStaleTerminal,
+  226:  goStaleTerminal,
+  336:  goStaleTerminal,
+  441:  goStaleTerminal,
+
+◆ Ran command · Locate stale function definitions · ✓ · 0.1s
+├ grep -n "export function goStaleTerminal\|export function
+│ probeExtensionApiStaleRaw\|function goStaleTerminal\|function
+│ probeExtensionApiStaleRaw" extensions/loops/goal-session.ts
+│ extensions/loops/goal-runtime-globals.ts extensions/goal-loop.ts 2>/dev/null
+├ exit 0
+└ extensions/loops/goal-session.ts:646:function goStaleTerminal(ctx: ExtensionC…
+  extensions/loops/goal-session.ts:1246:function probeExtensionApiStaleRaw(): b…
+
+  Read extensions/loops/goal-session.ts
+
+◆ Ran command · Find stale-latch behavioral tests and setters · ✓ · 0.7s
+├ grep -rn "stale-latch" tests --include="*.ts" | grep -v "
+│ stale-latch-workerless\|stale-latch-recovery" | head -n 20; echo =====; grep -
+│ rn "SetStale\|setStale\|BypassStale\|__testOnly.*[Ss]tale"
+│ extensions/loops/goal-session.ts extensions/loops/goal.ts
+│ extensions/goal-heartbeat.ts | head -n 20
+├ exit 0
+└ tests/stuck-audit-latch.test.ts:19://   Fix B — heartbeatTick parks a stuck a…
+  tests/stuck-audit-latch.test.ts:44:test("Fix B: the stale-latch stranded park…
+  tests/stuck-audit-latch.test.ts:48:  assert.ok(parked < staleBranch, "the sta…
+  tests/stuck-audit-latch.test.ts:80:  // Both stale-latch branches (fresh-ctx …
+  tests/wait-overdue-backstop.test.ts:230:// dispatch surface can carry the res…
+  =====
+  extensions/loops/goal-session.ts:1159:export function __testOnlyResetStaleFla…
+  extensions/loops/goal.ts:24:import { __testOnlyResetOwnerSession, __testOnlyR…
+  extensions/loops/goal.ts:80:  __testOnlyResetStaleFlag,
+  extensions/loops/goal.ts:270:  __testOnlyResetStaleFlag();
+  extensions/goal-heartbeat.ts:425:// heartbeatStaleDebounce is overridable via…
+  extensions/goal-heartbeat.ts:1934:export function __testOnlySetHeartbeatStale…
+
+  Read tests/stuck-audit-latch.test.ts
+  Read tests/completed-audit-recovery.test.ts
+
+◆ Ran command · Find stub users and real-activity setter usage · ✓ · 0.5s
+├ grep -rn "spawnWorkerStub\|spawn(\"node\"\|spawn('node'" tests --include="*.ts
+│ " -l; echo =====; grep -n "__testOnlySetLastRealActivityAt"
+│ tests/completed-audit-recovery.test.ts
+├ exit 0
+└ tests/compactor-worker-lifecycle.test.ts
+  tests/mechanical-pipeline-lifecycle.test.ts
+  tests/contained-child-platform.test.ts
+  tests/completed-audit-recovery.test.ts
+  tests/owner-file-protocol.test.ts
+  tests/test-runner-lifecycle.test.ts
+  =====
+  6:import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, _…
+  431:  __testOnlySetLastRealActivityAt(Date.now() - 100_000);
+
+◆ Ran command · Check debounce default and stub-check users · ✓ · 0.2s
+├ grep -n "HEARTBEAT_STALE_DEBOUNCE" extensions/goal-heartbeat.ts | head -n 5;
+│ echo =====; grep -rn "workerProcessMatches\|auditorWorkerLiveForAttempt" tests
+│  --include="*.ts" -l
+├ exit 0
+└ 426:const HEARTBEAT_STALE_DEBOUNCE = 3;
+  427:let heartbeatStaleDebounce = HEARTBEAT_STALE_DEBOUNCE;
+  1926: * watchdog with HEARTBEAT_STALE_DEBOUNCE applied. Never called by produ…
+  1933: * production HEARTBEAT_STALE_DEBOUNCE). Never called by production code…
+  1935:  heartbeatStaleDebounce = n ?? HEARTBEAT_STALE_DEBOUNCE;
+  =====
+  tests/pending-claim-lifecycle.test.ts
+  tests/stuck-audit-latch.test.ts
+  tests/completed-audit-recovery.test.ts
+
+  Read extensions/goal-heartbeat.ts
+
+◆ Ran command · Check other suite's worker-check usage · ✓ · 0.6s
+├ grep -n "workerProcessMatches\|auditorWorkerLiveForAttempt\|spawn"
+│ tests/pending-claim-lifecycle.test.ts | head -n 10
+├ exit 0
+└ 218:    // dead pid and no result. workerProcessMatches gates any live kill,
+
+◆ Edited tests/completed-audit-recovery.test.ts (+13 −0)
+  27  }
+  28 +/** Bun returns from spawn() before the child has exec'd: an immediate
+  29 + * /proc/pid/cmdline read sees an empty (pre-exec) cmdline ~50% of the tim
+      e,
+  30 + * and workerProcessMatches correctly fails closed on it. Production never
+  31 + * checks a just-spawned pid (heartbeat/reap only inspect previous-session
+  32 + * locks), so the wait lives here: poll until the stub is observable. */
+  33 +async function waitForWorkerStub(cwd: string, pid: number, dir: string, pl
+      atform?: NodeJS.Platform): Promise<boolean> {
+  34 +  const deadline = Date.now() + 5000;
+  35 +  for (;;) {
+  36 +    if (workerProcessMatches(cwd, pid, dir, platform ?? process.platform))
+       return true;
+  37 +    if (Date.now() >= deadline) return false;
+  38 +    await new Promise(r => setTimeout(r, 25));
+  39 +  }
+  40 +}
+
+◆ Edited tests/completed-audit-recovery.test.ts (+4 −1)
+  138      try {
+  139 -      if (guard === "in-flight") assert.equal(auditorWorkerLiveForAttempt
+       (cwd, "saved-claim"), true, "the stub models a live worker");
+  139 +      if (guard === "in-flight") {
+  140 +        assert.equal(await waitForWorkerStub(cwd, stub!.child.pid!, saved
+       .dir), true, "the stub is observable before the liveness check");
+  141 +        assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), tru
+       e, "the stub models a live worker");
+  142 +      }
+
+◆ Edited tests/completed-audit-recovery.test.ts (+14 −1)
+  326    const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx =
+       await boot(pi, cwd);
+  327 +  // The stale-latch stranded block only runs while the latch is ALREADY
+  328 +  // held: goStaleTerminal parks an already-auditing goal directly
+  329 +  // (audit_recovery_pending/context-free-stale-latch), so a single tick
+  330 +  // after invalidate never reaches it. Trip the latch first with a
+  331 +  // non-auditing goal, then land the auditing claim while latched — the
+  332 +  // v0.34.80 field shape (the tool path dispatched an audit after transi
+       ent
+  333 +  // probe failures latched the session stale).
+  334 +  const idle = seedGoal({ status: "active", autoContinue: false }) as unk
+       nown as Goal;
+  335 +  seedState(cwd, { goal: idle });
+  336 +  __testOnlyLoadState(cwd);
+  337 +  invalidateHostSession(pi, ctx);
+  338 +  __testOnlyHeartbeatTick(); await tick(120);
+  339 +  assert.ok(events(cwd).some(e => e.type === "extension_api_stale"), "tic
+       k 1 trips the stale latch");
+  340    const g = goal();
+      ⋮
+  346    __testOnlySetLastActivityAt(Date.now() - 100_000);
+  334 -  invalidateHostSession(pi, ctx);
+  347 +  __testOnlySetLastRealActivityAt(Date.now() - 100_000);
+  348    const runtime = globalThis as typeof globalThis & { completionAuditInFl
+       ight: boolean };
+
+◆ Edited tests/completed-audit-recovery.test.ts (+2 −1)
+  388 -test("auditorWorkerLiveForAttempt: only a matching live worker counts", (
+       ) => {
+  388 +test("auditorWorkerLiveForAttempt: only a matching live worker counts", a
+       sync () => {
+  389    const cwd = tmpCwd(), g = goal();
+      ⋮
+  399      if (stub.child.pid) writeWorkerLock(saved.dir, "saved-claim-physical"
+       , stub.child.pid);
+  400 +    assert.equal(await waitForWorkerStub(cwd, stub.child.pid!, saved.dir)
+       , true, "the stub is observable before the liveness check");
+  401      assert.equal(auditorWorkerLiveForAttempt(cwd, "saved-claim"), true, "
+       a matching live process is a live worker");
+
+◆ Edited tests/completed-audit-recovery.test.ts (+2 −1)
+  417 -test("workerProcessMatches darwin branch reads identity via ps", () => {
+  417 +test("workerProcessMatches darwin branch reads identity via ps", async ()
+        => {
+  418    // The darwin branch shells to `ps -o command=`, which also exists on
+      ⋮
+  425      if (stub.child.pid) writeWorkerLock(saved.dir, "saved-claim-physical"
+       , stub.child.pid);
+  426 +    assert.equal(await waitForWorkerStub(cwd, stub.child.pid!, saved.dir,
+        "darwin"), true, "the stub is observable before the identity check");
+  427      assert.equal(workerProcessMatches(cwd, stub.child.pid!, saved.dir, "d
+       arwin"), true, "live stub matches via ps cmdline");
+
+◆ Ran command · Run full recovery suite after fixes · ✓ · 7.1s
+├ bun test tests/completed-audit-recovery.test.ts 2>&1 | tail -n 15
+├ exit 0
+└ (pass) days-old auditing orphan with a saved verdict recovers via heartbeat (…
+  (pass) workerless in-flight claim with a saved verdict reconciles without lau…
+  (pass) S5: workerless in-flight claim parks under the stale latch via stale-l…
+  (pass) workerless in-flight claim without a verdict parks via workerless-in-f…
+  (pass) auditorWorkerLiveForAttempt: only a matching live worker counts [28.81…
+  (pass) unreadable saved transcript returns null but ledgers the reason [1.39m…
+  (pass) workerProcessMatches darwin branch reads identity via ps [211.56ms]
+  (pass) auditing claim stuck in starting with no worker parks for recovery via…
+  (pass) S7: stranded recovery measures real activity, not the heartbeat's own …
+  (pass) workerless park drops the dead attempt's auditor cursor so recovery re…
+  (pass) reconcile names its rejecting gate in the ledger [1.40ms]
+
+   38 pass
+   0 fail
+  Ran 38 tests across 1 file. [6.95s]
+
+◆ Ran command · Repeat suite twice for stability · ✓ · 14s
+├ bun test tests/completed-audit-recovery.test.ts 2>&1 | tail -n 4; bun test
+│ tests/completed-audit-recovery.test.ts 2>&1 | tail -n 4
+├ exit 0
+└
+   38 pass
+   0 fail
+  Ran 38 tests across 1 file. [7.04s]
+
+   38 pass
+   0 fail
+  Ran 38 tests across 1 file. [6.73s]
+
+◆ Ran command · Show package scripts for checks · ✓ · 14s
+├ cat package.json | head -n 40
+├ exit 0
+└ {
+      "name": "pi-goal-list-loop-audit",
+      "version": "0.38.108",
+      "description": "Mission control for long running pi work: interview draft…
+      "license": "AGPL-3.0-only",
+      "author": "dracon",
+      "type": "module",
+      "keywords": [
+  … 24 lines omitted
+          "prompts",
+          "schemas",
+          "scripts",
+          "docs",
+          "examples",
+          "media",
+          "README.md",
+          "INSTALL.md",
+
+◆ Ran command · Find configured verification gates · ✓ · 0.2s
+├ grep -n '"scripts"' -A 15 package.json; ls .github/workflows/ 2>/dev/null &&
+│ grep -n "run:" .github/workflows/*.yml | head -n 10
+├ exit 0
+└ 35:        "scripts",
+  36-        "docs",
+  37-        "examples",
+  38-        "media",
+  39-        "README.md",
+  40-        "INSTALL.md",
+  41-        "PLAN.md",
+  42-        "LIST-PHILOSOPHY.md",
+  … 30 lines omitted
+  .github/workflows/compatibility.yml:32:      - run: npm run check
+  .github/workflows/compatibility.yml:34:        run: npm test -- tests/contain…
+  .github/workflows/compatibility.yml:36:        run: node tests/repro-jiti-sta…
+  .github/workflows/publish.yml:55:        run: npm ci
+  .github/workflows/publish.yml:58:        run: npm run release:check
+  .github/workflows/publish.yml:94:        run: npm install --global npm@11.12.1
+  .github/workflows/publish.yml:99:        run: |
+  .github/workflows/publish.yml:110:        run: npm ci
+
+◆ Ran command · Typecheck the edited test file · ✓ · 12s
+├ npx tsc --noEmit 2>&1 | head -n 20; echo "tsc_exit=$?"
+├ exit 0
+└ tests/loop-held-start.test.ts(64,18): error TS2352: Conversion of type 'LoopS…
+    Type 'LoopState' is not comparable to type 'Record<string, unknown>'.
+      Index signature for type 'string' is missing in type 'LoopState'.
+  tests/loop-held-start.test.ts(81,18): error TS2352: Conversion of type 'LoopS…
+    Type 'LoopState' is not comparable to type 'Record<string, unknown>'.
+      Index signature for type 'string' is missing in type 'LoopState'.
+  tests/loop-held-start.test.ts(110,18): error TS2352: Conversion of type 'Loop…
+    Type 'LoopState' is not comparable to type 'Record<string, unknown>'.
+  … 5 lines omitted
+    Types of property 'ui' are incompatible.
+      Type 'MockUi' is missing the following properties from type 'ExtensionUIC…
+  tests/settings-stale-save.test.ts(26,67): error TS2345: Argument of type 'Moc…
+    Types of property 'ui' are incompatible.
+      Type 'MockUi' is missing the following properties from type 'ExtensionUIC…
+  tests/settings-stale-save.test.ts(41,52): error TS2345: Argument of type 'Moc…
+    Types of property 'ui' are incompatible.
+  tsc_exit=0
+
+◆ Ran command · Compare typecheck errors before and after edit · ✓ · 28s
+├ npx tsc --noEmit 2>&1 | grep -c "error TS"; npx tsc --noEmit 2>&1 | grep "
+│ completed-audit-recovery" | head; echo "---mine-clean-above-means-zero---";
+│ git stash -q && npx tsc --noEmit 2>&1 | grep -c "error TS"; git stash pop -q
+│ && git status --short | head
+├ exit 0
+└ 7
+  ---mine-clean-above-means-zero---
+  7
+   M tests/completed-audit-recovery.test.ts
+
+◆ Ran command · Run neighboring latch suites · ✓ · 2.7s
+├ bun test tests/stuck-audit-latch.test.ts tests/pending-claim-lifecycle.test.ts
+│  2>&1 | tail -n 6; git status --short
+├ exit 0
+└ (pass) S9 (continuation route): the overdue backstop latches only after the p…
+  (pass) S9 (probe route): the overdue backstop releases the latch at settle wh…
+
+   11 pass
+   0 fail
+  Ran 11 tests across 2 files. [2.56s]
+   M tests/completed-audit-recovery.test.ts
+
+◆ Both failures fixed — 38/38 green across three runs. No production code
+  changed; both were test-side defects in tests/completed-audit-recovery.test.ts
+  .
+
+  S5 (stale-latch-workerless): unreachable setup, not a code bug. The test
+  invalidated the host and ticked once with the goal already auditing — but that
+  path goes through goStaleTerminal, which parks every auditing goal directly (
+  audit_recovery_pending / context-free-stale-latch). The stale-latch stranded
+  block only runs while the latch is already held. I confirmed via worktree that
+  S5 failed at its own birth commit — it never passed. Fix: latch-first sequence
+  — tick 1 with an active goal trips the latch (asserted via extension_api_stale
+  ), then the auditing workerless in-flight claim lands while latched and tick 2
+  parks it via stranded_audit_recovered / stale-latch-workerless, matching the
+  v0.34.80 field shape. Also ages lastRealActivityAt, since the S7 honest clock
+  prefers it.
+
+  auditorWorkerLiveForAttempt: Bun spawn race. Bun returns from spawn() before
+  the child execs — an immediate /proc/pid/cmdline read sees an empty cmdline ~
+  50% of the time (measured), and workerProcessMatches correctly fails closed.
+  Production never checks a just-spawned pid (heartbeat/reap only inspect
+  previous-session locks), so the wait belongs in the test: new
+  waitForWorkerStub poll helper, applied at all three stub sites (workerLive,
+  darwin-branch, and the in-flight guard test, which had the same latent race).
+
+  Verification: full file 38 pass / 0 fail ×3; neighbors (stuck-audit-latch,
+  pending-claim-lifecycle) 11/11; tsc --noEmit shows the same 7 pre-existing
+  errors before and after my edit, none in the touched file.
+
+◆ Worked for 7m 21s · 6:19 PM
+
