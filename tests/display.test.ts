@@ -62,6 +62,21 @@ test("truncate", () => {
   assert.equal(truncate("a much longer string", 8), "a much …");
 });
 
+test("D6: the clause-cut floor scales with the budget instead of pinning at 16", () => {
+  // max=100 → budget 99, floor 39. The only clause boundary sits at
+  // width 20: below the floor, so the head takes the character cut.
+  const text = `${"a".repeat(20)}: ${"b".repeat(150)}`;
+  const cut = truncateObjective(text, 100);
+  assert.ok(cut.length > 50, `below-floor boundary falls back to the char cut, got ${cut.length} cells`);
+  assert.ok(!cut.startsWith("a".repeat(20)), "the short clause cut is not taken");
+});
+
+test("D10: fmtElapsed clamps non-finite input to zero", () => {
+  assert.equal(fmtElapsed(NaN), "0s");
+  assert.equal(fmtElapsed(Infinity), "0s");
+  assert.equal(fmtElapsed(-5), "0s", "negatives still clamp");
+});
+
 test("display projections remove terminal and zero-width control characters without changing stored state", () => {
   const hostile = "safe\u001b[31m\nspoof\u0007\u202Ehidden\u200B";
   assert.equal(truncate(hostile, 200), "safe spoof hidden");
