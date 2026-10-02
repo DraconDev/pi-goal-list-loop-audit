@@ -737,8 +737,10 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
     delete settings.compactorModel;
   }
   // C10 diff: report every top-level delete (see InvalidSettingReport).
+  // Explicit-undefined defaults (drafterThinkingLevel, the mirror flag)
+  // delete as a matter of course — only a PRESENT raw value is dead junk.
   for (const [key, raw] of before) {
-    if (!(key in settings)) noteDroppedSetting(key, raw);
+    if (raw !== undefined && !(key in settings)) noteDroppedSetting(key, raw);
   }
   return settings;
 }
