@@ -5,6 +5,7 @@ import {
   buildApprovalChatLines,
   withoutStaleNext,
 } from "../extensions/completion-summary.js";
+import { inspectionSessionExtras } from "../extensions/loops/goal-auditor-hooks.js";
 
 // v0.38.20 (field 2026-09-04 19:20): the detached-approval chat notify
 // reprinted the agent's pre-verdict recap verbatim — `Next: detached auditor
@@ -68,4 +69,19 @@ test("v0.38.39 withoutStaleNext keeps one concrete next action, still strips sta
   );
   assert.deepEqual(withoutStaleNext(undefined), []);
   assert.deepEqual(withoutStaleNext([]), []);
+});
+
+test("A10: the kept-session command quotes the worker-reported path", () => {
+  assert.deepEqual(
+    inspectionSessionExtras("/tmp/audit jobs/sess;rm -rf ~.jsonl"),
+    ["Auditor session kept for review: pi --session '/tmp/audit jobs/sess;rm -rf ~.jsonl' (or pi --fork '/tmp/audit jobs/sess;rm -rf ~.jsonl')."],
+    "spaces and metacharacters render inside quotes",
+  );
+  assert.deepEqual(
+    inspectionSessionExtras("/tmp/it's.jsonl"),
+    ["Auditor session kept for review: pi --session '/tmp/it'\\''s.jsonl' (or pi --fork '/tmp/it'\\''s.jsonl')."],
+    "embedded quotes escape",
+  );
+  assert.deepEqual(inspectionSessionExtras(undefined), [], "absent path omits the command");
+  assert.deepEqual(inspectionSessionExtras("   "), [], "blank path omits the command");
 });
