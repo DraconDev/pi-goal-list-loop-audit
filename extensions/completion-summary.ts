@@ -217,7 +217,15 @@ export function humanCompletionBrief(
  * self-referential audit/process lines (`verdict decides`, `awaiting
  * approval`, …) still drop, but the first concrete action survives as
  * the closing bullet. The full six-label record stays in the archive. */
-const STALE_NEXT_PATTERN = /auditor|verdict|approv|audit|settl|review/i;
+/** D5: self-reference is a process noun NEAR a process-state verb, not a
+ * bare keyword. The old /auditor|verdict|approv|audit|settl|review/i ate
+ * concrete work ("Next: review pending PRs", "Next: audit the remaining
+ * fixtures", "Next: settle the API contract"). A state verb LEADING
+ * ("awaiting approval") is always a status report; a noun leading only
+ * drops when a state verb follows within the window ("verdict decides").
+ * Bare "review …" leads survive — reviewing things is real work. */
+const STALE_NEXT_LEAD_VERB = /(awaiting|pending|forthcoming|underway|in progress).{0,24}(auditor|verdict|approval|audit|settlement|review)/i;
+const STALE_NEXT_LEAD_NOUN = /(auditor|verdict|approval|audit|settlement).{0,24}(decides?|pending|awaiting|forthcoming|underway|in progress)/i;
 /** The recorded-facts fallback Next is concrete (`review the durable
  * record at …`) and must survive the stale-Next filter (v0.38.45 audit:
  * /review/i ate it, leaving fallback approval chats with no next action). */
@@ -236,7 +244,7 @@ export function withoutStaleNext(details: string[] | undefined): string[] {
       kept.push(detail);
       continue;
     }
-    if (STALE_NEXT_PATTERN.test(detail)) continue;
+    if (STALE_NEXT_LEAD_VERB.test(detail) || STALE_NEXT_LEAD_NOUN.test(detail)) continue;
     if (actionKept) continue;
     actionKept = true;
     kept.push(detail);
