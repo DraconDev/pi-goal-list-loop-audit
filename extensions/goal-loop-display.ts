@@ -1452,9 +1452,15 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
         : rms > 0 ? ` · ${supervised ? "auto-retry" : "auto-continue"} in ${fmtElapsed(rms)}`
         : -rms >= PAUSED_RESUME_GRACE_MS ? ` · ${supervised ? "retry" : "auto-continue"} overdue` : " · resuming…";
       if (kind === "blocked") {
+        // A pending timer means no action is needed — "action needed ·
+        // auto-retry in Xs" contradicts itself on one chip. Name the
+        // timer alone; bare "action needed" stays for the truly manual
+        // case (no timer), where the card banner agrees: resume.
         const label = state.mainModelRecovery?.manualResumeRequired === true
           ? "⏸ manual recovery hold"
-          : `⏸ action needed${when}`;
+          : when
+            ? `⏸${when.replace(/^ · /, " ")}`
+            : "⏸ action needed";
         return `glla: ${paint(theme, "warning", label)}${pausedStatusSuffix(g, state, extras, now, false, true)}${heldSuffix}`;
       }
       // v0.38.64 (021655): standby waits on a background agent — dim
@@ -2328,7 +2334,11 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
     } else if (kind === "blocked" && state.mainModelRecovery?.manualResumeRequired === true) {
       lines.push(`├─ ${paint(theme, "warning", "manual recovery hold — automatic probes stopped")}`);
     } else if (kind === "blocked") {
-      lines.push(`├─ ${paint(theme, "warning", "blocked — waiting for manual action")}`);
+      // The v0.28.22 comment above removed manual-resume wording, but this
+      // row kept saying "waiting for manual action" beside a `next:` line
+      // that says resume — naming no action while one exists. The action
+      // IS resume (the transition names the surface command); say so.
+      lines.push(`├─ ${paint(theme, "warning", "blocked — resume to continue")}`);
     // v0.38.64 (021655): standby is parked on a running background agent
     // — the card waits with it instead of inventing a manual action.
     } else if (kind === "standby") {
