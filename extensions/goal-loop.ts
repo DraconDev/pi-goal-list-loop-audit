@@ -55,6 +55,8 @@ import {
   RESPEC_SPEC_CANDIDATES,
   resolveSpecFiles,
   respecTarget,
+  respecNeedsDraftPhase,
+  respecDraftReady,
   specFileHash,
   topOpenAuditFinding,
   LOOP_DEFAULTS,
@@ -387,6 +389,13 @@ async function parkLoopOnWrongBranch(ctx: ExtensionContext, loop: LoopState, whe
 }
 
 function loopPrompt(loop: LoopState, regressionNote: string, strategyNote: string, boundsNote: string, interventionNote = "", variantNote = "", hypothesisNote = "", refineHintNote = ""): string {
+  if (respecNeedsDraftPhase(loop)) {
+    return loadPromptWhole("goal-loop-respec-draft.md")
+      .replace(/\$\{SPEC_FILE\}/g, loop.specFile!)
+      .replace(/\$\{ITERATION\}/g, String(loop.iteration + 1))
+      .replace(/\$\{BOUNDS_NOTE\}/g, boundsNote)
+      .replace(/\$\{REFINE_HINT\}/g, loop.refineHint ?? "(none)");
+  }
   // v0.23.0: metricless loops get their own prompt — no metric section,
   // anti-doorknob rules instead of anti-gaming rules.
   const metricless = !loop.measureCmd;
@@ -476,6 +485,12 @@ function sendLoopTurn(): void {
     return;
   }
   const loop = state.loop!;
+  if (respecNeedsDraftPhase(loop) && loop.respecPhase !== "draft") {
+    loop.respecPhase = "draft";
+    loop.target = `Draft the comprehensive ${path.basename(loop.specFile!)} from the current codebase before reconciliation`;
+    persistState(ctx);
+    appendLedger(ctx.cwd, "respec_draft_recovered", { specFile: loop.specFile, iteration: loop.iteration });
+  }
   // v0.29.10: "regressed" = the last two measurements moved the WRONG way
   // — not merely "didn't beat best". The old trigger (any non-improving
   // iteration) cried REGRESSED on stalls and on the audit loop's
@@ -659,6 +674,16 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
     const last = [...(event.messages as any[])].reverse().find((m) => m.role === "assistant");
     lastAssistantText = last && Array.isArray(last.content) ? last.content.filter((p: any) => p.type === "text").map((p: any) => p.text).join("\n") : "";
     hypothesis = lastAssistantText.match(/^HYPOTHESIS:\s*(.+)$/m)?.[1]?.trim().slice(0, 200);
+  }
+  if (respecNeedsDraftPhase(loop) && respecDraftReady(loop.specFile!, lastAssistantText)) {
+    loop.respecPhase = "reconcile";
+    loop.target = respecTarget(path.basename(loop.specFile!));
+    loop.consecutiveStuck = 0;
+    loop.recentPrints = [];
+    loop.recentTexts = [];
+    loop.recentToolResults = [];
+    appendLedger(ctx.cwd, "respec_draft_completed", { specFile: loop.specFile, iteration: loop.iteration });
+    ctx.ui.notify("Respec draft written — starting reconciliation against its Rules and descriptive sections.", "info");
   }
   // v0.24.0 anti-repetition: roll the behavior windows, then classify. The
   // plateau stop watches the NUMBER; this watches the WORK — a metricless
@@ -1010,6 +1035,7 @@ async function finishLoopGit(ctx: ExtensionContext, loop: LoopState): Promise<bo
 
 interface LoopConfig {
   target: string;
+  respecPhase?: "draft" | "reconcile";
   /** Empty string = metricless spec loop (v0.23.0). */
   measureCmd: string;
   direction?: "min" | "max";
@@ -1118,6 +1144,7 @@ async function startLoopFromConfig(ctx: ExtensionContext, cfg: LoopConfig): Prom
     ...state,
     loop: {
       target: cfg.target,
+      respecPhase: cfg.respecPhase,
       measureCmd: cfg.measureCmd || undefined,
       direction: cfg.direction,
       iteration: 0,
@@ -1146,7 +1173,9 @@ async function startLoopFromConfig(ctx: ExtensionContext, cfg: LoopConfig): Prom
   persistState(ctx);
   appendLedger(ctx.cwd, "loop_started", { target: cfg.target, measureCmd: cfg.measureCmd || "none", direction: cfg.direction ?? "none", baseline, branch: branchName, timeLimitHours: cfg.timeLimitHours, tokenBudget: cfg.tokenBudget, minimumIterationIntervalMs: cfg.minimumIterationIntervalMs });
   ctx.ui.notify(
-    metricless
+    cfg.respecPhase === "draft"
+      ? `Respec big draft started: research the project and write ${path.basename(cfg.specFile!)}. Reconciliation waits for the completed draft. /loop pause and /loop stop remain available.`
+      : metricless
       ? `Loop started (metricless spec loop — NO plateau stop): ${displaySlice(cfg.target, 60)}\nEnds only at ${cfg.maxIterations > 0 ? `max ${cfg.maxIterations} iterations` : "no iteration cap"}${cfg.timeLimitHours ? ` · ${cfg.timeLimitHours}h` : ""}${cfg.tokenBudget ? ` · ${cfg.tokenBudget.toLocaleString()} tokens` : ""} · /loop stop. Every iteration must make ONE real, inspectable change — cosmetic churn is the doorknob failure.` +
         (cfg.minimumIterationIntervalMs ? ` · cadence ≥ ${Math.ceil(cfg.minimumIterationIntervalMs / 1_000)}s` : "") +
         (branchName ? `\nbranch mode: committing each iteration to ${branchName}` : "")
@@ -1579,9 +1608,10 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       // the moment the draft lands (a missing file hashes null and seeds
       // silently — no false external-drift event).
       const specPath = path.join(ctx.cwd, RESPEC_SPEC_CANDIDATES[0]!);
-      ctx.ui.notify("No SPEC.md / spec.md in the project root — starting with the big draft: the loop writes the comprehensive SPEC.md first, then reconciles against it.", "info");
+      ctx.ui.notify("No SPEC.md / spec.md in the project root — starting the dedicated big draft. Reconciliation waits until the draft is written and handed off.", "info");
       await startLoopFromConfig(ctx, {
-        target: respecTarget(path.basename(specPath), { bootstrapping: true }),
+        target: `Draft the comprehensive ${path.basename(specPath)} from the current codebase before reconciliation`,
+        respecPhase: "draft",
         measureCmd: "",
         direction: undefined,
         plateauWindow: LOOP_DEFAULTS.plateauWindow,

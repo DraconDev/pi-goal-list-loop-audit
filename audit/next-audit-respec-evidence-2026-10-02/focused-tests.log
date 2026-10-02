@@ -1,0 +1,40 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-draft-phase.test.ts:
+(pass) missing-spec respec dispatches a durable dedicated draft and gates reconciliation [250.13ms]
+(pass) legacy bootstrap loops recover into the draft phase, including an existing partial spec [129.75ms]
+(pass) respec with an existing spec retains immediate reconciliation [120.62ms]
+(pass) a draft completion marker cannot substitute for a missing or empty spec [0.38ms]
+
+tests/completed-audit-recovery.test.ts:
+(pass) legacy parked claim without phase consumes saved approved on the first restore [313.08ms]
+(pass) legacy parked claim without phase consumes saved disapproved on the first restore [156.87ms]
+(pass) healthy host heartbeat reconciles an unarmed orphan: approved [404.96ms]
+(pass) healthy host heartbeat reconciles an unarmed orphan: disapproved [308.66ms]
+(pass) healthy host heartbeat reconciles an unarmed orphan: missing [307.06ms]
+(pass) heartbeat orphan recovery respects in-flight [275.85ms]
+(pass) heartbeat orphan recovery respects recent [292.25ms]
+(pass) heartbeat orphan recovery respects frozen [292.72ms]
+(pass) heartbeat orphan recovery respects cold-held [285.33ms]
+(pass) finished real worker, lost parent: restart applies approved exactly once without re-auditing [1059.45ms]
+(pass) finished real worker, lost parent: restart applies disapproved exactly once without re-auditing [911.29ms]
+(pass) manual resume consumes a completed parked claim instead of launching another auditor [500.26ms]
+(pass) agent resume consumes a completed parked claim instead of launching another auditor [398.94ms]
+(pass) silent file-backed successor applies a finished verdict from the dead generation [466.40ms]
+(pass) legacy completed jobs bind the original goal, contract, and claim without new metadata [1.93ms]
+(pass) newer unfinished candidate prevents replay of an older completed result [0.95ms]
+(pass) saved result refuses unsafe recovery: revision [0.63ms]
+(pass) saved result refuses unsafe recovery: claim [0.57ms]
+(pass) saved result refuses unsafe recovery: structured-claim [0.53ms]
+(pass) saved result refuses unsafe recovery: hash [0.57ms]
+(pass) saved result refuses unsafe recovery: result-identity [0.49ms]
+(pass) saved result refuses unsafe recovery: cancelled-tool [0.81ms]
+(pass) saved result refuses unsafe recovery: strict-challenge [3.44ms]
+(pass) saved result refuses unsafe recovery: unsupported-tool [0.74ms]
+(pass) corrupt final progress identity refuses recovery without consuming the claim [0.80ms]
+(pass) saved approval still enforces the audit-tool floor and regression shield [0.95ms]
+(pass) second audit pass remains visible through thinking, tools, and report generation [0.93ms]
+
+ 31 pass
+ 0 fail
+Ran 31 tests across 2 files. [8.32s]

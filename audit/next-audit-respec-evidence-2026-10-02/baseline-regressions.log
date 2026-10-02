@@ -1,0 +1,128 @@
+Baseline HEAD archive. Omitted the new helper import so old code can run the route assertions.
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-draft-phase.test.ts:
+17 |   const ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-draft" } });
+18 |   await pi.fire("session_start", { reason: "startup" }, ctx);
+19 |   try {
+20 |     await pi.command("loop", "respec", ctx); await tick(100);
+21 |     const draft = pi.sent.find(s => s.message.content?.includes("[RESPEC BIG DRAFT]"));
+22 |     assert.ok(draft, "the route actually sends the dedicated drafting prompt");
+                ^
+AssertionError: the route actually sends the dedicated drafting prompt
+ generatedMessage: false,
+     actual: undefined,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-next-baseline-xcfmgfx7/tests/respec-draft-phase.test.ts:22:12
+      at processTicksAndRejections (native:7:39)
+(fail) missing-spec respec dispatches a durable dedicated draft and gates reconciliation [351.01ms]
+47 |     seedState(cwd, { goal: null, loop: { target: respecTarget("SPEC.md", { bootstrapping: true }),
+48 |       specFile, active: false, stopReason: "held: restored in a fresh session", iteration: 32, maxIterations: 0, plateauWindow: 5, stallCount: 0,
+49 |       bestValue: null, lastValue: null, history: [], startedAt: new Date().toISOString() } });
+50 |     __testOnlyLoadState(cwd);
+51 |     await pi.command("loop", "resume", ctx); await tick(100);
+52 |     assert.equal(readState(cwd).loop?.respecPhase, "draft");
+                ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ undefined
+- 'draft'
+
+ generatedMessage: true,
+     actual: undefined,
+   expected: "draft",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-next-baseline-xcfmgfx7/tests/respec-draft-phase.test.ts:52:12
+      at processTicksAndRejections (native:7:39)
+(fail) legacy bootstrap loops recover into the draft phase, including an existing partial spec [141.03ms]
+
+tests/completed-audit-recovery.test.ts:
+50 |     delete g.pendingCompletion!.phase;
+51 |     seedState(cwd, { goal: g });
+52 |     job(cwd, g, { output: `<evidence>\nartifact inspected\n</evidence>\n<${verdict}/>` });
+53 |     const pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+54 |     try {
+55 |       assert.equal(readState(cwd).goal?.pendingCompletion, undefined);
+                  ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ {
++   at: '2026-10-02T09:19:49.567Z',
++   attemptId: 'saved-claim',
++   completionSummary: 'artifact delivered',
++   quotaAttempts: undefined,
++   quotaAutoRetryUntil: undefined,
++   quotaFirstAt: undefined,
++   verificationSummary: 'artifact exists'
++ }
+- undefined
+
+ generatedMessage: true,
+     actual: {
+  at: "2026-10-02T09:19:49.567Z",
+  attemptId: "saved-claim",
+  completionSummary: "artifact delivered",
+  verificationSummary: "artifact exists",
+  quotaAttempts: undefined,
+  quotaFirstAt: undefined,
+  quotaAutoRetryUntil: undefined,
+},
+   expected: undefined,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-next-baseline-xcfmgfx7/tests/completed-audit-recovery.test.ts:55:14
+      at processTicksAndRejections (native:7:39)
+(fail) legacy parked claim without phase consumes saved approved on the first restore [228.96ms]
+50 |     delete g.pendingCompletion!.phase;
+51 |     seedState(cwd, { goal: g });
+52 |     job(cwd, g, { output: `<evidence>\nartifact inspected\n</evidence>\n<${verdict}/>` });
+53 |     const pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+54 |     try {
+55 |       assert.equal(readState(cwd).goal?.pendingCompletion, undefined);
+                  ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ {
++   at: '2026-10-02T09:19:49.719Z',
++   attemptId: 'saved-claim',
++   completionSummary: 'artifact delivered',
++   quotaAttempts: undefined,
++   quotaAutoRetryUntil: undefined,
++   quotaFirstAt: undefined,
++   verificationSummary: 'artifact exists'
++ }
+- undefined
+
+ generatedMessage: true,
+     actual: {
+  at: "2026-10-02T09:19:49.719Z",
+  attemptId: "saved-claim",
+  completionSummary: "artifact delivered",
+  verificationSummary: "artifact exists",
+  quotaAttempts: undefined,
+  quotaFirstAt: undefined,
+  quotaAutoRetryUntil: undefined,
+},
+   expected: undefined,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /tmp/glla-next-baseline-xcfmgfx7/tests/completed-audit-recovery.test.ts:55:14
+      at processTicksAndRejections (native:7:39)
+(fail) legacy parked claim without phase consumes saved disapproved on the first restore [145.86ms]
+
+ 0 pass
+ 27 filtered out
+ 4 fail
+Ran 4 tests across 2 files. [2.42s]
+
+Exit status: 1

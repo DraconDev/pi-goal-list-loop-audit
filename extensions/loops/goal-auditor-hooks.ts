@@ -2478,7 +2478,7 @@ export function resumeCompletedCompletionAudit(ctx: ExtensionContext, opts: { or
   const goal = state.goal;
   const claim = goal?.pendingCompletion;
   if (!goal || !claim || !claim.attemptId || isSettlingClaim(claim)
-    || (goal.status !== "auditing" && (goal.status !== "paused" || claim.phase !== "recovery-pending")
+    || (goal.status !== "auditing" && (goal.status !== "paused" || (claim.phase ?? "recovery-pending") !== "recovery-pending")
       && !(goal.status === "active" && (opts.origin === "manual" || opts.origin === "agent")))) return false;
   if (!freshCtxForGeneration(sessionGeneration)) return false;
   const settings = loadSettings(ctx.cwd);

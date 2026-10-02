@@ -43,6 +43,24 @@ async function boot(pi: MockPi, cwd: string) {
 }
 afterEach(() => { __testOnlyResetAuditorSurface(); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); });
 
+for (const verdict of ["approved", "disapproved"] as const) {
+  test(`legacy parked claim without phase consumes saved ${verdict} on the first restore`, async () => {
+    const cwd = tmpCwd(), g = goal();
+    g.status = "paused";
+    delete g.pendingCompletion!.phase;
+    seedState(cwd, { goal: g });
+    job(cwd, g, { output: `<evidence>\nartifact inspected\n</evidence>\n<${verdict}/>` });
+    const pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+    try {
+      assert.equal(readState(cwd).goal?.pendingCompletion, undefined);
+      assert.equal(events(cwd).filter(e => e.type === "audit_completed_result_recovered").length, 1);
+      assert.equal(events(cwd).filter(e => e.type === "audit_started").length, 0);
+      if (verdict === "approved") assert.ok(fs.existsSync(archivedGoalPath(cwd, g.id)));
+      else assert.equal(readState(cwd).goal?.auditHistory?.at(-1)?.disapproved, true);
+    } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+  });
+}
+
 for (const verdict of ["approved", "disapproved", "missing"] as const) {
   test(`healthy host heartbeat reconciles an unarmed orphan: ${verdict}`, async () => {
     const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);

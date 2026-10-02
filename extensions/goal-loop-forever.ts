@@ -165,6 +165,8 @@ export interface LoopState {
    * (specHash compared per tick), checkbox progress (specChecked →
    * spec_item_progress events), and the refine tool's specText write path. */
   specFile?: string;
+  /** Missing-spec respec bootstrap is drafting, not reconciliation. */
+  respecPhase?: "draft" | "reconcile";
   specHash?: string;
   specChecked?: number;
   /** v0.33.2: hypothesis feedback loop — the last turn's HYPOTHESIS line
@@ -567,6 +569,25 @@ export function respecTarget(specName: string, opts?: { bootstrapping?: boolean 
     ? `No ${specName} exists yet — phase 1 is the big draft: write the comprehensive ${specName} from the current codebase first (binding requirements under a \`## Rules\` section, everything else as descriptive sections), then reconcile. `
     : "";
   return `${draft}Reconcile the codebase against ${specName} (the project spec in the root). The spec is not frozen: its \`## Rules\` section is binding — close rule/code gaps by changing the code, and report a genuine rule conflict with reality instead of forcing it. Anything outside Rules is descriptive — when it disagrees with the code, update ${specName} itself to match reality rather than churning code to match stale prose. Otherwise pick the next gap between spec and code and close it. Rotate: one iteration implements a missing or outdated spec item, the next audits something already "implemented" against the spec and fixes what drifted.`;
+}
+
+/** Recognize pre-phase bootstrap loops without treating arbitrary spec loops as respec. */
+export function respecNeedsDraftPhase(loop: LoopState): boolean {
+  return loop.respecPhase === "draft" || (loop.respecPhase === undefined && !!loop.specFile
+    && loop.target.startsWith(`No ${loop.specFile.split(/[\\/]/).pop()} exists yet — phase 1 is the big draft:`));
+}
+
+/** A file alone may be an incremental draft. Require the explicit end-of-turn
+ * handoff and a nonempty Rules section before the orchestrator changes phase.
+ * This is a structural gate, not proof that the draft is comprehensive. */
+export function respecDraftReady(specFile: string, assistantText: string): boolean {
+  if (!/^\[RESPEC DRAFT COMPLETE\]\s*$/m.test(assistantText)) return false;
+  try {
+    const text = readFileSync(specFile, "utf8");
+    const rules = text.match(/^## Rules[^\S\r\n]*\r?\n([\s\S]*?)(?=^#{1,2}\s|$(?![\s\S]))/m)?.[1];
+    return /^#\s+\S/m.test(text) && !!rules?.trim()
+      && [...text.matchAll(/^##\s+(.+)$/gm)].some(m => m[1]!.trim() !== "Rules");
+  } catch { return false; }
 }
 
 // ---- /loop audit (v0.29.0) ----

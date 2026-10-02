@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Respec drafting phase and legacy audit recovery
+
+- Missing-spec `/loop respec` now enters a persisted big-draft phase with a
+  dedicated research-and-write prompt. Reconciliation waits for a completed
+  draft handoff and a structurally valid spec. Older bootstrap loops enter
+  this phase on their next dispatch, preserving their iteration history.
+- Restore accepts saved verdicts for older parked completion claims whose
+  phase field is absent, matching the existing recovery-pending default.
+  The normal claim, request hash, revision and challenge checks still apply.
+
 ### Configurable opportunistic compaction target
 
 - `/glla` → Compactor → **Compaction token target** sets the global context
