@@ -335,7 +335,7 @@ test("D4: the auditor session row is sanitized and bounded", () => {
   )!;
   const row = lines.find((line) => line.includes("session: "));
   assert.ok(row, "the session row renders");
-  assert.doesNotMatch(row, //, "control bytes never reach the card");
+  assert.equal(row.includes("\u0007"), false, "control bytes never reach the card");
   assert.ok(row.length <= 120, `the row is bounded, got ${row.length} cells`);
 });
 
