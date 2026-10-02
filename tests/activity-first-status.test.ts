@@ -20,6 +20,7 @@ import {
   type Goal,
   type PendingCompletion,
 } from "../extensions/goal-loop-core.ts";
+import type { LoopState } from "../extensions/goal-loop-forever.ts";
 
 const NOW = Date.parse("2026-09-17T12:00:00Z");
 
@@ -312,6 +313,17 @@ test("activity-first: footer monitoring and awaiting labels agree with the card 
     { activity: "awaiting-first-turn" },
   )!;
   assert.match(awaitingFooter, /AWAITING FIRST TURN/, "awaiting badge renders from the shared activity");
+});
+
+test("D2: the loop status line folds watching into QUEUED like the goal head", () => {
+  const loop: LoopState = {
+    target: "watch the queue", iteration: 3, maxIterations: 0,
+    plateauWindow: 5, stallCount: 0, active: true, history: [],
+    startedAt: "2026-09-17T11:50:00Z",
+  };
+  const footer = buildStatusText({ goal: null, list: [], loop }, null, NOW, undefined, { activity: "monitoring" })!;
+  assert.match(footer, /⏳ QUEUED/, "the loop surface shares the fold");
+  assert.doesNotMatch(footer, /MONITORING/, "no surface renders the watching badge");
 });
 
 // ---- stamp helper: pure, attempt-scoped, sanitized ----
