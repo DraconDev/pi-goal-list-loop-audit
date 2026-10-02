@@ -2,17 +2,6 @@
 
 # Next
 
-##
-final audit can still get stuck or least previous ones that got stuck not progress
-file:///home/dracon/Pictures/Screenshots/Screenshot_20261002_100506.png
-file:///home/dracon/Pictures/Screenshots/Screenshot_20261002_100346.png
-
-
-##
-respec didnt start draft
-file:///home/dracon/Pictures/Screenshots/Screenshot_20261002_100232.png
-file:///home/dracon/Pictures/Screenshots/Screenshot_20261002_100227.png
-
 # later
 
 ##
