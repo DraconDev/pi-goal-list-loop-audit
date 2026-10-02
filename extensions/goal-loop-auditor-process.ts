@@ -488,6 +488,12 @@ export async function runAuditorFallbackWithPolicy(
     infrastructureClass: "transport",
   });
   const callbackAccepted = (accepted: boolean | void): boolean => accepted !== false;
+  // A7: a callback refusal AFTER a generation handoff is not a persistence
+  // failure — the newer generation owns the audit now. Re-check liveness
+  // before manufacturing cursorPersistenceFailure so a superseded ladder
+  // stops quietly on its in-hand result instead of hard-parking the claim.
+  const refusalResult = (candidate: AuditorFallbackCandidate, inHand: GoalAuditorResult): GoalAuditorResult =>
+    isLive() ? cursorPersistenceFailure(candidate) : inHand;
   const noCandidateResult = (): GoalAuditorResult => ({
     approved: false,
     disapproved: false,
