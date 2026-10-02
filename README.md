@@ -145,7 +145,7 @@ forcing every problem into a loop.
 
 ```text
 /goal                                      # interview + Confirm
-/goal do this, do that                     # free-form seed → dynamic draft + Confirm
+/goal sort out logins                      # vague seed → draft draws out detail + Confirm
 /goal "... Done when: ..."                 # direct contract start
 /goal start "..."                          # explicit no-interview start
 /goal start                                  # use one clear recent request, or draft safely
