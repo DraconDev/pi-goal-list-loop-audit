@@ -2,7 +2,7 @@ import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyLoadState } from "../extensions/loops/goal.js";
+import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from "../extensions/loops/goal.js";
 import { HELD_ON_RESTORE } from "../extensions/goal-loop-forever.js";
 import { readState } from "../extensions/goal-loop-core.js";
 import { MockPi, makeMockCtx, seedGoal, seedLoop, seedState, tick, tmpCwd } from "./harness/mock-pi.js";
