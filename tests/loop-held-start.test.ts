@@ -91,7 +91,6 @@ test("fresh start over a held loop: headless refuses instead of discarding", asy
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
   seedState(cwd, { loop: seedLoop({ active: false, stopReason: HELD_ON_RESTORE, target: "held respec draft" }) });
   const ctx = await boot(pi, cwd);
-  __testOnlyLoadState(cwd);
   (ctx as { hasUI: boolean }).hasUI = false;
   try {
     await pi.command("loop", "start fresh target", ctx);
@@ -105,7 +104,6 @@ test("fresh start over an explicitly stopped loop keeps today's silent behavior"
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
   seedState(cwd, { loop: seedLoop({ active: false, stopReason: "stopped by user — done for now", target: "old loop" }) });
   const ctx = await boot(pi, cwd);
-  __testOnlyLoadState(cwd);
   let selects = 0;
   ctx.ui.selectImpl = async () => { selects++; return undefined; };
   try {
