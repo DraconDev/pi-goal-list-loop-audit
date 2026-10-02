@@ -217,3 +217,25 @@ test("bug 1.7: /goal pause with a corrupted in-memory policy heals to goal and p
     setGlobalAutoResume(false);
   }
 });
+
+test("S10: unhealable corruption names the true cause instead of failing over to a misleading refusal", async () => {
+  __testOnlyResetStaleFlag();
+  setGlobalAutoResume(true);
+  const cwd = tmpCwd();
+  try {
+    // Corrupted policy with NO durable .md marker: the heal cannot land.
+    // (Deliberately no seedDurablePolicy call.)
+    seedState(cwd, { goal: seedGoal({ id: GOAL_ID, policy: "lits", status: "active" }) });
+    const ctx = await freshSession(cwd, "reload");
+    await tick();
+
+    await pi.command("list", "pause", ctx);
+
+    assert.ok(ctx.ui.matching("could not be recovered from the durable goal file").length >= 1, "truthful warning names the corruption");
+    const ledger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf-8");
+    assert.match(ledger, /"goal_policy_heal_failed"/);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+    setGlobalAutoResume(false);
+  }
+});
