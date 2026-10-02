@@ -466,7 +466,53 @@ export function readSettingsFile(file: string): Partial<Settings> {
   }
 }
 
+/** C10: a hand-edited value normalizeLoadedSettings dropped (invalid →
+ * unset). Only top-level DELETES report: nested prunes (a bad chain entry,
+ * a typo'd thinking-map level) still leave the key itself effective, so the
+ * whole-value-ignored case is the reportable one. */
+export interface InvalidSettingReport {
+  key: string;
+  /** JSON snippet of the ignored raw value (≤80 chars). No source file:
+   * the normalizer sees the merged object; grep the two settings files. */
+  raw: string;
+}
+let pendingInvalidSettingReports: InvalidSettingReport[] = [];
+/** Once per process per distinct (key, raw value): loads are frequent and
+ * junk is usually stable, so the ledger must not spam one line per tick. A
+ * NEW junk value for the same key re-reports (distinct snippet). */
+const reportedInvalidSettings = new Set<string>();
+
+function noteDroppedSetting(key: string, raw: unknown): void {
+  let snippet: string;
+  try {
+    snippet = (JSON.stringify(raw) ?? String(raw)).slice(0, 80);
+  } catch {
+    snippet = String(raw).slice(0, 80);
+  }
+  const dedupe = `${key} ${snippet}`;
+  if (reportedInvalidSettings.has(dedupe)) return;
+  reportedInvalidSettings.add(dedupe);
+  pendingInvalidSettingReports.push({ key, raw: snippet });
+}
+
+/** Drain C10 reports queued by normalizeLoadedSettings since the last drain. */
+export function drainInvalidSettingReports(): InvalidSettingReport[] {
+  const out = pendingInvalidSettingReports;
+  pendingInvalidSettingReports = [];
+  return out;
+}
+
+/** Test-only: reset the C10 report queue + dedupe set between isolated rigs. */
+export function __testOnlyResetInvalidSettingReports(): void {
+  pendingInvalidSettingReports = [];
+  reportedInvalidSettings.clear();
+}
+
 export function normalizeLoadedSettings(settings: Settings): Settings {
+  // C10 snapshot: every key the checks below DELETE is a dead hand-edited
+  // value (defaults are valid by construction, so merged-in file junk is
+  // the only deletable content). Snapshot first, diff at the end.
+  const before = new Map<string, unknown>(Object.entries(settings));
   // Settings files can be edited by hand or survive an older UI. Normalize
   // the main fallback chain at every read so runtime, display, and persistence
   // all see the same bounded value.
@@ -690,6 +736,10 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   if (typeof settings.compactorModel !== "string" || settings.compactorModel.trim().length === 0) {
     delete settings.compactorModel;
   }
+  // C10 diff: report every top-level delete (see InvalidSettingReport).
+  for (const [key, raw] of before) {
+    if (!(key in settings)) noteDroppedSetting(key, raw);
+  }
   return settings;
 }
 
@@ -728,11 +778,19 @@ export function loadSettings(cwd: string): Settings {
   const project = migrateLegacySettings(readSettingsFile(projectSettingsPath(cwd)));
   const global = migrateLegacySettings(readSettingsFile(globalSettingsPath()));
   for (const key of GLOBAL_ONLY_KEYS) delete project[key];
-  return normalizeLoadedSettings(mergeSettings(
+  const out = normalizeLoadedSettings(mergeSettings(
     DEFAULT_SETTINGS as unknown as Record<string, unknown>,
     global,
     project as Record<string, unknown>,
   ) as unknown as Settings);
+  // C10: surface dead hand-edited values as ledger evidence (throttled once
+  // per distinct junk value inside noteDroppedSetting). loadGlobalSettings
+  // has no cwd to ledger to, so it leaves reports queued for the next
+  // cwd-bearing load — the settings UI and session start always take this path.
+  for (const report of drainInvalidSettingReports()) {
+    appendLedger(cwd, "settings_invalid_ignored", { key: report.key, raw: report.raw });
+  }
+  return out;
 }
 
 /**
