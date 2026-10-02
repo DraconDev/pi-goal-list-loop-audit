@@ -84,15 +84,16 @@ the recommended experience.
 Start pi in the project you want it to work on, then just say what you want:
 
 ```text
-/goal fix the login flow, failed logins should return a useful error
+/goal logins are broken, sort it out
 ```
 
-There is no required format. A plain `do this, do that` seed leads into a
-draft: GLLA researches the ambiguity, asks focused questions at dynamic
-length — a word or two for a clear ask, more for a vague one — and shows a
-Confirm dialog before anything activates. If your seed already carries
-enough detail (alone or with the recent conversation), it skips the
-questions and goes straight to confirmation.
+There is no required format — vagueness is fine. A plain seed leads into
+a draft: GLLA researches the problem itself, asks focused questions at
+dynamic length to draw out whatever detail matters, and shows a Confirm
+dialog before anything activates. You never have to front-load the whole
+spec; the draft pulls it out of you. If your seed already carries enough
+detail (alone or with the recent conversation), it skips the questions
+and goes straight to confirmation.
 
 When you already know the finish line, spell it out — a `Done when:`
 contract starts directly and is independently audited at the end:

@@ -91,12 +91,14 @@ Start pi in the project directory where the work belongs, then just say what
 you want — no required format:
 
 ```text
-/goal fix the login flow, failed logins should return a useful error
+/goal logins are broken, sort it out
 ```
 
-A free-form seed leads into a draft: GLLA researches the ambiguity, asks
-focused questions at dynamic length, and waits for Confirm before anything
-activates. If the seed already carries enough detail, it skips the questions
+Vagueness is fine — a free-form seed leads into a draft: GLLA researches
+the problem itself, asks focused questions at dynamic length to draw out
+whatever detail matters, and waits for Confirm before anything activates.
+You never have to front-load the whole spec; the draft pulls it out of
+you. If the seed already carries enough detail, it skips the questions
 and goes straight to confirmation. A complete `Done when:` clause starts
 directly and is independently audited at the end:
 
