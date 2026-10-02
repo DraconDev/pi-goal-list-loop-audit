@@ -500,8 +500,7 @@ function freshCtx(): ExtensionContext | null {
     lastCtx.isIdle();
     return lastCtx;
   } catch (err) {
-    void err;
-    lastCtx = null; // NEGPROOF: old catch-all
+    if (isStaleApiError(err)) lastCtx = null;
     return null;
   }
 }
