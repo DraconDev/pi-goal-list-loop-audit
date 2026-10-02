@@ -21,6 +21,7 @@ import {
   parseAuditFindingsForFanout,
 } from "../extensions/goal-loop-forever.ts";
 import { readGoalRuntimeSource } from "./harness/goal-source.js";
+import { parseListItemDeclaration } from "../extensions/goal-loop-core.ts";
 
 const SRC = readGoalRuntimeSource();
 const CMDS = fs.readFileSync(new URL("../extensions/goal-commands.ts", import.meta.url), "utf-8");
