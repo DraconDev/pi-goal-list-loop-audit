@@ -23,11 +23,17 @@ test("A9 premise: appendAuditVerdict mutates the passed history in place (array 
   assert.ok(prior.supersededBy?.startsWith("disapproval:"));
 });
 
-test("A9 (pin): the apply path copies auditHistory before appendAuditVerdict can touch it", () => {
+test("A9 (pin): both apply paths copy auditHistory before appendAuditVerdict can touch it", () => {
   assert.match(
     HOOKS,
     /const history = \(state\.goal\.auditHistory \?\? \[\]\)\.map\(\(v\) => \(\{\.\.\.v\}\)\);[^]*?appendAuditVerdict\(history, \{/,
-    "per-entry copy precedes the mutating append",
+    "detached site: per-entry copy precedes the mutating append",
+  );
+  assert.match(
+    TOOLS,
+    /const history = \(state\.goal\.auditHistory \?\? \[\]\)\.map\(\(v\) => \(\{\.\.\.v\}\)\);[^]*?appendAuditVerdict\(history, \{/,
+    "inline/Esc site: per-entry copy precedes the mutating append",
   );
   assert.doesNotMatch(HOOKS, /appendAuditVerdict\(state\.goal\.auditHistory/, "the live array is never passed to the in-place push");
+  assert.doesNotMatch(TOOLS, /const history = state\.goal\.auditHistory \?\? \[\];/, "no uncopied live-array alias remains");
 });
