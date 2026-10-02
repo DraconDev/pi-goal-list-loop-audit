@@ -5298,3 +5298,13 @@ test("tweak carries its revision bump inside the durable patch (no phantom revis
   assert.match(CMDS_SRC, /if \(!updateGoal\(patch, ctx\)\) return false;/);
   assert.ok(!/state\.goal = bumpGoalRevision\(latest\);/.test(CMDS_SRC), "no pre-commit RAM bump in cmdTweak");
 });
+
+test("resetContinuationDispatchState clears the in-memory pending ref (S2 audit)", () => {
+  // Both session_start and the wipe/abort reset funnel through
+  // clearContinuationStartWatchdog, which nulls pendingContinuationDispatch.
+  // Pin it: a surviving ref would blind the heartbeat early-return forever.
+  setPendingContinuationDispatchRef({ id: "stale-ref", sentAt: Date.now(), generation: 0, kind: "goal", goalId: "g", marker: "test", ownerSessionId: "main" } as any);
+  assert.ok(pendingContinuationDispatchRef() !== null, "precondition: ref set");
+  resetContinuationDispatchState(tmpCwd());
+  assert.equal(pendingContinuationDispatchRef(), null, "reset clears the pending ref");
+});
