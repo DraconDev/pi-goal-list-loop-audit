@@ -348,3 +348,40 @@ no worker): by design the parked claim waits for an explicit
 this tree, but a parked claim never auto-retries. Post-release:
 resume it explicitly; if it parks again with a cursor-persistence
 error, that is a new bug against the recovery write path.
+
+## Field addendum 2 — auditor still parks on 0.38.108 (clean-web, 2026-10-02 pm)
+
+Journal + job-dir forensics on the live clean-web claim (5 verdicts, then
+attempts that never settle). Three stacked defects, two fixed:
+
+FIXED (a) Dead-cursor poison: worker-death parks kept
+`auditorAttemptedRefs=[dead model]`; the next session-recovery begin
+inherited them (fresh cycle requires `auditorFallbackExhausted`, never
+set by a death park), so the walker exhausted in ~9ms with "no auditor
+model" and consumed the one-shot auto retry. Journal-proven (select→
+exhausted in 9ms, twice). Fix: both park sites clear the 7 dead-cursor
+keys (mirror the burn clearing); evictions + identical streak survive.
+Test: workerless park drops the cursor.
+FIXED (d) Silent reconcile: `readCompletedCompletionAudit` returned null
+with zero ledger trace (only exceptions logged). A complete valid
+6th verdict (disapproval, `ok:true`, full evidence) sat unapplied while
+the claim parked workerless. Fix: every rejecting gate now ledgers
+`completed_audit_recovery_rejected` with its name. The mur2sq0s verdict
+is still on disk — the next resume re-attempts reconcile and will name
+its gate. Test: rejection names gate + attempt.
+OPEN (b) Orphaned supervision: the mur2sq0s worker ran 14:57→15:10 and
+completed, but the parent poll never applied the result (no settlement,
+no ledger). Prime suspect: generation handoff/compaction orphaned the
+await (A7 quiet-stop) with no adoption by the new generation. Needs
+runtime evidence (job lock + handoff markers at the time); shell was
+dead for the whole session so no process telemetry could be taken.
+OPEN (c) Detector masked by host activity: the stranded branch keys on
+host quiet (`lastRealActivityAt`), so in an active session a dead audit
+sits until the host idles 90s (here: 45 min, 15:10→15:55). Fix direction:
+key ALSO on audit-progress silence (claim `lastActivityAt` + worker
+absence). Needs claim-activity writer verification first.
+OPEN (e) Same-failure burn: "provider empty response" × N and
+"unsupported tool: write" cycle the same single candidate with no
+circuit breaker on the death path (the identical streak lives only in
+settlement, which needs a result). Provider flakiness is external (the
+main model hit empty responses too); GLLA's share is bounding it.
