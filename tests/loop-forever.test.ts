@@ -25,6 +25,7 @@ import {
   auditMeasureCmd,
   auditTarget,
   countOpenAuditFindings,
+  countCheckedSpecItems,
   topOpenAuditFinding,
   parseAuditFindingsForFanout,
   AUDIT_FINDINGS_REL,
