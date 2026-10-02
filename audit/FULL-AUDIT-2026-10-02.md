@@ -323,3 +323,28 @@ policy-self-heal, objective-conflict, cmd-review, settings-stale-save,
 settings-invalid-report, audit-history-copy, session-rpc-rebind,
 completion-summary-lines, loop-forever, display), then the broad
 behavioral + auditor suites, then `check:inventory` + inventory regen.
+
+## Field addendum — held respec loop silently discarded (2026-10-02 screenshots)
+
+A respec draft loop completed its draft (`[RESPEC DRAFT COMPLETE]`),
+the session reloaded, the loop HELD (autoResume off) — and the
+load-hold warning named every resume verb EXCEPT `/loop resume`. The
+user ran `/loop respec` again, which silently replaced the held loop
+with a fresh reconcile loop; the held loop's history was lost.
+
+Fix (unreleased tree, `tests/loop-held-start.test.ts` 6 tests):
+- `startLoopFromConfig` (`goal-loop.ts`) now asks (Resume / Start
+  fresh / Cancel) before a fresh start replaces a lifecycle-held
+  loop; headless fails closed (`loop_fresh_start_refused_held`);
+  explicit "Start fresh" ledgers `loop_held_discarded`. Deliberate
+  stops/pauses keep silent fresh-start (already decided).
+- The load-hold warning names `/loop resume` when a loop is held
+  (byte-identical otherwise, pinned by test).
+
+Related field report (Clean Web final audit parked ~90m,
+`auditor_recovery_cursor_persistence_failed` + `workerless-in-flight`,
+no worker): by design the parked claim waits for an explicit
+`/goal resume` or `/list resume` — the S9/A6 recovery paths exist in
+this tree, but a parked claim never auto-retries. Post-release:
+resume it explicitly; if it parks again with a cursor-persistence
+error, that is a new bug against the recovery write path.
