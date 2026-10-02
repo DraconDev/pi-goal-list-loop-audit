@@ -1987,6 +1987,18 @@ export function readCompletedCompletionAudit(cwd: string, goal: Goal, strictChal
   const logicalId = goal.pendingCompletion?.attemptId;
   if (!logicalId || !ATTEMPT_ID_RE.test(logicalId)) return null;
   const root = path.join(piGlaDir(cwd), "audit-jobs");
+  // Field 2026-10-02 (clean-web): a complete valid verdict sat unapplied
+  // while reconcile returned null with zero ledger trace — every gate
+  // below failed silently. Name the rejecting gate durably so the next
+  // field occurrence reads as a cause, not a mystery. At most one line
+  // per reconcile attempt; the callers (heartbeat pre-park, session
+  // recovery, explicit resume) bound the frequency.
+  const reject = (gate: string): null => {
+    try {
+      appendLedger(cwd, "completed_audit_recovery_rejected", { logicalAttemptId: logicalId, gate });
+    } catch { /* best effort; the null below is the contract */ }
+    return null;
+  };
   try {
     const jobs = readdirSync(root, { withFileTypes: true })
       .filter(entry => entry.isDirectory() && (entry.name === logicalId || entry.name.startsWith(`${logicalId}-`)))
@@ -1998,32 +2010,37 @@ export function readCompletedCompletionAudit(cwd: string, goal: Goal, strictChal
         return { dir, request, startedAt, name: entry.name };
       }).sort((a, b) => b.startedAt - a.startedAt);
     const job = jobs[0];
-    if (!job || (jobs[1] && jobs[1].startedAt === job.startedAt)) return null;
+    if (!job) return reject("no-job-dir");
+    if (jobs[1] && jobs[1].startedAt === job.startedAt) return reject("job-timestamp-tie");
     const { request, dir, startedAt, name } = job;
     const { requestHash: hash, ...unsigned } = request;
     const token = captureGoalRevision(goal);
-    if (request.protocolVersion !== PROTOCOL_VERSION || request.attemptId !== name
-      || requestHash(unsigned) !== hash || path.resolve(request.cwd) !== path.resolve(cwd)
-      || !token || request.goalRevision?.goalId !== token.goalId || request.goalRevision?.revision !== token.revision
-      || (request.logicalAttemptId !== undefined && request.logicalAttemptId !== logicalId)
-      || (request.recoveryIdentity !== undefined
-        ? request.recoveryIdentity !== completionAuditRecoveryIdentity(goal)
-        : !legacyRequestMatchesClaim(request, goal))) return null;
+    if (request.protocolVersion !== PROTOCOL_VERSION) return reject("request-protocol");
+    if (request.attemptId !== name) return reject("request-attempt");
+    if (requestHash(unsigned) !== hash) return reject("request-hash");
+    if (path.resolve(request.cwd) !== path.resolve(cwd)) return reject("request-cwd");
+    if (!token || request.goalRevision?.goalId !== token.goalId || request.goalRevision?.revision !== token.revision) return reject("request-revision");
+    if (request.logicalAttemptId !== undefined && request.logicalAttemptId !== logicalId) return reject("request-logical-id");
+    if (request.recoveryIdentity !== undefined
+      ? request.recoveryIdentity !== completionAuditRecoveryIdentity(goal)
+      : !legacyRequestMatchesClaim(request, goal)) return reject("request-identity");
     const result = JSON.parse(readFileSync(path.join(dir, "result.json"), "utf8")) as AuditorResultFile;
-    if (result.protocolVersion !== PROTOCOL_VERSION || result.attemptId !== name || result.requestHash !== hash
-      || result.goalRevision?.goalId !== token.goalId || result.goalRevision?.revision !== token.revision
-      || typeof result.output !== "string" || !Array.isArray(result.toolCalls)
-      || typeof result.ok !== "boolean") return null;
+    if (result.protocolVersion !== PROTOCOL_VERSION) return reject("result-protocol");
+    if (result.attemptId !== name) return reject("result-attempt");
+    if (result.requestHash !== hash) return reject("result-hash");
+    if (result.goalRevision?.goalId !== token.goalId || result.goalRevision?.revision !== token.revision) return reject("result-revision");
+    if (typeof result.output !== "string" || !Array.isArray(result.toolCalls)
+      || typeof result.ok !== "boolean") return reject("result-shape");
     let progress: AuditorProgressFile | undefined;
     try { progress = JSON.parse(readFileSync(path.join(dir, "progress.json"), "utf8")); } catch { /* result-only legacy job */ }
-    if (progress && (progress.protocolVersion !== PROTOCOL_VERSION || progress.attemptId !== name || progress.requestHash !== hash)) return null;
+    if (progress && (progress.protocolVersion !== PROTOCOL_VERSION || progress.attemptId !== name || progress.requestHash !== hash)) return reject("progress-mismatch");
     const validated = validateCompletedAuditorResult({
       result, goal, model: request.model, thinkingLevel: request.thinkingLevel,
       capturedRevisionToken: token, strictChallenge: (strictChallenge && request.auditTier !== "light") || request.strictChallenge === true,
       startedAt, nowMs: Date.now(), lastProgress: progress, reportStall: () => {},
     });
     // Infrastructure results belong to retry recovery, never semantic settlement.
-    if (!validated.approved && !validated.disapproved && !validated.impossible) return null;
+    if (!validated.approved && !validated.disapproved && !validated.impossible) return reject("no-verdict");
     const durationMs = typeof progress?.elapsedMs === "number" && Number.isFinite(progress.elapsedMs)
       ? Math.max(0, progress.elapsedMs) : Math.max(0, statSync(path.join(dir, "result.json")).mtimeMs - startedAt);
     return { result: { ...validated, ...(request.auditTier ? { auditTier: request.auditTier } : {}), ...(request.spotCheck ? { spotCheck: true } : {}) }, jobAttemptId: name, startedAt, durationMs };
