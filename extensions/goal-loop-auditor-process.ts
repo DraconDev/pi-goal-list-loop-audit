@@ -916,7 +916,7 @@ async function terminateWorker(child: ChildProcess): Promise<void> {
   return termination;
 }
 
-function workerProcessMatches(cwd: string, pid: number, dir: string): boolean {
+export function workerProcessMatches(cwd: string, pid: number, dir: string, platform: NodeJS.Platform = process.platform): boolean {
   try {
     const workerDir = path.resolve(dir);
     const lock = JSON.parse(readFileSync(path.join(workerDir, "lock"), "utf8")) as Record<string, unknown>;
@@ -924,7 +924,23 @@ function workerProcessMatches(cwd: string, pid: number, dir: string): boolean {
       ? path.resolve(lock.workerPath)
       : "goal-auditor-worker";
     let command: string;
-    if (process.platform === "win32") {
+    if (platform === "darwin") {
+      // macOS has no /proc: read the command line via ps. There is no
+      // cheap cwd equivalent (lsof), so identity rests on the cmdline
+      // alone — the workerDir carries both attempt nonces, which is
+      // sufficient to rule out PID reuse. Fails closed on any error.
+      const inspected = nodeSpawnSync("ps", ["-o", "command=", "-p", String(pid)], {
+        encoding: "utf8",
+        timeout: 1_000,
+      });
+      if (inspected.error || inspected.status !== 0) return false;
+      command = String(inspected.stdout ?? "").trim();
+      if (!command) return false;
+      return (command.includes(workerPath) || command.includes(path.basename(workerPath)))
+        && command.includes("--job-dir")
+        && command.includes(workerDir);
+    }
+    if (platform === "win32") {
       // Verify the command line before taskkill /T. A stale numeric PID can be
       // reused by an unrelated process between host sessions; PowerShell's
       // CIM query is available on supported Windows hosts and fails closed if
