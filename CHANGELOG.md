@@ -1,6 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.38.108 — full-audit fixes plus held-loop protection (2026-10-02)
+
+### Held loop is never silently discarded
+
+- Starting a fresh loop (slash subcommand or confirmed agent draft) while a
+  lifecycle-held loop exists now offers Resume / Start fresh / Cancel
+  instead of silently replacing the held loop's history. Headless starts
+  fail closed and ask for an explicit `/loop resume`.
+- The reload-hold warning now names `/loop resume` alongside the other
+  resume verbs when a held loop exists (field: a held respec draft loop
+  looked stalled and was discarded by a fresh `/loop respec` after reload).
 
 ### Full-audit implementation pass (2026-10-02 tasklist)
 
