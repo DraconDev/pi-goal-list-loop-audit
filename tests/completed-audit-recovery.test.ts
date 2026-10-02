@@ -25,6 +25,19 @@ function spawnWorkerStub(cwd: string, dir: string): { child: ChildProcess; clean
 function writeWorkerLock(dir: string, attemptId: string, pid: number): void {
   fs.writeFileSync(path.join(dir, "lock"), JSON.stringify({ protocolVersion: 1, attemptId, pid, role: "worker", workerPath: "node" }));
 }
+/** Bun returns from spawn() before the child has exec'd: an immediate
+ * /proc/pid/cmdline read sees an empty (pre-exec) cmdline ~50% of the time,
+ * and workerProcessMatches correctly fails closed on it. Production never
+ * checks a just-spawned pid (heartbeat/reap only inspect previous-session
+ * locks), so the wait lives here: poll until the stub is observable. */
+async function waitForWorkerStub(cwd: string, pid: number, dir: string, platform?: NodeJS.Platform): Promise<boolean> {
+  const deadline = Date.now() + 5000;
+  for (;;) {
+    if (workerProcessMatches(cwd, pid, dir, platform ?? process.platform)) return true;
+    if (Date.now() >= deadline) return false;
+    await new Promise(r => setTimeout(r, 25));
+  }
+}
 
 function goal(): Goal {
   return seedGoal({ status: "auditing", objective: "verify the artifact", verificationContract: "artifact exists", revision: 0,
