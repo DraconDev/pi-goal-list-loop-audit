@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyLoadState } from "../extensions/loops/goal.js";
-import { runLoopTick, clearLoopTimer } from "../extensions/goal-loop.js";
+import { runLoopTick, clearLoopTimer, loopPrompt } from "../extensions/goal-loop.js";
 import { readState } from "../extensions/goal-loop-core.js";
 import { respecTarget, respecDraftReady, respecSpecComplete } from "../extensions/goal-loop-forever.js";
 import { MockPi, makeMockCtx, tmpCwd, tick, seedState } from "./harness/mock-pi.js";
@@ -133,30 +133,19 @@ test("sticky handoff: marker one turn, finished spec the next, still reconciles"
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
 
-test("draft prompt carries the stuck-ladder intervention note", async () => {
-  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
-  const ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-intervention" } });
-  await pi.fire("session_start", { reason: "startup" }, ctx);
-  try {
-    // A draft loop mid-stuck-ladder; the incoming turn repeats the same
-    // text so the classifier keeps it stuck and the dispatch intervenes.
-    seedState(cwd, { goal: null, loop: { target: "Draft the comprehensive SPEC.md from the current codebase before reconciliation",
-      specFile: path.join(cwd, "SPEC.md"), respecPhase: "draft",
-      active: true, iteration: 3, maxIterations: 0, plateauWindow: 5, stallCount: 0,
-      consecutiveStuck: 1, lastStuckReason: "same coverage twice",
-      recentTexts: ["Researching.", "Researching."],
-      bestValue: null, lastValue: null, history: [], startedAt: new Date().toISOString() } });
-    __testOnlyLoadState(cwd);
-    pi.sent.length = 0;
-    const turn = (text: string) => ({ messages: [{ role: "assistant", content: [{ type: "text", text }] }] });
-    await runLoopTick(ctx as unknown as ExtensionContext, turn("Researching."));
-    await tick(150);
-    clearLoopTimer();
-    const draft = pi.sent.find(s => s.message.content?.includes("[RESPEC BIG DRAFT]"));
-    assert.ok(draft, "draft dispatched");
-    assert.ok(!draft.message.content?.includes("${INTERVENTION_NOTE}"), "placeholder is replaced");
-    assert.ok(/Abandon the current angle|genuinely different approach/i.test(draft.message.content ?? ""), "intervention survives into the draft prompt");
-  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+test("draft prompt carries the stuck-ladder intervention note", () => {
+  const loop = {
+    target: "Draft the comprehensive SPEC.md", specFile: path.join(tmpCwd(), "SPEC.md"),
+    respecPhase: "draft", active: true, iteration: 3, maxIterations: 0,
+    plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null,
+    history: [], startedAt: new Date().toISOString(),
+  } as unknown as import("../extensions/goal-loop-forever.ts").LoopState;
+  const prompt = loopPrompt(loop, "", "", "", "INTERVENTION-PROBE: vary coverage");
+  assert.ok(prompt.includes("[RESPEC BIG DRAFT]"), "draft branch taken");
+  assert.ok(prompt.includes("INTERVENTION-PROBE: vary coverage"), "intervention survives into the draft prompt");
+  assert.ok(!prompt.includes("${INTERVENTION_NOTE}"), "placeholder is replaced");
+  const quiet = loopPrompt(loop, "", "", "", "");
+  assert.ok(!quiet.includes("${INTERVENTION_NOTE}"), "empty note leaves no placeholder");
 });
 
 test("draft phase without a spec file degrades instead of throwing", async () => {

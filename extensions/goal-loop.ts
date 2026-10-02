@@ -389,7 +389,7 @@ async function parkLoopOnWrongBranch(ctx: ExtensionContext, loop: LoopState, whe
   return true;
 }
 
-function loopPrompt(loop: LoopState, regressionNote: string, strategyNote: string, boundsNote: string, interventionNote = "", variantNote = "", hypothesisNote = "", refineHintNote = ""): string {
+export function loopPrompt(loop: LoopState, regressionNote: string, strategyNote: string, boundsNote: string, interventionNote = "", variantNote = "", hypothesisNote = "", refineHintNote = ""): string {
   // A bare draft phase without a spec file (corrupt/hand-migrated state)
   // cannot draft to nowhere: fall through to the standard prompt instead
   // of throwing on path.basename(undefined) and killing the dispatch.
