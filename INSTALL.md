@@ -87,7 +87,18 @@ for the same active work. One supervisor should own continuation scheduling.
 
 ## First goal in 60 seconds
 
-Start pi in the project directory where the work belongs:
+Start pi in the project directory where the work belongs, then just say what
+you want — no required format:
+
+```text
+/goal fix the login flow, failed logins should return a useful error
+```
+
+A free-form seed leads into a draft: GLLA researches the ambiguity, asks
+focused questions at dynamic length, and waits for Confirm before anything
+activates. If the seed already carries enough detail, it skips the questions
+and goes straight to confirmation. A complete `Done when:` clause starts
+directly and is independently audited at the end:
 
 ```text
 /goal "Improve the login flow.
@@ -98,10 +109,9 @@ Done when:
 - the change is documented and committed."
 ```
 
-A complete `Done when:` clause starts directly. For a new or ambiguous
-objective, use bare `/goal` instead: GLLA interviews you, helps shape the
-contract, and waits for Confirm. `/goal start "..."` skips that interview only
-when you explicitly want it skipped. Bare `/goal start` uses one clear recent
+Bare `/goal` always interviews, `/goal plan "..."` always forces the full
+research-first draft, and `/goal start "..."` skips the interview only when
+you explicitly want it skipped. Bare `/goal start` uses one clear recent
 user request when possible and otherwise returns to the normal drafting flow;
 it never guesses across ambiguous requests.
 
