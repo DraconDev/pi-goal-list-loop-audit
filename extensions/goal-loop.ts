@@ -57,6 +57,7 @@ import {
   respecTarget,
   respecNeedsDraftPhase,
   respecDraftReady,
+  respecSpecComplete,
   specFileHash,
   topOpenAuditFinding,
   LOOP_DEFAULTS,
@@ -1640,6 +1641,24 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
         `Using ${path.basename(specPath)} as the spec. Both files exist — worth consolidating; the loop treats only ${path.basename(specPath)} as the spec.`,
         "info",
       );
+    }
+    // An existing file that is structurally incomplete (no title, empty
+    // Rules, or Rules-only) is a partial draft, not a reconcile target.
+    // Enter the draft phase so the agent finishes it before reconciliation.
+    if (!respecSpecComplete(specPath)) {
+      ctx.ui.notify(`${path.basename(specPath)} exists but is structurally incomplete — starting the dedicated big draft to finish it before reconciliation.`, "info");
+      await startLoopFromConfig(ctx, {
+        target: `Draft the comprehensive ${path.basename(specPath)} from the current codebase before reconciliation`,
+        respecPhase: "draft",
+        measureCmd: "",
+        direction: undefined,
+        plateauWindow: LOOP_DEFAULTS.plateauWindow,
+        maxIterations: 0,
+        branch: false,
+        force: false,
+        specFile: specPath,
+      });
+      return;
     }
     const target = respecTarget(path.basename(specPath));
     await startLoopFromConfig(ctx, {
