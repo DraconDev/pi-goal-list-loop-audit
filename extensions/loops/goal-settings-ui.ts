@@ -210,7 +210,12 @@ let settingsEditContext: ExtensionContext | null = null;
  */
 function saveSettings(scope: "global" | "project", cwd: string, patch: Partial<Settings>): void {
   const probe = (globalThis as any).warnIfStaleAtEntry as ((ctx: ExtensionContext, what: string) => boolean) | undefined;
-  if (settingsEditContext && typeof probe === "function" && probe(settingsEditContext, "settings save")) return;
+  // C9: a stale-probe refusal is a FAILED save, not a silent skip — throw
+  // through the menu's NOT-saved catch (same channel as a disk error) so
+  // no branch below can claim "saved" for a write that never landed.
+  if (settingsEditContext && typeof probe === "function" && probe(settingsEditContext, "settings save")) {
+    throw new Error("settings save refused: the session handle went stale during the edit (a replacement session owns the state root)");
+  }
   if (scope === "project") {
     persistSettings(scope, cwd, patch);
     return;
