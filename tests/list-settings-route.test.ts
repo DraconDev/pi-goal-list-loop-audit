@@ -149,3 +149,22 @@ test("v0.34.53: source — /list help documents /glla as the settings command an
   // And the redirect message itself names the supported command:
   assert.match(SRC, /Settings are under \/glla, not \/list — bare \/glla opens the settings table/, "message names /glla");
 });
+
+test("C5: /list add of a just-finished objective is skipped, not resurrected", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  seedState(cwd, {});
+  const ctx = await freshSession(cwd, "startup");
+  await tick();
+  // A completion archived moments ago (appendLedger stamps `at`).
+  fs.appendFileSync(
+    path.join(cwd, ".pi-glla", "active.jsonl"),
+    JSON.stringify({ type: "goal_archived", value: { goalId: "g1", status: "complete", objective: "polish the widget" }, at: new Date().toISOString() }) + "\n",
+  );
+  await pi.command("list", "add polish the widget", ctx);
+  await tick();
+  const state = readState(cwd) as { goal: unknown; list: unknown[] };
+  assert.equal(state.goal, null, "no zombie goal activated");
+  assert.equal(state.list.length, 0, "no zombie item queued");
+  assert.ok(ledgerText(cwd).includes('"list_duplicate_skipped"'), "the skip is ledgered");
+});
