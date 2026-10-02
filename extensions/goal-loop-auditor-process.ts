@@ -1884,7 +1884,14 @@ function validateCompletedAuditorResult(args: {
     );
   }
   if (parsed.approved && !usedAuditTool) {
-    return stampToken({ approved: false, disapproved: true, output, model, thinkingLevel, challenge, error: "Auditor approved without calling any audit tool; treated as disapproved." }, capturedRevisionToken);
+    // Audit-tool floor: an approval with zero audit tool calls is a
+    // semantic disapproval (agent rework), NOT infrastructure. The
+    // explanation rides in the output transcript — never in `error`,
+    // which normalizeAuditorInfrastructureResult would wipe into the
+    // provider retry ladder. The appended tag keeps the transcript
+    // consistent under the final-line rule.
+    const floorNote = "Auditor approved without calling any audit tool; treated as disapproved.";
+    return stampToken({ approved: false, disapproved: true, output: `${output}\n\n${floorNote}\n<disapproved/>`, model, thinkingLevel, challenge }, capturedRevisionToken);
   }
   if (parsed.approved && goal.verificationContract?.trim()) {
     const shield = checkRegressionShield(output, goal.verificationContract);
