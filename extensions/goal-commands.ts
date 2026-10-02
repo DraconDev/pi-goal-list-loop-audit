@@ -39,7 +39,7 @@ import { formatMainModelFallbacks, normalizeMainModelFallbackRefs } from "./main
 import { ReviewerConfig, normalizeObjective, resolveReviewerConfig, reviewerMenuOptions } from "./reviewer.js";
 import type { SettingsSectionId } from "./settings-menu.js";
 import { cmdLoop, clearLoopTimer, finishLoopGit, isLoopActive, scheduleLoopTick } from "./goal-loop.js";
-import { chooseObjectiveConflict, liveObjectives } from "./goal-objective-conflict.js";
+import { chooseObjectiveConflict, liveObjectives, type LiveObjective } from "./goal-objective-conflict.js";
 import { formatGllaVersion } from "./glla-version.js";
 import { cmdGllaOwner, cmdGllaTakeover } from "./state-root-owner.js";
 import { AUDIT_JOB_CLEANUP_MIN_AGE_MS, cancelDetachedGoalCompletionAuditor, cleanupDeadAuditJobs, inspectAuditJobHealth, DEFAULT_AUDITOR_STALL_MS, DEFAULT_AUDITOR_TOOL_TIMEOUT_MS } from "./goal-loop-auditor-process.js";
