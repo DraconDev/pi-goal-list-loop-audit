@@ -1042,8 +1042,11 @@ export async function cmdTweak(
   // omitted clause → no verificationContract key in the patch: preserved.
   // v0.34.61: contract-scoped revision bump — one of exactly two sites
   // (the other: complete_goal newObjective). persistState no longer bumps.
-  state.goal = bumpGoalRevision(latest);
-  updateGoal(patch, ctx);
+  // The bump rides INSIDE the patch: updateGoal is the single RAM+disk
+  // commit, so a failed transaction write cannot leave a phantom revision
+  // in memory (and the success ledger below only records landed writes).
+  patch.revision = (latest.revision ?? 0) + 1;
+  if (!updateGoal(patch, ctx)) return false;
   appendLedger(ctx.cwd, "goal_tweaked", {
     goalId: latest.id,
     objective: newObjective,
