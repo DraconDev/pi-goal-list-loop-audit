@@ -132,6 +132,23 @@ test("fan-out: canonical dedupe, cap accounting, optional auto-accept, and decli
   assert.ok(SRC.indexOf("list_audit_decisions_raised") < SRC.indexOf("list_audit_fanout_empty"), "decision-raising hoisted BEFORE the empty early-return");
 });
 
+test("fan-out dedupe round-trip: stored form matches, prefix collisions do not", () => {
+  const stored = (text: string) => parseListItemDeclaration(listAuditFanoutItemText(text)).objective;
+  // The contract tail is split out at enqueue; the raw fan-out text would
+  // never match a stored objective, so dedupe must compare stored forms.
+  assert.ok(!stored("dock does not refresh").includes("Done when:"));
+  assert.equal(
+    stored("dock does not refresh"),
+    parseListItemDeclaration(listAuditFanoutItemText("dock does not refresh")).objective,
+    "same finding, same stored form",
+  );
+  assert.notEqual(
+    stored("fix X"),
+    stored("fix X thoroughly"),
+    "exact equality: a short finding must not shadow its longer sibling",
+  );
+});
+
 test("help surface: /list audit appears in the command description + completions", () => {
   assert.match(SRC, /\/list audit \[focus\] \(collect findings, then drain them as items\)/);
   assert.match(SRC, /\["audit", "collect-then-drain: audit the project, queue every finding as its own item"\]/);
