@@ -226,3 +226,100 @@ silently degrade (`goal-settings.ts:616`).
   orchestrator/goal skimmed with spot reads.
 - Commands: settings, list-queue, orchestrator fully; commands,
   tools, settings-ui strategic + hot spots.
+
+## Implementation dispositions (parent pass, 2026-10-02)
+
+Every P0/P1 item fixed + tested. Every P2/P3 item confirmed-then-fixed
+with durable collateral, except the five downgrades below (traced, not
+assumed). P3 line refs below are post-fix; scout refs drifted.
+
+FIXED (behavioral test + pin where the rig cannot reach the failure path):
+- S1 darwin worker matching (`workerProcessMatches` darwin `ps` branch).
+- A1 no-tool disapproval to transcript, `disapproved:true` preserved.
+- L1 sticky respec handoff (`respecMarkerSeen` + draft-marker gate).
+- C1 fan-out dedupe on the stored objective form.
+- C3 tweak revision inside the patch; `CommandDeps.updateGoal` widened boolean.
+- D1 loop recent-action goal scoping + recency.
+- D3+U1 blocked wording `blocked — resume to continue`, timer-only chip.
+- S2 kept + pinned (both resets clear the ref).
+- L4 `loopPrompt` specFile guard (degrade, not throw).
+- A2 `priorAttemptId` lineage: rotation stamps + cancels the prior worker
+  (`audit_prior_worker_cancelled`) + pre-dispatch reap at both sites.
+- A4 unreadable-transcript ledger (`completed_audit_recovery_unreadable`).
+- A5 abandoned challenge preserves prose to `challenge-abandoned.md`
+  (bounded 8k; fail-open kept + evidence sidecar — batch B policy).
+- A7 handoff quiet-stop: `refusalResult()` re-checks `isLive()` (7 sites).
+- A8 abortable ladder sleeps (`AbortSignal` threaded, incl. tools path).
+- A9 copy-before-append at BOTH sites (detached hooks + inline/Esc tools)
+  + in-place-contract unit test. Second instance found during test design.
+- A10 NODE_OPTIONS dropped from passthrough; session command quoted.
+- C2 explicit `/goal start` stops the live loop (`stopConflictingLoops`,
+  both paths; live in-session test + negative proof).
+- C4 `/list remove` on a group cascades to queued children + sidecars,
+  one Confirm; live-child goal refuses the whole remove.
+- C5 direct-add zombie guard + `ts`/`at` cutoff fix.
+- C6 `/goal verify` on recovery-pending resumes (fresh attempt by design).
+- C7 conflict retry stops after explicit cancel (`cancelled` out-signal).
+- C8 `/review` substring ambiguity refuses with the candidate list.
+- C9 stale-probe save refusal throws through the menu NOT-saved catch.
+- C10 dropped junk settings ledger `settings_invalid_ignored`, once per
+  distinct (key, value) per process (no per-tick spam).
+- D2 shared `foldWatchingActivity()`; D4 sanitized+bounded worker row;
+  D5 noun-near-verb stale-Next filter; D6 floor scales; D7 sanitize in
+  recap projections + audit gaps (approval-chat lines, counts line,
+  extras twin routed to the quoted builder); D8 honest empty outcome;
+  D10 non-finite elapsed clamp.
+- L2 draft `${INTERVENTION_NOTE}` wired; L5 single prompt build;
+  L6 timer handle cleared first (pin); L7 indented checkbox count.
+- S3 owner-generation publish on mid-session bumps; S4 `freshCtx()`
+  only drops `lastCtx` on stale-class throws; S5 workerless disjunct
+  under the stale latch; S6 RPC re-bind on claim-raised generation
+  (+ `__testOnlyGetSubagentRpcGeneration` seam + test).
+- S7 stranded clocks measure REAL activity (`strandedQuietMs()` on
+  `lastRealActivityAt`, 3 sites: stale-latch x2 + ordinary).
+- S9 overdue backstop: continuation route proves the park-clear before
+  latch+ledger; probe route releases the latch at settle when the same
+  wait is still parked (`HeartbeatDeps.updateGoal` widened boolean).
+- S10 unhealable policy corruption notifies the true cause (the ledger
+  already had `goal_policy_heal_failed`; gates used to misattribute).
+
+DOWNGRADED (traced against the code):
+- A3 double-apply race: both apply paths synchronous decision→claim-clear.
+- S8 rearm-before-dispatch: all four `consumeStaleContinuationRearm`
+  sites schedule-or-already-scheduled (session_start's schedule is
+  unconditional-on-true with the load barrier verified down; the other
+  three decline only when a timer/dispatch is already pending); every
+  no-op exit (manual hold, recovery-owned, stale) has an owning flow
+  that re-drives dispatch. Clear-on-promised-resume is the documented
+  marker design. (An earlier pass mislabeled the S9 probe-route fix
+  "S8"; the record now reads S9-probe / S9-continuation.)
+- D9 IDLE/BUSY freshness: decided 2026-09-07 (head owns liveness via
+  `stream {age}`; status keeps state+counts so the two never disagree).
+- A6 verificationIncomplete "forever": the flag is attempt-scoped (fresh
+  worker child process per attempt); within-attempt refusal is the
+  documented v0.38.99 integrity stance ("may not certify what it never
+  saw"); the retry ladder re-audits clean. Fail-closed kept (batch B).
+- L3 mid-tick rebind vs handoff: dead mechanism — capture is fresh at
+  tick start (no pre-capture await), `:677` rebinds sync-immediately
+  before the `:691` write (no interleave possible), spreads carry the
+  flag, full replacements are new loops; the only loss is tick-abandon
+  after an explicit stop (moot).
+
+NOTED, out of scope: F2's UX hint (strictness superseded by L1);
+timeline `challenge`/`model` raw interpolation (`goal-commands.ts`
+`timelineVerdictLine`) — flagged for a later display pass, outside the
+D7 recap-projection boundary.
+
+GATES STATUS: `tsc --noEmit` + focused/broad suites could not run in
+this pass — the sandbox shell is EMFILE-dead (`os error 24` on every
+spawn, 10+ consecutive turns). All edits were re-read in place for
+syntax/type/shape risk instead (highest-risk items: the
+`HeartbeatDeps.updateGoal` boolean widening — no test fakes
+`createGoalHeartbeat`, sole production injector already boolean; the
+C10 diff guard for explicit-undefined defaults; the S9 latch narrowing).
+Resume procedure: `npm run check`, then the focused files
+(overdue-backstop, completed-audit-recovery, stuck-audit-latch,
+policy-self-heal, objective-conflict, cmd-review, settings-stale-save,
+settings-invalid-report, audit-history-copy, session-rpc-rebind,
+completion-summary-lines, loop-forever, display), then the broad
+behavioral + auditor suites, then `check:inventory` + inventory regen.
