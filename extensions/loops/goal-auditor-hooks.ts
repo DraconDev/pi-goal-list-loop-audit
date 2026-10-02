@@ -712,8 +712,12 @@ function beginCompletionAudit(ctx: ExtensionContext, claim: PendingCompletion, o
     : origin === "session-recovery" && freshAuditorCycle
       ? { ...claim, ...freshAuditorCycleClaim(claim) }
       : claim;
+  const priorAttemptId = claim.attemptId;
   const pending: PendingCompletion = {
     ...claimForAttempt,
+    // A2: keep the rotated-away id — the old worker's job dir is keyed
+    // by it, and no prefix reap under the NEW id can reach it.
+    ...(priorAttemptId ? { priorAttemptId } : {}),
     // v0.38.99: the launch window is `starting`, not `running`. The claim is
     // durable before the worker exists, and a crash inside this window used
     // to leave a claim indistinguishable from a live audit. No

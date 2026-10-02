@@ -551,6 +551,10 @@ export interface PendingCompletion {
   verdictAt?: string;
   /** Identifies the isolated-auditor attempt, not the goal. */
   attemptId?: string;
+  /** A2: the rotated-away attempt id. A retry mints a fresh attemptId but
+   * the prior worker may still be alive; the durable lineage lets the
+   * retry's cancel + pre-dispatch reap cover the old job dir too. */
+  priorAttemptId?: string;
   /** Start time for the current isolated-auditor attempt. */
   startedAt?: string;
   /** Why the claim is waiting for a fresh attempt. */
