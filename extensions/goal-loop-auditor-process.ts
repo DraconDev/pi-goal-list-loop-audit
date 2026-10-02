@@ -551,7 +551,7 @@ export async function runAuditorFallbackWithPolicy(
         delayMs: nextRef ? mainModelFailureDelayMs({ kind: "transient", raw: syntheticError }, ++failureAttempt, opts.retryBaseMinutes ?? 15) : 0,
       };
       if (!callbackAccepted(opts.onCandidateExhausted?.(candidate, syntheticError, retryInfo))) {
-        return { result: cursorPersistenceFailure(candidate), retriedOnce, fallbackUsed, via: candidate.via };
+        return { result: refusalResult(candidate, pendingResult ?? noCandidateResult()), retriedOnce, fallbackUsed, via: candidate.via };
       }
       const unknownResult: GoalAuditorResult = {
         approved: false,
@@ -589,7 +589,7 @@ export async function runAuditorFallbackWithPolicy(
       failureCount: isRetryAttempt ? 1 : 0,
     };
     if (!callbackAccepted(opts.onAttempt?.(candidate, firstInfo))) {
-      return { result: cursorPersistenceFailure(candidate), retriedOnce, fallbackUsed, via: candidate.via };
+      return { result: refusalResult(candidate, pendingResult ?? noCandidateResult()), retriedOnce, fallbackUsed, via: candidate.via };
     }
     if (isRetryAttempt && !isLive()) {
       return { result: cursorPersistenceFailure(candidate), retriedOnce, fallbackUsed, via: candidate.via };
