@@ -1669,12 +1669,16 @@ function heartbeatTick(): void {
   // /goal resume (or the mode-correct list/loop resume route) is the explicit
   // one-fresh-dispatch gate.
   const strandedClaim = state.goal?.status === "auditing" ? state.goal.pendingCompletion : undefined;
-  const strandedWorkerlessInFlight = !!strandedClaim?.attemptId && flags.completionAuditInFlight
+  // Gate the filesystem liveness probe on the same grace as the recovery:
+  // a healthy dispatch creates its job dir in milliseconds, so probing on
+  // every 15s tick while activity is fresh would only tax healthy audits.
+  const strandedQuietMs = state.goal?.status === "auditing" ? Date.now() - flags.lastActivityAt : 0;
+  const strandedWorkerlessInFlight = strandedQuietMs >= 90_000 && !!strandedClaim?.attemptId && flags.completionAuditInFlight
     && !auditorWorkerLiveForAttempt(ctx.cwd, strandedClaim.attemptId);
   if (
     state.goal?.status === "auditing" &&
     (!flags.completionAuditInFlight || strandedWorkerlessInFlight) &&
-    Date.now() - flags.lastActivityAt >= 90_000
+    strandedQuietMs >= 90_000
   ) {
     // The retry-armed flag is not ownership: a dropped first attempt can
     // leave it false forever. Reconcile the exact saved verdict before
