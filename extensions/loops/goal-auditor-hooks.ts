@@ -1822,7 +1822,9 @@ function applyCompletedCompletionAudit(args: {
   // in appendAuditVerdict: a new disapproval retires older live rounds,
   // a clean approval clears the objection pin).
   const auditorRan = result.output.trim().length > 0;
-  const history = state.goal.auditHistory ?? [];
+  // A9: copy before append — appendAuditVerdict push/splice-marks in place,
+  // and a failed updateGoal below must not leave phantom verdicts in RAM.
+  const history = (state.goal.auditHistory ?? []).map((v) => ({ ...v }));
   if (auditorRan) {
     result.output = stripThinkBlocks(result.output);
     appendAuditVerdict(history, {

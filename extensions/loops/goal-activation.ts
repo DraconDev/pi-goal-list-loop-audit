@@ -1951,7 +1951,13 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // rebind consent on its own.
     const recoveryResume = consumeRecoveryResume(ctx.cwd);
     const ownerClaim = claimSessionOwnerAndDetectRebind(ctx.cwd, sessionGeneration, sessionManagerId(ctx));
-    sessionGeneration = ownerClaim.generation;
+    if (ownerClaim.generation !== sessionGeneration) {
+      // S6: the claim raised the generation after the RPC host bound it —
+      // re-bind so stop-via-RPC doesn't read stale forever. (The heartbeat
+      // poll already re-arms itself on mismatch since v0.38.104.)
+      sessionGeneration = ownerClaim.generation;
+      bindSubagentRpcHost(pi.events, sessionGeneration);
+    }
     retireSupersededSubagentHangProbes(ctx.cwd, sessionGeneration);
     // v0.34.73 (OPEN-ISSUES 1.12): forced rewrite/handoff — the previous
     // owner recorded a different session id in the owner sidecar (or the

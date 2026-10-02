@@ -470,12 +470,14 @@ function scheduleLoopTickWithUrgency(ctx: ExtensionContext, urgent: boolean): vo
 }
 
 function sendLoopTurn(): void {
+  // L6: the timer FIRED — clear the handle before any early return, or
+  // loopTimerPending() lies and suppresses legitimate sends elsewhere.
+  loopTimer = null;
   // v0.35.15: same as sendContinuation — pre-pause loop timers must not
   // dispatch turns while the supervisor is frozen.
   if (supervisorPaused(state)) return;
   if (mainModelRecoveryActive()) return;
   if (flags.sessionHandoffPending || flags.initialSessionLoadPending || flags.extensionApiStale || flags.staleTerminalDone || flags.zombieStoodDown || flags.continuationDispatchStoodDown || flags.pendingContinuationDispatch) return;
-  loopTimer = null;
   if (!isLoopActive() || !flags.extensionApi) return;
   const ctx = freshCtx();
   if (!ctx || !ctx.isIdle() || ctx.hasPendingMessages()) {
@@ -588,12 +590,14 @@ function sendLoopTurn(): void {
       resync: Boolean(loopResync),
     });
     if (!attempt) return;
+    // L5: build once — the retry payload is verbatim by construction.
+    const loopTurnContent = loopResync + loopPrompt(loop, regressionNote, strategyNote2, boundsNote, interventionNote, variantNote, hypothesisNote, refineHintNote);
     flags.extensionApi.sendMessage({
       customType: GOAL_EVENT_ENTRY,
-      content: loopResync + loopPrompt(loop, regressionNote, strategyNote2, boundsNote, interventionNote, variantNote, hypothesisNote, refineHintNote),
+      content: loopTurnContent,
       display: false,
     }, { triggerTurn: true, deliverAs: "followUp" });
-    flags.lastContinuationSentPayload = { content: loopResync + loopPrompt(loop, regressionNote, strategyNote2, boundsNote, interventionNote, variantNote, hypothesisNote, refineHintNote), display: false }; // v0.34.88: verbatim retry payload
+    flags.lastContinuationSentPayload = { content: loopTurnContent, display: false }; // v0.34.88: verbatim retry payload
     if (!dispatchAccepted(ctx, attempt)) return;
     // One-shot directives are consumed only after the dispatch is durably
     // accepted. A prepare/send failure above leaves the operator hint,
