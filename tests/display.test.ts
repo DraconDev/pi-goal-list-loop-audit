@@ -2123,6 +2123,29 @@ test("v0.33.0: slim card — meter rounding guard, folded status segments, last-
   assert.match(loopLines[0]!, /^∞ endless-td audit · iter 12\/100 ▰▱▱▱▱ · /);
   assert.match(loopLines[1]!, /^├─ ✓ read tiles\.ts \(8s\)/);
   assert.match(loopLines[2]!, /^└─ metricless \(no plateau\) · \/loop stop · \/loop refine/); // v0.33.2: /loop refine is a real verb now
+  // Loop-scoped twin of the v0.34.124 goal fix: the ring is
+  // process-global, so a live loop card must not wear the last action of
+  // whatever ran before the loop started.
+  const mkLoop = (startedAt: string) => ({ goal: null, list: [], loop: {
+    active: true, target: "endless-td audit", iteration: 12, maxIterations: 100,
+    stallCount: 0, plateauWindow: 5, startedAt, history: [],
+  } as any });
+  const staleLoop = buildWidgetLines(mkLoop("2026-07-21T11:59:16Z"), null, NOW, undefined, 120, {
+    recent: [
+      { name: "complete_goal", arg: undefined, ms: 0, ok: true, at: Date.parse("2026-07-21T11:59:10Z") },
+      { name: "read", arg: "tiles.ts", ms: 8_000, ok: true, at: Date.parse("2026-07-21T11:59:20Z") },
+    ],
+  })!;
+  assert.match(staleLoop.join("\n"), /✓ read tiles\.ts/, "the newest action from THIS loop is shown");
+  assert.doesNotMatch(staleLoop.join("\n"), /complete_goal/, "a pre-loop action must never leak onto the card");
+  const allStaleLoop = buildWidgetLines(mkLoop("2026-07-21T11:59:16Z"), null, NOW, undefined, 120, {
+    recent: [{ name: "complete_goal", arg: undefined, ms: 0, ok: true, at: Date.parse("2026-07-21T11:59:10Z") }],
+  })!;
+  assert.doesNotMatch(allStaleLoop.join("\n"), /complete_goal/, "all-pre-loop actions vanish entirely");
+  const freshLoop = buildWidgetLines(mkLoop("2026-07-21T11:59:16Z"), null, NOW, undefined, 120, {
+    recent: [{ name: "read", arg: "tiles.ts", ms: 8_000, ok: true, at: Date.parse("2026-07-21T11:59:30Z") }],
+  })!;
+  assert.match(freshLoop.join("\n"), /· 30s ago/, "stamped loop actions carry bucketed recency");
   const SRC = readGoalRuntimeSource();
 const LOOP = fs.readFileSync("extensions/goal-loop.ts", "utf-8");
   assert.match(SRC, /noteToolCall\(event\); \/\/ v0\.33\.0/);
