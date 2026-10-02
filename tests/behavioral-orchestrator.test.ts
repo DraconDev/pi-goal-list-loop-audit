@@ -819,6 +819,17 @@ test("v0.35.0: a direct /loop start also confirms before replacing a live goal",
   await pi.fire("session_shutdown", { reason: "quit" }, ctx);
 });
 
+test("C2: an explicit /goal start stops the active loop instead of stacking two live things", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  seedState(cwd, { loop: seedLoop({ active: true, target: "loop before goal" }) });
+  const ctx = await freshSession(cwd, "reload");
+  await pi.command("goal", "start goal over loop — done when pinned", ctx);
+  assert.equal((readState(cwd).loop as { active: boolean }).active, false, "the explicit path stops the loop like the dialog path");
+  assert.ok(readState(cwd).goal, "the new goal owns the live slot");
+  await pi.fire("session_shutdown", { reason: "quit" }, ctx);
+});
+
 test("v0.34.121: one confirmed /glla wipe clears recovery and dispatch artifacts too", async () => {
   __testOnlyResetStaleFlag();
   const cwd = tmpCwd();
