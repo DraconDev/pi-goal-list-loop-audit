@@ -1109,7 +1109,9 @@ async function startLoopFromConfig(ctx: ExtensionContext, cfg: LoopConfig): Prom
     }
     if (choice.startsWith("Resume")) {
       await cmdLoop("resume", ctx);
-      return true;
+      // The resume path adjudicates (branch check, active-goal guard) and
+      // notifies either way — report what is actually active now.
+      return isLoopActive();
     }
     appendLedger(ctx.cwd, "loop_held_discarded", { target: held.target.slice(0, 120), stopReason: held.stopReason, via: "explicit-fresh-start" });
   }

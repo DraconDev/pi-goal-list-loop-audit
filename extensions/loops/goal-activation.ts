@@ -2419,8 +2419,12 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
         replaceState({ ...state, loadHoldAt: Date.now() });
         persistState(ctx);
         appendLedger(ctx.cwd, "load_hold_engaged", { reason: startReason ?? "startup" });
+        // A held loop resumes through /loop — without the hint the warning
+        // reads as if only goal/list work were held (field 2026-10-02: a
+        // held respec loop was re-started fresh instead of resumed).
+        const loopResumeHint = state.loop && !state.loop.active ? " /loop resume," : "";
         ctx.ui.notify(
-          "Loaded without starting: your goal/list/loop state is restored and shown below, but automation is HELD for your decision. /goal resume, /list resume, or /list next starts work; enable Auto-resume in /glla settings to restore load-time automation.",
+          `Loaded without starting: your goal/list/loop state is restored and shown below, but automation is HELD for your decision. /goal resume, /list resume,${loopResumeHint} or /list next starts work; enable Auto-resume in /glla settings to restore load-time automation.`,
           "warning",
         );
         // v0.38.7 (note.md Next: objectives seemingly lost on reload) —
