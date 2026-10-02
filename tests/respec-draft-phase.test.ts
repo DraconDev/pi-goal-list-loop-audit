@@ -75,3 +75,50 @@ test("a draft completion marker cannot substitute for a missing or empty spec", 
   assert.equal(respecDraftReady(file, "checkpoint"), false);
   assert.equal(respecDraftReady(file, "[RESPEC DRAFT COMPLETE]"), true);
 });
+
+test("active legacy bootstrap loop recovers into draft on its next tick", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-active-legacy" } });
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  try {
+    const specFile = path.join(cwd, "SPEC.md");
+    // No SPEC.md on disk: the field case (iter 30, 2h32m, still no spec).
+    seedState(cwd, { goal: null, loop: { target: respecTarget("SPEC.md", { bootstrapping: true }),
+      specFile, active: true, iteration: 30, maxIterations: 0, plateauWindow: 5, stallCount: 0,
+      bestValue: null, lastValue: null, history: [], startedAt: new Date().toISOString() } });
+    __testOnlyLoadState(cwd);
+    pi.sent.length = 0;
+    const turn = (text: string) => ({ messages: [{ role: "assistant", content: [{ type: "text", text }] }] });
+    await runLoopTick(ctx as unknown as ExtensionContext, turn("Still researching the codebase."));
+    await tick(150);
+    clearLoopTimer();
+    assert.equal(readState(cwd).loop?.respecPhase, "draft", "active legacy loop enters draft phase");
+    assert.ok(pi.sent.some(s => s.message.content?.includes("[RESPEC BIG DRAFT]")), "next dispatch uses the dedicated draft prompt");
+    assert.ok((readState(cwd).loop?.iteration ?? 0) >= 30, "recovery preserves the run history");
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});
+
+test("respec with a structurally incomplete spec enters draft instead of reconciling", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  fs.writeFileSync(path.join(cwd, "SPEC.md"), "# Project\n\n## Rules\n\n");
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-partial" } });
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  try {
+    await pi.command("loop", "respec", ctx); await tick(100);
+    assert.equal(readState(cwd).loop?.respecPhase, "draft", "partial spec is finished first");
+    assert.ok(pi.sent.some(s => s.message.content?.includes("[RESPEC BIG DRAFT]")));
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});
+
+test("respecSpecComplete: title plus nonempty Rules plus another section", () => {
+  const dir = tmpCwd(), file = path.join(dir, "SPEC.md");
+  assert.equal(respecSpecComplete(file), false, "missing file is incomplete");
+  fs.writeFileSync(file, "");
+  assert.equal(respecSpecComplete(file), false, "empty file is incomplete");
+  fs.writeFileSync(file, "# Project\n\n## Rules\n\n");
+  assert.equal(respecSpecComplete(file), false, "empty Rules is incomplete");
+  fs.writeFileSync(file, "# Project\n\n## Rules\nBe good.\n");
+  assert.equal(respecSpecComplete(file), false, "Rules-only is incomplete");
+  fs.writeFileSync(file, SPEC);
+  assert.equal(respecSpecComplete(file), true, "title plus Rules plus Architecture is complete");
+});
