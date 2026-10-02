@@ -878,6 +878,7 @@ export async function cmdTweak(
   mode: "goal" | "list" = "goal",
   options: ConflictTweakOptions = {},
 ): Promise<boolean> {
+  options.cancelled = false;
   if (warnIfStaleAtEntry(ctx, mode === "list" ? "/list tweak" : "/goal tweak")) return false;
   const current = state.goal;
   const liveListConflict = mode === "list"
@@ -929,6 +930,7 @@ export async function cmdTweak(
     }
     if (v === undefined || !v.trim()) {
       ctx.ui.notify("Tweak cancelled; nothing changed.", "info");
+      options.cancelled = true;
       return false;
     }
     raw = v.trim();
@@ -1008,6 +1010,7 @@ export async function cmdTweak(
   }
   if (!confirmed) {
     ctx.ui.notify("Tweak cancelled; goal unchanged.", "info");
+    options.cancelled = true;
     return false;
   }
   // The proposal dialog yields to the host. A pause, recovery mark, or other
