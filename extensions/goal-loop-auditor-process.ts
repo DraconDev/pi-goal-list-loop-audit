@@ -592,7 +592,7 @@ export async function runAuditorFallbackWithPolicy(
       return { result: refusalResult(candidate, pendingResult ?? noCandidateResult()), retriedOnce, fallbackUsed, via: candidate.via };
     }
     if (isRetryAttempt && !isLive()) {
-      return { result: cursorPersistenceFailure(candidate), retriedOnce, fallbackUsed, via: candidate.via };
+      return { result: pendingResult ?? noCandidateResult(), retriedOnce, fallbackUsed, via: candidate.via };
     }
 
     pendingResult = undefined;
@@ -622,7 +622,7 @@ export async function runAuditorFallbackWithPolicy(
         delayMs: 0,
       };
       if (!callbackAccepted(opts.onCandidateExhausted?.(candidate, first.error, exhaustedInfo))) {
-        return { result: cursorPersistenceFailure(candidate), retriedOnce, fallbackUsed, via: candidate.via };
+        return { result: refusalResult(candidate, first), retriedOnce, fallbackUsed, via: candidate.via };
       }
       if (nextRef === undefined) {
         return { result: markExhausted(first, failureClass(first)), retriedOnce, fallbackUsed, via: candidate.via };
@@ -643,7 +643,7 @@ export async function runAuditorFallbackWithPolicy(
         failureClass: failureClass(first),
       };
       if (!callbackAccepted(opts.onRetry?.(candidate, first.error, retryDelayMs, retryInfo))) {
-        return { result: cursorPersistenceFailure(candidate), retriedOnce, fallbackUsed, via: candidate.via };
+        return { result: refusalResult(candidate, first), retriedOnce, fallbackUsed, via: candidate.via };
       }
       await abortableSleep(retryDelayMs);
       if (!isLive()) return { result: first, retriedOnce, fallbackUsed, via: candidate.via };
@@ -655,7 +655,7 @@ export async function runAuditorFallbackWithPolicy(
         failureClass: failureClass(first),
       };
       if (!callbackAccepted(opts.onAttempt?.(candidate, secondInfo))) {
-        return { result: cursorPersistenceFailure(candidate), retriedOnce, fallbackUsed, via: candidate.via };
+        return { result: refusalResult(candidate, first), retriedOnce, fallbackUsed, via: candidate.via };
       }
       const second = normalizeAuditorInfrastructureResult(await run(candidate));
       pendingResult = second;
@@ -685,7 +685,7 @@ export async function runAuditorFallbackWithPolicy(
         delayMs: nextRef ? fallbackDelayMs : 0,
       };
       if (!callbackAccepted(opts.onCandidateExhausted?.(candidate, second.error, exhaustedInfo))) {
-        return { result: cursorPersistenceFailure(candidate), retriedOnce, fallbackUsed, via: candidate.via };
+        return { result: refusalResult(candidate, second), retriedOnce, fallbackUsed, via: candidate.via };
       }
       if (nextRef === undefined) {
         return { result: markExhausted(second, failureClass(second)), retriedOnce, fallbackUsed, via: candidate.via };
@@ -713,7 +713,7 @@ export async function runAuditorFallbackWithPolicy(
       delayMs: nextRef ? mainModelFailureDelayMs(failure, failureAttempt, opts.retryBaseMinutes ?? 15) : 0,
     };
     if (!callbackAccepted(opts.onCandidateExhausted?.(candidate, first.error, exhaustedInfo))) {
-      return { result: cursorPersistenceFailure(candidate), retriedOnce, fallbackUsed, via: candidate.via };
+      return { result: refusalResult(candidate, first), retriedOnce, fallbackUsed, via: candidate.via };
     }
     if (nextRef === undefined) {
       return { result: markExhausted(first, failureClass(first)), retriedOnce, fallbackUsed, via: candidate.via };
