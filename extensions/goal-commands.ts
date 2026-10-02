@@ -1782,6 +1782,39 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
     }
     const n = position.flatIndex;
     const removed = position.item;
+    // C4: a group remove cascades to its queued children — otherwise the
+    // children stay queued but invisible (position/render loops skip
+    // parentId rows whose parent is gone) and their sidecars could
+    // resurrect them. One Confirm for the whole batch; a live child goal
+    // blocks the remove instead of going out from under it.
+    const cascade = queue.filter((c) => c.parentId === removed.id);
+    if (cascade.length > 0) {
+      if (state.goal?.parentId === removed.id && state.goal.status !== "complete" && state.goal.status !== "aborted") {
+        ctx.ui.notify(`Remove refused — "${displaySlice(removed.objective, 60)}" owns the live goal. Finish or park it first.`, "warning");
+        return;
+      }
+      let confirmed = false;
+      try {
+        confirmed = await ctx.ui.confirm(
+          `Remove group and ${cascade.length} subtask${cascade.length === 1 ? "" : "s"}?`,
+          [displaySlice(removed.objective, 120), ...cascade.map((c) => `• ${displaySlice(c.objective, 100)}`)].join("\n"),
+        );
+      } catch {
+        confirmed = false;
+      }
+      if (!confirmed) {
+        ctx.ui.notify("Remove cancelled; the list is unchanged.", "info");
+        return;
+      }
+      for (const child of cascade) {
+        const childDeleted = deleteQueueItemFileResult(ctx.cwd, child.id);
+        if (childDeleted.failed) {
+          appendLedger(ctx.cwd, "list_remove_sidecar_delete_failed", { id: child.id, path: childDeleted.path });
+          ctx.ui.notify(`Remove refused — the durable sidecar for ${displaySlice(child.objective, 80)} could not be removed. The group remains queued; fix disk access and retry.`, "warning");
+          return;
+        }
+      }
+    }
     // v0.34.61: delete the sidecar so the /list disk-recovery fallback
     // cannot resurrect the removed item. Without this, the new fallback
     // (cmdList → readQueueFromDisk) would show the removed item after
@@ -1792,10 +1825,10 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
       ctx.ui.notify(`Remove refused — the durable sidecar for ${displaySlice(removed.objective, 80)} could not be removed. The item remains queued; fix disk access and retry.`, "warning");
       return;
     }
-    replaceState({ ...state, list: queue.filter((_, i) => i !== n) });
+    replaceState({ ...state, list: queue.filter((c, i) => i !== n && c.parentId !== removed.id) });
     persistState(ctx);
-    appendLedger(ctx.cwd, "list_removed", { id: removed.id, objective: removed.objective });
-    ctx.ui.notify(`Removed: ${displaySlice(removed.objective, 80)}`, "info");
+    appendLedger(ctx.cwd, "list_removed", { id: removed.id, objective: removed.objective, ...(cascade.length > 0 ? { cascaded: cascade.map((c) => c.id) } : {}) });
+    ctx.ui.notify(cascade.length > 0 ? `Removed group + ${cascade.length} subtask${cascade.length === 1 ? "" : "s"}: ${displaySlice(removed.objective, 80)}` : `Removed: ${displaySlice(removed.objective, 80)}`, "info");
     return;
   }
 
