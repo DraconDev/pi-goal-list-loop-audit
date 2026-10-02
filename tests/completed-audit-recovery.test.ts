@@ -348,6 +348,21 @@ test("auditorWorkerLiveForAttempt: only a matching live worker counts", () => {
   } finally { stub.cleanup(); }
 });
 
+test("workerProcessMatches darwin branch reads identity via ps", () => {
+  // The darwin branch shells to `ps -o command=`, which also exists on
+  // Linux, so inject the platform to exercise it anywhere.
+  const cwd = tmpCwd(), g = goal();
+  const saved = job(cwd, g, { result: false });
+  assert.equal(workerProcessMatches(cwd, 999_999_999, saved.dir, "darwin"), false, "dead pid fails closed");
+  const stub = spawnWorkerStub(cwd, saved.dir);
+  try {
+    if (stub.child.pid) writeWorkerLock(saved.dir, "saved-claim-physical", stub.child.pid);
+    assert.equal(workerProcessMatches(cwd, stub.child.pid!, saved.dir, "darwin"), true, "live stub matches via ps cmdline");
+    const other = job(cwd, g, { physical: "other-physical", result: false });
+    assert.equal(workerProcessMatches(cwd, stub.child.pid!, other.dir, "darwin"), false, "same pid, other job dir does not match");
+  } finally { stub.cleanup(); }
+});
+
 test("auditing claim stuck in starting with no worker parks for recovery via heartbeat", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
   const g = goal();
