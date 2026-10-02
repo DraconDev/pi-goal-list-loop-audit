@@ -550,3 +550,29 @@ test("auditor and drafter source paths name the shared policy primitives", () =>
   assert.match(drafterSource, /new ModelSelector/);
 });
 
+
+test("A8: a host abort interrupts the ladder delay instead of stranding the claim in it", async () => {
+  const candidates: AuditorFallbackCandidate[] = [
+    { ref: "test/primary", model: { provider: "test", id: "primary" }, via: "setting" },
+  ];
+  const calls: string[] = [];
+  const controller = new AbortController();
+  // A sleep that never resolves on its own: without the abort race the
+  // ladder would hang here for the whole retry delay.
+  const outcomeP = runAuditorFallbackWithPolicy(candidates, async (candidate) => {
+    calls.push(candidate.ref!);
+    return result({ error: "503 upstream unavailable", model: candidate.ref! });
+  }, {
+    retryBaseMinutes: 15,
+    sleep: () => new Promise<void>(() => {}),
+    shouldRetry: () => true,
+    signal: controller.signal,
+  });
+  // Let the ladder reach the delay, then abort like an Esc would.
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  controller.abort();
+  const outcome = await outcomeP;
+  assert.deepEqual(calls, ["test/primary"], "no second launch after the abort");
+  assert.equal(outcome.result.error, "503 upstream unavailable", "the in-hand result returns promptly");
+  assert.equal(outcome.retriedOnce, false, "the aborted retry is not recorded as taken");
+});
