@@ -23,6 +23,7 @@ import {
   DEFAULT_AUDIT_FEEDBACK_CHARS,
   DEFAULT_COMPACTION_TOKEN_THRESHOLD,
   DEFAULT_FORBIDDEN_MODELS,
+  appendLedger,
   mergeSettings,
   piGlaDir,
 } from "./goal-loop-core.ts";
@@ -33,6 +34,7 @@ import {
   DEFAULT_MAIN_MODEL_PRIMARY_PROBE_MINUTES,
   normalizeMainModelFallbackRefs,
 } from "./main-model-recovery.js";
+
 // v0.37.0: the auditor timeout bases/bounds live with the watchdogs that
 // consume them — the settings layer only defaults/clamps against them.
 import {
