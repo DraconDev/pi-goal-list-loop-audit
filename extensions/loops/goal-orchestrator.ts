@@ -1015,15 +1015,21 @@ async function fanOutListAuditFindings(cwd: string, generation: number): Promise
   }
   const { open, decisions } = parseAuditFindingsForFanout(md);
   // v0.34.129: dedupe against each live queue item by the canonical finding
-  // prefix, not by searching one joined blob for the finding's first 60
+  // text, not by searching one joined blob for the finding's first 60
   // chars. A distinct finding can legitimately have that prefix inside a
   // longer objective; the old substring check silently dropped it.
+  // The comparison runs against the STORED form: enqueueItems parses the
+  // fan-out text through parseListItemDeclaration, which splits the
+  // "— Done when:" tail into the verification contract. Comparing the
+  // unparsed text (with the tail) can never match a stored objective.
+  // Exact equality (not startsWith) keeps prefix-collisions out: finding
+  // A ("fix X") must not shadow finding B ("fix X thoroughly").
   const queuedObjectives = listQueue()
     .map((i: any) => typeof i?.objective === "string" ? i.objective : "")
     .filter(Boolean);
   const isQueuedFinding = (finding: AuditFindingLine): boolean => {
-    const prefix = `Fix audit finding: ${finding.text} — Done when:`;
-    return queuedObjectives.some((objective: string) => objective.startsWith(prefix));
+    const storedForm = parseListItemDeclaration(listAuditFanoutItemText(finding.text)).objective;
+    return queuedObjectives.some((objective: string) => objective === storedForm);
   };
   const alreadyQueued = open.filter(isQueuedFinding).length;
   const eligible = open.filter((f) => !isQueuedFinding(f));
