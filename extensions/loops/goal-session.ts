@@ -1109,6 +1109,29 @@ function claimSessionOwnerAndDetectRebind(
   }
 }
 
+/** S3: mid-session generation bumps (absorb, self-heal, stale-terminal)
+ * publish to the owner file — otherwise the shutdown handoff's
+ * generation/session id disagrees with the claim-time record and the
+ * successor rejects the handoff as an identity mismatch. Monotonic:
+ * never downgrade a newer generation a successor already claimed. */
+function refreshSessionOwnerGeneration(cwd: string, ownerSessionId: string): void {
+  try {
+    const p = path.join(piGlaDir(cwd), SESSION_OWNER_FILE);
+    let previous: SessionOwnerRecord = {};
+    try {
+      previous = JSON.parse(fs.readFileSync(p, "utf-8")) as SessionOwnerRecord;
+    } catch { /* absent — the next claim owns first boot */ }
+    if (typeof previous.generation === "number" && previous.generation >= sessionGeneration) return;
+    fs.writeFileSync(p, JSON.stringify({
+      ...previous,
+      pid: process.pid,
+      at: new Date().toISOString(),
+      generation: sessionGeneration,
+      ownerSessionId,
+    } satisfies SessionOwnerRecord));
+  } catch { /* advisory — a stale handoff still loses cleanly at consume */ }
+}
+
 /** v0.34.73 (OPEN-ISSUES 1.12): the id_invalidation ledger event. The old
  * session handle was invalidated (forced rewrite/handoff) and the fresh
  * session carries a new id — record the pair + reason so a repro from
@@ -1670,6 +1693,7 @@ function tryAbsorbHostSuccessor(ctx: ExtensionContext, via: string): boolean {
   staleTerminalDone = false;
   sessionHandoffPending = false;
   sessionGeneration++; // a dead generation's delayed callbacks must not fire into the new owner
+  refreshSessionOwnerGeneration(ctx.cwd, sessionManagerId(ctx)); // S3: the handoff must match the live owner, not the claim
   clearDeadGenerationDispatch(ctx, "successor-absorb");
   clearDraftingState(); // the old interview belongs to the disposed generation
   appendLedger(ctx.cwd, "session_rebind_via_live_ctx", { via, generation: sessionGeneration });
@@ -1768,6 +1792,7 @@ function selfHealStaleSameSession(ctx: ExtensionContext): boolean {
   ownerCwd = ctx.cwd;
   lastCtx = ctx;
   sessionGeneration++; // a parked generation's delayed callbacks must not fire into the reclaimed plane
+  refreshSessionOwnerGeneration(ctx.cwd, sessionManagerId(ctx)); // S3: keep the owner file on the live generation
   // Audit 2026-09-07 (MEDIUM, finding 382): same dead-dispatch clear as
   // the absorb path — otherwise the rearm notify below fires while the
   // tail schedule skips on the orphaned pending and the plane idles.
