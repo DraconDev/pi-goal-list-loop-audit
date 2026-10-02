@@ -156,15 +156,21 @@ test("C5: /list add of a just-finished objective is skipped, not resurrected", a
   seedState(cwd, {});
   const ctx = await freshSession(cwd, "startup");
   await tick();
-  // A completion archived moments ago (appendLedger stamps `at`).
+  // Round-trip: add it once, archive its STORED objective as completed,
+  // then add the same text again — the twin must be skipped.
+  await pi.command("list", "add polish the widget — done when: tests pass", ctx);
+  await tick();
+  const first = readState(cwd) as { goal: { objective: string } | null; list: { objective: string }[] };
+  const stored = first.goal?.objective ?? first.list[0]!.objective;
   fs.appendFileSync(
     path.join(cwd, ".pi-glla", "active.jsonl"),
-    JSON.stringify({ type: "goal_archived", value: { goalId: "g1", status: "complete", objective: "polish the widget" }, at: new Date().toISOString() }) + "\n",
+    JSON.stringify({ type: "goal_archived", value: { goalId: "g1", status: "complete", objective: stored }, at: new Date().toISOString() }) + "\n",
   );
+  // The first item stays live; the re-add would queue behind it if the
+  // guard missed, so an empty queue proves the skip.
   await pi.command("list", "add polish the widget — done when: tests pass", ctx);
   await tick();
   const state = readState(cwd) as { goal: unknown; list: unknown[] };
-  assert.equal(state.goal, null, "no zombie goal activated");
   assert.equal(state.list.length, 0, "no zombie item queued");
   assert.ok(ledgerText(cwd).includes('"list_duplicate_skipped"'), "the skip is ledgered");
 });
