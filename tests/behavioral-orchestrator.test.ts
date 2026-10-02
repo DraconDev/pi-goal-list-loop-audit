@@ -5276,3 +5276,25 @@ test("audit-2026-09-06: measure test-run dialogs disclose the pre-confirm exec",
   assert.match(src, /already executed once by the orchestrator/, "refine dialog discloses the test-run");
   assert.match(src, /already test-run once to establish the baseline/, "auto-accept notifies disclose the test-run");
 });
+
+test("tweak carries its revision bump inside the durable patch (no phantom revision)", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  seedState(cwd, {
+    goal: seedGoal({ policy: "goal", status: "paused", objective: "ship the widget", revision: 3, pauseReason: "paused by user", pauseSuggestedAction: "/goal resume to continue" }),
+  });
+  const ctx = await freshSession(cwd, "reload");
+  await tick();
+  await pi.command("goal", "tweak ship the widget faster", ctx);
+  await tick();
+  const stored = readState(cwd).goal as { objective: string; revision: number };
+  assert.equal(stored.objective, "ship the widget faster");
+  assert.equal(stored.revision, 4, "exactly one bump lands with the patch");
+  // Structural invariant: the bump must ride inside the updateGoal patch
+  // (whose boolean is checked), never as a pre-mutation of state.goal —
+  // a failed transaction write would otherwise leave a phantom revision.
+  const CMDS_SRC = fs.readFileSync(new URL("../extensions/goal-commands.ts", import.meta.url), "utf-8");
+  assert.match(CMDS_SRC, /patch\.revision = \(latest\.revision \?\? 0\) \+ 1;/);
+  assert.match(CMDS_SRC, /if \(!updateGoal\(patch, ctx\)\) return false;/);
+  assert.ok(!/state\.goal = bumpGoalRevision\(latest\);/.test(CMDS_SRC), "no pre-commit RAM bump in cmdTweak");
+});
