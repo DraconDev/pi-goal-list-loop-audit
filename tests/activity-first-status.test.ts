@@ -326,6 +326,19 @@ test("D2: the loop status line folds watching into QUEUED like the goal head", (
   assert.doesNotMatch(footer, /MONITORING/, "no surface renders the watching badge");
 });
 
+test("D4: the auditor session row is sanitized and bounded", () => {
+  const g = goalOf({ pendingCompletion: claimOf({ phase: "running" }) });
+  const lines = buildWidgetLines(
+    { goal: g, list: [] },
+    { phase: "running", elapsedMs: 60_000, sessionPath: `/tmp/${"x".repeat(200)}/session.jsonl` },
+    NOW,
+  )!;
+  const row = lines.find((line) => line.includes("session: "));
+  assert.ok(row, "the session row renders");
+  assert.doesNotMatch(row, //, "control bytes never reach the card");
+  assert.ok(row.length <= 120, `the row is bounded, got ${row.length} cells`);
+});
+
 // ---- stamp helper: pure, attempt-scoped, sanitized ----
 
 test("stampAuditorAttemptThinking stamps only the owning attempt and sanitizes", () => {
