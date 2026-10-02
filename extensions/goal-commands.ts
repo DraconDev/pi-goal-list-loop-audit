@@ -1138,7 +1138,10 @@ function recentlyCompletedObjectives(cwd: string): Set<string> {
       try {
         const e = JSON.parse(line);
         if (e?.type !== "goal_archived" || e.value?.status !== "complete") continue;
-        if (!(Date.parse(e.ts ?? "") >= cutoff)) continue;
+        // appendLedger stamps `at`, not `ts` — read both so the guard
+        // actually fires (with `ts` alone every line was skipped and
+        // just-finished objectives resurrected as zombie twins).
+        if (!(Date.parse(e.ts ?? e.at ?? "") >= cutoff)) continue;
         // v0.29.1+ entries carry the objective inline; older entries fall
         // back to the archived goal file (## Objective → "> …" line).
         let objective = typeof e.value?.objective === "string" ? e.value.objective : "";
