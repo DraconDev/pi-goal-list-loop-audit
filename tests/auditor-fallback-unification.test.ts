@@ -576,3 +576,34 @@ test("A8: a host abort interrupts the ladder delay instead of stranding the clai
   assert.equal(outcome.result.error, "503 upstream unavailable", "the in-hand result returns promptly");
   assert.equal(outcome.retriedOnce, false, "the aborted retry is not recorded as taken");
 });
+
+test("A7: a cursor-callback refusal while live stays a persistence failure", async () => {
+  const candidates: AuditorFallbackCandidate[] = [
+    { ref: "test/primary", model: { provider: "test", id: "primary" }, via: "setting" },
+  ];
+  const outcome = await runAuditorFallbackWithPolicy(candidates, async (candidate) =>
+    result({ error: "503 upstream unavailable", model: candidate.ref! }), {
+    retryBaseMinutes: 1,
+    sleep: async () => {},
+    shouldRetry: () => true,
+    onRetry: () => false, // durable write genuinely failed — no handoff
+  });
+  assert.equal(outcome.result.error, "auditor recovery cursor persistence failed", "live refusal manufactures the persistence failure");
+});
+
+test("A7: a cursor-callback refusal after a generation handoff stops quietly on the in-hand result", async () => {
+  const candidates: AuditorFallbackCandidate[] = [
+    { ref: "test/primary", model: { provider: "test", id: "primary" }, via: "setting" },
+  ];
+  let live = true;
+  const outcome = await runAuditorFallbackWithPolicy(candidates, async (candidate) =>
+    result({ error: "503 upstream unavailable", model: candidate.ref! }), {
+    retryBaseMinutes: 1,
+    sleep: async () => {},
+    shouldRetry: () => live,
+    // The handoff lands between the fence check and the cursor write —
+    // the exact race persistDetachedAuditorCursor loses.
+    onRetry: () => { live = false; return false; },
+  });
+  assert.equal(outcome.result.error, "503 upstream unavailable", "no manufactured failure after handoff");
+});
