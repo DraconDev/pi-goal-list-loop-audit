@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   piGlaDir,
+  appendLedger,
   stripThinkBlocks,
   captureGoalRevision,
   isRetriableInfraError,
@@ -1993,7 +1994,18 @@ export function readCompletedCompletionAudit(cwd: string, goal: Goal, strictChal
     const durationMs = typeof progress?.elapsedMs === "number" && Number.isFinite(progress.elapsedMs)
       ? Math.max(0, progress.elapsedMs) : Math.max(0, statSync(path.join(dir, "result.json")).mtimeMs - startedAt);
     return { result: { ...validated, ...(request.auditTier ? { auditTier: request.auditTier } : {}), ...(request.spotCheck ? { spotCheck: true } : {}) }, jobAttemptId: name, startedAt, durationMs };
-  } catch { return null; }
+  } catch (error) {
+    // Fail-safe (retry/park, never a wrong verdict), but not silent: a
+    // truncated/corrupt transcript and a code bug look identical to the
+    // caller, so record which one this was for field triage.
+    try {
+      appendLedger(cwd, "completed_audit_recovery_unreadable", {
+        logicalAttemptId: logicalId,
+        reason: error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200),
+      });
+    } catch { /* ledger best effort; the null below is the contract */ }
+    return null;
+  }
 }
 
 const JAVASCRIPT_RUNTIME_BASENAMES = new Set(["node", "nodejs", "bun", "deno"]);
