@@ -1413,7 +1413,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         return;
       }
       const match = /^(\d+(?:,\d{3})*)([km])?$/.exec(raw);
-      const tokens = match ? Number(match[1].replace(/,/g, "")) * (match[2] === "k" ? 1000 : match[2] === "m" ? 1_000_000 : 1) : NaN;
+      const tokens = match ? Number(match[1]!.replace(/,/g, "")) * (match[2] === "k" ? 1000 : match[2] === "m" ? 1_000_000 : 1) : NaN;
       if (!Number.isSafeInteger(tokens) || tokens <= 0) {
         ctx.ui.notify("Enter a positive whole token count, such as 200000 or 200k, or leave empty to restore the default.", "warning");
         return;

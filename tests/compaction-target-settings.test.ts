@@ -2,6 +2,7 @@ import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import activate, { handleSettingChoice, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from "../extensions/loops/goal.js";
 import { globalSettingsPath, loadGlobalSettings, loadSettings, projectSettingsPath, saveSettings, settingsProvenance } from "../extensions/goal-settings.js";
 import { maybeCompactTranscriptAtBoundary, compactorBoundaryMarkerPath, __testOnlySetSpawnWorker, __testOnlyResetCompactor } from "../extensions/goal-compactor.js";
@@ -10,6 +11,7 @@ import { MockPi, makeMockCtx, tmpCwd, tick } from "./harness/mock-pi.js";
 
 const globalFile = globalSettingsPath();
 const original = fs.readFileSync(globalFile, "utf8"); // hermetic test-preload path
+const asHost = (ctx: ReturnType<typeof makeMockCtx>) => ctx as unknown as ExtensionContext;
 afterEach(() => {
   fs.writeFileSync(globalFile, original);
   __testOnlyResetCompactor(); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
@@ -19,17 +21,17 @@ test("/glla token-target editor persists shorthand, cancellation, validation, an
   const cwd = tmpCwd(), ctx = makeMockCtx(cwd);
   for (const [input, expected] of [["300k", 300_000], ["250,000", 250_000], ["1M", 1_000_000]] as const) {
     ctx.ui.inputImpl = async () => input;
-    await handleSettingChoice("compactionTokenThreshold", ctx);
+    await handleSettingChoice("compactionTokenThreshold", asHost(ctx));
     assert.equal(loadGlobalSettings().compactionTokenThreshold, expected);
     assert.match(ctx.ui.notifies.at(-1)!.message, /idle boundary/);
   }
   for (const input of [undefined, "0", "-5", "12.5", "20,00", "200k junk", "Infinity", "9007199254740992"]) {
     ctx.ui.inputImpl = async () => input;
-    await handleSettingChoice("compactionTokenThreshold", ctx);
+    await handleSettingChoice("compactionTokenThreshold", asHost(ctx));
     assert.equal(loadGlobalSettings().compactionTokenThreshold, 1_000_000, `invalid/cancelled ${input} must preserve the value`);
   }
   ctx.ui.inputImpl = async () => "";
-  await handleSettingChoice("compactionTokenThreshold", ctx);
+  await handleSettingChoice("compactionTokenThreshold", asHost(ctx));
   assert.equal(loadGlobalSettings().compactionTokenThreshold, 200_000);
   assert.equal(JSON.parse(fs.readFileSync(globalFile, "utf8")).compactionTokenThreshold, undefined);
 });
@@ -59,18 +61,18 @@ test("configured target reaches the actual trigger, idle guard, and hysteresis",
   __testOnlySetSpawnWorker(async () => ({ ok: true, brief: "Objective: test. Next task: verify." }));
   saveSettings("global", cwd, { compactionTokenThreshold: 300_000 });
   const flags = { supervising: true, auditInFlight: false, paused: false };
-  assert.equal(maybeCompactTranscriptAtBoundary(ctx, flags), false, "250k is below the chosen 300k target");
+  assert.equal(maybeCompactTranscriptAtBoundary(asHost(ctx), flags), false, "250k is below the chosen 300k target");
   tokens = 320_000; idle = false;
-  assert.equal(maybeCompactTranscriptAtBoundary(ctx, flags), false, "crossing the target never interrupts a running turn");
+  assert.equal(maybeCompactTranscriptAtBoundary(asHost(ctx), flags), false, "crossing the target never interrupts a running turn");
   idle = true;
-  assert.equal(maybeCompactTranscriptAtBoundary(ctx, flags), true);
+  assert.equal(maybeCompactTranscriptAtBoundary(asHost(ctx), flags), true);
   assert.equal(compacts, 1);
-  assert.equal(maybeCompactTranscriptAtBoundary(ctx, flags), false, "no repeated compaction within an episode");
+  assert.equal(maybeCompactTranscriptAtBoundary(asHost(ctx), flags), false, "no repeated compaction within an episode");
   tokens = 140_000; // below half of 300k, but NOT below half of the old 200k
-  assert.equal(maybeCompactTranscriptAtBoundary(ctx, flags), false);
+  assert.equal(maybeCompactTranscriptAtBoundary(asHost(ctx), flags), false);
   assert.equal(fs.existsSync(compactorBoundaryMarkerPath(cwd)), false, "hysteresis follows the configured target");
   tokens = 310_000;
-  assert.equal(maybeCompactTranscriptAtBoundary(ctx, flags), true);
+  assert.equal(maybeCompactTranscriptAtBoundary(asHost(ctx), flags), true);
   assert.equal(compacts, 2);
   await tick(100);
 });
@@ -84,7 +86,7 @@ test("hand-edited invalid targets safely fall back at runtime", async () => {
     ctx.getContextUsage = () => ({ tokens: 210_000, contextWindow: 1_000_000, percent: 21 });
     ctx.compact = () => { compacts++; };
     assert.equal(settingsProvenance(cwd).compactionTokenThreshold.source, "default");
-    assert.equal(maybeCompactTranscriptAtBoundary(ctx, flags), true);
+    assert.equal(maybeCompactTranscriptAtBoundary(asHost(ctx), flags), true);
     assert.equal(compacts, 1);
   }
   await tick(100);
