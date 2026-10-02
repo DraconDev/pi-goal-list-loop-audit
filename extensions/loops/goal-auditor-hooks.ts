@@ -1028,6 +1028,17 @@ export function persistClaimWorkerActivity(
  * settlement can be re-driven (the old path dropped it, which turned a
  * recoverable archive failure into a goal that looked approved forever).
  */
+/** A10: the worker-reported session path is untrusted for command
+ * rendering — quote it so spaces/metacharacters can't break (or
+ * weaponize) the copy-paste command; an empty-after-sanitize path omits
+ * the command instead of rendering a bare `pi --session`. */
+export function inspectionSessionExtras(inspectionSessionPath: string | undefined): string[] {
+  const clean = inspectionSessionPath ? sanitizeDisplayText(inspectionSessionPath).trim() : "";
+  if (!clean) return [];
+  const quoted = `'${clean.replace(/'/g, `'\\''`)}'`;
+  return [`Auditor session kept for review: pi --session ${quoted} (or pi --fork ${quoted}).`];
+}
+
 function settleApprovedCompletion(
   ctx: ExtensionContext,
   opts: {
@@ -1086,15 +1097,7 @@ function settleApprovedCompletion(
     ...(claim.findingGroups ? { findingGroups: claim.findingGroups } : {}),
     ...(claim.gateRows ? { gateRows: claim.gateRows } : {}),
     ...(approvalRepoState ? { repoState: approvalRepoState } : {}),
-    // A10: the worker-reported path is untrusted for command rendering —
-    // quote it so spaces/metacharacters can't break (or weaponize) the
-    // copy-paste command; an empty-after-sanitize path omits the command.
-    extras: (() => {
-      const clean = inspectionSessionPath ? sanitizeDisplayText(inspectionSessionPath).trim() : "";
-      if (!clean) return [];
-      const quoted = `'${clean.replace(/'/g, `'\\''`)}'`;
-      return [`Auditor session kept for review: pi --session ${quoted} (or pi --fork ${quoted}).`];
-    })(),
+    extras: inspectionSessionExtras(inspectionSessionPath),
   });
   const approvalObjective = goal.objective;
   const archived = archiveCurrentGoal(ctx, "complete", terminalReason, {}, {
