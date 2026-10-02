@@ -167,6 +167,10 @@ export interface LoopState {
   specFile?: string;
   /** Missing-spec respec bootstrap is drafting, not reconciliation. */
   respecPhase?: "draft" | "reconcile";
+  /** Sticky draft handoff: the agent emitted [RESPEC DRAFT COMPLETE] on
+   * some earlier turn. Reconciliation still waits for a structurally
+   * complete spec; cleared on handoff. */
+  respecMarkerSeen?: boolean;
   specHash?: string;
   specChecked?: number;
   /** v0.33.2: hypothesis feedback loop — the last turn's HYPOTHESIS line

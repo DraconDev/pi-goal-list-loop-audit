@@ -676,9 +676,15 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
     lastAssistantText = last && Array.isArray(last.content) ? last.content.filter((p: any) => p.type === "text").map((p: any) => p.text).join("\n") : "";
     hypothesis = lastAssistantText.match(/^HYPOTHESIS:\s*(.+)$/m)?.[1]?.trim().slice(0, 200);
   }
-  if (respecNeedsDraftPhase(loop) && respecDraftReady(loop.specFile!, lastAssistantText)) {
-    loop.respecPhase = "reconcile";
-    loop.target = respecTarget(path.basename(loop.specFile!));
+  // Sticky handoff: a marker emitted before the spec was complete still
+  // counts once the spec later completes — the two need not coincide in
+  // one turn. The structural gate still applies either way.
+  if (respecNeedsDraftPhase(loop) && loop.specFile) {
+    if (respecDraftMarkerPresent(lastAssistantText)) loop.respecMarkerSeen = true;
+    if (loop.respecMarkerSeen && respecSpecComplete(loop.specFile)) {
+      loop.respecPhase = "reconcile";
+      loop.respecMarkerSeen = undefined;
+      loop.target = respecTarget(path.basename(loop.specFile));
     loop.consecutiveStuck = 0;
     loop.recentPrints = [];
     loop.recentTexts = [];
