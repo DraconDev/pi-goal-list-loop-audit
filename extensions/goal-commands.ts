@@ -95,7 +95,7 @@ export interface CommandDeps {
   listQueue: () => NonNullable<State["list"]>;
   notifyExternal: (ctx: ExtensionContext, message: string) => void;
   persistState: (ctx: ExtensionContext) => void;
-  updateGoal: (patch: Partial<Goal>, ctx: ExtensionContext) => void;
+  updateGoal: (patch: Partial<Goal>, ctx: ExtensionContext) => boolean;
   setGoal: (goal: Goal, ctx: ExtensionContext, via?: string) => boolean;
   archiveCurrentGoal: (ctx: ExtensionContext, status: Status, stopReason?: string) => boolean;
   healGoalPolicy: (ctx: ExtensionContext) => boolean;
