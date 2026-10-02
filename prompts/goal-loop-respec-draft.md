@@ -35,3 +35,5 @@ with this line, by itself, only when ready to hand off:
 
 The orchestrator checks the file and changes the persisted phase. A partial
 file or a drafting checkpoint does not start reconciliation.
+
+${INTERVENTION_NOTE}

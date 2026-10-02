@@ -398,7 +398,8 @@ function loopPrompt(loop: LoopState, regressionNote: string, strategyNote: strin
       .replace(/\$\{SPEC_FILE\}/g, loop.specFile!)
       .replace(/\$\{ITERATION\}/g, String(loop.iteration + 1))
       .replace(/\$\{BOUNDS_NOTE\}/g, boundsNote)
-      .replace(/\$\{REFINE_HINT\}/g, loop.refineHint ?? "(none)");
+      .replace(/\$\{REFINE_HINT\}/g, loop.refineHint ?? "(none)")
+      .replace(/\$\{INTERVENTION_NOTE\}/g, interventionNote);
   }
   // v0.23.0: metricless loops get their own prompt — no metric section,
   // anti-doorknob rules instead of anti-gaming rules.
