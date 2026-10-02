@@ -56,7 +56,7 @@ import {
   resolveSpecFiles,
   respecTarget,
   respecNeedsDraftPhase,
-  respecDraftReady,
+  respecDraftMarkerPresent,
   respecSpecComplete,
   specFileHash,
   topOpenAuditFinding,
@@ -691,6 +691,7 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
     loop.recentToolResults = [];
     appendLedger(ctx.cwd, "respec_draft_completed", { specFile: loop.specFile, iteration: loop.iteration });
     ctx.ui.notify("Respec draft written — starting reconciliation against its Rules and descriptive sections.", "info");
+    }
   }
   // v0.24.0 anti-repetition: roll the behavior windows, then classify. The
   // plateau stop watches the NUMBER; this watches the WORK — a metricless
