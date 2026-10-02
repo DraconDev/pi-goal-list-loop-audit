@@ -117,7 +117,8 @@ export function compactCompletionSummary(text: string | undefined, maxValueLengt
       .sort((a, b) => a - b)[0] ?? source.length;
     const rawValue = source.slice(valueStart, nextStart).trim();
     const value = rawValue || "not recorded";
-    return `${name}: ${clipSummaryValue(value, limit)}`;
+    // D7: recap projections sanitize like every other human surface.
+    return `${name}: ${clipSummaryValue(sanitizeDisplayText(value), limit)}`;
   });
   return parts.join(" · ");
 }
@@ -1278,7 +1279,8 @@ export function completionSummaryLines(text: string | undefined, maxValueLength 
       .map((entry) => entry.start)
       .sort((a, b) => a - b)[0] ?? source.length;
     const rawValue = source.slice(valueStart, nextStart).trim();
-    const line = `${name}: ${clipSummaryValue(rawValue || "not recorded", maxValueLength)}`;
+    // D7: recap projections sanitize like every other human surface.
+    const line = `${name}: ${clipSummaryValue(sanitizeDisplayText(rawValue || "not recorded"), maxValueLength)}`;
     // Audit 2026-09-06: optional width budget for width-bound surfaces —
     // the default 240-char values previously had no width-conscious path.
     // v0.38.30 audit: plain-text surface — use the ANSI-free truncator

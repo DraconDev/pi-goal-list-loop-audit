@@ -1086,9 +1086,15 @@ function settleApprovedCompletion(
     ...(claim.findingGroups ? { findingGroups: claim.findingGroups } : {}),
     ...(claim.gateRows ? { gateRows: claim.gateRows } : {}),
     ...(approvalRepoState ? { repoState: approvalRepoState } : {}),
-    extras: inspectionSessionPath
-      ? [`Auditor session kept for review: pi --session ${inspectionSessionPath} (or pi --fork ${inspectionSessionPath}).`]
-      : [],
+    // A10: the worker-reported path is untrusted for command rendering —
+    // quote it so spaces/metacharacters can't break (or weaponize) the
+    // copy-paste command; an empty-after-sanitize path omits the command.
+    extras: (() => {
+      const clean = inspectionSessionPath ? sanitizeDisplayText(inspectionSessionPath).trim() : "";
+      if (!clean) return [];
+      const quoted = `'${clean.replace(/'/g, `'\\''`)}'`;
+      return [`Auditor session kept for review: pi --session ${quoted} (or pi --fork ${quoted}).`];
+    })(),
   });
   const approvalObjective = goal.objective;
   const archived = archiveCurrentGoal(ctx, "complete", terminalReason, {}, {

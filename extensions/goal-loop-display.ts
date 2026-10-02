@@ -42,6 +42,8 @@ function heldLoop(state: State): LoopState | undefined {
 // ---- formatters ----
 
 export function fmtElapsed(ms: number): string {
+  // D10: non-finite input rendered "NaNh NaNm" — clamp to zero.
+  if (!Number.isFinite(ms)) ms = 0;
   if (ms < 0) ms = 0;
   const s = Math.floor(ms / 1000);
   if (s < 60) return `${s}s`;
