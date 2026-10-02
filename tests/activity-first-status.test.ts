@@ -318,8 +318,8 @@ test("activity-first: footer monitoring and awaiting labels agree with the card 
 test("D2: the loop status line folds watching into QUEUED like the goal head", () => {
   const loop: LoopState = {
     target: "watch the queue", iteration: 3, maxIterations: 0,
-    plateauWindow: 5, stallCount: 0, active: true, history: [],
-    startedAt: "2026-09-17T11:50:00Z",
+    plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null,
+    active: true, history: [], startedAt: "2026-09-17T11:50:00Z",
   };
   const footer = buildStatusText({ goal: null, list: [], loop }, null, NOW, undefined, { activity: "monitoring" })!;
   assert.match(footer, /⏳ QUEUED/, "the loop surface shares the fold");
