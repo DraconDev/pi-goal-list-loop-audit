@@ -1991,11 +1991,23 @@ async function cmdReview(args: string, ctx: ExtensionContext): Promise<void> {
   let objective = "(archived goal)";
   try {
     const files = fs.readdirSync(archiveDir(ctx.cwd)).filter((f) => f.endsWith(".md"));
-    const match = files.find((f) => f === `${id}.md`) ?? files.find((f) => f.includes(id));
-    if (!match) {
+    const exact = files.find((f) => f === `${id}.md`);
+    // C8: a substring id matching several archived goals must not silently
+    // review whichever readdir returns first — refuse with the candidates.
+    const matches = exact ? [exact] : files.filter((f) => f.includes(id));
+    if (matches.length === 0) {
       ctx.ui.notify(`No archived goal matching "${id}". /goal archive lists them.`, "warning");
       return;
     }
+    if (matches.length > 1) {
+      const shown = matches.slice(0, 8).map((f) => f.replace(/\.md$/, ""));
+      ctx.ui.notify(
+        `"${id}" matches ${matches.length} archived goals — use a longer id:\n${shown.join("\n")}${matches.length > 8 ? `\n…(+${matches.length - 8} more)` : ""}`,
+        "warning",
+      );
+      return;
+    }
+    const match = matches[0]!;
     goalId = match.replace(/\.md$/, "");
     const md = fs.readFileSync(path.join(archiveDir(ctx.cwd), match), "utf-8");
     const objMatch = md.match(/## Objective\n\n> ([\s\S]*?)(?:\n\n|$)/);
