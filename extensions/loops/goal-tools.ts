@@ -1647,9 +1647,9 @@ function registerAgentTools(pi: any): void {
           ...(durableCompletionClaim.findingGroups ? { findingGroups: durableCompletionClaim.findingGroups } : {}),
           ...(durableCompletionClaim.gateRows ? { gateRows: durableCompletionClaim.gateRows } : {}),
           ...(manualRepoState ? { repoState: manualRepoState } : {}),
-          extras: inspectionSessionPath
-            ? [`Auditor session kept for review: pi --session ${inspectionSessionPath} (or pi --fork ${inspectionSessionPath}).`]
-            : [],
+          // D7 audit: the shared builder sanitizes + shell-quotes the path;
+          // the inline twin interpolated it raw (and unquoted) into chat.
+          extras: inspectionSessionExtras(inspectionSessionPath),
         });
         const manualObjective = state.goal.objective;
         const manualGoalId = state.goal.id;
