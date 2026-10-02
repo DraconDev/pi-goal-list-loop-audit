@@ -1842,6 +1842,13 @@ function addSingleItem(ctx: ExtensionContext, raw: string): void {
   hydrateListQueueFromDisk(ctx);
   if (coalesceParkedDuplicate(ctx, raw)) return;
   const extracted = parseListItemDeclaration(raw);
+  // Same zombie-twin guard as the enqueueItems funnel: a just-finished
+  // objective re-added via /list add must not resurrect as a fresh item.
+  if (recentlyCompletedObjectives(ctx.cwd).has(normalizeObjective(extracted.objective))) {
+    appendLedger(ctx.cwd, "list_duplicate_skipped", { source: "direct", count: 1, objective: extracted.objective.slice(0, 200) });
+    ctx.ui.notify(`Already completed recently — not re-queued: ${displaySlice(extracted.objective, 80)}`, "info");
+    return;
+  }
   const item = assignQueueOrder([{
     id: newGoalId(),
     objective: extracted.objective,
