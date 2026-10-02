@@ -25,10 +25,7 @@ function waitGoal(pauseReason: string): Goal {
     pauseSuggestedAction: "test wait",
   }) as unknown as Goal;
 }
-afterEach(() => { __testOnlyResetAuditorSurfaceSafe(); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); __testOnlyResetOverdueWaitBackstop(); });
-// The auditor surface reset lives behind its own module; keep this file's
-// teardown dependency-free when that module is untouched.
-function __testOnlyResetAuditorSurfaceSafe(): void {}
+afterEach(() => { __testOnlyResetAuditorSurface(); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); __testOnlyResetOverdueWaitBackstop(); });
 
 test("S9: overdue agent wait resumes exactly once — park-clear lands, then latch + ledger", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);

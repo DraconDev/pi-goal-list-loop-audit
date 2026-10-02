@@ -93,3 +93,25 @@ test("audit 2026-09-25: stranded_audit_recovered is ledgered only after the park
     "context-free ledger follows the successful park",
   );
 });
+
+test("S9: the overdue continuation route latches only after the park-clear lands", () => {
+  // The live rig's real updateGoal won't fail on cue, so the failure path
+  // is pinned by shape: a falsy write returns BEFORE the latch and the
+  // "resumed" ledger line — a failed write stays parked AND retriable.
+  assert.match(
+    HB,
+    /const parkCleared = updateGoal\(\{[^]*?if \(!parkCleared\) return;[^]*?lastOverdueWaitKey = overdueKey;[^]*?appendLedger\(ctx\.cwd, "wait_pause_overdue_resume"/,
+    "write, then latch, then ledger",
+  );
+});
+
+test("S8: the overdue probe route releases the latch at settle when the wait is still parked", () => {
+  // A no-op probe (no recovery state) or a pre-repark throw leaves the
+  // SAME wait parked under a latched key; the settle handler releases it
+  // so the next tick retries, while re-parks and resumes keep the latch.
+  assert.match(
+    HB,
+    /\.finally\(\(\) => \{[^]*?lastOverdueWaitKey === overdueKey[^]*?current\.pauseResumeAt === parkedResumeAt[^]*?lastOverdueWaitKey = "";/,
+    "settle-time latch release on the still-parked wait",
+  );
+});
