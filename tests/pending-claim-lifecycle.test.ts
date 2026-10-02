@@ -173,3 +173,35 @@ test("a durable pending audit survives cold reload parked with its identity and 
     await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
   }
 });
+
+test("/goal verify on a recovery-pending claim resumes it instead of overwriting the cursor", async () => {
+  const pi = new MockPi();
+  activate(pi.api);
+  const cwd = tmpCwd();
+  const ctx = await boot(pi, cwd);
+  try {
+    seedState(cwd, {
+      goal: seedGoal({
+        status: "paused",
+        objective: "parked verify — done when pinned",
+        pendingCompletion: {
+          completionSummary: "agent claim parked",
+          at: new Date().toISOString(),
+          phase: "recovery-pending",
+          attemptId: "parked-verify-attempt",
+          recoveryRetryAt: new Date(Date.now() + 600_000).toISOString(),
+        } as any,
+      }),
+    });
+    __testOnlyLoadState(cwd);
+    await pi.command("goal", "verify", ctx);
+    await tick();
+    const goal = readState(cwd).goal as any;
+    assert.equal(goal.pendingCompletion?.attemptId, "parked-verify-attempt", "the parked attempt is not replaced");
+    assert.equal(goal.pendingCompletion?.phase, "recovery-pending", "the retry cursor survives verify");
+    assert.equal(goal.pendingCompletion?.completionSummary, "agent claim parked", "no synthesized claim is written");
+    assert.ok(ledger(cwd).includes("recovery-pending-resume"), "the resume path is ledgered");
+  } finally {
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});
