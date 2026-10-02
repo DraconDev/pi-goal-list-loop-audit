@@ -213,3 +213,23 @@ test("label named inside a value does not steal later segmentation", () => {
   const restated = compactCompletionSummary("Outcome: see Tests: x. Tests: 5 pass", 72, true);
   assert.match(restated, /Tests: 5 pass/, "the last restatement of a label wins");
 });
+
+test("D5: concrete work mentioning audit/review/settle/approval survives the stale-Next filter", () => {
+  const kept = withoutStaleNext([
+    "Evidence: commit abc",
+    "Next: detached auditor verdict decides.",
+    "Next: review pending PRs before the release",
+  ]);
+  assert.deepEqual(kept, [
+    "Evidence: commit abc",
+    "Next: review pending PRs before the release",
+  ], "self-reference drops, concrete review work survives");
+  for (const action of [
+    "Next: audit the remaining fixtures",
+    "Next: settle the API contract",
+    "Next: get final approval from the team",
+    "Next: check whether the audit finished",
+  ]) {
+    assert.deepEqual(withoutStaleNext([action]), [action], `${action} survives the filter`);
+  }
+});
