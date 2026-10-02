@@ -1007,8 +1007,20 @@ function healGoalPolicy(ctx: ExtensionContext): boolean {
       `Recovered the goal mode (${healed === "list" ? "list item" : "goal"}) from the durable goal file — the corrupted in-memory mode flag was self-healed; no restart needed.`,
       "info",
     );
+    return true;
   }
-  return healed !== undefined;
+  // S10: unhealable corruption must not fall through to a misleading gate
+  // refusal ("the active work is a standalone goal — /goal pause"). The
+  // ledger already carries goal_policy_heal_failed; say the true cause out
+  // loud, once per entry, so the gate message below is read as a symptom.
+  const policy = state.goal?.policy;
+  if (state.goal && policy !== "goal" && policy !== "list") {
+    ctx.ui.notify(
+      `The goal mode flag is corrupted (${String(policy).slice(0, 80)}) and could not be recovered from the durable goal file — list/goal actions may refuse until the goal file is repaired or the goal is re-created.`,
+      "warning",
+    );
+  }
+  return false;
 }
 
 function notifyExternal(ctx: ExtensionContext, message: string): void {
