@@ -1847,3 +1847,61 @@ test("A2 (pin): the crash-safe pre-dispatch reap covers the rotated-away attempt
   const toolsSrc = fs.readFileSync("extensions/loops/goal-tools.ts", "utf-8");
   assert.match(toolsSrc, /priorAttemptId: completionClaim\.priorAttemptId/, "tools dispatch forwards the durable lineage");
 });
+
+test("A5: an abandoned challenge preserves its prose beside the byte-exact round-1 output", { timeout: 60_000 }, async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "glla-abandon-"));
+  const fakePi = path.join(dir, "abandon-pi.mjs");
+  const counterFile = path.join(dir, "invocations");
+  await writeFile(counterFile, "0");
+  const fakePiSource = `
+import { setTimeout as sleep } from "node:timers/promises";
+import { readFileSync, writeFileSync } from "node:fs";
+const counterFile = ${JSON.stringify(counterFile)};
+let handled = false;
+process.stdin.on("data", async (chunk) => {
+  if (handled || !String(chunk).includes("\\n")) return;
+  handled = true;
+  const inv = Number(readFileSync(counterFile, "utf8")) + 1;
+  writeFileSync(counterFile, String(inv));
+  const out = (value) => process.stdout.write(JSON.stringify(value) + "\\n");
+  out({ type: "agent_start" });
+  await sleep(50);
+  if (inv === 1) {
+    out({ type: "tool_execution_start", toolCallId: "read-1", toolName: "read", args: { path: "/repo/README.md" } });
+    await sleep(50);
+    out({ type: "tool_execution_end", toolCallId: "read-1" });
+    await sleep(50);
+    out({ type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "<evidence>\\nartifact exists; tests pass\\n</evidence>\\n<approved/>" } });
+  } else {
+    out({ type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "OBJECTION: the artifact lacks a checksum — re-verify before trusting round 1." } });
+  }
+  await sleep(50);
+  out({ type: "agent_settled" });
+  await sleep(300);
+});
+`;
+  await writeFile(fakePi, `#!/usr/bin/env node\n${fakePiSource}`);
+  await chmod(fakePi, 0o700);
+  try {
+    const result = await runDetachedGoalCompletionAuditor({
+      cwd: dir,
+      goal,
+      model: "test/provider-model",
+      thinkingLevel: "high",
+      runtime: {
+        workerPath: path.resolve(process.cwd(), "scripts/goal-auditor-worker.mjs"),
+        env: { GLLA_PI_BINARY: fakePi },
+        attemptId: () => "attempt-a5-abandon",
+        pollIntervalMs: 5,
+        wallTimeoutMs: 30_000,
+      },
+    });
+    assert.equal(result.approved, true, `fail-open approval survives (error: ${result.error ?? "none"})`);
+    assert.match(result.challenge ?? "", /settled without a verdict/, "the abandon reason is recorded");
+    assert.doesNotMatch(result.output ?? "", /OBJECTION/, "published output stays byte-exact round-1");
+    const preserved = await readFile(path.join(dir, ".pi-glla", "audit-jobs", "attempt-a5-abandon", "challenge-abandoned.md"), "utf8");
+    assert.match(preserved, /OBJECTION: the artifact lacks a checksum/, "the abandoned falsification prose is preserved");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
