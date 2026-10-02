@@ -37,6 +37,27 @@ test("172705: exact-duplicate details render once per bucket", () => {
   assert.deepEqual(parts.next, ["Unresolved: none."]);
 });
 
+test("2026-10-02: same-label restatement in next/remaining collapses to first", () => {
+  const first = "Unresolved: The fix is NOT live. The installed binary is 0.112.42 built before this change, and the guard is still running that old binary — a release cut was explicitly out of scope, so activation happens at the next release.";
+  const restatement = "Unresolved: the fix is still not live — the installed binary is 0.112.42 built before this work, so activation needs a release cut, which was explicitly out of scope.";
+  const parts = partitionRichDetails([first, restatement]);
+  assert.deepEqual(parts.next, [first]);
+});
+
+test("2026-10-02: problem and action across labels always both render", () => {
+  const problem = "Unresolved: the fix is still not live — the installed binary is 0.112.42 built before this work, so activation needs a release cut.";
+  const action = "Next: Cut a release to activate the TTL, then confirm the first expiry pass in the journal.";
+  const parts = partitionRichDetails([problem, action]);
+  assert.deepEqual(parts.next, [problem, action]);
+});
+
+test("2026-10-02: distinct same-label next steps both render", () => {
+  const one = "Next: Cut a release to activate the TTL.";
+  const two = "Next: Confirm the first expiry pass in the journal.";
+  const parts = partitionRichDetails([one, two]);
+  assert.deepEqual(parts.next, [one, two]);
+});
+
 test("172705: zero turns omitted, elapsed and audits kept", () => {
   const line = buildDurationLine({
     telemetry: { turns: 0, fileWrites: 0, bashCalls: 0 },
