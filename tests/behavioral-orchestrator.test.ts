@@ -2456,6 +2456,54 @@ test("v0.35.x: full auditor reports and required-fixes tails survive lifecycle b
   }
 });
 
+test("S3: a mid-session absorb publishes the owner file, so the shutdown handoff still validates", async () => {
+  __testOnlyResetStaleFlag();
+  const cwd = tmpCwd();
+  const ctx = await freshSession(cwd, "startup");
+  await pi.command("goal", "handoff survival — done when absorbed", ctx);
+  await tick();
+  await acknowledgeLastContinuation(ctx);
+  pi.sent.length = 0;
+  const ownerFile = path.join(cwd, ".pi-glla", "session-owner.json");
+  const claimGen = (JSON.parse(fs.readFileSync(ownerFile, "utf8")) as { generation: number }).generation;
+  // Stale-terminal the owner, then absorb a successor via a tool call —
+  // two mid-session generation bumps with no session_start between.
+  pi.sendMessageError = staleError();
+  await pi.fire("agent_end", { messages: [{ role: "assistant", content: [{ type: "text", text: "boundary" }], stopReason: "end_turn" }] }, ctx);
+  await tick();
+  pi.sendMessageError = null;
+  const successorCtx = makeMockCtx(cwd, {
+    sessionManager: {
+      name: "successor-session-manager",
+      getSessionFile: () => path.join(cwd, "successor-session.jsonl"),
+      getSessionId: () => "successor-1",
+    },
+  });
+  await pi.runTool("list_add", { items: ["post-swap follow-up"] }, successorCtx);
+  await tick(200);
+  const afterAbsorb = JSON.parse(fs.readFileSync(ownerFile, "utf8")) as { generation: number; ownerSessionId: string };
+  assert.ok(afterAbsorb.generation > claimGen, `the absorb publishes a newer generation (claim ${claimGen}, now ${afterAbsorb.generation})`);
+  assert.equal(afterAbsorb.ownerSessionId, "successor-1", "the absorb publishes the live session id");
+  // Shut down supervising (goal still active) and compare the handoff the
+  // successor will validate against the owner record it validates with.
+  await pi.fire("session_shutdown", { reason: "reload" }, successorCtx);
+  await tick();
+  const handoff = JSON.parse(fs.readFileSync(path.join(cwd, ".pi-glla", "session-handoff.json"), "utf8")) as { generation: number; ownerSessionId: string };
+  const ownerAtShutdown = JSON.parse(fs.readFileSync(ownerFile, "utf8")) as { generation: number; ownerSessionId: string };
+  assert.equal(handoff.generation, ownerAtShutdown.generation, "handoff and owner agree on the generation");
+  assert.equal(handoff.ownerSessionId, ownerAtShutdown.ownerSessionId, "handoff and owner agree on the session");
+  // The successor start consumes the handoff instead of rejecting it.
+  const nextCtx = makeMockCtx(cwd, {
+    sessionManager: { name: "next", getSessionFile: () => path.join(cwd, "next.jsonl"), getSessionId: () => "successor-2" },
+  });
+  await pi.fire("session_start", { reason: "reload" }, nextCtx);
+  await tick();
+  const ledger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
+  assert.doesNotMatch(ledger, /"session_handoff_rejected"/, "no identity-mismatch rejection after mid-session bumps");
+  await pi.fire("session_shutdown", { reason: "test-end" }, nextCtx);
+  __testOnlyResetOwnerSession();
+});
+
 test("v0.34.25: silent swap — live file-backed successor is absorbed via a tool call and the work auto-resumes", async () => {
   __testOnlyResetStaleFlag();
   const cwd = tmpCwd();
