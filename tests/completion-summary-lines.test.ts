@@ -233,3 +233,19 @@ test("D5: concrete work mentioning audit/review/settle/approval survives the sta
     assert.deepEqual(withoutStaleNext([action]), [action], `${action} survives the filter`);
   }
 });
+
+test("D7: recap projections sanitize control bytes and ANSI", () => {
+  const text = "Outcome: shipped[31m redbell\nChanged: x\nEvidence: y\nTests: z\nUnresolved: none\nNext: n";
+  const compact = compactCompletionSummary(text);
+  assert.doesNotMatch(compact, //, "compact projection strips escapes");
+  assert.ok(!compact.includes(""), "compact projection strips control bytes");
+  const lines = completionSummaryLines(text);
+  assert.doesNotMatch(lines.join("\n"), //, "line projection strips escapes");
+});
+
+test("D8: an empty outcome says so instead of inventing done", () => {
+  const brief = humanCompletionBrief(undefined);
+  assert.equal(brief.outcome, "(outcome not recorded)");
+  const blank = humanCompletionBrief("   ");
+  assert.equal(blank.outcome, "(outcome not recorded)");
+});
