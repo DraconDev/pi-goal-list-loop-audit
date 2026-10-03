@@ -2955,7 +2955,7 @@
       "file": "extensions/loops/goal-settings-ui.ts",
       "line": 770,
       "kind": "notify",
-      "content": "`glla setting \"${id}\" NOT saved: ${err instanceof Error ? err.message : String(err)} — check ${globalSettingsPath()} permissions.`"
+      "content": "`glla setting \"${id}\" NOT saved: ${err instanceof Error ? err.message : String(err)} — resolve the reported error, then retry.`"
     },
     {
       "file": "extensions/loops/goal-settings-ui.ts",

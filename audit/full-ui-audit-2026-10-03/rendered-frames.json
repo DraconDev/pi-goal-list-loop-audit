@@ -223,12 +223,12 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;167;152;215mGLLA settings\u001b[39m",
-      "\u001b[38;2;167;152;215mAll tabs · 1 matches\u001b[39m",
+      "\u001b[38;2;167;152;215mAll tabs · 1 match\u001b[39m",
       "\u001b[38;2;157;165;169msearch: timeout▏\u001b[39m",
       "\u001b[48;2;33;59;73m▶ Auditor · Auditor tool time… · default\u001b[49m",
       "\u001b[48;2;33;59;73m  5m base · ×2 per retry · cap 4×       \u001b[49m",
       "\u001b[38;2;126;136;142mtype to search · ↑↓ move\u001b[39m",
-      "\u001b[38;2;126;136;142menter edit · esc clear search\u001b[39m"
+      "\u001b[38;2;126;136;142mctrl+d details · enter · esc clear\u001b[39m"
     ]
   },
   {
@@ -421,7 +421,8 @@
       "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215msafely parked\u001b[39m                          \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more       \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mobservation before work can continue.\u001b[39m  \u001b[49m",
-      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: /goal resume\u001b[39m                     \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mChoose an option in the decision card, \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mthen resume.\u001b[39m                           \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn   \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mstopped before more work could be      \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mlost.\u001b[39m                                  \u001b[49m",
@@ -918,12 +919,12 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;167;152;215mGLLA settings\u001b[39m",
-      "\u001b[38;2;167;152;215mAll tabs · 1 matches\u001b[39m",
+      "\u001b[38;2;167;152;215mAll tabs · 1 match\u001b[39m",
       "\u001b[38;2;157;165;169msearch: timeout▏\u001b[39m",
       "\u001b[48;2;33;59;73m▶ Auditor · Auditor tool timeout · default                  \u001b[49m",
       "\u001b[48;2;33;59;73m  5m base · ×2 per retry · cap 4×                           \u001b[49m",
       "\u001b[38;2;126;136;142mtype to search · ↑↓ move\u001b[39m",
-      "\u001b[38;2;126;136;142menter edit · esc clear search\u001b[39m"
+      "\u001b[38;2;126;136;142mctrl+d details · enter · esc clear\u001b[39m"
     ]
   },
   {
@@ -1111,7 +1112,7 @@
       "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m⏸ GLLA Decision needed — work is safely parked\u001b[39m             \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work   \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mcan continue.\u001b[39m                                              \u001b[49m",
-      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: /goal resume\u001b[39m                                         \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mChoose an option in the decision card, then resume.\u001b[39m        \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn stopped before more   \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mwork could be lost.\u001b[39m                                        \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mResume: /goal resume\u001b[39m                                       \u001b[49m",
@@ -1575,12 +1576,12 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;167;152;215mGLLA settings\u001b[39m",
-      "\u001b[38;2;167;152;215mAll tabs · 1 matches\u001b[39m",
+      "\u001b[38;2;167;152;215mAll tabs · 1 match\u001b[39m",
       "\u001b[38;2;157;165;169msearch: timeout▏\u001b[39m",
       "KEY                             \u001b[38;2;126;136;142m │ \u001b[39mVALUE                              \u001b[38;2;126;136;142m │ \u001b[39mSOURCE ",
       "\u001b[38;2;126;136;142m─────────────────────────────────┼─────────────────────────────────────┼────────\u001b[39m",
       "\u001b[48;2;33;59;73m▶ Auditor · Auditor tool timeout │ 5m base · ×2 per retry · cap 4×     │ default\u001b[49m",
-      "\u001b[38;2;126;136;142m←/→ tab · ↑/↓ move · d details on · / search · enter edit · esc exit\u001b[39m"
+      "\u001b[38;2;126;136;142mtype to search · ↑/↓ move · ctrl+d details · enter edit · esc clear search\u001b[39m"
     ]
   },
   {
@@ -1765,7 +1766,7 @@
       "\u001b[48;2;58;48;85m                                                                                \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m⏸ GLLA Decision needed — work is safely parked\u001b[39m                                 \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work can continue.\u001b[39m         \u001b[49m",
-      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: /goal resume\u001b[39m                                                             \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mChoose an option in the decision card, then resume.\u001b[39m                            \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m   \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mResume: /goal resume\u001b[39m                                                           \u001b[49m",
       "\u001b[48;2;58;48;85m                                                                                \u001b[49m"
@@ -2224,12 +2225,12 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;167;152;215mGLLA settings\u001b[39m",
-      "\u001b[38;2;167;152;215mAll tabs · 1 matches\u001b[39m",
+      "\u001b[38;2;167;152;215mAll tabs · 1 match\u001b[39m",
       "\u001b[38;2;157;165;169msearch: timeout▏\u001b[39m",
       "KEY                             \u001b[38;2;126;136;142m │ \u001b[39mVALUE                                                                      \u001b[38;2;126;136;142m │ \u001b[39mSOURCE ",
       "\u001b[38;2;126;136;142m─────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────┼────────\u001b[39m",
       "\u001b[48;2;33;59;73m▶ Auditor · Auditor tool timeout │ 5m base · ×2 per retry · cap 4×                                             │ default\u001b[49m",
-      "\u001b[38;2;126;136;142m←/→ tab · ↑/↓ move · d details on · / search · enter edit · esc exit\u001b[39m"
+      "\u001b[38;2;126;136;142mtype to search · ↑/↓ move · ctrl+d details · enter edit · esc clear search\u001b[39m"
     ]
   },
   {
@@ -2414,7 +2415,7 @@
       "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m⏸ GLLA Decision needed — work is safely parked\u001b[39m                                                                         \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work can continue.\u001b[39m                                                 \u001b[49m",
-      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: /goal resume\u001b[39m                                                                                                     \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mChoose an option in the decision card, then resume.\u001b[39m                                                                    \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m                                           \u001b[49m",
       "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mResume: /goal resume\u001b[39m                                                                                                   \u001b[49m",
       "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m"
@@ -2894,12 +2895,12 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;116;89;180mGLLA settings\u001b[39m",
-      "\u001b[38;2;116;89;180mAll tabs · 1 matches\u001b[39m",
+      "\u001b[38;2;116;89;180mAll tabs · 1 match\u001b[39m",
       "\u001b[38;2;103;113;118msearch: timeout▏\u001b[39m",
       "\u001b[48;2;223;231;236m▶ Auditor · Auditor tool time… · default\u001b[49m",
       "\u001b[48;2;223;231;236m  5m base · ×2 per retry · cap 4×       \u001b[49m",
       "\u001b[38;2;135;144;149mtype to search · ↑↓ move\u001b[39m",
-      "\u001b[38;2;135;144;149menter edit · esc clear search\u001b[39m"
+      "\u001b[38;2;135;144;149mctrl+d details · enter · esc clear\u001b[39m"
     ]
   },
   {
@@ -3092,7 +3093,8 @@
       "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180msafely parked\u001b[39m                          \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more       \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mobservation before work can continue.\u001b[39m  \u001b[49m",
-      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: /goal resume\u001b[39m                     \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mChoose an option in the decision card, \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mthen resume.\u001b[39m                           \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn   \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mstopped before more work could be      \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mlost.\u001b[39m                                  \u001b[49m",
@@ -3589,12 +3591,12 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;116;89;180mGLLA settings\u001b[39m",
-      "\u001b[38;2;116;89;180mAll tabs · 1 matches\u001b[39m",
+      "\u001b[38;2;116;89;180mAll tabs · 1 match\u001b[39m",
       "\u001b[38;2;103;113;118msearch: timeout▏\u001b[39m",
       "\u001b[48;2;223;231;236m▶ Auditor · Auditor tool timeout · default                  \u001b[49m",
       "\u001b[48;2;223;231;236m  5m base · ×2 per retry · cap 4×                           \u001b[49m",
       "\u001b[38;2;135;144;149mtype to search · ↑↓ move\u001b[39m",
-      "\u001b[38;2;135;144;149menter edit · esc clear search\u001b[39m"
+      "\u001b[38;2;135;144;149mctrl+d details · enter · esc clear\u001b[39m"
     ]
   },
   {
@@ -3782,7 +3784,7 @@
       "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m⏸ GLLA Decision needed — work is safely parked\u001b[39m             \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work   \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mcan continue.\u001b[39m                                              \u001b[49m",
-      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: /goal resume\u001b[39m                                         \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mChoose an option in the decision card, then resume.\u001b[39m        \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn stopped before more   \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mwork could be lost.\u001b[39m                                        \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mResume: /goal resume\u001b[39m                                       \u001b[49m",
@@ -4246,12 +4248,12 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;116;89;180mGLLA settings\u001b[39m",
-      "\u001b[38;2;116;89;180mAll tabs · 1 matches\u001b[39m",
+      "\u001b[38;2;116;89;180mAll tabs · 1 match\u001b[39m",
       "\u001b[38;2;103;113;118msearch: timeout▏\u001b[39m",
       "KEY                             \u001b[38;2;135;144;149m │ \u001b[39mVALUE                              \u001b[38;2;135;144;149m │ \u001b[39mSOURCE ",
       "\u001b[38;2;135;144;149m─────────────────────────────────┼─────────────────────────────────────┼────────\u001b[39m",
       "\u001b[48;2;223;231;236m▶ Auditor · Auditor tool timeout │ 5m base · ×2 per retry · cap 4×     │ default\u001b[49m",
-      "\u001b[38;2;135;144;149m←/→ tab · ↑/↓ move · d details on · / search · enter edit · esc exit\u001b[39m"
+      "\u001b[38;2;135;144;149mtype to search · ↑/↓ move · ctrl+d details · enter edit · esc clear search\u001b[39m"
     ]
   },
   {
@@ -4436,7 +4438,7 @@
       "\u001b[48;2;230;228;238m                                                                                \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m⏸ GLLA Decision needed — work is safely parked\u001b[39m                                 \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work can continue.\u001b[39m         \u001b[49m",
-      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: /goal resume\u001b[39m                                                             \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mChoose an option in the decision card, then resume.\u001b[39m                            \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m   \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mResume: /goal resume\u001b[39m                                                           \u001b[49m",
       "\u001b[48;2;230;228;238m                                                                                \u001b[49m"
@@ -4895,12 +4897,12 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;116;89;180mGLLA settings\u001b[39m",
-      "\u001b[38;2;116;89;180mAll tabs · 1 matches\u001b[39m",
+      "\u001b[38;2;116;89;180mAll tabs · 1 match\u001b[39m",
       "\u001b[38;2;103;113;118msearch: timeout▏\u001b[39m",
       "KEY                             \u001b[38;2;135;144;149m │ \u001b[39mVALUE                                                                      \u001b[38;2;135;144;149m │ \u001b[39mSOURCE ",
       "\u001b[38;2;135;144;149m─────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────┼────────\u001b[39m",
       "\u001b[48;2;223;231;236m▶ Auditor · Auditor tool timeout │ 5m base · ×2 per retry · cap 4×                                             │ default\u001b[49m",
-      "\u001b[38;2;135;144;149m←/→ tab · ↑/↓ move · d details on · / search · enter edit · esc exit\u001b[39m"
+      "\u001b[38;2;135;144;149mtype to search · ↑/↓ move · ctrl+d details · enter edit · esc clear search\u001b[39m"
     ]
   },
   {
@@ -5085,7 +5087,7 @@
       "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m⏸ GLLA Decision needed — work is safely parked\u001b[39m                                                                         \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work can continue.\u001b[39m                                                 \u001b[49m",
-      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: /goal resume\u001b[39m                                                                                                     \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mChoose an option in the decision card, then resume.\u001b[39m                                                                    \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m                                           \u001b[49m",
       "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mResume: /goal resume\u001b[39m                                                                                                   \u001b[49m",
       "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m"
