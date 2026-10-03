@@ -2,3 +2,18 @@
 > pi-goal-list-loop-audit@0.38.109 check
 > tsc --noEmit
 
+tests/glla-ui-command-audit.test.ts(55,48): error TS2345: Argument of type 'MockCtx' is not assignable to parameter of type 'ExtensionContext'.
+  Types of property 'ui' are incompatible.
+    Type 'MockUi' is missing the following properties from type 'ExtensionUIContext': onTerminalInput, setWorkingMessage, setWorkingVisible, setWorkingIndicator, and 16 more.
+tests/glla-ui-command-audit.test.ts(65,35): error TS2345: Argument of type 'MockCtx' is not assignable to parameter of type 'ExtensionContext'.
+  Types of property 'ui' are incompatible.
+    Type 'MockUi' is missing the following properties from type 'ExtensionUIContext': onTerminalInput, setWorkingMessage, setWorkingVisible, setWorkingIndicator, and 16 more.
+tests/glla-ui-command-audit.test.ts(81,56): error TS2345: Argument of type 'MockCtx' is not assignable to parameter of type 'ExtensionContext'.
+  Types of property 'ui' are incompatible.
+    Type 'MockUi' is missing the following properties from type 'ExtensionUIContext': onTerminalInput, setWorkingMessage, setWorkingVisible, setWorkingIndicator, and 16 more.
+tests/glla-ui-command-audit.test.ts(150,46): error TS2345: Argument of type 'MockCtx' is not assignable to parameter of type 'ExtensionContext'.
+  Types of property 'ui' are incompatible.
+    Type 'MockUi' is missing the following properties from type 'ExtensionUIContext': onTerminalInput, setWorkingMessage, setWorkingVisible, setWorkingIndicator, and 16 more.
+tests/glla-ui-command-audit.test.ts(166,47): error TS2345: Argument of type 'MockCtx' is not assignable to parameter of type 'ExtensionContext'.
+  Types of property 'ui' are incompatible.
+    Type 'MockUi' is missing the following properties from type 'ExtensionUIContext': onTerminalInput, setWorkingMessage, setWorkingVisible, setWorkingIndicator, and 16 more.
