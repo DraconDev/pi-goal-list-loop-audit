@@ -3571,3 +3571,4 @@ tests/start-context.test.ts:
 (pass) field 2026-09-16: tweak chatter over competing requests surfaces candidates [0.10ms]
 
 tests/auditor-stall-watchdog.test.ts:
+(pass) stall: worker that never emits a first event is failed fast, not left for the wall [5266.83ms]
