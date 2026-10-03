@@ -21,6 +21,7 @@ import * as path from "node:path";
 
 import { defineTool, type ContextEvent, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import { applyToolConfig } from "../tool-config.js";
 
 // v0.34.109 (decomposition step 1): the state singleton and the persistence
 // core moved to goal-state.ts — the SINGLE owner of the mutable state object
