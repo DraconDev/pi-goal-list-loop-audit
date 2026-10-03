@@ -1,0 +1,223 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/ui-experience-audit.test.ts:
+13 | const items = buildModelPickItems(Array.from({ length: 30 }, (_, i) => ({ provider: "fixture", id: `model-${i.toString().padStart(2, "0")}` })), "fixture/current", { includeSessionRow: false, includeManualRow: false });
+14 | function assertFits(lines: string[], width: number, height: number) { assert.ok(lines.length <= height, `${lines.length} lines exceed ${height}`); for (const line of lines) assert.ok(visibleWidth(line) <= width, `overflow: ${line}`); }
+15 | 
+16 | test("settings keep the active final tab visible on narrow terminals", () => {
+17 |   const component = menu({ initialSection: "other" });
+18 |   assert.match(component.render(60)[1]!, /Other/);
+              ^
+AssertionError: The input did not match the regular expression /Other/. Input:
+
+'Keep-going (9)  Main agent (6)  Drafter (2)  Compactor (3\x1B[0m…\x1B[0m'
+
+ generatedMessage: true,
+     actual: "Keep-going (9)  Main agent (6)  Drafter (2)  Compactor (3\u001b[0m…\u001b[0m",
+   expected: /Other/,
+   operator: "match",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:18:10
+      at fn (node:test:215:18)
+(fail) settings keep the active final tab visible on narrow terminals [4.80ms]
+18 |   assert.match(component.render(60)[1]!, /Other/);
+19 | });
+20 | test("narrow settings show both the focused setting and its effective value", () => {
+21 |   const component = menu({ initialSection: "auditor" });
+22 |   const text = component.render(40).join("\n");
+23 |   assert.match(text, /Auditor model/);
+              ^
+AssertionError: The input did not match the regular expression /Auditor model/. Input:
+
+'GLLA settings\n' +
+  'Keep-going (9)  Main agent (6)  Draft\x1B[0m…\x1B[0m\n' +
+  'KEY                              │ VALU\x1B[0m…\x1B[0m\n' +
+  '─────────────────────────────────┼──┼──\x1B[0m…\x1B[0m\n' +
+  '▶ Auditor agent                  │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Fallback models (up to 10)     │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Allowed extensions             │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Mirror session extensions      │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Same-model swap                │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Silent auditor stream          │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Auditor progress signals       │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Auditor tool timeout           │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Auditor stall budget           │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Audit job retention            │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Audit spot-check rate          │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Auditor inspection session     │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Require full audit challenge   │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Audit cap                      │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Audit hard cap                 │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Mechanical load scaling        │  │ d\x1B[0m…\x1B[0m\n' +
+  '  Audit feedback chars           │  │ d\x1B[0m…\x1B[0m\n' +
+  '←/→ tab · ↑/↓ move · d details on · ent\x1B[0m…\x1B[0m'
+
+ generatedMessage: true,
+     actual: "GLLA settings\nKeep-going (9)  Main agent (6)  Draft\u001b[0m…\u001b[0m\nKEY                              │ VALU\u001b[0m…\u001b[0m\n─────────────────────────────────┼──┼──\u001b[0m…\u001b[0m\n▶ Auditor agent                  │  │ d\u001b[0m…\u001b[0m\n  Fallback models (up to 10)     │  │ d\u001b[0m…\u001b[0m\n  Allowed extensions             │  │ d\u001b[0m…\u001b[0m\n  Mirror session extensions      │  │ d\u001b[0m…\u001b[0m\n  Same-model swap                │  │ d\u001b[0m…\u001b[0m\n  Silent auditor stream          │  │ d\u001b[0m…\u001b[0m\n  Auditor progress signals       │  │ d\u001b[0m…\u001b[0m\n  Auditor tool timeout           │  │ d\u001b[0m…\u001b[0m\n  Auditor stall budget           │  │ d\u001b[0m…\u001b[0m\n  Audit job retention            │  │ d\u001b[0m…\u001b[0m\n  Audit spot-check rate          │  │ d\u001b[0m…\u001b[0m\n  Auditor inspection session     │  │ d\u001b[0m…\u001b[0m\n  Require full audit challenge   │  │ d\u001b[0m…\u001b[0m\n  Audit cap                      │  │ d\u001b[0m…\u001b[0m\n  Audit hard cap                 │  │ d\u001b[0m…\u001b[0m\n  Mechanical load scaling        │  │ d\u001b[0m…\u001b[0m\n  Audit feedback chars           │  │ d\u001b[0m…\u001b[0m\n←/→ tab · ↑/↓ move · d details on · ent\u001b[0m…\u001b[0m",
+   expected: /Auditor model/,
+   operator: "match",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:23:10
+      at fn (node:test:215:18)
+(fail) narrow settings show both the focused setting and its effective value [1.14ms]
+23 |   assert.match(text, /Auditor model/);
+24 |   assert.match(text, /provider\/a-very/);
+25 | });
+26 | test("reopened settings focus the edited row and each tab remembers its cursor", () => {
+27 |   const component = menu({ initialSelectedId: "mainModelRetryMinutes" });
+28 |   assert.equal(component.visibleRows()[component.getSelectedIdx()]?.id, "mainModelRetryMinutes");
+              ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ 'autoResume'
+- 'mainModelRetryMinutes'
+
+ generatedMessage: true,
+     actual: "autoResume",
+   expected: "mainModelRetryMinutes",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:28:10
+      at fn (node:test:215:18)
+(fail) reopened settings focus the edited row and each tab remembers its cursor [0.44ms]
+(pass) settings window keeps the cursor, navigation and details within a short terminal [1.53ms]
+39 | });
+40 | test("settings search finds rows across sections and Esc clears search before closing", () => {
+41 |   let closed = false;
+42 |   const component = new SettingsMenuComponent({ rows, title: "settings" }, () => {}, theme, kb, () => { closed = true; });
+43 |   component.handleInput("/"); component.handleInput("Auditor model");
+44 |   assert.equal(component.visibleRows()[0]?.id, "auditorModel");
+              ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ 'autoResume'
+- 'auditorModel'
+     ^
+
+ generatedMessage: true,
+     actual: "autoResume",
+   expected: "auditorModel",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:44:10
+      at fn (node:test:215:18)
+(fail) settings search finds rows across sections and Esc clears search before closing [0.21ms]
+47 |   component.handleInput("esc"); assert.equal(closed, true);
+48 | });
+49 | test("settings details allow reading the full long value", () => {
+50 |   const component = menu({ initialSelectedId: "auditorModel" });
+51 |   component.handleInput("d");
+52 |   assert.match(component.render(60).join("\n"), /losing-the-tail/);
+              ^
+AssertionError: The input did not match the regular expression /losing-the-tail/. Input:
+
+'GLLA settings\n' +
+  'Keep-going (9)  Main agent (6)  Drafter (2)  Compactor (3\x1B[0m…\x1B[0m\n' +
+  'KEY                              │ VALUE                   \x1B[0m…\x1B[0m\n' +
+  '─────────────────────────────────┼─────────────────────────\x1B[0m…\x1B[0m\n' +
+  '▶ Auto-resume on load            │ default                 \x1B[0m…\x1B[0m\n' +
+  '  Decision popup                 │ on                      \x1B[0m…\x1B[0m\n' +
+  '  Carryover policy               │ pause                   \x1B[0m…\x1B[0m\n' +
+  '  Decision pause budget          │ unset (pause every time)\x1B[0m…\x1B[0m\n' +
+  '  Auto-accept drafts             │ off                     \x1B[0m…\x1B[0m\n' +
+  '  Aggressive mode                │ on                      \x1B[0m…\x1B[0m\n' +
+  '  Vision assist                  │ on                      \x1B[0m…\x1B[0m\n' +
+  '  Forbidden model patterns       │ none                    \x1B[0m…\x1B[0m\n' +
+  '  Block forbidden switches       │ on                      \x1B[0m…\x1B[0m\n' +
+  '←/→ tab · ↑/↓ move · d details off · enter drill-in · esc e\x1B[0m…\x1B[0m'
+
+ generatedMessage: true,
+     actual: "GLLA settings\nKeep-going (9)  Main agent (6)  Drafter (2)  Compactor (3\u001b[0m…\u001b[0m\nKEY                              │ VALUE                   \u001b[0m…\u001b[0m\n─────────────────────────────────┼─────────────────────────\u001b[0m…\u001b[0m\n▶ Auto-resume on load            │ default                 \u001b[0m…\u001b[0m\n  Decision popup                 │ on                      \u001b[0m…\u001b[0m\n  Carryover policy               │ pause                   \u001b[0m…\u001b[0m\n  Decision pause budget          │ unset (pause every time)\u001b[0m…\u001b[0m\n  Auto-accept drafts             │ off                     \u001b[0m…\u001b[0m\n  Aggressive mode                │ on                      \u001b[0m…\u001b[0m\n  Vision assist                  │ on                      \u001b[0m…\u001b[0m\n  Forbidden model patterns       │ none                    \u001b[0m…\u001b[0m\n  Block forbidden switches       │ on                      \u001b[0m…\u001b[0m\n←/→ tab · ↑/↓ move · d details off · enter drill-in · esc e\u001b[0m…\u001b[0m",
+   expected: /losing-the-tail/,
+   operator: "match",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:52:10
+      at fn (node:test:215:18)
+(fail) settings details allow reading the full long value [0.69ms]
+ 9 | const theme = { fg: (_: string, s: string) => s, bg: (_: string, s: string) => s, bold: (s: string) => s };
+10 | const kb = { matches: (data: string, key: string) => key === `tui.select.${({ up: "up", down: "down", pgup: "pageUp", pgdown: "pageDown", enter: "confirm", esc: "cancel" } as Record<string, string>)[data]}` };
+11 | const rows = buildSettingsRows({ auditorModel: "provider/a-very-long-model-name-to-inspect-without-losing-the-tail" }, {});
+12 | function menu(extra: Record<string, unknown> = {}) { return new SettingsMenuComponent({ rows, title: "GLLA settings", ...extra } as SettingsMenuFactoryDeps, () => {}, theme, kb, () => {}); }
+13 | const items = buildModelPickItems(Array.from({ length: 30 }, (_, i) => ({ provider: "fixture", id: `model-${i.toString().padStart(2, "0")}` })), "fixture/current", { includeSessionRow: false, includeManualRow: false });
+14 | function assertFits(lines: string[], width: number, height: number) { assert.ok(lines.length <= height, `${lines.length} lines exceed ${height}`); for (const line of lines) assert.ok(visibleWidth(line) <= width, `overflow: ${line}`); }
+                                                                                  ^
+AssertionError: 20 lines exceed 12
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at assertFits (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:14:78)
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:46:3
+      at fn (node:test:215:18)
+(fail) single picker respects terminal height and keeps the selected model visible [0.42ms]
+ 9 | const theme = { fg: (_: string, s: string) => s, bg: (_: string, s: string) => s, bold: (s: string) => s };
+10 | const kb = { matches: (data: string, key: string) => key === `tui.select.${({ up: "up", down: "down", pgup: "pageUp", pgdown: "pageDown", enter: "confirm", esc: "cancel" } as Record<string, string>)[data]}` };
+11 | const rows = buildSettingsRows({ auditorModel: "provider/a-very-long-model-name-to-inspect-without-losing-the-tail" }, {});
+12 | function menu(extra: Record<string, unknown> = {}) { return new SettingsMenuComponent({ rows, title: "GLLA settings", ...extra } as SettingsMenuFactoryDeps, () => {}, theme, kb, () => {}); }
+13 | const items = buildModelPickItems(Array.from({ length: 30 }, (_, i) => ({ provider: "fixture", id: `model-${i.toString().padStart(2, "0")}` })), "fixture/current", { includeSessionRow: false, includeManualRow: false });
+14 | function assertFits(lines: string[], width: number, height: number) { assert.ok(lines.length <= height, `${lines.length} lines exceed ${height}`); for (const line of lines) assert.ok(visibleWidth(line) <= width, `overflow: ${line}`); }
+                                                                                  ^
+AssertionError: 52 lines exceed 18
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at assertFits (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:14:78)
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:51:3
+      at fn (node:test:215:18)
+(fail) large unordered selections fit a short multi-picker without hiding its cursor [0.98ms]
+65 |   assert.match(component.render(60).join("\n"), /30 selected/);
+66 | });
+67 | test("picker backspace deletes a complete Unicode character", () => {
+68 |   for (const component of [new ModelPickerComponent({ title: "model", items }, () => {}, theme, kb, () => {}), new MultiModelPickerComponent({ title: "models", items }, () => {}, theme, kb, () => {})]) {
+69 |     component.handleInput("a🚀"); component.handleInput("\x7f");
+70 |     assert.equal(component.getQuery(), "a");
+                ^
+AssertionError: Expected values to be strictly equal:
+
+'a\ud83d' !== 'a'
+
+ generatedMessage: true,
+     actual: "a\ud83d",
+   expected: "a",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:70:12
+      at fn (node:test:215:18)
+(fail) picker backspace deletes a complete Unicode character [0.21ms]
+ 9 | const theme = { fg: (_: string, s: string) => s, bg: (_: string, s: string) => s, bold: (s: string) => s };
+10 | const kb = { matches: (data: string, key: string) => key === `tui.select.${({ up: "up", down: "down", pgup: "pageUp", pgdown: "pageDown", enter: "confirm", esc: "cancel" } as Record<string, string>)[data]}` };
+11 | const rows = buildSettingsRows({ auditorModel: "provider/a-very-long-model-name-to-inspect-without-losing-the-tail" }, {});
+12 | function menu(extra: Record<string, unknown> = {}) { return new SettingsMenuComponent({ rows, title: "GLLA settings", ...extra } as SettingsMenuFactoryDeps, () => {}, theme, kb, () => {}); }
+13 | const items = buildModelPickItems(Array.from({ length: 30 }, (_, i) => ({ provider: "fixture", id: `model-${i.toString().padStart(2, "0")}` })), "fixture/current", { includeSessionRow: false, includeManualRow: false });
+14 | function assertFits(lines: string[], width: number, height: number) { assert.ok(lines.length <= height, `${lines.length} lines exceed ${height}`); for (const line of lines) assert.ok(visibleWidth(line) <= width, `overflow: ${line}`); }
+                                                                                  ^
+AssertionError: 100 lines exceed 18
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at assertFits (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:14:78)
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:60:1
+      at fn (node:test:215:18)
+(fail) long draft reviews scroll while their decisions remain visible [10.39ms]
+
+ 1 pass
+ 9 fail
+Ran 10 tests across 1 file. [587.00ms]
+[run-tests] finished in 1s (exit 1)
