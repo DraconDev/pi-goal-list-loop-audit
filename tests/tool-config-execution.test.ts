@@ -71,8 +71,10 @@ test("a stale host cannot rewrite tool arguments", async () => {
 
 test("the real Pi tool pipeline executes bash with the configured timeout", async () => {
   let observedTimeout: number | undefined;
+  let executions = 0;
   const definition = createBashToolDefinition(tmpCwd(), { operations: {
     exec: async (_command, _cwd, options) => {
+      executions++;
       observedTimeout = options.timeout;
       options.onData(Buffer.from("configured execution\n"));
       return { exitCode: 0 };
@@ -87,6 +89,18 @@ test("the real Pi tool pipeline executes bash with the configured timeout", asyn
   });
   assert.equal(outcome.isError, false, JSON.stringify(outcome));
   assert.equal(observedTimeout, 60, "the actual bash execution receives the override");
+  saveSettings("project", ctx.cwd, { toolOverrides: { perToolConfig: { bash: { timeout: "bad" } } } });
+  const blocked = await runToolCall({ type: "toolCall", id: "blocked-call", name: "bash", arguments: { command: "fixture command", timeout: 5 } }, {
+    tools: context.tools!, context,
+    assistantMessage: { role: "assistant", content: [] } as unknown as AssistantMessage,
+    beforeToolCall: async ({ toolCall, args }) => await pi.handlers.get("tool_call")!({ type: "tool_call", toolName: toolCall.name, toolCallId: toolCall.id, input: args } as never, ctx as never) as any,
+  });
+  assert.equal(blocked.isError, true);
+  assert.equal(executions, 1, "invalid overrides are blocked before tool execution");
+  saveSettings("project", ctx.cwd, { toolOverrides: { perToolConfig: {} } });
+  const cleared = { command: "original", timeout: 5 };
+  await call(cleared);
+  assert.deepEqual(cleared, { command: "original", timeout: 5 }, "clearing restores model arguments");
 });
 
 test("invalid merged options leave every input field unchanged", () => {

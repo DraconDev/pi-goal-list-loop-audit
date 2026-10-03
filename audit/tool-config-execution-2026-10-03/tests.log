@@ -1,14 +1,17 @@
-✔ project optional arguments override supplied values and apply to later calls (413.793456ms)
-✔ invalid options block atomically: {"timeout":"bad"} (11.318113ms)
-✔ invalid options block atomically: {"unsupported":true} (15.247142ms)
-✔ invalid options block atomically: {"command":"replace the operation"} (15.442431ms)
-✔ a stale host cannot rewrite tool arguments (14.096139ms)
-✔ the real Pi tool pipeline executes bash with the configured timeout (23.525966ms)
-ℹ tests 6
+✔ project optional arguments override supplied values and apply to later calls (61.016544ms)
+✔ invalid options block atomically: {"timeout":"bad"} (14.438946ms)
+✔ invalid options block atomically: {"unsupported":true} (17.615425ms)
+✔ invalid options block atomically: {"command":"replace the operation"} (15.66408ms)
+✔ a stale host cannot rewrite tool arguments (19.988797ms)
+✔ the real Pi tool pipeline executes bash with the configured timeout (36.832174ms)
+✔ invalid merged options leave every input field unchanged (0.598379ms)
+✔ nested overrides belong to each call, and optional zero remains valid (1.074439ms)
+✔ unconfigured calls do not need a registry; missing or unsupported schemas block configured calls (0.3814ms)
+ℹ tests 9
 ℹ suites 0
-ℹ pass 6
+ℹ pass 9
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 2774.041682
+ℹ duration_ms 2518.815083
