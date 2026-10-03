@@ -2145,3 +2145,170 @@ AssertionError: undefined == true
 (pass) v0.34.20 lifecycle: fan-out confirmation from the old generation cannot queue into its replacement [17.50ms]
 (pass) v0.34.20 lifecycle: loop measurement abandons the old generation after replacement [97.39ms]
 (pass) v0.34.25: a resolved auditor model failure advances to the session fallback without a verdict [0.96ms]
+(pass) v0.35.x: zero-stream zombie auto-aborts and parks a list item without a retry storm [485.54ms]
+(pass) v0.35.x: zero-stream loop termination preserves and notifies its recap [13.62ms]
+(pass) v0.35.4: zombie watchdog stands down while a subagent wait is in flight [18.10ms]
+(pass) v0.35.64: a stale subagent probe no longer shields unrelated parent cleanup [49.92ms]
+(pass) v0.35.4: context-starved warning is one-shot per refusal episode [13.77ms]
+(pass) audit-2026-09-06: measure test-run dialogs disclose the pre-confirm exec [7.46ms]
+(pass) tweak carries its revision bump inside the durable patch (no phantom revision) [430.08ms]
+(pass) resetContinuationDispatchState clears the in-memory pending ref (S2 audit) [0.55ms]
+
+tests/state-root-owner.test.ts:
+(pass) normalizeOwnerAt tolerates number and ISO, rejects garbage [112.89ms]
+(pass) looksLikePi admits pi hosts, refuses sleep, abstains on unknown [71.94ms]
+(pass) classifyOwner covers the full matrix [79.00ms]
+(pass) describeOwner returns null for self, shape for foreign [90.53ms]
+(pass) takeover with no record claims silently [118.14ms]
+(pass) takeover of a dead owner reclaims without signaling [77.18ms]
+(pass) takeover of self reclaims (same-process sessions always win) [69.61ms]
+(pass) live owner without confirm returns needs-confirm and touches nothing [203.10ms]
+(pass) confirmed takeover of a non-pi process is refused, survivor unclaimed [208.10ms]
+(pass) confirmed takeover SIGTERMs a pi-shaped owner, verifies exit, claims [526.61ms]
+(pass) owner surviving SIGTERM is never claimed [593.06ms]
+(pass) recycled pid is unlinked without signaling the innocent occupant [226.88ms]
+(pass) heartbeat refresh is throttled and owner-scoped [211.18ms]
+(pass) /glla owner reports unclaimed / self / live holder [348.45ms]
+(pass) /glla takeover end to end reclaims a dead root via command [81.09ms]
+(pass) /glla takeover aborts on dismissed confirm without signaling [207.72ms]
+(pass) source pins the new escape hatches on both read-only warnings [80.66ms]
+(pass) audit-2026-09-06: takeover re-verifies the occupant at signal time [199.36ms]
+
+tests/auditing-standstill.test.ts:
+(pass) agent turns during a pending audit stay silent instead of escalating [770.34ms]
+
+tests/repair-card-loop-block.test.ts:
+(pass) v0.35.22: activating a queued item under a LIVE loop refuses LOUDLY — warning names the queued item and the way out [331.13ms]
+(pass) v0.35.22: when the loop ends, the blocked item becomes startable — /loop stop advances the queue [548.78ms]
+(pass) v0.35.41: the stuck-ladder stop also announces queued-list resumption [319.54ms]
+(pass) v0.35.41: the provider-error cap stop also announces queued-list resumption [1129.69ms]
+
+tests/zombie-subagent-tool-name.test.ts:
+(pass) v0.35.26 #13: an in-flight 'subagent' call stands down the zombie abort until it settles [77.96ms]
+(pass) v0.35.26 #13: the blocking 'subagent_wait' tool gets the same stand-down [15.25ms]
+(pass) v0.35.26 #13: both watchdog sites consume the shared isSubagentWaitCall name set [1.03ms]
+
+tests/tool-overrides.test.ts:
+(pass) Settings type accepts toolOverrides (allow / hide / perToolConfig) [0.66ms]
+(pass) SETTINGS_KEYS includes toolOverrides for provenance tracking [3.34ms]
+(pass) goal.ts ensureAgentToolsActive applies toolOverrides.allow and .hide [46.71ms]
+(pass) /glla tooloverride keyword routes to cmdToolOverride [0.60ms]
+(pass) cmdToolOverride supports allow / hide / unallow / unhide / set / unset / list [0.57ms]
+(pass) parseToolOverrideValue coerces booleans, numbers, JSON; else string [0.64ms]
+(pass) reviewer 4-mode set (off | on | auto | aggressive) is the contract surface [0.07ms]
+(pass) legacy 'default' and 'report' modes auto-migrate to 'on' in resolveReviewerConfig [0.24ms]
+(pass) paused widget renders `awaiting first turn` for zero-telemetry (literal contract) [0.77ms]
+(pass) auditor prompt (extensions/goal-loop-auditor.ts) carries the chunk-near-context-full hint [0.13ms]
+
+tests/subagent-host-boundary.test.ts:
+(pass) v0.35.62: a worker cannot be the first claimant, while host telemetry still records Explore [106.55ms]
+(pass) v0.35.62: foreign slash commands cannot mutate the host list [6.60ms]
+(pass) v0.35.62: persistent workers cannot masquerade as silent host successors [12.31ms]
+(pass) v0.35.72: state-root read-only denial hints at sessionDir via the MAIN-owner refusal [9.75ms]
+
+tests/mechanical-pipeline-lifecycle.test.ts:
+(pass) Node callers survive noisy early-closing filters and retain head failure/cancellation [876.07ms]
+
+tests/heartbeat-suppression-rework.test.ts:
+(pass) lastShippedAtMs ignores the state-file mtime (the self-sustaining term) [44.75ms]
+(pass) lastShippedAtMs source has no active.jsonl mtime term [0.52ms]
+(pass) heartbeat never calls the suppression check; audit-in-flight flag guards the only real window [1.00ms]
+(pass) the deprecated pure fn remains exported (API compat) but marked deprecated [0.13ms]
+(pass) no heartbeat_suppressed ledger writes remain in the heartbeat path [0.51ms]
+
+tests/prompt-subagent-retry-guidance.test.ts:
+(pass) continuation prompt treats provider wording as generic retryable failure (item 38) [0.40ms]
+(pass) continuation prompt resumes or retries a failed subagent without a reset wait [0.10ms]
+
+tests/settings-editors.test.ts:
+(pass) T4: select editor — stateRoot writes the global workingDir/sessionDir choice [70.49ms]
+(pass) T4: select editor — autoResume writes on/off/default with the right key [10.09ms]
+(pass) T4: select editor — auditorInspection is opt-in on (writes true), off clears to default [5.10ms]
+(pass) removed request-rate fallback setting has no editor or persistence path [0.37ms]
+(pass) T4: select editor — aggressiveMode writes the boolean + notifies [2.34ms]
+(pass) T4: select editor — contextCheckpointProjection writes true, off removes the key (v0.38.54) [7.39ms]
+(pass) T4: select editor — carryover writes clear/resume, pause removes the key (v0.34.25) [14.28ms]
+(pass) T4: select options stay concise — rationale lives in the title, not the option rows (v0.34.25) [1.07ms]
+(pass) main recovery settings are global-only and project copies cannot create a UI/runtime mismatch [4.50ms]
+(pass) scope-aware settings editing updates a project override instead of a hidden global baseline [9.60ms]
+(pass) forbidden-model editing excludes drafter and auditor fallback chains [2.57ms]
+(pass) numeric settings reject malformed integer prefixes instead of truncating them [0.29ms]
+(pass) RPC custom stub falls back to typed main-backup editing instead of silently canceling [2.13ms]
+(pass) main failback policy and primary-probe cadence are global settings [3.48ms]
+(pass) T4: input editor — main model backups preserve order and retry cadence [6.75ms]
+(pass) main backup editor refuses the 11th typed model and keeps the first ten in order [2.30ms]
+(pass) main-model fallback reload preserves explicit order and does not reintroduce a cleared key [9.61ms]
+(pass) v0.34.118: backup and forbidden editors enforce mutual exclusion even in headless input mode [5.47ms]
+(pass) T4: input editor — auditorModel set / cleared on empty [4.36ms]
+(pass) v0.36.0: auditor fallback editor preserves ordered refs, caps at ten, and clears [7.93ms]
+(pass) v0.36.0: the singular auditor fallback setting migrates to the ordered chain [5.29ms]
+(pass) drafter agent picker immediately offers model-specific thinking and persists both choices [8.48ms]
+(pass) T4: input editor validation — auditCap rejects garbage loudly, accepts integers, clears on empty [5.13ms]
+(pass) v0.35.64: subagent hang action accepts warning-only/long thresholds and rejects unsafe values [15.15ms]
+(pass) v0.35.x: zero-stream retry budget persists and rejects values outside 0..10 [5.49ms]
+(pass) v0.35.x: hand-edited zero-stream retry budgets normalize to the safe default [0.38ms]
+(pass) T4: a dismissed editor (Esc → undefined) writes NOTHING [0.36ms]
+(pass) settings editor failures notify loudly and return to the menu [0.62ms]
+(pass) T4: the switch has no confirm-class editors (select + input only) [0.27ms]
+(pass) v0.28.34: notify folds a default IN — auto-detect notify-send/osascript, 'off' silences, custom overrides [5.40ms]
+(pass) audit-2026-09-06: headless /glla fallback shows compactor + display-richness rows [0.29ms]
+(pass) audit 2026-09-06: docs/SETTINGS.md covers every SETTINGS_KEYS entry [0.74ms]
+(pass) audit 2026-09-07 (LOW, finding 400): typing the displayed `auto` in the notify editor round-trips to unset, not a literal shell command [16.91ms]
+(pass) audit 2026-09-25: decisionPauseBudget is visible on every operator surface [6.32ms]
+(pass) audit 2026-09-26: subagent thinking editor pins, inherits, and rejects garbage [9.94ms]
+(pass) audit 2026-09-26: headless /glla fallback covers every SETTINGS_KEYS entry [0.69ms]
+(pass) v0.38.104: the audit-dir retention row renders a legal 0 instead of the unknown-value '?' [1.05ms]
+(pass) v0.38.104: the main-recovery row does not promise a 24h stop the default mode removes [0.61ms]
+(pass) v0.38.104: every 'Global-only.' annotation in docs/SETTINGS.md is true in code [0.44ms]
+(pass) v0.38.104: the superseded DESIGN.md table does not mark files that do not exist as shipped [0.67ms]
+(pass) v0.38.104: the auditor model path carries no dead settings placeholders [0.68ms]
+
+tests/contained-child-platform.test.ts:
+(pass) real linux cleanup stops a live owned Node tree and inherited pipes [1157.40ms]
+
+tests/task-list-persistence.test.ts:
+(pass) normal task-list proposal reports failure and stores no task list [65.35ms]
+(pass) repair proposal preserves the source sidecar and queue when the task list cannot persist [2.93ms]
+
+tests/auditor-eager-retry.test.ts:
+(pass) eager: first attempt is 5s for every provider failure family [25.91ms]
+(pass) hourly: later attempts keep the slot diagnostic but cap the wait at 15m [0.12ms]
+(pass) hourly: rate-limit, billing, and transient-shaped failures share the same later schedule [0.09ms]
+(pass) eager: an upstream Retry-After hint does not suppress the uniform retry [0.04ms]
+(pass) eager: detached auditor retries an account-shaped failure once before durable parking [0.67ms]
+(pass) eager: a second recoverable provider error remains infrastructure after the one retry [0.34ms]
+(pass) eager: conservative attempts remain bounded by the existing durable safety window [0.05ms]
+(pass) unified: no auditor-only attempt cap inside the shared horizon [0.03ms]
+(pass) aggressive auditor recovery respects the fixed recovery horizon [0.03ms]
+(pass) manual-started timer retries preserve automatic provenance and clear exhausted cycle state [0.36ms]
+(pass) automatic plans advance counters while preserving their original envelope [0.08ms]
+(pass) source pins: uniform eager retry and hourly probe wording are present at both dispatch sites [0.77ms]
+
+tests/completion-trailing-space.test.ts:
+(pass) subcommand items get a trailing space in value, label stays clean [21.98ms]
+(pass) key=value items get NO trailing space (user types the value right after the =) [0.32ms]
+(pass) mixed list (bare commands + key=value) — the asymmetric rule [0.30ms]
+(pass) filter still prefix-based (no other behavior change) [0.31ms]
+(pass) registerCommand: /goal, /glla, /list, /loop all use the shared factory [1.38ms]
+(pass) /glla completions stay concise: actions only; settings live in the table [0.54ms]
+
+tests/post-drafting-stuck.test.ts:
+(pass) post-drafting: complete_goal storage failure returns an error, never a wait narrative [65.31ms]
+(pass) post-drafting: resume_goal resumes a paused auditor-retry list item [168.82ms]
+(pass) post-drafting: auditor retry waits after the eager probe are capped at 15 minutes [0.53ms]
+(pass) post-drafting: recovery-wait surfaces name resume_goal as the agent path [0.40ms]
+
+tests/respec-draft-phase.test.ts:
+(pass) missing-spec respec dispatches a durable dedicated draft and gates reconciliation [212.69ms]
+(pass) legacy bootstrap loops recover into the draft phase, including an existing partial spec [138.84ms]
+(pass) respec with an existing spec retains immediate reconciliation [161.04ms]
+(pass) a draft completion marker cannot substitute for a missing or empty spec [0.53ms]
+(pass) active legacy bootstrap loop recovers into draft on its next tick [165.20ms]
+(pass) respec with a structurally incomplete spec enters draft instead of reconciling [160.94ms]
+(pass) sticky handoff: marker one turn, finished spec the next, still reconciles [311.44ms]
+(pass) draft prompt carries the stuck-ladder intervention note [0.42ms]
+(pass) draft phase without a spec file degrades instead of throwing [182.99ms]
+(pass) respecSpecComplete: title plus nonempty Rules plus another section [0.27ms]
+
+tests/same-process-successor-resume.test.ts:
+(pass) same-process successor resumes a held ACTIVE goal — the list/goal asymmetry fix [402.52ms]
