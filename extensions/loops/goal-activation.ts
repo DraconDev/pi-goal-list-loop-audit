@@ -142,7 +142,7 @@ import {
   transitionDispatch,
   type ContinuationDispatch,
 } from "../goal-loop-dispatch.js";
-import { maybeCompactTranscriptAtBoundary, readHandoffBriefExcerpt, runGoalCompactionIfDue } from "../goal-compactor.js";
+import { clearBoundaryCompactionAttempt, settleBoundaryCompactionFailure, maybeCompactTranscriptAtBoundary, readHandoffBriefExcerpt, runGoalCompactionIfDue } from "../goal-compactor.js";
 import {
   createGoalContinuation,
   scheduleContinuation,
@@ -1296,12 +1296,20 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
   }
 
 
+  function resumeAfterBoundaryCompactionFailure(ctx: ExtensionContext): void {
+    if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(ctx)) return;
+    noteCompactionSettled();
+    if (!isSupervising() || supervisorPaused(state) || abortedStandDown) return;
+    if (isLoopActive()) scheduleLoopTick(ctx);
+    else if (isActionableGoal()) scheduleContinuation(ctx, true, EAGER_CONTINUATION_SETTLE_MS);
+  }
+
   // A failed compaction attempt is a first-class lifecycle boundary. Pi owns
   // the compactor, cut point, persistence, and any retry. GLLA only consumes
   // this public event: settle its current-attempt marker and observe the
   // outcome. A willRetry attempt must remain entirely host-owned; terminal
   // prompt-overflow failures may use the configured model fallback, while an
-  // output-capped or otherwise terminal summarization failure parks durable
+  // output-capped or otherwise terminal blocking summarization failure parks durable
   // work instead of misclassifying the model as unable to hold the context.
   // Pi 0.87 added session_compact_failed after this package's minimum
   // peer contract. Register through a narrow compatibility cast so GLLA can
@@ -1337,6 +1345,9 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       fromExtension: event.fromExtension === true,
       generation: sessionGeneration,
     });
+    // Our threshold is opportunistic. Its event may omit fromExtension;
+    // bind it to the actual pending attempt rather than guessing from text.
+    if (settleBoundaryCompactionFailure(ctx, safe, failure.kind !== "retry-owned" && failure.kind !== "aborted")) return;
     if (failure.kind === "retry-owned" || failure.kind === "aborted" || failure.kind === "from-extension" || !isSupervising()) return;
 
     // Only a terminal failure that specifically says the prompt still cannot
@@ -1706,6 +1717,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     if (!admission) return;
     const { hostLifecycleStart, recordedOwner } = admission;
     if (!claimSessionRootOrNotify(ctx, hostLifecycleStart)) return;
+    clearBoundaryCompactionAttempt(ctx);
     retentionSweepAuditJobs(ctx);
     // [lifecycle 4/12] rebind reset: capture flags, clear timers, rebind ctx, restore state
     // v0.34.73 (OPEN-ISSUES 1.12): capture the pre-rebind invalidation flags
@@ -3171,7 +3183,7 @@ async function handleHotLengthExhaustion(
         supervising: isSupervising(),
         auditInFlight: completionAuditInFlight,
         paused: supervisorPaused(state),
-      })) return;
+      }, () => resumeAfterBoundaryCompactionFailure(ctx))) return;
     } catch {
       // A compaction check never breaks the turn boundary.
     }
@@ -3217,7 +3229,7 @@ async function handleHotLengthExhaustion(
           supervising: isSupervising(),
           auditInFlight: completionAuditInFlight,
           paused: supervisorPaused(state),
-        })) {
+        }, () => resumeAfterBoundaryCompactionFailure(ctx))) {
           clearContinuationTimer();
           if (isLoopActive()) clearLoopTimer();
           return;
@@ -3354,6 +3366,7 @@ async function handleHotLengthExhaustion(
     }
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(ctx)) return;
     ensureAgentToolsReady(ctx, true);
+    clearBoundaryCompactionAttempt(ctx);
     markActionReminderTurnStart();
     lastStreamActivityAt = Date.now();
     lastTurnStartAt = lastStreamActivityAt;

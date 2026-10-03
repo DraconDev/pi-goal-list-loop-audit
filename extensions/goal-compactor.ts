@@ -94,6 +94,27 @@ export function shouldCompactBetweenTasks(input: {
   return { compact: true, reason: `between tasks at ${Math.round(tokens)} tokens (threshold ${threshold})` };
 }
 
+type BoundaryOwnerContext = { cwd: string; sessionManager?: object };
+type BoundaryAttempt = { fail(error: string, resume: boolean): void };
+// Public failure events and compact callbacks may arrive in either order.
+// Keep the settled attempt until the next real turn so both contacts share
+// ownership and cannot send twice or fall through to the blocking handler.
+let boundaryAttempts = new WeakMap<object, BoundaryAttempt>();
+function boundaryOwner(ctx: BoundaryOwnerContext): object {
+  return ctx.sessionManager ?? ctx;
+}
+
+export function settleBoundaryCompactionFailure(ctx: BoundaryOwnerContext, error: string, resume = true): boolean {
+  const attempt = boundaryAttempts.get(boundaryOwner(ctx));
+  if (!attempt) return false;
+  attempt.fail(error, resume);
+  return true;
+}
+
+export function clearBoundaryCompactionAttempt(ctx: BoundaryOwnerContext): void {
+  boundaryAttempts.delete(boundaryOwner(ctx));
+}
+
 /** v0.38.105 (field 2026-09-29: 600-900k-token sessions never compacted):
  * fire a REAL transcript compaction at the turn boundary.
  *
@@ -112,8 +133,9 @@ export function shouldCompactBetweenTasks(input: {
  * when this returns true. Returns false when nothing fired (or when this
  * host has no compact trigger). */
 export function maybeCompactTranscriptAtBoundary(
-  ctx: Pick<ExtensionContext, "cwd" | "getContextUsage" | "compact" | "ui"> & { isIdle(): boolean; hasPendingMessages(): boolean },
+  ctx: Pick<ExtensionContext, "cwd" | "getContextUsage" | "compact" | "ui"> & { isIdle(): boolean; hasPendingMessages(): boolean; sessionManager?: object },
   flags: { supervising: boolean; auditInFlight: boolean; paused: boolean },
+  onFailure?: () => void,
 ): boolean {
   if (!flags.supervising || flags.auditInFlight || flags.paused) return false;
   let idle = false;
@@ -192,37 +214,40 @@ export function maybeCompactTranscriptAtBoundary(
   } catch {
     // Stale ctx best effort.
   }
+  let settled = false;
+  const attempt: BoundaryAttempt = {
+    fail(detail, resume) {
+      if (settled) return;
+      settled = true;
+      // The episode marker stays: this optional attempt must not grind once
+      // per turn. Failure leaves the existing transcript and work usable.
+      try {
+        appendLedger(ctx.cwd, "compactor_transcript_error", { error: detail.slice(0, 200) });
+        if (resume) appendLedger(ctx.cwd, "compactor_transcript_resume", {});
+      } catch { /* ledger best effort */ }
+      if (!resume) return;
+      try {
+        ctx.ui.notify(`glla: optional transcript compaction failed (${detail.slice(0, 160)}); continuing with the current transcript.`, "warning");
+      } catch { /* stale UI best effort */ }
+      // Defer until the firing boundary has cleared its eager timers.
+      queueMicrotask(() => onFailure?.());
+    },
+  };
+  boundaryAttempts.set(boundaryOwner(ctx), attempt);
   try {
     (ctx as ExtensionContext).compact({
       onComplete: () => {
-        try {
-          appendLedger(ctx.cwd, "compactor_transcript_done", {});
-        } catch {
-          // Ledger best effort.
-        }
+        settled = true;
+        if (boundaryAttempts.get(boundaryOwner(ctx)) === attempt) clearBoundaryCompactionAttempt(ctx);
+        try { appendLedger(ctx.cwd, "compactor_transcript_done", {}); }
+        catch { /* ledger best effort */ }
       },
-      onError: (error) => {
-        // One attempt per episode stands (marker stays): a failing compact
-        // must not grind once per turn. The warning below is the recourse.
-        const detail = error instanceof Error ? error.message : String(error);
-        try {
-          appendLedger(ctx.cwd, "compactor_transcript_error", { error: detail.slice(0, 200) });
-        } catch {
-          // Ledger best effort.
-        }
-        try {
-          ctx.ui.notify(`glla: automatic transcript compaction failed (${detail.slice(0, 160)}). Run /compact manually, then resume.`, "warning");
-        } catch {
-          // Stale ctx best effort.
-        }
-      },
+      onError: (error) => attempt.fail(error instanceof Error ? error.message : String(error), true),
     });
   } catch (error) {
-    try {
-      appendLedger(ctx.cwd, "compactor_transcript_error", { error: `throw: ${String(error).slice(0, 160)}` });
-    } catch {
-      // Ledger best effort.
-    }
+    // Nothing launched; let the caller's normal continuation run.
+    attempt.fail(`throw: ${String(error)}`, false);
+    return false;
   }
   return true;
 }
@@ -250,6 +275,7 @@ let compactorRefuseArmed = true;
 /** Test-only reset for the episode one-shot. */
 export function __testOnlyResetCompactor(): void {
   compactorRefuseArmed = true;
+  boundaryAttempts = new WeakMap();
   testSpawnWorker = undefined;
 }
 
