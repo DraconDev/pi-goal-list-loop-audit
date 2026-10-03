@@ -1085,3 +1085,158 @@ tests/auditor-process.test.ts:
 (pass) worker honors a bash call's granted timeout past the base budget [442.90ms]
 (pass) real worker stops a runaway RPC process group before it becomes a storm [2154.26ms]
 (pass) worker launches pi with the exact auditor RPC contract and one LF JSONL prompt [214.03ms]
+(pass) worker force-kills a wedged RPC child before it exits [385.00ms]
+(pass) v0.36.0: allow-listed extensions load via --extension while isolation flags stay intact [399.90ms]
+(pass) v0.36.0: the process layer resolves raw specs to install paths before the worker sees them [398.72ms]
+(pass) v0.36.0: a malformed allowedExtensions request fails closed as an identity error [52.31ms]
+(pass) v0.38.80: the worker's challenge outcome threads through to the auditor result [143.97ms]
+(pass) v0.38.80: an absent challenge stays undefined for legacy workers [312.56ms]
+(pass) strict challenge: the parent refuses a legacy or skipped approval [1160.90ms]
+(pass) v0.38.81: the dispatch-decided tier stamps onto the result [70.88ms]
+(pass) v0.38.81: spot-check stamps true; legacy callers see no tier fields [157.76ms]
+(pass) slow-audit hardening: attempt cost summarizes prompt, tools, vision, and elapsed [1.12ms]
+(pass) audit-tool floor: no-tool approval is a disapproval, not infrastructure [0.25ms]
+(pass) A2 (pin): the crash-safe pre-dispatch reap covers the rotated-away attempt [0.66ms]
+(pass) A5: an abandoned challenge preserves its prose beside the byte-exact round-1 output [581.03ms]
+(pass) A10: the detached worker does not inherit NODE_OPTIONS [0.35ms]
+
+tests/hourly-auditor-backstop.test.ts:
+(pass) unified: the shared ticker arms for a parked auditor claim with no main recovery [13.31ms]
+(pass) unified: the backstop fires past-due auditor retries and never touches models [0.13ms]
+(pass) unified: the ladder arms the ticker as its backstop [0.27ms]
+(pass) unified: one dead backend does not burn a launch per rung [0.10ms]
+(pass) unified: executable runtime regression covers arming, past-due fire, guards, and opt-out [89.60ms]
+
+tests/pause-message-content.test.ts:
+(pass) audit-cap pause message guides INVESTIGATION (item 20) [17.35ms]
+(pass) pause message no longer leads with 'summarize and ask' (item 19) [0.99ms]
+
+tests/overcap-strategy.test.ts:
+(pass) ladder skips the stale retry after a recent compact [0.59ms]
+(pass) failed compact + configured chain rotates, no ladder [313.03ms]
+(pass) failed compact + empty chain names rung 3, never claims a walk [222.17ms]
+
+tests/audit-lifecycle.test.ts:
+[run-tests] progress: 120s elapsed · 0s since last output · 82 KiB of suite output
+(pass) lifecycle: a fresh claim is STARTING, not running — the launch window is represented [15.83ms]
+(pass) lifecycle: the launch window is reported as no-first-event once it passes the window [0.14ms]
+(pass) lifecycle: a starting claim that HAS produced worker activity is running, with the worker's own stamp [0.09ms]
+(pass) lifecycle: a park is a park, not worker activity [0.13ms]
+(pass) lifecycle: a settling claim reports the applied verdict, not a worker event [0.14ms]
+(pass) lifecycle: running with last activity, and a quiet one reported as no progress [0.13ms]
+(pass) lifecycle: the activity heartbeat is throttled, so a chatty auditor cannot flood the ledger [0.08ms]
+(pass) lifecycle: an applied approval awaiting its archive is SETTLING — never terminal [0.04ms]
+(pass) lifecycle: approved is a SETTLEMENT state, and only the settlement may claim it [0.09ms]
+(pass) lifecycle: an interrupted or unknown claim is RECOVERY NEEDED with a real next action [0.19ms]
+(pass) lifecycle: a retry-waiting claim is distinct, and names the armed retry [0.09ms]
+(pass) lifecycle: phase migration and attempt ownership stay explicit [0.04ms]
+(pass) lifecycle: a claim with no usable timestamp never invents an age [0.05ms]
+(pass) lifecycle: a future activity stamp clamps instead of rendering a negative age [0.04ms]
+(pass) settlement: an unresolved claim can never reach a terminal render [0.09ms]
+(pass) settlement: a failed write or archive parks instead of claiming success [0.05ms]
+(pass) lifecycle: the age formatter is the shared vocabulary [0.05ms]
+
+tests/closed-goal-clears-waiting.test.ts:
+(pass) v0.38.19 live auditing still projects awaiting-verdict (no live-path regression) [65.44ms]
+(pass) v0.38.19 a closed goal clears awaiting-verdict even with a stale complete progress [92.08ms]
+
+tests/eager-continuation-core.test.ts:
+(pass) extractPendingTasks: pulls objection bullets, skips evidence (item 22) [18.05ms]
+(pass) extractPendingTasks: caps at 5 and dedupes [0.09ms]
+(pass) classifyImpossibleReason: partial vs full (item 23) [0.11ms]
+(pass) audit-cap branch: aggressiveMode keeps ACTIVE + pendingTasks; OFF pauses (item 24 tests 1-2) [1.52ms]
+(pass) IMPOSSIBLE branch: aggressive partial continues, full terminalizes (item 24 tests 3-4) [0.40ms]
+(pass) shouldSuppressHeartbeatForRecentShip: recent ship suppresses, stale does not (item 27) [0.14ms]
+(pass) heartbeat ship-suppression was removed in v0.26.6 (self-sustaining via ledger mtime) [0.26ms]
+
+tests/postaudit-surface.test.ts:
+(pass) fireReviewer emits a SECOND notify with the review file path after the cascade [14.45ms]
+(pass) surface-notify branch is preceded by the existing manual-suppressed notify [0.10ms]
+(pass) postaudit settings key takes precedence over legacy reviewer key (fireReviewer) [0.13ms]
+(pass) Settings type accepts both reviewer and postaudit keys [0.15ms]
+(pass) SETTINGS_KEYS includes postaudit and toolOverrides [0.03ms]
+(pass) /glla postaudit opens the same menu as /glla reviewer (no behavioral split) [0.05ms]
+(pass) /glla routes reviewer (legacy) and postaudit (new) without completion rows [0.18ms]
+(pass) resolveReviewerConfig: postaudit and reviewer blocks merge equivalently [0.12ms]
+(pass) goal-loop-continuation prompt carries the 0.27.5 chunk-near-context-full hint [0.09ms]
+
+tests/quota-sleep-until-reset.test.ts:
+(pass) quota sleep-until-reset: explicit upstream hint sleeps to reset, on the FIRST attempt too (v0.38.104) [0.42ms]
+(pass) quota sleep-until-reset: hint never widens the 5h envelope [0.05ms]
+(pass) quota sleep-until-reset: hintless quota failures keep the blind ladder [0.05ms]
+(pass) quota sleep-until-reset: non-quota signals ignore hints [0.10ms]
+
+tests/auditor-stderr-diagnostic.test.ts:
+(pass) a lone BEL flush contributes nothing (field bug: 90+ errors recorded only BEL) [20.13ms]
+(pass) stderr chunks accumulate in order [0.15ms]
+(pass) OSC sequences and control bytes are stripped, printable text kept [0.09ms]
+(pass) tab, LF, and CR survive; other C0 controls do not [0.03ms]
+(pass) accumulation is bounded, keeping the tail [0.72ms]
+
+tests/contract-text-semantics.test.ts:
+(pass) parser: supplied clause yields replacement data [0.31ms]
+(pass) parser: omitted clause yields no contract and no clear signal [0.07ms]
+(pass) parser: bare line-marker is an explicit clear [0.05ms]
+(pass) parser: bare inline marker is an explicit clear and is stripped from the objective [0.04ms]
+(pass) parser: bare marker followed by content still captures the contract block [18.21ms]
+(pass) goal tweak: supplied clause replaces the stored contract [202.17ms]
+(pass) goal tweak: omitted clause preserves the stored contract [160.41ms]
+(pass) goal tweak: bare 'Done when:' clears the stored contract [182.57ms]
+(pass) list tweak: supplied clause replaces the stored contract [184.53ms]
+(pass) list tweak: omitted clause preserves the stored contract [236.11ms]
+(pass) list tweak: bare 'Done when:' clears the stored contract [204.89ms]
+
+tests/continuation-start-self-heal.test.ts:
+(pass) v0.38.104: the self-heal cadence is bounded on both sides [20.26ms]
+(pass) v0.38.104: an unacknowledged turn start self-heals instead of demanding a human [606.22ms]
+(pass) v0.38.104: a turn-start proof resets the budget even when no timer is armed [0.41ms]
+
+tests/no-provider-smoke.test.mjs:
+(pass) GLLA loads without the optional pi-subagents provider [663.97ms]
+
+tests/refine-spec-rebaseline.test.ts:
+REFINE RESULT: Refinement confirmed and applied. Continue improving against the NEW spec — one small change per turn.
+(pass) v0.35.43: a confirmed respec with newly checked boxes re-baselines specChecked — no unearned progress [47.69ms]
+(pass) v0.35.x: recoverable bound-stopped loops accept a confirmed refinement without auto-starting [8.89ms]
+
+tests/lifecycle-recovery.test.ts:
+(pass) v0.35.x: a mutating /list command during handoff is replayed once by the successor [426.21ms]
+(pass) v0.35.x: a mismatched handoff discards a deferred list command without replay [360.90ms]
+(pass) v0.34.54: /list show before rebind — honest stale result: the recovery warning accompanies the read [328.76ms]
+(pass) v0.34.54: settings before rebind — bare /glla refused, read-only /glla status usable, both honest [489.59ms]
+(pass) v0.34.54: /list show after a fresh session_start — renders clean, zero stale residue [641.64ms]
+(pass) v0.34.54: settings after a fresh session_start — the table opens AND a real write lands [813.13ms]
+(pass) v0.34.54: source — read-only surfaces are never in the mutating sets; the gates are the honest refusal, not silence [3.76ms]
+
+tests/image1-list-stall-and-count-fix.test.ts:
+(pass) v0.34.104 [Image-#1] Problem 1: LIST_COMPLETION_SETTLE_MS constant + flag exist [0.24ms]
+(pass) v0.34.104 [Image-#1] Problem 1: archiveCurrentGoal arms the settle window BEFORE activating the next item [0.13ms]
+(pass) v0.34.104 [Image-#1] Problem 1: scheduleContinuation honours the settle window [0.08ms]
+(pass) v0.34.104 [Image-#1] Problem 1: agent activity during settle cancels the deferred send [0.07ms]
+(pass) v0.34.104 [Image-#1] Problem 1: sendContinuation honors an early settle callback [0.08ms]
+(pass) v0.34.104 [Image-#1] Problem 2: validateCompletionSummary exists and is wired into complete_goal capture [0.94ms]
+(pass) v0.34.104 [Image-#1] Problem 2: impossible X/Y pass counts match the field regex (29/28) [0.05ms]
+(pass) v0.34.104 [Image-#1] Problem 2: ledger event `completion_summary_impossible_count` is the canonical key [0.15ms]
+(pass) v0.34.104 [Image-#1] Problem 2: clean input early-returns before any ledger work [0.10ms]
+
+tests/metric-never-moved-resumable.test.ts:
+(pass) behavioral: a loop parked by 'metric never moved' resumes via /loop resume — history kept, counters re-armed [192.02ms]
+(pass) v0.35.x: time and token bound stops resume as fresh windows without discarding history [346.42ms]
+(pass) v0.35.x: metricless cadence delays automatic re-wakes but explicit start is urgent [499.73ms]
+(pass) negative pin: a bounded stop ('max iterations reached') is still not resumable [143.22ms]
+
+tests/test-split.test.ts:
+(pass) test-split: every slow-listed file exists and is a test file [0.33ms]
+(pass) test-split: fast mode excludes via one ignore pattern per slow file [0.15ms]
+(pass) test-split: explicit paths drop the ignore patterns [0.05ms]
+(pass) test-split: slow mode names the files; all mode passes through [0.08ms]
+(pass) runner: the stall window is bounded and overridable [0.06ms]
+(pass) runner: silence past the window stalls, progress resets the clock [0.06ms]
+(pass) runner: the wrapper owns its child (no orphan on abort) [0.10ms]
+(pass) runner: the hand-written .d.mts declares every runtime export (drift guard) [0.33ms]
+(pass) v0.38.104: the suite child is detached so the documented group-kill is real [0.25ms]
+(pass) v0.38.104: the release gate runs the hardened runner, and CI bounds both jobs [0.55ms]
+(pass) v0.38.104: no test gates itself on the removed @tintinweb fork [75.34ms]
+(pass) v0.38.104: tests/README.md does not claim npm test runs the whole suite [0.32ms]
+
+tests/delta-only-continuation.test.ts:
