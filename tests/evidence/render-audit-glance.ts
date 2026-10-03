@@ -16,7 +16,7 @@ for (const appearance of ["dark", "light"]) {
     for (const [key, progress] of [
       ["audit-running", audit],
       ["audit-quiet", { ...audit, lastActivityAt: now - 31 * 60000, toolCalls: audit.toolCalls!.map(call => ({ ...call, finishedAt: now - 31 * 60000 })) }],
-      ["audit-tool", { ...audit, phase: "tool_executing", currentTool: "bash", currentToolStartedAt: now - 2000, toolTimeoutMs: 1200000 }],
+      ["audit-tool", { ...audit, phase: "tool_executing", lastActivityAt: now - 1000, currentTool: "bash", currentToolStartedAt: now - 2000, toolTimeoutMs: 1200000 }],
     ] as [string, AuditDisplayProgress][]) {
       const extras = { compactAuditCard: true };
       frames.push({ key, theme: appearance, width, height: 10, lines: [...buildWidgetLines({ goal, list: [] }, progress, now, theme, width, extras)!, "", buildStatusText({ goal, list: [] }, progress, now, theme, extras, width)!] });

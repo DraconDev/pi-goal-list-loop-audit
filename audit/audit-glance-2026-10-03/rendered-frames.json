@@ -40,14 +40,14 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit findi… \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m audi\u001b[0m…\u001b[0m",
-      "├─ \u001b[38;2;167;152;215mAudit running · last observed tool\u001b[39m",
-      "│ 11 calls finished · activity 17s ago",
+      "├─ \u001b[38;2;167;152;215mAudit running · tool executing\u001b[39m",
+      "│ 11 calls finished · activity 1s ago",
       "│ audit elapsed 8m 00s",
-      "│ last tool: bash",
+      "│ tool: bash · 2s / 20m 00s budget · \u001b[0m…\u001b[0m",
       "│ No action needed — review applies a\u001b[0m…\u001b[0m",
       "└─ /goal status for full audit details",
       "",
-      "glla: \u001b[38;2;167;152;215mAUDIT RUNNING\u001b[39m · activity 17s ago \u001b[0m…\u001b[0m"
+      "glla: \u001b[38;2;104;183;141mAUDIT RUNNING\u001b[39m · activity 1s ago ·\u001b[0m…\u001b[0m"
     ]
   },
   {
@@ -91,14 +91,14 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit finding: HIGH… \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m auditing \u001b[38;2;126;136;142m·\u001b[39m total 1h 10m \u001b[38;2;126;136;142m·\u001b[39m \u001b[38;2;126;136;142m194k tok\u001b[39m",
-      "├─ \u001b[38;2;167;152;215mAudit running · last observed tool\u001b[39m",
-      "│ 11 calls finished · activity 17s ago",
+      "├─ \u001b[38;2;167;152;215mAudit running · tool executing\u001b[39m",
+      "│ 11 calls finished · activity 1s ago",
       "│ audit elapsed 8m 00s",
-      "│ last tool: bash",
+      "│ tool: bash · 2s / 20m 00s budget · openrouter/stealth/space-bunny-alpha · t\u001b[0m…\u001b[0m",
       "│ No action needed — review applies automatically",
       "└─ /goal status for full audit details",
       "",
-      "glla: \u001b[38;2;167;152;215mAUDIT RUNNING\u001b[39m · activity 17s ago · \u001b[38;2;167;152;215mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;167;152;215mauditor ▶ la\u001b[0m…\u001b[0m"
+      "glla: \u001b[38;2;104;183;141mAUDIT RUNNING\u001b[39m · activity 1s ago · \u001b[38;2;167;152;215mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;104;183;141mauditor ▶ too\u001b[0m…\u001b[0m"
     ]
   },
   {
@@ -142,14 +142,14 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit finding: HIGH: the \"no probe runs in no gate\" guard counts a comment \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m auditing \u001b[38;2;126;136;142m·\u001b[39m total 1h 10m \u001b[38;2;126;136;142m·\u001b[39m \u001b[38;2;126;136;142m194k tok\u001b[39m",
-      "├─ \u001b[38;2;167;152;215mAudit running · last observed tool\u001b[39m",
-      "│ 11 calls finished · activity 17s ago",
+      "├─ \u001b[38;2;167;152;215mAudit running · tool executing\u001b[39m",
+      "│ 11 calls finished · activity 1s ago",
       "│ audit elapsed 8m 00s",
-      "│ last tool: bash",
+      "│ tool: bash · 2s / 20m 00s budget · openrouter/stealth/space-bunny-alpha · thinking max",
       "│ No action needed — review applies automatically",
       "└─ /goal status for full audit details",
       "",
-      "glla: \u001b[38;2;167;152;215mAUDIT RUNNING\u001b[39m · activity 17s ago · \u001b[38;2;167;152;215mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;167;152;215mauditor ▶ last observed tool\u001b[39m \u001b[38;2;126;136;142m▰▰▰▰▱\u001b[39m"
+      "glla: \u001b[38;2;104;183;141mAUDIT RUNNING\u001b[39m · activity 1s ago · \u001b[38;2;167;152;215mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;104;183;141mauditor ▶ tool executing\u001b[39m \u001b[38;2;167;152;215m▰▰▰▰▱\u001b[39m \u001b[38;2;126;136;142m[\u001b[39m\u001b[38;2;157;165;169m▁\u001b[39m\u001b[38;2;167;152;215m▂\u001b[39m\u001b[38;2;167;152;215m▄\u001b[39m\u001b[38;2;167;152;215m▆\u001b[39m\u001b[38;2;104;183;141m█\u001b[39m\u001b[38;2;167;152;215m▆\u001b[39m\u001b[38;2;126;136;142m \u001b[39m\u001b[38;2;167;152;215mAUDITOR\u001b[39m\u001b[38;2;126;136;142m · \u001b[39m\u001b[38;2;167;152;215mDETACHED\u001b[39m\u001b[38;2;126;136;142m · \u001b[39m\u001b[38;2;104;183;141mLIVE\u001b[39m\u001b[38;2;126;136;142m]\u001b[39m"
     ]
   },
   {
@@ -193,14 +193,14 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit findi… \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m audi\u001b[0m…\u001b[0m",
-      "├─ \u001b[38;2;116;89;180mAudit running · last observed tool\u001b[39m",
-      "│ 11 calls finished · activity 17s ago",
+      "├─ \u001b[38;2;116;89;180mAudit running · tool executing\u001b[39m",
+      "│ 11 calls finished · activity 1s ago",
       "│ audit elapsed 8m 00s",
-      "│ last tool: bash",
+      "│ tool: bash · 2s / 20m 00s budget · \u001b[0m…\u001b[0m",
       "│ No action needed — review applies a\u001b[0m…\u001b[0m",
       "└─ /goal status for full audit details",
       "",
-      "glla: \u001b[38;2;116;89;180mAUDIT RUNNING\u001b[39m · activity 17s ago \u001b[0m…\u001b[0m"
+      "glla: \u001b[38;2;51;126;88mAUDIT RUNNING\u001b[39m · activity 1s ago ·\u001b[0m…\u001b[0m"
     ]
   },
   {
@@ -244,14 +244,14 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit finding: HIGH… \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m auditing \u001b[38;2;135;144;149m·\u001b[39m total 1h 10m \u001b[38;2;135;144;149m·\u001b[39m \u001b[38;2;135;144;149m194k tok\u001b[39m",
-      "├─ \u001b[38;2;116;89;180mAudit running · last observed tool\u001b[39m",
-      "│ 11 calls finished · activity 17s ago",
+      "├─ \u001b[38;2;116;89;180mAudit running · tool executing\u001b[39m",
+      "│ 11 calls finished · activity 1s ago",
       "│ audit elapsed 8m 00s",
-      "│ last tool: bash",
+      "│ tool: bash · 2s / 20m 00s budget · openrouter/stealth/space-bunny-alpha · t\u001b[0m…\u001b[0m",
       "│ No action needed — review applies automatically",
       "└─ /goal status for full audit details",
       "",
-      "glla: \u001b[38;2;116;89;180mAUDIT RUNNING\u001b[39m · activity 17s ago · \u001b[38;2;116;89;180mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;116;89;180mauditor ▶ la\u001b[0m…\u001b[0m"
+      "glla: \u001b[38;2;51;126;88mAUDIT RUNNING\u001b[39m · activity 1s ago · \u001b[38;2;116;89;180mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;51;126;88mauditor ▶ too\u001b[0m…\u001b[0m"
     ]
   },
   {
@@ -295,14 +295,14 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit finding: HIGH: the \"no probe runs in no gate\" guard counts a comment \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m auditing \u001b[38;2;135;144;149m·\u001b[39m total 1h 10m \u001b[38;2;135;144;149m·\u001b[39m \u001b[38;2;135;144;149m194k tok\u001b[39m",
-      "├─ \u001b[38;2;116;89;180mAudit running · last observed tool\u001b[39m",
-      "│ 11 calls finished · activity 17s ago",
+      "├─ \u001b[38;2;116;89;180mAudit running · tool executing\u001b[39m",
+      "│ 11 calls finished · activity 1s ago",
       "│ audit elapsed 8m 00s",
-      "│ last tool: bash",
+      "│ tool: bash · 2s / 20m 00s budget · openrouter/stealth/space-bunny-alpha · thinking max",
       "│ No action needed — review applies automatically",
       "└─ /goal status for full audit details",
       "",
-      "glla: \u001b[38;2;116;89;180mAUDIT RUNNING\u001b[39m · activity 17s ago · \u001b[38;2;116;89;180mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;116;89;180mauditor ▶ last observed tool\u001b[39m \u001b[38;2;135;144;149m▰▰▰▰▱\u001b[39m"
+      "glla: \u001b[38;2;51;126;88mAUDIT RUNNING\u001b[39m · activity 1s ago · \u001b[38;2;116;89;180mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;51;126;88mauditor ▶ tool executing\u001b[39m \u001b[38;2;116;89;180m▰▰▰▰▱\u001b[39m \u001b[38;2;135;144;149m[\u001b[39m\u001b[38;2;103;113;118m▁\u001b[39m\u001b[38;2;116;89;180m▂\u001b[39m\u001b[38;2;116;89;180m▄\u001b[39m\u001b[38;2;116;89;180m▆\u001b[39m\u001b[38;2;51;126;88m█\u001b[39m\u001b[38;2;116;89;180m▆\u001b[39m\u001b[38;2;135;144;149m \u001b[39m\u001b[38;2;116;89;180mAUDITOR\u001b[39m\u001b[38;2;135;144;149m · \u001b[39m\u001b[38;2;116;89;180mDETACHED\u001b[39m\u001b[38;2;135;144;149m · \u001b[39m\u001b[38;2;51;126;88mLIVE\u001b[39m\u001b[38;2;135;144;149m]\u001b[39m"
     ]
   }
 ]
