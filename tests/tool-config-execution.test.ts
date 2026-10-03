@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import * as fs from "node:fs";
 import { Type, type TSchema } from "typebox";
 import { applyToolConfig } from "../extensions/tool-config.js";
-import { runToolCall, type AgentContext } from "@earendil-works/pi-agent-core";
+import * as agentCore from "@earendil-works/pi-agent-core";
+import type { AgentContext } from "@earendil-works/pi-agent-core";
 import { createBashToolDefinition } from "@earendil-works/pi-coding-agent";
 import type { AssistantMessage } from "@earendil-works/pi-ai";
 import activate, { __testOnlyResetProcessState } from "../extensions/loops/goal.js";
@@ -14,6 +15,11 @@ const settingsFile = globalSettingsPath();
 const original = fs.readFileSync(settingsFile, "utf8");
 let session: { pi: MockPi; ctx: ReturnType<typeof makeMockCtx> } | undefined;
 const schema = Type.Object({ command: Type.String(), timeout: Type.Optional(Type.Number()), format: Type.Optional(Type.Union([Type.Literal("text"), Type.Literal("json")])) });
+// Only the pinned current-host execution proof uses this newer helper.
+// Reflective access keeps older supported Pi boundary typechecks valid;
+// the proof below fails explicitly if its actual dispatcher is absent.
+const runToolCall = Reflect.get(agentCore, "runToolCall");
+type BeforeCall = { toolCall: { name: string; id: string }; args: Record<string, unknown> };
 async function boot(options: Record<string, unknown>, parameters: TSchema = schema) {
   __testOnlyResetProcessState();
   fs.writeFileSync(settingsFile, JSON.stringify({ autoResume: false, aggressiveMode: false }));
@@ -70,6 +76,7 @@ test("a stale host cannot rewrite tool arguments", async () => {
 });
 
 test("the real Pi tool pipeline executes bash with the configured timeout", async () => {
+  assert.equal(typeof runToolCall, "function", "current-host execution proof requires Pi's actual tool dispatcher");
   let observedTimeout: number | undefined;
   let executions = 0;
   const definition = createBashToolDefinition(tmpCwd(), { operations: {
@@ -81,11 +88,11 @@ test("the real Pi tool pipeline executes bash with the configured timeout", asyn
     },
   } });
   const { pi, ctx } = await boot({ timeout: 60 }, definition.parameters);
-  const context: AgentContext = { messages: [], tools: [{ ...definition, execute: (...args: any[]) => (definition.execute as any)(...args, ctx) }] };
+  const context: AgentContext = { systemPrompt: "", messages: [], tools: [{ ...definition, execute: (...args: any[]) => (definition.execute as any)(...args, ctx) }] };
   const outcome = await runToolCall({ type: "toolCall", id: "pipeline-call", name: "bash", arguments: { command: "fixture command", timeout: 5 } }, {
     tools: context.tools!, context,
     assistantMessage: { role: "assistant", content: [], api: "openai-completions", provider: "fixture", model: "fixture", stopReason: "toolUse", timestamp: Date.now(), usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } } as AssistantMessage,
-    beforeToolCall: async ({ toolCall, args }) => await pi.handlers.get("tool_call")!({ type: "tool_call", toolName: toolCall.name, toolCallId: toolCall.id, input: args } as never, ctx as never) as any,
+    beforeToolCall: async ({ toolCall, args }: BeforeCall) => await pi.handlers.get("tool_call")!({ type: "tool_call", toolName: toolCall.name, toolCallId: toolCall.id, input: args } as never, ctx as never) as any,
   });
   assert.equal(outcome.isError, false, JSON.stringify(outcome));
   assert.equal(observedTimeout, 60, "the actual bash execution receives the override");
@@ -93,7 +100,7 @@ test("the real Pi tool pipeline executes bash with the configured timeout", asyn
   const blocked = await runToolCall({ type: "toolCall", id: "blocked-call", name: "bash", arguments: { command: "fixture command", timeout: 5 } }, {
     tools: context.tools!, context,
     assistantMessage: { role: "assistant", content: [] } as unknown as AssistantMessage,
-    beforeToolCall: async ({ toolCall, args }) => await pi.handlers.get("tool_call")!({ type: "tool_call", toolName: toolCall.name, toolCallId: toolCall.id, input: args } as never, ctx as never) as any,
+    beforeToolCall: async ({ toolCall, args }: BeforeCall) => await pi.handlers.get("tool_call")!({ type: "tool_call", toolName: toolCall.name, toolCallId: toolCall.id, input: args } as never, ctx as never) as any,
   });
   assert.equal(blocked.isError, true);
   assert.equal(executions, 1, "invalid overrides are blocked before tool execution");
