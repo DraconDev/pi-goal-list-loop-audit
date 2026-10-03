@@ -424,7 +424,7 @@ export class MultiModelPickerComponent {
       : this.maxSelections !== undefined && this.selection.length >= this.maxSelections
         ? "space add/remove · tab order · enter save · esc cancel · maximum reached"
         : "space add/remove · tab order · enter save · esc cancel"));
-    return lines;
+    return lines.map((line) => truncateToWidth(line, Math.max(0, width), "…"));
   }
 
   handleInput(data: string): void {

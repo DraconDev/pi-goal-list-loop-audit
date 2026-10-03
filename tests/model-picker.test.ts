@@ -25,7 +25,7 @@ const THEME = {
 };
 const HIGHLIGHT_THEME = {
   ...THEME,
-  bg: (_c: string, t: string) => `<selected>${t}</selected>`,
+  bg: (_c: string, t: string) => `\x1b[48;5;24m${t}\x1b[49m`,
 };
 const KB = {
   matches: (data: string, key: string) =>
@@ -169,9 +169,9 @@ test("model-picker: active model row uses the available width for selection", ()
     () => undefined,
   );
   const line = component.render(60)[4]!;
-  assert.match(line, /^<selected>→ /);
-  assert.ok(line.endsWith("</selected>"));
-  assert.equal(line.slice("<selected>".length, -"</selected>".length).length, 58);
+  assert.match(line, /^\x1b\[48;5;24m→ /);
+  assert.ok(line.endsWith("\x1b[49m"));
+  assert.equal(line.slice("\x1b[48;5;24m".length, -"\x1b[49m".length).length, 58);
 });
 
 test("v0.29.17 wiring: model-valued settings use the fuzzy picker; unavailable auditor models fall back LOUDLY to the session model", () => {

@@ -25,7 +25,7 @@ const THEME = {
 };
 const HIGHLIGHT_THEME = {
   ...THEME,
-  bg: (_c: string, t: string) => `<selected>${t}</selected>`,
+  bg: (_c: string, t: string) => `\x1b[48;5;24m${t}\x1b[49m`,
 };
 const KB = {
   matches: (data: string, key: string) =>
@@ -362,7 +362,7 @@ test("multi-model-picker: order mode — the active chain row is highlighted and
   component.handleInput("\t");
   const lines = component.render(80);
   const text = lines.join("\n");
-  assert.match(text, /<selected>→\s+1 backup  minimax\/MiniMax-M3/, "first chain row is the active cursor");
+  assert.match(text, /\x1b\[48;5;24m→\s+1 backup  minimax\/MiniMax-M3/, "first chain row is the active cursor");
   assert.match(text, /order mode — arrows move this backup/, "mode line names order mode");
   assert.match(text, /↑\/↓ reorder · tab browse · enter save · esc cancel/, "order-mode footer");
   // Move the cursor to the end and confirm the highlight follows the moved row
@@ -370,7 +370,7 @@ test("multi-model-picker: order mode — the active chain row is highlighted and
   component.handleInput("\x1b[B");
   component.handleInput("\x1b[B");
   const moved = component.render(80).join("\n");
-  assert.match(moved, /<selected>→\s+2 backup  minimax\/MiniMax-M3/, "moved row stays the active cursor at its new rank");
+  assert.match(moved, /\x1b\[48;5;24m→\s+2 backup  minimax\/MiniMax-M3/, "moved row stays the active cursor at its new rank");
   assert.match(moved, /^  1 backup  anthropic\/claude-opus-4-7/m, "displaced row renders unhighlighted");
 });
 
@@ -465,10 +465,10 @@ test("multi-model-picker: render — highlighted row uses the available width fo
   );
   component.handleInput("\x1b[B"); // move highlight to the first model row
   const lines = component.render(80);
-  const highlighted = lines.find((l) => l.startsWith("<selected>"));
+  const highlighted = lines.find((l) => l.startsWith("\x1b[48;5;24m"));
   assert.ok(highlighted, "highlighted row is wrapped in selectedBg");
-  assert.match(highlighted!, /^<selected>→ \[ \] /);
-  assert.ok(highlighted!.endsWith("</selected>"));
+  assert.match(highlighted!, /^\x1b\[48;5;24m→ \[ \] /);
+  assert.ok(highlighted!.endsWith("\x1b[49m"));
 });
 
 test("multi-model-picker: render — selected row keeps its rank even when not highlighted", () => {
@@ -487,7 +487,7 @@ test("multi-model-picker: render — selected row keeps its rank even when not h
   // appear even though the highlight is elsewhere.
   assert.match(text, /\[1\] .*minimax\/MiniMax-M3/);
   // The first model row (highlighted) still shows the [ ] marker.
-  assert.match(text, /<selected>→ \[ \] anthropic\/claude-opus-4-7/);
+  assert.match(text, /\x1b\[48;5;24m→ \[ \] anthropic\/claude-opus-4-7/);
 });
 
 // ---------------------------------------------------------------------------

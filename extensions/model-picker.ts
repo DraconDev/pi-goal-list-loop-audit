@@ -244,7 +244,7 @@ export class ModelPickerComponent {
     }
     lines.push("");
     lines.push(this.theme.fg("dim", "type to filter · ↑/↓ move · enter select · esc cancel"));
-    return lines;
+    return lines.map((line) => truncateToWidth(line, Math.max(0, width), "…"));
   }
 
   handleInput(data: string): void {
