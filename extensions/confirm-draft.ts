@@ -10,14 +10,13 @@
 
 import {
   type Component,
-  Container,
   Markdown,
   type MarkdownTheme,
   type SelectItem,
   SelectList,
   type SelectListTheme,
-  Spacer,
   Text,
+  truncateToWidth,
 } from "@earendil-works/pi-tui";
 import { DynamicBorder, type Theme } from "@earendil-works/pi-coding-agent";
 
@@ -25,6 +24,7 @@ export interface ConfirmDraftFactoryDeps {
   title: string;
   body: string;
   options: string[];
+  getHeight?: () => number;
 }
 
 /** Structural type for the KeybindingsManager — mirrors settings-menu.ts. */
@@ -82,6 +82,9 @@ export class ConfirmDraftComponent implements Component {
   private readonly requestRender: () => void;
   private readonly theme: Theme;
   private readonly keybindings: KeybindingsManagerLike;
+  private readonly getHeight: (() => number) | undefined;
+  private scrollOffset = 0;
+  private pageSize = 8;
 
   constructor(
     deps: ConfirmDraftFactoryDeps,
@@ -91,6 +94,7 @@ export class ConfirmDraftComponent implements Component {
     done: (value: string | undefined) => void,
   ) {
     this.requestRender = requestRender;
+    this.getHeight = deps.getHeight;
     this.theme = theme;
     this.keybindings = keybindings;
     this.md = new Markdown(buildConfirmDraftMarkdown(deps.title, deps.body), 1, 1, markdownTheme(theme));
@@ -101,15 +105,18 @@ export class ConfirmDraftComponent implements Component {
   }
 
   render(width: number): string[] {
-    const container = new Container();
-    container.addChild(new DynamicBorder((s: string) => this.theme.fg("borderAccent", s)));
-    container.addChild(this.md);
-    container.addChild(new Spacer(1));
-    container.addChild(this.selectList);
-    container.addChild(new Spacer(1));
-    container.addChild(new Text(this.theme.fg("dim", "↑↓ navigate • enter select • esc cancel"), 1, 0));
-    container.addChild(new DynamicBorder((s: string) => this.theme.fg("borderAccent", s)));
-    return container.render(width);
+    const border = new DynamicBorder((text: string) => this.theme.fg("borderAccent", text)).render(width);
+    const body = this.md.render(width);
+    const decisions = this.selectList.render(width);
+    const height = this.getHeight ? Math.max(8, Math.floor(this.getHeight())) : Number.POSITIVE_INFINITY;
+    const help = new Text(this.theme.fg("dim", "↑↓ choose · enter select · esc cancel"), 1, 0).render(width);
+    const bodyRows = Math.max(1, height - border.length * 2 - decisions.length - help.length - 3);
+    this.pageSize = bodyRows;
+    this.scrollOffset = Math.min(this.scrollOffset, Math.max(0, body.length - bodyRows));
+    const scrollInfo = body.length > bodyRows
+      ? [this.theme.fg("dim", `Review ${this.scrollOffset + 1}–${Math.min(body.length, this.scrollOffset + bodyRows)}/${body.length} · PgUp/PgDn scroll`)] : [];
+    return [...border, ...body.slice(this.scrollOffset, this.scrollOffset + bodyRows), ...scrollInfo, "", ...decisions, "", ...help, ...border]
+      .map((line) => truncateToWidth(line, Math.max(0, width), "…"));
   }
 
   invalidate(): void {
@@ -119,7 +126,9 @@ export class ConfirmDraftComponent implements Component {
   }
 
   handleInput(data: string): void {
-    this.selectList.handleInput(data);
+    if (this.keybindings.matches(data, "tui.select.pageUp") || data === "\x1b[5~") this.scrollOffset = Math.max(0, this.scrollOffset - this.pageSize);
+    else if (this.keybindings.matches(data, "tui.select.pageDown") || data === "\x1b[6~") this.scrollOffset += this.pageSize;
+    else this.selectList.handleInput(data);
     this.requestRender();
   }
 

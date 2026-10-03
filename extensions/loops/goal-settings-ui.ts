@@ -740,6 +740,7 @@ export function resolveAuditorModel(
  * extensions/settings-menu.ts.
  */
 async function openSettingsUI(ctx: ExtensionContext, initialSection?: SettingsSectionId): Promise<void> {
+  let initialSelectedId: string | undefined;
   for (;;) {
     const settings = loadSettings(ctx.cwd);
     const prov = settingsProvenance(ctx.cwd);
@@ -753,10 +754,11 @@ async function openSettingsUI(ctx: ExtensionContext, initialSection?: SettingsSe
       sessionThinkingLevel: ctx.thinkingLevel ?? "off",
       thinkingLevelsByRef: menuThinkingLevelsByRef(ctx),
     });
-    const id = await promptSettingsMenu(ctx, rows, initialSection);
+    const id = await promptSettingsMenu(ctx, rows, initialSection, initialSelectedId);
     // Reopen the chosen row's tab after its editor closes.
     initialSection = rows.find((row) => row.id === id)?.section ?? initialSection;
     if (!id) return;
+    initialSelectedId = id;
     const probe = (globalThis as any).warnIfStaleAtEntry as ((ctx: ExtensionContext, what: string) => boolean) | undefined;
     if (typeof probe === "function" && probe(ctx, "settings edit")) return;
     try {
@@ -784,8 +786,9 @@ async function promptSettingsMenu(
   ctx: ExtensionContext,
   rows: SettingsRow[],
   initialSection?: SettingsSectionId,
+  initialSelectedId?: string,
 ): Promise<string | undefined> {
-  const title = `pi-goal-list-loop-audit settings — global: ${globalSettingsPath()}`;
+  const title = "GLLA settings";
   // v0.34.80: `custom` is a function in EVERY pi 0.84.1 mode — RPC/noOp
   // resolve `undefined` without invoking the builder. Detect availability by
   // whether the factory RAN; a settled stub falls through to the flat-row
@@ -795,7 +798,7 @@ async function promptSettingsMenu(
     try {
       const v = await ctx.ui.custom<string | undefined>((tui, theme, keybindings, done) => {
         factoryInvoked = true;
-        return new SettingsMenuComponent({ rows, title, initialSection }, () => tui.requestRender(), theme, keybindings, done);
+        return new SettingsMenuComponent({ rows, title, initialSection, initialSelectedId, getHeight: () => tui.terminal.rows - 4 }, () => tui.requestRender(), theme, keybindings, done);
       });
       if (factoryInvoked) return v;
       appendLedger(ctx.cwd, "settings_menu_fallback_select", { via: "custom-stub" });
@@ -883,7 +886,7 @@ async function promptModelRef(
   let factoryInvoked = false;
   const pick = await ctx.ui.custom<ModelPickItem | undefined>((tui, theme, keybindings, done) => {
     factoryInvoked = true;
-    return new ModelPickerComponent({ title, items }, () => tui.requestRender(), theme, keybindings, done);
+    return new ModelPickerComponent({ title, items, getHeight: () => tui.terminal.rows - 4 }, () => tui.requestRender(), theme, keybindings, done);
   });
   // RPC/no-op hosts expose custom() but never invoke the factory. Use the
   // typed escape hatch there; an invoked factory returning undefined is Esc.
@@ -983,7 +986,7 @@ async function promptModelRefs(
   let factoryInvoked = false;
   const pick = await ctx.ui.custom<MultiModelPickerResult>((tui, theme, keybindings, done) => {
     factoryInvoked = true;
-    return new MultiModelPickerComponent({ title, items, initialSelected: initialRefs, currentRef: opts.currentRef, maxSelections }, () => tui.requestRender(), theme, keybindings, done);
+    return new MultiModelPickerComponent({ title, items, initialSelected: initialRefs, currentRef: opts.currentRef, maxSelections, getHeight: () => tui.terminal.rows - 4 }, () => tui.requestRender(), theme, keybindings, done);
   });
   // pi's RPC/no-op UI exposes custom() but resolves undefined without
   // invoking the factory. Treat that as headless, not as an Esc cancellation;
@@ -1640,6 +1643,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
               items: extItems,
               initialSelected: currentExts,
               unorderedSet: true,
+              getHeight: () => tui.terminal.rows - 4,
             },
             () => tui.requestRender(),
             theme,

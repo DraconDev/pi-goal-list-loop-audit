@@ -46,6 +46,7 @@ export interface MultiModelPickerDeps {
   currentRef?: string;
   /** Cap on visible list rows (window scrolls with the selection). */
   maxVisibleRows?: number;
+  getHeight?: () => number;
   /** Maximum number of model refs that may be selected. Undefined = no cap. */
   maxSelections?: number;
   /** Add a distinct dynamic "inherit from session" choice row. */
@@ -74,6 +75,7 @@ export class MultiModelPickerComponent {
   private readonly items: ModelPickItem[];
   private readonly includeInheritOption: boolean;
   private readonly maxRows: number;
+  private readonly getHeight: (() => number) | undefined;
   private readonly maxSelections: number | undefined;
   private readonly currentRef: string | undefined;
   private readonly unorderedSet: boolean;
@@ -114,7 +116,8 @@ export class MultiModelPickerComponent {
     this.items = this.includeInheritOption && !deps.items.some((item) => item.kind === "inherit")
       ? [inheritItem, ...deps.items]
       : deps.items;
-    this.maxRows = deps.maxVisibleRows ?? 12;
+    this.maxRows = Math.max(1, deps.maxVisibleRows ?? 12);
+    this.getHeight = deps.getHeight;
     this.maxSelections = deps.maxSelections !== undefined && Number.isInteger(deps.maxSelections) && deps.maxSelections >= 0
       ? deps.maxSelections
       : undefined;
@@ -326,7 +329,8 @@ export class MultiModelPickerComponent {
   }
 
   render(width: number): string[] {
-    const w = Math.max(20, width - 2);
+    const w = Math.max(0, width - 2);
+    const height = this.getHeight ? Math.max(8, Math.floor(this.getHeight())) : Number.POSITIVE_INFINITY;
     const lines: string[] = [];
     lines.push(this.theme.fg("accent", this.theme.bold(truncateToWidth(this.title, w, "…"))));
     if (this.unorderedSet) {
@@ -347,7 +351,10 @@ export class MultiModelPickerComponent {
         ? "  — no backups; keep probing the current model"
         : this.unorderedSet ? "  — no extensions allowed (fully isolated auditor)" : "  — no fallback refs configured"));
     } else {
-      for (let i = 0; i < this.selection.length; i++) {
+      const summaryLimit = Number.isFinite(height) ? Math.max(1, Math.min(this.selection.length, Math.floor(height / 4))) : this.selection.length;
+      const summaryStart = this.orderMode ? Math.max(0, Math.min(this.orderIdx - Math.floor(summaryLimit / 2), this.selection.length - summaryLimit)) : 0;
+      if (this.unorderedSet && this.selection.length > summaryLimit) lines.push(this.theme.fg("muted", `  ${this.selection.length} selected · [X] marks membership below`));
+      else for (let i = summaryStart; i < summaryStart + summaryLimit; i++) {
         const ref = this.selection[i]!;
         const item = this.itemForRef(ref);
         const status = this.effectiveDisabledReason(item) ? ` · ${this.effectiveDisabledReason(item)}` : "";
@@ -361,6 +368,7 @@ export class MultiModelPickerComponent {
           lines.push(row);
         }
       }
+      if (!this.unorderedSet && summaryLimit < this.selection.length) lines.push(this.theme.fg("dim", `  Backups ${summaryStart + 1}–${summaryStart + summaryLimit} of ${this.selection.length} · tab to inspect order`));
     }
     lines.push("");
     const searchLine = this.orderMode ? "order mode — arrows move this backup" : `search: ${this.query}`;
@@ -389,9 +397,10 @@ export class MultiModelPickerComponent {
       lines.push(this.theme.fg("warning", "  no matches — keep typing, or Esc to cancel"));
     } else {
       const sel = Math.min(this.selectedIdx, filtered.length - 1);
-      const half = Math.floor(this.maxRows / 2);
-      const start = Math.max(0, Math.min(sel - half, filtered.length - this.maxRows));
-      const window = filtered.slice(start, start + this.maxRows);
+      const maxRows = Math.max(1, Math.min(this.maxRows, height - lines.length - 4));
+      const half = Math.floor(maxRows / 2);
+      const start = Math.max(0, Math.min(sel - half, filtered.length - maxRows));
+      const window = filtered.slice(start, start + maxRows);
       if (start > 0) lines.push(this.theme.fg("dim", `  ↑ ${start} more`));
       for (let i = 0; i < window.length; i++) {
         const idx = start + i;
@@ -504,7 +513,7 @@ export class MultiModelPickerComponent {
     }
     if (data === "\x7f" || data === "\b") {
       if (this.query.length > 0) {
-        this.query = this.query.slice(0, -1);
+        this.query = [...this.query].slice(0, -1).join("");
         this.selectedIdx = 0;
         this.refresh();
       }

@@ -1402,7 +1402,7 @@ async function confirmDraft(ctx: ExtensionContext, title: string, body: string):
     try {
       const choice = await ctx.ui.custom<string | undefined>((tui, theme, keybindings, done) => {
         factoryInvoked = true;
-        return new ConfirmDraftComponent({ title, body, options }, () => tui.requestRender(), theme as any, keybindings as any, done);
+        return new ConfirmDraftComponent({ title, body, options, getHeight: () => tui.terminal.rows - 4 }, () => tui.requestRender(), theme as any, keybindings as any, done);
       });
       if (factoryInvoked) {
         if (choice === ALWAYS) {

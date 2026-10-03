@@ -150,12 +150,14 @@ export interface ModelPickerFactoryDeps {
   items: ModelPickItem[];
   /** Cap on visible list rows (window scrolls with the selection). */
   maxVisibleRows?: number;
+  getHeight?: () => number;
 }
 
 export class ModelPickerComponent {
   private readonly title: string;
   private readonly items: ModelPickItem[];
   private readonly maxRows: number;
+  private readonly getHeight: (() => number) | undefined;
   private readonly requestRender: () => void;
   private readonly theme: SettingsMenuTheme;
   private readonly keybindings: KeybindingsManagerLike;
@@ -173,7 +175,8 @@ export class ModelPickerComponent {
   ) {
     this.title = deps.title;
     this.items = deps.items;
-    this.maxRows = deps.maxVisibleRows ?? 12;
+    this.maxRows = Math.max(1, deps.maxVisibleRows ?? 12);
+    this.getHeight = deps.getHeight;
     this.requestRender = requestRender;
     this.theme = theme;
     this.keybindings = keybindings;
@@ -208,7 +211,8 @@ export class ModelPickerComponent {
   }
 
   render(width: number): string[] {
-    const w = Math.max(20, width - 2);
+    const w = Math.max(0, width - 2);
+    const height = this.getHeight ? Math.max(8, Math.floor(this.getHeight())) : Number.POSITIVE_INFINITY;
     const lines: string[] = [];
     lines.push(this.theme.fg("accent", this.theme.bold(truncateToWidth(this.title, w, "…"))));
     lines.push("");
@@ -220,9 +224,10 @@ export class ModelPickerComponent {
       lines.push(this.theme.fg("warning", "  no matches — keep typing, or Esc to cancel"));
     } else {
       const sel = Math.min(this.selectedIdx, filtered.length - 1);
-      const half = Math.floor(this.maxRows / 2);
-      const start = Math.max(0, Math.min(sel - half, filtered.length - this.maxRows));
-      const window = filtered.slice(start, start + this.maxRows);
+      const maxRows = Math.max(1, Math.min(this.maxRows, height - 8));
+      const half = Math.floor(maxRows / 2);
+      const start = Math.max(0, Math.min(sel - half, filtered.length - maxRows));
+      const window = filtered.slice(start, start + maxRows);
       if (start > 0) lines.push(this.theme.fg("dim", `  ↑ ${start} more`));
       for (let i = 0; i < window.length; i++) {
         const idx = start + i;
@@ -267,7 +272,7 @@ export class ModelPickerComponent {
     }
     if (data === "\x7f" || data === "\b") {
       if (this.query.length > 0) {
-        this.query = this.query.slice(0, -1);
+        this.query = [...this.query].slice(0, -1).join("");
         this.selectedIdx = 0;
         this.refresh();
       }
