@@ -1967,7 +1967,8 @@ function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefin
   // Lead row 3 (or 2 when nothing live is known): the next action always
   // renders, on its own short row so it survives narrow-terminal
   // truncation that may ellipsize the longer tool/model row above.
-  lead.push(`│ next: ${auditorNextAction(phase)}`);
+  const settlementNext = durable?.phase === "settling" ? `${g.policy === "list" ? "/list resume" : "/goal resume"} finishes approved settlement` : undefined;
+  lead.push(`│ next: ${settlementNext ?? auditorNextAction(phase)}`);
   // Tail: the remaining observations (session, quiet stretch, report
   // tail, evidence, unmatched events) flow straight into the closing
   // line (v0.38.55 — no spacer row). Closers are byte-identical to the
@@ -2021,6 +2022,8 @@ function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefin
     tail.push(`└─ ${paint(theme, "warning", `auditor quiet ${fmtElapsed(quietMs)}${last} — may be stuck; /goal cancel discards the claim`)}`);
   } else if (phase === "blocked") {
     tail.push(`└─ ${paint(theme, "warning", `auditor blocked${audit?.label ? ` — ${truncate(audit.label, 44)}` : ""}${last}`)}`);
+  } else if (settlementNext) {
+    tail.push(`└─ ${paint(theme, "dim", "approved — terminal archive owed")}`);
   } else if (phase === "awaiting-verdict") {
     tail.push(`└─ ${paint(theme, "dim", `waiting for completion review${last}`)}`);
   } else if (phase === "queued") {

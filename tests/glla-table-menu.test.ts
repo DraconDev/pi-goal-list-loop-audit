@@ -303,16 +303,13 @@ test("nav: Left-arrow CSI sequence (\\x1b[D) retreats section", () => {
 /*  Pin 3: truncation                                                    */
 /* --------------------------------------------------------------------- */
 
-test("details toggle: descriptions can be shown and truncated when requested", () => {
+test("details toggle: narrow descriptions are readable in a wrapped pane", () => {
   const { component } = makeComponent(SAMPLE_ROWS, 60);
   component.handleInput("d");
   const lines = component.render(60);
   // Find the body rows (skip title, tabs, header, footer).
   const body = lines.slice(3, -1);
   assert.ok(body.length >= 3, "expected at least 3 body rows for keep-going");
-  // The description column should be truncated visibly within the width —
-  // we assert that the suffix "(0m…" appears (truncateToWidth inserts it)
-  // on at least one body row when width=60. This proves truncation kicked in.
   assert.ok(lines.join("\n").includes("Details"), "narrow details use a wrapped reading pane");
   assert.ok(lines.every((line) => visibleWidthFromTui(line) <= 60));
 });

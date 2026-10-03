@@ -795,6 +795,7 @@ export class SettingsMenuComponent implements Component {
   private activeSectionIdx: number;
   private selectedIdx: number;
   private cachedWidth?: number;
+  private cachedHeight?: number;
   private cachedLines?: string[];
   private showDescriptions = false;
   private readonly getHeight: (() => number) | undefined;
@@ -849,7 +850,11 @@ export class SettingsMenuComponent implements Component {
 
   /** Rows in the active section. Exposed for tests. */
   visibleRows(): SettingsRow[] {
-    if (this.searching && this.query.trim()) return fuzzyFilter(this.rows, this.query.trim(), (row) => `${row.label} ${row.id} ${row.description} ${row.valueText}`);
+    if (this.searching && this.query.trim()) {
+      const query = this.query.trim().toLowerCase();
+      const direct = this.rows.filter((row) => `${row.label} ${row.id} ${row.description} ${row.valueText}`.toLowerCase().includes(query));
+      return direct.length ? direct : fuzzyFilter(this.rows, query, (row) => `${row.label} ${row.id}`);
+    }
     return this.rows.filter(
       (r) => r.section === SETTINGS_SECTIONS[this.activeSectionIdx]!.id,
     );
@@ -941,7 +946,7 @@ export class SettingsMenuComponent implements Component {
       ? this.theme.fg("accent", this.theme.bold(tabLabel(section)))
       : this.theme.fg("dim", tabLabel(section))).join("  ");
     const activeTab = tabLabel(SETTINGS_SECTIONS[this.activeSectionIdx]!);
-    lines.push(visibleWidth(allTabs) <= width ? allTabs
+    lines.push(this.searching ? this.theme.fg("accent", `All tabs · ${this.visibleRows().length} matches`) : visibleWidth(allTabs) <= width ? allTabs
       : this.theme.fg("accent", this.theme.bold(`‹ ${activeTab} › · ${this.activeSectionIdx + 1}/${SETTINGS_SECTIONS.length}`)));
     if (this.searching) lines.push(this.theme.fg("muted", `search: ${this.query}▏`));
 
@@ -974,12 +979,15 @@ export class SettingsMenuComponent implements Component {
     window.forEach((row, index) => {
       const selected = start + index === this.selectedIdx;
       const prefix = selected ? "▶ " : "  ";
+      const label = this.searching ? `${SETTINGS_SECTIONS.find(section => section.id === row.section)?.label} · ${row.label}` : row.label;
       const paintRow = (text: string) => selected ? this.theme.bg("selectedBg", this.theme.bold(this.padEnd(truncateToWidth(text, width, "…"), width))) : text;
       if (narrow) {
-        lines.push(paintRow(`${prefix}${row.label}`));
-        lines.push(paintRow(`  ${row.valueText} · ${row.sourceText}`));
+        const source = truncateToWidth(row.sourceText, Math.max(0, width - 8), "…");
+        const labelWidth = Math.max(0, width - visibleWidth(prefix) - visibleWidth(source) - 3);
+        lines.push(paintRow(`${prefix}${truncateToWidth(label, labelWidth, "…")} · ${source}`));
+        lines.push(paintRow(`  ${row.valueText}`));
       } else {
-        const cells = [this.padEnd(truncateToWidth(prefix + row.label, keyW, "…"), keyW), this.padEnd(truncateToWidth(row.valueText, valueW, "…"), valueW), this.padEnd(truncateToWidth(row.sourceText, sourceW, "…"), sourceW)];
+        const cells = [this.padEnd(truncateToWidth(prefix + label, keyW, "…"), keyW), this.padEnd(truncateToWidth(row.valueText, valueW, "…"), valueW), this.padEnd(truncateToWidth(row.sourceText, sourceW, "…"), sourceW)];
         if (this.showDescriptions) cells.push(this.padEnd(truncateToWidth(row.description, descW, "…"), descW));
         lines.push(paintRow(cells.join(selected ? COL_SEP : sep)));
       }
@@ -998,8 +1006,10 @@ export class SettingsMenuComponent implements Component {
   }
 
   render(width: number): string[] {
-    if (!this.getHeight && this.cachedLines && this.cachedWidth === width) return this.cachedLines;
+    const height = this.getHeight?.();
+    if (this.cachedLines && this.cachedWidth === width && this.cachedHeight === height) return this.cachedLines;
     this.cachedWidth = width;
+    this.cachedHeight = height;
     // Fixed columns and the details minimum can exceed a narrow terminal.
     // Bound the complete painted lines (including headers and help) so a
     // resize cannot hand Pi a row wider than its renderer accepts.

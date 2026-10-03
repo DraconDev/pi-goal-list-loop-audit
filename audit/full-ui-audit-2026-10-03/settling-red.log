@@ -1,0 +1,48 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/ui-experience-audit.test.ts:
+(pass) settings keep the active final tab visible on narrow terminals [13.00ms]
+(pass) narrow settings show both the focused setting and its effective value [1.17ms]
+(pass) reopened settings focus the edited row and each tab remembers its cursor [0.21ms]
+(pass) settings window keeps the cursor, navigation and details within a short terminal [7.58ms]
+(pass) settings search finds rows across sections and Esc clears search before closing [1.76ms]
+(pass) settings details allow reading the full long value [1.45ms]
+(pass) single picker respects terminal height and keeps the selected model visible [1.36ms]
+(pass) large unordered selections fit a short multi-picker without hiding its cursor [1.50ms]
+(pass) picker backspace deletes a complete Unicode character [0.32ms]
+(pass) long draft reviews scroll while their decisions remain visible [16.43ms]
+(pass) ordered pickers fit short terminals with current, inherit and cap notices [4.51ms]
+(pass) settings sanitize terminal controls without changing saved strings [0.65ms]
+(pass) settings details and all tab windows fit very short terminals [120.79ms]
+(pass) lifecycle cards and status rows fit every explicit terminal width [62.51ms]
+(pass) draft review keeps project consent readable and uses the supplied keybindings [10.43ms]
+(pass) untrusted picker labels and draft bodies cannot emit terminal commands [1.87ms]
+147 | test("settling cards identify the approved archive owed and its recovery action", async () => {
+148 |   const { UI_AUDIT_SCENES, UI_AUDIT_NOW } = await import("./evidence/ui-audit-scenes.js");
+149 |   const { buildWidgetLines } = await import("../extensions/goal-loop-display.js");
+150 |   const scene = UI_AUDIT_SCENES.find(scene => scene.key === "audit-settling")!;
+151 |   const text = buildWidgetLines(scene.state, null, UI_AUDIT_NOW, theme, 80)!.join("\n");
+152 |   assert.match(text, /approved.*archive owed/);
+               ^
+AssertionError: The input did not match the regular expression /approved.*archive owed/. Input:
+
+'⟡ Ship a clear and readable GLLA … · auditing · total 1h 00m · 123k/200k ▰▰▰▱▱\n' +
+  '├─ auditor: settling · detached worker · last progress 10s ago (durable)\n' +
+  '│ next: completion review applying\n' +
+  '└─ waiting for completion review'
+
+ generatedMessage: true,
+     actual: "⟡ Ship a clear and readable GLLA … · auditing · total 1h 00m · 123k/200k ▰▰▰▱▱\n├─ auditor: settling · detached worker · last progress 10s ago (durable)\n│ next: completion review applying\n└─ waiting for completion review",
+   expected: /approved.*archive owed/,
+   operator: "match",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:152:10
+      at processTicksAndRejections (native:7:39)
+(fail) settling cards identify the approved archive owed and its recovery action [2.69ms]
+
+ 16 pass
+ 1 fail
+Ran 17 tests across 1 file. [1160.00ms]
+[run-tests] finished in 1s (exit 1)

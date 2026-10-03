@@ -1,0 +1,60 @@
+{
+  "components": [
+    {
+      "file": "extensions/confirm-draft.ts",
+      "line": 83,
+      "name": "ConfirmDraftComponent"
+    },
+    {
+      "file": "extensions/model-picker.ts",
+      "line": 157,
+      "name": "ModelPickerComponent"
+    },
+    {
+      "file": "extensions/multi-model-picker.ts",
+      "line": 74,
+      "name": "MultiModelPickerComponent"
+    },
+    {
+      "file": "extensions/settings-menu.ts",
+      "line": 787,
+      "name": "SettingsMenuComponent"
+    }
+  ],
+  "commands": [
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 996,
+      "name": "\"goal\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1033,
+      "name": "\"glla\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1058,
+      "name": "\"review\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1070,
+      "name": "\"list\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1100,
+      "name": "\"loop\""
+    }
+  ],
+  "counts": {
+    "notify": 589,
+    "select": 34,
+    "input": 27,
+    "confirm": 8,
+    "custom": 5,
+    "setStatus": 1,
+    "setWidget": 1
+  }
+}

@@ -7,6 +7,29 @@ settings menu; this file is the shipped, reviewable contract. A release-gate
 test pins that every `SETTINGS_KEYS` entry in `extensions/goal-settings.ts`
 appears here, so the table cannot silently drift.
 
+## Navigating the settings menu
+
+`/glla` opens the settings menu. Left/right arrows or Tab/Shift+Tab switch
+sections; up/down arrows choose a setting, and Enter opens its editor.
+The menu remembers the selected row after an edit and when revisiting a tab.
+Press `/` to search across all tabs. Direct text matches take priority;
+results identify their section. Esc clears search first, then exits the menu.
+
+Press `d` to read the focused setting's complete value and explanation.
+PgUp/PgDn scroll the details while they are open; otherwise they move through
+the settings list. Narrow terminals use two lines per setting so both its
+source and value remain visible. Short terminals show a window around the
+selection. Values tagged `default` save to global settings when edited;
+existing project overrides save back to that project. Tool overrides always
+use project scope. The source column describes the effective value.
+
+Model pickers support typing to filter and arrow navigation. In fallback
+pickers, Space toggles membership and Tab opens order mode; up/down then move
+the selected backup through the try order. Enter saves; Esc cancels.
+Draft confirmation keeps its choices visible while PgUp/PgDn scroll the full
+contract. The “always auto-accept” choice applies to future drafts in this
+project; it remains a separate, explicit choice.
+
 ## Files and precedence
 
 - Global file: `~/.pi/agent/pi-goal-list-loop-audit.settings.json` (machine/provider policy).

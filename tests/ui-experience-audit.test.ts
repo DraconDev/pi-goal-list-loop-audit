@@ -143,3 +143,13 @@ test("untrusted picker labels and draft bodies cannot emit terminal commands", (
   assert.match(draft.render(60).join("\n"), /Last paragraph/);
   for (const component of [single, multi]) { component.handleInput("test\x9b"); assert.equal(component.getQuery(), "test"); }
 });
+
+test("settling cards identify the approved archive owed and its recovery action", async () => {
+  const { UI_AUDIT_SCENES, UI_AUDIT_NOW } = await import("./evidence/ui-audit-scenes.js");
+  const { buildWidgetLines } = await import("../extensions/goal-loop-display.js");
+  const scene = UI_AUDIT_SCENES.find(scene => scene.key === "audit-settling")!;
+  const text = buildWidgetLines(scene.state, null, UI_AUDIT_NOW, theme, 80)!.join("\n");
+  assert.match(text, /approved.*archive owed/);
+  assert.match(text, /next: \/goal resume.*approved/);
+  assert.doesNotMatch(text, /waiting for completion review/);
+});

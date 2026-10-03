@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+## 0.38.112 — full terminal UI audit (2026-10-03)
+
+- Settings adapt to narrow and short terminals, keeping the active tab,
+  effective value, source, and keyboard help visible. Search spans every tab,
+  favors direct matches, and identifies each result's role.
+- Reopening an editor restores its row; tab switches remember their cursors.
+  Wrapped details and PgUp/PgDn make full values and explanations reviewable.
+- Model and fallback pickers fit terminal height. Order mode gives the chain
+  its own viewport; large extension sets retain a visible selection count.
+  Search backspace removes complete Unicode characters.
+- Draft contracts scroll independently of their decisions. Persistent draft
+  acceptance states its project scope without implementation-key jargon;
+  long selected choices wrap so their meaning remains visible.
+- Settings, picker labels and draft Markdown strip untrusted terminal controls.
+  Explicit zero-width cards/status rows are bounded. Settling audit cards name
+  the approved archive owed and the command that finishes settlement.
+
 ## 0.38.111 — per-tool execution options (2026-10-03)
 
 - Project tool configuration now overrides registered optional arguments on

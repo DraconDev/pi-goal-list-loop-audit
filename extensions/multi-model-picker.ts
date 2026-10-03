@@ -383,7 +383,7 @@ export class MultiModelPickerComponent {
     if (this.selection.length === 0) {
       lines.push(this.theme.fg("dim", this.currentRef
         ? "  — no backups; keep probing the current model"
-        : this.unorderedSet ? "  — no extensions allowed (fully isolated auditor)" : "  — no fallback refs configured"));
+        : this.unorderedSet ? "  — no extra extensions selected; session mirroring is separate" : "  — no fallback refs configured"));
     } else {
       const summaryLimit = Number.isFinite(height) ? Math.max(1, Math.min(this.selection.length, Math.floor(height / 4))) : this.selection.length;
       const summaryStart = this.orderMode ? Math.max(0, Math.min(this.orderIdx - Math.floor(summaryLimit / 2), this.selection.length - summaryLimit)) : 0;

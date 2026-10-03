@@ -271,6 +271,12 @@ export class ModelPickerComponent {
       this.move(+1);
       return;
     }
+    if (this.keybindings.matches(data, "tui.select.pageUp") || this.keybindings.matches(data, "tui.select.pageDown")) {
+      const direction = this.keybindings.matches(data, "tui.select.pageUp") ? -1 : 1;
+      const pageSize = Math.max(1, Math.min(this.maxRows, (this.getHeight?.() ?? Number.POSITIVE_INFINITY) - 8));
+      this.move(direction * pageSize);
+      return;
+    }
     if (data === "\x7f" || data === "\b") {
       if (this.query.length > 0) {
         this.query = [...this.query].slice(0, -1).join("");

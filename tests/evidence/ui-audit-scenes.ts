@@ -9,7 +9,7 @@ const loop = (patch: Partial<LoopState> = {}): LoopState => ({ target: "Improve 
 export interface UiAuditScene { key: string; state: State; extras?: WidgetExtras; }
 export const UI_AUDIT_SCENES: UiAuditScene[] = [
   { key: "empty", state: { goal: null, list: [] } },
-  { key: "working", state: { goal: goal() }, extras: { goalActivity: { label: "working", isStreaming: true, lastActivityAt: UI_AUDIT_NOW - 5000 } } as WidgetExtras },
+  { key: "working", state: { goal: goal() }, extras: { activity: "working", lastActivityAt: UI_AUDIT_NOW - 5000, lastStreamActivityAt: UI_AUDIT_NOW - 5000 } },
   { key: "paused", state: { goal: goal({ status: "paused", pauseReason: "Need a decision on the proposed design", pauseKind: "decision", pauseSuggestedAction: "Choose a direction, then /goal resume" }) } },
   { key: "blocked", state: { goal: goal({ status: "paused", pauseKind: "blocked", pauseReason: "Verification could not finish", pauseSuggestedAction: "Resolve the failing check, then /goal resume" }) } },
   { key: "supervisor-frozen", state: { goal: goal(), supervisorPausedAt: UI_AUDIT_NOW - 45000 } },

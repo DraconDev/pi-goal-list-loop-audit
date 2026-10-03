@@ -16,7 +16,7 @@ Policy contracts and recent changes live in the `audit/` directory of the
   failback; v0.35.9 hardened cross-version npm tarball checks; v0.35.10
   handles multi-entry npm dry-run reports; v0.35.11 accepts both npm report
   shapes; v0.35.12 supports npm 12's keyed pack reports; v0.35.13 fixes stale-API recovery loops.
-  v0.35.14–v0.38.111 continue through the supervisor freeze (`/glla pause`),
+  v0.35.14–v0.38.112 continue through the supervisor freeze (`/glla pause`),
   load hold, auditor picker parity, Windows launch fix, zombie-watchdog
   subagent carve-out, due-wait backstop, the `/glla agents` visibility panel,
   durable state-root selection, blank-until-resume auditor context, frozen
@@ -35,6 +35,8 @@ Policy contracts and recent changes live in the `audit/` directory of the
   preserves second-pass visibility, and fits the store thumbnail to its 8:5 card.
   v0.38.109 keeps work moving after optional compaction failures and fixes
   settings-editor ownership, narrow rendering, and stale approved-summary text.
+  v0.38.112 audits the full terminal UI: responsive settings, search, focus
+  continuity, picker height, scrollable draft review, and settlement wording.
   v0.38.111 applies project optional tool arguments with schema validation.
   v0.38.110 audits /glla menus and commands: model policy, narrow picker
   rendering, concurrent edits, mutation guards, and accurate option wording.

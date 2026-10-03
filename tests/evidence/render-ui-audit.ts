@@ -33,7 +33,7 @@ for (const appearance of ["dark", "light"]) {
     const multi = new MultiModelPickerComponent({ title: "Fallback models", items, currentRef: "openai/session", initialSelected: items.slice(0, 10).map(item => item.ref!), getHeight: () => height }, () => {}, theme, kb, () => {});
     add("fallback-picker", multi.render(width)); multi.handleInput("\t"); for (let i = 0; i < 7; i++) multi.handleInput("down"); add("fallback-order", multi.render(width));
     const draft = new ConfirmDraftComponent({ title: "Confirm goal", body: "Improve the complete GLLA interface.\n\n" + Array.from({ length: 20 }, (_, i) => `- Requirement ${i + 1}: prove the interface is readable and the action has the promised result.`).join("\n\n"), options: ["Yes", "Yes — always auto-accept drafts for this project", "No"], getHeight: () => height }, () => {}, theme, kb, () => {});
-    add("draft-start", draft.render(width)); for (let i = 0; i < 30; i++) draft.handleInput("pgdown"); add("draft-end", draft.render(width));
+    add("draft-start", draft.render(width)); for (let i = 0; i < 30; i++) draft.handleInput("pgdown"); add("draft-end", draft.render(width)); draft.handleInput("down"); add("draft-consent", draft.render(width));
     for (const scene of UI_AUDIT_SCENES) add(scene.key, [...(buildWidgetLines(scene.state, null, UI_AUDIT_NOW, theme, width, scene.extras) ?? ["(no ambient UI)"]), "", buildStatusText(scene.state, null, UI_AUDIT_NOW, theme, scene.extras, width) ?? "(no status)"]);
   }
 }

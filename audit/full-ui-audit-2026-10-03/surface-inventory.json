@@ -1,0 +1,4052 @@
+{
+  "components": [
+    {
+      "file": "extensions/confirm-draft.ts",
+      "line": 83,
+      "name": "ConfirmDraftComponent"
+    },
+    {
+      "file": "extensions/model-picker.ts",
+      "line": 157,
+      "name": "ModelPickerComponent"
+    },
+    {
+      "file": "extensions/multi-model-picker.ts",
+      "line": 74,
+      "name": "MultiModelPickerComponent"
+    },
+    {
+      "file": "extensions/settings-menu.ts",
+      "line": 787,
+      "name": "SettingsMenuComponent"
+    }
+  ],
+  "commands": [
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 996,
+      "name": "\"goal\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1033,
+      "name": "\"glla\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1058,
+      "name": "\"review\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1070,
+      "name": "\"list\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1100,
+      "name": "\"loop\""
+    }
+  ],
+  "counts": {
+    "notify": 589,
+    "select": 34,
+    "input": 27,
+    "confirm": 8,
+    "custom": 5,
+    "setStatus": 1,
+    "setWidget": 1
+  },
+  "calls": [
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 188,
+      "kind": "notify",
+      "content": "`/${surface} start could not safely choose an objective: ${explainStartInference(inference)} Falling back to the normal ${surface} drafting flow; nothing is activated before its existing gates.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 212,
+      "kind": "notify",
+      "content": "\"No pending decision — the goal isn't paused on a choice (or no UI).\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 226,
+      "kind": "notify",
+      "content": "\"An audit loop is already running here — a one-shot /goal audit duplicates its work. /loop status to see it; /loop stop first if you want the one-shot instead.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 241,
+      "kind": "notify",
+      "content": "\"No active goal — /goal verify needs a goal to verify.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 245,
+      "kind": "notify",
+      "content": "\"An audit is already running…\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 253,
+      "kind": "notify",
+      "content": "`A completion audit is already awaiting its verdict — wait for it or ${activeGoalSurfaceCommand(\"cancel\")} to discard the pending claim and start over.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 307,
+      "kind": "notify",
+      "content": "`${explainStartInference(inference)} /goal start is explicit consent, so the drafting interview is skipped.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 349,
+      "kind": "notify",
+      "content": "\"New goal cancelled; the current objective is unchanged.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 359,
+      "kind": "notify",
+      "content": "\"Update selected, but the current list item has no safe cross-mode in-place edit. No new goal was started.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 408,
+      "kind": "notify",
+      "content": "\"Seed + recent context carry enough detail — activating directly (no interview). /goal plan forces the full draft.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 428,
+      "kind": "notify",
+      "content": "`Goal saved: ${shortObj(goal.objective)} — safe in .pi-glla/, but this stale process can't send continuations. Use /new to create a fresh context; its session_start will resume it. If /new does not create one, restart pi normally, then ${activeGoalSurfaceCommand(\"resume\")} if autoresume is off.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 431,
+      "kind": "notify",
+      "content": "`Goal started: ${shortObj(goal.objective)} — the auditor will verify on completion.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 439,
+      "kind": "notify",
+      "content": "[\"No active goal.\", ...recoveryLines, \"Use /goal <objective>, /list show, or /loop status for the owning surface.\"].join(\"\\n\")"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 442,
+      "kind": "notify",
+      "content": "\"No active goal. Use /goal <objective>.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 480,
+      "kind": "notify",
+      "content": "lines.join(\"\\n\")"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 504,
+      "kind": "notify",
+      "content": "`List item \"${shortObj(state.goal.objective)}\" paused${queued > 0 ? ` (${queued} waiting in the list)` : \"\"}. ${resumeCommand} to continue.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 507,
+      "kind": "notify",
+      "content": "`Goal \"${shortObj(state.goal.objective)}\" paused. ${resumeCommand} to continue.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 518,
+      "kind": "notify",
+      "content": "\"Load hold released — automation is live again.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 537,
+      "kind": "notify",
+      "content": "\"Retrying the saved main-model recovery now — one provider probe, then the configured fallback models if needed.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 545,
+      "kind": "notify",
+      "content": "\"Probing the preferred primary now — the current fallback remains available if the primary is still unhealthy.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 555,
+      "kind": "notify",
+      "content": "\"A loop is active — one active thing at a time. /loop stop it first, then resume the goal.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 575,
+      "kind": "notify",
+      "content": "`The ${state.goal.policy === \"list\" ? \"list item\" : \"goal\"} is ACTIVE but idle — re-firing its continuation: ${displaySlice(state.goal.objective, 70)}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 584,
+      "kind": "notify",
+      "content": "`A detached completion auditor is in flight — wait for its verdict (the status line shows auditor running). ${activeGoalSurfaceCommand(\"cancel\")} discards the pending claim.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 588,
+      "kind": "notify",
+      "content": "`The detached completion auditor is already running — wait for its verdict or ${activeGoalSurfaceCommand(\"cancel\")} to discard the pending claim.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 592,
+      "kind": "notify",
+      "content": "\"A loop is active — one active thing at a time. /loop stop it first, then resume the completion audit.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 608,
+      "kind": "notify",
+      "content": "\"Resuming the stored completion claim — starting a detached auditor (no agent turn needed).\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 619,
+      "kind": "notify",
+      "content": "`Nothing to resume — no goal is active or paused.${loopHint}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 625,
+      "kind": "notify",
+      "content": "`The ${label} is ${state.goal.status} (archived) — it can't be resumed. ${state.goal.policy === \"list\" ? \"/list add <objective> re-queues it; /list show lists waiting items.\" : \"/goal <objective> starts a fresh one; /goal archive lists archived goals.\"}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 630,
+      "kind": "notify",
+      "content": "`The ${label} is ${state.goal.status} — nothing to resume. ${activeGoalStatusCommand()} for the current state.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 638,
+      "kind": "notify",
+      "content": "\"A loop is active — one active thing at a time. /loop stop it first, then resume the goal.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 676,
+      "kind": "notify",
+      "content": "\"Resuming the stored completion claim — starting a detached auditor (no agent turn needed).\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 686,
+      "kind": "notify",
+      "content": "isListItem\n      ? `Resumed list item [${state.goal.id}]: ${displaySlice(state.goal.objective, 70)}${queued > 0 ? ` (+${queued} waiting in the list)` : \"\"}`\n      : `Resumed goal [${state.goal.id}]: ${displaySlice(state.goal.objective, 70)}${queued > 0 ? ` (+${queued} waiting in the list — resuming the list's head)` : \"\"}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 698,
+      "kind": "notify",
+      "content": "\"Cancel deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 705,
+      "kind": "notify",
+      "content": "\"No goal to cancel — a LOOP is active: /loop stop (or /loop cancel) ends it.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 723,
+      "kind": "notify",
+      "content": "`${noun} aborted.${isLoopActive() ? \" A loop is still active — /loop stop ends it.\" : \"\"}\\nRecap: ${cancelRecap}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 736,
+      "kind": "notify",
+      "content": "\"Accept deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 740,
+      "kind": "notify",
+      "content": "\"No goal to accept.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 744,
+      "kind": "notify",
+      "content": "\"Accept with follow-ups is for a cap-paused goal — this goal is still active. It appears as a decision option when disapprovals hit the cap.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 759,
+      "kind": "notify",
+      "content": "`${noun} archived as complete with residuals routed to follow-ups.\\nRecap: ${acceptRecap}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 787,
+      "kind": "select",
+      "content": "title"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 838,
+      "kind": "notify",
+      "content": "\"No archived goals yet.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 843,
+      "kind": "notify",
+      "content": "\"No archived goals yet.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 858,
+      "kind": "notify",
+      "content": "`Archived goals (${files.length}${files.length > 20 ? \", showing 20\" : \"\"}):\\n` + lines.join(\"\\n\")"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 896,
+      "kind": "notify",
+      "content": "mode === \"list\"\n        ? \"No paused list item to tweak. /list tweak <replacement objective, optional 'Done when: ...' clause>\"\n        : \"No goal to tweak. /goal <objective> to start one.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 916,
+      "kind": "notify",
+      "content": "`Tweak ${surface} — current: ${displaySlice(current.objective, 120)}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 922,
+      "kind": "input",
+      "content": "mode === \"list\"\n          ? \"What should we update the list item into? (replacement objective, optional 'Done when: ...' clause)\"\n          : \"What should we update the goal into? (replacement objective, optional 'Done when: ...' clause)\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 932,
+      "kind": "notify",
+      "content": "\"Tweak cancelled; nothing changed.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 957,
+      "kind": "notify",
+      "content": "guidance"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 970,
+      "kind": "notify",
+      "content": "mode === \"list\"\n        ? \"No objective in the replacement text — include what the list item should become.\"\n        : \"No objective in the replacement text — include what the goal should become.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 994,
+      "kind": "notify",
+      "content": "\"Tweak cancelled — the objective is unchanged.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 999,
+      "kind": "confirm",
+      "content": "mode === \"list\" ? \"Tweak list item?\" : \"Tweak goal?\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1012,
+      "kind": "notify",
+      "content": "\"Tweak cancelled; goal unchanged.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1023,
+      "kind": "notify",
+      "content": "\"Tweak cancelled — the goal changed while confirmation was open; no stale state was restored.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1027,
+      "kind": "notify",
+      "content": "\"Tweak cancelled — the goal finished while confirmation was open; no stale state was restored.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1085,
+      "kind": "notify",
+      "content": "\"Whole list objective updated; the current item continues against the new objective.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1090,
+      "kind": "notify",
+      "content": "\"List item tweaked; it remains paused. /list resume to continue.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1098,
+      "kind": "notify",
+      "content": "\"Goal tweaked; it remains paused. /goal resume to continue.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1101,
+      "kind": "notify",
+      "content": "\"Goal tweaked. The loop continues against the new objective.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1246,
+      "kind": "notify",
+      "content": "`Skipped ${skipped} item(s) duplicating work COMPLETED in the last 24h (zombie-twin guard): ${first.slice(0, 90)}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1256,
+      "kind": "notify",
+      "content": "`Coalesced ${split.coalesced.length} item(s) already waiting behind the paused head — queue depth holds at ${listQueue().length}.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1311,
+      "kind": "notify",
+      "content": "`Refused ${refused.length} subtask item(s): ${refused.join(\" | \")}.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1328,
+      "kind": "notify",
+      "content": "`Could not persist the queued item(s) from ${source}; no in-memory queue mutation was applied. Fix disk access and retry.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1339,
+      "kind": "notify",
+      "content": "`Queued ${itemsToWrite.length} item(s) behind the paused head (${listQueue().length} waiting) — ${state.goal.pauseSuggestedAction ?? \"resume the head to continue\"}.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1347,
+      "kind": "notify",
+      "content": "`Queued ${itemsToWrite.length} item(s) from ${source} — /list next when ready (auto-start is opt-in: enable Auto-resume in /glla settings).`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1359,
+      "kind": "notify",
+      "content": "\"No items found (headings/blank lines don't count).\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1368,
+      "kind": "confirm",
+      "content": "\"Import into list?\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1377,
+      "kind": "notify",
+      "content": "\"Import cancelled.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1382,
+      "kind": "notify",
+      "content": "`Imported ${n} items (${listQueue().length} waiting in the list).`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1392,
+      "kind": "notify",
+      "content": "`Cannot read: ${abs}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1433,
+      "kind": "notify",
+      "content": "\"Usage: /list start — activates the queued head, or starts the normal list drafting flow from one clear recent objective.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1442,
+      "kind": "notify",
+      "content": "`${explainStartInference(inference)} /list start keeps the list's Confirm gate; the inferred text will be drafted into queue items before anything is activated.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1463,
+      "kind": "notify",
+      "content": "\"An audit loop is already draining findings here — /list audit would double-hunt the same ground. /loop status to see it.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1468,
+      "kind": "notify",
+      "content": "\"Audit collection item queued — it CHANGES NO CODE: it appends findings to \" +\n        AUDIT_FINDINGS_REL +\n        \", and on completion each open finding becomes its own list item (fixes drain one audited commit at a time). DECIDE findings are presented to you, never queued.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1481,
+      "kind": "notify",
+      "content": "`/list depth: ${formatListDepth(stats)}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1492,
+      "kind": "notify",
+      "content": "state.goal ? \"The active work is a standalone goal — /goal pause to pause it.\" : \"No active list item to pause. /list show to see the list.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1517,
+      "kind": "notify",
+      "content": "terminalListItem\n          ? `The last list item is ${statusLabel(state.goal!.status)} and archived${state.goal!.stopReason ? ` (${displaySlice(state.goal!.stopReason, 90)})` : \"\"}; nothing to resume. Re-add it with /list or activate a waiting item with /list next.`\n          : \"No paused list item to resume. /list show to see the list.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1526,
+      "kind": "notify",
+      "content": "`The paused goal didn't come from the list — ${activeGoalSurfaceCommand(\"resume\")} to continue it.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1613,
+      "kind": "notify",
+      "content": "lines.join(\"\\n\")"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1661,
+      "kind": "notify",
+      "content": "\"List clear deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1672,
+      "kind": "notify",
+      "content": "`List clear refused — ${clearedSidecars.failed.length} queue sidecar(s) could not be removed. The in-memory list is unchanged; fix disk access and retry.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1678,
+      "kind": "notify",
+      "content": "`List clear could not remove ${clearedSidecars.failed.length} queue sidecar(s); the list is not fully clean.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1679,
+      "kind": "notify",
+      "content": "`List cleared. Active goal (if any) is untouched — ${activeGoalSurfaceCommand(\"cancel\")} for that, /list cancel to stop the whole list.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1688,
+      "kind": "notify",
+      "content": "\"List cancel deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1694,
+      "kind": "notify",
+      "content": "`No list to cancel — nothing waiting, and the active goal (if any) isn't a list item. ${activeGoalSurfaceCommand(\"cancel\")} aborts a standalone goal.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1714,
+      "kind": "notify",
+      "content": "`List cancellation is incomplete — ${clearedSidecars.failed.length} queue sidecar(s) could not be removed. Waiting items remain recoverable; fix disk access and retry.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1721,
+      "kind": "notify",
+      "content": "`List cancelled: ${activeIsListItem ? \"active item aborted + \" : \"\"}${dropped} waiting item(s) dropped.${!activeIsListItem && state.goal && state.goal.status === \"active\" ? ` Active goal is not a list item — untouched (${activeGoalSurfaceCommand(\"cancel\")} for that).` : \"\"}${listCancelRecap ? `\\nRecap: ${listCancelRecap}` : \"\"}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1725,
+      "kind": "notify",
+      "content": "`List cancel could not remove ${clearedSidecars.failed.length} queue sidecar(s); retry after fixing disk access.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1738,
+      "kind": "notify",
+      "content": "`Usage: /list next [visible position such as 1, 2, or 1.1]`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1749,
+      "kind": "notify",
+      "content": "\"List activation cancelled; the current objective is unchanged.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1756,
+      "kind": "notify",
+      "content": "\"Whole list update was not applied; the current objective and queue are unchanged.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1772,
+      "kind": "notify",
+      "content": "`Previous ${skippedGoal.policy === \"list\" ? \"list item\" : \"goal\"} skipped; the selected list item will be activated.\\nRecap: ${skipRecap}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1779,
+      "kind": "notify",
+      "content": "listQueue().length === 0 ? \"List is empty — nothing to activate.\" : `No visible item #${label} (list has ${visibleListPositions(listQueue()).length}).`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1792,
+      "kind": "notify",
+      "content": "\"Usage: /list remove <visible position such as 1, 2, or 1.1>\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1804,
+      "kind": "notify",
+      "content": "`Remove refused — \"${displaySlice(removed.objective, 60)}\" owns the live goal. Finish or park it first.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1810,
+      "kind": "confirm",
+      "content": "`Remove group and ${cascade.length} subtask${cascade.length === 1 ? \"\" : \"s\"}?`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1818,
+      "kind": "notify",
+      "content": "\"Remove cancelled; the list is unchanged.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1825,
+      "kind": "notify",
+      "content": "`Remove refused — the durable sidecar for ${displaySlice(child.objective, 80)} could not be removed. The group remains queued; fix disk access and retry.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1837,
+      "kind": "notify",
+      "content": "`Remove refused — the durable sidecar for ${displaySlice(removed.objective, 80)} could not be removed. The item remains queued; fix disk access and retry.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1843,
+      "kind": "notify",
+      "content": "cascade.length > 0 ? `Removed group + ${cascade.length} subtask${cascade.length === 1 ? \"\" : \"s\"}: ${displaySlice(removed.objective, 80)}` : `Removed: ${displaySlice(removed.objective, 80)}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1855,
+      "kind": "notify",
+      "content": "\"Settings are under /glla, not /list — bare /glla opens the settings table (status/log/stats/audits and the actions live there too).\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1900,
+      "kind": "notify",
+      "content": "`Already waiting behind the paused head — coalesced, queue depth holds at ${listQueue().length}.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1912,
+      "kind": "notify",
+      "content": "`Already completed recently — not re-queued: ${displaySlice(extracted.objective, 80)}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1928,
+      "kind": "notify",
+      "content": "\"Could not persist the list item; no in-memory queue mutation was applied. Fix disk access and retry.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1938,
+      "kind": "notify",
+      "content": "`Added to the list (${listQueue().length} waiting): ${displaySlice(extracted.objective, 80)}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1982,
+      "kind": "notify",
+      "content": "`Unknown mode \"${modeArg}\" — use off | on | auto | aggressive.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1986,
+      "kind": "notify",
+      "content": "`Usage: /review <goal-id> [${validModes.join(\"|\")}] — see /goal archive for ids.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 1999,
+      "kind": "notify",
+      "content": "`No archived goal matching \"${id}\". /goal archive lists them.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2004,
+      "kind": "notify",
+      "content": "`\"${id}\" matches ${matches.length} archived goals — use a longer id:\\n${shown.join(\"\\n\")}${matches.length > 8 ? `\\n…(+${matches.length - 8} more)` : \"\"}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2016,
+      "kind": "notify",
+      "content": "`No archive found for ${id}.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2042,
+      "kind": "notify",
+      "content": "out"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2051,
+      "kind": "notify",
+      "content": "`Usage: /glla tooloverride ${action} <tool>`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2057,
+      "kind": "notify",
+      "content": "`\"${tool}\" is now always visible to the agent (project override saved).`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2061,
+      "kind": "notify",
+      "content": "`\"${tool}\" is now always hidden from the agent (project override saved).`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2064,
+      "kind": "notify",
+      "content": "`\"${tool}\" visibility override removed — the session decides again.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2067,
+      "kind": "notify",
+      "content": "`\"${tool}\" hide override removed — the session decides again.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2075,
+      "kind": "notify",
+      "content": "`Usage: /glla tooloverride ${action} <tool> <key>[=<value>]`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2083,
+      "kind": "notify",
+      "content": "`set needs key=value: got \"${kv}\"`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2087,
+      "kind": "notify",
+      "content": "\"A tool configuration key is required.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2095,
+      "kind": "notify",
+      "content": "action === \"set\"\n        ? `\"${tool}\" setting saved: ${kv.slice(0, kv.indexOf(\"=\")).trim()} = ${JSON.stringify(toolCfg[kv.slice(0, kv.indexOf(\"=\")).trim()])} (project optional arguments; validated before execution).`\n        : `\"${tool}\" setting \"${kv}\" removed — back to the built-in default.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2103,
+      "kind": "notify",
+      "content": "`Unknown tooloverride action: ${action}. Use: list | allow | hide | unallow | unhide | set | unset.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2132,
+      "kind": "notify",
+      "content": "`${settingsKey} (project): ${JSON.stringify(cfg, null, 2)}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2146,
+      "kind": "select",
+      "content": "\"Postaudit — post-completion follow-up enqueuer (project settings)\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2164,
+      "kind": "input",
+      "content": "\"Max findings per review\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2168,
+      "kind": "input",
+      "content": "\"Max reviewer fires per day\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2175,
+      "kind": "notify",
+      "content": "`Postaudit setting NOT saved: ${err instanceof Error ? err.message : String(err)} — check .pi-glla/settings.json permissions.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2218,
+      "kind": "notify",
+      "content": "`Unknown /glla stats argument \"${unknown}\". Use: outcomes | challenges | reliability | premature | json | project=<path>.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2226,
+      "kind": "notify",
+      "content": "`/glla stats: no .pi-glla/active.jsonl under ${p}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2237,
+      "kind": "notify",
+      "content": "\"/glla stats: no projects with .pi-glla/active.jsonl found on this rig.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2250,
+      "kind": "notify",
+      "content": "`/glla stats${view ? ` ${view}` : \"\"} — ${rollups.length} project(s)${prematureOnly ? \" (premature filter)\" : \"\"}\\n${out}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2273,
+      "kind": "notify",
+      "content": "\"No ledger yet — .pi-glla/active.jsonl doesn't exist.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2278,
+      "kind": "notify",
+      "content": "\"Ledger is empty (no non-noise events yet).\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2290,
+      "kind": "notify",
+      "content": "`Ledger tail (last ${tail.length}${all ? \"\" : \" non-noise\"} events — /glla log <N> for more, /glla log all to include noise):\\n${lines.join(\"\\n\")}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2435,
+      "kind": "notify",
+      "content": "\"No active goal — /goal timeline needs a goal to narrate.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2444,
+      "kind": "notify",
+      "content": "\"No ledger yet — .pi-glla/active.jsonl doesn't exist.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2447,
+      "kind": "notify",
+      "content": "formatGoalTimeline({ goal, entries, nowMs: Date.now(), limit: n })"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2460,
+      "kind": "notify",
+      "content": "\"No ledger yet — .pi-glla/active.jsonl doesn't exist.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2465,
+      "kind": "notify",
+      "content": "\"No model switches recorded yet — /glla switchlog shows the model_switch / forbidden_model_switch trail.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2477,
+      "kind": "notify",
+      "content": "`Model-switch trail (last ${tail.length} — /glla switchlog <N> for more):\\n${lines.join(\"\\n\")}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2493,
+      "kind": "notify",
+      "content": "\"Wipe deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2507,
+      "kind": "notify",
+      "content": "\"glla state is already clean — no goal, no list, no loop, no recovery.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2518,
+      "kind": "notify",
+      "content": "\"Wipe requires an interactive Confirm dialog; no state was changed.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2522,
+      "kind": "confirm",
+      "content": "\"Wipe glla state?\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2524,
+      "kind": "notify",
+      "content": "\"Wipe cancelled.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2528,
+      "kind": "notify",
+      "content": "\"Wipe cancelled.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2616,
+      "kind": "notify",
+      "content": "`Wipe could not remove ${failedCleanupCount} live artifact(s) (${failedLabels}); the clean slate is incomplete.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2618,
+      "kind": "notify",
+      "content": "`glla wipe done: ${parts.join(\" · \")}.${goalWipeRecap ? `\\nGoal recap: ${goalWipeRecap}` : \"\"}${loopWipeRecap ? `\\nLoop recap: ${loopWipeRecap}` : \"\"} ${failedCleanupCount > 0 ? \"Partial clean slate — fix disk access and retry.\" : \"Clean slate.\"}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2657,
+      "kind": "notify",
+      "content": "already\n    ? \"Supervisor is already paused — all automatic machinery stays frozen (active work untouched). /glla resume to unfreeze.\"\n    : \"Supervisor PAUSED — heartbeat re-arms, recovery probes, auto-resume, continuation dispatch, loop ticks, and auditor quiet notifies are frozen. The active goal/list item/loop and detached workers keep running. /glla resume to unfreeze.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2682,
+      "kind": "notify",
+      "content": "`Supervisor RESUMED after ${fmtElapsed(frozenMs)} — heartbeat re-arms, recovery probes, auto-resume, continuation dispatch, and auditor quiet notifies are live again.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2692,
+      "kind": "notify",
+      "content": "\"Load hold released — automation is live again.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2698,
+      "kind": "notify",
+      "content": "\"Retrying the saved main-model recovery now — one provider probe, then the configured fallback models if needed.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2709,
+      "kind": "select",
+      "content": "\"Two things can resume — which one?\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2714,
+      "kind": "notify",
+      "content": "\"Resume cancelled.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2751,
+      "kind": "notify",
+      "content": "`The ${g.policy === \"list\" ? \"list item\" : \"goal\"} is ACTIVE but idle — re-firing its continuation: ${displaySlice(g.objective, 70)}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2760,
+      "kind": "notify",
+      "content": "\"A detached completion auditor is in flight — wait for its verdict (the status line shows auditor running). /glla cancel discards the pending claim.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2764,
+      "kind": "notify",
+      "content": "\"The detached completion auditor is already running — wait for its verdict or /glla cancel to discard the pending claim.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2777,
+      "kind": "notify",
+      "content": "\"Resuming the stored completion claim — starting a detached auditor (no agent turn needed).\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2784,
+      "kind": "notify",
+      "content": "`The loop is ACTIVE — re-firing its tick (iteration ${state.loop.iteration}). If it wedges again, /loop status for the diagnostics.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2800,
+      "kind": "notify",
+      "content": "`Resuming the waiting list — starting its next item (${waitingListCount} waiting).`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2802,
+      "kind": "notify",
+      "content": "\"The waiting list remains queued because its head could not be activated. Use /list show for the reason.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2810,
+      "kind": "notify",
+      "content": "\"Nothing to resume — no paused goal/list-item, no held loop, or waiting list. /goal, /list, or /loop to start something.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2827,
+      "kind": "notify",
+      "content": "\"Cancel deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2859,
+      "kind": "notify",
+      "content": "\"Nothing to cancel — no active/paused goal/list-item, no loop. Queued list items: /list cancel; everything: /glla wipe.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2871,
+      "kind": "notify",
+      "content": "`glla audit-job ${action}: ${report.total} director${report.total === 1 ? \"y\" : \"ies\"} · ${report.live} live · ${report.dead} proven dead · ${report.ambiguous} ambiguous · ${report.bytes} bytes${report.cleanupCandidates > 0 ? ` · ${report.cleanupCandidates} old dead candidate(s)` : \"\"}.` +\n      (report.ambiguous > 0 ? \" Ambiguous locks were preserved.\" : \"\")"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2885,
+      "kind": "notify",
+      "content": "`Latest audit on this goal — ${fromGoal.model} (${fromGoal.at})\\n${sanitizeProviderAuditReport(fromGoal.report)}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2889,
+      "kind": "notify",
+      "content": "latest ? `Latest audit — ${latest.verdict} (${latest.model}, ${latest.at})\\n${sanitizeProviderAuditReport(latest.report)}` : \"No audits logged yet.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2895,
+      "kind": "notify",
+      "content": "`glla audits — this goal's history (${state.goal.auditHistory.length} verdict(s); /glla audits all for the project log)\\n${formatGoalAuditHistory(state.goal)}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2903,
+      "kind": "notify",
+      "content": "`glla audits — last ${entries.length} verdict(s) in ${ctx.cwd}\\n${formatAuditLog(entries)}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2910,
+      "kind": "notify",
+      "content": "formatGllaVersion(ctx.cwd)"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2974,
+      "kind": "notify",
+      "content": "`Bug capture failed to write ${file}: ${e instanceof Error ? e.message : String(e)}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2978,
+      "kind": "notify",
+      "content": "`Bug captured to ${rel} (${message ? \"with message\" : \"no message\"}). Durable goal state untouched.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2994,
+      "kind": "notify",
+      "content": "`No tracked subagent matches \"${id}\". /glla agents lists the current ids.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 2998,
+      "kind": "notify",
+      "content": "`\"${id}\" matches ${cands.length} tracked subagents — be more specific:\\n${cands.map((a) => `  ${a.recordId} (${a.agentType ?? \"subagent\"}, ${a.status})`).join(\"\\n\")}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 3034,
+      "kind": "notify",
+      "content": "[header, ...result.lines, ...(result.ok ? [] : [result.detail])].join(\"\\n\")"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 3054,
+      "kind": "notify",
+      "content": "`glla agents${managerAvailable ? \"\" : \" (pi-subagents manager registry not present — event evidence only)\"}\\n${renderAgentsPanel(agents, Date.now(), managerAvailable, recentHangs).join(\"\\n\")}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 3140,
+      "kind": "notify",
+      "content": "`glla status\\n${lines.join(\"\\n\")}`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 3244,
+      "kind": "notify",
+      "content": "\"Main agent fallback models cleared globally and any pending fallback switch was cancelled.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 3247,
+      "kind": "notify",
+      "content": "`Main agent fallback models: ${formatMainModelFallbacks(settings.mainModelFallbacks)}. Use /glla fallbacks clear to remove them.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 3256,
+      "kind": "notify",
+      "content": "\"/glla reset is now /glla wipe (renamed — too close to /glla resume). Nothing was done.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 3293,
+      "kind": "notify",
+      "content": "\"Bug capture deferred — the selected sessionDir is not resolved yet. Reload the host session and retry; no fallback .pi-glla tree was created.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 3301,
+      "kind": "notify",
+      "content": "`Unknown /glla action \"${trimmed}\". Use /glla to open settings; command arguments are reserved for actions.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 3334,
+      "kind": "notify",
+      "content": "[\n      fmt(\"stateRoot\", \"stateRoot\"),\n      `mainAgent: ${sessionModel} · ${sessionThinking}  [runtime]`,\n      `mainAgentFallbackModels: ${formatMainModelFallbacks(effectiveSettings.mainModelFallbacks)}  [${prov.mainModelFallbacks?.source ?? \"default\"}]`,\n      fmt(\"mainModelRetryMinutes\", \"mainModelRetryMinutes (base minutes; doubles per attempt)\"),\n      fmt(\"mainModelFailback\", \"mainModelFailback (auto/sticky)\"),\n      fmt(\"mainModelPrimaryProbeMinutes\", \"mainModelPrimaryProbeMinutes\"),\n      fmt(\"drafterModel\", \"drafterAgent (drafting only)\"),\n      fmt(\"drafterThinkingLevel\", \"drafterTh"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 3445,
+      "kind": "notify",
+      "content": "`pi-goal-list-loop-audit: session provider \"${provider}\" is not a known built-in. The auditor inherits the resolved model in-process, so this usually works — but if audits error with auth/provider failures, choose an explicit auditor model in /glla settings.`"
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 3469,
+      "kind": "notify",
+      "content": "`pi-goal-list-loop-audit: command collision on ${dupes.join(\", \")}. Another extension registered the same name; ours may be reachable as /${first.slice(1)}:2. Consider disabling the other plugin.`"
+    },
+    {
+      "file": "extensions/goal-compactor.ts",
+      "line": 210,
+      "kind": "notify",
+      "content": "`glla: compacting the transcript (${decision.reason}). Work resumes automatically after compaction lands.`"
+    },
+    {
+      "file": "extensions/goal-compactor.ts",
+      "line": 230,
+      "kind": "notify",
+      "content": "`glla: optional transcript compaction failed (${detail.slice(0, 160)}); continuing with the current transcript.`"
+    },
+    {
+      "file": "extensions/goal-continuation.ts",
+      "line": 436,
+      "kind": "notify",
+      "content": "msg"
+    },
+    {
+      "file": "extensions/goal-continuation.ts",
+      "line": 477,
+      "kind": "notify",
+      "content": "\"Send-retry storm during the completion audit — NOT pausing; the auditor's silence is expected. If pi is wedged, Escape cancels the stuck run; the stored claim survives.\""
+    },
+    {
+      "file": "extensions/goal-continuation.ts",
+      "line": 496,
+      "kind": "notify",
+      "content": "`${goalNoun()} paused: send-retry storm (${mins}m, session silent ${silent}m). Escape cancels the stuck run, then ${activeGoalSurfaceCommand(\"resume\")}. A fresh session_start rebinds it; restart pi normally only if no replacement arrives.`"
+    },
+    {
+      "file": "extensions/goal-continuation.ts",
+      "line": 600,
+      "kind": "notify",
+      "content": "\"glla: could not persist the continuation dispatch record, so no automatic turn was sent. Fix .pi-glla storage, then resume explicitly.\""
+    },
+    {
+      "file": "extensions/goal-continuation.ts",
+      "line": 825,
+      "kind": "notify",
+      "content": "msg"
+    },
+    {
+      "file": "extensions/goal-continuation.ts",
+      "line": 883,
+      "kind": "notify",
+      "content": "msg"
+    },
+    {
+      "file": "extensions/goal-continuation.ts",
+      "line": 1024,
+      "kind": "notify",
+      "content": "\"glla: the continuation retry was sent but its dispatch record could not be persisted, so no further automatic retry is scheduled. Fix .pi-glla storage, then resume explicitly.\""
+    },
+    {
+      "file": "extensions/goal-continuation.ts",
+      "line": 1092,
+      "kind": "notify",
+      "content": "msg"
+    },
+    {
+      "file": "extensions/goal-continuation.ts",
+      "line": 1156,
+      "kind": "notify",
+      "content": "\"The goal was already archived/cancelled; stale in-memory work was discarded.\""
+    },
+    {
+      "file": "extensions/goal-continuation.ts",
+      "line": 1191,
+      "kind": "notify",
+      "content": "`Replan required before continuing: ${goal.repairTarget.objective.slice(0, 140)}. The one replan turn must call propose_task_list and receive confirmation.`"
+    },
+    {
+      "file": "extensions/goal-continuation.ts",
+      "line": 1240,
+      "kind": "notify",
+      "content": "`Repaired a suspicious ${goal.policy === \"list\" ? \"list item\" : \"goal\"} from ${proposal.source}; continuing with the recorded replacement.`"
+    },
+    {
+      "file": "extensions/goal-continuation.ts",
+      "line": 1269,
+      "kind": "notify",
+      "content": "`Paused the suspicious ${goal.policy === \"list\" ? \"list item\" : \"goal\"}; a repair task was queued instead of dispatching it.`"
+    },
+    {
+      "file": "extensions/goal-continuation.ts",
+      "line": 1665,
+      "kind": "notify",
+      "content": "`Response hit the output-token cap — auto-continuing (${consecutive}/${LENGTH_CONTINUE_MAX})`"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1166,
+      "kind": "notify",
+      "content": "msg"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1209,
+      "kind": "notify",
+      "content": "msg"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1227,
+      "kind": "notify",
+      "content": "`glla: the child-stop RPC failed for ${label}; the parent was not aborted. Inspect the Agents panel and use an explicit interrupt if needed.`"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1255,
+      "kind": "notify",
+      "content": "`glla: could not request a child-specific abort for ${label}; the parent was not aborted. Inspect the Agents panel and use an explicit interrupt if needed.`"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1261,
+      "kind": "notify",
+      "content": "`glla: the manager rejected the child-specific abort for ${label}; the parent was not aborted. Inspect the Agents panel and use an explicit interrupt if needed.`"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1428,
+      "kind": "notify",
+      "content": "`Completion audit recovery could not be persisted; the claim remains auditing. Fix .pi-glla storage and retry ${activeGoalSurfaceCommand(\"resume\")}.`"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1435,
+      "kind": "notify",
+      "content": "`Completion audit blocked — no verdict (stale session). The stored claim is safe; ${activeGoalSurfaceCommand(\"resume\")} starts exactly one fresh auditor.`"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1547,
+      "kind": "notify",
+      "content": "msg"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1700,
+      "kind": "notify",
+      "content": "`glla: the BUSY turn had zero stream activity for ${Math.round(streamSilentMs / 60000)} min and automatic cleanup was unable to claim it. Use ${activeGoalSurfaceCommand(\"resume\")} or ${activeGoalSurfaceCommand(\"cancel\")} after a fresh session rebind.`"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1703,
+      "kind": "notify",
+      "content": "`glla: the session has been BUSY with zero stream activity for ${Math.round(streamSilentMs / 60000)} min — the provider stream is likely hung. Automatic cleanup will abort it after the bounded grace window.`"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1724,
+      "kind": "notify",
+      "content": "msg"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1762,
+      "kind": "notify",
+      "content": "`Completion audit blocked — no verdict. The stored claim is safe; ${activeGoalSurfaceCommand(\"resume\")} starts exactly one fresh auditor.`"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1771,
+      "kind": "notify",
+      "content": "`Completion audit interrupted — no verdict. MAIN released; ${activeGoalSurfaceCommand(\"resume\")} to continue.`"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1800,
+      "kind": "notify",
+      "content": "msg"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1845,
+      "kind": "notify",
+      "content": "msg"
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1867,
+      "kind": "notify",
+      "content": "\"glla: auto-compaction appears to be off (or not running) — context is starving and the next turn would just truncate again. Run `/compact` once, or set `compaction.enabled:true` in ~/.pi/agent/settings.json to let pi handle this automatically.\""
+    },
+    {
+      "file": "extensions/goal-heartbeat.ts",
+      "line": 1893,
+      "kind": "notify",
+      "content": "`Heartbeat: supervisor active but session stalled — re-firing continuation (stall ${flags.consecutiveStalls}/${stallEscalation > 0 ? stallEscalation : \"∞\"}).`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 280,
+      "kind": "notify",
+      "content": "\"New loop cancelled; the current objective is unchanged.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 288,
+      "kind": "notify",
+      "content": "\"Update selected — the current loop will use this refinement hint; no second loop was started.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 290,
+      "kind": "notify",
+      "content": "\"Update selected, but this cross-mode start has no safe in-place loop edit. No replacement was started.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 307,
+      "kind": "notify",
+      "content": "`Previous ${replacedGoal.policy === \"list\" ? \"list item\" : \"goal\"} was replaced by the new loop objective.\\nRecap: ${recap}`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 387,
+      "kind": "notify",
+      "content": "`Loop parked: ${reason}. No add, commit, reset, or checkout was attempted. Check out ${loop.branchName} explicitly, then /loop resume.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 702,
+      "kind": "notify",
+      "content": "\"Respec draft written — starting reconciliation against its Rules and descriptive sections.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 745,
+      "kind": "notify",
+      "content": "\"Spec file changed mid-loop — drift ledgered (spec_updated).\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 786,
+      "kind": "notify",
+      "content": "`Loop stuck (${loop.consecutiveStuck}×): ${stuckReason}`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 865,
+      "kind": "notify",
+      "content": "`Loop stopped: ${loop.stopReason}. ${loop.history.length} iterations recorded.\\nRecap: ${recap}`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 894,
+      "kind": "notify",
+      "content": "`Audit loop plateau reprieve (${reprieves}/${AUDIT_PLATEAU_MAX_REPRIEVES}): ${open} open findings — the well isn't dry, continuing.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 908,
+      "kind": "notify",
+      "content": "`Loop stopped: ${outcome.reason}. ${loop.history.length} iterations recorded.\\nRecap: ${recap}`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 933,
+      "kind": "notify",
+      "content": "`The loop ended — ${waiting} queued list item${waiting === 1 ? \"\" : \"s\"} can start again (up next: \"${head}\"). /list next starts it.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 994,
+      "kind": "notify",
+      "content": "`Loop parked: ${reason}. No destructive reset or checkout was attempted; inspect and commit the branch manually.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1020,
+      "kind": "notify",
+      "content": "`Loop parked: ${reason}. Checkout was not attempted; inspect the branch manually.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1036,
+      "kind": "notify",
+      "content": "`Loop parked: ${reason}. No success recap was written.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1045,
+      "kind": "notify",
+      "content": "`Loop work is on branch ${loop.branchName} (${loop.iteration} iterations, best ${loop.bestValue ?? \"n/a\"}).\\nRecap: ${recap}\\nMerge with: git merge ${loop.branchName} — or delete with: git branch -D ${loop.branchName}`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1093,
+      "kind": "notify",
+      "content": "`A loop is held (${displaySlice(held.target, 80)} — ${held.stopReason}); headless start refused — resume it explicitly with /loop resume.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1099,
+      "kind": "select",
+      "content": "`A loop is held: ${displaySlice(held.target, 80)} (iteration ${held.iteration} — ${held.stopReason}). Resume it instead of starting fresh?`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1107,
+      "kind": "notify",
+      "content": "\"New loop cancelled; the held loop is unchanged.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1134,
+      "kind": "notify",
+      "content": "\"branch=1 requires a git repository.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1139,
+      "kind": "notify",
+      "content": "\"branch=1 requires a clean working tree — commit or stash your changes first.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1147,
+      "kind": "notify",
+      "content": "`Failed to create scratch branch ${branchName}.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1160,
+      "kind": "notify",
+      "content": "`Loop start refused AND the branch restore failed — you are still on scratch branch ${branchName} (the measure may have left uncommitted changes blocking checkout).`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1174,
+      "kind": "notify",
+      "content": "`/loop start refused: the measure produced no number.\\nCommand: ${cfg.measureCmd}\\nFix it so it prints exactly one number, or re-run with force=1 if it only works after the agent builds something first.\\n(Non-numeric goal — research, docs, features? Use /goal: the independent auditor verifies semantically. /loop only believes a number.)`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1226,
+      "kind": "notify",
+      "content": "cfg.respecPhase === \"draft\"\n      ? `Respec big draft started: research the project and write ${path.basename(cfg.specFile!)}. Reconciliation waits for the completed draft. /loop pause and /loop stop remain available.`\n      : metricless\n      ? `Loop started (metricless spec loop — NO plateau stop): ${displaySlice(cfg.target, 60)}\\nEnds only at ${cfg.maxIterations > 0 ? `max ${cfg.maxIterations} iterations` : \"no iteration cap\"}${cfg.timeLimitHours ? ` · ${cfg.timeLimitHours}h` : \"\"}${cfg.tokenBudget ? ` · ${cfg.tokenBudget.toLocaleString()} tokens` : \"\"} · /loop stop. Every iteration must ma"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1268,
+      "kind": "notify",
+      "content": "\"Retrying the saved main-model recovery now — one provider probe, then the configured fallback models if needed.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1280,
+      "kind": "notify",
+      "content": "\"Loop dispatch stand-down cleared — retrying one continuation explicitly.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1282,
+      "kind": "notify",
+      "content": "\"A loop is already active — /loop status to inspect, /loop stop to end it.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1299,
+      "kind": "notify",
+      "content": "`Loop resume refused: branch mode requires HEAD on ${stored.branchName}, but the current branch is ${currentBranch.ok ? currentBranch.stdout : \"unknown\"}. Check out the scratch branch explicitly, then run /loop resume.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1306,
+      "kind": "notify",
+      "content": "`A goal is active — the held loop stays held. ${activeGoalSurfaceCommand(\"pause\")} or ${activeGoalSurfaceCommand(\"cancel\")} it first, then /loop resume.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1358,
+      "kind": "notify",
+      "content": "`Loop resumed: iteration ${stored.iteration}/${stored.maxIterations > 0 ? stored.maxIterations : \"∞\"} · best ${stored.bestValue ?? \"n/a\"}${boundResetNote} — ${displaySlice(stored.target, 60)}`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1365,
+      "kind": "notify",
+      "content": "\"No held loop to resume. /loop to draft one, or /loop start \\\"<target>\\\" for an infinite metricless loop.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1376,
+      "kind": "notify",
+      "content": "formatLoopRecoveryStatus(ctx)"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1379,
+      "kind": "notify",
+      "content": "\"No loop. /loop to draft one, /loop start \\\"<target>\\\" for an infinite metricless loop, or add measure=\\\"<cmd>\\\" direction=min|max for a metric loop [window=5] [max=50] [time=<hours>] [tokens=<budget>] [cadence=<seconds>]\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1409,
+      "kind": "notify",
+      "content": "lines.join(\"\\n\")"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1418,
+      "kind": "notify",
+      "content": "`/${sub} could not safely choose a loop target: ${loopStartInferenceDescription(inference)} Falling back to the normal loop drafting flow; metric design and its Confirm gate remain required.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1428,
+      "kind": "notify",
+      "content": "`${loopStartInferenceDescription(inference)} /loop start is explicit consent; starting the inferred target in the existing metricless form. Add measure=\\\"<cmd>\\\" direction=min|max when a numeric metric is intended.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1445,
+      "kind": "notify",
+      "content": "`/loop start: ${err instanceof Error ? err.message : String(err)}\\n(Non-numeric goal — research, docs, features? Use /goal: the auditor verifies semantically. /loop only believes a number. Or /loop with no args to draft.)`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1470,
+      "kind": "notify",
+      "content": "\"No active loop to refine — /loop start first.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1477,
+      "kind": "notify",
+      "content": "\"That loop stopped on a broken measure — the hint was not queued. Have the agent repair it via propose_loop_refine (it test-runs the new measure), then /loop resume.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1480,
+      "kind": "notify",
+      "content": "`That loop ended (${stored.stopReason ?? \"stopped\"}) — the hint was not queued. /loop start begins a fresh run.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1485,
+      "kind": "notify",
+      "content": "\"Usage: /loop refine <what the spec should capture better> — the suggestion rides the next iteration's prompt; the agent proposes via propose_loop_refine and you confirm.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1495,
+      "kind": "notify",
+      "content": "\"Refine hint queued — it rides the next iteration's prompt. Resuming the held loop now.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1498,
+      "kind": "notify",
+      "content": "\"Refine hint queued — it rides the next iteration's prompt.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1504,
+      "kind": "notify",
+      "content": "\"No loop to stop.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1530,
+      "kind": "notify",
+      "content": "`Loop stopped after ${state.loop.iteration} iterations. Best: ${state.loop.bestValue ?? \"n/a\"}.\\nRecap: ${recap}`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1546,
+      "kind": "notify",
+      "content": "\"No loop to pause.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1550,
+      "kind": "notify",
+      "content": "`Loop is not active (${state.loop.stopReason ?? \"held\"}). Use /loop resume to continue, or /loop status to inspect.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1564,
+      "kind": "notify",
+      "content": "`Loop paused after ${state.loop.iteration} iterations. Best: ${state.loop.bestValue ?? \"n/a\"}.\\nUse /loop resume to continue.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1576,
+      "kind": "notify",
+      "content": "\"No loop to finish.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1600,
+      "kind": "notify",
+      "content": "`Loop finished (${reason}) after ${state.loop.iteration} iterations. Best: ${state.loop.bestValue ?? \"n/a\"}.\\nRecap: ${recap}`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1626,
+      "kind": "notify",
+      "content": "`Heads up: a ${state.goal.status} one-shot audit goal exists in this session — the audit loop SUPERSEDES it (one pass + fixes IS the loop's job). ${activeGoalSurfaceCommand(\"cancel\")} clears it; one audit initiative per session.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1662,
+      "kind": "notify",
+      "content": "\"No SPEC.md / spec.md in the project root — starting the dedicated big draft. Reconciliation waits until the draft is written and handed off.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1681,
+      "kind": "select",
+      "content": "\"Both SPEC.md and spec.md exist in the root — which one is the spec?\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1686,
+      "kind": "notify",
+      "content": "\"respec cancelled.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1690,
+      "kind": "notify",
+      "content": "`Using ${path.basename(specPath)} as the spec. Both files exist — worth consolidating; the loop treats only ${path.basename(specPath)} as the spec.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1699,
+      "kind": "notify",
+      "content": "`${path.basename(specPath)} exists but is structurally incomplete — starting the dedicated big draft to finish it before reconciliation.`"
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1733,
+      "kind": "notify",
+      "content": "\"A loop is already active — /loop status to inspect, /loop stop to end it.\""
+    },
+    {
+      "file": "extensions/goal-loop.ts",
+      "line": 1745,
+      "kind": "notify",
+      "content": "\"A loop is already active — /loop status to inspect, /loop stop to end it.\""
+    },
+    {
+      "file": "extensions/goal-objective-conflict.ts",
+      "line": 79,
+      "kind": "notify",
+      "content": "`Cannot start ${label(incoming)} while another objective is live:\\n${currentText}\\nUse the existing ${label(current[0]!.kind)} edit command, or explicitly cancel/replace it first.`"
+    },
+    {
+      "file": "extensions/goal-objective-conflict.ts",
+      "line": 86,
+      "kind": "select",
+      "content": "`An objective is already active:\\n${currentText}\\n\\nNew ${label(incoming)}: ${objective.slice(0, 180)}\\nChoose how to proceed:`"
+    },
+    {
+      "file": "extensions/goal-objective-conflict.ts",
+      "line": 92,
+      "kind": "notify",
+      "content": "\"The active objective changed while the conflict dialog was open; no update or replacement was applied. Re-run the new objective command to choose again.\""
+    },
+    {
+      "file": "extensions/goal-recovery.ts",
+      "line": 389,
+      "kind": "notify",
+      "content": "\"glla: session_compact did not release the overflow — walking the fallback chain to a larger-context model.\""
+    },
+    {
+      "file": "extensions/goal-recovery.ts",
+      "line": 454,
+      "kind": "notify",
+      "content": "\"glla: stale ctx detected — host supplied a fresh-session capability; rehydrating the goal now.\""
+    },
+    {
+      "file": "extensions/goal-recovery.ts",
+      "line": 605,
+      "kind": "notify",
+      "content": "`Main-model recovery stopped automatic probes: ${sanitizeProviderDisplayText(why)}. Work is saved; check the provider or switch /model, then ${resumeCmd}.`"
+    },
+    {
+      "file": "extensions/goal-recovery.ts",
+      "line": 813,
+      "kind": "notify",
+      "content": "`Main session model failover: ${current} → backup ${backupIndex}/${refs.length} ${candidateRef}. The next supervised turn tests it; a healthy fallback schedules a preferred-primary failback probe.`"
+    },
+    {
+      "file": "extensions/goal-recovery.ts",
+      "line": 927,
+      "kind": "notify",
+      "content": "`Main model recovery: ${sanitizeProviderDisplayText(normalized.reason)}. Trying again in ${minutes}m; work is saved and will not be abandoned. The agent can retry now with resume_goal.`"
+    },
+    {
+      "file": "extensions/goal-recovery.ts",
+      "line": 1178,
+      "kind": "notify",
+      "content": "aggressive\n    ? \"Manual resume reopens event-driven main-model recovery — one provider probe, then configured fallback models as long as the failure remains recoverable.\"\n    : \"Manual resume starts a fresh bounded main-model recovery window — one provider probe, then configured fallback models if needed.\""
+    },
+    {
+      "file": "extensions/goal-recovery.ts",
+      "line": 1278,
+      "kind": "notify",
+      "content": "`Main-model failback skipped ${primary} because forbiddenModels excludes it; the current fallback remains selected.`"
+    },
+    {
+      "file": "extensions/goal-recovery.ts",
+      "line": 1338,
+      "kind": "notify",
+      "content": "`Main session model failed back to ${primary} from ${current ?? \"the fallback\"}; the next supervised turn tests the primary.`"
+    },
+    {
+      "file": "extensions/goal-recovery.ts",
+      "line": 1409,
+      "kind": "notify",
+      "content": "`Main model recovery probe: continuing on ${current}; primary will be tested after this supervised turn.`"
+    },
+    {
+      "file": "extensions/goal-recovery.ts",
+      "line": 1542,
+      "kind": "notify",
+      "content": "`Main model recovery probe: retrying ${current} after visiting the configured fallback chain.`"
+    },
+    {
+      "file": "extensions/goal-recovery.ts",
+      "line": 1604,
+      "kind": "notify",
+      "content": "`Main model recovery probe: ${targetTryLabel} ${target} selected; sending one supervised probe.`"
+    },
+    {
+      "file": "extensions/goal-recovery.ts",
+      "line": 1768,
+      "kind": "notify",
+      "content": "`Main session fallback ${current} is healthy; the preferred primary ${preferredPrimary} will be probed automatically.`"
+    },
+    {
+      "file": "extensions/goal-recovery.ts",
+      "line": 1770,
+      "kind": "notify",
+      "content": "\"The stored completion audit is retrying after the healthy main-model fallback.\""
+    },
+    {
+      "file": "extensions/goal-recovery.ts",
+      "line": 1825,
+      "kind": "notify",
+      "content": "`Main session model recovered on ${current ?? \"the active model\"}; automatic recovery is cleared${resumed ? ` and the ${resumed} is resuming` : auditRetryStarted ? \" and the stored completion audit is retrying\" : \"\"}.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 443,
+      "kind": "notify",
+      "content": "\"Could not persist the repair target; the original queued item remains unchanged.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 460,
+      "kind": "notify",
+      "content": "\"Could not persist the repair target; the queued repair remains without promotion metadata.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 621,
+      "kind": "notify",
+      "content": "`Automatic retry ${retryAttempt}/${retryMaxAttempts} starting — the earlier ${goal.policy === \"list\" ? \"list item\" : \"goal\"} turn was aborted after ${silentMinutes}m of zero stream activity. If it hangs again, GLLA keeps retrying within this budget before requiring ${activeGoalSurfaceCommand(\"resume\")}.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 642,
+      "kind": "notify",
+      "content": "`Automatic retry ${retryAttempt}/${retryMaxAttempts} starting — the loop was stopped after a zero-stream abort. GLLA keeps retrying within this budget; if it hangs again after the budget, it stays stopped for /loop resume.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 746,
+      "kind": "notify",
+      "content": "message"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 749,
+      "kind": "notify",
+      "content": "\"glla: provider reports context overflow — compacting instead of retrying the same prompt.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 761,
+      "kind": "notify",
+      "content": "\"glla: the provider refused the request itself (deterministic client error). Switch model or trim the request, then reply to retry.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 768,
+      "kind": "notify",
+      "content": "`glla: provider auth failed (${display}) — fix the key or switch model; not retrying blindly.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 774,
+      "kind": "notify",
+      "content": "`glla: provider billing wall (${display}) — manual action needed; not retrying.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 785,
+      "kind": "notify",
+      "content": "delay >= 90_000\n        ? `glla: provider error (${display}) — retrying automatically in ${Math.max(1, Math.round(delay / 60_000))}m.`\n        : `glla: provider error (${display}) — retrying automatically.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 812,
+      "kind": "notify",
+      "content": "\"glla: automatic retry could not be delivered. Reply to retry.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 897,
+      "kind": "notify",
+      "content": "message"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 908,
+      "kind": "notify",
+      "content": "refusal"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1169,
+      "kind": "notify",
+      "content": "`glla: ${missing.length} agent tool(s) were hidden by an external tool allowlist (e.g. a modlist profile) and have been re-activated (${list}). Add them to your allowlist profile to silence this.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1268,
+      "kind": "notify",
+      "content": "\"glla: this fresh session took over the state root — the previous live session is now read-only. Your new objective is the real one; the old session's disk state is preserved.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1273,
+      "kind": "notify",
+      "content": "\"glla: this session could not own the working-directory state root (a worker contact, or an unresolved sessionDir) — it is read-only to prevent competing goal/loop writes. /glla owner inspects the holder; /glla takeover resolves it with confirmation.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1365,
+      "kind": "notify",
+      "content": "\"glla: context compaction failed — rotated to a configured fallback model and queued one durable recovery probe.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1387,
+      "kind": "notify",
+      "content": "`Loop parked: ${reason}. ${action}`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1398,
+      "kind": "notify",
+      "content": "`${goalNoun()} parked: ${reason}. ${action}`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1443,
+      "kind": "notify",
+      "content": "`glla: session compacting — stall counter reset, grace timer started. The widget will show ⏳ compacting… for the next 3 minutes.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1656,
+      "kind": "notify",
+      "content": "quotaEvidence\n            ? `Subagent quota signal (${quotaEvidence.signal}). Parking on this provider error auto-retries at the reset window instead of waiting for manual action — keep working if any non-quota work remains, else pause and the wait re-fires on its own.`\n            : \"Subagent provider/runtime error. Retry the subagent, choose a configured model if needed, or do the work inline.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1801,
+      "kind": "notify",
+      "content": "\"glla: session rebound but the extension handle is still stale — waiting for another fresh session_start; restart pi normally only if no replacement arrives, then /glla resume.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1835,
+      "kind": "notify",
+      "content": "`glla: recovered terminal archive for ${archiveRecovery.goalId} after an interrupted cleanup.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1837,
+      "kind": "notify",
+      "content": "`glla: terminal archive ${archiveRecovery.goalId} is durable but cleanup is still pending; persistence will retry at the next lifecycle boundary.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1846,
+      "kind": "notify",
+      "content": "`glla: prior terminal archive ${archiveRecovery.goalId} is durable but its old active projection is still present; cleanup will retry safely.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1864,
+      "kind": "notify",
+      "content": "`glla: restored ${hydratedFromDisk} queued list item(s) from durable sidecars.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1950,
+      "kind": "notify",
+      "content": "`glla subagent override skipped [${skip.name}]: ${overrideFailureCopy.display}`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1956,
+      "kind": "notify",
+      "content": "`glla repaired managed subagent override(s): ${sync.repaired.join(\", \")} — the file(s) were missing or altered externally; re-written per your subagent settings.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 1962,
+      "kind": "notify",
+      "content": "`glla subagent override sync failed: ${err instanceof Error ? err.message : String(err)}`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2053,
+      "kind": "notify",
+      "content": "`Completion audit blocked — no verdict. The claim is safe; load the session, then ${activeGoalSurfaceCommand(\"resume\")} to retry.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2061,
+      "kind": "notify",
+      "content": "`glla: pi has not loaded a conversation yet — waiting before auto-resume. Load/resume the session, or explicitly run ${activeGoalSurfaceCommand(\"resume\")} or /loop start.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2112,
+      "kind": "notify",
+      "content": "`Main-model recovery stopped automatic probes — the work is safe; ${recoveryResumeCmd} starts a fresh bounded window after you check the provider.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2118,
+      "kind": "notify",
+      "content": "`Restored main-model recovery (${mainRecovery.kind}) — ${mainRecovery.pendingModelSwitch ? `reconciling ${mainRecovery.pendingModelSwitch}` : delay > 0 ? `next probe in ${Math.max(1, Math.ceil(delay / 60_000))}m` : \"probe is due now\"}.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2126,
+      "kind": "notify",
+      "content": "`Main-model recovery is waiting with the work safe — ${recoveryResumeCmd} retries the provider, or enable Auto-resume in /glla settings.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2133,
+      "kind": "notify",
+      "content": "`Restored preferred-primary failback — the primary is selected and needs one supervised probe.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2138,
+      "kind": "notify",
+      "content": "`Restored preferred-primary failback — next probe ${delay > 0 ? `in ${Math.max(1, Math.ceil(delay / 60_000))}m` : \"is due now\"}.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2142,
+      "kind": "notify",
+      "content": "`Preferred-primary failback is waiting with the fallback serving — ${recoveryResumeCmd} probes the primary, or enable Auto-resume in /glla settings.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2180,
+      "kind": "notify",
+      "content": "`Stored completion claim is waiting on an auditor provider retry — ${retryResumeCmd} retries it, or enable Auto-resume in /glla settings.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2189,
+      "kind": "notify",
+      "content": "\"Auto-resume fired (event: session start). Continue working.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2218,
+      "kind": "notify",
+      "content": "`Resuming held loop (iteration ${held.iteration}/${held.maxIterations > 0 ? held.maxIterations : \"∞\"}, best ${held.bestValue ?? \"n/a\"}): ${displaySlice(held.target, 60)}`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2257,
+      "kind": "notify",
+      "content": "`Resuming loop (iteration ${l.iteration}/${l.maxIterations > 0 ? l.maxIterations : \"∞\"}, best ${l.bestValue ?? \"n/a\"}, stall ${l.stallCount}/${l.plateauWindow}): ${displaySlice(l.target, 60)}`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2265,
+      "kind": "notify",
+      "content": "`Loop held on restore: ${displaySlice(l.target, 60)} — /loop resume to continue, or enable Auto-resume in /glla settings for session-load recovery.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2288,
+      "kind": "notify",
+      "content": "`Resuming ${state.goal.policy === \"list\" ? \"list item\" : \"goal\"}: ${displaySlice(state.goal.objective, 70)}${listQueue().length > 0 ? ` (+${listQueue().length} queued)` : \"\"}${staleRearmedOnSessionStart ? \" — re-armed after the stale-host boundary\" : wasInterrupted ? \" — auto-resumed after the stale-handle interrupt\" : \"\"}`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2320,
+      "kind": "notify",
+      "content": "`${isListItem ? \"List item\" : \"Goal\"} held on restore: ${displaySlice(state.goal.objective, 70)}${queued > 0 ? ` (+${queued} waiting in the list)` : \"\"} — ${resumeCmd} to continue.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2327,
+      "kind": "notify",
+      "content": "`Restored ${state.goal.policy === \"list\" ? \"list item\" : \"goal\"}: ${displaySlice(state.goal.objective, 70)}${listQueue().length > 0 ? ` (+${listQueue().length} queued)` : \"\"}`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2336,
+      "kind": "notify",
+      "content": "`List has ${listQueue().length} item(s) waiting — /list next to activate the head.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2362,
+      "kind": "notify",
+      "content": "\"Restored an interrupted approval: the archived summary for the approved goal is below.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2387,
+      "kind": "notify",
+      "content": "`Completion audit remains parked after its one automatic recovery attempt. The stored claim is safe; ${activeGoalSurfaceCommand(\"resume\")} retries it explicitly.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2399,
+      "kind": "notify",
+      "content": "`Completion audit blocked — no verdict. The stored claim is safe; ${activeGoalSurfaceCommand(\"resume\")} retries the isolated auditor.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2412,
+      "kind": "notify",
+      "content": "`glla: deferred /list operation could not be replayed after session_start: ${operation.slice(0, 120)}`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2444,
+      "kind": "notify",
+      "content": "`Loaded without starting: your goal/list/loop state is restored and shown below, but automation is HELD for your decision. /goal resume, /list resume,${loopResumeHint} or /list next starts work; enable Auto-resume in /glla settings to restore load-time automation.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2472,
+      "kind": "notify",
+      "content": "banner.join(\"\\n\")"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2503,
+      "kind": "notify",
+      "content": "`glla: response truncated ${LENGTH_CONTINUE_MAX}× at ${percent !== null ? `${percent.toFixed(1)}%` : \"near-full\"} context — rotated to a larger-context backup model with a fresh truncation budget.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2513,
+      "kind": "notify",
+      "content": "`glla: response truncated ${LENGTH_CONTINUE_MAX}× at ${percent !== null ? `${percent.toFixed(1)}%` : \"near-full\"} context — the prompt no longer fits this model. Yielding to pi auto-compaction; work stays active and resumes with a fresh truncation budget after compaction lands.${recentCompact ? \" A compact-and-retry already failed within the last 90s, so the fallback rotation above is the next recourse.\" : \"\"}`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2515,
+      "kind": "notify",
+      "content": "message"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2640,
+      "kind": "notify",
+      "content": "\"glla: rotated to a larger-context backup model. The next turn will retry on the new model.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2645,
+      "kind": "notify",
+      "content": "buildStarvationLadderMessage({ percent: typeof contextUsage?.percent === \"number\" ? contextUsage.percent : null, streak: starved.streak, recentCompact: sinceLastCompactMs < COMPACTION_GRACE_MS })"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2648,
+      "kind": "notify",
+      "content": "message"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2659,
+      "kind": "notify",
+      "content": "`glla: response hit the output-token cap ${LENGTH_CONTINUE_MAX}× in a row — stepping aside. Ask the model to split the work into smaller pieces.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2688,
+      "kind": "notify",
+      "content": "`glla: response hit the output-token cap ${LENGTH_CONTINUE_MAX}× in a row — truncation budget restarted (relentless episode ${episode.episodes} of ${LENGTH_EXHAUSTION_MAX_EPISODES - 1}). Split the work into smaller pieces across turns; a repeat parks for manual action.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2702,
+      "kind": "notify",
+      "content": "`glla: response hit the output-token cap ${LENGTH_CONTINUE_MAX}× in a row — the loop stopped. Ask the model to split the work into smaller pieces.\\nRecap: ${recap}`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2714,
+      "kind": "notify",
+      "content": "`glla: response hit the output-token cap ${LENGTH_CONTINUE_MAX}× in a row — truncation budget restarted (relentless episode ${episode.episodes} of ${LENGTH_EXHAUSTION_MAX_EPISODES - 1}). Split the work into smaller pieces across turns; a repeat stops the loop.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2809,
+      "kind": "notify",
+      "content": "`Loop stopped: stalled (${HEARTBEAT_MAX_NUDGES} unproductive turns). /loop start to begin a new one.\\nRecap: ${recap}`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2822,
+      "kind": "notify",
+      "content": "`${goalNoun()} paused: stalled (${HEARTBEAT_MAX_NUDGES} unproductive turns).`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2876,
+      "kind": "notify",
+      "content": "`Loop stopped: ${loop.stopReason}\\nRecap: ${recap}`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2909,
+      "kind": "notify",
+      "content": "\"Draft handoff correction could not be delivered. Reply to continue drafting.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2963,
+      "kind": "notify",
+      "content": "result.fired\n            ? `glla: compacted at ${percent.toFixed(1)}% context — transcript trimmed, goal and tasks untouched.`\n            : `glla: context at ${percent.toFixed(1)}% and compaction could not start. Past 90% this is the over-cap ladder (retry /compact, larger model, or /new + resume).`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2970,
+      "kind": "notify",
+      "content": "`glla: context at ${percent.toFixed(1)}% — compaction failed. Run /compact, or expect the over-cap ladder past 90%.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 2995,
+      "kind": "notify",
+      "content": "`${goalNoun()} paused: token limit exceeded (${used.toLocaleString()} > ${limit.toLocaleString()}). Raise Token limit in /glla settings, or set it to 0 to disable.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 3047,
+      "kind": "notify",
+      "content": "`Goal paused: ${failureCopy.sensitive ? \"provider output-token wall\" : reason}. Re-scope into smaller pieces, then ${activeGoalSurfaceCommand(\"resume\")}.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 3075,
+      "kind": "notify",
+      "content": "`${goalNoun()} parked: ${failureCopy.sensitive ? \"provider error\" : reason} — 6 brakes in a row. An automatic probe is scheduled for :00:30 after the next hour starts.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 3090,
+      "kind": "notify",
+      "content": "\"Hourly provider retry: resuming after the hour boundary.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 3113,
+      "kind": "notify",
+      "content": "`Goal paused: ${failureCopy.sensitive ? \"provider error\" : reason}. Automatic retries continue; ${activeGoalSurfaceCommand(\"resume\")} retries now.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 3133,
+      "kind": "notify",
+      "content": "\"Auto-resumed after the 5-error brake (cooldown elapsed).\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 3160,
+      "kind": "notify",
+      "content": "\"Goal paused: 5 consecutive aborts (user interrupted).\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 3168,
+      "kind": "notify",
+      "content": "`${goalNoun()} standing down — turn aborted by user (not counted toward stalls). ${activeGoalSurfaceCommand(\"resume\")} to continue, ${activeGoalSurfaceCommand(\"cancel\")} to stop.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 3267,
+      "kind": "notify",
+      "content": "configFailure.reason"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 3344,
+      "kind": "notify",
+      "content": "`Forbidden model ${to} was blocked by the glla policy gate (forbiddenModels) and reverted to ${from}.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 3346,
+      "kind": "notify",
+      "content": "`Forbidden model ${to} selected — the glla policy gate blocks it, but pi did not accept the revert. Switch away manually.`"
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 3362,
+      "kind": "notify",
+      "content": "\"Manual model selection cancelled the automatic main-model recovery cycle. Resume the goal when ready.\""
+    },
+    {
+      "file": "extensions/loops/goal-activation.ts",
+      "line": 3498,
+      "kind": "notify",
+      "content": "`Subagent run${who} failed transiently (${terminal.detail}) — safe to re-dispatch now.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 1145,
+      "kind": "notify",
+      "content": "\"Goal archived, but its chat summary could not be persisted. Review the archived completion summary.\""
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 1366,
+      "kind": "notify",
+      "content": "\"Stored completion claim was not persisted for auditor recovery; no auditor was launched. Fix .pi-glla storage and retry explicitly.\""
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 1377,
+      "kind": "notify",
+      "content": "origin === \"manual\"\n    ? \"Manual /goal verify — starting the detached auditor now (no agent turn needed).\"\n    : origin === \"agent\"\n      ? \"Agent-resumed completion claim — starting the detached auditor now (no agent turn needed).\"\n    : origin === \"session-recovery\"\n      ? \"Fresh session recovered the interrupted completion audit — starting a detached retry for the stored claim.\"\n      : \"Auditor provider retry is due — starting a detached retry with your stored completion claim (no agent turn needed).\""
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 1407,
+      "kind": "notify",
+      "content": "`Auditor model issue: ${modelFailureCopy.display}. ${modelFailureCopy.action}`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 1687,
+      "kind": "notify",
+      "content": "`Detached auditor failed on ${auditorCandidateLabel(from)} — retrying with ${auditorCandidateLabel(to)}. This is infrastructure, not a verdict.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 1707,
+      "kind": "notify",
+      "content": "\"Stored completion audit failed before producing a result; the claim is parked for a bounded recovery attempt.\""
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 1805,
+      "kind": "notify",
+      "content": "`Stale auditor verdict REFUSED: goal ${goalId} revision is ${state.goal.revision ?? 0} but the auditor captured ${result.goalRevision.revision}. The goal moved on during the audit — its verdict was not applied. Run /goal verify again to audit the current state.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 1959,
+      "kind": "notify",
+      "content": "`Regression shield blocked completion ${shieldStreak}× consecutively (hard cap ${shieldCap}). ${activeGoalStatusCommand()} for the reports; pick accept / resume / tweak / cancel.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 1972,
+      "kind": "notify",
+      "content": "`Regression shield blocked completion: the auditor approved, but ${detail}.\\n\\nCall complete_goal again; the next audit will be told to quote raw evidence for each item.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2067,
+      "kind": "notify",
+      "content": "cursorPersistenceFailed\n          ? `Auditor recovery stopped because its durable cursor could not be saved. The completion claim remains stored; ${activeGoalSurfaceCommand(\"resume\")} retries it explicitly.`\n          : `Auditor fallback candidates are exhausted. The completion claim remains stored with no verifier verdict; inspect the provider setup, then ${activeGoalSurfaceCommand(\"resume\")}.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2126,
+      "kind": "notify",
+      "content": "timeoutInfrastructure\n        ? `Completion auditor timed out (infrastructure, not a verdict). The stored claim is safe; ${persistentRecovery ? \"aggressive mode will keep retrying it\" : `fix the command/model and ${activeGoalSurfaceCommand(\"resume\")} to retry it`}.`\n        : `Completion auditor stopped before a verdict (infrastructure, not a judgment). The stored claim is safe; ${persistentRecovery ? \"aggressive mode will keep retrying it\" : `fix the auditor/session issue and ${activeGoalSurfaceCommand(\"resume\")} to retry it`}.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2202,
+      "kind": "notify",
+      "content": "`Auditor slowed to a ${cadence} re-probe after ${identical.auditorConsecutiveIdenticalFailures} identical infra failures (${deadChain}) — the claim stays stored and retries on its own. Fix the auditor/model setup to make the next attempt land, or ${activeGoalSurfaceCommand(\"resume\")} to retry now.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2226,
+      "kind": "notify",
+      "content": "`Auditor ladder horizon reached after ${plan.attempt} bounded attempts — the claim stays stored and re-probes itself every ${cadence}. Fix the provider, or ${activeGoalSurfaceCommand(\"resume\")} to retry now.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2246,
+      "kind": "notify",
+      "content": "`Auditor still failing — next auto-retry in ${fmtRetryDelay(plan.retryAfterSec)} (your completion claim is stored; it retries automatically, and the agent can retry now with resume_goal).`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2292,
+      "kind": "notify",
+      "content": "`Auditor (${origin}): IMPOSSIBLE (partial) on ${partialStreak} consecutive rounds (hard cap ${partialCap}). ${activeGoalStatusCommand()} for the reports; pick accept / tweak / cancel.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2305,
+      "kind": "notify",
+      "content": "`Auditor (${origin}): part of the goal is IMPOSSIBLE — ${reason.slice(0, 140)}. aggressiveMode: narrowing and continuing.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2321,
+      "kind": "notify",
+      "content": "`Auditor (${origin}): part of the goal is IMPOSSIBLE — ${reason.slice(0, 140)}. Goal paused for an explicit narrowing decision.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2341,
+      "kind": "notify",
+      "content": "`Goal archived as aborted — auditor (${origin}) marked it IMPOSSIBLE: ${reason.slice(0, 180)}.\\nRecap: ${recap}`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2394,
+      "kind": "notify",
+      "content": "`Auditor automation paused: ${stopReason}. The objection is preserved as TODOs; inspect it before ${activeGoalSurfaceCommand(\"resume\")}.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2435,
+      "kind": "notify",
+      "content": "`Auditor disapproved ${effectiveStreak}× consecutively (hard cap ${hardCap}, binds aggressive mode)${graderStable ? \"\" : \" — across alternating ladder rungs\"}. ${activeGoalStatusCommand()} for the reports; pick accept / resume / tweak / cancel.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2454,
+      "kind": "notify",
+      "content": "`Auditor disapproved ${trailingDisapprovals}× (cap); aggressive mode keeps the goal active with durable TODOs.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2469,
+      "kind": "notify",
+      "content": "`Auditor disapproved ${trailingDisapprovals}× (cap ${auditCap}); the goal is paused for an explicit decision.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2485,
+      "kind": "notify",
+      "content": "result.disapproved\n      ? `Auditor (${origin}) DISAPPROVED — resuming; the report is in ${activeGoalStatusCommand()}.`\n      : result.impossible\n        ? `Auditor (${origin}): goal IMPOSSIBLE — ${(result.impossibleReason ?? \"\").slice(0, 100)}. Resuming; consider ${activeGoalSurfaceCommand(\"tweak\")}.`\n        : `Auditor (${origin}) hit an infrastructure error — resuming; re-call complete_goal when ready.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2602,
+      "kind": "notify",
+      "content": "\"Postaudit /goal proposal NOT delivered — the current session is stale or handing off; the follow-up was not counted as proposed.\""
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2609,
+      "kind": "notify",
+      "content": "`Postaudit /goal proposal NOT delivered: ${err instanceof Error ? err.message : String(err)} — the follow-up never reached the session. Wait for a fresh session_start, then retry.`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2616,
+      "kind": "notify",
+      "content": "message"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2620,
+      "kind": "notify",
+      "content": "`Postaudit suppressed: ${outcome.suppressedReason}`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2630,
+      "kind": "notify",
+      "content": "`↳ review written: ${relPath}${outcome.enqueued ? ` (${outcome.enqueued} enqueued to /list)` : \"\"}${outcome.proposed ? ` (${outcome.proposed} /goal proposed)` : \"\"}`"
+    },
+    {
+      "file": "extensions/loops/goal-auditor-hooks.ts",
+      "line": 2636,
+      "kind": "notify",
+      "content": "`Postaudit failed (non-fatal): ${err instanceof Error ? err.message : String(err)}`"
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 443,
+      "kind": "notify",
+      "content": "\"Configured drafter models were unavailable; drafting stays on the current session model. Main and auditor recovery chains are unchanged.\""
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 469,
+      "kind": "notify",
+      "content": "\"Configured drafter models were unavailable; drafting stays on the current session model. Main and auditor recovery chains are unchanged.\""
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 492,
+      "kind": "notify",
+      "content": "`Drafter model ${selected.ref} could not be selected; drafting stays on the current session model.`"
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 507,
+      "kind": "notify",
+      "content": "`Drafting uses ${selected.ref} temporarily; the session model will be restored when drafting ends.`"
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 544,
+      "kind": "notify",
+      "content": "\"The drafting model could not be restored; the current model remains active. Main and auditor settings were not changed.\""
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 547,
+      "kind": "notify",
+      "content": "\"The drafting model could not be restored; the current model remains active. Main and auditor settings were not changed.\""
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 609,
+      "kind": "notify",
+      "content": "`Drafting provider failed; retrying the existing interview on ${pick.ref} after ${Math.round(delayMs / 1000)}s.`"
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 617,
+      "kind": "notify",
+      "content": "\"The dedicated drafter chain is exhausted; the drafting interview remains open on the current model. Retry the drafting command when ready.\""
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 663,
+      "kind": "notify",
+      "content": "\"Could not durably promote the repair; the original queued order remains unchanged.\""
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 683,
+      "kind": "notify",
+      "content": "\"Could not persist the repair item; the original queued item remains unchanged.\""
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 711,
+      "kind": "notify",
+      "content": "head\n        ? `The queued item cannot start while a loop owns the surface — \"${head.objective.slice(0, 80)}\" stays queued. /loop stop the loop (or let its bounds end it), then /list next starts the item.`\n        : \"A loop is active — one active thing at a time. /loop stop it first, then /list next.\""
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 752,
+      "kind": "notify",
+      "content": "`List item #${opts?.displayLabel ?? n} is a group with ${open} open subtask${open === 1 ? \"\" : \"s\"} — complete its subtasks first (they run in queue order, then the group closes itself).`"
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 794,
+      "kind": "notify",
+      "content": "\"The queued item looks like reviewer/verification text, so it was not activated; a safe repair item is next in the list.\""
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 812,
+      "kind": "notify",
+      "content": "\"List activation paused — its durable queue sidecar could not be removed, so the item remains queued. Fix disk access and retry.\""
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 841,
+      "kind": "notify",
+      "content": "\"Could not restore the list sidecar after activation failed; fix disk access before retrying.\""
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 849,
+      "kind": "notify",
+      "content": "`List item #${n} activated (${rest.length} remaining): ${displaySlice(goal.objective, 80)}`"
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 899,
+      "kind": "notify",
+      "content": "`Could not start drafting: the ${target} prompt template could not be loaded. Fix the packaged file and retry.`"
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 960,
+      "kind": "notify",
+      "content": "\"glla: can't start the drafting interview — this session's extension handle is stale (pi session replacement). A fresh session_start will rebind it; if no replacement arrives, restart pi normally, then re-run the command.\""
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 964,
+      "kind": "notify",
+      "content": "seed\n        ? seededHint\n        : `${label} started. The agent will grill until the contract is concrete, then ${tool} opens a Confirm dialog. No work begins before confirmation.`"
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 982,
+      "kind": "notify",
+      "content": "\"glla: can't start the drafting interview — this session's extension handle is stale (pi session replacement). A fresh session_start will rebind it; if no replacement arrives, restart pi normally, then re-run the command.\""
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 984,
+      "kind": "notify",
+      "content": "`glla: couldn't start the drafting interview (${err instanceof Error ? err.message : String(err)}) — try again.`"
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 1006,
+      "kind": "notify",
+      "content": "`Recovered the goal mode (${healed === \"list\" ? \"list item\" : \"goal\"}) from the durable goal file — the corrupted in-memory mode flag was self-healed; no restart needed.`"
+    },
+    {
+      "file": "extensions/loops/goal-list-queue.ts",
+      "line": 1018,
+      "kind": "notify",
+      "content": "`The goal mode flag is corrupted (${String(policy).slice(0, 80)}) and could not be recovered from the durable goal file — list/goal actions may refuse until the goal file is repaired or the goal is re-created.`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 401,
+      "kind": "notify",
+      "content": "`Loop stopped: ${threshold} refires produced no turn — the continuation is not landing. Escape cancels a stuck run, then /loop resume (the loop holds on restore). A fresh session_start rebinds it; restart pi normally only if no replacement arrives.`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 412,
+      "kind": "notify",
+      "content": "`${goalNoun()} paused: ${threshold} refires produced no turn. Escape cancels a stuck run, then ${activeGoalSurfaceCommand(\"resume\")}. A fresh session_start rebinds it; restart pi normally only if no replacement arrives.`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 637,
+      "kind": "notify",
+      "content": "message"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 640,
+      "kind": "notify",
+      "content": "\"glla: prompt-policy settlement could not fully persist its stop boundary. Automatic work is held in this process; fix .pi-glla storage and verify the durable state before resuming.\""
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 809,
+      "kind": "notify",
+      "content": "`⚠ Persistence degraded: ${err?.what ?? \"disk write\"} failed (${(err?.error ?? \"unknown\").slice(0, 80)}). State lives in RAM and re-syncs on the next successful write — .pi-glla may be missing recent entries. Fix the disk (space/permissions) and it self-heals.`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 816,
+      "kind": "notify",
+      "content": "\"Persistence recovered — .pi-glla writes are landing again.\""
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 837,
+      "kind": "notify",
+      "content": "\"New objective not started — the durable goal transaction could not be written. Fix .pi-glla storage and retry.\""
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 877,
+      "kind": "notify",
+      "content": "`Previous ${replaced.policy === \"list\" ? \"list item\" : \"goal\"} could not be archived safely — its objective is preserved in the ledger, and the new objective starts anyway.`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 887,
+      "kind": "notify",
+      "content": "`Goal [${replaced.id}]: ${displaySlice(replaced.objective, 60)} was superseded and archived — its scheduled auto-resume (${new Date(Date.parse(replaced.pauseResumeAt!)).toLocaleTimeString()}) was cancelled. ${verb} <objective> to recreate it.\\nRecap: ${replacementRecap}`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 893,
+      "kind": "notify",
+      "content": "`Previous ${replaced.policy === \"list\" ? \"list item\" : \"goal\"} was superseded by the new objective.\\nRecap: ${replacementRecap}`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 934,
+      "kind": "notify",
+      "content": "\"Goal update was not persisted — the durable goal transaction could not be written. Fix .pi-glla storage and retry.\""
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 982,
+      "kind": "notify",
+      "content": "\"Stacked state could not be auto-arbitrated safely because the older goal archive failed; both live records were preserved.\""
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 988,
+      "kind": "notify",
+      "content": "`Stacked state auto-arbitrated (one active thing): kept the loop — more recent activity — and archived the goal (${goal.id}).\\nGoal recap: ${goalRecap}${loopRecap ? `\\nLoop recap: ${loopRecap}` : \"\"} Recoverable: /loop status · .pi-glla/archive/ · /glla wipe for a clean slate.`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 997,
+      "kind": "notify",
+      "content": "`Stacked state auto-arbitrated (one active thing): kept the goal — more recent activity — and archived the loop (iter ${loop.iteration}, best ${loop.bestValue ?? \"n/a\"}).${loopRecap ? `\\nLoop recap: ${loopRecap}` : \"\"} Recoverable: /loop status · .pi-glla/archive/ · /glla wipe for a clean slate.`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 1066,
+      "kind": "notify",
+      "content": "open.length > 0\n        ? `Audit collected ${open.length} open finding(s) — all already queued.${decideNote}`\n        : `Audit complete — no open findings; the project is clean, nothing to queue.${decideNote}`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 1085,
+      "kind": "confirm",
+      "content": "`Queue ${fresh.length} audit finding(s) as list items?`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 1095,
+      "kind": "notify",
+      "content": "`Fan-out declined — the findings stay open in ${AUDIT_FINDINGS_REL}; /list audit re-queues them any time.`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 1106,
+      "kind": "notify",
+      "content": "`Queued ${n} finding(s) — the list drains them fix by fix, each with its own audited commit.${alreadyQueued > 0 ? ` (${alreadyQueued} already queued.)` : \"\"}${deferredByCap > 0 ? ` ${deferredByCap} more held by the 50-item cap; rerun /list audit to queue them.` : \"\"}${autoAccepted ? \" Auto-accepted by autoAcceptDrafts.\" : \"\"}${decideNote}`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 1155,
+      "kind": "notify",
+      "content": "\"Could not archive the goal — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.\""
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 1160,
+      "kind": "notify",
+      "content": "\"Could not archive the goal — its persisted id is invalid, so no filesystem path was used. Repair the state before retrying.\""
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 1212,
+      "kind": "notify",
+      "content": "`Could not archive ${goal.policy === \"list\" ? \"the list item\" : \"the goal\"} — an existing archive was preserved and the live objective was kept open; no terminal state was recorded. Fix the project disk and retry.`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 1226,
+      "kind": "notify",
+      "content": "`Could not archive ${goal.policy === \"list\" ? \"the list item\" : \"the goal\"} — the durable archive intent could not be written, so the live objective was kept open.`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 1267,
+      "kind": "notify",
+      "content": "`Could not archive ${goal.policy === \"list\" ? \"the list item\" : \"the goal\"} — ${archiveFence ? \"an existing archive was preserved and\" : \"the\"} live objective was kept open; no terminal state was recorded. Fix the project disk and retry.`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 1334,
+      "kind": "notify",
+      "content": "`Archive published for ${goal.policy === \"list\" ? \"the list item\" : \"the goal\"}, but the terminal state could not be persisted. The live objective remains open and startup recovery will retry safely.`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 1342,
+      "kind": "notify",
+      "content": "`Archive committed for ${goal.policy === \"list\" ? \"the list item\" : \"the goal\"}, but active-file cleanup is pending. The durable intent remains for the next recovery boundary.`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 1399,
+      "kind": "notify",
+      "content": "`Group remains queued — its durable sidecar could not be removed. Fix disk access and retry the group close.`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 1407,
+      "kind": "notify",
+      "content": "`Group closed: \"${displaySlice(parent.objective, 80)}\" — all subtasks complete.`"
+    },
+    {
+      "file": "extensions/loops/goal-orchestrator.ts",
+      "line": 1457,
+      "kind": "notify",
+      "content": "\"List complete. /loop audit to sweep the project for the next batch of work.\""
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 720,
+      "kind": "notify",
+      "content": "`glla: ${guidance}`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1306,
+      "kind": "notify",
+      "content": "`glla: a newer pi session owns this working-directory state root — ${what} is refused here to prevent competing writes. Start a fresh session to take it back. /glla owner inspects the holder; /glla takeover ends it with confirmation.`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1311,
+      "kind": "notify",
+      "content": "`glla: this session is handing off to a fresh pi context — ${what} will be handled after session_start.`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1320,
+      "kind": "notify",
+      "content": "`glla: this session is rebinding after /reload — ${what} will be handled by the refreshed instance; retry in a moment if it doesn't.`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1324,
+      "kind": "notify",
+      "content": "`glla: a refreshed instance owns this session — ${what} is handled there; nothing to do.`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1328,
+      "kind": "notify",
+      "content": "`glla: this session's extension handle is stale (pi session replacement) — ${what} can't send continuations in this process. State is safe in .pi-glla/. Use /new to create a fresh context; its session_start will resume it. If /new does not create one, restart pi normally and restore the saved work.`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1403,
+      "kind": "custom",
+      "content": "(tui, theme, keybindings, done) => {\n        factoryInvoked = true;\n        return new ConfirmDraftComponent({ title, body, options, getHeight: () => (tui.terminal?.rows ?? 24) - 4 }, () => tui.requestRender(), theme as any, keybindings as any, done);\n      }"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1411,
+      "kind": "notify",
+      "content": "\"Draft auto-accept ON for this project — future draft confirms are skipped. Undo in /glla settings: Auto-accept drafts = off.\""
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1425,
+      "kind": "select",
+      "content": "`${title}\\n\\n${body}`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1429,
+      "kind": "notify",
+      "content": "\"Draft auto-accept ON for this project — future draft confirms are skipped. Undo in /glla settings: Auto-accept drafts = off.\""
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1436,
+      "kind": "confirm",
+      "content": "title"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1473,
+      "kind": "notify",
+      "content": "`Carryover ${trigger} is blocked — the paused ${pausedGoal.policy === \"list\" ? \"list item\" : \"goal\"} could not be archived safely. Fix persistence and retry; no replacement was started.`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1488,
+      "kind": "notify",
+      "content": "`Carryover clear is blocked — ${clearedSidecars.failed.length} queue sidecar(s) could not be removed. The queue remains recoverable; fix disk access and retry.`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1519,
+      "kind": "notify",
+      "content": "policy === \"clear\"\n      ? `Carryover cleared (${trigger}): ${summary}${clearedLoop ? `\\nLoop recap: ${clearedLoop}` : \"\"}${archivedRecap}`\n      : `Carryover from before this session: ${summary}${waiting.length > 0 ? \" — set Carryover = clear in /glla settings to drop these automatically.\" : \"\"}${archivedRecap}`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1677,
+      "kind": "notify",
+      "content": "`glla: restored ${restoredQueue} queued list item(s) after the host session replacement.`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1722,
+      "kind": "notify",
+      "content": "auditRetryStarted\n        ? \"glla: detached completion auditor lost with the old host — no verdict was reached; the live replacement is retrying the stored claim once.\"\n        : `glla: detached completion auditor lost with the old host — no verdict was reached; the MAIN is released. ${activeGoalSurfaceCommand(\"resume\")} retries the stored claim.`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1729,
+      "kind": "notify",
+      "content": "\"glla: pi replaced this session without delivering session_start — absorbed the live replacement as the goal-plane owner (in-memory subagent sessions stay refused).\""
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1734,
+      "kind": "notify",
+      "content": "`glla: fresh host event re-armed ${state.goal?.policy === \"list\" ? \"the list item\" : \"the goal\"} continuation after the stale-handle boundary.`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1740,
+      "kind": "notify",
+      "content": "`Resuming ${state.goal.policy === \"list\" ? \"list item\" : \"goal\"}: ${displaySlice(state.goal.objective, 70)} — auto-resumed after the silent session swap`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1805,
+      "kind": "notify",
+      "content": "`glla: restored ${restoredQueue} queued list item(s) after the stale-handle recovery.`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1812,
+      "kind": "notify",
+      "content": "`glla: the healthy handle re-armed ${state.goal?.policy === \"list\" ? \"the list item\" : \"the goal\"} continuation after the stale-handle boundary.`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1822,
+      "kind": "notify",
+      "content": "\"glla: the stale handle recovered in place — retrying the stored no-verdict completion audit once.\""
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1827,
+      "kind": "notify",
+      "content": "`Recovered from the stale-handle park — the handle is healthy again. Resuming ${state.goal.policy === \"list\" ? \"list item\" : \"goal\"}: ${displaySlice(state.goal.objective, 70)}`"
+    },
+    {
+      "file": "extensions/loops/goal-session.ts",
+      "line": 1836,
+      "kind": "notify",
+      "content": "\"glla: recovered from the stale-handle park — the handle is healthy again; the goal plane is live.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 543,
+      "kind": "select",
+      "content": "\"Auditor thinking — DETACHED auditor worker ONLY (your session model's thinking is untouched)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 646,
+      "kind": "notify",
+      "content": "`Auditor model \"${event.toRef}\" is unavailable (${display}) — trying the next fallback model. Fix via /glla → Auditor model.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 703,
+      "kind": "notify",
+      "content": "`Session model IS the pinned auditor (${currentRef}) — auditor auto-swapped to ${replacement.ref} so the verifier differs.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 705,
+      "kind": "notify",
+      "content": "`The session model IS the pinned auditor (${currentRef}) — select a different /glla → Auditor fallback model so the verifier can differ.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 712,
+      "kind": "notify",
+      "content": "\"All pinned auditor models are unavailable — falling back to the session model. Fix via /glla → Auditor model.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 770,
+      "kind": "notify",
+      "content": "`glla setting \"${id}\" NOT saved: ${err instanceof Error ? err.message : String(err)} — check ${globalSettingsPath()} permissions.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 799,
+      "kind": "custom",
+      "content": "(tui, theme, keybindings, done) => {\n        factoryInvoked = true;\n        return new SettingsMenuComponent({ rows, title, initialSection, initialSelectedId, getHeight: () => (tui.terminal?.rows ?? 24) - 4 }, () => tui.requestRender(), theme, keybindings, done);\n      }"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 819,
+      "kind": "select",
+      "content": "title"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 858,
+      "kind": "notify",
+      "content": "\"The compactor cannot use the current session model. Choose another model or clear the pin for registry plan B.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 862,
+      "kind": "notify",
+      "content": "`\"${ref}\" matches your forbidden-models policy — the picker refuses it. Adjust /glla → Forbidden models first.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 868,
+      "kind": "input",
+      "content": "title"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 887,
+      "kind": "custom",
+      "content": "(tui, theme, keybindings, done) => {\n    factoryInvoked = true;\n    return new ModelPickerComponent({ title, items, getHeight: () => (tui.terminal?.rows ?? 24) - 4 }, () => tui.requestRender(), theme, keybindings, done);\n  }"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 898,
+      "kind": "input",
+      "content": "title"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 937,
+      "kind": "input",
+      "content": "title"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 945,
+      "kind": "notify",
+      "content": "`Not saved because policy excludes: ${policyBlocked.join(\", \")}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 950,
+      "kind": "notify",
+      "content": "`Skipped selections that policy excludes: ${policyBlocked.join(\", \")}; saving the remaining selections.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 961,
+      "kind": "notify",
+      "content": "`Current model is slot 0 and was not saved as a backup: ${droppedCurrent.join(\", \")}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 964,
+      "kind": "notify",
+      "content": "`Only the first ${maxSelections} fallback agents are kept; the remaining selections were refused.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 987,
+      "kind": "custom",
+      "content": "(tui, theme, keybindings, done) => {\n    factoryInvoked = true;\n    return new MultiModelPickerComponent({ title, items, initialSelected: initialRefs, currentRef: opts.currentRef, maxSelections, getHeight: () => (tui.terminal?.rows ?? 24) - 4 }, () => tui.requestRender(), theme, keybindings, done);\n  }"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1007,
+      "kind": "notify",
+      "content": "`Current session model is slot 0 and was not saved as a backup: ${omittedCurrent.join(\", \")}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1010,
+      "kind": "notify",
+      "content": "`Skipped selections that policy excludes: ${omittedPolicy.join(\", \")}; saving the remaining selections.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1045,
+      "kind": "notify",
+      "content": "`${agentType} model pin saved — applies to NEW pi sessions.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1060,
+      "kind": "notify",
+      "content": "refs.length ? `${agentType} fallback chain saved: ${refs.join(\" → \")} — applies to NEW pi sessions.` : `${agentType} fallback chain cleared — falls through to the legacy pin / strategy.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1069,
+      "kind": "select",
+      "content": "`Thinking level for ${agentType} subagents`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1080,
+      "kind": "notify",
+      "content": "`Not a thinking level: ${pick}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1086,
+      "kind": "notify",
+      "content": "`${agentType} thinking ${next[agentType] ? `pinned to ${next[agentType]}` : \"cleared — inherits session\"} — applies to NEW pi sessions.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1092,
+      "kind": "select",
+      "content": "\"State root — where durable glla state lives\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1100,
+      "kind": "select",
+      "content": "\"Auto-resume on session start — a LOADED session waits for an explicit resume; on reload/fork the machinery still rebinds so work never strands\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1109,
+      "kind": "select",
+      "content": "\"Carryover — a NEW goal/loop meets stale paused work from a previous session\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1118,
+      "kind": "select",
+      "content": "\"Auto-accept goal/loop drafts\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1126,
+      "kind": "select",
+      "content": "\"Decision popup — what a decision-class pause does\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1134,
+      "kind": "select",
+      "content": "\"Aggressive mode — ON by default: autoResume, audit cap 10, stuck max 10, wedge alerts off, provider retries, cap objections become a TODO list (explicit per-key settings still win)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1140,
+      "kind": "notify",
+      "content": "`Aggressive mode ${v.startsWith(\"on\") ? \"ON — goals keep going past the audit cap; objections become TODOs\" : \"off\"}.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1145,
+      "kind": "select",
+      "content": "\"Vision assist — prefer the current model's native image capability; external providers are optional (preapproval gate: forbiddenModels)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1151,
+      "kind": "notify",
+      "content": "v.startsWith(\"off\") ? \"Vision assist OFF — no native-vision guidance; the model-switch gate still stands.\" : \"Vision assist ON — native vision first; external providers require confirmation and vision-only switches stay off.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1156,
+      "kind": "select",
+      "content": "\"Context checkpoint projection — off keeps the transcript append-only so the provider prefix-cache holds across turns; on restores the legacy per-turn splice of a bounded continuation checkpoint\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1162,
+      "kind": "notify",
+      "content": "v.startsWith(\"on\") ? \"Context checkpoint projection ON — legacy per-turn splice; expect higher prompt-cache miss rates.\" : \"Context checkpoint projection OFF — transcript stays append-only; the continuation prompt carries live state.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1167,
+      "kind": "notify",
+      "content": "\"The current main agent and thinking level are controlled by pi's regular model/thinking selectors. The fallback chain is configured in this tab.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1198,
+      "kind": "notify",
+      "content": "refs.length ? `Main agent fallback models saved in order: ${refs.join(\" → \")}` : \"Main agent fallback models cleared — any pending fallback switch was cancelled and recovery will probe the current model.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1202,
+      "kind": "select",
+      "content": "\"Silent auditor stream — how the auditor's report text renders in the widget while the detached worker streams\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1208,
+      "kind": "notify",
+      "content": "v.startsWith(\"off\") ? \"Auditor stream LIVE — report lines show as they stream.\" : \"Auditor stream SILENT — final text at the verdict.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1213,
+      "kind": "select",
+      "content": "\"Auditor progress signals — intermediate evidence shown during silent audits (phase label + report byte-counter)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1219,
+      "kind": "notify",
+      "content": "v.startsWith(\"off\") ? \"Auditor progress signals OFF — silent card shows only the timer.\" : \"Auditor progress signals ON — phase + byte-counter visible during audits.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1232,
+      "kind": "input",
+      "content": "`${isTool ? \"Per-tool timeout\" : \"No-progress stall window\"} in ms (or s/m/h, e.g. 300000 / 10m; empty = default ${def / 60000}m)`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1240,
+      "kind": "notify",
+      "content": "`Cleared: ${id} (default ${def / 60000}m).`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1245,
+      "kind": "notify",
+      "content": "`Saved ${id} = ${ms} ms.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1247,
+      "kind": "notify",
+      "content": "`Rejected: enter ${min}-${max} ms (e.g. 15m). Allowed range: ${min / 60000}m-${max / 60000}m.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1257,
+      "kind": "input",
+      "content": "`Audit job retention in ms (or s/m/h, e.g. 900000 / 15m / 2h; empty = default ${AUDIT_JOB_CLEANUP_MIN_AGE_MS / 60000}m)`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1265,
+      "kind": "notify",
+      "content": "`Cleared: auditJobRetentionMs (default ${AUDIT_JOB_CLEANUP_MIN_AGE_MS / 60000}m).`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1270,
+      "kind": "notify",
+      "content": "`Saved auditJobRetentionMs = ${ms} ms.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1272,
+      "kind": "notify",
+      "content": "`Rejected: enter 0-${MAX_AUDIT_JOB_RETENTION_MS} ms (e.g. 15m). Allowed range: 0-${MAX_AUDIT_JOB_RETENTION_MS / 60000}m.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1279,
+      "kind": "select",
+      "content": "\"Audit spot-check rate — fraction of light-tier audits silently escalated to full (tune from the spot flip rate in /glla stats challenges)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1291,
+      "kind": "notify",
+      "content": "rate === 0.1\n            ? \"Cleared: auditSpotCheckRate (default 0.1).\"\n            : `Saved auditSpotCheckRate = ${rate}.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1295,
+      "kind": "notify",
+      "content": "\"Rejected: pick a preset rate (0–1).\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1303,
+      "kind": "select",
+      "content": "\"Auditor inspection session — persist the auditor's pi as a resumable session for live tail -f / post-audit attach\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1310,
+      "kind": "notify",
+      "content": "on ? \"Auditor inspection ON — audits now persist a resumable session.\"\n          : \"Auditor inspection OFF — back to the original --no-session spawn.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1316,
+      "kind": "select",
+      "content": "\"Full-tier approval challenge policy\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1323,
+      "kind": "notify",
+      "content": "on ? \"Full-tier approvals now require a successful challenge.\" : \"Default challenge policy restored.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1328,
+      "kind": "select",
+      "content": "\"Hourly main-model retry — an extra blind :00:30 attempt while recovery is parked (the normal retry ladder is separate)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1337,
+      "kind": "notify",
+      "content": "off ? \"Hourly main recovery probe OFF — only the configured retry ladder will run.\" : \"Hourly main recovery probe ON — extra :00:30 probe while parked.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1342,
+      "kind": "select",
+      "content": "\"Primary failback — what happens after a fallback turn succeeds\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1356,
+      "kind": "notify",
+      "content": "sticky ? \"Primary failback STICKY — the current fallback stays selected until you switch manually.\" : \"Primary failback AUTO — a healthy fallback will periodically test the preferred primary.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1361,
+      "kind": "input",
+      "content": "\"Preferred-primary failback probe cadence\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1367,
+      "kind": "notify",
+      "content": "`primary probe minutes must be a positive integer, got: ${v}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1380,
+      "kind": "notify",
+      "content": "`Drafter agent: ${pick.kind === \"session\" ? \"session model (override cleared)\" : pick.ref} — this model exposes no thinking levels (drafting runs with thinking off).`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1384,
+      "kind": "select",
+      "content": "\"Drafter thinking — TEMPORARY DRAFTING AGENT ONLY (your session thinking is restored afterward)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1399,
+      "kind": "notify",
+      "content": "`Drafter agent: ${pick.kind === \"session\" ? \"session model (override cleared)\" : pick.ref}${inheritThinking ? \" · thinking inherited from the session\" : pickedThinking ? ` · thinking ${pickedThinking}` : \"\"} — main and auditor agents are unchanged.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1416,
+      "kind": "notify",
+      "content": "refs.length ? `Drafter fallback models saved: ${refs.join(\" → \")}.` : \"Drafter fallback models cleared — the session model remains the last resort.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1421,
+      "kind": "input",
+      "content": "`Compaction token target (e.g. 200000 or 200k; empty = default ${DEFAULT_COMPACTION_TOKEN_THRESHOLD}). Waits for an idle boundary; never interrupts a tool or audit.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1429,
+      "kind": "notify",
+      "content": "`Compaction token target reset to ${DEFAULT_COMPACTION_TOKEN_THRESHOLD.toLocaleString(\"en-US\")} tokens; compact at the next safe idle boundary.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1435,
+      "kind": "notify",
+      "content": "\"Enter a positive whole token count, such as 200000 or 200k, or leave empty to restore the default.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1439,
+      "kind": "notify",
+      "content": "`Compaction token target: ${tokens.toLocaleString(\"en-US\")} tokens. Compaction becomes due above this target and waits for the next safe idle boundary.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1446,
+      "kind": "notify",
+      "content": "pick.kind === \"session\"\n          ? \"Compactor agent: registry plan B (the session model can never be the compactor — it is the stuck one).\"\n          : `Compactor agent: ${pick.ref} — main, drafter, and auditor agents are unchanged.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1465,
+      "kind": "notify",
+      "content": "refs.length ? `Compactor fallback models saved: ${refs.join(\" → \")}.` : \"Compactor fallback models cleared — registry plan B remains.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1490,
+      "kind": "notify",
+      "content": "refs.length ? `Forbidden models saved: ${refs.join(\", \")}` : \"Forbidden models cleared — every model is allowed (policy gate off).\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1494,
+      "kind": "select",
+      "content": "\"Block forbidden model switches — revert a forbidden selection to the previous model\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1502,
+      "kind": "input",
+      "content": "\"Main recovery base wait\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1508,
+      "kind": "notify",
+      "content": "`main model retry minutes must be a positive integer, got: ${v}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1538,
+      "kind": "notify",
+      "content": "`Auditor model: ${pick.kind === \"session\" ? \"session model (override cleared)\" : pick.ref} — this model exposes no thinking levels (auditor runs with thinking off)${curThinking !== undefined ? \"; cleared the stale thinking override\" : \"\"}.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1547,
+      "kind": "select",
+      "content": "\"Auditor thinking — DETACHED auditor worker ONLY (your session model's thinking is untouched)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1558,
+      "kind": "notify",
+      "content": "`Auditor model: ${pick.kind === \"session\" ? \"session model (override cleared)\" : pick.ref}${inheritThinking ? \" · thinking inherited from the session\" : t ? ` · thinking ${t.split(\" \")[0]}` : \"\"}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1582,
+      "kind": "notify",
+      "content": "\"Auditor fallback models cleared — the session model remains the last resort.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1594,
+      "kind": "notify",
+      "content": "`Auditor fallback models saved in order: ${refs.join(\" → \")}${thinking.kind === \"set\" ? thinking.suffix : thinking.clearedStale ? \" · cleared the stale thinking override\" : \"\"}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1629,
+      "kind": "input",
+      "content": "\"Auditor allowed extensions — comma-separated pi extension specs\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1638,
+      "kind": "custom",
+      "content": "(tui, theme, keybindings, done) => {\n          extFactoryInvoked = true;\n          return new MultiModelPickerComponent(\n            {\n              title: \"Auditor allowed extensions — space toggles, enter confirms; empty clears extra extensions; mirroring is controlled separately\",\n              items: extItems,\n              initialSelected: currentExts,\n              unorderedSet: true,\n              getHeight: () => (tui.terminal?.rows ?? 24) - 4,\n            },\n            () => tui.requestRender(),\n            theme,\n            keybindings,\n            done,\n          );\n        }"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1662,
+      "kind": "notify",
+      "content": "normalizedExts.length\n          ? `Auditor allowed extensions saved: ${normalizedExts.length} enabled.`\n          : loadSettings(ctx.cwd).auditorMirrorSessionExtensions === false\n            ? \"Auditor allowed extensions cleared — mirroring is off, so the detached auditor runs extension-less.\"\n            : \"Auditor allowed extensions cleared — session packages are still mirrored. Turn mirroring off for full isolation.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1673,
+      "kind": "select",
+      "content": "\"Same-model swap — when the pinned auditor IS the session model, walk the ordered fallback chain (a same-family model shares the executor's blind spots)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1681,
+      "kind": "select",
+      "content": "\"Mirror session extensions — the detached auditor also loads the session's own packages so a session-inherited auditor ref resolves in the worker (GLLA itself is never mirrored; tools stay restricted)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1691,
+      "kind": "input",
+      "content": "\"Soft disapproval threshold — conservative or run-to-done pauses; aggressive continues with TODOs\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1697,
+      "kind": "notify",
+      "content": "`Not a non-negative integer: ${v}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1702,
+      "kind": "input",
+      "content": "\"Hard ceiling on consecutive auditor disapprovals (pauses even in aggressive mode)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1708,
+      "kind": "notify",
+      "content": "`Not a non-negative integer: ${v}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1713,
+      "kind": "select",
+      "content": "\"Mechanical load scaling — scale gate budgets with host load (up to 2×)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1719,
+      "kind": "notify",
+      "content": "v.startsWith(\"off\") ? \"Mechanical load scaling OFF — fixed gate budgets.\" : \"Mechanical load scaling ON — budgets scale to 2× under saturation.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1724,
+      "kind": "input",
+      "content": "\"Max agent-authored decision pauses per goal before auto-default\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1730,
+      "kind": "notify",
+      "content": "`Not a non-negative integer: ${v}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1735,
+      "kind": "input",
+      "content": "\"Auditor feedback returned to the executor (characters)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1741,
+      "kind": "notify",
+      "content": "`Not a non-negative integer: ${v}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1748,
+      "kind": "input",
+      "content": "\"Wedge alert threshold (minutes)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1754,
+      "kind": "notify",
+      "content": "`Not a non-negative integer: ${v}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1759,
+      "kind": "input",
+      "content": "\"Subagent hang action threshold (minutes)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1766,
+      "kind": "notify",
+      "content": "`Subagent hang action must be 0 or an integer >= 5 minutes: ${v}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1773,
+      "kind": "input",
+      "content": "\"Consecutive stuck interventions before a loop stops\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1779,
+      "kind": "notify",
+      "content": "`Not a positive integer: ${v}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1784,
+      "kind": "input",
+      "content": "\"Heartbeat refires without a turn before the goal pauses / loop stops\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1790,
+      "kind": "notify",
+      "content": "`Not a non-negative integer: ${v}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1795,
+      "kind": "input",
+      "content": "\"Automatic retries after a busy zero-stream abort\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1804,
+      "kind": "notify",
+      "content": "`Automatic retry count must be an integer from 0 to ${MAX_ZOMBIE_RETRY_ATTEMPTS}: ${v}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1810,
+      "kind": "input",
+      "content": "\"Stall short words threshold\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1816,
+      "kind": "notify",
+      "content": "`Not a non-negative integer: ${v}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1821,
+      "kind": "input",
+      "content": "\"Stall similarity threshold (0..1)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1827,
+      "kind": "notify",
+      "content": "`Not a decimal between 0 and 1: ${v}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1832,
+      "kind": "select",
+      "content": "\"Subagent model (pi-subagents default agents)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1839,
+      "kind": "notify",
+      "content": "\"Subagent model strategy saved — applies to NEW pi sessions (pi-subagents registers agents at session start).\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1844,
+      "kind": "select",
+      "content": "\"Subagent display richness (ambient worker UI)\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1852,
+      "kind": "notify",
+      "content": "`Subagent display richness saved (${richness}) — applies on the next UI refresh.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1861,
+      "kind": "input",
+      "content": "\"Notify command — the event message is passed as $1\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1873,
+      "kind": "input",
+      "content": "\"Per-goal token budget\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1879,
+      "kind": "notify",
+      "content": "`Not a non-negative integer: ${v}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1887,
+      "kind": "select",
+      "content": "`Tool overrides — PROJECT scope (this project only) — ${describe(current)}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1899,
+      "kind": "notify",
+      "content": "`toolOverrides (project):\\n${describe(current)}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1902,
+      "kind": "input",
+      "content": "`Tool name (${verb})`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1916,
+      "kind": "notify",
+      "content": "`\"${tool}\" is now ${verb === \"allow\" ? \"always visible\" : \"always hidden\"} (project override saved).`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1922,
+      "kind": "notify",
+      "content": "`\"${tool}\" ${verb.slice(2)} override removed — the session decides again.`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1925,
+      "kind": "input",
+      "content": "`Config ${verb} — ${verb === \"set\" ? \"key=value\" : \"key\"}`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1936,
+      "kind": "notify",
+      "content": "`set needs key=value: got \"${kv}\"`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1940,
+      "kind": "notify",
+      "content": "\"A tool configuration key is required.\""
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1947,
+      "kind": "notify",
+      "content": "`\"${tool}\" config ${verb === \"set\" ? \"saved\" : \"removed\"} (project optional arguments; validated before execution).`"
+    },
+    {
+      "file": "extensions/loops/goal-settings-ui.ts",
+      "line": 1957,
+      "kind": "notify",
+      "content": "`/glla: unknown setting id \"${id}\" — please report this.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 474,
+      "kind": "notify",
+      "content": "`New ${incoming} objective cancelled; the current objective is unchanged.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 488,
+      "kind": "notify",
+      "content": "\"Update selected, but this cross-mode start has no safe in-place edit. No replacement was started.\""
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 504,
+      "kind": "notify",
+      "content": "`Previous ${replacedGoal.policy === \"list\" ? \"list item\" : \"goal\"} was replaced by the new ${incoming} objective.\\nRecap: ${recap}`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 762,
+      "kind": "notify",
+      "content": "`Objective updated (complete_goal newObjective): ${cleanObj.slice(0, 80)}`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 872,
+      "kind": "notify",
+      "content": "`Goal archived as aborted — completionSummary indicated the work was ${matchedPhrase}; no new work shipped in this turn.\\nRecap: ${recap}`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 891,
+      "kind": "notify",
+      "content": "`completionSummary says \"${matchedPhrase}\" with no version named — routing to the NORMAL audit so the auditor verifies the work exists in the tree.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 997,
+      "kind": "notify",
+      "content": "`Auditor model issue: ${modelFailureCopy.display}. ${modelFailureCopy.action}`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 1320,
+      "kind": "notify",
+      "content": "`Detached auditor failed on ${auditorCandidateLabel(from)} — retrying with ${auditorCandidateLabel(to)}. This is infrastructure, not a verdict.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 1370,
+      "kind": "notify",
+      "content": "`Completion auditor failed before producing a result (infrastructure, not a verdict). The claim remains stored; fix the issue, then ${activeGoalSurfaceCommand(\"resume\")}.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 1412,
+      "kind": "notify",
+      "content": "`Stale auditor verdict REFUSED: goal ${auditGoalId} revision is ${state.goal.revision ?? 0} but the auditor captured ${result.goalRevision.revision}. The goal moved on during the audit — its verdict was not applied. Run /goal verify again to audit the current state.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 1514,
+      "kind": "confirm",
+      "content": "\"Audit aborted\""
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 1576,
+      "kind": "notify",
+      "content": "\"Goal archived, but its chat summary could not be persisted. Review the archived completion summary.\""
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 1691,
+      "kind": "notify",
+      "content": "\"Goal archived, but its chat summary could not be persisted. Review the archived completion summary.\""
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 1717,
+      "kind": "notify",
+      "content": "`Auditor: part of the goal is IMPOSSIBLE — ${reason.slice(0, 100)}. aggressiveMode: narrowing and continuing.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 1742,
+      "kind": "notify",
+      "content": "`Auditor: part of the goal is IMPOSSIBLE — ${reason.slice(0, 140)}. Goal paused for an explicit narrowing decision.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 1779,
+      "kind": "notify",
+      "content": "`Goal archived as aborted — auditor marked it IMPOSSIBLE: ${reason.slice(0, 180)}.\\nRecap: ${recap}`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 1883,
+      "kind": "notify",
+      "content": "cursorPersistenceFailed\n                ? `Auditor recovery stopped because its durable cursor could not be saved. The completion claim remains stored; ${activeGoalSurfaceCommand(\"resume\")} retries it explicitly.`\n                : `Auditor fallback candidates are exhausted. The completion claim remains stored with no verifier verdict; inspect the provider setup, then ${activeGoalSurfaceCommand(\"resume\")}.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 1947,
+      "kind": "notify",
+      "content": "timeoutInfrastructure\n                ? `Completion auditor timed out (infrastructure, not a verdict). The stored claim is safe; fix the command/model and ${activeGoalSurfaceCommand(\"resume\")} to retry it.`\n                : `Completion auditor stopped before a verdict (infrastructure, not a judgment). The stored claim is safe; fix the auditor/session issue and ${activeGoalSurfaceCommand(\"resume\")} to retry it.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2027,
+      "kind": "notify",
+      "content": "`Auditor slowed to a ${cadence} re-probe after ${identical.auditorConsecutiveIdenticalFailures} identical infra failures (${deadChain}) — the claim stays stored and retries on its own. Fix the auditor/model setup to make the next attempt land, or ${activeGoalSurfaceCommand(\"resume\")} to retry now.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2055,
+      "kind": "notify",
+      "content": "`Auditor ladder horizon reached after ${plan.attempt} bounded attempts — the claim stays stored and re-probes itself every ${cadence}. Fix the provider, or ${activeGoalSurfaceCommand(\"resume\")} to retry now.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2095,
+      "kind": "notify",
+      "content": "\"Auto-resume fired (event: auditor provider retry elapsed). Continue working.\""
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2135,
+      "kind": "notify",
+      "content": "`Regression shield blocked completion: the auditor approved, but ${detail}.\\n\\nCall complete_goal again; the next audit will be told to quote raw evidence for each item.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2220,
+      "kind": "notify",
+      "content": "`Auditor automation paused: ${stopReason}. The objection is preserved as TODOs; inspect it before ${activeGoalSurfaceCommand(\"resume\")}.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2257,
+      "kind": "notify",
+      "content": "`${goalNoun()} paused: one auditor disapproved ${comparableStreak}× consecutively (hard cap ${hardCap}, binds aggressive mode). ${activeGoalStatusCommand()} for the reports; pick accept / resume / tweak / cancel.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2288,
+      "kind": "notify",
+      "content": "`Auditor disapproved ${trailingDisapprovals}× (cap). Treating as TODOs:\\n${todoBlock}`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2309,
+      "kind": "notify",
+      "content": "`${goalNoun()} paused: auditor disapproved ${trailingDisapprovals}× consecutively (cap ${auditCap}). ${activeGoalStatusCommand()} for the reports; ${activeGoalSurfaceCommand(\"resume\")} to continue.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2337,
+      "kind": "notify",
+      "content": "`Auditor disapproved. Report excerpt:\\n${userFeedback}`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2388,
+      "kind": "notify",
+      "content": "`Completion auditor worker failed to settle (infrastructure, not a verdict). The stored claim is safe; ${activeGoalSurfaceCommand(\"resume\")} retries it.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2759,
+      "kind": "notify",
+      "content": "`${message}\\nRecap: ${recap}`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2787,
+      "kind": "notify",
+      "content": "`Pause scheduled for ~${hours}h. If the objective no longer matches your intent, run ${activeGoalSurfaceCommand(\"tweak\")} to replace it now; otherwise the wait auto-continues shortly after its resume time (heartbeat backstop), and ${activeGoalSurfaceCommand(\"resume\")} resumes immediately.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2837,
+      "kind": "notify",
+      "content": "`${goalNoun()} paused: ${safePauseReason}${safePauseAction ? `\\n\\n→ ${safePauseAction}` : \"\"}`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2928,
+      "kind": "notify",
+      "content": "\"Load hold released — automation is live again.\""
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2949,
+      "kind": "notify",
+      "content": "\"Retrying the saved main-model recovery now — one provider probe, then the configured fallback models if needed.\""
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 2995,
+      "kind": "notify",
+      "content": "\"Resuming the stored completion claim — starting a detached auditor (no agent turn needed).\""
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 3000,
+      "kind": "notify",
+      "content": "resumedPolicy === \"list\"\n          ? `Resumed list item [${resumedId}]: ${slice}${queued > 0 ? ` (+${queued} waiting in the list)` : \"\"}`\n          : `Resumed goal [${resumedId}]: ${slice}${queued > 0 ? ` (+${queued} waiting in the list — resuming the list's head)` : \"\"}`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 3250,
+      "kind": "notify",
+      "content": "`List batch auto-accepted (Auto-accept drafts = on in /glla settings): ${p.items.length} items${batchActivates ? \" — the list head ACTIVATES now\" : \"\"}.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 3368,
+      "kind": "notify",
+      "content": "`Draft auto-accepted (Auto-accept drafts = on in /glla settings)${willActivate ? \" — ACTIVATING now\" : \"\"}: ${displaySlice(p.objective.trim(), 90)}`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 3413,
+      "kind": "notify",
+      "content": "`Draft REJECTED (zombie-twin guard): this objective matches a goal completed in the last 24h. Tell the user the work is already done.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 3623,
+      "kind": "notify",
+      "content": "`Loop draft auto-accepted (Auto-accept drafts = on in /glla settings): ${displaySlice(p.target.trim(), 90)}${!metricless ? \" — the measure command was already test-run once to establish the baseline\" : \"\"}`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 3723,
+      "kind": "notify",
+      "content": "`Loop spec refinement auto-accepted (Auto-accept drafts = on in /glla settings).${newMeasure !== loop.measureCmd ? \" The new measure command was already test-run once to establish the baseline.\" : \"\"}`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 3777,
+      "kind": "notify",
+      "content": "`Loop spec refined at iteration ${loop.iteration}.${newBaseline !== null ? ` New baseline: ${newBaseline}.` : \"\"}${specChange ? \" Spec file updated.\" : \"\"}${wasActive ? \"\" : \" Run /loop resume to continue with the preserved history.\"}`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 4000,
+      "kind": "notify",
+      "content": "`Task list auto-accepted (Auto-accept drafts = on in /glla settings): ${p.tasks.length} tasks.`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 4045,
+      "kind": "notify",
+      "content": "`Repair target restored and task list accepted: ${parsed.objective.slice(0, 120)}`"
+    },
+    {
+      "file": "extensions/loops/goal-tools.ts",
+      "line": 4069,
+      "kind": "notify",
+      "content": "repairRestored\n                ? \"The repaired source item remains queued because its durable sidecar could not be removed; the repair link was restored. Fix disk access and retry.\"\n                : \"The source sidecar could not be removed, and restoring the repair link also failed. Fix .pi-glla storage before continuing.\""
+    },
+    {
+      "file": "extensions/loops/goal-ui.ts",
+      "line": 871,
+      "kind": "setStatus",
+      "content": "\"pi-glla\""
+    },
+    {
+      "file": "extensions/loops/goal-ui.ts",
+      "line": 874,
+      "kind": "setWidget",
+      "content": "\"pi-glla\""
+    },
+    {
+      "file": "extensions/loops/goal-ui.ts",
+      "line": 968,
+      "kind": "notify",
+      "content": "warning"
+    },
+    {
+      "file": "extensions/quota-retry.ts",
+      "line": 640,
+      "kind": "notify",
+      "content": "`${label} in ${Math.round(safeSec / 60)}m${capped ? ` (automatic retry capped at ${Math.round(safeSec / 3600)}h)` : \"\"} (${presentation.display}). /goal resume retries now.`"
+    },
+    {
+      "file": "extensions/state-root-owner.ts",
+      "line": 489,
+      "kind": "notify",
+      "content": "`glla: a newer session (pid ${ownerPid}) took over this folder's state root — this session is now read-only to prevent competing writes. Start a fresh session here to take it back.`"
+    },
+    {
+      "file": "extensions/state-root-owner.ts",
+      "line": 515,
+      "kind": "notify",
+      "content": "lines.join(\"\\n\")"
+    },
+    {
+      "file": "extensions/state-root-owner.ts",
+      "line": 522,
+      "kind": "notify",
+      "content": "\"Takeover refused — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.\""
+    },
+    {
+      "file": "extensions/state-root-owner.ts",
+      "line": 529,
+      "kind": "notify",
+      "content": "first.via === \"none\"\n        ? \"State root was unclaimed — claimed for this session. Goal/loop commands write normally now.\"\n        : first.via === \"self\"\n          ? \"State root already owned by this process — confirmed. Goal/loop commands write normally now.\"\n          : `State root reclaimed (previous owner ${first.via}) — no process was signaled. Goal/loop commands write normally now.`"
+    },
+    {
+      "file": "extensions/state-root-owner.ts",
+      "line": 540,
+      "kind": "notify",
+      "content": "`Takeover complete — previous owner pid ${first.prevPid} exited after SIGTERM; this session owns the state root now.`"
+    },
+    {
+      "file": "extensions/state-root-owner.ts",
+      "line": 544,
+      "kind": "notify",
+      "content": "`Takeover refused: ${first.detail}`"
+    },
+    {
+      "file": "extensions/state-root-owner.ts",
+      "line": 551,
+      "kind": "confirm",
+      "content": "\"Take over this folder's state root?\""
+    },
+    {
+      "file": "extensions/state-root-owner.ts",
+      "line": 556,
+      "kind": "notify",
+      "content": "\"Takeover aborted — nothing was signaled, nothing claimed. The other host still owns the root.\""
+    },
+    {
+      "file": "extensions/state-root-owner.ts",
+      "line": 561,
+      "kind": "notify",
+      "content": "`Takeover complete — previous owner pid ${second.prevPid} exited after SIGTERM; this session owns the state root now.`"
+    },
+    {
+      "file": "extensions/state-root-owner.ts",
+      "line": 563,
+      "kind": "notify",
+      "content": "\"The previous owner exited on its own before the signal — reclaimed quietly, nothing was signaled.\""
+    },
+    {
+      "file": "extensions/state-root-owner.ts",
+      "line": 565,
+      "kind": "notify",
+      "content": "`Takeover refused: ${second.detail}`"
+    },
+    {
+      "file": "extensions/state-root-owner.ts",
+      "line": 567,
+      "kind": "notify",
+      "content": "\"Takeover aborted — the owner changed under us. Inspect with /glla owner and retry.\""
+    }
+  ]
+}
