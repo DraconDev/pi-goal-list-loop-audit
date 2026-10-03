@@ -180,7 +180,7 @@ test("v0.29.17 wiring: model-valued settings use the fuzzy picker; unavailable a
   // v0.35.24: the auditor slot threads opts.excludeRefs (forbidden-models
   // parity); the bare two-arg call remains for other model-valued rows.
   assert.match(SRC, /buildModelPickItems\(models, sessionLabel, \{ excludeRefs: exclude \}\)/);
-  assert.match(SRC, /new ModelPickerComponent\(\{ title, items \}/);
+  assert.match(SRC, /new ModelPickerComponent\(\{ title, items, getHeight:/);
   // Configured-auth filter — a pick from the list can never be a dead provider:
   assert.match(SRC, /hasConfiguredAuth\(m\)/);
   // The old bare-input auditorModel editor is gone from the case body:

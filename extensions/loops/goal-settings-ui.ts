@@ -798,7 +798,7 @@ async function promptSettingsMenu(
     try {
       const v = await ctx.ui.custom<string | undefined>((tui, theme, keybindings, done) => {
         factoryInvoked = true;
-        return new SettingsMenuComponent({ rows, title, initialSection, initialSelectedId, getHeight: () => tui.terminal.rows - 4 }, () => tui.requestRender(), theme, keybindings, done);
+        return new SettingsMenuComponent({ rows, title, initialSection, initialSelectedId, getHeight: () => (tui.terminal?.rows ?? 24) - 4 }, () => tui.requestRender(), theme, keybindings, done);
       });
       if (factoryInvoked) return v;
       appendLedger(ctx.cwd, "settings_menu_fallback_select", { via: "custom-stub" });
@@ -886,7 +886,7 @@ async function promptModelRef(
   let factoryInvoked = false;
   const pick = await ctx.ui.custom<ModelPickItem | undefined>((tui, theme, keybindings, done) => {
     factoryInvoked = true;
-    return new ModelPickerComponent({ title, items, getHeight: () => tui.terminal.rows - 4 }, () => tui.requestRender(), theme, keybindings, done);
+    return new ModelPickerComponent({ title, items, getHeight: () => (tui.terminal?.rows ?? 24) - 4 }, () => tui.requestRender(), theme, keybindings, done);
   });
   // RPC/no-op hosts expose custom() but never invoke the factory. Use the
   // typed escape hatch there; an invoked factory returning undefined is Esc.
@@ -986,7 +986,7 @@ async function promptModelRefs(
   let factoryInvoked = false;
   const pick = await ctx.ui.custom<MultiModelPickerResult>((tui, theme, keybindings, done) => {
     factoryInvoked = true;
-    return new MultiModelPickerComponent({ title, items, initialSelected: initialRefs, currentRef: opts.currentRef, maxSelections, getHeight: () => tui.terminal.rows - 4 }, () => tui.requestRender(), theme, keybindings, done);
+    return new MultiModelPickerComponent({ title, items, initialSelected: initialRefs, currentRef: opts.currentRef, maxSelections, getHeight: () => (tui.terminal?.rows ?? 24) - 4 }, () => tui.requestRender(), theme, keybindings, done);
   });
   // pi's RPC/no-op UI exposes custom() but resolves undefined without
   // invoking the factory. Treat that as headless, not as an Esc cancellation;
@@ -1643,7 +1643,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
               items: extItems,
               initialSelected: currentExts,
               unorderedSet: true,
-              getHeight: () => tui.terminal.rows - 4,
+              getHeight: () => (tui.terminal?.rows ?? 24) - 4,
             },
             () => tui.requestRender(),
             theme,

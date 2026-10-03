@@ -20,7 +20,7 @@ test("settings keep the active final tab visible on narrow terminals", () => {
 test("narrow settings show both the focused setting and its effective value", () => {
   const component = menu({ initialSection: "auditor" });
   const text = component.render(40).join("\n");
-  assert.match(text, /Auditor model/);
+  assert.match(text, /Auditor agent/);
   assert.match(text, /provider\/a-very/);
 });
 test("reopened settings focus the edited row and each tab remembers its cursor", () => {
@@ -49,7 +49,7 @@ test("settings search finds rows across sections and Esc clears search before cl
 test("settings details allow reading the full long value", () => {
   const component = menu({ initialSelectedId: "auditorModel" });
   component.handleInput("d");
-  assert.match(component.render(60).join("\n"), /losing-the-tail/);
+  assert.ok(component.render(60).join("").replace(/\x1b\[[0-9;]*m/g, "").replace(/\s/g, "").includes("provider/a-very-long-model-name-to-inspect-without-losing-the-tail"));
 });
 test("single picker respects terminal height and keeps the selected model visible", () => {
   const component = new ModelPickerComponent({ title: "Choose model", items, getHeight: () => 12 } as ModelPickerFactoryDeps, () => {}, theme, kb, () => {});

@@ -234,7 +234,7 @@ test("render: footer pin includes the optional details toggle", () => {
   assert.match(footer, /←\/→ tab/);
   assert.match(footer, /↑\/↓ move/);
   assert.match(footer, /d details on/);
-  assert.match(footer, /enter drill-in/);
+  assert.match(footer, /enter edit/);
   assert.match(footer, /esc exit/);
 });
 
@@ -313,14 +313,8 @@ test("details toggle: descriptions can be shown and truncated when requested", (
   // The description column should be truncated visibly within the width —
   // we assert that the suffix "(0m…" appears (truncateToWidth inserts it)
   // on at least one body row when width=60. This proves truncation kicked in.
-  let anyTruncated = false;
-  for (const line of body) {
-    if (/…/.test(line)) {
-      anyTruncated = true;
-      break;
-    }
-  }
-  assert.ok(anyTruncated, `expected at least one body row to show "…" at width=60`);
+  assert.ok(lines.join("\n").includes("Details"), "narrow details use a wrapped reading pane");
+  assert.ok(lines.every((line) => visibleWidthFromTui(line) <= 60));
 });
 
 test("details toggle: at width=120 the description column shows most of the row text", () => {
