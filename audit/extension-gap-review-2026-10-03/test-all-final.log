@@ -608,3 +608,215 @@ Switched to branch 'main'
 Switched to a new branch 'pi-glla-loop/resumable-park'
 Switched to branch 'main'
 Switched to branch 'pi-glla-loop/resumable-park'
+(pass) a branch-changed park is resumable: /loop resume on the scratch branch keeps the loop's history [2311.83ms]
+(pass) v0.38.104: the branch-changed park names the loop surface and is in RESUMABLE_STOP (source pins) [1.06ms]
+
+tests/waiting-on-subagent-pause.test.ts:
+(pass) 021655: standby pause does not render 'waiting for manual action' [2.78ms]
+(pass) 021655: standby pause names the background agent as owner, not manual action [1.12ms]
+(pass) 021655: standby status line waits instead of demanding action [0.29ms]
+(pass) v0.38.90: standby reason renders dim (monitoring narration, not a call to action) [0.60ms]
+(pass) v0.38.90: standby reason caps at 2 wrapped rows like decisions/waits [24.14ms]
+(pass) 021655: neighboring kinds keep their action rendering [1.00ms]
+
+tests/audit-job-retention.test.ts:
+(pass) retention: pre-convention finished dirs (no lock, result on file) reap past the window [201.27ms]
+(pass) retention: lockless UNFINISHED dirs stay ambiguous (interrupted creation) [114.31ms]
+(pass) retention: corrupt (present-but-unparseable) locks stay ambiguous [26.41ms]
+(pass) retention: crash before worker ownership reaps only when the parent is dead [194.91ms]
+(pass) retention: proven-dead workers reap past the window, live pids never reap [3.29ms]
+(pass) retention: aged lockless dirs with neither request nor result reap as unowned debris [1.04ms]
+(pass) retention: unowned debris younger than the identity-free floor stays ambiguous [0.45ms]
+(pass) v0.38.104 retention: a finished result settles a LIVE parent lock (PID reuse no longer pins it) [1.19ms]
+(pass) v0.38.104 retention: a LIVE parent lock with no result is still ambiguous (unchanged) [0.51ms]
+
+tests/audit-tier-record.test.ts:
+(pass) tier-record: a small quiet claim audits light and records the tier [3061.64ms]
+(pass) tier-record: spot-check rate 1 forces full and marks the verdict [4071.87ms]
+(pass) tier-record: complete_goal requestFullAudit escalates one claim [3676.15ms]
+(pass) tier-record: draft consent sets fullAudit, shows the notice, ledgers consent [1358.99ms]
+[run-tests] progress: 271s elapsed · 0s since last output · 46 KiB of suite output
+(pass) tier-record: batch drafts refuse fullAudit instead of dropping it [1552.66ms]
+(pass) tier-record: single list drafts refuse fullAudit instead of dropping it [1398.21ms]
+
+tests/audit-recovery-persistence.test.ts:
+(pass) context-free audit recovery returns false and leaves restart state auditing when append fails [322.99ms]
+
+tests/loop-held-start.test.ts:
+(pass) held loop: the load-hold warning names /loop resume [1885.18ms]
+(pass) held loop: the load-hold warning is byte-identical when no loop is held [1703.10ms]
+(pass) fresh start over a held loop offers resume and preserves the loop [508.22ms]
+(pass) fresh start over a held loop: dismiss keeps the held loop untouched [1849.81ms]
+(pass) fresh start over a held loop: headless refuses instead of discarding [1773.89ms]
+(pass) fresh start over an explicitly stopped loop keeps today's silent behavior [466.91ms]
+
+tests/durable-defer-ui-fixture.test.ts:
+(pass) deterministic goal-card fixture keeps the durable plaque first after three defers [18.92ms]
+
+tests/compaction-failure.test.ts:
+(pass) host-owned retry and cancellation outrank diagnostic text [28.82ms]
+(pass) output-cap and incomplete-summary diagnostics are not context overflow [0.42ms]
+(pass) only explicit prompt/context-window overflow can rotate the session model [1.39ms]
+(pass) unknown and generic threshold failures stay terminal without a model claim [0.11ms]
+
+tests/audit-followup-contract.test.ts:
+unknown format "date-time" ignored in schema at path "#/properties/deferred/properties/at"
+unknown format "date-time" ignored in schema at path "#/properties/deferred/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/auditVerdict/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/auditVerdict/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/lastActivityAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/lastActivityAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/verdictAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/verdictAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/startedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/startedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryRetryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryRetryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaAutoRetryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaAutoRetryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorRetryAttemptStartedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorRetryAttemptStartedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorFailureAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorFailureAt"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepair/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepair/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepairTarget/properties/replanPromptedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepairTarget/properties/replanPromptedAt"
+unknown format "date-time" ignored in schema at path "#/properties/createdAt"
+unknown format "date-time" ignored in schema at path "#/properties/createdAt"
+unknown format "date-time" ignored in schema at path "#/properties/updatedAt"
+unknown format "date-time" ignored in schema at path "#/properties/updatedAt"
+(pass) blank subtask titles never reach persistence > a blank subtask is rejected with its position named [0.35ms]
+(pass) blank subtask titles never reach persistence > a blank top-level title is still refused [0.02ms]
+(pass) blank subtask titles never reach persistence > a well-formed proposal with subtasks still passes [0.10ms]
+(pass) blank subtask titles never reach persistence > the count cap is still enforced (the new check does not mask it) [0.03ms]
+(pass) live-objection counting agrees with the runtime > a legacy disapproval settled by a later approval is not live [0.10ms]
+(pass) live-objection counting agrees with the runtime > a genuinely live objection is still counted [0.03ms]
+(pass) live-objection counting agrees with the runtime > an already-pinned history is counted the same way [0.02ms]
+(pass) the published schema matches what the runtime persists > the five terminal-render fields on a completion claim are accepted [3.07ms]
+(pass) the published schema matches what the runtime persists > a task deferral stamp is accepted [0.27ms]
+(pass) the published schema matches what the runtime persists > timeoutEscalation is bounded to [0, 100], matching the load clamp [0.05ms]
+(pass) the published schema matches what the runtime persists > wallDeadlineAt is gone: no GLLA code has ever written it [0.03ms]
+(pass) the published schema matches what the runtime persists > the blank subtask the validator now blocks is exactly what the schema rejects [0.04ms]
+
+tests/stale-self-heal.test.ts:
+(pass) v0.34.62 — debounce + self-heal wiring (source guards) [322.42ms]
+(pass) v0.34.62 — ONE heartbeat probe failure must NOT park a live session [2240.24ms]
+(pass) v0.34.62 — debounced park, then a same-session command self-heals (autoResume resumes the goal) [1121.01ms]
+(pass) v0.34.62 — a genuinely dead handle stays parked (no heal) [850.60ms]
+(pass) v0.35.12 — a healthy context cannot revive a stale ExtensionAPI [1480.92ms]
+(pass) v0.34.62 — a DIFFERENT session's command is not self-healed (successor absorption owns that path) [430.03ms]
+(pass) v0.34.62 — the rebind window (session_shutdown) still refuses a same-session heal [1049.46ms]
+(pass) v0.34.62 — a stale-stopped loop stays held after a heal (user resumes explicitly) [1375.72ms]
+
+tests/provider-retry-relentless.test.ts:
+(pass) 200751: agent pause inside the brake episode does not kill the retry [8.33ms]
+(pass) untouched brake pause still resumes [0.07ms]
+(pass) untouched 6-brake park still probes [0.02ms]
+(pass) explicit user pause stands the retry down [0.02ms]
+(pass) pending decision picker stands the retry down [0.01ms]
+(pass) active goal never resumes [0.02ms]
+(pass) episode mismatch never resumes [0.02ms]
+(pass) missing episode never resumes [0.01ms]
+
+tests/stale-api-terminal.test.ts:
+(pass) isStaleApiError matches pi's exact stale signature, rejects everything else [31.44ms]
+(pass) both autonomous send paths detect staleness and auto-recover before terminal [0.62ms]
+(pass) terminal path: ledger event, single-fire, goal ACTIVE+marker / loop stop with restart guidance [0.96ms]
+(pass) v0.29.11 — heartbeat PROBES staleness before burning stall refires [0.44ms]
+(pass) v0.30.0 — rebind-first survival: session_shutdown attribution, session_start rebind, zombie stand-down [1.69ms]
+(pass) v0.35.72: pause and low-level activity cannot settle unrelated automatic dispatches [0.26ms]
+(pass) v0.29.11 — stale/stall-stopped loops HOLD on next load (resume, not restart-from-scratch) [1.06ms]
+(pass) v0.29.12 — /glla resume is stale-aware (the zombie must not say 'Nothing to resume') [0.36ms]
+(pass) v0.34.16 — lifecycle handoff replaces terminal keystroke recovery [2.21ms]
+(pass) v0.34.16 — lifecycle recovery has no multiplexer dependency [1.03ms]
+(pass) v0.34.16 — stale paths never inject terminal input [0.91ms]
+(pass) send paths short-circuit once stale (no retry-into-the-void) [0.19ms]
+(pass) only an admitted host session claims the API and resets session state [0.68ms]
+(pass) v0.32.0: audit-opportunistic fix batch — dispose, keys, caps, message [14.04ms]
+(pass) v0.34.94: heartbeat only self-heals when the API and context are fresh [0.41ms]
+(pass) v0.38.104: the preserved heartbeat releases its handle and re-arms across a generation bump [0.22ms]
+
+tests/auditor-fallback-unification.test.ts:
+(pass) auditor ordered fallback refs retain order and use the main normalizer [2.46ms]
+(pass) auditor keeps all ten fallback slots after a pinned primary [70.00ms]
+(pass) auditor forbidden refs are skipped silently and recorded [3.18ms]
+(pass) a forbidden auditor primary is skipped before the configured fallback and remains silent [3.70ms]
+(pass) auditor retries the same ref, then walks the next untried ref with bounded shared backoff [7.39ms]
+(pass) auditor forbidden and duplicate refs are skipped before retry ordering [0.57ms]
+(pass) an all-forbidden auditor chain does not launch a forbidden worker [0.19ms]
+(pass) non-recoverable auditor failures stop without retrying or advancing [0.17ms]
+(pass) auditor wall timeouts and watchdog stalls walk the fallback chain [0.34ms]
+(pass) a restarted retry cursor spends the second call once, then advances [0.41ms]
+(pass) a crash after launching the retry consumes that retry and advances without a third call [0.79ms]
+(pass) infrastructure errors cannot survive as semantic auditor verdicts [0.15ms]
+(pass) partial semantic flags cannot bypass fallback recovery [0.27ms]
+(pass) same-provider rungs collapse after a provider-class failure [0.34ms]
+(pass) cross-provider rungs still walk the full chain [0.40ms]
+(pass) account-throttle wording collapses same-provider rungs [0.38ms]
+(pass) ambiguous worker death still walks the chain [0.36ms]
+(pass) cursor persistence failure fails closed before a retry or fallback [0.35ms]
+(pass) auditor and drafter source paths name the shared policy primitives [5.52ms]
+(pass) A8: a host abort interrupts the ladder delay instead of stranding the claim in it [68.34ms]
+(pass) A7: a cursor-callback refusal while live stays a persistence failure [0.46ms]
+(pass) A7: a cursor-callback refusal after a generation handoff stops quietly on the in-hand result [0.15ms]
+
+tests/list-tweak-proposal.test.ts:
+(pass) bug (note 2026-08-07): bare /list tweak launches the update-proposal flow — current text shown, old→new confirmed, then applied [2044.22ms]
+(pass) bare /list tweak with an empty/cancelled input changes nothing [486.28ms]
+(pass) bare /list tweak returning the unchanged text is a no-op (no revision bump, no confirm) [524.79ms]
+(pass) bare /list tweak input carrying a 'Done when:' clause applies the new contract [448.61ms]
+(pass) goal tweak rebases onto a pause that lands while confirmation is open [311.48ms]
+(pass) mirror: bare /goal tweak launches the same flow for an active goal [472.12ms]
+
+tests/subagent-polish.test.ts:
+(pass) current pi-subagents roles expose complete model-pin definitions [75.97ms]
+(pass) strategy-driven sync writes only the GLLA-owned Designer role [53.43ms]
+(pass) managed sync rejects path traversal from settings and corrupt sync state [0.81ms]
+(pass) repair detection: externally deleted/altered Designer files are re-written and flagged [0.78ms]
+(pass) effective resolution: per-type pin > inherit-parent > current agent default [0.07ms]
+(pass) subagent provider failure: any failed Agent payload, without classification [0.06ms]
+(pass) v0.38.16: failed current-tool spawns take the provider-failure path too [0.04ms]
+(pass) v0.38.16: model-facing text speaks the current subagent dialect [53.40ms]
+
+tests/repro-jiti-state-split.test.mjs:
+[run-tests] progress: 301s elapsed · 1s since last output · 60 KiB of suite output
+(pass) jiti: /list audit enqueues, persists the item, and ACTIVATES (state binding not split) [1460.91ms]
+
+tests/auditor-session-mirror.test.ts:
+(pass) sessionMirrorExtensionSpecs returns raw user settings package specs [117.73ms]
+(pass) sessionMirrorExtensionSpecs appends project settings specs, deduped [9.23ms]
+(pass) sessionMirrorExtensionSpecs never mirrors GLLA itself [0.31ms]
+(pass) mergeAuditorAllowedExtensions unions user allowlist first, then mirror [0.17ms]
+(pass) mergeAuditorAllowedExtensions with mirror off keeps the user allowlist alone [0.02ms]
+(pass) mergeAuditorAllowedExtensions with mirror on and empty user list yields the mirror [0.05ms]
+(pass) unresolvable mirror entries still drop fail-closed at resolve time [0.29ms]
+(pass) settings round-trip: mirror opt-out persists, on clears, junk normalizes [1056.77ms]
+
+tests/decision-budget.test.ts:
+(pass) decision budget: in-budget pauses behave as today, over-budget auto-defaults without pausing [1777.03ms]
+(pass) decision budget: unset budget keeps legacy pause-every-time behavior [282.91ms]
+
+tests/completion-communication.test.ts:
