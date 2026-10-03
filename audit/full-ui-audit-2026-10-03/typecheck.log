@@ -2,5 +2,3 @@
 > pi-goal-list-loop-audit@0.38.111 check
 > tsc --noEmit
 
-extensions/multi-model-picker.ts(366,65): error TS2349: This expression is not callable.
-  Type 'never' has no call signatures.

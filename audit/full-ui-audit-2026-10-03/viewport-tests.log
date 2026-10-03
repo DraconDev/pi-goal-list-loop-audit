@@ -2,38 +2,22 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/ui-experience-audit.test.ts:
-(pass) settings keep the active final tab visible on narrow terminals [9.76ms]
-(pass) narrow settings show both the focused setting and its effective value [1.69ms]
-(pass) reopened settings focus the edited row and each tab remembers its cursor [0.22ms]
-(pass) settings window keeps the cursor, navigation and details within a short terminal [2.85ms]
-(pass) settings search finds rows across sections and Esc clears search before closing [1.47ms]
-(pass) settings details allow reading the full long value [1.14ms]
-(pass) single picker respects terminal height and keeps the selected model visible [0.69ms]
-(pass) large unordered selections fit a short multi-picker without hiding its cursor [2.25ms]
-(pass) picker backspace deletes a complete Unicode character [0.46ms]
-(pass) long draft reviews scroll while their decisions remain visible [17.14ms]
-(pass) ordered pickers fit short terminals with current, inherit and cap notices [2.37ms]
-(pass) settings sanitize terminal controls without changing saved strings [0.62ms]
- 9 | const theme = { fg: (_: string, s: string) => s, bg: (_: string, s: string) => s, bold: (s: string) => s };
-10 | const kb = { matches: (data: string, key: string) => key === `tui.select.${({ up: "up", down: "down", pgup: "pageUp", pgdown: "pageDown", enter: "confirm", esc: "cancel" } as Record<string, string>)[data]}` };
-11 | const rows = buildSettingsRows({ auditorModel: "provider/a-very-long-model-name-to-inspect-without-losing-the-tail" }, {});
-12 | function menu(extra: Record<string, unknown> = {}) { return new SettingsMenuComponent({ rows, title: "GLLA settings", ...extra } as SettingsMenuFactoryDeps, () => {}, theme, kb, () => {}); }
-13 | const items = buildModelPickItems(Array.from({ length: 30 }, (_, i) => ({ provider: "fixture", id: `model-${i.toString().padStart(2, "0")}` })), "fixture/current", { includeSessionRow: false, includeManualRow: false });
-14 | function assertFits(lines: string[], width: number, height: number) { assert.ok(lines.length <= height, `${lines.length} lines exceed ${height}`); for (const line of lines) assert.ok(visibleWidth(line) <= width, `overflow: ${line}`); }
-                                                                                  ^
-AssertionError: 10 lines exceed 8
- generatedMessage: false,
-     actual: false,
-   expected: true,
-   operator: "==",
-       code: "ERR_ASSERTION"
+(pass) settings keep the active final tab visible on narrow terminals [5.63ms]
+(pass) narrow settings show both the focused setting and its effective value [0.59ms]
+(pass) reopened settings focus the edited row and each tab remembers its cursor [0.16ms]
+(pass) settings window keeps the cursor, navigation and details within a short terminal [1.70ms]
+(pass) settings search finds rows across sections and Esc clears search before closing [0.71ms]
+(pass) settings details allow reading the full long value [0.65ms]
+(pass) single picker respects terminal height and keeps the selected model visible [0.47ms]
+(pass) large unordered selections fit a short multi-picker without hiding its cursor [1.04ms]
+(pass) picker backspace deletes a complete Unicode character [0.13ms]
+(pass) long draft reviews scroll while their decisions remain visible [9.21ms]
+(pass) ordered pickers fit short terminals with current, inherit and cap notices [1.06ms]
+(pass) settings sanitize terminal controls without changing saved strings [0.39ms]
+(pass) settings details and all tab windows fit very short terminals [57.73ms]
+(pass) lifecycle cards and status rows fit every explicit terminal width [34.06ms]
 
-      at assertFits (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:14:78)
-      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:82:2
-      at fn (node:test:215:18)
-(fail) settings details and all tab windows fit very short terminals [2.49ms]
-
- 12 pass
- 1 fail
-Ran 13 tests across 1 file. [895.00ms]
-[run-tests] finished in 1s (exit 1)
+ 14 pass
+ 0 fail
+Ran 14 tests across 1 file. [597.00ms]
+[run-tests] finished in 1s (exit 0)

@@ -108,3 +108,13 @@ test("settings details and all tab windows fit very short terminals", () => {
     }
   }
 });
+
+test("lifecycle cards and status rows fit every explicit terminal width", async () => {
+  const { UI_AUDIT_SCENES, UI_AUDIT_NOW } = await import("./evidence/ui-audit-scenes.js");
+  const { buildStatusText, buildWidgetLines } = await import("../extensions/goal-loop-display.js");
+  for (const scene of UI_AUDIT_SCENES) for (const width of [0, 1, 20, 40, 60, 80, 120]) {
+    const status = buildStatusText(scene.state, null, UI_AUDIT_NOW, theme, scene.extras, width);
+    assert.ok(visibleWidth(status ?? "") <= width, `${scene.key} status exceeds width ${width}`);
+    for (const line of buildWidgetLines(scene.state, null, UI_AUDIT_NOW, theme, width, scene.extras) ?? []) assert.ok(visibleWidth(line) <= Math.max(0, width - 2), `${scene.key} widget exceeds width ${width}`);
+  }
+});
