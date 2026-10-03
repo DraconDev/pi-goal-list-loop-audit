@@ -1,0 +1,58 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/settings-menu-complete.test.ts:
+(pass) every row carries every required column field [8.60ms]
+(pass) role-specific tabs keep each agent's model, thinking, and fallback controls together [0.12ms]
+(pass) every row's section is one of the 8 known section ids (no orphans) [0.19ms]
+(pass) main-agent tab starts with the runtime agent; drafter and subagent chains have their own tabs [0.30ms]
+(pass) main fallback row explains ordered, deselectable selection [0.29ms]
+(pass) role rows show each selected model with requested/effective thinking [0.22ms]
+(pass) v0.36.0: unset auditor thinking mirrors the parent session and the fallback row uses the main shape [0.19ms]
+(pass) inherited drafter and auditor model rows identify the session category [0.14ms]
+(pass) all embedded subagent types expose editable fallback-chain rows [0.18ms]
+(pass) key rows from v0.27.0 settings menu are all present (menu coverage contract) [0.27ms]
+(pass) descriptions and values carry no version-tag chrome (v0.34.25) [0.27ms]
+(pass) rows map 1:1 to dispatchable ids (every id can drive a handler) [3.99ms]
+(pass) main fallback row shows the persisted numbered try order and truthful runtime semantics [0.25ms]
+(pass) auditorAllowedExtensions valueText is a count — never joined absolute paths (screen-size crash) [0.36ms]
+(pass) valueText derives from settings (effective values surface for each row) [0.22ms]
+(pass) default fallbacks surface when settings + provenance both missing [0.28ms]
+(pass) default fallbacks follow the effective aggressive matrix (explicit off → base values) [0.47ms]
+(pass) effective resolution names the real session model for inherit-parent [0.35ms]
+(pass) provenance flows into sourceText (project/global/default tags) [0.18ms]
+(pass) haiku mention is dropped from any valueText / description / sourceText [0.24ms]
+(pass) headless `/glla` fallback keeps stall brakes and the v0.34.127 sync list [0.39ms]
+(pass) the legacy flat-row startsWith logic is removed (no more `──` section headers in code) [3.59ms]
+(pass) /glla tooloverride still routes headlessly (regression: subsystems unchanged) [0.41ms]
+(pass) postaudit and reviewer routes both open the reviewer menu (back-compat) [0.35ms]
+(pass) stateRoot: one global-only row with the workingDir default [0.33ms]
+(pass) v0.28.20: no bracket/paren chrome — VALUE and SOURCE render bare [0.24ms]
+(pass) audit-2026-09-06: settings TUI tabs row is truncated to terminal width [2.16ms]
+(pass) audit 2026-09-06: normalizeLoadedSettings resets junk numerics/enums/strings to unset [0.91ms]
+(pass) settings provenance reports normalized effective values, not rejected raw junk [28.22ms]
+(pass) audit 2026-09-06: legacy reviewer block migrates to postaudit [0.49ms]
+(pass) audit 2026-09-07 (LOW, findings 392-394): quiet copy names the count line at every surface [0.19ms]
+628 |   );
+629 |   for (const details of [false, true]) {
+630 |     if (details) menu.handleInput("d");
+631 |     for (const width of [1, 20, 40, 80, 150]) {
+632 |       for (const line of menu.render(width)) {
+633 |         assert.ok(visibleWidth(line) <= width, `details=${details}, width=${width}: ${line}`);
+                     ^
+AssertionError: details=false, width=1: Settings for this p[0m…[0m
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/settings-menu-complete.test.ts:633:16
+      at processTicksAndRejections (native:7:39)
+(fail) settings table fits narrow terminals with details both hidden and visible [1.23ms]
+
+1 tests failed:
+(fail) settings table fits narrow terminals with details both hidden and visible [1.23ms]
+
+ 31 pass
+ 1 fail
+Ran 32 tests across 1 file. [478.00ms]

@@ -616,3 +616,22 @@ test("audit 2026-09-07 (LOW, findings 392-394): quiet copy names the count line 
   const UI = fs.readFileSync("extensions/loops/goal-settings-ui.ts", "utf-8");
   assert.match(UI, /quiet — troubled workers only \+ the count line/, "picker option names the count line");
 });
+
+
+test("settings table fits narrow terminals with details both hidden and visible", async () => {
+  const { SettingsMenuComponent } = await import("../extensions/settings-menu.ts");
+  const { visibleWidth } = await import("@earendil-works/pi-tui");
+  const theme = { fg: (_color: string, text: string) => text, bg: (_color: string, text: string) => text, bold: (text: string) => text };
+  const menu = new SettingsMenuComponent(
+    { rows: buildSettingsRows(SAMPLE_SETTINGS, EMPTY_PROV), title: "Settings for this project" },
+    () => {}, theme, { matches: () => false }, () => {},
+  );
+  for (const details of [false, true]) {
+    if (details) menu.handleInput("d");
+    for (const width of [1, 20, 40, 80, 150]) {
+      for (const line of menu.render(width)) {
+        assert.ok(visibleWidth(line) <= width, `details=${details}, width=${width}: ${line}`);
+      }
+    }
+  }
+});
