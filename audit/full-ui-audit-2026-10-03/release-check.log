@@ -2383,3 +2383,50 @@ AssertionError: The input did not match the regular expression /Yes \u2014 and a
 (pass) v0.35.x: healthy same-session heartbeat recovers a parked completion audit without manual resume [1338.41ms]
 [run-tests] progress: 360s elapsed · 4s since last output · 1311 KiB of suite output
 (pass) v0.36.0: exhausted no-verdict auditor chain enters the shared ladder with an automatic retry timer [6322.35ms]
+(pass) bounded recovery: initial aggressive completion preserves its horizon and exhausted chain [6204.62ms]
+(pass) v0.35.x: stale host loss releases an in-flight completion audit without a verdict [6642.22ms]
+(pass) v0.34.29: audit fan-out honors autoAcceptDrafts without opening confirmation [7.66ms]
+(pass) v0.34.129: fan-out dedupe does not drop a finding whose prefix appears inside another queue item [11.11ms]
+(pass) v0.34.129: fan-out reports cap-deferred findings separately from true queue dedupes [19.95ms]
+(pass) v0.34.20 lifecycle: fan-out confirmation from the old generation cannot queue into its replacement [19.98ms]
+(pass) v0.34.20 lifecycle: loop measurement abandons the old generation after replacement [77.26ms]
+(pass) v0.34.25: a resolved auditor model failure advances to the session fallback without a verdict [0.80ms]
+(pass) v0.35.x: zero-stream zombie auto-aborts and parks a list item without a retry storm [426.85ms]
+(pass) v0.35.x: zero-stream loop termination preserves and notifies its recap [18.18ms]
+(pass) v0.35.4: zombie watchdog stands down while a subagent wait is in flight [10.77ms]
+(pass) v0.35.64: a stale subagent probe no longer shields unrelated parent cleanup [14.32ms]
+(pass) v0.35.4: context-starved warning is one-shot per refusal episode [16.70ms]
+(pass) audit-2026-09-06: measure test-run dialogs disclose the pre-confirm exec [0.55ms]
+(pass) tweak carries its revision bump inside the durable patch (no phantom revision) [387.87ms]
+(pass) resetContinuationDispatchState clears the in-memory pending ref (S2 audit) [0.45ms]
+
+tests/state-root-owner.test.ts:
+(pass) normalizeOwnerAt tolerates number and ISO, rejects garbage [114.94ms]
+(pass) looksLikePi admits pi hosts, refuses sleep, abstains on unknown [72.83ms]
+(pass) classifyOwner covers the full matrix [66.38ms]
+(pass) describeOwner returns null for self, shape for foreign [66.45ms]
+(pass) takeover with no record claims silently [110.94ms]
+(pass) takeover of a dead owner reclaims without signaling [72.54ms]
+(pass) takeover of self reclaims (same-process sessions always win) [83.52ms]
+(pass) live owner without confirm returns needs-confirm and touches nothing [196.01ms]
+(pass) confirmed takeover of a non-pi process is refused, survivor unclaimed [209.74ms]
+(pass) confirmed takeover SIGTERMs a pi-shaped owner, verifies exit, claims [535.54ms]
+(pass) owner surviving SIGTERM is never claimed [574.93ms]
+(pass) recycled pid is unlinked without signaling the innocent occupant [236.70ms]
+(pass) heartbeat refresh is throttled and owner-scoped [223.05ms]
+(pass) /glla owner reports unclaimed / self / live holder [347.16ms]
+(pass) /glla takeover end to end reclaims a dead root via command [71.97ms]
+(pass) /glla takeover aborts on dismissed confirm without signaling [204.02ms]
+(pass) source pins the new escape hatches on both read-only warnings [71.94ms]
+(pass) audit-2026-09-06: takeover re-verifies the occupant at signal time [210.40ms]
+
+tests/auditing-standstill.test.ts:
+(pass) agent turns during a pending audit stay silent instead of escalating [768.26ms]
+
+tests/repair-card-loop-block.test.ts:
+(pass) v0.35.22: activating a queued item under a LIVE loop refuses LOUDLY — warning names the queued item and the way out [286.71ms]
+(pass) v0.35.22: when the loop ends, the blocked item becomes startable — /loop stop advances the queue [466.30ms]
+(pass) v0.35.41: the stuck-ladder stop also announces queued-list resumption [289.58ms]
+(pass) v0.35.41: the provider-error cap stop also announces queued-list resumption [1268.92ms]
+
+tests/zombie-subagent-tool-name.test.ts:
