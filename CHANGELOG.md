@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.38.114 — semantic summary colors (2026-10-03)
+
+- Terminal completion summaries use the active theme’s semantic colors for
+  outcomes, remaining work, next actions and verification results. Unknown
+  or merely reported verification stays neutral; failures remain distinct.
+- Styling is applied by a registered renderer. Saved summary Markdown,
+  archive content, receipt identity and headless output retain plain content;
+  continuation messages continue through Pi’s default renderer.
+
 ## 0.38.113 — make background audits clear (2026-10-03)
 
 - The live audit widget uses a compact card, keeping audit state, completed

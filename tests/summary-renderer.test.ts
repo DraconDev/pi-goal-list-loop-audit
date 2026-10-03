@@ -4,6 +4,7 @@ import { registerSummaryRenderer, summaryHeadingTone, summaryMarkdownBlocks, sum
 import { MockPi } from "./harness/mock-pi.js";
 import { loadThemeFromPath } from "../node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/theme/theme.js";
 import * as path from "node:path";
+import activate from "../extensions/loops/goal.js";
 import { visibleWidth, stripTerminalSequences, type Component } from "@earendil-works/pi-tui";
 
 const content = "## Done — The audit card is readable\n\nTook 8m.\n\n### What Changed\n1. **Audit activity stays visible**\n   - Keeps the latest observation above the cutoff.\n\n### Remaining\n- **Unresolved** — The owner still needs confirmation.\n  → Next: Confirm the named owner.\n- **Left out** — Live production changes.\n\n### Verification\n190 passed, 0 failures.\n\n### Next\n- **Next** — Reload after the active audit ends.\n";
@@ -11,6 +12,12 @@ const content = "## Done — The audit card is readable\n\nTook 8m.\n\n### What 
 test("semantic colors distinguish outcomes, actions, unresolved work and neutral evidence", () => {
   for (const [heading, tone] of [["Done — fixed", "success"], ["Aborted — user stopped", "warning"], ["Failed — check", "error"], ["Remaining", "warning"], ["Next", "accent"], ["Verification", "accent"], ["Final Repository State", "dim"], ["Done — without a recorded review", "warning"]]) assert.equal(summaryHeadingTone(heading!), tone);
   for (const [text, tone] of [["190 passed, 0 failures", "success"], ["10 passed, 2 failed", "error"], ["0 passed, 0 failed; not run", "warning"], ["3 passed, 1 reported", "warning"], ["Verification reported", "dim"], ["Clean exit 0", "text"]]) assert.equal(summaryVerificationTone(text!), tone);
+  assert.equal(summaryVerificationTone("0 passed, 0 failed"), "text");
+});
+
+test("the actual extension installer registers the terminal summary renderer", () => {
+  const pi = new MockPi(); activate(pi.api);
+  assert.ok(pi.messageRenderers.has("goal-event"));
 });
 
 test("code fences and canonical Markdown survive semantic section splitting", () => {
