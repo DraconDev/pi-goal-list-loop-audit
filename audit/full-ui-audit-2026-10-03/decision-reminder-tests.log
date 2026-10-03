@@ -4,3 +4,51 @@ bun test v1.3.14 (0d9b296a) 1x PARALLEL
 tests/pause-decision-interrupt.test.ts:
 (pass) decision pause persists options AND aborts the turn so the picker owns an idle surface [461.44ms]
 (pass) options without kind are inferred as decision — no silently dropped picker [328.95ms]
+(pass) every agent-authored pause ends the turn (blocked/error/wait), not just decisions [1020.22ms]
+(pass) impossible-drop auto-advance does NOT abort — the next item's continuation owns the turn [337.29ms]
+(pass) source pins: decision picker wiring + abort ordering survive refactors [1.02ms]
+
+tests/ui-experience-audit.test.ts:
+(pass) settings keep the active final tab visible on narrow terminals [14.97ms]
+(pass) narrow settings show both the focused setting and its effective value [1.72ms]
+(pass) reopened settings focus the edited row and each tab remembers its cursor [0.28ms]
+(pass) settings window keeps the cursor, navigation and details within a short terminal [2.12ms]
+(pass) settings search finds rows across sections and Esc clears search before closing [1.05ms]
+(pass) settings details allow reading the full long value [1.03ms]
+(pass) single picker respects terminal height and keeps the selected model visible [0.85ms]
+(pass) large unordered selections fit a short multi-picker without hiding its cursor [1.76ms]
+(pass) picker backspace deletes a complete Unicode character [0.31ms]
+(pass) long draft reviews scroll while their decisions remain visible [16.15ms]
+(pass) ordered pickers fit short terminals with current, inherit and cap notices [1.84ms]
+(pass) settings sanitize terminal controls without changing saved strings [0.60ms]
+(pass) settings details and all tab windows fit very short terminals [86.28ms]
+(pass) lifecycle cards and status rows fit every explicit terminal width [33.44ms]
+(pass) draft review keeps project consent readable and uses the supplied keybindings [9.89ms]
+(pass) untrusted picker labels and draft bodies cannot emit terminal commands [1.03ms]
+(pass) settling cards identify the approved archive owed and its recovery action [0.49ms]
+(pass) single picker resizes through short and narrow terminals without losing focus [1.48ms]
+(pass) truncated selected rows keep their background across values, source and padding [0.97ms]
+
+tests/ui-command-view-audit.test.ts:
+(pass) held loop status preserves its meaning and names the actual resume command [79.44ms]
+(pass) compact settling status reports archive debt instead of worker silence [12.16ms]
+(pass) paused goal status includes its saved next action without inventing one [5.27ms]
+
+tests/action-reminder.test.ts:
+(pass) standby renderer keeps the background-wake explanation visible [1.64ms]
+(pass) registers a dedicated GLLA reminder renderer [0.06ms]
+(pass) blocked reminder is actionable and says the work is safely parked [0.48ms]
+(pass) decision reminder is prominent, safely parked, and names the exact picker action [0.42ms]
+(pass) redirect reminder says the goal is held while the new request runs [0.31ms]
+(pass) diagnostics trail the actionable reminder as subordinate text [0.34ms]
+(pass) standby reminder says background completion wakes the work [0.06ms]
+(pass) timed wait is automatic and does not invent a manual action [0.21ms]
+(pass) assistant abort notice is a GLLA explanation, not generic transport text [0.09ms]
+(pass) wait abort notice uses the same automatic-wake explanation as its card [0.06ms]
+(pass) reminder rendering bounds narrow rows and strips terminal commands [3.05ms]
+(pass) decision reminder rendering agrees with its transcript when no action was supplied [0.28ms]
+
+ 39 pass
+ 0 fail
+Ran 39 tests across 4 files. [4.11s]
+[run-tests] finished in 4s (exit 0)
