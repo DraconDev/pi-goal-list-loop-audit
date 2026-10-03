@@ -1211,7 +1211,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
     }
     case "auditorProgressSignals": {
       const v = await ctx.ui.select("Auditor progress signals — intermediate evidence shown during silent audits (phase label + report byte-counter)", [
-        "on — phase label (reading source… / writing report…) + report byte-counter (default)",
+        "on — phase label (thinking… / writing report…) + report byte-counter (default)",
         "off — plain timer-only card, no intermediate signals",
       ]);
       if (v) {

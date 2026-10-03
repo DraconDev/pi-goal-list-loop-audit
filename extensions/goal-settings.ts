@@ -133,7 +133,7 @@ export interface Settings {
    * Screenshot_20260804_211341/211506). */
   auditorSilent?: boolean;
   /** v0.34.86: intermediate progress signals during silent audits — phase
-   * label ("reading source…" / "writing report…") + report byte-counter.
+   * label ("thinking…" / "writing report…") + report byte-counter.
    * Default ON; off = the plain timer-only card. */
   auditorProgressSignals?: boolean;
   /** v0.37.0: base budget, in milliseconds, for ONE allowed auditor tool

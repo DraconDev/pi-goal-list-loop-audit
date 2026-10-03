@@ -462,7 +462,7 @@ export function buildSettingsRows(
       label: "Auditor progress signals",
       valueText: show("auditorProgressSignals", "on"),
       sourceText: src("auditorProgressSignals"),
-      description: "on: during silent audits the card shows a phase label (reading source… / writing report…) and a report byte-counter so a long pass shows movement · off: plain timer-only card",
+      description: "on: during silent audits the card shows a phase label (thinking… / writing report…) and a report byte-counter so a long pass shows movement · off: plain timer-only card",
     },
     {
       id: "auditorToolTimeoutMs",

@@ -1176,7 +1176,7 @@ test("detached auditor elapsed time keeps ticking between worker progress events
     lastActivityAt: NOW - 20_000,
   };
   const status = buildStatusText({ goal: g, list: [] }, audit, NOW)!;
-  assert.match(status, /auditor ▶ (?:thinking|reading source…)/);
+  assert.match(status, /auditor ▶ (?:thinking|thinking…)/);
   assert.doesNotMatch(status, /elapsed 2m 00s|worker activity|evidence:/);
   const lines = buildWidgetLines({ goal: g, list: [] }, audit, NOW)!;
   assert.ok(lines.some((line) => line.includes("2m 00s in detached worker")), lines.join("\\n"));
@@ -1221,7 +1221,7 @@ test("detached recent auditor output is sanitized in live and awaiting-verdict w
   assert.match(awaitingWidget, /diagnostic redacted/);
 });
 
-test("v0.34.86: silent audits show a fine phase label (reading source… / writing report…)", () => {
+test("v0.34.86: silent audits show a fine phase label (thinking… / writing report…)", () => {
   const g = goalOf({ status: "auditing", pendingCompletion: { at: "2026-07-21T11:59:00Z", phase: "running", attemptId: "audit-fine" } });
   const audit = { phase: "producing_report" as const, elapsedMs: 300_000, lastActivityAt: NOW - 5_000 };
 
@@ -1230,7 +1230,7 @@ test("v0.34.86: silent audits show a fine phase label (reading source… / writi
   assert.ok(widget.some((l) => l.includes("auditor: writing report…")), "the fine label replaces the coarse one");
 
   const status = buildStatusText({ goal: g, list: [] }, { ...audit, phase: "thinking" }, NOW)!;
-  assert.match(status, /auditor ▶ reading source…/, "status line carries the fine phase");
+  assert.match(status, /auditor ▶ thinking…/, "status line carries the fine phase");
 });
 
 test("v0.34.86: silent audits show a report byte-counter instead of a dead timer", () => {
@@ -1265,7 +1265,7 @@ test("v0.34.86: auditorProgressSignals off restores the plain timer-only card", 
   assert.ok(lines.some((l) => l.includes("auditor: producing report")), "the coarse label returns when opted out");
   assert.ok(lines.some((l) => l.includes("report stream muted — final text at completion review")), "the pre-v0.34.86 silent line returns");
   const status = buildStatusText({ goal: g, list: [] }, audit, NOW, undefined, extras)!;
-  assert.doesNotMatch(status, /reading source…|writing report…/, "status line opts out too");
+  assert.doesNotMatch(status, /thinking…|writing report…/, "status line opts out too");
 });
 
 test("v0.34.86: live tail (auditorSilent off) is unaffected by the byte counter", () => {

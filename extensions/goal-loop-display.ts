@@ -1415,10 +1415,11 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
     const compactPrefix = extras?.compactAuditCard
       ? `${paint(theme, color, durableLabel ?? (phase === "running" ? "AUDIT RUNNING" : phase === "quiet" ? "AUDIT QUIET — may be stuck" : phase === "blocked" ? "AUDIT BLOCKED" : phase === "queued" ? "AUDIT STARTING" : "AUDIT REVIEW"))} · `
       : "";
+    const activityAge = auditorActivityAge(audit, now);
     const freshness = extras?.compactAuditCard && phase !== "quiet"
-      ? (auditorActivityAge(audit, now) !== undefined ? ` · activity ${fmtElapsed(auditorActivityAge(audit, now)!)} ago` : " · no worker activity yet")
+      ? `${activityAge !== undefined ? `activity ${fmtElapsed(activityAge)} ago` : "no worker activity yet"} · `
       : "";
-    return `glla: ${compactPrefix}${extras?.compactAuditCard ? freshness.replace(/^ · /, "") + " · " : ""}${host} · ${label}${quietSuffix}${heldSuffix}`;
+    return `glla: ${compactPrefix}${freshness}${host} · ${label}${quietSuffix}${heldSuffix}`;
   }
   if (g.status === "paused") {
     // v0.28.22: the status line names the ACTIONABILITY, not the reason —
