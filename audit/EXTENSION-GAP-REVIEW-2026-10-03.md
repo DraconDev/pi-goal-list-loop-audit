@@ -4,7 +4,7 @@ Follow-up to `EXTENSION-AUDIT-2026-10-02-PM.md` and the exported
 `conversation-2026-10-03-063308.txt`. Scope: fix the stale completion-summary
 assertion and directly inspect the bodies that the prior audit omitted.
 Starting tree: `364e706e`, package 0.38.108. All implementation changes are
-GLLA-owned. No external plugins, live Pi sessions, or git history were changed.
+GLLA-owned. No external plugins or live Pi sessions were changed; git history was not rewritten.
 The sync daemon checkpoints the tracked changes normally.
 
 ## Findings and dispositions
@@ -51,6 +51,14 @@ The sync daemon checkpoints the tracked changes normally.
   The list-conflict integration test now pins the shipped C7 rule: decline
   ends the update, leaves the queue intact, and opens no retry editor. Lockfile
   root metadata and the documentation index now match package 0.38.108.
+  The composite test-isolation reset now clears invalid-setting reports too,
+  as required by the exported-reset membership contract. The selected-row
+  fixture uses zero-width ANSI backgrounds rather than visible fake tags.
+  Watchdog assertions now include the workerless-in-flight route and its
+  90-second grace; loop-resync assertions follow the shared dispatch payload.
+  Automatic-pause guards are inspected in named function bodies rather than
+  fragile comment-length windows. Audit-history copy pins tolerate whitespace
+  while retaining their copy-before-append requirement.
 
 ## Coverage of the previously omitted bodies
 
@@ -121,4 +129,26 @@ Evidence directory: `extension-gap-review-2026-10-03/`.
   stopped through its own runner before starting the final full-suite run;
   it is not a green gate. Final complete-run result is recorded below.
 
-Final full-suite and gate results: verification in progress.
+- `test-all-final.log`: the complete serialized sweep ran 3,120 tests across
+  338 files: 3,112 pass, one environment-gated auto-committer test skipped,
+  seven fail. This run exited 1 and is **not** a green `test:all` or
+  `release:check` result. All seven failures were then corrected; the source
+  reset omission and six stale assertions/fixtures are described above.
+- `final-repairs.log`: 10 pass, 0 fail across auto-resume, process reset,
+  invalid-setting reporting, and audit-history copy tests.
+- `sweep-repairs.log`: 81 pass, 0 fail across all tests in the auto-resume,
+  audit-history, table-menu, stall-handling, and status-UX files.
+  `reset-recheck.log`: all three process-reset tests pass. Together these
+  rerun every file containing one of the seven full-sweep failures. No new
+  skips or filtered assertions were used in these corrective reruns.
+- `isolation-tests.log`: eight additional isolation/reset tests pass.
+- `typecheck.log` and `inventory.log`: final TypeScript and inventory gates
+  pass. `jiti.log`: the real jiti state-binding regression passes.
+  `auditor-extensions.log`: offline extension registration passes.
+- `pack-dry-run.log`: package manifest dry run succeeds (134 files).
+  `pack-smoke.log`: packed launcher completes the bounded RPC challenge,
+  packaged skill loads without diagnostics, and installed 0.38.108 imports.
+
+The requested gap review and fixes are complete. The complete sweep plus
+corrective file reruns supply the evidence above; a second complete sweep
+and the composite release gate were not rerun. No release was published.

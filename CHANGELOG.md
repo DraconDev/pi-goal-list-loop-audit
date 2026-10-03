@@ -14,6 +14,7 @@
   including narrow terminals after a resize.
 - Approved completion summaries omit stale "await audit" / "waiting for
   auditor approval" next steps while preserving concrete audit/review work.
+- Completed the composite test-isolation reset for invalid-setting reports.
 - Corrected stale verification assertions and test-context types; synchronized
   the lockfile and documentation index with package version 0.38.108.
 
