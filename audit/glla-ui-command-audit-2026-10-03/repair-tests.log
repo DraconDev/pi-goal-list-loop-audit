@@ -5,3 +5,44 @@ tests/glla-stale-context.test.ts:
 (pass) v0.34.52: bare /glla on a stale handle is refused — standard recovery message, UI never opens, settings untouched [4122.37ms]
 (pass) v0.34.52: mutating /glla actions (wipe, cancel, resume, reviewer, postaudit, tooloverride) are all refused on a stale handle [337.42ms]
 (pass) v0.34.52: /glla status, log, stats, audits stay usable on a stale handle (inspect, don't mutate) [3385.61ms]
+(pass) audit 2026-09-07 (LOW, finding 399): bare `/glla fallbacks` is a read-only display — allowed on a stale handle; `fallbacks clear` still mutates and is refused [457.51ms]
+(pass) v0.34.52: the standard recovery — a fresh session reopens the settings UI and owns the next /glla [612.17ms]
+(pass) v0.35.72: source — settings rechecks admission after the menu and before saves [0.42ms]
+(pass) v0.34.52: source — cmdSettings captures the entry probe and gates the settings entry + mutating actions [1.20ms]
+
+tests/model-picker.test.ts:
+(pass) model-picker items: session row first, manual row last, models sorted by provider/id [4.28ms]
+(pass) v0.34.118 backup picker: excludes forbidden refs before rendering [0.11ms]
+(pass) model-picker exclusion honors case-insensitive substring policy entries [0.06ms]
+(pass) model-picker: typing fuzzy-filters the list; enter returns the highlighted model [0.72ms]
+(pass) model-picker: slash-token fuzzy match (provider/model style), nav wraps, backspace edits [0.16ms]
+(pass) model-picker: up/down moves the selection; esc cancels with undefined [0.10ms]
+(pass) model-picker: selecting the session row clears the override; manual row is the typed escape hatch [0.05ms]
+(pass) model-picker: render stays within width and shows the filter hint [0.38ms]
+(pass) model-picker: active model row uses the available width for selection [0.20ms]
+(pass) v0.29.17 wiring: model-valued settings use the fuzzy picker; unavailable auditor models fall back LOUDLY to the session model [5.84ms]
+(pass) v0.36.0: auditor thinking inherits the parent dial unless explicitly overridden [4.75ms]
+(pass) v0.36.0: the auditor chain — pinned primary → ordered fallbacks → session LAST; same-as-session auto-swap [5.45ms]
+(pass) v0.31.6: same-model swap toggle — default ON, off = same-model audits stand [3.59ms]
+(pass) v0.31.8: thinking options come from the PICKED MODEL — xhigh/max only when the model maps them [3.41ms]
+(pass) v0.31.9: fork-bomb lesson is prompt-law — auditor reject-class + executor hard rule [2.33ms]
+
+tests/glla-ui-command-audit.test.ts:
+(pass) settings table reopens the tab that was edited [35.19ms]
+(pass) forbidden substring patterns cannot disable configured fallback chains [22.78ms]
+(pass) drafterModel refuses a forbidden primary pin [5.20ms]
+(pass) compactorModel refuses a forbidden primary pin [4.85ms]
+(pass) subagentModelOverrides.scout refuses a forbidden primary pin [4.69ms]
+(pass) editing a role fallback preserves other roles saved while its picker was open [24.63ms]
+(pass) audit health stays available but cleanup is refused on a stale host [7.60ms]
+(pass) tool visibility commands replace conflicting overrides [46.87ms]
+(pass) tool config accepts spaced JSON and refuses empty keys [40.02ms]
+(pass) postaudit refuses a save after the host became stale in its dialog [29.66ms]
+(pass) wipe revalidates its host after the confirmation dialog [65.47ms]
+(pass) tool metadata editor preserves concurrent updates and names its execution limit [46.63ms]
+(pass) compactor picker labels its clear choice as registry plan B [19.15ms]
+
+ 35 pass
+ 0 fail
+Ran 35 tests across 3 files. [10.46s]
+[run-tests] finished in 11s (exit 0)
