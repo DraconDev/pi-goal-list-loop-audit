@@ -788,7 +788,7 @@ async function promptSettingsMenu(
   initialSection?: SettingsSectionId,
   initialSelectedId?: string,
 ): Promise<string | undefined> {
-  const title = "GLLA settings";
+  const title = "GLLA settings · defaults save globally";
   // v0.34.80: `custom` is a function in EVERY pi 0.84.1 mode — RPC/noOp
   // resolve `undefined` without invoking the builder. Detect availability by
   // whether the factory RAN; a settled stub falls through to the flat-row

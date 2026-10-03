@@ -363,7 +363,7 @@ export class MultiModelPickerComponent {
   render(width: number): string[] {
     if (this.getHeight) return this.renderViewport(width, Math.max(8, Math.floor(this.getHeight())));
     const w = Math.max(0, width - 2);
-    const height = this.getHeight ? Math.max(8, Math.floor(this.getHeight())) : Number.POSITIVE_INFINITY;
+    const height = Number.POSITIVE_INFINITY;
     const lines: string[] = [];
     lines.push(this.theme.fg("accent", this.theme.bold(truncateToWidth(this.title, w, "…"))));
     if (this.unorderedSet) {
