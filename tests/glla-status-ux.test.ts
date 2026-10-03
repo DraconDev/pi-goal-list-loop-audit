@@ -189,13 +189,13 @@ test("v0.35.15: quiet watcher stays silent while the supervisor is paused (it IS
 
 test("v0.35.15: every automatic dispatch point gates on supervisorPaused", () => {
   const gates: Array<[string, string, RegExp]> = [
-    ["extensions/goal-continuation.ts", "scheduleContinuation", /export function scheduleContinuation[^}]*?supervisorPaused\(state\)/s],
-    ["extensions/goal-continuation.ts", "sendContinuation (armed-timer race)", /export function sendContinuation\(goalId: string\): void \{[\s\S]{0,400}?if \(supervisorPaused\(state\)\) return;/],
-    ["extensions/goal-loop.ts", "scheduleLoopTick", /function scheduleLoopTick\(ctx: ExtensionContext\): void \{[\s\S]{0,300}?if \(supervisorPaused\(state\)\) return;/],
-    ["extensions/goal-loop.ts", "sendLoopTurn (armed-timer race)", /function sendLoopTurn\(\): void \{[\s\S]{0,200}?if \(supervisorPaused\(state\)\) return;/],
-    ["extensions/goal-recovery.ts", "main-model recovery probe timer", /export function scheduleMainModelRecoveryTimer[\s\S]{0,500}?if \(supervisorPaused\(state\)\) return;/],
-    ["extensions/loops/goal-auditor-hooks.ts", "automatic audit recovery (non-manual)", /async function retryStoredCompletionAudit[\s\S]{0,1400}?origin !== "manual" && supervisorPaused\(state\)/],
-    ["extensions/loops/goal-ui.ts", "proactive quiet notify", /__auditorQuietWatchTick[\s\S]{0,600}?supervisorPaused\(state\)/],
+    ["extensions/goal-continuation.ts", "scheduleContinuation", /supervisorPaused\(state\)/],
+    ["extensions/goal-continuation.ts", "sendContinuation", /if \(supervisorPaused\(state\)\) return;/],
+    ["extensions/goal-loop.ts", "scheduleLoopTick", /if \(supervisorPaused\(state\)\) return;/],
+    ["extensions/goal-loop.ts", "sendLoopTurn", /if \(supervisorPaused\(state\)\) return;/],
+    ["extensions/goal-recovery.ts", "scheduleMainModelRecoveryTimer", /if \(supervisorPaused\(state\)\) return;/],
+    ["extensions/loops/goal-auditor-hooks.ts", "retryStoredCompletionAudit", /origin !== "manual" && supervisorPaused\(state\)/],
+    ["extensions/loops/goal-ui.ts", "__auditorQuietWatchTick", /supervisorPaused\(state\)/],
   ];
   // Inspect the function rather than a character window sensitive to comments.
   const source = ts.createSourceFile("heartbeat.ts", fs.readFileSync("extensions/goal-heartbeat.ts", "utf8"), ts.ScriptTarget.Latest, true);
@@ -204,8 +204,10 @@ test("v0.35.15: every automatic dispatch point gates on supervisorPaused", () =>
   const guard = heartbeat.body.statements.find(node => ts.isIfStatement(node) && node.expression.getText(source) === 'typeof state.supervisorPausedAt === "number"');
   assert.ok(guard && ts.isIfStatement(guard) && ts.isReturnStatement(guard.thenStatement), "heartbeat must return for a manual supervisor pause");
   for (const [file, point, re] of gates) {
-    const src = fs.readFileSync(file, "utf-8");
-    assert.ok(re.test(src), `${file}: ${point} must freeze under /glla pause`);
+    const parsed = ts.createSourceFile(file, fs.readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true);
+    const declaration = parsed.statements.find((node): node is ts.FunctionDeclaration => ts.isFunctionDeclaration(node) && node.name?.text === point);
+    assert.ok(declaration?.body, `${file}: ${point} must exist`);
+    assert.match(declaration.body.getText(parsed), re, `${file}: ${point} must freeze under /glla pause`);
   }
 });
 function ownerCtx(cwd: string): MockCtx {

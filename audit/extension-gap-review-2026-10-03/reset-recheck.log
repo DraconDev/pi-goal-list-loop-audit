@@ -1,0 +1,12 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/process-state-reset.test.ts:
+(pass) v0.38.88: composite clears a poisoned starvation streak [0.81ms]
+(pass) v0.38.88: composite releases the session-owner claim [1367.29ms]
+(pass) v0.38.88: composite invokes every exported latch reset [120.54ms]
+
+ 3 pass
+ 0 fail
+Ran 3 tests across 1 file. [2.44s]
+[run-tests] finished in 3s (exit 0)

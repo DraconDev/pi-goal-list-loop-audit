@@ -239,13 +239,10 @@ test("v0.29.1: completion lifecycle survives the wedged-queue window (storm supp
   //    result never landed (pully: 12h+ stuck). Release the stored claim as
   //    infrastructure/no-verdict; a heartbeat must not launch a blind retry.
   const hbIdx = HEARTBEAT_SRC.indexOf("function heartbeatTick");
-  // v0.34.94: increased slice size to cover the new self-heal block added
-  // between the stale-probe check and the stranded-audit watchdog — the
-  // pending_latch_stuck event the assertion targets has grown further into
-  // the heartbeatTick body as new features land.
-  const hb = HEARTBEAT_SRC.slice(hbIdx, hbIdx + 27000); // v0.35.x: heartbeat releases stranded audits before latch handling; 2026-09-25: L2/L3 durability additions moved the latch watchdog past the old 24000 window
+  const hb = HEARTBEAT_SRC.slice(hbIdx, HEARTBEAT_SRC.indexOf("export function startHeartbeat", hbIdx));
   assert.match(hb, /stranded_audit_recovered/);
-  assert.match(hb, /state\.goal\?\.status === "auditing" &&\s*\n\s*!flags\.completionAuditInFlight/);
+  assert.match(hb, /state\.goal\?\.status === "auditing" &&\s*\n\s*\(!flags\.completionAuditInFlight \|\| strandedWorkerlessInFlight\) &&\s*\n\s*strandedSilentMs >= 90_000/);
+  assert.match(hb, /strandedWorkerlessInFlight = strandedSilentMs >= 90_000[\s\S]*?!auditorWorkerLiveForAttempt\(ctx\.cwd, strandedClaim\.attemptId\)/);
   assert.match(hb, /Completion audit blocked — no verdict/);
   assert.doesNotMatch(hb, /retryStoredCompletionAudit\("session-recovery"\)/);
   assert.ok(hb.indexOf("stranded_audit_recovered") < hb.indexOf("pending_latch_stuck"),
@@ -486,7 +483,8 @@ test("v0.32.1: post-compaction resume debt + deterministic resync (pi-goal-x's l
   assert.match(HEARTBEAT_SRC, /compaction_resume_owed_refire/); // heartbeat retries the debt every post-grace tick
   assert.match(CONT, /\[POST-COMPACTION RESYNC\]/); // deterministic re-anchor block (decomposition step 5: buildPostCompactResync moved)
   assert.match(CONT, /content: resync \+ continuationPrompt/); // goal path prepends (decomposition step 5: sendContinuation moved)
-  assert.match(LOOP, /content: loopResync \+ loopPrompt/); // loop path prepends (moved to goal-loop.ts, decomposition step 2)
+  assert.match(LOOP, /const loopTurnContent = loopResync \+ loopPrompt\(/); // loop path prepends before dispatch
+  assert.match(LOOP, /content: loopTurnContent/);
   assert.match(CONT, /resync: Boolean\(resync\)/, "dispatch records whether resync was sent (decomposition step 5: sendContinuation moved)");
   assert.match(CONT, /if \(record\.resync\) flags\.postCompactResyncPending = false;/, "resync is consumed only after start acknowledgement (decomposition step 5: dispatchStartAcknowledged moved + flags re-spelling)");
   // discharged by a real turn start (agent_start), not by the send itself.

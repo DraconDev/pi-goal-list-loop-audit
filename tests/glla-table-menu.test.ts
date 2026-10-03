@@ -40,7 +40,7 @@ const THEME = {
 const HIGHLIGHT_THEME = {
   ...THEME,
   bg(_color: "selectedBg", text: string) {
-    return `<selected>${text}</selected>`;
+    return `\x1b[48;5;24m${text}\x1b[49m`;
   },
 };
 
@@ -175,10 +175,10 @@ test("render: active row uses a full-width selected background", () => {
     done,
   );
   const line = component.render(120)[4]!;
-  assert.match(line, /^<selected>▶ Auto-resume on load/);
-  assert.ok(line.endsWith("</selected>"));
+  assert.ok(line.startsWith("\x1b[48;5;24m▶ Auto-resume on load"));
+  assert.ok(line.endsWith("\x1b[49m"));
 
-  const inner = line.slice("<selected>".length, -"</selected>".length);
+  const inner = line.slice("\x1b[48;5;24m".length, -"\x1b[49m".length);
   assert.equal(
     visibleWidthFromTui(inner),
     120,
