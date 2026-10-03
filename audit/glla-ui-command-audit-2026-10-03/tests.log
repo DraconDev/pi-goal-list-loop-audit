@@ -460,3 +460,75 @@ tests/settings-stale-save.test.ts:
 (pass) C9 control: healthy probe saves and reports normally [145.28ms]
 (pass) settings save validates its own session after an overlapping editor [133.23ms]
 (pass) similarity editor empty input restores the default; explicit zero stays zero [145.20ms]
+(pass) auditor picker offers thinking for provider refs containing nested model ids [149.32ms]
+
+tests/list-settings-route.test.ts:
+(pass) v0.34.53: /list settings redirects to /glla explicitly — no drafting, no state mutation [392.26ms]
+(pass) v0.34.53: /list settings is read-only — it still redirects on a stale extension handle [313.57ms]
+(pass) v0.34.53: /list add settings… still adds a literal item — the explicit verb is the only way in [323.57ms]
+(pass) v0.34.53: source — /list help documents /glla as the settings command and the branch precedes the dump fallthrough [7.23ms]
+(pass) C5: /list add of a just-finished objective is skipped, not resurrected [600.59ms]
+
+tests/compaction-target-settings.test.ts:
+(pass) /glla token-target editor persists shorthand, cancellation, validation, and reset [1007.20ms]
+(pass) global-only target, defaults, provenance and menu describe the effective policy [11.14ms]
+(pass) configured target reaches the actual trigger, idle guard, and hysteresis [126.79ms]
+(pass) hand-edited invalid targets safely fall back at runtime [120.40ms]
+(pass) headless /glla exposes the chosen token target and source [31.23ms]
+
+tests/ui-polish.test.ts:
+(pass) v0.38.89: unknownStatsArg strips the known stats tokens [0.32ms]
+(pass) v0.38.89: stats header and unknown-arg usage share the /glla prefix [0.36ms]
+(pass) v0.38.91: tool descriptions enumerate plan/audit/verify/add [0.28ms]
+(pass) v0.38.89: /goal status card points at /goal timeline [35.07ms]
+
+tests/glla-table-menu.test.ts:
+(pass) render: title row [13.33ms]
+(pass) grouped entry points can open a specific settings section [0.81ms]
+(pass) render: tabs row lists all 8 sections [1.34ms]
+(pass) main agent tab starts with the current agent and drills in [0.57ms]
+(pass) render: at width=120, the keep-going section renders its rows (v0.28.23: +decisionPopup) [0.71ms]
+(pass) render: active row uses a full-width selected background [0.80ms]
+(pass) render: compact header row has KEY, VALUE, SOURCE columns [0.65ms]
+(pass) render: compact mode never exceeds terminal width even with a long VALUE in another section [0.62ms]
+(pass) render: footer pin includes the optional details toggle [0.67ms]
+(pass) nav: Enter on the first row emits that row's id [0.21ms]
+(pass) nav: Down arrow moves to the next visible row [0.14ms]
+(pass) nav: Down wrapping at the end of a section wraps to 0 [0.12ms]
+(pass) nav: Esc emits undefined (close) [0.06ms]
+(pass) nav: Tab advances to the next section [0.04ms]
+(pass) nav: Back-tab (\x1b[Z) retreats to the previous section [0.03ms]
+(pass) nav: Right-arrow CSI sequence (\x1b[C) advances section [0.02ms]
+(pass) nav: Left-arrow CSI sequence (\x1b[D) retreats section [0.38ms]
+(pass) details toggle: descriptions can be shown and truncated when requested [0.66ms]
+(pass) details toggle: at width=120 the description column shows most of the row text [0.73ms]
+(pass) cache: identical renders at the same width return the same array reference [0.45ms]
+(pass) cache: state change invalidates cache (move → next render produces new lines) [0.98ms]
+(pass) compact view expands VALUE so model + thinking are visible [0.62ms]
+(pass) structural: Class implements Component (has render + invalidate + handleInput) [0.05ms]
+(pass) structural: buildSettingsRows returns ≥20 rows across all 8 sections (coverage) [0.29ms]
+(pass) render: tab bar is color-only (v0.28.19: brackets dropped), all sections present [0.61ms]
+(pass) render: a header rule with ┼ junctions follows the header row [2.19ms]
+(pass) render: column separators align across header, rule, and every row (prefix counted) [0.46ms]
+(pass) render: a too-long VALUE is truncated with … — it must NOT break the grid [0.33ms]
+(pass) render: column widths are stable across tab switches (no grid reflow) [1.80ms]
+
+tests/glla-status-ux.test.ts:
+(pass) v0.35.15: auditing footer carries a distinct phase glyph AND an activity meter element for every auditor phase [14.62ms]
+(pass) v0.35.15: activity meter drains as worker silence grows (full at fresh, empty past the quiet threshold) [0.18ms]
+(pass) v0.35.15: ⏸ supervisor chip leads the footer in every lifecycle branch when paused [0.36ms]
+(pass) v0.35.15: a recently ended quiet stretch shows 'silent Xm then resumed' in the widget; stale stretches stay hidden [1.32ms]
+(pass) v0.35.15: quiet watcher notifies EXACTLY ONCE on entering the quiet phase, records the stretch on resume [33.59ms]
+(pass) v0.35.15: quiet watcher stays silent while the supervisor is paused (it IS automatic machinery) [0.97ms]
+(pass) v0.35.15: every automatic dispatch point gates on supervisorPaused [203.70ms]
+(pass) v0.35.15: /glla pause persists a durable flag, leaves the active goal untouched, and survives a disk reload [512.03ms]
+(pass) v0.35.15: /glla resume clears the freeze, reports the frozen duration, and never lies 'Nothing to resume' [333.65ms]
+(pass) v0.38.104: the working-card tool argument is cut cell-aware, never mid-surrogate [1.10ms]
+
+1 tests failed:
+(fail) v0.29.17 wiring: model-valued settings use the fuzzy picker; unavailable auditor models fall back LOUDLY to the session model [16.15ms]
+
+ 270 pass
+ 1 fail
+Ran 271 tests across 20 files. [26.65s]
+[run-tests] finished in 27s (exit 1)
