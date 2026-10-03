@@ -1409,6 +1409,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // extension. It must not reclaim the old ctx or schedule settle refires.
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown) return;
     if (!isSupervising()) return;
+    clearBoundaryCompactionAttempt(ctx);
     appendLedger(ctx.cwd, "session_compact", {});
     // v0.28.24: a compaction is LEGITIMATE busy time — reset the send-rearm
     // storm streaks (π-web nearly escalated a "send-retry storm" pause during

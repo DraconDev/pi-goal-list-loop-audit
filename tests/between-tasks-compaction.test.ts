@@ -201,3 +201,15 @@ test("v0.38.105 the boundary never re-arms the starvation path's brief one-shot"
     fs.rmSync(cwd, { recursive: true, force: true });
   }
 });
+
+test("a synchronous compact throw releases the boundary for ordinary continuation", async () => {
+  const cwd = mkBoundaryCwd();
+  try {
+    __testOnlySetSpawnWorker(async () => ({ ok: true, brief: "Objective: continue." }));
+    const { ctx } = boundaryCtx(cwd, { tokens: 205_508, compact: () => { throw new Error("summarizer unavailable"); } });
+    assert.equal(maybeCompactTranscriptAtBoundary(ctx, LIVE_FLAGS), false, "no launched attempt owns the next turn");
+    assert.ok(fs.existsSync(compactorBoundaryMarkerPath(cwd)), "a failed attempt retains retry suppression");
+    assert.equal(maybeCompactTranscriptAtBoundary(ctx, LIVE_FLAGS), false);
+    await settleBrief();
+  } finally { fs.rmSync(cwd, { recursive: true, force: true }); }
+});

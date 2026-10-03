@@ -286,7 +286,9 @@ for (const eventFirst of [true, false]) {
     const failEvent = () => pi.fire("session_compact_failed", { reason: "threshold", errorMessage: error.message, willRetry: false }, ctx);
     if (eventFirst) { await failEvent(); callbacks.onError(error); }
     else { callbacks.onError(error); await failEvent(); }
-    await tick(100);
+    const sendsAtFailure = pi.sent.length;
+    await tick(2_700);
+    assert.equal(pi.sent.length, sendsAtFailure + 1, "one real continuation is dispatched after failure");
     assert.equal(readState(cwd).goal?.status, "active", "the opportunistic threshold is never a hard stop");
     assert.equal(pi.modelSelections.length, 0);
     assert.equal(ledger(cwd).filter(e => e.type === "compactor_transcript_error").length, 1);
@@ -295,5 +297,26 @@ for (const eventFirst of [true, false]) {
     assert.ok(!ctx.ui.notifies.some((n: { message: string }) => /parked|then resume|Run \/new/i.test(n.message)));
     await pi.fire("agent_settled", {}, ctx);
     assert.equal(attempts, 1, "failure does not trigger compaction on every turn");
+  });
+}
+
+for (const synchronousError of [false, true]) {
+  test(`optional compaction resumes a branch loop (${synchronousError ? "synchronous callback" : "event without callback"})`, async () => {
+    const cwd = tmpCwd();
+    seedState(cwd, { loop: seedLoop({ active: true, iteration: 4, target: "optional compaction keeps loop moving" }) });
+    const { pi, ctx } = await boot(cwd, { mainModelFallbacks: [], compactionTokenThreshold: 300_000 });
+    ctx.getContextUsage = () => ({ tokens: 305_508, contextWindow: 1_000_000, percent: 30.55 });
+    ctx.compact = (options: { onError(error: Error): void }) => {
+      if (synchronousError) options.onError(new Error("generation hit the token cap"));
+    };
+    await pi.fire("agent_settled", {}, ctx);
+    if (!synchronousError) await pi.fire("session_compact_failed", { reason: "threshold", errorMessage: "generation hit the token cap", willRetry: false }, ctx);
+    const sendsAtFailure = pi.sent.length;
+    await tick(2_700);
+    assert.equal(readState(cwd).loop?.active, true);
+    assert.equal(readState(cwd).loop?.iteration, 4);
+    assert.equal(pi.sent.length, sendsAtFailure + 1, "the loop sends its next real turn");
+    assert.equal(ledger(cwd).filter(e => e.type === "compactor_transcript_resume").length, 1);
+    assert.equal(ledger(cwd).filter(e => e.type === "loop_stopped").length, 0);
   });
 }

@@ -230,7 +230,7 @@ export function maybeCompactTranscriptAtBoundary(
         ctx.ui.notify(`glla: optional transcript compaction failed (${detail.slice(0, 160)}); continuing with the current transcript.`, "warning");
       } catch { /* stale UI best effort */ }
       // Defer until the firing boundary has cleared its eager timers.
-      queueMicrotask(() => onFailure?.());
+      setTimeout(() => onFailure?.(), 0);
     },
   };
   boundaryAttempts.set(boundaryOwner(ctx), attempt);
@@ -247,6 +247,7 @@ export function maybeCompactTranscriptAtBoundary(
   } catch (error) {
     // Nothing launched; let the caller's normal continuation run.
     attempt.fail(`throw: ${String(error)}`, false);
+    clearBoundaryCompactionAttempt(ctx);
     return false;
   }
   return true;
