@@ -1,0 +1,1302 @@
+Muse Code Conversation Export
+=============================
+
+Exported At: 2026-10-03 06:33:08 UTC
+Session: 01a0fe0e-4127-74e1-981b-bb5888451dec
+Workspace: /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit
+
+## Conversation
+
+  Model set to muse-spark-1.3-contributor
+  ⎿  Your content, including inter-session messages, may be used for product
+     improvement.
+
+◆ Goal set — we are still ahving a problem wit hthe final audit investigate it
+
+◆ Ran command · List repo root and audit state · ✓ · 0.1s
+├ ls -la; echo "---"; cat package.json 2>/dev/null | head -n 100; echo "==="; ls
+│  -la .pi-glla/ 2>&1 | head -n 50; echo "==="; ls audit/ 2>&1 | head -n 50
+├ exit 0
+└ total 323836
+  drwxr-xr-x 22 dracon users      4096 Oct  2 19:15 .
+  drwxr-xr-x 18 dracon users      4096 Sep 28 12:08 ..
+  drwxr-xr-x  2 dracon users      4096 Aug 20 11:42 .agents
+  -rw-r--r--  1 dracon users      4240 Sep 30 16:23 AGENTS.md
+  drwxr-xr-x 24 dracon users     20480 Oct  2 12:07 audit
+  -rw-r--r--  1 dracon users       165 Jul 29 03:14 bunfig.toml
+  -rw-r--r--  1 dracon users    625851 Oct  2 17:12 CHANGELOG.md
+  … 191 lines omitted
+  COMPLETION-SUMMARY-2026-09-04.md
+  COMPLETION-SUMMARY-AUDIT-2026-08-27.md
+  COMPLETION-SUMMARY-POLICY-2026-08-19.md
+  CONFIRM-DRAFT-MARKDOWN-2026-08-07.md
+  CONTEXT-GROWTH-2026-08-29.md
+  CONTEXT-STARVATION-REFUSE-2026-08-07.md
+  CONTINUATION-APPROACH-COMPARISON-2026-08-15.md
+  CONTINUATION-DISPATCH-RELIABILITY-2026-08-19.md
+
+◆ Ran command · Check recent commits and structure · ✓ · 0.1s
+├ git log --oneline -20; echo "==="; ls -R extensions/ | head -n 100; echo "==="
+│ ; ls tests/ | head -n 100
+├ exit 0
+└ 2b6b58b5 1 file(s) [conversation-2026-10-02-181541.txt] DELTA:+875/-0 | EXT:t…
+  f790069f 1 file(s) in tests/completed-audit-recovery.test.ts DELTA:+4/-2 | EX…
+  829df296 1 file(s) in tests/completed-audit-recovery.test.ts DELTA:+18/-2 | E…
+  edcfae45 1 file(s) in tests/completed-audit-recovery.test.ts DELTA:+13/-0 | E…
+  ce907a6d 1 file(s) in audit/FULL-AUDIT-2026-10-02.md DELTA:+37/-0 | EXT:md DO…
+  90a2743a 1 file(s) [CHANGELOG.md] DELTA:+15/-0 | EXT:md DOCSONLY:CHANGELOG.md
+  bbbe2816 1 file(s) in tests/completed-audit-recovery.test.ts DELTA:+42/-0 | E…
+  70499742 1 file(s) in extensions/goal-loop-auditor-process.ts DELTA:+31/-14 |…
+  … 182 lines omitted
+  delegate-skill.test.ts
+  delta-only-continuation.test.ts
+  designer-drafter-policy.test.ts
+  disk-first-queue.test.ts
+  display.test.ts
+  drafting-handoff.test.ts
+  drafting-questionnaire.test.ts
+  draft-staging.test.ts
+
+◆ Ran command · Check latest audit docs and notes · ✓ · 0.1s
+├ ls -t audit/ | head -n 30; echo "==="; cat note.md; echo "==="; ls -t tests/ |
+│  head -n 20
+├ exit 0
+└ FULL-AUDIT-2026-10-02.md
+  CONTROL-UI-RETHINK-2026-10-02.md
+  CONTROL-UI-AUDIT-2026-10-02.md
+  workerless-inflight-2026-10-02
+  respec-orphan-hardening-2026-10-02
+  next-audit-respec-evidence-2026-10-02
+  compaction-target-evidence-2026-10-02
+  COMPACTION-TARGET-SETTING-2026-10-02.md
+  … 94 lines omitted
+  overdue-backstop.test.ts
+  policy-self-heal.test.ts
+  approval-notify.test.ts
+  auditor-process.test.ts
+  display.test.ts
+  behavioral-orchestrator.test.ts
+  auditor-fallback-unification.test.ts
+  pending-claim-lifecycle.test.ts
+
+  Read audit/FULL-AUDIT-2026-10-02.md
+  Read audit/FINAL-AUDIT-NAMED-PROJECTS-2026-10-02.md
+  Read audit/FINAL-AUDIT-ORPHAN-BACKSTOP-2026-10-02.md
+
+◆ Ran command · Check git status and recent conversation · ✓ · 0.1s
+├ git status --short | head -n 30; echo "==="; tail -n 80
+│ conversation-2026-10-02-181541.txt; echo "===VERSION==="; grep '"version"'
+│ package.json
+├ exit 0
+└ ===
+    .github/workflows/publish.yml:55:        run: npm ci
+    .github/workflows/publish.yml:58:        run: npm run release:check
+    .github/workflows/publish.yml:94:        run: npm install --global npm@11.1…
+    .github/workflows/publish.yml:99:        run: |
+    .github/workflows/publish.yml:110:        run: npm ci
+
+  ◆ Ran command · Typecheck the edited test file · ✓ · 12s
+  … 67 lines omitted
+    Verification: full file 38 pass / 0 fail ×3; neighbors (stuck-audit-latch,
+    pending-claim-lifecycle) 11/11; tsc --noEmit shows the same 7 pre-existing
+    errors before and after my edit, none in the touched file.
+
+  ◆ Worked for 7m 21s · 6:19 PM
+
+  ===VERSION===
+      "version": "0.38.108",
+
+◆ Ran command · Review final-audit doc history · ✓ · 0.1s
+├ ls -t audit/final-audit* audit/FINAL* 2>/dev/null; echo "==="; tail -n 60
+│ audit/FINAL-AUDIT-RECOVERY-2026-10-01.md 2>/dev/null; echo "===TRIAGE===";
+│ tail -n 40 audit/FINAL-AUDIT-TRIAGE-2026-10-01.md 2>/dev/null
+├ exit 0
+└ audit/FINAL-AUDIT-NAMED-PROJECTS-2026-10-02.md
+  audit/FINAL-AUDIT-ORPHAN-BACKSTOP-2026-10-02.md
+  audit/FINAL-AUDIT-VERSION-GAP-2026-10-01.md
+  audit/FINAL-AUDIT-RECOVERY-2026-10-01.md
+  audit/FINAL-AUDIT-TRIAGE-2026-10-01.md
+
+  audit/final-audit-orphan-backstop-evidence-2026-10-02:
+  package-check.log
+  … 111 lines omitted
+
+  ## Validation
+
+  Targeted existing recovery checks: **14 passed, 0 failed** across
+  `audit-settlement-restart`, `audit-recovery-persistence`, and
+  `stuck-audit-latch`. Raw log: `final-audit-triage-evidence-2026-10-01/recover…
+  No runtime repair has been implemented; these tests demonstrate existing
+  covered recovery behavior, not closure of the new field report.
+
+  Searched "final.?audit|FinalAudit|completionAudit|completed_audit" (no matches
+)
+
+◆ Ran command · Search recent conversation for final audit symptoms · ✓ · 0.1s
+├ grep -n -i "final audit\|parked\|orphan\|workerless"
+│ conversation-2026-10-02-181541.txt | tail -n 40
+├ exit 0
+└ 20:  ✓ legacy parked claim without phase consumes saved approved on the first
+  22:  ✓ legacy parked claim without phase consumes saved disapproved on the fi…
+  24:  ✓ healthy host heartbeat reconciles an unarmed orphan: approved [284.42m…
+  25:  ✓ healthy host heartbeat reconciles an unarmed orphan: disapproved [273.…
+  26:  ✓ healthy host heartbeat reconciles an unarmed orphan: missing [271.63ms]
+  27:  ✓ heartbeat orphan recovery respects in-flight [261.34ms]
+  28:  ✓ heartbeat orphan recovery respects recent [249.95ms]
+  29:  ✓ heartbeat orphan recovery respects frozen [250.54ms]
+  … 21 lines omitted
+  730:└ (pass) days-old auditing orphan with a saved verdict recovers via heart…
+  731:  (pass) workerless in-flight claim with a saved verdict reconciles witho…
+  732:  (pass) S5: workerless in-flight claim parks under the stale latch via s…
+  733:  (pass) workerless in-flight claim without a verdict parks via workerles…
+  739:  (pass) workerless park drops the dead attempt's auditor cursor so recov…
+  850:  S5 (stale-latch-workerless): unreachable setup, not a code bug. The test
+  857:  ), then the auditing workerless in-flight claim lands while latched and…
+  858:  parks it via stranded_audit_recovered / stale-latch-workerless, matchin…
+
+◆ Ran command · Inspect auditor process recovery paths · ✓ · 0.1s
+├ grep -rn "
+│ completed_audit_recovery_rejected\|readCompletedCompletionAudit\|workerless"
+│ extensions/goal-loop-auditor-process.ts | head -n 30; echo "==="; grep -rn "
+│ final" extensions/goal-loop-auditor-process.ts | head -n 20; echo "===HEAD==="
+│ ; head -n 60 conversation-2026-10-02-181541.txt
+├ exit 0
+└ 1042: * (worker alive — hands off, no wall) from a workerless in-flight hang …
+  1984:export function readCompletedCompletionAudit(cwd: string, goal: Goal, st…
+  1998:      appendLedger(cwd, "completed_audit_recovery_rejected", { logicalAt…
+  ===
+  70:   * the final failure still retains its concrete transport/provider/timeo…
+  84:   * legacy workers. Never affects verdict semantics — the final-line
+  739:/** Classify the final failure without trusting provider prose when the w…
+  849:// A child can finish its final atomic rename just as the parent observes…
+  … 69 lines omitted
+    ✓ corrupt final progress identity refuses recovery without consuming the cl…
+    [0.74ms]
+    ✓ saved approval still enforces the audit-tool floor and regression shield
+    [0.97ms]
+    ✓ second audit pass remains visible through thinking, tools, and report
+    generation [0.91ms]
+    ✓ days-old auditing orphan with a saved verdict recovers via heartbeat (SEO
+    field case) [251.14ms]
+
+◆ Ran command · Inspect live goal state tail · ✓ · 0.1s
+├ python3 -c "
+│ import json
+│ path='.pi-glla/active.jsonl'
+│ with open(path) as f:
+│     lines=f.readlines()
+│ print('lines:',len(lines))
+│ for ln in lines[-8:]:
+│     try:
+│         o=json.loads(ln)
+│         print(json.dumps({k:o.get(k) for k in ['id','objective','status','
+│ phase','completionClaim','auditorAttemptId','updatedAt','lastActivityAt'] if k
+│  in o}, indent=1)[:1500])
+│         print('---keys:', sorted(o.keys())[:30])
+│     except Exception as e:
+│         print('ERR',e)
+│ "
+├ exit 0
+└ lines: 1520
+  {}
+  ---keys: ['at', 'type', 'value']
+  {}
+  ---keys: ['at', 'type', 'value']
+  {}
+  ---keys: ['at', 'type', 'value']
+  {}
+  ---keys: ['at', 'type', 'value']
+  {}
+  ---keys: ['at', 'type', 'value']
+  {}
+  ---keys: ['at', 'type', 'value']
+  {}
+  ---keys: ['at', 'type', 'value']
+  {}
+  ---keys: ['at', 'type', 'value']
+
+❯ or oddly it actually cleared so maybe fine ??? but the ui needs an improvement
+  and we need to check all pi processes
+
+◆ Ran command · List running pi processes · ✓ · 0.2s
+├ ps aux | grep -i -E "pi |pi-|bun|node" | grep -v grep | head -n 40; echo "
+│ ===PGREP==="; pgrep -af "pi-" | head -n 40
+├ exit 0
+└ root        4213  0.0  0.0   2688     8 ?        Ss   Sep25   0:00 /nix/store…
+  dracon    201907  0.0  0.0   8432  2924 ?        Ss   19:52   0:00 timeout 72…
+  dracon    201908  0.2  0.2 13304992 68816 ?      Sl   19:52   0:04 node node_…
+  dracon    220886  0.0  0.0   8432  2920 ?        Ss   19:53   0:00 timeout 72…
+  dracon    220890  0.5  0.2 13281672 69124 ?      Sl   19:53   0:08 node node_…
+  dracon    269872  0.0  0.0 1345260 13348 ?       Sl   Oct01   0:00 node -e re…
+  dracon    341618  0.0  0.0 1417276 14860 ?       Sl   Sep27   0:05 node /tmp/…
+  dracon    398618  0.0  0.0   8432  2900 ?        Ss   19:58   0:00 timeout 72…
+  … 46 lines omitted
+  3781070 systemd-inhibit --what=sleep:idle:handle-lid-switch:handle-power-key …
+  3785817 systemd-inhibit --what=sleep:idle:handle-lid-switch:handle-power-key …
+  3791889 systemd-inhibit --what=sleep:idle:handle-lid-switch:handle-power-key …
+  3804582 systemd-inhibit --what=sleep:idle:handle-lid-switch:handle-power-key …
+  3826258 systemd-inhibit --what=sleep:idle:handle-lid-switch:handle-power-key …
+  3840509 systemd-inhibit --what=sleep:idle:handle-lid-switch:handle-power-key …
+  3932606 systemd-inhibit --what=sleep:idle:handle-lid-switch:handle-power-key …
+  3944571 systemd-inhibit --what=sleep:idle:handle-lid-switch:handle-power-key …
+
+◆ Ran command · Inventory pi agent processes with cwd · ✓ · 0.7s
+├ for p in $(pgrep -f "npm-global/bin/pi "); do cwd=$(readlink /proc/$p/cwd 2>
+│ /dev/null); start=$(ps -o lstart= -p $p 2>/dev/null); echo "PID=$p START=[$
+│ start] CWD=$cwd"; done; echo "===COUNT==="; pgrep -c -f "npm-global/bin/pi "
+├ exit 0
+└ PID=1168051 START=[Fri Oct  2 20:20:02 2026] CWD=/home/dracon/Dev/pi-plugins/…
+  PID=1442020 START=[Wed Sep 30 00:24:55 2026] CWD=/home/dracon/Dev/dracon-stra…
+  PID=2156816 START=[Thu Oct  1 14:51:13 2026] CWD=/home/dracon/Dev/dracon-stra…
+  PID=2258875 START=[Fri Oct  2 16:22:54 2026] CWD=/home/dracon/Dev/dracon-plat…
+  PID=2268545 START=[Fri Oct  2 16:23:26 2026] CWD=/home/dracon/Dev/dracon-plat…
+  PID=2301121 START=[Fri Oct  2 16:24:49 2026] CWD=/home/dracon/Dev/browser-ext…
+  PID=2313811 START=[Fri Oct  2 16:25:22 2026] CWD=/home/dracon/Dev/dracon-plat…
+  PID=2516775 START=[Fri Oct  2 16:35:27 2026] CWD=/home/dracon/Dev/dracon-plat…
+  … 6 lines omitted
+  PID=3791889 START=[Fri Oct  2 19:33:16 2026] CWD=/home/dracon/Dev/dracon-plat…
+  PID=3804582 START=[Fri Oct  2 19:33:37 2026] CWD=/home/dracon/Dev/dracon-plat…
+  PID=3826258 START=[Fri Oct  2 19:34:19 2026] CWD=/home/dracon/Dev/eve
+  PID=3840509 START=[Fri Oct  2 19:34:43 2026] CWD=/home/dracon/Dev/dracon-plat…
+  PID=3932606 START=[Fri Oct  2 19:37:33 2026] CWD=/home/dracon/Dev/dracon-plat…
+  PID=3944571 START=[Fri Oct  2 19:37:51 2026] CWD=/home/dracon/Dev/dracon-plat…
+  ===COUNT===
+  19
+
+◆ Ran command · Survey GLLA state dirs per project · ✓ · 0.1s
+├ for d in /home/dracon/Dev/dracon-strategy/ai-auto-video
+│ /home/dracon/Dev/dracon-strategy/ai-auto-writer
+│ /home/dracon/Dev/dracon-platform/web/studio
+│ /home/dracon/Dev/dracon-platform/web/chat
+│ /home/dracon/Dev/browser-extensions-shared/extensions/standalones/clean-web
+│ /home/dracon/Dev/dracon-platform/web/games/wip/doomtap
+│ /home/dracon/Dev/dracon-platform
+│ /home/dracon/Dev/dracon-platform/web/games/wip/junk-runner
+│ /home/dracon/Dev/dracon-platform/web/games/wip/freeport
+│ /home/dracon/Dev/dracon-platform/web/games/wip/football-forever
+│ /home/dracon/Dev/dracon-platform/web/games/wip/neonbreak
+│ /home/dracon/Dev/dracon-platform/web/games/wip/endless-td
+│ /home/dracon/Dev/dracon-platform/web/games/wip/polis
+│ /home/dracon/Dev/dracon-platform/web/games/wip/darklord
+│ /home/dracon/Dev/dracon-platform/web/games/wip/capture-anime-girls
+│ /home/dracon/Dev/eve /home/dracon/Dev/dracon-platform/web/games/wip/deathrun
+│ /home/dracon/Dev/dracon-platform/web/games/wip/hegemon
+│ /home/dracon/Dev/dracon-platform/web/games/wip/hellhunter; do echo "### $d";
+│ ls "$d/.pi-glla/" 2>/dev/null | head -n 20 || echo "NO .pi-glla"; done
+├ exit 0
+└ ### /home/dracon/Dev/dracon-strategy/ai-auto-video
+  active.jsonl
+  archive
+  audit-jobs
+  audit-loop
+  audits.jsonl
+  compactor-jobs
+  goals
+  … 327 lines omitted
+  account-journey-debug17.log
+  account-journey-debug18.log
+  account-journey-debug19.log
+  account-journey-debug2.log
+  account-journey-debug3.log
+  account-journey-debug4.log
+  account-journey-debug5.log
+  account-journey-debug6.log
+
+◆ Ran command · Peek journal entry schema · ✓ · 0.1s
+├ head -n 3 .pi-glla/active.jsonl | cut -c1-600; echo; echo "===TYPES===";
+│ python3 -c "
+│ import json
+│ from collections import Counter
+│ c=Counter()
+│ with open('.pi-glla/active.jsonl') as f:
+│     for ln in f:
+│         try: c[json.loads(ln).get('type')]+=1
+│         except: pass
+│ print(c)"
+├ exit 0
+└ {"type":"state","value":{"goal":{"id":"20260926102404-7dzyzj","objective":"Le…
+  {"type":"auditor_thinking_selected","value":{"goalId":"20260926102404-7dzyzj"…
+  {"type":"state","value":{"goal":{"id":"20260926102404-7dzyzj","objective":"Le…
+
+  ===TYPES===
+  Counter({'model_fallback_select': 591, 'state': 249, 'context_hygiene_dropped…
+
+◆ Wrote /tmp/fleet-survey.py (+78)
+   1 +#!/usr/bin/env python3
+   2 +"""Read-only GLLA fleet survey: latest goal state + recent ledger per proj
+      ect."""
+   3 +import json, sys, os
+   4 +from datetime import datetime, timezone
+   5 +
+   6 +NOISE = {"model_fallback_select","context_hygiene_dropped","pitfalls_consu
+      lted",
+   7 +         "context_usage_sample","payload_guard_eviction","auditor_model_sa
+      me_as_session",
+   8 +         "state","auditor_thinking_selected"}
+   9 +
+  10 +def survey(d):
+  11 +    p = os.path.join(d, ".pi-glla", "active.jsonl")
+  12 +    out = {"dir": d}
+  13 +    try:
+  14 +        with open(p) as f:
+  15 +            lines = f.readlines()
+  16 +    except Exception as e:
+  17 +        return {"dir": d, "error": str(e)}
+  18 +    out["journal_lines"] = len(lines)
+  19 +    states = {}
+  20 +    recent = []
+  21 +    for ln in lines:
+  22 +        try:
+  23 +            o = json.loads(ln)
+  24 +        except Exception:
+  25 +            continue
+  26 +        t = o.get("type")
+  27 +        if t == "state":
+  28 +            g = (o.get("value") or {}).get("goal") or {}
+  29 +            gid = g.get("id", "?")
+  30 +            states[gid] = (o.get("at"), g)
+  31 +        elif t not in NOISE:
+  32 +            recent.append((o.get("at"), t))
+  33 +    goals = []
+  34 +    for gid, (at, g) in states.items():
+  35 +        claim = g.get("completionClaim") or g.get("completion_claim")
+  36 +        goals.append({
+  37 +            "id": gid,
+  38 +            "at": at,
+  39 +            "status": g.get("status"),
+  40 +            "phase": g.get("phase"),
+  41 +            "paused": g.get("paused"),
+  42 +            "objective": (g.get("objective") or "")[:90],
+  43 +            "claim": bool(claim),
+  44 +            "claim_phase": (claim or {}).get("phase") if isinstance(claim,
+       dict) else None,
+  45 +            "claim_attempt": (claim or {}).get("attemptId") or (claim or {
+      }).get("logicalAttemptId") if isinstance(claim, dict) else None,
+  46 +            "lastActivity": g.get("lastActivityAt") or g.get("updatedAt"),
+  47 +            "keys": sorted(g.keys()),
+  48 +        })
+  49 +    out["goals"] = goals
+  50 +    out["recent"] = recent[-14:]
+  51 +    # audit jobs: newest dirs + result presence
+  52 +    aj = os.path.join(d, ".pi-glla", "audit-jobs")
+  53 +    try:
+  54 +        jobs = sorted(os.listdir(aj))[-4:]
+  55 +        jobinfo = []
+  56 +        for j in jobs:
+  57 +            jp = os.path.join(aj, j)
+  58 +            try:
+  59 +                files = os.listdir(jp)
+  60 +                jobinfo.append(f"{j} [{','.join(sorted(files)[:6])}]")
+  61 +            except Exception:
+  62 +                jobinfo.append(f"{j} [?]")
+  63 +        out["jobs"] = jobinfo
+  64 +    except Exception as e:
+  65 +        out["jobs"] = [f"ERR {e}"]
+  66 +    return out
+  67 +
+  68 +for d in sys.argv[1:]:
+  69 +    s = survey(d)
+  70 +    print("=" * 100)
+  71 +    print(s["dir"], "lines=", s.get("journal_lines"), s.get("error", ""))
+  72 +    for g in s.get("goals", []):
+  73 +        print(f'  GOAL {g["id"]} status={g["status"]} phase={g["phase"]} p
+      aused={g["paused"]}')
+  74 +        print(f'    obj: {g["objective"]}')
+  75 +        print(f'    claim={g["claim"]} claim_phase={g["claim_phase"]} atte
+      mpt={g["claim_attempt"]} lastActivity={g["lastActivity"]} stateAt={g["at"]
+      }')
+  76 +    print("  RECENT:", " | ".join(f"{a} {t}" for a, t in s.get("recent", [
+      ])))
+  77 +    for j in s.get("jobs", []):
+  78 +        print(f"  JOB {j}")
+
+◆ Ran command · Survey first batch of project goal states · ✓ · 0.6s
+├ python3 /tmp/fleet-survey.py /home/dracon/Dev/dracon-strategy/ai-auto-video
+│ /home/dracon/Dev/dracon-strategy/ai-auto-writer
+│ /home/dracon/Dev/dracon-platform/web/studio
+│ /home/dracon/Dev/dracon-platform/web/chat
+│ /home/dracon/Dev/browser-extensions-shared/extensions/standalones/clean-web
+│ /home/dracon/Dev/dracon-platform/web/games/wip/doomtap
+│ /home/dracon/Dev/dracon-platform 2>&1 | head -n 120
+├ exit 0
+└ =============================================================================…
+  /home/dracon/Dev/dracon-strategy/ai-auto-video lines= 499
+    GOAL 20260926211842-jo6zdz status=complete phase=None paused=None
+      obj: Run ONE project audit pass and leave the project in a known state. S…
+      claim=False claim_phase=None attempt=None lastActivity=2026-09-27T15:17:4…
+    GOAL 20260927151748-t92fi1 status=complete phase=None paused=None
+      obj: Extend `--style` beyond the per-question overlay: thread QuizStyle t…
+      claim=False claim_phase=None attempt=None lastActivity=2026-09-27T17:40:1…
+  … 77 lines omitted
+    GOAL ? status=None phase=None paused=None
+      obj:
+      claim=False claim_phase=None attempt=None lastActivity=None stateAt=2026-…
+    RECENT: 2026-10-02T18:43:05.147Z goal_archived | 2026-10-02T18:43:05.156Z t…
+    JOB audit-msdeka46-w2x79p-msdeka48-925dcf46 [lock,progress.json,request.jso…
+    JOB audit-msfymuk3-rwjenv-msfymuk5-7471b7fb [lock,progress.json,request.jso…
+    JOB audit-mskm8xkm-qae3n6-mskm8xko-07bf92f7 [lock,progress.json,request.jso…
+    JOB audit-msqjbky2-q3ertv-msqjbky4-8620ffe4 [lock,progress.json,request.jso…
+
+◆ Ran command · Survey second batch of project goal states · ✓ · 0.9s
+├ python3 /tmp/fleet-survey.py
+│ /home/dracon/Dev/dracon-platform/web/games/wip/junk-runner
+│ /home/dracon/Dev/dracon-platform/web/games/wip/freeport
+│ /home/dracon/Dev/dracon-platform/web/games/wip/football-forever
+│ /home/dracon/Dev/dracon-platform/web/games/wip/neonbreak
+│ /home/dracon/Dev/dracon-platform/web/games/wip/endless-td
+│ /home/dracon/Dev/dracon-platform/web/games/wip/polis
+│ /home/dracon/Dev/dracon-platform/web/games/wip/darklord 2>&1 | head -n 110
+├ exit 0
+└ =============================================================================…
+  /home/dracon/Dev/dracon-platform/web/games/wip/junk-runner lines= 1163
+    GOAL 20261002020917-pqw5fd status=complete phase=None paused=None
+      obj: upstream: re-sync `src/fake-indexeddb.ts` into `wip/neonbreak/vendor…
+      claim=False claim_phase=None attempt=None lastActivity=2026-10-02T02:40:3…
+    GOAL 20261002024039-nfuwdz status=complete phase=None paused=None
+      obj: Stop `bun run build` from intermittently failing with `ENOENT … .sve…
+      claim=False claim_phase=None attempt=None lastActivity=2026-10-02T03:23:5…
+  … 45 lines omitted
+    GOAL ? status=None phase=None paused=None
+      obj:
+      claim=False claim_phase=None attempt=None lastActivity=None stateAt=2026-…
+    RECENT: 2026-10-02T18:33:19.754Z session_rebound | 2026-10-02T18:33:19.760Z…
+    JOB rc-playtest-run6.log [?]
+    JOB rc-playtest-run7.log [?]
+    JOB rc-playtest-run8.log [?]
+    JOB rc-playtest-run9.log [?]
+
+◆ Reported progress 40% ████░░░░░░
+├ now    Surveying live pi processes and GLLA goal/audit state per project (2 of
+│        3 batches done); clean-web parked audit confirmed cleared
+└ next   Finish third batch survey, verify no stuck final audits remain, then
+         clarify/scope the UI improvement
+
+◆ Ran command · Survey third batch of project goal states · ✓ · 0.5s
+├ python3 /tmp/fleet-survey.py
+│ /home/dracon/Dev/dracon-platform/web/games/wip/capture-anime-girls
+│ /home/dracon/Dev/eve /home/dracon/Dev/dracon-platform/web/games/wip/deathrun
+│ /home/dracon/Dev/dracon-platform/web/games/wip/hegemon
+│ /home/dracon/Dev/dracon-platform/web/games/wip/hellhunter 2>&1 | head -n 90
+├ exit 0
+└ =============================================================================…
+  /home/dracon/Dev/dracon-platform/web/games/wip/capture-anime-girls lines= 355
+    GOAL ? status=None phase=None paused=None
+      obj:
+      claim=False claim_phase=None attempt=None lastActivity=None stateAt=2026-…
+    RECENT: 2026-10-02T18:33:40.558Z session_rebound | 2026-10-02T18:33:40.564Z…
+  =============================================================================…
+  /home/dracon/Dev/eve lines= 349
+  … 17 lines omitted
+      claim=False claim_phase=None attempt=None lastActivity=None stateAt=2026-…
+    RECENT: 2026-10-02T19:00:42.122Z loop_turn_sent | 2026-10-02T19:00:42.124Z …
+  =============================================================================…
+  /home/dracon/Dev/dracon-platform/web/games/wip/hellhunter lines= 1485
+    GOAL ? status=None phase=None paused=None
+      obj:
+      claim=False claim_phase=None attempt=None lastActivity=None stateAt=2026-…
+    RECENT: 2026-10-02T19:06:45.900Z loop_measured | 2026-10-02T19:06:45.952Z c…
+
+◆ Ran command · Find audit jobs without results · ✓ · 0.2s
+├ for d in /home/dracon/Dev/dracon-strategy/ai-auto-video
+│ /home/dracon/Dev/dracon-strategy/ai-auto-writer
+│ /home/dracon/Dev/dracon-platform/web/studio
+│ /home/dracon/Dev/dracon-platform/web/chat
+│ /home/dracon/Dev/browser-extensions-shared/extensions/standalones/clean-web
+│ /home/dracon/Dev/dracon-platform/web/games/wip/doomtap
+│ /home/dracon/Dev/dracon-platform
+│ /home/dracon/Dev/dracon-platform/web/games/wip/junk-runner
+│ /home/dracon/Dev/dracon-platform/web/games/wip/freeport
+│ /home/dracon/Dev/dracon-platform/web/games/wip/football-forever
+│ /home/dracon/Dev/dracon-platform/web/games/wip/neonbreak
+│ /home/dracon/Dev/dracon-platform/web/games/wip/endless-td
+│ /home/dracon/Dev/dracon-platform/web/games/wip/polis
+│ /home/dracon/Dev/dracon-platform/web/games/wip/darklord
+│ /home/dracon/Dev/dracon-platform/web/games/wip/capture-anime-girls
+│ /home/dracon/Dev/eve /home/dracon/Dev/dracon-platform/web/games/wip/deathrun
+│ /home/dracon/Dev/dracon-platform/web/games/wip/hegemon
+│ /home/dracon/Dev/dracon-platform/web/games/wip/hellhunter; do for j in "$d
+│ /.pi-glla/audit-jobs/"*/; do [ -d "$j" ] || continue; if [ ! -f "$j
+│ /result.json" ]; then echo "RESULTLESS: $j"; ls "$j"; fi; done; done; echo "
+│ === done ==="; ls /home/dracon/Dev/dracon-platform/seo/.pi-glla/audit-jobs/ 2>
+│ /dev/null | head
+├ exit 0
+└ === done ===
+  audit-muhbedy5-xzsys5-muhbee0g-84839178
+
+◆ Ran command · Peek control UI audit docs · ✓ · 0.1s
+├ head -n 50 audit/CONTROL-UI-RETHINK-2026-10-02.md; echo "===AUDIT-HEAD===";
+│ head -n 30 audit/CONTROL-UI-AUDIT-2026-10-02.md
+├ exit 0
+└ # Control UI rethink — 2026-10-02 (proposal, not decided)
+
+  Grounded in Screenshot_20261001_120159 ("not sure what i am expected
+  to do here") and the display code behind it. Companion to
+  `audit/CONTROL-UI-AUDIT-2026-10-02.md` (findings U1–U5).
+
+  ## The job of the control UI
+
+  … 65 lines omitted
+  Not audited: full suite, worker script internals, provider/recovery
+  ladders, settings UI. No release published.
+
+  ## Findings
+
+  ### F1 (FIXED this pass): liveness probe ran on healthy audits
+
+  The workerless check evaluated `auditorWorkerLiveForAttempt` (readdir +
+
+  Structured user input answered — Which UI: Completion summary (Recommended);
+  Stale PIs: Leave running (Recommended)
+
+◆ Ran command · Map summary section structure · ✓ · 0.1s
+├ wc -l extensions/completion-summary.ts; grep -n "
+│ Remaining\|Next\|Verification\|Outcome\|## " extensions/completion-summary.ts
+│ | head -n 40
+├ exit 0
+└ 1534 extensions/completion-summary.ts
+  13:  "Outcome:",
+  18:  "Next:",
+  40: * `Outcome:` cannot turn an incomplete claim into a useful recap.
+  85: * segmentation of every later label ("Outcome: see Tests: x. Tests: y"
+  86: * read Outcome as "see"). The last restatement wins, which also favors
+  180:  const rawOutcome = (lines[0] ?? "").replace(/^Outcome:\s*/, "");
+  187:  const outcomeSource = priorLines[0]?.replace(/^Outcome:\s*/, "") ?? raw…
+  … 25 lines omitted
+  671:      if (isNextRestatement(nextHeads, detail)) { seen.add(detail.trim())…
+  683: * `## Done — outcome` shape stays, so direct unit callers are unaffected.
+  687:  const safeOutcome = sanitizeDisplayText(outcome);
+  689:  return echo ? `## ${kind}: ${echo} \u2014 ${safeOutcome}` : `## ${kind}…
+  730: * v0.38.50: agent-structured groups render as `#### n. Area` subsections
+  802:   * keeps the `### Summary` section out (unstructured summaries keep
+  810:  showVerification?: boolean;
+  816:    // Tests:/Verification: lines to `tests` and discards the rest.
+
+  Read extensions/completion-summary.ts
+
+◆ Ran command · Find card section render sites · ✓ · 0.1s
+├ grep -n "Remaining\|### Next\|### Verification\|### Summary\|### Findings\|###
+│  Tests" extensions/completion-summary.ts | head -n 30
+├ exit 0
+└ 191:  // summary; headers ride only in the ### Summary section.
+  361:/** Full Outcome body for the `### Summary` card section, or null when
+  402:   * newlines preserved, rendered as `### Summary`. Empty unless the
+  802:   * keeps the `### Summary` section out (unstructured summaries keep
+  1008:    lines.push("### Summary", ...parts.summaryLines.map((line) => saniti…
+  1015:    lines.push(parts.chat ? "### Remaining" : "### Remaining", ...parts.…
+  1018:    lines.push("### Verification", sanitizeDisplayText(parts.verificatio…
+  1020:    lines.push("### Verification Evidence", ...parts.tableLines.map((lin…
+  1023:    lines.push("### Next", ...parts.nextLines.map((line) => sanitizeDisp…
+  1248:  // earns the full `### Summary` section on the terminal card (and the
+
+  Read extensions/completion-summary.ts
+  Read extensions/completion-summary.ts
+
+◆ Request user input Summary shape — failed
+└ invalid request_user_input request: `header` is too long: max 12, got 13
+
+  Structured user input answered — Sum shape: Pair problem+action (Recommended)
+
+◆ Read skill durable-test-collateral · built-in · 2 KB
+
+  Read tests/rich-summary-dedup.test.ts
+  Read extensions/completion-summary.ts
+  Read extensions/completion-summary.ts
+  Read extensions/completion-summary.ts
+
+◆ Ran command · Check arrow usage and builder callers · ✓ · 0.6s
+├ grep -n '"  →\|→ ' extensions/*.ts | head; echo "==="; grep -rn "
+│ buildRichTerminalParts" extensions/ tests/ --include="*.ts" -l
+├ exit 0
+└ extensions/audit-lifecycle.ts:107:/** Stored phase → the state a reader sees.…
+  extensions/auditor-extensions.ts:21://   • `npm:<name>[@version]` → `~/.pi/ag…
+  extensions/auditor-extensions.ts:24://   • `git:<url>` → `~/.pi/agent/git/<ho…
+  extensions/auditor-extensions.ts:26://   • paths → `~` expanded; relative pat…
+  extensions/auditor-extensions.ts:57: * `@scope/pkg`; `pkg@^2` → `pkg`; `pkg` …
+  extensions/auditor-extensions.ts:338:  // "npm:@scope/pkg@version" → "@scope/…
+  extensions/auditor-extensions.ts:368:  // to concrete install paths (npm: → m…
+  extensions/auditor-extensions.ts:369:  // git root, relative paths → settings…
+  … 2 lines omitted
+  ===
+  extensions/completion-summary.ts
+  tests/finding-lead-contract.test.ts
+  tests/verification-status.test.ts
+  tests/rich-terminal-summary.test.ts
+  tests/second-gemini-gap.test.ts
+  tests/repository-receipts.test.ts
+  tests/structured-summary.test.ts
+
+◆ Reported progress 65% ██████▌░░░
+├ now    Implementing completion-summary problem+action pairing (user chose:
+│        Unresolved bullets carry their resolving Next action inline); writing
+│        failing test first
+└ next   Implement pairing in buildRichTerminalParts, run focused tests + tsc +
+         inventory, report fleet status
+
+◆ Ran command · Check arrow in user-visible strings and test runner · ✓ · 0.2s
+├ grep -rn '→' extensions/goal-loop-display.ts extensions/loops/goal-ui.ts 2>
+│ /dev/null | grep -v "^\s*\*\|^\s*//" | head -n 8; echo "==="; grep -c "bun"
+│ scripts/run-tests.mjs; head -n 30 scripts/run-tests.mjs
+├ exit 0
+└ extensions/goal-loop-display.ts:8: * which does not rewrite `.js` → `.ts` spe…
+  extensions/goal-loop-display.ts:299:// tree glyphs already structure observat…
+  extensions/goal-loop-display.ts:356:      ? `switching → ${truncate(recovery.…
+  extensions/goal-loop-display.ts:407:  if (fallbacks.length > 0) lines.push(`f…
+  extensions/goal-loop-display.ts:456:// ---- semantic colors (optional; tests …
+  extensions/goal-loop-display.ts:1223:    case "decision": return `user decisi…
+  extensions/goal-loop-display.ts:1224:    case "error": return `manual action …
+  extensions/goal-loop-display.ts:1958:    toolSeg = `tool: ${truncate(audit.cu…
+  … 24 lines omitted
+  //      interrupted run cleans its suite group before reporting failure.
+  // Separately detached workers require their own ownership cleanup (F3).
+  // The heartbeat goes to stderr so piping stdout still gives clean test outpu…
+
+  import { spawn, spawnSync } from "node:child_process";
+  import * as fs from "node:fs";
+  import * as os from "node:os";
+  import * as path from "node:path";
+
+◆ Wrote tests/remaining-next-pairing.test.ts (+79)
+   1 +// pi-goal-list-loop-audit — Remaining/Next problem+action pairing.
+   2 +//
+   3 +// Field 2026-10-02 (note.md): "Next and remaining is pretty much the same
+   4 +// no?" — the card listed a problem under ### Remaining ("Unresolved: the
+      fix
+   5 +// is still not live ... activation needs a release cut") and the same fac
+      t
+   6 +// again under ### Next ("Next: Cut a release ..."), burying what mattered
+      .
+   7 +// Pins: a Next action that resolves an Unresolved problem renders inline
+   8 +// under that problem (`→ Next:`); ### Next keeps only standalone actions.
+   9 +// Left out (decided scope, not a problem) never pairs. The archive machin
+      e
+  10 +// layer keeps the verbatim recap — only the human projection pairs.
+  11 +
+  12 +import { test } from "node:test";
+  13 +import * as assert from "node:assert/strict";
+  14 +
+  15 +import {
+  16 +  buildRichTerminalParts,
+  17 +  composeRichTerminalLines,
+  18 +} from "../extensions/completion-summary.js";
+  19 +
+  20 +const PROBLEM =
+  21 +  "Unresolved: the fix is still not live — the installed binary is 0.112.4
+      2 built before this work, so activation needs a release cut.";
+  22 +const RESOLVING_ACTION =
+  23 +  "Next: Cut a release to activate the TTL, then confirm the first expiry
+      pass in the journal.";
+  24 +const STANDALONE_ACTION = "Next: Audit the remaining game fixtures for sta
+      le high scores.";
+  25 +
+  26 +function parts(details: string[]) {
+  27 +  return buildRichTerminalParts({
+  28 +    chat: true,
+  29 +    outcome: "TTL guard shipped",
+  30 +    details,
+  31 +    countsLine: "completion review: approved (1 review).",
+  32 +  });
+  33 +}
+  34 +
+  35 +test("pairing: resolving action rides inline under its problem", () => {
+  36 +  const p = parts([PROBLEM, RESOLVING_ACTION]);
+  37 +  assert.equal(p.nextLines.length, 0, "paired action leaves ### Next");
+  38 +  assert.match(p.remainingLines.join("\n"), /Unresolved/, "problem still r
+      enders");
+  39 +  const arrow = p.remainingLines.find((line) => line.includes("→ Next:"));
+  40 +  assert.ok(arrow, "resolving action renders as an inline → Next: line");
+  41 +  assert.match(arrow!, /Cut a release/, "action prose kept verbatim");
+  42 +});
+  43 +
+  44 +test("pairing: standalone actions stay in ### Next", () => {
+  45 +  const p = parts([PROBLEM, RESOLVING_ACTION, STANDALONE_ACTION]);
+  46 +  assert.equal(p.nextLines.length, 1, "only the standalone action stays");
+  47 +  assert.match(p.nextLines[0]!, /Audit the remaining game fixtures/);
+  48 +  const card = composeRichTerminalLines(p).join("\n");
+  49 +  assert.match(card, /### Remaining/, "Remaining section renders");
+  50 +  assert.match(card, /### Next/, "Next section renders for the standalone
+      action");
+  51 +});
+  52 +
+  53 +test("pairing: fully paired card omits an empty ### Next", () => {
+  54 +  const card = composeRichTerminalLines(parts([PROBLEM, RESOLVING_ACTION])
+      ).join("\n");
+  55 +  assert.match(card, /### Remaining/);
+  56 +  assert.doesNotMatch(card, /### Next/, "no empty Next section");
+  57 +});
+  58 +
+  59 +test("pairing: unrelated problem and action do not pair", () => {
+  60 +  const other = "Unresolved: guard clean --rust still lists protected cand
+      idates in its dry-run preview.";
+  61 +  const p = parts([other, RESOLVING_ACTION]);
+  62 +  assert.equal(p.nextLines.length, 1, "action stays standalone");
+  63 +  assert.ok(!p.remainingLines.some((line) => line.includes("→")), "no arro
+      w under the unrelated problem");
+  64 +});
+  65 +
+  66 +test("pairing: Left out never pairs, even on shared words", () => {
+  67 +  const leftOut = "Left out: No release cut, so the fix is not live; activ
+      ation happens at the next release.";
+  68 +  const p = parts([leftOut, RESOLVING_ACTION]);
+  69 +  assert.equal(p.nextLines.length, 1, "action stays in ### Next");
+  70 +  assert.ok(!p.remainingLines.some((line) => line.includes("→")), "decided
+       scope carries no resolving action");
+  71 +});
+  72 +
+  73 +test("pairing: several actions can resolve one problem", () => {
+  74 +  const second = "Next: Cut a release candidate and smoke the expiry journ
+      al entry.";
+  75 +  const p = parts([PROBLEM, RESOLVING_ACTION, second]);
+  76 +  assert.equal(p.nextLines.length, 0, "both actions pair");
+  77 +  const arrows = p.remainingLines.filter((line) => line.includes("→ Next:"
+      ));
+  78 +  assert.equal(arrows.length, 2, "both actions render inline");
+  79 +});
+
+◆ Ran command · Run new pairing test to observe failure · ✓ · 1.1s
+├ bun test tests/remaining-next-pairing.test.ts 2>&1 | tail -n 25
+├ exit 0
+└ (pass) pairing: Left out never pairs, even on shared words [0.16ms]
+  71 | });
+  72 |
+  73 | test("pairing: several actions can resolve one problem", () => {
+  74 |   const second = "Next: Cut a release candidate and smoke the expiry jou…
+  75 |   const p = parts([PROBLEM, RESOLVING_ACTION, second]);
+  76 |   assert.equal(p.nextLines.length, 0, "both actions pair");
+                ^
+  … 9 lines omitted
+
+        at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/remaining-…
+        at fn (node:test:215:18)
+  (fail) pairing: several actions can resolve one problem [0.27ms]
+
+   2 pass
+   4 fail
+  Ran 6 tests across 1 file. [808.00ms]
+
+◆ Edited extensions/completion-summary.ts (+26 −0)
+  621 +/** Content words for cross-lead problem→action pairing (field 2026-10-02
+       ,
+  622 + * note.md). Full body, not the restatement head window: the shared topic
+  623 + * ("release cut") often sits at the tail of a long problem body. */
+  624 +function pairingWords(detail: string): Set<string> {
+  625 +  const body = detail.replace(/^\s*(?:Next|Unresolved)\s*:?/i, "");
+  626 +  const words = body.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s
+       +/)
+  627 +    .filter((w) => w.length > 2 && !RESTATEMENT_STOPWORDS.has(w));
+  628 +  return new Set(words.slice(0, 60));
+  629 +}
+  630 +
+  631 +/** Shared-topic score for one problem/action pair. A pair needs ≥2 share
+       d
+  632 + * content words with at least one long (≥5 chars) token, so generic
+  633 + * overlaps never attach an action to the wrong problem. Returns 0 when
+  634 + * the pair must not render together. */
+  635 +function pairingScore(problem: Set<string>, action: Set<string>): number
+       {
+  636 +  let shared = 0;
+  637 +  let longShared = 0;
+  638 +  for (const word of action) {
+  639 +    if (problem.has(word)) {
+  640 +      shared++;
+  641 +      if (word.length >= 5) longShared++;
+  642 +    }
+  643 +  }
+  644 +  return shared >= 2 && longShared >= 1 ? shared : 0;
+  645 +}
+  646 +
+  647  /** True when `detail` restates an already-kept same-label next detail:
+
+◆ Edited extensions/completion-summary.ts (+41 −1)
+   985    // are change-impact facts, not a second technical next step.
+   986 +  // Field 2026-10-02 (note.md): a Next action that resolves an Unresolv
+        ed
+   987 +  // problem renders inline under that problem (`→ Next:`) — the card us
+        ed
+   988 +  // to state the same fact twice (problem under Remaining, its fix unde
+        r
+   989 +  // Next), burying what mattered. ### Next keeps only standalone action
+        s.
+   990 +  // Left out is decided scope, never a problem, so it never pairs. The
+   991 +  // archive machine layer keeps the verbatim recap; only this human
+   992 +  // projection pairs.
+   993 +  const unresolvedDetails = next.filter((d) => /^\s*Unresolved\s*:/i.tes
+        t(d));
+   994 +  const nextDetails = next.filter((d) => /^\s*Next\s*:/i.test(d));
+   995 +  const problemWords = unresolvedDetails.map(pairingWords);
+   996 +  const pairedByProblem = new Map<number, number[]>();
+   997 +  const consumedActions = new Set<number>();
+   998 +  nextDetails.forEach((action, actionIdx) => {
+   999 +    const actionWords = pairingWords(action);
+  1000 +    let best = -1;
+  1001 +    let bestScore = 0;
+  1002 +    problemWords.forEach((words, problemIdx) => {
+  1003 +      const score = pairingScore(words, actionWords);
+  1004 +      if (score > bestScore) { bestScore = score; best = problemIdx; }
+  1005 +    });
+  1006 +    if (best >= 0) {
+  1007 +      consumedActions.add(actionIdx);
+  1008 +      const list = pairedByProblem.get(best) ?? [];
+  1009 +      list.push(actionIdx);
+  1010 +      pairedByProblem.set(best, list);
+  1011 +    }
+  1012 +  });
+  1013    const nextLines: string[] = [];
+   987 -  for (const detail of next.filter((d) => !/^\s*(?:Left out|Unresolved)\
+        s*:/i.test(d))) {
+  1014 +  for (const [actionIdx, detail] of nextDetails.entries()) {
+  1015 +    if (consumedActions.has(actionIdx)) continue;
+  1016      const { lead, body } = leadBody(detail);
+       ⋮
+  1026      remainingLines.push(...rest);
+  1027 +    if (/^\s*Unresolved\s*:/i.test(detail)) {
+  1028 +      // Paired actions relocate verbatim (the ### Next rendering, moved
+  1029 +      // under their problem) — pairing is co-location, not re-voicing.
+  1030 +      const problemIdx = unresolvedDetails.indexOf(detail);
+  1031 +      for (const actionIdx of pairedByProblem.get(problemIdx) ?? []) {
+  1032 +        const actionDetail = nextDetails[actionIdx] ?? "";
+  1033 +        const { lead: actionLead, body: actionBody } = leadBody(actionDe
+        tail);
+  1034 +        const [actionHead, ...actionRest] = expandInlineList(actionBody)
+        ;
+  1035 +        remainingLines.push(`  → ${actionLead}: ${actionHead ?? ""}`.tri
+        mEnd());
+  1036 +        remainingLines.push(...actionRest);
+  1037 +      }
+  1038 +    }
+  1039    }
+
+◆ Ran command · Run pairing test plus neighbor suites · ✓ · 1.4s
+├ bun test tests/remaining-next-pairing.test.ts tests/rich-summary-dedup.test.ts
+│  tests/completion-summary-lines.test.ts tests/rich-terminal-summary.test.ts 2
+│ >&1 | tail -n 12
+├ exit 0
+└ (pass) 172705: exact-duplicate details render once per bucket [0.12ms]
+  (pass) 2026-10-02: same-label restatement in next/remaining collapses to firs…
+  (pass) 2026-10-02: problem and action across labels always both render [0.05m…
+  (pass) 2026-10-02: distinct same-label next steps both render [0.03ms]
+  (pass) 172705: zero turns omitted, elapsed and audits kept [0.10ms]
+
+  1 tests failed:
+  (fail) the ✓ done chat notifies use the line block; external keeps the single…
+
+   57 pass
+   1 fail
+  Ran 58 tests across 4 files. [1259.00ms]
+
+◆ Ran command · Show failing test detail · ✓ · 0.7s
+├ bun test tests/remaining-next-pairing.test.ts tests/rich-summary-dedup.test.ts
+│  tests/completion-summary-lines.test.ts tests/rich-terminal-summary.test.ts 2
+│ >&1 | grep -B2 -A25 "fail)" | head -n 60
+├ exit 0
+└       at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/completion…
+        at fn (node:test:215:18)
+  (fail) the ✓ done chat notifies use the line block; external keeps the single…
+  (pass) audit-2026-09-06: completionSummaryLines honors the optional line-widt…
+  (pass) recorded-facts fallback Next survives the stale-Next filter [0.06ms]
+  (pass) machine-path strip converges on nested groups, leaves no husk [0.07ms]
+  (pass) clip never splits a surrogate pair [0.08ms]
+  (pass) label named inside a value does not steal later segmentation [0.07ms]
+  … 12 lines omitted
+  (pass) 172705: zero turns omitted, elapsed and audits kept [0.13ms]
+
+  1 tests failed:
+  (fail) the ✓ done chat notifies use the line block; external keeps the single…
+
+   57 pass
+   1 fail
+  Ran 58 tests across 4 files. [544.00ms]
+
+  Read tests/completion-summary-lines.test.ts
+
+◆ Ran command · Check failing test on unmodified baseline · ✗ · 0.9s
+├ git stash -q && bun test tests/completion-summary-lines.test.ts 2>&1 | tail -n
+│  5; git stash pop -q && git status --short | head
+├ exit 1
+└ (fail) the ✓ done chat notifies use the line block; external keeps the single…
+
+   21 pass
+   1 fail
+  Ran 22 tests across 1 file. [709.00ms]
+  No stash entries found.
+
+◆ Ran command · Check git state after stash surprise · ✓ · 0.2s
+├ git log --oneline -5; echo "==="; git status --short | head; echo "==="; git
+│ stash list | head
+├ exit 0
+└ 8153c705 1 file(s) in extensions/completion-summary.ts DELTA:+67/-1 | EXT:ts
+  562b9d81 1 file(s) in tests/remaining-next-pairing.test.ts DELTA:+79/-0 | EXT…
+  2b6b58b5 1 file(s) [conversation-2026-10-02-181541.txt] DELTA:+875/-0 | EXT:t…
+  f790069f 1 file(s) in tests/completed-audit-recovery.test.ts DELTA:+4/-2 | EX…
+  829df296 1 file(s) in tests/completed-audit-recovery.test.ts DELTA:+18/-2 | E…
+  ===
+  ===
+
+◆ Ran command · Compare pinned string before and after change · ✓ · 0.1s
+├ echo "--- HEAD:"; grep -c '✓ done — ${notice.outcome}'
+│ extensions/completion-summary.ts; echo "--- HEAD~2 (pre-my-change):"; git show
+│  HEAD~2:extensions/completion-summary.ts | grep -c '✓ done — ${notice.outcome}
+│ '; echo "--- actual done-notice lines at HEAD:"; grep -n '✓ done'
+│ extensions/completion-summary.ts | head -n 5
+├ exit 0
+└ --- HEAD:
+  0
+  --- HEAD~2 (pre-my-change):
+  0
+  --- actual done-notice lines at HEAD:
+  1162:    `✓ done — ${sanitizeDisplayText(notice.outcome)}`,
+  1280:  /** Brief outcome (chat line 1 without the `✓ done — ` prefix). */
+  1521:/** Brief twin of compactTerminalCompletionSummary for the `✓ done` chat
+  1530:/** Multi-line twin of compactTerminalCompletionSummary for the `✓ done`
+
+◆ Ran command · Run pairing tests and all builder consumers · ✓ · 3.7s
+├ bun test tests/remaining-next-pairing.test.ts 2>&1 | tail -n 4; echo "
+│ ===CONSUMERS==="; bun test tests/finding-lead-contract.test.ts
+│ tests/verification-status.test.ts tests/second-gemini-gap.test.ts
+│ tests/repository-receipts.test.ts tests/structured-summary.test.ts 2>&1 | tail
+│  -n 5
+├ exit 0
+└
+   6 pass
+   0 fail
+  Ran 6 tests across 1 file. [769.00ms]
+  ===CONSUMERS===
+  (pass) archive human layer carries the same Summary section [0.48ms]
+
+   68 pass
+   0 fail
+  Ran 68 tests across 5 files. [2.74s]
+
+◆ Ran command · Typecheck and inventory gate · ✓ · 13s
+├ npx tsc --noEmit 2>&1 | tee /tmp/tsc-after.txt | grep -c "error TS"; echo "
+│ ---in-touched-files---"; grep "completion-summary\|remaining-next-pairing"
+│ /tmp/tsc-after.txt | head; echo "(empty above = clean)"; echo "===INVENTORY===
+│ "; node scripts/generate-inventory.mjs --check 2>&1 | tail -n 5
+├ exit 0
+└ 7
+  ---in-touched-files---
+  (empty above = clean)
+  ===INVENTORY===
+  Runtime inventory is stale; run node scripts/generate-inventory.mjs
+
+◆ Ran command · Regenerate and recheck inventory · ✓ · 2.2s
+├ node scripts/generate-inventory.mjs 2>&1 | tail -n 3; node
+│ scripts/generate-inventory.mjs --check 2>&1 | tail -n 3; git status --short |
+│ head
+├ exit 0
+└  M docs/RUNTIME-INVENTORY.md
+
+◆ Ran command · Verify inventory check passes · ✓ · 1s
+├ node scripts/generate-inventory.mjs --check; echo "inventory_exit=$?"; git
+│ diff --stat
+├ exit 0
+└ inventory_exit=0
+   docs/RUNTIME-INVENTORY.md | 24 ++++++++++++------------
+   1 file changed, 12 insertions(+), 12 deletions(-)
+
+◆ Wrote audit/FINAL-AUDIT-CLEARING-SUMMARY-PAIRING-2026-10-02.md (+65)
+   1 +# Final-audit clearing + summary pairing — 2026-10-02 (evening)
+   2 +
+   3 +## Final audit: cleared, verified read-only
+   4 +
+   5 +The operator reported a still-stuck final audit, then observed it had
+   6 +cleared. Verified across all 19 live pi hosts (20:19–20:21 UTC):
+   7 +
+   8 +- clean-web goal `20261002065243-sfdk2a` archived 16:14:31 UTC with
+   9 +  `audit_settlement_completed`; the previously parked `mur2sq0s` job now
+  10 +  carries `result.json`. The Field-addendum-2 park is resolved.
+  11 +- No project journal shows an active completion claim in auditing state.
+  12 +- Zero resultless audit jobs (`progress.json` without `result.json`) in
+  13 +  any live project's `.pi-glla/audit-jobs/`.
+  14 +- SEO (`dracon-platform/seo`) still holds its orphaned completed job on
+  15 +  disk with no live owner process — known unresolved runtime debt (needs
+  16 +  a normal Pi session in seo to reconcile; read-only here, unchanged).
+  17 +
+  18 +Per-project state was projected from each journal's latest `state`
+  19 +entries plus recent non-noise ledger events (probe kept outside the
+  20 +repo at `/tmp/fleet-survey.py`).
+  21 +
+  22 +## Fleet notes (all processes left running, per operator choice)
+  23 +
+  24 +- 19 pi agents live: 2 dracon-strategy, studio, chat, clean-web,
+  25 +  dracon-platform root, 11 wip games, eve. Plus 1 subagent runner.
+  26 +- hellhunter / junk-runner / deathrun show `session_compact_failed` +
+  27 +  `compactor_transcript_error` + `loop_stopped` — loops stopped on a
+  28 +  compaction failure, not on audit. deathrun additionally held
+  29 +  (`load_hold_engaged`, idle since 18:34). eve wiped at 16:02
+  30 +  (`glla_wipe`, idle). polis logged `loop_stuck` 19:07 then resumed
+  31 +  turns. None of these are final-audit states; flagged, not changed.
+  32 +
+  33 +## UI: Remaining/Next problem+action pairing
+  34 +
+  35 +`note.md`: "Next and remaining is pretty much the same no? ... clearer
+  36 +way to see what is important." The card stated one fact twice — the
+  37 +problem under ### Remaining, its fix under ### Next. Operator chose
+  38 +pairing over re-ranking or section merge.
+  39 +
+  40 +Change (`extensions/completion-summary.ts`, human projection only —
+  41 +archive machine layer keeps the verbatim recap):
+  42 +
+  43 +- A `Next:` action sharing ≥2 content words (≥1 long, ≥5 chars) with an
+  44 +  `Unresolved:` problem renders inline under it as `→ Next: …` and
+  45 +  leaves ### Next. Full-body word sets: the shared topic usually sits
+  46 +  at the tail of a long problem body, outside the restatement head
+  47 +  window.
+  48 +- ### Next keeps only standalone actions; a fully paired card omits the
+  49 +  empty section. `Left out` (decided scope) never pairs.
+  50 +
+  51 +Verification:
+  52 +
+  53 +- New `tests/remaining-next-pairing.test.ts`: 6 pass (written first —
+  54 +  4 failed pre-change, 2 negative pins passed vacuously).
+  55 +- Consumers green: rich-summary-dedup, rich-terminal-summary,
+  56 +  finding-lead-contract, verification-status, second-gemini-gap,
+  57 +  repository-receipts, structured-summary (68 pass, 0 fail).
+  58 +- `tsc --noEmit`: 7 errors before and after, none in touched files.
+  59 +- Inventory regenerated; `check` exits 0.
+  60 +
+  61 +Pre-existing, out of scope: `completion-summary-lines.test.ts` "the ✓
+  62 +done chat notifies ..." fails identically with and without this change
+  63 +(stale source-text pin — D7 sanitized the line to
+  64 +`✓ done — ${sanitizeDisplayText(notice.outcome)}`; pin still expects
+  65 +the raw form). Left untouched for its owner.
+
+◆ Completed goal 100% ██████████
+
+◆ Final audit is fine — it cleared by itself, and I verified there's nothing
+  stuck anywhere.
+
+  Final audit: The clean-web parked audit settled at 16:14 UTC (goal archived,
+  settlement completed, result on disk). Across all 19 live pi projects: zero
+  auditing-state claims, zero resultless audit jobs. The only leftover is the
+  known SEO orphan on disk with no live owner — that needs a Pi session opened
+  in seo to reconcile, and I left it untouched.
+
+  Pi processes (19, all left running per your choice): 2 strategy, studio, chat,
+  clean-web, platform root, 11 wip games, eve, plus a subagent runner. Not
+  audit-related, but flagged: hellhunter/junk-runner/deathrun loops stopped on
+  compaction failures, deathrun is load-held and idle, eve was wiped at 16:02
+  and is idle. Say the word if you want any of those stopped or restarted.
+
+  Summary UI: Shipped the pairing shape you picked. A Next: action that resolves
+  an Unresolved: problem now renders inline under it (→ Next: …) instead of
+  repeating the fact in a separate section; ### Next keeps only standalone
+  actions, and Left out never pairs. Covered by
+  tests/remaining-next-pairing.test.ts (6 pass, written failing-first); all
+  consumer suites green (68 pass), tsc unchanged (7 pre-existing errors, none in
+  touched files), inventory regenerated. Details in
+  audit/FINAL-AUDIT-CLEARING-SUMMARY-PAIRING-2026-10-02.md.
+
+  One pre-existing failure I confirmed is not mine and left alone: the ✓ done
+  source-text pin in completion-summary-lines.test.ts went stale when D7
+  sanitized that line — it fails identically with and without my change.
+
+◆ Worked for 32m 48s · 8:52 PM
+
+◆ Goal set — audit our extension
+
+◆ Read skill workflow-authoring · built-in · 30 KB
+
+◆ Workflow(Extension audit: delta + fix verification + skimmed-surface probe)
+├ Running in background · /workflows to monitor
+├ call id: call_01a0fe3a0e4b727280d9e55158b1109a · wire name: workflow
+├ arguments: {"name":"Extension audit: delta + fix verification +
+│ skimmed-surface probe","script":"export default async function workflow(host)
+│ {\n const evidenceSchema = {\n type: \"object\",\n required: [\"complete\",
+│ \"evidence\", \"unresolved\"],\n properties: {\n complete: { type: \"boolean\"
+│ },\n evidence: { type: \"array\", items: { type: \"string\" } },\n unresolved:
+│ { type: \"array\", items: { type: \"string\" } },\n },\n };\n const compact =
+│ (result, scope, missing) => {\n const failed = result === null ||
+│ result.error_kind;\n const data = !failed && result.data && typeof result.data
+│ === \"object\" ? result.data : null;\n const evidence = !failed &&
+│ Array.isArray(data?.evidence) ? data.evidence.filter(Boolean) : [];\n const
+│ declared = !failed && Array.isArray(data?.unresolved) ?
+│ data.unresolved.filter(Boolean) : [];\n const complete = data?.complete ===
+│ true && evidence.length > 0 && declared.length === 0;\n return {\n scope,\n
+│ ref: result?.ref ?? null,\n complete,\n evidence,\n unresolved: complete ? []
+│ : (declared.length ? declared : [missing || `${scope}: missing complete
+│ evidence result`]),\n };\n };\n\n const reports = await host.parallel([\n {\n
+│ label: \"delta-audit\",\n schema: evidenceSchema,\n input: \"AUDIT the delta:
+│ in repo /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit, list commits
+│ after audit/FULL-AUDIT-2026-10-02.md dispositions (git log), diff each, and
+│ review every changed hunk for correctness/regressions. Open each changed
+│ implementation body you cite. Return {complete, evidence[] (each: file:line +
+│ verdict + one-line why, max 30 items), unresolved[]}. Keep data under 4096
+│ bytes.\",\n },\n {\n label: \"fix-verify\",\n schema: evidenceSchema,\n input:
+│ \"VERIFY landed FULL-AUDIT fixes in
+│ /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit: read
+│ audit/FULL-AUDIT-2026-10-02.md Implementation dispositions, then spot-check
+│ the highest-risk fixes in code (S9 latch routes, C10 settings guard,
+│ HeartbeatDeps boolean widening, Remaining/Next pairing in
+│ completion-summary.ts) and run their focused tests (bun test on the named
+│ files). Open every body cited. Return {complete, evidence[] (claim + file:line
+│ or test tally, max 30), unresolved[]}. Under 4096 bytes.\",\n },\n {\n label:
+│ \"skimmed-probe\",\n schema: evidenceSchema,\n input: \"FRESH-EYES probe of
+│ surfaces the 2026-10-02 full audit SKIMMED in
+│ /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit (see its Coverage section:
+│ goal-loop-core.ts beyond line 500, worker script internals, provider/recovery
+│ ladders, settings UI, goal-auditor-hooks gaps). Hunt P0/P1-class defects only
+│ (data loss, stuck claims, wrong verdicts, crashes). Open every body cited.
+│ Return {complete, evidence[] (file:line + defect + impact, max 30),
+│ unresolved[]}. Under 4096 bytes.\",\n },\n ]);\n const scopes =
+│ [\"delta-audit\", \"fix-verify\", \"skimmed-probe\"];\n const compactReports =
+│ reports.map((r, i) => compact(r, scopes[i]));\n const refs =
+│ compactReports.map((r) => r.ref).filter(Boolean);\n\n const critic = await
+│ host.agent({\n label: \"skeptic\",\n schema: evidenceSchema,\n input: `You are
+│ the skeptic. These audit findings need falsification; inspect the cited bodies
+│ yourself: ${JSON.stringify(compactReports.map((r) => ({ scope: r.scope,
+│ evidence: r.evidence })))}. For each finding return SURVIVES or FALSE-POSITIVE
+│ with file:line and one-line reason. New defects you spot yourself go in
+│ evidence too. Return {complete, evidence[] (max 30), unresolved[]} under 4096
+│ bytes.`,\n });\n const compactCritic = compact(critic, \"skeptic\");\n const
+│ all = [...compactReports, compactCritic];\n const open = all.flatMap((r) =>
+│ r.unresolved);\n const firstGap = open[0];\n let followupReport = null;\n if
+│ (firstGap) {\n const followup = await host.agent({\n label:
+│ \"gap-followup\",\n schema: evidenceSchema,\n input: `Resolve this exact audit
+│ gap once by inspecting the repo, or return it unchanged: ${firstGap}. Return
+│ {complete, evidence[], unresolved[]} under 4096 bytes.`,\n });\n
+│ followupReport = compact(followup, firstGap, firstGap);\n }\n const
+│ finalReports = followupReport ? [...all, followupReport] : all;\n const
+│ unresolved = firstGap ? [...open.slice(1), ...followupReport.unresolved] :
+│ open;\n const evidence = finalReports.flatMap((r) => r.evidence.map((v) =>
+│ `[${r.scope}@${r.ref}] ${v}`));\n const synthesis = await host.agent({\n
+│ label: \"synthesis\",\n schema: evidenceSchema,\n input: `Synthesize this
+│ extension-audit evidence into a prioritized finding list (P0/P1/P2 +
+│ false-positives killed by the skeptic). Evidence:
+│ ${JSON.stringify(evidence).slice(0, 2500)}. Unresolved:
+│ ${JSON.stringify(unresolved)}. Omitted scope must be disclosed. Return
+│ {complete, evidence[] (max 30 findings), unresolved[]} under 4096 bytes.`,\n
+│ });\n const s = synthesis !== null && !synthesis.error_kind && synthesis.data
+│ ? synthesis.data : null;\n return {\n status: \"ok\",\n ref: synthesis?.ref ??
+│ null,\n text: synthesis?.text ?? null,\n findings: Array.isArray(s?.evidence)
+│ ? s.evidence : [],\n unresolved: [...unresolved,
+│ ...((Array.isArray(s?.unresolved) ? s.unresolved : []))],\n reportRefs:
+│ [...refs, critic?.ref, synthesis?.ref].filter(Boolean),\n };\n}"}
+└ raw result: {"args":{},"entryId":"Extension audit: delta + fix verification +
+  skimmed-surface
+  probe","hostApiVersion":"v1","maxParallelAgents":14,"message":"Workflow
+  launched: the workflow runs in the background and its completion is delivered
+  to this conversation. Do not call workflow again while this owner is live. The
+… output capped
+
+  Workflow launched
+  Entry: Extension audit: delta + fix verification + skimmed-surface probe
+  Run: workflow-run-model-tool-call_01a0fe3a0e4b727280d9e55158b1109a
+  Status: launched
+
+  (↓ to view workflows)
+
+◆ Checked work status · work.v1.workflow.sha256.015fd6efb0fa84e7bdda10c537eacf8…
+├ Workflow · running · Work:
+│ work.v1.workflow.sha256.015fd6efb0fa84e7bdda10c537eacf8221e160c074dc55a6091606
+│ f5435cfdbc
+├ {"status":"found","work_id":"work.v1.workflow.sha256.015fd6efb0fa84e7bdda10c53
+│ 7eacf8221e160c074dc55a6091606f5435cfdbc","family":"workflow","lifecycle":"runn
+│ ing","terminal":null,"controls":{"work_stop":"available"},"inspection_hint":"U
+│ se this summary for progress; inspect artifacts only for per-item detail or
+│ diagnosis.","artifacts":[],"detail":{"workflow":{"owner_state":"child_running"
+│ ,"attempt_state":"running","waiting_for_workflow_window":0,"waiting_for_root_c
+│ apacity":0,"waiting_for_runtime_start":0,"running_agents":3,"completed":0,"fai
+│ led":0,"cancelled":0,"oldest_capacity_wait_ms":null,"capacity_retry":"not_wait
+│ ing","root_pool":{"occupied":4,"limit":64,"visibility":"full"}}}}
+└ work status · work.v1.workflow.sha256.015fd6efb0fa84e7bdda10c537eacf8221e160c0
+  74dc55a6091606f5435cfdbc
+
+◆ Reported progress 15% █▌░░░░░░░░
+├ now    Extension audit workflow launched: delta-audit, fix-verify, and
+│        skimmed-surface probe agents running, skeptic + synthesis to follow
+└ next   Collect synthesized findings on workflow completion, verify top claims
+         against code, write audit memo
+
+◆ Audit workflow is running: three parallel agents (delta review, fix
+  verification, fresh-eyes probe of previously skimmed surfaces), then a skeptic
+  pass and synthesis. I'll verify the top findings against the code and write up
+  the memo when it lands.
+
+  Workflow product progress
+  Entry: Extension audit: delta + fix verification + skimmed-surface probe
+  Status: completed
+  Children: 6
+  Spend: ↓ 8.5m tokens
+  Owner wait: parked
+  Child 01a0fe3a-3d7e-7ad3-911e-db97d1049e1b: completed
+  Child 01a0fe3a-3a0a-77a2-8481-edce7700fd71: completed
+  Child 01a0fe3a-3f7d-7a71-98eb-776a288cec69: completed
+  Child 01a0fe3f-11f8-7401-878b-a802ca7ef875: completed
+  Child 01a0fe41-9f6e-72c2-ab3a-2a64cf6f4a5c: completed
+  Child 01a0fe42-6fd5-7082-ae66-067a726494ea: completed
+  Module output:
+  adapter-output:workflow-script-terminal-json-fnv64:74f2b75303353d2e
+  Replay: no rerun
+  Workflow controls
+  Cancel: unavailable
+
+◆ Ran command · Re-verify stale pin claim · ✓ · 0.1s
+├ grep -c '✓ done — ${notice.outcome}' extensions/completion-summary.ts; grep -n
+│  '✓ done — ' extensions/completion-summary.ts | head -n 3; sed -n '165,168p'
+│ tests/completion-summary-lines.test.ts
+├ exit 0
+└ 0
+  1162:    `✓ done — ${sanitizeDisplayText(notice.outcome)}`,
+  1280:  /** Brief outcome (chat line 1 without the `✓ done — ` prefix). */
+    assert.match(hooks, /completion audit \$\{model\} approved \(\$\{origin\}\)…
+    const brief = fs.readFileSync("extensions/completion-summary.ts", "utf8");
+    assert.match(brief, /✓ done — \$\{notice\.outcome\}/);
+    const tools = fs.readFileSync("extensions/loops/goal-tools.ts", "utf8");
+
+◆ Wrote audit/EXTENSION-AUDIT-2026-10-02-PM.md (+44)
+   1 +# Extension audit — 2026-10-02 (evening, post-FULL-AUDIT)
+   2 +
+   3 +Method: workflow with three parallel researchers (commit-delta review,
+   4 +landed-fix verification with test runs, fresh-eyes probe of surfaces
+   5 +the morning FULL-AUDIT skimmed), then a skeptic falsification pass and
+   6 +synthesis. 6 agents, ~200 tool calls. Parent re-verified the P1 below
+   7 +against the current tree.
+   8 +
+   9 +## Findings
+  10 +
+  11 +### P0 — none
+  12 +
+  13 +No blocking defect in the pairing/recovery scope. The Remaining/Next
+  14 +pairing implementation survived the skeptic line by line: prefix
+  15 +stripping, stopword/length filtering, 60-word cap, ≥2-shared/≥1-long
+  16 +threshold, greedy best-match (ties-first, many-to-one), loop
+  17 +equivalence with the old filter via the partitioner, `indexOf` safety
+  18 +via partitioner dedup, and leadBody/expandInlineList D7 sanitize
+  19 +behavior all check out. The 6 pairing tests pass; the
+  20 +`waitForWorkerStub` ≤5s poll fixes the ~50% Bun spawn flake.
+  21 +
+  22 +### P1 — stale source-text pin (verified by parent)
+  23 +
+  24 +`tests/completion-summary-lines.test.ts:167` expects the literal
+  25 +``✓ done — ${notice.outcome}`` in `extensions/completion-summary.ts`,
+  26 +but the D7 sanitize pass changed that line (now `:1162`) to the
+  27 +sanitized form ``✓ done — ${sanitizeDisplayText(notice.outcome)}``.
+  28 +Zero matches for the pinned form at HEAD and before this change —
+  29 +pre-existing failure, fails identically with and without the pairing
+  30 +work. Fix: update the pin to the sanitized form. Left for its owner;
+  31 +this audit implements no fixes.
+  32 +
+  33 +## Omitted scope (unresolved, disclosed honestly)
+  34 +
+  35 +The probe did not open everything it named — these stay unverified:
+  36 +
+  37 +- `goal-loop-core.ts` 500–1110 (helpers/export list, skim only),
+  38 +  3380–4440 and 4530–4965 including `trackAuditorIdenticalFailure`.
+  39 +- Settings UI body (grep only), watchdog threshold bodies (not read),
+  40 +  main-model-recovery delay math 258–456 (not read).
+  41 +- `s9-probe.mjs` not re-executed (covered by code reference only).
+  42 +
+  43 +A second wave targeting exactly these bodies would close the audit.
+  44 +No release was cut; no source was changed by this audit.
+
+◆ Completed goal 100% ██████████
+
+◆ Audit done. No P0s — the pairing implementation and recovery paths survived a
+  skeptic pass line by line. One P1: the stale ✓ done source-text pin at
+  tests/completion-summary-lines.test.ts (I re-verified it myself; the fix is
+  updating the pin to the sanitized form). Full write-up with honestly disclosed
+  unverified areas in audit/EXTENSION-AUDIT-2026-10-02-PM.md. No source changed.
+  Want me to fix the P1 pin or run a second wave over the skipped bodies?
+
+◆ Worked for 10m 28s · 9:16 PM
+
