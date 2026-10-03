@@ -27,6 +27,8 @@ import {
   type Component,
   truncateToWidth,
   visibleWidth,
+  wrapTextWithAnsi,
+  fuzzyFilter,
 } from "@earendil-works/pi-tui";
 
 import {
@@ -770,6 +772,9 @@ export interface SettingsMenuFactoryDeps {
   title: string;
   /** Optional section to open first when launched from a grouped command. */
   initialSection?: SettingsSectionId;
+  initialSelectedId?: string;
+  /** Live content height, allowing terminal resizes without reopening. */
+  getHeight?: () => number;
 }
 
 /**
@@ -791,6 +796,13 @@ export class SettingsMenuComponent implements Component {
   private cachedWidth?: number;
   private cachedLines?: string[];
   private showDescriptions = false;
+  private readonly getHeight: (() => number) | undefined;
+  private readonly sectionCursors = new Map<number, number>();
+  private searching = false;
+  private query = "";
+  private detailOffset = 0;
+  private detailPageSize = 5;
+  private rowPageSize = 8;
 
   constructor(
     deps: SettingsMenuFactoryDeps,
@@ -811,6 +823,12 @@ export class SettingsMenuComponent implements Component {
       SETTINGS_SECTIONS.findIndex((section) => section.id === initialSection),
     );
     this.selectedIdx = 0;
+    this.getHeight = deps.getHeight;
+    const selected = this.rows.find((row) => row.id === deps.initialSelectedId);
+    if (selected) {
+      this.activeSectionIdx = SETTINGS_SECTIONS.findIndex((section) => section.id === selected.section);
+      this.selectedIdx = this.visibleRows().findIndex((row) => row.id === selected.id);
+    }
   }
 
   /** Index into `SETTINGS_SECTIONS`. Exposed for tests. */
@@ -830,6 +848,7 @@ export class SettingsMenuComponent implements Component {
 
   /** Rows in the active section. Exposed for tests. */
   visibleRows(): SettingsRow[] {
+    if (this.searching && this.query.trim()) return fuzzyFilter(this.rows, this.query.trim(), (row) => `${row.label} ${row.id} ${row.description} ${row.valueText}`);
     return this.rows.filter(
       (r) => r.section === SETTINGS_SECTIONS[this.activeSectionIdx]!.id,
     );
@@ -847,14 +866,17 @@ export class SettingsMenuComponent implements Component {
     if (vs.length === 0) return;
     const n = vs.length;
     this.selectedIdx = ((this.selectedIdx + delta) % n + n) % n;
+    this.detailOffset = 0;
     this.refresh();
   }
 
   /** Switch section. -1 = left, +1 = right; wraps at ends. Exposed for tests. */
   switchSection(delta: number): void {
+    this.sectionCursors.set(this.activeSectionIdx, this.selectedIdx);
     const n = SETTINGS_SECTIONS.length;
     this.activeSectionIdx = ((this.activeSectionIdx + delta) % n + n) % n;
-    this.selectedIdx = 0;
+    this.selectedIdx = this.sectionCursors.get(this.activeSectionIdx) ?? 0;
+    this.detailOffset = 0;
     this.refresh();
   }
 
@@ -914,71 +936,62 @@ export class SettingsMenuComponent implements Component {
       settingsTabLabel(s.label, this.rows.filter((r) => r.section === s.id).length);
     // Audit 2026-09-06: the 8 `label (count)` tabs exceed 80 cols joined —
     // truncate like the title and cells (ANSI-aware, so per-tab colors survive).
-    lines.push(
-      truncateToWidth(SETTINGS_SECTIONS.map((s, i) =>
-        i === this.activeSectionIdx
-          ? this.theme.fg("accent", this.theme.bold(tabLabel(s)))
-          : this.theme.fg("dim", tabLabel(s)),
-      ).join("  "), Math.max(20, width - 2), "…"),
-    );
+    const allTabs = SETTINGS_SECTIONS.map((section, i) => i === this.activeSectionIdx
+      ? this.theme.fg("accent", this.theme.bold(tabLabel(section)))
+      : this.theme.fg("dim", tabLabel(section))).join("  ");
+    const activeTab = tabLabel(SETTINGS_SECTIONS[this.activeSectionIdx]!);
+    lines.push(visibleWidth(allTabs) <= width ? allTabs
+      : this.theme.fg("accent", this.theme.bold(`‹ ${activeTab} › · ${this.activeSectionIdx + 1}/${SETTINGS_SECTIONS.length}`)));
+    if (this.searching) lines.push(this.theme.fg("muted", `search: ${this.query}▏`));
 
-    const headerCells = [
-      this.padEnd(this.theme.bold("KEY"), keyW),
-      this.padEnd(this.theme.bold("VALUE"), valueW),
-      this.padEnd(this.theme.bold("SOURCE"), sourceW),
-    ];
-    if (this.showDescriptions) headerCells.push(this.theme.bold("DESCRIPTION"));
-    lines.push(headerCells.join(sep));
-    // Header rule — the grid line that makes it read as a table.
-    lines.push(
-      this.theme.fg(
-        "dim",
-        [
-          "─".repeat(keyW),
-          "─".repeat(valueW),
-          "─".repeat(sourceW),
-          ...(this.showDescriptions ? ["─".repeat(descW)] : []),
-        ].join(COL_RULE_SEP),
-      ),
-    );
 
+    const narrow = width < 72;
+    if (!narrow) {
+      const headerCells = [this.padEnd(this.theme.bold("KEY"), keyW), this.padEnd(this.theme.bold("VALUE"), valueW), this.padEnd(this.theme.bold("SOURCE"), sourceW)];
+      if (this.showDescriptions) headerCells.push(this.theme.bold("DESCRIPTION"));
+      lines.push(headerCells.join(sep));
+      lines.push(this.theme.fg("dim", ["─".repeat(keyW), "─".repeat(valueW), "─".repeat(sourceW), ...(this.showDescriptions ? ["─".repeat(descW)] : [])].join(COL_RULE_SEP)));
+    }
     const vs = this.visibleRows();
-    if (vs.length === 0) {
-      lines.push(this.theme.fg("muted", "(no settings in this section)"));
-    } else {
-      vs.forEach((r, i) => {
-        const selected = i === this.selectedIdx;
-        const prefix = selected ? "▶ " : "  ";
-        // v0.28.18: KEY (incl. prefix) and VALUE are truncated to their
-        // column — before, an over-long VALUE (e.g. the subagent effective-
-        // resolution composite) overflowed and shoved SOURCE/DESCRIPTION
-        // right on that row only, breaking the grid.
-        const rowCells = [
-          this.padEnd(truncateToWidth(prefix + r.label, keyW, "…"), keyW),
-          this.padEnd(truncateToWidth(r.valueText, valueW, "…"), valueW),
-          this.padEnd(truncateToWidth(r.sourceText, sourceW, "…"), sourceW),
-        ];
-        if (this.showDescriptions) {
-          // Keep the active background visible across the whole table width,
-          // including otherwise-empty description space. This is intentionally
-          // display-only; row values and persisted settings remain unchanged.
-          rowCells.push(this.padEnd(truncateToWidth(r.description, descW, "…"), descW));
-        }
-        // Selected row: plain separators — the whole row gets one selected-bg
-        // wrap; a nested dim separator's reset code would end it early.
-        const row = rowCells.join(selected ? COL_SEP : sep);
-        lines.push(
-          selected
-            ? this.theme.bg("selectedBg", this.theme.bold(row))
-            : row,
-        );
-      });
+    const focused = vs[this.selectedIdx];
+    const details = this.showDescriptions && focused ? [
+      ...wrapTextWithAnsi(`${focused.label}: ${focused.valueText}`, Math.max(1, width)),
+      ...wrapTextWithAnsi(`${focused.sourceText} · ${focused.description}`, Math.max(1, width)),
+    ] : [];
+    const height = this.getHeight ? Math.max(8, Math.floor(this.getHeight())) : Number.POSITIVE_INFINITY;
+    const detailRows = Math.min(details.length, Number.isFinite(height) ? Math.max(2, Math.floor(height / 3)) : details.length);
+    this.detailPageSize = Math.max(1, detailRows);
+    this.detailOffset = Math.min(this.detailOffset, Math.max(0, details.length - detailRows));
+    const detailChrome = details.length ? detailRows + 1 : 0;
+    const perRow = narrow ? 2 : 1;
+    const rowLimit = Math.max(1, Math.floor((height - lines.length - detailChrome - 2) / perRow));
+    this.rowPageSize = Math.min(vs.length, rowLimit);
+    const start = Math.max(0, Math.min(this.selectedIdx - Math.floor(rowLimit / 2), vs.length - rowLimit));
+    const window = vs.slice(start, start + rowLimit);
+    if (!vs.length) lines.push(this.theme.fg("muted", this.searching ? "No matching settings. Clear search with Esc." : "(no settings in this section)"));
+    window.forEach((row, index) => {
+      const selected = start + index === this.selectedIdx;
+      const prefix = selected ? "▶ " : "  ";
+      const paintRow = (text: string) => selected ? this.theme.bg("selectedBg", this.theme.bold(this.padEnd(truncateToWidth(text, width, "…"), width))) : text;
+      if (narrow) {
+        lines.push(paintRow(`${prefix}${row.label}`));
+        lines.push(paintRow(`  ${row.valueText} · ${row.sourceText}`));
+      } else {
+        const cells = [this.padEnd(truncateToWidth(prefix + row.label, keyW, "…"), keyW), this.padEnd(truncateToWidth(row.valueText, valueW, "…"), valueW), this.padEnd(truncateToWidth(row.sourceText, sourceW, "…"), sourceW)];
+        if (this.showDescriptions) cells.push(this.padEnd(truncateToWidth(row.description, descW, "…"), descW));
+        lines.push(paintRow(cells.join(selected ? COL_SEP : sep)));
+      }
+    });
+    if (window.length < vs.length) lines.push(this.theme.fg("dim", `Rows ${start + 1}–${start + window.length} of ${vs.length} · PgUp/PgDn move`));
+    if (details.length) {
+      lines.push(this.theme.fg("dim", `Details ${this.detailOffset + 1}–${this.detailOffset + detailRows}/${details.length} · PgUp/PgDn scroll`));
+      lines.push(...details.slice(this.detailOffset, this.detailOffset + detailRows).map((line) => this.theme.fg("muted", line)));
     }
 
     lines.push(
       this.theme.fg(
         "dim",
-        `←/→ tab · ↑/↓ move · d details ${this.showDescriptions ? "off" : "on"} · enter drill-in · esc exit`,
+        `←/→ tab · ↑/↓ move · d details ${this.showDescriptions ? "off" : "on"} · / search · enter edit · esc exit`,
       ),
     );
 
@@ -986,7 +999,7 @@ export class SettingsMenuComponent implements Component {
   }
 
   render(width: number): string[] {
-    if (this.cachedLines && this.cachedWidth === width) return this.cachedLines;
+    if (!this.getHeight && this.cachedLines && this.cachedWidth === width) return this.cachedLines;
     this.cachedWidth = width;
     // Fixed columns and the details minimum can exceed a narrow terminal.
     // Bound the complete painted lines (including headers and help) so a
@@ -1001,6 +1014,7 @@ export class SettingsMenuComponent implements Component {
       return;
     }
     if (this.keybindings.matches(data, "tui.select.cancel") || data === "\x1b") {
+      if (this.searching) { this.searching = false; this.query = ""; this.selectedIdx = this.sectionCursors.get(this.activeSectionIdx) ?? 0; this.refresh(); return; }
       this.done(undefined);
       return;
     }
@@ -1012,6 +1026,18 @@ export class SettingsMenuComponent implements Component {
       this.move(+1);
       return;
     }
+    if (this.keybindings.matches(data, "tui.select.pageUp") || this.keybindings.matches(data, "tui.select.pageDown")) {
+      const direction = this.keybindings.matches(data, "tui.select.pageUp") ? -1 : 1;
+      if (this.showDescriptions) { this.detailOffset = Math.max(0, this.detailOffset + direction * this.detailPageSize); this.refresh(); }
+      else this.move(direction * Math.max(1, this.rowPageSize));
+      return;
+    }
+    if (this.searching) {
+      if (data === "\x7f" || data === "\b") this.query = [...this.query].slice(0, -1).join("");
+      else if (!data.startsWith("\x1b")) this.query += [...data].filter((char) => char >= " " && char !== "\x7f").join("");
+      this.selectedIdx = 0; this.detailOffset = 0; this.refresh(); return;
+    }
+    if (data === "/") { this.sectionCursors.set(this.activeSectionIdx, this.selectedIdx); this.searching = true; this.query = ""; this.refresh(); return; }
     if (data === "d" || data === "D") {
       this.showDescriptions = !this.showDescriptions;
       this.refresh();
