@@ -2,5 +2,3 @@
 > pi-goal-list-loop-audit@0.38.110 check
 > tsc --noEmit
 
-tests/multi-model-picker.test.ts(13,10): error TS2300: Duplicate identifier 'visibleWidth'.
-tests/multi-model-picker.test.ts(16,10): error TS2300: Duplicate identifier 'visibleWidth'.

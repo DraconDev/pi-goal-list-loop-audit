@@ -10,7 +10,6 @@
 // not toggleable.
 
 import { test } from "node:test";
-import { visibleWidth } from "@earendil-works/pi-tui";
 import * as assert from "node:assert/strict";
 
 import { visibleWidth } from "@earendil-works/pi-tui";
