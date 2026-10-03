@@ -2181,12 +2181,14 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
       // No history or model plaques in the glance card: Pi clips its tail.
       // Keep state, real evidence and the user action ahead of all details.
       const phaseLine = needsRecovery ? (phase === "quiet" ? `├─ ${paint(theme, "warning", "Audit quiet — may be stuck")}` : block.lead[0]!)
-        : `├─ ${paint(theme, "accent", phase === "running" ? `Audit running · ${auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, auditorHasLiveEvidence(audit, phase, now))}` : phase === "queued" ? "Audit starting" : "Audit review pending")}`;
+        : `├─ ${paint(theme, "accent", phase === "running" ? `Audit running · ${(extras?.auditorProgressSignals !== false ? auditorProgressPhaseLabel(audit) : undefined) ?? auditorPhaseForDisplay(audit, phase, auditorHasLiveEvidence(audit, phase, now))}` : phase === "queued" ? "Audit starting" : "Audit review pending")}`;
       const toolLine = block.lead.find(line => /^│ (?:last )?tool:/.test(line));
+      const modelRef = auditorCardModelRef(audit, g.pendingCompletion);
+      const compactToolLine = modelRef ? toolLine?.split(` · ${modelRef}`)[0] : toolLine;
       return [head, phaseLine,
         ...(facts.length ? [`│ ${facts.join(" · ")}`] : []),
         ...(elapsed !== undefined ? [`│ audit elapsed ${fmtElapsed(elapsed)}`] : []),
-        ...(toolLine ? [toolLine.startsWith("│ tool:") ? toolLine : `│ last tool: ${lastAuditorTool(audit) ?? audit?.currentTool}`] : []),
+        ...(compactToolLine ? [compactToolLine.startsWith("│ tool:") ? compactToolLine : `│ last tool: ${lastAuditorTool(audit) ?? audit?.currentTool}`] : []),
         ...(needsRecovery ? (action ? [action] : block.lead.slice(1)) : [`│ No action needed — review applies automatically`]),
         `└─ /goal status for full audit details`];
     }

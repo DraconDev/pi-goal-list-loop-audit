@@ -1,0 +1,25 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/goal-loop-display.test.ts:
+(pass) active goal card pins primary, ordered fallbacks, skipped forbidden refs, and handled models [21.77ms]
+(pass) v0.38.28: duplicate handled-turn provenance is omitted; lone inherited row is dropped [0.29ms]
+(pass) v0.38.29: active recovery is a compact model row, not a duplicate report [0.53ms]
+(pass) v0.38.29: settled recovery does not leave Markdown noise in the head [0.25ms]
+(pass) card head cuts the objective at a clause boundary, never mid-word [0.23ms]
+(pass) truncateObjective keeps clause boundaries with emoji and CJK prefixes [20.61ms]
+(pass) truncateObjective falls back to a character cut with no usable boundary [0.09ms]
+(pass) active card with an action row closes the tree [0.35ms]
+(pass) v0.38.104: objective truncation never splits a surrogate pair [0.38ms]
+(pass) v0.38.105: recovery banner shows the loop target for loop-only state [0.22ms]
+(pass) v0.38.105: loop surfaces show the cadence countdown during the gap [1.07ms]
+(pass) v0.38.105: no countdown once the gap elapsed or cadence unset [0.10ms]
+(pass) v0.38.105: recovery selector preserves goal and list precedence [0.07ms]
+
+tests/completion-communication.test.ts:
+(pass) pending is nonterminal; approval delivers durable concrete summary (idle=true) [1228.35ms]
+(pass) pending is nonterminal; approval delivers durable concrete summary (idle=false) [1104.54ms]
+(pass) complete_goal leftOut renders the deliberate-non-do bullet end to end [1314.12ms]
+(pass) complete_goal findingGroups ride the claim into the grouped terminal render [1054.62ms]
+(pass) disapproval remains unfinished, no final success is posted [847.92ms]
+(pass) archive write failure never emits a terminal success [1106.38ms]
