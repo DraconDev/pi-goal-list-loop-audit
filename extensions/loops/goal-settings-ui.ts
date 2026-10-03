@@ -197,8 +197,7 @@ import { ModelSelector } from "../model-selector.js";
 
 /** Recheck the originating editor's session immediately before every settings
  * write. Carry its context explicitly: overlapping editors must never replace
- * the identity being checked after an awaited dialog. The
- * editor itself awaits user input, so a replacement can happen after the
+ * the identity being checked after an awaited dialog. A replacement can happen after the
  * menu-entry probe but before the selected value is saved.
  *
  * Normal menu rows edit the effective setting. A project value therefore must

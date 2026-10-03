@@ -1,0 +1,104 @@
+
+> pi-goal-list-loop-audit@0.38.108 test:all
+> node scripts/run-tests.mjs --all && tsc --noEmit && node tests/repro-jiti-state-split.test.mjs && npm run test:auditor-extensions
+
+[run-tests] mode=all slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-stale-context.test.ts:
+(pass) v0.34.52: bare /glla on a stale handle is refused — standard recovery message, UI never opens, settings untouched [1238.86ms]
+(pass) v0.34.52: mutating /glla actions (wipe, cancel, resume, reviewer, postaudit, tooloverride) are all refused on a stale handle [1169.58ms]
+(pass) v0.34.52: /glla status, log, stats, audits stay usable on a stale handle (inspect, don't mutate) [20951.60ms]
+(pass) audit 2026-09-07 (LOW, finding 399): bare `/glla fallbacks` is a read-only display — allowed on a stale handle; `fallbacks clear` still mutates and is refused [1717.07ms]
+(pass) v0.34.52: the standard recovery — a fresh session reopens the settings UI and owns the next /glla [2023.09ms]
+(pass) v0.35.72: source — settings rechecks admission after the menu and before saves [0.70ms]
+(pass) v0.34.52: source — cmdSettings captures the entry probe and gates the settings entry + mutating actions [18.16ms]
+
+tests/terminal-summary-delivery.test.ts:
+[run-tests] progress: 30s elapsed · 1s since last output · 1 KiB of suite output
+(pass) visible summary persists without an LLM turn (idle=true) [620.52ms]
+(pass) visible summary persists without an LLM turn (idle=false) [1.52ms]
+(pass) branch-before-persist failure stays pending, suppresses duplicate, later persistence confirms [0.30ms]
+(pass) no-file session never acknowledges but does not repeat the visible summary [0.28ms]
+(pass) outbox survives failed delivery and restart; acknowledged render never replays [657.28ms]
+(pass) failed outbox acknowledgement does not duplicate an existing persisted branch summary [482.29ms]
+(pass) confirmation requires exact identity/content and complete JSONL, tolerates malformed tail [0.98ms]
+(pass) bounded confirmation fails conservatively when receipt is outside tail [11.06ms]
+(pass) maximum supported outbox receipt is acknowledged ("x") [339.43ms]
+(pass) maximum supported outbox receipt is acknowledged ("😀") [835.28ms]
+(pass) maximum supported outbox receipt is acknowledged ("\u0000") [812.04ms]
+(pass) maximum supported outbox receipt is acknowledged ("\\") [720.04ms]
+(pass) failed outbox acknowledgement write retries without resending the visible message [1510.40ms]
+(pass) current settlement is not starved by older unconfirmed renders [2743.37ms]
+(pass) persistently unconfirmed head rotates so a later render is attempted [1867.32ms]
+(pass) host sendMessage reentrant enqueue remains pending after confirmed session delivery [1302.93ms]
+
+tests/blocked-pause-autoclear.test.ts:
+(pass) v0.34.64 — blocked pause owned by recovery auto-clears when the probe succeeds [1030.66ms]
+(pass) v0.34.64 — blocked pause with a NON-recovery reason stays blocked [651.92ms]
+(pass) v0.34.64 — wait pause owned by recovery still auto-clears [1367.74ms]
+(pass) v0.34.64 — source guard: only main-model recovery owns the auto-clear [78.27ms]
+
+tests/list-bare-draft.test.ts:
+(pass) v0.38.51: bare /list enters list drafting — agent list_add is gated [2270.44ms]
+(pass) v0.38.51: /list show still renders the queue (viewer preserved) [879.49ms]
+(pass) v0.38.51: stale bare /list latches no drafting gate — a later list_add lands [2293.70ms]
+
+tests/stale-interrupt-resume.test.ts:
+(pass) Goal type + schema carry the interrupt marker fields [0.58ms]
+(pass) S3 probe: side-effect-free getSessionName() probe caches the positive [0.13ms]
+(pass) S3 warn helper: honest 'state is safe' messaging + ledger [0.22ms]
+(pass) S3: probes wired at cmdSet / cmdResume / cmdList / propose_goal_draft entry [0.39ms]
+(pass) S3: stale creation marks the interrupt and tells the truth (no 'starting now' lie) [0.13ms]
+(pass) S1: stale resume persists active+marker, skips the misleading notify and the doomed send [0.07ms]
+(pass) S2: restore gate clears the marker on auto-resume and names the recovery [0.71ms]
+(pass) S2 (v0.28.21): the 0.28.3 interrupt exemption is SUPERSEDED — only autoresume=on auto-resumes [0.90ms]
+(pass) S1/S2: widget surfaces the interrupt on ACTIVE goals [0.15ms]
+(pass) E6: drafting-seed send failure is loud and stale-aware (was silent) [0.25ms]
+(pass) T1: stale Confirm is NOT a rejection — both single and batch paths [0.49ms]
+(pass) v0.28.27: stale handle silences ALL stall machinery — refiring into a dead process misleads, and the stall escalation would PAUSE an interrupted goal (killing restart auto-resume) [0.12ms]
+(pass) v0.28.27/0.29.8: /goal verify (renamed from /goal audit) — manual auditor invocation with a synthesized claim, wired into the pendingCompletion machinery [16.73ms]
+(pass) v0.29.8: /goal audit [focus] — the one-shot project audit; /glla status — the unified view [0.27ms]
+(pass) v0.34.2: cmdResume clears interruptedAt/interruptedReason on a fresh-session resume [0.11ms]
+(pass) v0.34.7: safeSteerUser wraps every orchestrator sendUserMessage (darklord crash) [2.77ms]
+(pass) v0.34.7: the fan-out float carries a catch (rejection ≠ process exit) [2.71ms]
+(pass) v0.34.7: re-kick clears the stale-handle marker (banner must not survive a working session) [0.26ms]
+
+tests/between-tasks-compaction.test.ts:
+(pass) v0.38.104 the 200k rule is a token threshold, and it is distinct from the model-size hint [0.24ms]
+(pass) v0.38.104 compaction is due past the threshold, not below it [0.08ms]
+(pass) v0.38.104 a token count, not a percentage — the same goal on a 1M window still fires at 200k [0.13ms]
+(pass) v0.38.104 it fires ONCE per episode and re-arms as the goal grows back [0.04ms]
+(pass) v0.38.104 an unknown context count never compacts blindly [0.05ms]
+(pass) v0.38.104 the threshold is overridable but must be positive [0.52ms]
+(pass) v0.38.105 the boundary fires ctx.compact past 200k and ledgers it [142.91ms]
+(pass) v0.38.105 one firing per episode; a shrunk transcript re-arms [119.49ms]
+(pass) v0.38.105 quiet boundaries: below threshold, busy, unsupervised, audit, paused, unknown, no trigger [1.30ms]
+(pass) v0.38.105 the boundary never re-arms the starvation path's brief one-shot [0.47ms]
+
+tests/auditor-scope-guard.test.ts:
+(pass) auditor scope guard — project at hand only > auditor prompt contains outside-scope guard [6.72ms]
+(pass) auditor scope guard — project at hand only > outside-scope findings are recorded but not auto-queued [172.31ms]
+(pass) auditor convergence contract — the change, not the repository > brief bounds blocking objections to the change and defines a reachable approval bar [0.34ms]
+(pass) auditor convergence contract — the change, not the repository > a first round carries no rework framing [0.09ms]
+(pass) auditor convergence contract — the change, not the repository > a rework round asks whether the PRIOR objections are closed [0.20ms]
+
+tests/finding-lead-contract.test.ts:
+(pass) canonical and legacy Lead inputs render the same outcome/evidence [8.69ms]
+(pass) legacy topical and semantic labels are not exposed as finding labels [0.89ms]
+(pass) technical-only legacy claims stay out of default chat [0.48ms]
+(pass) archive table uses outcome/evidence columns and keeps proof [0.43ms]
+(pass) widget projects the normalized outcome without legacy Lead or technical labels [0.45ms]
+(pass) terminal and archive human sections share the What Changed contract [1.70ms]
+(pass) normalization is raw-preserving and does not split path/version colons [0.13ms]
+(pass) normalization strips dash-separated label prefixes (Lead –/Tests –) [0.13ms]
+(pass) archive preserves technical group findings and Verdict details as evidence instead of dropping them [0.21ms]
+(pass) chat still suppresses technical findings after the archive-preservation fix [0.08ms]
+
+tests/real-host-canary.test.ts:
+(pass) real-host canary reports an explicit skip without opt-in or spawning Pi [112.71ms]
+(pass) opt-in canary installs its request guard and records bounded host evidence (stub host) [254.85ms]
+[run-tests] progress: 60s elapsed · 6s since last output · 8 KiB of suite output
+(pass) generated canary uses actual Pi dispatcher and allowed transport behavior [5950.62ms]
+(pass) generated canary uses actual Pi dispatcher and unknown-price transport behavior [2192.20ms]
+(pass) generated canary uses actual Pi dispatcher and over-budget transport behavior [2556.40ms]

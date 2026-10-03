@@ -2585,3 +2585,6 @@ Switched to branch 'main'
 (pass) explicit 429-shaped errors use the generic fallback chain [1606.10ms]
 [run-tests] progress: 451s elapsed · 3s since last output · 275 KiB of suite output
 (pass) a successful core retry clears generic provider recovery and resumes the parked goal [2609.75ms]
+(pass) v0.35.x: a successful main-model recovery gives a parked audit its one automatic retry [4950.08ms]
+[run-tests] received SIGTERM — cleaning up the suite group
+[run-tests] finished in 459s (exit null, signal SIGTERM)

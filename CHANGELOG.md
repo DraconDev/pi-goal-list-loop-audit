@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Settings and completion-summary audit follow-up
+
+- Settings writes validate the context of the editor that initiated them,
+  even when a replacement session opens another editor while the first waits
+  for input. A stale editor cannot save through the replacement's identity.
+- Empty stall-similarity input restores the default; explicit zero remains a
+  valid saved value. Auditor refs with nested model IDs now offer the selected
+  model's thinking levels through the shared model resolver.
+- Settings-menu lines fit the terminal width with details shown or hidden,
+  including narrow terminals after a resize.
+- Approved completion summaries omit stale "await audit" / "waiting for
+  auditor approval" next steps while preserving concrete audit/review work.
+- Corrected stale verification assertions and test-context types; synchronized
+  the lockfile and documentation index with package version 0.38.108.
+
 ### Auditor recovery: dead cursor no longer poisons the next attempt
 
 - Parking a workerless completion claim now drops the dead attempt's

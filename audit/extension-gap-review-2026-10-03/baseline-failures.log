@@ -1,0 +1,19 @@
+Read-only git archive of starting commit 364e706e; five test files, serialized runner, shared dependency installation.
+(fail) package and lock metadata stay synchronized for version reporting [1.43ms]
+(fail) v0.34.61: addSingleItem is disk-first (sidecar before state mutation) [308.18ms]
+(fail) pending is nonterminal; approval delivers durable concrete summary (idle=true) [4906.95ms]
+(fail) pending is nonterminal; approval delivers durable concrete summary (idle=false) [5046.81ms]
+(fail) approval without an audit tool is a semantic disapproval [1170.67ms]
+(fail) D6: the clause-cut floor scales with the budget instead of pinning at 16 [106.81ms]
+(fail) package and lock metadata stay synchronized for version reporting [1.43ms]
+(fail) v0.34.61: addSingleItem is disk-first (sidecar before state mutation) [308.18ms]
+(fail) pending is nonterminal; approval delivers durable concrete summary (idle=true) [4906.95ms]
+(fail) pending is nonterminal; approval delivers durable concrete summary (idle=false) [5046.81ms]
+(fail) approval without an audit tool is a semantic disapproval [1170.67ms]
+(fail) D6: the clause-cut floor scales with the budget instead of pinning at 16 [106.81ms]
+(fail) D6: the clause-cut floor scales with the budget instead of pinning at 16 [106.81ms]
+
+ 196 pass
+ 6 fail
+Ran 202 tests across 5 files. [97.55s]
+[run-tests] finished in 98s (exit 1)
