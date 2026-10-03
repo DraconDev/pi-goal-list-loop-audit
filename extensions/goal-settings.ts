@@ -319,7 +319,8 @@ export interface Settings {
     allow?: string[];
     /** Tools that MUST be hidden even when the session allows them. */
     hide?: string[];
-    /** Per-tool configuration knobs (extensible). */
+    /** Project overrides for registered optional tool arguments. Validated
+     * against the complete parameter schema before each model-issued call. */
     perToolConfig?: Record<string, Record<string, unknown>>;
   };
   /** v0.38.54: on → the per-turn `context` hook replaces stale GLLA

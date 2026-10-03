@@ -1920,7 +1920,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       }
       const kv = await ctx.ui.input(
         `Config ${verb} — ${verb === "set" ? "key=value" : "key"}`,
-        verb === "set" ? "e.g. timeout=60 (one key at a time; stored only, not applied to tool execution) — empty cancels" : "e.g. timeout — empty cancels",
+        verb === "set" ? "e.g. timeout=60 (one key at a time; optional arguments; validated before execution) — empty cancels" : "e.g. timeout — empty cancels",
       );
       if (kv === undefined || !kv.trim()) return;
       current = loadSettings(ctx.cwd).toolOverrides ?? {};
@@ -1940,7 +1940,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       }
       cfg[tool] = toolCfg;
       apply({ perToolConfig: cfg });
-      ctx.ui.notify(`"${tool}" config ${verb === "set" ? "saved" : "removed"} (project metadata; not applied to tool execution).`, "info");
+      ctx.ui.notify(`"${tool}" config ${verb === "set" ? "saved" : "removed"} (project optional arguments; validated before execution).`, "info");
       return;
     }
     case "postaudit":

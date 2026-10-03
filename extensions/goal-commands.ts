@@ -2094,7 +2094,7 @@ async function cmdToolOverride(args: string, ctx: ExtensionContext): Promise<voi
     apply({ perToolConfig: cfg });
     ctx.ui.notify(
       action === "set"
-        ? `"${tool}" setting saved: ${kv.slice(0, kv.indexOf("=")).trim()} = ${JSON.stringify(toolCfg[kv.slice(0, kv.indexOf("=")).trim()])} (project metadata; not applied to tool execution).`
+        ? `"${tool}" setting saved: ${kv.slice(0, kv.indexOf("=")).trim()} = ${JSON.stringify(toolCfg[kv.slice(0, kv.indexOf("=")).trim()])} (project optional arguments; validated before execution).`
         : `"${tool}" setting "${kv}" removed — back to the built-in default.`,
       "info",
     );

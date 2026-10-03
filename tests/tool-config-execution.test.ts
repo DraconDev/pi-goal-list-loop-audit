@@ -1,7 +1,8 @@
 import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
-import { Type } from "typebox";
+import { Type, type TSchema } from "typebox";
+import { applyToolConfig } from "../extensions/tool-config.js";
 import { runToolCall, type AgentContext } from "@earendil-works/pi-agent-core";
 import { createBashToolDefinition } from "@earendil-works/pi-coding-agent";
 import type { AssistantMessage } from "@earendil-works/pi-ai";
@@ -13,7 +14,7 @@ const settingsFile = globalSettingsPath();
 const original = fs.readFileSync(settingsFile, "utf8");
 let session: { pi: MockPi; ctx: ReturnType<typeof makeMockCtx> } | undefined;
 const schema = Type.Object({ command: Type.String(), timeout: Type.Optional(Type.Number()), format: Type.Optional(Type.Union([Type.Literal("text"), Type.Literal("json")])) });
-async function boot(options: Record<string, unknown>, parameters = schema) {
+async function boot(options: Record<string, unknown>, parameters: TSchema = schema) {
   __testOnlyResetProcessState();
   fs.writeFileSync(settingsFile, JSON.stringify({ autoResume: false, aggressiveMode: false }));
   const pi = new MockPi();

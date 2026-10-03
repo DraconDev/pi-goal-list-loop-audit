@@ -118,10 +118,22 @@ This authority boundary applies before settings-value normalization.
 | `contextCheckpointProjection` | `false` (off) | Per-turn `context`-hook splice of a bounded continuation checkpoint. Off (default) leaves the transcript append-only so the provider prefix-cache holds; the fresh continuation prompt still carries live state. On restores the legacy projection (busts the cache). |
 | `reviewer` | legacy | Deprecated alias for `postaudit`; migrated on load, `postaudit` wins. |
 
-## Tool visibility and stored metadata
+## Tool visibility and execution options
 
 `/glla tooloverride allow <tool>` and `hide <tool>` change project tool
 visibility. Choosing either removes the opposing override for that tool.
-`set <tool> <key>=<value>` stores per-tool metadata, including JSON values.
-These configuration values are not applied to tool execution: saving a
-`timeout` here does not change the timeout used by Pi or another extension.
+`set <tool> <key>=<value>` overrides an optional argument on subsequent
+model-issued tool calls, including calls outside a goal or loop. For example,
+`/glla tooloverride set bash timeout=60` sets bash's timeout to 60 seconds,
+even if the model supplies another timeout. JSON values are supported.
+`/glla tooloverride unset bash timeout` restores the model's argument.
+The same editor is available under `/glla` → Tool overrides.
+
+Only named optional arguments in the registered tool's parameter schema are
+supported. Required operation inputs such as bash's `command` cannot be
+changed this way. GLLA validates the complete merged arguments before changing
+any input; unsupported keys, invalid values, or unavailable schemas block the
+call with an error explaining how to remove the setting. Nested values are
+copied for each call. Changes do not affect calls already running or direct
+user shell commands (`!`). These options do not configure tool internals or
+other extensions' settings.

@@ -3261,6 +3261,7 @@ async function handleHotLengthExhaustion(
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(ctx)) return;
     const configuredToolName = String(event?.toolName ?? event?.name ?? "");
     const options = loadSettings(ctx.cwd).toolOverrides?.perToolConfig?.[configuredToolName];
+    if (options !== undefined && warnIfStaleAtEntry(ctx, "tool configuration")) return;
     const configFailure = applyToolConfig(configuredToolName, event?.input, options, () => pi.getAllTools());
     if (configFailure) {
       ctx.ui.notify(configFailure.reason, "warning");

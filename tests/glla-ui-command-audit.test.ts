@@ -150,7 +150,7 @@ test("tool metadata editor preserves concurrent updates and names its execution 
   };
   await handleSettingChoice("toolOverrides", ctx as unknown as ExtensionContext);
   assert.deepEqual(loadSettings(ctx.cwd).toolOverrides, { allow: ["read"], perToolConfig: { other: { enabled: true }, bash: { metadata: { label: "two words" } } } });
-  assert.ok(ctx.ui.matching("not applied to tool execution").length > 0);
+  assert.ok(ctx.ui.matching("validated before execution").length > 0);
 });
 
 test("compactor picker labels its clear choice as registry plan B", async () => {

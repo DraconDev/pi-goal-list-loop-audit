@@ -708,7 +708,7 @@ export function buildSettingsRows(
         return parts.join(" · ") || "none";
       })(),
       sourceText: src("toolOverrides"),
-      description: "project tool visibility overrides; config values are stored only and are not applied to tool execution; Enter opens the editor",
+      description: "project tool visibility overrides; config values override optional arguments after schema validation; Enter opens the editor",
     },
     {
       id: "postaudit",
