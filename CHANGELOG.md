@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+## 0.38.110 — /glla UI and command audit (2026-10-03)
+
+- Settings edits return to their selected tab. Single and multiple model
+  pickers now fit narrow terminals, including help and search lines.
+- Drafter, compactor, and subagent primary pins honor forbidden-model policy.
+  Compactor selection excludes the session model and labels its clear choice
+  as registry plan B. Forbidden substring patterns cannot conflict with saved
+  fallback chains; partial policy exclusions are reported accurately.
+- Role fallback and tool-configuration edits preserve concurrent saves.
+  Tool allow/hide choices replace opposing overrides; configuration keys are
+  validated and command values preserve spaced JSON.
+- Audit cleanup refuses stale hosts. Postaudit saves and wipe confirmation
+  recheck their originating host before writing or clearing state.
+- Tool configuration is explicitly described as stored metadata that is not
+  applied to executions. Auditor isolation, soft audit-cap behavior, and the
+  compactor's handoff-brief role are described accurately.
+- Command completion now includes fallbacks, owner, takeover, and postaudit.
+
 ## 0.38.109 — opportunistic compaction and audit follow-up (2026-10-03)
 
 ### Opportunistic compaction failure keeps work moving

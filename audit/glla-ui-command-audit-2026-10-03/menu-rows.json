@@ -149,7 +149,7 @@
     "label": "Compactor agent",
     "valueText": "registry plan B",
     "sourceText": "default",
-    "description": "emergency handoff-brief model used only when context starvation parks the session; unset → verified free big-context registry plan B (never the stuck session model)"
+    "description": "handoff-brief model for boundary compaction and context starvation; transcript summarization uses Pi's compaction settings; unset → registry plan B (never the session model)"
   },
   {
     "id": "compactorModelFallbacks",
@@ -235,9 +235,9 @@
     "id": "auditorAllowedExtensions",
     "section": "auditor",
     "label": "Allowed extensions",
-    "valueText": "none (fully isolated, default)",
+    "valueText": "none (session packages mirrored)",
     "sourceText": "default",
-    "description": "pi extension specs the DETACHED auditor may load (e.g. npm:pi-webaio) so extension-provided model providers can run — tools stay restricted to read/grep/find/ls/bash; empty = the default extension-less auditor"
+    "description": "pi extension specs the DETACHED auditor may load (e.g. npm:pi-webaio) so extension-provided model providers can run — tools stay restricted to read/grep/find/ls/bash; empty clears extra extensions; turn mirroring off too for full isolation"
   },
   {
     "id": "auditorMirrorSessionExtensions",
@@ -275,7 +275,7 @@
     "id": "auditorToolTimeoutMs",
     "section": "auditor",
     "label": "Auditor tool timeout",
-    "valueText": "? base · ×2 per retry · cap 4×",
+    "valueText": "5m base · ×2 per retry · cap 4×",
     "sourceText": "default",
     "description": "base budget for ONE allowed auditor tool call — every failed retried attempt doubles the effective budget (cap 4× base); raise for slow local models or long bounded verification commands"
   },
@@ -283,7 +283,7 @@
     "id": "auditorStallMs",
     "section": "auditor",
     "label": "Auditor stall budget",
-    "valueText": "? base · ×2 per retry · cap 4×",
+    "valueText": "10m base · ×2 per retry · cap 4×",
     "sourceText": "default",
     "description": "base silence/no-progress budget — no new tool call or output for this long aborts the audit; doubles per retried attempt (cap 4× base); an actively generating model never counts as silent"
   },
@@ -291,7 +291,7 @@
     "id": "auditJobRetentionMs",
     "section": "auditor",
     "label": "Audit job retention",
-    "valueText": "? dead-dir window",
+    "valueText": "15m dead-dir window",
     "sourceText": "default",
     "description": "how long a finished audit's job dir (session log, result) survives after the worker dies, before `/glla audits health cleanup` reaps it — raise it to keep finished audit logs readable longer; 0 reaps immediately"
   },
@@ -325,7 +325,7 @@
     "label": "Audit cap",
     "valueText": "10",
     "sourceText": "default",
-    "description": "pause the goal after N consecutive disapprovals (0 = unlimited; unset = 10 in aggressive mode, otherwise 5)"
+    "description": "soft disapproval threshold: conservative or run-to-done pauses; aggressive continues with TODOs; hard cap still binds (0 = unlimited; default 10 aggressive, otherwise 5)"
   },
   {
     "id": "auditCapHard",

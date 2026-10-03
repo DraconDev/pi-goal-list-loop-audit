@@ -1,0 +1,124 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-stale-context.test.ts:
+(pass) v0.34.52: bare /glla on a stale handle is refused — standard recovery message, UI never opens, settings untouched [806.33ms]
+(pass) v0.34.52: mutating /glla actions (wipe, cancel, resume, reviewer, postaudit, tooloverride) are all refused on a stale handle [334.08ms]
+(pass) v0.34.52: /glla status, log, stats, audits stay usable on a stale handle (inspect, don't mutate) [3479.43ms]
+(pass) audit 2026-09-07 (LOW, finding 399): bare `/glla fallbacks` is a read-only display — allowed on a stale handle; `fallbacks clear` still mutates and is refused [471.12ms]
+(pass) v0.34.52: the standard recovery — a fresh session reopens the settings UI and owns the next /glla [618.58ms]
+(pass) v0.35.72: source — settings rechecks admission after the menu and before saves [0.43ms]
+(pass) v0.34.52: source — cmdSettings captures the entry probe and gates the settings entry + mutating actions [2.00ms]
+
+tests/glla-bug-capture.test.ts:
+(pass) /glla bug writes to dedicated bugs artifact and leaves durable goal state untouched [1178.30ms]
+(pass) /glla bug without message still captures and does not mutate state [307.55ms]
+(pass) source: cmdGllaBug exists and writes to bugs/ without persistState [0.52ms]
+(pass) source: /glla bug is registered in completions and handler [3.81ms]
+
+tests/auditor-timeout-settings.test.ts:
+(pass) v0.37.0: escalatedAuditorTimeout doubles per prior attempt and saturates at 4x base [2.59ms]
+(pass) v0.37.0: auditor timeout settings clamp into bounds on load [23.23ms]
+(pass) v0.37.0: /glla editor accepts plain-ms and s/m/h duration input for both keys [27.62ms]
+(pass) v0.37.0: settings menu exposes both auditor timeout rows in the auditor section [1.00ms]
+(pass) v0.37.0: dispatch env reaches the worker process so parent and worker budgets agree [324.00ms]
+(pass) v0.37.0: progress signature counts streamed report bytes [0.21ms]
+(pass) v0.37.0: an in-budget live tool exempts the audit card from the quiet phase [0.20ms]
+(pass) v0.37.0: durable claims preserve the timeout escalation index across loads [1.88ms]
+(pass) v0.38.3: auditJobRetentionMs clamps into [0, 7d] on load [0.78ms]
+(pass) v0.38.3: /glla editor accepts duration input for auditJobRetentionMs (0 is legal) [17.03ms]
+(pass) v0.38.3: settings menu exposes the audit job retention row in the auditor section [0.55ms]
+
+tests/stats-outcomes.test.ts:
+(pass) outcomes: completed/aborted/open counts with the run-to-done split [5.73ms]
+(pass) outcomes: rounds, wall-clock, and tokens average over known data only [0.34ms]
+(pass) outcomes: unknown archive statuses are ignored, empty ledgers are zeroed [0.13ms]
+(pass) outcomes: table and JSON formats mirror the schema [0.55ms]
+
+tests/tui-density.test.ts:
+(pass) widget carries the audits row only with history [2.96ms]
+(pass) widget fits 80 columns at width 80 [0.23ms]
+(pass) paused status carries the tally [0.19ms]
+(pass) ladder is one recovery per line [0.18ms]
+(pass) settings tab labels carry row counts [0.05ms]
+
+tests/glla-version.test.ts:
+(pass) /glla version reads the installed package metadata and exposes a registry check [3.12ms]
+(pass) /glla version names staleness and the update path when the sidecar proves it [0.80ms]
+(pass) package and lock metadata stay synchronized for version reporting [0.05ms]
+(pass) /glla version is registered, autocompleted, and read-only routed [0.23ms]
+(pass) unknown running version makes no staleness claim either way [0.28ms]
+(pass) compareVersions is strictly numeric: prereleases never equal releases [0.04ms]
+(pass) updateCheckPath defaults to the cwd state dir [0.03ms]
+
+tests/stats-challenges.test.ts:
+(pass) challenges: confirmed/flipped/skipped counts over all verdicts, legacy ignored [1.42ms]
+(pass) challenges: empty ledgers zero out, flip rate renders em-dash without challenged runs [0.44ms]
+(pass) challenges: table and JSON formats mirror the schema [0.27ms]
+(pass) challenges: light-tier verdicts and spot-check flips count separately [0.17ms]
+
+tests/auditor-picker-parity.test.ts:
+(pass) v0.35.24: the auditor picker persists its selection where resolveAuditorModel reads it [15.90ms]
+(pass) v0.35.24: a typed forbidden ref is REFUSED by the auditor picker, never persisted [0.60ms]
+(pass) v0.36.0: the ordered auditor fallback picker applies the same filtering [0.79ms]
+(pass) v0.36.0: the ordered auditor fallback picker keeps the first ten refs in typed order [7.68ms]
+(pass) v0.35.24: buildModelPickItems excludes forbidden refs for the auditor slot (list-level filter) [7.42ms]
+
+tests/model-picker.test.ts:
+(pass) model-picker items: session row first, manual row last, models sorted by provider/id [0.40ms]
+(pass) v0.34.118 backup picker: excludes forbidden refs before rendering [0.14ms]
+(pass) model-picker exclusion honors case-insensitive substring policy entries [0.09ms]
+(pass) model-picker: typing fuzzy-filters the list; enter returns the highlighted model [6.97ms]
+(pass) model-picker: slash-token fuzzy match (provider/model style), nav wraps, backspace edits [0.20ms]
+(pass) model-picker: up/down moves the selection; esc cancels with undefined [0.08ms]
+(pass) model-picker: selecting the session row clears the override; manual row is the typed escape hatch [0.04ms]
+(pass) model-picker: render stays within width and shows the filter hint [0.54ms]
+(pass) model-picker: active model row uses the available width for selection [0.38ms]
+(pass) v0.29.17 wiring: model-valued settings use the fuzzy picker; unavailable auditor models fall back LOUDLY to the session model [9.20ms]
+(pass) v0.36.0: auditor thinking inherits the parent dial unless explicitly overridden [4.32ms]
+(pass) v0.36.0: the auditor chain — pinned primary → ordered fallbacks → session LAST; same-as-session auto-swap [5.03ms]
+(pass) v0.31.6: same-model swap toggle — default ON, off = same-model audits stand [3.31ms]
+(pass) v0.31.8: thinking options come from the PICKED MODEL — xhigh/max only when the model maps them [2.80ms]
+(pass) v0.31.9: fork-bomb lesson is prompt-law — auditor reject-class + executor hard rule [4.18ms]
+(pass) narrow model pickers bound every rendered line [2.11ms]
+
+tests/settings-menu-complete.test.ts:
+(pass) every row carries every required column field [4.70ms]
+(pass) role-specific tabs keep each agent's model, thinking, and fallback controls together [0.12ms]
+(pass) every row's section is one of the 8 known section ids (no orphans) [0.24ms]
+(pass) main-agent tab starts with the runtime agent; drafter and subagent chains have their own tabs [0.50ms]
+(pass) main fallback row explains ordered, deselectable selection [0.39ms]
+(pass) role rows show each selected model with requested/effective thinking [0.27ms]
+(pass) v0.36.0: unset auditor thinking mirrors the parent session and the fallback row uses the main shape [0.19ms]
+(pass) inherited drafter and auditor model rows identify the session category [0.19ms]
+(pass) all embedded subagent types expose editable fallback-chain rows [0.25ms]
+(pass) key rows from v0.27.0 settings menu are all present (menu coverage contract) [0.20ms]
+(pass) descriptions and values carry no version-tag chrome (v0.34.25) [0.27ms]
+(pass) rows map 1:1 to dispatchable ids (every id can drive a handler) [2.10ms]
+(pass) main fallback row shows the persisted numbered try order and truthful runtime semantics [0.43ms]
+(pass) auditorAllowedExtensions valueText is a count — never joined absolute paths (screen-size crash) [0.57ms]
+(pass) valueText derives from settings (effective values surface for each row) [0.38ms]
+(pass) default fallbacks surface when settings + provenance both missing [0.34ms]
+(pass) default fallbacks follow the effective aggressive matrix (explicit off → base values) [0.35ms]
+(pass) effective resolution names the real session model for inherit-parent [0.33ms]
+(pass) provenance flows into sourceText (project/global/default tags) [0.20ms]
+(pass) haiku mention is dropped from any valueText / description / sourceText [0.27ms]
+(pass) headless `/glla` fallback keeps stall brakes and the v0.34.127 sync list [0.43ms]
+(pass) the legacy flat-row startsWith logic is removed (no more `──` section headers in code) [1.14ms]
+(pass) /glla tooloverride still routes headlessly (regression: subsystems unchanged) [0.22ms]
+(pass) postaudit and reviewer routes both open the reviewer menu (back-compat) [0.21ms]
+(pass) stateRoot: one global-only row with the workingDir default [0.29ms]
+(pass) v0.28.20: no bracket/paren chrome — VALUE and SOURCE render bare [0.34ms]
+(pass) audit-2026-09-06: settings TUI tabs row is truncated to terminal width [1.48ms]
+(pass) audit 2026-09-06: normalizeLoadedSettings resets junk numerics/enums/strings to unset [0.74ms]
+(pass) settings provenance reports normalized effective values, not rejected raw junk [102.25ms]
+(pass) audit 2026-09-06: legacy reviewer block migrates to postaudit [0.76ms]
+(pass) audit 2026-09-07 (LOW, findings 392-394): quiet copy names the count line at every surface [0.23ms]
+(pass) settings table fits narrow terminals with details both hidden and visible [4.79ms]
+
+tests/mode-command-guidance.test.ts:
+(pass) mode-aware helpers exist and route by policy [3.83ms]
+(pass) no hardcoded /goal <cmd> literals remain in generated guidance (goal.ts) [11.75ms]
+(pass) loop-policy recovery guidance interpolates recoverySurfaceCommand (v0.34.108) [6.77ms]
+(pass) widget resume hints are mode-aware ternaries (display.ts) [0.15ms]
+(pass) goal-policy pause notifies with /goal resume [186.45ms]
