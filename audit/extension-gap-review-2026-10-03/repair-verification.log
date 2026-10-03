@@ -1,0 +1,34 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-version.test.ts:
+(pass) /glla version reads the installed package metadata and exposes a registry check [0.78ms]
+(pass) /glla version names staleness and the update path when the sidecar proves it [561.57ms]
+(pass) package and lock metadata stay synchronized for version reporting [0.20ms]
+(pass) /glla version is registered, autocompleted, and read-only routed [0.41ms]
+(pass) unknown running version makes no staleness claim either way [1.52ms]
+(pass) compareVersions is strictly numeric: prereleases never equal releases [0.13ms]
+(pass) updateCheckPath defaults to the cwd state dir [0.12ms]
+
+tests/disk-first-queue.test.ts:
+(pass) writeQueueItemFile: atomic, lands in .pi-glla/goals/<id>.queue.json [167.64ms]
+(pass) writeQueueItemFile: idempotent on retry (no overwrite) [38.00ms]
+(pass) writeQueueItemFile: refuses to follow symlinks (symlink-safety) [0.55ms]
+(pass) writeQueueItemFile: survives an existing temp residual [0.37ms]
+(pass) deleteQueueItemFile: returns true when present, false when missing [0.71ms]
+(pass) clearQueueItemFiles: removes orphaned sidecars and is idempotent [2.10ms]
+(pass) readQueueFromDisk: returns queue items, in id order, skipping garbage [94.01ms]
+(pass) readQueueFromDisk: excludeIds removes ids that are active or archived [167.87ms]
+(pass) readQueueFromDisk: missing goals/ dir returns [] (not throw) [0.33ms]
+(pass) round-trip: write then read returns identical items [2.66ms]
+(pass) queueItemPath: stable relative shape [139.18ms]
+(pass) v0.34.61: addSingleItem is disk-first (sidecar before state mutation) [1.13ms]
+(pass) v0.34.61: list-draft path is disk-first (sidecar before state mutation) [0.49ms]
+(pass) v0.35.0: remove/clear/cancel/glla_wipe clear queue sidecars [0.73ms]
+(pass) v0.34.61: crash-simulation — sidecar survives state death and reload finds it [83.57ms]
+(pass) v0.35.4: queue metadata round-trips and recovery uses durable order [289.05ms]
+(pass) v0.35.4: failed sidecar writes are reported without leaving temp files [0.44ms]
+(pass) v0.35.4: queue recovery and carryover clear use durable sidecars [0.74ms]
+
+tests/completion-communication.test.ts:
+(pass) pending is nonterminal; approval delivers durable concrete summary (idle=true) [3843.54ms]
