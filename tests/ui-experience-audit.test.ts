@@ -80,3 +80,20 @@ test("long draft reviews scroll while their decisions remain visible", () => {
   assert.match(component.render(60).join("\n"), /Contract item 45:/);
   assert.equal(component.getSelectedItem(), "Yes", "review scrolling must not change the decision");
 });
+
+test("ordered pickers fit short terminals with current, inherit and cap notices", () => {
+  for (const height of [8, 12, 18, 24]) {
+    const component = new MultiModelPickerComponent({ title: "Fallbacks", items, initialSelected: items.map(item => item.ref!), currentRef: "fixture/current", includeInheritOption: true, maxSelections: 10, getHeight: () => height }, () => {}, theme, kb, () => {});
+    assertFits(component.render(60), 60, height);
+    component.handleInput("\t");
+    for (let i = 0; i < 8; i++) component.handleInput("down");
+    assertFits(component.render(60), 60, height);
+    assert.match(component.render(60).join("\n"), /→ \[9\] fixture\/model-00/);
+  }
+});
+test("settings sanitize terminal controls without changing saved strings", () => {
+  const settings = { notifyCmd: "echo first\nsecond\x1b[2J" };
+  const row = buildSettingsRows(settings, {}).find(row => row.id === "notifyCmd")!;
+  assert.ok(!/[\x00-\x1f\x7f]/.test(row.valueText));
+  assert.equal(settings.notifyCmd, "echo first\nsecond\x1b[2J");
+});

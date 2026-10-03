@@ -328,7 +328,40 @@ export class MultiModelPickerComponent {
     return this.items.find((item) => item.kind === "model" && item.ref?.toLowerCase() === key);
   }
 
+  /** Height-aware production layout: membership stays in the result list;
+   * order mode gives the whole viewport to the chain being rearranged. */
+  private renderViewport(width: number, height: number): string[] {
+    const w = Math.max(0, width - 2);
+    const lines = [this.theme.fg("accent", this.theme.bold(this.title))];
+    const count = `${this.selection.length}${this.maxSelections === undefined ? "" : `/${this.maxSelections}`} selected`;
+    const inherit = this.includeInheritOption ? ` · inherit ${this.inheritFromSession ? "on" : "off"}` : "";
+    lines.push(this.theme.fg("muted", `${this.orderMode ? "Order" : this.unorderedSet ? "Extensions" : "Backups"} · ${count}${inherit}`));
+    if (this.currentRef) lines.push(this.theme.fg("muted", `Current: ${this.currentRef}`));
+    if (this.initialOmitted.length) lines.push(this.theme.fg("warning", `${this.initialOmitted.length} saved refs omitted by cap ${this.maxSelections}`));
+    lines.push(this.theme.fg("muted", this.orderMode ? "↑↓ moves this backup · tab returns to search" : `search: ${this.query}▏`));
+    const footer = this.orderMode ? "↑↓ reorder · tab browse · enter save · esc cancel"
+      : this.unorderedSet ? "space toggle · enter save · esc cancel"
+      : "space toggle · tab order · enter save · esc cancel";
+    const limit = Math.max(1, Math.min(this.maxRows, height - lines.length - 2));
+    const list = this.orderMode ? this.selection.map((ref) => ({ ref, label: ref, kind: "model" as const, searchText: ref })) : this.filteredItems();
+    const selected = Math.min(this.orderMode ? this.orderIdx : this.selectedIdx, list.length - 1);
+    const start = Math.max(0, Math.min(selected - Math.floor(limit / 2), list.length - limit));
+    const window = list.slice(start, start + limit);
+    if (!list.length) lines.push(this.theme.fg("warning", this.orderMode ? "No backups selected · tab to browse" : "No matches · change search or Esc to cancel"));
+    window.forEach((item, index) => {
+      const at = start + index;
+      const disabled = this.effectiveDisabledReason(this.itemForRef(item.ref) ?? item);
+      const label = `${this.itemMarker(item)} ${item.label}${disabled ? ` · ${disabled}` : ""}`;
+      const row = truncateToWidth(`${at === selected ? "→" : " "} ${label}`, w, "…");
+      lines.push(at === selected ? this.theme.bg("selectedBg", this.theme.bold(row + " ".repeat(Math.max(0, w - visibleWidth(row))))) : row);
+    });
+    if (list.length) lines.push(this.theme.fg("dim", `${start + 1}–${start + window.length} of ${list.length}${!this.unorderedSet && !this.orderMode ? " · rank = try order" : ""}`));
+    lines.push(this.theme.fg("dim", footer));
+    return lines.map((line) => truncateToWidth(line, Math.max(0, width), "…"));
+  }
+
   render(width: number): string[] {
+    if (this.getHeight) return this.renderViewport(width, Math.max(8, Math.floor(this.getHeight())));
     const w = Math.max(0, width - 2);
     const height = this.getHeight ? Math.max(8, Math.floor(this.getHeight())) : Number.POSITIVE_INFINITY;
     const lines: string[] = [];

@@ -34,6 +34,7 @@ import {
 import {
   AUDIT_CAP_HARD_DEFAULT,
   DEFAULT_AUDIT_FEEDBACK_CHARS,
+  compactDisplayText,
   DEFAULT_COMPACTION_TOKEN_THRESHOLD,
   DEFAULT_STALL_ESCALATION_REFIRES,
   resolveEffectiveAggressiveSettings,
@@ -732,7 +733,7 @@ export function buildSettingsRows(
     },
   );
 
-  return rows;
+  return rows.map((row) => ({ ...row, label: compactDisplayText(row.label), valueText: compactDisplayText(row.valueText), sourceText: compactDisplayText(row.sourceText), description: compactDisplayText(row.description) }));
 }
 
 // =================================================================
@@ -964,7 +965,8 @@ export class SettingsMenuComponent implements Component {
     this.detailOffset = Math.min(this.detailOffset, Math.max(0, details.length - detailRows));
     const detailChrome = details.length ? detailRows + 1 : 0;
     const perRow = narrow ? 2 : 1;
-    const rowLimit = Math.max(1, Math.floor((height - lines.length - detailChrome - 2) / perRow));
+    const footerRows = narrow ? 2 : 1;
+    const rowLimit = Math.max(1, Math.floor((height - lines.length - detailChrome - footerRows - 1) / perRow));
     this.rowPageSize = Math.min(vs.length, rowLimit);
     const start = Math.max(0, Math.min(this.selectedIdx - Math.floor(rowLimit / 2), vs.length - rowLimit));
     const window = vs.slice(start, start + rowLimit);
@@ -988,12 +990,9 @@ export class SettingsMenuComponent implements Component {
       lines.push(...details.slice(this.detailOffset, this.detailOffset + detailRows).map((line) => this.theme.fg("muted", line)));
     }
 
-    lines.push(
-      this.theme.fg(
-        "dim",
-        `←/→ tab · ↑/↓ move · d details ${this.showDescriptions ? "off" : "on"} · / search · enter edit · esc exit`,
-      ),
-    );
+    const help = narrow ? (this.searching ? ["type to search · ↑↓ move", "enter edit · esc clear search"] : ["←→ tab · ↑↓ move · / search", `d details ${this.showDescriptions ? "off" : "on"} · enter edit · esc exit`])
+      : [`←/→ tab · ↑/↓ move · d details ${this.showDescriptions ? "off" : "on"} · / search · enter edit · esc exit`];
+    lines.push(...help.map((line) => this.theme.fg("dim", line)));
 
     return lines;
   }
