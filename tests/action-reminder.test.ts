@@ -176,3 +176,11 @@ test("reminder rendering bounds narrow rows and strips terminal commands", () =>
     assert.ok(lines.every(line => visibleWidth(line) <= width), `reminder fits ${width} columns`);
   }
 });
+
+test("decision reminder rendering agrees with its transcript when no action was supplied", () => {
+  const reminder = buildActionReminder({ kind: "decision", reason: "Choose the rollout approach.", resumeCommand: "/goal resume" });
+  assert.match(reminder.content, /Choose an option in the decision card/);
+  const rendered = renderReminder(reminder);
+  assert.match(rendered, /Choose an option in the decision card/);
+  assert.doesNotMatch(rendered, /Next: \/goal resume/);
+});
