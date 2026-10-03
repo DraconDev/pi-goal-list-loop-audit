@@ -3919,3 +3919,66 @@ tests/impossible-list-drop.test.ts:
 (pass) rule: blocked + no resume path on a /list item → auto-dropped (ledgered) and the queue advances [544.64ms]
 (pass) guard: blocked WITH a resume path stays paused — never overridden [473.98ms]
 (pass) guard: blocked + no resume path on a plain GOAL is not a list drop [428.46ms]
+(pass) last item: drop still ledgered, list goes empty, no advance possible [415.74ms]
+(pass) full auditor IMPOSSIBLE result is terminalized with a durable recap and notification [1129.38ms]
+(pass) stored-claim full IMPOSSIBLE retry also terminalizes with its recap [530.23ms]
+(pass) loop hold: drop ledgered but NO advance while a loop owns the surface [191.14ms]
+
+tests/context-growth-measurement.test.ts:
+(pass) fixture: repeated real continuation payloads grow context linearly and are isolated [46.01ms]
+(pass) reported checkpoint shape stays pinned across all probe sizes [6.16ms]
+(pass) provider capture preserves exact pi-ai usage and rejects partial data [0.20ms]
+(pass) measurement: failed turns and ordinary conversation remain separate from GLLA payload bytes [1.15ms]
+
+tests/command-registration-collisions.test.ts:
+(pass) v0.34.55: model — a collided name is suffixed for EVERY registrant; the bare name becomes unowned [45.91ms]
+(pass) v0.34.55: model — within-extension re-registration is last-wins (Map.set), no self-collision [0.06ms]
+(pass) v0.34.138: routing scan follows local imports and keeps winner paths portable [0.86ms]
+(pass) v0.34.55: live rig — the routing table records duplicate-command routing and identifies the winning registration [514.81ms]
+(pass) v0.35.47: every handled /list and /loop subcommand has a completion entry [0.91ms]
+(pass) every canonical /glla action is discoverable in completions [0.33ms]
+
+tests/state-root-consumers.test.ts:
+(pass) resolved consumers follow the selected root — dispatch, stats, audit findings [1.87ms]
+(pass) pending sessionDir defers dispatch, reviewer, and audit writes — no cwd fallback tree [0.97ms]
+(pass) workingDir fallback and PI_SESSION_FILE fallback behave correctly [0.33ms]
+(pass) source pins: raw cwd/.pi-glla hardcodings are gone from consumers [51.76ms]
+
+tests/session-visibility.test.ts:
+(pass) tally classifies like auditVerdictLabel [0.43ms]
+(pass) tally segment stays silent with no verdicts [0.26ms]
+(pass) recovery banner pins objective, next task, audits, resume [0.44ms]
+(pass) v0.38.55: auditing status line is liveness-only — the tally lives on the card (Screenshot 20260914) [1.40ms]
+(pass) reload with a held goal paints the recovery banner from disk [296.21ms]
+(pass) future verdict timestamp suppresses the age instead of printing 0s ago [0.39ms]
+
+tests/completion-recap-shape.test.ts:
+(pass) structured completion recap survives archive rendering and the terminal widget [41.70ms]
+(pass) auditor receives completionSummary and verificationSummary independently [0.18ms]
+(pass) complete_goal tool schema references the six-label policy [0.18ms]
+
+tests/rich-summary-dedup.test.ts:
+(pass) 172705: exact-duplicate details render once per bucket [44.16ms]
+(pass) 2026-10-02: same-label restatement in next/remaining collapses to first [0.32ms]
+(pass) 2026-10-02: problem and action across labels always both render [0.31ms]
+(pass) 2026-10-02: distinct same-label next steps both render [0.10ms]
+(pass) 172705: zero turns omitted, elapsed and audits kept [0.35ms]
+
+tests/runtime-globals-contract.test.ts:
+(pass) runtime global bridge has one typed declaration for every registration [41.90ms]
+(pass) audit-2026-09-06: runtime globals register exactly once per process [0.36ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [435.10ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [187.53ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [200.82ms]
+[run-tests] progress: 540s elapsed · 2s since last output · 297 KiB of suite output
+(pass) runner escalates a child that ignores TERM and still reports interruption [5190.31ms]
+(pass) runner reaps a TERM-ignoring group descendant after normal leader exit [694.70ms]
+(pass) runner reaps a TERM-ignoring group descendant after signal leader exit [166.13ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on normal exit [1524.01ms]
+(pass) runner reaps a registered detached worker and its TERM-ignoring descendant on signal exit [1366.76ms]
+(pass) registry refuses to signal a record naming a reused leader identity [17.01ms]
+(pass) runner refuses a green suite after a swallowed primary registration write failure [126.92ms]
+(pass) runner refuses a green suite after a swallowed obligation registration write failure [165.45ms]
+(pass) parent runner fails after swallowed initial identity denial and restored reads [165.07ms]
