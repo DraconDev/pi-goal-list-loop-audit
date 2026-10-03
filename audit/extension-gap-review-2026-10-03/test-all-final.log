@@ -207,3 +207,137 @@ tests/subagent-hang-detection.test.ts:
 (pass) nested child is not eligible for top-level automatic abort [1505.10ms]
 (pass) v0.35.65: an old-generation child cannot receive a stop RPC after host rebind [732.60ms]
 (pass) host rebind retires healthy event-only evidence and admits fresh same-generation progress [1640.55ms]
+(pass) v0.34.102: event-only hang surfaces `subagent_hang_detected` with evidence=event-only when no manager record exists [1475.61ms]
+(pass) completed/failed events end the watch — no hang alert after completion [1441.43ms]
+(pass) compacted/steered events refresh the streak (secondary progress evidence) [2673.46ms]
+(pass) malformed hang inputs are dropped, not crashy [994.75ms]
+(pass) source pins: constants, watchdog wiring, and ledger key [7.53ms]
+(pass) v0.34.105: hang scan runs during main-model recovery (quota wall blinds the watchdog before the fix) [1724.80ms]
+(pass) v0.34.105 source pin: subagent scan precedes the main-model-recovery early return in heartbeatTick [0.20ms]
+(pass) v0.38.104 releasing the RPC host unsubscribes the readiness listeners it installed [0.28ms]
+
+tests/reviewer-modes.test.ts:
+(pass) E4: a failed proposal send is NOT counted or reported (phantom-reviewer hole closed) [29.42ms]
+(pass) E4: clean-completion branch also gates on delivery — default AND aggressive modes [0.65ms]
+(pass) auto mode: architectural findings enqueue to /list — proposeGoal NEVER called [0.44ms]
+(pass) auto mode: clean completion enqueues the audit as a /list item (no Confirm) [0.28ms]
+(pass) report mode: REMOVED in 0.27.9 (the 4-mode set `off | on | auto | aggressive` has no report branch) [6.28ms]
+(pass) improvement-class extraction: 'consider adding X' / 'could be improved' enqueue without Confirm [0.63ms]
+(pass) auto mode: refire window skipped for list-complete, enforced for goal-complete and in default mode [0.43ms]
+(pass) auto mode: the per-day cap still bounds everything [0.23ms]
+(pass) menu: Mode option lists the 4 modes (off, on, auto, aggressive) [0.25ms]
+(pass) /review accepts all 4 modes and rejects unknown modes [0.14ms]
+(pass) config: mode defaults to 'on' and merges from project settings [0.07ms]
+(pass) config: legacy 'default' and 'report' modes auto-migrate to 'on' [0.05ms]
+(pass) report-mode test removed: the 4-mode postaudit surface (`off | on | auto | aggressive`) has no report branch anymore (0.27.9) [0.17ms]
+(pass) off mode: reviewer NEVER fires (equivalent to enabled=false, exposed via postaudit menu) [42.71ms]
+(pass) aggressive mode: architectural findings enqueue AND the first one relaunches as /goal [0.99ms]
+(pass) aggressive mode: clean completion → relaunch audit /goal (no Confirm) [0.38ms]
+(pass) goal.ts fireReviewer opts.mode now accepts the 4-mode ReviewerMode union [0.26ms]
+
+tests/approval-notify.test.ts:
+(pass) v0.38.20 approval chat drops the stale pre-verdict Next line [5.56ms]
+(pass) approval chat keeps every informing detail (Tests + meaningful Unresolved preserved) [0.04ms]
+(pass) v0.38.39 withoutStaleNext keeps one concrete next action, still strips stale ones [0.03ms]
+(pass) A10: the kept-session command quotes the worker-reported path [0.06ms]
+
+tests/compaction-settled-boundary.test.ts:
+[run-tests] progress: 120s elapsed · 1s since last output · 18 KiB of suite output
+(pass) settled and idle-send compaction preserve paused [741.81ms]
+(pass) settled and idle-send compaction preserve auditing [466.42ms]
+(pass) settled and idle-send compaction preserve frozen [851.12ms]
+(pass) settled and idle-send compaction preserve aborted [951.48ms]
+(pass) idle list advancement checks compaction before dispatching the next task [1499.54ms]
+(pass) busy agent_end defers the 200k trigger to agent_settled, then work resumes after compaction [2955.20ms]
+
+tests/migrate-on-read.test.ts:
+(pass) v0.38.32: legacy disapprovals settled by a later approval are never live again [0.42ms]
+(pass) v0.38.32: later legacy disapproval supersedes the earlier round only [0.06ms]
+(pass) v0.38.32: lone legacy disapproval stays live [0.03ms]
+(pass) v0.38.32: error entries neither settle nor get settled [0.04ms]
+(pass) v0.38.32: backfill is idempotent and a no-op on flagged histories [1.78ms]
+
+tests/pause-decision-interrupt.test.ts:
+(pass) decision pause persists options AND aborts the turn so the picker owns an idle surface [892.88ms]
+(pass) options without kind are inferred as decision — no silently dropped picker [1276.76ms]
+(pass) every agent-authored pause ends the turn (blocked/error/wait), not just decisions [3678.76ms]
+(pass) impossible-drop auto-advance does NOT abort — the next item's continuation owns the turn [800.41ms]
+(pass) source pins: decision picker wiring + abort ordering survive refactors [2.55ms]
+
+tests/audit-tier.test.ts:
+(pass) tier: a small quiet claim with no history audits light [0.70ms]
+(pass) tier: draft-time full-audit consent escalates [0.20ms]
+(pass) tier: the agent's own full-audit request escalates [0.13ms]
+(pass) tier: any prior disapproval escalates (rework proved risky once) [0.12ms]
+(pass) tier: missing telemetry escalates (unknown activity, conservative floor) [0.11ms]
+(pass) tier: activity above any ceiling escalates, at-ceiling stays light [0.16ms]
+(pass) tier: high-stakes language escalates and names the match [0.70ms]
+(pass) tier: ordinary objectives do not trip the keyword list [0.09ms]
+(pass) tier: spot-check rate 1 escalates every light claim and marks it [0.08ms]
+(pass) tier: spot-check never marks a claim that was already full [0.05ms]
+(pass) tier: injected random decides the draw (seeded, no flakes) [0.15ms]
+(pass) tier: rates clamp to [0, 1]; junk restores the default [0.11ms]
+(pass) tier: spot-check rate ships at 0.1 and normalizes junk to default [0.49ms]
+(pass) tier: claim mapper counts disapprovals and carries both escalation flags [0.25ms]
+(pass) tier: settings menu exposes the spot-check rate row in the auditor section [35.71ms]
+
+tests/auditor-timeout-settings.test.ts:
+(pass) v0.37.0: escalatedAuditorTimeout doubles per prior attempt and saturates at 4x base [10.93ms]
+(pass) v0.37.0: auditor timeout settings clamp into bounds on load [146.50ms]
+(pass) v0.37.0: /glla editor accepts plain-ms and s/m/h duration input for both keys [3698.54ms]
+(pass) v0.37.0: settings menu exposes both auditor timeout rows in the auditor section [1.08ms]
+(pass) v0.37.0: dispatch env reaches the worker process so parent and worker budgets agree [1182.05ms]
+(pass) v0.37.0: progress signature counts streamed report bytes [0.53ms]
+(pass) v0.37.0: an in-budget live tool exempts the audit card from the quiet phase [0.16ms]
+(pass) v0.37.0: durable claims preserve the timeout escalation index across loads [40.93ms]
+(pass) v0.38.3: auditJobRetentionMs clamps into [0, 7d] on load [0.69ms]
+(pass) v0.38.3: /glla editor accepts duration input for auditJobRetentionMs (0 is legal) [1169.40ms]
+(pass) v0.38.3: settings menu exposes the audit job retention row in the auditor section [4.32ms]
+
+tests/compaction-survival.test.ts:
+(pass) compaction survival: three mid-run compacts, then the goal still completes approved [6072.28ms]
+[run-tests] progress: 150s elapsed · 2s since last output · 22 KiB of suite output
+(pass) compaction survival: a compact around an in-flight audit still completes [2076.39ms]
+
+tests/stats-outcomes.test.ts:
+(pass) outcomes: completed/aborted/open counts with the run-to-done split [6.99ms]
+(pass) outcomes: rounds, wall-clock, and tokens average over known data only [0.20ms]
+(pass) outcomes: unknown archive statuses are ignored, empty ledgers are zeroed [0.13ms]
+(pass) outcomes: table and JSON formats mirror the schema [0.59ms]
+
+tests/stale-delayed-context.test.ts:
+(pass) v0.34.20: registered agent tools resolve the invocation context [20.99ms]
+(pass) v0.34.20: provider retry timers have one session-boundary adapter [0.93ms]
+(pass) v0.34.20: detached fan-out revalidates after user confirmation [0.39ms]
+(pass) v0.34.22: detached completion audits persist lifecycle claims and stop applying after replacement [0.94ms]
+(pass) v0.34.20: generic infra retry supports a lifecycle guard before and after backoff [0.17ms]
+(pass) v0.34.20: manual resume consumes a stored completion claim directly [0.24ms]
+(pass) v0.34.20: loop measurement and branch cleanup rebind after async work [0.44ms]
+
+tests/auditor-shift-acceptance.test.ts:
+(pass) auditor prompt treats completion summaries as untrusted scope claims [0.31ms]
+(pass) scope changes require the durable objective and contract [0.12ms]
+
+tests/tui-density.test.ts:
+(pass) widget carries the audits row only with history [33.21ms]
+(pass) widget fits 80 columns at width 80 [0.78ms]
+(pass) paused status carries the tally [0.34ms]
+(pass) ladder is one recovery per line [0.38ms]
+(pass) settings tab labels carry row counts [0.13ms]
+
+tests/audit-unsettled-treadmill-cap.test.ts:
+(pass) countTrailingUnsettledRounds — all verdict classes > counts disapprovals, and an approval breaks the streak [115.58ms]
+(pass) countTrailingUnsettledRounds — all verdict classes > counts a regression-shield block, which the disapproval cap cannot see [0.30ms]
+(pass) countTrailingUnsettledRounds — all verdict classes > counts an IMPOSSIBLE(partial) verdict [0.08ms]
+(pass) countTrailingUnsettledRounds — all verdict classes > an infra error is transparent; a clean approval of a shielded round is NOT [0.07ms]
+(pass) countTrailingUnsettledRounds — all verdict classes > a mechanical pre-audit gate row stays transparent [0.31ms]
+(pass) grader alternation no longer defeats the hard cap > an alternating primary/fallback streak is detected as unstable [0.15ms]
+(pass) grader alternation no longer defeats the hard cap > a single-grader streak is still reported stable [0.07ms]
+(pass) regression shield — the branch the cap could not see > shield blocks pause at the hard cap instead of re-continuing forever [3044.32ms]
+
+tests/loop-measure-probe-exit.test.ts:
+(pass) propose_loop_draft rejects non-zero measure output even when stdout is numeric [65.51ms]
+(pass) propose_loop_refine rejects non-zero measure output and leaves the live loop unchanged [4.66ms]
+
+tests/pause-redirect.test.ts:
+(pass) redirect parks the goal but keeps the turn alive for the user's new task [1712.37ms]
