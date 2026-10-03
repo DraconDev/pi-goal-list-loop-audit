@@ -2086,3 +2086,19 @@ Switched to branch 'main'
 (pass) v0.35.x: bare 403 main recovery sanitizes live surfaces while retaining diagnostics [1160.71ms]
 [run-tests] progress: 904s elapsed · 0s since last output · 157 KiB of suite output
 (pass) v0.35.x: bare 403 completion diagnostics stay durable while completion surfaces remain sanitized [9842.05ms]
+(pass) v0.34.119: auditor-approved list completion archives the item and activates exactly the next queue item [7766.24ms]
+(pass) v0.36.2: approved standalone completion automatically activates a pre-queued list head [3308.36ms]
+(pass) v0.34.91: detached approval notify carries the agent's completion recap, not process boilerplate [4755.34ms]
+(pass) v0.34.87: complete_goal on a paused item names the pause + resume verb, not a flat 'No active goal' [668.39ms]
+(pass) v0.34.22: detached disapproval resumes the goal with a durable report [2659.81ms]
+[run-tests] progress: 934s elapsed · 1s since last output · 158 KiB of suite output
+(pass) v0.35.x: a detached approval blocked by the regression shield is not relabeled [3080.10ms]
+(pass) v0.34.22: an old detached result cannot archive after session replacement [2256.09ms]
+(pass) v0.34.21 lifecycle: cold startup holds a recovered claim until explicit resume [593.47ms]
+(pass) v0.35.x: validated session handoff auto-retries a parked completion audit [4243.91ms]
+(pass) v0.35.x: explicit Auto-resume retries a parked claim on cold startup [2359.40ms]
+(pass) v0.35.x: manual /list resume retries a parked list completion claim directly [1874.66ms]
+(pass) v0.35.x: one automatic parked-audit retry is durable across repeated lifecycle events [994.78ms]
+(pass) v0.35.x: stale host replacement session_start auto-recovers the parked audit [8004.02ms]
+(pass) v0.35.x: healthy same-session heartbeat recovers a parked completion audit without manual resume [4370.06ms]
+[run-tests] progress: 964s elapsed · 3s since last output · 159 KiB of suite output
