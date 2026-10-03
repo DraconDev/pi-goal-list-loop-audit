@@ -22,3 +22,260 @@ tests/completion-communication.test.ts:
 (pass) complete_goal findingGroups ride the claim into the grouped terminal render [1031.21ms]
 (pass) disapproval remains unfinished, no final success is posted [543.08ms]
 (pass) archive write failure never emits a terminal success [1067.57ms]
+(pass) approval summary does not replace independent next-item continuation [16054.15ms]
+(pass) outbox write failure warns without claiming summary delivery [1056.74ms]
+
+tests/audit-glance-clarity.test.ts:
+(pass) screenshot regression: live audit facts and user action fit before Pi's ten-row cut [0.90ms]
+(pass) narrow footer starts with audit state and real freshness [0.10ms]
+(pass) quiet, blocked, settlement and recovery do not claim no action is needed [0.53ms]
+(pass) starting audit distinguishes waiting for first activity from recent activity [0.27ms]
+
+tests/ui-experience-audit.test.ts:
+(pass) settings keep the active final tab visible on narrow terminals [0.81ms]
+(pass) narrow settings show both the focused setting and its effective value [0.32ms]
+(pass) reopened settings focus the edited row and each tab remembers its cursor [0.10ms]
+(pass) settings window keeps the cursor, navigation and details within a short terminal [1.04ms]
+(pass) settings search finds rows across sections and Esc clears search before closing [0.62ms]
+(pass) settings details allow reading the full long value [0.71ms]
+(pass) single picker respects terminal height and keeps the selected model visible [0.54ms]
+(pass) large unordered selections fit a short multi-picker without hiding its cursor [1.06ms]
+(pass) picker backspace deletes a complete Unicode character [0.14ms]
+(pass) long draft reviews scroll while their decisions remain visible [10.95ms]
+(pass) ordered pickers fit short terminals with current, inherit and cap notices [4.35ms]
+(pass) settings sanitize terminal controls without changing saved strings [0.54ms]
+(pass) settings details and all tab windows fit very short terminals [71.07ms]
+(pass) lifecycle cards and status rows fit every explicit terminal width [18.25ms]
+(pass) draft review keeps project consent readable and uses the supplied keybindings [8.92ms]
+(pass) untrusted picker labels and draft bodies cannot emit terminal commands [0.80ms]
+(pass) settling cards identify the approved archive owed and its recovery action [0.45ms]
+(pass) single picker resizes through short and narrow terminals without losing focus [1.00ms]
+(pass) truncated selected rows keep their background across values, source and padding [0.61ms]
+(pass) settings search exposes details without treating a typed d as a command [0.76ms]
+
+tests/display.test.ts:
+(pass) fmtElapsed [0.11ms]
+(pass) fmtTokens [0.04ms]
+(pass) truncate [0.03ms]
+(pass) D6: the clause-cut floor scales with the budget instead of pinning at 16 [0.05ms]
+(pass) D10: fmtElapsed clamps non-finite input to zero [0.03ms]
+(pass) display projections remove terminal and zero-width control characters without changing stored state [0.68ms]
+(pass) empty state → undefined (segment cleared) [0.03ms]
+(pass) active goal shows a compact state capsule (elapsed lives on the card) [0.06ms]
+(pass) version tail rides the status on every branch (field 20260909_161057) [0.10ms]
+(pass) monitoring intent never substitutes for runtime evidence [0.11ms]
+(pass) repair cards show the preserved target and the concrete one-turn recovery [0.19ms]
+(pass) repair cards with a sent bootstrap show the explicit retry action [0.08ms]
+(pass) active status does not make first-turn or long-idle gaps look green [0.17ms]
+(pass) stream-proven work uses one compact status-bar HUD; the card stays quiet [0.26ms]
+(pass) v0.34.95: queued + parked recovery surfaces 'parked on provider recovery' on the status line [0.09ms]
+(pass) v0.34.95: queued WITHOUT a parked recovery does NOT show quota text (no false signal) [0.03ms]
+(pass) v0.34.95: parked recovery on a WORKING goal does NOT show quota text (only queued needs the WHY) [0.04ms]
+(pass) v0.34.97: status line shows '⏳ compacting…' during the post-compaction grace window [0.03ms]
+(pass) v0.34.97: compacting chip is GONE after the 3-minute grace window [0.03ms]
+(pass) v0.34.97: no compacting chip when lastCompactionAt is absent [0.01ms]
+(pass) head owns liveness: WORKING status is static, the head carries the animated signal [0.05ms]
+(pass) WORKING badge keeps semantic colors without decorative noise [0.09ms]
+(pass) active goal with tasks shows progress [0.11ms]
+(pass) stale interrupted goal is visibly orphaned, not normally active [0.17ms]
+(pass) accepted continuation without a turn-start proof is not mislabeled as a lost host session [0.11ms]
+453 |       }],
+454 |     });
+455 |     const widget = buildWidgetLines({ goal: g, list: [] }, null, NOW)!;
+456 |     const rendered = widget.join("\\n");
+457 |     assert.ok(rendered.includes(lifecycleText), `lifecycle marker missing: ${rendered}`);
+458 |     assert.ok(rendered.includes("completion review disapproved — durable required fixes"), rendered);
+                 ^
+AssertionError: ⚠ Create x.txt containing ok · interrupted · total 3m 00s · 12.4k/1000k ▰▱▱▱▱\n├─ audits: 1 review · 1 disapproved · last disapproved 1m 30s ago\n├─ continuation was accepted, but pi did not start a turn\n└─ automatic re-sends are stopped · /goal resume to retry once
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/display.test.ts:458:12
+      at fn (node:test:215:18)
+(fail) lifecycle interruption keeps durable auditor disapproval feedback visible [0.46ms]
+(pass) widget truncation is width-aware (v0.22.2) [0.18ms]
+(pass) audit 2026-09-07: worker rows splice before the auditor block, never inside it [0.26ms]
+(pass) widget lines reserve pi-tui's horizontal padding [0.16ms]
+(pass) list policy footer: queued count, no duplicated 'list' [0.06ms]
+(pass) goal policy footer says 'N queued' (v0.28.11 U10 — was the cryptic 'list N') [0.03ms]
+(pass) widget names a list item as such and points at /list, not /goal [0.08ms]
+(pass) long-running list card shows a truthful queue trail and immediate next item [0.06ms]
+(pass) widget list item, last in queue: no '0 queued' [0.03ms]
+(pass) widget goal policy keeps /goal status hint + list N prefix [0.05ms]
+(pass) paused shows the reason [0.08ms]
+(pass) runtime activity projection scopes goals and active loops to their own start boundary [0.10ms]
+(pass) paused lifecycle projection names owner, queue, last activity, and next transition [0.28ms]
+(pass) active/in-flight main-model recovery uses one compact card row [0.14ms]
+(pass) standalone main-model recovery remains visible when no goal is active [0.18ms]
+(pass) loop recovery remains visible while the loop is parked [0.22ms]
+(pass) passed provider retryAt stays parked until recovery state clears [0.15ms]
+(pass) paused decision without activity says no turn was observed and names the manual path [0.22ms]
+(pass) v0.38.70: paused action card leads with the action, history rides after (field 20260920_152744) [0.57ms]
+(pass) auditing keeps the footer compact while the widget shows the auditor's current tool [0.13ms]
+(pass) v0.34.89: completed goal shows a dim one-line summary instead of a loud status claim [0.05ms]
+(pass) v0.34.89: completed goal widget is ONE dim summary line (objective + duration, no verdict card) [0.06ms]
+(pass) v0.34.91: completed goal summary shows the agent's completion recap, not the objective echo [0.10ms]
+(pass) completed-goal TUI card shows the human outcome without technical recap labels [0.05ms]
+(pass) v0.34.91: whitespace-only completion summary falls back to the objective [0.03ms]
+(pass) v0.34.89: aborted goal summary names the reason + duration on one line [0.04ms]
+(pass) v0.34.89: completed goal without a verdict does not fabricate one on the summary [0.03ms]
+(pass) active loop shows iteration + best + stall [0.05ms]
+(pass) active loop status names evidence-backed working, waiting, and idle states [0.08ms]
+(pass) v0.29.15 — audit-loop widget names the metric instead of showing the raw grep ("that weird line") [0.06ms]
+(pass) widget: nothing supervised → undefined [0.02ms]
+(pass) widget: goal lines include objective, status, tokens, no footer [0.08ms]
+(pass) widget: paused goal shows reason + suggestion [0.11ms]
+(pass) widget: auditing shows auditor progress [0.15ms]
+(pass) widget: interrupted completion claims render the named recovery-needed lifecycle, not auditor-running [0.16ms]
+(pass) widget: a durable running claim without observed progress names its durable state [0.12ms]
+(pass) auditor progress phases are explicit and retain worker activity [0.31ms]
+(pass) worker-timeout display demotes stale progress to quiet without claiming LIVE [0.11ms]
+(pass) detached auditor keeps compact footer liveness and detailed widget evidence without pausing MAIN [0.43ms]
+(pass) detached auditor elapsed time keeps ticking between worker progress events [0.13ms]
+(pass) detached recent auditor output is sanitized in live and awaiting-verdict widget paths [0.29ms]
+(pass) v0.34.86: silent audits show a fine phase label (thinking… / writing report…) [0.12ms]
+(pass) v0.34.86: silent audits show a report byte-counter instead of a dead timer [0.11ms]
+(pass) v0.34.86: auditorProgressSignals off restores the plain timer-only card [0.13ms]
+(pass) v0.34.86: live tail (auditorSilent off) is unaffected by the byte counter [0.09ms]
+(pass) H-code: HUD liveness gate rejects clock-skewed lastActivityAt (future timestamps must not claim LIVE) [0.16ms]
+(pass) auditor widget shows concrete worker observations without exposing think blocks [0.35ms]
+(pass) v0.34.119: repeated auditor tool telemetry does not render a tool-name history [0.11ms]
+(pass) v0.34.66: auditor stream is SILENT by default — no live tail, muted note instead [0.07ms]
+(pass) v0.34.66: at the verdict the FINAL report shows even when silent [0.33ms]
+(pass) v0.38.55: no spacer row between observations and the card footer (Screenshot 20260914) [0.18ms]
+(pass) v0.38.55: no spacer is invented when there is no worker text [0.09ms]
+(pass) v0.34.56: unmatched tool-event counts render ONLY with evidence (never a zero-fact observation) [0.25ms]
+(pass) stale auditor snapshots show the last tool, not a fake current tool [0.09ms]
+(pass) auditor startup does not claim worker activity before the first RPC event [0.11ms]
+(pass) widget: loop lines include measure + metric state [0.10ms]
+(pass) held loop alone → status segment + widget card (before: BOTH vanished) [0.09ms]
+(pass) held loop + paused goal → both visible (status suffix + widget trailing line) [0.15ms]
+(pass) held loop + active goal → status suffix present [0.05ms]
+(pass) v0.34.89: held loop + completed goal → dim summary shows, held loop stays visible via suffix [0.03ms]
+(pass) active loop unchanged; stopped loop stays invisible [0.06ms]
+(pass) decision pause: banner + numbered options + recommended flagged (widget + status) [0.28ms]
+(pass) v0.38.71: decision card renders the action before the options (field UI-SURVEY-2026-09-20) [0.24ms]
+(pass) error pause: ACTION NEEDED banner, action line popped (widget + status) [0.15ms]
+(pass) active auditor infrastructure failure is visible as blocked, not green progress [0.17ms]
+(pass) v0.34.87: paused auditor no-verdict is parked, not host-bearing (surface separation) [0.19ms]
+(pass) v0.34.87: a paused LIST item's parked line names /list resume and the queue [0.07ms]
+(pass) MAIN activity is never represented as detached — the detached marker belongs only to the live auditor badge [0.14ms]
+(pass) v0.34.57: MAIN host label is pinned to SUPERVISING by the MAIN_HOST_LABEL constant guard [0.21ms]
+1818 |   });
+1819 |   const disapprovalState = { goal: disapproved, list: [], loop: null };
+1820 |   const disapprovalWidget = buildWidgetLines(disapprovalState as never)!;
+1821 |   assert.match(disapprovalWidget[0]!, /completion review disapproved — fix the gap/);
+1822 |   assert.ok(disapprovalWidget.some((l) => l.includes("completion review: disapproved")), `disapproval: ${disapprovalWidget.join("\\n")}`);
+1823 |   assert.ok(disapprovalWidget.some((l) => l.includes("v1.0.0-image-regen")), `feedback: ${disapprovalWidget.join("\\n")}`);
+                ^
+AssertionError: feedback: ⚠ Create x.txt containing ok · completion review disapproved — fix the gap · total 1782h 35m · 12.4k/1000k ▰▱▱▱▱\n├─ audits: 1 review · 1 disapproved · last disapproved 1782h 32m ago\n├─ completion review: disapproved\n│  auditor disapproved\n│  Inspect auditor feedback and fix the actual gap before\n└─ calling complete_goal again
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/display.test.ts:1823:10
+      at fn (node:test:215:18)
+(fail) active auditor verdicts never masquerade as infrastructure no-verdict [0.42ms]
+1854 |   // the whole widget made this test wall-clock sensitive (red at 1429h
+1855 |   // elapsed, green at 1427h/1430h). The payload must not survive in the
+1856 |   // feedback lines themselves.
+1857 |   const feedback = widget.split("latest audit feedback:")[1] ?? "";
+1858 |   assert.doesNotMatch(feedback, /403|429|Token Plan|secret-request|secret-account|rate limit/);
+1859 |   assert.match(widget, /diagnostic redacted/);
+                ^
+AssertionError: The input did not match the regular expression /diagnostic redacted/. Input:
+
+'⚠ Create x.txt containing ok · completion review disapproved — fix the gap · total 1782h 35m · 12.4k/1000k ▰▱▱▱▱\n' +
+  '├─ audits: 1 review · 1 disapproved · last disapproved 1782h 32m ago\n' +
+  '├─ completion review: disapproved\n' +
+  '│  auditor disapproved\n' +
+  '└─ Inspect the required fixes, then /goal resume.'
+
+ generatedMessage: true,
+     actual: "⚠ Create x.txt containing ok · completion review disapproved — fix the gap · total 1782h 35m · 12.4k/1000k ▰▱▱▱▱\n├─ audits: 1 review · 1 disapproved · last disapproved 1782h 32m ago\n├─ completion review: disapproved\n│  auditor disapproved\n└─ Inspect the required fixes, then /goal resume.",
+   expected: /diagnostic redacted/,
+   operator: "match",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/display.test.ts:1859:10
+      at fn (node:test:215:18)
+(fail) provider payloads stay out of durable disapproval widget feedback [1.48ms]
+(pass) v0.34.64: retry-class pause shows uniform auto-retrying countdown; no QUOTA WALL anywhere [0.28ms]
+(pass) v0.34.64: ambiguous (transient 503) recovery is shown with the same auto-retrying badge — no special 'wall' label [0.13ms]
+(pass) v0.34.102: paused goal parked on mainModelRecovery renders as RECOVERING, not paused (widget head + card) [0.18ms]
+(pass) v0.34.102: wait pause WITHOUT mainModelRecovery keeps the uniform auto-retrying shape [0.09ms]
+(pass) v0.34.64: 24h horizon holds render as a paused card with the suggested action; no manual-resume wording [3.30ms]
+(pass) main-model recovery manual hold does not claim a non-quota block [0.23ms]
+(pass) blocked card carries one directive: timer names itself, otherwise resume [0.22ms]
+(pass) v0.34.51: a passed quota resumeAt says resuming…, never the old 'retrying now' [0.09ms]
+(pass) legacy pause (no kind): flat card unchanged; error-regex still classifies the status line [0.12ms]
+(pass) v0.28.30: the widget card status line ALWAYS names the type (goal · / list item ·) [0.26ms]
+(pass) v0.33.0: slim card — meter rounding guard, folded status segments, last-action line [4.03ms]
+(pass) v0.38.27: widget task count — a closed parent covers its subtasks (ported from Bjynt's PR #45) [0.29ms]
+(pass) v0.33.1: audit-batch — sanitize, head fits width, last restored, flag lifecycle [5.63ms]
+(pass) v0.33.2: loop proactiveness + respec machinery [4.72ms]
+(pass) v0.34.100: auditorSilent default is on in settings (every session model) [0.10ms]
+(pass) v0.34.100: auditorSilent plumbing threads the loaded setting through extras [4.47ms]
+(pass) v0.36.2: live UI repaint has a bounded cadence and diff guard [3.28ms]
+(pass) v0.34.100: silent-default widget renders muted for ANY session model [0.87ms]
+(pass) v0.34.96/v0.34.128: complete_goal detects 'already shipped' / 'verified vX covers this' / 'no new work shipped' — version-bearing aborts, version-less routes to the audit (SRC-pinned in display.test.ts) [3.85ms]
+(pass) audit-2026-09-07: widget worker rows render bare glyph-first, no `agent: ` prefix [0.44ms]
+(pass) audit-2026-09-06: status line honors the width budget [0.17ms]
+(pass) audit-2026-09-06: truncate/wrap are cell-aware (CJK/emoji + surrogate-safe) [1.03ms]
+(pass) version tail rides the paused branch too, not just active [0.08ms]
+
+tests/activity-first-status.test.ts:
+(pass) activity-first: lead rows follow the head and precede all historical rows [0.75ms]
+(pass) activity-first: quiet card leads with phase, age, last tool, model, thinking, next action [0.24ms]
+(pass) activity-first: awaiting-verdict card and footer agree on the phase words [0.22ms]
+(pass) activity-first: blocked card and footer agree on the blocked label [0.25ms]
+(pass) activity-first: live running card carries tool elapsed/budget in the lead [0.36ms]
+(pass) activity-first: legacy claim without thinking/model omits the segments, never invents [0.15ms]
+(pass) activity-first: phase colour wraps the words (quiet warns, live succeeds, queued stays neutral) [0.42ms]
+(pass) activity-first: footer monitoring and awaiting labels agree with the card head [0.09ms]
+(pass) D2: the loop status line folds watching into QUEUED like the goal head [0.07ms]
+(pass) D4: the auditor session row is sanitized and bounded [0.13ms]
+(pass) stampAuditorAttemptThinking stamps only the owning attempt and sanitizes [0.06ms]
+
+tests/audit-lifecycle-surfaces.test.ts:
+148 |     await (h as (...a: unknown[]) => Promise<void>)(...args);
+149 |   }
+150 | 
+151 |   async runTool(name: string, params: unknown, ctx: unknown, signal: AbortSignal = new AbortController().signal): Promise<{ content: Array<{ type: string; text: string }> }> {
+152 |     const t = this.tools.get(name);
+153 |     if (!t) throw new Error(`tool not registered: ${name}`);
+                            ^
+error: tool not registered: complete_goal
+      at runTool (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/harness/mock-pi.ts:153:23)
+      at <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/audit-lifecycle-surfaces.test.ts:78:14)
+(fail) durable: an ordinary complete_goal records phase running + lastActivityAt before the verdict [3.47ms]
+(pass) durable phase beats a worker-complete snapshot on the widget card and the status line [0.68ms]
+(pass) a live worker still refines a running claim (the HUD stays the richer truth) [0.15ms]
+(pass) durable phase with no live worker says so, and names the durable age [0.13ms]
+(pass) the durable projection is the single source for all three surfaces [0.14ms]
+(pass) a paused goal that still owes a settlement names it on card and status line [0.21ms]
+(pass) a paused parked claim names recovery-needed on card and status line [0.11ms]
+(pass) a list item names its own resume command, never /goal resume [0.08ms]
+
+tests/session-visibility.test.ts:
+(pass) tally classifies like auditVerdictLabel [0.17ms]
+(pass) tally segment stays silent with no verdicts [0.07ms]
+(pass) recovery banner pins objective, next task, audits, resume [0.11ms]
+(pass) v0.38.55: auditing status line is liveness-only — the tally lives on the card (Screenshot 20260914) [0.21ms]
+(pass) reload with a held goal paints the recovery banner from disk [126.12ms]
+(pass) future verdict timestamp suppresses the age instead of printing 0s ago [0.19ms]
+
+4 tests failed:
+(fail) lifecycle interruption keeps durable auditor disapproval feedback visible [0.46ms]
+(fail) active auditor verdicts never masquerade as infrastructure no-verdict [0.42ms]
+(fail) provider payloads stay out of durable disapproval widget feedback [1.48ms]
+(fail) durable: an ordinary complete_goal records phase running + lastActivityAt before the verdict [3.47ms]
+
+ 185 pass
+ 4 fail
+Ran 189 tests across 8 files. [23.82s]
