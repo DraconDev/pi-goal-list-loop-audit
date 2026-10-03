@@ -1,0 +1,25 @@
+
+> pi-goal-list-loop-audit@0.38.108 check
+> tsc --noEmit
+
+tests/loop-held-start.test.ts(64,18): error TS2352: Conversion of type 'LoopState | undefined' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'LoopState' is not comparable to type 'Record<string, unknown>'.
+    Index signature for type 'string' is missing in type 'LoopState'.
+tests/loop-held-start.test.ts(81,18): error TS2352: Conversion of type 'LoopState | undefined' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'LoopState' is not comparable to type 'Record<string, unknown>'.
+    Index signature for type 'string' is missing in type 'LoopState'.
+tests/loop-held-start.test.ts(110,18): error TS2352: Conversion of type 'LoopState | undefined' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'LoopState' is not comparable to type 'Record<string, unknown>'.
+    Index signature for type 'string' is missing in type 'LoopState'.
+tests/objective-conflict.test.ts(28,55): error TS2345: Argument of type 'MockCtx' is not assignable to parameter of type 'ExtensionContext'.
+  Types of property 'ui' are incompatible.
+    Type 'MockUi' is missing the following properties from type 'ExtensionUIContext': onTerminalInput, setWorkingMessage, setWorkingVisible, setWorkingIndicator, and 16 more.
+tests/objective-conflict.test.ts(43,55): error TS2345: Argument of type 'MockCtx' is not assignable to parameter of type 'ExtensionContext'.
+  Types of property 'ui' are incompatible.
+    Type 'MockUi' is missing the following properties from type 'ExtensionUIContext': onTerminalInput, setWorkingMessage, setWorkingVisible, setWorkingIndicator, and 16 more.
+tests/settings-stale-save.test.ts(26,67): error TS2345: Argument of type 'MockCtx' is not assignable to parameter of type 'ExtensionContext'.
+  Types of property 'ui' are incompatible.
+    Type 'MockUi' is missing the following properties from type 'ExtensionUIContext': onTerminalInput, setWorkingMessage, setWorkingVisible, setWorkingIndicator, and 16 more.
+tests/settings-stale-save.test.ts(41,52): error TS2345: Argument of type 'MockCtx' is not assignable to parameter of type 'ExtensionContext'.
+  Types of property 'ui' are incompatible.
+    Type 'MockUi' is missing the following properties from type 'ExtensionUIContext': onTerminalInput, setWorkingMessage, setWorkingVisible, setWorkingIndicator, and 16 more.

@@ -1,0 +1,37 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/remaining-next-pairing.test.ts:
+(pass) pairing: resolving action rides inline under its problem [2.05ms]
+(pass) pairing: standalone actions stay in ### Next [0.68ms]
+(pass) pairing: fully paired card omits an empty ### Next [0.15ms]
+(pass) pairing: unrelated problem and action do not pair [0.24ms]
+(pass) pairing: Left out never pairs, even on shared words [0.14ms]
+(pass) pairing: several actions can resolve one problem [0.21ms]
+
+tests/completion-summary-lines.test.ts:
+(pass) clip cuts at a word boundary, never mid-word [0.11ms]
+(pass) clip hard-cuts only long tokens without spaces [0.97ms]
+(pass) clip cuts at a clause boundary and never strands punctuation (field 2026-09-08) [0.07ms]
+(pass) lines project one label per line, in order, word-bounded [0.27ms]
+(pass) lines keep missing labels as not recorded and never mid-word cut [0.06ms]
+(pass) compact stays one line but cuts at word boundaries now [0.16ms]
+(pass) terminal lines resolve through the same facts as the compact recap [0.29ms]
+(pass) v0.38.14: filler values inform nobody and are dropped [0.10ms]
+(pass) v0.38.14: the briefing leads with the outcome and keeps only informing labels [0.38ms]
+(pass) v0.38.14: terminal brief resolves through the same facts as the compact recap [0.11ms]
+(pass) the ✓ done chat notifies use the line block; external keeps the single line [0.72ms]
+(pass) audit-2026-09-06: completionSummaryLines honors the optional line-width budget [0.92ms]
+(pass) recorded-facts fallback Next survives the stale-Next filter [0.09ms]
+(pass) machine-path strip converges on nested groups, leaves no husk [0.04ms]
+(pass) clip never splits a surrogate pair [0.07ms]
+(pass) label named inside a value does not steal later segmentation [0.08ms]
+(pass) D5: concrete work mentioning audit/review/settle/approval survives the stale-Next filter [0.12ms]
+(pass) D7: recap projections sanitize control bytes and ANSI [0.10ms]
+(pass) D8: an empty outcome says so instead of inventing done [0.05ms]
+(pass) D7 audit: approval-chat lines sanitize their inputs at the trust boundary [0.11ms]
+(pass) D7 audit: the counts line sanitizes the auditNote override at the source [0.08ms]
+(pass) D7 audit (pin): manual-path extras route through the shared quoted builder [0.30ms]
+
+ 28 pass
+ 0 fail
+Ran 28 tests across 2 files. [659.00ms]

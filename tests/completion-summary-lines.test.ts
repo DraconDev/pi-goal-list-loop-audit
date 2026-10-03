@@ -164,7 +164,7 @@ test("the ✓ done chat notifies use the line block; external keeps the single l
   // provenance contract is unchanged, the parameter name is not.
   assert.match(hooks, /completion audit \$\{model\} approved \(\$\{origin\}\)/);
   const brief = fs.readFileSync("extensions/completion-summary.ts", "utf8");
-  assert.match(brief, /✓ done — \$\{notice\.outcome\}/);
+  assert.match(brief, /✓ done — \$\{sanitizeDisplayText\(notice\.outcome\)\}/);
   const tools = fs.readFileSync("extensions/loops/goal-tools.ts", "utf8");
   assert.equal(tools.match(/buildTerminalApprovalRender\(\{/g)?.length ?? 0, 2, "both tool ✓ done paths use the canonical render");
   assert.equal(tools.match(/persistApprovalRender\(/g)?.length ?? 0, 2, "both tool paths persist the render");
