@@ -215,3 +215,280 @@ tests/subagent-hang-detection.test.ts:
 (pass) compacted/steered events refresh the streak (secondary progress evidence) [648.59ms]
 (pass) malformed hang inputs are dropped, not crashy [306.10ms]
 (pass) source pins: constants, watchdog wiring, and ledger key [10.56ms]
+(pass) v0.34.105: hang scan runs during main-model recovery (quota wall blinds the watchdog before the fix) [969.79ms]
+(pass) v0.34.105 source pin: subagent scan precedes the main-model-recovery early return in heartbeatTick [0.19ms]
+(pass) v0.38.104 releasing the RPC host unsubscribes the readiness listeners it installed [0.24ms]
+
+tests/reviewer-modes.test.ts:
+(pass) E4: a failed proposal send is NOT counted or reported (phantom-reviewer hole closed) [0.99ms]
+(pass) E4: clean-completion branch also gates on delivery — default AND aggressive modes [0.75ms]
+(pass) auto mode: architectural findings enqueue to /list — proposeGoal NEVER called [20.21ms]
+(pass) auto mode: clean completion enqueues the audit as a /list item (no Confirm) [0.44ms]
+(pass) report mode: REMOVED in 0.27.9 (the 4-mode set `off | on | auto | aggressive` has no report branch) [0.14ms]
+(pass) improvement-class extraction: 'consider adding X' / 'could be improved' enqueue without Confirm [1.02ms]
+(pass) auto mode: refire window skipped for list-complete, enforced for goal-complete and in default mode [0.50ms]
+(pass) auto mode: the per-day cap still bounds everything [0.25ms]
+(pass) menu: Mode option lists the 4 modes (off, on, auto, aggressive) [0.28ms]
+(pass) /review accepts all 4 modes and rejects unknown modes [0.14ms]
+(pass) config: mode defaults to 'on' and merges from project settings [0.04ms]
+(pass) config: legacy 'default' and 'report' modes auto-migrate to 'on' [0.03ms]
+(pass) report-mode test removed: the 4-mode postaudit surface (`off | on | auto | aggressive`) has no report branch anymore (0.27.9) [0.14ms]
+(pass) off mode: reviewer NEVER fires (equivalent to enabled=false, exposed via postaudit menu) [0.13ms]
+(pass) aggressive mode: architectural findings enqueue AND the first one relaunches as /goal [0.43ms]
+(pass) aggressive mode: clean completion → relaunch audit /goal (no Confirm) [0.28ms]
+(pass) goal.ts fireReviewer opts.mode now accepts the 4-mode ReviewerMode union [0.24ms]
+
+tests/approval-notify.test.ts:
+(pass) v0.38.20 approval chat drops the stale pre-verdict Next line [1.06ms]
+(pass) approval chat keeps every informing detail (Tests + meaningful Unresolved preserved) [0.06ms]
+(pass) v0.38.39 withoutStaleNext keeps one concrete next action, still strips stale ones [0.05ms]
+(pass) A10: the kept-session command quotes the worker-reported path [0.08ms]
+
+tests/compaction-settled-boundary.test.ts:
+(pass) settled and idle-send compaction preserve paused [53.26ms]
+(pass) settled and idle-send compaction preserve auditing [11.16ms]
+(pass) settled and idle-send compaction preserve frozen [12.23ms]
+(pass) settled and idle-send compaction preserve aborted [7.55ms]
+(pass) idle list advancement checks compaction before dispatching the next task [128.47ms]
+(pass) busy agent_end defers the 200k trigger to agent_settled, then work resumes after compaction [366.00ms]
+
+tests/migrate-on-read.test.ts:
+(pass) v0.38.32: legacy disapprovals settled by a later approval are never live again [0.25ms]
+(pass) v0.38.32: later legacy disapproval supersedes the earlier round only [0.22ms]
+(pass) v0.38.32: lone legacy disapproval stays live [0.06ms]
+(pass) v0.38.32: error entries neither settle nor get settled [0.06ms]
+(pass) v0.38.32: backfill is idempotent and a no-op on flagged histories [0.08ms]
+
+tests/pause-decision-interrupt.test.ts:
+(pass) decision pause persists options AND aborts the turn so the picker owns an idle surface [385.01ms]
+(pass) options without kind are inferred as decision — no silently dropped picker [334.70ms]
+(pass) every agent-authored pause ends the turn (blocked/error/wait), not just decisions [983.52ms]
+(pass) impossible-drop auto-advance does NOT abort — the next item's continuation owns the turn [375.00ms]
+(pass) source pins: decision picker wiring + abort ordering survive refactors [1.89ms]
+
+tests/audit-tier.test.ts:
+(pass) tier: a small quiet claim with no history audits light [0.42ms]
+(pass) tier: draft-time full-audit consent escalates [0.16ms]
+(pass) tier: the agent's own full-audit request escalates [0.07ms]
+(pass) tier: any prior disapproval escalates (rework proved risky once) [0.06ms]
+(pass) tier: missing telemetry escalates (unknown activity, conservative floor) [0.05ms]
+(pass) tier: activity above any ceiling escalates, at-ceiling stays light [0.07ms]
+(pass) tier: high-stakes language escalates and names the match [0.24ms]
+(pass) tier: ordinary objectives do not trip the keyword list [0.07ms]
+(pass) tier: spot-check rate 1 escalates every light claim and marks it [0.09ms]
+(pass) tier: spot-check never marks a claim that was already full [0.06ms]
+(pass) tier: injected random decides the draw (seeded, no flakes) [0.10ms]
+(pass) tier: rates clamp to [0, 1]; junk restores the default [0.09ms]
+(pass) tier: spot-check rate ships at 0.1 and normalizes junk to default [0.51ms]
+(pass) tier: claim mapper counts disapprovals and carries both escalation flags [0.28ms]
+(pass) tier: settings menu exposes the spot-check rate row in the auditor section [0.93ms]
+
+tests/auditor-timeout-settings.test.ts:
+(pass) v0.37.0: escalatedAuditorTimeout doubles per prior attempt and saturates at 4x base [4.36ms]
+(pass) v0.37.0: auditor timeout settings clamp into bounds on load [25.42ms]
+(pass) v0.37.0: /glla editor accepts plain-ms and s/m/h duration input for both keys [24.65ms]
+(pass) v0.37.0: settings menu exposes both auditor timeout rows in the auditor section [1.09ms]
+(pass) v0.37.0: dispatch env reaches the worker process so parent and worker budgets agree [334.34ms]
+(pass) v0.37.0: progress signature counts streamed report bytes [0.12ms]
+(pass) v0.37.0: an in-budget live tool exempts the audit card from the quiet phase [0.06ms]
+(pass) v0.37.0: durable claims preserve the timeout escalation index across loads [1.72ms]
+(pass) v0.38.3: auditJobRetentionMs clamps into [0, 7d] on load [0.40ms]
+(pass) v0.38.3: /glla editor accepts duration input for auditJobRetentionMs (0 is legal) [18.75ms]
+(pass) v0.38.3: settings menu exposes the audit job retention row in the auditor section [0.67ms]
+
+tests/compaction-survival.test.ts:
+(pass) compaction survival: three mid-run compacts, then the goal still completes approved [779.32ms]
+(pass) compaction survival: a compact around an in-flight audit still completes [430.54ms]
+
+tests/stats-outcomes.test.ts:
+(pass) outcomes: completed/aborted/open counts with the run-to-done split [11.00ms]
+(pass) outcomes: rounds, wall-clock, and tokens average over known data only [0.20ms]
+(pass) outcomes: unknown archive statuses are ignored, empty ledgers are zeroed [0.11ms]
+(pass) outcomes: table and JSON formats mirror the schema [0.58ms]
+
+tests/stale-delayed-context.test.ts:
+(pass) v0.34.20: registered agent tools resolve the invocation context [8.28ms]
+(pass) v0.34.20: provider retry timers have one session-boundary adapter [0.88ms]
+(pass) v0.34.20: detached fan-out revalidates after user confirmation [0.37ms]
+(pass) v0.34.22: detached completion audits persist lifecycle claims and stop applying after replacement [1.03ms]
+(pass) v0.34.20: generic infra retry supports a lifecycle guard before and after backoff [0.20ms]
+(pass) v0.34.20: manual resume consumes a stored completion claim directly [0.12ms]
+(pass) v0.34.20: loop measurement and branch cleanup rebind after async work [0.32ms]
+
+tests/auditor-shift-acceptance.test.ts:
+(pass) auditor prompt treats completion summaries as untrusted scope claims [0.37ms]
+(pass) scope changes require the durable objective and contract [0.10ms]
+
+tests/tui-density.test.ts:
+(pass) widget carries the audits row only with history [1.23ms]
+(pass) widget fits 80 columns at width 80 [0.33ms]
+(pass) paused status carries the tally [0.23ms]
+(pass) ladder is one recovery per line [0.18ms]
+(pass) settings tab labels carry row counts [0.03ms]
+
+tests/audit-unsettled-treadmill-cap.test.ts:
+(pass) countTrailingUnsettledRounds — all verdict classes > counts disapprovals, and an approval breaks the streak [0.39ms]
+(pass) countTrailingUnsettledRounds — all verdict classes > counts a regression-shield block, which the disapproval cap cannot see [0.07ms]
+(pass) countTrailingUnsettledRounds — all verdict classes > counts an IMPOSSIBLE(partial) verdict [0.07ms]
+(pass) countTrailingUnsettledRounds — all verdict classes > an infra error is transparent; a clean approval of a shielded round is NOT [0.04ms]
+(pass) countTrailingUnsettledRounds — all verdict classes > a mechanical pre-audit gate row stays transparent [0.08ms]
+(pass) grader alternation no longer defeats the hard cap > an alternating primary/fallback streak is detected as unstable [0.12ms]
+(pass) grader alternation no longer defeats the hard cap > a single-grader streak is still reported stable [0.05ms]
+(pass) regression shield — the branch the cap could not see > shield blocks pause at the hard cap instead of re-continuing forever [358.21ms]
+
+tests/loop-measure-probe-exit.test.ts:
+(pass) propose_loop_draft rejects non-zero measure output even when stdout is numeric [41.70ms]
+(pass) propose_loop_refine rejects non-zero measure output and leaves the live loop unchanged [1.92ms]
+
+tests/pause-redirect.test.ts:
+(pass) redirect parks the goal but keeps the turn alive for the user's new task [178.60ms]
+(pass) control: a plain pause still aborts the turn (v0.35.15 contract) [135.55ms]
+
+tests/auditor-quota-identical.test.ts:
+(pass) rate-limit and plan-quota walls are exempt from the identical park [9.52ms]
+(pass) billing walls keep the park — retries cannot fix a paywall [0.02ms]
+(pass) non-quota infra failures keep the identical park [0.02ms]
+(pass) freshAuditorCycleClaim reseeds the dead chain and restarts the streak [0.12ms]
+
+tests/prompt-pivot-detection.test.ts:
+(pass) continuation prompt has the PIVOT DETECTION section (item 26) [11.87ms]
+(pass) isFullAuditObjective classifies survey pivots (item 28) [0.07ms]
+(pass) orchestrator injects the FULL-AUDIT directive conditionally (item 28) [0.14ms]
+(pass) continuation prompt includes the latest auditor report verbatim [0.24ms]
+(pass) stale-approval directive mirrors the numeric-revision gate, never legacy entries [0.25ms]
+
+tests/overdue-backstop.test.ts:
+(pass) S9 (continuation route): overdue agent wait resumes exactly once — park-clear lands, then latch + ledger [448.77ms]
+(pass) S9 (probe route): probe no-op releases the overdue latch so the next tick retries [400.28ms]
+(pass) S9: failed durable resume leaves the wait retriable on the next heartbeat [390.64ms]
+
+tests/state-root-failure.test.ts:
+(pass) known session root remains readable and mutations defer on permission [14.03ms]
+(pass) known session root remains readable and mutations defer on malformed [1.27ms]
+(pass) known session root remains readable and mutations defer on invalid-selector [1.11ms]
+(pass) cold unreadable selector does not authorize a fallback root [0.63ms]
+(pass) cold invalid-json selector does not authorize a fallback root [0.22ms]
+(pass) absent selector uses the default, while a persistence operation pins a validated root [0.52ms]
+
+tests/loop-finish.test.ts:
+(pass) loopFinishStopReason: cmdLoop('finish audit clean') → 'completed: audit clean' (item 7) [12.22ms]
+(pass) /loop finish is routed in cmdLoop and registered in completions (item 7) [0.25ms]
+(pass) branch-mode resume refuses to commit from the original branch [0.07ms]
+
+tests/repro-list-audit-activation.test.ts:
+=== ledger tail ===
+session_rebound {"reason":"startup"}
+session_shutdown {"reason":"resume"}
+session_rebound {"reason":"resume"}
+list_queue_disk_first {"source":"/list audit","count":1,"diskFirst":true}
+state {"goal":null,"list":[{"id":"20261003150433-ocr2aa","objective":"[LIST-AUDIT-COLLECT] Run ONE project audit pass that COLLECTS work — the follow-up fix
+list_imported {"source":"/list audit","count":1}
+state {"goal":{"id":"20261003150433-ksvokk","objective":"[LIST-AUDIT-COLLECT] Run ONE project audit pass that COLLECTS work — the follow-up fixes are queued
+goal_created {"goalId":"20261003150433-ksvokk","objective":"[LIST-AUDIT-COLLECT] Run ONE project audit pass that COLLECTS work — the follow-up fixes are queued as 
+=== goals: [ "20261003150433-ksvokk.md" ] | notify-activated: false
+=== last state list: []
+(pass) repro: live sequence startup/shutdown(resume)/rebound(resume) then /list audit [40.28ms]
+
+tests/glla-version.test.ts:
+(pass) /glla version reads the installed package metadata and exposes a registry check [0.41ms]
+(pass) /glla version names staleness and the update path when the sidecar proves it [0.86ms]
+(pass) package and lock metadata stay synchronized for version reporting [0.08ms]
+(pass) /glla version is registered, autocompleted, and read-only routed [0.29ms]
+(pass) unknown running version makes no staleness claim either way [0.40ms]
+(pass) compareVersions is strictly numeric: prereleases never equal releases [0.07ms]
+(pass) updateCheckPath defaults to the cwd state dir [0.04ms]
+
+tests/faulty-objective-recovery.test.ts:
+(pass) detects archive-derived and verification-fragment objectives [0.46ms]
+(pass) detects reviewer prose, headings, numbered audit text, and dangling fragments [0.13ms]
+(pass) valid imperative objectives are not flagged [0.04ms]
+(pass) valid imperative objectives may mention auditor and verification machinery [0.03ms]
+(pass) imperative implementation requests mentioning audit, verification, or regression stay valid [0.08ms]
+(pass) queue items that merely name the auditor role are not verification-fragments (2026-08-16 field regression) [0.07ms]
+(pass) auditor/reviewer verdict-shaped text is still a verification-fragment [0.07ms]
+(pass) explicit reviewer and evidence fragments are rejected [0.06ms]
+(pass) the screenshot reviewer fragment records the exact saved-intent repair [0.55ms]
+(pass) recover is a valid imperative for the exact queued detached-auditor item [0.03ms]
+(pass) normalization is an automatic provenance repair [0.07ms]
+(pass) durable original provenance wins over reviewer prose and supplies the saved contract [0.15ms]
+(pass) unverified completion prose is never promoted [0.05ms]
+(pass) approved completion context from an older revision cannot resurrect saved intent [0.06ms]
+(pass) audit history contributes only an actionable required-fix line [0.08ms]
+(pass) all direct continuation and stored-audit paths retain the final gate [0.27ms]
+(pass) durable pending task is preferred when the objective cannot be normalized [0.07ms]
+(pass) irrecoverable suspicious objectives produce a non-suspicious queued repair task [0.10ms]
+(pass) session_start auto-resume blocks a suspicious active objective and queues repair [113.85ms]
+(pass) manual resume blocks a suspicious paused objective before dispatch [182.85ms]
+(pass) list activation blocks a suspicious queued objective and leaves its repair task actionable [306.73ms]
+(pass) repair cards require a concrete replan objective and clear the latch only after confirmation [99.54ms]
+(pass) exact queued detached-auditor objective activates without a repair task [179.90ms]
+(pass) provenance-backed repair auto-applies before dispatch [102.68ms]
+(pass) direct continuation dispatch rechecks the suspicious objective [186.49ms]
+(pass) a canceled goal and stale continuation attempt are hard fences [136.37ms]
+(pass) an archived goal id is a hard fence against stale resurrection [84.28ms]
+(pass) an active goal with an interrupted terminal stopReason is not dispatched [0.91ms]
+(pass) an explicit /goal start objective is dispatched even when the heuristic flags it [0.95ms]
+(pass) v0.35.35: seed trust survives a Done when: clause and @role in the raw seed (createGoal stores raw vs cleaned) [0.98ms]
+(pass) v0.35.35: normalization does not widen trust to agent-authored seeds [3.16ms]
+(pass) agent-authored suspicious objectives still pause — the trust is user-seed only [87.25ms]
+(pass) replan confirmation consumes the source queue fragment and its sidecar [90.31ms]
+(pass) audit-2026-09-06: archivedPath outside the archive dir is an anomaly, not a goal-nulling probe [95.65ms]
+(pass) audit-2026-09-06: archivedPath inside the archive dir still fences [99.08ms]
+(pass) v0.38.101 a title-like heading is an objective, not a pasted report [0.27ms]
+(pass) v0.38.101 a pasted report still trips the heading heuristic [0.26ms]
+
+tests/audit-stuck-batch.test.ts:
+(pass) 124541: model-not-found shapes are unresolvable auditor refs [0.23ms]
+(pass) 124541: walker does not spend the same-ref retry on an unresolvable ref [0.58ms]
+(pass) 124544: resume_goal probes pending main-model recovery inline, no user bounce [511.01ms]
+(pass) identical infra failures count toward a bounded identical-park threshold [0.29ms]
+(pass) identical-failure counters survive a state round-trip sanitized [0.71ms]
+(pass) splitParkedQueueDuplicates coalesces queued + batch-internal duplicates [0.58ms]
+(pass) 124536: re-adding a queued objective while parked coalesces, no pile-up [388.78ms]
+(pass) 124536: hourly auditor backstop stands down on an identical-parked head [256.62ms]
+(pass) 124541: re-seed filters evicted refs so the next episode starts live [0.20ms]
+(pass) v0.38.104: the identical-failure park arms a bounded self-healing probe, never a dead end [6.01ms]
+(pass) v0.38.104: no operator-facing string promises the auditor stopped for good [0.81ms]
+
+tests/disk-first-queue.test.ts:
+(pass) writeQueueItemFile: atomic, lands in .pi-glla/goals/<id>.queue.json [10.68ms]
+(pass) writeQueueItemFile: idempotent on retry (no overwrite) [0.21ms]
+(pass) writeQueueItemFile: refuses to follow symlinks (symlink-safety) [0.16ms]
+(pass) writeQueueItemFile: survives an existing temp residual [0.25ms]
+(pass) deleteQueueItemFile: returns true when present, false when missing [0.30ms]
+(pass) clearQueueItemFiles: removes orphaned sidecars and is idempotent [0.54ms]
+(pass) readQueueFromDisk: returns queue items, in id order, skipping garbage [0.59ms]
+(pass) readQueueFromDisk: excludeIds removes ids that are active or archived [0.30ms]
+(pass) readQueueFromDisk: missing goals/ dir returns [] (not throw) [0.09ms]
+(pass) round-trip: write then read returns identical items [0.28ms]
+(pass) queueItemPath: stable relative shape [0.05ms]
+(pass) v0.34.61: addSingleItem is disk-first (sidecar before state mutation) [0.16ms]
+(pass) v0.34.61: list-draft path is disk-first (sidecar before state mutation) [0.13ms]
+(pass) v0.35.0: remove/clear/cancel/glla_wipe clear queue sidecars [0.32ms]
+(pass) v0.34.61: crash-simulation — sidecar survives state death and reload finds it [0.26ms]
+(pass) v0.35.4: queue metadata round-trips and recovery uses durable order [0.43ms]
+(pass) v0.35.4: failed sidecar writes are reported without leaving temp files [0.20ms]
+(pass) v0.35.4: queue recovery and carryover clear use durable sidecars [0.19ms]
+
+tests/stuck-detection-rework.test.ts:
+(pass) trigramSimilarity: identity = 1, disjoint = 0, empties [8.20ms]
+(pass) trigramSimilarity: similar but not identical [0.15ms]
+(pass) isNudgeTurn: tool use resets the brake even on empty text [0.03ms]
+(pass) isNudgeTurn: short no-tool turn is always a nudge [0.06ms]
+(pass) isNudgeTurn: substantive paragraph (≥15 words, novel) is NOT a nudge (the polis incident) [0.26ms]
+(pass) isNudgeTurn: long + repetitive text IS a nudge [0.22ms]
+(pass) isNudgeTurn: long text with no prior (first turn in a streak) is NOT a nudge [0.15ms]
+(pass) isNudgeTurn: tunable thresholds [0.13ms]
+(pass) accountTurnForNudgesRich: three substantive no-tool turns → stays 0 (the fix) [0.27ms]
+(pass) accountTurnForNudgesRich: three short repetitive replies → reaches max [0.04ms]
+(pass) defaults [0.02ms]
+
+tests/remaining-next-pairing.test.ts:
+(pass) pairing: resolving action rides inline under its problem [16.58ms]
+(pass) pairing: standalone actions stay in ### Next [0.35ms]
+(pass) pairing: fully paired card omits an empty ### Next [0.21ms]
+(pass) pairing: unrelated problem and action do not pair [0.23ms]
+(pass) pairing: Left out never pairs, even on shared words [0.16ms]
+(pass) pairing: several actions can resolve one problem [0.22ms]
+
+tests/auditor-challenge-record.test.ts:
