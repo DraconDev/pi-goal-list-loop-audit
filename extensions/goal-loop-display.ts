@@ -2180,7 +2180,7 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
       const action = block.lead.find(line => line.startsWith("│ next:"));
       // No history or model plaques in the glance card: Pi clips its tail.
       // Keep state, real evidence and the user action ahead of all details.
-      const phaseLine = needsRecovery ? (phase === "quiet" ? block.lead[0]!.replace("auditor: quiet", "auditor: quiet — may be stuck") : block.lead[0]!)
+      const phaseLine = needsRecovery ? (phase === "quiet" ? `├─ ${paint(theme, "warning", "Audit quiet — may be stuck")}` : block.lead[0]!)
         : `├─ ${paint(theme, "accent", phase === "running" ? `Audit running · ${auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, auditorHasLiveEvidence(audit, phase, now))}` : phase === "queued" ? "Audit starting" : "Audit review pending")}`;
       const toolLine = block.lead.find(line => /^│ (?:last )?tool:/.test(line));
       return [head, phaseLine,

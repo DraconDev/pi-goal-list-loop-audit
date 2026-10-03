@@ -62,3 +62,10 @@ test("starting audit distinguishes waiting for first activity from recent activi
   assert.match(status, /no worker activity yet/);
   assert.doesNotMatch(status, /activity 0s ago/);
 });
+
+test("current tool keeps elapsed time and timeout budget in the compact card", () => {
+  const progress: AuditDisplayProgress = { ...audit, phase: "tool_executing", currentTool: "bash", currentToolStartedAt: now - 2000, toolTimeoutMs: 1200000 };
+  const text = buildWidgetLines({ goal, list: [] }, progress, now, undefined, 80, extras)!.join("\n");
+  assert.match(text, /tool: bash · 2s · 20m 00s budget/);
+  assert.doesNotMatch(text, /last tool: bash/);
+});

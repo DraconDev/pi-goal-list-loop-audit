@@ -1,0 +1,37 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/audit-glance-clarity.test.ts:
+(pass) screenshot regression: live audit facts and user action fit before Pi's ten-row cut [16.54ms]
+(pass) narrow footer starts with audit state and real freshness [1.15ms]
+(pass) quiet, blocked, settlement and recovery do not claim no action is needed [0.93ms]
+(pass) starting audit distinguishes waiting for first activity from recent activity [14.49ms]
+64 | });
+65 | 
+66 | test("current tool keeps elapsed time and timeout budget in the compact card", () => {
+67 |   const progress: AuditDisplayProgress = { ...audit, phase: "tool_executing", currentTool: "bash", currentToolStartedAt: now - 2000, toolTimeoutMs: 1200000 };
+68 |   const text = buildWidgetLines({ goal, list: [] }, progress, now, undefined, 80, extras)!.join("\n");
+69 |   assert.match(text, /tool: bash · 2s · 20m 00s budget/);
+              ^
+AssertionError: The input did not match the regular expression /tool: bash \u00B7 2s \u00B7 20m 00s budget/. Input:
+
+'⟡ Fix audit finding: HIGH… · list item · auditing · total 1h 10m · 194k tok\n' +
+  '├─ Audit running · last observed tool\n' +
+  '│ 11 calls finished · activity 17s ago\n' +
+  '│ audit elapsed 8m 00s\n' +
+  '│ last tool: bash\n' +
+  '│ No action needed — review applies automatically\n' +
+  '└─ /goal status for full audit details'
+
+ generatedMessage: true,
+     actual: "⟡ Fix audit finding: HIGH… · list item · auditing · total 1h 10m · 194k tok\n├─ Audit running · last observed tool\n│ 11 calls finished · activity 17s ago\n│ audit elapsed 8m 00s\n│ last tool: bash\n│ No action needed — review applies automatically\n└─ /goal status for full audit details",
+   expected: /tool: bash \u00B7 2s \u00B7 20m 00s budget/,
+   operator: "match",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/audit-glance-clarity.test.ts:69:10
+      at fn (node:test:215:18)
+(fail) current tool keeps elapsed time and timeout budget in the compact card [2.75ms]
+
+ 4 pass
+ 1 fail
+Ran 5 tests across 1 file. [777.00ms]
