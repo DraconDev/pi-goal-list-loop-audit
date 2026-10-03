@@ -1781,3 +1781,94 @@ tests/auditor-error-paths.test.ts:
 (pass) audit 2026-09-25: the reverted wall-clock bound leaves no dead classification branches [102.84ms]
 
 tests/objective-loss-lifecycle.test.ts:
+(pass) production session_start registers the host session root before restore [586.94ms]
+(pass) fresh processes reload session-root state across a cwd switch [390.53ms]
+(pass) cancel and wipe defer safely while sessionDir is unresolved [2.82ms]
+(pass) cancel and wipe archive live state under the registered session root [1536.15ms]
+
+tests/uniform-provider-retry.test.ts:
+(pass) the first provider retry is eager for every failure family [40.40ms]
+(pass) later provider retries use one bounded configured ladder [0.12ms]
+(pass) main-model recovery has no quota-derived policy branch [3.38ms]
+(pass) the auditor durable plan is generic and keeps safe diagnostic copy [6.26ms]
+(pass) display surfaces identify generic recovery, not a guessed quota state [0.48ms]
+
+tests/lifesign.test.ts:
+(pass) bands: fresh <5m, aging to 30m, stale past it, hung on classification [24.50ms]
+(pass) head: empty/ended rows invent nothing [0.10ms]
+(pass) head: band follows the worst row, readout follows the freshest; breath rides evidence counters [0.27ms]
+(pass) card head: active goal with workers breathes + reads out evidence age [1.40ms]
+(pass) card head: hung row triangles the head; paused keeps its own glyph; no rows means no readout [1.66ms]
+(pass) rows: band colors ride the glyph; unpainted rows keep shape + number [0.65ms]
+(pass) lifesign card fits 80 columns and is key-stable within a bucket [0.57ms]
+
+tests/mode-command-guidance.test.ts:
+(pass) mode-aware helpers exist and route by policy [35.15ms]
+(pass) no hardcoded /goal <cmd> literals remain in generated guidance (goal.ts) [18.17ms]
+(pass) loop-policy recovery guidance interpolates recoverySurfaceCommand (v0.34.108) [10.14ms]
+(pass) widget resume hints are mode-aware ternaries (display.ts) [0.97ms]
+(pass) goal-policy pause notifies with /goal resume [719.76ms]
+(pass) list-policy pause notifies with /list resume [837.37ms]
+(pass) widget wait countdown is uniform auto-retrying (no manual resume hint — v0.34.64) [0.73ms]
+(pass) widget no-verdict fallback action is mode-aware [0.34ms]
+
+tests/provider-report-redaction-budget.test.ts:
+(pass) v0.38.104 an auditor report survives sanitizing instead of being deleted [1.86ms]
+(pass) v0.38.104 the required-fixes section is always recoverable [55.04ms]
+(pass) v0.38.104 a genuine provider payload still redacts IN FULL [2.37ms]
+(pass) v0.38.104 a payload-heavy blob redacts in full regardless of length [0.36ms]
+(pass) v0.38.104 the budget is a real fraction with an absolute floor [0.06ms]
+(pass) v0.38.104 a marked line is always redacted, even after the budget [1.84ms]
+(pass) v0.38.104 a bare 5xx-shaped number is not a provider marker [1.70ms]
+(pass) v0.38.104 a 5xx WITH http context still redacts [0.25ms]
+
+tests/process-registration-faults.test.ts:
+(pass) process registration first-write failure is visible and stops the owned child [1263.10ms]
+(pass) process registration rename failure is visible and stops the owned child [314.79ms]
+(pass) process registration owner-loss failure is visible and stops the owned child [1546.98ms]
+(pass) process registration refresh failure is visible and stops the owned child [1534.81ms]
+(pass) process registration primary-loss failure is visible and stops the owned child [399.85ms]
+(pass) process registration obligation-write failure is visible and stops the owned child [110.63ms]
+(pass) process registration obligation-owner-loss failure is visible and stops the owned child [888.89ms]
+(pass) process registration initial-owner-loss failure is visible and stops the owned child [287.98ms]
+(pass) process registration stat-denied failure is visible and stops the owned child [263.10ms]
+(pass) process registration stat-malformed failure is visible and stops the owned child [236.42ms]
+(pass) process registration stat-missing failure is visible and stops the owned child [521.94ms]
+(pass) proven already-exited child retires its declaration without a cleanup failure [219.21ms]
+(pass) proven proc-disappeared child retires its declaration without a cleanup failure [181.92ms]
+(pass) proven suite-group child retires its declaration without a cleanup failure [142.44ms]
+
+tests/agents-panel.test.ts:
+(pass) v0.35.29 #15: the panel ranks hung > running > ended and caps at 20 rows with a notice [38.45ms]
+(pass) v0.35.29 #15: empty state explains where evidence comes from [0.08ms]
+(pass) v0.35.64: the panel makes a child-specific abort request visible [0.17ms]
+(pass) v0.35.29 #15: the compact worker summary hides at zero and warns on the least-live child [0.24ms]
+(pass) v0.38.23: detailed widget rows are single-line glyph-first with age, plus a command-free overflow [0.48ms]
+(pass) v0.35.66: --tail matches the exact child identity and formats entries tolerantly [0.97ms]
+(pass) v0.35.66: --tail selects the exact persisted child identity among same-type transcripts [0.35ms]
+(pass) v0.37.1: --tail uses the persisted session id to find an older transcript [0.35ms]
+(pass) v0.35.66: --tail refuses a same-type transcript without exact child identity [0.15ms]
+(pass) v0.36.0: --tail rejects a message that merely mentions the target identity [0.12ms]
+(pass) v0.35.29 #15: --tail is LOUD when nothing matches or the dir is unreadable [0.32ms]
+(pass) v0.35.29 #15: formatTranscriptEntry survives shape drift without throwing [0.06ms]
+(pass) v0.35.29 #15: end-to-end — /glla agents renders real probe data; widget segment rides the goal card [1090.83ms]
+(pass) v0.35.65: buildWidgetLines places detailed worker rows before the card footer and supports an agent-only card [1.51ms]
+(pass) v0.35.45: formatTranscriptEntry strips ANSI escapes and control chars on ALL paths [0.65ms]
+(pass) v0.35.45: the candidate scan reads a bounded tail per file, not full transcripts [241.68ms]
+(pass) audit-2026-09-06: panel renders the doc-promised blocks row and Recent hangs footer [0.79ms]
+(pass) audit-2026-09-06: snapshot labels live rows with the observed parent wait only [0.33ms]
+(pass) audit-2026-09-06: --tail with an ambiguous prefix lists candidates instead of picking silently [364.27ms]
+(pass) audit 2026-09-25: transcript role labels never split surrogate pairs [0.84ms]
+
+tests/compaction-containment.test.ts:
+(pass) session_before_compact returns nothing — another extension's compaction must survive [448.03ms]
+(pass) pure: in-flight marker is armed-signal plus timeout, never silence [0.63ms]
+(pass) compaction in flight suppresses send-storm escalation (no park, no recovery) [2371.35ms]
+[run-tests] progress: 663s elapsed · 0s since last output · 138 KiB of suite output
+(pass) post-compact settle owns exactly one bounded probe (no duplicates) [4682.78ms]
+(pass) escalation proceeds after settle — the gate is compaction-scoped, not a blanket disable [3851.21ms]
+(pass) scheduleContinuation defers while in flight and the settle still sends once [3962.41ms]
+
+tests/audit-settlement-restart.test.ts:
+(pass) restart: a running claim whose worker is gone parks as recovery-needed and never looks complete [1122.55ms]
+(pass) restart: a claim whose worker never reported is recovery-needed, with no invented activity [914.05ms]
