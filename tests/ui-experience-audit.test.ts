@@ -118,3 +118,17 @@ test("lifecycle cards and status rows fit every explicit terminal width", async 
     for (const line of buildWidgetLines(scene.state, null, UI_AUDIT_NOW, theme, width, scene.extras) ?? []) assert.ok(visibleWidth(line) <= Math.max(0, width - 2), `${scene.key} widget exceeds width ${width}`);
   }
 });
+
+test("draft review keeps project consent readable and uses the supplied keybindings", () => {
+  for (const height of [8, 12, 18, 24]) {
+    let accepted: string | undefined;
+    const choice = "Yes — always auto-accept drafts for this project";
+    const component = new ConfirmDraftComponent({ title: "Review", body: "A complete draft contract.\n\n".repeat(20), options: ["Yes", choice, "No"], getHeight: () => height }, () => {}, theme as unknown as Theme, kb, (value) => { accepted = value; });
+    assertFits(component.render(40), 40, height);
+    component.handleInput("down");
+    assert.equal(component.getSelectedItem(), choice);
+    assertFits(component.render(40), 40, height);
+    assert.match(component.render(40).join("\n"), /this project/);
+    component.handleInput("enter"); assert.equal(accepted, choice);
+  }
+});

@@ -17,6 +17,7 @@ import {
   type SelectListTheme,
   Text,
   truncateToWidth,
+  wrapTextWithAnsi,
 } from "@earendil-works/pi-tui";
 import { DynamicBorder, type Theme } from "@earendil-works/pi-coding-agent";
 
@@ -85,6 +86,8 @@ export class ConfirmDraftComponent implements Component {
   private readonly getHeight: (() => number) | undefined;
   private scrollOffset = 0;
   private pageSize = 8;
+  private readonly options: string[];
+  private readonly done: (value: string | undefined) => void;
 
   constructor(
     deps: ConfirmDraftFactoryDeps,
@@ -95,6 +98,8 @@ export class ConfirmDraftComponent implements Component {
   ) {
     this.requestRender = requestRender;
     this.getHeight = deps.getHeight;
+    this.options = deps.options;
+    this.done = done;
     this.theme = theme;
     this.keybindings = keybindings;
     this.md = new Markdown(buildConfirmDraftMarkdown(deps.title, deps.body), 1, 1, markdownTheme(theme));
@@ -110,12 +115,17 @@ export class ConfirmDraftComponent implements Component {
     const decisions = this.selectList.render(width);
     const height = this.getHeight ? Math.max(8, Math.floor(this.getHeight())) : Number.POSITIVE_INFINITY;
     const help = new Text(this.theme.fg("dim", "↑↓ choose · enter select · esc cancel"), 1, 0).render(width);
-    const bodyRows = Math.max(1, height - border.length * 2 - decisions.length - help.length - 3);
-    this.pageSize = bodyRows;
+    const selected = this.getSelectedItem() ?? "";
+    const notes = selected.length > Math.max(0, width - 4)
+      ? wrapTextWithAnsi(selected, Math.max(1, width - 2)).map((line) => this.theme.fg("muted", line)) : [];
+    const gaps = height < 14 ? [] : [""];
+    const contentBudget = Math.max(0, height - border.length * 2 - decisions.length - help.length - gaps.length * 2 - notes.length);
+    const bodyRows = body.length > contentBudget ? Math.max(0, contentBudget - 1) : contentBudget;
+    this.pageSize = Math.max(1, bodyRows);
     this.scrollOffset = Math.min(this.scrollOffset, Math.max(0, body.length - bodyRows));
-    const scrollInfo = body.length > bodyRows
+    const scrollInfo = body.length > bodyRows && contentBudget > 0
       ? [this.theme.fg("dim", `Review ${this.scrollOffset + 1}–${Math.min(body.length, this.scrollOffset + bodyRows)}/${body.length} · PgUp/PgDn scroll`)] : [];
-    return [...border, ...body.slice(this.scrollOffset, this.scrollOffset + bodyRows), ...scrollInfo, "", ...decisions, "", ...help, ...border]
+    return [...border, ...body.slice(this.scrollOffset, this.scrollOffset + bodyRows), ...scrollInfo, ...gaps, ...decisions, ...notes, ...gaps, ...help, ...border]
       .map((line) => truncateToWidth(line, Math.max(0, width), "…"));
   }
 
@@ -128,7 +138,13 @@ export class ConfirmDraftComponent implements Component {
   handleInput(data: string): void {
     if (this.keybindings.matches(data, "tui.select.pageUp") || data === "\x1b[5~") this.scrollOffset = Math.max(0, this.scrollOffset - this.pageSize);
     else if (this.keybindings.matches(data, "tui.select.pageDown") || data === "\x1b[6~") this.scrollOffset += this.pageSize;
-    else this.selectList.handleInput(data);
+    else if (this.keybindings.matches(data, "tui.select.confirm")) this.done(this.getSelectedItem() ?? undefined);
+    else if (this.keybindings.matches(data, "tui.select.cancel")) this.done(undefined);
+    else if (this.keybindings.matches(data, "tui.select.up") || this.keybindings.matches(data, "tui.select.down")) {
+      const delta = this.keybindings.matches(data, "tui.select.up") ? -1 : 1;
+      const index = this.options.indexOf(this.getSelectedItem() ?? "");
+      this.selectList.setSelectedIndex((index + delta + this.options.length) % this.options.length);
+    } else this.selectList.handleInput(data);
     this.requestRender();
   }
 

@@ -1,0 +1,39 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/ui-experience-audit.test.ts:
+(pass) settings keep the active final tab visible on narrow terminals [4.26ms]
+(pass) narrow settings show both the focused setting and its effective value [0.73ms]
+(pass) reopened settings focus the edited row and each tab remembers its cursor [0.22ms]
+(pass) settings window keeps the cursor, navigation and details within a short terminal [1.44ms]
+(pass) settings search finds rows across sections and Esc clears search before closing [0.72ms]
+(pass) settings details allow reading the full long value [0.65ms]
+(pass) single picker respects terminal height and keeps the selected model visible [0.48ms]
+(pass) large unordered selections fit a short multi-picker without hiding its cursor [1.09ms]
+(pass) picker backspace deletes a complete Unicode character [0.16ms]
+(pass) long draft reviews scroll while their decisions remain visible [12.56ms]
+(pass) ordered pickers fit short terminals with current, inherit and cap notices [2.38ms]
+(pass) settings sanitize terminal controls without changing saved strings [0.55ms]
+(pass) settings details and all tab windows fit very short terminals [91.80ms]
+(pass) lifecycle cards and status rows fit every explicit terminal width [47.31ms]
+(pass) draft review keeps project consent readable and uses the supplied keybindings [9.90ms]
+
+tests/confirm-draft.test.ts:
+(pass) buildConfirmDraftMarkdown: title is the H1, body follows [0.14ms]
+(pass) ConfirmDraftComponent renders the title, body, and all three choices [6.68ms]
+(pass) ConfirmDraftComponent: first choice selected, no-throw on input/invalidate [4.08ms]
+(pass) custom path: Yes accepts the draft and the dialog is captured [214.28ms]
+(pass) custom path: No rejects the draft [165.64ms]
+(pass) custom path: a stale error returns stale (NOT-a-rejection) [175.23ms]
+(pass) fallback: no custom shard → plain select path still accepts (Yes) [171.13ms]
+(pass) fallback: a stale select error still returns stale [203.23ms]
+(pass) list batch confirmation resolves paused carryover before activating the head [227.98ms]
+(pass) RPC stub (custom present, factory never invoked): the select fallback fires and accepts [197.01ms]
+(pass) v0.34.82: the custom-path factory is INVOKED and returns a ConfirmDraftComponent that renders the body + all three choices [174.01ms]
+(pass) RPC stub: a select 'No' still declines, and a stale select error returns stale [169.47ms]
+
+ 27 pass
+ 0 fail
+Ran 27 tests across 2 files. [3.15s]
+[run-tests] detached cleanup: 1 owned groups; 0 unverified survivors/records
+[run-tests] finished in 4s (exit 0)
