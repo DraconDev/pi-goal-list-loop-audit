@@ -1,0 +1,89 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/tool-config-execution.test.ts:
+3258 |     rememberCtx(ctx);
+3259 |     if (tryAbsorbHostSuccessor(ctx, "tool_call")) return;
+3260 |     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(ctx)) return;
+3261 |     const configuredToolName = String(event?.toolName ?? event?.name ?? "");
+3262 |     const options = loadSettings(ctx.cwd).toolOverrides?.perToolConfig?.[configuredToolName];
+3263 |     const configFailure = applyToolConfig(configuredToolName, event?.input, options, () => pi.getAllTools());
+                                 ^
+ReferenceError: applyToolConfig is not defined
+      at <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/extensions/loops/goal-activation.ts:3263:27)
+      at call (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:37:43)
+      at <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:43:23)
+(fail) project optional arguments override supplied values and apply to later calls [80.70ms]
+3258 |     rememberCtx(ctx);
+3259 |     if (tryAbsorbHostSuccessor(ctx, "tool_call")) return;
+3260 |     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(ctx)) return;
+3261 |     const configuredToolName = String(event?.toolName ?? event?.name ?? "");
+3262 |     const options = loadSettings(ctx.cwd).toolOverrides?.perToolConfig?.[configuredToolName];
+3263 |     const configFailure = applyToolConfig(configuredToolName, event?.input, options, () => pi.getAllTools());
+                                 ^
+ReferenceError: applyToolConfig is not defined
+      at <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/extensions/loops/goal-activation.ts:3263:27)
+      at call (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:37:43)
+      at <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:56:26)
+(fail) invalid options block atomically: {"timeout":"bad"} [17.81ms]
+3258 |     rememberCtx(ctx);
+3259 |     if (tryAbsorbHostSuccessor(ctx, "tool_call")) return;
+3260 |     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(ctx)) return;
+3261 |     const configuredToolName = String(event?.toolName ?? event?.name ?? "");
+3262 |     const options = loadSettings(ctx.cwd).toolOverrides?.perToolConfig?.[configuredToolName];
+3263 |     const configFailure = applyToolConfig(configuredToolName, event?.input, options, () => pi.getAllTools());
+                                 ^
+ReferenceError: applyToolConfig is not defined
+      at <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/extensions/loops/goal-activation.ts:3263:27)
+      at call (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:37:43)
+      at <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:56:26)
+(fail) invalid options block atomically: {"unsupported":true} [19.01ms]
+3258 |     rememberCtx(ctx);
+3259 |     if (tryAbsorbHostSuccessor(ctx, "tool_call")) return;
+3260 |     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(ctx)) return;
+3261 |     const configuredToolName = String(event?.toolName ?? event?.name ?? "");
+3262 |     const options = loadSettings(ctx.cwd).toolOverrides?.perToolConfig?.[configuredToolName];
+3263 |     const configFailure = applyToolConfig(configuredToolName, event?.input, options, () => pi.getAllTools());
+                                 ^
+ReferenceError: applyToolConfig is not defined
+      at <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/extensions/loops/goal-activation.ts:3263:27)
+      at call (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:37:43)
+      at <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:56:26)
+(fail) invalid options block atomically: {"command":"replace the operation"} [13.44ms]
+3258 |     rememberCtx(ctx);
+3259 |     if (tryAbsorbHostSuccessor(ctx, "tool_call")) return;
+3260 |     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(ctx)) return;
+3261 |     const configuredToolName = String(event?.toolName ?? event?.name ?? "");
+3262 |     const options = loadSettings(ctx.cwd).toolOverrides?.perToolConfig?.[configuredToolName];
+3263 |     const configFailure = applyToolConfig(configuredToolName, event?.input, options, () => pi.getAllTools());
+                                 ^
+ReferenceError: applyToolConfig is not defined
+      at <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/extensions/loops/goal-activation.ts:3263:27)
+      at call (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:37:43)
+      at <anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:67:9)
+(fail) a stale host cannot rewrite tool arguments [29.92ms]
+82 |   const outcome = await runToolCall({ id: "pipeline-call", name: "bash", arguments: { command: "fixture command", timeout: 5 } }, {
+83 |     tools: context.tools!, context,
+84 |     assistantMessage: { role: "assistant", content: [], api: "openai-completions", provider: "fixture", model: "fixture", stopReason: "toolUse", timestamp: Date.now(), usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } } as AssistantMessage,
+85 |     beforeToolCall: async ({ toolCall, args }) => await pi.handlers.get("tool_call")!({ type: "tool_call", toolName: toolCall.name, toolCallId: toolCall.id, input: args } as never, ctx as never) as any,
+86 |   });
+87 |   assert.equal(outcome.isError, false, JSON.stringify(outcome));
+              ^
+AssertionError: {"toolCall":{"id":"pipeline-call","name":"bash","arguments":{"command":"fixture command","timeout":5}},"result":{"content":[{"type":"text","text":"applyToolConfig is not defined"}],"details":{}},"isError":true}
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:87:10
+      at processTicksAndRejections (native:7:39)
+(fail) the real Pi tool pipeline executes bash with the configured timeout [45.64ms]
+
+ 0 pass
+ 6 fail
+Ran 6 tests across 1 file. [835.00ms]
+[run-tests] finished in 1s (exit 1)

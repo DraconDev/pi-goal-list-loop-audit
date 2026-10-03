@@ -3258,6 +3258,13 @@ async function handleHotLengthExhaustion(
     rememberCtx(ctx);
     if (tryAbsorbHostSuccessor(ctx, "tool_call")) return;
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(ctx)) return;
+    const configuredToolName = String(event?.toolName ?? event?.name ?? "");
+    const options = loadSettings(ctx.cwd).toolOverrides?.perToolConfig?.[configuredToolName];
+    const configFailure = applyToolConfig(configuredToolName, event?.input, options, () => pi.getAllTools());
+    if (configFailure) {
+      ctx.ui.notify(configFailure.reason, "warning");
+      return configFailure;
+    }
     if (draftingTarget !== null) {
       draftingHandoff.invalidate();
       const name = String(event?.toolName ?? event?.name ?? "");
