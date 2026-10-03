@@ -1,13 +1,4 @@
 
-> pi-goal-list-loop-audit@0.38.110 check
+> pi-goal-list-loop-audit@0.38.111 check
 > tsc --noEmit
 
-extensions/tool-config.ts(33,16): error TS2339: Property 'type' does not exist on type 'TSchema'.
-extensions/tool-config.ts(33,45): error TS2339: Property 'properties' does not exist on type 'TSchema'.
-extensions/tool-config.ts(33,73): error TS2339: Property 'properties' does not exist on type 'TSchema'.
-extensions/tool-config.ts(36,51): error TS2339: Property 'required' does not exist on type 'TSchema'.
-extensions/tool-config.ts(36,70): error TS2339: Property 'required' does not exist on type 'TSchema'.
-extensions/tool-config.ts(38,92): error TS2339: Property 'properties' does not exist on type 'TSchema'.
-tests/tool-config-execution.test.ts(82,35): error TS2353: Object literal may only specify known properties, and 'systemPrompt' does not exist in type 'AgentContext'.
-tests/tool-config-execution.test.ts(83,37): error TS2345: Argument of type '{ id: string; name: string; arguments: { command: string; timeout: number; }; }' is not assignable to parameter of type 'ToolCall'.
-  Property 'type' is missing in type '{ id: string; name: string; arguments: { command: string; timeout: number; }; }' but required in type 'ToolCall'.

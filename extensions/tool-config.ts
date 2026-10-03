@@ -29,7 +29,7 @@ export function applyToolConfig(
   try {
     const tool = tools().find((candidate) => candidate.name === toolName);
     if (!tool) return reject("no registered parameter schema is available on this host");
-    const schema = tool.parameters;
+    const schema = tool.parameters as TSchema & { type?: unknown; properties?: Record<string, unknown>; required?: string[] };
     if (schema.type !== "object" || !schema.properties || typeof schema.properties !== "object") {
       return reject("the tool does not expose named optional arguments");
     }

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 0.38.111 — per-tool execution options (2026-10-03)
+
+- Project tool configuration now overrides registered optional arguments on
+  subsequent model-issued tool calls, including calls outside goals and loops.
+- Complete merged arguments are validated before mutation. Unsupported keys,
+  required operation inputs, invalid values, and unavailable schemas block
+  the call with removal instructions. Nested settings are copied per call.
+- Stale hosts cannot apply argument overrides. UI, command confirmations,
+  and settings documentation describe the execution behavior.
+
 ## 0.38.110 — /glla UI and command audit (2026-10-03)
 
 - Settings edits return to their selected tab. Single and multiple model

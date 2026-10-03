@@ -79,8 +79,8 @@ test("the real Pi tool pipeline executes bash with the configured timeout", asyn
     },
   } });
   const { pi, ctx } = await boot({ timeout: 60 }, definition.parameters);
-  const context: AgentContext = { systemPrompt: "", messages: [], tools: [{ ...definition, execute: (...args: any[]) => (definition.execute as any)(...args, ctx) }] };
-  const outcome = await runToolCall({ id: "pipeline-call", name: "bash", arguments: { command: "fixture command", timeout: 5 } }, {
+  const context: AgentContext = { messages: [], tools: [{ ...definition, execute: (...args: any[]) => (definition.execute as any)(...args, ctx) }] };
+  const outcome = await runToolCall({ type: "toolCall", id: "pipeline-call", name: "bash", arguments: { command: "fixture command", timeout: 5 } }, {
     tools: context.tools!, context,
     assistantMessage: { role: "assistant", content: [], api: "openai-completions", provider: "fixture", model: "fixture", stopReason: "toolUse", timestamp: Date.now(), usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } } as AssistantMessage,
     beforeToolCall: async ({ toolCall, args }) => await pi.handlers.get("tool_call")!({ type: "tool_call", toolName: toolCall.name, toolCallId: toolCall.id, input: args } as never, ctx as never) as any,
