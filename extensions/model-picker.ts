@@ -166,6 +166,7 @@ export class ModelPickerComponent {
 
   private query = "";
   private selectedIdx = 0;
+  private pageRows = 12;
 
   constructor(
     deps: ModelPickerFactoryDeps,
@@ -217,6 +218,7 @@ export class ModelPickerComponent {
     const footer = width < 60 ? ["type to search · ↑↓ move", "enter select · esc cancel"] : ["type to filter · ↑↓ move · enter select · esc cancel"];
     const filtered = this.filteredItems();
     const limit = Math.max(1, Math.min(this.maxRows, height - lines.length - footer.length - 1));
+    this.pageRows = limit;
     const selected = Math.min(this.selectedIdx, filtered.length - 1);
     const start = Math.max(0, Math.min(selected - Math.floor(limit / 2), filtered.length - limit));
     const window = filtered.slice(start, start + limit);
@@ -293,7 +295,7 @@ export class ModelPickerComponent {
     }
     if (this.keybindings.matches(data, "tui.select.pageUp") || this.keybindings.matches(data, "tui.select.pageDown")) {
       const direction = this.keybindings.matches(data, "tui.select.pageUp") ? -1 : 1;
-      const pageSize = Math.max(1, Math.min(this.maxRows, (this.getHeight?.() ?? Number.POSITIVE_INFINITY) - 8));
+      const pageSize = this.getHeight ? this.pageRows : this.maxRows;
       this.move(direction * pageSize);
       return;
     }

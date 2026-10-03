@@ -1,0 +1,11 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/lifecycle-recovery.test.ts:
+(pass) v0.34.54: source — read-only surfaces are never in the mutating sets; the gates are the honest refusal, not silence [6.69ms]
+
+ 1 pass
+ 6 filtered out
+ 0 fail
+Ran 1 test across 1 file. [401.00ms]
+[run-tests] finished in 0s (exit 0)

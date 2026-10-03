@@ -1,5 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { Box, Text } from "@earendil-works/pi-tui";
+import { compactDisplayText } from "./goal-loop-core.js";
+import { Box, Text, truncateToWidth } from "@earendil-works/pi-tui";
 
 export const ACTION_REMINDER_CUSTOM_TYPE = "glla-action-reminder";
 
@@ -146,7 +147,7 @@ export function buildActionReminder(input: {
         ? "Your saved work is intact; no manual action is needed."
         : "Your saved work is intact; this turn stopped before more work could be lost.",
     presentation.next,
-    ...(diagnostic ? [`Diagnostic: ${diagnostic}`] : []),
+    ...(diagnostic ? [`Diagnostic: ${compactDisplayText(diagnostic)}`] : []),
   ].join("\n");
   return {
     content,
@@ -175,58 +176,59 @@ export function buildPausePresentation(input: {
   resumeAt?: string;
   parkState: ActionReminderParkState;
 }): ActionReminderPresentation {
-  const why = input.reason.trim() || "The current turn cannot continue safely.";
-  if (input.parkState === "redirect") {
+  const displayed = { ...input, reason: compactDisplayText(input.reason), action: compactDisplayText(input.action), resumeCommand: compactDisplayText(input.resumeCommand), resumeAt: input.resumeAt ? compactDisplayText(input.resumeAt) : undefined };
+  const why = displayed.reason.trim() || "The current turn cannot continue safely.";
+  if (displayed.parkState === "redirect") {
     return {
       heading: "Goal safely parked — handling your new request now",
       why,
-      next: `Next: ${input.action || input.resumeCommand}`,
-      resumeCommand: input.resumeCommand,
-      parkState: input.parkState,
+      next: `Next: ${displayed.action || displayed.resumeCommand}`,
+      resumeCommand: displayed.resumeCommand,
+      parkState: displayed.parkState,
     };
   }
-  if (input.kind === "standby") {
+  if (displayed.kind === "standby") {
     return {
       heading: "Waiting — work is safely parked",
       why,
       next: "No action is needed; the background completion will wake this work automatically.",
-      parkState: input.parkState,
+      parkState: displayed.parkState,
     };
   }
-  if (input.kind === "wait") {
+  if (displayed.kind === "wait") {
     return {
       heading: "Waiting — work is safely parked",
       why,
-      next: input.resumeAt
-        ? `The wait resumes automatically at ${input.resumeAt}.`
+      next: displayed.resumeAt
+        ? `The wait resumes automatically at ${displayed.resumeAt}.`
         : "The wait resumes automatically when its condition clears.",
-      parkState: input.parkState,
+      parkState: displayed.parkState,
     };
   }
-  if (input.kind === "decision") {
+  if (displayed.kind === "decision") {
     return {
       heading: "Decision needed — work is safely parked",
       why,
-      next: input.action
-        ? `Next: ${input.action}`
+      next: displayed.action
+        ? `Next: ${displayed.action}`
         : "Choose an option in the decision card, then resume.",
-      resumeCommand: input.resumeCommand,
-      parkState: input.parkState,
+      resumeCommand: displayed.resumeCommand,
+      parkState: displayed.parkState,
     };
   }
   return {
     heading: "Action needed — work is safely parked",
     why,
-    next: `Next: ${input.action || input.resumeCommand}`,
-    resumeCommand: input.resumeCommand,
-    parkState: input.parkState,
+    next: `Next: ${displayed.action || displayed.resumeCommand}`,
+    resumeCommand: displayed.resumeCommand,
+    parkState: displayed.parkState,
   };
 }
 
 export function registerActionReminderRenderer(pi: ExtensionAPI): void {
   pi.registerMessageRenderer(ACTION_REMINDER_CUSTOM_TYPE, (message, { outputPad }, theme) => {
     const details = message.details as Partial<ActionReminderDetails> | undefined;
-    const diagnostics = details?.diagnostic?.trim();
+    const diagnostics = compactDisplayText(details?.diagnostic ?? "");
     const kind = details?.kind ?? "blocked";
     const color = kind === "error" ? "error" : kind === "decision" ? "accent" : "warning";
     const parkState = details?.parkState ?? (kind === "wait" || kind === "standby" ? "automatic" : "stopped");
@@ -260,6 +262,9 @@ export function registerActionReminderRenderer(pi: ExtensionAPI): void {
     if (diagnostics) {
       box.addChild(new Text(theme.fg("dim", `Diagnostic: ${diagnostics}`), 0, 0));
     }
-    return box;
+    return {
+      render: (width: number) => width <= 0 ? [] : box.render(width).map((line) => truncateToWidth(line, width, "…")),
+      invalidate: () => box.invalidate(),
+    };
   });
 }

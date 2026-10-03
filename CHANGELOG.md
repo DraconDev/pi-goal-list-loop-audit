@@ -15,7 +15,8 @@
 - Draft contracts scroll independently of their decisions. Persistent draft
   acceptance states its project scope without implementation-key jargon;
   long selected choices wrap so their meaning remains visible.
-- Settings, picker labels and draft Markdown strip untrusted terminal controls.
+- Settings, picker labels, draft Markdown and pause reminders strip untrusted
+  terminal controls. Reminder rows fit even the narrowest terminal.
   Explicit zero-width cards/status rows are bounded. Settling audit cards name
   the approved archive owed and the command that finishes settlement.
 - Held loop status names its resume action; paused goal status includes the

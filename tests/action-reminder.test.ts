@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { visibleWidth } from "@earendil-works/pi-tui";
 import {
   buildAbortedAssistantNotice,
   buildActionReminder,
@@ -162,4 +163,16 @@ test("wait abort notice uses the same automatic-wake explanation as its card", (
   assert.match(notice, /resumes automatically at 2026-09-24T23:59:00\.000Z/);
   assert.doesNotMatch(notice, /Next:/);
   assert.doesNotMatch(notice, /Operation aborted/);
+});
+
+test("reminder rendering bounds narrow rows and strips terminal commands", () => {
+  const reminder = buildActionReminder({ kind: "blocked", reason: "verify\x1b[2J the result", action: "resume\x9b after checking", diagnostic: "details\x1b[2J", resumeCommand: "/goal resume" });
+  const pi = new MockPi(); registerActionReminderRenderer(pi.api);
+  const renderer = pi.messageRenderers.get("glla-action-reminder")!;
+  const component = renderer({ details: reminder.details, content: reminder.content }, { outputPad: 1 }, { fg: (_: string, s: string) => s, bg: (_: string, s: string) => s }) as { render(width: number): string[] };
+  for (const width of [0, 1, 20, 40, 80]) {
+    const lines = component.render(width);
+    assert.ok(lines.every(line => !/\x1b\[2J|\x9b/.test(line)), "provider/tool text must not clear the terminal");
+    assert.ok(lines.every(line => visibleWidth(line) <= width), `reminder fits ${width} columns`);
+  }
 });

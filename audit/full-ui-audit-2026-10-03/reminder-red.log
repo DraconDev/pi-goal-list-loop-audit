@@ -1,0 +1,36 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/action-reminder.test.ts:
+(pass) standby renderer keeps the background-wake explanation visible [16.23ms]
+(pass) registers a dedicated GLLA reminder renderer [0.07ms]
+(pass) blocked reminder is actionable and says the work is safely parked [0.29ms]
+(pass) decision reminder is prominent, safely parked, and names the exact picker action [0.26ms]
+(pass) redirect reminder says the goal is held while the new request runs [0.18ms]
+(pass) diagnostics trail the actionable reminder as subordinate text [0.16ms]
+(pass) standby reminder says background completion wakes the work [0.04ms]
+(pass) timed wait is automatic and does not invent a manual action [0.10ms]
+(pass) assistant abort notice is a GLLA explanation, not generic transport text [0.07ms]
+(pass) wait abort notice uses the same automatic-wake explanation as its card [0.04ms]
+170 |   const pi = new MockPi(); registerActionReminderRenderer(pi.api);
+171 |   const renderer = pi.messageRenderers.get("glla-action-reminder")!;
+172 |   const component = renderer({ details: reminder.details, content: reminder.content }, { outputPad: 1 }, { fg: (_: string, s: string) => s, bg: (_: string, s: string) => s }) as { render(width: number): string[] };
+173 |   for (const width of [0, 1, 20, 40, 80]) {
+174 |     const lines = component.render(width);
+175 |     assert.ok(lines.every(line => !/\x1b\[2J|\x9b/.test(line)), "provider/tool text must not clear the terminal");
+                 ^
+AssertionError: provider/tool text must not clear the terminal
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/action-reminder.test.ts:175:12
+      at fn (node:test:215:18)
+(fail) reminder rendering bounds narrow rows and strips terminal commands [2.46ms]
+
+ 10 pass
+ 1 fail
+Ran 11 tests across 1 file. [473.00ms]
+[run-tests] finished in 1s (exit 1)
