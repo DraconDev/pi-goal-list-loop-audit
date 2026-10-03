@@ -960,13 +960,13 @@ export class SettingsMenuComponent implements Component {
       ...wrapTextWithAnsi(`${focused.sourceText} · ${focused.description}`, Math.max(1, width)),
     ] : [];
     const height = this.getHeight ? Math.max(8, Math.floor(this.getHeight())) : Number.POSITIVE_INFINITY;
-    const detailRows = Math.min(details.length, Number.isFinite(height) ? Math.max(2, Math.floor(height / 3)) : details.length);
+    const footerRows = narrow ? 2 : 1;
+    const detailRows = Math.min(details.length, Number.isFinite(height) ? Math.max(0, Math.min(Math.floor(height / 3), height - lines.length - footerRows - 1)) : details.length);
     this.detailPageSize = Math.max(1, detailRows);
     this.detailOffset = Math.min(this.detailOffset, Math.max(0, details.length - detailRows));
     const detailChrome = details.length ? detailRows + 1 : 0;
     const perRow = narrow ? 2 : 1;
-    const footerRows = narrow ? 2 : 1;
-    const rowLimit = Math.max(1, Math.floor((height - lines.length - detailChrome - footerRows - 1) / perRow));
+    const rowLimit = Math.max(details.length ? 0 : 1, Math.floor((height - lines.length - detailChrome - footerRows - 1) / perRow));
     this.rowPageSize = Math.min(vs.length, rowLimit);
     const start = Math.max(0, Math.min(this.selectedIdx - Math.floor(rowLimit / 2), vs.length - rowLimit));
     const window = vs.slice(start, start + rowLimit);
@@ -984,7 +984,7 @@ export class SettingsMenuComponent implements Component {
         lines.push(paintRow(cells.join(selected ? COL_SEP : sep)));
       }
     });
-    if (window.length < vs.length) lines.push(this.theme.fg("dim", `Rows ${start + 1}–${start + window.length} of ${vs.length} · PgUp/PgDn move`));
+    if (window.length > 0 && window.length < vs.length) lines.push(this.theme.fg("dim", `Rows ${start + 1}–${start + window.length} of ${vs.length} · PgUp/PgDn move`));
     if (details.length) {
       lines.push(this.theme.fg("dim", `Details ${this.detailOffset + 1}–${this.detailOffset + detailRows}/${details.length} · PgUp/PgDn scroll`));
       lines.push(...details.slice(this.detailOffset, this.detailOffset + detailRows).map((line) => this.theme.fg("muted", line)));
