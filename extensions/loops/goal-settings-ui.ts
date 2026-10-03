@@ -756,7 +756,7 @@ async function openSettingsUI(ctx: ExtensionContext, initialSection?: SettingsSe
     const id = await promptSettingsMenu(ctx, rows, initialSection);
     // The section is only an entry-point hint; after the first render the
     // table owns navigation and keeps all grouped settings available.
-    initialSection = undefined;
+    initialSection = rows.find((row) => row.id === id)?.section ?? initialSection;
     if (!id) return;
     const probe = (globalThis as any).warnIfStaleAtEntry as ((ctx: ExtensionContext, what: string) => boolean) | undefined;
     if (typeof probe === "function" && probe(ctx, "settings edit")) return;
@@ -848,10 +848,14 @@ async function promptModelRef(
   // typed escape hatch. Without it the user could pin a model the resolver
   // would silently skip at audit time (auditor_model_fallback reason:
   // "forbidden"), a dead-end selection the main selector never offers.
-  opts: { excludeRefs?: readonly string[] } = {},
+  opts: { excludeRefs?: readonly string[]; excludeCurrentModel?: boolean; defaultLabel?: string } = {},
 ): Promise<{ kind: "session" } | { kind: "ref"; ref: string } | undefined> {
   const exclude = opts.excludeRefs ?? [];
   const validateTypedRef = (ref: string): { kind: "session" } | { kind: "ref"; ref: string } | undefined => {
+    if (opts.excludeCurrentModel && ref.toLowerCase() === modelRef(ctx.model)?.toLowerCase()) {
+      ctx.ui.notify("The compactor cannot use the current session model. Choose another model or clear the pin for registry plan B.", "warning");
+      return undefined;
+    }
     if (exclude.length > 0 && isForbiddenModel(ref, exclude)) {
       ctx.ui.notify(`"${ref}" matches your forbidden-models policy — the picker refuses it. Adjust /glla → Forbidden models first.`, "warning");
       return undefined;
@@ -871,7 +875,11 @@ async function promptModelRef(
   const models = ctx.modelRegistry
     .getAvailable()
     .filter((m: any) => ctx.modelRegistry.hasConfiguredAuth(m));
-  const items = buildModelPickItems(models, sessionLabel, { excludeRefs: exclude });
+  const items = buildModelPickItems(models.filter((model) => !opts.excludeCurrentModel || modelRef(model)?.toLowerCase() !== modelRef(ctx.model)?.toLowerCase()), sessionLabel, { excludeRefs: exclude });
+  if (opts.defaultLabel) {
+    const defaultItem = items.find((item) => item.kind === "session");
+    if (defaultItem) { defaultItem.label = opts.defaultLabel; defaultItem.searchText = opts.defaultLabel; }
+  }
   let factoryInvoked = false;
   const pick = await ctx.ui.custom<ModelPickItem | undefined>((tui, theme, keybindings, done) => {
     factoryInvoked = true;
@@ -904,10 +912,12 @@ async function promptModelRefs(
   ctx: ExtensionContext,
   title: string,
   initialRefs: string[],
-  opts: { excludeRefs?: string[]; maxSelections?: number; currentRef?: string } = {},
+  opts: { excludeRefs?: string[]; maxSelections?: number; currentRef?: string; protectedRefs?: string[] } = {},
 ): Promise<string[] | undefined> {
   const exclude = opts.excludeRefs ?? [];
   const maxSelections = opts.maxSelections;
+  const policyExcluded = (ref: string) => isForbiddenModel(ref, exclude)
+    || (opts.protectedRefs ?? []).some((protectedRef) => isForbiddenModel(protectedRef, [ref]));
   const normalizeSelection = (value: unknown): string[] => {
     const refs = normalizeModelRefs(value);
     const seen = new Set<string>();
@@ -918,7 +928,7 @@ async function promptModelRefs(
       return true;
     });
     const currentKey = opts.currentRef?.trim().toLowerCase();
-    return unique.filter((ref) => !isForbiddenModel(ref, exclude) && ref.toLowerCase() !== currentKey);
+    return unique.filter((ref) => !policyExcluded(ref) && ref.toLowerCase() !== currentKey);
   };
   const inputFallback = async (): Promise<string[] | undefined> => {
     const v = await ctx.ui.input(title, initialRefs.length ? initialRefs.join(",") : "provider/model-a,provider/model-b");
@@ -927,14 +937,14 @@ async function promptModelRefs(
     // the TUI picker; a typed forbidden ref must not sneak into a backup
     // chain (and a typed backup must not be added to forbiddenModels).
     const typedRefs = normalizeModelRefs(v);
-    const policyBlocked = typedRefs.filter((ref) => isForbiddenModel(ref, exclude));
+    const policyBlocked = typedRefs.filter(policyExcluded);
     if (typedRefs.length > 0 && policyBlocked.length === typedRefs.length) {
       ctx.ui.notify(`Not saved because policy excludes: ${policyBlocked.join(", ")}`, "warning");
       return undefined;
     }
     const refs = normalizeSelection(v);
     if (policyBlocked.length > 0) {
-      ctx.ui.notify(`Not saved because policy excludes: ${policyBlocked.join(", ")}`, "warning");
+      ctx.ui.notify(`Skipped selections that policy excludes: ${policyBlocked.join(", ")}; saving the remaining selections.`, "warning");
     }
     // v0.38.65 (field 152226): the TUI picker disables the current-model
     // row with a reason, but this free-form path dropped it silently and
@@ -994,7 +1004,7 @@ async function promptModelRefs(
     ctx.ui.notify(`Current session model is slot 0 and was not saved as a backup: ${omittedCurrent.join(", ")}`, "info");
   }
   if (omittedPolicy.length > 0) {
-    ctx.ui.notify(`Not saved because policy excludes: ${omittedPolicy.join(", ")}`, "warning");
+    ctx.ui.notify(`Skipped selections that policy excludes: ${omittedPolicy.join(", ")}; saving the remaining selections.`, "warning");
   }
   return normalizedPick;
 }
@@ -1022,7 +1032,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
   if (id.startsWith("subagentModelOverrides.")) {
     const agentType = id.slice("subagentModelOverrides.".length);
     if (OVERRIDABLE_AGENT_TYPES.includes(agentType)) {
-      const pick = await promptModelRef(ctx, `Model pin for ${agentType} subagents`, "provider/model-id e.g. minimax/MiniMax-M3 — always wins over strategy; empty = follow strategy");
+      const pick = await promptModelRef(ctx, `Model pin for ${agentType} subagents`, "provider/model-id e.g. minimax/MiniMax-M3 — always wins over strategy; empty = follow strategy", { excludeRefs: normalizeModelRefs(loadSettings(ctx.cwd).forbiddenModels) });
       if (pick === undefined) return;
       const current = loadSettings(ctx.cwd).subagentModelOverrides ?? {};
       const next = { ...current };
@@ -1040,7 +1050,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       const current = settings.subagentFallbacks?.[agentType] ?? [];
       const refs = await promptModelRefs(ctx, `${agentType} fallback chain — ordered, up to ${MAX_MAIN_MODEL_FALLBACKS} (space to toggle, tab = order mode with ↑/↓, enter to confirm); forbidden models hidden`, current, { excludeRefs: normalizeModelRefs(settings.forbiddenModels), maxSelections: MAX_MAIN_MODEL_FALLBACKS });
       if (refs === undefined) return;
-      const next = { ...(settings.subagentFallbacks ?? {}) };
+      const next = { ...(loadSettings(ctx.cwd).subagentFallbacks ?? {}) };
       if (refs.length > 0) next[agentType] = refs;
       else delete next[agentType];
       saveSettings("global", ctx, { subagentFallbacks: Object.keys(next).length > 0 ? next : undefined });
@@ -1356,7 +1366,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       return;
     }
     case "drafterModel": {
-      const pick = await promptModelRef(ctx, "Drafter agent — temporary agent for drafting only", "provider/model-id — empty keeps the current session model");
+      const pick = await promptModelRef(ctx, "Drafter agent — temporary agent for drafting only", "provider/model-id — empty keeps the current session model", { excludeRefs: normalizeModelRefs(loadSettings(ctx.cwd).forbiddenModels) });
       if (pick === undefined) return;
       const pickedModel = resolvePickedModel(ctx, pick);
       const currentThinking = loadSettings(ctx.cwd).drafterThinkingLevel;
@@ -1427,7 +1437,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       return;
     }
     case "compactorModel": {
-      const pick = await promptModelRef(ctx, "Compactor agent — emergency handoff brief only", "provider/model-id — empty keeps registry plan B (verified free big-context model)");
+      const pick = await promptModelRef(ctx, "Compactor agent — emergency handoff brief only", "provider/model-id — empty keeps registry plan B (verified free big-context model)", { excludeRefs: normalizeModelRefs(loadSettings(ctx.cwd).forbiddenModels), excludeCurrentModel: true, defaultLabel: "registry plan B — clear the compactor pin" });
       if (pick === undefined) return;
       saveSettings("global", ctx, { compactorModel: pick.kind === "session" ? undefined : pick.ref });
       ctx.ui.notify(
@@ -1470,7 +1480,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         ctx,
         "Forbidden model patterns — case-insensitive provider/id substrings; recovery always skips matches (space to toggle, tab = order mode with ↑/↓, enter to confirm)",
         current,
-        { excludeRefs: fallbackRefs },
+        { excludeRefs: fallbackRefs, protectedRefs: fallbackRefs },
       );
       if (refs === undefined) return;
       saveSettings("global", ctx, { forbiddenModels: refs });
@@ -1865,7 +1875,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       return;
     }
     case "toolOverrides": {
-      const current = loadSettings(ctx.cwd).toolOverrides ?? {};
+      let current = loadSettings(ctx.cwd).toolOverrides ?? {};
       const describe = (o: NonNullable<Settings["toolOverrides"]>) =>
         `allow: ${o.allow?.length ? o.allow.join(", ") : "(none)"} · hide: ${o.hide?.length ? o.hide.join(", ") : "(none)"} · config: ${Object.keys(o.perToolConfig ?? {}).length ? `${Object.keys(o.perToolConfig!).length} tool(s)` : "(none)"}`;
       const action = await ctx.ui.select(`Tool overrides — PROJECT scope (this project only) — ${describe(current)}`, [
@@ -1886,15 +1896,16 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       const toolName = await ctx.ui.input(`Tool name (${verb})`, "e.g. bash, complete_goal — empty cancels");
       if (toolName === undefined || !toolName.trim()) return;
       const tool = toolName.trim();
+      current = loadSettings(ctx.cwd).toolOverrides ?? {};
       const apply = (patch: Partial<NonNullable<Settings["toolOverrides"]>>) =>
         saveSettings("project", ctx, { toolOverrides: { ...current, ...patch } });
       if (verb === "allow" || verb === "hide") {
         if (verb === "allow") {
           const list = current.allow ?? [];
-          if (!list.includes(tool)) apply({ allow: [...list, tool] });
+          apply({ allow: list.includes(tool) ? list : [...list, tool], hide: (current.hide ?? []).filter((entry) => entry !== tool) });
         } else {
           const list = current.hide ?? [];
-          if (!list.includes(tool)) apply({ hide: [...list, tool] });
+          apply({ hide: list.includes(tool) ? list : [...list, tool], allow: (current.allow ?? []).filter((entry) => entry !== tool) });
         }
         ctx.ui.notify(`"${tool}" is now ${verb === "allow" ? "always visible" : "always hidden"} (project override saved).`, "info");
         return;
@@ -1907,9 +1918,10 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       }
       const kv = await ctx.ui.input(
         `Config ${verb} — ${verb === "set" ? "key=value" : "key"}`,
-        verb === "set" ? "e.g. timeout=60, stream=true — empty cancels" : "e.g. timeout — empty cancels",
+        verb === "set" ? "e.g. timeout=60 (one key at a time; stored only, not applied to tool execution) — empty cancels" : "e.g. timeout — empty cancels",
       );
       if (kv === undefined || !kv.trim()) return;
+      current = loadSettings(ctx.cwd).toolOverrides ?? {};
       const cfg = { ...(current.perToolConfig ?? {}) };
       const toolCfg = { ...(cfg[tool] ?? {}) };
       if (verb === "set") {
@@ -1918,13 +1930,15 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
           ctx.ui.notify(`set needs key=value: got "${kv}"`, "warning");
           return;
         }
-        toolCfg[kv.slice(0, eq)] = parseToolOverrideValueLocal(kv.slice(eq + 1));
+        const key = kv.slice(0, eq).trim();
+        if (!key) { ctx.ui.notify("A tool configuration key is required.", "warning"); return; }
+        toolCfg[key] = parseToolOverrideValueLocal(kv.slice(eq + 1));
       } else {
         delete toolCfg[kv.trim()];
       }
       cfg[tool] = toolCfg;
       apply({ perToolConfig: cfg });
-      ctx.ui.notify(`"${tool}" config ${verb === "set" ? "saved" : "removed"} (project override).`, "info");
+      ctx.ui.notify(`"${tool}" config ${verb === "set" ? "saved" : "removed"} (project metadata; not applied to tool execution).`, "info");
       return;
     }
     case "postaudit":

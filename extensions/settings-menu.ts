@@ -708,7 +708,7 @@ export function buildSettingsRows(
         return parts.join(" · ") || "none";
       })(),
       sourceText: src("toolOverrides"),
-      description: "project-scoped per-tool policy — force tools visible/hidden despite modlists + per-tool config knobs; Enter opens the editor",
+      description: "project tool visibility overrides; config values are stored only and are not applied to tool execution; Enter opens the editor",
     },
     {
       id: "postaudit",

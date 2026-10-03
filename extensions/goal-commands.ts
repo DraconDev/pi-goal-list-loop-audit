@@ -2053,11 +2053,11 @@ async function cmdToolOverride(args: string, ctx: ExtensionContext): Promise<voi
     }
     if (action === "allow") {
       const allow = current.allow ?? [];
-      if (!allow.includes(tool)) apply({ allow: [...allow, tool] });
+      apply({ allow: allow.includes(tool) ? allow : [...allow, tool], hide: (current.hide ?? []).filter((entry) => entry !== tool) });
       ctx.ui.notify(`"${tool}" is now always visible to the agent (project override saved).`, "info");
     } else if (action === "hide") {
       const hide = current.hide ?? [];
-      if (!hide.includes(tool)) apply({ hide: [...hide, tool] });
+      apply({ hide: hide.includes(tool) ? hide : [...hide, tool], allow: (current.allow ?? []).filter((entry) => entry !== tool) });
       ctx.ui.notify(`"${tool}" is now always hidden from the agent (project override saved).`, "info");
     } else if (action === "unallow") {
       apply({ allow: (current.allow ?? []).filter((t) => t !== tool) });
@@ -2070,7 +2070,7 @@ async function cmdToolOverride(args: string, ctx: ExtensionContext): Promise<voi
   }
   if (action === "set" || action === "unset") {
     const tool = parts[1];
-    const kv = parts[2];
+    const kv = action === "set" ? args.trim().match(/^\S+\s+\S+\s+([\s\S]+)$/)?.[1] : parts[2];
     if (!tool || !kv) {
       ctx.ui.notify(`Usage: /glla tooloverride ${action} <tool> <key>[=<value>]`, "warning");
       return;
@@ -2083,7 +2083,8 @@ async function cmdToolOverride(args: string, ctx: ExtensionContext): Promise<voi
         ctx.ui.notify(`set needs key=value: got "${kv}"`, "warning");
         return;
       }
-      const k = kv.slice(0, eq);
+      const k = kv.slice(0, eq).trim();
+      if (!k) { ctx.ui.notify("A tool configuration key is required.", "warning"); return; }
       const v: unknown = parseToolOverrideValue(kv.slice(eq + 1));
       toolCfg[k] = v;
     } else {
@@ -2093,7 +2094,7 @@ async function cmdToolOverride(args: string, ctx: ExtensionContext): Promise<voi
     apply({ perToolConfig: cfg });
     ctx.ui.notify(
       action === "set"
-        ? `"${tool}" setting saved: ${kv.slice(0, kv.indexOf("="))} = ${JSON.stringify(toolCfg[kv.slice(0, kv.indexOf("="))])} (project override).`
+        ? `"${tool}" setting saved: ${kv.slice(0, kv.indexOf("="))} = ${JSON.stringify(toolCfg[kv.slice(0, kv.indexOf("="))])} (project metadata; not applied to tool execution).`
         : `"${tool}" setting "${kv}" removed — back to the built-in default.`,
       "info",
     );
@@ -3182,7 +3183,8 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   // read-only display on a stale handle blocks inspection for no safety.
   const fallbacksRest = verb === "fallbacks" ? trimmed.slice("fallbacks".length).trim().toLowerCase() : "";
   const fallbacksReadOnly = verb === "fallbacks" && !/^(clear|off|unset|none)(\s|$)/.test(fallbacksRest);
-  if (staleEntry && (verb === "ui" || (!fallbacksReadOnly && SETTINGS_MUTATING_ACTIONS.has(verb)))) {
+  const auditCleanup = verb === "audits" && /\bhealth\b/.test(trimmed) && /\bcleanup\b/.test(trimmed);
+  if (staleEntry && (verb === "ui" || auditCleanup || (!fallbacksReadOnly && SETTINGS_MUTATING_ACTIONS.has(verb)))) {
     appendLedger(ctx.cwd, "settings_mutation_refused_stale", { sub: verb });
     return;
   }
