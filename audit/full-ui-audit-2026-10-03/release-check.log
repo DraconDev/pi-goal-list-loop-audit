@@ -1662,3 +1662,192 @@ tests/policy-self-heal.test.ts:
 (pass) S10: unhealable corruption names the true cause instead of failing over to a misleading refusal [204.33ms]
 
 tests/quota-park-reroute.test.ts:
+(pass) quota evidence: a subagent 429 tool error is recorded on the goal [342.67ms]
+(pass) quota reroute: blocked park with fresh evidence becomes a supervised wait [205.74ms]
+(pass) quota reroute: quota wording in the reason needs no evidence [145.15ms]
+(pass) quota reroute: ordinary and stale-evidence parks are untouched [223.68ms]
+
+tests/auditor-thinking-display.test.ts:
+(pass) headless /glla shows the effective auditor thinking level with its why [84.71ms]
+(pass) headless /glla honors an explicit thinking setting and unknown models [15.78ms]
+
+tests/truthful-pause-labels.test.ts:
+(pass) deliberate user wait is never labeled supervised recovery [43.14ms]
+(pass) deliberate wait transitions stay truthful with absent, due, or overdue timers [0.60ms]
+(pass) internal retry pauses keep the supervised recovery labels [0.34ms]
+(pass) queued healthz implementation never claims a monitor or next check [0.23ms]
+(pass) age alone never earns the monitoring label on a queued goal [0.12ms]
+
+tests/cmd-review.test.ts:
+(pass) C8: ambiguous substring id refuses with the candidates instead of reviewing the first match [242.21ms]
+(pass) C8 control: exact id fires the review [179.44ms]
+
+tests/load-without-autostart.test.ts:
+(pass) v0.35.23: DEFAULT cold load restores + displays a pending goal but sends NOTHING and arms NO automation [847.39ms]
+(pass) v0.35.23: DEFAULT cold load HELDS a persisted live loop instead of resuming its ticks [496.55ms]
+(pass) v0.35.23: explicit autoResume:true restores load-time automation (opt-in = today's behavior) [472.21ms]
+(pass) v0.35.23: /goal resume releases the load hold and re-arms automation [622.98ms]
+(pass) v0.38.96: /glla resume releases the load hold BEFORE the manual-recovery probe (field 2026-09-23) [1677.56ms]
+(pass) v0.38.96: /loop resume releases the load hold BEFORE the manual-recovery probe [447.17ms]
+(pass) v0.35.23: /list next also releases the hold and starts the queued head [439.95ms]
+
+tests/rich-terminal-summary.test.ts:
+(pass) card opens with the outcome, then a change-first account and compact verification [28.92ms]
+(pass) chat hides verification by default; the archive retains the full table [1.16ms]
+(pass) failed verification is archive-only unless explicitly requested [0.91ms]
+(pass) REPORTED verification stays visible when explicitly requested — never upgraded to PASS [0.47ms]
+(pass) commit hashes stay in the archive, while chat keeps explanations [1.12ms]
+(pass) Next section carries the concrete action; stale self-reference still drops [0.72ms]
+(pass) trailer contract holds: approval bullet, record pointer last [0.34ms]
+(pass) change and next lines render uncapped [1.12ms]
+(pass) no audit history means no Audit row, approval voice still closes [0.62ms]
+(pass) archive section retains detailed findings and verification for complete, Aborted-headlined for aborted [0.48ms]
+(pass) duration line rides under the headline; unknown facts stay absent [0.47ms]
+(pass) fewer than four groups render as nested change subsections [0.42ms]
+(pass) four or more groups render as an Area | Finding | Evidence table [1.31ms]
+(pass) three groups stay nested — the table trigger is exactly four [0.41ms]
+(pass) v0.38.55: render path respects the sanitize trust boundary [2.16ms]
+(pass) extractEvidenceTokens moves tokens mechanically and never invents [0.16ms]
+(pass) sanitizeFindingGroups bounds shape at the trust boundary [1.42ms]
+(pass) v0.38.55: banner voices every audit outcome honestly [0.24ms]
+(pass) v0.38.55: gate commands render a Command column; absent keeps 4 cols [0.28ms]
+(pass) rich terminal projections remove ANSI, OSC, and control bytes from every field [0.61ms]
+(pass) v0.38.55: final repository state closes the card when readable [12.96ms]
+(pass) audit 2026-09-26: complete_goal accepts long free-prose values instead of refusing them [1.75ms]
+(pass) v0.38.102 an inline enumeration renders as an indented list [0.51ms]
+(pass) v0.38.102 a single (1) marker is prose, not a list, and is left intact [0.20ms]
+(pass) v0.38.102 Next gets the same treatment as Remaining [0.16ms]
+
+tests/retry-bounds.test.ts:
+(pass) E2: persisted auditInfraStreak field (type + schema) [25.38ms]
+(pass) E2: auditor infra errors enter the durable bounded retry plan (v0.34.51 — no 3-strike stop) [1.11ms]
+(pass) main recovery remains unbounded but auditor retries retain their fixed horizon [5.52ms]
+(pass) v0.36.0: aggressive auditor disapprovals become durable TODOs and stop on repeated no-progress [0.59ms]
+(pass) E3: send-retry re-arms counted, ledgered, escalated [0.21ms]
+(pass) v0.28.29: busy-retry cadence backs off (no more flat 50ms spins) [0.19ms]
+(pass) v0.28.29: escalation is TIME-based and ACTIVITY-gated (busy ≠ wedged — the polis false positive) [0.51ms]
+(pass) E3: provider-held send storms enter durable main-model recovery [0.60ms]
+(pass) E8: the error brake carries the REAL error text, not stopReason [1.62ms]
+(pass) v0.34.26: output-token-limit provider errors are classified as a deterministic wall, not a flake [0.63ms]
+(pass) v0.34.36: a loop whose continuation never starts is durably stopped and resumable [0.07ms]
+(pass) v0.34.51: stored-claim auditor retries enter the durable plan on ANY infra error [0.24ms]
+(pass) v0.34.26: length-continue exhaustion is a durable paused state, not a transient notify [0.68ms]
+(pass) E8: user aborts braked SEPARATELY — honest message, no auto-resume [0.76ms]
+(pass) E8: provider-error brake gets ONE capped escalating auto-resume with reason re-check (v0.28.25) [1.00ms]
+(pass) v0.28.25: inter-error retries ride an exponential ladder, not the immediate continuation [0.69ms]
+(pass) v0.28.26: quota-blocked audits store the claim + the retry re-runs the AUDITOR directly (no agent turn) [1.72ms]
+(pass) v0.28.26: pendingCompletion typed + schematized [0.36ms]
+
+tests/quota-retry.test.ts:
+(pass) structured HTTP status is normalized before provider classification [29.75ms]
+(pass) provider-wall copy separates safe display/action text from durable diagnostics [0.36ms]
+(pass) non-sensitive provider text projects a bounded display while staying redaction-capable [0.32ms]
+(pass) bare 403 provider payloads are sensitive diagnostics, not raw display copy [0.19ms]
+(pass) full auditor reports redact raw provider payload lines while preserving safe findings [0.65ms]
+(pass) multiline provider markers redact the following arbitrary JSON payload [0.13ms]
+(pass) audit history projections sanitize provider diagnostics [0.63ms]
+(pass) scheduleQuotaRetry deduplicates one notice key within an episode [0.27ms]
+(pass) parseQuotaError: 429 with Retry-After: 5 → retryAfterSec 5 (item 12 test 1) [0.08ms]
+(pass) parseQuotaError: 429 without hint → default 3600 (item 12 test 2) [0.05ms]
+(pass) parseQuotaError: prose hints (retry in 2m / retry after 30 seconds) [0.10ms]
+(pass) v0.34.125: temporary-window prose is honored — no give-up until the bigger reset [0.54ms]
+(pass) v0.34.125: 'temporarily over quota' is a retryable rate-limit, plain 'temporarily unavailable' stays ambiguous [0.13ms]
+(pass) quota classification stays conservative around ambiguous provider errors [0.05ms]
+(pass) every explicit 429/rate-limit marker stays a retryable request-rate wall [0.03ms]
+(pass) plan wording without a 429 remains distinct, while 429 Token Plan text is rate-limit [0.06ms]
+(pass) parseQuotaError: JSON reset fields and HTTP-date reset are understood [0.09ms]
+(pass) parseQuotaError: digit-leading Retry-After ISO date is not truncated as seconds [0.04ms]
+(pass) quota retry cadence caps at five hours instead of retrying for a week [0.09ms]
+(pass) isQuotaError: wild-caught shapes [0.05ms]
+(pass) scheduleQuotaRetry: fires the callback after the window (item 12 test 3 core) [1324.40ms]
+(pass) cancelQuotaRetry: a pending retry does not fire (item 12 test 4 core) [1326.72ms]
+(pass) selectQuotaWaitReroute: reason wording wins with its parsed hint [0.35ms]
+(pass) selectQuotaWaitReroute: absolute reset survives only while future [0.16ms]
+(pass) selectQuotaWaitReroute: fresh evidence supplies the cause; stale never does [0.14ms]
+(pass) subagentQuotaEvidenceFrom: quota payloads become evidence, plain errors do not [0.07ms]
+
+tests/screenshot-completion.test.ts:
+(pass) screenshot-derived GLLA keeps explanations and truthful checks [22.93ms]
+(pass) screenshot-derived Deathrun keeps explanations and truthful checks [2.15ms]
+(pass) screenshot-derived Neonbreak keeps explanations and truthful checks [1.61ms]
+(pass) multi-line citation extraction consumes the complete reference, not just its first line [0.20ms]
+
+tests/durable-defer-production-ui.test.ts:
+(pass) production record_goal_judgment persists facts and refreshUI renders durable first [517.58ms]
+
+tests/auditor-extensions.test.ts:
+(pass) normalizeAuditorAllowedExtensions is bounded, deduped, deterministic [22.76ms]
+(pass) discovery resolves settings packages/extensions to concrete install paths [2.04ms]
+(pass) resolveAuditorExtensionSpec maps npm/git/local specs to existing paths [0.55ms]
+(pass) resolveAuditorAllowedExtensions drops unresolvable entries fail-closed [0.37ms]
+(pass) v0.35.72: project-relative auditor extensions resolve from the project settings base [0.24ms]
+(pass) request allowedExtensions rides the hashed payload with resolved paths [0.31ms]
+(pass) auditorExtensionArgs only emits args for a non-empty allowlist [0.17ms]
+(pass) audit 2026-09-06: auditorExtensionArgs drops raw npm: specs fail-closed [0.06ms]
+(pass) audit 2026-09-06: allowlist normalize dedups case-insensitively [0.02ms]
+(pass) v0.35.72: offline auditor validation uses Node timeout support, not POSIX timeout [0.30ms]
+(pass) mandatory hermetic auditor-extension validation loads the resolved allowlist path [237.52ms]
+(pass) settings round-trip: menu pick persists, load normalizes, clear removes [35.75ms]
+(pass) saveSettings writes the allowlist and hand-edited junk is normalized on load [1.79ms]
+
+tests/long-running-discipline.test.ts:
+(pass) long-running supervision is event-driven with 250ms→15s fallback, not duration-guessed [27.33ms]
+(pass) monitor goals are display-only — scheduling is event-driven for every plane [1.83ms]
+(pass) drafting batches 2–4 questions up front via one ask_user_question picker [0.15ms]
+(pass) long-running policies compensate zero mid-run questions with more upfront [0.14ms]
+(pass) continuation prompt carries both policies so active execution sees them [1.21ms]
+
+tests/auditor-error-paths.test.ts:
+(pass) catch block never returns disapproved: true [21.34ms]
+(pass) infra-flavored returns (no model / aborted) are not disapprovals [0.38ms]
+(pass) auditor watchdog exits are infrastructure failures, never verdicts [0.70ms]
+(pass) worker stream failures accumulate onto stderr, never overwrite it [0.11ms]
+(pass) semantic verdict-quality failures and shield blocks keep distinct categories [0.10ms]
+(pass) audit 2026-09-25: the reverted wall-clock bound leaves no dead classification branches [19.81ms]
+
+tests/objective-loss-lifecycle.test.ts:
+(pass) production session_start registers the host session root before restore [53.38ms]
+(pass) fresh processes reload session-root state across a cwd switch [47.15ms]
+(pass) cancel and wipe defer safely while sessionDir is unresolved [1.66ms]
+(pass) cancel and wipe archive live state under the registered session root [16.24ms]
+
+tests/uniform-provider-retry.test.ts:
+(pass) the first provider retry is eager for every failure family [22.71ms]
+(pass) later provider retries use one bounded configured ladder [0.13ms]
+(pass) main-model recovery has no quota-derived policy branch [2.08ms]
+(pass) the auditor durable plan is generic and keeps safe diagnostic copy [2.19ms]
+(pass) display surfaces identify generic recovery, not a guessed quota state [0.19ms]
+
+tests/lifesign.test.ts:
+(pass) bands: fresh <5m, aging to 30m, stale past it, hung on classification [0.47ms]
+(pass) head: empty/ended rows invent nothing [0.11ms]
+(pass) head: band follows the worst row, readout follows the freshest; breath rides evidence counters [0.25ms]
+(pass) card head: active goal with workers breathes + reads out evidence age [0.82ms]
+(pass) card head: hung row triangles the head; paused keeps its own glyph; no rows means no readout [1.01ms]
+(pass) rows: band colors ride the glyph; unpainted rows keep shape + number [0.40ms]
+(pass) lifesign card fits 80 columns and is key-stable within a bucket [0.26ms]
+
+tests/mode-command-guidance.test.ts:
+(pass) mode-aware helpers exist and route by policy [32.80ms]
+(pass) no hardcoded /goal <cmd> literals remain in generated guidance (goal.ts) [9.57ms]
+(pass) loop-policy recovery guidance interpolates recoverySurfaceCommand (v0.34.108) [5.76ms]
+(pass) widget resume hints are mode-aware ternaries (display.ts) [0.17ms]
+(pass) goal-policy pause notifies with /goal resume [291.29ms]
+(pass) list-policy pause notifies with /list resume [185.34ms]
+(pass) widget wait countdown is uniform auto-retrying (no manual resume hint — v0.34.64) [0.55ms]
+(pass) widget no-verdict fallback action is mode-aware [0.35ms]
+
+tests/provider-report-redaction-budget.test.ts:
+(pass) v0.38.104 an auditor report survives sanitizing instead of being deleted [21.54ms]
+(pass) v0.38.104 the required-fixes section is always recoverable [0.38ms]
+(pass) v0.38.104 a genuine provider payload still redacts IN FULL [0.13ms]
+(pass) v0.38.104 a payload-heavy blob redacts in full regardless of length [0.19ms]
+(pass) v0.38.104 the budget is a real fraction with an absolute floor [0.03ms]
+(pass) v0.38.104 a marked line is always redacted, even after the budget [1.12ms]
+(pass) v0.38.104 a bare 5xx-shaped number is not a provider marker [0.28ms]
+(pass) v0.38.104 a 5xx WITH http context still redacts [0.07ms]
+
+tests/process-registration-faults.test.ts:
+(pass) process registration first-write failure is visible and stops the owned child [75.53ms]
+(pass) process registration rename failure is visible and stops the owned child [52.25ms]
+(pass) process registration owner-loss failure is visible and stops the owned child [856.76ms]
