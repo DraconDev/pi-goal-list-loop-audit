@@ -524,3 +524,15 @@ test("v0.35.47: every handled /list and /loop subcommand has a completion entry"
     assert.ok(loopCompletions.has(v), `/loop completion for ${v}`);
   }
 });
+
+test("every canonical /glla action is discoverable in completions", () => {
+  const completions = completionValues(src("extensions/loops/goal-activation.ts"), "glla");
+  const commands = src("extensions/goal-commands.ts");
+  const start = commands.indexOf("async function cmdSettings");
+  const end = commands.indexOf("\n}\n", start);
+  const body = commands.slice(start, end);
+  const aliases = new Set(["reviewer", "reset"]);
+  const handled = [...body.matchAll(/if \(\/\^([a-z]+)\(\?:/g)].map(match => match[1]!);
+  assert.ok(handled.length >= 15, "the scan must cover the actual action namespace");
+  assert.deepEqual(handled.filter(action => !aliases.has(action) && !completions.has(action)), []);
+});

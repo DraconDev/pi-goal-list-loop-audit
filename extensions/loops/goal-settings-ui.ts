@@ -1437,7 +1437,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       return;
     }
     case "compactorModel": {
-      const pick = await promptModelRef(ctx, "Compactor agent — emergency handoff brief only", "provider/model-id — empty keeps registry plan B (verified free big-context model)", { excludeRefs: normalizeModelRefs(loadSettings(ctx.cwd).forbiddenModels), excludeCurrentModel: true, defaultLabel: "registry plan B — clear the compactor pin" });
+      const pick = await promptModelRef(ctx, "Compactor agent — handoff brief only; Pi summarizes the transcript", "provider/model-id — empty keeps registry plan B (verified free big-context model)", { excludeRefs: normalizeModelRefs(loadSettings(ctx.cwd).forbiddenModels), excludeCurrentModel: true, defaultLabel: "registry plan B — clear the compactor pin" });
       if (pick === undefined) return;
       saveSettings("global", ctx, { compactorModel: pick.kind === "session" ? undefined : pick.ref });
       ctx.ui.notify(
@@ -1636,7 +1636,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
           extFactoryInvoked = true;
           return new MultiModelPickerComponent(
             {
-              title: "Auditor allowed extensions — space toggles, enter confirms; empty = fully isolated auditor (default)",
+              title: "Auditor allowed extensions — space toggles, enter confirms; empty clears extra extensions; mirroring is controlled separately",
               items: extItems,
               initialSelected: currentExts,
               unorderedSet: true,
@@ -1658,7 +1658,9 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       ctx.ui.notify(
         normalizedExts.length
           ? `Auditor allowed extensions saved: ${normalizedExts.length} enabled.`
-          : "Auditor allowed extensions cleared — the detached auditor runs extension-less again (default).",
+          : loadSettings(ctx.cwd).auditorMirrorSessionExtensions === false
+            ? "Auditor allowed extensions cleared — mirroring is off, so the detached auditor runs extension-less."
+            : "Auditor allowed extensions cleared — session packages are still mirrored. Turn mirroring off for full isolation.",
         "info",
       );
       return;
@@ -1682,7 +1684,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
     case "auditCap": {
       const current = loadSettings(ctx.cwd);
       const defaultCap = resolveEffectiveAggressiveSettings({ ...current, auditCap: undefined }).auditCap;
-      const v = await ctx.ui.input("Consecutive auditor disapprovals before the goal pauses", `non-negative integer; 0 = unlimited, empty = current default ${defaultCap}`);
+      const v = await ctx.ui.input("Soft disapproval threshold — conservative or run-to-done pauses; aggressive continues with TODOs", `non-negative integer; 0 = unlimited, empty = current default ${defaultCap}`);
       if (v !== undefined) {
         const raw = v.trim();
         const n = parseSettingsInteger(raw);

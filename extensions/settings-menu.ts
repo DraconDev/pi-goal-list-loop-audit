@@ -364,7 +364,7 @@ export function buildSettingsRows(
       label: "Compactor agent",
       valueText: compactorRef,
       sourceText: src("compactorModel"),
-      description: "emergency handoff-brief model used only when context starvation parks the session; unset → verified free big-context registry plan B (never the stuck session model)",
+      description: "handoff-brief model for boundary compaction and context starvation; transcript summarization uses Pi's compaction settings; unset → registry plan B (never the session model)",
     },
     {
       id: "compactorModelFallbacks",
@@ -424,9 +424,9 @@ export function buildSettingsRows(
       // crashes pi's TUI. Open the row to pick concrete specs in the picker.
       valueText: settings.auditorAllowedExtensions?.length
         ? `${settings.auditorAllowedExtensions.length} enabled`
-        : "none (fully isolated, default)",
+        : settings.auditorMirrorSessionExtensions === false ? "none (fully isolated)" : "none (session packages mirrored)",
       sourceText: src("auditorAllowedExtensions"),
-      description: "pi extension specs the DETACHED auditor may load (e.g. npm:pi-webaio) so extension-provided model providers can run — tools stay restricted to read/grep/find/ls/bash; empty = the default extension-less auditor",
+      description: "pi extension specs the DETACHED auditor may load (e.g. npm:pi-webaio) so extension-provided model providers can run — tools stay restricted to read/grep/find/ls/bash; empty clears extra extensions; turn mirroring off too for full isolation",
     },
     {
       id: "auditorMirrorSessionExtensions",
@@ -519,7 +519,7 @@ export function buildSettingsRows(
       label: "Audit cap",
       valueText: show("auditCap", `${effective.auditCap}`),
       sourceText: src("auditCap"),
-      description: "pause the goal after N consecutive disapprovals (0 = unlimited; unset = 10 in aggressive mode, otherwise 5)",
+      description: "soft disapproval threshold: conservative or run-to-done pauses; aggressive continues with TODOs; hard cap still binds (0 = unlimited; default 10 aggressive, otherwise 5)",
     },
     {
       id: "auditCapHard",

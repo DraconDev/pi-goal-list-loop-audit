@@ -303,7 +303,10 @@ test("auditorAllowedExtensions valueText is a count — never joined absolute pa
   }
   const empty = buildSettingsRows({} as Settings, EMPTY_PROV)
     .find((r) => r.id === "auditorAllowedExtensions")!;
-  assert.equal(empty.valueText, "none (fully isolated, default)");
+  assert.equal(empty.valueText, "none (session packages mirrored)");
+  const isolated = buildSettingsRows({ auditorMirrorSessionExtensions: false } as Settings, EMPTY_PROV)
+    .find((r) => r.id === "auditorAllowedExtensions")!;
+  assert.equal(isolated.valueText, "none (fully isolated)");
 });
 
 test("valueText derives from settings (effective values surface for each row)", () => {

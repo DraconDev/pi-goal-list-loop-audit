@@ -1,0 +1,64 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/settings-menu-complete.test.ts:
+(pass) every row carries every required column field [6.01ms]
+(pass) role-specific tabs keep each agent's model, thinking, and fallback controls together [0.10ms]
+(pass) every row's section is one of the 8 known section ids (no orphans) [0.17ms]
+(pass) main-agent tab starts with the runtime agent; drafter and subagent chains have their own tabs [0.22ms]
+(pass) main fallback row explains ordered, deselectable selection [0.23ms]
+(pass) role rows show each selected model with requested/effective thinking [0.17ms]
+(pass) v0.36.0: unset auditor thinking mirrors the parent session and the fallback row uses the main shape [0.13ms]
+(pass) inherited drafter and auditor model rows identify the session category [0.11ms]
+(pass) all embedded subagent types expose editable fallback-chain rows [0.12ms]
+(pass) key rows from v0.27.0 settings menu are all present (menu coverage contract) [0.15ms]
+(pass) descriptions and values carry no version-tag chrome (v0.34.25) [0.17ms]
+(pass) rows map 1:1 to dispatchable ids (every id can drive a handler) [3.38ms]
+(pass) main fallback row shows the persisted numbered try order and truthful runtime semantics [0.23ms]
+(pass) auditorAllowedExtensions valueText is a count — never joined absolute paths (screen-size crash) [0.53ms]
+(pass) valueText derives from settings (effective values surface for each row) [0.24ms]
+(pass) default fallbacks surface when settings + provenance both missing [0.33ms]
+(pass) default fallbacks follow the effective aggressive matrix (explicit off → base values) [0.32ms]
+(pass) effective resolution names the real session model for inherit-parent [0.27ms]
+(pass) provenance flows into sourceText (project/global/default tags) [0.22ms]
+(pass) haiku mention is dropped from any valueText / description / sourceText [0.24ms]
+(pass) headless `/glla` fallback keeps stall brakes and the v0.34.127 sync list [0.59ms]
+(pass) the legacy flat-row startsWith logic is removed (no more `──` section headers in code) [2.79ms]
+(pass) /glla tooloverride still routes headlessly (regression: subsystems unchanged) [0.32ms]
+(pass) postaudit and reviewer routes both open the reviewer menu (back-compat) [0.29ms]
+(pass) stateRoot: one global-only row with the workingDir default [0.21ms]
+(pass) v0.28.20: no bracket/paren chrome — VALUE and SOURCE render bare [0.23ms]
+(pass) audit-2026-09-06: settings TUI tabs row is truncated to terminal width [2.10ms]
+(pass) audit 2026-09-06: normalizeLoadedSettings resets junk numerics/enums/strings to unset [0.79ms]
+(pass) settings provenance reports normalized effective values, not rejected raw junk [1308.42ms]
+(pass) audit 2026-09-06: legacy reviewer block migrates to postaudit [0.54ms]
+(pass) audit 2026-09-07 (LOW, findings 392-394): quiet copy names the count line at every surface [0.23ms]
+(pass) settings table fits narrow terminals with details both hidden and visible [7.78ms]
+
+tests/glla-ui-command-audit.test.ts:
+(pass) settings table reopens the tab that was edited [58.08ms]
+(pass) forbidden substring patterns cannot disable configured fallback chains [10.53ms]
+(pass) drafterModel refuses a forbidden primary pin [5.96ms]
+(pass) compactorModel refuses a forbidden primary pin [4.30ms]
+(pass) subagentModelOverrides.scout refuses a forbidden primary pin [5.80ms]
+(pass) editing a role fallback preserves other roles saved while its picker was open [19.55ms]
+(pass) audit health stays available but cleanup is refused on a stale host [6.77ms]
+(pass) tool visibility commands replace conflicting overrides [16.93ms]
+(pass) tool config accepts spaced JSON and refuses empty keys [18.98ms]
+(pass) postaudit refuses a save after the host became stale in its dialog [18.23ms]
+(pass) wipe revalidates its host after the confirmation dialog [54.34ms]
+(pass) tool metadata editor preserves concurrent updates and names its execution limit [28.87ms]
+(pass) compactor picker labels its clear choice as registry plan B [19.96ms]
+
+tests/command-registration-collisions.test.ts:
+(pass) v0.34.55: model — a collided name is suffixed for EVERY registrant; the bare name becomes unowned [1.34ms]
+(pass) v0.34.55: model — within-extension re-registration is last-wins (Map.set), no self-collision [0.04ms]
+(pass) v0.34.138: routing scan follows local imports and keeps winner paths portable [0.72ms]
+(pass) v0.34.55: live rig — the routing table records duplicate-command routing and identifies the winning registration [1396.45ms]
+(pass) v0.35.47: every handled /list and /loop subcommand has a completion entry [1.23ms]
+(pass) every canonical /glla action is discoverable in completions [0.48ms]
+
+ 51 pass
+ 0 fail
+Ran 51 tests across 3 files. [3.87s]
+[run-tests] finished in 4s (exit 0)
