@@ -109,7 +109,11 @@ and the reminder/transcript mismatch. They are not hand-written UI replicas.
   owned verification runs explicitly stopped with SIGTERM when additional
   rendered UI defects required fixes. The runner completed contained cleanup;
   these runs are not claimed as passing gates.
-- `release-check.log`: final frozen-source composite gate — in progress.
+- `release-check.log`: final frozen-source composite gate passed (exit 0):
+  3175 tests passed across 342 files, one environment-gated auto-committer
+  test skipped, zero failures. TypeScript checking, Jiti state binding,
+  offline auditor-extension loading, generated inventory checking, package
+  dry-run and installed-tarball launcher/RPC/skill checks all passed.
 
 ## Boundaries and retained choices
 
@@ -127,5 +131,19 @@ mode. No runtime journal was forced into git, no history was rewritten, and no
 package publication or release tag was performed. The sync daemon owns tracked
 commits. Version metadata, changelog, docs and generated inventory are 0.38.112.
 
-Completion is pending the final composite gate and requirement-by-requirement
-review of its results.
+## Completion review
+
+| Requirement | Result and evidence |
+| --- | --- |
+| 1. Complete surface inventory | Complete: AST callsite inventory and coverage register include custom components, ambient UI, commands, native dialogs and notifications |
+| 2. Settings behavior and readability | Complete: all eight tabs exercised across width/height budgets; search, provenance, details, cancellation and actual editor row/tab continuity verified |
+| 3. Single and multiple pickers | Complete: search, Unicode deletion, disabled entries, caps, selection, order and live resizing verified; actual browse/order frames inspected |
+| 4. Draft review and acceptance | Complete: full long contract reachable, choices retained, keybindings and project consent verified; beginning/end/consent frames inspected |
+| 5. Lifecycle cards and next actions | Complete: 16 durable states rendered; settling, held and paused actions verified; explicit zero and narrow width bounds tested |
+| 6. Commands and fallback behavior | Complete: 144 public-handler views generated; canonical routes, read-only behavior, ownership/stale guards, RPC/headless and approval delivery covered by passing suites |
+| 7. Actual rendered evidence | Complete: 296 dark/light frames at four widths, four inspected contact sheets, short-terminal component tests and documented retained choices |
+| 8. Release verification and metadata | Complete: final composite gate passed; package and both lock versions are 0.38.112, changelog/docs/inventory synchronized, installed packed extension verified |
+
+All eight requirements are satisfied within the GLLA scope. The final release
+check ran against the completed implementation; subsequent changes only finish
+this evidence record. The package is prepared and verified, without publication.
