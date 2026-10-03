@@ -1,3 +1,4 @@
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -52,7 +53,7 @@ test("forbidden substring patterns cannot disable configured fallback chains", a
   const { ctx } = await boot({ mainModelFallbacks: ["provider/backup"], forbiddenModels: [] });
   ctx.ui.customStubMode = true;
   ctx.ui.inputImpl = async () => "provider/,other/model";
-  await handleSettingChoice("forbiddenModels", ctx);
+  await handleSettingChoice("forbiddenModels", ctx as unknown as ExtensionContext);
   assert.deepEqual(loadSettings(ctx.cwd).forbiddenModels, ["other/model"]);
   assert.ok(ctx.ui.matching("policy").length > 0);
 });
@@ -62,7 +63,7 @@ for (const id of ["drafterModel", "compactorModel", "subagentModelOverrides.scou
     const { ctx } = await boot({ forbiddenModels: ["blocked"] });
     ctx.ui.customStubMode = true;
     ctx.ui.inputImpl = async () => "provider/blocked-model";
-    await handleSettingChoice(id, ctx);
+    await handleSettingChoice(id, ctx as unknown as ExtensionContext);
     const settings = loadSettings(ctx.cwd);
     assert.equal(settings.drafterModel, undefined);
     assert.equal(settings.compactorModel, undefined);
@@ -78,7 +79,7 @@ test("editing a role fallback preserves other roles saved while its picker was o
     saveSettings("global", ctx.cwd, { subagentFallbacks: { worker: ["provider/new"] } });
     return "provider/scout";
   };
-  await handleSettingChoice("subagentFallbacks:scout", ctx);
+  await handleSettingChoice("subagentFallbacks:scout", ctx as unknown as ExtensionContext);
   assert.deepEqual(loadSettings(ctx.cwd).subagentFallbacks, { worker: ["provider/new"], scout: ["provider/scout"] });
 });
 
@@ -147,7 +148,7 @@ test("tool metadata editor preserves concurrent updates and names its execution 
     saveSettings("project", ctx.cwd, { toolOverrides: { allow: ["read"], perToolConfig: { other: { enabled: true } } } });
     return ' metadata = {"label": "two words"}';
   };
-  await handleSettingChoice("toolOverrides", ctx);
+  await handleSettingChoice("toolOverrides", ctx as unknown as ExtensionContext);
   assert.deepEqual(loadSettings(ctx.cwd).toolOverrides, { allow: ["read"], perToolConfig: { other: { enabled: true }, bash: { metadata: { label: "two words" } } } });
   assert.ok(ctx.ui.matching("not applied to tool execution").length > 0);
 });
@@ -163,7 +164,7 @@ test("compactor picker labels its clear choice as registry plan B", async () => 
     clearLabel = component.render(140).join("\n");
     return undefined;
   };
-  await handleSettingChoice("compactorModel", ctx);
+  await handleSettingChoice("compactorModel", ctx as unknown as ExtensionContext);
   assert.match(clearLabel ?? "", /registry plan B/);
   assert.doesNotMatch(clearLabel ?? "", /session model.*clear the override/);
 });

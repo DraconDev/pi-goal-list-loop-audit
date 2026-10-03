@@ -1,0 +1,594 @@
+[
+  {
+    "id": "autoResume",
+    "section": "keep-going",
+    "label": "Auto-resume on load",
+    "valueText": "default",
+    "sourceText": "default",
+    "description": "on: resume on session load too · off: never · default: hold on a fresh load, rebind on reload/fork — explicit resume"
+  },
+  {
+    "id": "decisionPopup",
+    "section": "keep-going",
+    "label": "Decision popup",
+    "valueText": "on",
+    "sourceText": "default",
+    "description": "on: decision pauses pop the select() picker · off: widget card only — /goal decide reopens the picker"
+  },
+  {
+    "id": "carryover",
+    "section": "keep-going",
+    "label": "Carryover policy",
+    "valueText": "pause",
+    "sourceText": "default",
+    "description": "new goal over stale paused work — pause: one summary, archive the stale goal, keep list+loop · clear: drop the stale queue too · resume: silent stack"
+  },
+  {
+    "id": "decisionPauseBudget",
+    "section": "keep-going",
+    "label": "Decision pause budget",
+    "valueText": "unset (pause every time)",
+    "sourceText": "default",
+    "description": "max agent-authored decision pauses per goal before auto-default (0 = relentless from the first; unset = pause every time)"
+  },
+  {
+    "id": "autoAcceptDrafts",
+    "section": "keep-going",
+    "label": "Auto-accept drafts",
+    "valueText": "off",
+    "sourceText": "default",
+    "description": "on: goal/loop drafts activate without the Confirm dialog (unattended rigs)"
+  },
+  {
+    "id": "aggressiveMode",
+    "section": "keep-going",
+    "label": "Aggressive mode",
+    "valueText": "on",
+    "sourceText": "default",
+    "description": "ON by default: keep-going defaults (cap 10, stuck 10, wedge off, provider + no-verdict auditor retries, cap→TODOs); autoResume remains explicit global consent; set off for conservative pauses; explicit per-key settings still win"
+  },
+  {
+    "id": "visionAssist",
+    "section": "keep-going",
+    "label": "Vision assist",
+    "valueText": "on",
+    "sourceText": "default",
+    "description": "on: continuation prompts prefer the current model's native vision; confirmed external tools are optional; no vision-only model switch (forbiddenModels gate)"
+  },
+  {
+    "id": "mainAgent",
+    "section": "main-agent",
+    "label": "Current main agent",
+    "valueText": "session model · session thinking",
+    "sourceText": "runtime",
+    "description": "the active pi session agent/model and thinking level — change it with pi's regular model and thinking selectors"
+  },
+  {
+    "id": "mainModelFallbacks",
+    "section": "main-agent",
+    "label": "Fallback models (up to 10)",
+    "valueText": "0/10 · none",
+    "sourceText": "default",
+    "description": "ordered and deselectable: current main agent → fallback 1 → fallback 2…; every recoverable provider failure switches one eligible fallback at a time"
+  },
+  {
+    "id": "forbiddenModels",
+    "section": "keep-going",
+    "label": "Forbidden model patterns",
+    "valueText": "none",
+    "sourceText": "default",
+    "description": "case-insensitive substring patterns matched against provider/id; recovery always skips matches, while the explicit-switch gate may block or ledger them"
+  },
+  {
+    "id": "blockForbiddenModelSwitches",
+    "section": "keep-going",
+    "label": "Block forbidden switches",
+    "valueText": "on",
+    "sourceText": "default",
+    "description": "on: a forbidden selection is reverted to the previous model · off: the switch stands, the violation is still ledgered"
+  },
+  {
+    "id": "mainModelRetryMinutes",
+    "section": "main-agent",
+    "label": "Main recovery base minutes",
+    "valueText": "15",
+    "sourceText": "default",
+    "description": "first retry is eager, later retries use this bounded ladder; an extra :00:30 probe runs after each hour starts; automatic recovery stops after 24h when aggressive mode is OFF — aggressive mode (the default) has no wall-clock expiry, and only a deterministic provider error still stops it"
+  },
+  {
+    "id": "hourlyRetryProbe",
+    "section": "main-agent",
+    "label": "Hourly main recovery probe",
+    "valueText": "on",
+    "sourceText": "default",
+    "description": "adds a probe at :00:30 while any main-model recovery is parked; off disables only this extra ticker, not the configured retry ladder"
+  },
+  {
+    "id": "mainModelFailback",
+    "section": "main-agent",
+    "label": "Primary failback policy",
+    "valueText": "auto",
+    "sourceText": "default",
+    "description": "auto: a healthy fallback periodically tests the preferred primary · sticky: stay on the fallback until manually changed"
+  },
+  {
+    "id": "mainModelPrimaryProbeMinutes",
+    "section": "main-agent",
+    "label": "Primary probe minutes",
+    "valueText": "15",
+    "sourceText": "default",
+    "description": "minutes between preferred-primary failback probes while the fallback is serving"
+  },
+  {
+    "id": "drafterModel",
+    "section": "drafter",
+    "label": "Drafter agent",
+    "valueText": "session model · session thinking",
+    "sourceText": "default",
+    "description": "temporary agent/model used only during /goal, /list, and /loop drafting; after confirmation or interruption the session agent is restored"
+  },
+  {
+    "id": "drafterModelFallbacks",
+    "section": "drafter",
+    "label": "Drafter fallback models (up to 10)",
+    "valueText": "0/10 · session model · session thinking (last resort)",
+    "sourceText": "default",
+    "description": "ordered and deselectable: current drafter → fallback 1 → fallback 2…; every recoverable provider failure switches one eligible fallback at a time"
+  },
+  {
+    "id": "compactionTokenThreshold",
+    "section": "compactor",
+    "label": "Compaction token target",
+    "valueText": "200,000 tokens · next idle boundary",
+    "sourceText": "default",
+    "description": "global context-token target; above it, compact opportunistically between work turns or list items, with no tool or audit running; work resumes afterward"
+  },
+  {
+    "id": "compactorModel",
+    "section": "compactor",
+    "label": "Compactor agent",
+    "valueText": "registry plan B",
+    "sourceText": "default",
+    "description": "emergency handoff-brief model used only when context starvation parks the session; unset → verified free big-context registry plan B (never the stuck session model)"
+  },
+  {
+    "id": "compactorModelFallbacks",
+    "section": "compactor",
+    "label": "Compactor fallback models (up to 10)",
+    "valueText": "0/10 · registry plan B",
+    "sourceText": "default",
+    "description": "ordered and deselectable: compactor primary → fallback 1 → fallback 2… then registry plan B; no session last resort"
+  },
+  {
+    "id": "subagentFallbacks:delegate",
+    "section": "subagents",
+    "label": "delegate fallback agents",
+    "valueText": "none (uses pin or inherits)",
+    "sourceText": "default",
+    "description": "ordered fallback agents; the FIRST eligible provider/model ref is written as the delegate.md override. Empty → falls through to subagentModelOverrides / subagentModelStrategy."
+  },
+  {
+    "id": "subagentFallbacks:oracle",
+    "section": "subagents",
+    "label": "oracle fallback agents",
+    "valueText": "none (uses pin or inherits)",
+    "sourceText": "default",
+    "description": "ordered fallback agents; the FIRST eligible provider/model ref is written as the oracle.md override. Empty → falls through to subagentModelOverrides / subagentModelStrategy."
+  },
+  {
+    "id": "subagentFallbacks:researcher",
+    "section": "subagents",
+    "label": "researcher fallback agents",
+    "valueText": "none (uses pin or inherits)",
+    "sourceText": "default",
+    "description": "ordered fallback agents; the FIRST eligible provider/model ref is written as the researcher.md override. Empty → falls through to subagentModelOverrides / subagentModelStrategy."
+  },
+  {
+    "id": "subagentFallbacks:reviewer",
+    "section": "subagents",
+    "label": "reviewer fallback agents",
+    "valueText": "none (uses pin or inherits)",
+    "sourceText": "default",
+    "description": "ordered fallback agents; the FIRST eligible provider/model ref is written as the reviewer.md override. Empty → falls through to subagentModelOverrides / subagentModelStrategy."
+  },
+  {
+    "id": "subagentFallbacks:scout",
+    "section": "subagents",
+    "label": "scout fallback agents",
+    "valueText": "none (uses pin or inherits)",
+    "sourceText": "default",
+    "description": "ordered fallback agents; the FIRST eligible provider/model ref is written as the scout.md override. Empty → falls through to subagentModelOverrides / subagentModelStrategy."
+  },
+  {
+    "id": "subagentFallbacks:worker",
+    "section": "subagents",
+    "label": "worker fallback agents",
+    "valueText": "none (uses pin or inherits)",
+    "sourceText": "default",
+    "description": "ordered fallback agents; the FIRST eligible provider/model ref is written as the worker.md override. Empty → falls through to subagentModelOverrides / subagentModelStrategy."
+  },
+  {
+    "id": "subagentFallbacks:Designer",
+    "section": "subagents",
+    "label": "Designer fallback agents",
+    "valueText": "none (uses pin or inherits)",
+    "sourceText": "default",
+    "description": "ordered fallback agents; the FIRST eligible provider/model ref is written as the Designer.md override. Empty → falls through to subagentModelOverrides / subagentModelStrategy."
+  },
+  {
+    "id": "auditorModel",
+    "section": "auditor",
+    "label": "Auditor agent",
+    "valueText": "session model · session thinking",
+    "sourceText": "default",
+    "description": "provider/model override for the isolated auditor agent — the fallback chain below runs after this primary; its thinking defaults to the parent session"
+  },
+  {
+    "id": "auditorModelFallbacks",
+    "section": "auditor",
+    "label": "Fallback models (up to 10)",
+    "valueText": "0/10 · session model · session thinking (last resort)",
+    "sourceText": "default",
+    "description": "ordered and deselectable: auditor primary → fallback 1 → fallback 2…; every recoverable auditor failure advances one eligible candidate at a time, then returns to the session model"
+  },
+  {
+    "id": "auditorAllowedExtensions",
+    "section": "auditor",
+    "label": "Allowed extensions",
+    "valueText": "none (fully isolated, default)",
+    "sourceText": "default",
+    "description": "pi extension specs the DETACHED auditor may load (e.g. npm:pi-webaio) so extension-provided model providers can run — tools stay restricted to read/grep/find/ls/bash; empty = the default extension-less auditor"
+  },
+  {
+    "id": "auditorMirrorSessionExtensions",
+    "section": "auditor",
+    "label": "Mirror session extensions",
+    "valueText": "on",
+    "sourceText": "default",
+    "description": "on: the detached auditor also loads the session's own packages so a session-inherited auditor ref resolves in the worker (GLLA itself is never mirrored) — off: only Allowed extensions above, possibly fully isolated"
+  },
+  {
+    "id": "auditorSameSessionSwap",
+    "section": "auditor",
+    "label": "Same-model swap",
+    "valueText": "on",
+    "sourceText": "default",
+    "description": "when the pinned auditor IS the session model, walk the ordered fallback chain (verifier ≠ executor) — off = same-model audits stand"
+  },
+  {
+    "id": "auditorSilent",
+    "section": "auditor",
+    "label": "Silent auditor stream",
+    "valueText": "on",
+    "sourceText": "default",
+    "description": "on: the auditor's report renders final-only — the widget shows the text at the verdict, never word-by-word · off: live per-token tail"
+  },
+  {
+    "id": "auditorProgressSignals",
+    "section": "auditor",
+    "label": "Auditor progress signals",
+    "valueText": "on",
+    "sourceText": "default",
+    "description": "on: during silent audits the card shows a phase label (reading source… / writing report…) and a report byte-counter so a long pass shows movement · off: plain timer-only card"
+  },
+  {
+    "id": "auditorToolTimeoutMs",
+    "section": "auditor",
+    "label": "Auditor tool timeout",
+    "valueText": "? base · ×2 per retry · cap 4×",
+    "sourceText": "default",
+    "description": "base budget for ONE allowed auditor tool call — every failed retried attempt doubles the effective budget (cap 4× base); raise for slow local models or long bounded verification commands"
+  },
+  {
+    "id": "auditorStallMs",
+    "section": "auditor",
+    "label": "Auditor stall budget",
+    "valueText": "? base · ×2 per retry · cap 4×",
+    "sourceText": "default",
+    "description": "base silence/no-progress budget — no new tool call or output for this long aborts the audit; doubles per retried attempt (cap 4× base); an actively generating model never counts as silent"
+  },
+  {
+    "id": "auditJobRetentionMs",
+    "section": "auditor",
+    "label": "Audit job retention",
+    "valueText": "? dead-dir window",
+    "sourceText": "default",
+    "description": "how long a finished audit's job dir (session log, result) survives after the worker dies, before `/glla audits health cleanup` reaps it — raise it to keep finished audit logs readable longer; 0 reaps immediately"
+  },
+  {
+    "id": "auditSpotCheckRate",
+    "section": "auditor",
+    "label": "Audit spot-check rate",
+    "valueText": "0.1 of light audits run full",
+    "sourceText": "default",
+    "description": "fraction of light-tier audits silently escalated to full (risk-tiered auditing spot-checks) — 0 disables; tune from the spot flip rate in /glla stats challenges"
+  },
+  {
+    "id": "auditorInspection",
+    "section": "auditor",
+    "label": "Auditor inspection session",
+    "valueText": "off",
+    "sourceText": "default",
+    "description": "on: the auditor's pi runs as a normal persistent session (--session <jobDir>/session.jsonl) you can tail -f live or resume after the audit · off: the original --no-session spawn (default)"
+  },
+  {
+    "id": "auditorStrictChallenge",
+    "section": "auditor",
+    "label": "Require full audit challenge",
+    "valueText": "off",
+    "sourceText": "default",
+    "description": "on: full-tier approvals require a successful falsification pass, including rework rounds; a failed challenge leaves no verdict · off: preserve round-one approval on challenge failure (default)"
+  },
+  {
+    "id": "auditCap",
+    "section": "auditor",
+    "label": "Audit cap",
+    "valueText": "10",
+    "sourceText": "default",
+    "description": "pause the goal after N consecutive disapprovals (0 = unlimited; unset = 10 in aggressive mode, otherwise 5)"
+  },
+  {
+    "id": "auditCapHard",
+    "section": "auditor",
+    "label": "Audit hard cap",
+    "valueText": "8",
+    "sourceText": "default",
+    "description": "hard ceiling on consecutive disapprovals — pauses with a decision even in aggressive mode (0 = unlimited; unset = 8)"
+  },
+  {
+    "id": "mechanicalLoadScale",
+    "section": "auditor",
+    "label": "Mechanical load scaling",
+    "valueText": "on",
+    "sourceText": "default",
+    "description": "on: mechanical gate budgets scale with host load up to 2× (default) · off: fixed budgets"
+  },
+  {
+    "id": "auditFeedbackChars",
+    "section": "auditor",
+    "label": "Audit feedback chars",
+    "valueText": "full report",
+    "sourceText": "default",
+    "description": "cap the executor-visible disapproval report (0 = full report)"
+  },
+  {
+    "id": "wedgeAlertMinutes",
+    "section": "stall-brakes",
+    "label": "Wedge alert minutes",
+    "valueText": "0",
+    "sourceText": "default",
+    "description": "hung-command alert while the session is busy (0 = off; unset = 0 in aggressive mode, otherwise 30)"
+  },
+  {
+    "id": "subagentHangEscalationMinutes",
+    "section": "stall-brakes",
+    "label": "Subagent hang action",
+    "valueText": "30m",
+    "sourceText": "default",
+    "description": "request one child-specific abort after confirmed no progress (0 = warning only)"
+  },
+  {
+    "id": "stuckMaxInterventions",
+    "section": "stall-brakes",
+    "label": "Stuck max interventions",
+    "valueText": "10",
+    "sourceText": "default",
+    "description": "consecutive stuck interventions before a loop stops (unset = 10 in aggressive mode, otherwise 5)"
+  },
+  {
+    "id": "stallEscalationRefires",
+    "section": "stall-brakes",
+    "label": "Stall escalation refires",
+    "valueText": "5",
+    "sourceText": "default",
+    "description": "heartbeat refires with no turn before the goal pauses / loop stops (0 = never)"
+  },
+  {
+    "id": "zombieRetryMaxAttempts",
+    "section": "stall-brakes",
+    "label": "Zero-stream retries",
+    "valueText": "3",
+    "sourceText": "default",
+    "description": "automatic retries after a busy zero-stream abort (0 = manual only; max 10)"
+  },
+  {
+    "id": "stallShortWords",
+    "section": "stall-brakes",
+    "label": "Stall short words",
+    "valueText": "15",
+    "sourceText": "default",
+    "description": "turns with no tools AND fewer words than this count as a nudge"
+  },
+  {
+    "id": "stallSimilarityThreshold",
+    "section": "stall-brakes",
+    "label": "Stall similarity threshold",
+    "valueText": "0.6",
+    "sourceText": "default",
+    "description": "no-tool turns whose text is > this similar to the prior turn count as a nudge (0–1)"
+  },
+  {
+    "id": "subagentModelStrategy",
+    "section": "subagents",
+    "label": "Subagent model strategy",
+    "valueText": "inherit-parent",
+    "sourceText": "default",
+    "description": "inherit-parent shares your session model; agent-default uses upstream defaults; Designer remains available as a glla role"
+  },
+  {
+    "id": "subagentDisplayRichness",
+    "section": "subagents",
+    "label": "Subagent display richness",
+    "valueText": "quiet",
+    "sourceText": "default",
+    "description": "quiet shows troubled workers only + the count line (default — healthy fan-out lives on the fleet panel); rich shows all worker rows; compact shows the count line only — HUNG is never silent"
+  },
+  {
+    "id": "subagentModelOverrides.delegate",
+    "section": "subagents",
+    "label": "Subagent delegate pin",
+    "valueText": "follows strategy",
+    "sourceText": "default",
+    "description": "provider/model pin; always wins over strategy"
+  },
+  {
+    "id": "subagentModelOverrides.oracle",
+    "section": "subagents",
+    "label": "Subagent oracle pin",
+    "valueText": "follows strategy",
+    "sourceText": "default",
+    "description": "provider/model pin; always wins over strategy"
+  },
+  {
+    "id": "subagentModelOverrides.researcher",
+    "section": "subagents",
+    "label": "Subagent researcher pin",
+    "valueText": "follows strategy",
+    "sourceText": "default",
+    "description": "provider/model pin; always wins over strategy"
+  },
+  {
+    "id": "subagentModelOverrides.reviewer",
+    "section": "subagents",
+    "label": "Subagent reviewer pin",
+    "valueText": "follows strategy",
+    "sourceText": "default",
+    "description": "provider/model pin; always wins over strategy"
+  },
+  {
+    "id": "subagentModelOverrides.scout",
+    "section": "subagents",
+    "label": "Subagent scout pin",
+    "valueText": "follows strategy",
+    "sourceText": "default",
+    "description": "provider/model pin; always wins over strategy"
+  },
+  {
+    "id": "subagentModelOverrides.worker",
+    "section": "subagents",
+    "label": "Subagent worker pin",
+    "valueText": "follows strategy",
+    "sourceText": "default",
+    "description": "provider/model pin; always wins over strategy"
+  },
+  {
+    "id": "subagentModelOverrides.Designer",
+    "section": "subagents",
+    "label": "Subagent Designer pin",
+    "valueText": "follows strategy",
+    "sourceText": "default",
+    "description": "provider/model pin; always wins over strategy"
+  },
+  {
+    "id": "subagentThinkingOverrides.delegate",
+    "section": "subagents",
+    "label": "Subagent delegate thinking",
+    "valueText": "inherits session",
+    "sourceText": "default",
+    "description": "thinking-level pin for this subagent type; unset inherits the session level"
+  },
+  {
+    "id": "subagentThinkingOverrides.oracle",
+    "section": "subagents",
+    "label": "Subagent oracle thinking",
+    "valueText": "inherits session",
+    "sourceText": "default",
+    "description": "thinking-level pin for this subagent type; unset inherits the session level"
+  },
+  {
+    "id": "subagentThinkingOverrides.researcher",
+    "section": "subagents",
+    "label": "Subagent researcher thinking",
+    "valueText": "inherits session",
+    "sourceText": "default",
+    "description": "thinking-level pin for this subagent type; unset inherits the session level"
+  },
+  {
+    "id": "subagentThinkingOverrides.reviewer",
+    "section": "subagents",
+    "label": "Subagent reviewer thinking",
+    "valueText": "inherits session",
+    "sourceText": "default",
+    "description": "thinking-level pin for this subagent type; unset inherits the session level"
+  },
+  {
+    "id": "subagentThinkingOverrides.scout",
+    "section": "subagents",
+    "label": "Subagent scout thinking",
+    "valueText": "inherits session",
+    "sourceText": "default",
+    "description": "thinking-level pin for this subagent type; unset inherits the session level"
+  },
+  {
+    "id": "subagentThinkingOverrides.worker",
+    "section": "subagents",
+    "label": "Subagent worker thinking",
+    "valueText": "inherits session",
+    "sourceText": "default",
+    "description": "thinking-level pin for this subagent type; unset inherits the session level"
+  },
+  {
+    "id": "subagentThinkingOverrides.Designer",
+    "section": "subagents",
+    "label": "Subagent Designer thinking",
+    "valueText": "inherits session",
+    "sourceText": "default",
+    "description": "thinking-level pin for this subagent type; unset inherits the session level"
+  },
+  {
+    "id": "subagentResolved",
+    "section": "subagents",
+    "label": "Effective resolution",
+    "valueText": "session model",
+    "sourceText": "runtime",
+    "description": "effective delegate / oracle / researcher / reviewer / scout / worker / Designer model given current settings"
+  },
+  {
+    "id": "stateRoot",
+    "section": "other",
+    "label": "State root",
+    "valueText": "workingDir",
+    "sourceText": "default",
+    "description": "durable glla state location — workingDir: <cwd>/.pi-glla · sessionDir: top-level Pi session directory (global-only; old root untouched)"
+  },
+  {
+    "id": "notifyCmd",
+    "section": "other",
+    "label": "Notify command",
+    "valueText": "auto",
+    "sourceText": "default",
+    "description": "custom command ($1 = message) · unset = auto-detect notify-send/osascript · 'off' = silent"
+  },
+  {
+    "id": "tokenLimit",
+    "section": "other",
+    "label": "Token limit per goal",
+    "valueText": "off",
+    "sourceText": "default",
+    "description": "per-goal token budget; pause when exceeded (0 = off)"
+  },
+  {
+    "id": "toolOverrides",
+    "section": "other",
+    "label": "Tool overrides",
+    "valueText": "none",
+    "sourceText": "default",
+    "description": "project tool visibility overrides; config values are stored only and are not applied to tool execution; Enter opens the editor"
+  },
+  {
+    "id": "postaudit",
+    "section": "other",
+    "label": "Postaudit",
+    "valueText": "open sub-menu",
+    "sourceText": "—",
+    "description": "post-completion follow-up enqueuer: mode, triggers, cascade, caps (postaudit / reviewer)"
+  },
+  {
+    "id": "contextCheckpointProjection",
+    "section": "other",
+    "label": "Context checkpoint projection",
+    "valueText": "off",
+    "sourceText": "default",
+    "description": "off: leave the transcript alone so the provider prefix-cache holds (default) · on: legacy per-turn splice of a bounded continuation checkpoint"
+  }
+]
