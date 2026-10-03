@@ -246,8 +246,9 @@ test("v0.34.52: the standard recovery — a fresh session reopens the settings U
 
 test("v0.35.72: source — settings rechecks admission after the menu and before saves", () => {
   assert.match(SETTINGS_UI, /if \(typeof probe === "function" && probe\(ctx, "settings edit"\)\) return;/);
-  assert.match(SETTINGS_UI, /settingsEditContext = ctx;/);
-  assert.match(SETTINGS_UI, /probe\(settingsEditContext, "settings save"\)/);
+  assert.match(SETTINGS_UI, /function saveSettings\(scope: "global" \| "project", ctx: ExtensionContext,/);
+  assert.match(SETTINGS_UI, /probe\(ctx, "settings save"\)/);
+  assert.doesNotMatch(SETTINGS_UI, /settingsEditContext/, "each save carries its originating editor context");
 });
 
 test("v0.34.52: source — cmdSettings captures the entry probe and gates the settings entry + mutating actions", () => {

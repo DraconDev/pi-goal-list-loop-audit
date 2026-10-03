@@ -37,7 +37,10 @@ test("S9 (continuation route): overdue agent wait resumes exactly once — park-
     const restored = readState(cwd).goal;
     assert.equal(restored?.status, "active");
     assert.equal(restored?.pauseResumeAt, undefined);
-    assert.equal(restored?.autoResumedEvent, "overdue wait resumed (agent wait — test cooldown)");
+    const resumed = events(cwd).find(e => e.type === "state" && e.value?.goal?.autoResumedEvent);
+    assert.equal(resumed?.value.goal.autoResumedEvent, "overdue wait resumed (agent wait — test cooldown)", "recovery stamp became durable before dispatch");
+    assert.equal(restored?.autoResumedEvent, undefined, "accepted continuation consumes the one-shot stamp");
+    assert.equal(events(cwd).filter(e => e.type === "recovery_notice_delivered").length, 1, "the recovery notice was delivered once");
     assert.equal(events(cwd).filter(e => e.type === "wait_pause_overdue_resume").length, 1);
     __testOnlyHeartbeatTick(); await tick(120);
     assert.equal(events(cwd).filter(e => e.type === "wait_pause_overdue_resume").length, 1, "latched: the same wait never resumes twice");
