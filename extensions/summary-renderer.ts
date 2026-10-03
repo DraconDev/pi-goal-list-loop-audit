@@ -22,6 +22,15 @@ function labelTone(text: string): SummaryTone | undefined {
   return undefined;
 }
 
+export function summaryVerificationTone(text: string): SummaryTone {
+  const counts = [...text.matchAll(/\b(\d+)\s+(?:failed|failures|errors)\b/gi)];
+  if (counts.some(match => Number(match[1]) > 0) || /^\s*(?:FAIL|FAILED|ERROR)\b/im.test(text)) return "error";
+  if (/\b(?:skipped|not run|inconclusive)\b/i.test(text) || /\b[1-9]\d*\s+reported\b/i.test(text)) return "warning";
+  if (/\b(?:reported|not recorded|unknown)\b/i.test(text)) return "dim";
+  if (/\b\d+\s+passed\b/i.test(text) || /^\s*PASS\b/im.test(text)) return "success";
+  return "text";
+}
+
 /** Split only structural section headings, never heading-like code samples. */
 export function summaryMarkdownBlocks(content: string): string[] {
   const safe = stripTerminalSequences(content).replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, " ");
@@ -64,8 +73,11 @@ export function registerSummaryRenderer(pi: Pick<ExtensionAPI, "registerMessageR
     for (const block of summaryMarkdownBlocks(message.content)) {
       const heading = block.split("\n").find(line => /^#{2,4}\s/.test(line)) ?? "";
       const tone = summaryHeadingTone(heading);
+      const bodyTone = /^#+\s+Verification\b/i.test(heading)
+        ? summaryVerificationTone(block.split("\n").slice(1).join("\n"))
+        : tone === "dim" ? "dim" : "text";
       box.addChild(new Markdown(block, 0, 0, summaryTheme(theme, tone), {
-        color: text => theme.fg(tone === "dim" ? "dim" : "text", text),
+        color: text => theme.fg(bodyTone, text),
       }));
     }
     return {
