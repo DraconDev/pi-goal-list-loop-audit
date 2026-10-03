@@ -475,6 +475,11 @@ async function cmdStatus(ctx: ExtensionContext): Promise<void> {
     lines.push(`Completion audit: ${formatStoredAuditLifecycle(g, { inFlight: flags.completionAuditInFlight, queued: flags.latestAuditProgress?.label === "queued" })}`);
   }
   if (g.pauseReason) lines.push(`Paused: ${sanitizeProviderDisplayText(g.pauseReason)}`);
+  if (g.status === "paused" && !g.pendingCompletion) {
+    if (g.pauseSuggestedAction) lines.push(`Next: ${sanitizeProviderDisplayText(g.pauseSuggestedAction)}`);
+    else if (g.pauseKind === "decision" && g.pauseOptions?.length) lines.push(`Choose: ${activeGoalSurfaceCommand("decide")}`);
+    else lines.push(`Resume: ${activeGoalSurfaceCommand("resume")}`);
+  }
   // v0.38.89: the timeline is the status card's slow twin — one pointer.
   lines.push("Trail: /goal timeline");
   ctx.ui.notify(lines.join("\n"), "info");
@@ -3079,7 +3084,9 @@ function formatStoredAuditLifecycle(
     resumeCommand: activeGoalSurfaceCommand("resume"),
   });
   if (!lifecycle) return "no stored claim";
-  if (opts.compact) return `${lifecycle.label}${lifecycle.stale ? " · no progress" : ""}`;
+  if (opts.compact) return lifecycle.phase === "settling"
+    ? `${lifecycle.label} · approved; archive owed`
+    : `${lifecycle.label}${lifecycle.stale ? " · no progress" : ""}`;
   // A claim this process is actively driving is described by its phase plus
   // the process fact; a parked one names its unblock action.
   if (lifecycle.phase === "starting" && !opts.inFlight) {

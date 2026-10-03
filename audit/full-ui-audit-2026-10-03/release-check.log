@@ -3168,3 +3168,74 @@ tests/stale-event-context.test.ts:
 (pass) late agent_settled events with stale contexts are ignored safely [79.96ms]
 
 tests/durable-choice-ledger.test.ts:
+(pass) durable-vs-defer judgment is an explicit bounded ledger choice [83.21ms]
+(pass) durable-choice payload compacts model-authored rationale [0.06ms]
+
+tests/session-identity-refusal.test.ts:
+(pass) 195237: same session id on a new manager object is the owner, not a subagent [310.60ms]
+(pass) v0.38.92: a dethroned main is told about the lost root, never called a subagent [245.37ms]
+(pass) 195237: a genuinely different session is still refused [251.03ms]
+
+tests/loop-error-exemption.test.ts:
+(pass) v0.29.19: provider-error turns are NOT iterations — no measure, no stall, no stuck; loop stays active [710.32ms]
+(pass) v0.35.x: repeated in-band provider tool output parks recovery without loop stuck accounting [1185.46ms]
+(pass) explicit in-band prompt-policy refusal stops a loop on its first pane [311.93ms]
+(pass) v0.29.19: a real turn after errors clears the streak and measures normally [559.36ms]
+(pass) v0.35.x: recoverable provider failures use the same durable recovery envelope [0.18ms]
+(pass) v0.34.31: extended quota errors enter durable main-model recovery [1389.44ms]
+(pass) v0.34.26: loop output-token exhaustion persists and notifies the compact recap [1591.56ms]
+(pass) v0.29.19: 3 consecutive user aborts stop the loop — user aborts mean STOP [482.34ms]
+(pass) v0.29.19: audit plateau with OPEN findings stands down (reprieve), then stops honestly when reprieves run out [2452.63ms]
+(pass) v0.29.20: a plain plateau stop is resumable (pre-gate false plateaus recover) [453.11ms]
+(pass) v0.29.19: audit plateau with ZERO open findings stops normally — the well is dry [258.54ms]
+
+tests/list-subtasks.test.ts:
+(pass) v0.35.72: visible hierarchical positions map to flat queue indexes [72.18ms]
+(pass) v0.34.81: SUBTASK_MARKER is line-start + case-insensitive [0.51ms]
+(pass) v0.34.81: extractSubtaskParent — no marker → undefined parent [0.19ms]
+(pass) v0.34.81: extractSubtaskParent — em-dash splits parent/child [0.12ms]
+(pass) v0.34.81: extractSubtaskParent — en-dash and hyphen-separator both work [0.07ms]
+(pass) v0.34.81: extractSubtaskParent — hyphen WITHOUT spaces does NOT split [0.04ms]
+(pass) v0.34.81: extractSubtaskParent — no separator captures parent only, empty child [0.03ms]
+(pass) v0.34.81: extractSubtaskParent — multi-line child objective survives marker strip [0.32ms]
+(pass) v0.34.81: parseListItemDeclaration — child objective keeps its own Parallel + Done when [0.30ms]
+(pass) v0.34.81: parseListItemDeclaration — no marker means parentObjective is undefined [0.15ms]
+(pass) v0.34.81: parentId round-trips through writeQueueItemFile → readQueueFromDisk [2.57ms]
+(pass) v0.34.81: readQueueFromDisk ignores malformed parentId (non-string) [0.65ms]
+(pass) v0.34.81: wiring — parse in core, resolve/refuse/cascade in goal.ts [9.52ms]
+(pass) v0.34.81 (behavioral): list_add with a subtask binds parentId to the matching queue item [363.07ms]
+(pass) v0.34.81 (behavioral): unresolved parent refuses that child, other items still land [368.19ms]
+(pass) v0.34.81 (behavioral): explicit pick on a group refuses loudly (no silent jump) [697.72ms]
+(pass) v0.34.81 (behavioral): auto-advance skips a head group and lands on its first open child [312.19ms]
+(pass) audit-2026-09-06: auto-advance head-group skip is ledgered, not silent [381.82ms]
+(pass) v0.38.104: list_activate accepts the dotted child label the queue prints [280.25ms]
+(pass) v0.38.104 (schema pin): list_activate's `n` accepts the child-label string form [25.30ms]
+(pass) C4 (behavioral): /list remove on a group cascades to its queued children [523.91ms]
+(pass) C4 (behavioral): /list remove on a group with a live child is refused [506.21ms]
+
+tests/repair-source-consume-durability.test.ts:
+(pass) failed repair-source deletion restores the durable repair link [148.04ms]
+
+tests/loop-refine-transaction.test.ts:
+(pass) failed spec refinement leaves loop state unchanged [139.77ms]
+
+tests/auditor-ladder-discipline.test.ts:
+(pass) v0.38.103 nothing configured: session model, and NO ladder to exhaust [16.03ms]
+(pass) v0.38.103 an explicit auditor is tried FIRST and the session model is the last resort [1.86ms]
+(pass) v0.38.103 a configured auditor with no fallbacks still keeps the session model reachable [0.62ms]
+(pass) v0.38.103 an unavailable primary escalates immediately and still ends at the session model [2.26ms]
+(pass) v0.38.103 same-session-swap does not change the ordering contract [179.19ms]
+(pass) v0.38.103 an auditor pinned to the session model is the session model, with no invented ladder [1.06ms]
+(pass) v0.38.103 with no session model and nothing configured, the error stays actionable [0.57ms]
+(pass) v0.38.103 a mechanical fast-fail verdict is not an auditor round [0.12ms]
+(pass) v0.38.103 the streak passes THROUGH a mechanical gate rather than stopping [0.04ms]
+(pass) v0.38.103 an approval still ends the comparable streak [0.03ms]
+(pass) v0.38.103 infrastructure entries stay transparent [0.04ms]
+(pass) v0.38.103 a grader fallback RE-BASELINES the streak instead of pinning [0.09ms]
+(pass) v0.38.103 the challenge-round limit is a small, finite number [0.10ms]
+(pass) v0.38.103 streak counting is what the challenge gate reads [0.05ms]
+(pass) ladder tests never write to the repo ledger: no ctx cwd points at process.cwd() [4.18ms]
+
+tests/mid-objective-park-refusal.test.ts:
+(pass) 200751-shape: blocked self-park while the brake retry is armed is refused, goal stays active [617.41ms]
+(pass) kind error and kind-unset parks are refused while armed [391.20ms]

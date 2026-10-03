@@ -3015,7 +3015,7 @@ test("auto-accept escape hatch: ALWAYS choice persists project autoAcceptDrafts 
   await pi.fire("message_start", { message: { role: "user" } }, ctx); // floor satisfied
   let selectTitle = "";
   ctx.ui.customImpl = async () => {
-    return "Yes — and always auto-accept drafts (sets autoAcceptDrafts for this project)";
+    return "Yes — always auto-accept drafts for this project";
   };
   const res = await pi.runTool("propose_goal_draft", { objective: "hatch objective — done when pinned", verificationContract: "pinned" }, ctx);
   ctx.ui.customImpl = undefined; // cleanup BEFORE asserts
@@ -3053,7 +3053,7 @@ test("source pin: all five draft-class dialogs route through confirmDraft with t
   for (const s of sites) assert.ok(GOAL_SRC.includes(s), `dialog exists: ${s}`);
   const callsites = GOAL_SRC.split("confirmDraft(").length - 1;
   assert.ok(callsites >= 6, `helper + 5 call sites (got ${callsites})`);
-  assert.match(GOAL_SRC, /Yes — and always auto-accept drafts \(sets autoAcceptDrafts for this project\)/);
+  assert.match(GOAL_SRC, /Yes — always auto-accept drafts for this project/);
   assert.match(GOAL_SRC, /saveSettings\("project", ctx\.cwd, \{ autoAcceptDrafts: true \}\)/);
   assert.match(GOAL_SRC, /if \(isStaleApiError\(err\)\) return "stale";/, "stale fallback preserved inside the helper");
 });

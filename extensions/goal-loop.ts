@@ -18,6 +18,7 @@ import {
   archivedGoalPath,
   clearLoadHold,
   formatMainModelRecoveryStatus,
+  sanitizeDisplayText,
   isStaleApiError,
   scanLedgerRecords,
   nowIso,
@@ -1380,8 +1381,8 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       return;
     }
     const lines = [
-      `Loop: ${loop.active ? "active" : "stopped"} — ${displaySlice(loop.target, 80)}`, 
-      `Metric: ${loop.measureCmd ? `${loop.measureCmd} (${loop.direction})` : "none — metricless spec loop (no plateau)"}`,
+      `Loop: ${loop.active ? "active" : isLifecycleHeldLoopReason(loop.stopReason) ? "held" : "stopped"} — ${displaySlice(loop.target, 80)}`, 
+      `Metric: ${loop.measureCmd ? `${sanitizeDisplayText(loop.measureCmd)} (${loop.direction})` : "none — metricless spec loop (no plateau)"}`,
       `Iteration ${loop.iteration}/${loop.maxIterations > 0 ? loop.maxIterations : "∞"} · best ${loop.bestValue ?? "n/a"} · last ${loop.lastValue ?? "n/a"} · stall ${loop.stallCount}/${loop.plateauWindow}`,
     ];
     const bounds: string[] = [];
@@ -1394,7 +1395,8 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       lines.push(`Cadence: ≥ ${Math.ceil(loop.minimumIterationIntervalMs / 1_000)}s between iterations${nextDelay > 0 ? ` · next in ${Math.ceil(nextDelay / 1_000)}s` : " · ready"}`);
     }
     if (loop.refinements?.length) lines.push(`Spec refined ${loop.refinements.length}× (latest: iteration ${loop.refinements[loop.refinements.length - 1]!.iteration})`);
-    if (loop.stopReason) lines.push(`Stopped: ${loop.stopReason}`);
+    if (loop.stopReason) lines.push(`${isLifecycleHeldLoopReason(loop.stopReason) ? "Held" : "Stopped"}: ${sanitizeDisplayText(loop.stopReason)}`);
+    if (!loop.active && RESUMABLE_STOP(loop.stopReason)) lines.push("Resume: /loop resume continues the saved loop; /loop stop drops it.");
     if (!loop.active && loop.completionSummary) {
       // User-facing status is a change story, not a gate/test transcript.
       // The durable loop.completionSummary remains available in the archive

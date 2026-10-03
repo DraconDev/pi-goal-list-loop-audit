@@ -18,6 +18,9 @@
 - Settings, picker labels and draft Markdown strip untrusted terminal controls.
   Explicit zero-width cards/status rows are bounded. Settling audit cards name
   the approved archive owed and the command that finishes settlement.
+- Held loop status names its resume action; paused goal status includes the
+  saved next step. Compact audit status distinguishes archive debt from a
+  silent worker.
 
 ## 0.38.111 — per-tool execution options (2026-10-03)
 

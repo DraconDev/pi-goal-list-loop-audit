@@ -1,0 +1,41 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/goal-timeline.test.ts:
+(pass) timeline: routes as a goal subcommand with optional count [2.50ms]
+(pass) timeline: merges ledger events and verdicts in time order, humanized [1.47ms]
+(pass) timeline: unknown types render compactly, noise and foreign goals excluded [0.29ms]
+(pass) timeline: honors the limit with a truncation note [0.18ms]
+(pass) timeline: next action derives from live state [1.40ms]
+(pass) timeline: /goal timeline renders the live goal end to end [197.08ms]
+
+tests/ui-command-view-audit.test.ts:
+(pass) held loop status preserves its meaning and names the actual resume command [59.43ms]
+(pass) compact settling status reports archive debt instead of worker silence [6.99ms]
+(pass) paused goal status includes its saved next action without inventing one [16.89ms]
+
+tests/audit-lifecycle-surfaces.test.ts:
+(pass) durable: an ordinary complete_goal records phase running + lastActivityAt before the verdict [5808.12ms]
+(pass) durable phase beats a worker-complete snapshot on the widget card and the status line [1.06ms]
+(pass) a live worker still refines a running claim (the HUD stays the richer truth) [0.21ms]
+(pass) durable phase with no live worker says so, and names the durable age [0.15ms]
+(pass) the durable projection is the single source for all three surfaces [0.14ms]
+(pass) a paused goal that still owes a settlement names it on card and status line [0.69ms]
+(pass) a paused parked claim names recovery-needed on card and status line [0.22ms]
+(pass) a list item names its own resume command, never /goal resume [0.83ms]
+
+tests/glla-status-ux.test.ts:
+(pass) v0.35.15: auditing footer carries a distinct phase glyph AND an activity meter element for every auditor phase [6.98ms]
+(pass) v0.35.15: activity meter drains as worker silence grows (full at fresh, empty past the quiet threshold) [0.18ms]
+(pass) v0.35.15: ⏸ supervisor chip leads the footer in every lifecycle branch when paused [0.56ms]
+(pass) v0.35.15: a recently ended quiet stretch shows 'silent Xm then resumed' in the widget; stale stretches stay hidden [0.77ms]
+(pass) v0.35.15: quiet watcher notifies EXACTLY ONCE on entering the quiet phase, records the stretch on resume [35.99ms]
+(pass) v0.35.15: quiet watcher stays silent while the supervisor is paused (it IS automatic machinery) [0.58ms]
+(pass) v0.35.15: every automatic dispatch point gates on supervisorPaused [277.28ms]
+(pass) v0.35.15: /glla pause persists a durable flag, leaves the active goal untouched, and survives a disk reload [627.70ms]
+(pass) v0.35.15: /glla resume clears the freeze, reports the frozen duration, and never lies 'Nothing to resume' [357.27ms]
+(pass) v0.38.104: the working-card tool argument is cut cell-aware, never mid-surrogate [3.34ms]
+
+ 27 pass
+ 0 fail
+Ran 27 tests across 4 files. [9.63s]
