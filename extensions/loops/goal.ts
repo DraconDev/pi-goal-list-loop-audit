@@ -19,6 +19,7 @@ import "./goal-list-queue.js";
 import "./goal-tools.js";
 import "./goal-settings-ui.js";
 import { registerActionReminderRenderer } from "../action-reminder.js";
+import { registerSummaryRenderer } from "../summary-renderer.js";
 import { abortZombieRun, enqueueFaultRepairTask, registerGoalRuntime, resetLengthExhaustionEpisodes, __testOnlyResetLengthExhaustionEpisodes, __testOnlyResetZombieAutoRetry, __testOnlyResetUnsupervisedErrorRetry } from "./goal-activation.js";
 // v0.38.88: members of the __testOnlyResetProcessState composite.
 import { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags, __testOnlyResetOwnershipRecheck } from "./goal-session.js";
@@ -471,5 +472,6 @@ export default function (pi: ExtensionAPI): void {
   // Registration must not claim the shared host API or start session timers;
   // the admitted host session_start below owns both lifecycle resources.
   registerActionReminderRenderer(pi);
+  registerSummaryRenderer(pi);
   registerGoalRuntime(pi);
 }
