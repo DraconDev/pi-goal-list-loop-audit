@@ -3795,3 +3795,53 @@ tests/list-draft-handoff.test.ts:
 (pass) stated next dependent question is a legal drafting end: no correction [2884.25ms]
 (pass) short ack without a question is not commentary: no correction [2823.09ms]
 (pass) tool-unavailable fallback: the correction directs prose asking [0.36ms]
+(pass) confirmation gate untouched: correction never earns a proposal [2819.86ms]
+
+tests/glla-update-check.test.ts:
+(pass) compareVersions orders semver-ish strings and shrugs at garbage [0.65ms]
+(pass) staleUpdateNudge fires only when the cache proves the registry is ahead [0.09ms]
+(pass) buildVersionTail always names the running version, nudges only when stale [0.06ms]
+(pass) readUpdateCheck returns null for missing, malformed, and future-dated caches [0.59ms]
+(pass) refreshUpdateCheck skips spawn while the cache is within TTL [0.25ms]
+(pass) refreshUpdateCheck shells npm view when stale and caches the latest [0.48ms]
+(pass) refreshUpdateCheck never throws and never writes on registry failure [0.39ms]
+(pass) async spawn error is swallowed, never crashes, never writes [0.23ms]
+(pass) non-version npm stdout never poisons the sidecar [0.22ms]
+(pass) future-dated cache suppresses the spawn instead of causing one per contact [0.20ms]
+
+tests/revision-counter.test.ts:
+(pass) bumpGoalRevision increments revision by exactly 1 [0.76ms]
+(pass) bumpGoalRevision treats undefined revision as 0 [0.04ms]
+(pass) captureGoalRevision returns null for null goal [0.03ms]
+(pass) captureGoalRevision tokens match by value, not identity [0.09ms]
+(pass) isGoalRevisionCurrent: matches when revision is unchanged [0.03ms]
+(pass) isGoalRevisionCurrent: refuses when revision bumped [0.06ms]
+(pass) isGoalRevisionCurrent: refuses when goal replaced [0.04ms]
+(pass) isGoalRevisionCurrent: refuses when current goal is null [0.02ms]
+(pass) isGoalRevisionCurrent: null token passes through (legacy compat) [0.02ms]
+(pass) end-to-end: capture → mutate → refuse [0.11ms]
+(pass) GoalRevisionToken shape carries only goalId+revision [0.04ms]
+
+tests/model-selector-parity.test.ts:
+[run-tests] progress: 570s elapsed · 0s since last output · 1414 KiB of suite output
+(pass) model selector parity — fallback set and ordering > subagent-like raw chains are normalized like main (cap 10, case-insensitive dedup, order retained) [0.27ms]
+(pass) model selector parity — fallback set and ordering > selectors share fallback ordering and forbidden/unregistered walk [0.33ms]
+
+tests/start-context.test.ts:
+(pass) bare-start inference accepts one clear current request [1.39ms]
+(pass) bare-start inference ignores assistant text and generic acknowledgements [3.02ms]
+(pass) bare-start inference deduplicates a repeated request [0.29ms]
+(pass) bare-start inference fails closed for two distinct requests [0.45ms]
+(pass) bare-start inference falls back for vague or command-only context [0.13ms]
+(pass) bare-start inference marks a multi-task request ambiguous [0.07ms]
+(pass) bare-start inference preserves multiline task boundaries [0.06ms]
+(pass) session reader uses only a bounded active-branch tail [0.60ms]
+(pass) session reader fails closed when the host branch cannot be read [0.08ms]
+(pass) field 2026-09-16: chatter shapes divert, real objectives pass through [0.15ms]
+(pass) field 2026-09-16: tweak chatter resolves to the discussed objective (VidPro replay) [0.15ms]
+(pass) audit 2026-09-16: explicit compound tweak never substitutes an older request [0.04ms]
+(pass) field 2026-09-16: tweak chatter with no discussed objective is unresolvable, never verbatim [0.05ms]
+(pass) field 2026-09-16: tweak chatter over competing requests surfaces candidates [0.13ms]
+
+tests/auditor-stall-watchdog.test.ts:
+(pass) stall: worker that never emits a first event is failed fast, not left for the wall [5319.06ms]
