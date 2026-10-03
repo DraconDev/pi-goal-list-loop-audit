@@ -2,13 +2,34 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/glla-ui-command-audit.test.ts:
-(pass) settings table reopens the tab that was edited [173.10ms]
-49 | test("forbidden substring patterns cannot disable configured fallback chains", async () => {
-50 |   const { ctx } = await boot({ mainModelFallbacks: ["provider/backup"], forbiddenModels: [] });
-51 |   ctx.ui.customStubMode = true;
-52 |   ctx.ui.inputImpl = async () => "provider/,other/model";
-53 |   await handleSettingChoice("forbiddenModels", ctx);
-54 |   assert.deepEqual(loadSettings(ctx.cwd).forbiddenModels, ["other/model"]);
+43 |     reopenedSection = component.visibleRows()[0]?.section;
+44 |     return undefined;
+45 |   };
+46 |   await pi.command("glla", "", ctx);
+47 |   assert.equal(calls, 2);
+48 |   assert.equal(reopenedSection, "auditor", "editing does not reset navigation to Keep-going");
+              ^
+AssertionError: editing does not reset navigation to Keep-going
++ actual - expected
+
++ 'keep-going'
+- 'auditor'
+
+ generatedMessage: false,
+     actual: "keep-going",
+   expected: "auditor",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:48:10
+      at processTicksAndRejections (native:7:39)
+(fail) settings table reopens the tab that was edited [505.27ms]
+51 | test("forbidden substring patterns cannot disable configured fallback chains", async () => {
+52 |   const { ctx } = await boot({ mainModelFallbacks: ["provider/backup"], forbiddenModels: [] });
+53 |   ctx.ui.customStubMode = true;
+54 |   ctx.ui.inputImpl = async () => "provider/,other/model";
+55 |   await handleSettingChoice("forbiddenModels", ctx);
+56 |   assert.deepEqual(loadSettings(ctx.cwd).forbiddenModels, ["other/model"]);
               ^
 AssertionError: Expected values to be strictly deep-equal:
 + actual - expected
@@ -24,59 +45,15 @@ AssertionError: Expected values to be strictly deep-equal:
    operator: "deepStrictEqual",
        code: "ERR_ASSERTION"
 
-      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:54:10
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:56:10
       at processTicksAndRejections (native:7:39)
-(fail) forbidden substring patterns cannot disable configured fallback chains [15.48ms]
-60 |     const { ctx } = await boot({ forbiddenModels: ["blocked"] });
-61 |     ctx.ui.customStubMode = true;
-62 |     ctx.ui.inputImpl = async () => "provider/blocked-model";
-63 |     await handleSettingChoice(id, ctx);
-64 |     const settings = loadSettings(ctx.cwd);
-65 |     assert.equal(settings.drafterModel, undefined);
-                ^
-AssertionError: Expected values to be strictly equal:
-+ actual - expected
-
-+ 'provider/blocked-model'
-- undefined
-
- generatedMessage: true,
-     actual: "provider/blocked-model",
-   expected: undefined,
-   operator: "strictEqual",
-       code: "ERR_ASSERTION"
-
-      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:65:12
-      at processTicksAndRejections (native:7:39)
-(fail) drafterModel refuses a forbidden primary pin [9.94ms]
-61 |     ctx.ui.customStubMode = true;
-62 |     ctx.ui.inputImpl = async () => "provider/blocked-model";
-63 |     await handleSettingChoice(id, ctx);
-64 |     const settings = loadSettings(ctx.cwd);
-65 |     assert.equal(settings.drafterModel, undefined);
-66 |     assert.equal(settings.compactorModel, undefined);
-                ^
-AssertionError: Expected values to be strictly equal:
-+ actual - expected
-
-+ 'provider/blocked-model'
-- undefined
-
- generatedMessage: true,
-     actual: "provider/blocked-model",
-   expected: undefined,
-   operator: "strictEqual",
-       code: "ERR_ASSERTION"
-
-      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:66:12
-      at processTicksAndRejections (native:7:39)
-(fail) compactorModel refuses a forbidden primary pin [9.68ms]
-62 |     ctx.ui.inputImpl = async () => "provider/blocked-model";
-63 |     await handleSettingChoice(id, ctx);
-64 |     const settings = loadSettings(ctx.cwd);
-65 |     assert.equal(settings.drafterModel, undefined);
-66 |     assert.equal(settings.compactorModel, undefined);
-67 |     assert.equal(settings.subagentModelOverrides?.scout, undefined);
+(fail) forbidden substring patterns cannot disable configured fallback chains [59.16ms]
+62 |     const { ctx } = await boot({ forbiddenModels: ["blocked"] });
+63 |     ctx.ui.customStubMode = true;
+64 |     ctx.ui.inputImpl = async () => "provider/blocked-model";
+65 |     await handleSettingChoice(id, ctx);
+66 |     const settings = loadSettings(ctx.cwd);
+67 |     assert.equal(settings.drafterModel, undefined);
                 ^
 AssertionError: Expected values to be strictly equal:
 + actual - expected
@@ -92,13 +69,57 @@ AssertionError: Expected values to be strictly equal:
 
       at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:67:12
       at processTicksAndRejections (native:7:39)
-(fail) subagentModelOverrides.scout refuses a forbidden primary pin [10.66ms]
-75 |   ctx.ui.inputImpl = async () => {
-76 |     saveSettings("global", ctx.cwd, { subagentFallbacks: { worker: ["provider/new"] } });
-77 |     return "provider/scout";
-78 |   };
-79 |   await handleSettingChoice("subagentFallbacks:scout", ctx);
-80 |   assert.deepEqual(loadSettings(ctx.cwd).subagentFallbacks, { worker: ["provider/new"], scout: ["provider/scout"] });
+(fail) drafterModel refuses a forbidden primary pin [19.58ms]
+63 |     ctx.ui.customStubMode = true;
+64 |     ctx.ui.inputImpl = async () => "provider/blocked-model";
+65 |     await handleSettingChoice(id, ctx);
+66 |     const settings = loadSettings(ctx.cwd);
+67 |     assert.equal(settings.drafterModel, undefined);
+68 |     assert.equal(settings.compactorModel, undefined);
+                ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ 'provider/blocked-model'
+- undefined
+
+ generatedMessage: true,
+     actual: "provider/blocked-model",
+   expected: undefined,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:68:12
+      at processTicksAndRejections (native:7:39)
+(fail) compactorModel refuses a forbidden primary pin [27.73ms]
+64 |     ctx.ui.inputImpl = async () => "provider/blocked-model";
+65 |     await handleSettingChoice(id, ctx);
+66 |     const settings = loadSettings(ctx.cwd);
+67 |     assert.equal(settings.drafterModel, undefined);
+68 |     assert.equal(settings.compactorModel, undefined);
+69 |     assert.equal(settings.subagentModelOverrides?.scout, undefined);
+                ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ 'provider/blocked-model'
+- undefined
+
+ generatedMessage: true,
+     actual: "provider/blocked-model",
+   expected: undefined,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:69:12
+      at processTicksAndRejections (native:7:39)
+(fail) subagentModelOverrides.scout refuses a forbidden primary pin [31.10ms]
+77 |   ctx.ui.inputImpl = async () => {
+78 |     saveSettings("global", ctx.cwd, { subagentFallbacks: { worker: ["provider/new"] } });
+79 |     return "provider/scout";
+80 |   };
+81 |   await handleSettingChoice("subagentFallbacks:scout", ctx);
+82 |   assert.deepEqual(loadSettings(ctx.cwd).subagentFallbacks, { worker: ["provider/new"], scout: ["provider/scout"] });
               ^
 AssertionError: Expected values to be strictly deep-equal:
 + actual - expected
@@ -125,15 +146,15 @@ AssertionError: Expected values to be strictly deep-equal:
    operator: "deepStrictEqual",
        code: "ERR_ASSERTION"
 
-      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:80:10
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:82:10
       at processTicksAndRejections (native:7:39)
-(fail) editing a role fallback preserves other roles saved while its picker was open [17.31ms]
-89 |   fs.utimesSync(job, old, old);
-90 |   invalidateHostSession(pi, ctx);
-91 |   await pi.command("glla", "audits health", ctx);
-92 |   assert.ok(ctx.ui.matching("audit-job health").length > 0);
-93 |   await pi.command("glla", "audits health cleanup", ctx);
-94 |   assert.ok(fs.existsSync(job), "an invalidated host cannot delete audit evidence");
+(fail) editing a role fallback preserves other roles saved while its picker was open [241.91ms]
+91 |   fs.utimesSync(job, old, old);
+92 |   invalidateHostSession(pi, ctx);
+93 |   await pi.command("glla", "audits health", ctx);
+94 |   assert.ok(ctx.ui.matching("audit-job health").length > 0);
+95 |   await pi.command("glla", "audits health cleanup", ctx);
+96 |   assert.ok(fs.existsSync(job), "an invalidated host cannot delete audit evidence");
               ^
 AssertionError: an invalidated host cannot delete audit evidence
  generatedMessage: false,
@@ -142,15 +163,15 @@ AssertionError: an invalidated host cannot delete audit evidence
    operator: "==",
        code: "ERR_ASSERTION"
 
-      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:94:10
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:96:10
       at processTicksAndRejections (native:7:39)
-(fail) audit health stays available but cleanup is refused on a stale host [14.03ms]
- 97 | test("tool visibility commands replace conflicting overrides", async () => {
- 98 |   const { pi, ctx } = await boot();
- 99 |   await pi.command("glla", "tooloverride hide bash", ctx);
-100 |   await pi.command("glla", "tooloverride allow bash", ctx);
-101 |   assert.deepEqual(loadSettings(ctx.cwd).toolOverrides?.allow, ["bash"]);
-102 |   assert.deepEqual(loadSettings(ctx.cwd).toolOverrides?.hide ?? [], []);
+(fail) audit health stays available but cleanup is refused on a stale host [11.96ms]
+ 99 | test("tool visibility commands replace conflicting overrides", async () => {
+100 |   const { pi, ctx } = await boot();
+101 |   await pi.command("glla", "tooloverride hide bash", ctx);
+102 |   await pi.command("glla", "tooloverride allow bash", ctx);
+103 |   assert.deepEqual(loadSettings(ctx.cwd).toolOverrides?.allow, ["bash"]);
+104 |   assert.deepEqual(loadSettings(ctx.cwd).toolOverrides?.hide ?? [], []);
                ^
 AssertionError: Expected values to be strictly deep-equal:
 + actual - expected
@@ -166,15 +187,15 @@ AssertionError: Expected values to be strictly deep-equal:
    operator: "deepStrictEqual",
        code: "ERR_ASSERTION"
 
-      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:102:10
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:104:10
       at processTicksAndRejections (native:7:39)
-(fail) tool visibility commands replace conflicting overrides [30.02ms]
-103 | });
-104 | 
-105 | test("tool config accepts spaced JSON and refuses empty keys", async () => {
-106 |   const { pi, ctx } = await boot();
-107 |   await pi.command("glla", 'tooloverride set bash metadata={"label": "two words"}', ctx);
-108 |   assert.deepEqual(loadSettings(ctx.cwd).toolOverrides?.perToolConfig?.bash?.metadata, { label: "two words" });
+(fail) tool visibility commands replace conflicting overrides [30.95ms]
+105 | });
+106 | 
+107 | test("tool config accepts spaced JSON and refuses empty keys", async () => {
+108 |   const { pi, ctx } = await boot();
+109 |   await pi.command("glla", 'tooloverride set bash metadata={"label": "two words"}', ctx);
+110 |   assert.deepEqual(loadSettings(ctx.cwd).toolOverrides?.perToolConfig?.bash?.metadata, { label: "two words" });
                ^
 AssertionError: Expected values to be strictly deep-equal:
 + actual - expected
@@ -192,11 +213,11 @@ AssertionError: Expected values to be strictly deep-equal:
    operator: "deepStrictEqual",
        code: "ERR_ASSERTION"
 
-      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:108:10
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:110:10
       at processTicksAndRejections (native:7:39)
-(fail) tool config accepts spaced JSON and refuses empty keys [40.13ms]
+(fail) tool config accepts spaced JSON and refuses empty keys [30.12ms]
 
- 1 pass
- 8 fail
-Ran 9 tests across 1 file. [813.00ms]
-[run-tests] finished in 1s (exit 1)
+ 0 pass
+ 9 fail
+Ran 9 tests across 1 file. [1.52s]
+[run-tests] finished in 2s (exit 1)

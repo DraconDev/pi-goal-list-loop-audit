@@ -30,6 +30,7 @@ afterEach(async () => {
 test("settings table reopens the tab that was edited", async () => {
   const { pi, ctx } = await boot();
   let calls = 0;
+  let reopenedSection: string | undefined;
   ctx.ui.customStubMode = true;
   ctx.ui.customImpl = async (...args) => {
     const factory = args[0] as (...values: any[]) => SettingsMenuComponent;
@@ -39,11 +40,12 @@ test("settings table reopens the tab that was edited", async () => {
       assert.equal(component.visibleRows()[0]?.section, "auditor");
       return "auditorSilent";
     }
-    assert.equal(component.visibleRows()[0]?.section, "auditor", "editing does not reset navigation to Keep-going");
+    reopenedSection = component.visibleRows()[0]?.section;
     return undefined;
   };
   await pi.command("glla", "", ctx);
   assert.equal(calls, 2);
+  assert.equal(reopenedSection, "auditor", "editing does not reset navigation to Keep-going");
 });
 
 test("forbidden substring patterns cannot disable configured fallback chains", async () => {
