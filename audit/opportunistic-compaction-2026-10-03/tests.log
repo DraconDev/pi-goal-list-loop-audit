@@ -1,0 +1,31 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/between-tasks-compaction.test.ts:
+(pass) v0.38.104 the 200k rule is a token threshold, and it is distinct from the model-size hint [0.41ms]
+(pass) v0.38.104 compaction is due past the threshold, not below it [0.12ms]
+(pass) v0.38.104 a token count, not a percentage — the same goal on a 1M window still fires at 200k [0.17ms]
+(pass) v0.38.104 it fires ONCE per episode and re-arms as the goal grows back [0.05ms]
+(pass) v0.38.104 an unknown context count never compacts blindly [0.16ms]
+(pass) v0.38.104 the threshold is overridable but must be positive [0.04ms]
+(pass) v0.38.105 the boundary fires ctx.compact past 200k and ledgers it [437.22ms]
+(pass) v0.38.105 one firing per episode; a shrunk transcript re-arms [112.89ms]
+(pass) v0.38.105 quiet boundaries: below threshold, busy, unsupervised, audit, paused, unknown, no trigger [1.77ms]
+(pass) v0.38.105 the boundary never re-arms the starvation path's brief one-shot [0.52ms]
+(pass) a synchronous compact throw releases the boundary for ordinary continuation [103.79ms]
+
+tests/compaction-survival.test.ts:
+(pass) compaction survival: three mid-run compacts, then the goal still completes approved [4039.06ms]
+(pass) compaction survival: a compact around an in-flight audit still completes [2157.19ms]
+
+tests/compaction-failure.test.ts:
+(pass) host-owned retry and cancellation outrank diagnostic text [0.51ms]
+(pass) output-cap and incomplete-summary diagnostics are not context overflow [0.20ms]
+(pass) only explicit prompt/context-window overflow can rotate the session model [0.62ms]
+(pass) unknown and generic threshold failures stay terminal without a model claim [7.68ms]
+
+tests/compaction-containment.test.ts:
+(pass) session_before_compact returns nothing — another extension's compaction must survive [112.39ms]
+(pass) pure: in-flight marker is armed-signal plus timeout, never silence [0.38ms]
+(pass) compaction in flight suppresses send-storm escalation (no park, no recovery) [726.08ms]
+(pass) post-compact settle owns exactly one bounded probe (no duplicates) [3627.95ms]

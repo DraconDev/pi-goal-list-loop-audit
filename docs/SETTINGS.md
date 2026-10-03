@@ -29,6 +29,9 @@ For opportunistic transcript compaction, open `/glla` → **Compactor** →
 Saving the target does not compact immediately: crossing it makes compaction
 due at the next safe idle boundary between work turns or queued list items.
 The configured target also controls rearming once usage drops below half.
+This target is opportunistic: if that compaction fails, work continues with
+its current transcript. The attempt stays suppressed until usage drops below
+half the target, so a failing summarizer is not retried every turn.
 
 These describe machine/provider/session policy, not a project artifact. Project
 copies are ignored (GLLA reads the global file for these policies):

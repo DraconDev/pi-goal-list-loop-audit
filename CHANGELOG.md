@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Opportunistic compaction failure keeps work moving
+
+- Failure of GLLA's optional transcript compaction at the configured token
+  target keeps goals and branch loops active and resumes their next turn.
+  The public failure event and error callback share one attempt, preventing
+  duplicate resumption and the generic blocking-compaction park.
+- A failed attempt retains the episode marker to avoid retrying each turn;
+  synchronous launch errors release the ordinary continuation path.
+
 ### Settings and completion-summary audit follow-up
 
 - Settings writes validate the context of the editor that initiated them,

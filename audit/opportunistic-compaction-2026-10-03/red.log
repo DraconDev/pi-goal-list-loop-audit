@@ -1,0 +1,51 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/compaction-failed-recovery.test.ts:
+[run-tests] progress: 30s elapsed · 30s since last output · 0 KiB of suite output
+285 |     const error = new Error("Summarization failed: generation hit the token cap and the summary is incomplete");
+286 |     const failEvent = () => pi.fire("session_compact_failed", { reason: "threshold", errorMessage: error.message, willRetry: false }, ctx);
+287 |     if (eventFirst) { await failEvent(); callbacks.onError(error); }
+288 |     else { callbacks.onError(error); await failEvent(); }
+289 |     await tick(100);
+290 |     assert.equal(readState(cwd).goal?.status, "active", "the opportunistic threshold is never a hard stop");
+                 ^
+AssertionError: the opportunistic threshold is never a hard stop
+
+'paused' !== 'active'
+
+ generatedMessage: false,
+     actual: "paused",
+   expected: "active",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/compaction-failed-recovery.test.ts:290:12
+      at processTicksAndRejections (native:7:39)
+(fail) opportunistic output-cap failure keeps work active and resumes once (event first) [38246.99ms]
+285 |     const error = new Error("Summarization failed: generation hit the token cap and the summary is incomplete");
+286 |     const failEvent = () => pi.fire("session_compact_failed", { reason: "threshold", errorMessage: error.message, willRetry: false }, ctx);
+287 |     if (eventFirst) { await failEvent(); callbacks.onError(error); }
+288 |     else { callbacks.onError(error); await failEvent(); }
+289 |     await tick(100);
+290 |     assert.equal(readState(cwd).goal?.status, "active", "the opportunistic threshold is never a hard stop");
+                 ^
+AssertionError: the opportunistic threshold is never a hard stop
+
+'paused' !== 'active'
+
+ generatedMessage: false,
+     actual: "paused",
+   expected: "active",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/compaction-failed-recovery.test.ts:290:12
+      at processTicksAndRejections (native:7:39)
+(fail) opportunistic output-cap failure keeps work active and resumes once (callback first) [1329.52ms]
+
+ 0 pass
+ 7 filtered out
+ 2 fail
+Ran 2 tests across 1 file. [42.47s]
+[run-tests] finished in 43s (exit 1)

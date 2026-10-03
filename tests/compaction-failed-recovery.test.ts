@@ -17,6 +17,7 @@ import activate, {
   __testOnlySetCompactionInFlight,
 } from "../extensions/loops/goal.js";
 import { readState } from "../extensions/goal-loop-core.js";
+import { __testOnlyResetCompactor, __testOnlySetSpawnWorker } from "../extensions/goal-compactor.js";
 import { MockPi, makeMockCtx, seedGoal, seedLoop, seedState, tick, tmpCwd } from "./harness/mock-pi.ts";
 
 const GLOBAL = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
@@ -56,6 +57,7 @@ afterEach(async () => {
     __testOnlyResetPostCompactDebt();
     await current.pi.fire("session_shutdown", { reason: "test-end" }, current.ctx).catch(() => {});
   }
+  __testOnlyResetCompactor();
   fs.writeFileSync(GLOBAL, original);
 });
 
@@ -276,6 +278,7 @@ for (const eventFirst of [true, false]) {
     const cwd = tmpCwd();
     seedState(cwd, { goal: seedGoal({ status: "active", objective: "continue after optional compaction" }) });
     const { pi, ctx } = await boot(cwd, { mainModelFallbacks: ["provider/large"] });
+    __testOnlySetSpawnWorker(async () => ({ ok: true, brief: "Continue durable work." }));
     await pi.fire("agent_start", {}, ctx); // acknowledge the startup continuation before the idle boundary
     ctx.getContextUsage = () => ({ tokens: 205_508, contextWindow: 1_000_000, percent: 20.55 });
     let callbacks: { onError(error: Error): void } | undefined;
@@ -306,6 +309,7 @@ for (const synchronousError of [false, true]) {
     const cwd = tmpCwd();
     seedState(cwd, { loop: seedLoop({ active: true, iteration: 4, target: "optional compaction keeps loop moving" }) });
     const { pi, ctx } = await boot(cwd, { mainModelFallbacks: [], compactionTokenThreshold: 300_000 });
+    __testOnlySetSpawnWorker(async () => ({ ok: true, brief: "Continue durable work." }));
     await pi.fire("agent_start", {}, ctx); // acknowledge the startup loop dispatch
     ctx.getContextUsage = () => ({ tokens: 305_508, contextWindow: 1_000_000, percent: 30.55 });
     ctx.compact = (options: { onError(error: Error): void }) => {
