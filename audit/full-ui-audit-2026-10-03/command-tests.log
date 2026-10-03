@@ -39,3 +39,4 @@ tests/glla-status-ux.test.ts:
  27 pass
  0 fail
 Ran 27 tests across 4 files. [9.63s]
+[run-tests] finished in 10s (exit 0)
