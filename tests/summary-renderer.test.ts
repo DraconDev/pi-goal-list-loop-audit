@@ -32,7 +32,8 @@ test("real dark/light renderers preserve content, fit narrow widths and color se
   for (const appearance of ["dark", "light"]) {
     const theme = loadThemeFromPath(path.resolve(import.meta.dirname, `../node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/theme/${appearance}.json`), "truecolor");
     const pi = new MockPi(); registerSummaryRenderer(pi.api);
-    const message = { content, details: { terminalApprovalGoalId: "approved-goal" } };
+    const emphasizedContent = content + "\n*Important follow-up*\n\n> Quoted evidence\n";
+    const message = { content: emphasizedContent, details: { terminalApprovalGoalId: "approved-goal" } };
     const render = pi.messageRenderers.get("goal-event")!(message as never, { outputPad: 1 } as never, theme) as Component;
     for (const width of [0, 1, 20, 40, 80, 120]) {
       const lines = render.render(width);
@@ -42,9 +43,11 @@ test("real dark/light renderers preserve content, fit narrow widths and color se
         for (const phrase of ["Done", "Unresolved", "Left out", "190 passed", "Reload after"]) assert.ok(plain.includes(phrase), plain);
         assert.ok(lines.join("\n").includes(theme.fg("warning", "Unresolved")));
         assert.ok(lines.join("\n").includes(theme.fg("accent", "Next")));
+        assert.ok(lines.join("\n").includes(theme.bold(theme.fg("text", "Important follow-up"))));
+        assert.doesNotMatch(lines.join("\n"), /\x1b\[(?:\d+;)*3(?:;\d+)*m/, "summary emphasis and quotes must not enable italics");
       }
     }
-    assert.equal(message.content, content, "saved/transcript content receives no ANSI or rewriting");
+    assert.equal(message.content, emphasizedContent, "saved/transcript content receives no ANSI or rewriting");
   }
 });
 

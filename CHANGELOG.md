@@ -4,6 +4,8 @@
 
 ## 0.38.114 — semantic summary colors (2026-10-03)
 
+- Summary emphasis uses bold, including Markdown italic emphasis and quotes;
+  summaries do not render italics.
 - Terminal completion summaries use the active theme’s semantic colors for
   outcomes, remaining work, next actions and verification results. Unknown
   verification stays neutral; reported or skipped checks use amber, and

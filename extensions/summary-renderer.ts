@@ -64,7 +64,7 @@ function summaryTheme(theme: Theme, sectionTone: SummaryTone): MarkdownTheme {
     codeBlock: fg("mdCodeBlock"), codeBlockBorder: fg("mdCodeBlockBorder"),
     quote: fg("mdQuote"), quoteBorder: fg("mdQuoteBorder"), hr: fg("mdHr"),
     listBullet: fg(sectionTone === "warning" ? "warning" : sectionTone === "accent" ? "accent" : "mdListBullet"),
-    italic: text => theme.italic(text), strikethrough: text => theme.strikethrough(text), underline: text => theme.underline(text),
+    italic: text => theme.bold(text), strikethrough: text => theme.strikethrough(text), underline: text => theme.underline(text),
   };
 }
 

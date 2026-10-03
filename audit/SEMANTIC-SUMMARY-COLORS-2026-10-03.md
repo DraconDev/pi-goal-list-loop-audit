@@ -9,6 +9,8 @@ failed checks; accent for changes and next actions; dim for supporting labels
 and repository details. Unrecognized evidence stays neutral. Zero passed and
 zero failed does not imply success. A failed check does not recolor unrelated
 audit approval or archive references red. Text labels retain the meaning.
+Headings and emphasis use bold. Markdown italic emphasis and quoted text render
+with bold instead of italics, while the saved Markdown remains unchanged.
 
 The renderer is registered by the actual extension installer and is fenced to
 terminal receipts carrying `terminalApprovalGoalId`. Other `goal-event`
