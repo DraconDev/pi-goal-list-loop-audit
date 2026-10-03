@@ -820,3 +820,11 @@ tests/decision-budget.test.ts:
 (pass) decision budget: unset budget keeps legacy pause-every-time behavior [282.91ms]
 
 tests/completion-communication.test.ts:
+(pass) pending is nonterminal; approval delivers durable concrete summary (idle=true) [4902.82ms]
+(pass) pending is nonterminal; approval delivers durable concrete summary (idle=false) [7721.14ms]
+(pass) complete_goal leftOut renders the deliberate-non-do bullet end to end [6641.69ms]
+[run-tests] progress: 331s elapsed · 5s since last output · 61 KiB of suite output
+(pass) complete_goal findingGroups ride the claim into the grouped terminal render [5470.57ms]
+(pass) disapproval remains unfinished, no final success is posted [2199.02ms]
+(pass) archive write failure never emits a terminal success [3037.17ms]
+(pass) approval summary does not replace independent next-item continuation [18191.26ms]
