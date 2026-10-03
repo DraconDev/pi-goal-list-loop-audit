@@ -101,3 +101,10 @@ The storage-only limitation recorded above was subsequently implemented in
 for the public-hook ownership analysis, supported optional-argument contract,
 and execution/validation evidence. The original 0.38.110 findings above remain
 historical evidence.
+
+## Full UI follow-up
+
+The broader 0.38.112 UI pass includes responsive layouts, search, row continuity,
+full draft review, reminders, lifecycle cards and command views. See
+[FULL-UI-AUDIT-2026-10-03.md](FULL-UI-AUDIT-2026-10-03.md) for the expanded coverage
+register, rendered evidence and final verification state.
