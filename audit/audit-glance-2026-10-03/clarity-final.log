@@ -6,7 +6,7 @@ tests/audit-glance-clarity.test.ts:
 (pass) quiet, blocked, settlement and recovery do not claim no action is needed [0.93ms]
 (pass) starting audit distinguishes waiting for first activity from recent activity [14.49ms]
 64 | });
-65 | 
+65 |
 66 | test("current tool keeps elapsed time and timeout budget in the compact card", () => {
 67 |   const progress: AuditDisplayProgress = { ...audit, phase: "tool_executing", currentTool: "bash", currentToolStartedAt: now - 2000, toolTimeoutMs: 1200000 };
 68 |   const text = buildWidgetLines({ goal, list: [] }, progress, now, undefined, 80, extras)!.join("\n");

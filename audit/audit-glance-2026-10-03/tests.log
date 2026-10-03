@@ -245,7 +245,7 @@ tests/activity-first-status.test.ts:
 tests/audit-lifecycle-surfaces.test.ts:
 148 |     await (h as (...a: unknown[]) => Promise<void>)(...args);
 149 |   }
-150 | 
+150 |
 151 |   async runTool(name: string, params: unknown, ctx: unknown, signal: AbortSignal = new AbortController().signal): Promise<{ content: Array<{ type: string; text: string }> }> {
 152 |     const t = this.tools.get(name);
 153 |     if (!t) throw new Error(`tool not registered: ${name}`);
