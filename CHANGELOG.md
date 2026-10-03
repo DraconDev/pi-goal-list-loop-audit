@@ -11,7 +11,8 @@
   Wrapped details and PgUp/PgDn make full values and explanations reviewable.
 - Model and fallback pickers fit terminal height. Order mode gives the chain
   its own viewport; large extension sets retain a visible selection count.
-  Search backspace removes complete Unicode characters.
+  Search backspace removes complete Unicode characters. Truncated selected
+  rows keep their background across the full row.
 - Draft contracts scroll independently of their decisions. Persistent draft
   acceptance states its project scope without implementation-key jargon;
   long selected choices wrap so their meaning remains visible.

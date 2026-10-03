@@ -352,7 +352,8 @@ export class MultiModelPickerComponent {
     window.forEach((item, index) => {
       const at = start + index;
       const disabled = this.effectiveDisabledReason((item.ref ? this.itemForRef(item.ref) : undefined) ?? item);
-      const label = compactDisplayText(`${this.itemMarker(item)} ${item.label}${disabled ? ` · ${disabled}` : ""}`);
+      const disabledSuffix = disabled && !compactDisplayText(item.label).toLowerCase().includes(disabled.toLowerCase()) ? ` · ${disabled}` : "";
+      const label = compactDisplayText(`${this.itemMarker(item)} ${item.label}${disabledSuffix}`);
       const row = truncateToWidth(`${at === selected ? "→" : " "} ${label}`, w, "…");
       lines.push(at === selected ? this.theme.bg("selectedBg", this.theme.bold(stripTerminalSequences(row) + " ".repeat(Math.max(0, w - visibleWidth(row))))) : row);
     });
