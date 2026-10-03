@@ -4168,3 +4168,80 @@ tests/mechanical-inconclusive.test.ts:
 (pass) mechanical run: empty command list passes [0.16ms]
 
 tests/glla-status-ux.test.ts:
+(pass) v0.35.15: auditing footer carries a distinct phase glyph AND an activity meter element for every auditor phase [40.98ms]
+(pass) v0.35.15: activity meter drains as worker silence grows (full at fresh, empty past the quiet threshold) [0.14ms]
+(pass) v0.35.15: ⏸ supervisor chip leads the footer in every lifecycle branch when paused [0.20ms]
+(pass) v0.35.15: a recently ended quiet stretch shows 'silent Xm then resumed' in the widget; stale stretches stay hidden [0.68ms]
+(pass) v0.35.15: quiet watcher notifies EXACTLY ONCE on entering the quiet phase, records the stretch on resume [21.38ms]
+(pass) v0.35.15: quiet watcher stays silent while the supervisor is paused (it IS automatic machinery) [0.51ms]
+(pass) v0.35.15: every automatic dispatch point gates on supervisorPaused [125.99ms]
+(pass) v0.35.15: /glla pause persists a durable flag, leaves the active goal untouched, and survives a disk reload [583.41ms]
+(pass) v0.35.15: /glla resume clears the freeze, reports the frozen duration, and never lies 'Nothing to resume' [316.07ms]
+(pass) v0.38.104: the working-card tool argument is cut cell-aware, never mid-surrogate [0.89ms]
+
+tests/owner-file-protocol.test.ts:
+(pass) Windows replacement retries a sharing violation without unlinking the previous owner [3.83ms]
+(pass) competing Node processes serialize owner mutations and publish only complete records [1142.36ms]
+(pass) a live mutation times out contenders; SIGKILL recovery never removes a successor lock [225.43ms]
+(pass) Windows participant read retries denial but preserves malformed-record refusal [39.82ms]
+
+tests/recap-preservation.test.ts:
+(pass) repair re-claim preserves the whole-work recap in the approved render [3771.32ms]
+
+tests/impossible-list-drop.test.ts:
+(pass) rule: blocked + no resume path on a /list item → auto-dropped (ledgered) and the queue advances [480.94ms]
+(pass) guard: blocked WITH a resume path stays paused — never overridden [418.59ms]
+(pass) guard: blocked + no resume path on a plain GOAL is not a list drop [400.73ms]
+(pass) last item: drop still ledgered, list goes empty, no advance possible [405.15ms]
+(pass) full auditor IMPOSSIBLE result is terminalized with a durable recap and notification [930.42ms]
+(pass) stored-claim full IMPOSSIBLE retry also terminalizes with its recap [509.48ms]
+(pass) loop hold: drop ledgered but NO advance while a loop owns the surface [193.54ms]
+
+tests/context-growth-measurement.test.ts:
+(pass) fixture: repeated real continuation payloads grow context linearly and are isolated [48.49ms]
+(pass) reported checkpoint shape stays pinned across all probe sizes [5.29ms]
+(pass) provider capture preserves exact pi-ai usage and rejects partial data [0.11ms]
+(pass) measurement: failed turns and ordinary conversation remain separate from GLLA payload bytes [0.78ms]
+
+tests/command-registration-collisions.test.ts:
+(pass) v0.34.55: model — a collided name is suffixed for EVERY registrant; the bare name becomes unowned [39.30ms]
+(pass) v0.34.55: model — within-extension re-registration is last-wins (Map.set), no self-collision [0.07ms]
+(pass) v0.34.138: routing scan follows local imports and keeps winner paths portable [1.14ms]
+(pass) v0.34.55: live rig — the routing table records duplicate-command routing and identifies the winning registration [537.77ms]
+(pass) v0.35.47: every handled /list and /loop subcommand has a completion entry [1.47ms]
+(pass) every canonical /glla action is discoverable in completions [0.28ms]
+
+tests/state-root-consumers.test.ts:
+(pass) resolved consumers follow the selected root — dispatch, stats, audit findings [45.91ms]
+(pass) pending sessionDir defers dispatch, reviewer, and audit writes — no cwd fallback tree [0.63ms]
+(pass) workingDir fallback and PI_SESSION_FILE fallback behave correctly [0.26ms]
+(pass) source pins: raw cwd/.pi-glla hardcodings are gone from consumers [1.56ms]
+
+tests/session-visibility.test.ts:
+(pass) tally classifies like auditVerdictLabel [38.73ms]
+(pass) tally segment stays silent with no verdicts [0.19ms]
+(pass) recovery banner pins objective, next task, audits, resume [0.19ms]
+(pass) v0.38.55: auditing status line is liveness-only — the tally lives on the card (Screenshot 20260914) [0.75ms]
+(pass) reload with a held goal paints the recovery banner from disk [199.78ms]
+(pass) future verdict timestamp suppresses the age instead of printing 0s ago [0.34ms]
+
+tests/completion-recap-shape.test.ts:
+(pass) structured completion recap survives archive rendering and the terminal widget [39.62ms]
+(pass) auditor receives completionSummary and verificationSummary independently [0.51ms]
+(pass) complete_goal tool schema references the six-label policy [0.50ms]
+
+tests/rich-summary-dedup.test.ts:
+(pass) 172705: exact-duplicate details render once per bucket [0.63ms]
+(pass) 2026-10-02: same-label restatement in next/remaining collapses to first [0.23ms]
+(pass) 2026-10-02: problem and action across labels always both render [0.08ms]
+(pass) 2026-10-02: distinct same-label next steps both render [0.06ms]
+(pass) 172705: zero turns omitted, elapsed and audits kept [0.29ms]
+
+tests/runtime-globals-contract.test.ts:
+(pass) runtime global bridge has one typed declaration for every registration [44.98ms]
+(pass) audit-2026-09-06: runtime globals register exactly once per process [0.31ms]
+
+tests/test-runner-lifecycle.test.ts:
+(pass) runner propagates failing exit even when both pipes close before the child exits [470.19ms]
+(pass) runner fails on SIGINT even when its child cooperatively exits zero [192.48ms]
+(pass) runner fails on SIGTERM even when its child cooperatively exits zero [226.66ms]
