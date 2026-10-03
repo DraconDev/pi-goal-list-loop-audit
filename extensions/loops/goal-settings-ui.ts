@@ -195,9 +195,9 @@ import {
 } from "../goal-settings.js";
 import { ModelSelector } from "../model-selector.js";
 
-let settingsEditContext: ExtensionContext | null = null;
-
-/** Recheck session admission immediately before every settings write. The
+/** Recheck the originating editor's session immediately before every settings
+ * write. Carry its context explicitly: overlapping editors must never replace
+ * the identity being checked after an awaited dialog. The
  * editor itself awaits user input, so a replacement can happen after the
  * menu-entry probe but before the selected value is saved.
  *
@@ -208,12 +208,13 @@ let settingsEditContext: ExtensionContext | null = null;
  * global-only keys never acquire a project destination because provenance
  * filters them out in goal-settings.ts.
  */
-function saveSettings(scope: "global" | "project", cwd: string, patch: Partial<Settings>): void {
+function saveSettings(scope: "global" | "project", ctx: ExtensionContext, patch: Partial<Settings>): void {
+  const cwd = ctx.cwd;
   const probe = (globalThis as any).warnIfStaleAtEntry as ((ctx: ExtensionContext, what: string) => boolean) | undefined;
   // C9: a stale-probe refusal is a FAILED save, not a silent skip — throw
   // through the menu's NOT-saved catch (same channel as a disk error) so
   // no branch below can claim "saved" for a write that never landed.
-  if (settingsEditContext && typeof probe === "function" && probe(settingsEditContext, "settings save")) {
+  if (typeof probe === "function" && probe(ctx, "settings save")) {
     throw new Error("settings save refused: the session handle went stale during the edit (a replacement session owns the state root)");
   }
   if (scope === "project") {
@@ -534,7 +535,7 @@ async function promptAuditorThinking(
     // Audit 2026-09-07 (MEDIUM, finding 387): a non-reasoning model
     // must not inherit a dead override — clear it so the next
     // reasoning model starts from session inheritance, not a stale pin.
-    if (curThinking !== undefined) saveSettings("global", ctx.cwd, { auditorThinkingLevel: undefined });
+    if (curThinking !== undefined) saveSettings("global", ctx, { auditorThinkingLevel: undefined });
     return { kind: "non-reasoning", clearedStale: curThinking !== undefined };
   }
   // Audit 2026-09-07 (MEDIUM, finding 386): parity with the drafter
@@ -549,8 +550,8 @@ async function promptAuditorThinking(
     ),
   );
   const inheritThinking = t?.startsWith("session —") ?? false;
-  if (inheritThinking) saveSettings("global", ctx.cwd, { auditorThinkingLevel: undefined });
-  else if (t) saveSettings("global", ctx.cwd, { auditorThinkingLevel: t.split(" ")[0] as Settings["auditorThinkingLevel"] });
+  if (inheritThinking) saveSettings("global", ctx, { auditorThinkingLevel: undefined });
+  else if (t) saveSettings("global", ctx, { auditorThinkingLevel: t.split(" ")[0] as Settings["auditorThinkingLevel"] });
   return { kind: "set", suffix: inheritThinking ? " · thinking inherited from the session" : t ? ` · thinking ${t.split(" ")[0]}` : "" };
 }
 
@@ -1016,7 +1017,6 @@ function parseToolOverrideValueLocal(s: string): unknown {
 }
 
 export async function handleSettingChoice(id: string, ctx: ExtensionContext): Promise<void> {
-  settingsEditContext = ctx;
   // Current pi-subagents roles are data-driven. Keep this dispatch in front
   // of the switch so adding a built-in role does not require another hard-coded
   // case label here.
@@ -1029,7 +1029,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       const next = { ...current };
       if (pick.kind === "ref") next[agentType] = pick.ref;
       else delete next[agentType];
-      saveSettings("global", ctx.cwd, { subagentModelOverrides: Object.keys(next).length > 0 ? next : undefined });
+      saveSettings("global", ctx, { subagentModelOverrides: Object.keys(next).length > 0 ? next : undefined });
       ctx.ui.notify(`${agentType} model pin saved — applies to NEW pi sessions.`, "info");
       return;
     }
@@ -1044,7 +1044,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       const next = { ...(settings.subagentFallbacks ?? {}) };
       if (refs.length > 0) next[agentType] = refs;
       else delete next[agentType];
-      saveSettings("global", ctx.cwd, { subagentFallbacks: Object.keys(next).length > 0 ? next : undefined });
+      saveSettings("global", ctx, { subagentFallbacks: Object.keys(next).length > 0 ? next : undefined });
       ctx.ui.notify(refs.length ? `${agentType} fallback chain saved: ${refs.join(" → ")} — applies to NEW pi sessions.` : `${agentType} fallback chain cleared — falls through to the legacy pin / strategy.`, "info");
       return;
     }
@@ -1070,7 +1070,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         }
         next[agentType] = level as NonNullable<Settings["subagentThinkingOverrides"]>[string];
       }
-      saveSettings("global", ctx.cwd, { subagentThinkingOverrides: Object.keys(next).length > 0 ? next : undefined });
+      saveSettings("global", ctx, { subagentThinkingOverrides: Object.keys(next).length > 0 ? next : undefined });
       ctx.ui.notify(`${agentType} thinking ${next[agentType] ? `pinned to ${next[agentType]}` : "cleared — inherits session"} — applies to NEW pi sessions.`, "info");
       return;
     }
@@ -1081,7 +1081,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         "workingDir — <cwd>/.pi-glla (default)",
         "sessionDir — top-level Pi session directory (opt-in)",
       ]);
-      if (v) saveSettings("global", ctx.cwd, { stateRoot: v.startsWith("sessionDir") ? "sessionDir" : "workingDir" });
+      if (v) saveSettings("global", ctx, { stateRoot: v.startsWith("sessionDir") ? "sessionDir" : "workingDir" });
       return;
     }
     case "autoResume": {
@@ -1090,7 +1090,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         "on — auto-resume on EVERY session start (unattended rigs)",
         "off — never auto-resume; explicit resume only",
       ]);
-      if (v) saveSettings("global", ctx.cwd, { autoResume: v.startsWith("on") ? true : v.startsWith("off") ? false : undefined });
+      if (v) saveSettings("global", ctx, { autoResume: v.startsWith("on") ? true : v.startsWith("off") ? false : undefined });
       return;
     }
     case "carryover": {
@@ -1099,7 +1099,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         "clear — also drop the stale queue and dismiss the held loop",
         "resume — legacy silent stacking, no summary",
       ]);
-      if (v) saveSettings("global", ctx.cwd, { carryover: v.startsWith("clear") ? "clear" : v.startsWith("resume") ? "resume" : undefined });
+      if (v) saveSettings("global", ctx, { carryover: v.startsWith("clear") ? "clear" : v.startsWith("resume") ? "resume" : undefined });
       return;
     }
     case "autoAcceptDrafts": {
@@ -1107,7 +1107,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         "off — the Confirm dialog gates every draft",
         "on — drafts activate immediately, no Confirm (unattended rigs)",
       ]);
-      if (v) saveSettings("global", ctx.cwd, { autoAcceptDrafts: v.startsWith("on") ? true : undefined });
+      if (v) saveSettings("global", ctx, { autoAcceptDrafts: v.startsWith("on") ? true : undefined });
       return;
     }
     case "decisionPopup": {
@@ -1115,7 +1115,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         "on — a decision pause opens the picker; the widget card is the Escape fallback",
         `off — widget card only; ${activeGoalSurfaceCommand("decide")} opens the picker on demand`,
       ]);
-      if (v) saveSettings("global", ctx.cwd, { decisionPopup: v.startsWith("off") ? false : undefined });
+      if (v) saveSettings("global", ctx, { decisionPopup: v.startsWith("off") ? false : undefined });
       return;
     }
     case "aggressiveMode": {
@@ -1124,7 +1124,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         "on — keep-going default; the goal does not park at the audit cap",
       ]);
       if (v) {
-        saveSettings("global", ctx.cwd, { aggressiveMode: v.startsWith("on") });
+        saveSettings("global", ctx, { aggressiveMode: v.startsWith("on") });
         ctx.ui.notify(`Aggressive mode ${v.startsWith("on") ? "ON — goals keep going past the audit cap; objections become TODOs" : "off"}.`, "info");
       }
       return;
@@ -1135,7 +1135,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         "off — no vision guidance injected; the forbiddenModels gate still blocks forbidden switches",
       ]);
       if (v) {
-        saveSettings("global", ctx.cwd, { visionAssist: v.startsWith("off") ? false : undefined });
+        saveSettings("global", ctx, { visionAssist: v.startsWith("off") ? false : undefined });
         ctx.ui.notify(v.startsWith("off") ? "Vision assist OFF — no native-vision guidance; the model-switch gate still stands." : "Vision assist ON — native vision first; external providers require confirmation and vision-only switches stay off.", "info");
       }
       return;
@@ -1146,7 +1146,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         "on — splice a bounded checkpoint every turn (legacy; busts the prompt cache)",
       ]);
       if (v) {
-        saveSettings("global", ctx.cwd, { contextCheckpointProjection: v.startsWith("on") ? true : undefined });
+        saveSettings("global", ctx, { contextCheckpointProjection: v.startsWith("on") ? true : undefined });
         ctx.ui.notify(v.startsWith("on") ? "Context checkpoint projection ON — legacy per-turn splice; expect higher prompt-cache miss rates." : "Context checkpoint projection OFF — transcript stays append-only; the continuation prompt carries live state.", "info");
       }
       return;
@@ -1168,7 +1168,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         { excludeRefs: forbidden, maxSelections: MAX_MAIN_MODEL_FALLBACKS, currentRef: modelRef(ctx.model) },
       );
       if (refs === undefined) return;
-      saveSettings("global", ctx.cwd, { mainModelFallbacks: refs.length ? refs : undefined });
+      saveSettings("global", ctx, { mainModelFallbacks: refs.length ? refs : undefined });
       if (!refs.length && state.mainModelRecovery) {
         const recovery = state.mainModelRecovery;
         const current = recovery.active ?? recovery.primary;
@@ -1192,7 +1192,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         "off — live tail: show the streamed report lines as they arrive",
       ]);
       if (v) {
-        saveSettings("global", ctx.cwd, { auditorSilent: v.startsWith("off") ? false : undefined });
+        saveSettings("global", ctx, { auditorSilent: v.startsWith("off") ? false : undefined });
         ctx.ui.notify(v.startsWith("off") ? "Auditor stream LIVE — report lines show as they stream." : "Auditor stream SILENT — final text at the verdict.", "info");
       }
       return;
@@ -1203,7 +1203,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         "off — plain timer-only card, no intermediate signals",
       ]);
       if (v) {
-        saveSettings("global", ctx.cwd, { auditorProgressSignals: v.startsWith("off") ? false : undefined });
+        saveSettings("global", ctx, { auditorProgressSignals: v.startsWith("off") ? false : undefined });
         ctx.ui.notify(v.startsWith("off") ? "Auditor progress signals OFF — silent card shows only the timer." : "Auditor progress signals ON — phase + byte-counter visible during audits.", "info");
       }
       return;
@@ -1224,12 +1224,12 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (input === undefined) return;
       const t = input.trim();
       if (t === "") {
-        saveSettings("global", ctx.cwd, { [id]: undefined });
+        saveSettings("global", ctx, { [id]: undefined });
         ctx.ui.notify(`Cleared: ${id} (default ${def / 60000}m).`);
       } else {
         const ms = parseSettingsDurationMs(t);
         if (ms !== undefined && ms >= min && ms <= max) {
-          saveSettings("global", ctx.cwd, { [id]: ms });
+          saveSettings("global", ctx, { [id]: ms });
           ctx.ui.notify(`Saved ${id} = ${ms} ms.`);
         } else {
           ctx.ui.notify(`Rejected: enter ${min}-${max} ms (e.g. 15m). Allowed range: ${min / 60000}m-${max / 60000}m.`);
@@ -1249,12 +1249,12 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (input === undefined) return;
       const t = input.trim();
       if (t === "") {
-        saveSettings("global", ctx.cwd, { auditJobRetentionMs: undefined });
+        saveSettings("global", ctx, { auditJobRetentionMs: undefined });
         ctx.ui.notify(`Cleared: auditJobRetentionMs (default ${AUDIT_JOB_CLEANUP_MIN_AGE_MS / 60000}m).`);
       } else {
         const ms = parseSettingsDurationMs(t);
         if (ms !== undefined && ms >= 0 && ms <= MAX_AUDIT_JOB_RETENTION_MS) {
-          saveSettings("global", ctx.cwd, { auditJobRetentionMs: ms });
+          saveSettings("global", ctx, { auditJobRetentionMs: ms });
           ctx.ui.notify(`Saved auditJobRetentionMs = ${ms} ms.`);
         } else {
           ctx.ui.notify(`Rejected: enter 0-${MAX_AUDIT_JOB_RETENTION_MS} ms (e.g. 15m). Allowed range: 0-${MAX_AUDIT_JOB_RETENTION_MS / 60000}m.`);
@@ -1275,7 +1275,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (v) {
         const rate = parseFloat(v);
         if (Number.isFinite(rate) && rate >= 0 && rate <= 1) {
-          saveSettings("global", ctx.cwd, { auditSpotCheckRate: rate === 0.1 ? undefined : rate });
+          saveSettings("global", ctx, { auditSpotCheckRate: rate === 0.1 ? undefined : rate });
           ctx.ui.notify(rate === 0.1
             ? "Cleared: auditSpotCheckRate (default 0.1)."
             : `Saved auditSpotCheckRate = ${rate}.`);
@@ -1294,7 +1294,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       ]);
       if (v) {
         const on = v.startsWith("on");
-        saveSettings("global", ctx.cwd, { auditorInspection: on ? true : undefined });
+        saveSettings("global", ctx, { auditorInspection: on ? true : undefined });
         ctx.ui.notify(on ? "Auditor inspection ON — audits now persist a resumable session."
           : "Auditor inspection OFF — back to the original --no-session spawn.", "info");
       }
@@ -1307,7 +1307,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       ]);
       if (value) {
         const on = value.startsWith("on");
-        saveSettings("global", ctx.cwd, { auditorStrictChallenge: on ? true : undefined });
+        saveSettings("global", ctx, { auditorStrictChallenge: on ? true : undefined });
         ctx.ui.notify(on ? "Full-tier approvals now require a successful challenge." : "Default challenge policy restored.", "info");
       }
       return;
@@ -1319,7 +1319,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       ]);
       if (v) {
         const off = v.startsWith("off");
-        saveSettings("global", ctx.cwd, { hourlyRetryProbe: off ? false : undefined });
+        saveSettings("global", ctx, { hourlyRetryProbe: off ? false : undefined });
         if (off) cancelHourlyProbe();
         else if (state.mainModelRecovery && !state.mainModelRecovery.manualResumeRequired) scheduleHourlyProbe(ctx);
         ctx.ui.notify(off ? "Hourly main recovery probe OFF — only the configured retry ladder will run." : "Hourly main recovery probe ON — extra :00:30 probe while parked.", "info");
@@ -1333,7 +1333,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       ]);
       if (v) {
         const sticky = v.startsWith("sticky");
-        saveSettings("global", ctx.cwd, { mainModelFailback: sticky ? "sticky" : undefined });
+        saveSettings("global", ctx, { mainModelFailback: sticky ? "sticky" : undefined });
         if (sticky && state.mainModelRecovery && (state.mainModelRecovery.primaryProbeAt || state.mainModelRecovery.primaryProbeInFlight)) {
           clearMainModelRecoveryTimer();
           state.mainModelRecovery = undefined;
@@ -1350,8 +1350,8 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (v !== undefined) {
         const raw = v.trim();
         const n = parseSettingsInteger(raw);
-        if (n !== undefined && n > 0) saveSettings("global", ctx.cwd, { mainModelPrimaryProbeMinutes: n });
-        else if (!raw) saveSettings("global", ctx.cwd, { mainModelPrimaryProbeMinutes: undefined });
+        if (n !== undefined && n > 0) saveSettings("global", ctx, { mainModelPrimaryProbeMinutes: n });
+        else if (!raw) saveSettings("global", ctx, { mainModelPrimaryProbeMinutes: undefined });
         else ctx.ui.notify(`primary probe minutes must be a positive integer, got: ${v}`, "warning");
       }
       return;
@@ -1380,7 +1380,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         if (thinking?.startsWith("session —")) inheritThinking = true;
         else if (thinking) pickedThinking = thinking.split(" ")[0] as ConfiguredThinkingLevel;
       }
-      saveSettings("global", ctx.cwd, {
+      saveSettings("global", ctx, {
         drafterModel: pick.kind === "session" ? undefined : pick.ref,
         ...(inheritThinking ? { drafterThinkingLevel: undefined } : pickedThinking ? { drafterThinkingLevel: pickedThinking } : {}),
       });
@@ -1400,7 +1400,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         { excludeRefs: normalizeModelRefs(loadSettings(ctx.cwd).forbiddenModels), maxSelections: MAX_MAIN_MODEL_FALLBACKS, currentRef: modelRef(ctx.model) },
       );
       if (refs === undefined) return;
-      saveSettings("global", ctx.cwd, { drafterModelFallbacks: refs.length ? refs : undefined });
+      saveSettings("global", ctx, { drafterModelFallbacks: refs.length ? refs : undefined });
       ctx.ui.notify(refs.length ? `Drafter fallback models saved: ${refs.join(" → ")}.` : "Drafter fallback models cleared — the session model remains the last resort.", "info");
       return;
     }
@@ -1413,7 +1413,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (input === undefined) return;
       const raw = input.trim().toLowerCase();
       if (!raw) {
-        saveSettings("global", ctx.cwd, { compactionTokenThreshold: undefined });
+        saveSettings("global", ctx, { compactionTokenThreshold: undefined });
         ctx.ui.notify(`Compaction token target reset to ${DEFAULT_COMPACTION_TOKEN_THRESHOLD.toLocaleString("en-US")} tokens; compact at the next safe idle boundary.`, "info");
         return;
       }
@@ -1423,14 +1423,14 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         ctx.ui.notify("Enter a positive whole token count, such as 200000 or 200k, or leave empty to restore the default.", "warning");
         return;
       }
-      saveSettings("global", ctx.cwd, { compactionTokenThreshold: tokens });
+      saveSettings("global", ctx, { compactionTokenThreshold: tokens });
       ctx.ui.notify(`Compaction token target: ${tokens.toLocaleString("en-US")} tokens. Compaction becomes due above this target and waits for the next safe idle boundary.`, "info");
       return;
     }
     case "compactorModel": {
       const pick = await promptModelRef(ctx, "Compactor agent — emergency handoff brief only", "provider/model-id — empty keeps registry plan B (verified free big-context model)");
       if (pick === undefined) return;
-      saveSettings("global", ctx.cwd, { compactorModel: pick.kind === "session" ? undefined : pick.ref });
+      saveSettings("global", ctx, { compactorModel: pick.kind === "session" ? undefined : pick.ref });
       ctx.ui.notify(
         pick.kind === "session"
           ? "Compactor agent: registry plan B (the session model can never be the compactor — it is the stuck one)."
@@ -1449,7 +1449,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         { excludeRefs: normalizeModelRefs(loadSettings(ctx.cwd).forbiddenModels), maxSelections: MAX_MAIN_MODEL_FALLBACKS, currentRef: modelRef(ctx.model) },
       );
       if (refs === undefined) return;
-      saveSettings("global", ctx.cwd, { compactorModelFallbacks: refs.length ? refs : undefined });
+      saveSettings("global", ctx, { compactorModelFallbacks: refs.length ? refs : undefined });
       ctx.ui.notify(refs.length ? `Compactor fallback models saved: ${refs.join(" → ")}.` : "Compactor fallback models cleared — registry plan B remains.", "info");
       return;
     }
@@ -1474,7 +1474,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         { excludeRefs: fallbackRefs },
       );
       if (refs === undefined) return;
-      saveSettings("global", ctx.cwd, { forbiddenModels: refs });
+      saveSettings("global", ctx, { forbiddenModels: refs });
       ctx.ui.notify(refs.length ? `Forbidden models saved: ${refs.join(", ")}` : "Forbidden models cleared — every model is allowed (policy gate off).", "info");
       return;
     }
@@ -1483,7 +1483,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         "on — forbidden selections are reverted to the previous model (default)",
         "off — the switch stands; the forbidden_model_switch ledger entry still records the violation",
       ]);
-      if (v) saveSettings("global", ctx.cwd, { blockForbiddenModelSwitches: v.startsWith("off") ? false : undefined });
+      if (v) saveSettings("global", ctx, { blockForbiddenModelSwitches: v.startsWith("off") ? false : undefined });
       return;
     }
     case "mainModelRetryMinutes": {
@@ -1491,8 +1491,8 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (v !== undefined) {
         const raw = v.trim();
         const n = parseSettingsInteger(raw);
-        if (n !== undefined && n > 0) saveSettings("global", ctx.cwd, { mainModelRetryMinutes: n });
-        else if (!raw) saveSettings("global", ctx.cwd, { mainModelRetryMinutes: undefined });
+        if (n !== undefined && n > 0) saveSettings("global", ctx, { mainModelRetryMinutes: n });
+        else if (!raw) saveSettings("global", ctx, { mainModelRetryMinutes: undefined });
         else ctx.ui.notify(`main model retry minutes must be a positive integer, got: ${v}`, "warning");
       }
       return;
@@ -1504,7 +1504,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       // resolver will actually honor.
       const pick = await promptModelRef(ctx, "Auditor model override", "provider/model-id — empty keeps the pi session model", { excludeRefs: loadSettings(ctx.cwd).forbiddenModels });
       if (pick === undefined) return;
-      saveSettings("global", ctx.cwd, { auditorModel: pick.kind === "session" ? undefined : pick.ref });
+      saveSettings("global", ctx, { auditorModel: pick.kind === "session" ? undefined : pick.ref });
       // v0.31.4: thinking is chosen WITH the model (user: "we are setting
       // the thinking when we select the model now or we should") — there is
       // no standalone thinking row to forget about. Esc keeps the level.
@@ -1514,13 +1514,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       // v0.31.8: the options come from the PICKED MODEL's info (user: "we
       // are not using the model information cause it has no max") — a model
       // that maps xhigh/max offers them; a non-reasoning model is told, not asked.
-      let pickedModel: any = pick.kind === "session" ? (ctx.model as any) : undefined;
-      if (pick.kind === "ref" && pick.ref) {
-        const parts = pick.ref.split("/");
-        try {
-          pickedModel = parts.length === 2 ? (ctx.modelRegistry?.find?.(parts[0]!, parts[1]!) as any) : (ctx.modelRegistry?.getAvailable?.().filter((m: any) => m.id === pick.ref)[0] as any);
-        } catch { pickedModel = undefined; } // levels fall back to the full ladder below
-      }
+      const pickedModel = resolvePickedModel(ctx, pick);
       const curThinking = loadSettings(ctx.cwd).auditorThinkingLevel;
       const inheritedThinking = ctx.thinkingLevel ?? "max";
       const levels = auditorThinkingLevels(pickedModel);
@@ -1528,7 +1522,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         // Audit 2026-09-07 (MEDIUM, finding 387): a non-reasoning model
         // must not inherit a dead override — clear it so the next
         // reasoning model starts from session inheritance, not a stale pin.
-        if (curThinking !== undefined) saveSettings("global", ctx.cwd, { auditorThinkingLevel: undefined });
+        if (curThinking !== undefined) saveSettings("global", ctx, { auditorThinkingLevel: undefined });
         ctx.ui.notify(`Auditor model: ${pick.kind === "session" ? "session model (override cleared)" : pick.ref} — this model exposes no thinking levels (auditor runs with thinking off)${curThinking !== undefined ? "; cleared the stale thinking override" : ""}.`, "info");
         return;
       }
@@ -1547,8 +1541,8 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         ),
       );
       const inheritThinking = t?.startsWith("session —") ?? false;
-      if (inheritThinking) saveSettings("global", ctx.cwd, { auditorThinkingLevel: undefined });
-      else if (t) saveSettings("global", ctx.cwd, { auditorThinkingLevel: t.split(" ")[0] as Settings["auditorThinkingLevel"] });
+      if (inheritThinking) saveSettings("global", ctx, { auditorThinkingLevel: undefined });
+      else if (t) saveSettings("global", ctx, { auditorThinkingLevel: t.split(" ")[0] as Settings["auditorThinkingLevel"] });
       ctx.ui.notify(`Auditor model: ${pick.kind === "session" ? "session model (override cleared)" : pick.ref}${inheritThinking ? " · thinking inherited from the session" : t ? ` · thinking ${t.split(" ")[0]}` : ""}`, "info");
       return;
     }
@@ -1571,7 +1565,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         { excludeRefs: forbidden, maxSelections: MAX_MAIN_MODEL_FALLBACKS, currentRef: primaryRef },
       );
       if (refs === undefined) return;
-      saveSettings("global", ctx.cwd, { auditorModelFallbacks: refs.length ? refs : undefined });
+      saveSettings("global", ctx, { auditorModelFallbacks: refs.length ? refs : undefined });
       if (!refs.length) {
         ctx.ui.notify(
           "Auditor fallback models cleared — the session model remains the last resort.",
@@ -1651,7 +1645,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       else pickedExts = Array.isArray(extPick) ? extPick : extPick.refs;
       if (pickedExts === undefined) return;
       const normalizedExts = normalizeAuditorAllowedExtensions(pickedExts);
-      saveSettings("global", ctx.cwd, { auditorAllowedExtensions: normalizedExts.length ? normalizedExts : undefined });
+      saveSettings("global", ctx, { auditorAllowedExtensions: normalizedExts.length ? normalizedExts : undefined });
       ctx.ui.notify(
         normalizedExts.length
           ? `Auditor allowed extensions saved: ${normalizedExts.length} enabled.`
@@ -1665,7 +1659,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         "on — the verifier differs from the executor (default)",
         "off — same-model audits stand; isolation + evidence contract still apply",
       ]);
-      if (v) saveSettings("global", ctx.cwd, { auditorSameSessionSwap: v.startsWith("off") ? false : undefined });
+      if (v) saveSettings("global", ctx, { auditorSameSessionSwap: v.startsWith("off") ? false : undefined });
       return;
     }
     case "auditorMirrorSessionExtensions": {
@@ -1673,7 +1667,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         "on — session packages load in the worker (default)",
         "off — only the curated allow-list; empty = fully isolated",
       ]);
-      if (v) saveSettings("global", ctx.cwd, { auditorMirrorSessionExtensions: v.startsWith("off") ? false : undefined });
+      if (v) saveSettings("global", ctx, { auditorMirrorSessionExtensions: v.startsWith("off") ? false : undefined });
       return;
     }
     case "auditCap": {
@@ -1683,8 +1677,8 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (v !== undefined) {
         const raw = v.trim();
         const n = parseSettingsInteger(raw);
-        if (n !== undefined && n >= 0) saveSettings("global", ctx.cwd, { auditCap: n });
-        else if (!raw) saveSettings("global", ctx.cwd, { auditCap: undefined });
+        if (n !== undefined && n >= 0) saveSettings("global", ctx, { auditCap: n });
+        else if (!raw) saveSettings("global", ctx, { auditCap: undefined });
         else ctx.ui.notify(`Not a non-negative integer: ${v}`, "warning");
       }
       return;
@@ -1694,8 +1688,8 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (v !== undefined) {
         const raw = v.trim();
         const n = parseSettingsInteger(raw);
-        if (n !== undefined && n >= 0) saveSettings("global", ctx.cwd, { auditCapHard: n });
-        else if (!raw) saveSettings("global", ctx.cwd, { auditCapHard: undefined });
+        if (n !== undefined && n >= 0) saveSettings("global", ctx, { auditCapHard: n });
+        else if (!raw) saveSettings("global", ctx, { auditCapHard: undefined });
         else ctx.ui.notify(`Not a non-negative integer: ${v}`, "warning");
       }
       return;
@@ -1706,7 +1700,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         "off — fixed budgets",
       ]);
       if (v) {
-        saveSettings("global", ctx.cwd, { mechanicalLoadScale: v.startsWith("off") ? false : undefined });
+        saveSettings("global", ctx, { mechanicalLoadScale: v.startsWith("off") ? false : undefined });
         ctx.ui.notify(v.startsWith("off") ? "Mechanical load scaling OFF — fixed gate budgets." : "Mechanical load scaling ON — budgets scale to 2× under saturation.", "info");
       }
       return;
@@ -1716,8 +1710,8 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (v !== undefined) {
         const raw = v.trim();
         const n = parseSettingsInteger(raw);
-        if (n !== undefined && n >= 0) saveSettings("global", ctx.cwd, { decisionPauseBudget: n });
-        else if (!raw) saveSettings("global", ctx.cwd, { decisionPauseBudget: undefined });
+        if (n !== undefined && n >= 0) saveSettings("global", ctx, { decisionPauseBudget: n });
+        else if (!raw) saveSettings("global", ctx, { decisionPauseBudget: undefined });
         else ctx.ui.notify(`Not a non-negative integer: ${v}`, "warning");
       }
       return;
@@ -1727,8 +1721,8 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (v !== undefined) {
         const raw = v.trim();
         const n = Number(raw);
-        if (/^\d+$/.test(raw) && Number.isSafeInteger(n)) saveSettings("global", ctx.cwd, { auditFeedbackChars: n });
-        else if (!v.trim()) saveSettings("global", ctx.cwd, { auditFeedbackChars: undefined });
+        if (/^\d+$/.test(raw) && Number.isSafeInteger(n)) saveSettings("global", ctx, { auditFeedbackChars: n });
+        else if (!v.trim()) saveSettings("global", ctx, { auditFeedbackChars: undefined });
         else ctx.ui.notify(`Not a non-negative integer: ${v}`, "warning");
       }
       return;
@@ -1740,8 +1734,8 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (v !== undefined) {
         const raw = v.trim();
         const n = parseSettingsInteger(raw);
-        if (n !== undefined && n >= 0) saveSettings("global", ctx.cwd, { wedgeAlertMinutes: n });
-        else if (!raw) saveSettings("global", ctx.cwd, { wedgeAlertMinutes: undefined });
+        if (n !== undefined && n >= 0) saveSettings("global", ctx, { wedgeAlertMinutes: n });
+        else if (!raw) saveSettings("global", ctx, { wedgeAlertMinutes: undefined });
         else ctx.ui.notify(`Not a non-negative integer: ${v}`, "warning");
       }
       return;
@@ -1751,9 +1745,9 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (v !== undefined) {
         const raw = v.trim();
         const n = parseSettingsInteger(raw);
-        if (n !== undefined && n === 0) saveSettings("global", ctx.cwd, { subagentHangEscalationMinutes: 0 });
-        else if (n !== undefined && n >= 5) saveSettings("global", ctx.cwd, { subagentHangEscalationMinutes: n });
-        else if (!raw) saveSettings("global", ctx.cwd, { subagentHangEscalationMinutes: undefined });
+        if (n !== undefined && n === 0) saveSettings("global", ctx, { subagentHangEscalationMinutes: 0 });
+        else if (n !== undefined && n >= 5) saveSettings("global", ctx, { subagentHangEscalationMinutes: n });
+        else if (!raw) saveSettings("global", ctx, { subagentHangEscalationMinutes: undefined });
         else ctx.ui.notify(`Subagent hang action must be 0 or an integer >= 5 minutes: ${v}`, "warning");
       }
       return;
@@ -1765,8 +1759,8 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (v !== undefined) {
         const raw = v.trim();
         const n = parseSettingsInteger(raw);
-        if (n !== undefined && n > 0) saveSettings("global", ctx.cwd, { stuckMaxInterventions: n });
-        else if (!raw) saveSettings("global", ctx.cwd, { stuckMaxInterventions: undefined });
+        if (n !== undefined && n > 0) saveSettings("global", ctx, { stuckMaxInterventions: n });
+        else if (!raw) saveSettings("global", ctx, { stuckMaxInterventions: undefined });
         else ctx.ui.notify(`Not a positive integer: ${v}`, "warning");
       }
       return;
@@ -1776,8 +1770,8 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (v !== undefined) {
         const raw = v.trim();
         const n = parseSettingsInteger(raw);
-        if (n !== undefined && n >= 0) saveSettings("global", ctx.cwd, { stallEscalationRefires: n });
-        else if (!raw) saveSettings("global", ctx.cwd, { stallEscalationRefires: undefined });
+        if (n !== undefined && n >= 0) saveSettings("global", ctx, { stallEscalationRefires: n });
+        else if (!raw) saveSettings("global", ctx, { stallEscalationRefires: undefined });
         else ctx.ui.notify(`Not a non-negative integer: ${v}`, "warning");
       }
       return;
@@ -1788,9 +1782,9 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         const raw = v.trim();
         const n = parseSettingsInteger(raw);
         if (n !== undefined && n >= 0 && n <= MAX_ZOMBIE_RETRY_ATTEMPTS) {
-          saveSettings("global", ctx.cwd, { zombieRetryMaxAttempts: n });
+          saveSettings("global", ctx, { zombieRetryMaxAttempts: n });
         } else if (!raw) {
-          saveSettings("global", ctx.cwd, { zombieRetryMaxAttempts: undefined });
+          saveSettings("global", ctx, { zombieRetryMaxAttempts: undefined });
         } else {
           ctx.ui.notify(`Automatic retry count must be an integer from 0 to ${MAX_ZOMBIE_RETRY_ATTEMPTS}: ${v}`, "warning");
         }
@@ -1802,8 +1796,8 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (v !== undefined) {
         const raw = v.trim();
         const n = parseSettingsInteger(raw);
-        if (n !== undefined && n >= 0) saveSettings("global", ctx.cwd, { stallShortWords: n });
-        else if (!raw) saveSettings("global", ctx.cwd, { stallShortWords: undefined });
+        if (n !== undefined && n >= 0) saveSettings("global", ctx, { stallShortWords: n });
+        else if (!raw) saveSettings("global", ctx, { stallShortWords: undefined });
         else ctx.ui.notify(`Not a non-negative integer: ${v}`, "warning");
       }
       return;
@@ -1811,9 +1805,10 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
     case "stallSimilarityThreshold": {
       const v = await ctx.ui.input("Stall similarity threshold (0..1)", "decimal between 0 and 1; empty = default 0.6");
       if (v !== undefined) {
-        const n = Number(v.trim());
-        if (Number.isFinite(n) && n >= 0 && n <= 1) saveSettings("global", ctx.cwd, { stallSimilarityThreshold: n });
-        else if (!v.trim()) saveSettings("global", ctx.cwd, { stallSimilarityThreshold: undefined });
+        const raw = v.trim();
+        const n = Number(raw);
+        if (!raw) saveSettings("global", ctx, { stallSimilarityThreshold: undefined });
+        else if (Number.isFinite(n) && n >= 0 && n <= 1) saveSettings("global", ctx, { stallSimilarityThreshold: n });
         else ctx.ui.notify(`Not a decimal between 0 and 1: ${v}`, "warning");
       }
       return;
@@ -1825,7 +1820,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       ]);
       if (v) {
         const strategy: SubagentModelStrategy = v.startsWith("agent-default") ? "agent-default" : "inherit-parent";
-        saveSettings("global", ctx.cwd, { subagentModelStrategy: strategy });
+        saveSettings("global", ctx, { subagentModelStrategy: strategy });
         ctx.ui.notify("Subagent model strategy saved — applies to NEW pi sessions (pi-subagents registers agents at session start).", "info");
       }
       return;
@@ -1838,7 +1833,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       ]);
       if (v) {
         const richness: SubagentDisplayRichness = v.startsWith("compact") ? "compact" : v.startsWith("quiet") ? "quiet" : "rich";
-        saveSettings("global", ctx.cwd, { subagentDisplayRichness: richness });
+        saveSettings("global", ctx, { subagentDisplayRichness: richness });
         ctx.ui.notify(`Subagent display richness saved (${richness}) — applies on the next UI refresh.`, "info");
       }
       return;
@@ -1855,7 +1850,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (v !== undefined) {
         const raw = v.trim();
         const auto = /^(auto(?:-detect)?|default)$/i.test(raw);
-        saveSettings("global", ctx.cwd, { notifyCmd: !raw || auto ? undefined : raw });
+        saveSettings("global", ctx, { notifyCmd: !raw || auto ? undefined : raw });
       }
       return;
     }
@@ -1864,8 +1859,8 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (v !== undefined) {
         const raw = v.trim();
         const n = parseSettingsInteger(raw);
-        if (n !== undefined && n >= 0) saveSettings("global", ctx.cwd, { tokenLimit: n });
-        else if (!raw) saveSettings("global", ctx.cwd, { tokenLimit: undefined });
+        if (n !== undefined && n >= 0) saveSettings("global", ctx, { tokenLimit: n });
+        else if (!raw) saveSettings("global", ctx, { tokenLimit: undefined });
         else ctx.ui.notify(`Not a non-negative integer: ${v}`, "warning");
       }
       return;
@@ -1893,7 +1888,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       if (toolName === undefined || !toolName.trim()) return;
       const tool = toolName.trim();
       const apply = (patch: Partial<NonNullable<Settings["toolOverrides"]>>) =>
-        saveSettings("project", ctx.cwd, { toolOverrides: { ...current, ...patch } });
+        saveSettings("project", ctx, { toolOverrides: { ...current, ...patch } });
       if (verb === "allow" || verb === "hide") {
         if (verb === "allow") {
           const list = current.allow ?? [];
