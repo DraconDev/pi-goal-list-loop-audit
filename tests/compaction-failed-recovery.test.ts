@@ -276,6 +276,7 @@ for (const eventFirst of [true, false]) {
     const cwd = tmpCwd();
     seedState(cwd, { goal: seedGoal({ status: "active", objective: "continue after optional compaction" }) });
     const { pi, ctx } = await boot(cwd, { mainModelFallbacks: ["provider/large"] });
+    await pi.fire("agent_start", {}, ctx); // acknowledge the startup continuation before the idle boundary
     ctx.getContextUsage = () => ({ tokens: 205_508, contextWindow: 1_000_000, percent: 20.55 });
     let callbacks: { onError(error: Error): void } | undefined;
     let attempts = 0;
@@ -305,6 +306,7 @@ for (const synchronousError of [false, true]) {
     const cwd = tmpCwd();
     seedState(cwd, { loop: seedLoop({ active: true, iteration: 4, target: "optional compaction keeps loop moving" }) });
     const { pi, ctx } = await boot(cwd, { mainModelFallbacks: [], compactionTokenThreshold: 300_000 });
+    await pi.fire("agent_start", {}, ctx); // acknowledge the startup loop dispatch
     ctx.getContextUsage = () => ({ tokens: 305_508, contextWindow: 1_000_000, percent: 30.55 });
     ctx.compact = (options: { onError(error: Error): void }) => {
       if (synchronousError) options.onError(new Error("generation hit the token cap"));
