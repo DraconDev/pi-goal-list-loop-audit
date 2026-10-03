@@ -8,7 +8,6 @@ improve control ui ?
 ##
 do a release
 
-
 # later
 
 ##
@@ -18,8 +17,8 @@ work on respec
 
 # Research
 investigate
-https://pi.dev/packages/pi-goal-x?name=pi+goal+x https://github.com/tmonk/pi-goal-x
 
+https://pi.dev/packages?name=goal
 https://github.com/openai/codex
 https://github.com/xai-org/grok-build
 https://github.com/anthropics/claude-code
