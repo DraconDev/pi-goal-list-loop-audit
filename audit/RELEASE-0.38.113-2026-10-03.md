@@ -55,3 +55,13 @@ passed its full release contract: 3180 passes, one environment skip, zero
 failures, plus all package gates. The stale-recovery case passed in 484.97 ms;
 three additional isolated replays also passed. Publication retry remains
 subject to its own complete release gate.
+
+## Publication completed
+
+Attempt 2 passed the complete tagged release contract: 3180 passes, one
+environment skip, zero failures (553.50 seconds), plus all type, loader,
+inventory and installed-package gates. Trusted npm publishing succeeded at
+2026-10-03 19:35:23 UTC with signed provenance. npm processed the accepted
+upload asynchronously; its public registry confirmed `latest: 0.38.113` at
+19:38:17 UTC. The GitHub release remains published and both mirror tag refs
+are verified. No tag or commit history was rewritten.
