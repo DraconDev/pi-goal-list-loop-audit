@@ -2379,3 +2379,7 @@ AssertionError: The input did not match the regular expression /Yes \u2014 and a
 (pass) v0.35.x: explicit Auto-resume retries a parked claim on cold startup [1239.55ms]
 (pass) v0.35.x: manual /list resume retries a parked list completion claim directly [1305.56ms]
 (pass) v0.35.x: one automatic parked-audit retry is durable across repeated lifecycle events [148.39ms]
+(pass) v0.35.x: stale host replacement session_start auto-recovers the parked audit [1553.13ms]
+(pass) v0.35.x: healthy same-session heartbeat recovers a parked completion audit without manual resume [1338.41ms]
+[run-tests] progress: 360s elapsed · 4s since last output · 1311 KiB of suite output
+(pass) v0.36.0: exhausted no-verdict auditor chain enters the shared ladder with an automatic retry timer [6322.35ms]
