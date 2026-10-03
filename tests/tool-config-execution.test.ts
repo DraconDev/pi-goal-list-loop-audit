@@ -83,6 +83,6 @@ test("the real Pi tool pipeline executes bash with the configured timeout", asyn
     assistantMessage: { role: "assistant", content: [], api: "openai-completions", provider: "fixture", model: "fixture", stopReason: "toolUse", timestamp: Date.now(), usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } } as AssistantMessage,
     beforeToolCall: async ({ toolCall, args }) => await pi.handlers.get("tool_call")!({ type: "tool_call", toolName: toolCall.name, toolCallId: toolCall.id, input: args } as never, ctx as never) as any,
   });
-  assert.equal(outcome.isError, false);
+  assert.equal(outcome.isError, false, JSON.stringify(outcome));
   assert.equal(observedTimeout, 60, "the actual bash execution receives the override");
 });
