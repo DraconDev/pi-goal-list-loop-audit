@@ -88,3 +88,33 @@ test("the real Pi tool pipeline executes bash with the configured timeout", asyn
   assert.equal(outcome.isError, false, JSON.stringify(outcome));
   assert.equal(observedTimeout, 60, "the actual bash execution receives the override");
 });
+
+test("invalid merged options leave every input field unchanged", () => {
+  const input = { command: "original", timeout: 5, format: "text" };
+  assert.equal(applyToolConfig("bash", input, { timeout: 60, format: "unsupported" }, () => [{ name: "bash", parameters: schema }])?.block, true);
+  assert.deepEqual(input, { command: "original", timeout: 5, format: "text" });
+});
+
+test("nested overrides belong to each call, and optional zero remains valid", () => {
+  const parameters = Type.Object({ command: Type.String(), options: Type.Optional(Type.Object({ limit: Type.Number(), labels: Type.Array(Type.String()) })) });
+  const config = { options: { limit: 0, labels: ["original"] } };
+  const tools = () => [{ name: "bash", parameters }];
+  const first: Record<string, any> = { command: "first" };
+  const second: Record<string, any> = { command: "second" };
+  assert.equal(applyToolConfig("bash", first, config, tools), undefined);
+  first.options.labels.push("mutated");
+  assert.equal(applyToolConfig("bash", second, config, tools), undefined);
+  assert.deepEqual(second.options, { limit: 0, labels: ["original"] });
+  assert.deepEqual(config.options, second.options);
+});
+
+test("unconfigured calls do not need a registry; missing or unsupported schemas block configured calls", () => {
+  const input = { command: "original" };
+  const unavailable = () => { throw new Error("registry unavailable"); };
+  assert.equal(applyToolConfig("bash", input, undefined, unavailable), undefined);
+  assert.equal(applyToolConfig("bash", input, {}, unavailable), undefined);
+  assert.equal(applyToolConfig("bash", input, { timeout: 60 }, unavailable)?.block, true);
+  assert.equal(applyToolConfig("bash", input, { timeout: 60 }, () => [])?.block, true);
+  assert.equal(applyToolConfig("bash", input, { timeout: 60 }, () => [{ name: "bash", parameters: Type.String() }])?.block, true);
+  assert.deepEqual(input, { command: "original" });
+});
