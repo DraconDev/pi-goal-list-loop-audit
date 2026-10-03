@@ -978,3 +978,123 @@ tests/compaction-live-verifier.test.mjs:
 
 tests/compactor-worker-lifecycle.test.ts:
 (pass) compactor cleans its Pi tree on SIGTERM, including inherited pipes and TERM-ignoring children [221.03ms]
+(pass) compactor cleans its Pi tree on timeout, including inherited pipes and TERM-ignoring children [3157.89ms]
+[run-tests] progress: 120s elapsed · 0s since last output · 72 KiB of suite output
+67 |         worker.kill("SIGTERM");
+68 |         fs.writeFileSync(signalSent, "sent");
+69 |       }
+70 |       const code = await closed;
+71 |       assert.equal(code, scenario === "normal" ? 0 : 1);
+72 |       for (const pid of pids) assert.equal(alive(pid), false, `owned descendant ${pid} stopped`);
+                                          ^
+AssertionError: owned descendant 1232665 stopped
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/compactor-worker-lifecycle.test.ts:72:38
+      at processTicksAndRejections (native:7:39)
+(fail) compactor cleans its Pi tree on normal, including inherited pipes and TERM-ignoring children [683.62ms]
+(pass) compactor cleans its Pi tree on result-write-failure, including inherited pipes and TERM-ignoring children [631.63ms]
+
+tests/ui-experience-audit.test.ts:
+(pass) settings keep the active final tab visible on narrow terminals [2.55ms]
+(pass) narrow settings show both the focused setting and its effective value [5.93ms]
+(pass) reopened settings focus the edited row and each tab remembers its cursor [0.29ms]
+(pass) settings window keeps the cursor, navigation and details within a short terminal [26.36ms]
+(pass) settings search finds rows across sections and Esc clears search before closing [0.98ms]
+(pass) settings details allow reading the full long value [5.50ms]
+(pass) single picker respects terminal height and keeps the selected model visible [1.04ms]
+(pass) large unordered selections fit a short multi-picker without hiding its cursor [2.54ms]
+(pass) picker backspace deletes a complete Unicode character [0.37ms]
+(pass) long draft reviews scroll while their decisions remain visible [23.33ms]
+(pass) ordered pickers fit short terminals with current, inherit and cap notices [2.36ms]
+(pass) settings sanitize terminal controls without changing saved strings [0.74ms]
+(pass) settings details and all tab windows fit very short terminals [129.31ms]
+(pass) lifecycle cards and status rows fit every explicit terminal width [56.23ms]
+(pass) draft review keeps project consent readable and uses the supplied keybindings [11.88ms]
+(pass) untrusted picker labels and draft bodies cannot emit terminal commands [1.23ms]
+(pass) settling cards identify the approved archive owed and its recovery action [0.61ms]
+
+tests/auditor-thinking.test.ts:
+(pass) supported requested level is used verbatim [0.28ms]
+(pass) unsupported xhigh/max fall downwards; mapped nulls are skipped [0.09ms]
+(pass) non-reasoning and unknown requests degrade safely [0.06ms]
+
+tests/never-streamed-standdown.test.ts:
+(pass) v0.38.18 zombieRetryDecision: a turn that never streamed refuses at once [67.77ms]
+(pass) v0.38.18 rearm milestone: an open-but-silent turn is named, not denied [1.78ms]
+(pass) v0.38.18 rearm milestone: with no open turn the legacy wording stays [0.61ms]
+(pass) v0.38.18 behavioral: a never-streamed turn aborts once and stays parked [472.09ms]
+
+tests/visual-auditor-fresh.test.ts:
+(pass) isVisualGoal detects UI/screenshot/visual goals [0.22ms]
+(pass) visual auditor prompt injects fresh native/external capture guidance before verdict [0.40ms]
+(pass) non-visual goals keep the original prompt without fresh capture [0.19ms]
+(pass) visual prompt fixture does not assume an external vision command [0.35ms]
+
+tests/proactive-pre-read.test.ts:
+(pass) gatherProactivePreRead surfaces bounded file evidence and seed excerpt before questioning [76.86ms]
+(pass) gatherProactivePreRead notes image references without assuming an external tool [0.27ms]
+(pass) gatherProactivePreRead still emits a seed-excerpt block when no files match [0.17ms]
+(pass) drafting injects proactive pre-read before the first question [28.02ms]
+(pass) constants retain bounded shape (max 3 files, 800 chars each) [0.11ms]
+
+tests/transient-retry-cadence.test.ts:
+(pass) transient weather hammers: 10 eager probes through the real classifier [0.80ms]
+(pass) post-eager transient ladder: 1m base doubling to the 30m cap [0.20ms]
+(pass) walls keep the historical ladder; a reset hint outranks the eager window [0.33ms]
+(pass) v0.38.104: unclassified errors fail open to eager [0.13ms]
+(pass) recovery probes use the kind-aware delay (the 300m park) [0.51ms]
+(pass) describeSubagentTerminal: transient text is eager, walls and aborts are not [0.44ms]
+(pass) subagentTerminalAlreadyRecorded: the nudge fires once per run [0.16ms]
+(pass) audit: terminal precedence holds in every event order [0.22ms]
+(pass) wiring: the process-terminal handler ledger-nudges eager child failures [40.50ms]
+(pass) wiring: recovery probes route through the kind-aware delay [1.61ms]
+
+tests/continuous-supervision.test.ts:
+(pass) v0.36.0: activeSupervisionPlanes covers every GLLA work plane without inventing activity [0.63ms]
+(pass) v0.36.0: checker reacts to durable transitions across every work plane [0.40ms]
+(pass) v0.36.0: lifecycle signals route immediately for every declared plane [0.35ms]
+(pass) v0.36.0: a child and recovery transition are durable signals, not guessed waits [0.26ms]
+(pass) v0.36.0: fallback polling adapts from 250ms to the 15s safety cadence [0.08ms]
+(pass) v0.36.0: a real event resets fallback backoff instead of waiting for the old slot [0.06ms]
+(pass) v0.36.0: loop terminal outcomes receive a durable user-facing recap [0.41ms]
+(pass) v0.36.0: production heartbeat is event-first with adaptive timeout fallback [0.76ms]
+
+tests/auditor-process.test.ts:
+(pass) compiled Pi hosts fall back to a JavaScript runtime while explicit commands remain available [23.80ms]
+(pass) v0.35.27 (PR #17): bare tokens pass unquoted for .CMD shims, unsafe-arg gate still covers EVERY arg [0.15ms]
+(pass) Windows worker shutdown kills the cmd/pi process tree [57.24ms]
+(pass) Windows atomic protocol retries transient rename locks without unlinking the old snapshot [0.71ms]
+(pass) transport failures carry an explicit no-verdict classification [1289.74ms]
+(pass) fake worker setup stays in per-test temp storage [0.79ms]
+(pass) detached parent accepts an identity-checked result and applies regression_shield [236.58ms]
+(pass) detached parent keeps a regression-shield block distinct from disapproval and infrastructure [133.30ms]
+(pass) detached parent forwards live worker telemetry to its progress callback [145.60ms]
+(pass) v0.34.57: heartbeat-without-progress watchdog emits auditor_stalled and cancels the detached job [471.68ms]
+(pass) parent abort escalates a detached TERM-ignoring worker and removes its job [1228.47ms]
+(pass) the real worker forwards ordered tool and report phases to the parent [977.69ms]
+(pass) real worker preserves structured HTTP 429 diagnostics for the parent [347.20ms]
+(pass) real worker persists the auditor session when inspection is enabled (spawn spec + progress shape) [448.07ms]
+(pass) detached auditor env keeps runtime necessities and selected provider auth, not unrelated secrets [0.28ms]
+(pass) real worker keeps the original --no-session spawn when inspection is unset (default unchanged) [716.34ms]
+(pass) worker assembles streamed report fragments into cumulative display lines without changing the exact result [486.71ms]
+(pass) parent rejects a result that reports an unsupported tool [361.80ms]
+(pass) approval without an audit tool is a semantic disapproval [287.05ms]
+(pass) a verdict marker inside a think block is not accepted [316.46ms]
+(pass) failed setup preserves a pre-existing attempt directory it does not own [11.24ms]
+(pass) detached retry identities remain unique while completed job dirs persist for the retention window [429.18ms]
+(pass) cancel keeps a finished audit's transcript dir but reaps incomplete scratch [105.54ms]
+(pass) a mismatched result hash fails closed as infrastructure [168.18ms]
+(pass) request hashing is stable and excludes no runtime secret or API key field [25.83ms]
+(pass) EOF before exit preserves process and stream diagnostics without accepting a partial verdict [376.23ms]
+(pass) EOF from a live RPC child gets a bounded close grace then TERM-to-KILL cleanup [488.80ms]
+(pass) detached worker treats silent provider time as infrastructure, not a verdict [325.34ms]
+(pass) parent tool watchdog cancels a tool with no follow-up RPC events [148.74ms]
+(pass) worker aborts an unsupported tool event instead of treating it as an audit tool [277.76ms]
