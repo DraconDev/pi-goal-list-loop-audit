@@ -1,0 +1,25 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/autoresume-default.test.ts:
+(pass) /glla settings persists explicit auto-resume off (tri-state, not undefined) [1.25ms]
+(pass) settings table shows the tri-state honestly [0.30ms]
+(pass) hold-on-load text offers the explicit resume + the on opt-in [0.52ms]
+
+tests/process-state-reset.test.ts:
+(pass) v0.38.88: composite clears a poisoned starvation streak [0.55ms]
+(pass) v0.38.88: composite releases the session-owner claim [66.92ms]
+(pass) v0.38.88: composite invokes every exported latch reset [35.51ms]
+
+tests/settings-invalid-report.test.ts:
+(pass) C10: dropped junk values report once per distinct value; undefined defaults stay silent [0.56ms]
+(pass) C10: loadSettings ledgers dead hand-edited values as settings_invalid_ignored [59.50ms]
+
+tests/audit-history-copy.test.ts:
+(pass) A9 premise: appendAuditVerdict mutates the passed history in place (array + entries) [0.31ms]
+(pass) A9 (pin): both apply paths copy auditHistory before appendAuditVerdict can touch it [0.78ms]
+
+ 10 pass
+ 0 fail
+Ran 10 tests across 4 files. [1.66s]
+[run-tests] finished in 2s (exit 0)
