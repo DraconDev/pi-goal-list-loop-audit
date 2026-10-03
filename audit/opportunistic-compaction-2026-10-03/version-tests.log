@@ -1,0 +1,31 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-version.test.ts:
+(pass) /glla version reads the installed package metadata and exposes a registry check [0.80ms]
+(pass) /glla version names staleness and the update path when the sidecar proves it [2.11ms]
+(pass) package and lock metadata stay synchronized for version reporting [0.08ms]
+(pass) /glla version is registered, autocompleted, and read-only routed [0.33ms]
+(pass) unknown running version makes no staleness claim either way [0.45ms]
+(pass) compareVersions is strictly numeric: prereleases never equal releases [0.06ms]
+(pass) updateCheckPath defaults to the cwd state dir [0.32ms]
+
+tests/release-contract.test.ts:
+(pass) release contract: published documentation links are covered by the npm tarball [2706.57ms]
+(pass) release contract: the release gate exercises the packed artifact [0.33ms]
+(pass) release contract: packed prompts, schema, and workers ship in the dry-run list [800.42ms]
+(pass) release contract: glla-delegate skill loads without diagnostics (source-tree fast tier) [9.77ms]
+(pass) release contract: docs index tracks the package version [0.12ms]
+(pass) release contract: package is discoverable as a Pi extension and skill [565.81ms]
+(pass) release contract: README package contents claim matches the files allowlist [988.79ms]
+(pass) release contract: first-use README guidance matches current behavior [0.31ms]
+(pass) release contract: smoke waits use durable or literal transition markers [0.61ms]
+(pass) release workflow scopes trusted-publishing OIDC to the publish job [3.70ms]
+(pass) v0.38.32: release runs never share the push-churn concurrency group [0.16ms]
+(pass) release contract: changelog has one heading for the current package version [9.47ms]
+(pass) release contract: untagged source work has an Unreleased changelog section to promote [33.83ms]
+
+ 20 pass
+ 0 fail
+Ran 20 tests across 2 files. [6.30s]
+[run-tests] finished in 6s (exit 0)

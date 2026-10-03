@@ -53,3 +53,12 @@ No full release gate or publication was performed for this bounded fix.
 No upstream plugin, provider, Pi implementation, or live session was changed.
 Tracked source, documentation, and evidence are checkpointed by the sync
 daemon; no git history was rewritten.
+
+## Version checkpoint
+
+Bumped package and both root lockfile version fields to 0.38.109. Promoted
+the pending compaction and audit follow-up notes into its dated changelog
+entry, retained the Unreleased slot, and advanced the docs index.
+`version-tests.log`: 20 version/release-contract tests pass, zero failures.
+`version-inventory.log`: inventory verification passes. This updates source
+release metadata; no package publication or release tag was created.

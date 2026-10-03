@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.38.109 — opportunistic compaction and audit follow-up (2026-10-03)
+
 ### Opportunistic compaction failure keeps work moving
 
 - Failure of GLLA's optional transcript compaction at the configured token
