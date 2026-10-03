@@ -154,6 +154,7 @@ test("tool metadata editor preserves concurrent updates and names its execution 
 
 test("compactor picker labels its clear choice as registry plan B", async () => {
   const { ctx } = await boot();
+  ctx.modelRegistry = { getAvailable: () => [ctx.model], hasConfiguredAuth: () => true } as unknown as typeof ctx.modelRegistry;
   let clearLabel: string | undefined;
   ctx.ui.customStubMode = true;
   ctx.ui.customImpl = async (...args) => {

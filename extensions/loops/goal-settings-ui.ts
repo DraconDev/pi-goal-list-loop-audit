@@ -754,8 +754,7 @@ async function openSettingsUI(ctx: ExtensionContext, initialSection?: SettingsSe
       thinkingLevelsByRef: menuThinkingLevelsByRef(ctx),
     });
     const id = await promptSettingsMenu(ctx, rows, initialSection);
-    // The section is only an entry-point hint; after the first render the
-    // table owns navigation and keeps all grouped settings available.
+    // Reopen the chosen row's tab after its editor closes.
     initialSection = rows.find((row) => row.id === id)?.section ?? initialSection;
     if (!id) return;
     const probe = (globalThis as any).warnIfStaleAtEntry as ((ctx: ExtensionContext, what: string) => boolean) | undefined;

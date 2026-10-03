@@ -1,0 +1,7 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-stale-context.test.ts:
+(pass) v0.34.52: bare /glla on a stale handle is refused — standard recovery message, UI never opens, settings untouched [688.84ms]
+(pass) v0.34.52: mutating /glla actions (wipe, cancel, resume, reviewer, postaudit, tooloverride) are all refused on a stale handle [336.39ms]
+(pass) v0.34.52: /glla status, log, stats, audits stay usable on a stale handle (inspect, don't mutate) [4005.42ms]

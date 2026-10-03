@@ -2133,8 +2133,12 @@ async function cmdReviewerSettings(ctx: ExtensionContext): Promise<void> {
     return;
   }
   const load = () => resolveReviewerConfig(loadSettings(ctx.cwd)[settingsKey] as Partial<ReviewerConfig> | undefined);
-  const save = (patch: Partial<ReviewerConfig>) =>
+  const save = (patch: Partial<ReviewerConfig>) => {
+    if (warnIfStaleAtEntry(ctx, "postaudit settings save")) {
+      throw new Error("the session handle became stale during the edit");
+    }
     saveSettings("project", ctx.cwd, { [settingsKey]: { ...load(), ...patch } as Record<string, unknown> });
+  };
   for (;;) {
     const cfg = load();
     let choice: string | undefined;
@@ -2524,6 +2528,7 @@ async function cmdGllaWipe(ctx: ExtensionContext, entryChecked = false): Promise
     ctx.ui.notify("Wipe cancelled.", "info");
     return;
   }
+  if (warnIfStaleAtEntry(ctx, "/glla wipe confirmation")) return;
   appendLedger(ctx.cwd, "glla_wipe", {
     goalId: live ? g!.id : undefined,
     listCleared: n,
