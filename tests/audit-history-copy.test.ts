@@ -26,12 +26,12 @@ test("A9 premise: appendAuditVerdict mutates the passed history in place (array 
 test("A9 (pin): both apply paths copy auditHistory before appendAuditVerdict can touch it", () => {
   assert.match(
     HOOKS,
-    /const history = \(state\.goal\.auditHistory \?\? \[\]\)\.map\(\(v\) => \(\{\.\.\.v\}\)\);[^]*?appendAuditVerdict\(history, \{/,
+    /const history = \(state\.goal\.auditHistory \?\? \[\]\)\.map\(\(v\) => \(\{\s*\.\.\.v\s*\}\)\);[^]*?appendAuditVerdict\(history, \{/,
     "detached site: per-entry copy precedes the mutating append",
   );
   assert.match(
     TOOLS,
-    /const history = \(state\.goal\.auditHistory \?\? \[\]\)\.map\(\(v\) => \(\{\.\.\.v\}\)\);[^]*?appendAuditVerdict\(history, \{/,
+    /const history = \(state\.goal\.auditHistory \?\? \[\]\)\.map\(\(v\) => \(\{\s*\.\.\.v\s*\}\)\);[^]*?appendAuditVerdict\(history, \{/,
     "inline/Esc site: per-entry copy precedes the mutating append",
   );
   assert.doesNotMatch(HOOKS, /appendAuditVerdict\(state\.goal\.auditHistory/, "the live array is never passed to the in-place push");
