@@ -23,3 +23,220 @@ tests/completion-communication.test.ts:
 (pass) complete_goal findingGroups ride the claim into the grouped terminal render [1305.22ms]
 (pass) disapproval remains unfinished, no final success is posted [556.68ms]
 (pass) archive write failure never emits a terminal success [1064.72ms]
+(pass) approval summary does not replace independent next-item continuation [16059.13ms]
+(pass) outbox write failure warns without claiming summary delivery [1308.75ms]
+
+tests/audit-glance-clarity.test.ts:
+(pass) screenshot regression: live audit facts and user action fit before Pi's ten-row cut [9.49ms]
+(pass) narrow footer starts with audit state and real freshness [0.34ms]
+(pass) quiet, blocked, settlement and recovery do not claim no action is needed [1.08ms]
+(pass) starting audit distinguishes waiting for first activity from recent activity [0.38ms]
+64 | });
+65 | 
+66 | test("current tool keeps elapsed time and timeout budget in the compact card", () => {
+67 |   const progress: AuditDisplayProgress = { ...audit, phase: "tool_executing", lastActivityAt: now - 1000, currentTool: "bash", currentToolStartedAt: now - 2000, toolTimeoutMs: 1200000 };
+68 |   const text = buildWidgetLines({ goal, list: [] }, progress, now, undefined, 80, extras)!.join("\n");
+69 |   assert.match(text, /tool: bash · 2s · 20m 00s budget/);
+              ^
+AssertionError: The input did not match the regular expression /tool: bash \u00B7 2s \u00B7 20m 00s budget/. Input:
+
+'⟡ Fix audit finding: HIGH… · list item · auditing · total 1h 10m · 194k tok\n' +
+  '├─ Audit running · tool executing\n' +
+  '│ 11 calls finished · activity 1s ago\n' +
+  '│ audit elapsed 8m 00s\n' +
+  '│ tool: bash · 2s / 20m 00s budget · openrouter/stealth/space-bunny-alpha · t\x1B[0m…\x1B[0m\n' +
+  '│ No action needed — review applies automatically\n' +
+  '└─ /goal status for full audit details'
+
+ generatedMessage: true,
+     actual: "⟡ Fix audit finding: HIGH… · list item · auditing · total 1h 10m · 194k tok\n├─ Audit running · tool executing\n│ 11 calls finished · activity 1s ago\n│ audit elapsed 8m 00s\n│ tool: bash · 2s / 20m 00s budget · openrouter/stealth/space-bunny-alpha · t\u001b[0m…\u001b[0m\n│ No action needed — review applies automatically\n└─ /goal status for full audit details",
+   expected: /tool: bash \u00B7 2s \u00B7 20m 00s budget/,
+   operator: "match",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/audit-glance-clarity.test.ts:69:10
+      at fn (node:test:215:18)
+(fail) current tool keeps elapsed time and timeout budget in the compact card [2.04ms]
+
+tests/ui-experience-audit.test.ts:
+(pass) settings keep the active final tab visible on narrow terminals [1.96ms]
+(pass) narrow settings show both the focused setting and its effective value [0.74ms]
+(pass) reopened settings focus the edited row and each tab remembers its cursor [0.23ms]
+(pass) settings window keeps the cursor, navigation and details within a short terminal [15.16ms]
+(pass) settings search finds rows across sections and Esc clears search before closing [1.74ms]
+(pass) settings details allow reading the full long value [1.00ms]
+(pass) single picker respects terminal height and keeps the selected model visible [0.70ms]
+(pass) large unordered selections fit a short multi-picker without hiding its cursor [2.47ms]
+(pass) picker backspace deletes a complete Unicode character [0.21ms]
+(pass) long draft reviews scroll while their decisions remain visible [12.43ms]
+(pass) ordered pickers fit short terminals with current, inherit and cap notices [1.52ms]
+(pass) settings sanitize terminal controls without changing saved strings [0.78ms]
+(pass) settings details and all tab windows fit very short terminals [77.23ms]
+(pass) lifecycle cards and status rows fit every explicit terminal width [30.73ms]
+(pass) draft review keeps project consent readable and uses the supplied keybindings [9.37ms]
+(pass) untrusted picker labels and draft bodies cannot emit terminal commands [1.13ms]
+(pass) settling cards identify the approved archive owed and its recovery action [0.50ms]
+(pass) single picker resizes through short and narrow terminals without losing focus [1.76ms]
+(pass) truncated selected rows keep their background across values, source and padding [0.93ms]
+(pass) settings search exposes details without treating a typed d as a command [1.22ms]
+
+tests/display.test.ts:
+(pass) fmtElapsed [6.01ms]
+(pass) fmtTokens [0.09ms]
+(pass) truncate [0.32ms]
+(pass) D6: the clause-cut floor scales with the budget instead of pinning at 16 [0.35ms]
+(pass) D10: fmtElapsed clamps non-finite input to zero [0.04ms]
+(pass) display projections remove terminal and zero-width control characters without changing stored state [1.12ms]
+(pass) empty state → undefined (segment cleared) [0.09ms]
+(pass) active goal shows a compact state capsule (elapsed lives on the card) [0.10ms]
+(pass) version tail rides the status on every branch (field 20260909_161057) [0.12ms]
+(pass) monitoring intent never substitutes for runtime evidence [0.15ms]
+(pass) repair cards show the preserved target and the concrete one-turn recovery [0.36ms]
+(pass) repair cards with a sent bootstrap show the explicit retry action [0.12ms]
+(pass) active status does not make first-turn or long-idle gaps look green [0.83ms]
+(pass) stream-proven work uses one compact status-bar HUD; the card stays quiet [0.46ms]
+(pass) v0.34.95: queued + parked recovery surfaces 'parked on provider recovery' on the status line [0.15ms]
+(pass) v0.34.95: queued WITHOUT a parked recovery does NOT show quota text (no false signal) [0.05ms]
+(pass) v0.34.95: parked recovery on a WORKING goal does NOT show quota text (only queued needs the WHY) [0.09ms]
+(pass) v0.34.97: status line shows '⏳ compacting…' during the post-compaction grace window [0.07ms]
+(pass) v0.34.97: compacting chip is GONE after the 3-minute grace window [0.04ms]
+(pass) v0.34.97: no compacting chip when lastCompactionAt is absent [0.03ms]
+(pass) head owns liveness: WORKING status is static, the head carries the animated signal [0.08ms]
+(pass) WORKING badge keeps semantic colors without decorative noise [0.13ms]
+(pass) active goal with tasks shows progress [0.15ms]
+(pass) stale interrupted goal is visibly orphaned, not normally active [0.25ms]
+(pass) accepted continuation without a turn-start proof is not mislabeled as a lost host session [0.14ms]
+(pass) lifecycle interruption keeps durable auditor disapproval feedback visible [0.59ms]
+(pass) widget truncation is width-aware (v0.22.2) [0.29ms]
+(pass) audit 2026-09-07: worker rows splice before the auditor block, never inside it [0.56ms]
+(pass) widget lines reserve pi-tui's horizontal padding [0.36ms]
+(pass) list policy footer: queued count, no duplicated 'list' [0.11ms]
+(pass) goal policy footer says 'N queued' (v0.28.11 U10 — was the cryptic 'list N') [0.07ms]
+(pass) widget names a list item as such and points at /list, not /goal [0.17ms]
+(pass) long-running list card shows a truthful queue trail and immediate next item [0.16ms]
+(pass) widget list item, last in queue: no '0 queued' [0.10ms]
+(pass) widget goal policy keeps /goal status hint + list N prefix [0.09ms]
+(pass) paused shows the reason [0.16ms]
+(pass) runtime activity projection scopes goals and active loops to their own start boundary [0.12ms]
+(pass) paused lifecycle projection names owner, queue, last activity, and next transition [0.32ms]
+(pass) active/in-flight main-model recovery uses one compact card row [0.22ms]
+(pass) standalone main-model recovery remains visible when no goal is active [0.24ms]
+(pass) loop recovery remains visible while the loop is parked [0.25ms]
+(pass) passed provider retryAt stays parked until recovery state clears [0.19ms]
+(pass) paused decision without activity says no turn was observed and names the manual path [0.28ms]
+(pass) v0.38.70: paused action card leads with the action, history rides after (field 20260920_152744) [0.70ms]
+(pass) auditing keeps the footer compact while the widget shows the auditor's current tool [0.14ms]
+(pass) v0.34.89: completed goal shows a dim one-line summary instead of a loud status claim [0.09ms]
+(pass) v0.34.89: completed goal widget is ONE dim summary line (objective + duration, no verdict card) [0.13ms]
+(pass) v0.34.91: completed goal summary shows the agent's completion recap, not the objective echo [0.26ms]
+(pass) completed-goal TUI card shows the human outcome without technical recap labels [0.11ms]
+(pass) v0.34.91: whitespace-only completion summary falls back to the objective [0.04ms]
+(pass) v0.34.89: aborted goal summary names the reason + duration on one line [0.06ms]
+(pass) v0.34.89: completed goal without a verdict does not fabricate one on the summary [0.04ms]
+(pass) active loop shows iteration + best + stall [0.06ms]
+(pass) active loop status names evidence-backed working, waiting, and idle states [0.12ms]
+(pass) v0.29.15 — audit-loop widget names the metric instead of showing the raw grep ("that weird line") [0.07ms]
+(pass) widget: nothing supervised → undefined [0.04ms]
+(pass) widget: goal lines include objective, status, tokens, no footer [0.11ms]
+(pass) widget: paused goal shows reason + suggestion [0.16ms]
+(pass) widget: auditing shows auditor progress [0.27ms]
+(pass) widget: interrupted completion claims render the named recovery-needed lifecycle, not auditor-running [0.28ms]
+(pass) widget: a durable running claim without observed progress names its durable state [0.27ms]
+(pass) auditor progress phases are explicit and retain worker activity [0.51ms]
+(pass) worker-timeout display demotes stale progress to quiet without claiming LIVE [0.17ms]
+(pass) detached auditor keeps compact footer liveness and detailed widget evidence without pausing MAIN [0.44ms]
+(pass) detached auditor elapsed time keeps ticking between worker progress events [0.18ms]
+(pass) detached recent auditor output is sanitized in live and awaiting-verdict widget paths [0.40ms]
+(pass) v0.34.86: silent audits show a fine phase label (thinking… / writing report…) [0.14ms]
+(pass) v0.34.86: silent audits show a report byte-counter instead of a dead timer [0.17ms]
+(pass) v0.34.86: auditorProgressSignals off restores the plain timer-only card [0.16ms]
+(pass) v0.34.86: live tail (auditorSilent off) is unaffected by the byte counter [0.11ms]
+(pass) H-code: HUD liveness gate rejects clock-skewed lastActivityAt (future timestamps must not claim LIVE) [0.16ms]
+(pass) auditor widget shows concrete worker observations without exposing think blocks [0.35ms]
+(pass) v0.34.119: repeated auditor tool telemetry does not render a tool-name history [0.13ms]
+(pass) v0.34.66: auditor stream is SILENT by default — no live tail, muted note instead [0.10ms]
+(pass) v0.34.66: at the verdict the FINAL report shows even when silent [0.42ms]
+(pass) v0.38.55: no spacer row between observations and the card footer (Screenshot 20260914) [0.22ms]
+(pass) v0.38.55: no spacer is invented when there is no worker text [0.08ms]
+(pass) v0.34.56: unmatched tool-event counts render ONLY with evidence (never a zero-fact observation) [0.27ms]
+(pass) stale auditor snapshots show the last tool, not a fake current tool [0.11ms]
+(pass) auditor startup does not claim worker activity before the first RPC event [0.11ms]
+(pass) widget: loop lines include measure + metric state [0.11ms]
+(pass) held loop alone → status segment + widget card (before: BOTH vanished) [0.10ms]
+(pass) held loop + paused goal → both visible (status suffix + widget trailing line) [0.17ms]
+(pass) held loop + active goal → status suffix present [0.05ms]
+(pass) v0.34.89: held loop + completed goal → dim summary shows, held loop stays visible via suffix [0.04ms]
+(pass) active loop unchanged; stopped loop stays invisible [0.07ms]
+(pass) decision pause: banner + numbered options + recommended flagged (widget + status) [0.27ms]
+(pass) v0.38.71: decision card renders the action before the options (field UI-SURVEY-2026-09-20) [0.30ms]
+(pass) error pause: ACTION NEEDED banner, action line popped (widget + status) [0.19ms]
+(pass) active auditor infrastructure failure is visible as blocked, not green progress [0.18ms]
+(pass) v0.34.87: paused auditor no-verdict is parked, not host-bearing (surface separation) [0.22ms]
+(pass) v0.34.87: a paused LIST item's parked line names /list resume and the queue [0.09ms]
+(pass) MAIN activity is never represented as detached — the detached marker belongs only to the live auditor badge [0.16ms]
+(pass) v0.34.57: MAIN host label is pinned to SUPERVISING by the MAIN_HOST_LABEL constant guard [0.23ms]
+(pass) active auditor verdicts never masquerade as infrastructure no-verdict [0.36ms]
+(pass) provider payloads stay out of durable disapproval widget feedback [0.31ms]
+(pass) v0.34.64: retry-class pause shows uniform auto-retrying countdown; no QUOTA WALL anywhere [0.21ms]
+(pass) v0.34.64: ambiguous (transient 503) recovery is shown with the same auto-retrying badge — no special 'wall' label [0.19ms]
+(pass) v0.34.102: paused goal parked on mainModelRecovery renders as RECOVERING, not paused (widget head + card) [0.34ms]
+(pass) v0.34.102: wait pause WITHOUT mainModelRecovery keeps the uniform auto-retrying shape [0.13ms]
+(pass) v0.34.64: 24h horizon holds render as a paused card with the suggested action; no manual-resume wording [2.34ms]
+(pass) main-model recovery manual hold does not claim a non-quota block [0.29ms]
+(pass) blocked card carries one directive: timer names itself, otherwise resume [0.25ms]
+(pass) v0.34.51: a passed quota resumeAt says resuming…, never the old 'retrying now' [0.14ms]
+(pass) legacy pause (no kind): flat card unchanged; error-regex still classifies the status line [0.16ms]
+(pass) v0.28.30: the widget card status line ALWAYS names the type (goal · / list item ·) [0.34ms]
+(pass) v0.33.0: slim card — meter rounding guard, folded status segments, last-action line [8.00ms]
+(pass) v0.38.27: widget task count — a closed parent covers its subtasks (ported from Bjynt's PR #45) [1.84ms]
+(pass) v0.33.1: audit-batch — sanitize, head fits width, last restored, flag lifecycle [6.29ms]
+(pass) v0.33.2: loop proactiveness + respec machinery [5.73ms]
+(pass) v0.34.100: auditorSilent default is on in settings (every session model) [0.17ms]
+(pass) v0.34.100: auditorSilent plumbing threads the loaded setting through extras [4.53ms]
+(pass) v0.36.2: live UI repaint has a bounded cadence and diff guard [4.44ms]
+(pass) v0.34.100: silent-default widget renders muted for ANY session model [0.55ms]
+(pass) v0.34.96/v0.34.128: complete_goal detects 'already shipped' / 'verified vX covers this' / 'no new work shipped' — version-bearing aborts, version-less routes to the audit (SRC-pinned in display.test.ts) [5.73ms]
+(pass) audit-2026-09-07: widget worker rows render bare glyph-first, no `agent: ` prefix [0.43ms]
+(pass) audit-2026-09-06: status line honors the width budget [0.25ms]
+(pass) audit-2026-09-06: truncate/wrap are cell-aware (CJK/emoji + surrogate-safe) [0.87ms]
+(pass) version tail rides the paused branch too, not just active [0.11ms]
+
+tests/activity-first-status.test.ts:
+(pass) activity-first: lead rows follow the head and precede all historical rows [7.69ms]
+(pass) activity-first: quiet card leads with phase, age, last tool, model, thinking, next action [0.47ms]
+(pass) activity-first: awaiting-verdict card and footer agree on the phase words [0.27ms]
+(pass) activity-first: blocked card and footer agree on the blocked label [0.26ms]
+(pass) activity-first: live running card carries tool elapsed/budget in the lead [0.44ms]
+(pass) activity-first: legacy claim without thinking/model omits the segments, never invents [0.20ms]
+(pass) activity-first: phase colour wraps the words (quiet warns, live succeeds, queued stays neutral) [0.50ms]
+(pass) activity-first: footer monitoring and awaiting labels agree with the card head [0.06ms]
+(pass) D2: the loop status line folds watching into QUEUED like the goal head [0.05ms]
+(pass) D4: the auditor session row is sanitized and bounded [0.12ms]
+(pass) stampAuditorAttemptThinking stamps only the owning attempt and sanitizes [0.07ms]
+
+tests/audit-lifecycle-surfaces.test.ts:
+[run-tests] progress: 30s elapsed · 3s since last output · 17 KiB of suite output
+(pass) durable: an ordinary complete_goal records phase running + lastActivityAt before the verdict [5594.45ms]
+(pass) durable phase beats a worker-complete snapshot on the widget card and the status line [0.86ms]
+(pass) a live worker still refines a running claim (the HUD stays the richer truth) [0.35ms]
+(pass) durable phase with no live worker says so, and names the durable age [0.16ms]
+(pass) the durable projection is the single source for all three surfaces [0.13ms]
+(pass) a paused goal that still owes a settlement names it on card and status line [0.40ms]
+(pass) a paused parked claim names recovery-needed on card and status line [0.25ms]
+(pass) a list item names its own resume command, never /goal resume [0.14ms]
+
+tests/session-visibility.test.ts:
+(pass) tally classifies like auditVerdictLabel [5.03ms]
+(pass) tally segment stays silent with no verdicts [0.69ms]
+(pass) recovery banner pins objective, next task, audits, resume [0.47ms]
+(pass) v0.38.55: auditing status line is liveness-only — the tally lives on the card (Screenshot 20260914) [1.44ms]
+(pass) reload with a held goal paints the recovery banner from disk [234.17ms]
+(pass) future verdict timestamp suppresses the age instead of printing 0s ago [0.27ms]
+
+1 tests failed:
+(fail) current tool keeps elapsed time and timeout budget in the compact card [2.04ms]
+
+ 189 pass
+ 1 fail
+Ran 190 tests across 8 files. [33.15s]
+[run-tests] finished in 33s (exit 1)
