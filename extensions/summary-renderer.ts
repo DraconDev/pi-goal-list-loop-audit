@@ -5,7 +5,7 @@ export type SummaryTone = "success" | "warning" | "error" | "accent" | "dim" | "
 
 /** Color describes a stated result; neutral evidence must never look passed. */
 export function summaryHeadingTone(text: string): SummaryTone {
-  const heading = text.replace(/^#+\s*/, "").trim();
+  const heading = stripTerminalSequences(text).replace(/^#+\s*/, "").trim();
   if (/^(?:Aborted|Paused|Remaining|Unresolved)\b/i.test(heading)) return "warning";
   if (/^(?:Failed|Disapproved|Error)\b/i.test(heading)) return "error";
   if (/^Done\b/i.test(heading)) return /without.*review|no review|impossible|skipped/i.test(heading) ? "warning" : "success";
@@ -15,6 +15,7 @@ export function summaryHeadingTone(text: string): SummaryTone {
 }
 
 function labelTone(text: string): SummaryTone | undefined {
+  text = stripTerminalSequences(text);
   if (/^(?:Unresolved|Remaining)$/i.test(text)) return "warning";
   if (/^(?:Failed|Error|Disapproved)$/i.test(text)) return "error";
   if (/^Next$/i.test(text)) return "accent";
@@ -27,7 +28,7 @@ export function summaryVerificationTone(text: string): SummaryTone {
   if (counts.some(match => Number(match[1]) > 0) || /^\s*(?:FAIL|FAILED|ERROR)\b/im.test(text)) return "error";
   if (/\b(?:skipped|not run|inconclusive)\b/i.test(text) || /\b[1-9]\d*\s+reported\b/i.test(text)) return "warning";
   if (/\b(?:reported|not recorded|unknown)\b/i.test(text)) return "dim";
-  if (/\b\d+\s+passed\b/i.test(text) || /^\s*PASS\b/im.test(text)) return "success";
+  if (/\b[1-9]\d*\s+passed\b/i.test(text) || /^\s*PASS\b/im.test(text)) return "success";
   return "text";
 }
 
@@ -54,8 +55,11 @@ export function summaryMarkdownBlocks(content: string): string[] {
 function summaryTheme(theme: Theme, sectionTone: SummaryTone): MarkdownTheme {
   const fg = (color: Parameters<Theme["fg"]>[0]) => (text: string) => theme.fg(color, text);
   return {
-    heading: text => theme.bold(theme.fg(summaryHeadingTone(text), text)),
-    bold: text => theme.bold(theme.fg(labelTone(text) ?? (sectionTone === "accent" ? "accent" : "text"), text)),
+    heading: text => theme.bold(theme.fg(summaryHeadingTone(text), stripTerminalSequences(text))),
+    bold: text => {
+      const tone = labelTone(text) ?? (sectionTone === "accent" ? "accent" : undefined);
+      return theme.bold(tone ? theme.fg(tone, stripTerminalSequences(text)) : text);
+    },
     link: fg("mdLink"), linkUrl: fg("mdLinkUrl"), code: fg("mdCode"),
     codeBlock: fg("mdCodeBlock"), codeBlockBorder: fg("mdCodeBlockBorder"),
     quote: fg("mdQuote"), quoteBorder: fg("mdQuoteBorder"), hr: fg("mdHr"),

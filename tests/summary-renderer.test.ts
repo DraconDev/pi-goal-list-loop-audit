@@ -4,7 +4,7 @@ import { registerSummaryRenderer, summaryHeadingTone, summaryMarkdownBlocks, sum
 import { MockPi } from "./harness/mock-pi.js";
 import { loadThemeFromPath } from "../node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/theme/theme.js";
 import * as path from "node:path";
-import { visibleWidth, stripTerminalSequences } from "@earendil-works/pi-tui";
+import { visibleWidth, stripTerminalSequences, type Component } from "@earendil-works/pi-tui";
 
 const content = "## Done — The audit card is readable\n\nTook 8m.\n\n### What Changed\n1. **Audit activity stays visible**\n   - Keeps the latest observation above the cutoff.\n\n### Remaining\n- **Unresolved** — The owner still needs confirmation.\n  → Next: Confirm the named owner.\n- **Left out** — Live production changes.\n\n### Verification\n190 passed, 0 failures.\n\n### Next\n- **Next** — Reload after the active audit ends.\n";
 
@@ -26,7 +26,7 @@ test("real dark/light renderers preserve content, fit narrow widths and color se
     const theme = loadThemeFromPath(path.resolve(import.meta.dirname, `../node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/theme/${appearance}.json`), "truecolor");
     const pi = new MockPi(); registerSummaryRenderer(pi.api);
     const message = { content, details: { terminalApprovalGoalId: "approved-goal" } };
-    const render = pi.messageRenderers.get("goal-event")!(message as never, { outputPad: 1 } as never, theme)!;
+    const render = pi.messageRenderers.get("goal-event")!(message as never, { outputPad: 1 } as never, theme) as Component;
     for (const width of [0, 1, 20, 40, 80, 120]) {
       const lines = render.render(width);
       assert.ok(lines.every(line => visibleWidth(line) <= width));
@@ -45,6 +45,6 @@ test("continuations retain Pi's default renderer and unsafe terminal sequences n
   const theme = loadThemeFromPath(path.resolve(import.meta.dirname, "../node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/theme/dark.json"), "truecolor");
   const pi = new MockPi(); registerSummaryRenderer(pi.api); const factory = pi.messageRenderers.get("goal-event")!;
   assert.equal(factory({ content: "Continue the goal." } as never, { outputPad: 1 } as never, theme), undefined);
-  const rendered = factory({ content: content + "\x1b]52;c;bad\x07\x1b[2J", details: { terminalApprovalGoalId: "approved-goal" } } as never, { outputPad: 1 } as never, theme)!.render(80).join("\n");
+  const rendered = (factory({ content: content + "\x1b]52;c;bad\x07\x1b[2J", details: { terminalApprovalGoalId: "approved-goal" } } as never, { outputPad: 1 } as never, theme) as Component).render(80).join("\n");
   assert.doesNotMatch(rendered, /\x1b\]52|\x1b\[2J/);
 });
