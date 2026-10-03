@@ -3153,3 +3153,166 @@ tests/auditor-ladder-discipline.test.ts:
 (pass) ladder tests never write to the repo ledger: no ctx cwd points at process.cwd() [0.12ms]
 
 tests/mid-objective-park-refusal.test.ts:
+(pass) 200751-shape: blocked self-park while the brake retry is armed is refused, goal stays active [213.42ms]
+(pass) kind error and kind-unset parks are refused while armed [286.66ms]
+(pass) decision picker while armed is still allowed (user deliberating) [137.28ms]
+(pass) time-gated wait while armed is still allowed (bounded by the clamp) [159.40ms]
+(pass) blocked park with no armed recovery is still allowed (genuine blocker) [161.92ms]
+
+tests/goal-route.test.ts:
+(pass) empty args → draft [0.14ms]
+(pass) exact subcommands route [0.03ms]
+(pass) subcommands are case-insensitive [0.02ms]
+(pass) tweak takes args [0.01ms]
+(pass) archive routes with or without args [0.01ms]
+(pass) CRITICAL: objective starting with 'pause' is a goal, not a subcommand [0.02ms]
+(pass) CRITICAL: objective starting with 'status' is a goal [0.03ms]
+(pass) objective starting with 'cancel' is a goal [0.06ms]
+(pass) plain objectives set [0.02ms]
+(pass) quoted objectives set (quote stripping happens downstream) [0.01ms]
+(pass) goalArgsNeedDrafting: vague objective needs drafting [0.04ms]
+(pass) goalArgsNeedDrafting: explicit contract activates instantly [0.02ms]
+(pass) goalArgsNeedDrafting: empty is the no-args drafting path
+(pass) buildSeedGrillMessage: seed + tool + gate notice + grilling protocol [0.21ms]
+(pass) draftProposalBlock: 0 replies → block with instructions, ≥1 → null [0.07ms]
+(pass) draftProposalBlock: escape hatch after 3 blocked proposals (v0.15.1) [0.09ms]
+(pass) askUserQuestionAnswered: answered dialog counts, cancel/esc does not (v0.15.1) [0.06ms]
+(pass) /goal start routes as a subcommand with the objective as rest (v0.16.0) [0.03ms]
+(pass) normalizeDraftContract: drops bare 'Done when:' introducer lines [0.07ms]
+(pass) normalizeDraftContract: drops 'Done when ALL of the following are true:' preamble [0.03ms]
+(pass) normalizeDraftContract: strips glued 'Done when: ' prefix on content line [0.02ms]
+(pass) normalizeDraftContract: renumbers mixed bullets and existing numbers sequentially [0.09ms]
+(pass) normalizeDraftContract: prose lines pass through untouched [0.05ms]
+(pass) draftContractItemCount counts numbered items only [0.05ms]
+(pass) classifySessionCtx: no owner yet → claim [0.02ms]
+(pass) classifySessionCtx: owner stale → claim (session replaced via /new) [0.03ms]
+(pass) classifySessionCtx: same sessionManager → refresh (main session event) [0.01ms]
+(pass) classifySessionCtx: different sessionManager → foreign (subagent session) [0.02ms]
+
+tests/session-rpc-rebind.test.ts:
+[run-tests] progress: 1084s elapsed · 0s since last output · 1130 KiB of suite output
+(pass) S6: a claim-raised session generation re-binds the subagent RPC host [188.56ms]
+
+tests/completed-audit-recovery.test.ts:
+(pass) legacy parked claim without phase consumes saved approved on the first restore [246.19ms]
+(pass) legacy parked claim without phase consumes saved disapproved on the first restore [159.36ms]
+(pass) healthy host heartbeat reconciles an unarmed orphan: approved [394.63ms]
+(pass) healthy host heartbeat reconciles an unarmed orphan: disapproved [384.37ms]
+(pass) healthy host heartbeat reconciles an unarmed orphan: missing [436.07ms]
+(pass) heartbeat orphan recovery respects in-flight [371.88ms]
+(pass) heartbeat orphan recovery respects recent [327.23ms]
+(pass) heartbeat orphan recovery respects frozen [316.43ms]
+(pass) heartbeat orphan recovery respects cold-held [356.41ms]
+(pass) finished real worker, lost parent: restart applies approved exactly once without re-auditing [950.62ms]
+(pass) finished real worker, lost parent: restart applies disapproved exactly once without re-auditing [1054.28ms]
+(pass) manual resume consumes a completed parked claim instead of launching another auditor [467.09ms]
+(pass) agent resume consumes a completed parked claim instead of launching another auditor [483.40ms]
+(pass) silent file-backed successor applies a finished verdict from the dead generation [511.76ms]
+(pass) legacy completed jobs bind the original goal, contract, and claim without new metadata [45.95ms]
+(pass) newer unfinished candidate prevents replay of an older completed result [1.26ms]
+(pass) saved result refuses unsafe recovery: revision [0.96ms]
+(pass) saved result refuses unsafe recovery: claim [0.59ms]
+(pass) saved result refuses unsafe recovery: structured-claim [0.56ms]
+(pass) saved result refuses unsafe recovery: hash [0.59ms]
+(pass) saved result refuses unsafe recovery: result-identity [0.60ms]
+(pass) saved result refuses unsafe recovery: cancelled-tool [1.02ms]
+(pass) saved result refuses unsafe recovery: strict-challenge [1.35ms]
+(pass) saved result refuses unsafe recovery: unsupported-tool [0.80ms]
+(pass) corrupt final progress identity refuses recovery without consuming the claim [0.80ms]
+(pass) saved approval still enforces the audit-tool floor and regression shield [2.02ms]
+(pass) second audit pass remains visible through thinking, tools, and report generation [0.93ms]
+(pass) days-old auditing orphan with a saved verdict recovers via heartbeat (SEO field case) [353.15ms]
+(pass) workerless in-flight claim with a saved verdict reconciles without launching [338.44ms]
+(pass) S5: workerless in-flight claim parks under the stale latch via stale-latch-workerless [553.08ms]
+(pass) workerless in-flight claim without a verdict parks via workerless-in-flight [382.21ms]
+(pass) auditorWorkerLiveForAttempt: only a matching live worker counts [107.60ms]
+(pass) unreadable saved transcript returns null but ledgers the reason [1.35ms]
+(pass) workerProcessMatches darwin branch reads identity via ps [221.95ms]
+(pass) auditing claim stuck in starting with no worker parks for recovery via heartbeat [375.19ms]
+(pass) S7: stranded recovery measures real activity, not the heartbeat's own refire notes [314.01ms]
+(pass) workerless park drops the dead attempt's auditor cursor so recovery re-walks (clean-web field) [331.75ms]
+(pass) reconcile names its rejecting gate in the ledger [1.46ms]
+
+tests/gettick-tool-visibility.test.ts:
+(pass) v0.35.60: glla tools are reactivated at the pre-turn boundary [262.04ms]
+
+tests/list-stall-reproduction.test.ts:
+(pass) completed standalone goal automatically hands off to the waiting list [296.84ms]
+(pass) /glla resume starts a waiting-only list instead of reporting nothing [136.78ms]
+(pass) list-sourced completion promotes the successor and records the settle transition [238.69ms]
+
+tests/goal-state.test.ts:
+(pass) goal-state.ts owns the state singleton (single source of truth) [35.79ms]
+(pass) wholesale state replacement goes through replaceState() only [4.00ms]
+(pass) the persistence core lives in goal-state.ts (persistStateLine) [0.34ms]
+(pass) replaceState is used at the moved wholesale sites [0.53ms]
+
+tests/list-audit-state-root.test.ts:
+(pass) list-audit fan-out reads findings from the configured sessionDir root [109.89ms]
+
+tests/list-stale-context.test.ts:
+(pass) v0.34.51: /list add on a stale handle is refused — honest recovery result, zero state mutation [452.07ms]
+(pass) v0.34.51: /list remove, clear, cancel, next, tweak, pause, resume are all refused on a stale handle [413.10ms]
+(pass) v0.34.51: the natural-language dump fallthrough is refused on a stale handle — drafting never starts [353.11ms]
+(pass) v0.34.51: /list show and /list depth stay usable on a stale handle (inspect, don't mutate) [436.42ms]
+(pass) v0.34.51: the honest recovery result — the refreshed session owns the command and the add lands [661.29ms]
+(pass) v0.34.51: list_add and list_activate tools return the stale-context recovery result without mutating [196.68ms]
+(pass) v0.34.51: source — cmdList captures the entry probe and gates every mutating path [1.26ms]
+
+tests/terminal-completion-notice.test.ts:
+(pass) v0.38.18 terminal notice: the done brief lands in the conversation exactly once [85.13ms]
+(pass) v0.38.18 source: the detached-approval branch closes the transcript [0.28ms]
+(pass) audit-2026-09-06: a stale-generation notice never fires into the successor session [6.12ms]
+
+tests/aggressive-mode.test.ts:
+(pass) aggressiveMode persists through the settings file (item 8) [56.70ms]
+(pass) effective settings: aggressiveMode ON flips the defaults (items 5+7) [0.07ms]
+(pass) effective settings: missing aggressiveMode uses the production keep-going default [0.05ms]
+(pass) effective settings: explicit OFF keeps base defaults; auditCap base is 5 [0.03ms]
+(pass) explicit per-key settings WIN over aggressiveMode (advisor semantics) [0.02ms]
+(pass) autoResume is global-only in the effective settings and provenance [6.66ms]
+(pass) obsolete quota policy files cannot change the generic retry settings [0.40ms]
+
+tests/settings-invalid-report.test.ts:
+(pass) C10: dropped junk values report once per distinct value; undefined defaults stay silent [0.57ms]
+(pass) C10: loadSettings ledgers dead hand-edited values as settings_invalid_ignored [72.41ms]
+
+tests/task-list.test.ts:
+(pass) accepts a reasonable breakdown [41.63ms]
+(pass) rejects empty list [0.17ms]
+(pass) rejects too many top-level tasks [0.11ms]
+(pass) rejects too many subtasks (the anti-drift cap) [0.26ms]
+(pass) accepts exactly at the cap [0.09ms]
+(pass) rejects empty titles [0.04ms]
+(pass) assigns hierarchical ids and pending statuses [0.24ms]
+(pass) trims titles [0.05ms]
+
+tests/objective-loss-state-root.test.ts:
+(pass) workingDir default: cwd switch makes old objective invisible from new cwd (expected) [39.17ms]
+(pass) sessionDir opt-in: same cwd switch keeps objective visible via shared sessionDir [0.84ms]
+(pass) evidence: no destructive migration and pending defers writes — Wez crash / version switch does not delete old root [0.61ms]
+
+tests/resume-goal-tool.test.ts:
+(pass) resume_goal reactivates a paused goal and clears every pause marker [288.19ms]
+(pass) resume_goal on an already-active goal answers instead of churning state [327.80ms]
+(pass) resume_goal with no goal answers instead of swallowing the verb [185.14ms]
+(pass) a held-on-restore loop does not block resume_goal (only a LIVE loop does) [206.45ms]
+(pass) resume_goal refuses while the supervisor is frozen [362.59ms]
+(pass) resume_goal probes pending main-model recovery inline instead of bouncing (124544) [340.81ms]
+(pass) resume_goal refuses a terminal goal with the real recovery path [197.12ms]
+(pass) resume_goal keeps its live-loop refusal (source-pinned defense-in-depth) [0.58ms]
+(pass) paused → resume_goal → complete_goal flows without a manual resume [1710.35ms]
+(pass) resume_goal re-fires a stored completion claim through the agent origin [1542.60ms]
+
+tests/hegemon-queue-unblock-evidence.test.ts:
+(pass) REAL SHAPE: 12 empty head items block list activation exactly as in the hegemon ledger [351.08ms]
+(pass) REAL SHAPE: the clean 31-item queue (empties removed) activates main-menu without any blocked event [226.17ms]
+
+tests/settings-stale-save.test.ts:
+(pass) C9: stale-probe refusal fails the save loudly — no false saved claim [266.35ms]
+(pass) C9 control: healthy probe saves and reports normally [172.81ms]
+(pass) settings save validates its own session after an overlapping editor [149.81ms]
+(pass) similarity editor empty input restores the default; explicit zero stays zero [230.86ms]
+(pass) auditor picker offers thinking for provider refs containing nested model ids [209.23ms]
+
+tests/quota-horizon-exemption.test.ts:
