@@ -1,0 +1,81 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/ui-command-view-audit.test.ts:
+15 | test("held loop status preserves its meaning and names the actual resume command", async () => {
+16 |  const { pi, ctx } = boot({ loop: seedLoop({ active: false, stopReason: HELD_ON_RESTORE }) });
+17 |  const before = readState(ctx.cwd);
+18 |  await pi.command("loop", "status", ctx);
+19 |  const text = ctx.ui.notifies.map(n => n.message).join("\n");
+20 |  assert.match(text, /Loop: held/); assert.match(text, /\/loop resume/);
+             ^
+AssertionError: The input did not match the regular expression /Loop: held/. Input:
+
+'Loop: stopped — seeded loop target\n' +
+  'Metric: echo 1 (min)\n' +
+  'Iteration 1/50 · best n/a · last n/a · stall 0/5\n' +
+  'Stopped: held: restored in a fresh session'
+
+ generatedMessage: true,
+     actual: "Loop: stopped — seeded loop target\nMetric: echo 1 (min)\nIteration 1/50 · best n/a · last n/a · stall 0/5\nStopped: held: restored in a fresh session",
+   expected: /Loop: held/,
+   operator: "match",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-command-view-audit.test.ts:20:9
+      at processTicksAndRejections (native:7:39)
+(fail) held loop status preserves its meaning and names the actual resume command [62.63ms]
+23 | test("compact settling status reports archive debt instead of worker silence", async () => {
+24 |  const ago = new Date(Date.now() - 3600000).toISOString();
+25 |  const { pi, ctx } = boot({ goal: seedGoal({ status: "auditing", pendingCompletion: { phase: "settling", at: ago, startedAt: ago, verdictAt: ago, attemptId: "stored-approval" } }) });
+26 |  await pi.command("glla", "status", ctx);
+27 |  const text = ctx.ui.notifies.map(n => n.message).join("\n");
+28 |  assert.match(text, /archive owed/); assert.doesNotMatch(text, /no progress/);
+             ^
+AssertionError: The input did not match the regular expression /archive owed/. Input:
+
+'glla status\n' +
+  'goal [goal] auditing (audit settling · no progress): seeded test objective — done when pinned\n' +
+  'list: empty\n' +
+  'loop: none\n' +
+  'deep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log'
+
+ generatedMessage: true,
+     actual: "glla status\ngoal [goal] auditing (audit settling · no progress): seeded test objective — done when pinned\nlist: empty\nloop: none\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+   expected: /archive owed/,
+   operator: "match",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-command-view-audit.test.ts:28:9
+      at processTicksAndRejections (native:7:39)
+(fail) compact settling status reports archive debt instead of worker silence [18.27ms]
+28 |  assert.match(text, /archive owed/); assert.doesNotMatch(text, /no progress/);
+29 | });
+30 | test("paused goal status includes its saved next action without inventing one", async () => {
+31 |  const { pi, ctx } = boot({ goal: seedGoal({ status: "paused", pauseKind: "blocked", pauseReason: "Verification failed", pauseSuggestedAction: "Resolve the failing check, then /goal resume" }) });
+32 |  await pi.command("goal", "status", ctx);
+33 |  assert.match(ctx.ui.notifies.map(n => n.message).join("\n"), /Next: Resolve the failing check, then \/goal resume/);
+             ^
+AssertionError: The input did not match the regular expression /Next: Resolve the failing check, then \/goal resume/. Input:
+
+'paused: seeded test objective — done when pinned\n' +
+  'Auto-continue: on\n' +
+  'Iteration: 0\n' +
+  'Tokens: 0 (no cap — set Token limit in /glla settings)\n' +
+  'Paused: Verification failed\n' +
+  'Trail: /goal timeline'
+
+ generatedMessage: true,
+     actual: "paused: seeded test objective — done when pinned\nAuto-continue: on\nIteration: 0\nTokens: 0 (no cap — set Token limit in /glla settings)\nPaused: Verification failed\nTrail: /goal timeline",
+   expected: /Next: Resolve the failing check, then \/goal resume/,
+   operator: "match",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-command-view-audit.test.ts:33:9
+      at processTicksAndRejections (native:7:39)
+(fail) paused goal status includes its saved next action without inventing one [60.75ms]
+
+ 0 pass
+ 3 fail
+Ran 3 tests across 1 file. [1153.00ms]
+[run-tests] finished in 1s (exit 1)
