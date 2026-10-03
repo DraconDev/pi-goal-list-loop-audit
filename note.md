@@ -1,14 +1,14 @@
 # Now
 
+##
+improve control ui ?
+
 # Next
 
 ##
 do a release
 
 # later
-
-##
-improve control ui ?
 
 # Testing
 
