@@ -1503,3 +1503,9 @@ tests/drafting-handoff.test.ts:
 (pass) field screenshot: answered promise-only draft delivers exactly one corrective follow-up [5760.02ms]
 (pass) cancelled or missing answer suppresses stale handoff evidence: {"cancelled":true,"answers":[]} [2837.29ms]
 (pass) cancelled or missing answer suppresses stale handoff evidence: {} [2834.90ms]
+(pass) cancelled or missing answer suppresses stale handoff evidence: {"cancelled":false,"answers":[]} [2953.34ms]
+(pass) pending draft correction stands down on cancel [2820.72ms]
+[run-tests] progress: 180s elapsed · 2s since last output · 112 KiB of suite output
+(pass) pending draft correction stands down on user [2827.82ms]
+(pass) pending draft correction stands down on busy [2814.16ms]
+(pass) pending draft correction stands down on pending [2848.72ms]
