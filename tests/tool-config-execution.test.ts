@@ -18,7 +18,8 @@ async function boot(options: Record<string, unknown>, parameters = schema) {
   fs.writeFileSync(settingsFile, JSON.stringify({ autoResume: false, aggressiveMode: false }));
   const pi = new MockPi();
   activate(pi.api);
-  const ctx = makeMockCtx(tmpCwd(), { sessionManager: { name: `tool-options-${Math.random()}` } });
+  const sessionId = `tool-options-${Math.random()}`;
+  const ctx = makeMockCtx(tmpCwd(), { sessionManager: { name: sessionId, getSessionId: () => sessionId, getSessionFile: () => undefined } });
   pi.api.getAllTools = () => [{ name: "bash", parameters }] as ReturnType<typeof pi.api.getAllTools>;
   await pi.fire("session_start", { reason: "startup" }, ctx);
   saveSettings("project", ctx.cwd, { toolOverrides: { perToolConfig: { bash: options } } });

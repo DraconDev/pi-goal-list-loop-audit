@@ -2,12 +2,12 @@
 bun test v1.3.14 (0d9b296a) 1x PARALLEL
 
 tests/tool-config-execution.test.ts:
-38 | 
-39 | test("project optional arguments override supplied values and apply to later calls", async () => {
-40 |   const { ctx } = await boot({ timeout: 60, format: "json" });
-41 |   const first = { command: "example", timeout: 5 } as Record<string, unknown>;
-42 |   assert.equal((await call(first))?.block, undefined);
-43 |   assert.deepEqual(first, { command: "example", timeout: 60, format: "json" });
+39 | 
+40 | test("project optional arguments override supplied values and apply to later calls", async () => {
+41 |   const { ctx } = await boot({ timeout: 60, format: "json" });
+42 |   const first = { command: "example", timeout: 5 } as Record<string, unknown>;
+43 |   assert.equal((await call(first))?.block, undefined);
+44 |   assert.deepEqual(first, { command: "example", timeout: 60, format: "json" });
               ^
 AssertionError: Expected values to be strictly deep-equal:
 + actual - expected
@@ -32,15 +32,15 @@ AssertionError: Expected values to be strictly deep-equal:
    operator: "deepStrictEqual",
        code: "ERR_ASSERTION"
 
-      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:43:10
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:44:10
       at processTicksAndRejections (native:7:39)
-(fail) project optional arguments override supplied values and apply to later calls [134.46ms]
-51 | for (const config of [{ timeout: "bad" }, { unsupported: true }, { command: "replace the operation" }]) {
-52 |   test(`invalid options block atomically: ${JSON.stringify(config)}`, async () => {
-53 |     await boot(config);
-54 |     const input = { command: "original", timeout: 5 };
-55 |     const result = await call(input);
-56 |     assert.equal(result?.block, true);
+(fail) project optional arguments override supplied values and apply to later calls [50.99ms]
+52 | for (const config of [{ timeout: "bad" }, { unsupported: true }, { command: "replace the operation" }]) {
+53 |   test(`invalid options block atomically: ${JSON.stringify(config)}`, async () => {
+54 |     await boot(config);
+55 |     const input = { command: "original", timeout: 5 };
+56 |     const result = await call(input);
+57 |     assert.equal(result?.block, true);
                 ^
 AssertionError: Expected values to be strictly equal:
 + actual - expected
@@ -54,15 +54,15 @@ AssertionError: Expected values to be strictly equal:
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:56:12
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:57:12
       at processTicksAndRejections (native:7:39)
-(fail) invalid options block atomically: {"timeout":"bad"} [16.80ms]
-51 | for (const config of [{ timeout: "bad" }, { unsupported: true }, { command: "replace the operation" }]) {
-52 |   test(`invalid options block atomically: ${JSON.stringify(config)}`, async () => {
-53 |     await boot(config);
-54 |     const input = { command: "original", timeout: 5 };
-55 |     const result = await call(input);
-56 |     assert.equal(result?.block, true);
+(fail) invalid options block atomically: {"timeout":"bad"} [7.47ms]
+52 | for (const config of [{ timeout: "bad" }, { unsupported: true }, { command: "replace the operation" }]) {
+53 |   test(`invalid options block atomically: ${JSON.stringify(config)}`, async () => {
+54 |     await boot(config);
+55 |     const input = { command: "original", timeout: 5 };
+56 |     const result = await call(input);
+57 |     assert.equal(result?.block, true);
                 ^
 AssertionError: Expected values to be strictly equal:
 + actual - expected
@@ -76,15 +76,15 @@ AssertionError: Expected values to be strictly equal:
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:56:12
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:57:12
       at processTicksAndRejections (native:7:39)
-(fail) invalid options block atomically: {"unsupported":true} [12.70ms]
-51 | for (const config of [{ timeout: "bad" }, { unsupported: true }, { command: "replace the operation" }]) {
-52 |   test(`invalid options block atomically: ${JSON.stringify(config)}`, async () => {
-53 |     await boot(config);
-54 |     const input = { command: "original", timeout: 5 };
-55 |     const result = await call(input);
-56 |     assert.equal(result?.block, true);
+(fail) invalid options block atomically: {"unsupported":true} [10.10ms]
+52 | for (const config of [{ timeout: "bad" }, { unsupported: true }, { command: "replace the operation" }]) {
+53 |   test(`invalid options block atomically: ${JSON.stringify(config)}`, async () => {
+54 |     await boot(config);
+55 |     const input = { command: "original", timeout: 5 };
+56 |     const result = await call(input);
+57 |     assert.equal(result?.block, true);
                 ^
 AssertionError: Expected values to be strictly equal:
 + actual - expected
@@ -98,32 +98,32 @@ AssertionError: Expected values to be strictly equal:
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:56:12
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:57:12
       at processTicksAndRejections (native:7:39)
-(fail) invalid options block atomically: {"command":"replace the operation"} [10.75ms]
-(pass) a stale host cannot rewrite tool arguments [12.85ms]
-81 |   const outcome = await runToolCall({ id: "pipeline-call", name: "bash", arguments: { command: "fixture command", timeout: 5 } }, {
-82 |     tools: context.tools!, context,
-83 |     assistantMessage: { role: "assistant", content: [], api: "openai-completions", provider: "fixture", model: "fixture", stopReason: "toolUse", timestamp: Date.now(), usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } } as AssistantMessage,
-84 |     beforeToolCall: async ({ toolCall, args }) => await pi.handlers.get("tool_call")!({ type: "tool_call", toolName: toolCall.name, toolCallId: toolCall.id, input: args } as never, ctx as never) as any,
-85 |   });
-86 |   assert.equal(outcome.isError, false);
+(fail) invalid options block atomically: {"command":"replace the operation"} [9.58ms]
+(pass) a stale host cannot rewrite tool arguments [8.84ms]
+83 |     tools: context.tools!, context,
+84 |     assistantMessage: { role: "assistant", content: [], api: "openai-completions", provider: "fixture", model: "fixture", stopReason: "toolUse", timestamp: Date.now(), usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } } as AssistantMessage,
+85 |     beforeToolCall: async ({ toolCall, args }) => await pi.handlers.get("tool_call")!({ type: "tool_call", toolName: toolCall.name, toolCallId: toolCall.id, input: args } as never, ctx as never) as any,
+86 |   });
+87 |   assert.equal(outcome.isError, false, JSON.stringify(outcome));
+88 |   assert.equal(observedTimeout, 60, "the actual bash execution receives the override");
               ^
-AssertionError: Expected values to be strictly equal:
+AssertionError: the actual bash execution receives the override
 
-true !== false
+5 !== 60
 
- generatedMessage: true,
-     actual: true,
-   expected: false,
+ generatedMessage: false,
+     actual: 5,
+   expected: 60,
    operator: "strictEqual",
        code: "ERR_ASSERTION"
 
-      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:86:10
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:88:10
       at processTicksAndRejections (native:7:39)
-(fail) the real Pi tool pipeline executes bash with the configured timeout [20.31ms]
+(fail) the real Pi tool pipeline executes bash with the configured timeout [14.49ms]
 
  1 pass
  5 fail
-Ran 6 tests across 1 file. [888.00ms]
+Ran 6 tests across 1 file. [647.00ms]
 [run-tests] finished in 1s (exit 1)
