@@ -93,3 +93,11 @@ This is a source and component/behavioral audit. It does not claim a fresh
 live-fleet survey, manual screenshots from every Pi UI mode, a test of all
 provider credentials, or a clean composite full-suite release gate. No
 release tag or package publication was performed.
+
+## Execution-options follow-up
+
+The storage-only limitation recorded above was subsequently implemented in
+0.38.111. See [TOOL-CONFIG-EXECUTION-2026-10-03.md](TOOL-CONFIG-EXECUTION-2026-10-03.md)
+for the public-hook ownership analysis, supported optional-argument contract,
+and execution/validation evidence. The original 0.38.110 findings above remain
+historical evidence.
