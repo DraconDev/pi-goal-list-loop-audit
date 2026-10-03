@@ -2344,3 +2344,130 @@ tests/agents-panel.test.ts:
 (pass) v0.36.0: --tail rejects a message that merely mentions the target identity [0.14ms]
 (pass) v0.35.29 #15: --tail is LOUD when nothing matches or the dir is unreadable [0.38ms]
 (pass) v0.35.29 #15: formatTranscriptEntry survives shape drift without throwing [0.07ms]
+(pass) v0.35.29 #15: end-to-end — /glla agents renders real probe data; widget segment rides the goal card [1240.54ms]
+(pass) v0.35.65: buildWidgetLines places detailed worker rows before the card footer and supports an agent-only card [2.18ms]
+(pass) v0.35.45: formatTranscriptEntry strips ANSI escapes and control chars on ALL paths [0.29ms]
+(pass) v0.35.45: the candidate scan reads a bounded tail per file, not full transcripts [0.72ms]
+(pass) audit-2026-09-06: panel renders the doc-promised blocks row and Recent hangs footer [1.64ms]
+(pass) audit-2026-09-06: snapshot labels live rows with the observed parent wait only [0.45ms]
+(pass) audit-2026-09-06: --tail with an ambiguous prefix lists candidates instead of picking silently [954.25ms]
+(pass) audit 2026-09-25: transcript role labels never split surrogate pairs [0.76ms]
+
+tests/compaction-containment.test.ts:
+(pass) session_before_compact returns nothing — another extension's compaction must survive [111.71ms]
+(pass) pure: in-flight marker is armed-signal plus timeout, never silence [5.44ms]
+(pass) compaction in flight suppresses send-storm escalation (no park, no recovery) [898.72ms]
+[run-tests] progress: 270s elapsed · 2s since last output · 257 KiB of suite output
+(pass) post-compact settle owns exactly one bounded probe (no duplicates) [3546.93ms]
+(pass) escalation proceeds after settle — the gate is compaction-scoped, not a blanket disable [3745.74ms]
+(pass) scheduleContinuation defers while in flight and the settle still sends once [3373.34ms]
+
+tests/audit-settlement-restart.test.ts:
+(pass) restart: a running claim whose worker is gone parks as recovery-needed and never looks complete [1360.46ms]
+(pass) restart: a claim whose worker never reported is recovery-needed, with no invented activity [1278.60ms]
+(pass) restart: a settling claim completes its archive without re-running the auditor [2031.95ms]
+(pass) restart: a finished settlement is approved once — one render, and the render follows the archive [1433.11ms]
+(pass) restart: a refused archive keeps the approved claim and emits no terminal success [824.77ms]
+(pass) recovery: after the fault is repaired, /goal resume finishes the settlement WITHOUT re-auditing [1280.25ms]
+(pass) recovery: a restart after the fault is repaired also finishes the settlement without re-auditing [1768.91ms]
+(pass) lifecycle evidence survives the durable state boundary (sanitized, not dropped) [1.36ms]
+(pass) audit 2026-09-25: no constant-folded settlement guard obscures the live gate [0.85ms]
+
+tests/draft-staging.test.ts:
+(pass) v0.38.53: proposal stages stale and interview gates before Confirm [0.31ms]
+(pass) v0.38.53: list batch conflict handling follows confirmation and precedes enqueue [0.09ms]
+(pass) v0.38.53: single list confirmation precedes post-confirm conflict handling [0.07ms]
+(pass) v0.38.53: prompt construction precedes the drafting gate, then model lease and steering [0.05ms]
+
+tests/second-gemini-gap.test.ts:
+(pass) v0.38.52: gate rows widen the verification table with derived statuses [3.67ms]
+(pass) v0.38.52: without gates the 3-col mechanical table is byte-identical [86.63ms]
+(pass) v0.38.52: nested findings render Test Results sub-bullets aligned by index [1.70ms]
+(pass) v0.38.52: table-mode findings ride test proof in the Evidence cell [0.85ms]
+(pass) v0.38.52: sanitizeGateRows drops garbage, clips, caps [0.48ms]
+(pass) v0.38.52: sanitizeFindingGroups parses parallel tests [0.21ms]
+(pass) v0.38.52: old claims without tests render byte-identical to v0.38.50 [0.22ms]
+(pass) v0.38.52: complete_goal gateRows + tests ride the claim into the chat render [4282.43ms]
+
+tests/owner-fence.test.ts:
+(pass) v0.35.72: a live foreign process cannot claim the workingDir owner file [240.85ms]
+(pass) v0.35.72: mutating goal and loop commands use the stale admission fence [0.78ms]
+(pass) owner acquisition and refresh preserve malformed records for explicit repair [2037.20ms]
+(pass) takeover compares the complete record inside the owner mutation [674.67ms]
+(pass) a stale instance refresh cannot overwrite a same-process successor [1001.35ms]
+
+tests/auditor-fallback-thinking.test.ts:
+[run-tests] progress: 300s elapsed · 1s since last output · 260 KiB of suite output
+(pass) non-empty fallback save is followed by the auditor thinking select [2667.47ms]
+(pass) typing the session model into the fallback input names the slot-0 exclusion [99.20ms]
+(pass) clearing the fallback chain skips the thinking prompt [115.26ms]
+
+tests/list-audit.test.ts:
+(pass) parseAuditFindingsForFanout: open boxes actionable, [?] boxes decisions, checked boxes ignored [23.23ms]
+(pass) parseAuditFindingsForFanout: tolerates the /loop audit format (no FIX: prefix) [0.21ms]
+(pass) parseAuditFindingsForFanout: accepts aligned open checkbox spacing [0.06ms]
+(pass) parseAuditFindingsForFanout: empty / missing content yields nothing [0.03ms]
+(pass) listAuditFanoutItemText: checkable Done when tied to the findings file [0.18ms]
+(pass) listAuditCollectTarget: collect-only — marker, no-fix law, honest-empty law, Done when [0.18ms]
+(pass) /list audit route: builds the collect target and enqueues it [0.14ms]
+(pass) completion fan-out: collect items fan out + suppress the list-complete noise [0.67ms]
+(pass) fan-out: canonical dedupe, cap accounting, optional auto-accept, and decline keeps findings open [1.24ms]
+(pass) fan-out dedupe round-trip: stored form matches, prefix collisions do not [0.32ms]
+(pass) help surface: /list audit appears in the command description + completions [0.41ms]
+(pass) markers: the built targets still contain what the guards match on [0.25ms]
+(pass) /loop audit warns when a one-shot audit goal exists (paused or active) [0.15ms]
+(pass) /goal audit + /list audit warn when an audit loop is already running [0.19ms]
+(pass) restore-hold names the supersession in the widget surface [0.59ms]
+(pass) v0.33.3: one-shot audit raises DECIDE findings as questions before completing [0.08ms]
+
+tests/release-contract.test.ts:
+(pass) release contract: published documentation links are covered by the npm tarball [4380.95ms]
+(pass) release contract: the release gate exercises the packed artifact [0.36ms]
+(pass) release contract: packed prompts, schema, and workers ship in the dry-run list [2601.79ms]
+(pass) release contract: glla-delegate skill loads without diagnostics (source-tree fast tier) [23.08ms]
+88 | });
+89 | 
+90 | test("release contract: docs index tracks the package version", () => {
+91 |   const version = (JSON.parse(fs.readFileSync("package.json", "utf-8")) as { version: string }).version;
+92 |   const index = fs.readFileSync("docs/INDEX.md", "utf-8");
+93 |   assert.ok(index.includes(`v0.35.14–v${version}`), "the active-focus trail must reach the current package version");
+              ^
+AssertionError: the active-focus trail must reach the current package version
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/release-contract.test.ts:93:10
+      at fn (node:test:215:18)
+(fail) release contract: docs index tracks the package version [1.64ms]
+(pass) release contract: package is discoverable as a Pi extension and skill [1334.84ms]
+(pass) release contract: README package contents claim matches the files allowlist [2120.82ms]
+(pass) release contract: first-use README guidance matches current behavior [0.33ms]
+(pass) release contract: smoke waits use durable or literal transition markers [0.19ms]
+(pass) release workflow scopes trusted-publishing OIDC to the publish job [9.66ms]
+(pass) v0.38.32: release runs never share the push-churn concurrency group [0.37ms]
+(pass) release contract: changelog has one heading for the current package version [5.59ms]
+(pass) release contract: untagged source work has an Unreleased changelog section to promote [15.92ms]
+
+tests/subagent-display-richness.test.ts:
+(pass) audit 2026-09-07 richness defaults to quiet (exceptions-only) and normalizes junk [16.28ms]
+(pass) v0.38.23 rich assembles single-line glyph rows, no header; compact keeps the line; quiet hides healthy workers [0.60ms]
+(pass) v0.38.22 detailed lines bucket silence — identical output seconds apart [0.20ms]
+(pass) v0.38.22 hasHungWorker covers hung + aborting, ignores ended [0.07ms]
+(pass) audit 2026-09-07 count line flags trouble on ANY child, not just the stalest [0.07ms]
+(pass) v0.38.23 every rich line is width-safe; long summaries truncate cell-aware [0.12ms]
+
+tests/behavioral-orchestrator.test.ts:
+(pass) T3a: active goal + human load (startup) + default settings → HELD for explicit resume [1352.55ms]
+(pass) v0.34.18: blank startup waits for the transcript before autoresume, while explicit resume and loaded history still work [1856.08ms]
+(pass) v0.34.121: blank startup closes a legacy terminal slot when its archive exists [304.26ms]
+(pass) T3c (v0.28.21): interrupted goal HELDS by default — the 0.28.3 exemption is superseded; autoresume=on auto-resumes [1107.56ms]
+(pass) T3b (v0.28.21): active goal + reload → HELD by default; autoresume=on → auto-resumes [811.91ms]
+(pass) v0.35.x: list cancel archives the active item, does not relabel it as active, and preserves its audit history [1076.29ms]
+(pass) v0.36.0: /goal cancel archives a standalone goal with a compact six-label recap [141.46ms]
+(pass) v0.36.0: /list next archives the skipped active item with a compact recap [406.60ms]
+(pass) v0.36.1: bare /goal start uses one clear active-branch request [645.32ms]
+(pass) v0.36.1: bare /list start activates the hydrated queue head [578.05ms]
+(pass) v0.36.1: bare /loop start infers only a target and uses the metricless path [310.09ms]

@@ -849,7 +849,9 @@ test("approval without an audit tool is a semantic disapproval", async () => {
     const result = await run(dir, { FAKE_AUDIT_OUTPUT: "<approved/>" });
     assert.equal(result.approved, false);
     assert.equal(result.disapproved, true);
-    assert.match(result.error ?? "", /audit tool/);
+    assert.equal(result.error, undefined, "semantic disapproval must not enter infrastructure retry");
+    assert.match(result.output, /audit tool/);
+    assert.match(result.output, /<disapproved\/>\s*$/, "the final marker agrees with the semantic verdict");
   } finally {
     await cleanup(dir);
   }

@@ -221,6 +221,8 @@ test("D5: concrete work mentioning audit/review/settle/approval survives the sta
   const kept = withoutStaleNext([
     "Evidence: commit abc",
     "Next: detached auditor verdict decides.",
+    "Next: await audit.",
+    "Next: waiting for auditor approval.",
     "Next: review pending PRs before the release",
   ]);
   assert.deepEqual(kept, [

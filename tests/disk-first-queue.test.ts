@@ -185,7 +185,8 @@ test("v0.34.61: addSingleItem is disk-first (sidecar before state mutation)", ()
   // must be written BEFORE `state = { ...state, list: ... }` so an
   // orchestrator-turn death between the state mutation and persistState
   // cannot lose the item. readQueueFromDisk must find it after a reload.
-  const fn = SRC.slice(SRC.indexOf("function addSingleItem"), SRC.indexOf("function addSingleItem") + 1200);
+  const start = SRC.indexOf("function addSingleItem");
+  const fn = SRC.slice(start, SRC.indexOf("\n}\n", start) + 2);
   const writePos = fn.indexOf("writeQueueItemFile(ctx.cwd, item)");
   const statePos = fn.indexOf("replaceState({ ...state, list: [...listQueue(), item] })");
   assert.ok(writePos !== -1, "addSingleItem calls writeQueueItemFile");

@@ -226,7 +226,7 @@ export function humanCompletionBrief(
  * ("awaiting approval") is always a status report; a noun leading only
  * drops when a state verb follows within the window ("verdict decides").
  * Bare "review …" leads survive — reviewing things is real work. */
-const STALE_NEXT_LEAD_VERB = /(awaiting|pending|forthcoming|underway|in progress).{0,24}(auditor|verdict|approval|audit|settlement|review)/i;
+const STALE_NEXT_LEAD_VERB = /\b(await(?:ing)?|waiting for|pending|forthcoming|underway|in progress).{0,24}(auditor|verdict|approval|audit|settlement|review)/i;
 const STALE_NEXT_LEAD_NOUN = /(auditor|verdict|approval|audit|settlement).{0,24}(decides?|pending|awaiting|forthcoming|underway|in progress)/i;
 /** The recorded-facts fallback Next is concrete (`review the durable
  * record at …`) and must survive the stale-Next filter (v0.38.45 audit:

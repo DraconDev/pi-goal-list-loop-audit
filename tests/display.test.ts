@@ -68,7 +68,7 @@ test("D6: the clause-cut floor scales with the budget instead of pinning at 16",
   const text = `${"a".repeat(20)}: ${"b".repeat(150)}`;
   const cut = truncateObjective(text, 100);
   assert.ok(cut.length > 50, `below-floor boundary falls back to the char cut, got ${cut.length} cells`);
-  assert.ok(!cut.startsWith("a".repeat(20)), "the short clause cut is not taken");
+  assert.ok(cut.includes("b".repeat(50)), "the character cut retains text beyond the short clause");
 });
 
 test("D10: fmtElapsed clamps non-finite input to zero", () => {
