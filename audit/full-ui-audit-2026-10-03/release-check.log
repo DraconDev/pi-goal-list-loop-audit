@@ -3857,3 +3857,116 @@ tests/auditor-stall-watchdog.test.ts:
 (pass) v0.38.99: a genuinely wedged tool still fails fast once the grace expires [712.10ms]
 
 tests/auditor-retry-callback.test.ts:
+[run-tests] progress: 600s elapsed · 9s since last output · 1417 KiB of suite output
+(pass) manual audit exhaustion retries through timer with fresh candidates and unchanged envelope [23040.10ms]
+
+tests/goal.schema.test.ts:
+unknown format "date-time" ignored in schema at path "#/properties/deferred/properties/at"
+unknown format "date-time" ignored in schema at path "#/properties/deferred/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/auditVerdict/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/auditVerdict/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/subagentQuotaEvidence/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/lastActivityAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/lastActivityAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/verdictAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/verdictAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/startedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/startedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryRetryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/recoveryRetryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/automaticRecoveryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/retryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaFirstAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaAutoRetryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/quotaAutoRetryUntil"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/resetAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorRetryAttemptStartedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorRetryAttemptStartedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorFailureAt"
+unknown format "date-time" ignored in schema at path "#/definitions/pendingCompletion/properties/auditorFailureAt"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepair/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepair/properties/at"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepairTarget/properties/replanPromptedAt"
+unknown format "date-time" ignored in schema at path "#/definitions/objectiveRepairTarget/properties/replanPromptedAt"
+unknown format "date-time" ignored in schema at path "#/properties/createdAt"
+unknown format "date-time" ignored in schema at path "#/properties/createdAt"
+unknown format "date-time" ignored in schema at path "#/properties/updatedAt"
+unknown format "date-time" ignored in schema at path "#/properties/updatedAt"
+(pass) schema accepts active goal and queued-list goal fixtures [36.15ms]
+(pass) schema rejects invalid status and missing required usage [0.23ms]
+(pass) schema validates nested task and audit-verdict required fields [0.23ms]
+
+tests/glla-table-menu.test.ts:
+(pass) render: title row [38.64ms]
+(pass) grouped entry points can open a specific settings section [0.67ms]
+(pass) render: tabs row lists all 8 sections [1.06ms]
+(pass) main agent tab starts with the current agent and drills in [0.87ms]
+(pass) render: at width=120, the keep-going section renders its rows (v0.28.23: +decisionPopup) [0.62ms]
+(pass) render: active row uses a full-width selected background [0.68ms]
+(pass) render: compact header row has KEY, VALUE, SOURCE columns [0.45ms]
+(pass) render: compact mode never exceeds terminal width even with a long VALUE in another section [0.33ms]
+(pass) render: footer pin includes the optional details toggle [0.40ms]
+(pass) nav: Enter on the first row emits that row's id [0.08ms]
+(pass) nav: Down arrow moves to the next visible row [0.09ms]
+(pass) nav: Down wrapping at the end of a section wraps to 0 [0.10ms]
+(pass) nav: Esc emits undefined (close) [0.03ms]
+(pass) nav: Tab advances to the next section [0.04ms]
+(pass) nav: Back-tab (\x1b[Z) retreats to the previous section [0.03ms]
+(pass) nav: Right-arrow CSI sequence (\x1b[C) advances section [0.02ms]
+(pass) nav: Left-arrow CSI sequence (\x1b[D) retreats section [0.02ms]
+(pass) details toggle: narrow descriptions are readable in a wrapped pane [0.93ms]
+(pass) details toggle: at width=120 the description column shows most of the row text [0.80ms]
+(pass) cache: identical renders at the same width return the same array reference [0.35ms]
+(pass) cache: state change invalidates cache (move → next render produces new lines) [0.62ms]
+(pass) compact view expands VALUE so model + thinking are visible [0.43ms]
+(pass) structural: Class implements Component (has render + invalidate + handleInput) [0.03ms]
+(pass) structural: buildSettingsRows returns ≥20 rows across all 8 sections (coverage) [0.35ms]
+(pass) render: tab bar is color-only (v0.28.19: brackets dropped), all sections present [0.42ms]
+(pass) render: a header rule with ┼ junctions follows the header row [0.55ms]
+(pass) render: column separators align across header, rule, and every row (prefix counted) [0.43ms]
+(pass) render: a too-long VALUE is truncated with … — it must NOT break the grid [0.36ms]
+(pass) render: column widths are stable across tab switches (no grid reflow) [1.20ms]
+
+tests/active-liveness.test.ts:
+(pass) headLifesign falls back to host stream silence with the same bands [0.19ms]
+(pass) tracked rows win over the stream fallback [0.14ms]
+(pass) active head shows main-model stream age without tracked rows [35.41ms]
+(pass) stale main-model stream paints the head error, aging paints warning [0.27ms]
+(pass) future or missing stream evidence invents no head readout [0.09ms]
+(pass) stamped last action carries bucketed recency [0.47ms]
+(pass) unstamped or future-stamped actions carry no recency [0.28ms]
+
+tests/goal-loop-stats.test.ts:
+(pass) empty rig: no .pi-glla anywhere → empty discovery + no rollup [40.31ms]
+(pass) single project with one approved goal: all counters correct [1.13ms]
+(pass) premature-success detection fires on low turns + 0 writes + few bash [0.07ms]
+(pass) JSON output schema matches the table columns [0.49ms]
+(pass) premature filter: only flagged projects, ratio-sorted [0.10ms]
+(pass) discovery finds nested projects and dedupes via cwd [0.50ms]
+(pass) parseLedgerEntries skips malformed lines [0.11ms]
+
+tests/compaction-failed-recovery.test.ts:
+(pass) host-owned failed compaction retries without model rotation, park, or competing continuation [284.95ms]
+(pass) terminal prompt overflow rotates once and arms durable post-compact resume debt [252.21ms]
+(pass) same-session startup restores fallback debt, while a new session discards it [220.49ms]
+(pass) terminal output-cap failure parks instead of misclassifying it as context overflow [134.48ms]
+(pass) failed compaction without a usable fallback parks an active goal durably [146.08ms]
+(pass) failed compaction parks a branch loop instead of leaving it active [157.80ms]
+(pass) a failed debt-discharge append keeps RAM debt instead of diverging from disk [138.01ms]

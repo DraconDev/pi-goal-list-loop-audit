@@ -1046,7 +1046,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       ["audits", "browse the audit log"],
       ["agents", "show tracked subagents; --tail <id> reads a child transcript"],
       ["switchlog", "show the model-switch trail (model_switch / forbidden_model_switch)"],
-      ["tooloverride", "configure agent-tool visibility"],
+      ["tooloverride", "configure tool visibility and optional execution arguments"],
       ["fallbacks", "show main fallback models; /glla fallbacks clear removes them"],
       ["owner", "inspect this folder's state-root owner"],
       ["takeover", "take over the state root after a verified Confirm dialog"],

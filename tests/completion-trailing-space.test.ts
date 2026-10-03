@@ -111,7 +111,9 @@ test("/glla completions stay concise: actions only; settings live in the table",
   // v0.35.29 (issue #15): "agents" joined as the 12th — tracked-subagent
   // visibility is an inspection action, not a settings route.
   // v0.35.72: "bug" joined as the 13th — failure capture is an action, not a setting.
-  assert.ok((glla.match(/\["[^"]+",/g) ?? []).length <= 13, "glla autocomplete stays concise");
+  // v0.38.110: fallbacks, owner, takeover and postaudit bring the action
+  // list to 17; canonical-route coverage lives in command-registration-collisions.
+  assert.ok((glla.match(/\["[^"]+",/g) ?? []).length <= 17, "glla autocomplete stays concise");
   assert.ok(!/\["[a-zA-Z]+=",/.test(glla), "no key=value setting aliases in autocomplete");
   assert.doesNotMatch(glla, /key=value|project key/);
   assert.doesNotMatch(SRC, /\^\(keep-going\|agents\|auditor\|stall-brakes\|subagents\|other\)\\b/);

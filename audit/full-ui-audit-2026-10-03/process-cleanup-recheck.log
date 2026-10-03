@@ -1,0 +1,13 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/compactor-worker-lifecycle.test.ts:
+(pass) compactor cleans its Pi tree on SIGTERM, including inherited pipes and TERM-ignoring children [1005.84ms]
+(pass) compactor cleans its Pi tree on timeout, including inherited pipes and TERM-ignoring children [3163.98ms]
+(pass) compactor cleans its Pi tree on normal, including inherited pipes and TERM-ignoring children [594.68ms]
+(pass) compactor cleans its Pi tree on result-write-failure, including inherited pipes and TERM-ignoring children [561.13ms]
+
+ 4 pass
+ 0 fail
+Ran 4 tests across 1 file. [5.78s]
+[run-tests] finished in 6s (exit 0)

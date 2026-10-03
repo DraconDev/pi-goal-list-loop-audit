@@ -1,0 +1,15 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/behavioral-orchestrator.test.ts:
+(pass) auto-accept escape hatch: ALWAYS choice persists project autoAcceptDrafts and accepts the draft [3137.15ms]
+(pass) source pin: all five draft-class dialogs route through confirmDraft with the 3-choice ALWAYS option [3.88ms]
+
+tests/completion-trailing-space.test.ts:
+(pass) /glla completions stay concise: actions only; settings live in the table [3.01ms]
+
+ 3 pass
+ 159 filtered out
+ 0 fail
+Ran 3 tests across 2 files. [4.80s]
+[run-tests] finished in 5s (exit 0)
