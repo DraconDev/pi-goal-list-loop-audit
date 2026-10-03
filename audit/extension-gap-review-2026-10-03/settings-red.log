@@ -1,29 +1,8 @@
 bun test v1.3.14 (0d9b296a)
 
 tests/settings-stale-save.test.ts:
-24 |   Object.defineProperty(globalThis, "warnIfStaleAtEntry", { configurable: true, value: () => true });
-25 |   ctx.ui.selectImpl = async () => "on — --session <jobDir>/session.jsonl: tail -f it live, resume it after the audit";
-26 |   try {
-27 |     await assert.rejects(handleSettingChoice("auditorInspection", ctx as unknown as ExtensionContext), /went stale during the edit/);
-28 |     assert.equal(ctx.ui.matching("Auditor inspection ON").length, 0, "the branch success notify never ran");
-29 |     assert.equal(loadGlobalSettings().auditorInspection, undefined, "nothing was written");
-                ^
-AssertionError: nothing was written
-+ actual - expected
-
-+ false
-- undefined
-
- generatedMessage: false,
-     actual: false,
-   expected: undefined,
-   operator: "strictEqual",
-       code: "ERR_ASSERTION"
-
-      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/settings-stale-save.test.ts:29:12
-      at processTicksAndRejections (native:7:39)
-(fail) C9: stale-probe refusal fails the save loudly — no false saved claim [807.71ms]
-(pass) C9 control: healthy probe saves and reports normally [386.21ms]
+(pass) C9: stale-probe refusal fails the save loudly — no false saved claim [178.63ms]
+(pass) C9 control: healthy probe saves and reports normally [139.21ms]
 61 |     // A second editor replaces the old module-global context while the first
 62 |     // one waits for its answer. Even a cancelled edit exposed the race.
 63 |     fresh.ui.selectImpl = async () => undefined;
@@ -40,7 +19,7 @@ AssertionError: Missing expected rejection.
 
       at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/settings-stale-save.test.ts:66:18
       at processTicksAndRejections (native:7:39)
-(fail) settings save validates its own session after an overlapping editor [684.96ms]
+(fail) settings save validates its own session after an overlapping editor [137.76ms]
 78 |     ctx.ui.inputImpl = async () => "0";
 79 |     await handleSettingChoice("stallSimilarityThreshold", ctx as unknown as ExtensionContext);
 80 |     assert.equal(loadGlobalSettings().stallSimilarityThreshold, 0);
@@ -60,8 +39,28 @@ AssertionError: Expected values to be strictly equal:
 
       at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/settings-stale-save.test.ts:83:12
       at processTicksAndRejections (native:7:39)
-(fail) similarity editor empty input restores the default; explicit zero stays zero [514.12ms]
+(fail) similarity editor empty input restores the default; explicit zero stays zero [558.29ms]
+100 |     thinkingPrompts++;
+101 |     return "max — maximum reasoning";
+102 |   };
+103 |   try {
+104 |     await handleSettingChoice("auditorModel", ctx as unknown as ExtensionContext);
+105 |     assert.equal(thinkingPrompts, 1);
+                 ^
+AssertionError: Expected values to be strictly equal:
 
- 1 pass
+0 !== 1
+
+ generatedMessage: true,
+     actual: 0,
+   expected: 1,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/settings-stale-save.test.ts:105:12
+      at processTicksAndRejections (native:7:39)
+(fail) auditor picker offers thinking for provider refs containing nested model ids [466.13ms]
+
+ 2 pass
  3 fail
-Ran 4 tests across 1 file. [4.86s]
+Ran 5 tests across 1 file. [2.06s]

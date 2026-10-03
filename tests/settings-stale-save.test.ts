@@ -26,7 +26,7 @@ test("C9: stale-probe refusal fails the save loudly — no false saved claim", a
   try {
     await assert.rejects(handleSettingChoice("auditorInspection", ctx as unknown as ExtensionContext), /went stale during the edit/);
     assert.equal(ctx.ui.matching("Auditor inspection ON").length, 0, "the branch success notify never ran");
-    assert.equal(loadGlobalSettings().auditorInspection, undefined, "nothing was written");
+    assert.equal(loadGlobalSettings().auditorInspection, false, "nothing was written");
   } finally {
     Object.defineProperty(globalThis, "warnIfStaleAtEntry", prior);
     await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
@@ -64,7 +64,7 @@ test("settings save validates its own session after an overlapping editor", asyn
     await handleSettingChoice("auditorInspection", fresh as unknown as ExtensionContext);
     answer("on — persist inspection");
     await assert.rejects(staleEdit, /went stale during the edit/);
-    assert.equal(loadGlobalSettings().auditorInspection, undefined, "stale editor wrote nothing");
+    assert.equal(loadGlobalSettings().auditorInspection, false, "stale editor wrote nothing");
     assert.equal(ctx.ui.matching("Auditor inspection ON").length, 0);
   } finally {
     Object.defineProperty(globalThis, "warnIfStaleAtEntry", prior);
@@ -81,5 +81,28 @@ test("similarity editor empty input restores the default; explicit zero stays ze
     ctx.ui.inputImpl = async () => "   ";
     await handleSettingChoice("stallSimilarityThreshold", ctx as unknown as ExtensionContext);
     assert.equal(loadGlobalSettings().stallSimilarityThreshold, undefined);
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});
+
+
+test("auditor picker offers thinking for provider refs containing nested model ids", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); const ctx = await boot(pi, cwd);
+  const model = { provider: "openrouter", id: "vendor/reasoner", reasoning: true, thinkingLevelMap: { max: "max" } };
+  ctx.modelRegistry = {
+    find: (provider: string, id: string) => provider === model.provider && id === model.id ? model : undefined,
+    getAvailable: () => [model],
+    hasConfiguredAuth: () => true,
+  };
+  ctx.ui.customImpl = async () => ({ kind: "model", ref: "openrouter/vendor/reasoner" });
+  let thinkingPrompts = 0;
+  ctx.ui.selectImpl = async (title: string) => {
+    if (!title.startsWith("Auditor thinking")) return undefined;
+    thinkingPrompts++;
+    return "max — maximum reasoning";
+  };
+  try {
+    await handleSettingChoice("auditorModel", ctx as unknown as ExtensionContext);
+    assert.equal(thinkingPrompts, 1);
+    assert.equal(loadGlobalSettings().auditorThinkingLevel, "max");
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
