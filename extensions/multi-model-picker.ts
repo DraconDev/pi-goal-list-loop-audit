@@ -364,7 +364,6 @@ export class MultiModelPickerComponent {
   render(width: number): string[] {
     if (this.getHeight) return this.renderViewport(width, Math.max(8, Math.floor(this.getHeight())));
     const w = Math.max(0, width - 2);
-    const height = Number.POSITIVE_INFINITY;
     const lines: string[] = [];
     lines.push(this.theme.fg("accent", this.theme.bold(truncateToWidth(compactDisplayText(this.title), w, "…"))));
     if (this.unorderedSet) {
@@ -385,10 +384,7 @@ export class MultiModelPickerComponent {
         ? "  — no backups; keep probing the current model"
         : this.unorderedSet ? "  — no extra extensions selected; session mirroring is separate" : "  — no fallback refs configured"));
     } else {
-      const summaryLimit = Number.isFinite(height) ? Math.max(1, Math.min(this.selection.length, Math.floor(height / 4))) : this.selection.length;
-      const summaryStart = this.orderMode ? Math.max(0, Math.min(this.orderIdx - Math.floor(summaryLimit / 2), this.selection.length - summaryLimit)) : 0;
-      if (this.unorderedSet && this.selection.length > summaryLimit) lines.push(this.theme.fg("muted", `  ${this.selection.length} selected · [X] marks membership below`));
-      else for (let i = summaryStart; i < summaryStart + summaryLimit; i++) {
+      for (let i = 0; i < this.selection.length; i++) {
         const ref = this.selection[i]!;
         const item = this.itemForRef(ref);
         const status = this.effectiveDisabledReason(item) ? ` · ${this.effectiveDisabledReason(item)}` : "";
@@ -402,7 +398,6 @@ export class MultiModelPickerComponent {
           lines.push(row);
         }
       }
-      if (!this.unorderedSet && summaryLimit < this.selection.length) lines.push(this.theme.fg("dim", `  Backups ${summaryStart + 1}–${summaryStart + summaryLimit} of ${this.selection.length} · tab to inspect order`));
     }
     lines.push("");
     const searchLine = this.orderMode ? "order mode — arrows move this backup" : `search: ${this.query}`;
@@ -431,7 +426,7 @@ export class MultiModelPickerComponent {
       lines.push(this.theme.fg("warning", "  no matches — keep typing, or Esc to cancel"));
     } else {
       const sel = Math.min(this.selectedIdx, filtered.length - 1);
-      const maxRows = Math.max(1, Math.min(this.maxRows, height - lines.length - 4));
+      const maxRows = this.maxRows;
       const half = Math.floor(maxRows / 2);
       const start = Math.max(0, Math.min(sel - half, filtered.length - maxRows));
       const window = filtered.slice(start, start + maxRows);

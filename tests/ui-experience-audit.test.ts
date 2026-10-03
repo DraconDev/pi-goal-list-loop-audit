@@ -153,3 +153,14 @@ test("settling cards identify the approved archive owed and its recovery action"
   assert.match(text, /next: \/goal resume.*approved/);
   assert.doesNotMatch(text, /waiting for completion review/);
 });
+
+test("single picker resizes through short and narrow terminals without losing focus", () => {
+ let height = 24;
+ const component = new ModelPickerComponent({ title: "Pick a model", items, getHeight: () => height }, () => {}, theme, kb, () => {});
+ for (let i = 0; i < 22; i++) component.handleInput("down");
+ for (height of [8, 12, 18, 24]) for (const width of [40, 60, 120]) {
+  assertFits(component.render(width), width, height);
+  assert.match(component.render(width).join("\n"), /→ fixture\/model-22/);
+  assert.equal(component.getSelectedIdx(), 22);
+ }
+});

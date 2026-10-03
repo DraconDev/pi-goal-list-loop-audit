@@ -211,9 +211,29 @@ export class ModelPickerComponent {
     this.refresh();
   }
 
-  render(width: number): string[] {
+  private renderViewport(width: number, height: number): string[] {
     const w = Math.max(0, width - 2);
-    const height = this.getHeight ? Math.max(8, Math.floor(this.getHeight())) : Number.POSITIVE_INFINITY;
+    const lines = [this.theme.fg("accent", this.theme.bold(compactDisplayText(this.title))), this.theme.fg("muted", `search: ${this.query}▏`)];
+    const footer = width < 60 ? ["type to search · ↑↓ move", "enter select · esc cancel"] : ["type to filter · ↑↓ move · enter select · esc cancel"];
+    const filtered = this.filteredItems();
+    const limit = Math.max(1, Math.min(this.maxRows, height - lines.length - footer.length - 1));
+    const selected = Math.min(this.selectedIdx, filtered.length - 1);
+    const start = Math.max(0, Math.min(selected - Math.floor(limit / 2), filtered.length - limit));
+    const window = filtered.slice(start, start + limit);
+    if (!filtered.length) lines.push(this.theme.fg("warning", "No matches · change search or Esc to cancel"));
+    window.forEach((item, index) => {
+      const active = start + index === selected;
+      const row = truncateToWidth(`${active ? "→" : " "} ${compactDisplayText(item.label)}`, w, "…");
+      lines.push(active ? this.theme.bg("selectedBg", this.theme.bold(row + " ".repeat(Math.max(0, w - visibleWidth(row))))) : row);
+    });
+    if (filtered.length) lines.push(this.theme.fg("dim", `${start + 1}–${start + window.length} of ${filtered.length}`));
+    lines.push(...footer.map((text) => this.theme.fg("dim", text)));
+    return lines.map((line) => truncateToWidth(line, Math.max(0, width), "…"));
+  }
+
+  render(width: number): string[] {
+    if (this.getHeight) return this.renderViewport(width, Math.max(8, Math.floor(this.getHeight())));
+    const w = Math.max(0, width - 2);
     const lines: string[] = [];
     lines.push(this.theme.fg("accent", this.theme.bold(truncateToWidth(compactDisplayText(this.title), w, "…"))));
     lines.push("");
@@ -225,7 +245,7 @@ export class ModelPickerComponent {
       lines.push(this.theme.fg("warning", "  no matches — keep typing, or Esc to cancel"));
     } else {
       const sel = Math.min(this.selectedIdx, filtered.length - 1);
-      const maxRows = Math.max(1, Math.min(this.maxRows, height - 8));
+      const maxRows = this.maxRows;
       const half = Math.floor(maxRows / 2);
       const start = Math.max(0, Math.min(sel - half, filtered.length - maxRows));
       const window = filtered.slice(start, start + maxRows);
