@@ -92,7 +92,7 @@ test("auditor picker offers thinking for provider refs containing nested model i
     find: (provider: string, id: string) => provider === model.provider && id === model.id ? model : undefined,
     getAvailable: () => [model],
     hasConfiguredAuth: () => true,
-  };
+  } as unknown as ExtensionContext["modelRegistry"];
   ctx.ui.customImpl = async () => ({ kind: "model", ref: "openrouter/vendor/reasoner" });
   let thinkingPrompts = 0;
   ctx.ui.selectImpl = async (title: string) => {

@@ -1,0 +1,279 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/subagent-hang-detection.test.ts:
+(pass) v0.35.65: snapshots use live manager counters and expose honest phase/elapsed data [0.71ms]
+(pass) v0.35.65: queued manager records stay queued and do not masquerade as active work [0.08ms]
+(pass) current pi-subagents async lifecycle and status.json drive live counters [536.64ms]
+(pass) current v1 stop RPC is selected after the status artifact proves top-level ownership [460.29ms]
+(pass) classify: a running subagent with no new progress for 5m is hung [0.20ms]
+(pass) classify: sub-5m silence is not hung (5m floor, shorter than the auditor's 10m) [0.05ms]
+(pass) classify: a NEW tool use refreshes the streak (working, not wedged) [0.08ms]
+(pass) classify: NEW output tokens refresh the streak (long think, still alive) [0.05ms]
+(pass) classify: ended / non-running records are not hung (watch stops) [0.06ms]
+(pass) v0.34.102: a vanished/unreachable record falls back to event-only evidence (field: pully 118m wedge) [0.09ms]
+(pass) hang detection surfaces ui.notify + ledger `subagent_hang_detected` via the heartbeat scan [464.41ms]
+(pass) hang warning is throttled — one alert per 5m streak window, not per tick [605.79ms]
+(pass) long frozen tracked child requests one bounded child-specific abort after the warning window [606.89ms]
+(pass) progress arriving before escalation cancels the action and starts a fresh episode [455.17ms]
+(pass) event-only child reaches an honest unavailable-action record, never a guessed abort [615.47ms]
+(pass) nested child is not eligible for top-level automatic abort [463.13ms]
+(pass) v0.35.65: an old-generation child cannot receive a stop RPC after host rebind [479.70ms]
+(pass) host rebind retires healthy event-only evidence and admits fresh same-generation progress [479.71ms]
+(pass) v0.34.102: event-only hang surfaces `subagent_hang_detected` with evidence=event-only when no manager record exists [459.54ms]
+(pass) completed/failed events end the watch — no hang alert after completion [610.92ms]
+(pass) compacted/steered events refresh the streak (secondary progress evidence) [624.73ms]
+(pass) malformed hang inputs are dropped, not crashy [310.49ms]
+(pass) source pins: constants, watchdog wiring, and ledger key [13.04ms]
+(pass) v0.34.105: hang scan runs during main-model recovery (quota wall blinds the watchdog before the fix) [991.10ms]
+(pass) v0.34.105 source pin: subagent scan precedes the main-model-recovery early return in heartbeatTick [0.46ms]
+(pass) v0.38.104 releasing the RPC host unsubscribes the readiness listeners it installed [0.23ms]
+
+tests/auditor-timeout-settings.test.ts:
+(pass) v0.37.0: escalatedAuditorTimeout doubles per prior attempt and saturates at 4x base [0.22ms]
+(pass) v0.37.0: auditor timeout settings clamp into bounds on load [1.14ms]
+(pass) v0.37.0: /glla editor accepts plain-ms and s/m/h duration input for both keys [196.39ms]
+(pass) v0.37.0: settings menu exposes both auditor timeout rows in the auditor section [8.67ms]
+(pass) v0.37.0: dispatch env reaches the worker process so parent and worker budgets agree [357.80ms]
+(pass) v0.37.0: progress signature counts streamed report bytes [0.19ms]
+(pass) v0.37.0: an in-budget live tool exempts the audit card from the quiet phase [0.26ms]
+(pass) v0.37.0: durable claims preserve the timeout escalation index across loads [1.88ms]
+(pass) v0.38.3: auditJobRetentionMs clamps into [0, 7d] on load [0.63ms]
+(pass) v0.38.3: /glla editor accepts duration input for auditJobRetentionMs (0 is legal) [316.40ms]
+(pass) v0.38.3: settings menu exposes the audit job retention row in the auditor section [0.69ms]
+
+tests/auditor-quota-identical.test.ts:
+(pass) rate-limit and plan-quota walls are exempt from the identical park [1.29ms]
+(pass) billing walls keep the park — retries cannot fix a paywall [0.09ms]
+(pass) non-quota infra failures keep the identical park [0.06ms]
+(pass) freshAuditorCycleClaim reseeds the dead chain and restarts the streak [0.20ms]
+
+tests/overdue-backstop.test.ts:
+35 |   try {
+36 |     __testOnlyHeartbeatTick(); await tick(120);
+37 |     const restored = readState(cwd).goal;
+38 |     assert.equal(restored?.status, "active");
+39 |     assert.equal(restored?.pauseResumeAt, undefined);
+40 |     assert.equal(restored?.autoResumedEvent, "overdue wait resumed (agent wait — test cooldown)");
+                ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ undefined
+- 'overdue wait resumed (agent wait — test cooldown)'
+
+ generatedMessage: true,
+     actual: undefined,
+   expected: "overdue wait resumed (agent wait — test cooldown)",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/overdue-backstop.test.ts:40:12
+      at processTicksAndRejections (native:7:39)
+(fail) S9 (continuation route): overdue agent wait resumes exactly once — park-clear lands, then latch + ledger [275.43ms]
+(pass) S9 (probe route): probe no-op releases the overdue latch so the next tick retries [388.97ms]
+
+tests/transient-retry-cadence.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+44 | 
+45 | afterEach(() => {
+46 |   __testOnlyClearSubagentHangProbes();
+47 | });
+48 | 
+49 | test("transient weather hammers: 10 eager probes through the real classifier", () => {
+     ^
+NotImplementedError: test() inside another test() is not yet implemented in Bun. Track the status & thumbs up the issue: https://github.com/oven-sh/bun/issues/5090. Use `bun:test` in the interim.
+ code: "ERR_NOT_IMPLEMENTED"
+
+      at #checkNotInsideTest (node:test:113:26)
+      at checkNotInsideTest (node:test:118:32)
+      at createTest (node:test:202:21)
+      at test (node:test:143:41)
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/transient-retry-cadence.test.ts:49:1
+-------------------------------
+
+
+tests/eager-continuation-core.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+21 | 
+22 | const goalSrc = readGoalRuntimeSource();
+23 | 
+24 | // ---- item 22: pendingTasks extraction ----
+25 | 
+26 | test("extractPendingTasks: pulls objection bullets, skips evidence (item 22)", () => {
+     ^
+NotImplementedError: test() inside another test() is not yet implemented in Bun. Track the status & thumbs up the issue: https://github.com/oven-sh/bun/issues/5090. Use `bun:test` in the interim.
+ code: "ERR_NOT_IMPLEMENTED"
+
+      at #checkNotInsideTest (node:test:113:26)
+      at checkNotInsideTest (node:test:118:32)
+      at createTest (node:test:202:21)
+      at test (node:test:143:41)
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/eager-continuation-core.test.ts:26:1
+-------------------------------
+
+
+tests/list-import.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+ 9 | import { test } from "node:test";
+10 | import * as assert from "node:assert/strict";
+11 | 
+12 | import { parseListImport, resolveImportFile, routeListText, hasExplicitListStructure, listMutationBlocked, LIST_DRAFTING_BLOCK_MESSAGE } from "../extensions/goal-loop-core.ts";
+13 | 
+14 | test("markdown checklist", () => {
+     ^
+NotImplementedError: test() inside another test() is not yet implemented in Bun. Track the status & thumbs up the issue: https://github.com/oven-sh/bun/issues/5090. Use `bun:test` in the interim.
+ code: "ERR_NOT_IMPLEMENTED"
+
+      at #checkNotInsideTest (node:test:113:26)
+      at checkNotInsideTest (node:test:118:32)
+      at createTest (node:test:202:21)
+      at test (node:test:143:41)
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/list-import.test.ts:14:1
+-------------------------------
+
+
+tests/retry-bounds.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+27 | const LOOP = fs.readFileSync("extensions/goal-loop.ts", "utf-8");
+28 | const CORE = fs.readFileSync("extensions/goal-loop-core.ts", "utf-8");
+29 | const PROVIDER_RETRY = fs.readFileSync("extensions/quota-retry.ts", "utf-8");
+30 | const SCHEMA = fs.readFileSync("schemas/goal.schema.json", "utf-8");
+31 | 
+32 | test("E2: persisted auditInfraStreak field (type + schema)", () => {
+     ^
+NotImplementedError: test() inside another test() is not yet implemented in Bun. Track the status & thumbs up the issue: https://github.com/oven-sh/bun/issues/5090. Use `bun:test` in the interim.
+ code: "ERR_NOT_IMPLEMENTED"
+
+      at #checkNotInsideTest (node:test:113:26)
+      at checkNotInsideTest (node:test:118:32)
+      at createTest (node:test:202:21)
+      at test (node:test:143:41)
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/retry-bounds.test.ts:32:1
+-------------------------------
+
+
+tests/uniform-provider-retry.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+11 | 
+12 | const SRC = readGoalRuntimeSource();
+13 | const RECOVERY = fs.readFileSync("extensions/main-model-recovery.ts", "utf-8");
+14 | const DISPLAY = fs.readFileSync("extensions/goal-loop-display.ts", "utf-8");
+15 | 
+16 | test("the first provider retry is eager for every failure family", () => {
+     ^
+NotImplementedError: test() inside another test() is not yet implemented in Bun. Track the status & thumbs up the issue: https://github.com/oven-sh/bun/issues/5090. Use `bun:test` in the interim.
+ code: "ERR_NOT_IMPLEMENTED"
+
+      at #checkNotInsideTest (node:test:113:26)
+      at checkNotInsideTest (node:test:118:32)
+      at createTest (node:test:202:21)
+      at test (node:test:143:41)
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/uniform-provider-retry.test.ts:16:1
+-------------------------------
+
+
+tests/wait-overdue-backstop.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+72 | afterEach(() => {
+73 |   try { fs.copyFileSync(GLOBAL_BACKUP, GLOBAL_SETTINGS_PATH); } catch { fs.rmSync(GLOBAL_SETTINGS_PATH, { force: true }); }
+74 |   fs.rmSync(GLOBAL_BACKUP, { force: true });
+75 | });
+76 | 
+77 | test("v0.35.28 #16: a wait 30min past its pauseResumeAt is resumed by the heartbeat backstop", async () => {
+     ^
+NotImplementedError: test() inside another test() is not yet implemented in Bun. Track the status & thumbs up the issue: https://github.com/oven-sh/bun/issues/5090. Use `bun:test` in the interim.
+ code: "ERR_NOT_IMPLEMENTED"
+
+      at #checkNotInsideTest (node:test:113:26)
+      at checkNotInsideTest (node:test:118:32)
+      at createTest (node:test:202:21)
+      at test (node:test:143:41)
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/wait-overdue-backstop.test.ts:77:1
+-------------------------------
+
+
+tests/auditor-stall-watchdog.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+51 | 
+52 | async function cleanup(): Promise<void> {
+53 |   while (dirs.length) await rm(dirs.pop()!, { recursive: true, force: true });
+54 | }
+55 | 
+56 | test("stall: worker that never emits a first event is failed fast, not left for the wall", { timeout: 20_000 }, async () => {
+     ^
+NotImplementedError: test() inside another test() is not yet implemented in Bun. Track the status & thumbs up the issue: https://github.com/oven-sh/bun/issues/5090. Use `bun:test` in the interim.
+ code: "ERR_NOT_IMPLEMENTED"
+
+      at #checkNotInsideTest (node:test:113:26)
+      at checkNotInsideTest (node:test:118:32)
+      at createTest (node:test:202:21)
+      at test (node:test:143:41)
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/auditor-stall-watchdog.test.ts:56:1
+-------------------------------
+
+
+tests/goal-loop-core.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+50 |   return d;
+51 | }
+52 | 
+53 | // ---- tests ----
+54 | 
+55 | test("piGlaDir returns the canonical path", () => {
+     ^
+NotImplementedError: test() inside another test() is not yet implemented in Bun. Track the status & thumbs up the issue: https://github.com/oven-sh/bun/issues/5090. Use `bun:test` in the interim.
+ code: "ERR_NOT_IMPLEMENTED"
+
+      at #checkNotInsideTest (node:test:113:26)
+      at checkNotInsideTest (node:test:118:32)
+      at createTest (node:test:202:21)
+      at test (node:test:143:41)
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/goal-loop-core.test.ts:55:1
+-------------------------------
+
+
+tests/main-model-recovery.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+32 |   tryMainModelFallback,
+33 | } from "../extensions/goal-recovery.js";
+34 | import { replaceState, state } from "../extensions/goal-state.js";
+35 | import { globalSettingsPath } from "../extensions/goal-settings.js";
+36 | 
+37 | test("main model refs preserve order, dedupe, and support nested model ids", () => {
+     ^
+NotImplementedError: test() inside another test() is not yet implemented in Bun. Track the status & thumbs up the issue: https://github.com/oven-sh/bun/issues/5090. Use `bun:test` in the interim.
+ code: "ERR_NOT_IMPLEMENTED"
+
+      at #checkNotInsideTest (node:test:113:26)
+      at checkNotInsideTest (node:test:118:32)
+      at createTest (node:test:202:21)
+      at test (node:test:143:41)
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/main-model-recovery.test.ts:37:1
+-------------------------------
+
+
+10 tests failed:
+(fail) S9 (continuation route): overdue agent wait resumes exactly once — park-clear lands, then latch + ledger [275.43ms]
+
+ 42 pass
+ 10 fail
+ 9 errors
+Ran 52 tests across 13 files. [10.47s]
