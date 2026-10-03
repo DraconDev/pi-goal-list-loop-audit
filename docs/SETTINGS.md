@@ -117,3 +117,11 @@ This authority boundary applies before settings-value normalization.
 | `toolOverrides` | unset | Per-tool allow/hide/per-tool-config overrides. |
 | `contextCheckpointProjection` | `false` (off) | Per-turn `context`-hook splice of a bounded continuation checkpoint. Off (default) leaves the transcript append-only so the provider prefix-cache holds; the fresh continuation prompt still carries live state. On restores the legacy projection (busts the cache). |
 | `reviewer` | legacy | Deprecated alias for `postaudit`; migrated on load, `postaudit` wins. |
+
+## Tool visibility and stored metadata
+
+`/glla tooloverride allow <tool>` and `hide <tool>` change project tool
+visibility. Choosing either removes the opposing override for that tool.
+`set <tool> <key>=<value>` stores per-tool metadata, including JSON values.
+These configuration values are not applied to tool execution: saving a
+`timeout` here does not change the timeout used by Pi or another extension.

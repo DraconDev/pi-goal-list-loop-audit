@@ -873,8 +873,9 @@ async function promptModelRef(
   const sessionLabel = sessionModel ? `${sessionModel.provider}/${sessionModel.id}` : "pi session model";
   const models = ctx.modelRegistry
     .getAvailable()
-    .filter((m: any) => ctx.modelRegistry.hasConfiguredAuth(m));
-  const items = buildModelPickItems(models.filter((model) => !opts.excludeCurrentModel || modelRef(model)?.toLowerCase() !== modelRef(ctx.model)?.toLowerCase()), sessionLabel, { excludeRefs: exclude });
+    .filter((m: any) => ctx.modelRegistry.hasConfiguredAuth(m))
+    .filter((model) => !opts.excludeCurrentModel || modelRef(model)?.toLowerCase() !== modelRef(ctx.model)?.toLowerCase());
+  const items = buildModelPickItems(models, sessionLabel, { excludeRefs: exclude });
   if (opts.defaultLabel) {
     const defaultItem = items.find((item) => item.kind === "session");
     if (defaultItem) { defaultItem.label = opts.defaultLabel; defaultItem.searchText = opts.defaultLabel; }
