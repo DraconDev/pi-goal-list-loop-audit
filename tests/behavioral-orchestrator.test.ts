@@ -710,7 +710,7 @@ test("v0.35.x: list_activate uses the same whole-objective conflict update", asy
   await pi.fire("session_shutdown", { reason: "quit" }, ctx);
 });
 
-test("v0.35.x: failed conflict update retries the same whole-objective prompt", async () => {
+test("C7: declined list conflict update preserves work without retrying the editor", async () => {
   __testOnlyResetStaleFlag();
   setGlobalAutoResume(true);
   const cwd = tmpCwd();
@@ -726,21 +726,17 @@ test("v0.35.x: failed conflict update retries the same whole-objective prompt", 
   const ctx = await freshSession(cwd, "reload");
   ctx.ui.selectImpl = async (_title, options) => options.find((option) => option === "Update current objective");
   let confirms = 0;
-  ctx.ui.confirmImpl = async () => ++confirms > 1;
+  ctx.ui.confirmImpl = async () => { confirms++; return false; };
   let inputs = 0;
-  const inputTitles: string[] = [];
-  ctx.ui.inputImpl = async (title) => {
-    inputTitles.push(title);
-    inputs++;
-    return inputs === 2 ? "replacement whole list objective. Done when: retry proof exists" : undefined;
-  };
+  ctx.ui.inputImpl = async () => { inputs++; return undefined; };
 
   await pi.command("list", "next", ctx);
 
-  assert.equal(readState(cwd).goal?.objective, "replacement whole list objective");
-  assert.equal(inputs, 2, "the bounded fallback retries the same whole-objective editor, not individual tasks");
-  assert.deepEqual(new Set(inputTitles), new Set(["What should we update the list item into? (replacement objective, optional 'Done when: ...' clause)"]));
-  assert.equal(readLedger(cwd).filter((entry) => entry.type === "objective_conflict_update_retry").length, 2);
+  assert.equal(readState(cwd).goal?.objective, "current list before retry — done when the old proof exists");
+  assert.equal(confirms, 1, "the explicit decline ends the update");
+  assert.equal(inputs, 0, "no editor opens after the decline");
+  assert.ok(readState(cwd).list?.some(item => item.id === queued.id), "the queued objective remains available");
+  assert.equal(readLedger(cwd).filter((entry) => entry.type === "objective_conflict_update_retry").length, 0);
   assert.equal(readLedger(cwd).some((entry) => entry.type === "update_task_status"), false);
   await pi.fire("session_shutdown", { reason: "quit" }, ctx);
 });

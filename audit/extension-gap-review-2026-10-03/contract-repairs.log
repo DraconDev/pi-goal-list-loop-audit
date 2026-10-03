@@ -1,0 +1,14 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/release-contract.test.ts:
+(pass) release contract: docs index tracks the package version [1.14ms]
+
+tests/behavioral-orchestrator.test.ts:
+(pass) C7: declined list conflict update preserves work without retrying the editor [1300.32ms]
+
+ 2 pass
+ 167 filtered out
+ 0 fail
+Ran 2 tests across 2 files. [4.12s]
+[run-tests] finished in 5s (exit 0)
