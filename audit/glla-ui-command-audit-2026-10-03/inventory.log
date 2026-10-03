@@ -1,4 +1,4 @@
 
-> pi-goal-list-loop-audit@0.38.109 check:inventory
+> pi-goal-list-loop-audit@0.38.110 check:inventory
 > node scripts/generate-inventory.mjs --check
 
