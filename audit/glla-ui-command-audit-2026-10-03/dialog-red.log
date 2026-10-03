@@ -1,0 +1,79 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-ui-command-audit.test.ts:
+120 |     called = true;
+121 |     invalidateHostSession(pi, ctx);
+122 |     return options.find(option => option.startsWith("Enabled"));
+123 |   };
+124 |   await pi.command("glla", "postaudit", ctx);
+125 |   assert.equal(loadSettings(ctx.cwd).postaudit, undefined);
+               ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ {
++   auditCadence: 'every-clean-completion',
++   auditScope: 'regression-scan',
++   cascade: [
++     'convert-findings-to-list',
++     'queue-leftovers',
++     'notify-and-idle'
++   ],
++   doNotFireOn: [
++     'goal-aborted',
++     'goal-paused'
++   ],
++   enabled: false,
++   fireOn: [
++     'goal-complete',
++     'list-complete'
++   ],
++   maxFindingsPerReview: 10,
++   maxReviewsPerDay: 20,
++   mode: 'on'
++ }
+- undefined
+
+ generatedMessage: true,
+     actual: {
+  enabled: false,
+  mode: "on",
+  fireOn: [ "goal-complete", "list-complete" ],
+  doNotFireOn: [ "goal-aborted", "goal-paused" ],
+  cascade: [ "convert-findings-to-list", "queue-leftovers", "notify-and-idle" ],
+  auditCadence: "every-clean-completion",
+  auditScope: "regression-scan",
+  maxFindingsPerReview: 10,
+  maxReviewsPerDay: 20,
+},
+   expected: undefined,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:125:10
+      at processTicksAndRejections (native:7:39)
+(fail) postaudit refuses a save after the host became stale in its dialog [2258.99ms]
+132 |   seedState(ctx.cwd, { goal: seedGoal({ status: "paused", objective: "preserve work when the confirmation's host is replaced" }) });
+133 |   await pi.fire("session_start", { reason: "reload" }, ctx);
+134 |   ctx.ui.confirmImpl = async () => { invalidateHostSession(pi, ctx); return true; };
+135 |   await pi.command("glla", "wipe", ctx);
+136 |   const journal = fs.readFileSync(path.join(ctx.cwd, ".pi-glla", "active.jsonl"), "utf8");
+137 |   assert.ok(!journal.includes('"glla_wipe"'));
+               ^
+AssertionError: false == true
+ generatedMessage: true,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:137:10
+      at processTicksAndRejections (native:7:39)
+(fail) wipe revalidates its host after the confirmation dialog [52.15ms]
+
+ 0 pass
+ 11 filtered out
+ 2 fail
+Ran 2 tests across 1 file. [3.01s]
+[run-tests] finished in 3s (exit 1)

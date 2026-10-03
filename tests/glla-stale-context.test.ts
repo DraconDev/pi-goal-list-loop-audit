@@ -258,7 +258,7 @@ test("v0.34.52: source — cmdSettings captures the entry probe and gates the se
   // Audit 2026-09-07 (LOW, finding 399): the gate is arg-aware for the
   // mixed `fallbacks` verb — bare display reads only, clear mutates.
   assert.match(SRC, /fallbacksReadOnly = verb === "fallbacks"/, "bare fallbacks display carves out of the mutating gate");
-  assert.match(SRC, /if \(staleEntry && \(verb === "ui" \|\| \(!fallbacksReadOnly && SETTINGS_MUTATING_ACTIONS\.has\(verb\)\)\)\) \{/, "settings-entry + action gate");
+  assert.match(SRC, /if \(staleEntry && \(verb === "ui" \|\| auditCleanup \|\| \(!fallbacksReadOnly && SETTINGS_MUTATING_ACTIONS\.has\(verb\)\)\)\) \{/, "settings-entry + action gate");
   assert.match(SRC, /appendLedger\(ctx\.cwd, "settings_mutation_refused_stale", \{ sub: verb \}\)/, "refusal is ledgered with the verb");
   assert.match(CORE, /SETTINGS_MUTATING_ACTIONS = new Set\(\[/, "the action set lives in core next to the /list gate");
   for (const verb of ["wipe", "reset", "cancel", "resume", "reviewer", "postaudit", "tooloverride"]) {

@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import activate, { handleSettingChoice, __testOnlyResetProcessState } from "../extensions/loops/goal.js";
 import { globalSettingsPath, loadSettings, saveSettings } from "../extensions/goal-settings.js";
-import { MockPi, makeMockCtx, tmpCwd, invalidateHostSession } from "./harness/mock-pi.js";
+import { MockPi, makeMockCtx, tmpCwd, invalidateHostSession, seedState, seedGoal } from "./harness/mock-pi.js";
 import type { SettingsMenuComponent } from "../extensions/settings-menu.js";
 
 const globalFile = globalSettingsPath();
@@ -110,4 +110,59 @@ test("tool config accepts spaced JSON and refuses empty keys", async () => {
   assert.deepEqual(loadSettings(ctx.cwd).toolOverrides?.perToolConfig?.bash?.metadata, { label: "two words" });
   await pi.command("glla", "tooloverride set bash =60", ctx);
   assert.equal(loadSettings(ctx.cwd).toolOverrides?.perToolConfig?.bash?.[""], undefined);
+});
+
+test("postaudit refuses a save after the host became stale in its dialog", async () => {
+  const { pi, ctx } = await boot();
+  let called = false;
+  ctx.ui.selectImpl = async (_title, options) => {
+    if (called) return undefined;
+    called = true;
+    invalidateHostSession(pi, ctx);
+    return options.find(option => option.startsWith("Enabled"));
+  };
+  await pi.command("glla", "postaudit", ctx);
+  assert.equal(loadSettings(ctx.cwd).postaudit, undefined);
+  assert.equal(loadSettings(ctx.cwd).reviewer, undefined);
+  assert.ok(ctx.ui.matching("NOT saved").length > 0);
+});
+
+test("wipe revalidates its host after the confirmation dialog", async () => {
+  const { pi, ctx } = await boot();
+  seedState(ctx.cwd, { goal: seedGoal({ status: "paused", objective: "preserve work when the confirmation's host is replaced" }) });
+  await pi.fire("session_start", { reason: "reload" }, ctx);
+  ctx.ui.confirmImpl = async () => { invalidateHostSession(pi, ctx); return true; };
+  await pi.command("glla", "wipe", ctx);
+  const journal = fs.readFileSync(path.join(ctx.cwd, ".pi-glla", "active.jsonl"), "utf8");
+  assert.ok(!journal.includes('"glla_wipe"'));
+  assert.ok(journal.includes("preserve work when"));
+});
+
+test("tool metadata editor preserves concurrent updates and names its execution limit", async () => {
+  const { ctx } = await boot();
+  ctx.ui.selectImpl = async () => "set — per-tool config";
+  let inputs = 0;
+  ctx.ui.inputImpl = async () => {
+    if (inputs++ === 0) return "bash";
+    saveSettings("project", ctx.cwd, { toolOverrides: { allow: ["read"], perToolConfig: { other: { enabled: true } } } });
+    return ' metadata = {"label": "two words"}';
+  };
+  await handleSettingChoice("toolOverrides", ctx);
+  assert.deepEqual(loadSettings(ctx.cwd).toolOverrides, { allow: ["read"], perToolConfig: { other: { enabled: true }, bash: { metadata: { label: "two words" } } } });
+  assert.ok(ctx.ui.matching("not applied to tool execution").length > 0);
+});
+
+test("compactor picker labels its clear choice as registry plan B", async () => {
+  const { ctx } = await boot();
+  let clearLabel: string | undefined;
+  ctx.ui.customStubMode = true;
+  ctx.ui.customImpl = async (...args) => {
+    const factory = args[0] as (...values: any[]) => { render(width: number): string[] };
+    const component = factory({ requestRender() {} }, { fg: (_: string, t: string) => t, bg: (_: string, t: string) => t, bold: (t: string) => t }, { matches: () => false }, () => {});
+    clearLabel = component.render(140).join("\n");
+    return undefined;
+  };
+  await handleSettingChoice("compactorModel", ctx);
+  assert.match(clearLabel ?? "", /registry plan B/);
+  assert.doesNotMatch(clearLabel ?? "", /session model.*clear the override/);
 });
