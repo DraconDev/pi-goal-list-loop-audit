@@ -3781,3 +3781,17 @@ tests/action-reminder.test.ts:
 
 tests/wait-overdue-backstop.test.ts:
 (pass) v0.35.28 #16: a wait 30min past its pauseResumeAt is resumed by the heartbeat backstop [338.29ms]
+(pass) v0.35.28 #16: not-yet-due and already-fired waits do not double-dispatch [228.62ms]
+(pass) v0.35.28 #16: under the load hold (stock consent-less boot) an overdue wait stays frozen [220.62ms]
+(pass) v0.35.28 #16: manual /goal resume clears the recovery stamp (user-driven, no notice needed) [3.36ms]
+(pass) v0.35.28 #16: the pause_goal wait copy is now backed by machinery (source pin) [0.41ms]
+(pass) v0.35.28 #16: once consent exists on reload, the overdue wait resumes through the backstop [269.81ms]
+(pass) v0.35.48: the backstop stays parked during a session handoff window [192.01ms]
+(pass) v0.35.48: an agent-authored wait stays parked while main-model recovery is active [229.89ms]
+(pass) v0.35.48: the backstop's dispatch-surface gates sit before the one-shot latch [0.29ms]
+
+tests/list-draft-handoff.test.ts:
+(pass) 125335: fresh commentary-only draft end delivers exactly one bounded correction [5897.67ms]
+(pass) stated next dependent question is a legal drafting end: no correction [2884.25ms]
+(pass) short ack without a question is not commentary: no correction [2823.09ms]
+(pass) tool-unavailable fallback: the correction directs prose asking [0.36ms]
