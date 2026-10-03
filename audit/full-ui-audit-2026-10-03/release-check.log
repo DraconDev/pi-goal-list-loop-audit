@@ -832,3 +832,6 @@ tests/completion-communication.test.ts:
 (pass) pending is nonterminal; approval delivers durable concrete summary (idle=true) [1185.03ms]
 (pass) pending is nonterminal; approval delivers durable concrete summary (idle=false) [1171.24ms]
 (pass) complete_goal leftOut renders the deliberate-non-do bullet end to end [1054.38ms]
+(pass) complete_goal findingGroups ride the claim into the grouped terminal render [1064.80ms]
+(pass) disapproval remains unfinished, no final success is posted [633.07ms]
+(pass) archive write failure never emits a terminal success [1149.90ms]
