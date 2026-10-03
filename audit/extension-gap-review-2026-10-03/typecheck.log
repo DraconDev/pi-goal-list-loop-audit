@@ -2,7 +2,3 @@
 > pi-goal-list-loop-audit@0.38.108 check
 > tsc --noEmit
 
-tests/settings-stale-save.test.ts(92,5): error TS2322: Type '(provider: string, id: string) => { provider: string; id: string; reasoning: boolean; thinkingLevelMap: { max: string; }; } | undefined' is not assignable to type '(provider: string, modelId: string) => Model<Api> | undefined'.
-  Type '{ provider: string; id: string; reasoning: boolean; thinkingLevelMap: { max: string; }; } | undefined' is not assignable to type 'Model<Api> | undefined'.
-    Type '{ provider: string; id: string; reasoning: boolean; thinkingLevelMap: { max: string; }; }' is missing the following properties from type 'Model<Api>': contextWindow, maxTokens, name, api, and 3 more.
-tests/settings-stale-save.test.ts(93,26): error TS2740: Type '{ provider: string; id: string; reasoning: boolean; thinkingLevelMap: { max: string; }; }' is missing the following properties from type 'Model<Api>': contextWindow, maxTokens, name, api, and 3 more.

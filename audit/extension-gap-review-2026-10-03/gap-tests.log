@@ -5,3 +5,233 @@ tests/subagent-hang-detection.test.ts:
 (pass) v0.35.65: snapshots use live manager counters and expose honest phase/elapsed data [3.37ms]
 (pass) v0.35.65: queued manager records stay queued and do not masquerade as active work [0.11ms]
 (pass) current pi-subagents async lifecycle and status.json drive live counters [494.10ms]
+(pass) current v1 stop RPC is selected after the status artifact proves top-level ownership [462.61ms]
+(pass) classify: a running subagent with no new progress for 5m is hung [0.28ms]
+(pass) classify: sub-5m silence is not hung (5m floor, shorter than the auditor's 10m) [0.07ms]
+(pass) classify: a NEW tool use refreshes the streak (working, not wedged) [0.14ms]
+(pass) classify: NEW output tokens refresh the streak (long think, still alive) [0.08ms]
+(pass) classify: ended / non-running records are not hung (watch stops) [0.08ms]
+(pass) v0.34.102: a vanished/unreachable record falls back to event-only evidence (field: pully 118m wedge) [0.10ms]
+(pass) hang detection surfaces ui.notify + ledger `subagent_hang_detected` via the heartbeat scan [470.22ms]
+(pass) hang warning is throttled — one alert per 5m streak window, not per tick [628.05ms]
+(pass) long frozen tracked child requests one bounded child-specific abort after the warning window [615.49ms]
+(pass) progress arriving before escalation cancels the action and starts a fresh episode [473.73ms]
+(pass) event-only child reaches an honest unavailable-action record, never a guessed abort [637.75ms]
+(pass) nested child is not eligible for top-level automatic abort [587.65ms]
+(pass) v0.35.65: an old-generation child cannot receive a stop RPC after host rebind [907.34ms]
+(pass) host rebind retires healthy event-only evidence and admits fresh same-generation progress [608.43ms]
+(pass) v0.34.102: event-only hang surfaces `subagent_hang_detected` with evidence=event-only when no manager record exists [640.72ms]
+(pass) completed/failed events end the watch — no hang alert after completion [615.50ms]
+(pass) compacted/steered events refresh the streak (secondary progress evidence) [846.75ms]
+(pass) malformed hang inputs are dropped, not crashy [573.36ms]
+(pass) source pins: constants, watchdog wiring, and ledger key [27.21ms]
+(pass) v0.34.105: hang scan runs during main-model recovery (quota wall blinds the watchdog before the fix) [999.10ms]
+(pass) v0.34.105 source pin: subagent scan precedes the main-model-recovery early return in heartbeatTick [0.28ms]
+(pass) v0.38.104 releasing the RPC host unsubscribes the readiness listeners it installed [6.92ms]
+
+tests/auditor-timeout-settings.test.ts:
+(pass) v0.37.0: escalatedAuditorTimeout doubles per prior attempt and saturates at 4x base [5.96ms]
+(pass) v0.37.0: auditor timeout settings clamp into bounds on load [284.14ms]
+(pass) v0.37.0: /glla editor accepts plain-ms and s/m/h duration input for both keys [1137.21ms]
+(pass) v0.37.0: settings menu exposes both auditor timeout rows in the auditor section [76.08ms]
+(pass) v0.37.0: dispatch env reaches the worker process so parent and worker budgets agree [5098.09ms]
+(pass) v0.37.0: progress signature counts streamed report bytes [0.24ms]
+(pass) v0.37.0: an in-budget live tool exempts the audit card from the quiet phase [0.23ms]
+(pass) v0.37.0: durable claims preserve the timeout escalation index across loads [69.43ms]
+(pass) v0.38.3: auditJobRetentionMs clamps into [0, 7d] on load [0.82ms]
+(pass) v0.38.3: /glla editor accepts duration input for auditJobRetentionMs (0 is legal) [1301.36ms]
+(pass) v0.38.3: settings menu exposes the audit job retention row in the auditor section [0.71ms]
+
+tests/auditor-quota-identical.test.ts:
+(pass) rate-limit and plan-quota walls are exempt from the identical park [0.44ms]
+(pass) billing walls keep the park — retries cannot fix a paywall [0.05ms]
+(pass) non-quota infra failures keep the identical park [0.05ms]
+(pass) freshAuditorCycleClaim reseeds the dead chain and restarts the streak [0.17ms]
+
+tests/overdue-backstop.test.ts:
+35 |   try {
+36 |     __testOnlyHeartbeatTick(); await tick(120);
+37 |     const restored = readState(cwd).goal;
+38 |     assert.equal(restored?.status, "active");
+39 |     assert.equal(restored?.pauseResumeAt, undefined);
+40 |     assert.equal(restored?.autoResumedEvent, "overdue wait resumed (agent wait — test cooldown)");
+                ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ undefined
+- 'overdue wait resumed (agent wait — test cooldown)'
+
+ generatedMessage: true,
+     actual: undefined,
+   expected: "overdue wait resumed (agent wait — test cooldown)",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/overdue-backstop.test.ts:40:12
+      at processTicksAndRejections (native:7:39)
+(fail) S9 (continuation route): overdue agent wait resumes exactly once — park-clear lands, then latch + ledger [7532.78ms]
+(pass) S9 (probe route): probe no-op releases the overdue latch so the next tick retries [1947.76ms]
+
+tests/transient-retry-cadence.test.ts:
+(pass) transient weather hammers: 10 eager probes through the real classifier [1.17ms]
+(pass) post-eager transient ladder: 1m base doubling to the 30m cap [0.22ms]
+(pass) walls keep the historical ladder; a reset hint outranks the eager window [0.77ms]
+(pass) v0.38.104: unclassified errors fail open to eager [0.86ms]
+(pass) recovery probes use the kind-aware delay (the 300m park) [0.13ms]
+(pass) describeSubagentTerminal: transient text is eager, walls and aborts are not [0.50ms]
+(pass) subagentTerminalAlreadyRecorded: the nudge fires once per run [0.14ms]
+(pass) audit: terminal precedence holds in every event order [0.18ms]
+(pass) wiring: the process-terminal handler ledger-nudges eager child failures [0.94ms]
+(pass) wiring: recovery probes route through the kind-aware delay [0.83ms]
+
+tests/eager-continuation-core.test.ts:
+(pass) extractPendingTasks: pulls objection bullets, skips evidence (item 22) [39.22ms]
+(pass) extractPendingTasks: caps at 5 and dedupes [0.12ms]
+(pass) classifyImpossibleReason: partial vs full (item 23) [0.08ms]
+(pass) audit-cap branch: aggressiveMode keeps ACTIVE + pendingTasks; OFF pauses (item 24 tests 1-2) [1.82ms]
+(pass) IMPOSSIBLE branch: aggressive partial continues, full terminalizes (item 24 tests 3-4) [1.23ms]
+(pass) shouldSuppressHeartbeatForRecentShip: recent ship suppresses, stale does not (item 27) [0.16ms]
+(pass) heartbeat ship-suppression was removed in v0.26.6 (self-sustaining via ledger mtime) [0.28ms]
+
+tests/list-import.test.ts:
+(pass) markdown checklist [0.41ms]
+[run-tests] progress: 30s elapsed · 0s since last output · 6 KiB of suite output
+(pass) bullets of all flavors [0.09ms]
+(pass) numbered items [0.05ms]
+(pass) plain lines pass through [0.03ms]
+(pass) headings, blanks, comments, hr rules are skipped [0.03ms]
+(pass) a sisyphus-style plan file imports clean [0.04ms]
+(pass) whitespace-only and empty content yields nothing [0.02ms]
+(pass) items with inline contracts survive intact [0.03ms]
+(pass) resolveImportFile: detects a real file by bare name [105.69ms]
+(pass) resolveImportFile: detects paths with separators and ./ [0.56ms]
+(pass) resolveImportFile: objective text is NOT a file [0.29ms]
+(pass) resolveImportFile: directories are not importable [95.07ms]
+(pass) routeListText: file path wins over everything [0.58ms]
+(pass) routeListText: field 2026-09-16 — plain lines are a paragraph, not a batch [0.34ms]
+(pass) routeListText: field 2026-09-16 — marked structure still batches [0.15ms]
+(pass) hasExplicitListStructure: two marked lines, one marked line, none [0.21ms]
+(pass) routeListText: field 2026-09-16 — explicit add keeps contracted lines batched (v0.34.81 subtasks) [0.95ms]
+(pass) routeListText: field 2026-09-16 — explicit add with contract-less prose still drafts [0.08ms]
+(pass) routeListText: field 2026-09-16 — explicit add batches mixed contracted lines [0.08ms]
+(pass) audit 2026-09-16: bare list preserves independently contracted records [0.07ms]
+(pass) audit 2026-09-16: add preserves a paragraph with a standalone contract [0.06ms]
+(pass) routeListText: pasted bullets preserve item wording and contracts [0.07ms]
+(pass) routeListText: a one-record paste remains eligible for item-level clarification [0.07ms]
+(pass) routeListText: 'Done when:' clause adds directly, no interview [0.05ms]
+(pass) routeListText: vague dump goes to conversational drafting [0.02ms]
+(pass) routeListText: nonexistent file-ish text is not a file [0.54ms]
+(pass) listMutationBlocked: only during list drafting sessions [0.17ms]
+
+tests/retry-bounds.test.ts:
+(pass) E2: persisted auditInfraStreak field (type + schema) [8.32ms]
+(pass) E2: auditor infra errors enter the durable bounded retry plan (v0.34.51 — no 3-strike stop) [1.49ms]
+(pass) main recovery remains unbounded but auditor retries retain their fixed horizon [9.11ms]
+(pass) v0.36.0: aggressive auditor disapprovals become durable TODOs and stop on repeated no-progress [0.68ms]
+(pass) E3: send-retry re-arms counted, ledgered, escalated [0.26ms]
+(pass) v0.28.29: busy-retry cadence backs off (no more flat 50ms spins) [0.36ms]
+(pass) v0.28.29: escalation is TIME-based and ACTIVITY-gated (busy ≠ wedged — the polis false positive) [0.76ms]
+(pass) E3: provider-held send storms enter durable main-model recovery [1.51ms]
+(pass) E8: the error brake carries the REAL error text, not stopReason [5.72ms]
+(pass) v0.34.26: output-token-limit provider errors are classified as a deterministic wall, not a flake [0.96ms]
+(pass) v0.34.36: a loop whose continuation never starts is durably stopped and resumable [0.13ms]
+(pass) v0.34.51: stored-claim auditor retries enter the durable plan on ANY infra error [0.36ms]
+(pass) v0.34.26: length-continue exhaustion is a durable paused state, not a transient notify [4.11ms]
+(pass) E8: user aborts braked SEPARATELY — honest message, no auto-resume [1.06ms]
+(pass) E8: provider-error brake gets ONE capped escalating auto-resume with reason re-check (v0.28.25) [4.65ms]
+(pass) v0.28.25: inter-error retries ride an exponential ladder, not the immediate continuation [1.02ms]
+(pass) v0.28.26: quota-blocked audits store the claim + the retry re-runs the AUDITOR directly (no agent turn) [4.85ms]
+(pass) v0.28.26: pendingCompletion typed + schematized [0.70ms]
+
+tests/uniform-provider-retry.test.ts:
+(pass) the first provider retry is eager for every failure family [6.35ms]
+(pass) later provider retries use one bounded configured ladder [0.13ms]
+(pass) main-model recovery has no quota-derived policy branch [3.54ms]
+(pass) the auditor durable plan is generic and keeps safe diagnostic copy [9.85ms]
+(pass) display surfaces identify generic recovery, not a guessed quota state [3.12ms]
+
+tests/wait-overdue-backstop.test.ts:
+(pass) v0.35.28 #16: a wait 30min past its pauseResumeAt is resumed by the heartbeat backstop [2517.87ms]
+(pass) v0.35.28 #16: not-yet-due and already-fired waits do not double-dispatch [174.45ms]
+(pass) v0.35.28 #16: under the load hold (stock consent-less boot) an overdue wait stays frozen [138.43ms]
+(pass) v0.35.28 #16: manual /goal resume clears the recovery stamp (user-driven, no notice needed) [13.68ms]
+(pass) v0.35.28 #16: the pause_goal wait copy is now backed by machinery (source pin) [0.41ms]
+(pass) v0.35.28 #16: once consent exists on reload, the overdue wait resumes through the backstop [320.32ms]
+(pass) v0.35.48: the backstop stays parked during a session handoff window [175.21ms]
+(pass) v0.35.48: an agent-authored wait stays parked while main-model recovery is active [229.35ms]
+(pass) v0.35.48: the backstop's dispatch-surface gates sit before the one-shot latch [0.52ms]
+
+tests/auditor-stall-watchdog.test.ts:
+(pass) stall: worker that never emits a first event is failed fast, not left for the wall [5534.39ms]
+(pass) stall: first-event budget starts after successful spawn, not pre-spawn setup [7017.34ms]
+(pass) stall: worker whose single boot heartbeat goes stale is failed fast, not left for the wall [2754.22ms]
+(pass) progress: a live auditor outlives the legacy wall metadata and settles on its result [1468.21ms]
+(pass) stall: a running auditor tool is exempt — the per-tool timeout owns that axis [1618.07ms]
+(pass) stall: a silent-past-bound attempt fails fast WITH its cost record (controlled clock) [788.77ms]
+(pass) stall: a worker-reported brake is reclassified with the same evidence [422.24ms]
+(pass) stall: an open in-budget tool is not silence — the no-progress bound spares it [959.85ms]
+(pass) v0.38.99: an over-budget tool is NOT fatal — the worker cancels it, resumes, and its result still lands [2954.41ms]
+[run-tests] progress: 60s elapsed · 1s since last output · 12 KiB of suite output
+(pass) v0.38.99 approval guard: an approving verdict from a verification-incomplete attempt is refused, not applied [1799.82ms]
+(pass) v0.38.99: a genuinely wedged tool still fails fast once the grace expires [618.30ms]
+
+tests/goal-loop-core.test.ts:
+(pass) piGlaDir returns the canonical path [0.34ms]
+(pass) newGoalId format [0.19ms]
+(pass) v0.36.0: repeated identical auditor objections are a state-based no-progress signal [0.76ms]
+(pass) statusLabel covers all states [0.11ms]
+(pass) audit display classification keeps semantic verdicts separate from infra and shield outcomes [0.64ms]
+(pass) list policy and aborted status remain separate display facts [0.13ms]
+(pass) findNextPendingTask BFSes subtasks [0.12ms]
+(pass) findNextPendingTask returns subtask when no sibling pending [0.04ms]
+(pass) buildTaskSummary counts complete [0.07ms]
+(pass) renderGoalMarkdown renders sections [0.08ms]
+(pass) v0.34.91: renderGoalMarkdown includes the completion recap section [0.07ms]
+(pass) writeGoalMd persists + readGoalMd returns [0.78ms]
+(pass) readState returns default when no ledger [1.60ms]
+(pass) appendLedger + readState roundtrip [1.06ms]
+(pass) readState sanitizes a saved main-model recovery without dropping its retry plan [1.37ms]
+(pass) sumNewAssistantTokens accumulates assistant usage only [0.16ms]
+(pass) sumNewAssistantTokens dedupes replayed messages [0.05ms]
+(pass) sumNewAssistantTokens ignores zero/negative/invalid usage [0.04ms]
+(pass) mergeSettings: later layers win per key [0.07ms]
+(pass) mergeSettings: undefined in a layer means 'not set here' [0.04ms]
+(pass) mergeSettings: null/missing layers are skipped [0.04ms]
+(pass) mergeSettings: does not mutate the base [0.02ms]
+(pass) auditFeedbackExcerpt: bounds executor feedback at the configured character count [0.55ms]
+(pass) auditFeedbackExcerpt: zero returns the full auditor report [0.07ms]
+(pass) ensureDirs creates the .pi-glla tree [0.33ms]
+(pass) sumNewAssistantTokens counts input+output, not cache reads (v0.12.0) [0.07ms]
+(pass) sumNewAssistantTokens falls back to totalTokens when no split [0.04ms]
+(pass) DEFAULT_TOKEN_LIMIT is 0 — the guard is opt-in (v0.12.0) [0.02ms]
+(pass) piGlaDir migrates a legacy .pi-gla dir exactly once (v0.17.0) [0.74ms]
+(pass) restore gate (v0.28.21 default): NOTHING auto-resumes on session load — the item loads HELD [0.10ms]
+(pass) restore gate: autoresume=on auto-resumes everywhere (unattended rigs) [0.05ms]
+(pass) restore gate: autoresume=off never auto-resumes [0.17ms]
+(pass) v0.24.5 missingGllaTools: empty active set returns all glla tool names [0.10ms]
+(pass) v0.24.5 missingGllaTools: only glla tool names are tracked (no false positives on base tools) [0.05ms]
+(pass) v0.24.5 missingGllaTools: modlist-snapshot example (the real bug) [0.04ms]
+(pass) v0.24.5 missingGllaTools: all tools present → empty missing list [0.03ms]
+(pass) v0.24.5 missingGllaTools: missing just one tool → that single name [0.06ms]
+
+tests/main-model-recovery.test.ts:
+(pass) main model refs preserve order, dedupe, and support nested model ids [0.36ms]
+(pass) main model fallback candidates are ordered and never retried in a cycle [0.14ms]
+(pass) main fallback settings dedupe case-insensitively and cap the chain at ten [0.17ms]
+(pass) runtime fallback walk uses one supervised model at a time and preserves left-to-right order [610.40ms]
+(pass) successful fallback turns keep the preferred primary and fail back after a supervised probe [6.46ms]
+(pass) sticky failback preserves the old fallback-settles behavior [0.50ms]
+(pass) in-band provider output is recognized only for strong repeated-pane markers [0.23ms]
+(pass) the explicit Codex prompt-policy event is terminal, while lookalike text remains generic [0.18ms]
+(pass) main model errors stay opaque to the recovery policy [0.14ms]
+(pass) main model recovery backs off without giving up [0.48ms]
+(pass) main recovery requirements are generic across provider wording [0.05ms]
+
+1 tests failed:
+(fail) S9 (continuation route): overdue agent wait resumes exactly once — park-clear lands, then latch + ledger [7532.78ms]
+
+ 177 pass
+ 1 fail
+Ran 178 tests across 13 files. [62.87s]
+[run-tests] finished in 63s (exit 1)

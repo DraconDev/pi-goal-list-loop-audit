@@ -1767,3 +1767,318 @@ tests/loop-pause.test.ts:
 (pass) v0.38.27: RESUMABLE_STOP matches the pause stopReason so /loop resume picks it up [0.03ms]
 
 tests/continuation-retry-persistence.test.ts:
+(pass) v0.38.104 a retry that cannot be persisted is reported, not recorded as durable [1056.56ms]
+[run-tests] progress: 120s elapsed · 0s since last output · 213 KiB of suite output
+(pass) v0.38.104 a persistable retry still records retryCount durably [349.85ms]
+
+tests/display.test.ts:
+(pass) fmtElapsed [23.65ms]
+(pass) fmtTokens [0.06ms]
+(pass) truncate [0.16ms]
+66 |   // max=100 → budget 99, floor 39. The only clause boundary sits at
+67 |   // width 20: below the floor, so the head takes the character cut.
+68 |   const text = `${"a".repeat(20)}: ${"b".repeat(150)}`;
+69 |   const cut = truncateObjective(text, 100);
+70 |   assert.ok(cut.length > 50, `below-floor boundary falls back to the char cut, got ${cut.length} cells`);
+71 |   assert.ok(!cut.startsWith("a".repeat(20)), "the short clause cut is not taken");
+              ^
+AssertionError: the short clause cut is not taken
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/display.test.ts:71:10
+      at fn (node:test:215:18)
+(fail) D6: the clause-cut floor scales with the budget instead of pinning at 16 [8.20ms]
+(pass) D10: fmtElapsed clamps non-finite input to zero [0.16ms]
+(pass) display projections remove terminal and zero-width control characters without changing stored state [1.72ms]
+(pass) empty state → undefined (segment cleared) [0.16ms]
+(pass) active goal shows a compact state capsule (elapsed lives on the card) [0.15ms]
+(pass) version tail rides the status on every branch (field 20260909_161057) [0.15ms]
+(pass) monitoring intent never substitutes for runtime evidence [0.17ms]
+(pass) repair cards show the preserved target and the concrete one-turn recovery [0.47ms]
+(pass) repair cards with a sent bootstrap show the explicit retry action [0.34ms]
+(pass) active status does not make first-turn or long-idle gaps look green [0.36ms]
+(pass) stream-proven work uses one compact status-bar HUD; the card stays quiet [0.56ms]
+(pass) v0.34.95: queued + parked recovery surfaces 'parked on provider recovery' on the status line [0.38ms]
+(pass) v0.34.95: queued WITHOUT a parked recovery does NOT show quota text (no false signal) [0.11ms]
+(pass) v0.34.95: parked recovery on a WORKING goal does NOT show quota text (only queued needs the WHY) [0.11ms]
+(pass) v0.34.97: status line shows '⏳ compacting…' during the post-compaction grace window [0.08ms]
+(pass) v0.34.97: compacting chip is GONE after the 3-minute grace window [0.06ms]
+(pass) v0.34.97: no compacting chip when lastCompactionAt is absent [0.05ms]
+(pass) head owns liveness: WORKING status is static, the head carries the animated signal [0.10ms]
+(pass) WORKING badge keeps semantic colors without decorative noise [0.18ms]
+(pass) active goal with tasks shows progress [0.14ms]
+(pass) stale interrupted goal is visibly orphaned, not normally active [0.28ms]
+(pass) accepted continuation without a turn-start proof is not mislabeled as a lost host session [0.19ms]
+(pass) lifecycle interruption keeps durable auditor disapproval feedback visible [0.84ms]
+(pass) widget truncation is width-aware (v0.22.2) [0.37ms]
+(pass) audit 2026-09-07: worker rows splice before the auditor block, never inside it [0.77ms]
+(pass) widget lines reserve pi-tui's horizontal padding [0.38ms]
+(pass) list policy footer: queued count, no duplicated 'list' [0.14ms]
+(pass) goal policy footer says 'N queued' (v0.28.11 U10 — was the cryptic 'list N') [0.06ms]
+(pass) widget names a list item as such and points at /list, not /goal [0.15ms]
+(pass) long-running list card shows a truthful queue trail and immediate next item [0.15ms]
+(pass) widget list item, last in queue: no '0 queued' [0.08ms]
+(pass) widget goal policy keeps /goal status hint + list N prefix [0.08ms]
+(pass) paused shows the reason [0.33ms]
+(pass) runtime activity projection scopes goals and active loops to their own start boundary [0.18ms]
+(pass) paused lifecycle projection names owner, queue, last activity, and next transition [0.45ms]
+(pass) active/in-flight main-model recovery uses one compact card row [0.27ms]
+(pass) standalone main-model recovery remains visible when no goal is active [0.34ms]
+(pass) loop recovery remains visible while the loop is parked [0.34ms]
+(pass) passed provider retryAt stays parked until recovery state clears [0.24ms]
+(pass) paused decision without activity says no turn was observed and names the manual path [0.42ms]
+(pass) v0.38.70: paused action card leads with the action, history rides after (field 20260920_152744) [1.94ms]
+(pass) auditing keeps the footer compact while the widget shows the auditor's current tool [0.21ms]
+(pass) v0.34.89: completed goal shows a dim one-line summary instead of a loud status claim [0.09ms]
+(pass) v0.34.89: completed goal widget is ONE dim summary line (objective + duration, no verdict card) [0.15ms]
+(pass) v0.34.91: completed goal summary shows the agent's completion recap, not the objective echo [0.53ms]
+(pass) completed-goal TUI card shows the human outcome without technical recap labels [0.19ms]
+(pass) v0.34.91: whitespace-only completion summary falls back to the objective [0.09ms]
+(pass) v0.34.89: aborted goal summary names the reason + duration on one line [0.08ms]
+(pass) v0.34.89: completed goal without a verdict does not fabricate one on the summary [0.05ms]
+(pass) active loop shows iteration + best + stall [0.14ms]
+(pass) active loop status names evidence-backed working, waiting, and idle states [0.18ms]
+(pass) v0.29.15 — audit-loop widget names the metric instead of showing the raw grep ("that weird line") [0.11ms]
+(pass) widget: nothing supervised → undefined [0.03ms]
+(pass) widget: goal lines include objective, status, tokens, no footer [0.12ms]
+(pass) widget: paused goal shows reason + suggestion [0.21ms]
+(pass) widget: auditing shows auditor progress [0.28ms]
+(pass) widget: interrupted completion claims render the named recovery-needed lifecycle, not auditor-running [0.22ms]
+(pass) widget: a durable running claim without observed progress names its durable state [0.39ms]
+(pass) auditor progress phases are explicit and retain worker activity [0.48ms]
+(pass) worker-timeout display demotes stale progress to quiet without claiming LIVE [0.29ms]
+(pass) detached auditor keeps compact footer liveness and detailed widget evidence without pausing MAIN [0.58ms]
+(pass) detached auditor elapsed time keeps ticking between worker progress events [0.22ms]
+(pass) detached recent auditor output is sanitized in live and awaiting-verdict widget paths [0.65ms]
+(pass) v0.34.86: silent audits show a fine phase label (reading source… / writing report…) [0.17ms]
+(pass) v0.34.86: silent audits show a report byte-counter instead of a dead timer [0.19ms]
+(pass) v0.34.86: auditorProgressSignals off restores the plain timer-only card [0.21ms]
+(pass) v0.34.86: live tail (auditorSilent off) is unaffected by the byte counter [0.12ms]
+(pass) H-code: HUD liveness gate rejects clock-skewed lastActivityAt (future timestamps must not claim LIVE) [0.21ms]
+(pass) auditor widget shows concrete worker observations without exposing think blocks [0.57ms]
+(pass) v0.34.119: repeated auditor tool telemetry does not render a tool-name history [0.14ms]
+(pass) v0.34.66: auditor stream is SILENT by default — no live tail, muted note instead [0.12ms]
+(pass) v0.34.66: at the verdict the FINAL report shows even when silent [0.58ms]
+(pass) v0.38.55: no spacer row between observations and the card footer (Screenshot 20260914) [0.24ms]
+(pass) v0.38.55: no spacer is invented when there is no worker text [0.13ms]
+(pass) v0.34.56: unmatched tool-event counts render ONLY with evidence (never a zero-fact observation) [0.43ms]
+(pass) stale auditor snapshots show the last tool, not a fake current tool [0.14ms]
+(pass) auditor startup does not claim worker activity before the first RPC event [0.12ms]
+(pass) widget: loop lines include measure + metric state [0.15ms]
+(pass) held loop alone → status segment + widget card (before: BOTH vanished) [0.16ms]
+(pass) held loop + paused goal → both visible (status suffix + widget trailing line) [0.27ms]
+(pass) held loop + active goal → status suffix present [0.08ms]
+(pass) v0.34.89: held loop + completed goal → dim summary shows, held loop stays visible via suffix [0.07ms]
+(pass) active loop unchanged; stopped loop stays invisible [0.09ms]
+(pass) decision pause: banner + numbered options + recommended flagged (widget + status) [0.45ms]
+(pass) v0.38.71: decision card renders the action before the options (field UI-SURVEY-2026-09-20) [0.43ms]
+(pass) error pause: ACTION NEEDED banner, action line popped (widget + status) [0.24ms]
+(pass) active auditor infrastructure failure is visible as blocked, not green progress [0.33ms]
+(pass) v0.34.87: paused auditor no-verdict is parked, not host-bearing (surface separation) [0.28ms]
+(pass) v0.34.87: a paused LIST item's parked line names /list resume and the queue [0.12ms]
+(pass) MAIN activity is never represented as detached — the detached marker belongs only to the live auditor badge [0.16ms]
+(pass) v0.34.57: MAIN host label is pinned to SUPERVISING by the MAIN_HOST_LABEL constant guard [0.24ms]
+(pass) active auditor verdicts never masquerade as infrastructure no-verdict [0.39ms]
+(pass) provider payloads stay out of durable disapproval widget feedback [0.45ms]
+(pass) v0.34.64: retry-class pause shows uniform auto-retrying countdown; no QUOTA WALL anywhere [0.27ms]
+(pass) v0.34.64: ambiguous (transient 503) recovery is shown with the same auto-retrying badge — no special 'wall' label [0.17ms]
+(pass) v0.34.102: paused goal parked on mainModelRecovery renders as RECOVERING, not paused (widget head + card) [0.29ms]
+(pass) v0.34.102: wait pause WITHOUT mainModelRecovery keeps the uniform auto-retrying shape [0.15ms]
+(pass) v0.34.64: 24h horizon holds render as a paused card with the suggested action; no manual-resume wording [1.59ms]
+(pass) main-model recovery manual hold does not claim a non-quota block [0.42ms]
+(pass) blocked card carries one directive: timer names itself, otherwise resume [0.23ms]
+(pass) v0.34.51: a passed quota resumeAt says resuming…, never the old 'retrying now' [0.13ms]
+(pass) legacy pause (no kind): flat card unchanged; error-regex still classifies the status line [0.17ms]
+(pass) v0.28.30: the widget card status line ALWAYS names the type (goal · / list item ·) [0.23ms]
+(pass) v0.33.0: slim card — meter rounding guard, folded status segments, last-action line [5.37ms]
+(pass) v0.38.27: widget task count — a closed parent covers its subtasks (ported from Bjynt's PR #45) [0.39ms]
+(pass) v0.33.1: audit-batch — sanitize, head fits width, last restored, flag lifecycle [4.60ms]
+(pass) v0.33.2: loop proactiveness + respec machinery [6.17ms]
+(pass) v0.34.100: auditorSilent default is on in settings (every session model) [0.14ms]
+(pass) v0.34.100: auditorSilent plumbing threads the loaded setting through extras [4.06ms]
+(pass) v0.36.2: live UI repaint has a bounded cadence and diff guard [3.50ms]
+(pass) v0.34.100: silent-default widget renders muted for ANY session model [0.47ms]
+(pass) v0.34.96/v0.34.128: complete_goal detects 'already shipped' / 'verified vX covers this' / 'no new work shipped' — version-bearing aborts, version-less routes to the audit (SRC-pinned in display.test.ts) [4.95ms]
+(pass) audit-2026-09-07: widget worker rows render bare glyph-first, no `agent: ` prefix [0.30ms]
+(pass) audit-2026-09-06: status line honors the width budget [0.26ms]
+(pass) audit-2026-09-06: truncate/wrap are cell-aware (CJK/emoji + surrogate-safe) [0.96ms]
+(pass) version tail rides the paused branch too, not just active [0.09ms]
+
+tests/quota-wall-engagement.test.ts:
+(pass) send-storm escalation has one generic threshold [0.36ms]
+(pass) quota-shaped provider text is opaque and still recoverable [0.62ms]
+(pass) source contains no reason-specific send-storm policy [1.24ms]
+(pass) send-rearm escalation still funnels into the generic recovery envelope [0.06ms]
+
+tests/objective-conflict.test.ts:
+(pass) C7: declining the conflict confirm ends the update — no retry re-prompt [218.70ms]
+(pass) C7 control: accepting the conflict confirm applies the whole-objective update [175.38ms]
+
+tests/last-wins.test.ts:
+(pass) last-wins: a main host steals a live root — the old owner is never signaled [518.52ms]
+(pass) last-wins: a worker contact never steals — the main session keeps the root [343.12ms]
+(pass) last-wins: quiet paths still reclaim without supersede noise [220.05ms]
+(pass) last-wins: the dethroned session stands down once, then recovers when the holder dies [688.38ms]
+(pass) last-wins wiring: session_start supersedes under hostLifecycleStart, agent_end notes standing [175.83ms]
+(pass) last-wins: an archive fence no longer refuses the new objective — old is ledgered, new starts [1075.54ms]
+(pass) last-wins control: without a fence the old objective still archives honestly [717.63ms]
+(pass) last-wins source pins: setGoal preserves-then-proceeds, refusal text gone [100.66ms]
+(pass) audit-2026-09-06: same-session lineage reclaims quietly — no steal event [374.15ms]
+(pass) audit-2026-09-06: anonymous claimant cannot dethrone a live owner [367.62ms]
+
+tests/post-accept-hang-retry.test.ts:
+(pass) v0.35.x zombieRetryDecision: repeated silence consumes the configured retry budget [4.89ms]
+(pass) v0.35.x zombieRetryDecision: exhaustion refuses without a retry storm [0.19ms]
+(pass) v0.35.x zombieRetryDecision: a different owner key always gets its own budget [0.08ms]
+(pass) v0.35.x production retry defaults stay finite and bounded [0.15ms]
+(pass) v0.35.17 source: the auto-retry is armed inside abortZombieRun behind the streak decision [0.29ms]
+(pass) v0.35.17 source: the retry timer respects /glla pause and only clears ITS OWN park [0.15ms]
+(pass) v0.35.x source: the user-facing copy announces the bounded retry budget [0.08ms]
+(pass) v0.35.x behavioral: a hung post-accept turn aborts, parks, then AUTO-resumes within the budget [3060.55ms]
+(pass) v0.35.x behavioral: repeated zero-stream aborts retry until exhaustion, then stay parked [1928.42ms]
+(pass) v0.35.17 behavioral: /glla pause during the waystation freezes the automatic retry [667.05ms]
+
+tests/replace-resume-intent.test.ts:
+(pass) v0.34.103 (issue #6 Defect A): replacing a wait goal with a scheduled resume warns + ledgers the cancellation [15.15ms]
+(pass) v0.36.0: every plain replacement includes the archived recap [0.14ms]
+(pass) v0.34.103 (issue #6 Defect B): /goal resume answers terminal (complete/aborted) goals explicitly [0.16ms]
+(pass) v0.34.103 (issue #6 Defect B): resume with NO goal at all answers instead of swallowing the verb [0.62ms]
+(pass) v0.34.103 (issue #6): the ledger key survives in goal-loop-core round-trips [0.17ms]
+
+tests/drafting-handoff.test.ts:
+(pass) draft-only handoff: a real question waits without an autonomous retry [6034.83ms]
+(pass) field screenshot: answered promise-only draft delivers exactly one corrective follow-up [6985.85ms]
+[run-tests] progress: 150s elapsed · 4s since last output · 228 KiB of suite output
+(pass) cancelled or missing answer suppresses stale handoff evidence: {"cancelled":true,"answers":[]} [3949.23ms]
+(pass) cancelled or missing answer suppresses stale handoff evidence: {} [3791.11ms]
+(pass) cancelled or missing answer suppresses stale handoff evidence: {"cancelled":false,"answers":[]} [3464.23ms]
+(pass) pending draft correction stands down on cancel [4245.74ms]
+(pass) pending draft correction stands down on user [4270.81ms]
+(pass) pending draft correction stands down on busy [5005.51ms]
+(pass) pending draft correction stands down on pending [3166.59ms]
+(pass) pending draft correction stands down on shutdown [3505.58ms]
+[run-tests] progress: 180s elapsed · 2s since last output · 228 KiB of suite output
+(pass) pending draft correction stands down on new-draft [4208.88ms]
+
+tests/pitfall-registry.test.ts:
+(pass) pitfall registry: absent file reads as absent [43.03ms]
+(pass) pitfall registry: present file is returned bounded [0.42ms]
+(pass) pitfall registry: brief rides the continuation prompt [360.88ms]
+(pass) pitfall registry: no brief means no section [1.29ms]
+
+tests/tweak-procedural-tail.test.ts:
+(pass) 184316: trailing filing instruction with embedded command is stripped [0.44ms]
+(pass) single-sentence input passes through untouched [0.08ms]
+(pass) non-instructional trailing mention of a command is kept [0.03ms]
+(pass) trailing 'then resume' instruction without filing nouns is stripped [0.02ms]
+(pass) plain multi-sentence objective with no tail is unchanged [0.02ms]
+
+tests/transcript-replay.test.ts:
+(pass) replay transcript 1: NEW detector says NOT stuck (item 11) [38.53ms]
+(pass) replay transcript 2: NEW detector says NOT stuck (item 11) [0.02ms]
+(pass) replay transcripts: OLD detector WOULD have flagged both (the false positive being fixed) [1.01ms]
+(pass) replay transcripts without the shipped work: narrate-but-don't-ship is still stuck [0.23ms]
+
+tests/tool-cap-inventory.test.ts:
+(pass) cap inventory: no tool schema refuses past the documented guard [35.16ms]
+(pass) darklord replay: oversized gate notes are accepted and preserved [0.33ms]
+(pass) judgment and resume values clip at handlers instead of refusing [0.76ms]
+(pass) cap audit gaps: judgment record and group titles clip clause-aware [0.76ms]
+
+tests/activity-first-status.test.ts:
+(pass) activity-first: lead rows follow the head and precede all historical rows [19.20ms]
+(pass) activity-first: quiet card leads with phase, age, last tool, model, thinking, next action [0.53ms]
+(pass) activity-first: awaiting-verdict card and footer agree on the phase words [0.37ms]
+(pass) activity-first: blocked card and footer agree on the blocked label [0.32ms]
+(pass) activity-first: live running card carries tool elapsed/budget in the lead [0.56ms]
+(pass) activity-first: legacy claim without thinking/model omits the segments, never invents [0.24ms]
+(pass) activity-first: phase colour wraps the words (quiet warns, live succeeds, queued stays neutral) [0.87ms]
+(pass) activity-first: footer monitoring and awaiting labels agree with the card head [0.10ms]
+(pass) D2: the loop status line folds watching into QUEUED like the goal head [0.09ms]
+(pass) D4: the auditor session row is sanitized and bounded [0.16ms]
+(pass) stampAuditorAttemptThinking stamps only the owning attempt and sanitizes [0.08ms]
+
+tests/model-picker.test.ts:
+(pass) model-picker items: session row first, manual row last, models sorted by provider/id [0.38ms]
+(pass) v0.34.118 backup picker: excludes forbidden refs before rendering [0.08ms]
+(pass) model-picker exclusion honors case-insensitive substring policy entries [0.05ms]
+(pass) model-picker: typing fuzzy-filters the list; enter returns the highlighted model [23.38ms]
+(pass) model-picker: slash-token fuzzy match (provider/model style), nav wraps, backspace edits [0.19ms]
+(pass) model-picker: up/down moves the selection; esc cancels with undefined [0.09ms]
+(pass) model-picker: selecting the session row clears the override; manual row is the typed escape hatch [0.06ms]
+(pass) model-picker: render stays within width and shows the filter hint [0.56ms]
+(pass) model-picker: active model row uses the available width for selection [0.32ms]
+(pass) v0.29.17 wiring: model-valued settings use the fuzzy picker; unavailable auditor models fall back LOUDLY to the session model [7.32ms]
+(pass) v0.36.0: auditor thinking inherits the parent dial unless explicitly overridden [5.79ms]
+(pass) v0.36.0: the auditor chain — pinned primary → ordered fallbacks → session LAST; same-as-session auto-swap [7.55ms]
+(pass) v0.31.6: same-model swap toggle — default ON, off = same-model audits stand [5.82ms]
+(pass) v0.31.8: thinking options come from the PICKED MODEL — xhigh/max only when the model maps them [6.78ms]
+(pass) v0.31.9: fork-bomb lesson is prompt-law — auditor reject-class + executor hard rule [0.22ms]
+
+tests/settings-menu-complete.test.ts:
+(pass) every row carries every required column field [1.67ms]
+(pass) role-specific tabs keep each agent's model, thinking, and fallback controls together [0.15ms]
+(pass) every row's section is one of the 8 known section ids (no orphans) [0.38ms]
+(pass) main-agent tab starts with the runtime agent; drafter and subagent chains have their own tabs [0.42ms]
+(pass) main fallback row explains ordered, deselectable selection [41.16ms]
+(pass) role rows show each selected model with requested/effective thinking [0.49ms]
+(pass) v0.36.0: unset auditor thinking mirrors the parent session and the fallback row uses the main shape [0.28ms]
+(pass) inherited drafter and auditor model rows identify the session category [0.36ms]
+(pass) all embedded subagent types expose editable fallback-chain rows [0.24ms]
+(pass) key rows from v0.27.0 settings menu are all present (menu coverage contract) [0.30ms]
+(pass) descriptions and values carry no version-tag chrome (v0.34.25) [0.37ms]
+(pass) rows map 1:1 to dispatchable ids (every id can drive a handler) [4.00ms]
+(pass) main fallback row shows the persisted numbered try order and truthful runtime semantics [0.94ms]
+(pass) auditorAllowedExtensions valueText is a count — never joined absolute paths (screen-size crash) [0.70ms]
+(pass) valueText derives from settings (effective values surface for each row) [0.30ms]
+(pass) default fallbacks surface when settings + provenance both missing [0.48ms]
+(pass) default fallbacks follow the effective aggressive matrix (explicit off → base values) [0.53ms]
+(pass) effective resolution names the real session model for inherit-parent [0.40ms]
+(pass) provenance flows into sourceText (project/global/default tags) [0.23ms]
+(pass) haiku mention is dropped from any valueText / description / sourceText [0.34ms]
+(pass) headless `/glla` fallback keeps stall brakes and the v0.34.127 sync list [1.51ms]
+(pass) the legacy flat-row startsWith logic is removed (no more `──` section headers in code) [2.27ms]
+(pass) /glla tooloverride still routes headlessly (regression: subsystems unchanged) [1.54ms]
+(pass) postaudit and reviewer routes both open the reviewer menu (back-compat) [1.62ms]
+(pass) stateRoot: one global-only row with the workingDir default [0.75ms]
+(pass) v0.28.20: no bracket/paren chrome — VALUE and SOURCE render bare [0.48ms]
+(pass) audit-2026-09-06: settings TUI tabs row is truncated to terminal width [2.12ms]
+(pass) audit 2026-09-06: normalizeLoadedSettings resets junk numerics/enums/strings to unset [1.11ms]
+(pass) settings provenance reports normalized effective values, not rejected raw junk [41.53ms]
+(pass) audit 2026-09-06: legacy reviewer block migrates to postaudit [0.98ms]
+(pass) audit 2026-09-07 (LOW, findings 392-394): quiet copy names the count line at every surface [0.44ms]
+628 |   );
+629 |   for (const details of [false, true]) {
+630 |     if (details) menu.handleInput("d");
+631 |     for (const width of [1, 20, 40, 80, 150]) {
+632 |       for (const line of menu.render(width)) {
+633 |         assert.ok(visibleWidth(line) <= width, `details=${details}, width=${width}: ${line}`);
+                     ^
+AssertionError: details=false, width=1: Settings for this p[0m…[0m
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/settings-menu-complete.test.ts:633:16
+      at processTicksAndRejections (native:7:39)
+(fail) settings table fits narrow terminals with details both hidden and visible [1.46ms]
+
+tests/compactor-handoff.test.ts:
+(pass) plan B picks verified free big-context, largest first, max two [45.97ms]
+(pass) plan B disqualifies unknown metadata, paid, unauthed, forbidden, stuck [0.30ms]
+(pass) plan B returns [] when the registry throws [0.10ms]
+(pass) compactor chain normalizes and caps 0-10 exactly like drafter [82.52ms]
+(pass) compactor chain never leases the stuck session model [0.49ms]
+(pass) refuse transition fires exactly once per episode [0.09ms]
+(pass) audit 2026-09-06: compactor one-shot survives a restart mid-episode [3.34ms]
+(pass) audit 2026-09-06: worker timeout escalates SIGTERM to SIGKILL [0.39ms]
+(pass) brief scope: packet bounded, sections present, worker tool-less [135.72ms]
+(pass) resync carries the brief excerpt only when present [0.36ms]
+(pass) recovery banner quotes the handoff excerpt [0.36ms]
+(pass) refuse engages the compactor once with the chain model + packet scope [2671.45ms]
