@@ -6,7 +6,7 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit findi… \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m audi\u001b[0m…\u001b[0m",
-      "├─ \u001b[38;2;167;152;215mAudit running · thinking…\u001b[39m",
+      "├─ \u001b[38;2;167;152;215mAudit running · thinking… · detach\u001b[0m…\u001b[0m",
       "│ 11 calls finished · activity 17s ago",
       "│ audit elapsed 8m 00s",
       "│ last tool: bash",
@@ -40,7 +40,7 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit findi… \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m audi\u001b[0m…\u001b[0m",
-      "├─ \u001b[38;2;167;152;215mAudit running · tool executing\u001b[39m",
+      "├─ \u001b[38;2;167;152;215mAudit running · tool executing · d\u001b[0m…\u001b[0m",
       "│ 11 calls finished · activity 1s ago",
       "│ audit elapsed 8m 00s",
       "│ tool: bash · 2s / 20m 00s budget",
@@ -57,7 +57,7 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit finding: HIGH… \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m auditing \u001b[38;2;126;136;142m·\u001b[39m total 1h 10m \u001b[38;2;126;136;142m·\u001b[39m \u001b[38;2;126;136;142m194k tok\u001b[39m",
-      "├─ \u001b[38;2;167;152;215mAudit running · thinking…\u001b[39m",
+      "├─ \u001b[38;2;167;152;215mAudit running · thinking… · detached worker\u001b[39m",
       "│ 11 calls finished · activity 17s ago",
       "│ audit elapsed 8m 00s",
       "│ last tool: bash",
@@ -91,7 +91,7 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit finding: HIGH… \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m auditing \u001b[38;2;126;136;142m·\u001b[39m total 1h 10m \u001b[38;2;126;136;142m·\u001b[39m \u001b[38;2;126;136;142m194k tok\u001b[39m",
-      "├─ \u001b[38;2;167;152;215mAudit running · tool executing\u001b[39m",
+      "├─ \u001b[38;2;167;152;215mAudit running · tool executing · detached worker\u001b[39m",
       "│ 11 calls finished · activity 1s ago",
       "│ audit elapsed 8m 00s",
       "│ tool: bash · 2s / 20m 00s budget",
@@ -108,7 +108,7 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit finding: HIGH: the \"no probe runs in no gate\" guard counts a comment \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m auditing \u001b[38;2;126;136;142m·\u001b[39m total 1h 10m \u001b[38;2;126;136;142m·\u001b[39m \u001b[38;2;126;136;142m194k tok\u001b[39m",
-      "├─ \u001b[38;2;167;152;215mAudit running · thinking…\u001b[39m",
+      "├─ \u001b[38;2;167;152;215mAudit running · thinking… · detached worker\u001b[39m",
       "│ 11 calls finished · activity 17s ago",
       "│ audit elapsed 8m 00s",
       "│ last tool: bash",
@@ -142,7 +142,7 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit finding: HIGH: the \"no probe runs in no gate\" guard counts a comment \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m auditing \u001b[38;2;126;136;142m·\u001b[39m total 1h 10m \u001b[38;2;126;136;142m·\u001b[39m \u001b[38;2;126;136;142m194k tok\u001b[39m",
-      "├─ \u001b[38;2;167;152;215mAudit running · tool executing\u001b[39m",
+      "├─ \u001b[38;2;167;152;215mAudit running · tool executing · detached worker\u001b[39m",
       "│ 11 calls finished · activity 1s ago",
       "│ audit elapsed 8m 00s",
       "│ tool: bash · 2s / 20m 00s budget",
@@ -159,7 +159,7 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit findi… \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m audi\u001b[0m…\u001b[0m",
-      "├─ \u001b[38;2;116;89;180mAudit running · thinking…\u001b[39m",
+      "├─ \u001b[38;2;116;89;180mAudit running · thinking… · detach\u001b[0m…\u001b[0m",
       "│ 11 calls finished · activity 17s ago",
       "│ audit elapsed 8m 00s",
       "│ last tool: bash",
@@ -193,7 +193,7 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit findi… \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m audi\u001b[0m…\u001b[0m",
-      "├─ \u001b[38;2;116;89;180mAudit running · tool executing\u001b[39m",
+      "├─ \u001b[38;2;116;89;180mAudit running · tool executing · d\u001b[0m…\u001b[0m",
       "│ 11 calls finished · activity 1s ago",
       "│ audit elapsed 8m 00s",
       "│ tool: bash · 2s / 20m 00s budget",
@@ -210,7 +210,7 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit finding: HIGH… \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m auditing \u001b[38;2;135;144;149m·\u001b[39m total 1h 10m \u001b[38;2;135;144;149m·\u001b[39m \u001b[38;2;135;144;149m194k tok\u001b[39m",
-      "├─ \u001b[38;2;116;89;180mAudit running · thinking…\u001b[39m",
+      "├─ \u001b[38;2;116;89;180mAudit running · thinking… · detached worker\u001b[39m",
       "│ 11 calls finished · activity 17s ago",
       "│ audit elapsed 8m 00s",
       "│ last tool: bash",
@@ -244,7 +244,7 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit finding: HIGH… \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m auditing \u001b[38;2;135;144;149m·\u001b[39m total 1h 10m \u001b[38;2;135;144;149m·\u001b[39m \u001b[38;2;135;144;149m194k tok\u001b[39m",
-      "├─ \u001b[38;2;116;89;180mAudit running · tool executing\u001b[39m",
+      "├─ \u001b[38;2;116;89;180mAudit running · tool executing · detached worker\u001b[39m",
       "│ 11 calls finished · activity 1s ago",
       "│ audit elapsed 8m 00s",
       "│ tool: bash · 2s / 20m 00s budget",
@@ -261,7 +261,7 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit finding: HIGH: the \"no probe runs in no gate\" guard counts a comment \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m auditing \u001b[38;2;135;144;149m·\u001b[39m total 1h 10m \u001b[38;2;135;144;149m·\u001b[39m \u001b[38;2;135;144;149m194k tok\u001b[39m",
-      "├─ \u001b[38;2;116;89;180mAudit running · thinking…\u001b[39m",
+      "├─ \u001b[38;2;116;89;180mAudit running · thinking… · detached worker\u001b[39m",
       "│ 11 calls finished · activity 17s ago",
       "│ audit elapsed 8m 00s",
       "│ last tool: bash",
@@ -295,7 +295,7 @@
     "height": 10,
     "lines": [
       "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit finding: HIGH: the \"no probe runs in no gate\" guard counts a comment \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m auditing \u001b[38;2;135;144;149m·\u001b[39m total 1h 10m \u001b[38;2;135;144;149m·\u001b[39m \u001b[38;2;135;144;149m194k tok\u001b[39m",
-      "├─ \u001b[38;2;116;89;180mAudit running · tool executing\u001b[39m",
+      "├─ \u001b[38;2;116;89;180mAudit running · tool executing · detached worker\u001b[39m",
       "│ 11 calls finished · activity 1s ago",
       "│ audit elapsed 8m 00s",
       "│ tool: bash · 2s / 20m 00s budget",
