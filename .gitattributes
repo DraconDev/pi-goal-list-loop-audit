@@ -69,10 +69,24 @@ config/licenses.json filter=dracon diff=dracon merge=dracon
 config/licenses.test.json filter=dracon diff=dracon merge=dracon
 config/services.json filter=dracon diff=dracon merge=dracon
 config/services.test.json filter=dracon diff=dracon merge=dracon
+conversation-*.html filter=dracon diff=dracon merge=dracon
+conversation-*.json filter=dracon diff=dracon merge=dracon
+conversation-*.md filter=dracon diff=dracon merge=dracon
+conversation-*.txt filter=dracon diff=dracon merge=dracon
+pi-session-*.html filter=dracon diff=dracon merge=dracon
+pi-session-*.json filter=dracon diff=dracon merge=dracon
+pi-session-*.md filter=dracon diff=dracon merge=dracon
+pi-session-*.txt filter=dracon diff=dracon merge=dracon
 plan/pages/snapshots/*.json filter=dracon diff=dracon merge=dracon
 plan/pages/templates/*.json filter=dracon diff=dracon merge=dracon
+rollout-*.json filter=dracon diff=dracon merge=dracon
+rollout-*.jsonl filter=dracon diff=dracon merge=dracon
 secrets/** filter=dracon diff=dracon merge=dracon
 test_secret.txt filter=dracon diff=dracon merge=dracon
+trajectory-*.html filter=dracon diff=dracon merge=dracon
+trajectory-*.json filter=dracon diff=dracon merge=dracon
+trajectory-*.md filter=dracon diff=dracon merge=dracon
+trajectory-*.txt filter=dracon diff=dracon merge=dracon
 web/ai-hub/src/lib/data/promo-codes.json filter=dracon diff=dracon merge=dracon
 web/ai-hub/src/lib/data/voucher-research.json filter=dracon diff=dracon merge=dracon
 *.dll -filter
