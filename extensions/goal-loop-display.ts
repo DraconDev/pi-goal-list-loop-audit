@@ -2174,16 +2174,20 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
       const needsRecovery = auditRecoveryPending(g) || phase === "quiet" || phase === "blocked" || durable?.phase === "settling";
       const elapsed = auditorElapsedMs(audit, now);
       const finished = audit?.toolCalls?.filter(call => call.finishedAt !== undefined).length;
-      const facts = [elapsed !== undefined ? `audit elapsed ${fmtElapsed(elapsed)}` : undefined,
-        finished !== undefined ? `${finished} tool calls finished` : undefined].filter(Boolean);
+      const age = auditorActivityAge(audit, now);
+      const facts = [finished !== undefined ? `${finished} calls finished` : undefined,
+        age !== undefined ? `activity ${fmtElapsed(age)} ago` : "no activity yet"].filter(Boolean);
       const action = block.lead.find(line => line.startsWith("│ next:"));
       // No history or model plaques in the glance card: Pi clips its tail.
       // Keep state, real evidence and the user action ahead of all details.
-      return [head, block.lead[0]!,
+      const phaseLine = needsRecovery ? block.lead[0]!
+        : `├─ ${paint(theme, "accent", phase === "running" ? `Audit running · ${auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, auditorHasLiveEvidence(audit, phase, now))}` : phase === "queued" ? "Audit starting" : "Audit review pending")}`;
+      const toolLine = block.lead.find(line => /^│ (?:last )?tool:/.test(line));
+      return [head, phaseLine,
         ...(facts.length ? [`│ ${facts.join(" · ")}`] : []),
-        ...block.lead.slice(1).filter(line => !line.startsWith("│ next:")),
-        ...(action ? [action] : []),
-        ...(!needsRecovery ? [`│ No action needed — the auditor runs in the background`] : []),
+        ...(elapsed !== undefined ? [`│ audit elapsed ${fmtElapsed(elapsed)}`] : []),
+        ...(toolLine ? [phase === "running" && audit?.currentTool ? toolLine : `│ last tool: ${lastAuditorTool(audit) ?? audit?.currentTool}`] : []),
+        ...(needsRecovery ? (action ? [action] : block.lead.slice(1)) : [`│ No action needed — review applies automatically`]),
         `└─ /goal status for full audit details`];
     }
     lines.push(...block.lead);

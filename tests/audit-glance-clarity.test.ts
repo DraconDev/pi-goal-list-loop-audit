@@ -7,6 +7,7 @@ const now = Date.parse("2026-10-03T18:25:00Z");
 const goal: Goal = {
   id: "doomtap-audit", objective: "Fix audit finding: HIGH: the no probe runs in no gate guard counts a comment",
   status: "auditing", policy: "list", autoContinue: true,
+  usage: { tokensUsed: 194_000, tokensLimit: 0 },
   createdAt: new Date(now - 70 * 60_000).toISOString(), updatedAt: new Date(now).toISOString(),
   pendingCompletion: { at: new Date(now - 8 * 60_000).toISOString(), phase: "running", attemptId: "glance-audit", auditorThinkingLevel: "max" },
 };
@@ -27,9 +28,9 @@ test("screenshot regression: live audit facts and user action fit before Pi's te
     const text = lines.join("\n");
     assert.ok(lines.length <= 7, text);
     assert.match(text, /No action needed/);
-    assert.match(text, /11 tool calls finished/);
+    assert.match(text, /11 calls finished/);
     assert.match(text, /audit elapsed 8m/);
-    assert.match(text, /last progress 17s/);
+    assert.match(text, /activity 17s/);
     assert.match(text, /thinking/);
     assert.doesNotMatch(text, /reading source|Durable fix|selected:|model: primary|judgment:/);
     assert.match(text, /\/goal status/);
@@ -43,8 +44,8 @@ test("narrow footer starts with audit state and real freshness", () => {
 
 test("quiet, blocked, settlement and recovery do not claim no action is needed", () => {
   const cases = [
-    { goal, audit: { ...audit, lastActivityAt: now - 31 * 60_000 } },
-    { goal, audit: { ...audit, phase: "blocked" as const } },
+    { goal, audit: { ...audit, lastActivityAt: now - 31 * 60_000, toolCalls: [] } },
+    { goal, audit: { ...audit, label: "blocked" } },
     { goal: { ...goal, pendingCompletion: { ...goal.pendingCompletion!, phase: "settling" as const } }, audit: null },
     { goal: { ...goal, pendingCompletion: { ...goal.pendingCompletion!, phase: "recovery-pending" as const } }, audit: null },
   ];
