@@ -1,0 +1,302 @@
+[
+  {
+    "key": "audit-running",
+    "theme": "dark",
+    "width": 40,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit findi… \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m audi\u001b[0m…\u001b[0m",
+      "├─ \u001b[38;2;167;152;215mAudit running · thinking…\u001b[39m",
+      "│ 11 calls finished · activity 17s ago",
+      "│ audit elapsed 8m 00s",
+      "│ last tool: bash",
+      "│ No action needed — review applies a\u001b[0m…\u001b[0m",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;167;152;215mAUDIT RUNNING\u001b[39m · activity 17s ago \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "audit-quiet",
+    "theme": "dark",
+    "width": 40,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit findi… \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m audi\u001b[0m…\u001b[0m",
+      "├─ auditor: \u001b[38;2;205;154;34mquiet\u001b[39m · detached worker ·\u001b[0m…\u001b[0m",
+      "│ 0 calls finished · activity 31m 00s\u001b[0m…\u001b[0m",
+      "│ audit elapsed 8m 00s",
+      "│ next: /goal cancel discards the cla\u001b[0m…\u001b[0m",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;205;154;34mAUDIT QUIET — may be stuck\u001b[39m · \u001b[38;2;167;152;215mMAIN\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "audit-tool",
+    "theme": "dark",
+    "width": 40,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit findi… \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m audi\u001b[0m…\u001b[0m",
+      "├─ \u001b[38;2;167;152;215mAudit running · last observed tool\u001b[39m",
+      "│ 11 calls finished · activity 17s ago",
+      "│ audit elapsed 8m 00s",
+      "│ last tool: bash",
+      "│ No action needed — review applies a\u001b[0m…\u001b[0m",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;167;152;215mAUDIT RUNNING\u001b[39m · activity 17s ago \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "audit-running",
+    "theme": "dark",
+    "width": 80,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit finding: HIGH… \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m auditing \u001b[38;2;126;136;142m·\u001b[39m total 1h 10m \u001b[38;2;126;136;142m·\u001b[39m \u001b[38;2;126;136;142m194k tok\u001b[39m",
+      "├─ \u001b[38;2;167;152;215mAudit running · thinking…\u001b[39m",
+      "│ 11 calls finished · activity 17s ago",
+      "│ audit elapsed 8m 00s",
+      "│ last tool: bash",
+      "│ No action needed — review applies automatically",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;167;152;215mAUDIT RUNNING\u001b[39m · activity 17s ago · \u001b[38;2;167;152;215mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;167;152;215mauditor ▶ th\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "audit-quiet",
+    "theme": "dark",
+    "width": 80,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit finding: HIGH… \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m auditing \u001b[38;2;126;136;142m·\u001b[39m total 1h 10m \u001b[38;2;126;136;142m·\u001b[39m \u001b[38;2;126;136;142m194k tok\u001b[39m",
+      "├─ auditor: \u001b[38;2;205;154;34mquiet\u001b[39m · detached worker · last progress 31m 00s ago",
+      "│ 0 calls finished · activity 31m 00s ago",
+      "│ audit elapsed 8m 00s",
+      "│ next: /goal cancel discards the claim",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;205;154;34mAUDIT QUIET — may be stuck\u001b[39m · \u001b[38;2;167;152;215mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;205;154;34mauditor ◌ quiet\u001b[39m \u001b[38;2;205;154;34m▱▱\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "audit-tool",
+    "theme": "dark",
+    "width": 80,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit finding: HIGH… \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m auditing \u001b[38;2;126;136;142m·\u001b[39m total 1h 10m \u001b[38;2;126;136;142m·\u001b[39m \u001b[38;2;126;136;142m194k tok\u001b[39m",
+      "├─ \u001b[38;2;167;152;215mAudit running · last observed tool\u001b[39m",
+      "│ 11 calls finished · activity 17s ago",
+      "│ audit elapsed 8m 00s",
+      "│ last tool: bash",
+      "│ No action needed — review applies automatically",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;167;152;215mAUDIT RUNNING\u001b[39m · activity 17s ago · \u001b[38;2;167;152;215mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;167;152;215mauditor ▶ la\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "audit-running",
+    "theme": "dark",
+    "width": 190,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit finding: HIGH: the \"no probe runs in no gate\" guard counts a comment \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m auditing \u001b[38;2;126;136;142m·\u001b[39m total 1h 10m \u001b[38;2;126;136;142m·\u001b[39m \u001b[38;2;126;136;142m194k tok\u001b[39m",
+      "├─ \u001b[38;2;167;152;215mAudit running · thinking…\u001b[39m",
+      "│ 11 calls finished · activity 17s ago",
+      "│ audit elapsed 8m 00s",
+      "│ last tool: bash",
+      "│ No action needed — review applies automatically",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;167;152;215mAUDIT RUNNING\u001b[39m · activity 17s ago · \u001b[38;2;167;152;215mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;167;152;215mauditor ▶ thinking…\u001b[39m \u001b[38;2;126;136;142m▰▰▰▰▱\u001b[39m"
+    ]
+  },
+  {
+    "key": "audit-quiet",
+    "theme": "dark",
+    "width": 190,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit finding: HIGH: the \"no probe runs in no gate\" guard counts a comment \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m auditing \u001b[38;2;126;136;142m·\u001b[39m total 1h 10m \u001b[38;2;126;136;142m·\u001b[39m \u001b[38;2;126;136;142m194k tok\u001b[39m",
+      "├─ auditor: \u001b[38;2;205;154;34mquiet\u001b[39m · detached worker · last progress 31m 00s ago",
+      "│ 0 calls finished · activity 31m 00s ago",
+      "│ audit elapsed 8m 00s",
+      "│ next: /goal cancel discards the claim",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;205;154;34mAUDIT QUIET — may be stuck\u001b[39m · \u001b[38;2;167;152;215mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;205;154;34mauditor ◌ quiet\u001b[39m \u001b[38;2;205;154;34m▱▱▱▱▱\u001b[39m · silent 31m 00s"
+    ]
+  },
+  {
+    "key": "audit-tool",
+    "theme": "dark",
+    "width": 190,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;167;152;215m⟡\u001b[39m Fix audit finding: HIGH: the \"no probe runs in no gate\" guard counts a comment \u001b[38;2;126;136;142m·\u001b[39m list item \u001b[38;2;126;136;142m·\u001b[39m auditing \u001b[38;2;126;136;142m·\u001b[39m total 1h 10m \u001b[38;2;126;136;142m·\u001b[39m \u001b[38;2;126;136;142m194k tok\u001b[39m",
+      "├─ \u001b[38;2;167;152;215mAudit running · last observed tool\u001b[39m",
+      "│ 11 calls finished · activity 17s ago",
+      "│ audit elapsed 8m 00s",
+      "│ last tool: bash",
+      "│ No action needed — review applies automatically",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;167;152;215mAUDIT RUNNING\u001b[39m · activity 17s ago · \u001b[38;2;167;152;215mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;167;152;215mauditor ▶ last observed tool\u001b[39m \u001b[38;2;126;136;142m▰▰▰▰▱\u001b[39m"
+    ]
+  },
+  {
+    "key": "audit-running",
+    "theme": "light",
+    "width": 40,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit findi… \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m audi\u001b[0m…\u001b[0m",
+      "├─ \u001b[38;2;116;89;180mAudit running · thinking…\u001b[39m",
+      "│ 11 calls finished · activity 17s ago",
+      "│ audit elapsed 8m 00s",
+      "│ last tool: bash",
+      "│ No action needed — review applies a\u001b[0m…\u001b[0m",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;116;89;180mAUDIT RUNNING\u001b[39m · activity 17s ago \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "audit-quiet",
+    "theme": "light",
+    "width": 40,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit findi… \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m audi\u001b[0m…\u001b[0m",
+      "├─ auditor: \u001b[38;2;143;104;2mquiet\u001b[39m · detached worker ·\u001b[0m…\u001b[0m",
+      "│ 0 calls finished · activity 31m 00s\u001b[0m…\u001b[0m",
+      "│ audit elapsed 8m 00s",
+      "│ next: /goal cancel discards the cla\u001b[0m…\u001b[0m",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;143;104;2mAUDIT QUIET — may be stuck\u001b[39m · \u001b[38;2;116;89;180mMAIN\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "audit-tool",
+    "theme": "light",
+    "width": 40,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit findi… \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m audi\u001b[0m…\u001b[0m",
+      "├─ \u001b[38;2;116;89;180mAudit running · last observed tool\u001b[39m",
+      "│ 11 calls finished · activity 17s ago",
+      "│ audit elapsed 8m 00s",
+      "│ last tool: bash",
+      "│ No action needed — review applies a\u001b[0m…\u001b[0m",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;116;89;180mAUDIT RUNNING\u001b[39m · activity 17s ago \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "audit-running",
+    "theme": "light",
+    "width": 80,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit finding: HIGH… \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m auditing \u001b[38;2;135;144;149m·\u001b[39m total 1h 10m \u001b[38;2;135;144;149m·\u001b[39m \u001b[38;2;135;144;149m194k tok\u001b[39m",
+      "├─ \u001b[38;2;116;89;180mAudit running · thinking…\u001b[39m",
+      "│ 11 calls finished · activity 17s ago",
+      "│ audit elapsed 8m 00s",
+      "│ last tool: bash",
+      "│ No action needed — review applies automatically",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;116;89;180mAUDIT RUNNING\u001b[39m · activity 17s ago · \u001b[38;2;116;89;180mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;116;89;180mauditor ▶ th\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "audit-quiet",
+    "theme": "light",
+    "width": 80,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit finding: HIGH… \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m auditing \u001b[38;2;135;144;149m·\u001b[39m total 1h 10m \u001b[38;2;135;144;149m·\u001b[39m \u001b[38;2;135;144;149m194k tok\u001b[39m",
+      "├─ auditor: \u001b[38;2;143;104;2mquiet\u001b[39m · detached worker · last progress 31m 00s ago",
+      "│ 0 calls finished · activity 31m 00s ago",
+      "│ audit elapsed 8m 00s",
+      "│ next: /goal cancel discards the claim",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;143;104;2mAUDIT QUIET — may be stuck\u001b[39m · \u001b[38;2;116;89;180mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;143;104;2mauditor ◌ quiet\u001b[39m \u001b[38;2;143;104;2m▱▱\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "audit-tool",
+    "theme": "light",
+    "width": 80,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit finding: HIGH… \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m auditing \u001b[38;2;135;144;149m·\u001b[39m total 1h 10m \u001b[38;2;135;144;149m·\u001b[39m \u001b[38;2;135;144;149m194k tok\u001b[39m",
+      "├─ \u001b[38;2;116;89;180mAudit running · last observed tool\u001b[39m",
+      "│ 11 calls finished · activity 17s ago",
+      "│ audit elapsed 8m 00s",
+      "│ last tool: bash",
+      "│ No action needed — review applies automatically",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;116;89;180mAUDIT RUNNING\u001b[39m · activity 17s ago · \u001b[38;2;116;89;180mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;116;89;180mauditor ▶ la\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "audit-running",
+    "theme": "light",
+    "width": 190,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit finding: HIGH: the \"no probe runs in no gate\" guard counts a comment \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m auditing \u001b[38;2;135;144;149m·\u001b[39m total 1h 10m \u001b[38;2;135;144;149m·\u001b[39m \u001b[38;2;135;144;149m194k tok\u001b[39m",
+      "├─ \u001b[38;2;116;89;180mAudit running · thinking…\u001b[39m",
+      "│ 11 calls finished · activity 17s ago",
+      "│ audit elapsed 8m 00s",
+      "│ last tool: bash",
+      "│ No action needed — review applies automatically",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;116;89;180mAUDIT RUNNING\u001b[39m · activity 17s ago · \u001b[38;2;116;89;180mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;116;89;180mauditor ▶ thinking…\u001b[39m \u001b[38;2;135;144;149m▰▰▰▰▱\u001b[39m"
+    ]
+  },
+  {
+    "key": "audit-quiet",
+    "theme": "light",
+    "width": 190,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit finding: HIGH: the \"no probe runs in no gate\" guard counts a comment \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m auditing \u001b[38;2;135;144;149m·\u001b[39m total 1h 10m \u001b[38;2;135;144;149m·\u001b[39m \u001b[38;2;135;144;149m194k tok\u001b[39m",
+      "├─ auditor: \u001b[38;2;143;104;2mquiet\u001b[39m · detached worker · last progress 31m 00s ago",
+      "│ 0 calls finished · activity 31m 00s ago",
+      "│ audit elapsed 8m 00s",
+      "│ next: /goal cancel discards the claim",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;143;104;2mAUDIT QUIET — may be stuck\u001b[39m · \u001b[38;2;116;89;180mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;143;104;2mauditor ◌ quiet\u001b[39m \u001b[38;2;143;104;2m▱▱▱▱▱\u001b[39m · silent 31m 00s"
+    ]
+  },
+  {
+    "key": "audit-tool",
+    "theme": "light",
+    "width": 190,
+    "height": 10,
+    "lines": [
+      "\u001b[38;2;116;89;180m⟡\u001b[39m Fix audit finding: HIGH: the \"no probe runs in no gate\" guard counts a comment \u001b[38;2;135;144;149m·\u001b[39m list item \u001b[38;2;135;144;149m·\u001b[39m auditing \u001b[38;2;135;144;149m·\u001b[39m total 1h 10m \u001b[38;2;135;144;149m·\u001b[39m \u001b[38;2;135;144;149m194k tok\u001b[39m",
+      "├─ \u001b[38;2;116;89;180mAudit running · last observed tool\u001b[39m",
+      "│ 11 calls finished · activity 17s ago",
+      "│ audit elapsed 8m 00s",
+      "│ last tool: bash",
+      "│ No action needed — review applies automatically",
+      "└─ /goal status for full audit details",
+      "",
+      "glla: \u001b[38;2;116;89;180mAUDIT RUNNING\u001b[39m · activity 17s ago · \u001b[38;2;116;89;180mMAIN HOST · SUPERVISING\u001b[39m · \u001b[38;2;116;89;180mauditor ▶ last observed tool\u001b[39m \u001b[38;2;135;144;149m▰▰▰▰▱\u001b[39m"
+    ]
+  }
+]
