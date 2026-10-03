@@ -3572,3 +3572,16 @@ tests/start-context.test.ts:
 
 tests/auditor-stall-watchdog.test.ts:
 (pass) stall: worker that never emits a first event is failed fast, not left for the wall [5266.83ms]
+(pass) stall: first-event budget starts after successful spawn, not pre-spawn setup [6750.46ms]
+(pass) stall: worker whose single boot heartbeat goes stale is failed fast, not left for the wall [1274.71ms]
+(pass) progress: a live auditor outlives the legacy wall metadata and settles on its result [429.30ms]
+(pass) stall: a running auditor tool is exempt — the per-tool timeout owns that axis [959.42ms]
+(pass) stall: a silent-past-bound attempt fails fast WITH its cost record (controlled clock) [176.11ms]
+(pass) stall: a worker-reported brake is reclassified with the same evidence [139.25ms]
+(pass) stall: an open in-budget tool is not silence — the no-progress bound spares it [193.14ms]
+[run-tests] progress: 480s elapsed · 1s since last output · 266 KiB of suite output
+(pass) v0.38.99: an over-budget tool is NOT fatal — the worker cancels it, resumes, and its result still lands [2560.65ms]
+(pass) v0.38.99 approval guard: an approving verdict from a verification-incomplete attempt is refused, not applied [1656.99ms]
+(pass) v0.38.99: a genuinely wedged tool still fails fast once the grace expires [678.10ms]
+
+tests/auditor-retry-callback.test.ts:
