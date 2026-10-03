@@ -1,3 +1,4 @@
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -25,7 +26,7 @@ test("C7: declining the conflict confirm ends the update — no retry re-prompt"
   ctx.ui.inputImpl = async () => { inputCalls++; return undefined; };
   ctx.ui.confirmImpl = async () => { confirmCalls++; return false; };
   try {
-    const ok = await updateWholeObjectiveFromConflict(ctx, "replacement objective", "goal");
+    const ok = await updateWholeObjectiveFromConflict(ctx as unknown as ExtensionContext, "replacement objective", "goal");
     assert.equal(ok, false);
     assert.equal(confirmCalls, 1, "the proposal confirm ran once");
     assert.equal(inputCalls, 0, "no interactive re-prompt after the explicit decline");
@@ -40,7 +41,7 @@ test("C7 control: accepting the conflict confirm applies the whole-objective upd
   __testOnlyLoadState(cwd);
   ctx.ui.confirmImpl = async () => true;
   try {
-    const ok = await updateWholeObjectiveFromConflict(ctx, "replacement objective", "goal");
+    const ok = await updateWholeObjectiveFromConflict(ctx as unknown as ExtensionContext, "replacement objective", "goal");
     assert.equal(ok, true);
     assert.equal(readState(cwd).goal?.objective, "replacement objective");
     assert.equal(events(cwd).filter(e => e.type === "goal_tweaked").length, 1);

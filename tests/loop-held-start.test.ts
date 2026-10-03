@@ -61,7 +61,7 @@ test("fresh start over a held loop offers resume and preserves the loop", async 
   ctx.ui.selectImpl = async (_title, options) => options.find((o) => o.startsWith("Resume"));
   try {
     await pi.command("loop", "start fresh target", ctx);
-    const loop = readState(cwd).loop as Record<string, unknown>;
+    const loop = readState(cwd).loop!;
     assert.equal(loop.active, true, "the held loop resumed");
     assert.equal(loop.iteration, 7, "history preserved, not restarted");
     assert.equal(loop.target, "held respec draft", "no fresh loop replaced it");
@@ -78,7 +78,7 @@ test("fresh start over a held loop: dismiss keeps the held loop untouched", asyn
   ctx.ui.selectImpl = async () => undefined;
   try {
     await pi.command("loop", "start fresh target", ctx);
-    const loop = readState(cwd).loop as Record<string, unknown>;
+    const loop = readState(cwd).loop!;
     assert.equal(loop.active, false, "still held");
     assert.equal(loop.iteration, 7);
     assert.ok(ctx.ui.matching("held loop is unchanged").length >= 1);
@@ -107,7 +107,7 @@ test("fresh start over an explicitly stopped loop keeps today's silent behavior"
   ctx.ui.selectImpl = async () => { selects++; return undefined; };
   try {
     await pi.command("loop", "start fresh target", ctx);
-    const loop = readState(cwd).loop as Record<string, unknown>;
+    const loop = readState(cwd).loop!;
     assert.equal(loop.active, true, "fresh start proceeds");
     assert.equal(loop.target, "fresh target");
     assert.equal(selects, 0, "no held-loop dialog for an explicit stop");
