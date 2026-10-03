@@ -65,3 +65,8 @@ inventory and installed-package gates. Trusted npm publishing succeeded at
 upload asynchronously; its public registry confirmed `latest: 0.38.113` at
 19:38:17 UTC. The GitHub release remains published and both mirror tag refs
 are verified. No tag or commit history was rewritten.
+
+[Registry metadata](release-0.38.113-registry.json) confirms the package's
+`gitHead` matches the released tag and its tarball SHA matches the successful
+CI upload (`199f9384fe45bb82fcea60efc78cc43ce295f74c`). Release notes now record
+the final test/platform results and the timing-sensitive failed-attempt retry.
