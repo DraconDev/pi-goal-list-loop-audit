@@ -2033,3 +2033,42 @@ Switched to branch 'main'
 (pass) T3e (v0.28.21): no active goal + queued list + reload → NOT activated by default; autoresume=on → head activates [413.95ms]
 (pass) v0.34.24: continuation dispatch waits for owner start proof and clears its sidecar [208.53ms]
 (pass) v0.34.36: compaction releases a timed-out dispatch for one fresh resync attempt [2668.02ms]
+(pass) v0.34.36: a loop missing start proof stops durably and /loop resume re-arms it exactly once [851.86ms]
+(pass) v0.34.48: /list resume releases an unacknowledged dispatch exactly once [924.67ms]
+(pass) v0.34.24: missing start proof stands down durably and explicit resume sends one fresh attempt [888.22ms]
+(pass) v0.34.88: a transient no-turn-start miss self-heals with exactly ONE verbatim retry [422.92ms]
+(pass) v0.34.88: a genuine stall fires unacknowledged after the retry backoff — exactly one retry, then re-sends stop [793.58ms]
+(pass) v0.34.88: a goal paused inside the watchdog window is never blind-retried [1009.46ms]
+(pass) T5: mutating tools refuse a foreign (subagent) session ctx [15.67ms]
+(pass) T5: guard coverage pin — every mutating tool routes through foreignToolGuard [2.04ms]
+(pass) v0.36.3: live activity is scoped across lost results, host replacement, timestamps, timers, and pending dispatch [42.36ms]
+(pass) v0.36.4: /glla resume behaviorally re-kicks an ACTIVE-but-idle goal [513.06ms]
+(pass) T2: a stale send on agent_end continuation → goal ACTIVE + interrupt marker + loud notify [493.64ms]
+(pass) T2b: stale before compaction → no late rebind, refire, or misleading active UI [2582.23ms]
+2229 |     pi.sent.length = 0;
+2230 |     const stale = staleError();
+2231 |     pi.sendMessageError = stale;
+2232 |     await pi.fire("agent_end", { messages: [{ role: "assistant", content: [{ type: "text", text: "boundary" }], stopReason: "end_turn" }] }, ctx);
+2233 |     await tick();
+2234 |     assert.ok((readState(cwd).goal as { interruptedAt?: string }).interruptedAt);
+                  ^
+AssertionError: undefined == true
+ generatedMessage: true,
+     actual: undefined,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/behavioral-orchestrator.test.ts:2234:12
+      at processTicksAndRejections (native:7:39)
+(fail) v0.35.x: stale terminal keeps a recovery probe and self-heals without reload [404.76ms]
+(pass) v0.34.48: host-session loss without replacement session_start parks durably and rejects late callbacks [2463.24ms]
+(pass) v0.35.x: host loss keeps durable auditor disapproval feedback visible [201.19ms]
+(pass) v0.35.x: full auditor reports and required-fixes tails survive lifecycle boundaries [1948.22ms]
+[run-tests] progress: 270s elapsed · 1s since last output · 155 KiB of suite output
+(pass) S3: a mid-session absorb publishes the owner file, so the shutdown handoff still validates [970.89ms]
+(pass) v0.34.25: silent swap — live file-backed successor is absorbed via a tool call and the work auto-resumes [650.90ms]
+(pass) v0.34.25: silent swap — in-memory (subagent) ctx is still refused and the park stays honest [381.83ms]
+(pass) v0.34.25: the field ordering — stale before compaction, then the successor's compact event absorbs in place [622.90ms]
+(pass) v0.34.25: dead owner + ephemeral ctx cannot claim the plane (subagent lockout fix) [207.73ms]
+(pass) S4: a transient lastCtx probe glitch fails one tool call closed without dropping the context [6.14ms]

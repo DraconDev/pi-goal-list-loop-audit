@@ -22,7 +22,8 @@
   the approved archive owed and the command that finishes settlement.
 - Held loop status names its resume action; paused goal status includes the
   saved next step. Compact audit status distinguishes archive debt from a
-  silent worker.
+  silent worker. Decision reminders retain the same choice instruction in
+  their transcript and rendered card.
 
 ## 0.38.111 — per-tool execution options (2026-10-03)
 

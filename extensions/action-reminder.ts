@@ -125,7 +125,7 @@ export function buildActionReminder(input: {
 }): ActionReminderCopy {
   const reason = input.reason.trim() || "The current turn cannot continue safely.";
   const suppliedAction = input.action?.trim();
-  const action = suppliedAction || input.resumeCommand;
+  const action = input.kind === "decision" && !suppliedAction ? "" : suppliedAction || input.resumeCommand;
   const parkState = input.parkState ?? (
     input.kind === "wait" || input.kind === "standby" ? "automatic" : "stopped"
   );
