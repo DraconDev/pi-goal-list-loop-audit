@@ -4299,3 +4299,4 @@ tests/loops/goal.test.ts:
  1 skip
  5 fail
 Ran 3168 tests across 341 files. [664.18s]
+[run-tests] finished in 665s (exit 1)
