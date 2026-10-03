@@ -179,3 +179,11 @@ test("truncated selected rows keep their background across values, source and pa
     assert.ok(!selected.includes("\x1b[0m"), "inner truncation resets must not erase the selection background");
   }
 });
+
+test("settings search exposes details without treating a typed d as a command", () => {
+ const component = menu(); component.handleInput("/"); component.handleInput("timeout");
+ assert.match(component.render(80).at(-1)!, /ctrl\+d details/);
+ component.handleInput("\x04"); assert.equal(component.descriptionsVisible(), true);
+ assert.match(component.render(80).join("\n"), /Details/);
+ component.handleInput("d"); assert.equal(component.descriptionsVisible(), true);
+});

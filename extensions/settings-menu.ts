@@ -948,7 +948,7 @@ export class SettingsMenuComponent implements Component {
       ? this.theme.fg("accent", this.theme.bold(tabLabel(section)))
       : this.theme.fg("dim", tabLabel(section))).join("  ");
     const activeTab = tabLabel(SETTINGS_SECTIONS[this.activeSectionIdx]!);
-    lines.push(this.searching ? this.theme.fg("accent", `All tabs · ${this.visibleRows().length} matches`) : visibleWidth(allTabs) <= width ? allTabs
+    lines.push(this.searching ? this.theme.fg("accent", `All tabs · ${this.visibleRows().length} ${this.visibleRows().length === 1 ? "match" : "matches"}`) : visibleWidth(allTabs) <= width ? allTabs
       : this.theme.fg("accent", this.theme.bold(`‹ ${activeTab} › · ${this.activeSectionIdx + 1}/${SETTINGS_SECTIONS.length}`)));
     if (this.searching) lines.push(this.theme.fg("muted", `search: ${this.query}▏`));
 
@@ -1000,7 +1000,8 @@ export class SettingsMenuComponent implements Component {
       lines.push(...details.slice(this.detailOffset, this.detailOffset + detailRows).map((line) => this.theme.fg("muted", line)));
     }
 
-    const help = narrow ? (this.searching ? ["type to search · ↑↓ move", "enter edit · esc clear search"] : ["←→ tab · ↑↓ move · / search", `d details ${this.showDescriptions ? "off" : "on"} · enter edit · esc exit`])
+    const help = narrow ? (this.searching ? ["type to search · ↑↓ move", "ctrl+d details · enter · esc clear"] : ["←→ tab · ↑↓ move · / search", `d details ${this.showDescriptions ? "off" : "on"} · enter edit · esc exit`])
+      : this.searching ? ["type to search · ↑/↓ move · ctrl+d details · enter edit · esc clear search"]
       : [`←/→ tab · ↑/↓ move · d details ${this.showDescriptions ? "off" : "on"} · / search · enter edit · esc exit`];
     lines.push(...help.map((line) => this.theme.fg("dim", line)));
 
@@ -1043,6 +1044,7 @@ export class SettingsMenuComponent implements Component {
       else this.move(direction * Math.max(1, this.rowPageSize));
       return;
     }
+    if (data === "\x04") { this.showDescriptions = !this.showDescriptions; this.refresh(); return; }
     if (this.searching) {
       if (data === "\x7f" || data === "\b") this.query = [...this.query].slice(0, -1).join("");
       else if (!data.startsWith("\x1b")) this.query += [...data].filter((char) => char >= " " && !/[\x7f-\x9f]/.test(char)).join("");

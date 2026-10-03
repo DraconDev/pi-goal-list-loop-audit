@@ -13,7 +13,8 @@ appears here, so the table cannot silently drift.
 sections; up/down arrows choose a setting, and Enter opens its editor.
 The menu remembers the selected row after an edit and when revisiting a tab.
 Press `/` to search across all tabs. Direct text matches take priority;
-results identify their section. Esc clears search first, then exits the menu.
+results identify their section. Ctrl+D opens details while searching. Esc
+clears search first, then exits the menu.
 
 Press `d` to read the focused setting's complete value and explanation.
 PgUp/PgDn scroll the details while they are open; otherwise they move through

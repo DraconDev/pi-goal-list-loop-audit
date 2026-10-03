@@ -768,7 +768,7 @@ async function openSettingsUI(ctx: ExtensionContext, initialSection?: SettingsSe
       // settings write look like a successful edit. Match the loud-save
       // behavior of the postaudit editor below.
       ctx.ui.notify(
-        `glla setting "${id}" NOT saved: ${err instanceof Error ? err.message : String(err)} — check ${globalSettingsPath()} permissions.`,
+        `glla setting "${id}" NOT saved: ${err instanceof Error ? err.message : String(err)} — resolve the reported error, then retry.`,
         "warning",
       );
     }

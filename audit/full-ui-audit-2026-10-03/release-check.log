@@ -3025,3 +3025,94 @@ tests/completed-audit-recovery.test.ts:
 (pass) healthy host heartbeat reconciles an unarmed orphan: approved [479.88ms]
 (pass) healthy host heartbeat reconciles an unarmed orphan: disapproved [419.40ms]
 (pass) healthy host heartbeat reconciles an unarmed orphan: missing [440.95ms]
+(pass) heartbeat orphan recovery respects in-flight [461.82ms]
+(pass) heartbeat orphan recovery respects recent [306.79ms]
+(pass) heartbeat orphan recovery respects frozen [305.30ms]
+(pass) heartbeat orphan recovery respects cold-held [393.01ms]
+(pass) finished real worker, lost parent: restart applies approved exactly once without re-auditing [1379.90ms]
+(pass) finished real worker, lost parent: restart applies disapproved exactly once without re-auditing [726.19ms]
+(pass) manual resume consumes a completed parked claim instead of launching another auditor [385.93ms]
+(pass) agent resume consumes a completed parked claim instead of launching another auditor [419.42ms]
+(pass) silent file-backed successor applies a finished verdict from the dead generation [541.49ms]
+(pass) legacy completed jobs bind the original goal, contract, and claim without new metadata [3.04ms]
+(pass) newer unfinished candidate prevents replay of an older completed result [1.50ms]
+(pass) saved result refuses unsafe recovery: revision [1.20ms]
+(pass) saved result refuses unsafe recovery: claim [0.70ms]
+(pass) saved result refuses unsafe recovery: structured-claim [0.71ms]
+(pass) saved result refuses unsafe recovery: hash [0.92ms]
+(pass) saved result refuses unsafe recovery: result-identity [0.58ms]
+(pass) saved result refuses unsafe recovery: cancelled-tool [1.07ms]
+(pass) saved result refuses unsafe recovery: strict-challenge [0.87ms]
+(pass) saved result refuses unsafe recovery: unsupported-tool [0.97ms]
+(pass) corrupt final progress identity refuses recovery without consuming the claim [1.06ms]
+(pass) saved approval still enforces the audit-tool floor and regression shield [2.15ms]
+(pass) second audit pass remains visible through thinking, tools, and report generation [0.88ms]
+(pass) days-old auditing orphan with a saved verdict recovers via heartbeat (SEO field case) [369.36ms]
+(pass) workerless in-flight claim with a saved verdict reconciles without launching [333.14ms]
+(pass) S5: workerless in-flight claim parks under the stale latch via stale-latch-workerless [622.27ms]
+(pass) workerless in-flight claim without a verdict parks via workerless-in-flight [353.97ms]
+(pass) auditorWorkerLiveForAttempt: only a matching live worker counts [100.07ms]
+(pass) unreadable saved transcript returns null but ledgers the reason [1.61ms]
+(pass) workerProcessMatches darwin branch reads identity via ps [293.18ms]
+(pass) auditing claim stuck in starting with no worker parks for recovery via heartbeat [405.49ms]
+(pass) S7: stranded recovery measures real activity, not the heartbeat's own refire notes [341.98ms]
+(pass) workerless park drops the dead attempt's auditor cursor so recovery re-walks (clean-web field) [318.89ms]
+(pass) reconcile names its rejecting gate in the ledger [1.74ms]
+
+tests/gettick-tool-visibility.test.ts:
+(pass) v0.35.60: glla tools are reactivated at the pre-turn boundary [93.22ms]
+
+tests/list-stall-reproduction.test.ts:
+(pass) completed standalone goal automatically hands off to the waiting list [481.38ms]
+(pass) /glla resume starts a waiting-only list instead of reporting nothing [185.92ms]
+(pass) list-sourced completion promotes the successor and records the settle transition [182.10ms]
+
+tests/goal-state.test.ts:
+(pass) goal-state.ts owns the state singleton (single source of truth) [37.46ms]
+(pass) wholesale state replacement goes through replaceState() only [3.57ms]
+(pass) the persistence core lives in goal-state.ts (persistStateLine) [0.31ms]
+(pass) replaceState is used at the moved wholesale sites [0.52ms]
+
+tests/list-audit-state-root.test.ts:
+(pass) list-audit fan-out reads findings from the configured sessionDir root [100.07ms]
+
+tests/list-stale-context.test.ts:
+(pass) v0.34.51: /list add on a stale handle is refused — honest recovery result, zero state mutation [527.99ms]
+(pass) v0.34.51: /list remove, clear, cancel, next, tweak, pause, resume are all refused on a stale handle [395.95ms]
+(pass) v0.34.51: the natural-language dump fallthrough is refused on a stale handle — drafting never starts [418.06ms]
+(pass) v0.34.51: /list show and /list depth stay usable on a stale handle (inspect, don't mutate) [319.97ms]
+(pass) v0.34.51: the honest recovery result — the refreshed session owns the command and the add lands [829.39ms]
+(pass) v0.34.51: list_add and list_activate tools return the stale-context recovery result without mutating [198.30ms]
+(pass) v0.34.51: source — cmdList captures the entry probe and gates every mutating path [1.46ms]
+
+tests/terminal-completion-notice.test.ts:
+(pass) v0.38.18 terminal notice: the done brief lands in the conversation exactly once [98.01ms]
+(pass) v0.38.18 source: the detached-approval branch closes the transcript [0.25ms]
+(pass) audit-2026-09-06: a stale-generation notice never fires into the successor session [10.60ms]
+
+tests/aggressive-mode.test.ts:
+(pass) aggressiveMode persists through the settings file (item 8) [58.25ms]
+(pass) effective settings: aggressiveMode ON flips the defaults (items 5+7) [0.09ms]
+(pass) effective settings: missing aggressiveMode uses the production keep-going default [0.24ms]
+(pass) effective settings: explicit OFF keeps base defaults; auditCap base is 5 [0.06ms]
+(pass) explicit per-key settings WIN over aggressiveMode (advisor semantics) [0.05ms]
+(pass) autoResume is global-only in the effective settings and provenance [2.76ms]
+(pass) obsolete quota policy files cannot change the generic retry settings [0.27ms]
+
+tests/settings-invalid-report.test.ts:
+(pass) C10: dropped junk values report once per distinct value; undefined defaults stay silent [0.87ms]
+(pass) C10: loadSettings ledgers dead hand-edited values as settings_invalid_ignored [100.62ms]
+
+tests/task-list.test.ts:
+(pass) accepts a reasonable breakdown [48.10ms]
+(pass) rejects empty list [0.14ms]
+(pass) rejects too many top-level tasks [0.06ms]
+(pass) rejects too many subtasks (the anti-drift cap) [0.06ms]
+(pass) accepts exactly at the cap [0.06ms]
+(pass) rejects empty titles [0.03ms]
+(pass) assigns hierarchical ids and pending statuses [0.11ms]
+(pass) trims titles [0.03ms]
+
+tests/objective-loss-state-root.test.ts:
+[run-tests] received SIGTERM — cleaning up the suite group
+[run-tests] finished in 438s (exit null, signal SIGTERM)
