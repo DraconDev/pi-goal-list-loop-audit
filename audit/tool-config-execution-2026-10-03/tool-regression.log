@@ -1,0 +1,48 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/tool-config-execution.test.ts:
+(pass) project optional arguments override supplied values and apply to later calls [200.77ms]
+(pass) invalid options block atomically: {"timeout":"bad"} [5.51ms]
+(pass) invalid options block atomically: {"unsupported":true} [5.38ms]
+(pass) invalid options block atomically: {"command":"replace the operation"} [5.35ms]
+(pass) a stale host cannot rewrite tool arguments [6.03ms]
+(pass) the real Pi tool pipeline executes bash with the configured timeout [15.47ms]
+(pass) invalid merged options leave every input field unchanged [0.42ms]
+(pass) nested overrides belong to each call, and optional zero remains valid [0.75ms]
+(pass) unconfigured calls do not need a registry; missing or unsupported schemas block configured calls [0.23ms]
+
+tests/telemetry-event-shapes.test.ts:
+(pass) name-shaped write results count fileWrites on goal telemetry [51.32ms]
+(pass) name-shaped write results count fileWrites on loop iterMetrics [6.28ms]
+
+tests/tool-cap-inventory.test.ts:
+(pass) cap inventory: no tool schema refuses past the documented guard [0.46ms]
+(pass) darklord replay: oversized gate notes are accepted and preserved [0.17ms]
+(pass) judgment and resume values clip at handlers instead of refusing [0.41ms]
+(pass) cap audit gaps: judgment record and group titles clip clause-aware [10.42ms]
+
+tests/zombie-subagent-tool-name.test.ts:
+(pass) v0.35.26 #13: an in-flight 'subagent' call stands down the zombie abort until it settles [39.37ms]
+(pass) v0.35.26 #13: the blocking 'subagent_wait' tool gets the same stand-down [8.21ms]
+(pass) v0.35.26 #13: both watchdog sites consume the shared isSubagentWaitCall name set [0.22ms]
+
+tests/gettick-tool-visibility.test.ts:
+(pass) v0.35.60: glla tools are reactivated at the pre-turn boundary [37.31ms]
+
+tests/resume-goal-tool.test.ts:
+(pass) resume_goal reactivates a paused goal and clears every pause marker [162.42ms]
+(pass) resume_goal on an already-active goal answers instead of churning state [284.96ms]
+(pass) resume_goal with no goal answers instead of swallowing the verb [133.21ms]
+(pass) a held-on-restore loop does not block resume_goal (only a LIVE loop does) [144.26ms]
+(pass) resume_goal refuses while the supervisor is frozen [293.58ms]
+(pass) resume_goal probes pending main-model recovery inline instead of bouncing (124544) [285.53ms]
+(pass) resume_goal refuses a terminal goal with the real recovery path [125.57ms]
+(pass) resume_goal keeps its live-loop refusal (source-pinned defense-in-depth) [0.45ms]
+(pass) paused → resume_goal → complete_goal flows without a manual resume [1358.24ms]
+(pass) resume_goal re-fires a stored completion claim through the agent origin [1175.05ms]
+
+ 29 pass
+ 0 fail
+Ran 29 tests across 6 files. [5.64s]
+[run-tests] finished in 6s (exit 0)
