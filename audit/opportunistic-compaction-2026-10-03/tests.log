@@ -29,3 +29,31 @@ tests/compaction-containment.test.ts:
 (pass) pure: in-flight marker is armed-signal plus timeout, never silence [0.38ms]
 (pass) compaction in flight suppresses send-storm escalation (no park, no recovery) [726.08ms]
 (pass) post-compact settle owns exactly one bounded probe (no duplicates) [3627.95ms]
+(pass) escalation proceeds after settle — the gate is compaction-scoped, not a blanket disable [3210.26ms]
+(pass) scheduleContinuation defers while in flight and the settle still sends once [3291.20ms]
+
+tests/compaction-target-settings.test.ts:
+(pass) /glla token-target editor persists shorthand, cancellation, validation, and reset [1735.07ms]
+(pass) global-only target, defaults, provenance and menu describe the effective policy [105.66ms]
+(pass) configured target reaches the actual trigger, idle guard, and hysteresis [203.84ms]
+(pass) hand-edited invalid targets safely fall back at runtime [115.00ms]
+(pass) headless /glla exposes the chosen token target and source [998.60ms]
+
+tests/compaction-failed-recovery.test.ts:
+(pass) host-owned failed compaction retries without model rotation, park, or competing continuation [612.32ms]
+(pass) terminal prompt overflow rotates once and arms durable post-compact resume debt [470.10ms]
+(pass) same-session startup restores fallback debt, while a new session discards it [968.81ms]
+(pass) terminal output-cap failure parks instead of misclassifying it as context overflow [131.46ms]
+(pass) failed compaction without a usable fallback parks an active goal durably [174.22ms]
+(pass) failed compaction parks a branch loop instead of leaving it active [535.07ms]
+(pass) a failed debt-discharge append keeps RAM debt instead of diverging from disk [121.75ms]
+(pass) opportunistic output-cap failure keeps work active and resumes once (event first) [2993.55ms]
+[run-tests] progress: 30s elapsed · 1s since last output · 4 KiB of suite output
+(pass) opportunistic output-cap failure keeps work active and resumes once (callback first) [3282.56ms]
+(pass) optional compaction resumes a branch loop (event without callback) [4044.16ms]
+(pass) optional compaction resumes a branch loop (synchronous callback) [3628.38ms]
+
+ 39 pass
+ 0 fail
+Ran 39 tests across 6 files. [40.45s]
+[run-tests] finished in 41s (exit 0)
