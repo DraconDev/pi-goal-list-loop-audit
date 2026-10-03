@@ -1,0 +1,38 @@
+✔ project optional arguments override supplied values and apply to later calls (720.740534ms)
+✔ invalid options block atomically: {"timeout":"bad"} (12.453617ms)
+✔ invalid options block atomically: {"unsupported":true} (13.645638ms)
+✔ invalid options block atomically: {"command":"replace the operation"} (20.677196ms)
+✖ a stale host cannot rewrite tool arguments (15.175166ms)
+✔ the real Pi tool pipeline executes bash with the configured timeout (23.176145ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4439.992799
+
+✖ failing tests:
+
+test at tests/tool-config-execution.test.ts:63:1
+✖ a stale host cannot rewrite tool arguments (15.175166ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      command: 'original',
+  +   timeout: 60
+  -   timeout: 5
+    }
+  
+      at TestContext.<anonymous> (/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/tool-config-execution.test.ts:68:10)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { command: 'original', timeout: 60 },
+    expected: { command: 'original', timeout: 5 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
