@@ -1318,8 +1318,8 @@ export function buildStatusText(state: State, audit?: AuditDisplayProgress | nul
  * stray next line. Cell/ANSI-aware via pi-tui (CJK-safe); width omitted
  * keeps the legacy untruncated line for headless/test callers. */
 function truncateStatusToWidth(line: string | undefined, width?: number): string | undefined {
-  if (!line || !width || width <= 0) return line;
-  return tuiTruncateToWidth(line, width, "…");
+  if (!line || width === undefined) return line;
+  return tuiTruncateToWidth(line, Math.max(0, width), "…");
 }
 
 /** v0.38.105 (note.md Next: "looks frozen"): the loop's cadence countdown.
@@ -1734,8 +1734,8 @@ export function buildWidgetLines(state: State, audit?: AuditDisplayProgress | nu
   // paddingX=1 consumes one cell on each side. Keep every emitted line inside
   // that content width so long detail/status strings never wrap a trailing
   // segment (for example, `50s`) into a stray next line.
-  if (lines && width && width > 0) {
-    const contentWidth = Math.max(1, width - WIDGET_HORIZONTAL_MARGIN);
+  if (lines && width !== undefined) {
+    const contentWidth = Math.max(0, width - WIDGET_HORIZONTAL_MARGIN);
     return lines.map((line) => tuiTruncateToWidth(line, contentWidth, "…"));
   }
   return lines;

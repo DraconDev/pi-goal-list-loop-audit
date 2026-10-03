@@ -350,7 +350,7 @@ export class MultiModelPickerComponent {
     if (!list.length) lines.push(this.theme.fg("warning", this.orderMode ? "No backups selected · tab to browse" : "No matches · change search or Esc to cancel"));
     window.forEach((item, index) => {
       const at = start + index;
-      const disabled = this.effectiveDisabledReason(this.itemForRef(item.ref) ?? item);
+      const disabled = this.effectiveDisabledReason((item.ref ? this.itemForRef(item.ref) : undefined) ?? item);
       const label = `${this.itemMarker(item)} ${item.label}${disabled ? ` · ${disabled}` : ""}`;
       const row = truncateToWidth(`${at === selected ? "→" : " "} ${label}`, w, "…");
       lines.push(at === selected ? this.theme.bg("selectedBg", this.theme.bold(row + " ".repeat(Math.max(0, w - visibleWidth(row))))) : row);

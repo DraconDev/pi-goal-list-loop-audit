@@ -1385,7 +1385,7 @@ type DraftChoice = "yes" | "no" | "stale";
 // custom builder.
 let lastConfirmDialog: { title: string; body: string; options: string[] } | null = null;
 async function confirmDraft(ctx: ExtensionContext, title: string, body: string): Promise<DraftChoice> {
-  const ALWAYS = "Yes — and always auto-accept drafts (sets autoAcceptDrafts for this project)";
+  const ALWAYS = "Yes — always auto-accept drafts for this project";
   const options = ["Yes", ALWAYS, "No"];
   // v0.34.80 (GitHub #4 rework): `custom` is ALWAYS a function in real pi
   // 0.84.1 — RPC mode resolves `undefined` WITHOUT ever invoking the factory

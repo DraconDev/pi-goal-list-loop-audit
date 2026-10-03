@@ -97,3 +97,14 @@ test("settings sanitize terminal controls without changing saved strings", () =>
   assert.ok(!/[\x00-\x1f\x7f]/.test(row.valueText));
   assert.equal(settings.notifyCmd, "echo first\nsecond\x1b[2J");
 });
+
+test("settings details and all tab windows fit very short terminals", () => {
+  for (const section of SETTINGS_SECTIONS) for (const height of [8, 12, 18, 24]) {
+    const component = menu({ initialSection: section.id, getHeight: () => height });
+    for (const width of [40, 60, 80, 120]) {
+      assertFits(component.render(width), width, height);
+      component.handleInput("d"); assertFits(component.render(width), width, height);
+      component.handleInput("d");
+    }
+  }
+});

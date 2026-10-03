@@ -48,7 +48,7 @@ test("buildConfirmDraftMarkdown: title is the H1, body follows", () => {
 
 test("ConfirmDraftComponent renders the title, body, and all three choices", () => {
   const lines = new ConfirmDraftComponent(
-    { title: "Confirm goal", body: "swap survival — done when absorbed", options: ["Yes", "No", "Yes — and always auto-accept drafts (sets autoAcceptDrafts for this project)"] },
+    { title: "Confirm goal", body: "swap survival — done when absorbed", options: ["Yes", "No", "Yes — always auto-accept drafts for this project"] },
     () => {},
     FAKE_THEME,
     FAKE_KB,
