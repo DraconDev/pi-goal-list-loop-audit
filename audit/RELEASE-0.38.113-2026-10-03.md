@@ -49,3 +49,9 @@ One failed-job retry was requested against the unchanged tag. No gate was
 disabled, no failed run is counted as a pass, and no release/tag was rewritten.
 A future test hardening should await the acknowledged continuation and durable
 interruption rather than assuming fixed sleeps observe both transitions.
+
+The independent push-triggered [quality run for the exact released tag](https://github.com/DraconDev/pi-goal-list-loop-audit/actions/runs/37147097017)
+passed its full release contract: 3180 passes, one environment skip, zero
+failures, plus all package gates. The stale-recovery case passed in 484.97 ms;
+three additional isolated replays also passed. Publication retry remains
+subject to its own complete release gate.
