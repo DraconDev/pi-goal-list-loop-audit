@@ -988,7 +988,10 @@ export class SettingsMenuComponent implements Component {
   render(width: number): string[] {
     if (this.cachedLines && this.cachedWidth === width) return this.cachedLines;
     this.cachedWidth = width;
-    this.cachedLines = this.renderBody(width);
+    // Fixed columns and the details minimum can exceed a narrow terminal.
+    // Bound the complete painted lines (including headers and help) so a
+    // resize cannot hand Pi a row wider than its renderer accepts.
+    this.cachedLines = this.renderBody(width).map((line) => truncateToWidth(line, Math.max(0, width), "…"));
     return this.cachedLines;
   }
 

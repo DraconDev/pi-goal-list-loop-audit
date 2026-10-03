@@ -1172,3 +1172,104 @@ tests/list-tweak-proposal.test.ts:
 (pass) bug (note 2026-08-07): bare /list tweak launches the update-proposal flow — current text shown, old→new confirmed, then applied [210.17ms]
 (pass) bare /list tweak with an empty/cancelled input changes nothing [170.78ms]
 (pass) bare /list tweak returning the unchanged text is a no-op (no revision bump, no confirm) [165.11ms]
+(pass) bare /list tweak input carrying a 'Done when:' clause applies the new contract [167.19ms]
+(pass) goal tweak rebases onto a pause that lands while confirmation is open [180.03ms]
+(pass) mirror: bare /goal tweak launches the same flow for an active goal [169.51ms]
+
+tests/subagent-polish.test.ts:
+(pass) current pi-subagents roles expose complete model-pin definitions [12.56ms]
+(pass) strategy-driven sync writes only the GLLA-owned Designer role [1.34ms]
+(pass) managed sync rejects path traversal from settings and corrupt sync state [0.35ms]
+(pass) repair detection: externally deleted/altered Designer files are re-written and flagged [0.45ms]
+(pass) effective resolution: per-type pin > inherit-parent > current agent default [0.04ms]
+(pass) subagent provider failure: any failed Agent payload, without classification [0.03ms]
+(pass) v0.38.16: failed current-tool spawns take the provider-failure path too [0.02ms]
+(pass) v0.38.16: model-facing text speaks the current subagent dialect [0.31ms]
+
+tests/repro-jiti-state-split.test.mjs:
+(pass) jiti: /list audit enqueues, persists the item, and ACTIVATES (state binding not split) [49.59ms]
+
+tests/auditor-session-mirror.test.ts:
+(pass) sessionMirrorExtensionSpecs returns raw user settings package specs [13.64ms]
+(pass) sessionMirrorExtensionSpecs appends project settings specs, deduped [0.29ms]
+(pass) sessionMirrorExtensionSpecs never mirrors GLLA itself [0.13ms]
+(pass) mergeAuditorAllowedExtensions unions user allowlist first, then mirror [0.06ms]
+(pass) mergeAuditorAllowedExtensions with mirror off keeps the user allowlist alone [0.02ms]
+(pass) mergeAuditorAllowedExtensions with mirror on and empty user list yields the mirror [0.04ms]
+(pass) unresolvable mirror entries still drop fail-closed at resolve time [0.17ms]
+(pass) settings round-trip: mirror opt-out persists, on clears, junk normalizes [108.64ms]
+
+tests/decision-budget.test.ts:
+(pass) decision budget: in-budget pauses behave as today, over-budget auto-defaults without pausing [184.76ms]
+(pass) decision budget: unset budget keeps legacy pause-every-time behavior [132.01ms]
+
+tests/completion-communication.test.ts:
+73 |   assert.match(entries[0].content, /1\. \*\*router\.ts/);
+74 |   // Technical verification stays in the archive by default; the human chat
+75 |   // carries the change story and record pointer.
+76 |   assert.doesNotMatch(entries[0].content, /### Verification/);
+77 |   assert.doesNotMatch(entries[0].content, /^Tests:/m);
+78 |   assert.doesNotMatch(entries[0].content, /Next:|await audit|Acknowledge briefly/);
+              ^
+AssertionError: The input was expected to not match the regular expression /Next:|await audit|Acknowledge briefly/. Input:
+
+'## Done — Fixed routing.\n' +
+  '\n' +
+  '— 1s elapsed · 1 audit\n' +
+  '\n' +
+  '### What Changed\n' +
+  '1. **router.ts.**\n' +
+  '2. **routing fixture.**\n' +
+  '\n' +
+  '### Next\n' +
+  '- **Next** — await audit.\n' +
+  '\n' +
+  '• completion audit approved (1 review).\n' +
+  '• record: .pi-glla/archive/20261003081524-7ch68k.md'
+
+ generatedMessage: true,
+     actual: "## Done — Fixed routing.\n\n— 1s elapsed · 1 audit\n\n### What Changed\n1. **router.ts.**\n2. **routing fixture.**\n\n### Next\n- **Next** — await audit.\n\n• completion audit approved (1 review).\n• record: .pi-glla/archive/20261003081524-7ch68k.md",
+   expected: /Next:|await audit|Acknowledge briefly/,
+   operator: "doesNotMatch",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/completion-communication.test.ts:78:10
+      at processTicksAndRejections (native:7:39)
+(fail) pending is nonterminal; approval delivers durable concrete summary (idle=true) [1144.93ms]
+73 |   assert.match(entries[0].content, /1\. \*\*router\.ts/);
+74 |   // Technical verification stays in the archive by default; the human chat
+75 |   // carries the change story and record pointer.
+76 |   assert.doesNotMatch(entries[0].content, /### Verification/);
+77 |   assert.doesNotMatch(entries[0].content, /^Tests:/m);
+78 |   assert.doesNotMatch(entries[0].content, /Next:|await audit|Acknowledge briefly/);
+              ^
+AssertionError: The input was expected to not match the regular expression /Next:|await audit|Acknowledge briefly/. Input:
+
+'## Done — Fixed routing.\n' +
+  '\n' +
+  '— 1s elapsed · 1 audit\n' +
+  '\n' +
+  '### What Changed\n' +
+  '1. **router.ts.**\n' +
+  '2. **routing fixture.**\n' +
+  '\n' +
+  '### Next\n' +
+  '- **Next** — await audit.\n' +
+  '\n' +
+  '• completion audit approved (1 review).\n' +
+  '• record: .pi-glla/archive/20261003081525-l5ybw1.md'
+
+ generatedMessage: true,
+     actual: "## Done — Fixed routing.\n\n— 1s elapsed · 1 audit\n\n### What Changed\n1. **router.ts.**\n2. **routing fixture.**\n\n### Next\n- **Next** — await audit.\n\n• completion audit approved (1 review).\n• record: .pi-glla/archive/20261003081525-l5ybw1.md",
+   expected: /Next:|await audit|Acknowledge briefly/,
+   operator: "doesNotMatch",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/completion-communication.test.ts:78:10
+      at processTicksAndRejections (native:7:39)
+(fail) pending is nonterminal; approval delivers durable concrete summary (idle=false) [1102.78ms]
+(pass) complete_goal leftOut renders the deliberate-non-do bullet end to end [1077.00ms]
+[run-tests] progress: 60s elapsed · 1s since last output · 178 KiB of suite output
+(pass) complete_goal findingGroups ride the claim into the grouped terminal render [1068.19ms]
+(pass) disapproval remains unfinished, no final success is posted [643.77ms]
+(pass) archive write failure never emits a terminal success [1204.75ms]
