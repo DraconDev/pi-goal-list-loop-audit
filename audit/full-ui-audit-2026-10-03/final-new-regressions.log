@@ -1,0 +1,45 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/ui-experience-audit.test.ts:
+(pass) settings keep the active final tab visible on narrow terminals [3.55ms]
+(pass) narrow settings show both the focused setting and its effective value [0.72ms]
+(pass) reopened settings focus the edited row and each tab remembers its cursor [0.20ms]
+(pass) settings window keeps the cursor, navigation and details within a short terminal [1.80ms]
+(pass) settings search finds rows across sections and Esc clears search before closing [0.95ms]
+(pass) settings details allow reading the full long value [1.01ms]
+(pass) single picker respects terminal height and keeps the selected model visible [0.70ms]
+(pass) large unordered selections fit a short multi-picker without hiding its cursor [1.29ms]
+(pass) picker backspace deletes a complete Unicode character [0.20ms]
+(pass) long draft reviews scroll while their decisions remain visible [13.74ms]
+(pass) ordered pickers fit short terminals with current, inherit and cap notices [2.31ms]
+(pass) settings sanitize terminal controls without changing saved strings [0.58ms]
+(pass) settings details and all tab windows fit very short terminals [66.26ms]
+(pass) lifecycle cards and status rows fit every explicit terminal width [38.39ms]
+(pass) draft review keeps project consent readable and uses the supplied keybindings [10.07ms]
+(pass) untrusted picker labels and draft bodies cannot emit terminal commands [0.85ms]
+(pass) settling cards identify the approved archive owed and its recovery action [0.47ms]
+(pass) single picker resizes through short and narrow terminals without losing focus [1.21ms]
+
+tests/ui-command-view-audit.test.ts:
+(pass) held loop status preserves its meaning and names the actual resume command [33.38ms]
+(pass) compact settling status reports archive debt instead of worker silence [3.86ms]
+(pass) paused goal status includes its saved next action without inventing one [3.17ms]
+
+tests/action-reminder.test.ts:
+(pass) standby renderer keeps the background-wake explanation visible [14.40ms]
+(pass) registers a dedicated GLLA reminder renderer [0.10ms]
+(pass) blocked reminder is actionable and says the work is safely parked [0.40ms]
+(pass) decision reminder is prominent, safely parked, and names the exact picker action [0.40ms]
+(pass) redirect reminder says the goal is held while the new request runs [0.30ms]
+(pass) diagnostics trail the actionable reminder as subordinate text [0.39ms]
+(pass) standby reminder says background completion wakes the work [0.07ms]
+(pass) timed wait is automatic and does not invent a manual action [0.22ms]
+(pass) assistant abort notice is a GLLA explanation, not generic transport text [0.08ms]
+(pass) wait abort notice uses the same automatic-wake explanation as its card [0.07ms]
+(pass) reminder rendering bounds narrow rows and strips terminal commands [2.58ms]
+
+ 32 pass
+ 0 fail
+Ran 32 tests across 3 files. [1050.00ms]
+[run-tests] finished in 1s (exit 0)

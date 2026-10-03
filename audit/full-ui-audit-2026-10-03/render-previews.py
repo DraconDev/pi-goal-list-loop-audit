@@ -79,4 +79,4 @@ for frame in frames:
     bg='#11151e' if frame['theme']=='dark' else '#f7f8fc'
     blocks.append(f'<section><h2>{frame["key"]} · {frame["theme"]} · {frame["width"]} columns</h2><pre style="background:{bg};width:{frame["width"]}ch">'+ '\n'.join(output)+'</pre></section>')
 (root/'rendered-gallery.html').write_text('<!doctype html><meta charset="utf-8"><title>GLLA UI audit</title><style>body{background:#252d3a;color:#fff;font:14px monospace;margin:24px}section{margin-bottom:32px}pre{padding:12px;line-height:1.5;overflow:auto}h2{font-size:16px}</style>'+''.join(blocks))
-print(f'Painted {len(frames)} production frames, three contact sheets, and an HTML gallery.')
+print(f'Painted {len(frames)} production frames, four contact sheets, and an HTML gallery.')

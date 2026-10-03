@@ -40,7 +40,9 @@ test("settings window keeps the cursor, navigation and details within a short te
 test("settings search finds rows across sections and Esc clears search before closing", () => {
   let closed = false;
   const component = new SettingsMenuComponent({ rows, title: "settings" }, () => {}, theme, kb, () => { closed = true; });
-  component.handleInput("/"); component.handleInput("Auditor model");
+  component.handleInput("/");
+  assert.equal(component.visibleRows().length, rows.length, "empty search browses every tab");
+  component.handleInput("Auditor model");
   assert.equal(component.visibleRows()[0]?.id, "auditorModel");
   component.handleInput("esc"); assert.equal(closed, false);
   assert.equal(component.visibleRows()[0]?.section, SETTINGS_SECTIONS[0]!.id);

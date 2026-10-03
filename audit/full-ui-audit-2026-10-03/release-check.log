@@ -1504,3 +1504,7 @@ tests/drafting-handoff.test.ts:
 (pass) cancelled or missing answer suppresses stale handoff evidence: {} [2826.64ms]
 (pass) cancelled or missing answer suppresses stale handoff evidence: {"cancelled":false,"answers":[]} [2850.14ms]
 (pass) pending draft correction stands down on cancel [2832.04ms]
+(pass) pending draft correction stands down on user [2835.03ms]
+(pass) pending draft correction stands down on busy [2814.71ms]
+[run-tests] received SIGTERM — cleaning up the suite group
+[run-tests] finished in 171s (exit null, signal SIGTERM)

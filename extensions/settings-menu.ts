@@ -850,6 +850,7 @@ export class SettingsMenuComponent implements Component {
 
   /** Rows in the active section. Exposed for tests. */
   visibleRows(): SettingsRow[] {
+    if (this.searching && !this.query.trim()) return this.rows;
     if (this.searching && this.query.trim()) {
       const query = this.query.trim().toLowerCase();
       const direct = this.rows.filter((row) => `${row.label} ${row.id} ${row.description} ${row.valueText}`.toLowerCase().includes(query));
