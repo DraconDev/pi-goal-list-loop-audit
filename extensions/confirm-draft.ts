@@ -18,6 +18,7 @@ import {
   Text,
   truncateToWidth,
   wrapTextWithAnsi,
+  stripTerminalSequences,
 } from "@earendil-works/pi-tui";
 import { DynamicBorder, type Theme } from "@earendil-works/pi-coding-agent";
 
@@ -36,7 +37,9 @@ export interface KeybindingsManagerLike {
 /** Pure: the markdown rendered in the dialog. The title is the H1, the
  * body (objective + verification contract) is the content. */
 export function buildConfirmDraftMarkdown(title: string, body: string): string {
-  return `# ${title}\n\n${body}`;
+  const safeTitle = stripTerminalSequences(title).replace(/[\x00-\x1f\x7f-\x9f]/g, " ");
+  const safeBody = stripTerminalSequences(body).replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, " ");
+  return `# ${safeTitle}\n\n${safeBody}`;
 }
 
 /** Build a MarkdownTheme from the runtime Theme's fg()/bold() primitives.

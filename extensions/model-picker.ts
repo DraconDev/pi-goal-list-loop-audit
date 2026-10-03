@@ -18,6 +18,7 @@
 // refs in their saved order, remaining configured-auth models sorted by
 // provider/id, and "type manually…" last.
 
+import { compactDisplayText } from "./goal-loop-core.js";
 import { fuzzyFilter, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import type { SettingsMenuTheme, KeybindingsManagerLike } from "./settings-menu.ts";
 
@@ -214,7 +215,7 @@ export class ModelPickerComponent {
     const w = Math.max(0, width - 2);
     const height = this.getHeight ? Math.max(8, Math.floor(this.getHeight())) : Number.POSITIVE_INFINITY;
     const lines: string[] = [];
-    lines.push(this.theme.fg("accent", this.theme.bold(truncateToWidth(this.title, w, "…"))));
+    lines.push(this.theme.fg("accent", this.theme.bold(truncateToWidth(compactDisplayText(this.title), w, "…"))));
     lines.push("");
     const searchLine = `search: ${this.query}`;
     lines.push(this.theme.fg("muted", truncateToWidth(searchLine, w, "…") + "▏"));
@@ -232,7 +233,7 @@ export class ModelPickerComponent {
       for (let i = 0; i < window.length; i++) {
         const idx = start + i;
         const it = window[i]!;
-        const row = truncateToWidth(it.label, w - 2, "…");
+        const row = truncateToWidth(compactDisplayText(it.label), w - 2, "…");
         if (idx === sel) {
           // Use the available horizontal space for a high-contrast active
           // state. Accent-only text was easy to miss in dark terminals and
@@ -281,7 +282,7 @@ export class ModelPickerComponent {
     // Printable input (single keystrokes and pasted runs alike). Ignore
     // escape/CSI sequences — they start with \x1b and were handled above.
     if (!data.startsWith("\x1b")) {
-      const printable = [...data].filter((ch) => ch >= " ").join("");
+      const printable = [...data].filter((ch) => ch >= " " && !/[\x7f-\x9f]/.test(ch)).join("");
       if (printable.length > 0) {
         this.query += printable;
         this.selectedIdx = 0;

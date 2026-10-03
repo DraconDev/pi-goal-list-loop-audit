@@ -30,6 +30,7 @@
 // item type, ./settings-menu.ts for the theme/keybindings shapes, and
 // @earendil-works/pi-tui for fuzzyFilter / truncateToWidth / visibleWidth.
 
+import { compactDisplayText } from "./goal-loop-core.js";
 import { fuzzyFilter, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import type { SettingsMenuTheme, KeybindingsManagerLike } from "./settings-menu.ts";
 import type { ModelPickItem } from "./model-picker.ts";
@@ -332,11 +333,11 @@ export class MultiModelPickerComponent {
    * order mode gives the whole viewport to the chain being rearranged. */
   private renderViewport(width: number, height: number): string[] {
     const w = Math.max(0, width - 2);
-    const lines = [this.theme.fg("accent", this.theme.bold(this.title))];
+    const lines = [this.theme.fg("accent", this.theme.bold(compactDisplayText(this.title)))];
     const count = `${this.selection.length}${this.maxSelections === undefined ? "" : `/${this.maxSelections}`} selected`;
     const inherit = this.includeInheritOption ? ` · inherit ${this.inheritFromSession ? "on" : "off"}` : "";
     lines.push(this.theme.fg("muted", `${this.orderMode ? "Order" : this.unorderedSet ? "Extensions" : "Backups"} · ${count}${inherit}`));
-    if (this.currentRef) lines.push(this.theme.fg("muted", `Current: ${this.currentRef}`));
+    if (this.currentRef) lines.push(this.theme.fg("muted", `Current: ${compactDisplayText(this.currentRef)}`));
     if (this.initialOmitted.length) lines.push(this.theme.fg("warning", `${this.initialOmitted.length} saved refs omitted by cap ${this.maxSelections}`));
     lines.push(this.theme.fg("muted", this.orderMode ? "↑↓ moves this backup · tab returns to search" : `search: ${this.query}▏`));
     const footer = this.orderMode ? "↑↓ reorder · tab browse · enter save · esc cancel"
@@ -351,7 +352,7 @@ export class MultiModelPickerComponent {
     window.forEach((item, index) => {
       const at = start + index;
       const disabled = this.effectiveDisabledReason((item.ref ? this.itemForRef(item.ref) : undefined) ?? item);
-      const label = `${this.itemMarker(item)} ${item.label}${disabled ? ` · ${disabled}` : ""}`;
+      const label = compactDisplayText(`${this.itemMarker(item)} ${item.label}${disabled ? ` · ${disabled}` : ""}`);
       const row = truncateToWidth(`${at === selected ? "→" : " "} ${label}`, w, "…");
       lines.push(at === selected ? this.theme.bg("selectedBg", this.theme.bold(row + " ".repeat(Math.max(0, w - visibleWidth(row))))) : row);
     });
@@ -365,12 +366,12 @@ export class MultiModelPickerComponent {
     const w = Math.max(0, width - 2);
     const height = Number.POSITIVE_INFINITY;
     const lines: string[] = [];
-    lines.push(this.theme.fg("accent", this.theme.bold(truncateToWidth(this.title, w, "…"))));
+    lines.push(this.theme.fg("accent", this.theme.bold(truncateToWidth(compactDisplayText(this.title), w, "…"))));
     if (this.unorderedSet) {
       lines.push(this.theme.fg("muted", "selected extensions are loaded by the auditor; order does not matter:"));
     } else if (this.currentRef) {
       lines.push(this.theme.fg("muted", "try order on a provider failure (one supervised model at a time):"));
-      lines.push(truncateToWidth(`  0 current  ${this.currentRef}`, w, "…"));
+      lines.push(truncateToWidth(`  0 current  ${compactDisplayText(this.currentRef)}`, w, "…"));
     } else {
       lines.push(this.theme.fg("muted", "configured try order (first eligible ref wins):"));
     }
@@ -441,7 +442,7 @@ export class MultiModelPickerComponent {
         const marker = this.itemMarker(it);
         const disabledReason = this.effectiveDisabledReason(it);
         const disabled = disabledReason && !this.isSelected(it.ref) ? ` · ${disabledReason}` : "";
-        const row = truncateToWidth(`${marker} ${it.label}${disabled}`, w - 2, "…");
+        const row = truncateToWidth(`${marker} ${compactDisplayText(it.label)}${disabled}`, w - 2, "…");
         if (idx === sel) {
           // Use the available horizontal space for a high-contrast active
           // state. Accent-only text was easy to miss in dark terminals and
@@ -555,7 +556,7 @@ export class MultiModelPickerComponent {
     // Printable input (single keystrokes and pasted runs alike). Ignore
     // escape/CSI sequences — they start with \x1b and were handled above.
     if (!data.startsWith("\x1b")) {
-      const printable = [...data].filter((ch) => ch >= " ").join("");
+      const printable = [...data].filter((ch) => ch >= " " && !/[\x7f-\x9f]/.test(ch)).join("");
       if (printable.length > 0) {
         this.query += printable;
         this.selectedIdx = 0;

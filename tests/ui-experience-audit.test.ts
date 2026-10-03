@@ -132,3 +132,14 @@ test("draft review keeps project consent readable and uses the supplied keybindi
     component.handleInput("enter"); assert.equal(accepted, choice);
   }
 });
+
+test("untrusted picker labels and draft bodies cannot emit terminal commands", () => {
+  const unsafe = "safe\x1b[2J\x9b31m";
+  const registry = [{ kind: "model" as const, ref: "fixture/safe", label: unsafe, searchText: "safe" }];
+  const single = new ModelPickerComponent({ title: unsafe, items: registry }, () => {}, theme, kb, () => {});
+  const multi = new MultiModelPickerComponent({ title: unsafe, items: registry, getHeight: () => 18 }, () => {}, theme, kb, () => {});
+  const draft = new ConfirmDraftComponent({ title: unsafe, body: `First paragraph.\n\n${unsafe}\n\nLast paragraph.`, options: ["Yes", "No"] }, () => {}, theme as unknown as Theme, kb, () => {});
+  for (const component of [single, multi, draft]) assert.ok(!/\x1b\[2J|\x9b/.test(component.render(60).join("\n")));
+  assert.match(draft.render(60).join("\n"), /Last paragraph/);
+  for (const component of [single, multi]) { component.handleInput("test\x9b"); assert.equal(component.getQuery(), "test"); }
+});

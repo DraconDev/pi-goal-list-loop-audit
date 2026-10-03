@@ -1033,7 +1033,7 @@ export class SettingsMenuComponent implements Component {
     }
     if (this.searching) {
       if (data === "\x7f" || data === "\b") this.query = [...this.query].slice(0, -1).join("");
-      else if (!data.startsWith("\x1b")) this.query += [...data].filter((char) => char >= " " && char !== "\x7f").join("");
+      else if (!data.startsWith("\x1b")) this.query += [...data].filter((char) => char >= " " && !/[\x7f-\x9f]/.test(char)).join("");
       this.selectedIdx = 0; this.detailOffset = 0; this.refresh(); return;
     }
     if (data === "/") { this.sectionCursors.set(this.activeSectionIdx, this.selectedIdx); this.searching = true; this.query = ""; this.refresh(); return; }
