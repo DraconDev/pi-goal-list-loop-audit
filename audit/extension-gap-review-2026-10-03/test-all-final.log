@@ -2821,3 +2821,335 @@ tests/regression-shield.test.ts:
 (pass) v0.38.23: mechanical checks resolve project-local node_modules/.bin (bare tsc ENOENT field fix) [83.59ms]
 
 tests/auditor-challenge.test.ts:
+(pass) challenge: approval earns a falsification round; re-confirm preserves the verdict [259.83ms]
+(pass) challenge: a challenge disapproval flips the verdict by final line [233.83ms]
+(pass) challenge: round-1 disapprovals run single-round [139.07ms]
+(pass) challenge: a failed challenge falls back to byte-identical round-1 output [148.90ms]
+(pass) strict challenge: a failed falsification pass is infrastructure/no-verdict [188.49ms]
+(pass) strict challenge: an explicit requirement overrides a policy skip [259.08ms]
+(pass) challenge: a failed round 1 still fails without challenging [120.70ms]
+(pass) challenge: a light-tier request skips round 2 and records the skip [111.80ms]
+(pass) challenge: a rework-streak skip is NOT recorded as a light-tier audit (v0.38.104) [125.25ms]
+(pass) challenge: a request with no reason keeps the light-tier default (v0.38.104) [146.15ms]
+
+tests/multi-model-picker.test.ts:
+(pass) multi-model-picker: items-build integration — session/manual still render as non-toggleable rows [0.63ms]
+(pass) multi-model-picker: explicit inherit choice is distinct from session/manual rows [1.34ms]
+(pass) multi-model-picker: typing fuzzy-filters the list; backspace widens [0.47ms]
+(pass) multi-model-picker: ↑/↓ move the selection (wrap at ends) [0.13ms]
+(pass) multi-model-picker: space toggles the highlighted model in/out of the selection [0.08ms]
+(pass) multi-model-picker: selection order matches toggle order, not list order [0.08ms]
+(pass) multi-model-picker: enter confirms with the refs in selection order [0.12ms]
+(pass) multi-model-picker: brackets reorder the configured try sequence [0.35ms]
+(pass) multi-model-picker: current session model is slot 0 and cannot be added as its own backup [0.56ms]
+(pass) multi-model-picker: configured unavailable and blocked refs remain visible with reasons [0.37ms]
+(pass) multi-model-picker: tab enters order mode; enter still confirms [0.12ms]
+(pass) multi-model-picker: order mode — ↑/↓ moves the chain row and the cursor follows [0.13ms]
+(pass) multi-model-picker: order mode — tab returns to browse without confirming; space is suspended [0.10ms]
+(pass) multi-model-picker: order mode — empty chain is a no-op and esc still cancels [0.06ms]
+(pass) multi-model-picker: render truncates a long title to the terminal width [0.73ms]
+(pass) multi-model-picker: order mode — the active chain row is highlighted and the footer switches [0.69ms]
+(pass) multi-model-picker: empty selection confirms as an empty array (not undefined) [0.06ms]
+(pass) multi-model-picker: esc cancels with undefined (regardless of selection) [0.05ms]
+(pass) multi-model-picker: session row is not toggleable — space is a no-op [0.06ms]
+(pass) multi-model-picker: manual row is not toggleable — space is a no-op [0.17ms]
+(pass) multi-model-picker: main backup cap refuses the 11th selection [0.49ms]
+(pass) multi-model-picker: initialSelected preserves stale refs for explicit cleanup [0.09ms]
+(pass) multi-model-picker: render — title, search, marked rows, and footer hint are all present [0.13ms]
+(pass) multi-model-picker: render — highlighted row uses the available width for selection [0.20ms]
+(pass) multi-model-picker: render — selected row keeps its rank even when not highlighted [0.22ms]
+(pass) multi-model-picker set mode: rows render as [X]/[ ] with no positional digits [0.34ms]
+(pass) multi-model-picker set mode: selection order is invariant under toggle sequence [0.25ms]
+(pass) multi-model-picker set mode: tab is a no-op and never enters order mode [0.07ms]
+(pass) multi-model-picker set mode: brackets are a no-op (no reordering) [0.06ms]
+(pass) audit 2026-09-06: capped initialSelected names the omitted refs [0.22ms]
+(pass) multi-model-picker set mode: initial selection is canonicalized to item order [0.06ms]
+
+tests/process-state-reset.test.ts:
+(pass) v0.38.88: composite clears a poisoned starvation streak [0.44ms]
+(pass) v0.38.88: composite releases the session-owner claim [87.69ms]
+68 |     }
+69 |   }
+70 |   const expected = [...new Set(members)].filter((m) => m !== "__testOnlyResetProcessState");
+71 |   assert.ok(expected.length >= 17, `expected >=17 member resets, got ${expected.length}`);
+72 |   for (const name of expected) {
+73 |     assert.ok(body.includes(`${name}()`), `${name} is invoked by the composite`);
+                ^
+AssertionError: __testOnlyResetInvalidSettingReports is invoked by the composite
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/process-state-reset.test.ts:73:12
+      at fn (node:test:215:18)
+(fail) v0.38.88: composite invokes every exported latch reset [6.79ms]
+
+tests/confirm-draft.test.ts:
+(pass) buildConfirmDraftMarkdown: title is the H1, body follows [24.57ms]
+(pass) ConfirmDraftComponent renders the title, body, and all three choices [6.13ms]
+(pass) ConfirmDraftComponent: first choice selected, no-throw on input/invalidate [1.36ms]
+(pass) custom path: Yes accepts the draft and the dialog is captured [190.73ms]
+(pass) custom path: No rejects the draft [182.73ms]
+(pass) custom path: a stale error returns stale (NOT-a-rejection) [169.31ms]
+(pass) fallback: no custom shard → plain select path still accepts (Yes) [173.17ms]
+(pass) fallback: a stale select error still returns stale [174.26ms]
+(pass) list batch confirmation resolves paused carryover before activating the head [218.34ms]
+(pass) RPC stub (custom present, factory never invoked): the select fallback fires and accepts [222.35ms]
+(pass) v0.34.82: the custom-path factory is INVOKED and returns a ConfirmDraftComponent that renders the body + all three choices [229.24ms]
+(pass) RPC stub: a select 'No' still declines, and a stale select error returns stale [189.94ms]
+
+tests/completion-summary-lines.test.ts:
+(pass) clip cuts at a word boundary, never mid-word [0.27ms]
+(pass) clip hard-cuts only long tokens without spaces [0.11ms]
+(pass) clip cuts at a clause boundary and never strands punctuation (field 2026-09-08) [0.21ms]
+(pass) lines project one label per line, in order, word-bounded [0.29ms]
+(pass) lines keep missing labels as not recorded and never mid-word cut [0.22ms]
+(pass) compact stays one line but cuts at word boundaries now [0.14ms]
+(pass) terminal lines resolve through the same facts as the compact recap [0.28ms]
+(pass) v0.38.14: filler values inform nobody and are dropped [0.12ms]
+(pass) v0.38.14: the briefing leads with the outcome and keeps only informing labels [50.13ms]
+(pass) v0.38.14: terminal brief resolves through the same facts as the compact recap [0.45ms]
+(pass) the ✓ done chat notifies use the line block; external keeps the single line [1.26ms]
+(pass) audit-2026-09-06: completionSummaryLines honors the optional line-width budget [1.22ms]
+(pass) recorded-facts fallback Next survives the stale-Next filter [0.12ms]
+(pass) machine-path strip converges on nested groups, leaves no husk [0.08ms]
+(pass) clip never splits a surrogate pair [0.08ms]
+(pass) label named inside a value does not steal later segmentation [0.12ms]
+(pass) D5: concrete work mentioning audit/review/settle/approval survives the stale-Next filter [0.12ms]
+(pass) D7: recap projections sanitize control bytes and ANSI [0.17ms]
+(pass) D8: an empty outcome says so instead of inventing done [0.08ms]
+(pass) D7 audit: approval-chat lines sanitize their inputs at the trust boundary [0.11ms]
+(pass) D7 audit: the counts line sanitizes the auditNote override at the source [0.15ms]
+(pass) D7 audit (pin): manual-path extras route through the shared quoted builder [0.32ms]
+
+tests/list-queue.test.ts:
+(pass) readState restores an empty list when no state exists [0.84ms]
+(pass) readState restores list from the latest state event [47.00ms]
+(pass) latest state event wins for the list [0.94ms]
+(pass) list events (list_added etc.) do not corrupt state restore [0.63ms]
+(pass) state event without a list field restores as empty list (v0.1.0 compat) [0.57ms]
+(pass) takeAt: head is the FIFO default [0.09ms]
+(pass) takeAt: middle item [0.04ms]
+(pass) takeAt: last item [0.02ms]
+(pass) takeAt: out of range returns null [0.03ms]
+(pass) v0.28.28: unsolicited enqueue (reviewer) does not auto-start the head unless autoResume is on [3.77ms]
+(pass) v0.29.4: auto-accepted drafts START (supersedes the 0.28.28 autoResume hold) [2.92ms]
+(pass) v0.28.28: goal provenance — setGoal threads `via` into the record + goal_created ledger [0.94ms]
+(pass) v0.28.28: /glla log [N] — human-readable ledger tail, noise-filtered [0.25ms]
+(pass) v0.28.33: /glla wipe — renamed from reset (too close to /glla resume); reset redirects without acting [0.41ms]
+(pass) v0.34.119: /glla cancel cancels the whole list objective, while standalone goals/loops keep their own paths [0.49ms]
+
+tests/designer-drafter-policy.test.ts:
+(pass) long-running judgment policy is default-decide and bans band-aid-vs-proper questions [1.04ms]
+(pass) drafting gathers constraints upfront and active execution defers local choices [49.68ms]
+(pass) explicit Designer declarations are consumed without changing ordinary design prose [0.29ms]
+(pass) task plans preserve Designer routing and verification contracts and expose them on tasks [0.22ms]
+(pass) Designer is a managed read-only role and remains available without a pin [0.94ms]
+(pass) drafter resolution walks its own ordered chain and falls back to the session [0.60ms]
+(pass) drafter resolution always retains one current-session last resort [0.11ms]
+(pass) drafter resolution skips forbidden candidates without inspecting provider text [0.11ms]
+(pass) audit 2026-09-06: drafter session-last-resort refuses a forbidden session model [0.32ms]
+(pass) drafter keeps a configured current primary so its fallback remains reachable [0.12ms]
+(pass) settings expose drafting-only primary and fallback controls [0.42ms]
+(pass) drafting recovery stays on the dedicated chain and uses the existing interview [0.34ms]
+(pass) continuation prompt names the explicit Designer hand-off syntax [0.08ms]
+
+tests/goal-timeline.test.ts:
+(pass) timeline: routes as a goal subcommand with optional count [0.33ms]
+(pass) timeline: merges ledger events and verdicts in time order, humanized [48.72ms]
+(pass) timeline: unknown types render compactly, noise and foreign goals excluded [0.41ms]
+(pass) timeline: honors the limit with a truncation note [0.29ms]
+(pass) timeline: next action derives from live state [0.37ms]
+(pass) timeline: /goal timeline renders the live goal end to end [215.13ms]
+
+tests/subagent-model-override.test.ts:
+(pass) current package roles are the model override surface [0.18ms]
+(pass) build: current scout definition is preserved and uses current frontmatter names [54.38ms]
+(pass) build: an explicit worker pin preserves its complete upstream definition [2.69ms]
+(pass) build: unknown agent name throws [0.45ms]
+(pass) sync: no upstream model pin means only the GLLA Designer role is created [0.59ms]
+(pass) sync: explicit current-role pin wins over strategy and is idempotent [0.59ms]
+(pass) sync: clearing a current-role pin removes only GLLA-owned content [0.54ms]
+(pass) sync: user-owned current role is never overwritten [0.40ms]
+(pass) sync: legacy managed files are cleaned only when marked [0.38ms]
+(pass) sync: missing or altered Designer definitions are repaired and flagged [0.59ms]
+(pass) defaultAgentDir follows PI_CODING_AGENT_DIR when the host overrides it [0.16ms]
+(pass) drift: every current built-in ships without a hidden model pin [0.79ms]
+(pass) build+sync: a thinking pin writes a thinking-only override that inherits the model [0.72ms]
+
+tests/paused-owner-honesty.test.ts:
+(pass) stale recovery remnant does not own a blocked pause [1.47ms]
+(pass) live recovery timer still owns a blocked pause [0.98ms]
+
+tests/audit-verdict.test.ts:
+(pass) parseAuditorVerdict: approved [0.30ms]
+(pass) parseAuditorVerdict: disapproved [0.07ms]
+(pass) parseAuditorVerdict: impossible with reason [0.03ms]
+(pass) parseAuditorVerdict: verdict read from the LAST block that mentions a tag [0.02ms]
+(pass) parseAuditorVerdict: impossible reason clipped to 300 chars [0.20ms]
+(pass) parseAuditorVerdict: contradictory terminal tags never approve [0.03ms]
+(pass) countTrailingDisapprovals: empty and all-clean histories [0.06ms]
+(pass) countTrailingDisapprovals: counts only the trailing streak [0.04ms]
+(pass) countTrailingDisapprovals: shield-blocked approval breaks the streak [0.05ms]
+(pass) countTrailingDisapprovals: impossible is its own verdict, not a disapproval [0.03ms]
+
+tests/stale-continuation.test.ts:
+(pass) helper: goal checkpoint with no active goal is stale [76.16ms]
+(pass) helper: goal checkpoint with matching active goal is not stale [0.33ms]
+(pass) helper: goal checkpoint with mismatched id is stale [0.14ms]
+(pass) helper: goal checkpoint with paused goal is stale [0.12ms]
+(pass) helper: goal checkpoint with already archived file is stale even if state still active [0.27ms]
+(pass) helper: loop iteration with no active loop is stale [0.11ms]
+(pass) helper: loop iteration with active loop is not stale [0.12ms]
+(pass) helper: stall warning with no active goal is stale [0.09ms]
+(pass) helper: stall warning with active goal is not stale [0.10ms]
+(pass) helper: length continue delivers with live supervision, stale without (audit 2026-09-07) [0.13ms]
+(pass) helper: generic goal-event with no supervision is stale [0.09ms]
+(pass) helper: generic goal-event with active goal is not stale [0.09ms]
+(pass) helper: raw continuation source is correctly identified as stale when archived [0.12ms]
+
+tests/mechanical-pipeline.test.ts:
+(pass) parseMechanicalPipeline: accepts the narrow pipeline shape [37.19ms]
+(pass) parseMechanicalPipeline: rejects everything outside the shape [0.12ms]
+(pass) extraction delivers the field pipeline string to the runner [0.19ms]
+(pass) pipeline runs shell-free: green head passes, evidence truncated [88.99ms]
+(pass) pipeline exit follows the head, never the filter [429.21ms]
+(pass) unsafe pipeline stages never execute: 126 with no side effects [40.08ms]
+(pass) grep filter reads stdin only: no file operand, no leak [124.42ms]
+
+tests/paused-overdue-display.test.ts:
+(pass) v0.38.31: overdue wait names the recovery timer, never resuming now [47.08ms]
+(pass) v0.38.31: overdue wait status bar reads retry overdue [0.25ms]
+(pass) v0.38.31: in-grace wait keeps resuming now [0.41ms]
+(pass) v0.38.31: future wait keeps the countdown [0.31ms]
+(pass) v0.38.31: wait card drops the generic tail and closes the tree [0.32ms]
+(pass) v0.38.31: error pause keeps suggested action and saved tail [0.58ms]
+
+tests/goal-loop-dispatch.test.ts:
+(pass) dispatch starts prepared and only accepted records can time out [36.15ms]
+(pass) start proof is generation/owner-bound and prompt matching is exact to the attempt marker [0.17ms]
+(pass) dispatch sidecar is atomic and recoverable across a session boundary [13.07ms]
+(pass) corrupt or unknown sidecar records are ignored [0.24ms]
+
+tests/drafting-questionnaire.test.ts:
+(pass) seeded drafting requires tool-first choices and a concrete next handoff [37.87ms]
+(pass) goal-loop-draft.md: carries the roadmap-then-stages rule [0.23ms]
+(pass) goal-loop-draft.md: carries the rich-option standard [0.09ms]
+(pass) goal-loop-draft.md: invites the Esc correction explicitly [0.08ms]
+(pass) goal-loop-forever-draft.md: carries the roadmap-then-stages rule [0.50ms]
+(pass) goal-loop-forever-draft.md: carries the rich-option standard [0.10ms]
+(pass) goal-loop-forever-draft.md: invites the Esc correction explicitly [0.07ms]
+(pass) goal-loop-plan.md: carries the roadmap-then-stages rule [0.19ms]
+(pass) goal-loop-plan.md: carries the rich-option standard [0.04ms]
+(pass) goal-loop-plan.md: invites the Esc correction explicitly [0.01ms]
+(pass) goal-loop-draft.md: pasted list-like seeds use supplied wording without an exactness choice [0.14ms]
+(pass) goal-loop-plan.md: pasted list-like seeds use supplied wording without an exactness choice [0.13ms]
+
+tests/completion-summary-quality.test.ts:
+(pass) completion summary quality: validator requires six labels [46.95ms]
+(pass) completion summary quality: generic prose and missing labels ledger and NOTE [41.84ms]
+(pass) completion summary quality: valid six-label recap passes without missing-label ledger [6.78ms]
+(pass) v0.36.0: every terminal outcome gets a six-label recorded-facts fallback [0.40ms]
+(pass) v0.36.0: validation annotations cannot satisfy recap-label validation [0.23ms]
+(pass) v0.36.0: valid recap is preserved while generic prose is replaced [0.14ms]
+(pass) gate and projectors share last-occurrence segmentation on stolen labels [0.24ms]
+(pass) v0.36.0: compact recap projection keeps the five human labels and bounds each value [0.28ms]
+(pass) v0.36.0: terminal notification projection resolves generic claims from durable facts [0.22ms]
+(pass) v0.36.0: fallback never invents changed files or test results [0.13ms]
+(pass) v0.36.0: archive boundary replaces a validator annotation with recorded facts [10.23ms]
+(pass) v0.36.0: archiveCurrentGoal writes a recap for complete and abort-derived terminal paths [8.20ms]
+(pass) completion summary audit doc exists and inventories archives [2.28ms]
+(pass) v0.38.104: the recorded-facts archive summary never emits a lone surrogate [0.34ms]
+
+tests/auditor-polish.test.ts:
+(pass) stripThinkBlocks removes think bodies, fragments, and artifacts [0.28ms]
+(pass) audit log: append + read round-trip, malformed lines skipped [49.08ms]
+(pass) audit log bounded tail scans large records from the end [0.76ms]
+(pass) formatAuditLog: one line per verdict with glyph, goal, model, first report line [0.36ms]
+(pass) tail-aware excerpt: capped output keeps the Required-fixes tail [0.36ms]
+(pass) audit feedback excerpts redact provider payloads before executor output [0.14ms]
+(pass) disapproval feedback is surfaced even when the continuation turn never starts [2.98ms]
+(pass) infra errors are transparent to the disapproval streak (not breakers) [0.18ms]
+(pass) widget flags auditor-quiet stalls after 3 minutes [1.01ms]
+(pass) auditor prompt requires the Required-fixes tail + no think blocks [0.23ms]
+(pass) isRetriableInfraError: aborts and missing-model are NOT retried [0.36ms]
+(pass) runWithInfraRetry: retriable infra failure retried exactly once [0.45ms]
+(pass) runWithInfraRetry: provider Retry-After does not suppress the uniform backoff [0.20ms]
+(pass) runWithInfraRetry: lifecycle guard prevents a second attempt [0.20ms]
+(pass) formatGoalAuditHistory: one line per verdict with elapsed [0.38ms]
+
+tests/stale-event-context.test.ts:
+(pass) late agent_settled events with stale contexts are ignored safely [92.49ms]
+
+tests/durable-choice-ledger.test.ts:
+(pass) durable-vs-defer judgment is an explicit bounded ledger choice [146.03ms]
+(pass) durable-choice payload compacts model-authored rationale [0.08ms]
+
+tests/session-identity-refusal.test.ts:
+(pass) 195237: same session id on a new manager object is the owner, not a subagent [380.76ms]
+(pass) v0.38.92: a dethroned main is told about the lost root, never called a subagent [196.03ms]
+(pass) 195237: a genuinely different session is still refused [195.75ms]
+
+tests/loop-error-exemption.test.ts:
+(pass) v0.29.19: provider-error turns are NOT iterations — no measure, no stall, no stuck; loop stays active [647.85ms]
+(pass) v0.35.x: repeated in-band provider tool output parks recovery without loop stuck accounting [1119.48ms]
+(pass) explicit in-band prompt-policy refusal stops a loop on its first pane [257.23ms]
+(pass) v0.29.19: a real turn after errors clears the streak and measures normally [516.25ms]
+(pass) v0.35.x: recoverable provider failures use the same durable recovery envelope [0.19ms]
+(pass) v0.34.31: extended quota errors enter durable main-model recovery [1216.12ms]
+(pass) v0.34.26: loop output-token exhaustion persists and notifies the compact recap [1366.35ms]
+(pass) v0.29.19: 3 consecutive user aborts stop the loop — user aborts mean STOP [490.54ms]
+(pass) v0.29.19: audit plateau with OPEN findings stands down (reprieve), then stops honestly when reprieves run out [2150.05ms]
+(pass) v0.29.20: a plain plateau stop is resumable (pre-gate false plateaus recover) [382.05ms]
+(pass) v0.29.19: audit plateau with ZERO open findings stops normally — the well is dry [204.26ms]
+
+tests/list-subtasks.test.ts:
+(pass) v0.35.72: visible hierarchical positions map to flat queue indexes [0.44ms]
+(pass) v0.34.81: SUBTASK_MARKER is line-start + case-insensitive [0.20ms]
+(pass) v0.34.81: extractSubtaskParent — no marker → undefined parent [0.07ms]
+(pass) v0.34.81: extractSubtaskParent — em-dash splits parent/child [0.13ms]
+(pass) v0.34.81: extractSubtaskParent — en-dash and hyphen-separator both work [0.09ms]
+(pass) v0.34.81: extractSubtaskParent — hyphen WITHOUT spaces does NOT split [0.05ms]
+(pass) v0.34.81: extractSubtaskParent — no separator captures parent only, empty child [0.04ms]
+(pass) v0.34.81: extractSubtaskParent — multi-line child objective survives marker strip [0.06ms]
+(pass) v0.34.81: parseListItemDeclaration — child objective keeps its own Parallel + Done when [0.18ms]
+(pass) v0.34.81: parseListItemDeclaration — no marker means parentObjective is undefined [0.11ms]
+(pass) v0.34.81: parentId round-trips through writeQueueItemFile → readQueueFromDisk [35.37ms]
+(pass) v0.34.81: readQueueFromDisk ignores malformed parentId (non-string) [0.47ms]
+(pass) v0.34.81: wiring — parse in core, resolve/refuse/cascade in goal.ts [3.42ms]
+(pass) v0.34.81 (behavioral): list_add with a subtask binds parentId to the matching queue item [269.08ms]
+(pass) v0.34.81 (behavioral): unresolved parent refuses that child, other items still land [231.11ms]
+(pass) v0.34.81 (behavioral): explicit pick on a group refuses loudly (no silent jump) [343.37ms]
+(pass) v0.34.81 (behavioral): auto-advance skips a head group and lands on its first open child [182.64ms]
+(pass) audit-2026-09-06: auto-advance head-group skip is ledgered, not silent [179.01ms]
+(pass) v0.38.104: list_activate accepts the dotted child label the queue prints [18.67ms]
+(pass) v0.38.104 (schema pin): list_activate's `n` accepts the child-label string form [2.83ms]
+(pass) C4 (behavioral): /list remove on a group cascades to its queued children [235.80ms]
+(pass) C4 (behavioral): /list remove on a group with a live child is refused [399.53ms]
+
+tests/repair-source-consume-durability.test.ts:
+(pass) failed repair-source deletion restores the durable repair link [69.76ms]
+
+tests/loop-refine-transaction.test.ts:
+(pass) failed spec refinement leaves loop state unchanged [69.09ms]
+
+tests/auditor-ladder-discipline.test.ts:
+(pass) v0.38.103 nothing configured: session model, and NO ladder to exhaust [27.48ms]
+(pass) v0.38.103 an explicit auditor is tried FIRST and the session model is the last resort [0.87ms]
+(pass) v0.38.103 a configured auditor with no fallbacks still keeps the session model reachable [0.29ms]
+(pass) v0.38.103 an unavailable primary escalates immediately and still ends at the session model [0.44ms]
+(pass) v0.38.103 same-session-swap does not change the ordering contract [0.49ms]
+(pass) v0.38.103 an auditor pinned to the session model is the session model, with no invented ladder [0.25ms]
+(pass) v0.38.103 with no session model and nothing configured, the error stays actionable [0.27ms]
+(pass) v0.38.103 a mechanical fast-fail verdict is not an auditor round [0.06ms]
+(pass) v0.38.103 the streak passes THROUGH a mechanical gate rather than stopping [0.02ms]
+(pass) v0.38.103 an approval still ends the comparable streak [0.01ms]
+(pass) v0.38.103 infrastructure entries stay transparent [0.03ms]
+(pass) v0.38.103 a grader fallback RE-BASELINES the streak instead of pinning [0.06ms]
+(pass) v0.38.103 the challenge-round limit is a small, finite number [0.05ms]
+(pass) v0.38.103 streak counting is what the challenge gate reads [0.03ms]
+(pass) ladder tests never write to the repo ledger: no ctx cwd points at process.cwd() [0.12ms]
+
+tests/mid-objective-park-refusal.test.ts:
