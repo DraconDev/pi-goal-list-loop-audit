@@ -30,3 +30,11 @@ Git history was not rewritten. The sync daemon owns source/evidence commits.
 The tag and GitHub release trigger the repository's trusted npm publishing
 workflow, which repeats `release:check` before publishing. Publication status
 will be recorded after the workflow and registry verification finish.
+
+The published [GitHub release](https://github.com/DraconDev/pi-goal-list-loop-audit/releases/tag/v0.38.113)
+points to `ffb20f10662c737f7357d60ac8089af31820776b`. Both GitHub and GitLab
+accepted the annotated tag; GitLab's remote refs were read back to verify it.
+GitLab emitted a storage-limit notice but accepted this tag; no external
+storage cleanup or repository-history repair was attempted.
+The [npm publishing run](https://github.com/DraconDev/pi-goal-list-loop-audit/actions/runs/37147097472)
+is validating the released tag before publication.
