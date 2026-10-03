@@ -6,7 +6,8 @@
 
 - Terminal completion summaries use the active theme’s semantic colors for
   outcomes, remaining work, next actions and verification results. Unknown
-  or merely reported verification stays neutral; failures remain distinct.
+  verification stays neutral; reported or skipped checks use amber, and
+  failures use red without recoloring unrelated approval references.
 - Styling is applied by a registered renderer. Saved summary Markdown,
   archive content, receipt identity and headless output retain plain content;
   continuation messages continue through Pi’s default renderer.
