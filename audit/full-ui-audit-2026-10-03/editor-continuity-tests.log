@@ -12,3 +12,11 @@ tests/glla-ui-command-audit.test.ts:
 (pass) tool visibility commands replace conflicting overrides [33.44ms]
 (pass) tool config accepts spaced JSON and refuses empty keys [21.44ms]
 (pass) postaudit refuses a save after the host became stale in its dialog [28.29ms]
+(pass) wipe revalidates its host after the confirmation dialog [270.20ms]
+(pass) tool metadata editor preserves concurrent updates and names its execution limit [27.98ms]
+(pass) compactor picker labels its clear choice as registry plan B [36.09ms]
+
+ 13 pass
+ 0 fail
+Ran 13 tests across 1 file. [1251.00ms]
+[run-tests] finished in 1s (exit 0)
