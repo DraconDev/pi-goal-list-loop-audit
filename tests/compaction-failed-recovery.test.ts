@@ -270,3 +270,30 @@ test("a failed debt-discharge append keeps RAM debt instead of diverging from di
   );
   session = { pi, ctx };
 });
+
+for (const eventFirst of [true, false]) {
+  test(`opportunistic output-cap failure keeps work active and resumes once (${eventFirst ? "event first" : "callback first"})`, async () => {
+    const cwd = tmpCwd();
+    seedState(cwd, { goal: seedGoal({ status: "active", objective: "continue after optional compaction" }) });
+    const { pi, ctx } = await boot(cwd, { mainModelFallbacks: ["provider/large"] });
+    ctx.getContextUsage = () => ({ tokens: 205_508, contextWindow: 1_000_000, percent: 20.55 });
+    let callbacks: { onError(error: Error): void } | undefined;
+    let attempts = 0;
+    ctx.compact = (options: typeof callbacks) => { callbacks = options; attempts++; };
+    await pi.fire("agent_settled", {}, ctx);
+    assert.ok(callbacks, "the configured boundary triggers an actual compaction");
+    const error = new Error("Summarization failed: generation hit the token cap and the summary is incomplete");
+    const failEvent = () => pi.fire("session_compact_failed", { reason: "threshold", errorMessage: error.message, willRetry: false }, ctx);
+    if (eventFirst) { await failEvent(); callbacks.onError(error); }
+    else { callbacks.onError(error); await failEvent(); }
+    await tick(100);
+    assert.equal(readState(cwd).goal?.status, "active", "the opportunistic threshold is never a hard stop");
+    assert.equal(pi.modelSelections.length, 0);
+    assert.equal(ledger(cwd).filter(e => e.type === "compactor_transcript_error").length, 1);
+    assert.equal(ledger(cwd).filter(e => e.type === "compactor_transcript_resume").length, 1, "event and callback coalesce");
+    assert.ok(ctx.ui.notifies.some((n: { message: string }) => /continuing.*current transcript/i.test(n.message)));
+    assert.ok(!ctx.ui.notifies.some((n: { message: string }) => /parked|then resume|Run \/new/i.test(n.message)));
+    await pi.fire("agent_settled", {}, ctx);
+    assert.equal(attempts, 1, "failure does not trigger compaction on every turn");
+  });
+}
