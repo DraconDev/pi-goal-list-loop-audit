@@ -19,7 +19,7 @@ const schema = Type.Object({ command: Type.String(), timeout: Type.Optional(Type
 // Reflective access keeps older supported Pi boundary typechecks valid;
 // the proof below fails explicitly if its actual dispatcher is absent.
 const runToolCall = Reflect.get(agentCore, "runToolCall");
-type BeforeCall = { toolCall: { name: string; id: string }; args: Record<string, unknown> };
+type BeforeCall = { toolCall: { name: string; id: string }; args: unknown };
 async function boot(options: Record<string, unknown>, parameters: TSchema = schema) {
   __testOnlyResetProcessState();
   fs.writeFileSync(settingsFile, JSON.stringify({ autoResume: false, aggressiveMode: false }));
@@ -88,7 +88,8 @@ test("the real Pi tool pipeline executes bash with the configured timeout", asyn
     },
   } });
   const { pi, ctx } = await boot({ timeout: 60 }, definition.parameters);
-  const context: AgentContext = { systemPrompt: "", messages: [], tools: [{ ...definition, execute: (...args: any[]) => (definition.execute as any)(...args, ctx) }] };
+  const contextFields = { systemPrompt: "", messages: [], tools: [{ ...definition, execute: (...args: any[]) => (definition.execute as any)(...args, ctx) }] };
+  const context: AgentContext = contextFields;
   const outcome = await runToolCall({ type: "toolCall", id: "pipeline-call", name: "bash", arguments: { command: "fixture command", timeout: 5 } }, {
     tools: context.tools!, context,
     assistantMessage: { role: "assistant", content: [], api: "openai-completions", provider: "fixture", model: "fixture", stopReason: "toolUse", timestamp: Date.now(), usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } } as AssistantMessage,
