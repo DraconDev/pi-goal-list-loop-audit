@@ -219,6 +219,8 @@ export interface WidgetExtras {
    * report byte-counter render while the prose tail is muted. false =
    * the plain timer-only card (the pre-v0.34.86 silent look). */
   auditorProgressSignals?: boolean;
+  /** Compact live audit HUD; detailed history remains in /goal status. */
+  compactAuditCard?: boolean;
   /** Effective global main-model backup order for truthful recovery HUDs. */
   mainModelFallbacks?: string[];
   /** v0.38.44 (field 20260909_161057): precomputed status-tail version
@@ -926,7 +928,7 @@ export function auditorDisplayPhase(g: Goal, audit: AuditDisplayProgress | null 
 function auditorProgressPhaseLabel(audit: AuditDisplayProgress | null | undefined): string | undefined {
   if (audit?.round === 2 && !["tool_cancelled", "continuing", "complete"].includes(audit.phase ?? "")) return "second audit pass…";
   switch (audit?.phase) {
-    case "thinking": return "reading source…";
+    case "thinking": return "thinking…";
     case "producing_report": return "writing report…";
     case "challenging": return "challenging report…";
     case "tool_cancelled": return "cancelling slow tool…";
@@ -1410,7 +1412,13 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
     // on screen (Screenshot 20260914). One surface per fact.
     const quietAge = phase === "quiet" ? auditorActivityAge(audit, now) : undefined;
     const quietSuffix = quietAge !== undefined ? ` · silent ${fmtElapsed(quietAge)}` : "";
-    return `glla: ${host} · ${label}${quietSuffix}${heldSuffix}`;
+    const compactPrefix = extras?.compactAuditCard
+      ? `${paint(theme, color, durableLabel ?? (phase === "running" ? "AUDIT RUNNING" : phase === "quiet" ? "AUDIT QUIET — may be stuck" : phase === "blocked" ? "AUDIT BLOCKED" : phase === "queued" ? "AUDIT STARTING" : "AUDIT REVIEW"))} · `
+      : "";
+    const freshness = extras?.compactAuditCard && phase !== "quiet"
+      ? (auditorActivityAge(audit, now) !== undefined ? ` · activity ${fmtElapsed(auditorActivityAge(audit, now)!)} ago` : " · no worker activity yet")
+      : "";
+    return `glla: ${compactPrefix}${extras?.compactAuditCard ? freshness.replace(/^ · /, "") + " · " : ""}${host} · ${label}${quietSuffix}${heldSuffix}`;
   }
   if (g.status === "paused") {
     // v0.28.22: the status line names the ACTIONABILITY, not the reason —
@@ -2159,6 +2167,24 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
   let auditTail: string[] = [];
   if (g.status === "auditing") {
     const block = auditingCardBlock(g, audit, now, theme, extras);
+    if (extras?.compactAuditCard) {
+      const phase = auditorDisplayPhase(g, audit, now);
+      const durable = auditLifecycleProjection(g.pendingCompletion, { now });
+      const needsRecovery = auditRecoveryPending(g) || phase === "quiet" || phase === "blocked" || durable?.phase === "settling";
+      const elapsed = auditorElapsedMs(audit, now);
+      const finished = audit?.toolCalls?.filter(call => call.finishedAt !== undefined).length;
+      const facts = [elapsed !== undefined ? `audit elapsed ${fmtElapsed(elapsed)}` : undefined,
+        finished !== undefined ? `${finished} tool calls finished` : undefined].filter(Boolean);
+      const action = block.lead.find(line => line.startsWith("│ next:"));
+      // No history or model plaques in the glance card: Pi clips its tail.
+      // Keep state, real evidence and the user action ahead of all details.
+      return [head, block.lead[0]!,
+        ...(facts.length ? [`│ ${facts.join(" · ")}`] : []),
+        ...block.lead.slice(1).filter(line => !line.startsWith("│ next:")),
+        ...(action ? [action] : []),
+        ...(!needsRecovery ? [`│ No action needed — the auditor runs in the background`] : []),
+        `└─ /goal status for full audit details`];
+    }
     lines.push(...block.lead);
     auditTail = block.tail;
   } else if (g.pendingCompletion && !isCompletionAuditNoVerdict(g)) {

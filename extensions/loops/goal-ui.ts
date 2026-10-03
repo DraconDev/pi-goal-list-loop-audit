@@ -852,6 +852,7 @@ function refreshUI(ctx: ExtensionContext, force = false): void {
       turnPending: pendingContinuationDispatchRef() !== null,
       auditorSilent: settings.auditorSilent !== false,
       auditorProgressSignals: settings.auditorProgressSignals !== false,
+      compactAuditCard: true,
       mainModelFallbacks: fallbackRefs,
       modelProvenance,
       ...(durableDeferRecommendation ? { durableDeferRecommendation } : {}),
