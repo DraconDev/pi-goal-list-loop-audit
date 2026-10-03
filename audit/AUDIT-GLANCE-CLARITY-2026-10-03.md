@@ -40,6 +40,11 @@ A new budget assertion also initially expected the wrong separator and was
 corrected to the existing elapsed/budget format. These red runs are retained
 and are not claimed as passing gates.
 
-Final verification: pending. Package and both lock versions are 0.38.113;
+Final verification: `tests-verified.log` records 190 passes across eight files,
+zero failures, using the repository's serialized runner. TypeScript checking
+and generated inventory checking passed; `package-verified.log` records the
+installed 0.38.113 tarball's launcher/RPC probe, skill and import checks.
+This is the affected UI/communication sweep, not a repeat of the previous
+0.38.112 full 3175-test release gate. Package and both lock versions are 0.38.113;
 changelog and generated runtime inventory are synchronized. No Doomtap live
 journal was changed, no process was restarted, and no package was published.
