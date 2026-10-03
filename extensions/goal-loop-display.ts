@@ -2181,7 +2181,7 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
       // No history or model plaques in the glance card: Pi clips its tail.
       // Keep state, real evidence and the user action ahead of all details.
       const phaseLine = needsRecovery ? (phase === "quiet" ? `├─ ${paint(theme, "warning", "Audit quiet — may be stuck")}` : block.lead[0]!)
-        : `├─ ${paint(theme, "accent", phase === "running" ? `Audit running · ${(extras?.auditorProgressSignals !== false ? auditorProgressPhaseLabel(audit) : undefined) ?? auditorPhaseForDisplay(audit, phase, auditorHasLiveEvidence(audit, phase, now))}` : phase === "queued" ? "Audit starting" : "Audit review pending")}`;
+        : `├─ ${paint(theme, "accent", phase === "running" ? `Audit running · ${(extras?.auditorProgressSignals !== false ? auditorProgressPhaseLabel(audit) : undefined) ?? auditorPhaseForDisplay(audit, phase, auditorHasLiveEvidence(audit, phase, now))} · detached worker` : phase === "queued" ? "Audit starting · detached worker" : "Audit review pending · detached worker")}`;
       const toolLine = block.lead.find(line => /^│ (?:last )?tool:/.test(line));
       const modelRef = auditorCardModelRef(audit, g.pendingCompletion);
       const compactToolLine = modelRef ? toolLine?.split(` · ${modelRef}`)[0] : toolLine;

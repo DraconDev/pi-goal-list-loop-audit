@@ -3857,7 +3857,7 @@ test("v0.34.22: complete_goal returns while a detached auditor finishes and arch
     assert.equal(claimed.status, "auditing", "claim is durable before the detached result");
     assertOwnsAttempt(claimed.pendingCompletion, "claim is durable before the detached result");
     const queuedWidget = (ctx.ui.widgets["pi-glla"] as string[] | undefined) ?? [];
-    assert.ok(queuedWidget.some((line) => line.includes("auditor: queued")), "the queued auditor phase is visible before worker progress");
+    assert.ok(queuedWidget.some((line) => line.includes("Audit starting")), "the queued auditor phase is visible before worker progress");
     // A host render can run after the tool callback and restore the previous
     // widget. The persistence-side deferred repaint must win after the
     // current event yields, even if the worker has already moved past its

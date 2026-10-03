@@ -12,6 +12,9 @@
   recovery states retain their recovery action. The footer starts with audit
   state and freshness. Generic model thinking is called “thinking”, rather
   than claiming the worker is reading source.
+- Compatibility CI pins the optional subagent test fixture to versions
+  compatible with each supported Pi boundary, retaining npm peer checks.
+  The detached-completion integration assertion follows the new audit wording.
 
 ## 0.38.112 — full terminal UI audit (2026-10-03)
 

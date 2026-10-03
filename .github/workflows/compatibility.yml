@@ -15,6 +15,14 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         pi: ["0.84.2", "0.99.1"]
+        # This is a dev fixture, not a GLLA runtime dependency. Current
+        # pi-subagents requires Pi >=0.86.1; use a compatible fixture at
+        # the older supported GLLA boundary without bypassing peer checks.
+        include:
+          - pi: "0.84.2"
+            subagents: "0.60.0"
+          - pi: "0.99.1"
+            subagents: "0.75.0"
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
@@ -28,7 +36,7 @@ jobs:
           bun-version: 1.3.14
       - run: npm ci
       - name: Install the selected Pi boundary without changing manifests
-        run: npm install --no-save --package-lock=false --ignore-scripts @earendil-works/pi-agent-core@${{ matrix.pi }} @earendil-works/pi-ai@${{ matrix.pi }} @earendil-works/pi-coding-agent@${{ matrix.pi }} @earendil-works/pi-tui@${{ matrix.pi }}
+        run: npm install --no-save --package-lock=false --ignore-scripts @earendil-works/pi-agent-core@${{ matrix.pi }} @earendil-works/pi-ai@${{ matrix.pi }} @earendil-works/pi-coding-agent@${{ matrix.pi }} @earendil-works/pi-tui@${{ matrix.pi }} pi-subagents@${{ matrix.subagents }}
       - run: npm run check
       - name: Exercise actual platform process and persistence behavior
         run: npm test -- tests/contained-child-platform.test.ts tests/owner-file-protocol.test.ts tests/terminal-summary-delivery.test.ts tests/persistence-recovery.test.ts
