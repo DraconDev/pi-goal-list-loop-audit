@@ -238,10 +238,7 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;167;152;215mAuditor model\u001b[39m",
-      "",
       "\u001b[38;2;157;165;169msearch: ▏\u001b[39m",
-      "",
-      "\u001b[38;2;126;136;142m  ↑ 14 more\u001b[39m",
       "  anthropic/model-28",
       "  openai/model-01",
       "  openai/model-03",
@@ -254,9 +251,9 @@
       "  openai/model-17",
       "  openai/model-19",
       "  openai/model-21",
-      "\u001b[38;2;126;136;142m  ↓ 4 more\u001b[39m",
-      "",
-      "\u001b[38;2;126;136;142mtype to filter · ↑/↓ move · enter selec\u001b[0m…\u001b[0m"
+      "\u001b[38;2;126;136;142m15–26 of 30\u001b[39m",
+      "\u001b[38;2;126;136;142mtype to search · ↑↓ move\u001b[39m",
+      "\u001b[38;2;126;136;142menter select · esc cancel\u001b[39m"
     ]
   },
   {
@@ -391,6 +388,101 @@
       "",
       " \u001b[38;2;126;136;142m↑↓ choose · enter select · esc cancel\u001b[39m  ",
       "\u001b[38;2;160;142;213m────────────────────────────────────────\u001b[39m"
+    ]
+  },
+  {
+    "key": "reminder-blocked",
+    "theme": "dark",
+    "width": 40,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;205;154;34m⏸ GLLA Action needed — work is safely  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;205;154;34mparked\u001b[39m                                 \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more       \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mobservation before work can continue.\u001b[39m  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: Resolve the failing check, then  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m/goal resume.\u001b[39m                          \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mstopped before more work could be      \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mlost.\u001b[39m                                  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mResume: /goal resume\u001b[39m                   \u001b[49m",
+      "\u001b[48;2;58;48;85m                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-decision",
+    "theme": "dark",
+    "width": 40,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m⏸ GLLA Decision needed — work is       \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215msafely parked\u001b[39m                          \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more       \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mobservation before work can continue.\u001b[39m  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: /goal resume\u001b[39m                     \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mstopped before more work could be      \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mlost.\u001b[39m                                  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mResume: /goal resume\u001b[39m                   \u001b[49m",
+      "\u001b[48;2;58;48;85m                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-error",
+    "theme": "dark",
+    "width": 40,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;234;127;129m⏸ GLLA Action needed — work is safely  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;234;127;129mparked\u001b[39m                                 \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more       \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mobservation before work can continue.\u001b[39m  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: /goal resume\u001b[39m                     \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mstopped before more work could be      \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mlost.\u001b[39m                                  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mResume: /goal resume\u001b[39m                   \u001b[49m",
+      "\u001b[48;2;58;48;85m                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-wait",
+    "theme": "dark",
+    "width": 40,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;205;154;34m⏳ GLLA Waiting — work is safely       \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;205;154;34mparked\u001b[39m                                 \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more       \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mobservation before work can continue.\u001b[39m  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mThe wait resumes automatically when    \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mits condition clears.\u001b[39m                  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; no manual   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142maction is needed.\u001b[39m                      \u001b[49m",
+      "\u001b[48;2;58;48;85m                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-standby",
+    "theme": "dark",
+    "width": 40,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;205;154;34m⏳ GLLA Waiting — work is safely       \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;205;154;34mparked\u001b[39m                                 \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more       \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mobservation before work can continue.\u001b[39m  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNo action is needed; the background    \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mcompletion will wake this work         \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mautomatically.\u001b[39m                         \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; no manual   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142maction is needed.\u001b[39m                      \u001b[49m",
+      "\u001b[48;2;58;48;85m                                        \u001b[49m"
     ]
   },
   {
@@ -841,10 +933,7 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;167;152;215mAuditor model\u001b[39m",
-      "",
       "\u001b[38;2;157;165;169msearch: ▏\u001b[39m",
-      "",
-      "\u001b[38;2;126;136;142m  ↑ 14 more\u001b[39m",
       "  anthropic/model-28",
       "  openai/model-01",
       "  openai/model-03",
@@ -857,9 +946,8 @@
       "  openai/model-17",
       "  openai/model-19",
       "  openai/model-21",
-      "\u001b[38;2;126;136;142m  ↓ 4 more\u001b[39m",
-      "",
-      "\u001b[38;2;126;136;142mtype to filter · ↑/↓ move · enter select · esc cancel\u001b[39m"
+      "\u001b[38;2;126;136;142m15–26 of 30\u001b[39m",
+      "\u001b[38;2;126;136;142mtype to filter · ↑↓ move · enter select · esc cancel\u001b[39m"
     ]
   },
   {
@@ -994,6 +1082,88 @@
       "",
       " \u001b[38;2;126;136;142m↑↓ choose · enter select · esc cancel\u001b[39m                      ",
       "\u001b[38;2;160;142;213m────────────────────────────────────────────────────────────\u001b[39m"
+    ]
+  },
+  {
+    "key": "reminder-blocked",
+    "theme": "dark",
+    "width": 60,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                            \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;205;154;34m⏸ GLLA Action needed — work is safely parked\u001b[39m               \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mcan continue.\u001b[39m                                              \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: Resolve the failing check, then /goal resume.\u001b[39m        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn stopped before more   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mwork could be lost.\u001b[39m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mResume: /goal resume\u001b[39m                                       \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                            \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-decision",
+    "theme": "dark",
+    "width": 60,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                            \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m⏸ GLLA Decision needed — work is safely parked\u001b[39m             \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mcan continue.\u001b[39m                                              \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: /goal resume\u001b[39m                                         \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn stopped before more   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mwork could be lost.\u001b[39m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mResume: /goal resume\u001b[39m                                       \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                            \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-error",
+    "theme": "dark",
+    "width": 60,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                            \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;234;127;129m⏸ GLLA Action needed — work is safely parked\u001b[39m               \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mcan continue.\u001b[39m                                              \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: /goal resume\u001b[39m                                         \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn stopped before more   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mwork could be lost.\u001b[39m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mResume: /goal resume\u001b[39m                                       \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                            \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-wait",
+    "theme": "dark",
+    "width": 60,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                            \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;205;154;34m⏳ GLLA Waiting — work is safely parked\u001b[39m                    \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mcan continue.\u001b[39m                                              \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mThe wait resumes automatically when its condition clears.\u001b[39m  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; no manual action is needed.\u001b[39m     \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                            \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-standby",
+    "theme": "dark",
+    "width": 60,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                            \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;205;154;34m⏳ GLLA Waiting — work is safely parked\u001b[39m                    \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mcan continue.\u001b[39m                                              \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNo action is needed; the background completion will wake   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mthis work automatically.\u001b[39m                                   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; no manual action is needed.\u001b[39m     \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                            \u001b[49m"
     ]
   },
   {
@@ -1420,10 +1590,7 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;167;152;215mAuditor model\u001b[39m",
-      "",
       "\u001b[38;2;157;165;169msearch: ▏\u001b[39m",
-      "",
-      "\u001b[38;2;126;136;142m  ↑ 14 more\u001b[39m",
       "  anthropic/model-28",
       "  openai/model-01",
       "  openai/model-03",
@@ -1436,9 +1603,8 @@
       "  openai/model-17",
       "  openai/model-19",
       "  openai/model-21",
-      "\u001b[38;2;126;136;142m  ↓ 4 more\u001b[39m",
-      "",
-      "\u001b[38;2;126;136;142mtype to filter · ↑/↓ move · enter select · esc cancel\u001b[39m"
+      "\u001b[38;2;126;136;142m15–26 of 30\u001b[39m",
+      "\u001b[38;2;126;136;142mtype to filter · ↑↓ move · enter select · esc cancel\u001b[39m"
     ]
   },
   {
@@ -1573,6 +1739,80 @@
       "",
       " \u001b[38;2;126;136;142m↑↓ choose · enter select · esc cancel\u001b[39m                                          ",
       "\u001b[38;2;160;142;213m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+    ]
+  },
+  {
+    "key": "reminder-blocked",
+    "theme": "dark",
+    "width": 80,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;205;154;34m⏸ GLLA Action needed — work is safely parked\u001b[39m                                   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work can continue.\u001b[39m         \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: Resolve the failing check, then /goal resume.\u001b[39m                            \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mResume: /goal resume\u001b[39m                                                           \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-decision",
+    "theme": "dark",
+    "width": 80,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m⏸ GLLA Decision needed — work is safely parked\u001b[39m                                 \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work can continue.\u001b[39m         \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: /goal resume\u001b[39m                                                             \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mResume: /goal resume\u001b[39m                                                           \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-error",
+    "theme": "dark",
+    "width": 80,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;234;127;129m⏸ GLLA Action needed — work is safely parked\u001b[39m                                   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work can continue.\u001b[39m         \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: /goal resume\u001b[39m                                                             \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mResume: /goal resume\u001b[39m                                                           \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-wait",
+    "theme": "dark",
+    "width": 80,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;205;154;34m⏳ GLLA Waiting — work is safely parked\u001b[39m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work can continue.\u001b[39m         \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mThe wait resumes automatically when its condition clears.\u001b[39m                      \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; no manual action is needed.\u001b[39m                         \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-standby",
+    "theme": "dark",
+    "width": 80,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;205;154;34m⏳ GLLA Waiting — work is safely parked\u001b[39m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work can continue.\u001b[39m         \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNo action is needed; the background completion will wake this work             \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mautomatically.\u001b[39m                                                                 \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; no manual action is needed.\u001b[39m                         \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m"
     ]
   },
   {
@@ -1999,10 +2239,7 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;167;152;215mAuditor model\u001b[39m",
-      "",
       "\u001b[38;2;157;165;169msearch: ▏\u001b[39m",
-      "",
-      "\u001b[38;2;126;136;142m  ↑ 14 more\u001b[39m",
       "  anthropic/model-28",
       "  openai/model-01",
       "  openai/model-03",
@@ -2015,9 +2252,8 @@
       "  openai/model-17",
       "  openai/model-19",
       "  openai/model-21",
-      "\u001b[38;2;126;136;142m  ↓ 4 more\u001b[39m",
-      "",
-      "\u001b[38;2;126;136;142mtype to filter · ↑/↓ move · enter select · esc cancel\u001b[39m"
+      "\u001b[38;2;126;136;142m15–26 of 30\u001b[39m",
+      "\u001b[38;2;126;136;142mtype to filter · ↑↓ move · enter select · esc cancel\u001b[39m"
     ]
   },
   {
@@ -2152,6 +2388,79 @@
       "",
       " \u001b[38;2;126;136;142m↑↓ choose · enter select · esc cancel\u001b[39m                                                                                  ",
       "\u001b[38;2;160;142;213m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+    ]
+  },
+  {
+    "key": "reminder-blocked",
+    "theme": "dark",
+    "width": 120,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;205;154;34m⏸ GLLA Action needed — work is safely parked\u001b[39m                                                                           \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work can continue.\u001b[39m                                                 \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: Resolve the failing check, then /goal resume.\u001b[39m                                                                    \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m                                           \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mResume: /goal resume\u001b[39m                                                                                                   \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-decision",
+    "theme": "dark",
+    "width": 120,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m⏸ GLLA Decision needed — work is safely parked\u001b[39m                                                                         \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work can continue.\u001b[39m                                                 \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: /goal resume\u001b[39m                                                                                                     \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m                                           \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mResume: /goal resume\u001b[39m                                                                                                   \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-error",
+    "theme": "dark",
+    "width": 120,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;234;127;129m⏸ GLLA Action needed — work is safely parked\u001b[39m                                                                           \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work can continue.\u001b[39m                                                 \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNext: /goal resume\u001b[39m                                                                                                     \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m                                           \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mResume: /goal resume\u001b[39m                                                                                                   \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-wait",
+    "theme": "dark",
+    "width": 120,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;205;154;34m⏳ GLLA Waiting — work is safely parked\u001b[39m                                                                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work can continue.\u001b[39m                                                 \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mThe wait resumes automatically when its condition clears.\u001b[39m                                                              \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; no manual action is needed.\u001b[39m                                                                 \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-standby",
+    "theme": "dark",
+    "width": 120,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;205;154;34m⏳ GLLA Waiting — work is safely parked\u001b[39m                                                                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mWhy: Verification needs one more observation before work can continue.\u001b[39m                                                 \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215mNo action is needed; the background completion will wake this work automatically.\u001b[39m                                      \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;126;136;142mYour saved work is intact; no manual action is needed.\u001b[39m                                                                 \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m"
     ]
   },
   {
@@ -2600,10 +2909,7 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;116;89;180mAuditor model\u001b[39m",
-      "",
       "\u001b[38;2;103;113;118msearch: ▏\u001b[39m",
-      "",
-      "\u001b[38;2;135;144;149m  ↑ 14 more\u001b[39m",
       "  anthropic/model-28",
       "  openai/model-01",
       "  openai/model-03",
@@ -2616,9 +2922,9 @@
       "  openai/model-17",
       "  openai/model-19",
       "  openai/model-21",
-      "\u001b[38;2;135;144;149m  ↓ 4 more\u001b[39m",
-      "",
-      "\u001b[38;2;135;144;149mtype to filter · ↑/↓ move · enter selec\u001b[0m…\u001b[0m"
+      "\u001b[38;2;135;144;149m15–26 of 30\u001b[39m",
+      "\u001b[38;2;135;144;149mtype to search · ↑↓ move\u001b[39m",
+      "\u001b[38;2;135;144;149menter select · esc cancel\u001b[39m"
     ]
   },
   {
@@ -2753,6 +3059,101 @@
       "",
       " \u001b[38;2;135;144;149m↑↓ choose · enter select · esc cancel\u001b[39m  ",
       "\u001b[38;2;138;114;203m────────────────────────────────────────\u001b[39m"
+    ]
+  },
+  {
+    "key": "reminder-blocked",
+    "theme": "light",
+    "width": 40,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;143;104;2m⏸ GLLA Action needed — work is safely  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;143;104;2mparked\u001b[39m                                 \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more       \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mobservation before work can continue.\u001b[39m  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: Resolve the failing check, then  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m/goal resume.\u001b[39m                          \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mstopped before more work could be      \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mlost.\u001b[39m                                  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mResume: /goal resume\u001b[39m                   \u001b[49m",
+      "\u001b[48;2;230;228;238m                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-decision",
+    "theme": "light",
+    "width": 40,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m⏸ GLLA Decision needed — work is       \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180msafely parked\u001b[39m                          \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more       \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mobservation before work can continue.\u001b[39m  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: /goal resume\u001b[39m                     \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mstopped before more work could be      \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mlost.\u001b[39m                                  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mResume: /goal resume\u001b[39m                   \u001b[49m",
+      "\u001b[48;2;230;228;238m                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-error",
+    "theme": "light",
+    "width": 40,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;200;37;61m⏸ GLLA Action needed — work is safely  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;200;37;61mparked\u001b[39m                                 \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more       \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mobservation before work can continue.\u001b[39m  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: /goal resume\u001b[39m                     \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mstopped before more work could be      \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mlost.\u001b[39m                                  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mResume: /goal resume\u001b[39m                   \u001b[49m",
+      "\u001b[48;2;230;228;238m                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-wait",
+    "theme": "light",
+    "width": 40,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;143;104;2m⏳ GLLA Waiting — work is safely       \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;143;104;2mparked\u001b[39m                                 \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more       \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mobservation before work can continue.\u001b[39m  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mThe wait resumes automatically when    \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mits condition clears.\u001b[39m                  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; no manual   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149maction is needed.\u001b[39m                      \u001b[49m",
+      "\u001b[48;2;230;228;238m                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-standby",
+    "theme": "light",
+    "width": 40,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;143;104;2m⏳ GLLA Waiting — work is safely       \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;143;104;2mparked\u001b[39m                                 \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more       \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mobservation before work can continue.\u001b[39m  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNo action is needed; the background    \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mcompletion will wake this work         \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mautomatically.\u001b[39m                         \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; no manual   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149maction is needed.\u001b[39m                      \u001b[49m",
+      "\u001b[48;2;230;228;238m                                        \u001b[49m"
     ]
   },
   {
@@ -3203,10 +3604,7 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;116;89;180mAuditor model\u001b[39m",
-      "",
       "\u001b[38;2;103;113;118msearch: ▏\u001b[39m",
-      "",
-      "\u001b[38;2;135;144;149m  ↑ 14 more\u001b[39m",
       "  anthropic/model-28",
       "  openai/model-01",
       "  openai/model-03",
@@ -3219,9 +3617,8 @@
       "  openai/model-17",
       "  openai/model-19",
       "  openai/model-21",
-      "\u001b[38;2;135;144;149m  ↓ 4 more\u001b[39m",
-      "",
-      "\u001b[38;2;135;144;149mtype to filter · ↑/↓ move · enter select · esc cancel\u001b[39m"
+      "\u001b[38;2;135;144;149m15–26 of 30\u001b[39m",
+      "\u001b[38;2;135;144;149mtype to filter · ↑↓ move · enter select · esc cancel\u001b[39m"
     ]
   },
   {
@@ -3356,6 +3753,88 @@
       "",
       " \u001b[38;2;135;144;149m↑↓ choose · enter select · esc cancel\u001b[39m                      ",
       "\u001b[38;2;138;114;203m────────────────────────────────────────────────────────────\u001b[39m"
+    ]
+  },
+  {
+    "key": "reminder-blocked",
+    "theme": "light",
+    "width": 60,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                            \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;143;104;2m⏸ GLLA Action needed — work is safely parked\u001b[39m               \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mcan continue.\u001b[39m                                              \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: Resolve the failing check, then /goal resume.\u001b[39m        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn stopped before more   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mwork could be lost.\u001b[39m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mResume: /goal resume\u001b[39m                                       \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                            \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-decision",
+    "theme": "light",
+    "width": 60,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                            \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m⏸ GLLA Decision needed — work is safely parked\u001b[39m             \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mcan continue.\u001b[39m                                              \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: /goal resume\u001b[39m                                         \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn stopped before more   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mwork could be lost.\u001b[39m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mResume: /goal resume\u001b[39m                                       \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                            \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-error",
+    "theme": "light",
+    "width": 60,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                            \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;200;37;61m⏸ GLLA Action needed — work is safely parked\u001b[39m               \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mcan continue.\u001b[39m                                              \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: /goal resume\u001b[39m                                         \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn stopped before more   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mwork could be lost.\u001b[39m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mResume: /goal resume\u001b[39m                                       \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                            \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-wait",
+    "theme": "light",
+    "width": 60,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                            \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;143;104;2m⏳ GLLA Waiting — work is safely parked\u001b[39m                    \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mcan continue.\u001b[39m                                              \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mThe wait resumes automatically when its condition clears.\u001b[39m  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; no manual action is needed.\u001b[39m     \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                            \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-standby",
+    "theme": "light",
+    "width": 60,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                            \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;143;104;2m⏳ GLLA Waiting — work is safely parked\u001b[39m                    \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mcan continue.\u001b[39m                                              \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNo action is needed; the background completion will wake   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mthis work automatically.\u001b[39m                                   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; no manual action is needed.\u001b[39m     \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                            \u001b[49m"
     ]
   },
   {
@@ -3782,10 +4261,7 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;116;89;180mAuditor model\u001b[39m",
-      "",
       "\u001b[38;2;103;113;118msearch: ▏\u001b[39m",
-      "",
-      "\u001b[38;2;135;144;149m  ↑ 14 more\u001b[39m",
       "  anthropic/model-28",
       "  openai/model-01",
       "  openai/model-03",
@@ -3798,9 +4274,8 @@
       "  openai/model-17",
       "  openai/model-19",
       "  openai/model-21",
-      "\u001b[38;2;135;144;149m  ↓ 4 more\u001b[39m",
-      "",
-      "\u001b[38;2;135;144;149mtype to filter · ↑/↓ move · enter select · esc cancel\u001b[39m"
+      "\u001b[38;2;135;144;149m15–26 of 30\u001b[39m",
+      "\u001b[38;2;135;144;149mtype to filter · ↑↓ move · enter select · esc cancel\u001b[39m"
     ]
   },
   {
@@ -3935,6 +4410,80 @@
       "",
       " \u001b[38;2;135;144;149m↑↓ choose · enter select · esc cancel\u001b[39m                                          ",
       "\u001b[38;2;138;114;203m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+    ]
+  },
+  {
+    "key": "reminder-blocked",
+    "theme": "light",
+    "width": 80,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;143;104;2m⏸ GLLA Action needed — work is safely parked\u001b[39m                                   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work can continue.\u001b[39m         \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: Resolve the failing check, then /goal resume.\u001b[39m                            \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mResume: /goal resume\u001b[39m                                                           \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-decision",
+    "theme": "light",
+    "width": 80,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m⏸ GLLA Decision needed — work is safely parked\u001b[39m                                 \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work can continue.\u001b[39m         \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: /goal resume\u001b[39m                                                             \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mResume: /goal resume\u001b[39m                                                           \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-error",
+    "theme": "light",
+    "width": 80,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;200;37;61m⏸ GLLA Action needed — work is safely parked\u001b[39m                                   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work can continue.\u001b[39m         \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: /goal resume\u001b[39m                                                             \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mResume: /goal resume\u001b[39m                                                           \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-wait",
+    "theme": "light",
+    "width": 80,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;143;104;2m⏳ GLLA Waiting — work is safely parked\u001b[39m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work can continue.\u001b[39m         \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mThe wait resumes automatically when its condition clears.\u001b[39m                      \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; no manual action is needed.\u001b[39m                         \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-standby",
+    "theme": "light",
+    "width": 80,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;143;104;2m⏳ GLLA Waiting — work is safely parked\u001b[39m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work can continue.\u001b[39m         \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNo action is needed; the background completion will wake this work             \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mautomatically.\u001b[39m                                                                 \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; no manual action is needed.\u001b[39m                         \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m"
     ]
   },
   {
@@ -4361,10 +4910,7 @@
     "height": 20,
     "lines": [
       "\u001b[38;2;116;89;180mAuditor model\u001b[39m",
-      "",
       "\u001b[38;2;103;113;118msearch: ▏\u001b[39m",
-      "",
-      "\u001b[38;2;135;144;149m  ↑ 14 more\u001b[39m",
       "  anthropic/model-28",
       "  openai/model-01",
       "  openai/model-03",
@@ -4377,9 +4923,8 @@
       "  openai/model-17",
       "  openai/model-19",
       "  openai/model-21",
-      "\u001b[38;2;135;144;149m  ↓ 4 more\u001b[39m",
-      "",
-      "\u001b[38;2;135;144;149mtype to filter · ↑/↓ move · enter select · esc cancel\u001b[39m"
+      "\u001b[38;2;135;144;149m15–26 of 30\u001b[39m",
+      "\u001b[38;2;135;144;149mtype to filter · ↑↓ move · enter select · esc cancel\u001b[39m"
     ]
   },
   {
@@ -4514,6 +5059,79 @@
       "",
       " \u001b[38;2;135;144;149m↑↓ choose · enter select · esc cancel\u001b[39m                                                                                  ",
       "\u001b[38;2;138;114;203m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+    ]
+  },
+  {
+    "key": "reminder-blocked",
+    "theme": "light",
+    "width": 120,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;143;104;2m⏸ GLLA Action needed — work is safely parked\u001b[39m                                                                           \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work can continue.\u001b[39m                                                 \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: Resolve the failing check, then /goal resume.\u001b[39m                                                                    \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m                                           \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mResume: /goal resume\u001b[39m                                                                                                   \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-decision",
+    "theme": "light",
+    "width": 120,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m⏸ GLLA Decision needed — work is safely parked\u001b[39m                                                                         \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work can continue.\u001b[39m                                                 \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: /goal resume\u001b[39m                                                                                                     \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m                                           \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mResume: /goal resume\u001b[39m                                                                                                   \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-error",
+    "theme": "light",
+    "width": 120,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;200;37;61m⏸ GLLA Action needed — work is safely parked\u001b[39m                                                                           \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work can continue.\u001b[39m                                                 \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNext: /goal resume\u001b[39m                                                                                                     \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; this turn stopped before more work could be lost.\u001b[39m                                           \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mResume: /goal resume\u001b[39m                                                                                                   \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-wait",
+    "theme": "light",
+    "width": 120,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;143;104;2m⏳ GLLA Waiting — work is safely parked\u001b[39m                                                                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work can continue.\u001b[39m                                                 \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mThe wait resumes automatically when its condition clears.\u001b[39m                                                              \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; no manual action is needed.\u001b[39m                                                                 \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "reminder-standby",
+    "theme": "light",
+    "width": 120,
+    "height": 20,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;143;104;2m⏳ GLLA Waiting — work is safely parked\u001b[39m                                                                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mWhy: Verification needs one more observation before work can continue.\u001b[39m                                                 \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180mNo action is needed; the background completion will wake this work automatically.\u001b[39m                                      \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;135;144;149mYour saved work is intact; no manual action is needed.\u001b[39m                                                                 \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m"
     ]
   },
   {

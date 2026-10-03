@@ -8,6 +8,8 @@ import { ModelPickerComponent, buildModelPickItems } from "../../extensions/mode
 import { MultiModelPickerComponent } from "../../extensions/multi-model-picker.js";
 import { ConfirmDraftComponent } from "../../extensions/confirm-draft.js";
 import { buildWidgetLines, buildStatusText } from "../../extensions/goal-loop-display.js";
+import { buildActionReminder, registerActionReminderRenderer } from "../../extensions/action-reminder.js";
+import { MockPi } from "../harness/mock-pi.js";
 import { UI_AUDIT_SCENES, UI_AUDIT_NOW } from "./ui-audit-scenes.js";
 const out = path.resolve(import.meta.dirname, "../../audit/full-ui-audit-2026-10-03");
 fs.mkdirSync(out, { recursive: true });
@@ -34,6 +36,12 @@ for (const appearance of ["dark", "light"]) {
     add("fallback-picker", multi.render(width)); multi.handleInput("\t"); for (let i = 0; i < 7; i++) multi.handleInput("down"); add("fallback-order", multi.render(width));
     const draft = new ConfirmDraftComponent({ title: "Confirm goal", body: "Improve the complete GLLA interface.\n\n" + Array.from({ length: 20 }, (_, i) => `- Requirement ${i + 1}: prove the interface is readable and the action has the promised result.`).join("\n\n"), options: ["Yes", "Yes — always auto-accept drafts for this project", "No"], getHeight: () => height }, () => {}, theme, kb, () => {});
     add("draft-start", draft.render(width)); for (let i = 0; i < 30; i++) draft.handleInput("pgdown"); add("draft-end", draft.render(width)); draft.handleInput("down"); add("draft-consent", draft.render(width));
+    const pi = new MockPi(); registerActionReminderRenderer(pi.api);
+    for (const kind of ["blocked", "decision", "error", "wait", "standby"] as const) {
+      const reminder = buildActionReminder({ kind, reason: "Verification needs one more observation before work can continue.", action: kind === "blocked" ? "Resolve the failing check, then /goal resume." : undefined, resumeCommand: "/goal resume" });
+      const component = pi.messageRenderers.get("glla-action-reminder")!({ details: reminder.details }, { outputPad: 1 }, theme) as { render(width: number): string[] };
+      add(`reminder-${kind}`, component.render(width));
+    }
     for (const scene of UI_AUDIT_SCENES) add(scene.key, [...(buildWidgetLines(scene.state, null, UI_AUDIT_NOW, theme, width, scene.extras) ?? ["(no ambient UI)"]), "", buildStatusText(scene.state, null, UI_AUDIT_NOW, theme, scene.extras, width) ?? "(no status)"]);
   }
 }

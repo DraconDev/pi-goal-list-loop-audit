@@ -21,6 +21,13 @@
       "name": "SettingsMenuComponent"
     }
   ],
+  "messageRenderers": [
+    {
+      "file": "extensions/action-reminder.ts",
+      "line": 229,
+      "name": "ACTION_REMINDER_CUSTOM_TYPE"
+    }
+  ],
   "commands": [
     {
       "file": "extensions/loops/goal-activation.ts",

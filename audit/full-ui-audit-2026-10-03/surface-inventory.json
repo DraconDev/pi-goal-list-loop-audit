@@ -21,6 +21,13 @@
       "name": "SettingsMenuComponent"
     }
   ],
+  "messageRenderers": [
+    {
+      "file": "extensions/action-reminder.ts",
+      "line": 229,
+      "name": "ACTION_REMINDER_CUSTOM_TYPE"
+    }
+  ],
   "commands": [
     {
       "file": "extensions/loops/goal-activation.ts",
@@ -144,165 +151,159 @@
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 480,
+      "line": 485,
       "kind": "notify",
       "content": "lines.join(\"\\n\")"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 504,
+      "line": 509,
       "kind": "notify",
       "content": "`List item \"${shortObj(state.goal.objective)}\" paused${queued > 0 ? ` (${queued} waiting in the list)` : \"\"}. ${resumeCommand} to continue.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 507,
+      "line": 512,
       "kind": "notify",
       "content": "`Goal \"${shortObj(state.goal.objective)}\" paused. ${resumeCommand} to continue.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 518,
+      "line": 523,
       "kind": "notify",
       "content": "\"Load hold released — automation is live again.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 537,
+      "line": 542,
       "kind": "notify",
       "content": "\"Retrying the saved main-model recovery now — one provider probe, then the configured fallback models if needed.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 545,
+      "line": 550,
       "kind": "notify",
       "content": "\"Probing the preferred primary now — the current fallback remains available if the primary is still unhealthy.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 555,
+      "line": 560,
       "kind": "notify",
       "content": "\"A loop is active — one active thing at a time. /loop stop it first, then resume the goal.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 575,
+      "line": 580,
       "kind": "notify",
       "content": "`The ${state.goal.policy === \"list\" ? \"list item\" : \"goal\"} is ACTIVE but idle — re-firing its continuation: ${displaySlice(state.goal.objective, 70)}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 584,
+      "line": 589,
       "kind": "notify",
       "content": "`A detached completion auditor is in flight — wait for its verdict (the status line shows auditor running). ${activeGoalSurfaceCommand(\"cancel\")} discards the pending claim.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 588,
+      "line": 593,
       "kind": "notify",
       "content": "`The detached completion auditor is already running — wait for its verdict or ${activeGoalSurfaceCommand(\"cancel\")} to discard the pending claim.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 592,
+      "line": 597,
       "kind": "notify",
       "content": "\"A loop is active — one active thing at a time. /loop stop it first, then resume the completion audit.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 608,
+      "line": 613,
       "kind": "notify",
       "content": "\"Resuming the stored completion claim — starting a detached auditor (no agent turn needed).\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 619,
+      "line": 624,
       "kind": "notify",
       "content": "`Nothing to resume — no goal is active or paused.${loopHint}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 625,
+      "line": 630,
       "kind": "notify",
       "content": "`The ${label} is ${state.goal.status} (archived) — it can't be resumed. ${state.goal.policy === \"list\" ? \"/list add <objective> re-queues it; /list show lists waiting items.\" : \"/goal <objective> starts a fresh one; /goal archive lists archived goals.\"}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 630,
+      "line": 635,
       "kind": "notify",
       "content": "`The ${label} is ${state.goal.status} — nothing to resume. ${activeGoalStatusCommand()} for the current state.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 638,
+      "line": 643,
       "kind": "notify",
       "content": "\"A loop is active — one active thing at a time. /loop stop it first, then resume the goal.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 676,
+      "line": 681,
       "kind": "notify",
       "content": "\"Resuming the stored completion claim — starting a detached auditor (no agent turn needed).\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 686,
+      "line": 691,
       "kind": "notify",
       "content": "isListItem\n      ? `Resumed list item [${state.goal.id}]: ${displaySlice(state.goal.objective, 70)}${queued > 0 ? ` (+${queued} waiting in the list)` : \"\"}`\n      : `Resumed goal [${state.goal.id}]: ${displaySlice(state.goal.objective, 70)}${queued > 0 ? ` (+${queued} waiting in the list — resuming the list's head)` : \"\"}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 698,
+      "line": 703,
       "kind": "notify",
       "content": "\"Cancel deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 705,
+      "line": 710,
       "kind": "notify",
       "content": "\"No goal to cancel — a LOOP is active: /loop stop (or /loop cancel) ends it.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 723,
+      "line": 728,
       "kind": "notify",
       "content": "`${noun} aborted.${isLoopActive() ? \" A loop is still active — /loop stop ends it.\" : \"\"}\\nRecap: ${cancelRecap}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 736,
+      "line": 741,
       "kind": "notify",
       "content": "\"Accept deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 740,
+      "line": 745,
       "kind": "notify",
       "content": "\"No goal to accept.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 744,
+      "line": 749,
       "kind": "notify",
       "content": "\"Accept with follow-ups is for a cap-paused goal — this goal is still active. It appears as a decision option when disapprovals hit the cap.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 759,
+      "line": 764,
       "kind": "notify",
       "content": "`${noun} archived as complete with residuals routed to follow-ups.\\nRecap: ${acceptRecap}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 787,
+      "line": 792,
       "kind": "select",
       "content": "title"
-    },
-    {
-      "file": "extensions/goal-commands.ts",
-      "line": 838,
-      "kind": "notify",
-      "content": "\"No archived goals yet.\""
     },
     {
       "file": "extensions/goal-commands.ts",
@@ -312,847 +313,853 @@
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 858,
+      "line": 848,
+      "kind": "notify",
+      "content": "\"No archived goals yet.\""
+    },
+    {
+      "file": "extensions/goal-commands.ts",
+      "line": 863,
       "kind": "notify",
       "content": "`Archived goals (${files.length}${files.length > 20 ? \", showing 20\" : \"\"}):\\n` + lines.join(\"\\n\")"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 896,
+      "line": 901,
       "kind": "notify",
       "content": "mode === \"list\"\n        ? \"No paused list item to tweak. /list tweak <replacement objective, optional 'Done when: ...' clause>\"\n        : \"No goal to tweak. /goal <objective> to start one.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 916,
+      "line": 921,
       "kind": "notify",
       "content": "`Tweak ${surface} — current: ${displaySlice(current.objective, 120)}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 922,
+      "line": 927,
       "kind": "input",
       "content": "mode === \"list\"\n          ? \"What should we update the list item into? (replacement objective, optional 'Done when: ...' clause)\"\n          : \"What should we update the goal into? (replacement objective, optional 'Done when: ...' clause)\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 932,
+      "line": 937,
       "kind": "notify",
       "content": "\"Tweak cancelled; nothing changed.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 957,
+      "line": 962,
       "kind": "notify",
       "content": "guidance"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 970,
+      "line": 975,
       "kind": "notify",
       "content": "mode === \"list\"\n        ? \"No objective in the replacement text — include what the list item should become.\"\n        : \"No objective in the replacement text — include what the goal should become.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 994,
+      "line": 999,
       "kind": "notify",
       "content": "\"Tweak cancelled — the objective is unchanged.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 999,
+      "line": 1004,
       "kind": "confirm",
       "content": "mode === \"list\" ? \"Tweak list item?\" : \"Tweak goal?\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1012,
+      "line": 1017,
       "kind": "notify",
       "content": "\"Tweak cancelled; goal unchanged.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1023,
+      "line": 1028,
       "kind": "notify",
       "content": "\"Tweak cancelled — the goal changed while confirmation was open; no stale state was restored.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1027,
+      "line": 1032,
       "kind": "notify",
       "content": "\"Tweak cancelled — the goal finished while confirmation was open; no stale state was restored.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1085,
+      "line": 1090,
       "kind": "notify",
       "content": "\"Whole list objective updated; the current item continues against the new objective.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1090,
+      "line": 1095,
       "kind": "notify",
       "content": "\"List item tweaked; it remains paused. /list resume to continue.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1098,
+      "line": 1103,
       "kind": "notify",
       "content": "\"Goal tweaked; it remains paused. /goal resume to continue.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1101,
+      "line": 1106,
       "kind": "notify",
       "content": "\"Goal tweaked. The loop continues against the new objective.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1246,
+      "line": 1251,
       "kind": "notify",
       "content": "`Skipped ${skipped} item(s) duplicating work COMPLETED in the last 24h (zombie-twin guard): ${first.slice(0, 90)}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1256,
+      "line": 1261,
       "kind": "notify",
       "content": "`Coalesced ${split.coalesced.length} item(s) already waiting behind the paused head — queue depth holds at ${listQueue().length}.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1311,
+      "line": 1316,
       "kind": "notify",
       "content": "`Refused ${refused.length} subtask item(s): ${refused.join(\" | \")}.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1328,
+      "line": 1333,
       "kind": "notify",
       "content": "`Could not persist the queued item(s) from ${source}; no in-memory queue mutation was applied. Fix disk access and retry.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1339,
+      "line": 1344,
       "kind": "notify",
       "content": "`Queued ${itemsToWrite.length} item(s) behind the paused head (${listQueue().length} waiting) — ${state.goal.pauseSuggestedAction ?? \"resume the head to continue\"}.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1347,
+      "line": 1352,
       "kind": "notify",
       "content": "`Queued ${itemsToWrite.length} item(s) from ${source} — /list next when ready (auto-start is opt-in: enable Auto-resume in /glla settings).`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1359,
+      "line": 1364,
       "kind": "notify",
       "content": "\"No items found (headings/blank lines don't count).\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1368,
+      "line": 1373,
       "kind": "confirm",
       "content": "\"Import into list?\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1377,
+      "line": 1382,
       "kind": "notify",
       "content": "\"Import cancelled.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1382,
+      "line": 1387,
       "kind": "notify",
       "content": "`Imported ${n} items (${listQueue().length} waiting in the list).`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1392,
+      "line": 1397,
       "kind": "notify",
       "content": "`Cannot read: ${abs}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1433,
+      "line": 1438,
       "kind": "notify",
       "content": "\"Usage: /list start — activates the queued head, or starts the normal list drafting flow from one clear recent objective.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1442,
+      "line": 1447,
       "kind": "notify",
       "content": "`${explainStartInference(inference)} /list start keeps the list's Confirm gate; the inferred text will be drafted into queue items before anything is activated.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1463,
+      "line": 1468,
       "kind": "notify",
       "content": "\"An audit loop is already draining findings here — /list audit would double-hunt the same ground. /loop status to see it.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1468,
+      "line": 1473,
       "kind": "notify",
       "content": "\"Audit collection item queued — it CHANGES NO CODE: it appends findings to \" +\n        AUDIT_FINDINGS_REL +\n        \", and on completion each open finding becomes its own list item (fixes drain one audited commit at a time). DECIDE findings are presented to you, never queued.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1481,
+      "line": 1486,
       "kind": "notify",
       "content": "`/list depth: ${formatListDepth(stats)}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1492,
+      "line": 1497,
       "kind": "notify",
       "content": "state.goal ? \"The active work is a standalone goal — /goal pause to pause it.\" : \"No active list item to pause. /list show to see the list.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1517,
+      "line": 1522,
       "kind": "notify",
       "content": "terminalListItem\n          ? `The last list item is ${statusLabel(state.goal!.status)} and archived${state.goal!.stopReason ? ` (${displaySlice(state.goal!.stopReason, 90)})` : \"\"}; nothing to resume. Re-add it with /list or activate a waiting item with /list next.`\n          : \"No paused list item to resume. /list show to see the list.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1526,
+      "line": 1531,
       "kind": "notify",
       "content": "`The paused goal didn't come from the list — ${activeGoalSurfaceCommand(\"resume\")} to continue it.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1613,
+      "line": 1618,
       "kind": "notify",
       "content": "lines.join(\"\\n\")"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1661,
+      "line": 1666,
       "kind": "notify",
       "content": "\"List clear deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1672,
+      "line": 1677,
       "kind": "notify",
       "content": "`List clear refused — ${clearedSidecars.failed.length} queue sidecar(s) could not be removed. The in-memory list is unchanged; fix disk access and retry.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1678,
+      "line": 1683,
       "kind": "notify",
       "content": "`List clear could not remove ${clearedSidecars.failed.length} queue sidecar(s); the list is not fully clean.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1679,
+      "line": 1684,
       "kind": "notify",
       "content": "`List cleared. Active goal (if any) is untouched — ${activeGoalSurfaceCommand(\"cancel\")} for that, /list cancel to stop the whole list.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1688,
+      "line": 1693,
       "kind": "notify",
       "content": "\"List cancel deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1694,
+      "line": 1699,
       "kind": "notify",
       "content": "`No list to cancel — nothing waiting, and the active goal (if any) isn't a list item. ${activeGoalSurfaceCommand(\"cancel\")} aborts a standalone goal.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1714,
+      "line": 1719,
       "kind": "notify",
       "content": "`List cancellation is incomplete — ${clearedSidecars.failed.length} queue sidecar(s) could not be removed. Waiting items remain recoverable; fix disk access and retry.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1721,
+      "line": 1726,
       "kind": "notify",
       "content": "`List cancelled: ${activeIsListItem ? \"active item aborted + \" : \"\"}${dropped} waiting item(s) dropped.${!activeIsListItem && state.goal && state.goal.status === \"active\" ? ` Active goal is not a list item — untouched (${activeGoalSurfaceCommand(\"cancel\")} for that).` : \"\"}${listCancelRecap ? `\\nRecap: ${listCancelRecap}` : \"\"}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1725,
+      "line": 1730,
       "kind": "notify",
       "content": "`List cancel could not remove ${clearedSidecars.failed.length} queue sidecar(s); retry after fixing disk access.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1738,
+      "line": 1743,
       "kind": "notify",
       "content": "`Usage: /list next [visible position such as 1, 2, or 1.1]`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1749,
+      "line": 1754,
       "kind": "notify",
       "content": "\"List activation cancelled; the current objective is unchanged.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1756,
+      "line": 1761,
       "kind": "notify",
       "content": "\"Whole list update was not applied; the current objective and queue are unchanged.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1772,
+      "line": 1777,
       "kind": "notify",
       "content": "`Previous ${skippedGoal.policy === \"list\" ? \"list item\" : \"goal\"} skipped; the selected list item will be activated.\\nRecap: ${skipRecap}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1779,
+      "line": 1784,
       "kind": "notify",
       "content": "listQueue().length === 0 ? \"List is empty — nothing to activate.\" : `No visible item #${label} (list has ${visibleListPositions(listQueue()).length}).`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1792,
+      "line": 1797,
       "kind": "notify",
       "content": "\"Usage: /list remove <visible position such as 1, 2, or 1.1>\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1804,
+      "line": 1809,
       "kind": "notify",
       "content": "`Remove refused — \"${displaySlice(removed.objective, 60)}\" owns the live goal. Finish or park it first.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1810,
+      "line": 1815,
       "kind": "confirm",
       "content": "`Remove group and ${cascade.length} subtask${cascade.length === 1 ? \"\" : \"s\"}?`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1818,
+      "line": 1823,
       "kind": "notify",
       "content": "\"Remove cancelled; the list is unchanged.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1825,
+      "line": 1830,
       "kind": "notify",
       "content": "`Remove refused — the durable sidecar for ${displaySlice(child.objective, 80)} could not be removed. The group remains queued; fix disk access and retry.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1837,
+      "line": 1842,
       "kind": "notify",
       "content": "`Remove refused — the durable sidecar for ${displaySlice(removed.objective, 80)} could not be removed. The item remains queued; fix disk access and retry.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1843,
+      "line": 1848,
       "kind": "notify",
       "content": "cascade.length > 0 ? `Removed group + ${cascade.length} subtask${cascade.length === 1 ? \"\" : \"s\"}: ${displaySlice(removed.objective, 80)}` : `Removed: ${displaySlice(removed.objective, 80)}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1855,
+      "line": 1860,
       "kind": "notify",
       "content": "\"Settings are under /glla, not /list — bare /glla opens the settings table (status/log/stats/audits and the actions live there too).\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1900,
+      "line": 1905,
       "kind": "notify",
       "content": "`Already waiting behind the paused head — coalesced, queue depth holds at ${listQueue().length}.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1912,
+      "line": 1917,
       "kind": "notify",
       "content": "`Already completed recently — not re-queued: ${displaySlice(extracted.objective, 80)}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1928,
+      "line": 1933,
       "kind": "notify",
       "content": "\"Could not persist the list item; no in-memory queue mutation was applied. Fix disk access and retry.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1938,
+      "line": 1943,
       "kind": "notify",
       "content": "`Added to the list (${listQueue().length} waiting): ${displaySlice(extracted.objective, 80)}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1982,
+      "line": 1987,
       "kind": "notify",
       "content": "`Unknown mode \"${modeArg}\" — use off | on | auto | aggressive.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1986,
+      "line": 1991,
       "kind": "notify",
       "content": "`Usage: /review <goal-id> [${validModes.join(\"|\")}] — see /goal archive for ids.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 1999,
+      "line": 2004,
       "kind": "notify",
       "content": "`No archived goal matching \"${id}\". /goal archive lists them.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2004,
+      "line": 2009,
       "kind": "notify",
       "content": "`\"${id}\" matches ${matches.length} archived goals — use a longer id:\\n${shown.join(\"\\n\")}${matches.length > 8 ? `\\n…(+${matches.length - 8} more)` : \"\"}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2016,
+      "line": 2021,
       "kind": "notify",
       "content": "`No archive found for ${id}.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2042,
+      "line": 2047,
       "kind": "notify",
       "content": "out"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2051,
+      "line": 2056,
       "kind": "notify",
       "content": "`Usage: /glla tooloverride ${action} <tool>`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2057,
+      "line": 2062,
       "kind": "notify",
       "content": "`\"${tool}\" is now always visible to the agent (project override saved).`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2061,
+      "line": 2066,
       "kind": "notify",
       "content": "`\"${tool}\" is now always hidden from the agent (project override saved).`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2064,
+      "line": 2069,
       "kind": "notify",
       "content": "`\"${tool}\" visibility override removed — the session decides again.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2067,
+      "line": 2072,
       "kind": "notify",
       "content": "`\"${tool}\" hide override removed — the session decides again.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2075,
+      "line": 2080,
       "kind": "notify",
       "content": "`Usage: /glla tooloverride ${action} <tool> <key>[=<value>]`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2083,
+      "line": 2088,
       "kind": "notify",
       "content": "`set needs key=value: got \"${kv}\"`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2087,
+      "line": 2092,
       "kind": "notify",
       "content": "\"A tool configuration key is required.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2095,
+      "line": 2100,
       "kind": "notify",
       "content": "action === \"set\"\n        ? `\"${tool}\" setting saved: ${kv.slice(0, kv.indexOf(\"=\")).trim()} = ${JSON.stringify(toolCfg[kv.slice(0, kv.indexOf(\"=\")).trim()])} (project optional arguments; validated before execution).`\n        : `\"${tool}\" setting \"${kv}\" removed — back to the built-in default.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2103,
+      "line": 2108,
       "kind": "notify",
       "content": "`Unknown tooloverride action: ${action}. Use: list | allow | hide | unallow | unhide | set | unset.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2132,
+      "line": 2137,
       "kind": "notify",
       "content": "`${settingsKey} (project): ${JSON.stringify(cfg, null, 2)}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2146,
+      "line": 2151,
       "kind": "select",
       "content": "\"Postaudit — post-completion follow-up enqueuer (project settings)\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2164,
+      "line": 2169,
       "kind": "input",
       "content": "\"Max findings per review\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2168,
+      "line": 2173,
       "kind": "input",
       "content": "\"Max reviewer fires per day\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2175,
+      "line": 2180,
       "kind": "notify",
       "content": "`Postaudit setting NOT saved: ${err instanceof Error ? err.message : String(err)} — check .pi-glla/settings.json permissions.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2218,
+      "line": 2223,
       "kind": "notify",
       "content": "`Unknown /glla stats argument \"${unknown}\". Use: outcomes | challenges | reliability | premature | json | project=<path>.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2226,
+      "line": 2231,
       "kind": "notify",
       "content": "`/glla stats: no .pi-glla/active.jsonl under ${p}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2237,
+      "line": 2242,
       "kind": "notify",
       "content": "\"/glla stats: no projects with .pi-glla/active.jsonl found on this rig.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2250,
+      "line": 2255,
       "kind": "notify",
       "content": "`/glla stats${view ? ` ${view}` : \"\"} — ${rollups.length} project(s)${prematureOnly ? \" (premature filter)\" : \"\"}\\n${out}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2273,
+      "line": 2278,
       "kind": "notify",
       "content": "\"No ledger yet — .pi-glla/active.jsonl doesn't exist.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2278,
+      "line": 2283,
       "kind": "notify",
       "content": "\"Ledger is empty (no non-noise events yet).\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2290,
+      "line": 2295,
       "kind": "notify",
       "content": "`Ledger tail (last ${tail.length}${all ? \"\" : \" non-noise\"} events — /glla log <N> for more, /glla log all to include noise):\\n${lines.join(\"\\n\")}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2435,
+      "line": 2440,
       "kind": "notify",
       "content": "\"No active goal — /goal timeline needs a goal to narrate.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2444,
+      "line": 2449,
       "kind": "notify",
       "content": "\"No ledger yet — .pi-glla/active.jsonl doesn't exist.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2447,
+      "line": 2452,
       "kind": "notify",
       "content": "formatGoalTimeline({ goal, entries, nowMs: Date.now(), limit: n })"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2460,
+      "line": 2465,
       "kind": "notify",
       "content": "\"No ledger yet — .pi-glla/active.jsonl doesn't exist.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2465,
+      "line": 2470,
       "kind": "notify",
       "content": "\"No model switches recorded yet — /glla switchlog shows the model_switch / forbidden_model_switch trail.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2477,
+      "line": 2482,
       "kind": "notify",
       "content": "`Model-switch trail (last ${tail.length} — /glla switchlog <N> for more):\\n${lines.join(\"\\n\")}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2493,
+      "line": 2498,
       "kind": "notify",
       "content": "\"Wipe deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2507,
+      "line": 2512,
       "kind": "notify",
       "content": "\"glla state is already clean — no goal, no list, no loop, no recovery.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2518,
+      "line": 2523,
       "kind": "notify",
       "content": "\"Wipe requires an interactive Confirm dialog; no state was changed.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2522,
+      "line": 2527,
       "kind": "confirm",
       "content": "\"Wipe glla state?\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2524,
+      "line": 2529,
       "kind": "notify",
       "content": "\"Wipe cancelled.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2528,
+      "line": 2533,
       "kind": "notify",
       "content": "\"Wipe cancelled.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2616,
+      "line": 2621,
       "kind": "notify",
       "content": "`Wipe could not remove ${failedCleanupCount} live artifact(s) (${failedLabels}); the clean slate is incomplete.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2618,
+      "line": 2623,
       "kind": "notify",
       "content": "`glla wipe done: ${parts.join(\" · \")}.${goalWipeRecap ? `\\nGoal recap: ${goalWipeRecap}` : \"\"}${loopWipeRecap ? `\\nLoop recap: ${loopWipeRecap}` : \"\"} ${failedCleanupCount > 0 ? \"Partial clean slate — fix disk access and retry.\" : \"Clean slate.\"}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2657,
+      "line": 2662,
       "kind": "notify",
       "content": "already\n    ? \"Supervisor is already paused — all automatic machinery stays frozen (active work untouched). /glla resume to unfreeze.\"\n    : \"Supervisor PAUSED — heartbeat re-arms, recovery probes, auto-resume, continuation dispatch, loop ticks, and auditor quiet notifies are frozen. The active goal/list item/loop and detached workers keep running. /glla resume to unfreeze.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2682,
+      "line": 2687,
       "kind": "notify",
       "content": "`Supervisor RESUMED after ${fmtElapsed(frozenMs)} — heartbeat re-arms, recovery probes, auto-resume, continuation dispatch, and auditor quiet notifies are live again.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2692,
+      "line": 2697,
       "kind": "notify",
       "content": "\"Load hold released — automation is live again.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2698,
+      "line": 2703,
       "kind": "notify",
       "content": "\"Retrying the saved main-model recovery now — one provider probe, then the configured fallback models if needed.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2709,
+      "line": 2714,
       "kind": "select",
       "content": "\"Two things can resume — which one?\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2714,
+      "line": 2719,
       "kind": "notify",
       "content": "\"Resume cancelled.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2751,
+      "line": 2756,
       "kind": "notify",
       "content": "`The ${g.policy === \"list\" ? \"list item\" : \"goal\"} is ACTIVE but idle — re-firing its continuation: ${displaySlice(g.objective, 70)}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2760,
+      "line": 2765,
       "kind": "notify",
       "content": "\"A detached completion auditor is in flight — wait for its verdict (the status line shows auditor running). /glla cancel discards the pending claim.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2764,
+      "line": 2769,
       "kind": "notify",
       "content": "\"The detached completion auditor is already running — wait for its verdict or /glla cancel to discard the pending claim.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2777,
+      "line": 2782,
       "kind": "notify",
       "content": "\"Resuming the stored completion claim — starting a detached auditor (no agent turn needed).\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2784,
+      "line": 2789,
       "kind": "notify",
       "content": "`The loop is ACTIVE — re-firing its tick (iteration ${state.loop.iteration}). If it wedges again, /loop status for the diagnostics.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2800,
+      "line": 2805,
       "kind": "notify",
       "content": "`Resuming the waiting list — starting its next item (${waitingListCount} waiting).`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2802,
+      "line": 2807,
       "kind": "notify",
       "content": "\"The waiting list remains queued because its head could not be activated. Use /list show for the reason.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2810,
+      "line": 2815,
       "kind": "notify",
       "content": "\"Nothing to resume — no paused goal/list-item, no held loop, or waiting list. /goal, /list, or /loop to start something.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2827,
+      "line": 2832,
       "kind": "notify",
       "content": "\"Cancel deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2859,
+      "line": 2864,
       "kind": "notify",
       "content": "\"Nothing to cancel — no active/paused goal/list-item, no loop. Queued list items: /list cancel; everything: /glla wipe.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2871,
+      "line": 2876,
       "kind": "notify",
       "content": "`glla audit-job ${action}: ${report.total} director${report.total === 1 ? \"y\" : \"ies\"} · ${report.live} live · ${report.dead} proven dead · ${report.ambiguous} ambiguous · ${report.bytes} bytes${report.cleanupCandidates > 0 ? ` · ${report.cleanupCandidates} old dead candidate(s)` : \"\"}.` +\n      (report.ambiguous > 0 ? \" Ambiguous locks were preserved.\" : \"\")"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2885,
+      "line": 2890,
       "kind": "notify",
       "content": "`Latest audit on this goal — ${fromGoal.model} (${fromGoal.at})\\n${sanitizeProviderAuditReport(fromGoal.report)}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2889,
+      "line": 2894,
       "kind": "notify",
       "content": "latest ? `Latest audit — ${latest.verdict} (${latest.model}, ${latest.at})\\n${sanitizeProviderAuditReport(latest.report)}` : \"No audits logged yet.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2895,
+      "line": 2900,
       "kind": "notify",
       "content": "`glla audits — this goal's history (${state.goal.auditHistory.length} verdict(s); /glla audits all for the project log)\\n${formatGoalAuditHistory(state.goal)}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2903,
+      "line": 2908,
       "kind": "notify",
       "content": "`glla audits — last ${entries.length} verdict(s) in ${ctx.cwd}\\n${formatAuditLog(entries)}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2910,
+      "line": 2915,
       "kind": "notify",
       "content": "formatGllaVersion(ctx.cwd)"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2974,
+      "line": 2979,
       "kind": "notify",
       "content": "`Bug capture failed to write ${file}: ${e instanceof Error ? e.message : String(e)}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2978,
+      "line": 2983,
       "kind": "notify",
       "content": "`Bug captured to ${rel} (${message ? \"with message\" : \"no message\"}). Durable goal state untouched.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2994,
+      "line": 2999,
       "kind": "notify",
       "content": "`No tracked subagent matches \"${id}\". /glla agents lists the current ids.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 2998,
+      "line": 3003,
       "kind": "notify",
       "content": "`\"${id}\" matches ${cands.length} tracked subagents — be more specific:\\n${cands.map((a) => `  ${a.recordId} (${a.agentType ?? \"subagent\"}, ${a.status})`).join(\"\\n\")}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 3034,
+      "line": 3039,
       "kind": "notify",
       "content": "[header, ...result.lines, ...(result.ok ? [] : [result.detail])].join(\"\\n\")"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 3054,
+      "line": 3059,
       "kind": "notify",
       "content": "`glla agents${managerAvailable ? \"\" : \" (pi-subagents manager registry not present — event evidence only)\"}\\n${renderAgentsPanel(agents, Date.now(), managerAvailable, recentHangs).join(\"\\n\")}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 3140,
+      "line": 3147,
       "kind": "notify",
       "content": "`glla status\\n${lines.join(\"\\n\")}`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 3244,
+      "line": 3251,
       "kind": "notify",
       "content": "\"Main agent fallback models cleared globally and any pending fallback switch was cancelled.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 3247,
+      "line": 3254,
       "kind": "notify",
       "content": "`Main agent fallback models: ${formatMainModelFallbacks(settings.mainModelFallbacks)}. Use /glla fallbacks clear to remove them.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 3256,
+      "line": 3263,
       "kind": "notify",
       "content": "\"/glla reset is now /glla wipe (renamed — too close to /glla resume). Nothing was done.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 3293,
+      "line": 3300,
       "kind": "notify",
       "content": "\"Bug capture deferred — the selected sessionDir is not resolved yet. Reload the host session and retry; no fallback .pi-glla tree was created.\""
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 3301,
+      "line": 3308,
       "kind": "notify",
       "content": "`Unknown /glla action \"${trimmed}\". Use /glla to open settings; command arguments are reserved for actions.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 3334,
+      "line": 3341,
       "kind": "notify",
       "content": "[\n      fmt(\"stateRoot\", \"stateRoot\"),\n      `mainAgent: ${sessionModel} · ${sessionThinking}  [runtime]`,\n      `mainAgentFallbackModels: ${formatMainModelFallbacks(effectiveSettings.mainModelFallbacks)}  [${prov.mainModelFallbacks?.source ?? \"default\"}]`,\n      fmt(\"mainModelRetryMinutes\", \"mainModelRetryMinutes (base minutes; doubles per attempt)\"),\n      fmt(\"mainModelFailback\", \"mainModelFailback (auto/sticky)\"),\n      fmt(\"mainModelPrimaryProbeMinutes\", \"mainModelPrimaryProbeMinutes\"),\n      fmt(\"drafterModel\", \"drafterAgent (drafting only)\"),\n      fmt(\"drafterThinkingLevel\", \"drafterTh"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 3445,
+      "line": 3452,
       "kind": "notify",
       "content": "`pi-goal-list-loop-audit: session provider \"${provider}\" is not a known built-in. The auditor inherits the resolved model in-process, so this usually works — but if audits error with auth/provider failures, choose an explicit auditor model in /glla settings.`"
     },
     {
       "file": "extensions/goal-commands.ts",
-      "line": 3469,
+      "line": 3476,
       "kind": "notify",
       "content": "`pi-goal-list-loop-audit: command collision on ${dupes.join(\", \")}. Another extension registered the same name; ours may be reachable as /${first.slice(1)}:2. Consider disabling the other plugin.`"
     },
@@ -1350,355 +1357,355 @@
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 280,
+      "line": 281,
       "kind": "notify",
       "content": "\"New loop cancelled; the current objective is unchanged.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 288,
+      "line": 289,
       "kind": "notify",
       "content": "\"Update selected — the current loop will use this refinement hint; no second loop was started.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 290,
+      "line": 291,
       "kind": "notify",
       "content": "\"Update selected, but this cross-mode start has no safe in-place loop edit. No replacement was started.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 307,
+      "line": 308,
       "kind": "notify",
       "content": "`Previous ${replacedGoal.policy === \"list\" ? \"list item\" : \"goal\"} was replaced by the new loop objective.\\nRecap: ${recap}`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 387,
+      "line": 388,
       "kind": "notify",
       "content": "`Loop parked: ${reason}. No add, commit, reset, or checkout was attempted. Check out ${loop.branchName} explicitly, then /loop resume.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 702,
+      "line": 703,
       "kind": "notify",
       "content": "\"Respec draft written — starting reconciliation against its Rules and descriptive sections.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 745,
+      "line": 746,
       "kind": "notify",
       "content": "\"Spec file changed mid-loop — drift ledgered (spec_updated).\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 786,
+      "line": 787,
       "kind": "notify",
       "content": "`Loop stuck (${loop.consecutiveStuck}×): ${stuckReason}`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 865,
+      "line": 866,
       "kind": "notify",
       "content": "`Loop stopped: ${loop.stopReason}. ${loop.history.length} iterations recorded.\\nRecap: ${recap}`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 894,
+      "line": 895,
       "kind": "notify",
       "content": "`Audit loop plateau reprieve (${reprieves}/${AUDIT_PLATEAU_MAX_REPRIEVES}): ${open} open findings — the well isn't dry, continuing.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 908,
+      "line": 909,
       "kind": "notify",
       "content": "`Loop stopped: ${outcome.reason}. ${loop.history.length} iterations recorded.\\nRecap: ${recap}`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 933,
+      "line": 934,
       "kind": "notify",
       "content": "`The loop ended — ${waiting} queued list item${waiting === 1 ? \"\" : \"s\"} can start again (up next: \"${head}\"). /list next starts it.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 994,
+      "line": 995,
       "kind": "notify",
       "content": "`Loop parked: ${reason}. No destructive reset or checkout was attempted; inspect and commit the branch manually.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1020,
+      "line": 1021,
       "kind": "notify",
       "content": "`Loop parked: ${reason}. Checkout was not attempted; inspect the branch manually.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1036,
+      "line": 1037,
       "kind": "notify",
       "content": "`Loop parked: ${reason}. No success recap was written.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1045,
+      "line": 1046,
       "kind": "notify",
       "content": "`Loop work is on branch ${loop.branchName} (${loop.iteration} iterations, best ${loop.bestValue ?? \"n/a\"}).\\nRecap: ${recap}\\nMerge with: git merge ${loop.branchName} — or delete with: git branch -D ${loop.branchName}`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1093,
+      "line": 1094,
       "kind": "notify",
       "content": "`A loop is held (${displaySlice(held.target, 80)} — ${held.stopReason}); headless start refused — resume it explicitly with /loop resume.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1099,
+      "line": 1100,
       "kind": "select",
       "content": "`A loop is held: ${displaySlice(held.target, 80)} (iteration ${held.iteration} — ${held.stopReason}). Resume it instead of starting fresh?`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1107,
+      "line": 1108,
       "kind": "notify",
       "content": "\"New loop cancelled; the held loop is unchanged.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1134,
+      "line": 1135,
       "kind": "notify",
       "content": "\"branch=1 requires a git repository.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1139,
+      "line": 1140,
       "kind": "notify",
       "content": "\"branch=1 requires a clean working tree — commit or stash your changes first.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1147,
+      "line": 1148,
       "kind": "notify",
       "content": "`Failed to create scratch branch ${branchName}.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1160,
+      "line": 1161,
       "kind": "notify",
       "content": "`Loop start refused AND the branch restore failed — you are still on scratch branch ${branchName} (the measure may have left uncommitted changes blocking checkout).`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1174,
+      "line": 1175,
       "kind": "notify",
       "content": "`/loop start refused: the measure produced no number.\\nCommand: ${cfg.measureCmd}\\nFix it so it prints exactly one number, or re-run with force=1 if it only works after the agent builds something first.\\n(Non-numeric goal — research, docs, features? Use /goal: the independent auditor verifies semantically. /loop only believes a number.)`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1226,
+      "line": 1227,
       "kind": "notify",
       "content": "cfg.respecPhase === \"draft\"\n      ? `Respec big draft started: research the project and write ${path.basename(cfg.specFile!)}. Reconciliation waits for the completed draft. /loop pause and /loop stop remain available.`\n      : metricless\n      ? `Loop started (metricless spec loop — NO plateau stop): ${displaySlice(cfg.target, 60)}\\nEnds only at ${cfg.maxIterations > 0 ? `max ${cfg.maxIterations} iterations` : \"no iteration cap\"}${cfg.timeLimitHours ? ` · ${cfg.timeLimitHours}h` : \"\"}${cfg.tokenBudget ? ` · ${cfg.tokenBudget.toLocaleString()} tokens` : \"\"} · /loop stop. Every iteration must ma"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1268,
+      "line": 1269,
       "kind": "notify",
       "content": "\"Retrying the saved main-model recovery now — one provider probe, then the configured fallback models if needed.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1280,
+      "line": 1281,
       "kind": "notify",
       "content": "\"Loop dispatch stand-down cleared — retrying one continuation explicitly.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1282,
+      "line": 1283,
       "kind": "notify",
       "content": "\"A loop is already active — /loop status to inspect, /loop stop to end it.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1299,
+      "line": 1300,
       "kind": "notify",
       "content": "`Loop resume refused: branch mode requires HEAD on ${stored.branchName}, but the current branch is ${currentBranch.ok ? currentBranch.stdout : \"unknown\"}. Check out the scratch branch explicitly, then run /loop resume.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1306,
+      "line": 1307,
       "kind": "notify",
       "content": "`A goal is active — the held loop stays held. ${activeGoalSurfaceCommand(\"pause\")} or ${activeGoalSurfaceCommand(\"cancel\")} it first, then /loop resume.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1358,
+      "line": 1359,
       "kind": "notify",
       "content": "`Loop resumed: iteration ${stored.iteration}/${stored.maxIterations > 0 ? stored.maxIterations : \"∞\"} · best ${stored.bestValue ?? \"n/a\"}${boundResetNote} — ${displaySlice(stored.target, 60)}`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1365,
+      "line": 1366,
       "kind": "notify",
       "content": "\"No held loop to resume. /loop to draft one, or /loop start \\\"<target>\\\" for an infinite metricless loop.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1376,
+      "line": 1377,
       "kind": "notify",
       "content": "formatLoopRecoveryStatus(ctx)"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1379,
+      "line": 1380,
       "kind": "notify",
       "content": "\"No loop. /loop to draft one, /loop start \\\"<target>\\\" for an infinite metricless loop, or add measure=\\\"<cmd>\\\" direction=min|max for a metric loop [window=5] [max=50] [time=<hours>] [tokens=<budget>] [cadence=<seconds>]\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1409,
+      "line": 1411,
       "kind": "notify",
       "content": "lines.join(\"\\n\")"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1418,
+      "line": 1420,
       "kind": "notify",
       "content": "`/${sub} could not safely choose a loop target: ${loopStartInferenceDescription(inference)} Falling back to the normal loop drafting flow; metric design and its Confirm gate remain required.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1428,
+      "line": 1430,
       "kind": "notify",
       "content": "`${loopStartInferenceDescription(inference)} /loop start is explicit consent; starting the inferred target in the existing metricless form. Add measure=\\\"<cmd>\\\" direction=min|max when a numeric metric is intended.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1445,
+      "line": 1447,
       "kind": "notify",
       "content": "`/loop start: ${err instanceof Error ? err.message : String(err)}\\n(Non-numeric goal — research, docs, features? Use /goal: the auditor verifies semantically. /loop only believes a number. Or /loop with no args to draft.)`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1470,
+      "line": 1472,
       "kind": "notify",
       "content": "\"No active loop to refine — /loop start first.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1477,
+      "line": 1479,
       "kind": "notify",
       "content": "\"That loop stopped on a broken measure — the hint was not queued. Have the agent repair it via propose_loop_refine (it test-runs the new measure), then /loop resume.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1480,
+      "line": 1482,
       "kind": "notify",
       "content": "`That loop ended (${stored.stopReason ?? \"stopped\"}) — the hint was not queued. /loop start begins a fresh run.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1485,
+      "line": 1487,
       "kind": "notify",
       "content": "\"Usage: /loop refine <what the spec should capture better> — the suggestion rides the next iteration's prompt; the agent proposes via propose_loop_refine and you confirm.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1495,
+      "line": 1497,
       "kind": "notify",
       "content": "\"Refine hint queued — it rides the next iteration's prompt. Resuming the held loop now.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1498,
+      "line": 1500,
       "kind": "notify",
       "content": "\"Refine hint queued — it rides the next iteration's prompt.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1504,
+      "line": 1506,
       "kind": "notify",
       "content": "\"No loop to stop.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1530,
+      "line": 1532,
       "kind": "notify",
       "content": "`Loop stopped after ${state.loop.iteration} iterations. Best: ${state.loop.bestValue ?? \"n/a\"}.\\nRecap: ${recap}`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1546,
+      "line": 1548,
       "kind": "notify",
       "content": "\"No loop to pause.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1550,
+      "line": 1552,
       "kind": "notify",
       "content": "`Loop is not active (${state.loop.stopReason ?? \"held\"}). Use /loop resume to continue, or /loop status to inspect.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1564,
+      "line": 1566,
       "kind": "notify",
       "content": "`Loop paused after ${state.loop.iteration} iterations. Best: ${state.loop.bestValue ?? \"n/a\"}.\\nUse /loop resume to continue.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1576,
+      "line": 1578,
       "kind": "notify",
       "content": "\"No loop to finish.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1600,
+      "line": 1602,
       "kind": "notify",
       "content": "`Loop finished (${reason}) after ${state.loop.iteration} iterations. Best: ${state.loop.bestValue ?? \"n/a\"}.\\nRecap: ${recap}`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1626,
+      "line": 1628,
       "kind": "notify",
       "content": "`Heads up: a ${state.goal.status} one-shot audit goal exists in this session — the audit loop SUPERSEDES it (one pass + fixes IS the loop's job). ${activeGoalSurfaceCommand(\"cancel\")} clears it; one audit initiative per session.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1662,
+      "line": 1664,
       "kind": "notify",
       "content": "\"No SPEC.md / spec.md in the project root — starting the dedicated big draft. Reconciliation waits until the draft is written and handed off.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1681,
+      "line": 1683,
       "kind": "select",
       "content": "\"Both SPEC.md and spec.md exist in the root — which one is the spec?\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1686,
+      "line": 1688,
       "kind": "notify",
       "content": "\"respec cancelled.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1690,
+      "line": 1692,
       "kind": "notify",
       "content": "`Using ${path.basename(specPath)} as the spec. Both files exist — worth consolidating; the loop treats only ${path.basename(specPath)} as the spec.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1699,
+      "line": 1701,
       "kind": "notify",
       "content": "`${path.basename(specPath)} exists but is structurally incomplete — starting the dedicated big draft to finish it before reconciliation.`"
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1733,
+      "line": 1735,
       "kind": "notify",
       "content": "\"A loop is already active — /loop status to inspect, /loop stop to end it.\""
     },
     {
       "file": "extensions/goal-loop.ts",
-      "line": 1745,
+      "line": 1747,
       "kind": "notify",
       "content": "\"A loop is already active — /loop status to inspect, /loop stop to end it.\""
     },

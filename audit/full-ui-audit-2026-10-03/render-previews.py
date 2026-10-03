@@ -1,10 +1,13 @@
 """Paint production ANSI frames, preserving the host theme's foreground/background."""
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
-import json, re, unicodedata, html
+import json, re, unicodedata, html, subprocess
+from fontTools.ttLib import TTFont
 root = Path(__file__).parent
 frames = json.loads((root/'rendered-frames.json').read_text())
-font_path = '/nix/store/b7ybgcl00ak8q66bc0w15vfnyly4g13k-hack-font-3.003/share/fonts/truetype/Hack-Regular.ttf'
+font_path = subprocess.check_output(['fc-match', 'monospace', '-f', '%{file}'], text=True).strip()
+cmap = TTFont(font_path).getBestCmap()
+fallbacks = {}
 font = ImageFont.truetype(font_path, 14)
 cell, line_height = round(font.getlength('M')), 21
 ansi = re.compile(r'\x1b\[([0-9;]*)m')
@@ -41,7 +44,16 @@ def paint(draw, frame, x, y):
                 cells = 0 if unicodedata.combining(char) or char in ('\ufe0f', '\u200d') else 2 if unicodedata.east_asian_width(char) in ('W','F') else 1
                 left, top = x+12+col*cell, y+12+row*line_height
                 if bg: draw.rectangle((left, top, left+cells*cell, top+line_height), fill=bg)
-                draw.text((left, top), char, font=font, fill=foreground)
+                glyph_font = font
+                if ord(char) not in cmap:
+                    if char not in fallbacks:
+                        try:
+                            glyph_path = subprocess.check_output(['fc-match', f':charset={ord(char):x}', '-f', '%{file}'], text=True).strip()
+                            fallbacks[char] = ImageFont.truetype(glyph_path, 14)
+                        except Exception:
+                            fallbacks[char] = font
+                    glyph_font = fallbacks[char]
+                draw.text((left, top), char, font=glyph_font, fill=foreground)
                 col += cells
 
 def sheet(name, specs):
@@ -57,6 +69,7 @@ def sheet(name, specs):
     image.save(root/name)
 sheet('settings-and-review.png', [(key,'dark',80) for key in ['settings-auditor','settings-search','fallback-picker','fallback-order','draft-start','draft-consent']])
 sheet('narrow-and-light.png', [('settings-auditor','dark',40),('settings-other','dark',40),('settings-auditor','light',60),('settings-auditor-details','light',60),('draft-consent','dark',40),('draft-end','light',60)])
+sheet('pause-reminders.png', [(f'reminder-{kind}', theme, 60) for theme in ['dark','light'] for kind in ['blocked','decision','error','wait','standby']])
 sheet('lifecycle-cards.png', [(key,'dark',80) for key in ['working','paused','blocked','supervisor-frozen','audit-starting','audit-running','audit-settling','audit-recovery-pending','completed','aborted','queue-only','loop-active','loop-cadence','loop-held','workers','empty']])
 blocks=[]
 for frame in frames:
