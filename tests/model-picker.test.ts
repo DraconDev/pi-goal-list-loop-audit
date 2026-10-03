@@ -11,6 +11,7 @@
 // model if unavailable".
 
 import { test } from "node:test";
+import { visibleWidth } from "@earendil-works/pi-tui";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 
@@ -309,5 +310,13 @@ test("v0.31.9: fork-bomb lesson is prompt-law — auditor reject-class + executo
   for (const f of ["prompts/goal-loop-continuation.md", "prompts/goal-loop-forever.md", "prompts/goal-loop-forever-metricless.md"]) {
     const t = fs.readFileSync(f, "utf-8");
     assert.match(t, /Never run the suite from inside the suite/, f);
+  }
+});
+
+test("narrow model pickers bound every rendered line", () => {
+  const theme = { fg: (_: string, t: string) => t, bg: (_: string, t: string) => `\x1b[48;5;24m${t}\x1b[49m`, bold: (t: string) => t };
+  const picker = new ModelPickerComponent({ title: "A long title that must fit after resize", items: buildModelPickItems(MODELS, "minimax/MiniMax-M3") }, () => {}, theme, KB, () => {});
+  for (const width of [0, 1, 10, 20, 40, 80]) {
+    for (const line of picker.render(width)) assert.ok(visibleWidth(line) <= width, `width ${width}: ${line}`);
   }
 });

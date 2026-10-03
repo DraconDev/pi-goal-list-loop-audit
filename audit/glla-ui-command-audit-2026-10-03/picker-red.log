@@ -1,0 +1,46 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/model-picker.test.ts:
+315 | 
+316 | test("narrow model pickers bound every rendered line", () => {
+317 |   const theme = { fg: (_: string, t: string) => t, bg: (_: string, t: string) => `\x1b[48;5;24m${t}\x1b[49m`, bold: (t: string) => t };
+318 |   const picker = new ModelPickerComponent({ title: "A long title that must fit after resize", items: buildModelPickItems(MODELS, "minimax/MiniMax-M3") }, () => {}, theme, KB, () => {});
+319 |   for (const width of [0, 1, 10, 20, 40, 80]) {
+320 |     for (const line of picker.render(width)) assert.ok(visibleWidth(line) <= width, `width ${width}: ${line}`);
+                                                          ^
+AssertionError: width 0: A long title that m[0m…[0m
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/model-picker.test.ts:320:53
+      at fn (node:test:215:18)
+(fail) narrow model pickers bound every rendered line [9.19ms]
+
+tests/multi-model-picker.test.ts:
+599 | 
+600 | test("narrow model pickers bound every rendered line", () => {
+601 |   const theme = { fg: (_: string, t: string) => t, bg: (_: string, t: string) => `\x1b[48;5;24m${t}\x1b[49m`, bold: (t: string) => t };
+602 |   const picker = new MultiModelPickerComponent({ title: "A long title that must fit after resize", items: buildModelPickItems(MODELS, "minimax/MiniMax-M3") }, () => {}, theme, KB, () => {});
+603 |   for (const width of [0, 1, 10, 20, 40, 80]) {
+604 |     for (const line of picker.render(width)) assert.ok(visibleWidth(line) <= width, `width ${width}: ${line}`);
+                                                          ^
+AssertionError: width 0: A long title that m[0m…[0m
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/multi-model-picker.test.ts:604:53
+      at fn (node:test:215:18)
+(fail) narrow model pickers bound every rendered line [1.27ms]
+
+ 0 pass
+ 46 filtered out
+ 2 fail
+Ran 2 tests across 2 files. [894.00ms]
+[run-tests] finished in 1s (exit 1)
