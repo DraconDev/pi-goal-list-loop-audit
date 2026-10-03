@@ -3012,3 +3012,140 @@ tests/completed-audit-recovery.test.ts:
 (pass) heartbeat orphan recovery respects in-flight [318.17ms]
 (pass) heartbeat orphan recovery respects recent [270.76ms]
 (pass) heartbeat orphan recovery respects frozen [274.38ms]
+(pass) heartbeat orphan recovery respects cold-held [272.77ms]
+(pass) finished real worker, lost parent: restart applies approved exactly once without re-auditing [556.64ms]
+(pass) finished real worker, lost parent: restart applies disapproved exactly once without re-auditing [577.31ms]
+(pass) manual resume consumes a completed parked claim instead of launching another auditor [282.45ms]
+(pass) agent resume consumes a completed parked claim instead of launching another auditor [266.51ms]
+(pass) silent file-backed successor applies a finished verdict from the dead generation [426.71ms]
+(pass) legacy completed jobs bind the original goal, contract, and claim without new metadata [1.80ms]
+(pass) newer unfinished candidate prevents replay of an older completed result [1.07ms]
+(pass) saved result refuses unsafe recovery: revision [0.79ms]
+(pass) saved result refuses unsafe recovery: claim [0.73ms]
+(pass) saved result refuses unsafe recovery: structured-claim [0.66ms]
+(pass) saved result refuses unsafe recovery: hash [0.63ms]
+(pass) saved result refuses unsafe recovery: result-identity [0.54ms]
+(pass) saved result refuses unsafe recovery: cancelled-tool [0.82ms]
+(pass) saved result refuses unsafe recovery: strict-challenge [0.68ms]
+(pass) saved result refuses unsafe recovery: unsupported-tool [0.71ms]
+(pass) corrupt final progress identity refuses recovery without consuming the claim [0.71ms]
+(pass) saved approval still enforces the audit-tool floor and regression shield [1.05ms]
+(pass) second audit pass remains visible through thinking, tools, and report generation [0.63ms]
+(pass) days-old auditing orphan with a saved verdict recovers via heartbeat (SEO field case) [274.26ms]
+(pass) workerless in-flight claim with a saved verdict reconciles without launching [278.15ms]
+(pass) S5: workerless in-flight claim parks under the stale latch via stale-latch-workerless [446.50ms]
+(pass) workerless in-flight claim without a verdict parks via workerless-in-flight [269.79ms]
+(pass) auditorWorkerLiveForAttempt: only a matching live worker counts [57.80ms]
+(pass) unreadable saved transcript returns null but ledgers the reason [1.14ms]
+(pass) workerProcessMatches darwin branch reads identity via ps [201.63ms]
+(pass) auditing claim stuck in starting with no worker parks for recovery via heartbeat [275.16ms]
+(pass) S7: stranded recovery measures real activity, not the heartbeat's own refire notes [270.62ms]
+(pass) workerless park drops the dead attempt's auditor cursor so recovery re-walks (clean-web field) [273.14ms]
+(pass) reconcile names its rejecting gate in the ledger [0.91ms]
+
+tests/gettick-tool-visibility.test.ts:
+(pass) v0.35.60: glla tools are reactivated at the pre-turn boundary [57.52ms]
+
+tests/list-stall-reproduction.test.ts:
+(pass) completed standalone goal automatically hands off to the waiting list [182.09ms]
+(pass) /glla resume starts a waiting-only list instead of reporting nothing [93.17ms]
+(pass) list-sourced completion promotes the successor and records the settle transition [104.60ms]
+
+tests/goal-state.test.ts:
+(pass) goal-state.ts owns the state singleton (single source of truth) [23.84ms]
+(pass) wholesale state replacement goes through replaceState() only [2.16ms]
+(pass) the persistence core lives in goal-state.ts (persistStateLine) [0.24ms]
+(pass) replaceState is used at the moved wholesale sites [0.27ms]
+
+tests/list-audit-state-root.test.ts:
+(pass) list-audit fan-out reads findings from the configured sessionDir root [62.24ms]
+
+tests/list-stale-context.test.ts:
+(pass) v0.34.51: /list add on a stale handle is refused — honest recovery result, zero state mutation [415.08ms]
+(pass) v0.34.51: /list remove, clear, cancel, next, tweak, pause, resume are all refused on a stale handle [370.36ms]
+(pass) v0.34.51: the natural-language dump fallthrough is refused on a stale handle — drafting never starts [368.71ms]
+(pass) v0.34.51: /list show and /list depth stay usable on a stale handle (inspect, don't mutate) [410.02ms]
+(pass) v0.34.51: the honest recovery result — the refreshed session owns the command and the add lands [680.77ms]
+(pass) v0.34.51: list_add and list_activate tools return the stale-context recovery result without mutating [188.86ms]
+(pass) v0.34.51: source — cmdList captures the entry probe and gates every mutating path [0.79ms]
+
+tests/terminal-completion-notice.test.ts:
+(pass) v0.38.18 terminal notice: the done brief lands in the conversation exactly once [71.60ms]
+(pass) v0.38.18 source: the detached-approval branch closes the transcript [0.30ms]
+(pass) audit-2026-09-06: a stale-generation notice never fires into the successor session [6.90ms]
+
+tests/aggressive-mode.test.ts:
+(pass) aggressiveMode persists through the settings file (item 8) [37.53ms]
+(pass) effective settings: aggressiveMode ON flips the defaults (items 5+7) [0.06ms]
+(pass) effective settings: missing aggressiveMode uses the production keep-going default [0.03ms]
+(pass) effective settings: explicit OFF keeps base defaults; auditCap base is 5 [0.03ms]
+(pass) explicit per-key settings WIN over aggressiveMode (advisor semantics) [0.04ms]
+(pass) autoResume is global-only in the effective settings and provenance [2.14ms]
+(pass) obsolete quota policy files cannot change the generic retry settings [0.47ms]
+
+tests/settings-invalid-report.test.ts:
+(pass) C10: dropped junk values report once per distinct value; undefined defaults stay silent [34.21ms]
+(pass) C10: loadSettings ledgers dead hand-edited values as settings_invalid_ignored [26.24ms]
+
+tests/task-list.test.ts:
+(pass) accepts a reasonable breakdown [35.33ms]
+(pass) rejects empty list [0.14ms]
+(pass) rejects too many top-level tasks [0.08ms]
+(pass) rejects too many subtasks (the anti-drift cap) [0.08ms]
+(pass) accepts exactly at the cap [0.06ms]
+(pass) rejects empty titles [0.02ms]
+(pass) assigns hierarchical ids and pending statuses [0.15ms]
+(pass) trims titles [0.03ms]
+
+tests/objective-loss-state-root.test.ts:
+(pass) workingDir default: cwd switch makes old objective invisible from new cwd (expected) [1.62ms]
+(pass) sessionDir opt-in: same cwd switch keeps objective visible via shared sessionDir [0.67ms]
+(pass) evidence: no destructive migration and pending defers writes — Wez crash / version switch does not delete old root [0.55ms]
+
+tests/resume-goal-tool.test.ts:
+(pass) resume_goal reactivates a paused goal and clears every pause marker [241.48ms]
+(pass) resume_goal on an already-active goal answers instead of churning state [304.69ms]
+(pass) resume_goal with no goal answers instead of swallowing the verb [124.06ms]
+(pass) a held-on-restore loop does not block resume_goal (only a LIVE loop does) [150.32ms]
+(pass) resume_goal refuses while the supervisor is frozen [295.28ms]
+(pass) resume_goal probes pending main-model recovery inline instead of bouncing (124544) [350.23ms]
+(pass) resume_goal refuses a terminal goal with the real recovery path [158.12ms]
+(pass) resume_goal keeps its live-loop refusal (source-pinned defense-in-depth) [0.38ms]
+(pass) paused → resume_goal → complete_goal flows without a manual resume [1572.01ms]
+(pass) resume_goal re-fires a stored completion claim through the agent origin [1439.73ms]
+
+tests/hegemon-queue-unblock-evidence.test.ts:
+(pass) REAL SHAPE: 12 empty head items block list activation exactly as in the hegemon ledger [282.64ms]
+(pass) REAL SHAPE: the clean 31-item queue (empties removed) activates main-menu without any blocked event [256.36ms]
+
+tests/settings-stale-save.test.ts:
+(pass) C9: stale-probe refusal fails the save loudly — no false saved claim [222.31ms]
+(pass) C9 control: healthy probe saves and reports normally [131.41ms]
+(pass) settings save validates its own session after an overlapping editor [145.39ms]
+(pass) similarity editor empty input restores the default; explicit zero stays zero [153.23ms]
+(pass) auditor picker offers thinking for provider refs containing nested model ids [128.25ms]
+
+tests/quota-horizon-exemption.test.ts:
+(pass) quota wait survives the horizon instead of parking [34.09ms]
+(pass) billing and non-quota failures still park at the horizon [0.73ms]
+(pass) deterministic classifier: 400 markers hold, everything else passes through [0.04ms]
+(pass) deterministic 400 holds even aggressive and fresh — identical retries cannot succeed [0.40ms]
+(pass) deterministic hold names the fix directions [0.19ms]
+(pass) transient wall still schedules under aggressive (control) [0.30ms]
+
+tests/reviewer.test.ts:
+(pass) fires on goal-complete + list-complete; NOT on aborted/paused [1.66ms]
+(pass) leverage: bug/TODO findings enqueue to /list WITHOUT any Confirm (no proposeGoal) [0.44ms]
+(pass) architectural findings are proposed as /goal (Confirm path) [0.40ms]
+(pass) classification order: strategic > architectural > bug > refactor [0.06ms]
+(pass) clean completion fires the audit step; strategic-only notifies [0.58ms]
+(pass) runaway prevention: a reviewer fire in the last 5 minutes suppresses re-firing [0.16ms]
+(pass) per-day cap: the 21st fire is suppressed with a ledger entry [0.24ms]
+(pass) manual /review bypasses the trigger gates [0.27ms]
+(pass) review report written to .pi-glla/reviews/<goal-id>-<timestamp>.md [0.30ms]
+(pass) menu options reflect the config [0.12ms]
+(pass) no /loop triggering: the loop stop path never calls runReviewer [3.10ms]
+(pass) config block: partial project settings merge over defaults [0.22ms]
+(pass) v0.28.16 duplicate-scan dedupe: completing a regression scan does NOT propose another scan (report-only) [0.66ms]
+
+tests/list-settings-route.test.ts:
