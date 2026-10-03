@@ -2120,3 +2120,5 @@ Switched to branch 'main'
 (pass) v0.35.x: one automatic parked-audit retry is durable across repeated lifecycle events [111.41ms]
 (pass) v0.35.x: stale host replacement session_start auto-recovers the parked audit [1618.82ms]
 (pass) v0.35.x: healthy same-session heartbeat recovers a parked completion audit without manual resume [963.67ms]
+(pass) v0.36.0: exhausted no-verdict auditor chain enters the shared ladder with an automatic retry timer [5816.95ms]
+(pass) bounded recovery: initial aggressive completion preserves its horizon and exhausted chain [6393.89ms]

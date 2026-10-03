@@ -28,10 +28,11 @@ afterEach(async () => {
   fs.writeFileSync(globalFile, original);
 });
 
-test("settings table reopens the tab that was edited", async () => {
+test("settings table reopens the tab and row that were edited", async () => {
   const { pi, ctx } = await boot();
   let calls = 0;
   let reopenedSection: string | undefined;
+  let reopenedRow: string | undefined;
   ctx.ui.customStubMode = true;
   ctx.ui.customImpl = async (...args) => {
     const factory = args[0] as (...values: any[]) => SettingsMenuComponent;
@@ -42,11 +43,13 @@ test("settings table reopens the tab that was edited", async () => {
       return "auditorSilent";
     }
     reopenedSection = component.visibleRows()[0]?.section;
+    reopenedRow = component.visibleRows()[component.getSelectedIdx()]?.id;
     return undefined;
   };
   await pi.command("glla", "", ctx);
   assert.equal(calls, 2);
   assert.equal(reopenedSection, "auditor", "editing does not reset navigation to Keep-going");
+  assert.equal(reopenedRow, "auditorSilent", "returning from an editor retains its row");
 });
 
 test("forbidden substring patterns cannot disable configured fallback chains", async () => {
