@@ -4610,3 +4610,38 @@ tests/load-wait-bound.test.ts:
 (pass) 153404: a short wait inside the horizon is stored as requested [143.66ms]
 
 tests/length-exhaustion-relentless.test.ts:
+(pass) hot context with fallback refs rotates to a larger-context model [0.15ms]
+(pass) hot context at the 90% boundary still rotates [0.02ms]
+(pass) hot context without fallback refs defers to auto-compaction [0.02ms]
+(pass) roomy context grants one fresh budget, never an immediate manual park [0.02ms]
+(pass) exhaustion episodes: first wedge stays relentless, second parks [0.07ms]
+(pass) exhaustion episodes degrade garbage to a fresh first episode [0.03ms]
+(pass) unknown context heat degrades to fresh-budget, never rotate [0.02ms]
+
+tests/loops/goal.test.ts:
+(pass) v0.34.57: a compaction inside the watchdog window pauses the watchdog instead of firing the unacknowledged warning [751.84ms]
+(pass) v0.34.57: compaction rearm cap goes directly to unacknowledged without a retry [447.00ms]
+[run-tests] progress: 1234s elapsed · 0s since last output · 1489 KiB of suite output
+(pass) v0.34.124: a recovery resume inside the watchdog window pauses the watchdog instead of firing the unacknowledged warning [465.26ms]
+(pass) v0.34.124: recovery rearm counters clear when the dispatch watchdog settles [0.42ms]
+(pass) v0.34.124: a recovery resume OUTSIDE the grace window does not pause the watchdog [587.64ms]
+(pass) v0.34.57: a genuine stall (no compaction in the window) still fires the unacknowledged warning [657.39ms]
+
+1 tests skipped:
+(skip) commit survives the auto-committer daemon (item 32, env-gated watched repo)
+
+
+7 tests failed:
+(fail) /glla settings persists explicit auto-resume off (tri-state, not undefined) [42.59ms]
+(fail) v0.38.88: composite invokes every exported latch reset [6.79ms]
+(fail) A9 (pin): both apply paths copy auditHistory before appendAuditVerdict can touch it [1.21ms]
+(fail) render: active row uses a full-width selected background [1.25ms]
+(fail) v0.29.1: completion lifecycle survives the wedged-queue window (storm suppression + stranded recovery + brake cap) [5.82ms]
+(fail) v0.32.1: post-compaction resume debt + deterministic resync (pi-goal-x's lesson) [6.35ms]
+(fail) v0.35.15: every automatic dispatch point gates on supervisorPaused [37.40ms]
+
+ 3112 pass
+ 1 skip
+ 7 fail
+Ran 3120 tests across 338 files. [1235.36s]
+[run-tests] finished in 1236s (exit 1)
