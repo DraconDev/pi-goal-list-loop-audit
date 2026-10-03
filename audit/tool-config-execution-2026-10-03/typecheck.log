@@ -2,3 +2,19 @@
 > pi-goal-list-loop-audit@0.38.110 check
 > tsc --noEmit
 
+extensions/loops/goal-activation.ts(3263,27): error TS2304: Cannot find name 'applyToolConfig'.
+extensions/tool-config.ts(33,16): error TS2339: Property 'type' does not exist on type 'TSchema'.
+extensions/tool-config.ts(33,45): error TS2339: Property 'properties' does not exist on type 'TSchema'.
+extensions/tool-config.ts(33,73): error TS2339: Property 'properties' does not exist on type 'TSchema'.
+extensions/tool-config.ts(36,51): error TS2339: Property 'required' does not exist on type 'TSchema'.
+extensions/tool-config.ts(36,70): error TS2339: Property 'required' does not exist on type 'TSchema'.
+extensions/tool-config.ts(38,92): error TS2339: Property 'properties' does not exist on type 'TSchema'.
+tests/tool-config-execution.test.ts(23,30): error TS2352: Conversion of type '{ name: string; parameters: TObject<{ command: TString; timeout: TOptional<TNumber>; format: TOptional<TUnion<[TLiteral<"text">, TLiteral<"json">]>>; }>; }[]' to type 'ToolInfo[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ name: string; parameters: Type.TObject<{ command: Type.TString; timeout: Type.TOptional<Type.TNumber>; format: Type.TOptional<Type.TUnion<[Type.TLiteral<"text">, Type.TLiteral<"json">]>>; }>; }' is not comparable to type 'ToolInfo'.
+    Property 'description' is missing in type '{ name: string; parameters: Type.TObject<{ command: Type.TString; timeout: Type.TOptional<Type.TNumber>; format: Type.TOptional<Type.TUnion<[Type.TLiteral<"text">, Type.TLiteral<"json">]>>; }>; }' but required in type 'Pick<ToolDefinition<TSchema, unknown, any>, "description" | "name" | "parameters" | "promptGuidelines">'.
+tests/tool-config-execution.test.ts(80,51): error TS2345: Argument of type 'TObject<{ command: TString; timeout: TOptional<TNumber>; }>' is not assignable to parameter of type 'TObject<{ command: TString; timeout: TOptional<TNumber>; format: TOptional<TUnion<[TLiteral<"text">, TLiteral<"json">]>>; }>'.
+  Types of property 'properties' are incompatible.
+    Property 'format' is missing in type '{ command: TString; timeout: TOptional<TNumber>; }' but required in type '{ command: Type.TString; timeout: Type.TOptional<Type.TNumber>; format: Type.TOptional<Type.TUnion<[Type.TLiteral<"text">, Type.TLiteral<"json">]>>; }'.
+tests/tool-config-execution.test.ts(81,35): error TS2353: Object literal may only specify known properties, and 'systemPrompt' does not exist in type 'AgentContext'.
+tests/tool-config-execution.test.ts(82,37): error TS2345: Argument of type '{ id: string; name: string; arguments: { command: string; timeout: number; }; }' is not assignable to parameter of type 'ToolCall'.
+  Property 'type' is missing in type '{ id: string; name: string; arguments: { command: string; timeout: number; }; }' but required in type 'ToolCall'.
