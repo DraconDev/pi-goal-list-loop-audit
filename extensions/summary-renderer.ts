@@ -77,11 +77,9 @@ export function registerSummaryRenderer(pi: Pick<ExtensionAPI, "registerMessageR
     for (const block of summaryMarkdownBlocks(message.content)) {
       const heading = block.split("\n").find(line => /^#{2,4}\s/.test(line)) ?? "";
       const tone = summaryHeadingTone(heading);
-      const bodyTone = /^#+\s+Verification\b/i.test(heading)
-        ? summaryVerificationTone(block.split("\n").slice(1).join("\n"))
-        : tone === "dim" ? "dim" : "text";
+      const verification = /^#+\s+Verification\b/i.test(heading);
       box.addChild(new Markdown(block, 0, 0, summaryTheme(theme, tone), {
-        color: text => theme.fg(bodyTone, text),
+        color: text => theme.fg(verification ? summaryVerificationTone(stripTerminalSequences(text)) : tone === "dim" ? "dim" : "text", text),
       }));
     }
     return {

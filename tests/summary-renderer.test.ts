@@ -55,3 +55,13 @@ test("continuations retain Pi's default renderer and unsafe terminal sequences n
   const rendered = (factory({ content: content + "\x1b]52;c;bad\x07\x1b[2J", details: { terminalApprovalGoalId: "approved-goal" } } as never, { outputPad: 1 } as never, theme) as Component).render(80).join("\n");
   assert.doesNotMatch(rendered, /\x1b\]52|\x1b\[2J/);
 });
+
+test("failed verification does not color unrelated approval and archive references as failures", () => {
+  const theme = loadThemeFromPath(path.resolve(import.meta.dirname, "../node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/theme/dark.json"), "truecolor");
+  const pi = new MockPi(); registerSummaryRenderer(pi.api);
+  const render = pi.messageRenderers.get("goal-event")!({ content: "### Verification\n1 failed.\n\n- completion audit approved (1 review).\n- archive.md", details: { terminalApprovalGoalId: "approved-goal" } } as never, { outputPad: 1 } as never, theme) as Component;
+  const ansi = render.render(120).join("\n");
+  assert.ok(ansi.includes(theme.fg("error", "1 failed.")));
+  assert.ok(ansi.includes(theme.fg("text", "completion audit approved (1 review).")));
+  assert.ok(ansi.includes(theme.fg("text", "archive.md")));
+});
