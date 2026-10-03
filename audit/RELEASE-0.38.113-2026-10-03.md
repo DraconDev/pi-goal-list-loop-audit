@@ -38,3 +38,14 @@ GitLab emitted a storage-limit notice but accepted this tag; no external
 storage cleanup or repository-history repair was attempted.
 The [npm publishing run](https://github.com/DraconDev/pi-goal-list-loop-audit/actions/runs/37147097472)
 is validating the released tag before publication.
+
+Publishing attempt 1 stopped at the test gate: 3179 passes, one environment
+skip, one failure in “stale terminal keeps a recovery probe and self-heals
+without reload”. Its assertion observed no interruption after a fixed 150 ms
+wait. The same test passed in the complete local gate and its isolated replay;
+the complete pre-release source quality run also passed. This is consistent
+with a timing-sensitive observation, not proof of a production regression.
+One failed-job retry was requested against the unchanged tag. No gate was
+disabled, no failed run is counted as a pass, and no release/tag was rewritten.
+A future test hardening should await the acknowledged continuation and durable
+interruption rather than assuming fixed sleeps observe both transitions.
