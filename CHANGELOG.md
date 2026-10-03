@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 0.38.113 — make background audits clear (2026-10-03)
+
+- The live audit widget uses a compact card, keeping audit state, completed
+  tool calls, activity age, elapsed time and the user's next action above
+  Pi's widget cutoff. Model provenance and old judgment plaques remain in
+  `/goal status` rather than crowding the live card.
+- Running audits explicitly say no action is needed; quiet, blocked and
+  recovery states retain their recovery action. The footer starts with audit
+  state and freshness. Generic model thinking is called “thinking”, rather
+  than claiming the worker is reading source.
+
 ## 0.38.112 — full terminal UI audit (2026-10-03)
 
 - Settings adapt to narrow and short terminals, keeping the active tab,
