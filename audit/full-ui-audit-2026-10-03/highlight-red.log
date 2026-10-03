@@ -1,0 +1,44 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/ui-experience-audit.test.ts:
+(pass) settings keep the active final tab visible on narrow terminals [2.94ms]
+(pass) narrow settings show both the focused setting and its effective value [0.81ms]
+(pass) reopened settings focus the edited row and each tab remembers its cursor [0.17ms]
+(pass) settings window keeps the cursor, navigation and details within a short terminal [1.84ms]
+(pass) settings search finds rows across sections and Esc clears search before closing [1.09ms]
+(pass) settings details allow reading the full long value [1.09ms]
+(pass) single picker respects terminal height and keeps the selected model visible [0.80ms]
+(pass) large unordered selections fit a short multi-picker without hiding its cursor [1.56ms]
+(pass) picker backspace deletes a complete Unicode character [0.17ms]
+(pass) long draft reviews scroll while their decisions remain visible [28.82ms]
+(pass) ordered pickers fit short terminals with current, inherit and cap notices [2.35ms]
+(pass) settings sanitize terminal controls without changing saved strings [0.62ms]
+(pass) settings details and all tab windows fit very short terminals [94.41ms]
+(pass) lifecycle cards and status rows fit every explicit terminal width [49.50ms]
+(pass) draft review keeps project consent readable and uses the supplied keybindings [11.44ms]
+(pass) untrusted picker labels and draft bodies cannot emit terminal commands [1.50ms]
+(pass) settling cards identify the approved archive owed and its recovery action [0.59ms]
+(pass) single picker resizes through short and narrow terminals without losing focus [2.11ms]
+174 |   const single = new ModelPickerComponent({ title: "model", items: longItems, getHeight: () => 12 }, () => {}, colored, kb, () => {});
+175 |   const multi = new MultiModelPickerComponent({ title: "models", items: longItems, getHeight: () => 12 }, () => {}, colored, kb, () => {});
+176 |   for (const component of [settings, single, multi]) {
+177 |     const selected = component.render(80).find(line => line.startsWith("\x1b[48;5;24m"))!;
+178 |     assert.ok(selected);
+179 |     assert.ok(!selected.includes("\x1b[0m"), "inner truncation resets must not erase the selection background");
+                 ^
+AssertionError: inner truncation resets must not erase the selection background
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/ui-experience-audit.test.ts:179:12
+      at fn (node:test:215:18)
+(fail) truncated selected rows keep their background across values, source and padding [1.15ms]
+
+ 18 pass
+ 1 fail
+Ran 19 tests across 1 file. [946.00ms]
+[run-tests] finished in 1s (exit 1)

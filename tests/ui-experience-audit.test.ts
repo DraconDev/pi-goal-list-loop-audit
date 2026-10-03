@@ -166,3 +166,16 @@ test("single picker resizes through short and narrow terminals without losing fo
   assert.equal(component.getSelectedIdx(), 22);
  }
 });
+
+test("truncated selected rows keep their background across values, source and padding", () => {
+  const colored = { ...theme, bg: (_: string, text: string) => `\x1b[48;5;24m${text}\x1b[49m` };
+  const settings = new SettingsMenuComponent({ rows, title: "settings", initialSection: "auditor" }, () => {}, colored, kb, () => {});
+  const longItems = [{ kind: "model" as const, ref: "fixture/long", label: "long model name ".repeat(20), searchText: "long" }];
+  const single = new ModelPickerComponent({ title: "model", items: longItems, getHeight: () => 12 }, () => {}, colored, kb, () => {});
+  const multi = new MultiModelPickerComponent({ title: "models", items: longItems, getHeight: () => 12 }, () => {}, colored, kb, () => {});
+  for (const component of [settings, single, multi]) {
+    const selected = component.render(80).find(line => line.startsWith("\x1b[48;5;24m"))!;
+    assert.ok(selected);
+    assert.ok(!selected.includes("\x1b[0m"), "inner truncation resets must not erase the selection background");
+  }
+});
