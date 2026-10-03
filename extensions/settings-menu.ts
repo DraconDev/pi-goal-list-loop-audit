@@ -29,6 +29,7 @@ import {
   visibleWidth,
   wrapTextWithAnsi,
   fuzzyFilter,
+  stripTerminalSequences,
 } from "@earendil-works/pi-tui";
 
 import {
@@ -981,7 +982,7 @@ export class SettingsMenuComponent implements Component {
       const selected = start + index === this.selectedIdx;
       const prefix = selected ? "▶ " : "  ";
       const label = this.searching ? `${SETTINGS_SECTIONS.find(section => section.id === row.section)?.label} · ${row.label}` : row.label;
-      const paintRow = (text: string) => selected ? this.theme.bg("selectedBg", this.theme.bold(this.padEnd(truncateToWidth(text, width, "…"), width))) : text;
+      const paintRow = (text: string) => selected ? this.theme.bg("selectedBg", this.theme.bold(this.padEnd(stripTerminalSequences(truncateToWidth(text, width, "…")), width))) : text;
       if (narrow) {
         const source = truncateToWidth(row.sourceText, Math.max(0, width - 8), "…");
         const labelWidth = Math.max(0, width - visibleWidth(prefix) - visibleWidth(source) - 3);

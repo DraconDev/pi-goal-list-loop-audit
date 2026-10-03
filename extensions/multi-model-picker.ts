@@ -31,7 +31,7 @@
 // @earendil-works/pi-tui for fuzzyFilter / truncateToWidth / visibleWidth.
 
 import { compactDisplayText } from "./goal-loop-core.js";
-import { fuzzyFilter, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { fuzzyFilter, stripTerminalSequences, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import type { SettingsMenuTheme, KeybindingsManagerLike } from "./settings-menu.ts";
 import type { ModelPickItem } from "./model-picker.ts";
 
@@ -354,7 +354,7 @@ export class MultiModelPickerComponent {
       const disabled = this.effectiveDisabledReason((item.ref ? this.itemForRef(item.ref) : undefined) ?? item);
       const label = compactDisplayText(`${this.itemMarker(item)} ${item.label}${disabled ? ` · ${disabled}` : ""}`);
       const row = truncateToWidth(`${at === selected ? "→" : " "} ${label}`, w, "…");
-      lines.push(at === selected ? this.theme.bg("selectedBg", this.theme.bold(row + " ".repeat(Math.max(0, w - visibleWidth(row))))) : row);
+      lines.push(at === selected ? this.theme.bg("selectedBg", this.theme.bold(stripTerminalSequences(row) + " ".repeat(Math.max(0, w - visibleWidth(row))))) : row);
     });
     if (list.length) lines.push(this.theme.fg("dim", `${start + 1}–${start + window.length} of ${list.length}${!this.unorderedSet && !this.orderMode ? " · rank = try order" : ""}`));
     lines.push(this.theme.fg("dim", footer));
@@ -391,7 +391,7 @@ export class MultiModelPickerComponent {
         const row = truncateToWidth(`  ${i + 1} ${this.unorderedSet ? "selected" : "backup"}  ${ref}${status}`, w, "…");
         if (this.orderMode && i === this.orderIdx) {
           // In order mode the active chain row is the cursor: ↑/↓ moves it.
-          const selectedRow = this.theme.bold(`→ ${row}`);
+          const selectedRow = this.theme.bold(`→ ${stripTerminalSequences(row)}`);
           const paddedRow = selectedRow + " ".repeat(Math.max(0, w - visibleWidth(selectedRow)));
           lines.push(this.theme.bg("selectedBg", paddedRow));
         } else {
@@ -444,7 +444,7 @@ export class MultiModelPickerComponent {
           // left the selected model indistinguishable from its neighbours.
           // The order marker is unrelated to the highlight — a selected
           // non-highlighted row keeps its rank, and vice versa.
-          const selectedRow = this.theme.bold(`→ ${row}`);
+          const selectedRow = this.theme.bold(`→ ${stripTerminalSequences(row)}`);
           const paddedRow = selectedRow + " ".repeat(Math.max(0, w - visibleWidth(selectedRow)));
           lines.push(this.theme.bg("selectedBg", paddedRow));
         } else {

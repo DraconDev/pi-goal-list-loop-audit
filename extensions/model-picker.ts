@@ -19,7 +19,7 @@
 // provider/id, and "type manually…" last.
 
 import { compactDisplayText } from "./goal-loop-core.js";
-import { fuzzyFilter, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { fuzzyFilter, stripTerminalSequences, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import type { SettingsMenuTheme, KeybindingsManagerLike } from "./settings-menu.ts";
 
 export type ModelPickKind = "session" | "inherit" | "model" | "manual";
@@ -226,7 +226,7 @@ export class ModelPickerComponent {
     window.forEach((item, index) => {
       const active = start + index === selected;
       const row = truncateToWidth(`${active ? "→" : " "} ${compactDisplayText(item.label)}`, w, "…");
-      lines.push(active ? this.theme.bg("selectedBg", this.theme.bold(row + " ".repeat(Math.max(0, w - visibleWidth(row))))) : row);
+      lines.push(active ? this.theme.bg("selectedBg", this.theme.bold(stripTerminalSequences(row) + " ".repeat(Math.max(0, w - visibleWidth(row))))) : row);
     });
     if (filtered.length) lines.push(this.theme.fg("dim", `${start + 1}–${start + window.length} of ${filtered.length}`));
     lines.push(...footer.map((text) => this.theme.fg("dim", text)));
@@ -260,7 +260,7 @@ export class ModelPickerComponent {
           // Use the available horizontal space for a high-contrast active
           // state. Accent-only text was easy to miss in dark terminals and
           // left the selected model indistinguishable from its neighbours.
-          const selectedRow = this.theme.bold(`→ ${row}`);
+          const selectedRow = this.theme.bold(`→ ${stripTerminalSequences(row)}`);
           const paddedRow = selectedRow + " ".repeat(Math.max(0, w - visibleWidth(selectedRow)));
           lines.push(this.theme.bg("selectedBg", paddedRow));
         } else {
