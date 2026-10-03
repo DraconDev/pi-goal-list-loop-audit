@@ -1,0 +1,12 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/overdue-backstop.test.ts:
+(pass) S9 (continuation route): overdue agent wait resumes exactly once — park-clear lands, then latch + ledger [3258.69ms]
+(pass) S9 (probe route): probe no-op releases the overdue latch so the next tick retries [1773.96ms]
+(pass) S9: failed durable resume leaves the wait retriable on the next heartbeat [1752.20ms]
+
+ 3 pass
+ 0 fail
+Ran 3 tests across 1 file. [8.18s]
+[run-tests] finished in 9s (exit 0)

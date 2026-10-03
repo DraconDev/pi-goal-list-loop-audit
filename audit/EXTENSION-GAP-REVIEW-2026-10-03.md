@@ -84,7 +84,10 @@ The sync daemon checkpoints the tracked changes normally.
 - The old `s9-probe.mjs` is absent from the repository and `/tmp`. Its behavior
   was revalidated through the tracked overdue-backstop tests: real heartbeat
   invocation, durable continuation-route resume, and no-op probe settlement
-  releasing its latch for a second heartbeat. The original ephemeral script
+  releasing its latch for a second heartbeat. A new real filesystem failure
+  test blocks the atomic transaction destination, proves no resume receipt
+  is written, then restores storage and proves the same wait retries. The
+  original ephemeral script
   was not recovered or claimed as rerun.
 
 This closes the named omissions through direct body review and behavioral
@@ -103,6 +106,8 @@ Evidence directory: `extension-gap-review-2026-10-03/`.
   admission assertions, current narrow renderer and settings regressions.
 - `repair-verification.log`: 224 pass, 0 fail across summary, communication,
   version, disk-first, auditor-process, and display suites.
+- `s9-replay.log`: all three real-heartbeat recovery tests pass, including
+  failed durable write followed by successful retry.
 - `contract-repairs.log`: both targeted docs-version and list-decline checks
   pass; unrelated tests are filtered intentionally in this targeted run.
 - `baseline-failures.log`: read-only archive of starting commit 364e706e
