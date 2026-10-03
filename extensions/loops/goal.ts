@@ -27,6 +27,7 @@ import { __testOnlyResetAuditorSurface } from "./goal-auditor-surface.js";
 import { __testOnlyResetAuditorRecoveryRuntime, resumeStoredCompletionOrSettlement, resumeCompletedCompletionAudit, resumeSettlingCompletionAudit } from "./goal-auditor-hooks.js";
 import { __testOnlyResetOverdueWaitBackstop, __testOnlyResetZombieRunWatchdog, __testOnlyClearSubagentHangProbes } from "../goal-heartbeat.js";
 import { __testOnlyResetCompactor } from "../goal-compactor.js";
+import { __testOnlyResetInvalidSettingReports } from "../goal-settings.js";
 import { __testOnlyResetOwnerHeartbeat, __testOnlyResetStandDownNotice } from "../state-root-owner.js";
 
 import {
@@ -283,6 +284,7 @@ export function __testOnlyResetProcessState(): void {
   __testOnlyResetZombieRunWatchdog();
   __testOnlyClearSubagentHangProbes();
   __testOnlyResetCompactor();
+  __testOnlyResetInvalidSettingReports();
   __testOnlyResetOwnerHeartbeat();
   __testOnlyResetStandDownNotice();
 }

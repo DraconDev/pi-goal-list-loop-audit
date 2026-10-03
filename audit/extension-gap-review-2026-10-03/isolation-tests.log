@@ -1,0 +1,21 @@
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/autoresume-default.test.ts:
+(pass) /glla settings persists explicit auto-resume off (tri-state, not undefined) [0.79ms]
+(pass) settings table shows the tri-state honestly [0.28ms]
+(pass) hold-on-load text offers the explicit resume + the on opt-in [0.38ms]
+
+tests/process-state-reset.test.ts:
+(pass) v0.38.88: composite clears a poisoned starvation streak [0.70ms]
+(pass) v0.38.88: composite releases the session-owner claim [57.52ms]
+(pass) v0.38.88: composite invokes every exported latch reset [4.88ms]
+
+tests/settings-invalid-report.test.ts:
+(pass) C10: dropped junk values report once per distinct value; undefined defaults stay silent [1.72ms]
+(pass) C10: loadSettings ledgers dead hand-edited values as settings_invalid_ignored [29.59ms]
+
+ 8 pass
+ 0 fail
+Ran 8 tests across 3 files. [832.00ms]
+[run-tests] finished in 1s (exit 0)

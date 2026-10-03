@@ -15,7 +15,7 @@ import { readGoalRuntimeSource } from "./harness/goal-source.js";
 const SRC = readGoalRuntimeSource();
 
 test("/glla settings persists explicit auto-resume off (tri-state, not undefined)", () => {
-  assert.match(SRC, /saveSettings\("global", ctx\.cwd, \{ autoResume: v\.startsWith\("on"\) \? true : v\.startsWith\("off"\) \? false : undefined \}\)/);
+  assert.match(SRC, /saveSettings\("global", ctx, \{ autoResume: v\.startsWith\("on"\) \? true : v\.startsWith\("off"\) \? false : undefined \}\)/);
   assert.doesNotMatch(SRC, /\/glla autoresume=/);
 });
 
