@@ -1,0 +1,9 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/behavioral-orchestrator.test.ts:
+(pass) v0.35.x: stale terminal keeps a recovery probe and self-heals without reload [124.79ms]
+
+ 1 pass
+ 155 filtered out
+ 0 fail
+Ran 1 test across 1 file. [678.00ms]
