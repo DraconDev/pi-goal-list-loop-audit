@@ -16,16 +16,87 @@ Earlier reports are pointers, not proof that current source is correct.
 
 | Surface family | Source and audit obligations | Disposition |
 | --- | --- | --- |
-| Commands and agent tools | Activation, goal-commands, goal-tools, loop command; contract adoption, consent, pause/stop/resume and truthful completion | Reviewing |
-| Durable state and ownership | goal-state/core, glla-state-root, state-root-owner, owner-file-protocol, goal-session; journal projection, archive, stale/foreign fencing | Reviewing |
-| Goal/list supervision | goal-orchestrator/list-queue, goal-heartbeat/continuation/recovery, dispatch, continuous-supervision; one active objective, queue loss, bounded recovery | Reviewing |
-| Loop/respec | goal-loop/forever/repetition, respec-builder/audit/runtime/ui; unfinished work, bounds, blockers, concurrent lifecycle and audit identity | Reviewing |
-| Independent auditor | auditor process/worker, hooks/surface, audit-lifecycle, reviewer, shield, auditor thinking/extensions; verdict integrity, retries, timeout/cancellation, stale settlement | Reviewing |
-| Provider/compaction containment | main-model-recovery, quota-retry, model selection, compactor, context/length/hygiene, compaction failure/input; finite recovery, external ownership and durable continuity | Reviewing |
-| UI/settings/receipts | display/ui/settings, components/pickers, drafts, summary renderer/outbox; readable state/actions, semantic truth, narrow widths, cancellation and delivery | Reviewing |
-| Distribution | manifests, schemas, prompts/skills, docs/inventory and scripts; boundary versions, installed package and worker RPC | Reviewing |
+| Commands and agent tools | Activation, goal-commands, goal-tools, loop command; contract adoption, consent, pause/stop/resume and truthful completion | Source reviewed; current full gate pending |
+| Durable state and ownership | goal-state/core, glla-state-root, state-root-owner, owner-file-protocol, goal-session; journal projection, archive, stale/foreign fencing | Source reviewed; current full gate pending |
+| Goal/list supervision | goal-orchestrator/list-queue, goal-heartbeat/continuation/recovery, dispatch, continuous-supervision; one active objective, queue loss, bounded recovery | Source reviewed; current full gate pending |
+| Loop/respec | goal-loop/forever/repetition, respec-builder/audit/runtime/ui; unfinished work, bounds, blockers, concurrent lifecycle and audit identity | Source reviewed; current full gate pending |
+| Independent auditor | auditor process/worker, hooks/surface, audit-lifecycle, reviewer, shield, auditor thinking/extensions; verdict integrity, retries, timeout/cancellation, stale settlement | Source reviewed; current full gate pending |
+| Provider/compaction containment | main-model-recovery, quota-retry, model selection, compactor, context/length/hygiene, compaction failure/input; finite recovery, external ownership and durable continuity | Source reviewed; current full gate pending |
+| UI/settings/receipts | display/ui/settings, components/pickers, drafts, summary renderer/outbox; readable state/actions, semantic truth, narrow widths, cancellation and delivery | Source reviewed; current full gate pending |
+| Distribution | manifests, schemas, prompts/skills, docs/inventory and scripts; boundary versions, installed package and worker RPC | Source reviewed; current full gate pending |
 
 ## Findings
 
-Reproduction and final disposition will be appended as evidence becomes available.
-Do not treat this report as a completed audit or release approval yet.
+| # | Severity | Finding and repair | Evidence |
+| --- | --- | --- | --- |
+| 1 | High | A respec journal-write failure could clear live state: rollback retained an alias of the mutable singleton. All four rollback paths now snapshot the previous top-level projection. | Forced persistence failure preserves byte-identical RAM and the durable claim. |
+| 2 | Medium | Respec could dispatch or retry while `/glla pause` froze supervision. Dispatch and retry policy now honor the freeze. Existing workers can still settle, consistent with global pause semantics. | Frozen entry launches zero workers; freeze between attempts launches no retry/fallback. |
+| 3 | Medium | Rapid `/loop pause` and resume raced cancelled-worker cleanup, parking resumed work or losing its wake. Cancelled results cannot settle; releasing the latch rearms only the same project/era/claim. | A real worker is cancelled, its claim remains active, then a second worker completes it. |
+| 4 | Medium | Continuous supervision omitted respec audit planes and same-iteration phase/revision changes. Builder identity and coverage now participate in its durable signature. | Building→auditing and scope refinement produce durable signals; auditing exposes the auditor plane. |
+| 5 | Medium | `/loop resume` could reactivate a project whose remaining requirements were all blocked. Resume now refuses until a blocker is cleared. | Actual registered command remains paused; unblock preserves pause and enables explicit resume. |
+| 6 | Medium | An undelivered project summary lost automatic replay when a new project replaced its loop. Project receipts now use the shared durable terminal outbox. | Failed delivery, loop replacement, successful single replay; corrupt outbox preserves approved job evidence for recovery. |
+| 7 | Medium | Generic terminal-loop summary materialization overwrote independently verified project summaries. Verified project summaries are retained. | Production installation/commands/tools/agent_end integration verifies receipt and persisted summary parity. |
+| 8 | Low | Large project summaries exceeded the shared outbox/receipt transport limits. Display now bounds requirements/reports/line lengths and explicitly names omissions; complete records remain in archive and status. | 100 requirements with long Unicode text and 100 reports remain ≤150 lines/2000 code points per line, with omission counts. |
+
+The first five findings were reproduced together: **23 passed, 5 failed** before
+repairs. The outbox replacement regression separately failed with **16 passed,
+1 failed**. Moving receipts to the shared outbox exposed the generic-summary
+overwrite in the production integration check. Summary bounds were checked
+against the actual shared transport constants and then exercised with a large
+Unicode project. These are distinct forms of evidence, not eight identical
+red/green test runs.
+
+Current focused lifecycle/receipt/UI verification: **53 passed, 0 failed** across
+five files. Current and oldest supported host TypeScript checks passed. The
+fresh full release gate is still running; this report is not complete yet.
+
+## Reviewed invariants and retained boundaries
+
+- Registered project actions draft and confirm requirements and refinements;
+  only isolated auditor settlement verifies requirements. Bounds, blockers,
+  task claims, and infrastructure failures retain unfinished work.
+- Durable state has one in-place singleton, full journal projections, explicit
+  recovery clears, archive-before-terminal settlement and saved job recovery.
+  Ownership covers stale sessions, state-root selection, process reuse and
+  cross-process mutation; no live foreign state was changed by this audit.
+- Queue activation hydrates sidecars, refuses an active loop, validates work
+  objectives, refuses failed sidecar deletion and restores failed activation.
+  Goal replacement commits successor intent before predecessor archival.
+- Auditor recovery binds goal/revision/claim payload identity and worker request
+  hashes. Approval requires tool evidence and contract regression coverage.
+  Retry candidates/cursors and cancellation stay within the existing policy.
+- Optional transcript compaction respects the configured threshold, idle task
+  boundaries and episode hysteresis. Summary-cap failure keeps work usable
+  rather than parking it. GLLA invokes public hooks; Pi owns summarization.
+- Provider error classification, bounded retry ladders, quota-reset sleeps and
+  context hygiene contain upstream failures. They do not repair providers or
+  guarantee that a provider eventually returns usable output.
+- Settings retain per-key project/global/default precedence, global-only keys,
+  legacy migration, validation and explicit invalid-setting reporting. Public
+  read-only command views all produced feedback.
+- Package smoke installs the actual tarball and loads through Jiti with its own
+  peer tree, then exercises the shipped worker RPC. Publishing remains owned
+  by the tagged release workflow; an audit does not itself publish 0.39.0.
+
+## Current UI and live case
+
+Fresh production-renderer evidence includes **296** settings/picker/draft/card
+frames, **144** registered command views and **54** project frames. Both themes
+and narrow/normal/wide terminals are covered; all 350 rendered frames fit their
+specified width. Representative settings, project lifecycle, live retry/activity
+and semantic completion frames were inspected as terminal text. Behavioral UI
+regressions additionally cover editing, cancellation, Unicode and stale saves;
+frame generation alone is not a claim of live visual inspection.
+
+At 20:53 London time the observed chat session was actively issuing tools for
+the later icon-size request. Its prior detached audit had finished at 19:21,
+with a successful result. A browser evaluation timeout was followed by successful
+calls; no restart was needed. Earlier empty provider responses and the isolated
+browser timeout are external behavior, not GLLA implementation targets. No chat
+source, processes or runtime journals were altered.
+
+## Remaining verification
+
+Await the current full release gate, record its exact outcome and copy its
+selected evidence. This remains an incomplete audit until that succeeds.
+
