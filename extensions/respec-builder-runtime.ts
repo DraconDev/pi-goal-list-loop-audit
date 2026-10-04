@@ -21,9 +21,10 @@ const running = new Set<string>();
 function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecBuilderState): boolean {
   if (!host.context(ctx)) return false;
   const loop = state.loop;
-  if (!loop?.active || loop.builder !== before) return false;
+  if (!loop || loop.builder !== before) return false;
   const old = state;
-  replaceState({ ...old, loop: { ...loop, builder: next, ...(next.phase === "complete" ? { active: false, stopReason: "completed: all intended project requirements independently verified" } : {}) } });
+  const blocked = next.requirements.some(r => r.status === "blocked") && !next.requirements.some(r => r.status === "open") && next.phase !== "auditing";
+  replaceState({ ...old, loop: { ...loop, builder: next, ...(next.phase === "complete" ? { active: false, stopReason: "completed: all intended project requirements independently verified" } : blocked ? { active: false, stopReason: "blocked project requirements: clear the recorded blockers, then /loop resume" } : {}) } });
   if (!host.persist(ctx)) { replaceState(old); return false; }
   appendLedger(ctx.cwd, "respec_builder_transition", { phase: next.phase, revision: next.revision, cycle: next.cycle,
     history: next.history?.at(-1), scopeChange: next.scopeChanges?.at(-1) });
@@ -84,16 +85,16 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
 export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
   host = deps;
   const reply = (text: string) => ({ content: [{ type: "text" as const, text }], details: {} });
-  const execute = (action: (p: any, ctx: ExtensionContext, before: RespecBuilderState) => Promise<RespecBuilderState> | RespecBuilderState) =>
+  const execute = (action: (p: any, ctx: ExtensionContext, before: RespecBuilderState) => Promise<RespecBuilderState> | RespecBuilderState, allowStopped = false) =>
     async (_id: string, params: any, _signal: AbortSignal | undefined, _update: any, execCtx: ExtensionContext) => {
       const ctx = host.context(execCtx);
       if (!ctx) return reply("This session cannot mutate the active project.");
       const before = state.loop?.builder;
-      if (!before || !state.loop?.active) return reply("No active respec project builder.");
+      if (!before || (!state.loop?.active && !allowStopped)) return reply("No active respec project builder.");
       try {
         const next = await action(params, ctx, before);
         if (!commit(ctx, before, next)) return reply("Project changed or persistence failed; no proposal was applied.");
-        return reply(`Project ${next.phase}; increment ${next.cycle}. Requirements close only after independent audit.`);
+        return reply(`Project ${next.phase}; increment ${next.cycle}. Requirements close only after independent audit.${state.loop?.active ? "" : " Work stays paused; clear blockers and use /loop resume when ready."}`);
       } catch (error) { return reply(String(error instanceof Error ? error.message : error)); }
     };
   pi.registerTool(host.wrapTool({ name: "propose_project_requirements", label: "Draft intended project", description: "Propose desired project capabilities and observable acceptance criteria. User confirmation adopts scope; no requirement starts verified.",
@@ -120,7 +121,7 @@ export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
     ["unblock_project_requirement", "Clear project blocker", unblockRespecRequirement],
   ] as const) {
     pi.registerTool(host.wrapTool({ name, label, description: "Record a concrete blocker or evidence it cleared. Blocked requirements remain unfinished; abandoning a batch retains its tasks and reason.",
-      parameters: Type.Object({ id: Type.String(), reason: Type.String() }), execute: execute((p, _ctx, before) => action(before, p.id, p.reason)),
+      parameters: Type.Object({ id: Type.String(), reason: Type.String() }), execute: execute((p, _ctx, before) => action(before, p.id, p.reason), true),
     }));
   }
   pi.registerTool(host.wrapTool({ name: "propose_project_refinement", label: "Refine intended project", description: "Propose the full revised requirements with rationale. Scope removal or changed acceptance needs user confirmation; prior audit claims become stale.",
@@ -130,6 +131,6 @@ export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
       const ok = await ctx.ui.confirm("Confirm project scope change", `Reason: ${p.reason}\n\nCURRENT:\n${before.requirements.map(r => `${r.id}: ${r.text}\nDone when: ${r.acceptance}`).join("\n\n")}\n\nPROPOSED:\n${next.requirements.map(r => `${r.id}: ${r.text}\nDone when: ${r.acceptance}`).join("\n\n")}\n\nRemoved: ${next.scopeChanges!.at(-1)!.removedIds.join(", ") || "none"}. Changed scope requires renewed verification.`);
       if (!ok) throw new Error("Scope change declined; existing requirements and audit claim remain intact.");
       return next;
-    }),
+    }, true),
   }));
 }
