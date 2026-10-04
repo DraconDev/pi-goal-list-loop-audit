@@ -9,6 +9,7 @@ import { appendLedger, nowIso, archiveDir } from "./goal-loop-core.js";
 import { loadSettings } from "./goal-settings.js";
 import type { LoopState } from "./goal-loop-forever.js";
 import { dispatchAuditorAllowedExtensions } from "./auditor-extensions.js";
+import { resolveAuditorThinkingLevel } from "./auditor-thinking.js";
 import { runDetachedGoalCompletionAuditor, runAuditorFallbackWithPolicy, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, writeAtomicJson, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
 import { respecIncrementAuditGoal } from "./respec-builder-audit.js";
 import { adoptRespecRequirements, beginRespecAudit, blockRespecRequirement, unblockRespecRequirement, refineRespecRequirements, claimRespecTask, planRespecIncrement, settleRespecAudit, type RespecBuilderState } from "./respec-builder.js";
@@ -24,6 +25,7 @@ interface Host {
   finished?: (ctx: ExtensionContext) => void;
   confirm?: (ctx: ExtensionContext, title: string, body: string) => Promise<boolean>;
   auditSleep?: (ms: number) => Promise<void>;
+  thinkingLevel?: () => string | undefined;
 }
 let host: Host;
 const running = new Map<string, AbortController>();
@@ -107,7 +109,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
     const result = saved?.result ?? (resolved.error || !resolved.model
       ? { approved: false, disapproved: false, error: resolved.error ?? "No auditor model available", output: "", model: "unset" }
       : (await runAuditorFallbackWithPolicy([{ model: resolved.model, ref: candidateRef(resolved.model), via: "primary" }, ...(resolved.fallbackModels ?? []).map(candidate => ({ ...candidate, ref: candidateRef(candidate.model), via: candidate.via ?? "fallback" }))], candidate => runDetachedGoalCompletionAuditor({ cwd: ctx.cwd, goal, completionSummary: builder.audit!.claim,
-        model: candidate.model, strictChallenge: settings.auditorStrictChallenge, thinkingLevel: settings.auditorThinkingLevel ?? "max",
+        model: candidate.model, strictChallenge: settings.auditorStrictChallenge, thinkingLevel: resolveAuditorThinkingLevel(candidate.model, settings.auditorThinkingLevel ?? host.thinkingLevel?.() ?? "max"),
         allowedExtensions: dispatchAuditorAllowedExtensions(settings.auditorAllowedExtensions, settings.auditorMirrorSessionExtensions, host.auditRuntime?.homeDir ?? homedir(), ctx.cwd),
         inspection: settings.auditorInspection === true,
         signal: controller.signal,
