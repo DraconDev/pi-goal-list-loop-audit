@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { registerRespecBuilderTools, runRespecBuilderAudit, respecProjectArchivePath, cancelRespecBuilderAudit } from "../extensions/respec-builder-runtime.js";
+import { registerRespecBuilderTools, runRespecBuilderAudit, respecProjectArchivePath, cancelRespecBuilderAudit, __testOnlyRespecAuditorRuntime } from "../extensions/respec-builder-runtime.js";
+import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from "../extensions/loops/goal.js";
+import { clearLoopTimer } from "../extensions/goal-loop.js";
+import { saveSettings } from "../extensions/goal-settings.js";
 import { createRespecBuilder, adoptRespecRequirements, planRespecIncrement, claimRespecTask, beginRespecAudit } from "../extensions/respec-builder.js";
 import { state, replaceState, persistStateLine } from "../extensions/goal-state.js";
 import { readState } from "../extensions/goal-loop-core.js";
@@ -159,4 +162,35 @@ test("an exhausted token bound holds the project before spawning an auditor or c
     assert.equal(fs.existsSync(path.join(f.cwd, ".pi-glla", "audit-jobs")), false);
     assert.deepEqual(f.counts(), { wakes: 0, finishes: 0 });
   } finally { replaceState(f.original); }
+});
+
+test("actual installer, command, tools and agent_end carry a project through detached verification", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(), ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-full-lifecycle" } });
+  const previous = state;
+  __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
+  activate(pi.api); saveSettings("project", cwd, { autoAcceptDrafts: false });
+  ctx.ui.customImpl = async () => "Yes";
+  const file = path.join(cwd, "bounded-auditor-worker.mjs"); fs.writeFileSync(file, worker);
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  const restore = __testOnlyRespecAuditorRuntime({ resolveModel: () => ({ model: "test/provider-model" }), auditSleep: async () => {},
+    auditRuntime: { command: process.execPath, workerPath: file, homeDir: cwd, pollIntervalMs: 10, heartbeatNoProgressMs: 5000, firstEventTimeoutMs: 5000 } });
+  try {
+    await pi.command("loop", "respec build the artifact", ctx); clearLoopTimer();
+    await pi.runTool("propose_project_requirements", { requirements: [{ id: "artifact", text: "Artifact", acceptance: "artifact exists" }] }, ctx);
+    await pi.runTool("plan_project_increment", { tasks: [{ id: "task", text: "Build artifact", requirementIds: ["artifact"] }] }, ctx);
+    await pi.runTool("claim_project_task", { id: "task" }, ctx);
+    await pi.runTool("audit_project_increment", { claim: "Artifact implemented" }, ctx);
+    assert.equal(readState(cwd).loop!.builder!.requirements[0]!.status, "open");
+    await pi.fire("agent_end", { messages: [{ role: "assistant", content: [{ type: "text", text: "Increment ready for independent verification." }] }] }, ctx);
+    const deadline = Date.now() + 5000;
+    while (readState(cwd).loop!.builder!.phase !== "complete") {
+      if (Date.now() > deadline) throw new Error(JSON.stringify(readState(cwd).loop));
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    const loop = readState(cwd).loop!;
+    assert.equal(loop.active, false);
+    assert.equal(loop.builder!.requirements[0]!.status, "verified");
+    assert.ok(fs.existsSync(respecProjectArchivePath(cwd, loop.startedAt, loop.builder!.revision)));
+    assert.ok(ctx.ui.matching("every intended requirement").length > 0);
+  } finally { clearLoopTimer(); restore(); await pi.fire("session_shutdown", { reason: "test-end" }, ctx); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); replaceState(previous); }
 });

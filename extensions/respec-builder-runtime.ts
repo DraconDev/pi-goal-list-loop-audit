@@ -28,6 +28,14 @@ interface Host {
 let host: Host;
 const running = new Map<string, AbortController>();
 
+/** Hermetic process tests retain the production ownership/commit/tool adapters. */
+export function __testOnlyRespecAuditorRuntime(overrides: Pick<Host, "auditRuntime" | "auditSleep" | "resolveModel">): () => void {
+  const previous = host;
+  const configured = { ...host, ...overrides };
+  host = configured;
+  return () => { if (host === configured) host = previous; };
+}
+
 export function cancelRespecBuilderAudit(cwd: string, startedAt: string): void {
   for (const [key, controller] of running) if (key.startsWith(`${cwd}:${startedAt}:`)) controller.abort();
 }
