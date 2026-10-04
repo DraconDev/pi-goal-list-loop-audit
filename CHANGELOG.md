@@ -15,6 +15,10 @@
   wakes share one worker, pause/stop cancels audits, and archive failures retain
   approved evidence for settlement retry. Completion archives the project before
   exposing terminal state and announces waiting queue items.
+- Project audit cards show live worker/retry state, model, elapsed time and last
+  activity. `/loop status` lists every requirement and its acceptance/evidence.
+  Verified project summaries use semantic colors and bold, archive before
+  delivery, and replay unacknowledged receipts on reload.
 - Project cards/status expose phase, increment, verified/remaining coverage,
   blockers, evidence and next action using the existing semantic palette.
 - Regression-shield rejection reports unfinished work and carries missing

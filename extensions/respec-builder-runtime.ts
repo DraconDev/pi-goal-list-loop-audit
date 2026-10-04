@@ -97,7 +97,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
   const publish = (patch: Partial<NonNullable<ReturnType<typeof getRespecAuditLive>>>) => {
     if (!state.loop?.active || state.loop.builder !== builder || !host.context(ctx)) return;
     setRespecAuditLive(builder, { phase: "waiting", startedAt: auditStartedAt, ...getRespecAuditLive(builder), ...patch });
-    host.refresh?.(ctx);
+    try { host.refresh?.(ctx); } catch { /* display failure cannot discard audit evidence */ }
   };
   publish({ phase: "waiting" });
   const remainingMs = loop.timeLimitHours !== undefined ? loop.timeLimitHours * 3600000 - (Date.now() - Date.parse(loop.startedAt)) : undefined;
@@ -176,7 +176,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
       if (!host.persist(liveCtx)) replaceState(old);
       liveCtx.ui.notify("Project audit interrupted without a verdict; /loop resume retries its durable claim.", "warning");
     }
-  } finally { if (boundTimer) clearTimeout(boundTimer); running.delete(key); setRespecAuditLive(initialBuilder); if (host.context(ctx)) host.refresh?.(ctx); }
+  } finally { if (boundTimer) clearTimeout(boundTimer); running.delete(key); setRespecAuditLive(initialBuilder); if (host.context(ctx)) { try { host.refresh?.(ctx); } catch { /* stale display */ } } }
 }
 
 /** The durable terminal summary is the outbox; replay uses the existing receipt check. */

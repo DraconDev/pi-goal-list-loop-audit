@@ -257,7 +257,14 @@ capabilities for regressions. The project finishes only when every adopted
 requirement is independently verified and the project archive is written.
 
 The widget and `/loop status` show phase, increment, verified/remaining coverage
-and blockers. `/loop pause` holds work, `/loop resume` continues saved state, and
+and blockers. During auditing, the card shows the actual worker state, model,
+elapsed time and last activity, including retries; a restored claim without
+live telemetry is shown as waiting for dispatch. `/loop status` lists every
+requirement, its acceptance criteria, blocker and verification evidence.
+Verified completion posts a semantic summary of shipped capabilities,
+acceptance checks and evidence, saved in the journal and project archive;
+unacknowledged delivery retries on reload without rerunning the audit.
+`/loop pause` holds work, `/loop resume` continues saved state, and
 `/loop stop` stops it without calling unfinished work complete. If all remaining
 work is blocked, automation parks with reasons; clearing a blocker leaves work
 paused until resume. `/loop refine <suggestion>` supplies direction for the next
