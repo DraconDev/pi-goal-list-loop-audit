@@ -35,11 +35,31 @@ durable project state. Version 0.39.0 remains prepared and unpublished.
   summaries. Actual themed renderers prove semantic headings, width bounds,
   bold and no italics. Command integration checks the full register output.
 - Focused validation: 26 tests pass across five files. Oldest supported Pi
-  (0.84.2) TypeScript check passes. Full release check is pending its terminal
-  result; do not claim this gate passed before it finishes.
+  (0.84.2) TypeScript check passes. Full `npm run release:check` passes, exit 0:
+  3,216 tests passed, one environment-gated auto-committer test skipped, zero
+  failures across 349 files. Current-source TypeScript, Jiti binding checks,
+  offline auditor extension verification, generated inventory, package dry run,
+  packed worker RPC/challenge probe, skill diagnostics and installed-package
+  import all pass. Full output is `respec-project-ui-2026-10-04/release-check.log`.
 - Rendered 54 actual dark/light project and summary frames at 40/80/120 columns.
   Selected reviewed preview: `respec-project-ui-2026-10-04/respec-builder.png`.
 
 Worker tests use bounded synthetic verdicts through the real detached protocol;
 they do not claim a live-model assessment of this implementation. No production
 project loop, external plugin or Pi core was modified during this task.
+
+## Completion audit
+
+1. **Proved:** runtime callbacks publish exact-claim model, state and activity;
+   startup is not misrepresented as worker activity. Worker/fallback tests and
+   reviewed running/retrying/waiting frames cover the actual UI path.
+2. **Proved:** completion rejects unverified registers, writes the summary to
+   archive and journal before sending, and uses the existing semantic renderer
+   and persisted receipt protocol. Actual installer dispatch and delivery-failure
+   replay tests cover the adapters; startup is wired to replay pending summaries.
+3. **Proved:** actual `/loop status` output contains both requirement entries
+   and acceptance criteria; the same loop-independent iteration lists blockers
+   and evidence and works while paused. No filter excludes unfinished entries.
+
+All three authorized improvements are implemented and verified. Version 0.39.0
+is ready for release; publication remains outside this implementation task.
