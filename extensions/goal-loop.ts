@@ -72,6 +72,7 @@ import { chooseObjectiveConflict, liveObjectives } from "./goal-objective-confli
 import { releaseAuditorSurface } from "./loops/goal-auditor-surface.js";
 import { compactLoopCompletionSummary, compactTerminalCompletionSummary } from "./completion-summary.js";
 import { inferStartFromSession, type StartContextInference } from "./start-context.js";
+import { respecCoverage } from "./respec-builder.js";
 
 type DispatchInput = Omit<Parameters<typeof createContinuationDispatch>[0], "id" | "sentAt">;
 
@@ -392,6 +393,14 @@ async function parkLoopOnWrongBranch(ctx: ExtensionContext, loop: LoopState, whe
 }
 
 export function loopPrompt(loop: LoopState, regressionNote: string, strategyNote: string, boundsNote: string, interventionNote = "", variantNote = "", hypothesisNote = "", refineHintNote = ""): string {
+  if (loop.builder) {
+    return loadPromptWhole("goal-loop-respec-builder.md")
+      .replace(/\$\{ITERATION\}/g, String(loop.iteration + 1))
+      .replace(/\$\{BUILDER_PHASE\}/g, loop.builder.phase)
+      .replace(/\$\{BUILDER_STATE\}/g, () => JSON.stringify(loop.builder, null, 2))
+      .replace(/\$\{BOUNDS_NOTE\}/g, () => boundsNote)
+      .replace(/\$\{INTERVENTION_NOTE\}/g, () => interventionNote);
+  }
   // A bare draft phase without a spec file (corrupt/hand-migrated state)
   // cannot draft to nowhere: fall through to the standard prompt instead
   // of throwing on path.basename(undefined) and killing the dispatch.
@@ -1386,6 +1395,13 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       `Iteration ${loop.iteration}/${loop.maxIterations > 0 ? loop.maxIterations : "∞"} · best ${loop.bestValue ?? "n/a"} · last ${loop.lastValue ?? "n/a"} · stall ${loop.stallCount}/${loop.plateauWindow}`,
     ];
     const bounds: string[] = [];
+    if (loop.builder) {
+      const coverage = respecCoverage(loop.builder);
+      lines.push(`Project: ${loop.builder.phase} · increment ${loop.builder.cycle} · verified ${coverage.verified}/${coverage.total} · remaining ${coverage.remaining} · blocked ${coverage.blocked}`);
+      for (const requirement of loop.builder.requirements.filter(r => r.status === "blocked")) {
+        lines.push(`Blocked ${sanitizeDisplayText(requirement.id)}: ${sanitizeDisplayText(requirement.blockedReason ?? "reason missing")}`);
+      }
+    }
     if (loop.timeLimitHours !== undefined) bounds.push(`time ≤ ${loop.timeLimitHours}h`);
     if (loop.tokenBudget !== undefined) bounds.push(`tokens ${(loop.tokensUsed ?? 0).toLocaleString()}/${loop.tokenBudget.toLocaleString()}`);
     if (bounds.length) lines.push(`Bounds: ${bounds.join(" · ")}`);
