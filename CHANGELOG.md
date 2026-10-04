@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 0.39.1 — explain long audit tool waits (2026-10-04)
+
+- Audit cards keep the current tool's ticking elapsed time and timeout visible
+  when it stops producing events. The card says it is waiting on the tool,
+  rather than turning the current call into a historical "last tool" row.
+- Compact footers lead with the tool wait and its elapsed/timeout clock.
+  Waiting is distinct from fresh activity; cancelled, overdue and invalid
+  telemetry cannot claim a healthy wait. Timeout handling stays automatic.
+- Automatic and manual audit progress use the worker's effective granted tool
+  timeout, matching the watchdog rather than showing only the base budget.
+
 ## 0.39.0 — respec project builder (2026-10-04)
 
 - `/loop respec [project direction]` drafts intended requirements for confirmation,

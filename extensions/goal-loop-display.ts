@@ -1013,7 +1013,8 @@ function auditorToolWait(audit: AuditDisplayProgress | null | undefined, phase: 
     && now - audit.currentToolStartedAt < audit.toolTimeoutMs;
 }
 
-function auditorPhaseForDisplay(audit: AuditDisplayProgress | null | undefined, phase: AuditorDisplayPhase, live: boolean): string {
+function auditorPhaseForDisplay(audit: AuditDisplayProgress | null | undefined, phase: AuditorDisplayPhase, live: boolean, now: number): string {
+  if (!live && auditorToolWait(audit, phase, now)) return `waiting on ${sanitizeDisplayText(audit!.currentTool!)}`;
   // Once a worker timestamp exists, a stale tool snapshot is historical
   // context, not a claim that the detached process is still in that call.
   if (!live && phase === "running" && audit?.lastActivityAt !== undefined && audit.currentTool) {
@@ -1416,8 +1417,8 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
     const observed = durableLabel
       ?? (toolWait ? `waiting on ${sanitizeDisplayText(audit!.currentTool!)}` : undefined)
       ?? (signals && phase === "running"
-        ? (auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, live))
-        : auditorPhaseForDisplay(audit, phase, live));
+        ? (auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, live, now))
+        : auditorPhaseForDisplay(audit, phase, live, now));
     // v0.35.15: leading phase glyph + draining activity meter — a glance
     // answers "is the audit alive?" without reading the sentence.
     const phaseText = `auditor ${auditorPhaseGlyph(phase)} ${observed}`;
@@ -1932,8 +1933,8 @@ function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefin
   // on ("reading source…" / "writing report…"); the coarse label otherwise.
   const signals = extras?.auditorProgressSignals !== false;
   const phaseLabel = signals && phase === "running"
-    ? (auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, phaseLive))
-    : auditorPhaseForDisplay(audit, phase, phaseLive);
+    ? (auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, phaseLive, now))
+    : auditorPhaseForDisplay(audit, phase, phaseLive, now);
   // v0.38.99: the durable lifecycle names the state whenever in-process
   // progress cannot (see durablePhaseOverride). The coarse display phase only
   // speaks for a claim a LIVE worker is driving.
@@ -2204,7 +2205,7 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
       // No history or model plaques in the glance card: Pi clips its tail.
       // Keep state, real evidence and the user action ahead of all details.
       const phaseLine = toolWait ? `├─ ${paint(theme, "accent", `Waiting on ${sanitizeDisplayText(audit!.currentTool!)}${audit?.round === 2 ? " · second audit pass" : ""} · detached auditor`)}` : needsRecovery ? (phase === "quiet" ? `├─ ${paint(theme, "warning", "Audit quiet — may be stuck")}` : block.lead[0]!)
-        : `├─ ${paint(theme, "accent", phase === "running" ? `Audit running · ${(extras?.auditorProgressSignals !== false ? auditorProgressPhaseLabel(audit) : undefined) ?? auditorPhaseForDisplay(audit, phase, auditorHasLiveEvidence(audit, phase, now))} · detached worker` : phase === "queued" ? "Audit starting · detached worker" : "Audit review pending · detached worker")}`;
+        : `├─ ${paint(theme, "accent", phase === "running" ? `Audit running · ${(extras?.auditorProgressSignals !== false ? auditorProgressPhaseLabel(audit) : undefined) ?? auditorPhaseForDisplay(audit, phase, auditorHasLiveEvidence(audit, phase, now), now)} · detached worker` : phase === "queued" ? "Audit starting · detached worker" : "Audit review pending · detached worker")}`;
       const toolLine = block.lead.find(line => /^│ (?:last )?tool:/.test(line));
       const modelRef = auditorCardModelRef(audit, g.pendingCompletion);
       const compactToolLine = modelRef ? toolLine?.split(` · ${modelRef}`)[0] : toolLine;
