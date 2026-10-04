@@ -1,0 +1,16 @@
+{
+  "observedCommit": "e38d8165ed9283ae23b2a4e1a0730347b0646451",
+  "files": {
+    "package.json": "15a3ef1c62011ff8ca01ef8bbba478e28efe0ca5d697a2d86295bb9bec3fc55b",
+    "package-lock.json": "125e881350ce1ee66c1bf7e6daa032b56e05d1a0e18e4bebdf5edd7acb221108",
+    "extensions/respec-builder-runtime.ts": "5e4193e787dc534650a4e8552ddd110f1fe8edb37109277b163538f5d1f1fe9a",
+    "extensions/respec-builder-ui.ts": "63c68a4a35f1455e19deeb035566b222ba942b0d94379828fa8fe9571a65e881",
+    "extensions/continuous-supervision.ts": "9ec149a204fe514e15513ad72e7ce2b75bea78ada12e7875393dc4a0de3de0e5",
+    "extensions/goal-loop.ts": "94b69536d91b319ed88520525e6b5d16f176b4f19a365b7ea9cb7614ae5ed75a",
+    "extensions/loops/goal-orchestrator.ts": "193e42f6b0c48a9953fdd6b24b8ac1dfff581b9757823c9f16698297a03e14d3",
+    "tests/respec-builder-audit-runtime.test.ts": "28ae442d7758fa4657392419e35b37be6801450c547386aece0a6b91ba0691fe",
+    "tests/respec-builder-ui.test.ts": "d1941a30248f259636bab84fd91e8a09a80991a27a99db49590b2904df250a50",
+    "tests/respec-builder-wiring.test.ts": "de3fbf494df2e1cb547aba241cc8f379262ed87b3257ff90999e84f8e9120b07",
+    "tests/continuous-supervision.test.ts": "f95401ecf76ec4cbf3a1ea3e9129ab7bffb88271a23db6d59cae551380ca96a0"
+  }
+}
