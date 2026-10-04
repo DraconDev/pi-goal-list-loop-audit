@@ -1,10 +1,12 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
+import { mkdir } from "node:fs/promises";
+import * as path from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { state, replaceState } from "./goal-state.js";
-import { appendLedger, nowIso } from "./goal-loop-core.js";
+import { appendLedger, nowIso, archiveDir } from "./goal-loop-core.js";
 import { loadSettings } from "./goal-settings.js";
-import { runDetachedGoalCompletionAuditor, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
+import { runDetachedGoalCompletionAuditor, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, writeAtomicJson, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
 import { respecIncrementAuditGoal } from "./respec-builder-audit.js";
 import { adoptRespecRequirements, beginRespecAudit, blockRespecRequirement, unblockRespecRequirement, refineRespecRequirements, claimRespecTask, planRespecIncrement, settleRespecAudit, type RespecBuilderState } from "./respec-builder.js";
 
@@ -20,6 +22,11 @@ interface Host {
 }
 let host: Host;
 const running = new Set<string>();
+
+export function respecProjectArchivePath(cwd: string, startedAt: string, revision: number): string {
+  const identity = createHash("sha256").update(`${startedAt}:${revision}`).digest("hex").slice(0, 24);
+  return path.join(archiveDir(cwd), `respec-${identity}.json`);
+}
 
 function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecBuilderState): boolean {
   if (!host.context(ctx)) return false;
@@ -63,6 +70,12 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
     const current = state.loop;
     if (!liveCtx || current?.startedAt !== loop.startedAt || !current.active || current.builder !== builder) return;
     const next = settleRespecAudit(builder, builder.audit.attemptId, result);
+    if (next.phase === "complete") {
+      await mkdir(archiveDir(liveCtx.cwd), { recursive: true });
+      await writeAtomicJson(respecProjectArchivePath(liveCtx.cwd, loop.startedAt, next.revision), { kind: "respec-project", startedAt: loop.startedAt, completedAt: nowIso(), builder: next });
+      // Archival yields: a concurrent stop/refinement must still own state.
+      if (!host.context(liveCtx) || state.loop?.builder !== builder || !state.loop.active) return;
+    }
     if (!commit(liveCtx, builder, next)) return;
     if (result.error) {
       // Keep the claim, but park automation rather than retrying an unavailable

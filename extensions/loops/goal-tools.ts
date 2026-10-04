@@ -431,6 +431,7 @@ import {
   runLoopTick,
   scheduleLoopTick,
   startLoopFromConfig,
+  announceQueuedListAfterLoopEnd,
   type LoopDeps,
   type LoopFlags,
 } from "../goal-loop.js";
@@ -584,6 +585,7 @@ function registerAgentTools(pi: any): void {
       return resolveAuditorModel(ctx, settings.auditorModel, settings.auditorModelFallbacks, settings.auditorSameSessionSwap !== false);
     },
     wrapTool: tool => defineTool(tool),
+    finished: ctx => announceQueuedListAfterLoopEnd(ctx),
   });
   pi.registerTool(defineTool({
     name: "complete_goal",
