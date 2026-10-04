@@ -461,6 +461,7 @@ export function buildDurableDeferDecisionLines(input: DurableDeferRecommendation
 export type DisplayColor = "accent" | "success" | "warning" | "error" | "muted" | "dim";
 export interface DisplayTheme {
   fg(color: DisplayColor, text: string): string;
+  bold?(text: string): string;
 }
 export const paint = (theme: DisplayTheme | undefined, color: DisplayColor, text: string): string => (theme ? theme.fg(color, text) : text);
 
@@ -2638,14 +2639,16 @@ function respecBuilderLines(loop: LoopState, theme?: DisplayTheme, width?: numbe
   const blocker = builder.requirements.find(r => r.status === "blocked");
   const evidence = [...builder.requirements].reverse().find(r => r.evidence)?.evidence?.report ?? builder.history?.at(-1)?.report;
   const action = builder.phase === "complete" ? "All adopted requirements independently verified" : !loop.active ? "Work held · /loop status · /loop resume when ready" : builder.phase === "auditing" ? "Independent verification pending · no action needed" : "Work continues · /loop pause · /loop refine";
+  const narrowAction = builder.phase === "complete" ? `All ${coverage.total} requirements verified` : !loop.active ? "/loop resume when ready · /loop status" : builder.phase === "auditing" ? "Independent audit pending · no action" : "Work continues · /loop pause";
+  const title = paint(theme, tone, `Project · ${phase}`);
   return [
-    `${paint(theme, tone, `Project · ${phase}`)}${loop.active || builder.phase === "complete" ? "" : " · held"} · increment ${builder.cycle}`,
+    `${theme?.bold ? theme.bold(title) : title}${loop.active || builder.phase === "complete" ? "" : " · held"} · increment ${builder.cycle}`,
     `├─ ${truncate(sanitizeDisplayText(builder.vision), budgetFor(width, 3, 75))}`,
     `├─ ${paint(theme, coverage.verified > 0 ? "success" : "dim", `verified ${coverage.verified}/${coverage.total}`)} · ${paint(theme, coverage.remaining > 0 ? "warning" : "dim", `remaining ${coverage.remaining} · blocked ${coverage.blocked}`)}`,
     ...(current ? [`├─ ${builder.phase === "auditing" ? "claim" : "task"}: ${truncate(sanitizeDisplayText(current.text), budgetFor(width, 10, 70))}`] : []),
     ...(blocker ? [`├─ ${paint(theme, "warning", "blocked")}: ${truncate(sanitizeDisplayText(blocker.blockedReason ?? "reason missing"), budgetFor(width, 12, 70))}`] : []),
     ...(evidence ? [`├─ ${paint(theme, "dim", `evidence: ${truncate(sanitizeDisplayText(evidence), budgetFor(width, 13, 65))}`)}`] : []),
-    `└─ ${paint(theme, tone, action)}`,
+    `└─ ${paint(theme, tone, width && width < 60 ? narrowAction : action)}`,
   ];
 }
 

@@ -8,7 +8,7 @@
       "\u001b[38;2;167;152;215mProject · Drafting\u001b[39m · increment 0",
       "├─ Build usable account login and dat…",
       "├─ \u001b[38;2;126;136;142mverified 0/0\u001b[39m · \u001b[38;2;126;136;142mremaining 0 · block\u001b[0m…\u001b[0m",
-      "└─ \u001b[38;2;167;152;215mWork continues · /loop pause · /lo\u001b[0m…\u001b[0m",
+      "└─ \u001b[38;2;167;152;215mWork continues · /loop pause\u001b[39m",
       "",
       "glla: project \u001b[38;2;167;152;215mdrafting\u001b[39m · increment 0 · \u001b[0m…\u001b[0m"
     ]
@@ -23,7 +23,7 @@
       "├─ Build usable account login and dat…",
       "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · block\u001b[0m…\u001b[0m",
       "├─ task: Implement login behavior an…",
-      "└─ \u001b[38;2;167;152;215mWork continues · /loop pause · /lo\u001b[0m…\u001b[0m",
+      "└─ \u001b[38;2;167;152;215mWork continues · /loop pause\u001b[39m",
       "",
       "glla: project \u001b[38;2;167;152;215mbuilding\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
     ]
@@ -38,7 +38,7 @@
       "├─ Build usable account login and dat…",
       "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · block\u001b[0m…\u001b[0m",
       "├─ claim: Implement login behavior an…",
-      "└─ \u001b[38;2;167;152;215mIndependent verification pending ·\u001b[0m…\u001b[0m",
+      "└─ \u001b[38;2;167;152;215mIndependent audit pending · no act\u001b[0m…\u001b[0m",
       "",
       "glla: project \u001b[38;2;167;152;215mauditing\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
     ]
@@ -54,7 +54,7 @@
       "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · block\u001b[0m…\u001b[0m",
       "├─ task: Implement login behavior an…",
       "├─ \u001b[38;2;126;136;142mevidence: Invalid credentials are …\u001b[39m",
-      "└─ \u001b[38;2;167;152;215mWork continues · /loop pause · /lo\u001b[0m…\u001b[0m",
+      "└─ \u001b[38;2;167;152;215mWork continues · /loop pause\u001b[39m",
       "",
       "glla: project \u001b[38;2;167;152;215mreplanning\u001b[39m · increment 1 \u001b[0m…\u001b[0m"
     ]
@@ -70,7 +70,7 @@
       "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · block\u001b[0m…\u001b[0m",
       "├─ \u001b[38;2;205;154;34mblocked\u001b[39m: Identity service credenti…",
       "├─ \u001b[38;2;126;136;142mevidence: Blocked login: Identity …\u001b[39m",
-      "└─ \u001b[38;2;205;154;34mWork held · /loop status · /loop r\u001b[0m…\u001b[0m",
+      "└─ \u001b[38;2;205;154;34m/loop resume when ready · /loop st\u001b[0m…\u001b[0m",
       "",
       "glla: project \u001b[38;2;205;154;34mreplanning\u001b[39m · held · incre\u001b[0m…\u001b[0m"
     ]
@@ -86,7 +86,7 @@
       "├─ \u001b[38;2;104;183;141mverified 2/2\u001b[39m · \u001b[38;2;126;136;142mremaining 0 · block\u001b[0m…\u001b[0m",
       "├─ task: Build login and export",
       "├─ \u001b[38;2;126;136;142mevidence: Login rejection and expo…\u001b[39m",
-      "└─ \u001b[38;2;104;183;141mAll adopted requirements independe\u001b[0m…\u001b[0m",
+      "└─ \u001b[38;2;104;183;141mAll 2 requirements verified\u001b[39m",
       "",
       "glla: project \u001b[38;2;104;183;141mcomplete\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
     ]
@@ -284,7 +284,7 @@
       "\u001b[38;2;116;89;180mProject · Drafting\u001b[39m · increment 0",
       "├─ Build usable account login and dat…",
       "├─ \u001b[38;2;135;144;149mverified 0/0\u001b[39m · \u001b[38;2;135;144;149mremaining 0 · block\u001b[0m…\u001b[0m",
-      "└─ \u001b[38;2;116;89;180mWork continues · /loop pause · /lo\u001b[0m…\u001b[0m",
+      "└─ \u001b[38;2;116;89;180mWork continues · /loop pause\u001b[39m",
       "",
       "glla: project \u001b[38;2;116;89;180mdrafting\u001b[39m · increment 0 · \u001b[0m…\u001b[0m"
     ]
@@ -299,7 +299,7 @@
       "├─ Build usable account login and dat…",
       "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · block\u001b[0m…\u001b[0m",
       "├─ task: Implement login behavior an…",
-      "└─ \u001b[38;2;116;89;180mWork continues · /loop pause · /lo\u001b[0m…\u001b[0m",
+      "└─ \u001b[38;2;116;89;180mWork continues · /loop pause\u001b[39m",
       "",
       "glla: project \u001b[38;2;116;89;180mbuilding\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
     ]
@@ -314,7 +314,7 @@
       "├─ Build usable account login and dat…",
       "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · block\u001b[0m…\u001b[0m",
       "├─ claim: Implement login behavior an…",
-      "└─ \u001b[38;2;116;89;180mIndependent verification pending ·\u001b[0m…\u001b[0m",
+      "└─ \u001b[38;2;116;89;180mIndependent audit pending · no act\u001b[0m…\u001b[0m",
       "",
       "glla: project \u001b[38;2;116;89;180mauditing\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
     ]
@@ -330,7 +330,7 @@
       "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · block\u001b[0m…\u001b[0m",
       "├─ task: Implement login behavior an…",
       "├─ \u001b[38;2;135;144;149mevidence: Invalid credentials are …\u001b[39m",
-      "└─ \u001b[38;2;116;89;180mWork continues · /loop pause · /lo\u001b[0m…\u001b[0m",
+      "└─ \u001b[38;2;116;89;180mWork continues · /loop pause\u001b[39m",
       "",
       "glla: project \u001b[38;2;116;89;180mreplanning\u001b[39m · increment 1 \u001b[0m…\u001b[0m"
     ]
@@ -346,7 +346,7 @@
       "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · block\u001b[0m…\u001b[0m",
       "├─ \u001b[38;2;143;104;2mblocked\u001b[39m: Identity service credenti…",
       "├─ \u001b[38;2;135;144;149mevidence: Blocked login: Identity …\u001b[39m",
-      "└─ \u001b[38;2;143;104;2mWork held · /loop status · /loop r\u001b[0m…\u001b[0m",
+      "└─ \u001b[38;2;143;104;2m/loop resume when ready · /loop st\u001b[0m…\u001b[0m",
       "",
       "glla: project \u001b[38;2;143;104;2mreplanning\u001b[39m · held · incre\u001b[0m…\u001b[0m"
     ]
@@ -362,7 +362,7 @@
       "├─ \u001b[38;2;51;126;88mverified 2/2\u001b[39m · \u001b[38;2;135;144;149mremaining 0 · block\u001b[0m…\u001b[0m",
       "├─ task: Build login and export",
       "├─ \u001b[38;2;135;144;149mevidence: Login rejection and expo…\u001b[39m",
-      "└─ \u001b[38;2;51;126;88mAll adopted requirements independe\u001b[0m…\u001b[0m",
+      "└─ \u001b[38;2;51;126;88mAll 2 requirements verified\u001b[39m",
       "",
       "glla: project \u001b[38;2;51;126;88mcomplete\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
     ]
