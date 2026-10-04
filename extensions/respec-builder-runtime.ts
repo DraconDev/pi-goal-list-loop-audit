@@ -63,6 +63,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
     const settings = loadSettings(ctx.cwd);
     const saved = readCompletedCompletionAudit(ctx.cwd, goal, settings.auditorStrictChallenge);
     const resolved = host.resolveModel(ctx);
+    const candidateRef = (model: any): string | undefined => typeof model === "string" ? model : model?.provider && model?.id ? `${model.provider}/${model.id}` : undefined;
     const saveCursor = (patch: Partial<NonNullable<RespecBuilderState["audit"]>>): boolean => {
       if (!builder.audit || !state.loop?.active || state.loop.builder !== builder) return false;
       const next = { ...builder, audit: { ...builder.audit, ...patch } };
@@ -72,7 +73,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
     };
     const result = saved?.result ?? (resolved.error || !resolved.model
       ? { approved: false, disapproved: false, error: resolved.error ?? "No auditor model available", output: "", model: "unset" }
-      : (await runAuditorFallbackWithPolicy([{ model: resolved.model, via: "primary" }, ...(resolved.fallbackModels ?? []).map(candidate => ({ ...candidate, via: candidate.via ?? "fallback" }))], candidate => runDetachedGoalCompletionAuditor({ cwd: ctx.cwd, goal, completionSummary: builder.audit!.claim,
+      : (await runAuditorFallbackWithPolicy([{ model: resolved.model, ref: candidateRef(resolved.model), via: "primary" }, ...(resolved.fallbackModels ?? []).map(candidate => ({ ...candidate, ref: candidateRef(candidate.model), via: candidate.via ?? "fallback" }))], candidate => runDetachedGoalCompletionAuditor({ cwd: ctx.cwd, goal, completionSummary: builder.audit!.claim,
         model: candidate.model, strictChallenge: settings.auditorStrictChallenge, thinkingLevel: settings.auditorThinkingLevel ?? "max",
         allowedExtensions: dispatchAuditorAllowedExtensions(settings.auditorAllowedExtensions, settings.auditorMirrorSessionExtensions, host.auditRuntime?.homeDir ?? homedir(), ctx.cwd),
         inspection: settings.auditorInspection === true,
