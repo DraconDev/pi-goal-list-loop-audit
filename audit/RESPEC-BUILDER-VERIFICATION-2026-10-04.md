@@ -25,8 +25,17 @@ comes from the actual display code and themes. Tests use temporary project dirs.
 ## Validation
 
 - Final focused tests: 48 passed across six files, zero failures.
-- Full release gate: pending terminal result; do not treat this report as release approval yet.
+- Full `npm run release:check`: passed, exit 0. Suite: 3,208 passed,
+  one environment-gated auto-committer test skipped, zero failures, 348 files.
+  Current-source TypeScript, Jiti module-state verification, offline auditor
+  extensions, inventory, package dry run, packed worker RPC/challenge probe,
+  delegate-skill diagnostics and installed-package import all passed.
 - Oldest supported Pi boundary: current-source TypeScript check passed (0.84.2).
+
+Full passing gate output is retained as
+`respec-builder-2026-10-04/release-check.log`; focused, boundary and recovery
+logs are beside it. All eight implementation requirements have been reviewed
+against the final behavior and evidence. Version 0.39.0 remains unpublished.
 
 The full suite exposed a fixed-delay race in an existing stale-session recovery
 test. Its assertions are preserved, while bounded waits now observe the new
