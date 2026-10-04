@@ -1,0 +1,71 @@
+"""Paint production ANSI frames, preserving the host theme's foreground/background."""
+from pathlib import Path
+from PIL import Image, ImageDraw, ImageFont
+import json, re, unicodedata, html, subprocess
+from fontTools.ttLib import TTFont
+root = Path(__file__).parent
+frames = json.loads((root/'rendered-frames.json').read_text())
+font_path = subprocess.check_output(['fc-match', 'monospace', '-f', '%{file}'], text=True).strip()
+cmap = TTFont(font_path).getBestCmap()
+fallbacks = {}
+font = ImageFont.truetype(font_path, 14)
+cell, line_height = round(font.getlength('M')), 21
+ansi = re.compile(r'\x1b\[([0-9;]*)m')
+
+def segments(line, appearance):
+    fg_default = '#dfe3ed' if appearance == 'dark' else '#242938'
+    fg, bg = fg_default, None
+    cursor = 0
+    for match in ansi.finditer(line):
+        yield line[cursor:match.start()], fg, bg
+        codes = [int(x or 0) for x in match[1].split(';')]
+        index = 0
+        while index < len(codes):
+            code = codes[index]
+            if code == 0: fg, bg = fg_default, None
+            elif code == 39: fg = fg_default
+            elif code == 49: bg = None
+            elif code in (38, 48) and index + 4 < len(codes) and codes[index + 1] == 2:
+                color = '#%02x%02x%02x' % tuple(codes[index + 2:index + 5])
+                if code == 38: fg = color
+                else: bg = color
+                index += 4
+            index += 1
+        cursor = match.end()
+    yield line[cursor:], fg, bg
+
+def paint(draw, frame, x, y):
+    background = '#11151e' if frame['theme'] == 'dark' else '#f7f8fc'
+    draw.rectangle((x, y, x+frame['width']*cell+24, y+(len(frame['lines'])+2)*line_height), fill=background)
+    for row, line in enumerate(frame['lines']):
+        col = 0
+        for text, foreground, bg in segments(line, frame['theme']):
+            for char in text:
+                cells = 0 if unicodedata.combining(char) or char in ('\ufe0f', '\u200d') else 2 if unicodedata.east_asian_width(char) in ('W','F') else 1
+                left, top = x+12+col*cell, y+12+row*line_height
+                if bg: draw.rectangle((left, top, left+cells*cell, top+line_height), fill=bg)
+                glyph_font = font
+                if ord(char) not in cmap:
+                    if char not in fallbacks:
+                        try:
+                            glyph_path = subprocess.check_output(['fc-match', f':charset={ord(char):x}', '-f', '%{file}'], text=True).strip()
+                            fallbacks[char] = ImageFont.truetype(glyph_path, 14)
+                        except Exception:
+                            fallbacks[char] = font
+                    glyph_font = fallbacks[char]
+                draw.text((left, top), char, font=glyph_font, fill=foreground)
+                col += cells
+
+def sheet(name, specs):
+    selected = [next(f for f in frames if (f['key'],f['theme'],f['width']) == spec) for spec in specs]
+    slot_w = max(f['width'] for f in selected)*cell+64
+    slot_h = max(len(f['lines']) for f in selected)*line_height+84
+    image = Image.new('RGB', (slot_w*2, slot_h*((len(selected)+1)//2)), '#252d3a')
+    draw = ImageDraw.Draw(image)
+    for index, frame in enumerate(selected):
+        x,y = (index%2)*slot_w+16, (index//2)*slot_h+12
+        draw.text((x,y), f"{frame['key']} | {frame['theme']} | {frame['width']} cols", font=font, fill='#ffffff')
+        paint(draw, frame, x, y+28)
+    image.save(root/name)
+
+sheet('respec-builder.png', [(key,theme,width) for key,theme,width in [('building','dark',80),('building','light',80),('auditing','dark',80),('blocked','dark',80),('replanning','dark',40),('complete','light',40)]])
