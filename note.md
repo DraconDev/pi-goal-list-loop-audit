@@ -5,11 +5,6 @@
 # later
 
 ##
-semantic colors for summaries and ui ? 
-
-we already do ui somewhat mostly, but summaries are very one tone
-
-##
 work on respec
 
 ##
