@@ -75,3 +75,52 @@ test("completed job is recovered after reloading an unsettled claim without anot
     assert.deepEqual(fs.readdirSync(path.join(f.cwd, ".pi-glla", "audit-jobs")), jobs);
   } finally { replaceState(f.original); }
 });
+
+test("pausing during an actual worker run prevents late approval from settling the project", async () => {
+  const f = fixture({ RESULT_DELAY: "200" });
+  try {
+    const pending = runRespecBuilderAudit(f.ctx);
+    const deadline = Date.now() + 5000;
+    while (!fs.existsSync(path.join(f.cwd, ".pi-glla", "audit-jobs")) || !fs.readdirSync(path.join(f.cwd, ".pi-glla", "audit-jobs")).some(name => fs.existsSync(path.join(f.cwd, ".pi-glla", "audit-jobs", name, "progress.json")))) {
+      if (Date.now() > deadline) throw new Error("Worker did not publish progress");
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    replaceState({ ...state, loop: { ...state.loop!, active: false, stopReason: "paused by user" } });
+    persistStateLine(f.cwd, state);
+    await pending;
+    assert.equal(readState(f.cwd).loop!.active, false);
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "auditing");
+    assert.equal(readState(f.cwd).loop!.builder!.requirements[0]!.status, "open");
+    assert.deepEqual(f.counts(), { wakes: 0, finishes: 0 });
+  } finally { replaceState(f.original); }
+});
+
+test("archive failure preserves approval evidence for settlement retry instead of launching another audit", async () => {
+  const f = fixture();
+  try {
+    const archiveDir = path.dirname(respecProjectArchivePath(f.cwd, f.startedAt, f.builder.revision));
+    fs.rmSync(archiveDir, { recursive: true, force: true }); fs.writeFileSync(archiveDir, "blocked archive destination");
+    await runRespecBuilderAudit(f.ctx);
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "auditing");
+    assert.equal(readState(f.cwd).loop!.active, false);
+    assert.deepEqual(f.counts(), { wakes: 0, finishes: 0 });
+    const jobs = fs.readdirSync(path.join(f.cwd, ".pi-glla", "audit-jobs"));
+    fs.unlinkSync(archiveDir); fs.unlinkSync(f.file);
+    replaceState({ ...state, loop: { ...state.loop!, active: true, stopReason: undefined } });
+    persistStateLine(f.cwd, state);
+    await runRespecBuilderAudit(f.ctx);
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "complete");
+    assert.deepEqual(fs.readdirSync(path.join(f.cwd, ".pi-glla", "audit-jobs")), jobs);
+    assert.deepEqual(f.counts(), { wakes: 0, finishes: 1 });
+  } finally { replaceState(f.original); }
+});
+
+test("concurrent wake paths dispatch only one worker for the exact durable claim", async () => {
+  const f = fixture({ RESULT_DELAY: "100" });
+  try {
+    await Promise.all([runRespecBuilderAudit(f.ctx), runRespecBuilderAudit(f.ctx)]);
+    assert.equal(fs.readdirSync(path.join(f.cwd, ".pi-glla", "audit-jobs")).length, 1);
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "complete");
+    assert.deepEqual(f.counts(), { wakes: 0, finishes: 1 });
+  } finally { replaceState(f.original); }
+});
