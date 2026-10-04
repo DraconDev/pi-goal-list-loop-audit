@@ -33,12 +33,41 @@ function fixture(env: Record<string, string> = {}) {
   const startedAt = new Date().toISOString();
   replaceState({ goal: null, list: [], loop: { target: builder.vision, builder, active: true, startedAt, iteration: 1, maxIterations: 0, plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [] } });
   persistStateLine(cwd, state);
-  let wakes = 0, finishes = 0;
-  registerRespecBuilderTools(pi.api, { context: () => ctx, persist: () => persistStateLine(cwd, state), wake: () => { wakes++; }, finished: () => { finishes++; }, resolveModel: () => env.FAIL_PRIMARY ? { model: "test/primary", fallbackModels: [{ model: "test/backup", via: "configured fallback" }] } : { model: "test/provider-model" }, wrapTool: tool => tool,
+  let wakes = 0, finishes = 0, owned = true, resolutions = 0;
+  registerRespecBuilderTools(pi.api, { context: () => owned ? ctx : null, persist: () => persistStateLine(cwd, state), wake: () => { wakes++; }, finished: () => { finishes++; }, resolveModel: () => { resolutions++; return env.FAIL_PRIMARY ? { model: "test/primary", fallbackModels: [{ model: "test/backup", via: "configured fallback" }] } : { model: "test/provider-model" }; }, wrapTool: tool => tool,
     auditSleep: async () => {},
     auditRuntime: { command: process.execPath, workerPath: file, homeDir: cwd, pollIntervalMs: 10, heartbeatNoProgressMs: 5000, firstEventTimeoutMs: 5000, env } });
-  return { cwd, ctx, startedAt, original, builder, file, counts: () => ({ wakes, finishes }) };
+  return { cwd, ctx, startedAt, original, builder, file, counts: () => ({ wakes, finishes }), disown: () => { owned = false; }, resolutions: () => resolutions };
 }
+
+test("a stale audit wake does not resolve a model or launch a worker", async () => {
+  const f = fixture();
+  try {
+    f.disown();
+    await runRespecBuilderAudit(f.ctx);
+    assert.equal(f.resolutions(), 0);
+    assert.equal(fs.existsSync(path.join(f.cwd, ".pi-glla", "audit-jobs")), false);
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "auditing");
+  } finally { replaceState(f.original); }
+});
+
+test("a time bound cancels an in-flight worker and retains unfinished requirements", async () => {
+  const f = fixture({ RESULT_DELAY: "5000" });
+  try {
+    replaceState({ ...state, loop: { ...state.loop!, timeLimitHours: 0.5 / 3600 } });
+    persistStateLine(f.cwd, state);
+    await runRespecBuilderAudit(f.ctx);
+    const saved = readState(f.cwd).loop!;
+    assert.equal(saved.active, false);
+    assert.match(saved.stopReason!, /time bound reached/);
+    assert.equal(saved.builder!.phase, "auditing");
+    assert.equal(saved.builder!.requirements[0]!.status, "open");
+    const jobs = path.join(f.cwd, ".pi-glla", "audit-jobs");
+    assert.ok(fs.readdirSync(jobs).length > 0, "an actual worker was dispatched");
+    assert.ok(fs.readdirSync(jobs).every(name => !fs.existsSync(path.join(jobs, name, "result.json"))));
+    assert.deepEqual(f.counts(), { wakes: 0, finishes: 0 });
+  } finally { replaceState(f.original); }
+});
 
 test("real detached protocol approval archives the intended project before terminal handoff", async () => {
   const f = fixture();

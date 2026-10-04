@@ -83,7 +83,7 @@ function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecB
 /** Resume the same durable claim; process-layer lookup fences the exact request. */
 export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void> {
   const loop = state.loop, initialBuilder = loop?.builder;
-  if (!loop?.active || initialBuilder?.phase !== "auditing" || !initialBuilder.audit) return;
+  if (!loop?.active || initialBuilder?.phase !== "auditing" || !initialBuilder.audit || !host.context(ctx)) return;
   if (parkProjectBound(ctx)) return;
   let builder = initialBuilder;
   const key = `${ctx.cwd}:${loop.startedAt}:${builder.audit!.attemptId}`;
@@ -150,7 +150,8 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
       if (!host.persist(liveCtx)) replaceState(old);
       liveCtx.ui.notify(`Project audit has no verdict: ${result.error}. /loop resume retries the saved claim.`, "warning");
     } else {
-      liveCtx.ui.notify(next.phase === "complete" ? "Project complete — every intended requirement was independently verified." : result.approved ? "Increment verified — replanning the remaining project requirements." : "Increment needs work — audit findings carry into replanning.", next.phase === "replanning" && !result.approved ? "warning" : "info");
+      const verified = next.history?.at(-1)?.outcome === "approved";
+      liveCtx.ui.notify(next.phase === "complete" ? "Project complete — every intended requirement was independently verified." : verified ? "Increment verified — replanning the remaining project requirements." : "Increment needs work — audit findings carry into replanning.", next.phase === "replanning" && !verified ? "warning" : "info");
       if (next.phase !== "complete") host.wake(liveCtx);
       else host.finished?.(liveCtx);
     }
