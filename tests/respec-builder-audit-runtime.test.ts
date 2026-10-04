@@ -39,7 +39,7 @@ test("real detached protocol approval archives the intended project before termi
   const f = fixture();
   try {
     await runRespecBuilderAudit(f.ctx);
-    assert.equal(readState(f.cwd).loop!.builder!.phase, "complete");
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "complete", JSON.stringify(readState(f.cwd).loop));
     assert.equal(readState(f.cwd).loop!.active, false);
     const archive = JSON.parse(fs.readFileSync(respecProjectArchivePath(f.cwd, f.startedAt, f.builder.revision), "utf8"));
     assert.equal(archive.builder.requirements[0].status, "verified");
@@ -53,7 +53,7 @@ test("real detached disapproval carries findings into a durable unfinished next 
   try {
     await runRespecBuilderAudit(f.ctx);
     const saved = readState(f.cwd).loop!.builder!;
-    assert.equal(saved.phase, "replanning");
+    assert.equal(saved.phase, "replanning", JSON.stringify(readState(f.cwd).loop));
     assert.equal(saved.requirements[0]!.status, "open");
     assert.match(saved.feedback.at(-1)!, /Invalid credentials/);
     assert.equal(saved.history!.at(-1)!.outcome, "needs-work");
