@@ -19,7 +19,7 @@ const req = JSON.parse(await readFile(dir + "/request.json", "utf8"));
 async function atomic(file, data) { await writeFile(file + ".tmp", JSON.stringify(data)); await rename(file + ".tmp", file); }
 await atomic(dir + "/progress.json", { protocolVersion: 1, attemptId: req.attemptId, requestHash: req.requestHash, phase: "running", elapsedMs: 1, lastActivityAt: Date.now(), toolCalls: [], recentOutput: [] });
 if (process.env.RESULT_DELAY) await new Promise(resolve => setTimeout(resolve, Number(process.env.RESULT_DELAY)));
-const output = process.env.FAIL_PRIMARY && req.model.includes("primary") ? "no verdict from primary" : process.env.NEEDS_WORK ? "<evidence>\\nInvalid credentials accepted\\n</evidence>\\n<disapproved/>" : "<evidence>\\nartifact exists\\n</evidence>\\n<approved/>";
+const output = process.env.INCOMPLETE_EVIDENCE ? "Looks good\\n<approved/>" : process.env.FAIL_PRIMARY && req.model.includes("primary") ? "no verdict from primary" : process.env.NEEDS_WORK ? "<evidence>\\nInvalid credentials accepted\\n</evidence>\\n<disapproved/>" : "<evidence>\\nartifact exists\\n</evidence>\\n<approved/>";
 await atomic(dir + "/result.json", { protocolVersion: 1, attemptId: req.attemptId, requestHash: req.requestHash, goalRevision: req.goalRevision, ok: true, output, model: req.model, thinkingLevel: req.thinkingLevel, challenge: "confirmed", toolCalls: [{ name: "read", argsPrefix: "{}", finishedAt: Date.now() }] });
 `;
 
@@ -52,9 +52,9 @@ test("a stale audit wake does not resolve a model or launch a worker", async () 
 });
 
 test("a time bound cancels an in-flight worker and retains unfinished requirements", async () => {
-  const f = fixture({ RESULT_DELAY: "5000" });
+  const f = fixture({ RESULT_DELAY: "10000" });
   try {
-    replaceState({ ...state, loop: { ...state.loop!, timeLimitHours: 0.5 / 3600 } });
+    replaceState({ ...state, loop: { ...state.loop!, timeLimitHours: 2 / 3600 } });
     persistStateLine(f.cwd, state);
     await runRespecBuilderAudit(f.ctx);
     const saved = readState(f.cwd).loop!;
@@ -91,6 +91,19 @@ test("real detached disapproval carries findings into a durable unfinished next 
     assert.equal(saved.requirements[0]!.status, "open");
     assert.match(saved.feedback.at(-1)!, /Invalid credentials/);
     assert.equal(saved.history!.at(-1)!.outcome, "needs-work");
+    assert.deepEqual(f.counts(), { wakes: 1, finishes: 0 });
+  } finally { replaceState(f.original); }
+});
+
+test("a semantic approval rejected by the regression shield reports needs work", async () => {
+  const f = fixture({ INCOMPLETE_EVIDENCE: "1" });
+  try {
+    await runRespecBuilderAudit(f.ctx);
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "replanning");
+    assert.equal(readState(f.cwd).loop!.builder!.requirements[0]!.status, "open");
+    const notifications = (f.ctx.ui as ReturnType<typeof makeMockCtx>["ui"]).notifies;
+    assert.ok(notifications.some(n => /Increment needs work/.test(n.message) && n.type === "warning"));
+    assert.ok(notifications.every(n => !/Increment verified/.test(n.message)));
     assert.deepEqual(f.counts(), { wakes: 1, finishes: 0 });
   } finally { replaceState(f.original); }
 });
