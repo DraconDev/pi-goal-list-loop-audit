@@ -49,3 +49,21 @@ auditor prompt. This is not a completed feature: the command does not yet
 initialize builder state, and tools, journal transitions, detached dispatch,
 recovery, confirmed scope refinement, terminal settlement and UI evidence still
 need integration. Existing respec dispatch remains operational meanwhile.
+
+## Implementation checkpoint — command and tool wiring
+
+`/loop respec [project direction]` now initializes the builder's intended-scope
+draft. Registered production tools propose confirmed requirements, plan a batch,
+claim tasks and persist an audit request. Eight core/actual-installer tests pass,
+including durable command/tool state and refusal of proposed scope. TypeScript
+checks pass. The runtime calls the existing detached auditor and synthesizes
+increment acceptance/regression contracts; it fences settlement to the captured
+builder and keeps infrastructure failures as parked claims. Claim timestamps are
+durable, and auditor progress aborts work whose owning loop/session changed.
+
+Still unproven/incomplete: detached-worker behavioral/restart tests; prompt/tool
+guidance details; preservation of ambiguous root-spec selection; legacy restored
+draft regression test migration to distinguish it from the new command; explicit
+blocked/unblocked and confirmed scope-refinement flows; evidence retention across
+replanning; bound/pause/stop/terminal settlement; semantic UI frames; documentation,
+version and full validation. Do not claim feature completion or publish yet.
