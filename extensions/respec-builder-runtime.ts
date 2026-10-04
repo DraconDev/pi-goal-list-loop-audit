@@ -4,7 +4,7 @@ import { Type } from "typebox";
 import { state, replaceState } from "./goal-state.js";
 import { appendLedger, nowIso } from "./goal-loop-core.js";
 import { loadSettings } from "./goal-settings.js";
-import { runDetachedGoalCompletionAuditor, readCompletedCompletionAudit } from "./goal-loop-auditor-process.js";
+import { runDetachedGoalCompletionAuditor, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
 import { respecIncrementAuditGoal } from "./respec-builder-audit.js";
 import { adoptRespecRequirements, beginRespecAudit, blockRespecRequirement, unblockRespecRequirement, refineRespecRequirements, claimRespecTask, planRespecIncrement, settleRespecAudit, type RespecBuilderState } from "./respec-builder.js";
 
@@ -14,6 +14,9 @@ interface Host {
   wake: (ctx: ExtensionContext) => void;
   resolveModel: (ctx: ExtensionContext) => { model: any; error?: string };
   wrapTool: (tool: any) => any;
+  /** Bounded worker launcher overrides for embedding and hermetic tests. */
+  auditRuntime?: AuditorProcessRuntime;
+  finished?: (ctx: ExtensionContext) => void;
 }
 let host: Host;
 const running = new Set<string>();
@@ -52,8 +55,9 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
         onProgress: () => {
           if (!state.loop?.active || state.loop.startedAt !== loop.startedAt || state.loop.builder !== builder || !host.context(ctx)) controller.abort();
         },
-        runtime: { logicalAttemptId: builder.audit.attemptId,
-          toolTimeoutMs: settings.auditorToolTimeoutMs, heartbeatNoProgressMs: settings.auditorStallMs },
+        runtime: { ...host.auditRuntime, logicalAttemptId: builder.audit.attemptId,
+          attemptId: () => newDetachedAuditJobAttemptId(builder.audit!.attemptId),
+          toolTimeoutMs: host.auditRuntime?.toolTimeoutMs ?? settings.auditorToolTimeoutMs, heartbeatNoProgressMs: host.auditRuntime?.heartbeatNoProgressMs ?? settings.auditorStallMs },
       }));
     const liveCtx = host.context(ctx);
     const current = state.loop;
@@ -70,6 +74,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
     } else {
       liveCtx.ui.notify(next.phase === "complete" ? "Project complete — every intended requirement was independently verified." : result.approved ? "Increment verified — replanning the remaining project requirements." : "Increment needs work — audit findings carry into replanning.", next.phase === "replanning" && !result.approved ? "warning" : "info");
       if (next.phase !== "complete") host.wake(liveCtx);
+      else host.finished?.(liveCtx);
     }
   } catch (error) {
     const liveCtx = host.context(ctx);
