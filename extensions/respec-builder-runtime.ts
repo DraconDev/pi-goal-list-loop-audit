@@ -21,7 +21,11 @@ interface Host {
   finished?: (ctx: ExtensionContext) => void;
 }
 let host: Host;
-const running = new Set<string>();
+const running = new Map<string, AbortController>();
+
+export function cancelRespecBuilderAudit(cwd: string, startedAt: string): void {
+  for (const [key, controller] of running) if (key.startsWith(`${cwd}:${startedAt}:`)) controller.abort();
+}
 
 export function respecProjectArchivePath(cwd: string, startedAt: string, revision: number): string {
   const identity = createHash("sha256").update(`${startedAt}:${revision}`).digest("hex").slice(0, 24);
@@ -47,13 +51,13 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
   if (!loop?.active || builder?.phase !== "auditing" || !builder.audit) return;
   const key = `${ctx.cwd}:${loop.startedAt}:${builder.audit.attemptId}`;
   if (running.has(key)) return;
-  running.add(key);
+  const controller = new AbortController();
+  running.set(key, controller);
   try {
     const goal = respecIncrementAuditGoal(builder, loop.startedAt, nowIso());
     const settings = loadSettings(ctx.cwd);
     const saved = readCompletedCompletionAudit(ctx.cwd, goal, settings.auditorStrictChallenge);
     const resolved = host.resolveModel(ctx);
-    const controller = new AbortController();
     const result = saved?.result ?? (resolved.error || !resolved.model
       ? { approved: false, disapproved: false, error: resolved.error ?? "No auditor model available", output: "", model: "unset" }
       : await runDetachedGoalCompletionAuditor({ cwd: ctx.cwd, goal, completionSummary: builder.audit.claim,

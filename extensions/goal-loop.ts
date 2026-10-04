@@ -73,7 +73,7 @@ import { releaseAuditorSurface } from "./loops/goal-auditor-surface.js";
 import { compactLoopCompletionSummary, compactTerminalCompletionSummary } from "./completion-summary.js";
 import { inferStartFromSession, type StartContextInference } from "./start-context.js";
 import { createRespecBuilder, respecCoverage, type RespecBuilderState } from "./respec-builder.js";
-import { runRespecBuilderAudit } from "./respec-builder-runtime.js";
+import { runRespecBuilderAudit, cancelRespecBuilderAudit } from "./respec-builder-runtime.js";
 
 type DispatchInput = Omit<Parameters<typeof createContinuationDispatch>[0], "id" | "sentAt">;
 
@@ -1273,6 +1273,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
   // other route can mutate or dispatch work, so reject it before any state,
   // recovery, or drafting side effect.
   if (sub !== "status" && warnIfStaleAtEntry(ctx, `/loop${sub ? ` ${sub}` : ""}`)) return;
+  if (["pause", "stop", "cancel"].includes(sub) && state.loop?.builder) cancelRespecBuilderAudit(ctx.cwd, state.loop.startedAt);
 
   if (!sub || sub === "resume") {
     releaseInitialSessionLoadBarrier();
