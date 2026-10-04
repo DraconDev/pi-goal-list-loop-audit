@@ -323,3 +323,18 @@ test("rapid pause/resume discards the cancelled worker result and rearms the sav
     assert.deepEqual(f.counts(), { wakes: 1, finishes: 0 });
   } finally { replaceState(f.original); }
 });
+
+
+test("an undelivered project summary survives replacement by a new project", async () => {
+  const env: Record<string, string> = { SUMMARY_FAIL: "1" }, f = fixture(env);
+  try {
+    await runRespecBuilderAudit(f.ctx);
+    const summary = state.loop!.completionSummary;
+    replaceState({ ...state, loop: null }); persistStateLine(f.cwd, state);
+    delete env.SUMMARY_FAIL;
+    replayRespecCompletionSummary(f.ctx);
+    replayRespecCompletionSummary(f.ctx);
+    assert.deepEqual(f.summaries, [summary]);
+    assert.equal(state.loop, null);
+  } finally { replaceState(f.original); }
+});
