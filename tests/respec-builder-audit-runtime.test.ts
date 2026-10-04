@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { registerRespecBuilderTools, runRespecBuilderAudit, respecProjectArchivePath } from "../extensions/respec-builder-runtime.js";
+import { registerRespecBuilderTools, runRespecBuilderAudit, respecProjectArchivePath, cancelRespecBuilderAudit } from "../extensions/respec-builder-runtime.js";
 import { createRespecBuilder, adoptRespecRequirements, planRespecIncrement, claimRespecTask, beginRespecAudit } from "../extensions/respec-builder.js";
 import { state, replaceState, persistStateLine } from "../extensions/goal-state.js";
 import { readState } from "../extensions/goal-loop-core.js";
@@ -78,7 +78,7 @@ test("completed job is recovered after reloading an unsettled claim without anot
 });
 
 test("pausing during an actual worker run prevents late approval from settling the project", async () => {
-  const f = fixture({ RESULT_DELAY: "200" });
+  const f = fixture({ RESULT_DELAY: "5000" });
   try {
     const pending = runRespecBuilderAudit(f.ctx);
     const deadline = Date.now() + 5000;
@@ -88,11 +88,13 @@ test("pausing during an actual worker run prevents late approval from settling t
     }
     replaceState({ ...state, loop: { ...state.loop!, active: false, stopReason: "paused by user" } });
     persistStateLine(f.cwd, state);
+    cancelRespecBuilderAudit(f.cwd, f.startedAt);
     await pending;
     assert.equal(readState(f.cwd).loop!.active, false);
     assert.equal(readState(f.cwd).loop!.builder!.phase, "auditing");
     assert.equal(readState(f.cwd).loop!.builder!.requirements[0]!.status, "open");
     assert.deepEqual(f.counts(), { wakes: 0, finishes: 0 });
+    assert.ok(fs.readdirSync(path.join(f.cwd, ".pi-glla", "audit-jobs")).every(name => !fs.existsSync(path.join(f.cwd, ".pi-glla", "audit-jobs", name, "result.json"))), "the paused worker is cancelled before it publishes approval");
   } finally { replaceState(f.original); }
 });
 
