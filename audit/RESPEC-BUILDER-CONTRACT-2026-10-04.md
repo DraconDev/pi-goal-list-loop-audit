@@ -84,3 +84,29 @@ evidence and action. Width checks and no-italic checks pass. 22 tests pass acros
 the core, real command/tool wiring, restored draft and display suites. Actual
 dark/light rendered-frame inspection, detached process/reload lifecycle tests,
 terminal archival/queue handoff and broader release checks remain outstanding.
+
+## Implementation checkpoint — detached lifecycle and release validation
+
+Six real detached-process protocol tests pass for approval/archive/handoff,
+disapproval/replanning, recovering finished exact-claim evidence after reload
+without another spawn, pause cancellation, archive-failure settlement retry and
+concurrent-wake deduplication. Combined builder/draft/display suites reached
+28 passing tests. Auditor jobs now use the durable logical claim prefix; claim
+timestamps and revision tokens survive reload. Completion writes a project
+archive before terminal state and announces queued work. Pause/stop cancels
+workers through the existing process signal boundary.
+
+Rendered and inspected 36 actual project widget/status frames in dark/light
+themes at 40/80/120 columns. Narrow action text was shortened to preserve the
+user's command. Prepared version 0.39.0 and updated README, command completion
+guidance and changelog. Production scope review uses the existing scrollable
+Confirm component and configured draft auto-accept policy. Auditor inspection
+and configured provider-extension mirroring are respected.
+
+The full release gate is running as exec session 9345, with output in
+`/tmp/glla-respec-builder-release-check.log`. It found a stale same-model-toggle
+source assertion expecting two audit call sites; the new respec site makes three.
+That assertion was corrected and its targeted suite passes. Do not claim the
+full gate passed until completion and any required rerun. Remaining review:
+audit fallback-chain cursor/settings support, bound behavior, current-source
+compatibility, completion requirement audit and full clean validation.
