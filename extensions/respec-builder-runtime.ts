@@ -11,6 +11,7 @@ import type { LoopState } from "./goal-loop-forever.js";
 import { dispatchAuditorAllowedExtensions } from "./auditor-extensions.js";
 import { resolveAuditorThinkingLevel } from "./auditor-thinking.js";
 import { runDetachedGoalCompletionAuditor, runAuditorFallbackWithPolicy, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, writeAtomicJson, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
+import { setRespecAuditLive, getRespecAuditLive, respecCompletionSummary } from "./respec-builder-ui.js";
 import { respecIncrementAuditGoal } from "./respec-builder-audit.js";
 import { adoptRespecRequirements, beginRespecAudit, blockRespecRequirement, unblockRespecRequirement, refineRespecRequirements, claimRespecTask, planRespecIncrement, settleRespecAudit, type RespecBuilderState } from "./respec-builder.js";
 
@@ -26,6 +27,8 @@ interface Host {
   confirm?: (ctx: ExtensionContext, title: string, body: string) => Promise<boolean>;
   auditSleep?: (ms: number) => Promise<void>;
   thinkingLevel?: () => string | undefined;
+  refresh?: (ctx: ExtensionContext) => void;
+  completed?: (ctx: ExtensionContext, id: string, summary: string) => boolean;
 }
 let host: Host;
 const running = new Map<string, AbortController>();
@@ -67,13 +70,13 @@ function parkProjectBound(ctx: ExtensionContext): boolean {
   return true;
 }
 
-function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecBuilderState): boolean {
+function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecBuilderState, completionSummary?: string): boolean {
   if (!host.context(ctx)) return false;
   const loop = state.loop;
   if (!loop || loop.builder !== before) return false;
   const old = state;
   const blocked = next.requirements.some(r => r.status === "blocked") && !next.requirements.some(r => r.status === "open") && next.phase !== "auditing";
-  replaceState({ ...old, loop: { ...loop, builder: next, ...(next.phase === "complete" ? { active: false, stopReason: "completed: all intended project requirements independently verified" } : blocked ? { active: false, stopReason: "blocked project requirements: clear the recorded blockers, then /loop resume" } : {}) } });
+  replaceState({ ...old, loop: { ...loop, builder: next, ...(completionSummary ? { completionSummary } : {}), ...(next.phase === "complete" ? { active: false, stopReason: "completed: all intended project requirements independently verified" } : blocked ? { active: false, stopReason: "blocked project requirements: clear the recorded blockers, then /loop resume" } : {}) } });
   if (!host.persist(ctx)) { replaceState(old); return false; }
   appendLedger(ctx.cwd, "respec_builder_transition", { phase: next.phase, revision: next.revision, cycle: next.cycle,
     history: next.history?.at(-1), scopeChange: next.scopeChanges?.at(-1) });
@@ -90,6 +93,13 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
   if (running.has(key)) return;
   const controller = new AbortController();
   running.set(key, controller);
+  const auditStartedAt = Date.now();
+  const publish = (patch: Partial<NonNullable<ReturnType<typeof getRespecAuditLive>>>) => {
+    if (!state.loop?.active || state.loop.builder !== builder || !host.context(ctx)) return;
+    setRespecAuditLive(builder, { phase: "waiting", startedAt: auditStartedAt, ...getRespecAuditLive(builder), ...patch });
+    host.refresh?.(ctx);
+  };
+  publish({ phase: "waiting" });
   const remainingMs = loop.timeLimitHours !== undefined ? loop.timeLimitHours * 3600000 - (Date.now() - Date.parse(loop.startedAt)) : undefined;
   const boundTimer = remainingMs !== undefined && Number.isFinite(remainingMs) && remainingMs > 0 && remainingMs <= 2147483647
     ? setTimeout(() => { if (state.loop?.startedAt === loop.startedAt && state.loop.builder === builder && parkProjectBound(ctx)) controller.abort(); }, remainingMs + 1) : undefined;
@@ -113,7 +123,8 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
         allowedExtensions: dispatchAuditorAllowedExtensions(settings.auditorAllowedExtensions, settings.auditorMirrorSessionExtensions, host.auditRuntime?.homeDir ?? homedir(), ctx.cwd),
         inspection: settings.auditorInspection === true,
         signal: controller.signal,
-        onProgress: () => {
+        onProgress: progress => {
+          publish({ phase: progress.phase === "starting" ? "starting" : "running", lastActivityAt: progress.lastActivityAt, activity: progress.currentTool ? `tool: ${progress.currentTool}` : progress.phase.replaceAll("_", " ") });
           if (parkProjectBound(ctx)) controller.abort();
           if (!state.loop?.active || state.loop.startedAt !== loop.startedAt || state.loop.builder !== builder || !host.context(ctx)) controller.abort();
         },
@@ -127,21 +138,23 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
         resumeCandidateRef: builder.audit!.candidateRef, attemptedRefs: builder.audit!.attemptedRefs,
         retryCandidateRef: builder.audit!.retryCandidateRef, retryAttemptStarted: builder.audit!.retryAttemptStarted,
         retryFailureClass: builder.audit!.retryFailureClass,
-        onAttempt: (_candidate, info) => saveCursor({ candidateRef: info.candidateRef, attemptedRefs: info.attemptedRefs, retryAttemptStarted: info.attempt === 2 }),
-        onRetry: (_candidate, _error, _delay, info) => saveCursor({ candidateRef: info.candidateRef, attemptedRefs: info.attemptedRefs, retryCandidateRef: info.candidateRef, retryFailureClass: info.failureClass, retryAttemptStarted: false }),
-        onCandidateExhausted: (_candidate, _error, info) => saveCursor({ candidateRef: info.nextCandidateRef ?? info.candidateRef, attemptedRefs: info.attemptedRefs, retryCandidateRef: undefined, retryAttemptStarted: false, retryFailureClass: info.failureClass }),
+        onAttempt: (_candidate, info) => { publish({ phase: "starting", model: info.candidateRef, retryAt: undefined, lastActivityAt: undefined, activity: undefined }); return saveCursor({ candidateRef: info.candidateRef, attemptedRefs: info.attemptedRefs, retryAttemptStarted: info.attempt === 2 }); },
+        onRetry: (_candidate, _error, delay, info) => { publish({ phase: "retrying", retryAt: Date.now() + delay, activity: `retry: ${info.failureClass}` }); return saveCursor({ candidateRef: info.candidateRef, attemptedRefs: info.attemptedRefs, retryCandidateRef: info.candidateRef, retryFailureClass: info.failureClass, retryAttemptStarted: false }); },
+        onCandidateExhausted: (_candidate, _error, info) => { publish({ phase: "waiting", model: info.nextCandidateRef, retryAt: undefined, activity: "selecting fallback" }); return saveCursor({ candidateRef: info.nextCandidateRef ?? info.candidateRef, attemptedRefs: info.attemptedRefs, retryCandidateRef: undefined, retryAttemptStarted: false, retryFailureClass: info.failureClass }); },
       })).result);
     const liveCtx = host.context(ctx);
     const current = state.loop;
     if (!liveCtx || current?.startedAt !== loop.startedAt || !current.active || current.builder !== builder) return;
     const next = settleRespecAudit(builder, builder.audit!.attemptId, result);
+    const archive = respecProjectArchivePath(liveCtx.cwd, loop.startedAt, next.revision);
+    const summary = next.phase === "complete" ? respecCompletionSummary(next, archive) : undefined;
     if (next.phase === "complete") {
       await mkdir(archiveDir(liveCtx.cwd), { recursive: true });
-      await writeAtomicJson(respecProjectArchivePath(liveCtx.cwd, loop.startedAt, next.revision), { kind: "respec-project", startedAt: loop.startedAt, completedAt: nowIso(), builder: next });
+      await writeAtomicJson(respecProjectArchivePath(liveCtx.cwd, loop.startedAt, next.revision), { kind: "respec-project", startedAt: loop.startedAt, completedAt: nowIso(), builder: next, completionSummary: summary });
       // Archival yields: a concurrent stop/refinement must still own state.
       if (!host.context(liveCtx) || state.loop?.builder !== builder || !state.loop.active) return;
     }
-    if (!commit(liveCtx, builder, next)) return;
+    if (!commit(liveCtx, builder, next, summary)) return;
     if (result.error) {
       // Keep the claim, but park automation rather than retrying an unavailable
       // provider in a hot loop. Explicit resume retries the same durable claim.
@@ -153,7 +166,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
       const verified = next.history?.at(-1)?.outcome === "approved";
       liveCtx.ui.notify(next.phase === "complete" ? "Project complete — every intended requirement was independently verified." : verified ? "Increment verified — replanning the remaining project requirements." : "Increment needs work — audit findings carry into replanning.", next.phase === "replanning" && !verified ? "warning" : "info");
       if (next.phase !== "complete") host.wake(liveCtx);
-      else host.finished?.(liveCtx);
+      else { replayRespecCompletionSummary(liveCtx); host.finished?.(liveCtx); }
     }
   } catch (error) {
     const liveCtx = host.context(ctx);
@@ -163,7 +176,18 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
       if (!host.persist(liveCtx)) replaceState(old);
       liveCtx.ui.notify("Project audit interrupted without a verdict; /loop resume retries its durable claim.", "warning");
     }
-  } finally { if (boundTimer) clearTimeout(boundTimer); running.delete(key); }
+  } finally { if (boundTimer) clearTimeout(boundTimer); running.delete(key); setRespecAuditLive(initialBuilder); if (host.context(ctx)) host.refresh?.(ctx); }
+}
+
+/** The durable terminal summary is the outbox; replay uses the existing receipt check. */
+export function replayRespecCompletionSummary(ctx: ExtensionContext): void {
+  const loop = state.loop, builder = loop?.builder;
+  if (!host?.completed || !host.context(ctx) || builder?.phase !== "complete" || builder.summaryDeliveredAt || !loop?.completionSummary) return;
+  try {
+    if (host.completed(ctx, `respec:${builder.projectId ?? loop.startedAt}:${builder.revision}`, loop.completionSummary)) {
+      commit(ctx, builder, { ...builder, summaryDeliveredAt: nowIso() });
+    }
+  } catch { ctx.ui.notify("Project summary is saved; /loop status shows it. Delivery will retry on reload.", "warning"); }
 }
 
 export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
