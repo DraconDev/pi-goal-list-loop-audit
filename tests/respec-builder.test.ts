@@ -14,6 +14,14 @@ function planned() {
 }
 const pass = { approved: true, disapproved: false, output: "Inspected and exercised login acceptance criteria.", model: "auditor", regressionShieldPassed: true };
 
+test("replanning receives the missing contract evidence when semantic approval is rejected", () => {
+  const pending = beginRespecAudit(claimRespecTask(planned(), "auth"), "shield-missing", "Implemented login");
+  const next = settleRespecAudit(pending, "shield-missing", { ...pass, regressionShieldPassed: false, regressionShieldMissing: ["Invalid credentials are rejected"] });
+  assert.equal(next.phase, "replanning");
+  assert.match(next.feedback.at(-1)!, /missing contract evidence for Invalid credentials are rejected/);
+  assert.match(next.history!.at(-1)!.report, /approving claim was not accepted/);
+});
+
 test("task completion is only a claim; approving one batch leaves the project unfinished", () => {
   const state = planned();
   const claimed = claimRespecTask(state, "auth");

@@ -54,7 +54,7 @@ test("a stale audit wake does not resolve a model or launch a worker", async () 
 test("a time bound cancels an in-flight worker and retains unfinished requirements", async () => {
   const f = fixture({ RESULT_DELAY: "10000" });
   try {
-    replaceState({ ...state, loop: { ...state.loop!, timeLimitHours: 2 / 3600 } });
+    replaceState({ ...state, loop: { ...state.loop!, startedAt: new Date().toISOString(), timeLimitHours: 2 / 3600 } });
     persistStateLine(f.cwd, state);
     await runRespecBuilderAudit(f.ctx);
     const saved = readState(f.cwd).loop!;
@@ -101,7 +101,7 @@ test("a semantic approval rejected by the regression shield reports needs work",
     await runRespecBuilderAudit(f.ctx);
     assert.equal(readState(f.cwd).loop!.builder!.phase, "replanning");
     assert.equal(readState(f.cwd).loop!.builder!.requirements[0]!.status, "open");
-    const notifications = (f.ctx.ui as ReturnType<typeof makeMockCtx>["ui"]).notifies;
+    const notifications = (f.ctx.ui as unknown as ReturnType<typeof makeMockCtx>["ui"]).notifies;
     assert.ok(notifications.some(n => /Increment needs work/.test(n.message) && n.type === "warning"));
     assert.ok(notifications.every(n => !/Increment verified/.test(n.message)));
     assert.deepEqual(f.counts(), { wakes: 1, finishes: 0 });

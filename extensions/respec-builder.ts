@@ -76,13 +76,16 @@ export function beginRespecAudit(state: RespecBuilderState, attemptId: string, c
 export function settleRespecAudit(state: RespecBuilderState, attemptId: string, result: GoalAuditorResult): RespecBuilderState {
   if (state.phase !== "auditing" || state.audit?.attemptId !== attemptId || state.audit.revision !== state.revision) return state;
   const approved = result.approved && !result.disapproved && !result.impossible && !result.error && result.regressionShieldPassed !== false;
-  const history = result.error ? state.history : [...(state.history ?? []), { cycle: state.cycle, tasks: state.tasks, outcome: approved ? "approved" as const : "needs-work" as const, report: result.output, attemptId }].slice(-20);
+  const report = result.regressionShieldPassed === false
+    ? `${result.output}\n\nIndependent verification incomplete: missing contract evidence${result.regressionShieldMissing?.length ? ` for ${result.regressionShieldMissing.join("; ")}` : ""}. The approving claim was not accepted.`
+    : result.output;
+  const history = result.error ? state.history : [...(state.history ?? []), { cycle: state.cycle, tasks: state.tasks, outcome: approved ? "approved" as const : "needs-work" as const, report, attemptId }].slice(-20);
   if (!approved) return { ...state, phase: result.error ? "auditing" : "replanning", audit: result.error ? state.audit : undefined,
     // The audit covers earlier capabilities as regressions too. A negative
     // verdict cannot retain them as currently verified without itemized proof.
     requirements: result.error ? state.requirements : state.requirements.map(r => r.status === "verified" ? { ...r, status: "open", evidence: undefined } : r),
     history,
-    feedback: [...state.feedback, result.error ?? result.impossibleReason ?? result.output].slice(-5) };
+    feedback: [...state.feedback, result.error ?? result.impossibleReason ?? report].slice(-5) };
   const audited = new Set(state.audit.requirementIds);
   const requirements = state.requirements.map(r => audited.has(r.id) ? { ...r, status: "verified" as const, blockedReason: undefined,
     evidence: { attemptId, report: result.output, model: result.model } } : r);
