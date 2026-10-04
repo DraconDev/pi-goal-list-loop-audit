@@ -1,3 +1,8 @@
+import * as path from "node:path";
+import { loadThemeFromPath } from "../node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/theme/theme.js";
+import { registerSummaryRenderer } from "../extensions/summary-renderer.js";
+import { MockPi } from "./harness/mock-pi.js";
+import { stripTerminalSequences, type Component } from "@earendil-works/pi-tui";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createRespecBuilder, adoptRespecRequirements, planRespecIncrement, claimRespecTask, beginRespecAudit, settleRespecAudit } from "../extensions/respec-builder.js";
@@ -32,4 +37,25 @@ test("completion summary requires proof and includes acceptance, shipped capabil
   const text = respecCompletionSummary(complete, "archive.json");
   for (const phrase of ["What Changed", "Usable login", "Reject invalid credentials", "independent/model", "Invalid credentials rejected", "No unfinished adopted requirements", "Archive"]) assert.ok(text.includes(phrase));
   assert.doesNotMatch(text, /\x1b/);
+});
+
+
+test("actual project summaries render semantic headings, bold and no italics in both themes", () => {
+  const builder = pending();
+  const complete = settleRespecAudit(builder, "attempt", { approved: true, disapproved: false, output: "Invalid credentials rejected", model: "independent/model", regressionShieldPassed: true });
+  const content = respecCompletionSummary(complete, "archive.json");
+  for (const appearance of ["dark", "light"]) {
+    const theme = loadThemeFromPath(path.resolve(import.meta.dirname, `../node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/theme/${appearance}.json`), "truecolor");
+    const pi = new MockPi(); registerSummaryRenderer(pi.api);
+    const renderer = pi.messageRenderers.get("goal-event")!({ content, details: { terminalApprovalGoalId: "respec:project:1" } } as never, { outputPad: 1 } as never, theme) as Component;
+    for (const width of [1, 20, 40, 80, 120]) {
+      const lines = renderer.render(width), ansi = lines.join("\n");
+      assert.ok(lines.every(line => visibleWidth(line) <= width));
+      assert.doesNotMatch(ansi, /\x1b\[(?:\d+;)*3(?:;\d+)*m/);
+      if (width >= 40) {
+        assert.ok(ansi.includes(theme.bold(theme.fg("success", "Done"))));
+        assert.match(stripTerminalSequences(ansi), /What Changed/);
+      }
+    }
+  }
 });
