@@ -6,7 +6,7 @@ import { appendLedger, nowIso } from "./goal-loop-core.js";
 import { loadSettings } from "./goal-settings.js";
 import { runDetachedGoalCompletionAuditor, readCompletedCompletionAudit } from "./goal-loop-auditor-process.js";
 import { respecIncrementAuditGoal } from "./respec-builder-audit.js";
-import { adoptRespecRequirements, beginRespecAudit, claimRespecTask, planRespecIncrement, settleRespecAudit, type RespecBuilderState } from "./respec-builder.js";
+import { adoptRespecRequirements, beginRespecAudit, blockRespecRequirement, unblockRespecRequirement, refineRespecRequirements, claimRespecTask, planRespecIncrement, settleRespecAudit, type RespecBuilderState } from "./respec-builder.js";
 
 interface Host {
   context: (ctx: ExtensionContext) => ExtensionContext | null;
@@ -25,7 +25,8 @@ function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecB
   const old = state;
   replaceState({ ...old, loop: { ...loop, builder: next, ...(next.phase === "complete" ? { active: false, stopReason: "completed: all intended project requirements independently verified" } : {}) } });
   if (!host.persist(ctx)) { replaceState(old); return false; }
-  appendLedger(ctx.cwd, "respec_builder_transition", { phase: next.phase, revision: next.revision, cycle: next.cycle });
+  appendLedger(ctx.cwd, "respec_builder_transition", { phase: next.phase, revision: next.revision, cycle: next.cycle,
+    history: next.history?.at(-1), scopeChange: next.scopeChanges?.at(-1) });
   return true;
 }
 
@@ -113,5 +114,22 @@ export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
   }));
   pi.registerTool(host.wrapTool({ name: "audit_project_increment", label: "Audit build increment", description: "Submit a concrete implementation claim after all batch tasks are claimed. The host runs the isolated auditor after this turn.",
     parameters: Type.Object({ claim: Type.String() }), execute: execute((p, _ctx, before) => beginRespecAudit(before, randomUUID(), p.claim)),
+  }));
+  for (const [name, label, action] of [
+    ["block_project_requirement", "Record project blocker", blockRespecRequirement],
+    ["unblock_project_requirement", "Clear project blocker", unblockRespecRequirement],
+  ] as const) {
+    pi.registerTool(host.wrapTool({ name, label, description: "Record a concrete blocker or evidence it cleared. Blocked requirements remain unfinished; abandoning a batch retains its tasks and reason.",
+      parameters: Type.Object({ id: Type.String(), reason: Type.String() }), execute: execute((p, _ctx, before) => action(before, p.id, p.reason)),
+    }));
+  }
+  pi.registerTool(host.wrapTool({ name: "propose_project_refinement", label: "Refine intended project", description: "Propose the full revised requirements with rationale. Scope removal or changed acceptance needs user confirmation; prior audit claims become stale.",
+    parameters: Type.Object({ reason: Type.String(), requirements: Type.Array(Type.Object({ id: Type.String(), text: Type.String(), acceptance: Type.String() })) }),
+    execute: execute(async (p, ctx, before) => {
+      const next = refineRespecRequirements(before, p.requirements, p.reason);
+      const ok = await ctx.ui.confirm("Confirm project scope change", `Reason: ${p.reason}\n\nCURRENT:\n${before.requirements.map(r => `${r.id}: ${r.text}\nDone when: ${r.acceptance}`).join("\n\n")}\n\nPROPOSED:\n${next.requirements.map(r => `${r.id}: ${r.text}\nDone when: ${r.acceptance}`).join("\n\n")}\n\nRemoved: ${next.scopeChanges!.at(-1)!.removedIds.join(", ") || "none"}. Changed scope requires renewed verification.`);
+      if (!ok) throw new Error("Scope change declined; existing requirements and audit claim remain intact.");
+      return next;
+    }),
   }));
 }

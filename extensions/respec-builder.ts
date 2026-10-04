@@ -23,6 +23,8 @@ export interface RespecBuilderState {
   requirements: RespecRequirement[];
   tasks: RespecBuildTask[];
   feedback: string[];
+  history?: { cycle: number; tasks: RespecBuildTask[]; outcome: "approved" | "needs-work" | "replanned"; report: string; attemptId?: string }[];
+  scopeChanges?: { revision: number; reason: string; removedIds: string[] }[];
   audit?: { attemptId: string; revision: number; requirementIds: string[]; claim: string; at: string };
 }
 
@@ -70,18 +72,42 @@ export function beginRespecAudit(state: RespecBuilderState, attemptId: string, c
 export function settleRespecAudit(state: RespecBuilderState, attemptId: string, result: GoalAuditorResult): RespecBuilderState {
   if (state.phase !== "auditing" || state.audit?.attemptId !== attemptId || state.audit.revision !== state.revision) return state;
   const approved = result.approved && !result.disapproved && !result.impossible && !result.error && result.regressionShieldPassed !== false;
+  const history = result.error ? state.history : [...(state.history ?? []), { cycle: state.cycle, tasks: state.tasks, outcome: approved ? "approved" as const : "needs-work" as const, report: result.output, attemptId }].slice(-20);
   if (!approved) return { ...state, phase: result.error ? "auditing" : "replanning", audit: result.error ? state.audit : undefined,
+    history,
     feedback: [...state.feedback, result.error ?? result.impossibleReason ?? result.output].slice(-5) };
   const audited = new Set(state.audit.requirementIds);
   const requirements = state.requirements.map(r => audited.has(r.id) ? { ...r, status: "verified" as const, blockedReason: undefined,
     evidence: { attemptId, report: result.output, model: result.model } } : r);
-  return { ...state, requirements, phase: requirements.every(r => r.status === "verified") ? "complete" : "replanning", audit: undefined };
+  return { ...state, requirements, history, phase: requirements.every(r => r.status === "verified") ? "complete" : "replanning", audit: undefined };
 }
 
 export function blockRespecRequirement(state: RespecBuilderState, id: string, reason: string): RespecBuilderState {
-  requirePhase(state, ["planning", "replanning"]);
+  requirePhase(state, ["planning", "replanning", "building"]);
   if (!reason.trim() || !state.requirements.some(r => r.id === id && r.status !== "verified")) throw new Error("Blocking needs an unfinished requirement and a concrete reason.");
-  return { ...state, requirements: state.requirements.map(r => r.id === id ? { ...r, status: "blocked", blockedReason: reason.trim() } : r) };
+  return { ...state, phase: "replanning", tasks: [], history: state.tasks.length ? [...(state.history ?? []), { cycle: state.cycle, tasks: state.tasks, outcome: "replanned" as const, report: `Blocked ${id}: ${reason.trim()}` }].slice(-20) : state.history,
+    requirements: state.requirements.map(r => r.id === id ? { ...r, status: "blocked", blockedReason: reason.trim() } : r) };
+}
+
+export function unblockRespecRequirement(state: RespecBuilderState, id: string, reason: string): RespecBuilderState {
+  requirePhase(state, ["planning", "replanning", "building"]);
+  if (!reason.trim() || !state.requirements.some(r => r.id === id && r.status === "blocked")) throw new Error("Unblocking needs a blocked requirement and evidence that its blocker cleared.");
+  return { ...state, feedback: [...state.feedback, `Unblocked ${id}: ${reason.trim()}`].slice(-5), requirements: state.requirements.map(r => r.id === id ? { ...r, status: "open", blockedReason: undefined } : r) };
+}
+
+/** Explicit confirmed scope change; changing criteria invalidates their proof. */
+export function refineRespecRequirements(state: RespecBuilderState, requirements: { id: string; text: string; acceptance: string }[], reason: string): RespecBuilderState {
+  requirePhase(state, ["planning", "replanning", "building", "auditing"]);
+  if (!reason.trim()) throw new Error("Scope refinement needs a reason.");
+  const adopted = adoptRespecRequirements({ ...state, phase: "drafting" }, requirements);
+  const next = adopted.requirements.map(r => {
+    const old = state.requirements.find(prior => prior.id === r.id && prior.text === r.text && prior.acceptance === r.acceptance);
+    return old ? { ...old } : r;
+  });
+  // All-verified scope still requires an independent whole-project audit.
+  return { ...state, revision: state.revision + 1, phase: "replanning", requirements: next.map(r => r.status === "verified" ? { ...r, status: "open", evidence: undefined } : r), tasks: [], audit: undefined,
+    history: state.tasks.length ? [...(state.history ?? []), { cycle: state.cycle, tasks: state.tasks, outcome: "replanned" as const, report: reason }].slice(-20) : state.history,
+    scopeChanges: [...(state.scopeChanges ?? []), { revision: state.revision + 1, reason: reason.trim(), removedIds: state.requirements.filter(r => !next.some(n => n.id === r.id)).map(r => r.id) }].slice(-20) };
 }
 
 export function respecCoverage(state: RespecBuilderState): { verified: number; remaining: number; blocked: number; total: number } {
