@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyLoadState } from "../extensions/loops/goal.js";
-import { runLoopTick, clearLoopTimer, loopPrompt } from "../extensions/goal-loop.js";
+import { runLoopTick, clearLoopTimer, loopPrompt, scheduleLoopTick } from "../extensions/goal-loop.js";
 import { readState } from "../extensions/goal-loop-core.js";
 import { respecTarget, respecDraftReady, respecSpecComplete } from "../extensions/goal-loop-forever.js";
 import { MockPi, makeMockCtx, tmpCwd, tick, seedState } from "./harness/mock-pi.js";
@@ -12,12 +12,20 @@ import { MockPi, makeMockCtx, tmpCwd, tick, seedState } from "./harness/mock-pi.
 afterEach(() => { clearLoopTimer(); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); });
 const SPEC = "# Project\n\n## Rules\nRespect the project instructions.\n\n## Architecture\nObserved entry points and state.\n";
 
-test("missing-spec respec dispatches a durable dedicated draft and gates reconciliation", async () => {
+async function restoreLegacyDraft(cwd: string, ctx: ReturnType<typeof makeMockCtx>) {
+  seedState(cwd, { goal: null, loop: { target: "Draft the comprehensive SPEC.md from the current codebase before reconciliation", specFile: path.join(cwd, "SPEC.md"), respecPhase: "draft",
+    active: true, iteration: 0, maxIterations: 0, plateauWindow: 5, stallCount: 0,
+    bestValue: null, lastValue: null, history: [], startedAt: new Date().toISOString() } });
+  __testOnlyLoadState(cwd);
+  scheduleLoopTick(ctx as unknown as ExtensionContext);
+}
+
+test("restored legacy missing-spec loop dispatches its dedicated draft and gates reconciliation", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-draft" } });
   await pi.fire("session_start", { reason: "startup" }, ctx);
   try {
-    await pi.command("loop", "respec", ctx); await tick(100);
+    await restoreLegacyDraft(cwd, ctx); await tick(100);
     const draft = pi.sent.find(s => s.message.content?.includes("[RESPEC BIG DRAFT]"));
     assert.ok(draft, "the route actually sends the dedicated drafting prompt");
     assert.match(draft.message.content!, /\[LOOP ITERATION 1\]/, "dispatch acknowledgement retains its loop marker");
@@ -55,7 +63,7 @@ test("legacy bootstrap loops recover into the draft phase, including an existing
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
 
-test("respec with an existing spec retains immediate reconciliation", async () => {
+test("respec with an existing spec drafts intended requirements before building", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
   fs.writeFileSync(path.join(cwd, "SPEC.md"), SPEC);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-existing" } });
@@ -63,7 +71,8 @@ test("respec with an existing spec retains immediate reconciliation", async () =
   try {
     await pi.command("loop", "respec", ctx); await tick(100);
     assert.equal(readState(cwd).loop?.respecPhase, undefined);
-    assert.equal(readState(cwd).loop?.target, respecTarget("SPEC.md"));
+    assert.equal(readState(cwd).loop?.builder?.phase, "drafting");
+    assert.equal(readState(cwd).loop?.specFile, path.join(cwd, "SPEC.md"));
     assert.ok(!pi.sent.some(s => s.message.content?.includes("[RESPEC BIG DRAFT]")));
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
