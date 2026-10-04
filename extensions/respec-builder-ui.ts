@@ -37,7 +37,7 @@ export function respecCompletionSummary(builder: RespecBuilderState, archive: st
   const audits = new Map(builder.requirements.map(r => [r.evidence!.attemptId, r.evidence!]));
   return ["### Done", markdown(builder.vision), "", "### What Changed",
     ...builder.requirements.map(r => `- **${markdown(r.id)}:** ${markdown(r.text)}`), "", "### Verification",
-    `${builder.requirements.length} passed requirement audits; every adopted acceptance criterion is independently verified.`,
+    `PASS: All ${builder.requirements.length} adopted requirements are independently verified.`,
     ...builder.requirements.map(r => `- **${markdown(r.id)}:** ${markdown(r.acceptance)} — audit ${markdown(r.evidence!.attemptId)}`),
     "", "### Evidence", ...[...audits.values()].map(e => `- **${markdown(e.attemptId)}** · ${markdown(e.model)}: ${markdown(e.report)}`),
     `- **Archive:** ${markdown(archive)}`, "", "### Remaining", "No unfinished adopted requirements.", "", "### Next", "Use /loop status to inspect the verified project; start a new project when its intended scope changes."].join("\n");

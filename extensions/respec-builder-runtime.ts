@@ -124,7 +124,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
         inspection: settings.auditorInspection === true,
         signal: controller.signal,
         onProgress: progress => {
-          publish({ phase: progress.phase === "starting" ? "starting" : "running", ...(progress.lastActivityAt !== undefined ? { lastActivityAt: progress.lastActivityAt } : {}), activity: progress.currentTool ? `tool: ${progress.currentTool}` : progress.phase.replaceAll("_", " ") });
+          publish({ phase: progress.phase === "starting" ? "starting" : "running", ...(progress.phase !== "starting" && progress.lastActivityAt !== undefined ? { lastActivityAt: progress.lastActivityAt } : {}), activity: progress.currentTool ? `tool: ${progress.currentTool}` : progress.phase.replaceAll("_", " ") });
           if (parkProjectBound(ctx)) controller.abort();
           if (!state.loop?.active || state.loop.startedAt !== loop.startedAt || state.loop.builder !== builder || !host.context(ctx)) controller.abort();
         },
