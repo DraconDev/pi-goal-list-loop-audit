@@ -16,14 +16,14 @@ Earlier reports are pointers, not proof that current source is correct.
 
 | Surface family | Source and audit obligations | Disposition |
 | --- | --- | --- |
-| Commands and agent tools | Activation, goal-commands, goal-tools, loop command; contract adoption, consent, pause/stop/resume and truthful completion | Source reviewed; current full gate pending |
-| Durable state and ownership | goal-state/core, glla-state-root, state-root-owner, owner-file-protocol, goal-session; journal projection, archive, stale/foreign fencing | Source reviewed; current full gate pending |
-| Goal/list supervision | goal-orchestrator/list-queue, goal-heartbeat/continuation/recovery, dispatch, continuous-supervision; one active objective, queue loss, bounded recovery | Source reviewed; current full gate pending |
-| Loop/respec | goal-loop/forever/repetition, respec-builder/audit/runtime/ui; unfinished work, bounds, blockers, concurrent lifecycle and audit identity | Source reviewed; current full gate pending |
-| Independent auditor | auditor process/worker, hooks/surface, audit-lifecycle, reviewer, shield, auditor thinking/extensions; verdict integrity, retries, timeout/cancellation, stale settlement | Source reviewed; current full gate pending |
-| Provider/compaction containment | main-model-recovery, quota-retry, model selection, compactor, context/length/hygiene, compaction failure/input; finite recovery, external ownership and durable continuity | Source reviewed; current full gate pending |
-| UI/settings/receipts | display/ui/settings, components/pickers, drafts, summary renderer/outbox; readable state/actions, semantic truth, narrow widths, cancellation and delivery | Source reviewed; current full gate pending |
-| Distribution | manifests, schemas, prompts/skills, docs/inventory and scripts; boundary versions, installed package and worker RPC | Source reviewed; current full gate pending |
+| Commands and agent tools | Activation, goal-commands, goal-tools, loop command; contract adoption, consent, pause/stop/resume and truthful completion | Reviewed; current full gate passed |
+| Durable state and ownership | goal-state/core, glla-state-root, state-root-owner, owner-file-protocol, goal-session; journal projection, archive, stale/foreign fencing | Reviewed; current full gate passed |
+| Goal/list supervision | goal-orchestrator/list-queue, goal-heartbeat/continuation/recovery, dispatch, continuous-supervision; one active objective, queue loss, bounded recovery | Reviewed; current full gate passed |
+| Loop/respec | goal-loop/forever/repetition, respec-builder/audit/runtime/ui; unfinished work, bounds, blockers, concurrent lifecycle and audit identity | Reviewed; current full gate passed |
+| Independent auditor | auditor process/worker, hooks/surface, audit-lifecycle, reviewer, shield, auditor thinking/extensions; verdict integrity, retries, timeout/cancellation, stale settlement | Reviewed; current full gate passed |
+| Provider/compaction containment | main-model-recovery, quota-retry, model selection, compactor, context/length/hygiene, compaction failure/input; finite recovery, external ownership and durable continuity | Reviewed; current full gate passed |
+| UI/settings/receipts | display/ui/settings, components/pickers, drafts, summary renderer/outbox; readable state/actions, semantic truth, narrow widths, cancellation and delivery | Reviewed; current full gate passed |
+| Distribution | manifests, schemas, prompts/skills, docs/inventory and scripts; boundary versions, installed package and worker RPC | Reviewed; current full gate passed |
 
 ## Findings
 
@@ -48,7 +48,8 @@ red/green test runs.
 
 Current focused lifecycle/receipt/UI verification: **53 passed, 0 failed** across
 five files. Current and oldest supported host TypeScript checks passed. The
-fresh full release gate is still running; this report is not complete yet.
+fresh full release gate passed with **3,224 passed, 1 skipped, 0 failed**
+across 349 files (629.84 seconds for the test suite).
 
 ## Reviewed invariants and retained boundaries
 
@@ -97,8 +98,32 @@ calls; no restart was needed. Earlier empty provider responses and the isolated
 browser timeout are external behavior, not GLLA implementation targets. No chat
 source, processes or runtime journals were altered.
 
-## Remaining verification
+## Final verification and disposition
 
-Await the current full release gate, record its exact outcome and copy its
-selected evidence. This remains an incomplete audit until that succeeds.
+`npm run release:check` completed with exit 0 on the repaired source:
 
+- Full suite: **3,224 passed, 1 skipped, 0 failed**, 349 files. The skip is the
+  environment-gated test of an actual watched auto-committer repository; this
+  audit did not modify the daemon or claim a live daemon integration run.
+- Current host 0.99.1 and oldest supported host 0.84.2: TypeScript passed.
+- Jiti mutable-state split reproduction, hermetic auditor extension isolation,
+  generated inventory consistency and npm dry-run packing: passed.
+- Actual installed **0.39.0** tarball: extension imported, packed launcher
+  loaded, shipped worker completed its bounded RPC challenge, and packaged
+  delegate skill loaded without diagnostics.
+- Focused lifecycle/receipt/UI checks: **53 passed, 0 failed**. All 350 fresh
+  rendered UI frames fit their widths; all 144 command views gave feedback.
+- Evidence is under `audit/full-audit-2026-10-04/`, including red/green logs,
+  host checks, fresh frames, gate output and source provenance.
+
+The eight concrete GLLA findings above are fixed and verified. No unresolved
+implementation finding remains from this audit. This is a bounded source and
+regression audit, not a guarantee that all possible bugs or provider behaviors
+have been eliminated. Strict mechanical pre-checks remain deliberate: unusual
+commands can fall through to the independent auditor rather than receive a
+false mechanical pass. Provider recovery under aggressive/quota policy can
+continue indefinitely, and host summarization remains upstream-owned.
+
+The chat session subsequently posted its final successful icon-change result;
+it did not require intervention. **0.39.0 is prepared and verified, not published
+by this audit.** Publishing requires the repository's tagged release workflow.

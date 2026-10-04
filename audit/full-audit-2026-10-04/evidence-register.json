@@ -10,5 +10,13 @@
   "uiFrames": 350,
   "commandViews": 144,
   "uiWidthOverflow": 0,
-  "liveCase": "chat active at 20:53 Europe/London; no modifications"
+  "liveCase": "chat session finished icon request; no intervention",
+  "fullGate": {
+    "exitCode": 0,
+    "pass": 3224,
+    "skip": 1,
+    "fail": 0,
+    "files": 349
+  },
+  "disposition": "complete; package 0.39.0 verified and unpublished"
 }
