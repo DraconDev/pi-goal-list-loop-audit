@@ -240,7 +240,8 @@ There are three loop styles:
 - **Project audit:** each iteration looks for the next important finding,
   appends evidence to the audit ledger, and works through the findings.
 
-If the work has a finish line, use `/goal`, not an endless loop.
+Use `/goal` for one defined outcome, `/list` for a known task queue, and
+`/loop respec` for developing a project through evolving build and audit batches.
 
 `/loop respec` develops a project through substantial increments. It researches
 the code and root `SPEC.md` (or `spec.md`), drafts intended capabilities with
