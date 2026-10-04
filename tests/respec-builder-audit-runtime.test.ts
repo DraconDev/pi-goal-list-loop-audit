@@ -35,13 +35,14 @@ function fixture(env: Record<string, string> = {}) {
   replaceState({ goal: null, list: [], loop: { target: builder.vision, builder, active: true, startedAt, iteration: 1, maxIterations: 0, plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [] } });
   persistStateLine(cwd, state);
   const summaries: string[] = [], progress: string[] = [];
+  const observations: NonNullable<ReturnType<typeof getRespecAuditLive>>[] = [];
   let wakes = 0, finishes = 0, owned = true, resolutions = 0;
   registerRespecBuilderTools(pi.api, { context: () => owned ? ctx : null, persist: () => persistStateLine(cwd, state), wake: () => { wakes++; }, finished: () => { finishes++; }, resolveModel: () => { resolutions++; return env.FAIL_PRIMARY ? { model: "test/primary", fallbackModels: [{ model: "test/backup", via: "configured fallback" }] } : { model: "test/provider-model" }; }, wrapTool: tool => tool,
     completed: (_ctx, _id, summary) => { if (env.SUMMARY_FAIL) throw new Error("Receipt failed"); summaries.push(summary); return true; },
-    refresh: () => { const value = state.loop?.builder && getRespecAuditLive(state.loop.builder); if (value) progress.push(value.phase); },
+    refresh: () => { const value = state.loop?.builder && getRespecAuditLive(state.loop.builder); if (value) { progress.push(value.phase); observations.push({ ...value }); } },
     auditSleep: async () => {},
     auditRuntime: { command: process.execPath, workerPath: file, homeDir: cwd, pollIntervalMs: 10, heartbeatNoProgressMs: 5000, firstEventTimeoutMs: 5000, env } });
-  return { cwd, ctx, startedAt, original, builder, file, counts: () => ({ wakes, finishes }), summaries, progress, disown: () => { owned = false; }, resolutions: () => resolutions };
+  return { cwd, ctx, startedAt, original, builder, file, counts: () => ({ wakes, finishes }), summaries, progress, observations, disown: () => { owned = false; }, resolutions: () => resolutions };
 }
 
 test("a stale audit wake does not resolve a model or launch a worker", async () => {
@@ -96,6 +97,8 @@ test("real detached protocol approval archives the intended project before termi
     assert.match(f.summaries[0]!, /artifact exists/);
     assert.ok(readState(f.cwd).loop!.builder!.summaryDeliveredAt);
     assert.ok(f.progress.includes("running"));
+    assert.ok(f.observations.filter(p => p.phase === "starting").every(p => p.lastActivityAt === undefined), "parent startup is not worker activity");
+    assert.ok(f.observations.some(p => p.phase === "running" && p.lastActivityAt !== undefined));
     assert.equal(getRespecAuditLive(f.builder), undefined);
     assert.match(archive.builder.requirements[0].evidence.report, /artifact exists/);
     assert.deepEqual(f.counts(), { wakes: 0, finishes: 1 });
