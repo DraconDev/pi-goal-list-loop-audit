@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { adoptRespecRequirements, beginRespecAudit, blockRespecRequirement, claimRespecTask, createRespecBuilder, planRespecIncrement, respecCoverage, settleRespecAudit } from "../extensions/respec-builder.js";
 import { respecIncrementAuditGoal } from "../extensions/respec-builder-audit.js";
+import { refineRespecRequirements, unblockRespecRequirement } from "../extensions/respec-builder.js";
 import { buildGoalAuditorPrompt } from "../extensions/goal-loop-auditor.js";
 
 function planned() {
@@ -82,4 +83,28 @@ test("increment audits carry acceptance criteria and regressions into the produc
   assert.match(prompt, /invalid credentials are rejected/);
   assert.equal(goal.pendingCompletion!.attemptId, "second");
   assert.throws(() => respecIncrementAuditGoal(planned(), "loop", "now"), /awaiting audit/);
+});
+
+test("scope refinement invalidates in-flight claims and records explicit removals", () => {
+  const auditing = beginRespecAudit(claimRespecTask(planned(), "auth"), "old", "Implemented");
+  const next = refineRespecRequirements(auditing, [{ id: "login", text: "Users can log in", acceptance: "Two-factor login works" }], "Operator chose login first, with two-factor authentication");
+  assert.equal(next.phase, "replanning");
+  assert.equal(next.revision, auditing.revision + 1);
+  assert.equal(next.audit, undefined);
+  assert.deepEqual(next.scopeChanges!.at(-1)!.removedIds, ["export"]);
+  assert.equal(next.history!.at(-1)!.tasks[0]!.id, "auth");
+  assert.equal(settleRespecAudit(next, "old", pass), next);
+  assert.equal(next.requirements[0]!.status, "open");
+});
+
+test("blocking a batch retains its work and unblocking requires a concrete reason", () => {
+  const blocked = blockRespecRequirement(planned(), "login", "Identity service unavailable");
+  assert.equal(blocked.phase, "replanning");
+  assert.equal(blocked.history!.at(-1)!.tasks[0]!.id, "auth");
+  assert.equal(blocked.requirements.length, 2);
+  assert.throws(() => unblockRespecRequirement(blocked, "login", ""), /evidence/);
+  const opened = unblockRespecRequirement(blocked, "login", "Service health endpoint responds and credentials validated");
+  assert.equal(opened.requirements[0]!.status, "open");
+  assert.equal(opened.requirements[0]!.blockedReason, undefined);
+  assert.equal(respecCoverage(opened).verified, 0);
 });
