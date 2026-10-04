@@ -17,6 +17,7 @@ import { auditVerdictLabel, auditLifecycleLine, auditLifecycleProjection, auditP
 
 export { isMonitorGoal };
 import { HELD_ON_RESTORE, type LoopState } from "./goal-loop-forever.js";
+import { respecCoverage } from "./respec-builder.js";
 import { normalizeFindingLead } from "./finding-lead.js";
 import { auditorSurfaceSuppressed } from "./loops/goal-auditor-surface.js";
 
@@ -1783,6 +1784,7 @@ function waitingListLines(state: State, theme?: DisplayTheme, width?: number): s
 }
 
 function buildWidgetLinesInner(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, width?: number, extras?: WidgetExtras): string[] | undefined {
+  if (state.loop?.builder && (state.loop.active || !state.goal)) return respecBuilderLines(state.loop, theme, width);
   if (state.loop?.active) return loopLines(state.loop, now, theme, width, extras);
   if (state.loop && !state.loop.active && state.mainModelRecovery?.kind === "loop") return parkedLoopRecoveryLines(state.loop, state.mainModelRecovery, now, theme, width, extras?.mainModelFallbacks);
   if (!state.goal && state.mainModelRecovery) return standaloneRecoveryLines(state.mainModelRecovery, now, theme, width, extras?.mainModelFallbacks);
@@ -2621,6 +2623,26 @@ function completedGoalLines(g: Goal, now: number, theme?: DisplayTheme, width?: 
     ? completionOutcomeForDisplay(g.completionSummary)
     : g.objective.replace(/\s+/g, " ");
   return [`${paint(theme, "dim", "─")} ${paint(theme, "dim", `${outcome} · ${truncate(recap, objBudget)} · ${tail}`)}`];
+}
+
+function respecBuilderLines(loop: LoopState, theme?: DisplayTheme, width?: number): string[] {
+  const builder = loop.builder!;
+  const coverage = respecCoverage(builder);
+  const tone = builder.phase === "complete" ? "success" : !loop.active ? "warning" : "accent";
+  const phase = builder.phase === "planning" ? "Planning" : builder.phase[0]!.toUpperCase() + builder.phase.slice(1);
+  const current = builder.tasks.find(t => t.status === "pending") ?? builder.tasks.at(-1);
+  const blocker = builder.requirements.find(r => r.status === "blocked");
+  const evidence = builder.requirements.findLast(r => r.evidence)?.evidence?.report ?? builder.history?.at(-1)?.report;
+  const action = builder.phase === "complete" ? "All adopted requirements independently verified" : !loop.active ? "Work held · /loop status · /loop resume when ready" : builder.phase === "auditing" ? "Independent auditor running · no action needed" : "Work continues · /loop pause · /loop refine";
+  return [
+    `${paint(theme, tone, `Project · ${phase}`)}${loop.active ? "" : " · held"} · increment ${builder.cycle}`,
+    `├─ ${truncate(sanitizeDisplayText(builder.vision), budgetFor(width, 3, 75))}`,
+    `├─ ${paint(theme, "success", `verified ${coverage.verified}/${coverage.total}`)} · ${paint(theme, "warning", `remaining ${coverage.remaining} · blocked ${coverage.blocked}`)}`,
+    ...(current ? [`├─ ${builder.phase === "auditing" ? "claim" : "task"}: ${truncate(sanitizeDisplayText(current.text), budgetFor(width, 10, 70))}`] : []),
+    ...(blocker ? [`├─ ${paint(theme, "warning", "blocked")}: ${truncate(sanitizeDisplayText(blocker.blockedReason ?? "reason missing"), budgetFor(width, 12, 70))}`] : []),
+    ...(evidence ? [`├─ ${paint(theme, "dim", `evidence: ${truncate(sanitizeDisplayText(evidence), budgetFor(width, 13, 65))}`)}`] : []),
+    `└─ ${paint(theme, tone, action)}`,
+  ];
 }
 
 function loopLines(l: LoopState, now: number, theme?: DisplayTheme, width?: number, extras?: WidgetExtras): string[] {
