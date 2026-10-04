@@ -1,0 +1,1442 @@
+[
+  {
+    "scene": "empty",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "No active goal. Use /goal <objective>.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "empty",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "No active goal — /goal timeline needs a goal to narrate.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "empty",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Active: (none)\nList: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "empty",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "No loop. /loop to draft one, /loop start \"<target>\" for an infinite metricless loop, or add measure=\"<cmd>\" direction=min|max for a metric loop [window=5] [max=50] [time=<hours>] [tokens=<budget>] [cadence=<seconds>]",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "empty",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\ngoal: none\nlist: empty\nloop: none\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "empty",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/empty | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "empty",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/empty\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "empty",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "empty",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  },
+  {
+    "scene": "working",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "active: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nAuto-continue: on\nIteration: 0\nTokens: 123,400 / 200,000\nTrail: /goal timeline",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "working",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "Timeline: Ship a clear and readable GLLA interface — verify settings, cards and draft review (active)\nNext: working toward the contract.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "working",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Active: [goal] Ship a clear and readable GLLA interface — verify settings, cards and draft rev… (active)\nList: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "working",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "No loop. /loop to draft one, /loop start \"<target>\" for an infinite metricless loop, or add measure=\"<cmd>\" direction=min|max for a metric loop [window=5] [max=50] [time=<hours>] [tokens=<budget>] [cadence=<seconds>]",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "working",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\ngoal [goal] active · 123400 tok: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nlist: empty\nloop: none\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "working",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/working | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 123,400 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "working",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/working\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "working",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "working",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  },
+  {
+    "scene": "paused",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "paused: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nAuto-continue: on\nIteration: 0\nTokens: 123,400 / 200,000\nPaused: Need a decision on the proposed design\nNext: Choose a direction, then /goal resume\nTrail: /goal timeline",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "paused",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "Timeline: Ship a clear and readable GLLA interface — verify settings, cards and draft review (paused)\nNext: answer the pending decision (/goal decide).",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "paused",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Active: [goal] Ship a clear and readable GLLA interface — verify settings, cards and draft rev… (paused)\nList: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "paused",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "No loop. /loop to draft one, /loop start \"<target>\" for an infinite metricless loop, or add measure=\"<cmd>\" direction=min|max for a metric loop [window=5] [max=50] [time=<hours>] [tokens=<budget>] [cadence=<seconds>]",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "paused",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\ngoal [goal] paused · 123400 tok: Ship a clear and readable GLLA interface — verify settings, cards and draft review — Need a decision on the proposed design\nlist: empty\nloop: none\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "paused",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/paused | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 123,400 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "paused",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/paused\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "paused",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "paused",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  },
+  {
+    "scene": "blocked",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "paused: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nAuto-continue: on\nIteration: 0\nTokens: 123,400 / 200,000\nPaused: Verification could not finish\nNext: Resolve the failing check, then /goal resume\nTrail: /goal timeline",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "blocked",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "Timeline: Ship a clear and readable GLLA interface — verify settings, cards and draft review (paused)\nNext: /goal resume to continue (Verification could not finish).",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "blocked",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Active: [goal] Ship a clear and readable GLLA interface — verify settings, cards and draft rev… (paused)\nList: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "blocked",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "No loop. /loop to draft one, /loop start \"<target>\" for an infinite metricless loop, or add measure=\"<cmd>\" direction=min|max for a metric loop [window=5] [max=50] [time=<hours>] [tokens=<budget>] [cadence=<seconds>]",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "blocked",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\ngoal [goal] paused · 123400 tok: Ship a clear and readable GLLA interface — verify settings, cards and draft review — Verification could not finish\nlist: empty\nloop: none\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "blocked",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/blocked | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 123,400 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "blocked",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/blocked\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "blocked",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "blocked",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  },
+  {
+    "scene": "supervisor-frozen",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "active: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nAuto-continue: on\nIteration: 0\nTokens: 123,400 / 200,000\nTrail: /goal timeline",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "supervisor-frozen",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "Timeline: Ship a clear and readable GLLA interface — verify settings, cards and draft review (active)\nNext: working toward the contract.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "supervisor-frozen",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Active: [goal] Ship a clear and readable GLLA interface — verify settings, cards and draft rev… (active)\nList: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "supervisor-frozen",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "No loop. /loop to draft one, /loop start \"<target>\" for an infinite metricless loop, or add measure=\"<cmd>\" direction=min|max for a metric loop [window=5] [max=50] [time=<hours>] [tokens=<budget>] [cadence=<seconds>]",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "supervisor-frozen",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\nsupervisor: ⏸ PAUSED since 2026-10-03T11:59:15.000Z — re-arms/recovery/dispatch frozen — /glla resume\ngoal [goal] active · 123400 tok: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nlist: empty\nloop: none\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "supervisor-frozen",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/supervisor-frozen | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 123,400 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "supervisor-frozen",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/supervisor-frozen\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "supervisor-frozen",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "supervisor-frozen",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  },
+  {
+    "scene": "audit-starting",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "auditing: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nAuto-continue: on\nIteration: 0\nTokens: 123,400 / 200,000\nCompletion audit: starting — no worker event after 31h 58m; detached worker starting — /goal cancel discards the claim\nTrail: /goal timeline",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-starting",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "Timeline: Ship a clear and readable GLLA interface — verify settings, cards and draft review (auditing)\nNext: audit in flight — wait for the verdict.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-starting",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Active: [goal] Ship a clear and readable GLLA interface — verify settings, cards and draft rev… (auditing)\nList: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-starting",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "No loop. /loop to draft one, /loop start \"<target>\" for an infinite metricless loop, or add measure=\"<cmd>\" direction=min|max for a metric loop [window=5] [max=50] [time=<hours>] [tokens=<budget>] [cadence=<seconds>]",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-starting",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\ngoal [goal] auditing (audit starting · no progress) · 123400 tok: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nlist: empty\nloop: none\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-starting",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/audit-starting | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 123,400 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-starting",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/audit-starting\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-starting",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-starting",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  },
+  {
+    "scene": "audit-running",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "auditing: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nAuto-continue: on\nIteration: 0\nTokens: 123,400 / 200,000\nCompletion audit: running — no progress for 31h 58m — /goal resume retries the stored claim\nTrail: /goal timeline",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-running",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "Timeline: Ship a clear and readable GLLA interface — verify settings, cards and draft review (auditing)\nNext: audit in flight — wait for the verdict.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-running",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Active: [goal] Ship a clear and readable GLLA interface — verify settings, cards and draft rev… (auditing)\nList: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-running",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "No loop. /loop to draft one, /loop start \"<target>\" for an infinite metricless loop, or add measure=\"<cmd>\" direction=min|max for a metric loop [window=5] [max=50] [time=<hours>] [tokens=<budget>] [cadence=<seconds>]",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-running",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\ngoal [goal] auditing (audit running · no progress) · 123400 tok: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nlist: empty\nloop: none\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-running",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/audit-running | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 123,400 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-running",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/audit-running\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-running",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-running",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  },
+  {
+    "scene": "audit-settling",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "auditing: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nAuto-continue: on\nIteration: 0\nTokens: 123,400 / 200,000\nCompletion audit: settling — approved; the terminal archive is owed — /goal resume finishes it\nTrail: /goal timeline",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-settling",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "Timeline: Ship a clear and readable GLLA interface — verify settings, cards and draft review (auditing)\nNext: audit in flight — wait for the verdict.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-settling",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Active: [goal] Ship a clear and readable GLLA interface — verify settings, cards and draft rev… (auditing)\nList: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-settling",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "No loop. /loop to draft one, /loop start \"<target>\" for an infinite metricless loop, or add measure=\"<cmd>\" direction=min|max for a metric loop [window=5] [max=50] [time=<hours>] [tokens=<budget>] [cadence=<seconds>]",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-settling",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\ngoal [goal] auditing (audit settling · approved; archive owed) · 123400 tok: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nlist: empty\nloop: none\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-settling",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/audit-settling | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 123,400 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-settling",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/audit-settling\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-settling",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-settling",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  },
+  {
+    "scene": "audit-recovery-pending",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "paused: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nAuto-continue: on\nIteration: 0\nTokens: 123,400 / 200,000\nCompletion audit: recovery needed — /goal resume retries the stored claim\nTrail: /goal timeline",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-recovery-pending",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "Timeline: Ship a clear and readable GLLA interface — verify settings, cards and draft review (paused)\nNext: /goal resume to continue.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-recovery-pending",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Active: [goal] Ship a clear and readable GLLA interface — verify settings, cards and draft rev… (paused)\nList: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-recovery-pending",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "No loop. /loop to draft one, /loop start \"<target>\" for an infinite metricless loop, or add measure=\"<cmd>\" direction=min|max for a metric loop [window=5] [max=50] [time=<hours>] [tokens=<budget>] [cadence=<seconds>]",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-recovery-pending",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\ngoal [goal] paused (audit recovery needed) · 123400 tok: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nlist: empty\nloop: none\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-recovery-pending",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/audit-recovery-pending | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 123,400 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-recovery-pending",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/audit-recovery-pending\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-recovery-pending",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "audit-recovery-pending",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  },
+  {
+    "scene": "completed",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "complete: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nAuto-continue: on\nIteration: 0\nTokens: 123,400 / 200,000\nTrail: /goal timeline",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "completed",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "Timeline: Ship a clear and readable GLLA interface — verify settings, cards and draft review (complete)\nNext: nothing — complete.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "completed",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Last: [goal] Ship a clear and readable GLLA interface — verify settings, cards and draft rev… (complete)\nList: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "completed",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "No loop. /loop to draft one, /loop start \"<target>\" for an infinite metricless loop, or add measure=\"<cmd>\" direction=min|max for a metric loop [window=5] [max=50] [time=<hours>] [tokens=<budget>] [cadence=<seconds>]",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "completed",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\ngoal [goal] complete · 123400 tok: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nlist: empty\nloop: none\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "completed",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/completed | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 123,400 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "completed",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/completed\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "completed",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "completed",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  },
+  {
+    "scene": "aborted",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "aborted: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nAuto-continue: on\nIteration: 0\nTokens: 123,400 / 200,000\nTrail: /goal timeline",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "aborted",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "Timeline: Ship a clear and readable GLLA interface — verify settings, cards and draft review (aborted)\nNext: nothing — aborted.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "aborted",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Last: [goal] Ship a clear and readable GLLA interface — verify settings, cards and draft rev… (aborted)\nList: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "aborted",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "No loop. /loop to draft one, /loop start \"<target>\" for an infinite metricless loop, or add measure=\"<cmd>\" direction=min|max for a metric loop [window=5] [max=50] [time=<hours>] [tokens=<budget>] [cadence=<seconds>]",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "aborted",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\ngoal [goal] aborted · 123400 tok: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nlist: empty\nloop: none\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "aborted",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/aborted | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 123,400 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "aborted",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/aborted\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "aborted",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "aborted",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  },
+  {
+    "scene": "queue-only",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "No active goal. Use /goal <objective>.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "queue-only",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "No active goal — /goal timeline needs a goal to narrate.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "queue-only",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Active: (none)\nList (1):\n  1. Review the next interface improvement",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "queue-only",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "No loop. /loop to draft one, /loop start \"<target>\" for an infinite metricless loop, or add measure=\"<cmd>\" direction=min|max for a metric loop [window=5] [max=50] [time=<hours>] [tokens=<budget>] [cadence=<seconds>]",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "queue-only",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\ngoal: none\nlist: 1 queued — head: Review the next interface improvement\nloop: none\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "queue-only",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/queue-only | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "queue-only",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/queue-only\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "queue-only",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "queue-only",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  },
+  {
+    "scene": "loop-active",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "No active goal. Use /goal <objective>.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-active",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "No active goal — /goal timeline needs a goal to narrate.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-active",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Active: (none)\nList: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-active",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "Loop: active — Improve the interface through measured iterations\nMetric: fixture (min)\nIteration 3/20 · best 4 · last 6 · stall 0/5",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-active",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\ngoal: none\nlist: empty\nloop: ACTIVE · iter 3/20 · best 4 · stall 0 — Improve the interface through measured iterations\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-active",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/loop-active | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-active",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/loop-active\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-active",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-active",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  },
+  {
+    "scene": "loop-cadence",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "No active goal. Use /goal <objective>.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-cadence",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "No active goal — /goal timeline needs a goal to narrate.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-cadence",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Active: (none)\nList: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-cadence",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "Loop: active — Improve the interface through measured iterations\nMetric: fixture (min)\nIteration 3/20 · best 4 · last 6 · stall 0/5\nCadence: ≥ 120s between iterations · ready",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-cadence",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\ngoal: none\nlist: empty\nloop: ACTIVE · iter 3/20 · best 4 · stall 0 — Improve the interface through measured iterations\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-cadence",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/loop-cadence | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-cadence",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/loop-cadence\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-cadence",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-cadence",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  },
+  {
+    "scene": "loop-held",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "No active goal. Use /goal <objective>.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-held",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "No active goal — /goal timeline needs a goal to narrate.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-held",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Active: (none)\nList: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-held",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "Loop: held — Improve the interface through measured iterations\nMetric: fixture (min)\nIteration 3/20 · best 4 · last 6 · stall 0/5\nHeld: held: restored in a fresh session\nResume: /loop resume continues the saved loop; /loop stop drops it.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-held",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\ngoal: none\nlist: empty\nloop: held/stopped — held: restored in a fresh session · iter 3/20 · best 4 · stall 0 — Improve the interface through measured iterations\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-held",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/loop-held | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-held",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/loop-held\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-held",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "loop-held",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  },
+  {
+    "scene": "workers",
+    "command": "/goal status",
+    "messages": [
+      {
+        "message": "active: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nAuto-continue: on\nIteration: 0\nTokens: 123,400 / 200,000\nTrail: /goal timeline",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "workers",
+    "command": "/goal timeline",
+    "messages": [
+      {
+        "message": "Timeline: Ship a clear and readable GLLA interface — verify settings, cards and draft review (active)\nNext: working toward the contract.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "workers",
+    "command": "/list show",
+    "messages": [
+      {
+        "message": "Active: [goal] Ship a clear and readable GLLA interface — verify settings, cards and draft rev… (active)\nList: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "workers",
+    "command": "/loop status",
+    "messages": [
+      {
+        "message": "No loop. /loop to draft one, /loop start \"<target>\" for an infinite metricless loop, or add measure=\"<cmd>\" direction=min|max for a metric loop [window=5] [max=50] [time=<hours>] [tokens=<budget>] [cadence=<seconds>]",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "workers",
+    "command": "/glla status",
+    "messages": [
+      {
+        "message": "glla status\ngoal [goal] active · 123400 tok: Ship a clear and readable GLLA interface — verify settings, cards and draft review\nlist: empty\nloop: none\ndeep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "workers",
+    "command": "/glla stats",
+    "messages": [
+      {
+        "message": "/glla stats — 21 project(s)\n| project | goals | approved | disapproved | errors | avg turns | avg writes | premature | tokens | last active |\n|---|---|---|---|---|---|---|---|---|---|\n| ~ | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-26 |\n| ~/.dracon/convos | 2 | 1 | 0 | 0 | 0 | 0.5 | 1 | 0 | 2026-10-04 |\n| ~/.dracon/convos/agnes | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-13 |\n| ~/.dracon/convos/minmax | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-30 |\n| ~/.dracon/convos/wezterm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-08-25 |\n| ~/.dracon/utilities | 2 | 2 | 1 | 0 | 0 | 2 | 0 | 0 | 2026-08-16 |\n| ~/Dev/archive/dracon-log | 15 | 16 | 19 | 1 | 0.5 | 69.8 | 0 | 1,933,514 | 2026-10-01 |\n| ~/Dev/browser-extensions-shared | 290 | 281 | 60 | 2 | 0.3 | 6.1 | 65 | 8,351,896 | 2026-10-02 |\n| ~/Dev/db-gateway | 74 | 77 | 19 | 0 | 0.2 | 15.1 | 29 | 4,869,863 | 2026-09-30 |\n| ~/Dev/dracon-log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-01 |\n| ~/Dev/dracon-platform | 658 | 611 | 171 | 14 | 0.5 | 8.3 | 148 | 43,089,469 | 2026-10-04 |\n| ~/Dev/dracon-strategy | 24 | 22 | 19 | 0 | 0.4 | 12.8 | 2 | 1,567,987 | 2026-10-02 |\n| ~/Dev/dracon-utilities | 15 | 14 | 24 | 0 | 1.5 | 61.1 | 0 | 8,565,072 | 2026-10-01 |\n| ~/Dev/eve | 99 | 99 | 45 | 3 | 1.2 | 29.3 | 1 | 15,325,373 | 2026-10-04 |\n| ~/Dev/folder-auto-banner | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/Dev/pi-plugins | 2 | 2 | 1 | 0 | 3.5 | 26.5 | 0 | 2,563 | 2026-09-24 |\n| ~/Dev/terhub | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-10-03 |\n| ~/Dev/warden-vid | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-16 |\n| ~/Videos | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2026-09-29 |\n| ~/chat/pi | 105 | 94 | 19 | 0 | 1.1 | 6.3 | 17 | 5,835,360 | 2026-08-06 |\n| /tmp/glla-ui-commands-iyEL0r/workers | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 123,400 | 2026-10-04 |",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "workers",
+    "command": "/glla audits",
+    "messages": [
+      {
+        "message": "glla audits — last 0 verdict(s) in /tmp/glla-ui-commands-iyEL0r/workers\n(no audits logged yet — the log starts with the next verdict)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "workers",
+    "command": "/glla agents",
+    "messages": [
+      {
+        "message": "glla agents (pi-subagents manager registry not present — event evidence only)\nNo subagents tracked yet — spawn one via the `subagent` tool and it appears here.\n(evidence: glla's event probes)",
+        "type": "info"
+      }
+    ]
+  },
+  {
+    "scene": "workers",
+    "command": "/glla list",
+    "messages": [
+      {
+        "message": "Unknown /glla action \"list\". Use /glla to open settings; command arguments are reserved for actions.",
+        "type": "warning"
+      }
+    ]
+  }
+]
