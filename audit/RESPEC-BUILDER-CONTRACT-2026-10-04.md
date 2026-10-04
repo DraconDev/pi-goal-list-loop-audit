@@ -32,3 +32,20 @@ Required behavior:
 Implementation remains within GLLA and reuses its journal and auditor. No
 production loop is started while implementing. No publishing is part of this
 request.
+
+## Implementation checkpoint — foundation
+
+Implemented the pure requirements/increment state machine in
+`extensions/respec-builder.ts`, attached its durable shape to `LoopState`, and
+added `extensions/respec-builder-audit.ts` to synthesize the existing auditor's
+Goal contract. The adapter includes current increment acceptance criteria and
+regressions for earlier verified capabilities. Added phase-specific builder
+prompt and status coverage projection for loops carrying builder state.
+
+Six behavioral tests pass for partial approval, full completion, negative and
+contradictory verdicts, infrastructure failures, stale attempts/revisions,
+blocking, immutable snapshots, scope adoption validation and the production
+auditor prompt. This is not a completed feature: the command does not yet
+initialize builder state, and tools, journal transitions, detached dispatch,
+recovery, confirmed scope refinement, terminal settlement and UI evidence still
+need integration. Existing respec dispatch remains operational meanwhile.
