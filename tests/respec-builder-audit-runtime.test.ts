@@ -260,6 +260,7 @@ test("actual installer, command, tools and agent_end carry a project through det
     assert.ok(ctx.ui.matching("every intended requirement").length > 0);
     const receipt = pi.sent.find(entry => (entry.message as { details?: { terminalApprovalGoalId?: string } }).details?.terminalApprovalGoalId?.startsWith("respec:"));
     assert.ok(receipt, "production adapter posts the semantic summary receipt");
+    console.error("RECEIPT DIAG", JSON.stringify(receipt.message.content), JSON.stringify(loop.completionSummary));
     assert.equal(receipt.message.content, loop.completionSummary);
   } finally { clearLoopTimer(); restore(); await pi.fire("session_shutdown", { reason: "test-end" }, ctx); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); replaceState(previous); }
 });
@@ -334,11 +335,11 @@ test("an undelivered project summary survives replacement by a new project", asy
   try {
     await runRespecBuilderAudit(f.ctx);
     const summary = state.loop!.completionSummary;
-    replaceState({ ...state, loop: null }); persistStateLine(f.cwd, state);
+    replaceState({ ...state, loop: undefined }); persistStateLine(f.cwd, state);
     delete env.SUMMARY_FAIL;
     replayRespecCompletionSummary(f.ctx);
     replayRespecCompletionSummary(f.ctx);
     assert.deepEqual(f.summaries, [summary]);
-    assert.equal(state.loop, null);
+    assert.equal(state.loop, undefined);
   } finally { replaceState(f.original); }
 });
