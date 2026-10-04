@@ -17,6 +17,7 @@ export interface RespecBuildTask {
   status: "pending" | "claimed";
 }
 export interface RespecBuilderState {
+  summaryDeliveredAt?: string;
   projectId?: string;
   phase: RespecBuilderPhase;
   revision: number;
