@@ -25,7 +25,9 @@ export interface RespecBuilderState {
   feedback: string[];
   history?: { cycle: number; tasks: RespecBuildTask[]; outcome: "approved" | "needs-work" | "replanned"; report: string; attemptId?: string }[];
   scopeChanges?: { revision: number; reason: string; removedIds: string[] }[];
-  audit?: { attemptId: string; revision: number; requirementIds: string[]; claim: string; at: string };
+  audit?: { attemptId: string; revision: number; requirementIds: string[]; claim: string; at: string;
+    candidateRef?: string; attemptedRefs?: string[]; retryCandidateRef?: string;
+    retryAttemptStarted?: boolean; retryFailureClass?: "no-verdict" | "timeout" | "transport" | "provider" };
 }
 
 /** Pure copy transitions; the host must journal the returned state before use. */

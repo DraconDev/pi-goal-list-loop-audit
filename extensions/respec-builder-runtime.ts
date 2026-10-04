@@ -8,7 +8,7 @@ import { state, replaceState } from "./goal-state.js";
 import { appendLedger, nowIso, archiveDir } from "./goal-loop-core.js";
 import { loadSettings } from "./goal-settings.js";
 import { dispatchAuditorAllowedExtensions } from "./auditor-extensions.js";
-import { runDetachedGoalCompletionAuditor, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, writeAtomicJson, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
+import { runDetachedGoalCompletionAuditor, runAuditorFallbackWithPolicy, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, writeAtomicJson, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
 import { respecIncrementAuditGoal } from "./respec-builder-audit.js";
 import { adoptRespecRequirements, beginRespecAudit, blockRespecRequirement, unblockRespecRequirement, refineRespecRequirements, claimRespecTask, planRespecIncrement, settleRespecAudit, type RespecBuilderState } from "./respec-builder.js";
 
@@ -16,12 +16,13 @@ interface Host {
   context: (ctx: ExtensionContext) => ExtensionContext | null;
   persist: (ctx: ExtensionContext) => boolean;
   wake: (ctx: ExtensionContext) => void;
-  resolveModel: (ctx: ExtensionContext) => { model: any; error?: string };
+  resolveModel: (ctx: ExtensionContext) => { model: any; error?: string; fallbackModels?: { model: any; via?: string }[] };
   wrapTool: (tool: any) => any;
   /** Bounded worker launcher overrides for embedding and hermetic tests. */
   auditRuntime?: AuditorProcessRuntime;
   finished?: (ctx: ExtensionContext) => void;
   confirm?: (ctx: ExtensionContext, title: string, body: string) => Promise<boolean>;
+  auditSleep?: (ms: number) => Promise<void>;
 }
 let host: Host;
 const running = new Map<string, AbortController>();
@@ -50,8 +51,9 @@ function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecB
 
 /** Resume the same durable claim; process-layer lookup fences the exact request. */
 export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void> {
-  const loop = state.loop, builder = loop?.builder;
-  if (!loop?.active || builder?.phase !== "auditing" || !builder.audit) return;
+  const loop = state.loop, initialBuilder = loop?.builder;
+  if (!loop?.active || initialBuilder?.phase !== "auditing" || !initialBuilder.audit) return;
+  let builder = initialBuilder;
   const key = `${ctx.cwd}:${loop.startedAt}:${builder.audit.attemptId}`;
   if (running.has(key)) return;
   const controller = new AbortController();
@@ -61,24 +63,41 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
     const settings = loadSettings(ctx.cwd);
     const saved = readCompletedCompletionAudit(ctx.cwd, goal, settings.auditorStrictChallenge);
     const resolved = host.resolveModel(ctx);
+    const saveCursor = (patch: Partial<NonNullable<RespecBuilderState["audit"]>>): boolean => {
+      if (!builder.audit || !state.loop?.active || state.loop.builder !== builder) return false;
+      const next = { ...builder, audit: { ...builder.audit, ...patch } };
+      if (!commit(ctx, builder, next)) return false;
+      builder = next;
+      return true;
+    };
     const result = saved?.result ?? (resolved.error || !resolved.model
       ? { approved: false, disapproved: false, error: resolved.error ?? "No auditor model available", output: "", model: "unset" }
-      : await runDetachedGoalCompletionAuditor({ cwd: ctx.cwd, goal, completionSummary: builder.audit.claim,
-        model: resolved.model, strictChallenge: settings.auditorStrictChallenge, thinkingLevel: settings.auditorThinkingLevel ?? "max",
+      : (await runAuditorFallbackWithPolicy([{ model: resolved.model, via: "primary" }, ...(resolved.fallbackModels ?? []).map(candidate => ({ ...candidate, via: candidate.via ?? "fallback" }))], candidate => runDetachedGoalCompletionAuditor({ cwd: ctx.cwd, goal, completionSummary: builder.audit!.claim,
+        model: candidate.model, strictChallenge: settings.auditorStrictChallenge, thinkingLevel: settings.auditorThinkingLevel ?? "max",
         allowedExtensions: dispatchAuditorAllowedExtensions(settings.auditorAllowedExtensions, settings.auditorMirrorSessionExtensions, host.auditRuntime?.homeDir ?? homedir(), ctx.cwd),
         inspection: settings.auditorInspection === true,
         signal: controller.signal,
         onProgress: () => {
           if (!state.loop?.active || state.loop.startedAt !== loop.startedAt || state.loop.builder !== builder || !host.context(ctx)) controller.abort();
         },
-        runtime: { ...host.auditRuntime, logicalAttemptId: builder.audit.attemptId,
+        runtime: { ...host.auditRuntime, logicalAttemptId: builder.audit!.attemptId,
           attemptId: () => newDetachedAuditJobAttemptId(builder.audit!.attemptId),
           toolTimeoutMs: host.auditRuntime?.toolTimeoutMs ?? settings.auditorToolTimeoutMs, heartbeatNoProgressMs: host.auditRuntime?.heartbeatNoProgressMs ?? settings.auditorStallMs },
-      }));
+      }), {
+        signal: controller.signal, sleep: host.auditSleep,
+        forbiddenRefs: settings.forbiddenModels,
+        shouldRetry: () => !!state.loop?.active && state.loop.builder === builder && !!host.context(ctx),
+        resumeCandidateRef: builder.audit!.candidateRef, attemptedRefs: builder.audit!.attemptedRefs,
+        retryCandidateRef: builder.audit!.retryCandidateRef, retryAttemptStarted: builder.audit!.retryAttemptStarted,
+        retryFailureClass: builder.audit!.retryFailureClass,
+        onAttempt: (_candidate, info) => saveCursor({ candidateRef: info.candidateRef, attemptedRefs: info.attemptedRefs, retryAttemptStarted: info.attempt === 2 }),
+        onRetry: (_candidate, _error, _delay, info) => saveCursor({ candidateRef: info.candidateRef, attemptedRefs: info.attemptedRefs, retryCandidateRef: info.candidateRef, retryFailureClass: info.failureClass, retryAttemptStarted: false }),
+        onCandidateExhausted: (_candidate, _error, info) => saveCursor({ candidateRef: info.nextCandidateRef ?? info.candidateRef, attemptedRefs: info.attemptedRefs, retryCandidateRef: undefined, retryAttemptStarted: false, retryFailureClass: info.failureClass }),
+      })).result);
     const liveCtx = host.context(ctx);
     const current = state.loop;
     if (!liveCtx || current?.startedAt !== loop.startedAt || !current.active || current.builder !== builder) return;
-    const next = settleRespecAudit(builder, builder.audit.attemptId, result);
+    const next = settleRespecAudit(builder, builder.audit!.attemptId, result);
     if (next.phase === "complete") {
       await mkdir(archiveDir(liveCtx.cwd), { recursive: true });
       await writeAtomicJson(respecProjectArchivePath(liveCtx.cwd, loop.startedAt, next.revision), { kind: "respec-project", startedAt: loop.startedAt, completedAt: nowIso(), builder: next });
