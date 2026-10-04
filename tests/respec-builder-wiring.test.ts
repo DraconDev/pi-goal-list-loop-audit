@@ -3,12 +3,14 @@ import assert from "node:assert/strict";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from "../extensions/loops/goal.js";
 import { clearLoopTimer, loopPrompt } from "../extensions/goal-loop.js";
 import { readState } from "../extensions/goal-loop-core.js";
+import { saveSettings } from "../extensions/goal-settings.js";
 import { MockPi, makeMockCtx, tmpCwd, tick } from "./harness/mock-pi.js";
 
 afterEach(() => { clearLoopTimer(); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); });
 
 test("actual respec command and tools persist intended scope, batch and audit claim", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  saveSettings("project", cwd, { autoAcceptDrafts: false });
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "builder-wiring" } });
   ctx.ui.customImpl = async () => "Yes";
   await pi.fire("session_start", { reason: "startup" }, ctx);
@@ -35,6 +37,7 @@ test("actual respec command and tools persist intended scope, batch and audit cl
 
 test("declining intended scope leaves the project drafting with no adopted requirements", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  saveSettings("project", cwd, { autoAcceptDrafts: false });
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "builder-refusal" } });
   ctx.ui.customImpl = async () => "Yes";
   await pi.fire("session_start", { reason: "startup" }, ctx);
@@ -49,6 +52,7 @@ test("declining intended scope leaves the project drafting with no adopted requi
 
 test("registered blocker and refinement tools preserve work and require consent to change scope", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  saveSettings("project", cwd, { autoAcceptDrafts: false });
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "builder-refinement" } });
   ctx.ui.customImpl = async () => "Yes";
   await pi.fire("session_start", { reason: "startup" }, ctx);

@@ -7,6 +7,7 @@ import { Type } from "typebox";
 import { state, replaceState } from "./goal-state.js";
 import { appendLedger, nowIso, archiveDir } from "./goal-loop-core.js";
 import { loadSettings } from "./goal-settings.js";
+import type { LoopState } from "./goal-loop-forever.js";
 import { dispatchAuditorAllowedExtensions } from "./auditor-extensions.js";
 import { runDetachedGoalCompletionAuditor, runAuditorFallbackWithPolicy, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, writeAtomicJson, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
 import { respecIncrementAuditGoal } from "./respec-builder-audit.js";
@@ -36,6 +37,26 @@ export function respecProjectArchivePath(cwd: string, startedAt: string, revisio
   return path.join(archiveDir(cwd), `respec-${identity}.json`);
 }
 
+function projectBoundReason(loop: LoopState): string | undefined {
+  if (loop.timeLimitHours !== undefined && Date.now() - Date.parse(loop.startedAt) >= loop.timeLimitHours * 3600000) return `time bound reached (${loop.timeLimitHours}h); project requirements remain unfinished`;
+  if (loop.tokenBudget !== undefined && (loop.tokensUsed ?? 0) >= loop.tokenBudget) return `token budget exhausted (${loop.tokenBudget}); project requirements remain unfinished`;
+  if (loop.maxIterations > 0 && loop.iteration >= loop.maxIterations) return `max iterations reached (${loop.maxIterations}); project requirements remain unfinished`;
+  return undefined;
+}
+
+function parkProjectBound(ctx: ExtensionContext): boolean {
+  const loop = state.loop;
+  if (!loop?.active || !loop.builder || !host.context(ctx)) return false;
+  const reason = projectBoundReason(loop);
+  if (!reason) return false;
+  const old = state;
+  replaceState({ ...old, loop: { ...loop, active: false, stopReason: reason } });
+  if (!host.persist(ctx)) { replaceState(old); return true; }
+  appendLedger(ctx.cwd, "respec_project_bound", { reason, cycle: loop.builder.cycle });
+  ctx.ui.notify(`Project held: ${reason}. /loop status shows remaining work.`, "warning");
+  return true;
+}
+
 function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecBuilderState): boolean {
   if (!host.context(ctx)) return false;
   const loop = state.loop;
@@ -53,11 +74,15 @@ function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecB
 export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void> {
   const loop = state.loop, initialBuilder = loop?.builder;
   if (!loop?.active || initialBuilder?.phase !== "auditing" || !initialBuilder.audit) return;
+  if (parkProjectBound(ctx)) return;
   let builder = initialBuilder;
   const key = `${ctx.cwd}:${loop.startedAt}:${builder.audit!.attemptId}`;
   if (running.has(key)) return;
   const controller = new AbortController();
   running.set(key, controller);
+  const remainingMs = loop.timeLimitHours !== undefined ? loop.timeLimitHours * 3600000 - (Date.now() - Date.parse(loop.startedAt)) : undefined;
+  const boundTimer = remainingMs !== undefined && Number.isFinite(remainingMs) && remainingMs > 0 && remainingMs <= 2147483647
+    ? setTimeout(() => { if (state.loop?.startedAt === loop.startedAt && state.loop.builder === builder && parkProjectBound(ctx)) controller.abort(); }, remainingMs + 1) : undefined;
   try {
     const goal = respecIncrementAuditGoal(builder, builder.projectId ?? loop.startedAt, nowIso());
     const settings = loadSettings(ctx.cwd);
@@ -79,6 +104,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
         inspection: settings.auditorInspection === true,
         signal: controller.signal,
         onProgress: () => {
+          if (parkProjectBound(ctx)) controller.abort();
           if (!state.loop?.active || state.loop.startedAt !== loop.startedAt || state.loop.builder !== builder || !host.context(ctx)) controller.abort();
         },
         runtime: { ...host.auditRuntime, logicalAttemptId: builder.audit!.attemptId,
@@ -126,7 +152,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
       if (!host.persist(liveCtx)) replaceState(old);
       liveCtx.ui.notify("Project audit interrupted without a verdict; /loop resume retries its durable claim.", "warning");
     }
-  } finally { running.delete(key); }
+  } finally { if (boundTimer) clearTimeout(boundTimer); running.delete(key); }
 }
 
 export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
