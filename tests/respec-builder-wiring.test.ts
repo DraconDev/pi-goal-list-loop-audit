@@ -44,3 +44,30 @@ test("declining intended scope leaves the project drafting with no adopted requi
     assert.equal(readState(cwd).loop!.builder!.requirements.length, 0);
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
+
+test("registered blocker and refinement tools preserve work and require consent to change scope", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "builder-refinement" } });
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  try {
+    await pi.command("loop", "respec build login", ctx); clearLoopTimer();
+    await pi.runTool("propose_project_requirements", { requirements: [{ id: "login", text: "Login", acceptance: "Valid credentials succeed" }] }, ctx);
+    await pi.runTool("plan_project_increment", { tasks: [{ id: "auth", text: "Implement login", requirementIds: ["login"] }] }, ctx);
+    await pi.runTool("block_project_requirement", { id: "login", reason: "Credentials unavailable" }, ctx);
+    assert.equal(readState(cwd).loop!.active, false, "all-blocked work parks automation");
+    assert.equal(readState(cwd).loop!.builder!.history!.at(-1)!.tasks[0]!.id, "auth");
+    await pi.runTool("unblock_project_requirement", { id: "login", reason: "Credentials supplied and validated" }, ctx);
+    assert.equal(readState(cwd).loop!.builder!.requirements[0]!.status, "open");
+    assert.equal(readState(cwd).loop!.active, false, "unblocking preserves explicit pause until resume");
+    const before = JSON.stringify(readState(cwd).loop!.builder);
+    ctx.ui.confirmImpl = async () => false;
+    const proposal = { reason: "Add two-factor authentication", requirements: [{ id: "login", text: "Two-factor login", acceptance: "Password and second factor required" }] };
+    await pi.runTool("propose_project_refinement", proposal, ctx);
+    assert.equal(JSON.stringify(readState(cwd).loop!.builder), before, "declining scope keeps every durable requirement");
+    ctx.ui.confirmImpl = async () => true;
+    await pi.runTool("propose_project_refinement", proposal, ctx);
+    assert.equal(readState(cwd).loop!.builder!.requirements[0]!.acceptance, "Password and second factor required");
+    assert.equal(readState(cwd).loop!.builder!.revision, 2);
+    assert.equal(readState(cwd).loop!.active, false);
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});
