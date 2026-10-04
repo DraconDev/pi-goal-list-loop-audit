@@ -1,9 +1,10 @@
+import { getRespecAuditLive } from "../extensions/respec-builder-ui.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { registerRespecBuilderTools, runRespecBuilderAudit, respecProjectArchivePath, cancelRespecBuilderAudit, __testOnlyRespecAuditorRuntime } from "../extensions/respec-builder-runtime.js";
+import { registerRespecBuilderTools, runRespecBuilderAudit, respecProjectArchivePath, cancelRespecBuilderAudit, replayRespecCompletionSummary, __testOnlyRespecAuditorRuntime } from "../extensions/respec-builder-runtime.js";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from "../extensions/loops/goal.js";
 import { clearLoopTimer } from "../extensions/goal-loop.js";
 import { saveSettings } from "../extensions/goal-settings.js";
@@ -33,11 +34,14 @@ function fixture(env: Record<string, string> = {}) {
   const startedAt = new Date().toISOString();
   replaceState({ goal: null, list: [], loop: { target: builder.vision, builder, active: true, startedAt, iteration: 1, maxIterations: 0, plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [] } });
   persistStateLine(cwd, state);
+  const summaries: string[] = [], progress: string[] = [];
   let wakes = 0, finishes = 0, owned = true, resolutions = 0;
   registerRespecBuilderTools(pi.api, { context: () => owned ? ctx : null, persist: () => persistStateLine(cwd, state), wake: () => { wakes++; }, finished: () => { finishes++; }, resolveModel: () => { resolutions++; return env.FAIL_PRIMARY ? { model: "test/primary", fallbackModels: [{ model: "test/backup", via: "configured fallback" }] } : { model: "test/provider-model" }; }, wrapTool: tool => tool,
+    completed: (_ctx, _id, summary) => { if (env.SUMMARY_FAIL) throw new Error("Receipt failed"); summaries.push(summary); return true; },
+    refresh: () => { const value = state.loop?.builder && getRespecAuditLive(state.loop.builder); if (value) progress.push(value.phase); },
     auditSleep: async () => {},
     auditRuntime: { command: process.execPath, workerPath: file, homeDir: cwd, pollIntervalMs: 10, heartbeatNoProgressMs: 5000, firstEventTimeoutMs: 5000, env } });
-  return { cwd, ctx, startedAt, original, builder, file, counts: () => ({ wakes, finishes }), disown: () => { owned = false; }, resolutions: () => resolutions };
+  return { cwd, ctx, startedAt, original, builder, file, counts: () => ({ wakes, finishes }), summaries, progress, disown: () => { owned = false; }, resolutions: () => resolutions };
 }
 
 test("a stale audit wake does not resolve a model or launch a worker", async () => {
@@ -87,6 +91,12 @@ test("real detached protocol approval archives the intended project before termi
     assert.equal(readState(f.cwd).loop!.active, false);
     const archive = JSON.parse(fs.readFileSync(respecProjectArchivePath(f.cwd, f.startedAt, f.builder.revision), "utf8"));
     assert.equal(archive.builder.requirements[0].status, "verified");
+    assert.equal(archive.completionSummary, readState(f.cwd).loop!.completionSummary);
+    assert.match(f.summaries[0]!, /What Changed/);
+    assert.match(f.summaries[0]!, /artifact exists/);
+    assert.ok(readState(f.cwd).loop!.builder!.summaryDeliveredAt);
+    assert.ok(f.progress.includes("running"));
+    assert.equal(getRespecAuditLive(f.builder), undefined);
     assert.match(archive.builder.requirements[0].evidence.report, /artifact exists/);
     assert.deepEqual(f.counts(), { wakes: 0, finishes: 1 });
   } finally { replaceState(f.original); }
@@ -196,6 +206,7 @@ test("respec uses the shared bounded retry/fallback policy and journals its cand
     const journal = fs.readFileSync(path.join(f.cwd, ".pi-glla", "active.jsonl"), "utf8");
     assert.match(journal, /candidateRef.*test\/backup/);
     assert.match(journal, /attemptedRefs.*test\/primary/);
+    assert.ok(f.progress.includes("retrying"));
     assert.deepEqual(f.counts(), { wakes: 0, finishes: 1 });
   } finally { replaceState(f.original); }
 });
@@ -245,4 +256,20 @@ test("actual installer, command, tools and agent_end carry a project through det
     assert.ok(fs.existsSync(respecProjectArchivePath(cwd, loop.startedAt, loop.builder!.revision)));
     assert.ok(ctx.ui.matching("every intended requirement").length > 0);
   } finally { clearLoopTimer(); restore(); await pi.fire("session_shutdown", { reason: "test-end" }, ctx); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); replaceState(previous); }
+});
+
+
+test("terminal summary delivery failure preserves a replayable durable summary", async () => {
+  const env = { SUMMARY_FAIL: "1" }, f = fixture(env);
+  try {
+    await runRespecBuilderAudit(f.ctx);
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "complete");
+    assert.ok(readState(f.cwd).loop!.completionSummary);
+    assert.equal(readState(f.cwd).loop!.builder!.summaryDeliveredAt, undefined);
+    delete (env as Record<string, string>).SUMMARY_FAIL;
+    replayRespecCompletionSummary(f.ctx);
+    replayRespecCompletionSummary(f.ctx);
+    assert.equal(f.summaries.length, 1);
+    assert.ok(readState(f.cwd).loop!.builder!.summaryDeliveredAt);
+  } finally { replaceState(f.original); }
 });

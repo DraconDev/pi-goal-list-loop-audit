@@ -35,6 +35,12 @@ test("actual respec command and tools persist intended scope, batch and audit cl
     assert.ok(saved.audit!.attemptId);
     assert.ok(saved.audit!.at);
     assert.equal(saved.tasks[0]!.status, "claimed");
+    await pi.command("loop", "status", ctx);
+    const status = ctx.ui.notifies.at(-1)!.message;
+    assert.match(status, /login \[open\]: Users can log in/);
+    assert.match(status, /Done when: Valid login succeeds; invalid login fails/);
+    assert.match(status, /export \[open\]: Users can export/);
+    assert.match(status, /waiting for dispatch/);
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
 
