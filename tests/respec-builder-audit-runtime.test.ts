@@ -71,7 +71,7 @@ test("completed job is recovered after reloading an unsettled claim without anot
     persistStateLine(f.cwd, state);
     fs.unlinkSync(f.file); // A new spawn would fail: only saved evidence can approve.
     await runRespecBuilderAudit(f.ctx);
-    assert.equal(readState(f.cwd).loop!.builder!.phase, "complete");
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "complete", fs.readFileSync(path.join(f.cwd, ".pi-glla", "active.jsonl"), "utf8"));
     assert.deepEqual(fs.readdirSync(path.join(f.cwd, ".pi-glla", "audit-jobs")), jobs);
   } finally { replaceState(f.original); }
 });
