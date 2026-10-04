@@ -1,0 +1,68 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [1009.21ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [87.15ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [68.30ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [59.34ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [61.77ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [63.14ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [14.14ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [65.34ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [175.83ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [208.55ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [0.73ms]
+(pass) actual installer, command, tools and agent_end carry a project through detached verification [128.11ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [75.40ms]
+(pass) a failed builder journal commit restores the complete prior RAM state [1.11ms]
+(pass) a supervisor freeze prevents a new project audit dispatch [0.51ms]
+(pass) rapid pause/resume discards the cancelled worker result and rearms the saved claim [79.08ms]
+(pass) an undelivered project summary survives replacement by a new project [62.78ms]
+(pass) freezing supervision between auditor attempts prevents retry and fallback dispatch [78.34ms]
+(pass) a corrupt summary outbox prevents terminal handoff and retains approved job evidence [69.82ms]
+
+tests/continuous-supervision.test.ts:
+(pass) v0.36.0: activeSupervisionPlanes covers every GLLA work plane without inventing activity [2.23ms]
+(pass) v0.36.0: checker reacts to durable transitions across every work plane [0.31ms]
+(pass) v0.36.0: lifecycle signals route immediately for every declared plane [0.30ms]
+(pass) v0.36.0: a child and recovery transition are durable signals, not guessed waits [0.23ms]
+(pass) v0.36.0: fallback polling adapts from 250ms to the 15s safety cadence [0.05ms]
+(pass) v0.36.0: a real event resets fallback backoff instead of waiting for the old slot [0.05ms]
+(pass) v0.36.0: loop terminal outcomes receive a durable user-facing recap [0.36ms]
+(pass) v0.36.0: production heartbeat is event-first with adaptive timeout fallback [0.96ms]
+(pass) respec audit phase and register changes are observed without inventing a worker [0.14ms]
+
+tests/respec-builder-wiring.test.ts:
+(pass) actual respec command and tools persist intended scope, batch and audit claim [158.71ms]
+(pass) declining intended scope leaves the project drafting with no adopted requirements [11.75ms]
+(pass) registered blocker and refinement tools preserve work and require consent to change scope [38.03ms]
+
+tests/respec-builder-ui.test.ts:
+(pass) live telemetry is claim-fenced and missing telemetry never implies a running worker [2.97ms]
+(pass) completion summary requires proof and includes acceptance, shipped capability and evidence [0.30ms]
+(pass) actual project summaries render semantic headings, bold and no italics in both themes [29.08ms]
+(pass) large project summaries stay within the shared receipt transport and disclose omissions [15.62ms]
+
+tests/terminal-approval-render.test.ts:
+(pass) skipped challenges are disclosed in chat, transcript, and archive evidence [13.59ms]
+(pass) canonical render folds a lone approval with the verdict count, model-free [0.55ms]
+(pass) standalone audit bullet survives only with news [0.68ms]
+(pass) counts line proofs the audit verdict from durable state only [0.26ms]
+(pass) buildApprovalChatLines stays backward compatible without counts [0.12ms]
+(pass) v0.38.37 posted summary carries verifiable-result bullets plus the deliberate non-do [1.03ms]
+(pass) idle-persisted render replays once on the next live contact [35.85ms]
+(pass) render with confirmed delivery never replays [1.26ms]
+(pass) corrupt store degrades to zero replays, never throws [0.27ms]
+(pass) v0.38.39 chat brief strips machine paths but the archive keeps them [0.50ms]
+(pass) v0.38.39 clause cut respects +-joined lists [0.08ms]
+(pass) second approval for the same goal after delivery queues a fresh render [2.17ms]
+(pass) error-only audit history renders an honest archive banner with no review row [0.29ms]
+(pass) unreadable outbox refuses enqueue without replacing an earlier pending render [2.00ms]
+(pass) malformed and partially invalid stores preserve bytes and refuse mutations [2.37ms]
+(pass) delivery callback enqueue survives acknowledgement and replays on next contact [1.88ms]
+(pass) nested replay neither repeats the in-flight render nor restores acknowledged entries [2.04ms]
+(pass) refusal rotation preserves callback enqueues and makes them reachable next contact [6.09ms]
+
+ 53 pass
+ 0 fail
+Ran 53 tests across 5 files. [3.99s]

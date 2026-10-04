@@ -1,0 +1,57 @@
+running
+Project · Auditing · increment 1
+├─ Build usable account login and data export
+├─ verified 0/2 · remaining 2 · blocked 0
+├─ claim: Implement login behavior and exercise acceptance criteria
+├─ auditor: running · 1m 05s · provider/auditor-model
+├─ last activity: 17s ago · tool: bash
+└─ Independent verification pending · no action needed
+
+glla: project auditing · increment 1 · verified 0/2 · remaining 2 · blocked 0 ·…
+retrying
+Project · Auditing · increment 1
+├─ Build usable account login and data export
+├─ verified 0/2 · remaining 2 · blocked 0
+├─ claim: Implement login behavior and exercise acceptance criteria
+├─ auditor: retrying · 1m 05s · provider/auditor-model
+├─ last activity: 17s ago · retry: timeout · retry in 5s
+└─ Independent verification pending · no action needed
+
+glla: project auditing · increment 1 · verified 0/2 · remaining 2 · blocked 0 ·…
+complete
+Project · Complete · increment 1
+├─ Build usable account login and data export
+├─ verified 2/2 · remaining 0 · blocked 0
+├─ task: Build login and export
+├─ evidence: Login rejection and export round-trip independently exercised.
+└─ All adopted requirements independently verified
+
+glla: project complete · increment 1 · verified 2/2 · remaining 0 · blocked 0
+summary
+
+ ### Done
+
+ Build usable account login and data export
+ ### What Changed
+
+ - login: Usable account login
+ - export: Data export
+ ### Verification
+
+ PASS: All 2 adopted requirements are independently verified.
+ - login: Valid credentials open the account; invalid credentials are rejected
+   — audit audit-final
+ - export: Export round-trips all fields — audit audit-final
+ ### Evidence
+
+ - audit-final · auditor: Login rejection and export round-trip independently
+   exercised.
+ - Archive: .pi-glla/archive/respec-project.json
+ ### Remaining
+
+ No unfinished adopted requirements.
+ ### Next
+
+ Use /loop status to inspect the verified project; start a new project when its
+ intended scope changes.
+

@@ -1,0 +1,14 @@
+{
+  "currentHost": "0.99.1",
+  "oldestHost": "0.84.2",
+  "packageVersion": "0.39.0",
+  "focused": {
+    "pass": 53,
+    "fail": 0,
+    "files": 5
+  },
+  "uiFrames": 350,
+  "commandViews": 144,
+  "uiWidthOverflow": 0,
+  "liveCase": "chat active at 20:53 Europe/London; no modifications"
+}

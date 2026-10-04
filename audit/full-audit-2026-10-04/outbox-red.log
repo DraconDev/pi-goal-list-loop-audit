@@ -1,0 +1,65 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [1268.14ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [1999.55ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [847.83ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [106.42ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [155.33ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [122.55ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [16.98ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [95.61ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [188.35ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [264.30ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [3.56ms]
+(pass) actual installer, command, tools and agent_end carry a project through detached verification [325.61ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [284.93ms]
+(pass) a failed builder journal commit restores the complete prior RAM state [1.44ms]
+(pass) a supervisor freeze prevents a new project audit dispatch [8.24ms]
+(pass) rapid pause/resume discards the cancelled worker result and rearms the saved claim [62.14ms]
+332 |     const summary = state.loop!.completionSummary;
+333 |     replaceState({ ...state, loop: null }); persistStateLine(f.cwd, state);
+334 |     delete env.SUMMARY_FAIL;
+335 |     replayRespecCompletionSummary(f.ctx);
+336 |     replayRespecCompletionSummary(f.ctx);
+337 |     assert.deepEqual(f.summaries, [summary]);
+                 ^
+AssertionError: Expected values to be strictly deep-equal:
++ actual - expected
+
++ []
+- [
+-   '### Done\n' +
+-     'Build an artifact\n' +
+-     '\n' +
+-     '### What Changed\n' +
+-     '- **artifact:** Artifact\n' +
+-     '\n' +
+-     '### Verification\n' +
+-     'PASS: All 1 adopted requirements are independently verified.\n' +
+-     '- **artifact:** artifact exists — audit aabbccdd\\-1111\\-2222\\-3333\\-444455556666\n' +
+-     '\n' +
+-     '### Evidence\n' +
+-     '- **aabbccdd\\-1111\\-2222\\-3333\\-444455556666** · test/provider\\-model: <evidence\\> artifact exists </evidence\\> <approved/\\>\n' +
+-     '- **Archive:** /tmp/glla\\-behavioral\\-3OircU/\\.pi\\-glla/archive/respec\\-92fb598676fa67ec89857181\\.json\n' +
+-     '\n' +
+-     '### Remaining\n' +
+-     'No unfinished adopted requirements.\n' +
+-     '\n' +
+-     '### Next\n' +
+-     'Use /loop status to inspect the verified project; start a new project when its intended scope changes.'
+- ]
+
+ generatedMessage: true,
+     actual: [],
+   expected: [ "### Done\nBuild an artifact\n\n### What Changed\n- **artifact:** Artifact\n\n### Verification\nPASS: All 1 adopted requirements are independently verified.\n- **artifact:** artifact exists — audit aabbccdd\\-1111\\-2222\\-3333\\-444455556666\n\n### Evidence\n- **aabbccdd\\-1111\\-2222\\-3333\\-444455556666** · test/provider\\-model: <evidence\\> artifact exists </evidence\\> <approved/\\>\n- **Archive:** /tmp/glla\\-behavioral\\-3OircU/\\.pi\\-glla/archive/respec\\-92fb598676fa67ec89857181\\.json\n\n### Remaining\nNo unfinished adopted requirements.\n\n### Next\nUse /loop status to inspect the verified project; start a new project when its intended scope changes." ],
+   operator: "deepStrictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/respec-builder-audit-runtime.test.ts:337:12
+      at processTicksAndRejections (native:7:39)
+(fail) an undelivered project summary survives replacement by a new project [234.81ms]
+
+ 16 pass
+ 1 fail
+Ran 17 tests across 1 file. [7.07s]

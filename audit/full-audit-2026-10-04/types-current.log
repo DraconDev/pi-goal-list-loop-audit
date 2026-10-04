@@ -1,0 +1,4 @@
+
+> pi-goal-list-loop-audit@0.39.0 check
+> tsc --noEmit
+

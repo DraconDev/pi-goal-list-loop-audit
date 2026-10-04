@@ -1,0 +1,140 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [2627.73ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [51.24ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [78.56ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [78.76ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [73.35ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [75.67ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [16.36ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [77.63ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [177.17ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [207.08ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [1.18ms]
+(pass) actual installer, command, tools and agent_end carry a project through detached verification [190.09ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [89.03ms]
+284 | test("a failed builder journal commit restores the complete prior RAM state", async () => {
+285 |   const f = fixture({ PERSIST_FAIL: "1" });
+286 |   try {
+287 |     const before = JSON.stringify(state);
+288 |     await runRespecBuilderAudit(f.ctx);
+289 |     assert.equal(JSON.stringify(state), before);
+                 ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ '{}'
+- '{"goal":null,"list":[],"loop":{"target":"Build an artifact","builder":{"projectId":"1deecef8-1797-48ac-841a-bb207d0bf603","phase":"auditing","revision":1,"cycle":1,"vision":"Build an artifact","requirements":[{"id":"artifact","text":"Artifact","acceptance":"artifact exists","status":"open"}],"tasks":[{"id":"task","text":"Build artifact","requirementIds":["artifact"],"status":"claimed"}],"feedback":[],"audit":{"attemptId":"aabbccdd-1111-2222-3333-444455556666","revision":1,"requirementIds":["artifact"],"claim":"Artifact implemented","at":"2026-10-04T19:48:02.290Z"}},"active":true,"startedAt":"2026-10-04T19:48:02.290Z","iteration":1,"maxIterations":0,"plateauWindow":5,"stallCount":0,"bestValue":null,"lastValue":null,"history":[]}}'
+
+ generatedMessage: true,
+     actual: "{}",
+   expected: "{\"goal\":null,\"list\":[],\"loop\":{\"target\":\"Build an artifact\",\"builder\":{\"projectId\":\"1deecef8-1797-48ac-841a-bb207d0bf603\",\"phase\":\"auditing\",\"revision\":1,\"cycle\":1,\"vision\":\"Build an artifact\",\"requirements\":[{\"id\":\"artifact\",\"text\":\"Artifact\",\"acceptance\":\"artifact exists\",\"status\":\"open\"}],\"tasks\":[{\"id\":\"task\",\"text\":\"Build artifact\",\"requirementIds\":[\"artifact\"],\"status\":\"claimed\"}],\"feedback\":[],\"audit\":{\"attemptId\":\"aabbccdd-1111-2222-3333-444455556666\",\"revision\":1,\"requirementIds\":[\"artifact\"],\"claim\":\"Artifact implemented\",\"at\":\"2026-10-04T19:48:02.290Z\"}},\"active\":true,\"startedAt\":\"2026-10-04T19:48:02.290Z\",\"iteration\":1,\"maxIterations\":0,\"plateauWindow\":5,\"stallCount\":0,\"bestValue\":null,\"lastValue\":null,\"history\":[]}}",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/respec-builder-audit-runtime.test.ts:289:12
+      at processTicksAndRejections (native:7:39)
+(fail) a failed builder journal commit restores the complete prior RAM state [2.45ms]
+295 | test("a supervisor freeze prevents a new project audit dispatch", async () => {
+296 |   const f = fixture();
+297 |   try {
+298 |     replaceState({ ...state, supervisorPausedAt: Date.now() }); persistStateLine(f.cwd, state);
+299 |     await runRespecBuilderAudit(f.ctx);
+300 |     assert.equal(f.resolutions(), 0);
+                 ^
+AssertionError: Expected values to be strictly equal:
+
+1 !== 0
+
+ generatedMessage: true,
+     actual: 1,
+   expected: 0,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/respec-builder-audit-runtime.test.ts:300:12
+      at processTicksAndRejections (native:7:39)
+(fail) a supervisor freeze prevents a new project audit dispatch [94.00ms]
+315 |     replaceState({ ...state, loop: { ...state.loop!, active: false, stopReason: "paused by user (/loop pause)" } });
+316 |     cancelRespecBuilderAudit(f.cwd, f.startedAt);
+317 |     replaceState({ ...state, loop: { ...state.loop!, active: true, stopReason: undefined } });
+318 |     persistStateLine(f.cwd, state);
+319 |     await pending;
+320 |     assert.equal(readState(f.cwd).loop!.active, true);
+                 ^
+AssertionError: Expected values to be strictly equal:
+
+false !== true
+
+ generatedMessage: true,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/respec-builder-audit-runtime.test.ts:320:12
+      at processTicksAndRejections (native:7:39)
+(fail) rapid pause/resume discards the cancelled worker result and rearms the saved claim [33.73ms]
+
+tests/continuous-supervision.test.ts:
+(pass) v0.36.0: activeSupervisionPlanes covers every GLLA work plane without inventing activity [2.54ms]
+(pass) v0.36.0: checker reacts to durable transitions across every work plane [0.42ms]
+(pass) v0.36.0: lifecycle signals route immediately for every declared plane [0.28ms]
+(pass) v0.36.0: a child and recovery transition are durable signals, not guessed waits [0.33ms]
+(pass) v0.36.0: fallback polling adapts from 250ms to the 15s safety cadence [0.08ms]
+(pass) v0.36.0: a real event resets fallback backoff instead of waiting for the old slot [0.07ms]
+(pass) v0.36.0: loop terminal outcomes receive a durable user-facing recap [0.38ms]
+(pass) v0.36.0: production heartbeat is event-first with adaptive timeout fallback [0.96ms]
+167 |   const supervisor = new ContinuousSupervisor();
+168 |   const state = { ...empty(), loop: { active: true, target: "Build project", iteration: 1, builder: { phase: "building", revision: 1, cycle: 1 } } } as unknown as State;
+169 |   supervisor.check(state);
+170 |   assert.equal(supervisor.check(state).cause, "fallback");
+171 |   const auditing = { ...state, loop: { ...state.loop!, builder: { ...state.loop!.builder!, phase: "auditing", audit: { attemptId: "claim" } } } } as State;
+172 |   assert.ok(activeSupervisionPlanes(auditing).includes("auditor"));
+               ^
+AssertionError: false == true
+ generatedMessage: true,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/continuous-supervision.test.ts:172:10
+      at fn (node:test:215:18)
+(fail) respec audit phase and register changes are observed without inventing a worker [1.03ms]
+
+tests/respec-builder-wiring.test.ts:
+(pass) actual respec command and tools persist intended scope, batch and audit claim [161.95ms]
+(pass) declining intended scope leaves the project drafting with no adopted requirements [11.86ms]
+71 |     await pi.runTool("plan_project_increment", { tasks: [{ id: "auth", text: "Implement login", requirementIds: ["login"] }] }, ctx);
+72 |     await pi.runTool("block_project_requirement", { id: "login", reason: "Credentials unavailable" }, ctx);
+73 |     assert.equal(readState(cwd).loop!.active, false, "all-blocked work parks automation");
+74 |     assert.equal(readState(cwd).loop!.builder!.history!.at(-1)!.tasks[0]!.id, "auth");
+75 |     await pi.command("loop", "resume", ctx); clearLoopTimer();
+76 |     assert.equal(readState(cwd).loop!.active, false, "unresolved all-blocked project cannot resume into a no-progress loop");
+                ^
+AssertionError: unresolved all-blocked project cannot resume into a no-progress loop
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/respec-builder-wiring.test.ts:76:12
+      at processTicksAndRejections (native:7:39)
+(fail) registered blocker and refinement tools preserve work and require consent to change scope [14.26ms]
+
+5 tests failed:
+(fail) a failed builder journal commit restores the complete prior RAM state [2.45ms]
+(fail) a supervisor freeze prevents a new project audit dispatch [94.00ms]
+(fail) rapid pause/resume discards the cancelled worker result and rearms the saved claim [33.73ms]
+(fail) respec audit phase and register changes are observed without inventing a worker [1.03ms]
+(fail) registered blocker and refinement tools preserve work and require consent to change scope [14.26ms]
+
+ 23 pass
+ 5 fail
+Ran 28 tests across 3 files. [5.47s]

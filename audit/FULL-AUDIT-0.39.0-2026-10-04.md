@@ -70,7 +70,9 @@ fresh full release gate is still running; this report is not complete yet.
   rather than parking it. GLLA invokes public hooks; Pi owns summarization.
 - Provider error classification, bounded retry ladders, quota-reset sleeps and
   context hygiene contain upstream failures. They do not repair providers or
-  guarantee that a provider eventually returns usable output.
+  guarantee that a provider eventually returns usable output. Aggressive mode
+  and quota recovery deliberately keep probing without an episode expiry;
+  each attempt/delay remains bounded, and explicit user stops still win.
 - Settings retain per-key project/global/default precedence, global-only keys,
   legacy migration, validation and explicit invalid-setting reporting. Public
   read-only command views all produced feedback.

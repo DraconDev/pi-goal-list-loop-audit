@@ -1,0 +1,89 @@
+{"root":"audit/full-audit-2026-10-04/ui","frames":296,"overflow":[]}
+[
+  {
+    "key": "settings-keep-going",
+    "lines": [
+      "GLLA settings · defaults save globally",
+      "‹ Keep-going (9) › · 1/8",
+      "KEY                              │ VALUE                               │ SOURCE ",
+      "─────────────────────────────────┼─────────────────────────────────────┼────────",
+      "▶ Auto-resume on load            │ default                             │ default",
+      "  Decision popup                 │ on                                  │ default",
+      "  Carryover policy               │ pause                               │ default",
+      "  Decision pause budget          │ unset (pause every time)            │ default",
+      "  Auto-accept drafts             │ off                                 │ default",
+      "  Aggressive mode                │ on                                  │ default",
+      "  Vision assist                  │ on                                  │ default",
+      "  Forbidden model patterns       │ none                                │ default",
+      "  Block forbidden switches       │ on                                  │ default",
+      "←/→ tab · ↑/↓ move · d details on · / search · enter edit · esc exit"
+    ]
+  },
+  {
+    "key": "settings-main-agent",
+    "lines": [
+      "GLLA settings · defaults save globally",
+      "‹ Main agent (6) › · 2/8",
+      "KEY                              │ VALUE                               │ SOURCE ",
+      "─────────────────────────────────┼─────────────────────────────────────┼────────",
+      "▶ Current main agent             │ session model · session thinking    │ runtime",
+      "  Fallback models (up to 10)     │ 2/10 · 1. openai/gpt-5 · session t… │ default",
+      "  Main recovery base minutes     │ 15                                  │ default",
+      "  Hourly main recovery probe     │ on                                  │ default",
+      "  Primary failback policy        │ auto                                │ default",
+      "  Primary probe minutes          │ 15                                  │ default",
+      "←/→ tab · ↑/↓ move · d details on · / search · enter edit · esc exit"
+    ]
+  },
+  {
+    "key": "settings-drafter",
+    "lines": [
+      "GLLA settings · defaults save globally",
+      "‹ Drafter (2) › · 3/8",
+      "KEY                              │ VALUE                               │ SOURCE ",
+      "─────────────────────────────────┼─────────────────────────────────────┼────────",
+      "▶ Drafter agent                  │ session model · session thinking    │ default",
+      "  Drafter fallback models (up t… │ 0/10 · session model · session thi… │ default",
+      "←/→ tab · ↑/↓ move · d details on · / search · enter edit · esc exit"
+    ]
+  }
+]
+{"root":"audit/full-audit-2026-10-04/respec-ui","frames":54,"overflow":[]}
+[
+  {
+    "key": "drafting",
+    "lines": [
+      "Project · Drafting · increment 0",
+      "├─ Build usable account login and data export",
+      "├─ verified 0/0 · remaining 0 · blocked 0",
+      "└─ Work continues · /loop pause · /loop refine",
+      "",
+      "glla: project drafting · increment 0 · verified 0/0 · remaining 0 · blocked 0"
+    ]
+  },
+  {
+    "key": "building",
+    "lines": [
+      "Project · Building · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ verified 0/2 · remaining 2 · blocked 0",
+      "├─ task: Implement login behavior and exercise acceptance criteria",
+      "└─ Work continues · /loop pause · /loop refine",
+      "",
+      "glla: project building · increment 1 · verified 0/2 · remaining 2 · blocked 0"
+    ]
+  },
+  {
+    "key": "auditing",
+    "lines": [
+      "Project · Auditing · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ verified 0/2 · remaining 2 · blocked 0",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ auditor: waiting for dispatch · no live worker observed",
+      "└─ Independent verification pending · no action needed",
+      "",
+      "glla: project auditing · increment 1 · verified 0/2 · remaining 2 · blocked 0 ·…"
+    ]
+  }
+]
