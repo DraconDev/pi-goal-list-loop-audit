@@ -263,7 +263,10 @@ live telemetry is shown as waiting for dispatch. `/loop status` lists every
 requirement, its acceptance criteria, blocker and verification evidence.
 Verified completion posts a semantic summary of shipped capabilities,
 acceptance checks and evidence, saved in the journal and project archive;
-unacknowledged delivery retries on reload without rerunning the audit.
+unacknowledged delivery uses the durable outbox and retries on reload, even
+after a new project replaces the old loop, without rerunning the audit. Large
+summary cards name omitted requirements/reports; the archive and `/loop status`
+retain the full criteria and evidence.
 `/loop pause` holds work, `/loop resume` continues saved state, and
 `/loop stop` stops it without calling unfinished work complete. If all remaining
 work is blocked, automation parks with reasons; clearing a blocker leaves work
