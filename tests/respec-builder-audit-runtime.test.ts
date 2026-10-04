@@ -54,15 +54,25 @@ test("a stale audit wake does not resolve a model or launch a worker", async () 
 test("a time bound cancels an in-flight worker and retains unfinished requirements", async () => {
   const f = fixture({ RESULT_DELAY: "10000" });
   try {
-    replaceState({ ...state, loop: { ...state.loop!, startedAt: new Date().toISOString(), timeLimitHours: 2 / 3600 } });
+    replaceState({ ...state, loop: { ...state.loop!, startedAt: new Date().toISOString(), timeLimitHours: 1 } });
     persistStateLine(f.cwd, state);
-    await runRespecBuilderAudit(f.ctx);
+    const pending = runRespecBuilderAudit(f.ctx);
+    const jobs = path.join(f.cwd, ".pi-glla", "audit-jobs");
+    const deadline = Date.now() + 20000;
+    while (!fs.existsSync(jobs) || !fs.readdirSync(jobs).some(name => fs.existsSync(path.join(jobs, name, "progress.json")))) {
+      if (Date.now() > deadline) throw new Error("Worker did not publish progress");
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    // Exhaust the window only after real worker activity, independently of
+    // provider/setup latency. The progress hook must contain the active job.
+    replaceState({ ...state, loop: { ...state.loop!, timeLimitHours: 0 } });
+    persistStateLine(f.cwd, state);
+    await pending;
     const saved = readState(f.cwd).loop!;
     assert.equal(saved.active, false);
     assert.match(saved.stopReason!, /time bound reached/);
     assert.equal(saved.builder!.phase, "auditing");
     assert.equal(saved.builder!.requirements[0]!.status, "open");
-    const jobs = path.join(f.cwd, ".pi-glla", "audit-jobs");
     assert.ok(fs.readdirSync(jobs).length > 0, "an actual worker was dispatched");
     assert.ok(fs.readdirSync(jobs).every(name => !fs.existsSync(path.join(jobs, name, "result.json"))));
     assert.deepEqual(f.counts(), { wakes: 0, finishes: 0 });
