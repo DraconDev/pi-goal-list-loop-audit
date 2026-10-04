@@ -21,7 +21,7 @@ for (const file of files.sort()) {
       const name = node.expression.getText(ast);
       const arg = node.arguments[0];
       if (name.endsWith('.registerCommand') && arg && ts.isStringLiteral(arg)) commands.add(arg.text);
-      if (name === 'defineTool' && arg && ts.isObjectLiteralExpression(arg)) {
+      if ((name === 'defineTool' || name.endsWith('.wrapTool')) && arg && ts.isObjectLiteralExpression(arg)) {
         for (const prop of arg.properties) if (ts.isPropertyAssignment(prop) && prop.name.getText(ast)==='name' && ts.isStringLiteral(prop.initializer)) tools.add(prop.initializer.text);
       }
     }
