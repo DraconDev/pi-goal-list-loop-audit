@@ -693,8 +693,12 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
     loop.tokensUsed = (loop.tokensUsed ?? 0) + sumNewAssistantTokens(event.messages as unknown[], flags.countedLoopTokenMessages);
   }
   if (loop.builder?.phase === "auditing") {
+    if (event) applyMetriclessTick(loop, nowIso());
     persistState(ctx);
-    if (!loop.active) return;
+    if (!loop.active) {
+      ctx.ui.notify(`Project held: ${loop.stopReason}; requirements remain unfinished. /loop status shows saved work.`, "warning");
+      return;
+    }
     void runRespecBuilderAudit(ctx);
     return;
   }
@@ -1312,7 +1316,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       return;
     }
     const stored = state.loop;
-    if (stored && !stored.active && RESUMABLE_STOP(stored.stopReason)) {
+    if (stored && !stored.active && (RESUMABLE_STOP(stored.stopReason) || (!!stored.builder && !!stored.stopReason?.startsWith("max iterations reached")))) {
       // Branch-mode stop returns HEAD to originalBranch. Refuse a resume from
       // there rather than letting the next tick commit loop work to the
       // user's branch; the user can explicitly check out the recorded
@@ -1360,6 +1364,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
         auditPlateauReprieves: 0,
         ...(resetTimeWindow ? { startedAt: resumedAt } : {}),
         ...(resetTokenBudget ? { tokensUsed: 0 } : {}),
+        ...(stored.builder && stored.stopReason?.startsWith("max iterations reached") ? { maxIterations: stored.iteration + stored.maxIterations } : {}),
       };
       persistState(ctx);
       if (resetTimeWindow || resetTokenBudget) {

@@ -144,3 +144,19 @@ test("respec uses the shared bounded retry/fallback policy and journals its cand
     assert.deepEqual(f.counts(), { wakes: 0, finishes: 1 });
   } finally { replaceState(f.original); }
 });
+
+test("an exhausted token bound holds the project before spawning an auditor or claiming completion", async () => {
+  const f = fixture();
+  try {
+    replaceState({ ...state, loop: { ...state.loop!, tokenBudget: 10, tokensUsed: 10 } });
+    persistStateLine(f.cwd, state);
+    await runRespecBuilderAudit(f.ctx);
+    const saved = readState(f.cwd).loop!;
+    assert.equal(saved.active, false);
+    assert.match(saved.stopReason!, /token budget exhausted/);
+    assert.equal(saved.builder!.phase, "auditing");
+    assert.equal(saved.builder!.requirements[0]!.status, "open");
+    assert.equal(fs.existsSync(path.join(f.cwd, ".pi-glla", "audit-jobs")), false);
+    assert.deepEqual(f.counts(), { wakes: 0, finishes: 0 });
+  } finally { replaceState(f.original); }
+});

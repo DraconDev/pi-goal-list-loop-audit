@@ -18,6 +18,9 @@ test("actual respec command and tools persist intended scope, batch and audit cl
     await pi.command("loop", "respec build login and export", ctx); await tick(100); clearLoopTimer();
     assert.equal(readState(cwd).loop?.builder?.vision, "build login and export");
     assert.equal(readState(cwd).loop?.builder?.phase, "drafting");
+    await pi.command("loop", "finish looks done", ctx);
+    assert.equal(readState(cwd).loop?.active, true, "finish cannot bypass requirement verification");
+    assert.equal(readState(cwd).loop?.builder?.phase, "drafting");
     assert.match(loopPrompt(readState(cwd).loop!, "", "", ""), /RESPEC PROJECT BUILDER/);
     const run = async (name: string, params: unknown) => pi.tools.get(name)!.execute(...["call", params, undefined, undefined, ctx] as never[]);
     await run("propose_project_requirements", { requirements: [{ id: "login", text: "Users can log in", acceptance: "Valid login succeeds; invalid login fails" }, { id: "export", text: "Users can export", acceptance: "Data round-trips" }] });
