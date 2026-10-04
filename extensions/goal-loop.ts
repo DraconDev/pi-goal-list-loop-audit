@@ -400,6 +400,7 @@ export function loopPrompt(loop: LoopState, regressionNote: string, strategyNote
       .replace(/\$\{ITERATION\}/g, String(loop.iteration + 1))
       .replace(/\$\{BUILDER_PHASE\}/g, loop.builder.phase)
       .replace(/\$\{SPEC_FILE\}/g, () => loop.specFile ?? "SPEC.md")
+      .replace(/\$\{REFINE_HINT\}/g, () => loop.refineHint ?? "none")
       .replace(/\$\{BUILDER_STATE\}/g, () => JSON.stringify(loop.builder, null, 2))
       .replace(/\$\{BOUNDS_NOTE\}/g, () => boundsNote)
       .replace(/\$\{INTERVENTION_NOTE\}/g, () => interventionNote);
@@ -1681,12 +1682,20 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     // The rest is operator intent, not a discarded pseudo-option string.
     // Draft requirements from this direction plus the current project/spec.
     const intent = rest || "Develop this project toward the intended capabilities in its instructions, spec and recent operator discussion.";
+    const specs = resolveSpecFiles(ctx.cwd);
+    let selectedSpec = specs[0] ?? path.join(ctx.cwd, RESPEC_SPEC_CANDIDATES[0]!);
+    if (specs.length > 1) {
+      const choice = await ctx.ui.select("Both SPEC.md and spec.md exist — which is the project spec?", specs.map(file => path.basename(file)));
+      const selected = specs.find(file => path.basename(file) === choice);
+      if (!selected) { ctx.ui.notify("Respec cancelled; no project started.", "info"); return; }
+      selectedSpec = selected;
+    }
     await startLoopFromConfig(ctx, {
       target: `Build the intended project: ${intent}`,
       builder: createRespecBuilder(intent),
       measureCmd: "", plateauWindow: LOOP_DEFAULTS.plateauWindow,
       maxIterations: 0, branch: false, force: false,
-      specFile: resolveSpecFiles(ctx.cwd)[0] ?? path.join(ctx.cwd, RESPEC_SPEC_CANDIDATES[0]!),
+      specFile: selectedSpec,
     });
     return;
   }
