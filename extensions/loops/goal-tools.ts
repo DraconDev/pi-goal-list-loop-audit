@@ -1,3 +1,4 @@
+import { effectiveToolTimeoutMs } from "../goal-loop-auditor-process.js";
 import { deliverTerminalSummary } from "../terminal-summary-delivery.js";
 import { archiveCurrentGoal } from "./goal-orchestrator.js";
 /**
@@ -1144,7 +1145,7 @@ function registerAgentTools(pi: any): void {
             // quiet watcher exempts an in-budget long tool from the 3m
             // warning, and the card renders "tool: X · 4m / 20m budget".
             if (progress.sessionPath) inspectionSessionPath = progress.sessionPath;
-            publishDetachedAuditProgress(auditGeneration, auditGoalId, auditAttemptId, { ...progress, toolTimeoutMs });
+            publishDetachedAuditProgress(auditGeneration, auditGoalId, auditAttemptId, { ...progress, toolTimeoutMs: effectiveToolTimeoutMs(toolTimeoutMs, progress.currentToolTimeoutMs) });
             // v0.38.99: this is the MAIN path every ordinary completion takes,
             // and it must record durable lifecycle evidence too. Without it
             // the claim stayed `starting` with no lastActivityAt for the whole

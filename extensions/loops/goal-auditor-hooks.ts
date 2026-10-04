@@ -1,3 +1,4 @@
+import { effectiveToolTimeoutMs } from "../goal-loop-auditor-process.js";
 import { archiveCurrentGoal } from "./goal-orchestrator.js";
 /**
  * pi-goal-list-loop-audit — v0.1.0
@@ -1526,7 +1527,7 @@ async function retryStoredCompletionAudit(origin: CompletionAuditOrigin = "provi
             // quiet watcher exempts an in-budget long tool from the 3m
             // warning, and the card renders "tool: X · 4m / 20m budget".
             if (progress.sessionPath) inspectionSessionPath = progress.sessionPath;
-            publishDetachedAuditProgress(generation, goalId, claim.attemptId!, { ...progress, toolTimeoutMs });
+            publishDetachedAuditProgress(generation, goalId, claim.attemptId!, { ...progress, toolTimeoutMs: effectiveToolTimeoutMs(toolTimeoutMs, progress.currentToolTimeoutMs) });
             // v0.38.99: the same event is durable lifecycle evidence. Only a
             // real worker activity stamp counts (the worker's `lastActivityAt`),
             // never a boot/heartbeat resend, so a silent worker cannot keep a

@@ -1001,6 +1001,18 @@ function auditorObservedPhase(audit: AuditDisplayProgress | null | undefined, ph
   }
 }
 
+/** An unfinished tool is a wait, not fresh evidence of forward progress.
+ * Retain its observed clock while it is inside the dispatched timeout. */
+function auditorToolWait(audit: AuditDisplayProgress | null | undefined, phase: AuditorDisplayPhase, now: number): boolean {
+  return phase === "running" && !!audit?.currentTool
+    && (audit.phase === "running" || audit.phase === "tool_executing" || audit.phase === undefined)
+    && typeof audit.currentToolStartedAt === "number" && Number.isFinite(audit.currentToolStartedAt)
+    && audit.currentToolStartedAt <= now
+    && (audit.lastActivityAt === undefined || Number.isFinite(audit.lastActivityAt) && audit.lastActivityAt <= now)
+    && typeof audit.toolTimeoutMs === "number" && Number.isFinite(audit.toolTimeoutMs) && audit.toolTimeoutMs > 0
+    && now - audit.currentToolStartedAt < audit.toolTimeoutMs;
+}
+
 function auditorPhaseForDisplay(audit: AuditDisplayProgress | null | undefined, phase: AuditorDisplayPhase, live: boolean): string {
   // Once a worker timestamp exists, a stale tool snapshot is historical
   // context, not a claim that the detached process is still in that call.
@@ -1400,7 +1412,9 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
     // settling, workerless, and contradicted-starting claims are named by
     // their durable phase; any other real progress object speaks for itself.
     const durableLabel = durablePhaseOverride(g.pendingCompletion, audit, now);
+    const toolWait = auditorToolWait(audit, phase, now);
     const observed = durableLabel
+      ?? (toolWait ? `waiting on ${sanitizeDisplayText(audit!.currentTool!)}` : undefined)
       ?? (signals && phase === "running"
         ? (auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, live))
         : auditorPhaseForDisplay(audit, phase, live));
@@ -1420,10 +1434,10 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
     const quietAge = phase === "quiet" ? auditorActivityAge(audit, now) : undefined;
     const quietSuffix = quietAge !== undefined ? ` · silent ${fmtElapsed(quietAge)}` : "";
     const compactPrefix = extras?.compactAuditCard
-      ? `${paint(theme, color, durableLabel ?? (phase === "running" ? "AUDIT RUNNING" : phase === "quiet" ? "AUDIT QUIET — may be stuck" : phase === "blocked" ? "AUDIT BLOCKED" : phase === "queued" ? "AUDIT STARTING" : "AUDIT REVIEW"))} · `
+      ? `${paint(theme, color, durableLabel ?? (toolWait ? `AUDIT TOOL WAIT · ${sanitizeDisplayText(audit!.currentTool!)} ${fmtElapsed(now - audit!.currentToolStartedAt!)} / ${fmtElapsed(audit!.toolTimeoutMs!)}` : phase === "running" ? "AUDIT RUNNING" : phase === "quiet" ? "AUDIT QUIET — may be stuck" : phase === "blocked" ? "AUDIT BLOCKED" : phase === "queued" ? "AUDIT STARTING" : "AUDIT REVIEW"))} · `
       : "";
     const activityAge = auditorActivityAge(audit, now);
-    const freshness = extras?.compactAuditCard && phase !== "quiet"
+    const freshness = extras?.compactAuditCard && phase !== "quiet" && !toolWait
       ? `${activityAge !== undefined ? `activity ${fmtElapsed(activityAge)} ago` : "no worker activity yet"} · `
       : "";
     return `glla: ${compactPrefix}${freshness}${host} · ${label}${quietSuffix}${heldSuffix}`;
@@ -1961,7 +1975,7 @@ function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefin
   // ONLY here (it moved out of the tail) so the card keeps its
   // one-current-observation rule.
   let toolSeg: string | undefined;
-  if (phase === "running" && phaseLive && audit?.currentTool) {
+  if (phase === "running" && (phaseLive || auditorToolWait(audit, phase, now)) && audit?.currentTool) {
     const target = auditorToolTarget(audit.currentToolArgs);
     const duration = audit.currentToolStartedAt !== undefined && Number.isFinite(audit.currentToolStartedAt)
       ? ` · ${fmtElapsed(now - audit.currentToolStartedAt)}`
@@ -2185,10 +2199,11 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
       const age = auditorActivityAge(audit, now);
       const facts = [finished !== undefined ? `${finished} calls finished` : undefined,
         age !== undefined ? `activity ${fmtElapsed(age)} ago` : "no activity yet"].filter(Boolean);
+      const toolWait = auditorToolWait(audit, phase, now);
       const action = block.lead.find(line => line.startsWith("│ next:"));
       // No history or model plaques in the glance card: Pi clips its tail.
       // Keep state, real evidence and the user action ahead of all details.
-      const phaseLine = needsRecovery ? (phase === "quiet" ? `├─ ${paint(theme, "warning", "Audit quiet — may be stuck")}` : block.lead[0]!)
+      const phaseLine = toolWait ? `├─ ${paint(theme, "accent", `Waiting on ${sanitizeDisplayText(audit!.currentTool!)}${audit?.round === 2 ? " · second audit pass" : ""} · detached auditor`)}` : needsRecovery ? (phase === "quiet" ? `├─ ${paint(theme, "warning", "Audit quiet — may be stuck")}` : block.lead[0]!)
         : `├─ ${paint(theme, "accent", phase === "running" ? `Audit running · ${(extras?.auditorProgressSignals !== false ? auditorProgressPhaseLabel(audit) : undefined) ?? auditorPhaseForDisplay(audit, phase, auditorHasLiveEvidence(audit, phase, now))} · detached worker` : phase === "queued" ? "Audit starting · detached worker" : "Audit review pending · detached worker")}`;
       const toolLine = block.lead.find(line => /^│ (?:last )?tool:/.test(line));
       const modelRef = auditorCardModelRef(audit, g.pendingCompletion);
@@ -2197,7 +2212,7 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
         ...(facts.length ? [`│ ${facts.join(" · ")}`] : []),
         ...(elapsed !== undefined ? [`│ audit elapsed ${fmtElapsed(elapsed)}`] : []),
         ...(compactToolLine ? [compactToolLine.startsWith("│ tool:") ? compactToolLine : `│ last tool: ${lastAuditorTool(audit) ?? audit?.currentTool}`] : []),
-        ...(needsRecovery ? (action ? [action] : block.lead.slice(1)) : [`│ No action needed — review applies automatically`]),
+        ...(needsRecovery ? (action ? [action] : block.lead.slice(1)) : [toolWait ? `│ No tool completion yet — timeout handling is automatic` : `│ No action needed — review applies automatically`]),
         `└─ /goal status for full audit details`];
     }
     lines.push(...block.lead);
