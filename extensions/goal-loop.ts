@@ -72,7 +72,8 @@ import { chooseObjectiveConflict, liveObjectives } from "./goal-objective-confli
 import { releaseAuditorSurface } from "./loops/goal-auditor-surface.js";
 import { compactLoopCompletionSummary, compactTerminalCompletionSummary } from "./completion-summary.js";
 import { inferStartFromSession, type StartContextInference } from "./start-context.js";
-import { respecCoverage } from "./respec-builder.js";
+import { createRespecBuilder, respecCoverage, type RespecBuilderState } from "./respec-builder.js";
+import { runRespecBuilderAudit } from "./respec-builder-runtime.js";
 
 type DispatchInput = Omit<Parameters<typeof createContinuationDispatch>[0], "id" | "sentAt">;
 
@@ -503,6 +504,10 @@ function sendLoopTurn(): void {
     return;
   }
   const loop = state.loop!;
+  if (loop.builder?.phase === "auditing") {
+    void runRespecBuilderAudit(ctx);
+    return;
+  }
   if (respecNeedsDraftPhase(loop) && loop.respecPhase !== "draft") {
     loop.respecPhase = "draft";
     loop.target = `Draft the comprehensive ${path.basename(loop.specFile!)} from the current codebase before reconciliation`;
@@ -1062,6 +1067,7 @@ async function finishLoopGit(ctx: ExtensionContext, loop: LoopState): Promise<bo
 
 interface LoopConfig {
   target: string;
+  builder?: RespecBuilderState;
   respecPhase?: "draft" | "reconcile";
   /** Empty string = metricless spec loop (v0.23.0). */
   measureCmd: string;
@@ -1205,6 +1211,7 @@ async function startLoopFromConfig(ctx: ExtensionContext, cfg: LoopConfig): Prom
     ...state,
     loop: {
       target: cfg.target,
+      builder: cfg.builder,
       respecPhase: cfg.respecPhase,
       measureCmd: cfg.measureCmd || undefined,
       direction: cfg.direction,
@@ -1664,6 +1671,20 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
   }
 
   if (sub === "respec") {
+    // The rest is operator intent, not a discarded pseudo-option string.
+    // Draft requirements from this direction plus the current project/spec.
+    const intent = rest || "Develop this project toward the intended capabilities in its instructions, spec and recent operator discussion.";
+    await startLoopFromConfig(ctx, {
+      target: `Build the intended project: ${intent}`,
+      builder: createRespecBuilder(intent),
+      measureCmd: "", plateauWindow: LOOP_DEFAULTS.plateauWindow,
+      maxIterations: 0, branch: false, force: false,
+      specFile: resolveSpecFiles(ctx.cwd)[0] ?? path.join(ctx.cwd, RESPEC_SPEC_CANDIDATES[0]!),
+    });
+    return;
+  }
+
+  if (sub === "respec-legacy") {
     // v0.24.3: reconcile the codebase against the root spec, forever.
     // Same auto-start path as /loop start (the user typed the command —
     // that IS the act); metricless + unbounded by design. No limit-nagging:

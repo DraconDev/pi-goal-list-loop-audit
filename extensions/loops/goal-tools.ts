@@ -435,6 +435,7 @@ import {
   type LoopFlags,
 } from "../goal-loop.js";
 import { defineGoalRuntimeGlobal } from "./goal-runtime-globals.js";
+import { registerRespecBuilderTools } from "../respec-builder-runtime.js";
 import { releaseAuditorSurface } from "./goal-auditor-surface.js";
 import { chooseObjectiveConflict, liveObjectives, type ObjectiveKind } from "../goal-objective-conflict.js";
 import { ACTION_REMINDER_CUSTOM_TYPE, buildActionReminder, clearPauseAbort, markPauseAbort } from "../action-reminder.js";
@@ -574,6 +575,16 @@ function durableDeferFactsForGoal(
 }
 
 function registerAgentTools(pi: any): void {
+  registerRespecBuilderTools(pi, {
+    context: ctx => foreignToolGuard(ctx) ? null : currentToolContext(ctx),
+    persist: ctx => persistState(ctx),
+    wake: ctx => scheduleLoopTick(ctx),
+    resolveModel: ctx => {
+      const settings = loadSettings(ctx.cwd);
+      return resolveAuditorModel(ctx, settings.auditorModel, settings.auditorModelFallbacks, settings.auditorSameSessionSwap !== false);
+    },
+    wrapTool: tool => defineTool(tool),
+  });
   pi.registerTool(defineTool({
     name: "complete_goal",
     label: "Complete goal",
