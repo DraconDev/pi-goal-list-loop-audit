@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { adoptRespecRequirements, beginRespecAudit, blockRespecRequirement, claimRespecTask, createRespecBuilder, planRespecIncrement, respecCoverage, settleRespecAudit } from "../extensions/respec-builder.js";
+import { respecIncrementAuditGoal } from "../extensions/respec-builder-audit.js";
+import { buildGoalAuditorPrompt } from "../extensions/goal-loop-auditor.js";
 
 function planned() {
   const state = adoptRespecRequirements(createRespecBuilder("Build the intended project"), [
@@ -65,4 +67,19 @@ test("draft adoption rejects empty criteria and ignores supplied agent verificat
   const adopted = adoptRespecRequirements(draft, [{ id: "a", text: "Feature", acceptance: "Observable behavior", status: "verified" } as never]);
   assert.equal(adopted.requirements[0]!.status, "open");
   assert.throws(() => planRespecIncrement(adopted, [{ id: "a", text: "Task", requirementIds: ["unknown"] }]), /open requirements/);
+});
+
+test("increment audits carry acceptance criteria and regressions into the production auditor prompt", () => {
+  const approved = settleRespecAudit(beginRespecAudit(claimRespecTask(planned(), "auth"), "first", "Login works"), "first", pass);
+  const next = planRespecIncrement(approved, [{ id: "export-task", text: "Build export", requirementIds: ["export"] }]);
+  const auditing = beginRespecAudit(claimRespecTask(next, "export-task"), "second", "Export implemented");
+  const goal = respecIncrementAuditGoal(auditing, "loop", new Date().toISOString());
+  assert.match(goal.verificationContract!, /Exported data round-trips/);
+  assert.match(goal.verificationContract!, /Regression — login/);
+  assert.match(goal.verificationContract!, /invalid credentials are rejected/);
+  const prompt = buildGoalAuditorPrompt(goal, auditing.audit!.claim, undefined);
+  assert.match(prompt, /Exported data round-trips/);
+  assert.match(prompt, /invalid credentials are rejected/);
+  assert.equal(goal.pendingCompletion!.attemptId, "second");
+  assert.throws(() => respecIncrementAuditGoal(planned(), "loop", "now"), /awaiting audit/);
 });
