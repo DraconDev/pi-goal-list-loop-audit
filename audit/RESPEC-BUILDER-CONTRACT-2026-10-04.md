@@ -110,3 +110,10 @@ That assertion was corrected and its targeted suite passes. Do not claim the
 full gate passed until completion and any required rerun. Remaining review:
 audit fallback-chain cursor/settings support, bound behavior, current-source
 compatibility, completion requirement audit and full clean validation.
+
+## Final requirement review
+
+The checkpoints above preserve implementation history, including failed and
+incomplete validation runs. Current requirement-by-requirement evidence and
+the final gate disposition are maintained in
+`audit/RESPEC-BUILDER-VERIFICATION-2026-10-04.md`.
