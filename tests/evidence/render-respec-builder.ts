@@ -31,6 +31,6 @@ for (const appearance of ["dark", "light"]) {
   const renderer = pi.messageRenderers.get("goal-event")!(receipt as never, { outputPad: 1 } as never, theme) as Component;
   for (const width of [40, 80, 120]) frames.push({ key: "summary", theme: appearance, width, height: 12, lines: renderer.render(width) });
 }
-const out = path.resolve(import.meta.dirname, "../../audit/respec-project-ui-2026-10-04"); fs.mkdirSync(out, { recursive: true });
+const out = path.resolve(process.env.GLLA_UI_EVIDENCE_DIR ?? path.resolve(import.meta.dirname, "../../audit/respec-project-ui-2026-10-04")); fs.mkdirSync(out, { recursive: true });
 fs.writeFileSync(path.join(out, "rendered-frames.json"), JSON.stringify(frames, null, 2) + "\n");
 console.log(`Rendered ${frames.length} actual project frames.`);

@@ -25,5 +25,5 @@ for (const scene of UI_AUDIT_SCENES) {
  await pi.fire("session_shutdown", { reason: "fixture" }, ctx);
 }
 __testOnlyResetProcessState();
-fs.writeFileSync(path.resolve(import.meta.dirname, "../../audit/full-ui-audit-2026-10-03/command-views.json"), JSON.stringify(frames, null, 2) + "\n");
+fs.writeFileSync(path.join(process.env.GLLA_UI_EVIDENCE_DIR ?? path.resolve(import.meta.dirname, "../../audit/full-ui-audit-2026-10-03"), "command-views.json"), JSON.stringify(frames, null, 2) + "\n");
 console.log(`Rendered ${frames.length} command views from public handlers across ${UI_AUDIT_SCENES.length} durable state fixtures; every view gave feedback.`);

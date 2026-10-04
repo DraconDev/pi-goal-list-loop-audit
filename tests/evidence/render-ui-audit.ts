@@ -11,7 +11,7 @@ import { buildWidgetLines, buildStatusText } from "../../extensions/goal-loop-di
 import { buildActionReminder, registerActionReminderRenderer } from "../../extensions/action-reminder.js";
 import { MockPi } from "../harness/mock-pi.js";
 import { UI_AUDIT_SCENES, UI_AUDIT_NOW } from "./ui-audit-scenes.js";
-const out = path.resolve(import.meta.dirname, "../../audit/full-ui-audit-2026-10-03");
+const out = path.resolve(process.env.GLLA_UI_EVIDENCE_DIR ?? path.resolve(import.meta.dirname, "../../audit/full-ui-audit-2026-10-03"));
 fs.mkdirSync(out, { recursive: true });
 const frames: { key: string; theme: string; width: number; height: number; lines: string[] }[] = [];
 const settings = { ...DEFAULT_SETTINGS, auditorModel: "anthropic/claude-sonnet-4-5", mainModelFallbacks: ["openai/gpt-5", "google/gemini-2.5-pro"] };
