@@ -2223,8 +2223,9 @@ test("v0.35.x: stale terminal keeps a recovery probe and self-heals without relo
   const cwd = tmpCwd();
   const ctx = await freshSession(cwd, "startup");
   try {
+    const sendsBeforeGoal = pi.sent.length;
     await pi.command("goal", "same-process stale recovery — done when pinned", ctx);
-    await waitUntil(() => pi.sent.length > 0, 2500);
+    await waitUntil(() => pi.sent.length > sendsBeforeGoal, 2500);
     await acknowledgeLastContinuation(ctx);
     pi.sent.length = 0;
     const stale = staleError();
