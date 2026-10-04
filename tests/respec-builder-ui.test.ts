@@ -59,3 +59,18 @@ test("actual project summaries render semantic headings, bold and no italics in 
     }
   }
 });
+
+
+test("large project summaries stay within the shared receipt transport and disclose omissions", () => {
+  const complete = settleRespecAudit(pending(), "attempt", { approved: true, disapproved: false, output: "proof", model: "independent/model", regressionShieldPassed: true });
+  complete.requirements = Array.from({ length: 100 }, (_, i) => ({ ...complete.requirements[0]!, id: `r${i}`, text: "𐐀".repeat(3000), evidence: { ...complete.requirements[0]!.evidence!, attemptId: `audit${i}`, report: "𐐀".repeat(3000) } }));
+  const summary = respecCompletionSummary(complete, "archive.json");
+  const lines = summary.split("\n");
+  assert.ok(lines.length <= 150);
+  assert.ok(lines.every(line => [...line].length <= 2000));
+  assert.match(summary, /60 more requirements/);
+  assert.match(summary, /80 more audit reports/);
+  assert.match(summary, /PASS: All 100/);
+  assert.ok(lines.some(line => line.endsWith("…")));
+  assert.ok(!summary.includes("\ufffd"));
+});

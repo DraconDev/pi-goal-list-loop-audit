@@ -6,6 +6,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { Type } from "typebox";
 import { state, replaceState } from "./goal-state.js";
 import { appendLedger, nowIso, archiveDir, supervisorPaused } from "./goal-loop-core.js";
+import { persistApprovalRender, replayUndeliveredApprovalRenders } from "./approval-render-store.js";
 import { loadSettings } from "./goal-settings.js";
 import type { LoopState } from "./goal-loop-forever.js";
 import { dispatchAuditorAllowedExtensions } from "./auditor-extensions.js";
@@ -154,6 +155,10 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
       // Archival yields: a concurrent stop/refinement must still own state.
       if (!host.context(liveCtx) || state.loop?.builder !== builder || !state.loop.active) return;
     }
+    if (summary && !persistApprovalRender(liveCtx.cwd, {
+      goalId: `respec:${next.projectId ?? loop.startedAt}:${next.revision}`,
+      objective: next.vision, chatLines: summary.split("\n"),
+    })) throw new Error("Project summary outbox could not be persisted");
     if (!commit(liveCtx, builder, next, summary)) return;
     if (result.error) {
       // Keep the claim, but park automation rather than retrying an unavailable
@@ -183,20 +188,28 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
     const current = state.loop;
     // An explicit resume may arrive before cancelled-job cleanup completes.
     // Re-arm only the same live claim, after releasing its dispatch latch.
-    if (controller.signal.aborted && current?.active && current.builder?.audit?.attemptId === initialBuilder.audit?.attemptId && host.context(ctx) && !supervisorPaused(state)) host.wake(ctx);
+    if (controller.signal.aborted && current?.active && current.startedAt === loop.startedAt && current.builder?.projectId === initialBuilder.projectId && current.builder?.audit?.attemptId === initialBuilder.audit?.attemptId && host.context(ctx) && !supervisorPaused(state)) host.wake(ctx);
     if (host.context(ctx)) { try { host.refresh?.(ctx); } catch { /* stale display */ } }
   }
 }
 
-/** The durable terminal summary is the outbox; replay uses the existing receipt check. */
+/** The shared durable outbox survives replacement of the current project. */
 export function replayRespecCompletionSummary(ctx: ExtensionContext): void {
+  if (!host?.completed || !host.context(ctx)) return;
   const loop = state.loop, builder = loop?.builder;
-  if (!host?.completed || !host.context(ctx) || builder?.phase !== "complete" || builder.summaryDeliveredAt || !loop?.completionSummary) return;
-  try {
-    if (host.completed(ctx, `respec:${builder.projectId ?? loop.startedAt}:${builder.revision}`, loop.completionSummary)) {
-      commit(ctx, builder, { ...builder, summaryDeliveredAt: nowIso() });
+  // Migrate completed projects written before the shared outbox was used.
+  if (builder?.phase === "complete" && !builder.summaryDeliveredAt && loop?.completionSummary) {
+    if (!persistApprovalRender(ctx.cwd, { goalId: `respec:${builder.projectId ?? loop.startedAt}:${builder.revision}`, objective: builder.vision, chatLines: loop.completionSummary.split("\n") })) return;
+  }
+  replayUndeliveredApprovalRenders(ctx, entry => {
+    if (!entry.goalId.startsWith("respec:") || !host.context(ctx)) return false;
+    if (!host.completed!(ctx, entry.goalId, entry.chatLines.join("\n"))) return false;
+    const current = state.loop, completed = current?.builder;
+    if (completed?.phase === "complete" && entry.goalId === `respec:${completed.projectId ?? current!.startedAt}:${completed.revision}`) {
+      commit(ctx, completed, { ...completed, summaryDeliveredAt: nowIso() });
     }
-  } catch { ctx.ui.notify("Project summary is saved; /loop status shows it. Delivery will retry on reload.", "warning"); }
+    return true;
+  });
 }
 
 export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {

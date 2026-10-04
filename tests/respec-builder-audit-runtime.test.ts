@@ -304,7 +304,7 @@ test("a supervisor freeze prevents a new project audit dispatch", async () => {
 });
 
 test("rapid pause/resume discards the cancelled worker result and rearms the saved claim", async () => {
-  const f = fixture({ RESULT_DELAY: "10000" });
+  const env: Record<string, string> = { RESULT_DELAY: "10000" }, f = fixture(env);
   try {
     const pending = runRespecBuilderAudit(f.ctx);
     const jobs = path.join(f.cwd, ".pi-glla", "audit-jobs"), deadline = Date.now() + 20000;
@@ -321,6 +321,10 @@ test("rapid pause/resume discards the cancelled worker result and rearms the sav
     assert.equal(readState(f.cwd).loop!.stopReason, undefined);
     assert.equal(readState(f.cwd).loop!.builder!.phase, "auditing");
     assert.deepEqual(f.counts(), { wakes: 1, finishes: 0 });
+    delete env.RESULT_DELAY;
+    await runRespecBuilderAudit(f.ctx);
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "complete");
+    assert.equal(f.counts().finishes, 1);
   } finally { replaceState(f.original); }
 });
 

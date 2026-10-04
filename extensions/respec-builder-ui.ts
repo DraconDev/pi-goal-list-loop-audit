@@ -1,4 +1,5 @@
 import type { RespecBuilderState } from "./respec-builder.js";
+import { MAX_RENDER_LINE_CHARS } from "./terminal-summary-limits.js";
 import { sanitizeDisplayText } from "./goal-loop-core.js";
 
 export interface RespecAuditLive {
@@ -35,10 +36,21 @@ const markdown = (text: string) => sanitizeDisplayText(text).replace(/[\\`*_{}\[
 export function respecCompletionSummary(builder: RespecBuilderState, archive: string): string {
   if (builder.phase !== "complete" || !builder.requirements.length || builder.requirements.some(r => r.status !== "verified" || !r.evidence)) throw new Error("Project summary requires independently verified requirements.");
   const audits = new Map(builder.requirements.map(r => [r.evidence!.attemptId, r.evidence!]));
+  // Preserve receipt/outbox parity for large projects; the archive and status
+  // retain the full contract and reports. Display omissions are explicit.
+  const requirements = builder.requirements.slice(0, 40);
+  const evidence = [...audits.values()].slice(0, 20);
+  const omittedRequirements = builder.requirements.length - requirements.length;
+  const omittedAudits = audits.size - evidence.length;
   return ["### Done", markdown(builder.vision), "", "### What Changed",
-    ...builder.requirements.map(r => `- **${markdown(r.id)}:** ${markdown(r.text)}`), "", "### Verification",
+    ...requirements.map(r => `- **${markdown(r.id)}:** ${markdown(r.text)}`), ...(omittedRequirements ? [`- ${omittedRequirements} more requirements: see /loop status and archive.`] : []), "", "### Verification",
     `PASS: All ${builder.requirements.length} adopted requirements are independently verified.`,
-    ...builder.requirements.map(r => `- **${markdown(r.id)}:** ${markdown(r.acceptance)} — audit ${markdown(r.evidence!.attemptId)}`),
-    "", "### Evidence", ...[...audits.values()].map(e => `- **${markdown(e.attemptId)}** · ${markdown(e.model)}: ${markdown(e.report)}`),
-    `- **Archive:** ${markdown(archive)}`, "", "### Remaining", "No unfinished adopted requirements.", "", "### Next", "Use /loop status to inspect the verified project; start a new project when its intended scope changes."].join("\n");
+    ...requirements.map(r => `- **${markdown(r.id)}:** ${markdown(r.acceptance)} — audit ${markdown(r.evidence!.attemptId)}`),
+    ...(omittedRequirements ? [`- Acceptance and proof for ${omittedRequirements} more requirements: see /loop status and archive.`] : []),
+    "", "### Evidence", ...evidence.map(e => `- **${markdown(e.attemptId)}** · ${markdown(e.model)}: ${markdown(e.report)}`),
+    ...(omittedAudits ? [`- ${omittedAudits} more audit reports: see archive.`] : []),
+    `- **Archive:** ${markdown(archive)}`, "", "### Remaining", "No unfinished adopted requirements.", "", "### Next", "Use /loop status to inspect the verified project; start a new project when its intended scope changes."].map(line => {
+      const points = [...line];
+      return points.length <= MAX_RENDER_LINE_CHARS ? line : points.slice(0, MAX_RENDER_LINE_CHARS - 1).join("") + "…";
+    }).join("\n");
 }
