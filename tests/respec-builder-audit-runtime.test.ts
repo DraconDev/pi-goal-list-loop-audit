@@ -238,7 +238,7 @@ test("actual installer, command, tools and agent_end carry a project through det
   ctx.ui.customImpl = async () => "Yes";
   const file = path.join(cwd, "bounded-auditor-worker.mjs"); fs.writeFileSync(file, worker);
   await pi.fire("session_start", { reason: "startup" }, ctx);
-  const restore = __testOnlyRespecAuditorRuntime({ resolveModel: () => ({ model: "test/provider-model" }), auditSleep: async () => { if (env.FREEZE_RETRY) { replaceState({ ...state, supervisorPausedAt: Date.now() }); persistStateLine(cwd, state); } },
+  const restore = __testOnlyRespecAuditorRuntime({ resolveModel: () => ({ model: "test/provider-model" }), auditSleep: async () => {},
     auditRuntime: { command: process.execPath, workerPath: file, homeDir: cwd, pollIntervalMs: 10, heartbeatNoProgressMs: 5000, firstEventTimeoutMs: 5000 } });
   try {
     await pi.command("loop", "respec build the artifact", ctx); clearLoopTimer();
