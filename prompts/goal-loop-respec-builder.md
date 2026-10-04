@@ -9,9 +9,15 @@ ${BUILDER_STATE}
 </builder_state>
 
 Phase: ${BUILDER_PHASE}
+Project spec: ${SPEC_FILE}
 
 During drafting, research the current project and operator intent. Separate
 observed behavior from desired capabilities. Preserve binding project Rules.
+Read and develop the comprehensive root project spec, retaining useful existing
+sections and documenting desired capabilities separately from observed behavior.
+Map desired capabilities to the requirement ids you propose. The durable adopted
+register governs verification; writing or checking boxes in the spec cannot close
+a requirement. Use the spec as context, not as permission to weaken scope.
 Missing capabilities are work to build, not limitations to silently accept.
 Propose the intended requirements with observable acceptance criteria for scope
 confirmation. Ask only questions that materially affect the intended outcome;

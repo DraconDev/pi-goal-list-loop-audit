@@ -19,6 +19,7 @@ let host: Host;
 const running = new Set<string>();
 
 function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecBuilderState): boolean {
+  if (!host.context(ctx)) return false;
   const loop = state.loop;
   if (!loop?.active || loop.builder !== before) return false;
   const old = state;
@@ -40,10 +41,15 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
     const settings = loadSettings(ctx.cwd);
     const saved = readCompletedCompletionAudit(ctx.cwd, goal, settings.auditorStrictChallenge);
     const resolved = host.resolveModel(ctx);
+    const controller = new AbortController();
     const result = saved?.result ?? (resolved.error || !resolved.model
       ? { approved: false, disapproved: false, error: resolved.error ?? "No auditor model available", output: "", model: "unset" }
       : await runDetachedGoalCompletionAuditor({ cwd: ctx.cwd, goal, completionSummary: builder.audit.claim,
         model: resolved.model, strictChallenge: settings.auditorStrictChallenge, thinkingLevel: settings.auditorThinkingLevel ?? "max",
+        signal: controller.signal,
+        onProgress: () => {
+          if (!state.loop?.active || state.loop.startedAt !== loop.startedAt || state.loop.builder !== builder || !host.context(ctx)) controller.abort();
+        },
         runtime: { logicalAttemptId: builder.audit.attemptId,
           toolTimeoutMs: settings.auditorToolTimeoutMs, heartbeatNoProgressMs: settings.auditorStallMs },
       }));

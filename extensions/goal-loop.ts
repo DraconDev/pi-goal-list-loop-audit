@@ -399,6 +399,7 @@ export function loopPrompt(loop: LoopState, regressionNote: string, strategyNote
     return loadPromptWhole("goal-loop-respec-builder.md")
       .replace(/\$\{ITERATION\}/g, String(loop.iteration + 1))
       .replace(/\$\{BUILDER_PHASE\}/g, loop.builder.phase)
+      .replace(/\$\{SPEC_FILE\}/g, () => loop.specFile ?? "SPEC.md")
       .replace(/\$\{BUILDER_STATE\}/g, () => JSON.stringify(loop.builder, null, 2))
       .replace(/\$\{BOUNDS_NOTE\}/g, () => boundsNote)
       .replace(/\$\{INTERVENTION_NOTE\}/g, () => interventionNote);
@@ -1686,85 +1687,6 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       measureCmd: "", plateauWindow: LOOP_DEFAULTS.plateauWindow,
       maxIterations: 0, branch: false, force: false,
       specFile: resolveSpecFiles(ctx.cwd)[0] ?? path.join(ctx.cwd, RESPEC_SPEC_CANDIDATES[0]!),
-    });
-    return;
-  }
-
-  if (sub === "respec-legacy") {
-    // v0.24.3: reconcile the codebase against the root spec, forever.
-    // Same auto-start path as /loop start (the user typed the command —
-    // that IS the act); metricless + unbounded by design. No limit-nagging:
-    // bounds exist on /loop start for whoever wants them.
-    const specs = resolveSpecFiles(ctx.cwd);
-    if (specs.length === 0) {
-      // v0.38.105 (note.md Next: respec refinement): no spec → start with
-      // the big draft, no grill. The loop's phase 1 writes the comprehensive
-      // SPEC.md from the current code, then reconciles against it. specFile
-      // points at the canonical name so drift/checkbox tracking attaches
-      // the moment the draft lands (a missing file hashes null and seeds
-      // silently — no false external-drift event).
-      const specPath = path.join(ctx.cwd, RESPEC_SPEC_CANDIDATES[0]!);
-      ctx.ui.notify("No SPEC.md / spec.md in the project root — starting the dedicated big draft. Reconciliation waits until the draft is written and handed off.", "info");
-      await startLoopFromConfig(ctx, {
-        target: `Draft the comprehensive ${path.basename(specPath)} from the current codebase before reconciliation`,
-        respecPhase: "draft",
-        measureCmd: "",
-        direction: undefined,
-        plateauWindow: LOOP_DEFAULTS.plateauWindow,
-        maxIterations: 0,
-        branch: false,
-        force: false,
-        specFile: specPath,
-      });
-      return;
-    }
-    let specPath = specs[0]!;
-    if (specs.length > 1) {
-      // Two specs = ambiguous — never silently pick (v0.24.4). One
-      // slash-bar select, plus a nudge to consolidate.
-      const names = specs.map((p) => path.basename(p));
-      const choice = await ctx.ui.select(
-        "Both SPEC.md and spec.md exist in the root — which one is the spec?",
-        names,
-      );
-      if (choice === undefined) {
-        ctx.ui.notify("respec cancelled.", "info");
-        return;
-      }
-      specPath = specs[names.indexOf(choice)]!;
-      ctx.ui.notify(
-        `Using ${path.basename(specPath)} as the spec. Both files exist — worth consolidating; the loop treats only ${path.basename(specPath)} as the spec.`,
-        "info",
-      );
-    }
-    // An existing file that is structurally incomplete (no title, empty
-    // Rules, or Rules-only) is a partial draft, not a reconcile target.
-    // Enter the draft phase so the agent finishes it before reconciliation.
-    if (!respecSpecComplete(specPath)) {
-      ctx.ui.notify(`${path.basename(specPath)} exists but is structurally incomplete — starting the dedicated big draft to finish it before reconciliation.`, "info");
-      await startLoopFromConfig(ctx, {
-        target: `Draft the comprehensive ${path.basename(specPath)} from the current codebase before reconciliation`,
-        respecPhase: "draft",
-        measureCmd: "",
-        direction: undefined,
-        plateauWindow: LOOP_DEFAULTS.plateauWindow,
-        maxIterations: 0,
-        branch: false,
-        force: false,
-        specFile: specPath,
-      });
-      return;
-    }
-    const target = respecTarget(path.basename(specPath));
-    await startLoopFromConfig(ctx, {
-      target,
-      measureCmd: "",
-      direction: undefined,
-      plateauWindow: LOOP_DEFAULTS.plateauWindow,
-      maxIterations: 0,
-      branch: false,
-      force: false,
-      specFile: specPath, // v0.33.2
     });
     return;
   }
