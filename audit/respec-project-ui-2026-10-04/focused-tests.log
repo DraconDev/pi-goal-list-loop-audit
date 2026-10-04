@@ -1,0 +1,41 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-display.test.ts:
+(pass) project cards expose phase, unfinished coverage and recorded blockers within narrow widths [10.32ms]
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [61.66ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [187.00ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [127.95ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [149.08ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [106.94ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [95.86ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [25.94ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [107.22ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [207.39ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [333.09ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [2.56ms]
+(pass) actual installer, command, tools and agent_end carry a project through detached verification [339.32ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [191.58ms]
+
+tests/summary-renderer.test.ts:
+(pass) semantic colors distinguish outcomes, actions, unresolved work and neutral evidence [2.50ms]
+(pass) the actual extension installer registers the terminal summary renderer [0.42ms]
+(pass) code fences and canonical Markdown survive semantic section splitting [0.26ms]
+(pass) real dark/light renderers preserve content, fit narrow widths and color semantic labels [79.13ms]
+(pass) continuations retain Pi's default renderer and unsafe terminal sequences never execute [5.27ms]
+(pass) failed verification does not color unrelated approval and archive references as failures [1.60ms]
+
+tests/respec-builder-wiring.test.ts:
+(pass) actual respec command and tools persist intended scope, batch and audit claim [196.86ms]
+(pass) declining intended scope leaves the project drafting with no adopted requirements [153.45ms]
+(pass) registered blocker and refinement tools preserve work and require consent to change scope [43.10ms]
+
+tests/respec-builder-ui.test.ts:
+(pass) live telemetry is claim-fenced and missing telemetry never implies a running worker [6.19ms]
+(pass) completion summary requires proof and includes acceptance, shipped capability and evidence [0.53ms]
+(pass) actual project summaries render semantic headings, bold and no italics in both themes [38.04ms]
+
+ 26 pass
+ 0 fail
+Ran 26 tests across 5 files. [4.95s]
