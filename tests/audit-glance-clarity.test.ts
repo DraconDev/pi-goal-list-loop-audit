@@ -70,3 +70,30 @@ test("current tool keeps elapsed time and timeout budget in the compact card", (
   assert.doesNotMatch(text, /last tool: bash/);
   assert.doesNotMatch(text, /openrouter\/stealth/);
 });
+
+
+test("Studio regression: a silent bounded tool retains its clock and explains the wait", () => {
+  const progress: AuditDisplayProgress = { ...audit, phase: "running", currentTool: "bash", currentToolStartedAt: now - 133000, lastActivityAt: now - 133000, toolTimeoutMs: 300000 };
+  for (const width of [60, 80, 120]) {
+    const lines = buildWidgetLines({ goal, list: [] }, progress, now, undefined, width, extras)!;
+    const text = lines.join("\n");
+    assert.ok(lines.length <= 7);
+    assert.match(text, /Waiting on bash/);
+    assert.match(text, /tool: bash · 2m 13s \/ 5m 00s budget/);
+    assert.match(text, /No tool completion yet/);
+    assert.doesNotMatch(text, /last tool: bash|last observed tool|No action needed/);
+    const footer = buildStatusText({ goal, list: [] }, progress, now, undefined, extras, width)!;
+    assert.match(footer, /^glla: AUDIT TOOL WAIT · bash 2m 13s \/ 5m 00s/);
+    assert.doesNotMatch(footer, /DETACHED · LIVE/);
+  }
+  const tick = buildWidgetLines({ goal, list: [] }, progress, now + 1000, undefined, 80, extras)!.join("\n");
+  assert.match(tick, /2m 14s \/ 5m 00s budget/);
+});
+
+test("a tool past its deadline, a cancelled tool and skewed telemetry cannot claim a healthy wait", () => {
+  const progress: AuditDisplayProgress = { ...audit, currentTool: "bash", currentToolStartedAt: now - 301000, lastActivityAt: now - 301000, toolTimeoutMs: 300000 };
+  for (const patch of [{ phase: "running" as const }, { phase: "tool_cancelled" as const }, { phase: "thinking" as const }, { phase: "tool_executing" as const, currentToolStartedAt: now + 1000, lastActivityAt: now + 1000 }]) {
+    const text = buildWidgetLines({ goal, list: [] }, { ...progress, ...patch }, now, undefined, 120, extras)!.join("\n");
+    assert.doesNotMatch(text, /Waiting on bash|No tool completion yet/);
+  }
+});
