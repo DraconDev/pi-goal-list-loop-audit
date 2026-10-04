@@ -59,11 +59,11 @@ def paint(draw, frame, x, y):
 def sheet(name, specs):
     selected = [next(f for f in frames if (f['key'],f['theme'],f['width']) == spec) for spec in specs]
     slot_w = max(f['width'] for f in selected)*cell+64
-    slot_h = max(len(f['lines']) for f in selected)*line_height+84
-    image = Image.new('RGB', (slot_w*2, slot_h*((len(selected)+1)//2)), '#252d3a')
+    row_heights = [max(len(f['lines']) for f in selected[i:i+2])*line_height+84 for i in range(0,len(selected),2)]
+    image = Image.new('RGB', (slot_w*2, sum(row_heights)), '#252d3a')
     draw = ImageDraw.Draw(image)
     for index, frame in enumerate(selected):
-        x,y = (index%2)*slot_w+16, (index//2)*slot_h+12
+        x,y = (index%2)*slot_w+16, sum(row_heights[:index//2])+12
         draw.text((x,y), f"{frame['key']} | {frame['theme']} | {frame['width']} cols", font=font, fill='#ffffff')
         paint(draw, frame, x, y+28)
     image.save(root/name)

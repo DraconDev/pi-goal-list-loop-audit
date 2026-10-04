@@ -228,7 +228,7 @@ test("an exhausted token bound holds the project before spawning an auditor or c
 });
 
 test("actual installer, command, tools and agent_end carry a project through detached verification", async () => {
-  const cwd = tmpCwd(), pi = new MockPi(), ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-full-lifecycle" } });
+  const cwd = tmpCwd(), pi = new MockPi(), ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-full-lifecycle", getBranch: () => [], getSessionFile: () => undefined } });
   const previous = state;
   __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
   activate(pi.api); saveSettings("project", cwd, { autoAcceptDrafts: false });
