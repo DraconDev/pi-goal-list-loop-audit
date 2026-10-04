@@ -2224,13 +2224,13 @@ test("v0.35.x: stale terminal keeps a recovery probe and self-heals without relo
   const ctx = await freshSession(cwd, "startup");
   try {
     await pi.command("goal", "same-process stale recovery — done when pinned", ctx);
-    await tick();
+    await waitUntil(() => pi.sent.length > 0, 2500);
     await acknowledgeLastContinuation(ctx);
     pi.sent.length = 0;
     const stale = staleError();
     pi.sendMessageError = stale;
     await pi.fire("agent_end", { messages: [{ role: "assistant", content: [{ type: "text", text: "boundary" }], stopReason: "end_turn" }] }, ctx);
-    await tick();
+    await waitUntil(() => !!(readState(cwd).goal as { interruptedAt?: string } | null)?.interruptedAt, 2500);
     assert.ok((readState(cwd).goal as { interruptedAt?: string }).interruptedAt);
 
     // The API and captured context become healthy again in the same process;
@@ -2240,7 +2240,7 @@ test("v0.35.x: stale terminal keeps a recovery probe and self-heals without relo
     (ctx as any).isIdle = () => true;
     (ctx as any).hasPendingMessages = () => false;
     __testOnlyHeartbeatTick();
-    await tick();
+    await waitUntil(() => !(readState(cwd).goal as { interruptedAt?: string } | null)?.interruptedAt && pi.sent.length >= 1, 2500);
 
     const recovered = readState(cwd).goal as { status?: string; interruptedAt?: string } | null;
     assert.equal(recovered?.status, "active");
