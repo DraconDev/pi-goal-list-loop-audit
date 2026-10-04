@@ -30,14 +30,14 @@ function fixture(env: Record<string, string> = {}) {
   const drafted = adoptRespecRequirements(createRespecBuilder("Build an artifact"), [{ id: "artifact", text: "Artifact", acceptance: "artifact exists" }]);
   const building = planRespecIncrement(drafted, [{ id: "task", text: "Build artifact", requirementIds: ["artifact"] }]);
   const builder = beginRespecAudit(claimRespecTask(building, "task"), "aabbccdd-1111-2222-3333-444455556666", "Artifact implemented");
-  const original = state;
+  const original = { ...state };
   const startedAt = new Date().toISOString();
   replaceState({ goal: null, list: [], loop: { target: builder.vision, builder, active: true, startedAt, iteration: 1, maxIterations: 0, plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [] } });
   persistStateLine(cwd, state);
   const summaries: string[] = [], progress: string[] = [];
   const observations: NonNullable<ReturnType<typeof getRespecAuditLive>>[] = [];
   let wakes = 0, finishes = 0, owned = true, resolutions = 0;
-  registerRespecBuilderTools(pi.api, { context: () => owned ? ctx : null, persist: () => persistStateLine(cwd, state), wake: () => { wakes++; }, finished: () => { finishes++; }, resolveModel: () => { resolutions++; return env.FAIL_PRIMARY ? { model: "test/primary", fallbackModels: [{ model: "test/backup", via: "configured fallback" }] } : { model: "test/provider-model" }; }, wrapTool: tool => tool,
+  registerRespecBuilderTools(pi.api, { context: () => owned ? ctx : null, persist: () => env.PERSIST_FAIL ? false : persistStateLine(cwd, state), wake: () => { wakes++; }, finished: () => { finishes++; }, resolveModel: () => { resolutions++; return env.FAIL_PRIMARY ? { model: "test/primary", fallbackModels: [{ model: "test/backup", via: "configured fallback" }] } : { model: "test/provider-model" }; }, wrapTool: tool => tool,
     completed: (_ctx, _id, summary) => { if (env.SUMMARY_FAIL) throw new Error("Receipt failed"); summaries.push(summary); return true; },
     refresh: () => { const value = state.loop?.builder && getRespecAuditLive(state.loop.builder); if (value) { progress.push(value.phase); observations.push({ ...value }); } },
     auditSleep: async () => {},
@@ -232,7 +232,7 @@ test("an exhausted token bound holds the project before spawning an auditor or c
 
 test("actual installer, command, tools and agent_end carry a project through detached verification", async () => {
   const cwd = tmpCwd(), pi = new MockPi(), ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-full-lifecycle", getBranch: () => [], getSessionFile: () => undefined } });
-  const previous = state;
+  const previous = { ...state };
   __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
   activate(pi.api); saveSettings("project", cwd, { autoAcceptDrafts: false });
   ctx.ui.customImpl = async () => "Yes";
@@ -277,5 +277,49 @@ test("terminal summary delivery failure preserves a replayable durable summary",
     replayRespecCompletionSummary(f.ctx);
     assert.equal(f.summaries.length, 1);
     assert.ok(readState(f.cwd).loop!.builder!.summaryDeliveredAt);
+  } finally { replaceState(f.original); }
+});
+
+
+test("a failed builder journal commit restores the complete prior RAM state", async () => {
+  const f = fixture({ PERSIST_FAIL: "1" });
+  try {
+    const before = JSON.stringify(state);
+    await runRespecBuilderAudit(f.ctx);
+    assert.equal(JSON.stringify(state), before);
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "auditing");
+    assert.deepEqual(f.counts(), { wakes: 0, finishes: 0 });
+  } finally { replaceState(f.original); }
+});
+
+test("a supervisor freeze prevents a new project audit dispatch", async () => {
+  const f = fixture();
+  try {
+    replaceState({ ...state, supervisorPausedAt: Date.now() }); persistStateLine(f.cwd, state);
+    await runRespecBuilderAudit(f.ctx);
+    assert.equal(f.resolutions(), 0);
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "auditing");
+    assert.equal(fs.existsSync(path.join(f.cwd, ".pi-glla", "audit-jobs")), false);
+  } finally { replaceState(f.original); }
+});
+
+test("rapid pause/resume discards the cancelled worker result and rearms the saved claim", async () => {
+  const f = fixture({ RESULT_DELAY: "10000" });
+  try {
+    const pending = runRespecBuilderAudit(f.ctx);
+    const jobs = path.join(f.cwd, ".pi-glla", "audit-jobs"), deadline = Date.now() + 20000;
+    while (!fs.existsSync(jobs) || !fs.readdirSync(jobs).some(name => fs.existsSync(path.join(jobs, name, "progress.json")))) {
+      if (Date.now() > deadline) throw new Error("Worker did not publish progress");
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    replaceState({ ...state, loop: { ...state.loop!, active: false, stopReason: "paused by user (/loop pause)" } });
+    cancelRespecBuilderAudit(f.cwd, f.startedAt);
+    replaceState({ ...state, loop: { ...state.loop!, active: true, stopReason: undefined } });
+    persistStateLine(f.cwd, state);
+    await pending;
+    assert.equal(readState(f.cwd).loop!.active, true);
+    assert.equal(readState(f.cwd).loop!.stopReason, undefined);
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "auditing");
+    assert.deepEqual(f.counts(), { wakes: 1, finishes: 0 });
   } finally { replaceState(f.original); }
 });

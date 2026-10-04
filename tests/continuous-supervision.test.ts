@@ -161,3 +161,16 @@ test("v0.36.0: production heartbeat is event-first with adaptive timeout fallbac
   assert.match(orchestrator, /const nextSummary = buildLoopCompletionSummary\(/);
   assert.match(orchestrator, /loop\.completionSummary = nextSummary/);
 });
+
+
+test("respec audit phase and register changes are observed without inventing a worker", () => {
+  const supervisor = new ContinuousSupervisor();
+  const state = { ...empty(), loop: { active: true, target: "Build project", iteration: 1, builder: { phase: "building", revision: 1, cycle: 1 } } } as unknown as State;
+  supervisor.check(state);
+  assert.equal(supervisor.check(state).cause, "fallback");
+  const auditing = { ...state, loop: { ...state.loop!, builder: { ...state.loop!.builder!, phase: "auditing", audit: { attemptId: "claim" } } } } as State;
+  assert.ok(activeSupervisionPlanes(auditing).includes("auditor"));
+  assert.equal(supervisor.check(auditing).cause, "durable-state");
+  const refined = { ...auditing, loop: { ...auditing.loop!, builder: { ...auditing.loop!.builder!, phase: "replanning", revision: 2, audit: undefined } } } as State;
+  assert.equal(supervisor.check(refined).cause, "durable-state");
+});

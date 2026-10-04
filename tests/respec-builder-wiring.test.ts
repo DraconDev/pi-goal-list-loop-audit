@@ -72,6 +72,8 @@ test("registered blocker and refinement tools preserve work and require consent 
     await pi.runTool("block_project_requirement", { id: "login", reason: "Credentials unavailable" }, ctx);
     assert.equal(readState(cwd).loop!.active, false, "all-blocked work parks automation");
     assert.equal(readState(cwd).loop!.builder!.history!.at(-1)!.tasks[0]!.id, "auth");
+    await pi.command("loop", "resume", ctx); clearLoopTimer();
+    assert.equal(readState(cwd).loop!.active, false, "unresolved all-blocked project cannot resume into a no-progress loop");
     await pi.runTool("unblock_project_requirement", { id: "login", reason: "Credentials supplied and validated" }, ctx);
     assert.equal(readState(cwd).loop!.builder!.requirements[0]!.status, "open");
     assert.equal(readState(cwd).loop!.active, false, "unblocking preserves explicit pause until resume");
