@@ -26,7 +26,7 @@ comes from the actual display code and themes. Tests use temporary project dirs.
 
 - Final focused tests: 48 passed across six files, zero failures.
 - Full release gate: pending terminal result; do not treat this report as release approval yet.
-- Oldest supported Pi boundary: pending final TypeScript result (0.84.2).
+- Oldest supported Pi boundary: current-source TypeScript check passed (0.84.2).
 
 The full suite exposed a fixed-delay race in an existing stale-session recovery
 test. Its assertions are preserved, while bounded waits now observe the new
