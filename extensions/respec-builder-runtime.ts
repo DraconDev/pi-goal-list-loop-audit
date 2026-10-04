@@ -1,11 +1,13 @@
 import { randomUUID, createHash } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import * as path from "node:path";
+import { homedir } from "node:os";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { state, replaceState } from "./goal-state.js";
 import { appendLedger, nowIso, archiveDir } from "./goal-loop-core.js";
 import { loadSettings } from "./goal-settings.js";
+import { dispatchAuditorAllowedExtensions } from "./auditor-extensions.js";
 import { runDetachedGoalCompletionAuditor, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, writeAtomicJson, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
 import { respecIncrementAuditGoal } from "./respec-builder-audit.js";
 import { adoptRespecRequirements, beginRespecAudit, blockRespecRequirement, unblockRespecRequirement, refineRespecRequirements, claimRespecTask, planRespecIncrement, settleRespecAudit, type RespecBuilderState } from "./respec-builder.js";
@@ -62,6 +64,8 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
       ? { approved: false, disapproved: false, error: resolved.error ?? "No auditor model available", output: "", model: "unset" }
       : await runDetachedGoalCompletionAuditor({ cwd: ctx.cwd, goal, completionSummary: builder.audit.claim,
         model: resolved.model, strictChallenge: settings.auditorStrictChallenge, thinkingLevel: settings.auditorThinkingLevel ?? "max",
+        allowedExtensions: dispatchAuditorAllowedExtensions(settings.auditorAllowedExtensions, settings.auditorMirrorSessionExtensions, host.auditRuntime?.homeDir ?? homedir(), ctx.cwd),
+        inspection: settings.auditorInspection === true,
         signal: controller.signal,
         onProgress: () => {
           if (!state.loop?.active || state.loop.startedAt !== loop.startedAt || state.loop.builder !== builder || !host.context(ctx)) controller.abort();

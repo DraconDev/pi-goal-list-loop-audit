@@ -32,7 +32,7 @@ function fixture(env: Record<string, string> = {}) {
   persistStateLine(cwd, state);
   let wakes = 0, finishes = 0;
   registerRespecBuilderTools(pi.api, { context: () => ctx, persist: () => persistStateLine(cwd, state), wake: () => { wakes++; }, finished: () => { finishes++; }, resolveModel: () => ({ model: "test/provider-model" }), wrapTool: tool => tool,
-    auditRuntime: { command: process.execPath, workerPath: file, pollIntervalMs: 10, heartbeatNoProgressMs: 5000, firstEventTimeoutMs: 5000, env } });
+    auditRuntime: { command: process.execPath, workerPath: file, homeDir: cwd, pollIntervalMs: 10, heartbeatNoProgressMs: 5000, firstEventTimeoutMs: 5000, env } });
   return { cwd, ctx, startedAt, original, builder, file, counts: () => ({ wakes, finishes }) };
 }
 
