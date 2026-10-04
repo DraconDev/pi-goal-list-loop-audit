@@ -114,17 +114,17 @@ test("respec with a structurally incomplete spec enters draft instead of reconci
   await pi.fire("session_start", { reason: "startup" }, ctx);
   try {
     await pi.command("loop", "respec", ctx); await tick(100);
-    assert.equal(readState(cwd).loop?.respecPhase, "draft", "partial spec is finished first");
-    assert.ok(pi.sent.some(s => s.message.content?.includes("[RESPEC BIG DRAFT]")));
+    assert.equal(readState(cwd).loop?.builder?.phase, "drafting", "partial spec informs intended-project drafting");
+    assert.ok(pi.sent.some(s => s.message.content?.includes("[RESPEC PROJECT BUILDER]")));
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
 
-test("sticky handoff: marker one turn, finished spec the next, still reconciles", async () => {
+test("restored legacy sticky handoff: marker one turn, finished spec the next, still reconciles", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-sticky" } });
   await pi.fire("session_start", { reason: "startup" }, ctx);
   try {
-    await pi.command("loop", "respec", ctx); await tick(100);
+    await restoreLegacyDraft(cwd, ctx); await tick(100);
     const specFile = path.join(cwd, "SPEC.md");
     const turn = (text: string) => ({ messages: [{ role: "assistant", content: [{ type: "text", text }] }] });
     // Turn N: agent declares done early with only a partial spec on disk.
