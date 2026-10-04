@@ -55,8 +55,8 @@ worker-granted budget as the parent watchdog.
 - Studio regression failed before the change: 6 passed, 1 failed.
 - Focused card/status/lifecycle/timeout/host/package contract checks:
   **52 passed, 0 failed**, six files.
-- Current host TypeScript passed; oldest host check and fresh full release gate
-  are pending at this checkpoint.
+- TypeScript passed against current host 0.99.1 and oldest host 0.84.2.
+  The fresh full release gate is pending at this checkpoint.
 - 24 production-renderer frames across dark/light and widths 40/80/190 fit
   their terminal width. Actual waiting frames were inspected as terminal text.
 - Evidence: `audit/tool-wait-2026-10-04/`.
