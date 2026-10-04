@@ -16,7 +16,7 @@ const req = JSON.parse(await readFile(dir + "/request.json", "utf8"));
 async function atomic(file, data) { await writeFile(file + ".tmp", JSON.stringify(data)); await rename(file + ".tmp", file); }
 await atomic(dir + "/progress.json", { protocolVersion: 1, attemptId: req.attemptId, requestHash: req.requestHash, phase: "running", elapsedMs: 1, lastActivityAt: Date.now(), toolCalls: [], recentOutput: [] });
 if (process.env.RESULT_DELAY) await new Promise(resolve => setTimeout(resolve, Number(process.env.RESULT_DELAY)));
-const output = process.env.NEEDS_WORK ? "<evidence>\\nInvalid credentials accepted\\n</evidence>\\n<disapproved/>" : "<evidence>\\nartifact exists\\n</evidence>\\n<approved/>";
+const output = process.env.FAIL_PRIMARY && req.model.includes("primary") ? "no verdict from primary" : process.env.NEEDS_WORK ? "<evidence>\\nInvalid credentials accepted\\n</evidence>\\n<disapproved/>" : "<evidence>\\nartifact exists\\n</evidence>\\n<approved/>";
 await atomic(dir + "/result.json", { protocolVersion: 1, attemptId: req.attemptId, requestHash: req.requestHash, goalRevision: req.goalRevision, ok: true, output, model: req.model, thinkingLevel: req.thinkingLevel, challenge: "confirmed", toolCalls: [{ name: "read", argsPrefix: "{}", finishedAt: Date.now() }] });
 `;
 
@@ -31,7 +31,8 @@ function fixture(env: Record<string, string> = {}) {
   replaceState({ goal: null, list: [], loop: { target: builder.vision, builder, active: true, startedAt, iteration: 1, maxIterations: 0, plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [] } });
   persistStateLine(cwd, state);
   let wakes = 0, finishes = 0;
-  registerRespecBuilderTools(pi.api, { context: () => ctx, persist: () => persistStateLine(cwd, state), wake: () => { wakes++; }, finished: () => { finishes++; }, resolveModel: () => ({ model: "test/provider-model" }), wrapTool: tool => tool,
+  registerRespecBuilderTools(pi.api, { context: () => ctx, persist: () => persistStateLine(cwd, state), wake: () => { wakes++; }, finished: () => { finishes++; }, resolveModel: () => env.FAIL_PRIMARY ? { model: "test/primary", fallbackModels: [{ model: "test/backup", via: "configured fallback" }] } : { model: "test/provider-model" }, wrapTool: tool => tool,
+    auditSleep: async () => {},
     auditRuntime: { command: process.execPath, workerPath: file, homeDir: cwd, pollIntervalMs: 10, heartbeatNoProgressMs: 5000, firstEventTimeoutMs: 5000, env } });
   return { cwd, ctx, startedAt, original, builder, file, counts: () => ({ wakes, finishes }) };
 }
@@ -124,6 +125,22 @@ test("concurrent wake paths dispatch only one worker for the exact durable claim
     await Promise.all([runRespecBuilderAudit(f.ctx), runRespecBuilderAudit(f.ctx)]);
     assert.equal(fs.readdirSync(path.join(f.cwd, ".pi-glla", "audit-jobs")).length, 1);
     assert.equal(readState(f.cwd).loop!.builder!.phase, "complete");
+    assert.deepEqual(f.counts(), { wakes: 0, finishes: 1 });
+  } finally { replaceState(f.original); }
+});
+
+test("respec uses the shared bounded retry/fallback policy and journals its candidate cursor", async () => {
+  const f = fixture({ FAIL_PRIMARY: "1" });
+  try {
+    await runRespecBuilderAudit(f.ctx);
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "complete");
+    assert.equal(readState(f.cwd).loop!.builder!.requirements[0]!.evidence!.model, "test/backup");
+    const requests = fs.readdirSync(path.join(f.cwd, ".pi-glla", "audit-jobs")).map(name => JSON.parse(fs.readFileSync(path.join(f.cwd, ".pi-glla", "audit-jobs", name, "request.json"), "utf8")));
+    assert.equal(requests.filter(request => request.model === "test/primary").length, 2, "primary gets one bounded retry");
+    assert.equal(requests.filter(request => request.model === "test/backup").length, 1);
+    const journal = fs.readFileSync(path.join(f.cwd, ".pi-glla", "active.jsonl"), "utf8");
+    assert.match(journal, /candidateRef.*test\/backup/);
+    assert.match(journal, /attemptedRefs.*test\/primary/);
     assert.deepEqual(f.counts(), { wakes: 0, finishes: 1 });
   } finally { replaceState(f.original); }
 });

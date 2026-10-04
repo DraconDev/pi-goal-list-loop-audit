@@ -54,12 +54,12 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
   const loop = state.loop, initialBuilder = loop?.builder;
   if (!loop?.active || initialBuilder?.phase !== "auditing" || !initialBuilder.audit) return;
   let builder = initialBuilder;
-  const key = `${ctx.cwd}:${loop.startedAt}:${builder.audit.attemptId}`;
+  const key = `${ctx.cwd}:${loop.startedAt}:${builder.audit!.attemptId}`;
   if (running.has(key)) return;
   const controller = new AbortController();
   running.set(key, controller);
   try {
-    const goal = respecIncrementAuditGoal(builder, loop.startedAt, nowIso());
+    const goal = respecIncrementAuditGoal(builder, builder.projectId ?? loop.startedAt, nowIso());
     const settings = loadSettings(ctx.cwd);
     const saved = readCompletedCompletionAudit(ctx.cwd, goal, settings.auditorStrictChallenge);
     const resolved = host.resolveModel(ctx);

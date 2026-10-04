@@ -1,4 +1,5 @@
 import type { GoalAuditorResult } from "./goal-loop-auditor.js";
+import { randomUUID } from "node:crypto";
 
 export type RespecBuilderPhase = "drafting" | "planning" | "building" | "auditing" | "replanning" | "complete";
 export interface RespecRequirement {
@@ -16,6 +17,7 @@ export interface RespecBuildTask {
   status: "pending" | "claimed";
 }
 export interface RespecBuilderState {
+  projectId?: string;
   phase: RespecBuilderPhase;
   revision: number;
   cycle: number;
@@ -32,7 +34,7 @@ export interface RespecBuilderState {
 
 /** Pure copy transitions; the host must journal the returned state before use. */
 export function createRespecBuilder(vision: string): RespecBuilderState {
-  return { phase: "drafting", revision: 0, cycle: 0, vision: vision.trim(), requirements: [], tasks: [], feedback: [] };
+  return { projectId: randomUUID(), phase: "drafting", revision: 0, cycle: 0, vision: vision.trim(), requirements: [], tasks: [], feedback: [] };
 }
 
 function requirePhase(state: RespecBuilderState, phases: RespecBuilderPhase[]): void {

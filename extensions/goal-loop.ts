@@ -1348,6 +1348,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       const resumedAt = nowIso();
       state.loop = {
         ...stored,
+        ...(stored.builder?.audit && stored.stopReason?.startsWith("audit infrastructure:") ? { builder: { ...stored.builder, audit: { ...stored.builder.audit, candidateRef: undefined, attemptedRefs: undefined, retryCandidateRef: undefined, retryAttemptStarted: undefined, retryFailureClass: undefined } } } : {}),
         active: true,
         stopReason: undefined,
         completionSummary: undefined,
