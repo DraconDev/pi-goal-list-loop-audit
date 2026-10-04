@@ -214,6 +214,8 @@ drafting flow. Ambiguous context is never queued automatically.
 /loop start "reduce flaky tests" measure="..." direction=min
 /loop start "keep improving the spec" measure=none max=20 cadence=900
 /loop audit                               # recurring project-audit cadence
+/loop respec [project direction]           # draft intended scope, build, audit and replan
+/loop refine <suggestion>                  # steer the next round; scope changes need confirmation
 /loop status
 /loop stop
 ```
@@ -239,6 +241,28 @@ There are three loop styles:
   appends evidence to the audit ledger, and works through the findings.
 
 If the work has a finish line, use `/goal`, not an endless loop.
+
+`/loop respec` develops a project through substantial increments. It researches
+the code and root `SPEC.md` (or `spec.md`), drafts intended capabilities with
+observable acceptance criteria, and asks you to confirm that scope. Existing
+behavior and desired behavior are kept distinct; missing features become work
+to build. `## Rules` remains binding project guidance.
+
+After confirmation, the builder plans a coherent batch, implements it, and
+submits it to the isolated auditor. A task marked implemented is a claim;
+only independent approval verifies its requirements. Failed checks and unfinished
+requirements feed replanning. Each later audit also checks previously verified
+capabilities for regressions. The project finishes only when every adopted
+requirement is independently verified and the project archive is written.
+
+The widget and `/loop status` show phase, increment, verified/remaining coverage
+and blockers. `/loop pause` holds work, `/loop resume` continues saved state, and
+`/loop stop` stops it without calling unfinished work complete. If all remaining
+work is blocked, automation parks with reasons; clearing a blocker leaves work
+paused until resume. `/loop refine <suggestion>` supplies direction for the next
+round. Changes to adopted requirements show current/proposed acceptance criteria
+and need your confirmation. Text after `respec` is project direction, not metric
+or budget option syntax. Generic `/loop start` remains the metric/bounded path.
 
 ## The autonomy model
 

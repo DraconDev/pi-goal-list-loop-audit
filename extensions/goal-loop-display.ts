@@ -1341,6 +1341,10 @@ export function loopCadenceCountdown(l: { minimumIterationIntervalMs?: number; l
 }
 
 function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, extras?: WidgetExtras, width?: number): string | undefined {
+  if (state.loop?.builder && (state.loop.active || !state.goal)) {
+    const l = state.loop, builder = l.builder!, coverage = respecCoverage(builder);
+    return `glla: project ${paint(theme, builder.phase === "complete" ? "success" : !l.active ? "warning" : "accent", builder.phase)}${l.active || builder.phase === "complete" ? "" : " · held"} · increment ${builder.cycle} · verified ${coverage.verified}/${coverage.total} · remaining ${coverage.remaining} · blocked ${coverage.blocked}`;
+  }
   if (state.loop?.active) {
     const l = state.loop;
     // v0.26.1: surface the refire streak — a spinning supervisor is the

@@ -1098,10 +1098,10 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     },
   });
   pi.registerCommand("loop", {
-    description: "Loop 3: metric-driven process — it never completes. /loop <target> drafts the metric with you · /loop start \"<target>\" = infinite metricless loop (no plateau, no cap; ends at time=/tokens= or /loop stop) · bare /loop start inherits one clear recent target but does not infer metric, bounds, or branch options · /loop respec = infinite metricless reconcile against the root SPEC.md (drafts it first when missing; Rules binding, rest follows code) · add measure=\"<cmd>\" direction=min|max [window=5] [max=50] [cadence=<seconds>] [branch=1] for a loop · cadence is opt-in and limits automatic wakes between successful iterations · /loop status · /loop stop (alias /loop cancel). 'Improve until X' is a /goal, not a loop.",
+    description: "Run a metric improvement loop or a respec project builder. /loop drafts with Confirm; /loop start <target> starts immediately (metricless unless measure= is supplied). /loop respec [project direction] researches and drafts intended requirements, then builds substantial increments, independently audits them and replans until all adopted criteria are verified. /loop status shows saved progress; /loop pause, resume and stop control it. /loop refine <suggestion> steers the next round; adopted scope changes require confirmation.",
     getArgumentCompletions: completions([
       ["start", "skip drafting: /loop start \"<target>\" measure=\"<cmd>\" direction=min|max [window=5] [max=50] [cadence=<seconds>]; bare start uses one clear recent target"],
-      ["respec", "infinite metricless loop reconciling the codebase against the root SPEC.md (big-draft first when missing)"],
+      ["respec", "draft intended project requirements, build increments, audit independently and replan unfinished work: /loop respec [project direction]"],
       ["plan", "extended loop draft: deep research + multi-round metric design, same Confirm as a regular draft"],
       ["audit", "project-audit loop: each iteration audits fresh, appends findings, fixes the top ones — plateau stops when the well is dry (v0.29.0)"],
       ["status", "show metric, iteration, best/last values, stall count, and cadence"],

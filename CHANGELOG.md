@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## 0.39.0 — respec project builder (2026-10-04)
+
+- `/loop respec [project direction]` drafts intended requirements for confirmation,
+  builds coherent increments, runs isolated audits and replans unfinished work.
+  Task claims and spec checkboxes cannot verify requirements. Later audits cover
+  previous capabilities as regressions; completion requires all adopted criteria.
+- Scope refinements require confirmation, retain removal/task history and fence
+  old verdicts by revision. Blockers stay visible; all-blocked projects park,
+  and clearing a blocker preserves pause until explicit resume.
+- Durable audit identities recover saved verdicts across restart, concurrent
+  wakes share one worker, pause/stop cancels audits, and archive failures retain
+  approved evidence for settlement retry. Completion archives the project before
+  exposing terminal state and announces waiting queue items.
+- Project cards/status expose phase, increment, verified/remaining coverage,
+  blockers, evidence and next action using the existing semantic palette.
+
 ## 0.38.114 — semantic summary colors (2026-10-03)
 
 - Summary emphasis uses bold, including Markdown italic emphasis and quotes;
