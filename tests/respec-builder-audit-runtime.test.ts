@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { registerRespecBuilderTools, runRespecBuilderAudit, respecProjectArchivePath } from "../extensions/respec-builder-runtime.js";
@@ -20,7 +21,7 @@ await atomic(dir + "/result.json", { protocolVersion: 1, attemptId: req.attemptI
 `;
 
 function fixture(env: Record<string, string> = {}) {
-  const cwd = tmpCwd(), pi = new MockPi(), ctx = makeMockCtx(cwd);
+  const cwd = tmpCwd(), pi = new MockPi(), ctx = makeMockCtx(cwd) as unknown as ExtensionContext;
   const file = path.join(cwd, "bounded-auditor-worker.mjs"); fs.writeFileSync(file, worker);
   const drafted = adoptRespecRequirements(createRespecBuilder("Build an artifact"), [{ id: "artifact", text: "Artifact", acceptance: "artifact exists" }]);
   const building = planRespecIncrement(drafted, [{ id: "task", text: "Build artifact", requirementIds: ["artifact"] }]);
@@ -98,14 +99,14 @@ test("pausing during an actual worker run prevents late approval from settling t
 test("archive failure preserves approval evidence for settlement retry instead of launching another audit", async () => {
   const f = fixture();
   try {
-    const archiveDir = path.dirname(respecProjectArchivePath(f.cwd, f.startedAt, f.builder.revision));
-    fs.rmSync(archiveDir, { recursive: true, force: true }); fs.writeFileSync(archiveDir, "blocked archive destination");
+    const archivePath = respecProjectArchivePath(f.cwd, f.startedAt, f.builder.revision);
+    fs.mkdirSync(archivePath, { recursive: true });
     await runRespecBuilderAudit(f.ctx);
     assert.equal(readState(f.cwd).loop!.builder!.phase, "auditing");
     assert.equal(readState(f.cwd).loop!.active, false);
     assert.deepEqual(f.counts(), { wakes: 0, finishes: 0 });
     const jobs = fs.readdirSync(path.join(f.cwd, ".pi-glla", "audit-jobs"));
-    fs.unlinkSync(archiveDir); fs.unlinkSync(f.file);
+    fs.rmSync(archivePath, { recursive: true }); fs.unlinkSync(f.file);
     replaceState({ ...state, loop: { ...state.loop!, active: true, stopReason: undefined } });
     persistStateLine(f.cwd, state);
     await runRespecBuilderAudit(f.ctx);
