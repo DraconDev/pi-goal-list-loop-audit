@@ -733,7 +733,8 @@ function persistState(ctx: ExtensionContext): boolean {
     // still hold the same object while resolving a plateau/hold decision in
     // the current turn.
     loop.completionSummary = undefined;
-  } else if (loop && !loop.active && isTerminalLoopStopReason(loop.stopReason)) {
+  } else if (loop && !loop.active && isTerminalLoopStopReason(loop.stopReason)
+    && !(loop.builder?.phase === "complete" && loop.completionSummary)) {
     // Rebuild when the final stop reason changes after an intermediate
     // measurement (the audit-loop reprieve path does exactly that). A stale
     // recap would make the terminal notification describe the provisional
