@@ -1318,6 +1318,10 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     }
     const stored = state.loop;
     if (stored && !stored.active && (RESUMABLE_STOP(stored.stopReason) || (!!stored.builder && !!stored.stopReason?.startsWith("max iterations reached")))) {
+      if (stored.builder && stored.builder.requirements.some(r => r.status === "blocked") && !stored.builder.requirements.some(r => r.status === "open")) {
+        ctx.ui.notify("Project stays held: every unfinished requirement is blocked. Clear the recorded blockers before /loop resume; /loop status shows the reasons.", "warning");
+        return;
+      }
       // Branch-mode stop returns HEAD to originalBranch. Refuse a resume from
       // there rather than letting the next tick commit loop work to the
       // user's branch; the user can explicitly check out the recorded

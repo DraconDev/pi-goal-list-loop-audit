@@ -5,7 +5,7 @@ import { homedir } from "node:os";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { state, replaceState } from "./goal-state.js";
-import { appendLedger, nowIso, archiveDir } from "./goal-loop-core.js";
+import { appendLedger, nowIso, archiveDir, supervisorPaused } from "./goal-loop-core.js";
 import { loadSettings } from "./goal-settings.js";
 import type { LoopState } from "./goal-loop-forever.js";
 import { dispatchAuditorAllowedExtensions } from "./auditor-extensions.js";
@@ -62,7 +62,7 @@ function parkProjectBound(ctx: ExtensionContext): boolean {
   if (!loop?.active || !loop.builder || !host.context(ctx)) return false;
   const reason = projectBoundReason(loop);
   if (!reason) return false;
-  const old = state;
+  const old = { ...state };
   replaceState({ ...old, loop: { ...loop, active: false, stopReason: reason } });
   if (!host.persist(ctx)) { replaceState(old); return true; }
   appendLedger(ctx.cwd, "respec_project_bound", { reason, cycle: loop.builder.cycle });
@@ -74,7 +74,7 @@ function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecB
   if (!host.context(ctx)) return false;
   const loop = state.loop;
   if (!loop || loop.builder !== before) return false;
-  const old = state;
+  const old = { ...state };
   const blocked = next.requirements.some(r => r.status === "blocked") && !next.requirements.some(r => r.status === "open") && next.phase !== "auditing";
   replaceState({ ...old, loop: { ...loop, builder: next, ...(completionSummary ? { completionSummary } : {}), ...(next.phase === "complete" ? { active: false, stopReason: "completed: all intended project requirements independently verified" } : blocked ? { active: false, stopReason: "blocked project requirements: clear the recorded blockers, then /loop resume" } : {}) } });
   if (!host.persist(ctx)) { replaceState(old); return false; }
@@ -86,7 +86,7 @@ function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecB
 /** Resume the same durable claim; process-layer lookup fences the exact request. */
 export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void> {
   const loop = state.loop, initialBuilder = loop?.builder;
-  if (!loop?.active || initialBuilder?.phase !== "auditing" || !initialBuilder.audit || !host.context(ctx)) return;
+  if (supervisorPaused(state) || !loop?.active || initialBuilder?.phase !== "auditing" || !initialBuilder.audit || !host.context(ctx)) return;
   if (parkProjectBound(ctx)) return;
   let builder = initialBuilder;
   const key = `${ctx.cwd}:${loop.startedAt}:${builder.audit!.attemptId}`;
@@ -134,7 +134,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
       }), {
         signal: controller.signal, sleep: host.auditSleep,
         forbiddenRefs: settings.forbiddenModels,
-        shouldRetry: () => !!state.loop?.active && state.loop.builder === builder && !!host.context(ctx),
+        shouldRetry: () => !supervisorPaused(state) && !!state.loop?.active && state.loop.builder === builder && !!host.context(ctx),
         resumeCandidateRef: builder.audit!.candidateRef, attemptedRefs: builder.audit!.attemptedRefs,
         retryCandidateRef: builder.audit!.retryCandidateRef, retryAttemptStarted: builder.audit!.retryAttemptStarted,
         retryFailureClass: builder.audit!.retryFailureClass,
@@ -144,7 +144,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
       })).result);
     const liveCtx = host.context(ctx);
     const current = state.loop;
-    if (!liveCtx || current?.startedAt !== loop.startedAt || !current.active || current.builder !== builder) return;
+    if (controller.signal.aborted || !liveCtx || current?.startedAt !== loop.startedAt || !current.active || current.builder !== builder) return;
     const next = settleRespecAudit(builder, builder.audit!.attemptId, result);
     const archive = respecProjectArchivePath(liveCtx.cwd, loop.startedAt, next.revision);
     const summary = next.phase === "complete" ? respecCompletionSummary(next, archive) : undefined;
@@ -158,7 +158,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
     if (result.error) {
       // Keep the claim, but park automation rather than retrying an unavailable
       // provider in a hot loop. Explicit resume retries the same durable claim.
-      const old = state;
+      const old = { ...state };
       replaceState({ ...old, loop: { ...state.loop!, active: false, stopReason: `audit infrastructure: ${result.error}` } });
       if (!host.persist(liveCtx)) replaceState(old);
       liveCtx.ui.notify(`Project audit has no verdict: ${result.error}. /loop resume retries the saved claim.`, "warning");
@@ -170,13 +170,22 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
     }
   } catch (error) {
     const liveCtx = host.context(ctx);
-    if (liveCtx && state.loop?.startedAt === loop.startedAt && state.loop.builder === builder && state.loop.active) {
-      const old = state;
+    if (!controller.signal.aborted && liveCtx && state.loop?.startedAt === loop.startedAt && state.loop.builder === builder && state.loop.active) {
+      const old = { ...state };
       replaceState({ ...old, loop: { ...state.loop, active: false, stopReason: `audit infrastructure: ${String(error)}` } });
       if (!host.persist(liveCtx)) replaceState(old);
       liveCtx.ui.notify("Project audit interrupted without a verdict; /loop resume retries its durable claim.", "warning");
     }
-  } finally { if (boundTimer) clearTimeout(boundTimer); running.delete(key); setRespecAuditLive(initialBuilder); if (host.context(ctx)) { try { host.refresh?.(ctx); } catch { /* stale display */ } } }
+  } finally {
+    if (boundTimer) clearTimeout(boundTimer);
+    running.delete(key);
+    setRespecAuditLive(initialBuilder);
+    const current = state.loop;
+    // An explicit resume may arrive before cancelled-job cleanup completes.
+    // Re-arm only the same live claim, after releasing its dispatch latch.
+    if (controller.signal.aborted && current?.active && current.builder?.audit?.attemptId === initialBuilder.audit?.attemptId && host.context(ctx) && !supervisorPaused(state)) host.wake(ctx);
+    if (host.context(ctx)) { try { host.refresh?.(ctx); } catch { /* stale display */ } }
+  }
 }
 
 /** The durable terminal summary is the outbox; replay uses the existing receipt check. */

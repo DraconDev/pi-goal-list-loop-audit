@@ -55,6 +55,11 @@ function durableStateSignature(state: State, liveSubagentCount: number): string 
       iteration: state.loop.iteration,
       stopReason: state.loop.stopReason,
       bestValue: state.loop.bestValue,
+      builder: state.loop.builder ? {
+        phase: state.loop.builder.phase, revision: state.loop.builder.revision,
+        cycle: state.loop.builder.cycle, attemptId: state.loop.builder.audit?.attemptId,
+        requirements: state.loop.builder.requirements?.map(r => ({ id: r.id, status: r.status })),
+      } : undefined,
     }
     : null;
   const recovery = state.mainModelRecovery
@@ -85,6 +90,7 @@ export function activeSupervisionPlanes(state: State, liveSubagentCount = 0): Su
     if (goal.status === "auditing" || !!goal.pendingCompletion) planes.push("auditor");
   }
   if (state.loop?.active) planes.push("loop");
+  if (state.loop?.builder?.phase === "auditing" && state.loop.builder.audit && !planes.includes("auditor")) planes.push("auditor");
   if ((state.list?.length ?? 0) > 0) planes.push("queue");
   if (state.mainModelRecovery) planes.push("provider-recovery");
   if (liveSubagentCount > 0) planes.push("subagent");
