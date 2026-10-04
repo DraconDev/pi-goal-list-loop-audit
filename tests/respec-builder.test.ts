@@ -108,3 +108,15 @@ test("blocking a batch retains its work and unblocking requires a concrete reaso
   assert.equal(opened.requirements[0]!.blockedReason, undefined);
   assert.equal(respecCoverage(opened).verified, 0);
 });
+
+test("a negative regression audit reopens earlier capabilities instead of displaying stale verification", () => {
+  const first = settleRespecAudit(beginRespecAudit(claimRespecTask(planned(), "auth"), "first", "Login works"), "first", pass);
+  const second = planRespecIncrement(first, [{ id: "export-task", text: "Build export", requirementIds: ["export"] }]);
+  const audit = beginRespecAudit(claimRespecTask(second, "export-task"), "second", "Export implemented");
+  const failed = settleRespecAudit(audit, "second", { ...pass, approved: false, disapproved: true, output: "Export changed credential handling; login now admits invalid credentials." });
+  assert.equal(respecCoverage(failed).verified, 0);
+  assert.equal(respecCoverage(failed).remaining, 2);
+  assert.equal(failed.requirements[0]!.evidence, undefined);
+  assert.equal(failed.history!.at(-1)!.outcome, "needs-work");
+  assert.equal(first.requirements[0]!.status, "verified", "old durable proof remains in prior journal snapshots");
+});
