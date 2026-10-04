@@ -233,6 +233,7 @@ function isLoopActive(): boolean {
 // v0.29.19 gate + re-armed counters make the resumed run honest.
 export const RESUMABLE_STOP = (r?: string): boolean =>
   r === HELD_ON_RESTORE ||
+  !!r?.startsWith("audit infrastructure:") ||
   !!r?.startsWith("provider errors —") ||
   !!r?.startsWith("stopped by user —") ||
   !!r?.startsWith("plateau —") ||
