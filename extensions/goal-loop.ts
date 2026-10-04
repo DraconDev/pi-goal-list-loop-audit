@@ -1,3 +1,4 @@
+import { respecAuditStatus } from "./respec-builder-ui.js";
 /**
  * goal-loop.ts — Loop 3 machinery: /loop command, tick engine, git finish.
  *
@@ -1422,8 +1423,13 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     if (loop.builder) {
       const coverage = respecCoverage(loop.builder);
       lines.push(`Project: ${loop.builder.phase} · increment ${loop.builder.cycle} · verified ${coverage.verified}/${coverage.total} · remaining ${coverage.remaining} · blocked ${coverage.blocked}`);
-      for (const requirement of loop.builder.requirements.filter(r => r.status === "blocked")) {
-        lines.push(`Blocked ${sanitizeDisplayText(requirement.id)}: ${sanitizeDisplayText(requirement.blockedReason ?? "reason missing")}`);
+      if (loop.active && loop.builder.phase === "auditing") lines.push(respecAuditStatus(loop.builder, Date.now()));
+      if (!loop.builder.requirements.length) lines.push("Requirements: intended scope is still being drafted.");
+      for (const requirement of loop.builder.requirements) {
+        lines.push(`${sanitizeDisplayText(requirement.id)} [${requirement.status}]: ${sanitizeDisplayText(requirement.text)}`);
+        lines.push(`  Done when: ${sanitizeDisplayText(requirement.acceptance)}`);
+        if (requirement.blockedReason) lines.push(`  Blocker: ${sanitizeDisplayText(requirement.blockedReason)}`);
+        if (requirement.evidence) lines.push(`  Evidence: ${sanitizeDisplayText(requirement.evidence.attemptId)} · ${sanitizeDisplayText(requirement.evidence.model)} · ${sanitizeDisplayText(requirement.evidence.report)}`);
       }
     }
     if (loop.timeLimitHours !== undefined) bounds.push(`time ≤ ${loop.timeLimitHours}h`);
@@ -1441,7 +1447,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       // User-facing status is a change story, not a gate/test transcript.
       // The durable loop.completionSummary remains available in the archive
       // and auditor inputs; only the displayed projection is compact.
-      lines.push(`Summary:\n${compactLoopCompletionSummary(loop)}`);
+      lines.push(`Summary:\n${loop.builder ? loop.completionSummary : compactLoopCompletionSummary(loop)}`);
     }
     if (state.mainModelRecovery?.kind === "loop") lines.push(...formatLoopRecoveryStatusLines(ctx));
     const tail = loop.history.slice(-5);

@@ -1,3 +1,4 @@
+import { deliverTerminalSummary } from "../terminal-summary-delivery.js";
 import { archiveCurrentGoal } from "./goal-orchestrator.js";
 /**
  * pi-goal-list-loop-audit — v0.1.0
@@ -586,6 +587,8 @@ function registerAgentTools(pi: any): void {
     },
     wrapTool: tool => defineTool(tool),
     thinkingLevel: () => pi.getThinkingLevel?.(),
+    refresh: ctx => refreshUI(ctx),
+    completed: (ctx, id, summary) => deliverTerminalSummary(ctx, pi, "goal-event", id, summary),
     finished: ctx => announceQueuedListAfterLoopEnd(ctx),
     confirm: async (ctx, title, body) => {
       if (loadSettings(ctx.cwd).autoAcceptDrafts === true) {
