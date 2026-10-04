@@ -586,6 +586,13 @@ function registerAgentTools(pi: any): void {
     },
     wrapTool: tool => defineTool(tool),
     finished: ctx => announceQueuedListAfterLoopEnd(ctx),
+    confirm: async (ctx, title, body) => {
+      if (loadSettings(ctx.cwd).autoAcceptDrafts === true) {
+        appendLedger(ctx.cwd, "draft_autoaccepted", { kind: "respec-project", title });
+        return true;
+      }
+      return (await confirmDraft(ctx, title, body)) === "yes";
+    },
   });
   pi.registerTool(defineTool({
     name: "complete_goal",

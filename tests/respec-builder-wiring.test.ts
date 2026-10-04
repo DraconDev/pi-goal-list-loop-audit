@@ -10,6 +10,7 @@ afterEach(() => { clearLoopTimer(); __testOnlyResetOwnerSession(); __testOnlyRes
 test("actual respec command and tools persist intended scope, batch and audit claim", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "builder-wiring" } });
+  ctx.ui.customImpl = async () => "Yes";
   await pi.fire("session_start", { reason: "startup" }, ctx);
   try {
     await pi.command("loop", "respec build login and export", ctx); await tick(100); clearLoopTimer();
@@ -35,10 +36,11 @@ test("actual respec command and tools persist intended scope, batch and audit cl
 test("declining intended scope leaves the project drafting with no adopted requirements", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "builder-refusal" } });
+  ctx.ui.customImpl = async () => "Yes";
   await pi.fire("session_start", { reason: "startup" }, ctx);
   try {
     await pi.command("loop", "respec", ctx); clearLoopTimer();
-    ctx.ui.confirmImpl = async () => false;
+    ctx.ui.customImpl = async () => "No";
     await pi.tools.get("propose_project_requirements")!.execute(...["call", { requirements: [{ id: "a", text: "Feature", acceptance: "Observable feature works" }] }, undefined, undefined, ctx] as never[]);
     assert.equal(readState(cwd).loop!.builder!.phase, "drafting");
     assert.equal(readState(cwd).loop!.builder!.requirements.length, 0);
@@ -48,6 +50,7 @@ test("declining intended scope leaves the project drafting with no adopted requi
 test("registered blocker and refinement tools preserve work and require consent to change scope", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "builder-refinement" } });
+  ctx.ui.customImpl = async () => "Yes";
   await pi.fire("session_start", { reason: "startup" }, ctx);
   try {
     await pi.command("loop", "respec build login", ctx); clearLoopTimer();
@@ -60,11 +63,11 @@ test("registered blocker and refinement tools preserve work and require consent 
     assert.equal(readState(cwd).loop!.builder!.requirements[0]!.status, "open");
     assert.equal(readState(cwd).loop!.active, false, "unblocking preserves explicit pause until resume");
     const before = JSON.stringify(readState(cwd).loop!.builder);
-    ctx.ui.confirmImpl = async () => false;
+    ctx.ui.customImpl = async () => "No";
     const proposal = { reason: "Add two-factor authentication", requirements: [{ id: "login", text: "Two-factor login", acceptance: "Password and second factor required" }] };
     await pi.runTool("propose_project_refinement", proposal, ctx);
     assert.equal(JSON.stringify(readState(cwd).loop!.builder), before, "declining scope keeps every durable requirement");
-    ctx.ui.confirmImpl = async () => true;
+    ctx.ui.customImpl = async () => "Yes";
     await pi.runTool("propose_project_refinement", proposal, ctx);
     assert.equal(readState(cwd).loop!.builder!.requirements[0]!.acceptance, "Password and second factor required");
     assert.equal(readState(cwd).loop!.builder!.revision, 2);

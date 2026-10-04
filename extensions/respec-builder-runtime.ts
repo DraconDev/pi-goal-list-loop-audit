@@ -21,6 +21,7 @@ interface Host {
   /** Bounded worker launcher overrides for embedding and hermetic tests. */
   auditRuntime?: AuditorProcessRuntime;
   finished?: (ctx: ExtensionContext) => void;
+  confirm?: (ctx: ExtensionContext, title: string, body: string) => Promise<boolean>;
 }
 let host: Host;
 const running = new Map<string, AbortController>();
@@ -110,6 +111,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
 
 export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
   host = deps;
+  const confirm = (ctx: ExtensionContext, title: string, body: string) => host.confirm ? host.confirm(ctx, title, body) : ctx.ui.confirm(title, body);
   const reply = (text: string) => ({ content: [{ type: "text" as const, text }], details: {} });
   const execute = (action: (p: any, ctx: ExtensionContext, before: RespecBuilderState) => Promise<RespecBuilderState> | RespecBuilderState, allowStopped = false) =>
     async (_id: string, params: any, _signal: AbortSignal | undefined, _update: any, execCtx: ExtensionContext) => {
@@ -127,7 +129,7 @@ export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
     parameters: Type.Object({ requirements: Type.Array(Type.Object({ id: Type.String(), text: Type.String(), acceptance: Type.String() })) }),
     execute: execute(async (p, ctx, before) => {
       const next = adoptRespecRequirements(before, p.requirements);
-      const ok = await ctx.ui.confirm("Confirm intended project", next.requirements.map(r => `${r.id}: ${r.text}\nDone when: ${r.acceptance}`).join("\n\n"));
+      const ok = await confirm(ctx, "Confirm intended project", next.requirements.map(r => `**${r.id}: ${r.text}**\n\nDone when: ${r.acceptance}`).join("\n\n"));
       if (!ok) throw new Error("Project scope was not adopted; continue drafting from the operator's feedback.");
       return next;
     }),
@@ -154,7 +156,7 @@ export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
     parameters: Type.Object({ reason: Type.String(), requirements: Type.Array(Type.Object({ id: Type.String(), text: Type.String(), acceptance: Type.String() })) }),
     execute: execute(async (p, ctx, before) => {
       const next = refineRespecRequirements(before, p.requirements, p.reason);
-      const ok = await ctx.ui.confirm("Confirm project scope change", `Reason: ${p.reason}\n\nCURRENT:\n${before.requirements.map(r => `${r.id}: ${r.text}\nDone when: ${r.acceptance}`).join("\n\n")}\n\nPROPOSED:\n${next.requirements.map(r => `${r.id}: ${r.text}\nDone when: ${r.acceptance}`).join("\n\n")}\n\nRemoved: ${next.scopeChanges!.at(-1)!.removedIds.join(", ") || "none"}. Changed scope requires renewed verification.`);
+      const ok = await confirm(ctx, "Confirm project scope change", `Reason: ${p.reason}\n\n**CURRENT:**\n${before.requirements.map(r => `${r.id}: ${r.text}\nDone when: ${r.acceptance}`).join("\n\n")}\n\n**PROPOSED:**\n${next.requirements.map(r => `${r.id}: ${r.text}\nDone when: ${r.acceptance}`).join("\n\n")}\n\nRemoved: ${next.scopeChanges!.at(-1)!.removedIds.join(", ") || "none"}. Changed scope requires renewed verification.`);
       if (!ok) throw new Error("Scope change declined; existing requirements and audit claim remain intact.");
       return next;
     }, true),
