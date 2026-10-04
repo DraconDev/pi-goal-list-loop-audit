@@ -1,0 +1,36 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/auditor-timeout-settings.test.ts:
+(pass) v0.37.0: escalatedAuditorTimeout doubles per prior attempt and saturates at 4x base [0.30ms]
+(pass) v0.37.0: auditor timeout settings clamp into bounds on load [34.73ms]
+(pass) v0.37.0: /glla editor accepts plain-ms and s/m/h duration input for both keys [669.87ms]
+(pass) v0.37.0: settings menu exposes both auditor timeout rows in the auditor section [2.54ms]
+(pass) v0.37.0: dispatch env reaches the worker process so parent and worker budgets agree [303.94ms]
+(pass) v0.37.0: progress signature counts streamed report bytes [0.19ms]
+(pass) v0.37.0: an in-budget live tool exempts the audit card from the quiet phase [0.25ms]
+(pass) v0.37.0: durable claims preserve the timeout escalation index across loads [2.40ms]
+(pass) v0.38.3: auditJobRetentionMs clamps into [0, 7d] on load [0.43ms]
+(pass) v0.38.3: /glla editor accepts duration input for auditJobRetentionMs (0 is legal) [240.82ms]
+(pass) v0.38.3: settings menu exposes the audit job retention row in the auditor section [0.61ms]
+
+tests/stale-delayed-context.test.ts:
+(pass) v0.34.20: registered agent tools resolve the invocation context [1.18ms]
+(pass) v0.34.20: provider retry timers have one session-boundary adapter [1.43ms]
+(pass) v0.34.20: detached fan-out revalidates after user confirmation [0.34ms]
+(pass) v0.34.22: detached completion audits persist lifecycle claims and stop applying after replacement [0.98ms]
+(pass) v0.34.20: generic infra retry supports a lifecycle guard before and after backoff [0.15ms]
+(pass) v0.34.20: manual resume consumes a stored completion claim directly [0.10ms]
+(pass) v0.34.20: loop measurement and branch cleanup rebind after async work [0.32ms]
+
+tests/audit-glance-clarity.test.ts:
+(pass) screenshot regression: live audit facts and user action fit before Pi's ten-row cut [4.65ms]
+(pass) narrow footer starts with audit state and real freshness [0.78ms]
+(pass) quiet, blocked, settlement and recovery do not claim no action is needed [0.93ms]
+(pass) starting audit distinguishes waiting for first activity from recent activity [14.63ms]
+(pass) current tool keeps elapsed time and timeout budget in the compact card [0.71ms]
+(pass) Studio regression: a silent bounded tool retains its clock and explains the wait [0.90ms]
+(pass) a tool past its deadline, a cancelled tool and skewed telemetry cannot claim a healthy wait [0.62ms]
+
+ 25 pass
+ 0 fail
+Ran 25 tests across 3 files. [2.32s]

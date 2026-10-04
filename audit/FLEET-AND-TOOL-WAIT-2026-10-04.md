@@ -15,6 +15,8 @@ The snapshots are point-in-time evidence, not a promise of eventual completion.
   delayed the auditor; that observation did not prove a lost verdict.
 - **Platform root and Eve:** live detached auditors, fresh tool activity,
   unfinished calls within their published timeouts. No orphan is observed.
+  In the follow-up, platform root had moved on to a new goal; its original
+  audit was no longer the active claim.
 - **Darklord, Endless TD, Hellhunter:** live main hosts blocked in visible
   `ask_user_question` dialogs. They require an operator answer; no background
   task should be inferred from the age of their last tool-start message.
@@ -56,7 +58,20 @@ worker-granted budget as the parent watchdog.
 - Focused card/status/lifecycle/timeout/host/package contract checks:
   **52 passed, 0 failed**, six files.
 - TypeScript passed against current host 0.99.1 and oldest host 0.84.2.
-  The fresh full release gate is pending at this checkpoint.
+- The initial full release gate ran 3,227 tests in 349 files: **3,224 passed,
+  1 skipped, 2 failed**. One failure was a stale source assertion for the old
+  budget expression; it was corrected while retaining generation/goal/attempt
+  fencing. The corrected lifecycle and tool-wait files passed: **25 passed,
+  0 failed**.
+- The other failure concerned descendant cleanup on a mechanical-check
+  timeout. It did not reproduce in isolation or two runs of the entire
+  regression-shield file (**76 passed, 0 failed**). Its first-run cause remains
+  unproven; no cleanup code or test timing was weakened. The full release gate
+  has **not** subsequently been rerun clean.
+- Remaining release stages passed separately: current TypeScript, Jiti state
+  binding, offline auditor extension loading, inventory, npm dry-run packing,
+  and installation/import of the **0.39.1 tarball**, including the bounded
+  launcher/worker RPC probe and delegate skill loading.
 - 24 production-renderer frames across dark/light and widths 40/80/190 fit
   their terminal width. Actual waiting frames were inspected as terminal text.
 - Evidence: `audit/tool-wait-2026-10-04/`.

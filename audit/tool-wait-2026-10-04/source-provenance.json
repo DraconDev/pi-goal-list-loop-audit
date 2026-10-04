@@ -5,5 +5,6 @@
   "extensions/loops/goal-auditor-hooks.ts": "46c64a366e22310e540a8098c655b44386a8421f69f20fbb442f2d4ea4c16e4a",
   "extensions/loops/goal-tools.ts": "f946ef065cade968132ee7aed781a69553c98ef74ab359a37e0588ad6c0f8b99",
   "tests/audit-glance-clarity.test.ts": "f95c6b687df3a6d10dcec7e6c77a2fda3b61054c7ffd5604b62131786700603a",
-  "tests/evidence/render-audit-glance.ts": "41841cedf43900264a3d622bfd52417ae5da2c9453f40bfca277933a39062e5c"
+  "tests/evidence/render-audit-glance.ts": "41841cedf43900264a3d622bfd52417ae5da2c9453f40bfca277933a39062e5c",
+  "tests/stale-delayed-context.test.ts": "8e5392bf9f7acb569826ac85ba6455318ae69cf207e2a733e642a939eec692cc"
 }

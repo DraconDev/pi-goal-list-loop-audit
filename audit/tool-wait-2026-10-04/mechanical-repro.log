@@ -1,0 +1,9 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/regression-shield.test.ts:
+(pass) mechanical checks stay async and kill descendant processes on timeout [2345.38ms]
+
+ 1 pass
+ 37 filtered out
+ 0 fail
+Ran 1 test across 1 file. [2.96s]

@@ -1,4 +1,196 @@
 {
-  "observedAt": "2026-10-04T22:07:15.633777+00:00",
-  "projects": []
+  "observedAt": "2026-10-04T22:07:57.365327+00:00",
+  "projects": [
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform",
+      "snapshotAt": "2026-10-04T22:00:24.814Z",
+      "goalId": "20261004215848-k4rpg7",
+      "goalStatus": "active",
+      "pendingCompletion": null
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/seo",
+      "snapshotAt": "2026-09-25T18:51:00.524Z",
+      "goalId": "20260924180311-jok0tk",
+      "goalStatus": "auditing",
+      "pendingCompletion": {
+        "completionSummary": "Outcome: the SEO growth delivery is implemented, deployed, and re-verified end to end; the source gate the auditor killed at 600s now re-runs in 1.5s and its full execution passes in 142s. Changed: `seo/verify-seo-growth-delivery.py` (parallel memory-aware lanes, content-addressed hash-verified attestations, `--no-reuse`/`--jobs`/`--workspace`, failing runs that still record evidence, bounded fetch retries, and the selected-page internal-link check the contract required but the tool never did); `seo/qualified-actions.mjs` (resolves a usable Chromium instead of assuming one, which had made the qualified-action contract unrunnable on this Nix host); `seo/seo-growth-delivery.json`; new `scripts/tests/seo-source-attestation.test.sh`; report sections 6.1/6.2; four type-only lines in another workstream's saves test that unblocked a red workspace typecheck. Evidence: source gate 28/28 in `seo/evidence/runs/final-source-full-verify/`; crawl of 8,091 URLs plus 26 internal link targets in `seo/evidence/runs/final-live-crawl6/crawl.json`; exactly one `provider_key_setup_intent` after the click, none on page view. Tests: attestation contract 5/5 pass; gates 1, 2, 3, 4, 6, 7 exit 0. Unresolved: `bash scripts/verify-deployment.sh` is 69/70 \u2014 the Studio API health route answers 503 `db: error` mid-deploy, and that API is out of scope (the same run gets 200 from the studio feed; the script was 70/70 at 13:40Z). Next: re-run that script once the studio-api database is reachable.",
+        "verificationSummary": "Contract 1 (report): `python3 seo/verify-seo-growth-delivery.py --report seo/SEO-GROWTH-DELIVERY.md` exits 0; the report carries the dated 2026-06-23..2026-09-22 window, 231 clicks, 34.7K impressions, 0.7% CTR, position 16, 1.13K/1.79K index coverage, the QwenCloud SERP findings, the opportunity scorecard, the Selected/deferred boundary, the changed-file map, the deployed SHA 2cc6fa0d, before/after edge evidence, the qualified-action boundary, and Day 28/Day 56 rules. Contract 2 (source): `--gate source` exits 0 in 142.3s covering 28 declared commands across 10 changed workspaces \u2014 3 executed (games check/test/build) and 25 verified from content-addressed attestations; a pure replay is 0.63s with 0 executed and 28 attested. Every command has a preserved raw log and SHA-256 in `seo/evidence/attestations/`, and `scripts/tests/seo-source-attestation.test.sh` proves the reuse layer is fail-closed (cold executes, warm reuses without re-executing, tampered log re-executes, edited input re-executes, nonzero exit fails and seals nothing). Contract 3 (crawl): `--gate crawl --base-url https://dracon.uk` exits 0 in 5m01s; all eight sitemaps parse (36/403/64/5575/2001/8/3/1 = 8,091 unique URLs), every listed URL is 200 with a self-canonical and no noindex, the selected page has its unique title/description/H1 and valid JSON-LD, and 26 selected-page internal link targets all resolve 200. Contract 4 (actions): `--gate actions --base-url https://dracon.uk` exits 0; `ACTION-OK https://dracon.uk/ai-hub/keys/qwen-cloud` with exactly one PII-free first-party event after the explicit click and zero during page view (`seo/evidence/runs/final-actions-verify2/`). Contract 5 (deployment): `bash scripts/verify-deployment.sh` exits 1 \u2014 69 of 70 probes pass; the single failure is `/api/v1/studio/healthz \u2192 503 {\"db\":\"error\",\"status\":\"degraded\"}`, preserved in `seo/evidence/final-verify-deployment-latest.log`, while `/api/v1/studio/codex-reset-feed` returns 200 in the same run. The same script completed 70/70 at 2026-09-25T13:40Z, the run bound to the deployed SHA. Contract 6 (measurement): `--gate measurement` exits 0; explicit post-deploy window handling, query-anonymization and position-distribution caveats, Day 28/Day 56 thresholds, and an insufficient-data outcome. Contract 7 (repository): `git diff --check` exits 0 and `bash web/games/scripts/check-submodule-drift.sh` exits 0 after the prescribed `--fix` pass; no history was rewritten.",
+        "leftOut": "Left out: (1) the Studio API's deployed database \u2014 out of scope, so verify-deployment.sh stays 69/70 until that workstream restores it; (2) no redeploy of post-2cc6 SEO source (the AI Hub dispatcher refactor): the edge serves 2cc6fa0d and the residual delta is enumerated in the report; (3) the music page-weight cause is measured and recorded as next action, not fixed \u2014 2,000 artist pages each inherit a 1.16 MB layout payload, a music data-contract change under concurrent catalog work.",
+        "findingGroups": [
+          {
+            "title": "Verification tooling",
+            "findings": [
+              "Source gate re-runs in 1.5s instead of being killed at 600s \u2014 the verifier schedules 10 workspaces in memory-aware lanes and reuses content-addressed attestations, so the auditor's command exits 0 (28/28 verified, 142.3s with 3 commands executed, 0.63s fully attested)",
+              "Attestation reuse is contract-tested, not trusted \u2014 scripts/tests/seo-source-attestation.test.sh pins cold-executes, warm-reuses-without-executing, tampered-log-re-executes, edited-input-re-executes, and nonzero-fails-and-seals-nothing",
+              "The crawl gate now proves what the contract asked but the tool never did \u2014 selected-page internal links are collected, policy-excluded, and resolved (26 targets, all 200) next to the 8,091 sitemap URLs"
+            ]
+          },
+          {
+            "title": "Live surfaces",
+            "findings": [
+              "Qualified-action contract was unrunnable on this host and now passes \u2014 the runner falls back to a Nix-provided Chromium when Playwright's downloaded shell cannot load its shared libraries, verifying exactly one PII-free event per click",
+              "All eight sitemaps and 8,091 URLs are 200 with self-canonicals and no noindex, and the selected Qwen page keeps its unique title, description, H1 and valid JSON-LD",
+              "One deployment probe is red for another workstream \u2014 /api/v1/studio/healthz answers 503 db:error while the studio feed still serves 200; that API is out of scope and the script was 70/70 at 13:40Z"
+            ]
+          },
+          {
+            "title": "Diagnosis carried forward",
+            "findings": [
+              "The 1,698s serial source cost is measured, not estimated \u2014 97% is the music prerender at 2,673s under load, because every artist page inherits a 1.16 MB root-layout payload across 2,000 cooks",
+              "A red workspace typecheck was fixed in place rather than worked around \u2014 four type-only lines in another workstream's saves test restore web/games to 0 errors, and no declared command was narrowed or skipped"
+            ]
+          }
+        ],
+        "gateRows": [
+          {
+            "gate": "Source gate (28 commands, 10 workspaces)",
+            "command": "python3 seo/verify-seo-growth-delivery.py --manifest seo/seo-growth-delivery.json --gate source",
+            "scope": "typecheck, unit/contract tests and production build for every changed public workspace",
+            "notes": "28/28 commands exit 0; 3 executed, 25 hash-verified from the sealed store; 142.3s wall, 0.63s on a pure replay"
+          },
+          {
+            "gate": "Attestation contract test",
+            "command": "bash scripts/tests/seo-source-attestation.test.sh",
+            "scope": "fail-closed behavior of the content-addressed reuse layer",
+            "notes": "5 cases pass, 0 fail"
+          },
+          {
+            "gate": "Live crawl",
+            "command": "python3 seo/verify-seo-growth-delivery.py --manifest seo/seo-growth-delivery.json --gate crawl --base-url https://dracon.uk",
+            "scope": "8 sitemaps, 8,091 URLs, canonicals, indexability, JSON-LD, internal links",
+            "notes": "8,091 URLs all 200 with self-canonicals and no noindex; 26 internal link targets all 200; 5m01s, 0 failures"
+          },
+          {
+            "gate": "Qualified actions",
+            "command": "python3 seo/verify-seo-growth-delivery.py --manifest seo/seo-growth-delivery.json --gate actions --base-url https://dracon.uk",
+            "scope": "browser test of the selected landing page's first-party event contract",
+            "notes": "exactly one allowlisted PII-free provider_key_setup_intent after the click, zero on page view"
+          },
+          {
+            "gate": "Report contract",
+            "command": "python3 seo/verify-seo-growth-delivery.py --report seo/SEO-GROWTH-DELIVERY.md",
+            "scope": "dated GSC window, index coverage, SERP, scorecard, changed-file map, deployed SHA, decision rules",
+            "notes": "exit 0, 0 missing phrases, 0 prohibited claims"
+          },
+          {
+            "gate": "Measurement contract",
+            "command": "python3 seo/verify-seo-growth-delivery.py --manifest seo/seo-growth-delivery.json --gate measurement",
+            "scope": "post-deploy baseline windows, caveats, 28/56-day thresholds",
+            "notes": "exit 0, all required fields and caveats present"
+          },
+          {
+            "gate": "Repository state",
+            "command": "git diff --check && bash web/games/scripts/check-submodule-drift.sh",
+            "scope": "patch whitespace and submodule gitlink sync",
+            "notes": "both exit 0 after the prescribed --fix staging pass"
+          },
+          {
+            "gate": "Deployment verification",
+            "command": "bash scripts/verify-deployment.sh",
+            "scope": "70 public production endpoint probes",
+            "notes": "69 passed, 1 failed \u2014 /api/v1/studio/healthz 503 (db: error) from the concurrent studio-api deploy; out of this slice's scope, preserved in seo/evidence/final-verify-deployment-latest.log"
+          }
+        ],
+        "priorCompletionSummary": "Outcome: Delivered and deployed the evidence-led SEO growth slice for the public platform, with the Qwen setup guide, shared indexability policy, qualified-action contract, live evidence, and Search Console inspection recorded. Changed: `seo/SEO-GROWTH-DELIVERY.md`, `seo/seo-growth-delivery.json`, raw SEO gate/evidence artifacts, GSC inspection evidence, and the SEO source/test corrections are represented in the durable history; concurrent Chat and game work was preserved. Evidence: deployed/source SHA `2cc6fa0d36003b4150b095bf86c948598ee745bb`; source gate 27/27 commands passed; live crawl covered eight sitemaps and 8,091 URLs; action gate passed; deployment verification reported 70 passed/0 failed; GSC showed the Qwen URL indexed/on Google and accepted an indexing request. Tests: report, measurement, action, deployment, evidence-integrity, append-only guard, diff-check, and submodule-drift checks passed; the broader platform games audit remains a separate failing concurrent-work gate. Unresolved: unrelated dirty game submodules continue moving and the platform-wide games audit has catalog/orphan/asset/functional findings; the final report records these as separate residual risks. Next: allow the owning daemons to finish unrelated game synchronization, then address the games audit independently.",
+        "at": "2026-09-25T18:28:10.602Z",
+        "attemptId": "audit-muhbedy5-xzsys5",
+        "startedAt": "2026-09-25T18:49:12.221Z",
+        "recoveryEpisodeKey": "2026-09-25T18:28:10.602Z:provider:session shutdown quit",
+        "recoveryNoticeKeys": [],
+        "automaticRecoveryAttempted": true,
+        "phase": "running",
+        "lastActivityAt": "2026-09-25T18:51:00.277Z",
+        "automaticRecoveryAt": "2026-09-25T18:49:12.221Z",
+        "automaticRecoveryGeneration": 18,
+        "automaticRecoveryAttempts": 1,
+        "automaticRecoveryFirstAt": "2026-09-25T18:36:25.919Z",
+        "automaticRecoveryUntil": "2026-09-26T18:36:25.919Z",
+        "auditorCandidateRefs": [
+          "openrouter/stealth/space-bunny-alpha"
+        ],
+        "auditorCandidateRef": "openrouter/stealth/space-bunny-alpha",
+        "auditorAttemptedRefs": [],
+        "auditorFailureCount": 0,
+        "timeoutEscalation": 1,
+        "auditorThinkingLevel": "max"
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/studio",
+      "snapshotAt": "2026-10-04T21:30:42.347Z",
+      "goalId": null,
+      "goalStatus": null,
+      "pendingCompletion": null
+    },
+    {
+      "cwd": "/home/dracon/Dev/eve",
+      "snapshotAt": "2026-10-04T22:03:09.350Z",
+      "goalId": "20261004212759-a6jf7d",
+      "goalStatus": "auditing",
+      "pendingCompletion": {
+        "completionSummary": "Outcome: The terminal surface has its frontend kind back \u2014 `FrontendKind::Tui` with wire tag `tui` \u2014 and the host contract records version 2 in every place it states a version, with the v1 tags frozen and the plugin ABI untouched. Changed: the kind, tag, and version in `crates/eve-frontend`, the new kind's projection in `contrib.rs`, coverage for both the tag round-trip and the terminal projection, and the version in three documents. Evidence: `cargo check -p eve-frontend` passes, an audit-found contradiction between two version records in one file is resolved, and the eve-bash test failure the audit saw is confirmed environment-dependent in a crate that does not depend on this one. Tests: `scripts/verify.sh` all six gates PASS, plus a deliberate regression check proving the new test fails if the terminal arm is moved. Unresolved: none blocking; the terminal surface still does not open its session through this handshake, which is out of scope here. Next: none.",
+        "verificationSummary": "CONTRACT CLAUSE A \u2014 `cargo check -p eve-frontend` passes. Run directly: `cargo check -p eve-frontend --offline` \u2192 \"Finished `dev` profile ... in 0.25s\", no diagnostics.\n\nCONTRACT CLAUSE B \u2014 the version bump is recorded. Code: `crates/eve-frontend/src/lib.rs:37` is `pub const CONTRACT_VERSION: u32 = 2;`. Documents: `docs/design/frontend-host-v0.md:36` records \"`CONTRACT_VERSION: u32 = 2`. Version 2 adds the `tui` frontend kind; the v1 tags are unchanged and frozen\"; its compatibility promise at ~line 125 states v2 widens the kind set while leaving every v1 tag byte-for-byte unchanged; `docs/design/compat-matrix-v0.md:22` records `CONTRACT_VERSION = 2`.\n\nAUDIT FINDING 1 \u2014 RESOLVED (the blocking defect). `docs/design/compat-matrix-v0.md` recorded the version twice and the bump desynchronized them: line 22 said `CONTRACT_VERSION = 2` while line 85 still read \"The frontend contract is already at version 1; its exact-match rule is unchanged.\" Line 85 now reads \"The frontend contract is at version 2; version 2 only widens the set of kinds a hello may declare (adding `tui`), and its exact-match rule is unchanged.\" Both records now read 2, verified by grep. This was a real contradiction inside a file this change edited, and it contradicted the objective's own clause \"where the contract records versions.\"\n\nAUDIT FINDING 2 \u2014 RESOLVED (ui-contrib-v0.md owns `render`'s contract). That document still described two kinds and said the schema test pins \"the two frontend-kind tags\". All three statements now match the code: the `ModeView::Rows` bullet names `FrontendKind::Tui` as rendering the same rows as `FrontendKind::Rpc` byte for byte because the terminal surface draws real panels, status items and prompt widgets; the headless bullet cites `mode_behavior` for the terminal assertion and for `Null` staying reserved for `Headless`; the compatibility promise says \"the three frontend-kind tags\".\n\nAUDIT FINDING 3 \u2014 RESOLVED (the new arm now has a test, not just compilation). `mode_behavior` in `crates/eve-frontend/tests/contrib.rs` renders `FrontendKind::Tui`, asserts the schema version, destructures `ModeView::Rows` with the message \"the terminal surface renders rows, not absence\", asserts its rows equal the RPC rows exactly (equality, not a length check, so drift from the mirrored surface also fails), and asserts `Null` stays reserved for `Headless`. TEST HAS TEETH \u2014 verified by mutation: temporarily folding `Tui` into the `Null` arm in contrib.rs makes the test fail with `panicked at crates/eve-frontend/tests/contrib.rs:435: the terminal surface renders rows, not absence` and `test result: FAILED. 0 passed; 1 failed`. The file was then restored from backup and `git diff --stat crates/eve-frontend/src/contrib.rs` is empty.\n\nOBJECTIVE CONSTRAINTS \u2014 all verified. Wire tag: `lib.rs:58-60` are `Self::Rpc => \"rpc\"`, `Self::Headless => \"headless\"`, `Self::Tui => \"tui\"`, with a matching `\"tui\" => Ok(Self::Tui)` arm in `parse`. The v1 literals are unchanged, so the frozen-tag promise holds. Plugin ABI frozen: `grep -rn \"FrontendKind\" crates/eve-plugin-api/ crates/eve-plugin-sdk/` returns no matches, and neither crate appears in either commit. The journal `SchemaVersion::V0` is untouched.\n\nAUDIT FINDING 4 (eve-bash) \u2014 CONFIRMED PRE-EXISTING AND UNRELATED. The audit reported `crates/eve-bash/tests/sh.rs:884` failing on `count >= 50` because its sandbox exposes 42 environment variables. I read `crates/eve-bash/Cargo.toml` directly: its dependencies are `rustix`, `eve-core`, `eve-plugin-api` and `libc` \u2014 no `eve-frontend`. The assertion is about environment-variable passthrough in a shell plugin, unrelated to the frontend contract, and env-dependent by nature. It passed on my subsequent full run (`PASS test`).\n\nGATES: `timeout 3600 bash scripts/verify.sh` \u2192 PASS fmt, PASS check, PASS clippy, PASS clippy-build-scripts, PASS test, PASS msrv (6/6). `cargo test -p eve-frontend --offline` \u2192 12 host + 14 contrib, 0 failed, including `mode_behavior` and `every_frontend_kind_tag_parses_back_to_itself`. `git status --porcelain` clean. Commits 52a9844e (the contract change) and 67d95a96 (the audit fixes) on top of db22473e.",
+        "leftOut": "Deliberately left out: the terminal surface still does not open its session through `Session::handshake`, so `Tui` is declared, projected and pinned but not exercised end-to-end by `eve tui` \u2014 `run_tui` reads through `ChatSession`, not `eve_frontend::Session`, which is a larger change than this objective scopes. Also left `docs/design/reviews/eve20-review.md:7` quoting `CONTRACT_VERSION=1`: it is a dated review snapshot of what was reviewed at the time, not the contract recording its own version, so rewriting it would falsify the review record.",
+        "gateRows": [
+          {
+            "gate": "Workspace gates (verify.sh)",
+            "command": "timeout 3600 bash scripts/verify.sh",
+            "scope": "fmt, check, clippy, clippy-build-scripts, test, msrv across the whole workspace",
+            "notes": "all 6 gates PASS, 0 failures"
+          },
+          {
+            "gate": "Contract clause A (cargo check -p eve-frontend)",
+            "command": "timeout 300 cargo check -p eve-frontend --offline",
+            "scope": "the eve-frontend crate after adding FrontendKind::Tui",
+            "notes": "Finished with no diagnostics"
+          },
+          {
+            "gate": "Contract clause B (version bump recorded)",
+            "command": "grep -n version docs/design/compat-matrix-v0.md docs/design/frontend-host-v0.md; grep -n CONTRACT_VERSION crates/eve-frontend/src/lib.rs",
+            "scope": "every place the contract records its own version, including the audit-found contradiction at compat-matrix-v0.md:85",
+            "notes": "all version records now read 2 and agree across both documents"
+          },
+          {
+            "gate": "Frontend host and contrib suites",
+            "command": "timeout 900 cargo test -p eve-frontend --offline",
+            "scope": "the host contract tests and the UI contribution projection tests",
+            "notes": "12 host + 14 contrib passed, 0 failed, including mode_behavior and every_frontend_kind_tag_parses_back_to_itself"
+          },
+          {
+            "gate": "Regression proof (mutation check)",
+            "command": "fold Tui into the Null arm in contrib.rs, run mode_behavior, restore",
+            "scope": "proving the new Tui render assertion is real coverage and not a tautology",
+            "notes": "test FAILED as intended with 'the terminal surface renders rows, not absence'; file restored, diff empty"
+          },
+          {
+            "gate": "Plugin ABI frozen",
+            "command": "grep -rn FrontendKind crates/eve-plugin-api crates/eve-plugin-sdk; git diff --name-only on both crates",
+            "scope": "the v0 plugin protocol crates the objective freezes",
+            "notes": "no references to FrontendKind; neither crate is in either commit"
+          },
+          {
+            "gate": "eve-bash independence (audit finding 4)",
+            "command": "read crates/eve-bash/Cargo.toml dependencies",
+            "scope": "confirming the audit-reported eve-bash test failure is not caused by this change",
+            "notes": "no eve-frontend dependency; env-dependent failure is unrelated to this change and passed on the full run"
+          }
+        ],
+        "priorCompletionSummary": "Outcome: The terminal surface has a frontend kind again \u2014 `FrontendKind::Tui` with wire tag `tui` \u2014 and the host contract moved to version 2 to declare it, with the v1 tags frozen. Changed: the kind, tag, and version in `crates/eve-frontend`, the new kind's projection in `contrib.rs`, pinned coverage in the frontend tests, and the version recorded in both contract documents. Evidence: `cargo check -p eve-frontend` passes, the plugin protocol v0 ABI is untouched, and a latent test bug was fixed \u2014 a hardcoded \"wrong version\" literal had silently become the current version and was turning a negative case into a positive one. Tests: `scripts/verify.sh` all six gates PASS. Unresolved: none. Next: none.",
+        "at": "2026-10-04T21:58:09.185Z",
+        "phase": "running",
+        "attemptId": "audit-muud41lt-1ryuwe",
+        "startedAt": "2026-10-04T21:58:09.185Z",
+        "lastActivityAt": "2026-10-04T22:03:09.300Z",
+        "timeoutEscalation": 1,
+        "auditorCandidateRefs": [
+          "openrouter/stealth/space-bunny-alpha"
+        ],
+        "auditorCandidateRef": "openrouter/stealth/space-bunny-alpha",
+        "auditorAttemptedRefs": [],
+        "auditorFailureCount": 0,
+        "auditorThinkingLevel": "max"
+      }
+    }
+  ]
 }
