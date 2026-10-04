@@ -16,6 +16,7 @@ for (const appearance of ["dark", "light"]) {
     for (const [key, progress] of [
       ["audit-running", audit],
       ["audit-quiet", { ...audit, lastActivityAt: now - 31 * 60000, toolCalls: audit.toolCalls!.map(call => ({ ...call, finishedAt: now - 31 * 60000 })) }],
+      ["audit-tool-wait", { ...audit, phase: "running", lastActivityAt: now - 133000, currentTool: "bash", currentToolStartedAt: now - 133000, toolTimeoutMs: 300000 }],
       ["audit-tool", { ...audit, phase: "tool_executing", lastActivityAt: now - 1000, currentTool: "bash", currentToolStartedAt: now - 2000, toolTimeoutMs: 1200000 }],
     ] as [string, AuditDisplayProgress][]) {
       const extras = { compactAuditCard: true };
@@ -23,7 +24,7 @@ for (const appearance of ["dark", "light"]) {
     }
   }
 }
-const out = path.resolve(import.meta.dirname, "../../audit/audit-glance-2026-10-03");
+const out = path.resolve(process.env.GLLA_UI_EVIDENCE_DIR ?? path.resolve(import.meta.dirname, "../../audit/audit-glance-2026-10-03"));
 fs.mkdirSync(out, { recursive: true });
 fs.writeFileSync(path.join(out, "rendered-frames.json"), JSON.stringify(frames, null, 2) + "\n");
 console.log(`Rendered ${frames.length} actual audit frames.`);
