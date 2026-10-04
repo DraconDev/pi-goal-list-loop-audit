@@ -67,3 +67,20 @@ draft regression test migration to distinguish it from the new command; explicit
 blocked/unblocked and confirmed scope-refinement flows; evidence retention across
 replanning; bound/pause/stop/terminal settlement; semantic UI frames; documentation,
 version and full validation. Do not claim feature completion or publish yet.
+
+## Implementation checkpoint — scope, blockers and phase card
+
+Added confirmed full-register refinement with explicit removal records and
+revision fencing; changed scope requires renewed independent verification.
+Added blocker/unblock tools, retained increment task/evidence history in state
+and transition events, and parked automation when all remaining work is blocked.
+Clearing blockers and editing paused scope do not automatically resume work.
+Preserved ambiguous root-spec selection and routed `/loop refine` hints into the
+builder prompt. Updated legacy regression tests to exercise restored old drafts
+separately from the new intended-project command.
+
+Added a compact project widget with phase, increment, coverage, task, blockers,
+evidence and action. Width checks and no-italic checks pass. 22 tests pass across
+the core, real command/tool wiring, restored draft and display suites. Actual
+dark/light rendered-frame inspection, detached process/reload lifecycle tests,
+terminal archival/queue handoff and broader release checks remain outstanding.

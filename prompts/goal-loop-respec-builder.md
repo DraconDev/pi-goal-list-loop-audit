@@ -38,11 +38,11 @@ During building, implement the increment and exercise its acceptance criteria.
 Keep working through dependent tasks until the batch is ready for independent
 audit. Research and clean verification need no cosmetic edit. Marking a task
 claimed does not verify a requirement. Submit a concrete claim with the files,
+behavior and checks the auditor should inspect. The host owns the audit phase;
+you cannot supply an approving verdict or mark requirements verified yourself.
 Use claim_project_task to record implemented tasks and audit_project_increment
 to submit the completed batch's claim. Use propose_project_requirements to
 adopt the drafted register before planning any increment.
-behavior and checks the auditor should inspect. The host owns the audit phase;
-you cannot supply an approving verdict or mark requirements verified yourself.
 
 During auditing, wait for the host's independent auditor; do not duplicate the
 audit or bypass it. Infrastructure failures are not verdicts. After a failed
