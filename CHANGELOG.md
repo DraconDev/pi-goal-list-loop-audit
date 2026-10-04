@@ -17,6 +17,9 @@
   exposing terminal state and announces waiting queue items.
 - Project cards/status expose phase, increment, verified/remaining coverage,
   blockers, evidence and next action using the existing semantic palette.
+- Regression-shield rejection reports unfinished work and carries missing
+  contract evidence into replanning. Stale audit wakes are rejected before
+  model resolution or dispatch.
 
 ## 0.38.114 — semantic summary colors (2026-10-03)
 

@@ -1,0 +1,69 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-display.test.ts:
+(pass) project cards expose phase, unfinished coverage and recorded blockers within narrow widths [20.46ms]
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [1731.77ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [109.80ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [143.27ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [95.65ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [414.15ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [301.54ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [102.59ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [363.14ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [796.38ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [1062.82ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [1.70ms]
+(pass) actual installer, command, tools and agent_end carry a project through detached verification [1303.03ms]
+
+tests/respec-builder.test.ts:
+(pass) replanning receives the missing contract evidence when semantic approval is rejected [9.55ms]
+(pass) task completion is only a claim; approving one batch leaves the project unfinished [0.67ms]
+(pass) failed, contradictory and infrastructure verdicts cannot close requirements [0.21ms]
+(pass) stale worker results and incomplete batches cannot trigger settlement [0.52ms]
+(pass) blocked requirements stay unfinished and visible through planning and serialization [0.20ms]
+(pass) draft adoption rejects empty criteria and ignores supplied agent verification status [0.12ms]
+(pass) increment audits carry acceptance criteria and regressions into the production auditor prompt [0.60ms]
+(pass) scope refinement invalidates in-flight claims and records explicit removals [0.34ms]
+(pass) blocking a batch retains its work and unblocking requires a concrete reason [0.20ms]
+(pass) a negative regression audit reopens earlier capabilities instead of displaying stale verification [0.13ms]
+
+tests/model-picker.test.ts:
+(pass) model-picker items: session row first, manual row last, models sorted by provider/id [0.94ms]
+(pass) v0.34.118 backup picker: excludes forbidden refs before rendering [0.19ms]
+(pass) model-picker exclusion honors case-insensitive substring policy entries [0.07ms]
+(pass) model-picker: typing fuzzy-filters the list; enter returns the highlighted model [0.94ms]
+(pass) model-picker: slash-token fuzzy match (provider/model style), nav wraps, backspace edits [0.19ms]
+(pass) model-picker: up/down moves the selection; esc cancels with undefined [0.09ms]
+(pass) model-picker: selecting the session row clears the override; manual row is the typed escape hatch [0.07ms]
+(pass) model-picker: render stays within width and shows the filter hint [1.30ms]
+(pass) model-picker: active model row uses the available width for selection [0.54ms]
+(pass) v0.29.17 wiring: model-valued settings use the fuzzy picker; unavailable auditor models fall back LOUDLY to the session model [5.53ms]
+(pass) v0.36.0: auditor thinking inherits the parent dial unless explicitly overridden [6.71ms]
+(pass) v0.36.0: the auditor chain — pinned primary → ordered fallbacks → session LAST; same-as-session auto-swap [6.96ms]
+(pass) v0.31.6: same-model swap toggle — default ON, off = same-model audits stand [8.90ms]
+(pass) v0.31.8: thinking options come from the PICKED MODEL — xhigh/max only when the model maps them [9.88ms]
+(pass) v0.31.9: fork-bomb lesson is prompt-law — auditor reject-class + executor hard rule [4.63ms]
+(pass) narrow model pickers bound every rendered line [1.78ms]
+
+tests/respec-builder-wiring.test.ts:
+(pass) actual respec command and tools persist intended scope, batch and audit claim [915.59ms]
+(pass) declining intended scope leaves the project drafting with no adopted requirements [67.48ms]
+(pass) registered blocker and refinement tools preserve work and require consent to change scope [85.19ms]
+
+tests/respec-draft-phase.test.ts:
+(pass) restored legacy missing-spec loop dispatches its dedicated draft and gates reconciliation [352.67ms]
+(pass) legacy bootstrap loops recover into the draft phase, including an existing partial spec [878.86ms]
+(pass) respec with an existing spec drafts intended requirements before building [525.92ms]
+(pass) a draft completion marker cannot substitute for a missing or empty spec [0.38ms]
+(pass) active legacy bootstrap loop recovers into draft on its next tick [196.30ms]
+(pass) respec with a structurally incomplete spec enters draft instead of reconciling [198.67ms]
+(pass) restored legacy sticky handoff: marker one turn, finished spec the next, still reconciles [639.48ms]
+(pass) draft prompt carries the stuck-ladder intervention note [5.48ms]
+(pass) draft phase without a spec file degrades instead of throwing [204.68ms]
+(pass) respecSpecComplete: title plus nonempty Rules plus another section [0.47ms]
+
+ 52 pass
+ 0 fail
+Ran 52 tests across 6 files. [13.95s]

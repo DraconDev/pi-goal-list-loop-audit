@@ -63,6 +63,7 @@ test("a time bound cancels an in-flight worker and retains unfinished requiremen
       if (Date.now() > deadline) throw new Error("Worker did not publish progress");
       await new Promise(resolve => setTimeout(resolve, 10));
     }
+    assert.ok(fs.readdirSync(jobs).length > 0, "an actual worker was dispatched");
     // Exhaust the window only after real worker activity, independently of
     // provider/setup latency. The progress hook must contain the active job.
     replaceState({ ...state, loop: { ...state.loop!, timeLimitHours: 0 } });
@@ -73,7 +74,6 @@ test("a time bound cancels an in-flight worker and retains unfinished requiremen
     assert.match(saved.stopReason!, /time bound reached/);
     assert.equal(saved.builder!.phase, "auditing");
     assert.equal(saved.builder!.requirements[0]!.status, "open");
-    assert.ok(fs.readdirSync(jobs).length > 0, "an actual worker was dispatched");
     assert.ok(fs.readdirSync(jobs).every(name => !fs.existsSync(path.join(jobs, name, "result.json"))));
     assert.deepEqual(f.counts(), { wakes: 0, finishes: 0 });
   } finally { replaceState(f.original); }
