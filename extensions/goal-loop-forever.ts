@@ -14,6 +14,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { piGlaDir } from "./goal-loop-core.js";
+import type { RespecBuilderState } from "./respec-builder.js";
 
 export type LoopDirection = "min" | "max";
 
@@ -167,6 +168,8 @@ export interface LoopState {
   specFile?: string;
   /** Missing-spec respec bootstrap is drafting, not reconciliation. */
   respecPhase?: "draft" | "reconcile";
+  /** Intended-project requirements and independently audited build cycles. */
+  builder?: RespecBuilderState;
   /** Sticky draft handoff: the agent emitted [RESPEC DRAFT COMPLETE] on
    * some earlier turn. Reconciliation still waits for a structurally
    * complete spec; cleared on handoff. */
