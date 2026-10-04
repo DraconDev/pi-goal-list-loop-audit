@@ -127,3 +127,32 @@ continue indefinitely, and host summarization remains upstream-owned.
 The chat session subsequently posted its final successful icon-change result;
 it did not require intervention. **0.39.0 is prepared and verified, not published
 by this audit.** Publishing requires the repository's tagged release workflow.
+
+## Correction: original final-audit field report remains open
+
+The operator challenged closure after this audit. Re-reading the named
+`conversation-2026-10-03-063308.txt` establishes that the original "final audit"
+problem concerned completed detached verdicts stranded in a running claim,
+including the explicitly unresolved SEO orphan. Chat completing is not evidence
+that this older field report is resolved. The full test gate remains valid;
+the previous closure language did not account for this live runtime debt.
+
+Read-only verification on 2026-10-04:
+
+- `/home/dracon/Dev/dracon-platform/seo` still has goal
+  `20260924180311-jok0tk` in `auditing`, claim phase `running`; its latest state
+  snapshot is 2026-09-25T18:51:00.524Z.
+- Recorded owner PID 1081658 is dead. There is no owner to execute the
+  heartbeat/startup recovery path.
+- Job `audit-muhbedy5-xzsys5-muhbee0g-84839178` contains a completed
+  **disapproval**. The current source's `readCompletedCompletionAudit`, with
+  strict challenge enabled, accepts that exact verdict.
+- A normal host in SEO must reconcile the existing disapproval and preserve
+  unfinished work. It must not fabricate approval or rerun the unchanged
+  audit merely to clear the display. No live state or process was changed.
+
+Disposition: **recovery implementation is verified; original SEO runtime debt
+is still unresolved**. Checkout fixes do not execute in a dead host, and a
+passing release gate does not prove recovery occurred in every reported project.
+Separately, respec currently has increment/regression audits rather than a
+separate final whole-project audit stage; this audit did not add that stage.

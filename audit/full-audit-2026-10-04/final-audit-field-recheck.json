@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-10-04T21:04:51.473264+00:00",
+  "project": "/home/dracon/Dev/dracon-platform/seo",
+  "goalId": "20260924180311-jok0tk",
+  "latestStateAt": "2026-09-25T18:51:00.524Z",
+  "status": "auditing",
+  "claimPhase": "running",
+  "ownerPid": 1081658,
+  "ownerAlive": false,
+  "recoveryAccepted": true,
+  "approved": false,
+  "disapproved": true,
+  "runtimeStateModified": false,
+  "disposition": "original field report remains unresolved; host reconciliation required"
+}
