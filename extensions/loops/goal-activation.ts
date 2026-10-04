@@ -1,3 +1,4 @@
+import { replayRespecCompletionSummary } from "../respec-builder-runtime.js";
 /**
  * pi-goal-list-loop-audit — v0.1.0
  * extensions/loops/goal.ts
@@ -2482,6 +2483,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     }
     refreshUI(ctx, true);
     replayApprovalSummariesOnContact(ctx);
+    replayRespecCompletionSummary(ctx);
   });
 
 /** v0.38.68 (relentless, field 162348): shared hot-exhaustion core for the
