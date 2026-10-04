@@ -40,7 +40,7 @@ function fixture(env: Record<string, string> = {}) {
   registerRespecBuilderTools(pi.api, { context: () => owned ? ctx : null, persist: () => env.PERSIST_FAIL ? false : persistStateLine(cwd, state), wake: () => { wakes++; }, finished: () => { finishes++; }, resolveModel: () => { resolutions++; return env.FAIL_PRIMARY ? { model: "test/primary", fallbackModels: [{ model: "test/backup", via: "configured fallback" }] } : { model: "test/provider-model" }; }, wrapTool: tool => tool,
     completed: (_ctx, _id, summary) => { if (env.SUMMARY_FAIL) throw new Error("Receipt failed"); summaries.push(summary); return true; },
     refresh: () => { const value = state.loop?.builder && getRespecAuditLive(state.loop.builder); if (value) { progress.push(value.phase); observations.push({ ...value }); } },
-    auditSleep: async () => {},
+    auditSleep: async () => { if (env.FREEZE_RETRY) { replaceState({ ...state, supervisorPausedAt: Date.now() }); persistStateLine(cwd, state); } },
     auditRuntime: { command: process.execPath, workerPath: file, homeDir: cwd, pollIntervalMs: 10, heartbeatNoProgressMs: 5000, firstEventTimeoutMs: 5000, env } });
   return { cwd, ctx, startedAt, original, builder, file, counts: () => ({ wakes, finishes }), summaries, progress, observations, disown: () => { owned = false; }, resolutions: () => resolutions };
 }
@@ -238,7 +238,7 @@ test("actual installer, command, tools and agent_end carry a project through det
   ctx.ui.customImpl = async () => "Yes";
   const file = path.join(cwd, "bounded-auditor-worker.mjs"); fs.writeFileSync(file, worker);
   await pi.fire("session_start", { reason: "startup" }, ctx);
-  const restore = __testOnlyRespecAuditorRuntime({ resolveModel: () => ({ model: "test/provider-model" }), auditSleep: async () => {},
+  const restore = __testOnlyRespecAuditorRuntime({ resolveModel: () => ({ model: "test/provider-model" }), auditSleep: async () => { if (env.FREEZE_RETRY) { replaceState({ ...state, supervisorPausedAt: Date.now() }); persistStateLine(cwd, state); } },
     auditRuntime: { command: process.execPath, workerPath: file, homeDir: cwd, pollIntervalMs: 10, heartbeatNoProgressMs: 5000, firstEventTimeoutMs: 5000 } });
   try {
     await pi.command("loop", "respec build the artifact", ctx); clearLoopTimer();
@@ -340,5 +340,38 @@ test("an undelivered project summary survives replacement by a new project", asy
     replayRespecCompletionSummary(f.ctx);
     assert.deepEqual(f.summaries, [summary]);
     assert.equal(state.loop, undefined);
+  } finally { replaceState(f.original); }
+});
+
+
+test("freezing supervision between auditor attempts prevents retry and fallback dispatch", async () => {
+  const f = fixture({ FAIL_PRIMARY: "1", FREEZE_RETRY: "1" });
+  try {
+    await runRespecBuilderAudit(f.ctx);
+    assert.ok(readState(f.cwd).supervisorPausedAt);
+    const jobs = path.join(f.cwd, ".pi-glla", "audit-jobs");
+    assert.equal(fs.readdirSync(jobs).length, 1);
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "auditing");
+    assert.equal(f.counts().finishes, 0);
+  } finally { replaceState(f.original); }
+});
+
+test("a corrupt summary outbox prevents terminal handoff and retains approved job evidence", async () => {
+  const f = fixture();
+  try {
+    const store = path.join(f.cwd, ".pi-glla", "pending-approval-renders.json");
+    fs.writeFileSync(store, "broken queue");
+    await runRespecBuilderAudit(f.ctx);
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "auditing");
+    assert.equal(f.counts().finishes, 0);
+    assert.equal(fs.readFileSync(store, "utf8"), "broken queue");
+    const jobs = fs.readdirSync(path.join(f.cwd, ".pi-glla", "audit-jobs"));
+    fs.unlinkSync(store); fs.unlinkSync(f.file);
+    replaceState({ ...state, loop: { ...state.loop!, active: true, stopReason: undefined } });
+    persistStateLine(f.cwd, state);
+    await runRespecBuilderAudit(f.ctx);
+    assert.equal(readState(f.cwd).loop!.builder!.phase, "complete");
+    assert.deepEqual(fs.readdirSync(path.join(f.cwd, ".pi-glla", "audit-jobs")), jobs);
+    assert.equal(f.summaries.length, 1);
   } finally { replaceState(f.original); }
 });

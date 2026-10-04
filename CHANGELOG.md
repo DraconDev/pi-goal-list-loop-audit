@@ -19,6 +19,11 @@
   activity. `/loop status` lists every requirement and its acceptance/evidence.
   Verified project summaries use semantic colors and bold, archive before
   delivery, and replay unacknowledged receipts on reload.
+- Full audit fixes persistence rollback, supervisor freeze/retry gating,
+  rapid pause/resume rearming, blocked-project resume and continuous audit
+  visibility. Project receipts use the shared durable outbox across project
+  replacement; large summaries disclose omissions and retain full archives.
+  Generic loop recaps preserve verified project summaries.
 - Project cards/status expose phase, increment, verified/remaining coverage,
   blockers, evidence and next action using the existing semantic palette.
 - Regression-shield rejection reports unfinished work and carries missing
