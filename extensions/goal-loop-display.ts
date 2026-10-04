@@ -2633,7 +2633,7 @@ function respecBuilderLines(loop: LoopState, theme?: DisplayTheme, width?: numbe
   const current = builder.tasks.find(t => t.status === "pending") ?? builder.tasks.at(-1);
   const blocker = builder.requirements.find(r => r.status === "blocked");
   const evidence = builder.requirements.findLast(r => r.evidence)?.evidence?.report ?? builder.history?.at(-1)?.report;
-  const action = builder.phase === "complete" ? "All adopted requirements independently verified" : !loop.active ? "Work held · /loop status · /loop resume when ready" : builder.phase === "auditing" ? "Independent auditor running · no action needed" : "Work continues · /loop pause · /loop refine";
+  const action = builder.phase === "complete" ? "All adopted requirements independently verified" : !loop.active ? "Work held · /loop status · /loop resume when ready" : builder.phase === "auditing" ? "Independent verification pending · no action needed" : "Work continues · /loop pause · /loop refine";
   return [
     `${paint(theme, tone, `Project · ${phase}`)}${loop.active ? "" : " · held"} · increment ${builder.cycle}`,
     `├─ ${truncate(sanitizeDisplayText(builder.vision), budgetFor(width, 3, 75))}`,
