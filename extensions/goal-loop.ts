@@ -688,6 +688,11 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
   if (event?.messages) {
     loop.tokensUsed = (loop.tokensUsed ?? 0) + sumNewAssistantTokens(event.messages as unknown[], flags.countedLoopTokenMessages);
   }
+  if (loop.builder?.phase === "auditing") {
+    persistState(ctx);
+    void runRespecBuilderAudit(ctx);
+    return;
+  }
   const metricless = !loop.measureCmd;
   const value = metricless ? null : await runMeasure(ctx, loop.measureCmd!);
   if (!rebindLoop()) return;

@@ -23,7 +23,7 @@ export interface RespecBuilderState {
   requirements: RespecRequirement[];
   tasks: RespecBuildTask[];
   feedback: string[];
-  audit?: { attemptId: string; revision: number; requirementIds: string[]; claim: string };
+  audit?: { attemptId: string; revision: number; requirementIds: string[]; claim: string; at: string };
 }
 
 /** Pure copy transitions; the host must journal the returned state before use. */
@@ -63,7 +63,7 @@ export function claimRespecTask(state: RespecBuilderState, id: string): RespecBu
 export function beginRespecAudit(state: RespecBuilderState, attemptId: string, claim: string): RespecBuilderState {
   requirePhase(state, ["building"]);
   if (!attemptId.trim() || !claim.trim() || !state.tasks.length || state.tasks.some(t => t.status !== "claimed")) throw new Error("Audit requires a concrete claim and every task in the increment claimed.");
-  return { ...state, phase: "auditing", audit: { attemptId, revision: state.revision, requirementIds: [...new Set(state.tasks.flatMap(t => t.requirementIds))], claim } };
+  return { ...state, phase: "auditing", audit: { attemptId, revision: state.revision, requirementIds: [...new Set(state.tasks.flatMap(t => t.requirementIds))], claim, at: new Date().toISOString() } };
 }
 
 /** Only the detached auditor adapter supplies results. Stale attempts do nothing. */

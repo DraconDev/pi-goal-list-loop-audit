@@ -15,7 +15,7 @@ export function respecIncrementAuditGoal(builder: RespecBuilderState, loopId: st
     verificationContract: [...requirements.map(describe), ...regression.map(r => `Regression — ${describe(r)}`)].join("\n\n"),
     status: "auditing", policy: "goal", autoContinue: false,
     usage: { tokensUsed: 0, tokensLimit: 0 },
-    createdAt: at, updatedAt: at, revision: builder.revision,
-    pendingCompletion: { completionSummary: builder.audit.claim, at, attemptId: builder.audit.attemptId },
+    createdAt: builder.audit.at, updatedAt: builder.audit.at, revision: builder.revision,
+    pendingCompletion: { completionSummary: builder.audit.claim, at: builder.audit.at, attemptId: builder.audit.attemptId },
   };
 }
