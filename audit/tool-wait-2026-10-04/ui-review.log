@@ -1,0 +1,31 @@
+frames 24 overflow 0
+WIDTH 40
+⟡ Fix audit findi… · list item · audi…
+├─ Waiting on bash · detached auditor
+│ 11 calls finished · activity 2m 13s…
+│ audit elapsed 8m 00s
+│ tool: bash · 2m 13s / 5m 00s budget
+│ No tool completion yet — timeout ha…
+└─ /goal status for full audit details
+
+glla: AUDIT TOOL WAIT · bash 2m 13s / 5…
+WIDTH 80
+⟡ Fix audit finding: HIGH… · list item · auditing · total 1h 10m · 194k tok
+├─ Waiting on bash · detached auditor
+│ 11 calls finished · activity 2m 13s ago
+│ audit elapsed 8m 00s
+│ tool: bash · 2m 13s / 5m 00s budget
+│ No tool completion yet — timeout handling is automatic
+└─ /goal status for full audit details
+
+glla: AUDIT TOOL WAIT · bash 2m 13s / 5m 00s · MAIN HOST · SUPERVISING · audito…
+WIDTH 190
+⟡ Fix audit finding: HIGH: the "no probe runs in no gate" guard counts a comment · list item · auditing · total 1h 10m · 194k tok
+├─ Waiting on bash · detached auditor
+│ 11 calls finished · activity 2m 13s ago
+│ audit elapsed 8m 00s
+│ tool: bash · 2m 13s / 5m 00s budget
+│ No tool completion yet — timeout handling is automatic
+└─ /goal status for full audit details
+
+glla: AUDIT TOOL WAIT · bash 2m 13s / 5m 00s · MAIN HOST · SUPERVISING · auditor ▶ waiting on bash ▰▱▱▱▱

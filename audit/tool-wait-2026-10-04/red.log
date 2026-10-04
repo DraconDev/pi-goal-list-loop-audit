@@ -1,0 +1,39 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/audit-glance-clarity.test.ts:
+(pass) screenshot regression: live audit facts and user action fit before Pi's ten-row cut [5.76ms]
+(pass) narrow footer starts with audit state and real freshness [0.84ms]
+(pass) quiet, blocked, settlement and recovery do not claim no action is needed [1.07ms]
+(pass) starting audit distinguishes waiting for first activity from recent activity [14.90ms]
+(pass) current tool keeps elapsed time and timeout budget in the compact card [0.82ms]
+76 |   const progress: AuditDisplayProgress = { ...audit, phase: "running", currentTool: "bash", currentToolStartedAt: now - 133000, lastActivityAt: now - 133000, toolTimeoutMs: 300000 };
+77 |   for (const width of [60, 80, 120]) {
+78 |     const lines = buildWidgetLines({ goal, list: [] }, progress, now, undefined, width, extras)!;
+79 |     const text = lines.join("\n");
+80 |     assert.ok(lines.length <= 7);
+81 |     assert.match(text, /Waiting on bash/);
+                ^
+AssertionError: The input did not match the regular expression /Waiting on bash/. Input:
+
+'⟡ Fix audit findi… · list item · auditing · total 1h 10m \x1B[0m…\x1B[0m\n' +
+  '├─ Audit running · last observed tool · detached worker\n' +
+  '│ 11 calls finished · activity 2m 13s ago\n' +
+  '│ audit elapsed 8m 00s\n' +
+  '│ last tool: bash\n' +
+  '│ No action needed — review applies automatically\n' +
+  '└─ /goal status for full audit details'
+
+ generatedMessage: true,
+     actual: "⟡ Fix audit findi… · list item · auditing · total 1h 10m \u001b[0m…\u001b[0m\n├─ Audit running · last observed tool · detached worker\n│ 11 calls finished · activity 2m 13s ago\n│ audit elapsed 8m 00s\n│ last tool: bash\n│ No action needed — review applies automatically\n└─ /goal status for full audit details",
+   expected: /Waiting on bash/,
+   operator: "match",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/audit-glance-clarity.test.ts:81:12
+      at fn (node:test:215:18)
+(fail) Studio regression: a silent bounded tool retains its clock and explains the wait [1.95ms]
+(pass) a tool past its deadline, a cancelled tool and skewed telemetry cannot claim a healthy wait [0.77ms]
+
+ 6 pass
+ 1 fail
+Ran 7 tests across 1 file. [707.00ms]

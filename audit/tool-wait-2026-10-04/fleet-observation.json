@@ -1,0 +1,700 @@
+{
+  "observedAt": "2026-10-04T21:46:12.518876+00:00",
+  "projects": [
+    {
+      "cwd": "/home/dracon/Dev/browser-extensions-shared/extensions/standalones/clean-web",
+      "owner": 4018810,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T15:27:23.266Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": null,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-04T06-11-09-853Z_01a10589-a79c-74ca-b01e-c1886a6f2581.jsonl",
+        "updatedSecondsAgo": 951,
+        "lastRole": "assistant",
+        "lastStop": "stop",
+        "lastAt": "2026-10-04T21:24:35.331Z",
+        "recentErrorCount": 0,
+        "lastTool": null
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform",
+      "owner": 3897288,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T21:38:46.028Z",
+      "goalStatus": "auditing",
+      "goalId": "20261004205446-wa4pnf",
+      "claimPhase": "running",
+      "attemptId": "audit-muuc84of-m9k64n",
+      "loopActive": null,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "audit": {
+        "job": "audit-muuc84of-m9k64n-muuc84pm-4f82eb3e",
+        "workerAlive": true,
+        "hasResult": false,
+        "phase": "running",
+        "calls": 16,
+        "activityAgeSeconds": 70,
+        "tool": "bash",
+        "toolAgeSeconds": 70,
+        "toolBudgetSeconds": 300.0
+      },
+      "session": {
+        "file": "2026-10-04T19-09-38-408Z_01a10852-5ee8-74db-82d9-3d4b2be1476c.jsonl",
+        "updatedSecondsAgo": 426,
+        "lastRole": "toolResult",
+        "lastStop": null,
+        "lastAt": "2026-10-04T21:33:20.221Z",
+        "recentErrorCount": 0,
+        "lastTool": "complete_goal"
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/seo",
+      "owner": 1081658,
+      "ownerAlive": false,
+      "stateAt": "2026-09-25T18:51:00.524Z",
+      "goalStatus": "auditing",
+      "goalId": "20260924180311-jok0tk",
+      "claimPhase": "running",
+      "attemptId": "audit-muhbedy5-xzsys5",
+      "loopActive": null,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "audit": {
+        "job": "audit-muhbedy5-xzsys5-muhbee0g-84839178",
+        "workerAlive": false,
+        "hasResult": true,
+        "phase": "complete",
+        "calls": 47,
+        "activityAgeSeconds": 787367,
+        "tool": null,
+        "toolAgeSeconds": null,
+        "toolBudgetSeconds": 0.0
+      },
+      "session": {
+        "file": "2026-09-25T15-24-54-402Z_01a0d92b-6302-7342-9386-fafdb89f442d.jsonl",
+        "updatedSecondsAgo": 788007,
+        "lastRole": "assistant",
+        "lastStop": "stop",
+        "lastAt": "2026-09-25T18:46:59.291Z",
+        "recentErrorCount": 0,
+        "lastTool": null
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/chat",
+      "owner": 3018081,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T18:21:56.473Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": null,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-03T18-58-56-888Z_01a10322-38f8-70ff-907e-b521622431c5.jsonl",
+        "updatedSecondsAgo": 1756,
+        "lastRole": "assistant",
+        "lastStop": "stop",
+        "lastAt": "2026-10-04T21:11:10.116Z",
+        "recentErrorCount": 0,
+        "lastTool": null
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/capture-anime-girls",
+      "owner": 1433827,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T21:36:20.612Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": true,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-04T06-13-36-808Z_01a1058b-e5a8-721d-9949-13bd07168c1e.jsonl",
+        "updatedSecondsAgo": 226,
+        "lastRole": "assistant",
+        "lastStop": "toolUse",
+        "lastAt": "2026-10-04T21:36:40.298Z",
+        "recentErrorCount": 0,
+        "lastTool": null
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/darklord",
+      "owner": 3663625,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T21:05:17.656Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": true,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-04T21-05-09-873Z_01a108bc-22f0-7662-8fd6-353baec0b3a9.jsonl",
+        "updatedSecondsAgo": 1542,
+        "lastRole": "assistant",
+        "lastStop": "toolUse",
+        "lastAt": "2026-10-04T21:14:44.307Z",
+        "recentErrorCount": 0,
+        "lastTool": null
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/deathrun",
+      "owner": 3684255,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T21:35:22.453Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": true,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-04T21-05-46-021Z_01a108bc-b024-73c2-8108-d10043182bd2.jsonl",
+        "updatedSecondsAgo": 8,
+        "lastRole": "assistant",
+        "lastStop": "toolUse",
+        "lastAt": "2026-10-04T21:40:17.938Z",
+        "recentErrorCount": 0,
+        "lastTool": null
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/doomtap",
+      "owner": 1378217,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T21:30:31.922Z",
+      "goalStatus": "active",
+      "goalId": "20261004213031-ymbcaq",
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": false,
+      "loopStopReason": "summarization output limit: Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete",
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-04T06-12-05-662Z_01a1058a-819d-7354-a5df-fbd7055e976c.jsonl",
+        "updatedSecondsAgo": 36,
+        "lastRole": "toolResult",
+        "lastStop": null,
+        "lastAt": "2026-10-04T21:39:50.585Z",
+        "recentErrorCount": 0,
+        "lastTool": "bash"
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/endless-td",
+      "owner": 3674458,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T21:05:33.364Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": true,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-04T21-05-28-168Z_01a108bc-6a68-7159-b734-42e792c151a6.jsonl",
+        "updatedSecondsAgo": 1570,
+        "lastRole": "assistant",
+        "lastStop": "toolUse",
+        "lastAt": "2026-10-04T21:14:16.561Z",
+        "recentErrorCount": 0,
+        "lastTool": null
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/football-forever",
+      "owner": 1398395,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T21:37:21.721Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": true,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-04T06-12-25-596Z_01a1058a-cf7c-7392-a772-003244e661df.jsonl",
+        "updatedSecondsAgo": 1,
+        "lastRole": "assistant",
+        "lastStop": "toolUse",
+        "lastAt": "2026-10-04T21:40:25.152Z",
+        "recentErrorCount": 0,
+        "lastTool": null
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/freeport",
+      "owner": 3714525,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T20:55:39.553Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": true,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-04T21-06-46-775Z_01a108bd-9d76-7645-9fc3-abfc1453c653.jsonl",
+        "updatedSecondsAgo": 86,
+        "lastRole": "assistant",
+        "lastStop": "toolUse",
+        "lastAt": "2026-10-04T21:39:00.976Z",
+        "recentErrorCount": 0,
+        "lastTool": null
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/hegemon",
+      "owner": 3698243,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T21:35:05.369Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": true,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-04T21-06-13-421Z_01a108bd-1b2d-71f8-9328-45b9a8c16923.jsonl",
+        "updatedSecondsAgo": 6,
+        "lastRole": "toolResult",
+        "lastStop": null,
+        "lastAt": "2026-10-04T21:40:20.880Z",
+        "recentErrorCount": 0,
+        "lastTool": "bash"
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/hellhunter",
+      "owner": 3707032,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T21:06:38.740Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": true,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-04T21-06-30-422Z_01a108bd-5d95-7747-aa3c-9f209438b385.jsonl",
+        "updatedSecondsAgo": 1763,
+        "lastRole": "assistant",
+        "lastStop": "toolUse",
+        "lastAt": "2026-10-04T21:11:03.586Z",
+        "recentErrorCount": 0,
+        "lastTool": null
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/junk-runner",
+      "owner": 3689767,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T21:13:16.625Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": true,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-04T21-05-56-902Z_01a108bc-daa6-714b-8755-63a114094733.jsonl",
+        "updatedSecondsAgo": 0,
+        "lastRole": "toolResult",
+        "lastStop": null,
+        "lastAt": "2026-10-04T21:40:26.502Z",
+        "recentErrorCount": 0,
+        "lastTool": "update_task_batch"
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/neonbreak",
+      "owner": 1409038,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T21:31:46.102Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": true,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-04T06-12-52-883Z_01a1058b-3a13-70e5-a2a3-16c15d6df8e7.jsonl",
+        "updatedSecondsAgo": 24,
+        "lastRole": "assistant",
+        "lastStop": "toolUse",
+        "lastAt": "2026-10-04T21:40:02.098Z",
+        "recentErrorCount": 0,
+        "lastTool": null
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/polis",
+      "owner": 1419011,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T21:37:12.088Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": true,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-04T06-13-10-352Z_01a1058b-7e50-762e-8b3f-d13b192582b0.jsonl",
+        "updatedSecondsAgo": 2,
+        "lastRole": "toolResult",
+        "lastStop": null,
+        "lastAt": "2026-10-04T21:40:24.905Z",
+        "recentErrorCount": 0,
+        "lastTool": "bash"
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/studio",
+      "owner": 3940098,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T21:30:42.347Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": null,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-04T19-10-41-758Z_01a10853-565e-74f1-b995-5d006e2c47b2.jsonl",
+        "updatedSecondsAgo": 584,
+        "lastRole": "toolResult",
+        "lastStop": null,
+        "lastAt": "2026-10-04T21:01:01.775Z",
+        "recentErrorCount": 0,
+        "lastTool": "complete_goal"
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-utilities",
+      "owner": 4161877,
+      "ownerAlive": false,
+      "stateAt": "2026-10-01T10:41:19.467Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": null,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-09-30T12-20-43-881Z_01a0f242-90e8-7531-90d1-fc422c0ffc2f.jsonl",
+        "updatedSecondsAgo": 298497,
+        "lastRole": "assistant",
+        "lastStop": "stop",
+        "lastAt": "2026-10-01T10:45:29.615Z",
+        "recentErrorCount": 0,
+        "lastTool": null
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/eve",
+      "owner": 4012053,
+      "ownerAlive": true,
+      "stateAt": "2026-10-04T21:39:04.310Z",
+      "goalStatus": "auditing",
+      "goalId": "20261004212759-a6jf7d",
+      "claimPhase": "running",
+      "attemptId": "audit-muucclc4-eqn94f",
+      "loopActive": null,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      },
+      "audit": {
+        "job": "audit-muucclc4-eqn94f-muuccln7-beae21a8",
+        "workerAlive": true,
+        "hasResult": false,
+        "phase": "running",
+        "calls": 13,
+        "activityAgeSeconds": 46,
+        "tool": "bash",
+        "toolAgeSeconds": 46,
+        "toolBudgetSeconds": 300.0
+      },
+      "session": {
+        "file": "2026-10-04T19-13-33-644Z_01a10855-f5cb-7442-b8b4-7e124cf828c4.jsonl",
+        "updatedSecondsAgo": 218,
+        "lastRole": "toolResult",
+        "lastStop": null,
+        "lastAt": "2026-10-04T21:36:48.792Z",
+        "recentErrorCount": 0,
+        "lastTool": "complete_goal"
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit",
+      "owner": 1019269,
+      "ownerAlive": false,
+      "stateAt": "2026-09-28T19:00:40.673Z",
+      "goalStatus": "paused",
+      "goalId": "20260928180523-4l1mz0",
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": null,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": "goal",
+        "retryAt": "2026-09-29T00:00:40.651Z",
+        "attempts": 7,
+        "pendingModelSwitch": null
+      },
+      "session": {
+        "file": "2026-10-01T20-40-33-320Z_01a0f932-8727-7365-8fbb-188e9c3c47a4.jsonl",
+        "updatedSecondsAgo": 262775,
+        "lastRole": "toolResult",
+        "lastStop": null,
+        "lastAt": "2026-10-01T20:40:51.394Z",
+        "recentErrorCount": 0,
+        "lastTool": "bash"
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/terhub",
+      "owner": 2339545,
+      "ownerAlive": false,
+      "stateAt": null,
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": null,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "recovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "pendingModelSwitch": null
+      }
+    },
+    {
+      "cwd": "/home/dracon/.dracon/convos",
+      "observedHostPid": 1793684,
+      "hasJournal": true,
+      "stateAt": "2026-10-04T06:26:27.478Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": null,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "session": {
+        "updatedSecondsAgo": 50482,
+        "lastRole": "assistant",
+        "lastStop": "stop",
+        "lastTools": []
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-strategy/ai-auto-writer",
+      "observedHostPid": 1918742,
+      "hasJournal": true,
+      "stateAt": "2026-10-01T19:54:25.916Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": null,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "session": {
+        "updatedSecondsAgo": 37600,
+        "lastRole": "assistant",
+        "lastStop": "toolUse",
+        "lastTools": [
+          "ask_user_question"
+        ]
+      }
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-strategy/ai-auto-video",
+      "observedHostPid": 2199423,
+      "hasJournal": true,
+      "stateAt": "2026-09-27T17:40:17.652Z",
+      "goalStatus": null,
+      "goalId": null,
+      "claimPhase": null,
+      "attemptId": null,
+      "loopActive": null,
+      "loopStopReason": null,
+      "supervisorPaused": false,
+      "loadHeld": false,
+      "session": {
+        "updatedSecondsAgo": 100267,
+        "lastRole": "assistant",
+        "lastStop": "stop",
+        "lastTools": []
+      }
+    }
+  ]
+}

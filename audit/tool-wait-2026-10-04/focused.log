@@ -1,0 +1,69 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/auditor-timeout-settings.test.ts:
+(pass) v0.37.0: escalatedAuditorTimeout doubles per prior attempt and saturates at 4x base [0.46ms]
+(pass) v0.37.0: auditor timeout settings clamp into bounds on load [89.79ms]
+(pass) v0.37.0: /glla editor accepts plain-ms and s/m/h duration input for both keys [34.53ms]
+(pass) v0.37.0: settings menu exposes both auditor timeout rows in the auditor section [11.35ms]
+(pass) v0.37.0: dispatch env reaches the worker process so parent and worker budgets agree [594.65ms]
+(pass) v0.37.0: progress signature counts streamed report bytes [0.18ms]
+(pass) v0.37.0: an in-budget live tool exempts the audit card from the quiet phase [0.22ms]
+(pass) v0.37.0: durable claims preserve the timeout escalation index across loads [6.55ms]
+(pass) v0.38.3: auditJobRetentionMs clamps into [0, 7d] on load [0.62ms]
+(pass) v0.38.3: /glla editor accepts duration input for auditJobRetentionMs (0 is legal) [12.69ms]
+(pass) v0.38.3: settings menu exposes the audit job retention row in the auditor section [0.85ms]
+
+tests/audit-glance-clarity.test.ts:
+(pass) screenshot regression: live audit facts and user action fit before Pi's ten-row cut [13.01ms]
+(pass) narrow footer starts with audit state and real freshness [4.12ms]
+(pass) quiet, blocked, settlement and recovery do not claim no action is needed [4.98ms]
+(pass) starting audit distinguishes waiting for first activity from recent activity [27.79ms]
+(pass) current tool keeps elapsed time and timeout budget in the compact card [0.73ms]
+(pass) Studio regression: a silent bounded tool retains its clock and explains the wait [1.00ms]
+(pass) a tool past its deadline, a cancelled tool and skewed telemetry cannot claim a healthy wait [0.81ms]
+
+tests/activity-first-status.test.ts:
+(pass) activity-first: lead rows follow the head and precede all historical rows [13.33ms]
+(pass) activity-first: quiet card leads with phase, age, last tool, model, thinking, next action [0.60ms]
+(pass) activity-first: awaiting-verdict card and footer agree on the phase words [0.58ms]
+(pass) activity-first: blocked card and footer agree on the blocked label [20.45ms]
+(pass) activity-first: live running card carries tool elapsed/budget in the lead [10.38ms]
+(pass) activity-first: legacy claim without thinking/model omits the segments, never invents [0.27ms]
+(pass) activity-first: phase colour wraps the words (quiet warns, live succeeds, queued stays neutral) [0.70ms]
+(pass) activity-first: footer monitoring and awaiting labels agree with the card head [0.13ms]
+(pass) D2: the loop status line folds watching into QUEUED like the goal head [0.12ms]
+(pass) D4: the auditor session row is sanitized and bounded [0.14ms]
+(pass) stampAuditorAttemptThinking stamps only the owning attempt and sanitizes [0.12ms]
+
+tests/auditor-thinking-display.test.ts:
+(pass) headless /glla shows the effective auditor thinking level with its why [116.34ms]
+(pass) headless /glla honors an explicit thinking setting and unknown models [81.53ms]
+
+tests/release-contract.test.ts:
+(pass) release contract: published documentation links are covered by the npm tarball [1195.36ms]
+(pass) release contract: the release gate exercises the packed artifact [0.39ms]
+(pass) release contract: packed prompts, schema, and workers ship in the dry-run list [1078.15ms]
+(pass) release contract: glla-delegate skill loads without diagnostics (source-tree fast tier) [17.14ms]
+(pass) release contract: docs index tracks the package version [0.16ms]
+(pass) release contract: package is discoverable as a Pi extension and skill [880.14ms]
+(pass) release contract: README package contents claim matches the files allowlist [806.61ms]
+(pass) release contract: first-use README guidance matches current behavior [0.35ms]
+(pass) release contract: smoke waits use durable or literal transition markers [0.15ms]
+(pass) release workflow scopes trusted-publishing OIDC to the publish job [2.05ms]
+(pass) v0.38.32: release runs never share the push-churn concurrency group [0.14ms]
+(pass) release contract: changelog has one heading for the current package version [8.97ms]
+(pass) release contract: untagged source work has an Unreleased changelog section to promote [36.13ms]
+
+tests/audit-lifecycle-surfaces.test.ts:
+(pass) durable: an ordinary complete_goal records phase running + lastActivityAt before the verdict [5548.77ms]
+(pass) durable phase beats a worker-complete snapshot on the widget card and the status line [2.21ms]
+(pass) a live worker still refines a running claim (the HUD stays the richer truth) [0.42ms]
+(pass) durable phase with no live worker says so, and names the durable age [0.59ms]
+(pass) the durable projection is the single source for all three surfaces [0.30ms]
+(pass) a paused goal that still owes a settlement names it on card and status line [2.25ms]
+(pass) a paused parked claim names recovery-needed on card and status line [0.66ms]
+(pass) a list item names its own resume command, never /goal resume [0.22ms]
+
+ 52 pass
+ 0 fail
+Ran 52 tests across 6 files. [14.74s]
