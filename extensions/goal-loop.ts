@@ -694,6 +694,7 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
   }
   if (loop.builder?.phase === "auditing") {
     persistState(ctx);
+    if (!loop.active) return;
     void runRespecBuilderAudit(ctx);
     return;
   }
@@ -1608,6 +1609,10 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
   // v0.25.1: a CLEAN end — "completed: <reason>", distinct from
   // stuck/plateau/stopped-by-user. Additive: /loop stop is untouched.
   if (sub === "finish") {
+    if (state.loop?.builder && state.loop.builder.phase !== "complete") {
+      ctx.ui.notify("Project requirements are not independently verified. /loop stop ends work without calling the project complete; /loop status shows what remains.", "warning");
+      return;
+    }
     if (!state.loop) {
       ctx.ui.notify("No loop to finish.", "info");
       return;
