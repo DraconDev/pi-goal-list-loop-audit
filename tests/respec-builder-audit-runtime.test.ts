@@ -255,7 +255,7 @@ test("actual installer, command, tools and agent_end carry a project through det
     assert.equal(loop.builder!.requirements[0]!.status, "verified");
     assert.ok(fs.existsSync(respecProjectArchivePath(cwd, loop.startedAt, loop.builder!.revision)));
     assert.ok(ctx.ui.matching("every intended requirement").length > 0);
-    const receipt = pi.sent.find(entry => (entry.message.details as { terminalApprovalGoalId?: string } | undefined)?.terminalApprovalGoalId?.startsWith("respec:"));
+    const receipt = pi.sent.find(entry => (entry.message as { details?: { terminalApprovalGoalId?: string } }).details?.terminalApprovalGoalId?.startsWith("respec:"));
     assert.ok(receipt, "production adapter posts the semantic summary receipt");
     assert.equal(receipt.message.content, loop.completionSummary);
   } finally { clearLoopTimer(); restore(); await pi.fire("session_shutdown", { reason: "test-end" }, ctx); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); replaceState(previous); }
