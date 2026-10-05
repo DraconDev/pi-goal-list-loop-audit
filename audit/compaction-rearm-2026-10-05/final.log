@@ -1,0 +1,61 @@
+
+> pi-goal-list-loop-audit@0.39.11 test
+> node scripts/run-tests.mjs tests/between-tasks-compaction.test.ts tests/compaction-settled-boundary.test.ts tests/compaction-target-settings.test.ts tests/compaction-failed-recovery.test.ts tests/compaction-survival.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/between-tasks-compaction.test.ts:
+(pass) v0.38.104 the 200k rule is a token threshold, and it is distinct from the model-size hint [0.50ms]
+(pass) v0.38.104 compaction is due past the threshold, not below it [0.16ms]
+(pass) v0.38.104 a token count, not a percentage — the same goal on a 1M window still fires at 200k [0.18ms]
+(pass) v0.38.104 it fires ONCE per episode and re-arms as the goal grows back [0.05ms]
+(pass) v0.38.104 an unknown context count never compacts blindly [0.12ms]
+(pass) v0.38.104 the threshold is overridable but must be positive [0.04ms]
+(pass) v0.38.105 the boundary fires ctx.compact past 200k and ledgers it [256.32ms]
+(pass) v0.38.105 one firing per episode; a shrunk transcript re-arms [107.41ms]
+(pass) v0.38.105 quiet boundaries: below threshold, busy, unsupervised, audit, paused, unknown, no trigger [1.53ms]
+(pass) v0.38.105 the boundary never re-arms the starvation path's brief one-shot [4.64ms]
+(pass) a synchronous compact throw releases the boundary for ordinary continuation [104.06ms]
+(pass) successful compaction rearms after grace even when context never falls below half the target [106.78ms]
+(pass) legacy successful markers rearm from durable completion, while failed attempts stay one-shot [110.72ms]
+
+tests/compaction-settled-boundary.test.ts:
+(pass) idle loop dispatch checks the threshold without agent_settled (failure=false) [2144.29ms]
+(pass) idle loop dispatch checks the threshold without agent_settled (failure=true) [159.11ms]
+(pass) settled and idle-send compaction preserve paused [33.87ms]
+(pass) settled and idle-send compaction preserve auditing [35.75ms]
+(pass) settled and idle-send compaction preserve frozen [43.48ms]
+(pass) settled and idle-send compaction preserve aborted [72.82ms]
+(pass) idle list advancement checks compaction before dispatching the next task [165.28ms]
+(pass) busy agent_end defers the 200k trigger to agent_settled, then work resumes after compaction [412.70ms]
+(pass) completed compaction is named accurately and remains inspectable through public status [91.48ms]
+
+tests/compaction-survival.test.ts:
+(pass) compaction survival: three mid-run compacts, then the goal still completes approved [1170.38ms]
+(pass) compaction survival: a compact around an in-flight audit still completes [690.51ms]
+
+tests/compaction-target-settings.test.ts:
+(pass) /glla token-target editor persists shorthand, cancellation, validation, and reset [101.34ms]
+(pass) global-only target, defaults, provenance and menu describe the effective policy [9.46ms]
+(pass) configured target reaches the actual trigger, idle guard, and hysteresis [112.72ms]
+(pass) hand-edited invalid targets safely fall back at runtime [107.60ms]
+(pass) headless /glla exposes the chosen token target and source [26.19ms]
+
+tests/compaction-failed-recovery.test.ts:
+(pass) host-owned failed compaction retries without model rotation, park, or competing continuation [278.72ms]
+(pass) terminal prompt overflow rotates once and arms durable post-compact resume debt [203.24ms]
+(pass) same-session startup restores fallback debt, while a new session discards it [196.48ms]
+(pass) terminal output-cap failure parks instead of misclassifying it as context overflow [99.16ms]
+(pass) failed compaction without a usable fallback parks an active goal durably [138.22ms]
+(pass) failed compaction parks a branch loop instead of leaving it active [113.61ms]
+(pass) a failed debt-discharge append keeps RAM debt instead of diverging from disk [104.27ms]
+(pass) opportunistic output-cap failure keeps work active and resumes once (event first) [2941.60ms]
+(pass) opportunistic output-cap failure keeps work active and resumes once (callback first) [2840.09ms]
+(pass) optional compaction resumes a branch loop (event without callback) [2801.62ms]
+(pass) optional compaction resumes a branch loop (synchronous callback) [2807.12ms]
+
+ 40 pass
+ 0 fail
+Ran 40 tests across 5 files. [20.99s]
+[run-tests] finished in 21s (exit 0)

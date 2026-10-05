@@ -1,0 +1,609 @@
+{
+  "observedAt": "2026-10-05T22:39:03.507201+00:00",
+  "projects": [
+    {
+      "root": "/home/dracon/Dev/browser-extensions-shared/extensions/standalones/clean-web",
+      "contextAt": "2026-10-05T22:34:12.870Z",
+      "context": {
+        "tokens": 429179,
+        "contextWindow": 1048576,
+        "percent": 40.9296989440918
+      },
+      "goalStatus": null,
+      "loopActive": null,
+      "projectPhase": null,
+      "events": [],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-09-29T22:20:12.705Z"
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform",
+      "contextAt": "2026-10-05T22:30:02.828Z",
+      "context": {
+        "tokens": 209993,
+        "contextWindow": 1048576,
+        "percent": 20.026493072509766
+      },
+      "goalStatus": null,
+      "loopActive": null,
+      "projectPhase": null,
+      "events": [],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-10-02T14:15:56.630Z"
+        },
+        "compactor-boundary.json": {
+          "at": "2026-10-05T18:24:40.263Z",
+          "tokens": 204990
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/chat",
+      "contextAt": "2026-10-05T22:37:49.625Z",
+      "context": {
+        "tokens": 263579,
+        "contextWindow": 1048576,
+        "percent": 25.136852264404297
+      },
+      "goalStatus": null,
+      "loopActive": null,
+      "projectPhase": null,
+      "events": [],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-09-29T16:13:54.971Z"
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/capture-anime-girls",
+      "contextAt": "2026-10-05T22:33:57.148Z",
+      "context": {
+        "tokens": 201078,
+        "contextWindow": 1048576,
+        "percent": 19.176292419433594
+      },
+      "goalStatus": null,
+      "loopActive": true,
+      "projectPhase": null,
+      "events": [
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-05T19:27:58.323Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-05T19:27:58.365Z"
+        },
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 220186,
+            "reason": "between tasks at 220186 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T21:22:20.507Z"
+        },
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-05T21:24:06.514Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-05T21:24:06.525Z"
+        },
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 201078,
+            "reason": "between tasks at 201078 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T22:33:57.899Z"
+        },
+        {
+          "type": "compactor_transcript_error",
+          "value": {
+            "error": "Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete"
+          },
+          "at": "2026-10-05T22:35:35.027Z"
+        },
+        {
+          "type": "compactor_transcript_resume",
+          "value": {},
+          "at": "2026-10-05T22:35:35.028Z"
+        }
+      ],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-09-28T14:35:52.820Z"
+        },
+        "compactor-boundary.json": {
+          "at": "2026-10-05T22:33:57.899Z",
+          "tokens": 201078
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/darklord",
+      "contextAt": "2026-10-05T22:32:34.030Z",
+      "context": {
+        "tokens": 207540,
+        "contextWindow": 1048576,
+        "percent": 19.792556762695312
+      },
+      "goalStatus": null,
+      "loopActive": true,
+      "projectPhase": "auditing",
+      "events": [],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-09-28T23:51:52.081Z"
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/deathrun",
+      "contextAt": "2026-10-05T22:32:37.396Z",
+      "context": {
+        "tokens": 700486,
+        "contextWindow": 1048576,
+        "percent": 66.80355072021484
+      },
+      "goalStatus": null,
+      "loopActive": true,
+      "projectPhase": null,
+      "events": [
+        {
+          "type": "compactor_transcript_error",
+          "value": {
+            "error": "Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete"
+          },
+          "at": "2026-10-05T14:25:10.898Z"
+        },
+        {
+          "type": "compactor_transcript_resume",
+          "value": {},
+          "at": "2026-10-05T14:25:10.898Z"
+        },
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 204986,
+            "reason": "between tasks at 204986 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T17:14:51.235Z"
+        },
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-05T17:15:43.409Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-05T17:15:43.469Z"
+        },
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 201231,
+            "reason": "between tasks at 201231 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T18:17:28.008Z"
+        },
+        {
+          "type": "compactor_transcript_error",
+          "value": {
+            "error": "Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete"
+          },
+          "at": "2026-10-05T18:21:12.828Z"
+        },
+        {
+          "type": "compactor_transcript_resume",
+          "value": {},
+          "at": "2026-10-05T18:21:12.828Z"
+        }
+      ],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-09-28T12:19:20.402Z"
+        },
+        "compactor-boundary.json": {
+          "at": "2026-10-05T18:17:28.007Z",
+          "tokens": 201231
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/doomtap",
+      "contextAt": "2026-10-05T20:40:27.900Z",
+      "context": {
+        "tokens": 414574,
+        "contextWindow": 1048576,
+        "percent": 39.53685760498047
+      },
+      "goalStatus": null,
+      "loopActive": true,
+      "projectPhase": "drafting",
+      "events": [],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-10-02T10:07:20.894Z"
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/endless-td",
+      "contextAt": "2026-10-05T17:57:03.399Z",
+      "context": {
+        "tokens": 192550,
+        "contextWindow": 1048576,
+        "percent": 18.362998962402344
+      },
+      "goalStatus": null,
+      "loopActive": null,
+      "projectPhase": null,
+      "events": [],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-09-28T11:39:26.962Z"
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/football-forever",
+      "contextAt": "2026-10-05T19:03:30.889Z",
+      "context": {
+        "tokens": 363924,
+        "contextWindow": 1048576,
+        "percent": 34.70649719238281
+      },
+      "goalStatus": null,
+      "loopActive": true,
+      "projectPhase": "building",
+      "events": [
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 209772,
+            "reason": "between tasks at 209772 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T16:02:17.371Z"
+        },
+        {
+          "type": "compactor_transcript_error",
+          "value": {
+            "error": "Compaction failed: Turn prefix summarization failed: 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}"
+          },
+          "at": "2026-10-05T16:03:42.131Z"
+        },
+        {
+          "type": "compactor_transcript_resume",
+          "value": {},
+          "at": "2026-10-05T16:03:42.131Z"
+        },
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 363924,
+            "reason": "between tasks at 363924 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T19:26:37.062Z"
+        },
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-05T19:26:51.473Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-05T19:26:51.514Z"
+        }
+      ],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-10-02T09:38:06.868Z"
+        },
+        "compactor-boundary.json": {
+          "at": "2026-10-05T19:26:37.061Z",
+          "tokens": 363924
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/freeport",
+      "contextAt": "2026-10-05T11:53:12.483Z",
+      "context": {
+        "tokens": 122653,
+        "contextWindow": 1000000,
+        "percent": 12.2653
+      },
+      "goalStatus": null,
+      "loopActive": true,
+      "projectPhase": "building",
+      "events": [],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-09-28T13:41:59.849Z"
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/hegemon",
+      "contextAt": "2026-10-05T22:26:48.062Z",
+      "context": {
+        "tokens": 319283,
+        "contextWindow": 1048576,
+        "percent": 30.449199676513672
+      },
+      "goalStatus": null,
+      "loopActive": true,
+      "projectPhase": null,
+      "events": [
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-05T17:16:27.184Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-05T17:16:27.237Z"
+        },
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 210889,
+            "reason": "between tasks at 210889 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T17:56:39.622Z"
+        },
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-05T17:59:46.344Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-05T17:59:46.365Z"
+        },
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 206794,
+            "reason": "between tasks at 206794 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T19:42:49.551Z"
+        },
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-05T19:44:32.534Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-05T19:44:32.551Z"
+        }
+      ],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-10-02T15:56:15.526Z"
+        },
+        "compactor-boundary.json": {
+          "at": "2026-10-05T19:42:49.551Z",
+          "tokens": 206794
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/hellhunter",
+      "contextAt": "2026-10-05T20:30:31.456Z",
+      "context": {
+        "tokens": 273305,
+        "contextWindow": 1000000,
+        "percent": 27.3305
+      },
+      "goalStatus": null,
+      "loopActive": true,
+      "projectPhase": "building",
+      "events": [
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 244928,
+            "reason": "between tasks at 244928 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T19:11:46.047Z"
+        },
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-05T19:12:06.473Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-05T19:12:06.498Z"
+        }
+      ],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-10-02T16:19:52.337Z"
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/junk-runner",
+      "contextAt": "2026-10-05T22:36:10.247Z",
+      "context": {
+        "tokens": 685727,
+        "contextWindow": 1048576,
+        "percent": 65.39602279663086
+      },
+      "goalStatus": null,
+      "loopActive": true,
+      "projectPhase": "auditing",
+      "events": [],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-10-02T16:27:09.688Z"
+        },
+        "compactor-boundary.json": {
+          "at": "2026-10-05T17:53:16.022Z",
+          "tokens": 259650
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/neonbreak",
+      "contextAt": "2026-10-05T21:57:15.863Z",
+      "context": {
+        "tokens": 678418,
+        "contextWindow": 1048576,
+        "percent": 64.69898223876953
+      },
+      "goalStatus": null,
+      "loopActive": true,
+      "projectPhase": "replanning",
+      "events": [],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-09-28T22:02:57.716Z"
+        },
+        "compactor-boundary.json": {
+          "at": "2026-10-04T16:14:21.187Z",
+          "tokens": 209568
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/polis",
+      "contextAt": "2026-10-05T22:36:18.863Z",
+      "context": {
+        "tokens": 310457,
+        "contextWindow": 1048576,
+        "percent": 29.607486724853516
+      },
+      "goalStatus": null,
+      "loopActive": true,
+      "projectPhase": null,
+      "events": [],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-09-29T13:40:49.711Z"
+        },
+        "compactor-boundary.json": {
+          "at": "2026-10-05T22:00:22.803Z",
+          "tokens": 237183
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/studio",
+      "contextAt": "2026-10-05T22:06:58.986Z",
+      "context": {
+        "tokens": 212567,
+        "contextWindow": 1048576,
+        "percent": 20.271968841552734
+      },
+      "goalStatus": null,
+      "loopActive": null,
+      "projectPhase": null,
+      "events": [],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-09-29T02:01:28.470Z"
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/eve",
+      "contextAt": "2026-10-05T22:38:07.686Z",
+      "context": {
+        "tokens": 120992,
+        "contextWindow": 1048576,
+        "percent": 11.5386962890625
+      },
+      "goalStatus": null,
+      "loopActive": null,
+      "projectPhase": null,
+      "events": [
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 214446,
+            "reason": "between tasks at 214446 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T11:43:25.952Z"
+        },
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-05T11:44:57.346Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-05T11:44:57.401Z"
+        },
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 205111,
+            "reason": "between tasks at 205111 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T17:43:41.458Z"
+        },
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-05T17:45:03.470Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-05T17:45:03.511Z"
+        }
+      ],
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-09-28T20:56:06.314Z"
+        }
+      }
+    },
+    {
+      "root": "/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit",
+      "contextAt": "2026-09-28T19:00:40.644Z",
+      "context": {
+        "tokens": 205386,
+        "contextWindow": 1000000,
+        "percent": 20.538600000000002
+      },
+      "goalStatus": "paused",
+      "loopActive": null,
+      "projectPhase": null,
+      "events": [],
+      "markers": {}
+    },
+    {
+      "root": "/home/dracon/Dev/terhub",
+      "contextAt": null,
+      "context": null,
+      "goalStatus": null,
+      "loopActive": null,
+      "projectPhase": null,
+      "events": [],
+      "markers": {}
+    }
+  ]
+}

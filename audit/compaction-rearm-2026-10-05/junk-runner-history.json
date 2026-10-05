@@ -1,0 +1,76 @@
+{
+  "observedAt": "2026-10-05T22:40:31.448942+00:00",
+  "events": [
+    {
+      "type": "session_compact",
+      "value": {},
+      "at": "2026-09-25T07:06:17.138Z"
+    },
+    {
+      "type": "session_compact",
+      "value": {},
+      "at": "2026-09-29T22:03:19.095Z"
+    },
+    {
+      "type": "session_compact",
+      "value": {},
+      "at": "2026-10-02T09:53:19.397Z"
+    },
+    {
+      "type": "compactor_transcript_firing",
+      "value": {
+        "tokens": 209384,
+        "reason": "between tasks at 209384 tokens (threshold 200000)"
+      },
+      "at": "2026-10-02T16:27:09.738Z"
+    },
+    {
+      "type": "session_compact",
+      "value": {},
+      "at": "2026-10-02T16:29:09.181Z"
+    },
+    {
+      "type": "compactor_transcript_done",
+      "value": {},
+      "at": "2026-10-02T16:29:09.205Z"
+    },
+    {
+      "type": "compactor_transcript_firing",
+      "value": {
+        "tokens": 210810,
+        "reason": "between tasks at 210810 tokens (threshold 200000)"
+      },
+      "at": "2026-10-02T17:23:58.860Z"
+    },
+    {
+      "type": "compactor_transcript_error",
+      "value": {
+        "error": "Summarization failed: generation hit the token cap and the summary is incomplete"
+      },
+      "at": "2026-10-02T17:27:56.740Z"
+    },
+    {
+      "type": "session_compact",
+      "value": {},
+      "at": "2026-10-03T22:45:25.789Z"
+    },
+    {
+      "type": "compactor_transcript_firing",
+      "value": {
+        "tokens": 259650,
+        "reason": "between tasks at 259650 tokens (threshold 200000)"
+      },
+      "at": "2026-10-05T17:53:16.024Z"
+    },
+    {
+      "type": "session_compact",
+      "value": {},
+      "at": "2026-10-05T17:53:49.676Z"
+    },
+    {
+      "type": "compactor_transcript_done",
+      "value": {},
+      "at": "2026-10-05T17:53:49.685Z"
+    }
+  ]
+}

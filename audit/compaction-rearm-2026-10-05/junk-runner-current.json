@@ -1,0 +1,28 @@
+{
+  "observedAt": "2026-10-05T22:49:37.070996+00:00",
+  "loopActive": true,
+  "projectPhase": "auditing",
+  "cycle": 6,
+  "lastCompactionAt": 1791222829676,
+  "boundaryMarker": {
+    "at": "2026-10-05T17:53:16.022Z",
+    "tokens": 259650
+  },
+  "jobs": [
+    {
+      "id": "346c0502-bd28-4554-8750-f85d2d96b97b-muvtwsdu-9bb644e2",
+      "progress": {
+        "phase": "running",
+        "round": 1,
+        "elapsedMs": 746557,
+        "lastActivityAt": 1791240517001,
+        "currentTool": null,
+        "currentToolStartedAt": null,
+        "currentToolTimeoutMs": null
+      },
+      "workerPid": 3508211,
+      "workerPresent": true,
+      "resultPresent": false
+    }
+  ]
+}

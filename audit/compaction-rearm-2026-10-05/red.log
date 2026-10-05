@@ -1,0 +1,34 @@
+
+> pi-goal-list-loop-audit@0.39.10 test
+> node scripts/run-tests.mjs tests/between-tasks-compaction.test.ts -t successful compaction rearms after grace
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/between-tasks-compaction.test.ts:
+225 |     (first.compacts[0] as { onComplete(): void }).onComplete();
+226 |     const grown = boundaryCtx(cwd, { tokens: 685727 });
+227 |     assert.equal(maybeCompactTranscriptAtBoundary(grown.ctx, LIVE_FLAGS), false, "success cannot immediately cause a compaction loop");
+228 |     now += 180001;
+229 |     assert.equal(maybeCompactTranscriptAtBoundary(grown.ctx, LIVE_FLAGS), false, "rearming yields one ordinary work boundary");
+230 |     assert.equal(fs.existsSync(compactorBoundaryMarkerPath(cwd)), false, "completed attempt must not suppress future opportunities forever");
+                 ^
+AssertionError: completed attempt must not suppress future opportunities forever
+
+true !== false
+
+ generatedMessage: false,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/between-tasks-compaction.test.ts:230:12
+      at fn (node:test:215:18)
+(fail) successful compaction rearms after grace even when context never falls below half the target [115.68ms]
+
+ 0 pass
+ 11 filtered out
+ 1 fail
+Ran 1 test across 1 file. [1.59s]
+[run-tests] finished in 2s (exit 1)
