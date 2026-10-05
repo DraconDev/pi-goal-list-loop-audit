@@ -1,0 +1,46 @@
+
+> pi-goal-list-loop-audit@0.39.7 test
+> node scripts/run-tests.mjs tests/model-switch.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/model-switch.test.ts:
+(pass) v0.34.57: persistState carries lastModelRef on the state line for a fresh process to restore [1413.14ms]
+(pass) v0.34.57: a fresh process with a changed default model ledgeres turn-boundary drift (cross-session detection) [1.39ms]
+(pass) v0.34.57: modelSwitch() builds the canonical ledger payload [0.14ms]
+(pass) v0.34.57: isForbiddenModel matches refs, case-insensitively; v0.34.115: empty default forbids nothing [0.15ms]
+(pass) v0.34.57: the model_select hook ledgeres every provider/model change [0.61ms]
+(pass) v0.34.57: the turn-boundary check ledgeres drift that arrives without a model_select event [1.82ms]
+(pass) v0.34.57: the forbidden gate blocks a forbidden selection, emits forbidden_model_switch, and reverts [14.30ms]
+(pass) v0.34.57: blockForbiddenModelSwitches off allows the switch but records the violation [0.76ms]
+(pass) v0.34.93: isForbiddenModel flags sonnet/opus/gpt-5.5 refs the gate must skip [0.09ms]
+(pass) v0.34.93: empty / undefined ref is never forbidden (the empty-list semantic); v0.34.115: default is empty [0.05ms]
+(pass) v0.34.93: a forbidden candidate is silently skipped by the recovery gate (the recovery-envelope gate skips the candidate without rotation or verdict change) [0.11ms]
+(pass) v0.34.57: turn-boundary drift into a forbidden model records the violation without blocking [1.56ms]
+(pass) v0.34.57: /glla switchlog renders the last N entries of the model-switch trail [4.41ms]
+354 |     const saved = readState(cwd);
+355 |     assert.equal(saved.mainModelRecovery, undefined);
+356 |     assert.equal(saved.loop!.target, loop.target);
+357 |     assert.equal(saved.loop!.iteration, 42);
+358 |     assert.equal(saved.loop!.active, false);
+359 |     assert.equal(RESUMABLE_STOP(saved.loop!.stopReason), true);
+                 ^
+AssertionError: Expected values to be strictly equal:
+
+false !== true
+
+ generatedMessage: true,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/model-switch.test.ts:359:12
+      at processTicksAndRejections (native:7:39)
+(fail) manual model selection retains a recovering loop as visible resumable work [33.32ms]
+
+ 13 pass
+ 1 fail
+Ran 14 tests across 1 file. [2.21s]
+[run-tests] finished in 2s (exit 1)

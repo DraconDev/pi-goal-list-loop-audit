@@ -27,8 +27,12 @@ import { test, beforeEach, afterEach } from "node:test";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { MockPi, makeMockCtx, tmpCwd, type MockCtx } from "./harness/mock-pi.js";
+import { MockPi, makeMockCtx, tmpCwd, type MockCtx, seedLoop } from "./harness/mock-pi.js";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag, __testOnlyResetTerminalFlags, __testOnlySetLastModelRef } from "../extensions/loops/goal.js";
+import { state, replaceState, persistStateLine } from "../extensions/goal-state.js";
+import { buildWidgetLines, buildStatusText } from "../extensions/goal-loop-display.js";
+import { RESUMABLE_STOP, clearLoopTimer } from "../extensions/goal-loop.js";
+import { readState } from "../extensions/goal-loop-core.js";
 import { modelSwitch, isForbiddenModel, DEFAULT_FORBIDDEN_MODELS } from "../extensions/goal-loop-core.js";
 
 const pi = new MockPi();
@@ -336,4 +340,27 @@ test("v0.34.57: /glla switchlog renders the last N entries of the model-switch t
   assert.equal(capped.length, 2);
   assert.match(capped[1]!.message, /last 1/);
   assert.doesNotMatch(capped[1]!.message, /claude-sonnet-4-5 → openai\/gpt-4\.1/);
+});
+
+for (const pendingRecovery of [true, false]) test(`model selection preserves visible resumable loop work (pending recovery=${pendingRecovery})`, async () => {
+  const cwd = tmpCwd(), ctx = ownerCtx(cwd);
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  const previous = { ...state };
+  const loop = seedLoop({ active: false, target: "Retain Football Forever objective", iteration: 42, maxIterations: 0, stopReason: "main model recovery — retrying in 30m (404); /loop resume retries immediately" }) as unknown as NonNullable<typeof state.loop>;
+  replaceState({ ...state, loop, mainModelRecovery: pendingRecovery ? { kind: "loop", primary: "test/old", active: "test/old", attempted: ["test/old"], attempts: 3, reason: "404", retryAt: new Date(Date.now() + 1800000).toISOString() } : undefined });
+  persistStateLine(cwd, state);
+  try {
+    await pi.fire("model_select", { previousModel: { provider: "test", id: "old" }, model: { provider: "test", id: "new" }, source: "set" }, ctx);
+    const saved = readState(cwd);
+    assert.equal(saved.mainModelRecovery, undefined);
+    assert.equal(saved.loop!.target, loop.target);
+    assert.equal(saved.loop!.iteration, 42);
+    assert.equal(saved.loop!.active, false);
+    assert.equal(RESUMABLE_STOP(saved.loop!.stopReason), true);
+    assert.match(buildWidgetLines(saved)!.join("\n"), /Retain Football Forever objective/);
+    assert.match(buildStatusText(saved)!, /held/);
+    await pi.command("glla", "resume", ctx);
+    assert.equal(readState(cwd).loop!.active, true);
+    assert.equal(readState(cwd).loop!.target, loop.target);
+  } finally { clearLoopTimer(); await pi.fire("session_shutdown", { reason: "quit" }, ctx); replaceState(previous); }
 });

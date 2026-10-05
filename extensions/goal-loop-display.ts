@@ -38,7 +38,9 @@ export const MAIN_HOST_LABEL = "MAIN HOST · SUPERVISING";
  * immature"). Stopped loops (any other stopReason) stay invisible. */
 function heldLoop(state: State): LoopState | undefined {
   const l = state.loop;
-  return l && !l.active && l.stopReason === HELD_ON_RESTORE ? l : undefined;
+  return l && !l.active && (l.stopReason === HELD_ON_RESTORE
+    || (!state.mainModelRecovery && (l.stopReason?.startsWith("provider errors —")
+      || l.stopReason?.startsWith("main model recovery —")))) ? l : undefined;
 }
 
 // ---- formatters ----
@@ -1864,10 +1866,11 @@ function standaloneRecoveryLines(recovery: MainModelRecovery, now: number, theme
 }
 
 function heldLoopLines(l: LoopState, now: number, theme?: DisplayTheme, width?: number): string[] {
+  const reason = l.stopReason === HELD_ON_RESTORE ? "held by the session-restore gate" : "provider recovery stopped; saved work retained";
   return [
     `${paint(theme, "warning", "⏸")} ${truncate(l.target, budgetFor(width, 3, 64))}`,
     `├─ loop held · iter ${l.iteration} · ${fmtElapsed(now - Date.parse(l.startedAt))} so far`,
-    `└─ ${paint(theme, "dim", "held by the session-restore gate — /loop to resume, /loop stop to drop")}`,
+    `└─ ${paint(theme, "dim", `${reason} — /loop resume to continue, /loop stop to drop`)}`,
   ];
 }
 

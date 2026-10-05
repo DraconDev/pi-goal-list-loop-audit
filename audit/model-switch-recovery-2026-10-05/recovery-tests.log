@@ -1,0 +1,60 @@
+
+> pi-goal-list-loop-audit@0.39.8 test
+> node scripts/run-tests.mjs tests/model-switch.test.ts tests/main-model-recovery.test.ts tests/zombie-resume.test.ts tests/respec-builder-display.test.ts tests/loop-refine-parity.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-display.test.ts:
+(pass) a stopped project audit exposes its hold reason instead of implying a running auditor [4.62ms]
+(pass) project cards expose phase, unfinished coverage and recorded blockers within narrow widths [4.20ms]
+(pass) an explicitly stopped project audit does not advertise an unavailable resume [0.43ms]
+(pass) completed project dismisses both live UI surfaces while preserving other work [1.74ms]
+
+tests/zombie-resume.test.ts:
+(pass) v0.35.25 #14: /loop resume honors the zero-stream abort park and preserves iteration/history [359.88ms]
+(pass) v0.35.25 #14: control — a non-resumable stop reason is still refused [165.49ms]
+(pass) /glla resume resumes a loop held for stopped: automatic zero-stream abort — no provider activity was observed after 30m (iteration 210 preserved; /loop resume to retry) [189.20ms]
+(pass) /glla resume resumes a loop held for paused by user (/loop pause) [195.68ms]
+(pass) /glla resume resumes a loop held for stalled: 5 continuation refires landed no turn [206.64ms]
+(pass) /glla resume leaves a completed loop terminal [201.62ms]
+
+tests/loop-refine-parity.test.ts:
+(pass) parked loops are refinable on both surfaces [2.25ms]
+(pass) terminal stops are refinable on neither surface [0.04ms]
+(pass) broken measure is the deliberate divergence: tool fixes, slash will not resume [0.02ms]
+
+tests/model-switch.test.ts:
+(pass) v0.34.57: persistState carries lastModelRef on the state line for a fresh process to restore [72.88ms]
+(pass) v0.34.57: a fresh process with a changed default model ledgeres turn-boundary drift (cross-session detection) [9.71ms]
+(pass) v0.34.57: modelSwitch() builds the canonical ledger payload [0.20ms]
+(pass) v0.34.57: isForbiddenModel matches refs, case-insensitively; v0.34.115: empty default forbids nothing [0.14ms]
+(pass) v0.34.57: the model_select hook ledgeres every provider/model change [0.76ms]
+(pass) v0.34.57: the turn-boundary check ledgeres drift that arrives without a model_select event [2.08ms]
+(pass) v0.34.57: the forbidden gate blocks a forbidden selection, emits forbidden_model_switch, and reverts [9.60ms]
+(pass) v0.34.57: blockForbiddenModelSwitches off allows the switch but records the violation [1.09ms]
+(pass) v0.34.93: isForbiddenModel flags sonnet/opus/gpt-5.5 refs the gate must skip [0.13ms]
+(pass) v0.34.93: empty / undefined ref is never forbidden (the empty-list semantic); v0.34.115: default is empty [0.06ms]
+(pass) v0.34.93: a forbidden candidate is silently skipped by the recovery gate (the recovery-envelope gate skips the candidate without rotation or verdict change) [0.13ms]
+(pass) v0.34.57: turn-boundary drift into a forbidden model records the violation without blocking [2.04ms]
+(pass) v0.34.57: /glla switchlog renders the last N entries of the model-switch trail [3.98ms]
+(pass) model selection preserves visible resumable loop work (pending recovery=true) [42.79ms]
+(pass) model selection preserves visible resumable loop work (pending recovery=false) [14.39ms]
+
+tests/main-model-recovery.test.ts:
+(pass) main model refs preserve order, dedupe, and support nested model ids [0.34ms]
+(pass) main model fallback candidates are ordered and never retried in a cycle [0.11ms]
+(pass) main fallback settings dedupe case-insensitively and cap the chain at ten [0.13ms]
+(pass) runtime fallback walk uses one supervised model at a time and preserves left-to-right order [23.08ms]
+(pass) successful fallback turns keep the preferred primary and fail back after a supervised probe [3.03ms]
+(pass) sticky failback preserves the old fallback-settles behavior [0.61ms]
+(pass) in-band provider output is recognized only for strong repeated-pane markers [0.21ms]
+(pass) the explicit Codex prompt-policy event is terminal, while lookalike text remains generic [0.24ms]
+(pass) main model errors stay opaque to the recovery policy [0.21ms]
+(pass) main model recovery backs off without giving up [0.67ms]
+(pass) main recovery requirements are generic across provider wording [0.05ms]
+
+ 39 pass
+ 0 fail
+Ran 39 tests across 5 files. [3.69s]
+[run-tests] finished in 4s (exit 0)

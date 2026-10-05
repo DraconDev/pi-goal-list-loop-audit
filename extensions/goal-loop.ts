@@ -238,6 +238,7 @@ export const RESUMABLE_STOP = (r?: string): boolean =>
   !!r?.startsWith("audit infrastructure:") ||
   !!r?.startsWith("blocked project requirements:") ||
   !!r?.startsWith("provider errors —") ||
+  !!r?.startsWith("main model recovery —") ||
   !!r?.startsWith("stopped by user —") ||
   !!r?.startsWith("plateau —") ||
   !!r?.startsWith("stalled:") ||

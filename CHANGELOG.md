@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.39.8 — retain visible work after recovery model changes (2026-10-05)
+
+- Manually selecting a model during loop recovery leaves a visible, resumable
+  hold with its objective and iteration history retained. Cancellation no
+  longer leaves an invisible loop with an obsolete retry countdown.
+- Existing loops stranded with a main-model recovery stop reason remain
+  visible and can resume through `/loop resume` or `/glla resume`.
+
 ## 0.39.7 — dismiss completed project UI (2026-10-05)
 
 - Completed projects disappear from the live widget and footer. Their

@@ -3369,12 +3369,21 @@ async function handleHotLengthExhaustion(
     // rebases the automatic chain; the plugin's own recovery selection is
     // fenced by mainModelSwitchInFlight above.
     if (mainModelSwitchInFlight || source === "restore" || !state.mainModelRecovery) return;
+    const previousRecoveryState = { ...state };
+    const loopRecovery = state.mainModelRecovery.kind === "loop";
     clearMainModelRecoveryTimer();
     state.mainModelRecovery = undefined;
+    if (loopRecovery && state.loop && !state.loop.active && state.loop.stopReason?.startsWith("main model recovery —")) {
+      state.loop = { ...state.loop, stopReason: "provider errors — automatic recovery cancelled by manual model selection; /loop resume to continue with the selected model" };
+    }
     setContinuationDispatchStoodDownRef(false);
+    if (!persistState(ctx)) {
+      replaceState(previousRecoveryState);
+      ctx.ui.notify("Model changed, but recovery cancellation was not persisted. Saved work remains retained; repair persistence and resume explicitly.", "warning");
+      return;
+    }
     appendLedger(ctx.cwd, "main_model_recovery_cancelled", { via: "manual-model-select", model: modelRef(ctx.model), source });
-    persistState(ctx);
-    ctx.ui.notify("Manual model selection cancelled the automatic main-model recovery cycle. Resume the goal when ready.", "info");
+    ctx.ui.notify(`Manual model selection cancelled the automatic main-model recovery cycle. Saved ${loopRecovery ? "loop work is held — /loop resume (or /glla resume)" : "goal work remains — /glla resume"} when ready.`, "info");
   });
 
   pi.on("message_update", (_event: any, ctx: ExtensionContext) => {
