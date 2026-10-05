@@ -59,8 +59,10 @@ source assertion expected the incorrect bare `/list` inspection hint. The
 assertion was corrected to `/list show`; its complete file subsequently passed.
 A final current-source run covers the corrected assertions, all new regressions,
 real project audit resumption/archival, TUI widths, command discovery and
-neighboring recovery paths. Final counts and evidence are recorded below once
-that run finishes. TypeScript and the Jiti shared-state test are also checked.
+neighboring recovery paths. The final run passed **123 tests across nine files, zero failures**.
+TypeScript and the Jiti shared-state test passed; runtime inventory and
+`git diff --check` are clean. Evidence is in
+`command-audit-2026-10-05/verified-tests.log`.
 
 This is a focused command audit, not a claim that every possible combination
 of provider failure, dialog interleaving and filesystem failure was exhaustively

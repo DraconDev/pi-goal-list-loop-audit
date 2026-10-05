@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-05T15:18:54.125405+00:00",
+  "sha256": {
+    "extensions/goal-commands.ts": "cadfb754e77c2a758d23f10e25b1c58f28c29ee079a0715384b45b31bad61335",
+    "extensions/goal-loop.ts": "c320b2628aafef5420d027c2f30d06378a4e623f3a18692e84612548a7c616e0",
+    "extensions/goal-loop-display.ts": "b916a3919f7d0b0e6db67415286a70ae63ed1989de6fb2cab633a6e96872c91c",
+    "extensions/loops/goal-activation.ts": "4013efb3dbc6014f4ae3b5c5d311e919b3308bedec428c8dd277bcc68bfeec9c",
+    "tests/glla-ui-command-audit.test.ts": "ee6b5e6a3b60ffa79bb8f45ba80868ca6c5b8ea877bb92ed57871667c7236ead",
+    "tests/respec-builder-audit-runtime.test.ts": "15e9121cb18e7127618ab8bc7b2b7839dd9e7901a37996be1964fb8335464de8",
+    "tests/respec-builder-display.test.ts": "1afd652c43b4539d7aac481290f9292ab2281fc8f6d0035b3ce89c3cf41f99f0",
+    "tests/command-registration-collisions.test.ts": "ba479c44b92e4128ee48f50bffc8da11dd2a172227e70987f7bdbcbb41e43eca",
+    "tests/stale-interrupt-resume.test.ts": "27f1e36a2340399ad6bf7021fba4a2a4e8f8233f25d560475b2836d48f4be0e1",
+    "tests/mode-command-guidance.test.ts": "4f88d0daba6e971916adc70f680923e5dce62c2afef906af03f12cc8d872e01c",
+    "tests/zombie-resume.test.ts": "dd51ded353099bd7894563fee095aed1d785402f9d2040bfd4ceabe3233b6801",
+    "package.json": "ce6ea6b2d5be3f2f580fd0e6a4de476e2080246d9fff2285a4ed60b9a71ced14",
+    "package-lock.json": "f41749d314083f76433f3312faaa452583b1747862d72e160f1edc97aa6239c1",
+    "CHANGELOG.md": "a0a5f65463dc0fdf396d740024ce9d8218f282434b19fbd350516ee2f7ce579d"
+  }
+}
