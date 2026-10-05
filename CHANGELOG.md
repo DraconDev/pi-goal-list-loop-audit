@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.39.6 — close completed project work cards (2026-10-05)
+
+- Completed projects render a compact archived receipt instead of the open
+  work card with task, evidence and held-reason rows. `/loop status` retains
+  the saved verification details.
+- Loading terminal-only state no longer engages a work-resume hold or warns
+  that the completed project must resume. Legacy terminal-only load holds
+  clear on restore; explicit supervisor pauses remain intact.
+
 ## 0.39.5 — consistent command recovery and decision actions (2026-10-05)
 
 - `/glla resume` recognises the same held-loop reasons as `/loop resume`,

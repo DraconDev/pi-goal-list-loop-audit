@@ -44,3 +44,16 @@ test("an explicitly stopped project audit does not advertise an unavailable resu
   assert.match(plain, /Audit stopped/);
   assert.doesNotMatch(plain, /\/loop resume|Work held/);
 });
+
+test("completed project closes the work card into a compact archived receipt", () => {
+  const builder = { ...createRespecBuilder("Completed project"), phase: "complete", requirements: [{ id: "done", text: "Done", acceptance: "Verified", status: "verified" }] };
+  const state = { goal: null, list: [], loop: { builder, active: false, stopReason: "completed: all intended project requirements independently verified", target: "Completed project", startedAt: new Date().toISOString(), iteration: 2, maxIterations: 0, plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [] } } as State;
+  for (const width of [20, 60, 120]) {
+    const lines = buildWidgetLines(state, null, Date.now(), undefined, width)!;
+    assert.ok(lines.length <= 2);
+    assert.ok(lines.every(line => visibleWidth(line) <= width - 2));
+    const plain = stripTerminalSequences(lines.join("\n"));
+    assert.doesNotMatch(plain, /held:|task:|evidence:|\/loop resume/);
+    if (width === 120) assert.match(plain, /Verified 1\/1 · archived/);
+  }
+});

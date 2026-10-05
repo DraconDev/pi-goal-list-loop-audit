@@ -2656,6 +2656,11 @@ function respecBuilderLines(loop: LoopState, now: number, theme?: DisplayTheme, 
   const builder = loop.builder!;
   const stopped = projectExplicitlyStopped(loop);
   const coverage = respecCoverage(builder);
+  if (builder.phase === "complete") {
+    const title = paint(theme, "success", `Project · Complete · increment ${builder.cycle}`);
+    return [theme?.bold ? theme.bold(title) : title,
+      `└─ ${paint(theme, "success", `Verified ${coverage.verified}/${coverage.total} · archived`)} · /loop status`];
+  }
   const tone = builder.phase === "complete" ? "success" : !loop.active ? "warning" : "accent";
   const phase = !loop.active && builder.phase === "auditing" ? stopped ? "Audit stopped" : "Audit held" : builder.phase === "planning" ? "Planning" : builder.phase[0]!.toUpperCase() + builder.phase.slice(1);
   const current = builder.tasks.find(t => t.status === "pending") ?? builder.tasks.at(-1);

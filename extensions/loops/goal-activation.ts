@@ -422,6 +422,7 @@ import {
   announceQueuedListAfterLoopEnd,
   createGoalLoop,
   isLoopActive,
+  isHeldLoopResumable,
   loopTimerPending,
   runLoopTick,
   scheduleLoopTick,
@@ -2431,7 +2432,15 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // restored and DISPLAYED — only automation waits for the user.
     if (!autoResume && !explicitRecovery && !staleRearmedOnSessionStart) {
       const somethingLive = (!!state.goal && ["active", "auditing"].includes(state.goal.status)) || isLoopActive();
-      const pendingDurableState = !!state.goal || (state.list?.length ?? 0) > 0 || !!state.loop;
+      const pendingDurableState = (!!state.goal && !["complete", "aborted"].includes(state.goal.status))
+        || (state.list?.length ?? 0) > 0 || isHeldLoopResumable(state.loop) || !!state.mainModelRecovery;
+      // Terminal receipts remain inspectable but cannot need consent to run.
+      // Remove only the obsolete load hold, never a supervisor pause.
+      if (!pendingDurableState && !somethingLive && typeof state.loadHoldAt === "number") {
+        replaceState({ ...state, loadHoldAt: undefined });
+        persistState(ctx);
+        appendLedger(ctx.cwd, "load_hold_released", { via: "terminal-only-restore" });
+      }
       // v0.35.23: restore itself may have consented to live work (journal
       // replay activating a deferred item, stale rearm) — a hold must never
       // freeze what restore deliberately started.
@@ -2442,7 +2451,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
         // A held loop resumes through /loop — without the hint the warning
         // reads as if only goal/list work were held (field 2026-10-02: a
         // held respec loop was re-started fresh instead of resumed).
-        const loopResumeHint = state.loop && !state.loop.active ? " /loop resume," : "";
+        const loopResumeHint = isHeldLoopResumable(state.loop) ? " /loop resume," : "";
         ctx.ui.notify(
           `Loaded without starting: your goal/list/loop state is restored and shown below, but automation is HELD for your decision. /goal resume, /list resume,${loopResumeHint} or /list next starts work; enable Auto-resume in /glla settings to restore load-time automation.`,
           "warning",
