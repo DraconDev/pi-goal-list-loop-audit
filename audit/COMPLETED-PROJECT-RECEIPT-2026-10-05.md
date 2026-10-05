@@ -29,3 +29,7 @@ The two terminal restore tests failed before the fix (fresh and legacy hold).
 Focused verification covers compact receipts at narrow widths, retained
 supervisor pauses, unfinished queues, ordinary restore consent/recovery, and
 real project worker settlement/archival. Counts are appended after verification.
+
+Final verification: **41 tests passed across four files, zero failures**.
+TypeScript passed. The Jiti shared-state check passed; runtime inventory and
+whitespace checks are current. The full release gate was not run for this patch.

@@ -1,0 +1,60 @@
+
+> pi-goal-list-loop-audit@0.39.6 test
+> node scripts/run-tests.mjs tests/load-without-autostart.test.ts tests/respec-builder-display.test.ts tests/loop-held-start.test.ts tests/respec-builder-audit-runtime.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-display.test.ts:
+(pass) a stopped project audit exposes its hold reason instead of implying a running auditor [2.12ms]
+(pass) project cards expose phase, unfinished coverage and recorded blockers within narrow widths [2.11ms]
+(pass) an explicitly stopped project audit does not advertise an unavailable resume [0.24ms]
+(pass) completed project closes the work card into a compact archived receipt [0.33ms]
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [40.27ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [96.17ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [80.08ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [81.74ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [78.49ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [87.23ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [23.50ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [82.47ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [190.62ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [245.16ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [0.80ms]
+(pass) actual project lifecycle reaches detached verification through agent_end [1660.70ms]
+(pass) actual project lifecycle reaches detached verification through /glla resume of a stalled audit [1617.99ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [83.42ms]
+(pass) a failed builder journal commit restores the complete prior RAM state [1.21ms]
+(pass) a supervisor freeze prevents a new project audit dispatch [0.71ms]
+(pass) rapid pause/resume discards the cancelled worker result and rearms the saved claim [100.19ms]
+(pass) an undelivered project summary survives replacement by a new project [83.46ms]
+(pass) freezing supervision between auditor attempts prevents retry and fallback dispatch [85.96ms]
+(pass) a corrupt summary outbox prevents terminal handoff and retains approved job evidence [85.14ms]
+
+tests/loop-held-start.test.ts:
+(pass) held loop: the load-hold warning names /loop resume [188.64ms]
+(pass) held loop: the load-hold warning is byte-identical when no loop is held [130.73ms]
+(pass) fresh start over a held loop offers resume and preserves the loop [131.69ms]
+(pass) fresh start over a held loop: dismiss keeps the held loop untouched [129.70ms]
+(pass) fresh start over a held loop: headless refuses instead of discarding [129.07ms]
+(pass) fresh start over an explicitly stopped loop keeps today's silent behavior [133.96ms]
+
+tests/load-without-autostart.test.ts:
+(pass) v0.35.23: DEFAULT cold load restores + displays a pending goal but sends NOTHING and arms NO automation [690.19ms]
+(pass) v0.35.23: DEFAULT cold load HELDS a persisted live loop instead of resuming its ticks [450.47ms]
+(pass) v0.35.23: explicit autoResume:true restores load-time automation (opt-in = today's behavior) [401.86ms]
+(pass) v0.35.23: /goal resume releases the load hold and re-arms automation [556.69ms]
+(pass) v0.38.96: /glla resume releases the load hold BEFORE the manual-recovery probe (field 2026-09-23) [1604.87ms]
+(pass) v0.38.96: /loop resume releases the load hold BEFORE the manual-recovery probe [403.61ms]
+(pass) v0.35.23: /list next also releases the hold and starts the queued head [404.30ms]
+(pass) completed project receipt does not create or retain a load hold (legacy=false) [247.95ms]
+(pass) completed project receipt does not create or retain a load hold (legacy=true) [250.71ms]
+(pass) terminal receipt restore preserves an explicit supervisor pause [249.38ms]
+(pass) a completed project beside a waiting queue still holds the unfinished queue [250.32ms]
+
+ 41 pass
+ 0 fail
+Ran 41 tests across 4 files. [12.05s]
+[run-tests] finished in 12s (exit 0)
