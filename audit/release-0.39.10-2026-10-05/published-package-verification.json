@@ -1,0 +1,25 @@
+{
+  "observedAt": "2026-10-05T22:30:01.611791+00:00",
+  "version": "0.39.10",
+  "latest": "0.39.10",
+  "integrityVerified": true,
+  "filesChecked": 142,
+  "mismatches": [],
+  "tagCommit": "f55dcf7de0d7642675ec891bd4ced904c90d45a2",
+  "tarball": "https://registry.npmjs.org/pi-goal-list-loop-audit/-/pi-goal-list-loop-audit-0.39.10.tgz",
+  "attestations": {
+    "url": "https://registry.npmjs.org/-/npm/v1/attestations/pi-goal-list-loop-audit@0.39.10",
+    "provenance": {
+      "predicateType": "https://slsa.dev/provenance/v1"
+    }
+  },
+  "pi": {
+    "image": "https://raw.githubusercontent.com/DraconDev/pi-goal-list-loop-audit/main/media/glla-icon.png",
+    "skills": [
+      "skills/glla-delegate"
+    ],
+    "extensions": [
+      "extensions/loops/goal.ts"
+    ]
+  }
+}
