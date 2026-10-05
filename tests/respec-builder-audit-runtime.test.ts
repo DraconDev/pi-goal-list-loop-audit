@@ -6,6 +6,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { registerRespecBuilderTools, runRespecBuilderAudit, respecProjectArchivePath, cancelRespecBuilderAudit, replayRespecCompletionSummary, __testOnlyRespecAuditorRuntime, respecBuilderAuditInFlight } from "../extensions/respec-builder-runtime.js";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from "../extensions/loops/goal.js";
+import { __testOnlyHeartbeatTick } from "../extensions/goal-heartbeat.js";
+import { __testOnlySetLastActivityAt, __testOnlySetLastRealActivityAt } from "../extensions/loops/goal-ui.js";
 import { clearLoopTimer } from "../extensions/goal-loop.js";
 import { saveSettings } from "../extensions/goal-settings.js";
 import { createRespecBuilder, adoptRespecRequirements, planRespecIncrement, claimRespecTask, beginRespecAudit } from "../extensions/respec-builder.js";
@@ -247,7 +249,7 @@ test("actual installer, command, tools and agent_end carry a project through det
   const file = path.join(cwd, "bounded-auditor-worker.mjs"); fs.writeFileSync(file, worker);
   await pi.fire("session_start", { reason: "startup" }, ctx);
   const restore = __testOnlyRespecAuditorRuntime({ resolveModel: () => ({ model: "test/provider-model" }), auditSleep: async () => {},
-    auditRuntime: { command: process.execPath, workerPath: file, homeDir: cwd, pollIntervalMs: 10, heartbeatNoProgressMs: 5000, firstEventTimeoutMs: 5000 } });
+    auditRuntime: { command: process.execPath, workerPath: file, homeDir: cwd, pollIntervalMs: 10, heartbeatNoProgressMs: 5000, firstEventTimeoutMs: 5000, env: { RESULT_DELAY: "1500" } } });
   try {
     await pi.command("loop", "respec build the artifact", ctx); clearLoopTimer();
     await pi.runTool("propose_project_requirements", { requirements: [{ id: "artifact", text: "Artifact", acceptance: "artifact exists" }] }, ctx);
@@ -256,6 +258,19 @@ test("actual installer, command, tools and agent_end carry a project through det
     await pi.runTool("audit_project_increment", { claim: "Artifact implemented" }, ctx);
     assert.equal(readState(cwd).loop!.builder!.requirements[0]!.status, "open");
     await pi.fire("agent_end", { messages: [{ role: "assistant", content: [{ type: "text", text: "Increment ready for independent verification." }] }] }, ctx);
+    assert.equal(respecBuilderAuditInFlight(cwd), true, "production agent_end dispatched the increment auditor");
+    // Freeport/Junk Runner reproduction: the detached worker owns the wait
+    // while the main session looks idle. Exercise the real heartbeat beyond
+    // its five-refire threshold, rather than only checking source wiring.
+    for (let i = 0; i < 6; i++) {
+      const quietSince = Date.now() - 60 * 60_000;
+      __testOnlySetLastActivityAt(quietSince);
+      __testOnlySetLastRealActivityAt(quietSince);
+      __testOnlyHeartbeatTick();
+      assert.equal(state.loop!.active, true, "a dispatched auditor must not be parked as a missing main turn");
+    }
+    const journal = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
+    assert.doesNotMatch(journal, /"type":"(?:heartbeat_refire|stall_escalated)"/);
     const deadline = Date.now() + 5000;
     while (readState(cwd).loop!.builder!.phase !== "complete") {
       if (Date.now() > deadline) throw new Error(JSON.stringify(readState(cwd).loop));
