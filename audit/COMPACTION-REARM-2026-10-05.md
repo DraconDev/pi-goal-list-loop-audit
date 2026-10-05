@@ -37,5 +37,7 @@ The successful-large-context regression failed before the change. Coverage
 includes successful and legacy rearming, cooldown, failed attempt containment,
 late callback ordering, configured targets, idle/settled dispatch and public
 completion/status wording. Verification logs are retained alongside the live
-observations. Full release validation has not been run for this prepared
+observations. Verification: 40 compaction tests passed across five files, plus
+36 ownership/containment/project-worker tests across three files. TypeScript,
+inventory and whitespace checks passed. Full release validation has not been run for this prepared
 version; it is not published. No live audit was interrupted or compact forced.

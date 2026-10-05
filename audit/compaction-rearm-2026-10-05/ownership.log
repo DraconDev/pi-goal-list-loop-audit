@@ -1,0 +1,53 @@
+
+> pi-goal-list-loop-audit@0.39.11 test
+> node scripts/run-tests.mjs tests/compaction-containment.test.ts tests/respec-builder-audit-runtime.test.ts tests/compaction-settled-boundary.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [1708.90ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [95.52ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [172.85ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [365.47ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [517.84ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [461.43ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [57.47ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [353.76ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [334.93ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [731.51ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [2.13ms]
+(pass) actual project lifecycle reaches detached verification through agent_end [1969.80ms]
+(pass) actual project lifecycle reaches detached verification through /glla resume of a stalled audit [1945.23ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [816.59ms]
+(pass) a failed builder journal commit restores the complete prior RAM state [1.57ms]
+(pass) a supervisor freeze prevents a new project audit dispatch [6.93ms]
+(pass) rapid pause/resume discards the cancelled worker result and rearms the saved claim [932.61ms]
+(pass) an undelivered project summary survives replacement by a new project [257.56ms]
+(pass) freezing supervision between auditor attempts prevents retry and fallback dispatch [223.23ms]
+(pass) a corrupt summary outbox prevents terminal handoff and retains approved job evidence [251.26ms]
+(pass) project audit preserves live tool deadline and attempt clock through the real worker bridge [551.95ms]
+
+tests/compaction-settled-boundary.test.ts:
+(pass) idle loop dispatch checks the threshold without agent_settled (failure=false) [502.63ms]
+(pass) idle loop dispatch checks the threshold without agent_settled (failure=true) [187.65ms]
+(pass) settled and idle-send compaction preserve paused [52.75ms]
+(pass) settled and idle-send compaction preserve auditing [73.80ms]
+(pass) settled and idle-send compaction preserve frozen [81.99ms]
+(pass) settled and idle-send compaction preserve aborted [114.30ms]
+(pass) idle list advancement checks compaction before dispatching the next task [226.07ms]
+(pass) busy agent_end defers the 200k trigger to agent_settled, then work resumes after compaction [417.42ms]
+(pass) completed compaction is named accurately and remains inspectable through public status [41.40ms]
+
+tests/compaction-containment.test.ts:
+(pass) session_before_compact returns nothing — another extension's compaction must survive [181.97ms]
+(pass) pure: in-flight marker is armed-signal plus timeout, never silence [0.40ms]
+(pass) compaction in flight suppresses send-storm escalation (no park, no recovery) [505.00ms]
+(pass) post-compact settle owns exactly one bounded probe (no duplicates) [3136.68ms]
+(pass) escalation proceeds after settle — the gate is compaction-scoped, not a blanket disable [3027.08ms]
+(pass) scheduleContinuation defers while in flight and the settle still sends once [3149.50ms]
+
+ 36 pass
+ 0 fail
+Ran 36 tests across 3 files. [28.07s]
+[run-tests] finished in 28s (exit 0)

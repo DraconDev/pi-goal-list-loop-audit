@@ -1,0 +1,17 @@
+{
+  "version": "0.39.11",
+  "focusedCompaction": {
+    "passed": 40,
+    "failed": 0,
+    "files": 5
+  },
+  "ownershipAndContainment": {
+    "passed": 36,
+    "failed": 0,
+    "files": 3
+  },
+  "typescript": "passed",
+  "inventory": "passed",
+  "fullReleaseGate": "not run",
+  "published": false
+}

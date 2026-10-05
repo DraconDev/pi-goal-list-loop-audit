@@ -281,7 +281,7 @@ export function maybeCompactTranscriptAtBoundary(
  * break the starvation one-shot the compactor-handoff tests pin). The
  * boundary respects the shared marker only through runGoalCompactionIfDue
  * (no double brief); its own fire/re-arm cycle lives here with hysteresis
- * (fire at the threshold, re-arm below half of it). */
+ * (fire at the threshold; failures rearm below half, successes after grace). */
 export function compactorBoundaryMarkerPath(cwd: string): string {
   return path.join(piGlaDir(cwd), "compactor-boundary.json");
 }
