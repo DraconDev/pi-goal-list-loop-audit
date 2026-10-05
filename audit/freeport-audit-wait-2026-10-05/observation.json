@@ -1,0 +1,111 @@
+{
+  "observedAt": "2026-10-05T18:27:09.912571+00:00",
+  "root": "/home/dracon/Dev/dracon-platform/web/games/wip/freeport",
+  "jobs": [
+    {
+      "id": "063dd528-5bdb-42fb-8414-c0b0f2ac8b09-muuebn7k-cacdd9bc",
+      "progress": {
+        "phase": "complete",
+        "round": 1,
+        "elapsedMs": 1385682,
+        "lastActivityAt": 1791154509156,
+        "currentTool": null,
+        "currentToolStartedAt": null,
+        "currentToolTimeoutMs": null
+      },
+      "lastToolFinishedAt": 1791154507150,
+      "result": {
+        "ok": false,
+        "error": "Auditor aborted.",
+        "model": "openrouter/stealth/space-bunny-alpha"
+      },
+      "resultPresent": true,
+      "workerPid": 2001138,
+      "workerPresent": false
+    },
+    {
+      "id": "063dd528-5bdb-42fb-8414-c0b0f2ac8b09-muvd5kgv-2bf8544f",
+      "progress": {
+        "phase": "complete",
+        "round": 1,
+        "elapsedMs": 1697317,
+        "lastActivityAt": 1791213323769,
+        "currentTool": null,
+        "currentToolStartedAt": null,
+        "currentToolTimeoutMs": null
+      },
+      "lastToolFinishedAt": 1791213323236,
+      "result": {
+        "ok": false,
+        "error": "Provider returned an empty response",
+        "model": "openrouter/stealth/space-bunny-alpha"
+      },
+      "resultPresent": true,
+      "workerPid": 1904971,
+      "workerPresent": false
+    },
+    {
+      "id": "063dd528-5bdb-42fb-8414-c0b0f2ac8b09-muvh6bsc-b8975cd6",
+      "progress": {
+        "phase": "complete",
+        "round": 2,
+        "elapsedMs": 3925381,
+        "lastActivityAt": 1791222005706,
+        "currentTool": null,
+        "currentToolStartedAt": null,
+        "currentToolTimeoutMs": null
+      },
+      "lastToolFinishedAt": 1791222002811,
+      "result": {
+        "ok": false,
+        "error": "Auditor stalled \u2014 tool bash exceeded its 5m timeout during the challenge round; the worker was aborted.",
+        "model": "opencode-go/space-bunny-free"
+      },
+      "resultPresent": true,
+      "workerPid": 1381786,
+      "workerPresent": false
+    },
+    {
+      "id": "063dd528-5bdb-42fb-8414-c0b0f2ac8b09-muvjiko9-a0cb146d",
+      "progress": {
+        "phase": "running",
+        "round": 1,
+        "elapsedMs": 2511225,
+        "lastActivityAt": 1791224822260,
+        "currentTool": "bash",
+        "currentToolStartedAt": 1791224822245,
+        "currentToolTimeoutMs": 300000
+      },
+      "lastToolFinishedAt": 1791224810916,
+      "result": {
+        "ok": null,
+        "error": null,
+        "model": null
+      },
+      "resultPresent": false,
+      "workerPid": 2823235,
+      "workerPresent": true
+    },
+    {
+      "id": "063dd528-5bdb-42fb-8414-c0b0f2ac8b09-muve627q-85717e3a",
+      "progress": {
+        "phase": "complete",
+        "round": 1,
+        "elapsedMs": 312667,
+        "lastActivityAt": 1791213641828,
+        "currentTool": null,
+        "currentToolStartedAt": null,
+        "currentToolTimeoutMs": null
+      },
+      "lastToolFinishedAt": 1791213641096,
+      "result": {
+        "ok": false,
+        "error": "Provider returned an empty response",
+        "model": "openrouter/stealth/space-bunny-alpha"
+      },
+      "resultPresent": true,
+      "workerPid": 2670546,
+      "workerPresent": false
+    }
+  ]
+}

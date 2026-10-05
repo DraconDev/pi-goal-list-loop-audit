@@ -1,0 +1,41 @@
+
+> pi-goal-list-loop-audit@0.39.9 test
+> node scripts/run-tests.mjs tests/respec-builder-audit-runtime.test.ts tests/respec-builder-display.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-display.test.ts:
+(pass) a stopped project audit exposes its hold reason instead of implying a running auditor [15.83ms]
+(pass) project cards expose phase, unfinished coverage and recorded blockers within narrow widths [3.17ms]
+(pass) an explicitly stopped project audit does not advertise an unavailable resume [0.36ms]
+(pass) completed project dismisses both live UI surfaces while preserving other work [1.98ms]
+(pass) project tool waits show a ticking deadline and separate attempt/total clocks [0.81ms]
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [1222.75ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [180.53ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [156.42ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [142.55ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [135.45ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [176.15ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [33.79ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [136.12ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [335.66ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [1336.90ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [1.40ms]
+(pass) actual project lifecycle reaches detached verification through agent_end [2019.79ms]
+(pass) actual project lifecycle reaches detached verification through /glla resume of a stalled audit [1756.22ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [158.32ms]
+(pass) a failed builder journal commit restores the complete prior RAM state [7.39ms]
+(pass) a supervisor freeze prevents a new project audit dispatch [1.06ms]
+(pass) rapid pause/resume discards the cancelled worker result and rearms the saved claim [294.58ms]
+(pass) an undelivered project summary survives replacement by a new project [913.52ms]
+(pass) freezing supervision between auditor attempts prevents retry and fallback dispatch [535.48ms]
+(pass) a corrupt summary outbox prevents terminal handoff and retains approved job evidence [1094.13ms]
+(pass) project audit preserves live tool deadline and attempt clock through the real worker bridge [626.27ms]
+
+ 26 pass
+ 0 fail
+Ran 26 tests across 2 files. [12.82s]
+[run-tests] finished in 13s (exit 0)

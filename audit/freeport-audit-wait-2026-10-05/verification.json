@@ -1,0 +1,12 @@
+{
+  "version": "0.39.9",
+  "focusedTests": {
+    "passed": 26,
+    "failed": 0,
+    "files": 2
+  },
+  "typescript": "passed",
+  "inventory": "passed",
+  "fullReleaseGate": "not run",
+  "published": false
+}

@@ -1,0 +1,36 @@
+
+> pi-goal-list-loop-audit@0.39.8 test
+> node scripts/run-tests.mjs tests/respec-builder-audit-runtime.test.ts -t project audit preserves live tool
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-audit-runtime.test.ts:
+425 | test("project audit preserves live tool deadline and attempt clock through the real worker bridge", async () => {
+426 |   const f = fixture({ TOOL_WAIT: "1", RESULT_DELAY: "250" });
+427 |   try {
+428 |     await runRespecBuilderAudit(f.ctx);
+429 |     const observed = f.observations.find(p => p.phase === "running" && p.lastActivityAt !== undefined)!;
+430 |     assert.equal(observed.currentTool, "bash");
+                 ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ undefined
+- 'bash'
+
+ generatedMessage: true,
+     actual: undefined,
+   expected: "bash",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/respec-builder-audit-runtime.test.ts:430:12
+      at processTicksAndRejections (native:7:39)
+(fail) project audit preserves live tool deadline and attempt clock through the real worker bridge [13395.76ms]
+
+ 0 pass
+ 20 filtered out
+ 1 fail
+Ran 1 test across 1 file. [15.66s]
+[run-tests] finished in 16s (exit 1)
