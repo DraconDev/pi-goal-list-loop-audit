@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.39.4 — check compaction before idle loop dispatch (2026-10-05)
+
+- Metric loops and project builder turns check the configured context-token
+  threshold at their actual idle dispatch boundary, matching goal/list sends.
+  Hosts without a settled-turn event can still attempt opportunistic compaction.
+- A failed optional compaction resumes the same active loop through a fresh
+  owner context. Busy hosts, queued messages, paused work and audit dispatches
+  retain their guards; an attempted episode is not retried every turn.
+
 ## 0.39.3 — preserve project audit boundaries and recovery evidence (2026-10-05)
 
 - Startup and manual audit-job cleanup preserve jobs belonging to unresolved

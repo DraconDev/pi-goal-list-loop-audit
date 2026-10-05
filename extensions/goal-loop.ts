@@ -518,7 +518,7 @@ function sendLoopTurn(): void {
   // boundary, just as goal/list dispatch does, before preparing a new turn.
   try {
     if (maybeCompactTranscriptAtBoundary(ctx, {
-      supervising: true, auditInFlight: false, paused: supervisorPaused(state),
+      supervising: true, auditInFlight: state.goal?.status === "auditing", paused: supervisorPaused(state),
     }, () => {
       const current = freshCtx();
       if (current && state.loop?.active && state.loop.startedAt === loop.startedAt) scheduleLoopTick(current);
