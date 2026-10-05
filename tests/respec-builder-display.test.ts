@@ -2,8 +2,20 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { buildWidgetLines } from "../extensions/goal-loop-display.js";
 import { visibleWidth, stripTerminalSequences } from "@earendil-works/pi-tui";
-import { createRespecBuilder, adoptRespecRequirements, planRespecIncrement, blockRespecRequirement } from "../extensions/respec-builder.js";
+import { createRespecBuilder, adoptRespecRequirements, planRespecIncrement, blockRespecRequirement, claimRespecTask, beginRespecAudit } from "../extensions/respec-builder.js";
 import type { State } from "../extensions/goal-loop-core.js";
+
+test("a stopped project audit exposes its hold reason instead of implying a running auditor", () => {
+  const adopted = adoptRespecRequirements(createRespecBuilder("Build export"), [{ id: "export", text: "Export", acceptance: "Round trip" }]);
+  const planned = planRespecIncrement(adopted, [{ id: "export-task", text: "Build export", requirementIds: ["export"] }]);
+  const builder = beginRespecAudit(claimRespecTask(planned, "export-task", "Export implemented"), "Round trip checked", "attempt");
+  const state = { goal: null, list: [], loop: { builder, active: false, stopReason: "stalled: 5 continuation refires landed no turn", target: builder.vision, startedAt: new Date().toISOString(), iteration: 1, maxIterations: 0, plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [] } } as State;
+  const plain = stripTerminalSequences(buildWidgetLines(state, null, Date.now(), undefined, 120)!.join("\n"));
+  assert.match(plain, /Audit held/);
+  assert.match(plain, /stalled: 5 continuation refires/);
+  assert.match(plain, /\/loop resume/);
+  assert.doesNotMatch(plain, /no action needed|Project · Auditing/);
+});
 
 test("project cards expose phase, unfinished coverage and recorded blockers within narrow widths", () => {
   const drafted = adoptRespecRequirements(createRespecBuilder("Develop login and export"), [{ id: "login", text: "Login", acceptance: "Credentials verified" }, { id: "export", text: "Export", acceptance: "Data round-trips" }]);

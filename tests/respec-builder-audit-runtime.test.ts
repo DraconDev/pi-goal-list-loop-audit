@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { registerRespecBuilderTools, runRespecBuilderAudit, respecProjectArchivePath, cancelRespecBuilderAudit, replayRespecCompletionSummary, __testOnlyRespecAuditorRuntime } from "../extensions/respec-builder-runtime.js";
+import { registerRespecBuilderTools, runRespecBuilderAudit, respecProjectArchivePath, cancelRespecBuilderAudit, replayRespecCompletionSummary, __testOnlyRespecAuditorRuntime, respecBuilderAuditInFlight } from "../extensions/respec-builder-runtime.js";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from "../extensions/loops/goal.js";
 import { clearLoopTimer } from "../extensions/goal-loop.js";
 import { saveSettings } from "../extensions/goal-settings.js";
@@ -61,7 +61,10 @@ test("a time bound cancels an in-flight worker and retains unfinished requiremen
   try {
     replaceState({ ...state, loop: { ...state.loop!, startedAt: new Date().toISOString(), timeLimitHours: 1 } });
     persistStateLine(f.cwd, state);
+    assert.equal(respecBuilderAuditInFlight(f.cwd), false, "a saved claim is not a running dispatch");
     const pending = runRespecBuilderAudit(f.ctx);
+    assert.equal(respecBuilderAuditInFlight(f.cwd), true);
+    assert.equal(respecBuilderAuditInFlight(f.cwd + '-other'), false, "dispatch ownership includes the project root");
     const jobs = path.join(f.cwd, ".pi-glla", "audit-jobs");
     const deadline = Date.now() + 20000;
     while (!fs.existsSync(jobs) || !fs.readdirSync(jobs).some(name => fs.existsSync(path.join(jobs, name, "progress.json")))) {
@@ -74,6 +77,7 @@ test("a time bound cancels an in-flight worker and retains unfinished requiremen
     replaceState({ ...state, loop: { ...state.loop!, timeLimitHours: 0 } });
     persistStateLine(f.cwd, state);
     await pending;
+    assert.equal(respecBuilderAuditInFlight(f.cwd), false, "finished cancellation releases heartbeat protection");
     const saved = readState(f.cwd).loop!;
     assert.equal(saved.active, false);
     assert.match(saved.stopReason!, /time bound reached/);

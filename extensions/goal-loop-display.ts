@@ -2664,7 +2664,7 @@ function respecBuilderLines(loop: LoopState, now: number, theme?: DisplayTheme, 
   ] : ["auditor: waiting for dispatch · no live worker observed"] : [];
   const title = paint(theme, tone, `Project · ${phase}`);
   return [
-    `${theme?.bold ? theme.bold(title) : title}${loop.active || builder.phase === "complete" ? "" : " · held"} · increment ${builder.cycle}`,
+    `${theme?.bold ? theme.bold(title) : title}${loop.active || builder.phase === "complete" || builder.phase === "auditing" ? "" : " · held"} · increment ${builder.cycle}`,
     `├─ ${truncate(sanitizeDisplayText(builder.vision), budgetFor(width, 3, 75))}`,
     `├─ ${paint(theme, coverage.verified > 0 ? "success" : "dim", `verified ${coverage.verified}/${coverage.total}`)} · ${paint(theme, coverage.remaining > 0 ? "warning" : "dim", `remaining ${coverage.remaining} · blocked ${coverage.blocked}`)}`,
     ...(current ? [`├─ ${builder.phase === "auditing" ? "claim" : "task"}: ${truncate(sanitizeDisplayText(current.text), budgetFor(width, 10, 70))}`] : []),
