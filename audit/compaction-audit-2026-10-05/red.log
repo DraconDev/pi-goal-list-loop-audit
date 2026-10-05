@@ -1,0 +1,53 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/compaction-settled-boundary.test.ts:
+26 |       await pi.command("loop", "start develop the intended project", ctx);
+27 |       clearLoopTimer(); pi.sent.length = 0;
+28 |       tokens = 315_000;
+29 |       scheduleLoopTick(ctx);
+30 |       await tick(150);
+31 |       assert.equal(compacts, 1, "a loop turn must check compaction before dispatch");
+                  ^
+AssertionError: a loop turn must check compaction before dispatch
+
+0 !== 1
+
+ generatedMessage: false,
+     actual: 0,
+   expected: 1,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/compaction-settled-boundary.test.ts:31:14
+      at processTicksAndRejections (native:7:39)
+(fail) idle loop dispatch checks the threshold without agent_settled (failure=false) [2635.58ms]
+26 |       await pi.command("loop", "start develop the intended project", ctx);
+27 |       clearLoopTimer(); pi.sent.length = 0;
+28 |       tokens = 315_000;
+29 |       scheduleLoopTick(ctx);
+30 |       await tick(150);
+31 |       assert.equal(compacts, 1, "a loop turn must check compaction before dispatch");
+                  ^
+AssertionError: a loop turn must check compaction before dispatch
+
+0 !== 1
+
+ generatedMessage: false,
+     actual: 0,
+   expected: 1,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/compaction-settled-boundary.test.ts:31:14
+      at processTicksAndRejections (native:7:39)
+(fail) idle loop dispatch checks the threshold without agent_settled (failure=true) [176.79ms]
+(pass) settled and idle-send compaction preserve paused [24.28ms]
+(pass) settled and idle-send compaction preserve auditing [26.92ms]
+(pass) settled and idle-send compaction preserve frozen [19.55ms]
+(pass) settled and idle-send compaction preserve aborted [37.10ms]
+(pass) idle list advancement checks compaction before dispatching the next task [134.88ms]
+(pass) busy agent_end defers the 200k trigger to agent_settled, then work resumes after compaction [470.10ms]
+
+ 6 pass
+ 2 fail
+Ran 8 tests across 1 file. [4.38s]

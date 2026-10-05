@@ -1,0 +1,69 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/between-tasks-compaction.test.ts:
+(pass) v0.38.104 the 200k rule is a token threshold, and it is distinct from the model-size hint [0.45ms]
+(pass) v0.38.104 compaction is due past the threshold, not below it [0.11ms]
+(pass) v0.38.104 a token count, not a percentage — the same goal on a 1M window still fires at 200k [0.17ms]
+(pass) v0.38.104 it fires ONCE per episode and re-arms as the goal grows back [0.04ms]
+(pass) v0.38.104 an unknown context count never compacts blindly [0.09ms]
+(pass) v0.38.104 the threshold is overridable but must be positive [0.04ms]
+(pass) v0.38.105 the boundary fires ctx.compact past 200k and ledgers it [149.30ms]
+(pass) v0.38.105 one firing per episode; a shrunk transcript re-arms [103.13ms]
+(pass) v0.38.105 quiet boundaries: below threshold, busy, unsupervised, audit, paused, unknown, no trigger [1.38ms]
+(pass) v0.38.105 the boundary never re-arms the starvation path's brief one-shot [0.72ms]
+(pass) a synchronous compact throw releases the boundary for ordinary continuation [101.51ms]
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [630.41ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [126.03ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [100.25ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [88.10ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [86.40ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [82.47ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [15.02ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [93.49ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [201.40ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [279.86ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [0.88ms]
+(pass) actual installer, command, tools and agent_end carry a project through detached verification [1696.76ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [111.22ms]
+(pass) a failed builder journal commit restores the complete prior RAM state [1.88ms]
+(pass) a supervisor freeze prevents a new project audit dispatch [1.46ms]
+(pass) rapid pause/resume discards the cancelled worker result and rearms the saved claim [107.48ms]
+(pass) an undelivered project summary survives replacement by a new project [96.38ms]
+(pass) freezing supervision between auditor attempts prevents retry and fallback dispatch [89.21ms]
+(pass) a corrupt summary outbox prevents terminal handoff and retains approved job evidence [109.47ms]
+
+tests/compaction-settled-boundary.test.ts:
+(pass) idle loop dispatch checks the threshold without agent_settled (failure=false) [231.83ms]
+(pass) idle loop dispatch checks the threshold without agent_settled (failure=true) [157.38ms]
+(pass) settled and idle-send compaction preserve paused [6.15ms]
+(pass) settled and idle-send compaction preserve auditing [5.27ms]
+(pass) settled and idle-send compaction preserve frozen [6.47ms]
+(pass) settled and idle-send compaction preserve aborted [24.77ms]
+(pass) idle list advancement checks compaction before dispatching the next task [155.51ms]
+(pass) busy agent_end defers the 200k trigger to agent_settled, then work resumes after compaction [367.76ms]
+
+tests/compaction-target-settings.test.ts:
+(pass) /glla token-target editor persists shorthand, cancellation, validation, and reset [94.21ms]
+(pass) global-only target, defaults, provenance and menu describe the effective policy [9.73ms]
+(pass) configured target reaches the actual trigger, idle guard, and hysteresis [114.88ms]
+(pass) hand-edited invalid targets safely fall back at runtime [111.01ms]
+(pass) headless /glla exposes the chosen token target and source [27.05ms]
+
+tests/compaction-failed-recovery.test.ts:
+(pass) host-owned failed compaction retries without model rotation, park, or competing continuation [233.24ms]
+(pass) terminal prompt overflow rotates once and arms durable post-compact resume debt [183.19ms]
+(pass) same-session startup restores fallback debt, while a new session discards it [179.99ms]
+(pass) terminal output-cap failure parks instead of misclassifying it as context overflow [195.03ms]
+(pass) failed compaction without a usable fallback parks an active goal durably [232.43ms]
+(pass) failed compaction parks a branch loop instead of leaving it active [220.40ms]
+(pass) a failed debt-discharge append keeps RAM debt instead of diverging from disk [170.76ms]
+(pass) opportunistic output-cap failure keeps work active and resumes once (event first) [2819.55ms]
+(pass) opportunistic output-cap failure keeps work active and resumes once (callback first) [2811.92ms]
+(pass) optional compaction resumes a branch loop (event without callback) [2798.87ms]
+(pass) optional compaction resumes a branch loop (synchronous callback) [2805.32ms]
+
+ 54 pass
+ 0 fail
+Ran 54 tests across 5 files. [19.62s]

@@ -70,9 +70,9 @@ a trigger guarantees success or that the target is a hard cap.
 
 ## Verification
 
-Final targeted checks, TypeScript for current/minimum host versions, Jiti state
-binding, inventory and actual 0.39.4 tarball installation/RPC checks are being
-recorded in this directory. The complete 0.39.3 release gate passed immediately
+Final targeted checks passed: **81 passed, 0 failed across eight files**.
+TypeScript passed on current host 0.99.1 and minimum host 0.84.2. Jiti state
+binding, inventory and actual 0.39.4 tarball installation/RPC checks passed. The complete 0.39.3 release gate passed immediately
 before this patch; the full gate is not claimed for 0.39.4 without a new run.
 
 0.39.4 is prepared, not published. Existing hosts retain their loaded code until

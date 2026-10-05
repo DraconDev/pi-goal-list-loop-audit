@@ -1,0 +1,22 @@
+{
+  "completedAt": "2026-10-05T09:48:27.678910+00:00",
+  "version": "0.39.4",
+  "targetedTests": {
+    "passed": 81,
+    "failed": 0,
+    "files": 8
+  },
+  "typescriptHosts": [
+    "0.99.1",
+    "0.84.2"
+  ],
+  "packProbe": "passed",
+  "fullReleaseGateRerun": false,
+  "sha256": {
+    "extensions/goal-loop.ts": "605851b7f4882b83a54c8c9a441141d4e469a23117c5c1b61044875356cac989",
+    "extensions/goal-compactor.ts": "fb73e3edccc49d77549c6dbad0bc3fd69c79af9d01c68121bf85c14ec2b7b42d",
+    "tests/compaction-settled-boundary.test.ts": "fc5851b1b6a87190b9a00be7920cb68f4f5ee5075231c5bb3d19206fdf56cdce",
+    "package.json": "363f6c1205be9daae9e4f2c3965073397350cb877f8f269b776e310006a13bae",
+    "package-lock.json": "0858b49b61de217f862ae20bd6108782f7e36dc00a65c815961d29fe1bd5593f"
+  }
+}

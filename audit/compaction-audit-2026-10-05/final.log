@@ -1,0 +1,115 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/between-tasks-compaction.test.ts:
+(pass) v0.38.104 the 200k rule is a token threshold, and it is distinct from the model-size hint [0.39ms]
+(pass) v0.38.104 compaction is due past the threshold, not below it [0.10ms]
+(pass) v0.38.104 a token count, not a percentage — the same goal on a 1M window still fires at 200k [0.18ms]
+(pass) v0.38.104 it fires ONCE per episode and re-arms as the goal grows back [0.03ms]
+(pass) v0.38.104 an unknown context count never compacts blindly [2.33ms]
+(pass) v0.38.104 the threshold is overridable but must be positive [0.09ms]
+(pass) v0.38.105 the boundary fires ctx.compact past 200k and ledgers it [155.49ms]
+(pass) v0.38.105 one firing per episode; a shrunk transcript re-arms [107.74ms]
+(pass) v0.38.105 quiet boundaries: below threshold, busy, unsupervised, audit, paused, unknown, no trigger [2.10ms]
+(pass) v0.38.105 the boundary never re-arms the starvation path's brief one-shot [0.50ms]
+(pass) a synchronous compact throw releases the boundary for ordinary continuation [102.42ms]
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [59.31ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [121.34ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [106.77ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [96.71ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [93.00ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [110.08ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [19.01ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [104.70ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [231.39ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [290.98ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [1.06ms]
+(pass) actual installer, command, tools and agent_end carry a project through detached verification [1695.41ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [106.52ms]
+(pass) a failed builder journal commit restores the complete prior RAM state [1.35ms]
+(pass) a supervisor freeze prevents a new project audit dispatch [0.67ms]
+(pass) rapid pause/resume discards the cancelled worker result and rearms the saved claim [117.74ms]
+(pass) an undelivered project summary survives replacement by a new project [82.58ms]
+(pass) freezing supervision between auditor attempts prevents retry and fallback dispatch [94.45ms]
+(pass) a corrupt summary outbox prevents terminal handoff and retains approved job evidence [113.58ms]
+
+tests/compaction-settled-boundary.test.ts:
+(pass) idle loop dispatch checks the threshold without agent_settled (failure=false) [220.62ms]
+(pass) idle loop dispatch checks the threshold without agent_settled (failure=true) [158.98ms]
+(pass) settled and idle-send compaction preserve paused [7.04ms]
+(pass) settled and idle-send compaction preserve auditing [20.54ms]
+(pass) settled and idle-send compaction preserve frozen [17.49ms]
+(pass) settled and idle-send compaction preserve aborted [15.22ms]
+(pass) idle list advancement checks compaction before dispatching the next task [135.06ms]
+(pass) busy agent_end defers the 200k trigger to agent_settled, then work resumes after compaction [312.31ms]
+
+tests/loop-branch-ownership.test.ts:
+Switched to a new branch 'pi-glla-loop/test'
+Switched to branch 'main'
+(pass) active branch loop parks before commit when HEAD moved to the user's branch [227.92ms]
+Switched to a new branch 'pi-glla-loop/commit-fail'
+(pass) terminal commit failure preserves the uncommitted iteration and skips destructive finish [228.47ms]
+Switched to a new branch 'pi-glla-loop/reset-fail'
+(pass) reset failure during finish keeps the terminal branch and never attempts checkout [214.78ms]
+Switched to a new branch 'pi-glla-loop/stop-guard'
+Switched to branch 'main'
+(pass) /loop stop on a branch-mode loop parked on a foreign branch attempts no reset or checkout [222.84ms]
+Switched to a new branch 'pi-glla-loop/stop-mid-tick'
+Switched to branch 'main'
+(pass) /loop stop mid-tick still restores the original branch (no false branch-changed park) [232.74ms]
+Switched to a new branch 'pi-glla-loop/stop-commit-inflight'
+Switched to branch 'main'
+(pass) /loop stop mid-tick commits the in-flight iteration instead of resetting it away [346.72ms]
+(pass) commitPendingTerminalWork is module scope and finishLoopGit commits before its reset (source pin) [0.53ms]
+(pass) parkLoopOnWrongBranch consults HEAD before the in-flight tick guard (source pin) [0.31ms]
+Switched to a new branch 'pi-glla-loop/resumable-park'
+Switched to branch 'main'
+Switched to branch 'pi-glla-loop/resumable-park'
+(pass) a branch-changed park is resumable: /loop resume on the scratch branch keeps the loop's history [144.82ms]
+(pass) v0.38.104: the branch-changed park names the loop surface and is in RESUMABLE_STOP (source pins) [0.49ms]
+
+tests/release-contract.test.ts:
+(pass) release contract: published documentation links are covered by the npm tarball [824.31ms]
+(pass) release contract: the release gate exercises the packed artifact [0.39ms]
+(pass) release contract: packed prompts, schema, and workers ship in the dry-run list [698.48ms]
+(pass) release contract: glla-delegate skill loads without diagnostics (source-tree fast tier) [12.07ms]
+(pass) release contract: docs index tracks the package version [0.21ms]
+(pass) release contract: package is discoverable as a Pi extension and skill [739.42ms]
+(pass) release contract: README package contents claim matches the files allowlist [837.40ms]
+(pass) release contract: first-use README guidance matches current behavior [0.37ms]
+(pass) release contract: smoke waits use durable or literal transition markers [0.15ms]
+(pass) release workflow scopes trusted-publishing OIDC to the publish job [0.31ms]
+(pass) v0.38.32: release runs never share the push-churn concurrency group [0.15ms]
+(pass) release contract: changelog has one heading for the current package version [3.83ms]
+(pass) release contract: untagged source work has an Unreleased changelog section to promote [13.45ms]
+
+tests/goal-loop-dispatch.test.ts:
+(pass) dispatch starts prepared and only accepted records can time out [0.21ms]
+(pass) start proof is generation/owner-bound and prompt matching is exact to the attempt marker [0.06ms]
+(pass) dispatch sidecar is atomic and recoverable across a session boundary [2.95ms]
+(pass) corrupt or unknown sidecar records are ignored [0.19ms]
+
+tests/compaction-target-settings.test.ts:
+(pass) /glla token-target editor persists shorthand, cancellation, validation, and reset [112.50ms]
+(pass) global-only target, defaults, provenance and menu describe the effective policy [4.41ms]
+(pass) configured target reaches the actual trigger, idle guard, and hysteresis [111.79ms]
+(pass) hand-edited invalid targets safely fall back at runtime [110.88ms]
+(pass) headless /glla exposes the chosen token target and source [23.05ms]
+
+tests/compaction-failed-recovery.test.ts:
+(pass) host-owned failed compaction retries without model rotation, park, or competing continuation [251.55ms]
+(pass) terminal prompt overflow rotates once and arms durable post-compact resume debt [185.65ms]
+(pass) same-session startup restores fallback debt, while a new session discards it [190.29ms]
+(pass) terminal output-cap failure parks instead of misclassifying it as context overflow [111.76ms]
+(pass) failed compaction without a usable fallback parks an active goal durably [90.33ms]
+(pass) failed compaction parks a branch loop instead of leaving it active [87.57ms]
+(pass) a failed debt-discharge append keeps RAM debt instead of diverging from disk [90.95ms]
+(pass) opportunistic output-cap failure keeps work active and resumes once (event first) [2797.04ms]
+(pass) opportunistic output-cap failure keeps work active and resumes once (callback first) [2796.86ms]
+(pass) optional compaction resumes a branch loop (event without callback) [2797.50ms]
+(pass) optional compaction resumes a branch loop (synchronous callback) [2803.10ms]
+
+ 81 pass
+ 0 fail
+Ran 81 tests across 8 files. [24.29s]
