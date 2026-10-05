@@ -247,3 +247,13 @@ for (const outcome of ["stale", "delivery-error"] as const) {
     assert.equal(pi.userMessages.length, 0);
   });
 }
+
+test("the list-cancel decision executes cancellation instead of resuming work", async () => {
+  const { pi, ctx } = await boot();
+  replaceState({ ...state, goal: seedGoal({ policy: "list", status: "paused", pauseKind: "decision", pauseOptions: ["Cancel list (/list cancel)"] }) as unknown as typeof state.goal });
+  persistStateLine(ctx.cwd, state);
+  ctx.ui.selectImpl = async (_title, options) => options[0];
+  await pi.command("goal", "decide", ctx);
+  assert.equal(readState(ctx.cwd).goal, null);
+  assert.equal(pi.userMessages.length, 0, "executable cancellation is not an agent instruction");
+});
