@@ -10,6 +10,7 @@ import { __testOnlyHeartbeatTick } from "../extensions/goal-heartbeat.js";
 import { __testOnlySetLastActivityAt, __testOnlySetLastRealActivityAt } from "../extensions/loops/goal-ui.js";
 import { clearLoopTimer } from "../extensions/goal-loop.js";
 import { saveSettings } from "../extensions/goal-settings.js";
+import { cleanupDeadAuditJobs } from "../extensions/goal-loop-auditor-process.js";
 import { createRespecBuilder, adoptRespecRequirements, planRespecIncrement, claimRespecTask, beginRespecAudit } from "../extensions/respec-builder.js";
 import { state, replaceState, persistStateLine } from "../extensions/goal-state.js";
 import { readState } from "../extensions/goal-loop-core.js";
@@ -149,6 +150,8 @@ test("completed job is recovered after reloading an unsettled claim without anot
     assert.equal(jobs.length, 1);
     replaceState({ ...state, loop: { ...state.loop!, active: true, stopReason: undefined, builder: JSON.parse(JSON.stringify(f.builder)) } });
     persistStateLine(f.cwd, state);
+    cleanupDeadAuditJobs(f.cwd, 0);
+    assert.deepEqual(fs.readdirSync(path.join(f.cwd, ".pi-glla", "audit-jobs")), jobs, "startup-style cleanup retains the unsettled approval before recovery");
     fs.unlinkSync(f.file); // A new spawn would fail: only saved evidence can approve.
     await runRespecBuilderAudit(f.ctx);
     assert.equal(readState(f.cwd).loop!.builder!.phase, "complete", fs.readFileSync(path.join(f.cwd, ".pi-glla", "active.jsonl"), "utf8"));
