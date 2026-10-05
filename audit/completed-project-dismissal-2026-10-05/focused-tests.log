@@ -1,0 +1,58 @@
+
+> pi-goal-list-loop-audit@0.39.7 test
+> node scripts/run-tests.mjs tests/respec-builder-display.test.ts tests/load-without-autostart.test.ts tests/ui-command-view-audit.test.ts tests/respec-builder-audit-runtime.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-display.test.ts:
+(pass) a stopped project audit exposes its hold reason instead of implying a running auditor [4.19ms]
+(pass) project cards expose phase, unfinished coverage and recorded blockers within narrow widths [1.36ms]
+(pass) an explicitly stopped project audit does not advertise an unavailable resume [0.21ms]
+(pass) completed project dismisses both live UI surfaces while preserving other work [0.72ms]
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [38.54ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [79.29ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [67.15ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [64.07ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [64.95ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [68.10ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [24.43ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [67.21ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [167.86ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [190.51ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [0.77ms]
+(pass) actual project lifecycle reaches detached verification through agent_end [1615.75ms]
+(pass) actual project lifecycle reaches detached verification through /glla resume of a stalled audit [1607.89ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [69.45ms]
+(pass) a failed builder journal commit restores the complete prior RAM state [1.03ms]
+(pass) a supervisor freeze prevents a new project audit dispatch [0.54ms]
+(pass) rapid pause/resume discards the cancelled worker result and rearms the saved claim [93.40ms]
+(pass) an undelivered project summary survives replacement by a new project [70.08ms]
+(pass) freezing supervision between auditor attempts prevents retry and fallback dispatch [61.15ms]
+(pass) a corrupt summary outbox prevents terminal handoff and retains approved job evidence [74.10ms]
+
+tests/load-without-autostart.test.ts:
+(pass) v0.35.23: DEFAULT cold load restores + displays a pending goal but sends NOTHING and arms NO automation [702.68ms]
+(pass) v0.35.23: DEFAULT cold load HELDS a persisted live loop instead of resuming its ticks [448.57ms]
+(pass) v0.35.23: explicit autoResume:true restores load-time automation (opt-in = today's behavior) [399.82ms]
+(pass) v0.35.23: /goal resume releases the load hold and re-arms automation [556.06ms]
+(pass) v0.38.96: /glla resume releases the load hold BEFORE the manual-recovery probe (field 2026-09-23) [1604.23ms]
+(pass) v0.38.96: /loop resume releases the load hold BEFORE the manual-recovery probe [401.59ms]
+(pass) v0.35.23: /list next also releases the hold and starts the queued head [400.84ms]
+(pass) completed project receipt does not create or retain a load hold (legacy=false) [246.31ms]
+(pass) completed project receipt does not create or retain a load hold (legacy=true) [249.13ms]
+(pass) terminal receipt restore preserves an explicit supervisor pause [246.76ms]
+(pass) a completed project beside a waiting queue still holds the unfinished queue [252.55ms]
+(pass) terminal-only blank startup does not advertise work to resume [5.89ms]
+
+tests/ui-command-view-audit.test.ts:
+(pass) held loop status preserves its meaning and names the actual resume command [48.40ms]
+(pass) compact settling status reports archive debt instead of worker silence [2.42ms]
+(pass) paused goal status includes its saved next action without inventing one [4.93ms]
+
+ 39 pass
+ 0 fail
+Ran 39 tests across 4 files. [10.88s]
+[run-tests] finished in 11s (exit 0)
