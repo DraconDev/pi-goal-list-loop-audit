@@ -213,3 +213,22 @@ test("a synchronous compact throw releases the boundary for ordinary continuatio
     await settleBrief();
   } finally { fs.rmSync(cwd, { recursive: true, force: true }); }
 });
+
+
+test("successful compaction rearms after grace even when context never falls below half the target", async () => {
+  const cwd = mkBoundaryCwd(), originalNow = Date.now;
+  let now = originalNow(); Date.now = () => now;
+  try {
+    __testOnlySetSpawnWorker(async () => ({ ok: true, brief: "Continue work." }));
+    const first = boundaryCtx(cwd, { tokens: 259650 });
+    assert.equal(maybeCompactTranscriptAtBoundary(first.ctx, LIVE_FLAGS), true);
+    (first.compacts[0] as { onComplete(): void }).onComplete();
+    const grown = boundaryCtx(cwd, { tokens: 685727 });
+    assert.equal(maybeCompactTranscriptAtBoundary(grown.ctx, LIVE_FLAGS), false, "success cannot immediately cause a compaction loop");
+    now += 180001;
+    assert.equal(maybeCompactTranscriptAtBoundary(grown.ctx, LIVE_FLAGS), false, "rearming yields one ordinary work boundary");
+    assert.equal(fs.existsSync(compactorBoundaryMarkerPath(cwd)), false, "completed attempt must not suppress future opportunities forever");
+    assert.equal(maybeCompactTranscriptAtBoundary(grown.ctx, LIVE_FLAGS), true);
+    assert.equal(grown.compacts.length, 1);
+  } finally { Date.now = originalNow; await settleBrief(); fs.rmSync(cwd, { recursive: true, force: true }); }
+});
