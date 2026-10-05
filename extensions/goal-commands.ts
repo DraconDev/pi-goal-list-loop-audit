@@ -237,6 +237,8 @@ async function cmdGoal(args: string, ctx: ExtensionContext): Promise<void> {
     // v0.28.26 stored-claim provider retry). Seeds a synthesized claim so an
     // infrastructure failure falls into the same pendingCompletion machinery.
     if (route.name === "verify") {
+      if (warnIfStaleAtEntry(ctx, "/goal verify")) return;
+      if (refuseTerminalGoalAction(ctx, "verify")) return;
       if (!state.goal) {
         ctx.ui.notify("No active goal — /goal verify needs a goal to verify.", "warning");
         return;
@@ -485,9 +487,20 @@ async function cmdStatus(ctx: ExtensionContext): Promise<void> {
   ctx.ui.notify(lines.join("\n"), "info");
 }
 
+function refuseTerminalGoalAction(ctx: ExtensionContext, action: string): boolean {
+  const goal = state.goal;
+  if (!goal || (goal.status !== "complete" && goal.status !== "aborted")) return false;
+  ctx.ui.notify(`The ${goal.policy === "list" ? "list item" : "goal"} is ${goal.status} — can't ${action} terminal work. /goal archive shows past work; /goal or /list add <objective> starts fresh work.`, "info");
+  return true;
+}
+
 async function cmdPause(ctx: ExtensionContext): Promise<void> {
   if (warnIfStaleAtEntry(ctx, "/goal pause")) return;
-  if (!state.goal) return;
+  if (refuseTerminalGoalAction(ctx, "pause")) return;
+  if (!state.goal) {
+    ctx.ui.notify(`No active goal to pause.${state.loop?.active ? " /loop pause holds the active loop." : " /goal starts a new goal."}`, "info");
+    return;
+  }
   if (state.mainModelRecovery?.kind === "goal") {
     clearMainModelRecoveryTimer();
     state.mainModelRecovery = undefined;
@@ -699,6 +712,7 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
 
 async function cmdCancel(ctx: ExtensionContext): Promise<void> {
   if (warnIfStaleAtEntry(ctx, "/goal cancel")) return;
+  if (refuseTerminalGoalAction(ctx, "cancel")) return;
   if (stateRootPending()) {
     ctx.ui.notify("Cancel deferred — the selected sessionDir is not resolved yet, so no live state was changed. Reload the host session and retry.", "warning");
     return;
@@ -706,9 +720,9 @@ async function cmdCancel(ctx: ExtensionContext): Promise<void> {
   if (!state.goal) {
     // v0.28.14: users reach for /goal cancel to kill a LOOP (no goal
     // active) — point at the right verb instead of doing nothing silently.
-    if (isLoopActive()) {
-      ctx.ui.notify("No goal to cancel — a LOOP is active: /loop stop (or /loop cancel) ends it.", "info");
-    }
+    ctx.ui.notify(isLoopActive()
+      ? "No goal to cancel — a LOOP is active: /loop stop (or /loop cancel) ends it."
+      : "No active goal to cancel. /goal archive shows past work.", "info");
     return;
   }
   const noun = goalNoun();
@@ -1516,7 +1530,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
       && state.goal.policy === "list"
       && state.goal.status === "active"
       && (!!state.goal.interruptedAt || flags.continuationDispatchStoodDown);
-    if (!state.goal || (state.goal.status !== "paused" && !listDispatchRecovery)) {
+    if (!state.goal || (state.goal.status !== "paused" && state.goal.status !== "auditing" && !listDispatchRecovery)) {
       const terminalListItem = state.goal?.policy === "list"
         && (state.goal.status === "complete" || state.goal.status === "aborted");
       ctx.ui.notify(
@@ -1976,6 +1990,7 @@ function probeAutoNotify(ctx: ExtensionContext): void {
 
 
 async function cmdReview(args: string, ctx: ExtensionContext): Promise<void> {
+  if (warnIfStaleAtEntry(ctx, "/review")) return;
   const parts = args.trim().split(/\s+/).filter(Boolean);
   const id = parts[0] ?? "";
   const modeArg = parts[1];
@@ -3144,7 +3159,7 @@ function cmdGllaStatus(ctx: ExtensionContext): void {
   if (g?.status === "paused" && g.pauseKind === "decision" && g.pauseOptions?.length) {
     lines.push(`decision pending (${g.pauseOptions.length} options) — ${activeGoalSurfaceCommand("decide")}`);
   }
-  lines.push("deep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log");
+  lines.push("deep: /goal status · /list show · /loop status · /glla stats · /glla audits · /glla log");
   ctx.ui.notify(`glla status\n${lines.join("\n")}`, "info");
 }
 

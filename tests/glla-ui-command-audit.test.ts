@@ -175,7 +175,7 @@ test("compactor picker labels its clear choice as registry plan B", async () => 
 });
 
 for (const status of ["complete", "aborted"] as const) {
-  for (const action of ["pause", "verify"]) {
+  for (const action of ["pause", "verify", "cancel"]) {
     test(`/goal ${action} preserves a ${status} goal`, async () => {
       const { pi, ctx } = await boot();
       replaceState({ ...state, goal: seedGoal({ status, stopReason: "terminal evidence" }) as typeof state.goal });
