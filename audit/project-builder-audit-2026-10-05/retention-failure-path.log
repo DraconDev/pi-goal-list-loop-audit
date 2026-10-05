@@ -1,0 +1,39 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [235.17ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [108.74ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [91.59ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [75.17ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [70.78ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [80.72ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [15.58ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [87.39ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [175.88ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [227.63ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [0.78ms]
+(pass) actual installer, command, tools and agent_end carry a project through detached verification [1637.53ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [74.25ms]
+(pass) a failed builder journal commit restores the complete prior RAM state [1.19ms]
+(pass) a supervisor freeze prevents a new project audit dispatch [0.49ms]
+(pass) rapid pause/resume discards the cancelled worker result and rearms the saved claim [87.07ms]
+(pass) an undelivered project summary survives replacement by a new project [70.60ms]
+(pass) freezing supervision between auditor attempts prevents retry and fallback dispatch [75.67ms]
+(pass) a corrupt summary outbox prevents terminal handoff and retains approved job evidence [109.45ms]
+
+tests/audit-job-retention.test.ts:
+(pass) retention refuses cleanup when the durable claim journal cannot be read [1.79ms]
+(pass) retention keeps unresolved goal and held project evidence until their claims settle [2.65ms]
+(pass) retention: pre-convention finished dirs (no lock, result on file) reap past the window [0.84ms]
+(pass) retention: lockless UNFINISHED dirs stay ambiguous (interrupted creation) [0.68ms]
+(pass) retention: corrupt (present-but-unparseable) locks stay ambiguous [0.62ms]
+(pass) retention: crash before worker ownership reaps only when the parent is dead [0.93ms]
+(pass) retention: proven-dead workers reap past the window, live pids never reap [0.77ms]
+(pass) retention: aged lockless dirs with neither request nor result reap as unowned debris [0.86ms]
+(pass) retention: unowned debris younger than the identity-free floor stays ambiguous [0.56ms]
+(pass) v0.38.104 retention: a finished result settles a LIVE parent lock (PID reuse no longer pins it) [0.78ms]
+(pass) v0.38.104 retention: a LIVE parent lock with no result is still ambiguous (unchanged) [0.58ms]
+
+ 30 pass
+ 0 fail
+Ran 30 tests across 2 files. [4.34s]

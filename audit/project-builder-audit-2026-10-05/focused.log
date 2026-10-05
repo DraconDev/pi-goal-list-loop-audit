@@ -1,0 +1,66 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [44.63ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [85.25ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [75.56ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [69.36ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [70.85ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [73.26ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [15.41ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [72.61ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [169.65ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [211.66ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [0.75ms]
+(pass) actual installer, command, tools and agent_end carry a project through detached verification [1626.32ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [71.90ms]
+(pass) a failed builder journal commit restores the complete prior RAM state [0.88ms]
+(pass) a supervisor freeze prevents a new project audit dispatch [0.51ms]
+(pass) rapid pause/resume discards the cancelled worker result and rearms the saved claim [86.35ms]
+(pass) an undelivered project summary survives replacement by a new project [73.41ms]
+(pass) freezing supervision between auditor attempts prevents retry and fallback dispatch [70.37ms]
+(pass) a corrupt summary outbox prevents terminal handoff and retains approved job evidence [73.96ms]
+
+tests/compaction-settled-boundary.test.ts:
+(pass) settled and idle-send compaction preserve paused [48.24ms]
+(pass) settled and idle-send compaction preserve auditing [3.72ms]
+(pass) settled and idle-send compaction preserve frozen [3.76ms]
+(pass) settled and idle-send compaction preserve aborted [4.68ms]
+(pass) idle list advancement checks compaction before dispatching the next task [115.00ms]
+(pass) busy agent_end defers the 200k trigger to agent_settled, then work resumes after compaction [346.64ms]
+
+tests/audit-job-retention.test.ts:
+(pass) retention refuses cleanup when the durable claim journal cannot be read [2.35ms]
+(pass) retention keeps unresolved goal and held project evidence until their claims settle [9.95ms]
+(pass) retention: pre-convention finished dirs (no lock, result on file) reap past the window [1.32ms]
+(pass) retention: lockless UNFINISHED dirs stay ambiguous (interrupted creation) [0.70ms]
+(pass) retention: corrupt (present-but-unparseable) locks stay ambiguous [0.57ms]
+(pass) retention: crash before worker ownership reaps only when the parent is dead [0.92ms]
+(pass) retention: proven-dead workers reap past the window, live pids never reap [0.80ms]
+(pass) retention: aged lockless dirs with neither request nor result reap as unowned debris [0.81ms]
+(pass) retention: unowned debris younger than the identity-free floor stays ambiguous [0.57ms]
+(pass) v0.38.104 retention: a finished result settles a LIVE parent lock (PID reuse no longer pins it) [0.64ms]
+(pass) v0.38.104 retention: a LIVE parent lock with no result is still ambiguous (unchanged) [0.49ms]
+
+tests/compactor-handoff.test.ts:
+(pass) plan B picks verified free big-context, largest first, max two [0.35ms]
+(pass) plan B disqualifies unknown metadata, paid, unauthed, forbidden, stuck [0.13ms]
+(pass) plan B returns [] when the registry throws [0.05ms]
+(pass) compactor chain normalizes and caps 0-10 exactly like drafter [36.06ms]
+(pass) compactor chain never leases the stuck session model [0.25ms]
+(pass) refuse transition fires exactly once per episode [0.05ms]
+(pass) audit 2026-09-06: compactor one-shot survives a restart mid-episode [2.01ms]
+(pass) audit 2026-09-06: worker timeout escalates SIGTERM to SIGKILL [0.22ms]
+(pass) brief scope: packet bounded, sections present, worker tool-less [0.18ms]
+(pass) resync carries the brief excerpt only when present [0.06ms]
+(pass) recovery banner quotes the handoff excerpt [0.15ms]
+(pass) refuse engages the compactor once with the chain model + packet scope [520.84ms]
+(pass) chain empty falls back to the verified free registry model [315.90ms]
+(pass) no model anywhere skips silently with ledger, ladder still paints [612.46ms]
+(pass) notifyCmd off keeps the brief, drops the page [312.61ms]
+(pass) reload with a brief on disk quotes the handoff in the banner [126.44ms]
+(pass) resolveCompactorModel end to end prefers chain over plan B [0.51ms]
+
+ 53 pass
+ 0 fail
+Ran 53 tests across 4 files. [6.18s]
