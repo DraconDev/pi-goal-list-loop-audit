@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Project audit cards and footers retain the current tool’s ticking elapsed/timeout
+  clock, show the second pass, and distinguish current attempt time from total
+  time across retries. Cancelled, invalid and overdue tool telemetry cannot claim
+  a healthy wait.
+
 ## 0.39.8 — consistent recovery and completed project UI (2026-10-05)
 
 ### Preserve work across model changes

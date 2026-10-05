@@ -1,3 +1,4 @@
+import { setRespecAuditLive } from "../extensions/respec-builder-ui.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { buildWidgetLines, buildStatusText } from "../extensions/goal-loop-display.js";
@@ -55,4 +56,26 @@ test("completed project dismisses both live UI surfaces while preserving other w
   const queued = { ...state, list: [{ id: "next", objective: "Next unfinished task", addedAt: new Date().toISOString() }] };
   assert.match(stripTerminalSequences(buildWidgetLines(queued, null, Date.now(), undefined, 120)!.join("\n")), /list queued/i);
   assert.match(stripTerminalSequences(buildStatusText(queued, null, Date.now())!), /list queued/i);
+});
+
+
+test("project tool waits show a ticking deadline and separate attempt/total clocks", () => {
+  const builder = beginRespecAudit(claimRespecTask(planRespecIncrement(adoptRespecRequirements(createRespecBuilder("Export"), [{ id: "export", text: "Export", acceptance: "Round trip" }]), [{ id: "task", text: "Build export", requirementIds: ["export"] }]), "task"), "tool-wait-attempt", "Round trip checked");
+  const now = 2000000;
+  const state = { goal: null, list: [], loop: { builder, active: true, target: builder.vision, startedAt: new Date(now - 900000).toISOString(), iteration: 1, maxIterations: 0, plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [] } } as State;
+  const progress = { phase: "running" as const, workerPhase: "running", round: 2 as const, startedAt: now - 900000, attemptStartedAt: now - 180000, currentTool: "bash", currentToolStartedAt: now - 90000, toolTimeoutMs: 300000, lastActivityAt: now - 90000 };
+  try {
+    setRespecAuditLive(builder, progress);
+    const card = stripTerminalSequences(buildWidgetLines(state, null, now, undefined, 250)!.join("\n"));
+    assert.match(card, /waiting on bash.*90s \/ 300s timeout.*second pass.*attempt 3m.*total 15m/);
+    assert.match(card, /timeout recovery is automatic/);
+    assert.match(buildStatusText(state, null, now)!, /waiting on bash.*90s \/ 300s timeout/);
+    assert.match(buildStatusText(state, null, now + 10000)!, /100s \/ 300s timeout/);
+    for (const patch of [{ workerPhase: "tool_cancelled" }, { currentToolStartedAt: now + 1 }, { currentToolStartedAt: NaN }, { toolTimeoutMs: 0 }, { toolTimeoutMs: Infinity }, { lastActivityAt: now + 1 }, { currentToolStartedAt: now - 300000 }, { phase: "retrying" as const }]) {
+      setRespecAuditLive(builder, { ...progress, ...patch });
+      assert.doesNotMatch(buildStatusText(state, null, now)!, /waiting on bash/);
+    }
+    setRespecAuditLive(builder, { ...progress, currentTool: undefined, currentToolStartedAt: undefined });
+    assert.doesNotMatch(buildStatusText(state, null, now)!, /waiting on bash/);
+  } finally { setRespecAuditLive(builder); }
 });
