@@ -972,7 +972,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
   // admitted session_start below decides which bus/generation may control a
   // child. Worker factories can never claim this binding.
   observeSubagentRpcReadiness(pi.events);
-  // Four top-level commands, that's all (v0.8.0 consolidation):
+  // Objective and settings command families:
   //   /goal  — set/draft + status|pause|resume|cancel|tweak|archive subcommands
   //   /list — the list (add|show|tweak|next|remove|clear)
   //   /loop  — the metric loop (draft|start|status|stop)
@@ -995,7 +995,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       }));
 
   pi.registerCommand("goal", {
-    description: "Set/draft a goal, or /goal status|timeline|pause|resume|cancel|tweak <text>|archive|start|plan|audit|verify <objective>. Objectives without a 'Done when:' clause are grilled into a contract first; include the clause or use /goal start to skip the interview and activate instantly. Bare /goal start inherits one clear recent objective or falls back to drafting. /goal plan drafts in rounds with a deep contract; /goal audit runs a one-shot project audit; /goal verify audits the current goal.",
+    description: "Set/draft a goal, or /goal status|timeline|pause|resume|cancel|decide|archive|verify; /goal tweak <text>, start <objective>, plan [direction], audit [focus]. Objectives without a 'Done when:' clause are grilled into a contract first; include the clause or use /goal start to skip the interview and activate instantly. Bare /goal start inherits one clear recent objective or falls back to drafting. /goal plan drafts in rounds with a deep contract; /goal audit runs a one-shot project audit; /goal verify audits the current goal.",
     getArgumentCompletions: completions([
       ["timeline", "show this goal's event trail plus the single next action (/goal timeline [N])"],
       ["start", "skip drafting — /goal start <objective> activates immediately; bare start uses one clear recent objective"],

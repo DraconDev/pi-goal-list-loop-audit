@@ -169,7 +169,7 @@ test("v0.29.8: /goal audit [focus] — the one-shot project audit; /glla status 
   assert.ok(CMDS.includes("function cmdGllaStatus(ctx: ExtensionContext): void {"));
   assert.ok(CMDS.includes("decision pending (${g.pauseOptions.length} options) — ${activeGoalSurfaceCommand(\"decide\")}"));
   // v0.34.51: the /glla status decision line is mode-aware (goal vs list policy).
-  assert.ok(CMDS.includes("deep: /goal status · /list · /loop status · /glla stats · /glla audits · /glla log"));
+  assert.ok(CMDS.includes("deep: /goal status · /list show · /loop status · /glla stats · /glla audits · /glla log"));
   assert.ok(CMDS.includes('if (/^status(?:\\s|$)/.test(trimmed)) {'));
 });
 

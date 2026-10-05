@@ -2,12 +2,22 @@
 
 ## Unreleased
 
-## 0.39.5 — resume held projects through the broad command (2026-10-05)
+## 0.39.5 — consistent command recovery and decision actions (2026-10-05)
 
 - `/glla resume` recognises the same held-loop reasons as `/loop resume`,
   including stalled project audits, manual pauses, auditor infrastructure
   failures and project bounds. It delegates to the loop handler, preserving
   the saved claim, blocker checks and branch restrictions.
+- `/list resume` admits auditing list heads to the existing claim-recovery
+  path. `/goal pause`, `cancel` and `verify` preserve terminal goals.
+- Manual verify and review refuse stale hosts. Decision pickers revalidate
+  both the session and the exact pending decision after selection, execute
+  list/loop control options through their real handlers, and leave work
+  paused when a content choice cannot be delivered.
+- Goal pause, resume and manual verify stop when their state transaction
+  cannot be persisted, avoiding false success messages and dispatches.
+- `/goal decide` is discoverable in completion; status points to `/list show`
+  for inspection. Resume descriptions and bound-stop hints match admission.
 - A real command-to-worker regression resumes a stalled project audit and
   verifies its retained claim through independent approval and archival.
 
