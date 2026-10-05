@@ -2661,13 +2661,13 @@ function respecBuilderLines(loop: LoopState, now: number, theme?: DisplayTheme, 
     return [theme?.bold ? theme.bold(title) : title,
       `└─ ${paint(theme, "success", `Verified ${coverage.verified}/${coverage.total} · archived`)} · /loop status`];
   }
-  const tone = builder.phase === "complete" ? "success" : !loop.active ? "warning" : "accent";
+  const tone = !loop.active ? "warning" : "accent";
   const phase = !loop.active && builder.phase === "auditing" ? stopped ? "Audit stopped" : "Audit held" : builder.phase === "planning" ? "Planning" : builder.phase[0]!.toUpperCase() + builder.phase.slice(1);
   const current = builder.tasks.find(t => t.status === "pending") ?? builder.tasks.at(-1);
   const blocker = builder.requirements.find(r => r.status === "blocked");
   const evidence = [...builder.requirements].reverse().find(r => r.evidence)?.evidence?.report ?? builder.history?.at(-1)?.report;
-  const action = builder.phase === "complete" ? "All adopted requirements independently verified" : stopped ? "Work stopped · /loop status · /loop respec starts a new project" : !loop.active ? "Work held · /loop status · /loop resume when ready" : builder.phase === "auditing" ? "Independent verification pending · no action needed" : "Work continues · /loop pause · /loop refine";
-  const narrowAction = builder.phase === "complete" ? `All ${coverage.total} requirements verified` : stopped ? "Work stopped · /loop status" : !loop.active ? "/loop resume when ready · /loop status" : builder.phase === "auditing" ? "Independent audit pending · no action" : "Work continues · /loop pause";
+  const action = stopped ? "Work stopped · /loop status · /loop respec starts a new project" : !loop.active ? "Work held · /loop status · /loop resume when ready" : builder.phase === "auditing" ? "Independent verification pending · no action needed" : "Work continues · /loop pause · /loop refine";
+  const narrowAction = stopped ? "Work stopped · /loop status" : !loop.active ? "/loop resume when ready · /loop status" : builder.phase === "auditing" ? "Independent audit pending · no action" : "Work continues · /loop pause";
   const progress = loop.active && builder.phase === "auditing" ? getRespecAuditLive(builder) : undefined;
   const auditLines = loop.active && builder.phase === "auditing" ? progress ? [
     `auditor: ${progress.phase} · ${fmtElapsed(now - progress.startedAt)} · ${sanitizeDisplayText(progress.model ?? "model pending")}`,
@@ -2675,7 +2675,7 @@ function respecBuilderLines(loop: LoopState, now: number, theme?: DisplayTheme, 
   ] : ["auditor: waiting for dispatch · no live worker observed"] : [];
   const title = paint(theme, tone, `Project · ${phase}`);
   return [
-    `${theme?.bold ? theme.bold(title) : title}${loop.active || builder.phase === "complete" || builder.phase === "auditing" ? "" : stopped ? " · stopped" : " · held"} · increment ${builder.cycle}`,
+    `${theme?.bold ? theme.bold(title) : title}${loop.active || builder.phase === "auditing" ? "" : stopped ? " · stopped" : " · held"} · increment ${builder.cycle}`,
     `├─ ${truncate(sanitizeDisplayText(builder.vision), budgetFor(width, 3, 75))}`,
     `├─ ${paint(theme, coverage.verified > 0 ? "success" : "dim", `verified ${coverage.verified}/${coverage.total}`)} · ${paint(theme, coverage.remaining > 0 ? "warning" : "dim", `remaining ${coverage.remaining} · blocked ${coverage.blocked}`)}`,
     ...(current ? [`├─ ${builder.phase === "auditing" ? "claim" : "task"}: ${truncate(sanitizeDisplayText(current.text), budgetFor(width, 10, 70))}`] : []),

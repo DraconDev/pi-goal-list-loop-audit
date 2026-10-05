@@ -266,7 +266,7 @@ for (const legacyHold of [false, true]) {
 test("terminal receipt restore preserves an explicit supervisor pause", async () => {
   fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ autoResume: false }));
   const cwd = tmpCwd(), pausedAt = Date.now();
-  seedState(cwd, { supervisorPausedAt: pausedAt, loadHoldAt: pausedAt, loop: seedLoop({ active: false, stopReason: "completed: verified" }) });
+  seedState(cwd, { ...{ supervisorPausedAt: pausedAt, loadHoldAt: pausedAt }, loop: seedLoop({ active: false, stopReason: "completed: verified" }) });
   const pi = newPi(), ctx = await coldBoot(pi, cwd);
   try {
     assert.equal(readState(cwd).supervisorPausedAt, pausedAt);

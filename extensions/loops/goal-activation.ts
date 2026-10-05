@@ -2437,9 +2437,10 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       // Terminal receipts remain inspectable but cannot need consent to run.
       // Remove only the obsolete load hold, never a supervisor pause.
       if (!pendingDurableState && !somethingLive && typeof state.loadHoldAt === "number") {
+        const previous = { ...state, loop: state.loop ? { ...state.loop } : state.loop };
         replaceState({ ...state, loadHoldAt: undefined });
-        persistState(ctx);
-        appendLedger(ctx.cwd, "load_hold_released", { via: "terminal-only-restore" });
+        if (persistState(ctx)) appendLedger(ctx.cwd, "load_hold_released", { via: "terminal-only-restore" });
+        else replaceState(previous);
       }
       // v0.35.23: restore itself may have consented to live work (journal
       // replay activating a deferred item, stale rearm) — a hold must never
