@@ -27,7 +27,16 @@ zero failures), then the publish step completed successfully at
 at 10:28:06Z. npm reported: "Your package is being processed and may take a few
 minutes to become available."
 
-At this checkpoint registry availability has **not yet** been verified; its
-latest query still reports 0.38.113. Live sessions and global package installs
-were not restarted or changed as part of publishing. The hosted workflow log
-is retained beside the local gate evidence.
+**Registry verification completed at 2026-10-05T10:34:18Z:** npm reports version
+and latest dist-tag **0.39.4**. The published tarball was downloaded from npm,
+its SHA-512 integrity matched the registry, and all **141 packaged files**
+matched the fingerprints of the tested tag. The registry exposes signed SLSA
+provenance through its attestations endpoint.
+
+Public package:
+https://www.npmjs.com/package/pi-goal-list-loop-audit/v/0.39.4
+
+The release is complete. Live sessions and global package installs were not
+restarted or changed as part of publishing. The hosted workflow log, registry
+metadata and downloaded-package verification are retained beside the local gate
+evidence.
