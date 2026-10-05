@@ -23,6 +23,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import activate, { __testOnlyResetOwnerSession } from "../extensions/loops/goal.js";
+import { createRespecBuilder } from "../extensions/respec-builder.js";
 import { readState } from "../extensions/goal-loop-core.js";
 import { seedGoal, seedLoop, seedState, tmpCwd, tick, MockPi, makeMockCtx } from "./harness/mock-pi.js";
 
@@ -244,3 +245,20 @@ test("v0.35.23: /list next also releases the hold and starts the queued head", a
   assert.ok(ledger(cwd).some((e) => e.type === "load_hold_released"));
   assert.match(JSON.stringify(ledger(cwd)), /goal_created/);
 });
+
+for (const legacyHold of [false, true]) {
+  test(`completed project receipt does not create or retain a load hold (legacy=${legacyHold})`, async () => {
+    fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ autoResume: false }));
+    const cwd = tmpCwd();
+    const builder = { ...createRespecBuilder("Finished project"), phase: "complete", requirements: [{ id: "done", text: "Done", acceptance: "Verified", status: "verified" }], summaryDeliveredAt: new Date().toISOString() };
+    seedState(cwd, { loop: seedLoop({ active: false, stopReason: "completed: all intended project requirements independently verified", builder }), ...(legacyHold ? { loadHoldAt: Date.now() } : {}) });
+    const pi = newPi();
+    const ctx = await coldBoot(pi, cwd);
+    try {
+      assert.equal(readState(cwd).loop!.builder!.phase, "complete");
+      assert.equal(readState(cwd).loadHoldAt, undefined);
+      assert.equal(ctx.ui.matching("Loaded without starting").length, 0);
+      assert.equal(pi.sent.length, 0);
+    } finally { await pi.fire("session_shutdown", { reason: "quit" }, ctx); }
+  });
+}
