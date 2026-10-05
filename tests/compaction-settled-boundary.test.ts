@@ -118,6 +118,7 @@ test("completed compaction is named accurately and remains inspectable through p
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "compact-visible-complete" } });
   await pi.fire("session_start", { reason: "startup" }, ctx);
+  seedState(cwd, { goal: seedGoal({ status: "active", autoContinue: true }) }); __testOnlyLoadState(cwd);
   try {
     await pi.fire("session_compact", {}, ctx);
     assert.ok(ctx.ui.notifies.some(n => n.message.includes("transcript compacted")));

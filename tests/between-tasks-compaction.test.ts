@@ -223,6 +223,7 @@ test("successful compaction rearms after grace even when context never falls bel
     __testOnlySetSpawnWorker(async () => ({ ok: true, brief: "Continue work." }));
     const first = boundaryCtx(cwd, { tokens: 259650 });
     assert.equal(maybeCompactTranscriptAtBoundary(first.ctx, LIVE_FLAGS), true);
+    now = Date.parse(JSON.parse(fs.readFileSync(compactorBoundaryMarkerPath(cwd), "utf8")).at);
     (first.compacts[0] as { onComplete(): void }).onComplete();
     const grown = boundaryCtx(cwd, { tokens: 685727 });
     assert.equal(maybeCompactTranscriptAtBoundary(grown.ctx, LIVE_FLAGS), false, "success cannot immediately cause a compaction loop");
@@ -242,6 +243,7 @@ test("legacy successful markers rearm from durable completion, while failed atte
     __testOnlySetSpawnWorker(async () => ({ ok: true, brief: "Continue work." }));
     const old = boundaryCtx(success, { tokens: 259650 });
     assert.equal(maybeCompactTranscriptAtBoundary(old.ctx, LIVE_FLAGS), true);
+    now = Date.parse(JSON.parse(fs.readFileSync(compactorBoundaryMarkerPath(success), "utf8")).at);
     seedState(success, { goal: null, lastCompactionAt: now + 1 });
     const failed = boundaryCtx(failure, { tokens: 250000 });
     assert.equal(maybeCompactTranscriptAtBoundary(failed.ctx, LIVE_FLAGS), true);
