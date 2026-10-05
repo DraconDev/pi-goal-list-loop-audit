@@ -1,0 +1,40 @@
+{
+  "version": "0.39.10",
+  "hostedFullGate": {
+    "conclusion": "success",
+    "passed": 3265,
+    "skipped": 1,
+    "failed": 0,
+    "files": 349,
+    "runId": 37372534223
+  },
+  "localFullSuite": {
+    "passed": 3264,
+    "skipped": 1,
+    "failed": 1,
+    "files": 349,
+    "failure": "auditor-retry-callback.test.ts retry count deadline"
+  },
+  "localFailedCaseRerun": {
+    "exit": 0,
+    "passed": 1,
+    "failed": 0
+  },
+  "remainingLocalChecks": {
+    "exit": 0,
+    "checks": [
+      "TypeScript",
+      "jiti state binding",
+      "offline auditor extensions",
+      "inventory",
+      "packing",
+      "installed launcher/worker/skill"
+    ]
+  },
+  "singleGreenLocalFullRerun": false,
+  "registryVerifiedAt": "2026-10-05T22:30:01.611791+00:00",
+  "latest": "0.39.10",
+  "filesMatched": 142,
+  "inputsMatched": 511,
+  "withdrawnVersion": "0.39.9"
+}

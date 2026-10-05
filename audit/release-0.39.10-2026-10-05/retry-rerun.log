@@ -1,0 +1,14 @@
+
+> pi-goal-list-loop-audit@0.39.10 test
+> node scripts/run-tests.mjs tests/auditor-retry-callback.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/auditor-retry-callback.test.ts:
+(pass) manual audit exhaustion retries through timer with fresh candidates and unchanged envelope [21548.53ms]
+
+ 1 pass
+ 0 fail
+Ran 1 test across 1 file. [23.52s]
+[run-tests] finished in 24s (exit 0)

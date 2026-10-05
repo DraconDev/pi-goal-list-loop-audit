@@ -38,7 +38,9 @@ same test passed on GitHub and on a separate local rerun (about 24 seconds).
 Local load sensitivity is a plausible explanation, not established proof of
 the failure's cause. No runtime code or test timeout was changed to hide it.
 The failure, rerun and separate remaining local gate checks are retained in
-the evidence directory; a single green local full-gate rerun is not claimed.
+the evidence directory; a single green local full-gate rerun is not claimed. The separate remaining
+local TypeScript, jiti binding, offline extension, inventory, packing and
+installed launcher/worker/skill checks all passed.
 
 **Registry verification complete:** npm version and latest dist-tag are
 0.39.10. The downloaded npm tarball's SHA-512 integrity matches the registry,
