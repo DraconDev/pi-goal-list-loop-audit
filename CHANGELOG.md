@@ -2,12 +2,15 @@
 
 ## Unreleased
 
-## 0.39.3 — preserve unresolved audit evidence during retention (2026-10-05)
+## 0.39.3 — preserve project audit boundaries and recovery evidence (2026-10-05)
 
 - Startup and manual audit-job cleanup preserve jobs belonging to unresolved
   goal or project increment claims, including held work. Once those claims
   settle, ordinary age and worker-identity retention applies again.
-- Health reports exclude claim-protected jobs from cleanup candidates.
+- Health reports exclude claim-protected jobs from cleanup candidates. Cleanup
+  also refuses to delete jobs when the durable claim journal cannot be read.
+- Settled-turn and idle-boundary transcript compaction wait while an exact
+  project increment audit dispatch owns the boundary.
 - The project-audit heartbeat regression now exercises six actual heartbeat
   ticks during a dispatched worker run, beyond the stall escalation threshold.
 

@@ -28,6 +28,7 @@ import {
 } from "./goal-loop-core.js";
 import { loadGlobalSettings, type Settings } from "./goal-settings.js";
 import { PLAN_B_MAX_ATTEMPTS, resolveCompactorModel } from "./compactor-model.js";
+import { respecBuilderAuditInFlight } from "./respec-builder-runtime.js";
 
 /** Hard cap on the persisted brief: a handoff, not a transcript. */
 export const COMPACTOR_BRIEF_MAX_CHARS = 2000;
@@ -138,6 +139,7 @@ export function maybeCompactTranscriptAtBoundary(
   onFailure?: () => void,
 ): boolean {
   if (!flags.supervising || flags.auditInFlight || flags.paused) return false;
+  if (respecBuilderAuditInFlight(ctx.cwd)) return false;
   let idle = false;
   let pending = true;
   try {
