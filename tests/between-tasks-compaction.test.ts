@@ -1,3 +1,4 @@
+import { seedState } from "./harness/mock-pi.js";
 // pi-goal-list-loop-audit — v0.38.104 between-tasks compaction.
 //
 // Field 2026-09-27: the 200k compaction rule was believed to be set and was
@@ -231,4 +232,28 @@ test("successful compaction rearms after grace even when context never falls bel
     assert.equal(maybeCompactTranscriptAtBoundary(grown.ctx, LIVE_FLAGS), true);
     assert.equal(grown.compacts.length, 1);
   } finally { Date.now = originalNow; await settleBrief(); fs.rmSync(cwd, { recursive: true, force: true }); }
+});
+
+
+test("legacy successful markers rearm from durable completion, while failed attempts stay one-shot", async () => {
+  const originalNow = Date.now; let now = originalNow(); Date.now = () => now;
+  const success = mkBoundaryCwd(), failure = mkBoundaryCwd();
+  try {
+    __testOnlySetSpawnWorker(async () => ({ ok: true, brief: "Continue work." }));
+    const old = boundaryCtx(success, { tokens: 259650 });
+    assert.equal(maybeCompactTranscriptAtBoundary(old.ctx, LIVE_FLAGS), true);
+    seedState(success, { goal: null, lastCompactionAt: now + 1 });
+    const failed = boundaryCtx(failure, { tokens: 250000 });
+    assert.equal(maybeCompactTranscriptAtBoundary(failed.ctx, LIVE_FLAGS), true);
+    const callbacks = failed.compacts[0] as { onError(e: Error): void; onComplete(): void };
+    callbacks.onError(new Error("summarizer output cap"));
+    callbacks.onComplete(); // a late callback cannot turn a failed attempt into success
+    now += 180002;
+    assert.equal(maybeCompactTranscriptAtBoundary(boundaryCtx(success, { tokens: 685727 }).ctx, LIVE_FLAGS), false);
+    assert.equal(fs.existsSync(compactorBoundaryMarkerPath(success)), false);
+    assert.equal(maybeCompactTranscriptAtBoundary(boundaryCtx(success, { tokens: 685727 }).ctx, LIVE_FLAGS), true);
+    assert.equal(maybeCompactTranscriptAtBoundary(boundaryCtx(failure, { tokens: 700000 }).ctx, LIVE_FLAGS), false);
+    assert.ok(fs.existsSync(compactorBoundaryMarkerPath(failure)));
+    assert.ok(!ledgerTypes(failure).includes("compactor_transcript_done"));
+  } finally { Date.now = originalNow; await settleBrief(); fs.rmSync(success, { recursive: true, force: true }); fs.rmSync(failure, { recursive: true, force: true }); }
 });

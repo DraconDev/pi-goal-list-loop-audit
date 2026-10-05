@@ -112,3 +112,18 @@ test("busy agent_end defers the 200k trigger to agent_settled, then work resumes
     await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
   }
 });
+
+
+test("completed compaction is named accurately and remains inspectable through public status", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "compact-visible-complete" } });
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  try {
+    await pi.fire("session_compact", {}, ctx);
+    assert.ok(ctx.ui.notifies.some(n => n.message.includes("transcript compacted")));
+    await pi.command("glla", "status", ctx);
+    const status = ctx.ui.notifies.at(-1)!.message;
+    assert.match(status, /compaction: target 200000 tokens.*last completed 20\d\d-/);
+    assert.doesNotMatch(status, /last completed not recorded/);
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});

@@ -71,11 +71,15 @@ without active GLLA work does not start automation simply by crossing the target
 
 Pi's summarizer can fail, for example when its output hits the model's token
 cap. GLLA records that failure and continues eligible work. It does not retry
-the same failed compaction episode every turn. The episode rearms when a later
-safe check observes context below half the configured target. Pi's `/compact`
+the same failed compaction episode every turn. Failed or unknown episodes rearm
+when a later safe check observes context below half the configured target. A
+confirmed successful compaction rearms after its three-minute recovery grace,
+yielding one normal work boundary before another attempt. This also recovers
+older success markers from the durable completion timestamp. Pi's `/compact`
 is available for a manual attempt; summarizer success is not guaranteed by
 GLLA's scheduling. Compare current context with the recorded attempt time
 before treating an older high-token sample as the current transcript size.
+`/glla status` shows the configured target and last recorded completion time.
 
 ## Updating a running session
 

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Successful transcript compaction rearms after recovery grace, even if the host
+  never reports context below half the target. Saved legacy success markers use
+  the durable completion timestamp; failures retain their one-shot guard.
+- Completion notifications say **compacted**. `/glla status` retains the target
+  and last completion time for inspection.
+
 ## 0.39.10 — clearer project audit progress (2026-10-05)
 
 - Project audit cards and footers retain the current tool’s ticking elapsed/timeout
