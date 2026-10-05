@@ -21,7 +21,13 @@ the actual 0.39.4 changelog entry, leaving an empty Unreleased section.
 
 Evidence: `audit/release-0.39.4-2026-10-05/`.
 
-At this checkpoint the GitHub release is published and its separate publish
-workflow is running. npm publication has **not yet** been verified; the registry
-still reports latest 0.38.113. Live sessions and global package installs were
-not restarted or changed as part of publishing.
+The hosted release gate passed the same 3,233 cases (3,232 passed, one skipped,
+zero failures), then the publish step completed successfully at
+2026-10-05T10:28:04Z with signed npm provenance. The workflow finished successfully
+at 10:28:06Z. npm reported: "Your package is being processed and may take a few
+minutes to become available."
+
+At this checkpoint registry availability has **not yet** been verified; its
+latest query still reports 0.38.113. Live sessions and global package installs
+were not restarted or changed as part of publishing. The hosted workflow log
+is retained beside the local gate evidence.
