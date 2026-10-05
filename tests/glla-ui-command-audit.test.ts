@@ -7,7 +7,7 @@ import activate, { handleSettingChoice, __testOnlyResetProcessState } from "../e
 import { globalSettingsPath, loadSettings, saveSettings } from "../extensions/goal-settings.js";
 import { MockPi, makeMockCtx, tmpCwd, invalidateHostSession, seedState, seedGoal } from "./harness/mock-pi.js";
 import { state, replaceState, persistStateLine } from "../extensions/goal-state.js";
-import { readState } from "../extensions/goal-loop-core.js";
+import { goalStateTransactionPath, readState } from "../extensions/goal-loop-core.js";
 import type { SettingsMenuComponent } from "../extensions/settings-menu.js";
 
 const globalFile = globalSettingsPath();
@@ -257,3 +257,25 @@ test("the list-cancel decision executes cancellation instead of resuming work", 
   assert.equal(readState(ctx.cwd).goal, null);
   assert.equal(pi.userMessages.length, 0, "executable cancellation is not an agent instruction");
 });
+
+for (const action of ["pause", "resume", "verify"]) {
+  test(`/goal ${action} does not announce or dispatch an unpersisted transition`, async () => {
+    const { pi, ctx } = await boot();
+    const status = action === "resume" ? "paused" : "active";
+    replaceState({ ...state, goal: seedGoal({ status }) as unknown as typeof state.goal });
+    persistStateLine(ctx.cwd, state);
+    const transaction = goalStateTransactionPath(ctx.cwd);
+    fs.mkdirSync(transaction, { recursive: true });
+    try {
+      await pi.command("goal", action, ctx);
+      assert.equal(readState(ctx.cwd).goal?.status, status);
+      assert.equal(readState(ctx.cwd).goal?.pendingCompletion, undefined);
+      const notices = ctx.ui.notifies.map(n => n.message).join("\n");
+      assert.match(notices, /not persisted/);
+      assert.doesNotMatch(notices, /Goal .* paused\.|Resumed goal|starting the detached auditor/);
+      const journal = fs.readFileSync(path.join(ctx.cwd, ".pi-glla", "active.jsonl"), "utf8");
+      assert.doesNotMatch(journal, /"type":"manual_audit_requested"/);
+      assert.equal(pi.sent.length, 0);
+    } finally { fs.rmSync(transaction, { recursive: true, force: true }); }
+  });
+}
