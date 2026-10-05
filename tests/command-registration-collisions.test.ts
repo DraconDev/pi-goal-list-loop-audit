@@ -536,3 +536,13 @@ test("every canonical /glla action is discoverable in completions", () => {
   assert.ok(handled.length >= 15, "the scan must cover the actual action namespace");
   assert.deepEqual(handled.filter(action => !aliases.has(action) && !completions.has(action)), []);
 });
+
+test("every handled /goal subcommand has a completion entry", () => {
+  const commands = src("extensions/goal-commands.ts");
+  const start = commands.indexOf("async function cmdGoal");
+  const end = commands.indexOf("\n}\n", start);
+  const handled = [...commands.slice(start, end).matchAll(/route\.name === "([a-z]+)"/g)].map(match => match[1]!);
+  const completions = completionValues(src("extensions/loops/goal-activation.ts"), "goal");
+  assert.ok(handled.length >= 12, "scan covers real routes, including decision recovery");
+  assert.deepEqual(handled.filter(action => !completions.has(action)), []);
+});

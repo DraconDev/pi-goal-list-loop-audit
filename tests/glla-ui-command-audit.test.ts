@@ -231,3 +231,19 @@ test("a decision picker cannot cancel a replacement goal", async () => {
   assert.equal(readState(ctx.cwd).goal?.id, "replacement-command-goal");
   assert.equal(readState(ctx.cwd).goal?.status, "active");
 });
+
+for (const outcome of ["stale", "delivery-error"] as const) {
+  test(`a decision stays paused after ${outcome} during selection`, async () => {
+    const { pi, ctx } = await boot();
+    replaceState({ ...state, goal: seedGoal({ status: "paused", pauseKind: "decision", pauseOptions: ["Continue with the current design"] }) as unknown as typeof state.goal });
+    persistStateLine(ctx.cwd, state);
+    ctx.ui.selectImpl = async (_title, options) => {
+      if (outcome === "stale") invalidateHostSession(pi, ctx);
+      else pi.sendMessageError = new Error("message delivery failed");
+      return options[0];
+    };
+    await pi.command("goal", "decide", ctx);
+    assert.equal(readState(ctx.cwd).goal?.status, "paused");
+    assert.equal(pi.userMessages.length, 0);
+  });
+}
