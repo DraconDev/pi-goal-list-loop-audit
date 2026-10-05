@@ -1,0 +1,169 @@
+{
+  "observedAt": "2026-10-05T06:55:14.864674+00:00",
+  "projects": [
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/freeport",
+      "stateAt": "2026-10-04T22:55:08.606Z",
+      "owner": {
+        "instanceId": "3714525:1791148009633",
+        "pid": 3714525,
+        "at": 1791153123383
+      },
+      "active": false,
+      "stopReason": "stalled: 5 continuation refires landed no turn \u2014 the session is not continuing (wedged message queue or stale API). Press Escape to cancel any stuck run, then /loop resume \u2014 the loop holds on restore. A fresh session_start rebinds the loop or goal; restart pi normally only if no replacement arrives.",
+      "builderPhase": "auditing",
+      "projectId": "1f82d990-5d3e-43b1-bd5a-f63890e8e240",
+      "cycle": 5,
+      "attemptId": "063dd528-5bdb-42fb-8414-c0b0f2ac8b09",
+      "events": [
+        {
+          "at": "2026-10-04T18:04:08.521Z",
+          "type": "heartbeat_refire",
+          "value": {
+            "nudgesSoFar": 0,
+            "consecutiveStalls": 2
+          }
+        },
+        {
+          "at": "2026-10-04T18:08:08.552Z",
+          "type": "heartbeat_refire",
+          "value": {
+            "nudgesSoFar": 0,
+            "consecutiveStalls": 3
+          }
+        },
+        {
+          "at": "2026-10-04T18:16:08.593Z",
+          "type": "heartbeat_refire",
+          "value": {
+            "nudgesSoFar": 0,
+            "consecutiveStalls": 4
+          }
+        },
+        {
+          "at": "2026-10-04T21:06:44.619Z",
+          "type": "session_shutdown",
+          "value": {
+            "reason": "quit"
+          }
+        },
+        {
+          "at": "2026-10-04T21:06:51.650Z",
+          "type": "audit_jobs_retention_sweep",
+          "value": {
+            "reaped": 1,
+            "remaining": 0
+          }
+        },
+        {
+          "at": "2026-10-04T21:06:51.658Z",
+          "type": "session_rebound",
+          "value": {
+            "reason": "startup"
+          }
+        },
+        {
+          "at": "2026-10-04T22:33:08.522Z",
+          "type": "heartbeat_refire",
+          "value": {
+            "nudgesSoFar": 0,
+            "consecutiveStalls": 1
+          }
+        },
+        {
+          "at": "2026-10-04T22:35:08.527Z",
+          "type": "heartbeat_refire",
+          "value": {
+            "nudgesSoFar": 0,
+            "consecutiveStalls": 2
+          }
+        },
+        {
+          "at": "2026-10-04T22:39:08.538Z",
+          "type": "heartbeat_refire",
+          "value": {
+            "nudgesSoFar": 0,
+            "consecutiveStalls": 3
+          }
+        },
+        {
+          "at": "2026-10-04T22:47:08.577Z",
+          "type": "heartbeat_refire",
+          "value": {
+            "nudgesSoFar": 0,
+            "consecutiveStalls": 4
+          }
+        },
+        {
+          "at": "2026-10-04T22:55:08.601Z",
+          "type": "heartbeat_refire",
+          "value": {
+            "nudgesSoFar": 0,
+            "consecutiveStalls": 5
+          }
+        },
+        {
+          "at": "2026-10-04T22:55:08.602Z",
+          "type": "stall_escalated",
+          "value": {
+            "threshold": 5,
+            "kind": "loop"
+          }
+        }
+      ],
+      "savedResults": [
+        {
+          "job": "063dd528-5bdb-42fb-8414-c0b0f2ac8b09-muuebn7k-cacdd9bc",
+          "ok": false,
+          "error": "Auditor aborted.",
+          "goalRevision": {
+            "goalId": "1f82d990-5d3e-43b1-bd5a-f63890e8e240:cycle-5:revision-1",
+            "revision": 1
+          },
+          "completedCalls": 64,
+          "lastCallAt": "2026-10-04T22:55:07.150000+00:00"
+        }
+      ]
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/junk-runner",
+      "stateAt": "2026-10-04T22:04:48.870Z",
+      "owner": {
+        "instanceId": "658449:1791182985862",
+        "pid": 658449,
+        "at": 1791183228332
+      },
+      "active": false,
+      "stopReason": "stalled: 5 continuation refires landed no turn \u2014 the session is not continuing (wedged message queue or stale API). Press Escape to cancel any stuck run, then /loop resume \u2014 the loop holds on restore. A fresh session_start rebinds the loop or goal; restart pi normally only if no replacement arrives.",
+      "builderPhase": "auditing",
+      "projectId": "1c47e151-5071-4917-a656-8b591c11cd0a",
+      "cycle": 1,
+      "attemptId": "7f18dd97-fc01-4ef3-918f-00093b904920",
+      "events": [
+        {
+          "at": "2026-10-05T06:49:43.883Z",
+          "type": "session_shutdown",
+          "value": {
+            "reason": "quit"
+          }
+        },
+        {
+          "at": "2026-10-05T06:49:46.489Z",
+          "type": "audit_jobs_retention_sweep",
+          "value": {
+            "reaped": 1,
+            "remaining": 0
+          }
+        },
+        {
+          "at": "2026-10-05T06:49:46.491Z",
+          "type": "session_rebound",
+          "value": {
+            "reason": "startup"
+          }
+        }
+      ],
+      "savedResults": []
+    }
+  ]
+}
