@@ -274,6 +274,11 @@ test("actual installer, command, tools and agent_end carry a project through det
     }
     const journal = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
     assert.doesNotMatch(journal, /"type":"(?:heartbeat_refire|stall_escalated)"/);
+    let compacts = 0;
+    ctx.getContextUsage = () => ({ tokens: 315_000, contextWindow: 1_000_000, percent: 31.5 });
+    ctx.compact = () => { compacts++; };
+    await pi.fire("agent_settled", {}, ctx);
+    assert.equal(compacts, 0, "settled-boundary compaction cannot interrupt an increment auditor's wait");
     const deadline = Date.now() + 5000;
     while (readState(cwd).loop!.builder!.phase !== "complete") {
       if (Date.now() > deadline) throw new Error(JSON.stringify(readState(cwd).loop));
