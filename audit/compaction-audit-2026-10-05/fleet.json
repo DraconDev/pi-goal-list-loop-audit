@@ -1,0 +1,801 @@
+{
+  "observedAt": "2026-10-05T09:42:57.240307+00:00",
+  "projects": [
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform",
+      "panes": [
+        "wez:1.1",
+        "wez:2.1",
+        "wez:3.1",
+        "wez:29.1"
+      ],
+      "visible": [
+        "[Context]",
+        "/council, /gather-context-and-clarify, /parallel-cleanup, /parallel-research, /parallel-review, /review-loop",
+        "\u219128k \u2193150 R181 CH0.7% 2.8%/1.0M (auto)                                                                                                             (openrouter) stealth/space-bunny-alpha \u2022 max",
+        "\u25cf Chrome Bridge (indefinite) glla: [WORKING] 0/28 tasks \u00b7 v0.39.3"
+      ],
+      "lastCompactionAt": 1791151222728,
+      "goalStatus": "active",
+      "loopActive": null,
+      "builderPhase": null,
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-10-02T14:15:56.630Z"
+        }
+      },
+      "events": [
+        {
+          "type": "compactor_transcript_firing",
+          "at": "2026-10-04T21:59:03.263Z",
+          "value": {
+            "tokens": 222539,
+            "reason": "between tasks at 222539 tokens (threshold 200000)"
+          }
+        },
+        {
+          "type": "session_compact",
+          "at": "2026-10-04T22:00:22.725Z",
+          "value": {}
+        },
+        {
+          "type": "compactor_transcript_done",
+          "at": "2026-10-04T22:00:22.788Z",
+          "value": {}
+        }
+      ]
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-utilities",
+      "panes": [
+        "wez:4.1"
+      ],
+      "visible": [],
+      "lastCompactionAt": 1790310484812,
+      "goalStatus": null,
+      "loopActive": null,
+      "builderPhase": null,
+      "markers": {},
+      "events": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit",
+      "panes": [
+        "wez:5.1",
+        "wez:6.1"
+      ],
+      "visible": [
+        "\u203a also lets check compression cause many projects go over 200k context which is fine but do they eventully compact ?"
+      ],
+      "lastCompactionAt": 1790298280111,
+      "goalStatus": "paused",
+      "loopActive": null,
+      "builderPhase": null,
+      "markers": {},
+      "events": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/studio",
+      "panes": [
+        "wez:7.1"
+      ],
+      "visible": [
+        "\u21911.2M \u2193126k R33M CH99.9% 25.3%/1.0M (auto)                                                                                                         (openrouter) stealth/space-bunny-alpha \u2022 max"
+      ],
+      "lastCompactionAt": 1791140653436,
+      "goalStatus": null,
+      "loopActive": null,
+      "builderPhase": null,
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-09-29T02:01:28.470Z"
+        }
+      },
+      "events": [
+        {
+          "type": "compactor_transcript_firing",
+          "at": "2026-10-04T19:03:03.617Z",
+          "value": {
+            "tokens": 236601,
+            "reason": "between tasks at 236601 tokens (threshold 200000)"
+          }
+        },
+        {
+          "type": "session_compact",
+          "at": "2026-10-04T19:04:13.435Z",
+          "value": {}
+        },
+        {
+          "type": "compactor_transcript_done",
+          "at": "2026-10-04T19:04:13.445Z",
+          "value": {}
+        }
+      ]
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/chat",
+      "panes": [
+        "wez:8.1"
+      ],
+      "visible": [
+        "\u21919.5M \u2193266k R192M CH100.0% 48.1%/1.0M (auto)                                                                                                       (openrouter) stealth/space-bunny-alpha \u2022 max"
+      ],
+      "lastCompactionAt": 1791027561278,
+      "goalStatus": null,
+      "loopActive": null,
+      "builderPhase": null,
+      "markers": {
+        "compactor-boundary.json": {
+          "at": "2026-10-03T11:38:17.862Z",
+          "tokens": 345990
+        },
+        "compactor-fired.json": {
+          "at": "2026-09-29T16:13:54.971Z"
+        }
+      },
+      "events": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/eve",
+      "panes": [
+        "wez:9.1"
+      ],
+      "visible": [
+        "- among them tui-read-v0.md still says the eve-tui crate is not in the tree and that mouse capture is not enabled, both of which the tree contradicts",
+        "- Unresolved \u2014 the queue's first entries are sentences in tui-read-v0.md that are currently false; correcting them is the loop's own turns, not this change's.",
+        "- Left out \u2014 Deliberately left out: the nine claims the queue names were not asserted here. Three are sentences in tui-read-v0.md that are false today \u2014 \"the eve-tui crate is not in the",
+        "\u2191708k \u219370k R15M CH99.9% 17.6%/1.0M (auto)                                                                                                          (openrouter) stealth/space-bunny-alpha \u2022 max"
+      ],
+      "lastCompactionAt": 1791158244581,
+      "goalStatus": null,
+      "loopActive": null,
+      "builderPhase": null,
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-09-28T20:56:06.314Z"
+        }
+      },
+      "events": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/browser-extensions-shared/extensions/standalones/clean-web",
+      "panes": [
+        "wez:10.1",
+        "wez:11.1"
+      ],
+      "visible": [
+        "\u21911.4M \u2193159k R53M CH99.6% 30.1%/1.0M (auto)                                                                                                         (openrouter) stealth/space-bunny-alpha \u2022 max"
+      ],
+      "lastCompactionAt": 1791061046196,
+      "goalStatus": null,
+      "loopActive": null,
+      "builderPhase": null,
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-09-29T22:20:12.705Z"
+        }
+      },
+      "events": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/terhub",
+      "panes": [
+        "wez:12.1",
+        "wez:33.1"
+      ],
+      "visible": [
+        "5. Preview title lacks agent context (src/ui.rs:828) \u2014 shows %1 \u00b7 session:window but not agent/state/idle, the exact things you check before jumping. Room exists:"
+      ],
+      "lastCompactionAt": null,
+      "goalStatus": null,
+      "loopActive": null,
+      "builderPhase": null,
+      "markers": {},
+      "events": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/doomtap",
+      "panes": [
+        "wez:13.1",
+        "wez:14.1"
+      ],
+      "visible": [
+        "\u2191250k \u219370k R19M CH100.0% 18.5%/1.0M (auto)                                                                                                         (openrouter) stealth/space-bunny-alpha \u2022 max",
+        "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 increment 1 \u00b7 verified 0/7 \u00b7 remaining 7 \u00b7 blocked 0 \u00b7 v0.39.2"
+      ],
+      "lastCompactionAt": 1791099847706,
+      "goalStatus": null,
+      "loopActive": true,
+      "builderPhase": "building",
+      "markers": {
+        "compactor-boundary.json": {
+          "at": "2026-10-04T07:42:47.075Z",
+          "tokens": 212531
+        },
+        "compactor-fired.json": {
+          "at": "2026-10-02T10:07:20.894Z"
+        }
+      },
+      "events": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/freeport",
+      "panes": [
+        "wez:15.1",
+        "wez:32.1"
+      ],
+      "visible": [
+        "\u219193k \u21936.4k R645k CH97.9% 5.2%/1.0M (auto)                                                                                                                  (opencode-go) space-bunny-free \u2022 max",
+        "\u25cf Chrome Bridge (indefinite) glla: project audit held \u2014 /loop resume \u00b7 increment 5 \u00b7 verified 0/12 \u00b7 remaining 12 \u00b7 blocked 1 \u00b7 v0.39.3"
+      ],
+      "lastCompactionAt": 1791098885680,
+      "goalStatus": null,
+      "loopActive": false,
+      "builderPhase": "auditing",
+      "markers": {
+        "compactor-boundary.json": {
+          "at": "2026-10-04T08:16:58.783Z",
+          "tokens": 213470
+        },
+        "compactor-fired.json": {
+          "at": "2026-09-28T13:41:59.849Z"
+        }
+      },
+      "events": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/football-forever",
+      "panes": [
+        "wez:16.1",
+        "wez:17.1"
+      ],
+      "visible": [
+        "\u2191434k \u2193244k R120M CH99.7% 40.6%/1.0M (auto)                                                                                                        (openrouter) stealth/space-bunny-alpha \u2022 max",
+        "\u25cf Chrome Bridge (indefinite) glla: [BUSY] \u00b7 loop \u221e iter 519 \u00b7 metricless \u00b7 v0.39.2"
+      ],
+      "lastCompactionAt": 1791143131535,
+      "goalStatus": null,
+      "loopActive": true,
+      "builderPhase": null,
+      "markers": {
+        "compactor-boundary.json": {
+          "at": "2026-10-05T07:45:21.238Z",
+          "tokens": 206356
+        },
+        "compactor-fired.json": {
+          "at": "2026-10-02T09:38:06.868Z"
+        }
+      },
+      "events": [
+        {
+          "type": "compactor_transcript_firing",
+          "at": "2026-10-04T21:18:01.338Z",
+          "value": {
+            "tokens": 212343,
+            "reason": "between tasks at 212343 tokens (threshold 200000)"
+          }
+        },
+        {
+          "type": "session_compact_failed",
+          "at": "2026-10-04T21:21:05.858Z",
+          "value": {
+            "reason": "manual",
+            "error": "Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete",
+            "failureKind": "summarization-length",
+            "aborted": false,
+            "willRetry": false,
+            "fromExtension": false,
+            "generation": 56
+          }
+        },
+        {
+          "type": "compactor_transcript_error",
+          "at": "2026-10-04T21:21:05.860Z",
+          "value": {
+            "error": "Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete"
+          }
+        },
+        {
+          "type": "compactor_transcript_resume",
+          "at": "2026-10-04T21:21:05.860Z",
+          "value": {}
+        },
+        {
+          "type": "compactor_transcript_firing",
+          "at": "2026-10-05T07:45:21.238Z",
+          "value": {
+            "tokens": 206356,
+            "reason": "between tasks at 206356 tokens (threshold 200000)"
+          }
+        },
+        {
+          "type": "session_compact_failed",
+          "at": "2026-10-05T07:48:52.483Z",
+          "value": {
+            "reason": "manual",
+            "error": "Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete",
+            "failureKind": "summarization-length",
+            "aborted": false,
+            "willRetry": false,
+            "fromExtension": false,
+            "generation": 57
+          }
+        },
+        {
+          "type": "compactor_transcript_error",
+          "at": "2026-10-05T07:48:52.490Z",
+          "value": {
+            "error": "Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete"
+          }
+        },
+        {
+          "type": "compactor_transcript_resume",
+          "at": "2026-10-05T07:48:52.490Z",
+          "value": {}
+        }
+      ]
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/neonbreak",
+      "panes": [
+        "wez:18.1",
+        "wez:19.1"
+      ],
+      "visible": [
+        "\u2191503k \u219382k R25M CH99.9% 22.2%/1.0M (auto)                                                                                                          (openrouter) stealth/space-bunny-alpha \u2022 max",
+        "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 increment 1 \u00b7 verified 0/3 \u00b7 remaining 3 \u00b7 blocked 0 \u00b7 v0.39.2",
+        "at async PluginContextImpl.resolveId (file:///home/dracon/Dev/dracon-platform/web/node_modules/.bun/vite@8.0.16+dd16c4e9360e504f/node_modules/vite/dist/node/chunks/node.js:31143:22)"
+      ],
+      "lastCompactionAt": 1791126385785,
+      "goalStatus": null,
+      "loopActive": true,
+      "builderPhase": "building",
+      "markers": {
+        "compactor-boundary.json": {
+          "at": "2026-10-04T16:14:21.187Z",
+          "tokens": 209568
+        },
+        "compactor-fired.json": {
+          "at": "2026-09-28T22:02:57.716Z"
+        }
+      },
+      "events": [
+        {
+          "type": "session_compact_failed",
+          "at": "2026-10-05T05:53:38.181Z",
+          "value": {
+            "reason": "threshold",
+            "error": "Auto-compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete",
+            "failureKind": "summarization-length",
+            "aborted": false,
+            "willRetry": false,
+            "fromExtension": false,
+            "generation": 71
+          }
+        }
+      ]
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/endless-td",
+      "panes": [
+        "wez:20.1"
+      ],
+      "visible": [
+        "\u21911.7M \u2193122k R55M CH100.0% 31.1%/1.0M (auto)                                                                                                        (openrouter) stealth/space-bunny-alpha \u2022 max"
+      ],
+      "lastCompactionAt": 1791097362335,
+      "goalStatus": null,
+      "loopActive": true,
+      "builderPhase": "auditing",
+      "markers": {
+        "compactor-boundary.json": {
+          "at": "2026-10-04T09:24:43.264Z",
+          "tokens": 207321
+        },
+        "compactor-fired.json": {
+          "at": "2026-09-28T11:39:26.962Z"
+        }
+      },
+      "events": [
+        {
+          "type": "session_compact_failed",
+          "at": "2026-10-04T19:57:20.851Z",
+          "value": {
+            "reason": "threshold",
+            "error": "Auto-compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete",
+            "failureKind": "summarization-length",
+            "aborted": false,
+            "willRetry": false,
+            "fromExtension": false,
+            "generation": 67
+          }
+        },
+        {
+          "type": "session_compact_failed",
+          "at": "2026-10-04T19:59:34.154Z",
+          "value": {
+            "reason": "threshold",
+            "error": "Auto-compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete",
+            "failureKind": "summarization-length",
+            "aborted": false,
+            "willRetry": false,
+            "fromExtension": false,
+            "generation": 67
+          }
+        },
+        {
+          "type": "session_compact_failed",
+          "at": "2026-10-04T20:04:57.738Z",
+          "value": {
+            "reason": "threshold",
+            "error": "Auto-compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete",
+            "failureKind": "summarization-length",
+            "aborted": false,
+            "willRetry": false,
+            "fromExtension": false,
+            "generation": 67
+          }
+        },
+        {
+          "type": "session_compact_failed",
+          "at": "2026-10-04T20:11:04.919Z",
+          "value": {
+            "reason": "threshold",
+            "error": "Auto-compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete",
+            "failureKind": "summarization-length",
+            "aborted": false,
+            "willRetry": false,
+            "fromExtension": false,
+            "generation": 67
+          }
+        },
+        {
+          "type": "session_compact_failed",
+          "at": "2026-10-04T20:18:29.760Z",
+          "value": {
+            "reason": "threshold",
+            "error": "Auto-compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete",
+            "failureKind": "summarization-length",
+            "aborted": false,
+            "willRetry": false,
+            "fromExtension": false,
+            "generation": 67
+          }
+        }
+      ]
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/polis",
+      "panes": [
+        "wez:21.1",
+        "wez:22.1"
+      ],
+      "visible": [
+        "\u2191920k \u2193220k R45M CH98.8% 24.2%/1.0M (auto)                                                                                                         (openrouter) stealth/space-bunny-alpha \u2022 max",
+        "\u25cf Chrome Bridge (indefinite) glla: [\u2586\u2588\u2586\u2584\u2582\u2581 LIVE \u00b7 WORKING] \u00b7 loop \u221e iter 514 \u00b7 metricless \u00b7 v0.39.2"
+      ],
+      "lastCompactionAt": 1791186719738,
+      "goalStatus": null,
+      "loopActive": true,
+      "builderPhase": null,
+      "markers": {
+        "compactor-boundary.json": {
+          "at": "2026-10-05T09:33:10.828Z",
+          "tokens": 224079
+        },
+        "compactor-fired.json": {
+          "at": "2026-09-29T13:40:49.711Z"
+        }
+      },
+      "events": [
+        {
+          "type": "compactor_transcript_firing",
+          "at": "2026-10-05T07:49:12.688Z",
+          "value": {
+            "tokens": 200566,
+            "reason": "between tasks at 200566 tokens (threshold 200000)"
+          }
+        },
+        {
+          "type": "session_compact",
+          "at": "2026-10-05T07:51:59.738Z",
+          "value": {}
+        },
+        {
+          "type": "compactor_transcript_done",
+          "at": "2026-10-05T07:51:59.760Z",
+          "value": {}
+        },
+        {
+          "type": "compactor_transcript_firing",
+          "at": "2026-10-05T09:33:10.828Z",
+          "value": {
+            "tokens": 224079,
+            "reason": "between tasks at 224079 tokens (threshold 200000)"
+          }
+        },
+        {
+          "type": "session_compact_failed",
+          "at": "2026-10-05T09:35:09.768Z",
+          "value": {
+            "reason": "manual",
+            "error": "Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete",
+            "failureKind": "summarization-length",
+            "aborted": false,
+            "willRetry": false,
+            "fromExtension": false,
+            "generation": 96
+          }
+        },
+        {
+          "type": "compactor_transcript_error",
+          "at": "2026-10-05T09:35:09.768Z",
+          "value": {
+            "error": "Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete"
+          }
+        },
+        {
+          "type": "compactor_transcript_resume",
+          "at": "2026-10-05T09:35:09.769Z",
+          "value": {}
+        }
+      ]
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/darklord",
+      "panes": [
+        "wez:23.1"
+      ],
+      "visible": [
+        "\u2191709k \u2193157k R65M CH99.8% 34.1%/1.0M (auto)                                                                                                         (openrouter) stealth/space-bunny-alpha \u2022 max",
+        "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 increment 1 \u00b7 verified 0/10 \u00b7 remaining 10 \u00b7 blocked 0 \u00b7 v0.39.2"
+      ],
+      "lastCompactionAt": 1791097448287,
+      "goalStatus": null,
+      "loopActive": true,
+      "builderPhase": "building",
+      "markers": {
+        "compactor-boundary.json": {
+          "at": "2026-10-04T07:40:38.255Z",
+          "tokens": 207429
+        },
+        "compactor-fired.json": {
+          "at": "2026-09-28T23:51:52.081Z"
+        }
+      },
+      "events": [
+        {
+          "type": "session_compact_failed",
+          "at": "2026-10-04T17:30:58.354Z",
+          "value": {
+            "reason": "threshold",
+            "error": "Auto-compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete",
+            "failureKind": "summarization-length",
+            "aborted": false,
+            "willRetry": false,
+            "fromExtension": false,
+            "generation": 45
+          }
+        }
+      ]
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/capture-anime-girls",
+      "panes": [
+        "wez:24.1",
+        "wez:25.1"
+      ],
+      "visible": [
+        "\u2191861k \u2193208k R53M CH99.4% 24.0%/1.0M (auto)                                                                                                         (openrouter) stealth/space-bunny-alpha \u2022 max",
+        "\u25cf Chrome Bridge (indefinite) glla: [BUSY] \u00b7 loop \u221e iter 253 \u00b7 metricless \u00b7 v0.39.2"
+      ],
+      "lastCompactionAt": 1791188271713,
+      "goalStatus": null,
+      "loopActive": true,
+      "builderPhase": null,
+      "markers": {
+        "compactor-boundary.json": {
+          "at": "2026-10-05T09:20:47.549Z",
+          "tokens": 207050
+        },
+        "compactor-fired.json": {
+          "at": "2026-09-28T14:35:52.820Z"
+        }
+      },
+      "events": [
+        {
+          "type": "compactor_transcript_firing",
+          "at": "2026-10-05T08:16:24.730Z",
+          "value": {
+            "tokens": 204012,
+            "reason": "between tasks at 204012 tokens (threshold 200000)"
+          }
+        },
+        {
+          "type": "session_compact",
+          "at": "2026-10-05T08:17:51.713Z",
+          "value": {}
+        },
+        {
+          "type": "compactor_transcript_done",
+          "at": "2026-10-05T08:17:51.733Z",
+          "value": {}
+        },
+        {
+          "type": "compactor_transcript_firing",
+          "at": "2026-10-05T09:20:47.550Z",
+          "value": {
+            "tokens": 207050,
+            "reason": "between tasks at 207050 tokens (threshold 200000)"
+          }
+        },
+        {
+          "type": "session_compact_failed",
+          "at": "2026-10-05T09:23:00.516Z",
+          "value": {
+            "reason": "manual",
+            "error": "Compaction failed: Turn prefix summarization failed: Provider returned an empty response",
+            "failureKind": "other-terminal",
+            "aborted": false,
+            "willRetry": false,
+            "fromExtension": false,
+            "generation": 77
+          }
+        },
+        {
+          "type": "compactor_transcript_error",
+          "at": "2026-10-05T09:23:00.518Z",
+          "value": {
+            "error": "Compaction failed: Turn prefix summarization failed: Provider returned an empty response"
+          }
+        },
+        {
+          "type": "compactor_transcript_resume",
+          "at": "2026-10-05T09:23:00.518Z",
+          "value": {}
+        }
+      ]
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/junk-runner",
+      "panes": [
+        "wez:26.1"
+      ],
+      "visible": [
+        "\u2191153k \u219354k R8.1M CH99.4% 14.7%/1.0M (auto)                                                                                                                 (opencode-go) space-bunny-free \u2022 max",
+        "\u25cf Chrome Bridge (indefinite) glla: project audit held \u2014 /loop resume \u00b7 increment 1 \u00b7 verified 0/15 \u00b7 remaining 15 \u00b7 blocked 0 \u00b7 v0.39.3"
+      ],
+      "lastCompactionAt": 1791067525789,
+      "goalStatus": null,
+      "loopActive": false,
+      "builderPhase": "auditing",
+      "markers": {
+        "compactor-boundary.json": {
+          "at": "2026-10-02T17:23:58.860Z",
+          "tokens": 210810
+        },
+        "compactor-fired.json": {
+          "at": "2026-10-02T16:27:09.688Z"
+        }
+      },
+      "events": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/deathrun",
+      "panes": [
+        "wez:27.1"
+      ],
+      "visible": [
+        "\u2191170k \u219340k R6.9M CH98.3% 13.6%/1.0M (auto)                                                                                                                 (opencode-go) space-bunny-free \u2022 max",
+        "\u25cf Chrome Bridge (indefinite) glla: [BUSY] \u00b7 loop \u221e iter 151 \u00b7 metricless \u00b7 v0.39.3"
+      ],
+      "lastCompactionAt": 1791179187485,
+      "goalStatus": null,
+      "loopActive": true,
+      "builderPhase": null,
+      "markers": {
+        "compactor-fired.json": {
+          "at": "2026-09-28T12:19:20.402Z"
+        }
+      },
+      "events": [
+        {
+          "type": "compactor_transcript_firing",
+          "at": "2026-10-05T07:44:25.574Z",
+          "value": {
+            "tokens": 201321,
+            "reason": "between tasks at 201321 tokens (threshold 200000)"
+          }
+        },
+        {
+          "type": "session_compact_failed",
+          "at": "2026-10-05T07:47:51.025Z",
+          "value": {
+            "reason": "manual",
+            "error": "Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete",
+            "failureKind": "summarization-length",
+            "aborted": false,
+            "willRetry": false,
+            "fromExtension": false,
+            "generation": 61
+          }
+        },
+        {
+          "type": "compactor_transcript_error",
+          "at": "2026-10-05T07:47:51.025Z",
+          "value": {
+            "error": "Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete"
+          }
+        },
+        {
+          "type": "compactor_transcript_resume",
+          "at": "2026-10-05T07:47:51.025Z",
+          "value": {}
+        }
+      ]
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/hegemon",
+      "panes": [
+        "wez:28.1"
+      ],
+      "visible": [
+        "\u2191167k \u219357k R10M CH99.0% 13.9%/1.0M (auto)                                                                                                                  (opencode-go) space-bunny-free \u2022 max",
+        "\u25cf Chrome Bridge (indefinite) glla: [\u2584\u2586\u2588\u2586\u2584\u2582 LIVE \u00b7 WORKING] \u00b7 loop \u221e iter 133 \u00b7 metricless \u00b7 v0.39.3"
+      ],
+      "lastCompactionAt": 1791095775055,
+      "goalStatus": null,
+      "loopActive": true,
+      "builderPhase": null,
+      "markers": {
+        "compactor-boundary.json": {
+          "at": "2026-10-04T07:30:24.440Z",
+          "tokens": 231607
+        },
+        "compactor-fired.json": {
+          "at": "2026-10-02T15:56:15.526Z"
+        }
+      },
+      "events": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/hellhunter",
+      "panes": [
+        "wez:30.1",
+        "wez:31.1"
+      ],
+      "visible": [
+        "\u2191864k \u2193186k R65M CH99.9% 33.9%/1.0M (auto)                                                                                                         (openrouter) stealth/space-bunny-alpha \u2022 max",
+        "\u25cf Chrome Bridge (indefinite) glla: project replanning \u00b7 increment 1 \u00b7 verified 0/8 \u00b7 remaining 8 \u00b7 blocked 1 \u00b7 v0.39.2"
+      ],
+      "lastCompactionAt": 1791067494806,
+      "goalStatus": null,
+      "loopActive": true,
+      "builderPhase": "replanning",
+      "markers": {
+        "compactor-boundary.json": {
+          "at": "2026-10-04T00:24:35.292Z",
+          "tokens": 204570
+        },
+        "compactor-fired.json": {
+          "at": "2026-10-02T16:19:52.337Z"
+        }
+      },
+      "events": [
+        {
+          "type": "session_compact_failed",
+          "at": "2026-10-04T19:46:46.924Z",
+          "value": {
+            "reason": "threshold",
+            "error": "Auto-compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete",
+            "failureKind": "summarization-length",
+            "aborted": false,
+            "willRetry": false,
+            "fromExtension": false,
+            "generation": 57
+          }
+        }
+      ]
+    }
+  ]
+}
