@@ -18,8 +18,16 @@ The earlier fleet gate found one outdated command-description assertion;
 its corrected file and all remaining release checks passed separately. This
 release repeats the entire local gate on the final documentation/package
 inputs. The hosted release workflow independently validates the tag before
-npm publication. Both gates are currently running. npm publication and
-downloaded-package verification are pending; a GitHub release alone is not
-registry availability.
+npm publication. The hosted full gate passed: **3,263 passed, one
+environment-gated skip, zero failures across 349 files** (498 seconds).
+Its remaining typecheck, binding, extension, inventory and installed package
+checks passed, followed by signed npm publication at 18:09:37 UTC. Workflow
+conclusion: success at 18:09:40 UTC. npm reported that processing may take a
+few minutes; registry availability and downloaded-package verification are
+still pending.
+
+The local full suite also passed the same 3,264 cases (3,263 passed, one
+skipped, zero failures), approximately 941 seconds. Its remaining gate
+stages are finishing.
 
 Evidence directory: `audit/release-0.39.8-2026-10-05/`.
