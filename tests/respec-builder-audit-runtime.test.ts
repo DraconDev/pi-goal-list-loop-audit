@@ -21,7 +21,7 @@ import { readFile, writeFile, rename } from "node:fs/promises";
 const dir = process.argv[process.argv.indexOf("--job-dir") + 1];
 const req = JSON.parse(await readFile(dir + "/request.json", "utf8"));
 async function atomic(file, data) { await writeFile(file + ".tmp", JSON.stringify(data)); await rename(file + ".tmp", file); }
-await atomic(dir + "/progress.json", { protocolVersion: 1, attemptId: req.attemptId, requestHash: req.requestHash, phase: "running", elapsedMs: 1, lastActivityAt: Date.now(), toolCalls: [], recentOutput: [] });
+await atomic(dir + "/progress.json", { protocolVersion: 1, attemptId: req.attemptId, requestHash: req.requestHash, phase: "running", elapsedMs: 1, lastActivityAt: Date.now(), toolCalls: [], recentOutput: [], ...(process.env.TOOL_WAIT ? { currentTool: "bash", currentToolStartedAt: Date.now(), toolTimeoutMs: 300000, currentToolTimeoutMs: 1200000, round: 2 } : {}) });
 if (process.env.RESULT_DELAY) await new Promise(resolve => setTimeout(resolve, Number(process.env.RESULT_DELAY)));
 const output = process.env.INCOMPLETE_EVIDENCE ? "Looks good\\n<approved/>" : process.env.FAIL_PRIMARY && req.model.includes("primary") ? "no verdict from primary" : process.env.NEEDS_WORK ? "<evidence>\\nInvalid credentials accepted\\n</evidence>\\n<disapproved/>" : "<evidence>\\nartifact exists\\n</evidence>\\n<approved/>";
 await atomic(dir + "/result.json", { protocolVersion: 1, attemptId: req.attemptId, requestHash: req.requestHash, goalRevision: req.goalRevision, ok: true, output, model: req.model, thinkingLevel: req.thinkingLevel, challenge: "confirmed", toolCalls: [{ name: "read", argsPrefix: "{}", finishedAt: Date.now() }] });
@@ -419,4 +419,18 @@ test("a corrupt summary outbox prevents terminal handoff and retains approved jo
     assert.deepEqual(fs.readdirSync(path.join(f.cwd, ".pi-glla", "audit-jobs")), jobs);
     assert.equal(f.summaries.length, 1);
   } finally { replaceState(f.original); }
+});
+
+
+test("project audit preserves live tool deadline and attempt clock through the real worker bridge", async () => {
+  const f = fixture({ TOOL_WAIT: "1", RESULT_DELAY: "250" });
+  try {
+    await runRespecBuilderAudit(f.ctx);
+    const observed = f.observations.find(p => p.phase === "running" && p.lastActivityAt !== undefined)!;
+    assert.equal(observed.currentTool, "bash");
+    assert.equal(observed.toolTimeoutMs, 1200000);
+    assert.equal(observed.round, 2);
+    assert.ok(typeof observed.currentToolStartedAt === "number");
+    assert.ok(typeof observed.attemptStartedAt === "number");
+  } finally { replaceState(f.original); fs.rmSync(f.cwd, { recursive: true, force: true }); }
 });

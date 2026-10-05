@@ -11,7 +11,7 @@ import { loadSettings } from "./goal-settings.js";
 import type { LoopState } from "./goal-loop-forever.js";
 import { dispatchAuditorAllowedExtensions } from "./auditor-extensions.js";
 import { resolveAuditorThinkingLevel } from "./auditor-thinking.js";
-import { runDetachedGoalCompletionAuditor, runAuditorFallbackWithPolicy, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, writeAtomicJson, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
+import { runDetachedGoalCompletionAuditor, runAuditorFallbackWithPolicy, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, writeAtomicJson, effectiveToolTimeoutMs, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
 import { setRespecAuditLive, getRespecAuditLive, respecCompletionSummary } from "./respec-builder-ui.js";
 import { respecIncrementAuditGoal } from "./respec-builder-audit.js";
 import { adoptRespecRequirements, beginRespecAudit, blockRespecRequirement, unblockRespecRequirement, refineRespecRequirements, claimRespecTask, planRespecIncrement, settleRespecAudit, type RespecBuilderState } from "./respec-builder.js";
@@ -134,7 +134,10 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
         inspection: settings.auditorInspection === true,
         signal: controller.signal,
         onProgress: progress => {
-          publish({ phase: progress.phase === "starting" ? "starting" : "running", ...(progress.phase !== "starting" && progress.lastActivityAt !== undefined ? { lastActivityAt: progress.lastActivityAt } : {}), activity: progress.currentTool ? `tool: ${progress.currentTool}` : progress.phase.replaceAll("_", " ") });
+          publish({ phase: progress.phase === "starting" ? "starting" : "running", ...(progress.phase !== "starting" && progress.lastActivityAt !== undefined ? { lastActivityAt: progress.lastActivityAt } : {}),
+            workerPhase: progress.phase, round: progress.round, currentTool: progress.currentTool, currentToolStartedAt: progress.currentToolStartedAt,
+            toolTimeoutMs: effectiveToolTimeoutMs(host.auditRuntime?.toolTimeoutMs ?? settings.auditorToolTimeoutMs, progress.currentToolTimeoutMs),
+            activity: progress.currentTool ? `tool: ${progress.currentTool}` : progress.phase.replaceAll("_", " ") });
           if (parkProjectBound(ctx)) controller.abort();
           if (!state.loop?.active || state.loop.startedAt !== loop.startedAt || state.loop.builder !== builder || !host.context(ctx)) controller.abort();
         },
@@ -148,7 +151,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
         resumeCandidateRef: builder.audit!.candidateRef, attemptedRefs: builder.audit!.attemptedRefs,
         retryCandidateRef: builder.audit!.retryCandidateRef, retryAttemptStarted: builder.audit!.retryAttemptStarted,
         retryFailureClass: builder.audit!.retryFailureClass,
-        onAttempt: (_candidate, info) => { publish({ phase: "starting", model: info.candidateRef, retryAt: undefined, lastActivityAt: undefined, activity: undefined }); return saveCursor({ candidateRef: info.candidateRef, attemptedRefs: info.attemptedRefs, retryAttemptStarted: info.attempt === 2 }); },
+        onAttempt: (_candidate, info) => { publish({ phase: "starting", model: info.candidateRef, attemptStartedAt: Date.now(), retryAt: undefined, lastActivityAt: undefined, activity: undefined, workerPhase: undefined, round: undefined, currentTool: undefined, currentToolStartedAt: undefined, toolTimeoutMs: undefined }); return saveCursor({ candidateRef: info.candidateRef, attemptedRefs: info.attemptedRefs, retryAttemptStarted: info.attempt === 2 }); },
         onRetry: (_candidate, _error, delay, info) => { publish({ phase: "retrying", retryAt: Date.now() + delay, activity: `retry: ${info.failureClass}` }); return saveCursor({ candidateRef: info.candidateRef, attemptedRefs: info.attemptedRefs, retryCandidateRef: info.candidateRef, retryFailureClass: info.failureClass, retryAttemptStarted: false }); },
         onCandidateExhausted: (_candidate, _error, info) => { publish({ phase: "waiting", model: info.nextCandidateRef, retryAt: undefined, activity: "selecting fallback" }); return saveCursor({ candidateRef: info.nextCandidateRef ?? info.candidateRef, attemptedRefs: info.attemptedRefs, retryCandidateRef: undefined, retryAttemptStarted: false, retryFailureClass: info.failureClass }); },
       })).result);

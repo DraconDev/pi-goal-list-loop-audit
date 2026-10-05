@@ -1,4 +1,4 @@
-import { getRespecAuditLive, respecAuditStatus } from "./respec-builder-ui.js";
+import { getRespecAuditLive, respecAuditStatus, respecAuditToolWait } from "./respec-builder-ui.js";
 /**
  * pi-goal-list-loop-audit — v0.9.0
  * extensions/goal-loop-display.ts
@@ -2667,8 +2667,9 @@ function respecBuilderLines(loop: LoopState, now: number, theme?: DisplayTheme, 
   const action = stopped ? "Work stopped · /loop status · /loop respec starts a new project" : !loop.active ? "Work held · /loop status · /loop resume when ready" : builder.phase === "auditing" ? "Independent verification pending · no action needed" : "Work continues · /loop pause · /loop refine";
   const narrowAction = stopped ? "Work stopped · /loop status" : !loop.active ? "/loop resume when ready · /loop status" : builder.phase === "auditing" ? "Independent audit pending · no action" : "Work continues · /loop pause";
   const progress = loop.active && builder.phase === "auditing" ? getRespecAuditLive(builder) : undefined;
+  const toolWait = respecAuditToolWait(progress, now);
   const auditLines = loop.active && builder.phase === "auditing" ? progress ? [
-    `auditor: ${progress.phase} · ${fmtElapsed(now - progress.startedAt)} · ${sanitizeDisplayText(progress.model ?? "model pending")}`,
+    `auditor: ${toolWait ?? progress.phase}${progress.round === 2 ? " · second pass" : ""} · ${progress.attemptStartedAt !== undefined ? `attempt ${fmtElapsed(now - progress.attemptStartedAt)} · ` : ""}total ${fmtElapsed(now - progress.startedAt)} · ${sanitizeDisplayText(progress.model ?? "model pending")}`,
     `last activity: ${progress.lastActivityAt !== undefined ? `${fmtElapsed(now - progress.lastActivityAt)} ago` : "not observed"}${progress.activity ? ` · ${sanitizeDisplayText(progress.activity)}` : ""}${progress.retryAt !== undefined ? ` · retry in ${fmtElapsed(Math.max(0, progress.retryAt - now))}` : ""}`,
   ] : ["auditor: waiting for dispatch · no live worker observed"] : [];
   const title = paint(theme, tone, `Project · ${phase}`);
@@ -2681,7 +2682,7 @@ function respecBuilderLines(loop: LoopState, now: number, theme?: DisplayTheme, 
     ...(!loop.active && loop.stopReason ? [`├─ ${paint(theme, "warning", `${stopped ? "stopped" : "held"}: ${truncate(sanitizeDisplayText(loop.stopReason), budgetFor(width, stopped ? 12 : 9, 90))}`)}`] : []),
     ...(blocker ? [`├─ ${paint(theme, "warning", "blocked")}: ${truncate(sanitizeDisplayText(blocker.blockedReason ?? "reason missing"), budgetFor(width, 12, 70))}`] : []),
     ...(evidence ? [`├─ ${paint(theme, "dim", `evidence: ${truncate(sanitizeDisplayText(evidence), budgetFor(width, 13, 65))}`)}`] : []),
-    `└─ ${paint(theme, tone, width && width < 60 ? narrowAction : action)}`,
+    `└─ ${paint(theme, tone, toolWait ? "Waiting for tool completion · timeout recovery is automatic" : width && width < 60 ? narrowAction : action)}`,
   ];
 }
 

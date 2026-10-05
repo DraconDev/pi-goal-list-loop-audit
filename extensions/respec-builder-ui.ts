@@ -6,6 +6,12 @@ export interface RespecAuditLive {
   phase: "starting" | "running" | "retrying" | "waiting";
   model?: string;
   startedAt: number;
+  attemptStartedAt?: number;
+  workerPhase?: string;
+  round?: 1 | 2;
+  currentTool?: string;
+  currentToolStartedAt?: number;
+  toolTimeoutMs?: number;
   lastActivityAt?: number;
   activity?: string;
   retryAt?: number;
@@ -24,10 +30,21 @@ export function getRespecAuditLive(builder: RespecBuilderState): RespecAuditLive
   return id ? live.get(id) : undefined;
 }
 const seconds = (ms: number) => `${Math.max(0, Math.floor(ms / 1000))}s`;
+export function respecAuditToolWait(progress: RespecAuditLive | undefined, now: number): string | undefined {
+  if (!progress || progress.phase !== "running" || !progress.currentTool
+    || !["running", "tool_executing"].includes(progress.workerPhase ?? "")
+    || !Number.isFinite(progress.currentToolStartedAt) || progress.currentToolStartedAt! > now
+    || (progress.lastActivityAt !== undefined && (!Number.isFinite(progress.lastActivityAt) || progress.lastActivityAt > now))
+    || !Number.isFinite(progress.toolTimeoutMs) || progress.toolTimeoutMs! <= 0
+    || now - progress.currentToolStartedAt! >= progress.toolTimeoutMs!) return undefined;
+  return `waiting on ${sanitizeDisplayText(progress.currentTool)} · ${seconds(now - progress.currentToolStartedAt!)} / ${seconds(progress.toolTimeoutMs!)} timeout`;
+}
 export function respecAuditStatus(builder: RespecBuilderState, now: number): string {
   const progress = getRespecAuditLive(builder);
   if (!progress) return "auditor: waiting for dispatch · no live worker observed";
-  return `auditor: ${progress.phase} · ${sanitizeDisplayText(progress.model ?? "model pending")} · elapsed ${seconds(now - progress.startedAt)}`
+  return `auditor: ${respecAuditToolWait(progress, now) ?? progress.phase}${progress.round === 2 ? " · second pass" : ""} · ${sanitizeDisplayText(progress.model ?? "model pending")}`
+    + (progress.attemptStartedAt !== undefined ? ` · attempt ${seconds(now - progress.attemptStartedAt)}` : "")
+    + ` · total ${seconds(now - progress.startedAt)}`
     + (progress.lastActivityAt !== undefined ? ` · last activity ${seconds(now - progress.lastActivityAt)} ago` : " · worker activity not observed")
     + (progress.activity ? ` · ${sanitizeDisplayText(progress.activity)}` : "")
     + (progress.retryAt !== undefined ? ` · retry in ${seconds(progress.retryAt - now)}` : "");
