@@ -1,0 +1,23 @@
+{
+  "version": "0.39.8",
+  "localReleaseCheck": {
+    "exit": 0,
+    "passed": 3263,
+    "skipped": 1,
+    "failed": 0,
+    "files": 349
+  },
+  "hostedReleaseCheck": {
+    "conclusion": "success",
+    "passed": 3263,
+    "skipped": 1,
+    "failed": 0,
+    "files": 349,
+    "runId": 37352643357
+  },
+  "inputsMatched": 511,
+  "tag": "v0.39.8",
+  "registryVerifiedAt": "2026-10-05T18:13:16.800483+00:00",
+  "publishedFilesMatched": 142,
+  "registryLatest": "0.39.8"
+}

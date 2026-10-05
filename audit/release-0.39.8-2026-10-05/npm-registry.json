@@ -1,0 +1,130 @@
+{
+  "observedAt": "2026-10-05T18:13:15.146675+00:00",
+  "distTags": {
+    "latest": "0.39.8"
+  },
+  "version": {
+    "pi": {
+      "image": "https://raw.githubusercontent.com/DraconDev/pi-goal-list-loop-audit/main/media/glla-icon.png",
+      "skills": [
+        "skills/glla-delegate"
+      ],
+      "extensions": [
+        "extensions/loops/goal.ts"
+      ]
+    },
+    "_id": "pi-goal-list-loop-audit@0.39.8",
+    "bugs": {
+      "url": "https://github.com/DraconDev/pi-goal-list-loop-audit/issues"
+    },
+    "dist": {
+      "shasum": "123f3e0f88877f4ac204844c244552d0e7d82d70",
+      "tarball": "https://registry.npmjs.org/pi-goal-list-loop-audit/-/pi-goal-list-loop-audit-0.39.8.tgz",
+      "fileCount": 142,
+      "integrity": "sha512-1MAB81lCn4iVBgpKzl9NoEtVxouTIrkRif0JIU3ggbKnPZkWM2Cq535f2KIikX08V4cevwubbaHS3hrHhJgGXQ==",
+      "signatures": [
+        {
+          "sig": "MEYCIQDk1FRgVMuNz4uLaVoOsJPTna/BVjki/qF4Qd/kuTVnswIhALhv+hAybg30pKcg5PYvCFtdDI1Dj4c8f5Bz0xat86QW",
+          "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+        },
+        {
+          "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+          "sig": "MEUCIQDssatJPHh//qN/a3vK1a7TLW8OPun+CXtWYD/qHQ9hzQIgWH0lKsCW3NBblXsRwqTYhzONtleq5PB122YWxr7vVoc="
+        }
+      ],
+      "attestations": {
+        "url": "https://registry.npmjs.org/-/npm/v1/attestations/pi-goal-list-loop-audit@0.39.8",
+        "provenance": {
+          "predicateType": "https://slsa.dev/provenance/v1"
+        }
+      },
+      "unpackedSize": 4624458
+    },
+    "name": "pi-goal-list-loop-audit",
+    "type": "module",
+    "author": {
+      "name": "dracon"
+    },
+    "engines": {
+      "node": ">=22.19.0"
+    },
+    "gitHead": "f56bfbdfce284e1884875a9bd90f46df480e436a",
+    "license": "AGPL-3.0-only",
+    "scripts": {
+      "test": "node scripts/run-tests.mjs",
+      "check": "tsc --noEmit",
+      "test:all": "node scripts/run-tests.mjs --all && tsc --noEmit && node tests/repro-jiti-state-split.test.mjs && npm run test:auditor-extensions",
+      "test:fast": "node scripts/run-tests.mjs",
+      "test:jiti": "node tests/repro-jiti-state-split.test.mjs",
+      "test:slow": "node scripts/run-tests.mjs --slow",
+      "test:changed": "bun test --parallel=1 --max-concurrency=1 --timeout=60000 --changed",
+      "release:check": "npm run test:all && npm run check:inventory && npm pack --dry-run && node scripts/release-pack-smoke.mjs",
+      "check:inventory": "node scripts/generate-inventory.mjs --check",
+      "test:auditor-extensions": "node scripts/verify-auditor-extensions-offline.mjs"
+    },
+    "version": "0.39.8",
+    "_npmUser": {
+      "name": "GitHub Actions",
+      "email": "npm-oidc-no-reply@github.com",
+      "trustedPublisher": {
+        "id": "github",
+        "oidcConfigId": "3adea767-e79d-4430-ae99-67b9e42df898"
+      }
+    },
+    "homepage": "https://github.com/DraconDev/pi-goal-list-loop-audit#readme",
+    "keywords": [
+      "pi-package",
+      "pi",
+      "pi-extension",
+      "goal",
+      "loop",
+      "list",
+      "audit",
+      "isolated-auditor",
+      "anti-bamboozle",
+      "agent-loop",
+      "long-running",
+      "verification-contract"
+    ],
+    "repository": {
+      "url": "git+https://github.com/DraconDev/pi-goal-list-loop-audit.git",
+      "type": "git"
+    },
+    "_npmVersion": "11.12.1",
+    "description": "Mission control for long running pi work: interview drafted goals, an audited task queue, and metric or audit loops that run for hours. Every completion is rechecked by a detached auditor with raw evidence, while Confirm drafts, decision pauses, and conse",
+    "directories": {},
+    "maintainers": [
+      {
+        "name": "dracond",
+        "email": "adamnagywork@gmail.com"
+      }
+    ],
+    "_nodeVersion": "22.19.0",
+    "publishConfig": {
+      "access": "public"
+    },
+    "_hasShrinkwrap": false,
+    "devDependencies": {
+      "ajv": "8.20.0",
+      "jiti": "2.7.0",
+      "typebox": "^1.3.14",
+      "typescript": "^5.9.3",
+      "pi-subagents": "*",
+      "@earendil-works/pi-ai": "0.99.1",
+      "@earendil-works/pi-tui": "0.99.1",
+      "@earendil-works/pi-agent-core": "0.99.1",
+      "@earendil-works/pi-coding-agent": "0.99.1"
+    },
+    "peerDependencies": {
+      "typebox": ">=1.3.14 <1.4.0",
+      "@earendil-works/pi-ai": ">=0.84.2 <0.100.0",
+      "@earendil-works/pi-tui": ">=0.84.2 <0.100.0",
+      "@earendil-works/pi-agent-core": ">=0.84.2 <0.100.0",
+      "@earendil-works/pi-coding-agent": ">=0.84.2 <0.100.0"
+    },
+    "_npmOperationalInternal": {
+      "host": "s3://npm-registry-packages-npm-production",
+      "tmp": "tmp/pi-goal-list-loop-audit_0.39.8_1791223935756_0.3658451114867478"
+    }
+  }
+}

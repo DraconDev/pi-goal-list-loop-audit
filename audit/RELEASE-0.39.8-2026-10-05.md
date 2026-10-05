@@ -23,11 +23,24 @@ environment-gated skip, zero failures across 349 files** (498 seconds).
 Its remaining typecheck, binding, extension, inventory and installed package
 checks passed, followed by signed npm publication at 18:09:37 UTC. Workflow
 conclusion: success at 18:09:40 UTC. npm reported that processing may take a
-few minutes; registry availability and downloaded-package verification are
-still pending.
+few minutes; the subsequent registry and tarball checks confirmed availability.
 
 The local full suite also passed the same 3,264 cases (3,263 passed, one
-skipped, zero failures), approximately 941 seconds. Its remaining gate
-stages are finishing.
+skipped, zero failures), approximately 941 seconds. Its remaining TypeScript,
+jiti binding, offline extension, inventory, packing and installed launcher,
+RPC worker and skill checks all passed. All 511 checked inputs still match
+the worktree and tag at the end of validation.
+
+**Registry verification complete:** npm version and latest dist-tag are
+0.39.8. The downloaded npm tarball's SHA-512 integrity matches the registry,
+and all 142 packaged files match the tag byte for byte. The registry includes
+npm provenance attestations and Pi extension/skill metadata. This npm package
+is the Pi plugin release; no separate Pi publication is required.
+
+Public package: https://www.npmjs.com/package/pi-goal-list-loop-audit/v/0.39.8
+
+The release is complete. Live sessions and installed packages were not
+restarted or upgraded. Users should update the npm/Pi installation and reload
+existing sessions, then inspect `/glla version`.
 
 Evidence directory: `audit/release-0.39.8-2026-10-05/`.
