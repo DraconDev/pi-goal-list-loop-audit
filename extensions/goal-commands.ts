@@ -281,12 +281,12 @@ async function cmdGoal(args: string, ctx: ExtensionContext): Promise<void> {
         }
         return;
       }
-      updateGoal({
+      if (!updateGoal({
         pendingCompletion: {
           completionSummary: "Manual audit requested by the user via /goal verify (no agent completion claim). Verify the objective against the repo directly.",
           at: nowIso(),
         },
-      }, ctx);
+      }, ctx)) return;
       appendLedger(ctx.cwd, "manual_audit_requested", { goalId: state.goal.id });
       void retryStoredCompletionAudit("manual");
       return;
@@ -509,13 +509,13 @@ async function cmdPause(ctx: ExtensionContext): Promise<void> {
   releaseContinuationDispatchStandDown();
   clearDispatchRecord(ctx.cwd);
   const resumeCommand = activeGoalCommand("resume");
-  updateGoal({
+  if (!updateGoal({
     status: "paused",
     pauseKind: "blocked",
     pauseReason: "paused by user",
     pauseSuggestedAction: `${resumeCommand} to continue`,
     pauseResumeAt: undefined,
-  }, ctx);
+  }, ctx)) return;
   // v0.22.7: name WHAT was paused — a list item resumes through /list.
   if (state.goal.policy === "list") {
     const queued = listQueue().length;
@@ -677,7 +677,7 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
   // manual resume exactly as by an automatic one. (staleEntry still re-marks
   // below — a resume inside a stale session is a NEW interrupt.)
   const storedCompletion = state.goal.pendingCompletion;
-  updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined, pauseKind: undefined, pauseOptions: undefined, pauseRecommended: undefined, pauseResumeAt: undefined, interruptedAt: undefined, interruptedReason: undefined, autoResumedAt: undefined, autoResumedEvent: undefined, ...(staleEntry ? { interruptedAt: nowIso(), interruptedReason: "resumed in a stale session" } : {}), ...(usage ? { usage } : {}) }, ctx);
+  if (!updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined, pauseKind: undefined, pauseOptions: undefined, pauseRecommended: undefined, pauseResumeAt: undefined, interruptedAt: undefined, interruptedReason: undefined, autoResumedAt: undefined, autoResumedEvent: undefined, ...(staleEntry ? { interruptedAt: nowIso(), interruptedReason: "resumed in a stale session" } : {}), ...(usage ? { usage } : {}) }, ctx) return;
   if (staleEntry) return;
   releaseAuditorSurface();
   // A manual resume starts a fresh relentless cycle: a user pause between
