@@ -201,7 +201,10 @@ Useful controls:
 ```
 
 `/glla pause` freezes supervisor automation without killing active work.
-`/glla resume` releases it. A BUSY/no-stream Pi turn is aborted and parked by
+`/glla resume` releases it and resumes eligible saved work, including held
+projects through the same recovery path as `/loop resume`.
+See the [recovery guide](docs/RECOVERY.md) for command choice, audit progress,
+model changes, completed projects and compaction. A BUSY/no-stream Pi turn is aborted and parked by
 GLLA, then automatically re-dispatched within the **Zero-stream retries**
 budget (default 3, configurable from 0–10); exhaustion requires an explicit
 mode-correct resume. A user abort means stop; recovery is not silently
@@ -276,7 +279,7 @@ PI_CODING_AGENT_DIR=/tmp/bare-agent pi -p "say ok" --model "provider/model-id"
 ### Work restored but not running
 
 That is a consent/supervision state, not proof of loss. Inspect `/glla status`
-and use `/goal resume`, `/list resume`, `/list next`, or `/loop resume` as
+and use `/glla resume`, or `/goal resume`, `/list resume`, `/list next`, or `/loop resume` as
 appropriate. Keep `Auto-resume` enabled only when automatic restart after
 session load is intentional.
 

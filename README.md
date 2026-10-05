@@ -267,6 +267,8 @@ unacknowledged delivery uses the durable outbox and retries on reload, even
 after a new project replaces the old loop, without rerunning the audit. Large
 summary cards name omitted requirements/reports; the archive and `/loop status`
 retain the full criteria and evidence.
+After completion, the project widget and GLLA footer disappear. The archive
+and `/loop status` retain the result; other unfinished work remains visible.
 `/loop pause` holds work, `/loop resume` continues saved state, and
 `/loop stop` stops it without calling unfinished work complete. If all remaining
 work is blocked, automation parks with reasons; clearing a blocker leaves work
@@ -455,7 +457,8 @@ proof of a quota or billing state.
   and re-dispatched within the configurable **Zero-stream retries** budget
   (default 3, range 0 to 10), then requires explicit resume;
 - `/goal resume`, `/list resume`, and `/loop resume` are explicit recovery
-  paths;
+  paths; `/glla resume` is the broad recovery command and routes eligible held
+  projects through the same handler as `/loop resume`;
 - a user abort means stop, not “try again behind my back”;
 - a loaded objective can be displayed without injecting stale auditor context
   until continuation consent exists;
@@ -467,6 +470,10 @@ proof of a quota or billing state.
 Use `/glla pause` to freeze supervisor automation without killing active work,
 `/glla resume` to release it, `/glla bug [message]` to capture failure context to `bugs/` without touching durable goal state, and `/glla status` or `/goal status` to inspect
 what happened.
+
+See the [recovery guide](docs/RECOVERY.md) for the resume command table,
+audit progress indicators, model changes, completed projects and compaction
+above the default 200k target.
 
 ### Settings worth knowing
 
