@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## 0.39.9 — clearer project audit progress (2026-10-05)
+## 0.39.10 — clearer project audit progress (2026-10-05)
 
 - Project audit cards and footers retain the current tool’s ticking elapsed/timeout
   clock, show the second pass, and distinguish current attempt time from total
@@ -12,6 +12,12 @@
 - The package description and search keywords surface project building and
   audited queues. README leads with a runnable spec-building example and links
   to the command/recovery guides and Pi catalog.
+
+## 0.39.9 — validation withdrawn (2026-10-05)
+
+- The release workflow was cancelled before npm publication after detecting an
+  older project-status test expecting the previous clock label. The existing
+  Git tag is retained; 0.39.10 includes the correction and the intended changes.
 
 ## 0.39.8 — consistent recovery and completed project UI (2026-10-05)
 

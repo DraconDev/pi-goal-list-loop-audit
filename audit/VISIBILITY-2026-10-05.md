@@ -2,7 +2,7 @@
 
 The official Pi catalog already lists GLLA:
 https://pi.dev/packages/pi-goal-list-loop-audit
-Observed October 5 before 0.39.9 publication: its introduction repeated the
+Observed October 5 before 0.39.10 publication: its introduction repeated the
 long package description, and its version was 0.39.8. Registry/catalog refresh
 is external; an npm release is the input, not proof of immediate catalog refresh.
 
@@ -41,7 +41,7 @@ completion claims. `/loop respec` drafts requirements for confirmation, builds
 increments, sends claims to an independent auditor, and replans gaps. Saved
 work has visible recovery commands; verified completion retains its evidence.
 
-0.39.9 makes long audits easier to read: current tool elapsed/timeout, audit
+0.39.10 makes long audits easier to read: current tool elapsed/timeout, audit
 pass, current-attempt time and total time across retries are distinct.
 
 Install: `pi install npm:pi-goal-list-loop-audit@latest`.
