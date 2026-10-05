@@ -75,6 +75,7 @@ import { compactLoopCompletionSummary, compactTerminalCompletionSummary } from "
 import { inferStartFromSession, type StartContextInference } from "./start-context.js";
 import { createRespecBuilder, respecCoverage, type RespecBuilderState } from "./respec-builder.js";
 import { runRespecBuilderAudit, cancelRespecBuilderAudit } from "./respec-builder-runtime.js";
+import { maybeCompactTranscriptAtBoundary } from "./goal-compactor.js";
 
 type DispatchInput = Omit<Parameters<typeof createContinuationDispatch>[0], "id" | "sentAt">;
 
@@ -513,6 +514,16 @@ function sendLoopTurn(): void {
     void runRespecBuilderAudit(ctx);
     return;
   }
+  // A loop host may never emit agent_settled. Check the actual idle send
+  // boundary, just as goal/list dispatch does, before preparing a new turn.
+  try {
+    if (maybeCompactTranscriptAtBoundary(ctx, {
+      supervising: true, auditInFlight: false, paused: supervisorPaused(state),
+    }, () => {
+      const current = freshCtx();
+      if (current && state.loop?.active && state.loop.startedAt === loop.startedAt) scheduleLoopTick(current);
+    })) return;
+  } catch { /* preventive compaction must not block ordinary loop work */ }
   if (respecNeedsDraftPhase(loop) && loop.respecPhase !== "draft") {
     loop.respecPhase = "draft";
     loop.target = `Draft the comprehensive ${path.basename(loop.specFile!)} from the current codebase before reconciliation`;
