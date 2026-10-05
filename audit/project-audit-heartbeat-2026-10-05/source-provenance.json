@@ -1,0 +1,10 @@
+{
+  "extensions/goal-heartbeat.ts": "3576f8fef44734861eebdd8df2851101609e5d45d88c4f0e240579efe420fd9c",
+  "extensions/respec-builder-runtime.ts": "44a5db9fca3a75037ebff7249b98a1bd996cf685c7febf1208d6cc96e98d4461",
+  "extensions/goal-loop-display.ts": "9e008f19208a728a16946d35b4388a2a359a488e92d7da1a693958a12536ed15",
+  "tests/respec-builder-audit-runtime.test.ts": "b8cc805e166b7af9439f5b95af7f0a1f998d0f2d1c32979ab6293ab22e9bff31",
+  "tests/respec-builder-display.test.ts": "a2f7eb16f9c6d194251df88b3328a22009e07fc4f74be5515366da5d0ef45dea",
+  "tests/heartbeat-suppression-rework.test.ts": "23da4d8f7ade188e78e634370835c373adbbb2e989c242e5269da5a0751fdc1e",
+  "package.json": "8d8f7eacde1738bf589341ebf24bac9b7c3e4d6e4e35c77f4087aa8219129173",
+  "package-lock.json": "8be15553c951e75a35631629c82730d30b82daae5b6d1d687ea58187a40611aa"
+}

@@ -1,0 +1,75 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-display.test.ts:
+(pass) a stopped project audit exposes its hold reason instead of implying a running auditor [4.24ms]
+(pass) project cards expose phase, unfinished coverage and recorded blockers within narrow widths [2.06ms]
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [753.78ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [30.87ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [89.98ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [73.63ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [77.18ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [77.71ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [24.80ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [87.94ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [184.28ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [391.57ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [0.94ms]
+(pass) actual installer, command, tools and agent_end carry a project through detached verification [149.59ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [91.73ms]
+(pass) a failed builder journal commit restores the complete prior RAM state [1.24ms]
+(pass) a supervisor freeze prevents a new project audit dispatch [0.76ms]
+(pass) rapid pause/resume discards the cancelled worker result and rearms the saved claim [108.33ms]
+(pass) an undelivered project summary survives replacement by a new project [76.89ms]
+(pass) freezing supervision between auditor attempts prevents retry and fallback dispatch [82.53ms]
+(pass) a corrupt summary outbox prevents terminal handoff and retains approved job evidence [77.38ms]
+
+tests/release-contract.test.ts:
+(pass) release contract: published documentation links are covered by the npm tarball [620.84ms]
+(pass) release contract: the release gate exercises the packed artifact [0.27ms]
+(pass) release contract: packed prompts, schema, and workers ship in the dry-run list [540.57ms]
+(pass) release contract: glla-delegate skill loads without diagnostics (source-tree fast tier) [8.11ms]
+(pass) release contract: docs index tracks the package version [0.21ms]
+(pass) release contract: package is discoverable as a Pi extension and skill [518.41ms]
+(pass) release contract: README package contents claim matches the files allowlist [529.04ms]
+(pass) release contract: first-use README guidance matches current behavior [0.20ms]
+(pass) release contract: smoke waits use durable or literal transition markers [0.12ms]
+(pass) release workflow scopes trusted-publishing OIDC to the publish job [0.16ms]
+(pass) v0.38.32: release runs never share the push-churn concurrency group [0.06ms]
+(pass) release contract: changelog has one heading for the current package version [2.60ms]
+(pass) release contract: untagged source work has an Unreleased changelog section to promote [8.60ms]
+
+tests/respec-builder-wiring.test.ts:
+(pass) actual respec command and tools persist intended scope, batch and audit claim [186.34ms]
+(pass) declining intended scope leaves the project drafting with no adopted requirements [16.65ms]
+(pass) registered blocker and refinement tools preserve work and require consent to change scope [35.10ms]
+
+tests/heartbeat-suppression-rework.test.ts:
+(pass) lastShippedAtMs ignores the state-file mtime (the self-sustaining term) [7.04ms]
+(pass) lastShippedAtMs source has no active.jsonl mtime term [0.21ms]
+(pass) heartbeat never calls the suppression check; audit-in-flight flag guards the only real window [0.63ms]
+(pass) the deprecated pure fn remains exported (API compat) but marked deprecated [0.06ms]
+(pass) no heartbeat_suppressed ledger writes remain in the heartbeat path [0.41ms]
+(pass) project auditor dispatch is protected before counting failed main-session continuations [0.22ms]
+
+tests/heartbeat.test.ts:
+(pass) fires: supervising + idle + no timer + quiet long enough [4.85ms]
+(pass) does not fire when not supervising [0.03ms]
+(pass) does not fire when session is busy [0.02ms]
+(pass) does not fire when a continuation is already scheduled [0.01ms]
+(pass) does not fire before the stall threshold [0.01ms]
+(pass) custom stall threshold is honored [0.01ms]
+(pass) shouldWedgeAlert: fires when supervising + busy + silent past threshold [0.03ms]
+(pass) shouldWedgeAlert: silent below threshold does not fire [0.02ms]
+(pass) shouldWedgeAlert: idle session is the heartbeat's job, not ours [0.01ms]
+(pass) shouldWedgeAlert: not supervising never fires [0.01ms]
+(pass) shouldWedgeAlert: throttled to once per threshold interval [0.01ms]
+(pass) shouldWedgeAlert: threshold 0 disables [0.05ms]
+(pass) timing defaults: wedge 30m, measure 10m, auditor inactivity 10m, no process wall [0.12ms]
+(pass) auditor watchdog: confirmed inactivity aborts only without a tool [0.05ms]
+(pass) v0.28.25: stall refires space exponentially — 1m, 2m, 4m, 8m cap (junk-runner 5-in-4-minutes fix) [0.06ms]
+
+ 58 pass
+ 0 fail
+Ran 58 tests across 6 files. [6.34s]
