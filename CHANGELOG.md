@@ -2,10 +2,16 @@
 
 ## Unreleased
 
+## 0.39.9 — clearer project audit progress (2026-10-05)
+
 - Project audit cards and footers retain the current tool’s ticking elapsed/timeout
   clock, show the second pass, and distinguish current attempt time from total
   time across retries. Cancelled, invalid and overdue tool telemetry cannot claim
   a healthy wait.
+
+- The package description and search keywords surface project building and
+  audited queues. README leads with a runnable spec-building example and links
+  to the command/recovery guides and Pi catalog.
 
 ## 0.39.8 — consistent recovery and completed project UI (2026-10-05)
 

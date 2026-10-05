@@ -4,7 +4,7 @@
   <img src="media/glla2.png" alt="GLLA mission control" width="960">
 </p>
 
-> **Long running, high leverage autonomy for pi.**
+> **Build, recover, and verify long-running work in Pi.**
 >
 > Give pi a meaningful outcome. GLLA helps it research, plan, execute,
 > recover, and prove the result over hours or days instead of treating one
@@ -15,6 +15,26 @@
 too long, or too important to leave to a single uninterrupted prompt:
 repo-wide changes, migrations, audits, research, documentation overhauls,
 large refactors, and continuous improvement.
+
+Build a project from its spec:
+
+```bash
+pi install npm:pi-goal-list-loop-audit
+```
+
+In Pi, run `/reload` if the session is already open, then:
+
+```text
+/loop respec Build the missing capabilities in SPEC.md and prove the result
+```
+
+GLLA researches the project, drafts requirements for your confirmation, builds
+increments, and sends completion claims to an independent auditor. Unmet
+requirements return to work; verified completion retains its evidence.
+Use `/goal` for one outcome or `/list` for a queue of outcomes.
+See the [command guide](#choose-the-work-surface) and
+[recovery guide](docs/RECOVERY.md), or find GLLA in the
+[Pi package catalog](https://pi.dev/packages/pi-goal-list-loop-audit).
 
 GLLA does not promise that an agent never makes a mistake. It makes the
 agent's work **more effective, durable, recoverable, and hard to declare
