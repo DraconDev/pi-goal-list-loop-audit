@@ -1358,7 +1358,8 @@ export function loopCadenceCountdown(l: { minimumIterationIntervalMs?: number; l
 function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, extras?: WidgetExtras, width?: number): string | undefined {
   if (state.loop?.builder && (state.loop.active || !state.goal)) {
     const l = state.loop, builder = l.builder!, coverage = respecCoverage(builder);
-    return `glla: project ${paint(theme, builder.phase === "complete" ? "success" : !l.active ? "warning" : "accent", !l.active && builder.phase === "auditing" ? "audit held — /loop resume" : builder.phase)}${l.active || builder.phase === "complete" || builder.phase === "auditing" ? "" : " · held"} · increment ${builder.cycle} · verified ${coverage.verified}/${coverage.total} · remaining ${coverage.remaining} · blocked ${coverage.blocked}${l.active && builder.phase === "auditing" ? ` · ${respecAuditStatus(builder, now)}` : ""}`;
+    const stopped = projectExplicitlyStopped(l);
+    return `glla: project ${paint(theme, builder.phase === "complete" ? "success" : !l.active ? "warning" : "accent", !l.active && builder.phase === "auditing" ? stopped ? "audit stopped — /loop status" : "audit held — /loop resume" : builder.phase)}${l.active || builder.phase === "complete" || builder.phase === "auditing" ? "" : stopped ? " · stopped" : " · held"} · increment ${builder.cycle} · verified ${coverage.verified}/${coverage.total} · remaining ${coverage.remaining} · blocked ${coverage.blocked}${l.active && builder.phase === "auditing" ? ` · ${respecAuditStatus(builder, now)}` : ""}`;
   }
   if (state.loop?.active) {
     const l = state.loop;
@@ -2647,16 +2648,21 @@ function completedGoalLines(g: Goal, now: number, theme?: DisplayTheme, width?: 
   return [`${paint(theme, "dim", "─")} ${paint(theme, "dim", `${outcome} · ${truncate(recap, objBudget)} · ${tail}`)}`];
 }
 
+function projectExplicitlyStopped(loop: LoopState): boolean {
+  return !loop.active && !!loop.stopReason?.startsWith("stopped by user (/loop ");
+}
+
 function respecBuilderLines(loop: LoopState, now: number, theme?: DisplayTheme, width?: number): string[] {
   const builder = loop.builder!;
+  const stopped = projectExplicitlyStopped(loop);
   const coverage = respecCoverage(builder);
   const tone = builder.phase === "complete" ? "success" : !loop.active ? "warning" : "accent";
-  const phase = !loop.active && builder.phase === "auditing" ? "Audit held" : builder.phase === "planning" ? "Planning" : builder.phase[0]!.toUpperCase() + builder.phase.slice(1);
+  const phase = !loop.active && builder.phase === "auditing" ? stopped ? "Audit stopped" : "Audit held" : builder.phase === "planning" ? "Planning" : builder.phase[0]!.toUpperCase() + builder.phase.slice(1);
   const current = builder.tasks.find(t => t.status === "pending") ?? builder.tasks.at(-1);
   const blocker = builder.requirements.find(r => r.status === "blocked");
   const evidence = [...builder.requirements].reverse().find(r => r.evidence)?.evidence?.report ?? builder.history?.at(-1)?.report;
-  const action = builder.phase === "complete" ? "All adopted requirements independently verified" : !loop.active ? "Work held · /loop status · /loop resume when ready" : builder.phase === "auditing" ? "Independent verification pending · no action needed" : "Work continues · /loop pause · /loop refine";
-  const narrowAction = builder.phase === "complete" ? `All ${coverage.total} requirements verified` : !loop.active ? "/loop resume when ready · /loop status" : builder.phase === "auditing" ? "Independent audit pending · no action" : "Work continues · /loop pause";
+  const action = builder.phase === "complete" ? "All adopted requirements independently verified" : stopped ? "Work stopped · /loop status · /loop respec starts a new project" : !loop.active ? "Work held · /loop status · /loop resume when ready" : builder.phase === "auditing" ? "Independent verification pending · no action needed" : "Work continues · /loop pause · /loop refine";
+  const narrowAction = builder.phase === "complete" ? `All ${coverage.total} requirements verified` : stopped ? "Work stopped · /loop status" : !loop.active ? "/loop resume when ready · /loop status" : builder.phase === "auditing" ? "Independent audit pending · no action" : "Work continues · /loop pause";
   const progress = loop.active && builder.phase === "auditing" ? getRespecAuditLive(builder) : undefined;
   const auditLines = loop.active && builder.phase === "auditing" ? progress ? [
     `auditor: ${progress.phase} · ${fmtElapsed(now - progress.startedAt)} · ${sanitizeDisplayText(progress.model ?? "model pending")}`,
@@ -2664,12 +2670,12 @@ function respecBuilderLines(loop: LoopState, now: number, theme?: DisplayTheme, 
   ] : ["auditor: waiting for dispatch · no live worker observed"] : [];
   const title = paint(theme, tone, `Project · ${phase}`);
   return [
-    `${theme?.bold ? theme.bold(title) : title}${loop.active || builder.phase === "complete" || builder.phase === "auditing" ? "" : " · held"} · increment ${builder.cycle}`,
+    `${theme?.bold ? theme.bold(title) : title}${loop.active || builder.phase === "complete" || builder.phase === "auditing" ? "" : stopped ? " · stopped" : " · held"} · increment ${builder.cycle}`,
     `├─ ${truncate(sanitizeDisplayText(builder.vision), budgetFor(width, 3, 75))}`,
     `├─ ${paint(theme, coverage.verified > 0 ? "success" : "dim", `verified ${coverage.verified}/${coverage.total}`)} · ${paint(theme, coverage.remaining > 0 ? "warning" : "dim", `remaining ${coverage.remaining} · blocked ${coverage.blocked}`)}`,
     ...(current ? [`├─ ${builder.phase === "auditing" ? "claim" : "task"}: ${truncate(sanitizeDisplayText(current.text), budgetFor(width, 10, 70))}`] : []),
     ...auditLines.map(line => `├─ ${paint(theme, progress?.phase === "retrying" ? "warning" : "accent", truncate(line, budgetFor(width, 3, 90)))}`),
-    ...(!loop.active && loop.stopReason ? [`├─ ${paint(theme, "warning", `held: ${truncate(sanitizeDisplayText(loop.stopReason), budgetFor(width, 9, 90))}`)}`] : []),
+    ...(!loop.active && loop.stopReason ? [`├─ ${paint(theme, "warning", `${stopped ? "stopped" : "held"}: ${truncate(sanitizeDisplayText(loop.stopReason), budgetFor(width, stopped ? 12 : 9, 90))}`)}`] : []),
     ...(blocker ? [`├─ ${paint(theme, "warning", "blocked")}: ${truncate(sanitizeDisplayText(blocker.blockedReason ?? "reason missing"), budgetFor(width, 12, 70))}`] : []),
     ...(evidence ? [`├─ ${paint(theme, "dim", `evidence: ${truncate(sanitizeDisplayText(evidence), budgetFor(width, 13, 65))}`)}`] : []),
     `└─ ${paint(theme, tone, width && width < 60 ? narrowAction : action)}`,
