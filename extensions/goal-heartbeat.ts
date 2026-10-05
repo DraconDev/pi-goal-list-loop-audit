@@ -44,6 +44,7 @@ import {
 } from "./goal-loop-backoff.js";
 import { isLoopActive, loopTimerPending, scheduleLoopTick } from "./goal-loop.js";
 import { auditorWorkerLiveForAttempt } from "./goal-loop-auditor-process.js";
+import { respecBuilderAuditInFlight } from "./respec-builder-runtime.js";
 import { mainModelRecoveryActive, markCompletionAuditRecoveryPending, probeMainModelRecovery } from "./goal-recovery.js";
 import type { ContinuationDispatch } from "./goal-loop-dispatch.js";
 import type { AgentPhase, AgentStatus } from "./goal-agents-panel.js";
@@ -1881,6 +1882,10 @@ function heartbeatTick(): void {
   // windows are already covered precisely — busy mid-turn, pending
   // messages, scheduled timers — plus the audit-in-flight flag below.
   if (flags.completionAuditInFlight) return;
+  // Increment audits intentionally leave the main session idle. Refiring
+  // its continuation cannot start a turn and would eventually park healthy
+  // detached work. Protect only the exact live dispatch, never an old claim.
+  if (respecBuilderAuditInFlight(ctx.cwd)) return;
   noteActivity();
   flags.consecutiveStalls++;
   appendLedger(ctx.cwd, "heartbeat_refire", { nudgesSoFar: flags.heartbeatNudges, consecutiveStalls: flags.consecutiveStalls });

@@ -1358,7 +1358,7 @@ export function loopCadenceCountdown(l: { minimumIterationIntervalMs?: number; l
 function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, extras?: WidgetExtras, width?: number): string | undefined {
   if (state.loop?.builder && (state.loop.active || !state.goal)) {
     const l = state.loop, builder = l.builder!, coverage = respecCoverage(builder);
-    return `glla: project ${paint(theme, builder.phase === "complete" ? "success" : !l.active ? "warning" : "accent", builder.phase)}${l.active || builder.phase === "complete" ? "" : " · held"} · increment ${builder.cycle} · verified ${coverage.verified}/${coverage.total} · remaining ${coverage.remaining} · blocked ${coverage.blocked}${l.active && builder.phase === "auditing" ? ` · ${respecAuditStatus(builder, now)}` : ""}`;
+    return `glla: project ${paint(theme, builder.phase === "complete" ? "success" : !l.active ? "warning" : "accent", !l.active && builder.phase === "auditing" ? "audit held — /loop resume" : builder.phase)}${l.active || builder.phase === "complete" || builder.phase === "auditing" ? "" : " · held"} · increment ${builder.cycle} · verified ${coverage.verified}/${coverage.total} · remaining ${coverage.remaining} · blocked ${coverage.blocked}${l.active && builder.phase === "auditing" ? ` · ${respecAuditStatus(builder, now)}` : ""}`;
   }
   if (state.loop?.active) {
     const l = state.loop;
@@ -2651,7 +2651,7 @@ function respecBuilderLines(loop: LoopState, now: number, theme?: DisplayTheme, 
   const builder = loop.builder!;
   const coverage = respecCoverage(builder);
   const tone = builder.phase === "complete" ? "success" : !loop.active ? "warning" : "accent";
-  const phase = builder.phase === "planning" ? "Planning" : builder.phase[0]!.toUpperCase() + builder.phase.slice(1);
+  const phase = !loop.active && builder.phase === "auditing" ? "Audit held" : builder.phase === "planning" ? "Planning" : builder.phase[0]!.toUpperCase() + builder.phase.slice(1);
   const current = builder.tasks.find(t => t.status === "pending") ?? builder.tasks.at(-1);
   const blocker = builder.requirements.find(r => r.status === "blocked");
   const evidence = [...builder.requirements].reverse().find(r => r.evidence)?.evidence?.report ?? builder.history?.at(-1)?.report;
@@ -2669,6 +2669,7 @@ function respecBuilderLines(loop: LoopState, now: number, theme?: DisplayTheme, 
     `├─ ${paint(theme, coverage.verified > 0 ? "success" : "dim", `verified ${coverage.verified}/${coverage.total}`)} · ${paint(theme, coverage.remaining > 0 ? "warning" : "dim", `remaining ${coverage.remaining} · blocked ${coverage.blocked}`)}`,
     ...(current ? [`├─ ${builder.phase === "auditing" ? "claim" : "task"}: ${truncate(sanitizeDisplayText(current.text), budgetFor(width, 10, 70))}`] : []),
     ...auditLines.map(line => `├─ ${paint(theme, progress?.phase === "retrying" ? "warning" : "accent", truncate(line, budgetFor(width, 3, 90)))}`),
+    ...(!loop.active && loop.stopReason ? [`├─ ${paint(theme, "warning", `held: ${truncate(sanitizeDisplayText(loop.stopReason), budgetFor(width, 9, 90))}`)}`] : []),
     ...(blocker ? [`├─ ${paint(theme, "warning", "blocked")}: ${truncate(sanitizeDisplayText(blocker.blockedReason ?? "reason missing"), budgetFor(width, 12, 70))}`] : []),
     ...(evidence ? [`├─ ${paint(theme, "dim", `evidence: ${truncate(sanitizeDisplayText(evidence), budgetFor(width, 13, 65))}`)}`] : []),
     `└─ ${paint(theme, tone, width && width < 60 ? narrowAction : action)}`,

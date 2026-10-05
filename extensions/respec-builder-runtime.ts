@@ -34,6 +34,15 @@ interface Host {
 let host: Host;
 const running = new Map<string, AbortController>();
 
+/** A durable claim alone is not proof of a live dispatch. The detached
+ * auditor owns its watchdog while this exact, uncancelled dispatch runs. */
+export function respecBuilderAuditInFlight(cwd: string): boolean {
+  const loop = state.loop;
+  if (!loop?.active || loop.builder?.phase !== "auditing" || !loop.builder.audit) return false;
+  const controller = running.get(`${cwd}:${loop.startedAt}:${loop.builder.audit.attemptId}`);
+  return !!controller && !controller.signal.aborted;
+}
+
 /** Hermetic process tests retain the production ownership/commit/tool adapters. */
 export function __testOnlyRespecAuditorRuntime(overrides: Pick<Host, "auditRuntime" | "auditSleep" | "resolveModel">): () => void {
   const previous = host;
