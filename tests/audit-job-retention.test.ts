@@ -11,7 +11,7 @@ import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { seedState } from "./harness/mock-pi.js";
+import { seedState, seedGoal } from "./harness/mock-pi.js";
 
 import {
   cleanupDeadAuditJobs,
@@ -29,7 +29,7 @@ test("retention keeps unresolved goal and held project evidence until their clai
     fs.writeFileSync(path.join(dir, "result.json"), "{}");
     ageDir(dir, 10 * DAY_MS);
   }
-  seedState(cwd, { goal: { status: "paused", pendingCompletion: { attemptId: "goal-claim" } },
+  seedState(cwd, { goal: seedGoal({ status: "paused", pendingCompletion: { attemptId: "goal-claim", completionSummary: "Implemented", at: new Date().toISOString() } }),
     loop: { active: false, builder: { phase: "auditing", audit: { attemptId: "project-claim" } } } });
   assert.equal(inspectAuditJobHealth(cwd, Date.now(), RETENTION_MS).cleanupCandidates, 1);
   cleanupDeadAuditJobs(cwd, RETENTION_MS);
