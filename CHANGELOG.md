@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.39.2 — protect project increment audits from continuation stalls (2026-10-05)
+
+- The main-session heartbeat no longer counts failed continuation attempts
+  while the exact project increment audit dispatch is running. Detached worker
+  timeout handling remains responsible for the audit. A saved claim alone, a
+  replacement claim, or a cancelled dispatch cannot suppress the heartbeat.
+- Held project audits say **Audit held** and show the recorded stop reason
+  instead of displaying an ambiguous auditing phase with generic held text.
+
 ## 0.39.1 — explain long audit tool waits (2026-10-04)
 
 - Audit cards keep the current tool's ticking elapsed time and timeout visible

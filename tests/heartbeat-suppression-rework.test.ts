@@ -55,3 +55,10 @@ test("no heartbeat_suppressed ledger writes remain in the heartbeat path", () =>
   const tick = SRC_GOAL.slice(SRC_GOAL.indexOf("function heartbeatTick"), SRC_GOAL.indexOf("function startHeartbeat"));
   assert.ok(!tick.includes("heartbeat_suppressed"), "the suppressed-tick ledger write (the self-sustaining fuel) is gone");
 });
+
+test("project auditor dispatch is protected before counting failed main-session continuations", () => {
+  const source = fs.readFileSync("extensions/goal-heartbeat.ts", "utf8");
+  const guard = source.indexOf("if (respecBuilderAuditInFlight(ctx.cwd)) return;");
+  const refire = source.indexOf('appendLedger(ctx.cwd, "heartbeat_refire"');
+  assert.ok(guard >= 0 && refire > guard, "a live increment auditor owns the wait before stall escalation");
+});
