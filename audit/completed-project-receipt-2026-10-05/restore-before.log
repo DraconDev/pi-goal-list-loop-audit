@@ -1,0 +1,64 @@
+
+> pi-goal-list-loop-audit@0.39.5 test
+> node scripts/run-tests.mjs tests/load-without-autostart.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/load-without-autostart.test.ts:
+(pass) v0.35.23: DEFAULT cold load restores + displays a pending goal but sends NOTHING and arms NO automation [831.89ms]
+(pass) v0.35.23: DEFAULT cold load HELDS a persisted live loop instead of resuming its ticks [453.67ms]
+(pass) v0.35.23: explicit autoResume:true restores load-time automation (opt-in = today's behavior) [406.78ms]
+(pass) v0.35.23: /goal resume releases the load hold and re-arms automation [564.16ms]
+(pass) v0.38.96: /glla resume releases the load hold BEFORE the manual-recovery probe (field 2026-09-23) [1617.18ms]
+(pass) v0.38.96: /loop resume releases the load hold BEFORE the manual-recovery probe [424.09ms]
+(pass) v0.35.23: /list next also releases the hold and starts the queued head [407.77ms]
+254 |     seedState(cwd, { loop: seedLoop({ active: false, stopReason: "completed: all intended project requirements independently verified", builder }), ...(legacyHold ? { loadHoldAt: Date.now() } : {}) });
+255 |     const pi = newPi();
+256 |     const ctx = await coldBoot(pi, cwd);
+257 |     try {
+258 |       assert.equal(readState(cwd).loop!.builder!.phase, "complete");
+259 |       assert.equal(readState(cwd).loadHoldAt, undefined);
+                   ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ 1791213948121
+- undefined
+
+ generatedMessage: true,
+     actual: 1791213948121,
+   expected: undefined,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/load-without-autostart.test.ts:259:14
+      at processTicksAndRejections (native:7:39)
+(fail) completed project receipt does not create or retain a load hold (legacy=false) [253.98ms]
+254 |     seedState(cwd, { loop: seedLoop({ active: false, stopReason: "completed: all intended project requirements independently verified", builder }), ...(legacyHold ? { loadHoldAt: Date.now() } : {}) });
+255 |     const pi = newPi();
+256 |     const ctx = await coldBoot(pi, cwd);
+257 |     try {
+258 |       assert.equal(readState(cwd).loop!.builder!.phase, "complete");
+259 |       assert.equal(readState(cwd).loadHoldAt, undefined);
+                   ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ 1791213948371
+- undefined
+
+ generatedMessage: true,
+     actual: 1791213948371,
+   expected: undefined,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/load-without-autostart.test.ts:259:14
+      at processTicksAndRejections (native:7:39)
+(fail) completed project receipt does not create or retain a load hold (legacy=true) [250.74ms]
+
+ 7 pass
+ 2 fail
+Ran 9 tests across 1 file. [6.09s]
+[run-tests] finished in 6s (exit 1)
