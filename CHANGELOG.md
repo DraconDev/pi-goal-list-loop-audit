@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-## 0.39.8 — retain visible work after recovery model changes (2026-10-05)
+## 0.39.8 — consistent recovery and completed project UI (2026-10-05)
+
+### Preserve work across model changes
 
 - Manually selecting a model during loop recovery leaves a visible, resumable
   hold with its objective and iteration history retained. Cancellation no
@@ -10,24 +12,18 @@
 - Existing loops stranded with a main-model recovery stop reason remain
   visible and can resume through `/loop resume` or `/glla resume`.
 
-## 0.39.7 — dismiss completed project UI (2026-10-05)
+### Dismiss completed projects
 
 - Completed projects disappear from the live widget and footer. Their
   archived summary and `/loop status` remain available for inspection.
   Unfinished queued work still renders its own UI.
-- Empty or terminal-only blank sessions no longer advertise a work-resume
-  action while waiting for a transcript to load.
-
-## 0.39.6 — close completed project work cards (2026-10-05)
-
-- Completed projects render a compact archived receipt instead of the open
-  work card with task, evidence and held-reason rows. `/loop status` retains
-  the saved verification details.
 - Loading terminal-only state no longer engages a work-resume hold or warns
   that the completed project must resume. Legacy terminal-only load holds
   clear on restore; explicit supervisor pauses remain intact.
+- Empty or terminal-only blank sessions no longer advertise a work-resume
+  action while waiting for a transcript to load.
 
-## 0.39.5 — consistent command recovery and decision actions (2026-10-05)
+### Make recovery commands consistent
 
 - `/glla resume` recognises the same held-loop reasons as `/loop resume`,
   including stalled project audits, manual pauses, auditor infrastructure
@@ -47,6 +43,15 @@
   for inspection. Resume descriptions and bound-stop hints match admission.
 - A real command-to-worker regression resumes a stalled project audit and
   verifies its retained claim through independent approval and archival.
+
+### Explain recovery and updates
+
+- A new recovery guide explains resume command choice, audit progress versus
+  tool waits, manual model changes, completed UI and the opportunistic 200k
+  compaction target.
+- README and installation instructions link to that guide. The docs index
+  leads with practical reading paths; unpublished milestones are consolidated
+  into this release entry.
 
 ## 0.39.4 — project builder, audit recovery and opportunistic compaction (2026-10-05)
 

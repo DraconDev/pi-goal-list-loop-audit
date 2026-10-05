@@ -2,58 +2,19 @@
 
 Ordered by reading path, not alphabetically.
 
-## Active focus (recent work, durable artifacts)
+## Start here
 
-Policy contracts and recent changes live in the `audit/` directory of the
-**repository checkout**; that directory is not shipped in the npm tarball
-(see "Repository-only material" below). The shipped entry points are:
-
-- `../CHANGELOG.md`: user-facing changelog; an `Unreleased` section may lead
-  the file, followed by the current released version. v0.35.5 adopted the six-label completion
-  recap; v0.35.6 added typed-boundary regression pins; v0.35.7 added
-  deterministic fast-fail pre-audits, zero-pause autonomous execution, and
-  task milestone gating; v0.35.8 added main-model preferred-primary
-  failback; v0.35.9 hardened cross-version npm tarball checks; v0.35.10
-  handles multi-entry npm dry-run reports; v0.35.11 accepts both npm report
-  shapes; v0.35.12 supports npm 12's keyed pack reports; v0.35.13 fixes stale-API recovery loops.
-  v0.35.14–v0.39.8 continue through the supervisor freeze (`/glla pause`),
-  load hold, auditor picker parity, Windows launch fix, zombie-watchdog
-  subagent carve-out, due-wait backstop, the `/glla agents` visibility panel,
-  durable state-root selection, blank-until-resume auditor context, frozen
-  subagent recovery, bounded repair/replan recovery, production RPC child
-  stopping, mandatory hermetic auditor-extension validation, optional provider
-  extensions, bounded zero-stream retry containment, crash-safe persistence,
-  packed-artifact release verification, and the 2026-09-07 display/lifecycle/
-  settings audit pass (abort-latch send guards, ownership compare-and-swap,
-  auditor inherit/clear parity), the v0.38.25 post-objective summary
-  (canonical approval render, persist + replay, audit-goal counts line), the v0.38.27 selective port of PRs #45/#46 (`/loop pause` soft-hold, widget subtask count), the v0.38.28 provenance-row closure fix, the v0.38.29 compact active-card recovery/judgment projection, and the v0.38.53 consent-safe `glla-delegate`
-  skill/list-drafting release, and the v0.38.54 opt-in context-checkpoint
-  projection (prompt-cache continuity, issue #53), and the v0.38.55 full-parity
-  terminal card, unified auditor-retry envelope, and agent-side resume_goal;
-  and the v0.38.106 audit repairs, versionless companion guidance and refreshed
-  store icon; v0.38.107 recovers completed detached audit results before retry,
-  preserves second-pass visibility, and fits the store thumbnail to its 8:5 card.
-  v0.38.109 keeps work moving after optional compaction failures and fixes
-  settings-editor ownership, narrow rendering, and stale approved-summary text.
-  v0.38.112 audits the full terminal UI: responsive settings, search, focus
-  continuity, picker height, scrollable draft review, and settlement wording.
-  v0.38.111 applies project optional tool arguments with schema validation.
-  v0.38.110 audits /glla menus and commands: model policy, narrow picker
-  rendering, concurrent edits, mutation guards, and accurate option wording.
-  See CHANGELOG.md for the full trail.
-- `../README.md`: what the plugin is, install, quickstart, and the
-  architectural guarantee (drafting + confirm + detached auditor).
-- `../INSTALL.md`: source install / local development setup and the
-  recommended companion plugins.
-
-## Entry points
-- `../README.md`: what the plugin is, install, quickstart
-- `SETTINGS.md`: canonical settings reference (files, precedence, every key)
-- `../INSTALL.md`: source install / local development setup
-- `../skills/glla-delegate/SKILL.md`: normal-chat goal/list delegation and consent ladder
-- `../CHANGELOG.md`: user-facing changelog; the first versioned heading is
-  the current released package version (use `/glla version` to compare with
-  the registry); post-release work may appear in `Unreleased` above it.
+- [README](../README.md): install, first goal, and choosing goal/list/loop work.
+- [Recovery guide](RECOVERY.md): resume commands, audit progress, model changes,
+  completed projects and opportunistic compaction.
+- [Settings](SETTINGS.md): settings files, precedence and every option.
+- [Installation and updating](../INSTALL.md): npm/source setup, companions and
+  reloading existing sessions.
+- [Delegation skill](../skills/glla-delegate/SKILL.md): normal-chat goal/list
+  delegation and confirmation.
+- [Changelog](../CHANGELOG.md): changes shipped in each release. The history
+  spans v0.35.14–v0.39.8; `/glla version` shows the installed version and the
+  registry comparison command. A checkout can contain unpublished changes.
 
 ## Architecture
 - `ARCHITECTURE.md`: 20-minute newcomer overview (three loops, audit lifecycle, persistence)
