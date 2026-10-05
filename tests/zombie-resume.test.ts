@@ -119,6 +119,35 @@ test("v0.35.25 #14: control — a non-resumable stop reason is still refused", a
   assert.equal(pi.sent.length, 0, "no dispatch for a non-resumable park");
 });
 
+for (const reason of [ZOMBIE_REASON, "paused by user (/loop pause)", "stalled: 5 continuation refires landed no turn"]) {
+  test(`/glla resume resumes a loop held for ${reason}`, async () => {
+    const cwd = tmpCwd();
+    seedState(cwd, { loop: seedLoop({ active: false, stopReason: reason, iteration: 17, maxIterations: 0 }) });
+    pi.sent.length = 0;
+    const ctx = await freshSession(cwd);
+    try {
+      await pi.command("glla", "resume", ctx);
+      await tick();
+      assert.equal(readState(cwd).loop!.active, true);
+      assert.equal(readState(cwd).loop!.iteration, 17);
+      assert.equal(readState(cwd).loop!.stopReason, undefined);
+      assert.ok(pi.sent.length > 0, "the resumed loop dispatches work");
+      assert.equal(ctx.ui.matching("Nothing to resume").length, 0);
+    } finally { await pi.command("loop", "stop", ctx); }
+  });
+}
+
+test("/glla resume leaves a completed loop terminal", async () => {
+  const cwd = tmpCwd();
+  seedState(cwd, { loop: seedLoop({ active: false, stopReason: "completed: all intended project requirements independently verified" }) });
+  pi.sent.length = 0;
+  const ctx = await freshSession(cwd);
+  await pi.command("glla", "resume", ctx);
+  await tick();
+  assert.equal(readState(cwd).loop!.active, false);
+  assert.equal(pi.sent.length, 0);
+});
+
 const GLOBAL_BACKUP = GLOBAL_SETTINGS_PATH + ".zombie-resume-backup";
 try { fs.copyFileSync(GLOBAL_SETTINGS_PATH, GLOBAL_BACKUP); } catch { /* absent */ }
 afterEach(() => {

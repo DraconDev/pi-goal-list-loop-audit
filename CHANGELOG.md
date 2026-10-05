@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.39.5 — resume held projects through the broad command (2026-10-05)
+
+- `/glla resume` recognises the same held-loop reasons as `/loop resume`,
+  including stalled project audits, manual pauses, auditor infrastructure
+  failures and project bounds. It delegates to the loop handler, preserving
+  the saved claim, blocker checks and branch restrictions.
+- A real command-to-worker regression resumes a stalled project audit and
+  verifies its retained claim through independent approval and archival.
+
 ## 0.39.4 — project builder, audit recovery and opportunistic compaction (2026-10-05)
 
 ### check compaction before idle loop dispatch
