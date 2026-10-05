@@ -827,8 +827,11 @@ async function showDecisionPrompt(ctx: ExtensionContext): Promise<boolean> {
       if (group === "goal" && verb === "resume") await cmdResume(ctx);
       else if (group === "goal" && verb === "cancel") await cmdCancel(ctx);
       else if (group === "goal" && verb === "accept") await cmdAcceptWithFollowups(ctx);
+      else if (group === "goal" && verb === "pause") await cmdPause(ctx);
+      else if (group === "list" && ["resume", "cancel", "pause", "next", "clear"].includes(verb!)) await cmdList(verb!, ctx);
       else if (group === "loop" && verb === "stop") await cmdLoop("stop", ctx);
       else if (group === "loop" && verb === "resume") await cmdLoop("resume", ctx);
+      else if (group === "loop" && ["cancel", "pause", "finish"].includes(verb!)) await cmdLoop(verb!, ctx);
       else {
         if (!safeSteerUser(ctx, `Decision for the paused goal "${displaySlice(g.objective, 240)}": ${sanitizeDisplayText(label)} — continue on this path.`)) {
           ctx.ui.notify("Decision could not be delivered — work stays paused. /goal decide to retry.", "warning");
