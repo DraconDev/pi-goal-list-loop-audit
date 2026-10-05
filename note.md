@@ -4,11 +4,6 @@
 
 # later
 
-##
-work on respec
-
-it should be proactive, 
-
 # Testing
 
 # Research
