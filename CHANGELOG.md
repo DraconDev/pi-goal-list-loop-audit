@@ -16,6 +16,8 @@
   paused when a content choice cannot be delivered.
 - Goal pause, resume and manual verify stop when their state transaction
   cannot be persisted, avoiding false success messages and dispatches.
+- Explicitly stopped project audits say **Audit stopped** and stop advertising
+  an unavailable resume command.
 - `/goal decide` is discoverable in completion; status points to `/list show`
   for inspection. Resume descriptions and bound-stop hints match admission.
 - A real command-to-worker regression resumes a stalled project audit and

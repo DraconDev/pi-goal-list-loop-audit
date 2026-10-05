@@ -1,0 +1,40 @@
+
+> pi-goal-list-loop-audit@0.39.5 test
+> node scripts/run-tests.mjs tests/respec-builder-display.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-display.test.ts:
+(pass) a stopped project audit exposes its hold reason instead of implying a running auditor [3.40ms]
+(pass) project cards expose phase, unfinished coverage and recorded blockers within narrow widths [2.32ms]
+39 | 
+40 | test("an explicitly stopped project audit does not advertise an unavailable resume", () => {
+41 |   const builder = beginRespecAudit(claimRespecTask(planRespecIncrement(adoptRespecRequirements(createRespecBuilder("Export"), [{ id: "export", text: "Export", acceptance: "Round trip" }]), [{ id: "task", text: "Build export", requirementIds: ["export"] }]), "task"), "attempt", "Round trip checked");
+42 |   const state = { goal: null, list: [], loop: { builder, active: false, stopReason: "stopped by user (/loop stop)", target: builder.vision, startedAt: new Date().toISOString(), iteration: 1, maxIterations: 0, plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [] } } as State;
+43 |   const plain = stripTerminalSequences(buildWidgetLines(state, null, Date.now(), undefined, 120)!.join("\n"));
+44 |   assert.match(plain, /Audit stopped/);
+              ^
+AssertionError: The input did not match the regular expression /Audit stopped/. Input:
+
+'Project · Audit held · increment 1\n' +
+  '├─ Export\n' +
+  '├─ verified 0/1 · remaining 1 · blocked 0\n' +
+  '├─ claim: Build export\n' +
+  '├─ held: stopped by user (/loop stop)\n' +
+  '└─ Work held · /loop status · /loop resume when ready'
+
+ generatedMessage: true,
+     actual: "Project · Audit held · increment 1\n├─ Export\n├─ verified 0/1 · remaining 1 · blocked 0\n├─ claim: Build export\n├─ held: stopped by user (/loop stop)\n└─ Work held · /loop status · /loop resume when ready",
+   expected: /Audit stopped/,
+   operator: "match",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/respec-builder-display.test.ts:44:10
+      at fn (node:test:215:18)
+(fail) an explicitly stopped project audit does not advertise an unavailable resume [1.97ms]
+
+ 2 pass
+ 1 fail
+Ran 3 tests across 1 file. [1357.00ms]
+[run-tests] finished in 2s (exit 1)
