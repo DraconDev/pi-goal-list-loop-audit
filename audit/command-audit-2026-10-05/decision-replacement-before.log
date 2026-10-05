@@ -1,0 +1,60 @@
+
+> pi-goal-list-loop-audit@0.39.5 test
+> node scripts/run-tests.mjs tests/glla-ui-command-audit.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-ui-command-audit.test.ts:
+(pass) settings table reopens the tab and row that were edited [108.91ms]
+(pass) forbidden substring patterns cannot disable configured fallback chains [18.45ms]
+(pass) drafterModel refuses a forbidden primary pin [14.77ms]
+(pass) compactorModel refuses a forbidden primary pin [10.02ms]
+(pass) subagentModelOverrides.scout refuses a forbidden primary pin [6.56ms]
+(pass) editing a role fallback preserves other roles saved while its picker was open [24.13ms]
+(pass) audit health stays available but cleanup is refused on a stale host [31.75ms]
+(pass) tool visibility commands replace conflicting overrides [36.90ms]
+(pass) tool config accepts spaced JSON and refuses empty keys [48.18ms]
+(pass) postaudit refuses a save after the host became stale in its dialog [21.56ms]
+(pass) wipe revalidates its host after the confirmation dialog [100.82ms]
+(pass) tool metadata editor preserves concurrent updates and names its execution limit [61.92ms]
+(pass) compactor picker labels its clear choice as registry plan B [8.14ms]
+(pass) /goal pause preserves a complete goal [108.16ms]
+(pass) /goal verify preserves a complete goal [60.51ms]
+(pass) /goal cancel preserves a complete goal [23.13ms]
+(pass) /goal pause preserves a aborted goal [62.07ms]
+(pass) /goal verify preserves a aborted goal [74.69ms]
+(pass) /goal cancel preserves a aborted goal [81.24ms]
+(pass) /goal verify refuses to write a new claim through a stale host [40.18ms]
+(pass) /review refuses a stale host before producing follow-up artifacts [71.20ms]
+(pass) /list resume admits an auditing head to the existing audit recovery path [156.96ms]
+226 |     replaceState({ ...state, goal: seedGoal({ id: "replacement-command-goal", status: "active" }) as unknown as unknown as typeof state.goal });
+227 |     persistStateLine(ctx.cwd, state);
+228 |     return options[0];
+229 |   };
+230 |   await pi.command("goal", "decide", ctx);
+231 |   assert.equal(readState(ctx.cwd).goal?.id, "replacement-command-goal");
+               ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ undefined
+- 'replacement-command-goal'
+
+ generatedMessage: true,
+     actual: undefined,
+   expected: "replacement-command-goal",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:231:10
+      at processTicksAndRejections (native:7:39)
+(fail) a decision picker cannot cancel a replacement goal [458.72ms]
+
+1 tests failed:
+(fail) a decision picker cannot cancel a replacement goal [458.72ms]
+
+ 22 pass
+ 1 fail
+Ran 23 tests across 1 file. [2.30s]
+[run-tests] finished in 3s (exit 1)

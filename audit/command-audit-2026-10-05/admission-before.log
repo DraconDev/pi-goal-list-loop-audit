@@ -1,0 +1,254 @@
+
+> pi-goal-list-loop-audit@0.39.5 test
+> node scripts/run-tests.mjs tests/glla-ui-command-audit.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-ui-command-audit.test.ts:
+(pass) settings table reopens the tab and row that were edited [86.41ms]
+(pass) forbidden substring patterns cannot disable configured fallback chains [16.00ms]
+(pass) drafterModel refuses a forbidden primary pin [9.56ms]
+(pass) compactorModel refuses a forbidden primary pin [10.38ms]
+(pass) subagentModelOverrides.scout refuses a forbidden primary pin [10.47ms]
+(pass) editing a role fallback preserves other roles saved while its picker was open [14.87ms]
+(pass) audit health stays available but cleanup is refused on a stale host [8.96ms]
+(pass) tool visibility commands replace conflicting overrides [40.07ms]
+(pass) tool config accepts spaced JSON and refuses empty keys [17.18ms]
+(pass) postaudit refuses a save after the host became stale in its dialog [41.75ms]
+(pass) wipe revalidates its host after the confirmation dialog [72.08ms]
+(pass) tool metadata editor preserves concurrent updates and names its execution limit [23.78ms]
+(pass) compactor picker labels its clear choice as registry plan B [26.95ms]
+179 |     test(`/goal ${action} preserves a ${status} goal`, async () => {
+180 |       const { pi, ctx } = await boot();
+181 |       replaceState({ ...state, goal: seedGoal({ status, stopReason: "terminal evidence" }) as typeof state.goal });
+182 |       persistStateLine(ctx.cwd, state);
+183 |       await pi.command("goal", action, ctx);
+184 |       assert.equal(readState(ctx.cwd).goal?.status, status);
+                   ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ 'paused'
+- 'complete'
+
+ generatedMessage: true,
+     actual: "paused",
+   expected: "complete",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:184:14
+      at processTicksAndRejections (native:7:39)
+(fail) /goal pause preserves a complete goal [62.03ms]
+180 |       const { pi, ctx } = await boot();
+181 |       replaceState({ ...state, goal: seedGoal({ status, stopReason: "terminal evidence" }) as typeof state.goal });
+182 |       persistStateLine(ctx.cwd, state);
+183 |       await pi.command("goal", action, ctx);
+184 |       assert.equal(readState(ctx.cwd).goal?.status, status);
+185 |       assert.equal(readState(ctx.cwd).goal?.pendingCompletion, undefined);
+                   ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ {
++   at: '2026-10-05T15:07:19.397Z',
++   completionSummary: 'Manual audit requested by the user via /goal verify (no agent completion claim). Verify the objective against the repo directly.',
++   quotaAttempts: undefined,
++   quotaAutoRetryUntil: undefined,
++   quotaFirstAt: undefined
++ }
+- undefined
+
+ generatedMessage: true,
+     actual: {
+  completionSummary: "Manual audit requested by the user via /goal verify (no agent completion claim). Verify the objective against the repo directly.",
+  at: "2026-10-05T15:07:19.397Z",
+  quotaAttempts: undefined,
+  quotaFirstAt: undefined,
+  quotaAutoRetryUntil: undefined,
+},
+   expected: undefined,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:185:14
+      at processTicksAndRejections (native:7:39)
+(fail) /goal verify preserves a complete goal [29.71ms]
+179 |     test(`/goal ${action} preserves a ${status} goal`, async () => {
+180 |       const { pi, ctx } = await boot();
+181 |       replaceState({ ...state, goal: seedGoal({ status, stopReason: "terminal evidence" }) as typeof state.goal });
+182 |       persistStateLine(ctx.cwd, state);
+183 |       await pi.command("goal", action, ctx);
+184 |       assert.equal(readState(ctx.cwd).goal?.status, status);
+                   ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ undefined
+- 'complete'
+
+ generatedMessage: true,
+     actual: undefined,
+   expected: "complete",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:184:14
+      at processTicksAndRejections (native:7:39)
+(fail) /goal cancel preserves a complete goal [86.92ms]
+179 |     test(`/goal ${action} preserves a ${status} goal`, async () => {
+180 |       const { pi, ctx } = await boot();
+181 |       replaceState({ ...state, goal: seedGoal({ status, stopReason: "terminal evidence" }) as typeof state.goal });
+182 |       persistStateLine(ctx.cwd, state);
+183 |       await pi.command("goal", action, ctx);
+184 |       assert.equal(readState(ctx.cwd).goal?.status, status);
+                   ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ 'paused'
+- 'aborted'
+
+ generatedMessage: true,
+     actual: "paused",
+   expected: "aborted",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:184:14
+      at processTicksAndRejections (native:7:39)
+(fail) /goal pause preserves a aborted goal [42.97ms]
+180 |       const { pi, ctx } = await boot();
+181 |       replaceState({ ...state, goal: seedGoal({ status, stopReason: "terminal evidence" }) as typeof state.goal });
+182 |       persistStateLine(ctx.cwd, state);
+183 |       await pi.command("goal", action, ctx);
+184 |       assert.equal(readState(ctx.cwd).goal?.status, status);
+185 |       assert.equal(readState(ctx.cwd).goal?.pendingCompletion, undefined);
+                   ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ {
++   at: '2026-10-05T15:07:19.581Z',
++   completionSummary: 'Manual audit requested by the user via /goal verify (no agent completion claim). Verify the objective against the repo directly.',
++   quotaAttempts: undefined,
++   quotaAutoRetryUntil: undefined,
++   quotaFirstAt: undefined
++ }
+- undefined
+
+ generatedMessage: true,
+     actual: {
+  completionSummary: "Manual audit requested by the user via /goal verify (no agent completion claim). Verify the objective against the repo directly.",
+  at: "2026-10-05T15:07:19.581Z",
+  quotaAttempts: undefined,
+  quotaFirstAt: undefined,
+  quotaAutoRetryUntil: undefined,
+},
+   expected: undefined,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:185:14
+      at processTicksAndRejections (native:7:39)
+(fail) /goal verify preserves a aborted goal [54.63ms]
+179 |     test(`/goal ${action} preserves a ${status} goal`, async () => {
+180 |       const { pi, ctx } = await boot();
+181 |       replaceState({ ...state, goal: seedGoal({ status, stopReason: "terminal evidence" }) as typeof state.goal });
+182 |       persistStateLine(ctx.cwd, state);
+183 |       await pi.command("goal", action, ctx);
+184 |       assert.equal(readState(ctx.cwd).goal?.status, status);
+                   ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ undefined
+- 'aborted'
+
+ generatedMessage: true,
+     actual: undefined,
+   expected: "aborted",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:184:14
+      at processTicksAndRejections (native:7:39)
+(fail) /goal cancel preserves a aborted goal [33.85ms]
+192 |   const { pi, ctx } = await boot();
+193 |   replaceState({ ...state, goal: seedGoal({ status: "active" }) as typeof state.goal });
+194 |   persistStateLine(ctx.cwd, state);
+195 |   invalidateHostSession(pi, ctx);
+196 |   await pi.command("goal", "verify", ctx);
+197 |   assert.equal(readState(ctx.cwd).goal?.pendingCompletion, undefined);
+               ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ {
++   at: '2026-10-05T15:07:19.697Z',
++   completionSummary: 'Manual audit requested by the user via /goal verify (no agent completion claim). Verify the objective against the repo directly.',
++   quotaAttempts: undefined,
++   quotaAutoRetryUntil: undefined,
++   quotaFirstAt: undefined
++ }
+- undefined
+
+ generatedMessage: true,
+     actual: {
+  completionSummary: "Manual audit requested by the user via /goal verify (no agent completion claim). Verify the objective against the repo directly.",
+  at: "2026-10-05T15:07:19.697Z",
+  quotaAttempts: undefined,
+  quotaFirstAt: undefined,
+  quotaAutoRetryUntil: undefined,
+},
+   expected: undefined,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:197:10
+      at processTicksAndRejections (native:7:39)
+(fail) /goal verify refuses to write a new claim through a stale host [75.28ms]
+204 |   const archive = path.join(ctx.cwd, ".pi-glla", "archive");
+205 |   fs.mkdirSync(archive, { recursive: true });
+206 |   fs.writeFileSync(path.join(archive, "review-command-audit.md"), "## Objective\n\n> TODO fix broken recovery\n\nHIGH: broken recovery needs correction.");
+207 |   invalidateHostSession(pi, ctx);
+208 |   await pi.command("review", "review-command-audit aggressive", ctx);
+209 |   assert.equal(fs.existsSync(path.join(ctx.cwd, ".pi-glla", "reviews")), false);
+               ^
+AssertionError: Expected values to be strictly equal:
+
+true !== false
+
+ generatedMessage: true,
+     actual: true,
+   expected: false,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:209:10
+      at processTicksAndRejections (native:7:39)
+(fail) /review refuses a stale host before producing follow-up artifacts [84.63ms]
+212 | test("/list resume admits an auditing head to the existing audit recovery path", async () => {
+213 |   const { pi, ctx } = await boot();
+214 |   replaceState({ ...state, goal: seedGoal({ policy: "list", status: "auditing" }) as typeof state.goal });
+215 |   persistStateLine(ctx.cwd, state);
+216 |   await pi.command("list", "resume", ctx);
+217 |   assert.ok(ctx.ui.matching("auditor is in flight").length > 0);
+               ^
+AssertionError: false == true
+ generatedMessage: true,
+     actual: false,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:217:10
+      at processTicksAndRejections (native:7:39)
+(fail) /list resume admits an auditing head to the existing audit recovery path [19.36ms]
+
+ 13 pass
+ 9 fail
+Ran 22 tests across 1 file. [1386.00ms]
+[run-tests] detached cleanup: 1 owned groups; 0 unverified survivors/records
+[run-tests] finished in 3s (exit 1)

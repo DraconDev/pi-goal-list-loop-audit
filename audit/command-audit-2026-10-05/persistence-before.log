@@ -1,0 +1,112 @@
+
+> pi-goal-list-loop-audit@0.39.5 test
+> node scripts/run-tests.mjs tests/glla-ui-command-audit.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-ui-command-audit.test.ts:
+(pass) settings table reopens the tab and row that were edited [170.51ms]
+(pass) forbidden substring patterns cannot disable configured fallback chains [23.69ms]
+(pass) drafterModel refuses a forbidden primary pin [11.41ms]
+(pass) compactorModel refuses a forbidden primary pin [15.49ms]
+(pass) subagentModelOverrides.scout refuses a forbidden primary pin [88.10ms]
+(pass) editing a role fallback preserves other roles saved while its picker was open [122.32ms]
+(pass) audit health stays available but cleanup is refused on a stale host [94.33ms]
+(pass) tool visibility commands replace conflicting overrides [174.45ms]
+(pass) tool config accepts spaced JSON and refuses empty keys [60.05ms]
+(pass) postaudit refuses a save after the host became stale in its dialog [81.33ms]
+(pass) wipe revalidates its host after the confirmation dialog [267.82ms]
+(pass) tool metadata editor preserves concurrent updates and names its execution limit [47.49ms]
+(pass) compactor picker labels its clear choice as registry plan B [25.71ms]
+(pass) /goal pause preserves a complete goal [31.70ms]
+(pass) /goal verify preserves a complete goal [69.82ms]
+(pass) /goal cancel preserves a complete goal [25.38ms]
+(pass) /goal pause preserves a aborted goal [68.87ms]
+(pass) /goal verify preserves a aborted goal [47.60ms]
+(pass) /goal cancel preserves a aborted goal [291.45ms]
+(pass) /goal verify refuses to write a new claim through a stale host [628.04ms]
+(pass) /review refuses a stale host before producing follow-up artifacts [63.50ms]
+(pass) /list resume admits an auditing head to the existing audit recovery path [146.92ms]
+(pass) a decision picker cannot cancel a replacement goal [199.84ms]
+(pass) a decision stays paused after stale during selection [158.63ms]
+(pass) a decision stays paused after delivery-error during selection [155.98ms]
+(pass) the list-cancel decision executes cancellation instead of resuming work [114.58ms]
+270 |       await pi.command("goal", action, ctx);
+271 |       assert.equal(readState(ctx.cwd).goal?.status, status);
+272 |       assert.equal(readState(ctx.cwd).goal?.pendingCompletion, undefined);
+273 |       const notices = ctx.ui.notifies.map(n => n.message).join("\n");
+274 |       assert.match(notices, /not persisted/);
+275 |       assert.doesNotMatch(notices, /Goal .* paused\.|Resumed goal|starting the detached auditor/);
+                   ^
+AssertionError: The input was expected to not match the regular expression /Goal .* paused\.|Resumed goal|starting the detached auditor/. Input:
+
+'glla: 12 agent tool(s) were hidden by an external tool allowlist (e.g. a modlist profile) and have been re-activated (complete_goal, pause_goal, complete_task, update_task_status, record_goal_judgment, propose_goal_draft, propose_loop_draft, propose_loop_refine, list_add, list_activate, list_status, propose_task_list). Add them to your allowlist profile to silence this.\n' +
+  'Goal update was not persisted — the durable goal transaction could not be written. Fix .pi-glla storage and retry.\n' +
+  'Goal "seeded test objective — done when pinned" paused. /goal resume to continue.'
+
+ generatedMessage: true,
+     actual: "glla: 12 agent tool(s) were hidden by an external tool allowlist (e.g. a modlist profile) and have been re-activated (complete_goal, pause_goal, complete_task, update_task_status, record_goal_judgment, propose_goal_draft, propose_loop_draft, propose_loop_refine, list_add, list_activate, list_status, propose_task_list). Add them to your allowlist profile to silence this.\nGoal update was not persisted — the durable goal transaction could not be written. Fix .pi-glla storage and retry.\nGoal \"seeded test objective — done when pinned\" paused. /goal resume to continue.",
+   expected: /Goal .* paused\.|Resumed goal|starting the detached auditor/,
+   operator: "doesNotMatch",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:275:14
+      at processTicksAndRejections (native:7:39)
+(fail) /goal pause does not announce or dispatch an unpersisted transition [75.69ms]
+270 |       await pi.command("goal", action, ctx);
+271 |       assert.equal(readState(ctx.cwd).goal?.status, status);
+272 |       assert.equal(readState(ctx.cwd).goal?.pendingCompletion, undefined);
+273 |       const notices = ctx.ui.notifies.map(n => n.message).join("\n");
+274 |       assert.match(notices, /not persisted/);
+275 |       assert.doesNotMatch(notices, /Goal .* paused\.|Resumed goal|starting the detached auditor/);
+                   ^
+AssertionError: The input was expected to not match the regular expression /Goal .* paused\.|Resumed goal|starting the detached auditor/. Input:
+
+'glla: 12 agent tool(s) were hidden by an external tool allowlist (e.g. a modlist profile) and have been re-activated (complete_goal, pause_goal, complete_task, update_task_status, record_goal_judgment, propose_goal_draft, propose_loop_draft, propose_loop_refine, list_add, list_activate, list_status, propose_task_list). Add them to your allowlist profile to silence this.\n' +
+  'Goal update was not persisted — the durable goal transaction could not be written. Fix .pi-glla storage and retry.\n' +
+  'Resumed goal [test-1791213092908-n3il4m]: seeded test objective — done when pinned'
+
+ generatedMessage: true,
+     actual: "glla: 12 agent tool(s) were hidden by an external tool allowlist (e.g. a modlist profile) and have been re-activated (complete_goal, pause_goal, complete_task, update_task_status, record_goal_judgment, propose_goal_draft, propose_loop_draft, propose_loop_refine, list_add, list_activate, list_status, propose_task_list). Add them to your allowlist profile to silence this.\nGoal update was not persisted — the durable goal transaction could not be written. Fix .pi-glla storage and retry.\nResumed goal [test-1791213092908-n3il4m]: seeded test objective — done when pinned",
+   expected: /Goal .* paused\.|Resumed goal|starting the detached auditor/,
+   operator: "doesNotMatch",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:275:14
+      at processTicksAndRejections (native:7:39)
+(fail) /goal resume does not announce or dispatch an unpersisted transition [95.53ms]
+272 |       assert.equal(readState(ctx.cwd).goal?.pendingCompletion, undefined);
+273 |       const notices = ctx.ui.notifies.map(n => n.message).join("\n");
+274 |       assert.match(notices, /not persisted/);
+275 |       assert.doesNotMatch(notices, /Goal .* paused\.|Resumed goal|starting the detached auditor/);
+276 |       const journal = fs.readFileSync(path.join(ctx.cwd, ".pi-glla", "active.jsonl"), "utf8");
+277 |       assert.doesNotMatch(journal, /"type":"manual_audit_requested"/);
+                   ^
+AssertionError: The input was expected to not match the regular expression /"type":"manual_audit_requested"/. Input:
+
+'{"type":"session_rebound","value":{"reason":"startup"},"at":"2026-10-05T15:11:32.974Z"}\n' +
+  '{"type":"state","value":{"goal":{"id":"test-1791213093009-jmyyw8","objective":"seeded test objective — done when pinned","status":"active","policy":"goal","autoContinue":true,"usage":{"inputTokens":0,"outputTokens":0,"cacheReadTokens":0,"cacheWriteTokens":0,"cost":0,"turns":0},"createdAt":"2026-10-05T15:11:33.009Z","updatedAt":"2026-10-05T15:11:33.009Z"},"list":[],"loop":null,"mainModelRecovery":null,"lastCompactionAt":null,"postCompactRecovery":null,"supervisorPausedAt":null,"loadHoldAt":null,"lastOutcome":null},"at":"2026-10-05T15:11:33.009Z"}\n' +
+  '{"type":"manual_audit_requested","value":{"goalId":"test-1791213093009-jmyyw8"},"at":"2026-10-05T15:11:33.056Z"}\n' +
+  ''
+
+ generatedMessage: true,
+     actual: "{\"type\":\"session_rebound\",\"value\":{\"reason\":\"startup\"},\"at\":\"2026-10-05T15:11:32.974Z\"}\n{\"type\":\"state\",\"value\":{\"goal\":{\"id\":\"test-1791213093009-jmyyw8\",\"objective\":\"seeded test objective — done when pinned\",\"status\":\"active\",\"policy\":\"goal\",\"autoContinue\":true,\"usage\":{\"inputTokens\":0,\"outputTokens\":0,\"cacheReadTokens\":0,\"cacheWriteTokens\":0,\"cost\":0,\"turns\":0},\"createdAt\":\"2026-10-05T15:11:33.009Z\",\"updatedAt\":\"2026-10-05T15:11:33.009Z\"},\"list\":[],\"loop\":null,\"mainModelRecovery\":null,\"lastCompactionAt\":null,\"postCompactRecovery\":null,\"supervisorPausedAt\":null,\"loadHoldAt\":null,\"lastOutcome\":null},\"at\":\"2026-10-05T15:11:33.009Z\"}\n{\"type\":\"manual_audit_requested\",\"value\":{\"goalId\":\"test-1791213093009-jmyyw8\"},\"at\":\"2026-10-05T15:11:33.056Z\"}\n",
+   expected: /"type":"manual_audit_requested"/,
+   operator: "doesNotMatch",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:277:14
+      at processTicksAndRejections (native:7:39)
+(fail) /goal verify does not announce or dispatch an unpersisted transition [153.63ms]
+
+3 tests failed:
+(fail) /goal pause does not announce or dispatch an unpersisted transition [75.69ms]
+(fail) /goal resume does not announce or dispatch an unpersisted transition [95.53ms]
+(fail) /goal verify does not announce or dispatch an unpersisted transition [153.63ms]
+
+ 26 pass
+ 3 fail
+Ran 29 tests across 1 file. [4.43s]
+[run-tests] detached cleanup: 1 owned groups; 0 unverified survivors/records
+[run-tests] finished in 6s (exit 1)

@@ -1,0 +1,86 @@
+
+> pi-goal-list-loop-audit@0.39.5 test
+> node scripts/run-tests.mjs tests/glla-ui-command-audit.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-ui-command-audit.test.ts:
+(pass) settings table reopens the tab and row that were edited [605.97ms]
+(pass) forbidden substring patterns cannot disable configured fallback chains [95.78ms]
+(pass) drafterModel refuses a forbidden primary pin [44.95ms]
+(pass) compactorModel refuses a forbidden primary pin [38.85ms]
+(pass) subagentModelOverrides.scout refuses a forbidden primary pin [169.87ms]
+(pass) editing a role fallback preserves other roles saved while its picker was open [326.94ms]
+(pass) audit health stays available but cleanup is refused on a stale host [116.52ms]
+(pass) tool visibility commands replace conflicting overrides [320.42ms]
+(pass) tool config accepts spaced JSON and refuses empty keys [511.38ms]
+(pass) postaudit refuses a save after the host became stale in its dialog [476.59ms]
+(pass) wipe revalidates its host after the confirmation dialog [567.22ms]
+(pass) tool metadata editor preserves concurrent updates and names its execution limit [524.11ms]
+(pass) compactor picker labels its clear choice as registry plan B [333.92ms]
+(pass) /goal pause preserves a complete goal [238.63ms]
+(pass) /goal verify preserves a complete goal [143.72ms]
+(pass) /goal cancel preserves a complete goal [37.70ms]
+(pass) /goal pause preserves a aborted goal [48.70ms]
+(pass) /goal verify preserves a aborted goal [49.14ms]
+(pass) /goal cancel preserves a aborted goal [70.08ms]
+(pass) /goal verify refuses to write a new claim through a stale host [67.47ms]
+(pass) /review refuses a stale host before producing follow-up artifacts [44.21ms]
+(pass) /list resume admits an auditing head to the existing audit recovery path [199.00ms]
+(pass) a decision picker cannot cancel a replacement goal [203.52ms]
+(pass) a decision stays paused after stale during selection [104.68ms]
+(pass) a decision stays paused after delivery-error during selection [53.08ms]
+252 |   const { pi, ctx } = await boot();
+253 |   replaceState({ ...state, goal: seedGoal({ policy: "list", status: "paused", pauseKind: "decision", pauseOptions: ["Cancel list (/list cancel)"] }) as unknown as typeof state.goal });
+254 |   persistStateLine(ctx.cwd, state);
+255 |   ctx.ui.selectImpl = async (_title, options) => options[0];
+256 |   await pi.command("goal", "decide", ctx);
+257 |   assert.equal(readState(ctx.cwd).goal, null);
+               ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ {
++   activePath: '.pi-glla/goals/test-1791213034547-3is7vw.md',
++   autoContinue: true,
++   createdAt: '2026-10-05T15:10:34.547Z',
++   id: 'test-1791213034547-3is7vw',
++   objective: 'seeded test objective — done when pinned',
++   policy: 'list',
++   status: 'active',
++   updatedAt: '2026-10-05T15:10:34.577Z',
++   usage: {
++     tokensLimit: 0
++   }
++ }
+- null
+
+ generatedMessage: true,
+     actual: {
+  id: "test-1791213034547-3is7vw",
+  objective: "seeded test objective — done when pinned",
+  status: "active",
+  policy: "list",
+  autoContinue: true,
+  usage: [Object ...],
+  createdAt: "2026-10-05T15:10:34.547Z",
+  updatedAt: "2026-10-05T15:10:34.577Z",
+  activePath: ".pi-glla/goals/test-1791213034547-3is7vw.md",
+},
+   expected: null,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/glla-ui-command-audit.test.ts:257:10
+      at processTicksAndRejections (native:7:39)
+(fail) the list-cancel decision executes cancellation instead of resuming work [121.24ms]
+
+1 tests failed:
+(fail) the list-cancel decision executes cancellation instead of resuming work [121.24ms]
+
+ 25 pass
+ 1 fail
+Ran 26 tests across 1 file. [7.91s]
+[run-tests] detached cleanup: 1 owned groups; 0 unverified survivors/records
+[run-tests] finished in 10s (exit 1)
