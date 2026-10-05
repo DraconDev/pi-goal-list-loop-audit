@@ -677,7 +677,7 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
   // manual resume exactly as by an automatic one. (staleEntry still re-marks
   // below — a resume inside a stale session is a NEW interrupt.)
   const storedCompletion = state.goal.pendingCompletion;
-  if (!updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined, pauseKind: undefined, pauseOptions: undefined, pauseRecommended: undefined, pauseResumeAt: undefined, interruptedAt: undefined, interruptedReason: undefined, autoResumedAt: undefined, autoResumedEvent: undefined, ...(staleEntry ? { interruptedAt: nowIso(), interruptedReason: "resumed in a stale session" } : {}), ...(usage ? { usage } : {}) }, ctx) return;
+  if (!updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined, pauseKind: undefined, pauseOptions: undefined, pauseRecommended: undefined, pauseResumeAt: undefined, interruptedAt: undefined, interruptedReason: undefined, autoResumedAt: undefined, autoResumedEvent: undefined, ...(staleEntry ? { interruptedAt: nowIso(), interruptedReason: "resumed in a stale session" } : {}), ...(usage ? { usage } : {}) }, ctx)) return;
   if (staleEntry) return;
   releaseAuditorSurface();
   // A manual resume starts a fresh relentless cycle: a user pause between
