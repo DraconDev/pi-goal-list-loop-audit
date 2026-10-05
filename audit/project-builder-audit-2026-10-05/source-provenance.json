@@ -1,0 +1,18 @@
+{
+  "observedAt": "2026-10-05T07:12:57.678565+00:00",
+  "sha256": {
+    "extensions/respec-builder.ts": "abfc117d861867e6dbaab67421e4b4ee59088eed1ab1e0f32e38451f6b30925b",
+    "extensions/respec-builder-audit.ts": "968c9af0ddb6a160fe3fa01e32096a98b92d558b937b23deb336779e77c60404",
+    "extensions/respec-builder-runtime.ts": "44a5db9fca3a75037ebff7249b98a1bd996cf685c7febf1208d6cc96e98d4461",
+    "extensions/respec-builder-ui.ts": "63c68a4a35f1455e19deeb035566b222ba942b0d94379828fa8fe9571a65e881",
+    "extensions/goal-heartbeat.ts": "3576f8fef44734861eebdd8df2851101609e5d45d88c4f0e240579efe420fd9c",
+    "extensions/goal-loop.ts": "94b69536d91b319ed88520525e6b5d16f176b4f19a365b7ea9cb7614ae5ed75a",
+    "extensions/goal-loop-display.ts": "9e008f19208a728a16946d35b4388a2a359a488e92d7da1a693958a12536ed15",
+    "extensions/goal-loop-auditor-process.ts": "ae5078d7f1d568bad75ab6b28297c99478c480813d7ffa814311abe914a188bb",
+    "extensions/continuous-supervision.ts": "9ec149a204fe514e15513ad72e7ce2b75bea78ada12e7875393dc4a0de3de0e5",
+    "tests/respec-builder-audit-runtime.test.ts": "a6ae04421b94312bd916bbdd91b2538b4ff6e392966578c74a61a47ef524fddb",
+    "tests/audit-job-retention.test.ts": "6a0e7ada69bfce9c376f1fbf0d5effbd0aa6080934a50e56ee904b99033d51ee",
+    "package.json": "d2e58878ff69b09a69e7ac96de39f9c67de6cfe624d1e321566e826598d4e8d6",
+    "package-lock.json": "0c34836da10b731e6865469ad0e5b6d21f155c47d6b2f2f6575dae1107e4febb"
+  }
+}

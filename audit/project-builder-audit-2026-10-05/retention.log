@@ -1,0 +1,17 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/audit-job-retention.test.ts:
+(pass) retention keeps unresolved goal and held project evidence until their claims settle [6.41ms]
+(pass) retention: pre-convention finished dirs (no lock, result on file) reap past the window [0.85ms]
+(pass) retention: lockless UNFINISHED dirs stay ambiguous (interrupted creation) [0.54ms]
+(pass) retention: corrupt (present-but-unparseable) locks stay ambiguous [0.57ms]
+(pass) retention: crash before worker ownership reaps only when the parent is dead [1.06ms]
+(pass) retention: proven-dead workers reap past the window, live pids never reap [0.66ms]
+(pass) retention: aged lockless dirs with neither request nor result reap as unowned debris [0.86ms]
+(pass) retention: unowned debris younger than the identity-free floor stays ambiguous [0.48ms]
+(pass) v0.38.104 retention: a finished result settles a LIVE parent lock (PID reuse no longer pins it) [0.64ms]
+(pass) v0.38.104 retention: a LIVE parent lock with no result is still ambiguous (unchanged) [0.66ms]
+
+ 10 pass
+ 0 fail
+Ran 10 tests across 1 file. [636.00ms]

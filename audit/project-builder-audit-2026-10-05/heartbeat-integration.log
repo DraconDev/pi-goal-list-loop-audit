@@ -1,0 +1,26 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [49.50ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [116.59ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [92.08ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [81.87ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [115.33ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [107.40ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [15.39ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [81.64ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [203.12ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [238.69ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [0.89ms]
+(pass) actual installer, command, tools and agent_end carry a project through detached verification [1650.35ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [100.49ms]
+(pass) a failed builder journal commit restores the complete prior RAM state [1.40ms]
+(pass) a supervisor freeze prevents a new project audit dispatch [0.72ms]
+(pass) rapid pause/resume discards the cancelled worker result and rearms the saved claim [106.60ms]
+(pass) an undelivered project summary survives replacement by a new project [89.48ms]
+(pass) freezing supervision between auditor attempts prevents retry and fallback dispatch [90.14ms]
+(pass) a corrupt summary outbox prevents terminal handoff and retains approved job evidence [95.99ms]
+
+ 19 pass
+ 0 fail
+Ran 19 tests across 1 file. [3.82s]
