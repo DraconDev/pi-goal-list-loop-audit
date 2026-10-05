@@ -797,6 +797,7 @@ function pendingDecision(): Goal | null {
 /** Open the decision picker for the current decision pause. Returns true
  * when a picker was shown (false → caller notifies "no pending decision"). */
 async function showDecisionPrompt(ctx: ExtensionContext): Promise<boolean> {
+  if (warnIfStaleAtEntry(ctx, "/goal decide")) return true;
   const g = pendingDecision();
   if (!g || !ctx.hasUI || decisionPromptOpen) return false;
   decisionPromptOpen = true;
@@ -805,6 +806,11 @@ async function showDecisionPrompt(ctx: ExtensionContext): Promise<boolean> {
     const options = g.pauseOptions!.map((o, i) => (g.pauseRecommended === i + 1 ? `${o}  (recommended)` : o));
     const pick = await ctx.ui.select(title, options);
     if (!pick) return true; // Escape — the widget card remains the fallback
+    if (warnIfStaleAtEntry(ctx, "/goal decide selection")) return true;
+    if (pendingDecision() !== g) {
+      ctx.ui.notify("Decision changed while the picker was open — selection was not applied. /goal decide shows the current choice.", "info");
+      return true;
+    }
     const idx = options.indexOf(pick);
     const label = g.pauseOptions![idx] ?? pick.replace(/ {2}\(recommended\)$/, "");
     // v0.29.3: the wipe escape — "… (/glla wipe)" options run the wipe
@@ -824,13 +830,19 @@ async function showDecisionPrompt(ctx: ExtensionContext): Promise<boolean> {
       else if (group === "loop" && verb === "stop") await cmdLoop("stop", ctx);
       else if (group === "loop" && verb === "resume") await cmdLoop("resume", ctx);
       else {
-        safeSteerUser(ctx, `Decision for the paused goal "${displaySlice(g.objective, 240)}": ${sanitizeDisplayText(label)} — continue on this path.`);
+        if (!safeSteerUser(ctx, `Decision for the paused goal "${displaySlice(g.objective, 240)}": ${sanitizeDisplayText(label)} — continue on this path.`)) {
+          ctx.ui.notify("Decision could not be delivered — work stays paused. /goal decide to retry.", "warning");
+          return true;
+        }
         await cmdResume(ctx);
       }
       return true;
     }
     // Content choice — deliver to the agent, then resume.
-    safeSteerUser(ctx, `Decision for the paused goal "${displaySlice(g.objective, 240)}": ${sanitizeDisplayText(label)} — continue on this path.`);
+    if (!safeSteerUser(ctx, `Decision for the paused goal "${displaySlice(g.objective, 240)}": ${sanitizeDisplayText(label)} — continue on this path.`)) {
+      ctx.ui.notify("Decision could not be delivered — work stays paused. /goal decide to retry.", "warning");
+      return true;
+    }
     await cmdResume(ctx);
     return true;
   } finally {

@@ -1464,7 +1464,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     }
     if (loop.refinements?.length) lines.push(`Spec refined ${loop.refinements.length}× (latest: iteration ${loop.refinements[loop.refinements.length - 1]!.iteration})`);
     if (loop.stopReason) lines.push(`${isLifecycleHeldLoopReason(loop.stopReason) ? "Held" : "Stopped"}: ${sanitizeDisplayText(loop.stopReason)}`);
-    if (!loop.active && RESUMABLE_STOP(loop.stopReason)) lines.push("Resume: /loop resume continues the saved loop; /loop stop drops it.");
+    if (isHeldLoopResumable(loop)) lines.push("Resume: /loop resume continues the saved loop; /loop stop drops it.");
     if (!loop.active && loop.completionSummary) {
       // User-facing status is a change story, not a gate/test transcript.
       // The durable loop.completionSummary remains available in the archive

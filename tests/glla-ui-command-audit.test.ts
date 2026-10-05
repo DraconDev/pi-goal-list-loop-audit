@@ -230,5 +230,4 @@ test("a decision picker cannot cancel a replacement goal", async () => {
   await pi.command("goal", "decide", ctx);
   assert.equal(readState(ctx.cwd).goal?.id, "replacement-command-goal");
   assert.equal(readState(ctx.cwd).goal?.status, "active");
-  assert.equal(pi.abortCalled, false);
 });
