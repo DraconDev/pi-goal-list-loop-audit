@@ -11,7 +11,7 @@ import { loadSettings } from "./goal-settings.js";
 import type { LoopState } from "./goal-loop-forever.js";
 import { dispatchAuditorAllowedExtensions } from "./auditor-extensions.js";
 import { resolveAuditorThinkingLevel } from "./auditor-thinking.js";
-import { runDetachedGoalCompletionAuditor, runAuditorFallbackWithPolicy, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, writeAtomicJson, effectiveToolTimeoutMs, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
+import { runDetachedGoalCompletionAuditor, runAuditorFallbackWithPolicy, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, writeAtomicJson, effectiveToolTimeoutMs, DEFAULT_AUDITOR_TOOL_TIMEOUT_MS, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
 import { setRespecAuditLive, getRespecAuditLive, respecCompletionSummary } from "./respec-builder-ui.js";
 import { respecIncrementAuditGoal } from "./respec-builder-audit.js";
 import { adoptRespecRequirements, beginRespecAudit, blockRespecRequirement, unblockRespecRequirement, refineRespecRequirements, claimRespecTask, planRespecIncrement, settleRespecAudit, type RespecBuilderState } from "./respec-builder.js";
@@ -136,7 +136,7 @@ export async function runRespecBuilderAudit(ctx: ExtensionContext): Promise<void
         onProgress: progress => {
           publish({ phase: progress.phase === "starting" ? "starting" : "running", ...(progress.phase !== "starting" && progress.lastActivityAt !== undefined ? { lastActivityAt: progress.lastActivityAt } : {}),
             workerPhase: progress.phase, round: progress.round, currentTool: progress.currentTool, currentToolStartedAt: progress.currentToolStartedAt,
-            toolTimeoutMs: effectiveToolTimeoutMs(host.auditRuntime?.toolTimeoutMs ?? settings.auditorToolTimeoutMs, progress.currentToolTimeoutMs),
+            toolTimeoutMs: effectiveToolTimeoutMs(host.auditRuntime?.toolTimeoutMs ?? settings.auditorToolTimeoutMs ?? DEFAULT_AUDITOR_TOOL_TIMEOUT_MS, progress.currentToolTimeoutMs),
             activity: progress.currentTool ? `tool: ${progress.currentTool}` : progress.phase.replaceAll("_", " ") });
           if (parkProjectBound(ctx)) controller.abort();
           if (!state.loop?.active || state.loop.startedAt !== loop.startedAt || state.loop.builder !== builder || !host.context(ctx)) controller.abort();
