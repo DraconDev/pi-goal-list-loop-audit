@@ -43,7 +43,9 @@ test("v0.38.89: stats header and unknown-arg usage share the /glla prefix", () =
 
 test("v0.38.91: tool descriptions enumerate plan/audit/verify/add", () => {
   const src = fs.readFileSync("extensions/loops/goal-activation.ts", "utf-8");
-  assert.match(src, /\/goal status\|timeline\|pause\|resume\|cancel\|tweak <text>\|archive\|start\|plan\|audit\|verify/);
+  assert.match(src, /\/goal status\|timeline\|pause\|resume\|cancel\|decide\|archive\|verify/);
+  assert.match(src, /\/goal tweak <text>, start <objective>, plan \[direction\], audit \[focus\]/);
+  assert.match(src, /\/goal verify audits the current goal\./);
   assert.match(src, /\/list plan \| \/list add <text>/);
 });
 
