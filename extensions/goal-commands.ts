@@ -2875,8 +2875,9 @@ function cmdAudits(args: string, ctx: ExtensionContext): void {
     const action = /\bcleanup\b/.test(args) ? "cleanup" : "health";
     ctx.ui.notify(
       `glla audit-job ${action}: ${report.total} director${report.total === 1 ? "y" : "ies"} · ${report.live} live · ${report.dead} proven dead · ${report.ambiguous} ambiguous · ${report.bytes} bytes${report.cleanupCandidates > 0 ? ` · ${report.cleanupCandidates} old dead candidate(s)` : ""}.` +
-      (report.ambiguous > 0 ? " Ambiguous locks were preserved." : ""),
-      report.ambiguous > 0 ? "warning" : "info",
+      (report.ambiguous > 0 ? " Ambiguous locks were preserved." : "") +
+      (report.retentionBlocked ? ` Cleanup held: ${report.retentionBlocked}.` : ""),
+      report.ambiguous > 0 || report.retentionBlocked ? "warning" : "info",
     );
     return;
   }
