@@ -19,8 +19,37 @@ VISIBILITY-2026-10-05.md.
   dry-run package includes 142 files.
 - Focused project runtime/display/summary coverage: 30 passed, zero failed.
 
-The complete local gate and the independent hosted publish gate are running.
-npm availability and downloaded-package verification are pending. Live project
-sessions and installed packages were not modified by this release task.
+Hosted publish workflow:
+https://github.com/DraconDev/pi-goal-list-loop-audit/actions/runs/37372534223
+It completed successfully at 21:44:54 UTC. The full hosted gate passed:
+**3,265 passed, one environment-gated skip, zero failures across 349 files**
+(about 575 seconds for the suite). The remaining typecheck, binding, extension,
+inventory, package and installed launcher/worker/skill checks passed before
+signed npm publication.
+
+GitHub had reported hosted-runner assignment delays during this release's
+queue window: https://www.githubstatus.com/ (October 5 Actions incident,
+19:11–21:54 UTC updates). This is external CI availability, not a GLLA change.
+
+The local full run reported 3,264 passed, one skip and one failure in the
+existing auditor-retry-callback test (about 1,332 seconds). Its second retry
+count was still one when the test's 25-second polling deadline expired. The
+same test passed on GitHub and on a separate local rerun (about 24 seconds).
+Local load sensitivity is a plausible explanation, not established proof of
+the failure's cause. No runtime code or test timeout was changed to hide it.
+The failure, rerun and separate remaining local gate checks are retained in
+the evidence directory; a single green local full-gate rerun is not claimed.
+
+**Registry verification complete:** npm version and latest dist-tag are
+0.39.10. The downloaded npm tarball's SHA-512 integrity matches the registry,
+and all 142 packaged files match the tag byte for byte. All 511 tested input
+fingerprints still match both worktree and tag. The npm/Pi plugin package
+includes the new description, keywords and README presentation.
+
+Public package: https://www.npmjs.com/package/pi-goal-list-loop-audit/v/0.39.10
+
+The release is published and registry-verified. Live project sessions and
+installed packages were not modified. Update the npm/Pi installation and run
+`/reload` in existing sessions, then check `/glla version`.
 
 Evidence directory: `audit/release-0.39.10-2026-10-05/`.
