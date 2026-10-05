@@ -1,0 +1,20 @@
+{
+  "completedAt": "2026-10-05T07:29:34.862825+00:00",
+  "version": "0.39.3",
+  "releaseCheckExitCode": 0,
+  "tests": {
+    "passed": 3230,
+    "skipped": 1,
+    "failed": 0,
+    "files": 349
+  },
+  "typescriptHosts": [
+    "0.99.1",
+    "0.84.2"
+  ],
+  "renderedFrames": 60,
+  "overflowingLines": 0,
+  "sourceHashesMatch": true,
+  "published": false,
+  "liveProjectsResumed": false
+}

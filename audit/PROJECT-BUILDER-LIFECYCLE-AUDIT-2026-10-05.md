@@ -80,11 +80,21 @@ retention sweep has already deleted.
 
 ## Validation
 
-53 focused runtime/retention/compaction checks passed across four files. The retention
-regression first exposed an incomplete test fixture (missing required pending
-claim fields), then passed with a valid durable claim. Current and minimum host
-TypeScript, final recovery follow-up and the fresh 0.39.3 full release gate are
-recorded in the evidence directory; final results are pending at this checkpoint.
+53 focused runtime/retention/compaction checks passed across four files. The
+retention regression first exposed an incomplete test fixture (missing required
+pending claim fields), then passed with a valid durable claim. Current host
+0.99.1 and minimum host 0.84.2 TypeScript passed. Sixty actual renderer frames
+across dark/light and widths 40/80/120 were inspected; no line overflowed its
+terminal width, including the new held-audit card and footer.
+
+The final **0.39.3 full release gate passed (exit 0)**: **3,230 passed, 1 skipped,
+0 failed**, 3,231 cases across 349 files, approximately 585 seconds for the test
+suite. The skip is the existing environment-gated watched-repository
+auto-committer test. Remaining stages passed: current TypeScript, Jiti shared
+state, offline auditor extension loading, inventory, dry-run packing and
+installation/import of the actual 0.39.3 tarball with bounded launcher/worker
+RPC and delegate skill loading. This is a clean complete gate for the final
+implementation, not a reconstruction from retries of failed cases.
 
 Earlier broad runs were stopped through their own signal handler when further
 audit findings changed the implementation; process-group cleanup ran. Those
