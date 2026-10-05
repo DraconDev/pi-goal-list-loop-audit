@@ -1,0 +1,56 @@
+{
+  "chat": {
+    "footer": "\u25cf Chrome Bridge (indefinite) glla: \u26a0 completion review disapproved \u2014 fix the gap \u00b7 v0.39.8",
+    "contextFooter": "\u2191158k \u219328k R2.1M CH99.5% 8.5%/1.0M (auto)                                                                                                                  (opencode-go) space-bunny-free \u2022 max",
+    "working": true,
+    "auditActivity": null
+  },
+  "studio": {
+    "footer": "\u25cf Chrome Bridge (indefinite) glla: \u26a0 completion review disapproved \u2014 fix the gap \u00b7 v0.39.8",
+    "contextFooter": "\u2191178k \u219361k R8.9M CH99.7% 14.1%/1.0M (auto)                                                                                                                 (opencode-go) space-bunny-free \u2022 max",
+    "working": true,
+    "auditActivity": null
+  },
+  "freeport": {
+    "footer": "\u25cf Chrome Bridge (indefinite) glla: project auditing \u00b7 increment 5 \u00b7 verified 0/12 \u00b7 remaining 12 \u00b7 blocked 1 \u00b7 auditor: running \u00b7 opencode-go/space-bunny-free \u00b7 elapsed 2743s \u00b7 last activi...",
+    "contextFooter": "0.0%/1.0M (auto)                                                                                                                                           (opencode-go) space-bunny-free \u2022 max",
+    "working": false,
+    "auditActivity": "\u251c\u2500 last activity: 0s ago \u00b7 thinking"
+  },
+  "eve": {
+    "footer": "\u25cf Chrome Bridge (indefinite) glla: \u26a0 completion review disapproved \u2014 fix the gap \u00b7 v0.39.7",
+    "contextFooter": "\u2191407k \u219354k R13M CH99.8% $0.078 (sub) 18.6%/1.0M (auto)                                                                                                (meta) muse-spark-1.3-contributor \u2022 xhigh",
+    "working": true,
+    "auditActivity": null
+  },
+  "darklord": {
+    "footer": "\u25cf Chrome Bridge (indefinite) glla: project auditing \u00b7 increment 6 \u00b7 verified 1/10 \u00b7 remaining 9 \u00b7 blocked 0 \u00b7 auditor: running \u00b7 opencode-go/space-bunny-free \u00b7 elapsed 38s \u00b7 last activity ...",
+    "contextFooter": "\u21912.6M \u219376k R29M CH98.0% 23.3%/1.0M (auto)                                                                                                                  (opencode-go) space-bunny-free \u2022 max",
+    "working": false,
+    "auditActivity": "\u251c\u2500 last activity: 0s ago \u00b7 thinking"
+  },
+  "endless-td": {
+    "footer": "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 held \u00b7 increment 6 \u00b7 verified 0/9 \u00b7 remaining 9 \u00b7 blocked 1 \u00b7 v0.39.7",
+    "contextFooter": "\u2191119k \u219336k R5.6M CH97.5% 11.4%/1.0M (auto)                                                                                                                 (opencode-go) space-bunny-free \u2022 max",
+    "working": true,
+    "auditActivity": null
+  },
+  "football": {
+    "footer": "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 increment 1 \u00b7 verified 0/8 \u00b7 remaining 8 \u00b7 blocked 0 \u00b7 v0.39.5",
+    "contextFooter": "\u2191260k \u219373k R17M CH99.9% 19.4%/1.0M (auto)                                                                                                                  (opencode-go) space-bunny-free \u2022 max",
+    "working": true,
+    "auditActivity": null
+  },
+  "neonbreak": {
+    "footer": "\u25cf Chrome Bridge (indefinite)",
+    "contextFooter": "\u21913.4M \u2193191k R126M CH99.9% $0.066 (sub) 45.7%/1.0M (auto)                                                                                              (meta) muse-spark-1.3-contributor \u2022 xhigh",
+    "working": false,
+    "auditActivity": null
+  },
+  "junk-runner": {
+    "footer": "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 increment 2 \u00b7 verified 0/15 \u00b7 remaining 15 \u00b7 blocked 0 \u00b7 v0.39.7",
+    "contextFooter": "\u2191680k \u2193118k R13M CH99.9% 22.0%/1.0M (auto)                                                                                                                 (opencode-go) space-bunny-free \u2022 max",
+    "working": true,
+    "auditActivity": null
+  }
+}
