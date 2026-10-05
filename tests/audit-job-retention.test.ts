@@ -21,6 +21,21 @@ import {
 const DAY_MS = 86_400_000;
 const RETENTION_MS = 7 * DAY_MS;
 
+test("retention refuses cleanup when the durable claim journal cannot be read", () => {
+  const cwd = tmpdir(), old = jobDir(cwd, "audit-old-finished");
+  fs.writeFileSync(path.join(old, "result.json"), "{}");
+  ageDir(old, 10 * DAY_MS);
+  const ledger = path.join(cwd, ".pi-glla", "active.jsonl");
+  fs.mkdirSync(ledger); // A directory at the journal path produces EISDIR.
+  const blocked = cleanupDeadAuditJobs(cwd, RETENTION_MS);
+  assert.match(blocked.retentionBlocked!, /claims could not be read/);
+  assert.equal(blocked.cleanupCandidates, 0);
+  assert.ok(fs.existsSync(old));
+  fs.rmdirSync(ledger);
+  cleanupDeadAuditJobs(cwd, RETENTION_MS);
+  assert.equal(fs.existsSync(old), false, "normal cleanup resumes when the journal is readable");
+});
+
 test("retention keeps unresolved goal and held project evidence until their claims settle", () => {
   const cwd = tmpdir();
   const ids = ["goal-claim-physical", "project-claim-physical", "project-claimant-unrelated"];

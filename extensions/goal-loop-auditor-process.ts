@@ -20,6 +20,7 @@ import {
   piGlaDir,
   appendLedger,
   readState,
+  isPersistenceDegraded,
   stripThinkBlocks,
   captureGoalRevision,
   isRetriableInfraError,
@@ -1105,6 +1106,7 @@ export interface AuditJobHealthReport {
   bytes: number;
   cleanupCandidates: number;
   entries: AuditJobHealthEntry[];
+  retentionBlocked?: string;
 }
 
 /** A deliberately conservative threshold: an auditor that is merely slow is
@@ -1149,6 +1151,7 @@ export function inspectAuditJobHealth(
   const root = path.join(piGlaDir(cwd), "audit-jobs");
   const entries: AuditJobHealthEntry[] = [];
   const durable = readState(cwd);
+  const retentionBlocked = isPersistenceDegraded() ? "durable claims could not be read safely" : undefined;
   const pendingIds = [durable.goal?.pendingCompletion?.attemptId, durable.loop?.builder?.audit?.attemptId]
     .filter((id): id is string => typeof id === "string" && id.length > 0);
   let dirs: Array<{ name: string; isDirectory: () => boolean }> = [];
@@ -1249,14 +1252,15 @@ export function inspectAuditJobHealth(
   const dead = entries.filter((entry) => entry.status === "dead").length;
   const ambiguous = entries.filter((entry) => entry.status === "ambiguous").length;
   const bytes = entries.reduce((sum, entry) => sum + entry.bytes, 0);
-  const cleanupCandidates = entries.filter((entry) => entry.status === "dead" && !entry.retainedForClaim && entry.ageMs >= maxAgeMs).length;
-  return { root, scannedAt: new Date(nowMs).toISOString(), total: entries.length, live, dead, ambiguous, bytes, cleanupCandidates, entries };
+  const cleanupCandidates = retentionBlocked ? 0 : entries.filter((entry) => entry.status === "dead" && !entry.retainedForClaim && entry.ageMs >= maxAgeMs).length;
+  return { root, scannedAt: new Date(nowMs).toISOString(), total: entries.length, live, dead, ambiguous, bytes, cleanupCandidates, entries, ...(retentionBlocked ? { retentionBlocked } : {}) };
 }
 
 /** Explicit, age-bounded cleanup for only proven-dead worker identities.
  * Ambiguous locks are intentionally left for operator inspection. */
 export function cleanupDeadAuditJobs(cwd: string, maxAgeMs = AUDIT_JOB_CLEANUP_MIN_AGE_MS, nowMs = Date.now()): AuditJobHealthReport {
   const report = inspectAuditJobHealth(cwd, nowMs, maxAgeMs);
+  if (report.retentionBlocked) return report;
   for (const entry of report.entries) {
     if (entry.status !== "dead" || entry.retainedForClaim || entry.ageMs < maxAgeMs) continue;
     // A dead entry WITH a pid always re-verifies liveness first (PID reuse
