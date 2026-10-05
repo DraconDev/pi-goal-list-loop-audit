@@ -1,5 +1,6 @@
 import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import activate, { __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from "../extensions/loops/goal.js";
 import { __testOnlyResetCompactor, __testOnlySetSpawnWorker } from "../extensions/goal-compactor.js";
 import { sendContinuation } from "../extensions/goal-continuation.js";
@@ -26,7 +27,7 @@ for (const fail of [false, true]) {
       await pi.command("loop", "start develop the intended project", ctx);
       clearLoopTimer(); pi.sent.length = 0;
       tokens = 315_000;
-      scheduleLoopTick(ctx);
+      scheduleLoopTick(ctx as unknown as ExtensionContext);
       await tick(150);
       assert.equal(compacts, 1, "a loop turn must check compaction before dispatch");
       assert.equal(pi.sent.filter(s => (s.options as { triggerTurn?: boolean })?.triggerTurn === true).length, fail ? 1 : 0,
