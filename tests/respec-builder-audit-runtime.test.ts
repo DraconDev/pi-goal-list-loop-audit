@@ -243,7 +243,7 @@ test("an exhausted token bound holds the project before spawning an auditor or c
   } finally { replaceState(f.original); }
 });
 
-test("actual installer, command, tools and agent_end carry a project through detached verification", async () => {
+for (const resumeHeld of [false, true]) test(`actual project lifecycle reaches detached verification through ${resumeHeld ? "/glla resume of a stalled audit" : "agent_end"}`, async () => {
   const cwd = tmpCwd(), pi = new MockPi(), ctx = makeMockCtx(cwd, { sessionManager: { name: "respec-full-lifecycle", getBranch: () => [], getSessionFile: () => undefined } });
   const previous = { ...state };
   __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
@@ -260,8 +260,22 @@ test("actual installer, command, tools and agent_end carry a project through det
     await pi.runTool("claim_project_task", { id: "task" }, ctx);
     await pi.runTool("audit_project_increment", { claim: "Artifact implemented" }, ctx);
     assert.equal(readState(cwd).loop!.builder!.requirements[0]!.status, "open");
-    await pi.fire("agent_end", { messages: [{ role: "assistant", content: [{ type: "text", text: "Increment ready for independent verification." }] }] }, ctx);
-    assert.equal(respecBuilderAuditInFlight(cwd), true, "production agent_end dispatched the increment auditor");
+    if (resumeHeld) {
+      const retainedAttempt = state.loop!.builder!.audit!.attemptId;
+      replaceState({ ...state, loop: { ...state.loop!, active: false, stopReason: "stalled: 5 continuation refires landed no turn" } });
+      persistStateLine(cwd, state);
+      await pi.command("glla", "resume", ctx);
+      assert.equal(readState(cwd).loop!.active, true, "broad resume must recognise the stalled audit hold");
+      assert.equal(readState(cwd).loop!.builder!.audit!.attemptId, retainedAttempt, "resume preserves the claim identity");
+      const dispatchDeadline = Date.now() + 3000;
+      while (!respecBuilderAuditInFlight(cwd)) {
+        if (Date.now() > dispatchDeadline) throw new Error("Resume did not dispatch the retained audit");
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+    } else {
+      await pi.fire("agent_end", { messages: [{ role: "assistant", content: [{ type: "text", text: "Increment ready for independent verification." }] }] }, ctx);
+    }
+    assert.equal(respecBuilderAuditInFlight(cwd), true, "production lifecycle dispatched the increment auditor");
     // Freeport/Junk Runner reproduction: the detached worker owns the wait
     // while the main session looks idle. Exercise the real heartbeat beyond
     // its five-refire threshold, rather than only checking source wiring.
