@@ -1,0 +1,65 @@
+
+> pi-goal-list-loop-audit@0.39.5 test
+> node scripts/run-tests.mjs tests/loop-branch-ownership.test.ts tests/loop-pause.test.ts tests/loop-refine-parity.test.ts tests/loop-held-start.test.ts tests/run-to-done.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/loop-branch-ownership.test.ts:
+Switched to a new branch 'pi-glla-loop/test'
+Switched to branch 'main'
+(pass) active branch loop parks before commit when HEAD moved to the user's branch [305.51ms]
+Switched to a new branch 'pi-glla-loop/commit-fail'
+(pass) terminal commit failure preserves the uncommitted iteration and skips destructive finish [182.55ms]
+Switched to a new branch 'pi-glla-loop/reset-fail'
+(pass) reset failure during finish keeps the terminal branch and never attempts checkout [210.31ms]
+Switched to a new branch 'pi-glla-loop/stop-guard'
+Switched to branch 'main'
+(pass) /loop stop on a branch-mode loop parked on a foreign branch attempts no reset or checkout [196.80ms]
+Switched to a new branch 'pi-glla-loop/stop-mid-tick'
+Switched to branch 'main'
+(pass) /loop stop mid-tick still restores the original branch (no false branch-changed park) [608.17ms]
+Switched to a new branch 'pi-glla-loop/stop-commit-inflight'
+Switched to branch 'main'
+(pass) /loop stop mid-tick commits the in-flight iteration instead of resetting it away [1285.07ms]
+(pass) commitPendingTerminalWork is module scope and finishLoopGit commits before its reset (source pin) [2.97ms]
+(pass) parkLoopOnWrongBranch consults HEAD before the in-flight tick guard (source pin) [0.40ms]
+Switched to a new branch 'pi-glla-loop/resumable-park'
+Switched to branch 'main'
+Switched to branch 'pi-glla-loop/resumable-park'
+(pass) a branch-changed park is resumable: /loop resume on the scratch branch keeps the loop's history [265.72ms]
+(pass) v0.38.104: the branch-changed park names the loop surface and is in RESUMABLE_STOP (source pins) [0.56ms]
+
+tests/loop-held-start.test.ts:
+(pass) held loop: the load-hold warning names /loop resume [245.34ms]
+(pass) held loop: the load-hold warning is byte-identical when no loop is held [143.10ms]
+(pass) fresh start over a held loop offers resume and preserves the loop [157.06ms]
+(pass) fresh start over a held loop: dismiss keeps the held loop untouched [167.27ms]
+(pass) fresh start over a held loop: headless refuses instead of discarding [159.93ms]
+(pass) fresh start over an explicitly stopped loop keeps today's silent behavior [153.04ms]
+
+tests/loop-refine-parity.test.ts:
+(pass) parked loops are refinable on both surfaces [12.19ms]
+(pass) terminal stops are refinable on neither surface [0.17ms]
+(pass) broken measure is the deliberate divergence: tool fixes, slash will not resume [2.93ms]
+
+tests/loop-pause.test.ts:
+(pass) v0.38.27: /loop pause is routed in cmdLoop and clears the tick [5.14ms]
+(pass) v0.38.27: /loop pause is registered in the help completions [0.19ms]
+(pass) v0.38.27: RESUMABLE_STOP matches the pause stopReason so /loop resume picks it up [0.04ms]
+
+tests/run-to-done.test.ts:
+(pass) run-to-done: draft consent sets the flag, shows the notice, ledgers consent [248.50ms]
+(pass) run-to-done: drafts without the flag stay supervised [197.10ms]
+(pass) run-to-done: batch drafts refuse the flag instead of dropping it [143.69ms]
+(pass) run-to-done: decisions auto-default immediately with no budget set [149.63ms]
+(pass) run-to-done: the audit cap parks instead of converting to TODOs [1534.30ms]
+(pass) run-to-done: aggressive cap conversion is preserved without the flag [1145.45ms]
+(pass) run-to-done: session start resumes held work without global autoResume; blocked parks stay parked [348.51ms]
+(pass) run-to-done: held work stays held without the flag or global consent [342.35ms]
+(pass) run-to-done: the status line names the mode [0.47ms]
+
+ 31 pass
+ 0 fail
+Ran 31 tests across 5 files. [10.54s]
+[run-tests] finished in 11s (exit 0)

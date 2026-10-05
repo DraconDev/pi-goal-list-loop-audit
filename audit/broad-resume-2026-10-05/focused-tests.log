@@ -1,0 +1,59 @@
+
+> pi-goal-list-loop-audit@0.39.5 test
+> node scripts/run-tests.mjs tests/respec-builder-audit-runtime.test.ts tests/zombie-resume.test.ts tests/resume-goal-tool.test.ts tests/resume-rekick.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [68.07ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [48.63ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [130.42ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [127.51ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [129.25ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [135.42ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [56.71ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [145.09ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [270.13ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [459.72ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [1.31ms]
+(pass) actual project lifecycle reaches detached verification through agent_end [1922.48ms]
+(pass) actual project lifecycle reaches detached verification through /glla resume of a stalled audit [1861.28ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [184.90ms]
+(pass) a failed builder journal commit restores the complete prior RAM state [2.01ms]
+(pass) a supervisor freeze prevents a new project audit dispatch [1.01ms]
+(pass) rapid pause/resume discards the cancelled worker result and rearms the saved claim [351.46ms]
+(pass) an undelivered project summary survives replacement by a new project [190.57ms]
+(pass) freezing supervision between auditor attempts prevents retry and fallback dispatch [183.68ms]
+(pass) a corrupt summary outbox prevents terminal handoff and retains approved job evidence [160.70ms]
+
+tests/zombie-resume.test.ts:
+(pass) v0.35.25 #14: /loop resume honors the zero-stream abort park and preserves iteration/history [259.88ms]
+(pass) v0.35.25 #14: control — a non-resumable stop reason is still refused [167.63ms]
+(pass) /glla resume resumes a loop held for stopped: automatic zero-stream abort — no provider activity was observed after 30m (iteration 210 preserved; /loop resume to retry) [225.57ms]
+(pass) /glla resume resumes a loop held for paused by user (/loop pause) [204.31ms]
+(pass) /glla resume resumes a loop held for stalled: 5 continuation refires landed no turn [167.14ms]
+(pass) /glla resume leaves a completed loop terminal [174.75ms]
+
+tests/resume-goal-tool.test.ts:
+(pass) resume_goal reactivates a paused goal and clears every pause marker [209.78ms]
+(pass) resume_goal on an already-active goal answers instead of churning state [290.00ms]
+(pass) resume_goal with no goal answers instead of swallowing the verb [127.84ms]
+(pass) a held-on-restore loop does not block resume_goal (only a LIVE loop does) [150.22ms]
+(pass) resume_goal refuses while the supervisor is frozen [299.58ms]
+(pass) resume_goal probes pending main-model recovery inline instead of bouncing (124544) [300.60ms]
+(pass) resume_goal refuses a terminal goal with the real recovery path [149.35ms]
+(pass) resume_goal keeps its live-loop refusal (source-pinned defense-in-depth) [0.51ms]
+(pass) paused → resume_goal → complete_goal flows without a manual resume [1824.01ms]
+(pass) resume_goal re-fires a stored completion claim through the agent origin [1471.61ms]
+
+tests/resume-rekick.test.ts:
+(pass) v0.34.3: /glla resume re-kicks an ACTIVE-but-idle goal instead of 'Nothing to resume' [0.45ms]
+(pass) v0.34.3: /glla resume re-kicks an ACTIVE loop too [0.11ms]
+(pass) v0.34.3: /goal resume (/list resume) re-kicks instead of silently returning [0.14ms]
+(pass) v0.34.3: re-kicks are ledger-visible (resume_rekick) [0.38ms]
+
+ 40 pass
+ 0 fail
+Ran 40 tests across 4 files. [14.07s]
+[run-tests] finished in 14s (exit 0)

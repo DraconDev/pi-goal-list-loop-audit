@@ -1,0 +1,52 @@
+
+> pi-goal-list-loop-audit@0.39.4 test
+> node scripts/run-tests.mjs tests/respec-builder-audit-runtime.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [2747.42ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [60.95ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [263.75ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [129.53ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [148.11ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [297.98ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [42.66ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [191.39ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [287.15ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [393.27ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [1.05ms]
+(pass) actual project lifecycle reaches detached verification through agent_end [1792.86ms]
+263 |     if (resumeHeld) {
+264 |       const retainedAttempt = state.loop!.builder!.audit!.attemptId;
+265 |       replaceState({ ...state, loop: { ...state.loop!, active: false, stopReason: "stalled: 5 continuation refires landed no turn" } });
+266 |       persistStateLine(cwd, state);
+267 |       await pi.command("glla", "resume", ctx);
+268 |       assert.equal(readState(cwd).loop!.active, true, "broad resume must recognise the stalled audit hold");
+                   ^
+AssertionError: broad resume must recognise the stalled audit hold
+
+false !== true
+
+ generatedMessage: false,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/respec-builder-audit-runtime.test.ts:268:14
+      at processTicksAndRejections (native:7:39)
+(fail) actual project lifecycle reaches detached verification through /glla resume of a stalled audit [26.17ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [236.84ms]
+(pass) a failed builder journal commit restores the complete prior RAM state [1.81ms]
+(pass) a supervisor freeze prevents a new project audit dispatch [2.07ms]
+(pass) rapid pause/resume discards the cancelled worker result and rearms the saved claim [261.53ms]
+(pass) an undelivered project summary survives replacement by a new project [176.05ms]
+(pass) freezing supervision between auditor attempts prevents retry and fallback dispatch [189.81ms]
+(pass) a corrupt summary outbox prevents terminal handoff and retains approved job evidence [195.07ms]
+
+ 19 pass
+ 1 fail
+Ran 20 tests across 1 file. [8.54s]
+[run-tests] finished in 9s (exit 1)
