@@ -1,0 +1,44 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/subagent-hang-detection.test.ts:
+(pass) v0.35.65: snapshots use live manager counters and expose honest phase/elapsed data [1.01ms]
+(pass) v0.35.65: queued manager records stay queued and do not masquerade as active work [0.14ms]
+(pass) current pi-subagents async lifecycle and status.json drive live counters [520.12ms]
+(pass) current v1 stop RPC is selected after the status artifact proves top-level ownership [473.03ms]
+(pass) classify: a running subagent with no new progress for 5m is hung [0.20ms]
+(pass) classify: sub-5m silence is not hung (5m floor, shorter than the auditor's 10m) [0.05ms]
+(pass) classify: a NEW tool use refreshes the streak (working, not wedged) [0.07ms]
+(pass) classify: NEW output tokens refresh the streak (long think, still alive) [0.06ms]
+(pass) classify: ended / non-running records are not hung (watch stops) [0.04ms]
+(pass) v0.34.102: a vanished/unreachable record falls back to event-only evidence (field: pully 118m wedge) [0.08ms]
+(pass) hang detection surfaces ui.notify + ledger `subagent_hang_detected` via the heartbeat scan [461.78ms]
+(pass) hang warning is throttled — one alert per 5m streak window, not per tick [610.15ms]
+(pass) long frozen tracked child requests one bounded child-specific abort after the warning window [614.78ms]
+(pass) progress arriving before escalation cancels the action and starts a fresh episode [458.22ms]
+(pass) event-only child reaches an honest unavailable-action record, never a guessed abort [610.04ms]
+(pass) nested child is not eligible for top-level automatic abort [464.43ms]
+(pass) v0.35.65: an old-generation child cannot receive a stop RPC after host rebind [495.62ms]
+(pass) host rebind retires healthy event-only evidence and admits fresh same-generation progress [495.61ms]
+(pass) v0.34.102: event-only hang surfaces `subagent_hang_detected` with evidence=event-only when no manager record exists [471.17ms]
+(pass) completed/failed events end the watch — no hang alert after completion [609.94ms]
+(pass) compacted/steered events refresh the streak (secondary progress evidence) [612.98ms]
+(pass) malformed hang inputs are dropped, not crashy [305.71ms]
+(pass) source pins: constants, watchdog wiring, and ledger key [30.98ms]
+(pass) v0.34.105: hang scan runs during main-model recovery (quota wall blinds the watchdog before the fix) [1128.27ms]
+(pass) v0.34.105 source pin: subagent scan precedes the main-model-recovery early return in heartbeatTick [0.22ms]
+(pass) v0.38.104 releasing the RPC host unsubscribes the readiness listeners it installed [0.28ms]
+
+tests/overdue-backstop.test.ts:
+(pass) S9 (continuation route): overdue agent wait resumes exactly once — park-clear lands, then latch + ledger [452.75ms]
+(pass) S9 (probe route): probe no-op releases the overdue latch so the next tick retries [384.07ms]
+(pass) S9: failed durable resume leaves the wait retriable on the next heartbeat [390.21ms]
+
+tests/respec-builder-ui.test.ts:
+(pass) live telemetry is claim-fenced and missing telemetry never implies a running worker [2.55ms]
+(pass) completion summary requires proof and includes acceptance, shipped capability and evidence [6.14ms]
+(pass) actual project summaries render semantic headings, bold and no italics in both themes [35.79ms]
+(pass) large project summaries stay within the shared receipt transport and disclose omissions [14.96ms]
+
+ 33 pass
+ 0 fail
+Ran 33 tests across 3 files. [10.97s]

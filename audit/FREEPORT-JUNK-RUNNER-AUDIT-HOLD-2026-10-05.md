@@ -46,8 +46,8 @@ auditing phase alone proves an active worker.
 claim replacement and cleanup, held-card rendering, heartbeat wiring and
 release contract. TypeScript, Jiti shared-state binding, installed 0.39.2
 tarball import, bounded launcher/worker RPC and delegate skill loading passed.
-The full release gate was not rerun for this patch. Neighbor checks are recorded
-separately in the evidence directory.
+The full release gate was not rerun for this patch. Another 33 neighboring
+heartbeat, backstop and summary checks passed; inventory is current.
 
 0.39.2 is prepared, not published. Existing hosts must load the corrected code:
 `/reload`, then `/loop resume`. Resume preserves the saved claim and uses normal
