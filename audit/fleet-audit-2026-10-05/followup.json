@@ -1,0 +1,1480 @@
+{
+  "observedAt": "2026-10-05T17:26:45.418383+00:00",
+  "projects": [
+    {
+      "cwd": "/home/dracon/Dev/browser-extensions-shared/extensions/standalones/clean-web",
+      "stateAt": "2026-10-04T15:27:23.266Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 4018810,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/browser-extensions-shared/extensions/standalones/clean-web",
+        "startTicks": "84889949"
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "startedAt": null,
+        "stopReason": null
+      },
+      "project": {
+        "phase": null,
+        "cycle": null,
+        "revision": null,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 378930,
+        "contextWindow": 1000000,
+        "percent": 37.893
+      },
+      "contextAt": "2026-10-05T15:19:04.732Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform",
+      "stateAt": "2026-10-05T16:50:59.037Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 2236339,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/dracon-platform",
+        "startTicks": "92836971"
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "startedAt": null,
+        "stopReason": null
+      },
+      "project": {
+        "phase": null,
+        "cycle": null,
+        "revision": null,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 116542,
+        "contextWindow": 272000,
+        "percent": 42.84632352941177
+      },
+      "contextAt": "2026-10-05T16:46:55.608Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/seo",
+      "stateAt": "2026-09-25T18:51:00.524Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 1081658,
+        "alive": false
+      },
+      "goal": {
+        "id": "20260924180311-jok0tk",
+        "status": "auditing",
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": "running",
+        "attemptId": "audit-muhbedy5-xzsys5",
+        "at": "2026-09-25T18:28:10.602Z",
+        "startedAt": "2026-09-25T18:49:12.221Z",
+        "verdictAt": null
+      },
+      "listCount": 1,
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "startedAt": null,
+        "stopReason": null
+      },
+      "project": {
+        "phase": null,
+        "cycle": null,
+        "revision": null,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 247537,
+        "contextWindow": 1000000,
+        "percent": 24.753700000000002
+      },
+      "contextAt": "2026-09-25T18:28:12.264Z",
+      "jobs": [
+        {
+          "id": "audit-muhbedy5-xzsys5-muhbee0g-84839178",
+          "phase": "complete",
+          "lastActivityAt": 1790362634958,
+          "elapsedMs": 482132,
+          "currentTool": null,
+          "resultPresent": true,
+          "resultOk": true,
+          "error": null,
+          "lock": {
+            "pid": 1087105,
+            "startedAt": null
+          },
+          "worker": {
+            "pid": 1087105,
+            "alive": false
+          }
+        }
+      ]
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/chat",
+      "stateAt": "2026-10-05T17:00:13.398Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 1854943,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/dracon-platform/web/chat",
+        "startTicks": "92737024"
+      },
+      "goal": {
+        "id": "20261005104328-n6b6mb",
+        "status": "active",
+        "pauseKind": null,
+        "pauseReason": "auditor disapproved"
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "startedAt": null,
+        "stopReason": null
+      },
+      "project": {
+        "phase": null,
+        "cycle": null,
+        "revision": null,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 770659,
+        "contextWindow": 1048576,
+        "percent": 73.49576950073242
+      },
+      "contextAt": "2026-10-05T16:51:19.512Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/capture-anime-girls",
+      "stateAt": "2026-10-05T17:05:32.945Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 1368160,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/capture-anime-girls",
+        "startTicks": "92600029"
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": false,
+        "iteration": 289,
+        "startedAt": "2026-10-03T07:27:07.852Z",
+        "stopReason": "main model recovery \u2014 retrying in 30m (main model unknown \u2014 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}); /loop resume retries immediately"
+      },
+      "project": {
+        "phase": null,
+        "cycle": null,
+        "revision": null,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": "loop",
+        "primary": "openrouter/stealth/space-bunny-alpha",
+        "active": "openrouter/stealth/space-bunny-alpha",
+        "reason": "main model unknown \u2014 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}",
+        "retryAt": "2026-10-05T17:35:32.945Z",
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 120552,
+        "contextWindow": 1000000,
+        "percent": 12.055200000000001
+      },
+      "contextAt": "2026-10-05T17:05:32.940Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/come-get-me",
+      "stateAt": "2026-09-29T03:28:20.810Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 2327290,
+        "alive": false
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "startedAt": null,
+        "stopReason": null
+      },
+      "project": {
+        "phase": null,
+        "cycle": null,
+        "revision": null,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 363851,
+        "contextWindow": 1048576,
+        "percent": 34.69953536987305
+      },
+      "contextAt": "2026-09-29T03:11:13.140Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/darklord",
+      "stateAt": "2026-10-05T17:24:46.427Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 1365191,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/darklord",
+        "startTicks": "92599099"
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": true,
+        "iteration": 6,
+        "startedAt": "2026-10-04T21:05:17.641Z",
+        "stopReason": null
+      },
+      "project": {
+        "phase": "auditing",
+        "cycle": 6,
+        "revision": 1,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 1,
+        "open": 9,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": "loop",
+        "primary": "openrouter/stealth/space-bunny-alpha",
+        "active": "opencode-go/space-bunny-free",
+        "reason": "main model unknown \u2014 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}",
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": null,
+      "contextAt": null,
+      "jobs": [
+        {
+          "id": "d6b129a3-29ae-498c-982f-2578575bf41a-muvisbtu-7bd5f4f6",
+          "phase": "running",
+          "lastActivityAt": 1791221202078,
+          "elapsedMs": 115278,
+          "currentTool": null,
+          "resultPresent": false,
+          "resultOk": null,
+          "error": null,
+          "lock": {
+            "pid": 2379641,
+            "startedAt": null
+          },
+          "worker": {
+            "pid": 2379641,
+            "state": "S",
+            "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/darklord",
+            "startTicks": "92875388"
+          }
+        }
+      ]
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/deathrun",
+      "stateAt": "2026-10-05T17:25:56.183Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 1378083,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/deathrun",
+        "startTicks": "92602157"
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": true,
+        "iteration": 185,
+        "startedAt": "2026-10-04T06:14:14.108Z",
+        "stopReason": null
+      },
+      "project": {
+        "phase": null,
+        "cycle": null,
+        "revision": null,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 111769,
+        "contextWindow": 1048576,
+        "percent": 10.659122467041016
+      },
+      "contextAt": "2026-10-05T17:25:55.155Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/doomtap",
+      "stateAt": "2026-10-05T17:13:10.412Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 1316561,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/doomtap",
+        "startTicks": "92592036"
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": true,
+        "iteration": 4,
+        "startedAt": "2026-10-05T06:48:51.564Z",
+        "stopReason": null
+      },
+      "project": {
+        "phase": "building",
+        "cycle": 4,
+        "revision": 2,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 4,
+        "open": 3,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 134815,
+        "contextWindow": 1048576,
+        "percent": 12.85696029663086
+      },
+      "contextAt": "2026-10-05T17:13:09.411Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/endless-td",
+      "stateAt": "2026-10-05T16:38:02.906Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 1353483,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/endless-td",
+        "startTicks": "92596491"
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": false,
+        "iteration": 4,
+        "startedAt": "2026-10-04T21:05:33.361Z",
+        "stopReason": "main model recovery \u2014 retrying in 30m (main model unknown \u2014 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}); /loop resume retries immediately"
+      },
+      "project": {
+        "phase": "building",
+        "cycle": 6,
+        "revision": 1,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 8,
+        "blocked": 1
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 809925,
+        "contextWindow": 1000000,
+        "percent": 80.9925
+      },
+      "contextAt": "2026-10-05T16:25:58.176Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/football-forever",
+      "stateAt": "2026-10-05T17:04:13.261Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 2447814,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/football-forever",
+        "startTicks": "92049021"
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": true,
+        "iteration": 0,
+        "startedAt": "2026-10-05T16:39:52.149Z",
+        "stopReason": null
+      },
+      "project": {
+        "phase": "building",
+        "cycle": 1,
+        "revision": 1,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 8,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 222473,
+        "contextWindow": 1000000,
+        "percent": 22.2473
+      },
+      "contextAt": "2026-10-05T16:25:10.592Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/freeport",
+      "stateAt": "2026-10-05T16:39:40.328Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 1380773,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/freeport",
+        "startTicks": "92604040"
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": true,
+        "iteration": 8,
+        "startedAt": "2026-10-04T15:28:24.267Z",
+        "stopReason": null
+      },
+      "project": {
+        "phase": "auditing",
+        "cycle": 5,
+        "revision": 1,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 11,
+        "blocked": 1
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 122653,
+        "contextWindow": 1000000,
+        "percent": 12.2653
+      },
+      "contextAt": "2026-10-05T11:53:12.483Z",
+      "jobs": [
+        {
+          "id": "063dd528-5bdb-42fb-8414-c0b0f2ac8b09-muuebn7k-cacdd9bc",
+          "phase": "complete",
+          "lastActivityAt": 1791154509156,
+          "elapsedMs": 1385682,
+          "currentTool": null,
+          "resultPresent": true,
+          "resultOk": false,
+          "error": "Auditor aborted.",
+          "lock": {
+            "pid": 2001138,
+            "startedAt": null
+          },
+          "worker": {
+            "pid": 2001138,
+            "alive": false
+          }
+        },
+        {
+          "id": "063dd528-5bdb-42fb-8414-c0b0f2ac8b09-muvd5kgv-2bf8544f",
+          "phase": "complete",
+          "lastActivityAt": 1791213323769,
+          "elapsedMs": 1697317,
+          "currentTool": null,
+          "resultPresent": true,
+          "resultOk": false,
+          "error": "Provider returned an empty response",
+          "lock": {
+            "pid": 1904971,
+            "startedAt": null
+          },
+          "worker": {
+            "pid": 1904971,
+            "alive": false
+          }
+        },
+        {
+          "id": "063dd528-5bdb-42fb-8414-c0b0f2ac8b09-muvh6bsc-b8975cd6",
+          "phase": "running",
+          "lastActivityAt": 1791221188235,
+          "elapsedMs": 2807848,
+          "currentTool": "bash",
+          "resultPresent": false,
+          "resultOk": null,
+          "error": null,
+          "lock": {
+            "pid": 1381786,
+            "startedAt": null
+          },
+          "worker": {
+            "pid": 1381786,
+            "state": "R",
+            "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/freeport",
+            "startTicks": "92604750"
+          }
+        },
+        {
+          "id": "063dd528-5bdb-42fb-8414-c0b0f2ac8b09-muve627q-85717e3a",
+          "phase": "complete",
+          "lastActivityAt": 1791213641828,
+          "elapsedMs": 312667,
+          "currentTool": null,
+          "resultPresent": true,
+          "resultOk": false,
+          "error": "Provider returned an empty response",
+          "lock": {
+            "pid": 2670546,
+            "startedAt": null
+          },
+          "worker": {
+            "pid": 2670546,
+            "alive": false
+          }
+        }
+      ]
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/hegemon",
+      "stateAt": "2026-10-05T17:21:26.956Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 1379006,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/hegemon",
+        "startTicks": "92602565"
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": true,
+        "iteration": 160,
+        "startedAt": "2026-10-03T11:43:34.365Z",
+        "stopReason": null
+      },
+      "project": {
+        "phase": null,
+        "cycle": null,
+        "revision": null,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 89461,
+        "contextWindow": 1048576,
+        "percent": 8.531665802001953
+      },
+      "contextAt": "2026-10-05T17:21:26.401Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/hellhunter",
+      "stateAt": "2026-10-05T17:00:10.458Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 1380553,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/hellhunter",
+        "startTicks": "92603715"
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": true,
+        "iteration": 6,
+        "startedAt": "2026-10-04T21:06:38.711Z",
+        "stopReason": null
+      },
+      "project": {
+        "phase": "building",
+        "cycle": 2,
+        "revision": 1,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 8,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": "loop",
+        "primary": "openrouter/stealth/space-bunny-alpha",
+        "active": "opencode-go/space-bunny-free",
+        "reason": "main model unknown \u2014 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}",
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 581281,
+        "contextWindow": 1000000,
+        "percent": 58.1281
+      },
+      "contextAt": "2026-10-05T16:29:43.062Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/junk-runner",
+      "stateAt": "2026-10-05T17:14:37.384Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 1374171,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/junk-runner",
+        "startTicks": "92601305"
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": true,
+        "iteration": 1,
+        "startedAt": "2026-10-04T21:06:03.936Z",
+        "stopReason": null
+      },
+      "project": {
+        "phase": "building",
+        "cycle": 2,
+        "revision": 1,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 15,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 173109,
+        "contextWindow": 1000000,
+        "percent": 17.3109
+      },
+      "contextAt": "2026-10-05T12:09:11.641Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/neonbreak",
+      "stateAt": "2026-10-05T16:32:32.039Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 1180521,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/neonbreak",
+        "startTicks": "92559659"
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": false,
+        "iteration": 2,
+        "startedAt": "2026-10-05T07:05:55.351Z",
+        "stopReason": "completed: all intended project requirements independently verified"
+      },
+      "project": {
+        "phase": "complete",
+        "cycle": 2,
+        "revision": 1,
+        "summaryDeliveredAt": "2026-10-05T15:16:04.735Z"
+      },
+      "coverage": {
+        "verified": 3,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": true,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 479181,
+        "contextWindow": 1048576,
+        "percent": 45.69826126098633
+      },
+      "contextAt": "2026-10-05T16:42:54.065Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/polis",
+      "stateAt": "2026-10-05T17:00:54.818Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 1361712,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/polis",
+        "startTicks": "92598147"
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": false,
+        "iteration": 549,
+        "startedAt": "2026-10-03T11:41:57.946Z",
+        "stopReason": "main model recovery \u2014 retrying in 30m (main model unknown \u2014 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}); /loop resume retries immediately"
+      },
+      "project": {
+        "phase": null,
+        "cycle": null,
+        "revision": null,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": "loop",
+        "primary": "openrouter/stealth/space-bunny-alpha",
+        "active": "openrouter/stealth/space-bunny-alpha",
+        "reason": "main model unknown \u2014 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}",
+        "retryAt": "2026-10-05T17:30:54.817Z",
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 130055,
+        "contextWindow": 1000000,
+        "percent": 13.0055
+      },
+      "contextAt": "2026-10-05T17:00:54.812Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/space-trucker",
+      "stateAt": "2026-09-23T23:50:24.900Z",
+      "journalErrors": 1,
+      "host": {
+        "pid": 138724,
+        "alive": false
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "startedAt": null,
+        "stopReason": null
+      },
+      "project": {
+        "phase": null,
+        "cycle": null,
+        "revision": null,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 850039,
+        "contextWindow": 1000000,
+        "percent": 85.0039
+      },
+      "contextAt": "2026-09-23T23:40:52.785Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-platform/web/studio",
+      "stateAt": "2026-10-05T16:51:31.331Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 1850586,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/dracon-platform/web/studio",
+        "startTicks": "92735790"
+      },
+      "goal": {
+        "id": "20261005112325-mz0mwl",
+        "status": "active",
+        "pauseKind": null,
+        "pauseReason": "auditor disapproved"
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "startedAt": null,
+        "stopReason": null
+      },
+      "project": {
+        "phase": null,
+        "cycle": null,
+        "revision": null,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 205684,
+        "contextWindow": 1048576,
+        "percent": 19.615554809570312
+      },
+      "contextAt": "2026-10-05T16:41:45.237Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/dracon-utilities",
+      "stateAt": "2026-10-01T10:41:19.467Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 4161877,
+        "alive": false
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "startedAt": null,
+        "stopReason": null
+      },
+      "project": {
+        "phase": null,
+        "cycle": null,
+        "revision": null,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 427775,
+        "contextWindow": 1000000,
+        "percent": 42.7775
+      },
+      "contextAt": "2026-10-01T10:45:29.734Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/eve",
+      "stateAt": "2026-10-05T17:24:51.116Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 339655,
+        "state": "S",
+        "cwd": "/home/dracon/Dev/eve",
+        "startTicks": "92433285"
+      },
+      "goal": {
+        "id": "20261005170024-quhyad",
+        "status": "active",
+        "pauseKind": null,
+        "pauseReason": "auditor disapproved"
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 2,
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "startedAt": null,
+        "stopReason": null
+      },
+      "project": {
+        "phase": null,
+        "cycle": null,
+        "revision": null,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 185103,
+        "contextWindow": 1048576,
+        "percent": 17.65279769897461
+      },
+      "contextAt": "2026-10-05T17:13:25.052Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit",
+      "stateAt": "2026-09-28T19:00:40.673Z",
+      "journalErrors": 0,
+      "host": {
+        "pid": 1019269,
+        "alive": false
+      },
+      "goal": {
+        "id": "20260928180523-4l1mz0",
+        "status": "paused",
+        "pauseKind": "wait",
+        "pauseReason": "main model recovery \u2014 retrying in 300m (main model unknown \u2014 Provider returned an empty response)"
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "startedAt": null,
+        "stopReason": null
+      },
+      "project": {
+        "phase": null,
+        "cycle": null,
+        "revision": null,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": "goal",
+        "primary": "openrouter/stealth/space-bunny-alpha",
+        "active": "openrouter/stealth/space-bunny-alpha",
+        "reason": "main model unknown \u2014 Provider returned an empty response",
+        "retryAt": "2026-09-29T00:00:40.651Z",
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": {
+        "tokens": 205386,
+        "contextWindow": 1000000,
+        "percent": 20.538600000000002
+      },
+      "contextAt": "2026-09-28T19:00:40.644Z",
+      "jobs": []
+    },
+    {
+      "cwd": "/home/dracon/Dev/terhub",
+      "stateAt": null,
+      "journalErrors": 0,
+      "host": {
+        "pid": 2339545,
+        "alive": false
+      },
+      "goal": {
+        "id": null,
+        "status": null,
+        "pauseKind": null,
+        "pauseReason": null
+      },
+      "claim": {
+        "phase": null,
+        "attemptId": null,
+        "at": null,
+        "startedAt": null,
+        "verdictAt": null
+      },
+      "listCount": 0,
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "startedAt": null,
+        "stopReason": null
+      },
+      "project": {
+        "phase": null,
+        "cycle": null,
+        "revision": null,
+        "summaryDeliveredAt": null
+      },
+      "coverage": {
+        "verified": 0,
+        "open": 0,
+        "blocked": 0
+      },
+      "archivePresent": null,
+      "recovery": {
+        "kind": null,
+        "primary": null,
+        "active": null,
+        "reason": null,
+        "retryAt": null,
+        "manualResumeRequired": null
+      },
+      "supervisorPausedAt": null,
+      "loadHoldAt": null,
+      "context": null,
+      "contextAt": null,
+      "jobs": []
+    }
+  ]
+}
