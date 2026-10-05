@@ -25,7 +25,6 @@ import {
   ledgerPath,
   piGlaDir,
   readState,
-  readState,
 } from "./goal-loop-core.js";
 import { loadGlobalSettings, type Settings } from "./goal-settings.js";
 import { PLAN_B_MAX_ATTEMPTS, resolveCompactorModel } from "./compactor-model.js";
