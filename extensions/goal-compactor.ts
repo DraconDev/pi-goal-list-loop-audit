@@ -131,7 +131,7 @@ export function clearBoundaryCompactionAttempt(ctx: BoundaryOwnerContext): void 
  * The handoff brief still goes first (best effort — the compaction must not
  * depend on a spare model being available for the brief). One firing per
  * episode via the boundary's OWN marker with hysteresis (fire at the
- * threshold, re-arm below half of it); the starvation path's shared brief
+ * threshold, re-arm failures below half and successes after recovery grace); the starvation path's shared brief
  * marker is never touched here. Post-compact resume (session_compact →
  * refire) owns the next turn, so the caller skips its eager continuation
  * when this returns true. Returns false when nothing fired (or when this
