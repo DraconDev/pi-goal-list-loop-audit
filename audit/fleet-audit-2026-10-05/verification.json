@@ -1,0 +1,31 @@
+{
+  "version": "0.39.8",
+  "initialReleaseCheck": {
+    "exit": 1,
+    "passed": 3262,
+    "skipped": 1,
+    "failed": 1,
+    "files": 349,
+    "failure": "tests/ui-polish.test.ts outdated command-description source assertion"
+  },
+  "correction": "test assertion only; no runtime source changed after the full suite",
+  "focusedRerun": {
+    "exit": 0,
+    "passed": 4,
+    "failed": 0,
+    "files": 1
+  },
+  "remainingReleaseChecks": {
+    "exit": 0,
+    "checks": [
+      "TypeScript",
+      "jiti state binding",
+      "offline auditor extensions",
+      "inventory",
+      "npm pack --dry-run",
+      "installed tarball launcher, RPC worker and skill smoke"
+    ]
+  },
+  "fullReleaseCheckRerun": false,
+  "publication": "not performed"
+}

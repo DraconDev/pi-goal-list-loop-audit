@@ -1,0 +1,17 @@
+
+> pi-goal-list-loop-audit@0.39.8 test
+> node scripts/run-tests.mjs tests/ui-polish.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/ui-polish.test.ts:
+(pass) v0.38.89: unknownStatsArg strips the known stats tokens [2.51ms]
+(pass) v0.38.89: stats header and unknown-arg usage share the /glla prefix [0.36ms]
+(pass) v0.38.91: tool descriptions enumerate plan/audit/verify/add [0.37ms]
+(pass) v0.38.89: /goal status card points at /goal timeline [59.90ms]
+
+ 4 pass
+ 0 fail
+Ran 4 tests across 1 file. [1279.00ms]
+[run-tests] finished in 1s (exit 0)

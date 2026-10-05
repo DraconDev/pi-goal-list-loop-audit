@@ -46,7 +46,20 @@ and context sample age. `ui-observation.json` retains the displayed versions,
 current context footer, working indicator and audit activity line. Project
 objectives and raw auditor output are omitted from these tracked snapshots.
 
-The combined 0.39.8 release gate is running; its final result will be recorded
-here when it finishes. No additional implementation change was required by
-this fleet observation. The command, completion dismissal and model-selection
-fixes have their own reproductions and focused verification reports in audit/.
+The full 0.39.8 suite ran 3,264 tests across 349 files: 3,262 passed, one
+environment-gated daemon test skipped, and one outdated command-description
+source assertion failed. It expected the previous command enumeration before
+`decide` and argument-free `verify` were clarified. Updated only that assertion
+to check the current command layout and verify semantics; the entire affected
+file then passed all four tests. No runtime source changed after the full run.
+
+The remaining release checks passed: TypeScript, jiti state binding, offline
+auditor extension loading, inventory, dry-run package inspection and installed
+0.39.8 tarball launcher/worker/skill smoke. The full `release:check` command
+was not repeated after the test-only correction; the initial failure and
+separate successful checks are retained explicitly in `verification.json`
+and the adjacent logs. No package was published by this audit.
+
+No additional runtime implementation change was required by this observation.
+The command, completion dismissal and model-selection fixes have their own
+reproductions and focused verification reports in audit/.
