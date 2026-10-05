@@ -20,8 +20,8 @@ const complete = settleRespecAudit(beginRespecAudit(claimRespecTask(allTasks, "w
 const frames = [];
 for (const appearance of ["dark", "light"]) {
   const theme = loadThemeFromPath(path.resolve(import.meta.dirname, `../../node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/theme/${appearance}.json`), "truecolor");
-  for (const width of [40, 80, 120]) for (const [key, builder] of [["drafting", draft], ["building", building], ["auditing", auditing], ["running", auditing], ["retrying", auditing], ["replanning", replanning], ["blocked", blocked], ["complete", complete]] as const) {
-    const state = { goal: null, list: [], loop: { builder, active: key !== "blocked" && key !== "complete", target: builder.vision, startedAt: new Date().toISOString(), iteration: 1, maxIterations: 0, plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [] } } as State;
+  for (const width of [40, 80, 120]) for (const [key, builder] of [["drafting", draft], ["building", building], ["auditing", auditing], ["held-audit", auditing], ["running", auditing], ["retrying", auditing], ["replanning", replanning], ["blocked", blocked], ["complete", complete]] as const) {
+    const state = { goal: null, list: [], loop: { builder, active: key !== "blocked" && key !== "complete" && key !== "held-audit", ...(key === "held-audit" ? { stopReason: "stalled: 5 continuation refires landed no turn" } : {}), target: builder.vision, startedAt: new Date().toISOString(), iteration: 1, maxIterations: 0, plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [] } } as State;
     if (key === "running" || key === "retrying") setRespecAuditLive(builder, { phase: key, model: "provider/auditor-model", startedAt: Date.now() - 65000, lastActivityAt: Date.now() - 17000, activity: key === "running" ? "tool: bash" : "retry: timeout", ...(key === "retrying" ? { retryAt: Date.now() + 5000 } : {}) });
     frames.push({ key, theme: appearance, width, height: 12, lines: [...buildWidgetLines(state, null, Date.now(), theme, width)!, "", buildStatusText(state, null, Date.now(), theme, undefined, width)!] });
     setRespecAuditLive(builder);

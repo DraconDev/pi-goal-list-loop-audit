@@ -1,0 +1,1078 @@
+[
+  {
+    "key": "drafting",
+    "theme": "dark",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Drafting\u001b[39m · increment 0",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;126;136;142mverified 0/0\u001b[39m · \u001b[38;2;126;136;142mremaining 0 · block\u001b[0m…\u001b[0m",
+      "└─ \u001b[38;2;167;152;215mWork continues · /loop pause\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mdrafting\u001b[39m · increment 0 · \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "building",
+    "theme": "dark",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Building\u001b[39m · increment 1",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · block\u001b[0m…\u001b[0m",
+      "├─ task: Implement login behavior an…",
+      "└─ \u001b[38;2;167;152;215mWork continues · /loop pause\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mbuilding\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "auditing",
+    "theme": "dark",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · block\u001b[0m…\u001b[0m",
+      "├─ claim: Implement login behavior an…",
+      "├─ \u001b[38;2;167;152;215mauditor: waiting for dispatch · no…\u001b[39m",
+      "└─ \u001b[38;2;167;152;215mIndependent audit pending · no act\u001b[0m…\u001b[0m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mauditing\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "held-audit",
+    "theme": "dark",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;205;154;34mProject · Audit held\u001b[39m · increment 1",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · block\u001b[0m…\u001b[0m",
+      "├─ claim: Implement login behavior an…",
+      "├─ \u001b[38;2;205;154;34mheld: stalled: 5 continuation refi…\u001b[39m",
+      "└─ \u001b[38;2;205;154;34m/loop resume when ready · /loop st\u001b[0m…\u001b[0m",
+      "",
+      "glla: project \u001b[38;2;205;154;34maudit held — /loop resume\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "running",
+    "theme": "dark",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · block\u001b[0m…\u001b[0m",
+      "├─ claim: Implement login behavior an…",
+      "├─ \u001b[38;2;167;152;215mauditor: running · 1m 05s · provid…\u001b[39m",
+      "├─ \u001b[38;2;167;152;215mlast activity: 17s ago · tool: bash\u001b[39m",
+      "└─ \u001b[38;2;167;152;215mIndependent audit pending · no act\u001b[0m…\u001b[0m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mauditing\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "retrying",
+    "theme": "dark",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · block\u001b[0m…\u001b[0m",
+      "├─ claim: Implement login behavior an…",
+      "├─ \u001b[38;2;205;154;34mauditor: retrying · 1m 05s · provi…\u001b[39m",
+      "├─ \u001b[38;2;205;154;34mlast activity: 17s ago · retry: ti…\u001b[39m",
+      "└─ \u001b[38;2;167;152;215mIndependent audit pending · no act\u001b[0m…\u001b[0m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mauditing\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "replanning",
+    "theme": "dark",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Replanning\u001b[39m · increment 1",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · block\u001b[0m…\u001b[0m",
+      "├─ task: Implement login behavior an…",
+      "├─ \u001b[38;2;126;136;142mevidence: Invalid credentials are …\u001b[39m",
+      "└─ \u001b[38;2;167;152;215mWork continues · /loop pause\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mreplanning\u001b[39m · increment 1 \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "blocked",
+    "theme": "dark",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;205;154;34mProject · Replanning\u001b[39m · held · increme\u001b[0m…\u001b[0m",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · block\u001b[0m…\u001b[0m",
+      "├─ \u001b[38;2;205;154;34mblocked\u001b[39m: Identity service credenti…",
+      "├─ \u001b[38;2;126;136;142mevidence: Blocked login: Identity …\u001b[39m",
+      "└─ \u001b[38;2;205;154;34m/loop resume when ready · /loop st\u001b[0m…\u001b[0m",
+      "",
+      "glla: project \u001b[38;2;205;154;34mreplanning\u001b[39m · held · incre\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "complete",
+    "theme": "dark",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;104;183;141mProject · Complete\u001b[39m · increment 1",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;104;183;141mverified 2/2\u001b[39m · \u001b[38;2;126;136;142mremaining 0 · block\u001b[0m…\u001b[0m",
+      "├─ task: Build login and export",
+      "├─ \u001b[38;2;126;136;142mevidence: Login rejection and expo…\u001b[39m",
+      "└─ \u001b[38;2;104;183;141mAll 2 requirements verified\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;104;183;141mcomplete\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "drafting",
+    "theme": "dark",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Drafting\u001b[39m · increment 0",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/0\u001b[39m · \u001b[38;2;126;136;142mremaining 0 · blocked 0\u001b[39m",
+      "└─ \u001b[38;2;167;152;215mWork continues · /loop pause · /loop refine\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mdrafting\u001b[39m · increment 0 · verified 0/0 · remaining 0 · blocked 0"
+    ]
+  },
+  {
+    "key": "building",
+    "theme": "dark",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Building\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · blocked 0\u001b[39m",
+      "├─ task: Implement login behavior and exercise acceptance criteria",
+      "└─ \u001b[38;2;167;152;215mWork continues · /loop pause · /loop refine\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mbuilding\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0"
+    ]
+  },
+  {
+    "key": "auditing",
+    "theme": "dark",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;167;152;215mauditor: waiting for dispatch · no live worker observed\u001b[39m",
+      "└─ \u001b[38;2;167;152;215mIndependent verification pending · no action needed\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mauditing\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0 ·\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "held-audit",
+    "theme": "dark",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;205;154;34mProject · Audit held\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;205;154;34mheld: stalled: 5 continuation refires landed no turn\u001b[39m",
+      "└─ \u001b[38;2;205;154;34mWork held · /loop status · /loop resume when ready\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;205;154;34maudit held — /loop resume\u001b[39m · increment 1 · verified 0/2 · remainin\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "running",
+    "theme": "dark",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;167;152;215mauditor: running · 1m 05s · provider/auditor-model\u001b[39m",
+      "├─ \u001b[38;2;167;152;215mlast activity: 17s ago · tool: bash\u001b[39m",
+      "└─ \u001b[38;2;167;152;215mIndependent verification pending · no action needed\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mauditing\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0 ·\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "retrying",
+    "theme": "dark",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;205;154;34mauditor: retrying · 1m 05s · provider/auditor-model\u001b[39m",
+      "├─ \u001b[38;2;205;154;34mlast activity: 17s ago · retry: timeout · retry in 5s\u001b[39m",
+      "└─ \u001b[38;2;167;152;215mIndependent verification pending · no action needed\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mauditing\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0 ·\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "replanning",
+    "theme": "dark",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Replanning\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · blocked 0\u001b[39m",
+      "├─ task: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;126;136;142mevidence: Invalid credentials are accepted; repair the credential check.\u001b[39m",
+      "└─ \u001b[38;2;167;152;215mWork continues · /loop pause · /loop refine\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mreplanning\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0"
+    ]
+  },
+  {
+    "key": "blocked",
+    "theme": "dark",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;205;154;34mProject · Replanning\u001b[39m · held · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · blocked 1\u001b[39m",
+      "├─ \u001b[38;2;205;154;34mblocked\u001b[39m: Identity service credentials are unavailable",
+      "├─ \u001b[38;2;126;136;142mevidence: Blocked login: Identity service credentials are unavailable\u001b[39m",
+      "└─ \u001b[38;2;205;154;34mWork held · /loop status · /loop resume when ready\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;205;154;34mreplanning\u001b[39m · held · increment 1 · verified 0/2 · remaining 2 · bl\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "complete",
+    "theme": "dark",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;104;183;141mProject · Complete\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;104;183;141mverified 2/2\u001b[39m · \u001b[38;2;126;136;142mremaining 0 · blocked 0\u001b[39m",
+      "├─ task: Build login and export",
+      "├─ \u001b[38;2;126;136;142mevidence: Login rejection and export round-trip independently exercised.\u001b[39m",
+      "└─ \u001b[38;2;104;183;141mAll adopted requirements independently verified\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;104;183;141mcomplete\u001b[39m · increment 1 · verified 2/2 · remaining 0 · blocked 0"
+    ]
+  },
+  {
+    "key": "drafting",
+    "theme": "dark",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Drafting\u001b[39m · increment 0",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/0\u001b[39m · \u001b[38;2;126;136;142mremaining 0 · blocked 0\u001b[39m",
+      "└─ \u001b[38;2;167;152;215mWork continues · /loop pause · /loop refine\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mdrafting\u001b[39m · increment 0 · verified 0/0 · remaining 0 · blocked 0"
+    ]
+  },
+  {
+    "key": "building",
+    "theme": "dark",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Building\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · blocked 0\u001b[39m",
+      "├─ task: Implement login behavior and exercise acceptance criteria",
+      "└─ \u001b[38;2;167;152;215mWork continues · /loop pause · /loop refine\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mbuilding\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0"
+    ]
+  },
+  {
+    "key": "auditing",
+    "theme": "dark",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;167;152;215mauditor: waiting for dispatch · no live worker observed\u001b[39m",
+      "└─ \u001b[38;2;167;152;215mIndependent verification pending · no action needed\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mauditing\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0 · auditor: waiting for dispatch · no live\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "held-audit",
+    "theme": "dark",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;205;154;34mProject · Audit held\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;205;154;34mheld: stalled: 5 continuation refires landed no turn\u001b[39m",
+      "└─ \u001b[38;2;205;154;34mWork held · /loop status · /loop resume when ready\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;205;154;34maudit held — /loop resume\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0"
+    ]
+  },
+  {
+    "key": "running",
+    "theme": "dark",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;167;152;215mauditor: running · 1m 05s · provider/auditor-model\u001b[39m",
+      "├─ \u001b[38;2;167;152;215mlast activity: 17s ago · tool: bash\u001b[39m",
+      "└─ \u001b[38;2;167;152;215mIndependent verification pending · no action needed\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mauditing\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0 · auditor: running · provider/auditor-mod\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "retrying",
+    "theme": "dark",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;205;154;34mauditor: retrying · 1m 05s · provider/auditor-model\u001b[39m",
+      "├─ \u001b[38;2;205;154;34mlast activity: 17s ago · retry: timeout · retry in 5s\u001b[39m",
+      "└─ \u001b[38;2;167;152;215mIndependent verification pending · no action needed\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mauditing\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0 · auditor: retrying · provider/auditor-mo\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "replanning",
+    "theme": "dark",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;167;152;215mProject · Replanning\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · blocked 0\u001b[39m",
+      "├─ task: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;126;136;142mevidence: Invalid credentials are accepted; repair the credential check.\u001b[39m",
+      "└─ \u001b[38;2;167;152;215mWork continues · /loop pause · /loop refine\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;167;152;215mreplanning\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0"
+    ]
+  },
+  {
+    "key": "blocked",
+    "theme": "dark",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;205;154;34mProject · Replanning\u001b[39m · held · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;126;136;142mverified 0/2\u001b[39m · \u001b[38;2;205;154;34mremaining 2 · blocked 1\u001b[39m",
+      "├─ \u001b[38;2;205;154;34mblocked\u001b[39m: Identity service credentials are unavailable",
+      "├─ \u001b[38;2;126;136;142mevidence: Blocked login: Identity service credentials are unavailable\u001b[39m",
+      "└─ \u001b[38;2;205;154;34mWork held · /loop status · /loop resume when ready\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;205;154;34mreplanning\u001b[39m · held · increment 1 · verified 0/2 · remaining 2 · blocked 1"
+    ]
+  },
+  {
+    "key": "complete",
+    "theme": "dark",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;104;183;141mProject · Complete\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;104;183;141mverified 2/2\u001b[39m · \u001b[38;2;126;136;142mremaining 0 · blocked 0\u001b[39m",
+      "├─ task: Build login and export",
+      "├─ \u001b[38;2;126;136;142mevidence: Login rejection and export round-trip independently exercised.\u001b[39m",
+      "└─ \u001b[38;2;104;183;141mAll adopted requirements independently verified\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;104;183;141mcomplete\u001b[39m · increment 1 · verified 2/2 · remaining 0 · blocked 0"
+    ]
+  },
+  {
+    "key": "summary",
+    "theme": "dark",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;104;183;141mDone\u001b[39m                               \u001b[49m",
+      "\u001b[48;2;58;48;85m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225mBuild usable account login and data    \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225mexport\u001b[39m                                 \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;167;152;215mWhat Changed\u001b[39m                       \u001b[49m",
+      "\u001b[48;2;58;48;85m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215mlogin:\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m Usable account login\u001b[39m          \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215mexport:\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m Data export\u001b[39m                  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;167;152;215mVerification\u001b[39m                       \u001b[49m",
+      "\u001b[48;2;58;48;85m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;104;183;141mPASS: All 2 adopted requirements are   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;104;183;141mindependently verified.\u001b[39m                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215mlogin:\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m Valid credentials open the    \u001b[49m",
+      "\u001b[48;2;58;48;85m   \u001b[38;2;222;224;225maccount; invalid credentials are     \u001b[49m",
+      "\u001b[48;2;58;48;85m   \u001b[38;2;222;224;225mrejected — audit audit\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mfinal\u001b[39m         \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215mexport:\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m Export round\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mtrips all       \u001b[49m",
+      "\u001b[48;2;58;48;85m   \u001b[38;2;222;224;225mfields — audit audit\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mfinal\u001b[39m           \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;167;152;215mEvidence\u001b[39m                           \u001b[49m",
+      "\u001b[48;2;58;48;85m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215maudit-final\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m · auditor: Login         \u001b[49m",
+      "\u001b[48;2;58;48;85m   \u001b[38;2;222;224;225mrejection and export round\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mtrip      \u001b[49m",
+      "\u001b[48;2;58;48;85m   \u001b[38;2;222;224;225mindependently exercised\u001b[39m\u001b[38;2;222;224;225m.\u001b[39m             \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215mArchive:\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m                             \u001b[49m",
+      "\u001b[48;2;58;48;85m   \u001b[38;2;222;224;225m\u001b[39m\u001b[38;2;222;224;225m.\u001b[39m\u001b[38;2;222;224;225mpi\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mglla/archive/respec\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mproject\u001b[39m\u001b[38;2;222;224;225m.\u001b[39m\u001b[38;2;222;224;225mjson\u001b[39m \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;205;154;34mRemaining\u001b[39m                          \u001b[49m",
+      "\u001b[48;2;58;48;85m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225mNo unfinished adopted requirements.\u001b[39m    \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;167;152;215mNext\u001b[39m                               \u001b[49m",
+      "\u001b[48;2;58;48;85m                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225mUse /loop status to inspect the        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225mverified project; start a new project  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225mwhen its intended scope changes.\u001b[39m       \u001b[49m",
+      "\u001b[48;2;58;48;85m                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "summary",
+    "theme": "dark",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;104;183;141mDone\u001b[39m                                                                       \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225mBuild usable account login and data export\u001b[39m                                     \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;167;152;215mWhat Changed\u001b[39m                                                               \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215mlogin:\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m Usable account login\u001b[39m                                                  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215mexport:\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m Data export\u001b[39m                                                          \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;167;152;215mVerification\u001b[39m                                                               \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;104;183;141mPASS: All 2 adopted requirements are independently verified.\u001b[39m                   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215mlogin:\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m Valid credentials open the account; invalid credentials are rejected  \u001b[49m",
+      "\u001b[48;2;58;48;85m   \u001b[38;2;222;224;225m— audit audit\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mfinal\u001b[39m                                                          \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215mexport:\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m Export round\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mtrips all fields — audit audit\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mfinal\u001b[39m                    \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;167;152;215mEvidence\u001b[39m                                                                   \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215maudit-final\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m · auditor: Login rejection and export round\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mtrip independently   \u001b[49m",
+      "\u001b[48;2;58;48;85m   \u001b[38;2;222;224;225mexercised\u001b[39m\u001b[38;2;222;224;225m.\u001b[39m                                                                   \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215mArchive:\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m \u001b[39m\u001b[38;2;222;224;225m.\u001b[39m\u001b[38;2;222;224;225mpi\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mglla/archive/respec\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mproject\u001b[39m\u001b[38;2;222;224;225m.\u001b[39m\u001b[38;2;222;224;225mjson\u001b[39m                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;205;154;34mRemaining\u001b[39m                                                                  \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225mNo unfinished adopted requirements.\u001b[39m                                            \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;167;152;215mNext\u001b[39m                                                                       \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225mUse /loop status to inspect the verified project; start a new project when its \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225mintended scope changes.\u001b[39m                                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                \u001b[49m"
+    ]
+  },
+  {
+    "key": "summary",
+    "theme": "dark",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;104;183;141mDone\u001b[39m                                                                                                               \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225mBuild usable account login and data export\u001b[39m                                                                             \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;167;152;215mWhat Changed\u001b[39m                                                                                                       \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215mlogin:\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m Usable account login\u001b[39m                                                                                          \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215mexport:\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m Data export\u001b[39m                                                                                                  \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;167;152;215mVerification\u001b[39m                                                                                                       \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;104;183;141mPASS: All 2 adopted requirements are independently verified.\u001b[39m                                                           \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215mlogin:\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m Valid credentials open the account; invalid credentials are rejected — audit audit\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mfinal\u001b[39m                      \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215mexport:\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m Export round\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mtrips all fields — audit audit\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mfinal\u001b[39m                                                            \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;167;152;215mEvidence\u001b[39m                                                                                                           \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215maudit-final\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m · auditor: Login rejection and export round\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mtrip independently exercised\u001b[39m\u001b[38;2;222;224;225m.\u001b[39m                                \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;167;152;215m- \u001b[39m\u001b[38;2;167;152;215mArchive:\u001b[39m\u001b[38;2;222;224;225m\u001b[38;2;222;224;225m \u001b[39m\u001b[38;2;222;224;225m.\u001b[39m\u001b[38;2;222;224;225mpi\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mglla/archive/respec\u001b[39m\u001b[38;2;222;224;225m-\u001b[39m\u001b[38;2;222;224;225mproject\u001b[39m\u001b[38;2;222;224;225m.\u001b[39m\u001b[38;2;222;224;225mjson\u001b[39m                                                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;205;154;34mRemaining\u001b[39m                                                                                                          \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225mNo unfinished adopted requirements.\u001b[39m                                                                                    \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225m### \u001b[39m\u001b[38;2;167;152;215mNext\u001b[39m                                                                                                               \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;58;48;85m \u001b[38;2;222;224;225mUse /loop status to inspect the verified project; start a new project when its intended scope changes.\u001b[39m                 \u001b[49m",
+      "\u001b[48;2;58;48;85m                                                                                                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "drafting",
+    "theme": "light",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Drafting\u001b[39m · increment 0",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;135;144;149mverified 0/0\u001b[39m · \u001b[38;2;135;144;149mremaining 0 · block\u001b[0m…\u001b[0m",
+      "└─ \u001b[38;2;116;89;180mWork continues · /loop pause\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mdrafting\u001b[39m · increment 0 · \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "building",
+    "theme": "light",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Building\u001b[39m · increment 1",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · block\u001b[0m…\u001b[0m",
+      "├─ task: Implement login behavior an…",
+      "└─ \u001b[38;2;116;89;180mWork continues · /loop pause\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mbuilding\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "auditing",
+    "theme": "light",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · block\u001b[0m…\u001b[0m",
+      "├─ claim: Implement login behavior an…",
+      "├─ \u001b[38;2;116;89;180mauditor: waiting for dispatch · no…\u001b[39m",
+      "└─ \u001b[38;2;116;89;180mIndependent audit pending · no act\u001b[0m…\u001b[0m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mauditing\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "held-audit",
+    "theme": "light",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;143;104;2mProject · Audit held\u001b[39m · increment 1",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · block\u001b[0m…\u001b[0m",
+      "├─ claim: Implement login behavior an…",
+      "├─ \u001b[38;2;143;104;2mheld: stalled: 5 continuation refi…\u001b[39m",
+      "└─ \u001b[38;2;143;104;2m/loop resume when ready · /loop st\u001b[0m…\u001b[0m",
+      "",
+      "glla: project \u001b[38;2;143;104;2maudit held — /loop resume\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "running",
+    "theme": "light",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · block\u001b[0m…\u001b[0m",
+      "├─ claim: Implement login behavior an…",
+      "├─ \u001b[38;2;116;89;180mauditor: running · 1m 05s · provid…\u001b[39m",
+      "├─ \u001b[38;2;116;89;180mlast activity: 17s ago · tool: bash\u001b[39m",
+      "└─ \u001b[38;2;116;89;180mIndependent audit pending · no act\u001b[0m…\u001b[0m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mauditing\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "retrying",
+    "theme": "light",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · block\u001b[0m…\u001b[0m",
+      "├─ claim: Implement login behavior an…",
+      "├─ \u001b[38;2;143;104;2mauditor: retrying · 1m 05s · provi…\u001b[39m",
+      "├─ \u001b[38;2;143;104;2mlast activity: 17s ago · retry: ti…\u001b[39m",
+      "└─ \u001b[38;2;116;89;180mIndependent audit pending · no act\u001b[0m…\u001b[0m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mauditing\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "replanning",
+    "theme": "light",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Replanning\u001b[39m · increment 1",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · block\u001b[0m…\u001b[0m",
+      "├─ task: Implement login behavior an…",
+      "├─ \u001b[38;2;135;144;149mevidence: Invalid credentials are …\u001b[39m",
+      "└─ \u001b[38;2;116;89;180mWork continues · /loop pause\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mreplanning\u001b[39m · increment 1 \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "blocked",
+    "theme": "light",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;143;104;2mProject · Replanning\u001b[39m · held · increme\u001b[0m…\u001b[0m",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · block\u001b[0m…\u001b[0m",
+      "├─ \u001b[38;2;143;104;2mblocked\u001b[39m: Identity service credenti…",
+      "├─ \u001b[38;2;135;144;149mevidence: Blocked login: Identity …\u001b[39m",
+      "└─ \u001b[38;2;143;104;2m/loop resume when ready · /loop st\u001b[0m…\u001b[0m",
+      "",
+      "glla: project \u001b[38;2;143;104;2mreplanning\u001b[39m · held · incre\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "complete",
+    "theme": "light",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;51;126;88mProject · Complete\u001b[39m · increment 1",
+      "├─ Build usable account login and dat…",
+      "├─ \u001b[38;2;51;126;88mverified 2/2\u001b[39m · \u001b[38;2;135;144;149mremaining 0 · block\u001b[0m…\u001b[0m",
+      "├─ task: Build login and export",
+      "├─ \u001b[38;2;135;144;149mevidence: Login rejection and expo…\u001b[39m",
+      "└─ \u001b[38;2;51;126;88mAll 2 requirements verified\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;51;126;88mcomplete\u001b[39m · increment 1 · \u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "drafting",
+    "theme": "light",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Drafting\u001b[39m · increment 0",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/0\u001b[39m · \u001b[38;2;135;144;149mremaining 0 · blocked 0\u001b[39m",
+      "└─ \u001b[38;2;116;89;180mWork continues · /loop pause · /loop refine\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mdrafting\u001b[39m · increment 0 · verified 0/0 · remaining 0 · blocked 0"
+    ]
+  },
+  {
+    "key": "building",
+    "theme": "light",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Building\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · blocked 0\u001b[39m",
+      "├─ task: Implement login behavior and exercise acceptance criteria",
+      "└─ \u001b[38;2;116;89;180mWork continues · /loop pause · /loop refine\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mbuilding\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0"
+    ]
+  },
+  {
+    "key": "auditing",
+    "theme": "light",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;116;89;180mauditor: waiting for dispatch · no live worker observed\u001b[39m",
+      "└─ \u001b[38;2;116;89;180mIndependent verification pending · no action needed\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mauditing\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0 ·\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "held-audit",
+    "theme": "light",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;143;104;2mProject · Audit held\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;143;104;2mheld: stalled: 5 continuation refires landed no turn\u001b[39m",
+      "└─ \u001b[38;2;143;104;2mWork held · /loop status · /loop resume when ready\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;143;104;2maudit held — /loop resume\u001b[39m · increment 1 · verified 0/2 · remainin\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "running",
+    "theme": "light",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;116;89;180mauditor: running · 1m 05s · provider/auditor-model\u001b[39m",
+      "├─ \u001b[38;2;116;89;180mlast activity: 17s ago · tool: bash\u001b[39m",
+      "└─ \u001b[38;2;116;89;180mIndependent verification pending · no action needed\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mauditing\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0 ·\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "retrying",
+    "theme": "light",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;143;104;2mauditor: retrying · 1m 05s · provider/auditor-model\u001b[39m",
+      "├─ \u001b[38;2;143;104;2mlast activity: 17s ago · retry: timeout · retry in 5s\u001b[39m",
+      "└─ \u001b[38;2;116;89;180mIndependent verification pending · no action needed\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mauditing\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0 ·\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "replanning",
+    "theme": "light",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Replanning\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · blocked 0\u001b[39m",
+      "├─ task: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;135;144;149mevidence: Invalid credentials are accepted; repair the credential check.\u001b[39m",
+      "└─ \u001b[38;2;116;89;180mWork continues · /loop pause · /loop refine\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mreplanning\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0"
+    ]
+  },
+  {
+    "key": "blocked",
+    "theme": "light",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;143;104;2mProject · Replanning\u001b[39m · held · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · blocked 1\u001b[39m",
+      "├─ \u001b[38;2;143;104;2mblocked\u001b[39m: Identity service credentials are unavailable",
+      "├─ \u001b[38;2;135;144;149mevidence: Blocked login: Identity service credentials are unavailable\u001b[39m",
+      "└─ \u001b[38;2;143;104;2mWork held · /loop status · /loop resume when ready\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;143;104;2mreplanning\u001b[39m · held · increment 1 · verified 0/2 · remaining 2 · bl\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "complete",
+    "theme": "light",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;51;126;88mProject · Complete\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;51;126;88mverified 2/2\u001b[39m · \u001b[38;2;135;144;149mremaining 0 · blocked 0\u001b[39m",
+      "├─ task: Build login and export",
+      "├─ \u001b[38;2;135;144;149mevidence: Login rejection and export round-trip independently exercised.\u001b[39m",
+      "└─ \u001b[38;2;51;126;88mAll adopted requirements independently verified\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;51;126;88mcomplete\u001b[39m · increment 1 · verified 2/2 · remaining 0 · blocked 0"
+    ]
+  },
+  {
+    "key": "drafting",
+    "theme": "light",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Drafting\u001b[39m · increment 0",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/0\u001b[39m · \u001b[38;2;135;144;149mremaining 0 · blocked 0\u001b[39m",
+      "└─ \u001b[38;2;116;89;180mWork continues · /loop pause · /loop refine\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mdrafting\u001b[39m · increment 0 · verified 0/0 · remaining 0 · blocked 0"
+    ]
+  },
+  {
+    "key": "building",
+    "theme": "light",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Building\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · blocked 0\u001b[39m",
+      "├─ task: Implement login behavior and exercise acceptance criteria",
+      "└─ \u001b[38;2;116;89;180mWork continues · /loop pause · /loop refine\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mbuilding\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0"
+    ]
+  },
+  {
+    "key": "auditing",
+    "theme": "light",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;116;89;180mauditor: waiting for dispatch · no live worker observed\u001b[39m",
+      "└─ \u001b[38;2;116;89;180mIndependent verification pending · no action needed\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mauditing\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0 · auditor: waiting for dispatch · no live\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "held-audit",
+    "theme": "light",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;143;104;2mProject · Audit held\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;143;104;2mheld: stalled: 5 continuation refires landed no turn\u001b[39m",
+      "└─ \u001b[38;2;143;104;2mWork held · /loop status · /loop resume when ready\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;143;104;2maudit held — /loop resume\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0"
+    ]
+  },
+  {
+    "key": "running",
+    "theme": "light",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;116;89;180mauditor: running · 1m 05s · provider/auditor-model\u001b[39m",
+      "├─ \u001b[38;2;116;89;180mlast activity: 17s ago · tool: bash\u001b[39m",
+      "└─ \u001b[38;2;116;89;180mIndependent verification pending · no action needed\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mauditing\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0 · auditor: running · provider/auditor-mod\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "retrying",
+    "theme": "light",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Auditing\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · blocked 0\u001b[39m",
+      "├─ claim: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;143;104;2mauditor: retrying · 1m 05s · provider/auditor-model\u001b[39m",
+      "├─ \u001b[38;2;143;104;2mlast activity: 17s ago · retry: timeout · retry in 5s\u001b[39m",
+      "└─ \u001b[38;2;116;89;180mIndependent verification pending · no action needed\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mauditing\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0 · auditor: retrying · provider/auditor-mo\u001b[0m…\u001b[0m"
+    ]
+  },
+  {
+    "key": "replanning",
+    "theme": "light",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;116;89;180mProject · Replanning\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · blocked 0\u001b[39m",
+      "├─ task: Implement login behavior and exercise acceptance criteria",
+      "├─ \u001b[38;2;135;144;149mevidence: Invalid credentials are accepted; repair the credential check.\u001b[39m",
+      "└─ \u001b[38;2;116;89;180mWork continues · /loop pause · /loop refine\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;116;89;180mreplanning\u001b[39m · increment 1 · verified 0/2 · remaining 2 · blocked 0"
+    ]
+  },
+  {
+    "key": "blocked",
+    "theme": "light",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;143;104;2mProject · Replanning\u001b[39m · held · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;135;144;149mverified 0/2\u001b[39m · \u001b[38;2;143;104;2mremaining 2 · blocked 1\u001b[39m",
+      "├─ \u001b[38;2;143;104;2mblocked\u001b[39m: Identity service credentials are unavailable",
+      "├─ \u001b[38;2;135;144;149mevidence: Blocked login: Identity service credentials are unavailable\u001b[39m",
+      "└─ \u001b[38;2;143;104;2mWork held · /loop status · /loop resume when ready\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;143;104;2mreplanning\u001b[39m · held · increment 1 · verified 0/2 · remaining 2 · blocked 1"
+    ]
+  },
+  {
+    "key": "complete",
+    "theme": "light",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[38;2;51;126;88mProject · Complete\u001b[39m · increment 1",
+      "├─ Build usable account login and data export",
+      "├─ \u001b[38;2;51;126;88mverified 2/2\u001b[39m · \u001b[38;2;135;144;149mremaining 0 · blocked 0\u001b[39m",
+      "├─ task: Build login and export",
+      "├─ \u001b[38;2;135;144;149mevidence: Login rejection and export round-trip independently exercised.\u001b[39m",
+      "└─ \u001b[38;2;51;126;88mAll adopted requirements independently verified\u001b[39m",
+      "",
+      "glla: project \u001b[38;2;51;126;88mcomplete\u001b[39m · increment 1 · verified 2/2 · remaining 0 · blocked 0"
+    ]
+  },
+  {
+    "key": "summary",
+    "theme": "light",
+    "width": 40,
+    "height": 12,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;51;126;88mDone\u001b[39m                               \u001b[49m",
+      "\u001b[48;2;230;228;238m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65mBuild usable account login and data    \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65mexport\u001b[39m                                 \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;116;89;180mWhat Changed\u001b[39m                       \u001b[49m",
+      "\u001b[48;2;230;228;238m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180mlogin:\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m Usable account login\u001b[39m          \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180mexport:\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m Data export\u001b[39m                  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;116;89;180mVerification\u001b[39m                       \u001b[49m",
+      "\u001b[48;2;230;228;238m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;51;126;88mPASS: All 2 adopted requirements are   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;51;126;88mindependently verified.\u001b[39m                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180mlogin:\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m Valid credentials open the    \u001b[49m",
+      "\u001b[48;2;230;228;238m   \u001b[38;2;59;63;65maccount; invalid credentials are     \u001b[49m",
+      "\u001b[48;2;230;228;238m   \u001b[38;2;59;63;65mrejected — audit audit\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mfinal\u001b[39m         \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180mexport:\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m Export round\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mtrips all       \u001b[49m",
+      "\u001b[48;2;230;228;238m   \u001b[38;2;59;63;65mfields — audit audit\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mfinal\u001b[39m           \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;116;89;180mEvidence\u001b[39m                           \u001b[49m",
+      "\u001b[48;2;230;228;238m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180maudit-final\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m · auditor: Login         \u001b[49m",
+      "\u001b[48;2;230;228;238m   \u001b[38;2;59;63;65mrejection and export round\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mtrip      \u001b[49m",
+      "\u001b[48;2;230;228;238m   \u001b[38;2;59;63;65mindependently exercised\u001b[39m\u001b[38;2;59;63;65m.\u001b[39m             \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180mArchive:\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m                             \u001b[49m",
+      "\u001b[48;2;230;228;238m   \u001b[38;2;59;63;65m\u001b[39m\u001b[38;2;59;63;65m.\u001b[39m\u001b[38;2;59;63;65mpi\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mglla/archive/respec\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mproject\u001b[39m\u001b[38;2;59;63;65m.\u001b[39m\u001b[38;2;59;63;65mjson\u001b[39m \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;143;104;2mRemaining\u001b[39m                          \u001b[49m",
+      "\u001b[48;2;230;228;238m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65mNo unfinished adopted requirements.\u001b[39m    \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;116;89;180mNext\u001b[39m                               \u001b[49m",
+      "\u001b[48;2;230;228;238m                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65mUse /loop status to inspect the        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65mverified project; start a new project  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65mwhen its intended scope changes.\u001b[39m       \u001b[49m",
+      "\u001b[48;2;230;228;238m                                        \u001b[49m"
+    ]
+  },
+  {
+    "key": "summary",
+    "theme": "light",
+    "width": 80,
+    "height": 12,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;51;126;88mDone\u001b[39m                                                                       \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65mBuild usable account login and data export\u001b[39m                                     \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;116;89;180mWhat Changed\u001b[39m                                                               \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180mlogin:\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m Usable account login\u001b[39m                                                  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180mexport:\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m Data export\u001b[39m                                                          \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;116;89;180mVerification\u001b[39m                                                               \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;51;126;88mPASS: All 2 adopted requirements are independently verified.\u001b[39m                   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180mlogin:\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m Valid credentials open the account; invalid credentials are rejected  \u001b[49m",
+      "\u001b[48;2;230;228;238m   \u001b[38;2;59;63;65m— audit audit\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mfinal\u001b[39m                                                          \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180mexport:\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m Export round\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mtrips all fields — audit audit\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mfinal\u001b[39m                    \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;116;89;180mEvidence\u001b[39m                                                                   \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180maudit-final\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m · auditor: Login rejection and export round\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mtrip independently   \u001b[49m",
+      "\u001b[48;2;230;228;238m   \u001b[38;2;59;63;65mexercised\u001b[39m\u001b[38;2;59;63;65m.\u001b[39m                                                                   \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180mArchive:\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m \u001b[39m\u001b[38;2;59;63;65m.\u001b[39m\u001b[38;2;59;63;65mpi\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mglla/archive/respec\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mproject\u001b[39m\u001b[38;2;59;63;65m.\u001b[39m\u001b[38;2;59;63;65mjson\u001b[39m                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;143;104;2mRemaining\u001b[39m                                                                  \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65mNo unfinished adopted requirements.\u001b[39m                                            \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;116;89;180mNext\u001b[39m                                                                       \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65mUse /loop status to inspect the verified project; start a new project when its \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65mintended scope changes.\u001b[39m                                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                \u001b[49m"
+    ]
+  },
+  {
+    "key": "summary",
+    "theme": "light",
+    "width": 120,
+    "height": 12,
+    "lines": [
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;51;126;88mDone\u001b[39m                                                                                                               \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65mBuild usable account login and data export\u001b[39m                                                                             \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;116;89;180mWhat Changed\u001b[39m                                                                                                       \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180mlogin:\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m Usable account login\u001b[39m                                                                                          \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180mexport:\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m Data export\u001b[39m                                                                                                  \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;116;89;180mVerification\u001b[39m                                                                                                       \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;51;126;88mPASS: All 2 adopted requirements are independently verified.\u001b[39m                                                           \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180mlogin:\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m Valid credentials open the account; invalid credentials are rejected — audit audit\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mfinal\u001b[39m                      \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180mexport:\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m Export round\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mtrips all fields — audit audit\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mfinal\u001b[39m                                                            \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;116;89;180mEvidence\u001b[39m                                                                                                           \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180maudit-final\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m · auditor: Login rejection and export round\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mtrip independently exercised\u001b[39m\u001b[38;2;59;63;65m.\u001b[39m                                \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;116;89;180m- \u001b[39m\u001b[38;2;116;89;180mArchive:\u001b[39m\u001b[38;2;59;63;65m\u001b[38;2;59;63;65m \u001b[39m\u001b[38;2;59;63;65m.\u001b[39m\u001b[38;2;59;63;65mpi\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mglla/archive/respec\u001b[39m\u001b[38;2;59;63;65m-\u001b[39m\u001b[38;2;59;63;65mproject\u001b[39m\u001b[38;2;59;63;65m.\u001b[39m\u001b[38;2;59;63;65mjson\u001b[39m                                                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;143;104;2mRemaining\u001b[39m                                                                                                          \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65mNo unfinished adopted requirements.\u001b[39m                                                                                    \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65m### \u001b[39m\u001b[38;2;116;89;180mNext\u001b[39m                                                                                                               \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m",
+      "\u001b[48;2;230;228;238m \u001b[38;2;59;63;65mUse /loop status to inspect the verified project; start a new project when its intended scope changes.\u001b[39m                 \u001b[49m",
+      "\u001b[48;2;230;228;238m                                                                                                                        \u001b[49m"
+    ]
+  }
+]
