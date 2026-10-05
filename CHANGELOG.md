@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-## 0.39.4 — check compaction before idle loop dispatch (2026-10-05)
+## 0.39.4 — project builder, audit recovery and opportunistic compaction (2026-10-05)
+
+### check compaction before idle loop dispatch
 
 - Metric loops and project builder turns check the configured context-token
   threshold at their actual idle dispatch boundary, matching goal/list sends.
@@ -11,7 +13,7 @@
   owner context. Busy hosts, queued messages, paused work and audit dispatches
   retain their guards; an attempted episode is not retried every turn.
 
-## 0.39.3 — preserve project audit boundaries and recovery evidence (2026-10-05)
+### preserve project audit boundaries and recovery evidence
 
 - Startup and manual audit-job cleanup preserve jobs belonging to unresolved
   goal or project increment claims, including held work. Once those claims
@@ -23,7 +25,7 @@
 - The project-audit heartbeat regression now exercises six actual heartbeat
   ticks during a dispatched worker run, beyond the stall escalation threshold.
 
-## 0.39.2 — protect project increment audits from continuation stalls (2026-10-05)
+### protect project increment audits from continuation stalls
 
 - The main-session heartbeat no longer counts failed continuation attempts
   while the exact project increment audit dispatch is running. Detached worker
@@ -32,7 +34,7 @@
 - Held project audits say **Audit held** and show the recorded stop reason
   instead of displaying an ambiguous auditing phase with generic held text.
 
-## 0.39.1 — explain long audit tool waits (2026-10-04)
+### explain long audit tool waits
 
 - Audit cards keep the current tool's ticking elapsed time and timeout visible
   when it stops producing events. The card says it is waiting on the tool,
@@ -43,7 +45,7 @@
 - Automatic and manual audit progress use the worker's effective granted tool
   timeout, matching the watchdog rather than showing only the base budget.
 
-## 0.39.0 — respec project builder (2026-10-04)
+### respec project builder
 
 - `/loop respec [project direction]` drafts intended requirements for confirmation,
   builds coherent increments, runs isolated audits and replans unfinished work.
@@ -71,7 +73,7 @@
   contract evidence into replanning. Stale audit wakes are rejected before
   model resolution or dispatch.
 
-## 0.38.114 — semantic summary colors (2026-10-03)
+### semantic summary colors
 
 - Summary emphasis uses bold, including Markdown italic emphasis and quotes;
   summaries do not render italics.
