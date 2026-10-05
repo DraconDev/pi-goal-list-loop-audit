@@ -178,7 +178,7 @@ for (const status of ["complete", "aborted"] as const) {
   for (const action of ["pause", "verify", "cancel"]) {
     test(`/goal ${action} preserves a ${status} goal`, async () => {
       const { pi, ctx } = await boot();
-      replaceState({ ...state, goal: seedGoal({ status, stopReason: "terminal evidence" }) as typeof state.goal });
+      replaceState({ ...state, goal: seedGoal({ status, stopReason: "terminal evidence" }) as unknown as typeof state.goal });
       persistStateLine(ctx.cwd, state);
       await pi.command("goal", action, ctx);
       assert.equal(readState(ctx.cwd).goal?.status, status);
@@ -190,7 +190,7 @@ for (const status of ["complete", "aborted"] as const) {
 
 test("/goal verify refuses to write a new claim through a stale host", async () => {
   const { pi, ctx } = await boot();
-  replaceState({ ...state, goal: seedGoal({ status: "active" }) as typeof state.goal });
+  replaceState({ ...state, goal: seedGoal({ status: "active" }) as unknown as typeof state.goal });
   persistStateLine(ctx.cwd, state);
   invalidateHostSession(pi, ctx);
   await pi.command("goal", "verify", ctx);
@@ -211,9 +211,24 @@ test("/review refuses a stale host before producing follow-up artifacts", async 
 
 test("/list resume admits an auditing head to the existing audit recovery path", async () => {
   const { pi, ctx } = await boot();
-  replaceState({ ...state, goal: seedGoal({ policy: "list", status: "auditing" }) as typeof state.goal });
+  replaceState({ ...state, goal: seedGoal({ policy: "list", status: "auditing" }) as unknown as typeof state.goal });
   persistStateLine(ctx.cwd, state);
   await pi.command("list", "resume", ctx);
   assert.ok(ctx.ui.matching("auditor is in flight").length > 0);
   assert.equal(ctx.ui.matching("No paused list item").length, 0);
+});
+
+test("a decision picker cannot cancel a replacement goal", async () => {
+  const { pi, ctx } = await boot();
+  replaceState({ ...state, goal: seedGoal({ status: "paused", pauseKind: "decision", pauseOptions: ["Cancel (/goal cancel)"] }) as unknown as unknown as typeof state.goal });
+  persistStateLine(ctx.cwd, state);
+  ctx.ui.selectImpl = async (_title, options) => {
+    replaceState({ ...state, goal: seedGoal({ id: "replacement-command-goal", status: "active" }) as unknown as unknown as typeof state.goal });
+    persistStateLine(ctx.cwd, state);
+    return options[0];
+  };
+  await pi.command("goal", "decide", ctx);
+  assert.equal(readState(ctx.cwd).goal?.id, "replacement-command-goal");
+  assert.equal(readState(ctx.cwd).goal?.status, "active");
+  assert.equal(pi.abortCalled, false);
 });
