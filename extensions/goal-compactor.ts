@@ -25,6 +25,7 @@ import {
   ledgerPath,
   piGlaDir,
   readState,
+  readState,
 } from "./goal-loop-core.js";
 import { loadGlobalSettings, type Settings } from "./goal-settings.js";
 import { PLAN_B_MAX_ATTEMPTS, resolveCompactorModel } from "./compactor-model.js";
@@ -36,6 +37,8 @@ export const COMPACTOR_BRIEF_MAX_CHARS = 2000;
 export const COMPACTOR_PACKET_MAX_CHARS = 6000;
 /** Worker wall clock: a brief is one completion, not an agentic loop. */
 export const COMPACTOR_TIMEOUT_MS = 180_000;
+/** Successful compaction yields ordinary work before another opportunity. */
+export const BOUNDARY_COMPACTION_SUCCESS_GRACE_MS = 180_000;
 /** Audit 2026-09-06: grace between SIGTERM and SIGKILL when the worker
  * overruns its timeout — SIGTERM alone can leave a stuck child alive. */
 export const COMPACTOR_KILL_GRACE_MS = 5_000;
@@ -167,9 +170,20 @@ export function maybeCompactTranscriptAtBoundary(
     alreadyFired = false;
   }
   if (alreadyFired) {
-    // Hysteresis re-arm: the transcript genuinely shrank (compaction
-    // landed), so the next growth episode may fire again.
-    if (tokens < threshold / 2) {
+    let completedAt: number | undefined;
+    try {
+      const marker = JSON.parse(fs.readFileSync(markerPath, "utf8"));
+      const firedAt = Date.parse(marker.at);
+      const recorded = typeof marker.completedAt === "number" ? marker.completedAt : readState(ctx.cwd).lastCompactionAt;
+      // The durable session_compact stamp also recovers legacy success
+      // markers. Older compactions cannot release a newer failed attempt.
+      if (Number.isFinite(firedAt) && typeof recorded === "number" && Number.isFinite(recorded)
+        && recorded >= firedAt && recorded <= Date.now()) completedAt = recorded;
+    } catch { /* Unknown outcomes retain the conservative episode guard. */ }
+    // Successful summaries need not fall below half the target, and the
+    // host may not expose its smaller usage before work grows again.
+    // Keep failures one-shot; release proven success after recovery grace.
+    if (tokens < threshold / 2 || (completedAt !== undefined && Date.now() - completedAt >= BOUNDARY_COMPACTION_SUCCESS_GRACE_MS)) {
       try {
         fs.rmSync(markerPath, { force: true });
       } catch {
@@ -188,9 +202,10 @@ export function maybeCompactTranscriptAtBoundary(
     }
     return false;
   }
+  const markerAt = new Date().toISOString();
   try {
     fs.mkdirSync(piGlaDir(ctx.cwd), { recursive: true });
-    fs.writeFileSync(markerPath, JSON.stringify({ at: new Date().toISOString(), tokens: Math.round(tokens) }) + "\n");
+    fs.writeFileSync(markerPath, JSON.stringify({ at: markerAt, tokens: Math.round(tokens) }) + "\n");
   } catch {
     // Marker write is best effort; without it this boundary still fires
     // once (a repeat next boundary is the only cost).
@@ -239,7 +254,12 @@ export function maybeCompactTranscriptAtBoundary(
   try {
     (ctx as ExtensionContext).compact({
       onComplete: () => {
+        if (settled) return;
         settled = true;
+        try {
+          const marker = JSON.parse(fs.readFileSync(markerPath, "utf8"));
+          if (marker.at === markerAt) fs.writeFileSync(markerPath, JSON.stringify({ ...marker, completedAt: Date.now() }) + "\n");
+        } catch { /* Durable session_compact state remains the fallback. */ }
         if (boundaryAttempts.get(boundaryOwner(ctx)) === attempt) clearBoundaryCompactionAttempt(ctx);
         try { appendLedger(ctx.cwd, "compactor_transcript_done", {}); }
         catch { /* ledger best effort */ }

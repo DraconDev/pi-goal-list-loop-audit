@@ -3174,6 +3174,7 @@ function cmdGllaStatus(ctx: ExtensionContext): void {
   if (g?.status === "paused" && g.pauseKind === "decision" && g.pauseOptions?.length) {
     lines.push(`decision pending (${g.pauseOptions.length} options) — ${activeGoalSurfaceCommand("decide")}`);
   }
+  lines.push(`compaction: target ${loadSettings(ctx.cwd).compactionTokenThreshold ?? DEFAULT_COMPACTION_TOKEN_THRESHOLD} tokens · last completed ${typeof state.lastCompactionAt === "number" ? new Date(state.lastCompactionAt).toISOString() : "not recorded"} · next safe idle boundary`);
   lines.push("deep: /goal status · /list show · /loop status · /glla stats · /glla audits · /glla log");
   ctx.ui.notify(`glla status\n${lines.join("\n")}`, "info");
 }

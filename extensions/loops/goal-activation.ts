@@ -1443,7 +1443,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // ⏳ compacting… chip while compactionGraceUntil is in the future
     // (see buildStatusText compaction check).
     try {
-      ctx.ui.notify(`glla: session compacting — stall counter reset, grace timer started. The widget will show ⏳ compacting… for the next 3 minutes.`, "info");
+      ctx.ui.notify(`glla: transcript compacted. Work resumes automatically; recovery grace is active for 3 minutes.`, "info");
     } catch {
       /* stale ctx best-effort */
     }
