@@ -3,9 +3,37 @@ import assert from "node:assert/strict";
 import activate, { __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from "../extensions/loops/goal.js";
 import { __testOnlyResetCompactor, __testOnlySetSpawnWorker } from "../extensions/goal-compactor.js";
 import { sendContinuation } from "../extensions/goal-continuation.js";
+import { scheduleLoopTick, clearLoopTimer } from "../extensions/goal-loop.js";
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd, tick } from "./harness/mock-pi.js";
 
 afterEach(() => { __testOnlyResetCompactor(); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); });
+
+for (const fail of [false, true]) {
+  test(`idle loop dispatch checks the threshold without agent_settled (failure=${fail})`, async () => {
+    const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+    const ctx = makeMockCtx(cwd, { sessionManager: { name: `compact-loop-${fail}` } });
+    let tokens = 50_000, compacts = 0, idle = true;
+    ctx.isIdle = () => idle;
+    ctx.getContextUsage = () => ({ tokens, contextWindow: 1_000_000, percent: tokens / 10_000 });
+    ctx.compact = options => {
+      compacts++;
+      if (fail) options?.onError?.(new Error("summarizer unavailable"));
+      else idle = false;
+    };
+    __testOnlySetSpawnWorker(async () => ({ ok: true, brief: "Continue this loop." }));
+    await pi.fire("session_start", { reason: "startup" }, ctx);
+    try {
+      await pi.command("loop", "start develop the intended project", ctx);
+      clearLoopTimer(); pi.sent.length = 0;
+      tokens = 315_000;
+      scheduleLoopTick(ctx);
+      await tick(150);
+      assert.equal(compacts, 1, "a loop turn must check compaction before dispatch");
+      assert.equal(pi.sent.filter(s => (s.options as { triggerTurn?: boolean })?.triggerTurn === true).length, fail ? 1 : 0,
+        "success yields to compaction; failure resumes ordinary work without repeated attempts");
+    } finally { clearLoopTimer(); await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+  });
+}
 
 for (const guard of ["paused", "auditing", "frozen", "aborted"] as const) {
   test(`settled and idle-send compaction preserve ${guard}`, async () => {
