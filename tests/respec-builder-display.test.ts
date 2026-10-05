@@ -36,3 +36,11 @@ test("project cards expose phase, unfinished coverage and recorded blockers with
     }
   }
 });
+
+test("an explicitly stopped project audit does not advertise an unavailable resume", () => {
+  const builder = beginRespecAudit(claimRespecTask(planRespecIncrement(adoptRespecRequirements(createRespecBuilder("Export"), [{ id: "export", text: "Export", acceptance: "Round trip" }]), [{ id: "task", text: "Build export", requirementIds: ["export"] }]), "task"), "attempt", "Round trip checked");
+  const state = { goal: null, list: [], loop: { builder, active: false, stopReason: "stopped by user (/loop stop)", target: builder.vision, startedAt: new Date().toISOString(), iteration: 1, maxIterations: 0, plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [] } } as State;
+  const plain = stripTerminalSequences(buildWidgetLines(state, null, Date.now(), undefined, 120)!.join("\n"));
+  assert.match(plain, /Audit stopped/);
+  assert.doesNotMatch(plain, /\/loop resume|Work held/);
+});
