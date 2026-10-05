@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.39.3 — preserve unresolved audit evidence during retention (2026-10-05)
+
+- Startup and manual audit-job cleanup preserve jobs belonging to unresolved
+  goal or project increment claims, including held work. Once those claims
+  settle, ordinary age and worker-identity retention applies again.
+- Health reports exclude claim-protected jobs from cleanup candidates.
+- The project-audit heartbeat regression now exercises six actual heartbeat
+  ticks during a dispatched worker run, beyond the stall escalation threshold.
+
 ## 0.39.2 — protect project increment audits from continuation stalls (2026-10-05)
 
 - The main-session heartbeat no longer counts failed continuation attempts
