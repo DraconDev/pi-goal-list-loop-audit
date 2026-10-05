@@ -11,6 +11,7 @@ import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { seedState } from "./harness/mock-pi.js";
 
 import {
   cleanupDeadAuditJobs,
@@ -19,6 +20,26 @@ import {
 
 const DAY_MS = 86_400_000;
 const RETENTION_MS = 7 * DAY_MS;
+
+test("retention keeps unresolved goal and held project evidence until their claims settle", () => {
+  const cwd = tmpdir();
+  const ids = ["goal-claim-physical", "project-claim-physical", "project-claimant-unrelated"];
+  for (const id of ids) {
+    const dir = jobDir(cwd, id);
+    fs.writeFileSync(path.join(dir, "result.json"), "{}");
+    ageDir(dir, 10 * DAY_MS);
+  }
+  seedState(cwd, { goal: { status: "paused", pendingCompletion: { attemptId: "goal-claim" } },
+    loop: { active: false, builder: { phase: "auditing", audit: { attemptId: "project-claim" } } } });
+  assert.equal(inspectAuditJobHealth(cwd, Date.now(), RETENTION_MS).cleanupCandidates, 1);
+  cleanupDeadAuditJobs(cwd, RETENTION_MS);
+  assert.ok(fs.existsSync(path.join(cwd, ".pi-glla/audit-jobs", ids[0]!)));
+  assert.ok(fs.existsSync(path.join(cwd, ".pi-glla/audit-jobs", ids[1]!)));
+  assert.equal(fs.existsSync(path.join(cwd, ".pi-glla/audit-jobs", ids[2]!)), false, "prefix lookalikes are not protected");
+  seedState(cwd, { goal: null, loop: { active: false, builder: { phase: "complete" } } });
+  cleanupDeadAuditJobs(cwd, RETENTION_MS);
+  assert.equal(fs.readdirSync(path.join(cwd, ".pi-glla/audit-jobs")).length, 0, "settled history returns to normal retention");
+});
 
 function tmpdir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "glla-retention-"));

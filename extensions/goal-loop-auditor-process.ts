@@ -19,6 +19,7 @@ import { fileURLToPath } from "node:url";
 import {
   piGlaDir,
   appendLedger,
+  readState,
   stripThinkBlocks,
   captureGoalRevision,
   isRetriableInfraError,
@@ -1090,6 +1091,8 @@ export interface AuditJobHealthEntry {
    * `pid` beside it is a PARENT identity (or a reused pid) and re-verifying its
    * liveness before a reap would protect nothing. */
   provenFinished?: boolean;
+  /** Unsettled durable claims still need this job's recovery evidence. */
+  retainedForClaim?: boolean;
 }
 
 export interface AuditJobHealthReport {
@@ -1145,6 +1148,9 @@ export function inspectAuditJobHealth(
 ): AuditJobHealthReport {
   const root = path.join(piGlaDir(cwd), "audit-jobs");
   const entries: AuditJobHealthEntry[] = [];
+  const durable = readState(cwd);
+  const pendingIds = [durable.goal?.pendingCompletion?.attemptId, durable.loop?.builder?.audit?.attemptId]
+    .filter((id): id is string => typeof id === "string" && id.length > 0);
   let dirs: Array<{ name: string; isDirectory: () => boolean }> = [];
   try {
     dirs = readdirSync(root, { withFileTypes: true });
@@ -1236,13 +1242,14 @@ export function inspectAuditJobHealth(
         }
       }
     }
-    entries.push({ attemptId: entry.name, dir, ageMs, bytes, status, ...(pid !== undefined ? { pid } : {}), ...(provenFinished ? { provenFinished: true } : {}), ...(reason ? { reason } : {}) });
+    const retainedForClaim = pendingIds.some(id => entry.name === id || entry.name.startsWith(`${id}-`));
+    entries.push({ attemptId: entry.name, dir, ageMs, bytes, status, ...(retainedForClaim ? { retainedForClaim: true } : {}), ...(pid !== undefined ? { pid } : {}), ...(provenFinished ? { provenFinished: true } : {}), ...(reason ? { reason } : {}) });
   }
   const live = entries.filter((entry) => entry.status === "live").length;
   const dead = entries.filter((entry) => entry.status === "dead").length;
   const ambiguous = entries.filter((entry) => entry.status === "ambiguous").length;
   const bytes = entries.reduce((sum, entry) => sum + entry.bytes, 0);
-  const cleanupCandidates = entries.filter((entry) => entry.status === "dead" && entry.ageMs >= maxAgeMs).length;
+  const cleanupCandidates = entries.filter((entry) => entry.status === "dead" && !entry.retainedForClaim && entry.ageMs >= maxAgeMs).length;
   return { root, scannedAt: new Date(nowMs).toISOString(), total: entries.length, live, dead, ambiguous, bytes, cleanupCandidates, entries };
 }
 
@@ -1251,7 +1258,7 @@ export function inspectAuditJobHealth(
 export function cleanupDeadAuditJobs(cwd: string, maxAgeMs = AUDIT_JOB_CLEANUP_MIN_AGE_MS, nowMs = Date.now()): AuditJobHealthReport {
   const report = inspectAuditJobHealth(cwd, nowMs, maxAgeMs);
   for (const entry of report.entries) {
-    if (entry.status !== "dead" || entry.ageMs < maxAgeMs) continue;
+    if (entry.status !== "dead" || entry.retainedForClaim || entry.ageMs < maxAgeMs) continue;
     // A dead entry WITH a pid always re-verifies liveness first (PID reuse
     // between scan and reap). A dead entry WITHOUT a pid is only reachable
     // via the no-lock+result path above — provably finished, no pid to
