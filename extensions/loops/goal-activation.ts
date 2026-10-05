@@ -2061,7 +2061,9 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       // a freshly restarted session does not look nonexistent while pi loads
       // its transcript; the later loaded session_start will repaint it.
       refreshUI(ctx, true);
-      ctx.ui.notify(`glla: pi has not loaded a conversation yet — waiting before auto-resume. Load/resume the session, or explicitly run ${activeGoalSurfaceCommand("resume")} or /loop start.`, "info");
+      if ((state.goal && !["complete", "aborted"].includes(state.goal.status)) || state.list.length > 0 || isLoopActive() || isHeldLoopResumable(state.loop) || state.mainModelRecovery) {
+        ctx.ui.notify(`glla: pi has not loaded a conversation yet — waiting before auto-resume. Load/resume the session, or explicitly run /glla resume.`, "info");
+      }
       return;
     }
     // An explicit lifecycle handoff/rebind is continuation consent even if

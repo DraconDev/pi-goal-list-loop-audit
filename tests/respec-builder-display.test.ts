@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildWidgetLines } from "../extensions/goal-loop-display.js";
+import { buildWidgetLines, buildStatusText } from "../extensions/goal-loop-display.js";
 import { visibleWidth, stripTerminalSequences } from "@earendil-works/pi-tui";
 import { createRespecBuilder, adoptRespecRequirements, planRespecIncrement, blockRespecRequirement, claimRespecTask, beginRespecAudit } from "../extensions/respec-builder.js";
 import type { State } from "../extensions/goal-loop-core.js";
@@ -45,15 +45,14 @@ test("an explicitly stopped project audit does not advertise an unavailable resu
   assert.doesNotMatch(plain, /\/loop resume|Work held/);
 });
 
-test("completed project closes the work card into a compact archived receipt", () => {
+test("completed project dismisses both live UI surfaces while preserving other work", () => {
   const builder = { ...createRespecBuilder("Completed project"), phase: "complete", requirements: [{ id: "done", text: "Done", acceptance: "Verified", status: "verified" }] };
   const state = { goal: null, list: [], loop: { builder, active: false, stopReason: "completed: all intended project requirements independently verified", target: "Completed project", startedAt: new Date().toISOString(), iteration: 2, maxIterations: 0, plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [] } } as State;
   for (const width of [20, 60, 120]) {
-    const lines = buildWidgetLines(state, null, Date.now(), undefined, width)!;
-    assert.ok(lines.length <= 2);
-    assert.ok(lines.every(line => visibleWidth(line) <= width - 2));
-    const plain = stripTerminalSequences(lines.join("\n"));
-    assert.doesNotMatch(plain, /held:|task:|evidence:|\/loop resume/);
-    if (width === 120) assert.match(plain, /Verified 1\/1 · archived/);
+    assert.equal(buildWidgetLines(state, null, Date.now(), undefined, width), undefined);
+    assert.equal(buildStatusText(state, null, Date.now()), undefined);
   }
+  const queued = { ...state, list: [{ id: "next", objective: "Next unfinished task", addedAt: new Date().toISOString() }] };
+  assert.match(stripTerminalSequences(buildWidgetLines(queued, null, Date.now(), undefined, 120)!.join("\n")), /list queued/);
+  assert.match(stripTerminalSequences(buildStatusText(queued, null, Date.now())!), /list queued/);
 });

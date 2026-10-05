@@ -1356,7 +1356,7 @@ export function loopCadenceCountdown(l: { minimumIterationIntervalMs?: number; l
 }
 
 function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, extras?: WidgetExtras, width?: number): string | undefined {
-  if (state.loop?.builder && (state.loop.active || !state.goal)) {
+  if (state.loop?.builder && state.loop.builder.phase !== "complete" && (state.loop.active || !state.goal)) {
     const l = state.loop, builder = l.builder!, coverage = respecCoverage(builder);
     const stopped = projectExplicitlyStopped(l);
     return `glla: project ${paint(theme, builder.phase === "complete" ? "success" : !l.active ? "warning" : "accent", !l.active && builder.phase === "auditing" ? stopped ? "audit stopped — /loop status" : "audit held — /loop resume" : builder.phase)}${l.active || builder.phase === "complete" || builder.phase === "auditing" ? "" : stopped ? " · stopped" : " · held"} · increment ${builder.cycle} · verified ${coverage.verified}/${coverage.total} · remaining ${coverage.remaining} · blocked ${coverage.blocked}${l.active && builder.phase === "auditing" ? ` · ${respecAuditStatus(builder, now)}` : ""}`;
@@ -1806,7 +1806,7 @@ function waitingListLines(state: State, theme?: DisplayTheme, width?: number): s
 }
 
 function buildWidgetLinesInner(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, width?: number, extras?: WidgetExtras): string[] | undefined {
-  if (state.loop?.builder && (state.loop.active || !state.goal)) return respecBuilderLines(state.loop, now, theme, width);
+  if (state.loop?.builder && state.loop.builder.phase !== "complete" && (state.loop.active || !state.goal)) return respecBuilderLines(state.loop, now, theme, width);
   if (state.loop?.active) return loopLines(state.loop, now, theme, width, extras);
   if (state.loop && !state.loop.active && state.mainModelRecovery?.kind === "loop") return parkedLoopRecoveryLines(state.loop, state.mainModelRecovery, now, theme, width, extras?.mainModelFallbacks);
   if (!state.goal && state.mainModelRecovery) return standaloneRecoveryLines(state.mainModelRecovery, now, theme, width, extras?.mainModelFallbacks);
@@ -2656,11 +2656,6 @@ function respecBuilderLines(loop: LoopState, now: number, theme?: DisplayTheme, 
   const builder = loop.builder!;
   const stopped = projectExplicitlyStopped(loop);
   const coverage = respecCoverage(builder);
-  if (builder.phase === "complete") {
-    const title = paint(theme, "success", `Project · Complete · increment ${builder.cycle}`);
-    return [theme?.bold ? theme.bold(title) : title,
-      `└─ ${paint(theme, "success", `Verified ${coverage.verified}/${coverage.total} · archived`)} · /loop status`];
-  }
   const tone = !loop.active ? "warning" : "accent";
   const phase = !loop.active && builder.phase === "auditing" ? stopped ? "Audit stopped" : "Audit held" : builder.phase === "planning" ? "Planning" : builder.phase[0]!.toUpperCase() + builder.phase.slice(1);
   const current = builder.tasks.find(t => t.status === "pending") ?? builder.tasks.at(-1);

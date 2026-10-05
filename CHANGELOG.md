@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.39.7 — dismiss completed project UI (2026-10-05)
+
+- Completed projects disappear from the live widget and footer. Their
+  archived summary and `/loop status` remain available for inspection.
+  Unfinished queued work still renders its own UI.
+- Empty or terminal-only blank sessions no longer advertise a work-resume
+  action while waiting for a transcript to load.
+
 ## 0.39.6 — close completed project work cards (2026-10-05)
 
 - Completed projects render a compact archived receipt instead of the open
