@@ -1,0 +1,29 @@
+{
+  "version": "0.39.4",
+  "dist-tags": {
+    "latest": "0.39.4"
+  },
+  "dist": {
+    "shasum": "a99261cd8dbc0e711018ccefb8308476c28e1e12",
+    "tarball": "https://registry.npmjs.org/pi-goal-list-loop-audit/-/pi-goal-list-loop-audit-0.39.4.tgz",
+    "fileCount": 141,
+    "integrity": "sha512-xjPgAUlDC/P+FG9sNFxfDZlG8O9JHaqZ2xx90NeBe543AEMGMftBHAXm569k70c+R5X85GdF8cDQzNzCRQ5xZA==",
+    "signatures": [
+      {
+        "sig": "MEQCIGVX9JUa87FjZMtiGDI2AiBeH6LZfLwXb2+NQ6ZQ0EUkAiB528XITyThJ1DpY3p0z2Q4qA5CyoLseJRhJT0UIMlBqg==",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+        "sig": "MEQCIG3/ixxgH5/RDRCKrEC13KECSnyvhXnzOpKsm4sT1OoLAiAsJJjiSPT25lZHgtmTwTsQDvlIMY2TcIsbFA9Z9aTXgg=="
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/pi-goal-list-loop-audit@0.39.4",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 4614363
+  }
+}
