@@ -279,6 +279,13 @@ export const RESUMABLE_STOP = (r?: string): boolean =>
   // follow.
   !!r?.startsWith("branch changed —");
 
+/** Shared admission for the broad resume command and the loop handler.
+ * Blocker and branch checks still run in cmdLoop before dispatch. */
+export function isHeldLoopResumable(loop: LoopState | null | undefined): boolean {
+  return !!loop && !loop.active && (RESUMABLE_STOP(loop.stopReason)
+    || (!!loop.builder && !!loop.stopReason?.startsWith("max iterations reached")));
+}
+
 async function resolveLoopStartConflict(ctx: ExtensionContext, target: string): Promise<boolean> {
   const current = liveObjectives(state);
   if (current.length === 0) return true;
@@ -1328,7 +1335,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       return;
     }
     const stored = state.loop;
-    if (stored && !stored.active && (RESUMABLE_STOP(stored.stopReason) || (!!stored.builder && !!stored.stopReason?.startsWith("max iterations reached")))) {
+    if (stored && isHeldLoopResumable(stored)) {
       if (stored.builder && stored.builder.requirements.some(r => r.status === "blocked") && !stored.builder.requirements.some(r => r.status === "open")) {
         ctx.ui.notify("Project stays held: every unfinished requirement is blocked. Clear the recorded blockers before /loop resume; /loop status shows the reasons.", "warning");
         return;

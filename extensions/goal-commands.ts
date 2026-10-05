@@ -27,7 +27,7 @@ import { auditLifecycleProjection, fmtAge, isSettlingClaim } from "./audit-lifec
 import { clearDispatchRecord, dispatchRecordExists } from "./goal-loop-dispatch.js";
 import type { AuditDisplayProgress } from "./goal-loop-display.js";
 import { auditorVerdictTally, fmtElapsed, formatVerdictTallySegment } from "./goal-loop-display.js";
-import { AUDIT_FINDINGS_REL, HELD_ON_RESTORE, LOOP_AUDIT_MARKER, listAuditCollectTarget, projectAuditTarget } from "./goal-loop-forever.js";
+import { AUDIT_FINDINGS_REL, LOOP_AUDIT_MARKER, listAuditCollectTarget, projectAuditTarget } from "./goal-loop-forever.js";
 import { buildLoopCompletionSummary, compactCompletionSummary, compactTerminalCompletionSummary } from "./completion-summary.js";
 import { ProjectRollup, discoverGllaProjects, filterPremature, formatChallengesJson, formatChallengesTable, formatReliabilityJson, formatReliabilityTable, formatOutcomesJson, formatOutcomesTable, formatRollupJson, formatRollupTable, rollupProject } from "./goal-loop-stats.js";
 import { OVERRIDABLE_AGENT_TYPES, resolveEffectiveSubagentModel } from "./goal-loop-subagents.js";
@@ -38,7 +38,7 @@ import { modelRef } from "./main-model-recovery.js";
 import { formatMainModelFallbacks, normalizeMainModelFallbackRefs } from "./main-model-recovery.js";
 import { ReviewerConfig, normalizeObjective, resolveReviewerConfig, reviewerMenuOptions } from "./reviewer.js";
 import type { SettingsSectionId } from "./settings-menu.js";
-import { cmdLoop, clearLoopTimer, finishLoopGit, isLoopActive, scheduleLoopTick } from "./goal-loop.js";
+import { cmdLoop, clearLoopTimer, finishLoopGit, isLoopActive, isHeldLoopResumable, scheduleLoopTick } from "./goal-loop.js";
 import { chooseObjectiveConflict, liveObjectives, type LiveObjective } from "./goal-objective-conflict.js";
 import { formatGllaVersion } from "./glla-version.js";
 import { cmdGllaOwner, cmdGllaTakeover } from "./state-root-owner.js";
@@ -2706,7 +2706,7 @@ async function cmdGllaResume(ctx: ExtensionContext): Promise<void> {
   }
   const g = state.goal;
   const goalResumable = g && g.status === "paused";
-  const loopResumable = state.loop && !state.loop.active && state.loop.stopReason === HELD_ON_RESTORE;
+  const loopResumable = isHeldLoopResumable(state.loop);
   if (goalResumable && loopResumable) {
     if (ctx.hasUI) {
       try {
