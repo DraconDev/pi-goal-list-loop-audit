@@ -6,6 +6,8 @@ import * as path from "node:path";
 import activate, { handleSettingChoice, __testOnlyResetProcessState } from "../extensions/loops/goal.js";
 import { globalSettingsPath, loadSettings, saveSettings } from "../extensions/goal-settings.js";
 import { MockPi, makeMockCtx, tmpCwd, invalidateHostSession, seedState, seedGoal } from "./harness/mock-pi.js";
+import { state, replaceState, persistStateLine } from "../extensions/goal-state.js";
+import { readState } from "../extensions/goal-loop-core.js";
 import type { SettingsMenuComponent } from "../extensions/settings-menu.js";
 
 const globalFile = globalSettingsPath();
@@ -170,4 +172,48 @@ test("compactor picker labels its clear choice as registry plan B", async () => 
   await handleSettingChoice("compactorModel", ctx as unknown as ExtensionContext);
   assert.match(clearLabel ?? "", /registry plan B/);
   assert.doesNotMatch(clearLabel ?? "", /session model.*clear the override/);
+});
+
+for (const status of ["complete", "aborted"] as const) {
+  for (const action of ["pause", "verify"]) {
+    test(`/goal ${action} preserves a ${status} goal`, async () => {
+      const { pi, ctx } = await boot();
+      replaceState({ ...state, goal: seedGoal({ status, stopReason: "terminal evidence" }) as typeof state.goal });
+      persistStateLine(ctx.cwd, state);
+      await pi.command("goal", action, ctx);
+      assert.equal(readState(ctx.cwd).goal?.status, status);
+      assert.equal(readState(ctx.cwd).goal?.pendingCompletion, undefined);
+      assert.ok(ctx.ui.matching("can't").length > 0, "terminal refusal is explicit");
+    });
+  }
+}
+
+test("/goal verify refuses to write a new claim through a stale host", async () => {
+  const { pi, ctx } = await boot();
+  replaceState({ ...state, goal: seedGoal({ status: "active" }) as typeof state.goal });
+  persistStateLine(ctx.cwd, state);
+  invalidateHostSession(pi, ctx);
+  await pi.command("goal", "verify", ctx);
+  assert.equal(readState(ctx.cwd).goal?.pendingCompletion, undefined);
+  const journal = fs.readFileSync(path.join(ctx.cwd, ".pi-glla", "active.jsonl"), "utf8");
+  assert.doesNotMatch(journal, /"type":"manual_audit_requested"/);
+});
+
+test("/review refuses a stale host before producing follow-up artifacts", async () => {
+  const { pi, ctx } = await boot();
+  const archive = path.join(ctx.cwd, ".pi-glla", "archive");
+  fs.mkdirSync(archive, { recursive: true });
+  fs.writeFileSync(path.join(archive, "review-command-audit.md"), "## Objective\n\n> TODO fix broken recovery\n\nHIGH: broken recovery needs correction.");
+  invalidateHostSession(pi, ctx);
+  await pi.command("review", "review-command-audit aggressive", ctx);
+  assert.equal(fs.existsSync(path.join(ctx.cwd, ".pi-glla", "reviews")), false);
+});
+
+test("/list resume admits an auditing head to the existing audit recovery path", async () => {
+  const { pi, ctx } = await boot();
+  replaceState({ ...state, goal: seedGoal({ policy: "list", status: "auditing" }) as typeof state.goal });
+  persistStateLine(ctx.cwd, state);
+  await pi.command("list", "resume", ctx);
+  assert.ok(ctx.ui.matching("auditor is in flight").length > 0);
+  assert.equal(ctx.ui.matching("No paused list item").length, 0);
 });
