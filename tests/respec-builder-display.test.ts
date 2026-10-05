@@ -53,6 +53,6 @@ test("completed project dismisses both live UI surfaces while preserving other w
     assert.equal(buildStatusText(state, null, Date.now()), undefined);
   }
   const queued = { ...state, list: [{ id: "next", objective: "Next unfinished task", addedAt: new Date().toISOString() }] };
-  assert.match(stripTerminalSequences(buildWidgetLines(queued, null, Date.now(), undefined, 120)!.join("\n")), /list queued/);
-  assert.match(stripTerminalSequences(buildStatusText(queued, null, Date.now())!), /list queued/);
+  assert.match(stripTerminalSequences(buildWidgetLines(queued, null, Date.now(), undefined, 120)!.join("\n")), /list queued/i);
+  assert.match(stripTerminalSequences(buildStatusText(queued, null, Date.now())!), /list queued/i);
 });

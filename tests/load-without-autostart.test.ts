@@ -287,3 +287,18 @@ test("a completed project beside a waiting queue still holds the unfinished queu
     assert.equal(pi.sent.length, 0);
   } finally { await pi.fire("session_shutdown", { reason: "quit" }, ctx); }
 });
+
+test("terminal-only blank startup does not advertise work to resume", async () => {
+  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ autoResume: true }));
+  const cwd = tmpCwd();
+  seedState(cwd, { loop: seedLoop({ active: false, stopReason: "completed: verified" }) });
+  const pi = newPi();
+  __testOnlyResetOwnerSession();
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "completed-blank-start", buildSessionContext: () => ({ messages: [] }) } });
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  try {
+    assert.equal(ctx.ui.matching("waiting before auto-resume").length, 0);
+    assert.equal(pi.sent.length, 0);
+    assert.equal(readState(cwd).loop!.active, false);
+  } finally { await pi.fire("session_shutdown", { reason: "quit" }, ctx); }
+});
