@@ -8,7 +8,7 @@ import type { State } from "../extensions/goal-loop-core.js";
 test("a stopped project audit exposes its hold reason instead of implying a running auditor", () => {
   const adopted = adoptRespecRequirements(createRespecBuilder("Build export"), [{ id: "export", text: "Export", acceptance: "Round trip" }]);
   const planned = planRespecIncrement(adopted, [{ id: "export-task", text: "Build export", requirementIds: ["export"] }]);
-  const builder = beginRespecAudit(claimRespecTask(planned, "export-task", "Export implemented"), "Round trip checked", "attempt");
+  const builder = beginRespecAudit(claimRespecTask(planned, "export-task"), "attempt", "Round trip checked");
   const state = { goal: null, list: [], loop: { builder, active: false, stopReason: "stalled: 5 continuation refires landed no turn", target: builder.vision, startedAt: new Date().toISOString(), iteration: 1, maxIterations: 0, plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [] } } as State;
   const plain = stripTerminalSequences(buildWidgetLines(state, null, Date.now(), undefined, 120)!.join("\n"));
   assert.match(plain, /Audit held/);

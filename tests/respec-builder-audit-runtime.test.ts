@@ -65,6 +65,10 @@ test("a time bound cancels an in-flight worker and retains unfinished requiremen
     const pending = runRespecBuilderAudit(f.ctx);
     assert.equal(respecBuilderAuditInFlight(f.cwd), true);
     assert.equal(respecBuilderAuditInFlight(f.cwd + '-other'), false, "dispatch ownership includes the project root");
+    const dispatched = state.loop!;
+    replaceState({ ...state, loop: { ...dispatched, builder: { ...dispatched.builder!, audit: { ...dispatched.builder!.audit!, attemptId: "replacement-claim" } } } });
+    assert.equal(respecBuilderAuditInFlight(f.cwd), false, "an old dispatch cannot protect a replacement claim");
+    replaceState({ ...state, loop: dispatched });
     const jobs = path.join(f.cwd, ".pi-glla", "audit-jobs");
     const deadline = Date.now() + 20000;
     while (!fs.existsSync(jobs) || !fs.readdirSync(jobs).some(name => fs.existsSync(path.join(jobs, name, "progress.json")))) {
