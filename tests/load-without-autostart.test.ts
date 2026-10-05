@@ -262,3 +262,28 @@ for (const legacyHold of [false, true]) {
     } finally { await pi.fire("session_shutdown", { reason: "quit" }, ctx); }
   });
 }
+
+test("terminal receipt restore preserves an explicit supervisor pause", async () => {
+  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ autoResume: false }));
+  const cwd = tmpCwd(), pausedAt = Date.now();
+  seedState(cwd, { supervisorPausedAt: pausedAt, loadHoldAt: pausedAt, loop: seedLoop({ active: false, stopReason: "completed: verified" }) });
+  const pi = newPi(), ctx = await coldBoot(pi, cwd);
+  try {
+    assert.equal(readState(cwd).supervisorPausedAt, pausedAt);
+    assert.equal(readState(cwd).loadHoldAt, undefined);
+    assert.equal(pi.sent.length, 0);
+  } finally { await pi.fire("session_shutdown", { reason: "quit" }, ctx); }
+});
+
+test("a completed project beside a waiting queue still holds the unfinished queue", async () => {
+  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ autoResume: false }));
+  const cwd = tmpCwd();
+  seedState(cwd, { loop: seedLoop({ active: false, stopReason: "completed: verified" }), list: [{ id: "next-work", objective: "Unfinished queued work", addedAt: new Date().toISOString() }] });
+  const pi = newPi(), ctx = await coldBoot(pi, cwd);
+  try {
+    assert.equal(typeof readState(cwd).loadHoldAt, "number");
+    assert.equal(ctx.ui.matching("Loaded without starting").length, 1);
+    assert.doesNotMatch(ctx.ui.matching("Loaded without starting")[0]!.message, /\/loop resume/);
+    assert.equal(pi.sent.length, 0);
+  } finally { await pi.fire("session_shutdown", { reason: "quit" }, ctx); }
+});
