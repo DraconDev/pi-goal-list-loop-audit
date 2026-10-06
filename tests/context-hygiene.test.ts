@@ -251,3 +251,14 @@ test("wiring: every default session_before_compact path receives the bounded pro
     assert.equal(projections.length, 1, `${reason} emits bounded projection telemetry`);
   }
 });
+
+
+test("failed GLLA probes shed their obsolete prompts with the error replies", () => {
+  const prompt = (n: number) => ({ role: "custom", customType: "goal-event", content: "project state".repeat(24000) + n });
+  const first = prompt(1), second = prompt(2), latest = prompt(3), actualUser = userTurn("keep this request");
+  const messages = [actualUser, first, failedTurn("404"), second, failedTurn("404"), latest, failedTurn("404")];
+  const result = dropFailedErrorOnlyTurns(messages);
+  assert.equal(result.messages.length, 3);
+  assert.deepEqual(result.messages, [actualUser, latest, messages.at(-1)]);
+  assert.equal(messages.length, 7, "saved transcript input is untouched");
+});
