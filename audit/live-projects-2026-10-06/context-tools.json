@@ -1,0 +1,302 @@
+[
+  {
+    "name": "ai-auto-video",
+    "cwd": "/home/dracon/Dev/dracon-strategy/ai-auto-video",
+    "lastUsage": {
+      "timestamp": "2026-10-06T12:00:39.486Z",
+      "input": 1247,
+      "cacheRead": 592753,
+      "cacheWrite": 0,
+      "provider": "meta",
+      "model": "muse-spark-1.3-contributor"
+    },
+    "pendingTools": [],
+    "compactorMarker": null
+  },
+  {
+    "name": "ai-auto-music",
+    "cwd": "/home/dracon/Dev/dracon-strategy/ai-auto-music",
+    "lastUsage": {
+      "timestamp": "2026-10-06T11:20:20.445Z",
+      "input": 1161,
+      "cacheRead": 167168,
+      "cacheWrite": 0,
+      "provider": "agnes",
+      "model": "agnes-3.0-flash"
+    },
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-10-05T17:52:03.589Z"
+    }
+  },
+  {
+    "name": "clean-web",
+    "cwd": "/home/dracon/Dev/browser-extensions-shared/extensions/standalones/clean-web",
+    "lastUsage": {
+      "timestamp": "2026-10-06T13:20:00.746Z",
+      "input": 1000,
+      "cacheRead": 462449,
+      "cacheWrite": 0,
+      "provider": "meta",
+      "model": "muse-spark-1.3-contributor"
+    },
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-09-29T22:20:12.705Z"
+    }
+  },
+  {
+    "name": "studio",
+    "cwd": "/home/dracon/Dev/dracon-platform/web/studio",
+    "lastUsage": {
+      "timestamp": "2026-10-06T13:21:39.946Z",
+      "input": 697,
+      "cacheRead": 174961,
+      "cacheWrite": 0,
+      "provider": "meta",
+      "model": "muse-spark-1.3-contributor"
+    },
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-09-29T02:01:28.470Z"
+    }
+  },
+  {
+    "name": "chat",
+    "cwd": "/home/dracon/Dev/dracon-platform/web/chat",
+    "lastUsage": {
+      "timestamp": "2026-10-06T13:24:12.091Z",
+      "input": 932,
+      "cacheRead": 343153,
+      "cacheWrite": 0,
+      "provider": "meta",
+      "model": "muse-spark-1.3-contributor"
+    },
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-09-29T16:13:54.971Z"
+    }
+  },
+  {
+    "name": "junk-runner",
+    "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/junk-runner",
+    "lastUsage": null,
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-10-02T16:27:09.688Z"
+    }
+  },
+  {
+    "name": "eve",
+    "cwd": "/home/dracon/Dev/eve",
+    "lastUsage": {
+      "timestamp": "2026-10-06T13:23:54.337Z",
+      "input": 389,
+      "cacheRead": 311409,
+      "cacheWrite": 0,
+      "provider": "meta",
+      "model": "muse-spark-1.3-contributor"
+    },
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-09-28T20:56:06.314Z"
+    }
+  },
+  {
+    "name": "hegemon",
+    "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/hegemon",
+    "lastUsage": null,
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-10-02T15:56:15.526Z"
+    }
+  },
+  {
+    "name": "hellhunter",
+    "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/hellhunter",
+    "lastUsage": {
+      "timestamp": "2026-10-06T13:22:53.193Z",
+      "input": 3644,
+      "cacheRead": 115825,
+      "cacheWrite": 0,
+      "provider": "meta",
+      "model": "muse-spark-1.3-contributor"
+    },
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-10-02T16:19:52.337Z"
+    }
+  },
+  {
+    "name": "freeport",
+    "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/freeport",
+    "lastUsage": {
+      "timestamp": "2026-10-06T13:24:09.244Z",
+      "input": 820,
+      "cacheRead": 117489,
+      "cacheWrite": 0,
+      "provider": "meta",
+      "model": "muse-spark-1.3-contributor"
+    },
+    "pendingTools": [
+      {
+        "name": "bash",
+        "timestamp": "2026-10-06T13:24:09.244Z",
+        "timeout": 900
+      }
+    ],
+    "compactorMarker": {
+      "at": "2026-09-28T13:41:59.849Z"
+    }
+  },
+  {
+    "name": "deathrun",
+    "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/deathrun",
+    "lastUsage": {
+      "timestamp": "2026-10-06T13:24:25.935Z",
+      "input": 1461,
+      "cacheRead": 145521,
+      "cacheWrite": 0,
+      "provider": "meta",
+      "model": "muse-spark-1.3-contributor"
+    },
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-09-28T12:19:20.402Z"
+    }
+  },
+  {
+    "name": "capture-anime-girls",
+    "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/capture-anime-girls",
+    "lastUsage": {
+      "timestamp": "2026-10-06T11:28:02.856Z",
+      "input": 268,
+      "cacheRead": 98454,
+      "cacheWrite": 0,
+      "provider": "minimax",
+      "model": "MiniMax-M3.1-Flash"
+    },
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-09-28T14:35:52.820Z"
+    }
+  },
+  {
+    "name": "football-forever",
+    "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/football-forever",
+    "lastUsage": {
+      "timestamp": "2026-10-06T13:24:09.271Z",
+      "input": 2740,
+      "cacheRead": 136305,
+      "cacheWrite": 0,
+      "provider": "meta",
+      "model": "muse-spark-1.3-contributor"
+    },
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-10-02T09:38:06.868Z"
+    }
+  },
+  {
+    "name": "doomtap",
+    "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/doomtap",
+    "lastUsage": {
+      "timestamp": "2026-10-06T13:24:14.252Z",
+      "input": 1050,
+      "cacheRead": 113905,
+      "cacheWrite": 0,
+      "provider": "meta",
+      "model": "muse-spark-1.3-contributor"
+    },
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-10-02T10:07:20.894Z"
+    }
+  },
+  {
+    "name": "dracon-platform",
+    "cwd": "/home/dracon/Dev/dracon-platform",
+    "lastUsage": {
+      "timestamp": "2026-10-06T12:54:38.621Z",
+      "input": 1251,
+      "cacheRead": 265457,
+      "cacheWrite": 0,
+      "provider": "meta",
+      "model": "muse-spark-1.3-contributor"
+    },
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-10-02T14:15:56.630Z"
+    }
+  },
+  {
+    "name": "neonbreak",
+    "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/neonbreak",
+    "lastUsage": {
+      "timestamp": "2026-10-06T11:28:02.466Z",
+      "input": 170,
+      "cacheRead": 323622,
+      "cacheWrite": 0,
+      "provider": "minimax",
+      "model": "MiniMax-M3.1-Flash"
+    },
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-09-28T22:02:57.716Z"
+    }
+  },
+  {
+    "name": "polis",
+    "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/polis",
+    "lastUsage": {
+      "timestamp": "2026-10-06T11:28:01.195Z",
+      "input": 1187,
+      "cacheRead": 69411,
+      "cacheWrite": 0,
+      "provider": "minimax",
+      "model": "MiniMax-M3.1-Flash"
+    },
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-09-29T13:40:49.711Z"
+    }
+  },
+  {
+    "name": "darklord",
+    "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/darklord",
+    "lastUsage": {
+      "timestamp": "2026-10-06T11:26:05.082Z",
+      "input": 40,
+      "cacheRead": 190019,
+      "cacheWrite": 0,
+      "provider": "minimax",
+      "model": "MiniMax-M3.1-Flash"
+    },
+    "pendingTools": [],
+    "compactorMarker": {
+      "at": "2026-09-28T23:51:52.081Z"
+    }
+  },
+  {
+    "name": "endless-td",
+    "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/endless-td",
+    "lastUsage": {
+      "timestamp": "2026-10-06T10:39:15.700Z",
+      "input": 673,
+      "cacheRead": 497905,
+      "cacheWrite": 0,
+      "provider": "meta",
+      "model": "muse-spark-1.3-contributor"
+    },
+    "pendingTools": [
+      {
+        "name": "bash",
+        "timestamp": "2026-10-06T10:39:15.700Z",
+        "timeout": 180000
+      }
+    ],
+    "compactorMarker": {
+      "at": "2026-09-28T11:39:26.962Z"
+    }
+  }
+]
