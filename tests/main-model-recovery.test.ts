@@ -98,7 +98,7 @@ test("runtime fallback walk uses one supervised model at a time and preserves le
   };
   try {
     fs.writeFileSync(settingsFile, JSON.stringify({
-      mainModelFallbacks: ["provider/blocked", "provider/first", "provider/second"],
+      mainModelFallbacks: ["provider/primary", "provider/blocked", "provider/first", "provider/second"],
       mainModelFallbackThinkingLevels: { "provider/first": "low", "provider/second": "medium" },
       forbiddenModels: ["blocked"],
     }));

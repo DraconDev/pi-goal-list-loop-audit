@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- The global main fallback chain can include the current session model.
+  Recovery still skips the active model and candidates already tried in its
+  current cycle; configuring the chain no longer depends on the editor's model.
 ## 0.39.12 — resumable compaction holds and fallback thinking (2026-10-06)
 
 - Main fallback selection offers a thinking level for each model. Saved pins

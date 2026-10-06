@@ -1168,9 +1168,9 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       const forbidden = normalizeModelRefs(loadSettings(ctx.cwd).forbiddenModels);
       const refs = await promptModelRefs(
         ctx,
-        `Main agent fallback models — try order is current → fallback 1 → fallback 2 … (space add/remove, tab order mode with ↑/↓, enter save); forbidden models are skipped`,
+        `Main agent fallback models — global ordered chain (space add/remove, tab order mode with ↑/↓, enter save); the current session model can be saved; recovery skips active or already-tried models`,
         current,
-        { excludeRefs: forbidden, maxSelections: MAX_MAIN_MODEL_FALLBACKS, currentRef: modelRef(ctx.model) },
+        { excludeRefs: forbidden, maxSelections: MAX_MAIN_MODEL_FALLBACKS },
       );
       if (refs === undefined) return;
       const thinkingLevels = { ...loadGlobalSettings().mainModelFallbackThinkingLevels };

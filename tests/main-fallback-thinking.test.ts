@@ -63,3 +63,27 @@ test('thinking choices come from registered model capabilities and reject unsupp
   assert.deepEqual(loadGlobalSettings().mainModelFallbackThinkingLevels,{'p/limited':'low','p/single':'medium'},'invalid choices cannot exceed model capabilities, and a single supported level is retained');
  }finally {fs.writeFileSync(globalPath,before);}
 });
+
+test('the global main fallback chain accepts the current session model in both picker and typed input',async()=>{
+ const before=fs.readFileSync(globalPath,'utf8');
+ try {
+  fs.writeFileSync(globalPath,'{}');
+  const ctx:any=makeMockCtx(tmpCwd());
+  const primary={provider:'p',id:'primary',reasoning:true};const backup={provider:'p',id:'backup',reasoning:true};
+  ctx.model=primary;ctx.thinkingLevel='high';
+  ctx.modelRegistry={getAvailable:()=>[primary,backup],find:(_p:string,id:string)=>id==='primary'?primary:backup,hasConfiguredAuth:()=>true};
+  ctx.ui.customStubMode=true;ctx.ui.customImpl=async()=>['p/primary','p/backup'];
+  ctx.ui.selectImpl=async(_title:string,options:string[])=>options.find(o=>o.startsWith('low '));
+  await handleSettingChoice('mainModelFallbacks',ctx);
+  assert.deepEqual(loadGlobalSettings().mainModelFallbacks,['p/primary','p/backup']);
+  assert.equal(loadGlobalSettings().mainModelFallbackThinkingLevels?.['p/primary'],'low');
+  ctx.model=backup;
+  await handleSettingChoice('mainModelFallbacks',ctx);
+  assert.deepEqual(loadGlobalSettings().mainModelFallbacks,['p/primary','p/backup'],'editing from another session model does not delete that model from global preferences');
+  ctx.ui.customImpl=async()=>undefined;
+  ctx.ui.inputImpl=async()=> 'p/backup,p/primary';
+  await handleSettingChoice('mainModelFallbacks',ctx);
+  assert.deepEqual(loadGlobalSettings().mainModelFallbacks,['p/backup','p/primary']);
+  assert.equal(ctx.ui.matching('Current model is slot 0 and was not saved').length,0);
+ } finally {fs.writeFileSync(globalPath,before);}
+});
