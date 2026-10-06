@@ -11,7 +11,8 @@
       "model": "muse-spark-1.3-contributor"
     },
     "pendingTools": [],
-    "compactorMarker": null
+    "starvationBriefMarker": null,
+    "boundaryCompactionMarker": null
   },
   {
     "name": "ai-auto-music",
@@ -25,9 +26,10 @@
       "model": "agnes-3.0-flash"
     },
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-10-05T17:52:03.589Z"
-    }
+    },
+    "boundaryCompactionMarker": null
   },
   {
     "name": "clean-web",
@@ -41,9 +43,10 @@
       "model": "muse-spark-1.3-contributor"
     },
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-09-29T22:20:12.705Z"
-    }
+    },
+    "boundaryCompactionMarker": null
   },
   {
     "name": "studio",
@@ -57,8 +60,12 @@
       "model": "muse-spark-1.3-contributor"
     },
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-09-29T02:01:28.470Z"
+    },
+    "boundaryCompactionMarker": {
+      "at": "2026-10-06T00:06:08.223Z",
+      "tokens": 328852
     }
   },
   {
@@ -73,18 +80,20 @@
       "model": "muse-spark-1.3-contributor"
     },
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-09-29T16:13:54.971Z"
-    }
+    },
+    "boundaryCompactionMarker": null
   },
   {
     "name": "junk-runner",
     "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/junk-runner",
     "lastUsage": null,
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-10-02T16:27:09.688Z"
-    }
+    },
+    "boundaryCompactionMarker": null
   },
   {
     "name": "eve",
@@ -98,18 +107,20 @@
       "model": "muse-spark-1.3-contributor"
     },
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-09-28T20:56:06.314Z"
-    }
+    },
+    "boundaryCompactionMarker": null
   },
   {
     "name": "hegemon",
     "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/hegemon",
     "lastUsage": null,
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-10-02T15:56:15.526Z"
-    }
+    },
+    "boundaryCompactionMarker": null
   },
   {
     "name": "hellhunter",
@@ -123,9 +134,10 @@
       "model": "muse-spark-1.3-contributor"
     },
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-10-02T16:19:52.337Z"
-    }
+    },
+    "boundaryCompactionMarker": null
   },
   {
     "name": "freeport",
@@ -145,9 +157,10 @@
         "timeout": 900
       }
     ],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-09-28T13:41:59.849Z"
-    }
+    },
+    "boundaryCompactionMarker": null
   },
   {
     "name": "deathrun",
@@ -161,9 +174,10 @@
       "model": "muse-spark-1.3-contributor"
     },
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-09-28T12:19:20.402Z"
-    }
+    },
+    "boundaryCompactionMarker": null
   },
   {
     "name": "capture-anime-girls",
@@ -177,9 +191,10 @@
       "model": "MiniMax-M3.1-Flash"
     },
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-09-28T14:35:52.820Z"
-    }
+    },
+    "boundaryCompactionMarker": null
   },
   {
     "name": "football-forever",
@@ -193,9 +208,10 @@
       "model": "muse-spark-1.3-contributor"
     },
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-10-02T09:38:06.868Z"
-    }
+    },
+    "boundaryCompactionMarker": null
   },
   {
     "name": "doomtap",
@@ -209,9 +225,10 @@
       "model": "muse-spark-1.3-contributor"
     },
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-10-02T10:07:20.894Z"
-    }
+    },
+    "boundaryCompactionMarker": null
   },
   {
     "name": "dracon-platform",
@@ -225,8 +242,12 @@
       "model": "muse-spark-1.3-contributor"
     },
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-10-02T14:15:56.630Z"
+    },
+    "boundaryCompactionMarker": {
+      "at": "2026-10-05T18:24:40.263Z",
+      "tokens": 204990
     }
   },
   {
@@ -241,8 +262,12 @@
       "model": "MiniMax-M3.1-Flash"
     },
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-09-28T22:02:57.716Z"
+    },
+    "boundaryCompactionMarker": {
+      "at": "2026-10-06T11:30:34.693Z",
+      "tokens": 281732
     }
   },
   {
@@ -257,9 +282,10 @@
       "model": "MiniMax-M3.1-Flash"
     },
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-09-29T13:40:49.711Z"
-    }
+    },
+    "boundaryCompactionMarker": null
   },
   {
     "name": "darklord",
@@ -273,8 +299,12 @@
       "model": "MiniMax-M3.1-Flash"
     },
     "pendingTools": [],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-09-28T23:51:52.081Z"
+    },
+    "boundaryCompactionMarker": {
+      "at": "2026-10-06T13:00:30.074Z",
+      "tokens": 201410
     }
   },
   {
@@ -295,8 +325,9 @@
         "timeout": 180000
       }
     ],
-    "compactorMarker": {
+    "starvationBriefMarker": {
       "at": "2026-09-28T11:39:26.962Z"
-    }
+    },
+    "boundaryCompactionMarker": null
   }
 ]
