@@ -1381,7 +1381,8 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // WORKING/IDLE while every automatic send is refused. The operator path
     // is /new (fresh empty projection), then resume from durable state.
     const reason = `${failure.kind === "context-overflow" ? "context overflow" : failure.kind === "summarization-length" ? "summarization output limit" : "compaction failure"}: ${safe}`;
-    const action = `Run /new, then ${activeGoalSurfaceCommand("resume")} to reload the durable goal/task state without a summarization pass${failure.kind === "summarization-length" ? "; then retry compaction after increasing the summarizer/model output budget" : mainModelFallbackRefs(ctx).length > 0 ? "; if a fallback is configured, fix its model/auth first" : ""}.`;
+    const resumeCommand = state.loop?.active ? "/loop resume" : activeGoalSurfaceCommand("resume");
+    const action = `Run /new, then ${resumeCommand} to reload the durable goal/task state without a summarization pass${failure.kind === "summarization-length" ? "; then retry compaction after increasing the summarizer/model output budget" : mainModelFallbackRefs(ctx).length > 0 ? "; if a fallback is configured, fix its model/auth first" : ""}.`;
     if (state.loop?.active) {
       clearLoopTimer();
       state.loop = { ...state.loop, active: false, stopReason: reason };

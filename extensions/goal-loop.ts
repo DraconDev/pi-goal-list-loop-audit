@@ -44,6 +44,7 @@ import {
   GOAL_AUDIT_ONESHOT_MARKER,
   HELD_ON_RESTORE,
   isLifecycleHeldLoopReason,
+  isCompactionHeldLoopReason,
   LoopState,
   LoopTickOutcome,
   applyMeasurement,
@@ -236,6 +237,7 @@ function isLoopActive(): boolean {
 // v0.29.19 gate + re-armed counters make the resumed run honest.
 export const RESUMABLE_STOP = (r?: string): boolean =>
   r === HELD_ON_RESTORE ||
+  isCompactionHeldLoopReason(r) ||
   !!r?.startsWith("audit infrastructure:") ||
   !!r?.startsWith("blocked project requirements:") ||
   !!r?.startsWith("provider errors —") ||

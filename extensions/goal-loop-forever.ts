@@ -41,6 +41,13 @@ export interface LoopRefinement {
  * unlike stopped loops which are genuinely gone. */
 export const HELD_ON_RESTORE = "held: restored in a fresh session";
 
+/** Failed host compaction preserves unfinished work for explicit resume.
+ * This is not an automatic lifecycle-resume permission. */
+export function isCompactionHeldLoopReason(reason?: string): boolean {
+  return !!reason && ["summarization output limit:", "context overflow:", "compaction failure:"]
+    .some(prefix => reason.startsWith(prefix));
+}
+
 /** Reasons that represent a lifecycle/recovery hold rather than deliberate
  * operator intent. These may auto-resume on a validated successor session;
  * user stops, provider/manual safety stops, plateaus, and stuck brakes do not.
@@ -78,6 +85,7 @@ export function isRefinableStoppedLoopReason(reason?: string): boolean {
     || reason.startsWith("paused by user (/loop pause)")
     || reason.startsWith("stopped: automatic zero-stream abort")
     || reason.startsWith("stopped by user —")
+    || isCompactionHeldLoopReason(reason)
   );
 }
 
