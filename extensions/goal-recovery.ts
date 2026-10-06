@@ -542,6 +542,15 @@ function sameModelRef(left: string | undefined, right: string | undefined): bool
   return !!left && !!right && left.toLowerCase() === right.toLowerCase();
 }
 
+/** Apply only after an accepted, generation-checked automatic model switch. */
+function applyRecoveryThinking(ref: string, model: any, recovery: MainModelRecovery): void {
+  const requested = sameModelRef(ref, recovery.primary)
+    ? recovery.primaryThinkingLevel
+    : loadGlobalSettings().mainModelFallbackThinkingLevels?.[ref.toLowerCase()] ?? recovery.primaryThinkingLevel;
+  if (requested === undefined || typeof flags.extensionApi?.setThinkingLevel !== "function") return;
+  flags.extensionApi.setThinkingLevel(resolveAuditorThinkingLevel(model, requested) as Parameters<ExtensionAPI["setThinkingLevel"]>[0]);
+}
+
 function scheduleSupervisedPrimaryProbe(ctx: ExtensionContext, recovery: MainModelRecovery): void {
   flags.continuationDispatchStoodDown = false;
   if (recovery.kind === "goal" && state.goal?.status === "active") {
