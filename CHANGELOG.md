@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Held projects supply their saved contract to ordinary status questions as
+  per-turn context. `/loop recheck`, and blocker-only all-blocked resume, request
+  one agent assessment instead of simply refusing. Repair work can return to
+  building; real dependencies retain their hold and accepted scope.
+
 - Project obstacles distinguish repair work from external dependencies.
   Failed tests and implementation gaps replan while remaining open and active;
   other open requirements continue around external blockers. Reclassifying a

@@ -208,11 +208,13 @@ test("held blocker reviews receive the durable project contract without silently
     await pi.runTool("block_project_requirement", { kind: "external", id: "combat", reason: "Old report claims unavailable access", summary: "Access unavailable", owner: "Operator", nextAction: "Supply access", expectedResult: "Probe succeeds", whyAgentCannotProceed: "Operator owns account" }, ctx);
     const snapshot = JSON.stringify(readState(cwd).loop);
     const hook = pi.handlers.get("before_agent_start")!;
-    const context = await (hook as any)({ prompt: "What is the hangup?" }, ctx);
-    assert.match(context.message.content, /SAVED HELD PROJECT/);
-    assert.match(context.message.content, /Measured targets take damage/);
-    assert.match(context.message.content, /Old report claims unavailable access/);
-    assert.match(context.message.content, /NOT AUTHORIZATION TO RESUME/);
+    const context = await (hook as any)({ prompt: "What is the hangup?", systemPrompt: "Original system instructions" }, ctx);
+    assert.match(context.systemPrompt, /^Original system instructions/);
+    assert.match(context.systemPrompt, /SAVED HELD PROJECT/);
+    assert.equal(context.message, undefined, "held context is ephemeral, not a repeated transcript entry");
+    assert.match(context.systemPrompt, /Measured targets take damage/);
+    assert.match(context.systemPrompt, /Old report claims unavailable access/);
+    assert.match(context.systemPrompt, /NOT AUTHORIZATION TO RESUME/);
     assert.equal(JSON.stringify(readState(cwd).loop), snapshot);
     const reviews = () => pi.sent.filter(s => String(s.message.content).includes("[PROJECT BLOCKER RECHECK"));
     await pi.command("loop", "resume", ctx);

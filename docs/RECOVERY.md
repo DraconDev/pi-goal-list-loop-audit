@@ -137,6 +137,18 @@ agent to recheck against the current project, resolve what it can, and give an
 exact command/location and expected result for any action that requires you.
 The view is read-only and remains available on stale handles.
 
+For a held project, ordinary user turns receive its bounded durable contract as
+per-turn context. A fresh conversation does not mean the project is complete or
+that no objective exists. This context does not grant permission to resume and
+is not appended repeatedly to transcript history.
+
+Use `/loop recheck` to request one agent assessment of the saved blockers.
+`/loop resume` does the same for an all-blocked project held solely by blockers.
+The review can reclassify ordinary repair work with `kind="work"` and continue
+building while preserving scope. Real dependencies remain blocked. Rechecks do
+not silently reopen requirements, and a running or queued turn prevents duplicate
+review dispatch. If sending fails, the saved hold remains intact.
+
 When evidence shows resolution, the agent calls `unblock_project_requirement`;
 then `/loop resume` continues the saved project. Unblocking does not verify a
 requirement. All-blocked projects retain their hold instead of repeatedly
