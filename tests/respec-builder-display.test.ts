@@ -32,7 +32,7 @@ test("project cards expose phase, unfinished coverage and recorded blockers with
         const plain = stripTerminalSequences(lines.join("\n"));
         assert.match(plain, /verified 0\/2/);
         assert.match(plain, /remaining 2/);
-        if (builder === blocked) { assert.match(plain, /Identity service unavailable/); assert.match(plain, /held/); assert.match(plain, /\/loop blockers/); assert.doesNotMatch(plain, /resume when ready/); }
+        if (builder === blocked) { assert.match(plain, /Identity service unavailable/); assert.match(plain, /held/); assert.match(plain, /\/loop blockers/); }
       }
     }
   }
@@ -93,4 +93,8 @@ test('blocker inspection retains late operator instructions and distinguishes re
  assert.match(text,/does not verify or complete/);
  assert.ok(text.split('\n').every(line=>line.length<=96));
  assert.equal(JSON.stringify(builder),before);
+ const state={goal:null,list:[],loop:{builder,active:false,target:builder.vision,startedAt:new Date().toISOString(),iteration:1,maxIterations:0,plateauWindow:5,stallCount:0,bestValue:null,lastValue:null,history:[]}} as State;
+ const card=stripTerminalSequences(buildWidgetLines(state,null,Date.now(),undefined,120)!.join('\n'));
+ assert.match(card,/\/loop blockers/);
+ assert.doesNotMatch(card,/resume when ready/,'all-blocked projects must not advertise a resume that will be refused');
 });
