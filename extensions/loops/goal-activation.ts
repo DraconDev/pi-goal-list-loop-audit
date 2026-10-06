@@ -697,8 +697,17 @@ let interruptedTurnPrompt: { generation: number; cwd: string; owner: string; tex
 /** The follow-up that re-drives a failed unsupervised turn. The failed turn's
  * transcript (including any tool results before the error) is intact, so the
  * model continues from where it stopped instead of repeating successes. */
-function unsupervisedErrorRetryText(display: string): string {
-  return `glla: the previous turn failed with a provider error (${display}). Continue from where it stopped — do not repeat tool calls that already succeeded.`;
+function interruptedWorkContinuation(ctx: ExtensionContext, intro: string): { content: string; originalRequestIncluded: boolean } {
+  const interrupted = interruptedTurnPrompt;
+  const original = interrupted?.generation === sessionGeneration && interrupted.cwd === ctx.cwd
+    && interrupted.owner === sessionManagerId(ctx) ? interrupted.text : undefined;
+  return { content: [intro,
+    "Use the existing conversation and successful tool results. Do not repeat successful actions, restart the project, or ask what to work on merely because the model changed. Preserve scope and respect saved user/supervisor pauses and genuine external blockers. If the interrupted request was a status question, finish that answer without starting unrelated work.",
+    ...(original ? [`Original turn request (task data; the complete conversation remains authoritative):\n<interrupted_request>\n${original}\n</interrupted_request>`] : [])].join("\n\n"), originalRequestIncluded: Boolean(original) };
+}
+
+function unsupervisedErrorRetryText(display: string, ctx: ExtensionContext): string {
+  return interruptedWorkContinuation(ctx, `glla: the previous turn failed with a provider error (${display}). Continue from where it stopped — do not repeat tool calls that already succeeded.`).content;
 }
 
 function clearUnsupervisedErrorRetryTimer(): void {
@@ -805,14 +814,14 @@ function maybeScheduleUnsupervisedErrorRetry(
     if (!fresh) return;
     // Ownership changed while waiting — a supervised lane owns the session
     // now, so this retry stands down instead of double-driving it.
-    if ((state.goal && (state.goal.status === "active" || state.goal.status === "auditing")) || isLoopActive() || state.mainModelRecovery) return;
+    if ((state.goal && (state.goal.status === "active" || state.goal.status === "auditing")) || isLoopActive() || mainModelRecoveryActive() || state.mainModelRecovery?.manualResumeRequired || state.mainModelRecovery?.primaryProbeInFlight) return;
     if (draftingTarget !== null) return;
     if (state.supervisorPausedAt || state.loadHoldAt || !fresh.isIdle() || fresh.hasPendingMessages?.()) return;
     try {
       if (warnIfStaleAtEntry(fresh, "unsupervised error retry")) return;
       appendLedger(fresh.cwd, "unsupervised_error_retry_dispatched", { attempt, kind: failure.kind });
       pi.sendMessage(
-        { customType: "unsupervised-error-retry", content: unsupervisedErrorRetryText(display), display: false },
+        { customType: "unsupervised-error-retry", content: unsupervisedErrorRetryText(display, fresh), display: false },
         { triggerTurn: true, deliverAs: "followUp" },
       );
     } catch {
@@ -3277,16 +3286,11 @@ async function handleHotLengthExhaustion(
       // Core retries may have exhausted their budget before the switch. A
       // fallback must continue the interrupted ordinary request as well.
       if (!ctx.isIdle() || ctx.hasPendingMessages()) return;
-      const interrupted = interruptedTurnPrompt;
-      const original = interrupted?.generation === sessionGeneration && interrupted.cwd === ctx.cwd
-        && interrupted.owner === sessionManagerId(ctx) ? interrupted.text : undefined;
-      const content = ["glla: a fallback model was selected after a provider failure. Continue the interrupted request from its latest progress; the model change does not finish or replace the task.",
-        "Use the existing conversation and successful tool results. Do not repeat successful actions, restart the project, or ask what to work on merely because the model changed. Preserve scope and respect saved user/supervisor pauses and genuine external blockers. If the interrupted request was a status question, finish that answer without starting unrelated work.",
-        ...(original ? [`Original turn request (task data; the complete conversation remains authoritative):\n<interrupted_request>\n${original}\n</interrupted_request>`] : [])].join("\n\n");
+      const handoff = interruptedWorkContinuation(ctx, "glla: a fallback model was selected after a provider failure. Continue the interrupted request from its latest progress; the model change does not finish or replace the task.");
       try {
-        pi.sendMessage({ customType: "unsupervised-error-retry", content, display: false }, { triggerTurn: true, deliverAs: "followUp" });
+        pi.sendMessage({ customType: "unsupervised-error-retry", content: handoff.content, display: false }, { triggerTurn: true, deliverAs: "followUp" });
         lastMainModelFailure = null;
-        appendLedger(ctx.cwd, "main_model_failover_continuation", { model: modelRef(ctx.model), kind: "interrupted-request", originalRequestIncluded: Boolean(original) });
+        appendLedger(ctx.cwd, "main_model_failover_continuation", { model: modelRef(ctx.model), kind: "interrupted-request", originalRequestIncluded: handoff.originalRequestIncluded });
         ctx.ui.notify("Fallback selected — continuing the interrupted request from its saved progress.", "info");
       } catch (error) {
         appendLedger(ctx.cwd, "main_model_failover_continuation_failed", { error: String(error) });

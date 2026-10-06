@@ -666,7 +666,7 @@ async function handleMainModelAgentEnd(ctx: ExtensionContext, rawLastA: any, las
       // rejected, the durable envelope owns retry on the current model.
       if ((state.goal?.status === "active" && requiresMainModelRecovery(failure)) || (backupRefs.length > 0 && isMainModelFallbackFailure(failure))) {
         parkMainModelAfterFailure(ctx, failure);
-        if (mainModelRecoveryActive() || state.mainModelRecovery) return true;
+        if (mainModelRecoveryActive() || (isSupervising() && state.mainModelRecovery)) return true;
       }
     }
   } else if (lastA) {
@@ -678,6 +678,10 @@ async function handleMainModelAgentEnd(ctx: ExtensionContext, rawLastA: any, las
     if (state.mainModelRecovery) mainModelRecoverySucceeded(ctx);
     else lastMainModelFailure = null;
   }
+  // A passive episode is history of a selected model, not proof that a
+  // supervised recovery timer owns an ordinary error. Let the ordinary
+  // retry policy own exhaustion; settlement must not claim a fresh switch.
+  if (lastA?.stopReason === "error" && !isSupervising()) lastMainModelFailure = null;
   return false;
 }
 
