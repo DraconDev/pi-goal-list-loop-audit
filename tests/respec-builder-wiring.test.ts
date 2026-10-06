@@ -118,6 +118,10 @@ test("project blockers automatically show generic actions after journaling, with
     assert.match(String(messages()[0]!.message.content), /Open the service settings/);
     assert.match(String(messages()[0]!.message.content), /A read probe succeeds/);
     assert.deepEqual(messages()[0]!.options, { triggerTurn: false });
+    const rendered = pi.messageRenderers.get("glla-project-blockers")!(messages()[0]!.message, { outputPad: 1 },
+      { fg: (_color: string, text: string) => text, bg: (_color: string, text: string) => text, bold: (text: string) => text });
+    assert.match(rendered.render(80).join("\n"), /GLLA · Action needed/);
+    assert.match(rendered.render(80).join("\n"), /Resolved when: A read probe succeeds/);
     assert.equal(readState(cwd).loop!.active, true, "partial blockers leave other work available");
     assert.equal(readState(cwd).loop!.builder!.requirements[0]!.blockerAction!.nextAction, blocker.nextAction);
     await pi.runTool("block_project_requirement", blocker, ctx);
@@ -131,7 +135,7 @@ test("project blockers automatically show generic actions after journaling, with
     pi.sendMessageError = new Error("display unavailable");
     await pi.runTool("block_project_requirement", { id: "dependency", reason: "Dependency still unavailable; checked today" }, ctx);
     assert.equal(readState(cwd).loop!.builder!.requirements[1]!.blockedReason, "Dependency still unavailable; checked today", "display failure does not discard durable blocker");
-    pi.sendMessageError = undefined;
+    pi.sendMessageError = null;
     await pi.runTool("unblock_project_requirement", { id: "access", reason: "Read probe succeeded" }, ctx);
     assert.equal(readState(cwd).loop!.builder!.requirements[0]!.blockerAction, undefined);
     assert.equal(readState(cwd).loop!.builder!.requirements[0]!.status, "open");
