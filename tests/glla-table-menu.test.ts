@@ -142,6 +142,7 @@ test("main agent tab starts with the current agent and drills in", () => {
   assert.deepEqual(component.visibleRows().map((row) => row.id), [
     "mainAgent",
     "mainModelFallbacks",
+    "mainModelFallbackThinkingLevels",
     "mainModelRetryMinutes",
     "hourlyRetryProbe",
     "mainModelFailback",
