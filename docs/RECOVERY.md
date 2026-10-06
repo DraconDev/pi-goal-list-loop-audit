@@ -81,6 +81,23 @@ GLLA's scheduling. Compare current context with the recorded attempt time
 before treating an older high-token sample as the current transcript size.
 `/glla status` shows the configured target and last recorded completion time.
 
+## Failed requests and context growth
+
+GLLA filters obsolete error-only assistant replies from outgoing model input and
+compaction input, retaining the latest failure for retry diagnosis. This applies
+with or without an active goal, list or project. Adjacent GLLA dispatch and
+automatic retry prompts disappear with their discarded failures. User requests,
+tool calls and results, and user aborts remain intact.
+
+Project dispatches also bound repeated audit reports and refer back to durable
+evidence. Adopted acceptance criteria remain complete in the ordinary dispatch;
+oversized contracts require scoped reads from durable state before work.
+
+These projections leave the saved transcript intact. The host's context estimate
+can therefore remain high until a successful compaction replaces the transcript
+prefix, even though provider input has already shed obsolete failure pairs.
+Filtering failed attempts does not restore an unavailable provider endpoint.
+
 ## Updating a running session
 
 The npm package is also the Pi plugin; there is no separate Pi-only release.

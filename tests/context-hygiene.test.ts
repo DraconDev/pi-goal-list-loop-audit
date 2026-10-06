@@ -263,6 +263,19 @@ test("failed GLLA probes shed their obsolete prompts with the error replies", ()
   assert.equal(messages.length, 7, "saved transcript input is untouched");
 });
 
+test("ordinary provider failures and unsupervised retries use the same hygiene rule", () => {
+  const user = userTurn("continue the original task");
+  const unrelated = { role: "custom", customType: "another-plugin", content: "keep this context" };
+  const retry = { role: "custom", customType: "unsupervised-error-retry", content: "retry after 503" };
+  const latest = failedTurn("latest provider failure");
+  const input = [user, failedTurn("first 503"), retry, failedTurn("second 503"), unrelated, latest];
+  const result = dropFailedErrorOnlyTurns(input);
+  assert.deepEqual(result.messages, [user, unrelated, latest]);
+  assert.equal(result.dropped.length, 2);
+  assert.equal(result.dropped.filter(turn => turn.triggerMessageIndex !== undefined).length, 1);
+  assert.equal(input.length, 6);
+});
+
 
 test("failed-probe cleanup preserves user requests, tool pairs, aborts and unrelated controls", () => {
   const control = { role: "custom", customType: "goal-event", content: "project directive" };
