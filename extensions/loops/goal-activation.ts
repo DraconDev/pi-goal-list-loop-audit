@@ -3345,7 +3345,7 @@ async function handleHotLengthExhaustion(
     if (!savedLoop?.active && savedLoop?.builder && savedLoop.builder.phase !== "complete"
       && !String(event?.prompt ?? "").includes("[PROJECT BLOCKER RECHECK")) {
       return { systemPrompt: `${event?.systemPrompt ?? ""}\n\n` + ["[SAVED HELD PROJECT — CONTEXT, NOT AUTHORIZATION TO RESUME]",
-          "This project remains unfinished despite an empty conversation or unrelated green checks. Answer status questions from its saved requirements and blockers. Do not invent absence of an objective.",
+          "This project remains unfinished despite an empty conversation or unrelated green checks. A null goal is normal: loop.builder holds the project contract. Read the last state record, not the last arbitrary journal event. Answer status questions from its saved requirements and blockers.",
           "This context does not release any hold. If the operator asks to continue or recheck, assess blockers: kind=work reclassifies implementation/test failures for repair; genuine external dependencies remain blocked. Preserve scope and verification requirements. Respect user/supervisor pauses and bounds.",
           `Saved hold: ${sanitizeDisplayText(savedLoop.stopReason ?? "unspecified")}`,
           `<builder_state>\n${respecBuilderContext(savedLoop.builder)}\n</builder_state>`].join("\n\n") };

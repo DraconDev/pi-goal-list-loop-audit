@@ -1,0 +1,71 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-display.test.ts:
+(pass) a stopped project audit exposes its hold reason instead of implying a running auditor [6.22ms]
+(pass) project cards expose phase, unfinished coverage and recorded blockers within narrow widths [4.53ms]
+(pass) an explicitly stopped project audit does not advertise an unavailable resume [0.37ms]
+(pass) completed project dismisses both live UI surfaces while preserving other work [1.34ms]
+(pass) project tool waits show a ticking deadline and separate attempt/total clocks [0.88ms]
+(pass) blocker inspection retains late operator instructions and distinguishes recorded claims from verification [1.08ms]
+(pass) automatic blocker actions lead with a short obstacle and keep long diagnostics in details [0.76ms]
+
+tests/glla-stale-context.test.ts:
+(pass) v0.34.52: bare /glla on a stale handle is refused — standard recovery message, UI never opens, settings untouched [1431.02ms]
+(pass) v0.34.52: mutating /glla actions (wipe, cancel, resume, reviewer, postaudit, tooloverride) are all refused on a stale handle [331.32ms]
+(pass) v0.34.52: /glla status, log, stats, audits stay usable on a stale handle (inspect, don't mutate) [3418.55ms]
+(pass) audit 2026-09-07 (LOW, finding 399): bare `/glla fallbacks` is a read-only display — allowed on a stale handle; `fallbacks clear` still mutates and is refused [468.14ms]
+(pass) v0.34.52: the standard recovery — a fresh session reopens the settings UI and owns the next /glla [621.68ms]
+(pass) v0.35.72: source — settings rechecks admission after the menu and before saves [0.68ms]
+(pass) v0.34.52: source — cmdSettings captures the entry probe and gates the settings entry + mutating actions [2.14ms]
+
+tests/respec-builder.test.ts:
+(pass) replanning receives the missing contract evidence when semantic approval is rejected [0.84ms]
+(pass) task completion is only a claim; approving one batch leaves the project unfinished [3.69ms]
+(pass) failed, contradictory and infrastructure verdicts cannot close requirements [0.29ms]
+(pass) stale worker results and incomplete batches cannot trigger settlement [0.59ms]
+(pass) blocked requirements stay unfinished and visible through planning and serialization [0.27ms]
+(pass) draft adoption rejects empty criteria and ignores supplied agent verification status [1.09ms]
+(pass) increment audits carry acceptance criteria and regressions into the production auditor prompt [3.68ms]
+(pass) scope refinement invalidates in-flight claims and records explicit removals [1.29ms]
+(pass) blocking a batch retains its work and unblocking requires a concrete reason [0.37ms]
+(pass) a negative regression audit reopens earlier capabilities instead of displaying stale verification [0.19ms]
+
+tests/loop-held-start.test.ts:
+(pass) loop resume restores a project held by summarization output limit: summary incomplete [1181.87ms]
+(pass) glla resume restores a project held by summarization output limit: summary incomplete [203.23ms]
+(pass) loop resume restores a project held by context overflow: prompt cannot fit [162.10ms]
+(pass) glla resume restores a project held by context overflow: prompt cannot fit [163.18ms]
+(pass) loop resume restores a project held by compaction failure: provider unavailable [148.86ms]
+(pass) glla resume restores a project held by compaction failure: provider unavailable [160.22ms]
+(pass) held loop: the load-hold warning names /loop resume [218.71ms]
+(pass) held loop: the load-hold warning is byte-identical when no loop is held [167.43ms]
+(pass) fresh start over a held loop offers resume and preserves the loop [181.48ms]
+(pass) fresh start over a held loop: dismiss keeps the held loop untouched [155.60ms]
+(pass) fresh start over a held loop: headless refuses instead of discarding [150.93ms]
+(pass) fresh start over an explicitly stopped loop keeps today's silent behavior [165.16ms]
+
+tests/respec-builder-wiring.test.ts:
+(pass) actual respec command and tools persist intended scope, batch and audit claim [196.06ms]
+(pass) declining intended scope leaves the project drafting with no adopted requirements [38.13ms]
+(pass) registered blocker and refinement tools preserve work and require consent to change scope [111.43ms]
+(pass) project blockers automatically show generic actions after journaling, without dispatch or implicit resolution [134.81ms]
+(pass) work obstacles keep building and mistaken blocker-only holds release without verifying scope [191.04ms]
+(pass) held blocker reviews receive the durable project contract without silently releasing dependencies [67.12ms]
+
+tests/action-reminder.test.ts:
+(pass) standby renderer keeps the background-wake explanation visible [6.88ms]
+(pass) registers a dedicated GLLA reminder renderer [0.08ms]
+(pass) blocked reminder is actionable and says the work is safely parked [0.45ms]
+(pass) decision reminder is prominent, safely parked, and names the exact picker action [0.43ms]
+(pass) redirect reminder says the goal is held while the new request runs [0.27ms]
+(pass) diagnostics trail the actionable reminder as subordinate text [0.34ms]
+(pass) standby reminder says background completion wakes the work [0.06ms]
+(pass) timed wait is automatic and does not invent a manual action [0.21ms]
+(pass) assistant abort notice is a GLLA explanation, not generic transport text [0.09ms]
+(pass) wait abort notice uses the same automatic-wake explanation as its card [0.06ms]
+(pass) reminder rendering bounds narrow rows and strips terminal commands [4.40ms]
+(pass) decision reminder rendering agrees with its transcript when no action was supplied [0.36ms]
+
+ 54 pass
+ 0 fail
+Ran 54 tests across 6 files. [12.75s]

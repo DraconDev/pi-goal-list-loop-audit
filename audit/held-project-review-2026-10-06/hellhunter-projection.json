@@ -1,0 +1,20 @@
+{
+  "stateAt": "2026-10-06T16:29:54.722Z",
+  "active": false,
+  "stopReason": "blocked project requirements: clear the recorded blockers, then /loop resume",
+  "cycle": 8,
+  "unfinished": [
+    {
+      "id": "REQ-BISECTION",
+      "status": "blocked",
+      "actionFieldsPresent": false
+    },
+    {
+      "id": "REQ-PLAYABLE",
+      "status": "blocked",
+      "actionFieldsPresent": false
+    }
+  ],
+  "lastJournalEvent": "context_usage_sample",
+  "inspection": "Read-only; state and processes unchanged"
+}

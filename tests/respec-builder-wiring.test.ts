@@ -211,6 +211,7 @@ test("held blocker reviews receive the durable project contract without silently
     const context = await (hook as any)({ prompt: "What is the hangup?", systemPrompt: "Original system instructions" }, ctx);
     assert.match(context.systemPrompt, /^Original system instructions/);
     assert.match(context.systemPrompt, /SAVED HELD PROJECT/);
+    assert.match(context.systemPrompt, /A null goal is normal/);
     assert.equal(context.message, undefined, "held context is ephemeral, not a repeated transcript entry");
     assert.match(context.systemPrompt, /Measured targets take damage/);
     assert.match(context.systemPrompt, /Old report claims unavailable access/);

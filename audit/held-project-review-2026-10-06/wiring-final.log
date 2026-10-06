@@ -1,0 +1,13 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-wiring.test.ts:
+(pass) actual respec command and tools persist intended scope, batch and audit claim [1310.77ms]
+(pass) declining intended scope leaves the project drafting with no adopted requirements [36.53ms]
+(pass) registered blocker and refinement tools preserve work and require consent to change scope [303.75ms]
+(pass) project blockers automatically show generic actions after journaling, without dispatch or implicit resolution [160.65ms]
+(pass) work obstacles keep building and mistaken blocker-only holds release without verifying scope [195.93ms]
+(pass) held blocker reviews receive the durable project contract without silently releasing dependencies [137.58ms]
+
+ 6 pass
+ 0 fail
+Ran 6 tests across 1 file. [4.26s]

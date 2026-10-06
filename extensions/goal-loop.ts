@@ -1308,7 +1308,7 @@ function recheckProjectBlockers(ctx: ExtensionContext): void {
     ctx.ui.notify("A turn is running or queued. Let it finish before /loop recheck; no duplicate review was queued.", "info"); return;
   }
   const content = ["[PROJECT BLOCKER RECHECK — ONE OPERATOR-REQUESTED REVIEW]",
-    "This saved project is unfinished. Do not infer completion or absence of an objective from an empty conversation or a green unrelated suite.",
+    "This saved project is unfinished. A null goal is normal: loop.builder holds this project contract. Read the last state record, not the last arbitrary journal event. Do not infer completion or absence of work from an empty conversation or a green unrelated suite.",
     "Inspect the saved blockers against the current project. Ordinary implementation failures, missing evidence and unrun checks are repair work: use block_project_requirement with kind=work, id, reason and a concrete nextAction. Then plan the repair increment and continue building/refining if the loop is active.",
     "Keep genuine external dependencies blocked and explain the actor, specific next step, expected result and why you cannot proceed. Do not invent operator requirements or silently weaken the adopted acceptance criteria.",
     "This review leaves the saved hold intact until a journaled reclassification. It cannot override a user/supervisor pause, a budget stop or a branch guard. If the loop remains held, report the precise remaining dependency and stop; do not repeatedly request rechecks.",

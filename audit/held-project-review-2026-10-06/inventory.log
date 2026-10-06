@@ -1,0 +1,5 @@
+
+> pi-goal-list-loop-audit@0.39.13 check:inventory
+> node scripts/generate-inventory.mjs --check
+
+Runtime inventory is stale; run node scripts/generate-inventory.mjs
