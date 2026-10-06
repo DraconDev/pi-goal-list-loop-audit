@@ -1,4 +1,4 @@
-import { respecAuditStatus } from "./respec-builder-ui.js";
+import { respecAuditStatus, respecBlockerDetails } from "./respec-builder-ui.js";
 import { respecBuilderContext } from "./respec-builder-context.js";
 /**
  * goal-loop.ts — Loop 3 machinery: /loop command, tick engine, git finish.
@@ -1300,7 +1300,11 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
   // Status is inspection-only and remains available on a stale handle. Every
   // other route can mutate or dispatch work, so reject it before any state,
   // recovery, or drafting side effect.
-  if (sub !== "status" && warnIfStaleAtEntry(ctx, `/loop${sub ? ` ${sub}` : ""}`)) return;
+  if (!["status", "blockers"].includes(sub) && warnIfStaleAtEntry(ctx, `/loop${sub ? ` ${sub}` : ""}`)) return;
+  if (sub === "blockers") {
+    ctx.ui.notify(state.loop?.builder ? respecBlockerDetails(state.loop.builder) : "No saved project. /loop status shows loop or recovery state.", "info");
+    return;
+  }
   if (["pause", "stop", "cancel"].includes(sub) && state.loop?.builder) cancelRespecBuilderAudit(ctx.cwd, state.loop.startedAt);
 
   if (!sub || sub === "resume") {
@@ -1341,7 +1345,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     const stored = state.loop;
     if (stored && isHeldLoopResumable(stored)) {
       if (stored.builder && stored.builder.requirements.some(r => r.status === "blocked") && !stored.builder.requirements.some(r => r.status === "open")) {
-        ctx.ui.notify("Project stays held: every unfinished requirement is blocked. Clear the recorded blockers before /loop resume; /loop status shows the reasons.", "warning");
+        ctx.ui.notify(`Project stays held: every unfinished requirement is blocked.\n${respecBlockerDetails(stored.builder)}`, "warning");
         return;
       }
       // Branch-mode stop returns HEAD to originalBranch. Refuse a resume from

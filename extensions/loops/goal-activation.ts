@@ -1108,6 +1108,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       ["plan", "extended loop draft: deep research + multi-round metric design, same Confirm as a regular draft"],
       ["audit", "project-audit loop: each iteration audits fresh, appends findings, fixes the top ones — plateau stops when the well is dry (v0.29.0)"],
       ["status", "show metric, iteration, best/last values, stall count, and cadence"],
+      ["blockers", "show complete recorded project blockers and the next action; inspect without resuming work"],
       ["resume", "resume a held loop or project audit, preserving saved work and recovery checks"],
       ["refine", "queue an operator respec suggestion into the next iteration's prompt: /loop refine <text>"],
       ["polish", "alias of /loop refine"],

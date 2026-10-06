@@ -30,6 +30,25 @@ export function getRespecAuditLive(builder: RespecBuilderState): RespecAuditLive
   return id ? live.get(id) : undefined;
 }
 const seconds = (ms: number) => `${Math.max(0, Math.floor(ms / 1000))}s`;
+export function respecBlockerDetails(builder: RespecBuilderState): string {
+  const blocked = builder.requirements.filter(r => r.status === "blocked");
+  if (!blocked.length) return "No recorded project blockers. /loop status shows remaining work.";
+  const wrap = (text: string): string[] => {
+    let remaining = sanitizeDisplayText(text).replace(/\s+/g, " ").trim();
+    const lines: string[] = [];
+    while (remaining.length > 96) {
+      const space = remaining.lastIndexOf(" ", 96);
+      const end = space > 0 ? space : 96;
+      lines.push(remaining.slice(0, end)); remaining = remaining.slice(end).trimStart();
+    }
+    if (remaining) lines.push(remaining);
+    return lines;
+  };
+  return ["Project blockers — recorded by the agent; recheck before treating them as current facts.",
+    ...blocked.flatMap(r => ["", ...wrap(`${r.id}: ${r.text}`), "Recorded reason:", ...wrap(r.blockedReason ?? "No concrete reason recorded.")]),
+    "", "Next action:", ...wrap('Ask the agent: "Recheck these blockers against the current project. Resolve what you can. For anything requiring me, give the exact command or location, expected result, and why you cannot do it here."'),
+    ...wrap("When evidence shows a blocker is resolved, the agent records it with unblock_project_requirement. Then /loop resume continues the saved project. Clearing a blocker does not verify or complete the requirement.")].join("\n");
+}
 export function respecAuditToolWait(progress: RespecAuditLive | undefined, now: number): string | undefined {
   if (!progress || progress.phase !== "running" || !progress.currentTool
     || !["running", "tool_executing"].includes(progress.workerPhase ?? "")
