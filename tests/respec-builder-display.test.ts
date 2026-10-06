@@ -32,7 +32,7 @@ test("project cards expose phase, unfinished coverage and recorded blockers with
         const plain = stripTerminalSequences(lines.join("\n"));
         assert.match(plain, /verified 0\/2/);
         assert.match(plain, /remaining 2/);
-        if (builder === blocked) { assert.match(plain, /Identity service unavailable/); assert.match(plain, /held/); }
+        if (builder === blocked) { assert.match(plain, /Identity service unavailable/); assert.match(plain, /held/); assert.match(plain, /\/loop blockers/); assert.doesNotMatch(plain, /resume when ready/); }
       }
     }
   }
@@ -78,4 +78,19 @@ test("project tool waits show a ticking deadline and separate attempt/total cloc
     setRespecAuditLive(builder, { ...progress, currentTool: undefined, currentToolStartedAt: undefined });
     assert.doesNotMatch(buildStatusText(state, null, now)!, /waiting on bash/);
   } finally { setRespecAuditLive(builder); }
+});
+
+test('blocker inspection retains late operator instructions and distinguishes recorded claims from verification',async()=>{
+ const {respecBlockerDetails}=await import('../extensions/respec-builder-ui.js');
+ const builder=blockRespecRequirement(adoptRespecRequirements(createRespecBuilder('finish the visuals'),[
+  {id:'DC-4',text:'Faction chrome',acceptance:'Pinned visual baselines pass'}]),'DC-4',
+  'Render environment mismatch. '+('diagnostic details '.repeat(100))+'Operator action needed: dispatch regeneration on the pinned runner.');
+ const before=JSON.stringify(builder),text=respecBlockerDetails(builder);
+ assert.match(text,/recorded by the agent/);
+ assert.match(text,/Operator action needed:/);
+ assert.match(text,/dispatch regeneration on the pinned\s+runner/);
+ assert.match(text,/unblock_project_requirement/);
+ assert.match(text,/does not verify or complete/);
+ assert.ok(text.split('\n').every(line=>line.length<=96));
+ assert.equal(JSON.stringify(builder),before);
 });

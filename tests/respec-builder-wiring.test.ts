@@ -72,6 +72,12 @@ test("registered blocker and refinement tools preserve work and require consent 
     await pi.runTool("block_project_requirement", { id: "login", reason: "Credentials unavailable" }, ctx);
     assert.equal(readState(cwd).loop!.active, false, "all-blocked work parks automation");
     assert.equal(readState(cwd).loop!.builder!.history!.at(-1)!.tasks[0]!.id, "auth");
+    const beforeInspection = JSON.stringify(readState(cwd).loop);
+    await pi.command("loop", "blockers", ctx);
+    assert.match(ctx.ui.notifies.at(-1)!.message, /Credentials unavailable/);
+    assert.match(ctx.ui.notifies.at(-1)!.message, /Recheck these blockers/);
+    assert.match(ctx.ui.notifies.at(-1)!.message, /unblock_project_requirement/);
+    assert.equal(JSON.stringify(readState(cwd).loop), beforeInspection, "inspection cannot clear a blocker, resume work or change the contract");
     await pi.command("loop", "resume", ctx); clearLoopTimer();
     assert.equal(readState(cwd).loop!.active, false, "unresolved all-blocked project cannot resume into a no-progress loop");
     await pi.runTool("unblock_project_requirement", { id: "login", reason: "Credentials supplied and validated" }, ctx);
