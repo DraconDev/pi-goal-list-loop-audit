@@ -1,0 +1,59 @@
+{
+  "observedAt": "2026-10-06T00:28:00.493896+00:00",
+  "panes": [
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/studio",
+      "pane": "wez:7.1",
+      "contextFooter": "\u21911.8M \u2193275k R127M CH99.8% 9.4%/1.0M (auto)                                                                                                                 (opencode-go) space-bunny-free \u2022 max",
+      "status": "\u25cf Chrome Bridge (indefinite) glla: \u26a0 completion review disapproved \u2014 fix the gap \u00b7 v0.39.9"
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/football-forever",
+      "pane": "wez:16.1",
+      "contextFooter": "\u2191910k \u2193403k R274M CH99.9% 46.3%/1.0M (auto)                                                                                                                (opencode-go) space-bunny-free \u2022 max",
+      "status": "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 increment 3 \u00b7 verified 0/8 \u00b7 remaining 8 \u00b7 blocked 0 \u00b7 v0.39.5 \u00b7 update v0.39.10 available"
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/neonbreak",
+      "pane": "wez:18.1",
+      "contextFooter": "\u21918.7M \u2193424k R471M CH99.9% $1.331 (sub) 86.4%/1.0M (auto)                                                                                              (meta) muse-spark-1.3-contributor \u2022 xhigh",
+      "status": "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 increment 5 \u00b7 verified 1/3 \u00b7 remaining 2 \u00b7 blocked 1 \u00b7 v0.39.8"
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/polis",
+      "pane": "wez:21.1",
+      "contextFooter": "\u21911.1M \u2193506k R200M CH99.7% 45.1%/1.0M (auto)                                                                                                                (opencode-go) space-bunny-free \u2022 max",
+      "status": "\u25cf Chrome Bridge (indefinite) glla: [\u2584\u2582\u2581\u2582\u2584\u2586 LIVE \u00b7 WORKING] \u00b7 loop \u221e iter 583 \u00b7 metricless \u00b7 v0.39.8 \u00b7 update v0.39.10 available"
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/darklord",
+      "pane": "wez:23.1",
+      "contextFooter": "\u2191914k \u2193193k R138M CH99.9% 58.3%/1.0M (auto)                                                                                                                (opencode-go) space-bunny-free \u2022 max",
+      "status": "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 increment 9 \u00b7 verified 3/10 \u00b7 remaining 7 \u00b7 blocked 0 \u00b7 v0.39.9"
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/junk-runner",
+      "pane": "wez:26.1",
+      "contextFooter": "\u21914.1M \u2193404k R262M 101.6%/1.0M (auto)                                                                                                                       (opencode-go) space-bunny-free \u2022 max",
+      "status": "\u25cf Chrome Bridge (indefinite) glla: project replanning \u00b7 held \u00b7 increment 7 \u00b7 verified 0/15 \u00b7 remaining 15 \u00b7 blocked 0 \u00b7 v0.39.7"
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/deathrun",
+      "pane": "wez:27.1",
+      "contextFooter": "\u21912.7M \u2193649k R964M CH100.0% 93.2%/1.0M (auto)                                                                                                               (opencode-go) space-bunny-free \u2022 max",
+      "status": "\u25cf Chrome Bridge (indefinite) glla: [BUSY] \u00b7 loop \u221e iter 249 \u00b7 metricless \u00b7 v0.39.7"
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/hegemon",
+      "pane": "wez:28.1",
+      "contextFooter": "\u21911.5M \u2193603k R302M CH100.0% 47.4%/1.0M (auto)                                                                                                               (opencode-go) space-bunny-free \u2022 max",
+      "status": "\u25cf Chrome Bridge (indefinite) glla: [\u2584\u2586\u2588\u2586\u2584\u2582 LIVE \u00b7 WORKING] \u00b7 loop \u221e iter 196 \u00b7 metricless \u00b7 v0.39.7"
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/hellhunter",
+      "pane": "wez:30.1",
+      "contextFooter": "\u21913.3M \u2193122k R35M 68.5%/1.0M (auto)                                                                                                                 (openrouter) stealth/space-bunny-alpha \u2022 max",
+      "status": "\u25cf Chrome Bridge (indefinite) glla: project replanning \u00b7 held \u00b7 increment 5 \u00b7 verified 3/8 \u00b7 remaining 5 \u00b7 blocked 2 \u00b7 v0.39.9"
+    }
+  ]
+}

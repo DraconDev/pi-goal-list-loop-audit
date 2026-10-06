@@ -1,0 +1,444 @@
+{
+  "observedAt": "2026-10-06T00:25:51.089074+00:00",
+  "projects": [
+    {
+      "root": "/home/dracon/Dev/dracon-platform",
+      "hostAlive": true,
+      "active": false,
+      "phase": null,
+      "marker": {
+        "at": "2026-10-05T18:24:40.263Z",
+        "tokens": 204990
+      },
+      "completedAfterMarker": true,
+      "lastCompactionAt": "2026-10-05T18:25:20.972000+00:00",
+      "context": {
+        "tokens": 209993,
+        "contextWindow": 1048576,
+        "percent": 20.026493072509766
+      },
+      "contextAt": "2026-10-05T22:30:02.828Z",
+      "stateAt": "2026-10-05T22:38:20.347Z",
+      "latestCompactionEvents": [
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 204990,
+            "reason": "between tasks at 204990 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T18:24:40.264Z"
+        },
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-05T18:25:20.970Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-05T18:25:21.029Z"
+        }
+      ]
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/capture-anime-girls",
+      "hostAlive": true,
+      "active": true,
+      "phase": null,
+      "marker": {
+        "at": "2026-10-05T22:33:57.899Z",
+        "tokens": 201078
+      },
+      "completedAfterMarker": false,
+      "lastCompactionAt": "2026-10-05T21:24:06.516000+00:00",
+      "context": {
+        "tokens": 329926,
+        "contextWindow": 1048576,
+        "percent": 31.464195251464844
+      },
+      "contextAt": "2026-10-05T23:59:14.353Z",
+      "stateAt": "2026-10-05T23:59:14.937Z",
+      "latestCompactionEvents": [
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 201078,
+            "reason": "between tasks at 201078 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T22:33:57.899Z"
+        },
+        {
+          "type": "compactor_transcript_error",
+          "value": {
+            "error": "Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete"
+          },
+          "at": "2026-10-05T22:35:35.027Z"
+        },
+        {
+          "type": "compactor_transcript_resume",
+          "value": {},
+          "at": "2026-10-05T22:35:35.028Z"
+        }
+      ]
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/darklord",
+      "hostAlive": true,
+      "active": true,
+      "phase": "building",
+      "marker": {
+        "at": "2026-10-05T23:02:09.712Z",
+        "tokens": 207540
+      },
+      "completedAfterMarker": true,
+      "lastCompactionAt": "2026-10-05T23:02:28.391000+00:00",
+      "context": {
+        "tokens": 403397,
+        "contextWindow": 1048576,
+        "percent": 38.4709358215332
+      },
+      "contextAt": "2026-10-05T23:54:12.902Z",
+      "stateAt": "2026-10-05T23:54:14.046Z",
+      "latestCompactionEvents": [
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 207540,
+            "reason": "between tasks at 207540 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T23:02:09.713Z"
+        },
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-05T23:02:28.387Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-05T23:02:28.436Z"
+        }
+      ]
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/deathrun",
+      "hostAlive": true,
+      "active": true,
+      "phase": null,
+      "marker": {
+        "at": "2026-10-05T18:17:28.007Z",
+        "tokens": 201231
+      },
+      "completedAfterMarker": false,
+      "lastCompactionAt": "2026-10-05T17:15:43.412000+00:00",
+      "context": {
+        "tokens": 968013,
+        "contextWindow": 1048576,
+        "percent": 92.31691360473633
+      },
+      "contextAt": "2026-10-06T00:23:50.172Z",
+      "stateAt": "2026-10-06T00:23:51.346Z",
+      "latestCompactionEvents": [
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 201231,
+            "reason": "between tasks at 201231 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T18:17:28.008Z"
+        },
+        {
+          "type": "compactor_transcript_error",
+          "value": {
+            "error": "Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete"
+          },
+          "at": "2026-10-05T18:21:12.828Z"
+        },
+        {
+          "type": "compactor_transcript_resume",
+          "value": {},
+          "at": "2026-10-05T18:21:12.828Z"
+        }
+      ]
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/football-forever",
+      "hostAlive": true,
+      "active": true,
+      "phase": "building",
+      "marker": {
+        "at": "2026-10-05T19:26:37.061Z",
+        "tokens": 363924
+      },
+      "completedAfterMarker": true,
+      "lastCompactionAt": "2026-10-05T19:26:51.473000+00:00",
+      "context": {
+        "tokens": 391321,
+        "contextWindow": 1048576,
+        "percent": 37.319278717041016
+      },
+      "contextAt": "2026-10-05T23:09:17.013Z",
+      "stateAt": "2026-10-05T23:36:02.858Z",
+      "latestCompactionEvents": [
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 363924,
+            "reason": "between tasks at 363924 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T19:26:37.062Z"
+        },
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-05T19:26:51.473Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-05T19:26:51.514Z"
+        }
+      ]
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/hegemon",
+      "hostAlive": true,
+      "active": true,
+      "phase": null,
+      "marker": {
+        "at": "2026-10-05T19:42:49.551Z",
+        "tokens": 206794
+      },
+      "completedAfterMarker": true,
+      "lastCompactionAt": "2026-10-05T19:44:32.536000+00:00",
+      "context": {
+        "tokens": 489337,
+        "contextWindow": 1048576,
+        "percent": 46.666812896728516
+      },
+      "contextAt": "2026-10-06T00:18:47.490Z",
+      "stateAt": "2026-10-06T00:18:48.110Z",
+      "latestCompactionEvents": [
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 206794,
+            "reason": "between tasks at 206794 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T19:42:49.551Z"
+        },
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-05T19:44:32.534Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-05T19:44:32.551Z"
+        }
+      ]
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/hellhunter",
+      "hostAlive": true,
+      "active": false,
+      "phase": "replanning",
+      "marker": {
+        "at": "2026-10-06T00:13:51.607Z",
+        "tokens": 265011
+      },
+      "completedAfterMarker": false,
+      "lastCompactionAt": "2026-10-05T19:12:06.473000+00:00",
+      "context": {
+        "tokens": 685275,
+        "contextWindow": 1000000,
+        "percent": 68.5275
+      },
+      "contextAt": "2026-10-06T00:13:53.006Z",
+      "stateAt": "2026-10-06T00:13:53.014Z",
+      "latestCompactionEvents": [
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 265011,
+            "reason": "between tasks at 265011 tokens (threshold 200000)"
+          },
+          "at": "2026-10-06T00:13:51.608Z"
+        },
+        {
+          "type": "compactor_transcript_error",
+          "value": {
+            "error": "Compaction failed: Turn prefix summarization failed: 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}"
+          },
+          "at": "2026-10-06T00:13:51.922Z"
+        },
+        {
+          "type": "compactor_transcript_resume",
+          "value": {},
+          "at": "2026-10-06T00:13:51.922Z"
+        }
+      ]
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/junk-runner",
+      "hostAlive": true,
+      "active": false,
+      "phase": "replanning",
+      "marker": {
+        "at": "2026-10-05T17:53:16.022Z",
+        "tokens": 259650
+      },
+      "completedAfterMarker": true,
+      "lastCompactionAt": "2026-10-05T17:53:49.676000+00:00",
+      "context": {
+        "tokens": 1065193,
+        "contextWindow": 1048576,
+        "percent": 101.58472061157227
+      },
+      "contextAt": "2026-10-05T23:44:18.738Z",
+      "stateAt": "2026-10-05T23:46:30.191Z",
+      "latestCompactionEvents": [
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 259650,
+            "reason": "between tasks at 259650 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T17:53:16.024Z"
+        },
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-05T17:53:49.676Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-05T17:53:49.685Z"
+        }
+      ]
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/neonbreak",
+      "hostAlive": true,
+      "active": true,
+      "phase": "building",
+      "marker": {
+        "at": "2026-10-04T16:14:21.187Z",
+        "tokens": 209568
+      },
+      "completedAfterMarker": false,
+      "lastCompactionAt": "2026-10-04T15:06:25.785000+00:00",
+      "context": {
+        "tokens": 748479,
+        "contextWindow": 1048576,
+        "percent": 71.38051986694336
+      },
+      "contextAt": "2026-10-05T23:00:08.625Z",
+      "stateAt": "2026-10-05T23:21:58.825Z",
+      "latestCompactionEvents": [
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 209568,
+            "reason": "between tasks at 209568 tokens (threshold 200000)"
+          },
+          "at": "2026-10-04T16:14:21.190Z"
+        },
+        {
+          "type": "compactor_transcript_error",
+          "value": {
+            "error": "Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete"
+          },
+          "at": "2026-10-04T16:17:04.225Z"
+        },
+        {
+          "type": "compactor_transcript_resume",
+          "value": {},
+          "at": "2026-10-04T16:17:04.225Z"
+        }
+      ]
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/games/wip/polis",
+      "hostAlive": true,
+      "active": true,
+      "phase": null,
+      "marker": {
+        "at": "2026-10-05T22:00:22.803Z",
+        "tokens": 237183
+      },
+      "completedAfterMarker": false,
+      "lastCompactionAt": "2026-10-05T20:42:53.892000+00:00",
+      "context": {
+        "tokens": 466151,
+        "contextWindow": 1048576,
+        "percent": 44.455623626708984
+      },
+      "contextAt": "2026-10-06T00:25:35.115Z",
+      "stateAt": "2026-10-06T00:25:37.972Z",
+      "latestCompactionEvents": [
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 237183,
+            "reason": "between tasks at 237183 tokens (threshold 200000)"
+          },
+          "at": "2026-10-05T22:00:22.805Z"
+        },
+        {
+          "type": "compactor_transcript_error",
+          "value": {
+            "error": "Compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete"
+          },
+          "at": "2026-10-05T22:02:33.063Z"
+        },
+        {
+          "type": "compactor_transcript_resume",
+          "value": {},
+          "at": "2026-10-05T22:02:33.063Z"
+        }
+      ]
+    },
+    {
+      "root": "/home/dracon/Dev/dracon-platform/web/studio",
+      "hostAlive": true,
+      "active": true,
+      "phase": "active",
+      "marker": {
+        "at": "2026-10-06T00:06:08.223Z",
+        "tokens": 328852
+      },
+      "completedAfterMarker": true,
+      "lastCompactionAt": "2026-10-06T00:09:38.047000+00:00",
+      "context": {
+        "tokens": 328852,
+        "contextWindow": 1048576,
+        "percent": 31.361770629882812
+      },
+      "contextAt": "2026-10-05T23:50:12.051Z",
+      "stateAt": "2026-10-06T00:09:40.073Z",
+      "latestCompactionEvents": [
+        {
+          "type": "compactor_transcript_firing",
+          "value": {
+            "tokens": 328852,
+            "reason": "between tasks at 328852 tokens (threshold 200000)"
+          },
+          "at": "2026-10-06T00:06:08.223Z"
+        },
+        {
+          "type": "session_compact",
+          "value": {},
+          "at": "2026-10-06T00:09:38.046Z"
+        },
+        {
+          "type": "compactor_transcript_done",
+          "value": {},
+          "at": "2026-10-06T00:09:38.060Z"
+        }
+      ]
+    }
+  ]
+}
