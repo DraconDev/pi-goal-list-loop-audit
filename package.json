@@ -1,6 +1,6 @@
 {
 	"name": "pi-goal-list-loop-audit",
-	"version": "0.39.12",
+	"version": "0.39.13",
 	"description": "Long-running autonomy for Pi: draft goals, build projects from specs, run audited task queues, and recover interrupted work. Independent auditors verify completion.",
 	"license": "AGPL-3.0-only",
 	"author": "dracon",
