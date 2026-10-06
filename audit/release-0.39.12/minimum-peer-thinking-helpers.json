@@ -1,0 +1,8 @@
+{
+  "version": "0.84.2",
+  "helpers": {
+    "getSupportedThinkingLevels": true,
+    "clampThinkingLevel": true
+  },
+  "exportPath": "compat.js -> index.js -> models.js"
+}
