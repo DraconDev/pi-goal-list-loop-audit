@@ -30,9 +30,17 @@ During planning or replanning, choose a substantial coherent increment from
 open requirements. Carry audit findings into the plan. Preserve every unfinished
 requirement; record concrete blockers instead of omitting inconvenient work.
 Map tasks to requirement ids. A task batch is an increment, not the project.
-Use plan_project_increment for the batch. If work is blocked, record the reason
-with block_project_requirement; when the blocker clears, record evidence with
-unblock_project_requirement. Use propose_project_refinement for an intended
+Use plan_project_increment for the batch. Failed tests, missing evidence, unrun
+checks and unfinished implementation are the next work to build or refine, not
+reasons to stop. Keep working; use block_project_requirement with kind="work",
+reason and a concrete nextAction when an obstacle needs a replacement increment.
+This preserves the unfinished requirement as open and continues the project.
+Only use kind="external" when a specific dependency is outside your authorized
+ability to resolve; name the actor, concrete action, expected result and why you
+cannot proceed. Continue other open requirements while that dependency waits.
+When an external blocker clears, record evidence with unblock_project_requirement.
+If an older report mistakenly classified repair work as blocked, reclassify it
+with kind="work" and explain the next step; do not claim the requirement verified. Use propose_project_refinement for an intended
 scope change, including the full revised register and rationale for confirmation.
 
 During building, implement the increment and exercise its acceptance criteria.

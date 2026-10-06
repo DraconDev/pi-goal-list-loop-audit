@@ -101,6 +101,18 @@ export function blockRespecRequirement(state: RespecBuilderState, id: string, re
     requirements: state.requirements.map(r => r.id === id ? { ...r, status: "blocked", blockedReason: reason.trim(), blockerAction: action ? { summary: action.summary?.trim() || undefined, whyAgentCannotProceed: action.whyAgentCannotProceed?.trim() || undefined, owner: action.owner?.trim() || undefined, nextAction: action.nextAction?.trim() || undefined, expectedResult: action.expectedResult?.trim() || undefined } : undefined } : r) };
 }
 
+/** An implementation obstacle is repair work, not an external dependency. */
+export function replanRespecWork(state: RespecBuilderState, id: string, reason: string, nextAction: string): RespecBuilderState {
+  requirePhase(state, ["planning", "replanning", "building"]);
+  if (!reason.trim() || !nextAction.trim() || !state.requirements.some(r => r.id === id && r.status !== "verified"))
+    throw new Error("Repair work needs an unfinished requirement, evidence and a concrete next step.");
+  const report = `Repair ${id}: ${reason.trim()}\nNext step: ${nextAction.trim()}`;
+  return { ...state, phase: "replanning", tasks: [],
+    history: state.tasks.length ? [...(state.history ?? []), { cycle: state.cycle, tasks: state.tasks, outcome: "replanned" as const, report }].slice(-20) : state.history,
+    feedback: [...state.feedback, report].slice(-5),
+    requirements: state.requirements.map(r => r.id === id ? { ...r, status: "open", blockedReason: undefined, blockerAction: undefined } : r) };
+}
+
 export function unblockRespecRequirement(state: RespecBuilderState, id: string, reason: string): RespecBuilderState {
   requirePhase(state, ["planning", "replanning", "building"]);
   if (!reason.trim() || !state.requirements.some(r => r.id === id && r.status === "blocked")) throw new Error("Unblocking needs a blocked requirement and evidence that its blocker cleared.");

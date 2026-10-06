@@ -15,7 +15,7 @@ import { resolveAuditorThinkingLevel } from "./auditor-thinking.js";
 import { runDetachedGoalCompletionAuditor, runAuditorFallbackWithPolicy, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, writeAtomicJson, effectiveToolTimeoutMs, DEFAULT_AUDITOR_TOOL_TIMEOUT_MS, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
 import { setRespecAuditLive, getRespecAuditLive, respecCompletionSummary, respecBlockerActions } from "./respec-builder-ui.js";
 import { respecIncrementAuditGoal } from "./respec-builder-audit.js";
-import { adoptRespecRequirements, beginRespecAudit, blockRespecRequirement, unblockRespecRequirement, refineRespecRequirements, claimRespecTask, planRespecIncrement, settleRespecAudit, type RespecBuilderState } from "./respec-builder.js";
+import { adoptRespecRequirements, beginRespecAudit, blockRespecRequirement, replanRespecWork, unblockRespecRequirement, refineRespecRequirements, claimRespecTask, planRespecIncrement, settleRespecAudit, type RespecBuilderState } from "./respec-builder.js";
 
 interface Host {
   context: (ctx: ExtensionContext) => ExtensionContext | null;
@@ -82,13 +82,15 @@ function parkProjectBound(ctx: ExtensionContext): boolean {
   return true;
 }
 
-function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecBuilderState, completionSummary?: string): boolean {
+function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecBuilderState, completionSummary?: string, continueRepair = false): boolean {
   if (!host.context(ctx)) return false;
   const loop = state.loop;
   if (!loop || loop.builder !== before) return false;
   const old = { ...state };
   const blocked = next.requirements.some(r => r.status === "blocked") && !next.requirements.some(r => r.status === "open") && next.phase !== "auditing";
-  replaceState({ ...old, loop: { ...loop, builder: next, ...(completionSummary ? { completionSummary } : {}), ...(next.phase === "complete" ? { active: false, stopReason: "completed: all intended project requirements independently verified" } : blocked ? { active: false, stopReason: "blocked project requirements: clear the recorded blockers, then /loop resume" } : {}) } });
+  const resumeRepair = continueRepair && !blocked && loop.stopReason?.startsWith("blocked project requirements:")
+    && !supervisorPaused(state) && !projectBoundReason(loop);
+  replaceState({ ...old, loop: { ...loop, builder: next, ...(completionSummary ? { completionSummary } : {}), ...(resumeRepair ? { active: true, stopReason: undefined } : {}), ...(next.phase === "complete" ? { active: false, stopReason: "completed: all intended project requirements independently verified" } : blocked ? { active: false, stopReason: "blocked project requirements: clear the recorded blockers, then /loop resume" } : {}) } });
   if (!host.persist(ctx)) { replaceState(old); return false; }
   appendLedger(ctx.cwd, "respec_builder_transition", { phase: next.phase, revision: next.revision, cycle: next.cycle,
     history: next.history?.at(-1), scopeChange: next.scopeChanges?.at(-1) });
@@ -253,7 +255,7 @@ export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
   });
   const confirm = (ctx: ExtensionContext, title: string, body: string) => host.confirm ? host.confirm(ctx, title, body) : ctx.ui.confirm(title, body);
   const reply = (text: string) => ({ content: [{ type: "text" as const, text }], details: {} });
-  const execute = (action: (p: any, ctx: ExtensionContext, before: RespecBuilderState) => Promise<RespecBuilderState> | RespecBuilderState, allowStopped = false) =>
+  const execute = (action: (p: any, ctx: ExtensionContext, before: RespecBuilderState) => Promise<RespecBuilderState> | RespecBuilderState, allowStopped = false, repair = (p: any) => false) =>
     async (_id: string, params: any, _signal: AbortSignal | undefined, _update: any, execCtx: ExtensionContext) => {
       const ctx = host.context(execCtx);
       if (!ctx) return reply("This session cannot mutate the active project.");
@@ -261,8 +263,8 @@ export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
       if (!before || (!state.loop?.active && !allowStopped)) return reply("No active respec project builder.");
       try {
         const next = await action(params, ctx, before);
-        if (!commit(ctx, before, next)) return reply("Project changed or persistence failed; no proposal was applied.");
-        return reply(`Project ${next.phase}; increment ${next.cycle}. Requirements close only after independent audit.${state.loop?.active ? "" : " Work stays paused; clear blockers and use /loop resume when ready."}`);
+        if (!commit(ctx, before, next, undefined, repair(params))) return reply("Project changed or persistence failed; no proposal was applied.");
+        return reply(`Project ${next.phase}; increment ${next.cycle}. Requirements close only after independent audit.${state.loop?.active ? repair(params) ? " This obstacle is repair work, not a hold. Plan the next increment and keep building or refining in THIS turn." : "" : " Work stays paused; clear blockers and use /loop resume when ready."}`);
       } catch (error) { return reply(String(error instanceof Error ? error.message : error)); }
     };
   pi.registerTool(host.wrapTool({ name: "propose_project_requirements", label: "Draft intended project", description: "Propose desired project capabilities and observable acceptance criteria. User confirmation adopts scope; no requirement starts verified.",
@@ -284,15 +286,21 @@ export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
   pi.registerTool(host.wrapTool({ name: "audit_project_increment", label: "Audit build increment", description: "Submit a concrete implementation claim after all batch tasks are claimed. The host runs the isolated auditor after this turn.",
     parameters: Type.Object({ claim: Type.String() }), execute: execute((p, _ctx, before) => beginRespecAudit(before, randomUUID(), p.claim)),
   }));
-  pi.registerTool(host.wrapTool({ name: "block_project_requirement", label: "Record project blocker", description: "Record any concrete blocker (access, dependency, decision, environment or other). Only park on a dependency you cannot resolve within the authorized project work. Failed tests, missing evidence, unrun checks and unfinished implementation are work to continue, not blockers. Supply a short summary, owner, nextAction (exact command or location when relevant), expectedResult and whyAgentCannotProceed. Put long measurements in reason. Actions are shown automatically. The requirement stays unfinished and abandoned batch work is retained.",
-    parameters: Type.Object({ id: Type.String(), reason: Type.String(), summary: Type.String({ description: "One short sentence naming the actual obstacle, not a test report", maxLength: 240 }), owner: Type.String({ description: "Person or external service that can remove this obstacle", maxLength: 160 }), nextAction: Type.String({ description: "Concrete action, with exact command or location when applicable", maxLength: 600 }), expectedResult: Type.String({ description: "Observable evidence that the obstacle cleared", maxLength: 400 }), whyAgentCannotProceed: Type.String({ description: "Why this cannot be resolved as ordinary authorized project work", maxLength: 400 }) }),
+  pi.registerTool(host.wrapTool({ name: "block_project_requirement", label: "Record project blocker", description: "Record an obstacle and classify kind=work for failed tests, missing evidence or implementation gaps: keep the requirement open and continue building/refining. Use kind=external only for a concrete external dependency. Only park on a dependency you cannot resolve within the authorized project work. Failed tests, missing evidence, unrun checks and unfinished implementation are work to continue, not blockers. Supply a short summary, owner, nextAction (exact command or location when relevant), expectedResult and whyAgentCannotProceed. Put long measurements in reason. Actions are shown automatically. The requirement stays unfinished and abandoned batch work is retained.",
+    parameters: Type.Object({ id: Type.String(), reason: Type.String(), kind: Type.Union([Type.Literal("work"), Type.Literal("external")], { description: "work continues building/refining; external may hold only if no other open work remains" }), summary: Type.Optional(Type.String({ description: "One short sentence naming the actual obstacle, not a test report", maxLength: 240 })), owner: Type.Optional(Type.String({ description: "Person or external service that can remove this obstacle", maxLength: 160 })), nextAction: Type.String({ description: "Concrete action, with exact command or location when applicable", maxLength: 600 }), expectedResult: Type.Optional(Type.String({ description: "Observable evidence that the obstacle cleared", maxLength: 400 })), whyAgentCannotProceed: Type.Optional(Type.String({ description: "Why this cannot be resolved as ordinary authorized project work", maxLength: 400 })) }),
     execute: execute((p, _ctx, before) => {
+      if (p.kind === "work") {
+        if (typeof p.nextAction !== "string" || !p.nextAction.trim() || p.nextAction.trim().length > 600)
+          throw new Error("Repair work needs a concrete nextAction (1–600 characters); keep investigating instead of parking.");
+        return replanRespecWork(before, p.id, p.reason, p.nextAction);
+      }
+      if (p.kind !== "external") throw new Error("Classify kind=work to continue repairing tests, missing evidence or implementation; kind=external is only for a dependency outside authorized project work. No blocker recorded.");
       for (const [key, limit] of [["summary", 240], ["owner", 160], ["nextAction", 600], ["expectedResult", 400], ["whyAgentCannotProceed", 400]] as const) {
         if (typeof p[key] !== "string" || !p[key].trim() || p[key].trim().length > limit)
           throw new Error(`Blocker not recorded: supply a concrete ${key} (1–${limit} characters). Continue investigating and fixing ordinary test or implementation failures; do not park work merely because acceptance is unmet.`);
       }
       return blockRespecRequirement(before, p.id, p.reason, { summary: p.summary, owner: p.owner, nextAction: p.nextAction, expectedResult: p.expectedResult, whyAgentCannotProceed: p.whyAgentCannotProceed });
-    }, true),
+    }, true, p => p.kind === "work"),
   }));
   pi.registerTool(host.wrapTool({ name: "unblock_project_requirement", label: "Clear project blocker", description: "Record evidence that a blocker cleared. Paused work stays paused until explicit resume.",
     parameters: Type.Object({ id: Type.String(), reason: Type.String() }), execute: execute((p, _ctx, before) => unblockRespecRequirement(before, p.id, p.reason), true),
