@@ -1,0 +1,15 @@
+{
+  "sessionId": "01a10dd3-271b-71bc-9bb5-bbfe0782bdc5",
+  "messagesBefore": 507,
+  "messagesAfter": 461,
+  "serializedCharsBefore": 8235897,
+  "serializedCharsAfter": 1616382,
+  "failedRepliesRemoved": 23,
+  "failedDispatchesRemoved": 23,
+  "latestFailureRetained": 1,
+  "builderCharsBefore": 279356,
+  "builderCharsAfter": 36390,
+  "contractOmitted": false,
+  "completeAcceptancePreserved": true,
+  "sourceTranscriptsModified": false
+}

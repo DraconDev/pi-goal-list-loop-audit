@@ -1,0 +1,127 @@
+
+> pi-goal-list-loop-audit@0.39.11 test
+> node scripts/run-tests.mjs tests/context-hygiene.test.ts tests/context-checkpoint.test.ts tests/compaction-input.test.ts tests/respec-builder-context.test.ts tests/respec-builder.test.ts tests/respec-builder-wiring.test.ts tests/respec-builder-audit-runtime.test.ts tests/respec-builder-display.test.ts tests/between-tasks-compaction.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-display.test.ts:
+(pass) a stopped project audit exposes its hold reason instead of implying a running auditor [91.47ms]
+(pass) project cards expose phase, unfinished coverage and recorded blockers within narrow widths [3.64ms]
+(pass) an explicitly stopped project audit does not advertise an unavailable resume [0.40ms]
+(pass) completed project dismisses both live UI surfaces while preserving other work [2.72ms]
+(pass) project tool waits show a ticking deadline and separate attempt/total clocks [0.88ms]
+
+tests/between-tasks-compaction.test.ts:
+(pass) v0.38.104 the 200k rule is a token threshold, and it is distinct from the model-size hint [0.43ms]
+(pass) v0.38.104 compaction is due past the threshold, not below it [0.12ms]
+(pass) v0.38.104 a token count, not a percentage — the same goal on a 1M window still fires at 200k [0.25ms]
+(pass) v0.38.104 it fires ONCE per episode and re-arms as the goal grows back [0.05ms]
+(pass) v0.38.104 an unknown context count never compacts blindly [0.08ms]
+(pass) v0.38.104 the threshold is overridable but must be positive [0.06ms]
+(pass) v0.38.105 the boundary fires ctx.compact past 200k and ledgers it [301.46ms]
+(pass) v0.38.105 one firing per episode; a shrunk transcript re-arms [111.52ms]
+(pass) v0.38.105 quiet boundaries: below threshold, busy, unsupervised, audit, paused, unknown, no trigger [1.54ms]
+(pass) v0.38.105 the boundary never re-arms the starvation path's brief one-shot [0.61ms]
+(pass) a synchronous compact throw releases the boundary for ordinary continuation [105.85ms]
+(pass) successful compaction rearms after grace even when context never falls below half the target [104.19ms]
+(pass) legacy successful markers rearm from durable completion, while failed attempts stay one-shot [125.37ms]
+
+tests/respec-builder-audit-runtime.test.ts:
+(pass) a stale audit wake does not resolve a model or launch a worker [82.83ms]
+(pass) a time bound cancels an in-flight worker and retains unfinished requirements [627.16ms]
+(pass) real detached protocol approval archives the intended project before terminal handoff [2598.06ms]
+(pass) real detached disapproval carries findings into a durable unfinished next cycle [240.54ms]
+(pass) a semantic approval rejected by the regression shield reports needs work [227.18ms]
+(pass) completed job is recovered after reloading an unsettled claim without another spawn [2616.07ms]
+(pass) pausing during an actual worker run prevents late approval from settling the project [1369.11ms]
+(pass) archive failure preserves approval evidence for settlement retry instead of launching another audit [1050.82ms]
+(pass) concurrent wake paths dispatch only one worker for the exact durable claim [1362.01ms]
+(pass) respec uses the shared bounded retry/fallback policy and journals its candidate cursor [1682.24ms]
+(pass) an exhausted token bound holds the project before spawning an auditor or claiming completion [3.08ms]
+(pass) actual project lifecycle reaches detached verification through agent_end [4427.75ms]
+(pass) actual project lifecycle reaches detached verification through /glla resume of a stalled audit [3199.88ms]
+(pass) terminal summary delivery failure preserves a replayable durable summary [1008.55ms]
+(pass) a failed builder journal commit restores the complete prior RAM state [2.35ms]
+(pass) a supervisor freeze prevents a new project audit dispatch [1.15ms]
+(pass) rapid pause/resume discards the cancelled worker result and rearms the saved claim [1306.21ms]
+(pass) an undelivered project summary survives replacement by a new project [701.32ms]
+(pass) freezing supervision between auditor attempts prevents retry and fallback dispatch [179.19ms]
+(pass) a corrupt summary outbox prevents terminal handoff and retains approved job evidence [815.23ms]
+(pass) project audit preserves live tool deadline and attempt clock through the real worker bridge [999.07ms]
+
+tests/respec-builder.test.ts:
+(pass) replanning receives the missing contract evidence when semantic approval is rejected [0.74ms]
+(pass) task completion is only a claim; approving one batch leaves the project unfinished [0.47ms]
+(pass) failed, contradictory and infrastructure verdicts cannot close requirements [6.99ms]
+(pass) stale worker results and incomplete batches cannot trigger settlement [0.94ms]
+(pass) blocked requirements stay unfinished and visible through planning and serialization [0.28ms]
+(pass) draft adoption rejects empty criteria and ignores supplied agent verification status [0.18ms]
+(pass) increment audits carry acceptance criteria and regressions into the production auditor prompt [0.70ms]
+(pass) scope refinement invalidates in-flight claims and records explicit removals [0.46ms]
+(pass) blocking a batch retains its work and unblocking requires a concrete reason [0.37ms]
+(pass) a negative regression audit reopens earlier capabilities instead of displaying stale verification [0.19ms]
+
+tests/context-checkpoint.test.ts:
+(pass) authoritative checkpoint carries stable state only — no dynamic fields [2.03ms]
+(pass) real continuation payload growth is bounded after checkpoint projection [7.04ms]
+(pass) projection removes old goal events, inserts one checkpoint, and keeps newest payload [0.22ms]
+(pass) one goal event is a no-op and does not inject a checkpoint [0.05ms]
+(pass) zero-retention mode resynchronizes from the checkpoint without retaining payloads [0.04ms]
+(pass) loop-only projection bounds repeated payloads and carries loop authority [9.64ms]
+(pass) loop checkpoint is byte-stable across volatile loop progress (prefix-cache stability) [0.35ms]
+(pass) context hook projects loop-only state and records loop authority [50.58ms]
+(pass) paused goal plus active loop preserves both authorities in the checkpoint [1.13ms]
+(pass) oversized paused goal plus active loop reserves required checkpoint fields [0.65ms]
+(pass) context hook uses current durable state and records the projection [0.83ms]
+(pass) audit-2026-09-06: marker text without customType is content, never control plane [0.12ms]
+(pass) v0.38.54: context hook leaves the transcript alone by default (prefix-cache continuity) [0.58ms]
+(pass) v0.38.54: junk contextCheckpointProjection normalizes to unset (default off) [0.32ms]
+(pass) v0.38.54: settings menu carries the opt-in row, off by default [2.58ms]
+
+tests/respec-builder-wiring.test.ts:
+[run-tests] progress: 30s elapsed · 1s since last output · 6 KiB of suite output
+(pass) actual respec command and tools persist intended scope, batch and audit claim [2606.55ms]
+(pass) declining intended scope leaves the project drafting with no adopted requirements [691.37ms]
+(pass) registered blocker and refinement tools preserve work and require consent to change scope [274.26ms]
+
+tests/compaction-input.test.ts:
+(pass) bounds successful assistant, tool-call, and tool-result content while preserving pairing [3.48ms]
+(pass) retains the newest goal payload and marks older payloads without changing message order [0.49ms]
+(pass) replaces image blocks while retaining the surrounding message structure [0.41ms]
+(pass) keeps the total bounded for a tiny caller budget with a previous summary [0.62ms]
+(pass) bounds a previous compaction summary without changing the preparation contract [12.39ms]
+(pass) leaves preparation metadata and fileOps untouched [0.72ms]
+(pass) applies one coordinated budget to summarize and turn-prefix arrays [1.11ms]
+(pass) returns no compaction result and tolerates a missing preparation [0.10ms]
+(pass) preserves both preparation-array identities when projection is a no-op [0.09ms]
+(pass) preserves the untouched half when only one preparation array needs projection [0.17ms]
+(pass) bounds every supported preparation shape and preserves pairing/order [1.56ms]
+(pass) second projection is idempotent [0.18ms]
+(pass) contains malformed preparation records without changing their positions [0.28ms]
+(pass) keeps malformed interleaved tool results paired with their calls [0.21ms]
+(pass) enforces a hard bound for arbitrarily many tiny messages [1715.71ms]
+(pass) keeps complete tool groups when high message counts force omission [86.81ms]
+
+tests/context-hygiene.test.ts:
+(pass) predicate: error-only turns are droppable; tool-carrying, aborted, and healthy turns are not [0.31ms]
+(pass) drop rule: keeps the most recent failed turn, drops older ones, preserves everything else [0.20ms]
+(pass) drop rule: identity preserved when at or under the keep window; window is configurable [0.06ms]
+(pass) drop rule: SEADED BLOAT — 60 failed turns collapse to the keep window; normal turns survive verbatim [0.47ms]
+(pass) compaction pruning: reassigns both message arrays in place and counts drops [0.19ms]
+(pass) wiring: the context event drops accumulated error turns and ledgeres the hygiene pass [66.65ms]
+(pass) wiring: session_before_compact prunes and bounds the preparation the runner will summarize [1.78ms]
+(pass) wiring: every default session_before_compact path receives the bounded projection and an undefined hook result [1.43ms]
+(pass) failed GLLA probes shed their obsolete prompts with the error replies [0.22ms]
+(pass) ordinary provider failures and unsupervised retries use the same hygiene rule [0.12ms]
+(pass) failed-probe cleanup preserves user requests, tool pairs, aborts and unrelated controls [0.16ms]
+(pass) both public context and compaction hooks remove obsolete failed dispatch pairs with checkpoint projection off [0.70ms]
+
+tests/respec-builder-context.test.ts:
+(pass) actual project dispatch bounds repeated reports while retaining complete adopted criteria [36.38ms]
+(pass) oversized contracts require durable reads and always serialize within the hard limit [5.75ms]
+
+ 97 pass
+ 0 fail
+Ran 97 tests across 9 files. [35.60s]
+[run-tests] finished in 36s (exit 0)

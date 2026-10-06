@@ -1,0 +1,34 @@
+
+> pi-goal-list-loop-audit@0.39.11 test
+> node scripts/run-tests.mjs tests/context-hygiene.test.ts -t failed GLLA probes shed
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/context-hygiene.test.ts:
+256 | test("failed GLLA probes shed their obsolete prompts with the error replies", () => {
+257 |   const prompt = (n: number) => ({ role: "custom", customType: "goal-event", content: "project state".repeat(24000) + n });
+258 |   const first = prompt(1), second = prompt(2), latest = prompt(3), actualUser = userTurn("keep this request");
+259 |   const messages = [actualUser, first, failedTurn("404"), second, failedTurn("404"), latest, failedTurn("404")];
+260 |   const result = dropFailedErrorOnlyTurns(messages);
+261 |   assert.equal(result.messages.length, 3);
+               ^
+AssertionError: Expected values to be strictly equal:
+
+5 !== 3
+
+ generatedMessage: true,
+     actual: 5,
+   expected: 3,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/context-hygiene.test.ts:261:10
+      at fn (node:test:215:18)
+(fail) failed GLLA probes shed their obsolete prompts with the error replies [1.71ms]
+
+ 0 pass
+ 8 filtered out
+ 1 fail
+Ran 1 test across 1 file. [808.00ms]
+[run-tests] finished in 1s (exit 1)
