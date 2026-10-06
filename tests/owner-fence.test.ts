@@ -44,7 +44,7 @@ test("v0.35.72: mutating goal and loop commands use the stale admission fence", 
   assert.match(pause, /warnIfStaleAtEntry\(ctx, "\/goal pause"\)/);
   assert.match(cancel, /warnIfStaleAtEntry\(ctx, "\/goal cancel"\)/);
   assert.match(tweak, /warnIfStaleAtEntry\(ctx, mode === "list" \? "\/list tweak" : "\/goal tweak"\)/);
-  assert.match(LOOP, /if \(sub !== "status" && warnIfStaleAtEntry\(ctx, `\/loop\$\{sub \? ` \$\{sub\}` : ""\}`\)\) return;/);
+  assert.match(LOOP, /if \(!\["status", "blockers"\]\.includes\(sub\) && warnIfStaleAtEntry\(ctx, `\/loop\$\{sub \? ` \$\{sub\}` : ""\}`\)\) return;/);
   // v0.38.12 (last-wins): the claim gate keeps its shape (ownsRoot) and a
   // newer main host supersedes a live foreign owner instead of refusing.
   assert.match(GOAL_ACTIVATION, /let ownsRoot = claimProcessOwner\(ctx\.cwd\);/);
