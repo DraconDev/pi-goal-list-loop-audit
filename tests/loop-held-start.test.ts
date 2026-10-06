@@ -5,6 +5,7 @@ import path from "node:path";
 import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from "../extensions/loops/goal.js";
 import { HELD_ON_RESTORE } from "../extensions/goal-loop-forever.js";
 import { readState } from "../extensions/goal-loop-core.js";
+import { createRespecBuilder, adoptRespecRequirements } from "../extensions/respec-builder.js";
 import { MockPi, makeMockCtx, seedGoal, seedLoop, seedState, tick, tmpCwd } from "./harness/mock-pi.js";
 
 // Field 2026-10-02: a respec draft loop completed its draft, the session
@@ -29,6 +30,32 @@ afterEach(() => {
   __testOnlyResetOwnerSession();
   __testOnlyResetStaleFlag();
 });
+
+for (const reason of ["summarization output limit: summary incomplete", "context overflow: prompt cannot fit", "compaction failure: provider unavailable"]) {
+  for (const command of ["loop", "glla"]) {
+    test(`${command} resume restores a project held by ${reason}`, async () => {
+      const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+      const builder = { ...adoptRespecRequirements(createRespecBuilder("finish the intended project"),
+        [{ id: "R1", text: "unfinished capability", acceptance: "independently verify the full capability" }]), phase: "replanning" as const, cycle: 7 };
+      seedState(cwd, { loop: seedLoop({ active: false, stopReason: reason, iteration: 8, builder,
+        history: [{ iteration: 8, value: null, improved: false, at: "2026-10-05T23:21:05.735Z" }] }) });
+      const ctx = await boot(pi, cwd);
+      try {
+        const before = readState(cwd).loop!;
+        await pi.command(command, "resume", ctx);
+        const after = readState(cwd).loop!;
+        assert.equal(after.active, true);
+        assert.equal(after.stopReason, undefined);
+        assert.equal(after.iteration, 8);
+        assert.deepEqual(after.builder, before.builder);
+        assert.deepEqual(after.history, before.history);
+        assert.ok(ctx.ui.matching("Loop resumed").length > 0);
+        assert.equal(ctx.ui.matching("Nothing to resume").length, 0);
+        assert.equal(events(cwd).filter(e => e.type === "loop_started").length, 0);
+      } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+    });
+  }
+}
 
 test("held loop: the load-hold warning names /loop resume", async () => {
   const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
