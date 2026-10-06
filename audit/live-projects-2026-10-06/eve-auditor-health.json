@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-06T13:26:49.763904+00:00",
+  "project": "eve",
+  "job": "audit-muwpmf70-wb6fc7-muwpmf7p-00033ca3",
+  "phase": "running",
+  "round": 2,
+  "elapsedMs": 174163,
+  "lastActivityAt": 1791293208756,
+  "completedToolCalls": 25,
+  "unmatchedToolStarts": 0,
+  "resultPresent": false
+}
