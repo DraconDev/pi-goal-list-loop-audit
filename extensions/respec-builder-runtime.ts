@@ -4,6 +4,7 @@ import * as path from "node:path";
 import { homedir } from "node:os";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import { Box, Text } from "@earendil-works/pi-tui";
 import { state, replaceState } from "./goal-state.js";
 import { appendLedger, nowIso, archiveDir, supervisorPaused } from "./goal-loop-core.js";
 import { persistApprovalRender, replayUndeliveredApprovalRenders } from "./approval-render-store.js";
@@ -240,6 +241,16 @@ export function replayRespecCompletionSummary(ctx: ExtensionContext): void {
 export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
   host = deps;
   extensionApi = pi;
+  pi.registerMessageRenderer("glla-project-blockers", (message, { outputPad }, theme) => {
+    const box = new Box(outputPad, 1, text => theme.bg("customMessageBg", text));
+    box.addChild(new Text(theme.fg("warning", theme.bold("GLLA · Action needed")), 0, 0));
+    const content = typeof message.content === "string" ? message.content : "";
+    for (const line of content.split("\n")) {
+      const action = /^(Who can act:|Action to take:|Resolved when:|Next action:)/.test(line);
+      box.addChild(new Text(action ? theme.fg("accent", theme.bold(line)) : line, 0, 0));
+    }
+    return box;
+  });
   const confirm = (ctx: ExtensionContext, title: string, body: string) => host.confirm ? host.confirm(ctx, title, body) : ctx.ui.confirm(title, body);
   const reply = (text: string) => ({ content: [{ type: "text" as const, text }], details: {} });
   const execute = (action: (p: any, ctx: ExtensionContext, before: RespecBuilderState) => Promise<RespecBuilderState> | RespecBuilderState, allowStopped = false) =>
