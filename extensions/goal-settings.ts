@@ -15,6 +15,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { normalizeMainFallbackThinking } from "./main-fallback-thinking.js";
 
 import { normalizeAuditorAllowedExtensions } from "./auditor-extensions.ts";
 import { globalSettingsPath, stateRootPending } from "./glla-state-root.js";
@@ -819,6 +820,7 @@ export function loadGlobalSettings(): Settings {
 export const SETTINGS_KEYS: Array<keyof Settings> = [
   "stateRoot",
   "mainModelFallbacks",
+  "mainModelFallbackThinkingLevels",
   "drafterModel",
   "drafterThinkingLevel",
   "drafterModelFallbacks",

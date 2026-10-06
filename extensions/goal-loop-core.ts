@@ -1289,6 +1289,8 @@ export function takeAt<T>(items: T[], n: number): [T, T[]] | null {
 export interface MainModelRecovery {
   /** The model selected when this recovery episode was first observed. */
   primary: string;
+  /** Session dial before the first automatic switch, retained for failback. */
+  primaryThinkingLevel?: import("./main-fallback-thinking.js").FallbackThinkingLevel;
   /** Bounded raw provider diagnostic retained for ledger/archive forensics. */
   providerErrorDiagnostic?: string;
   /** Stable identity for one main-model provider recovery episode. */
@@ -1433,6 +1435,7 @@ export function sanitizeMainModelRecovery(value: unknown): MainModelRecovery | u
     : 0;
   return {
     primary,
+    ...(["off", "minimal", "low", "medium", "high", "xhigh", "max"].includes(String(raw.primaryThinkingLevel)) ? { primaryThinkingLevel: raw.primaryThinkingLevel as MainModelRecovery["primaryThinkingLevel"] } : {}),
     ...(typeof raw.active === "string" && raw.active.trim() ? { active: raw.active.trim().slice(0, 300) } : {}),
     attempted: refs,
     attempts,

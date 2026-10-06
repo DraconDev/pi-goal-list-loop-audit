@@ -1180,7 +1180,21 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         { excludeRefs: forbidden, maxSelections: MAX_MAIN_MODEL_FALLBACKS, currentRef: modelRef(ctx.model) },
       );
       if (refs === undefined) return;
-      saveSettings("global", ctx, { mainModelFallbacks: refs.length ? refs : undefined });
+      const thinkingLevels = { ...loadGlobalSettings().mainModelFallbackThinkingLevels };
+      for (const ref of refs) {
+        const key = ref.toLowerCase();
+        const picked = resolvePickedModel(ctx, { kind: "ref", ref });
+        if (!picked) continue;
+        const levels = auditorThinkingLevels(picked);
+        if (levels.length === 1) { thinkingLevels[key] = "off"; continue; }
+        const chosen = await ctx.ui.select(
+          `Main fallback thinking — ${ref}`,
+          drafterThinkingChoiceOptions(levels, thinkingLevels[key] ?? ctx.thinkingLevel, thinkingLevels[key] === undefined),
+        );
+        if (chosen?.startsWith("session —")) delete thinkingLevels[key];
+        else if (chosen) thinkingLevels[key] = chosen.split(" ")[0] as ConfiguredThinkingLevel;
+      }
+      saveSettings("global", ctx, { mainModelFallbacks: refs.length ? refs : undefined, mainModelFallbackThinkingLevels: refs.length ? thinkingLevels : undefined });
       if (!refs.length && state.mainModelRecovery) {
         const recovery = state.mainModelRecovery;
         const current = recovery.active ?? recovery.primary;
@@ -1195,7 +1209,7 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         clearMainModelRecoveryTimer();
         persistState(ctx);
       }
-      ctx.ui.notify(refs.length ? `Main agent fallback models saved in order: ${refs.join(" → ")}` : "Main agent fallback models cleared — any pending fallback switch was cancelled and recovery will probe the current model.", "info");
+      ctx.ui.notify(refs.length ? `Main agent fallback models saved in order: ${refs.map(ref => `${ref} · ${thinkingLevels[ref.toLowerCase()] ?? "session thinking"}`).join(" → ")}` : "Main agent fallback models cleared — any pending fallback switch was cancelled and recovery will probe the current model.", "info");
       return;
     }
     case "auditorSilent": {
