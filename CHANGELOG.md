@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Ordinary requests whose fallback chain is exhausted enter retry backoff
+  instead of treating a passive recovery record as another successful model
+  switch. Delayed retries retain the original request and respect freezes.
+
 - Provider failure classification ignores opaque request metadata and requires
   actual HTTP status context for numeric codes. Original diagnostics remain
   intact; request IDs cannot falsely trigger authentication, timeout, context

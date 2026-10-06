@@ -320,3 +320,25 @@ test("exhausted ordinary fallback chain uses backoff instead of another immediat
   assert.equal(sentRetries().length, 2, "the passive failover episode must not suppress its retry timer");
   assert.match(String(sentRetries()[1]!.message.content), /Finish the saved export task/);
 });
+
+
+test("ordinary exhaustion retry respects a supervisor pause introduced while waiting", async () => {
+  const ctx = await failoverOrdinaryRequest("Keep investigating the current task");
+  __testOnlySetUnsupervisedErrorRetryDelay(100);
+  await pi.fire("agent_settled", {}, ctx);
+  await pi.fire("agent_end", errTurn("503 Service temporarily unavailable"), ctx);
+  await pi.command("glla", "pause", ctx);
+  await tick(250);
+  assert.equal(sentRetries().length, 1, "freeze prevents the pending ordinary retry");
+});
+
+test("authentication failure after ordinary chain exhaustion does not become a blind handoff", async () => {
+  const ctx = await failoverOrdinaryRequest("Finish the authorized task");
+  __testOnlySetUnsupervisedErrorRetryDelay(40);
+  await pi.fire("agent_settled", {}, ctx);
+  await pi.fire("agent_end", errTurn("HTTP 401 invalid API key"), ctx);
+  await pi.fire("agent_settled", {}, ctx);
+  await tick(150);
+  assert.equal(sentRetries().length, 1);
+  assert.ok(ledger().some(e => e.type === "unsupervised_error_retry_refused" && e.value.reason === "auth"));
+});

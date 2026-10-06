@@ -112,6 +112,12 @@ and one-off blocker reviews, GLLA requests one continuation after the failed run
 has settled, with a bounded excerpt of the original request and instructions to
 use existing successful tool results. The complete conversation remains authoritative.
 
+Once the ordinary request exhausts its configured fallback candidates, subsequent
+recoverable failures use ordinary retry backoff. A passive record of the selected
+model is not a fresh switch or a scheduled recovery owner. Delayed retries carry
+the original request as well, while credential and deterministic failures retain
+their manual-action rules.
+
 A successful core retry consumes this handoff; repeated settlement cannot duplicate
 it. Running or queued turns, explicit aborts, supervisor pauses and recovery waits
 prevent automatic sends. A send failure retains the pending handoff and reports
