@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `/loop resume` and `/glla resume` recognize saved compaction-failure holds,
+  preserving project requirements and iteration history. Loop compaction failures
+  advertise `/new`, then `/loop resume`, rather than the goal-only command.
+
 ## 0.39.11 — bounded recovery context and repeat compaction (2026-10-06)
 
 - Failed recovery cleanup removes obsolete GLLA dispatch and automatic retry

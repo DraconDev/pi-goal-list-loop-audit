@@ -17,6 +17,8 @@ import activate, {
   __testOnlySetCompactionInFlight,
 } from "../extensions/loops/goal.js";
 import { readState } from "../extensions/goal-loop-core.js";
+import { isHeldLoopResumable } from "../extensions/goal-loop.js";
+import { isLifecycleHeldLoopReason } from "../extensions/goal-loop-forever.js";
 import { __testOnlyResetCompactor, __testOnlySetSpawnWorker } from "../extensions/goal-compactor.js";
 import { MockPi, makeMockCtx, seedGoal, seedLoop, seedState, tick, tmpCwd } from "./harness/mock-pi.ts";
 
@@ -226,6 +228,9 @@ test("failed compaction parks a branch loop instead of leaving it active", async
   assert.equal(loop.active, false);
   assert.match(loop.stopReason ?? "", /summarization output limit/i);
   assert.equal(loop.iteration, 4, "history is preserved for /loop resume");
+  assert.equal(isHeldLoopResumable(readState(cwd).loop), true, "the advertised resume command must admit this hold");
+  assert.equal(isLifecycleHeldLoopReason(loop.stopReason), false, "failure is held for explicit consent, not automatic lifecycle restart");
+  assert.ok(ctx.ui.matching("Loop parked:").some((notice: { message: string }) => /\/new[\s\S]*\/loop resume/.test(notice.message)), "loop failures advertise the loop recovery command");
   assert.ok(ledger(cwd).some((e) => e.type === "loop_stopped" && e.value?.cause === "compaction_failed"));
 });
 

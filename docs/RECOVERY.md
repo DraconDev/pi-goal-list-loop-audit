@@ -81,6 +81,12 @@ GLLA's scheduling. Compare current context with the recorded attempt time
 before treating an older high-token sample as the current transcript size.
 `/glla status` shows the configured target and last recorded completion time.
 
+When a host-owned compaction failure parks a loop or project, its durable work
+remains resumable. Use `/new` if the current transcript still cannot fit, then
+`/loop resume` or `/glla resume` to continue the saved project. A saved
+summarization-output failure is a hold, not completed work. Resume preserves
+requirements and history; it does not approve the outstanding audit claim.
+
 ## Failed requests and context growth
 
 GLLA filters obsolete error-only assistant replies from outgoing model input and
