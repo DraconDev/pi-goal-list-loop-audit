@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-06T13:26:33.028672+00:00",
+  "project": "endless-td",
+  "pid": 3590066,
+  "alive": true,
+  "mainSessionPid": 3072470,
+  "toolTimeoutSeconds": 180000,
+  "runtimeSeconds": 10037,
+  "cpuPercent": 98.8
+}

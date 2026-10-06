@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-06T13:26:33.028461+00:00",
+  "project": "hellhunter",
+  "job": "b90adbcd-d87d-49a0-9d9a-5c998338c47e-muwpl437-157d27ab",
+  "phase": "running",
+  "round": 1,
+  "elapsedMs": 216169,
+  "lastActivityAt": 1791293189549,
+  "completedToolCalls": 33,
+  "unmatchedToolStarts": 0,
+  "resultPresent": false
+}
