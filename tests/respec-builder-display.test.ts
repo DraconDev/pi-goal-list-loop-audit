@@ -96,6 +96,25 @@ test('blocker inspection retains late operator instructions and distinguishes re
  const state={goal:null,list:[],loop:{builder,active:false,target:builder.vision,startedAt:new Date().toISOString(),iteration:1,maxIterations:0,plateauWindow:5,stallCount:0,bestValue:null,lastValue:null,history:[]}} as State;
  const card=stripTerminalSequences(buildWidgetLines(state,null,Date.now(),undefined,120)!.join('\n'));
  assert.match(card,/\/loop blockers/);
- assert.match(card,/action: Ask agent to recheck/);
+ assert.match(card,/action: Ask agent to clarify/);
  assert.doesNotMatch(card,/resume when ready/,'all-blocked projects must not advertise a resume that will be refused');
+});
+
+
+test("automatic blocker actions lead with a short obstacle and keep long diagnostics in details", async () => {
+  const { respecBlockerActions, respecBlockerDetails } = await import("../extensions/respec-builder-ui.js");
+  const builder = blockRespecRequirement(adoptRespecRequirements(createRespecBuilder("Restore integration"), [
+    { id: "api", text: "API integration", acceptance: "API responds" }]), "api", "Long evidence: " + "trace details ".repeat(500), {
+    summary: "The upstream API account is disabled", owner: "Account administrator", nextAction: "Open account settings and enable API access",
+    expectedResult: "An authenticated API probe returns 200", whyAgentCannotProceed: "The agent cannot change the external account" });
+  const action = respecBlockerActions(builder);
+  assert.match(action, /api: The upstream API account is disabled/);
+  assert.match(action, /Open account settings and enable API access/);
+  assert.match(action, /Why the agent cannot continue:/);
+  assert.doesNotMatch(action, /trace details/);
+  assert.ok(action.length < 1500);
+  assert.match(respecBlockerDetails(builder), /trace details/);
+  const legacy = { ...builder, requirements: builder.requirements.map(r => ({ ...r, blockerAction: undefined })) };
+  assert.match(respecBlockerActions(legacy), /Needs clarification:/);
+  assert.match(respecBlockerActions(legacy), /does not establish that you must intervene/);
 });

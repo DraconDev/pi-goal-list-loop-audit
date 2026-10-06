@@ -69,13 +69,13 @@ test("registered blocker and refinement tools preserve work and require consent 
     await pi.command("loop", "respec build login", ctx); clearLoopTimer();
     await pi.runTool("propose_project_requirements", { requirements: [{ id: "login", text: "Login", acceptance: "Valid credentials succeed" }] }, ctx);
     await pi.runTool("plan_project_increment", { tasks: [{ id: "auth", text: "Implement login", requirementIds: ["login"] }] }, ctx);
-    await pi.runTool("block_project_requirement", { id: "login", reason: "Credentials unavailable" }, ctx);
+    await pi.runTool("block_project_requirement", { id: "login", reason: "Credentials unavailable", summary: "Missing login credentials", owner: "Operator", nextAction: "Supply test credentials", expectedResult: "Login succeeds", whyAgentCannotProceed: "Only the operator can grant access" }, ctx);
     assert.equal(readState(cwd).loop!.active, false, "all-blocked work parks automation");
     assert.equal(readState(cwd).loop!.builder!.history!.at(-1)!.tasks[0]!.id, "auth");
     const beforeInspection = JSON.stringify(readState(cwd).loop);
     await pi.command("loop", "blockers", ctx);
     assert.match(ctx.ui.notifies.at(-1)!.message, /Credentials unavailable/);
-    assert.match(ctx.ui.notifies.at(-1)!.message, /Recheck these blockers/);
+    assert.match(ctx.ui.notifies.at(-1)!.message, /Supply test credentials/);
     assert.match(ctx.ui.notifies.at(-1)!.message, /unblock_project_requirement/);
     assert.equal(JSON.stringify(readState(cwd).loop), beforeInspection, "inspection cannot clear a blocker, resume work or change the contract");
     await pi.command("loop", "resume", ctx); clearLoopTimer();
@@ -109,7 +109,7 @@ test("project blockers automatically show generic actions after journaling, with
       { id: "access", text: "Service access", acceptance: "Can read service data" },
       { id: "dependency", text: "Import data", acceptance: "Import succeeds" },
     ] }, ctx);
-    const blocker = { id: "access", reason: "Service credentials unavailable", owner: "Operator",
+    const blocker = { summary: "Missing service credentials", whyAgentCannotProceed: "The operator owns the service account", id: "access", reason: "Service credentials unavailable", owner: "Operator",
       nextAction: "Open the service settings and supply a read-only credential", expectedResult: "A read probe succeeds" };
     await pi.runTool("block_project_requirement", blocker, ctx);
     const messages = () => pi.sent.filter(s => s.message.customType === "glla-project-blockers");
@@ -128,12 +128,18 @@ test("project blockers automatically show generic actions after journaling, with
     assert.equal(messages().length, 1, "unchanged blocker cannot spam the action surface");
     await pi.runTool("block_project_requirement", { ...blocker, nextAction: "Use the account access page instead" }, ctx);
     assert.equal(messages().length, 2, "updated actions are shown");
-    await pi.runTool("block_project_requirement", { id: "dependency", reason: "Dependency unavailable" }, ctx);
+    const beforeInvalid = JSON.stringify(readState(cwd).loop);
+    const invalid = await pi.runTool("block_project_requirement", { id: "dependency", reason: "The test failed and acceptance is unmet" }, ctx);
+    assert.match(invalid.content[0]!.text, /Blocker not recorded/);
+    assert.equal(JSON.stringify(readState(cwd).loop), beforeInvalid, "vague reports cannot park project work");
+    assert.equal(messages().length, 2);
+    const dependency = { id: "dependency", reason: "Dependency unavailable", summary: "Upstream service is offline", owner: "Service administrator", nextAction: "Restore the upstream service", expectedResult: "Health check succeeds", whyAgentCannotProceed: "The service runs outside this project and the agent has no deployment access" };
+    await pi.runTool("block_project_requirement", dependency, ctx);
     assert.equal(messages().length, 3);
-    assert.match(String(messages()[2]!.message.content), /Ask the agent to recheck this blocker/);
+    assert.match(String(messages()[2]!.message.content), /Restore the upstream service/);
     assert.equal(readState(cwd).loop!.active, false, "displaying actions cannot resume all-blocked work");
     pi.sendMessageError = new Error("display unavailable");
-    await pi.runTool("block_project_requirement", { id: "dependency", reason: "Dependency still unavailable; checked today" }, ctx);
+    await pi.runTool("block_project_requirement", { ...dependency, reason: "Dependency still unavailable; checked today" }, ctx);
     assert.equal(readState(cwd).loop!.builder!.requirements[1]!.blockedReason, "Dependency still unavailable; checked today", "display failure does not discard durable blocker");
     pi.sendMessageError = null;
     await pi.runTool("unblock_project_requirement", { id: "access", reason: "Read probe succeeded" }, ctx);

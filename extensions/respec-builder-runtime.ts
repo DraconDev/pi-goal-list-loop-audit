@@ -246,7 +246,7 @@ export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
     box.addChild(new Text(theme.fg("warning", theme.bold("GLLA · Action needed")), 0, 0));
     const content = typeof message.content === "string" ? message.content : "";
     for (const line of content.split("\n")) {
-      const action = /^(Who can act:|Action to take:|Resolved when:|Next action:)/.test(line);
+      const action = /^(Who can act:|Why the agent cannot continue:|Action to take:|Resolved when:|Next action:)/.test(line);
       box.addChild(new Text(action ? theme.fg("accent", theme.bold(line)) : line, 0, 0));
     }
     return box;
