@@ -28,6 +28,13 @@ Release tag `v0.39.12` targets commit
 GitHub release: https://github.com/DraconDev/pi-goal-list-loop-audit/releases/tag/v0.39.12
 Publish workflow: https://github.com/DraconDev/pi-goal-list-loop-audit/actions/runs/37476269752
 
-At this checkpoint GitHub publication is complete and the hosted release gate is
-running; npm publication and downloaded artifact verification remain pending.
+Hosted publication completed successfully. The exact-tag full suite passed:
+3,283 passing tests, one expected skip, zero failures across 351 files. Every
+remaining release gate passed, and npm reported publication at 14:18:46 UTC.
+After registry propagation and metadata-cache revalidation, the dist-tags and
+latest-version endpoints identify 0.39.12; `npm view --prefer-online` agrees.
+The downloaded tarball's SHA-512 integrity matches registry metadata, and all
+144 published files match the released tag byte for byte. Pi plugin metadata
+and the new fallback-thinking module are present. Hosted logs, workflow state
+and registry evidence are retained in `audit/release-0.39.12/`.
 No live project session or external provider configuration was changed.
