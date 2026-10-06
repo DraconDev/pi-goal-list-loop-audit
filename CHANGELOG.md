@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Provider failure classification ignores opaque request metadata and requires
+  actual HTTP status context for numeric codes. Original diagnostics remain
+  intact; request IDs cannot falsely trigger authentication, timeout, context
+  or prompt-policy routing.
+
 ## 0.39.13 — continue repair work and model handoffs (2026-10-06)
 
 ### Project repair and blocker recovery

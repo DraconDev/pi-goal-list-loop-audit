@@ -141,7 +141,7 @@ export function isPromptPolicyRejection(error: string | undefined): boolean {
 /** Classify error payload, not opaque trace ids or unrelated metadata. Raw
  * diagnostics stay on MainModelFailure for the existing display/storage path. */
 function classificationEvidence(raw: string): string {
-  const withoutIds = (text: string) => text.replace(/["']?request[_-]?id["']?\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;})]+)/gi, "");
+  const withoutIds = (text: string) => text.replace(/["']?request[ _-]?id["']?\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;})]+)/gi, "");
   const start = raw.indexOf("{"), end = raw.lastIndexOf("}");
   if (start >= 0 && end > start) {
     try {
@@ -167,7 +167,7 @@ function classificationEvidence(raw: string): string {
 }
 
 function hasHttpStatus(text: string, status: RegExp): boolean {
-  const codes = text.matchAll(/(?:^|\b(?:http(?:\s+(?:status|error))?|status(?:\s+code)?|error)\s*[:=]?\s*)([1-5]\d{2})(?=$|[\s:;,])/gi);
+  const codes = text.matchAll(/(?:^|\b(?:http(?:\/\d(?:\.\d)?)?(?:\s+(?:status|error))?|status(?:[ _-]?code)?|error)\s*[:=]?\s*)([1-5]\d{2})(?=$|[\s:;,])/gi);
   return [...codes].some(match => status.test(match[1]!));
 }
 

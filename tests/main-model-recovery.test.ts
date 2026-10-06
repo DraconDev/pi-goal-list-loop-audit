@@ -464,7 +464,7 @@ test("opaque provider request metadata cannot alter classification or fallback e
 });
 
 test("actual numeric status fields and HTTP prefixes remain classification evidence", () => {
-  for (const raw of ['HTTP 401', 'Error: 403: {"message":"Denied","request_id":"abc123"}', '{"error":{"message":"Failed","code":401,"request_id":"abc503"}}']) {
+  for (const raw of ['HTTP 401', 'HTTP/1.1 401', 'statusCode: 403', 'Error: 403: {"message":"Denied","request_id":"abc123"}', '{"error":{"message":"Failed","code":401,"request_id":"abc503"}}']) {
     assert.equal(classifyMainModelFailure(raw).kind, "auth", raw);
   }
   for (const raw of ['HTTP 503', '{"statusCode":503,"message":"Failure","request_id":"abc401"}', 'Error: 500: {"message":"Failure"}']) {
