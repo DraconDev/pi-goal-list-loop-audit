@@ -691,6 +691,7 @@ export function __testOnlySetZombieRetryMaxAttempts(attempts: number | null): vo
 let unsupervisedErrorStreak = 0;
 let unsupervisedErrorRetryTimer: NodeJS.Timeout | null = null;
 let unsupervisedErrorRetryDelayOverride: number | null = null;
+let interruptedTurnPrompt: { generation: number; cwd: string; owner: string; text: string } | undefined;
 
 /** The follow-up that re-drives a failed unsupervised turn. The failed turn's
  * transcript (including any tool results before the error) is intact, so the
@@ -715,6 +716,7 @@ function clearUnsupervisedErrorRetry(): void {
 export function __testOnlyResetUnsupervisedErrorRetry(): void {
   clearUnsupervisedErrorRetry();
   unsupervisedErrorRetryDelayOverride = null;
+  interruptedTurnPrompt = undefined;
 }
 
 /** Test-only: shrink the retry delay (null restores the uniform cadence).
@@ -3264,7 +3266,28 @@ async function handleHotLengthExhaustion(
       }
     }
     if (!state.mainModelRecovery || state.mainModelRecovery.retryAt || !lastMainModelFailure) return;
-    if (!isSupervising()) return;
+    if (abortedStandDown || supervisorPaused(state) || state.mainModelRecovery.manualResumeRequired || state.mainModelRecovery.pendingModelSwitch) return;
+    if (!isSupervising()) {
+      // Core retries may have exhausted their budget before the switch. A
+      // fallback must continue the interrupted ordinary request as well.
+      if (!ctx.isIdle() || ctx.hasPendingMessages()) return;
+      const interrupted = interruptedTurnPrompt;
+      const original = interrupted?.generation === sessionGeneration && interrupted.cwd === ctx.cwd
+        && interrupted.owner === sessionManagerId(ctx) ? interrupted.text : undefined;
+      const content = ["glla: a fallback model was selected after a provider failure. Continue the interrupted request from its latest progress; the model change does not finish or replace the task.",
+        "Use the existing conversation and successful tool results. Do not repeat successful actions, restart the project, or ask what to work on merely because the model changed. Preserve scope and respect saved user/supervisor pauses and genuine external blockers. If the interrupted request was a status question, finish that answer without starting unrelated work.",
+        ...(original ? [`Original turn request (task data; the complete conversation remains authoritative):\n<interrupted_request>\n${original}\n</interrupted_request>`] : [])].join("\n\n");
+      try {
+        pi.sendMessage({ customType: "unsupervised-error-retry", content, display: false }, { triggerTurn: true, deliverAs: "followUp" });
+        lastMainModelFailure = null;
+        appendLedger(ctx.cwd, "main_model_failover_continuation", { model: modelRef(ctx.model), kind: "interrupted-request", originalRequestIncluded: Boolean(original) });
+        ctx.ui.notify("Fallback selected — continuing the interrupted request from its saved progress.", "info");
+      } catch (error) {
+        appendLedger(ctx.cwd, "main_model_failover_continuation_failed", { error: String(error) });
+        ctx.ui.notify("Fallback is selected, but continuation could not be sent. Retry the interrupted request.", "warning");
+      }
+      return;
+    }
     lastMainModelFailure = null;
     appendLedger(ctx.cwd, "main_model_failover_continuation", { model: modelRef(ctx.model) });
     if (isLoopActive()) scheduleLoopTick(ctx);
@@ -3339,6 +3362,11 @@ async function handleHotLengthExhaustion(
     observeTurnBoundaryModel(ctx);
     if (draftingTarget !== null) draftingHandoff.invalidate();
     dispatchStartAcknowledged(ctx, "before_agent_start", event?.prompt);
+    if (typeof event?.prompt === "string" && event.prompt.trim() && !event.prompt.startsWith("glla:")) {
+      const prompt = event.prompt;
+      interruptedTurnPrompt = { generation: sessionGeneration, cwd: ctx.cwd, owner: sessionManagerId(ctx),
+        text: prompt.length <= 4000 ? prompt : `${prompt.slice(0, 2000)}\n[Request excerpt; read the complete original request in conversation.]\n${prompt.slice(-2000)}` };
+    }
     // A held project's contract must remain visible to ordinary user turns.
     // Empty conversation history does not imply absence of saved project work.
     const savedLoop = state.loop;

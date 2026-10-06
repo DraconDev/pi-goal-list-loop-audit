@@ -232,3 +232,51 @@ test("a busy session at fire time stands down instead of double-driving", async 
   await tick(150);
   assert.equal(sentRetries().length, 0, "pending user messages veto the dispatch");
 });
+
+
+async function failoverOrdinaryRequest(prompt: string): Promise<MockCtx> {
+  const ctx = await boot();
+  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ mainModelFallbacks: ["provider/backup"] }));
+  (ctx as any).modelRegistry = { find: (provider: string, id: string) => ({ provider, id, reasoning: true }), hasConfiguredAuth: () => true };
+  await pi.fire("before_agent_start", { prompt, systemPrompt: "Original instructions" }, ctx);
+  await pi.fire("agent_end", errTurn("503 Service temporarily unavailable"), ctx);
+  assert.equal(pi.modelSelections.length > 0, true);
+  (ctx as any).model = { provider: "provider", id: "backup" };
+  return ctx;
+}
+
+test("fallback continues an interrupted ordinary task after settlement with the original request", async () => {
+  const ctx = await failoverOrdinaryRequest("Implement the export action and verify round-trip data");
+  assert.equal(sentRetries().length, 0, "do not enqueue before the failed run settles");
+  await pi.fire("agent_settled", {}, ctx);
+  assert.equal(sentRetries().length, 1);
+  const retry = sentRetries()[0]!;
+  assert.match(String(retry.message.content), /Implement the export action and verify round-trip data/);
+  assert.match(String(retry.message.content), /Do not repeat successful actions/);
+  assert.match(String(retry.message.content), /model change does not finish or replace the task/);
+  assert.deepEqual(retry.options, { triggerTurn: true, deliverAs: "followUp" });
+  await pi.fire("agent_settled", {}, ctx);
+  assert.equal(sentRetries().length, 1, "repeated settlement must not duplicate the handoff");
+});
+
+test("fallback handoff waits for idle and does not override a user abort", async () => {
+  const ctx = await failoverOrdinaryRequest("Continue investigating the saved blockers");
+  ctx.isIdle = () => false;
+  await pi.fire("agent_settled", {}, ctx);
+  assert.equal(sentRetries().length, 0);
+  ctx.isIdle = () => true;
+  ctx.hasPendingMessages = () => true;
+  await pi.fire("agent_settled", {}, ctx);
+  assert.equal(sentRetries().length, 0);
+  ctx.hasPendingMessages = () => false;
+  await pi.fire("agent_end", { messages: [{ role: "assistant", content: [], stopReason: "aborted" }] }, ctx);
+  await pi.fire("agent_settled", {}, ctx);
+  assert.equal(sentRetries().length, 0, "Escape is not permission to restart the interrupted request");
+});
+
+test("a successful core retry consumes fallback recovery without a duplicate handoff", async () => {
+  const ctx = await failoverOrdinaryRequest("Finish the current task");
+  await pi.fire("agent_end", cleanTurn(), ctx);
+  await pi.fire("agent_settled", {}, ctx);
+  assert.equal(sentRetries().length, 0);
+});
