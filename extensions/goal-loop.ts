@@ -1295,6 +1295,8 @@ async function startLoopFromConfig(ctx: ExtensionContext, cfg: LoopConfig): Prom
 
 /** One operator-requested review, not a recurring loop or an unblocking verdict. */
 function recheckProjectBlockers(ctx: ExtensionContext): void {
+  const api = flags.extensionApi;
+  if (!api) { ctx.ui.notify("GLLA cannot dispatch a review from this session; saved work remains held.", "warning"); return; }
   const loop = state.loop;
   if (!loop?.builder || !loop.builder.requirements.some(r => r.status === "blocked")) {
     ctx.ui.notify("No recorded project blockers to recheck. /loop status shows saved work.", "info"); return;
@@ -1313,7 +1315,7 @@ function recheckProjectBlockers(ctx: ExtensionContext): void {
     `<builder_state>\n${respecBuilderContext(loop.builder)}\n</builder_state>`,
     `Saved loop: active=${loop.active}; hold=${sanitizeDisplayText(loop.stopReason ?? "none")}`].join("\n\n");
   try {
-    flags.extensionApi.sendMessage({ customType: GOAL_EVENT_ENTRY, content, display: false }, { triggerTurn: true, deliverAs: "followUp" });
+    api.sendMessage({ customType: GOAL_EVENT_ENTRY, content, display: false }, { triggerTurn: true, deliverAs: "followUp" });
     appendLedger(ctx.cwd, "respec_blocker_recheck_requested", { projectId: loop.builder.projectId, cycle: loop.builder.cycle, requirementIds: loop.builder.requirements.filter(r => r.status === "blocked").map(r => r.id) });
     ctx.ui.notify("Rechecking saved project blockers once. Repair work can continue after reclassification; genuine dependencies remain held.", "info");
   } catch (error) {
