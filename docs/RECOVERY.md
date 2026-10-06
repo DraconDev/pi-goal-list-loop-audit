@@ -104,6 +104,19 @@ can therefore remain high until a successful compaction replaces the transcript
 prefix, even though provider input has already shed obsolete failure pairs.
 Filtering failed attempts does not restore an unavailable provider endpoint.
 
+## Project requirement blockers
+
+Use `/loop blockers` for complete recorded reasons and the next action. These
+are agent reports, not proof that a dependency is still unavailable. Ask the
+agent to recheck against the current project, resolve what it can, and give an
+exact command/location and expected result for any action that requires you.
+The view is read-only and remains available on stale handles.
+
+When evidence shows resolution, the agent calls `unblock_project_requirement`;
+then `/loop resume` continues the saved project. Unblocking does not verify a
+requirement. All-blocked projects retain their hold instead of repeatedly
+dispatching work that cannot progress.
+
 ## Updating a running session
 
 The npm package is also the Pi plugin; there is no separate Pi-only release.

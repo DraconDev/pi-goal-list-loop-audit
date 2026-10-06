@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `/loop blockers` shows complete agent-recorded blocker reasons and recovery
+  steps. Blocked cards link to it, and all-blocked resume refusals show details
+  instead of asking the operator to clear an unspecified blocker.
 - Adding main fallback models asks for thinking only for newly selected models.
   Existing pins survive edits, reorder and removal. A separate Fallback thinking
   row edits one saved model without repeating the whole chain's prompts.
