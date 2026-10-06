@@ -70,11 +70,12 @@ test("runtime fallback walk uses one supervised model at a time and preserves le
   const settingsFile = globalSettingsPath();
   const original = fs.existsSync(settingsFile) ? fs.readFileSync(settingsFile, "utf8") : undefined;
   const calls: string[] = [];
+  const thinkingCalls: string[] = [];
   const ctx: any = {
     cwd,
     model: { provider: "provider", id: "primary" },
     modelRegistry: {
-      find: (provider: string, id: string) => ({ provider, id }),
+      find: (provider: string, id: string) => ({ provider, id, reasoning: true }),
       hasConfiguredAuth: () => true,
     },
     ui: { notify: () => {} },
@@ -89,7 +90,8 @@ test("runtime fallback walk uses one supervised model at a time and preserves le
     hourlyProbeTimer: null,
     hourlyProbeFireAt: null,
     sessionGeneration: 1,
-    extensionApi: { setModel: async (model: any) => { calls.push(`${model.provider}/${model.id}`); return true; } },
+    extensionApi: { setModel: async (model: any) => { calls.push(`${model.provider}/${model.id}`); return true; },
+      getThinkingLevel: () => "high", setThinkingLevel: (level: string) => { thinkingCalls.push(level); } },
     extensionApiStale: false,
     continuationDispatchStoodDown: false,
     lastMainModelRecoveryResumeAt: 0,
@@ -97,6 +99,7 @@ test("runtime fallback walk uses one supervised model at a time and preserves le
   try {
     fs.writeFileSync(settingsFile, JSON.stringify({
       mainModelFallbacks: ["provider/blocked", "provider/first", "provider/second"],
+      mainModelFallbackThinkingLevels: { "provider/first": "low", "provider/second": "medium" },
       forbiddenModels: ["blocked"],
     }));
     replaceState({ goal: null } as any);
@@ -116,6 +119,7 @@ test("runtime fallback walk uses one supervised model at a time and preserves le
     const accountFailure = classifyMainModelFailure("usage limit reached; switch billing");
     assert.equal(await tryMainModelFallback(ctx, accountFailure), true);
     assert.deepEqual(calls, ["provider/first"], "the first failure selects only the first eligible backup");
+    assert.deepEqual(thinkingCalls, ["low"], "accepted fallback uses its own saved thinking level");
     assert.deepEqual(state.mainModelRecovery?.attempted, ["provider/primary", "provider/blocked", "provider/first"]);
     assert.deepEqual(state.mainModelRecovery?.skipped, [{ ref: "provider/blocked", reason: "forbidden" }]);
     assert.equal(state.mainModelRecovery?.skipped?.some((entry) => entry.ref === "provider/first"), false, "the selected backup is not labelled skipped");
@@ -123,6 +127,7 @@ test("runtime fallback walk uses one supervised model at a time and preserves le
     ctx.model = { provider: "provider", id: "first" };
     assert.equal(await tryMainModelFallback(ctx, accountFailure), true);
     assert.deepEqual(calls, ["provider/first", "provider/second"], "the next failure advances to the next backup");
+    assert.deepEqual(thinkingCalls, ["low", "medium"]);
     assert.deepEqual(state.mainModelRecovery?.attempted, ["provider/primary", "provider/blocked", "provider/first", "provider/second"]);
     assert.equal(state.mainModelRecovery?.skipped?.some((entry) => entry.ref === "provider/first" || entry.ref === "provider/second"), false, "successful backups remain absent from skipped");
 
@@ -138,6 +143,7 @@ test("runtime fallback walk uses one supervised model at a time and preserves le
       kind: "goal",
     };
     await probeMainModelRecovery(ctx);
+    assert.equal(thinkingCalls.at(-1), "high", "returning to the primary restores its original session level");
     assert.equal(calls.at(-1), "provider/first", "the scheduled probe selects the first eligible backup");
     assert.deepEqual(state.mainModelRecovery?.skipped, [{ ref: "provider/blocked", reason: "forbidden" }]);
     assert.equal(state.mainModelRecovery?.skipped?.some((entry) => entry.ref === "provider/first"), false, "the scheduled probe target is not labelled skipped");
