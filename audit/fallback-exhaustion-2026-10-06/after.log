@@ -1,0 +1,50 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/context-overflow-recovery.test.ts:
+(pass) v0.34.116: classifyMainModelFailure accepts an isContextOverflow override [3.95ms]
+(pass) v0.34.116: context-overflow override routes to a context-overflow kind, not non-recoverable [0.10ms]
+(pass) v0.34.116: helper isContextOverflowError covers the same surface as the legacy non-recoverable regex [0.09ms]
+(pass) v0.34.116: recoverFromContextOverflow is exported and routes through tryMainModelFallback [0.13ms]
+(pass) v0.34.116: observeCompactFailure is the one-liner surface (notify + ledger) [0.11ms]
+(pass) v0.34.116: tryMainModelFallback opens context-overflow (it is the only rotation kind beyond provider failures) [0.09ms]
+(pass) v0.34.116: agent_end context-starved branch detects recent compaction and walks the chain [1.58ms]
+
+tests/unsupervised-error-retry.test.ts:
+(pass) empty provider response with no goal schedules and dispatches a retry [389.50ms]
+(pass) consecutive errors advance the streak; a clean turn clears it [311.82ms]
+(pass) composite isolation clears a poisoned unsupervised retry streak, timer, and override [21.52ms]
+(pass) user aborts never retry [155.38ms]
+(pass) policy refusals, auth, billing, and deterministic 400s refuse with a reason [157.79ms]
+(pass) context overflow compacts instead of retrying [164.69ms]
+(pass) hinted quota sleeps until the provider reset; hintless quota ladders [5.97ms]
+(pass) an active goal owns error turns — the unsupervised lane stays silent [197.57ms]
+(pass) a load-held session refuses instead of promising a retry it cannot send [160.48ms]
+(pass) a fresh turn stands down the pending retry [161.24ms]
+(pass) a busy session at fire time stands down instead of double-driving [159.45ms]
+(pass) fallback continues an interrupted ordinary task after settlement with the original request [9.74ms]
+(pass) fallback handoff waits for idle and does not override a user abort [10.45ms]
+(pass) a successful core retry consumes fallback recovery without a duplicate handoff [14.27ms]
+(pass) fallback send failure preserves the pending handoff and retries the same request on fresh settlement [33.14ms]
+(pass) long interrupted requests use a bounded handoff without growing nested retry prompts [87.89ms]
+(pass) exhausted ordinary fallback chain uses backoff instead of another immediate switch handoff [353.91ms]
+(pass) ordinary exhaustion retry respects a supervisor pause introduced while waiting [334.13ms]
+(pass) authentication failure after ordinary chain exhaustion does not become a blind handoff [297.78ms]
+
+tests/main-model-recovery.test.ts:
+(pass) main model refs preserve order, dedupe, and support nested model ids [0.31ms]
+(pass) main model fallback candidates are ordered and never retried in a cycle [0.05ms]
+(pass) main fallback settings dedupe case-insensitively and cap the chain at ten [0.09ms]
+(pass) runtime fallback walk uses one supervised model at a time and preserves left-to-right order [5.64ms]
+(pass) successful fallback turns keep the preferred primary and fail back after a supervised probe [1.51ms]
+(pass) sticky failback preserves the old fallback-settles behavior [0.33ms]
+(pass) in-band provider output is recognized only for strong repeated-pane markers [0.16ms]
+(pass) the explicit Codex prompt-policy event is terminal, while lookalike text remains generic [0.29ms]
+(pass) main model errors stay opaque to the recovery policy [0.19ms]
+(pass) main model recovery backs off without giving up [0.50ms]
+(pass) main recovery requirements are generic across provider wording [0.07ms]
+(pass) opaque provider request metadata cannot alter classification or fallback eligibility [0.45ms]
+(pass) actual numeric status fields and HTTP prefixes remain classification evidence [0.15ms]
+
+ 39 pass
+ 0 fail
+Ran 39 tests across 3 files. [4.36s]

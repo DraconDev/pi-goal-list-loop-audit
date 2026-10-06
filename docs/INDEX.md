@@ -13,7 +13,7 @@ Ordered by reading path, not alphabetically.
 - [Delegation skill](../skills/glla-delegate/SKILL.md): normal-chat goal/list
   delegation and confirmation.
 - [Changelog](../CHANGELOG.md): changes shipped in each release. The history
-  spans v0.35.14–v0.39.13; `/glla version` shows the installed version and the
+  spans v0.35.14–v0.39.14; `/glla version` shows the installed version and the
   registry comparison command. A checkout can contain unpublished changes.
 
 ## Architecture

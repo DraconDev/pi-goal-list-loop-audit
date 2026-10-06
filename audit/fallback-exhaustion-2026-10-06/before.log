@@ -1,0 +1,43 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/unsupervised-error-retry.test.ts:
+(pass) empty provider response with no goal schedules and dispatches a retry [212.95ms]
+(pass) consecutive errors advance the streak; a clean turn clears it [306.96ms]
+(pass) composite isolation clears a poisoned unsupervised retry streak, timer, and override [9.92ms]
+(pass) user aborts never retry [156.22ms]
+(pass) policy refusals, auth, billing, and deterministic 400s refuse with a reason [227.05ms]
+(pass) context overflow compacts instead of retrying [157.43ms]
+(pass) hinted quota sleeps until the provider reset; hintless quota ladders [10.98ms]
+(pass) an active goal owns error turns — the unsupervised lane stays silent [244.57ms]
+(pass) a load-held session refuses instead of promising a retry it cannot send [162.87ms]
+(pass) a fresh turn stands down the pending retry [156.75ms]
+(pass) a busy session at fire time stands down instead of double-driving [159.92ms]
+(pass) fallback continues an interrupted ordinary task after settlement with the original request [35.87ms]
+(pass) fallback handoff waits for idle and does not override a user abort [31.64ms]
+(pass) a successful core retry consumes fallback recovery without a duplicate handoff [23.04ms]
+(pass) fallback send failure preserves the pending handoff and retries the same request on fresh settlement [62.49ms]
+(pass) long interrupted requests use a bounded handoff without growing nested retry prompts [26.55ms]
+312 |   __testOnlySetUnsupervisedErrorRetryDelay(150);
+313 |   await pi.fire("agent_settled", {}, ctx);
+314 |   assert.equal(sentRetries().length, 1);
+315 |   await pi.fire("agent_end", errTurn("503 Service temporarily unavailable"), ctx);
+316 |   await pi.fire("agent_settled", {}, ctx);
+317 |   assert.equal(sentRetries().length, 1, "no model was selected this time; settlement must not immediately resend");
+               ^
+AssertionError: no model was selected this time; settlement must not immediately resend
+
+2 !== 1
+
+ generatedMessage: false,
+     actual: 2,
+   expected: 1,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/unsupervised-error-retry.test.ts:317:10
+      at processTicksAndRejections (native:7:39)
+(fail) exhausted ordinary fallback chain uses backoff instead of another immediate switch handoff [85.24ms]
+
+ 16 pass
+ 1 fail
+Ran 17 tests across 1 file. [2.59s]
