@@ -14,6 +14,7 @@ export function respecBuilderContext(builder: RespecBuilderState): string {
     ...builder,
     contextProjection: { authority, historyEntriesOmitted: Math.max(0, (builder.history?.length ?? 0) - 1),
       feedbackEntriesOmitted: Math.max(0, builder.feedback.length - 1),
+      scopeChangesOmitted: Math.max(0, (builder.scopeChanges?.length ?? 0) - 1),
       instruction: "This is a dispatch projection, not a replacement contract. Read omitted report/feedback fields using scoped inspection when needed; all adopted requirements and audit evidence remain binding." },
     requirements: builder.requirements.map(r => ({ ...r, evidence: r.evidence
       ? { attemptId: r.evidence.attemptId, model: r.evidence.model, reportReference: `${authority}: requirements evidence.report for ${r.id}` } : undefined })),

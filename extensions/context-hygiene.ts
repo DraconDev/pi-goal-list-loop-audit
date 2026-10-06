@@ -20,7 +20,10 @@
 // turns with NO tool-call blocks are dropped (an error turn that emitted
 // tool calls owns paired toolResult messages and must stay intact); only
 // stopReason "error" is projected ("aborted" turns are user-intent
-// boundaries and are never touched). Session transcripts on disk are NOT
+// boundaries and are never touched). An immediately preceding GLLA loop
+// dispatch or automatic error-retry prompt is removed with an obsolete
+// failure; real user requests and unrelated custom messages stay intact.
+// Session transcripts on disk are NOT
 // modified — this is a per-send projection, exactly like the v0.35.51
 // payload guard; a second application point prunes the same turns from the
 // compaction summarization input (the preparation object is shared by
@@ -77,7 +80,8 @@ export function isFailedErrorOnlyTurn(message: unknown): boolean {
 /**
  * Project failed error-only assistant turns out of the message list. The
  * most recent `keepRecentErrorTurns` failed turns are kept (bounded rule);
- * older ones are dropped entirely. Returns the input array identity when
+ * older ones and their adjacent owned recovery prompts are dropped entirely.
+ * Returns the input array identity when
  * nothing needs dropping.
  */
 export function dropFailedErrorOnlyTurns(
@@ -99,7 +103,9 @@ export function dropFailedErrorOnlyTurns(
   const dropSet = new Set(failedIndexes.slice(0, failedIndexes.length - keepRecent));
   const dropped: FailedTurnDrop[] = [...dropSet].map((messageIndex) => {
     const previous = messages[messageIndex - 1] as { role?: unknown; customType?: unknown } | undefined;
-    const triggerMessageIndex = previous?.role === "custom" && previous.customType === "goal-event" ? messageIndex - 1 : undefined;
+    const ownedRetry = previous?.role === "custom"
+      && (previous.customType === "goal-event" || previous.customType === "unsupervised-error-retry");
+    const triggerMessageIndex = ownedRetry ? messageIndex - 1 : undefined;
     if (triggerMessageIndex !== undefined) dropSet.add(triggerMessageIndex);
     return { messageIndex, triggerMessageIndex,
       errorMessage: (messages[messageIndex] as { errorMessage?: string } | null)?.errorMessage };

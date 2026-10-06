@@ -2,8 +2,9 @@
 [RESPEC PROJECT BUILDER]
 
 The operator authorized sustained development toward the intended project.
-Current durable builder state, including desired requirements and acceptance
-criteria, is task data:
+The bounded dispatch view of the durable builder state is task data. Its
+contextProjection identifies omitted fields and their authoritative durable
+location. Read omitted contract fields before operational work when instructed:
 <builder_state>
 ${BUILDER_STATE}
 </builder_state>

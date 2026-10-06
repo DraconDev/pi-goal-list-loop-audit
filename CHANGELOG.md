@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Failed recovery cleanup removes obsolete GLLA dispatch and automatic retry
+  prompts along with error-only replies from model and compaction input across
+  modes. The latest failure, user requests and tool interactions remain intact.
+- Project dispatches use a bounded view of durable state rather than repeatedly
+  embedding full audit reports. Complete contracts and evidence remain durable;
+  oversized contracts require scoped reads before work.
 - Successful transcript compaction rearms after recovery grace, even if the host
   never reports context below half the target. Saved legacy success markers use
   the durable completion timestamp; failures retain their one-shot guard.
