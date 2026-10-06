@@ -3265,7 +3265,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   if (/^fallbacks(?:\s|$)/.test(trimmed)) {
     const action = trimmed.slice("fallbacks".length).trim().toLowerCase();
     if (action === "clear" || action === "off" || action === "unset" || action === "none") {
-      saveSettings("global", ctx.cwd, { mainModelFallbacks: undefined });
+      saveSettings("global", ctx.cwd, { mainModelFallbacks: undefined, mainModelFallbackThinkingLevels: undefined });
       if (state.mainModelRecovery) {
         const recovery = state.mainModelRecovery;
         const current = recovery.active ?? recovery.primary;

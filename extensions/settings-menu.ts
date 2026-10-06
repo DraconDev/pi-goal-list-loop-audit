@@ -278,7 +278,7 @@ export function buildSettingsRows(
         ? `${settings.mainModelFallbacks.length}/${MAX_MAIN_MODEL_FALLBACKS} · ${settings.mainModelFallbacks.map((ref, index) => `${index + 1}. ${modelThinkingText(ref, settings.mainModelFallbackThinkingLevels?.[ref.toLowerCase()] ?? sessionThinking, subagent)}`).join(" → ")}`
         : `0/${MAX_MAIN_MODEL_FALLBACKS} · none`,
       sourceText: src("mainModelFallbacks"),
-      description: "ordered and deselectable: current main agent → fallback 1 → fallback 2…; choose thinking for each fallback, or inherit the primary session level",
+      description: "ordered and deselectable: current main agent → fallback 1 → fallback 2…; every recoverable provider failure switches one eligible fallback at a time; choose thinking per model or inherit the primary session level",
     },
     {
       id: "forbiddenModels",
