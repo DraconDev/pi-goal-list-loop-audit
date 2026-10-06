@@ -40,6 +40,7 @@ beforeEach(() => {
   __testOnlyResetTerminalFlags();
   __testOnlyResetUnsupervisedErrorRetry();
   pi.sent.length = 0;
+  pi.modelSelections.length = 0;
   try { savedGlobalSettings = fs.readFileSync(GLOBAL_SETTINGS_PATH, "utf-8"); } catch { savedGlobalSettings = undefined; }
   fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({}));
 });
@@ -240,7 +241,7 @@ async function failoverOrdinaryRequest(prompt: string): Promise<MockCtx> {
   (ctx as any).modelRegistry = { find: (provider: string, id: string) => ({ provider, id, reasoning: true }), hasConfiguredAuth: () => true };
   await pi.fire("before_agent_start", { prompt, systemPrompt: "Original instructions" }, ctx);
   await pi.fire("agent_end", errTurn("503 Service temporarily unavailable"), ctx);
-  assert.equal(pi.modelSelections.length > 0, true);
+  assert.deepEqual(pi.modelSelections.map((m: any) => `${m.provider}/${m.id}`), ["provider/backup"]);
   (ctx as any).model = { provider: "provider", id: "backup" };
   return ctx;
 }

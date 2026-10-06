@@ -691,6 +691,7 @@ export function __testOnlySetZombieRetryMaxAttempts(attempts: number | null): vo
 let unsupervisedErrorStreak = 0;
 let unsupervisedErrorRetryTimer: NodeJS.Timeout | null = null;
 let unsupervisedErrorRetryDelayOverride: number | null = null;
+let fallbackContinuationCancelled = false;
 let interruptedTurnPrompt: { generation: number; cwd: string; owner: string; text: string } | undefined;
 
 /** The follow-up that re-drives a failed unsupervised turn. The failed turn's
@@ -717,6 +718,7 @@ export function __testOnlyResetUnsupervisedErrorRetry(): void {
   clearUnsupervisedErrorRetry();
   unsupervisedErrorRetryDelayOverride = null;
   interruptedTurnPrompt = undefined;
+  fallbackContinuationCancelled = false;
 }
 
 /** Test-only: shrink the retry delay (null restores the uniform cadence).
@@ -2780,6 +2782,10 @@ async function handleHotLengthExhaustion(
         lastA = { stopReason: "error", text: raw, priorText: lastA?.priorText ?? "" };
       }
     }
+    if (["aborted", "cancelled", "canceled"].includes(lastA?.stopReason) && !mainModelAbortForRecovery) {
+      fallbackContinuationCancelled = true;
+      interruptedTurnPrompt = undefined;
+    }
     if (await handleMainModelAgentEnd(ctx, rawLastA, lastA)) return;
     // v0.25.2: per-goal turn telemetry (/glla stats).
     if (state.goal && state.goal.status === "active") {
@@ -3266,7 +3272,7 @@ async function handleHotLengthExhaustion(
       }
     }
     if (!state.mainModelRecovery || state.mainModelRecovery.retryAt || !lastMainModelFailure) return;
-    if (abortedStandDown || supervisorPaused(state) || state.mainModelRecovery.manualResumeRequired || state.mainModelRecovery.pendingModelSwitch) return;
+    if (fallbackContinuationCancelled || abortedStandDown || supervisorPaused(state) || state.mainModelRecovery.manualResumeRequired || state.mainModelRecovery.pendingModelSwitch) return;
     if (!isSupervising()) {
       // Core retries may have exhausted their budget before the switch. A
       // fallback must continue the interrupted ordinary request as well.
@@ -3364,6 +3370,7 @@ async function handleHotLengthExhaustion(
     dispatchStartAcknowledged(ctx, "before_agent_start", event?.prompt);
     if (typeof event?.prompt === "string" && event.prompt.trim() && !event.prompt.startsWith("glla:")) {
       const prompt = event.prompt;
+      fallbackContinuationCancelled = false;
       interruptedTurnPrompt = { generation: sessionGeneration, cwd: ctx.cwd, owner: sessionManagerId(ctx),
         text: prompt.length <= 4000 ? prompt : `${prompt.slice(0, 2000)}\n[Request excerpt; read the complete original request in conversation.]\n${prompt.slice(-2000)}` };
     }
