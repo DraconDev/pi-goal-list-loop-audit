@@ -1,0 +1,19 @@
+
+> pi-goal-list-loop-audit@0.39.12 test
+> node scripts/run-tests.mjs tests/loop-refine-parity.test.ts tests/loop-refine-transaction.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/loop-refine-parity.test.ts:
+(pass) parked loops are refinable on both surfaces [0.37ms]
+(pass) terminal stops are refinable on neither surface [0.13ms]
+(pass) broken measure is the deliberate divergence: tool fixes, slash will not resume [0.18ms]
+
+tests/loop-refine-transaction.test.ts:
+(pass) failed spec refinement leaves loop state unchanged [148.39ms]
+
+ 4 pass
+ 0 fail
+Ran 4 tests across 2 files. [1286.00ms]
+[run-tests] finished in 1s (exit 0)

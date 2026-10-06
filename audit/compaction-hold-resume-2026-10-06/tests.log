@@ -1,0 +1,50 @@
+
+> pi-goal-list-loop-audit@0.39.12 test
+> node scripts/run-tests.mjs tests/compaction-failed-recovery.test.ts tests/loop-held-start.test.ts tests/respec-builder-display.test.ts tests/same-process-successor-resume.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-display.test.ts:
+(pass) a stopped project audit exposes its hold reason instead of implying a running auditor [12.80ms]
+(pass) project cards expose phase, unfinished coverage and recorded blockers within narrow widths [5.81ms]
+(pass) an explicitly stopped project audit does not advertise an unavailable resume [0.60ms]
+(pass) completed project dismisses both live UI surfaces while preserving other work [1.65ms]
+(pass) project tool waits show a ticking deadline and separate attempt/total clocks [0.90ms]
+
+tests/loop-held-start.test.ts:
+(pass) loop resume restores a project held by summarization output limit: summary incomplete [271.78ms]
+(pass) glla resume restores a project held by summarization output limit: summary incomplete [146.37ms]
+(pass) loop resume restores a project held by context overflow: prompt cannot fit [152.19ms]
+(pass) glla resume restores a project held by context overflow: prompt cannot fit [157.32ms]
+(pass) loop resume restores a project held by compaction failure: provider unavailable [171.95ms]
+(pass) glla resume restores a project held by compaction failure: provider unavailable [176.89ms]
+(pass) held loop: the load-hold warning names /loop resume [159.16ms]
+(pass) held loop: the load-hold warning is byte-identical when no loop is held [203.41ms]
+(pass) fresh start over a held loop offers resume and preserves the loop [192.64ms]
+(pass) fresh start over a held loop: dismiss keeps the held loop untouched [151.99ms]
+(pass) fresh start over a held loop: headless refuses instead of discarding [138.75ms]
+(pass) fresh start over an explicitly stopped loop keeps today's silent behavior [147.05ms]
+
+tests/same-process-successor-resume.test.ts:
+(pass) same-process successor resumes a held ACTIVE goal — the list/goal asymmetry fix [408.43ms]
+(pass) same-process successor auto-retries a parked completion-audit claim — auditor consent parity [354.07ms]
+(pass) different-pid crash successor still HOLDS the goal — the cold-load law stands [418.47ms]
+
+tests/compaction-failed-recovery.test.ts:
+(pass) host-owned failed compaction retries without model rotation, park, or competing continuation [294.40ms]
+(pass) terminal prompt overflow rotates once and arms durable post-compact resume debt [201.32ms]
+(pass) same-session startup restores fallback debt, while a new session discards it [210.40ms]
+(pass) terminal output-cap failure parks instead of misclassifying it as context overflow [107.59ms]
+(pass) failed compaction without a usable fallback parks an active goal durably [139.55ms]
+(pass) failed compaction parks a branch loop instead of leaving it active [140.31ms]
+(pass) a failed debt-discharge append keeps RAM debt instead of diverging from disk [110.00ms]
+(pass) opportunistic output-cap failure keeps work active and resumes once (event first) [2825.07ms]
+(pass) opportunistic output-cap failure keeps work active and resumes once (callback first) [2810.63ms]
+(pass) optional compaction resumes a branch loop (event without callback) [2803.37ms]
+(pass) optional compaction resumes a branch loop (synchronous callback) [2806.82ms]
+
+ 31 pass
+ 0 fail
+Ran 31 tests across 4 files. [17.57s]
+[run-tests] finished in 18s (exit 0)

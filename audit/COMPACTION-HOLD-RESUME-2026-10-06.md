@@ -27,6 +27,9 @@ unchanged adopted requirements and iteration history, and no replacement loop.
 The host failure test also checks that an emitted hold is resumable, does not
 auto-restart through lifecycle admission, and advertises the correct command.
 Selected verification logs are in `audit/compaction-hold-resume-2026-10-06/`.
+Final verification: 31 recovery/display/handoff tests passed across four files,
+plus four refinement tests across two files. TypeScript, generated inventory
+and whitespace checks passed.
 This version is prepared, not published; the session screenshot already loads
 0.39.11 and needs the new code before either resume command can recover this
 legacy reason.
