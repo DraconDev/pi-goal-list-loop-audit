@@ -86,7 +86,7 @@ This authority boundary applies before settings-value normalization.
 | --- | ------- | ------- |
 | `stateRoot` | `"workingDir"` | Where durable state lives; `"sessionDir"` is explicit opt-in. Global-only. |
 | `mainModelFallbacks` | `[]` | Ordered provider/model refs on main-model failure. Can include the current session model: the saved global chain is independent of the editing session. Runtime skips active and already-tried candidates. Global-only. |
-| `mainModelFallbackThinkingLevels` | unset (inherit primary) | Per-model thinking pins for main fallbacks, keyed by lowercase provider/model. The fallback selector asks for each reasoning model's supported level; inheritance restores the primary session dial. Global-only. |
+| `mainModelFallbackThinkingLevels` | unset (inherit primary) | Per-model thinking pins for main fallbacks, keyed by lowercase provider/model. Adding a model asks only for its supported level. Use Main agent → Fallback thinking to edit one saved model; existing choices survive chain edits. Inheritance restores the primary session dial. Global-only. |
 | `drafterModel` | unset (session) | Drafting-only primary model. Global-only. |
 | `drafterThinkingLevel` | unset (inherit) | Thinking level for the drafting agent. Global-only. |
 | `drafterModelFallbacks` | `[]` | Ordered drafting fallbacks; session model is final. Global-only. |

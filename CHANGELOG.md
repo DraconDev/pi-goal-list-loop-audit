@@ -2,9 +2,13 @@
 
 ## Unreleased
 
+- Adding main fallback models asks for thinking only for newly selected models.
+  Existing pins survive edits, reorder and removal. A separate Fallback thinking
+  row edits one saved model without repeating the whole chain's prompts.
 - The global main fallback chain can include the current session model.
   Recovery still skips the active model and candidates already tried in its
   current cycle; configuring the chain no longer depends on the editor's model.
+
 ## 0.39.12 — resumable compaction holds and fallback thinking (2026-10-06)
 
 - Main fallback selection offers a thinking level for each model. Saved pins
