@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- New or changed project blockers automatically display complete reasons and
+  actions. Optional owner, nextAction and expectedResult fields cover access,
+  dependencies, decisions, environments and other blockers; legacy reports
+  get a recheck action. Displaying actions never clears or resumes blocked work.
+
 - `/loop blockers` shows complete agent-recorded blocker reasons and recovery
   steps. Blocked cards link to it, and all-blocked resume refusals show details
   instead of asking the operator to clear an unspecified blocker.

@@ -106,7 +106,16 @@ Filtering failed attempts does not restore an unavailable provider endpoint.
 
 ## Project requirement blockers
 
-Use `/loop blockers` for complete recorded reasons and the next action. These
+New or changed project blockers automatically show a visible action card,
+including who can act, the next step and the evidence that will show resolution.
+Agents should supply `owner`, `nextAction` and `expectedResult` to
+`block_project_requirement` for any blocker, including access, dependencies,
+decisions and environment constraints. Missing action fields fall back to an
+agent recheck; GLLA does not infer unsafe shell commands from the reason.
+Unchanged reports do not repeat the card. The card does not dispatch work,
+clear the blocker or count as independent verification.
+
+Use `/loop blockers` to reopen complete recorded reasons and the next action. These
 are agent reports, not proof that a dependency is still unavailable. Ask the
 agent to recheck against the current project, resolve what it can, and give an
 exact command/location and expected result for any action that requires you.

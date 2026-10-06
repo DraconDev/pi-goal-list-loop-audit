@@ -95,3 +95,46 @@ test("registered blocker and refinement tools preserve work and require consent 
     assert.equal(readState(cwd).loop!.active, false);
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
+
+
+test("project blockers automatically show generic actions after journaling, without dispatch or implicit resolution", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  saveSettings("project", cwd, { autoAcceptDrafts: false });
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "automatic-blocker-actions" } });
+  ctx.ui.customImpl = async () => "Yes";
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  try {
+    await pi.command("loop", "respec build service", ctx); clearLoopTimer();
+    await pi.runTool("propose_project_requirements", { requirements: [
+      { id: "access", text: "Service access", acceptance: "Can read service data" },
+      { id: "dependency", text: "Import data", acceptance: "Import succeeds" },
+    ] }, ctx);
+    const blocker = { id: "access", reason: "Service credentials unavailable", owner: "Operator",
+      nextAction: "Open the service settings and supply a read-only credential", expectedResult: "A read probe succeeds" };
+    await pi.runTool("block_project_requirement", blocker, ctx);
+    const messages = () => pi.sent.filter(s => s.message.customType === "glla-project-blockers");
+    assert.equal(messages().length, 1, "no inspection command needed");
+    assert.match(String(messages()[0]!.message.content), /Who can act: Operator/);
+    assert.match(String(messages()[0]!.message.content), /Open the service settings/);
+    assert.match(String(messages()[0]!.message.content), /A read probe succeeds/);
+    assert.deepEqual(messages()[0]!.options, { triggerTurn: false });
+    assert.equal(readState(cwd).loop!.active, true, "partial blockers leave other work available");
+    assert.equal(readState(cwd).loop!.builder!.requirements[0]!.blockerAction!.nextAction, blocker.nextAction);
+    await pi.runTool("block_project_requirement", blocker, ctx);
+    assert.equal(messages().length, 1, "unchanged blocker cannot spam the action surface");
+    await pi.runTool("block_project_requirement", { ...blocker, nextAction: "Use the account access page instead" }, ctx);
+    assert.equal(messages().length, 2, "updated actions are shown");
+    await pi.runTool("block_project_requirement", { id: "dependency", reason: "Dependency unavailable" }, ctx);
+    assert.equal(messages().length, 3);
+    assert.match(String(messages()[2]!.message.content), /Ask the agent to recheck this blocker/);
+    assert.equal(readState(cwd).loop!.active, false, "displaying actions cannot resume all-blocked work");
+    pi.sendMessageError = new Error("display unavailable");
+    await pi.runTool("block_project_requirement", { id: "dependency", reason: "Dependency still unavailable; checked today" }, ctx);
+    assert.equal(readState(cwd).loop!.builder!.requirements[1]!.blockedReason, "Dependency still unavailable; checked today", "display failure does not discard durable blocker");
+    pi.sendMessageError = undefined;
+    await pi.runTool("unblock_project_requirement", { id: "access", reason: "Read probe succeeded" }, ctx);
+    assert.equal(readState(cwd).loop!.builder!.requirements[0]!.blockerAction, undefined);
+    assert.equal(readState(cwd).loop!.builder!.requirements[0]!.status, "open");
+    assert.equal(readState(cwd).loop!.active, false);
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});
