@@ -83,6 +83,8 @@ export interface Settings {
   visionAssist?: boolean;
   /** Global-only ordered provider/model refs to use when the MAIN session model fails. */
   mainModelFallbacks?: string[];
+  /** Global-only per-fallback thinking overrides, keyed by lowercase provider/model. Unset inherits the primary session level. */
+  mainModelFallbackThinkingLevels?: Record<string, import("./main-fallback-thinking.js").FallbackThinkingLevel>;
   /** Global-only primary model used temporarily for goal/list/loop drafting. */
   drafterModel?: string;
   /** Global-only thinking level for the temporary drafting agent. Unset means
@@ -342,6 +344,7 @@ export interface Settings {
 export const GLOBAL_ONLY_KEYS: ReadonlySet<keyof Settings> = new Set([
   "stateRoot",
   "mainModelFallbacks",
+  "mainModelFallbackThinkingLevels",
   "mainModelRetryMinutes",
   "mainModelFailback",
   "mainModelPrimaryProbeMinutes",
@@ -518,6 +521,7 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   // the main fallback chain at every read so runtime, display, and persistence
   // all see the same bounded value.
   settings.mainModelFallbacks = normalizeMainModelFallbackRefs(settings.mainModelFallbacks);
+  settings.mainModelFallbackThinkingLevels = normalizeMainFallbackThinking(settings.mainModelFallbackThinkingLevels, settings.mainModelFallbacks);
   settings.drafterModelFallbacks = normalizeMainModelFallbackRefs(settings.drafterModelFallbacks);
   settings.compactorModelFallbacks = normalizeMainModelFallbackRefs(settings.compactorModelFallbacks);
   if (!Number.isSafeInteger(settings.compactionTokenThreshold) || (settings.compactionTokenThreshold ?? 0) <= 0) {
