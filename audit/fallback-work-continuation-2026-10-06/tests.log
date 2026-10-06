@@ -1,0 +1,44 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-wiring.test.ts:
+(pass) actual respec command and tools persist intended scope, batch and audit claim [915.04ms]
+(pass) declining intended scope leaves the project drafting with no adopted requirements [73.75ms]
+(pass) registered blocker and refinement tools preserve work and require consent to change scope [136.08ms]
+(pass) project blockers automatically show generic actions after journaling, without dispatch or implicit resolution [155.35ms]
+(pass) work obstacles keep building and mistaken blocker-only holds release without verifying scope [156.47ms]
+(pass) held blocker reviews receive the durable project contract without silently releasing dependencies [140.63ms]
+
+tests/unsupervised-error-retry.test.ts:
+(pass) empty provider response with no goal schedules and dispatches a retry [227.61ms]
+(pass) consecutive errors advance the streak; a clean turn clears it [334.85ms]
+(pass) composite isolation clears a poisoned unsupervised retry streak, timer, and override [32.70ms]
+(pass) user aborts never retry [176.33ms]
+(pass) policy refusals, auth, billing, and deterministic 400s refuse with a reason [163.00ms]
+(pass) context overflow compacts instead of retrying [182.74ms]
+(pass) hinted quota sleeps until the provider reset; hintless quota ladders [33.97ms]
+(pass) an active goal owns error turns — the unsupervised lane stays silent [254.72ms]
+(pass) a load-held session refuses instead of promising a retry it cannot send [180.45ms]
+(pass) a fresh turn stands down the pending retry [184.98ms]
+(pass) a busy session at fire time stands down instead of double-driving [186.92ms]
+(pass) fallback continues an interrupted ordinary task after settlement with the original request [66.02ms]
+(pass) fallback handoff waits for idle and does not override a user abort [24.08ms]
+(pass) a successful core retry consumes fallback recovery without a duplicate handoff [44.78ms]
+(pass) fallback send failure preserves the pending handoff and retries the same request on fresh settlement [30.37ms]
+(pass) long interrupted requests use a bounded handoff without growing nested retry prompts [36.84ms]
+
+tests/main-model-recovery.test.ts:
+(pass) main model refs preserve order, dedupe, and support nested model ids [0.42ms]
+(pass) main model fallback candidates are ordered and never retried in a cycle [0.10ms]
+(pass) main fallback settings dedupe case-insensitively and cap the chain at ten [0.18ms]
+(pass) runtime fallback walk uses one supervised model at a time and preserves left-to-right order [15.43ms]
+(pass) successful fallback turns keep the preferred primary and fail back after a supervised probe [3.36ms]
+(pass) sticky failback preserves the old fallback-settles behavior [0.49ms]
+(pass) in-band provider output is recognized only for strong repeated-pane markers [0.21ms]
+(pass) the explicit Codex prompt-policy event is terminal, while lookalike text remains generic [0.20ms]
+(pass) main model errors stay opaque to the recovery policy [0.14ms]
+(pass) main model recovery backs off without giving up [13.13ms]
+(pass) main recovery requirements are generic across provider wording [0.08ms]
+
+ 33 pass
+ 0 fail
+Ran 33 tests across 3 files. [5.55s]

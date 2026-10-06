@@ -1,0 +1,19 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/context-hygiene.test.ts:
+(pass) predicate: error-only turns are droppable; tool-carrying, aborted, and healthy turns are not [0.41ms]
+(pass) drop rule: keeps the most recent failed turn, drops older ones, preserves everything else [0.32ms]
+(pass) drop rule: identity preserved when at or under the keep window; window is configurable [0.08ms]
+(pass) drop rule: SEADED BLOAT — 60 failed turns collapse to the keep window; normal turns survive verbatim [0.27ms]
+(pass) compaction pruning: reassigns both message arrays in place and counts drops [0.18ms]
+(pass) wiring: the context event drops accumulated error turns and ledgeres the hygiene pass [1097.41ms]
+(pass) wiring: session_before_compact prunes and bounds the preparation the runner will summarize [3.23ms]
+(pass) wiring: every default session_before_compact path receives the bounded projection and an undefined hook result [1.77ms]
+(pass) failed GLLA probes shed their obsolete prompts with the error replies [0.23ms]
+(pass) ordinary provider failures and unsupervised retries use the same hygiene rule [0.07ms]
+(pass) failed-probe cleanup preserves user requests, tool pairs, aborts and unrelated controls [0.12ms]
+(pass) both public context and compaction hooks remove obsolete failed dispatch pairs with checkpoint projection off [0.76ms]
+
+ 12 pass
+ 0 fail
+Ran 12 tests across 1 file. [2.38s]
