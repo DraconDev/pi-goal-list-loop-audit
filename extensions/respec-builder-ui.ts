@@ -45,7 +45,10 @@ export function respecBlockerDetails(builder: RespecBuilderState): string {
     return lines;
   };
   return ["Project blockers — recorded by the agent; recheck before treating them as current facts.",
-    ...blocked.flatMap(r => ["", ...wrap(`${r.id}: ${r.text}`), "Recorded reason:", ...wrap(r.blockedReason ?? "No concrete reason recorded.")]),
+    ...blocked.flatMap(r => ["", ...wrap(`${r.id}: ${r.text}`), "Recorded reason:", ...wrap(r.blockedReason ?? "No concrete reason recorded."),
+      ...wrap(`Who can act: ${r.blockerAction?.owner || "Agent first; recheck what needs operator help."}`),
+      ...wrap(`Action to take: ${r.blockerAction?.nextAction || "Ask the agent to recheck this blocker, resolve what it can, and identify the exact remaining operator step."}`),
+      ...wrap(`Resolved when: ${r.blockerAction?.expectedResult || "The agent records evidence that the blocking condition cleared."}`)]),
     "", "Next action:", ...wrap('Ask the agent: "Recheck these blockers against the current project. Resolve what you can. For anything requiring me, give the exact command or location, expected result, and why you cannot do it here."'),
     ...wrap("When evidence shows a blocker is resolved, the agent records it with unblock_project_requirement. Then /loop resume continues the saved project. Clearing a blocker does not verify or complete the requirement.")].join("\n");
 }

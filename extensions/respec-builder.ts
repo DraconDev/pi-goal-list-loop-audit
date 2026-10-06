@@ -8,6 +8,7 @@ export interface RespecRequirement {
   acceptance: string;
   status: "open" | "blocked" | "verified";
   blockedReason?: string;
+  blockerAction?: { owner?: string; nextAction?: string; expectedResult?: string };
   evidence?: { attemptId: string; report: string; model: string };
 }
 export interface RespecBuildTask {
@@ -88,22 +89,22 @@ export function settleRespecAudit(state: RespecBuilderState, attemptId: string, 
     history,
     feedback: [...state.feedback, result.error ?? result.impossibleReason ?? report].slice(-5) };
   const audited = new Set(state.audit.requirementIds);
-  const requirements = state.requirements.map(r => audited.has(r.id) ? { ...r, status: "verified" as const, blockedReason: undefined,
+  const requirements = state.requirements.map(r => audited.has(r.id) ? { ...r, status: "verified" as const, blockedReason: undefined, blockerAction: undefined,
     evidence: { attemptId, report: result.output, model: result.model } } : r);
   return { ...state, requirements, history, phase: requirements.every(r => r.status === "verified") ? "complete" : "replanning", audit: undefined };
 }
 
-export function blockRespecRequirement(state: RespecBuilderState, id: string, reason: string): RespecBuilderState {
+export function blockRespecRequirement(state: RespecBuilderState, id: string, reason: string, action?: RespecRequirement["blockerAction"]): RespecBuilderState {
   requirePhase(state, ["planning", "replanning", "building"]);
   if (!reason.trim() || !state.requirements.some(r => r.id === id && r.status !== "verified")) throw new Error("Blocking needs an unfinished requirement and a concrete reason.");
   return { ...state, phase: "replanning", tasks: [], history: state.tasks.length ? [...(state.history ?? []), { cycle: state.cycle, tasks: state.tasks, outcome: "replanned" as const, report: `Blocked ${id}: ${reason.trim()}` }].slice(-20) : state.history,
-    requirements: state.requirements.map(r => r.id === id ? { ...r, status: "blocked", blockedReason: reason.trim() } : r) };
+    requirements: state.requirements.map(r => r.id === id ? { ...r, status: "blocked", blockedReason: reason.trim(), blockerAction: action ? { owner: action.owner?.trim() || undefined, nextAction: action.nextAction?.trim() || undefined, expectedResult: action.expectedResult?.trim() || undefined } : undefined } : r) };
 }
 
 export function unblockRespecRequirement(state: RespecBuilderState, id: string, reason: string): RespecBuilderState {
   requirePhase(state, ["planning", "replanning", "building"]);
   if (!reason.trim() || !state.requirements.some(r => r.id === id && r.status === "blocked")) throw new Error("Unblocking needs a blocked requirement and evidence that its blocker cleared.");
-  return { ...state, feedback: [...state.feedback, `Unblocked ${id}: ${reason.trim()}`].slice(-5), requirements: state.requirements.map(r => r.id === id ? { ...r, status: "open", blockedReason: undefined } : r) };
+  return { ...state, feedback: [...state.feedback, `Unblocked ${id}: ${reason.trim()}`].slice(-5), requirements: state.requirements.map(r => r.id === id ? { ...r, status: "open", blockedReason: undefined, blockerAction: undefined } : r) };
 }
 
 /** Explicit confirmed scope change; changing criteria invalidates their proof. */

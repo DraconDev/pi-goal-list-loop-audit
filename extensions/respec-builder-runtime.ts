@@ -12,7 +12,7 @@ import type { LoopState } from "./goal-loop-forever.js";
 import { dispatchAuditorAllowedExtensions } from "./auditor-extensions.js";
 import { resolveAuditorThinkingLevel } from "./auditor-thinking.js";
 import { runDetachedGoalCompletionAuditor, runAuditorFallbackWithPolicy, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, writeAtomicJson, effectiveToolTimeoutMs, DEFAULT_AUDITOR_TOOL_TIMEOUT_MS, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
-import { setRespecAuditLive, getRespecAuditLive, respecCompletionSummary } from "./respec-builder-ui.js";
+import { setRespecAuditLive, getRespecAuditLive, respecCompletionSummary, respecBlockerDetails } from "./respec-builder-ui.js";
 import { respecIncrementAuditGoal } from "./respec-builder-audit.js";
 import { adoptRespecRequirements, beginRespecAudit, blockRespecRequirement, unblockRespecRequirement, refineRespecRequirements, claimRespecTask, planRespecIncrement, settleRespecAudit, type RespecBuilderState } from "./respec-builder.js";
 
@@ -32,6 +32,7 @@ interface Host {
   completed?: (ctx: ExtensionContext, id: string, summary: string) => boolean;
 }
 let host: Host;
+let extensionApi: ExtensionAPI;
 const running = new Map<string, AbortController>();
 
 /** A durable claim alone is not proof of a live dispatch. The detached
@@ -90,6 +91,18 @@ function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecB
   if (!host.persist(ctx)) { replaceState(old); return false; }
   appendLedger(ctx.cwd, "respec_builder_transition", { phase: next.phase, revision: next.revision, cycle: next.cycle,
     history: next.history?.at(-1), scopeChange: next.scopeChanges?.at(-1) });
+  const newBlockers = next.requirements.filter(r => r.status === "blocked" && !before.requirements.some(old =>
+    old.id === r.id && old.status === "blocked" && old.blockedReason === r.blockedReason
+    && JSON.stringify(old.blockerAction) === JSON.stringify(r.blockerAction)));
+  if (newBlockers.length) {
+    // Public transcript hook: display actions without starting a turn or
+    // treating an operator acknowledgement as evidence of resolution.
+    const content = respecBlockerDetails({ ...next, requirements: newBlockers });
+    try { extensionApi.sendMessage({ customType: "glla-project-blockers", content, display: true,
+      details: { projectId: next.projectId, requirementIds: newBlockers.map(r => r.id) } }, { triggerTurn: false }); }
+    catch { /* A UI failure must not roll back a durably recorded blocker. */ }
+    try { ctx.ui.notify(content, "warning"); } catch { /* headless host */ }
+  }
   return true;
 }
 
@@ -226,6 +239,7 @@ export function replayRespecCompletionSummary(ctx: ExtensionContext): void {
 
 export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
   host = deps;
+  extensionApi = pi;
   const confirm = (ctx: ExtensionContext, title: string, body: string) => host.confirm ? host.confirm(ctx, title, body) : ctx.ui.confirm(title, body);
   const reply = (text: string) => ({ content: [{ type: "text" as const, text }], details: {} });
   const execute = (action: (p: any, ctx: ExtensionContext, before: RespecBuilderState) => Promise<RespecBuilderState> | RespecBuilderState, allowStopped = false) =>
@@ -259,8 +273,8 @@ export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
   pi.registerTool(host.wrapTool({ name: "audit_project_increment", label: "Audit build increment", description: "Submit a concrete implementation claim after all batch tasks are claimed. The host runs the isolated auditor after this turn.",
     parameters: Type.Object({ claim: Type.String() }), execute: execute((p, _ctx, before) => beginRespecAudit(before, randomUUID(), p.claim)),
   }));
-  pi.registerTool(host.wrapTool({ name: "block_project_requirement", label: "Record project blocker", description: "Record a concrete blocker. The requirement stays unfinished and abandoned batch work is retained.",
-    parameters: Type.Object({ id: Type.String(), reason: Type.String() }), execute: execute((p, _ctx, before) => blockRespecRequirement(before, p.id, p.reason), true),
+  pi.registerTool(host.wrapTool({ name: "block_project_requirement", label: "Record project blocker", description: "Record any concrete blocker (access, dependency, decision, environment or other). Supply owner, nextAction (exact command or location when relevant), and expectedResult so the operator sees actionable steps automatically. Recheck what you can resolve yourself first. The requirement stays unfinished and abandoned batch work is retained.",
+    parameters: Type.Object({ id: Type.String(), reason: Type.String(), owner: Type.Optional(Type.String()), nextAction: Type.Optional(Type.String()), expectedResult: Type.Optional(Type.String()) }), execute: execute((p, _ctx, before) => blockRespecRequirement(before, p.id, p.reason, { owner: p.owner, nextAction: p.nextAction, expectedResult: p.expectedResult }), true),
   }));
   pi.registerTool(host.wrapTool({ name: "unblock_project_requirement", label: "Clear project blocker", description: "Record evidence that a blocker cleared. Paused work stays paused until explicit resume.",
     parameters: Type.Object({ id: Type.String(), reason: Type.String() }), execute: execute((p, _ctx, before) => unblockRespecRequirement(before, p.id, p.reason), true),
