@@ -153,18 +153,52 @@ export function isPromptPolicyRejection(error: string | undefined): boolean {
  * the deterministic "non-recoverable" verb (a sample of a length cap
  * mid-stream MUST NOT silently rotate when the chain has no ref).
  */
+/** Classify error payload, not opaque trace ids or unrelated metadata. Raw
+ * diagnostics stay on MainModelFailure for the existing display/storage path. */
+function classificationEvidence(raw: string): string {
+  const withoutIds = (text: string) => text.replace(/["']?request[_-]?id["']?\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;})]+)/gi, "");
+  const start = raw.indexOf("{"), end = raw.lastIndexOf("}");
+  if (start >= 0 && end > start) {
+    try {
+      const payload = JSON.parse(raw.slice(start, end + 1));
+      const parts: string[] = [withoutIds(raw.slice(0, start))];
+      const read = (value: unknown, depth: number): void => {
+        if (depth > 6) return;
+        if (typeof value === "string") { parts.push(value); return; }
+        if (!value || typeof value !== "object" || Array.isArray(value)) return;
+        for (const [key, field] of Object.entries(value)) {
+          if (["message", "detail", "error", "type"].includes(key)) read(field, depth + 1);
+          else if (["code", "status", "statusCode", "status_code"].includes(key)) {
+            if (/^[1-5]\d{2}$/.test(String(field))) parts.push(`HTTP ${field}`);
+            else if (typeof field === "string") parts.push(field);
+          }
+        }
+      };
+      read(payload, 0);
+      return parts.join(" ");
+    } catch { /* Malformed provider JSON retains textual error evidence. */ }
+  }
+  return withoutIds(raw);
+}
+
+function hasHttpStatus(text: string, status: RegExp): boolean {
+  const codes = text.matchAll(/(?:^|\b(?:http(?:\s+(?:status|error))?|status(?:\s+code)?|error)\s*[:=]?\s*)([1-5]\d{2})(?=$|[\s:;,])/gi);
+  return [...codes].some(match => status.test(match[1]!));
+}
+
 export function classifyMainModelFailure(error: string | undefined, opts?: { isContextOverflow?: boolean }): MainModelFailure {
   const raw = typeof error === "string" ? error.trim() : "";
-  const text = raw.toLowerCase();
+  const evidence = classificationEvidence(raw);
+  const text = evidence.toLowerCase();
   if (!raw) return { kind: "unknown", raw };
   // Auditor timeouts / watchdog stalls are transient infrastructure failures, not user aborts.
-  if (/^(?:auditor (?:exceeded|stalled)|.*(?:timed?\s*out|timeout|inactivity|no session activity))/i.test(raw)) {
+  if (/^(?:auditor (?:exceeded|stalled)|.*(?:timed?\s*out|timeout|inactivity|no session activity))/i.test(evidence)) {
     return { kind: "transient", raw };
   }
-  if (/^(?:auditor aborted\.?$|user (?:interrupt|abort)|cancelled by user)/i.test(raw) || /user interrupt/.test(text)) {
+  if (/^(?:auditor aborted\.?$|user (?:interrupt|abort)|cancelled by user)/i.test(evidence) || /user interrupt/.test(text)) {
     return { kind: "non-recoverable", raw };
   }
-  if (isPromptPolicyRejection(raw)) {
+  if (isPromptPolicyRejection(evidence)) {
     return { kind: "non-recoverable", raw, nonRecoverableReason: "prompt-policy" };
   }
   if (/context|output[ -]?token|max_?tokens|length limit|too many tokens|prompt too large|context window/.test(text)) {
@@ -179,13 +213,13 @@ export function classifyMainModelFailure(error: string | undefined, opts?: { isC
   // first retry succeeds. Observed shapes: 413 {"message":"Downloaded image
   // content cannot exceed 30MB"...} and 413 {"code":"413","message":"Request
   // Entity Too Large"}.
-  if (/\b413\b|request entity too large|payload too large|image content cannot exceed/.test(text)) {
+  if (hasHttpStatus(text, /^413$/) || /request entity too large|payload too large|image content cannot exceed/.test(text)) {
     return { kind: "transient", raw };
   }
-  if (/401|403|unauthori[sz]ed|forbidden|invalid (?:api|access) key|authentication|no api key|credential/.test(text)) {
+  if (hasHttpStatus(text, /^40[13]$/) || /unauthori[sz]ed|forbidden|invalid (?:api|access) key|authentication|no api key|credential/.test(text)) {
     return { kind: "auth", raw };
   }
-  if (/5\d\d|overload|temporarily unavailable|service unavailable|timeout|timed? ?out|network|fetch failed|socket|econn|gateway|upstream|internal server/.test(text)) {
+  if (hasHttpStatus(text, /^5\d{2}$/) || /overload|temporarily unavailable|service unavailable|timeout|timed? ?out|network|fetch failed|socket|econn|gateway|upstream|internal server/.test(text)) {
     return { kind: "transient", raw };
   }
   return { kind: "unknown", raw };
