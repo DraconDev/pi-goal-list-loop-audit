@@ -36,6 +36,8 @@ export const DEFAULT_KEEP_RECENT_ERROR_TURNS = 1;
 
 export interface FailedTurnDrop {
   messageIndex: number;
+  /** Adjacent GLLA dispatch that produced this discarded failure. */
+  triggerMessageIndex?: number;
   errorMessage?: string;
 }
 
@@ -95,10 +97,13 @@ export function dropFailedErrorOnlyTurns(
   }
 
   const dropSet = new Set(failedIndexes.slice(0, failedIndexes.length - keepRecent));
-  const dropped: FailedTurnDrop[] = [...dropSet].map((messageIndex) => ({
-    messageIndex,
-    errorMessage: (messages[messageIndex] as { errorMessage?: string } | null)?.errorMessage,
-  }));
+  const dropped: FailedTurnDrop[] = [...dropSet].map((messageIndex) => {
+    const previous = messages[messageIndex - 1] as { role?: unknown; customType?: unknown } | undefined;
+    const triggerMessageIndex = previous?.role === "custom" && previous.customType === "goal-event" ? messageIndex - 1 : undefined;
+    if (triggerMessageIndex !== undefined) dropSet.add(triggerMessageIndex);
+    return { messageIndex, triggerMessageIndex,
+      errorMessage: (messages[messageIndex] as { errorMessage?: string } | null)?.errorMessage };
+  });
   const projected = messages.filter((_, index) => !dropSet.has(index));
   return { messages: projected, dropped, kept: keepRecent };
 }

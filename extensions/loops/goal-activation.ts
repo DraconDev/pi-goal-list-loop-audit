@@ -3648,6 +3648,7 @@ async function handleHotLengthExhaustion(
       if (hygiene.dropped.length > 0) {
         appendLedger(ctx.cwd, "context_hygiene_dropped", {
           dropped: hygiene.dropped.length,
+          droppedDispatchPayloads: hygiene.dropped.filter(turn => turn.triggerMessageIndex !== undefined).length,
           kept: hygiene.kept,
           lastError: hygiene.dropped[hygiene.dropped.length - 1]?.errorMessage?.slice(0, 160),
           generation: sessionGeneration,

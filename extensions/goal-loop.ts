@@ -1,4 +1,5 @@
 import { respecAuditStatus } from "./respec-builder-ui.js";
+import { respecBuilderContext } from "./respec-builder-context.js";
 /**
  * goal-loop.ts — Loop 3 machinery: /loop command, tick engine, git finish.
  *
@@ -412,7 +413,7 @@ export function loopPrompt(loop: LoopState, regressionNote: string, strategyNote
       .replace(/\$\{BUILDER_PHASE\}/g, loop.builder.phase)
       .replace(/\$\{SPEC_FILE\}/g, () => loop.specFile ?? "SPEC.md")
       .replace(/\$\{REFINE_HINT\}/g, () => loop.refineHint ?? "none")
-      .replace(/\$\{BUILDER_STATE\}/g, () => JSON.stringify(loop.builder, null, 2))
+      .replace(/\$\{BUILDER_STATE\}/g, () => respecBuilderContext(loop.builder!))
       .replace(/\$\{BOUNDS_NOTE\}/g, () => boundsNote)
       .replace(/\$\{INTERVENTION_NOTE\}/g, () => interventionNote);
   }
