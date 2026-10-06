@@ -446,3 +446,28 @@ test("main recovery requirements are generic across provider wording", () => {
     assert.equal(isMainModelFallbackFailure(classifyMainModelFailure(raw)), true, raw);
   }
 });
+
+
+test("opaque provider request metadata cannot alter classification or fallback eligibility", () => {
+  const ids = ["abc123", "abc401", "abc403", "abc503", "context-503", "credential-401", "user interrupt", "Codex error event: invalid prompt"];
+  for (const request_id of ids) {
+    const raw = `Error: 429: ${JSON.stringify({ error: { message: "Plan usage limit reached", code: 429, metadata: { request_id } }, request_id })}`;
+    const failure = classifyMainModelFailure(raw);
+    assert.equal(failure.kind, "unknown", request_id);
+    assert.equal(isMainModelFallbackFailure(failure), true, request_id);
+    assert.equal(failure.raw, raw, "original diagnostics remain available");
+  }
+  for (const id of ["abc401", "abc403", "abc503", "context-503"]) {
+    assert.equal(classifyMainModelFailure(`Plan usage limit reached; request_id=${id}`).kind, "unknown", id);
+  }
+});
+
+test("actual numeric status fields and HTTP prefixes remain classification evidence", () => {
+  for (const raw of ['HTTP 401', 'Error: 403: {"message":"Denied","request_id":"abc123"}', '{"error":{"message":"Failed","code":401,"request_id":"abc503"}}']) {
+    assert.equal(classifyMainModelFailure(raw).kind, "auth", raw);
+  }
+  for (const raw of ['HTTP 503', '{"statusCode":503,"message":"Failure","request_id":"abc401"}', 'Error: 500: {"message":"Failure"}']) {
+    assert.equal(classifyMainModelFailure(raw).kind, "transient", raw);
+  }
+  assert.equal(classifyMainModelFailure('Provider request_id=401').kind, "unknown");
+});
