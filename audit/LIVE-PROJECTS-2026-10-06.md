@@ -59,12 +59,15 @@ Do not modify the census or Pi core as part of this repository audit.
 | Clean Web | Ordinary session | No active GLLA objective; latest successful input approximately 463k tokens. |
 | Dracon Platform root | Ordinary session | No active GLLA objective; older warnings are not current audit ownership. |
 | AI Auto Music | Ordinary session | No active GLLA objective; older provider failures remain in transcript history. |
-| AI Auto Video | Ordinary session | No active GLLA objective; missing installed Pi bundle module is an external-only report. |
+| AI Auto Video | Ordinary session | No active GLLA objective; historical missing Pi bundle module is external-only, and the latest assistant turn succeeded. |
 
 The six provider holds have future retry timestamps; this snapshot does not show
 an overdue recovery timer. Plan-limit exhaustion cannot be repaired in GLLA.
 No stalled independent audit was confirmed. Completed job directories containing
 results were not counted as running auditors.
+The latest assistant turns in AI Auto Music, AI Auto Video, Clean Web, Studio
+and the platform root succeeded; their historical last-error fields do not prove
+they are currently blocked.
 
 ## Context and visibility observations
 
