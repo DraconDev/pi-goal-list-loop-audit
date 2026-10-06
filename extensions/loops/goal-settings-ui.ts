@@ -456,6 +456,20 @@ function auditorThinkingLevels(model: any): string[] {
 
 type ConfiguredThinkingLevel = NonNullable<Settings["auditorThinkingLevel"]>;
 
+async function promptMainFallbackThinking(ctx: ExtensionContext, refs: readonly string[], thinkingLevels: Record<string, ConfiguredThinkingLevel>): Promise<void> {
+  for (const ref of refs) {
+    const key = ref.toLowerCase();
+    const picked = resolvePickedModel(ctx, { kind: "ref", ref });
+    if (!picked) continue;
+    const levels = auditorThinkingLevels(picked);
+    if (levels.length === 1) { thinkingLevels[key] = levels[0] as ConfiguredThinkingLevel; continue; }
+    const chosen = await ctx.ui.select(`Main fallback thinking — ${ref}`,
+      drafterThinkingChoiceOptions(levels, thinkingLevels[key] ?? ctx.thinkingLevel, thinkingLevels[key] === undefined));
+    if (chosen?.startsWith("session —")) delete thinkingLevels[key];
+    else if (chosen && levels.includes(chosen.split(" ")[0]!)) thinkingLevels[key] = chosen.split(" ")[0] as ConfiguredThinkingLevel;
+  }
+}
+
 /** Resolve the model returned by the shared model picker. Keeping this in the
  * settings layer means every role can derive its thinking menu from the model
  * the user actually selected, including the session-model row. */
@@ -1174,19 +1188,8 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       );
       if (refs === undefined) return;
       const thinkingLevels = { ...loadGlobalSettings().mainModelFallbackThinkingLevels };
-      for (const ref of refs) {
-        const key = ref.toLowerCase();
-        const picked = resolvePickedModel(ctx, { kind: "ref", ref });
-        if (!picked) continue;
-        const levels = auditorThinkingLevels(picked);
-        if (levels.length === 1) { thinkingLevels[key] = levels[0] as ConfiguredThinkingLevel; continue; }
-        const chosen = await ctx.ui.select(
-          `Main fallback thinking — ${ref}`,
-          drafterThinkingChoiceOptions(levels, thinkingLevels[key] ?? ctx.thinkingLevel, thinkingLevels[key] === undefined),
-        );
-        if (chosen?.startsWith("session —")) delete thinkingLevels[key];
-        else if (chosen && levels.includes(chosen.split(" ")[0]!)) thinkingLevels[key] = chosen.split(" ")[0] as ConfiguredThinkingLevel;
-      }
+      const existing = new Set(current.map(ref => ref.toLowerCase()));
+      await promptMainFallbackThinking(ctx, refs.filter(ref => !existing.has(ref.toLowerCase())), thinkingLevels);
       saveSettings("global", ctx, { mainModelFallbacks: refs.length ? refs : undefined, mainModelFallbackThinkingLevels: refs.length ? thinkingLevels : undefined });
       if (!refs.length && state.mainModelRecovery) {
         const recovery = state.mainModelRecovery;
@@ -1203,6 +1206,18 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         persistState(ctx);
       }
       ctx.ui.notify(refs.length ? `Main agent fallback models saved in order: ${refs.map(ref => `${ref} · ${thinkingLevels[ref.toLowerCase()] ?? "session thinking"}`).join(" → ")}` : "Main agent fallback models cleared — any pending fallback switch was cancelled and recovery will probe the current model.", "info");
+      return;
+    }
+    case "mainModelFallbackThinkingLevels": {
+      const settings = loadGlobalSettings();
+      const refs = normalizeMainModelFallbackRefs(settings.mainModelFallbacks);
+      if (!refs.length) { ctx.ui.notify("Choose main fallback models first.", "info"); return; }
+      const ref = refs.length === 1 ? refs[0] : await ctx.ui.select("Main fallback model — edit thinking", refs);
+      if (!ref || !refs.includes(ref)) return;
+      const levels = { ...settings.mainModelFallbackThinkingLevels };
+      await promptMainFallbackThinking(ctx, [ref], levels);
+      saveSettings("global", ctx, { mainModelFallbackThinkingLevels: levels });
+      ctx.ui.notify(`${ref} · ${levels[ref.toLowerCase()] ?? "session thinking"}`, "info");
       return;
     }
     case "auditorSilent": {
