@@ -710,6 +710,10 @@ function unsupervisedErrorRetryText(display: string, ctx: ExtensionContext): str
   return interruptedWorkContinuation(ctx, `glla: the previous turn failed with a provider error (${display}). Continue from where it stopped — do not repeat tool calls that already succeeded.`).content;
 }
 
+function ordinaryRecoveryWaiting(): boolean {
+  return Boolean(mainModelRecoveryActive() || state.mainModelRecovery?.manualResumeRequired || state.mainModelRecovery?.primaryProbeInFlight);
+}
+
 function clearUnsupervisedErrorRetryTimer(): void {
   if (unsupervisedErrorRetryTimer) {
     clearTimeout(unsupervisedErrorRetryTimer);
@@ -814,7 +818,7 @@ function maybeScheduleUnsupervisedErrorRetry(
     if (!fresh) return;
     // Ownership changed while waiting — a supervised lane owns the session
     // now, so this retry stands down instead of double-driving it.
-    if ((state.goal && (state.goal.status === "active" || state.goal.status === "auditing")) || isLoopActive() || mainModelRecoveryActive() || state.mainModelRecovery?.manualResumeRequired || state.mainModelRecovery?.primaryProbeInFlight) return;
+    if ((state.goal && (state.goal.status === "active" || state.goal.status === "auditing")) || isLoopActive() || ordinaryRecoveryWaiting()) return;
     if (draftingTarget !== null) return;
     if (state.supervisorPausedAt || state.loadHoldAt || !fresh.isIdle() || fresh.hasPendingMessages?.()) return;
     try {
@@ -2954,7 +2958,7 @@ async function handleHotLengthExhaustion(
       draftingTarget === null &&
       !(state.goal && (state.goal.status === "active" || state.goal.status === "auditing")) &&
       !isLoopActive() &&
-      !state.mainModelRecovery
+      !ordinaryRecoveryWaiting()
     ) {
       maybeScheduleUnsupervisedErrorRetry(pi, ctx, rawLastA, lastA?.text ?? "");
       return;
