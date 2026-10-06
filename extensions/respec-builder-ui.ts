@@ -41,6 +41,12 @@ function wrapBlockerText(text: string): string[] {
   if (remaining) lines.push(remaining);
   return lines;
 }
+export function respecBlockerHeadline(requirement: RespecBuilderState["requirements"][number]): string {
+  if (requirement.blockerAction?.summary) return sanitizeDisplayText(requirement.blockerAction.summary);
+  const reason = sanitizeDisplayText(requirement.blockedReason || "No explanation recorded").replace(/\s+/g, " ").trim();
+  const first = reason.match(/^.*?[.!?](?:\s|$)/)?.[0]?.trim() || reason;
+  return `Needs clarification: ${first.length > 200 ? first.slice(0, 197) + "…" : first}`;
+}
 /** Action first: diagnostics stay in the explicit full-details view. */
 export function respecBlockerActions(builder: RespecBuilderState): string {
   const blocked = builder.requirements.filter(r => r.status === "blocked");
@@ -49,7 +55,7 @@ export function respecBlockerActions(builder: RespecBuilderState): string {
     ...blocked.flatMap(r => {
       const action = r.blockerAction;
       const legacy = !action?.summary || !action?.whyAgentCannotProceed;
-      return ["", ...wrapBlockerText(`${r.id}: ${action?.summary || "The agent did not record a short explanation of the hangup."}`),
+      return ["", ...wrapBlockerText(`${r.id}: ${respecBlockerHeadline(r)}`),
         ...wrapBlockerText(`Who can act: ${action?.owner || "Not recorded; operator involvement is unconfirmed."}`),
         ...wrapBlockerText(`Why the agent cannot continue: ${action?.whyAgentCannotProceed || "Not recorded. A failed test or unfinished implementation alone is not an external blocker."}`),
         ...wrapBlockerText(`Action to take: ${action?.nextAction || 'Ask the agent: "Recheck these blockers. Continue fixing ordinary implementation or test failures. For a real external dependency, name who must act and the exact step needed."'}`),
