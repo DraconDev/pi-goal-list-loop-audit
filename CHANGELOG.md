@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.39.11 — bounded recovery context and repeat compaction (2026-10-06)
+
 - Failed recovery cleanup removes obsolete GLLA dispatch and automatic retry
   prompts along with error-only replies from model and compaction input across
   modes. The latest failure, user requests and tool interactions remain intact.
