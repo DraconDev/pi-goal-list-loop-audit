@@ -119,7 +119,7 @@ test("project blockers automatically show generic actions after journaling, with
     assert.match(String(messages()[0]!.message.content), /A read probe succeeds/);
     assert.deepEqual(messages()[0]!.options, { triggerTurn: false });
     const rendered = pi.messageRenderers.get("glla-project-blockers")!(messages()[0]!.message, { outputPad: 1 },
-      { fg: (_color: string, text: string) => text, bg: (_color: string, text: string) => text, bold: (text: string) => text });
+      { fg: (_color: string, text: string) => text, bg: (_color: string, text: string) => text, bold: (text: string) => text }) as { render(width: number): string[] };
     assert.match(rendered.render(80).join("\n"), /GLLA · Action needed/);
     assert.match(rendered.render(80).join("\n"), /Resolved when: A read probe succeeds/);
     assert.equal(readState(cwd).loop!.active, true, "partial blockers leave other work available");
