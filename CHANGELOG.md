@@ -2,40 +2,35 @@
 
 ## Unreleased
 
-- Main-model fallback continues interrupted ordinary requests and blocker reviews
-  after the failed run settles, carrying a bounded original-request excerpt and
-  preserving successful actions. Core retries, queued work and user aborts avoid
-  duplicate or unwanted handoffs; goals and loops retain their existing saved
-  continuation paths.
+## 0.39.13 — continue repair work and model handoffs (2026-10-06)
 
+### Project repair and blocker recovery
+
+- Project obstacles distinguish repair work from external dependencies. Failed
+  tests and implementation gaps return to planning while requirements stay open.
+  Other open work continues around external dependencies. Correcting a mistaken
+  blocker releases only a blocker hold; user pauses and budget limits stay intact.
+- New external blockers automatically show a concise action card with the actor,
+  next step, expected result and why the agent cannot proceed. Incomplete reports
+  cannot park work. Older reports are labelled Needs clarification.
+- `/loop blockers` shows complete evidence; `/loop recheck` requests one agent
+  assessment. Blocker-only all-blocked resume now requests that review instead of
+  merely refusing. Scope and independent verification remain binding.
 - Held projects supply their saved contract to ordinary status questions as
-  per-turn context. `/loop recheck`, and blocker-only all-blocked resume, request
-  one agent assessment instead of simply refusing. Repair work can return to
-  building; real dependencies retain their hold and accepted scope.
+  per-turn context, without repeatedly adding it to transcript history.
 
-- Project obstacles distinguish repair work from external dependencies.
-  Failed tests and implementation gaps replan while remaining open and active;
-  other open requirements continue around external blockers. Reclassifying a
-  mistaken blocker releases a blocker-only hold, while user and budget holds
-  remain intact. Prior batch work and repair steps stay journaled.
+### Model fallback continuation and settings
 
-- New or changed project blockers automatically display complete reasons and
-  actions. New blocker reports require a short summary, actor, concrete action,
-  expected result and why the agent cannot proceed; incomplete reports cannot
-  park work. Automatic cards lead with actions and keep long evidence in
-  `/loop blockers`. Older reports are labelled Needs clarification. Failed
-  tests and unfinished implementation are work to continue. Displaying actions
-  never clears or resumes blocked work.
-
-- `/loop blockers` shows complete agent-recorded blocker reasons and recovery
-  steps. Blocked cards link to it, and all-blocked resume refusals show details
-  instead of asking the operator to clear an unspecified blocker.
-- Adding main fallback models asks for thinking only for newly selected models.
+- Main-model fallback continues interrupted ordinary requests and blocker reviews
+  after the failed run settles, preserving the original request and successful
+  actions. Core retries, queued work and user aborts avoid duplicate or unwanted
+  handoffs; goals and loops retain their saved continuation paths.
+- Adding fallback models asks for thinking only for newly selected models.
   Existing pins survive edits, reorder and removal. A separate Fallback thinking
   row edits one saved model without repeating the whole chain's prompts.
-- The global main fallback chain can include the current session model.
-  Recovery still skips the active model and candidates already tried in its
-  current cycle; configuring the chain no longer depends on the editor's model.
+- The global main fallback chain can include the current session model. Recovery
+  skips the active model and already-tried candidates in its current cycle;
+  editing the chain no longer depends on the editor's model.
 
 ## 0.39.12 — resumable compaction holds and fallback thinking (2026-10-06)
 
