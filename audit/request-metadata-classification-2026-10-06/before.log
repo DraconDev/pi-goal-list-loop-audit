@@ -1,0 +1,60 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/main-model-recovery.test.ts:
+(pass) main model refs preserve order, dedupe, and support nested model ids [1.78ms]
+(pass) main model fallback candidates are ordered and never retried in a cycle [0.12ms]
+(pass) main fallback settings dedupe case-insensitively and cap the chain at ten [0.13ms]
+(pass) runtime fallback walk uses one supervised model at a time and preserves left-to-right order [504.04ms]
+(pass) successful fallback turns keep the preferred primary and fail back after a supervised probe [12.34ms]
+(pass) sticky failback preserves the old fallback-settles behavior [15.15ms]
+(pass) in-band provider output is recognized only for strong repeated-pane markers [0.18ms]
+(pass) the explicit Codex prompt-policy event is terminal, while lookalike text remains generic [0.22ms]
+(pass) main model errors stay opaque to the recovery policy [0.20ms]
+(pass) main model recovery backs off without giving up [0.58ms]
+(pass) main recovery requirements are generic across provider wording [0.04ms]
+451 | test("opaque provider request metadata cannot alter classification or fallback eligibility", () => {
+452 |   const ids = ["abc123", "abc401", "abc403", "abc503", "context-503", "credential-401", "user interrupt", "Codex error event: invalid prompt"];
+453 |   for (const request_id of ids) {
+454 |     const raw = `Error: 429: ${JSON.stringify({ error: { message: "Plan usage limit reached", code: 429, metadata: { request_id } }, request_id })}`;
+455 |     const failure = classifyMainModelFailure(raw);
+456 |     assert.equal(failure.kind, "unknown", request_id);
+                 ^
+AssertionError: abc401
+
+'auth' !== 'unknown'
+
+ generatedMessage: false,
+     actual: "auth",
+   expected: "unknown",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/main-model-recovery.test.ts:456:12
+      at fn (node:test:215:18)
+(fail) opaque provider request metadata cannot alter classification or fallback eligibility [39.13ms]
+465 | test("actual numeric status fields and HTTP prefixes remain classification evidence", () => {
+466 |   for (const raw of ['HTTP 401', 'Error: 403: {"message":"Denied","request_id":"abc123"}', '{"error":{"message":"Failed","code":401,"request_id":"abc503"}}']) {
+467 |     assert.equal(classifyMainModelFailure(raw).kind, "auth", raw);
+468 |   }
+469 |   for (const raw of ['HTTP 503', '{"statusCode":503,"message":"Failure","request_id":"abc401"}', 'Error: 500: {"message":"Failure"}']) {
+470 |     assert.equal(classifyMainModelFailure(raw).kind, "transient", raw);
+                 ^
+AssertionError: {"statusCode":503,"message":"Failure","request_id":"abc401"}
++ actual - expected
+
++ 'auth'
+- 'transient'
+
+ generatedMessage: false,
+     actual: "auth",
+   expected: "transient",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/main-model-recovery.test.ts:470:12
+      at fn (node:test:215:18)
+(fail) actual numeric status fields and HTTP prefixes remain classification evidence [0.46ms]
+
+ 11 pass
+ 2 fail
+Ran 13 tests across 1 file. [3.13s]
