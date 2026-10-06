@@ -262,3 +262,32 @@ test("failed GLLA probes shed their obsolete prompts with the error replies", ()
   assert.deepEqual(result.messages, [actualUser, latest, messages.at(-1)]);
   assert.equal(messages.length, 7, "saved transcript input is untouched");
 });
+
+
+test("failed-probe cleanup preserves user requests, tool pairs, aborts and unrelated controls", () => {
+  const control = { role: "custom", customType: "goal-event", content: "project directive" };
+  const toolTurn = failedTurn("tool failed", [{ type: "toolCall", id: "t", name: "bash", arguments: {} }]);
+  const toolResult = { role: "toolResult", toolCallId: "t", content: [] };
+  const forgedUser = { role: "user", customType: "goal-event", content: "user-authored request" };
+  const abort = { role: "assistant", stopReason: "aborted", content: [] };
+  const lastError = failedTurn("latest");
+  const input = [control, toolTurn, toolResult, control, abort, forgedUser, failedTurn("old"), control, userTurn("intervening request"), failedTurn("old2"), control, lastError];
+  const result = dropFailedErrorOnlyTurns(input);
+  for (const kept of [control, toolTurn, toolResult, abort, forgedUser, input[8], lastError]) assert.ok(result.messages.includes(kept));
+  assert.equal(result.messages.filter(m => m === control).length, 4, "only an adjacent owned failed dispatch may disappear");
+});
+
+test("both public context and compaction hooks remove obsolete failed dispatch pairs with checkpoint projection off", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api); __testOnlyResetOwnerSession();
+  const ctx = makeMockCtx(cwd);
+  const controls = [1, 2, 3].map(n => ({ role: "custom", customType: "goal-event", content: "project state " + n }));
+  const input = [controls[0], failedTurn("404"), controls[1], failedTurn("404"), controls[2], failedTurn("latest")];
+  const handlers = (pi as unknown as { handlers: Map<string, (...a: unknown[]) => unknown> }).handlers;
+  const result = await handlers.get("context")!({ messages: input }, ctx) as { messages: unknown[] };
+  assert.deepEqual(result.messages, input.slice(-2));
+  const prep = { messagesToSummarize: input, turnPrefixMessages: [] };
+  await handlers.get("session_before_compact")!({ preparation: prep }, ctx);
+  assert.deepEqual(prep.messagesToSummarize, input.slice(-2));
+  assert.equal(input.length, 6);
+  __testOnlyResetOwnerSession();
+});

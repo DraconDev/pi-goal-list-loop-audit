@@ -26,7 +26,7 @@ export function respecBuilderContext(builder: RespecBuilderState): string {
   if (result.length <= MAX_RESPEC_CONTEXT_CHARS) return result;
   // Never silently clip acceptance criteria or serialize invalid JSON.
   // Oversized contracts require a scoped durable read before operational work.
-  return JSON.stringify({ projectId: excerpt(builder.projectId ?? "", 256), phase: builder.phase,
+  const fallback = JSON.stringify({ projectId: excerpt(builder.projectId ?? "", 256), phase: builder.phase,
     revision: builder.revision, cycle: builder.cycle, vision: excerpt(builder.vision, 2_000),
     requirementCount: builder.requirements.length, taskCount: builder.tasks.length,
     contextProjection: { authority, contractOmitted: true,
@@ -34,4 +34,9 @@ export function respecBuilderContext(builder: RespecBuilderState): string {
     latestAudit: latest ? { cycle: latest.cycle, outcome: latest.outcome, report: excerpt(latest.report, 12_000) } : undefined,
     latestFeedback: builder.feedback.length ? excerpt(builder.feedback.at(-1)!, 4_000) : undefined,
   }, null, 2);
+  if (fallback.length <= MAX_RESPEC_CONTEXT_CHARS) return fallback;
+  return JSON.stringify({ projectId: excerpt(builder.projectId ?? "", 128), phase: builder.phase,
+    revision: builder.revision, cycle: builder.cycle, requirementCount: builder.requirements.length,
+    taskCount: builder.tasks.length, contextProjection: { authority, contractOmitted: true, reportsOmitted: true,
+      instruction: "STOP before operational work: read the full adopted contract, current tasks and latest feedback through scoped durable inspection. This projection cannot define or weaken scope." } }, null, 2);
 }
