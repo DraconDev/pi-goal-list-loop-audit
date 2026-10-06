@@ -281,3 +281,27 @@ test("a successful core retry consumes fallback recovery without a duplicate han
   await pi.fire("agent_settled", {}, ctx);
   assert.equal(sentRetries().length, 0);
 });
+
+
+test("fallback send failure preserves the pending handoff and retries the same request on fresh settlement", async () => {
+  const ctx = await failoverOrdinaryRequest("Finish the positioning probe already in progress");
+  pi.sendMessageError = new Error("host could not enqueue");
+  try {
+    await pi.fire("agent_settled", {}, ctx);
+    assert.equal(sentRetries().length, 0);
+    assert.ok(ctx.ui.matching("continuation could not be sent").length);
+  } finally { pi.sendMessageError = null; }
+  await pi.fire("agent_settled", {}, ctx);
+  assert.equal(sentRetries().length, 1);
+  assert.match(String(sentRetries()[0]!.message.content), /Finish the positioning probe already in progress/);
+});
+
+test("long interrupted requests use a bounded handoff without growing nested retry prompts", async () => {
+  const ctx = await failoverOrdinaryRequest("Start the requested work. " + "request details ".repeat(600) + "Preserve the final acceptance criteria.");
+  await pi.fire("agent_settled", {}, ctx);
+  const content = String(sentRetries()[0]!.message.content);
+  assert.ok(content.length < 6000);
+  assert.match(content, /Start the requested work/);
+  assert.match(content, /Preserve the final acceptance criteria/);
+  assert.match(content, /read the complete original request in conversation/);
+});

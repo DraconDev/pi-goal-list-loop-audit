@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Main-model fallback continues interrupted ordinary requests and blocker reviews
+  after the failed run settles, carrying a bounded original-request excerpt and
+  preserving successful actions. Core retries, queued work and user aborts avoid
+  duplicate or unwanted handoffs; goals and loops retain their existing saved
+  continuation paths.
+
 - Held projects supply their saved contract to ordinary status questions as
   per-turn context. `/loop recheck`, and blocker-only all-blocked resume, request
   one agent assessment instead of simply refusing. Repair work can return to

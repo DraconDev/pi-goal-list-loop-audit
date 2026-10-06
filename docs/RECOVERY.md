@@ -104,6 +104,20 @@ can therefore remain high until a successful compaction replaces the transcript
 prefix, even though provider input has already shed obsolete failure pairs.
 Filtering failed attempts does not restore an unavailable provider endpoint.
 
+## Continuing work after a model fallback
+
+Selecting a fallback does not finish or replace the task. Active goals, list items
+and loops continue through their saved contracts and progress. For ordinary turns
+and one-off blocker reviews, GLLA requests one continuation after the failed run
+has settled, with a bounded excerpt of the original request and instructions to
+use existing successful tool results. The complete conversation remains authoritative.
+
+A successful core retry consumes this handoff; repeated settlement cannot duplicate
+it. Running or queued turns, explicit aborts, supervisor pauses and recovery waits
+prevent automatic sends. A send failure retains the pending handoff and reports
+that delivery failed. GLLA does not restart the project or unblock a dependency
+just because the selected model changed.
+
 ## Project requirement blockers
 
 New or changed project blockers automatically show a concise action card:
