@@ -151,6 +151,7 @@ test("runtime fallback walk uses one supervised model at a time and preserves le
     await probeMainModelRecovery(ctx);
     assert.equal(thinkingCalls.at(-1), "low", "scheduled probes also apply the chosen fallback thinking level");
     assert.equal(calls.at(-1), "provider/first", "the scheduled probe selects the first eligible backup");
+    assert.equal(state.mainModelRecovery?.primaryThinkingLevel, "high", "scheduled recovery durably captures the primary dial before applying a fallback pin");
     assert.deepEqual(state.mainModelRecovery?.skipped, [{ ref: "provider/blocked", reason: "forbidden" }]);
     assert.equal(state.mainModelRecovery?.skipped?.some((entry) => entry.ref === "provider/first"), false, "the scheduled probe target is not labelled skipped");
 

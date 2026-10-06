@@ -1385,9 +1385,17 @@ async function probePreferredPrimary(ctx: ExtensionContext, recovery: MainModelR
 async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> {
   if (supervisorPaused(state)) return;
   const generation = flags.sessionGeneration;
-  const recovery = state.mainModelRecovery;
+  let recovery = state.mainModelRecovery;
   if (!recovery) return;
   const current = modelRef(ctx.model);
+  if (recovery.primaryThinkingLevel === undefined && sameModelRef(current, recovery.primary)) {
+    const thinking = flags.extensionApi?.getThinkingLevel?.() ?? ctx.thinkingLevel;
+    if (FALLBACK_THINKING_LEVELS.includes(thinking as FallbackThinkingLevel)) {
+      recovery = { ...recovery, primaryThinkingLevel: thinking as FallbackThinkingLevel };
+      state.mainModelRecovery = recovery;
+      persistState(ctx);
+    }
+  }
   // Reconcile an async model switch that crossed a session boundary. If the
   // restored host already uses the pending target, the switch committed; if
   // it does not, the pending target is re-driven below before normal cursor

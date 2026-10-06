@@ -60,7 +60,7 @@ half the target, so a failing summarizer is not retried every turn.
 These describe machine/provider/session policy, not a project artifact. Project
 copies are ignored (GLLA reads the global file for these policies):
 
-`stateRoot`, `mainModelFallbacks`, `mainModelRetryMinutes`,
+`stateRoot`, `mainModelFallbacks`, `mainModelFallbackThinkingLevels`, `mainModelRetryMinutes`,
 `mainModelFailback`, `mainModelPrimaryProbeMinutes`, `hourlyRetryProbe`,
 `autoResume`, `drafterModel`, `drafterThinkingLevel`,
 `drafterModelFallbacks`, `compactorModel`, `compactorModelFallbacks`,
