@@ -16,7 +16,16 @@ Release tag `v0.39.11` points to the validated commit
 GitHub release: https://github.com/DraconDev/pi-goal-list-loop-audit/releases/tag/v0.39.11
 Publication workflow: https://github.com/DraconDev/pi-goal-list-loop-audit/actions/runs/37446338209
 
-At this checkpoint the GitHub release is published and hosted validation is
-running; npm publication and downloaded-artifact verification remain pending.
+Hosted validation also passed: 3,274 tests passed, one expected skip and zero
+failures; all remaining release gates passed. The workflow published npm at
+10:05:51 UTC on October 6 and completed successfully. After a brief registry
+propagation delay, `latest` resolved to 0.39.11. All 143 files downloaded from
+npm matched the released tag byte for byte, including the new project-context
+module. Registry SHA-512 integrity matched, provenance metadata is present,
+and Pi extension metadata points to `extensions/loops/goal.ts`. The package
+therefore supplies the same validated code through npm and Pi installation.
+Registry verification and hosted workflow evidence are retained alongside the
+local checks.
+
 No running project session was changed. Existing Pi sessions need `/reload`
 after updating the package; `/glla version` reports the actually loaded version.
