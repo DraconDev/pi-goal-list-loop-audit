@@ -26,7 +26,9 @@ test('main fallback picker saves a distinct supported thinking level per model a
   const row=buildSettingsRows(settings,{}, {sessionThinkingLevel:'high'}).find(r=>r.id==='mainModelFallbacks')!;
   assert.match(row.valueText,/p\/first · low/);assert.match(row.valueText,/p\/second · medium/);
   ctx.ui.selectImpl=async(_title:string,options:string[])=>options[0];
-  await handleSettingChoice('mainModelFallbacks',ctx);
+  await handleSettingChoice('mainModelFallbackThinkingLevels',ctx);
+  ctx.ui.selectImpl=async(title:string,options:string[])=>title.includes('edit thinking')?'p/second':options[0];
+  await handleSettingChoice('mainModelFallbackThinkingLevels',ctx);
   settings=loadGlobalSettings();
   assert.deepEqual(settings.mainModelFallbackThinkingLevels,{'p/plain':'off'},'inherit removes individual overrides');
   ctx.ui.customImpl=async()=>[];
@@ -57,6 +59,8 @@ test('thinking choices come from registered model capabilities and reject unsupp
   let offered:string[]=[];
   ctx.ui.selectImpl=async(_title:string,options:string[])=>{offered=options;return 'max — unsupported injected selection';};
   await handleSettingChoice('mainModelFallbacks',ctx);
+  ctx.ui.selectImpl=async(title:string,options:string[])=>title.includes('edit thinking')?'p/limited':(offered=options,'max — unsupported injected selection');
+  await handleSettingChoice('mainModelFallbackThinkingLevels',ctx);
   assert.ok(offered.some(o=>o.startsWith('low ')));
   assert.ok(offered.some(o=>o.startsWith('medium ')));
   assert.ok(!offered.some(o=>/^(off|minimal|high|xhigh|max) /.test(o)));
@@ -86,4 +90,29 @@ test('the global main fallback chain accepts the current session model in both p
   assert.deepEqual(loadGlobalSettings().mainModelFallbacks,['p/backup','p/primary']);
   assert.equal(ctx.ui.matching('Current model is slot 0 and was not saved').length,0);
  } finally {fs.writeFileSync(globalPath,before);}
+});
+
+test('adding Muse after M3.1 asks only for Muse and preserves existing pins on reorder/removal',async()=>{
+ const before=fs.readFileSync(globalPath,'utf8');
+ try {
+  fs.writeFileSync(globalPath,'{}');
+  const ctx:any=makeMockCtx(tmpCwd());ctx.model={provider:'p',id:'primary'};ctx.thinkingLevel='high';
+  const models=[{provider:'minimax',id:'m3.1',reasoning:true},{provider:'meta',id:'muse-spark-1.3',reasoning:true}];
+  const refs=['minimax/m3.1','meta/muse-spark-1.3'];
+  ctx.modelRegistry={getAvailable:()=>models,find:(p:string,id:string)=>models.find(m=>m.provider===p&&m.id===id),hasConfiguredAuth:()=>true};
+  ctx.ui.customStubMode=true;let selected=[refs[0]];ctx.ui.customImpl=async()=>selected;
+  const prompts:string[]=[];
+  ctx.ui.selectImpl=async(title:string,options:string[])=>{prompts.push(title);return options.find(o=>o.startsWith(title.includes('m3.1')?'high ':'medium '));};
+  await handleSettingChoice('mainModelFallbacks',ctx);
+  assert.deepEqual(prompts,['Main fallback thinking — minimax/m3.1']);
+  prompts.length=0;selected=refs;
+  await handleSettingChoice('mainModelFallbacks',ctx);
+  assert.deepEqual(prompts,['Main fallback thinking — meta/muse-spark-1.3']);
+  assert.deepEqual(loadGlobalSettings().mainModelFallbackThinkingLevels,{'minimax/m3.1':'high','meta/muse-spark-1.3':'medium'});
+  prompts.length=0;selected=[refs[1],refs[0]];
+  await handleSettingChoice('mainModelFallbacks',ctx);
+  selected=[refs[0]];await handleSettingChoice('mainModelFallbacks',ctx);
+  assert.deepEqual(prompts,[]);
+  assert.deepEqual(loadGlobalSettings().mainModelFallbackThinkingLevels,{'minimax/m3.1':'high'});
+ }finally {fs.writeFileSync(globalPath,before);}
 });
