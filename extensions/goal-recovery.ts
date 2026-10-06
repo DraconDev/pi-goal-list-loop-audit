@@ -19,6 +19,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { state } from "./goal-state.js";
+import { resolveAuditorThinkingLevel } from "./auditor-thinking.js";
+import { FALLBACK_THINKING_LEVELS, type FallbackThinkingLevel } from "./main-fallback-thinking.js";
 import { auditPhaseOwnsAttempt } from "./audit-lifecycle.js";
 import { appendLedger, claimRecoveryNotice, nowIso, piGlaDir, isFreshPastTimestamp, isForbiddenModel, isStaleApiError, nextHourlyProbeMs, providerErrorFingerprint, providerErrorPresentation, resolveEffectiveAggressiveSettings, sanitizeProviderDisplayText, supervisorPaused, writeGoalMd, goalMdPath, writeGoalStateTransaction, clearGoalStateTransaction, MAX_AUDITOR_CANDIDATE_REFS, type Goal, type MainModelRecovery, type PendingCompletion } from "./goal-loop-core.js";
 import { persistStateLine, replaceState } from "./goal-state.js";
@@ -697,6 +699,10 @@ export async function tryMainModelFallback(ctx: ExtensionContext, failure: MainM
     reason: mainModelRecoveryReason(failure),
     kind: mainModelRecoveryKind(),
   });
+  if (baseRecovery.primaryThinkingLevel === undefined && sameModelRef(current, baseRecovery.primary)) {
+    const thinking = flags.extensionApi?.getThinkingLevel?.() ?? ctx.thinkingLevel;
+    if (FALLBACK_THINKING_LEVELS.includes(thinking as FallbackThinkingLevel)) baseRecovery.primaryThinkingLevel = thinking as FallbackThinkingLevel;
+  }
   const failureCopy = providerErrorPresentation(failure.raw, "main");
   const recovery: MainModelRecovery = {
     ...baseRecovery,
@@ -798,6 +804,7 @@ export async function tryMainModelFallback(ctx: ExtensionContext, failure: MainM
         appendLedger(ctx.cwd, "main_model_fallback_unavailable", { ref: candidateRef, backupIndex, backupCount: refs.length, reason: "no configured auth" });
         continue;
       }
+      applyRecoveryThinking(candidateRef, candidate, state.mainModelRecovery!);
       const nextRecovery = {
         ...state.mainModelRecovery!,
         active: candidateRef,
@@ -1323,6 +1330,7 @@ async function probePreferredPrimary(ctx: ExtensionContext, recovery: MainModelR
     if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation) || supervisorPaused(state)) return;
     if (state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== primary.toLowerCase()) return;
     if (!accepted) throw new Error("no configured auth for preferred primary");
+    applyRecoveryThinking(primary, candidate, state.mainModelRecovery!);
     const switched = {
       ...state.mainModelRecovery!,
       active: primary,
@@ -1581,6 +1589,7 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
     if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation)) return;
     if (state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== target.toLowerCase()) return;
     if (!accepted) throw new Error(`no configured auth for ${target}`);
+    applyRecoveryThinking(target, candidate, state.mainModelRecovery!);
     state.mainModelRecovery = {
       ...state.mainModelRecovery!,
       active: target,
