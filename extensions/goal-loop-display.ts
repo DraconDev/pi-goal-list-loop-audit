@@ -2665,8 +2665,8 @@ function respecBuilderLines(loop: LoopState, now: number, theme?: DisplayTheme, 
   const blocker = builder.requirements.find(r => r.status === "blocked");
   const allBlocked = !loop.active && !stopped && coverage.blocked > 0 && coverage.blocked === coverage.remaining;
   const evidence = [...builder.requirements].reverse().find(r => r.evidence)?.evidence?.report ?? builder.history?.at(-1)?.report;
-  const action = stopped ? "Work stopped · /loop status · /loop respec starts a new project" : allBlocked ? "Blocked · /loop blockers for full reasons and next action" : !loop.active ? "Work held · /loop status · /loop resume when ready" : builder.phase === "auditing" ? "Independent verification pending · no action needed" : "Work continues · /loop pause · /loop refine";
-  const narrowAction = stopped ? "Work stopped · /loop status" : allBlocked ? "/loop blockers · ask agent to recheck" : !loop.active ? "/loop resume when ready · /loop status" : builder.phase === "auditing" ? "Independent audit pending · no action" : "Work continues · /loop pause";
+  const action = stopped ? "Work stopped · /loop status · /loop respec starts a new project" : allBlocked ? "Blocked · /loop recheck to assess and continue repair work" : !loop.active ? "Work held · /loop status · /loop resume when ready" : builder.phase === "auditing" ? "Independent verification pending · no action needed" : "Work continues · /loop pause · /loop refine";
+  const narrowAction = stopped ? "Work stopped · /loop status" : allBlocked ? "/loop recheck · assess blockers" : !loop.active ? "/loop resume when ready · /loop status" : builder.phase === "auditing" ? "Independent audit pending · no action" : "Work continues · /loop pause";
   const progress = loop.active && builder.phase === "auditing" ? getRespecAuditLive(builder) : undefined;
   const toolWait = respecAuditToolWait(progress, now);
   const auditLines = loop.active && builder.phase === "auditing" ? progress ? [

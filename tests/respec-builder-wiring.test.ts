@@ -194,3 +194,43 @@ test("work obstacles keep building and mistaken blocker-only holds release witho
     assert.match(readState(cwd).loop!.stopReason!, /paused by user/);
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
+
+
+test("held blocker reviews receive the durable project contract without silently releasing dependencies", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  saveSettings("project", cwd, { autoAcceptDrafts: false });
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "held-project-review" } });
+  ctx.ui.customImpl = async () => "Yes";
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  try {
+    await pi.command("loop", "respec finish combat", ctx); clearLoopTimer();
+    await pi.runTool("propose_project_requirements", { requirements: [{ id: "combat", text: "Combat works", acceptance: "Measured targets take damage" }] }, ctx);
+    await pi.runTool("block_project_requirement", { kind: "external", id: "combat", reason: "Old report claims unavailable access", summary: "Access unavailable", owner: "Operator", nextAction: "Supply access", expectedResult: "Probe succeeds", whyAgentCannotProceed: "Operator owns account" }, ctx);
+    const snapshot = JSON.stringify(readState(cwd).loop);
+    const hook = pi.handlers.get("before_agent_start")!;
+    const context = await (hook as any)({ prompt: "What is the hangup?" }, ctx);
+    assert.match(context.message.content, /SAVED HELD PROJECT/);
+    assert.match(context.message.content, /Measured targets take damage/);
+    assert.match(context.message.content, /Old report claims unavailable access/);
+    assert.match(context.message.content, /NOT AUTHORIZATION TO RESUME/);
+    assert.equal(JSON.stringify(readState(cwd).loop), snapshot);
+    const reviews = () => pi.sent.filter(s => String(s.message.content).includes("[PROJECT BLOCKER RECHECK"));
+    await pi.command("loop", "resume", ctx);
+    assert.equal(reviews().length, 1, "all-blocked resume must request one useful recheck instead of only refusing");
+    assert.match(String(reviews()[0]!.message.content), /Measured targets take damage/);
+    assert.match(String(reviews()[0]!.message.content), /kind=work/);
+    assert.deepEqual(reviews()[0]!.options, { triggerTurn: true, deliverAs: "followUp" });
+    assert.equal(JSON.stringify(readState(cwd).loop), snapshot, "requesting review cannot preempt its assessment");
+    ctx.hasPendingMessages = () => true;
+    await pi.command("loop", "recheck", ctx);
+    assert.equal(reviews().length, 1, "queued work must not receive duplicate reviews");
+    ctx.hasPendingMessages = () => false;
+    pi.sendMessageError = new Error("send failed");
+    await pi.command("loop", "recheck", ctx);
+    assert.match(ctx.ui.notifies.at(-1)!.message, /could not be sent/);
+    assert.equal(JSON.stringify(readState(cwd).loop), snapshot);
+    pi.sendMessageError = null;
+    await pi.command("loop", "recheck", ctx);
+    assert.equal(reviews().length, 2, "explicit recheck remains available");
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});

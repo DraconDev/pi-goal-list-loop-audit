@@ -1293,6 +1293,34 @@ async function startLoopFromConfig(ctx: ExtensionContext, cfg: LoopConfig): Prom
   return true;
 }
 
+/** One operator-requested review, not a recurring loop or an unblocking verdict. */
+function recheckProjectBlockers(ctx: ExtensionContext): void {
+  const loop = state.loop;
+  if (!loop?.builder || !loop.builder.requirements.some(r => r.status === "blocked")) {
+    ctx.ui.notify("No recorded project blockers to recheck. /loop status shows saved work.", "info"); return;
+  }
+  if (supervisorPaused(state)) {
+    ctx.ui.notify("Supervisor is paused. Resume supervision before requesting a blocker recheck.", "warning"); return;
+  }
+  if (!ctx.isIdle() || ctx.hasPendingMessages()) {
+    ctx.ui.notify("A turn is running or queued. Let it finish before /loop recheck; no duplicate review was queued.", "info"); return;
+  }
+  const content = ["[PROJECT BLOCKER RECHECK — ONE OPERATOR-REQUESTED REVIEW]",
+    "This saved project is unfinished. Do not infer completion or absence of an objective from an empty conversation or a green unrelated suite.",
+    "Inspect the saved blockers against the current project. Ordinary implementation failures, missing evidence and unrun checks are repair work: use block_project_requirement with kind=work, id, reason and a concrete nextAction. Then plan the repair increment and continue building/refining if the loop is active.",
+    "Keep genuine external dependencies blocked and explain the actor, specific next step, expected result and why you cannot proceed. Do not invent operator requirements or silently weaken the adopted acceptance criteria.",
+    "This review leaves the saved hold intact until a journaled reclassification. It cannot override a user/supervisor pause, a budget stop or a branch guard. If the loop remains held, report the precise remaining dependency and stop; do not repeatedly request rechecks.",
+    `<builder_state>\n${respecBuilderContext(loop.builder)}\n</builder_state>`,
+    `Saved loop: active=${loop.active}; hold=${sanitizeDisplayText(loop.stopReason ?? "none")}`].join("\n\n");
+  try {
+    flags.extensionApi.sendMessage({ customType: GOAL_EVENT_ENTRY, content, display: false }, { triggerTurn: true, deliverAs: "followUp" });
+    appendLedger(ctx.cwd, "respec_blocker_recheck_requested", { projectId: loop.builder.projectId, cycle: loop.builder.cycle, requirementIds: loop.builder.requirements.filter(r => r.status === "blocked").map(r => r.id) });
+    ctx.ui.notify("Rechecking saved project blockers once. Repair work can continue after reclassification; genuine dependencies remain held.", "info");
+  } catch (error) {
+    ctx.ui.notify(`Blocker recheck could not be sent; saved work remains held. Retry /loop recheck. ${sanitizeDisplayText(String(error))}`, "warning");
+  }
+}
+
 async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
   const parts = args.trim().split(/\s+/);
   const sub = (parts[0] ?? "").toLowerCase();
@@ -1304,6 +1332,11 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
   if (sub === "blockers") {
     ctx.ui.notify(state.loop?.builder ? respecBlockerDetails(state.loop.builder) : "No saved project. /loop status shows loop or recovery state.", "info");
     return;
+  }
+  if (sub === "recheck") {
+    releaseInitialSessionLoadBarrier();
+    if (clearLoadHold(state)) { persistState(ctx); appendLedger(ctx.cwd, "load_hold_released", { via: "loop-recheck" }); }
+    recheckProjectBlockers(ctx); return;
   }
   if (["pause", "stop", "cancel"].includes(sub) && state.loop?.builder) cancelRespecBuilderAudit(ctx.cwd, state.loop.startedAt);
 
@@ -1345,7 +1378,8 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     const stored = state.loop;
     if (stored && isHeldLoopResumable(stored)) {
       if (stored.builder && stored.builder.requirements.some(r => r.status === "blocked") && !stored.builder.requirements.some(r => r.status === "open")) {
-        ctx.ui.notify(`Project stays held: every unfinished requirement is blocked.\n${respecBlockerActions(stored.builder)}`, "warning");
+        if (stored.stopReason?.startsWith("blocked project requirements:")) recheckProjectBlockers(ctx);
+        else ctx.ui.notify(`Project stays held: every unfinished requirement is blocked.\n${respecBlockerActions(stored.builder)}`, "warning");
         return;
       }
       // Branch-mode stop returns HEAD to originalBranch. Refuse a resume from

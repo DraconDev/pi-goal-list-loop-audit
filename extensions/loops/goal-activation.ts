@@ -1,3 +1,4 @@
+import { respecBuilderContext } from "../respec-builder-context.js";
 import { replayRespecCompletionSummary } from "../respec-builder-runtime.js";
 /**
  * pi-goal-list-loop-audit — v0.1.0
@@ -1109,6 +1110,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       ["audit", "project-audit loop: each iteration audits fresh, appends findings, fixes the top ones — plateau stops when the well is dry (v0.29.0)"],
       ["status", "show metric, iteration, best/last values, stall count, and cadence"],
       ["blockers", "show complete recorded project blockers and the next action; inspect without resuming work"],
+      ["recheck", "one agent review of saved blockers; reclassify repair work and retain real dependencies"],
       ["resume", "resume a held loop or project audit, preserving saved work and recovery checks"],
       ["refine", "queue an operator respec suggestion into the next iteration's prompt: /loop refine <text>"],
       ["polish", "alias of /loop refine"],
@@ -3337,6 +3339,18 @@ async function handleHotLengthExhaustion(
     observeTurnBoundaryModel(ctx);
     if (draftingTarget !== null) draftingHandoff.invalidate();
     dispatchStartAcknowledged(ctx, "before_agent_start", event?.prompt);
+    // A held project's contract must remain visible to ordinary user turns.
+    // Empty conversation history does not imply absence of saved project work.
+    const savedLoop = state.loop;
+    if (!savedLoop?.active && savedLoop?.builder && savedLoop.builder.phase !== "complete"
+      && !String(event?.prompt ?? "").includes("[PROJECT BLOCKER RECHECK")) {
+      return { message: { customType: "glla-saved-project", display: false,
+        content: ["[SAVED HELD PROJECT — CONTEXT, NOT AUTHORIZATION TO RESUME]",
+          "This project remains unfinished despite an empty conversation or unrelated green checks. Answer status questions from its saved requirements and blockers. Do not invent absence of an objective.",
+          "This context does not release any hold. If the operator asks to continue or recheck, assess blockers: kind=work reclassifies implementation/test failures for repair; genuine external dependencies remain blocked. Preserve scope and verification requirements. Respect user/supervisor pauses and bounds.",
+          `Saved hold: ${sanitizeDisplayText(savedLoop.stopReason ?? "unspecified")}`,
+          `<builder_state>\n${respecBuilderContext(savedLoop.builder)}\n</builder_state>`].join("\n\n") } };
+    }
   });
   pi.on("model_select", async (event: any, ctx: ExtensionContext) => {
     rememberCtx(ctx);
