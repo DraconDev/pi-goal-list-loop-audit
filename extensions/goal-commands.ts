@@ -3375,6 +3375,7 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
       fmt("stateRoot", "stateRoot"),
       `mainAgent: ${sessionModel} · ${sessionThinking}  [runtime]`,
       `mainAgentFallbackModels: ${formatMainModelFallbacks(effectiveSettings.mainModelFallbacks)}  [${prov.mainModelFallbacks?.source ?? "default"}]`,
+      fmt("mainModelFallbackThinkingLevels", "mainAgentFallbackThinkingLevels"),
       fmt("mainModelRetryMinutes", "mainModelRetryMinutes (base minutes; doubles per attempt)"),
       fmt("mainModelFailback", "mainModelFailback (auto/sticky)"),
       fmt("mainModelPrimaryProbeMinutes", "mainModelPrimaryProbeMinutes"),
