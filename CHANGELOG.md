@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Project obstacles distinguish repair work from external dependencies.
+  Failed tests and implementation gaps replan while remaining open and active;
+  other open requirements continue around external blockers. Reclassifying a
+  mistaken blocker releases a blocker-only hold, while user and budget holds
+  remain intact. Prior batch work and repair steps stay journaled.
+
 - New or changed project blockers automatically display complete reasons and
   actions. New blocker reports require a short summary, actor, concrete action,
   expected result and why the agent cannot proceed; incomplete reports cannot

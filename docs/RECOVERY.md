@@ -109,12 +109,21 @@ Filtering failed attempts does not restore an unavailable provider endpoint.
 New or changed project blockers automatically show a concise action card:
 short obstacle, who can act, why the agent cannot continue, concrete next step
 and expected result. Long measurements stay in the full-details view.
-`block_project_requirement` requires nonempty `summary` (up to 240 characters),
-`owner`, `nextAction`, `expectedResult` and `whyAgentCannotProceed`; incomplete
-reports are rejected before changing durable state. Put diagnostic evidence in
-`reason`. Failed tests, unrun checks, missing evidence and unfinished implementation
-are ordinary work to continue; the agent should only park on a dependency it cannot
-resolve within the authorized project work.
+`block_project_requirement` distinguishes `kind="work"` from `kind="external"`.
+For work, give `id`, diagnostic `reason` and a concrete `nextAction`. The
+requirement stays open, the previous batch is retained as history, and the agent
+replans and keeps building/refining. Failed tests, unrun checks, missing evidence
+and unfinished implementation belong here; usually the agent can simply keep
+working without calling this tool at all.
+
+For external dependencies, also give `summary` (up to 240 characters), `owner`,
+`expectedResult` and `whyAgentCannotProceed`. Incomplete reports are rejected
+before changing durable state. Continue other open requirements; only all-blocked
+projects hold. Classifying a mistaken blocker as work releases a blocker-only
+hold and continues, while user pauses/stops, supervisor holds and exhausted
+budgets stay held. Branch-mode holds still require the guarded resume command.
+The classification and next step are journaled; no requirement becomes verified.
+Put long diagnostic evidence in `reason`.
 
 Older saved reports remain readable and are labelled **Needs clarification**.
 They do not establish that the operator must intervene; ask the agent to explain

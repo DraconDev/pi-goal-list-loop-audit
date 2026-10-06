@@ -187,6 +187,8 @@ test("work obstacles keep building and mistaken blocker-only holds release witho
     await pi.runTool("plan_project_increment", { tasks: [{ id: "probe", text: "Run positioning probe", requirementIds: ["combat"] }] }, ctx);
     assert.equal(readState(cwd).loop!.builder!.phase, "building");
     await pi.command("loop", "pause", ctx);
+    await pi.runTool("block_project_requirement", { ...external, id: "combat" }, ctx);
+    assert.match(readState(cwd).loop!.stopReason!, /paused by user/, "recording a dependency cannot overwrite a user hold");
     await pi.runTool("block_project_requirement", repair, ctx); clearLoopTimer();
     assert.equal(readState(cwd).loop!.active, false, "repair classification cannot override a user pause");
     assert.match(readState(cwd).loop!.stopReason!, /paused by user/);
