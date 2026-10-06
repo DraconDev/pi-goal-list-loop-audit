@@ -135,7 +135,40 @@ export function formatMainModelFallbacks(value: unknown): string {
  */
 export function isPromptPolicyRejection(error: string | undefined): boolean {
   const raw = typeof error === "string" ? error.trim() : "";
-  return /\bcodex error event:\s*invalid prompt\b/i.test(raw);
+  return /\bcodex error event:\s*invalid prompt\b/i.test(classificationEvidence(raw));
+}
+
+/** Classify error payload, not opaque trace ids or unrelated metadata. Raw
+ * diagnostics stay on MainModelFailure for the existing display/storage path. */
+function classificationEvidence(raw: string): string {
+  const withoutIds = (text: string) => text.replace(/["']?request[_-]?id["']?\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;})]+)/gi, "");
+  const start = raw.indexOf("{"), end = raw.lastIndexOf("}");
+  if (start >= 0 && end > start) {
+    try {
+      const payload = JSON.parse(raw.slice(start, end + 1));
+      const parts: string[] = [withoutIds(raw.slice(0, start))];
+      const read = (value: unknown, depth: number): void => {
+        if (depth > 6) return;
+        if (typeof value === "string") { parts.push(value); return; }
+        if (!value || typeof value !== "object" || Array.isArray(value)) return;
+        for (const [key, field] of Object.entries(value)) {
+          if (["message", "errorMessage", "error_message", "detail", "error", "type"].includes(key)) read(field, depth + 1);
+          else if (["code", "status", "statusCode", "status_code"].includes(key)) {
+            if ((typeof field === "number" || typeof field === "string") && /^[1-5]\d{2}$/.test(String(field))) parts.push(`HTTP ${field}`);
+            else if (typeof field === "string") parts.push(field);
+          }
+        }
+      };
+      read(payload, 0);
+      return parts.join(" ");
+    } catch { /* Malformed provider JSON retains textual error evidence. */ }
+  }
+  return withoutIds(raw);
+}
+
+function hasHttpStatus(text: string, status: RegExp): boolean {
+  const codes = text.matchAll(/(?:^|\b(?:http(?:\s+(?:status|error))?|status(?:\s+code)?|error)\s*[:=]?\s*)([1-5]\d{2})(?=$|[\s:;,])/gi);
+  return [...codes].some(match => status.test(match[1]!));
 }
 
 /**
@@ -153,39 +186,6 @@ export function isPromptPolicyRejection(error: string | undefined): boolean {
  * the deterministic "non-recoverable" verb (a sample of a length cap
  * mid-stream MUST NOT silently rotate when the chain has no ref).
  */
-/** Classify error payload, not opaque trace ids or unrelated metadata. Raw
- * diagnostics stay on MainModelFailure for the existing display/storage path. */
-function classificationEvidence(raw: string): string {
-  const withoutIds = (text: string) => text.replace(/["']?request[_-]?id["']?\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;})]+)/gi, "");
-  const start = raw.indexOf("{"), end = raw.lastIndexOf("}");
-  if (start >= 0 && end > start) {
-    try {
-      const payload = JSON.parse(raw.slice(start, end + 1));
-      const parts: string[] = [withoutIds(raw.slice(0, start))];
-      const read = (value: unknown, depth: number): void => {
-        if (depth > 6) return;
-        if (typeof value === "string") { parts.push(value); return; }
-        if (!value || typeof value !== "object" || Array.isArray(value)) return;
-        for (const [key, field] of Object.entries(value)) {
-          if (["message", "detail", "error", "type"].includes(key)) read(field, depth + 1);
-          else if (["code", "status", "statusCode", "status_code"].includes(key)) {
-            if (/^[1-5]\d{2}$/.test(String(field))) parts.push(`HTTP ${field}`);
-            else if (typeof field === "string") parts.push(field);
-          }
-        }
-      };
-      read(payload, 0);
-      return parts.join(" ");
-    } catch { /* Malformed provider JSON retains textual error evidence. */ }
-  }
-  return withoutIds(raw);
-}
-
-function hasHttpStatus(text: string, status: RegExp): boolean {
-  const codes = text.matchAll(/(?:^|\b(?:http(?:\s+(?:status|error))?|status(?:\s+code)?|error)\s*[:=]?\s*)([1-5]\d{2})(?=$|[\s:;,])/gi);
-  return [...codes].some(match => status.test(match[1]!));
-}
-
 export function classifyMainModelFailure(error: string | undefined, opts?: { isContextOverflow?: boolean }): MainModelFailure {
   const raw = typeof error === "string" ? error.trim() : "";
   const evidence = classificationEvidence(raw);

@@ -456,6 +456,7 @@ test("opaque provider request metadata cannot alter classification or fallback e
     assert.equal(failure.kind, "unknown", request_id);
     assert.equal(isMainModelFallbackFailure(failure), true, request_id);
     assert.equal(failure.raw, raw, "original diagnostics remain available");
+    assert.equal(isPromptPolicyRejection(raw), false, request_id);
   }
   for (const id of ["abc401", "abc403", "abc503", "context-503"]) {
     assert.equal(classifyMainModelFailure(`Plan usage limit reached; request_id=${id}`).kind, "unknown", id);
