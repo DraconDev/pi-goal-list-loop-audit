@@ -13,7 +13,7 @@ import type { LoopState } from "./goal-loop-forever.js";
 import { dispatchAuditorAllowedExtensions } from "./auditor-extensions.js";
 import { resolveAuditorThinkingLevel } from "./auditor-thinking.js";
 import { runDetachedGoalCompletionAuditor, runAuditorFallbackWithPolicy, readCompletedCompletionAudit, newDetachedAuditJobAttemptId, writeAtomicJson, effectiveToolTimeoutMs, DEFAULT_AUDITOR_TOOL_TIMEOUT_MS, type AuditorProcessRuntime } from "./goal-loop-auditor-process.js";
-import { setRespecAuditLive, getRespecAuditLive, respecCompletionSummary, respecBlockerDetails } from "./respec-builder-ui.js";
+import { setRespecAuditLive, getRespecAuditLive, respecCompletionSummary, respecBlockerActions } from "./respec-builder-ui.js";
 import { respecIncrementAuditGoal } from "./respec-builder-audit.js";
 import { adoptRespecRequirements, beginRespecAudit, blockRespecRequirement, unblockRespecRequirement, refineRespecRequirements, claimRespecTask, planRespecIncrement, settleRespecAudit, type RespecBuilderState } from "./respec-builder.js";
 
@@ -98,7 +98,7 @@ function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecB
   if (newBlockers.length) {
     // Public transcript hook: display actions without starting a turn or
     // treating an operator acknowledgement as evidence of resolution.
-    const content = respecBlockerDetails({ ...next, requirements: newBlockers });
+    const content = respecBlockerActions({ ...next, requirements: newBlockers });
     try { extensionApi.sendMessage({ customType: "glla-project-blockers", content, display: true,
       details: { projectId: next.projectId, requirementIds: newBlockers.map(r => r.id) } }, { triggerTurn: false }); }
     catch { /* A UI failure must not roll back a durably recorded blocker. */ }
@@ -284,8 +284,15 @@ export function registerRespecBuilderTools(pi: ExtensionAPI, deps: Host): void {
   pi.registerTool(host.wrapTool({ name: "audit_project_increment", label: "Audit build increment", description: "Submit a concrete implementation claim after all batch tasks are claimed. The host runs the isolated auditor after this turn.",
     parameters: Type.Object({ claim: Type.String() }), execute: execute((p, _ctx, before) => beginRespecAudit(before, randomUUID(), p.claim)),
   }));
-  pi.registerTool(host.wrapTool({ name: "block_project_requirement", label: "Record project blocker", description: "Record any concrete blocker (access, dependency, decision, environment or other). Supply owner, nextAction (exact command or location when relevant), and expectedResult so the operator sees actionable steps automatically. Recheck what you can resolve yourself first. The requirement stays unfinished and abandoned batch work is retained.",
-    parameters: Type.Object({ id: Type.String(), reason: Type.String(), owner: Type.Optional(Type.String()), nextAction: Type.Optional(Type.String()), expectedResult: Type.Optional(Type.String()) }), execute: execute((p, _ctx, before) => blockRespecRequirement(before, p.id, p.reason, { owner: p.owner, nextAction: p.nextAction, expectedResult: p.expectedResult }), true),
+  pi.registerTool(host.wrapTool({ name: "block_project_requirement", label: "Record project blocker", description: "Record any concrete blocker (access, dependency, decision, environment or other). Only park on a dependency you cannot resolve within the authorized project work. Failed tests, missing evidence, unrun checks and unfinished implementation are work to continue, not blockers. Supply a short summary, owner, nextAction (exact command or location when relevant), expectedResult and whyAgentCannotProceed. Put long measurements in reason. Actions are shown automatically. The requirement stays unfinished and abandoned batch work is retained.",
+    parameters: Type.Object({ id: Type.String(), reason: Type.String(), summary: Type.String({ description: "One short sentence naming the actual obstacle, not a test report", maxLength: 240 }), owner: Type.String({ description: "Person or external service that can remove this obstacle" }), nextAction: Type.String({ description: "Concrete action, with exact command or location when applicable", maxLength: 600 }), expectedResult: Type.String({ description: "Observable evidence that the obstacle cleared", maxLength: 400 }), whyAgentCannotProceed: Type.String({ description: "Why this cannot be resolved as ordinary authorized project work", maxLength: 400 }) }),
+    execute: execute((p, _ctx, before) => {
+      for (const [key, limit] of [["summary", 240], ["owner", 160], ["nextAction", 600], ["expectedResult", 400], ["whyAgentCannotProceed", 400]] as const) {
+        if (typeof p[key] !== "string" || !p[key].trim() || p[key].trim().length > limit)
+          throw new Error(`Blocker not recorded: supply a concrete ${key} (1–${limit} characters). Continue investigating and fixing ordinary test or implementation failures; do not park work merely because acceptance is unmet.`);
+      }
+      return blockRespecRequirement(before, p.id, p.reason, { summary: p.summary, owner: p.owner, nextAction: p.nextAction, expectedResult: p.expectedResult, whyAgentCannotProceed: p.whyAgentCannotProceed });
+    }, true),
   }));
   pi.registerTool(host.wrapTool({ name: "unblock_project_requirement", label: "Clear project blocker", description: "Record evidence that a blocker cleared. Paused work stays paused until explicit resume.",
     parameters: Type.Object({ id: Type.String(), reason: Type.String() }), execute: execute((p, _ctx, before) => unblockRespecRequirement(before, p.id, p.reason), true),

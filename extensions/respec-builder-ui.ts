@@ -30,27 +30,39 @@ export function getRespecAuditLive(builder: RespecBuilderState): RespecAuditLive
   return id ? live.get(id) : undefined;
 }
 const seconds = (ms: number) => `${Math.max(0, Math.floor(ms / 1000))}s`;
-export function respecBlockerDetails(builder: RespecBuilderState): string {
+function wrapBlockerText(text: string): string[] {
+  let remaining = sanitizeDisplayText(text).replace(/\s+/g, " ").trim();
+  const lines: string[] = [];
+  while (remaining.length > 96) {
+    const space = remaining.lastIndexOf(" ", 96);
+    const end = space > 0 ? space : 96;
+    lines.push(remaining.slice(0, end)); remaining = remaining.slice(end).trimStart();
+  }
+  if (remaining) lines.push(remaining);
+  return lines;
+}
+/** Action first: diagnostics stay in the explicit full-details view. */
+export function respecBlockerActions(builder: RespecBuilderState): string {
   const blocked = builder.requirements.filter(r => r.status === "blocked");
   if (!blocked.length) return "No recorded project blockers. /loop status shows remaining work.";
-  const wrap = (text: string): string[] => {
-    let remaining = sanitizeDisplayText(text).replace(/\s+/g, " ").trim();
-    const lines: string[] = [];
-    while (remaining.length > 96) {
-      const space = remaining.lastIndexOf(" ", 96);
-      const end = space > 0 ? space : 96;
-      lines.push(remaining.slice(0, end)); remaining = remaining.slice(end).trimStart();
-    }
-    if (remaining) lines.push(remaining);
-    return lines;
-  };
   return ["Project blockers — recorded by the agent; recheck before treating them as current facts.",
-    ...blocked.flatMap(r => ["", ...wrap(`${r.id}: ${r.text}`), "Recorded reason:", ...wrap(r.blockedReason ?? "No concrete reason recorded."),
-      ...wrap(`Who can act: ${r.blockerAction?.owner || "Agent first; recheck what needs operator help."}`),
-      ...wrap(`Action to take: ${r.blockerAction?.nextAction || "Ask the agent to recheck this blocker, resolve what it can, and identify the exact remaining operator step."}`),
-      ...wrap(`Resolved when: ${r.blockerAction?.expectedResult || "The agent records evidence that the blocking condition cleared."}`)]),
-    "", "Next action:", ...wrap('Ask the agent: "Recheck these blockers against the current project. Resolve what you can. For anything requiring me, give the exact command or location, expected result, and why you cannot do it here."'),
-    ...wrap("When evidence shows a blocker is resolved, the agent records it with unblock_project_requirement. Then /loop resume continues the saved project. Clearing a blocker does not verify or complete the requirement.")].join("\n");
+    ...blocked.flatMap(r => {
+      const action = r.blockerAction;
+      const legacy = !action?.summary || !action?.whyAgentCannotProceed;
+      return ["", ...wrapBlockerText(`${r.id}: ${action?.summary || "The agent did not record a short explanation of the hangup."}`),
+        ...wrapBlockerText(`Who can act: ${action?.owner || "Not recorded; operator involvement is unconfirmed."}`),
+        ...wrapBlockerText(`Why the agent cannot continue: ${action?.whyAgentCannotProceed || "Not recorded. A failed test or unfinished implementation alone is not an external blocker."}`),
+        ...wrapBlockerText(`Action to take: ${action?.nextAction || 'Ask the agent: "Recheck these blockers. Continue fixing ordinary implementation or test failures. For a real external dependency, name who must act and the exact step needed."'}`),
+        ...wrapBlockerText(`Resolved when: ${action?.expectedResult || "The agent demonstrates that the blocking condition cleared."}`),
+        ...(legacy ? ["This older report needs clarification; it does not establish that you must intervene."] : [])];
+    }), "", "Evidence and full recorded reports: /loop blockers",
+    ...wrapBlockerText("When evidence shows a blocker is resolved, the agent records it with unblock_project_requirement. Then /loop resume continues the saved project. Clearing a blocker does not verify or complete the requirement.")].join("\n");
+}
+export function respecBlockerDetails(builder: RespecBuilderState): string {
+  const blocked = builder.requirements.filter(r => r.status === "blocked");
+  if (!blocked.length) return respecBlockerActions(builder);
+  return [respecBlockerActions(builder), "", "Full recorded evidence:",
+    ...blocked.flatMap(r => ["", ...wrapBlockerText(`${r.id}: ${r.text}`), "Recorded reason:", ...wrapBlockerText(r.blockedReason || "No concrete reason recorded.")])].join("\n");
 }
 export function respecAuditToolWait(progress: RespecAuditLive | undefined, now: number): string | undefined {
   if (!progress || progress.phase !== "running" || !progress.currentTool
