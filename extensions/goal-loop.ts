@@ -1,4 +1,4 @@
-import { respecAuditStatus, respecBlockerDetails } from "./respec-builder-ui.js";
+import { respecAuditStatus, respecBlockerDetails, respecBlockerActions } from "./respec-builder-ui.js";
 import { respecBuilderContext } from "./respec-builder-context.js";
 /**
  * goal-loop.ts — Loop 3 machinery: /loop command, tick engine, git finish.
@@ -1345,7 +1345,7 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     const stored = state.loop;
     if (stored && isHeldLoopResumable(stored)) {
       if (stored.builder && stored.builder.requirements.some(r => r.status === "blocked") && !stored.builder.requirements.some(r => r.status === "open")) {
-        ctx.ui.notify(`Project stays held: every unfinished requirement is blocked.\n${respecBlockerDetails(stored.builder)}`, "warning");
+        ctx.ui.notify(`Project stays held: every unfinished requirement is blocked.\n${respecBlockerActions(stored.builder)}`, "warning");
         return;
       }
       // Branch-mode stop returns HEAD to originalBranch. Refuse a resume from

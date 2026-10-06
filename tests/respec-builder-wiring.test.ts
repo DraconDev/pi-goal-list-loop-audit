@@ -133,6 +133,9 @@ test("project blockers automatically show generic actions after journaling, with
     assert.match(invalid.content[0]!.text, /Blocker not recorded/);
     assert.equal(JSON.stringify(readState(cwd).loop), beforeInvalid, "vague reports cannot park project work");
     assert.equal(messages().length, 2);
+    const oversized = await pi.runTool("block_project_requirement", { ...blocker, summary: "long report ".repeat(30) }, ctx);
+    assert.match(oversized.content[0]!.text, /Blocker not recorded/);
+    assert.equal(JSON.stringify(readState(cwd).loop), beforeInvalid, "a report cannot replace the short obstacle explanation");
     const dependency = { id: "dependency", reason: "Dependency unavailable", summary: "Upstream service is offline", owner: "Service administrator", nextAction: "Restore the upstream service", expectedResult: "Health check succeeds", whyAgentCannotProceed: "The service runs outside this project and the agent has no deployment access" };
     await pi.runTool("block_project_requirement", dependency, ctx);
     assert.equal(messages().length, 3);
