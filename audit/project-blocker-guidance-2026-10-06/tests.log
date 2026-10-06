@@ -1,0 +1,48 @@
+
+> pi-goal-list-loop-audit@0.39.13 test
+> node scripts/run-tests.mjs tests/respec-builder-display.test.ts tests/respec-builder-wiring.test.ts tests/loop-held-start.test.ts tests/glla-stale-context.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/respec-builder-display.test.ts:
+(pass) a stopped project audit exposes its hold reason instead of implying a running auditor [6.86ms]
+(pass) project cards expose phase, unfinished coverage and recorded blockers within narrow widths [5.58ms]
+(pass) an explicitly stopped project audit does not advertise an unavailable resume [0.47ms]
+(pass) completed project dismisses both live UI surfaces while preserving other work [1.53ms]
+(pass) project tool waits show a ticking deadline and separate attempt/total clocks [3.80ms]
+(pass) blocker inspection retains late operator instructions and distinguishes recorded claims from verification [4.00ms]
+
+tests/glla-stale-context.test.ts:
+(pass) v0.34.52: bare /glla on a stale handle is refused — standard recovery message, UI never opens, settings untouched [7889.72ms]
+(pass) v0.34.52: mutating /glla actions (wipe, cancel, resume, reviewer, postaudit, tooloverride) are all refused on a stale handle [338.56ms]
+(pass) v0.34.52: /glla status, log, stats, audits stay usable on a stale handle (inspect, don't mutate) [8934.16ms]
+(pass) audit 2026-09-07 (LOW, finding 399): bare `/glla fallbacks` is a read-only display — allowed on a stale handle; `fallbacks clear` still mutates and is refused [468.72ms]
+(pass) v0.34.52: the standard recovery — a fresh session reopens the settings UI and owns the next /glla [638.02ms]
+(pass) v0.35.72: source — settings rechecks admission after the menu and before saves [1.17ms]
+(pass) v0.34.52: source — cmdSettings captures the entry probe and gates the settings entry + mutating actions [16.06ms]
+
+tests/loop-held-start.test.ts:
+(pass) loop resume restores a project held by summarization output limit: summary incomplete [3793.27ms]
+(pass) glla resume restores a project held by summarization output limit: summary incomplete [164.55ms]
+(pass) loop resume restores a project held by context overflow: prompt cannot fit [154.69ms]
+(pass) glla resume restores a project held by context overflow: prompt cannot fit [172.36ms]
+(pass) loop resume restores a project held by compaction failure: provider unavailable [163.07ms]
+(pass) glla resume restores a project held by compaction failure: provider unavailable [167.52ms]
+(pass) held loop: the load-hold warning names /loop resume [136.76ms]
+(pass) held loop: the load-hold warning is byte-identical when no loop is held [182.26ms]
+(pass) fresh start over a held loop offers resume and preserves the loop [139.12ms]
+(pass) fresh start over a held loop: dismiss keeps the held loop untouched [137.88ms]
+(pass) fresh start over a held loop: headless refuses instead of discarding [162.48ms]
+(pass) fresh start over an explicitly stopped loop keeps today's silent behavior [156.63ms]
+
+tests/respec-builder-wiring.test.ts:
+(pass) actual respec command and tools persist intended scope, batch and audit claim [1394.01ms]
+(pass) declining intended scope leaves the project drafting with no adopted requirements [55.85ms]
+(pass) registered blocker and refinement tools preserve work and require consent to change scope [176.96ms]
+
+ 28 pass
+ 0 fail
+Ran 28 tests across 4 files. [28.41s]
+[run-tests] detached cleanup: 1 owned groups; 0 unverified survivors/records
+[run-tests] finished in 30s (exit 0)
