@@ -1,0 +1,2425 @@
+{
+  "at": "2026-10-06T13:22:00.690626+00:00",
+  "projects": [
+    {
+      "pid": 29516,
+      "cwd": "/home/dracon/Dev/dracon-strategy/ai-auto-video",
+      "name": "ai-auto-video",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 4881.1,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "stopReason": null,
+        "tokensUsed": null
+      },
+      "project": {
+        "projectId": null,
+        "phase": null,
+        "cycle": null,
+        "revision": null
+      },
+      "requirements": {
+        "open": 0,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1790338374980,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T12:00:39.545Z",
+          "ageSeconds": 4881.1,
+          "value": {
+            "contextUsage": {
+              "tokens": 594412,
+              "contextWindow": 1048576,
+              "percent": 56.68754577636719
+            },
+            "provider": "meta",
+            "model": "muse-spark-1.3-contributor"
+          }
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-09-27T16:47:09.003Z",
+          "ageSeconds": 765291.7,
+          "value": {
+            "phase": "prepared",
+            "id": "1249171:1790479051880:66:20260927164708-zdvq27"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-09-27T16:47:09.098Z",
+          "ageSeconds": 765291.6,
+          "value": {
+            "phase": "accepted",
+            "id": "1249171:1790479051880:66:20260927164708-zdvq27"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-09-27T16:47:09.109Z",
+          "ageSeconds": 765291.6,
+          "value": {
+            "phase": "started",
+            "id": "1249171:1790479051880:66:20260927164708-zdvq27"
+          }
+        },
+        "context_hygiene_dropped": {
+          "at": "2026-10-06T12:00:19.831Z",
+          "ageSeconds": 4900.9,
+          "value": {
+            "dropped": 7,
+            "droppedDispatchPayloads": 3,
+            "kept": 1
+          }
+        }
+      },
+      "auditJobs": [],
+      "panes": [],
+      "session": {
+        "name": "2026-09-27T03-17-24-101Z_01a0e0de-0e03-737f-b217-1cb7924898be.jsonl",
+        "ageSeconds": 4881.2,
+        "bytes": 103298655,
+        "entries": 1730,
+        "compactions": 0,
+        "failedReplies": 10,
+        "lastType": "message",
+        "lastError": "Cannot find module '/home/dracon/.npm-global/lib/node_modules/@earendil-works/pi-coding-agent/dist/bundle/chunks/openai-responses-CQDDLDQF.js' imported from /home/dracon/.npm-global/lib/node_modules/@earendil-works/pi-coding-agent/dist/bundle/chunks/chunk-33XOIQ5N.js"
+      }
+    },
+    {
+      "pid": 580273,
+      "cwd": "/home/dracon/Dev/dracon-strategy/ai-auto-music",
+      "name": "ai-auto-music",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 7300.2,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "stopReason": null,
+        "tokensUsed": null
+      },
+      "project": {
+        "projectId": null,
+        "phase": null,
+        "cycle": null,
+        "revision": null
+      },
+      "requirements": {
+        "open": 0,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791222787469,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T11:20:20.481Z",
+          "ageSeconds": 7300.2,
+          "value": {
+            "contextUsage": {
+              "tokens": 169114,
+              "contextWindow": 1048576,
+              "percent": 16.127967834472656
+            },
+            "provider": "agnes",
+            "model": "agnes-3.0-flash"
+          }
+        },
+        "session_compact": {
+          "at": "2026-10-05T17:53:07.468Z",
+          "ageSeconds": 70133.2,
+          "value": {}
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-10-05T19:53:54.205Z",
+          "ageSeconds": 62886.5,
+          "value": {
+            "phase": "prepared",
+            "id": "580273:1791216988958:80:20261005195354-qxpncl"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-10-05T19:53:54.209Z",
+          "ageSeconds": 62886.5,
+          "value": {
+            "phase": "accepted",
+            "id": "580273:1791216988958:80:20261005195354-qxpncl"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-10-05T19:54:03.673Z",
+          "ageSeconds": 62877.0,
+          "value": {
+            "phase": "started",
+            "id": "580273:1791216988958:80:20261005195354-qxpncl"
+          }
+        },
+        "context_hygiene_dropped": {
+          "at": "2026-10-05T17:51:51.966Z",
+          "ageSeconds": 70208.7,
+          "value": {
+            "dropped": 15,
+            "kept": 1
+          }
+        }
+      },
+      "auditJobs": [
+        {
+          "name": "audit-muvu2lzx-0gcuhj-muvu2m2v-00e392c0",
+          "ageSeconds": 48450.5,
+          "files": [
+            "request.json",
+            "lock",
+            "result.json",
+            "progress.json"
+          ]
+        },
+        {
+          "name": "audit-muvor7h5-jf61nd-muvr7yxr-1fc15a8d",
+          "ageSeconds": 53779.0,
+          "files": [
+            "request.json",
+            "lock",
+            "result.json",
+            "progress.json"
+          ]
+        },
+        {
+          "name": "audit-muvor7h5-jf61nd-muvor7ik-217b9e34",
+          "ageSeconds": 57672.7,
+          "files": [
+            "request.json",
+            "lock",
+            "result.json",
+            "progress.json"
+          ]
+        }
+      ],
+      "panes": [],
+      "session": {
+        "name": "2026-09-28T03-49-16-048Z_01a0e621-967c-7412-be20-187b0895d29f.jsonl",
+        "ageSeconds": 7300.2,
+        "bytes": 2826258,
+        "entries": 1197,
+        "compactions": 1,
+        "failedReplies": 16,
+        "lastType": "message",
+        "lastError": "404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}"
+      }
+    },
+    {
+      "pid": 895696,
+      "cwd": "/home/dracon/Dev/browser-extensions-shared/extensions/standalones/clean-web",
+      "name": "clean-web",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 119.9,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "stopReason": null,
+        "tokensUsed": null
+      },
+      "project": {
+        "projectId": null,
+        "phase": null,
+        "cycle": null,
+        "revision": null
+      },
+      "requirements": {
+        "open": 0,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791061046196,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T13:20:00.784Z",
+          "ageSeconds": 119.9,
+          "value": {
+            "contextUsage": {
+              "tokens": 464841,
+              "contextWindow": 1048576,
+              "percent": 44.330692291259766
+            },
+            "provider": "meta",
+            "model": "muse-spark-1.3-contributor"
+          }
+        },
+        "context_hygiene_dropped": {
+          "at": "2026-10-06T13:18:49.101Z",
+          "ageSeconds": 191.6,
+          "value": {
+            "dropped": 4,
+            "kept": 1
+          }
+        }
+      },
+      "auditJobs": [],
+      "panes": [
+        {
+          "pane": "%192",
+          "statusLines": [
+            "\u21915.7M \u2193230k R105M CH100.0% 38.3%/1.0M (auto)                                                                                                               (opencode-go) space-bunny-free \u2022 max",
+            "\u21919.6M \u2193266k R137M CH99.8% $1.318 (sub) 44.3%/1.0M (auto)                                                                                              (meta) muse-spark-1.3-contributor \u2022 xhigh"
+          ]
+        }
+      ],
+      "session": {
+        "name": "2026-10-04T06-11-09-853Z_01a10589-a79c-74ca-b01e-c1886a6f2581.jsonl",
+        "ageSeconds": 119.9,
+        "bytes": 9135707,
+        "entries": 1122,
+        "compactions": 0,
+        "failedReplies": 14,
+        "lastType": "message",
+        "lastError": "opencode API error (403): {\"type\":\"FreeTierError\",\"message\":\"OpenCode's free tier can only be used from within OpenCode\"}"
+      }
+    },
+    {
+      "pid": 1799766,
+      "cwd": "/home/dracon/Dev/dracon-platform/web/studio",
+      "name": "studio",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 20.7,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "stopReason": null,
+        "tokensUsed": null
+      },
+      "project": {
+        "projectId": null,
+        "phase": null,
+        "cycle": null,
+        "revision": null
+      },
+      "requirements": {
+        "open": 0,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791245378047,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T13:21:40.038Z",
+          "ageSeconds": 20.7,
+          "value": {
+            "contextUsage": {
+              "tokens": 176783,
+              "contextWindow": 1048576,
+              "percent": 16.85934066772461
+            },
+            "provider": "meta",
+            "model": "muse-spark-1.3-contributor"
+          }
+        },
+        "session_compact": {
+          "at": "2026-10-06T00:09:38.046Z",
+          "ageSeconds": 47542.6,
+          "value": {}
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-10-06T00:09:40.058Z",
+          "ageSeconds": 47540.6,
+          "value": {
+            "phase": "prepared",
+            "id": "1799766:1791233036558:74:20261006000940-6ii0bh"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-10-06T00:09:40.066Z",
+          "ageSeconds": 47540.6,
+          "value": {
+            "phase": "accepted",
+            "id": "1799766:1791233036558:74:20261006000940-6ii0bh"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-10-06T00:09:40.074Z",
+          "ageSeconds": 47540.6,
+          "value": {
+            "phase": "started",
+            "id": "1799766:1791233036558:74:20261006000940-6ii0bh"
+          }
+        }
+      },
+      "auditJobs": [
+        {
+          "name": "audit-muvzck1v-7vd0tl-muvzck2a-5206a7c4",
+          "ageSeconds": 42488.5,
+          "files": [
+            "request.json",
+            "lock",
+            "result.json",
+            "progress.json"
+          ]
+        },
+        {
+          "name": "audit-muvwjzjx-gimr96-muvwjzkt-1a30d204",
+          "ageSeconds": 47752.6,
+          "files": [
+            "request.json",
+            "lock",
+            "result.json",
+            "progress.json"
+          ]
+        }
+      ],
+      "panes": [
+        {
+          "pane": "%80",
+          "statusLines": [
+            "\u21912.4M \u2193317k R145M CH99.6% $0.065 (sub) 16.9%/1.0M (auto)                                                                                              (meta) muse-spark-1.3-contributor \u2022 xhigh"
+          ]
+        }
+      ],
+      "session": {
+        "name": "2026-10-05T17-01-31-606Z_01a10d03-7055-7794-aed0-ea347a38b379.jsonl",
+        "ageSeconds": 20.7,
+        "bytes": 10284758,
+        "entries": 1672,
+        "compactions": 2,
+        "failedReplies": 1,
+        "lastType": "message",
+        "lastError": "Stream ended without finish_reason"
+      }
+    },
+    {
+      "pid": 1854943,
+      "cwd": "/home/dracon/Dev/dracon-platform/web/chat",
+      "name": "chat",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 18.1,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "stopReason": null,
+        "tokensUsed": null
+      },
+      "project": {
+        "projectId": null,
+        "phase": null,
+        "cycle": null,
+        "revision": null
+      },
+      "requirements": {
+        "open": 0,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791027561278,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T10:32:24.213Z",
+          "ageSeconds": 10176.5,
+          "value": {
+            "contextUsage": {
+              "tokens": 293753,
+              "contextWindow": 1000000,
+              "percent": 29.3753
+            },
+            "provider": "minimax",
+            "model": "MiniMax-M3.1-Flash"
+          }
+        }
+      },
+      "auditJobs": [
+        {
+          "name": "audit-muvk6vrd-qf37jo-muvk6vs9-9a95b0b4",
+          "ageSeconds": 68863.9,
+          "files": [
+            "request.json",
+            "lock",
+            "result.json",
+            "progress.json"
+          ]
+        },
+        {
+          "name": "audit-muvhlb6p-jujczb-muvhlb7c-c3bd50a7",
+          "ageSeconds": 73307.4,
+          "files": [
+            "request.json",
+            "lock",
+            "result.json",
+            "progress.json"
+          ]
+        }
+      ],
+      "panes": [
+        {
+          "pane": "%77",
+          "statusLines": [
+            "\u21912.6M \u2193196k R79M CH99.9% $1.344 (sub) 32.9%/1.0M (auto)                                                                                               (meta) muse-spark-1.3-contributor \u2022 xhigh"
+          ]
+        }
+      ],
+      "session": {
+        "name": "2026-10-05T17-01-43-657Z_01a10d03-9f68-706c-9af5-a9e58f4691f4.jsonl",
+        "ageSeconds": 18.2,
+        "bytes": 2756592,
+        "entries": 815,
+        "compactions": 0,
+        "failedReplies": 4,
+        "lastType": "message",
+        "lastError": "400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}"
+      }
+    },
+    {
+      "pid": 1964379,
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/junk-runner",
+      "name": "junk-runner",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 1055.9,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": false,
+        "iteration": 8,
+        "stopReason": "main model recovery \u2014 retrying in 60m (main model unknown \u2014 provider error); /loop resume retries immediately",
+        "tokensUsed": 4832943
+      },
+      "project": {
+        "projectId": "1c47e151-5071-4917-a656-8b591c11cd0a",
+        "phase": "replanning",
+        "cycle": 7,
+        "revision": 1
+      },
+      "requirements": {
+        "open": 15,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791222829676,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": "loop",
+        "retryAt": "2026-10-06T14:04:24.775Z",
+        "attempts": 3,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T13:04:24.769Z",
+          "ageSeconds": 1055.9,
+          "value": {
+            "contextUsage": {
+              "tokens": 41288,
+              "contextWindow": 1000000,
+              "percent": 4.1288
+            },
+            "provider": "minimax",
+            "model": "MiniMax-M3.1-Flash"
+          }
+        },
+        "session_compact_failed": {
+          "at": "2026-10-05T23:46:30.182Z",
+          "ageSeconds": 48930.5,
+          "value": {
+            "reason": "threshold",
+            "error": "Auto-compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete",
+            "failureKind": "summarization-length"
+          }
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-10-06T13:04:21.324Z",
+          "ageSeconds": 1059.4,
+          "value": {
+            "iteration": 9,
+            "phase": "prepared",
+            "id": "1964379:1791291772306:357:20261006130421-2wrcvj"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-10-06T13:04:21.328Z",
+          "ageSeconds": 1059.4,
+          "value": {
+            "iteration": 9,
+            "phase": "accepted",
+            "id": "1964379:1791291772306:357:20261006130421-2wrcvj"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-10-06T13:04:21.334Z",
+          "ageSeconds": 1059.4,
+          "value": {
+            "iteration": 9,
+            "phase": "started",
+            "id": "1964379:1791291772306:357:20261006130421-2wrcvj"
+          }
+        },
+        "context_hygiene_dropped": {
+          "at": "2026-10-05T23:44:13.253Z",
+          "ageSeconds": 49067.4,
+          "value": {
+            "dropped": 1,
+            "kept": 1
+          }
+        },
+        "respec_builder_transition": {
+          "at": "2026-10-05T23:44:05.110Z",
+          "ageSeconds": 49075.6,
+          "value": {
+            "phase": "replanning",
+            "cycle": 7
+          }
+        }
+      },
+      "auditJobs": [],
+      "panes": [
+        {
+          "pane": "%75",
+          "statusLines": [
+            "\u25cf Chrome Bridge (indefinite) glla: project replanning \u00b7 held \u00b7 increment 7 \u00b7 verified 0/15 \u00b7 remaining 15 \u00b7 blocked 0 \u00b7 v0.39.11",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Warning: Main model recovery: main model transient \u2014 provider error. Trying again in 1m; work is saved and will not be abandoned. The agent can retry now with resume_goal.",
+            " Error: Retry failed after 5 attempts: Retry cancelled",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Project \u00b7 Replanning \u00b7 held \u00b7 increment 7",
+            " \u251c\u2500 held: main model recovery \u2014 retrying in 60m (main model unknown \u2014 provider error); /loop resume retries immediately",
+            " \u2514\u2500 Work held \u00b7 /loop status \u00b7 /loop resume when ready",
+            "\u25cf Chrome Bridge (indefinite) glla: project replanning \u00b7 held \u00b7 increment 7 \u00b7 verified 0/15 \u00b7 remaining 15 \u00b7 blocked 0 \u00b7 v0.39.12"
+          ]
+        }
+      ],
+      "session": {
+        "name": "2026-10-06T13-02-50-604Z_01a1114f-46ec-760b-8f9a-78f7c3b01bb2.jsonl",
+        "ageSeconds": 1056.0,
+        "bytes": 174347,
+        "entries": 18,
+        "compactions": 0,
+        "failedReplies": 7,
+        "lastType": "message",
+        "lastError": "429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)\"},\"request_id\":\"071424d889826c9a5f745fdf92cd8f57\"}"
+      }
+    },
+    {
+      "pid": 2005938,
+      "cwd": "/home/dracon/Dev/eve",
+      "name": "eve",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 760.4,
+      "goal": {
+        "id": "20261006130520-eu6eab",
+        "status": "active",
+        "policy": "list",
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "stopReason": null,
+        "tokensUsed": null
+      },
+      "project": {
+        "projectId": null,
+        "phase": null,
+        "cycle": null,
+        "revision": null
+      },
+      "requirements": {
+        "open": 0,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791285861985,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T11:41:35.068Z",
+          "ageSeconds": 6025.6,
+          "value": {
+            "contextUsage": {
+              "tokens": 203869,
+              "contextWindow": 1048576,
+              "percent": 19.442462921142578
+            },
+            "provider": "meta",
+            "model": "muse-spark-1.3-contributor"
+          }
+        },
+        "session_compact": {
+          "at": "2026-10-06T11:24:21.984Z",
+          "ageSeconds": 7058.7,
+          "value": {}
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-10-06T13:05:20.411Z",
+          "ageSeconds": 1000.3,
+          "value": {
+            "phase": "prepared",
+            "id": "2005938:1791291911848:62:20261006130520-fqczt4"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-10-06T13:05:20.419Z",
+          "ageSeconds": 1000.3,
+          "value": {
+            "phase": "accepted",
+            "id": "2005938:1791291911848:62:20261006130520-fqczt4"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-10-06T13:05:20.424Z",
+          "ageSeconds": 1000.3,
+          "value": {
+            "phase": "started",
+            "id": "2005938:1791291911848:62:20261006130520-fqczt4"
+          }
+        },
+        "context_hygiene_dropped": {
+          "at": "2026-10-05T16:09:04.840Z",
+          "ageSeconds": 76375.9,
+          "value": {
+            "dropped": 8,
+            "kept": 1
+          }
+        }
+      },
+      "auditJobs": [],
+      "panes": [
+        {
+          "pane": "%82",
+          "statusLines": [
+            "\u21912.5M \u2193162k R50M CH99.1% $0.379 (sub) 19.5%/1.0M (auto)                                                                                               (meta) muse-spark-1.3-contributor \u2022 xhigh",
+            "\u21913.2M \u2193227k R59M CH99.9% $0.482 (sub) 29.4%/1.0M (auto)                                                                                               (meta) muse-spark-1.3-contributor \u2022 xhigh",
+            "\u25cf Chrome Bridge (indefinite) glla: [WORKING] \u00b7 v0.39.12"
+          ]
+        }
+      ],
+      "session": {
+        "name": "2026-10-05T16-11-06-034Z_01a10cd5-45b2-71a9-bbc0-31d12ec1b8ea.jsonl",
+        "ageSeconds": -1.7,
+        "bytes": 4350511,
+        "entries": 859,
+        "compactions": 2,
+        "failedReplies": 0,
+        "lastType": "message",
+        "lastError": null
+      }
+    },
+    {
+      "pid": 2103343,
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/hegemon",
+      "name": "hegemon",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 572.2,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": false,
+        "iteration": 223,
+        "stopReason": "main model recovery \u2014 retrying in 60m (main model unknown \u2014 provider error); /loop resume retries immediately",
+        "tokensUsed": 61126610
+      },
+      "project": {
+        "projectId": null,
+        "phase": null,
+        "cycle": null,
+        "revision": null
+      },
+      "requirements": {
+        "open": 0,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791229472536,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": "loop",
+        "retryAt": "2026-10-06T14:12:28.452Z",
+        "attempts": 3,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T13:12:28.442Z",
+          "ageSeconds": 572.2,
+          "value": {
+            "contextUsage": {
+              "tokens": 22900,
+              "contextWindow": 1000000,
+              "percent": 2.29
+            },
+            "provider": "minimax",
+            "model": "MiniMax-M3.1-Flash"
+          }
+        },
+        "session_compact": {
+          "at": "2026-10-05T19:44:32.534Z",
+          "ageSeconds": 63448.2,
+          "value": {}
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-10-06T13:12:25.066Z",
+          "ageSeconds": 575.6,
+          "value": {
+            "iteration": 224,
+            "phase": "prepared",
+            "id": "2103343:1791292253264:59:20261006131225-dg3hxn"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-10-06T13:12:25.071Z",
+          "ageSeconds": 575.6,
+          "value": {
+            "iteration": 224,
+            "phase": "accepted",
+            "id": "2103343:1791292253264:59:20261006131225-dg3hxn"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-10-06T13:12:25.076Z",
+          "ageSeconds": 575.6,
+          "value": {
+            "iteration": 224,
+            "phase": "started",
+            "id": "2103343:1791292253264:59:20261006131225-dg3hxn"
+          }
+        },
+        "context_hygiene_dropped": {
+          "at": "2026-10-06T13:10:45.000Z",
+          "ageSeconds": 675.7,
+          "value": {
+            "dropped": 7,
+            "kept": 1
+          }
+        }
+      },
+      "auditJobs": [],
+      "panes": [
+        {
+          "pane": "%22",
+          "statusLines": [
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            "\u25cf Chrome Bridge (indefinite) glla: [\u2588\u2586\u2584\u2582\u2581\u2582 LIVE \u00b7 WORKING] \u00b7 loop \u221e iter 223 \u00b7 metricless \u00b7 v0.39.11",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Warning: Main model recovery: main model transient \u2014 provider error. Trying again in 1m; work is saved and will not be abandoned. The agent can retry now with resume_goal.",
+            " Error: Retry failed after 5 attempts: Retry cancelled",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            "\u25cf Chrome Bridge (indefinite) glla: \u23f3 loop recovery \u00b7 primary selected \u00b7 Order: minimax/MiniMax-M3.1-Flash \u00b7 Current: minimax/MiniMax-M3.1-Flash \u00b7 Attempted: minimax/MiniMax-M3.1-Flash \u00b7 S..."
+          ]
+        }
+      ],
+      "session": {
+        "name": "2026-10-06T13-10-50-418Z_01a11156-9931-77bb-bcf3-a31131e5d7ce.jsonl",
+        "ageSeconds": 572.3,
+        "bytes": 98701,
+        "entries": 18,
+        "compactions": 0,
+        "failedReplies": 7,
+        "lastType": "message",
+        "lastError": "429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)\"},\"request_id\":\"071426bcfe932756ecff776c14a029cd\"}"
+      }
+    },
+    {
+      "pid": 2108771,
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/hellhunter",
+      "name": "hellhunter",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 5.1,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": true,
+        "iteration": 11,
+        "stopReason": null,
+        "tokensUsed": 11715764
+      },
+      "project": {
+        "projectId": "fee3441e-389a-4cfd-8530-5322cf865955",
+        "phase": "building",
+        "cycle": 7,
+        "revision": 1
+      },
+      "requirements": {
+        "open": 6,
+        "verified": 0,
+        "blocked": 2
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791227526473,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T13:14:33.449Z",
+          "ageSeconds": 447.2,
+          "value": {
+            "contextUsage": {
+              "tokens": 90268,
+              "contextWindow": 1048576,
+              "percent": 8.608627319335938
+            },
+            "provider": "meta",
+            "model": "muse-spark-1.3-contributor"
+          }
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-10-06T13:14:34.364Z",
+          "ageSeconds": 446.3,
+          "value": {
+            "iteration": 12,
+            "phase": "prepared",
+            "id": "2108771:1791292264421:63:20261006131434-caklmx"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-10-06T13:14:34.369Z",
+          "ageSeconds": 446.3,
+          "value": {
+            "iteration": 12,
+            "phase": "accepted",
+            "id": "2108771:1791292264421:63:20261006131434-caklmx"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-10-06T13:14:34.375Z",
+          "ageSeconds": 446.3,
+          "value": {
+            "iteration": 12,
+            "phase": "started",
+            "id": "2108771:1791292264421:63:20261006131434-caklmx"
+          }
+        },
+        "context_hygiene_dropped": {
+          "at": "2026-10-06T13:00:30.175Z",
+          "ageSeconds": 1290.5,
+          "value": {
+            "dropped": 11,
+            "kept": 1
+          }
+        },
+        "respec_builder_transition": {
+          "at": "2026-10-06T13:21:55.629Z",
+          "ageSeconds": 5.1,
+          "value": {
+            "phase": "building",
+            "cycle": 7
+          }
+        }
+      },
+      "auditJobs": [],
+      "panes": [
+        {
+          "pane": "%14",
+          "statusLines": [
+            " Error: 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}",
+            " Error: 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}",
+            " Error: 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}",
+            " Error: 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}",
+            " Error: 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}",
+            " Error: 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}",
+            " Error: 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}",
+            " Project \u00b7 Replanning \u00b7 held \u00b7 increment 6",
+            " \u251c\u2500 held: main model recovery \u2014 retrying in 30m (main model unknown \u2014 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}); /loop resume retries immediately",
+            " \u2514\u2500 Work held \u00b7 /loop status \u00b7 /loop resume when ready",
+            "\u25cf Chrome Bridge (indefinite) glla: project replanning \u00b7 held \u00b7 increment 6 \u00b7 verified 0/8 \u00b7 remaining 8 \u00b7 blocked 2 \u00b7 v0.39.11",
+            " Project \u00b7 Building \u00b7 increment 7",
+            "\u2191127k \u219314k R3.0M CH99.8% $0.021 (sub) 11.0%/1.0M (auto)                                                                                               (meta) muse-spark-1.3-contributor \u2022 xhigh",
+            "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 increment 7 \u00b7 verified 0/8 \u00b7 remaining 8 \u00b7 blocked 2 \u00b7 v0.39.12"
+          ]
+        },
+        {
+          "pane": "%229",
+          "statusLines": []
+        }
+      ],
+      "session": {
+        "name": "2026-10-06T13-11-03-127Z_01a11156-cad7-710b-abcd-0ca6fd2700f3.jsonl",
+        "ageSeconds": 5.1,
+        "bytes": 2278863,
+        "entries": 80,
+        "compactions": 0,
+        "failedReplies": 0,
+        "lastType": "message",
+        "lastError": null
+      }
+    },
+    {
+      "pid": 2116833,
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/freeport",
+      "name": "freeport",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 622.5,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": true,
+        "iteration": 10,
+        "stopReason": null,
+        "tokensUsed": 2421246
+      },
+      "project": {
+        "projectId": "1f82d990-5d3e-43b1-bd5a-f63890e8e240",
+        "phase": "building",
+        "cycle": 7,
+        "revision": 1
+      },
+      "requirements": {
+        "open": 12,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791248064105,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": "loop",
+        "retryAt": null,
+        "attempts": 47,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T13:00:31.256Z",
+          "ageSeconds": 1289.4,
+          "value": {
+            "contextUsage": {
+              "tokens": 449432,
+              "contextWindow": 1048576,
+              "percent": 42.861175537109375
+            },
+            "provider": "opencode-go",
+            "model": "space-bunny-free"
+          }
+        },
+        "session_compact_failed": {
+          "at": "2026-10-06T11:11:38.883Z",
+          "ageSeconds": 7821.8,
+          "value": {
+            "reason": "manual",
+            "error": "Compaction failed: Summarization failed: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            "failureKind": "other-terminal"
+          }
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-10-06T13:11:38.188Z",
+          "ageSeconds": 622.5,
+          "value": {
+            "iteration": 11,
+            "phase": "prepared",
+            "id": "2116833:1791292292165:65:20261006131138-r2oab5"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-10-06T13:11:38.191Z",
+          "ageSeconds": 622.5,
+          "value": {
+            "iteration": 11,
+            "phase": "accepted",
+            "id": "2116833:1791292292165:65:20261006131138-r2oab5"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-10-06T13:11:38.197Z",
+          "ageSeconds": 622.5,
+          "value": {
+            "iteration": 11,
+            "phase": "started",
+            "id": "2116833:1791292292165:65:20261006131138-r2oab5"
+          }
+        },
+        "context_hygiene_dropped": {
+          "at": "2026-10-06T13:00:30.152Z",
+          "ageSeconds": 1290.5,
+          "value": {
+            "dropped": 6,
+            "kept": 1
+          }
+        }
+      },
+      "auditJobs": [],
+      "panes": [
+        {
+          "pane": "%76",
+          "statusLines": [
+            " Error: Compaction failed: Summarization failed: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            " Warning: glla: optional transcript compaction failed (Compaction failed: Summarization failed: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"});",
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            " Project \u00b7 Building \u00b7 held \u00b7 increment 7",
+            " \u251c\u2500 held: main model recovery \u2014 retrying in 30m (main model transient \u2014 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}); /loop resume retries immedi\u2026",
+            " \u2514\u2500 Work held \u00b7 /loop status \u00b7 /loop resume when ready",
+            "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 held \u00b7 increment 7 \u00b7 verified 0/12 \u00b7 remaining 12 \u00b7 blocked 0 \u00b7 v0.39.11",
+            " Project \u00b7 Building \u00b7 increment 7",
+            "\u2191228k \u219316k R2.9M CH99.8% $0.032 (sub) 11.2%/1.0M (auto)                                                                                               (meta) muse-spark-1.3-contributor \u2022 xhigh",
+            "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 increment 7 \u00b7 verified 0/12 \u00b7 remaining 12 \u00b7 blocked 0 \u00b7 v0.39.12"
+          ]
+        }
+      ],
+      "session": {
+        "name": "2026-10-06T13-11-30-545Z_01a11157-35f1-74c0-ae42-df9884d6b4ef.jsonl",
+        "ageSeconds": -1.8,
+        "bytes": 580488,
+        "entries": 82,
+        "compactions": 0,
+        "failedReplies": 0,
+        "lastType": "message",
+        "lastError": null
+      }
+    },
+    {
+      "pid": 2122752,
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/deathrun",
+      "name": "deathrun",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 34.2,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": true,
+        "iteration": 357,
+        "stopReason": null,
+        "tokensUsed": 22532902
+      },
+      "project": {
+        "projectId": null,
+        "phase": null,
+        "cycle": null,
+        "revision": null
+      },
+      "requirements": {
+        "open": 0,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791254821645,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": "loop",
+        "retryAt": null,
+        "attempts": 46,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T13:21:25.693Z",
+          "ageSeconds": 35.0,
+          "value": {
+            "contextUsage": {
+              "tokens": 135709,
+              "contextWindow": 1048576,
+              "percent": 12.942218780517578
+            },
+            "provider": "meta",
+            "model": "muse-spark-1.3-contributor"
+          }
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-10-06T13:21:26.444Z",
+          "ageSeconds": 34.2,
+          "value": {
+            "iteration": 358,
+            "phase": "prepared",
+            "id": "2122752:1791292311839:65:20261006132126-ahgrq1"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-10-06T13:21:26.449Z",
+          "ageSeconds": 34.2,
+          "value": {
+            "iteration": 358,
+            "phase": "accepted",
+            "id": "2122752:1791292311839:65:20261006132126-ahgrq1"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-10-06T13:21:26.453Z",
+          "ageSeconds": 34.2,
+          "value": {
+            "iteration": 358,
+            "phase": "started",
+            "id": "2122752:1791292311839:65:20261006132126-ahgrq1"
+          }
+        },
+        "context_hygiene_dropped": {
+          "at": "2026-10-06T13:00:30.130Z",
+          "ageSeconds": 1290.6,
+          "value": {
+            "dropped": 6,
+            "kept": 1
+          }
+        }
+      },
+      "auditJobs": [],
+      "panes": [
+        {
+          "pane": "%23",
+          "statusLines": [
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            " Error: Retry failed after 5 attempts: Retry cancelled",
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            " Error: 400: {\"type\":\"server_error\",\"message\":\"Upstream request failed: Model is unavailable.\"}",
+            "\u25cf Chrome Bridge (indefinite) glla: \u23f3 loop recovery \u00b7 primary selected \u00b7 Order: opencode-go/space-bunny-free \u00b7 Current: opencode-go/space-bunny-free \u00b7 Attempted: opencode-go/space-bunny-fr...",
+            "\u2191316k \u219327k R6.5M CH99.6% $0.050 (sub) 13.1%/1.0M (auto)                                                                                               (meta) muse-spark-1.3-contributor \u2022 xhigh",
+            "\u25cf Chrome Bridge (indefinite) glla: [BUSY] \u00b7 loop \u221e iter 357 \u00b7 metricless \u00b7 v0.39.12"
+          ]
+        }
+      ],
+      "session": {
+        "name": "2026-10-06T13-11-49-539Z_01a11157-8023-7501-b982-f5bfd784ba37.jsonl",
+        "ageSeconds": 22.1,
+        "bytes": 738024,
+        "entries": 146,
+        "compactions": 0,
+        "failedReplies": 0,
+        "lastType": "message",
+        "lastError": null
+      }
+    },
+    {
+      "pid": 2153060,
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/capture-anime-girls",
+      "name": "capture-anime-girls",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 1287.0,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": false,
+        "iteration": 339,
+        "stopReason": "main model recovery \u2014 retrying in 300m (main model transient \u2014 provider error); /loop resume retries immediately",
+        "tokensUsed": 68329410
+      },
+      "project": {
+        "projectId": null,
+        "phase": null,
+        "cycle": null,
+        "revision": null
+      },
+      "requirements": {
+        "open": 0,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791285825225,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": "loop",
+        "retryAt": "2026-10-06T18:00:33.656Z",
+        "attempts": 7,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T13:00:33.653Z",
+          "ageSeconds": 1287.0,
+          "value": {
+            "contextUsage": {
+              "tokens": 92255,
+              "contextWindow": 1000000,
+              "percent": 9.2255
+            },
+            "provider": "minimax",
+            "model": "MiniMax-M3.1-Flash"
+          }
+        },
+        "session_compact": {
+          "at": "2026-10-06T11:23:45.225Z",
+          "ageSeconds": 7095.5,
+          "value": {}
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-10-06T13:00:30.083Z",
+          "ageSeconds": 1290.6,
+          "value": {
+            "iteration": 340,
+            "phase": "prepared",
+            "id": "2153060:1791278572504:80:20261006130030-xm2ki0"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-10-06T13:00:30.101Z",
+          "ageSeconds": 1290.6,
+          "value": {
+            "iteration": 340,
+            "phase": "accepted",
+            "id": "2153060:1791278572504:80:20261006130030-xm2ki0"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-10-06T13:00:30.120Z",
+          "ageSeconds": 1290.6,
+          "value": {
+            "iteration": 340,
+            "phase": "started",
+            "id": "2153060:1791278572504:80:20261006130030-xm2ki0"
+          }
+        },
+        "context_hygiene_dropped": {
+          "at": "2026-10-06T13:00:30.149Z",
+          "ageSeconds": 1290.5,
+          "value": {
+            "dropped": 2,
+            "kept": 1
+          }
+        }
+      },
+      "auditJobs": [],
+      "panes": [
+        {
+          "pane": "%81",
+          "statusLines": [
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Warning: Main model recovery: main model transient \u2014 provider error. Trying again in 1m; work is saved and will not be abandoned. The agent can retry now with resume_goal.",
+            " Error: Retry failed after 5 attempts: Retry cancelled",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            "\u25cf Chrome Bridge (indefinite) glla: \u23f3 loop recovery \u00b7 primary selected \u00b7 Order: minimax/MiniMax-M3.1-Flash \u00b7 Current: minimax/MiniMax-M3.1-Flash \u00b7 Attempted: minimax/MiniMax-M3.1-Flash \u00b7 S..."
+          ]
+        },
+        {
+          "pane": "%239",
+          "statusLines": []
+        }
+      ],
+      "session": {
+        "name": "2026-10-06T09-22-51-340Z_01a11085-df4b-745b-b0ad-435baaeb92fa.jsonl",
+        "ageSeconds": 1287.1,
+        "bytes": 6008138,
+        "entries": 2783,
+        "compactions": 5,
+        "failedReplies": 16,
+        "lastType": "message",
+        "lastError": "429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)\"},\"request_id\":\"071423f1dbcdd5863e406b2551915af6\"}"
+      }
+    },
+    {
+      "pid": 2201698,
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/football-forever",
+      "name": "football-forever",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 80.7,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": true,
+        "iteration": 8,
+        "stopReason": null,
+        "tokensUsed": 2235138
+      },
+      "project": {
+        "projectId": "74b1cdef-9ccd-4730-871b-f037fd9304eb",
+        "phase": "building",
+        "cycle": 8,
+        "revision": 1
+      },
+      "requirements": {
+        "open": 4,
+        "verified": 4,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791291794576,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T13:20:38.466Z",
+          "ageSeconds": 82.2,
+          "value": {
+            "contextUsage": {
+              "tokens": 88179,
+              "contextWindow": 1048576,
+              "percent": 8.409404754638672
+            },
+            "provider": "meta",
+            "model": "muse-spark-1.3-contributor"
+          }
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-10-06T13:20:39.977Z",
+          "ageSeconds": 80.7,
+          "value": {
+            "iteration": 9,
+            "phase": "prepared",
+            "id": "2201698:1791292578351:66:20261006132039-nlt0xn"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-10-06T13:20:39.984Z",
+          "ageSeconds": 80.7,
+          "value": {
+            "iteration": 9,
+            "phase": "accepted",
+            "id": "2201698:1791292578351:66:20261006132039-nlt0xn"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-10-06T13:20:39.988Z",
+          "ageSeconds": 80.7,
+          "value": {
+            "iteration": 9,
+            "phase": "started",
+            "id": "2201698:1791292578351:66:20261006132039-nlt0xn"
+          }
+        },
+        "respec_builder_transition": {
+          "at": "2026-10-06T13:20:26.772Z",
+          "ageSeconds": 93.9,
+          "value": {
+            "phase": "building",
+            "cycle": 8
+          }
+        }
+      },
+      "auditJobs": [],
+      "panes": [
+        {
+          "pane": "%17",
+          "statusLines": [
+            " Error: 503 {\"error\":{\"message\":\"Service temporarily unavailable. Please try again shortly.\",\"type\":\"service_unavailable_error\",\"param\":{\"error\":\"Service temporarily unavailable. Please try",
+            " Project \u00b7 Replanning \u00b7 held \u00b7 increment 7",
+            " \u251c\u2500 held: provider errors \u2014 automatic recovery cancelled by manual model selection; /loop resume to continue with the selected model",
+            " \u2514\u2500 Work held \u00b7 /loop status \u00b7 /loop resume when ready",
+            "\u25cf Chrome Bridge (indefinite) glla: project replanning \u00b7 held \u00b7 increment 7 \u00b7 verified 4/8 \u00b7 remaining 4 \u00b7 blocked 0 \u00b7 v0.39.12",
+            " Project \u00b7 Building \u00b7 increment 8",
+            "\u2191199k \u219311k R1.8M CH98.5% $0.026 (sub) 11.2%/1.0M (auto)                                                                                               (meta) muse-spark-1.3-contributor \u2022 xhigh",
+            "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 increment 8 \u00b7 verified 4/8 \u00b7 remaining 4 \u00b7 blocked 0 \u00b7 v0.39.12"
+          ]
+        },
+        {
+          "pane": "%228",
+          "statusLines": []
+        }
+      ],
+      "session": {
+        "name": "2026-10-06T13-16-16-315Z_01a1115b-923a-7224-b682-280f13caaf81.jsonl",
+        "ageSeconds": 25.2,
+        "bytes": 525269,
+        "entries": 62,
+        "compactions": 0,
+        "failedReplies": 0,
+        "lastType": "message",
+        "lastError": null
+      }
+    },
+    {
+      "pid": 2204931,
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/doomtap",
+      "name": "doomtap",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 329.1,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": true,
+        "iteration": 4,
+        "stopReason": null,
+        "tokensUsed": 713369
+      },
+      "project": {
+        "projectId": "8ea9049f-57ed-4191-a699-dcac1969af7b",
+        "phase": "building",
+        "cycle": 5,
+        "revision": 1
+      },
+      "requirements": {
+        "open": 8,
+        "verified": 4,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791284792617,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": "loop",
+        "retryAt": null,
+        "attempts": 4,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T13:16:03.271Z",
+          "ageSeconds": 357.4,
+          "value": {
+            "contextUsage": {
+              "tokens": 61628,
+              "contextWindow": 262144,
+              "percent": 23.50921630859375
+            },
+            "provider": "vercel-ai-gateway",
+            "model": "inclusionai/ling-3.1-flash-free"
+          }
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-10-06T13:16:31.593Z",
+          "ageSeconds": 329.1,
+          "value": {
+            "iteration": 5,
+            "phase": "prepared",
+            "id": "2204931:1791292588791:99:20261006131631-hkcmz6"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-10-06T13:16:31.597Z",
+          "ageSeconds": 329.1,
+          "value": {
+            "iteration": 5,
+            "phase": "accepted",
+            "id": "2204931:1791292588791:99:20261006131631-hkcmz6"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-10-06T13:16:31.602Z",
+          "ageSeconds": 329.1,
+          "value": {
+            "iteration": 5,
+            "phase": "started",
+            "id": "2204931:1791292588791:99:20261006131631-hkcmz6"
+          }
+        }
+      },
+      "auditJobs": [],
+      "panes": [
+        {
+          "pane": "%603",
+          "statusLines": [
+            "\u2502! %19    wez               neon              pi                        neonbreak                pi              limited  proc 21m    4s     21m    Error: 429 {\"type\":\"error\",\"error\":{\"t    \u2502"
+          ]
+        },
+        {
+          "pane": "%15",
+          "statusLines": [
+            " Error: 429 {\"error\":{\"message\":\"Rate limit exceeded for inclusionai/ling-3.1-flash for provider novita: this team's limit of 5 requests per minute (per region) was reached. Retry after",
+            " Project \u00b7 Building \u00b7 held \u00b7 increment 5",
+            " \u251c\u2500 held: main model recovery \u2014 retrying in 1m (main model transient \u2014 provider error); /loop resume retries immediately",
+            " \u2514\u2500 Work held \u00b7 /loop status \u00b7 /loop resume when ready",
+            "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 held \u00b7 increment 5 \u00b7 verified 4/12 \u00b7 remaining 8 \u00b7 blocked 0 \u00b7 v0.39.12",
+            " Project \u00b7 Building \u00b7 increment 5",
+            "\u219195k \u219312k R1.5M CH99.2% $0.015 (sub) 10.1%/1.0M (auto)                                                                                                (meta) muse-spark-1.3-contributor \u2022 xhigh",
+            "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 increment 5 \u00b7 verified 4/12 \u00b7 remaining 8 \u00b7 blocked 0 \u00b7 v0.39.12"
+          ]
+        },
+        {
+          "pane": "%226",
+          "statusLines": []
+        }
+      ],
+      "session": {
+        "name": "2026-10-06T13-16-27-431Z_01a1115b-bda7-73fc-a357-ed01b3013656.jsonl",
+        "ageSeconds": -1.9,
+        "bytes": 544405,
+        "entries": 46,
+        "compactions": 0,
+        "failedReplies": 0,
+        "lastType": "message",
+        "lastError": null
+      }
+    },
+    {
+      "pid": 2236339,
+      "cwd": "/home/dracon/Dev/dracon-platform",
+      "name": "dracon-platform",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 1642.0,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "stopReason": null,
+        "tokensUsed": null
+      },
+      "project": {
+        "projectId": null,
+        "phase": null,
+        "cycle": null,
+        "revision": null
+      },
+      "requirements": {
+        "open": 0,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791224720972,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T12:54:38.727Z",
+          "ageSeconds": 1642.0,
+          "value": {
+            "contextUsage": {
+              "tokens": 267036,
+              "contextWindow": 1048576,
+              "percent": 25.466537475585938
+            },
+            "provider": "meta",
+            "model": "muse-spark-1.3-contributor"
+          }
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-10-05T22:21:48.641Z",
+          "ageSeconds": 54012.0,
+          "value": {
+            "phase": "prepared",
+            "id": "2236339:1791220704607:562:20261005222148-cmx9gy"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-10-05T22:21:48.667Z",
+          "ageSeconds": 54012.0,
+          "value": {
+            "phase": "accepted",
+            "id": "2236339:1791220704607:562:20261005222148-cmx9gy"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-10-05T22:21:48.690Z",
+          "ageSeconds": 54012.0,
+          "value": {
+            "phase": "started",
+            "id": "2236339:1791220704607:562:20261005222148-cmx9gy"
+          }
+        },
+        "context_hygiene_dropped": {
+          "at": "2026-10-06T12:54:22.335Z",
+          "ageSeconds": 1658.4,
+          "value": {
+            "dropped": 2,
+            "kept": 1
+          }
+        }
+      },
+      "auditJobs": [
+        {
+          "name": "audit-muvtowo2-3ymzix-muvtowor-a6291bf4",
+          "ageSeconds": 53026.5,
+          "files": [
+            "request.json",
+            "lock",
+            "result.json",
+            "progress.json"
+          ]
+        },
+        {
+          "name": "audit-muvt54f4-igsdqi-muvt54gn-2772c094",
+          "ageSeconds": 54030.4,
+          "files": [
+            "request.json",
+            "lock",
+            "result.json",
+            "progress.json"
+          ]
+        },
+        {
+          "name": "audit-muvsnybc-vv254k-muvso7sg-04819bce",
+          "ageSeconds": 55223.2,
+          "files": [
+            "request.json",
+            "lock",
+            "result.json",
+            "progress.json"
+          ]
+        }
+      ],
+      "panes": [
+        {
+          "pane": "%8",
+          "statusLines": []
+        },
+        {
+          "pane": "%65",
+          "statusLines": [
+            "\u2191297k \u219319k R7.1M CH99.8% $1.501 (sub) 43.0%/272k (auto)                                                                                                     (openai-codex) gpt-6.1-sol \u2022 medium",
+            " rendered a blank `404 / Not Found` page. Console: `Error: Not found:",
+            "\u21911.5M \u2193116k R71M CH99.5% $5.761 (sub) 25.5%/1.0M (auto)                                                                                               (meta) muse-spark-1.3-contributor \u2022 xhigh"
+          ]
+        },
+        {
+          "pane": "%225",
+          "statusLines": []
+        },
+        {
+          "pane": "%1196",
+          "statusLines": []
+        },
+        {
+          "pane": "%1143",
+          "statusLines": []
+        },
+        {
+          "pane": "%230",
+          "statusLines": []
+        }
+      ],
+      "session": {
+        "name": "2026-10-05T16-05-30-834Z_01a10cd0-2852-7313-97a7-598dcf2c3290.jsonl",
+        "ageSeconds": 1642.1,
+        "bytes": 6029754,
+        "entries": 1006,
+        "compactions": 1,
+        "failedReplies": 7,
+        "lastType": "message",
+        "lastError": "This operation was aborted"
+      }
+    },
+    {
+      "pid": 2241746,
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/neonbreak",
+      "name": "neonbreak",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 1285.8,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": false,
+        "iteration": 1,
+        "stopReason": "main model recovery \u2014 retrying in 300m (main model unknown \u2014 provider error); /loop resume retries immediately",
+        "tokensUsed": 101336
+      },
+      "project": {
+        "projectId": "4e2e1b82-1af2-4c60-a848-6e0ca65cb671",
+        "phase": "building",
+        "cycle": 1,
+        "revision": 1
+      },
+      "requirements": {
+        "open": 1,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791126385785,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": "loop",
+        "retryAt": "2026-10-06T18:00:34.929Z",
+        "attempts": 7,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T13:00:34.926Z",
+          "ageSeconds": 1285.8,
+          "value": {
+            "contextUsage": {
+              "tokens": 288815,
+              "contextWindow": 1000000,
+              "percent": 28.8815
+            },
+            "provider": "minimax",
+            "model": "MiniMax-M3.1-Flash"
+          }
+        },
+        "session_compact_failed": {
+          "at": "2026-10-06T11:42:17.121Z",
+          "ageSeconds": 5983.6,
+          "value": {
+            "reason": "manual",
+            "error": "Compaction failed: Summarization failed: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)\"},\"request_id\":\"0714119940b90c415c4121019c4a48a5",
+            "failureKind": "other-terminal"
+          }
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-10-06T13:00:30.072Z",
+          "ageSeconds": 1290.6,
+          "value": {
+            "iteration": 2,
+            "phase": "prepared",
+            "id": "2241746:1791278874549:87:20261006130030-6d9f2q"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-10-06T13:00:30.088Z",
+          "ageSeconds": 1290.6,
+          "value": {
+            "iteration": 2,
+            "phase": "accepted",
+            "id": "2241746:1791278874549:87:20261006130030-6d9f2q"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-10-06T13:00:30.108Z",
+          "ageSeconds": 1290.6,
+          "value": {
+            "iteration": 2,
+            "phase": "started",
+            "id": "2241746:1791278874549:87:20261006130030-6d9f2q"
+          }
+        },
+        "context_hygiene_dropped": {
+          "at": "2026-10-06T13:00:30.163Z",
+          "ageSeconds": 1290.5,
+          "value": {
+            "dropped": 2,
+            "kept": 1
+          }
+        }
+      },
+      "auditJobs": [],
+      "panes": [
+        {
+          "pane": "%19",
+          "statusLines": [
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: Compaction failed: Summarization failed: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please",
+            " Warning: glla: optional transcript compaction failed (Compaction failed: Summarization failed: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Project \u00b7 Building \u00b7 held \u00b7 increment 1",
+            " \u251c\u2500 held: main model recovery \u2014 retrying in 300m (main model unknown \u2014 provider error); /loop resume retries immediately",
+            " \u2514\u2500 Work held \u00b7 /loop status \u00b7 /loop resume when ready",
+            "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 held \u00b7 increment 1 \u00b7 verified 0/1 \u00b7 remaining 1 \u00b7 blocked 0 \u00b7 v0.39.11"
+          ]
+        }
+      ],
+      "session": {
+        "name": "2026-10-06T09-27-53-352Z_01a1108a-7b08-72c0-9a61-588aad6a2a4f.jsonl",
+        "ageSeconds": 1285.8,
+        "bytes": 1812024,
+        "entries": 649,
+        "compactions": 0,
+        "failedReplies": 9,
+        "lastType": "message",
+        "lastError": "429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)\"},\"request_id\":\"071423f2266d7699b6eb695f6735b3b3\"}"
+      }
+    },
+    {
+      "pid": 2250035,
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/polis",
+      "name": "polis",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 1286.9,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": false,
+        "iteration": 643,
+        "stopReason": "main model recovery \u2014 retrying in 300m (main model transient \u2014 provider error); /loop resume retries immediately",
+        "tokensUsed": 42951318
+      },
+      "project": {
+        "projectId": null,
+        "phase": null,
+        "cycle": null,
+        "revision": null
+      },
+      "requirements": {
+        "open": 0,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791286026658,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": "loop",
+        "retryAt": "2026-10-06T18:00:33.778Z",
+        "attempts": 7,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T13:00:33.775Z",
+          "ageSeconds": 1286.9,
+          "value": {
+            "contextUsage": {
+              "tokens": 67803,
+              "contextWindow": 1000000,
+              "percent": 6.7803
+            },
+            "provider": "minimax",
+            "model": "MiniMax-M3.1-Flash"
+          }
+        },
+        "session_compact": {
+          "at": "2026-10-06T11:27:06.658Z",
+          "ageSeconds": 6894.0,
+          "value": {}
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-10-06T13:00:30.086Z",
+          "ageSeconds": 1290.6,
+          "value": {
+            "iteration": 644,
+            "phase": "prepared",
+            "id": "2250035:1791278900899:100:20261006130030-df7z58"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-10-06T13:00:30.105Z",
+          "ageSeconds": 1290.6,
+          "value": {
+            "iteration": 644,
+            "phase": "accepted",
+            "id": "2250035:1791278900899:100:20261006130030-df7z58"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-10-06T13:00:30.123Z",
+          "ageSeconds": 1290.6,
+          "value": {
+            "iteration": 644,
+            "phase": "started",
+            "id": "2250035:1791278900899:100:20261006130030-df7z58"
+          }
+        },
+        "context_hygiene_dropped": {
+          "at": "2026-10-06T13:00:30.157Z",
+          "ageSeconds": 1290.5,
+          "value": {
+            "dropped": 2,
+            "kept": 1
+          }
+        }
+      },
+      "auditJobs": [],
+      "panes": [
+        {
+          "pane": "%20",
+          "statusLines": [
+            "\u2191282k \u219314k R2.7M CH99.7% $0.036 (sub) 10.6%/1.0M (auto)                                                                                               (meta) muse-spark-1.3-contributor \u2022 xhigh",
+            "\u25cf Chrome Bridge (indefinite) glla: [\u2588\u2586\u2584\u2582\u2581\u2582 LIVE \u00b7 WORKING] \u00b7 loop \u221e iter 628 \u00b7 metricless \u00b7 v0.39.11",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Warning: Main model recovery: main model transient \u2014 provider error. Trying again in 1m; work is saved and will not be abandoned. The agent can retry now with resume_goal.",
+            " Error: Retry failed after 5 attempts: Retry cancelled",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            "\u25cf Chrome Bridge (indefinite) glla: \u23f3 loop recovery \u00b7 primary selected \u00b7 Order: minimax/MiniMax-M3.1-Flash \u00b7 Current: minimax/MiniMax-M3.1-Flash \u00b7 Attempted: minimax/MiniMax-M3.1-Flash \u00b7 S..."
+          ]
+        },
+        {
+          "pane": "%227",
+          "statusLines": []
+        }
+      ],
+      "session": {
+        "name": "2026-10-06T09-28-19-674Z_01a1108a-e1d9-7743-adf6-d9bcfc87df94.jsonl",
+        "ageSeconds": 1287.0,
+        "bytes": 9105922,
+        "entries": 2147,
+        "compactions": 6,
+        "failedReplies": 9,
+        "lastType": "message",
+        "lastError": "429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)\"},\"request_id\":\"071423f186c49502859f7f383291a0a9\"}"
+      }
+    },
+    {
+      "pid": 2323218,
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/darklord",
+      "name": "darklord",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 580.1,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": false,
+        "iteration": 14,
+        "stopReason": "main model recovery \u2014 retrying in 300m (main model transient \u2014 provider error); /loop resume retries immediately",
+        "tokensUsed": 14702748
+      },
+      "project": {
+        "projectId": "85601f6c-4ef3-4b47-b3e3-6e8dc6d1ad52",
+        "phase": "replanning",
+        "cycle": 12,
+        "revision": 2
+      },
+      "requirements": {
+        "open": 10,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791255198694,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": "loop",
+        "retryAt": "2026-10-06T18:12:20.574Z",
+        "attempts": 7,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "auditJobs": [
+        {
+          "name": "51963915-cc53-4141-a213-c7cc66b08e09-muwhi4ox-fb4b7f49",
+          "ageSeconds": 13093.6,
+          "files": [
+            "request.json",
+            "lock",
+            "result.json",
+            "progress.json"
+          ]
+        },
+        {
+          "name": "51963915-cc53-4141-a213-c7cc66b08e09-muwhcuns-61ae8a50",
+          "ageSeconds": 13528.7,
+          "files": [
+            "request.json",
+            "lock",
+            "result.json",
+            "progress.json"
+          ]
+        },
+        {
+          "name": "51963915-cc53-4141-a213-c7cc66b08e09-muwh03sd-77db58f9",
+          "ageSeconds": 13769.7,
+          "files": [
+            "request.json",
+            "lock",
+            "result.json",
+            "progress.json"
+          ]
+        }
+      ],
+      "panes": [
+        {
+          "pane": "%16",
+          "statusLines": [
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Error: Compaction failed: Turn prefix summarization failed: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid",
+            " Warning: glla: optional transcript compaction failed (Compaction failed: Turn prefix summarization failed: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan",
+            " Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn",
+            " Project \u00b7 Replanning \u00b7 held \u00b7 increment 12",
+            " \u251c\u2500 held: main model recovery \u2014 retrying in 300m (main model transient \u2014 provider error); /loop resume retries immediately",
+            " \u2514\u2500 Work held \u00b7 /loop status \u00b7 /loop resume when ready",
+            "\u25cf Chrome Bridge (indefinite) glla: project replanning \u00b7 held \u00b7 increment 12 \u00b7 verified 0/10 \u00b7 remaining 10 \u00b7 blocked 0 \u00b7 v0.39.11"
+          ]
+        }
+      ],
+      "session": {
+        "name": "2026-10-06T09-32-22-556Z_01a1108e-969b-7566-9242-d50316043adf.jsonl",
+        "ageSeconds": 580.2,
+        "bytes": 1302048,
+        "entries": 245,
+        "compactions": 0,
+        "failedReplies": 9,
+        "lastType": "message",
+        "lastError": "429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"The Token Plan usage limit has been reached. To avoid interruption, please upgrade your plan or buy credits and turn on auto consumption. (2067)\"},\"request_id\":\"071426b41f0c258673320964a429e9be\"}"
+      }
+    },
+    {
+      "pid": 3072470,
+      "cwd": "/home/dracon/Dev/dracon-platform/web/games/wip/endless-td",
+      "name": "endless-td",
+      "at": "2026-10-06T13:22:00.690626+00:00",
+      "journalAgeSeconds": 9782.7,
+      "goal": {
+        "id": null,
+        "status": null,
+        "policy": null,
+        "pauseKind": null,
+        "pauseReason": null,
+        "pauseSuggestedAction": null
+      },
+      "loop": {
+        "active": null,
+        "iteration": null,
+        "stopReason": null,
+        "tokensUsed": null
+      },
+      "project": {
+        "projectId": null,
+        "phase": null,
+        "cycle": null,
+        "revision": null
+      },
+      "requirements": {
+        "open": 0,
+        "verified": 0,
+        "blocked": 0
+      },
+      "stateRecovery": {
+        "lastCompactionAt": 1791212404986,
+        "supervisorPausedAt": null,
+        "loadHoldAt": null,
+        "postCompactRecovery": null
+      },
+      "modelRecovery": {
+        "kind": null,
+        "retryAt": null,
+        "attempts": null,
+        "lastError": null,
+        "primaryModel": null,
+        "pendingModelSwitch": null
+      },
+      "recentEvents": {
+        "context_usage_sample": {
+          "at": "2026-10-06T10:31:58.272Z",
+          "ageSeconds": 10202.4,
+          "value": {
+            "contextUsage": {
+              "tokens": 485892,
+              "contextWindow": 1048576,
+              "percent": 46.33827209472656
+            },
+            "provider": "meta",
+            "model": "muse-spark-1.3-contributor"
+          }
+        },
+        "continuation_dispatch_prepared": {
+          "at": "2026-10-05T17:56:59.188Z",
+          "ageSeconds": 69901.5,
+          "value": {
+            "iteration": 5,
+            "phase": "prepared",
+            "id": "3072470:1791222947443:72:20261005175659-t0bjkj"
+          }
+        },
+        "continuation_dispatch_accepted": {
+          "at": "2026-10-05T17:56:59.197Z",
+          "ageSeconds": 69901.5,
+          "value": {
+            "iteration": 5,
+            "phase": "accepted",
+            "id": "3072470:1791222947443:72:20261005175659-t0bjkj"
+          }
+        },
+        "continuation_start_acknowledged": {
+          "at": "2026-10-05T17:56:59.312Z",
+          "ageSeconds": 69901.4,
+          "value": {
+            "iteration": 5,
+            "phase": "started",
+            "id": "3072470:1791222947443:72:20261005175659-t0bjkj"
+          }
+        },
+        "context_hygiene_dropped": {
+          "at": "2026-10-06T10:38:58.021Z",
+          "ageSeconds": 9782.7,
+          "value": {
+            "dropped": 1,
+            "kept": 1
+          }
+        }
+      },
+      "auditJobs": [],
+      "panes": [
+        {
+          "pane": "%11",
+          "statusLines": [
+            " Project \u00b7 Building \u00b7 held \u00b7 increment 6",
+            " \u251c\u2500 held: main model recovery \u2014 retrying in 30m (main model unknown \u2014 404: {\"message\":\"No endpoints found for stealth/space-bunny-alpha.\",\"code\":404}); /loop resume retries immediately",
+            " \u2514\u2500 Work held \u00b7 /loop status \u00b7 /loop resume when ready",
+            "\u2191155k \u219358k R14M CH99.9% 14.9%/1.0M (auto)                                                                                                                  (opencode-go) space-bunny-free \u2022 max",
+            "\u25cf Chrome Bridge (indefinite) glla: project building \u00b7 held \u00b7 increment 6 \u00b7 verified 0/9 \u00b7 remaining 9 \u00b7 blocked 1 \u00b7 v0.39.7",
+            "\u21913.3M \u2193157k R123M CH99.9% $0.578 (sub) 47.6%/1.0M (auto)                                                                                              (meta) muse-spark-1.3-contributor \u2022 xhigh"
+          ]
+        },
+        {
+          "pane": "%1145",
+          "statusLines": []
+        }
+      ],
+      "session": {
+        "name": "2026-10-05T17-55-44-435Z_01a10d35-12b3-734c-a2ce-23fa60a565f1.jsonl",
+        "ageSeconds": 9765.0,
+        "bytes": 13071989,
+        "entries": 739,
+        "compactions": 0,
+        "failedReplies": 2,
+        "lastType": "message",
+        "lastError": "This operation was aborted"
+      }
+    }
+  ]
+}
