@@ -106,14 +106,21 @@ Filtering failed attempts does not restore an unavailable provider endpoint.
 
 ## Project requirement blockers
 
-New or changed project blockers automatically show a visible action card,
-including who can act, the next step and the evidence that will show resolution.
-Agents should supply `owner`, `nextAction` and `expectedResult` to
-`block_project_requirement` for any blocker, including access, dependencies,
-decisions and environment constraints. Missing action fields fall back to an
-agent recheck; GLLA does not infer unsafe shell commands from the reason.
-Unchanged reports do not repeat the card. The card does not dispatch work,
-clear the blocker or count as independent verification.
+New or changed project blockers automatically show a concise action card:
+short obstacle, who can act, why the agent cannot continue, concrete next step
+and expected result. Long measurements stay in the full-details view.
+`block_project_requirement` requires nonempty `summary` (up to 240 characters),
+`owner`, `nextAction`, `expectedResult` and `whyAgentCannotProceed`; incomplete
+reports are rejected before changing durable state. Put diagnostic evidence in
+`reason`. Failed tests, unrun checks, missing evidence and unfinished implementation
+are ordinary work to continue; the agent should only park on a dependency it cannot
+resolve within the authorized project work.
+
+Older saved reports remain readable and are labelled **Needs clarification**.
+They do not establish that the operator must intervene; ask the agent to explain
+or continue fixing the work. GLLA does not infer external dependencies or shell
+commands from unstructured test output. Unchanged reports do not repeat the card.
+Displaying a card does not dispatch work, clear a blocker or verify a requirement.
 
 Use `/loop blockers` to reopen complete recorded reasons and the next action. These
 are agent reports, not proof that a dependency is still unavailable. Ask the
