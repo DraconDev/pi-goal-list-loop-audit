@@ -131,6 +131,12 @@ test("runtime fallback walk uses one supervised model at a time and preserves le
     assert.deepEqual(state.mainModelRecovery?.attempted, ["provider/primary", "provider/blocked", "provider/first", "provider/second"]);
     assert.equal(state.mainModelRecovery?.skipped?.some((entry) => entry.ref === "provider/first" || entry.ref === "provider/second"), false, "successful backups remain absent from skipped");
 
+    ctx.model = { provider: "provider", id: "second" };
+    state.mainModelRecovery = { ...state.mainModelRecovery!, primaryProbeAt: new Date(Date.now() - 1).toISOString() };
+    await probeMainModelRecovery(ctx);
+    assert.equal(calls.at(-1), "provider/primary");
+    assert.equal(thinkingCalls.at(-1), "high", "failback restores the original primary thinking level");
+
     // The delayed/scheduled probe has its own selector path. A successful
     // probe target must be attempted, not persisted as an unregistered skip.
     ctx.model = { provider: "provider", id: "primary" };
@@ -143,7 +149,7 @@ test("runtime fallback walk uses one supervised model at a time and preserves le
       kind: "goal",
     };
     await probeMainModelRecovery(ctx);
-    assert.equal(thinkingCalls.at(-1), "high", "returning to the primary restores its original session level");
+    assert.equal(thinkingCalls.at(-1), "low", "scheduled probes also apply the chosen fallback thinking level");
     assert.equal(calls.at(-1), "provider/first", "the scheduled probe selects the first eligible backup");
     assert.deepEqual(state.mainModelRecovery?.skipped, [{ ref: "provider/blocked", reason: "forbidden" }]);
     assert.equal(state.mainModelRecovery?.skipped?.some((entry) => entry.ref === "provider/first"), false, "the scheduled probe target is not labelled skipped");
