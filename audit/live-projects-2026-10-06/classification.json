@@ -1,0 +1,52 @@
+{
+  "live": [
+    {
+      "project": "junk-runner",
+      "kindWithRequestId": "unknown",
+      "kindWithoutRequestId": "unknown"
+    },
+    {
+      "project": "hegemon",
+      "kindWithRequestId": "unknown",
+      "kindWithoutRequestId": "unknown"
+    },
+    {
+      "project": "capture-anime-girls",
+      "kindWithRequestId": "transient",
+      "kindWithoutRequestId": "unknown"
+    },
+    {
+      "project": "neonbreak",
+      "kindWithRequestId": "unknown",
+      "kindWithoutRequestId": "unknown"
+    },
+    {
+      "project": "polis",
+      "kindWithRequestId": "transient",
+      "kindWithoutRequestId": "unknown"
+    },
+    {
+      "project": "darklord",
+      "kindWithRequestId": "transient",
+      "kindWithoutRequestId": "unknown"
+    }
+  ],
+  "controlled": [
+    {
+      "requestId": "abc123",
+      "kind": "unknown"
+    },
+    {
+      "requestId": "abc503",
+      "kind": "transient"
+    },
+    {
+      "requestId": "abc401",
+      "kind": "auth"
+    },
+    {
+      "requestId": "abc403",
+      "kind": "auth"
+    }
+  ]
+}
