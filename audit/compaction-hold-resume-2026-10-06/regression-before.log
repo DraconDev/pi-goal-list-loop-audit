@@ -1,0 +1,139 @@
+
+> pi-goal-list-loop-audit@0.39.11 test
+> node scripts/run-tests.mjs tests/loop-held-start.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/loop-held-start.test.ts:
+42 |       const ctx = await boot(pi, cwd);
+43 |       try {
+44 |         const before = readState(cwd).loop!;
+45 |         await pi.command(command, "resume", ctx);
+46 |         const after = readState(cwd).loop!;
+47 |         assert.equal(after.active, true);
+                    ^
+AssertionError: Expected values to be strictly equal:
+
+false !== true
+
+ generatedMessage: true,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/loop-held-start.test.ts:47:16
+      at processTicksAndRejections (native:7:39)
+(fail) loop resume restores a project held by summarization output limit: summary incomplete [700.17ms]
+42 |       const ctx = await boot(pi, cwd);
+43 |       try {
+44 |         const before = readState(cwd).loop!;
+45 |         await pi.command(command, "resume", ctx);
+46 |         const after = readState(cwd).loop!;
+47 |         assert.equal(after.active, true);
+                    ^
+AssertionError: Expected values to be strictly equal:
+
+false !== true
+
+ generatedMessage: true,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/loop-held-start.test.ts:47:16
+      at processTicksAndRejections (native:7:39)
+(fail) glla resume restores a project held by summarization output limit: summary incomplete [143.97ms]
+42 |       const ctx = await boot(pi, cwd);
+43 |       try {
+44 |         const before = readState(cwd).loop!;
+45 |         await pi.command(command, "resume", ctx);
+46 |         const after = readState(cwd).loop!;
+47 |         assert.equal(after.active, true);
+                    ^
+AssertionError: Expected values to be strictly equal:
+
+false !== true
+
+ generatedMessage: true,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/loop-held-start.test.ts:47:16
+      at processTicksAndRejections (native:7:39)
+(fail) loop resume restores a project held by context overflow: prompt cannot fit [153.53ms]
+42 |       const ctx = await boot(pi, cwd);
+43 |       try {
+44 |         const before = readState(cwd).loop!;
+45 |         await pi.command(command, "resume", ctx);
+46 |         const after = readState(cwd).loop!;
+47 |         assert.equal(after.active, true);
+                    ^
+AssertionError: Expected values to be strictly equal:
+
+false !== true
+
+ generatedMessage: true,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/loop-held-start.test.ts:47:16
+      at processTicksAndRejections (native:7:39)
+(fail) glla resume restores a project held by context overflow: prompt cannot fit [145.61ms]
+42 |       const ctx = await boot(pi, cwd);
+43 |       try {
+44 |         const before = readState(cwd).loop!;
+45 |         await pi.command(command, "resume", ctx);
+46 |         const after = readState(cwd).loop!;
+47 |         assert.equal(after.active, true);
+                    ^
+AssertionError: Expected values to be strictly equal:
+
+false !== true
+
+ generatedMessage: true,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/loop-held-start.test.ts:47:16
+      at processTicksAndRejections (native:7:39)
+(fail) loop resume restores a project held by compaction failure: provider unavailable [226.46ms]
+42 |       const ctx = await boot(pi, cwd);
+43 |       try {
+44 |         const before = readState(cwd).loop!;
+45 |         await pi.command(command, "resume", ctx);
+46 |         const after = readState(cwd).loop!;
+47 |         assert.equal(after.active, true);
+                    ^
+AssertionError: Expected values to be strictly equal:
+
+false !== true
+
+ generatedMessage: true,
+     actual: false,
+   expected: true,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /home/dracon/Dev/pi-plugins/pi-goal-list-loop-audit/tests/loop-held-start.test.ts:47:16
+      at processTicksAndRejections (native:7:39)
+(fail) glla resume restores a project held by compaction failure: provider unavailable [194.47ms]
+(pass) held loop: the load-hold warning names /loop resume [229.38ms]
+(pass) held loop: the load-hold warning is byte-identical when no loop is held [312.89ms]
+(pass) fresh start over a held loop offers resume and preserves the loop [253.22ms]
+(pass) fresh start over a held loop: dismiss keeps the held loop untouched [142.48ms]
+(pass) fresh start over a held loop: headless refuses instead of discarding [151.50ms]
+(pass) fresh start over an explicitly stopped loop keeps today's silent behavior [150.36ms]
+
+ 6 pass
+ 6 fail
+Ran 12 tests across 1 file. [3.73s]
+[run-tests] finished in 4s (exit 1)

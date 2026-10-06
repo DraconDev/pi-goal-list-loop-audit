@@ -1,0 +1,11 @@
+{
+  "project": "junk-runner",
+  "active": false,
+  "iteration": 8,
+  "stopReason": "summarization output limit: Auto-compaction failed: Summarization failed: generation hit the token cap and the summary is incomplete",
+  "builderPhase": "replanning",
+  "builderCycle": 7,
+  "requirementCount": 15,
+  "verifiedRequirements": 0,
+  "sourceModified": false
+}
