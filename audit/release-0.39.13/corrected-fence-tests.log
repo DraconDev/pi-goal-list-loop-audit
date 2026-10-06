@@ -1,0 +1,21 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-stale-context.test.ts:
+(pass) v0.34.52: bare /glla on a stale handle is refused — standard recovery message, UI never opens, settings untouched [386.92ms]
+(pass) v0.34.52: mutating /glla actions (wipe, cancel, resume, reviewer, postaudit, tooloverride) are all refused on a stale handle [351.72ms]
+(pass) v0.34.52: /glla status, log, stats, audits stay usable on a stale handle (inspect, don't mutate) [7657.39ms]
+(pass) audit 2026-09-07 (LOW, finding 399): bare `/glla fallbacks` is a read-only display — allowed on a stale handle; `fallbacks clear` still mutates and is refused [463.36ms]
+(pass) v0.34.52: the standard recovery — a fresh session reopens the settings UI and owns the next /glla [622.67ms]
+(pass) v0.35.72: source — settings rechecks admission after the menu and before saves [1.58ms]
+(pass) v0.34.52: source — cmdSettings captures the entry probe and gates the settings entry + mutating actions [0.74ms]
+
+tests/owner-fence.test.ts:
+(pass) v0.35.72: a live foreign process cannot claim the workingDir owner file [45.37ms]
+(pass) v0.35.72: mutating goal and loop commands use the stale admission fence [0.64ms]
+(pass) owner acquisition and refresh preserve malformed records for explicit repair [3.77ms]
+(pass) takeover compares the complete record inside the owner mutation [1.86ms]
+(pass) a stale instance refresh cannot overwrite a same-process successor [0.96ms]
+
+ 12 pass
+ 0 fail
+Ran 12 tests across 2 files. [10.71s]

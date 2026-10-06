@@ -1,0 +1,36 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/glla-table-menu.test.ts:
+(pass) render: title row [4.63ms]
+(pass) grouped entry points can open a specific settings section [1.25ms]
+(pass) render: tabs row lists all 8 sections [1.62ms]
+(pass) main agent tab starts with the current agent and drills in [0.96ms]
+(pass) render: at width=120, the keep-going section renders its rows (v0.28.23: +decisionPopup) [0.68ms]
+(pass) render: active row uses a full-width selected background [0.77ms]
+(pass) render: compact header row has KEY, VALUE, SOURCE columns [0.88ms]
+(pass) render: compact mode never exceeds terminal width even with a long VALUE in another section [0.59ms]
+(pass) render: footer pin includes the optional details toggle [0.75ms]
+(pass) nav: Enter on the first row emits that row's id [0.09ms]
+(pass) nav: Down arrow moves to the next visible row [0.13ms]
+(pass) nav: Down wrapping at the end of a section wraps to 0 [0.11ms]
+(pass) nav: Esc emits undefined (close) [1.93ms]
+(pass) nav: Tab advances to the next section [0.14ms]
+(pass) nav: Back-tab (\x1b[Z) retreats to the previous section [0.08ms]
+(pass) nav: Right-arrow CSI sequence (\x1b[C) advances section [0.05ms]
+(pass) nav: Left-arrow CSI sequence (\x1b[D) retreats section [0.03ms]
+(pass) details toggle: narrow descriptions are readable in a wrapped pane [2.33ms]
+(pass) details toggle: at width=120 the description column shows most of the row text [1.52ms]
+(pass) cache: identical renders at the same width return the same array reference [0.67ms]
+(pass) cache: state change invalidates cache (move → next render produces new lines) [1.11ms]
+(pass) compact view expands VALUE so model + thinking are visible [0.84ms]
+(pass) structural: Class implements Component (has render + invalidate + handleInput) [0.06ms]
+(pass) structural: buildSettingsRows returns ≥20 rows across all 8 sections (coverage) [0.52ms]
+(pass) render: tab bar is color-only (v0.28.19: brackets dropped), all sections present [0.60ms]
+(pass) render: a header rule with ┼ junctions follows the header row [1.07ms]
+(pass) render: column separators align across header, rule, and every row (prefix counted) [0.67ms]
+(pass) render: a too-long VALUE is truncated with … — it must NOT break the grid [1.00ms]
+(pass) render: column widths are stable across tab switches (no grid reflow) [1.72ms]
+
+ 29 pass
+ 0 fail
+Ran 29 tests across 1 file. [2.06s]
