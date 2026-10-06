@@ -194,6 +194,7 @@ import {
   type Settings,
 } from "../goal-settings.js";
 import { ModelSelector } from "../model-selector.js";
+import { getSupportedThinkingLevels } from "@earendil-works/pi-ai/compat";
 
 /** Recheck the originating editor's session immediately before every settings
  * write. Carry its context explicitly: overlapping editors must never replace
@@ -450,15 +451,7 @@ import { defineGoalRuntimeGlobal } from "./goal-runtime-globals.js";
 type AuditorModelCandidate = { ref?: string; model: any; via: string };
 
 function auditorThinkingLevels(model: any): string[] {
-  const ALL = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
-  if (!model?.reasoning) return ["off"];
-  const map = model.thinkingLevelMap as Record<string, string | null> | undefined;
-  return ALL.filter((level) => {
-    const mapped = map?.[level];
-    if (mapped === null) return false;
-    if (level === "xhigh" || level === "max") return mapped !== undefined;
-    return true;
-  });
+  return model ? getSupportedThinkingLevels(model) : ["off"];
 }
 
 type ConfiguredThinkingLevel = NonNullable<Settings["auditorThinkingLevel"]>;
@@ -1186,13 +1179,13 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
         const picked = resolvePickedModel(ctx, { kind: "ref", ref });
         if (!picked) continue;
         const levels = auditorThinkingLevels(picked);
-        if (levels.length === 1) { thinkingLevels[key] = "off"; continue; }
+        if (levels.length === 1) { thinkingLevels[key] = levels[0] as ConfiguredThinkingLevel; continue; }
         const chosen = await ctx.ui.select(
           `Main fallback thinking — ${ref}`,
           drafterThinkingChoiceOptions(levels, thinkingLevels[key] ?? ctx.thinkingLevel, thinkingLevels[key] === undefined),
         );
         if (chosen?.startsWith("session —")) delete thinkingLevels[key];
-        else if (chosen) thinkingLevels[key] = chosen.split(" ")[0] as ConfiguredThinkingLevel;
+        else if (chosen && levels.includes(chosen.split(" ")[0]!)) thinkingLevels[key] = chosen.split(" ")[0] as ConfiguredThinkingLevel;
       }
       saveSettings("global", ctx, { mainModelFallbacks: refs.length ? refs : undefined, mainModelFallbackThinkingLevels: refs.length ? thinkingLevels : undefined });
       if (!refs.length && state.mainModelRecovery) {

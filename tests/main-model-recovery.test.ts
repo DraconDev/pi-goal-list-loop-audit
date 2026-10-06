@@ -193,6 +193,12 @@ test("runtime fallback walk uses one supervised model at a time and preserves le
     assert.ok(calls.length > beforeLegacySetting, "the removed pending target is replaced by the configured generic fallback");
     assert.equal(calls.includes("provider/removed"), false, "a removed pending backup is not resurrected by a delayed probe");
     assert.equal(state.mainModelRecovery?.pendingModelSwitch, undefined);
+    fs.writeFileSync(settingsFile, JSON.stringify({ mainModelFallbacks: ["provider/first"], mainModelFallbackThinkingLevels: { "provider/first": "max" } }));
+    ctx.model = { provider: "provider", id: "primary" };
+    ctx.modelRegistry.find = (provider: string, id: string) => ({ provider, id, reasoning: true, thinkingLevelMap: { high: null, xhigh: null, max: null } });
+    replaceState({ goal: null } as any);
+    assert.equal(await tryMainModelFallback(ctx, accountFailure), true);
+    assert.equal(thinkingCalls.at(-1), "medium", "stale or hand-edited pins cannot exceed the candidate model's supported levels");
   } finally {
     replaceState({ goal: null } as any);
     if (original === undefined) {

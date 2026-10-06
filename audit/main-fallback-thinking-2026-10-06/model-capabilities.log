@@ -1,0 +1,86 @@
+
+> pi-goal-list-loop-audit@0.39.12 test
+> node scripts/run-tests.mjs tests/main-fallback-thinking.test.ts tests/main-model-recovery.test.ts tests/auditor-fallback-thinking.test.ts tests/model-picker.test.ts tests/settings-menu-complete.test.ts
+
+[run-tests] mode=explicit slow_files=12 stall_timeout=180s heartbeat=30s
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/main-fallback-thinking.test.ts:
+(pass) main fallback picker saves a distinct supported thinking level per model and displays it [799.28ms]
+(pass) fallback thinking settings and primary restoration are bounded durable values [9.31ms]
+(pass) thinking choices come from registered model capabilities and reject unsupported selections [8.21ms]
+
+tests/model-picker.test.ts:
+(pass) model-picker items: session row first, manual row last, models sorted by provider/id [0.43ms]
+(pass) v0.34.118 backup picker: excludes forbidden refs before rendering [0.35ms]
+(pass) model-picker exclusion honors case-insensitive substring policy entries [0.09ms]
+(pass) model-picker: typing fuzzy-filters the list; enter returns the highlighted model [1.36ms]
+(pass) model-picker: slash-token fuzzy match (provider/model style), nav wraps, backspace edits [0.29ms]
+(pass) model-picker: up/down moves the selection; esc cancels with undefined [0.12ms]
+(pass) model-picker: selecting the session row clears the override; manual row is the typed escape hatch [0.08ms]
+(pass) model-picker: render stays within width and shows the filter hint [24.82ms]
+(pass) model-picker: active model row uses the available width for selection [2.17ms]
+(pass) v0.29.17 wiring: model-valued settings use the fuzzy picker; unavailable auditor models fall back LOUDLY to the session model [5.93ms]
+(pass) v0.36.0: auditor thinking inherits the parent dial unless explicitly overridden [5.75ms]
+(pass) v0.36.0: the auditor chain — pinned primary → ordered fallbacks → session LAST; same-as-session auto-swap [6.76ms]
+(pass) v0.31.6: same-model swap toggle — default ON, off = same-model audits stand [6.45ms]
+(pass) v0.31.8: thinking options come from the PICKED MODEL — xhigh/max only when the model maps them [4.79ms]
+(pass) v0.31.9: fork-bomb lesson is prompt-law — auditor reject-class + executor hard rule [1.89ms]
+(pass) narrow model pickers bound every rendered line [1.84ms]
+
+tests/settings-menu-complete.test.ts:
+(pass) every row carries every required column field [2.82ms]
+(pass) role-specific tabs keep each agent's model, thinking, and fallback controls together [0.15ms]
+(pass) every row's section is one of the 8 known section ids (no orphans) [0.54ms]
+(pass) main-agent tab starts with the runtime agent; drafter and subagent chains have their own tabs [0.66ms]
+(pass) main fallback row explains ordered, deselectable selection [1.61ms]
+(pass) role rows show each selected model with requested/effective thinking [0.80ms]
+(pass) v0.36.0: unset auditor thinking mirrors the parent session and the fallback row uses the main shape [0.49ms]
+(pass) inherited drafter and auditor model rows identify the session category [0.70ms]
+(pass) all embedded subagent types expose editable fallback-chain rows [0.46ms]
+(pass) key rows from v0.27.0 settings menu are all present (menu coverage contract) [0.70ms]
+(pass) descriptions and values carry no version-tag chrome (v0.34.25) [0.67ms]
+(pass) rows map 1:1 to dispatchable ids (every id can drive a handler) [5.85ms]
+(pass) main fallback row shows the persisted numbered try order and truthful runtime semantics [0.74ms]
+(pass) auditorAllowedExtensions valueText is a count — never joined absolute paths (screen-size crash) [1.20ms]
+(pass) valueText derives from settings (effective values surface for each row) [0.68ms]
+(pass) default fallbacks surface when settings + provenance both missing [0.87ms]
+(pass) default fallbacks follow the effective aggressive matrix (explicit off → base values) [0.89ms]
+(pass) effective resolution names the real session model for inherit-parent [0.56ms]
+(pass) provenance flows into sourceText (project/global/default tags) [0.46ms]
+(pass) haiku mention is dropped from any valueText / description / sourceText [2.95ms]
+(pass) headless `/glla` fallback keeps stall brakes and the v0.34.127 sync list [0.78ms]
+(pass) the legacy flat-row startsWith logic is removed (no more `──` section headers in code) [3.55ms]
+(pass) /glla tooloverride still routes headlessly (regression: subsystems unchanged) [0.78ms]
+(pass) postaudit and reviewer routes both open the reviewer menu (back-compat) [0.59ms]
+(pass) stateRoot: one global-only row with the workingDir default [0.78ms]
+(pass) v0.28.20: no bracket/paren chrome — VALUE and SOURCE render bare [0.98ms]
+(pass) audit-2026-09-06: settings TUI tabs row is truncated to terminal width [7.50ms]
+(pass) audit 2026-09-06: normalizeLoadedSettings resets junk numerics/enums/strings to unset [1.42ms]
+(pass) settings provenance reports normalized effective values, not rejected raw junk [390.39ms]
+(pass) audit 2026-09-06: legacy reviewer block migrates to postaudit [0.79ms]
+(pass) audit 2026-09-07 (LOW, findings 392-394): quiet copy names the count line at every surface [0.26ms]
+(pass) settings table fits narrow terminals with details both hidden and visible [18.21ms]
+
+tests/auditor-fallback-thinking.test.ts:
+(pass) non-empty fallback save is followed by the auditor thinking select [107.07ms]
+(pass) typing the session model into the fallback input names the slot-0 exclusion [10.01ms]
+(pass) clearing the fallback chain skips the thinking prompt [11.02ms]
+
+tests/main-model-recovery.test.ts:
+(pass) main model refs preserve order, dedupe, and support nested model ids [3.58ms]
+(pass) main model fallback candidates are ordered and never retried in a cycle [0.19ms]
+(pass) main fallback settings dedupe case-insensitively and cap the chain at ten [0.24ms]
+(pass) runtime fallback walk uses one supervised model at a time and preserves left-to-right order [36.87ms]
+(pass) successful fallback turns keep the preferred primary and fail back after a supervised probe [6.09ms]
+(pass) sticky failback preserves the old fallback-settles behavior [1.01ms]
+(pass) in-band provider output is recognized only for strong repeated-pane markers [0.19ms]
+(pass) the explicit Codex prompt-policy event is terminal, while lookalike text remains generic [0.29ms]
+(pass) main model errors stay opaque to the recovery policy [0.25ms]
+(pass) main model recovery backs off without giving up [1.05ms]
+(pass) main recovery requirements are generic across provider wording [0.06ms]
+
+ 65 pass
+ 0 fail
+Ran 65 tests across 5 files. [5.36s]
+[run-tests] finished in 6s (exit 0)

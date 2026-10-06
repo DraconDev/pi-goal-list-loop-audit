@@ -19,7 +19,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { state } from "./goal-state.js";
-import { resolveAuditorThinkingLevel } from "./auditor-thinking.js";
+import { clampThinkingLevel } from "@earendil-works/pi-ai/compat";
 import { FALLBACK_THINKING_LEVELS, type FallbackThinkingLevel } from "./main-fallback-thinking.js";
 import { auditPhaseOwnsAttempt } from "./audit-lifecycle.js";
 import { appendLedger, claimRecoveryNotice, nowIso, piGlaDir, isFreshPastTimestamp, isForbiddenModel, isStaleApiError, nextHourlyProbeMs, providerErrorFingerprint, providerErrorPresentation, resolveEffectiveAggressiveSettings, sanitizeProviderDisplayText, supervisorPaused, writeGoalMd, goalMdPath, writeGoalStateTransaction, clearGoalStateTransaction, MAX_AUDITOR_CANDIDATE_REFS, type Goal, type MainModelRecovery, type PendingCompletion } from "./goal-loop-core.js";
@@ -548,7 +548,7 @@ function applyRecoveryThinking(ref: string, model: any, recovery: MainModelRecov
     ? recovery.primaryThinkingLevel
     : loadGlobalSettings().mainModelFallbackThinkingLevels?.[ref.toLowerCase()] ?? recovery.primaryThinkingLevel;
   if (requested === undefined || typeof flags.extensionApi?.setThinkingLevel !== "function") return;
-  flags.extensionApi.setThinkingLevel(resolveAuditorThinkingLevel(model, requested) as Parameters<ExtensionAPI["setThinkingLevel"]>[0]);
+  flags.extensionApi.setThinkingLevel(clampThinkingLevel(model, requested) as Parameters<ExtensionAPI["setThinkingLevel"]>[0]);
 }
 
 function scheduleSupervisedPrimaryProbe(ctx: ExtensionContext, recovery: MainModelRecovery): void {

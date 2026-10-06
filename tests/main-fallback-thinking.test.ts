@@ -44,3 +44,22 @@ test('fallback thinking settings and primary restoration are bounded durable val
  const cwd=tmpCwd();saveSettings('project',cwd,{mainModelFallbackThinkingLevels:{'p/first':'high'}});
  assert.equal(fs.readFileSync(cwd+'/.pi-glla/settings.json','utf8').includes('mainModelFallbackThinkingLevels'),false,'recovery configuration is global-only');
 });
+
+test('thinking choices come from registered model capabilities and reject unsupported selections', async()=>{
+ const before=fs.readFileSync(globalPath,'utf8');
+ try {
+  fs.writeFileSync(globalPath,JSON.stringify({mainModelFallbacks:['p/limited'],mainModelFallbackThinkingLevels:{'p/limited':'low'}}));
+  const ctx:any=makeMockCtx(tmpCwd());ctx.model={provider:'p',id:'primary'};ctx.thinkingLevel='max';
+  const limited={provider:'p',id:'limited',reasoning:true,thinkingLevelMap:{off:null,minimal:null,high:null,xhigh:null,max:null}};
+  const single={provider:'p',id:'single',reasoning:true,thinkingLevelMap:{off:null,minimal:null,low:null,high:null,xhigh:null,max:null}};
+  ctx.modelRegistry={getAvailable:()=>[limited,single],find:(_p:string,id:string)=>id==='limited'?limited:single,hasConfiguredAuth:()=>true};
+  ctx.ui.customStubMode=true;ctx.ui.customImpl=async()=>['p/limited','p/single'];
+  let offered:string[]=[];
+  ctx.ui.selectImpl=async(_title:string,options:string[])=>{offered=options;return 'max — unsupported injected selection';};
+  await handleSettingChoice('mainModelFallbacks',ctx);
+  assert.ok(offered.some(o=>o.startsWith('low ')));
+  assert.ok(offered.some(o=>o.startsWith('medium ')));
+  assert.ok(!offered.some(o=>/^(off|minimal|high|xhigh|max) /.test(o)));
+  assert.deepEqual(loadGlobalSettings().mainModelFallbackThinkingLevels,{'p/limited':'low','p/single':'medium'},'invalid choices cannot exceed model capabilities, and a single supported level is retained');
+ }finally {fs.writeFileSync(globalPath,before);}
+});

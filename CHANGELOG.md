@@ -2,9 +2,12 @@
 
 ## Unreleased
 
+## 0.39.12 — resumable compaction holds and fallback thinking (2026-10-06)
+
 - Main fallback selection offers a thinking level for each model. Saved pins
   appear in settings and apply to immediate switches and scheduled probes;
-  failback restores the primary session's original level.
+  failback restores the primary session's original level. Choices and effective
+  levels use Pi's model-capability helpers, including single-level models.
 - `/loop resume` and `/glla resume` recognize saved compaction-failure holds,
   preserving project requirements and iteration history. Loop compaction failures
   advertise `/new`, then `/loop resume`, rather than the goal-only command.

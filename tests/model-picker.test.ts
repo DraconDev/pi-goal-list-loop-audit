@@ -292,8 +292,7 @@ test("v0.31.6: same-model swap toggle — default ON, off = same-model audits st
 test("v0.31.8: thinking options come from the PICKED MODEL — xhigh/max only when the model maps them", () => {
   const SRC = readGoalRuntimeSource();
   assert.match(SRC, /function auditorThinkingLevels\(model: any\): string\[\] \{/);
-  assert.match(SRC, /if \(!model\?\.reasoning\) return \["off"\];/);
-  assert.match(SRC, /if \(level === "xhigh" \|\| level === "max"\) return mapped !== undefined;/);
+  assert.match(SRC, /return model \? getSupportedThinkingLevels\(model\) : \["off"\];/, "the picker delegates capabilities to Pi's authoritative model helper");
   assert.match(SRC, /const levels = auditorThinkingLevels\(pickedModel\);/);
   // non-reasoning model → told, not asked:
   assert.match(SRC, /if \(levels\.length <= 1\) \{/);

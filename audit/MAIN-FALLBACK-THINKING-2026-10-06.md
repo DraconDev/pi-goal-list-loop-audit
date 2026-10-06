@@ -30,3 +30,14 @@ failback restoration. TypeScript, generated inventory and whitespace checks
 passed. Logs are in `audit/main-fallback-thinking-2026-10-06/`.
 The change is prepared in 0.39.12 and has not been published by this work.
 Auditor and drafting role-wide thinking settings retain their existing behavior.
+
+Follow-up before release: the picker now delegates to Pi's official
+`getSupportedThinkingLevels(model)` and main recovery uses its matching
+`clampThinkingLevel`. Models exposing only one level retain that actual level;
+unsupported selector responses cannot overwrite a valid pin. The native helper
+exists at the declared minimum pi-ai peer version, 0.84.2. A registered model
+with only low/medium available excludes all higher choices, and a hand-edited
+max pin clamps to medium in the actual failover runtime. The additional
+capability pass completed with 65 tests, zero failures, TypeScript and inventory
+checks passing. The earlier release-gate run was deliberately stopped; a fresh
+full gate includes this correction.
