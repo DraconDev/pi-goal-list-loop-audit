@@ -89,7 +89,7 @@ function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecB
   const old = { ...state };
   const blocked = next.requirements.some(r => r.status === "blocked") && !next.requirements.some(r => r.status === "open") && next.phase !== "auditing";
   const resumeRepair = continueRepair && !blocked && loop.stopReason?.startsWith("blocked project requirements:")
-    && !supervisorPaused(state) && !projectBoundReason(loop);
+    && !supervisorPaused(state) && !projectBoundReason(loop) && !loop.branchName;
   replaceState({ ...old, loop: { ...loop, builder: next, ...(completionSummary ? { completionSummary } : {}), ...(resumeRepair ? { active: true, stopReason: undefined } : {}), ...(next.phase === "complete" ? { active: false, stopReason: "completed: all intended project requirements independently verified" } : blocked ? { active: false, stopReason: "blocked project requirements: clear the recorded blockers, then /loop resume" } : {}) } });
   if (!host.persist(ctx)) { replaceState(old); return false; }
   appendLedger(ctx.cwd, "respec_builder_transition", { phase: next.phase, revision: next.revision, cycle: next.cycle,
@@ -106,6 +106,7 @@ function commit(ctx: ExtensionContext, before: RespecBuilderState, next: RespecB
     catch { /* A UI failure must not roll back a durably recorded blocker. */ }
     try { ctx.ui.notify(content, "warning"); } catch { /* headless host */ }
   }
+  if (resumeRepair) { try { host.wake(ctx); } catch { /* active state survives a failed timer */ } }
   return true;
 }
 

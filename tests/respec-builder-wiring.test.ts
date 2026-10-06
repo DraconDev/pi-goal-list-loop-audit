@@ -151,3 +151,44 @@ test("project blockers automatically show generic actions after journaling, with
     assert.equal(readState(cwd).loop!.active, false);
   } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
 });
+
+
+test("work obstacles keep building and mistaken blocker-only holds release without verifying scope", async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  saveSettings("project", cwd, { autoAcceptDrafts: false });
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: "repair-obstacles" } });
+  ctx.ui.customImpl = async () => "Yes";
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  try {
+    await pi.command("loop", "respec build game", ctx); clearLoopTimer();
+    await pi.runTool("propose_project_requirements", { requirements: [
+      { id: "combat", text: "Playable combat", acceptance: "Targets take damage" },
+      { id: "api", text: "Live API", acceptance: "API responds" },
+    ] }, ctx);
+    await pi.runTool("plan_project_increment", { tasks: [{ id: "combat-task", text: "Implement combat", requirementIds: ["combat"] }] }, ctx);
+    const repair = { kind: "work", id: "combat", reason: "Combat probe shows the hero stuck at the map edge", nextAction: "Place a target at an interior point and measure approach distance" };
+    const result = await pi.runTool("block_project_requirement", repair, ctx);
+    assert.match(result.content[0]!.text, /keep building or refining in THIS turn/);
+    assert.equal(readState(cwd).loop!.active, true);
+    assert.equal(readState(cwd).loop!.builder!.phase, "replanning");
+    assert.equal(readState(cwd).loop!.builder!.requirements[0]!.status, "open");
+    assert.equal(readState(cwd).loop!.builder!.history!.at(-1)!.tasks[0]!.id, "combat-task");
+    assert.match(readState(cwd).loop!.builder!.feedback.at(-1)!, /interior point/);
+    assert.equal(pi.sent.filter(s => s.message.customType === "glla-project-blockers").length, 0);
+    const external = { kind: "external", reason: "Access unavailable", summary: "Missing external access", owner: "Operator", nextAction: "Supply access", expectedResult: "Probe succeeds", whyAgentCannotProceed: "Operator controls the account" };
+    await pi.runTool("block_project_requirement", { ...external, id: "api" }, ctx);
+    assert.equal(readState(cwd).loop!.active, true, "remaining repair work proceeds around external dependency");
+    await pi.runTool("block_project_requirement", { ...external, id: "combat" }, ctx);
+    assert.equal(readState(cwd).loop!.active, false, "all external dependencies still hold");
+    await pi.runTool("block_project_requirement", repair, ctx); clearLoopTimer();
+    assert.equal(readState(cwd).loop!.active, true, "correcting a mistaken blocker releases only the blocker hold");
+    assert.equal(readState(cwd).loop!.builder!.requirements[1]!.status, "blocked");
+    assert.equal(readState(cwd).loop!.builder!.requirements[0]!.evidence, undefined);
+    await pi.runTool("plan_project_increment", { tasks: [{ id: "probe", text: "Run positioning probe", requirementIds: ["combat"] }] }, ctx);
+    assert.equal(readState(cwd).loop!.builder!.phase, "building");
+    await pi.command("loop", "pause", ctx);
+    await pi.runTool("block_project_requirement", repair, ctx); clearLoopTimer();
+    assert.equal(readState(cwd).loop!.active, false, "repair classification cannot override a user pause");
+    assert.match(readState(cwd).loop!.stopReason!, /paused by user/);
+  } finally { await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
+});
