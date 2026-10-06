@@ -305,3 +305,18 @@ test("long interrupted requests use a bounded handoff without growing nested ret
   assert.match(content, /Preserve the final acceptance criteria/);
   assert.match(content, /read the complete original request in conversation/);
 });
+
+
+test("exhausted ordinary fallback chain uses backoff instead of another immediate switch handoff", async () => {
+  const ctx = await failoverOrdinaryRequest("Finish the saved export task");
+  __testOnlySetUnsupervisedErrorRetryDelay(150);
+  await pi.fire("agent_settled", {}, ctx);
+  assert.equal(sentRetries().length, 1);
+  await pi.fire("agent_end", errTurn("503 Service temporarily unavailable"), ctx);
+  await pi.fire("agent_settled", {}, ctx);
+  assert.equal(sentRetries().length, 1, "no model was selected this time; settlement must not immediately resend");
+  assert.ok(ledger().some(e => e.type === "unsupervised_error_retry_scheduled"), "ordinary exhaustion has a real retry owner");
+  await tick(300);
+  assert.equal(sentRetries().length, 2, "the passive failover episode must not suppress its retry timer");
+  assert.match(String(sentRetries()[1]!.message.content), /Finish the saved export task/);
+});
