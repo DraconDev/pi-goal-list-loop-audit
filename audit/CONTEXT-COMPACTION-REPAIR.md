@@ -1,6 +1,6 @@
 # Context compaction and recovery repair — 2026-10-07
 
-Status: repair implemented and committed; detached audit rework is addressing a timer-sensitive verification failure. Approval is not claimed.
+Status: repair and timer-sensitive verification rework committed; post-rework full release gate passed. Detached audit approval is not claimed.
 
 ## Scope
 
@@ -61,6 +61,14 @@ Source: local session `2026-10-07T08-36-44-398Z_01a11582-02ed-70eb-b0fc-8504732b
 - The second detached audit reproduced a full-suite failure: 3370 pass / 1 skip / 1 fail, 3372 tests across 355 files in 836.79s, release exit 1. `idle loop dispatch checks the threshold without agent_settled (failure=true)` observed zero resumed turns at its fixed 150ms observation point. Isolated rerun passed 9/0. Failure diagnostics: `/tmp/glla-test-processes-fZGuZQ/failure.json`. This failed attempt is retained, not superseded or claimed green.
 - Root cause of that assertion race: the loop dispatch timer does synchronous ledger/compactor work and queues a failure callback timer, which queues the actual resume timer. Under load, the original 150ms test observer is already overdue and runs before newly queued timers. A synchronous 180ms delay inside the failing mock compactor deterministically reproduces the same 0-versus-1 failure: `timeout 180 bun test --timeout=60000 tests/compaction-settled-boundary.test.ts -t 'under timer lag'` produced 0 pass / 1 fail (`/tmp/glla-resume-timer-red.log`). No deterministic lost runtime resume is established.
 - Repair: retain the exact one-compaction and one-resumed-turn assertions; replace the elapsed-time guess with bounded outcome observation (2s monotonic deadline), followed by a duplicate-dispatch check. Add the deterministic lag case so the formerly timing-sensitive failure stays covered. Tests are not excluded and expected counts are not reduced. `timeout 180 bun test --timeout=60000 tests/compaction-settled-boundary.test.ts tests/context-pressure-recovery.test.ts`: 48 pass / 0 fail (`/tmp/glla-resume-timer-green.log`).
+
+## Final post-rework evidence
+
+- Timer-race repair commits: `8d237026` adds the deterministic lag case; `c19ebe03` replaces the elapsed-time observation with bounded outcome observation and retains exact count assertions. Audit corrections are `aebfea8e` and `a64fb76f`; source/runtime repair remains `37763d65`.
+- Ten repetitions of `bun test --timeout=60000 tests/compaction-settled-boundary.test.ts`: each 10 pass / 0 fail (`/tmp/glla-resume-repeat-1.log` through `-10.log`). `timeout 120 npm run check` exited zero (`/tmp/glla-resume-check.log`).
+- Independent read-only re-review confirmed the nested-timer root cause against actual source and deterministic red output; exact behavioral assertions were not weakened. No code blockers found. It inspected current source, not a committed diff; ten-run/typecheck evidence was parent-reported rather than independently rerun. Durable review output reference: `context-pressure-independent-review.md`, resumed run `3bc05cd7-488e-4950-9e04-12a696aa2b52`.
+- Committed-tree `timeout 1200 npm run release:check` exited zero after the rework: **3372 pass / 1 pre-existing skip / 0 fail**, 3373 tests across 355 files in 554.59s. Inventory, tsc, jiti identity, offline auditor extensions, package dry-run and packed launcher RPC/skill/import smoke all passed (`/tmp/glla-resume-final-release.log`). No tests were excluded and no expected behavioral counts reduced. The prior failing gate remains in the ledger above.
+- At post-gate inspection, `git status --porcelain` was empty; branch remained main, latest checkpoint `a64fb76f`, and no tags pointed at that checkpoint. Normal dedicated-dev checkpoints and existing daemon commits retain both implementation and incident evidence; no publication or history rewrite.
 
 ## Honest validation limits
 
