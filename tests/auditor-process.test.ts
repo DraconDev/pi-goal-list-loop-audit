@@ -1306,12 +1306,13 @@ await rename(dir + "/result.json.tmp", dir + "/result.json");
       onStalled: (info) => { console.error("stalled", JSON.stringify(info)); stalled.push(info); },
       onProgress: progress => {
         console.error("progress", JSON.stringify(progress.currentTool), JSON.stringify(progress.currentToolTimeoutMs), "jobDir:", JSON.stringify(progress.jobDir), "startedAt:", JSON.stringify(progress.currentToolStartedAt));
-        if (observedGrantedTool || progress.currentTool !== "bash") return;
+        if (observedGrantedTool || progress.currentTool !== "bash") { console.error("skip", observedGrantedTool, progress.currentTool); return; }
         try {
           assert.equal(progress.currentToolTimeoutMs, 600_000);
           assert.ok(Date.now() - progress.currentToolStartedAt! > 100, "parent observed a tool beyond its base budget");
           assert.equal(existsSync(path.join(progress.jobDir!, "result.json")), false, "staged result is hidden until observation");
         } catch (e) { console.error("assertion-failed", e.message); throw e; }
+        console.error("flipping observed");
       },
       runtime: {
         workerPath: grantedWorker,
