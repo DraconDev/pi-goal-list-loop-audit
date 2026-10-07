@@ -1303,16 +1303,14 @@ await rename(dir + "/result.json.tmp", dir + "/result.json");
       goal,
       model: "test/provider-model",
       thinkingLevel: "high",
-      onStalled: (info) => { console.error("stalled", JSON.stringify(info)); stalled.push(info); },
+      onStalled: (info) => stalled.push(info),
       onProgress: progress => {
-        console.error("progress", JSON.stringify(progress.currentTool), JSON.stringify(progress.currentToolTimeoutMs), "jobDir:", JSON.stringify(progress.jobDir), "startedAt:", JSON.stringify(progress.currentToolStartedAt));
-        if (observedGrantedTool || progress.currentTool !== "bash") { console.error("skip", observedGrantedTool, progress.currentTool); return; }
-        try {
-          assert.equal(progress.currentToolTimeoutMs, 600_000);
-          assert.ok(Date.now() - progress.currentToolStartedAt! > 100, "parent observed a tool beyond its base budget");
-          assert.equal(existsSync(path.join(progress.jobDir!, "result.json")), false, "staged result is hidden until observation");
-        } catch (e) { console.error("assertion-failed", e.message); throw e; }
-        console.error("flipping observed");
+        if (observedGrantedTool || progress.currentTool !== "bash") return;
+        if (progress.currentToolTimeoutMs !== 600_000) throw new Error(`expected 600000 grant, observed ${progress.currentToolTimeoutMs}`);
+        if (!(Date.now() - progress.currentToolStartedAt! > 100)) throw new Error(`tool age not beyond base: ${Date.now() - progress.currentToolStartedAt!}ms`);
+        if (existsSync(path.join(progress.jobDir!, "result.json"))) throw new Error("staged result must be hidden until observation");
+        observedGrantedTool = true;
+        writeFileSync(releasePath, "release");
       },
       runtime: {
         workerPath: grantedWorker,
@@ -1322,7 +1320,6 @@ await rename(dir + "/result.json.tmp", dir + "/result.json");
         toolTimeoutMs: 100,
       },
     });
-    if (!observedGrantedTool) console.error("stages", { stalled, result, observed: observedGrantedTool });
     assert.equal(observedGrantedTool, true, "budget proof is observed before result publication");
     assert.equal(stalled.length, 0, "no tool-timeout stall while inside the granted budget");
     assert.equal(result.disapproved, true, `audit settles with its verdict instead of a stall: ${result.error ?? "no infrastructure error"}`);
