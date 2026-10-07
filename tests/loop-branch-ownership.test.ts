@@ -246,6 +246,7 @@ test("/loop stop mid-tick still restores the original branch (no false branch-ch
   let measureInvoked = false;
   let resolveMeasure!: (value: { code: number; stdout: string; stderr: string }) => void;
   const measureGate = new Promise<{ code: number; stdout: string; stderr: string }>((res) => { resolveMeasure = res; });
+  const releaseMeasure = (): void => { try { resolveMeasure({ code: 1, stdout: "", stderr: "released-by-cleanup" }); } catch { /* already settled */ } };
   pi.execHandler = (cmd, args, opts) => {
     calls.push([cmd, ...args]);
     if (cmd === "bash") {
@@ -255,6 +256,7 @@ test("/loop stop mid-tick still restores the original branch (no false branch-ch
     return realGitExec(cwd, calls)(cmd, args, opts);
   };
   const ctx = await boot(cwd);
+  let tickSettled = false;
   try {
     // Park the tick on its long measure await with the rebind guard armed,
     // then stop the loop mid-tick: the stop's own finish must still restore
@@ -265,13 +267,14 @@ test("/loop stop mid-tick still restores the original branch (no false branch-ch
         content: [{ type: "text", text: "HYPOTHESIS: improve the metric" }],
         stopReason: "end_turn",
       }],
-    }, ctx);
+    }, ctx).finally(() => { tickSettled = true; });
     const deadline = Date.now() + 5000;
     while (!measureInvoked && Date.now() < deadline) await new Promise((r) => setTimeout(r, 10));
     assert.ok(measureInvoked, "the tick reached its measure await before the stop");
     await pi.command("loop", "stop", ctx);
     resolveMeasure({ code: 0, stdout: "2\n", stderr: "" });
     await tick;
+    tickSettled = true;
 
     const loop = readState(cwd).loop as { active: boolean; stopReason?: string };
     assert.equal(loop.active, false);
@@ -279,7 +282,12 @@ test("/loop stop mid-tick still restores the original branch (no false branch-ch
     assert.ok(calls.some(([cmd, ...args]) => cmd === "git" && args[0] === "checkout" && args[1] === "main"), "the original branch is restored");
     assert.equal(git(cwd, "branch", "--show-current"), "main", "the user is not stranded on the scratch branch");
   } finally {
-    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+    releaseMeasure();
+    if (!tickSettled) {
+      await pi.fire("session_shutdown", { reason: "test-cleanup" }, ctx).catch(() => {});
+    }
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx).catch(() => {});
+    pi.execHandler = null;
   }
 });
 
