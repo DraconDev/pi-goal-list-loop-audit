@@ -1,0 +1,33 @@
+bun test v1.3.14 (0d9b296a) 1x PARALLEL
+
+tests/release-contract.test.ts:
+(pass) release contract: published documentation links are covered by the npm tarball [650.78ms]
+(pass) release contract: the release gate exercises the packed artifact [0.20ms]
+(pass) release contract: packed prompts, schema, and workers ship in the dry-run list [429.58ms]
+(pass) release contract: glla-delegate skill loads without diagnostics (source-tree fast tier) [7.29ms]
+(pass) release contract: docs index tracks the package version [0.07ms]
+(pass) release contract: package is discoverable as a Pi extension and skill [416.53ms]
+(pass) release contract: README package contents claim matches the files allowlist [424.02ms]
+(pass) release contract: first-use README guidance matches current behavior [0.18ms]
+(pass) release contract: smoke waits use durable or literal transition markers [0.11ms]
+(pass) release workflow scopes trusted-publishing OIDC to the publish job [0.29ms]
+(pass) v0.38.32: release runs never share the push-churn concurrency group [0.05ms]
+(pass) release contract: changelog has one heading for the current package version [3.40ms]
+(pass) release contract: untagged source work has an Unreleased changelog section to promote [7.45ms]
+
+tests/auditor-stall-watchdog.test.ts:
+(pass) stall: worker that never emits a first event is failed fast, not left for the wall [5014.46ms]
+(pass) stall: first-event budget starts after successful spawn, not pre-spawn setup [6513.31ms]
+(pass) stall: worker whose single boot heartbeat goes stale is failed fast, not left for the wall [1245.68ms]
+(pass) progress: a live auditor outlives the legacy wall metadata and settles on its result [283.65ms]
+(pass) stall: a running auditor tool is exempt — the per-tool timeout owns that axis [851.43ms]
+(pass) stall: a silent-past-bound attempt fails fast WITH its cost record (controlled clock) [36.76ms]
+(pass) stall: a worker-reported brake is reclassified with the same evidence [34.42ms]
+(pass) stall: an open in-budget tool is not silence — the no-progress bound spares it [162.30ms]
+(pass) v0.38.99: an over-budget tool is NOT fatal — the worker cancels it, resumes, and its result still lands [2537.59ms]
+(pass) v0.38.99 approval guard: an approving verdict from a verification-incomplete attempt is refused, not applied [1541.49ms]
+(pass) v0.38.99: a genuinely wedged tool still fails fast once the grace expires [442.00ms]
+
+ 24 pass
+ 0 fail
+Ran 24 tests across 2 files. [21.20s]
