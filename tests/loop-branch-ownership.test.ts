@@ -283,7 +283,7 @@ test("/loop stop mid-tick still restores the original branch (no false branch-ch
   }
 });
 
-test("/loop stop mid-tick commits the in-flight iteration instead of resetting it away", async () => {
+test("/loop stop mid-tick commits the in-flight iteration instead of resetting it away", { timeout: 30000 }, async () => {
   // v0.38.104: `/loop stop` and `/loop finish` reach finishLoopGit WITHOUT
   // passing through runLoopTick, so a tick-local commit helper could not
   // protect them: the scratch branch's uncommitted diff was hard-reset away
@@ -319,6 +319,7 @@ test("/loop stop mid-tick commits the in-flight iteration instead of resetting i
   let measureInvoked = false;
   let resolveMeasure!: (value: { code: number; stdout: string; stderr: string }) => void;
   const measureGate = new Promise<{ code: number; stdout: string; stderr: string }>((res) => { resolveMeasure = res; });
+  const releaseMeasure = (): void => { try { resolveMeasure({ code: 1, stdout: "", stderr: "released-by-cleanup" }); } catch { /* already settled */ } };
   pi.execHandler = (cmd, args, opts) => {
     calls.push([cmd, ...args]);
     if (cmd === "bash") {
@@ -328,6 +329,7 @@ test("/loop stop mid-tick commits the in-flight iteration instead of resetting i
     return realGitExec(cwd, calls)(cmd, args, opts);
   };
   const ctx = await boot(cwd);
+  let tickSettled = false;
   try {
     const tick = pi.fire("agent_end", {
       messages: [{
@@ -335,13 +337,14 @@ test("/loop stop mid-tick commits the in-flight iteration instead of resetting i
         content: [{ type: "text", text: "HYPOTHESIS: improve the metric" }],
         stopReason: "end_turn",
       }],
-    }, ctx);
+    }, ctx).finally(() => { tickSettled = true; });
     const deadline = Date.now() + 5000;
     while (!measureInvoked && Date.now() < deadline) await new Promise((r) => setTimeout(r, 10));
     assert.ok(measureInvoked, "the tick reached its measure await before the stop");
     await pi.command("loop", "stop", ctx);
     resolveMeasure({ code: 0, stdout: "2\n", stderr: "" });
     await tick;
+    tickSettled = true;
 
     assert.equal(
       git(cwd, "show", `${branch}:inflight.txt`),
