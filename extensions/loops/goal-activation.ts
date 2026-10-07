@@ -145,6 +145,7 @@ import {
   transitionDispatch,
   type ContinuationDispatch,
 } from "../goal-loop-dispatch.js";
+import { clearPressureAttempt, flushPressureAttempt, settlePressureAttempt, pressureAttemptPending } from '../context-pressure-attempt.js';
 import { clearBoundaryCompactionAttempt, settleBoundaryCompactionFailure, maybeCompactTranscriptAtBoundary, readHandoffBriefExcerpt, runGoalCompactionIfDue } from "../goal-compactor.js";
 import {
   createGoalContinuation,
@@ -1375,6 +1376,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     });
     // Our threshold is opportunistic. Its event may omit fromExtension;
     // bind it to the actual pending attempt rather than guessing from text.
+    if (settlePressureAttempt(ctx, failure.kind === 'retry-owned' ? 'retry-owned' : failure.kind === 'aborted' ? 'aborted' : 'failure')) return;
     if (settleBoundaryCompactionFailure(ctx, safe, failure.kind !== "retry-owned" && failure.kind !== "aborted")) return;
     if (failure.kind === "retry-owned" || failure.kind === "aborted" || failure.kind === "from-extension" || !isSupervising()) return;
 
@@ -1437,6 +1439,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // A late compact event can arrive after pi has already invalidated this
     // extension. It must not reclaim the old ctx or schedule settle refires.
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown) return;
+    settlePressureAttempt(ctx, 'success');
     if (!isSupervising()) return;
     clearBoundaryCompactionAttempt(ctx);
     appendLedger(ctx.cwd, "session_compact", {});
@@ -1693,6 +1696,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
   });
 
   pi.on("session_shutdown", async (event: any, ctx: ExtensionContext) => {
+    clearPressureAttempt(ctx); // Retain the durable budget; cancel only live callbacks/timers.
     if (isForeignCtx(ctx)) return;
     releaseSubagentRpcHost(pi.events);
     // v0.30.0: attribution + rebind window. pi announces WHY the session
@@ -1743,6 +1747,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
   });
 
   pi.on("session_start", async (event: any, ctx: ExtensionContext) => {
+    clearPressureAttempt(ctx);
     const admission = admitSessionStart(ctx, event);
     if (!admission) return;
     const { hostLifecycleStart, recordedOwner } = admission;
@@ -3266,6 +3271,10 @@ async function handleHotLengthExhaustion(
     if (tryAbsorbHostSuccessor(ctx, "agent_settled")) return;
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(ctx)) return;
     replayApprovalSummariesOnContact(ctx);
+    if (!abortedStandDown && !supervisorPaused(state) && pressureAttemptPending(ctx)) {
+      clearContinuationTimer(); clearLoopTimer();
+      if (flushPressureAttempt(ctx, { compactionInFlight: compactionInFlightSince !== null })) return;
+    }
     // agent_end is emitted while Pi's run still owns the host. Its idle
     // guard can therefore skip the 200k check on every turn. Recheck at
     // the actual settled boundary before the queued continuation starts.
