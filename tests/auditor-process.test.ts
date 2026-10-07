@@ -1307,9 +1307,11 @@ await rename(dir + "/result.json.tmp", dir + "/result.json");
       onProgress: progress => {
         console.error("progress", JSON.stringify(progress.currentTool), JSON.stringify(progress.currentToolTimeoutMs), "staged:", existsSync(path.join(progress.jobDir ?? "", "result.json")));
         if (observedGrantedTool || progress.currentTool !== "bash") return;
-        assert.equal(progress.currentToolTimeoutMs, 600_000);
-        assert.ok(Date.now() - progress.currentToolStartedAt! > 100, "parent observed a tool beyond its base budget");
-        assert.equal(existsSync(path.join(progress.jobDir!, "result.json")), false, "staged result is hidden until observation");
+        try {
+          assert.equal(progress.currentToolTimeoutMs, 600_000);
+          assert.ok(Date.now() - progress.currentToolStartedAt! > 100, "parent observed a tool beyond its base budget");
+          assert.equal(existsSync(path.join(progress.jobDir!, "result.json")), false, "staged result is hidden until observation");
+        } catch (e) { console.error("assertion-failed", e); throw e; }
         observedGrantedTool = true;
         writeFileSync(releasePath, "release");
       },
@@ -1321,7 +1323,7 @@ await rename(dir + "/result.json.tmp", dir + "/result.json");
         toolTimeoutMs: 100,
       },
     });
-    if (!observedGrantedTool) console.error("stages", { stalled, result });
+    if (!observedGrantedTool) console.error("stages", { stalled, result, observed: observedGrantedTool });
     assert.equal(observedGrantedTool, true, "budget proof is observed before result publication");
     assert.equal(stalled.length, 0, "no tool-timeout stall while inside the granted budget");
     assert.equal(result.disapproved, true, `audit settles with its verdict instead of a stall: ${result.error ?? "no infrastructure error"}`);
