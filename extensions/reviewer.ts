@@ -208,14 +208,18 @@ export function extractFindings(sources: Array<{ name: string; text: string }>, 
       const cls = classifyFindingText(line);
       if (!cls) continue;
       const clean = cutAtClauseBoundary(line.trim().replace(/^[-*>\s\[\]x]+/, ""), 200);
-      if (clean.length < 8 || seen.has(clean)) continue;
+      // Scope is part of a finding's identity: an informational external
+      // report must not consume an identically worded local repair.
+      const outsideScope = outsideScopeLevel !== null || isOutsideScopeFinding(clean);
+      const identity = `${outsideScope ? "outside" : "local"}:${clean}`;
+      if (clean.length < 8 || seen.has(identity)) continue;
       if (DANGLING_END.test(clean) || /[,;:\u2014-]$/.test(clean)) continue; // v0.28.24: wrap/parse fragment
       if (completedNorm) {
         const nf = normalizeObjective(clean);
         if (nf.length >= 24 && (completedNorm.startsWith(nf) || nf.startsWith(completedNorm))) continue; // v0.28.24: restates the completed goal
       }
-      seen.add(clean);
-      out.push({ text: clean, source: name, class: cls, ...(outsideScopeLevel !== null ? { outsideScope: true } : {}) });
+      seen.add(identity);
+      out.push({ text: clean, source: name, class: cls, ...(outsideScope ? { outsideScope: true } : {}) });
       if (out.length >= max) return out;
     }
   }
