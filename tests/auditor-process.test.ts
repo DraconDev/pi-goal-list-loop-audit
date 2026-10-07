@@ -1303,8 +1303,9 @@ await rename(dir + "/result.json.tmp", dir + "/result.json");
       goal,
       model: "test/provider-model",
       thinkingLevel: "high",
-      onStalled: (info) => stalled.push(info),
+      onStalled: (info) => { console.error("stalled", JSON.stringify(info)); stalled.push(info); },
       onProgress: progress => {
+        console.error("progress", JSON.stringify(progress.currentTool), JSON.stringify(progress.currentToolTimeoutMs));
         if (observedGrantedTool || progress.currentTool !== "bash") return;
         assert.equal(progress.currentToolTimeoutMs, 600_000);
         assert.ok(Date.now() - progress.currentToolStartedAt! > 100, "parent observed a tool beyond its base budget");
@@ -1321,6 +1322,7 @@ await rename(dir + "/result.json.tmp", dir + "/result.json");
       },
     });
     assert.equal(observedGrantedTool, true, "budget proof is observed before result publication");
+    if (!observedGrantedTool) console.error("stages", { stalled, result });
     assert.equal(stalled.length, 0, "no tool-timeout stall while inside the granted budget");
     assert.equal(result.disapproved, true, `audit settles with its verdict instead of a stall: ${result.error ?? "no infrastructure error"}`);
     assert.doesNotMatch(result.error ?? "", /exceeded its .* timeout/);
