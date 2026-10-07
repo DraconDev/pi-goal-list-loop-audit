@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+## 0.39.16 — safe compaction and reliable continuation recovery (2026-10-07)
+
+### Compaction and context-pressure recovery
+
+- Preventive compaction checks safe idle dispatch boundaries for goals, lists
+  and loops, preserving the configured 200k target as opportunistic rather
+  than interrupting healthy tools.
+- Explicit input overflow and measured context pressure attempt one bounded
+  compact-first recovery before fallback. Generic low-context provider errors
+  retain ordinary fallback; policy and cancellation exclusions apply to both
+  preventive and emergency admission.
+- Recovery coalesces host events and callbacks, preserves completed tool
+  results and primary-model preference, and fences stale sessions and manual
+  cancellation. Shared durable attempt budgets prevent compaction/retry loops.
+- Recovery deadlines park work safely; storage failures retain a process-local
+  dispatch hold and notify the operator. Idle admission tolerates stale probes.
+
+### Reliability and audit safeguards
+
+- Continuation self-healing retains settled dispatch identity and supports
+  loop recovery without blocking manual resume or compaction resynchronization.
+- Task milestone verification cannot overwrite replacement goals or changed
+  task lists; owner takeover retries are bounded.
+- Reviewer extraction preserves outside-scope boundaries, deduplicates findings
+  within their scope, and reports actual queue admissions.
+- Completion recaps retain the latest claim. Auditor process handling and test
+  failure diagnostics preserve bounded, actionable evidence.
+- Compaction loop-resumption regressions observe bounded behavioral outcomes
+  rather than assuming nested timers finish within a fixed sleep.
+
 ## 0.39.15 — reliable failure classification and exhausted fallback retries (2026-10-06)
 
 - Ordinary requests whose fallback chain is exhausted enter retry backoff
