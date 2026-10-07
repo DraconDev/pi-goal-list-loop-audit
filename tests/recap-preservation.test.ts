@@ -2,9 +2,9 @@
 //
 // Field concern: after an auditor disapproval and a repair re-claim, the
 // terminal summary read like the last repair step was the whole story.
-// The whole-work recap from the ORIGINAL claim must survive into the
-// approved terminal render and the archive record; the auditor's
-// correction is context, not the headline.
+// The original claim survives verbatim in the forensic archive. The
+// latest approved claim alone supplies the terminal headline/details;
+// rejected claims must not override corrected outcomes or counts.
 
 import { test, afterEach } from "node:test";
 import * as assert from "node:assert/strict";
@@ -49,7 +49,7 @@ emit({type:"agent_settled"});
   return binary;
 }
 
-test("repair re-claim preserves the whole-work recap in the approved render", { timeout: 60000 }, async () => {
+test("repair re-claim renders the latest approved recap and archives the original verbatim", { timeout: 60000 }, async () => {
   __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); __testOnlyResetTerminalFlags();
   __testOnlyResetZombieAutoRetry(); __testOnlyResetZombieRunWatchdog();
   const cwd = tmpCwd(); resetContinuationDispatchState(cwd);
@@ -85,35 +85,37 @@ test("repair re-claim preserves the whole-work recap in the approved render", { 
   await waitFor(() => readState(cwd).goal?.auditHistory?.at(-1)?.disapproved === true);
   assert.equal(readState(cwd).goal?.status, "active");
 
-  // Repair turn: the agent re-claims after fixing the edge case. The new
-  // claim text carries ONLY the correction (the field failure); the
-  // whole-work recap from the first claim must still lead the terminal
-  // render and survive in the archive.
+  // A second claim is rejected too; neither rejected claim may leak into
+  // the final human projection. Original evidence remains forensic history.
   const DELTA_ONLY = "Outcome: Fixed the empty-query edge case.\nChanged: search.ts edge guard.\nEvidence: edge-case suite.\nTests: bun test 8 pass, 0 fail.\nUnresolved: none.\nNext: none.";
   await pi.runTool("complete_goal", { completionSummary: DELTA_ONLY, verificationSummary: "pinned" }, ctx);
   await waitFor(() => (readState(cwd).goal?.auditHistory?.filter(v => v.disapproved).length ?? 0) === 2);
-  // A second repair must not replace the original whole-work claim.
-  const STRUCTURED_REPAIR = DELTA_ONLY.replace("Fixed the empty-query edge case.", "Repaired another edge.\n## Guard\nTightened the guard.\n## Proof\nChecked the edge.");
+  // The executor supplies a corrected full recap; that approved revision
+  // replaces old headline/details while preserving the original raw claim.
+  const STRUCTURED_REPAIR = DELTA_ONLY.replace("Fixed the empty-query edge case.", "Completed the search rollout with all edge cases fixed.\n## Guard\nTightened the guard.\n## Proof\nChecked the edge.");
   install(auditorBinary(cwd, "approved", ""));
   await pi.runTool("complete_goal", { completionSummary: STRUCTURED_REPAIR, verificationSummary: "pinned" }, ctx);
   await waitFor(() => entries.length === 1);
   const chat = entries[0]!.content as string;
-  assert.match(chat, /^## Done — Shipped the search rollout end to end/);
+  assert.match(chat, /^## Done — Completed the search rollout with all edge cases fixed/);
   assert.match(chat, /• completion audit approved/);
-  assert.match(chat, /Shipped the search rollout end to end/, "the whole-work outcome leads the repair-approved render");
+  assert.doesNotMatch(chat, /Shipped the search rollout end to end|Fixed the empty-query edge case/, "rejected outcomes cannot lead or contaminate the approved render");
   assert.doesNotMatch(chat, /### Verification/, "verification stays in the archive by default");
   assert.doesNotMatch(chat, /^Tests:/m, "technical Tests stays in the archive by default");
   assert.doesNotMatch(chat, /2223 pass/, "test counts are supporting evidence, not the main chat narrative");
-  assert.match(chat, /rollout doc plus full suite/, "the whole-work evidence survives");
-  // Archive parity: the durable record's rich terminal section must carry
-  // the same whole-work lead, not just the delta-only repair claim.
+  assert.doesNotMatch(chat, /rollout doc plus full suite/, "rejected evidence is not concatenated into approved details");
+  assert.match(chat, /edge-case suite/, "approved evidence supplies the human details");
+  // Archive parity: the final section uses the approved recap while a
+  // separate forensic section preserves the original claim verbatim.
   const record = (chat.match(/• record: (\S+\.md)/) ?? [])[1];
   assert.ok(record, "chat carries the archive record pointer");
   const archiveMd = fs.readFileSync(path.join(cwd, record), "utf-8");
   assert.match(archiveMd, /## Terminal summary/);
   assert.ok(archiveMd.includes(WHOLE_WORK), "original raw claim is archived verbatim, without truncation or stripping");
-  assert.doesNotMatch(chat.split("\n")[0]!, /Repaired another edge/);
-  assert.match(archiveMd, /Shipped the search rollout end to end/, "the whole-work recap survives into the archived terminal section");
+  assert.ok(archiveMd.includes(STRUCTURED_REPAIR), "latest approved claim is archived verbatim too");
+  const terminalSection = archiveMd.split("## Terminal summary")[1]!.split("## Original completion claim (verbatim)")[0]!;
+  assert.match(terminalSection, /Completed the search rollout with all edge cases fixed/);
+  assert.doesNotMatch(terminalSection, /Shipped the search rollout end to end|rollout doc plus full suite/);
   assert.match(archiveMd, /2223 pass/, "the whole-work proof survives into the archive");
   assert.ok(JSON.parse(fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf-8").trim().split("\n").at(-1)!));
 });
