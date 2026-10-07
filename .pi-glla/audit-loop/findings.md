@@ -831,6 +831,6 @@ Known validation limitation: no single all-green release:check run was obtained.
 
 ### Auditor challenge repair — 2026-10-07
 
-- [ ] FIX: HIGH: reviewer text-only deduplication lets an outside-scope finding suppress an identically worded local finding, changing local queue admission with source order (extensions/reviewer.ts:211-218)
+- [x] FIX: HIGH: reviewer text-only deduplication lets an outside-scope finding suppress an identically worded local finding, changing local queue admission with source order (extensions/reviewer.ts:211-218) — fixed in 73f60ada; both source-order and same-scope deduplication regressions in 18c13764 (67 reviewer/scope tests pass; typecheck passes)
 
 The primary detached review approved the five original fixes; the falsification challenge correctly found this regression introduced by scope preservation. Repair is part of this same audit pass, not a second survey. DECIDE: none.
