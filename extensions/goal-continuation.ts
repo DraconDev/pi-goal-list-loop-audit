@@ -901,7 +901,7 @@ function armContinuationStartSelfHeal(ctx: ExtensionContext, record: Continuatio
       return;
     }
     continuationStartSelfHealProbes = probe;
-    appendLedger(live.cwd, "continuation_start_self_heal_fired", { id: dispatchId, probe, delayMs: continuationStartSelfHealDelayMs(probe - 1) });
+    appendLedger(live.cwd, "continuation_start_self_heal_fired", { id: dispatchId, probe, delayMs });
     // A fresh, fully guarded dispatch beats a blind re-send: it re-runs every
     // goal/loop guard, re-resolves the model chain, and gets its own start
     // watchdog. The stand-down is released for this one dispatch only; if it
