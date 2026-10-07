@@ -7,6 +7,47 @@ import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd, tick } from './harnes
 
 import { shouldRecoverContextPressure } from '../extensions/context-pressure-recovery.js';
 import { classifyMainModelFailure } from '../extensions/main-model-recovery.js';
+import { claimPressureAttempt, clearPressureAttempt, flushPressureAttempt, settlePressureAttempt } from '../extensions/context-pressure-attempt.js';
+
+for (const failureOrder of ['callback-first', 'event-first', 'throw', 'unavailable'] as const) {
+  test(`pressure attempt owns one fallback (${failureOrder}) and consumes its retry budget`, () => {
+    const ctx = makeMockCtx(tmpCwd(), { sessionManager: { name: failureOrder } });
+    let fallback = 0;
+    let onError: ((error: Error) => void) | undefined;
+    ctx.compact = options => {
+      onError = options?.onError;
+      if (failureOrder === 'throw') throw new Error('cannot compact');
+    };
+    if (failureOrder === 'unavailable') ctx.compact = undefined as unknown as typeof ctx.compact;
+    const options = { failure: classifyMainModelFailure('provider failed'), valid: () => true, fallback: () => { fallback++; }, record: () => {}, timeout: () => assert.fail('unexpected timeout') };
+    assert.equal(claimPressureAttempt(ctx, options), true);
+    assert.equal(flushPressureAttempt(ctx, { compactionInFlight: false }), true);
+    if (failureOrder === 'event-first') settlePressureAttempt(ctx, 'failure');
+    onError?.(new Error('summarization failed'));
+    settlePressureAttempt(ctx, 'failure');
+    assert.equal(fallback, 1);
+    assert.equal(claimPressureAttempt(ctx, options), false, 'failed retry must fall through to ordinary recovery');
+    clearPressureAttempt(ctx);
+  });
+}
+
+test('pressure attempt waits for healthy tools, adopts host compaction, and discards stale callbacks', () => {
+  const ctx = makeMockCtx(tmpCwd(), { sessionManager: { name: 'pressure-owner' } });
+  let idle = false, valid = true, compacts = 0, fallback = 0;
+  ctx.isIdle = () => idle;
+  ctx.compact = () => { compacts++; };
+  claimPressureAttempt(ctx, { failure: classifyMainModelFailure('provider failed'), valid: () => valid, fallback: () => { fallback++; }, record: () => {}, timeout: () => {} });
+  flushPressureAttempt(ctx, { compactionInFlight: false });
+  assert.equal(compacts, 0, 'busy tools remain untouched');
+  idle = true;
+  flushPressureAttempt(ctx, { compactionInFlight: true });
+  assert.equal(compacts, 0, 'host already owns compaction');
+  settlePressureAttempt(ctx, 'retry-owned');
+  valid = false;
+  settlePressureAttempt(ctx, 'failure');
+  assert.equal(fallback, 0, 'old generation cannot rotate the new owner');
+  clearPressureAttempt(ctx);
+});
 
 test('pressure policy distinguishes relative pressure, explicit input overflow and unrelated errors', () => {
   const generic = classifyMainModelFailure('provider unavailable');
