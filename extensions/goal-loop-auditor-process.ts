@@ -2375,8 +2375,7 @@ async function runDetachedGoalCompletionAuditorInner(args: {
           const serialized = stableJson(progress);
           if (serialized !== lastProgressSerialized) {
             lastProgressSerialized = serialized;
-            if (progress.jobDir === undefined) progress.jobDir = jobDir;
-            args.onProgress?.(asProgress(progress, startedAt));
+            args.onProgress?.(asProgress({ ...progress, jobDir }, startedAt));
           }
         } catch (error) {
           // v0.38.99: progress.json is TELEMETRY, not the verdict — the

@@ -1311,9 +1311,7 @@ await rename(dir + "/result.json.tmp", dir + "/result.json");
           assert.equal(progress.currentToolTimeoutMs, 600_000);
           assert.ok(Date.now() - progress.currentToolStartedAt! > 100, "parent observed a tool beyond its base budget");
           assert.equal(existsSync(path.join(progress.jobDir!, "result.json")), false, "staged result is hidden until observation");
-        } catch (e) { console.error("assertion-failed", e); throw e; }
-        observedGrantedTool = true;
-        writeFileSync(releasePath, "release");
+        } catch (e) { console.error("assertion-failed", e.message); throw e; }
       },
       runtime: {
         workerPath: grantedWorker,
