@@ -82,7 +82,7 @@ export function flushPressureAttempt(ctx: ExtensionContext, options: { compactio
   if (!attempt || attempt.phase === 'spent') return false;
   if (!attempt.valid()) { clearPressureAttempt(ctx); return false; }
   if (attempt.phase === 'compacting') return true;
-  if (!ctx.isIdle() || ctx.hasPendingMessages()) return true;
+  if (!options.compactionInFlight && (!ctx.isIdle() || ctx.hasPendingMessages())) return true;
   attempt.phase = 'compacting';
   attempt.record(options.compactionInFlight ? 'adopted' : 'started');
   attempt.timer = setTimeout(() => {
