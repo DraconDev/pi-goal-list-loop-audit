@@ -277,7 +277,7 @@ export type TakeoverResult =
   | { outcome: "reclaimed"; signaled: false; via: "none" | "self" | "released" | "dead" | "recycled" }
   | { outcome: "needs-confirm"; owner: DescribedOwner }
   | { outcome: "taken"; signaled: true; prevPid: number }
-  | { outcome: "refused"; reason: "state-root-pending" | "not-pi-process" | "still-alive" | "claim-lost"; detail: string };
+  | { outcome: "refused"; reason: "state-root-pending" | "not-pi-process" | "still-alive" | "claim-lost" | "signal-failed"; detail: string };
 
 const TAKEOVER_SETTLE_MS = 5000;
 const TAKEOVER_POLL_MS = 250;
@@ -357,10 +357,20 @@ export async function takeoverOwnerRoot(opts: {
       return { outcome: "refused", reason: "claim-lost", detail: "The owner changed before the signal, or its mutation was busy. Inspect with /glla owner and retry." };
     }
   } catch (err) {
-    // Signal failed (already exited, or permission): re-read — an exited
-    // owner means the quiet path now applies.
+    // Only a proven quiet owner permits reclaim after a failed signal.
+    // A live owner (EPERM, for example) must not recursively re-signal;
+    // consent also does not transfer to a newly arrived successor.
     const fresh = readOwnerFile(opts.cwd);
-    return takeoverOwnerRoot({ cwd: opts.cwd, record: fresh, confirmed: true, deps: opts.deps });
+    const freshCls = classifyOwner(fresh, process.pid, {
+      alive: typeof fresh?.pid === "number" ? d.isAlive(fresh.pid) : false,
+      startMs: typeof fresh?.pid === "number" ? d.procStartMs(fresh.pid) : null,
+    }, d.now());
+    if (freshCls !== "live-foreign") {
+      return takeoverOwnerRoot({ cwd: opts.cwd, record: fresh, confirmed: false, deps: opts.deps });
+    }
+    const detail = err instanceof Error ? err.message : String(err);
+    appendLedger(opts.cwd, "owner_takeover_refused", { reason: "signal-failed", pid: owner.pid, detail });
+    return { outcome: "refused", reason: "signal-failed", detail: `Could not signal pid ${owner.pid}: ${detail}. The owner is still live — NOT claimed. Inspect with /glla owner and close it by hand before retrying.` };
   }
   const settleMs = d.settleMs ?? TAKEOVER_SETTLE_MS;
   const deadline = d.now() + settleMs;
