@@ -3053,7 +3053,9 @@ function registerAgentTools(pi: any): void {
       if (!state.goal || !state.goal.taskList) {
         return { content: [{ type: "text", text: "No task list in this goal." }], details: {} };
       }
-      const tl = state.goal.taskList;
+      const taskGoal = state.goal;
+      const tl = taskGoal.taskList!;
+      const taskSnapshot = JSON.stringify(tl);
       // v0.38.48: copy-swap — the live list is never mutated in place, so a
       // kill between verify and persist (or a persist failure) cannot leave
       // partial state. Message strings are pinned by
@@ -3073,6 +3075,10 @@ function registerAgentTools(pi: any): void {
             }],
             details: {},
           };
+        }
+        if (foreignToolGuard(execCtx) || !currentToolContext(execCtx)) return staleToolResult();
+        if (state.goal !== taskGoal || taskGoal.taskList !== tl || JSON.stringify(tl) !== taskSnapshot) {
+          return { content: [{ type: "text", text: "Task update rejected — the goal or task list changed during verification. No task was changed. Retry against the current list." }], details: {} };
         }
         if (!updateGoal({ taskList: withTaskStatus(tl, p.id, "complete") }, ctx)) {
           return { content: [{ type: "text", text: `Task ${p.id} could not be marked complete — the persist failed and no state changed. Retry.` }], details: {} };
@@ -3104,7 +3110,9 @@ function registerAgentTools(pi: any): void {
       if (!state.goal || !state.goal.taskList) {
         return { content: [{ type: "text", text: "No task list in this goal." }], details: {} };
       }
-      const tl = state.goal.taskList;
+      const taskGoal = state.goal;
+      const tl = taskGoal.taskList!;
+      const taskSnapshot = JSON.stringify(tl);
       // v0.38.48: copy-swap (see complete_task). Message strings are pinned
       // by tests/task-atomicity-gate.test.ts.
       const t = findTask(tl, p.id);
@@ -3124,6 +3132,10 @@ function registerAgentTools(pi: any): void {
               details: {},
             };
           }
+        }
+        if (foreignToolGuard(execCtx) || !currentToolContext(execCtx)) return staleToolResult();
+        if (state.goal !== taskGoal || taskGoal.taskList !== tl || JSON.stringify(tl) !== taskSnapshot) {
+          return { content: [{ type: "text", text: "Task update rejected — the goal or task list changed during verification. No task was changed. Retry against the current list." }], details: {} };
         }
         if (!updateGoal({ taskList: withTaskStatus(tl, p.id, p.status) }, ctx)) {
           return { content: [{ type: "text", text: `Task ${p.id} could not move to ${p.status} — the persist failed and no state changed. Retry.` }], details: {} };
@@ -3152,7 +3164,9 @@ function registerAgentTools(pi: any): void {
       if (!state.goal || !state.goal.taskList) {
         return { content: [{ type: "text", text: "No task list in this goal." }], details: {} };
       }
-      const tl = state.goal.taskList;
+      const taskGoal = state.goal;
+      const tl = taskGoal.taskList!;
+      const taskSnapshot = JSON.stringify(tl);
       // Phase 1 — validate the WHOLE batch before any verification runs.
       const validation = validateTaskBatch(tl, p.updates);
       if (!validation.ok) {
@@ -3179,6 +3193,12 @@ function registerAgentTools(pi: any): void {
           }],
           details: {},
         };
+      }
+      // Verification yields to commands/session lifecycle events. Re-admit
+      // the context and captured contract before touching the current slot.
+      if (foreignToolGuard(execCtx) || !currentToolContext(execCtx)) return staleToolResult();
+      if (state.goal !== taskGoal || taskGoal.taskList !== tl || JSON.stringify(tl) !== taskSnapshot) {
+        return { content: [{ type: "text", text: "Task batch rejected — the goal or task list changed during verification. No task was changed. Retry against the current list." }], details: {} };
       }
       // Phase 3 — copy, apply, persist ONCE.
       if (!updateGoal({ taskList: applyValidatedBatch(tl, validation.entries) }, ctx)) {
