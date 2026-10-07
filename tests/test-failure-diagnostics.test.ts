@@ -12,7 +12,7 @@ test('injected failure retains worker verdict, specific timeout and process iden
     fs.writeFileSync(path.join(dir, 'progress.json'), JSON.stringify({ phase: 'tool_executing', currentTool: 'bash', currentToolTimeoutMs: 600000, currentToolArgs: 'private args' }));
     const file = captureWorkerFailure({ directory: path.join(dir, 'retained'), jobDir: dir, exitCode: 1,
       reason: 'tool-timeout: bash exceeded 600000ms', outputTail: 'Authorization: Bearer abcsecret\napi_key=privatesecret\nghp_abcdefghijklmnopqrstuvwxyz0123456789',
-      processState: { pid: 123, group: 123, birth: '9876', unverified: 1, env: 'private environment' } });
+      processState: { pid: 123, group: 123, birth: '9876', unverified: 1 } as unknown as import('../scripts/test-failure-diagnostics.mjs').ProcessStateSnapshot });
     const text = fs.readFileSync(file, 'utf8');
     const saved = JSON.parse(text);
     assert.equal(saved.workerResult.output, '<disapproved/>');
