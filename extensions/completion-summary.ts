@@ -173,23 +173,21 @@ export function humanCompletionBrief(
   text: string | undefined,
   outcomeBudget = 140,
   valueBudget = 120,
-  priorWholeWork?: string,
+  // Retained for API compatibility. Historical claims belong in the
+  // forensic archive, never in the latest approved human projection.
+  _priorWholeWork?: string,
   includeTests = false,
 ): HumanCompletionBrief {
   const lines = completionSummaryLines(text, Math.max(outcomeBudget, valueBudget), undefined, includeTests);
   const rawOutcome = (lines[0] ?? "").replace(/^Outcome:\s*/, "");
-  // 2026-09-16 whole-work recap: when the audited claim is a delta-only
-  // repair note, the whole-work recap from the FIRST claim leads. The
-  // repair details still ride; the headline summarizes the whole work.
-  const priorLines = priorWholeWork ? completionSummaryLines(priorWholeWork, Math.max(outcomeBudget, valueBudget), undefined, includeTests) : [];
-  const priorDetails = priorLines ? priorLines.slice(1) : [];
-  const mergedDetails = [...priorDetails, ...lines.slice(1)];
-  const outcomeSource = priorLines[0]?.replace(/^Outcome:\s*/, "") ?? rawOutcome;
+  // A corrected claim replaces its rejected predecessor. Merging the
+  // first claim here would restore stale counts and duplicate details.
+  const outcomeSource = rawOutcome;
   // 2026-09-16 field shots: the headline echo must summarize the ask, not
   // flatten section-structured Outcome markdown into one clipped line. The
   // lead paragraph (text before the first section header) is the human
   // summary; headers ride only in the ### Summary section.
-  const structured = structuredSummaryLines(priorWholeWork ?? text);
+  const structured = structuredSummaryLines(text);
   const lead = structured
     ? (structured.join("\n").split(/\n(?=#{2,4}\s)/)[0] ?? "")
       .split("\n")
@@ -199,7 +197,7 @@ export function humanCompletionBrief(
   // D8: no invented "done" — an empty outcome says so honestly.
   const outcome = clipSummaryValue(briefValueContent(lead || outcomeSource) ?? "(outcome not recorded)", outcomeBudget);
   const details: string[] = [];
-  for (const line of mergedDetails) {
+  for (const line of lines.slice(1)) {
     const separator = line.indexOf(":");
     if (separator < 0) continue;
     const content = briefValueContent(line.slice(separator + 1));
@@ -1102,13 +1100,12 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
 export function buildRichArchiveSection(goal: Goal, status: Status, archivePath: string, findingGroups?: FindingGroup[], gateRows?: GateRow[], priorWholeWorkOverride?: string): string[] {
   const facts: CompletionSummaryFacts = { goal, status, archivePath };
   const summary = resolveCompletionSummary(facts, goal.completionSummary).summary;
-  // 2026-09-16 whole-work recap: after a repair re-claim, the archived
-  // card leads with the whole work. The caller (archiveCurrentGoal)
-  // captures the claim's carried recap BEFORE pendingCompletion is
-  // cleared; the goal-field fallback covers direct callers.
+  // Preserve the original claim verbatim for forensic history only. The
+  // final card must use the corrected terminal recap, not a rejected one.
+  // archiveCurrentGoal captures history before pendingCompletion clears.
   const priorWholeWork = priorWholeWorkOverride ?? goal.pendingCompletion?.priorCompletionSummary;
   const brief = humanCompletionBrief(summary, 140, RICH_FULL_VALUE_BUDGET, priorWholeWork, true);
-  const structured = structuredSummaryLines(priorWholeWork ?? summary);
+  const structured = structuredSummaryLines(summary);
   const history = goal.auditHistory ?? [];
   const latest = history[history.length - 1];
   const approval = latest
@@ -1261,10 +1258,8 @@ export interface TerminalApprovalRenderInput {
    * buildFinalRepoStateLines(cwd). Absent keeps the section out.
    */
   repoState?: string[];
-  /** 2026-09-16 whole-work recap: the FIRST claim's completionSummary in
-   * this terminal episode. When the audited claim is a delta-only repair
-   * note, the render leads with the whole work instead (headline, Summary
-   * section, and the flat findings fallback); absent stays absent. */
+  /** Original claim retained for compatibility and forensic history.
+   * It must not override or merge into the latest approved human recap. */
   priorCompletionSummary?: string;
 }
 
@@ -1315,7 +1310,7 @@ export function buildTerminalApprovalRender(input: TerminalApprovalRenderInput):
   // archive human layer). Headline echo, verification, Next, recap, and
   // every recycled payload keep their bounds.
   const resolvedSummary = resolveCompletionSummary(facts, candidate).summary;
-  const structured = structuredSummaryLines(input.priorCompletionSummary ?? resolvedSummary);
+  const structured = structuredSummaryLines(resolvedSummary);
   // v0.38.37 (audit 2026-09-08): the deliberate non-do comes from the
   // agent's complete_goal leftOut claim — never invented. Filler ("none")
   // drops via the same briefValueContent filter; absent stays absent.
