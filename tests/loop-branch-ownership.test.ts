@@ -356,7 +356,15 @@ test("/loop stop mid-tick commits the in-flight iteration instead of resetting i
     const ledger = fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8");
     assert.match(ledger, /"action":"commit-terminal"/, "the terminal commit is auditable in the ledger");
   } finally {
-    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+    // Exception/timeout/assertion-failed paths can strand the started tick;
+    // release the deferred measurement and drain shutdown explicitly so
+    // the harness is never held open across the test boundary.
+    releaseMeasure();
+    if (!tickSettled) {
+      await pi.fire("session_shutdown", { reason: "test-cleanup" }, ctx).catch(() => {});
+    }
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx).catch(() => {});
+    pi.execHandler = null;
   }
 });
 
