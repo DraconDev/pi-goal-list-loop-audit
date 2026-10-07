@@ -114,7 +114,7 @@ test("v0.38.104: an unacknowledged turn start self-heals instead of demanding a 
     // self-heal, and a turn-start proof must clear it.
     const src = fs.readFileSync(path.join(__dirname, "..", "extensions", "goal-continuation.ts"), "utf8");
     const settle = src.slice(src.indexOf("function dispatchStartUnacknowledged"), src.indexOf("function armContinuationStartWatchdog"));
-    assert.match(settle, /armContinuationStartSelfHeal\(ctx, record\)/, "the settle arms the self-heal");
+    assert.match(settle, /armContinuationStartSelfHeal\(ctx, unacknowledged\)/, "the settle arms the self-heal");
     const acked = src.slice(src.indexOf("export function dispatchStartAcknowledged"));
     assert.match(acked.slice(0, 2_400), /clearContinuationStartSelfHeal\(\)/, "a turn-start proof clears the self-heal and resets the budget");
   } finally {

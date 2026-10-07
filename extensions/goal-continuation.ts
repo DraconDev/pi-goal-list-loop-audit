@@ -248,6 +248,9 @@ export function __testOnlySetContinuationRetryBackoff(backoffMs: number | null):
 /* ------------------------------------------------------------------ */
 
 let pendingContinuationDispatch: ContinuationDispatch | null = null;
+// Settled recovery debt is not an in-flight dispatch. Keeping it separate
+// lets explicit resume and compaction release the normal queue guards.
+let settledSelfHealDispatch: ContinuationDispatch | null = null;
 let continuationStartTimer: NodeJS.Timeout | null = null;
 // v0.38.104 (field: neonbreak 20260928 174457 — "continuation was accepted,
 // but pi did not start a turn … automatic re-sends are stopped · /list resume
@@ -520,6 +523,7 @@ export function clearContinuationStartWatchdog(): void {
     clearRecoveryRearms(pendingContinuationDispatch.id);
   }
   pendingContinuationDispatch = null;
+  settledSelfHealDispatch = null;
   lastContinuationSentAt = 0;
   lastContinuationSentPayload = null;
 }
@@ -600,6 +604,7 @@ export function dispatchPrepare(
     ctx.ui.notify("glla: could not persist the continuation dispatch record, so no automatic turn was sent. Fix .pi-glla storage, then resume explicitly.", "error");
     return null;
   }
+  settledSelfHealDispatch = null;
   pendingContinuationDispatch = record;
   const repairGoal = state.goal;
   const repairTarget = record.kind === "goal" && repairGoal && repairGoal.id === record.goalId
@@ -794,10 +799,6 @@ function dispatchStartUnacknowledged(ctx: ExtensionContext, record: Continuation
   };
   persistDispatchRecord(ctx.cwd, unacknowledged);
   clearContinuationStartWatchdog();
-  // Keep the settled identity live for the generation-fenced self-heal.
-  // Clearing the watchdog also clears this slot; without adopting the
-  // settlement every self-heal cancels itself before its first probe.
-  pendingContinuationDispatch = unacknowledged;
   continuationDispatchStoodDown = true;
   lastContinuationSentAt = 0;
   const reason = `continuation start acknowledgement timed out (${record.id})`;
@@ -823,7 +824,7 @@ function dispatchStartUnacknowledged(ctx: ExtensionContext, record: Continuation
   resetRepairReplanBootstrap(ctx, "start-unacknowledged");
   // v0.38.104: warn AND keep going. The one-automatic-retry cap still stops a
   // blind queue storm; it no longer decides the lane's fate.
-  armContinuationStartSelfHeal(ctx, record);
+  armContinuationStartSelfHeal(ctx, unacknowledged);
   const selfHeal = continuationStartSelfHealDelayOverrideMs ?? continuationStartSelfHealDelayMs(continuationStartSelfHealProbes);
   const msg = `glla: pi accepted the ${dispatchLabel(record)} continuation, but no observable turn-start event arrived within ${Math.round((Date.now() - record.sentAt) / 1000)}s despite one automatic retry. Automatic re-sends are paused to avoid a blind queue storm; the lane re-probes itself in ${Math.round(selfHeal / 1000)}s and keeps doing so on a slowing cadence, so nothing is needed if the host recovers. The work is safe in .pi-glla — use ${record.kind === "loop" ? "/loop resume" : activeGoalSurfaceCommand("resume")} to retry immediately, or start a fresh session.`;
   ctx.ui.notify(msg, "warning");
@@ -852,6 +853,7 @@ export function clearContinuationStartSelfHeal(): void {
     continuationStartSelfHealTimer = null;
   }
   continuationStartSelfHealProbes = 0;
+  settledSelfHealDispatch = null;
 }
 
 export function __testOnlySetContinuationStartSelfHealMaxProbes(value: number): void {
@@ -868,6 +870,7 @@ export function __testOnlySetContinuationStartSelfHealDelay(value: number | null
  * turn-start proof, or any pause clears it, so it can only ever help the lane
  * that is actually stuck. */
 function armContinuationStartSelfHeal(ctx: ExtensionContext, record: ContinuationDispatch): void {
+  settledSelfHealDispatch = record;
   if (continuationStartSelfHealTimer) clearTimeout(continuationStartSelfHealTimer);
   const dispatchId = record.id;
   const generation = record.generation;
@@ -879,14 +882,14 @@ function armContinuationStartSelfHeal(ctx: ExtensionContext, record: Continuatio
     continuationStartSelfHealTimer = null;
     const live = freshCtxForGeneration(generation);
     if (!live) return;
-    const settled = pendingContinuationDispatch;
+    const settled = settledSelfHealDispatch;
     const sameLane = record.kind === "loop"
       ? !!parkedLoop && state.loop?.startedAt === parkedLoop.startedAt &&
         state.loop.iteration === parkedLoop.iteration && !state.loop.active &&
         state.loop.stopReason === parkedLoop.stopReason && !!parkedLoop.stopReason?.includes(dispatchId)
       : record.kind === "length" ? state.goal === lengthGoal
       : state.goal?.id === record.goalId && state.goal?.status === "active";
-    if (!settled || settled.id !== dispatchId || settled.phase !== "unacknowledged" || !sameLane || supervisorPaused(state)) {
+    if (!settled || pendingContinuationDispatch || settled.id !== dispatchId || settled.phase !== "unacknowledged" || !sameLane || supervisorPaused(state)) {
       // The lane moved on (a turn started, a resume re-dispatched, or another
       // lane settled it). Self-heal is no longer this record's job.
       appendLedger(live.cwd, "continuation_start_self_heal_cancelled", { id: dispatchId, reason: "no longer the settled dispatch" });
