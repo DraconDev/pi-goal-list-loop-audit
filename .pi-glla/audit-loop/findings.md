@@ -828,3 +828,9 @@ The first complete release gate ran 3325 tests: 3321 passed, 1 skipped, 3 failed
 All five new FIX findings have fix commits and checked boxes. The HIGH finding also includes final lifecycle repair bdf845bc and terminal-record source pin 3fd4c602; generated inventory updated in f4ee01b4. DECIDE: none; no outstanding DECIDE checklist lines. Fresh reviewer 0ee9e521-b62e-40e7-a579-02320fa749c7 found no issues and corroborated commit evidence via the reflog. Detailed scope, command results and honesty checklist: audit/PROJECT-AUDIT-2026-10-07.md.
 
 Known validation limitation: no single all-green release:check run was obtained. After fixing the three initial resume/compaction regressions, full-suite attempts exposed a transient loop-branch timeout (whole-file rerun: 10 pass) and an intermittent unchanged auditor-budget fixture failure (10 repetitions pass; complete auditor-process plus stall-handling files: 87 pass). The stale terminal-record source pin was corrected rather than bypassed. Final typecheck, jiti identity probe, offline auditor extension loading, regenerated inventory, dry-run pack and packed-package smoke passed. These intermittent aggregate failures are retained as observations, not invented actionable findings; this pass does not claim a defect-free codebase or release readiness.
+
+### Auditor challenge repair — 2026-10-07
+
+- [ ] FIX: HIGH: reviewer text-only deduplication lets an outside-scope finding suppress an identically worded local finding, changing local queue admission with source order (extensions/reviewer.ts:211-218)
+
+The primary detached review approved the five original fixes; the falsification challenge correctly found this regression introduced by scope preservation. Repair is part of this same audit pass, not a second survey. DECIDE: none.
