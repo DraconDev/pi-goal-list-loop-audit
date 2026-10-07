@@ -22,6 +22,11 @@ Source: local session `2026-10-07T08-36-44-398Z_01a11582-02ed-70eb-b0fc-8504732b
 - `loops/goal-activation.ts` checks preventive compaction on `agent_end` and `agent_settled`; settled checks are skipped while main-model recovery is active. Exact runtime event ordering and admission reasons require regression evidence before attributing the missed opportunity.
 - `goal-recovery.ts:recoverFromContextOverflow` currently observes a compaction failure and rotates through `tryMainModelFallback`; caller-specific compact-first ownership must be traced to avoid double compaction or changing established failed-compaction fallback.
 
+## Confirmed recovery-ordering defect
+
+`loops/goal-orchestrator.ts:handleMainModelAgentEnd` calls `tryMainModelFallback` immediately for a recoverable error, before the preventive compaction checks later in `agent_end`. Once recovery is active, the `agent_settled` preventive check is skipped. Thus an error can both rotate the primary and exclude the subsequent safe compaction opportunity. This is a GLLA-owned ordering defect, not proof that the provider error itself was overflow.
+
 ## Verification ledger
 
-No implementation tests or full release gate run for this objective yet. Prior reliability-goal gates are not evidence for this repair.
+- Pre-fix `timeout 180 bun test --timeout=60000 tests/context-pressure-recovery.test.ts`: 1 pass, 2 fail. Near-limit generic-error regression observes fallback before compact-first admission; explicit-overflow with unavailable usage observes no settled compaction. The low-context generic-error control passes with ordinary fallback. Output saved locally in `/tmp/glla-context-pressure-baseline.log` (not tracked).
+- No full release gate run for this objective yet. Prior reliability-goal gates are not evidence for this repair.
