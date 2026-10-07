@@ -103,7 +103,7 @@ test("a DISAPPROVED report's required-fixes extract as findings; an APPROVED met
       { name: "audit", text: approvedMeta },
       { name: "audit", text: disapprovedReal },
     ],
-    enqueueListItems: (o) => calls.enqueued.push(o),
+    enqueueListItems: (o) => { calls.enqueued.push(o); return o.length; },
     proposeGoal: (g) => { calls.proposed.push(g); return true; },
     notify: () => {},
     ledger: () => {},

@@ -22,7 +22,7 @@ describe("auditor scope guard — project at hand only", () => {
       nowMs: Date.now(),
       ledgerEntries: [],
       sources: [{ name: "audit", text: "- bug: outside scope fix the world in other repo\n- bug: TODO fix local broken handler\n" }],
-      enqueueListItems: (items: string[]) => { enqueued.push(...items); },
+      enqueueListItems: (items: string[]) => { enqueued.push(...items); return items.length; },
       proposeGoal: () => true,
       notify: () => {},
       ledger: (type: string, value: any) => ledger.push({ type, value }),

@@ -32,7 +32,7 @@ function mkDeps(cwd: string, over: Partial<ReviewerDeps> = {}) {
     nowMs: Date.parse("2026-07-26T12:00:00Z"),
     ledgerEntries: [],
     sources: [],
-    enqueueListItems: (objs) => calls.enqueued.push(objs),
+    enqueueListItems: (objs) => { calls.enqueued.push(objs); return objs.length; },
     proposeGoal: (obj) => { calls.proposed.push(obj); return true; },
     notify: (m) => calls.notified.push(m),
     ledger: (t) => calls.ledgered.push(t),
