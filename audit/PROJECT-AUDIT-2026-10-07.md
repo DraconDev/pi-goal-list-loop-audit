@@ -69,3 +69,18 @@ Additional final commands:
 3. Every new FIX repaired and committed on the existing branch/identity: table above plus lifecycle correction and source-pin/inventory commits; no branch/identity changes or history rewrites. Behavioral regression and typecheck evidence recorded. Satisfied.
 4. DECIDE raised and recorded: none found; no outstanding DECIDE checklist lines. No work queued without a decision. Satisfied.
 5. Honest known state: five checked FIX boxes with real commits, no fabricated findings; full-suite failure history and intermittent remainder retained rather than hidden. Satisfied, with the explicit aggregate-test limitation above.
+
+## Detached challenge repair and final resubmission
+
+The primary detached auditor independently passed 160 tests and typecheck and approved the original five repairs. Its required falsification round then correctly disapproved a new regression introduced by scope preservation: text-only deduplication let an outside-scope finding suppress identically worded local work when the external report appeared first. This is a sixth concrete FIX in the same pass, not a second survey.
+
+- Ledger: appended the HIGH scope-deduplication finding; checked only after fix commit `73f60ada` existed.
+- Root repair: deduplication identity includes effective scope and text; both scoped identities survive while same-scope copies still collapse.
+- Behavioral regressions `18c13764`: both source orders, repeated same-scope sources, exactly one local admission and one informational external finding, no external proposal.
+- Read-only before/after VM probe of the actual pre-fix committed module versus current module: `{"beforeLocal":0,"afterLocal":1}`. No main-branch code was temporarily reverted.
+- `timeout 90 bun test --timeout=15000 tests/reviewer*.test.ts tests/auditor-scope-guard.test.ts`: 67 pass, 0 fail across 6 files.
+- Final focused gate (14 files, continuation/task/owner/reviewer/scope/stall lifecycle): 191 pass, 0 fail in ~10 seconds.
+- `timeout 150 bash -c 'npm run check && npm run check:inventory && node scripts/release-pack-smoke.mjs'`: typecheck, inventory and packed launcher/worker/skill smoke passed. Inventory regeneration committed in `927ec315`.
+- Prior reviewer could not resume after runtime replacement (exact status and resume attempts both returned Async run not found). A labeled fresh-context same-role fallback reviewed only the challenge repair: run `8f3bedbf-8f16-496c-a202-bf20a9eb9736`, no issues, Merge verdict OK with notes, BLOCKERS none. It inspected current source and both-order tests; parent command results are separately recorded above. Reviewer completed before resubmission.
+
+Final total: **six NEW FIX findings, all checked and committed; DECIDE none; zero outstanding FIX/DECIDE checklist lines**. The earlier aggregate-suite intermittency limitation remains explicit and unchanged; no release-readiness claim is added.
