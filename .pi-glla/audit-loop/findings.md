@@ -812,7 +812,7 @@ append-only, so these corrections are appended rather than edited in.
 ## Fresh parallel audit — 2026-10-07
 
 - [x] FIX: MEDIUM: task milestone verification can overwrite a replacement goal or changed task list after awaiting verification (extensions/loops/goal-tools.ts:3061-3185) — fixed in ffb3f828; behavioral regressions in c2c67348 (29 task tests pass)
-- [ ] FIX: MEDIUM: owner takeover recursively retries a persistent live-owner signal failure without a bound (extensions/state-root-owner.ts:357-362)
+- [x] FIX: MEDIUM: owner takeover recursively retries a persistent live-owner signal failure without a bound (extensions/state-root-owner.ts:357-362) — fixed in a2a19186; regressions in 0f96814e (20 owner tests pass)
 - [ ] FIX: MEDIUM: reviewer extraction drops Outside Scope section boundaries and auto-queues excluded findings (extensions/reviewer.ts:197-210)
 - [ ] FIX: MEDIUM: reviewer reports requested enqueue counts instead of actual queue admissions (extensions/reviewer.ts:408-470)
 - [ ] FIX: HIGH: continuation self-healing clears the settled dispatch it requires and cannot recover parked loops through goal-only scheduling (extensions/goal-continuation.ts:796-910)
