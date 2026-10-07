@@ -3,6 +3,7 @@ import type { MainModelFailure } from './main-model-recovery.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
+type PressureContext = Pick<ExtensionContext, 'sessionManager' | 'isIdle' | 'hasPendingMessages' | 'compact' | 'abort'>;
 export type PressurePhase = 'queued' | 'compacting' | 'spent';
 interface Attempt {
   phase: PressurePhase;
@@ -21,7 +22,7 @@ function owner(ctx: Pick<ExtensionContext, 'sessionManager'>): object { return c
 
 /** A compaction success does NOT reset this one-attempt budget. Only a healthy
  * work turn/new request may do that, otherwise a failed retry can compact forever. */
-export function claimPressureAttempt(ctx: ExtensionContext, options: Omit<Attempt, 'phase' | 'timer'>): boolean {
+export function claimPressureAttempt(ctx: PressureContext, options: Omit<Attempt, 'phase' | 'timer'>): boolean {
   const key = owner(ctx);
   const existing = attempts.get(key);
   if (existing) return existing.phase !== 'spent';
@@ -46,11 +47,11 @@ export function resetPressureBudget(file: string, key: string): void {
     if (saved.key === key) fs.rmSync(file, { force: true });
   } catch { /* Conservative on unreadable storage. */ }
 }
-export function pressureAttemptPending(ctx: ExtensionContext): boolean {
+export function pressureAttemptPending(ctx: PressureContext): boolean {
   const attempt = attempts.get(owner(ctx));
   return !!attempt && attempt.phase !== 'spent' && attempt.valid();
 }
-export function clearPressureAttempt(ctx: ExtensionContext, resetBudget = false): void {
+export function clearPressureAttempt(ctx: PressureContext, resetBudget = false): void {
   const key = owner(ctx), attempt = attempts.get(key);
   if (attempt?.timer) clearTimeout(attempt.timer);
   if (resetBudget && attempt?.budget) {
@@ -61,7 +62,7 @@ export function clearPressureAttempt(ctx: ExtensionContext, resetBudget = false)
   }
   attempts.delete(key);
 }
-export function settlePressureAttempt(ctx: ExtensionContext, outcome: 'success' | 'failure' | 'aborted' | 'retry-owned'): boolean {
+export function settlePressureAttempt(ctx: PressureContext, outcome: 'success' | 'failure' | 'aborted' | 'retry-owned'): boolean {
   const attempt = attempts.get(owner(ctx));
   if (!attempt || attempt.phase === 'queued') return false;
   if (attempt.phase === 'spent') return true; // callback + event share ownership
@@ -77,7 +78,7 @@ export function settlePressureAttempt(ctx: ExtensionContext, outcome: 'success' 
 /** Launch only after the failed request is idle. Never abort a healthy tool to
  * obtain idle, never contend with host-owned compaction, never send on success:
  * GLLA's session_compact resume debt owns that continuation. */
-export function flushPressureAttempt(ctx: ExtensionContext, options: { compactionInFlight: boolean; timeoutMs?: number }): boolean {
+export function flushPressureAttempt(ctx: PressureContext, options: { compactionInFlight: boolean; timeoutMs?: number }): boolean {
   const key = owner(ctx), attempt = attempts.get(key);
   if (!attempt || attempt.phase === 'spent') return false;
   if (!attempt.valid()) { clearPressureAttempt(ctx); return false; }
