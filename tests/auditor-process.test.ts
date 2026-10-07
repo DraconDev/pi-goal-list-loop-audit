@@ -41,20 +41,23 @@ function workerPathFor(dir: string): string {
   return path.join(dir, "auditor-fake-worker.mjs");
 }
 
+// Every conforming fixture shares production's atomic publication protocol.
+// The optional hook lets tests hold a completed temp snapshot before rename.
+const ATOMIC_JSON_SOURCE = `
+async function atomicJson(file, value, beforePublish) {
+  const temp = file + "." + process.pid + "." + randomUUID() + ".tmp";
+  try {
+    await writeFile(temp, JSON.stringify(value));
+    if (beforePublish) await beforePublish(temp);
+    await rename(temp, file);
+  } catch (e) { await rm(temp, { force: true }).catch(() => {}); throw e; }
+}
+`;
 const workerSource = `
 import { readFile, rename, rm, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 const dir = process.argv[process.argv.indexOf("--job-dir") + 1];
-// v0.35.15: publish via temp+rename like the REAL worker's atomicJson — a
-// plain writeFile let the parent's 10ms poll read a TORN json file under
-// load, failing the run as "invalid auditor result" infrastructure
-// (observed 2026-08-21: release:check fast-fail, 1-in-N runs).
-async function atomicJson(file, value) {
-  const temp = file + "." + process.pid + "." + randomUUID() + ".tmp";
-  await writeFile(temp, JSON.stringify(value));
-  try { await rename(temp, file); }
-  catch (e) { await rm(temp, { force: true }).catch(() => {}); throw e; }
-}
+${ATOMIC_JSON_SOURCE}
 const request = JSON.parse(await readFile(dir + "/request.json", "utf8"));
 const progress = {
   protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
@@ -1263,24 +1266,34 @@ test("parent tool watchdog honors the worker-armed granted budget", async () => 
   const dir = await mkdtemp(path.join(tmpdir(), "glla-tool-timeout-granted-"));
   const grantedWorker = path.join(dir, "granted-worker.mjs");
   const stalled: AuditorStalledInfo[] = [];
+  let observedGrantedTool = false;
+  const releasePath = path.join(dir, "release-result");
   await writeFile(grantedWorker, `
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, rename, rm, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+${ATOMIC_JSON_SOURCE}
 const dir = process.argv[process.argv.indexOf("--job-dir") + 1];
 const request = JSON.parse(await readFile(dir + "/request.json", "utf8"));
-// A tool open 10s with a 600s granted budget: past the 100ms base, inside
-// the grant. The watchdog must NOT fire; the worker then settles normally.
-await writeFile(dir + "/progress.json", JSON.stringify({
-  protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
-  phase: "tool_executing", elapsedMs: 1, lastActivityAt: Date.now(),
-  recentOutput: [], toolCalls: [], currentTool: "bash", currentToolArgs: "{}",
-  currentToolStartedAt: Date.now() - 10_000, currentToolTimeoutMs: 600_000,
-}));
-await new Promise((resolve) => setTimeout(resolve, 400));
-await writeFile(dir + "/result.json", JSON.stringify({
+// Stage a complete result without exposing it. Publish the open granted
+// tool atomically, then wait for parent observation before the final rename.
+await atomicJson(dir + "/result.json", {
   protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
   ok: true, output: "<disapproved/>", model: request.model,
   thinkingLevel: request.thinkingLevel, toolCalls: [],
-}));
+}, async () => {
+  await atomicJson(dir + "/progress.json", {
+    protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+    phase: "tool_executing", elapsedMs: 1, lastActivityAt: Date.now(),
+    recentOutput: [], toolCalls: [], currentTool: "bash", currentToolArgs: "{}",
+    currentToolStartedAt: Date.now() - 10_000, currentToolTimeoutMs: 600_000,
+  });
+  const deadline = Date.now() + 5000;
+  while (!existsSync(${JSON.stringify(releasePath)})) {
+    if (Date.now() >= deadline) throw new Error("parent did not observe granted tool before publication deadline");
+    await new Promise(resolve => setTimeout(resolve, 5));
+  }
+});
 `);
   try {
     const result = await runDetachedGoalCompletionAuditor({
@@ -1289,6 +1302,14 @@ await writeFile(dir + "/result.json", JSON.stringify({
       model: "test/provider-model",
       thinkingLevel: "high",
       onStalled: (info) => stalled.push(info),
+      onProgress: progress => {
+        if (observedGrantedTool || progress.currentTool !== "bash") return;
+        assert.equal(progress.currentToolTimeoutMs, 600_000);
+        assert.ok(Date.now() - progress.currentToolStartedAt! > 100, "parent observed a tool beyond its base budget");
+        assert.equal(existsSync(path.join(progress.jobDir, "result.json")), false, "staged result is hidden until observation");
+        observedGrantedTool = true;
+        writeFileSync(releasePath, "release");
+      },
       runtime: {
         workerPath: grantedWorker,
         attemptId: () => "attempt-granted-budget",
@@ -1297,8 +1318,9 @@ await writeFile(dir + "/result.json", JSON.stringify({
         toolTimeoutMs: 100,
       },
     });
+    assert.equal(observedGrantedTool, true, "budget proof is observed before result publication");
     assert.equal(stalled.length, 0, "no tool-timeout stall while inside the granted budget");
-    assert.equal(result.disapproved, true, "the audit settles with its verdict instead of a stall");
+    assert.equal(result.disapproved, true, `audit settles with its verdict instead of a stall: ${result.error ?? "no infrastructure error"}`);
     assert.doesNotMatch(result.error ?? "", /exceeded its .* timeout/);
   } finally {
     await rm(dir, { recursive: true, force: true });
