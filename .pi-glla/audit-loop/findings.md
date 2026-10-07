@@ -808,3 +808,13 @@ append-only, so these corrections are appended rather than edited in.
   against the pre-fix source. No commit was rewritten, no history rewritten,
   no worktree content discarded; every reverted change was re-applied
   immediately and the post-fix state is what is committed.
+
+## Fresh parallel audit — 2026-10-07
+
+- [ ] FIX: MEDIUM: task milestone verification can overwrite a replacement goal or changed task list after awaiting verification (extensions/loops/goal-tools.ts:3061-3185)
+- [ ] FIX: MEDIUM: owner takeover recursively retries a persistent live-owner signal failure without a bound (extensions/state-root-owner.ts:357-362)
+- [ ] FIX: MEDIUM: reviewer extraction drops Outside Scope section boundaries and auto-queues excluded findings (extensions/reviewer.ts:197-210)
+- [ ] FIX: MEDIUM: reviewer reports requested enqueue counts instead of actual queue admissions (extensions/reviewer.ts:408-470)
+- [ ] FIX: HIGH: continuation self-healing clears the settled dispatch it requires and cannot recover parked loops through goal-only scheduling (extensions/goal-continuation.ts:796-910)
+
+DECIDE findings: none in this pass. Three parallel read-only subsystem scouts completed; existing ledger findings were excluded. Baseline typecheck passed. Baseline fast suite reached its 240-second bound (exit 124), not a passing-suite claim.
