@@ -64,6 +64,8 @@ export interface Finding {
   text: string;
   source: string;
   class: FindingClass;
+  /** Inherited from an Outside Scope heading; never queued or proposed. */
+  outsideScope?: boolean;
 }
 
 /** Leverage classification (contract item 5). Order matters: strategic
@@ -194,7 +196,15 @@ export function extractFindings(sources: Array<{ name: string; text: string }>, 
   const seen = new Set<string>();
   const completedNorm = completedObjective ? normalizeObjective(completedObjective) : "";
   for (const { name, text } of sources) {
+    let outsideScopeLevel: number | null = null;
     for (const line of unwrapHardWrappedLines(stripCodeSpans(text)).split("\n")) {
+      const heading = /^\s{0,3}(#{1,6})\s+(.+)$/.exec(line);
+      if (heading) {
+        const level = heading[1]!.length;
+        if (outsideScopeLevel !== null && level <= outsideScopeLevel) outsideScopeLevel = null;
+        if (isOutsideScopeFinding(heading[2]!)) outsideScopeLevel ??= level;
+        continue;
+      }
       const cls = classifyFindingText(line);
       if (!cls) continue;
       const clean = cutAtClauseBoundary(line.trim().replace(/^[-*>\s\[\]x]+/, ""), 200);
@@ -205,7 +215,7 @@ export function extractFindings(sources: Array<{ name: string; text: string }>, 
         if (nf.length >= 24 && (completedNorm.startsWith(nf) || nf.startsWith(completedNorm))) continue; // v0.28.24: restates the completed goal
       }
       seen.add(clean);
-      out.push({ text: clean, source: name, class: cls });
+      out.push({ text: clean, source: name, class: cls, ...(outsideScopeLevel !== null ? { outsideScope: true } : {}) });
       if (out.length >= max) return out;
     }
   }
@@ -280,7 +290,8 @@ export interface ReviewReport {
 }
 
 export function formatReviewReport(r: ReviewReport): string {
-  const byClass = (c: FindingClass) => r.findings.filter((f) => f.class === c);
+  const outside = (f: Finding) => f.outsideScope || isOutsideScopeFinding(f.text);
+  const byClass = (c: FindingClass) => r.findings.filter((f) => f.class === c && !outside(f));
   const section = (title: string, items: Finding[]) =>
     items.length === 0 ? "" : `\n## ${title}\n\n${items.map((f) => `- ${f.text} _(${f.source})_`).join("\n")}\n`;
   return [
@@ -295,9 +306,10 @@ export function formatReviewReport(r: ReviewReport): string {
     `**Cascade step**: ${r.cascadeStep}`,
     "",
     `## Findings (${r.findings.length})`,
-    section("Bug-class (enqueued to /list, no Confirm)", byClass("bug")),
-    section("Refactor-class (enqueued to /list, no Confirm)", byClass("refactor")),
-    section("Architectural-class (proposed as /goal, Confirm required)", byClass("architectural")),
+    section("Bug-class (eligible for /list, no Confirm)", byClass("bug")),
+    section("Refactor-class (eligible for /list, no Confirm)", byClass("refactor")),
+    section("Architectural-class (eligible for cascade by mode)", byClass("architectural")),
+    section("Outside Scope (informational only)", r.findings.filter(outside)),
     section("Strategic-class (notify only)", byClass("strategic")),
     r.findings.length === 0 ? "\n(none — completion looks clean)\n" : "",
   ].join("\n");
@@ -323,7 +335,8 @@ export interface ReviewerDeps {
   ledgerEntries: Array<{ type: string; at?: string; value?: any }>;
   /** Source texts for finding extraction (archive md, audit reports). */
   sources: Array<{ name: string; text: string }>;
-  enqueueListItems: (objectives: string[]) => void;
+  /** Return the actual number durably admitted, not the requested count. */
+  enqueueListItems: (objectives: string[]) => number;
   /** Deliver a /goal proposal message to the session. Returns true when the
    * message was actually sent; false when the send failed (the v0.28.8 E4
    * contract — a failed send must NOT count as `proposed`, else the user is
@@ -389,8 +402,8 @@ export function runReviewer(
 
   const findings = extractFindings(deps.sources, config.maxFindingsPerReview, source.objective);
   // v0.36.x outside-scope cap: recorded in report but never auto-queued.
-  const inScope = findings.filter((f) => !isOutsideScopeFinding(f.text));
-  const outsideScope = findings.filter((f) => isOutsideScopeFinding(f.text));
+  const inScope = findings.filter((f) => !f.outsideScope && !isOutsideScopeFinding(f.text));
+  const outsideScope = findings.filter((f) => f.outsideScope || isOutsideScopeFinding(f.text));
   if (outsideScope.length > 0) deps.ledger("reviewer_outside_scope", { goalId: source.goalId, count: outsideScope.length, examples: outsideScope.slice(0, 2).map((f) => f.text.slice(0, 80)) });
   const bugs = inScope.filter((f) => f.class === "bug" || f.class === "refactor");
   const architectural = inScope.filter((f) => f.class === "architectural");
@@ -398,6 +411,14 @@ export function runReviewer(
 
   let enqueued = 0;
   let proposed = 0;
+  let enqueueRejected = 0;
+  const enqueue = (objectives: string[]): void => {
+    const admitted = deps.enqueueListItems(objectives);
+    // An invalid adapter result is not evidence of durable admission.
+    const count = Number.isInteger(admitted) && admitted >= 0 && admitted <= objectives.length ? admitted : 0;
+    enqueued += count;
+    enqueueRejected += objectives.length - count;
+  };
   let cascadeStep = "notify-and-idle";
   const auto = config.mode === "auto" || config.mode === "aggressive";
   const aggressive = config.mode === "aggressive";
@@ -405,8 +426,7 @@ export function runReviewer(
   // Cascade: findings → list items (leverage: fix-without-confirm).
   const convertStep = source.kind === "goal" ? "convert-findings-to-list" : "queue-leftovers";
   if (bugs.length > 0 && config.cascade.includes(convertStep)) {
-    deps.enqueueListItems(bugs.map((f) => f.text));
-    enqueued = bugs.length;
+    enqueue(bugs.map((f) => f.text));
     cascadeStep = convertStep;
   }
   // Architectural findings: default mode → /goal proposal WITH Confirm;
@@ -415,7 +435,7 @@ export function runReviewer(
   // (skips both Confirm and the queue — the unattended rig never stops).
   if (architectural.length > 0) {
     if (aggressive) {
-      deps.enqueueListItems(architectural.map((f) => f.text));
+      enqueue(architectural.map((f) => f.text));
       // v0.27.5 aggressive: also propose the FIRST architectural finding
       // as a relaunch so the queue gets burned through even when the
       // unattended rig can't Confirm.
@@ -427,11 +447,9 @@ export function runReviewer(
       ) {
         proposed += 1;
       }
-      enqueued += architectural.length;
       cascadeStep = "aggressive-relaunch";
     } else if (auto) {
-      deps.enqueueListItems(architectural.map((f) => f.text));
-      enqueued += architectural.length;
+      enqueue(architectural.map((f) => f.text));
       cascadeStep = convertStep;
     } else {
       if (
@@ -466,8 +484,7 @@ export function runReviewer(
       }
       cascadeStep = "aggressive-relaunch";
     } else if (auto) {
-      deps.enqueueListItems([auditObjective]);
-      enqueued++;
+      enqueue([auditObjective]);
       cascadeStep = "fire-audit-on-clean";
     } else {
       if (deps.proposeGoal(auditObjective, "reviewer: completion looks clean — firing the audit step")) {
@@ -477,6 +494,10 @@ export function runReviewer(
     }
   }
 
+  if (enqueueRejected > 0 && enqueued === 0 && proposed === 0) cascadeStep = "enqueue-rejected";
+  if (enqueueRejected > 0) {
+    deps.notify(`Reviewer: ${enqueueRejected} requested item(s) were not admitted to /list (duplicate suppression or persistence failure). See the queue ledger before retrying.`, "warning");
+  }
   const report: ReviewReport = {
     goalId: source.goalId,
     kind: source.kind,
@@ -492,6 +513,7 @@ export function runReviewer(
     kind: source.kind,
     findings: findings.length,
     enqueued,
+    enqueueRejected,
     proposed,
     cascadeStep,
     report: path.relative(deps.cwd, reportPath),
