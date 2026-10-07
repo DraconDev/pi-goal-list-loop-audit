@@ -1082,10 +1082,8 @@ function settleApprovedCompletion(
     status: "complete",
     stopReason: terminalReason,
     archivePath: approvalArchivePath,
-    // 2026-09-16 whole-work recap: after a repair re-claim the audited
-    // summary may be a delta-only correction; the FIRST claim's recap
-    // leads so the card still explains the whole work. The audited
-    // repair claim stays the substance the approval verdict covers.
+    // Latest approved claim owns headline and details. Original-claim
+    // history remains available for the forensic archive, not a merge.
     completionSummary: goal.completionSummary,
     priorCompletionSummary: claim.priorCompletionSummary,
     approval: `— completion audit approved${approvalVia}.`,

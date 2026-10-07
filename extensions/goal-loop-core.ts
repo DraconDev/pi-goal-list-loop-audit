@@ -610,10 +610,10 @@ gateRows?: GateRow[];
   automaticRecoveryAttempts?: number;
   automaticRecoveryFirstAt?: string;
   automaticRecoveryUntil?: string;
-  /** 2026-09-16 whole-work recap: the completionSummary of the FIRST claim
-   * in this terminal episode, captured when a repair re-claim follows an
-   * auditor disapproval. The approved render opens with the whole work;
-   * absent on first claims and legacy files (absent stays absent). */
+  /** Original completionSummary in this terminal episode, captured when
+   * a repair claim follows disapproval. Retained verbatim for forensic
+   * history only; never overrides/merges into the latest approved recap.
+   * Absent on first claims and legacy files (absent stays absent). */
   priorCompletionSummary?: string;
   /** v0.36.1: bounded detached-auditor candidate cursor. Refs are model
    * identifiers only — never model objects or credentials. The current ref

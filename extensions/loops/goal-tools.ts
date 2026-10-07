@@ -957,10 +957,9 @@ function registerAgentTools(pi: any): void {
       if (densityNote) {
         appendLedger(ctx.cwd, "completion_summary_low_density", { excerpt: (finalSummary ?? "").slice(0, 240) });
       }
-      // 2026-09-16 whole-work recap: a re-claim after an auditor disapproval
-      // is usually a delta-only repair note. Keep the FIRST claim's text so
-      // the approved terminal render still opens with the whole work; the
-      // audited repair claim stays the substance.
+      // Retain the original claim for forensic history across repairs.
+      // The latest approved recap alone owns the final human projection;
+      // earlier rejected outcomes/counts must never override it.
       const lastAuditEntry = state.goal.auditHistory?.[state.goal.auditHistory.length - 1];
       const priorWholeWork = state.goal.completionRecap?.objective === state.goal.objective
         ? state.goal.completionRecap.summary
@@ -1660,7 +1659,8 @@ function registerAgentTools(pi: any): void {
           stopReason: terminalReason,
           archivePath: manualArchivePath,
           completionSummary: state.goal.completionSummary,
-          // 2026-09-16 whole-work recap: same merge as the detached path.
+          // Preserve original-claim history just as on the detached path;
+        // the canonical builder projects only the latest terminal recap.
           ...(durableCompletionClaim.priorCompletionSummary ? { priorCompletionSummary: durableCompletionClaim.priorCompletionSummary } : {}),
           approval: `— completion audit approved.`,
           record: manualArchiveRecord,

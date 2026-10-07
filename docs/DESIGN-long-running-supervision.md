@@ -111,7 +111,13 @@ path. It says `not recorded` when a changed-file manifest or test result is not
 available. It never infers a passing test or invents a commit.
 
 The full six-label recap lives verbatim in the archive (`## Completion summary`)
-and the status/history surfaces. The human layer follows two different purposes:
+and the status/history surfaces. After a rejected claim is corrected, the latest
+approved claim alone supplies the final headline, structured Summary and change
+details. Earlier claim text remains verbatim in the forensic archive/history;
+it must not override corrected counts or be concatenated into the human recap.
+Executors should supply a full objective-level recap on each corrected claim,
+not depend on a rejected predecessor to fill in omitted work.
+The human layer follows two different purposes:
 
 - Chat and transcript explain **what happened**: outcome first, then a
   change-first `What Changed` account grouped by area, followed by material
