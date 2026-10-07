@@ -253,6 +253,11 @@ export interface AuditorProgress {
   /** v0.34.56: the toolCallId of the open start (undefined when the start
    * event carried none — the missing-toolCallId shape). */
   currentToolId?: string;
+  /** Test-only: the audit-jobs/<attemptId> directory the snapshot came
+   * from. Surfaced so handshake fixtures can stage their result without
+   * exposing it before the parent observes the granted tool. Absent on
+   * production progress callbacks. */
+  jobDir?: string;
   toolCalls: Array<{ name: string; argsPrefix: string; finishedAt: number }>;
   /** v0.34.56: explicitly unmatched tool starts/ends — see
    * applyToolExecutionEvent (goal-loop-auditor.ts) and the worker's mirror
@@ -1790,11 +1795,9 @@ function asProgress(file: AuditorProgressFile, startedAt: number): AuditorProgre
       ? { currentToolTimeoutMs: Math.floor(file.currentToolTimeoutMs) }
       : {}),
     ...(file.sessionPath ? { sessionPath: file.sessionPath } : {}),
-    ...(file.jobDir ? { jobDir: file.jobDir } : {}),
     ...(file.unmatchedToolStarts ? { unmatchedToolStarts: file.unmatchedToolStarts } : {}),
     ...(file.unmatchedToolEnds ? { unmatchedToolEnds: file.unmatchedToolEnds } : {}),
     cost: snapshotCost(file),
-  jobDir: file.jobDir,
   };
 }
 
