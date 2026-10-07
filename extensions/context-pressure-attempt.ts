@@ -1,5 +1,7 @@
 import type { ExtensionContext } from '@earendil-works/pi-coding-agent';
 import type { MainModelFailure } from './main-model-recovery.js';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 export type PressurePhase = 'queued' | 'compacting' | 'spent';
 interface Attempt {
@@ -9,6 +11,7 @@ interface Attempt {
   fallback(failure: MainModelFailure): void;
   record(event: string): void;
   timeout(): void;
+  budget?: { file: string; key: string };
   timer?: ReturnType<typeof setTimeout>;
 }
 // Owner identity is shared by event contexts, not by cwd: callbacks from an
@@ -22,6 +25,16 @@ export function claimPressureAttempt(ctx: ExtensionContext, options: Omit<Attemp
   const key = owner(ctx);
   const existing = attempts.get(key);
   if (existing) return existing.phase !== 'spent';
+  if (options.budget) {
+    try {
+      if (fs.existsSync(options.budget.file)) {
+        const saved = JSON.parse(fs.readFileSync(options.budget.file, 'utf8'));
+        if (saved.key === options.budget.key) return false;
+      }
+      fs.mkdirSync(path.dirname(options.budget.file), { recursive: true });
+      fs.writeFileSync(options.budget.file, JSON.stringify({ key: options.budget.key, claimedAt: new Date().toISOString() }), { mode: 0o600 });
+    } catch { return false; } // Without a durable claim, use ordinary fallback.
+  }
   const attempt: Attempt = { ...options, phase: 'queued' };
   attempts.set(key, attempt);
   attempt.record('queued');
@@ -31,9 +44,15 @@ export function pressureAttemptPending(ctx: ExtensionContext): boolean {
   const attempt = attempts.get(owner(ctx));
   return !!attempt && attempt.phase !== 'spent' && attempt.valid();
 }
-export function clearPressureAttempt(ctx: ExtensionContext): void {
+export function clearPressureAttempt(ctx: ExtensionContext, resetBudget = false): void {
   const key = owner(ctx), attempt = attempts.get(key);
   if (attempt?.timer) clearTimeout(attempt.timer);
+  if (resetBudget && attempt?.budget) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(attempt.budget.file, 'utf8'));
+      if (saved.key === attempt.budget.key) fs.rmSync(attempt.budget.file, { force: true });
+    } catch { /* A missing or unreadable budget stays conservative. */ }
+  }
   attempts.delete(key);
 }
 export function settlePressureAttempt(ctx: ExtensionContext, outcome: 'success' | 'failure' | 'aborted' | 'retry-owned'): boolean {
