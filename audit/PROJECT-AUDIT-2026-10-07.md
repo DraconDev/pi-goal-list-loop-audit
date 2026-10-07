@@ -39,3 +39,33 @@ All FIX entries have a checked box and real fix commits. The ledger's HIGH entry
 - `timeout 90 bun test --parallel=1 --max-concurrency=1 --timeout=15000 tests/continuation-start-self-heal.test.ts tests/continuation-retry-persistence.test.ts tests/goal-loop-dispatch.test.ts`: 15 passed, 0 failed.
 
 Final full release gate and independent reviewer rehearsal are pending; append their actual results before a completion claim.
+
+## Final verification and known state
+
+The fresh-context reviewer rehearsal (`0ee9e521-b62e-40e7-a579-02320fa749c7`) reported no issues, Merge verdict OK with notes, BLOCKERS none. It independently inspected the five lifecycle repairs, their behavioral tests, ledger boxes, production queue adapter, and commit evidence via the local reflog. It did not execute tests; command evidence below is from the parent.
+
+Full release attempts are NOT represented as green:
+
+1. The initial run found the three resume/compaction regressions, repaired in `bdf845bc` as documented above.
+2. The next run stalled in `tests/loop-branch-ownership.test.ts` after a 60-second test timeout. A bounded isolated rerun of the entire file passed all 10 tests.
+3. The following run completed with 3323 pass, 1 skip and 1 fail: an old source pin required the variable name `record` instead of the correctly settled `unacknowledged` argument. The pin was updated to require the terminal record in `3fd4c602`, without changing its semantic requirement.
+4. The latest full run completed with 3323 pass, 1 skip and 1 fail: `parent tool watchdog honors the worker-armed granted budget` in the unchanged `tests/auditor-process.test.ts`. That case passed all 10 bounded repetitions; the complete auditor-process file plus stall-handling file then passed 87 tests, zero failures. This intermittent full-suite failure remains an observation, not a fabricated root-cause finding. There is no single all-green `release:check` run from this pass.
+
+The final validation strategy pivoted to bounded isolated-file reruns instead of repeatedly chasing a clean aggregate run. Remaining limitation: aggregate suite intermittency is not diagnosed by this sampled audit. No release/tag/publish action was performed.
+
+Additional final commands:
+
+- `timeout 120 bun test --timeout=60000 tests/loop-branch-ownership.test.ts`: 10 pass, zero failures.
+- `timeout 120 bun test --timeout=15000 --rerun-each=10 tests/auditor-process.test.ts -t 'parent tool watchdog honors the worker-armed granted budget'`: 10 pass, zero failures (490 filtered).
+- `timeout 180 bun test --parallel=1 --max-concurrency=1 --timeout=60000 tests/auditor-process.test.ts tests/stall-handling.test.ts`: 87 pass, zero failures.
+- `timeout 180 bash -c 'npm run check && npm run test:jiti && npm run test:auditor-extensions && npm run check:inventory && npm pack --dry-run && node scripts/release-pack-smoke.mjs'`: typecheck, jiti state identity (1 pass) and offline auditor-extension checks passed; inventory detected expected count drift from this repair and stopped later stages.
+- Regenerated inventory with `timeout 30 node scripts/generate-inventory.mjs`, committed in `f4ee01b4`.
+- `timeout 180 bash -c 'npm run check:inventory && npm pack --dry-run && node scripts/release-pack-smoke.mjs'`: inventory, dry-run package and packed launcher/worker/skill smoke all passed.
+
+## Prompt-to-artifact completion checklist
+
+1. Fresh 3+ parallel scouts: successful single workflow and three tight briefs/run IDs above. Satisfied.
+2. New findings appended/deduplicated: five new FIX entries at the ledger's 2026-10-07 section; no new DECIDE entries. Satisfied.
+3. Every new FIX repaired and committed on the existing branch/identity: table above plus lifecycle correction and source-pin/inventory commits; no branch/identity changes or history rewrites. Behavioral regression and typecheck evidence recorded. Satisfied.
+4. DECIDE raised and recorded: none found; no outstanding DECIDE checklist lines. No work queued without a decision. Satisfied.
+5. Honest known state: five checked FIX boxes with real commits, no fabricated findings; full-suite failure history and intermittent remainder retained rather than hidden. Satisfied, with the explicit aggregate-test limitation above.
