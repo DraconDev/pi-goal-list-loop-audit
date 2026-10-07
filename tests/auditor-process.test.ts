@@ -1306,7 +1306,7 @@ await atomicJson(dir + "/result.json", {
         if (observedGrantedTool || progress.currentTool !== "bash") return;
         assert.equal(progress.currentToolTimeoutMs, 600_000);
         assert.ok(Date.now() - progress.currentToolStartedAt! > 100, "parent observed a tool beyond its base budget");
-        assert.equal(existsSync(path.join(progress.jobDir, "result.json")), false, "staged result is hidden until observation");
+        assert.equal(existsSync(path.join(progress.jobDir!, "result.json")), false, "staged result is hidden until observation");
         observedGrantedTool = true;
         writeFileSync(releasePath, "release");
       },
