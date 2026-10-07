@@ -9,8 +9,8 @@ import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd, tick } from "./harnes
 
 afterEach(() => { __testOnlyResetCompactor(); __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); });
 
-for (const fail of [false, true]) {
-  test(`idle loop dispatch checks the threshold without agent_settled (failure=${fail})`, async () => {
+for (const { fail, timerLag } of [{ fail: false, timerLag: 0 }, { fail: true, timerLag: 0 }, { fail: true, timerLag: 180 }]) {
+  test(`idle loop dispatch checks the threshold without agent_settled (failure=${fail})${timerLag ? ' under timer lag' : ''}`, async () => {
     const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
     const ctx = makeMockCtx(cwd, { sessionManager: { name: `compact-loop-${fail}` } });
     let tokens = 50_000, compacts = 0, idle = true;
@@ -18,6 +18,9 @@ for (const fail of [false, true]) {
     ctx.getContextUsage = () => ({ tokens, contextWindow: 1_000_000, percent: tokens / 10_000 });
     ctx.compact = options => {
       compacts++;
+      // Reproduce an overloaded suite: the initial dispatch callback can
+      // outlive the observer's 150ms sleep before it queues the resume timer.
+      if (timerLag) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, timerLag);
       if (fail) options?.onError?.(new Error("summarizer unavailable"));
       else idle = false;
     };
