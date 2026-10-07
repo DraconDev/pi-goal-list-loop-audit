@@ -31,9 +31,15 @@ for (const { fail, timerLag } of [{ fail: false, timerLag: 0 }, { fail: true, ti
       clearLoopTimer(); pi.sent.length = 0;
       tokens = 315_000;
       scheduleLoopTick(ctx as unknown as ExtensionContext);
-      await tick(150);
+      // Wait for the behavioral outcome, not a wall-clock guess about three
+      // nested dispatch/failure/re-arm timers. Keep the original exact-count
+      // assertions and a finite deadline: a genuinely lost resume still fails.
+      const turns = () => pi.sent.filter(s => (s.options as { triggerTurn?: boolean })?.triggerTurn === true).length;
+      const deadline = performance.now() + 2000;
+      while ((compacts === 0 || (fail && turns() === 0)) && performance.now() < deadline) await tick(10);
+      await tick(20); // Also observe duplicate/repeated dispatch after settlement.
       assert.equal(compacts, 1, "a loop turn must check compaction before dispatch");
-      assert.equal(pi.sent.filter(s => (s.options as { triggerTurn?: boolean })?.triggerTurn === true).length, fail ? 1 : 0,
+      assert.equal(turns(), fail ? 1 : 0,
         "success yields to compaction; failure resumes ordinary work without repeated attempts");
     } finally { clearLoopTimer(); await pi.fire("session_shutdown", { reason: "test-end" }, ctx); }
   });
