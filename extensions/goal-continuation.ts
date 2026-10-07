@@ -85,7 +85,7 @@ void MONITOR_CHECK_INTERVAL_MS; // deprecated throttle — scheduling is now eve
 import { VISION_ASSIST_GUIDANCE } from "./vision-assist.js";
 import { maybeCompactTranscriptAtBoundary, readHandoffBriefExcerpt } from "./goal-compactor.js";
 import { loadSettings } from "./goal-settings.js";
-import { clearLoopTimer, isLoopActive } from "./goal-loop.js";
+import { clearLoopTimer, isLoopActive, scheduleLoopTick } from "./goal-loop.js";
 import { attemptFreshSessionRecovery, mainModelRecoveryActive, recoverMainModelFromSendStorm } from "./goal-recovery.js";
 import { isCompactionInFlightSince, sendStormEscalateMs } from "./main-model-recovery.js";
 import {
@@ -794,6 +794,10 @@ function dispatchStartUnacknowledged(ctx: ExtensionContext, record: Continuation
   };
   persistDispatchRecord(ctx.cwd, unacknowledged);
   clearContinuationStartWatchdog();
+  // Keep the settled identity live for the generation-fenced self-heal.
+  // Clearing the watchdog also clears this slot; without adopting the
+  // settlement every self-heal cancels itself before its first probe.
+  pendingContinuationDispatch = unacknowledged;
   continuationDispatchStoodDown = true;
   lastContinuationSentAt = 0;
   const reason = `continuation start acknowledgement timed out (${record.id})`;
@@ -820,8 +824,8 @@ function dispatchStartUnacknowledged(ctx: ExtensionContext, record: Continuation
   // v0.38.104: warn AND keep going. The one-automatic-retry cap still stops a
   // blind queue storm; it no longer decides the lane's fate.
   armContinuationStartSelfHeal(ctx, record);
-  const selfHeal = continuationStartSelfHealDelayMs(continuationStartSelfHealProbes);
-  const msg = `glla: pi accepted the ${dispatchLabel(record)} continuation, but no observable turn-start event arrived within ${Math.round((Date.now() - record.sentAt) / 1000)}s despite one automatic retry. Automatic re-sends are paused to avoid a blind queue storm; the lane re-probes itself in ${Math.round(selfHeal / 1000)}s and keeps doing so on a slowing cadence, so nothing is needed if the host recovers. The work is safe in .pi-glla — use ${activeGoalSurfaceCommand("resume")} to retry immediately, or start a fresh session.`;
+  const selfHeal = continuationStartSelfHealDelayOverrideMs ?? continuationStartSelfHealDelayMs(continuationStartSelfHealProbes);
+  const msg = `glla: pi accepted the ${dispatchLabel(record)} continuation, but no observable turn-start event arrived within ${Math.round((Date.now() - record.sentAt) / 1000)}s despite one automatic retry. Automatic re-sends are paused to avoid a blind queue storm; the lane re-probes itself in ${Math.round(selfHeal / 1000)}s and keeps doing so on a slowing cadence, so nothing is needed if the host recovers. The work is safe in .pi-glla — use ${record.kind === "loop" ? "/loop resume" : activeGoalSurfaceCommand("resume")} to retry immediately, or start a fresh session.`;
   ctx.ui.notify(msg, "warning");
   notifyExternal(ctx, sanitizeDisplayText(msg));
   refreshUI(ctx);
@@ -854,6 +858,10 @@ export function __testOnlySetContinuationStartSelfHealMaxProbes(value: number): 
   continuationStartSelfHealMaxProbes = Math.max(1, Math.floor(value));
 }
 let continuationStartSelfHealMaxProbes = CONTINUATION_START_SELF_HEAL_MAX_PROBES;
+let continuationStartSelfHealDelayOverrideMs: number | null = null;
+export function __testOnlySetContinuationStartSelfHealDelay(value: number | null): void {
+  continuationStartSelfHealDelayOverrideMs = value === null ? null : Math.max(1, value);
+}
 
 /** Arm (or re-arm) the self-heal for a settled unacknowledged dispatch. The
  * timer is generation-fenced and self-cancelling: any newer dispatch, any
@@ -863,14 +871,20 @@ function armContinuationStartSelfHeal(ctx: ExtensionContext, record: Continuatio
   if (continuationStartSelfHealTimer) clearTimeout(continuationStartSelfHealTimer);
   const dispatchId = record.id;
   const generation = record.generation;
-  const delayMs = continuationStartSelfHealDelayMs(continuationStartSelfHealProbes);
+  const parkedLoop = record.kind === "loop" ? state.loop : undefined;
+  const delayMs = continuationStartSelfHealDelayOverrideMs ?? continuationStartSelfHealDelayMs(continuationStartSelfHealProbes);
   const timer = scheduleSessionTimeout(() => {
     if (continuationStartSelfHealTimer !== timer) return;
     continuationStartSelfHealTimer = null;
     const live = freshCtxForGeneration(generation);
     if (!live) return;
     const settled = pendingContinuationDispatch;
-    if (!settled || settled.id !== dispatchId || (settled.phase ?? "") !== "unacknowledged") {
+    const sameLane = record.kind === "loop"
+      ? !!parkedLoop && state.loop?.startedAt === parkedLoop.startedAt &&
+        state.loop.iteration === parkedLoop.iteration && !state.loop.active &&
+        state.loop.stopReason === parkedLoop.stopReason && !!parkedLoop.stopReason?.includes(dispatchId)
+      : state.goal?.id === record.goalId && state.goal.status === "active";
+    if (!settled || settled.id !== dispatchId || settled.phase !== "unacknowledged" || !sameLane || supervisorPaused(state)) {
       // The lane moved on (a turn started, a resume re-dispatched, or another
       // lane settled it). Self-heal is no longer this record's job.
       appendLedger(live.cwd, "continuation_start_self_heal_cancelled", { id: dispatchId, reason: "no longer the settled dispatch" });
@@ -879,7 +893,7 @@ function armContinuationStartSelfHeal(ctx: ExtensionContext, record: Continuatio
     const probe = continuationStartSelfHealProbes + 1;
     if (probe > continuationStartSelfHealMaxProbes) {
       appendLedger(live.cwd, "continuation_start_self_heal_exhausted", { id: dispatchId, probes: continuationStartSelfHealProbes });
-      const msg = `glla: the continuation lane spent its self-heal budget (${continuationStartSelfHealMaxProbes} bounded re-probes) without a turn start. The work is safe in .pi-glla; ${activeGoalSurfaceCommand("resume")} retries it explicitly, or start a fresh session.`;
+      const msg = `glla: the continuation lane spent its self-heal budget (${continuationStartSelfHealMaxProbes} bounded re-probes) without a turn start. The work is safe in .pi-glla; ${record.kind === "loop" ? "/loop resume" : activeGoalSurfaceCommand("resume")} retries it explicitly, or start a fresh session.`;
       ctx.ui.notify(msg, "warning");
       notifyExternal(ctx, sanitizeDisplayText(msg));
       return;
@@ -892,7 +906,16 @@ function armContinuationStartSelfHeal(ctx: ExtensionContext, record: Continuatio
     // misses again, dispatchStartUnacknowledged re-arms the next probe.
     clearContinuationStartWatchdog();
     releaseContinuationDispatchStandDown();
-    scheduleContinuation(live, true, 0);
+    if (record.kind === "loop") {
+      // Only undo this dispatch's own acknowledgement-timeout park, never
+      // a user stop or a replacement loop. The normal loop scheduler keeps
+      // cadence, model recovery and compaction admission guards intact.
+      state.loop = { ...state.loop!, active: true, stopReason: undefined };
+      persistState(live);
+      scheduleLoopTick(live);
+    } else {
+      scheduleContinuation(live, true, 0);
+    }
   }, delayMs);
   continuationStartSelfHealTimer = timer;
 }
