@@ -39,7 +39,10 @@ for (const structuredPrior of [false, true]) {
       else assert.doesNotMatch(chat, /### Summary/);
       const archive = buildRichArchiveSection(goal, "complete", "record.md", undefined, undefined, previous).join("\n");
       const finalSection = archive.split("## Original completion claim (verbatim)")[0]!;
-      assert.match(finalSection.split("\n")[0]!, /Delivered 6 committed fixes/);
+      // Archive headlines may lead with the independent approval fact;
+      // its change details must still belong solely to the latest claim.
+      assert.equal((finalSection.match(/6 repaired boundaries/g) ?? []).length, 1);
+      assert.equal((finalSection.match(/6 checked findings/g) ?? []).length, 1);
       assert.doesNotMatch(finalSection, /Delivered 5|5 repaired|5 checked/);
       assert.ok(archive.includes(previous), "historical claim survives verbatim in the forensic section");
       assert.match(archive, /## Original completion claim \(verbatim\)/);
