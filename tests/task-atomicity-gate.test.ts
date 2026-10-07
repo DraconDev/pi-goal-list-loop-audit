@@ -24,6 +24,7 @@ import {
   validateTaskBatch,
   withTaskStatus,
 } from "../extensions/task-batch.ts";
+import { state } from "../extensions/goal-state.ts";
 import { milestoneCheckFailureText } from "../extensions/loops/goal-tools.ts";
 
 function batchFixture(): TaskList {
@@ -407,6 +408,28 @@ test("claim passes the gate when open tasks are finished and the rest deferred",
   const res = await on.runTool("complete_goal", CLAIM, ctx);
   assert.doesNotMatch(res.content[0]!.text, /complete_goal REFUSED/);
 });
+
+for (const tool of ["complete_task", "update_task_status", "update_task_batch"]) {
+  for (const change of ["replacement", "list", "in-place"] as const) {
+    test(`${tool} rejects ${change} during milestone verification`, async () => {
+      const { ctx } = await batchHarness();
+      const original = state.goal!;
+      const params = tool === "update_task_batch"
+        ? { updates: [{ id: "1", status: "complete" }] }
+        : { id: "1", status: "complete" };
+      // Even a contractless verification yields. Change the live boundary
+      // before that await resumes, without sleeps or timing assumptions.
+      const pending = pi.runTool(tool, params, ctx);
+      if (change === "replacement") state.goal = seedGoal({ id: "replacement", taskList: toolFixture() });
+      else if (change === "list") original.taskList = { ...toolFixture(), version: 2 };
+      else original.taskList!.tasks[0]!.title = "New contract";
+      const expected = JSON.stringify(state.goal);
+      const result = await pending;
+      assert.match(result.content[0]!.text, /changed during verification/);
+      assert.equal(JSON.stringify(state.goal), expected, "changed boundary remains untouched");
+    });
+  }
+}
 
 // MUST stay the last test in this file: null the process-wide ownership
 // plane (live + dead owner, stale/terminal flags) so a successor test
