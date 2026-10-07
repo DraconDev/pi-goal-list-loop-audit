@@ -12,7 +12,7 @@ export function isExplicitPromptOverflow(raw: string): boolean {
 }
 
 export function shouldRecoverContextPressure(failure: MainModelFailure, usage?: PressureUsage): boolean {
-  if (failure.nonRecoverableReason === 'prompt-policy' || /user (?:interrupt|abort)|cancelled by user/i.test(failure.raw)) return false;
+  if (failure.nonRecoverableReason === 'prompt-policy' || /user (?:interrupt|abort)|cancelled by user|content policy violation/i.test(failure.raw)) return false;
   if (isExplicitPromptOverflow(failure.raw)) return true;
   // A credential or deterministic refusal is not healed by a smaller prompt.
   if (failure.kind !== 'unknown' && failure.kind !== 'transient') return false;
