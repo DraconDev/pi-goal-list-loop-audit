@@ -29,6 +29,7 @@ import {
   __testOnlySetContinuationStartSelfHealMaxProbes,
   continuationStartSelfHealDelayMs,
   resetContinuationDispatchState,
+  sendLengthContinue,
 } from "../extensions/goal-continuation.js";
 import { state } from "../extensions/goal-state.js";
 import { MockPi, makeMockCtx, tick, tmpCwd, type MockCtx } from "./harness/mock-pi.js";
@@ -177,6 +178,45 @@ for (const lane of ["goal", "loop"] as const) {
     }
   });
 }
+
+test("self-heal exhausts its bounded budget without sending a storm", async () => {
+  __testOnlySetContinuationStartTimeout(80);
+  __testOnlySetContinuationRetryBackoff(80);
+  __testOnlySetContinuationStartSelfHealDelay(80);
+  __testOnlySetContinuationStartSelfHealMaxProbes(1);
+  lastCwd = tmpCwd();
+  const ctx = context(lastCwd, `budget-${Math.random()}`);
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  try {
+    await pi.command("loop", "start bounded budget target", ctx);
+    await waitUntil(() => ledgerText(lastCwd).includes("continuation_start_self_heal_exhausted"));
+    assert.equal(pi.sent.length, 4, "initial send/retry plus one self-heal send/retry only");
+    assert.equal(state.loop?.active, false);
+    await new Promise(resolve => setTimeout(resolve, 250));
+    assert.equal(pi.sent.length, 4);
+  } finally {
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});
+
+test("plain-session length self-heal uses the length lane rather than requiring a goal", async () => {
+  __testOnlySetContinuationStartTimeout(80);
+  __testOnlySetContinuationRetryBackoff(80);
+  __testOnlySetContinuationStartSelfHealDelay(120);
+  lastCwd = tmpCwd();
+  const ctx = context(lastCwd, `length-${Math.random()}`);
+  await pi.fire("session_start", { reason: "startup" }, ctx);
+  try {
+    sendLengthContinue(ctx, 1);
+    await waitUntil(() => pi.sent.length >= 3);
+    assert.equal(pi.sent.length, 3);
+    assert.match(ledgerText(lastCwd), /continuation_start_self_heal_fired/);
+    await pi.fire("agent_start", {}, ctx);
+    assert.match(ledgerText(lastCwd), /continuation_start_acknowledged/);
+  } finally {
+    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+  }
+});
 
 // v0.38.104: the reset was gated on `continuationStartSelfHealTimer` being
 // live. Both terminal paths null the timer WITHOUT clearing the counter —
