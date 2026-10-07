@@ -5,6 +5,24 @@ import activate, { __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from 
 import { __testOnlyResetCompactor, __testOnlySetSpawnWorker } from '../extensions/goal-compactor.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd, tick } from './harness/mock-pi.js';
 
+import { shouldRecoverContextPressure } from '../extensions/context-pressure-recovery.js';
+import { classifyMainModelFailure } from '../extensions/main-model-recovery.js';
+
+test('pressure policy distinguishes relative pressure, explicit input overflow and unrelated errors', () => {
+  const generic = classifyMainModelFailure('provider unavailable');
+  assert.equal(shouldRecoverContextPressure(generic, { tokens: 18000, contextWindow: 20000 }), true);
+  assert.equal(shouldRecoverContextPressure(generic, { tokens: 17999, contextWindow: 20000 }), false);
+  assert.equal(shouldRecoverContextPressure(generic, { tokens: 232819, contextWindow: 272000 }), false, 'incident sample was above preventive target but below emergency pressure');
+  assert.equal(shouldRecoverContextPressure(generic, { tokens: 55829, contextWindow: 272000 }), false);
+  for (const usage of [undefined, { tokens: NaN, contextWindow: 20000 }, { tokens: 100, contextWindow: 0 }, { tokens: Infinity, contextWindow: 100 }, { tokens: -1, contextWindow: 100 }]) {
+    assert.equal(shouldRecoverContextPressure(generic, usage), false);
+  }
+  for (const raw of ['max_tokens output limit', 'context lookup failed', 'invalid API key', 'user interrupt', 'content policy violation']) {
+    assert.equal(shouldRecoverContextPressure(classifyMainModelFailure(raw), { tokens: 20000, contextWindow: 20000 }), false, raw);
+  }
+  assert.equal(shouldRecoverContextPressure(classifyMainModelFailure('maximum context length exceeded')), true);
+});
+
 const GLOBAL = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
 for (const scenario of [
   { name: 'near-limit generic provider error', tokens: 265000, error: 'An error occurred while processing your request.', compact: true },
