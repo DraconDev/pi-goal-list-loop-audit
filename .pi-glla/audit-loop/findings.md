@@ -813,8 +813,8 @@ append-only, so these corrections are appended rather than edited in.
 
 - [x] FIX: MEDIUM: task milestone verification can overwrite a replacement goal or changed task list after awaiting verification (extensions/loops/goal-tools.ts:3061-3185) — fixed in ffb3f828; behavioral regressions in c2c67348 (29 task tests pass)
 - [x] FIX: MEDIUM: owner takeover recursively retries a persistent live-owner signal failure without a bound (extensions/state-root-owner.ts:357-362) — fixed in a2a19186; regressions in 0f96814e (20 owner tests pass)
-- [ ] FIX: MEDIUM: reviewer extraction drops Outside Scope section boundaries and auto-queues excluded findings (extensions/reviewer.ts:197-210)
-- [ ] FIX: MEDIUM: reviewer reports requested enqueue counts instead of actual queue admissions (extensions/reviewer.ts:408-470)
+- [x] FIX: MEDIUM: reviewer extraction drops Outside Scope section boundaries and auto-queues excluded findings (extensions/reviewer.ts:197-210) — fixed in 1a59ba61; regressions in e4a01b17 (65 reviewer/scope tests pass)
+- [x] FIX: MEDIUM: reviewer reports requested enqueue counts instead of actual queue admissions (extensions/reviewer.ts:408-470) — fixed in 1a59ba61; regressions in e4a01b17 and admission-aware fixtures in b5677316 + 134a0726 (65 reviewer/scope tests pass)
 - [ ] FIX: HIGH: continuation self-healing clears the settled dispatch it requires and cannot recover parked loops through goal-only scheduling (extensions/goal-continuation.ts:796-910)
 
 DECIDE findings: none in this pass. Three parallel read-only subsystem scouts completed; existing ledger findings were excluded. Baseline typecheck passed. Baseline fast suite reached its 240-second bound (exit 124), not a passing-suite claim.

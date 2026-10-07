@@ -420,8 +420,8 @@ for (const tool of ["complete_task", "update_task_status", "update_task_batch"])
       // Even a contractless verification yields. Change the live boundary
       // before that await resumes, without sleeps or timing assumptions.
       const pending = pi.runTool(tool, params, ctx);
-      if (change === "replacement") state.goal = seedGoal({ id: "replacement", taskList: toolFixture() });
-      else if (change === "list") original.taskList = { ...toolFixture(), version: 2 };
+      if (change === "replacement") state.goal = { ...original, id: "replacement", taskList: toolFixture() };
+      else if (change === "list") original.taskList = toolFixture();
       else original.taskList!.tasks[0]!.title = "New contract";
       const expected = JSON.stringify(state.goal);
       const result = await pending;
