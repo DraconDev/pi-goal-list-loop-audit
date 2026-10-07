@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.39.14 — reliable failure classification and exhausted fallback retries (2026-10-06)
+## Unreleased
+
+## 0.39.15 — reliable failure classification and exhausted fallback retries (2026-10-06)
 
 - Ordinary requests whose fallback chain is exhausted enter retry backoff
   instead of treating a passive recovery record as another successful model

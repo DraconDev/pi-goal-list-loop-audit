@@ -12,4 +12,4 @@ supervisor freezes. Credential failures do not produce a blind handoff.
 
 Verification: 39 passing cases across ordinary retry, main model recovery and
 context overflow; TypeScript and inventory passed. Before/after and check logs:
-fallback-exhaustion-2026-10-06/. Release 0.39.14 includes this correction.
+fallback-exhaustion-2026-10-06/. Release 0.39.15 includes this correction.

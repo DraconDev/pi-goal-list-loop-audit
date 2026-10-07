@@ -23,7 +23,7 @@ Feature proposals (ordinary-session idle compaction, long-timeout diagnostics) d
 not count as fixes required by the existing contract without supporting evidence.
 Do not alter external projects to make an audit outcome look complete.
 
-The fallback-exhaustion hypothesis was reproduced and repaired. Release 0.39.14
+The fallback-exhaustion hypothesis was reproduced and repaired. Release 0.39.15
 packages that correction and request-metadata classification; broader audit rows
 remain open where current-state reconciliation is still required.
 
