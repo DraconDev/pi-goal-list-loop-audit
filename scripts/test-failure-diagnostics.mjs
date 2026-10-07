@@ -1,98 +1,43 @@
-// pi-goal-list-loop-audit — retained failure diagnostics for the test
-// runner. When bun test fails or stalls, the runner now writes a bounded
-// diagnostic bundle (exit code, timed-out markers, last process-group
-// activity, and a redacted snippet of recent stdout) to a stable
-// GLLA_TEST_FAILURE_PATH. Secrets (AWS keys, GitHub tokens, machine
-// paths) are removed at write time so the bundle is safe to attach to
-// reports. The helper is intentionally pure: no child re-spawn, no
-// filesystem walk of the working tree, no recursion.
-
-import * as fs from "node:fs";
-import * as path from "node:path";
-
-const TAIL_BYTES = 8 * 1024;
-const SECRET_PATTERNS = [
-  { re: /\bAKIA[0-9A-Z]{8,}\b/g, replacement: "[redacted:aws-key]" },
-  { re: /\bghp_[0-9a-fA-F]{8,}\b/g, replacement: "[redacted:github-token]" },
-  { re: /\bglpat-[0-9A-Za-z_-]{8,}\b/g, replacement: "[redacted:gitlab-token]" },
-  { re: /\bxox[baprs]-[0-9A-Za-z-]{8,}\b/g, replacement: "[redacted:slack-token]" },
-  { re: /(?:\/var)?\/tmp\/[^\s)]+/g, replacement: "[redacted:tmp-path]" },
-  { re: /\b[A-Fa-f0-9]{32,}\b/g, replacement: "[redacted:hex]" },
-];
-
-function redact(text) {
-  let out = String(text);
-  for (const { re, replacement } of SECRET_PATTERNS) out = out.replace(re, replacement);
-  return out;
+// Failure evidence is opt-in to read and bounded. Never dump request/env/session
+// files: they may contain credentials. Only explicitly selected protocol fields
+// and the runner's already-visible output are retained.
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+export function redactDiagnostic(value) {
+  return String(value).replace(/\b(?:gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|AKIA[A-Z0-9]{16}|glpat-[\w-]+|sk-[\w-]+)\b/g, '[redacted]')
+    .replace(/((?:authorization|api[_-]?key|token|password|secret)\s*[=:]\s*["']?)(?:Bearer\s+)?[^\s"',}]+/gi, '$1[redacted]');
 }
-
-function safeReadTail(file, maxBytes = TAIL_BYTES) {
+export function diagnosticTail(text, limit = 8192) {
+  return Buffer.from(redactDiagnostic(text)).subarray(-limit).toString('utf8');
+}
+function readProtocol(file) {
   try {
-    if (!file || !fs.existsSync(file)) return null;
-    const stat = fs.statSync(file);
-    const start = Math.max(0, stat.size - maxBytes);
-    const fd = fs.openSync(file, "r");
-    try {
-      const buf = Buffer.alloc(stat.size - start);
-      fs.readSync(fd, buf, 0, buf.length, start);
-      return buf.toString("utf8");
-    } finally { fs.closeSync(fd); }
-  } catch { return null; }
+    if (fs.statSync(file).size > 65536) return { omitted: 'exceeds 64KiB protocol limit' };
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch { return { unavailable: true }; }
 }
-
-function safeReadDir(dir) {
-  try { return fs.readdirSync(dir); } catch { return []; }
-}
-
-function safeReadJSON(file) {
-  try { return JSON.parse(fs.readFileSync(file, "utf8")); } catch { return null; }
-}
-
-export function captureTestFailureDiagnostics({ cwd, exitCode, registryDir, failurePath }) {
-  const path_ = failurePath ?? process.env.GLLA_TEST_FAILURE_PATH ?? path.join(cwd ?? process.cwd(), ".pi-glla", "last-failure.json");
-  const startedAt = Date.now();
+export function captureTestFailureDiagnostics({ directory, exitCode, signal, reason, outputTail = '', workerResult, progress, processState }) {
+  const select = (record, keys) => Object.fromEntries(keys.filter(key => record?.[key] !== undefined).map(key => [key, record[key]]));
   const bundle = {
-    capturedAt: new Date(startedAt).toISOString(),
-    exitCode: Number.isInteger(exitCode) ? exitCode : 1,
-    cwd: cwd ?? null,
-    markers: [] as string[],
-    commands: [] as string[],
-    note: "Bundled by captureTestFailureDiagnostics; do not commit. Check exit code and last lines.",
+    capturedAt: new Date().toISOString(), exitCode, signal, reason,
+    outputTail: diagnosticTail(outputTail),
+    workerResult: select(workerResult, ['ok', 'output', 'error', 'infrastructureFailureKind', 'attemptId']),
+    progress: select(progress, ['phase', 'elapsedMs', 'currentTool', 'currentToolTimeoutMs', 'currentToolStartedAt', 'lastActivityAt']),
+    processState: select(processState, ['pid', 'group', 'session', 'birth', 'exitCode', 'signalCode', 'killed', 'unverified', 'reaped']),
   };
-  // Markers — short, human-readable breadcrumbs the runner can read.
-  for (const file of ["marker.txt", "marker", "phase", "phase.txt"]) {
-    const value = safeReadTail(path.join(cwd ?? "", file));
-    if (value) {
-      const trimmed = redact(value).trim();
-      if (trimmed) bundle.markers.push(trimmed.slice(-256));
-    }
+  // Redact every value, not just stdout. Bound externally supplied fields too.
+  for (const record of [bundle.workerResult, bundle.progress, bundle.processState]) {
+    for (const key of Object.keys(record)) if (typeof record[key] === 'string') record[key] = diagnosticTail(record[key]);
   }
-  if (registryDir) {
-    const records = safeReadDir(registryDir).filter((name) => name.startsWith("process-") && name.endsWith(".json"));
-    for (const name of records.slice(0, 8)) {
-      const record = safeReadJSON(path.join(registryDir, name));
-      if (!record?.leader?.pid) continue;
-      bundle.commands.push(`detached child ${record.leader.pid} group ${record.leader.group} session ${record.leader.session} birth ${record.leader.birth} anchors ${record.anchors?.length ?? 0}`);
-    }
-    const failed = safeReadDir(registryDir).filter((name) => name.endsWith(".json") && /failed/i.test(name));
-    for (const name of failed.slice(0, 4)) bundle.markers.push(`registration-failure: ${redact(name)}`);
-  }
-  // Tail from the most recent failure-detecting log, if any.
-  for (const file of ["detail.txt", "tail.log", "details.log"]) {
-    const tail = safeReadTail(path.join(cwd ?? "", file));
-    if (tail) {
-      const redacted = redact(tail).split("\n").slice(-32).join("\n");
-      bundle.commands.push(redacted);
-    }
-  }
-  bundle.timedOutMs = typeof exitCode === "number" && exitCode === 124 ? startedAt - startedAt : 0;
-  try {
-    fs.mkdirSync(path.dirname(path_), { recursive: true });
-    fs.writeFileSync(path_, JSON.stringify(bundle, null, 2), { mode: 0o600 });
-  } catch (error) {
-    bundle.note = `failed to persist bundle: ${(error instanceof Error ? error.message : String(error)).slice(0, 240)}`;
-  }
-  return bundle;
+  bundle.reason = diagnosticTail(reason ?? '', 1024);
+  fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const file = path.join(directory, 'failure.json');
+  fs.writeFileSync(file, JSON.stringify(bundle, null, 2), { mode: 0o600 });
+  return file;
 }
-
-export type TestFailureDiagnostics = ReturnType<typeof captureTestFailureDiagnostics>;
+export function captureWorkerFailure({ directory, jobDir, ...args }) {
+  return captureTestFailureDiagnostics({ ...args, directory,
+    workerResult: readProtocol(path.join(jobDir, 'result.json')),
+    progress: readProtocol(path.join(jobDir, 'progress.json')),
+  });
+}
