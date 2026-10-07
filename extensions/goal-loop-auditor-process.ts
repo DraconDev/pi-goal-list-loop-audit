@@ -2372,6 +2372,7 @@ async function runDetachedGoalCompletionAuditorInner(args: {
           const serialized = stableJson(progress);
           if (serialized !== lastProgressSerialized) {
             lastProgressSerialized = serialized;
+            if (progress.jobDir === undefined) progress.jobDir = jobDir;
             args.onProgress?.(asProgress(progress, startedAt));
           }
         } catch (error) {
