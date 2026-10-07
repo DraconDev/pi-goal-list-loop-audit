@@ -1795,7 +1795,7 @@ function asProgress(file: AuditorProgressFile, startedAt: number): AuditorProgre
       ? { currentToolTimeoutMs: Math.floor(file.currentToolTimeoutMs) }
       : {}),
     ...(file.sessionPath ? { sessionPath: file.sessionPath } : {}),
-    ...(file.unmatchedToolStarts ? { unmatchedToolStarts: file.unmatchedToolStarts } : {}),
+    ...(file.jobDir ? { jobDir: file.jobDir } : {}),
     ...(file.unmatchedToolEnds ? { unmatchedToolEnds: file.unmatchedToolEnds } : {}),
     cost: snapshotCost(file),
   };
