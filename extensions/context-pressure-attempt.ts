@@ -40,6 +40,12 @@ export function claimPressureAttempt(ctx: ExtensionContext, options: Omit<Attemp
   attempt.record('queued');
   return true;
 }
+export function resetPressureBudget(file: string, key: string): void {
+  try {
+    const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (saved.key === key) fs.rmSync(file, { force: true });
+  } catch { /* Conservative on unreadable storage. */ }
+}
 export function pressureAttemptPending(ctx: ExtensionContext): boolean {
   const attempt = attempts.get(owner(ctx));
   return !!attempt && attempt.phase !== 'spent' && attempt.valid();
