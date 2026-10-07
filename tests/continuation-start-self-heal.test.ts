@@ -130,7 +130,7 @@ for (const lane of ["goal", "loop"] as const) {
     const ctx = context(lastCwd, `timer-${lane}-${Math.random()}`);
     await pi.fire("session_start", { reason: "startup" }, ctx);
     try {
-      await pi.command(lane, lane === "loop" ? "start bounded self-heal target" : "bounded self-heal target", ctx);
+      await pi.command(lane, lane === "loop" ? "start bounded self-heal target" : "bounded self-heal target — done when pinned", ctx);
       await waitUntil(() => ledgerText(lastCwd).includes("continuation_start_unacknowledged"));
       if (lane === "loop") {
         assert.equal(state.loop?.active, false, "timeout parks this loop");
@@ -143,7 +143,7 @@ for (const lane of ["goal", "loop"] as const) {
       if (lane === "loop") assert.equal(state.loop?.active, true, "only the timeout park is lifted");
       await pi.fire("agent_start", {}, ctx);
       const record = ledgerText(lastCwd);
-      assert.match(record, /continuation_dispatch_started/);
+      assert.match(record, /continuation_start_acknowledged/);
       const sent = pi.sent.length;
       await new Promise(resolve => setTimeout(resolve, 350));
       assert.equal(pi.sent.length, sent, "turn proof cancels further watchdog/self-heal sends");
@@ -163,7 +163,7 @@ for (const lane of ["goal", "loop"] as const) {
     const ctx = context(lastCwd, `cancel-${lane}-${Math.random()}`);
     await pi.fire("session_start", { reason: "startup" }, ctx);
     try {
-      await pi.command(lane, lane === "loop" ? "start cancelled self-heal target" : "cancelled self-heal target", ctx);
+      await pi.command(lane, lane === "loop" ? "start cancelled self-heal target" : "cancelled self-heal target — done when pinned", ctx);
       await waitUntil(() => ledgerText(lastCwd).includes("continuation_start_unacknowledged"));
       if (lane === "goal") state.goal = { ...state.goal!, id: "replacement" };
       else state.loop = { ...state.loop!, active: false, stopReason: "user stopped" };
@@ -210,10 +210,10 @@ test("v0.38.104: a turn-start proof resets the budget even when no timer is arme
 
   // And the two paths that null the timer must leave the counter consistent:
   // the exhaustion branch is the one that strands it.
-  const arm = src.slice(src.indexOf("function armContinuationStartSelfHeal"));
+  const arm = src.slice(src.indexOf("function armContinuationStartSelfHeal"), src.indexOf("function armContinuationStartWatchdog"));
   assert.match(
     arm,
-    /continuationStartSelfHealTimer = null;[\s\S]{0,900}probe > continuationStartSelfHealMaxProbes/,
+    /continuationStartSelfHealTimer = null;[\s\S]*probe > continuationStartSelfHealMaxProbes/,
     "exhaustion still nulls the timer first — which is why the reset must not depend on it",
   );
 });
