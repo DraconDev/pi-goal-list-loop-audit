@@ -31,6 +31,7 @@ import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import { terminateContainedChild } from "./contained-child.mjs";
 import { createTestProcessRegistry, registerOwnedTestProcess, reapOwnedTestProcesses } from "./test-process-registry.mjs";
+import { captureTestFailureDiagnostics, diagnosticTail } from "./test-failure-diagnostics.mjs";
 import { SLOW_TEST_FILES } from "../tests/slow-files.mjs";
 
 export const SERIAL_FLAGS = ["--parallel=1", "--max-concurrency=1", "--timeout=60000"];
@@ -108,6 +109,7 @@ function main() {
   testEnv.GLLA_TEST_ROOT_PROCESS_TOKEN ??= testEnv.GLLA_TEST_PROCESS_TOKEN;
   const child = spawn("bun", ["test", ...bunArgs], { stdio: ["inherit", "pipe", "pipe"], detached: true, env: testEnv });
   let bytes = 0;
+  let outputTail = "";
   let lastOutputAt = Date.now();
   let settled = false;
   let stallFired = false;
@@ -123,6 +125,7 @@ function main() {
   const forward = (stream, sink) => {
     stream.on("data", (chunk) => {
       bytes += chunk.length;
+      outputTail = diagnosticTail(outputTail + chunk.toString());
       lastOutputAt = Date.now();
       sink.write(chunk);
     });
@@ -174,7 +177,16 @@ function main() {
     await cleanup();
     const detached = await reapOwnedTestProcesses(testEnv);
     if (detached.reaped || detached.unverified) log(`detached cleanup: ${detached.reaped} owned groups; ${detached.unverified} unverified survivors/records`);
-    if (detached.unverified) log(`cleanup evidence retained at ${registryDir}`);
+    const failed = stallFired || interruptedExitCode || detached.unverified || code !== 0 || signal;
+    if (failed) {
+      try {
+        const file = captureTestFailureDiagnostics({ directory: registryDir, exitCode: code, signal,
+          reason: stallFired ? `suite stalled: no output for ${stallLimit}ms` : interruptedExitCode ? `interrupted (${interruptedExitCode})` : `suite exit ${code}; unverified cleanup ${detached.unverified}`,
+          outputTail, processState: { pid: child.pid, exitCode: child.exitCode, signalCode: child.signalCode, killed: child.killed, ...detached } });
+        log(`failure diagnostics retained at ${file}`);
+      } catch (error) { log(`could not retain failure diagnostics: ${error.message}`); }
+    }
+    if (failed) log(`cleanup evidence retained at ${registryDir}`);
     else {
       fs.rmSync(registryDir, { recursive: true, force: true });
       fs.rmSync(`${registryDir}.obligations`, { recursive: true, force: true });
