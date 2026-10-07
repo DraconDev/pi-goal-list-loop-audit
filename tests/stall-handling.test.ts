@@ -532,7 +532,7 @@ test("v0.34.11: unanswered-continuation watchdog (accepted send, no turn — hel
   // re-dispatches on a capped, capped-count cadence instead of a blind loop.
   assert.doesNotMatch(CONT, /Automatic re-sends are stopped/, "the lane must not promise to stop retrying for good");
   assert.match(CONT, /Automatic re-sends are paused to avoid a blind queue storm/, "re-sends stay paused between self-heal probes");
-  assert.match(CONT, /armContinuationStartSelfHeal\(ctx, record\)/, "the settle arms the bounded self-heal");
+  assert.match(CONT, /armContinuationStartSelfHeal\(ctx, unacknowledged\)/, "the settle arms the bounded self-heal with its terminal record, not an in-flight dispatch");
   assert.match(CONT, /const CONTINUATION_START_SELF_HEAL_MAX_PROBES = 6;/, "the self-heal probe budget is bounded");
   assert.match(CONT, /const CONTINUATION_START_SELF_HEAL_MAX_MS = 15 \* 60_000;/, "the self-heal cadence is capped");
 });
