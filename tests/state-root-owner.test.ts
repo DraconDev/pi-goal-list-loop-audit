@@ -207,6 +207,43 @@ test("confirmed takeover of a non-pi process is refused, survivor unclaimed", as
   assert.match(readLedger(cwd), /"owner_takeover_refused"/);
 });
 
+test("persistent signal permission failure refuses after one attempt without reclaim", async () => {
+  const cwd = tmpCwd();
+  writeOwner(cwd, { pid: 987654, at: Date.now() });
+  const before = readOwnerFile(cwd);
+  let signals = 0;
+  let sleeps = 0;
+  const result = await takeoverOwnerRoot({ cwd, record: before, confirmed: true, deps: {
+    isAlive: () => true,
+    procStartMs: () => null,
+    readCmdline: () => "pi\0",
+    signal: () => { signals++; throw new Error("EPERM"); },
+    sleepMs: async () => { sleeps++; },
+  } });
+  assert.equal(result.outcome, "refused");
+  if (result.outcome === "refused") assert.equal(result.reason, "signal-failed");
+  assert.equal(signals, 1);
+  assert.equal(sleeps, 0);
+  assert.deepEqual(readOwnerFile(cwd), before);
+  assert.match(readLedger(cwd), /signal-failed/);
+});
+
+test("failed signal reclaims only after the owner is proven dead", async () => {
+  const cwd = tmpCwd();
+  writeOwner(cwd, { pid: 987654, at: Date.now() });
+  let alive = true;
+  let signals = 0;
+  const result = await takeoverOwnerRoot({ cwd, record: readOwnerFile(cwd), confirmed: true, deps: {
+    isAlive: () => alive,
+    procStartMs: () => null,
+    readCmdline: () => "pi\0",
+    signal: () => { signals++; alive = false; throw new Error("ESRCH"); },
+  } });
+  assert.equal(result.outcome, "reclaimed");
+  assert.equal(signals, 1);
+  assert.equal(readOwnerFile(cwd)?.pid, process.pid);
+});
+
 test("confirmed takeover SIGTERMs a pi-shaped owner, verifies exit, claims", async () => {
   const cwd = tmpCwd();
   const child = spawnPiShaped();
