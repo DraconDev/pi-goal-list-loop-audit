@@ -1471,6 +1471,11 @@ interface AuditorResultFile {
 }
 
 interface AuditorProgressFile {
+  /** Job directory (audit-jobs/<attemptId>) the worker is reporting from,
+   * surfaced to test progress callbacks so handshake fixtures can stage
+   * their result without exposing it before the parent observes the
+   * granted tool. Absent on production (tests use it to release publication). */
+  jobDir?: string;
   /** Persistent verification pass, independent of thinking/tool/report phase. */
   round?: 1 | 2;
   protocolVersion: number;
@@ -1785,9 +1790,11 @@ function asProgress(file: AuditorProgressFile, startedAt: number): AuditorProgre
       ? { currentToolTimeoutMs: Math.floor(file.currentToolTimeoutMs) }
       : {}),
     ...(file.sessionPath ? { sessionPath: file.sessionPath } : {}),
+    ...(file.jobDir ? { jobDir: file.jobDir } : {}),
     ...(file.unmatchedToolStarts ? { unmatchedToolStarts: file.unmatchedToolStarts } : {}),
     ...(file.unmatchedToolEnds ? { unmatchedToolEnds: file.unmatchedToolEnds } : {}),
     cost: snapshotCost(file),
+  jobDir: file.jobDir,
   };
 }
 
