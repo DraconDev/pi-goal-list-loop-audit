@@ -11,8 +11,13 @@ export function isExplicitPromptOverflow(raw: string): boolean {
   return /maximum context (?:length|window)(?:\s+(?:is|was))?\s*(?:exceeded|reached)|context[_ -](?:length|window)[_ -]exceeded|(?:input|prompt|context)\s+(?:is\s+)?too (?:large|long)|too many (?:input|prompt) tokens|exceeds? (?:the )?(?:maximum |model.s )?context (?:length|window)/i.test(raw);
 }
 
+export function compactFirstEligible(failure: MainModelFailure): boolean {
+  return failure.nonRecoverableReason !== 'prompt-policy'
+    && !/user (?:interrupt|abort)|cancelled by user|content policy violation/i.test(failure.raw);
+}
+
 export function shouldRecoverContextPressure(failure: MainModelFailure, usage?: PressureUsage): boolean {
-  if (failure.nonRecoverableReason === 'prompt-policy' || /user (?:interrupt|abort)|cancelled by user|content policy violation/i.test(failure.raw)) return false;
+  if (!compactFirstEligible(failure)) return false;
   if (isExplicitPromptOverflow(failure.raw)) return true;
   // A credential or deterministic refusal is not healed by a smaller prompt.
   if (failure.kind !== 'unknown' && failure.kind !== 'transient') return false;

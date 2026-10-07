@@ -97,6 +97,7 @@ import {
   providerErrorPresentation,
   sanitizeDisplayText,
   piGlaDir,
+  supervisorPaused,
   normalizeDraftContract,
   draftContractItemCount,
   extractVerificationContract,
@@ -272,8 +273,9 @@ import {
   ModelPickerComponent,
   type ModelPickItem,
 } from "../model-picker.js";
-import { shouldRecoverContextPressure, isExplicitPromptOverflow } from '../context-pressure-recovery.js';
-import { claimPressureAttempt, clearPressureAttempt, resetPressureBudget } from '../context-pressure-attempt.js';
+import { shouldCompactBetweenTasks } from '../goal-compactor.js';
+import { shouldRecoverContextPressure, isExplicitPromptOverflow, compactFirstEligible } from '../context-pressure-recovery.js';
+import { claimPressureAttempt, clearPressureAttempt, resetPressureBudget, setPressureExclusion } from '../context-pressure-attempt.js';
 import { consumeRecoveryResume } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
 import {
   createGoalHeartbeat,
@@ -659,9 +661,15 @@ async function handleMainModelAgentEnd(ctx: ExtensionContext, rawLastA: any, las
     const failure = classifyMainModelFailure(rawError);
     if (failure.nonRecoverableReason === "prompt-policy" && settlePromptPolicyRejection(ctx, failure)) return true;
     lastMainModelFailure = failure;
+    setPressureExclusion(ctx, !compactFirstEligible(failure));
     let usage;
     try { usage = ctx.getContextUsage?.(); } catch { /* Unknown usage preserves ordinary recovery. */ }
-    if (isSupervising() && !supervisorPaused(state) && !abortedStandDown && shouldRecoverContextPressure(failure, usage)) {
+    // An error is also a safe opportunity to discharge the preventive token
+    // target. Otherwise immediate fallback makes the settled threshold check
+    // unreachable (the 232819/272000 incident), even below emergency pressure.
+    const preventiveDue = compactFirstEligible(failure) && (failure.kind === 'unknown' || failure.kind === 'transient')
+      && shouldCompactBetweenTasks({ tokens: usage?.tokens, threshold: loadGlobalSettings().compactionTokenThreshold }).compact;
+    if (isSupervising() && !supervisorPaused(state) && !abortedStandDown && (preventiveDue || shouldRecoverContextPressure(failure, usage))) {
       const generation = sessionGeneration;
       const target = state.loop?.active ? `loop:${state.loop.startedAt}` : `goal:${state.goal?.id}`;
       const budget = { file: path.join(piGlaDir(ctx.cwd), 'context-pressure-budget.json'), key: target };
@@ -688,15 +696,21 @@ async function handleMainModelAgentEnd(ctx: ExtensionContext, rawLastA: any, las
           })();
         },
         timeout: () => {
-          if (!valid()) return;
+          if (!valid()) return true;
           clearContinuationTimer(); clearLoopTimer();
           const reason = 'context compaction failure: compact-first recovery exceeded its 120s budget';
+          let landed = true;
           if (state.loop?.active) {
             state.loop = { ...state.loop, active: false, stopReason: reason };
-            persistState(ctx);
+            landed = persistState(ctx);
           } else if (state.goal?.status === 'active') {
-            updateGoal({ status: 'paused', pauseKind: 'error', pauseReason: reason, pauseSuggestedAction: `Inspect compaction, then ${activeGoalSurfaceCommand('resume')}.` }, ctx);
+            landed = updateGoal({ status: 'paused', pauseKind: 'error', pauseReason: reason, pauseSuggestedAction: `Inspect compaction, then ${activeGoalSurfaceCommand('resume')}.` }, ctx) !== false;
           }
+          if (!landed) {
+            setContinuationDispatchStoodDownRef(true);
+            ctx.ui.notify('glla: compact-first timeout could not persist its stop. Automatic dispatch remains held in this process; repair .pi-glla storage before resuming.', 'warning');
+          }
+          return landed;
         },
       });
       if (claimed) {

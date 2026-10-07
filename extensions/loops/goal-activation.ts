@@ -145,7 +145,7 @@ import {
   transitionDispatch,
   type ContinuationDispatch,
 } from "../goal-loop-dispatch.js";
-import { clearPressureAttempt, flushPressureAttempt, settlePressureAttempt, pressureAttemptPending } from '../context-pressure-attempt.js';
+import { clearPressureAttempt, flushPressureAttempt, settlePressureAttempt, pressureAttemptPending, retireSettledPressureAttempt } from '../context-pressure-attempt.js';
 import { clearBoundaryCompactionAttempt, settleBoundaryCompactionFailure, maybeCompactTranscriptAtBoundary, readHandoffBriefExcerpt, runGoalCompactionIfDue } from "../goal-compactor.js";
 import {
   createGoalContinuation,
@@ -1528,7 +1528,10 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     if (event?.message?.role === "user" && !draftingSeedInFlight) noteUserMessageForDispatch();
     // A live user message proves the host is responsive — any compaction
     // is over or cancelled (clear on liveness, not on guess).
-    if (event?.message?.role === "user") noteCompactionSettled();
+    if (event?.message?.role === "user") {
+      clearPressureAttempt(ctx, true);
+      noteCompactionSettled();
+    }
     // v0.14.0 drafting floor: count real user replies while drafting. Our
     // own injected draft prompt arrives as a user message — skip that one.
     if (draftingTarget === null) return;
@@ -1696,8 +1699,8 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
   });
 
   pi.on("session_shutdown", async (event: any, ctx: ExtensionContext) => {
-    clearPressureAttempt(ctx); // Retain the durable budget; cancel only live callbacks/timers.
     if (isForeignCtx(ctx)) return;
+    clearPressureAttempt(ctx); // Retain the durable budget; cancel only live callbacks/timers.
     releaseSubagentRpcHost(pi.events);
     // v0.30.0: attribution + rebind window. pi announces WHY the session
     // is being replaced (reload/resume/new/fork/quit) — the ledger can
@@ -1747,11 +1750,11 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
   });
 
   pi.on("session_start", async (event: any, ctx: ExtensionContext) => {
-    clearPressureAttempt(ctx);
     const admission = admitSessionStart(ctx, event);
     if (!admission) return;
     const { hostLifecycleStart, recordedOwner } = admission;
     if (!claimSessionRootOrNotify(ctx, hostLifecycleStart)) return;
+    clearPressureAttempt(ctx);
     clearBoundaryCompactionAttempt(ctx);
     retentionSweepAuditJobs(ctx);
     // [lifecycle 4/12] rebind reset: capture flags, clear timers, rebind ctx, restore state
@@ -3471,6 +3474,7 @@ async function handleHotLengthExhaustion(
     }
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown || isForeignCtx(ctx)) return;
     ensureAgentToolsReady(ctx, true);
+    if (retireSettledPressureAttempt(ctx)) mainModelAbortForRecovery = false;
     clearBoundaryCompactionAttempt(ctx);
     markActionReminderTurnStart();
     lastStreamActivityAt = Date.now();
@@ -3816,6 +3820,7 @@ async function handleHotLengthExhaustion(
     try {
       if (!isForeignCtx(ctx) && noteCompactionStarted()) {
         appendLedger(ctx.cwd, "compaction_inflight_start", { generation: sessionGeneration });
+        if (pressureAttemptPending(ctx)) flushPressureAttempt(ctx, { compactionInFlight: true });
       }
     } catch {
       // bookkeeping must never break compaction

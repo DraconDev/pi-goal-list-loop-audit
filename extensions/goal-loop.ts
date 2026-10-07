@@ -77,6 +77,7 @@ import { compactLoopCompletionSummary, compactTerminalCompletionSummary } from "
 import { inferStartFromSession, type StartContextInference } from "./start-context.js";
 import { createRespecBuilder, respecCoverage, type RespecBuilderState } from "./respec-builder.js";
 import { runRespecBuilderAudit, cancelRespecBuilderAudit } from "./respec-builder-runtime.js";
+import { pressureAttemptPending, flushPressureAttempt } from './context-pressure-attempt.js';
 import { maybeCompactTranscriptAtBoundary } from "./goal-compactor.js";
 
 type DispatchInput = Omit<Parameters<typeof createContinuationDispatch>[0], "id" | "sentAt">;
@@ -469,6 +470,7 @@ function scheduleLoopTickWithUrgency(ctx: ExtensionContext, urgent: boolean): vo
   // automatic machinery includes the metric loop's turn dispatch.
   if (supervisorPaused(state)) return;
   if (mainModelRecoveryActive()) return;
+  if (pressureAttemptPending(ctx)) return;
   // In-flight auto-compaction: no loop turns into a compacting host.
   // Urgent (explicit starts/resumes) bypasses like force does for goals.
   if (!urgent && isCompactionInFlightSince(flags.compactionInFlightSince)) {
@@ -509,6 +511,10 @@ function sendLoopTurn(): void {
   if (flags.sessionHandoffPending || flags.initialSessionLoadPending || flags.extensionApiStale || flags.staleTerminalDone || flags.zombieStoodDown || flags.continuationDispatchStoodDown || flags.pendingContinuationDispatch) return;
   if (!isLoopActive() || !flags.extensionApi) return;
   const ctx = freshCtx();
+  if (ctx && pressureAttemptPending(ctx)) {
+    flushPressureAttempt(ctx, { compactionInFlight: isCompactionInFlightSince(flags.compactionInFlightSince) });
+    return;
+  }
   if (!ctx || !ctx.isIdle() || ctx.hasPendingMessages()) {
     if (!ctx) {
       // v0.33.1: mirror sendContinuation — probe the handle (terminal exit)

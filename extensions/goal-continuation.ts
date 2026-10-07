@@ -83,6 +83,7 @@ const MONITOR_CHECK_INTERVAL_MS = Number.isFinite(configuredMonitorIntervalMs) &
   : DEFAULT_MONITOR_CHECK_INTERVAL_MS;
 void MONITOR_CHECK_INTERVAL_MS; // deprecated throttle — scheduling is now event-driven
 import { VISION_ASSIST_GUIDANCE } from "./vision-assist.js";
+import { pressureAttemptPending, flushPressureAttempt } from './context-pressure-attempt.js';
 import { maybeCompactTranscriptAtBoundary, readHandoffBriefExcerpt } from "./goal-compactor.js";
 import { loadSettings } from "./goal-settings.js";
 import { clearLoopTimer, isLoopActive, scheduleLoopTick } from "./goal-loop.js";
@@ -1306,6 +1307,7 @@ export function scheduleContinuation(ctx: ExtensionContext, force = false, delay
   // `/glla resume` is the only way back. Manual sends (user-typed prompts)
   // are unaffected: they never pass through here.
   if (supervisorPaused(state)) return;
+  if (pressureAttemptPending(ctx)) return;
   if (mainModelRecoveryActive()) return;
   if (flags.sessionHandoffPending || flags.initialSessionLoadPending || flags.extensionApiStale || flags.staleTerminalDone || flags.zombieStoodDown) return;
   if (pendingContinuationDispatch) return;
@@ -1469,6 +1471,11 @@ export function sendContinuation(goalId: string): void {
   if (flags.sessionHandoffPending || flags.initialSessionLoadPending || flags.extensionApiStale || flags.staleTerminalDone || flags.zombieStoodDown || continuationDispatchStoodDown || pendingContinuationDispatch || flags.abortedStandDown) return;
   continuationTimer = null;
   continuationScheduledFor = null;
+  const pressureCtx = freshCtx();
+  if (pressureCtx && pressureAttemptPending(pressureCtx)) {
+    flushPressureAttempt(pressureCtx, { compactionInFlight: isCompactionInFlightSince(flags.compactionInFlightSince) });
+    return;
+  }
   if (!state.goal || state.goal.id !== goalId) {
     const stale = freshCtx();
     if (stale) appendLedger(stale.cwd, "faulty_objective_stale_attempt_fence", { expectedGoalId: goalId, currentGoalId: state.goal?.id ?? null, where: "sendContinuation" });

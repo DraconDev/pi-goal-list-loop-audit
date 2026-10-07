@@ -28,6 +28,7 @@ import {
 } from "./goal-loop-core.js";
 import { loadGlobalSettings, type Settings } from "./goal-settings.js";
 import { PLAN_B_MAX_ATTEMPTS, resolveCompactorModel } from "./compactor-model.js";
+import { pressureBudgetClaimed, pressureExcluded } from './context-pressure-attempt.js';
 import { respecBuilderAuditInFlight } from "./respec-builder-runtime.js";
 
 /** Hard cap on the persisted brief: a handoff, not a transcript. */
@@ -140,8 +141,14 @@ export function maybeCompactTranscriptAtBoundary(
   flags: { supervising: boolean; auditInFlight: boolean; paused: boolean },
   onFailure?: () => void,
 ): boolean {
-  if (!flags.supervising || flags.auditInFlight || flags.paused) return false;
+  if (!flags.supervising || flags.auditInFlight || flags.paused || pressureExcluded(ctx)) return false;
   if (respecBuilderAuditInFlight(ctx.cwd)) return false;
+  // Pressure recovery and preventive compaction share one per-work budget.
+  // A failed compact-first episode must not re-enter via the optional path
+  // before a healthy retry has reset the claim.
+  const work = readState(ctx.cwd);
+  const pressureKey = work.loop?.active ? `loop:${work.loop.startedAt}` : `goal:${work.goal?.id}`;
+  if (pressureBudgetClaimed(path.join(piGlaDir(ctx.cwd), 'context-pressure-budget.json'), pressureKey)) return false;
   let idle = false;
   let pending = true;
   try {
