@@ -872,6 +872,7 @@ function armContinuationStartSelfHeal(ctx: ExtensionContext, record: Continuatio
   const dispatchId = record.id;
   const generation = record.generation;
   const parkedLoop = record.kind === "loop" ? state.loop : undefined;
+  const lengthGoal = record.kind === "length" ? state.goal : undefined;
   const delayMs = continuationStartSelfHealDelayOverrideMs ?? continuationStartSelfHealDelayMs(continuationStartSelfHealProbes);
   const timer = scheduleSessionTimeout(() => {
     if (continuationStartSelfHealTimer !== timer) return;
@@ -883,6 +884,7 @@ function armContinuationStartSelfHeal(ctx: ExtensionContext, record: Continuatio
       ? !!parkedLoop && state.loop?.startedAt === parkedLoop.startedAt &&
         state.loop.iteration === parkedLoop.iteration && !state.loop.active &&
         state.loop.stopReason === parkedLoop.stopReason && !!parkedLoop.stopReason?.includes(dispatchId)
+      : record.kind === "length" ? state.goal === lengthGoal
       : state.goal?.id === record.goalId && state.goal.status === "active";
     if (!settled || settled.id !== dispatchId || settled.phase !== "unacknowledged" || !sameLane || supervisorPaused(state)) {
       // The lane moved on (a turn started, a resume re-dispatched, or another
@@ -913,6 +915,8 @@ function armContinuationStartSelfHeal(ctx: ExtensionContext, record: Continuatio
       state.loop = { ...state.loop!, active: true, stopReason: undefined };
       persistState(live);
       scheduleLoopTick(live);
+    } else if (record.kind === "length") {
+      sendLengthContinue(live, 1);
     } else {
       scheduleContinuation(live, true, 0);
     }
