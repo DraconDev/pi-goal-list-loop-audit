@@ -1305,7 +1305,7 @@ await rename(dir + "/result.json.tmp", dir + "/result.json");
       thinkingLevel: "high",
       onStalled: (info) => { console.error("stalled", JSON.stringify(info)); stalled.push(info); },
       onProgress: progress => {
-        console.error("progress", JSON.stringify(progress.currentTool), JSON.stringify(progress.currentToolTimeoutMs), "staged:", existsSync(path.join(progress.jobDir ?? "", "result.json")));
+        console.error("progress", JSON.stringify(progress.currentTool), JSON.stringify(progress.currentToolTimeoutMs), "jobDir:", JSON.stringify(progress.jobDir), "startedAt:", JSON.stringify(progress.currentToolStartedAt));
         if (observedGrantedTool || progress.currentTool !== "bash") return;
         try {
           assert.equal(progress.currentToolTimeoutMs, 600_000);
