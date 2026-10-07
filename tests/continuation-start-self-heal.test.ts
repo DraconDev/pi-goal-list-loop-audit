@@ -25,9 +25,12 @@ import {
   CONTINUATION_START_SELF_HEAL_MAX_PROBES,
   CONTINUATION_START_SELF_HEAL_MIN_MS,
   clearContinuationStartSelfHeal,
+  __testOnlySetContinuationStartSelfHealDelay,
+  __testOnlySetContinuationStartSelfHealMaxProbes,
   continuationStartSelfHealDelayMs,
   resetContinuationDispatchState,
 } from "../extensions/goal-continuation.js";
+import { state } from "../extensions/goal-state.js";
 import { MockPi, makeMockCtx, tick, tmpCwd, type MockCtx } from "./harness/mock-pi.js";
 
 const GLOBAL_SETTINGS_PATH = process.env.GLLA_GLOBAL_SETTINGS_PATH!;
@@ -62,6 +65,8 @@ afterEach(() => {
   __testOnlyResetStaleFlag();
   resetContinuationDispatchState(lastCwd);
   clearContinuationStartSelfHeal();
+  __testOnlySetContinuationStartSelfHealDelay(null);
+  __testOnlySetContinuationStartSelfHealMaxProbes(CONTINUATION_START_SELF_HEAL_MAX_PROBES);
   __testOnlySetContinuationStartTimeout(null);
   __testOnlySetContinuationRetryBackoff(null);
   pi.sent.length = 0;
@@ -114,6 +119,64 @@ test("v0.38.104: an unacknowledged turn start self-heals instead of demanding a 
     await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
   }
 });
+
+for (const lane of ["goal", "loop"] as const) {
+  test(`${lane} self-heal timer actually redispatches the settled lane and acknowledges recovery`, async () => {
+    __testOnlySetContinuationStartTimeout(80);
+    __testOnlySetContinuationRetryBackoff(80);
+    __testOnlySetContinuationStartSelfHealDelay(120);
+    lastCwd = tmpCwd();
+    fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ autoResume: true, aggressiveMode: false }));
+    const ctx = context(lastCwd, `timer-${lane}-${Math.random()}`);
+    await pi.fire("session_start", { reason: "startup" }, ctx);
+    try {
+      await pi.command(lane, lane === "loop" ? "start bounded self-heal target" : "bounded self-heal target", ctx);
+      await waitUntil(() => ledgerText(lastCwd).includes("continuation_start_unacknowledged"));
+      if (lane === "loop") {
+        assert.equal(state.loop?.active, false, "timeout parks this loop");
+        assert.match(ctx.ui.notifies.map(n => n.message).join("\n"), /\/loop resume/);
+      }
+      await waitUntil(() => pi.sent.length >= 3);
+      assert.equal(pi.sent.length, 3, "exactly one fresh dispatch follows the retry pair");
+      assert.match(ledgerText(lastCwd), /continuation_start_self_heal_fired/);
+      assert.doesNotMatch(ledgerText(lastCwd), /continuation_start_self_heal_cancelled/);
+      if (lane === "loop") assert.equal(state.loop?.active, true, "only the timeout park is lifted");
+      await pi.fire("agent_start", {}, ctx);
+      const record = ledgerText(lastCwd);
+      assert.match(record, /continuation_dispatch_started/);
+      const sent = pi.sent.length;
+      await new Promise(resolve => setTimeout(resolve, 350));
+      assert.equal(pi.sent.length, sent, "turn proof cancels further watchdog/self-heal sends");
+    } finally {
+      await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+    }
+  });
+}
+
+for (const lane of ["goal", "loop"] as const) {
+  test(`${lane} self-heal never revives a replaced goal or deliberately stopped loop`, async () => {
+    __testOnlySetContinuationStartTimeout(80);
+    __testOnlySetContinuationRetryBackoff(80);
+    __testOnlySetContinuationStartSelfHealDelay(120);
+    lastCwd = tmpCwd();
+    fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ autoResume: true, aggressiveMode: false }));
+    const ctx = context(lastCwd, `cancel-${lane}-${Math.random()}`);
+    await pi.fire("session_start", { reason: "startup" }, ctx);
+    try {
+      await pi.command(lane, lane === "loop" ? "start cancelled self-heal target" : "cancelled self-heal target", ctx);
+      await waitUntil(() => ledgerText(lastCwd).includes("continuation_start_unacknowledged"));
+      if (lane === "goal") state.goal = { ...state.goal!, id: "replacement" };
+      else state.loop = { ...state.loop!, active: false, stopReason: "user stopped" };
+      const sent = pi.sent.length;
+      await waitUntil(() => ledgerText(lastCwd).includes("continuation_start_self_heal_cancelled"));
+      assert.equal(pi.sent.length, sent);
+      if (lane === "loop") assert.equal(state.loop?.stopReason, "user stopped");
+      else assert.equal(state.goal?.id, "replacement");
+    } finally {
+      await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+    }
+  });
+}
 
 // v0.38.104: the reset was gated on `continuationStartSelfHealTimer` being
 // live. Both terminal paths null the timer WITHOUT clearing the counter —
