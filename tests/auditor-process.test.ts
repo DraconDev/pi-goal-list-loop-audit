@@ -1277,23 +1277,25 @@ const dir = process.argv[process.argv.indexOf("--job-dir") + 1];
 const request = JSON.parse(await readFile(dir + "/request.json", "utf8"));
 // Stage a complete result without exposing it. Publish the open granted
 // tool atomically, then wait for parent observation before the final rename.
-await atomicJson(dir + "/result.json", {
+const stagedResult = {
   protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
   ok: true, output: "<disapproved/>", model: request.model,
   thinkingLevel: request.thinkingLevel, toolCalls: [],
-}, async () => {
-  await atomicJson(dir + "/progress.json", {
-    protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
-    phase: "tool_executing", elapsedMs: 1, lastActivityAt: Date.now(),
-    recentOutput: [], toolCalls: [], currentTool: "bash", currentToolArgs: "{}",
-    currentToolStartedAt: Date.now() - 10_000, currentToolTimeoutMs: 600_000,
-  });
-  const deadline = Date.now() + 5000;
-  while (!existsSync(${JSON.stringify(releasePath)})) {
-    if (Date.now() >= deadline) throw new Error("parent did not observe granted tool before publication deadline");
-    await new Promise(resolve => setTimeout(resolve, 5));
-  }
-});
+};
+const stagedProgress = {
+  protocolVersion: 1, attemptId: request.attemptId, requestHash: request.requestHash,
+  phase: "tool_executing", elapsedMs: 1, lastActivityAt: Date.now(),
+  recentOutput: [], toolCalls: [], currentTool: "bash", currentToolArgs: "{}",
+  currentToolStartedAt: Date.now() - 10_000, currentToolTimeoutMs: 600_000,
+};
+await writeFile(dir + "/result.json.tmp", JSON.stringify(stagedResult));
+await writeFile(dir + "/progress.json", JSON.stringify(stagedProgress));
+const deadline = Date.now() + 5000;
+while (!existsSync(${JSON.stringify(releasePath)})) {
+  if (Date.now() >= deadline) throw new Error("parent did not observe granted tool before publication deadline");
+  await new Promise(resolve => setTimeout(resolve, 5));
+}
+await rename(dir + "/result.json.tmp", dir + "/result.json");
 `);
   try {
     const result = await runDetachedGoalCompletionAuditor({
