@@ -818,3 +818,7 @@ append-only, so these corrections are appended rather than edited in.
 - [x] FIX: HIGH: continuation self-healing clears the settled dispatch it requires and cannot recover parked loops through goal-only scheduling (extensions/goal-continuation.ts:796-910) — fixed in c4610b60 + 819d429b + 01d75209 + a12daed9; timer-driven regressions in 10282e83 + e6381e45 + cd58130c (goal/loop/length recovery, replacement/stop cancellation, and budget exhaustion); focused final gate: 152 pass, 0 fail across 13 files
 
 DECIDE findings: none in this pass. Three parallel read-only subsystem scouts completed; existing ledger findings were excluded. Baseline typecheck passed. Baseline fast suite reached its 240-second bound (exit 124), not a passing-suite claim.
+
+### Verification correction — 2026-10-07
+
+The first complete release gate ran 3325 tests: 3321 passed, 1 skipped, 3 failed. The failures caught regressions in the initial self-heal repair: adopting a settled dispatch in the in-flight slot blocked manual goal/list resume and compaction resync. Commit bdf845bc separates settled self-heal identity from in-flight identity; all three existing regressions now pass unchanged (3 pass, 0 fail), alongside 15 continuation/retry/dispatch tests. This commit is part of the HIGH finding's fix above. No failing gate is claimed green; a fresh full release gate is required below. Task test typing corrected in 8e0c2d4f, verified through the task-test file history.
