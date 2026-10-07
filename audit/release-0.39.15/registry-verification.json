@@ -1,0 +1,18 @@
+{
+  "version": "0.39.15",
+  "latest": "0.39.15",
+  "publishedFilesMatchedToTag": 144,
+  "tagCommit": "1b7e1cfdd0d71f2b11df4a399abbba710f490547",
+  "integrityVerified": true,
+  "piExtension": [
+    "extensions/loops/goal.ts"
+  ],
+  "newProjectContextModuleIncluded": true,
+  "tarball": "https://registry.npmjs.org/pi-goal-list-loop-audit/-/pi-goal-list-loop-audit-0.39.15.tgz",
+  "attestations": {
+    "url": "https://registry.npmjs.org/-/npm/v1/attestations/pi-goal-list-loop-audit@0.39.15",
+    "provenance": {
+      "predicateType": "https://slsa.dev/provenance/v1"
+    }
+  }
+}
