@@ -20,7 +20,7 @@ export function fixtureRender() {
   return buildTerminalApprovalRender({ goal: fixtureGoal, status: "complete", approval: "— auditor fixture/model approved.", record: "— record: .pi-glla/archive/fixture.md", findingGroups: fixtureGroups, gateRows: fixtureGates, repoState: ["Branch main @ abc12345", "Tree clean"] });
 }
 
-test("whole-work recap takes precedence for every plain/structured repair combination", () => {
+test("latest approved recap takes precedence for every plain/structured claim combination", () => {
   for (const structuredPrior of [false, true]) for (const structuredRepair of [false, true]) {
     const prior = fixtureGoal.completionSummary!.replace("Drafting now hands off clearly and completion reports explain the result.",
       "Whole-work delivery." + (structuredPrior ? "\n## Drafting\nQuestions clarified.\n## Completion\nReports improved." : ""));
@@ -29,10 +29,10 @@ test("whole-work recap takes precedence for every plain/structured repair combin
     const goal = { ...fixtureGoal, completionSummary: repair };
     const chat = buildTerminalApprovalRender({ goal, status: "complete", approval: "approved", record: "archive.md", priorCompletionSummary: prior }).chatLines.join("\n");
     const archive = buildRichArchiveSection(goal, "complete", "archive.md", undefined, undefined, prior).join("\n");
-    assert.match(chat.split("\n")[0]!, /Whole-work delivery/);
-    assert.doesNotMatch(chat, /Repair-only delivery/);
-    assert.ok(archive.includes(prior));
-    if (structuredPrior) assert.match(chat, /Questions clarified/);
+    assert.match(chat.split("\n")[0]!, /Repair-only delivery/);
+    assert.doesNotMatch(chat, /Whole-work delivery|Questions clarified/);
+    assert.ok(archive.includes(prior), "original claim is retained as forensic history");
+    if (structuredRepair) assert.match(chat, /Guard fixed/);
   }
 });
 
