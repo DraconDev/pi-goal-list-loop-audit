@@ -10,6 +10,7 @@
 // only parks for real when the budget is spent.
 
 import { test, afterEach } from "node:test";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -207,7 +208,7 @@ test("plain-session length self-heal uses the length lane rather than requiring 
   const ctx = context(lastCwd, `length-${Math.random()}`);
   await pi.fire("session_start", { reason: "startup" }, ctx);
   try {
-    sendLengthContinue(ctx, 1);
+    sendLengthContinue(ctx as unknown as ExtensionContext, 1);
     await waitUntil(() => pi.sent.length >= 3);
     assert.equal(pi.sent.length, 3);
     assert.match(ledgerText(lastCwd), /continuation_start_self_heal_fired/);

@@ -885,7 +885,7 @@ function armContinuationStartSelfHeal(ctx: ExtensionContext, record: Continuatio
         state.loop.iteration === parkedLoop.iteration && !state.loop.active &&
         state.loop.stopReason === parkedLoop.stopReason && !!parkedLoop.stopReason?.includes(dispatchId)
       : record.kind === "length" ? state.goal === lengthGoal
-      : state.goal?.id === record.goalId && state.goal.status === "active";
+      : state.goal?.id === record.goalId && state.goal?.status === "active";
     if (!settled || settled.id !== dispatchId || settled.phase !== "unacknowledged" || !sameLane || supervisorPaused(state)) {
       // The lane moved on (a turn started, a resume re-dispatched, or another
       // lane settled it). Self-heal is no longer this record's job.
