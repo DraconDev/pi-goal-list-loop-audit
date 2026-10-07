@@ -272,6 +272,8 @@ import {
   ModelPickerComponent,
   type ModelPickItem,
 } from "../model-picker.js";
+import { shouldRecoverContextPressure, isExplicitPromptOverflow } from '../context-pressure-recovery.js';
+import { claimPressureAttempt, clearPressureAttempt, resetPressureBudget } from '../context-pressure-attempt.js';
 import { consumeRecoveryResume } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
 import {
   createGoalHeartbeat,
@@ -657,6 +659,61 @@ async function handleMainModelAgentEnd(ctx: ExtensionContext, rawLastA: any, las
     const failure = classifyMainModelFailure(rawError);
     if (failure.nonRecoverableReason === "prompt-policy" && settlePromptPolicyRejection(ctx, failure)) return true;
     lastMainModelFailure = failure;
+    let usage;
+    try { usage = ctx.getContextUsage?.(); } catch { /* Unknown usage preserves ordinary recovery. */ }
+    if (isSupervising() && !supervisorPaused(state) && !abortedStandDown && shouldRecoverContextPressure(failure, usage)) {
+      const generation = sessionGeneration;
+      const target = state.loop?.active ? `loop:${state.loop.startedAt}` : `goal:${state.goal?.id}`;
+      const budget = { file: path.join(piGlaDir(ctx.cwd), 'context-pressure-budget.json'), key: target };
+      const valid = () => generation === sessionGeneration && !!freshCtxForGeneration(generation)
+        && !supervisorPaused(state) && !abortedStandDown && isSupervising()
+        && target === (state.loop?.active ? `loop:${state.loop.startedAt}` : `goal:${state.goal?.id}`);
+      const recoveryFailure = isExplicitPromptOverflow(failure.raw) ? classifyMainModelFailure(failure.raw, { isContextOverflow: true }) : failure;
+      const claimed = claimPressureAttempt(ctx, {
+        failure: recoveryFailure, valid, budget,
+        record: phase => appendLedger(ctx.cwd, 'context_pressure_recovery', { phase, target, generation }),
+        fallback: original => {
+          void (async () => {
+            const current = freshCtxForGeneration(generation);
+            if (!current || !valid()) return;
+            try {
+              if (!await tryMainModelFallback(current, original)) parkMainModelAfterFailure(current, original);
+              const fresh = freshCtxForGeneration(generation);
+              if (!fresh || !valid()) return;
+              if (isLoopActive()) scheduleLoopTick(fresh);
+              else if (isActionableGoal()) scheduleContinuation(fresh, true, 1_000);
+            } catch (error) {
+              if (valid()) parkMainModelAfterFailure(current, classifyMainModelFailure(String(error)));
+            }
+          })();
+        },
+        timeout: () => {
+          if (!valid()) return;
+          clearContinuationTimer(); clearLoopTimer();
+          const reason = 'context compaction failure: compact-first recovery exceeded its 120s budget';
+          if (state.loop?.active) {
+            state.loop = { ...state.loop, active: false, stopReason: reason };
+            persistState(ctx);
+          } else if (state.goal?.status === 'active') {
+            updateGoal({ status: 'paused', pauseKind: 'error', pauseReason: reason, pauseSuggestedAction: `Inspect compaction, then ${activeGoalSurfaceCommand('resume')}.` }, ctx);
+          }
+        },
+      });
+      if (claimed) {
+        clearContinuationTimer(); clearLoopTimer(); cancelProviderRetry();
+        // Abort only the already-failed request, preventing Pi's core retry
+        // from racing the idle compact-first admission. No healthy tool is cut.
+        if (!mainModelAbortForRecovery) { mainModelAbortForRecovery = true; try { ctx.abort(); } catch { /* safe boundary will retry admission */ } }
+        return true;
+      }
+      // The one-shot budget survived compaction or reload. Explicit input
+      // overflow now reaches fallback without re-entering compact-first.
+      if (isExplicitPromptOverflow(failure.raw)) {
+        if (await tryMainModelFallback(ctx, recoveryFailure)) return true;
+        parkMainModelAfterFailure(ctx, recoveryFailure);
+        return true;
+      }
+    }
     if (failure.kind !== "non-recoverable") {
       const switched = await tryMainModelFallback(ctx, failure);
       if (switched) return true; // pi's core retry now uses the selected backup
@@ -674,7 +731,9 @@ async function handleMainModelAgentEnd(ctx: ExtensionContext, rawLastA: any, las
     // that the provider recovered. Clearing the durable fallback episode here
     // made Escape silently discard the only retry plan. Only a non-aborted,
     // non-error assistant end can settle main-model recovery.
-    if (lastA.stopReason === "aborted" || lastA.stopReason === "cancelled" || lastA.stopReason === "canceled") return false;
+    if (lastA.stopReason === "aborted" || lastA.stopReason === "cancelled" || lastA.stopReason === "canceled") { clearPressureAttempt(ctx); return false; }
+    clearPressureAttempt(ctx, true);
+    resetPressureBudget(path.join(piGlaDir(ctx.cwd), 'context-pressure-budget.json'), state.loop?.active ? `loop:${state.loop.startedAt}` : `goal:${state.goal?.id}`);
     if (state.mainModelRecovery) mainModelRecoverySucceeded(ctx);
     else lastMainModelFailure = null;
   }
