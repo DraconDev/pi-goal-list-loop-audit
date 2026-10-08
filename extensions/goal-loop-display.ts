@@ -1377,9 +1377,13 @@ export function buildStatusText(state: State, audit?: AuditDisplayProgress | nul
     : base;
   // v0.38.73: run-to-done is a consent state the user must see at a glance
   // — an auto-running goal must never look supervised.
-  const withMode = withAgentSummary && state.goal?.runToDone === true
-    ? `${withAgentSummary} · run to done`
+  const view = stateWorkView(state, observedWorkActivity(extras, now));
+  const withActivity = withAgentSummary && !backgroundDisplay(state) && view.activity !== "unknown"
+    ? `${withAgentSummary} · lifecycle: ${view.lifecycle} · activity: ${view.activity}`
     : withAgentSummary;
+  const withMode = withActivity && state.goal?.runToDone === true
+    ? `${withActivity} · run to done`
+    : withActivity;
   // v0.38.44 (field 20260909_161057): the running version rides the tail
   // of EVERY branch — a stale session must be visible at a glance, not
   // discoverable via a command. The update nudge appears only when the
@@ -1770,7 +1774,12 @@ function countTotal(g: Goal): number {
  * Returns undefined when nothing is worth showing.
  */
 export function buildWidgetLines(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, width?: number, extras?: WidgetExtras): string[] | undefined {
-  const inner = backgroundWidget(state, theme, width) ?? buildWidgetLinesInner(state, audit, now, theme, width, extras);
+  const background = backgroundWidget(state, theme, width);
+  const rawInner = background ?? buildWidgetLinesInner(state, audit, now, theme, width, extras);
+  const view = stateWorkView(state, observedWorkActivity(extras, now));
+  const inner = rawInner && !background && view.activity !== "unknown"
+    ? [rawInner[0]!, `├─ ${paint(theme, "dim", buildWorkLifecycleSummary(state, extras, now))}`, ...rawInner.slice(1)]
+    : rawInner;
   const detailedAgents = extras?.agents?.lines ?? (extras?.agents?.line ? [extras.agents.line] : []);
   let withAgents: string[] | undefined = inner;
   if (detailedAgents.length > 0) {
