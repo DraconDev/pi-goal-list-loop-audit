@@ -704,7 +704,7 @@ async function handleMainModelAgentEnd(ctx: ExtensionContext, rawLastA: any, las
             state.loop = { ...state.loop, active: false, stopReason: reason };
             landed = persistState(ctx);
           } else if (state.goal?.status === 'active') {
-            landed = updateGoal({ status: 'paused', pauseKind: 'error', pauseReason: reason, pauseSuggestedAction: `Inspect compaction, then ${activeGoalSurfaceCommand('resume')}.` }, ctx) !== false;
+            landed = updateGoal({ status: 'paused', pauseKind: 'error', pauseReason: reason, pauseSuggestedAction: `Run ${activeGoalSurfaceCommand('resume')} to retry saved work on the selected model. If compaction fails again: /model, then /compact, then ${activeGoalSurfaceCommand('resume')}.` }, ctx) !== false;
           }
           if (!landed) {
             setContinuationDispatchStoodDownRef(true);
