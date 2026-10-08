@@ -9,7 +9,8 @@ but current respec is not working well either and what if it were to finish then
 
 ##
 /home/dracon/Pictures/Screenshots/Screenshot_20261008_111737.png
-cant resume 
+cant resume
+btw designer should be auto off, only considered if we select it 
 
 ##
 This summary looks pretty can we improve ours
