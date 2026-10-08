@@ -90,3 +90,19 @@ export function projectProgress(records, options = {}) {
     limitations: ['Activity and verification are not proof of product shipment.', 'Legacy records cannot establish loaded version, phase costs or causal checkpoint attribution.'],
   };
 }
+
+export function formatProgressReport(report) {
+  const lines = ['GLLA progress — observational, not a delivery verdict',
+    `Evidence window: ${report.window.records} records${report.window.truncated ? ' · PARTIAL' : ''}; not lifetime totals.`];
+  if (!report.runs.length) lines.push('No identifiable run in this evidence window.');
+  for (const run of report.runs) {
+    lines.push('', `${run.mode} · ${run.id} · ${run.status}`, `Intended outcome: ${run.target}`,
+      `Iterations: ${run.iterations}; cycle: ${run.cycle ?? 'unknown'}; loaded version: ${run.loadedVersion}`,
+      `Capability evidence: ${run.capabilityProgress}`);
+    if (run.mode === 'requirement-builder') lines.push(`Current coverage: ${run.coverage.verified}/${run.coverage.total} verified, ${run.coverage.open} open, ${run.coverage.blocked} blocked${run.coverageIncomplete ? ' · INCOMPLETE' : ''}. Historical verification observations: ${run.historicalVerification.length}${run.historyTruncated ? '+' : ''}.`);
+    lines.push(`Phase durations: ${run.phaseAccounting.provenance}; recorded tokens: ${run.phaseAccounting.recordedTokens ?? 'unknown'}; monetary cost: unknown.`,
+      `Checkpoint: ${run.checkpoint.revision ?? 'unknown'}; attribution: ${run.checkpoint.attribution}.`);
+  }
+  lines.push('', ...report.limitations);
+  return lines.join('\n');
+}
