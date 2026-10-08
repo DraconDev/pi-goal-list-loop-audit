@@ -2,6 +2,7 @@ import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
+import * as path from "node:path";
 import { loadSkills } from "@earendil-works/pi-coding-agent";
 
 function dryRunFiles(): Set<string> {
@@ -33,9 +34,18 @@ test("release contract: published documentation links are covered by the npm tar
   for (const required of ["README.md", "INSTALL.md", "PLAN.md", "LIST-PHILOSOPHY.md", "CHANGELOG.md", "docs/INDEX.md", "docs/SETTINGS.md", "media/glla2.png", "examples/example-objective.md", "scripts/release-pack-smoke.mjs", "skills/glla-delegate/SKILL.md"]) {
     assert.ok(files.has(required), `${required} must be shipped`);
   }
-  const index = fs.readFileSync("docs/INDEX.md", "utf-8");
-  for (const omitted of ["../PLAN.md", "../LIST-PHILOSOPHY.md", "../audit/INDEX.md"]) {
-    assert.doesNotMatch(index, new RegExp(omitted.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")), `${omitted} must not be a broken package link`);
+  // Check actual shipped targets rather than banning historical filenames:
+  // PLAN and LIST-PHILOSOPHY now ship and are valid navigation destinations.
+  for (const document of ["README.md", "INSTALL.md", "docs/INDEX.md", "docs/WORKFLOWS.md", "docs/RECOVERY.md"]) {
+    assert.ok(files.has(document), `${document} must ship`);
+    const source = fs.readFileSync(document, "utf-8");
+    for (const match of source.matchAll(/\]\(([^\s)]+)\)/g)) {
+      const target = match[1];
+      if (!target || /^(?:[a-z][a-z0-9+.-]*:|#)/i.test(target)) continue;
+      const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(document), target.split("#")[0] ?? target));
+      const shipped = files.has(resolved) || (resolved.endsWith("/") && [...files].some((file) => file.startsWith(resolved)));
+      assert.ok(shipped, `${document}: ${target} must resolve inside the tarball`);
+    }
   }
 });
 

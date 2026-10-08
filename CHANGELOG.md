@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Documentation
+
+- Rebuild the README around durable work supervision, practical work shapes,
+  consent paths, independent completion review and explicit trust boundaries.
+- Shorten installation/update guidance, add a practical workflow guide and
+  reorganize the documentation index for users and contributors.
+- Explain why a stale provider-recovery marker does not reopen a completed
+  objective, and validate public navigation against the actual npm tarball.
+
 ## 0.39.16 — safe compaction and reliable continuation recovery (2026-10-07)
 
 ### Compaction and context-pressure recovery

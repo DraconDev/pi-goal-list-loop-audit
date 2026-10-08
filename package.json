@@ -1,7 +1,7 @@
 {
 	"name": "pi-goal-list-loop-audit",
 	"version": "0.39.16",
-	"description": "Long-running autonomy for Pi: draft goals, build projects from specs, run audited task queues, and recover interrupted work. Independent auditors verify completion.",
+	"description": "Durable work supervision for Pi: turn outcomes into goals, audited queues and spec-driven builds, recover interruptions, and verify completion against evidence.",
 	"license": "AGPL-3.0-only",
 	"author": "dracon",
 	"type": "module",
