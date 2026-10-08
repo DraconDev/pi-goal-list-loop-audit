@@ -3210,6 +3210,21 @@ function auditorThinkingEffectiveLine(
 }
 
 async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
+  // Progress is strictly observational: no stale probe, contact replay,
+  // ownership claim or persistence side effect is needed to read a root.
+  if (/^progress(?:\s|$)/.test(args.trim())) {
+    if (stateRootPending()) {
+      ctx.ui.notify("Progress unavailable: select the GLLA state root first.", "warning");
+      return;
+    }
+    try {
+      const report = readProgressReport(resolveGllaStateDir(ctx.cwd));
+      ctx.ui.notify(args.trim().slice("progress".length).trim() === "json" ? JSON.stringify(report, null, 2) : formatProgressReport(report), "info");
+    } catch {
+      ctx.ui.notify("Progress unavailable: the selected state root could not be read.", "warning");
+    }
+    return;
+  }
   // v0.34.52: settings entry probe — mirror of cmdList's stale gate. Bare
   // /glla is a settings surface every choice of which writes state, and
   // wipe/reset/cancel/resume/reviewer/postaudit/tooloverride mutate
@@ -3237,19 +3252,6 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   // v0.25.2: /glla stats sub-mode — cross-project telemetry rollups.
   if (/^version(?:\s|$)/.test(trimmed)) {
     cmdGllaVersion(ctx);
-    return;
-  }
-  if (/^progress(?:\s|$)/.test(trimmed)) {
-    if (stateRootPending()) {
-      ctx.ui.notify("Progress unavailable: select the GLLA state root first.", "warning");
-      return;
-    }
-    try {
-      const report = readProgressReport(resolveGllaStateDir(ctx.cwd));
-      ctx.ui.notify(trimmed.slice("progress".length).trim() === "json" ? JSON.stringify(report, null, 2) : formatProgressReport(report), "info");
-    } catch {
-      ctx.ui.notify("Progress unavailable: the selected state root could not be read.", "warning");
-    }
     return;
   }
   if (/^stats(?:\s|$)/.test(trimmed)) {

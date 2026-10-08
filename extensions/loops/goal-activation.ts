@@ -1044,6 +1044,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     },
   });
   const settingsHandler = (args: string, ctx: ExtensionContext) => {
+    if (/^progress(?:\s|$)/.test(args.trim())) return cmdSettings(args, ctx);
     rememberCtx(ctx);
     if (refuseForeignCommand(ctx)) return Promise.resolve();
     // v0.38.25: live contact — replay any approval render that landed
@@ -1059,6 +1060,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       // the bare `/glla` table, so they do not compete with action completion.
       ["version", "show the installed package version and registry check"],
       ["status", "show goal, list, loop, and pending decisions"],
+      ["progress", "read-only outcome evidence digest; progress json prints the report"],
       ["log", "show the recent event trail"],
       ["resume", "resume paused/held work or start a waiting-only list; also unfreezes a /glla pause"],
       ["pause", "freeze ALL supervisor automation (re-arms/recovery/dispatch) — active work keeps running"],
