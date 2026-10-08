@@ -1393,11 +1393,9 @@ export function buildStatusText(state: State, audit?: AuditDisplayProgress | nul
   // expose (an owned background wait, not a supervised retry) or names a
   // non-trivial activity. Supervised-recovery waits use the ⏳ auto-retrying
   // badge and must not gain a duplicate "lifecycle: waiting" segment.
-  const ownedWaitBadge = !backgroundDisplay(state)
-    && (view.wait && !view.wait.legacy)
-    || (view.lifecycle === "waiting" && !view.wait?.legacy && view.activity !== "recovering");
-  const lifecycleAddsInfo = ownedWaitBadge
-    || (view.lifecycle === "running" && view.activity !== "unknown" && view.activity !== "auditing");
+  const ownedBackgroundWait = !!view.wait && !view.wait.legacy;
+  const lifecycleAddsInfo = !backgroundDisplay(state) && (ownedBackgroundWait
+    || (view.lifecycle === "running" && view.activity !== "unknown" && view.activity !== "auditing"));
   const withActivity = withAgentSummary && lifecycleAddsInfo
     ? `${withAgentSummary} · lifecycle: ${view.lifecycle} · activity: ${view.activity}`
     : withAgentSummary;
