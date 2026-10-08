@@ -2,6 +2,10 @@
 
 # Next
 
+## some choices are truly self evident
+/home/dracon/Pictures/Screenshots/Screenshot_20261008_180530.png
+we can look into this and perhaps others we really should not be pausing on 
+
 # later
 
 # Testing
