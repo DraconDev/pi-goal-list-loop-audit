@@ -13,7 +13,7 @@ import { createHash } from "node:crypto";
 import { observeProgressState, observeProgressIteration, type ProgressReceipt } from "./progress-observer.js";
 import { execSync } from "node:child_process";
 import { isDeterministicProviderError, normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, quotaSignal, sanitizeProviderAuditReport, sanitizeProviderDisplayText, type QuotaSignal, type SubagentQuotaEvidence } from "./quota-retry.js";
-import { MAX_AUDITOR_CANDIDATE_REFS, MAX_MAIN_MODEL_FALLBACKS, normalizeBoundedModelRefs } from "./main-model-recovery.js";
+import { MAX_AUDITOR_CANDIDATE_REFS, MAX_MAIN_MODEL_FALLBACKS, MAX_MAIN_MODEL_SAME_MODEL_RETRIES, normalizeBoundedModelRefs } from "./main-model-recovery.js";
 import { resolveGllaStateDir, stateRootPending, withStateRootSnapshot } from "./glla-state-root.js";
 import { normalizeFindingLead, clipSummaryValue } from "./finding-lead.js";
 import { auditLifecycleLine, auditLifecycleProjection } from "./audit-lifecycle.js";
@@ -1305,6 +1305,11 @@ export interface MainModelRecovery {
   recoveryNoticeKeys?: string[];
   /** The model currently selected after one or more failovers. */
   active?: string;
+  /** v0.38.105: consecutive retries spent on `active` inside this episode.
+   * The current model keeps the episode until its same-model budget is spent
+   * (see DEFAULT_MAIN_MODEL_SAME_MODEL_RETRIES); a rotation resets it to 0 so
+   * the backup earns its own budget instead of inheriting the primary's. */
+  sameModelRetries?: number;
   /** Candidates already tried in this recovery cycle. */
   attempted: string[];
   /** Next safe probe time; persisted so reloads do not forget the wait. */
@@ -1392,6 +1397,9 @@ export function formatMainModelRecoveryStatus(recovery: MainModelRecovery | unde
     ...(recovery.pendingModelSwitch ? [`  Pending switch: ${recovery.pendingModelSwitch}`] : []),
     `  Attempted: ${attempted}`,
     `  Skipped: ${skipped}`,
+    ...(typeof recovery.sameModelRetries === "number" && recovery.sameModelRetries > 0
+      ? [`  Same-model retries: ${recovery.sameModelRetries} (budget before rotation)`]
+      : []),
     ...trajectory,
     ...cause,
   ];
@@ -1443,6 +1451,9 @@ export function sanitizeMainModelRecovery(value: unknown): MainModelRecovery | u
     primary,
     ...(["off", "minimal", "low", "medium", "high", "xhigh", "max"].includes(String(raw.primaryThinkingLevel)) ? { primaryThinkingLevel: raw.primaryThinkingLevel as MainModelRecovery["primaryThinkingLevel"] } : {}),
     ...(typeof raw.active === "string" && raw.active.trim() ? { active: raw.active.trim().slice(0, 300) } : {}),
+    ...(typeof raw.sameModelRetries === "number" && Number.isSafeInteger(raw.sameModelRetries) && raw.sameModelRetries > 0
+      ? { sameModelRetries: Math.min(raw.sameModelRetries, MAX_MAIN_MODEL_SAME_MODEL_RETRIES) }
+      : {}),
     attempted: refs,
     attempts,
     reason: bounded(raw.reason, 600) ?? "main model recovery",
