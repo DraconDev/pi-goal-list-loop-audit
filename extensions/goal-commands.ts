@@ -96,7 +96,7 @@ export interface CommandDeps {
   flags: CommandFlags;
   listQueue: () => NonNullable<State["list"]>;
   notifyExternal: (ctx: ExtensionContext, message: string) => void;
-  persistState: (ctx: ExtensionContext) => void;
+  persistState: (ctx: ExtensionContext) => boolean | void;
   updateGoal: (patch: Partial<Goal>, ctx: ExtensionContext) => boolean;
   setGoal: (goal: Goal, ctx: ExtensionContext, via?: string) => boolean;
   archiveCurrentGoal: (ctx: ExtensionContext, status: Status, stopReason?: string) => boolean;
@@ -2853,7 +2853,7 @@ async function cmdGllaResume(ctx: ExtensionContext): Promise<void> {
     const previous = state.mainModelRecovery;
     clearMainModelRecoveryTimer();
     state.mainModelRecovery = undefined;
-    if (!persistState(ctx)) {
+    if (persistState(ctx) === false) {
       state.mainModelRecovery = previous;
       ctx.ui.notify("No GLLA objective to resume; the stale recovery marker could not be cleared. Send a normal message to retry this chat.", "warning");
       return;
