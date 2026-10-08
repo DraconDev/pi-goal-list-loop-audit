@@ -35,22 +35,29 @@ test('observer retains pre-reset iteration signals and current version, and neve
   // FAILED LANDING: every receipt must already have been queued, and the
   // observer must not mutate, retry, or schedule a follow-up write.
   observeProgressState(root, { ...state, goal: { ...state.goal, status: 'paused' }, supervisorPausedAt: 1_700_000_003_000 }, receipt => received.push(receipt), 1_700_000_003_000);
-  assert.equal(received.length, 4);
-  const [first, second, third, fourth] = received;
-  assert.equal(first?.kind, 'state');
-  assert.equal(first?.runtimeId, second?.runtimeId);
+  const states = received.filter(receipt => receipt.kind === 'state');
+  const ended = received.filter(receipt => receipt.kind === 'ended');
+  const iteration = received.find(receipt => receipt.kind === 'iteration')!;
+  assert.equal(states.length, 3);
+  assert.equal(iteration.kind, 'iteration');
+  assert.equal(iteration.signals?.fileWrites, 7);
+  assert.equal(iteration.signals?.gitCommits, 3);
+  assert.equal(iteration.signals?.currentHead, 'a1b2c3d4');
+  // Initial loop-bearing observation ended the goal-only run, so the
+  // "ended" receipt is the rebind record — not a control decision.
+  assert.equal(ended.length, 1);
+  assert.equal(ended[0]?.reasonCode, 'target-no-longer-present');
+  const [, secondGoal] = states;
+  assert.equal(secondGoal?.interval?.milliseconds, 2000);
+  assert.equal(secondGoal?.interval?.phase, 'building');
+  assert.equal(secondGoal?.deltas?.some(delta => delta.id === 'other' && delta.to === 'verified'), true);
+  const [first, , final] = states;
+  assert.equal(first?.runtimeId, secondGoal?.runtimeId);
   assert.equal(first?.generation, 7);
   assert.equal(first?.version, '0.39.16');
   assert.equal(first?.phase, 'building');
-  assert.equal(second?.kind, 'iteration');
-  assert.equal(second?.signals?.fileWrites, 7);
-  assert.equal(second?.signals?.gitCommits, 3);
-  assert.equal(second?.signals?.currentHead, 'a1b2c3d4');
-  assert.equal(third?.interval?.milliseconds, 2000);
-  assert.equal(third?.interval?.phase, 'building');
-  assert.equal(third?.deltas?.some(delta => delta.id === 'other' && delta.to === 'verified'), true);
-  assert.equal(fourth?.reasonCode, 'supervisor-paused');
-  assert.equal(fourth?.phase, 'waiting');
+  assert.equal(final?.reasonCode, 'supervisor-paused');
+  assert.equal(final?.phase, 'waiting');
 }));
 
 test('observer preserves receipt identity, intervals and redacted blocked reasons after journaling', () => {
@@ -63,11 +70,11 @@ test('observer preserves receipt identity, intervals and redacted blocked reason
     const persisted = issued.map(receipt => JSON.stringify({ type: 'glla_progress_receipt', value: receipt, at: receipt.at }) + '\n').join('');
     fs.writeFileSync(path.join(root, 'active.jsonl'), persisted);
     const report = readProgressReport(root);
-    const goal = report.runs.find(run => run.id === 'goal-1');
+    const goal = report.runs.find(run => run.id === 'goal-1' && run.family === 'goal') ?? report.runs.find(run => run.id === 'goal-1');
     assert.equal(goal?.loadedVersion, '0.39.16');
     assert.equal(goal?.phaseAccounting.provenance, 'observed');
     assert.equal(goal?.phaseAccounting.durationsMs.building, 500);
-    assert.equal(goal?.phaseAccounting.recordedTokens, 60);
+  assert.equal(goal?.phaseAccounting.recordedTokens, 60);
     assert.equal(goal?.phaseAccounting.monetaryCost, 'unknown');
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });

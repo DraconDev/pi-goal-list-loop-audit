@@ -10,7 +10,7 @@ const bounded = (value, fallback, hard) => Number.isSafeInteger(value) && value 
 
 function emptyRun(runId, mode, target, timestamp) {
   return {
-    id: runId, mode, target, status: 'unknown', iterations: 0, cycle: undefined, loadedVersion: 'unknown',
+    id: runId, family: 'unknown', mode, target, status: 'unknown', iterations: 0, cycle: undefined, loadedVersion: 'unknown',
     capabilityProgress: 'unknown', coverage: { total: 0, verified: 0, open: 0, blocked: 0 },
     historicalVerification: [], historyTruncated: false, coverageIncomplete: false,
     checkpoint: { revision: undefined, attribution: 'unknown' },
@@ -26,6 +26,7 @@ function integrateReceipt(runs, options, receipt, timestamp) {
   if (!runs.has(key)) {
     if (runs.size >= bounded(options.maxRuns, 16, 64)) runs.delete(runs.keys().next().value);
     runs.set(key, emptyRun(receipt.runId, typeof receipt.mode === 'string' ? text(receipt.mode, 40) ?? 'unknown' : 'unknown', 'unknown', timestamp));
+    runs.get(key).family = family;
   }
   const run = runs.get(key);
   run.latestObservationAt = timestamp ?? run.latestObservationAt;
