@@ -1491,7 +1491,7 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
     state.mainModelRecovery = next;
     persistState(ctx);
     resumeSupervisedRecoverySurface(ctx, recovery.kind);
-    appendLedger(ctx.cwd, "main_model_same_model_retry", { current, attempt: nextRetries, budget: sameModelBudget, attempts: next.attempts });
+    appendLedger(ctx.cwd, "main_model_probe", { from: current, to: current, attempts: next.attempts, mode: "same-model-retry", sameModelRetries: nextRetries, budget: sameModelBudget });
     ctx.ui.notify(`Main model recovery: retrying ${current} (same-model retry ${nextRetries}/${sameModelBudget}) before switching to a configured backup.`, "info");
     return;
   }
