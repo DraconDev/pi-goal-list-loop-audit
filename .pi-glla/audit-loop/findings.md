@@ -852,5 +852,5 @@ Three parallel read-only subsystem scouts (core goal/loop dispatch; recovery/com
 - [x] FIX: LOW: respec prompts ride no ship-gate — smoke required list and release-contract test omit two runtime-loaded prompts, so a files[] narrowing would pass the gate and break /loop respec (scripts/release-pack-smoke.mjs:61) — fixed in cf954dc5; meta-gate tests/respec-prompt-ship-gate.test.ts pins every runtime-loaded prompt in both tiers (proven missing pre-fix)
 - [x] FIX: LOW: dead 0-byte test-failure-diagnostics plaintext artifact litters tests/ (tests/test-failure-diagnostics.test.ts.plaintext:1) — fixed in 4cd011ce (deleted)
 - [x] FIX: LOW: generated inventory baseline parenthetical is stale next to the regenerated count (docs/RUNTIME-INVENTORY.md:1) — fixed in 4cd011ce (generator re-baselined, inventory regenerated, check:inventory passes)
-- [?] DECIDE: test:changed runs bare bun test instead of the hardened runner (route --changed through scripts/run-tests.mjs for stall/orphan protection vs document it as unprotected and keep it fast) (package.json:64)
-- [?] DECIDE: boundary-compaction failure stays one-shot until usage halves (keep the documented anti-grind hysteresis vs record failedAt with a bounded retry so high-usage episodes keep a compaction path) (extensions/goal-compactor.ts:139)
+- [x] DECIDED: route test:changed through scripts/run-tests.mjs for stall/orphan protection (2026-10-08)
+- [x] DECIDED: keep the documented one-shot boundary-compaction hysteresis until usage halves (2026-10-08)
