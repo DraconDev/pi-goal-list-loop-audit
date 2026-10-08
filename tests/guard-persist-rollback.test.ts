@@ -20,6 +20,8 @@ test("guard with broken storage holds the dispatch and rolls memory back to acti
   seedState(cwd, {});
   const ctx = makeMockCtx(cwd, { sessionManager: { name: "guard-rollback" } });
   await pi.fire("session_start", { reason: "startup" }, ctx);
+  await tick(100);
+  // Seed after startup settles so no startup dispatch pauses the goal first.
   seedState(cwd, { goal: seedGoal({ status: "active", objective: SUSPICIOUS }) });
   __testOnlyLoadState(cwd);
   assert.equal(state.goal?.status, "active");
