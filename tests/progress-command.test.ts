@@ -3,14 +3,16 @@ import * as assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { MockPi, MockCtx } from './harness/mock-pi.ts';
+import { MockPi, makeMockCtx, type MockCtx } from './harness/mock-pi.ts';
 import { registerGoalRuntime } from '../extensions/loops/goal-activation.ts';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
 
 function setup() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'glla-progress-cmd-'));
   const pi = new MockPi();
-  const ctx = new MockCtx(dir);
+  (pi as any).events = { on: () => undefined, off: () => undefined };
+  const ctx = makeMockCtx(dir);
+  registerGoalRuntime(pi as unknown as ExtensionAPI);
   const glla = pi.commands.get('glla')!;
   return { dir, pi, ctx, glla };
 }
@@ -25,22 +27,20 @@ test('/glla progress is read-only and never mutates the journal, owner or settin
   fs.writeFileSync(journal, '');
   fs.writeFileSync(owner, '{"generation":"foreign","pid":1}');
   t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* cleanup is best-effort */ } });
-  registerGoalRuntime(pi as unknown as ExtensionAPI);
   const before = (): [string, string, string[], string] => [fs.readFileSync(journal, 'utf8'), fs.readFileSync(owner, 'utf8'), fs.readdirSync(dir).sort(), fs.readFileSync(settings, 'utf8')];
   const snapshot = before();
   await glla('progress', ctx as unknown as ExtensionContext);
   await glla('progress json', ctx as unknown as ExtensionContext);
-  const notify = pi.sent.map(entry => entry.message).filter(message => typeof message.content === 'string').map(message => message.content as string);
+  const notify = ctx.ui.notifies.map(notification => notification.message).filter(message => typeof message === 'string');
   assert.ok(notify.length >= 1);
-  assert.ok(!notify.some(content => content.includes('progress' + ' json')));
+  assert.ok(!notify.some(content => content.includes('progress json')));
   assert.deepEqual(before(), snapshot);
 });
 
 test('/glla progress refuses to run while the state root is still pending selection', async (t: TestContext) => {
-  const { dir, pi, ctx, glla } = setup();
+  const { dir, ctx, glla } = setup();
   t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* cleanup is best-effort */ } });
-  registerGoalRuntime(pi as unknown as ExtensionAPI);
   await glla('progress', ctx as unknown as ExtensionContext);
-  const warning = pi.notifications.find(notification => notification.message?.includes('Progress unavailable'))?.message;
+  const warning = ctx.ui.notifies.find(notification => notification.message?.includes('Progress unavailable'))?.message;
   assert.ok(typeof warning === 'string' && warning.includes('select the GLLA state root'));
 });
