@@ -26,7 +26,8 @@ import {
 import { auditLifecycleProjection, fmtAge, isSettlingClaim } from "./audit-lifecycle.js";
 import { clearDispatchRecord, dispatchRecordExists } from "./goal-loop-dispatch.js";
 import type { AuditDisplayProgress } from "./goal-loop-display.js";
-import { auditorVerdictTally, fmtElapsed, formatVerdictTallySegment } from "./goal-loop-display.js";
+import { auditorVerdictTally, fmtElapsed, formatVerdictTallySegment, buildWorkLifecycleSummary } from "./goal-loop-display.js";
+import { goalWorkView } from "./work-lifecycle.js";
 import { AUDIT_FINDINGS_REL, LOOP_AUDIT_MARKER, listAuditCollectTarget, projectAuditTarget } from "./goal-loop-forever.js";
 import { buildLoopCompletionSummary, compactCompletionSummary, compactTerminalCompletionSummary } from "./completion-summary.js";
 import { ProjectRollup, discoverGllaProjects, filterPremature, formatChallengesJson, formatChallengesTable, formatReliabilityJson, formatReliabilityTable, formatOutcomesJson, formatOutcomesTable, formatRollupJson, formatRollupTable, rollupProject } from "./goal-loop-stats.js";
@@ -447,8 +448,10 @@ async function cmdStatus(ctx: ExtensionContext): Promise<void> {
     return;
   }
   const g = state.goal;
+  const view = goalWorkView(g, state);
   const lines = [
-    `${statusLabel(g.status)}: ${sanitizeDisplayText(g.objective)}`,
+    `${view.lifecycle === "waiting" ? "WAITING" : statusLabel(g.status)}: ${sanitizeDisplayText(g.objective)}`,
+    buildWorkLifecycleSummary({ ...state, loop: undefined }),
     ...(g.agentRole ? [`Agent role: ${g.agentRole} subagent checkpoint requested`] : []),
     // v0.24.7: name WHERE the work came from — a queue item is not a goal.
     ...(g.policy === "list" ? [`Source: /list queue (${listQueue().length} waiting) — /list to manage`] : []),
@@ -478,7 +481,11 @@ async function cmdStatus(ctx: ExtensionContext): Promise<void> {
     // had two answers. The condition is now the one `/glla status` uses.
     lines.push(`Completion audit: ${formatStoredAuditLifecycle(g, { inFlight: flags.completionAuditInFlight, queued: flags.latestAuditProgress?.label === "queued" })}`);
   }
-  if (g.pauseReason) lines.push(`Paused: ${sanitizeProviderDisplayText(g.pauseReason)}`);
+  if (g.pauseReason) lines.push(`${view.lifecycle === "waiting" ? "Wait checkpoint" : "Paused"}: ${sanitizeProviderDisplayText(g.pauseReason)}`);
+  if (g.backgroundWait) {
+    lines.push(`Background checkpoint: ${sanitizeDisplayText(g.backgroundWait.reason)}`);
+    for (const dependency of g.backgroundWait.dependencies) lines.push(`Dependency ${sanitizeDisplayText(dependency.runId)}: ${dependency.outcome}${dependency.asyncDir ? ` · artifact ${sanitizeDisplayText(dependency.asyncDir)}` : ""}`);
+  }
   if (g.status === "paused" && !g.pendingCompletion) {
     if (g.pauseSuggestedAction) lines.push(`Next: ${sanitizeProviderDisplayText(g.pauseSuggestedAction)}`);
     else if (g.pauseKind === "decision" && g.pauseOptions?.length) lines.push(`Choose: ${activeGoalSurfaceCommand("decide")}`);
