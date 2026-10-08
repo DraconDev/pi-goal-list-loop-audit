@@ -48,7 +48,9 @@ function eventId(data: unknown): string | undefined {
   const id = e.runId ?? e.id;
   return typeof id === "string" && id.trim() && id.length <= 200 ? id.trim() : undefined;
 }
-function targetWait(): BackgroundWait | undefined { return state.goal?.backgroundWait ?? state.loop?.backgroundWait; }
+function targetWait(): BackgroundWait | undefined {
+  return workTargetId() === state.goal?.id ? state.goal?.backgroundWait : state.loop?.backgroundWait;
+}
 
 /** Only the currently admitted parent may associate a public start with work.
  * A supplied parent session must match; children from other tabs cannot attach. */
@@ -86,7 +88,8 @@ function storeWait(ctx: ExtensionContext, wait: BackgroundWait | undefined, lega
 export function admitBackgroundWait(ctx: ExtensionContext, runIds: string[], reason: string): { ok: boolean; message: string } {
   if (!hooks?.valid(ctx) || !sessionId(ctx) || supervisorPaused(state)) return { ok: false, message: "Not waiting: supervision is frozen or this session no longer owns the work." };
   const targetId = workTargetId();
-  if (!targetId || state.goal?.pendingCompletion || state.loop?.builder?.phase === "auditing" || (state.goal && state.goal.status !== "active") || (!state.goal && !state.loop?.active)) return { ok: false, message: "Not waiting: no eligible running target." };
+  const goalOwned = targetId === state.goal?.id;
+  if (!targetId || (goalOwned ? state.goal?.pendingCompletion || state.goal?.status !== "active" : !state.loop?.active || state.loop.builder?.phase === "auditing")) return { ok: false, message: "Not waiting: no eligible running target." };
   if (targetWait()) return { ok: false, message: "An owned background wait already exists; inspect its dependency results before replacing it." };
   if (!runIds.length || runIds.length > 32 || new Set(runIds).size !== runIds.length) return { ok: false, message: "Supply 1–32 distinct exact background run ids; a prose reason cannot establish ownership." };
   const admitted: Observation[] = [];
@@ -174,8 +177,9 @@ export function reconcileBackgroundWait(ctx: ExtensionContext, now = Date.now())
   }
   const saved = targetWait();
   if (!saved) return false;
-  if (supervisorPaused(state) || state.goal?.status === "paused" || (!state.goal && !state.loop?.active)) return true;
-  if (state.goal?.pendingCompletion || state.loop?.builder?.phase === "auditing") return true;
+  const goalOwned = targetId === state.goal?.id;
+  if (supervisorPaused(state) || (goalOwned ? state.goal?.status === "paused" : !state.loop?.active)) return true;
+  if (goalOwned ? state.goal?.pendingCompletion : state.loop?.builder?.phase === "auditing") return true;
   const wait = sanitizeBackgroundWait(saved, targetId);
   if (!wait) {
     // Invalid records remain held rather than manufacturing owner authority.
@@ -197,7 +201,7 @@ export function reconcileBackgroundWait(ctx: ExtensionContext, now = Date.now())
   // are in one state write, so a crash cannot lose the assessment obligation.
   const before = { ...state, goal: state.goal, loop: state.loop };
   const result = { ...next, settledAt: next.settledAt ?? new Date(now).toISOString() };
-  if (state.goal) state.goal = { ...state.goal, lastBackgroundWait: result, backgroundWait: undefined };
+  if (goalOwned && state.goal) state.goal = { ...state.goal, lastBackgroundWait: result, backgroundWait: undefined };
   else if (state.loop) state.loop = { ...state.loop, lastBackgroundWait: result, backgroundWait: undefined };
   if (!hooks.persist(ctx)) { replaceState(before); return true; }
   appendLedger(ctx.cwd, "background_wait_settled", { targetId, waitId: next.id, dependencies: next.dependencies, legacy: next.legacy === true });
