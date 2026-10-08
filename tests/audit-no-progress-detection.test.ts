@@ -198,25 +198,21 @@ test("v0.38.105 deterministic mechanical pre-audit rows are transparent to the n
     3,
     "transparent gate rows do not break a real auditor streak",
   );
-  // An interleaved history proves the auditor is what we count: every OTHER
-  // row is a gate, the auditor is byte-identical, but the auditor rows are
-  // never adjacent in the window (a single gate sits between each pair).
-  // Identical-fingerprint is computed on the immediately previous counted
-  // row, so the answer is 1.
-  const interleaved = [];
+  // An interleaved history proves the gate rows are TRANSPARENT, not
+  // resetting: a stair-step of auditor + gate + auditor + gate with
+  // identical auditor reports counts the auditor rows end-to-end (the
+  // gates do not break the streak because they are skipped, not counted
+  // against). Identical-fingerprint is computed on the immediately previous
+  // counted row, so three auditor rows interleaved with three gate rows
+  // still read as 3.
+  const interleaved: Array<{ at: string; model: string; report: string; approved: false; disapproved: true; revision: number }> = [];
   for (let i = 0; i < 3; i++) {
-    interleaved.push({ ...auditorReportRow(i) });
-    interleaved.push({ ...gateReportRow(i) });
+    interleaved.push({ at: `2026-10-08T16:5${i}:30.000Z`, model: "auditor/test", report: auditorReport, approved: false, disapproved: true, revision: 0 });
+    interleaved.push({ at: `2026-10-08T16:5${i}:00.000Z`, model: "deterministic-pre-audit", report: gateReport, approved: false, disapproved: true, revision: 0 });
   }
   assert.equal(
     countTrailingRepeatedDisapprovals(interleaved),
-    1,
-    "an auditor row separated from the next auditor by a gate is not a streak",
+    3,
+    "transparent gate rows between identical auditor reports do not break the streak",
   );
-  function gateReportRow(i: number) {
-    return { at: `2026-10-08T16:5${i}:00.000Z`, model: "deterministic-pre-audit", report: gateReport, approved: false, disapproved: true, revision: 0 };
-  }
-  function auditorReportRow(i: number) {
-    return { at: `2026-10-08T16:5${i}:30.000Z`, model: "auditor/test", report: auditorReport, approved: false, disapproved: true, revision: 0 };
-  }
 });
