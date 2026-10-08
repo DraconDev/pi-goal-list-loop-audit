@@ -1,7 +1,8 @@
 # Work lifecycle and activity
 
-Implementation contract for the confirmed lifecycle repair. This document
-specifies intended behavior; it is not a claim that each seam is implemented yet.
+Implementation/state reference for the lifecycle repair. Runtime verification
+is recorded separately in the tracked audit report; this reference is not an
+independent verification verdict.
 
 ## Why this exists
 
@@ -52,8 +53,9 @@ or loop invalidates the old wait even if its worker later completes.
 
 ## Admission and settlement
 
-- Expose explicit background-wait intent with dependency ids. Keep legacy
-  `pause_goal(kind=standby)` as a compatibility entry, not a genuine pause.
+- `wait_for_background({runIds, reason})` exposes explicit background-wait
+  intent. Keep legacy `pause_goal(kind=standby, runIds=...)` as a compatibility
+  entry, not a genuine pause. Both reject unknown or uncorrelated ids.
 - Admit only dependencies correlated to this owning session/target through
   observed public lifecycle or tool-result evidence. Unknown ids cannot
   authorize automatic continuation. Do not guess from a prose reason.
@@ -80,8 +82,10 @@ or loop invalidates the old wait even if its worker later completes.
 A wait survives in the authoritative state projection. On restore, reconcile
 only its saved dependencies through public, identity-matching status artifacts.
 Completed/failed dependencies can settle; absent/unreadable/mismatched artifacts
-must not be described as still running indefinitely. Request one bounded
-assessment once continuation consent exists. No restart bypasses a load hold or
+must not be described as still running indefinitely. A running artifact with a
+published deadline expires at that deadline. Without one, reconciliation requests
+assessment after at most 30 minutes; dead processes or stale unproved activity
+settle sooner. Request one bounded assessment once continuation consent exists. No restart bypasses a load hold or
 explicit pause. Local generation fences rebind through the admitted owner rather
 than granting arbitrary old callbacks authority.
 
@@ -103,7 +107,8 @@ resume. A failed migration write must retain the conservative hold.
   correlate identities, then settle waits separately from watchdog telemetry.
 - Durable async status: retain the public event's artifact identity for reload;
   no imports or modifications of companion internals.
-- Display: shared lifecycle/activity projection for cards, footer and status;
+- Display: `goalWorkView`, `loopWorkView` and `stateWorkView` share the
+  lifecycle/activity projection across cards, footer and status;
   waiting gets a distinct waiting indicator, paused gets the freeze indicator.
   Name the dependency and next owner action; never promise automatic wake without
   an admitted owner. Archived work remains terminal, not resumable.
