@@ -1,6 +1,6 @@
 # Progress observability implementation — 2026-10-08
 
-Status: initial pure report reducer implemented with four passing component regressions; lifecycle telemetry, read-only adapter, command and broader acceptance remain unfinished.
+Status: initial pure report reducer implemented with five passing component regressions; lifecycle telemetry, read-only adapter, command and broader acceptance remain unfinished.
 
 ## Adopted scope
 
@@ -19,7 +19,7 @@ Progress visibility only. Existing project runs remain read-only. Scheduling, wo
 
 ## Implementation register
 
-1. Pure report model, uncertainty/attribution rules and bounded read-only adapter — pending.
+1. Pure report model and initial uncertainty/attribution rules — in progress; bounded read-only adapter still pending.
 2. Versioned lifecycle observers and retained activity signals — pending.
 3. Public command and machine-readable reporting entry point — pending.
 4. Sanitized observational replay and observational immutability checks — pending.
@@ -31,4 +31,5 @@ Progress visibility only. Existing project runs remain read-only. Scheduling, wo
 - Initial feature test run failed at module resolution because the new report module did not exist (0 pass / 1 fail / 1 error); this is a missing-feature baseline, not behavioral proof against an existing implementation. `/tmp/glla-progress-report-baseline.log`.
 - After initial pure reducer implementation: `timeout 180 bun test --timeout=60000 tests/progress-report.test.ts`: 4 pass / 0 fail. Covers metricless housekeeping not becoming delivery, historical verification distinct from current reopening, separate run identities, and bounded/malformed input disclosure. `/tmp/glla-progress-report-first.log`.
 - `timeout 120 npm run check`: exit zero after these additions. `/tmp/glla-progress-types-first.log`.
+- A new mixed-state regression caught a report bug: a held loop and a current goal can coexist, but the first reducer chose the loop and hid the goal (4 pass / 1 fail; `/tmp/glla-progress-mixed-red.log`). The reducer now reports both without claiming ownership or applying runtime arbitration. Re-run: 5 pass / 0 fail and clean types (`/tmp/glla-progress-report-second.log`, `/tmp/glla-progress-types-second.log`).
 - The contract is NOT satisfied yet: these are component checks, not the required lifecycle, replay, public-interface or final full release gates. Previous-goal green gates are not evidence for this implementation.
