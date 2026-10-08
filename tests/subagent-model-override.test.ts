@@ -69,18 +69,24 @@ test("build: unknown agent name throws", () => {
   assert.throws(() => buildAgentOverrideMd("Custom"), /no embedded default config/);
 });
 
-test("sync: no upstream model pin means only the GLLA Designer role is created", () => {
+test("sync: Designer defaults off without an explicit selection", () => {
   const dir = tmpAgentDir();
   const result = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent" });
-  assert.deepEqual(result.written, ["Designer"]);
+  assert.deepEqual(result.written, []);
   assert.equal(readOverride(dir, "scout"), undefined);
+  assert.equal(readOverride(dir, "Designer"), undefined);
+  const selected = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", designerRequested: true });
+  assert.deepEqual(selected.written, ["Designer"]);
   assert.match(readOverride(dir, "Designer")!, /^systemPromptMode: replace$/m);
+  const cleared = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent" });
+  assert.deepEqual(cleared.removed, ["Designer"]);
+  assert.equal(readOverride(dir, "Designer"), undefined);
 });
 
 test("sync: explicit current-role pin wins over strategy and is idempotent", () => {
   const dir = tmpAgentDir();
   const first = syncSubagentModelOverrides({ agentDir: dir, strategy: "agent-default", overrides: { scout: "minimax/MiniMax-M3" } });
-  assert.deepEqual(first.written, ["Designer", "scout"]);
+  assert.deepEqual(first.written, ["scout"]);
   assert.match(readOverride(dir, "scout")!, /^model: minimax\/MiniMax-M3$/m);
   const second = syncSubagentModelOverrides({ agentDir: dir, strategy: "agent-default", overrides: { scout: "minimax/MiniMax-M3" } });
   assert.deepEqual(second.written, []);
@@ -93,7 +99,7 @@ test("sync: clearing a current-role pin removes only GLLA-owned content", () => 
   const result = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent" });
   assert.deepEqual(result.removed, ["scout"]);
   assert.equal(readOverride(dir, "scout"), undefined);
-  assert.ok(readOverride(dir, "Designer"));
+  assert.equal(readOverride(dir, "Designer"), undefined);
 });
 
 test("sync: user-owned current role is never overwritten", () => {
@@ -123,13 +129,13 @@ test("sync: legacy managed files are cleaned only when marked", () => {
 
 test("sync: missing or altered Designer definitions are repaired and flagged", () => {
   const dir = tmpAgentDir();
-  const first = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent" });
+  const first = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", designerRequested: true });
   assert.deepEqual(first.repaired, []);
   fs.unlinkSync(path.join(dir, "agents", "Designer.md"));
-  const second = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent" });
+  const second = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", designerRequested: true });
   assert.deepEqual(second.repaired, ["Designer"]);
   fs.appendFileSync(path.join(dir, "agents", "Designer.md"), "\n# external edit\n");
-  const third = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent" });
+  const third = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", designerRequested: true });
   assert.deepEqual(third.repaired, ["Designer"]);
 });
 

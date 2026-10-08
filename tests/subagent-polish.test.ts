@@ -27,11 +27,11 @@ test("current pi-subagents roles expose complete model-pin definitions", () => {
   assert.match(worker, /x-managed-by: pi-goal-list-loop-audit/);
 });
 
-test("strategy-driven sync writes only the GLLA-owned Designer role", () => {
+test("strategy-driven sync leaves Designer off and writes only explicit pins", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-subagent-"));
   const sync = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", overrides: {} });
-  assert.deepEqual(sync.written, ["Designer"]);
-  assert.ok(fs.existsSync(path.join(dir, "agents", "Designer.md")));
+  assert.deepEqual(sync.written, []);
+  assert.ok(!fs.existsSync(path.join(dir, "agents", "Designer.md")));
   assert.ok(!fs.existsSync(path.join(dir, "agents", "scout.md")), "scout already inherits the parent in current pi-subagents");
   const sync2 = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", overrides: { scout: "minimax/MiniMax-M3" } });
   assert.deepEqual(sync2.written, ["scout"]);
