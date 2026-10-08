@@ -731,6 +731,8 @@ export interface Goal {
   /** Dependency-owned waiting is orthogonal to legacy execution status.
    * It yields the main agent without converting supervision to a pause. */
   backgroundWait?: import("./work-lifecycle.js").BackgroundWait;
+  /** Most recent dependency settlement retained for parent assessment/reload. */
+  lastBackgroundWait?: import("./work-lifecycle.js").BackgroundWait;
   policy: Policy;
   /** Explicit specialist routing requested for this goal/list item. */
   agentRole?: AgentRole;

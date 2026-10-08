@@ -131,6 +131,7 @@ export interface LoopState {
   active: boolean;
   /** Active supervision can yield to owned background dependencies. */
   backgroundWait?: import("./work-lifecycle.js").BackgroundWait;
+  lastBackgroundWait?: import("./work-lifecycle.js").BackgroundWait;
   stopReason?: string;
   /** v0.36.0: durable user-facing recap for terminal loop outcomes. */
   completionSummary?: string;
