@@ -1389,6 +1389,25 @@ async function probePreferredPrimary(ctx: ExtensionContext, recovery: MainModelR
   }
 }
 
+/** v0.38.105: a probe that selects a model must re-arm the supervised
+ * surface — a parked goal/list item becomes active and its continuation
+ * timer fires, a stopped loop restarts. Three branches in
+ * `probeMainModelRecoveryImpl` (resume-backup, cycle-reset, the rotation
+ * success path) all want the same un-pause + schedule, so the live state
+ * transitions live in one place. Safe to call when nothing is parked: the
+ * guard clauses are no-ops. */
+function resumeSupervisedRecoverySurface(ctx: ExtensionContext, kind: "goal" | "loop"): void {
+  flags.continuationDispatchStoodDown = false;
+  if (kind === "goal" && state.goal?.status === "paused" && (state.goal.pauseReason ?? "").startsWith("main model recovery")) {
+    updateGoal({ status: "active", pauseKind: undefined, pauseResumeAt: undefined, pauseReason: undefined, pauseSuggestedAction: undefined, providerErrorDiagnostic: undefined, recoveryEpisodeKey: undefined, recoveryNoticeKeys: undefined }, ctx);
+    scheduleContinuation(ctx, true, 1_000);
+  } else if (kind === "loop" && state.loop && !state.loop.active && (state.loop.stopReason ?? "").startsWith("main model recovery")) {
+    state.loop = { ...state.loop, active: true, stopReason: undefined };
+    persistState(ctx);
+    scheduleLoopTick(ctx);
+  }
+}
+
 async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> {
   if (supervisorPaused(state)) return;
   const generation = flags.sessionGeneration;
