@@ -86,7 +86,8 @@ for (const surface of ["goal", "list", "metric", "project"] as const) {
     }
     pi.emitBus("subagent:async-complete", { runId: "other-worker" });
     assert.ok(state.goal?.backgroundWait ?? state.loop?.backgroundWait);
-    const sendsBefore = pi.userMessages.length;
+    const mainSends = () => pi.sent.filter(message => (message.options as { triggerTurn?: boolean })?.triggerTurn === true).length + pi.userMessages.length;
+    const sendsBefore = mainSends();
     busy = false;
     fs.writeFileSync(path.join(asyncDir, "status.json"), JSON.stringify({ runId: "owned-worker", state: "complete" }));
     pi.emitBus("subagent:async-complete", { runId: "owned-worker", sessionId: "parent-session" });
@@ -97,7 +98,7 @@ for (const surface of ["goal", "list", "metric", "project"] as const) {
     pi.emitBus("subagent:async-complete", { runId: "owned-worker" });
     assert.equal(pi.sent.filter(message => message.message.customType === "glla-background-settled").length, 1);
     await tick(500);
-    assert.equal(pi.userMessages.length - sendsBefore, 1, "matching completion admits exactly one main-thread continuation");
+    assert.equal(mainSends() - sendsBefore, 1, "matching completion admits exactly one main-thread continuation");
     assert.equal(aborts, 0);
   });
 }
