@@ -40,7 +40,10 @@ test('/glla progress is read-only and never mutates the journal, owner or settin
 test('/glla progress refuses to run while the state root is still pending selection', async (t: TestContext) => {
   const { dir, ctx, glla } = setup();
   t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* cleanup is best-effort */ } });
+  // Wipe any settings the previous test left behind so the selector must re-resolve.
+  fs.rmSync(path.join(dir, '.pi-glla', 'settings.json'), { force: true });
   await glla('progress', ctx as unknown as ExtensionContext);
+  console.log('notifies', JSON.stringify(ctx.ui.notifies, null, 2));
   const warning = ctx.ui.notifies.find(notification => notification.message?.includes('Progress unavailable'))?.message;
   assert.ok(typeof warning === 'string' && warning.includes('select the GLLA state root'));
 });
