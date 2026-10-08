@@ -21,6 +21,7 @@ import { HELD_ON_RESTORE, type LoopState } from "./goal-loop-forever.js";
 import { respecCoverage } from "./respec-builder.js";
 import { normalizeFindingLead } from "./finding-lead.js";
 import { auditorSurfaceSuppressed } from "./loops/goal-auditor-surface.js";
+import { isCompactionRecoveryHold, compactionResumeAction } from "./compaction-resume.js";
 
 /** v0.34.57 (OPEN-ISSUES bug #1.8 / tasklist item #2): the MAIN host is
  * NEVER detached — it is always SUPERVISING, regardless of any handle state.
@@ -1474,6 +1475,12 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
     }
     const kind = pauseKind(g);
     if (kind === "decision") return `glla: ${paint(theme, "accent", "⏸ decision needed")}${pausedStatusSuffix(g, state, extras, now, false, true)}${heldSuffix}`;
+    if (kind === "error" && isCompactionRecoveryHold(g)) {
+      // Reserve the scarce footer segment for the real action, not a reason
+      // followed by a duplicated lifecycle/owner/queue report that Pi clips.
+      const resume = g.policy === "list" ? "/list resume" : "/goal resume";
+      return `glla: ${paint(theme, "warning", resume)} · compaction stopped`;
+    }
     if (kind === "error") return `glla: ${paint(theme, "error", `⏸ action needed — ${truncate(displayPauseReason(g.pauseReason ?? ""), 30)}`)}${pausedStatusSuffix(g, state, extras, now, false, true)}${heldSuffix}`;
     // v0.38.64 (021655): standby joins this gate so its waiting label
     // renders here instead of falling through to the generic paused line.
@@ -2385,7 +2392,7 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
     // retry is an extra attempt, not a provider reset-time claim.
     const parkedAt = state.mainModelRecovery?.retryAt ? Date.parse(state.mainModelRecovery.retryAt) : Number.NaN;
     if (kind === "decision") lines.push(`├─ ${paint(theme, "accent", "decision needed — your call unblocks this")}`);
-    else if (kind === "error") lines.push(`├─ ${paint(theme, "error", "action needed — this won't fix itself")}`);
+    else if (kind === "error") lines.push(`├─ ${paint(theme, "error", isCompactionRecoveryHold(g) ? "compaction stopped — resume retries saved work" : "action needed — this won't fix itself")}`);
     else if (Number.isFinite(parkedAt) || state.mainModelRecovery?.pendingModelSwitch) {
       const recoveryLabel = "main-model recovery — retrying automatically";
       lines.push(`├─ ${paint(theme, "dim", recoveryLabel)}`);
@@ -2470,9 +2477,10 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
       ? `saved — ${spent.join(" · ")} · resumes exactly here`
       : `awaiting first turn — resumes exactly here`;
     const optionsFollow = decisionOptions !== undefined;
-    if (g.pauseSuggestedAction) {
+    const pauseAction = isCompactionRecoveryHold(g) ? compactionResumeAction(g.policy) : g.pauseSuggestedAction;
+    if (pauseAction) {
       lines.push(`├─ ${paint(theme, "dim", truncate(savedLine, budget))}`);
-      const wrapped = wrap(sanitizeProviderDisplayText(g.pauseSuggestedAction), budget, 3);
+      const wrapped = wrap(sanitizeProviderDisplayText(pauseAction), budget, 3);
       // v0.28.22: for ACTION NEEDED pauses the action is the point — pop it.
       const actionPaint = kind === "error" ? "warning" : "dim";
       // v0.38.71 (field UI-SURVEY-2026-09-20 finding 1): the action precedes
