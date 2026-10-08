@@ -73,6 +73,7 @@ import {
   type RecoveryFlags,
 } from "../goal-recovery.js";
 import { createGoalHeartbeat, getSubagentAgentsSnapshot, type HeartbeatDeps, type HeartbeatFlags } from "../goal-heartbeat.js";
+import { __testOnlyResetBackgroundWaitRuntime } from "../background-wait-runtime.js";
 import { createGoalCommands, type CommandDeps, type CommandFlags } from "../goal-commands.js";
 import { clearLoopTimer, createGoalLoop, type LoopDeps, type LoopFlags } from "../goal-loop.js";
 
