@@ -1,611 +1,273 @@
 # pi-goal-list-loop-audit
 
 <p align="center">
-  <img src="media/glla2.png" alt="GLLA mission control" width="960">
+  <img src="media/glla2.png" alt="GLLA work supervision in Pi" width="960">
 </p>
 
-> **Build, recover, and verify long-running work in Pi.**
->
-> Give pi a meaningful outcome. GLLA helps it research, plan, execute,
-> recover, and prove the result over hours or days instead of treating one
-> chat turn as the whole job.
+> **Give Pi an outcome—not another prompt to stop halfway through.**
 
-`pi-goal-list-loop-audit` (GLLA) is mission control for autonomous work in
-[pi](https://github.com/badlogic/pi-mono). It fits work that is too broad,
-too long, or too important to leave to a single uninterrupted prompt:
-repo-wide changes, migrations, audits, research, documentation overhauls,
-large refactors, and continuous improvement.
-
-Build a project from its spec:
+GLLA turns substantial work into a durable, supervised process: agree on the
+finish line, keep working across turns, recover interruptions, and check the
+result before calling it complete.
 
 ```bash
 pi install npm:pi-goal-list-loop-audit
 ```
 
-In Pi, run `/reload` if the session is already open, then:
+Then, in Pi:
 
 ```text
-/loop respec Build the missing capabilities in SPEC.md and prove the result
+/goal plan Make this project's first-run experience ready for new users
 ```
 
-GLLA researches the project, drafts requirements for your confirmation, builds
-increments, and sends completion claims to an independent auditor. Unmet
-requirements return to work; verified completion retains its evidence.
-Use `/goal` for one outcome or `/list` for a queue of outcomes.
-See the [command guide](#choose-the-work-surface) and
-[recovery guide](docs/RECOVERY.md), or find GLLA in the
-[Pi package catalog](https://pi.dev/packages/pi-goal-list-loop-audit).
+Review the proposed objective and acceptance criteria, confirm them, and let
+Pi work. Use `/glla status` to see what it is doing and what needs your attention.
 
-GLLA does not promise that an agent never makes a mistake. It makes the
-agent's work **more effective, durable, recoverable, and hard to declare
-finished without evidence**:
+[Install and update](INSTALL.md) · [Practical workflows](docs/WORKFLOWS.md) ·
+[Recovery](docs/RECOVERY.md) · [Settings](docs/SETTINGS.md) ·
+[Pi package catalog](https://pi.dev/packages/pi-goal-list-loop-audit)
 
-- You state the outcome and what “done” means.
-- The agent researches, decomposes, and executes across many turns.
-- GLLA keeps durable state, checks lifecycle/progress signals continuously, and
-  recovers failures with bounded per-attempt backoff plus policy-driven stop rules.
-- Every terminal objective leaves a useful six-label recap; missing evidence is
-  shown as `not recorded`, never guessed.
-- Optional subagents can do parallel research and focused implementation work.
-- A separate detached auditor checks the saved completion claim before GLLA
-  accepts it.
+## About GLLA
 
-The aim is not "run forever." The aim is **more useful work per unit of
-attention, with event-driven progress instead of guessed-duration waiting, and
-better evidence at the end**. See `docs/DESIGN-long-running-supervision.md` for
-the long-running policy.
+Coding agents are good at taking the next step. Substantial projects need
+something more: a remembered commitment, a reason to keep going, a way to
+recover, and a finish line that does not depend on the agent sounding confident.
 
-Use `/glla version` to inspect the installed version and compare it with the
-registry. This checkout may contain unreleased changes; npm is authoritative
-for published versions. The npm/Pi package listing displays this README from
-the published tarball, so release the package after updating it when store
-readers need the latest guidance.
+GLLA supplies that supervision inside [Pi](https://github.com/badlogic/pi-mono).
+The main agent researches and implements; GLLA keeps the objective, progress,
+pauses and completion claims on disk. A separate auditor inspects the result
+against the agreed contract. Rejected claims return to work rather than becoming
+successful-looking endings.
 
-## Is GLLA the right tool?
+This is useful for features spanning several subsystems, migrations, repository
+audits, documentation overhauls, backlogs and projects built from a specification.
+It is not a new model, a hosted coding service, or a promise of hands-off correctness.
+It works with your Pi session, tools and authenticated providers.
 
-Use GLLA when the work benefits from an autonomous operator that can keep
-context, make progress without a prompt after every step, and return with an
-evidence-backed result:
+**The ambition is less babysitting, not less accountability.** You choose the
+outcome and permissions; the agent handles ordinary implementation decisions;
+important scope changes and decisions remain visible. Durable state and evidence
+make it easier to inspect what happened—even after a long run or interruption.
 
-- a feature that spans several files or subsystems;
-- a migration, security review, or repository audit;
-- research followed by implementation;
-- a documentation or test-quality overhaul;
-- a backlog of independently verifiable changes;
-- an improvement process that should run until a metric, specification, or
-  audit cadence says to stop.
+## Pick the right work shape
 
-Use ordinary pi for a one-line edit, a quick question, or work where you want
-to supervise every action manually. GLLA is a **supervisor for high-level
-outcomes**, not a replacement for judgment or a reason to remove a human from
-important decisions.
+| You want… | Use | What counts as finished |
+|---|---|---|
+| One result: a fix, feature, migration, research report or audit | `/goal` | An accepted completion audit against the objective and contract |
+| Several independently verifiable results | `/list` | Each item is audited separately; the queue advances after settlement |
+| Repeated improvement | `/loop` | A configured bound, metric plateau or explicit stop—not a claim that everything is solved |
+| A project built toward an evolving specification | `/loop respec` | Every adopted requirement independently verified and the project archived |
 
-## Install
+For a quick question or tiny edit, ordinary Pi chat is usually enough. Use GLLA
+when continuity and verification are worth the extra model calls and coordination.
 
-Install GLLA into pi:
+## Start with one goal
 
-```bash
-pi install npm:pi-goal-list-loop-audit
-```
-
-For the intended interview and confirmation experience, also install the
-structured-question companion:
-
-```bash
-pi install npm:@juicesharp/rpiv-ask-user-question
-```
-
-If pi was already open, run `/reload` in that session. GLLA works without the
-question companion through plain-text fallbacks, but structured questions are
-the recommended experience.
-
-## Your first goal
-
-Start pi in the project you want it to work on, then just say what you want:
+A rough request can become a confirmed plan:
 
 ```text
 /goal logins are broken, sort it out
 ```
 
-There is no required format — vagueness is fine. A plain seed leads into
-a draft: GLLA researches the problem itself, asks focused questions at
-dynamic length to draw out whatever detail matters, and shows a Confirm
-dialog before anything activates. You never have to front-load the whole
-spec; the draft pulls it out of you. If your seed already carries enough
-detail (alone or with the recent conversation), it skips the questions
-and goes straight to confirmation.
+GLLA drafts the outcome, asks questions when needed and offers confirmation.
+Bare `/goal` opens the interview; `/goal plan ...` requests research-first drafting.
+You do not need to arrive with a perfect specification.
 
-When you already know the finish line, spell it out — a `Done when:`
-contract starts directly and is independently audited at the end:
+If you already know the finish line, a `Done when:` contract starts directly:
 
 ```text
-/goal "Improve the login flow.
-
-Done when:
-- failed logins return a useful, safe error;
-- the relevant tests cover the new behavior and pass;
-- the change is documented and committed."
+/goal Fix login error handling. Done when: failed logins return safe, useful errors; regression tests pass; the change is documented.
 ```
 
-Bare `/goal` always interviews, `/goal plan "..."` always forces the full
-research-first draft, and `/goal start "..."` is the explicit shortcut for
-skipping the interview when that is intentional.
+`/goal start ...` explicitly skips drafting. Be deliberate: an explicit start
+can replace existing work. Drafting and direct starts are different consent paths.
 
-### What happens next
+### The work cycle
 
-1. **Intake:** GLLA preserves the objective and its verification contract.
-2. **Research and planning:** the agent can inspect the repository, ask for
-   decisions that materially change scope, and propose bounded tasks.
-3. **Execution:** the main pi session keeps working after each agent turn;
-   optional subagents can handle parallel, focused work.
-4. **Durability:** goals, queue items, progress, pauses, retries, and audit
-   claims are written to inspectable state on disk.
-5. **Recovery:** provider failures, silent turns, session replacement, and
-   frozen workers are handled through bounded, visible recovery paths.
-6. **Verification:** `complete_goal` saves a claim, runs mechanical checks, and
-   queues a detached auditor. The goal archives only after the auditor accepts
-   evidence for the contract.
+1. **Agree:** preserve the objective and observable acceptance criteria.
+2. **Build:** the agent researches, plans and implements across supervised turns.
+3. **Recover:** retain work and use bounded recovery when providers, sessions or workers fail.
+4. **Claim:** the agent submits evidence; saying “done” in chat does not close the goal.
+5. **Audit:** a detached verifier checks the saved claim. Missing evidence or rejection keeps work open.
+6. **Archive:** accepted, durably settled work leaves a result and evidence record.
 
-The status widget and `/glla status` show whether work is active, queued,
-paused, recovering, auditing, or waiting for an explicit decision. Silence is
-not presented as progress.
+The agent can propose a task plan with `propose_task_list`; confirming the plan
+makes its tasks tracked milestones, not proof of correctness. Completion claims
+with unfinished tasks are refused unless an explicit deferral was recorded.
 
-## Choose the work surface
+### Controls you will actually use
 
-GLLA has three work shapes. Pick the one that matches the outcome rather than
-forcing every problem into a loop.
+| Command | Purpose |
+|---|---|
+| `/glla status` | Inspect supervision, recovery and current work |
+| `/goal status` | Inspect the saved goal |
+| `/glla pause` | Freeze automatic supervision without killing an already running tool |
+| `/goal pause` / `/goal resume` | Hold or resume the goal |
+| `/goal tweak ...` | Propose a changed objective with confirmation |
+| `/goal verify` | Request verification of the current goal now |
+| `/goal audit [focus]` | Start a new one-pass repository audit; this is not `/goal verify` |
+| `/goal cancel` | Cancel the current goal, not certify it as complete |
+| `/goal archive` | Inspect archived goals |
+| `/glla bug [description]` | Capture diagnostic context without changing the objective |
 
-| Surface | Use it for | Completion model |
-|---|---|---|
-| `/goal` | One meaningful outcome: feature, fix, audit, migration, research, or docs | The saved `Done when:` contract is independently audited |
-| `/list` | Several outcomes or a backlog of independently verifiable items | Each item is worked and audited separately; the queue advances safely |
-| `/loop` | Ongoing improvement with no single final item | A metric, specification, audit cadence, bound, or `/loop stop` ends the process |
-
-### `/goal`: one outcome
+## Work through a backlog
 
 ```text
-/goal                                      # interview + Confirm
-/goal sort out logins                      # vague seed → draft draws out detail + Confirm
-/goal "... Done when: ..."                 # direct contract start
-/goal start "..."                          # explicit no-interview start
-/goal start                                  # use one clear recent request, or draft safely
-/goal plan "..."                           # research-first extended plan
-/goal status                               # inspect the current goal
-/goal pause                                # pause automatic continuation
-/goal resume                               # explicitly resume
-/goal verify                               # audit the current claim now
-/goal tweak "..."                          # revise the objective with Confirm
-/goal cancel                               # cancel the active goal
+/list import plan.md
+/list show
+/list resume
 ```
 
-A goal is the best default for work with a finish line. If the agent discovers
-that the objective is too large, it can propose a bounded task plan instead of
-quietly inventing an unbounded backlog.
+A list is a durable **work pool**, not a dependency graph. Imported batches get
+confirmation; pasted checklist items retain their wording and boundaries.
+`/list add ...` queues work, `/list start` activates the head, and `/list next <n>`
+chooses a particular item using the numbering in `/list show`.
 
-### `/list`: a durable work pool
+After an item is approved and archived, the next queued item normally starts
+automatically. `/list resume` retries eligible saved work. `/list remove <n>`
+removes a waiting item; `/list cancel` cancels the active item and drops waiting
+items. Use these deliberately.
 
-```text
-/list "fix the cache. Done when: tests pass"
-/list plan.md                              # import a checklist or plan file
-/list                                     # interview + Confirm for a context draft
-/list show                                # show active and waiting items
-/list start                                # activate the queued head, or draft one clear recent request
-/list next                                 # explicitly skip/activate the next item
-/list next <n>                             # explicitly choose a specific item
-/list resume                               # explicitly retry/resume the list
-/list remove <n>
-/list clear
-/list cancel                               # stop the active item and drop waiting items
-/list add <text...>                        # queue one item directly (no interview)
-/list import <file>                        # import a file: one Confirm for the whole batch
-```
+Normal-chat requests such as “queue these fixes” can use the packaged
+[delegation skill](skills/glla-delegate/SKILL.md). Discovered follow-ups should
+be offered before they are queued—not silently turned into extra scope.
 
-A pasted multi-line, bulleted, numbered, or checklist-style list keeps its
-item wording and boundaries; GLLA does not ask for an “exact or refined” choice.
-Only a genuinely ambiguous individual item needs clarification. The direct
-`/list add` path skips the interview but not consent: pasted text and files
-still get one Confirm for the whole batch before anything is queued. The packaged
-`skills/glla-delegate/SKILL.md` records the safe normal-chat delegation path:
-explicit queue requests may use `list_add`, while discovered follow-ups are
-offered first and durable goals remain Confirm-gated.
+## Improve repeatedly—or build from a spec
 
-Order is the default, not the law. Automatic advance normally uses the head of
-the queue, while `/list next <n>` or the agent's `list_activate` tool can choose
-another item. Numbering always matches `/list show` output. After a list item is
-approved and archived, the next queued item starts automatically; no manual
-`/list next` is needed between items.
-
-If a saved item is malformed or needs a repair, the repair card preserves the
-full original target, explains the concrete recovery action, and permits one
-bounded bootstrap turn containing `propose_task_list`. Confirm the redraft;
-automatic repeats are fenced. Use `/list resume` or `/glla resume` for an
-intentional retry of a waiting/restored queue, and `/list next` when you
-intentionally want to skip or choose another queued item. `/list start` is
-also explicit: it activates the queued head, or, when the queue is empty, uses
-one clear recent user request as a seed for the normal Confirm-gated list
-drafting flow. Ambiguous context is never queued automatically.
-
-### `/loop`: an improvement process
+For a measurable process, use `/loop` to draft a target, measure and bounds.
+The measure must print one honest number; GLLA test-runs it before confirmation.
+Metric loops can stop on plateau. Metricless loops have no invented plateau
+signal and need iteration/time/token bounds or an explicit stop.
 
 ```text
-/loop                                     # interview + Confirm
-/loop start                                # use one clear recent target as an explicit metricless start
-/loop plan                                # research-first loop design
-/loop start "reduce flaky tests" measure="..." direction=min
+/loop
 /loop start "keep improving the spec" measure=none max=20 cadence=900
-/loop audit                               # recurring project-audit cadence
-/loop respec [project direction]           # draft intended scope, build, audit and replan
-/loop refine <suggestion>                  # steer the next round; scope changes need confirmation
-/loop status
-/loop stop
+/loop audit
 ```
 
-Bare `/loop start` infers only one clear recent target. It does not invent a
-measure, direction, bound, cadence, or branch setting; the command uses the
-existing explicit metricless-start path. If the context is ambiguous, GLLA
-returns to loop drafting so the target and any numeric metric/consent gates
-remain visible.
+`/loop audit` repeats project-audit passes. For one pass, use `/goal audit`.
+`/loop stop` stops the process without declaring unfinished work complete.
 
-There are three loop styles:
+For a project rather than a repeated metric:
 
-- **Metric:** a bounded command prints one number that honestly represents
-  progress, such as test failures or bundle size. GLLA test-runs the measure
-  before you confirm it and stops on plateau or a configured bound.
-- **Metricless specification:** no honest number exists, so the loop advances
-  a specification or checklist. It ends at its time/token/iteration bound or
-  `/loop stop`; it has no fake plateau metric. Add optional
-  `cadence=<seconds>` to put a minimum gap between successful automatic
-  iterations; explicit starts/resumes remain urgent and `/loop status` shows
-  the armed cadence.
-- **Project audit:** each iteration looks for the next important finding,
-  appends evidence to the audit ledger, and works through the findings.
+```text
+/loop respec Build the missing capabilities in SPEC.md and prove the result
+```
 
-Use `/goal` for one defined outcome, `/list` for a known task queue, and
-`/loop respec` for developing a project through evolving build and audit batches.
+The builder researches the repository and root `SPEC.md` (or `spec.md`), drafts
+requirements with acceptance criteria, and asks you to adopt that scope.
+It plans build batches, submits claims to an isolated auditor and replans unmet
+requirements. Previously verified capabilities are checked again for regressions.
+Marking a task implemented does not verify its requirement.
 
-`/loop respec` develops a project through substantial increments. It researches
-the code and root `SPEC.md` (or `spec.md`), drafts intended capabilities with
-observable acceptance criteria, and asks you to confirm that scope. Existing
-behavior and desired behavior are kept distinct; missing features become work
-to build. `## Rules` remains binding project guidance.
+Use `/loop status` for requirements and evidence, `/loop blockers` for recorded
+obstacles, and `/loop refine ...` for new direction. Changes to adopted scope
+need confirmation. Failed tests and incomplete implementation are work to do,
+not excuses to park the project as an external dependency.
 
-After confirmation, the builder plans a coherent batch, implements it, and
-submits it to the isolated auditor. A task marked implemented is a claim;
-only independent approval verifies its requirements. Failed checks and unfinished
-requirements feed replanning. Each later audit also checks previously verified
-capabilities for regressions. The project finishes only when every adopted
-requirement is independently verified and the project archive is written.
+## Know what you are trusting
 
-The widget and `/loop status` show phase, increment, verified/remaining coverage
-and blockers. During auditing, the card shows the actual worker state, model,
-elapsed time and last activity, including retries; a restored claim without
-live telemetry is shown as waiting for dispatch. `/loop status` lists every
-requirement, its acceptance criteria, blocker and verification evidence.
-Verified completion posts a semantic summary of shipped capabilities,
-acceptance checks and evidence, saved in the journal and project archive;
-unacknowledged delivery uses the durable outbox and retries on reload, even
-after a new project replaces the old loop, without rerunning the audit. Large
-summary cards name omitted requirements/reports; the archive and `/loop status`
-retain the full criteria and evidence.
-After completion, the project widget and GLLA footer disappear. The archive
-and `/loop status` retain the result; other unfinished work remains visible.
-`/loop pause` holds work, `/loop resume` continues saved state, and
-`/loop stop` stops it without calling unfinished work complete. If all remaining
-work is blocked, automation parks with reasons; clearing a blocker leaves work
-paused until resume. `/loop refine <suggestion>` supplies direction for the next
-round. Changes to adopted requirements show current/proposed acceptance criteria
-and need your confirmation. Text after `respec` is project direction, not metric
-or budget option syntax. Generic `/loop start` remains the metric/bounded path.
+**Verification is a separate review, not a guarantee.** The auditor runs in a
+fresh Pi process, outside the implementing conversation and GLLA's live state.
+It can inspect files and run bounded checks. Its value depends on the contract,
+the evidence and the model; an accepted audit is not a proof that no bug exists.
 
-## The autonomy model
+**Isolation is not an OS sandbox.** The auditor can run shell commands, and
+mirrored extensions can have side effects. Use host permissions, a container
+or another isolation boundary when the repository or checks are untrusted.
 
-GLLA is designed for **high-level autonomy with low-level accountability**.
-You provide direction and acceptance criteria; the agent owns the ordinary
-research and implementation decisions; GLLA owns continuity, state, recovery,
-and verification.
+**Autonomy consumes resources.** Research, continuation, retries, subagents and
+audits use model calls. Set loop bounds, choose models and configure recovery
+before leaving a run unattended. GLLA cannot repair provider credentials, billing
+or service availability, and a reload does not fix those problems.
 
-### What produces better results
+**Keep one continuation owner.** Do not run competing turn drivers, task queues
+for the same work, or overlapping retry/compaction supervisors in the same session.
 
-1. **Name the outcome, not a list of keystrokes.** Say what should be true
-   when the work is finished.
-2. **Make “done” inspectable.** Include tests, files, behavior, or user-visible
-   checks in the contract.
-3. **Give broad work room to research.** `/goal plan` is useful for greenfield
-   or ambiguous work; it researches before asking its deeper interview.
-4. **Let the agent decompose, but keep bounds.** Task plans have confirmation
-   and bounded task/subtask counts. A list item remains one auditable unit.
-5. **Use subagents for parallel leverage, not ceremony.** Spawn workers when
-   independent research or implementation can happen concurrently.
-6. **Treat the auditor as a gate, not as decoration.** A completion message is
-   a claim; acceptance requires evidence tied to the contract.
+## State and recovery
 
-Autonomy is intentionally not blind: Confirm dialogs, decision pauses,
-explicit resume paths, bounded retries, and durable status keep important
-control points visible.
+State root selection defaults to `workingDir` (`<project>/.pi-glla/`); an opt-in
+`sessionDir` setting uses Pi's admitted session directory. Changing roots does
+not migrate old state. Journals, goals, queue state, audit claims and archives
+are inspectable; keep them if you want recovery and history.
 
-### What GLLA verifies
+A restored objective may be **loaded without starting**. That is a hold, not
+proof of loss. Inspect status and use `/goal resume`, `/list resume`,
+`/loop resume` or broad `/glla resume` as appropriate. Enable auto-resume only
+when restarting saved automation is intentional.
 
-When the agent calls `complete_goal`, GLLA:
+A **completed objective is different from a recovery marker**. Provider recovery
+can outlive the work it once accompanied, including ordinary chat. If `/glla resume`
+says no objective is paused and clears an old marker, it does not reopen archived
+work or erase the conversation. Check the archive; send `continue` for ordinary
+chat, or start a new tracked objective for new work.
 
-1. runs the contract's mechanical checks when a release or command check is
-   specified;
-2. refuses the claim before audit when committed tasks are still open
-   (tasks with a recorded deferral are exempt), naming each open task;
-3. writes an identity-bound completion claim;
-4. starts a detached, fresh pi RPC worker for the audit;
-5. asks the worker to inspect the repository and run bounded checks;
-6. requires raw evidence for each verification-contract item through the
-   orchestrator-side regression shield;
-7. keeps the goal open on infrastructure failure, missing evidence, or
-   disapproval instead of silently archiving it.
+Compaction and provider recovery are bounded, not magic. High context can defer
+compaction at unsafe boundaries; a failed summarizer is not proof that the task
+is complete. [Recovery](docs/RECOVERY.md) explains the states and next actions.
 
-The auditor is intentionally isolated from the implementing conversation and
-GLLA extension state. It mirrors the session's extension packages by default
-so provider-extension models remain available; GLLA itself is excluded.
-Disable extension mirroring in `/glla` for an extension-less auditor and
-choose a model usable in that configuration. Skills, prompt templates,
-themes, and context files remain disabled. It is independent verification,
-not an OS sandbox: the auditor's
-`bash` tool can still change files if a prompt or verifier tells it to. Keep
-verification commands bounded and treat repository permissions accordingly.
-On Linux, both direct contract checks and the detached auditor enforce a
-256-process process-group ceiling to contain recursive helper/test launches;
-cross-platform timeout and process-tree cleanup remain in place as well.
+## Configure only what you need
 
-## Recommended pi extensions
+Open `/glla` for settings. Start with:
 
-GLLA is the supervisor. These companions add capabilities around it:
+- **Auditor model and thinking level:** choose a verifier that can handle the contract.
+- **Fallback models:** choose providers you can actually authenticate and afford.
+- **Auto-resume:** decide whether loaded work may restart automatically.
+- **State root:** choose where durable work belongs.
+- **Retry and audit limits:** keep failure recovery bounded.
+- **Notifications:** decide how you want to hear about decisions and results.
 
-### Recommended for almost everyone
+[SETTINGS.md](docs/SETTINGS.md) is the detailed reference. `/glla version` shows
+the loaded version and registry comparison; unpublished checkout changes are not
+necessarily available to npm or Pi catalog users.
 
-- **`@juicesharp/rpiv-ask-user-question`**: structured questions, multi-select,
-  previews, and Confirm dialogs for drafting and decisions. GLLA has a prose
-  fallback, but this is the intended UX.
+## Optional companions
 
-### Recommended for power: parallel orchestration (`pi-subagents`)
+GLLA can supervise goals and run its detached auditor without a subagent extension.
+Install companions for capabilities you need, not to satisfy a hidden dependency:
 
-- **`pi-subagents`: the optional parallel-orchestration companion for GLLA.** Use it
-  when you want the best automation and quality: `runs.all` parallel fan-out,
-  `runs.lanes` worker→review→fix chains, `outputSchema` + `acceptance` structured
-  verification, `runs.host` gated shell, worktree isolation, model routing
-  (`subagents.defaultModel` / `subagentModelOverrides` / `modelScope`), durable
-  missions/schedules/recovery, and versioned control RPC. Built-ins are `scout`,
-  `researcher`, `worker`, `reviewer`, `oracle`, `delegate` plus external-CLI
-  writers (`claude-code-writer` etc.); all inherit the parent model by default
-  so there is no hidden Explore/Plan quota pool. This is the companion GLLA
-  supervises via `subagent:*` lifecycle events + durable `status.json` + versioned
-  stop RPC (ownership/generation-checked). GLLA's `subagentModelOverrides`
-  can still pin an individual role.
-
-  The main pi session remains the owner of the goal/list/loop; subagents are
-  workers and cannot silently replace the parent's objective. A short or mostly
-  sequential goal can still run cleanly without workers; install when
-  parallelism will pay for its coordination and model usage.
-
-  Display coexistence: pi-subagents renders its own inline run panels +
-  FleetView, GLLA renders one compact widget line + the status-bar worker
-  count + `/glla agents`. If you see the same run stacked 3× or panels
-  swapping order, set pi-subagents `inlineToolDisplay: "summary"` (one
-  stable row per run) and pin `fleetViewPlacement`; GLLA's own richness is
-  the `subagentDisplayRichness` setting (`/glla` → Subagents): `quiet`
-  (default: troubled workers + the count line; HUNG is never silent),
-  `compact` (count line), `rich` (all worker rows). Upstream triple-render report:
-  nicobailon/pi-subagents#1931.
-
-Install the current companion (GLLA does not require a pinned version):
+- **`@juicesharp/rpiv-ask-user-question`:** recommended structured questions and
+  decision UX; GLLA also has plain-text fallbacks.
+- **`pi-subagents`:** parallel research, workers and independent reviews.
+  Particularly useful for separable work; coordination and extra calls still cost.
+- **`@pi-unipi/notify`:** remote notifications.
+- **`pi-chrome`:** browser work in a real signed-in session; grant access deliberately.
 
 ```bash
+pi install npm:@juicesharp/rpiv-ask-user-question
 pi install npm:pi-subagents
 ```
 
-The companion is installed separately; it is not a GLLA runtime dependency.
-Our development lockfile records the version used for reproducible checks,
-not a version requirement for your Pi session. See
+Companions are separately installed and updated. GLLA does not pin a runtime
+`pi-subagents` version. Do not load another subagent provider with overlapping
+tools or a second orchestrator for the same session. See
 [compatibility boundaries](docs/COMPATIBILITY.md).
 
-Do not install the older `@tintinweb/pi-subagents` provider alongside this
-recommendation in the same session. Existing Tintin-era agent files are
-cleaned only when GLLA's management marker proves that GLLA owns them; old
-settings are not silently remapped to a different role. Do not stack
-`@quintinshaw/pi-dynamic-workflows` as a competing orchestrator alongside
-GLLA + `pi-subagents` in the same session: duplicate tools and competing
-orchestration events create ambiguous ownership. Use its quality helpers
-(`verify`/`judgePanel`/`loopUntilDry`) only as isolated complements if needed.
+## Contributing and release checks
 
-### Useful, but optional
-
-- **`@pi-unipi/notify`**: Telegram, Gotify, or ntfy delivery when you need
-  alerts away from the desktop. GLLA's local notifications work without it;
-  when no command is configured, it auto-detects `notify-send`/`osascript`;
-  `notify=off` silences notifications.
-- **`pi-chrome`**: logged-in browser research and interaction when a goal needs
-  a real web session. It is not required for repository-only work.
-
-### What not to combine with GLLA
-
-These are coexistence rules, not a ranking of other projects:
-
-- Do **not** run a second extension that also drives agent turns on
-  `agent_end` while GLLA owns the session. Two supervisors can schedule
-  contradictory continuations. Choose one driver for a session.
-- Do not run a second task/queue extension for the same work. GLLA's `/list`
-  already provides durable queue state, statuses, auto-advance, and an audit
-  trail. Keep a separate task manager only when you specifically need a
-  dependency DAG or another workflow outside GLLA.
-- Avoid overlapping compaction, retry, or watchdog supervisors while a GLLA
-  goal/list/loop is active; duplicate nudges make liveness harder to reason
-  about.
-- A ralph-style loop can remain installed, but do not run it simultaneously
-  with a GLLA-driven loop or goal in the same pi session.
-
-## State, recovery, and user control
-
-### State roots
-
-By default, GLLA stores state in:
-
-```text
-<working-directory>/.pi-glla/
-```
-
-`/glla` offers an opt-in **State root → sessionDir** setting that uses pi's
-canonical top-level session directory. The session root must be admitted by
-the host lifecycle first. If it is unresolved, GLLA fails closed rather than
-recreating ambiguous state under whichever directory happens to be current.
-Changing the root does not silently migrate or delete the old working-directory
-tree. Unreadable or invalid root settings defer writes and keep reads on the
-last validated root; cold startup reports unresolved selection explicitly.
-Restoring valid settings lets persistence retry in the selected root.
-
-The state is inspectable: active JSONL, goal markdown, queue state, audit jobs,
-ledger history, and archived goals are kept under `.pi-glla/` (or the selected
-session root). Repository audit findings remain repository-only; the npm package
-ships the user-facing docs, not local audit history. The list-audit findings
-file and its fan-out follow the same selected state root, including the
-opt-in `sessionDir` root.
-
-### Recovery behavior
-
-Long-running work encounters provider outages, context compaction, process
-replacement, slow tools, and workers that stop making progress. GLLA records
-these as state transitions and uses bounded recovery rather than pretending
-that silence means success. Error text is **not trusted** to pick a retry policy;
-failure wording is retained as bounded diagnostics, not interpreted as
-proof of a quota or billing state.
-
-- automatic retries are bounded and visible; a BUSY/no-stream turn is parked
-  and re-dispatched within the configurable **Zero-stream retries** budget
-  (default 3, range 0 to 10), then requires explicit resume;
-- `/goal resume`, `/list resume`, and `/loop resume` are explicit recovery
-  paths; `/glla resume` is the broad recovery command and routes eligible held
-  projects through the same handler as `/loop resume`;
-- a user abort means stop, not “try again behind my back”;
-- a loaded objective can be displayed without injecting stale auditor context
-  until continuation consent exists;
-- frozen tracked subagents receive warning telemetry first and, after the
-  configured long threshold, at most one child-specific abort; the parent goal
-  is not aborted;
-- interrupted completion claims remain available for retry and inspection.
-
-Use `/glla pause` to freeze supervisor automation without killing active work,
-`/glla resume` to release it, `/glla bug [message]` to capture failure context to `bugs/` without touching durable goal state, and `/glla status` or `/goal status` to inspect
-what happened.
-
-See the [recovery guide](docs/RECOVERY.md) for the resume command table,
-audit progress indicators, model changes, completed projects and compaction
-above the default 200k target.
-
-### Settings worth knowing
-
-Open `/glla` for the settings table. The most important choices are:
-
-- **Auditor model / thinking level:** the verifier's model and depth; when
-  unset, auditor thinking inherits the parent session dial (including `max`);
-- **Main-agent and auditor fallback models:** both roles use the same ordered,
-  deselectable, bounded fallback-chain picker for provider failures; the
-  auditor's session model remains the final last resort. Saving a non-empty
-  auditor chain also offers the thinking-level pick so the selection sticks;
-- **Auto-resume:** whether persisted work may restart automatically after a
-  session loads; explicit resume commands are always available;
-- **State root:** `workingDir` by default, opt-in `sessionDir`;
-- **Aggressive mode:** long-running keep-going defaults; explicit per-setting
-  choices win;
-- **Subagent hang escalation:** warning-only at `0`, or one child-specific
-  action after a confirmed frozen interval;
-- **Zero-stream retries:** automatic GLLA recovery attempts after a busy,
-  stream-silent Pi turn; `0` keeps recovery manual and `1 to 10` bounds repeats;
-- **Audit cap and retry cadence:** bounds for repeated objections and
-  infrastructure recovery.
-
-For an attended first run, keep the default confirmation and inspect the
-status surfaces. For an unattended machine, configure auto-resume and notify
-behavior deliberately rather than assuming a terminal left open is a
-supervisor.
-
-## Model and auditor requirements
-
-The main agent may use the model/provider you normally use in pi. The detached
-auditor starts a fresh pi process that mirrors your session's extension
-packages by default, so session-resolved models (including
-provider-extension models) work there too; disable the mirror in `/glla`
-settings if you want the fully isolated extension-less auditor. Choose an
-auditor model in `/glla` if the session model depends on something the
-worker cannot reach.
-
-The worker inherits normal pi provider configuration and resolves `pi` from
-`PATH`. If needed, set:
+Development needs Node 22.19+, Bun and the declared development dependencies:
 
 ```bash
-GLLA_PI_BINARY=/absolute/path/to/pi
-```
-
-Credentials are not written into `.pi-glla/audit-jobs/` or command arguments.
-The isolated worker is an evidence checker, not a second implementation agent.
-
-## From source and maintainer checks
-
-Prerequisites: Node `22.19.0+`, [Bun](https://bun.sh/) for the test runner,
-pi-coding-agent, and TypeScript `5.9+`.
-
-```bash
-git clone https://github.com/DraconDev/pi-goal-list-loop-audit.git
-cd pi-goal-list-loop-audit
-pi install .
-```
-
-Try the local extension without installing it globally:
-
-```bash
-pi -e /absolute/path/to/pi-goal-list-loop-audit
-```
-
-Run the checks used for a release:
-
-```bash
+npm install
 npm test
 npm run check
 npm run release:check
 ```
 
-`npm test` runs the fast set (the full serialized suite minus the 12
-slowest files listed in `tests/slow-files.mjs`). `npm run test:slow` runs
-those slow files, `npm run test:changed` runs only git-affected files,
-and `npm run test:all` runs everything. `npm run release:check` runs
-the serialized Bun suite, TypeScript, the jiti reproduction, offline
-auditor-extension validation, and npm pack. The test count changes as
-regressions are added; the useful result is `0 fail`.
+`npm test` runs the fast set, `npm run test:slow` the slow set,
+`npm run test:changed` git-affected tests through the hardened runner, and
+`npm run test:all` the full suite plus supporting checks. The release gate also
+checks generated inventory, dry-run packing and the installed tarball.
 
-For design rationale, see [`docs/DESIGN.md`](docs/DESIGN.md). For the shipped
-document index, see [`docs/INDEX.md`](docs/INDEX.md). For publishing, see
-[`docs/RELEASING.md`](docs/RELEASING.md).
+The package ships extensions, skills, prompts, schemas, scripts, docs, examples,
+media and top-level user documentation. The full test suite remains
+repository material, as do local audit history and research. A published package
+and a live session are separate: update the package and reload existing sessions.
 
-### Maintainer source map
-
-The implementation is intentionally split by lifecycle concern. Start here
-when tracing behavior:
-
-| Area | Entry points |
-|---|---|
-| Commands and UI | `extensions/goal-commands.ts`, `extensions/goal-loop-display.ts` |
-| State and roots | `extensions/goal-state.ts`, `extensions/glla-state-root.ts` |
-| Continuation and recovery | `extensions/goal-continuation.ts`, `extensions/goal-heartbeat.ts`, `extensions/goal-recovery.ts` |
-| Queue and lifecycle | `extensions/loops/goal-list-queue.ts`, `extensions/loops/goal-orchestrator.ts` |
-| Completion audit | `extensions/goal-loop-auditor-process.ts`, `extensions/loops/goal-auditor-hooks.ts`, `extensions/loops/goal-auditor-surface.ts` |
-| Auditor launcher | `scripts/goal-auditor-worker.mjs`, `scripts/goal-auditor-launch.d.mts` |
-| Safety boundaries | `extensions/payload-guard.ts`, `extensions/context-hygiene.ts` |
-| Tests and design | `tests/`, `docs/DESIGN.md`, `PLAN.md` |
-
-The package contains the extension entry point
-`extensions/loops/goal.ts`, prompt templates, schemas, scripts, docs, examples,
-and the user-facing README/install/changelog files. The full test suite remains
-repository material for maintainers and is exercised by `npm run test:all`; it is
-not included in the published tarball. `audit/` and `.research/` are also
-repository material, not first-use package content.
+[Architecture](docs/ARCHITECTURE.md) · [Design](docs/DESIGN.md) ·
+[Documentation index](docs/INDEX.md) · [Release process](docs/RELEASING.md) ·
+[Changelog](CHANGELOG.md)
 
 ## License
 
 GNU Affero General Public License v3.0-only; see [LICENSE](LICENSE).
-
-Compatibility and process limits: [COMPATIBILITY.md](docs/COMPATIBILITY.md).
-Reliability metrics and opt-in canaries: [RELIABILITY-AND-MEASUREMENT.md](docs/RELIABILITY-AND-MEASUREMENT.md).
-Generated runtime inventory: [RUNTIME-INVENTORY.md](docs/RUNTIME-INVENTORY.md).
