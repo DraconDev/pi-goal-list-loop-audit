@@ -1,251 +1,152 @@
-# Install and first run
+# Install, update and start safely
 
-GLLA is a pi extension for long-running, high-leverage autonomous work. It
-keeps a high-level objective moving across turns, preserves state, recovers
-bounded failures, and requires an independent evidence check before accepting
-completion.
-
-For the product overview and the decision between `/goal`, `/list`, and
-`/loop`, start with [`README.md`](README.md). This file is the practical
-installation path.
+For the product overview, see [README.md](README.md). For choosing an actual
+workflow, see [WORKFLOWS.md](docs/WORKFLOWS.md).
 
 ## Requirements
 
-- [pi](https://github.com/badlogic/pi-mono) with extension support;
-- Node `22.19.0+` for the detached auditor and helper scripts;
-- a model/provider that pi can authenticate normally;
-- [Bun](https://bun.sh/) only for development, tests, and `npm run release:check`
-  (runtime goal/loop/list operation needs Node + pi, not Bun).
+- Pi with the supported peer versions in [COMPATIBILITY.md](docs/COMPATIBILITY.md).
+- Node 22.19 or newer for helper scripts and detached auditing.
+- An authenticated model/provider accessible to Pi.
+- Bun only for repository development and tests—not ordinary GLLA operation.
 
-## Install from npm
+## Install
 
 ```bash
 pi install npm:pi-goal-list-loop-audit
 ```
 
-GLLA loads into new pi sessions. If pi is already open, reload that session:
+In an already open Pi session:
 
 ```text
 /reload
+/glla version
 ```
 
-## Updating
+Start Pi in the project you intend to change. The default durable state root is
+that working directory's `.pi-glla/`.
 
-While a goal/list/loop is supervised, the status line shows the running
-version (`glla: … · vX.Y.Z`). Idle or hold-only sessions intentionally keep the
-version segment clear; use `/glla version` there. When the npm registry is
-ahead, an active supervised status also nudges:
+## First run
 
 ```text
-glla: … · vX.Y.Z · update vA.B.C available
+/goal plan Improve this project's first-run experience
 ```
 
-The nudge comes from a daily sidecar check (`.pi-glla/update-check.json`),
-refreshed on command contact and never blocking a turn. To update:
+Review the draft's scope and acceptance criteria before confirming. Use
+`/glla status` to inspect work. You can pause supervision with `/glla pause`;
+this does not kill an already running tool.
 
-```bash
-pi install npm:pi-goal-list-loop-audit@latest
+Already have a precise outcome? A `Done when:` clause starts directly:
+
+```text
+/goal Fix the cache invalidation bug. Done when: a regression test reproduces it; the fix passes that test and the relevant suite.
 ```
 
-Then `/reload` every open pi session: a session keeps running the
-version it loaded with until reloaded. `/glla version` says whether the
-current session is stale and repeats the update command.
+`/goal start ...` is an explicit no-interview path and may replace existing work.
+Prefer drafting for an unfamiliar project or uncertain scope.
 
-### Recommended companions
+## Modes
 
-The structured-question companion is recommended for the intended drafting
-and confirmation UX:
+Use `/goal` for one result, `/list` for several auditable results, and `/loop`
+for repeated improvement. `/loop respec` builds a project against adopted
+requirements. See [LIST-PHILOSOPHY.md](LIST-PHILOSOPHY.md) and
+[practical workflows](docs/WORKFLOWS.md) before choosing a long-running mode.
+
+## Optional companions
+
+For structured questions and decisions:
 
 ```bash
 pi install npm:@juicesharp/rpiv-ask-user-question
 ```
 
-For best automation and quality, add the **optional parallel-orchestration companion** (`pi-subagents`): GLLA's power-max choice for `runs.all` fan-out, `runs.lanes` worker→review→fix chains, structured verification, worktree isolation, and durable recovery:
+For parallel scouts, workers and reviewers:
 
 ```bash
 pi install npm:pi-subagents
 ```
 
-GLLA does not pin the companion version or install it as a runtime dependency.
-The development lockfile fixes the test environment only. Install and update
-the companion independently; see [compatibility boundaries](docs/COMPATIBILITY.md).
+Neither is required for a basic goal. GLLA does not install or version-pin
+`pi-subagents` as a runtime dependency. Install and update companions separately.
+Remote notification and browser extensions are optional too.
 
-GLLA's main continuation, queue, recovery, and detached auditor work without
-it, but parallelism pays for its coordination when a goal has independent
-research or implementation. Other companions are optional: `@pi-unipi/notify`
-sends remote notifications, and `pi-chrome` enables logged-in browser research.
-For a deeper completion check, choose a stronger auditor model in `/glla`;
-a separate advisor extension is not required. Do not run `@tintinweb/pi-subagents`
-or `@quintinshaw/pi-dynamic-workflows` as a second orchestrator alongside GLLA +
-`pi-subagents` in the same session.
+Do not run competing continuation drivers or overlapping subagent providers
+in the same session. One supervisor should own the active work.
 
-None of these companions is required for a basic GLLA goal.
+## Set up the auditor
 
-Do not run another extension that drives agent turns at the same time as GLLA.
-Likewise, avoid a second task queue or overlapping retry/compaction supervisor
-for the same active work. One supervisor should own continuation scheduling.
-
-## First goal in 60 seconds
-
-Start pi in the project directory where the work belongs, then just say what
-you want — no required format:
-
-```text
-/goal logins are broken, sort it out
-```
-
-Vagueness is fine — a free-form seed leads into a draft: GLLA researches
-the problem itself, asks focused questions at dynamic length to draw out
-whatever detail matters, and waits for Confirm before anything activates.
-You never have to front-load the whole spec; the draft pulls it out of
-you. If the seed already carries enough detail, it skips the questions
-and goes straight to confirmation. A complete `Done when:` clause starts
-directly and is independently audited at the end:
-
-```text
-/goal "Improve the login flow.
-
-Done when:
-- failed logins return a safe, useful error;
-- regression tests cover the behavior and pass;
-- the change is documented and committed."
-```
-
-Bare `/goal` always interviews, `/goal plan "..."` always forces the full
-research-first draft, and `/goal start "..."` skips the interview only when
-you explicitly want it skipped. Bare `/goal start` uses one clear recent
-user request when possible and otherwise returns to the normal drafting flow;
-it never guesses across ambiguous requests.
-
-The first run proceeds like this:
-
-1. GLLA records the objective and its acceptance contract.
-2. pi researches and implements the work across supervised turns.
-3. Optional subagents can handle independent research or implementation.
-4. GLLA persists progress and recovers bounded provider/session stalls.
-5. `complete_goal` saves the claim and queues a detached auditor.
-6. The goal archives only after the auditor accepts evidence for the contract.
-
-Inspect the status widget, `/glla status`, or `/goal status` whenever you want
-to know whether the work is active, queued, paused, recovering, auditing, or
-waiting for a decision.
-
-## Other work shapes
-
-```text
-/list "refactor the cache. Done when: tests pass"
-/list plan.md
-/list                                     # interview + Confirm for a context draft
-/list show                                # show active and waiting items
-/list add <text...>                        # queue one item directly (no interview)
-/list import <file>                        # import a file: one Confirm for the whole batch
-/list start
-/list next
-/list resume
-/list remove <n>
-/list clear
-/list cancel
-
-/loop
-/loop start                                  # one clear recent target, metricless
-/loop start "reduce flaky tests" measure="..." direction=min
-/loop start "keep improving the spec" measure=none max=20 cadence=900
-/loop audit
-```
-
-Use `/goal` for one outcome, `/list` for several independently auditable
-outcomes, and `/loop` for an improvement process without one final item. Bare
-`/list start` activates the queued head, or seeds the normal Confirm-gated list
-draft when the queue is empty. Bare `/loop start` infers only the target; it
-does not invent metric, direction, bounds, cadence, or branch settings. For
-metricless loops that intentionally mature between checks, add optional
-`cadence=<seconds>`; the interval is visible in `/loop status`, while explicit
-starts/resumes remain urgent. See the README for the full command semantics.
-
-## Modes
-
-The three surfaces are intentionally different policies on one durable state
-machine. Read [`LIST-PHILOSOPHY.md`](LIST-PHILOSOPHY.md) for the short decision
-table and guidance on choosing a goal, list, or loop.
-
-## State and recovery
-
-Default state is stored in the project:
-
-```text
-<working-directory>/.pi-glla/
-```
-
-`/glla` offers an opt-in `sessionDir` state root using pi's canonical session
-directory. The host must admit that root first; unresolved session roots fail
-closed rather than writing into an ambiguous cwd. Changing the root does not
-silently migrate or delete the old working-directory state.
-
-GLLA records goals, queue items, pauses, retries, audit claims, and archived
-results as inspectable state. If a saved list item needs repair, its repair
-card preserves the original target and gives one bounded
-`propose_task_list` bootstrap turn. Confirm the redraft; use `/list resume` for
-an intentional retry and `/list next` to choose another item. Automatic repeat
-refires are fenced.
-
-Useful controls:
-
-```text
-/glla status
-/glla pause
-/glla resume
-/goal status
-/goal resume
-/list resume
-/loop resume
-```
-
-`/glla pause` freezes supervisor automation without killing active work.
-`/glla resume` releases it and resumes eligible saved work, including held
-projects through the same recovery path as `/loop resume`.
-See the [recovery guide](docs/RECOVERY.md) for command choice, audit progress,
-model changes, completed projects and compaction. A BUSY/no-stream Pi turn is aborted and parked by
-GLLA, then automatically re-dispatched within the **Zero-stream retries**
-budget (default 3, configurable from 0–10); exhaustion requires an explicit
-mode-correct resume. A user abort means stop; recovery is not silently
-re-fired behind your back.
-
-## Auditor model requirement
-
-The completion auditor runs in a detached fresh pi RPC process. By default it
-mirrors your session's extension packages (so an extension-provided model
-works in the auditor too), but it loads no skills, prompt templates, themes, or
-context files. If you would rather the auditor run against only built-in pi
-providers, set **Auditor mirror session extensions** to off in `/glla` and then
-select a compatible model under the Auditor settings.
-
-The worker resolves `pi` from `PATH` and inherits normal provider configuration.
-If required, point it at a specific binary:
+GLLA verifies completion in a fresh Pi RPC process. Choose its model and thinking
+level in `/glla`. The worker inherits normal provider configuration and resolves
+`pi` from `PATH`; override the binary when needed:
 
 ```bash
 GLLA_PI_BINARY=/absolute/path/to/pi
 ```
 
-Credentials are not written into `.pi-glla/audit-jobs/` or command arguments.
-The auditor checks evidence; it does not implement the goal.
+By default, the worker mirrors session extension packages, excluding GLLA itself,
+so extension-provided models can be available. It does not load skills, prompt
+templates, themes or context files. Turn **Auditor mirror session extensions**
+off for an extension-less worker and choose a model compatible with that setup.
 
-## Install from source
+A fresh worker is not a filesystem sandbox. Choose a separate isolation boundary
+if auditing untrusted code or commands. A different auditor model can provide
+another perspective but does not guarantee correctness.
+
+## Update
+
+```bash
+pi install npm:pi-goal-list-loop-audit@latest
+```
+
+Then run `/reload` in each open session and check `/glla version`. Installing a
+new package does not replace code already loaded in a session. npm publication
+supplies the Pi package catalog too; there is no separate Pi-only build.
+
+## State and restored work
+
+The default state tree is `<project>/.pi-glla/`. Settings offer an opt-in
+`sessionDir` root, which must be admitted by the host. Changing roots does not
+migrate or delete old state. Do not delete journals to clear a UI warning.
+
+Restored work may wait for explicit consent. Inspect `/glla status`, then use
+`/goal resume`, `/list resume`, `/loop resume` or broad `/glla resume`.
+Enable auto-resume only if restarting saved work automatically is intentional.
+
+Completed work is archived, not resumable. An old provider-recovery marker does
+not establish that an objective remains active. See [RECOVERY.md](docs/RECOVERY.md)
+for that distinction and model/compaction troubleshooting.
+
+## Troubleshooting installation
+
+| Symptom | Check |
+|---|---|
+| Commands missing | Reload; verify Pi loaded the intended installation |
+| Old behavior after update | `/glla version` in the affected session, then `/reload` |
+| Auditor cannot use the model | Provider authentication, worker binary and extension mirroring settings |
+| Restored work is idle | Inspect status for a load hold, pause, blocker or pending audit |
+| Provider still fails after reload | Check provider access; reload is not a credential or quota fix |
+| Duplicate continuation or worker panels | Check for competing supervisors and companion display settings |
+
+Use `/glla bug <what happened>` to capture diagnostics. Describe the command,
+expected behavior and observed behavior; avoid posting credentials or sensitive
+project content from captures.
+
+## From source
 
 ```bash
 git clone https://github.com/DraconDev/pi-goal-list-loop-audit.git
 cd pi-goal-list-loop-audit
+npm install
 pi install .
 ```
 
-To try a local checkout without installing it globally:
+To try the checkout without global installation:
 
 ```bash
 pi -e /absolute/path/to/pi-goal-list-loop-audit
 ```
 
-## Development checks
-
-Install development dependencies, then run:
+Maintainer checks:
 
 ```bash
 npm test
@@ -253,46 +154,5 @@ npm run check
 npm run release:check
 ```
 
-The release gate runs the serialized Bun tests, TypeScript, the jiti state
-reproduction, offline auditor-extension validation, and npm pack. Require
-`0 fail`; test counts change as regressions are added.
-
-## Troubleshooting
-
-### GLLA is not visible after installation
-
-Run `/reload`, then start a new goal. Confirm that pi is using the project or
-user installation you intended.
-
-### The auditor cannot authenticate
-
-The detached auditor mirrors your session's extension packages by default, so
-an extension-provided model normally works (see Auditor model requirement
-above). If you turned **Auditor mirror session extensions** off, or the
-auditor still cannot authenticate, choose a built-in-provider model in `/glla`
-under Auditor settings and verify it in a clean directory if necessary:
-
-```bash
-PI_CODING_AGENT_DIR=/tmp/bare-agent pi -p "say ok" --model "provider/model-id"
-```
-
-### Work restored but not running
-
-That is a consent/supervision state, not proof of loss. Inspect `/glla status`
-and use `/glla resume`, or `/goal resume`, `/list resume`, `/list next`, or `/loop resume` as
-appropriate. Keep `Auto-resume` enabled only when automatic restart after
-session load is intentional.
-
-### Another loop is also active
-
-Do not run two continuation drivers in one session. Stop or pause the other
-supervisor, or let it own the session instead of GLLA.
-
-## Further reading
-
-- [`README.md`](README.md): product overview, first-use guide, commands,
-  companion policy, autonomy model, recovery, and maintainer map;
-- [`docs/DESIGN.md`](docs/DESIGN.md): architecture and design decisions;
-- [`docs/INDEX.md`](docs/INDEX.md): shipped and repository-only documentation;
-- [`docs/RELEASING.md`](docs/RELEASING.md): release process;
-- [`CHANGELOG.md`](CHANGELOG.md): version history.
+See [RELEASING.md](docs/RELEASING.md) for publication, and
+[INDEX.md](docs/INDEX.md) for technical references.
