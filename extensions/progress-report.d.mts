@@ -5,7 +5,7 @@ export interface ProgressVerification {
   attemptId?: string;
   observedAt?: string;
   current: boolean;
-  provenance: 'recorded-state';
+  provenance: 'recorded-state' | 'observed-receipt';
 }
 export interface ProgressRun {
   id: string;
@@ -21,7 +21,7 @@ export interface ProgressRun {
   historyTruncated: boolean;
   coverageIncomplete: boolean;
   checkpoint: { revision?: string; attribution: 'unknown' };
-  phaseAccounting: { provenance: 'unknown'; durationsMs: Record<string, number>; recordedTokens?: number; monetaryCost: 'unknown' };
+  phaseAccounting: { provenance: 'unknown' | 'observed'; durationsMs: Record<string, number>; recordedTokens?: number; monetaryCost: 'unknown' };
   latestObservationAt?: string;
 }
 export interface ProgressReport {
