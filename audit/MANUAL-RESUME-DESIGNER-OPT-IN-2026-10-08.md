@@ -31,7 +31,11 @@ Existing subagent tests now assert the requested opt-in policy: default absence,
 - `timeout 240 bun test --timeout=60000 tests/manual-resume-failback.test.ts tests/subagent-model-override.test.ts tests/subagent-polish.test.ts tests/compaction-hold-resume.test.ts tests/main-model-recovery.test.ts tests/paused-status-action-first.test.ts tests/display.test.ts`: 165 pass, 0 fail. `/tmp/glla-resume-designer-focused3.log`.
 - `timeout 120 npm run check`: exit zero. `/tmp/glla-resume-designer-types2.log`.
 - Runtime inventory regenerated; `git diff --check` clean.
-- Full release gate pending. No release publication/tag is authorized or performed.
+- First full release gate: 3396 pass, 1 skip, 1 fail. The sole failing test still required unconditional Designer creation (`designer-drafter-policy.test.ts`). Updated it to assert default absence and explicit role selection without a model pin; its read-only/no-model-pin assertions remain intact. Focused replay then passed 17 tests across two files.
+- Second `timeout 1200 npm run release:check` reached the outer 1200s bound and exited 124 while still making progress; runner reported SIGTERM cleanup. This is NOT a passing full gate. `/tmp/glla-resume-designer-release2.log`. No timing threshold was weakened to turn that run green.
+- Final expanded focused checks: 197 pass, 0 fail across 10 files, including actual resume/decision routing, Designer policy, stale-context admission, draft confirmation, provider recovery and display. `/tmp/glla-resume-designer-final-focused.log`.
+- Final `npm run check`, `npm run check:inventory`, `node tests/repro-jiti-state-split.test.mjs` and `node scripts/release-pack-smoke.mjs`, each bounded: exit zero. Types, runtime inventory, shared-module identity, packed launcher/RPC challenge, skill loading and package import pass. Logs `/tmp/glla-resume-designer-final-{types,inventory,jiti,pack}.log`.
+- Full-gate completion remains unverified after the timed-out run; no release publication/tag is authorized or performed.
 
 ## Operator guidance
 
