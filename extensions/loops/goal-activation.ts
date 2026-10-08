@@ -1981,6 +1981,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
         strategy: s.subagentModelStrategy ?? "inherit-parent",
         overrides: mergedOverrides,
         thinking: s.subagentThinkingOverrides,
+        designerRequested: state.goal?.agentRole === "designer" || state.goal?.taskList?.tasks.some(task => task.status !== "complete" && task.agentRole === "designer") === true,
       });
       for (const skip of sync.skipped) {
         const overrideFailureCopy = providerErrorPresentation(skip.reason, "recovery");

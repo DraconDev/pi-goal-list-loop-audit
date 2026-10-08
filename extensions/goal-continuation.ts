@@ -26,6 +26,7 @@
 // ============================================================================
 
 import { deliverTerminalSummary } from "./terminal-summary-delivery.js";
+import { defaultAgentDir, ensureRequestedDesigner } from "./goal-loop-subagents.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
@@ -1585,6 +1586,13 @@ export function sendContinuation(goalId: string): void {
     // start-proof matching keeps working; fallback agent_start/turn_start
     // needs no prompt at all.
     const goalForSend = state.goal!;
+    const nextTask = findNextPendingTask(goalForSend.taskList?.tasks ?? []);
+    if (goalForSend.agentRole === "designer" || nextTask?.agentRole === "designer") {
+      const settings = loadSettings(ctx.cwd);
+      if (!ensureRequestedDesigner({ agentDir: defaultAgentDir(), model: settings.subagentModelOverrides?.Designer, thinking: settings.subagentThinkingOverrides?.Designer })) {
+        ctx.ui.notify("Selected Designer could not be registered; the requested design checkpoint remains in the prompt for an inline fallback.", "warning");
+      }
+    }
     const { content, kind } = buildContinuationContent(goalForSend, { resync, firstSend: continuationInitialFullSentFor !== goalId });
     flags.extensionApi.sendMessage({
       customType: GOAL_EVENT_ENTRY,
