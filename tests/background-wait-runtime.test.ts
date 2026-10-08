@@ -18,7 +18,7 @@ function goal(over: Partial<Goal> = {}): Goal {
 }
 function fixture(policy: "goal" | "list" = "goal") {
   const cwd = tmpCwd();
-  const mock = makeMockCtx(cwd);
+  const mock = makeMockCtx(cwd, { sessionManager: { getSessionId: () => "session-1", getSessionFile: () => undefined } });
   const ctx = mock as unknown as ExtensionContext;
   let sends = 0, assessments = 0, writable = true, idle = true;
   mock.isIdle = () => idle;
