@@ -13,6 +13,10 @@ we can look into this and perhaps others we really should not be pausing on
 ## i think we are too eagerly falling back the main model we need to more eagerly retry
 
 
+## this error and any time of error we see we just keep hammering the retry
+
+ Error: 429: {"type":"server_error","message":"Upstream request failed: Rate limit exceeded. Please try again later."}
+
 # later
 
 # Testing
