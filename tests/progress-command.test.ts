@@ -10,9 +10,9 @@ import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-a
 function setup() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'glla-progress-cmd-'));
   const pi = new MockPi();
-  (pi as any).events = { on: () => undefined, off: () => undefined };
+  (pi.api as any).events = { on: () => undefined, off: () => undefined };
   const ctx = makeMockCtx(dir);
-  registerGoalRuntime(pi as unknown as ExtensionAPI);
+  registerGoalRuntime(pi.api as unknown as ExtensionAPI);
   const glla = pi.commands.get('glla')!;
   return { dir, pi, ctx, glla };
 }
