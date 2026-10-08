@@ -1352,8 +1352,8 @@ function backgroundStatus(state: State, theme?: DisplayTheme): string | undefine
   const { view, surface, command } = data;
   const deps = view.wait?.dependencies;
   const evidence = deps?.length ? `${deps.filter(dep => dep.outcome === "pending").length}/${deps.length} dependencies pending` : "legacy ownership unverified";
-  return `glla: ${paint(theme, view.lifecycle === "paused" ? "warning" : "accent", `${view.lifecycle === "paused" ? "⏸" : "⏳"} ${view.lifecycle}`)} · ${surface} · activity: ${view.activity} · ${evidence} · ${backgroundNextAction(state, view, command)}`.replace("background agent (legacy ownership unverified) → bounded assessment",
-    "legacy ownership unverified → bounded assessment");
+  const ownerText = view.wait && !view.wait.legacy ? "background agent" : view.wait?.legacy ? "background agent (legacy)" : "background agent";
+  return `glla: ${paint(theme, view.lifecycle === "paused" ? "warning" : "accent", `${view.lifecycle === "paused" ? "⏸" : "⏳"} ${view.lifecycle}`)} · ${surface} · waiting on ${ownerText} · ${evidence} · ${command} status`;
 }
 
 function backgroundWidget(state: State, theme?: DisplayTheme, width?: number): string[] | undefined {
