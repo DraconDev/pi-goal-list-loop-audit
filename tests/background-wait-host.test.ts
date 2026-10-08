@@ -73,6 +73,7 @@ for (const surface of ["goal", "list", "metric", "project"] as const) {
     const result = await pi.runTool("wait_for_background", { reason: "Independent checkpoint", runIds: ["owned-worker"] }, ctx) as unknown as { terminate?: boolean; isError?: boolean };
     assert.equal(result.isError, false); assert.equal(result.terminate, true);
     assert.equal(aborts, 0, "waiting must not abort the parent and induce model failure recovery");
+    assert.match(ctx.ui.statuses["pi-glla"]!, /⏳ waiting/);
     assert.equal(state.goal?.status ?? state.loop?.active, surface === "goal" || surface === "list" ? "active" : true);
     const loaded = readState(cwd);
     assert.ok(loaded.goal?.backgroundWait ?? loaded.loop?.backgroundWait, "the wait is durable");
@@ -85,6 +86,8 @@ for (const surface of ["goal", "list", "metric", "project"] as const) {
     }
     pi.emitBus("subagent:async-complete", { runId: "other-worker" });
     assert.ok(state.goal?.backgroundWait ?? state.loop?.backgroundWait);
+    const sendsBefore = pi.userMessages.length;
+    busy = false;
     fs.writeFileSync(path.join(asyncDir, "status.json"), JSON.stringify({ runId: "owned-worker", state: "complete" }));
     pi.emitBus("subagent:async-complete", { runId: "owned-worker", sessionId: "parent-session" });
     assert.equal(state.goal?.backgroundWait ?? state.loop?.backgroundWait, undefined);
@@ -93,6 +96,8 @@ for (const surface of ["goal", "list", "metric", "project"] as const) {
     assert.equal(notices, 1);
     pi.emitBus("subagent:async-complete", { runId: "owned-worker" });
     assert.equal(pi.sent.filter(message => message.message.customType === "glla-background-settled").length, 1);
+    await tick(500);
+    assert.equal(pi.userMessages.length - sendsBefore, 1, "matching completion admits exactly one main-thread continuation");
     assert.equal(aborts, 0);
   });
 }
