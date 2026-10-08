@@ -7,7 +7,7 @@ import type { Goal } from "../extensions/goal-loop-core.js";
 import { readState } from "../extensions/goal-loop-core.js";
 import { state, replaceState, persistStateLine } from "../extensions/goal-state.js";
 import { admitBackgroundWait, bindBackgroundWaitRuntime, observeBackgroundStart, observeBackgroundTerminal,
-  reconcileBackgroundWait, __testOnlyResetBackgroundWaitRuntime } from "../extensions/background-wait-runtime.js";
+  reconcileBackgroundWait, backgroundWaitPromptContext, __testOnlyResetBackgroundWaitRuntime } from "../extensions/background-wait-runtime.js";
 import { makeMockCtx, tmpCwd } from "./harness/mock-pi.js";
 
 const now = "2026-10-08T17:00:00.000Z";
@@ -53,6 +53,8 @@ for (const policy of ["goal", "list"] as const) {
     assert.equal(readState(f.cwd).goal?.backgroundWait, undefined);
     assert.equal(state.goal?.lastBackgroundWait?.dependencies[0]?.outcome, "completed");
     assert.equal(state.goal?.taskList?.tasks[0]?.status, "complete");
+    assert.match(backgroundWaitPromptContext()!, /Dependencies settled/);
+    assert.match(backgroundWaitPromptContext()!, /worker-1/);
     observeBackgroundTerminal({ runId: "worker-1" }, f.ctx, "completed");
     reconcileBackgroundWait(f.ctx); assert.equal(f.sends(), 1);
   });
