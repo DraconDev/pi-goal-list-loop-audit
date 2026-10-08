@@ -133,6 +133,8 @@ isGoalRevisionCurrent,
 } from "../goal-loop-core.js";
 import { persistApprovalRender, replayUndeliveredApprovalRenders } from "../approval-render-store.js";
 import { refreshUpdateCheck } from "../glla-update-check.js"; // v0.38.44 stale-version nudge
+import { readGllaVersionInfo } from "../glla-version.js";
+import { configureProgressRuntime } from "../progress-observer.js";
 import {
   createContinuationDispatch,
   dispatchMatchesOwner,
@@ -1790,6 +1792,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     zombieStoodDown = false;
     deadOwnerSession = null; // v0.34.25: a real session_start supersedes the silent-swap record
     deadOwnerCwd = null;
+    configureProgressRuntime(readGllaVersionInfo().version, () => sessionGeneration);
     sessionGeneration++;
     // A fresh host owns a fresh activity era even when pi skipped
     // session_shutdown. Old tool starts are not evidence for this session.
