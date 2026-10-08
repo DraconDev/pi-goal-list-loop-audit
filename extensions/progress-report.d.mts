@@ -31,3 +31,4 @@ export interface ProgressReport {
   limitations: string[];
 }
 export function projectProgress(records: Iterable<unknown>, options?: { maxRecords?: number; maxRuns?: number }): ProgressReport;
+export function formatProgressReport(report: ProgressReport): string;
