@@ -24,7 +24,8 @@ Read-only inspection of Deathrun's last 8 MiB of its journal confirmed: goal pau
 - `timeout 240 bun test --timeout=60000 tests/compaction-hold-resume.test.ts tests/main-model-recovery.test.ts tests/context-pressure-recovery.test.ts tests/compaction-failed-recovery.test.ts tests/paused-status-action-first.test.ts tests/display.test.ts`: 189 pass, 0 fail. `/tmp/glla-compaction-resume-focused.log`.
 - `timeout 120 npm run check`: exit zero. `/tmp/glla-compaction-resume-types.log`.
 - Runtime inventory regenerated; `git diff --check` clean.
-- Full release gate pending; no release tag/publication authorized or performed.
+- `timeout 1200 npm run release:check`: exit zero; 3393 pass, 1 pre-existing environment-gated skip, 0 fail across 360 files in 737s. Types, inventory, offline auditor-extension check and packed-package smoke pass. `/tmp/glla-compaction-resume-release.log`.
+- No release tag/publication authorized or performed. Source/evidence committed by the repository's existing sync daemon on `main`; history and git identity unchanged.
 
 ## Live use
 
