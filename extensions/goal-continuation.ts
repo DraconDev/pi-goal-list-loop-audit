@@ -617,7 +617,13 @@ export function dispatchPrepare(
     : undefined;
   if (repairTarget && !repairTarget.replanPromptedAt) {
     const promptedAt = nowIso();
-    updateGoal({ repairTarget: { ...repairTarget, replanPromptedAt: promptedAt } }, ctx);
+    // v0.39.x audit: the one-shot latch must land before forensics claims
+    // it armed — otherwise a failed write invites a second bootstrap turn.
+    if (!updateGoal({ repairTarget: { ...repairTarget, replanPromptedAt: promptedAt } }, ctx)) {
+      appendLedger(ctx.cwd, "faulty_objective_replan_turn_armed_failed", { goalId: record.goalId, targetId: repairTarget.id, attemptId: record.id });
+      ctx.ui.notify("glla: could not persist the repair bootstrap latch, so no automatic turn was sent. Fix .pi-glla storage, then resume explicitly.", "error");
+      return null;
+    }
     appendLedger(ctx.cwd, "faulty_objective_replan_turn_armed", {
       goalId: record.goalId,
       targetId: repairTarget.id,
@@ -1283,7 +1289,10 @@ export function guardGoalBeforeContinuation(
     const beforeRepair = { ...goal };
     const record = applyObjectiveRepair(goal, proposal, nowIso());
     if (!updateGoal({}, ctx)) {
+      // updateGoal repoints state.goal at its own copy — restore the
+      // snapshot AND the live binding, or memory still diverges.
       Object.assign(goal, beforeRepair);
+      replaceState({ ...state, goal });
       ctx.ui.notify("Suspicious-objective repair could not persist — dispatch held. Fix .pi-glla storage and retry.", "warning");
       return false;
     }
@@ -1326,7 +1335,10 @@ export function guardGoalBeforeContinuation(
   goal.updatedAt = nowIso();
   // Persist the staged pause through the goal-state transaction.
   if (!updateGoal({}, ctx)) {
+    // updateGoal repoints state.goal at its own copy — restore the
+    // snapshot AND the live binding, or memory still diverges.
     Object.assign(goal, beforePause);
+    replaceState({ ...state, goal });
     ctx.ui.notify(`Suspicious ${goal.policy === "list" ? "list item" : "goal"} pause could not persist — dispatch held. Fix .pi-glla storage and retry.`, "warning");
     return false;
   }

@@ -6,6 +6,7 @@ import activate, { __testOnlyResetProcessState } from "../extensions/loops/goal.
 import { __testOnlyLoadState } from "../extensions/loops/goal-ui.js";
 import { guardGoalBeforeContinuation } from "../extensions/goal-continuation.js";
 import { state } from "../extensions/goal-state.js";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { MockPi, makeMockCtx, seedState, seedGoal, tmpCwd, tick } from "./harness/mock-pi.js";
 
 afterEach(() => { __testOnlyResetProcessState(); });
@@ -29,7 +30,7 @@ test("guard with broken storage holds the dispatch and rolls memory back to acti
   const line = path.join(cwd, ".pi-glla", "active.jsonl");
   fs.rmSync(line, { force: true });
   fs.mkdirSync(line, { recursive: true });
-  const ok = guardGoalBeforeContinuation(ctx, "test-guard-rollback");
+  const ok = guardGoalBeforeContinuation(ctx as unknown as ExtensionContext, "test-guard-rollback");
   await tick(50);
   assert.equal(ok, false, "dispatch is held when the guard cannot persist");
   assert.equal(state.goal?.status, "active", "memory rolls back instead of diverging from disk");

@@ -993,7 +993,16 @@ function registerAgentTools(pi: any): void {
           isError: true,
         };
       }
-      updateGoal({ pendingTasks: undefined, ...(claimedSummary ? { completionSummary: claimedSummary } : {}) }, ctx);
+      // v0.39.x audit: the claim write is the launch commit — match the
+      // abort/confirm paths and refuse to launch an auditor the claim
+      // cannot see.
+      if (!updateGoal({ pendingTasks: undefined, ...(claimedSummary ? { completionSummary: claimedSummary } : {}) }, ctx)) {
+        return {
+          content: [{ type: "text", text: "FAILED — completion claim was not persisted; no auditor was launched. Do NOT wait for an audit — fix .pi-glla storage and retry complete_goal." }],
+          details: {},
+          isError: true,
+        };
+      }
       const auditGoal = state.goal;
       if (!auditGoal) return staleToolResult();
       const auditGoalId = auditGoal.id;

@@ -401,19 +401,21 @@ function escalateStallNow(ctx: ExtensionContext, threshold: number): boolean {
   if (isLoopActive()) {
     clearLoopTimer();
     state.loop = { ...state.loop!, active: false, stopReason: `stalled: ${threshold} continuation refires landed no turn — the session is not continuing (wedged message queue or stale API). Press Escape to cancel any stuck run, then /loop resume — the loop holds on restore. A fresh session_start rebinds the loop or goal; restart pi normally only if no replacement arrives.` };
-    persistState(ctx);
-    ctx.ui.notify(`Loop stopped: ${threshold} refires produced no turn — the continuation is not landing. Escape cancels a stuck run, then /loop resume (the loop holds on restore). A fresh session_start rebinds it; restart pi normally only if no replacement arrives.`, "warning");
+    // v0.39.x audit: the stop must prove it landed — degraded storage gets
+    // the caveat, not an unconditional safety claim.
+    const loopStopLanded = persistState(ctx);
+    ctx.ui.notify(`Loop stopped: ${threshold} refires produced no turn — the continuation is not landing. Escape cancels a stuck run, then /loop resume${loopStopLanded ? " (the loop holds on restore)" : " (the stop could not persist — repair .pi-glla storage before resuming)"}. A fresh session_start rebinds it; restart pi normally only if no replacement arrives.`, "warning");
     notifyExternal(ctx, "Loop stopped: stalled (continuation not landing).");
     return true;
   }
   if (state.goal && state.goal.status === "active") {
-    updateGoal({
+    const stallParkLanded = updateGoal({
       status: "paused",
       pauseKind: "error",
       pauseReason: `stalled: ${threshold} continuation refires landed no turn`,
       pauseSuggestedAction: `The continuation chain is broken in this process (wedged message queue or stale API). Press Escape to cancel any stuck run, then ${activeGoalSurfaceCommand("resume")}. A fresh session_start rebinds the goal; restart pi normally only if no replacement arrives.`,
     }, ctx);
-    ctx.ui.notify(`${goalNoun()} paused: ${threshold} refires produced no turn. Escape cancels a stuck run, then ${activeGoalSurfaceCommand("resume")}. A fresh session_start rebinds it; restart pi normally only if no replacement arrives.`, "warning");
+    ctx.ui.notify(`${goalNoun()} paused: ${threshold} refires produced no turn. Escape cancels a stuck run, then ${activeGoalSurfaceCommand("resume")}${stallParkLanded ? "" : " (the pause could not persist — repair .pi-glla storage before resuming)"}. A fresh session_start rebinds it; restart pi normally only if no replacement arrives.`, "warning");
     notifyExternal(ctx, `${goalNoun()} paused: stalled (continuation not landing).`);
     return true;
   }
