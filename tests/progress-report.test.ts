@@ -1,6 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { projectProgress } from '../extensions/progress-report.mjs';
+import { readProgressReport } from '../extensions/progress-reader.mjs';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { tmpdir } from 'node:os';
+
+function fixture(run: (root: string) => void): void {
+  const root = fs.mkdtempSync(path.join(tmpdir(), 'glla-progress-'));
+  try { run(root); } finally { fs.rmSync(root, { recursive: true, force: true }); }
+}
 
 const state = (loop: unknown) => ({ type: 'state', at: '2026-10-08T00:00:00Z', value: { goal: null, loop } });
 
@@ -54,3 +63,38 @@ test('malformed records and bounded windows disclose incomplete evidence', () =>
   assert.equal(report.window.invalidRecords, 1);
   assert.equal(report.runs.length, 0);
 });
+
+test('rotated journal replay retains chronology and never writes journals or ownership files', () => fixture(root => {
+  fs.mkdirSync(path.join(root, 'ledger-segments'));
+  const loop = (status: string) => ({ startedAt: 'builder', active: false, builder: { projectId: 'project', requirements: [{ id: 'R1', status }] } });
+  fs.writeFileSync(path.join(root, 'ledger-segments', 'segment-0001.jsonl'), JSON.stringify(state(loop('verified'))) + '\n');
+  fs.writeFileSync(path.join(root, 'active.jsonl'), JSON.stringify(state(loop('open'))) + '\n{torn\n');
+  fs.writeFileSync(path.join(root, 'owner.json'), '{"pid":123456,"generation":"foreign"}');
+  const snapshot = () => [fs.readFileSync(path.join(root, 'active.jsonl'), 'utf8'), fs.readFileSync(path.join(root, 'owner.json'), 'utf8'), fs.readdirSync(root).sort()];
+  const before = snapshot();
+  const report = readProgressReport(root);
+  assert.equal(report.runs[0]?.historicalVerification.length, 1);
+  assert.equal(report.runs[0]?.historicalVerification[0]?.current, false);
+  assert.equal(report.source.malformedLines, 1);
+  assert.equal(report.source.filesRead, 2);
+  assert.deepEqual(snapshot(), before);
+}));
+
+test('bounded journal reader selects the newest records and discloses truncation', () => fixture(root => {
+  fs.writeFileSync(path.join(root, 'active.jsonl'), [1, 2, 3].map(iteration => JSON.stringify(state({ startedAt: 'legacy', iteration }))).join('\n') + '\n');
+  const report = readProgressReport(root, { maxRecords: 1 });
+  assert.equal(report.runs[0]?.iterations, 3);
+  assert.equal(report.source.truncated, true);
+  assert.equal(report.window.truncated, true);
+}));
+
+test('reader refuses symlink journals and segment directories rather than reading another root', () => fixture(root => {
+  fs.mkdirSync(path.join(root, 'foreign'));
+  fs.writeFileSync(path.join(root, 'foreign', 'outside.jsonl'), JSON.stringify(state({ startedAt: 'foreign', iteration: 99 })));
+  fs.symlinkSync(path.join(root, 'foreign', 'outside.jsonl'), path.join(root, 'active.jsonl'));
+  fs.symlinkSync(path.join(root, 'foreign'), path.join(root, 'ledger-segments'));
+  const report = readProgressReport(root);
+  assert.equal(report.runs.length, 0);
+  assert.equal(report.source.errors.length, 2);
+  assert.equal(report.source.bytesRead, 0);
+}));
