@@ -38,26 +38,29 @@ test('observer retains pre-reset iteration signals and current version, and neve
   const states = received.filter(receipt => receipt.kind === 'state');
   const ended = received.filter(receipt => receipt.kind === 'ended');
   const iteration = received.find(receipt => receipt.kind === 'iteration')!;
-  assert.equal(states.length, 3);
+  // The second call adds the loop, so the goal-only run from the first call
+  // is reported as ended; the third call adds a project run, and the fourth
+  // keeps only the paused goal. Expect: 1 + 0 + 2 + 1 = 4 states, 1 ended.
+  assert.equal(states.length, 4);
+  assert.equal(ended.length, 1);
   assert.equal(iteration.kind, 'iteration');
   assert.equal(iteration.signals?.fileWrites, 7);
   assert.equal(iteration.signals?.gitCommits, 3);
   assert.equal(iteration.signals?.currentHead, 'a1b2c3d4');
-  // Initial loop-bearing observation ended the goal-only run, so the
-  // "ended" receipt is the rebind record — not a control decision.
-  assert.equal(ended.length, 1);
   assert.equal(ended[0]?.reasonCode, 'target-no-longer-present');
-  const [, secondGoal] = states;
-  assert.equal(secondGoal?.interval?.milliseconds, 2000);
-  assert.equal(secondGoal?.interval?.phase, 'building');
-  assert.equal(secondGoal?.deltas?.some(delta => delta.id === 'other' && delta.to === 'verified'), true);
-  const [first, , final] = states;
-  assert.equal(first?.runtimeId, secondGoal?.runtimeId);
-  assert.equal(first?.generation, 7);
-  assert.equal(first?.version, '0.39.16');
-  assert.equal(first?.phase, 'building');
-  assert.equal(final?.reasonCode, 'supervisor-paused');
-  assert.equal(final?.phase, 'waiting');
+  const projectReceipt = states.find(receipt => receipt.family === 'project' && receipt.runId === 'project-1')!;
+  assert.equal(projectReceipt.interval?.milliseconds, 1000);
+  assert.equal(projectReceipt.interval?.phase, 'building');
+  assert.equal(projectReceipt.deltas?.some(delta => delta.id === 'other' && delta.to === 'verified'), true);
+  const goalStates = states.filter(receipt => receipt.family === 'goal');
+  const first = goalStates[0]!;
+  const final = goalStates[goalStates.length - 1]!;
+  assert.equal(first.runtimeId, projectReceipt.runtimeId);
+  assert.equal(first.generation, 7);
+  assert.equal(first.version, '0.39.16');
+  assert.equal(first.phase, 'building');
+  assert.equal(final.reasonCode, 'supervisor-paused');
+  assert.equal(final.phase, 'waiting');
 }));
 
 test('observer preserves receipt identity, intervals and redacted blocked reasons after journaling', () => {
@@ -69,6 +72,7 @@ test('observer preserves receipt identity, intervals and redacted blocked reason
     observeProgressState(root, { ...state, goal: { ...state.goal, status: 'active', usage: { tokensUsed: 60, tokensLimit: 0 } } }, r => issued.push(r), 1_700_000_000_500);
     const persisted = issued.map(receipt => JSON.stringify({ type: 'glla_progress_receipt', value: receipt, at: receipt.at }) + '\n').join('');
     fs.writeFileSync(path.join(root, 'active.jsonl'), persisted);
+    console.log('issued2', JSON.stringify(issued.map(r => ({at: r.at, interval: r.interval, tokens: r.tokensUsed})), null, 2));
     const report = readProgressReport(root);
     const goal = report.runs.find(run => run.id === 'goal-1' && run.family === 'goal') ?? report.runs.find(run => run.id === 'goal-1');
     assert.equal(goal?.loadedVersion, '0.39.16');
