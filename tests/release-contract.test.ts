@@ -75,6 +75,15 @@ test("release contract: packed prompts, schema, and workers ship in the dry-run 
   }
 });
 
+test("release contract: changed tests ride the hardened runner", { timeout: 60_000 }, () => {
+  const manifest = JSON.parse(fs.readFileSync("package.json", "utf-8")) as { scripts?: Record<string, string> };
+  const changed = manifest.scripts?.["test:changed"] ?? "";
+  assert.match(changed, /scripts\/run-tests\.mjs/, "test:changed must route through the hardened runner");
+  assert.match(changed, /--changed/, "test:changed must keep the changed-file filter");
+  assert.doesNotMatch(changed, /bun test/, "test:changed must not invoke bare bun test");
+  assert.ok(dryRunFiles().has("scripts/run-tests.mjs"), "the hardened runner must ship in the tarball");
+});
+
 test("release contract: glla-delegate skill loads without diagnostics (source-tree fast tier)", () => {
   // Audit 2026-09-13: this is the fast source-tree tier only. The packed-
   // tarball tier lives in scripts/release-pack-smoke.mjs (loadSkills

@@ -11,6 +11,9 @@
 // Usage: node scripts/run-tests.mjs [--slow|--all] [extra bun test args...]
 // An explicit test path in the extras always wins: ignore patterns are
 // dropped so `npm test -- tests/some-slow.test.ts` runs that file.
+// A `--changed` filter also drops the slow-file exclusions: changed-file
+// selection is itself the scope, so a changed slow file must still run
+// (serially, under the stall/orphan watch) rather than be filtered out.
 //
 // Observable progress and bounded suite-group cleanup. The field reported a
 // suite that produced nothing for 37 minutes and a 26-hour-old `bun test`
@@ -78,13 +81,15 @@ export function buildRunnerArgs(argv, slowFiles) {
     "--changed", "--rerun-each", "--repeat-each",
   ]);
   let hasExplicitPaths = false;
+  let hasChangedFilter = false;
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i];
+    if (arg === "--changed" || arg.startsWith("--changed=")) { hasChangedFilter = true; continue; }
     if (VALUE_FLAGS.has(arg)) { i++; continue; }
     if (!arg.startsWith("-")) { hasExplicitPaths = true; break; }
   }
   if (mode === "slow") return { mode, bunArgs: [...SERIAL_FLAGS, ...slowFiles, ...rest] };
-  if (mode === "all" || hasExplicitPaths) return { mode: hasExplicitPaths ? "explicit" : mode, bunArgs: [...SERIAL_FLAGS, ...rest] };
+  if (mode === "all" || hasExplicitPaths || hasChangedFilter) return { mode: hasExplicitPaths ? "explicit" : hasChangedFilter ? "changed" : mode, bunArgs: [...SERIAL_FLAGS, ...rest] };
   return {
     mode,
     bunArgs: [...SERIAL_FLAGS, ...slowFiles.flatMap((f) => ["--path-ignore-patterns", f]), ...rest],

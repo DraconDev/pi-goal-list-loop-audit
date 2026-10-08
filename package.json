@@ -61,7 +61,7 @@
 		"test": "node scripts/run-tests.mjs",
 		"test:fast": "node scripts/run-tests.mjs",
 		"test:slow": "node scripts/run-tests.mjs --slow",
-		"test:changed": "bun test --parallel=1 --max-concurrency=1 --timeout=60000 --changed",
+		"test:changed": "node scripts/run-tests.mjs --changed",
 		"test:auditor-extensions": "node scripts/verify-auditor-extensions-offline.mjs",
 		"test:all": "node scripts/run-tests.mjs --all && tsc --noEmit && node tests/repro-jiti-state-split.test.mjs && npm run test:auditor-extensions",
 		"release:check": "npm run test:all && npm run check:inventory && npm pack --dry-run && node scripts/release-pack-smoke.mjs",

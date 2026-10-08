@@ -55,6 +55,7 @@ try {
     // or a spawned worker must fail here, not at draft time in the field.
     "scripts/goal-compactor-worker.mjs",
     "scripts/contained-child.mjs",
+    "scripts/run-tests.mjs",
     "scripts/test-process-registry.mjs",
     "scripts/durable-wait.mjs",
     "scripts/release-pack-smoke.mjs",

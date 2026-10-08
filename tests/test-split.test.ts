@@ -51,6 +51,17 @@ test("test-split: explicit paths drop the ignore patterns", () => {
   assert.ok(bunArgs.includes("tests/a.test.ts"));
 });
 
+test("test-split: a --changed filter drops the slow exclusions (changed scope wins)", () => {
+  const changed = buildRunnerArgs(["--changed"], ["tests/a.test.ts"]);
+  assert.equal(changed.mode, "changed");
+  assert.ok(!changed.bunArgs.some((a) => a.includes("ignore-patterns")), "a changed slow file must still run");
+  assert.ok(changed.bunArgs.includes("--changed"), "the filter passes through to bun");
+  assert.deepEqual(changed.bunArgs.slice(0, SERIAL_FLAGS.length), SERIAL_FLAGS, "serial flags first, always");
+  const changedRef = buildRunnerArgs(["--changed=main"], ["tests/a.test.ts"]);
+  assert.equal(changedRef.mode, "changed");
+  assert.ok(!changedRef.bunArgs.some((a) => a.includes("ignore-patterns")));
+});
+
 test("test-split: slow mode names the files; all mode passes through", () => {
   const slow = buildRunnerArgs(["--slow"], ["tests/a.test.ts"]);
   assert.equal(slow.mode, "slow");
