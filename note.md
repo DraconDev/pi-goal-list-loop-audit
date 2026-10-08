@@ -2,6 +2,17 @@
 
 # Next
 
+## ??
+i am not sure the loop respec idea is the best or perhaps should be a super rigous goal but hte problem is that it might call it early 
+
+but current respec is not working well either and what if it were to finish then we just keep burning ? 
+
+##
+This summary looks pretty can we improve ours
+/home/dracon/Pictures/Screenshots/Screenshot_20261008_014844.png
+/home/dracon/Pictures/Screenshots/Screenshot_20261008_014847.png
+
+
 # later
 
 # Testing
