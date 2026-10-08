@@ -5,6 +5,7 @@ import { readProgressReport } from '../extensions/progress-reader.mjs';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
 
 function fixture(run: (root: string) => void): void {
   const root = fs.mkdtempSync(path.join(tmpdir(), 'glla-progress-'));
@@ -86,6 +87,21 @@ test('bounded journal reader selects the newest records and discloses truncation
   assert.equal(report.runs[0]?.iterations, 3);
   assert.equal(report.source.truncated, true);
   assert.equal(report.window.truncated, true);
+}));
+
+test('machine-readable reporting entry point is bounded and leaves journal and owner unchanged', () => fixture(root => {
+  const ledger = JSON.stringify({ type: 'state', value: { goal: { id: 'list-item', policy: 'list', status: 'paused', objective: 'Verify a feature', usage: { tokensUsed: 42 } } } }) + '\n';
+  fs.writeFileSync(path.join(root, 'active.jsonl'), ledger);
+  fs.writeFileSync(path.join(root, 'owner.json'), '{"generation":"foreign"}');
+  const child = spawnSync(process.execPath, ['scripts/glla-progress-report.mjs', '--state-dir', root], { encoding: 'utf8', timeout: 4000, maxBuffer: 1024 * 1024 });
+  assert.equal(child.status, 0, child.stderr);
+  const report = JSON.parse(child.stdout);
+  assert.equal(report.runs[0].mode, 'list-goal');
+  assert.equal(report.runs[0].phaseAccounting.recordedTokens, 42);
+  assert.equal(report.runs[0].phaseAccounting.monetaryCost, 'unknown');
+  assert.equal(fs.readFileSync(path.join(root, 'active.jsonl'), 'utf8'), ledger);
+  assert.equal(fs.readFileSync(path.join(root, 'owner.json'), 'utf8'), '{"generation":"foreign"}');
+  assert.deepEqual(fs.readdirSync(root).sort(), ['active.jsonl', 'owner.json']);
 }));
 
 test('reader refuses symlink journals and segment directories rather than reading another root', () => fixture(root => {
