@@ -17,11 +17,13 @@ export function readProgressReport(stateDir, options = {}) {
   // explicitly partial observation rather than an unbounded sorting pass.
   let directory;
   try {
-    directory = fs.opendirSync(path.join(root, 'ledger-segments'));
+    const segmentRoot = path.join(root, 'ledger-segments');
+    if (fs.lstatSync(segmentRoot).isSymbolicLink()) throw Object.assign(new Error('symlink segment directory'), { code: 'ELOOP' });
+    directory = fs.opendirSync(segmentRoot);
     let entry, entries = 0;
     while ((entry = directory.readSync())) {
       if (++entries > 256) { source.truncated = true; break; }
-      if (entry.isFile() && /^\d[^/]*\.jsonl$/.test(entry.name)) segments.push(path.join(root, 'ledger-segments', entry.name));
+      if (entry.isFile() && /^segment-[^/]*\.jsonl$/.test(entry.name)) segments.push(path.join(root, 'ledger-segments', entry.name));
     }
   } catch (error) {
     if (error.code !== 'ENOENT') source.errors.push({ location: 'segments', code: error.code ?? 'unknown' });
