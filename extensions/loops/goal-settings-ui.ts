@@ -1531,6 +1531,17 @@ export async function handleSettingChoice(id: string, ctx: ExtensionContext): Pr
       }
       return;
     }
+    case "mainModelSameModelRetries": {
+      const v = await ctx.ui.input("Same-model retries before rotation", "non-negative integer 0..100; empty = default 10 (the TRANSIENT_EAGER_ATTEMPTS quantum; 0 = legacy immediate rotation)");
+      if (v !== undefined) {
+        const raw = v.trim();
+        const n = parseSettingsInteger(raw);
+        if (n !== undefined && n >= 0) saveSettings("global", ctx, { mainModelSameModelRetries: n });
+        else if (!raw) saveSettings("global", ctx, { mainModelSameModelRetries: undefined });
+        else ctx.ui.notify(`same-model retries must be a non-negative integer 0..100, got: ${v}`, "warning");
+      }
+      return;
+    }
     case "auditorModel": {
       // v0.35.24 (note.md Next #1): parity with the main agent selector —
       // the auditor picker filters forbidden models out of the list AND

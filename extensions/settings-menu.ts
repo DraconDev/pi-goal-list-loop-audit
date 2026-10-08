@@ -315,6 +315,14 @@ export function buildSettingsRows(
       description: "first retry is eager, later retries use this bounded ladder; an extra :00:30 probe runs after each hour starts; automatic recovery stops after 24h when aggressive mode is OFF — aggressive mode (the default) has no wall-clock expiry, and only a deterministic provider error still stops it"
     },
     {
+      id: "mainModelSameModelRetries",
+      section: "main-agent",
+      label: "Same-model retries before rotation",
+      valueText: show("mainModelSameModelRetries", "10"),
+      sourceText: src("mainModelSameModelRetries"),
+      description: "consecutive retries the CURRENT main model gets before the configured fallback chain is touched; the chosen model hammers this many times through the existing envelope (eager 5s for transient, provider reset for hinted walls, ladder for persistent) so a 429 does not rotate on the first turn; 0 restores the legacy immediate rotation"
+    },
+    {
       id: "hourlyRetryProbe",
       section: "main-agent",
       label: "Hourly main recovery probe",

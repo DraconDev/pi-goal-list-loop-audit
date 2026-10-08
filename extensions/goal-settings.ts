@@ -33,6 +33,8 @@ import type { SubagentModelStrategy } from "./goal-loop-subagents.js";
 export type SubagentDisplayRichness = "rich" | "compact" | "quiet";
 import {
   DEFAULT_MAIN_MODEL_PRIMARY_PROBE_MINUTES,
+  DEFAULT_MAIN_MODEL_SAME_MODEL_RETRIES,
+  MAX_MAIN_MODEL_SAME_MODEL_RETRIES,
   normalizeMainModelFallbackRefs,
 } from "./main-model-recovery.js";
 
@@ -107,6 +109,13 @@ export interface Settings {
   subagentFallbacks?: Record<string, string[]>;
   /** Global-only base minutes before main-session recovery; doubles per attempt, caps at 5h, and the automatic window ends at 24h. */
   mainModelRetryMinutes?: number;
+  /** Global-only: number of consecutive retries the CURRENT main model gets
+   * before the configured fallback chain is touched. Default 10 (the
+   * TRANSIENT_EAGER_ATTEMPTS quantum) so most provider failures hammer the
+   * model already chosen instead of rotating on the first blip. 0 restores
+   * the legacy immediate rotation. Hand-edited values are clamped to
+   * 0..MAX_MAIN_MODEL_SAME_MODEL_RETRIES. */
+  mainModelSameModelRetries?: number;
   /** Global-only: after a fallback succeeds, automatically test the preferred
    * primary again, or keep the fallback for the rest of the session. */
   mainModelFailback?: "auto" | "sticky";
@@ -347,6 +356,7 @@ export const GLOBAL_ONLY_KEYS: ReadonlySet<keyof Settings> = new Set([
   "mainModelFallbacks",
   "mainModelFallbackThinkingLevels",
   "mainModelRetryMinutes",
+  "mainModelSameModelRetries",
   "mainModelFailback",
   "mainModelPrimaryProbeMinutes",
   "hourlyRetryProbe",
@@ -383,6 +393,7 @@ export const DEFAULT_SETTINGS: Settings = {
   // to see (note.md 2026-08-30).
   visionAssist: true,
   mainModelRetryMinutes: 15,
+  mainModelSameModelRetries: DEFAULT_MAIN_MODEL_SAME_MODEL_RETRIES,
   mainModelFailback: "auto",
   mainModelPrimaryProbeMinutes: DEFAULT_MAIN_MODEL_PRIMARY_PROBE_MINUTES,
   // Unset = inherit the session thinking level while the temporary drafter
@@ -685,6 +696,11 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   // was dead.
   if (typeof settings.mainModelRetryMinutes !== "number" || !Number.isFinite(settings.mainModelRetryMinutes) || settings.mainModelRetryMinutes < 1) {
     delete settings.mainModelRetryMinutes;
+  }
+  if (typeof settings.mainModelSameModelRetries !== "number" || !Number.isInteger(settings.mainModelSameModelRetries) || settings.mainModelSameModelRetries < 0) {
+    delete settings.mainModelSameModelRetries;
+  } else if (settings.mainModelSameModelRetries > MAX_MAIN_MODEL_SAME_MODEL_RETRIES) {
+    settings.mainModelSameModelRetries = MAX_MAIN_MODEL_SAME_MODEL_RETRIES;
   }
   if (typeof settings.auditFeedbackChars !== "number" || !Number.isInteger(settings.auditFeedbackChars) || settings.auditFeedbackChars < 0) {
     delete settings.auditFeedbackChars;
