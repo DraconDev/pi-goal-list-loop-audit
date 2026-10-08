@@ -72,7 +72,7 @@ export class ProgressObserver {
         receipt.attemptId = target.requirements?.audit?.attemptId ?? target.requirements?.history?.at(-1)?.attemptId;
         // Epoch boundaries never bridge a replacement/offline session gap.
         if (before && before.generation === receipt.generation && at >= before.at && at - before.at <= 86400000) {
-          receipt.interval = { phase: before.phase, milliseconds: at - before.at, provenance: 'inferred-between-state-observations', _debug_at: at, _debug_before_at: before.at,
+          receipt.interval = { phase: before.phase, milliseconds: at - before.at, provenance: 'inferred-between-state-observations',
             ...(before.tokens !== undefined && target.tokens !== undefined && target.tokens >= before.tokens ? { tokens: target.tokens - before.tokens } : {}) };
         }
         const requirements = new Map<string, string>();
