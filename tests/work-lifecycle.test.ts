@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import type { Goal } from "../extensions/goal-loop-core.js";
+import type { Goal, State } from "../extensions/goal-loop-core.js";
+import { buildStatusText, buildWidgetLines, buildWorkLifecycleSummary } from "../extensions/goal-loop-display.js";
 function seedGoal(overrides: Partial<Goal> = {}): Goal {
   return { id: "goal-1", objective: "Implement the checked target", status: "active", policy: "goal",
     autoContinue: true, usage: { tokensUsed: 0, tokensLimit: 0 },
