@@ -121,6 +121,37 @@ test("replacement, cancellation and pending audit cannot be woken by an old depe
   assert.equal(state.goal.pendingCompletion?.completionSummary, "Saved audit");
 });
 
+test("admission rejects guessed ids; foreign sessions cannot settle an owned wait", () => {
+  const f = fixture();
+  assert.equal(admitBackgroundWait(f.ctx, ["guessed-worker"], "prose is not ownership").ok, false);
+  f.start(); admitBackgroundWait(f.ctx, ["worker-1"], "checkpoint");
+  observeBackgroundTerminal({ runId: "worker-1", sessionId: "unrelated-session" }, f.ctx, "completed");
+  assert.equal(state.goal?.backgroundWait?.dependencies[0]?.outcome, "pending");
+  assert.equal(f.sends(), 0);
+});
+
+test("multiple dependencies require all results; completion before admission is retained", () => {
+  const f = fixture(); f.start();
+  observeBackgroundStart({ runId: "worker-2" }, f.ctx);
+  observeBackgroundTerminal({ runId: "worker-1" }, f.ctx, "completed");
+  admitBackgroundWait(f.ctx, ["worker-1", "worker-2"], "two checkpoints");
+  reconcileBackgroundWait(f.ctx); assert.equal(f.sends(), 0);
+  observeBackgroundTerminal({ runId: "worker-2" }, f.ctx, "stopped");
+  assert.equal(f.sends(), 1);
+  assert.deepEqual(state.goal?.lastBackgroundWait?.dependencies.map(dep => dep.outcome), ["completed", "stopped"]);
+});
+
+for (const publishedDeadline of [true, false]) {
+  test(`running artifact cannot retain waiting indefinitely (${publishedDeadline ? "deadline" : "no deadline"})`, () => {
+    const f = fixture(); f.start(); admitBackgroundWait(f.ctx, ["worker-1"], "checkpoint");
+    state.goal = { ...state.goal!, backgroundWait: { ...state.goal!.backgroundWait!, createdAt: new Date(Date.now() - 31 * 60_000).toISOString() } };
+    fs.writeFileSync(path.join(f.asyncDir, "status.json"), JSON.stringify({ runId: "worker-1", state: "running", pid: process.pid,
+      lastActivityAt: Date.now(), ...(publishedDeadline ? { deadlineAt: Date.now() - 1 } : {}) }));
+    reconcileBackgroundWait(f.ctx);
+    assert.equal(f.sends(), 1); assert.equal(state.goal?.lastBackgroundWait?.dependencies[0]?.outcome, "missing");
+  });
+}
+
 test("busy parent consumes settlement without an extra main-thread send", () => {
   const f = fixture(); f.start(); admitBackgroundWait(f.ctx, ["worker-1"], "checkpoint");
   f.idle(false); f.publish("complete"); observeBackgroundTerminal({ runId: "worker-1" }, f.ctx, "completed");
