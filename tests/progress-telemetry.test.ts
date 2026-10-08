@@ -69,6 +69,8 @@ test('observer preserves receipt identity, intervals and redacted blocked reason
     observeProgressState(root, { ...state, goal: { ...state.goal, status: 'active', usage: { tokensUsed: 60, tokensLimit: 0 } } }, r => issued.push(r), 1_700_000_000_500);
     const persisted = issued.map(receipt => JSON.stringify({ type: 'glla_progress_receipt', value: receipt, at: receipt.at }) + '\n').join('');
     fs.writeFileSync(path.join(root, 'active.jsonl'), persisted);
+    console.log('issued', JSON.stringify(issued, null, 2));
+    console.log('root', root);
     const report = readProgressReport(root);
     console.log(JSON.stringify(report, null, 2));
     const goal = report.runs.find(run => run.id === 'goal-1' && run.family === 'goal') ?? report.runs.find(run => run.id === 'goal-1');
