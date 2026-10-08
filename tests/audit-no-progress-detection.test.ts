@@ -189,13 +189,34 @@ test("v0.38.105 deterministic mechanical pre-audit rows are transparent to the n
     3,
     "transparent gate rows do not break the auditor streak",
   );
-  // The reverse direction: a real auditor row followed by gates. The
-  // auditor's fingerprint is the first seen, and the gate rows do not
-  // match it — the streak stops at one.
+  // The reverse direction: a real auditor streak followed by transparent
+  // gate rows. Walking backward, the gate rows are skipped and the auditor
+  // rows still form their identical-fingerprint streak of 3.
   const reversed = [...auditorHistory, ...gateHistory];
   assert.equal(
     countTrailingRepeatedDisapprovals(reversed),
-    1,
-    "gate rows do not extend a real auditor streak when their fingerprint differs",
+    3,
+    "transparent gate rows do not break a real auditor streak",
   );
+  // An interleaved history proves the auditor is what we count: every OTHER
+  // row is a gate, the auditor is byte-identical, but the auditor rows are
+  // never adjacent in the window (a single gate sits between each pair).
+  // Identical-fingerprint is computed on the immediately previous counted
+  // row, so the answer is 1.
+  const interleaved = [];
+  for (let i = 0; i < 3; i++) {
+    interleaved.push({ ...auditorReportRow(i) });
+    interleaved.push({ ...gateReportRow(i) });
+  }
+  assert.equal(
+    countTrailingRepeatedDisapprovals(interleaved),
+    1,
+    "an auditor row separated from the next auditor by a gate is not a streak",
+  );
+  function gateReportRow(i: number) {
+    return { at: `2026-10-08T16:5${i}:00.000Z`, model: "deterministic-pre-audit", report: gateReport, approved: false, disapproved: true, revision: 0 };
+  }
+  function auditorReportRow(i: number) {
+    return { at: `2026-10-08T16:5${i}:30.000Z`, model: "auditor/test", report: auditorReport, approved: false, disapproved: true, revision: 0 };
+  }
 });
