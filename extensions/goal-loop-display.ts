@@ -1387,7 +1387,14 @@ export function buildStatusText(state: State, audit?: AuditDisplayProgress | nul
   // v0.38.73: run-to-done is a consent state the user must see at a glance
   // — an auto-running goal must never look supervised.
   const view = stateWorkView(state, observedWorkActivity(extras, now));
-  const withActivity = withAgentSummary && !backgroundDisplay(state) && (view.lifecycle !== "running" || (view.activity !== "unknown" && view.activity !== "auditing"))
+  // The status line already names lifecycle via the icon + word (active/paused/etc.)
+  // and activity via recent tool evidence. Only append a separate segment when
+  // the projection disambiguates a state the visible badge does not already
+  // expose (waiting vs paused recovery) or names a non-trivial activity.
+  const lifecycleAddsInfo = !backgroundDisplay(state)
+    && (view.lifecycle === "waiting"
+      || (view.lifecycle === "running" && view.activity !== "unknown" && view.activity !== "auditing"));
+  const withActivity = withAgentSummary && lifecycleAddsInfo
     ? `${withAgentSummary} · lifecycle: ${view.lifecycle} · activity: ${view.activity}`
     : withAgentSummary;
   const withMode = withActivity && state.goal?.runToDone === true
