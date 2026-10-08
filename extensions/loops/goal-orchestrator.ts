@@ -278,7 +278,7 @@ import {
 import { shouldCompactBetweenTasks } from '../goal-compactor.js';
 import { shouldRecoverContextPressure, isExplicitPromptOverflow, compactFirstEligible } from '../context-pressure-recovery.js';
 import { claimPressureAttempt, clearPressureAttempt, resetPressureBudget, setPressureExclusion } from '../context-pressure-attempt.js';
-import { consumeRecoveryResume } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
+import { consumeRecoveryResume, sameModelRef } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
 import {
   createGoalHeartbeat,
   endSubagentHangProbe,
