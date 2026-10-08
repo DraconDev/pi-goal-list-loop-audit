@@ -27,7 +27,7 @@ import { auditLifecycleProjection, fmtAge, isSettlingClaim } from "./audit-lifec
 import { clearDispatchRecord, dispatchRecordExists } from "./goal-loop-dispatch.js";
 import type { AuditDisplayProgress } from "./goal-loop-display.js";
 import { auditorVerdictTally, fmtElapsed, formatVerdictTallySegment, buildWorkLifecycleSummary } from "./goal-loop-display.js";
-import { goalWorkView } from "./work-lifecycle.js";
+import { goalWorkView, loopWorkView } from "./work-lifecycle.js";
 import { reconcileBackgroundWait } from "./background-wait-runtime.js";
 import { AUDIT_FINDINGS_REL, LOOP_AUDIT_MARKER, listAuditCollectTarget, projectAuditTarget } from "./goal-loop-forever.js";
 import { buildLoopCompletionSummary, compactCompletionSummary, compactTerminalCompletionSummary } from "./completion-summary.js";
@@ -3205,7 +3205,7 @@ function cmdGllaStatus(ctx: ExtensionContext): void {
   lines.push(`list: ${q.length === 0 ? "empty" : `${q.length} queued — head: ${displaySlice(q[0]?.objective ?? "", 70)}`}`);
   const l = state.loop;
   if (l) {
-    lines.push(`loop: ${l.backgroundWait && l.active && !supervisorPaused(state) ? "WAITING" : l.active ? "ACTIVE" : `held/stopped — ${sanitizeDisplayText(l.stopReason ?? "n/a")}`} · iter ${l.iteration}/${l.maxIterations > 0 ? l.maxIterations : "∞"} · best ${l.bestValue ?? "n/a"} · stall ${l.stallCount} — ${displaySlice(l.target, 60)}`);
+    lines.push(`loop: ${loopWorkView(l, state).lifecycle === "waiting" ? "WAITING" : l.active ? "ACTIVE" : `held/stopped — ${sanitizeDisplayText(l.stopReason ?? "n/a")}`} · iter ${l.iteration}/${l.maxIterations > 0 ? l.maxIterations : "∞"} · best ${l.bestValue ?? "n/a"} · stall ${l.stallCount} — ${displaySlice(l.target, 60)}`);
   } else {
     lines.push("loop: none");
   }
