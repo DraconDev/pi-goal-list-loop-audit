@@ -43,7 +43,10 @@ import {
   modelRef,
   normalizeBoundedModelRefs,
   normalizeMainModelFallbackRefs,
+  MAX_MAIN_MODEL_SAME_MODEL_RETRIES,
+  normalizeMainModelSameModelRetries,
   requiresMainModelRecovery,
+  sameModelRetriesRemain,
   splitModelRef,
   type MainModelFailure,
 } from "./main-model-recovery.js";
@@ -817,6 +820,10 @@ export async function tryMainModelFallback(ctx: ExtensionContext, failure: MainM
       const nextRecovery = {
         ...state.mainModelRecovery!,
         active: candidateRef,
+        // v0.38.105: a successful rotation restarts the same-model budget
+        // for the backup — it has not yet earned a single retry, so the
+        // primary's 10 attempts (if any) must not be inherited.
+        sameModelRetries: 0,
         pendingModelSwitch: undefined,
         retryAt: undefined,
         reason: mainModelRecoveryReason(failure),
@@ -1539,7 +1546,19 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
     // an explicit queue-jump, and the resumed supervised turn on `current`
     // IS the health check (v0.34.132 executable contract pins the
     // synchronous scheduleContinuation; deferring it strands the probe).
-    const next = { ...recovery, active: current, attempted: [current], retryAt: undefined, resumeCurrent: undefined, pendingModelSwitch: undefined, attempts: recovery.attempts + 1 };
+    const next = {
+      ...recovery,
+      active: current,
+      attempted: [current],
+      // v0.38.105: a deliberate return-to-current after a full chain visit
+      // re-seeds the same-model budget so the retry cadence reflects a
+      // fresh attempt, not the dead ladder rung it inherited.
+      sameModelRetries: 1,
+      retryAt: undefined,
+      resumeCurrent: undefined,
+      pendingModelSwitch: undefined,
+      attempts: recovery.attempts + 1,
+    };
     appendLedger(ctx.cwd, "main_model_fallback_cycle_reset", { current, attempted: recovery.attempted, attempts: next.attempts });
     const aggressive = (() => {
       try { return resolveEffectiveAggressiveSettings(loadSettings(ctx.cwd)).aggressiveMode; } catch { return false; }
@@ -1610,6 +1629,10 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
     state.mainModelRecovery = {
       ...state.mainModelRecovery!,
       active: target,
+      // v0.38.105: same-model budget resets on every successful rotation,
+      // including the probe path — the backup that just won the selector
+      // earns its own retries from zero.
+      sameModelRetries: 0,
       attempted,
       primaryProbeAt: undefined,
       primaryProbeInFlight: undefined,
@@ -1678,9 +1701,19 @@ export function parkMainModelAfterFailure(ctx: ExtensionContext, failure: MainMo
     kind: mainModelRecoveryKind(),
   } satisfies MainModelRecovery);
   const failureCopy = providerErrorPresentation(failure.raw, "main");
+  // v0.38.105: the same-model retry budget tracks consecutive failures on
+  // the currently selected model. A different `active` (a previous rotation
+  // to a backup that has now itself failed) starts a fresh budget for the
+  // new model; the same `active` extends the existing one. The first
+  // failure inside a new episode seeds the counter at 1.
+  const sameModel = sameModelRef(existing.active, current);
+  const nextSameModelRetries = sameModel
+    ? Math.min((existing.sameModelRetries ?? 0) + 1, MAX_MAIN_MODEL_SAME_MODEL_RETRIES)
+    : 1;
   const nextRecovery = withMainModelRecoveryWindow({
     ...existing,
     active: current,
+    sameModelRetries: nextSameModelRetries,
     attempts: existing.attempts + 1,
     reason: mainModelRecoveryReason(failure),
     providerErrorDiagnostic: failureCopy.diagnostic,

@@ -1928,6 +1928,20 @@ export function countTrailingRepeatedDisapprovals(history: AuditVerdict[]): numb
     const verdict = history[i]!;
     if (verdict.error && !verdict.approved && !verdict.disapproved) continue;
     if (!verdict.disapproved) break;
+    // v0.38.105: a deterministic mechanical pre-audit fast-fail is a GATE,
+    // not an auditor opinion. A contract command that exits 1 in 0.3s will
+    // produce the same disapproved report on every retry — by design; the
+    // gate is the test — so three identical gate rows were never the auditor
+    // disagreeing with the work, they were the work not passing its own
+    // contract. Treating them as a "no-progress" stop parked goals with a
+    // decision card whose recommended answer ("investigate, then /goal
+    // resume") was self-evident: the goal's own contract line named the URL
+    // the gate needed. A failing contract command is a red signal that the
+    // goal continuation is well-equipped to read and fix; pausing for human
+    // judgment is a defect, not a safety. The same gate-aware rule already
+    // lives on `countTrailingComparableDisapprovals`; the state-based stop
+    // was the inconsistency.
+    if (isMechanicalPreAuditVerdict(verdict)) continue;
     const currentFingerprint = auditDisapprovalFingerprint(verdict.report);
     if (!currentFingerprint) break;
     if (fingerprint === undefined) {
