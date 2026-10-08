@@ -1620,7 +1620,9 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
     const lines: string[] = [];
     if (state.goal) {
       const terminal = state.goal.status === "complete" || state.goal.status === "aborted";
-      lines.push(`${terminal ? "Last" : "Active"}: [${state.goal.policy}] ${displaySlice(state.goal.objective, 80)} (${statusLabel(state.goal.status)})`);
+      const view = goalWorkView(state.goal, state);
+      lines.push(`${terminal ? "Last" : view.lifecycle === "waiting" ? "Waiting" : "Active"}: [${state.goal.policy}] ${displaySlice(state.goal.objective, 80)} (${view.lifecycle === "waiting" ? "WAITING" : statusLabel(state.goal.status)})`);
+      lines.push(buildWorkLifecycleSummary({ ...state, loop: undefined }));
       if (state.goal.repairTarget) {
         lines.push(`Replan target (preserved): ${displaySlice(state.goal.repairTarget.objective, 180)}`);
       }
@@ -3195,7 +3197,7 @@ function cmdGllaStatus(ctx: ExtensionContext): void {
       ? ` (audit ${formatStoredAuditLifecycle(g, { inFlight: flags.completionAuditInFlight, queued: flags.latestAuditProgress?.label === "queued", compact: true })})`
       : "";
     const pause = g.status === "paused" && g.pauseReason ? ` — ${displaySlice(sanitizeProviderDisplayText(g.pauseReason), 90)}` : "";
-    lines.push(`goal [${g.policy}] ${g.status}${audit}${tok}: ${displaySlice(g.objective, 90)}${pause}`);
+    lines.push(`goal [${g.policy}] ${goalWorkView(g, state).lifecycle === "waiting" ? "waiting" : g.status}${audit}${tok}: ${displaySlice(g.objective, 90)}${pause}`);
   } else {
     lines.push("goal: none");
   }
@@ -3203,10 +3205,11 @@ function cmdGllaStatus(ctx: ExtensionContext): void {
   lines.push(`list: ${q.length === 0 ? "empty" : `${q.length} queued — head: ${displaySlice(q[0]?.objective ?? "", 70)}`}`);
   const l = state.loop;
   if (l) {
-    lines.push(`loop: ${l.active ? "ACTIVE" : `held/stopped — ${sanitizeDisplayText(l.stopReason ?? "n/a")}`} · iter ${l.iteration}/${l.maxIterations > 0 ? l.maxIterations : "∞"} · best ${l.bestValue ?? "n/a"} · stall ${l.stallCount} — ${displaySlice(l.target, 60)}`);
+    lines.push(`loop: ${l.backgroundWait && l.active && !supervisorPaused(state) ? "WAITING" : l.active ? "ACTIVE" : `held/stopped — ${sanitizeDisplayText(l.stopReason ?? "n/a")}`} · iter ${l.iteration}/${l.maxIterations > 0 ? l.maxIterations : "∞"} · best ${l.bestValue ?? "n/a"} · stall ${l.stallCount} — ${displaySlice(l.target, 60)}`);
   } else {
     lines.push("loop: none");
   }
+  lines.push(buildWorkLifecycleSummary(state));
   if (g?.status === "paused" && g.pauseKind === "decision" && g.pauseOptions?.length) {
     lines.push(`decision pending (${g.pauseOptions.length} options) — ${activeGoalSurfaceCommand("decide")}`);
   }
