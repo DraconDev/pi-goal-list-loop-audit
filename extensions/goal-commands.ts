@@ -28,6 +28,7 @@ import { clearDispatchRecord, dispatchRecordExists } from "./goal-loop-dispatch.
 import type { AuditDisplayProgress } from "./goal-loop-display.js";
 import { auditorVerdictTally, fmtElapsed, formatVerdictTallySegment, buildWorkLifecycleSummary } from "./goal-loop-display.js";
 import { goalWorkView } from "./work-lifecycle.js";
+import { reconcileBackgroundWait } from "./background-wait-runtime.js";
 import { AUDIT_FINDINGS_REL, LOOP_AUDIT_MARKER, listAuditCollectTarget, projectAuditTarget } from "./goal-loop-forever.js";
 import { buildLoopCompletionSummary, compactCompletionSummary, compactTerminalCompletionSummary } from "./completion-summary.js";
 import { ProjectRollup, discoverGllaProjects, filterPremature, formatChallengesJson, formatChallengesTable, formatReliabilityJson, formatReliabilityTable, formatOutcomesJson, formatOutcomesTable, formatRollupJson, formatRollupTable, rollupProject } from "./goal-loop-stats.js";
@@ -593,6 +594,13 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
     const staleEntry = warnIfStaleAtEntry(ctx, resumeCommand);
     if (staleEntry) return;
     releaseAuditorSurface();
+    if (state.goal.backgroundWait) {
+      reconcileBackgroundWait(ctx);
+      ctx.ui.notify(state.goal?.backgroundWait
+        ? `${buildWorkLifecycleSummary({ ...state, loop: undefined })} — saved dependencies remain authoritative; matching results are assessed without a blind re-send.`
+        : "Background dependencies reconciled — their assessment and the work checkpoint are retained.", "info");
+      return;
+    }
     if (state.goal.repairTarget?.replanPromptedAt) {
       const target = state.goal.repairTarget;
       updateGoal({ repairTarget: { ...target, replanPromptedAt: undefined } }, ctx);
@@ -2790,6 +2798,7 @@ async function cmdGllaResume(ctx: ExtensionContext): Promise<void> {
   // drive the new head never landed — and /glla resume shrugged "Nothing to
   // resume"). Re-kick the continuation instead of shrugging.
   if (g && g.status === "active") {
+    if (g.backgroundWait) { await cmdResume(ctx); return; }
     appendLedger(ctx.cwd, "resume_rekick", { goalId: g.id, policy: g.policy });
     // v0.34.7: the re-kick fulfills the stale-handle marker's promise too
     // (junk-runner/polis/neonbreak 2026-08-01: actively working with the
