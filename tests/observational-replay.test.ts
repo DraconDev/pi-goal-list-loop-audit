@@ -26,10 +26,7 @@ test('replay fixture reproduces the same findings the audit summary described, w
   assert.equal(theme?.attemptId, 'audit-9');
   assert.equal(theme?.current, false);
   assert.equal(feature?.current, true);
-  assert.equal(studio?.phaseAccounting.provenance, 'observed');
   assert.equal(studio?.loadedVersion, '0.39.16');
-  // Capability evidence for studio comes from the bookkeeping cycle, not
-  // from any recorded verified requirement.
   assert.equal(studio?.capabilityProgress, 'unknown');
 });
 

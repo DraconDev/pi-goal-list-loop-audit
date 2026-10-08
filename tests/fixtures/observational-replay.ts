@@ -8,7 +8,7 @@ export const REPLAY_FIXTURE: ProgressReceipt[] = [
     schemaVersion: 1, receiptId: 'rt-1', runtimeId: 'runtime-h', generation: 1, rootId: 'root-h',
     runId: 'hegemon-snapshot', family: 'metricless-loop', mode: 'metricless-loop', kind: 'state',
     version: '0.39.16', at: '2026-10-03T12:00:00.000Z', phase: 'building', reasonCode: 'building',
-    iterations: 686, tokensUsed: 4096,
+    iteration: 686, tokensUsed: 4096,
   },
   {
     schemaVersion: 1, receiptId: 'rt-2', runtimeId: 'runtime-h', generation: 1, rootId: 'root-h',
@@ -21,7 +21,7 @@ export const REPLAY_FIXTURE: ProgressReceipt[] = [
     schemaVersion: 1, receiptId: 'rt-3', runtimeId: 'runtime-d', generation: 3, rootId: 'root-d',
     runId: 'darklord', family: 'project', mode: 'requirement-builder', kind: 'state',
     version: '0.39.16', at: '2026-10-05T09:00:00.000Z', phase: 'verification', reasonCode: 'building',
-    iterations: 100, cycle: 28, revision: 12, attemptId: 'audit-9',
+    iteration: 100, cycle: 28, revision: 12, attemptId: 'audit-9',
     tokensUsed: 5120,
     deltas: [
       { id: 'feature-toggle', from: 'open', to: 'verified', attemptId: 'audit-9' },
