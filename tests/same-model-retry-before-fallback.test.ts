@@ -60,7 +60,9 @@ const RECOVERY_SRC = readFileSync(path.join(here, "..", "extensions", "goal-reco
 
 test("normalizeMainModelSameModelRetries clamps to the documented range", () => {
   assert.equal(normalizeMainModelSameModelRetries(undefined), DEFAULT_MAIN_MODEL_SAME_MODEL_RETRIES);
-  assert.equal(normalizeMainModelSameModelRetries(null), DEFAULT_MAIN_MODEL_SAME_MODEL_RETRIES);
+  // null is a number-shaped absence: treat it as 0 (legacy rotation). An
+  // explicit `null` is the operator opting out of the new phase.
+  assert.equal(normalizeMainModelSameModelRetries(null), 0);
   assert.equal(normalizeMainModelSameModelRetries(0), 0, "0 explicitly opts in to the legacy immediate rotation");
   assert.equal(normalizeMainModelSameModelRetries(1), 1);
   assert.equal(normalizeMainModelSameModelRetries(-5), 0, "negative values normalize to 0 (legacy rotation), not a permanent stall");
@@ -115,7 +117,7 @@ test("source: probe path emits a same-model-retry branch before the selector wal
 });
 
 test("integration: fresh recovery retries the current model instead of rotating", async () => {
-  const cwd = fs.mkdtempSync(path.join(path.join(import.meta.meta.dirname ?? "/tmp", "glla-same-model-")));
+  const cwd = fs.mkdtempSync(path.join("/tmp", "glla-same-model-park-"));
   const settingsFile = globalSettingsPath();
   const original = fs.existsSync(settingsFile) ? fs.readFileSync(settingsFile, "utf8") : undefined;
   const calls: string[] = [];
@@ -387,11 +389,18 @@ test("integration: parkMainModelAfterFailure increments the counter; rotation re
     const transient = classifyMainModelFailure("503 service unavailable");
     parkMainModelAfterFailure(ctx, transient);
     assert.equal(state.mainModelRecovery?.sameModelRetries, 1);
+    // parkMainModelAfterFailure is a no-op while a recovery is ACTIVE
+    // (retryAt set); in the real flow the timer fires, the probe re-arms
+    // the surface, and the next failure re-enters via the orchestrator
+    // (which calls parkMainModelAfterFailure again). Simulate the probe
+    // clearing the wait so a second park re-enters the episode with the
+    // existing counter intact.
+    state.mainModelRecovery = { ...state.mainModelRecovery!, retryAt: undefined };
     parkMainModelAfterFailure(ctx, transient);
     assert.equal(state.mainModelRecovery?.sameModelRetries, 2, "consecutive same-model failures extend the counter");
     // Switch the model and re-park: the counter must reset for the new model.
     ctx.model = { provider: "provider", id: "first" };
-    state.mainModelRecovery = { ...state.mainModelRecovery!, active: "provider/first", attempted: ["provider/first"] };
+    state.mainModelRecovery = { ...state.mainModelRecovery!, active: "provider/first", attempted: ["provider/first"], retryAt: undefined };
     parkMainModelAfterFailure(ctx, transient);
     assert.equal(state.mainModelRecovery?.sameModelRetries, 1, "a different active model starts a fresh budget at 1");
   } finally {
