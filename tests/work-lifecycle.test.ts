@@ -75,3 +75,39 @@ test("metric/project loop waiting retains active supervision and explicit stop a
   assert.equal(loopWorkView({ ...loop, active: false }, {}).lifecycle, "paused");
   assert.equal(backgroundDispatchHeld({ goal: null, loop }), true);
 });
+
+for (const surface of ["goal", "list", "metric", "project"] as const) {
+  test(`${surface}: card and footer distinguish waiting from a frozen background checkpoint`, () => {
+    const loopOwned = surface === "metric" || surface === "project";
+    const snapshot = { goal: loopOwned ? null : seedGoal({ policy: surface === "list" ? "list" : "goal", backgroundWait: wait() }), list: [],
+      ...(loopOwned ? { loop: { active: true, target: "Retained loop scope", backgroundWait: wait(),
+        ...(surface === "project" ? { builder: { phase: "building" } } : {}) } as LoopState } : {}) } as State;
+    const status = buildStatusText(snapshot)!;
+    assert.match(status, /⏳ waiting/); assert.doesNotMatch(status, /⏸|paused/);
+    const card = buildWidgetLines(snapshot)!.join("\n");
+    assert.match(card, /Lifecycle: waiting · Activity: background/);
+    assert.match(card, /scout-1/); assert.match(card, /parent assessment/);
+    const frozen = { ...snapshot, supervisorPausedAt: 1 };
+    assert.match(buildStatusText(frozen)!, /⏸ paused/);
+    assert.match(buildWidgetLines(frozen)!.join("\n"), /automatic continuation frozen.*\/glla resume/);
+    assert.equal(snapshot.goal?.status ?? snapshot.loop?.active, loopOwned ? true : "active", "rendering never mutates control");
+  });
+}
+
+test("legacy card refuses to promise an unowned automatic worker wake", () => {
+  const snapshot = { goal: seedGoal({ status: "paused", pauseKind: "standby", pauseReason: "Old checkpoint" }), list: [] } as State;
+  assert.match(buildStatusText(snapshot)!, /waiting.*ownership unverified/);
+  assert.match(buildWidgetLines(snapshot)!.join("\n"), /no automatic worker wake promised/);
+});
+
+test("activity needs recent successful observed tools, never unsupported narration", () => {
+  const snapshot = { goal: seedGoal(), list: [] } as State;
+  const now = Date.now();
+  assert.equal(buildWorkLifecycleSummary(snapshot), "Lifecycle: running · Activity: unknown");
+  for (const [name, activity] of [["read", "researching"], ["write", "implementing"], ["edit", "implementing"]]) {
+    assert.match(buildWorkLifecycleSummary(snapshot, { activity: "working", recent: [{ name: name!, ms: 1, ok: true, at: now }] }, now), new RegExp(`Activity: ${activity}`));
+    assert.match(buildWorkLifecycleSummary(snapshot, { activity: "idle", recent: [{ name: name!, ms: 1, ok: true, at: now }] }, now), /Activity: unknown/);
+  }
+  assert.match(buildWorkLifecycleSummary({ ...snapshot, goal: seedGoal({ status: "auditing" }) }), /Lifecycle: running · Activity: auditing/);
+  assert.equal(goalWorkView(seedGoal({ status: "paused", pauseKind: "wait" }), {}).lifecycle, "paused", "no timer means no automatic waiting permission");
+});
