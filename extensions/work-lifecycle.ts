@@ -94,21 +94,35 @@ export function goalWorkView(goal: Goal, state: Pick<State, "supervisorPausedAt"
   if (goal.status === "complete") return { lifecycle: "complete", activity: "unknown" };
   if (goal.status === "aborted") return { lifecycle: "cancelled", activity: "unknown" };
   if (frozen(state)) return { lifecycle: "paused", activity: observedActivity, ...(goal.backgroundWait ? { wait: goal.backgroundWait } : {}) };
-  if (goal.status === "paused" && goal.pauseKind !== "standby" && goal.pauseKind !== "wait") return { lifecycle: "paused", activity: observedActivity };
+  if (goal.status === "paused" && goal.pauseKind !== "standby" && goal.pauseKind !== "wait") return { lifecycle: "paused", activity: goal.backgroundWait ? "background" : observedActivity, ...(goal.backgroundWait ? { wait: goal.backgroundWait } : {}) };
   if (goal.backgroundWait) return { lifecycle: "waiting", activity: "background", wait: goal.backgroundWait };
   if (goal.status === "paused" && goal.pauseKind === "standby") return { lifecycle: "waiting", activity: "unknown" };
-  if (goal.status === "paused" && goal.pauseKind === "wait") return { lifecycle: "waiting", activity: "recovering" };
+  if (goal.status === "paused" && goal.pauseKind === "wait") {
+    const scheduled = date(goal.pauseResumeAt) || date(goal.pendingCompletion?.recoveryRetryAt)
+      || state.mainModelRecovery?.retryAt || state.mainModelRecovery?.pendingModelSwitch;
+    return { lifecycle: scheduled ? "waiting" : "paused", activity: goal.pendingCompletion || state.mainModelRecovery ? "recovering" : "unknown" };
+  }
   if (goal.status === "auditing") return { lifecycle: "running", activity: "auditing" };
   return { lifecycle: "running", activity: state.mainModelRecovery ? "recovering" : observedActivity };
 }
 
 export function loopWorkView(loop: LoopState, state: Pick<State, "supervisorPausedAt" | "loadHoldAt" | "mainModelRecovery">,
   observedActivity: WorkActivity = "unknown"): WorkView {
+  if (loop.builder?.phase === "complete") return { lifecycle: "complete", activity: "unknown" };
   // A stopped loop is not made active by retaining an old dependency record.
   if (!loop.active) return { lifecycle: "paused", activity: observedActivity, ...(loop.backgroundWait ? { wait: loop.backgroundWait } : {}) };
   if (frozen(state)) return { lifecycle: "paused", activity: observedActivity, ...(loop.backgroundWait ? { wait: loop.backgroundWait } : {}) };
   if (loop.backgroundWait) return { lifecycle: "waiting", activity: "background", wait: loop.backgroundWait };
-  return { lifecycle: "running", activity: state.mainModelRecovery ? "recovering" : observedActivity };
+  return { lifecycle: "running", activity: loop.builder?.phase === "auditing" ? "auditing" : state.mainModelRecovery ? "recovering" : observedActivity };
+}
+
+/** Shared display/tool projection. Loop dispatch takes precedence when active;
+ * terminal goals otherwise retain their own archive lifecycle. */
+export function stateWorkView(state: State, observedActivity: WorkActivity = "unknown"): WorkView {
+  if (state.loop?.active) return loopWorkView(state.loop, state, observedActivity);
+  if (state.goal) return goalWorkView(state.goal, state, observedActivity);
+  if (state.loop) return loopWorkView(state.loop, state, observedActivity);
+  return { lifecycle: "idle", activity: "unknown" };
 }
 
 /** Ordinary work dispatch must not race dependency-owned waiting. */
