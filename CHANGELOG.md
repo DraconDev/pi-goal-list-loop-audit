@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+## 0.39.17 — durable recovery and clearer first-use guidance (2026-10-08)
+
+### Reliability and recovery
+
+- Propagate persistence failures from goal updates and check dispatch, repair,
+  pause and completion-claim writes before proceeding or claiming durability.
+- Roll back guard-path memory mutations when storage fails, including the live
+  goal binding; report failed pause writes rather than implying safe persistence.
+- Preserve the durable context-pressure budget on user-message liveness and
+  record late compaction success distinctly after terminal recovery holds.
+- Improve compaction-hold and manual-resume behavior and associated status guidance.
+
+### Maintainer checks
+
+- Route changed-test selection through the hardened runner with stall and orphan
+  protection, without excluding changed slow tests.
+- Require both runtime-loaded respec prompts in release package checks and verify
+  public documentation links against shipped tarball contents.
+
 ### Documentation
 
 - Rebuild the README around durable work supervision, practical work shapes,
