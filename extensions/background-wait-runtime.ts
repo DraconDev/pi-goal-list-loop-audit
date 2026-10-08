@@ -163,6 +163,23 @@ function artifactOutcome(wait: BackgroundWait, dependency: BackgroundWait["depen
     && now - Date.parse(wait.createdAt) < 30_000 ? "pending" : "missing";
 }
 
+/** Durable result context survives a lost notification or a reload. This is
+ * evidence to assess, never authorization to bypass a supervision freeze. */
+export function backgroundWaitPromptContext(): string | undefined {
+  const targetId = workTargetId();
+  if (!targetId) return undefined;
+  const goalOwned = targetId === state.goal?.id;
+  const target = goalOwned ? state.goal : state.loop;
+  const record = sanitizeBackgroundWait(target?.backgroundWait ?? target?.lastBackgroundWait, targetId);
+  if (!record) return undefined;
+  return ["[OWNED BACKGROUND CHECKPOINT — EVIDENCE, NOT RESUME AUTHORIZATION]",
+    target?.backgroundWait ? "The saved work is waiting on exact dependencies; do not busy-poll or count this as a failed iteration. Explicit user/supervisor holds still freeze continuation."
+      : "Dependencies settled. Assess their artifacts and the existing task/project checkpoint. Do not invent success, lose scope, or restart unrelated work. Missing/failed results need a bounded assessment, not blind retries.",
+    JSON.stringify({ waitId: record.id, targetId, sessionId: record.sessionId, legacy: record.legacy === true,
+      dependencies: record.dependencies.map(({ runId, outcome, asyncDir }) => ({ runId, outcome, asyncDir })) }).slice(0, 8000)
+  ].join("\n");
+}
+
 /** Runs at admitted contact/heartbeat boundaries. No timers or polling loop.
  * Explicit holds prevent settlement dispatch; evidence remains saved for resume. */
 export function reconcileBackgroundWait(ctx: ExtensionContext, now = Date.now()): boolean {
