@@ -1390,10 +1390,14 @@ export function buildStatusText(state: State, audit?: AuditDisplayProgress | nul
   // The status line already names lifecycle via the icon + word (active/paused/etc.)
   // and activity via recent tool evidence. Only append a separate segment when
   // the projection disambiguates a state the visible badge does not already
-  // expose (waiting vs paused recovery) or names a non-trivial activity.
-  const lifecycleAddsInfo = !backgroundDisplay(state)
-    && (view.lifecycle === "waiting"
-      || (view.lifecycle === "running" && view.activity !== "unknown" && view.activity !== "auditing"));
+  // expose (an owned background wait, not a supervised retry) or names a
+  // non-trivial activity. Supervised-recovery waits use the ⏳ auto-retrying
+  // badge and must not gain a duplicate "lifecycle: waiting" segment.
+  const ownedWaitBadge = !backgroundDisplay(state)
+    && (view.wait && !view.wait.legacy)
+    || (view.lifecycle === "waiting" && !view.wait?.legacy && view.activity !== "recovering");
+  const lifecycleAddsInfo = ownedWaitBadge
+    || (view.lifecycle === "running" && view.activity !== "unknown" && view.activity !== "auditing");
   const withActivity = withAgentSummary && lifecycleAddsInfo
     ? `${withAgentSummary} · lifecycle: ${view.lifecycle} · activity: ${view.activity}`
     : withAgentSummary;
