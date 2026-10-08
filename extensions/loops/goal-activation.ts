@@ -289,7 +289,7 @@ import {
   ModelPickerComponent,
   type ModelPickItem,
 } from "../model-picker.js";
-import { bindBackgroundWaitRuntime, observeBackgroundStart, observeBackgroundTerminal, reconcileBackgroundWait, consumeBackgroundYield } from "../background-wait-runtime.js";
+import { bindBackgroundWaitRuntime, observeBackgroundStart, observeBackgroundTerminal, reconcileBackgroundWait, consumeBackgroundYield, backgroundWaitPromptContext } from "../background-wait-runtime.js";
 import { consumeRecoveryResume } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
 import { buildAbortedAssistantNotice, clearPauseAbort, consumePauseAbort, markActionReminderTurnStart } from "../action-reminder.js";
 import { payloadGuardProjection } from "../payload-guard.js"; // v0.35.51 image-413 guard
@@ -3441,6 +3441,8 @@ async function handleHotLengthExhaustion(
           `Saved hold: ${sanitizeDisplayText(savedLoop.stopReason ?? "unspecified")}`,
           `<builder_state>\n${respecBuilderContext(savedLoop.builder)}\n</builder_state>`].join("\n\n") };
     }
+    const backgroundContext = backgroundWaitPromptContext();
+    if (backgroundContext) return { systemPrompt: `${event?.systemPrompt ?? ""}\n\n${backgroundContext}` };
   });
   pi.on("model_select", async (event: any, ctx: ExtensionContext) => {
     rememberCtx(ctx);
