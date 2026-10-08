@@ -1,45 +1,45 @@
-# docs/ index
+# Documentation guide
 
-Ordered by reading path, not alphabetically.
+## Get useful work done
 
-## Start here
+- [Product overview](../README.md): what GLLA does, who it is for, work shapes and trust boundaries.
+- [Install and update](../INSTALL.md): setup, companions, auditor configuration and first run.
+- [Practical workflows](WORKFLOWS.md): fixes, audits, backlogs, spec-driven builds and bounded improvement.
+- [Recovery](RECOVERY.md): saved work, resume commands, provider fallback, compaction and completed objectives.
+- [Settings](SETTINGS.md): files, precedence and available options.
+- [Work-shape philosophy](../LIST-PHILOSOPHY.md): goals, work pools and loops.
+- [Delegation skill](../skills/glla-delegate/SKILL.md): normal-chat queue requests and consent boundaries.
 
-- [README](../README.md): install, first goal, and choosing goal/list/loop work.
-- [Recovery guide](RECOVERY.md): resume commands, audit progress, model changes,
-  completed projects and opportunistic compaction.
-- [Settings](SETTINGS.md): settings files, precedence and every option.
-- [Installation and updating](../INSTALL.md): npm/source setup, companions and
-  reloading existing sessions.
-- [Delegation skill](../skills/glla-delegate/SKILL.md): normal-chat goal/list
-  delegation and confirmation.
-- [Changelog](../CHANGELOG.md): changes shipped in each release. The history
-  spans v0.35.14–v0.39.16; `/glla version` shows the installed version and the
-  registry comparison command. A checkout can contain unpublished changes.
+## Understand the boundaries
 
-## Architecture
-- `ARCHITECTURE.md`: 20-minute newcomer overview (three loops, audit lifecycle, persistence)
-- `PROMOTION-CONTRACT.md`: the list item → goal → archive seam, diagrammed
-- `DESIGN.md`: plugin design (types, state, extension lifecycle)
-- `DESIGN-long-running-supervision.md`: v0.36.0 event/progress-driven supervision, aggressive recovery, terminal recaps, and future decision checklist
-- `GLLA-POSITIONING-AND-DECOMPOSITION-2026-08-08.md`: ecosystem
-  positioning, competitor review, and the goal.ts decomposition plan
-  (the current strategic doc; read this before touching
-  `extensions/loops/goal.ts`)
-- `VISION-ASSIST.md`: vision-assist plugin notes
-- `RELEASING.md`: how to publish to npm
+- [Compatibility](COMPATIBILITY.md): declared peers, tested environments and execution limits.
+- [Reliability and measurements](RELIABILITY-AND-MEASUREMENT.md): what telemetry and canaries do—and do not—establish.
+- [Ownership and settlement](OWNERSHIP-AND-SETTLEMENT.md): runtime ownership and durable completion.
+- [Vision assist](VISION-ASSIST.md): image evidence and provider routing policy.
 
-## Supporting material
-- `../prompts/`: goal/loop drafting prompt templates
-- `../schemas/`: goal state JSON schema
-- `../examples/`: example objective files
-- `../CHANGELOG.md`: user-facing changelog (unreleased at top)
-- `/glla bug`: `extensions/goal-commands.ts:cmdGllaBug` captures failure context to `<stateDir>/bugs/<ts>-<id>.md` without touching `active.jsonl`/`goals/*.md` (see `tests/glla-bug-capture.test.ts`)
+## Contribute
 
-## Repository-only material
-The audit history and competitor research live in `audit/` and `.research/`
-for contributors, but are intentionally not included in the npm tarball.
+- [Architecture](ARCHITECTURE.md): entry points, work lifecycles and persistence.
+- [Design reference](DESIGN.md): implementation concepts and lifecycle details.
+- [Long-running supervision](DESIGN-long-running-supervision.md): progress, recovery and terminal communication.
+- [Subagent visibility](DESIGN-subagent-visibility.md): supervisor/worker display responsibilities.
+- [Promotion contract](PROMOTION-CONTRACT.md): queue item → active goal → archive.
+- [Runtime inventory](RUNTIME-INVENTORY.md): generated source and registration counts, not coverage claims.
+- [Release process](RELEASING.md): validation and npm publication.
+- [Historical positioning and decomposition](GLLA-POSITIONING-AND-DECOMPOSITION-2026-08-08.md): dated ecosystem research and the decomposition rationale; not a current companion API reference.
 
-## Research material
-`.research/`: competitor plugin sources pulled from npm tarballs for study
-(gitignored, local only). Re-pull with `cd .research && npm pack <pkg> &&
-tar xzf <tgz>`; see the positioning doc's appendix for the package list.
+## Versions and shipped content
+
+[CHANGELOG.md](../CHANGELOG.md) records the release history from
+v0.35.14–v0.39.16 and unreleased work. `/glla version` reports the loaded version
+and registry comparison. A checkout can contain changes not yet published.
+
+The package includes this documentation, [examples](../examples/),
+[prompts](../prompts/) and [schemas](../schemas/). The full tests, tracked audit
+evidence and local `.research/` material remain repository-only. Runtime
+journals and archives live under the selected state root, not inside the
+published package.
+
+`/glla bug` captures diagnostic context under the state root's `bugs/` directory
+without changing the objective journal. Review captures for sensitive content
+before sharing them.
