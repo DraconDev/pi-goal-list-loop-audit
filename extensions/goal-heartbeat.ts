@@ -19,6 +19,7 @@
 //     stranded_audit_recovered, subagent_hang_detected, ...).
 // ============================================================================
 
+import { reconcileBackgroundWait } from "./background-wait-runtime.js";
 import { randomUUID } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -1365,6 +1366,9 @@ function heartbeatTick(): void {
   // heartbeat opportunity. Ended subagent probes remain in memory briefly for
   // HUD/final-state reads, but they no longer own the host and must not keep
   // this guard probing a disposed handle.
+  const waitingTarget = (state.goal?.status === "active" && !!state.goal.backgroundWait)
+    || (state.goal?.status === "paused" && state.goal.pauseKind === "standby")
+    || (state.loop?.active && !!state.loop.backgroundWait);
   const terminalGoal = state.goal?.status === "complete" || state.goal?.status === "aborted";
   const staleRecoveryDebt = (!terminalGoal && state.goal?.interruptedReason?.startsWith("extension api stale"))
     || state.loop?.stopReason?.startsWith("extension api stale");
@@ -1382,6 +1386,7 @@ function heartbeatTick(): void {
     && !isLoopActive()
     && !staleRecoveryDebt
     && !parkedCompletionAuditRecovery
+    && !waitingTarget
     && !hasLiveSubagentHangProbes()) return;
   // Probe the ExtensionAPI BEFORE probing the captured context. When pi
   // invalidates both handles and emits no replacement session_start,
@@ -1551,6 +1556,7 @@ function heartbeatTick(): void {
       requestSubagentHangAction(ctx, p, h.silentMs, poll, nowMs, escalationMs);
     }
   }
+  if (reconcileBackgroundWait(ctx)) return;
   if (mainModelRecoveryActive()) {
     overdueWaitBackstop(ctx);
     return;

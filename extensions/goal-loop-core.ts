@@ -4129,6 +4129,7 @@ export function classifySessionCtx(ownerSession: unknown, ownerLive: boolean, se
 export const GLLA_TOOL_NAMES = [
   "complete_goal",
   "pause_goal",
+  "wait_for_background",
   "complete_task",
   "update_task_status",
   "record_goal_judgment",
