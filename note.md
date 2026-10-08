@@ -10,6 +10,9 @@ we can look into this and perhaps others we really should not be pausing on
 /home/dracon/Pictures/Screenshots/Screenshot_20261008_191653.png
 
 
+## i think we are too eagerly falling back the main model we need to more eagerly retry
+
+
 # later
 
 # Testing
