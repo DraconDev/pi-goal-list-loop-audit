@@ -17,6 +17,7 @@ import type { ExtensionContext, ExtensionAPI } from "@earendil-works/pi-coding-a
 import { state, replaceState } from "./goal-state.js";
 import { backgroundDispatchHeld, loopWorkView } from "./work-lifecycle.js";
 import { buildWorkLifecycleSummary } from "./goal-loop-display.js";
+import { reconcileBackgroundWait } from "./background-wait-runtime.js";
 import {
   appendLedger,
   archivedGoalPath,
@@ -1380,6 +1381,11 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
     // if one is waiting; otherwise draft the loop config (metric design is
     // the whole game for a long-running loop; never start one blind).
     if (isLoopActive()) {
+      if (state.loop?.backgroundWait) {
+        reconcileBackgroundWait(ctx);
+        ctx.ui.notify(`${buildWorkLifecycleSummary({ ...state, goal: null })} — the dependency checkpoint is retained; /loop status shows its exact run ids.`, "info");
+        return;
+      }
       if (flags.continuationDispatchStoodDown) {
         releaseContinuationDispatchStandDown();
         releaseAuditorSurface();
