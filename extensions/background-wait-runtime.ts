@@ -36,7 +36,7 @@ export function __testOnlyResetBackgroundWaitRuntime(): void { hooks = undefined
 
 export function workTargetId(): string | undefined {
   if (state.goal && (state.goal.status === "active" || state.goal.status === "paused")) return state.goal.id;
-  if (state.loop) return `loop:${state.loop.startedAt}`;
+  if (state.loop) return `loop:${state.loop.startedAt}:${state.loop.builder?.projectId ?? "metric"}`;
   return undefined;
 }
 function sessionId(ctx: ExtensionContext): string {
@@ -86,7 +86,7 @@ function storeWait(ctx: ExtensionContext, wait: BackgroundWait | undefined, lega
 export function admitBackgroundWait(ctx: ExtensionContext, runIds: string[], reason: string): { ok: boolean; message: string } {
   if (!hooks?.valid(ctx) || !sessionId(ctx) || supervisorPaused(state)) return { ok: false, message: "Not waiting: supervision is frozen or this session no longer owns the work." };
   const targetId = workTargetId();
-  if (!targetId || (state.goal && state.goal.status !== "active") || (!state.goal && !state.loop?.active)) return { ok: false, message: "Not waiting: no eligible running target." };
+  if (!targetId || state.goal?.pendingCompletion || state.loop?.builder?.phase === "auditing" || (state.goal && state.goal.status !== "active") || (!state.goal && !state.loop?.active)) return { ok: false, message: "Not waiting: no eligible running target." };
   if (targetWait()) return { ok: false, message: "An owned background wait already exists; inspect its dependency results before replacing it." };
   if (!runIds.length || runIds.length > 32 || new Set(runIds).size !== runIds.length) return { ok: false, message: "Supply 1–32 distinct exact background run ids; a prose reason cannot establish ownership." };
   const admitted: Observation[] = [];
@@ -142,7 +142,7 @@ function artifactOutcome(wait: BackgroundWait, dependency: BackgroundWait["depen
           if (deadline !== undefined && now > deadline) return "missing";
           // A durable file cannot keep a dead local worker alive forever.
           if (typeof raw.pid === "number" && Number.isSafeInteger(raw.pid) && raw.pid > 0) {
-            try { process.kill(raw.pid, 0); } catch (error) {
+            try { process.kill(raw.pid, 0); return "pending"; } catch (error) {
               if ((error as NodeJS.ErrnoException).code === "ESRCH") return "missing";
             }
           }
