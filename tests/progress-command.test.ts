@@ -37,14 +37,19 @@ test('/glla progress is read-only and never mutates the journal, owner or settin
   assert.deepEqual(before(), snapshot);
 });
 
-test('/glla progress refuses to run while the state root is still pending selection', async (t: TestContext) => {
+test('/glla progress refuses to run when the global settings selector is unreadable', async (t: TestContext) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'glla-progress-pending-'));
   const pi = new MockPi();
   (pi.api as any).events = { on: () => undefined, off: () => undefined };
   const ctx = makeMockCtx(dir);
   registerGoalRuntime(pi.api as unknown as ExtensionAPI);
   const glla = pi.commands.get('glla')!;
-  t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* cleanup is best-effort */ } });
+  t.after(() => {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* cleanup is best-effort */ }
+    // Restore the preload-populated settings so the rest of the suite keeps a valid selector.
+    fs.writeFileSync(process.env.GLLA_GLOBAL_SETTINGS_PATH!, JSON.stringify({ aggressiveMode: false }));
+  });
+  fs.writeFileSync(process.env.GLLA_GLOBAL_SETTINGS_PATH!, JSON.stringify({ stateRoot: "invalid-root" }));
   await glla('progress', ctx as unknown as ExtensionContext);
   const warning = ctx.ui.notifies.find(notification => notification.message?.includes('Progress unavailable'))?.message;
   assert.ok(typeof warning === 'string' && warning.includes('select the GLLA state root'));
