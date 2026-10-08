@@ -1,6 +1,6 @@
 {
 	"name": "pi-goal-list-loop-audit",
-	"version": "0.39.16",
+	"version": "0.39.17",
 	"description": "Durable work supervision for Pi: turn outcomes into goals, audited queues and spec-driven builds, recover interruptions, and verify completion against evidence.",
 	"license": "AGPL-3.0-only",
 	"author": "dracon",
