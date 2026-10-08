@@ -94,14 +94,17 @@ test("task plans preserve Designer routing and verification contracts and expose
   assert.deepEqual(next, { id: "1", title: "Design the change", agentRole: "designer" });
 });
 
-test("Designer is a managed read-only role and remains available without a pin", () => {
+test("explicitly selected Designer is a managed read-only role without requiring a model pin", () => {
   const md = buildAgentOverrideMd("Designer");
   assert.doesNotMatch(md, /^model:/m);
   assert.match(md, /DESIGNER ROLE/);
   assert.match(md, /read, bash, grep, find, ls/);
 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-designer-role-"));
-  const sync = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", overrides: {} });
+  const disabled = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", overrides: {} });
+  assert.equal(disabled.written.includes("Designer"), false);
+  assert.equal(fs.existsSync(path.join(dir, "agents", "Designer.md")), false);
+  const sync = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", overrides: {}, designerRequested: true });
   assert.ok(sync.written.includes("Designer"));
   assert.ok(fs.existsSync(path.join(dir, "agents", "Designer.md")));
 });
