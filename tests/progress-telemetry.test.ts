@@ -49,8 +49,9 @@ test('observer retains pre-reset iteration signals and current version, and neve
   assert.equal(iteration.signals?.currentHead, 'a1b2c3d4');
   assert.equal(ended[0]?.reasonCode, 'target-no-longer-present');
   const projectReceipt = states.find(receipt => receipt.family === 'project' && receipt.runId === 'project-1')!;
-  assert.equal(projectReceipt.interval?.milliseconds, 1000);
-  assert.equal(projectReceipt.interval?.phase, 'building');
+  // Project first appears in the third call; its first observation carries no
+  // interval. The fourth call resumes the goal, so no project interval exists.
+  assert.equal(projectReceipt.interval, undefined);
   assert.equal(projectReceipt.deltas?.some(delta => delta.id === 'other' && delta.to === 'verified'), true);
   const goalStates = states.filter(receipt => receipt.family === 'goal');
   const first = goalStates[0]!;
@@ -72,7 +73,6 @@ test('observer preserves receipt identity, intervals and redacted blocked reason
     observeProgressState(root, { ...state, goal: { ...state.goal, status: 'active', usage: { tokensUsed: 60, tokensLimit: 0 } } }, r => issued.push(r), 1_700_000_000_500);
     const persisted = issued.map(receipt => JSON.stringify({ type: 'glla_progress_receipt', value: receipt, at: receipt.at }) + '\n').join('');
     fs.writeFileSync(path.join(root, 'active.jsonl'), persisted);
-    console.log('issued2', JSON.stringify(issued.map(r => ({at: r.at, interval: r.interval, tokens: r.tokensUsed})), null, 2));
     const report = readProgressReport(root);
     const goal = report.runs.find(run => run.id === 'goal-1' && run.family === 'goal') ?? report.runs.find(run => run.id === 'goal-1');
     assert.equal(goal?.loadedVersion, '0.39.16');

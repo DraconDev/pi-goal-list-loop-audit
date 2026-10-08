@@ -112,5 +112,5 @@ let runtime: ProgressObserver | undefined;
 export function configureProgressRuntime(version: string, generation: () => number): void {
   runtime = new ProgressObserver(/^\d+\.\d+\.\d+(?:[-+][\w.]+)?$/.test(version) ? version : 'unknown', generation);
 }
-export function observeProgressState(root: string, state: State, emit: (receipt: ProgressReceipt) => void): void { runtime?.snapshot(root, state, emit); }
-export function observeProgressIteration(root: string, loop: NonNullable<State['loop']>, signals: NonNullable<ProgressReceipt['signals']>, emit: (receipt: ProgressReceipt) => void): void { runtime?.iteration(root, loop, signals, emit); }
+export function observeProgressState(root: string, state: State, emit: (receipt: ProgressReceipt) => void, at?: number): void { runtime?.snapshot(root, state, emit, at); }
+export function observeProgressIteration(root: string, loop: NonNullable<State['loop']>, signals: NonNullable<ProgressReceipt['signals']>, emit: (receipt: ProgressReceipt) => void, at?: number): void { runtime?.iteration(root, loop, signals, emit, at); }
