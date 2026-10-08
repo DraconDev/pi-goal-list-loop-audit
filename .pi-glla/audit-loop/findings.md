@@ -836,3 +836,21 @@ Known validation limitation: no single all-green release:check run was obtained.
 The primary detached review approved the five original fixes; the falsification challenge correctly found this regression introduced by scope preservation. Repair is part of this same audit pass, not a second survey. DECIDE: none.
 
 Challenge repair verified: actual pre-fix/current module VM probe reproduced 0 versus 1 local findings; final focused gate 191 pass, 0 fail across 14 files; typecheck, regenerated inventory (927ec315) and packed-package smoke passed. Fresh-context challenge reviewer 8f3bedbf-8f16-496c-a202-bf20a9eb9736 found no issues and completed. Final total for this ONE pass is six new checked FIX findings (five scouts + one falsification regression), DECIDE none. Aggregate-suite intermittency remains documented; it is not claimed resolved.
+
+## Fresh parallel audit — 2026-10-08
+
+Three parallel read-only subsystem scouts (core goal/loop dispatch; recovery/compaction/audit machinery; tests/scripts/docs/packaging drift) completed with tight briefs. Candidate claims were verified against source before filing: the stale-budget key-drift claim was dropped (claim overwrites on key mismatch and reset is key-matched, so unique ids self-heal — no live bug), and the boundary one-shot hysteresis is documented design, filed as DECIDE instead of FIX. Over-broad transient-classifier wording, the hourly-ticker double-probe cost, and the reviewer enqueue-rejected overwrite were reviewed and left as observations (mitigated downstream / tokens-only / cosmetic) rather than findings.
+
+- [ ] FIX: HIGH: updateGoal/setGoal return true even when persistState fails, so the complete_goal newObjective durability gate cannot catch ledger failure (extensions/loops/goal-orchestrator.ts:1002)
+- [ ] FIX: MEDIUM: ContinuationDeps declares persistState/updateGoal as void, blinding ~10 dispatch/park call sites to persistence failure (extensions/goal-continuation.ts:145)
+- [ ] FIX: MEDIUM: guard/archive-fence paths mutate live state plus unchecked persist outside the goal-state transaction, risking memory/disk divergence (extensions/goal-continuation.ts:1184)
+- [ ] FIX: LOW: replan one-shot latch ledgers armed even when the replanPromptedAt write failed (extensions/goal-continuation.ts:615)
+- [ ] FIX: LOW: complete_goal claim/pendingTasks write ignores the updateGoal result while abort/confirm paths check it (extensions/loops/goal-tools.ts:996)
+- [ ] FIX: LOW: stall/storm park paths notify before proving persistence, telling the user work is parked on degraded storage (extensions/loops/goal-orchestrator.ts:397)
+- [ ] FIX: LOW: message_start user-liveness clears the pressure attempt with a durable budget reset before any healthy turn proves recovery (extensions/loops/goal-activation.ts:1536)
+- [ ] FIX: LOW: late session_compact success arriving after the pressure timeout-hold is swallowed with no distinct ledger line, hiding late-landing compactions (extensions/context-pressure-attempt.ts:117)
+- [ ] FIX: LOW: respec prompts ride no ship-gate — smoke required list and release-contract test omit two runtime-loaded prompts, so a files[] narrowing would pass the gate and break /loop respec (scripts/release-pack-smoke.mjs:61)
+- [ ] FIX: LOW: dead 0-byte test-failure-diagnostics plaintext artifact litters tests/ (tests/test-failure-diagnostics.test.ts.plaintext:1)
+- [ ] FIX: LOW: generated inventory baseline parenthetical is stale next to the regenerated count (docs/RUNTIME-INVENTORY.md:1)
+- [?] DECIDE: test:changed runs bare bun test instead of the hardened runner (route --changed through scripts/run-tests.mjs for stall/orphan protection vs document it as unprotected and keep it fast) (package.json:64)
+- [?] DECIDE: boundary-compaction failure stays one-shot until usage halves (keep the documented anti-grind hysteresis vs record failedAt with a bounded retry so high-usage episodes keep a compaction path) (extensions/goal-compactor.ts:139)
