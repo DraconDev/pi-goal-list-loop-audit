@@ -145,6 +145,11 @@ test("runtime fallback walk uses one supervised model at a time and preserves le
       active: "provider/primary",
       attempted: ["provider/primary"],
       attempts: 1,
+      // v0.38.105: the same-model phase (operator direction 2026-10-08) is
+      // not what this test is exercising — set the budget to exhausted so
+      // the probe still walks the chain as before. The new same-model
+      // contract is covered by tests/same-model-retry-before-fallback.test.ts.
+      sameModelRetries: 10,
       reason: "main model recovery — provider error",
       kind: "goal",
     };
