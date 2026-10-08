@@ -22,6 +22,7 @@ import { respecCoverage } from "./respec-builder.js";
 import { normalizeFindingLead } from "./finding-lead.js";
 import { auditorSurfaceSuppressed } from "./loops/goal-auditor-surface.js";
 import { isCompactionRecoveryHold, compactionResumeAction } from "./compaction-resume.js";
+import { stateWorkView, type WorkView, type WorkActivity } from "./work-lifecycle.js";
 
 /** v0.34.57 (OPEN-ISSUES bug #1.8 / tasklist item #2): the MAIN host is
  * NEVER detached — it is always SUPERVISING, regardless of any handle state.
@@ -1308,8 +1309,65 @@ function pausedStatusSuffix(g: Goal, state: State, extras: WidgetExtras | undefi
  * lifecycle branch (active/auditing/paused/loop/recovery). The chip is
  * injected after the literal `glla:` prefix so no per-branch edit can
  * forget it and a future branch inherits it for free. */
+function observedWorkActivity(extras: WidgetExtras | undefined, now: number): WorkActivity {
+  if (extras?.activity !== "working" && extras?.activity !== "busy") return "unknown";
+  const recent = extras.recent?.filter(item => item.ok && item.at !== undefined && now - item.at >= 0 && now - item.at < 15_000).at(-1);
+  if (recent?.name === "read") return "researching";
+  if (recent?.name === "edit" || recent?.name === "write") return "implementing";
+  return "unknown";
+}
+
+export function buildWorkLifecycleSummary(state: State, extras?: WidgetExtras, now = Date.now()): string {
+  const view = stateWorkView(state, observedWorkActivity(extras, now));
+  return `Lifecycle: ${view.lifecycle} · Activity: ${view.activity}`;
+}
+
+function backgroundDisplay(state: State): { view: WorkView; surface: string; target: string; command: string } | undefined {
+  const view = stateWorkView(state);
+  const loopOwned = !!state.loop && (state.loop.active || !state.goal);
+  const goal = loopOwned ? undefined : state.goal;
+  if (!view.wait && !(goal?.status === "paused" && goal.pauseKind === "standby")) return undefined;
+  if (view.lifecycle !== "waiting" && view.lifecycle !== "paused") return undefined;
+  return { view, surface: loopOwned ? state.loop?.builder ? "project" : "loop" : goal?.policy === "list" ? "list item" : "goal",
+    target: loopOwned ? state.loop!.target : goal!.objective, command: loopOwned ? "/loop" : goal?.policy === "list" ? "/list" : "/goal" };
+}
+
+function backgroundNextAction(state: State, view: WorkView, command: string): string {
+  if (view.lifecycle === "paused") return `automatic continuation frozen · ${typeof state.supervisorPausedAt === "number" ? "/glla resume" : `${command} resume`}`;
+  return view.wait && !view.wait.legacy
+    ? `owned completion → parent assessment · ${command} status`
+    : `legacy ownership unverified → bounded assessment on eligible contact · ${command} status`;
+}
+
+function backgroundStatus(state: State, theme?: DisplayTheme): string | undefined {
+  const data = backgroundDisplay(state);
+  if (!data) return undefined;
+  const { view, surface, command } = data;
+  const deps = view.wait?.dependencies;
+  const evidence = deps?.length ? `${deps.filter(dep => dep.outcome === "pending").length}/${deps.length} dependencies pending` : "legacy ownership unverified";
+  return `glla: ${paint(theme, view.lifecycle === "paused" ? "warning" : "accent", `${view.lifecycle === "paused" ? "⏸" : "⏳"} ${view.lifecycle}`)} · ${surface} · activity: ${view.activity} · ${evidence} · ${backgroundNextAction(state, view, command)}`;
+}
+
+function backgroundWidget(state: State, theme?: DisplayTheme, width?: number): string[] | undefined {
+  const data = backgroundDisplay(state);
+  if (!data) return undefined;
+  const { view, surface, target, command } = data;
+  const deps = view.wait?.dependencies ?? [];
+  const color = view.lifecycle === "paused" ? "warning" : "accent";
+  const lines = [`${paint(theme, color, `${view.lifecycle === "paused" ? "⏸" : "⏳"} ${surface} · ${view.lifecycle}`)}`];
+  for (const row of wrap(sanitizeDisplayText(target), budgetFor(width, 3, 60), 2)) lines.push(`├─ ${row}`);
+  lines.push(`├─ ${buildWorkLifecycleSummary(state)}`);
+  if (!deps.length) lines.push("├─ legacy standby · ownership unverified; no automatic worker wake promised");
+  else deps.slice(0, 6).forEach(dep => lines.push(`├─ dependency ${sanitizeDisplayText(dep.runId)} · ${dep.outcome}`));
+  if (deps.length > 6) lines.push(`├─ +${deps.length - 6} dependencies · inspect ${command} status`);
+  const reason = view.wait?.reason ?? state.goal?.pauseReason;
+  if (reason) wrap(sanitizeDisplayText(reason), budgetFor(width, 3, 60), 2).forEach(row => lines.push(`│  ${paint(theme, "dim", row)}`));
+  lines.push(`└─ ${paint(theme, color, backgroundNextAction(state, view, command))}`);
+  return lines;
+}
+
 export function buildStatusText(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, extras?: WidgetExtras, width?: number): string | undefined {
-  const base = buildStatusTextBase(state, audit, now, theme, extras, width);
+  const base = backgroundStatus(state, theme) ?? buildStatusTextBase(state, audit, now, theme, extras, width);
   // Audit 2026-09-07: the worker summary rides the status on EVERY branch
   // including auditing — suppressing it there hid hung/aborting children
   // behind the audit (HUNG is never silent). The auditor stays a distinct
@@ -1712,7 +1770,7 @@ function countTotal(g: Goal): number {
  * Returns undefined when nothing is worth showing.
  */
 export function buildWidgetLines(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, width?: number, extras?: WidgetExtras): string[] | undefined {
-  const inner = buildWidgetLinesInner(state, audit, now, theme, width, extras);
+  const inner = backgroundWidget(state, theme, width) ?? buildWidgetLinesInner(state, audit, now, theme, width, extras);
   const detailedAgents = extras?.agents?.lines ?? (extras?.agents?.line ? [extras.agents.line] : []);
   let withAgents: string[] | undefined = inner;
   if (detailedAgents.length > 0) {
