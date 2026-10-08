@@ -75,6 +75,30 @@ episode. A recovery-held loop keeps its objective and iteration history,
 stays visible, and offers `/loop resume` or `/glla resume` to continue using
 the selected model. Changing the model alone does not resume loop supervision.
 
+## Same-model phase (v0.38.105)
+
+Before rotating to a configured backup, GLLA spends its **same-model retry
+budget** on the currently selected model (default 10; setting
+`mainModelSameModelRetries`, 0..100, 0 = legacy immediate rotation). The
+phase exists because most provider failures are transient: a 429 "rate limit
+exceeded" rotating the session to a backup on the first turn spends a
+different provider's quota to solve a five-second problem.
+
+- The budget is **reason-agnostic** — the existing envelope cadence applies
+  inside it: 5s for the eager transient window, then the short ladder;
+  an explicit upstream reset hint still sleeps to reset; persistent walls
+  ladder per `mainModelRetryMinutes`.
+- A successful **rotation** resets the budget for the new model so the
+  backup earns its own retries from zero.
+- A **cycle reset** (return to the current model after the chain was
+  visited) re-seeds the budget at 1.
+- The status card shows the live counter (`Same-model retries: N`) so an
+  operator can see how close the next failure is to triggering rotation.
+- 0 keeps the legacy immediate rotation. Use it deliberately — for example
+  a project with no time tolerance for a flaky primary benefits from
+  rotating on the first blip; the default of 10 matches the
+  `TRANSIENT_EAGER_ATTEMPTS` quantum ("enough to prove it is not a blip").
+
 If an older loaded extension still hides the objective or shows an obsolete
 retry countdown, update GLLA and run `/reload`, inspect `/loop status`, then
 resume. Saved legacy recovery holds are supported from 0.39.8 onward.

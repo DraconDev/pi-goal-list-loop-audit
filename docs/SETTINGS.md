@@ -94,6 +94,7 @@ This authority boundary applies before settings-value normalization.
 | `compactorModelFallbacks` | `[]` | Ordered compactor fallbacks; no session last resort. Global-only. |
 | `compactionTokenThreshold` | `200000` | Positive context-token target for opportunistic transcript compaction at the next idle boundary, between work turns or list items. Waits while tools, audits, or queued messages own the host; respects pause and abort. Global-only. |
 | `mainModelRetryMinutes` | `15` | Base minutes before main-session recovery; doubles per attempt, caps 5h. Global-only. |
+| `mainModelSameModelRetries` | `10` | Consecutive retries the CURRENT main model gets before the configured fallback chain is touched. 0 = legacy immediate rotation. Clamped to 0..100. Global-only. |
 | `mainModelFailback` | `"auto"` | `"auto"` re-probes the primary; `"sticky"` keeps the fallback. Global-only. |
 | `mainModelPrimaryProbeMinutes` | `15` | Minutes between preferred-primary health probes. Global-only. |
 | `forbiddenModels` | `[]` | Refs that must never be selected (case-insensitive substring). |
