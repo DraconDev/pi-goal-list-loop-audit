@@ -14,6 +14,44 @@ export const DEFAULT_MAIN_MODEL_PRIMARY_PROBE_MINUTES = 15;
  * outside the UI. Ten alternatives is enough to cross providers/model pools
  * without turning one failure into an unbounded registry walk. */
 export const MAX_MAIN_MODEL_FALLBACKS = 10;
+/** Number of retries the CURRENT model gets before the configured fallback
+ * chain is touched. Operator direction (field 2026-10-08): most provider
+ * failures are transient — a 429 "rate limit exceeded" rotating the session to
+ * a backup on the first turn spends a different provider's quota to solve a
+ * five-second problem, and the operator reads the switch as GLLA giving up on
+ * the chosen model. Ten retries ride out a burst on the model already
+ * selected; the chain stays the second stage, not the first. 0 restores the
+ * legacy immediate rotation.
+ *
+ * Deliberately the same quantum as {@link TRANSIENT_EAGER_ATTEMPTS} — "enough
+ * retries to prove it is not a blip" — expressed literally because that
+ * constant is declared later in this module. */
+export const DEFAULT_MAIN_MODEL_SAME_MODEL_RETRIES = 10;
+/** Hard bound for the settings / hand-edited value. A budget above this turns
+ * one provider wall into an unbounded single-model treadmill. */
+export const MAX_MAIN_MODEL_SAME_MODEL_RETRIES = 100;
+
+/** Settings boundary for the same-model retry budget. Invalid/missing JSON
+ * values use the safe default rather than silently disabling the phase — the
+ * same fail-open contract as the other recovery knobs. */
+export function normalizeMainModelSameModelRetries(value: unknown): number {
+  const raw = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(raw)) return DEFAULT_MAIN_MODEL_SAME_MODEL_RETRIES;
+  const truncated = Math.trunc(raw);
+  if (truncated <= 0) return 0;
+  return Math.min(truncated, MAX_MAIN_MODEL_SAME_MODEL_RETRIES);
+}
+
+/** True while the current model still owns the recovery episode — i.e. a
+ * configured backup must NOT be selected yet. A missing budget (0) means the
+ * legacy immediate rotation. */
+export function sameModelRetriesRemain(sameModelRetries: number | undefined, budget: number): boolean {
+  if (!Number.isFinite(budget) || budget <= 0) return false;
+  const spent = typeof sameModelRetries === "number" && Number.isFinite(sameModelRetries) && sameModelRetries > 0
+    ? Math.trunc(sameModelRetries)
+    : 0;
+  return spent < budget;
+}
 /** A detached audit can carry one pinned primary, ten configured fallback
  * refs, and the session model as its final last resort. Cursor persistence
  * needs room for that complete chain across a host restart. */
