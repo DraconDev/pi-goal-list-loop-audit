@@ -1,6 +1,6 @@
 # Progress observability implementation — 2026-10-08
 
-Status: architecture and behavioral acceptance being established; no implementation or passing verification claim yet.
+Status: initial pure report reducer implemented with four passing component regressions; lifecycle telemetry, read-only adapter, command and broader acceptance remain unfinished.
 
 ## Adopted scope
 
@@ -28,4 +28,7 @@ Progress visibility only. Existing project runs remain read-only. Scheduling, wo
 
 ## Verification ledger
 
-No verification commands have run for this goal yet. Previous-goal green gates are not evidence for this implementation.
+- Initial feature test run failed at module resolution because the new report module did not exist (0 pass / 1 fail / 1 error); this is a missing-feature baseline, not behavioral proof against an existing implementation. `/tmp/glla-progress-report-baseline.log`.
+- After initial pure reducer implementation: `timeout 180 bun test --timeout=60000 tests/progress-report.test.ts`: 4 pass / 0 fail. Covers metricless housekeeping not becoming delivery, historical verification distinct from current reopening, separate run identities, and bounded/malformed input disclosure. `/tmp/glla-progress-report-first.log`.
+- `timeout 120 npm run check`: exit zero after these additions. `/tmp/glla-progress-types-first.log`.
+- The contract is NOT satisfied yet: these are component checks, not the required lifecycle, replay, public-interface or final full release gates. Previous-goal green gates are not evidence for this implementation.
