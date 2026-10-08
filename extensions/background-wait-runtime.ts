@@ -112,6 +112,8 @@ export function observeBackgroundTerminal(data: unknown, ctx: ExtensionContext, 
   if (!hooks?.valid(ctx)) return;
   const runId = eventId(data);
   if (!runId) return;
+  const parent = data && typeof data === "object" ? (data as Record<string, unknown>).sessionId : undefined;
+  if (typeof parent === "string" && parent !== sessionId(ctx) && parent !== ctx.sessionManager.getSessionFile?.()) return;
   const observation = observations.get(runId);
   if (observation && observation.sessionId === sessionId(ctx)) {
     if (observation.outcome === "pending") observation.outcome = outcome;
@@ -140,6 +142,7 @@ function artifactOutcome(wait: BackgroundWait, dependency: BackgroundWait["depen
         case "running": case "queued": case "pending": case "paused": {
           const deadline = typeof raw.deadlineAt === "number" ? raw.deadlineAt : undefined;
           if (deadline !== undefined && now > deadline) return "missing";
+          if (deadline === undefined && now - Date.parse(wait.createdAt) > 30 * 60_000) return "missing";
           // A durable file cannot keep a dead local worker alive forever.
           if (typeof raw.pid === "number" && Number.isSafeInteger(raw.pid) && raw.pid > 0) {
             try { process.kill(raw.pid, 0); return "pending"; } catch (error) {
