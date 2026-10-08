@@ -6,6 +6,10 @@
 /home/dracon/Pictures/Screenshots/Screenshot_20261008_180530.png
 we can look into this and perhaps others we really should not be pausing on 
 
+## some weird main model recovery objective
+/home/dracon/Pictures/Screenshots/Screenshot_20261008_191653.png
+
+
 # later
 
 # Testing
