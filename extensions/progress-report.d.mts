@@ -9,6 +9,7 @@ export interface ProgressVerification {
 }
 export interface ProgressRun {
   id: string;
+  family: 'unknown' | 'goal' | 'loop' | 'project';
   mode: ProgressMode;
   target: string;
   status: string;
