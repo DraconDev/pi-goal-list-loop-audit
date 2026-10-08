@@ -1241,7 +1241,7 @@ function pausedNextTransition(g: Goal, state: State, now: number): string {
     return `${resume} starts a fresh auditor`;
   }
   switch (pauseKind(g)) {
-    case "decision": return `user decision → ${resume}`;
+    case "decision": return `user decision → ${g.pauseOptions?.length ? (g.policy === "list" ? "/list decide" : "/goal decide") : resume}`;
     case "error": return `manual action → ${resume}`;
     case "blocked": return resume;
     case "wait": return isSupervisedWait(g) ? "recovery timer" : resume;
@@ -1868,7 +1868,7 @@ function standaloneRecoveryLines(recovery: MainModelRecovery, now: number, theme
   return [
     `${paint(theme, "warning", "⏳")} ${paint(theme, "accent", wall)} · ${truncate(current, budgetFor(width, 3, 36))}`,
     ...summary.map((line) => `├─ ${paint(theme, "dim", line)}`),
-    `└─ ${paint(theme, "dim", "work is saved · /glla resume or the matching goal/list/loop resume retries")}`,
+    `└─ ${paint(theme, "dim", "no GLLA objective · send 'continue' to retry this chat; /glla resume clears the stale marker")}`,
   ];
 }
 

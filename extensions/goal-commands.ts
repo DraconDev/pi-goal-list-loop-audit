@@ -562,7 +562,8 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
   // schedules only ACTIVE work, so it must not preempt goal reactivation or
   // a selected decision's delivery. Actual provider-recovery holds above
   // retain their existing bounded recovery path.
-  if (!recoveryStaleEntry && state.goal?.status !== "paused" && (state.mainModelRecovery?.primaryProbeAt || state.mainModelRecovery?.primaryProbeInFlight)) {
+  const activeProbeTarget = state.mainModelRecovery?.kind === "loop" ? state.loop?.active === true : state.goal?.status === "active";
+  if (!recoveryStaleEntry && activeProbeTarget && (state.mainModelRecovery?.primaryProbeAt || state.mainModelRecovery?.primaryProbeInFlight)) {
     releaseAuditorSurface();
     clearMainModelRecoveryTimer();
     flags.continuationDispatchStoodDown = false;
@@ -2848,7 +2849,20 @@ async function cmdGllaResume(ctx: ExtensionContext): Promise<void> {
     // misleading "Nothing to resume".
     return;
   }
-  ctx.ui.notify("Nothing to resume — no paused goal/list-item, no held loop, or waiting list. /goal, /list, or /loop to start something.", "info");
+  if (state.mainModelRecovery && !state.goal && !state.loop) {
+    const previous = state.mainModelRecovery;
+    clearMainModelRecoveryTimer();
+    state.mainModelRecovery = undefined;
+    if (!persistState(ctx)) {
+      state.mainModelRecovery = previous;
+      ctx.ui.notify("No GLLA objective to resume; the stale recovery marker could not be cleared. Send a normal message to retry this chat.", "warning");
+      return;
+    }
+    appendLedger(ctx.cwd, "main_model_recovery_retired_no_objective", { via: "glla-resume", reason: "no supervised target; not a provider health verdict" });
+    ctx.ui.notify("No GLLA objective is paused. Cleared the old recovery marker, not the chat history. Send 'continue' to retry your ordinary chat; /goal, /list or /loop starts tracked work.", "info");
+    return;
+  }
+  ctx.ui.notify("Nothing to resume — no paused goal/list-item, no held loop, or waiting list. Send 'continue' for ordinary chat; /goal, /list, or /loop starts tracked work.", "info");
 }
 
 /**
