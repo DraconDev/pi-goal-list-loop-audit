@@ -15,6 +15,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ExtensionContext, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { state, replaceState } from "./goal-state.js";
+import { backgroundDispatchHeld } from "./work-lifecycle.js";
 import {
   appendLedger,
   archivedGoalPath,
@@ -467,6 +468,7 @@ function scheduleLoopTickUrgent(ctx: ExtensionContext): void {
 }
 
 function scheduleLoopTickWithUrgency(ctx: ExtensionContext, urgent: boolean): void {
+  if (backgroundDispatchHeld(state)) return;
   // v0.35.15: `/glla pause` freezes loop re-arms too — the supervisor's
   // automatic machinery includes the metric loop's turn dispatch.
   if (supervisorPaused(state)) return;
@@ -502,6 +504,7 @@ function scheduleLoopTickWithUrgency(ctx: ExtensionContext, urgent: boolean): vo
 }
 
 function sendLoopTurn(): void {
+  if (backgroundDispatchHeld(state)) return;
   // L6: the timer FIRED — clear the handle before any early return, or
   // loopTimerPending() lies and suppresses legitimate sends elsewhere.
   loopTimer = null;
@@ -679,6 +682,7 @@ function sendLoopTurn(): void {
 
 /** agent_end hook for loop 3: measure → judge → continue or stop. */
 async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<void> {
+  if (backgroundDispatchHeld(state)) return;
   // v0.34.20: measurement/git work is asynchronous. Rebind the local
   // context after every await or abandon the tick; never let a replacement
   // session inherit the agent_end context.

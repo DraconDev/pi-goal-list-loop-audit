@@ -30,6 +30,8 @@ import { Type } from "typebox";
 // (positioning doc invariant #2). Property reads on the imported binding are
 // fine; wholesale replacement goes through replaceState().
 import { state, replaceState, persistStateLine } from "../goal-state.js";
+import { admitBackgroundWait } from "../background-wait-runtime.js";
+import { backgroundDispatchHeld } from "../work-lifecycle.js";
 
 import {
   type Goal,
@@ -678,6 +680,7 @@ function registerAgentTools(pi: any): void {
       if (!toolCtx) return staleToolResult();
       let ctx: ExtensionContext = toolCtx;
       const auditGeneration = sessionGeneration;
+      if (backgroundDispatchHeld(state)) return { content: [{ type: "text", text: "Completion refused: background dependencies still own this wait. Consume their settlement and assess the results first." }], details: {}, isError: true };
       if (!state.goal) return { content: [{ type: "text", text: "No active goal." }], details: {} };
       // v0.38.63 (field 032245): a suspicious-objective pause is a dispatch
       // shield, not a work stop — resume re-parks it, so refusing the claim
@@ -2519,11 +2522,30 @@ function registerAgentTools(pi: any): void {
   }));
 
   pi.registerTool(defineTool({
+    name: "wait_for_background",
+    label: "Wait for background work",
+    description: "Yield the main agent to explicitly named, owned background runs without pausing supervision. Supply exact runIds from this target's observed subagent launches. Matching completion or reload reconciliation settles the wait; failed/missing dependencies return to assessment, not completion. Explicit pauses remain authoritative. On success end the turn; do not call pause_goal or poll the worker.",
+    parameters: Type.Object({
+      reason: Type.String(),
+      runIds: Type.Array(Type.String(), { minItems: 1, maxItems: 32 }),
+    }),
+    async execute(_id, params, _signal, _onUpdate, execCtx) {
+      const foreign = foreignToolGuard(execCtx);
+      if (foreign) return { content: [{ type: "text", text: foreign }], details: {} };
+      const ctx = currentToolContext(execCtx);
+      if (!ctx) return staleToolResult();
+      const result = admitBackgroundWait(ctx, params.runIds, params.reason);
+      return { content: [{ type: "text", text: result.message }], details: {}, isError: !result.ok, ...(result.ok ? { terminate: true } : {}) };
+    },
+  }));
+
+  pi.registerTool(defineTool({
     name: "pause_goal",
     label: "Pause goal",
-    description: "Pause the active goal with a reason and suggested action. Use when blocked on user input or unable to make progress. Pausing ABORTS the current turn immediately — after this call, stop; never keep working. When the user interrupts with a NEW task ('do X first'), pass redirect=\"<their request>\" instead: the goal parks but the turn CONTINUES so you work X immediately — a plain pause strands the redirect until the user nudges. Never use redirect to dodge a real blocker, decision, or wait. When the user must CHOOSE between options, pass kind=\"decision\" with the options list (recommended = 1-based index of the best one) — decision pauses render as a prominent DECISION NEEDED card and pop a picker for the user. Time-gated waits (retry at a specific time) use kind=\"wait\" with resumeAt (ISO). Quota-caused parks (rate-limit/plan-quota/billing wording in the reason, or a recent subagent quota error) are automatically converted to monitored auto-retry waits — park normally and the reset wait re-fires on its own. Operational failures use kind=\"error\". Pauses that only wait on a running background subagent — its native completion wakes the goal, no manual action exists — use kind=\"standby\" so the card waits instead of demanding action. VOCABULARY (v0.28.24): decision options and reasons must reference REAL commands only — /goal resume, /goal cancel, /goal tweak \"<new text>\", /list remove N, /list next, /list resume, /loop stop, /loop resume. These all act on the ACTIVE goal/item: there is NO /goal drop and NO command takes a goal id. Never show goal ids to the user — name the thing ('the active goal', 'list item \"<short name>\"'); ids are internal plumbing the user cannot act on.",
+    description: "Pause the active goal with a reason and suggested action. Use when blocked on user input or unable to make progress. Pausing ABORTS the current turn immediately — after this call, stop; never keep working. When the user interrupts with a NEW task ('do X first'), pass redirect=\"<their request>\" instead: the goal parks but the turn CONTINUES so you work X immediately — a plain pause strands the redirect until the user nudges. Never use redirect to dodge a real blocker, decision, or wait. When the user must CHOOSE between options, pass kind=\"decision\" with the options list (recommended = 1-based index of the best one) — decision pauses render as a prominent DECISION NEEDED card and pop a picker for the user. Time-gated waits (retry at a specific time) use kind=\"wait\" with resumeAt (ISO). Quota-caused parks (rate-limit/plan-quota/billing wording in the reason, or a recent subagent quota error) are automatically converted to monitored auto-retry waits — park normally and the reset wait re-fires on its own. Operational failures use kind=\"error\". For background dependencies use wait_for_background with exact runIds instead of pausing. Legacy kind=\"standby\" requires those same runIds and admits an owned wait, not a freeze. VOCABULARY (v0.28.24): decision options and reasons must reference REAL commands only — /goal resume, /goal cancel, /goal tweak \"<new text>\", /list remove N, /list next, /list resume, /loop stop, /loop resume. These all act on the ACTIVE goal/item: there is NO /goal drop and NO command takes a goal id. Never show goal ids to the user — name the thing ('the active goal', 'list item \"<short name>\"'); ids are internal plumbing the user cannot act on.",
     parameters: Type.Object({
       reason: Type.String({ description: "Why the work is paused" }),
+      runIds: Type.Optional(Type.Array(Type.String(), { description: "Legacy standby only: exact owned dependency run ids. Prefer wait_for_background.", minItems: 1, maxItems: 32 })),
       suggestedAction: Type.Optional(Type.String({ description: "What the user should do next" })),
       kind: Type.Optional(Type.Union([Type.Literal("decision"), Type.Literal("error"), Type.Literal("wait"), Type.Literal("blocked"), Type.Literal("standby")], { description: "Pause class: decision (user picks an option), error (operational failure), wait (time-gated), blocked (generic), standby (waiting on a background subagent — its native completion wakes the goal, no manual action)" })),
       options: Type.Optional(Type.Array(Type.String(), { description: "For kind=decision: the options the user picks between (one line each)" })),
@@ -2536,7 +2558,11 @@ function registerAgentTools(pi: any): void {
       if (foreign1) return { content: [{ type: "text", text: foreign1 }], details: {} };
       const ctx = currentToolContext(execCtx);
       if (!ctx) return staleToolResult();
-      const p = params as { reason: string; suggestedAction?: string; kind?: "decision" | "error" | "wait" | "blocked" | "standby"; options?: string[]; recommended?: number; resumeAt?: string; redirect?: string };
+      const p = params as { reason: string; runIds?: string[]; suggestedAction?: string; kind?: "decision" | "error" | "wait" | "blocked" | "standby"; options?: string[]; recommended?: number; resumeAt?: string; redirect?: string };
+      if (p.kind === "standby") {
+        const result = admitBackgroundWait(ctx, p.runIds ?? [], p.reason);
+        return { content: [{ type: "text", text: result.message }], details: {}, isError: !result.ok, ...(result.ok ? { terminate: true } : {}) };
+      }
       // v0.35.15: a model that passes options but forgets kind="decision"
       // still gets the decision card — a non-empty options array IS the
       // decision intent; silently dropping it left the user with no picker.

@@ -289,6 +289,7 @@ import {
   ModelPickerComponent,
   type ModelPickItem,
 } from "../model-picker.js";
+import { bindBackgroundWaitRuntime, observeBackgroundStart, observeBackgroundTerminal, reconcileBackgroundWait, consumeBackgroundYield } from "../background-wait-runtime.js";
 import { consumeRecoveryResume } from "../goal-recovery.js"; // decomposition step 3 (v0.34.111)
 import { buildAbortedAssistantNotice, clearPauseAbort, consumePauseAbort, markActionReminderTurnStart } from "../action-reminder.js";
 import { payloadGuardProjection } from "../payload-guard.js"; // v0.35.51 image-413 guard
@@ -990,6 +991,18 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
   writeOwnerFile: defaultWriteOwnerFile,
 }): void {
   const { claimProcessOwner, writeOwnerFile } = ownership;
+  bindBackgroundWaitRuntime({
+    valid: ctx => !!freshCtx() && !isForeignCtx(ctx) && !sessionHandoffPending && !extensionApiStale && !staleTerminalDone && !zombieStoodDown && !abortedStandDown,
+    persist: ctx => persistState(ctx),
+    updateGoal: (patch, ctx) => updateGoal(patch, ctx),
+    clearTimers: () => { clearContinuationTimer(); clearLoopTimer(); },
+    refresh: ctx => refreshUI(ctx),
+    schedule: ctx => { if (isLoopActive()) scheduleLoopTick(ctx); else scheduleContinuation(ctx, true); },
+    assessment: (_ctx, wait) => {
+      pi.sendMessage({ customType: "glla-background-settled", display: false,
+        content: `Background wait settled. Assess saved results before continuing; completion does not verify tasks. ${wait.legacy ? "Legacy standby had no proven run ownership; inspect the checkpoint and dependencies rather than guessing a live worker." : wait.dependencies.map(dependency => `${dependency.runId}: ${dependency.outcome}`).join("; ")}` }, { triggerTurn: false });
+    },
+  });
   // Factories run before lifecycle events, so observe readiness now; the
   // admitted session_start below decides which bus/generation may control a
   // child. Worker factories can never claim this binding.
@@ -2598,6 +2611,15 @@ async function handleHotLengthExhaustion(
     // v0.23.8: a subagent finishing must not drive the main session's
     // continuation loop.
     if (isForeignCtx(ctx)) return;
+    const yieldedToBackground = consumeBackgroundYield(ctx);
+    const backgroundHeld = reconcileBackgroundWait(ctx);
+    if (backgroundHeld || yieldedToBackground) {
+      refreshUI(ctx);
+      if (!backgroundHeld && ctx.isIdle() && !ctx.hasPendingMessages()) {
+        if (isLoopActive()) scheduleLoopTick(ctx); else scheduleContinuation(ctx, true);
+      }
+      return;
+    }
     noteActivity(true);
     refreshOwnerHeartbeat(ctx.cwd); // v0.38.11: throttled (60s) claim refresh so /glla owner shows real idle
     noteOwnershipStanding(ctx); // v0.38.12: stand down to read-only when a newer session stole the root
@@ -3547,6 +3569,7 @@ async function handleHotLengthExhaustion(
     observeCurrentSubagentStart(data);
     const ctx = freshCtx();
     if (!ctx) return;
+    observeBackgroundStart(data, ctx);
     signalSupervisionEvent({ plane: "subagent", kind: "start", source: "subagent:async-started" });
     const e = (data ?? {}) as { id?: unknown; runId?: unknown; sessionId?: unknown; agent?: unknown; task?: unknown; goal?: unknown; mode?: unknown };
     const sessionId = typeof e.sessionId === "string" && e.sessionId.trim()
@@ -3574,7 +3597,9 @@ async function handleHotLengthExhaustion(
   pi.events.on("subagent:async-complete", (data: unknown) => {
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown) return;
     observeCurrentSubagentComplete(data);
-    if (!freshCtx()) return;
+    const ctx = freshCtx();
+    if (!ctx) return;
+    observeBackgroundTerminal(data, ctx, "completed");
     signalSupervisionEvent({ plane: "subagent", kind: "complete", source: "subagent:async-complete" });
   });
   pi.events.on("subagent:process-terminal", (data: unknown) => {
@@ -3584,7 +3609,11 @@ async function handleHotLengthExhaustion(
     const terminal = describeSubagentTerminal(data);
     const alreadyTerminal = subagentTerminalAlreadyRecorded(data);
     observeCurrentSubagentTerminal(data);
-    if (!freshCtx()) return;
+    const waitCtx = freshCtx();
+    if (!waitCtx) return;
+    // A clean process close is not stopped work; late terminal telemetry
+    // cannot turn a delivered completion into a cancellation.
+    observeBackgroundTerminal(data, waitCtx, terminal?.failed ? "failed" : "completed");
     signalSupervisionEvent({ plane: "subagent", kind: "complete", source: "subagent:process-terminal" });
     if (terminal?.failed && !alreadyTerminal) {
       const nudgeCtx = freshCtx();

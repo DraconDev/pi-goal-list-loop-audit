@@ -25,6 +25,7 @@
 //     send_rearm_*, queue_stuck_detected, ...).
 // ============================================================================
 
+import { backgroundDispatchHeld } from "./work-lifecycle.js";
 import { deliverTerminalSummary } from "./terminal-summary-delivery.js";
 import { defaultAgentDir, ensureRequestedDesigner } from "./goal-loop-subagents.js";
 import * as fs from "node:fs";
@@ -1347,6 +1348,7 @@ export function guardGoalBeforeContinuation(
 }
 
 export function scheduleContinuation(ctx: ExtensionContext, force = false, delayMs?: number): void {
+  if (backgroundDispatchHeld(state)) return;
   // v0.35.15: `/glla pause` freezes ALL automatic dispatch — even `force`
   // re-arms. Explicit user intent outranks every internal retry policy;
   // `/glla resume` is the only way back. Manual sends (user-typed prompts)
@@ -1504,6 +1506,7 @@ export function buildContinuationContent(goal: Goal, opts: { resync?: string; fi
 }
 
 export function sendContinuation(goalId: string): void {
+  if (backgroundDispatchHeld(state)) return;
   // v0.35.15: `/glla pause` — a continuation timer armed BEFORE the pause
   // must not fire into the frozen window. scheduleContinuation already
   // refuses new schedules; this closes the armed-timer race.
@@ -1681,6 +1684,7 @@ export function sendContinuation(goalId: string): void {
 // what closes the turn: complete_goal if done, pause_goal if blocked, a tool
 // call otherwise. display: true — the user should see the warning too.
 export function sendStallEscalation(ctx: ExtensionContext, nudges: number): void {
+  if (backgroundDispatchHeld(state)) return;
   if (supervisorPaused(state)) return;
   // Audit 2026-09-07 (HIGH): a stall nudge must not resurrect a stood-down
   // chain — same abort-latch reasoning as sendContinuation.
@@ -1725,6 +1729,7 @@ export function sendStallEscalation(ctx: ExtensionContext, nudges: number): void
 // sendContinuation (stale api = terminal), independent of goal state —
 // plain sessions truncate too.
 export function sendLengthContinue(ctx: ExtensionContext, consecutive: number): void {
+  if (backgroundDispatchHeld(state)) return;
   if (supervisorPaused(state)) return;
   // Audit 2026-09-07 (HIGH): a length nudge must not resurrect a stood-down
   // chain — same abort-latch reasoning as sendContinuation.
