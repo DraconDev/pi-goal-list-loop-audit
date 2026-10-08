@@ -52,6 +52,23 @@ If an older loaded extension still hides the objective or shows an obsolete
 retry countdown, update GLLA and run `/reload`, inspect `/loop status`, then
 resume. Saved legacy recovery holds are supported from 0.39.8 onward.
 
+## No objective to resume—but a recovery message remains
+
+An objective, its completion claim, and provider recovery are separate state.
+A retry/fallback record can belong to ordinary chat or remain after tracked
+work has already settled. It is not evidence that the objective is still active.
+
+If `/glla resume` says **No GLLA objective is paused** and clears an old recovery
+marker, it clears that marker—not the conversation, archive or completed work.
+Inspect `/goal archive` for goal history and `/loop status` for a saved project.
+For ordinary chat, send `continue`; for additional work after an accepted result,
+start a new goal. Resume does not reopen an archived objective.
+
+Reloading refreshes extension code but does not repair provider access, credits
+or credentials. A selected model and a responsive UI do not prove that the next
+provider request will succeed. If a fallback is needed, select one you can use,
+then inspect status and resume eligible unfinished work explicitly.
+
 ## When a project completes
 
 Project completion requires independent verification of every adopted
