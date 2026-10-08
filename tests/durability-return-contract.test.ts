@@ -27,7 +27,7 @@ test('complete_goal newObjective refuses when the ledger write fails instead of 
     completionSummary: 'Outcome: did the thing. Changed: code. Evidence: tests pass. Tests: bun test 1 pass. Unresolved: none. Next: none.',
     verificationSummary: 'evidence',
     newObjective: 'Shifted objective with contract',
-  }, ctx);
+  }, ctx) as unknown as { content: Array<{ text: string }>; isError?: boolean };
   await tick(50);
   const text = result.content.map(c => c.text).join('\n');
   assert.equal(result.isError, true);
