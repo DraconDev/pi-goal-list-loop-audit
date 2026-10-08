@@ -785,11 +785,11 @@ test("paused decision without activity says no turn was observed and names the m
   const status = buildStatusText(state, null, NOW)!;
   assert.match(status, /owner: user decision/);
   assert.match(status, /last host activity not observed/);
-  assert.match(status, /next: user decision → \/goal resume/);
+  assert.match(status, /next: user decision → \/goal decide/);
   const widget = buildWidgetLines(state, null, NOW)!;
   const joined = widget.join("\\n");
   assert.match(joined, /lifecycle: safely parked · owner: user decision · queue empty/);
-  assert.match(joined, /last host activity not observed · next: user decision → \/goal resume/);
+  assert.match(joined, /last host activity not observed · next: user decision → \/goal decide/);
   assert.match(joined, /1\. staging/);
 });
 

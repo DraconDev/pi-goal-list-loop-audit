@@ -51,7 +51,7 @@ test("decision status leads with the decision path", () => {
   } as State;
   const status = buildStatusText(state, null, NOW)!;
   assert.match(status, /decision needed/);
-  assertActionFirst(status, "next: user decision → /goal resume");
+  assertActionFirst(status, "next: user decision → /goal decide");
 });
 
 test("error status leads with the manual path", () => {
