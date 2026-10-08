@@ -288,6 +288,7 @@ export function __testOnlyResetProcessState(): void {
   __testOnlyResetInvalidSettingReports();
   __testOnlyResetOwnerHeartbeat();
   __testOnlyResetStandDownNotice();
+  __testOnlyResetBackgroundWaitRuntime();
 }
 
 // decomposition step 5 (v0.34.113): the continuation cluster (schedule/send,
