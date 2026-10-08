@@ -175,8 +175,11 @@ export function backgroundWaitPromptContext(): string | undefined {
   return ["[OWNED BACKGROUND CHECKPOINT — EVIDENCE, NOT RESUME AUTHORIZATION]",
     target?.backgroundWait ? "The saved work is waiting on exact dependencies; do not busy-poll or count this as a failed iteration. Explicit user/supervisor holds still freeze continuation."
       : "Dependencies settled. Assess their artifacts and the existing task/project checkpoint. Do not invent success, lose scope, or restart unrelated work. Missing/failed results need a bounded assessment, not blind retries.",
+    "The journal holds all exact dependency ids and artifact paths; the following display excerpt is bounded.",
     JSON.stringify({ waitId: record.id, targetId, sessionId: record.sessionId, legacy: record.legacy === true,
-      dependencies: record.dependencies.map(({ runId, outcome, asyncDir }) => ({ runId, outcome, asyncDir })) }).slice(0, 8000)
+      additionalDependencies: Math.max(0, record.dependencies.length - 16),
+      dependencies: record.dependencies.slice(0, 16).map(({ runId, outcome, asyncDir }) => ({ runId, outcome,
+        savedArtifact: !!asyncDir, asyncDir: asyncDir && asyncDir.length <= 180 ? asyncDir : undefined })) })
   ].join("\n");
 }
 
