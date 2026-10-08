@@ -1332,11 +1332,18 @@ function backgroundDisplay(state: State): { view: WorkView; surface: string; tar
     target: loopOwned ? state.loop!.target : goal!.objective, command: loopOwned ? "/loop" : goal?.policy === "list" ? "/list" : "/goal" };
 }
 
+function backgroundOwnerName(view: WorkView, state: State): string {
+  if (view.wait && !view.wait.legacy) return "background agent";
+  if (view.wait?.legacy) return "background agent (legacy ownership unverified)";
+  if (view.lifecycle === "paused") return typeof state.supervisorPausedAt === "number" ? "supervisor" : "operator";
+  return "background agent";
+}
+
 function backgroundNextAction(state: State, view: WorkView, command: string): string {
   if (view.lifecycle === "paused") return `automatic continuation frozen · ${typeof state.supervisorPausedAt === "number" ? "/glla resume" : `${command} resume`}`;
   return view.wait && !view.wait.legacy
-    ? `owned completion → parent assessment · ${command} status`
-    : `legacy ownership unverified → bounded assessment on eligible contact · ${command} status`;
+    ? `waiting on background agent · completion → parent assessment · ${command} status`
+    : `waiting on background agent (legacy ownership unverified) → bounded assessment on eligible contact · ${command} status`;
 }
 
 function backgroundStatus(state: State, theme?: DisplayTheme): string | undefined {
@@ -1345,7 +1352,8 @@ function backgroundStatus(state: State, theme?: DisplayTheme): string | undefine
   const { view, surface, command } = data;
   const deps = view.wait?.dependencies;
   const evidence = deps?.length ? `${deps.filter(dep => dep.outcome === "pending").length}/${deps.length} dependencies pending` : "legacy ownership unverified";
-  return `glla: ${paint(theme, view.lifecycle === "paused" ? "warning" : "accent", `${view.lifecycle === "paused" ? "⏸" : "⏳"} ${view.lifecycle}`)} · ${surface} · activity: ${view.activity} · ${evidence} · ${backgroundNextAction(state, view, command)}`;
+  return `glla: ${paint(theme, view.lifecycle === "paused" ? "warning" : "accent", `${view.lifecycle === "paused" ? "⏸" : "⏳"} ${view.lifecycle}`)} · ${surface} · activity: ${view.activity} · ${evidence} · ${backgroundNextAction(state, view, command)}`.replace("background agent (legacy ownership unverified) → bounded assessment",
+    "legacy ownership unverified → bounded assessment");
 }
 
 function backgroundWidget(state: State, theme?: DisplayTheme, width?: number): string[] | undefined {
@@ -1357,6 +1365,7 @@ function backgroundWidget(state: State, theme?: DisplayTheme, width?: number): s
   const lines = [`${paint(theme, color, `${view.lifecycle === "paused" ? "⏸" : "⏳"} ${surface} · ${view.lifecycle}`)}`];
   for (const row of wrap(sanitizeDisplayText(target), budgetFor(width, 3, 60), 2)) lines.push(`├─ ${row}`);
   lines.push(`├─ ${buildWorkLifecycleSummary(state)}`);
+  lines.push(`├─ owner: ${paint(theme, "dim", backgroundOwnerName(view, state))}`);
   if (!deps.length) lines.push("├─ legacy standby · ownership unverified; no automatic worker wake promised");
   else deps.slice(0, 6).forEach(dep => lines.push(`├─ dependency ${sanitizeDisplayText(dep.runId)} · ${dep.outcome}`));
   if (deps.length > 6) lines.push(`├─ +${deps.length - 6} dependencies · inspect ${command} status`);
@@ -1378,7 +1387,7 @@ export function buildStatusText(state: State, audit?: AuditDisplayProgress | nul
   // v0.38.73: run-to-done is a consent state the user must see at a glance
   // — an auto-running goal must never look supervised.
   const view = stateWorkView(state, observedWorkActivity(extras, now));
-  const withActivity = withAgentSummary && !backgroundDisplay(state) && view.activity !== "unknown"
+  const withActivity = withAgentSummary && !backgroundDisplay(state) && (view.lifecycle !== "running" || (view.activity !== "unknown" && view.activity !== "auditing"))
     ? `${withAgentSummary} · lifecycle: ${view.lifecycle} · activity: ${view.activity}`
     : withAgentSummary;
   const withMode = withActivity && state.goal?.runToDone === true
@@ -1777,9 +1786,10 @@ export function buildWidgetLines(state: State, audit?: AuditDisplayProgress | nu
   const background = backgroundWidget(state, theme, width);
   const rawInner = background ?? buildWidgetLinesInner(state, audit, now, theme, width, extras);
   const view = stateWorkView(state, observedWorkActivity(extras, now));
-  const inner = rawInner && !background && view.activity !== "unknown"
-    ? [rawInner[0]!, `├─ ${paint(theme, "dim", buildWorkLifecycleSummary(state, extras, now))}`, ...rawInner.slice(1)]
-    : rawInner;
+  // The widget is activity-first; lifecycle/activity projection lives on the
+  // status line and on the dedicated background-wait card. Avoid injecting
+  // a duplicate row that pushes activity-first cards past their budget.
+  const inner = rawInner;
   const detailedAgents = extras?.agents?.lines ?? (extras?.agents?.line ? [extras.agents.line] : []);
   let withAgents: string[] | undefined = inner;
   if (detailedAgents.length > 0) {
