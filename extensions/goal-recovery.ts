@@ -541,7 +541,10 @@ function mainModelPrimaryProbeDelay(): number {
   try { return mainModelPrimaryProbeDelayMs(loadGlobalSettings().mainModelPrimaryProbeMinutes); } catch { return mainModelPrimaryProbeDelayMs(); }
 }
 
-function sameModelRef(left: string | undefined, right: string | undefined): boolean {
+/** v0.38.105: sameModelRef is consumed by the orchestrator gate that pairs
+ * the recovery `active` with the live session model, so the helper is
+ * exported. The string compare itself is unchanged. */
+export function sameModelRef(left: string | undefined, right: string | undefined): boolean {
   return !!left && !!right && left.toLowerCase() === right.toLowerCase();
 }
 
