@@ -20,12 +20,12 @@ function runtimeLoadedPrompts(): string[] {
 
 function smokeRequired(): string[] {
   const src = fs.readFileSync("scripts/release-pack-smoke.mjs", "utf8");
-  return [...src.matchAll(/"(prompts\/[^"]+\.md)"/g)].map((m) => m[1]);
+  return [...src.matchAll(/"(prompts\/[^"]+\.md)"/g)].map((m) => m[1] as string);
 }
 
 function contractRequired(): string[] {
   const src = fs.readFileSync("tests/release-contract.test.ts", "utf8");
-  return [...src.matchAll(/"(prompts\/[^"]+\.md)"/g)].map((m) => m[1]);
+  return [...src.matchAll(/"(prompts\/[^"]+\.md)"/g)].map((m) => m[1] as string);
 }
 
 test("every runtime-loaded prompt rides the ship-gate in both tiers", () => {
