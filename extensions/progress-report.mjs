@@ -26,13 +26,17 @@ export function projectProgress(records, options = {}) {
     if (timestamp) { firstAt ??= timestamp; lastAt = timestamp; }
     if (record.type !== 'state' || !object(record.value)) continue;
     const state = record.value;
-    const loop = object(state.loop) ? state.loop : undefined;
-    const goal = object(state.goal) ? state.goal : undefined;
+    const candidates = [];
+    if (object(state.loop)) candidates.push({ loop: state.loop });
+    if (object(state.goal)) candidates.push({ goal: state.goal });
+    // A held project can coexist with a current goal. An observer must show
+    // both, not perform the runtime owner's arbitration or hide either one.
+    for (const { loop, goal } of candidates) {
     const builder = loop && object(loop.builder) ? loop.builder : undefined;
     const runId = builder ? id(builder.projectId) : loop ? id(loop.startedAt) : goal ? id(goal.id) : undefined;
     if (!runId) continue;
     const mode = builder ? 'requirement-builder' : loop ? typeof loop.measureCmd === 'string' && loop.measureCmd.trim() ? 'metric-loop' : 'metricless-loop' : goal.policy === 'list' ? 'list-goal' : 'goal';
-    const key = `${mode}:${runId}`;
+    const key = `${builder ? 'project' : loop ? 'loop' : 'goal'}:${runId}`;
     if (!runs.has(key)) {
       if (runs.size >= maxRuns) { runs.delete(runs.keys().next().value); omittedRuns++; }
       runs.set(key, {
@@ -46,6 +50,8 @@ export function projectProgress(records, options = {}) {
       });
     }
     const run = runs.get(key);
+    run.mode = mode;
+    run.target = text(loop?.target ?? goal?.objective) ?? 'unknown';
     run.status = loop ? loop.active === true ? builder?.phase ?? 'running' : 'inactive' : text(goal.status, 40) ?? 'unknown';
     run.iterations = count(loop?.iteration) ?? run.iterations;
     run.cycle = count(builder?.cycle);
@@ -75,6 +81,7 @@ export function projectProgress(records, options = {}) {
     }
     for (const verification of run.historicalVerification) verification.current = current.has(verification.requirementId);
     run.capabilityProgress = run.coverage.verified ? 'recorded-current-verification' : run.historicalVerification.length ? 'historical-verification-only' : 'unknown';
+    }
   }
   return {
     schemaVersion: 1,
