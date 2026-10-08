@@ -89,3 +89,39 @@ GLLA only. The decision-card picker, the audit-state machine, the
 fallback-chain selector, the goal/list/loop state schema, and the
 recovery-host timer wiring are unchanged. No other plugin, no provider
 config, no extension boundary touched.
+
+## "Perhaps others" — decision-pause inventory (operator direction 2026-10-08)
+
+Every `pauseKind: "decision"` site was audited. The gate-blind no-progress
+stop was the only defective self-evident pause; the rest are genuine
+treadmill breaks where a human picks the way out, and stay as-is:
+
+- `auditCapHard` on the comparable streak (inline + detached): one auditor
+  rejecting N rounds running. A human picks accept / resume / tweak / cancel.
+- Soft `auditCap` (inline + detached): in aggressive mode (the default) this
+  converts to TODOs and keeps going — no pause. The non-aggressive pause is
+  the mode's explicit contract (the operator asked for decisions there).
+  `countTrailingDisapprovals` stays the deliberately RAW counter (pinned by
+  tests/audit-verdict.test.ts and tests/auditor-ladder-discipline.test.ts);
+  gate-awareness lives on the comparable/no-progress counters only.
+- `IMPOSSIBLE (partial)` verdict + `partialCap` (inline + detached): the
+  auditor says part of the goal can never be satisfied. Narrowing the
+  objective is a human judgment, not a retry.
+- Regression-shield treadmill (`shieldCap`): rounds that approve the work
+  but fail the evidence contract. Same shape as the hard cap.
+- Heartbeat stall (`goal-activation.ts`): N consecutive unproductive turns.
+  "Retry" is recommended, but the agent just proved it cannot make progress
+  unaided — resuming unchanged would burn turns. The pause forces a human
+  look or an explicit tweak. Kept.
+
+Rotation inventory (same question for the model switch):
+
+- Context-pressure compact-first + `isExplicitPromptOverflow`: a model-cap
+  problem, not a blip. Keeps rotating immediately. Untouched.
+- Send-storm escalation (`recoverMainModelFromSendStorm`): fires after 15m
+  of failed sends + 5m of zero session activity. A wedge that survived 15
+  minutes has already proven non-transient, so the same-model budget does
+  not gate it. Untouched.
+- The generic `agent_end` recoverable branch: gated on the budget. Changed.
+- Auditor and per-subagent fallback ladders: separate scopes, no operator
+  complaint. Untouched.
