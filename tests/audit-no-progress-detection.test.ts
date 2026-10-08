@@ -133,3 +133,69 @@ test("v0.38.101 the exact-text fingerprint is unchanged", () => {
     auditDisapprovalFingerprint("at 2026-09-28T09:09:09.000Z ok"),
   );
 });
+
+test("v0.38.105 deterministic mechanical pre-audit rows are transparent to the no-progress stop", () => {
+  // Field 2026-10-08 (clean-web /pol/ inspection goal, 16:54): the goal's
+  // verification contract named `bun run peek` with a /pol/ URL inline. The
+  // deterministic pre-audit fast-fail ran the command BARE (no URL), the
+  // script threw "give at least one URL", and the same byte-identical report
+  // was emitted three rounds running. The state-based no-progress stop
+  // paused the goal with a decision card whose recommended answer was
+  // self-evident: the goal agent could fix the script (and did, commit
+  // a951e6c019, 17:15). The detector was conflating a red contract command
+  // with an auditor opinion. A failing gate is a gate; the goal agent reads
+  // it and continues. Mechanical rows are transparent to the streak,
+  // matching the cap-counted `countTrailingComparableDisapprovals`.
+  const gateReport = "<disapproved/>\n\nDeterministic Pre-Audit Fast-Fail: Mechanical contract check failed: `bun run peek` (exit code 1)\n\n<evidence>\n[mechanical check retried once after a failed first attempt (exit 1); second attempt also failed — output tail below]\n$ node scripts/browser-test/peek.mjs\nError: give at least one URL: bun run peek -- https://example.com\n</evidence>";
+  const gateHistory = Array.from({ length: 10 }, () => ({
+    at: "2026-10-08T16:54:00.000Z",
+    model: "deterministic-pre-audit",
+    report: gateReport,
+    approved: false,
+    disapproved: true,
+    revision: 0,
+  }));
+  assert.equal(
+    countTrailingRepeatedDisapprovals(gateHistory),
+    0,
+    "ten identical mechanical pre-audit fast-fails must NOT form a no-progress streak",
+  );
+  assert.ok(
+    countTrailingRepeatedDisapprovals(gateHistory) < 3,
+    "the no-progress stop (MAX_REPEATED_AUDIT_NO_PROGRESS = 3) cannot fire on a mechanical gate alone",
+  );
+  // Auditor rows are unaffected: the same detector still works on a real
+  // auditor disagreement. Sanity check that the real-auditor case still
+  // counts byte-identical reports (today's exact-text contract).
+  const auditorReport = "<disapproved/>\nThe verifier rejects the readiness artifact at its actual cause.";
+  const auditorHistory = Array.from({ length: 3 }, () => ({
+    at: "2026-10-08T17:00:00.000Z",
+    model: "auditor/test",
+    report: auditorReport,
+    approved: false,
+    disapproved: true,
+    revision: 0,
+  }));
+  assert.equal(
+    countTrailingRepeatedDisapprovals(auditorHistory),
+    3,
+    "three byte-identical real-auditor disapprovals still trigger the stop",
+  );
+  // Mixed history: the gate rows are transparent, the auditor rows are
+  // counted. The exact-text comparison is still in force for the auditor.
+  const mixed = [...gateHistory, ...auditorHistory];
+  assert.equal(
+    countTrailingRepeatedDisapprovals(mixed),
+    3,
+    "transparent gate rows do not break the auditor streak",
+  );
+  // The reverse direction: a real auditor row followed by gates. The
+  // auditor's fingerprint is the first seen, and the gate rows do not
+  // match it — the streak stops at one.
+  const reversed = [...auditorHistory, ...gateHistory];
+  assert.equal(
+    countTrailingRepeatedDisapprovals(reversed),
+    1,
+    "gate rows do not extend a real auditor streak when their fingerprint differs",
+  );
+});
