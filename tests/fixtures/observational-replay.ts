@@ -6,13 +6,13 @@ import type { ProgressReceipt } from '../../extensions/progress-observer.ts';
 export const REPLAY_FIXTURE: ProgressReceipt[] = [
   {
     schemaVersion: 1, receiptId: 'rt-1', runtimeId: 'runtime-h', generation: 1, rootId: 'root-h',
-    runId: 'hegemon-snapshot', family: 'metricless-loop', mode: 'metricless-loop', kind: 'state',
+    runId: 'hegemon-snapshot', family: 'loop', mode: 'metricless-loop', kind: 'state',
     version: '0.39.16', at: '2026-10-03T12:00:00.000Z', phase: 'building', reasonCode: 'building',
     iteration: 686, tokensUsed: 4096,
   },
   {
     schemaVersion: 1, receiptId: 'rt-2', runtimeId: 'runtime-h', generation: 1, rootId: 'root-h',
-    runId: 'hegemon-snapshot', family: 'metricless-loop', mode: 'metricless-loop', kind: 'iteration',
+    runId: 'hegemon-snapshot', family: 'loop', mode: 'metricless-loop', kind: 'iteration',
     version: '0.39.16', at: '2026-10-03T12:00:30.000Z', phase: 'building',
     signals: { fileWrites: 4, gitCommits: 0, specItemProgress: 0, currentHead: '9e704fd1b' },
     interval: { phase: 'building', milliseconds: 30_000, provenance: 'inferred-between-state-observations' },
