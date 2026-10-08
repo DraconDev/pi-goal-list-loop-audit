@@ -1196,7 +1196,13 @@ export function guardGoalBeforeContinuation(
     appendLedger(ctx.cwd, "faulty_objective_archive_fence", { goalId: goal.id, where, archive: storedArchive });
     try { fs.rmSync(goalMdPath(ctx.cwd, goal.id), { force: true }); } catch { /* best effort */ }
     replaceState({ ...state, goal: null });
-    persistState(ctx);
+    // v0.39.x audit: the discard must prove it landed — a failed persist
+    // restores the live goal instead of diverging memory from disk.
+    if (!persistState(ctx)) {
+      replaceState({ ...state, goal });
+      ctx.ui.notify("Stale archived work could not be discarded persistently — fix .pi-glla storage and retry.", "warning");
+      return false;
+    }
     ctx.ui.notify("The goal was already archived/cancelled; stale in-memory work was discarded.", "warning");
     return false;
   }
@@ -1272,9 +1278,15 @@ export function guardGoalBeforeContinuation(
 
   const proposal = deriveObjectiveRepair(goal, assessment);
   if (proposal) {
+    // v0.39.x audit: repair through the goal-state transaction so a failed
+    // persist rolls memory back instead of dispatching unrecorded work.
+    const beforeRepair = { ...goal };
     const record = applyObjectiveRepair(goal, proposal, nowIso());
-    persistState(ctx);
-    writeGoalMd(ctx.cwd, goal);
+    if (!updateGoal({}, ctx)) {
+      Object.assign(goal, beforeRepair);
+      ctx.ui.notify("Suspicious-objective repair could not persist — dispatch held. Fix .pi-glla storage and retry.", "warning");
+      return false;
+    }
     appendLedger(ctx.cwd, "faulty_objective_auto_repaired", {
       goalId: goal.id,
       where,
@@ -1285,6 +1297,10 @@ export function guardGoalBeforeContinuation(
     return true;
   }
 
+  // v0.39.x audit: snapshot BEFORE staging the pause — every write below
+  // is a top-level scalar (plus one replaced history array), so a shallow
+  // copy restores the pre-pause goal exactly on persist failure.
+  const beforePause = { ...goal };
   if (!hasQueuedObjectiveRepair(goal)) {
     const record = buildQueuedRepairRecord(goal, assessment, nowIso());
     appendObjectiveRepairRecord(goal, record);
@@ -1308,8 +1324,12 @@ export function guardGoalBeforeContinuation(
   goal.pauseSuggestedAction = `${activeGoalSurfaceCommand("tweak")} the objective if needed; /list next starts the preserved repair/replan task, then resume the original target after its confirmed task list is accepted.`;
   goal.pauseResumeAt = undefined;
   goal.updatedAt = nowIso();
-  persistState(ctx);
-  writeGoalMd(ctx.cwd, goal);
+  // Persist the staged pause through the goal-state transaction.
+  if (!updateGoal({}, ctx)) {
+    Object.assign(goal, beforePause);
+    ctx.ui.notify(`Suspicious ${goal.policy === "list" ? "list item" : "goal"} pause could not persist — dispatch held. Fix .pi-glla storage and retry.`, "warning");
+    return false;
+  }
   ctx.ui.notify(`Paused the suspicious ${goal.policy === "list" ? "list item" : "goal"}; a repair task was queued instead of dispatching it.`, "warning");
   return false;
 }
