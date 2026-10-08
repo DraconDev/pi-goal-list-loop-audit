@@ -38,6 +38,16 @@ test('distinct run identities do not merge even when targets and requirement IDs
   assert.equal(report.runs.find(r => r.id === 'project-two')?.historicalVerification.length, 0);
 });
 
+test('held loop and current goal in one state are both visible without choosing an owner', () => {
+  const report = projectProgress([{ type: 'state', value: {
+    loop: { startedAt: 'held-loop', active: false, target: 'Earlier project' },
+    goal: { id: 'current-goal', policy: 'goal', status: 'active', objective: 'Current work' },
+  } }]);
+  assert.equal(report.runs.length, 2);
+  assert.equal(report.runs.find(r => r.id === 'held-loop')?.status, 'inactive');
+  assert.equal(report.runs.find(r => r.id === 'current-goal')?.status, 'active');
+});
+
 test('malformed records and bounded windows disclose incomplete evidence', () => {
   const report = projectProgress([null, { type: 'state', value: { loop: null } }, state({ startedAt: 'legacy', iteration: 1 })], { maxRecords: 2 });
   assert.equal(report.window.truncated, true);
