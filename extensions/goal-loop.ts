@@ -15,7 +15,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ExtensionContext, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { state, replaceState } from "./goal-state.js";
-import { backgroundDispatchHeld } from "./work-lifecycle.js";
+import { backgroundDispatchHeld, loopWorkView } from "./work-lifecycle.js";
+import { buildWorkLifecycleSummary } from "./goal-loop-display.js";
 import {
   appendLedger,
   archivedGoalPath,
@@ -1493,10 +1494,15 @@ async function cmdLoop(args: string, ctx: ExtensionContext): Promise<void> {
       return;
     }
     const lines = [
-      `Loop: ${loop.active ? "active" : isLifecycleHeldLoopReason(loop.stopReason) ? "held" : "stopped"} — ${displaySlice(loop.target, 80)}`, 
+      `Loop: ${loopWorkView(loop, state).lifecycle === "waiting" ? "waiting" : loop.active ? "active" : isLifecycleHeldLoopReason(loop.stopReason) ? "held" : "stopped"} — ${displaySlice(loop.target, 80)}`,
+      buildWorkLifecycleSummary({ ...state, goal: null }),
       `Metric: ${loop.measureCmd ? `${sanitizeDisplayText(loop.measureCmd)} (${loop.direction})` : "none — metricless spec loop (no plateau)"}`,
       `Iteration ${loop.iteration}/${loop.maxIterations > 0 ? loop.maxIterations : "∞"} · best ${loop.bestValue ?? "n/a"} · last ${loop.lastValue ?? "n/a"} · stall ${loop.stallCount}/${loop.plateauWindow}`,
     ];
+    if (loop.backgroundWait) {
+      lines.push(`Background checkpoint: ${sanitizeDisplayText(loop.backgroundWait.reason)}`);
+      for (const dependency of loop.backgroundWait.dependencies) lines.push(`Dependency ${sanitizeDisplayText(dependency.runId)}: ${dependency.outcome}${dependency.asyncDir ? ` · artifact ${sanitizeDisplayText(dependency.asyncDir)}` : ""}`);
+    }
     const bounds: string[] = [];
     if (loop.builder) {
       const coverage = respecCoverage(loop.builder);
