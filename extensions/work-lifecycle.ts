@@ -93,7 +93,7 @@ export function goalWorkView(goal: Goal, state: Pick<State, "supervisorPausedAt"
   observedActivity: WorkActivity = "unknown"): WorkView {
   if (goal.status === "complete") return { lifecycle: "complete", activity: "unknown" };
   if (goal.status === "aborted") return { lifecycle: "cancelled", activity: "unknown" };
-  if (frozen(state)) return { lifecycle: "paused", activity: observedActivity, ...(goal.backgroundWait ? { wait: goal.backgroundWait } : {}) };
+  if (frozen(state)) return { lifecycle: "paused", activity: goal.backgroundWait ? "background" : observedActivity, ...(goal.backgroundWait ? { wait: goal.backgroundWait } : {}) };
   if (goal.status === "paused" && goal.pauseKind !== "standby" && goal.pauseKind !== "wait") return { lifecycle: "paused", activity: goal.backgroundWait ? "background" : observedActivity, ...(goal.backgroundWait ? { wait: goal.backgroundWait } : {}) };
   if (goal.backgroundWait) return { lifecycle: "waiting", activity: "background", wait: goal.backgroundWait };
   if (goal.status === "paused" && goal.pauseKind === "standby") return { lifecycle: "waiting", activity: "unknown" };
@@ -110,8 +110,8 @@ export function loopWorkView(loop: LoopState, state: Pick<State, "supervisorPaus
   observedActivity: WorkActivity = "unknown"): WorkView {
   if (loop.builder?.phase === "complete") return { lifecycle: "complete", activity: "unknown" };
   // A stopped loop is not made active by retaining an old dependency record.
-  if (!loop.active) return { lifecycle: "paused", activity: observedActivity, ...(loop.backgroundWait ? { wait: loop.backgroundWait } : {}) };
-  if (frozen(state)) return { lifecycle: "paused", activity: observedActivity, ...(loop.backgroundWait ? { wait: loop.backgroundWait } : {}) };
+  if (!loop.active) return { lifecycle: "paused", activity: loop.backgroundWait ? "background" : observedActivity, ...(loop.backgroundWait ? { wait: loop.backgroundWait } : {}) };
+  if (frozen(state)) return { lifecycle: "paused", activity: loop.backgroundWait ? "background" : observedActivity, ...(loop.backgroundWait ? { wait: loop.backgroundWait } : {}) };
   if (loop.backgroundWait) return { lifecycle: "waiting", activity: "background", wait: loop.backgroundWait };
   return { lifecycle: "running", activity: loop.builder?.phase === "auditing" ? "auditing" : state.mainModelRecovery ? "recovering" : observedActivity };
 }
