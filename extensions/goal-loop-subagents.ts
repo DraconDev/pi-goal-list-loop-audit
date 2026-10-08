@@ -40,8 +40,8 @@ export const CURRENT_SUBAGENT_AGENT_NAMES = [
  * remains exported because older callers/tests use it as a drift contract. */
 export const KNOWN_PINNED_DEFAULT_AGENTS = [] as const;
 
-/** Roles that GLLA itself owns. Built-ins are created only for explicit model
- * pins; Designer is always present because GLLA invokes it as a checkpoint. */
+/** Roles GLLA owns; enumerated for safe cleanup, not automatic creation.
+ * Designer is registered only after explicit role/model/thinking selection. */
 export const KNOWN_MANAGED_AGENT_NAMES = ["Designer"] as const;
 
 /** Names managed by the pre-0.36 Tintin integration. They are cleanup targets
@@ -216,6 +216,8 @@ export function syncSubagentModelOverrides(opts: {
   strategy: SubagentModelStrategy;
   overrides?: Record<string, string>;
   thinking?: Record<string, string>;
+  /** Explicit role selection; absent means Designer is off. */
+  designerRequested?: boolean;
 }): SubagentSyncResult {
   const result: SubagentSyncResult = { written: [], removed: [], skipped: [], repaired: [] };
   const overrides = opts.overrides ?? {};
@@ -265,9 +267,9 @@ export function syncSubagentModelOverrides(opts: {
       continue;
     }
 
-    // Explicit pins are the only reason to copy a current built-in. Designer
-    // remains a GLLA-owned role regardless of strategy. A thinking-only pin
-    // writes a model-inheriting file so the level applies without a model.
+    // Explicit pins are the only reason to copy a current built-in.
+    // Designer is also opt-in: role selection or an explicit model/thinking
+    // pin. A plain startup must not create or repair it automatically.
     const desired = overrideModel !== undefined
       ? (() => {
         try { return buildAgentOverrideMd(name, overrideModel, thinkingPin); }
@@ -276,7 +278,7 @@ export function syncSubagentModelOverrides(opts: {
           return undefined;
         }
       })()
-      : name === "Designer"
+      : name === "Designer" && (opts.designerRequested === true || thinkingPin !== undefined)
         ? (() => {
           try { return buildAgentOverrideMd(name, undefined, thinkingPin); }
           catch (error) {
@@ -326,6 +328,22 @@ export function syncSubagentModelOverrides(opts: {
     /* repair detection is best-effort */
   }
   return result;
+}
+
+/** Register only an explicitly selected live Designer checkpoint. No other
+ * agent definition is changed; user-owned files are never overwritten. */
+export function ensureRequestedDesigner(opts: { agentDir: string; model?: string; thinking?: string }): boolean {
+  try {
+    const file = path.join(opts.agentDir, "agents", "Designer.md");
+    const current = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : undefined;
+    if (current !== undefined && !hasManagedMarker(current)) return true;
+    const desired = buildAgentOverrideMd("Designer", opts.model, opts.thinking);
+    if (current !== desired) {
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, desired);
+    }
+    return true;
+  } catch { return false; }
 }
 
 /** Effective model for the headless settings display. Current built-ins use
