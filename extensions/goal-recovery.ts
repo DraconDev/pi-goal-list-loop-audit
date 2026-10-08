@@ -1447,17 +1447,49 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
       resumeCurrent: undefined,
       pendingModelSwitch: undefined,
     };
-    flags.continuationDispatchStoodDown = false;
-    if (recovery.kind === "goal" && state.goal?.status === "paused" && (state.goal.pauseReason ?? "").startsWith("main model recovery")) {
-      updateGoal({ status: "active", pauseKind: undefined, pauseResumeAt: undefined, pauseReason: undefined, pauseSuggestedAction: undefined, providerErrorDiagnostic: undefined, recoveryEpisodeKey: undefined, recoveryNoticeKeys: undefined }, ctx);
-      scheduleContinuation(ctx, true, 1_000);
-    } else if (recovery.kind === "loop" && state.loop && !state.loop.active && (state.loop.stopReason ?? "").startsWith("main model recovery")) {
-      state.loop = { ...state.loop, active: true, stopReason: undefined };
-      persistState(ctx);
-      scheduleLoopTick(ctx);
-    }
+    resumeSupervisedRecoverySurface(ctx, recovery.kind);
     appendLedger(ctx.cwd, "main_model_probe", { from: current, to: current, attempts: recovery.attempts, mode: "resume-backup" });
     ctx.ui.notify(`Main model recovery probe: continuing on ${current}; primary will be tested after this supervised turn.`, "info");
+    return;
+  }
+  // v0.38.105: same-model retry budget (operator direction 2026-10-08).
+  // The current model is the one already chosen; most provider failures are
+  // transient, and rotating on the first 429 spends a different provider's
+  // quota to solve a five-second problem. While the budget is unspent, the
+  // probe re-arms a supervised turn on the CURRENT model instead of walking
+  // the chain. 0 restores the legacy immediate rotation. The branch is
+  // reason-agnostic and inherits the existing envelope cadence (reset-hinted
+  // walls sleep to reset; transient/unknown/empty hammer at 5s; persistent
+  // walls ladder per mainModelFailureDelayMs).
+  const sameModelBudget = normalizeMainModelSameModelRetries(loadSettings(ctx.cwd).mainModelSameModelRetries);
+  if (current && sameModelRetriesRemain(recovery.sameModelRetries, sameModelBudget)) {
+    const nextRetries = (typeof recovery.sameModelRetries === "number" && Number.isFinite(recovery.sameModelRetries) && recovery.sameModelRetries > 0
+      ? Math.trunc(recovery.sameModelRetries)
+      : 0) + 1;
+    const next: MainModelRecovery = {
+      ...recovery,
+      active: current,
+      attempted: [current],
+      sameModelRetries: nextRetries,
+      attempts: recovery.attempts + 1,
+      retryAt: undefined,
+      resumeCurrent: undefined,
+      pendingModelSwitch: undefined,
+    };
+    const aggressive = (() => {
+      try { return resolveEffectiveAggressiveSettings(loadSettings(ctx.cwd)).aggressiveMode; } catch { return false; }
+    })();
+    const horizonMs = next.autoRetryUntil ? Date.parse(next.autoRetryUntil) : Number.NaN;
+    const quotaExempt = isQuotaHorizonExempt(next.providerErrorDiagnostic ?? next.reason);
+    if (next.manualResumeRequired || (!aggressive && !quotaExempt && Number.isFinite(horizonMs) && Date.now() >= horizonMs)) {
+      holdMainModelRecovery(ctx, next, "the 24h automatic recovery horizon was reached");
+      return;
+    }
+    state.mainModelRecovery = next;
+    persistState(ctx);
+    resumeSupervisedRecoverySurface(ctx, recovery.kind);
+    appendLedger(ctx.cwd, "main_model_same_model_retry", { current, attempt: nextRetries, budget: sameModelBudget, attempts: next.attempts });
+    ctx.ui.notify(`Main model recovery: retrying ${current} (same-model retry ${nextRetries}/${sameModelBudget}) before switching to a configured backup.`, "info");
     return;
   }
   // Use the same ordered selector for immediate failover and delayed probes.
@@ -1592,15 +1624,7 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
     }
     state.mainModelRecovery = next;
     persistState(ctx);
-    flags.continuationDispatchStoodDown = false;
-    if (recovery.kind === "goal" && state.goal?.status === "paused" && (state.goal.pauseReason ?? "").startsWith("main model recovery")) {
-      updateGoal({ status: "active", pauseKind: undefined, pauseResumeAt: undefined, pauseReason: undefined, pauseSuggestedAction: undefined, providerErrorDiagnostic: undefined, recoveryEpisodeKey: undefined, recoveryNoticeKeys: undefined }, ctx);
-      scheduleContinuation(ctx, true, 1_000);
-    } else if (recovery.kind === "loop" && state.loop && !state.loop.active && (state.loop.stopReason ?? "").startsWith("main model recovery")) {
-      state.loop = { ...state.loop, active: true, stopReason: undefined };
-      persistState(ctx);
-      scheduleLoopTick(ctx);
-    }
+    resumeSupervisedRecoverySurface(ctx, recovery.kind);
     appendLedger(ctx.cwd, "main_model_probe", { from: current, to: current, attempts: next.attempts, mode: "cycle-reset" });
     ctx.ui.notify(`Main model recovery probe: retrying ${current} after visiting the configured fallback chain.`, "info");
     return;
@@ -1660,15 +1684,7 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
     };
     persistState(ctx);
     appendLedger(ctx.cwd, "main_model_probe", { from: current, to: target, tryLabel: targetTryLabel, attempts: recovery.attempts });
-    flags.continuationDispatchStoodDown = false;
-    if (recovery.kind === "goal" && state.goal?.status === "paused" && (state.goal.pauseReason ?? "").startsWith("main model recovery")) {
-      updateGoal({ status: "active", pauseKind: undefined, pauseResumeAt: undefined, pauseReason: undefined, pauseSuggestedAction: undefined, providerErrorDiagnostic: undefined, recoveryEpisodeKey: undefined, recoveryNoticeKeys: undefined }, ctx);
-      scheduleContinuation(ctx, true, 1_000);
-    } else if (recovery.kind === "loop" && state.loop && !state.loop.active && (state.loop.stopReason ?? "").startsWith("main model recovery")) {
-      state.loop = { ...state.loop, active: true, stopReason: undefined };
-      persistState(ctx);
-      scheduleLoopTick(ctx);
-    }
+    resumeSupervisedRecoverySurface(ctx, recovery.kind);
     ctx.ui.notify(`Main model recovery probe: ${targetTryLabel} ${target} selected; sending one supervised probe.`, "info");
   } catch (err) {
     // A cancellation, replacement, or another recovery operation may have

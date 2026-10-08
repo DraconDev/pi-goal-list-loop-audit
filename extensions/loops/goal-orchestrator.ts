@@ -198,7 +198,9 @@ import {
   MAIN_MODEL_AUTO_RETRY_HORIZON_MS,
   modelRef,
   nextUntriedModelRef,
+  normalizeMainModelSameModelRetries,
   normalizeModelRefs,
+  sameModelRetriesRemain,
   sendStormEscalateMs,
   splitModelRef,
   type MainModelFailure,
@@ -731,7 +733,17 @@ async function handleMainModelAgentEnd(ctx: ExtensionContext, rawLastA: any, las
       }
     }
     if (failure.kind !== "non-recoverable") {
-      const switched = await tryMainModelFallback(ctx, failure);
+      // v0.38.105: same-model retry budget (operator direction 2026-10-08).
+      // Most provider failures are transient, so the CURRENT model keeps the
+      // episode until its budget is spent. 0 = legacy immediate rotation. The
+      // budget is shared between the agent_end and the probe path so rotation
+      // cannot be triggered twice from different code paths.
+      const sameModelBudget = normalizeMainModelSameModelRetries(loadSettings(ctx.cwd).mainModelSameModelRetries);
+      const recoveryActive = state.mainModelRecovery;
+      const current = ctx.model ? modelRef(ctx.model) : undefined;
+      const rotationsAllowed = !sameModelRetriesRemain(recoveryActive?.sameModelRetries, sameModelBudget)
+        || (!!recoveryActive && !!current && !sameModelRef(recoveryActive.active, current));
+      const switched = rotationsAllowed ? await tryMainModelFallback(ctx, failure) : false;
       if (switched) return true; // pi's core retry now uses the selected backup
       const backupRefs = mainModelFallbackRefs(ctx);
       // Every recoverable provider failure uses the same ordered backup and
