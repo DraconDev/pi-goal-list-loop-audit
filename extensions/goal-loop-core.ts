@@ -10,6 +10,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { createHash } from "node:crypto";
+import { observeProgressState, observeProgressIteration, type ProgressReceipt } from "./progress-observer.js";
 import { execSync } from "node:child_process";
 import { isDeterministicProviderError, normalizeProviderErrorText, providerErrorFingerprint, providerErrorPresentation, quotaSignal, sanitizeProviderAuditReport, sanitizeProviderDisplayText, type QuotaSignal, type SubagentQuotaEvidence } from "./quota-retry.js";
 import { MAX_AUDITOR_CANDIDATE_REFS, MAX_MAIN_MODEL_FALLBACKS, normalizeBoundedModelRefs } from "./main-model-recovery.js";
@@ -3092,8 +3093,24 @@ export function stateLedgerValue(s: State): Record<string, unknown> {
   };
 }
 
+function appendProgressReceipt(cwd: string, receipt: ProgressReceipt): void {
+  // The authoritative write has already landed. Optional telemetry failure
+  // must not enter persistence-health accounting or change its return value.
+  try {
+    if (stateRootPending()) return;
+    const line = JSON.stringify({ type: "glla_progress_receipt", value: receipt, at: receipt.at });
+    if (Buffer.byteLength(line) <= 65536) fs.appendFileSync(ledgerPath(cwd), line + "\n");
+  } catch { /* Observational loss is an unknown, never a control decision. */ }
+}
+
 export function appendStateSnapshot(cwd: string, s: State): boolean {
-  return appendLedger(cwd, "state", stateLedgerValue(s));
+  const landed = appendLedger(cwd, "state", stateLedgerValue(s));
+  if (landed) observeProgressState(ledgerPath(cwd), s, receipt => appendProgressReceipt(cwd, receipt));
+  return landed;
+}
+
+export function appendLoopProgressReceipt(cwd: string, loop: NonNullable<State["loop"]>, signals: NonNullable<ProgressReceipt["signals"]>): void {
+  observeProgressIteration(ledgerPath(cwd), loop, signals, receipt => appendProgressReceipt(cwd, receipt));
 }
 
 // =================================================================
