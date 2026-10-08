@@ -65,6 +65,8 @@ try {
     "prompts/goal-loop-forever.md",
     "prompts/goal-loop-plan-loop.md",
     "prompts/goal-loop-plan.md",
+    "prompts/goal-loop-respec-builder.md",
+    "prompts/goal-loop-respec-draft.md",
     "schemas/goal.schema.json",
     "skills/glla-delegate/SKILL.md",
     // Audit 2026-09-15: docs/ and media/ ship whole — a SETTINGS.md or

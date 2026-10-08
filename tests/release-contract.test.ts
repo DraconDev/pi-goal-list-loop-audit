@@ -67,6 +67,8 @@ test("release contract: packed prompts, schema, and workers ship in the dry-run 
     "prompts/goal-loop-forever.md",
     "prompts/goal-loop-plan-loop.md",
     "prompts/goal-loop-plan.md",
+    "prompts/goal-loop-respec-builder.md",
+    "prompts/goal-loop-respec-draft.md",
     "schemas/goal.schema.json",
   ]) {
     assert.ok(files.has(required), `${required} must be shipped`);

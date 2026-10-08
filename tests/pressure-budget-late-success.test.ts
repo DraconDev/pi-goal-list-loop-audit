@@ -58,6 +58,6 @@ test("liveness clear keeps the durable budget; only an explicit reset spends it"
     assert.ok(fs.existsSync(file), "the claim lands a durable budget file");
     if (reset) clearPressureAttempt(ctx, true);
     else clearPressureAttempt(ctx);
-    assert.equal(fs.existsSync(file), reset, reset ? "explicit reset spends the budget" : "liveness clear keeps it for the healthy turn");
+    assert.equal(fs.existsSync(file), !reset, reset ? "explicit reset spends the budget" : "liveness clear keeps it for the healthy turn");
   }
 });
