@@ -49,8 +49,8 @@ for (const outcome of ["complete", "failed", "missing"] as const) {
   });
 }
 
-for (const surface of ["goal", "list", "metric", "project"] as const) {
-  test(`${surface}: host wait tool yields without abort, event settles, and wait-turn skips accounting`, async () => {
+for (const surface of ["goal", "list", "metric", "project"] as const) for (const freeze of [false, true]) {
+  test(`${surface}: host wait yields, ${freeze ? "explicit pause freezes wake until resume" : "completion wakes once"}, without iteration accounting`, async () => {
     __testOnlyResetProcessState();
     const cwd = tmpCwd(); seedState(cwd, {});
     const pi = new MockPi(); activate(pi.api);
@@ -86,11 +86,20 @@ for (const surface of ["goal", "list", "metric", "project"] as const) {
     }
     pi.emitBus("subagent:async-complete", { runId: "other-worker" });
     assert.ok(state.goal?.backgroundWait ?? state.loop?.backgroundWait);
+    if (freeze) await pi.command(surface === "metric" || surface === "project" ? "loop" : "goal", "pause", ctx);
     const mainSends = () => pi.sent.filter(message => (message.options as { triggerTurn?: boolean })?.triggerTurn === true).length + pi.userMessages.length;
     const sendsBefore = mainSends();
     busy = false;
     fs.writeFileSync(path.join(asyncDir, "status.json"), JSON.stringify({ runId: "owned-worker", state: "complete" }));
     pi.emitBus("subagent:async-complete", { runId: "owned-worker", sessionId: "parent-session" });
+    if (freeze) {
+      await tick(50);
+      assert.equal(mainSends() - sendsBefore, 0, "an explicit pause forbids completion-triggered dispatch");
+      assert.ok(state.goal?.backgroundWait ?? state.loop?.backgroundWait, "freeze retains owned result evidence");
+      assert.match(ctx.ui.statuses["pi-glla"]!, /⏸ paused/);
+      await pi.command(surface === "metric" || surface === "project" ? "loop" : "goal", "resume", ctx);
+      __testOnlyHeartbeatTickRaw();
+    }
     assert.equal(state.goal?.backgroundWait ?? state.loop?.backgroundWait, undefined);
     assert.ok(state.goal?.lastBackgroundWait ?? state.loop?.lastBackgroundWait);
     const notices = pi.sent.filter(message => message.message.customType === "glla-background-settled").length;
