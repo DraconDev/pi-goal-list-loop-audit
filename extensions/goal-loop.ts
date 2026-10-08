@@ -18,6 +18,7 @@ import { state, replaceState } from "./goal-state.js";
 import {
   appendLedger,
   archivedGoalPath,
+  appendLoopProgressReceipt,
   clearLoadHold,
   formatMainModelRecoveryStatus,
   sanitizeDisplayText,
@@ -871,6 +872,7 @@ async function runLoopTick(initialCtx: ExtensionContext, event?: any): Promise<v
   }
   loop.lastHypothesis = hypothesis;
   persistState(ctx);
+  appendLoopProgressReceipt(ctx.cwd, loop, iterSignals);
   appendLedger(ctx.cwd, "loop_measured", {
     iteration: loop.iteration,
     value,
