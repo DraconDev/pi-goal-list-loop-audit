@@ -41,6 +41,8 @@ import type { SettingsSectionId } from "./settings-menu.js";
 import { cmdLoop, clearLoopTimer, finishLoopGit, isLoopActive, isHeldLoopResumable, scheduleLoopTick } from "./goal-loop.js";
 import { chooseObjectiveConflict, liveObjectives, type LiveObjective } from "./goal-objective-conflict.js";
 import { formatGllaVersion } from "./glla-version.js";
+import { readProgressReport } from "./progress-reader.mjs";
+import { formatProgressReport } from "./progress-report.mjs";
 import { cmdGllaOwner, cmdGllaTakeover } from "./state-root-owner.js";
 import { AUDIT_JOB_CLEANUP_MIN_AGE_MS, cancelDetachedGoalCompletionAuditor, cleanupDeadAuditJobs, inspectAuditJobHealth, DEFAULT_AUDITOR_STALL_MS, DEFAULT_AUDITOR_TOOL_TIMEOUT_MS } from "./goal-loop-auditor-process.js";
 import { releaseAuditorSurface } from "./loops/goal-auditor-surface.js";
@@ -3235,6 +3237,19 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   // v0.25.2: /glla stats sub-mode — cross-project telemetry rollups.
   if (/^version(?:\s|$)/.test(trimmed)) {
     cmdGllaVersion(ctx);
+    return;
+  }
+  if (/^progress(?:\s|$)/.test(trimmed)) {
+    if (stateRootPending()) {
+      ctx.ui.notify("Progress unavailable: select the GLLA state root first.", "warning");
+      return;
+    }
+    try {
+      const report = readProgressReport(resolveGllaStateDir(ctx.cwd));
+      ctx.ui.notify(trimmed.slice("progress".length).trim() === "json" ? JSON.stringify(report, null, 2) : formatProgressReport(report), "info");
+    } catch {
+      ctx.ui.notify("Progress unavailable: the selected state root could not be read.", "warning");
+    }
     return;
   }
   if (/^stats(?:\s|$)/.test(trimmed)) {
