@@ -89,6 +89,9 @@ export function resetPressureBudget(file: string, key: string): void {
     if (saved.key === key) fs.rmSync(file, { force: true });
   } catch { /* Conservative on unreadable storage. */ }
 }
+export function pressureAttemptPhase(ctx: PressureContext): PressurePhase | undefined {
+  return attempts.get(owner(ctx))?.phase;
+}
 export function pressureAttemptPending(ctx: PressureContext): boolean {
   const attempt = attempts.get(owner(ctx));
   return !!attempt && attempt.phase !== 'spent' && attempt.valid();
@@ -114,7 +117,13 @@ export function clearPressureAttempt(ctx: PressureContext, resetBudget = false):
 export function settlePressureAttempt(ctx: PressureContext, outcome: 'success' | 'failure' | 'aborted' | 'retry-owned'): boolean {
   const attempt = attempts.get(owner(ctx));
   if (!attempt || attempt.phase === 'queued') return false;
-  if (attempt.phase === 'spent' || attempt.phase === 'held') return true; // callback + event share ownership
+  // v0.39.x audit: a success landing after the terminal hold is still
+  // consumed as owned (fail-closed), but the attempt transcript must
+  // distinguish "compact landed too late" from a timely settle.
+  if (attempt.phase === 'spent' || attempt.phase === 'held') {
+    if (outcome === 'success') attempt.record('late-success');
+    return true;
+  }
   if (outcome === 'retry-owned') return true;
   if (attempt.timer) clearTimeout(attempt.timer);
   if (attempt.admissionTimer) clearInterval(attempt.admissionTimer);

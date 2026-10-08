@@ -147,7 +147,7 @@ import {
   transitionDispatch,
   type ContinuationDispatch,
 } from "../goal-loop-dispatch.js";
-import { clearPressureAttempt, flushPressureAttempt, settlePressureAttempt, pressureAttemptPending, retireSettledPressureAttempt } from '../context-pressure-attempt.js';
+import { clearPressureAttempt, flushPressureAttempt, settlePressureAttempt, pressureAttemptPending, pressureAttemptPhase, retireSettledPressureAttempt } from '../context-pressure-attempt.js';
 import { clearBoundaryCompactionAttempt, settleBoundaryCompactionFailure, maybeCompactTranscriptAtBoundary, readHandoffBriefExcerpt, runGoalCompactionIfDue } from "../goal-compactor.js";
 import {
   createGoalContinuation,
@@ -1443,7 +1443,12 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // A late compact event can arrive after pi has already invalidated this
     // extension. It must not reclaim the old ctx or schedule settle refires.
     if (sessionHandoffPending || extensionApiStale || staleTerminalDone || zombieStoodDown) return;
+    // v0.39.x audit: a success arriving after the pressure hold already
+    // went terminal is consumed as owned — ledger it distinctly so
+    // forensics can tell "compact landed too late" from a timely settle.
+    const pressurePhaseBefore = pressureAttemptPhase(ctx);
     settlePressureAttempt(ctx, 'success');
+    if (pressurePhaseBefore === 'held' || pressurePhaseBefore === 'spent') appendLedger(ctx.cwd, "pressure_late_compact_success", { phase: pressurePhaseBefore });
     if (!isSupervising()) return;
     clearBoundaryCompactionAttempt(ctx);
     appendLedger(ctx.cwd, "session_compact", {});
@@ -1531,9 +1536,12 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // draft seed arrives as role user and is skipped via draftingSeedInFlight.
     if (event?.message?.role === "user" && !draftingSeedInFlight) noteUserMessageForDispatch();
     // A live user message proves the host is responsive — any compaction
-    // is over or cancelled (clear on liveness, not on guess).
+    // is over or cancelled (clear on liveness, not on guess). Liveness
+    // clears live timers WITHOUT resetting the durable budget: only a
+    // healthy work turn proves recovery, otherwise one message per
+    // pressure episode re-arms a fresh compact-first round.
     if (event?.message?.role === "user") {
-      clearPressureAttempt(ctx, true);
+      clearPressureAttempt(ctx);
       noteCompactionSettled();
     }
     // v0.14.0 drafting floor: count real user replies while drafting. Our
