@@ -41,7 +41,6 @@ import type { SettingsSectionId } from "./settings-menu.js";
 import { cmdLoop, clearLoopTimer, finishLoopGit, isLoopActive, isHeldLoopResumable, scheduleLoopTick } from "./goal-loop.js";
 import { chooseObjectiveConflict, liveObjectives, type LiveObjective } from "./goal-objective-conflict.js";
 import { formatGllaVersion } from "./glla-version.js";
-import { isCompactionRecoveryHold } from "./compaction-resume.js";
 import { readProgressReport } from "./progress-reader.mjs";
 import { formatProgressReport } from "./progress-report.mjs";
 import { cmdGllaOwner, cmdGllaTakeover } from "./state-root-owner.js";
@@ -559,10 +558,11 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
     void probeMainModelRecovery(ctx);
     return;
   }
-  // A compaction hold is an independent paused-work boundary. Optional
-  // failback cannot consume resume before the goal is reactivated: its probe
-  // only schedules ACTIVE work, otherwise this is a reassuring no-op.
-  if (!recoveryStaleEntry && !isCompactionRecoveryHold(state.goal) && (state.mainModelRecovery?.primaryProbeAt || state.mainModelRecovery?.primaryProbeInFlight)) {
+  // Optional failback must never consume a paused-work resume. Its probe
+  // schedules only ACTIVE work, so it must not preempt goal reactivation or
+  // a selected decision's delivery. Actual provider-recovery holds above
+  // retain their existing bounded recovery path.
+  if (!recoveryStaleEntry && state.goal?.status !== "paused" && (state.mainModelRecovery?.primaryProbeAt || state.mainModelRecovery?.primaryProbeInFlight)) {
     releaseAuditorSurface();
     clearMainModelRecoveryTimer();
     flags.continuationDispatchStoodDown = false;
