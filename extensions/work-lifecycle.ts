@@ -113,5 +113,8 @@ export function loopWorkView(loop: LoopState, state: Pick<State, "supervisorPaus
 
 /** Ordinary work dispatch must not race dependency-owned waiting. */
 export function backgroundDispatchHeld(state: Pick<State, "goal" | "loop">): boolean {
-  return !!state.goal?.backgroundWait || !!state.loop?.backgroundWait;
+  const goal = state.goal;
+  const goalHeld = !!goal && goal.status !== "complete" && goal.status !== "aborted"
+    && (!!goal.backgroundWait || (goal.status === "paused" && goal.pauseKind === "standby"));
+  return goalHeld || (!!state.loop?.active && !!state.loop.backgroundWait);
 }
