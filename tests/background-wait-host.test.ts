@@ -5,11 +5,49 @@ import * as path from "node:path";
 import activate, { __testOnlyResetProcessState } from "../extensions/loops/goal.js";
 import { __testOnlyLoadState } from "../extensions/loops/goal-ui.js";
 import { state } from "../extensions/goal-state.js";
+import { __testOnlyHeartbeatTickRaw } from "../extensions/goal-heartbeat.js";
 import { readState } from "../extensions/goal-loop-core.js";
 import { createRespecBuilder } from "../extensions/respec-builder.js";
 import { MockPi, makeMockCtx, seedGoal, seedLoop, seedState, tmpCwd, tick } from "./harness/mock-pi.js";
 
 afterEach(() => { __testOnlyResetProcessState(); });
+
+for (const outcome of ["complete", "failed", "missing"] as const) {
+  test(`host reload reconciles ${outcome} after consent without task loss`, async () => {
+    __testOnlyResetProcessState();
+    const cwd = tmpCwd(); seedState(cwd, {});
+    const manager = { getSessionId: () => "restored-parent", getSessionFile: () => undefined, getSessionName: () => "parent", getBranch: () => [] };
+    const ctx = makeMockCtx(cwd, { sessionManager: manager });
+    ctx.isIdle = () => false;
+    const first = new MockPi(); activate(first.api);
+    await first.fire("session_start", { reason: "startup" }, ctx);
+    seedState(cwd, { goal: seedGoal({ objective: "Implement retained scope. Done when: tests pass.",
+      taskList: { version: 1, tasks: [{ id: "1", title: "Implementation", status: "in_progress", subtasks: [] }] } }) });
+    __testOnlyLoadState(cwd);
+    const asyncDir = path.join(cwd, "restored-dependency"); fs.mkdirSync(asyncDir);
+    const file = path.join(asyncDir, "status.json");
+    fs.writeFileSync(file, JSON.stringify({ runId: "reload-worker", state: "running", lastActivityAt: Date.now() }));
+    first.emitBus("subagent:async-started", { runId: "reload-worker", asyncDir, sessionId: "restored-parent" });
+    await first.runTool("wait_for_background", { reason: "checkpoint", runIds: ["reload-worker"] }, ctx);
+    const savedId = state.goal!.id;
+    if (outcome === "missing") fs.rmSync(file);
+    else fs.writeFileSync(file, JSON.stringify({ runId: "reload-worker", state: outcome }));
+    __testOnlyResetProcessState();
+    const restored = new MockPi(); activate(restored.api);
+    await restored.fire("session_start", { reason: "startup" }, ctx);
+    assert.equal(state.goal?.id, savedId);
+    // A cold load without consent must not grant automatic continuation.
+    assert.ok(state.goal?.backgroundWait);
+    await restored.command("goal", "resume", ctx);
+    __testOnlyHeartbeatTickRaw();
+    assert.equal(state.goal?.backgroundWait, undefined);
+    assert.equal(state.goal?.lastBackgroundWait?.dependencies[0]?.outcome, outcome === "complete" ? "completed" : outcome);
+    assert.equal(state.goal?.taskList?.tasks[0]?.status, "in_progress");
+    assert.equal(restored.sent.filter(message => message.message.customType === "glla-background-settled").length, 1);
+    __testOnlyHeartbeatTickRaw();
+    assert.equal(restored.sent.filter(message => message.message.customType === "glla-background-settled").length, 1);
+  });
+}
 
 for (const surface of ["goal", "list", "metric", "project"] as const) {
   test(`${surface}: host wait tool yields without abort, event settles, and wait-turn skips accounting`, async () => {
