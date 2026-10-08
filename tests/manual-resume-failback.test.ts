@@ -1,5 +1,7 @@
 import { test, afterEach } from 'node:test';
 import * as assert from 'node:assert/strict';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import activate, { __testOnlyResetProcessState } from '../extensions/loops/goal.js';
 import { replaceState, state } from '../extensions/goal-state.js';
 import { appendStateSnapshot, readState, type Goal } from '../extensions/goal-loop-core.js';
@@ -58,6 +60,18 @@ test('cancelled decision picker preserves the pause and the verification contrac
   assert.equal(state.goal?.verificationContract, 'unchanged');
   assert.equal(pi.sent.length, 0);
   assert.equal(pi.userMessages.length, 0);
+});
+
+test('Designer stays off on startup and is registered only when a live goal explicitly selects it', async () => {
+  const { pi, cwd, ctx } = await fixture();
+  const designerFile = path.join(process.env.PI_CODING_AGENT_DIR!, 'agents', 'Designer.md');
+  assert.equal(fs.existsSync(designerFile), false, 'plain startup does not enable Designer');
+  replaceState({ ...state, mainModelRecovery: undefined, goal: seedGoal({ status: 'paused', pauseKind: 'blocked', agentRole: 'designer' }) as unknown as Goal });
+  appendStateSnapshot(cwd, state);
+  await pi.command('goal', 'resume', ctx);
+  await tick(100);
+  assert.equal(fs.existsSync(designerFile), true, 'explicit role is made available at dispatch, not silently skipped');
+  assert.ok(pi.sent.some(m => m.message.content?.includes('DESIGNER ROLE REQUESTED')));
 });
 
 test('no-objective resume retires a stale probe marker without inventing a goal or claiming provider health', async () => {
