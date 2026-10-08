@@ -142,8 +142,8 @@ export interface ContinuationDeps {
   instanceId: string;
   GOAL_EVENT_ENTRY: string;
   LIST_COMPLETION_SETTLE_MS: number;
-  persistState(ctx: ExtensionContext): void;
-  updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): void;
+  persistState(ctx: ExtensionContext): boolean;
+  updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): boolean;
   refreshUI(ctx: ExtensionContext): void;
   notifyExternal(ctx: ExtensionContext, message: string): void;
   noteActivity(real?: boolean): void;
@@ -492,12 +492,15 @@ function escalateSendRearmStorm(ctx: ExtensionContext, kind: "continuation" | "l
     return;
   }
   if (state.goal && state.goal.status === "active") {
-    updateGoal({
+    // v0.39.x audit: the park must prove it landed before the notify
+    // claims safety — degraded storage gets the caveat, not silence.
+    const stormParkLanded = updateGoal({
       status: "paused",
       pauseKind: "error",
       pauseReason: `send-retry storm: ${mins}m of re-arms with no session activity for ${silent}m — the session never went idle for the continuation`,
       pauseSuggestedAction: `The session produced no events while the send retried (wedged queue — pi may still be holding the provider retry; pi prints 'escape to cancel'). Press Escape, then ${activeGoalSurfaceCommand("resume")}. A fresh session_start rebinds the goal; restart pi normally only if no replacement arrives.`,
     }, ctx);
+    if (!stormParkLanded) ctx.ui.notify("glla: send-retry storm park could not persist its stop. Repair .pi-glla storage before resuming.", "warning");
     ctx.ui.notify(`${goalNoun()} paused: send-retry storm (${mins}m, session silent ${silent}m). Escape cancels the stuck run, then ${activeGoalSurfaceCommand("resume")}. A fresh session_start rebinds it; restart pi normally only if no replacement arrives.`, "warning");
     notifyExternal(ctx, `${goalNoun()} paused: send-retry storm.`);
   }
@@ -811,6 +814,9 @@ function dispatchStartUnacknowledged(ctx: ExtensionContext, record: Continuation
     timedOutAt,
     settledAt: timedOutAt,
   }));
+  // v0.39.x audit: the unacknowledged park must prove it landed — the
+  // safety claim below is conditional on both writes.
+  let unackParkLanded = true;
   if (record.kind === "loop" && state.loop?.active) {
     clearLoopTimer();
     state.loop = {
@@ -818,17 +824,17 @@ function dispatchStartUnacknowledged(ctx: ExtensionContext, record: Continuation
       active: false,
       stopReason: `stalled: continuation start acknowledgement timed out (${record.id}) — /loop resume to retry explicitly`,
     };
-    persistState(ctx);
+    unackParkLanded = persistState(ctx);
   }
   if (state.goal && state.goal.status === "active" && (record.kind === "goal" || record.kind === "stall")) {
-    updateGoal({ interruptedAt: nowIso(), interruptedReason: reason }, ctx);
+    unackParkLanded = updateGoal({ interruptedAt: nowIso(), interruptedReason: reason }, ctx) && unackParkLanded;
   }
   resetRepairReplanBootstrap(ctx, "start-unacknowledged");
   // v0.38.104: warn AND keep going. The one-automatic-retry cap still stops a
   // blind queue storm; it no longer decides the lane's fate.
   armContinuationStartSelfHeal(ctx, unacknowledged);
   const selfHeal = continuationStartSelfHealDelayOverrideMs ?? continuationStartSelfHealDelayMs(continuationStartSelfHealProbes);
-  const msg = `glla: pi accepted the ${dispatchLabel(record)} continuation, but no observable turn-start event arrived within ${Math.round((Date.now() - record.sentAt) / 1000)}s despite one automatic retry. Automatic re-sends are paused to avoid a blind queue storm; the lane re-probes itself in ${Math.round(selfHeal / 1000)}s and keeps doing so on a slowing cadence, so nothing is needed if the host recovers. The work is safe in .pi-glla — use ${record.kind === "loop" ? "/loop resume" : activeGoalSurfaceCommand("resume")} to retry immediately, or start a fresh session.`;
+  const msg = `glla: pi accepted the ${dispatchLabel(record)} continuation, but no observable turn-start event arrived within ${Math.round((Date.now() - record.sentAt) / 1000)}s despite one automatic retry. Automatic re-sends are paused to avoid a blind queue storm; the lane re-probes itself in ${Math.round(selfHeal / 1000)}s and keeps doing so on a slowing cadence, so nothing is needed if the host recovers. ${unackParkLanded ? "The work is safe in .pi-glla" : "The park could not be fully persisted — repair .pi-glla storage before relying on resume"} — use ${record.kind === "loop" ? "/loop resume" : activeGoalSurfaceCommand("resume")} to retry immediately, or start a fresh session.`;
   ctx.ui.notify(msg, "warning");
   notifyExternal(ctx, sanitizeDisplayText(msg));
   refreshUI(ctx);
@@ -918,7 +924,13 @@ function armContinuationStartSelfHeal(ctx: ExtensionContext, record: Continuatio
       // a user stop or a replacement loop. The normal loop scheduler keeps
       // cadence, model recovery and compaction admission guards intact.
       state.loop = { ...state.loop!, active: true, stopReason: undefined };
-      persistState(live);
+      // v0.39.x audit: a self-heal reactivation that cannot persist must
+      // say so instead of scheduling ticks against a dead durable lane.
+      if (!persistState(live)) {
+        appendLedger(live.cwd, "continuation_start_self_heal_persist_failed", { id: dispatchId });
+        ctx.ui.notify("glla: self-heal reactivation could not persist. Repair .pi-glla storage before resuming.", "warning");
+        return;
+      }
       scheduleLoopTick(live);
     } else if (record.kind === "length") {
       sendLengthContinue(live, 1);
