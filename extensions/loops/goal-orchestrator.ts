@@ -994,9 +994,13 @@ function setGoal(goal: Goal, ctx: ExtensionContext, via = "user"): boolean {
   writeGoalMd(ctx.cwd, nextGoal);
   replaceState({ ...state, goal: nextGoal }); // preserve list AND loop (v0.28.14: the bare reconstruction used to nuke a held/active loop whenever a goal was set)
   const stateLanded = persistState(ctx);
-  if (stateLanded && goalMarkdownLanded(ctx.cwd, nextGoal)) clearGoalStateTransaction(ctx.cwd);
+  const mdLanded = goalMarkdownLanded(ctx.cwd, nextGoal);
+  if (stateLanded && mdLanded) clearGoalStateTransaction(ctx.cwd);
+  else ctx.ui.notify("Goal created but its durable projection is incomplete — fix .pi-glla storage and resume to reconcile.", "warning");
   appendLedger(ctx.cwd, "goal_created", { goalId: goal.id, objective: goal.objective, policy: goal.policy, via });
-  return true;
+  // v0.39.x audit: durability is the return contract — callers (notably the
+  // complete_goal newObjective gate) must be able to detect ledger failure.
+  return stateLanded && mdLanded;
 }
 
 function updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): boolean {
@@ -1016,8 +1020,12 @@ function updateGoal(patch: Partial<Goal>, ctx: ExtensionContext): boolean {
   state.goal = nextGoal;
   if (statusChanged) clearToolActivityState();
   const stateLanded = persistState(ctx);
-  if (stateLanded && goalMarkdownLanded(ctx.cwd, nextGoal)) clearGoalStateTransaction(ctx.cwd);
-  return true;
+  const mdLanded = goalMarkdownLanded(ctx.cwd, nextGoal);
+  if (stateLanded && mdLanded) clearGoalStateTransaction(ctx.cwd);
+  else ctx.ui.notify("Goal update was not fully persisted — the durable projection is incomplete. Fix .pi-glla storage and retry.", "warning");
+  // v0.39.x audit: durability is the return contract — a ledger failure
+  // must not report success to gates that depend on it.
+  return stateLanded && mdLanded;
 }
 
 // v0.29.6: stacked-state auto-arbitration (user directive: "auto archive /
