@@ -506,10 +506,10 @@ function scheduleLoopTickWithUrgency(ctx: ExtensionContext, urgent: boolean): vo
 }
 
 function sendLoopTurn(): void {
-  if (backgroundDispatchHeld(state)) return;
   // L6: the timer FIRED — clear the handle before any early return, or
   // loopTimerPending() lies and suppresses legitimate sends elsewhere.
   loopTimer = null;
+  if (backgroundDispatchHeld(state)) return;
   // v0.35.15: same as sendContinuation — pre-pause loop timers must not
   // dispatch turns while the supervisor is frozen.
   if (supervisorPaused(state)) return;

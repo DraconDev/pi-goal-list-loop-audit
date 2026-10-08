@@ -84,6 +84,8 @@
     "subagentQuotaEvidence": { "$ref": "#/definitions/subagentQuotaEvidence" },
     "interruptedAt": { "type": "string" },
     "interruptedReason": { "type": "string" },
+    "backgroundWait": { "$ref": "#/definitions/backgroundWait" },
+    "lastBackgroundWait": { "$ref": "#/definitions/backgroundWait" },
     "auditInfraStreak": { "type": "number" },
     "errorBrakeStreak": { "type": "number" },
     "revision": {
@@ -156,6 +158,34 @@
     "updatedAt": { "type": "string", "format": "date-time" }
   },
   "definitions": {
+    "backgroundWaitDependency": {
+      "type": "object",
+      "required": ["runId", "outcome"],
+      "properties": {
+        "runId": { "type": "string", "maxLength": 200 },
+        "asyncDir": { "type": "string", "maxLength": 4096 },
+        "outcome": { "type": "string", "enum": ["pending", "completed", "failed", "stopped", "missing"] }
+      }
+    },
+    "backgroundWait": {
+      "type": "object",
+      "required": ["version", "id", "targetId", "sessionId", "createdAt", "reason", "dependencies"],
+      "properties": {
+        "version": { "const": 1 },
+        "id": { "type": "string", "maxLength": 200 },
+        "targetId": { "type": "string", "maxLength": 200 },
+        "sessionId": { "type": "string", "maxLength": 400 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "reason": { "type": "string", "maxLength": 2000 },
+        "dependencies": {
+          "type": "array",
+          "maxItems": 32,
+          "items": { "$ref": "#/definitions/backgroundWaitDependency" }
+        },
+        "legacy": { "const": true },
+        "settledAt": { "type": "string", "format": "date-time" }
+      }
+    },
     "objectiveRepairTarget": {
       "type": "object",
       "required": ["id", "objective", "reasons", "source"],
