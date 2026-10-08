@@ -22,6 +22,8 @@ Then, in Pi:
 
 Review the proposed objective and acceptance criteria, confirm them, and let
 Pi work. Use `/glla status` to see what it is doing and what needs your attention.
+**Waiting** yields to named background work while supervision remains active;
+**paused** freezes automatic continuation. See [waiting and recovery](docs/RECOVERY.md#waiting-is-not-paused).
 
 [Install and update](INSTALL.md) · [Practical workflows](docs/WORKFLOWS.md) ·
 [Recovery](docs/RECOVERY.md) · [Settings](docs/SETTINGS.md) ·

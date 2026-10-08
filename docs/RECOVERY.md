@@ -3,6 +3,33 @@
 Start with `/glla status`. For full saved details, use `/goal status`,
 `/list show`, or `/loop status`, depending on the work surface.
 
+## Waiting is not paused
+
+**⏳ waiting** yields the main agent to named background dependencies. The
+saved goal/list item or loop/project remains supervised; exact terminal results
+trigger a bounded assessment of the retained checkpoint. Waiting does not mark
+tasks or project requirements successful. **⏸ paused** freezes automatic
+continuation; children may still run, but their results cannot bypass the freeze.
+Lifecycle is separate from activity such as researching, implementing, auditing
+or recovering. Activity requires observed evidence, not the model's narration.
+
+The agent uses `wait_for_background` with exact owned `runIds` and a reason.
+`pause_goal(kind="standby")` is a compatibility entry requiring the same ids;
+use a genuine pause for decisions, user holds or manual-action blockers. Unknown
+worker ids are rejected. Legacy saved standby records have no provable ownership:
+GLLA requests an assessment once eligible, rather than promising automatic wake.
+
+Use `/goal status`, `/list show`, or `/loop status` to inspect the checkpoint.
+On reload, GLLA reads only the saved identity-matching public status artifacts;
+completed, failed, stopped or missing results are assessed without discarding
+scope or progress. A running artifact with no deadline is assessed after at most
+30 minutes; stale activity without a provably live local process is assessed
+sooner. No busy polling or guessed worker adoption is performed. Load holds,
+supervisor pauses and pending audits remain authoritative. Explicit resume
+reconciles a dependency wait instead of blindly re-sending the main work.
+
+See [the lifecycle/state reference](DESIGN-work-lifecycle.md).
+
 ## Which resume command?
 
 | Command | Use it for |
