@@ -1,6 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { seedGoal } from "./harness/mock-pi.js";
+import type { Goal } from "../extensions/goal-loop-core.js";
+function seedGoal(overrides: Partial<Goal> = {}): Goal {
+  return { id: "goal-1", objective: "Implement the checked target", status: "active", policy: "goal",
+    autoContinue: true, usage: { tokensUsed: 0, tokensLimit: 0 },
+    createdAt: "2026-10-08T17:00:00.000Z", updatedAt: "2026-10-08T17:00:00.000Z", ...overrides };
+}
 import { backgroundDispatchHeld, backgroundWaitReady, goalWorkView, loopWorkView,
   sanitizeBackgroundWait, settleBackgroundDependency, type BackgroundWait } from "../extensions/work-lifecycle.js";
 import type { LoopState } from "../extensions/goal-loop-forever.js";
