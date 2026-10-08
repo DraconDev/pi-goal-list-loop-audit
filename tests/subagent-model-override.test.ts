@@ -176,6 +176,6 @@ test("build+sync: a thinking pin writes a thinking-only override that inherits t
   assert.equal(second.written.length, 0, "re-sync is idempotent");
 
   const cleared = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent" });
-  assert.ok(cleared.written.includes("Designer"), "clearing the pin rewrites the inherit-model file");
-  assert.doesNotMatch(readOverride(dir, "Designer")!, /^thinking:/m, "the thinking key is gone");
+  assert.ok(cleared.removed.includes("Designer"), "clearing the last opt-in disables the managed Designer");
+  assert.equal(readOverride(dir, "Designer"), undefined, "no automatic inherited Designer remains");
 });

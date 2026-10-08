@@ -59,21 +59,21 @@ test("managed sync rejects path traversal from settings and corrupt sync state",
   }
 });
 
-test("repair detection: externally deleted/altered Designer files are re-written and flagged", () => {
+test("repair detection: explicitly selected Designer files are re-written and flagged", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glla-subagent-repair-"));
-  const first = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", overrides: {} });
+  const first = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", overrides: {}, designerRequested: true });
   assert.deepEqual(first.written, ["Designer"]);
   assert.deepEqual(first.repaired, []);
-  const noop = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", overrides: {} });
+  const noop = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", overrides: {}, designerRequested: true });
   assert.deepEqual(noop.written, []);
   const syncState = JSON.parse(fs.readFileSync(path.join(dir, "agents", ".glla-subagent-sync.json"), "utf8"));
   assert.deepEqual(syncState.written, ["Designer"]);
   fs.unlinkSync(path.join(dir, "agents", "Designer.md"));
-  const second = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", overrides: {} });
+  const second = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", overrides: {}, designerRequested: true });
   assert.deepEqual(second.written, ["Designer"]);
   assert.deepEqual(second.repaired, ["Designer"]);
   fs.appendFileSync(path.join(dir, "agents", "Designer.md"), "\n# user scribble\n");
-  const third = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", overrides: {} });
+  const third = syncSubagentModelOverrides({ agentDir: dir, strategy: "inherit-parent", overrides: {}, designerRequested: true });
   assert.deepEqual(third.repaired, ["Designer"]);
 });
 
