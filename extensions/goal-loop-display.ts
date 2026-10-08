@@ -1241,7 +1241,7 @@ function pausedNextTransition(g: Goal, state: State, now: number): string {
     return `${resume} starts a fresh auditor`;
   }
   switch (pauseKind(g)) {
-    case "decision": return `user decision → ${g.pauseOptions?.length ? (g.policy === "list" ? "/list decide" : "/goal decide") : resume}`;
+    case "decision": return `user decision → ${g.pauseOptions?.length ? "/goal decide" : resume}`;
     case "error": return `manual action → ${resume}`;
     case "blocked": return resume;
     case "wait": return isSupervisedWait(g) ? "recovery timer" : resume;
