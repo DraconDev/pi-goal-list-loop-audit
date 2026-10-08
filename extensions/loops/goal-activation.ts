@@ -2611,6 +2611,7 @@ async function handleHotLengthExhaustion(
     // v0.23.8: a subagent finishing must not drive the main session's
     // continuation loop.
     if (isForeignCtx(ctx)) return;
+    noteActivity(true);
     const yieldedToBackground = consumeBackgroundYield(ctx);
     const backgroundHeld = reconcileBackgroundWait(ctx);
     if (backgroundHeld || yieldedToBackground) {
@@ -2620,7 +2621,6 @@ async function handleHotLengthExhaustion(
       }
       return;
     }
-    noteActivity(true);
     refreshOwnerHeartbeat(ctx.cwd); // v0.38.11: throttled (60s) claim refresh so /glla owner shows real idle
     noteOwnershipStanding(ctx); // v0.38.12: stand down to read-only when a newer session stole the root
     dispatchStartAcknowledged(ctx, "agent_end");

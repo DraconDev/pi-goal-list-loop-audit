@@ -39,7 +39,9 @@ export function workTargetId(): string | undefined {
   if (state.loop) return `loop:${state.loop.startedAt}`;
   return undefined;
 }
-function sessionId(ctx: ExtensionContext): string { return ctx.sessionManager.getSessionId(); }
+function sessionId(ctx: ExtensionContext): string {
+  try { return ctx.sessionManager.getSessionId?.() ?? ""; } catch { return ""; }
+}
 function eventId(data: unknown): string | undefined {
   if (!data || typeof data !== "object") return undefined;
   const e = data as Record<string, unknown>;
@@ -51,12 +53,12 @@ function targetWait(): BackgroundWait | undefined { return state.goal?.backgroun
 /** Only the currently admitted parent may associate a public start with work.
  * A supplied parent session must match; children from other tabs cannot attach. */
 export function observeBackgroundStart(data: unknown, ctx: ExtensionContext): void {
-  if (!hooks?.valid(ctx)) return;
+  if (!hooks?.valid(ctx) || !sessionId(ctx)) return;
   const runId = eventId(data), targetId = workTargetId();
   if (!runId || !targetId || !data || typeof data !== "object") return;
   const e = data as Record<string, unknown>;
   const parent = e.sessionId;
-  if (typeof parent === "string" && parent !== sessionId(ctx) && parent !== ctx.sessionManager.getSessionFile()) return;
+  if (typeof parent === "string" && parent !== sessionId(ctx) && parent !== ctx.sessionManager.getSessionFile?.()) return;
   const prior = observations.get(runId);
   if (prior) return; // a duplicate start must not erase terminal/owner evidence
   const asyncDir = typeof e.asyncDir === "string" && path.isAbsolute(e.asyncDir) ? e.asyncDir : undefined;
@@ -82,7 +84,7 @@ function storeWait(ctx: ExtensionContext, wait: BackgroundWait | undefined, lega
 }
 
 export function admitBackgroundWait(ctx: ExtensionContext, runIds: string[], reason: string): { ok: boolean; message: string } {
-  if (!hooks?.valid(ctx) || supervisorPaused(state)) return { ok: false, message: "Not waiting: supervision is frozen or this session no longer owns the work." };
+  if (!hooks?.valid(ctx) || !sessionId(ctx) || supervisorPaused(state)) return { ok: false, message: "Not waiting: supervision is frozen or this session no longer owns the work." };
   const targetId = workTargetId();
   if (!targetId || (state.goal && state.goal.status !== "active") || (!state.goal && !state.loop?.active)) return { ok: false, message: "Not waiting: no eligible running target." };
   if (targetWait()) return { ok: false, message: "An owned background wait already exists; inspect its dependency results before replacing it." };
@@ -162,7 +164,7 @@ export function reconcileBackgroundWait(ctx: ExtensionContext, now = Date.now())
   const targetId = workTargetId();
   if (!targetId) return false;
   if (state.goal?.status === "paused" && state.goal.pauseKind === "standby" && !state.goal.backgroundWait) {
-    if (supervisorPaused(state)) return true;
+    if (supervisorPaused(state) || !sessionId(ctx)) return true;
     const wait: BackgroundWait = { version: 1, id: `legacy:${targetId}`, targetId, sessionId: sessionId(ctx),
       createdAt: new Date(now).toISOString(), reason: state.goal.pauseReason ?? "Legacy background wait requires assessment", legacy: true, dependencies: [], settledAt: new Date(now).toISOString() };
     if (!storeWait(ctx, wait, true)) return true;
