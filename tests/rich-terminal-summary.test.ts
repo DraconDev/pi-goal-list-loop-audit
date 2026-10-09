@@ -508,9 +508,42 @@ test("v0.38.102 Next gets the same treatment as Remaining", () => {
     "Changed: the runbook",
     "Next: finish the handoff, and note: (1) claim the owner name. (2) record it in the runbook.",
   ]);
-  const idx = chatLines.findIndex((l) => l === "### Next");
+  const idx = chatLines.findIndex((l) => l === "Next");
   assert.ok(idx > 0, "Next section present");
   assert.equal(chatLines[idx + 1], "- **Next** — finish the handoff, and note:");
   assert.equal(chatLines[idx + 2], "  - claim the owner name.");
   assert.equal(chatLines[idx + 3], "  - record it in the runbook.");
+});
+
+test("v0.39.19: chat headings are plain text — the TUI shows # literally", () => {
+  // Field 2026-10-09 (terminal card screenshot): `### What Changed` and
+  // `#### 1. Area` reached the screen verbatim — the Pi TUI renders
+  // bold/lists but not `#` headings. The archived markdown keeps them.
+  const { chatLines } = render({
+    findingGroups: [
+      { title: "Sound manager", findings: ["mutes WebAudio — soundManager.ts:333"] },
+    ],
+  });
+  assert.ok(!chatLines.some((l) => l.startsWith("#")), `no markdown headings in chat, got: ${chatLines.join(" / ")}`);
+  assert.ok(chatLines.includes("What Changed"), "section label survives without hashes");
+  assert.ok(chatLines.includes("1. Sound manager"), "area label survives without hashes");
+  const archive = buildRichArchiveSection(richGoal(), "complete", ".pi-glla/archive/20260911-rich-voice.md", [
+    { title: "Sound manager", findings: ["mutes WebAudio — soundManager.ts:333"] },
+  ]);
+  assert.ok(archive.includes("### What Changed"), "archive keeps markdown headings");
+  assert.ok(archive.includes("#### 1. Sound manager"), "archive keeps area subheads");
+});
+
+test("v0.39.19: token-extraction comma husks never lead the reason line", () => {
+  // Field 2026-10-09: the card showed `· , weight 0.62 at · src/…` — the
+  // evidence tokens rode mid-sentence and extraction stranded a leading
+  // comma on the reason join.
+  const { chatLines } = render({
+    findingGroups: [
+      { title: "Area", findings: ["Pictures blur via the verdict, weight 0.62 at src/extract.ts:692"] },
+    ],
+  });
+  const reason = chatLines.filter((l) => l.startsWith("  - "));
+  assert.ok(reason.length > 0, "reason sub-bullet renders");
+  assert.ok(reason.every((l) => !/^  - [,;:]/.test(l)), `no leading punctuation husk, got: ${reason.join(" / ")}`);
 });
