@@ -480,3 +480,15 @@ test("v0.38.104: the branch-changed park names the loop surface and is in RESUMA
     "the park reason is resumable, so the command it names actually resumes",
   );
 });
+
+test("drainShutdown bounds wedged cleanup so one stuck test cannot stall the file", async () => {
+  // Field 2026-10-09: a timed-out test's unbounded shutdown drain stalled
+  // the runner file ~10min. A never-settling drain must resolve at the
+  // bound, and a healthy drain must still be awaited (not skipped).
+  const start = Date.now();
+  await drainShutdown(new Promise(() => {}), 50);
+  assert.ok(Date.now() - start < 5_000, "wedged drain resolves at the bound");
+  let settled = false;
+  await drainShutdown(Promise.resolve().then(() => { settled = true; }), 50);
+  assert.equal(settled, true, "healthy drains complete normally");
+});
