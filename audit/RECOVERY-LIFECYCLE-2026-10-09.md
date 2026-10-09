@@ -43,6 +43,22 @@ Coverage: `tests/recovery-ownership.test.ts` checks retained/terminal/replaced/h
 
 Bounded combined gate: nine files, 177 pass, 0 fail (`recovery-ownership`, ownership runtime, context pressure, unsupervised retry, hourly probe, table menu, stall handling, main recovery, restore-after-restart). `timeout 120 npm run check`, inventory regeneration and `timeout 30 npm run check:inventory` pass.
 
+## Manual-selection checkpoint
+
+Allowed manual `set`/`cycle` events now resume goal/list/loop work held solely by model recovery on the selected model, without replacing its objective, contract, telemetry or loop history. Restore/unknown/recovery events, nested forbidden-selection reverts, internal recovery rotations, forbidden models (including observe-only policy), audit claims, supervisor/load/user/decision/permission holds, and deterministic request refusals remain non-consent. Failed resume persistence restores the episode and prevents dispatch. Repeated selection does not duplicate continuation.
+
+`timeout 120 npm test -- tests/recovery-lifecycle-regression.test.ts`: 27 pass, 0 fail, including actual goal/list/loop activation paths. Earlier combined model-switch/manual-failback gate: 44 pass, 0 fail before the final additional internal-rotation/persistence cases.
+
+## Persistent recovery and truthful display checkpoint
+
+Main-model recovery no longer stops at an elapsed-time horizon in either aggressive or conservative mode. Legacy expiry metadata is discarded during normalization. Retry cadence and reset hints remain intact; explicit manual holds and deterministic refusals still stop. Failed recovery-wait persistence restores state, leaves dispatch held and does not arm a timer. Explicit manual recovery resume likewise fails closed on storage failure. Long-lived legacy **already-manually-held** horizon migration is not yet implemented and remains open.
+
+The saved `attempts` counter counts recovery/backoff steps, not provider requests or Pi's internal retry attempts. Status now labels it **Recovery steps** and the anchor **episode age**, explicitly denying that age proves continuous failure. Zero steps over five hours no longer claims five hours of observed failed probes. Durable deadlines alone show execution as unconfirmed, including overdue deadlines. Actual runtime snapshots distinguish regular timers, hourly-only timers, in-flight selections, active/queued host turns, absent timers and supervisor/load/context/stale-extension/persistence holds. Goal/list/loop status commands and widgets receive those snapshots; no model success is inferred from selection. Narrow restore widgets retain the short `retry scheduled (unconfirmed)` next-action line.
+
+`timeout 180 npm test -- tests/display.test.ts tests/retry-bounds.test.ts tests/recovery-runtime-status.test.ts tests/recovery-status-format.test.ts tests/quota-horizon-exemption.test.ts tests/uniform-provider-retry.test.ts tests/paused-status-action-first.test.ts tests/recovery-restore-after-restart.test.ts`: 166 pass, 0 fail. `npm run check` and regenerated `npm run check:inventory`: exit zero.
+
+Broad gates were also run, not concealed: `/tmp/glla-recovery-fast-current.log` had 3206 pass, 1 skip, 3 stale wording/policy assertion failures; those assertions were updated to the stronger truthful-display/no-expiry contract. `/tmp/glla-recovery-fast-current2.log` had 3155 pass, 1 skip, 11 fail and 16 errors: three further stale wording assertions (now passing in the 166-test gate) plus eight Bun runtime initialization errors (`EEXIST: file already exists, epoll_ctl` in native WriteStream/util/colors/assert/proper-lockfile initialization, followed by registration-after-completion errors). This is not a passing full-suite claim; the full gate must be rerun. No runtime/provider/Pi files were modified to contain those runner errors.
+
 ## Open contract work
 
-Persistent paced recovery without elapsed-time give-up; compaction-timeout handoff; manual-switch resume scoped to recovery-only holds; terminal/orphan cleanup fenced against incomplete restore and persistence failure; ordinary-chat ownership; truthful counters/timer diagnostics; dedicated goal/list/loop lifecycle matrix; remaining capture inspection and symptom mapping; recovery/settings docs; full test/type/inventory gates; fresh-context reviewer rehearsal.
+Compaction-timeout handoff; migration of legacy elapsed-time-only holds; immediate terminal/orphan cleanup and stale/late callback fences; ordinary-chat lifecycle refinements; dedicated goal/list/loop prolonged-recovery, reset-timing, candidate-exhaustion and compaction matrix; remaining capture inspection and symptom mapping; recovery/settings docs; full test/type/inventory gates; fresh-context reviewer rehearsal.
