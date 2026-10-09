@@ -75,6 +75,10 @@ The dedicated lifecycle suite now proves goal/list/loop compaction timeout → a
 
 `timeout 180 npm test -- tests/recovery-terminal-runtime.test.ts tests/recovery-owner-fences.test.ts tests/recovery-ownership-runtime.test.ts tests/unsupervised-error-retry.test.ts`: 71 pass (1 pre-fix archive-slot expectation corrected to null-slot + on-disk archive; `/tmp/glla-terminal-chat-proof.log` retained). Combined ownership/lifecycle gate: `tests/recovery-terminal-runtime + recovery-owner-fences + recovery-ownership-runtime + recovery-ownership + recovery-lifecycle-regression + recovery-legacy-hold + recovery-runtime-status` — 88 pass, 0 fail. `npm run check` clean; inventory regenerated.
 
+## Full validation (contract item 5/6)
+
+`npm run test:all` EXIT=0: 3562 tests across 379 files, 3561+ pass shape (`(pass)` count 3561 in log plus final jiti bins), 0 fail, 1 environment-gated skip (`commit survives the auto-committer daemon`). Log: `/tmp/glla-testall-final.log` (563s). Path: two prior full runs bracketed the fix — 3560 pass/1 fail on the isolated-rig ownership fence (`tests/main-model-recovery.test.ts` runtime fallback walk), then a stall on flaky `tests/loop-branch-ownership.test.ts` mid-tick timing (passes alone in 2s, untouched by this work), then green. `npm run check` clean; inventory regenerated (`docs/RUNTIME-INVENTORY.md`). Note: the task-8 milestone verifier cannot execute the 10-minute gate inside its own timeout, so the task remains system-pending despite the green log; no test was excluded or weakened.
+
 ## Open contract work
 
-Full test/type/inventory gates; fresh-context reviewer rehearsal.
+Fresh-context reviewer rehearsal (advisory, not in the verification contract).
