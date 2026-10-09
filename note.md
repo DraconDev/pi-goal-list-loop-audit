@@ -33,5 +33,9 @@ we need to entirely rethink the visual for hte audit we want to see making progr
 
 # later
 
+##
+/home/dracon/Pictures/Screenshots/Screenshot_20261009_130540.png
+we stopped retrying 
+
 # Testing
 
