@@ -16,6 +16,7 @@ import { isDeterministicProviderError, normalizeProviderErrorText, providerError
 import { MAX_AUDITOR_CANDIDATE_REFS, MAX_MAIN_MODEL_FALLBACKS, MAX_MAIN_MODEL_SAME_MODEL_RETRIES, normalizeBoundedModelRefs } from "./main-model-recovery.js";
 import { resolveGllaStateDir, stateRootPending, withStateRootSnapshot } from "./glla-state-root.js";
 import { normalizeFindingLead, clipSummaryValue } from "./finding-lead.js";
+import { sanitizeRecoveryOwner, type RecoveryOwner } from "./recovery-ownership.js";
 import { auditLifecycleLine, auditLifecycleProjection } from "./audit-lifecycle.js";
 // Re-exported so display surfaces (which already import values from this
 // module) share ONE lifecycle import edge — the projection, its vocabulary,
@@ -1293,6 +1294,8 @@ export function takeAt<T>(items: T[], n: number): [T, T[]] | null {
 }
 
 export interface MainModelRecovery {
+  /** Identity captured at episode creation; absence is a legacy record. */
+  owner?: RecoveryOwner;
   /** The model selected when this recovery episode was first observed. */
   primary: string;
   /** Session dial before the first automatic switch, retained for failback. */
@@ -1449,6 +1452,7 @@ export function sanitizeMainModelRecovery(value: unknown): MainModelRecovery | u
     : 0;
   return {
     primary,
+    ...(sanitizeRecoveryOwner(raw.owner) ? { owner: sanitizeRecoveryOwner(raw.owner) } : {}),
     ...(["off", "minimal", "low", "medium", "high", "xhigh", "max"].includes(String(raw.primaryThinkingLevel)) ? { primaryThinkingLevel: raw.primaryThinkingLevel as MainModelRecovery["primaryThinkingLevel"] } : {}),
     ...(typeof raw.active === "string" && raw.active.trim() ? { active: raw.active.trim().slice(0, 300) } : {}),
     ...(typeof raw.sameModelRetries === "number" && Number.isSafeInteger(raw.sameModelRetries) && raw.sameModelRetries > 0
