@@ -524,7 +524,9 @@ test("v0.39.19: chat headings are plain text — the TUI shows # literally", () 
       { title: "Sound manager", findings: ["mutes WebAudio — soundManager.ts:333"] },
     ],
   });
-  assert.ok(!chatLines.some((l) => l.startsWith("#")), `no markdown headings in chat, got: ${chatLines.join(" / ")}`);
+  // `## ` H2 headlines render in the TUI; `###`/`####` reached the screen
+  // literally (field screenshot), so only the deeper levels go plain.
+  assert.ok(!chatLines.some((l) => l.startsWith("###")), `no H3/H4 headings in chat, got: ${chatLines.join(" / ")}`);
   assert.ok(chatLines.includes("What Changed"), "section label survives without hashes");
   assert.ok(chatLines.includes("1. Sound manager"), "area label survives without hashes");
   const archive = buildRichArchiveSection(richGoal(), "complete", ".pi-glla/archive/20260911-rich-voice.md", [

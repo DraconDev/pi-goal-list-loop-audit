@@ -53,7 +53,8 @@ test("explicit verification opt-in adds one aggregate tail, not a gate table", (
   const lines = render(undefined, { showVerification: true }).chatLines;
   const start = lines.indexOf("Verification");
   const end = lines.indexOf("• completion audit approved (1 review).");
-  const block = lines.slice(start, end).filter((line) => line && (line === "### Verification" || (!line.startsWith("###") && !line.startsWith("- "))));
+  const sectionLabels = ["Summary", "What Changed", "Remaining", "Verification", "Verification Evidence", "Next", "Final Repository State"];
+  const block = lines.slice(start, end).filter((line) => line && (line === "Verification" || (!line.startsWith("###") && !line.startsWith("- ") && !sectionLabels.includes(line))));
   assert.deepEqual(block, ["Verification", "1 passed, 1 reported."], "verification is one aggregate sentence");
   assert.doesNotMatch(block.join("\n"), /Quality Gate|\| Unit tests \||\| Chrome build \|/);
   assert.doesNotMatch(block.join("\n"), /bun test|wxt build|747 passed|Tests:/);
