@@ -965,7 +965,7 @@ export async function tryMainModelFallback(ctx: ExtensionContext, failure: MainM
       // A user cancellation or host replacement may have cleared/replaced the
       // durable pending marker while setModel was awaiting. Never advance the
       // old operation's cursor or recreate recovery after that boundary.
-      if (generation !== flags.sessionGeneration || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== candidateRef.toLowerCase()) return false;
+      if (generation !== flags.sessionGeneration || !recoveryStillCurrent(recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== candidateRef.toLowerCase()) return false;
       appendLedger(ctx.cwd, "main_model_fallback_unavailable", { ref: candidateRef, backupIndex, backupCount: refs.length, reason: err instanceof Error ? err.message : String(err) });
       if (isStaleApiError(err)) {
         flags.extensionApiStale = true;
@@ -1479,7 +1479,7 @@ async function probePreferredPrimary(ctx: ExtensionContext, recovery: MainModelR
     ctx.ui.notify(`Main session model failed back to ${primary} from ${current ?? "the fallback"}; the next supervised turn tests the primary.`, "info");
     scheduleSupervisedPrimaryProbe(ctx, switched);
   } catch (err) {
-    if (generation !== flags.sessionGeneration || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== primary.toLowerCase()) return;
+    if (generation !== flags.sessionGeneration || !recoveryStillCurrent(recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== primary.toLowerCase()) return;
     const delay = mainModelPrimaryProbeDelay();
     const next = {
       ...state.mainModelRecovery!,
@@ -1806,7 +1806,7 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
     // A cancellation, replacement, or another recovery operation may have
     // consumed this pending switch while the host promise was in flight.
     // Its late rejection must not resurrect a cleared episode.
-    if (generation !== flags.sessionGeneration || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== target.toLowerCase()) return;
+    if (generation !== flags.sessionGeneration || !recoveryStillCurrent(recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== target.toLowerCase()) return;
     appendLedger(ctx.cwd, "main_model_probe_failed", { ref: target, tryLabel: targetTryLabel, error: err instanceof Error ? err.message : String(err) });
     const failure = classifyMainModelFailure(err instanceof Error ? err.message : String(err));
     // A recoverable failure may have walked the ordered chain before reaching

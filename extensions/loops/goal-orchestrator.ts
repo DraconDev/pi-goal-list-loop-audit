@@ -1387,7 +1387,7 @@ export function archiveCurrentGoal(
     }
     cancelDetachedGoalCompletionAuditor(ctx.cwd, pendingAttemptId);
   }
-  if (state.mainModelRecovery?.kind === "goal") {
+  if (state.mainModelRecovery?.kind === "goal" && state.mainModelRecovery.owner?.kind !== 'chat') {
     clearMainModelRecoveryTimer();
     state.mainModelRecovery = undefined;
     mainModelAbortForRecovery = false;
