@@ -928,9 +928,6 @@ export async function tryMainModelFallback(ctx: ExtensionContext, failure: MainM
 }
 
 export function setMainModelRecoveryPause(ctx: ExtensionContext, recovery: MainModelRecovery, delayMs: number): boolean {
-  const aggressive = (() => {
-    try { return resolveEffectiveAggressiveSettings(loadSettings(ctx.cwd)).aggressiveMode; } catch { return false; }
-  })();
   const before = { ...state };
   const normalizedRecovery = withMainModelRecoveryWindow(recovery);
   const diagnostic = normalizedRecovery.providerErrorDiagnostic ?? normalizedRecovery.reason;
@@ -977,8 +974,9 @@ export function setMainModelRecoveryPause(ctx: ExtensionContext, recovery: MainM
   // State the agent verb alongside the user verbs — this wait is resumable
   // from the agent side with resume_goal.
   const recoveryAction = `The provider failure is being retried automatically with paced backoff for as long as it remains recoverable; configured fallback models are tried in order. ${resumeCmd} retries immediately; the agent can retry immediately with resume_goal; ${activeGoalSurfaceCommand("cancel")} stops it.`;
+  let landed: boolean;
   if (normalized.kind === "goal" && state.goal) {
-    updateGoal({
+    landed = updateGoal({
       status: "paused",
       pauseKind: "wait",
       pauseResumeAt: retryAt,
@@ -987,12 +985,18 @@ export function setMainModelRecoveryPause(ctx: ExtensionContext, recovery: MainM
       providerErrorDiagnostic: normalized.providerErrorDiagnostic,
       recoveryEpisodeKey: normalized.recoveryEpisodeKey,
       recoveryNoticeKeys: normalized.recoveryNoticeKeys,
-    }, ctx);
+    }, ctx) !== false;
   } else if (normalized.kind === "loop" && state.loop) {
     state.loop = { ...state.loop, active: false, stopReason: `main model recovery — retrying in ${minutes}m (${sanitizeProviderDisplayText(normalized.reason)}); /loop resume retries immediately` };
-    persistState(ctx);
+    landed = persistState(ctx) !== false;
   } else {
-    persistState(ctx);
+    landed = persistState(ctx) !== false;
+  }
+  if (!landed) {
+    replaceState(before);
+    flags.continuationDispatchStoodDown = true;
+    ctx.ui.notify('glla: model recovery wait could not persist. Automatic dispatch remains held; repair storage before resuming.', 'warning');
+    return false;
   }
   appendLedger(ctx.cwd, "main_model_recovery_wait", {
     kind: normalized.kind,
