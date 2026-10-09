@@ -1,6 +1,9 @@
 // Dedicated cross-surface recovery contract regressions. The suite grows
 // with the remaining retry/compaction lifecycle implementation.
 import { test } from 'node:test';
+import type { ExtensionContext } from '@earendil-works/pi-coding-agent';
+import { tryMainModelFallback } from '../extensions/goal-recovery.js';
+import { classifyMainModelFailure } from '../extensions/main-model-recovery.js';
 import assert from 'node:assert/strict';
 import { withPressureSession } from './harness/context-pressure.js';
 import { readState } from '../extensions/goal-loop-core.js';
@@ -80,6 +83,30 @@ for (const hold of ['user', 'decision', 'permission', 'load', 'freeze', 'determi
     });
   });
 }
+
+test('internal recovery rotation with a set event is not manual resume consent', async () => {
+  await withPressureSession(async (pi, ctx, cwd) => {
+    const goal = state.goal!;
+    replaceState({ ...state,
+      goal: { ...goal, status: 'paused', pauseKind: 'wait', pauseReason: 'main model recovery — retrying' },
+      mainModelRecovery: { primary: 'provider/primary', active: 'provider/primary', attempted: ['provider/primary'], attempts: 12, kind: 'goal', reason: 'provider unavailable', owner: { kind: 'goal', id: goal.id } },
+    });
+    persistStateLine(cwd, state);
+    const originalSetModel = pi.api.setModel;
+    pi.api.setModel = async model => {
+      const previousModel = ctx.model;
+      ctx.model = model;
+      await pi.fire('model_select', { previousModel, model, source: 'set' }, ctx);
+      return true;
+    };
+    try {
+      assert.equal(await tryMainModelFallback(ctx as unknown as ExtensionContext, classifyMainModelFailure('provider unavailable')), true);
+      assert.equal(readState(cwd).goal?.status, 'paused', 'recovery itself owns the later probe/resume boundary');
+      assert.ok(readState(cwd).mainModelRecovery);
+      assert.equal(pi.sent.length, 0);
+    } finally { pi.api.setModel = originalSetModel; }
+  });
+});
 
 test('manual-switch resume fails closed when the goal transaction cannot persist', async () => {
   await withPressureSession(async (pi, ctx, cwd) => {
