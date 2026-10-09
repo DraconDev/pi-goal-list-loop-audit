@@ -181,6 +181,8 @@ test("runtime fallback walk uses one supervised model at a time and preserves le
       reason: "provider error",
       kind: "goal",
       quotaSignal: "rate-limit",
+      owner: { kind: "chat" },
+      firstFailureAt: new Date().toISOString(),
     };
     const beforeLegacySetting = calls.length;
     assert.equal(await tryMainModelFallback(ctx, classifyMainModelFailure("HTTP 429 too many requests")), true);
@@ -195,6 +197,8 @@ test("runtime fallback walk uses one supervised model at a time and preserves le
       kind: "goal",
       quotaSignal: "rate-limit",
       pendingModelSwitch: "provider/removed",
+      owner: { kind: "chat" },
+      firstFailureAt: new Date().toISOString(),
     };
     await probeMainModelRecovery(ctx);
     assert.ok(calls.length > beforeLegacySetting, "the removed pending target is replaced by the configured generic fallback");
