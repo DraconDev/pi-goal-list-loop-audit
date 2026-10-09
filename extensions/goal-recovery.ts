@@ -378,23 +378,23 @@ export function createGoalRecovery(flagsArg: RecoveryFlags, d: RecoveryDeps): vo
 /** Retire only a positively orphaned/terminal recovery projection. The caller
  * establishes restore completion; ordinary-chat ownership is not goal loss.
  * Storage failure retains the saved marker and stands dispatch down. */
-export function retireOrphanedMainModelRecovery(ctx: ExtensionContext, restoreComplete: boolean): boolean {
+export function retireOrphanedMainModelRecovery(ctx: ExtensionContext, restoreComplete: boolean): 'retained' | 'retired' | 'persistence-failed' {
   const recovery = state.mainModelRecovery;
-  if (!recovery) return false;
+  if (!recovery) return 'retained';
   const ownership = recoveryOwnership(recovery.owner, recovery.kind, state, restoreComplete);
-  if (!['terminal', 'absent', 'replaced'].includes(ownership)) return false;
+  if (!['terminal', 'absent', 'replaced'].includes(ownership)) return 'retained';
   state.mainModelRecovery = undefined;
   clearMainModelRecoveryTimer();
   if (persistState(ctx) === false) {
     state.mainModelRecovery = recovery;
     flags.continuationDispatchStoodDown = true;
     ctx.ui.notify('glla: recovery cleanup could not persist. Saved work is retained; automatic dispatch is held until storage is repaired.', 'warning');
-    return false;
+    return 'persistence-failed';
   }
   flags.lastMainModelFailure = null;
   flags.mainModelAbortForRecovery = false;
   appendLedger(ctx.cwd, 'main_model_recovery_retired', { ownership, owner: recovery.owner, kind: recovery.kind });
-  return true;
+  return 'retired';
 }
 
 export function mainModelRecoveryActive(): boolean {
