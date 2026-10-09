@@ -80,3 +80,31 @@ for (const hold of ['user', 'decision', 'permission', 'load', 'freeze', 'determi
     });
   });
 }
+
+test('forbidden selection revert event is not manual resume consent', async () => {
+  await withPressureSession(async (pi, ctx, cwd) => {
+    const fs = await import('node:fs');
+    fs.writeFileSync(`${cwd}/.pi-glla/settings.json`, JSON.stringify({ forbiddenModels: ['forbidden'] }));
+    const goal = state.goal!;
+    replaceState({ ...state,
+      goal: { ...goal, status: 'paused', pauseKind: 'wait', pauseReason: 'main model recovery — retrying' },
+      mainModelRecovery: { primary: 'provider/primary', active: 'provider/primary', attempted: ['provider/primary'], attempts: 1, kind: 'goal', reason: 'provider unavailable', owner: { kind: 'goal', id: goal.id } },
+    });
+    persistStateLine(cwd, state);
+    const originalSetModel = pi.api.setModel;
+    let reverts = 0;
+    pi.api.setModel = async model => {
+      reverts++;
+      ctx.model = model;
+      await pi.fire('model_select', { model, previousModel: { provider: 'provider', id: 'forbidden' }, source: 'set' }, ctx);
+      return true;
+    };
+    try {
+      await pi.fire('model_select', { model: { provider: 'provider', id: 'forbidden' }, previousModel: ctx.model, source: 'set' }, ctx);
+      assert.equal(reverts, 1);
+      assert.equal(readState(cwd).goal?.status, 'paused');
+      assert.ok(readState(cwd).mainModelRecovery);
+      assert.equal(pi.sent.length, 0);
+    } finally { pi.api.setModel = originalSetModel; }
+  });
+});
