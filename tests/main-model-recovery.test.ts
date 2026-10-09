@@ -152,6 +152,8 @@ test("runtime fallback walk uses one supervised model at a time and preserves le
       sameModelRetries: 10,
       reason: "main model recovery — provider error",
       kind: "goal",
+      owner: { kind: "chat" },
+      firstFailureAt: new Date().toISOString(),
     };
     await probeMainModelRecovery(ctx);
     assert.equal(thinkingCalls.at(-1), "low", "scheduled probes also apply the chosen fallback thinking level");
