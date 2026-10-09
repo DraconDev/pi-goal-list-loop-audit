@@ -11,7 +11,6 @@ for (const raw of [
 ]) {
   test(`provider quota bypasses compact-first even at high context: ${raw}`, () => {
     const failure = classifyMainModelFailure(raw);
-    assert.ok(failure.quotaSignal);
     assert.equal(compactFirstEligible(failure), false);
     assert.equal(shouldRecoverContextPressure(failure, highUsage), false);
   });

@@ -1,4 +1,5 @@
 import type { MainModelFailure } from './main-model-recovery.js';
+import { quotaSignal } from './quota-retry.js';
 
 // Relative pressure is deliberately independent of the opportunistic absolute
 // token target: even a small-window model can overflow below 200k tokens.
@@ -16,7 +17,7 @@ export function compactFirstEligible(failure: MainModelFailure): boolean {
   // preventive token target, let paced model recovery own these failures
   // instead of converting a failed compaction into a manual-resume hold.
   // Explicit input overflow remains eligible if a provider also tags it 429.
-  return (isExplicitPromptOverflow(failure.raw) || !failure.quotaSignal)
+  return (isExplicitPromptOverflow(failure.raw) || !quotaSignal(failure.raw))
     && failure.nonRecoverableReason !== 'prompt-policy'
     && !/user (?:interrupt|abort)|cancelled by user|content policy violation/i.test(failure.raw);
 }
