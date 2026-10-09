@@ -394,6 +394,23 @@ export function retireOrphanedMainModelRecovery(ctx: ExtensionContext, restoreCo
   return 'retired';
 }
 
+/** Fence asynchronous recovery against a terminal/replaced target or a new episode. */
+function recoveryStillCurrent(recovery: MainModelRecovery): boolean {
+  const live = state.mainModelRecovery;
+  if (!live || live.recoveryEpisodeKey !== recovery.recoveryEpisodeKey
+    || live.firstFailureAt !== recovery.firstFailureAt
+    || JSON.stringify(live.owner) !== JSON.stringify(recovery.owner)) return false;
+  const ownership = recoveryOwnership(recovery.owner, recovery.kind, state, true);
+  if (ownership === 'chat') return currentRecoveryOwner(state).kind === 'chat';
+  if (ownership !== 'retained') return false;
+  if (recovery.kind === 'goal') {
+    const goal = state.goal!;
+    return !goal.pendingCompletion && (goal.status === 'active'
+      || (goal.status === 'paused' && goal.pauseKind === 'wait' && (goal.pauseReason ?? '').startsWith('main model recovery')));
+  }
+  return !!state.loop && (state.loop.active || (state.loop.stopReason ?? '').startsWith('main model recovery'));
+}
+
 /** A user-selected allowed model is retry consent only for a surface held
  * exclusively by model recovery. It is not permission to cross decisions,
  * user freezes, stored audit claims, or deterministic request refusals. */
@@ -918,7 +935,7 @@ export async function tryMainModelFallback(ctx: ExtensionContext, failure: MainM
       if (supervisorPaused(state)) return false;
       const accepted = await api?.setModel(candidate);
       if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation) || supervisorPaused(state)) return false;
-      if (state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== candidateRef.toLowerCase()) return false;
+      if (!recoveryStillCurrent(recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== candidateRef.toLowerCase()) return false;
       if (!accepted) {
         state.mainModelRecovery = { ...state.mainModelRecovery, pendingModelSwitch: undefined, retryAt: undefined };
         persistState(ctx);
@@ -1314,7 +1331,9 @@ let hourlyProbeGeneration: number | null = null;
  * durable timer state is not enough to fence the two callbacks once both
  * have fired, so serialize the actual async probe as well. */
 export async function probeMainModelRecovery(ctx: ExtensionContext): Promise<void> {
-  if (supervisorPaused(state)) return;
+  if (supervisorPaused(state) || state.loadHoldAt || isPersistenceDegraded()
+    || state.mainModelRecovery?.manualResumeRequired || !state.mainModelRecovery
+    || !recoveryStillCurrent(state.mainModelRecovery)) return;
   const generation = flags.sessionGeneration;
   if (mainModelRecoveryProbeInFlight && mainModelRecoveryProbeGeneration !== generation) {
     mainModelRecoveryProbeInFlight = false;
@@ -1442,7 +1461,7 @@ async function probePreferredPrimary(ctx: ExtensionContext, recovery: MainModelR
     if (supervisorPaused(state)) return;
     const accepted = await flags.extensionApi?.setModel(candidate);
     if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation) || supervisorPaused(state)) return;
-    if (state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== primary.toLowerCase()) return;
+    if (!recoveryStillCurrent(recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== primary.toLowerCase()) return;
     if (!accepted) throw new Error("no configured auth for preferred primary");
     applyRecoveryThinking(primary, candidate, state.mainModelRecovery!);
     const switched = {
@@ -1763,7 +1782,7 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
     if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation)) return;
     const accepted = await flags.extensionApi?.setModel(candidate);
     if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation)) return;
-    if (state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== target.toLowerCase()) return;
+    if (!recoveryStillCurrent(recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== target.toLowerCase()) return;
     if (!accepted) throw new Error(`no configured auth for ${target}`);
     applyRecoveryThinking(target, candidate, state.mainModelRecovery!);
     state.mainModelRecovery = {
