@@ -354,6 +354,7 @@ createGoalContinuation(continuationFlags, continuationDeps);
 createGoalLoop(loopDeps);
 createGoalCommands(commandDeps);
 const recoveryFlags: RecoveryFlags = {
+  get initialSessionLoadPending() { return initialSessionLoadPending; },
   get completionAuditRecoveryArmed() { return completionAuditRecoveryArmed; },
   set completionAuditRecoveryArmed(v) { completionAuditRecoveryArmed = v; },
   get mainModelRecoveryTimer() { return mainModelRecoveryTimer; },

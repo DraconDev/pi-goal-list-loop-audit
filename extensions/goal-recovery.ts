@@ -25,6 +25,7 @@ import { FALLBACK_THINKING_LEVELS, type FallbackThinkingLevel } from "./main-fal
 import { auditPhaseOwnsAttempt } from "./audit-lifecycle.js";
 import { isPersistenceDegraded, appendLedger, claimRecoveryNotice, nowIso, piGlaDir, isFreshPastTimestamp, isForbiddenModel, isStaleApiError, nextHourlyProbeMs, providerErrorFingerprint, providerErrorPresentation, resolveEffectiveAggressiveSettings, sanitizeProviderDisplayText, supervisorPaused, writeGoalMd, goalMdPath, writeGoalStateTransaction, clearGoalStateTransaction, MAX_AUDITOR_CANDIDATE_REFS, type Goal, type MainModelRecovery, type PendingCompletion } from "./goal-loop-core.js";
 import { persistStateLine, replaceState } from "./goal-state.js";
+import { stateRootPending } from './glla-state-root.js';
 import { cancelDetachedGoalCompletionAuditor } from "./goal-loop-auditor-process.js";
 import {
   classifyMainModelFailure,
@@ -294,6 +295,8 @@ export function isCompletionAuditRecoveryPending(goal: Goal | null | undefined):
  * watchdogs, cmdResume, the loop, etc.) and are observed here through the
  * RecoveryFlags accessor object. */
 export interface RecoveryFlags {
+  /** Actual activation barrier; optional only for isolated test rigs. */
+  readonly initialSessionLoadPending?: boolean;
   get completionAuditRecoveryArmed(): boolean;
   set completionAuditRecoveryArmed(v: boolean);
   get mainModelRecoveryTimer(): NodeJS.Timeout | null;
@@ -409,6 +412,13 @@ function recoveryStillCurrent(recovery: MainModelRecovery): boolean {
       || (goal.status === 'paused' && (goal.pauseKind === 'wait' || goal.pauseKind === undefined) && (goal.pauseReason ?? '').startsWith('main model recovery')));
   }
   return !!state.loop && (state.loop.active || (state.loop.stopReason ?? '').startsWith('main model recovery'));
+}
+
+function recoveryOperationStillCurrent(ctx: ExtensionContext, recovery: MainModelRecovery): boolean {
+  if (flags.initialSessionLoadPending || stateRootPending()) return false;
+  if (recoveryStillCurrent(recovery)) return true;
+  retireOrphanedMainModelRecovery(ctx, true);
+  return false;
 }
 
 /** A user-selected allowed model is retry consent only for a surface held
@@ -935,7 +945,7 @@ export async function tryMainModelFallback(ctx: ExtensionContext, failure: MainM
       if (supervisorPaused(state)) return false;
       const accepted = await api?.setModel(candidate);
       if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation) || supervisorPaused(state)) return false;
-      if (!recoveryStillCurrent(recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== candidateRef.toLowerCase()) return false;
+      if (!recoveryOperationStillCurrent(ctx, recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== candidateRef.toLowerCase()) return false;
       if (!accepted) {
         state.mainModelRecovery = { ...state.mainModelRecovery, pendingModelSwitch: undefined, retryAt: undefined };
         persistState(ctx);
@@ -965,7 +975,7 @@ export async function tryMainModelFallback(ctx: ExtensionContext, failure: MainM
       // A user cancellation or host replacement may have cleared/replaced the
       // durable pending marker while setModel was awaiting. Never advance the
       // old operation's cursor or recreate recovery after that boundary.
-      if (generation !== flags.sessionGeneration || !recoveryStillCurrent(recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== candidateRef.toLowerCase()) return false;
+      if (generation !== flags.sessionGeneration || !recoveryOperationStillCurrent(ctx, recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== candidateRef.toLowerCase()) return false;
       appendLedger(ctx.cwd, "main_model_fallback_unavailable", { ref: candidateRef, backupIndex, backupCount: refs.length, reason: err instanceof Error ? err.message : String(err) });
       if (isStaleApiError(err)) {
         flags.extensionApiStale = true;
@@ -1462,7 +1472,7 @@ async function probePreferredPrimary(ctx: ExtensionContext, recovery: MainModelR
     if (supervisorPaused(state)) return;
     const accepted = await flags.extensionApi?.setModel(candidate);
     if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation) || supervisorPaused(state)) return;
-    if (!recoveryStillCurrent(recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== primary.toLowerCase()) return;
+    if (!recoveryOperationStillCurrent(ctx, recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== primary.toLowerCase()) return;
     if (!accepted) throw new Error("no configured auth for preferred primary");
     applyRecoveryThinking(primary, candidate, state.mainModelRecovery!);
     const switched = {
@@ -1480,7 +1490,7 @@ async function probePreferredPrimary(ctx: ExtensionContext, recovery: MainModelR
     ctx.ui.notify(`Main session model failed back to ${primary} from ${current ?? "the fallback"}; the next supervised turn tests the primary.`, "info");
     scheduleSupervisedPrimaryProbe(ctx, switched);
   } catch (err) {
-    if (generation !== flags.sessionGeneration || !recoveryStillCurrent(recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== primary.toLowerCase()) return;
+    if (generation !== flags.sessionGeneration || !recoveryOperationStillCurrent(ctx, recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== primary.toLowerCase()) return;
     const delay = mainModelPrimaryProbeDelay();
     const next = {
       ...state.mainModelRecovery!,
@@ -1793,7 +1803,7 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
     if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation)) return;
     const accepted = await flags.extensionApi?.setModel(candidate);
     if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation)) return;
-    if (!recoveryStillCurrent(recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== target.toLowerCase()) return;
+    if (!recoveryOperationStillCurrent(ctx, recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== target.toLowerCase()) return;
     if (!accepted) throw new Error(`no configured auth for ${target}`);
     applyRecoveryThinking(target, candidate, state.mainModelRecovery!);
     state.mainModelRecovery = {
@@ -1817,7 +1827,7 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
     // A cancellation, replacement, or another recovery operation may have
     // consumed this pending switch while the host promise was in flight.
     // Its late rejection must not resurrect a cleared episode.
-    if (generation !== flags.sessionGeneration || !recoveryStillCurrent(recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== target.toLowerCase()) return;
+    if (generation !== flags.sessionGeneration || !recoveryOperationStillCurrent(ctx, recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== target.toLowerCase()) return;
     appendLedger(ctx.cwd, "main_model_probe_failed", { ref: target, tryLabel: targetTryLabel, error: err instanceof Error ? err.message : String(err) });
     const failure = classifyMainModelFailure(err instanceof Error ? err.message : String(err));
     // A recoverable failure may have walked the ordered chain before reaching
