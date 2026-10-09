@@ -173,6 +173,7 @@ test("integration: fresh recovery retries the current model instead of rotating"
       active: "provider/primary",
       attempted: ["provider/primary"],
       attempts: 1,
+      owner: { kind: 'chat' }, // This isolated selector rig has no GLLA objective.
       retryAt: new Date(Date.now() - 1).toISOString(), // timer past, so the probe runs
       reason: "main model recovery — provider error",
       kind: "goal",
@@ -253,6 +254,7 @@ test("integration: budget exhausted walks the configured chain (existing contrac
       active: "provider/primary",
       attempted: ["provider/primary"],
       attempts: 5,
+      owner: { kind: 'chat' }, // This isolated selector rig has no GLLA objective.
       sameModelRetries: 10, // budget spent
       retryAt: new Date(Date.now() - 1).toISOString(),
       reason: "main model recovery — provider error",
