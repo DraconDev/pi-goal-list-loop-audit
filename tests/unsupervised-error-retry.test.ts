@@ -235,6 +235,20 @@ test("a busy session at fire time stands down instead of double-driving", async 
 });
 
 
+test("default same-model budget retains the ordinary request and schedules a paced retry before rotation", async () => {
+  const ctx = await boot();
+  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ mainModelFallbacks: ["provider/backup"] }));
+  (ctx as any).modelRegistry = { find: (provider: string, id: string) => ({ provider, id, reasoning: true }), hasConfiguredAuth: () => true };
+  __testOnlySetUnsupervisedErrorRetryDelay(20);
+  await pi.fire("before_agent_start", { prompt: "Preserve the original acceptance criteria", systemPrompt: "Original instructions" }, ctx);
+  await pi.fire("agent_end", errTurn("503 Service temporarily unavailable"), ctx);
+  assert.equal(pi.modelSelections.length, 0, "a first transient failure must not spend backup quota");
+  assert.ok(ledger().some(e => e.type === "unsupervised_error_retry_scheduled"));
+  await tick(150);
+  assert.equal(sentRetries().length, 1);
+  assert.match(String(sentRetries()[0]!.message.content), /Preserve the original acceptance criteria/);
+});
+
 async function failoverOrdinaryRequest(prompt: string): Promise<MockCtx> {
   const ctx = await boot();
   // Handoff tests deliberately select the immediate-rotation policy; the
