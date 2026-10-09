@@ -2,15 +2,58 @@
 // with the remaining retry/compaction lifecycle implementation.
 import { test } from 'node:test';
 import type { ExtensionContext } from '@earendil-works/pi-coding-agent';
-import { tryMainModelFallback } from '../extensions/goal-recovery.js';
+import { clearMainModelRecoveryTimer, probeMainModelRecovery, tryMainModelFallback } from '../extensions/goal-recovery.js';
+import { __testOnlySetPressureTimeout } from '../extensions/context-pressure-attempt.js';
 import { classifyMainModelFailure } from '../extensions/main-model-recovery.js';
 import assert from 'node:assert/strict';
-import { withPressureSession } from './harness/context-pressure.js';
+import { providerError, withPressureSession } from './harness/context-pressure.js';
 import { readState } from '../extensions/goal-loop-core.js';
 import { state, replaceState, persistStateLine } from '../extensions/goal-state.js';
 import { tick } from './harness/mock-pi.js';
 
 for (const mode of ['goal', 'list', 'loop'] as const) {
+  test(`${mode}: compaction timeout automatically hands off and success retains the saved contract`, async () => {
+    await withPressureSession(async (pi, ctx, cwd) => {
+      const before = readState(cwd);
+      __testOnlySetPressureTimeout(30);
+      let callbacks: Parameters<typeof ctx.compact>[0];
+      ctx.compact = options => { callbacks = options; };
+      await pi.fire('agent_end', providerError(), ctx);
+      await pi.fire('agent_settled', {}, ctx);
+      await tick(100);
+      const parked = readState(cwd);
+      assert.ok(parked.mainModelRecovery?.retryAt, 'timeout is a paced automatic handoff, not manual parking');
+      assert.equal(parked.mainModelRecovery?.manualResumeRequired, undefined);
+      assert.equal(pi.sent.length, 0);
+      callbacks?.onError?.(new Error('late compactor failure'));
+      callbacks?.onComplete?.({} as never);
+      await pi.fire('agent_settled', {}, ctx);
+      assert.equal(pi.sent.length, 0, 'late settlement cannot bypass the paced slot');
+      // Execute the owned probe deterministically instead of sleeping until
+      // its normal five-second timer. This is not a manual resume command.
+      clearMainModelRecoveryTimer();
+      await probeMainModelRecovery(ctx as unknown as ExtensionContext);
+      await tick(mode === 'loop' ? 100 : 1150);
+      assert.equal(pi.sent.length, 1, 'exactly one automatic continuation');
+      callbacks?.onError?.(new Error('repeated late compactor failure'));
+      callbacks?.onComplete?.({} as never);
+      await tick(50);
+      assert.equal(pi.sent.length, 1);
+      await pi.fire('agent_end', { messages: [{ role: 'assistant', content: [{ type: 'text', text: 'Continued saved work successfully.' }], stopReason: 'end_turn' }] }, ctx);
+      const saved = readState(cwd);
+      if (mode === 'loop') {
+        assert.equal(saved.loop?.target, before.loop?.target);
+        assert.equal(saved.loop?.startedAt, before.loop?.startedAt);
+        assert.ok(saved.loop!.iteration >= before.loop!.iteration);
+      } else {
+        assert.equal(saved.goal?.id, before.goal?.id);
+        assert.equal(saved.goal?.objective, before.goal?.objective);
+        assert.equal(saved.goal?.verificationContract, before.goal?.verificationContract);
+        assert.equal(saved.goal?.status, 'active');
+      }
+      assert.equal(saved.mainModelRecovery, undefined, 'healthy work settles the primary recovery episode');
+    }, mode);
+  });
   for (const source of ['set', 'cycle', 'restore', 'recovery', undefined]) {
     test(`${mode}: ${String(source)} selection resumes only explicit recovery-held work`, async () => {
       await withPressureSession(async (pi, ctx, cwd) => {
