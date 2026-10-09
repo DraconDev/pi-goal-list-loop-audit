@@ -53,7 +53,7 @@ for (const mode of ['goal', 'list', 'loop'] as const) {
   }
 }
 
-for (const hold of ['user', 'decision', 'permission', 'load', 'freeze', 'deterministic', 'forbidden'] as const) {
+for (const hold of ['user', 'decision', 'permission', 'load', 'freeze', 'deterministic', 'forbidden', 'forbidden-observe-only', 'audit'] as const) {
   test(`manual selection respects protected ${hold} hold`, async () => {
     await withPressureSession(async (pi, ctx, cwd) => {
       const primary = `${ctx.model!.provider}/${ctx.model!.id}`;
@@ -61,14 +61,14 @@ for (const hold of ['user', 'decision', 'permission', 'load', 'freeze', 'determi
       replaceState({ ...state,
         ...(hold === 'load' ? { loadHoldAt: Date.now() } : {}),
         ...(hold === 'freeze' ? { supervisorPausedAt: Date.now() } : {}),
-        goal: { ...goal, status: 'paused', pauseKind: hold === 'decision' || hold === 'permission' ? 'decision' : hold === 'user' ? 'blocked' : 'wait',
+        goal: { ...goal, ...(hold === 'audit' ? { pendingCompletion: { at: new Date().toISOString(), phase: 'retry-waiting' as const } } : {}), status: 'paused', pauseKind: hold === 'decision' || hold === 'permission' ? 'decision' : hold === 'user' ? 'blocked' : 'wait',
           pauseReason: hold === 'user' ? 'user stopped work' : hold === 'permission' ? 'upload requires explicit authorization' : hold === 'decision' ? 'choose product behavior' : 'main model recovery — retrying' },
         mainModelRecovery: { primary, active: primary, attempted: [primary], attempts: 3, kind: 'goal', reason: hold === 'deterministic' ? 'BadRequestError: too many images. "code":"400"' : 'provider unavailable', retryAt: new Date(Date.now() + 3600000).toISOString(), owner: { kind: 'goal', id: goal.id } },
       });
       persistStateLine(cwd, state);
-      if (hold === 'forbidden') {
+      if (hold === 'forbidden' || hold === 'forbidden-observe-only') {
         const fs = await import('node:fs');
-        fs.writeFileSync(`${cwd}/.pi-glla/settings.json`, JSON.stringify({ forbiddenModels: ['chosen'] }));
+        fs.writeFileSync(`${cwd}/.pi-glla/settings.json`, JSON.stringify({ forbiddenModels: ['chosen'], blockForbiddenModelSwitches: hold !== 'forbidden-observe-only' }));
       }
       const previousModel = ctx.model;
       const selected = { provider: 'provider', id: 'chosen' };
