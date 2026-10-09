@@ -16,7 +16,7 @@ Verification: `timeout 180 npm test -- tests/context-pressure-recovery.test.ts t
 
 ## Evidence limitations
 
-Several requested native image reads were stripped by the GLLA payload guard before delivery. Those stripped captures are not direct visual evidence; earlier chat descriptions of their pixels require independent confirmation. Images actually delivered in this continuation include 080151, 080333, 080347 and 094431. No application project has been modified or resumed.
+Initial full-resolution image reads were stripped by the GLLA payload guard. Native inspection was retried using local Pillow-resized JPEG captures (no external vision provider, model switch, or upload). Reduced captures subsequently delivered include 080147, 080149, 080307, 080312, 080318, 080329 and 092908; original delivered captures include 080151, 080333, 080347 and 094431. The reduced images are sufficient for the recovery cards but not every small transcript detail. No application project has been modified or resumed.
 
 ## Confirmed supplied captures (implementation/disposition pending)
 
@@ -25,6 +25,21 @@ Several requested native image reads were stripped by the GLLA payload guard bef
 - `Screenshot_20261009_080347.png`: Darklord publish is held on a real upload authorization decision. Provider 429/retry exhaustion is visible, but does not grant permission to upload a 446 MB build. This decision must remain authoritative; no model switch or recovery timer may treat it as upload consent.
 - `Screenshot_20261009_094431.png`: terminal summary is excessively implementation/test-heavy and opens with a mid-flight commit incident rather than a user-facing outcome. This is a summary-quality report, not evidence of a recovery-lost objective. Rendering/content disposition remains to verify against the summary policy.
 - `Screenshot_20261009_092908.png`: prior confirmed resume-guard report in `audit/RECOVERY-LIFECYCLE-RESUME-GUARD-2026-10-09.md` documents the adverb-qualified imperative classifier fix and preserved verification contract.
+
+- `Screenshot_20261009_080147.png`: application project resumes its saved contract and then surfaces an unresolved product-policy decision. A recoverable provider outage must not discard that contract; a genuine product-policy choice must not be silently decided by model recovery. The underlying application's validator is not a GLLA implementation target.
+- `Screenshot_20261009_080149.png`: application project readiness/audit hold coexists with upstream endpoint-unavailable 429 errors and compaction cancellation. The screenshot alone cannot establish objective loss; journal confirmation remains pending.
+- `Screenshot_20261009_080307.png`: project drafting is held by the same compact-first 120s deadline; pending intended scope remains visible. This is not a completed project nor evidence its scope was deleted. Containment must retain the drafting state as well as any underlying goal/loop owner.
+- `Screenshot_20261009_080312.png`: upstream Token Plan quota errors culminate in `Retry failed after 15 attempts`, and a paused project-audit goal still displays its objective, audit progress, and compaction-timeout hold. The provider/core retry exhaustion message is external; GLLA's ensuing scheduling/hold behavior is owned here.
+- `Screenshot_20261009_080318.png`: standalone main-model recovery card says `Attempts: 0 · failing 5h 24m` and explicitly `no GLLA objective`. This is evidence of a recovery marker without a visible objective, not proof the objective was lost. The display uses durable episode counters/anchor timestamps; timers and underlying journals still require confirmation.
+- `Screenshot_20261009_080329.png`: hegemon `/saves` follow-up list item retains its objective and pauses on the compact-first 120s timeout with `/list resume` guidance. Underlying contrast findings belong to the application project; only saved-work recovery is in scope.
+
+## Ownership implementation checkpoint
+
+`extensions/recovery-ownership.ts` distinguishes explicit chat ownership, goal identity, and loop identity, with a positive restore-completion gate. New episodes capture the owner in the durable recovery projection; sanitization retains only valid tags. Completed session restore now retires terminal/absent/replaced supervised markers and cancels recovery/hourly timers. Failed cleanup persistence restores the marker and holds dispatch instead of claiming a durable cleanup.
+
+Coverage: `tests/recovery-ownership.test.ts` checks retained/terminal/replaced/held-loop/chat/legacy/restore-pending policy. `tests/recovery-ownership-runtime.test.ts` exercises completed restore and blank-start retention through actual activation handlers. Immediate live terminal cleanup, persistence-failure injection, and stale-callback fences remain open; this checkpoint does not claim all lifecycle ownership work is implemented.
+
+Bounded combined gate: nine files, 177 pass, 0 fail (`recovery-ownership`, ownership runtime, context pressure, unsupervised retry, hourly probe, table menu, stall handling, main recovery, restore-after-restart). `timeout 120 npm run check`, inventory regeneration and `timeout 30 npm run check:inventory` pass.
 
 ## Open contract work
 
