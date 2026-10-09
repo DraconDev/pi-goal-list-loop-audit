@@ -355,10 +355,11 @@ for (const pendingRecovery of [true, false]) test(`model selection preserves vis
     assert.equal(saved.mainModelRecovery, undefined);
     assert.equal(saved.loop!.target, loop.target);
     assert.equal(saved.loop!.iteration, 42);
-    assert.equal(saved.loop!.active, false);
-    assert.equal(RESUMABLE_STOP(saved.loop!.stopReason), true);
+    assert.equal(saved.loop!.active, pendingRecovery, 'only a recovery-owned hold is resumed by the selection');
+    if (!pendingRecovery) assert.equal(RESUMABLE_STOP(saved.loop!.stopReason), true);
     assert.match(buildWidgetLines(saved)!.join("\n"), /Retain Football Forever objective/);
-    assert.match(buildStatusText(saved)!, /held/);
+    if (!pendingRecovery) assert.match(buildStatusText(saved)!, /held/);
+    else assert.equal(saved.loop!.stopReason, undefined);
     await pi.command("glla", "resume", ctx);
     assert.equal(readState(cwd).loop!.active, true);
     assert.equal(readState(cwd).loop!.target, loop.target);
