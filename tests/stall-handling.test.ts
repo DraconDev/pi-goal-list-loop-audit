@@ -432,7 +432,10 @@ test("audit 2026-09-07 HIGH: zombie retry routes on the abort owner, cycle-reset
   assert.ok(resetEnd > resetAt, "cycle-reset probe ledger ends the block");
   const resetBlock = RECOVERY.slice(resetAt, resetEnd);
   assert.match(resetBlock, /holdMainModelRecovery\(ctx, next/, "past the horizon the reset holds for manual resume instead of resurrecting");
-  assert.match(resetBlock, /scheduleContinuation\(ctx, true, 1_000\)/, "the probe turn still resumes synchronously (v0.34.132 contract: the turn IS the health check)");
+  assert.match(resetBlock, /resumeSupervisedRecoverySurface\(ctx, recovery\.kind\)/, "cycle reset synchronously resumes the owning surface");
+  const resumeSurface = RECOVERY.slice(RECOVERY.indexOf('function resumeSupervisedRecoverySurface'), RECOVERY.indexOf('async function probeMainModelRecoveryImpl'));
+  assert.match(resumeSurface, /scheduleContinuation\(ctx, true, 1_000\)/, "the goal probe turn still resumes synchronously (the turn IS the health check)");
+  assert.match(resumeSurface, /scheduleLoopTick\(ctx\)/, "loop recovery resumes its own scheduler instead of a goal continuation");
 });
 
 test("v0.35.x — zombie-run watchdog: busy + zero stream events gets bounded abort and recovery guidance", () => {
