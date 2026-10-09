@@ -119,7 +119,12 @@ remains recoverable, in every mode. There is no 24h automatic-recovery
 horizon: legacy expiry metadata is discarded during normalization, while
 retry cadence (`mainModelRetryMinutes`, doubling per attempt, 5h cap),
 explicit upstream reset sleeps, eager-transient handling, and the
-same-model/fallback policy stay intact. Explicit manual holds and
+same-model/fallback policy stay intact. The 5h cap is deliberate operator
+policy (2026-10-09): coding plans run in 5-hour windows, and retrying
+across the full window lets a project continue in the next window instead
+of dying. A `retrying in 300m` countdown on a hintless 429 is this ceiling
+working as designed — attempts advance and timers re-arm across failed
+probes, and the hourly :00:30 probe punctuates the wait. Explicit manual holds and
 deterministic client errors still stop. Failed recovery-wait persistence
 restores state, leaves dispatch held, and arms no timer.
 
