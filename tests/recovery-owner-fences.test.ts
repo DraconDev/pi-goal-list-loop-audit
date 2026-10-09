@@ -23,7 +23,7 @@ for (const mode of ['goal', 'list', 'loop'] as const) {
             if (change === 'new-episode') {
               state.mainModelRecovery = { ...state.mainModelRecovery!, recoveryEpisodeKey: 'new-owner-episode' };
             } else if (mode === 'loop') {
-              replaceState({ ...state, loop: change === 'terminal' || change === 'absent' ? null
+              replaceState({ ...state, loop: change === 'terminal' || change === 'absent' ? undefined
                 : change === 'replaced' ? { ...state.loop!, startedAt: new Date(Date.now() + 1000).toISOString(), target: 'successor work' }
                 : { ...state.loop!, active: false, stopReason: 'explicit user stop' } });
             } else {
