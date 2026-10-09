@@ -397,15 +397,22 @@ export function retireOrphanedMainModelRecovery(ctx: ExtensionContext, restoreCo
   return 'retired';
 }
 
-/** Fence asynchronous recovery against a terminal/replaced target or a new episode. */
-function recoveryStillCurrent(recovery: MainModelRecovery): boolean {
+/** Episode identity only: same live record, same owner, target still retained. Surface pauseReason is NOT checked here — a provider probe may run while an unrelated hold owns the surface; resume stays scoped. */
+function recoveryEpisodeCurrent(recovery: MainModelRecovery): boolean {
   const live = state.mainModelRecovery;
   if (!live || live.recoveryEpisodeKey !== recovery.recoveryEpisodeKey
     || live.firstFailureAt !== recovery.firstFailureAt
     || JSON.stringify(live.owner) !== JSON.stringify(recovery.owner)) return false;
   const ownership = recoveryOwnership(recovery.owner, recovery.kind, state, true);
   if (ownership === 'chat') return currentRecoveryOwner(state).kind === 'chat';
-  if (ownership !== 'retained') return false;
+  return ownership === 'retained';
+}
+
+/** Fence asynchronous recovery against a terminal/replaced target or a new episode. */
+function recoveryStillCurrent(recovery: MainModelRecovery): boolean {
+  if (!recoveryEpisodeCurrent(recovery)) return false;
+  const ownership = recoveryOwnership(recovery.owner, recovery.kind, state, true);
+  if (ownership === 'chat') return true;
   if (recovery.kind === 'goal') {
     const goal = state.goal!;
     return !goal.pendingCompletion && (goal.status === 'active'
@@ -1346,7 +1353,7 @@ export async function probeMainModelRecovery(ctx: ExtensionContext): Promise<voi
   if (supervisorPaused(state)) return;
   if (state.loadHoldAt || isPersistenceDegraded()
     || state.mainModelRecovery?.manualResumeRequired || !state.mainModelRecovery
-    || !recoveryStillCurrent(state.mainModelRecovery)) return;
+    || !recoveryEpisodeCurrent(state.mainModelRecovery)) return;
   const generation = flags.sessionGeneration;
   if (mainModelRecoveryProbeInFlight && mainModelRecoveryProbeGeneration !== generation) {
     mainModelRecoveryProbeInFlight = false;
