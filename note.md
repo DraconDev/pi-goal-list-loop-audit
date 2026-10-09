@@ -18,6 +18,11 @@ these restarted when i told them but otherwise seeming ly the cuase was models b
 
 but we have clear problems too 
 
+##
+we need better summaries
+/home/dracon/Pictures/Screenshots/Screenshot_20261009_094431.png
+
+
 # later
 
 # Testing
