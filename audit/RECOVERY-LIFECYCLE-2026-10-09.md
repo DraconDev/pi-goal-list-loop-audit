@@ -12,7 +12,9 @@ Bounded `timeout 900 npm test` baseline: 3142 pass, 1 environment-gated skip, 14
 - `tests/glla-table-menu.test.ts`: exact expected rows omitted the newly introduced same-model-retry setting. The exact list now includes it.
 - `tests/stall-handling.test.ts`: source assertion assumed attempt accounting and synchronous scheduling were adjacent inline. It now checks phase reset and attempt increment in the cycle-reset block, verifies invocation of the extracted surface-resume helper, and verifies that helper schedules both goal and loop owners.
 
-Verification: `timeout 180 npm test -- tests/context-pressure-recovery.test.ts tests/unsupervised-error-retry.test.ts tests/hourly-quota-probe.test.ts tests/glla-table-menu.test.ts tests/stall-handling.test.ts` — 144 pass, 0 fail. This is a focused gate, not full `test:all` evidence.
+Verification: `timeout 180 npm test -- tests/context-pressure-recovery.test.ts tests/unsupervised-error-retry.test.ts tests/hourly-quota-probe.test.ts tests/glla-table-menu.test.ts tests/stall-handling.test.ts` — 144 pass, 0 fail.
+
+A subsequent `timeout 1200 npm run test:all` ran 3488 tests across 374 files: 3485 pass, 1 environment-gated skip, 2 fail. Both remaining failures were slow `tests/behavioral-orchestrator.test.ts` fixtures asserting immediate generic fallback despite the default retry budget. They now explicitly configure the immediate-rotation policy while retaining their exact failover assertions. Focused `timeout 120 npm test -- tests/behavioral-orchestrator.test.ts --test-name-pattern 'generic fallback chain'` — 2 pass, 0 fail, 154 intentionally filtered by that focused command. Full `test:all` must still be rerun after the lifecycle implementation.
 
 ## Evidence limitations
 
