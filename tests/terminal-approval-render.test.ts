@@ -76,16 +76,17 @@ test("canonical render folds a lone approval with the verdict count, model-free"
   // Rich voice (field 20260911_*): sections + table + trailer. Headers,
   // numbered findings, table rows, and Next bullets share the chat; the
   // record pointer stays last.
-  assert.ok(render.chatLines.includes("### What Changed"), "change account present");
-  assert.equal(render.chatLines.includes("### Verification"), false, "verification is hidden by default");
+  assert.ok(render.chatLines.includes("What Changed"), "change account present");
+  assert.ok(!render.chatLines.includes("### What Changed"), "no literal markdown headings in chat");
+  assert.equal(render.chatLines.includes("Verification"), false, "verification is hidden by default");
   assert.equal(render.chatLines.includes("1 passed."), false, "test aggregate is hidden by default");
   assert.ok(!render.chatLines.some((l) => /^Tests:/.test(l)), "technical Tests stays out of default chat");
   assert.ok(!render.chatLines.some((l) => /^\| Tests \|/.test(l)), "gate table stays archival");
   // Change-first order: changes, then Next, then the pinned trailer
   // (approval, record last).
-  const findingsIdx = render.chatLines.indexOf("### What Changed");
-  const tableIdx = render.chatLines.indexOf("### Verification");
-  const nextIdx = render.chatLines.indexOf("### Next");
+  const findingsIdx = render.chatLines.indexOf("What Changed");
+  const tableIdx = render.chatLines.indexOf("Verification");
+  const nextIdx = render.chatLines.indexOf("Next");
   const approvalIdx = render.chatLines.findIndex((l) => l.startsWith("\u2022 completion audit approved"));
   assert.ok(findingsIdx !== -1 && findingsIdx < nextIdx && nextIdx < approvalIdx, "findings precede Next, which closes the card ahead of the trailer");
   // v0.38.42 (field 20260909_140404): a lone approval folds with the
