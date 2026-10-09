@@ -22,6 +22,10 @@ but we have clear problems too
 we need better summaries
 /home/dracon/Pictures/Screenshots/Screenshot_20261009_094431.png
 
+##
+/home/dracon/Pictures/Screenshots/Screenshot_20261009_095750.png
+we need to entirely rethink the visual for hte audit we want to see making progress
+
 
 # later
 
