@@ -83,6 +83,10 @@ The dedicated lifecycle suite now proves goal/list/loop compaction timeout → a
 
 `DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS` 600s → 1500s (`extensions/goal-loop-shield.ts`). The 10-minute ceiling repeated the v0.35.16 failure mode it was created to fix: this repo's honest gates outgrew it (`test:all` ≈ 563s over 379 files, `release:check` longer), so task 8's gate died INCONCLUSIVE-timeout on any slow host — a non-verdict that strands the objective. No suite timing was touched; the slowest single test is ≈18s (bulk is breadth, not a hang). Rails unchanged: per-command budget, process-group cap, 64MB output cap, tail-kept evidence, inconclusive-never-fails, 2× load-scale ceiling. Pinned by a new test in `tests/mechanical-inconclusive.test.ts` (13 pass, 0 fail); `npm run check` clean. One observed flake (not fixed here): a `loop-branch-ownership` mid-tick run once timed out at 30s and stalled its runner file under back-to-back full-suite load; passes alone in ~2s, untouched by this work.
 
+## v0.39.21 goal: loop-branch stall flake (task 3)
+
+The mid-tick test hit its 30s timeout under full-suite load and the aftermath stalled the runner file ~10min (7 dangling processes reaped at the stall kill). Mechanism: an unbounded `session_shutdown` drain in `finally` wedges on a dead tick, so one timed-out test holds the file open. Fix (test-harness only, no prod change): all 9 cleanup drains in `tests/loop-branch-ownership.test.ts` now race a 5s `drainShutdown` bound; pinned by a unit test (wedged drain resolves at the bound, healthy drains complete). File green across 4 consecutive runs (11 pass each).
+
 ## v0.39.19 follow-ups (field 2026-10-09, post-approval)
 
 Two user-reported glitches fixed after the goal archived:
