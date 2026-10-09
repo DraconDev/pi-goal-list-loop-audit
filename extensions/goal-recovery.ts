@@ -1331,7 +1331,8 @@ let hourlyProbeGeneration: number | null = null;
  * durable timer state is not enough to fence the two callbacks once both
  * have fired, so serialize the actual async probe as well. */
 export async function probeMainModelRecovery(ctx: ExtensionContext): Promise<void> {
-  if (supervisorPaused(state) || state.loadHoldAt || isPersistenceDegraded()
+  if (supervisorPaused(state)) return;
+  if (state.loadHoldAt || isPersistenceDegraded()
     || state.mainModelRecovery?.manualResumeRequired || !state.mainModelRecovery
     || !recoveryStillCurrent(state.mainModelRecovery)) return;
   const generation = flags.sessionGeneration;
