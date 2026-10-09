@@ -441,6 +441,28 @@ export function resumeRecoveryOnManualModelSelection(ctx: ExtensionContext, sele
   return true;
 }
 
+/** Retire only the old elapsed-time stop, after restore and resume consent.
+ * Never interpret a generic blocked/manual hold as a retired retry horizon. */
+export function rearmLegacyElapsedRecoveryHold(ctx: ExtensionContext, restoreComplete: boolean, consent: boolean): boolean {
+  const recovery = state.mainModelRecovery;
+  if (!restoreComplete || !consent || !recovery?.manualResumeRequired
+    || supervisorPaused(state) || state.loadHoldAt || isPersistenceDegraded()
+    || recoveryOwnership(recovery.owner, recovery.kind, state, true) !== 'retained'
+    || isDeterministicProviderError(recovery.providerErrorDiagnostic ?? recovery.reason)) return false;
+  const goal = recovery.kind === 'goal' ? state.goal : null;
+  const loop = recovery.kind === 'loop' ? state.loop : null;
+  if (goal && (goal.status !== 'paused' || goal.pauseKind !== 'blocked' || goal.pendingCompletion)) return false;
+  if (loop?.active) return false;
+  const hold = goal?.pauseReason ?? loop?.stopReason ?? '';
+  if (!/^main model recovery — automatic probes stopped \((?:the 24h automatic recovery horizon was reached|the automatic recovery horizon would be exceeded)\)/.test(hold)) return false;
+  const failure = classifyMainModelFailure(recovery.providerErrorDiagnostic ?? recovery.reason);
+  if (failure.kind === 'non-recoverable') return false;
+  const delay = mainModelFailureDelayMs(failure, recovery.attempts, loadGlobalSettings().mainModelRetryMinutes);
+  if (!setMainModelRecoveryPause(ctx, { ...recovery, manualResumeRequired: undefined, autoRetryUntil: undefined }, delay)) return false;
+  appendLedger(ctx.cwd, 'main_model_legacy_horizon_rearmed', { kind: recovery.kind, owner: recovery.owner, retryAt: state.mainModelRecovery?.retryAt });
+  return true;
+}
+
 export function mainModelRecoveryRuntimeStatus(): import('./goal-loop-core.js').MainModelRecoveryRuntime | undefined {
   if (!flags) return undefined;
   const ctx = freshCtxForGeneration(flags.sessionGeneration);
