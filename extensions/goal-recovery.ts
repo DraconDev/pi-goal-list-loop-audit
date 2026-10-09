@@ -19,6 +19,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { state } from "./goal-state.js";
+import { currentRecoveryOwner, recoveryOwnership } from "./recovery-ownership.js";
 import { clampThinkingLevel } from "@earendil-works/pi-ai/compat";
 import { FALLBACK_THINKING_LEVELS, type FallbackThinkingLevel } from "./main-fallback-thinking.js";
 import { auditPhaseOwnsAttempt } from "./audit-lifecycle.js";
@@ -334,7 +335,7 @@ export interface RecoveryDeps {
   freshCtxForGeneration: (generation: number) => ExtensionContext | null;
   isSupervising: () => boolean;
   notifyExternal: (ctx: ExtensionContext, message: string) => void;
-  persistState: (ctx: ExtensionContext) => void;
+  persistState: (ctx: ExtensionContext) => boolean | void;
   recoverySurfaceCommand: (kind: "goal" | "loop", command: string) => string;
   scheduleContinuation: (ctx: ExtensionContext, force?: boolean, delayMs?: number) => void;
   scheduleSessionTimeout: (callback: () => void, delayMs: number) => NodeJS.Timeout;
@@ -373,6 +374,28 @@ export function createGoalRecovery(flagsArg: RecoveryFlags, d: RecoveryDeps): vo
 /* Cluster B — moved functions (byte-identical bodies, module flags   */
 /* via RecoveryFlags accessor)                                         */
 /* ------------------------------------------------------------------ */
+
+/** Retire only a positively orphaned/terminal recovery projection. The caller
+ * establishes restore completion; ordinary-chat ownership is not goal loss.
+ * Storage failure retains the saved marker and stands dispatch down. */
+export function retireOrphanedMainModelRecovery(ctx: ExtensionContext, restoreComplete: boolean): boolean {
+  const recovery = state.mainModelRecovery;
+  if (!recovery) return false;
+  const ownership = recoveryOwnership(recovery.owner, recovery.kind, state, restoreComplete);
+  if (!['terminal', 'absent', 'replaced'].includes(ownership)) return false;
+  state.mainModelRecovery = undefined;
+  clearMainModelRecoveryTimer();
+  if (persistState(ctx) === false) {
+    state.mainModelRecovery = recovery;
+    flags.continuationDispatchStoodDown = true;
+    ctx.ui.notify('glla: recovery cleanup could not persist. Saved work is retained; automatic dispatch is held until storage is repaired.', 'warning');
+    return false;
+  }
+  flags.lastMainModelFailure = null;
+  flags.mainModelAbortForRecovery = false;
+  appendLedger(ctx.cwd, 'main_model_recovery_retired', { ownership, owner: recovery.owner, kind: recovery.kind });
+  return true;
+}
 
 export function mainModelRecoveryActive(): boolean {
   return !!state.mainModelRecovery?.retryAt || !!state.mainModelRecovery?.pendingModelSwitch;
@@ -708,6 +731,7 @@ export async function tryMainModelFallback(ctx: ExtensionContext, failure: MainM
   const existing = state.mainModelRecovery;
   const baseRecovery = withMainModelRecoveryWindow(existing ?? {
     primary: current,
+    owner: currentRecoveryOwner(state),
     active: current,
     attempted: [current],
     attempts: 0,
@@ -1732,6 +1756,7 @@ export function parkMainModelAfterFailure(ctx: ExtensionContext, failure: MainMo
   if (!current) return;
   const existing = withMainModelRecoveryWindow(state.mainModelRecovery ?? {
     primary: current,
+    owner: currentRecoveryOwner(state),
     active: current,
     attempted: [current],
     attempts: 0,
