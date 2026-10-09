@@ -1371,6 +1371,8 @@ export interface MainModelRecoveryRuntime {
   retryTimerArmed: boolean;
   hourlyTimerArmed: boolean;
   switchInFlight: boolean;
+  turnActive?: boolean;
+  turnQueued?: boolean;
   hold?: string;
 }
 
@@ -1418,6 +1420,8 @@ export function formatMainModelRecoveryStatus(recovery: MainModelRecovery | unde
   if (recovery.manualResumeRequired) lines.push("  Automatic probes: stopped; explicit resume required");
   else if (runtime?.hold) lines.push(`  Retry execution: held — ${runtime.hold}`);
   else if (runtime?.switchInFlight) lines.push('  Retry execution: model selection in flight (not provider success)');
+  else if (runtime?.turnActive) lines.push('  Retry execution: host turn active; recovery success unconfirmed');
+  else if (runtime?.turnQueued) lines.push('  Retry execution: host turn queued; recovery success unconfirmed');
   else if (recovery.retryAt || recovery.primaryProbeAt || recovery.pendingModelSwitch || recovery.primaryProbeInFlight) {
     const deadline = Date.parse(recovery.retryAt ?? recovery.primaryProbeAt ?? '');
     const due = Number.isFinite(deadline) && deadline <= nowMs;
@@ -1425,6 +1429,8 @@ export function formatMainModelRecoveryStatus(recovery: MainModelRecovery | unde
     else if (runtime.retryTimerArmed) lines.push(`  Retry execution: timer armed${due ? '; deadline overdue — waiting for safe dispatch' : ''}`);
     else if (runtime.hourlyTimerArmed) lines.push('  Retry execution: hourly timer only; regular probe not armed');
     else lines.push('  Retry execution: no live timer or model selection — stalled/unarmed; saved work retained');
+  } else if (Number.isFinite(firstMs)) {
+    lines.push('  Retry execution: no saved retry deadline; live execution unconfirmed');
   }
   return lines;
 }

@@ -444,6 +444,23 @@ export function resumeRecoveryOnManualModelSelection(ctx: ExtensionContext, sele
   return true;
 }
 
+export function mainModelRecoveryRuntimeStatus(): import('./goal-loop-core.js').MainModelRecoveryRuntime | undefined {
+  if (!flags) return undefined;
+  const ctx = freshCtxForGeneration(flags.sessionGeneration);
+  return {
+    retryTimerArmed: flags.mainModelRecoveryTimer !== null,
+    hourlyTimerArmed: flags.hourlyProbeTimer !== null,
+    switchInFlight: flags.mainModelSwitchInFlight,
+    turnActive: ctx?.isIdle?.() === false,
+    turnQueued: ctx?.hasPendingMessages?.() === true,
+    hold: state.supervisorPausedAt ? 'supervisor pause'
+      : state.loadHoldAt ? 'session load hold'
+      : flags.extensionApiStale ? 'stale extension; reload required'
+      : !ctx ? 'session context unavailable/restoring'
+      : undefined,
+  };
+}
+
 export function mainModelRecoveryActive(): boolean {
   return !!state.mainModelRecovery?.retryAt || !!state.mainModelRecovery?.pendingModelSwitch;
 }
