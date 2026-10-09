@@ -1541,6 +1541,16 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
   const generation = flags.sessionGeneration;
   let recovery = state.mainModelRecovery;
   if (!recovery) return;
+  if (!recovery.firstFailureAt || recovery.autoRetryUntil) {
+    const previous = recovery;
+    recovery = withMainModelRecoveryWindow(recovery);
+    state.mainModelRecovery = recovery;
+    if (persistState(ctx) === false) {
+      state.mainModelRecovery = previous;
+      flags.continuationDispatchStoodDown = true;
+      return;
+    }
+  }
   const current = modelRef(ctx.model);
   if (recovery.primaryThinkingLevel === undefined && sameModelRef(current, recovery.primary)) {
     const thinking = flags.extensionApi?.getThinkingLevel?.() ?? ctx.thinkingLevel;
