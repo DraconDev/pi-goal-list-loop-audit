@@ -8,8 +8,8 @@
 //   1. A quota-class episode (rate-limit/plan-quota) past its horizon does
 //      NOT hold for manual resume: the wait is re-armed, attempts keep
 //      climbing, the run survives the wall.
-//   2. Billing still parks at the horizon (account wall, not a transient).
-//   3. Non-quota failures still park at the horizon.
+//   2. All recoverable provider failures now persist beyond legacy expiry.
+//   3. Explicit manual holds and deterministic request refusals remain stops.
 
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
@@ -113,19 +113,21 @@ test("quota wait survives the horizon instead of parking", () => {
   }
 });
 
-test("billing and non-quota failures still park at the horizon", () => {
+test("billing and non-quota failures retain paced retries beyond legacy expiry without granting purchases", () => {
   const r = rig();
   try {
-    assert.equal(
-      setMainModelRecoveryPause(r.ctx, pastHorizonEpisode("insufficient credits — buy credits"), 30 * 60_000),
-      false, "billing parks: an account wall is not a transient",
-    );
-    assert.equal(state.mainModelRecovery?.manualResumeRequired, true);
-    assert.equal(
-      setMainModelRecoveryPause(r.ctx, pastHorizonEpisode("503 Service Unavailable"), 30 * 60_000),
-      false, "non-quota failures keep their horizon park",
-    );
-    assert.equal(state.mainModelRecovery?.manualResumeRequired, true);
+    for (const reason of ['insufficient credits — buy credits', '503 Service Unavailable', '401 invalid API key', 'unknown provider failure']) {
+      const episode = pastHorizonEpisode(reason);
+      assert.equal(setMainModelRecoveryPause(r.ctx, episode, 30 * 60_000), true);
+      assert.equal(state.mainModelRecovery?.manualResumeRequired, undefined);
+      assert.equal(state.mainModelRecovery?.autoRetryUntil, undefined);
+      assert.equal(state.mainModelRecovery?.firstFailureAt, episode.firstFailureAt);
+      assert.equal(state.mainModelRecovery?.attempts, 40);
+      assert.ok(Date.parse(state.mainModelRecovery?.retryAt ?? '') >= Date.now() + 29 * 60_000);
+    }
+    assert.equal(setMainModelRecoveryPause(r.ctx, { ...pastHorizonEpisode('503 Service Unavailable'), manualResumeRequired: true }, 30 * 60_000), false);
+    assert.equal(state.mainModelRecovery?.manualResumeRequired, true, 'explicit hold remains authoritative');
+    assert.equal(state.mainModelRecovery?.retryAt, undefined);
   } finally {
     r.restore();
   }
