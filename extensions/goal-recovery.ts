@@ -1249,6 +1249,7 @@ export function cancelHourlyProbe(): void {
 export function manuallyResumeMainModelRecovery(ctx: ExtensionContext): boolean {
   const recovery = state.mainModelRecovery;
   if (!recovery?.manualResumeRequired) return false;
+  const before = { ...state };
   const current = modelRef(ctx.model);
   const now = Date.now();
   state.mainModelRecovery = {
@@ -1268,11 +1269,14 @@ export function manuallyResumeMainModelRecovery(ctx: ExtensionContext): boolean 
     recoveryNoticeKeys: [],
   };
   clearMainModelRecoveryTimer();
+  if (persistState(ctx) === false) {
+    replaceState(before);
+    flags.continuationDispatchStoodDown = true;
+    ctx.ui.notify('glla: manual recovery resume could not persist. Saved work remains held until storage is repaired.', 'warning');
+    return false;
+  }
   flags.continuationDispatchStoodDown = false;
-  persistState(ctx);
-  ctx.ui.notify(aggressive
-    ? "Manual resume reopens event-driven main-model recovery — one provider probe, then configured fallback models as long as the failure remains recoverable."
-    : "Manual resume starts a fresh bounded main-model recovery window — one provider probe, then configured fallback models if needed.", "info");
+  ctx.ui.notify("Manual resume reopens paced main-model recovery — one provider probe, then configured fallback models as long as the failure remains recoverable.", "info");
   void probeMainModelRecovery(ctx);
   return true;
 }
