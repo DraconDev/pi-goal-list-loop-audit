@@ -39,7 +39,7 @@ test("latest approved recap takes precedence for every plain/structured claim co
 test("four-area chat is outcome-first and grouped; archive retains detailed evidence", () => {
   const chat = fixtureRender().chatLines.join("\n");
   assert.match(chat.split("\n")[0]!, /Drafting now hands off/);
-  assert.match(chat, /#### 1\. Drafting/);
+  assert.match(chat, /^1\. Drafting/m);
   assert.doesNotMatch(chat, /\| Area \| Finding|\| Command \||bun test tests\/|node scripts\/live|abc12345|Final Repository State/);
   assert.doesNotMatch(chat, /### Verification/);
   assert.doesNotMatch(chat, /^Tests:/m);

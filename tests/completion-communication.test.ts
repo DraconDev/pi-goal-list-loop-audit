@@ -92,7 +92,7 @@ test("complete_goal leftOut renders the deliberate-non-do bullet end to end", as
   assert.equal(entries.length, 1);
   assert.match(entries[0].content, /- \*\*Left out\*\* — the walkthrough artifact surface/);
   const lines = entries[0].content.split("\n");
-  assert.ok(lines.every((l: string) => l.startsWith("## ") || l.startsWith("### ") || l.startsWith("• ") || l === "" || /^\d+\. \*\*/.test(l) || l.startsWith("- **") || l.startsWith("\u2014 ")), "posted summary is one change-first voice");
+  assert.ok(lines.every((l: string) => l.startsWith("## ") || l.startsWith("### ") || l.startsWith("• ") || l === "" || /^\d+\. /.test(l) || l.startsWith("- **") || l.startsWith("\u2014 ") || ["What Changed", "Remaining", "Next", "Summary", "Verification"].includes(l)), "posted summary is one change-first voice");
   const numbered = lines.filter((l: string) => /^\d+\. \*\*/.test(l));
   assert.ok(numbered.length >= 1 && numbered.length <= 8, `posted summary carries numbered findings plus the trailer, got ${numbered.length}`);
   assert.ok(lines[lines.length - 1]!.startsWith("• record:"), "record pointer stays last");
@@ -115,7 +115,7 @@ test("complete_goal findingGroups ride the claim into the grouped terminal rende
   ], "the pending claim stores the sanitized groups");
   await waitFor(() => entries.length === 1);
   assert.match(entries[0].content, /^## Done — Fixed routing\./);
-  assert.ok(entries[0].content.includes("#### 1. Router"), "grouped area subsection reaches the chat");
+  assert.ok(entries[0].content.includes("1. Router"), "grouped area subsection reaches the chat");
   // v0.38.104: the bullet shape is the v0.38.102 gist/evidence split — the
   // finding is the bullet, the repo-relative evidence rides indented beneath
   // it. This assertion still described the pre-v0.38.102 one-line

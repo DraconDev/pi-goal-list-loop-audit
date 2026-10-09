@@ -46,14 +46,14 @@ test("pairing: standalone actions stay in ### Next", () => {
   assert.equal(p.nextLines.length, 1, "only the standalone action stays");
   assert.match(p.nextLines[0]!, /Audit the remaining game fixtures/);
   const card = composeRichTerminalLines(p).join("\n");
-  assert.match(card, /### Remaining/, "Remaining section renders");
-  assert.match(card, /### Next/, "Next section renders for the standalone action");
+  assert.match(card, /^Remaining$/m, "Remaining section renders");
+  assert.match(card, /^Next$/m, "Next section renders for the standalone action");
 });
 
 test("pairing: fully paired card omits an empty ### Next", () => {
   const card = composeRichTerminalLines(parts([PROBLEM, RESOLVING_ACTION])).join("\n");
-  assert.match(card, /### Remaining/);
-  assert.doesNotMatch(card, /### Next/, "no empty Next section");
+  assert.match(card, /^Remaining$/m);
+  assert.doesNotMatch(card, /^Next$/m, "no empty Next section");
 });
 
 test("pairing: unrelated problem and action do not pair", () => {

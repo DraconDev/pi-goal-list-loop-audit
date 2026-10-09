@@ -128,7 +128,7 @@ test("terminal and archive human sections share the What Changed contract", () =
   });
   const chat = rendered.chatLines.join("\n");
   const archive = buildRichArchiveSection(goal(), "complete", ".pi-glla/archive/lead-contract.md", findingGroups).join("\n");
-  assert.match(chat, /### What Changed/);
+  assert.match(chat, /^What Changed$/m);
   assert.match(archive, /### What Changed/);
   assert.match(chat, /Users can complete a browser-action fill/);
   assert.match(archive, /Users can complete a browser-action fill/);
