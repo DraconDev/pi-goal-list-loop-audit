@@ -1224,7 +1224,7 @@ function pausedNextTransition(g: Goal, state: State, now: number): string {
     // present, including after retryAt has passed but before the recovery
     // dispatch clears/unparks the goal. Do not claim "resuming now" on the
     // same line that says the goal is still parked in recovery.
-    return "retrying automatically";
+    return "retry scheduled; execution unconfirmed";
   }
   const resumeAt = g.pauseResumeAt ? Date.parse(g.pauseResumeAt) : Number.NaN;
   if (Number.isFinite(resumeAt)) {
@@ -1608,7 +1608,7 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
       // time; the hourly retry is only an extra retry.
       const parked = state.mainModelRecovery?.retryAt ? Date.parse(state.mainModelRecovery.retryAt) : Number.NaN;
       if (Number.isFinite(parked) || state.mainModelRecovery?.pendingModelSwitch) {
-        const label = "⏳ main-model recovery — retrying automatically";
+        const label = "⏳ main-model recovery — automatic retry scheduled";
         return `glla: ${paint(theme, "dim", label)}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
       }
       if (!supervised) {

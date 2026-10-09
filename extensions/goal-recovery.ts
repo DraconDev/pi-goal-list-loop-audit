@@ -31,16 +31,13 @@ import {
   isContextOverflowError,
   isMainModelFailbackAuto,
   isMainModelFallbackFailure,
-  mainModelAutoRetryUntil,
   mainModelFailureDelayMs,
   mainModelPrimaryProbeDelayMs,
   mainModelRetryDelayMs,
   probeRetryDelayMs,
   isDeterministicProviderError,
-  isQuotaHorizonExempt,
   quotaResetSleepMs,
   isCompactionInFlightSince,
-  MAIN_MODEL_AUTO_RETRY_HORIZON_MS,
   modelRef,
   normalizeBoundedModelRefs,
   normalizeMainModelFallbackRefs,
@@ -1248,25 +1245,19 @@ export function cancelHourlyProbe(): void {
 // hourly-retry-probe.test.ts is source-pin only and never called them.
 // Removed with the v0.34.108 dead-code sweep.
 
-/** An explicit resume is consent to start a fresh automatic episode after a
- * conservative safety hold. Aggressive mode has no wall-clock episode
- * horizon, but manual resume still remains the explicit escape from a
- * state-based hold. */
+/** Explicit resume starts a fresh automatic episode after a state-based hold. */
 export function manuallyResumeMainModelRecovery(ctx: ExtensionContext): boolean {
   const recovery = state.mainModelRecovery;
   if (!recovery?.manualResumeRequired) return false;
   const current = modelRef(ctx.model);
   const now = Date.now();
-  const aggressive = (() => {
-    try { return resolveEffectiveAggressiveSettings(loadSettings(ctx.cwd)).aggressiveMode; } catch { return false; }
-  })();
   state.mainModelRecovery = {
     ...recovery,
     active: current ?? recovery.active,
     attempted: current ? [current] : [],
     attempts: 0,
     firstFailureAt: new Date(now).toISOString(),
-    autoRetryUntil: aggressive ? undefined : mainModelAutoRetryUntil(now, MAIN_MODEL_AUTO_RETRY_HORIZON_MS),
+    autoRetryUntil: undefined,
     retryAt: undefined,
     primaryProbeAt: undefined,
     primaryProbeInFlight: undefined,
