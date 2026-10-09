@@ -1326,17 +1326,15 @@ export interface MainModelRecovery {
   primaryResetAt?: string;
   /** A preferred-primary switch was accepted and awaits one supervised turn. */
   primaryProbeInFlight?: boolean;
-  /** Number of completed recovery waits; drives the bounded per-attempt exponential cadence. */
+  /** Recovery/backoff steps recorded; not completed provider requests or core retry counts. */
   attempts: number;
   /** Human-readable provider failure excerpt. */
   reason: string;
   /** First failure in this automatic recovery episode (legacy horizon anchor). */
   firstFailureAt?: string;
-  /** Conservative-mode deadline; aggressive mode omits this legacy field and
-   * uses state-based stop rules instead. */
+  /** Legacy elapsed-time deadline, read for compatibility; new episodes do not expire. */
   autoRetryUntil?: string;
-  /** Set only when conservative recovery reaches its horizon or an explicit
-   * state-based hold requires user action. */
+  /** Explicit state-based manual hold; legacy records may carry a retired horizon hold. */
   manualResumeRequired?: boolean;
   /** Legacy provider hint retained only when reading old state. */
   resetAt?: string;
@@ -1369,7 +1367,15 @@ function fmtRecoveryElapsed(ms: number): string {
   return `${Math.floor(hours / 24)}d ${hours % 24}h`;
 }
 
-export function formatMainModelRecoveryStatus(recovery: MainModelRecovery | undefined, configuredBackups: string[] = [], nowMs: number = Date.now()): string[] {
+export interface MainModelRecoveryRuntime {
+  retryTimerArmed: boolean;
+  hourlyTimerArmed: boolean;
+  switchInFlight: boolean;
+  hold?: string;
+}
+
+/** Runtime evidence is optional: saved deadlines alone never prove execution. */
+export function formatMainModelRecoveryStatus(recovery: MainModelRecovery | undefined, configuredBackups: string[] = [], nowMs: number = Date.now(), runtime?: MainModelRecoveryRuntime): string[] {
   if (!recovery) return [];
   const safeBackups = configuredBackups.filter((ref) => typeof ref === "string" && ref.trim()).slice(0, MAX_MAIN_MODEL_FALLBACKS);
   const chain = [recovery.primary, ...safeBackups];
@@ -1385,7 +1391,7 @@ export function formatMainModelRecoveryStatus(recovery: MainModelRecovery | unde
   const attempts = typeof recovery.attempts === "number" && recovery.attempts > 0 ? recovery.attempts : 0;
   const firstMs = typeof recovery.firstFailureAt === "string" ? Date.parse(recovery.firstFailureAt) : Number.NaN;
   const trajectory = attempts > 0 || Number.isFinite(firstMs)
-    ? [`  Attempts: ${attempts}${Number.isFinite(firstMs) ? ` · failing ${fmtRecoveryElapsed(nowMs - firstMs)}` : ""}`]
+    ? [`  Recovery steps: ${attempts}${Number.isFinite(firstMs) ? ` · episode age ${fmtRecoveryElapsed(nowMs - firstMs)}` : ""}`, '  Counts are GLLA backoff steps, not provider requests; episode age does not prove continuous failure.']
     : [];
   // v0.38.93: name the deterministic class when classified — a held 400
   // with a countdown reads like a transient that will clear; it won't.
@@ -1410,6 +1416,16 @@ export function formatMainModelRecoveryStatus(recovery: MainModelRecovery | unde
   if (recovery.primaryProbeAt) lines.push(`  Preferred-primary probe at: ${recovery.primaryProbeAt}`);
   if (recovery.primaryProbeInFlight) lines.push("  Preferred-primary probe: supervised turn pending");
   if (recovery.manualResumeRequired) lines.push("  Automatic probes: stopped; explicit resume required");
+  else if (runtime?.hold) lines.push(`  Retry execution: held — ${runtime.hold}`);
+  else if (runtime?.switchInFlight) lines.push('  Retry execution: model selection in flight (not provider success)');
+  else if (recovery.retryAt || recovery.primaryProbeAt || recovery.pendingModelSwitch || recovery.primaryProbeInFlight) {
+    const deadline = Date.parse(recovery.retryAt ?? recovery.primaryProbeAt ?? '');
+    const due = Number.isFinite(deadline) && deadline <= nowMs;
+    if (!runtime) lines.push(`  Retry execution: ${due ? 'deadline overdue; ' : ''}live timer/probe unconfirmed`);
+    else if (runtime.retryTimerArmed) lines.push(`  Retry execution: timer armed${due ? '; deadline overdue — waiting for safe dispatch' : ''}`);
+    else if (runtime.hourlyTimerArmed) lines.push('  Retry execution: hourly timer only; regular probe not armed');
+    else lines.push('  Retry execution: no live timer or model selection — stalled/unarmed; saved work retained');
+  }
   return lines;
 }
 
