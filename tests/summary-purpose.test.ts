@@ -38,9 +38,9 @@ function render(summary?: string, overrides: Record<string, unknown> = {}) {
 
 test("chat summary leads with durable change facts and hides verification by default", () => {
   const lines = render().chatLines;
-  const changes = lines.findIndex((line) => line === "### What Changed");
-  const risks = lines.findIndex((line) => line === "### Remaining");
-  const verification = lines.findIndex((line) => line === "### Verification");
+  const changes = lines.findIndex((line) => line === "What Changed");
+  const risks = lines.findIndex((line) => line === "Remaining");
+  const verification = lines.findIndex((line) => line === "Verification");
   assert.ok(changes >= 0, "change account has its own primary section");
   assert.ok(risks > changes, "remaining risks follow changes");
   assert.equal(verification, -1, "technical verification is not shown unless requested");
@@ -51,10 +51,10 @@ test("chat summary leads with durable change facts and hides verification by def
 
 test("explicit verification opt-in adds one aggregate tail, not a gate table", () => {
   const lines = render(undefined, { showVerification: true }).chatLines;
-  const start = lines.indexOf("### Verification");
+  const start = lines.indexOf("Verification");
   const end = lines.indexOf("• completion audit approved (1 review).");
   const block = lines.slice(start, end).filter((line) => line && (line === "### Verification" || (!line.startsWith("###") && !line.startsWith("- "))));
-  assert.deepEqual(block, ["### Verification", "1 passed, 1 reported."], "verification is one aggregate sentence");
+  assert.deepEqual(block, ["Verification", "1 passed, 1 reported."], "verification is one aggregate sentence");
   assert.doesNotMatch(block.join("\n"), /Quality Gate|\| Unit tests \||\| Chrome build \|/);
   assert.doesNotMatch(block.join("\n"), /bun test|wxt build|747 passed|Tests:/);
   assert.doesNotMatch(lines.join("\n"), /^Tests:/m, "explicit verification does not restore the raw Tests label");
@@ -64,8 +64,8 @@ test("behavioral limitation belongs under Remaining, not a second technical Next
   const lines = render(undefined, {
     leftOut: "the repository-level legacy asset checker was intentionally not changed",
   }).chatLines;
-  const remaining = lines.indexOf("### Remaining");
-  const next = lines.indexOf("### Next");
+  const remaining = lines.indexOf("Remaining");
+  const next = lines.indexOf("Next");
   assert.ok(remaining >= 0, "non-do is visible as a remaining concern");
   assert.ok(remaining < next, "remaining concerns lead the optional next step");
   assert.ok(lines.slice(remaining, next).join("\n").includes("legacy asset checker"));

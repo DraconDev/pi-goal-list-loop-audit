@@ -56,7 +56,7 @@ test("card opens with the outcome, then a change-first account and compact verif
   const { chatLines } = render();
   assert.equal(chatLines[0], "## Done — shipped the rich terminal voice");
   assert.equal(chatLines.filter(line => line.startsWith("## Done")).length, 1, "one outcome headline");
-  const findingsIdx = chatLines.findIndex((l) => l === "### What Changed");
+  const findingsIdx = chatLines.findIndex((l) => l === "What Changed");
   assert.ok(findingsIdx > 0, "findings section present");
   assert.match(chatLines[findingsIdx + 1] ?? "", /^1\. \*\*extensions\/completion-summary\.ts/, "numbered outcome first");
   assert.match(chatLines[findingsIdx + 2] ?? "", /^2\. \*\*gate green/, "second finding numbered");
@@ -65,7 +65,7 @@ test("card opens with the outcome, then a change-first account and compact verif
 
 test("chat hides verification by default; the archive retains the full table", () => {
   const chat = render().chatLines;
-  assert.equal(chat.includes("### Verification"), false, "technical verification is not default user copy");
+  assert.equal(chat.includes("Verification"), false, "technical verification is not default user copy");
   assert.equal(chat.includes("1 passed."), false, "test counts stay out of default chat");
   assert.ok(!chat.some((l) => /^\| Tests \|/.test(l)), "gate-by-gate table stays archival");
   assert.ok(!chat.some((l) => /^Tests:/.test(l)), "technical Tests label stays out of default chat");
@@ -82,7 +82,7 @@ test("failed verification is archive-only unless explicitly requested", () => {
       completionSummary: SIX.replace("Tests: bun test 2075 pass, 0 fail", "Tests: bun test 3 failed, 9 passed | see log"),
     }) as unknown as Goal,
   });
-  assert.equal(failing.chatLines.includes("### Verification"), false, "failure evidence does not hijack the default user card");
+  assert.equal(failing.chatLines.includes("Verification"), false, "failure evidence does not hijack the default user card");
   assert.equal(failing.chatLines.includes("1 failed."), false, "failure aggregate stays out by default");
   const opted = render({
     showVerification: true,
@@ -92,7 +92,7 @@ test("failed verification is archive-only unless explicitly requested", () => {
       completionSummary: SIX.replace("Tests: bun test 2075 pass, 0 fail", "Tests: bun test 3 failed, 9 passed | see log"),
     }) as unknown as Goal,
   });
-  assert.ok(opted.chatLines.includes("### Verification"), "explicit request gets a compact verification tail");
+  assert.ok(opted.chatLines.includes("Verification"), "explicit request gets a compact verification tail");
   assert.ok(opted.chatLines.includes("1 failed."), "aggregate preserves the failure");
   assert.ok(!opted.chatLines.some((l) => /^Tests:/.test(l)), "the opt-in tail does not restore the raw Tests label");
 });
@@ -106,7 +106,7 @@ test("REPORTED verification stays visible when explicitly requested — never up
       completionSummary: SIX.replace("Tests: bun test 2075 pass, 0 fail", "Tests: exit 0, log kept"),
     }) as unknown as Goal,
   });
-  assert.ok(chatLines.includes("### Verification"), "reported evidence gets the compact tail");
+  assert.ok(chatLines.includes("Verification"), "reported evidence gets the compact tail");
   assert.ok(chatLines.includes("1 reported."), "bare-exit wording is not upgraded to PASS");
 });
 
@@ -154,7 +154,7 @@ test("commit hashes stay in the archive, while chat keeps explanations", () => {
 
 test("Next section carries the concrete action; stale self-reference still drops", () => {
   const { chatLines, transcriptLines } = render();
-  const nextIdx = chatLines.findIndex((l) => l === "### Next");
+  const nextIdx = chatLines.findIndex((l) => l === "Next");
   assert.ok(nextIdx > 0, "Next section present");
   assert.ok(chatLines.some((l) => /^- \*\*Next\*\* — replay on next contact$/.test(l)), "concrete Next survives as a bold-lead bullet");
   const stale = render({
@@ -238,9 +238,9 @@ test("duration line rides under the headline; unknown facts stay absent", () => 
 
 test("fewer than four groups render as nested change subsections", () => {
   const { chatLines, transcriptLines } = render({ findingGroups: GROUPS });
-  const findingsIdx = chatLines.findIndex((l) => l === "### What Changed");
+  const findingsIdx = chatLines.findIndex((l) => l === "What Changed");
   assert.ok(findingsIdx > 0, "findings section present");
-  assert.equal(chatLines[findingsIdx + 1], "#### 1. Sound manager", "first area subsection");
+  assert.equal(chatLines[findingsIdx + 1], "1. Sound manager", "first area subsection");
   // v0.38.102: the GIST is the bullet and the evidence rides indented beneath
   // it. Field 2026-09-27: a long `outcome — reason` line buried the outcome in
   // its own evidence, so the reader had to parse the whole sentence to learn
@@ -260,8 +260,8 @@ test("four or more groups render as an Area | Finding | Evidence table", () => {
     ];
   const table = { chatLines: buildRichArchiveSection(richGoal(), "complete", "archive.md", groups) };
   const chat = render({ findingGroups: groups }).chatLines;
-  assert.ok(chat.some(line => line === "#### 4. Screen B"));
-  assert.ok(chat.includes("### What Changed"));
+  assert.ok(chat.some(line => line === "4. Screen B"));
+  assert.ok(chat.includes("What Changed"));
   assert.ok(!chat.some(line => line.startsWith("| Area |")));
   const headerIdx = table.chatLines.findIndex((l) => l === "| Area | User-visible outcome | Evidence / reason |");
   assert.ok(headerIdx > 0, "findings table present");
@@ -279,8 +279,8 @@ test("four or more groups render as an Area | Finding | Evidence table", () => {
 
 test("three groups stay nested — the table trigger is exactly four", () => {
   const three = render({ findingGroups: [...GROUPS, { title: "Third", findings: ["Lead: body"] }] });
-  assert.ok(three.chatLines.some((l) => l.startsWith("#### 3. Third")), "third group nested");
-  assert.ok(three.chatLines.includes("### What Changed"));
+  assert.ok(three.chatLines.some((l) => l.startsWith("3. Third")), "third group nested");
+  assert.ok(three.chatLines.includes("What Changed"));
   assert.ok(!three.chatLines.some((l) => l.startsWith("| Area |")), "still no table");
 });
 
@@ -300,12 +300,12 @@ test("v0.38.55: render path respects the sanitize trust boundary", () => {
   // The renderer itself never clips values — the 10k-char finding bound
   // is the trust boundary's doing (pinned by the sanitize test above).
   assert.ok(long!.includes("x".repeat(400)), `value substantially present, got ${long!.length}`);
-  assert.ok(crowded.chatLines.some((l) => l.startsWith("#### 3.")), "later groups keep their headers");
-  assert.ok(crowded.chatLines.includes("### What Changed"));
+  assert.ok(crowded.chatLines.some((l) => l.startsWith("3.")), "later groups keep their headers");
+  assert.ok(crowded.chatLines.includes("What Changed"));
   const fifteen = sanitizeFindingGroups(Array.from({ length: 15 }, (_, i) => ({ title: `t${i}`, findings: ["Lead: body"] })));
   const capped = render({ findingGroups: fifteen });
-  assert.ok(capped.chatLines.includes("#### 12. t11"), "groups inside the 12-group boundary render");
-  assert.ok(!capped.chatLines.includes("#### 13. t12"), "groups past the boundary never render");
+  assert.ok(capped.chatLines.includes("12. t11"), "groups inside the 12-group boundary render");
+  assert.ok(!capped.chatLines.includes("13. t12"), "groups past the boundary never render");
   // Every Next renders — the one-concrete-action chat filter still
   // applies to six-label Nexts; parts-level Nexts are uncapped.
   const parts = buildRichTerminalParts({
@@ -470,7 +470,7 @@ test("v0.38.102 an inline enumeration renders as an indented list", () => {
     "Changed: the kill-switch runbook",
     "Left out: Deliberately not done, and why: (1) The runbook's probes target production URLs and were not executed live here. (2) No on-call rota was invented; the runbook keeps one marked TODO(owner). (3) No production configuration or toggle file was created — the switch ships fail-open and inert. (4) Not attempted: a dedicated ops-only endpoint reporting the switch state.",
   ]);
-  const idx = chatLines.findIndex((l) => l === "### Remaining");
+  const idx = chatLines.findIndex((l) => l === "Remaining");
   assert.ok(idx > 0, "Remaining section present");
   assert.equal(
     chatLines[idx + 1],
@@ -495,7 +495,7 @@ test("v0.38.102 a single (1) marker is prose, not a list, and is left intact", (
     "Changed: the runbook",
     "Unresolved: the only named owner is TODO(owner) and the count is off by (1) unit.",
   ]);
-  const idx = chatLines.findIndex((l) => l === "### Remaining");
+  const idx = chatLines.findIndex((l) => l === "Remaining");
   assert.equal(chatLines[idx + 1], "- **Unresolved** — the only named owner is TODO(owner) and the count is off by (1) unit.");
   assert.ok(
     !chatLines.slice(idx + 1).some((l) => l.startsWith("  - ")),
