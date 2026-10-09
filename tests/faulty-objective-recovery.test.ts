@@ -74,8 +74,7 @@ test("imperative implementation requests mentioning audit, verification, or regr
 });
 
 test("adverb-qualified recovery objectives are actionable, not verification fragments", () => {
-  for (const prefix of ["Durably", "Safely", "Fully", "Comprehensively", "Systematically", "Safely and"]) {
-    if (prefix === "Safely and") continue;
+  for (const prefix of ["Durably", "Safely", "Fully", "Comprehensively", "Systematically"]) {
     const text = `${prefix} fix all GLLA-owned recovery and lifecycle issues. Preserve unfinished goal/list/loop work and its verification contract across recoverable provider failures. Resolve the three broader test failures.`;
     assert.equal(assessSuspiciousObjective(text).suspicious, false, text);
   }
