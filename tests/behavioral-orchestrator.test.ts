@@ -3119,7 +3119,8 @@ test("main-model recovery external notices are deduplicated per provider episode
 test("request-rate prose uses the generic fallback chain", async () => {
   __testOnlyResetStaleFlag();
   const cwd = tmpCwd();
-  setGlobalSettings({ mainModelFallbacks: ["provider/backup"], aggressiveMode: false });
+  // Exercise chain eligibility independently of the earlier retry phase.
+  setGlobalSettings({ mainModelFallbacks: ["provider/backup"], mainModelSameModelRetries: 0, aggressiveMode: false });
   const ctx = await freshSession(cwd, "startup");
   (ctx as any).modelRegistry = { find: (provider: string, id: string) => ({ provider, id }), hasConfiguredAuth: () => true };
   await pi.command("goal", "request-rate stays current — done when pinned", ctx);
@@ -3134,7 +3135,8 @@ test("request-rate prose uses the generic fallback chain", async () => {
 test("explicit 429-shaped errors use the generic fallback chain", async () => {
   __testOnlyResetStaleFlag();
   const cwd = tmpCwd();
-  setGlobalSettings({ mainModelFallbacks: ["provider/backup"], aggressiveMode: false });
+  // Keep the exact failover assertion under explicit immediate rotation.
+  setGlobalSettings({ mainModelFallbacks: ["provider/backup"], mainModelSameModelRetries: 0, aggressiveMode: false });
   const ctx = await freshSession(cwd, "startup");
   (ctx as any).modelRegistry = { find: (provider: string, id: string) => ({ provider, id }), hasConfiguredAuth: () => true };
   await pi.command("goal", "429 keeps current model — done when pinned", ctx);
