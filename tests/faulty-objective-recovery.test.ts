@@ -317,6 +317,24 @@ test("session_start auto-resume blocks a suspicious active objective and queues 
   assert.doesNotMatch(ledger(cwd), /"goal_continuation_sent"/);
 });
 
+test("manual resume retains an adverb-qualified recovery goal without requeueing repair", async () => {
+  const cwd = tmpCwd();
+  const objective = "Durably fix all GLLA-owned recovery and lifecycle issues. Preserve unfinished work and its verification contract. Resolve the three broader test failures.";
+  const verificationContract = "Recovery lifecycle tests pass without weakening protected holds.";
+  seedState(cwd, { goal: seedGoal({ status: "paused", objective, verificationContract, pauseKind: "blocked", pauseReason: "Suspicious objective detected (verification-fragment)." }), list: [] });
+  const pi = new MockPi();
+  activate(pi.api);
+  const ctx = await boot(pi, cwd);
+  await pi.command("goal", "resume", ctx);
+  await tick(80);
+  const saved = readState(cwd);
+  assert.equal(saved.goal?.status, "active");
+  assert.equal(saved.goal?.objective, objective);
+  assert.equal(saved.goal?.verificationContract, verificationContract);
+  assert.equal(saved.list?.length ?? 0, 0);
+  assert.doesNotMatch(ledger(cwd), /"faulty_objective_repair_queued"/);
+});
+
 test("manual resume blocks a suspicious paused objective before dispatch", async () => {
   const cwd = tmpCwd();
   seedState(cwd, { goal: suspiciousGoal("paused"), list: [] });
