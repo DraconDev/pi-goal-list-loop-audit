@@ -409,7 +409,7 @@ function recoveryStillCurrent(recovery: MainModelRecovery): boolean {
   if (recovery.kind === 'goal') {
     const goal = state.goal!;
     return !goal.pendingCompletion && (goal.status === 'active'
-      || (goal.status === 'paused' && (goal.pauseKind === 'wait' || goal.pauseKind === undefined) && (goal.pauseReason ?? '').startsWith('main model recovery')));
+      || (goal.status === 'paused' && (goal.pauseKind === 'wait' || goal.pauseKind === 'blocked' || goal.pauseKind === undefined) && (goal.pauseReason ?? '').startsWith('main model recovery')));
   }
   return !!state.loop && (state.loop.active || (state.loop.stopReason ?? '').startsWith('main model recovery'));
 }
