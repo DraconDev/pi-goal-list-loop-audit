@@ -23,7 +23,7 @@ import { currentRecoveryOwner, recoveryOwnership } from "./recovery-ownership.js
 import { clampThinkingLevel } from "@earendil-works/pi-ai/compat";
 import { FALLBACK_THINKING_LEVELS, type FallbackThinkingLevel } from "./main-fallback-thinking.js";
 import { auditPhaseOwnsAttempt } from "./audit-lifecycle.js";
-import { appendLedger, claimRecoveryNotice, nowIso, piGlaDir, isFreshPastTimestamp, isForbiddenModel, isStaleApiError, nextHourlyProbeMs, providerErrorFingerprint, providerErrorPresentation, resolveEffectiveAggressiveSettings, sanitizeProviderDisplayText, supervisorPaused, writeGoalMd, goalMdPath, writeGoalStateTransaction, clearGoalStateTransaction, MAX_AUDITOR_CANDIDATE_REFS, type Goal, type MainModelRecovery, type PendingCompletion } from "./goal-loop-core.js";
+import { isPersistenceDegraded, appendLedger, claimRecoveryNotice, nowIso, piGlaDir, isFreshPastTimestamp, isForbiddenModel, isStaleApiError, nextHourlyProbeMs, providerErrorFingerprint, providerErrorPresentation, resolveEffectiveAggressiveSettings, sanitizeProviderDisplayText, supervisorPaused, writeGoalMd, goalMdPath, writeGoalStateTransaction, clearGoalStateTransaction, MAX_AUDITOR_CANDIDATE_REFS, type Goal, type MainModelRecovery, type PendingCompletion } from "./goal-loop-core.js";
 import { persistStateLine, replaceState } from "./goal-state.js";
 import { cancelDetachedGoalCompletionAuditor } from "./goal-loop-auditor-process.js";
 import {
@@ -453,7 +453,8 @@ export function mainModelRecoveryRuntimeStatus(): import('./goal-loop-core.js').
     switchInFlight: flags.mainModelSwitchInFlight,
     turnActive: ctx?.isIdle?.() === false,
     turnQueued: ctx?.hasPendingMessages?.() === true,
-    hold: state.supervisorPausedAt ? 'supervisor pause'
+    hold: isPersistenceDegraded() ? 'persistence degraded'
+      : state.supervisorPausedAt ? 'supervisor pause'
       : state.loadHoldAt ? 'session load hold'
       : flags.extensionApiStale ? 'stale extension; reload required'
       : !ctx ? 'session context unavailable/restoring'
