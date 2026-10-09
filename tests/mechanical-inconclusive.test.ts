@@ -18,6 +18,18 @@ import {
   scaledMechanicalTimeoutMs,
 } from "../extensions/goal-loop-shield.ts";
 
+// ---- default budget: pinned deliberately ----
+
+test("DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS covers this repo's honest gates", () => {
+  // v0.39.18: the 10-minute ceiling strangled `npm run test:all` (≈9.5min
+  // over 379 files and growing) and `npm run release:check` (longer) —
+  // every gate on a slow host died INCONCLUSIVE-timeout, a non-verdict that
+  // blocks goal completion. The default must keep ~2× headroom over the
+  // measured suite; change this number only with fresh measurements and an
+  // updated comment on the constant in extensions/goal-loop-shield.ts.
+  assert.equal(DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS, 1_500_000);
+});
+
 // ---- loadScaledTimeoutMs: pure math ----
 
 test("loadScaledTimeoutMs: 1× at or under cpu count", () => {

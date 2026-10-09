@@ -309,8 +309,9 @@ export function containmentReason(run: {
 }
 
 /** v0.38.103: load-scaling ceiling for mechanical gate budgets. A gate that
- * needs 10 minutes idle gets at most 20 under saturation — beyond that the
- * run is inconclusive promptly instead of holding a worker for an hour. */
+ * needs 25 minutes idle gets at most 50 under saturation — beyond that the
+ * run is inconclusive promptly instead of holding a worker past the hour.
+ * (v0.39.18: example numbers follow DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS.) */
 export const MECHANICAL_LOAD_SCALE_MAX = 2;
 
 /** v0.38.103: pure load-scaling math (pinned by unit test): 1× while
@@ -559,7 +560,21 @@ async function runMechanicalPipeline(
   return { passed: false, outcome: "fail", failedCommand: rawCommand, output: firstFailure?.output ?? "", exitCode: firstFailure?.exitCode ?? 1 };
 }
 
-export const DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS = 600_000;
+/** v0.39.18: default mechanical gate budget 10min → 25min. The v0.35.16
+ * 10-minute ceiling repeated its own failure mode: this repo's honest gates
+ * outgrew it (`npm run test:all` ≈ 9.5min over 379 files, `npm run
+ * release:check` longer still), so every milestone/auditor gate on a slow
+ * host fast-failed as INCONCLUSIVE-timeout — a non-verdict that blocks goal
+ * completion exactly like the 60s ceiling blocked approvals in 2026-08.
+ * The timeout still bounds genuinely hung commands (a hung gate is killed
+ * and reads inconclusive, never failed); it no longer bounds honest slow
+ * ones. All other rails are unchanged: process-group cap, 64MB output cap,
+ * tail-kept evidence, and the 2× load-scale ceiling (≤50min worst case on a
+ * saturated host — accepted, because killing an honest gate produces no
+ * verdict and strands the objective, which is worse than holding the
+ * worker). Raise deliberately: tests/mechanical-inconclusive.test.ts pins
+ * this value. */
+export const DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS = 1_500_000;
 const MECHANICAL_MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 const MECHANICAL_OUTPUT_TAIL_CHARS = 64 * 1024;
 const MECHANICAL_CHILD_SHUTDOWN_GRACE_MS = 1_000;
@@ -935,8 +950,9 @@ export async function runMechanicalPreAuditChecks(
     ? timeoutMs
     : DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS;
   // v0.38.103: scale the budget with host load (capped 2×) unless the
-  // caller disables it — a gate that needs 10 minutes idle must not be
-  // killed at 10:00 sharp on a saturated host and then read as a verdict.
+  // caller disables it — a gate that needs 25 minutes idle must not be
+  // killed at 25:00 sharp on a saturated host and then read as a verdict.
+  // (v0.39.18: example numbers follow DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS.)
   const effectiveTimeoutMs = opts?.loadScale === false ? baseTimeoutMs : scaledMechanicalTimeoutMs(baseTimeoutMs);
   const effectiveProcessGroupSize = normalizeMechanicalProcessGroupLimit(maxProcessGroupSize);
   const recoveredRetries: string[] = [];
