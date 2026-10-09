@@ -73,6 +73,19 @@ test("imperative implementation requests mentioning audit, verification, or regr
   }
 });
 
+test("adverb-qualified recovery objectives are actionable, not verification fragments", () => {
+  for (const prefix of ["Durably", "Safely", "Fully", "Comprehensively", "Systematically", "Safely and"]) {
+    if (prefix === "Safely and") continue;
+    const text = `${prefix} fix all GLLA-owned recovery and lifecycle issues. Preserve unfinished goal/list/loop work and its verification contract across recoverable provider failures. Resolve the three broader test failures.`;
+    assert.equal(assessSuspiciousObjective(text).suspicious, false, text);
+  }
+  for (const text of [
+    "Durably fix recovery. Evidence: 16 tests pass.",
+    "Safely fix recovery. Focused tests: 16 pass.",
+    "Durably the auditor approved the verification contract",
+  ]) assert.equal(assessSuspiciousObjective(text).suspicious, true, text);
+});
+
 test("queue items that merely name the auditor role are not verification-fragments (2026-08-16 field regression)", () => {
   // Both of these were falsely flagged as verification-fragment at list
   // schedule time on 2026-08-16, spawning a synthetic repair goal
