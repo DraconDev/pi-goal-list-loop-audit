@@ -272,7 +272,7 @@ for (const tokens of [199999, 200000]) {
 
 for (const mode of ['goal', 'list', 'loop'] as const) {
   for (const writeFails of [false, true]) {
-    test(`${mode} timeout ${writeFails ? 'retains fail-closed dispatch on storage failure' : 'durably parks the owner'}`, async () => {
+    test(`${mode} timeout ${writeFails ? 'retains fail-closed dispatch on storage failure' : 'hands off to paced automatic recovery'}`, async () => {
       await withPressureSession(async (pi, ctx, cwd) => {
         __testOnlySetPressureTimeout(30);
         let callbacks: Parameters<typeof ctx.compact>[0];
@@ -289,15 +289,19 @@ for (const mode of ['goal', 'list', 'loop'] as const) {
           const state = readState(cwd);
           if (writeFails) {
             assert.equal(mode === 'loop' ? state.loop?.active : state.goal?.status === 'active', true, 'failed write cannot claim durable parking');
-            assert.ok(ctx.ui.matching('could not persist its stop').length > 0);
+            assert.ok(ctx.ui.matching('recovery handoff could not persist').length > 0);
           } else {
             assert.equal(mode === 'loop' ? state.loop?.active : state.goal?.status === 'active', false);
+            assert.ok(state.mainModelRecovery?.retryAt, 'a durable paced automatic slot replaces manual compaction parking');
+            assert.equal(state.mainModelRecovery?.manualResumeRequired, undefined);
+            if (state.goal) assert.equal(state.goal.pauseKind, 'wait');
+            assert.ok(ctx.ui.matching('No manual resume is required').length);
           }
           callbacks?.onError?.(new Error('late cancelled compactor'));
           if (state.goal) sendContinuation(state.goal.id);
           await pi.fire('agent_settled', {}, ctx);
           await tick(60);
-          assert.equal(pi.sent.length, 0, 'even forced/repeated contacts cannot dispatch after expiry');
+          assert.equal(pi.sent.length, 0, 'forced/repeated contacts cannot bypass the paced slot or storage hold');
           assert.equal(pi.modelSelections.length, 0);
         } finally {
           if (writeFails) { fs.chmodSync(path.dirname(ledger), 0o755); fs.chmodSync(ledger, 0o644); }
