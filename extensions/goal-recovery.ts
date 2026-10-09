@@ -1473,15 +1473,26 @@ async function probePreferredPrimary(ctx: ExtensionContext, recovery: MainModelR
  * transitions live in one place. Safe to call when nothing is parked: the
  * guard clauses are no-ops. */
 function resumeSupervisedRecoverySurface(ctx: ExtensionContext, kind: "goal" | "loop"): void {
-  flags.continuationDispatchStoodDown = false;
+  const before = { ...state };
+  let landed = true;
+  let resumed: 'goal' | 'loop' | undefined;
   if (kind === "goal" && state.goal?.status === "paused" && (state.goal.pauseReason ?? "").startsWith("main model recovery")) {
-    updateGoal({ status: "active", pauseKind: undefined, pauseResumeAt: undefined, pauseReason: undefined, pauseSuggestedAction: undefined, providerErrorDiagnostic: undefined, recoveryEpisodeKey: undefined, recoveryNoticeKeys: undefined }, ctx);
-    scheduleContinuation(ctx, true, 1_000);
+    landed = updateGoal({ status: "active", pauseKind: undefined, pauseResumeAt: undefined, pauseReason: undefined, pauseSuggestedAction: undefined, providerErrorDiagnostic: undefined, recoveryEpisodeKey: undefined, recoveryNoticeKeys: undefined }, ctx) !== false;
+    resumed = 'goal';
   } else if (kind === "loop" && state.loop && !state.loop.active && (state.loop.stopReason ?? "").startsWith("main model recovery")) {
     state.loop = { ...state.loop, active: true, stopReason: undefined };
-    persistState(ctx);
-    scheduleLoopTick(ctx);
+    landed = persistState(ctx) !== false;
+    resumed = 'loop';
   }
+  if (!landed) {
+    replaceState(before);
+    flags.continuationDispatchStoodDown = true;
+    ctx.ui.notify('glla: automatic recovery resume could not persist. Saved work remains held until storage is repaired.', 'warning');
+    return;
+  }
+  flags.continuationDispatchStoodDown = false;
+  if (resumed === 'goal') scheduleContinuation(ctx, true, 1_000);
+  else if (resumed === 'loop') scheduleLoopTick(ctx);
 }
 
 async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> {
