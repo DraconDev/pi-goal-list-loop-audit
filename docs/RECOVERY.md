@@ -70,10 +70,19 @@ load/resume the original session before inspecting its pending claim again.
 
 ## Changing models during recovery
 
-Manually selecting a model cancels the current automatic main-model recovery
-episode. A recovery-held loop keeps its objective and iteration history,
-stays visible, and offers `/loop resume` or `/glla resume` to continue using
-the selected model. Changing the model alone does not resume loop supervision.
+An allowed manual `set`/`cycle` selection resumes work held solely for
+main-model recovery on the selected model. Goal/list work keeps its
+objective, verification contract, telemetry and history; a recovery-held
+loop keeps its objective and iteration history and restarts supervision.
+Resume is scoped: restore/unknown/recovery events, nested
+forbidden-selection reverts, internal recovery rotations, forbidden
+models, stored audit claims, supervisor/load pauses, user/decision/
+permission holds, and deterministic request refusals are never treated as
+resume consent. Failed resume persistence restores the episode and holds
+dispatch; repeated selection never duplicates continuation.
+
+A manual switch never bypasses an unrelated hold and never authorizes an
+upload, purchase, or other gated action.
 
 ## Same-model phase (v0.38.105)
 
@@ -102,6 +111,61 @@ different provider's quota to solve a five-second problem.
 If an older loaded extension still hides the objective or shows an obsolete
 retry countdown, update GLLA and run `/reload`, inspect `/loop status`, then
 resume. Saved legacy recovery holds are supported from 0.39.8 onward.
+
+## Persistent paced recovery (no elapsed-time give-up)
+
+Main-model recovery retries with paced backoff for as long as the failure
+remains recoverable, in every mode. There is no 24h automatic-recovery
+horizon: legacy expiry metadata is discarded during normalization, while
+retry cadence (`mainModelRetryMinutes`, doubling per attempt, 5h cap),
+explicit upstream reset sleeps, eager-transient handling, and the
+same-model/fallback policy stay intact. Explicit manual holds and
+deterministic client errors still stop. Failed recovery-wait persistence
+restores state, leaves dispatch held, and arms no timer.
+
+Legacy already-manually-held horizon records rearm only after positive
+restore completion plus resume consent, and only for the exact old
+elapsed-time stop wording. Identity, counters, contract and history are
+retained; generic manual, decision, audit, deterministic,
+supervisor/load, and replaced-owner holds never migrate.
+
+## Compaction-timeout handoff
+
+A compact-first timeout (including the 120s budget) hands the original
+provider diagnostic to paced automatic model recovery instead of parking
+for manual resume. The saved goal/list/loop contract survives, the
+compaction one-shot budget stays spent, owned compaction is cancelled
+before the handoff, and late compactor callbacks cannot duplicate
+dispatch. A persisted automatic wait is required before timers arm;
+storage failure keeps fail-closed dispatch.
+
+## Ownership cleanup and ordinary chat
+
+Recovery follows a work identity (goal id, loop start, or explicit chat),
+not whichever live slot exists when a delayed callback fires. Terminal
+(`complete`/`aborted`), genuinely absent, or replaced owners retire
+supervised markers and cancel both recovery and hourly timers immediately;
+explicit cancellation does the same. Cleanup never runs during an
+incomplete restore, and failed cleanup persistence restores the marker and
+holds dispatch. Ordinary-chat recovery is explicit, never inferred from a
+legacy orphan, and terminal goal archival neither adopts nor deletes it.
+Late accepted/rejected model selections cannot cross a terminal, absent,
+replaced, new-episode, or user-hold boundary.
+
+## Protected holds and truthful displays
+
+User stops, genuine decisions, permission gates, deterministic
+nonrecoverable errors, and persistence-safety holds stay authoritative:
+no timer, fallback, or model switch overrides them.
+
+The saved `attempts` counter counts GLLA backoff steps, not provider
+requests. Status labels it **Recovery steps** with **episode age**, and
+explicitly denies that age proves continuous failure. A durable `retryAt`
+alone renders execution as unconfirmed (`retry scheduled (unconfirmed)`);
+live snapshots distinguish armed regular timers, hourly-only timers,
+in-flight selections, active/queued host turns, absent timers, and
+supervisor/load/context/stale-extension/persistence holds. Selection alone
+is never reported as provider success.
 
 ## No objective to resume—but a recovery message remains
 
