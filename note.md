@@ -9,6 +9,15 @@
 
 these restarted when i told them but otherwise seeming ly the cuase was models bineg unavailable but they clearly work now so we just needed to hammer relentlessly 
 
+/home/dracon/Pictures/Screenshots/Screenshot_20261009_080347.png
+/home/dracon/Pictures/Screenshots/Screenshot_20261009_080333.png
+/home/dracon/Pictures/Screenshots/Screenshot_20261009_080329.png
+/home/dracon/Pictures/Screenshots/Screenshot_20261009_080318.png
+/home/dracon/Pictures/Screenshots/Screenshot_20261009_080312.png
+/home/dracon/Pictures/Screenshots/Screenshot_20261009_080307.png
+
+but we have clear error reasons 
+
 # later
 
 # Testing
