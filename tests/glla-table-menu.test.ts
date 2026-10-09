@@ -144,6 +144,7 @@ test("main agent tab starts with the current agent and drills in", () => {
     "mainModelFallbacks",
     "mainModelFallbackThinkingLevels",
     "mainModelRetryMinutes",
+    "mainModelSameModelRetries",
     "hourlyRetryProbe",
     "mainModelFailback",
     "mainModelPrimaryProbeMinutes",
