@@ -702,17 +702,18 @@ async function handleMainModelAgentEnd(ctx: ExtensionContext, rawLastA: any, las
         timeout: () => {
           if (!valid()) return true;
           clearContinuationTimer(); clearLoopTimer();
-          const reason = 'context compaction failure: compact-first recovery exceeded its 120s budget';
-          let landed = true;
-          if (state.loop?.active) {
-            state.loop = { ...state.loop, active: false, stopReason: reason };
-            landed = persistState(ctx);
-          } else if (state.goal?.status === 'active') {
-            landed = updateGoal({ status: 'paused', pauseKind: 'error', pauseReason: reason, pauseSuggestedAction: `Run ${activeGoalSurfaceCommand('resume')} to retry saved work on the selected model. If compaction fails again: /model, then /compact, then ${activeGoalSurfaceCommand('resume')}.` }, ctx) !== false;
-          }
+          // The compaction budget bounds this attempt, not the objective.
+          // Keep its one-shot budget spent and hand the ORIGINAL diagnostic
+          // to the paced provider owner; late compactor callbacks cannot
+          // reopen this attempt or duplicate the recovery continuation.
+          parkMainModelAfterFailure(ctx, recoveryFailure);
+          const landed = !isPersistenceDegraded() && !!state.mainModelRecovery?.retryAt;
           if (!landed) {
             setContinuationDispatchStoodDownRef(true);
-            ctx.ui.notify('glla: compact-first timeout could not persist its stop. Automatic dispatch remains held in this process; repair .pi-glla storage before resuming.', 'warning');
+            ctx.ui.notify('glla: compact-first timeout recovery handoff could not persist. Automatic dispatch remains held; repair .pi-glla storage before resuming.', 'warning');
+          } else {
+            appendLedger(ctx.cwd, 'context_pressure_timeout_handoff', { target, generation, retryAt: state.mainModelRecovery?.retryAt });
+            ctx.ui.notify('Compaction timed out; saved work is entering paced automatic model recovery. No manual resume is required.', 'warning');
           }
           return landed;
         },
