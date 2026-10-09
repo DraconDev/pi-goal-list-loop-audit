@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import type { ExtensionContext } from '@earendil-works/pi-coding-agent';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -63,7 +64,7 @@ test('failed retirement persistence retains the marker and holds dispatch', asyn
     const previous = state.mainModelRecovery;
     fs.chmodSync(ledger, 0o444);
     fs.chmodSync(directory, 0o555);
-    assert.equal(retireOrphanedMainModelRecovery(ctx, true), 'persistence-failed');
+    assert.equal(retireOrphanedMainModelRecovery(ctx as unknown as ExtensionContext, true), 'persistence-failed');
     assert.equal(state.mainModelRecovery, previous, 'failed cleanup restores the same episode');
     assert.ok(readState(cwd).mainModelRecovery, 'durable projection never falsely claims cleanup');
     assert.ok(ctx.ui.matching('recovery cleanup could not persist').length);

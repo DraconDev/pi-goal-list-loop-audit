@@ -13,7 +13,7 @@ for (const mode of ['goal', 'list', 'loop'] as const) {
       await withPressureSession(async (pi, ctx, cwd) => {
         const primary = `${ctx.model!.provider}/${ctx.model!.id}`;
         const selected = { provider: 'provider', id: 'chosen' };
-        const beforeGoal = state.goal && { ...state.goal, objective: 'Implement saved lifecycle work', verificationContract: 'Preserve the exact acceptance criteria', progressText: 'keep prior progress' };
+        const beforeGoal = state.goal && { ...state.goal, objective: 'Implement saved lifecycle work', verificationContract: 'Preserve the exact acceptance criteria', telemetry: { turns: 17, fileWrites: 3, bashCalls: 5 } };
         const beforeLoop = state.loop && { ...state.loop, iteration: 17, bestValue: 42, history: [...state.loop.history] };
         const retryAt = new Date(Date.now() + 3600000).toISOString();
         replaceState({ ...state,
@@ -40,7 +40,7 @@ for (const mode of ['goal', 'list', 'loop'] as const) {
           assert.equal(saved.goal?.id, beforeGoal!.id);
           assert.equal(saved.goal?.objective, beforeGoal!.objective);
           assert.equal(saved.goal?.verificationContract, beforeGoal!.verificationContract);
-          assert.equal(saved.goal?.progressText, beforeGoal!.progressText);
+          assert.deepEqual(saved.goal?.telemetry, beforeGoal!.telemetry);
           assert.deepEqual(saved.goal?.auditHistory, beforeGoal!.auditHistory);
         }
         if (allowed && mode !== 'loop') {
@@ -63,7 +63,7 @@ for (const hold of ['user', 'decision', 'permission', 'load', 'freeze', 'determi
         ...(hold === 'freeze' ? { supervisorPausedAt: Date.now() } : {}),
         goal: { ...goal, status: 'paused', pauseKind: hold === 'decision' || hold === 'permission' ? 'decision' : hold === 'user' ? 'blocked' : 'wait',
           pauseReason: hold === 'user' ? 'user stopped work' : hold === 'permission' ? 'upload requires explicit authorization' : hold === 'decision' ? 'choose product behavior' : 'main model recovery — retrying' },
-        mainModelRecovery: { primary, active: primary, attempted: [primary], attempts: 3, kind: 'goal', reason: hold === 'deterministic' ? 'HTTP 400 too many images' : 'provider unavailable', retryAt: new Date(Date.now() + 3600000).toISOString(), owner: { kind: 'goal', id: goal.id } },
+        mainModelRecovery: { primary, active: primary, attempted: [primary], attempts: 3, kind: 'goal', reason: hold === 'deterministic' ? 'BadRequestError: too many images. "code":"400"' : 'provider unavailable', retryAt: new Date(Date.now() + 3600000).toISOString(), owner: { kind: 'goal', id: goal.id } },
       });
       persistStateLine(cwd, state);
       if (hold === 'forbidden') {
