@@ -16,7 +16,7 @@ these restarted when i told them but otherwise seeming ly the cuase was models b
 /home/dracon/Pictures/Screenshots/Screenshot_20261009_080312.png
 /home/dracon/Pictures/Screenshots/Screenshot_20261009_080307.png
 
-but we have clear error reasons 
+but we have clear problems too 
 
 # later
 
