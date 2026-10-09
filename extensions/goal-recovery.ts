@@ -1351,6 +1351,17 @@ export async function probeMainModelRecovery(ctx: ExtensionContext): Promise<voi
   if (flags.initialSessionLoadPending || stateRootPending() || !freshCtxForGeneration(flags.sessionGeneration)) return;
   if (retireOrphanedMainModelRecovery(ctx, true) === 'persistence-failed') return;
   if (supervisorPaused(state)) return;
+  if (!state.mainModelRecovery) return;
+  // Backward-compatible normalization for legacy/isolated records that predate
+  // owned episodes: fill the anchor + owner before fencing, never invent a target.
+  if (!state.mainModelRecovery.firstFailureAt || !state.mainModelRecovery.owner) {
+    const normalized = withMainModelRecoveryWindow({
+      ...state.mainModelRecovery,
+      owner: state.mainModelRecovery.owner ?? currentRecoveryOwner(state),
+    });
+    state.mainModelRecovery = normalized;
+    persistState(ctx);
+  }
   if (state.loadHoldAt || isPersistenceDegraded()
     || state.mainModelRecovery?.manualResumeRequired || !state.mainModelRecovery
     || !recoveryEpisodeCurrent(state.mainModelRecovery)) return;
