@@ -12,7 +12,12 @@ export function isExplicitPromptOverflow(raw: string): boolean {
 }
 
 export function compactFirstEligible(failure: MainModelFailure): boolean {
-  return failure.nonRecoverableReason !== 'prompt-policy'
+  // Provider capacity/quota is not transcript pressure. Even above the
+  // preventive token target, let paced model recovery own these failures
+  // instead of converting a failed compaction into a manual-resume hold.
+  // Explicit input overflow remains eligible if a provider also tags it 429.
+  return (isExplicitPromptOverflow(failure.raw) || !failure.quotaSignal)
+    && failure.nonRecoverableReason !== 'prompt-policy'
     && !/user (?:interrupt|abort)|cancelled by user|content policy violation/i.test(failure.raw);
 }
 
