@@ -99,6 +99,6 @@ test("supervised waits keep lifecycle-first order (nobody's move)", () => {
   } as State;
   const status = buildStatusText(state, null, NOW)!;
   const parked = status.indexOf("safely parked");
-  const next = status.indexOf("next: retry scheduled; execution unconfirmed");
+  const next = status.indexOf("next: retry scheduled (unconfirmed)");
   assert.ok(parked >= 0 && next > parked, `wait stays lifecycle-first:\n${status}`);
 });

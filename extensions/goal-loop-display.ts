@@ -1224,7 +1224,7 @@ function pausedNextTransition(g: Goal, state: State, now: number): string {
     // present, including after retryAt has passed but before the recovery
     // dispatch clears/unparks the goal. Do not claim "resuming now" on the
     // same line that says the goal is still parked in recovery.
-    return "retry scheduled; execution unconfirmed";
+    return "retry scheduled (unconfirmed)";
   }
   const resumeAt = g.pauseResumeAt ? Date.parse(g.pauseResumeAt) : Number.NaN;
   if (Number.isFinite(resumeAt)) {
