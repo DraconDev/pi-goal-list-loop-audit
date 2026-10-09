@@ -74,7 +74,7 @@ import {
 import { loadSettings } from "./goal-settings.js";
 import { isCompactionInFlightSince, normalizeMainModelFallbackRefs } from "./main-model-recovery.js";
 import { createContinuationDispatch, type ContinuationDispatch } from "./goal-loop-dispatch.js";
-import { attemptFreshSessionRecovery } from "./goal-recovery.js";
+import { attemptFreshSessionRecovery, mainModelRecoveryRuntimeStatus } from "./goal-recovery.js";
 import { chooseObjectiveConflict, liveObjectives } from "./goal-objective-conflict.js";
 import { releaseAuditorSurface } from "./loops/goal-auditor-surface.js";
 import { compactLoopCompletionSummary, compactTerminalCompletionSummary } from "./completion-summary.js";
@@ -166,6 +166,7 @@ function formatLoopRecoveryStatusLines(ctx: ExtensionContext): string[] {
   return formatMainModelRecoveryStatus(
     state.mainModelRecovery,
     normalizeMainModelFallbackRefs(loadSettings(ctx.cwd).mainModelFallbacks),
+    Date.now(), mainModelRecoveryRuntimeStatus(),
   );
 }
 
