@@ -237,7 +237,9 @@ test("a busy session at fire time stands down instead of double-driving", async 
 
 async function failoverOrdinaryRequest(prompt: string): Promise<MockCtx> {
   const ctx = await boot();
-  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ mainModelFallbacks: ["provider/backup"] }));
+  // Handoff tests deliberately select the immediate-rotation policy; the
+  // default same-model phase is tested separately before this helper.
+  fs.writeFileSync(GLOBAL_SETTINGS_PATH, JSON.stringify({ mainModelFallbacks: ["provider/backup"], mainModelSameModelRetries: 0 }));
   (ctx as any).modelRegistry = { find: (provider: string, id: string) => ({ provider, id, reasoning: true }), hasConfiguredAuth: () => true };
   await pi.fire("before_agent_start", { prompt, systemPrompt: "Original instructions" }, ctx);
   await pi.fire("agent_end", errTurn("503 Service temporarily unavailable"), ctx);

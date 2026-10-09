@@ -19,6 +19,9 @@ function parkedRecovery() {
     active: "anthropic/mock-model",
     attempted: ["anthropic/mock-model"],
     attempts: 1,
+    // This fixture exercises rejected model selection, not the earlier
+    // same-model retry phase. That phase has its own integration coverage.
+    sameModelRetries: 10,
     reason: "main model quota: synthetic hourly probe failure",
     kind: "goal",
     firstFailureAt: new Date().toISOString(),
