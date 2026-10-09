@@ -61,9 +61,11 @@ export function claimPressureAttempt(ctx: PressureContext, options: Omit<Attempt
     attempt.phase = 'held'; // Claim the terminal hold before callbacks can re-enter.
     if (attempt.admissionTimer) clearInterval(attempt.admissionTimer);
     attempt.record('timeout');
+    // Cancel only the owned compaction before handing off. A cancellation
+    // after handoff could abort the newly resumed provider request instead.
+    if (cancelCompactor) try { ctx.abort(); } catch { /* safe recovery still owns the deadline */ }
     try { if (attempt.timeout() !== false) attempt.phase = 'spent'; }
-    catch { /* Failed parking retains the process-local terminal hold. */ }
-    if (cancelCompactor) try { ctx.abort(); } catch { /* timeout hold remains */ }
+    catch { /* Failed persistence retains the process-local terminal hold. */ }
   }, options.timeoutMs ?? pressureTimeoutMs);
   attempt.timer.unref?.();
   // Older hosts need not emit agent_settled. A bounded idle probe is a safe
