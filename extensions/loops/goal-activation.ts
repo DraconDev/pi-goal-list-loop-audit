@@ -255,6 +255,7 @@ import {
   type AuditorProgress,
 } from "../goal-loop-auditor-process.js";
 import { stateRootPending } from "../glla-state-root.js";
+import { retireOrphanedMainModelRecovery } from '../goal-recovery.js';
 import {
   REPETITION,
   isActuallyStuck,
@@ -2126,6 +2127,12 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
     // pi reported a blank startup context. Release the barrier before any
     // scheduling path below can observe it.
     initialSessionLoadPending = false;
+    // Only the completed restore can prove a legacy supervised episode has
+    // lost its owner. Never retire from the blank-start projection above.
+    if (retireOrphanedMainModelRecovery(ctx, !stateRootPending()) === 'persistence-failed') {
+      refreshUI(ctx, true);
+      return;
+    }
     // [lifecycle 9/12] arbitration + auto-resume consent + auditor surface + retry claims
     // v0.29.6: stacked-state auto-arbitration FIRST — one live artifact
     // survives before the restore gate decides hold-vs-resume for it.
