@@ -427,7 +427,7 @@ test("audit 2026-09-07 HIGH: zombie retry routes on the abort owner, cycle-reset
   const resetAt = RECOVERY.indexOf("main_model_fallback_cycle_reset");
   assert.ok(resetAt >= 0, "cycle-reset ledger site exists");
   const resetHead = RECOVERY.slice(Math.max(0, resetAt - 600), resetAt);
-  assert.match(resetHead, /attempted: \[current\][\s\S]{0,200}?attempts: recovery\.attempts \+ 1/, "each new cycle consumes backoff budget");
+  assert.match(resetHead, /attempted: \[current\],[\s\S]*?sameModelRetries: 1,[\s\S]*?attempts: recovery\.attempts \+ 1/, "each new cycle resets the same-model phase and consumes backoff budget");
   const resetEnd = RECOVERY.indexOf('mode: "cycle-reset"', resetAt);
   assert.ok(resetEnd > resetAt, "cycle-reset probe ledger ends the block");
   const resetBlock = RECOVERY.slice(resetAt, resetEnd);
