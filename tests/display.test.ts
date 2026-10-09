@@ -769,6 +769,37 @@ test("passed provider retryAt stays parked until recovery state clears", () => {
   assert.ok(widget.some((line) => line.includes('deadline overdue; live timer/probe unconfirmed')), widget.join('\\n'));
 });
 
+test("v0.39.19: recovery wait chip names attempt, probe time, and no-action-needed", () => {
+  // Field 2026-10-09 ("seemingly we gave up"): a bare "retry scheduled"
+  // next to a 300m countdown reads as abandoned. The chip must show the
+  // attempt count, the absolute probe time, and that nobody must act.
+  const retryAt = new Date(NOW + 4 * 3600_000 + 59 * 60_000).toISOString();
+  const state = {
+    goal: goalOf({
+      policy: "goal",
+      status: "paused",
+      pauseKind: "wait",
+      pauseReason: "main model recovery — retrying",
+      pauseResumeAt: retryAt,
+    }),
+    list: [],
+    mainModelRecovery: {
+      primary: "provider/session-model",
+      attempted: ["provider/session-model"],
+      attempts: 7,
+      retryAt,
+      reason: "provider unavailable",
+      kind: "goal",
+    },
+  } as State;
+
+  const status = buildStatusText(state, null, NOW)!;
+  assert.match(status, /main-model recovery — automatic retry scheduled/);
+  assert.match(status, /attempt 7/, "attempt count proves retries are happening");
+  assert.match(status, /next probe \d\d:\d\dZ \(in 4h 59m\)/, "absolute probe time plus countdown");
+  assert.match(status, /no action needed/, "nobody has to intervene");
+});
+
 test("paused decision without activity says no turn was observed and names the manual path", () => {
   const state = {
     goal: goalOf({
