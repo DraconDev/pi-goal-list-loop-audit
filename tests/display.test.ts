@@ -759,13 +759,14 @@ test("passed provider retryAt stays parked until recovery state clears", () => {
   } as State;
 
   const status = buildStatusText(state, null, NOW)!;
-  assert.match(status, /main-model recovery — retrying automatically/);
-  assert.match(status, /next: retrying automatically/);
+  assert.match(status, /main-model recovery — automatic retry scheduled/);
+  assert.match(status, /next: retry scheduled; execution unconfirmed/);
   assert.doesNotMatch(status, /next: resuming now/);
 
   const widget = buildWidgetLines(state, null, NOW)!;
-  assert.ok(widget.some((line) => line.includes("main-model recovery — retrying automatically")), widget.join("\\n"));
-  assert.ok(widget.some((line) => line.includes("next: retrying automatically")), widget.join("\\n"));
+  assert.ok(widget.some((line) => line.includes("main-model recovery — automatic retry scheduled")), widget.join("\\n"));
+  assert.ok(widget.some((line) => line.includes("next: retry scheduled; execution unconfirmed")), widget.join("\\n"));
+  assert.ok(widget.some((line) => line.includes('deadline overdue; live timer/probe unconfirmed')), widget.join('\\n'));
 });
 
 test("paused decision without activity says no turn was observed and names the manual path", () => {
@@ -1942,11 +1943,12 @@ test("v0.34.102: paused goal parked on mainModelRecovery renders as RECOVERING, 
   };
   const w = buildWidgetLines(state as never)!;
   assert.ok(w.some((l) => l.includes("recovering")), `head says recovering: ${w.join("\n")}`);
-  assert.ok(w.some((l) => l.includes("main-model recovery — retrying automatically")), `card names the park without a reset-time claim: ${w.join("\n")}`);
+  assert.ok(w.some((l) => l.includes("main-model recovery — automatic retry scheduled")), `card names the park without claiming live execution: ${w.join("\n")}`);
+  assert.ok(w.some(l => l.includes('live timer/probe unconfirmed')), 'saved deadlines are not runtime evidence');
   assert.doesNotMatch(w.join("\n"), /⏸ paused/, "the head chip no longer reads paused");
   assert.doesNotMatch(w.join("\n"), /quota reset/, "no guaranteed-reset time claim on the card");
   const s = buildStatusText(state as never)!;
-  assert.ok(s.includes("main-model recovery — retrying automatically"), `status names the blocker without a reset-time claim: ${s}`);
+  assert.ok(s.includes("main-model recovery — automatic retry scheduled"), `status names the blocker without a reset-time claim: ${s}`);
   assert.ok(!s.includes("auto-retrying"), "auto-retrying promise is gone for the parked case (it read as live retry)");
 });
 
