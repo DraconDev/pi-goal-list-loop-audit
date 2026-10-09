@@ -87,6 +87,15 @@ The dedicated lifecycle suite now proves goal/list/loop compaction timeout → a
 
 The mid-tick test hit its 30s timeout under full-suite load and the aftermath stalled the runner file ~10min (7 dangling processes reaped at the stall kill). Mechanism: an unbounded `session_shutdown` drain in `finally` wedges on a dead tick, so one timed-out test holds the file open. Fix (test-harness only, no prod change): all 9 cleanup drains in `tests/loop-branch-ownership.test.ts` now race a 5s `drainShutdown` bound; pinned by a unit test (wedged drain resolves at the bound, healthy drains complete). File green across 4 consecutive runs (11 pass each).
 
+## v0.39.21 audit round 2 (2026-10-09 ~21:30, disapproval repair)
+
+Auditor HIGH items: (1) music journal still holds the stale record; (2) no /glla version 0.39.21 from stuck projects. Investigation:
+
+- Full ref↔disk reconciliation of the installed pi-coding-agent 1.1.0 bundle: all 61 referenced hashed chunks exist on disk, zero missing. Install updated Oct 8 02:13, 7 min before the 02:20 failure — the UHF3DHNG/Y22YDKSW errors are stale in-memory code from the pre-update bundle referencing old chunk hashes, not a corrupt install. No host repair needed or performed.
+- `pi -p` fires NO extension session lifecycle (successful MUSIC_OK run wrote zero journal entries): headless print mode cannot exercise restore by construction. Two earlier -p hangs were transient model-plane 429 storms, not a GLLA wedge (fresh-dir probe green between them).
+- Retire mechanism needs no code change: `recoveryOwnership(undefined,'goal',{goal:null},true)` returns 'absent' (recovery-ownership.ts:38), `retireOrphanedMainModelRecovery` retires it, and the existing `absent-legacy` fixture in tests/recovery-ownership-runtime.test.ts pins exactly this shape through a real session_start (retired + ledgered + nothing resumed). What remains is a real session_start in the music tab (user reload), then a journal read.
+- Stuck set now: only music holds a recovery record (fleet-wide scan). eve/dracon-utilities run live goals (not stuck — must not be disturbed); ai-auto-video and browser-extensions-shared show recent 429 traces with no held record. Version evidence needs user-tab reloads.
+
 ## v0.39.19 follow-ups (field 2026-10-09, post-approval)
 
 Two user-reported glitches fixed after the goal archived:
