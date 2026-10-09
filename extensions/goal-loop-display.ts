@@ -229,6 +229,8 @@ export interface WidgetExtras {
   compactAuditCard?: boolean;
   /** Effective global main-model backup order for truthful recovery HUDs. */
   mainModelFallbacks?: string[];
+  /** Live ephemeral evidence; a durable retry timestamp is not a timer. */
+  mainModelRecoveryRuntime?: import('./goal-loop-core.js').MainModelRecoveryRuntime;
   /** v0.38.44 (field 20260909_161057): precomputed status-tail version
    * segment (`· v<running>` plus the update nudge when the cache proves
    * the registry is ahead). Resolved at render contact by the caller —
@@ -363,11 +365,11 @@ function compactMainModelRecoveryLine(recovery: MainModelRecovery | undefined, c
     : recovery.pendingModelSwitch
       ? `switching → ${truncate(recovery.pendingModelSwitch, budgetFor(width, 20, 48))}`
       : Number.isFinite(retryMs)
-        ? retryMs <= 0 ? "retrying now" : `retrying in ${fmtElapsed(retryMs)}`
+        ? retryMs <= 0 ? "retry overdue; execution unconfirmed" : `retry scheduled in ${fmtElapsed(retryMs)}`
         : recovery.primaryProbeInFlight
           ? "primary probe pending"
           : Number.isFinite(probeMs)
-            ? probeMs <= 0 ? "probing primary now" : `primary probe in ${fmtElapsed(probeMs)}`
+            ? probeMs <= 0 ? "primary probe overdue; execution unconfirmed" : `primary probe scheduled in ${fmtElapsed(probeMs)}`
             : `${selected} selected`;
   const attempted = recovery.attempted?.length ?? 0;
   const skipped = recovery.skipped?.length ?? 0;
@@ -1468,14 +1470,14 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
   const g = state.goal;
   const held = heldLoop(state);
   if (state.loop && !state.loop.active && state.mainModelRecovery?.kind === "loop") {
-    const summary = formatMainModelRecoveryStatus(state.mainModelRecovery, extras?.mainModelFallbacks);
+    const summary = formatMainModelRecoveryStatus(state.mainModelRecovery, extras?.mainModelFallbacks, now, extras?.mainModelRecoveryRuntime);
     return `glla: ${paint(theme, "warning", "⏳ loop recovery")}${summary.map((line) => ` · ${line.replace(/^Main-model recovery: /, "")}`).join("")}`;
   }
   // v0.28.17: a held loop rides every goal state as a compact suffix.
   const heldSuffix = held ? paint(theme, "warning", " · loop⏸held") : "";
   if (!g) {
     if (state.mainModelRecovery) {
-      const summary = formatMainModelRecoveryStatus(state.mainModelRecovery, extras?.mainModelFallbacks);
+      const summary = formatMainModelRecoveryStatus(state.mainModelRecovery, extras?.mainModelFallbacks, now, extras?.mainModelRecoveryRuntime);
       return `glla: ${paint(theme, "warning", "⏳ main-model recovery")}${summary.map((line) => ` · ${line.replace(/^Main-model recovery: /, "")}`).join("")}`;
     }
     if (held) return `glla: loop ${paint(theme, "warning", "⏸ held")} · iter ${held.iteration} — /loop to resume`;
@@ -1903,8 +1905,8 @@ function waitingListLines(state: State, theme?: DisplayTheme, width?: number): s
 function buildWidgetLinesInner(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, width?: number, extras?: WidgetExtras): string[] | undefined {
   if (state.loop?.builder && state.loop.builder.phase !== "complete" && (state.loop.active || !state.goal)) return respecBuilderLines(state.loop, now, theme, width);
   if (state.loop?.active) return loopLines(state.loop, now, theme, width, extras);
-  if (state.loop && !state.loop.active && state.mainModelRecovery?.kind === "loop") return parkedLoopRecoveryLines(state.loop, state.mainModelRecovery, now, theme, width, extras?.mainModelFallbacks);
-  if (!state.goal && state.mainModelRecovery) return standaloneRecoveryLines(state.mainModelRecovery, now, theme, width, extras?.mainModelFallbacks);
+  if (state.loop && !state.loop.active && state.mainModelRecovery?.kind === "loop") return parkedLoopRecoveryLines(state.loop, state.mainModelRecovery, now, theme, width, extras?.mainModelFallbacks, extras?.mainModelRecoveryRuntime);
+  if (!state.goal && state.mainModelRecovery) return standaloneRecoveryLines(state.mainModelRecovery, now, theme, width, extras?.mainModelFallbacks, extras?.mainModelRecoveryRuntime);
   const g = state.goal;
   const held = heldLoop(state);
   if (!g) {
@@ -1938,19 +1940,19 @@ function buildWidgetLinesInner(state: State, audit?: AuditDisplayProgress | null
 }
 
 /** Recovery card for a loop parked by the main-model wall. */
-function parkedLoopRecoveryLines(loop: LoopState, recovery: MainModelRecovery, now: number, theme?: DisplayTheme, width?: number, configuredBackups: string[] = []): string[] {
+function parkedLoopRecoveryLines(loop: LoopState, recovery: MainModelRecovery, now: number, theme?: DisplayTheme, width?: number, configuredBackups: string[] = [], runtime?: WidgetExtras['mainModelRecoveryRuntime']): string[] {
   return [
     `${paint(theme, "warning", "⏳")} ${truncate(loop.target, budgetFor(width, 3, 56))} · loop parked · iter ${loop.iteration}`,
-    ...formatMainModelRecoveryStatus(recovery, configuredBackups).map((line) => `├─ ${paint(theme, "dim", line)}`),
+    ...formatMainModelRecoveryStatus(recovery, configuredBackups, now, runtime).map((line) => `├─ ${paint(theme, "dim", line)}`),
     `└─ ${paint(theme, "warning", "work is saved · /loop resume retries the recovery, /loop stop drops it")}`,
   ];
 }
 
 /** v0.28.17: standalone card for a restore-held loop (no goal visible). */
-function standaloneRecoveryLines(recovery: MainModelRecovery, now: number, theme?: DisplayTheme, width?: number, configuredBackups: string[] = []): string[] {
+function standaloneRecoveryLines(recovery: MainModelRecovery, now: number, theme?: DisplayTheme, width?: number, configuredBackups: string[] = [], runtime?: WidgetExtras['mainModelRecoveryRuntime']): string[] {
   const current = recovery.active ?? recovery.primary;
   const wall = "main-model recovery";
-  const summary = formatMainModelRecoveryStatus(recovery, configuredBackups);
+  const summary = formatMainModelRecoveryStatus(recovery, configuredBackups, now, runtime);
   return [
     `${paint(theme, "warning", "⏳")} ${paint(theme, "accent", wall)} · ${truncate(current, budgetFor(width, 3, 36))}`,
     ...summary.map((line) => `├─ ${paint(theme, "dim", line)}`),
@@ -2480,9 +2482,9 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
     if (kind === "decision") lines.push(`├─ ${paint(theme, "accent", "decision needed — your call unblocks this")}`);
     else if (kind === "error") lines.push(`├─ ${paint(theme, "error", isCompactionRecoveryHold(g) ? "compaction stopped — resume retries saved work" : "action needed — this won't fix itself")}`);
     else if (Number.isFinite(parkedAt) || state.mainModelRecovery?.pendingModelSwitch) {
-      const recoveryLabel = "main-model recovery — retrying automatically";
+      const recoveryLabel = "main-model recovery — automatic retry scheduled";
       lines.push(`├─ ${paint(theme, "dim", recoveryLabel)}`);
-      const recoverySummary = formatMainModelRecoveryStatus(state.mainModelRecovery, extras?.mainModelFallbacks);
+      const recoverySummary = formatMainModelRecoveryStatus(state.mainModelRecovery, extras?.mainModelFallbacks, now, extras?.mainModelRecoveryRuntime);
       recoverySummary.forEach((line) => lines.push(`│  ${paint(theme, "dim", line.replace(/^Main-model recovery: /, ""))}`));
     }
     else if (Number.isFinite(retryMs)) {
