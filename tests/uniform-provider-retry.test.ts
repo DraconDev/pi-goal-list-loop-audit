@@ -67,5 +67,6 @@ test("the auditor durable plan is generic and keeps safe diagnostic copy", () =>
 
 test("display surfaces identify generic recovery, not a guessed quota state", () => {
   assert.doesNotMatch(DISPLAY, /quotaSignal|parked on provider wall|waiting for quota reset/);
-  assert.match(DISPLAY, /main-model recovery — retrying automatically/);
+  assert.match(DISPLAY, /main-model recovery — automatic retry scheduled/);
+  assert.match(DISPLAY, /execution unconfirmed/);
 });

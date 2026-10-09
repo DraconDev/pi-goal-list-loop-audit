@@ -179,7 +179,7 @@ test("blank restart paints the durable list objective, recovery owner, and next 
   assert.match(widget, /visible parked list objective/, "the current objective is visible during blank startup");
   assert.match(widget, /list item/, "the restored artifact is identified as a list item");
   assert.match(widget, /owner: main-model recovery/, "the recovery owner is rendered from durable state");
-  assert.match(widget, /next: retrying automatically/, "the next transition is rendered from durable recovery state");
+  assert.match(widget, /next: retry scheduled; execution unconfirmed/, "a saved deadline describes intent, not a proven running probe");
   // v0.38.31: recovery-timer waits end at the auto-retry row — the generic
   // suggested-action tail is gone (owner + next above carry the facts).
   assert.doesNotMatch(widget, /remains safe/, "no generic boilerplate tail on the wait card");
