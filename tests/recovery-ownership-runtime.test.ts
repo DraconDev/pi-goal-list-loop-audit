@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import activate, { __testOnlyResetProcessState } from '../extensions/loops/goal.js';
 import { readState } from '../extensions/goal-loop-core.js';
+import { state } from '../extensions/goal-state.js';
+import { retireOrphanedMainModelRecovery } from '../extensions/goal-recovery.js';
 import { MockPi, makeMockCtx, seedGoal, seedState, tmpCwd } from './harness/mock-pi.js';
 
 const recovery = {
@@ -45,6 +47,34 @@ for (const fixture of ['absent-legacy', 'terminal', 'replaced', 'retained', 'cha
     }
   });
 }
+
+test('failed retirement persistence retains the marker and holds dispatch', async () => {
+  __testOnlyResetProcessState();
+  const cwd = tmpCwd(), pi = new MockPi();
+  seedState(cwd, { goal: seedGoal({ id: 'owner', status: 'paused', pauseKind: 'decision' }), mainModelRecovery: { ...recovery, owner: { kind: 'goal', id: 'owner' } } });
+  activate(pi.api);
+  const ctx = makeMockCtx(cwd);
+  const ledger = path.join(cwd, '.pi-glla', 'active.jsonl');
+  const directory = path.dirname(ledger);
+  try {
+    await pi.fire('session_start', { reason: 'reload' }, ctx);
+    assert.ok(state.goal);
+    state.goal = { ...state.goal!, status: 'complete' };
+    const previous = state.mainModelRecovery;
+    fs.chmodSync(ledger, 0o444);
+    fs.chmodSync(directory, 0o555);
+    assert.equal(retireOrphanedMainModelRecovery(ctx, true), 'persistence-failed');
+    assert.equal(state.mainModelRecovery, previous, 'failed cleanup restores the same episode');
+    assert.ok(readState(cwd).mainModelRecovery, 'durable projection never falsely claims cleanup');
+    assert.ok(ctx.ui.matching('recovery cleanup could not persist').length);
+    assert.equal(pi.sent.length, 0);
+  } finally {
+    fs.chmodSync(directory, 0o755);
+    fs.chmodSync(ledger, 0o644);
+    await pi.fire('session_shutdown', { reason: 'test-end' }, ctx);
+    __testOnlyResetProcessState();
+  }
+});
 
 test('blank startup retains orphan marker until restore positively completes', async () => {
   __testOnlyResetProcessState();
