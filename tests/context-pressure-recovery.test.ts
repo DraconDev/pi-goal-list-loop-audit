@@ -360,12 +360,13 @@ for (const scenario of [
   { name: 'generic provider error with unavailable estimate', tokens: undefined, error: 'An error occurred while processing your request.', compact: false },
   { name: 'low-context generic provider error', tokens: 55829, error: 'An error occurred while processing your request.', compact: false },
 ]) {
-  test(`${scenario.name} uses the appropriate recovery before fallback`, async () => {
+  for (const retryBudget of scenario.compact ? [10] : [0, 10]) {
+  test(`${scenario.name} uses the appropriate recovery before fallback (retry budget ${retryBudget})`, async () => {
     const original = fs.readFileSync(GLOBAL, 'utf8');
     const cwd = tmpCwd();
     const pi = new MockPi();
     __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag(); __testOnlyResetCompactor();
-    fs.writeFileSync(GLOBAL, JSON.stringify({ autoResume: true, aggressiveMode: false, compactionTokenThreshold: 200000, mainModelFallbacks: ['provider/backup'] }));
+    fs.writeFileSync(GLOBAL, JSON.stringify({ autoResume: true, aggressiveMode: false, compactionTokenThreshold: 200000, mainModelFallbacks: ['provider/backup'], mainModelSameModelRetries: retryBudget }));
     seedState(cwd, { goal: seedGoal({ status: 'active', objective: 'preserve work through context pressure', autoContinue: true }) });
     activate(pi.api);
     const ctx = makeMockCtx(cwd, { sessionManager: { name: scenario.name } });
@@ -385,7 +386,16 @@ for (const scenario of [
       idle = true;
       await pi.fire('agent_settled', {}, ctx);
       assert.equal(compacts, scenario.compact ? 1 : 0);
-      assert.equal(pi.modelSelections.length, scenario.compact ? 0 : 1);
+      assert.equal(pi.modelSelections.length, scenario.compact || retryBudget > 0 ? 0 : 1);
+      if (!scenario.compact && retryBudget > 0) {
+        const saved = readState(cwd);
+        assert.equal(saved.goal?.status, 'paused');
+        assert.equal(saved.goal?.pauseKind, 'wait', 'ordinary recovery owns a paced wait, not a compaction error hold');
+        assert.equal(saved.goal?.objective, 'preserve work through context pressure');
+        assert.equal(saved.mainModelRecovery?.active, 'provider/primary');
+        assert.equal(saved.mainModelRecovery?.sameModelRetries, 1);
+        assert.ok(Date.parse(saved.mainModelRecovery?.retryAt ?? '') > Date.now(), 'the first retry has a durable future deadline');
+      }
     } finally {
       await pi.fire('session_shutdown', { reason: 'test-end' }, ctx);
       await tick(30);
@@ -393,4 +403,5 @@ for (const scenario of [
       fs.writeFileSync(GLOBAL, original);
     }
   });
+  }
 }
