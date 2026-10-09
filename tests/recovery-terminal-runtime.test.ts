@@ -36,8 +36,11 @@ test('terminal archive does not adopt or delete explicitly unrelated ordinary-ch
     const chat = { primary: 'provider/primary', active: 'provider/primary', attempted: ['provider/primary'], attempts: 2, kind: 'goal' as const, reason: 'provider unavailable', owner: { kind: 'chat' as const } };
     state.mainModelRecovery = chat;
     persistStateLine(cwd, state);
+    const goalId = state.goal!.id;
     assert.equal(archiveCurrentGoal(ctx as unknown as ExtensionContext, 'aborted', 'cancel only the tracked objective'), true);
-    assert.equal(readState(cwd).goal?.status, 'aborted');
-    assert.deepEqual(readState(cwd).mainModelRecovery, chat);
+    assert.equal(readState(cwd).goal, null, 'terminal archive clears the live slot');
+    assert.deepEqual(readState(cwd).mainModelRecovery, chat, 'unrelated chat recovery is neither adopted nor deleted by goal archival');
+    const { archivedGoalPath } = await import('../extensions/goal-loop-core.js');
+    assert.ok((await import('node:fs')).existsSync(archivedGoalPath(cwd, goalId)), 'terminal archive lands on disk');
   });
 });
