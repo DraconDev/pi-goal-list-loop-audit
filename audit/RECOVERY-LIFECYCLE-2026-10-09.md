@@ -83,6 +83,15 @@ The dedicated lifecycle suite now proves goal/list/loop compaction timeout → a
 
 `DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS` 600s → 1500s (`extensions/goal-loop-shield.ts`). The 10-minute ceiling repeated the v0.35.16 failure mode it was created to fix: this repo's honest gates outgrew it (`test:all` ≈ 563s over 379 files, `release:check` longer), so task 8's gate died INCONCLUSIVE-timeout on any slow host — a non-verdict that strands the objective. No suite timing was touched; the slowest single test is ≈18s (bulk is breadth, not a hang). Rails unchanged: per-command budget, process-group cap, 64MB output cap, tail-kept evidence, inconclusive-never-fails, 2× load-scale ceiling. Pinned by a new test in `tests/mechanical-inconclusive.test.ts` (13 pass, 0 fail); `npm run check` clean. One observed flake (not fixed here): a `loop-branch-ownership` mid-tick run once timed out at 30s and stalled its runner file under back-to-back full-suite load; passes alone in ~2s, untouched by this work.
 
+## v0.39.19 follow-ups (field 2026-10-09, post-approval)
+
+Two user-reported glitches fixed after the goal archived:
+
+1. **Terminal summary showed literal `###`/`####` headings** (screenshot 161600): the Pi TUI renders bold/lists but not `#` headings. Chat/terminal surfaces now use plain section labels (`What Changed`, `1. Area`, `Remaining`, …); the archived markdown keeps its headings. Token-extraction comma husks (`· , weight…`) are trimmed at the reason join. Pinned by new tests in `tests/rich-terminal-summary.test.ts`; ~15 chat-side pins updated across 7 test files (archive pins unchanged).
+2. **Retry state made obvious**: the recovery-wait chip now reads `⏳ main-model recovery — automatic retry scheduled · attempt N · next probe HH:MMZ (in Xh Ym) · no action needed` (attempt count, absolute probe time, and the no-action fact are all durable state, not promises). Pinned in `tests/display.test.ts`. Note: the label already existed in 0.39.x — stuck projects still run installed 0.38.104, so this (like all 0.39.x behavior) goes live on publish + reinstall + session restart.
+
+Validation: `npm run check` clean; targeted suites green (10 summary/display files: 198 pass; behavioral-orchestrator: 156 pass); inventory regenerated.
+
 ## Open contract work
 
 Fresh-context reviewer rehearsal (advisory, not in the verification contract).
