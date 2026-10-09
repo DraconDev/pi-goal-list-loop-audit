@@ -3488,7 +3488,8 @@ async function handleHotLengthExhaustion(
     // rebases the automatic chain; the plugin's own recovery selection is
     // fenced by mainModelSwitchInFlight above.
     if (blocked || forbiddenModelRevertDepth > 0 || mainModelSwitchInFlight || (source !== 'set' && source !== 'cycle')
-      || initialSessionLoadPending || stateRootPending() || !to || !state.mainModelRecovery) return;
+      || initialSessionLoadPending || stateRootPending() || !to || !state.mainModelRecovery
+      || isForbiddenModel(to, loadSettings(ctx.cwd).forbiddenModels)) return;
     resumeRecoveryOnManualModelSelection(ctx, to);
   });
 
