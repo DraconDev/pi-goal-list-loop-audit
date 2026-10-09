@@ -37,6 +37,7 @@ import { Settings, globalSettingsPath, loadSettings, projectSettingsPath, saveSe
 import { resolveGllaStateDir } from "./glla-state-root.js";
 import { resolveAuditorThinkingLevel } from "./auditor-thinking.js";
 import { modelRef } from "./main-model-recovery.js";
+import { mainModelRecoveryRuntimeStatus } from './goal-recovery.js';
 import { formatMainModelFallbacks, normalizeMainModelFallbackRefs } from "./main-model-recovery.js";
 import { ReviewerConfig, normalizeObjective, resolveReviewerConfig, reviewerMenuOptions } from "./reviewer.js";
 import type { SettingsSectionId } from "./settings-menu.js";
@@ -440,7 +441,7 @@ async function cmdSet(args: string, ctx: ExtensionContext, skipDraft = false, ex
 
 async function cmdStatus(ctx: ExtensionContext): Promise<void> {
   if (!state.goal) {
-    const recoveryLines = formatMainModelRecoveryStatus(state.mainModelRecovery, normalizeMainModelFallbackRefs(loadSettings(ctx.cwd).mainModelFallbacks));
+    const recoveryLines = formatMainModelRecoveryStatus(state.mainModelRecovery, normalizeMainModelFallbackRefs(loadSettings(ctx.cwd).mainModelFallbacks), Date.now(), mainModelRecoveryRuntimeStatus());
     if (recoveryLines.length > 0) {
       ctx.ui.notify(["No active goal.", ...recoveryLines, "Use /goal <objective>, /list show, or /loop status for the owning surface."].join("\n"), "info");
       return;
@@ -459,7 +460,7 @@ async function cmdStatus(ctx: ExtensionContext): Promise<void> {
     `Auto-continue: ${g.autoContinue ? "on" : "off"}`,
     `Iteration: ${flags.iterationCounter}`,
     `Tokens: ${(g.usage?.tokensUsed ?? 0).toLocaleString()}${(g.usage?.tokensLimit ?? 0) > 0 ? ` / ${(g.usage!.tokensLimit).toLocaleString()}` : " (no cap — set Token limit in /glla settings)"}`, 
-    ...formatMainModelRecoveryStatus(state.mainModelRecovery, normalizeMainModelFallbackRefs(loadSettings(ctx.cwd).mainModelFallbacks)),
+    ...formatMainModelRecoveryStatus(state.mainModelRecovery, normalizeMainModelFallbackRefs(loadSettings(ctx.cwd).mainModelFallbacks), Date.now(), mainModelRecoveryRuntimeStatus()),
   ];
   // v0.38.7: /goal status names disapprovals + last-verdict age, not just
   // the approval count — a capped/queued session must show what unblocks.
@@ -1629,7 +1630,7 @@ async function cmdList(args: string, ctx: ExtensionContext): Promise<void> {
     } else {
       lines.push("Active: (none)");
     }
-    const recoveryLines = formatMainModelRecoveryStatus(state.mainModelRecovery, normalizeMainModelFallbackRefs(loadSettings(ctx.cwd).mainModelFallbacks));
+    const recoveryLines = formatMainModelRecoveryStatus(state.mainModelRecovery, normalizeMainModelFallbackRefs(loadSettings(ctx.cwd).mainModelFallbacks), Date.now(), mainModelRecoveryRuntimeStatus());
     if (recoveryLines.length > 0) lines.push(...recoveryLines);
     if (queue.length === 0) {
       lines.push("List: empty. /list <describe your tasks, or a plan file> — the agent shapes dumps into items, files import directly.");
