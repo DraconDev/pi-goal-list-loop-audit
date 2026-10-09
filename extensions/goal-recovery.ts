@@ -580,11 +580,9 @@ export function mainModelRecoveryReason(failure: MainModelFailure): string {
 export function withMainModelRecoveryWindow(recovery: MainModelRecovery, now = Date.now()): MainModelRecovery {
   const firstMs = recovery.firstFailureAt ? Date.parse(recovery.firstFailureAt) : Number.NaN;
   const firstFailureAt = Number.isFinite(firstMs) ? recovery.firstFailureAt : new Date(now).toISOString();
-  const untilMs = recovery.autoRetryUntil ? Date.parse(recovery.autoRetryUntil) : Number.NaN;
-  const autoRetryUntil = Number.isFinite(untilMs) && untilMs > (Number.isFinite(firstMs) ? firstMs : now)
-    ? recovery.autoRetryUntil
-    : mainModelAutoRetryUntil(Number.isFinite(firstMs) ? firstMs : now, MAIN_MODEL_AUTO_RETRY_HORIZON_MS);
-  return { ...recovery, firstFailureAt, autoRetryUntil };
+  // Recovery is paced per attempt, not abandoned after elapsed wall time.
+  // Keep the episode anchor for diagnostics; retire legacy expiry metadata.
+  return { ...recovery, firstFailureAt, autoRetryUntil: undefined };
 }
 
 export function clearMainModelRecoveryTimer(): void {
@@ -933,10 +931,8 @@ export function setMainModelRecoveryPause(ctx: ExtensionContext, recovery: MainM
   const aggressive = (() => {
     try { return resolveEffectiveAggressiveSettings(loadSettings(ctx.cwd)).aggressiveMode; } catch { return false; }
   })();
-  const normalizedBase = withMainModelRecoveryWindow(recovery);
-  // Aggressive automation has no wall-clock episode expiry. The per-attempt
-  // delay remains bounded, and explicit/non-recoverable stops still win.
-  const normalizedRecovery = aggressive ? { ...normalizedBase, autoRetryUntil: undefined } : normalizedBase;
+  const before = { ...state };
+  const normalizedRecovery = withMainModelRecoveryWindow(recovery);
   const diagnostic = normalizedRecovery.providerErrorDiagnostic ?? normalizedRecovery.reason;
   const presentation = providerErrorPresentation(diagnostic, "main");
   const normalized: MainModelRecovery = {
@@ -947,7 +943,6 @@ export function setMainModelRecoveryPause(ctx: ExtensionContext, recovery: MainM
     recoveryNoticeKeys: normalizedRecovery.recoveryNoticeKeys ?? [],
   };
   const now = Date.now();
-  const deadlineMs = normalized.autoRetryUntil ? Date.parse(normalized.autoRetryUntil) : Number.NaN;
   // v0.38.92: deterministic 400s never schedule — an identical retry cannot
   // succeed, so the ladder would burn (forever under aggressiveMode) while
   // promising "retrying automatically". Hold for manual resume with the fix
@@ -958,16 +953,8 @@ export function setMainModelRecoveryPause(ctx: ExtensionContext, recovery: MainM
     return false;
   }
   const requestedDelayMs = Math.max(1_000, delayMs);
-  // v0.38.69 (Antigravity port): quota waits never park at the horizon —
-  // a rate-limit/plan-quota wall is transient, so the hold below is
-  // skipped and the wait re-arms. Billing and non-quota failures keep
-  // their horizon park.
-  const horizonApplies = !aggressive
-    && !isQuotaHorizonExempt(normalized.providerErrorDiagnostic ?? normalized.reason);
-  if (normalized.manualResumeRequired || (horizonApplies && Number.isFinite(deadlineMs) && (now >= deadlineMs || now + requestedDelayMs > deadlineMs))) {
-    holdMainModelRecovery(ctx, normalized, Number.isFinite(deadlineMs) && now >= deadlineMs
-      ? "the 24h automatic recovery horizon was reached"
-      : "the automatic recovery horizon would be exceeded");
+  if (normalized.manualResumeRequired) {
+    holdMainModelRecovery(ctx, normalized, "an explicit recovery hold requires manual action");
     return false;
   }
   const retryAt = new Date(now + requestedDelayMs).toISOString();
@@ -989,9 +976,7 @@ export function setMainModelRecoveryPause(ctx: ExtensionContext, recovery: MainM
   // user-side resume could clear a recovery wait and bounced to the user.
   // State the agent verb alongside the user verbs — this wait is resumable
   // from the agent side with resume_goal.
-  const recoveryAction = `${aggressive
-    ? "The provider failure is being retried automatically with adaptive backoff for as long as it remains recoverable"
-    : "The provider failure is being retried automatically within the bounded recovery window"}; configured fallback models are tried in order. ${resumeCmd} retries immediately; the agent can retry immediately with resume_goal; ${activeGoalSurfaceCommand("cancel")} stops it.`;
+  const recoveryAction = `The provider failure is being retried automatically with paced backoff for as long as it remains recoverable; configured fallback models are tried in order. ${resumeCmd} retries immediately; the agent can retry immediately with resume_goal; ${activeGoalSurfaceCommand("cancel")} stops it.`;
   if (normalized.kind === "goal" && state.goal) {
     updateGoal({
       status: "paused",
@@ -1550,13 +1535,8 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
       resumeCurrent: undefined,
       pendingModelSwitch: undefined,
     };
-    const aggressive = (() => {
-      try { return resolveEffectiveAggressiveSettings(loadSettings(ctx.cwd)).aggressiveMode; } catch { return false; }
-    })();
-    const horizonMs = next.autoRetryUntil ? Date.parse(next.autoRetryUntil) : Number.NaN;
-    const quotaExempt = isQuotaHorizonExempt(next.providerErrorDiagnostic ?? next.reason);
-    if (next.manualResumeRequired || (!aggressive && !quotaExempt && Number.isFinite(horizonMs) && Date.now() >= horizonMs)) {
-      holdMainModelRecovery(ctx, next, "the 24h automatic recovery horizon was reached");
+    if (next.manualResumeRequired) {
+      holdMainModelRecovery(ctx, next, "an explicit recovery hold requires manual action");
       return;
     }
     state.mainModelRecovery = next;
@@ -1685,15 +1665,8 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
       attempts: recovery.attempts + 1,
     };
     appendLedger(ctx.cwd, "main_model_fallback_cycle_reset", { current, attempted: recovery.attempted, attempts: next.attempts });
-    const aggressive = (() => {
-      try { return resolveEffectiveAggressiveSettings(loadSettings(ctx.cwd)).aggressiveMode; } catch { return false; }
-    })();
-    const horizonMs = next.autoRetryUntil ? Date.parse(next.autoRetryUntil) : Number.NaN;
-    // v0.38.69: quota waits skip the horizon hold here too (see
-    // setMainModelRecoveryPause) — a wall outliving 24h still resumes.
-    const quotaExempt = isQuotaHorizonExempt(next.providerErrorDiagnostic ?? next.reason);
-    if (next.manualResumeRequired || (!aggressive && !quotaExempt && Number.isFinite(horizonMs) && Date.now() >= horizonMs)) {
-      holdMainModelRecovery(ctx, next, "the 24h automatic recovery horizon was reached");
+    if (next.manualResumeRequired) {
+      holdMainModelRecovery(ctx, next, "an explicit recovery hold requires manual action");
       return;
     }
     state.mainModelRecovery = next;
