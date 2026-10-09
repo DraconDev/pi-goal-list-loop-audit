@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## 0.39.20 — readable terminal summaries and obvious retry status (2026-10-09)
+
+### Summary rendering
+
+- Terminal/chat completion cards use plain section labels (`What Changed`,
+  `1. Area`, `Remaining`) instead of literal `###`/`####` headings, which the
+  Pi TUI shows verbatim; the archived markdown keeps its headings.
+- Trim token-extraction comma husks from the reason join.
+- The recovery-wait chip names the attempt count, absolute probe time, and
+  that no action is needed.
+- Includes the unpublished 0.39.18–0.39.19 work: mechanical gate budget
+  600s → 1500s so full-suite validation fits.
+
 ## 0.39.17 — durable recovery and clearer first-use guidance (2026-10-08)
 
 ### Reliability and recovery
