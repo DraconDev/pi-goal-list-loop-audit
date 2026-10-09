@@ -1068,26 +1068,30 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   // order is preserved (findings, verification, Next keep their relative
   // order), the headline echo stays short, and the one-action Next rule
   // is untouched.
+  // v0.39.19 (field 2026-10-09 — terminal card screenshot): the Pi TUI
+  // renders bold/lists but NOT `#` headings, so `### What Changed` reached
+  // the screen literally. Chat/terminal surfaces get plain section labels;
+  // the archived markdown keeps its headings (a .md file renders them).
+  const head = (text: string): string => (parts.chat ? text : `### ${text}`);
   if (parts.summaryLines.length > 0) {
-    lines.push("### Summary", ...parts.summaryLines.map((line) => sanitizeDisplayText(line)), "");
+    lines.push(head("Summary"), ...parts.summaryLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.findingLines.length > 0) {
-    const heading = "### What Changed";
-    lines.push(heading, ...parts.findingLines.map((line) => sanitizeDisplayText(line)), "");
+    lines.push(head("What Changed"), ...parts.findingLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.remainingLines.length > 0) {
-    lines.push(parts.chat ? "### Remaining" : "### Remaining", ...parts.remainingLines.map((line) => sanitizeDisplayText(line)), "");
+    lines.push(head("Remaining"), ...parts.remainingLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.verificationSummaryLine) {
-    lines.push("### Verification", sanitizeDisplayText(parts.verificationSummaryLine), "");
+    lines.push(head("Verification"), sanitizeDisplayText(parts.verificationSummaryLine), "");
   } else if (!parts.chat && parts.tableLines.length > 0) {
     lines.push("### Verification Evidence", ...parts.tableLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.nextLines.length > 0) {
-    lines.push("### Next", ...parts.nextLines.map((line) => sanitizeDisplayText(line)), "");
+    lines.push(head("Next"), ...parts.nextLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.repoLines.length > 0) {
-    lines.push("### Final Repository State", ...parts.repoLines.map((line) => `- ${sanitizeDisplayText(line)}`), "");
+    lines.push(head("Final Repository State"), ...parts.repoLines.map((line) => `- ${sanitizeDisplayText(line)}`), "");
   }
   return lines;
 }
