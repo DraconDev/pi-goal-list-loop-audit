@@ -119,11 +119,11 @@ test("extractor: last line-anchored restatement wins", () => {
 test("card: structured Outcome renders a full ### Summary section, headline stays short", () => {
   const { chatLines } = render(STRUCTURED);
   assert.equal(chatLines[0], "## Done — shipped the keyword review", "outcome opens");
-  const summaryIdx = chatLines.indexOf("### Summary");
+  const summaryIdx = chatLines.indexOf("Summary");
   assert.ok(summaryIdx > 0, "Summary section present");
-  const findingsIdx = chatLines.indexOf("### What Changed");
-  const verificationIdx = chatLines.indexOf("### Verification");
-  const nextIdx = chatLines.indexOf("### Next");
+  const findingsIdx = chatLines.indexOf("What Changed");
+  const verificationIdx = chatLines.indexOf("Verification");
+  const nextIdx = chatLines.indexOf("Next");
   assert.equal(verificationIdx, -1, "technical verification is hidden by default");
   assert.ok(summaryIdx < findingsIdx && findingsIdx < nextIdx, "Summary rides the headline, then the change-first account");
   const summaryBlock = chatLines.slice(summaryIdx + 1, findingsIdx - 1);
@@ -136,13 +136,13 @@ test("card: structured Outcome renders a full ### Summary section, headline stay
 
 test("card: unstructured summaries keep today's shape — no Summary section", () => {
   const { chatLines } = render(PLAIN);
-  assert.ok(!chatLines.includes("### Summary"), "no Summary section without structure");
+  assert.ok(!chatLines.includes("Summary"), "no Summary section without structure");
   assert.equal(chatLines[0], "## Done — shipped the keyword review", "outcome-first headline");
 });
 
 test("card: one-action Next survives the structured body", () => {
   const { chatLines } = render(STRUCTURED);
-  const nextIdx = chatLines.indexOf("### Next");
+  const nextIdx = chatLines.indexOf("Next");
   const nextBlock = chatLines.slice(nextIdx + 1).filter((line) => line.startsWith("- "));
   assert.equal(nextBlock.length, 1, `exactly one Next action, got: ${JSON.stringify(nextBlock)}`);
   assert.match(nextBlock[0] ?? "", /implement slice 1/, "the concrete action survives");
@@ -168,11 +168,11 @@ test("doctrine: horizon lives in Summary, Next names only the immediate move", (
   const withRoadmap = STRUCTURED
     .replace("## Part 2: rollout\nSlice 1 lands first.", "## Part 2: rollout\nSlice 1 lands first.\n## Part 3: later slices\nSlices 2 and 3 follow after slice 1.");
   const { chatLines } = render(withRoadmap);
-  const summaryIdx = chatLines.indexOf("### Summary");
-  const findingsIdx = chatLines.indexOf("### What Changed");
+  const summaryIdx = chatLines.indexOf("Summary");
+  const findingsIdx = chatLines.indexOf("What Changed");
   const summaryBlock = chatLines.slice(summaryIdx + 1, findingsIdx - 1);
   assert.ok(summaryBlock.some((line) => line.includes("Slices 2 and 3 follow")), "horizon stays visible in Summary");
-  const nextIdx = chatLines.indexOf("### Next");
+  const nextIdx = chatLines.indexOf("Next");
   const nextBlock = chatLines.slice(nextIdx + 1).filter((line) => line.startsWith("- "));
   assert.equal(nextBlock.length, 1, `one immediate move, got: ${JSON.stringify(nextBlock)}`);
   assert.match(nextBlock[0] ?? "", /implement slice 1/, "the immediate move leads");
