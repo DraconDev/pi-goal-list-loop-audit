@@ -81,6 +81,29 @@ for (const hold of ['user', 'decision', 'permission', 'load', 'freeze', 'determi
   });
 }
 
+test('manual-switch resume fails closed when the goal transaction cannot persist', async () => {
+  await withPressureSession(async (pi, ctx, cwd) => {
+    const fs = await import('node:fs');
+    const goal = state.goal!;
+    replaceState({ ...state,
+      goal: { ...goal, status: 'paused', pauseKind: 'wait', pauseReason: 'main model recovery — retrying' },
+      mainModelRecovery: { primary: 'provider/primary', active: 'provider/primary', attempted: ['provider/primary'], attempts: 1, kind: 'goal', reason: 'provider unavailable', owner: { kind: 'goal', id: goal.id } },
+    });
+    persistStateLine(cwd, state);
+    const directory = `${cwd}/.pi-glla`, ledger = `${directory}/active.jsonl`;
+    fs.chmodSync(ledger, 0o444);
+    fs.chmodSync(directory, 0o555);
+    try {
+      await pi.fire('model_select', { model: { provider: 'provider', id: 'chosen' }, previousModel: ctx.model, source: 'set' }, ctx);
+      assert.equal(state.goal?.status, 'paused');
+      assert.equal(readState(cwd).goal?.status, 'paused');
+      assert.ok(state.mainModelRecovery);
+      assert.ok(ctx.ui.matching('recovery resume could not persist').length);
+      assert.equal(pi.sent.length, 0);
+    } finally { fs.chmodSync(directory, 0o755); fs.chmodSync(ledger, 0o644); }
+  });
+});
+
 test('forbidden selection revert event is not manual resume consent', async () => {
   await withPressureSession(async (pi, ctx, cwd) => {
     const fs = await import('node:fs');
