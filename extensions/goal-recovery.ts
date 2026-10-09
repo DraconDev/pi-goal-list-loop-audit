@@ -397,6 +397,53 @@ export function retireOrphanedMainModelRecovery(ctx: ExtensionContext, restoreCo
   return 'retired';
 }
 
+/** A user-selected allowed model is retry consent only for a surface held
+ * exclusively by model recovery. It is not permission to cross decisions,
+ * user freezes, stored audit claims, or deterministic request refusals. */
+export function resumeRecoveryOnManualModelSelection(ctx: ExtensionContext, selected: string): boolean {
+  const recovery = state.mainModelRecovery;
+  if (!recovery || supervisorPaused(state)
+    || isDeterministicProviderError(recovery.providerErrorDiagnostic ?? recovery.reason)) return false;
+  const ownership = recoveryOwnership(recovery.owner, recovery.kind, state, true);
+  if (ownership !== 'retained') return false;
+  const goal = state.goal;
+  const loop = state.loop;
+  const resumeGoal = recovery.kind === 'goal' && goal?.status === 'paused'
+    && !goal.pendingCompletion && (goal.pauseKind === 'wait' || goal.pauseKind === 'blocked')
+    && (goal.pauseReason ?? '').startsWith('main model recovery');
+  const resumeLoop = recovery.kind === 'loop' && loop && !loop.active
+    && (loop.stopReason ?? '').startsWith('main model recovery —');
+  if (!resumeGoal && !resumeLoop) return false;
+  const before = { ...state };
+  clearMainModelRecoveryTimer();
+  state.mainModelRecovery = undefined;
+  let landed: boolean;
+  if (resumeGoal) {
+    landed = updateGoal({ status: 'active', pauseKind: undefined, pauseReason: undefined,
+      pauseResumeAt: undefined, pauseSuggestedAction: undefined, providerErrorDiagnostic: undefined,
+      recoveryEpisodeKey: undefined, recoveryNoticeKeys: undefined,
+      autoResumedAt: nowIso(), autoResumedEvent: 'manual model selection' }, ctx) !== false;
+  } else {
+    state.loop = { ...loop!, active: true, stopReason: undefined };
+    landed = persistState(ctx) !== false;
+  }
+  if (!landed) {
+    replaceState(before);
+    flags.continuationDispatchStoodDown = true;
+    ctx.ui.notify('Model changed, but recovery resume could not persist. Saved work remains held until storage is repaired.', 'warning');
+    return false;
+  }
+  flags.continuationDispatchStoodDown = false;
+  flags.mainModelAbortForRecovery = false;
+  flags.lastMainModelFailure = null;
+  flags.lastMainModelRecoveryResumeAt = Date.now();
+  appendLedger(ctx.cwd, 'main_model_recovery_manual_selection_resumed', { model: selected, owner: recovery.owner, kind: recovery.kind });
+  if (resumeGoal) scheduleContinuation(ctx, true, 1_000);
+  else scheduleLoopTick(ctx);
+  ctx.ui.notify(`Selected ${selected}; saved ${resumeGoal ? 'goal/list work' : 'loop work'} is resuming.`, 'info');
+  return true;
+}
+
 export function mainModelRecoveryActive(): boolean {
   return !!state.mainModelRecovery?.retryAt || !!state.mainModelRecovery?.pendingModelSwitch;
 }
