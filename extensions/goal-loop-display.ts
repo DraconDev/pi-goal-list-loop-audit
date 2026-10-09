@@ -1608,7 +1608,20 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
       // time; the hourly retry is only an extra retry.
       const parked = state.mainModelRecovery?.retryAt ? Date.parse(state.mainModelRecovery.retryAt) : Number.NaN;
       if (Number.isFinite(parked) || state.mainModelRecovery?.pendingModelSwitch) {
-        const label = "⏳ main-model recovery — automatic retry scheduled";
+        // v0.39.19 (field 2026-10-09 — "seemingly we gave up"): a bare
+        // "retry scheduled" next to a 300m countdown reads as abandoned.
+        // Name the attempt count, the absolute probe time, and the fact
+        // that no action is needed — all three are durable facts, not
+        // promises (the probe time is ours; provider reset is not claimed).
+        const attempts = state.mainModelRecovery?.attempts;
+        const attemptSeg = typeof attempts === "number" && Number.isFinite(attempts) && attempts > 0
+          ? ` · attempt ${attempts}` : "";
+        const whenSeg = Number.isFinite(parked)
+          ? parked > now
+            ? ` · next probe ${new Date(parked).toISOString().slice(11, 16)}Z (in ${fmtElapsed(parked - now)})`
+            : " · probe due — dispatching"
+          : "";
+        const label = `⏳ main-model recovery — automatic retry scheduled${attemptSeg}${whenSeg} · no action needed`;
         return `glla: ${paint(theme, "dim", label)}${pausedStatusSuffix(g, state, extras, now)}${heldSuffix}`;
       }
       if (!supervised) {

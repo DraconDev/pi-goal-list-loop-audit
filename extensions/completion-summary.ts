@@ -504,7 +504,11 @@ function findingPresentation(finding: string, chat: boolean): { outcome: string;
     parsed.reason,
     ...parsed.evidence,
   ].filter(Boolean);
-  const normalizedReason = [...new Set(reasonParts)].join(" · ").trim();
+  // v0.39.19 (field 2026-10-09 — `· , weight 0.62 at` on the terminal
+  // card): token extraction can strand leading punctuation when the
+  // evidence tokens ride mid-sentence, so strip a leading `,;:` husk.
+  // Content words are untouched — only the join seam is cleaned.
+  const normalizedReason = [...new Set(reasonParts)].join(" · ").trim().replace(/^[,;:]+/, "").trim();
   return {
     // Chat removes machine receipts; the archive keeps the full evidence
     // prose. The outcome/reason split itself is shared by both surfaces.
@@ -886,7 +890,11 @@ export function buildRichTerminalParts(args: {
     }
   } else if (groups.length > 0) {
     groups.forEach((group, i) => {
-      findingLines.push(`#### ${i + 1}. ${sanitizeDisplayText(group.title)}`);
+      // v0.39.19: same plain-heading rule as composeRichTerminalLines —
+      // `#### n. Area` reached the terminal literally (field 2026-10-09).
+      findingLines.push(args.chat
+        ? `${i + 1}. ${sanitizeDisplayText(group.title)}`
+        : `#### ${i + 1}. ${sanitizeDisplayText(group.title)}`);
       group.findings.forEach((finding, fi) => {
         findingLines.push(...findingBullet(finding, args.chat === true));
         // Test proof is supporting evidence, not a second narrative. Keep it
