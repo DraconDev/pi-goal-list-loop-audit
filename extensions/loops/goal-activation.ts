@@ -992,6 +992,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
   writeOwnerFile: defaultWriteOwnerFile,
 }): void {
   const { claimProcessOwner, writeOwnerFile } = ownership;
+  let forbiddenModelRevertDepth = 0;
   bindBackgroundWaitRuntime({
     valid: ctx => !!freshCtx() && !isForeignCtx(ctx) && !sessionHandoffPending && !extensionApiStale && !staleTerminalDone && !zombieStoodDown && !abortedStandDown,
     persist: ctx => persistState(ctx),
@@ -3468,6 +3469,7 @@ async function handleHotLengthExhaustion(
       // The forbidden gate wants the selection undone. Revert to the
       // previous model — the resulting model_select is a plain switch
       // back and is ledgered normally.
+      forbiddenModelRevertDepth++;
       try {
         const reverted = await extensionApi?.setModel(event.previousModel);
         if (reverted) {
@@ -3477,13 +3479,15 @@ async function handleHotLengthExhaustion(
         }
       } catch {
         // The violation is already ledgered; the session keeps the model.
+      } finally {
+        forbiddenModelRevertDepth--;
       }
     }
     // A host restore selection is lifecycle plumbing, not user consent to
     // cancel a durable recovery episode. Only a real user/cycle selection
     // rebases the automatic chain; the plugin's own recovery selection is
     // fenced by mainModelSwitchInFlight above.
-    if (blocked || mainModelSwitchInFlight || (source !== 'set' && source !== 'cycle')
+    if (blocked || forbiddenModelRevertDepth > 0 || mainModelSwitchInFlight || (source !== 'set' && source !== 'cycle')
       || initialSessionLoadPending || stateRootPending() || !to || !state.mainModelRecovery) return;
     resumeRecoveryOnManualModelSelection(ctx, to);
   });
