@@ -643,10 +643,10 @@ test("paused lifecycle projection names owner, queue, last activity, and next tr
   assert.match(status, /owner: main-model recovery/);
   assert.match(status, /2 queued/);
   assert.match(status, /last host activity 2m 00s ago/);
-  assert.match(status, /next: retry scheduled; execution unconfirmed/);
+  assert.match(status, /next: retry scheduled \(unconfirmed\)/);
   const widget = buildWidgetLines(state, null, NOW, undefined, undefined, extras)!;
   assert.ok(widget.some((line) => line.includes("lifecycle: safely parked") && line.includes("owner: main-model recovery") && line.includes("2 queued")), widget.join("\\n"));
-  assert.ok(widget.some((line) => line.includes("last host activity 2m 00s ago") && line.includes("next: retry scheduled; execution unconfirmed")), widget.join("\\n"));
+  assert.ok(widget.some((line) => line.includes("last host activity 2m 00s ago") && line.includes("next: retry scheduled (unconfirmed)")), widget.join("\\n"));
 });
 
 test("active/in-flight main-model recovery uses one compact card row", () => {
@@ -760,12 +760,12 @@ test("passed provider retryAt stays parked until recovery state clears", () => {
 
   const status = buildStatusText(state, null, NOW)!;
   assert.match(status, /main-model recovery — automatic retry scheduled/);
-  assert.match(status, /next: retry scheduled; execution unconfirmed/);
+  assert.match(status, /next: retry scheduled \(unconfirmed\)/);
   assert.doesNotMatch(status, /next: resuming now/);
 
   const widget = buildWidgetLines(state, null, NOW)!;
   assert.ok(widget.some((line) => line.includes("main-model recovery — automatic retry scheduled")), widget.join("\\n"));
-  assert.ok(widget.some((line) => line.includes("next: retry scheduled; execution unconfirmed")), widget.join("\\n"));
+  assert.ok(widget.some((line) => line.includes("next: retry scheduled (unconfirmed)")), widget.join("\\n"));
   assert.ok(widget.some((line) => line.includes('deadline overdue; live timer/probe unconfirmed')), widget.join('\\n'));
 });
 
