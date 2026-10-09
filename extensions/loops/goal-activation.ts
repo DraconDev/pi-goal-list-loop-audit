@@ -255,7 +255,7 @@ import {
   type AuditorProgress,
 } from "../goal-loop-auditor-process.js";
 import { stateRootPending } from "../glla-state-root.js";
-import { retireOrphanedMainModelRecovery, resumeRecoveryOnManualModelSelection } from '../goal-recovery.js';
+import { rearmLegacyElapsedRecoveryHold, retireOrphanedMainModelRecovery, resumeRecoveryOnManualModelSelection } from '../goal-recovery.js';
 import {
   REPETITION,
   isActuallyStuck,
@@ -2175,10 +2175,11 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       || heldLoopSuccessorResume;
     if (continuationConsent) releaseAuditorSurface();
     else suppressAuditorSurfaceAfterColdRestore();
+    rearmLegacyElapsedRecoveryHold(ctx, !stateRootPending(), autoResume || explicitRecovery);
     const mainRecovery = state.mainModelRecovery;
     if (mainRecovery?.manualResumeRequired) {
       const recoveryResumeCmd = recoverySurfaceCommand(mainRecovery.kind, "resume");
-      ctx.ui.notify(`Main-model recovery stopped automatic probes — the work is safe; ${recoveryResumeCmd} starts a fresh bounded window after you check the provider.`, "warning");
+      ctx.ui.notify(`Main-model recovery stopped automatic probes — the work is safe; ${recoveryResumeCmd} reopens paced automatic recovery after the required action.`, "warning");
     } else if (mainRecovery?.retryAt || mainRecovery?.pendingModelSwitch) {
       const retryAtMs = mainRecovery.retryAt ? Date.parse(mainRecovery.retryAt) : Number.NaN;
       const recoveryConsent = autoResume || explicitRecovery;
