@@ -79,6 +79,10 @@ The dedicated lifecycle suite now proves goal/list/loop compaction timeout → a
 
 `npm run test:all` EXIT=0: 3562 tests across 379 files, 3561+ pass shape (`(pass)` count 3561 in log plus final jiti bins), 0 fail, 1 environment-gated skip (`commit survives the auto-committer daemon`). Log: `/tmp/glla-testall-final.log` (563s). Path: two prior full runs bracketed the fix — 3560 pass/1 fail on the isolated-rig ownership fence (`tests/main-model-recovery.test.ts` runtime fallback walk), then a stall on flaky `tests/loop-branch-ownership.test.ts` mid-tick timing (passes alone in 2s, untouched by this work), then green. `npm run check` clean; inventory regenerated (`docs/RUNTIME-INVENTORY.md`). Note: the task-8 milestone verifier cannot execute the 10-minute gate inside its own timeout, so the task remains system-pending despite the green log; no test was excluded or weakened.
 
+## Milestone-gate budget fix (v0.39.18, task 8 unblock)
+
+`DEFAULT_MECHANICAL_CHECK_TIMEOUT_MS` 600s → 1500s (`extensions/goal-loop-shield.ts`). The 10-minute ceiling repeated the v0.35.16 failure mode it was created to fix: this repo's honest gates outgrew it (`test:all` ≈ 563s over 379 files, `release:check` longer), so task 8's gate died INCONCLUSIVE-timeout on any slow host — a non-verdict that strands the objective. No suite timing was touched; the slowest single test is ≈18s (bulk is breadth, not a hang). Rails unchanged: per-command budget, process-group cap, 64MB output cap, tail-kept evidence, inconclusive-never-fails, 2× load-scale ceiling. Pinned by a new test in `tests/mechanical-inconclusive.test.ts` (13 pass, 0 fail); `npm run check` clean. One observed flake (not fixed here): a `loop-branch-ownership` mid-tick run once timed out at 30s and stalled its runner file under back-to-back full-suite load; passes alone in ~2s, untouched by this work.
+
 ## Open contract work
 
 Fresh-context reviewer rehearsal (advisory, not in the verification contract).
