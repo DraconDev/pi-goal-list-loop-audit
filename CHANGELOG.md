@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.39.21 — 5h retry-window policy, stall-proof test cleanup (2026-10-09)
+
+### Recovery policy
+
+- Pin the hintless-429 wall-ladder 5h cap as deliberate operator policy:
+  coding plans run in 5-hour windows and retrying across the full window
+  lets a project continue in the next window. Attempts advance and timers
+  re-arm across failed probes; the hourly probe punctuates long waits.
+- Bound all `session_shutdown` test-harness drains so one timed-out test
+  cannot stall its runner file (field: ~10min stall, 7 dangling
+  processes).
+
 ## 0.39.20 — readable terminal summaries and obvious retry status (2026-10-09)
 
 ### Summary rendering
