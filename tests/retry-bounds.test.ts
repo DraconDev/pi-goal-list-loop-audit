@@ -63,14 +63,13 @@ test("E2: auditor infra errors enter the durable bounded retry plan (v0.34.51 â€
 });
 
 test("main recovery remains unbounded but auditor retries retain their fixed horizon", () => {
-  assert.match(RECOVERY, /const normalizedRecovery = aggressive \? \{ \.\.\.normalizedBase, autoRetryUntil: undefined \} : normalizedBase;/);
-  // v0.38.69 (Antigravity port): quota waits never park at the horizon â€”
-  // the hold condition gained a quota-exemption conjunct, so the pin now
-  // matches the composed `horizonApplies` instead of the bare horizon.
-  assert.match(RECOVERY, /const horizonApplies = !aggressive\s*\n?\s*&& !isQuotaHorizonExempt/);
-  assert.match(RECOVERY, /horizonApplies && Number\.isFinite\(deadlineMs\)/);
-  assert.match(RECOVERY, /autoRetryUntil: aggressive \? undefined : mainModelAutoRetryUntil/);
-  assert.match(RECOVERY, /adaptive backoff for as long as it remains recoverable/);
+  // Main-model elapsed-time expiry is retired in every mode. Dedicated
+  // quota-horizon runtime tests verify paced retries and authoritative stops.
+  assert.match(RECOVERY, /return \{ \.\.\.recovery, firstFailureAt, autoRetryUntil: undefined \}/);
+  assert.doesNotMatch(RECOVERY, /horizonApplies|mainModelAutoRetryUntil\(/);
+  assert.match(RECOVERY, /if \(normalized\.manualResumeRequired\)/);
+  assert.match(RECOVERY, /isDeterministicProviderError\(normalized\.providerErrorDiagnostic/);
+  assert.match(RECOVERY, /paced backoff for as long as it remains recoverable/);
   assert.match(SRC, /auditorRetryPlan\(durableClaim, undefined, undefined, aggressive\)/);
   // Auditor retry policy is explicitly bounded even in aggressive mode;
   // this does not change the main-model policy assertions above.
