@@ -92,6 +92,10 @@ Two user-reported glitches fixed after the goal archived:
 
 Validation: `npm run check` clean; targeted suites green (10 summary/display files: 198 pass; behavioral-orchestrator: 156 pass); inventory regenerated.
 
+## v0.39.21 goal: ai-auto-music stale record (task 2)
+
+Journal held a `main model unknown — Cannot find module '…/pi-coding-agent/dist/bundle/chunks/openai-responses-UHF3DHNG.js'` record (attempts 0, no retryAt, no owner, no goal; dormant since Oct 8). Root cause: transient corrupted pi-coding-agent install (chunk-hash mismatch), not a GLLA defect — and correctly un-retried (a missing module never heals on a timer; it needs reinstall). Verified 2026-10-09: installed pi-coding-agent is 1.1.0, no references to the missing chunk remain, and the bundle loads clean. No journal write performed (another project's live state); the orphan record retires via the normal restore path on next session start, which now loads 0.39.20.
+
 ## Open contract work
 
 Fresh-context reviewer rehearsal (advisory, not in the verification contract).
