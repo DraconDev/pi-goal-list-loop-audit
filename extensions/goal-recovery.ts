@@ -503,7 +503,7 @@ export function mainModelRecoveryRuntimeStatus(): import('./goal-loop-core.js').
       : state.supervisorPausedAt ? 'supervisor pause'
       : state.loadHoldAt ? 'session load hold'
       : flags.extensionApiStale ? 'stale extension; reload required'
-      : !ctx ? 'session context unavailable/restoring'
+      : flags.initialSessionLoadPending || stateRootPending() || !ctx ? 'session context unavailable/restoring'
       : undefined,
   };
 }
