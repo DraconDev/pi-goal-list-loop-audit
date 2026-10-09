@@ -23,6 +23,25 @@ function git(cwd: string, ...args: string[]): string {
   return execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
 }
 
+/** Field 2026-10-09: the mid-tick test hit its 30s timeout under full-suite
+ * load and the aftermath stalled the whole runner file ~10min (the runner
+ * reaped 7 dangling processes at the stall kill). An unbounded
+ * `session_shutdown` drain in `finally` can wedge on a dead tick, so one
+ * timed-out test holds the file — and the suite — open. Every cleanup
+ * drain in this file races a bound: a wedged test still fails, but the
+ * file always progresses. */
+async function drainShutdown(promise: Promise<unknown>, ms = 5_000): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      promise.catch(() => {}),
+      new Promise<void>((resolve) => { timer = setTimeout(resolve, ms); timer.unref?.(); }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 function ledgerTypes(cwd: string): string[] {
   return fs.readFileSync(path.join(cwd, ".pi-glla", "active.jsonl"), "utf8")
     .split("\n")
@@ -112,7 +131,7 @@ test("active branch loop parks before commit when HEAD moved to the user's branc
     assert.ok(!calls.some(([cmd, ...args]) => cmd === "git" && args[0] === "commit"), "no commit on the user's branch");
     assert.equal(git(cwd, "branch", "--show-current"), "main", "HEAD is not repaired or moved by the guard");
   } finally {
-    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+    await drainShutdown(pi.fire("session_shutdown", { reason: "test-end" }, ctx));
   }
 });
 
@@ -152,7 +171,7 @@ test("terminal commit failure preserves the uncommitted iteration and skips dest
     assert.ok(!calls.some(([cmd, ...args]) => cmd === "git" && args[0] === "checkout"), "no checkout after commit failure");
     assert.equal(git(cwd, "branch", "--show-current"), branch);
   } finally {
-    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+    await drainShutdown(pi.fire("session_shutdown", { reason: "test-end" }, ctx));
   }
 });
 
@@ -182,7 +201,7 @@ test("reset failure during finish keeps the terminal branch and never attempts c
     assert.ok(!calls.some(([cmd, ...args]) => cmd === "git" && args[0] === "checkout"));
     assert.equal(git(cwd, "branch", "--show-current"), branch);
   } finally {
-    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+    await drainShutdown(pi.fire("session_shutdown", { reason: "test-end" }, ctx));
   }
 });
 
@@ -213,7 +232,7 @@ test("/loop stop on a branch-mode loop parked on a foreign branch attempts no re
     assert.ok(!calls.some(([cmd, ...args]) => cmd === "git" && args[0] === "checkout"), "finish performs no checkout on foreign HEAD");
     assert.equal(git(cwd, "branch", "--show-current"), "main");
   } finally {
-    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+    await drainShutdown(pi.fire("session_shutdown", { reason: "test-end" }, ctx));
   }
 });
 
@@ -284,9 +303,9 @@ test("/loop stop mid-tick still restores the original branch (no false branch-ch
   } finally {
     releaseMeasure();
     if (!tickSettled) {
-      await pi.fire("session_shutdown", { reason: "test-cleanup" }, ctx).catch(() => {});
+      await drainShutdown(pi.fire("session_shutdown", { reason: "test-cleanup" }, ctx));
     }
-    await pi.fire("session_shutdown", { reason: "test-end" }, ctx).catch(() => {});
+    await drainShutdown(pi.fire("session_shutdown", { reason: "test-end" }, ctx));
     pi.execHandler = null;
   }
 });
@@ -372,9 +391,9 @@ test("/loop stop mid-tick commits the in-flight iteration instead of resetting i
     // the harness is never held open across the test boundary.
     releaseMeasure();
     if (!tickSettled) {
-      await pi.fire("session_shutdown", { reason: "test-cleanup" }, ctx).catch(() => {});
+      await drainShutdown(pi.fire("session_shutdown", { reason: "test-cleanup" }, ctx));
     }
-    await pi.fire("session_shutdown", { reason: "test-end" }, ctx).catch(() => {});
+    await drainShutdown(pi.fire("session_shutdown", { reason: "test-end" }, ctx));
     pi.execHandler = null;
   }
 });
@@ -445,7 +464,7 @@ test("a branch-changed park is resumable: /loop resume on the scratch branch kee
     assert.equal(loop.history.length, 1, "history survives the park");
     assert.equal(loop.stopReason, undefined, "the resume clears the park reason");
   } finally {
-    await pi.fire("session_shutdown", { reason: "test-end" }, ctx);
+    await drainShutdown(pi.fire("session_shutdown", { reason: "test-end" }, ctx));
   }
 });
 
