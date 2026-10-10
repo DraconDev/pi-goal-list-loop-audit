@@ -1,4 +1,5 @@
 import type { State, MainModelRecoveryRuntime } from './goal-loop-core.js';
+import { unconfirmedCompactionStatus, type CompactionStatus } from './compaction-status.js';
 
 /** Presentation only. Never use these states as dispatch permissions. */
 export type ExecutionHealth = 'idle' | 'complete' | 'cancelled' | 'running' | 'tool-wait'
@@ -14,6 +15,7 @@ export interface UiStatusEvidence {
   turnQueued?: boolean;
   tool?: { name: string; startedAt: number; budgetMs: number };
   recovery?: MainModelRecoveryRuntime;
+  compaction?: CompactionStatus;
 }
 export interface UiStatusContext {
   now: number;
@@ -42,6 +44,7 @@ export interface UiStatus {
   queueDepth?: number;
   /** Saved-recovery honesty note for unconfirmed retries (never an armed-timer claim). */
   recoveryNote?: string;
+  compaction?: CompactionStatus;
 }
 
 export const UI_OBSERVATION_FRESH_MS = 30_000;
@@ -78,6 +81,15 @@ export function projectUiStatus(state: State, context: UiStatusContext): UiStatu
   // v0.35.61: waiting work rides every footer — a queue beside live work
   // is durable context, not a second card. Set before any finish() so all
   // executions carry it.
+  if (ownerKey) {
+    const host = context.evidence;
+    const sample = host?.compaction;
+    const fresh = host && host.ownerKey === ownerKey && context.generation !== undefined
+      && host.generation === context.generation && host.session === 'open'
+      && validTime(host.observedAt, now) && now - host.observedAt <= UI_OBSERVATION_FRESH_MS
+      && sample && validTime(sample.observedAt, now) && now - sample.observedAt <= UI_OBSERVATION_FRESH_MS;
+    base.compaction = fresh ? sample : unconfirmedCompactionStatus();
+  }
   const queued = state.list?.length ?? 0;
   if (queued > 0) base.queueDepth = queued;
   const finish = (execution: ExecutionHealth, actionability: UiStatus['actionability'], nextAction: string, blocker?: string): UiStatus =>

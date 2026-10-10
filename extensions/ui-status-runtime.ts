@@ -12,6 +12,7 @@ export interface UiRuntimeObservation {
   turnActive?: boolean;
   turnQueued?: boolean;
   recovery?: MainModelRecoveryRuntime;
+  compaction?: UiStatusEvidence['compaction'];
 }
 export interface UiAuditObservation {
   ownerKey: string;
