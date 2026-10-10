@@ -82,7 +82,9 @@ export function projectUiStatus(state: State, context: UiStatusContext): UiStatu
     : !recovery.owner && (recovery.kind === 'goal' ? !!goal : !!loop));
   const providerWait = recoveryOwned && !recovery?.manualResumeRequired
     && (!!recovery?.retryAt || !!recovery?.pendingModelSwitch);
-  if (goal?.status === 'paused' && goal.pauseKind !== 'wait' && goal.pauseKind !== 'standby' && !providerWait) {
+  const legacyProviderPause = providerWait && goal?.pauseKind !== 'decision'
+    && (goal?.pauseReason ?? '').startsWith('main model recovery');
+  if (goal?.status === 'paused' && goal.pauseKind !== 'wait' && goal.pauseKind !== 'standby' && !legacyProviderPause) {
     return finish('blocked', 'user', goal.pauseSuggestedAction ?? `${resume} when the prerequisite is resolved`, goal.pauseReason ?? 'Work paused');
   }
   if (recoveryOwned && recovery?.manualResumeRequired) return finish('blocked', 'user', `${resume} after resolving the recovery prerequisite`, recovery.reason);
