@@ -820,11 +820,12 @@ export function currentUiStatusContext(ctx: ExtensionContext, now = Date.now()):
   const root = piGlaDir(ctx.cwd);
   const metadata = readCompactionMetadata(path.join(root, 'compactor-boundary.json'),
     path.join(root, 'context-pressure-budget.json'), ownerKey, now, tokens, threshold, state.lastCompactionAt);
+  const selectedGoal = state.loop?.active ? undefined : state.goal;
   const compaction = projectCompactionStatus({
     tokens, threshold, observedAt: now, supervising: isSupervising(),
-    audit: completionAuditInFlight || state.goal?.status === 'auditing' || respecBuilderAuditInFlight(ctx.cwd),
+    audit: completionAuditInFlight || selectedGoal?.status === 'auditing' || respecBuilderAuditInFlight(ctx.cwd),
     paused: supervisorPaused(state) || typeof state.loadHoldAt === 'number' || isPersistenceDegraded()
-      || (state.goal?.status === 'paused' && !mainModelRecoveryActive()),
+      || (selectedGoal?.status === 'paused' && !mainModelRecoveryActive()),
     recovery: mainModelRecoveryActive() || pressureExcluded(ctx),
     compacting: isCompactionInFlightSince(compactionInFlightSince, now), idle: !turnActive, pending: turnQueued,
     available: typeof ctx.compact === 'function', ...metadata,
