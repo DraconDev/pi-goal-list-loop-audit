@@ -264,17 +264,21 @@ with:
 
 ### What the settings table controls
 
-Bare `/glla` opens a table you can navigate; each row edits one setting and shows
-the effective value rather than only the stored one. Groups cover:
+Bare `/glla` opens a tabbed table: switch between the eight sections with
+left/right and edit a row with up/down. Each row shows **KEY · VALUE · SOURCE**,
+so an unset key visibly reports the value the runtime actually uses instead of a
+different default. Sections:
 
-| Group | Example settings |
+| Section | Example rows |
 |---|---|
-| Supervision | `autoResume`, `keepGoing`, `supervisorPause` |
-| Context | compaction token threshold and related compaction behavior |
-| Recovery | main-model fallbacks, retry minutes, same-model retry budget |
-| Audit | auditor model, fallback model, silent mode, progress signals, post-audit policy |
-| Subagents | model strategy, per-agent models and fallback chains |
-| Tools | per-tool overrides and the tracked-subagent panel |
+| Keep-going | auto-resume, decision popup, carryover policy, decision-pause budget, auto-accept drafts, aggressive mode, vision assist |
+| Main agent | main-agent model, fallback models, fallback thinking levels, retry minutes, same-model retry budget, primary-probe minutes |
+| Drafter | drafting model used to interview an objective before it activates |
+| Compactor | compaction token target, compactor agent and its fallback models |
+| Auditor | auditor model and fallbacks, silent mode, progress signals, tool timeout, stall threshold, audit job retention, spot-check rate, audit caps |
+| Subagents | model strategy, per-agent models and thinking, per-agent fallback chains |
+| Stall brakes | wedge alert minutes, stuck-intervention cap, escalation refires, zombie retry cap |
+| Other | state root, notify command, token limit, tool overrides, post-audit policy, context checkpoint projection |
 
 Aggressive mode is a single switch that tightens supervision defaults; the table
 shows what each unset key resolves to, so an unset value never claims a
