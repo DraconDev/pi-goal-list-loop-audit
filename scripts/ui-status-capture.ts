@@ -21,14 +21,14 @@ function goal(): State { return { goal: { id: 'capture-fixture', objective: 'Mak
   status: 'active', policy: 'goal', autoContinue: true, usage: { tokensUsed: 0, tokensLimit: 0 }, createdAt: at, updatedAt: at }, list: [] }; }
 function observed(state: State): UiStatusContext { return { now, generation: 1, evidence: { ownerKey: uiStatusOwnerKey(state)!, generation: 1, observedAt: now, session: 'open', turnActive: true, lastActivityAt: now - 1000 } }; }
 const running = goal();
-const quota = goal(); quota.mainModelRecovery = { kind: 'goal', owner: { kind: 'goal', id: quota.goal!.id }, primary: 'minimax/MiniMax-M3.1-Flash', active: 'minimax/MiniMax-M3.1-Flash', reason: 'Provider 429 · saved work retained', retryAt: new Date(now + 300000).toISOString(), startedAt: at, regularRetries: 1, hourlyProbes: 0, skipped: [] };
+const quota = goal(); quota.mainModelRecovery = { kind: 'goal', owner: { kind: 'goal', id: quota.goal!.id }, primary: 'minimax/MiniMax-M3.1-Flash', active: 'minimax/MiniMax-M3.1-Flash', reason: 'Provider 429 · saved work retained', retryAt: new Date(now + 300000).toISOString(), firstFailureAt: at, attempts: 1, attempted: ['minimax/MiniMax-M3.1-Flash'], skipped: [] };
 const quotaContext = observed(quota); quotaContext.evidence!.recovery = { retryTimerArmed: true, hourlyTimerArmed: false, turnActive: false, turnQueued: false, switchInFlight: false };
 const blocked = goal(); blocked.goal!.status = 'paused'; blocked.goal!.pauseKind = 'blocked'; blocked.goal!.pauseReason = 'Version evidence missing'; blocked.goal!.pauseSuggestedAction = 'Paste AAV version';
 const dormant = goal(); dormant.goal!.status = 'auditing'; dormant.goal!.pendingCompletion = { phase: 'running', at, attemptId: 'closed-fixture', completionSummary: 'Saved claim' };
 const dormantContext = observed(dormant); dormantContext.evidence!.session = 'closed';
 const unconfirmed = structuredClone(dormant);
 const settling = structuredClone(dormant); settling.goal!.pendingCompletion!.phase = 'settling';
-const project: State = { list: [], loop: { target: 'Build a truthful project UI', startedAt: at, active: true, iteration: 3, maxIterations: 50,
+const project: State = { goal: undefined, list: [], loop: { target: 'Build a truthful project UI', startedAt: at, active: true, iteration: 3, maxIterations: 50,
   plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [], builder: adoptRespecRequirements(createRespecBuilder('Build a truthful project UI'), [{ id: 'ui', text: 'Truthful execution', acceptance: 'Owner-fenced evidence' }]) } };
 project.loop!.builder!.phase = 'replanning';
 const rejection = observed(project); rejection.workflowIssue = 'Audit rejected: plan the next increment';
@@ -50,7 +50,7 @@ for (const width of [40, 120]) {
   rows.push(ansi(244, '── Outcome-first completed summary'));
   const summary = composeRichTerminalLines(buildRichTerminalParts({ outcome: 'Execution status is now truthful and actionable', countsLine: '3 areas improved', chat: true,
     details: ['Changed: Cards share owner-fenced execution evidence.', 'Unresolved: Saved journals cannot prove a live session.', 'Next: Use /glla fleet for a read-only health observation.'],
-    auditHistory: [{ at, verdict: 'approved', summary: 'Fixture verification' }],
+    auditHistory: [{ at, approved: true, disapproved: false, model: 'fixture-reviewer', report: 'Fixture verification' }],
   })).join('\n');
   rows.push(...new Markdown(summary, 0, 0, mdTheme).render(width));
   fs.writeFileSync(path.join(directory, `${width}.ansi`), rows.join('\r\n') + '\r\n');
