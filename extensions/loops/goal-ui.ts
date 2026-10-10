@@ -27,6 +27,9 @@ import { truncateCells } from "../goal-loop-display.js";
 import { Type } from "typebox";
 import { uiStatusOwnerKey, type UiStatusContext } from '../ui-status.js';
 import { uiStatusContextFromRuntime, type UiAuditObservation } from '../ui-status-runtime.js';
+import { projectCompactionStatus, readCompactionMetadata } from '../compaction-status.js';
+import { pressureExcluded } from '../context-pressure-attempt.js';
+import { respecBuilderAuditInFlight } from '../respec-builder-runtime.js';
 
 // v0.34.109 (decomposition step 1): the state singleton and the persistence
 // core moved to goal-state.ts — the SINGLE owner of the mutable state object
@@ -810,10 +813,26 @@ export function currentUiStatusContext(ctx: ExtensionContext, now = Date.now()):
       ...(progress.currentTool && progress.currentToolStartedAt !== undefined && progress.toolTimeoutMs !== undefined
         ? { tool: { name: progress.currentTool, startedAt: progress.currentToolStartedAt, budgetMs: progress.toolTimeoutMs } } : {}) }
     : undefined;
+  let tokens: number | undefined;
+  try { tokens = ctx.getContextUsage?.()?.tokens ?? undefined; } catch { /* Unknown usage stays explicit. */ }
+  const configuredTarget = loadGlobalSettings().compactionTokenThreshold;
+  const threshold = typeof configuredTarget === 'number' && Number.isFinite(configuredTarget) && configuredTarget > 0 ? configuredTarget : 200_000;
+  const root = piGlaDir(ctx.cwd);
+  const metadata = readCompactionMetadata(path.join(root, 'compactor-boundary.json'),
+    path.join(root, 'context-pressure-budget.json'), ownerKey, now, tokens, threshold, state.lastCompactionAt);
+  const compaction = projectCompactionStatus({
+    tokens, threshold, observedAt: now, supervising: isSupervising(),
+    audit: completionAuditInFlight || state.goal?.status === 'auditing' || respecBuilderAuditInFlight(ctx.cwd),
+    paused: supervisorPaused(state) || typeof state.loadHoldAt === 'number' || isPersistenceDegraded()
+      || (state.goal?.status === 'paused' && !mainModelRecoveryActive()),
+    recovery: mainModelRecoveryActive() || pressureExcluded(ctx),
+    compacting: compactionInFlightSince !== null, idle: !turnActive, pending: turnQueued,
+    available: typeof ctx.compact === 'function', ...metadata,
+  });
   const context = uiStatusContextFromRuntime(state, now, generation, {
     ownerKey, generation, observedAt: now, session: 'open',
     lastActivityAt: activity.lastActivityAt, turnActive, turnQueued,
-    recovery: mainModelRecoveryRuntimeStatus(),
+    recovery: mainModelRecoveryRuntimeStatus(), compaction,
   }, audit);
   if (isPersistenceDegraded()) context.persistenceHold = `Persistence failed: ${lastPersistenceFailure()?.what ?? 'state write'}`;
   return context;
