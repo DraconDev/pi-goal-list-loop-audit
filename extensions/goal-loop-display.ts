@@ -801,11 +801,17 @@ export interface AuditDisplayProgress {
   sessionPath?: string;
 }
 
-type AuditorDisplayPhase = "queued" | "running" | "quiet" | "blocked" | "awaiting-verdict";
+type AuditorDisplayPhase = "queued" | "running" | "quiet" | "stalled" | "blocked" | "awaiting-verdict";
 /** v0.35.15: exported — the parent-side quiet watcher (goal-ui ticker) uses
  * the same threshold for the one-shot proactive notify so the notification
  * and the status chip can never disagree about when "quiet" begins. */
 export const AUDITOR_QUIET_MS = 3 * 60_000;
+/** v0.39.22 (field 2026-10-10: seo goal quiet 15 days, worker dead):
+ * quiet past this bound with no worker activity and no in-budget tool is
+ * a dead worker, not a slow one. An hour of total silence exceeds any
+ * legitimate inter-tool gap; the stalled presentation names the death and
+ * offers the retry (/goal resume) instead of only the discard. */
+export const AUDITOR_STALLED_MS = 60 * 60_000;
 /** v0.35.15: how long the "silent Xm then resumed" fact stays in the
  * detailed auditor card after a quiet stretch ends — long enough to be seen,
  * short enough not to become permanent noise. */
@@ -911,6 +917,7 @@ export function auditorDisplayPhase(g: Goal, audit: AuditDisplayProgress | null 
       toolAgeMs < audit.toolTimeoutMs
     )
       return "running";
+    if (age > AUDITOR_STALLED_MS) return "stalled";
     return "quiet";
   }
   // Same lifecycle scope as above: a stale goal snapshot that still
@@ -959,6 +966,7 @@ function auditorPhaseLabel(phase: AuditorDisplayPhase): string {
     case "queued": return "queued";
     case "running": return "running";
     case "quiet": return "quiet";
+    case "stalled": return "stalled";
     case "blocked": return "blocked";
     case "awaiting-verdict": return "awaiting completion review";
   }
@@ -973,6 +981,7 @@ export function auditorPhaseGlyph(phase: AuditorDisplayPhase): string {
     case "queued": return "⋯";      // waiting to start
     case "running": return "▶";     // worker alive
     case "quiet": return "◌";       // silent — possibly stuck
+    case "stalled": return "✖";      // silent past the death bound — worker dead
     case "blocked": return "⛔";    // infra failure / needs intervention
     case "awaiting-verdict": return "✓"; // worker done, verdict pending
   }
@@ -1983,12 +1992,13 @@ function heldLoopLines(l: LoopState, now: number, theme?: DisplayTheme, width?: 
 }
 
 /** Phase colour for the auditing card's lead row. Blocked/quiet are
- * warnings; a verdict that landed or live worker evidence is success;
+ * warnings, stalled is an error; a verdict that landed or live worker evidence is success;
  * queued/running-without-evidence stay neutral accent — a hung provider
  * must never wear success (v0.34.39). Colour always pairs with the phase
  * words (paint wraps the label, never replaces it), so a themeless
  * renderer loses colour but never meaning. */
 function auditorPhaseTone(phase: AuditorDisplayPhase, live: boolean): DisplayColor {
+  if (phase === "stalled") return "error";
   if (phase === "blocked" || phase === "quiet") return "warning";
   if (phase === "awaiting-verdict" || (phase === "running" && live)) return "success";
   return "accent";
@@ -2009,6 +2019,7 @@ function auditorCardModelRef(audit: AuditDisplayProgress | null | undefined, cla
  * row and the closing line can never name different actions. */
 function auditorNextAction(phase: AuditorDisplayPhase): string {
   if (phase === "quiet") return "/goal cancel discards the claim";
+  if (phase === "stalled") return "/goal resume retries the claim";
   if (phase === "blocked") return "/goal resume retries the claim";
   if (phase === "awaiting-verdict") return "completion review applying";
   if (phase === "queued") return "worker starting";
@@ -2082,7 +2093,11 @@ function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefin
   const staleSeg = activity === undefined && durable?.stale && durable.idleMs !== undefined
     ? ` · no progress ${fmtElapsed(durable.idleMs)}`
     : "";
-  const lead = [`├─ auditor: ${paint(theme, auditorPhaseTone(phase, phaseLive), effectivePhaseLabel)}${detail} · detached worker · ${ageSeg}${staleSeg}`];
+  // v0.39.22: a stalled audit asserts no live worker — printing
+  // "detached worker" would claim a process that has not spoken for over
+  // an hour. The `auditor:` anchor stays; only the worker segment changes.
+  const workerSeg = phase === "stalled" ? "no worker responds" : "detached worker";
+  const lead = [`├─ auditor: ${paint(theme, auditorPhaseTone(phase, phaseLive), effectivePhaseLabel)}${detail} · ${workerSeg} · ${ageSeg}${staleSeg}`];
   // Lead row 2: current tool + time budget, effective model + thinking.
   // Absent facts are omitted, never invented. The tool observation lives
   // ONLY here (it moved out of the tail) so the card keeps its
@@ -2161,7 +2176,9 @@ function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefin
     tail.push(`${i === 0 ? "├─" : "│ "} ${paint(theme, "dim", observation)}`);
   });
   const last = auditorLastActivity(audit, now);
-  if (phase === "quiet") {
+  if (phase === "stalled") {
+    tail.push(`└─ ${paint(theme, "error", `auditor stalled ${fmtElapsed(activity ?? 0)} — no worker activity, claim durable; /goal resume retries, /goal cancel discards`)}`);
+  } else if (phase === "quiet") {
     const quietMs = activity ?? 0;
     tail.push(`└─ ${paint(theme, "warning", `auditor quiet ${fmtElapsed(quietMs)}${last} — may be stuck; /goal cancel discards the claim`)}`);
   } else if (phase === "blocked") {
