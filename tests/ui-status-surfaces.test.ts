@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { visibleWidth } from '@earendil-works/pi-tui';
 import type { State } from '../extensions/goal-loop-core.js';
-import { buildStatusText, buildWidgetLines, type DisplayTheme } from '../extensions/goal-loop-display.js';
-import { uiStatusOwnerKey, type UiStatusContext } from '../extensions/ui-status.js';
+import { buildUiStatusFooter, buildStatusText, buildWidgetLines, type DisplayTheme } from '../extensions/goal-loop-display.js';
+import { projectUiStatus, uiStatusOwnerKey, type UiStatusContext } from '../extensions/ui-status.js';
 
 const NOW = Date.parse('2026-10-10T12:00:00Z');
 function fixture(): State {
@@ -50,6 +50,23 @@ test('actual prerequisite precedes evidence and remains visible at narrow width'
   assert.ok(lines.length <= 6);
   assert.ok(lines.every(line => visibleWidth(line) <= 40));
   assert.doesNotMatch(lines.join('\n'), /resume to continue|No action needed/);
+});
+
+test('narrow footers reserve required commands before secondary context', () => {
+  const theme: DisplayTheme = { fg: (_color, text) => `\x1b[38;5;179m${text}\x1b[0m` };
+  for (const command of ['/glla resume', '/goal resume', '/list resume', '/goal decide']) {
+    const state = fixture();
+    state.goal!.status = 'paused'; state.goal!.pauseKind = 'blocked';
+    state.goal!.pauseSuggestedAction = `${command} releases the held workflow after inspection`;
+    const status = { ...projectUiStatus(state, { now: NOW }), queueDepth: 12,
+      recoveryNote: 'recovery deadline saved but timer not observed' };
+    for (const width of [32, 40, 60]) for (const style of [undefined, theme]) {
+      const footer = buildUiStatusFooter(status, NOW, style, width);
+      const plain = footer.replace(/\x1b\[[0-9;]*m/g, '');
+      assert.ok(plain.includes(command), `${command} at ${width}: ${plain}`);
+      assert.ok(visibleWidth(footer) <= width);
+    }
+  }
 });
 
 test('cohesive active card retains primary and fallback model context', () => {
