@@ -26,6 +26,9 @@ import {
 import { auditLifecycleProjection, fmtAge, isSettlingClaim } from "./audit-lifecycle.js";
 import { clearDispatchRecord, dispatchRecordExists } from "./goal-loop-dispatch.js";
 import type { AuditDisplayProgress } from "./goal-loop-display.js";
+import { buildUiStatusCard } from './goal-loop-display.js';
+import { projectUiStatus } from './ui-status.js';
+import { currentUiStatusContext } from './loops/goal-ui.js';
 import { auditorVerdictTally, fmtElapsed, formatVerdictTallySegment, buildWorkLifecycleSummary } from "./goal-loop-display.js";
 import { goalWorkView, loopWorkView } from "./work-lifecycle.js";
 import { reconcileBackgroundWait } from "./background-wait-runtime.js";
@@ -451,8 +454,13 @@ async function cmdStatus(ctx: ExtensionContext): Promise<void> {
     return;
   }
   const g = state.goal;
+  const uiContext = currentUiStatusContext(ctx);
+  const statusState = { ...state, loop: undefined };
+  const uiStatus = projectUiStatus(statusState, uiContext);
   const view = goalWorkView(g, state);
   const lines = [
+    ...buildUiStatusCard(statusState, uiStatus, uiContext.now, undefined, process.stdout.columns || 80, false),
+    '', 'Saved workflow and diagnostics:',
     `${view.lifecycle === "waiting" ? "WAITING" : statusLabel(g.status)}: ${sanitizeDisplayText(g.objective)}`,
     buildWorkLifecycleSummary({ ...state, loop: undefined }),
     ...(g.agentRole ? [`Agent role: ${g.agentRole} subagent checkpoint requested`] : []),
@@ -3158,32 +3166,16 @@ function formatStoredAuditLifecycle(
   if (opts.compact) return lifecycle.phase === "settling"
     ? `${lifecycle.label} · approved; archive owed`
     : `${lifecycle.label}${lifecycle.stale ? " · no progress" : ""}`;
-  // A claim this process is actively driving is described by its phase plus
-  // the process fact; a parked one names its unblock action.
-  if (lifecycle.phase === "starting" && !opts.inFlight) {
-    return lifecycle.stale
-      ? `${lifecycle.label} — no worker event after ${fmtAge(lifecycle.idleMs ?? 0)}; ${lifecycle.nextAction}`
-      : `${lifecycle.label} — ${lifecycle.nextAction}`;
-  }
-  if (lifecycle.phase === "running" && !opts.inFlight) {
-    return lifecycle.stale
-      ? `${lifecycle.label} — ${lifecycle.nextAction}`
-      : `${lifecycle.label} — no worker event yet (detached worker, not yet reporting)`;
-  }
-  if (lifecycle.phase === "settling") {
-    // One vocabulary: the projection's own action sentence, which already
-    // names the approval, the owed archive, and the command that finishes it.
-    return `${lifecycle.label} — ${lifecycle.nextAction}`;
-  }
-  if (lifecycle.phase === "recovery-pending" || lifecycle.phase === "retry-waiting") {
-    return `${lifecycle.label} — ${lifecycle.nextAction}`;
-  }
-  // running + in flight: keep the process facts, they are the richer truth.
-  return opts.queued ? "detached auditor queued" : "detached auditor running";
+  // This section is a durable record, never a worker-liveness assertion.
+  // Current owner/attempt/runtime evidence lives in the shared card above.
+  if (lifecycle.phase === 'settling') return `${lifecycle.label} · approval recorded; archive owed`;
+  return `${lifecycle.label} · saved phase only; execution is shown above`;
 }
 
 function cmdGllaStatus(ctx: ExtensionContext): void {
-  const lines: string[] = [];
+  const uiContext = currentUiStatusContext(ctx);
+  const status = projectUiStatus(state, uiContext);
+  const lines: string[] = [...buildUiStatusCard(state, status, uiContext.now, undefined, process.stdout.columns || 80, false), '', 'Saved workflow and diagnostics:'];
   // v0.35.15: name a frozen supervisor FIRST — it changes how every other
   // line reads (nothing automatic will fire while this is set).
   if (typeof state.supervisorPausedAt === "number") {
