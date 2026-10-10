@@ -12,5 +12,10 @@
     "Approved settlement owed",
     "Completed project"
   ],
-  "source": "production card/footer builders and pi-tui Markdown"
+  "source": "production card/footer builders and pi-tui Markdown",
+  "capture": "real xterm on private Xvfb",
+  "pixels": [
+    380,
+    1673
+  ]
 }
