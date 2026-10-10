@@ -1,0 +1,13 @@
+{
+  "width": 120,
+  "rows": 18,
+  "appearance": "light",
+  "source": "registered goal-event production summary renderer; installed Pi dark/light theme",
+  "durableContentUnchanged": true,
+  "maxVisibleWidth": 120,
+  "capture": "real xterm on private Xvfb",
+  "pixels": [
+    1100,
+    400
+  ]
+}
