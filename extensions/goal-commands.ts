@@ -567,8 +567,8 @@ function cmdResume(ctx: ExtensionContext): Promise<void> | void {
     releaseAuditorSurface();
     if (state.goal?.status === "paused") {
       // v0.39.25: the same "resume stops at the probe" gap as the armed
-      // recovery below — release the parked goal once this probe resolves.
-      void probeMainModelRecovery(ctx).then(() => releasePausedGoalAfterRecoveryProbe(ctx, resumeCommand, true));
+      // recovery below — release the parked goal once THIS probe settles.
+      void mainModelRecoveryProbeSettled()?.then(() => releasePausedGoalAfterRecoveryProbe(ctx, resumeCommand, true));
     }
     return;
   }
