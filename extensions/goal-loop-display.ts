@@ -23,6 +23,7 @@ import { normalizeFindingLead } from "./finding-lead.js";
 import { auditorSurfaceSuppressed } from "./loops/goal-auditor-surface.js";
 import { isCompactionRecoveryHold, compactionResumeAction } from "./compaction-resume.js";
 import { stateWorkView, type WorkView, type WorkActivity } from "./work-lifecycle.js";
+import { projectUiStatus, type UiStatus, type UiStatusContext } from "./ui-status.js";
 
 /** v0.34.57 (OPEN-ISSUES bug #1.8 / tasklist item #2): the MAIN host is
  * NEVER detached — it is always SUPERVISING, regardless of any handle state.
@@ -199,6 +200,8 @@ export interface ModelProvenanceDisplay {
 }
 
 export interface WidgetExtras {
+  /** Shared evidence projection supplied by the admitted runtime adapter. */
+  uiStatusContext?: UiStatusContext;
   stalls?: number;
   recent?: RecentActionDisplay[];
   /** v0.35.29 (issue #15): one tracked-subagent snapshot projected into a
@@ -763,6 +766,10 @@ function auditRecoveryPending(g: Goal): boolean {
 // ---- status line (one-liner, always-on) ----
 
 export interface AuditDisplayProgress {
+  /** Identity stamped by the owning progress callback, never by rendering. */
+  ownerKey?: string;
+  generation?: number;
+  attemptId?: string;
   /** Persistent verification pass, independent of thinking/tool/report phase. */
   round?: 1 | 2;
   /** Model reference selected for the currently running detached attempt. */
@@ -1391,7 +1398,9 @@ function backgroundWidget(state: State, theme?: DisplayTheme, width?: number): s
 }
 
 export function buildStatusText(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, extras?: WidgetExtras, width?: number): string | undefined {
-  const base = backgroundStatus(state, theme) ?? buildStatusTextBase(state, audit, now, theme, extras, width);
+  const shared = extras?.uiStatusContext ? projectUiStatus(state, { ...extras.uiStatusContext, now }) : undefined;
+  const base = shared ? buildUiStatusFooter(shared, now, theme, width)
+    : backgroundStatus(state, theme) ?? buildStatusTextBase(state, audit, now, theme, extras, width);
   // Audit 2026-09-07: the worker summary rides the status on EVERY branch
   // including auditing — suppressing it there hid hung/aborting children
   // behind the audit (HUNG is never silent). The auditor stays a distinct
@@ -1821,7 +1830,9 @@ function countTotal(g: Goal): number {
  */
 export function buildWidgetLines(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, width?: number, extras?: WidgetExtras): string[] | undefined {
   const background = backgroundWidget(state, theme, width);
-  const rawInner = background ?? buildWidgetLinesInner(state, audit, now, theme, width, extras);
+  const shared = extras?.uiStatusContext ? projectUiStatus(state, { ...extras.uiStatusContext, now }) : undefined;
+  const rawInner = shared ? buildUiStatusCard(state, shared, now, theme, width, extras?.compactAuditCard !== false)
+    : background ?? buildWidgetLinesInner(state, audit, now, theme, width, extras);
   const view = stateWorkView(state, observedWorkActivity(extras, now));
   // The widget is activity-first; lifecycle/activity projection lives on the
   // status line and on the dedicated background-wait card. Avoid injecting
