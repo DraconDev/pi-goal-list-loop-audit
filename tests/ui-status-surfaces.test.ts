@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { visibleWidth } from '@earendil-works/pi-tui';
 import type { State } from '../extensions/goal-loop-core.js';
 import { buildStatusText, buildWidgetLines, type DisplayTheme } from '../extensions/goal-loop-display.js';
 import { uiStatusOwnerKey, type UiStatusContext } from '../extensions/ui-status.js';
@@ -47,7 +48,7 @@ test('actual prerequisite precedes evidence and remains visible at narrow width'
   assert.match(lines[0]!, /BLOCKED/);
   assert.match(lines[2]!, /├─ next: Paste AAV version/);
   assert.ok(lines.length <= 6);
-  assert.ok(lines.every(line => line.length <= 40));
+  assert.ok(lines.every(line => visibleWidth(line) <= 40));
   assert.doesNotMatch(lines.join('\n'), /resume to continue|No action needed/);
 });
 
