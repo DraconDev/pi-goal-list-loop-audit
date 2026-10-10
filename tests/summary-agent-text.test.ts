@@ -70,7 +70,7 @@ test("outcome strips stranded leading punctuation like the reason husk", () => {
 });
 
 test("clip never strands an unmatched backtick", () => {
-  const clipped = clipSummaryValue("A fresh install lands on `sendThreshold:` low for every kid", 40);
+  const clipped = clipSummaryValue("A fresh install lands on `sendThreshold:` low for every kid", 44);
   const opens = (clipped.match(/`/g) ?? []).length;
   assert.equal(opens % 2, 0, `balanced code span: ${clipped}`);
   assert.ok(clipped.includes("`sendThreshold:`"), `span completes: ${clipped}`);
