@@ -38,7 +38,11 @@ Four to six meaningful lines: actionability/workflow, objective/progress, runtim
 
 ## Fleet boundary
 
-Explicit configured roots; bounded depth, project count, per-journal bytes/lines and total time. Read GLLA runtime artifacts only. No conversation reads, symlink escape, sibling writes, ownership claims or dispatch. Unknown, malformed, unreadable and truncated observations remain visible as partial results. A saved auditing record is unfinished work, not proof of a live stalled session.
+`/glla fleet` explicitly invokes `extensions/fleet-health.ts`; there is no background scanner. Configure `fleetHealthRoots` in the normal global or project settings JSON, for example `{"fleetHealthRoots":["/home/dracon/Dev"]}`. Paths relative to the invoking project resolve from that project. Without this setting only the current project is inspected. Empty roots mean no scan. Only roots containing `.pi-glla/active.jsonl` in their project directories are discovered; sessionDir state roots outside these trees must be explicitly included, not inferred from conversations.
+
+Safety ceilings: 16 roots, depth 4 (root depth 0), 2000 directories, 100 projects, 2000ms, 512KiB per active-journal tail, 8MiB total artifact bytes and 200 diagnostic rows. Directory entries are streamed; symlinks are skipped, and `.git`, `.pi`, `node_modules`, `.pi-glla` and `vendor` are excluded from traversal. Only `active.jsonl` and up to 4KiB of `session-owner.json` are read. Regular-file checks and nonblocking/no-follow opens prevent special-file waits. Async filesystem waits share the overall deadline; late-opened handles are closed without dispatch or mutations.
+
+A bounded journal tail omits history and explicitly makes the report partial. No unreadable, malformed, missing, truncated or depth-skipped observation is silently promoted to healthy. Invalid newest records invalidate an earlier saved projection until a subsequent valid state record appears. Explicit `shutdownAt` after the snapshot can establish dormant execution; a PID, absent owner file, saved retry deadline or old claim cannot establish running or dead execution. Manual holds still take precedence over closure. Each project exposes artifact path, saved/observed timestamps, source and partial status in the structured report; terminal rows avoid printing objectives, journal text or conversation contents. The report does not run the lifecycle state loader, probe processes, write sibling files, restart sessions or dispatch work.
 
 ## Verification matrix
 
