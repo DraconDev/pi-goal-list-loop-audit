@@ -545,7 +545,7 @@ async function cmdPause(ctx: ExtensionContext): Promise<void> {
   ctx.ui.notify(`Goal "${shortObj(state.goal.objective)}" paused. ${resumeCommand} to continue.`, "info");
 }
 
-async function cmdResume(ctx: ExtensionContext): Promise<void> {
+function cmdResume(ctx: ExtensionContext): Promise<void> | void {
   releaseInitialSessionLoadBarrier();
   // v0.35.23 (note.md Next #2): an explicit resume is exactly the decision
   // the load hold waits for — release it before re-arming automation, or
@@ -567,13 +567,19 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
     releaseAuditorSurface();
     return;
   }
+  // v0.39.25 (field 2026-10-10): /goal resume while a saved main-model
+  // recovery is armed used to stop at the probe — the goal stayed paused even
+  // after a probe selected a working model, so the user had to type "continue"
+  // to get the resumed work running. Remember the resume request and release
+  // the parked goal once the probe actually wins; a failed probe re-arms the
+  // envelope and leaves the park in place.
+  const resumeGoalAfterProbe = state.goal?.status === "paused";
   if (!recoveryStaleEntry && (state.mainModelRecovery?.retryAt || state.mainModelRecovery?.pendingModelSwitch)) {
     releaseAuditorSurface();
     clearMainModelRecoveryTimer();
     flags.continuationDispatchStoodDown = false;
-    // v0.34.92: the chat-prompt re-arm was removed; recovery is timer-driven.
     ctx.ui.notify("Retrying the saved main-model recovery now — one provider probe, then the configured fallback models if needed.", "info");
-    void probeMainModelRecovery(ctx);
+    void probeMainModelRecovery(ctx).then(() => releasePausedGoalAfterRecoveryProbe(ctx, resumeCommand, resumeGoalAfterProbe));
     return;
   }
   // Optional failback must never consume a paused-work resume. Its probe
