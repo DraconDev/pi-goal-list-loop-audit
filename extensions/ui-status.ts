@@ -64,7 +64,7 @@ export function projectUiStatus(state: State, context: UiStatusContext): UiStatu
   const loop = state.loop?.active || !state.goal ? state.loop : undefined;
   const goal = loop ? undefined : state.goal;
   const mode = loop ? loop.builder ? 'project' : 'loop' : goal ? goal.policy === 'list' ? 'list' : 'goal' : 'idle';
-  const workflow = loop?.builder?.phase ?? (loop ? 'polishing' : goal?.pendingCompletion?.phase === 'settling' ? 'settling' : goal?.status === 'auditing' ? 'auditing' : goal ? 'working' : 'idle');
+  const workflow = loop?.builder?.phase ?? (loop ? 'polishing' : goal?.status === 'complete' ? 'complete' : goal?.status === 'aborted' ? 'cancelled' : goal?.pendingCompletion?.phase === 'settling' ? 'settling' : goal?.status === 'auditing' ? 'auditing' : goal ? 'working' : 'idle');
   const resume = mode === 'list' ? '/list resume' : loop ? '/loop resume' : '/goal resume';
   const base: UiStatus = { mode, workflow, execution: ownerKey ? 'unconfirmed' : 'idle',
     actionability: ownerKey ? 'inspect' : 'none', ownerKey,
