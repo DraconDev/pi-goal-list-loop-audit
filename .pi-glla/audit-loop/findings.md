@@ -854,3 +854,12 @@ Three parallel read-only subsystem scouts (core goal/loop dispatch; recovery/com
 - [x] FIX: LOW: generated inventory baseline parenthetical is stale next to the regenerated count (docs/RUNTIME-INVENTORY.md:1) — fixed in 4cd011ce (generator re-baselined, inventory regenerated, check:inventory passes)
 - [x] DECIDED: route test:changed through scripts/run-tests.mjs for stall/orphan protection (2026-10-08)
 - [x] DECIDED: keep the documented one-shot boundary-compaction hysteresis until usage halves (2026-10-08)
+
+
+## Fresh project audit pass — 2026-10-10 (0.39.24)
+
+Three parallel read-only scouts surveyed lifecycle/recovery, UI/fleet, and audit/persistence. Parent confirmed the following source defects. No DECIDE findings established. Persistence focused tests had one initial timeout, passing on rerun; not a confirmed defect. Survey is bounded, not an exhaustive clean bill.
+
+- [ ] FIX: MEDIUM: Fleet terminal output prints arbitrary saved pauseSuggestedAction, exposing private prerequisite text despite its no-journal-text privacy contract (extensions/fleet-health.ts:198).
+- [ ] FIX: MEDIUM: Narrow shared footer clips required recovery commands after secondary workflow/queue/recovery context, losing executable actions (extensions/goal-loop-display.ts:1426-1443).
+- [ ] FIX: MEDIUM: Delayed recovery model selection does not recheck supervisor/load holds after setModel resolves; it releases paused work and announces a probe during an explicit hold, though downstream dispatch guards still prevent sending (extensions/goal-recovery.ts:1813-1835).
