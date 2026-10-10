@@ -302,7 +302,7 @@ work commands (`/goal`, `/list`, `/loop`, `/review`). Common actions:
 | `/glla audits` | Browse the completion-audit log |
 | `/glla pause` | Freeze all supervisor automation (re-arms, recovery, dispatch); active work keeps running |
 | `/glla resume` | Resume paused/held work or start a waiting-only list; also unfreezes a `/glla pause` |
-| `/glla decide` | Reopen a pending decision instead of guessing an answer |
+| `/glla cancel` | Cancel the active objective; list cancellation includes waiting items |
 | `/glla progress [json]` | Read-only outcome-evidence digest |
 | `/glla agents [--tail <id>]` | Tracked subagents, with transcript tailing |
 | `/glla fleet` | Bounded, read-only health observations across configured roots |
