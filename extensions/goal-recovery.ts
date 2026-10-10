@@ -1535,6 +1535,7 @@ async function probePreferredPrimary(ctx: ExtensionContext, recovery: MainModelR
  * transitions live in one place. Safe to call when nothing is parked: the
  * guard clauses are no-ops. */
 function resumeSupervisedRecoverySurface(ctx: ExtensionContext, kind: "goal" | "loop"): void {
+  if (supervisorPaused(state) || state.loadHoldAt || isPersistenceDegraded()) return;
   const before = { ...state };
   let landed = true;
   let resumed: 'goal' | 'loop' | undefined;
@@ -1587,8 +1588,16 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
   // selection instead of being silently skipped as already attempted.
   if (recovery.pendingModelSwitch && current?.toLowerCase() === recovery.pendingModelSwitch.toLowerCase()) {
     appendLedger(ctx.cwd, "main_model_switch_reconciled", { ref: recovery.pendingModelSwitch, generation });
-    state.mainModelRecovery = { ...recovery, active: current, pendingModelSwitch: undefined, retryAt: undefined };
-    persistState(ctx);
+    const reconciled = { ...recovery, active: current, sameModelRetries: 0, pendingModelSwitch: undefined, retryAt: undefined };
+    state.mainModelRecovery = reconciled;
+    if (persistState(ctx) === false) {
+      state.mainModelRecovery = recovery;
+      flags.continuationDispatchStoodDown = true;
+      return;
+    }
+    // Continue from the committed cursor, not the pre-reconciliation copy:
+    // otherwise exhausted retry counts can select the same backup twice.
+    recovery = reconciled;
   }
   const preferredPrimaryRecovery = state.mainModelRecovery;
   if (preferredPrimaryRecovery?.primaryProbeAt || preferredPrimaryRecovery?.primaryProbeInFlight) {
@@ -1814,6 +1823,10 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
     const accepted = await flags.extensionApi?.setModel(candidate);
     if (generation !== flags.sessionGeneration || !freshCtxForGeneration(generation)) return;
     if (!recoveryOperationStillCurrent(ctx, recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== target.toLowerCase()) return;
+    // An explicit hold may have arrived while host model selection awaited.
+    // Keep the durable pending intent for reconciliation after release; the
+    // host selection cannot be undone, but saved work must remain held.
+    if (supervisorPaused(state) || state.loadHoldAt || isPersistenceDegraded()) return;
     if (!accepted) throw new Error(`no configured auth for ${target}`);
     applyRecoveryThinking(target, candidate, state.mainModelRecovery!);
     state.mainModelRecovery = {
@@ -1838,6 +1851,7 @@ async function probeMainModelRecoveryImpl(ctx: ExtensionContext): Promise<void> 
     // consumed this pending switch while the host promise was in flight.
     // Its late rejection must not resurrect a cleared episode.
     if (generation !== flags.sessionGeneration || !recoveryOperationStillCurrent(ctx, recovery) || state.mainModelRecovery?.pendingModelSwitch?.toLowerCase() !== target.toLowerCase()) return;
+    if (supervisorPaused(state) || state.loadHoldAt || isPersistenceDegraded()) return;
     appendLedger(ctx.cwd, "main_model_probe_failed", { ref: target, tryLabel: targetTryLabel, error: err instanceof Error ? err.message : String(err) });
     const failure = classifyMainModelFailure(err instanceof Error ? err.message : String(err));
     // A recoverable failure may have walked the ordered chain before reaching
