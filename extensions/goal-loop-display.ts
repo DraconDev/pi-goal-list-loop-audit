@@ -1459,8 +1459,16 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
   // Segmented header: icon + execution word carry the tone, mode/phase and
   // saved metrics stay dim. Painting the whole header in the tone washed
   // every blocked card orange (field 2026-10-10 125409).
-  const headerText = `${paint(theme, 'dim', heading.replace(UI_HEALTH_LABEL[status.execution], '').replace(/\s*·\s*$/, ''))}${heading.includes(UI_HEALTH_LABEL[status.execution]) ? `${paint(theme, 'dim', ' · ')}${paint(theme, tone, UI_HEALTH_LABEL[status.execution])}` : ''}${progress && !terminal ? paint(theme, 'dim', ` · ${uiSafeText(progress)}`) : ''}${metrics ? paint(theme, 'dim', ` · ${uiSafeText(metrics)}`) : ''}`;
-  const rows = [clipped(`${paint(theme, tone, terminal ? '✓ ' : '● ')}${headerText}`)];
+  const execWord = paint(theme, tone, UI_HEALTH_LABEL[status.execution]);
+  const modeWord = paint(theme, 'dim', status.mode.toUpperCase());
+  const flowWord = phase ? paint(theme, 'dim', status.workflow) : '';
+  const sep = paint(theme, 'dim', ' · ');
+  const headerText = width < 60
+    ? `${execWord}${sep}${modeWord}${flowWord ? ` ${flowWord}` : ''}`
+    : `${modeWord}${flowWord ? `${sep}${flowWord}` : ''}${sep}${execWord}`;
+  const progressWord = progress && !terminal ? `${sep}${paint(theme, 'dim', uiSafeText(progress))}` : '';
+  const metricsWord = metrics ? `${sep}${paint(theme, 'dim', uiSafeText(metrics))}` : '';
+  const rows = [clipped(`${paint(theme, tone, terminal ? '✓ ' : '● ')}${headerText}${progressWord}${metricsWord}`)];
   // Objective is plain body text (legacy heads never painted it accent).
   if (status.objective) rows.push(clipped(`${paint(theme, tone, '│  ')}${uiSafeText(status.objective)}`));
   // The rail is one visual unit, not a dump of independent labeled lines.
