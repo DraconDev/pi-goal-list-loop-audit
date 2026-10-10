@@ -974,7 +974,7 @@ export function buildRichTerminalParts(args: {
   // projection pairs.
   const unresolvedDetails = next.filter((d) => /^\s*Unresolved\s*:/i.test(d));
   const remainingSentences = new Set(next.filter(d => /^\s*(?:Unresolved|Left out)\s*:/i.test(d))
-    .flatMap(d => leadBody(d).body.split(/(?<=[.!?])\s+/)).map(sentence => sentence.trim().toLowerCase()));
+    .flatMap(d => leadBody(d).body.split(/(?<=[.!?])\s+/)).map(sentence => sentence.trim()));
   const nextDetails = next.filter((d) => /^\s*Next\s*:/i.test(d)).flatMap(detail => {
     if (!args.chat) return [detail];
     const { lead, body } = leadBody(detail);
@@ -982,7 +982,7 @@ export function buildRichTerminalParts(args: {
     // Remove only verbatim leading restatements. Never infer equivalence
     // from shared words; preserve all distinct action clauses and archives.
     let removed = false;
-    while (sentences.length && remainingSentences.has(sentences[0]!.trim().toLowerCase())) {
+    while (sentences.length && remainingSentences.has(sentences[0]!.trim())) {
       sentences.shift(); removed = true;
     }
     if (!removed) return [detail];

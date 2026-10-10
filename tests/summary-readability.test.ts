@@ -23,6 +23,14 @@ test('exact redundant next sentence adds no second copy; differing qualifiers st
     'Next: The narrow-window check is not wired into CI. Run the standalone probe.'];
   for (const detail of distinct) assert.ok(render(distinct).includes(detail.split(': ')[1]!));
 });
+test('case-sensitive evidence is never treated as a verbatim repetition', () => {
+  const details = ['Unresolved: Endpoint ABC is unavailable.', 'Next: Endpoint abc is unavailable. Inspect endpoint abc.'];
+  const chat = render(details);
+  assert.ok(chat.includes('Endpoint ABC is unavailable.'));
+  assert.ok(chat.includes('Endpoint abc is unavailable.'));
+  assert.ok(chat.includes('Inspect endpoint abc.'));
+});
+
 test('similar same-label heads cannot erase distinct trailing facts or negations', () => {
   const details = ['Unresolved: The provider test needs a runtime check before deployment. Credentials are missing.',
     'Unresolved: The provider test needs a runtime check before deployment. The network is offline.',
