@@ -164,7 +164,7 @@ export async function inspectFleetHealth(roots: readonly string[], input: Partia
       await inspectProject(current.dir);
       let directory: fs.Dir | undefined;
       try {
-        directory = await bounded(fs.promises.opendir(current.dir), d => { void d.close().catch(() => {}); });
+        directory = await bounded(fs.promises.opendir(current.dir), d => { d.close(() => {}); });
         let entry: fs.Dirent | null;
         while ((entry = await bounded(directory.read()))) {
           if (excluded.has(entry.name)) continue;
@@ -176,7 +176,7 @@ export async function inspectFleetHealth(roots: readonly string[], input: Partia
           if (!seen.has(child)) { seen.add(child); queue.push({ dir: child, depth: current.depth + 1 }); }
         }
       } catch (error) { if (error instanceof Deadline) throw error; issue(current.dir, 'unreadable', (error as NodeJS.ErrnoException).code ?? 'Directory unavailable'); }
-      finally { if (directory) void directory.close().catch(() => {}); }
+      finally { if (directory) directory.close(() => {}); }
     }
   } catch (error) { if (error instanceof Deadline) issue('', 'partial', 'Time budget reached'); else throw error; }
   report.elapsedMs = Date.now() - start;
