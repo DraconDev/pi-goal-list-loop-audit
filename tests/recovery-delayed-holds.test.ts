@@ -38,7 +38,7 @@ for (const mode of ['goal', 'list', 'loop'] as const) {
             await tick(10);
             assert.equal(state.mainModelRecovery?.pendingModelSwitch, 'provider/backup');
             if (hold === 'supervisor') await pi.command('glla', 'pause', ctx);
-            else { state.loadHoldAt = new Date().toISOString(); persistStateLine(cwd, state); }
+            else { state.loadHoldAt = Date.now(); persistStateLine(cwd, state); }
             const savedGoal = state.goal && { ...state.goal }, savedLoop = state.loop && { ...state.loop };
             const cursor = { ...state.mainModelRecovery! };
             release(); await pending;
@@ -48,7 +48,7 @@ for (const mode of ['goal', 'list', 'loop'] as const) {
             assert.equal(pi.sent.length, 0);
             assert.equal(ctx.ui.matching('sending one supervised probe').length, 0);
             if (outcome === 'accepted') {
-              state.supervisorPausedAt = null; state.loadHoldAt = null;
+              state.supervisorPausedAt = undefined; state.loadHoldAt = undefined;
               persistStateLine(cwd, state);
               await probeMainModelRecovery(ctx as unknown as ExtensionContext);
               assert.equal(selections, 1, 'resume reconciles committed selection without selecting twice');
