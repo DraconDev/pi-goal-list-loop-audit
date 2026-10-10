@@ -864,6 +864,7 @@ export function buildRichTerminalParts(args: {
     }
   } else if (groups.length > 0) {
     groups.forEach((group, i) => {
+      if (args.chat && i > 0) findingLines.push(''); // End prior nested evidence list before the next area.
       // v0.39.19: same plain-heading rule as composeRichTerminalLines —
       // `#### n. Area` reached the terminal literally (field 2026-10-09).
       findingLines.push(args.chat

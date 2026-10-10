@@ -89,7 +89,9 @@ export function registerSummaryRenderer(pi: Pick<ExtensionAPI, "registerMessageR
       // Current receipts use plain section labels for host compatibility.
       // Promote them only in the display layer so Markdown can style them;
       // durable content and archive text remain unchanged.
-      const displayBlock = heading ? heading + block.slice(firstLine.length) : block;
+      // Pi renders depth >=3 prefixes literally. Depth 2 preserves the
+      // semantic heading style without exposing Markdown hashes.
+      const displayBlock = heading ? heading.replace(/^#{2,4}\s+/, '## ') + block.slice(firstLine.length) : block;
       box.addChild(new Markdown(displayBlock, 0, 0, summaryTheme(theme, tone), {
         color: text => theme.fg(verification ? summaryVerificationTone(stripTerminalSequences(text)) : tone === "dim" ? "dim" : "text", text),
       }));

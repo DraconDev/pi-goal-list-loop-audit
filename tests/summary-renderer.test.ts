@@ -41,6 +41,7 @@ test("real dark/light renderers preserve content, fit narrow widths and color se
       if (width >= 40) {
         const plain = stripTerminalSequences(lines.join("\n")).replace(/\s+/g, " ");
         for (const phrase of ["Done", "Unresolved", "Left out", "190 passed", "Reload after"]) assert.ok(plain.includes(phrase), plain);
+        assert.doesNotMatch(plain, /#{2,4}\s+(?:What Changed|Remaining|Verification|Next)/, 'display headings never leak literal Markdown prefixes');
         assert.ok(lines.join("\n").includes(theme.fg("warning", "Unresolved")));
         assert.ok(lines.join("\n").includes(theme.fg("accent", "Next")));
         assert.ok(lines.join("\n").includes(theme.bold(theme.fg("text", "Important follow-up"))));
@@ -63,6 +64,7 @@ test("plain receipt headings get semantic styling without coloring entire findin
   assert.ok(text.includes(theme.fg("accent", "Next")));
   assert.ok(!text.includes(theme.fg("accent", "A user-visible improvement")));
   assert.equal(message.content, plainContent);
+  assert.doesNotMatch(stripTerminalSequences(text), /#{2,4}\s/);
 });
 
 test("continuations retain Pi's default renderer and unsafe terminal sequences never execute", () => {
