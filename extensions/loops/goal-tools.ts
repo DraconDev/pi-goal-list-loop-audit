@@ -637,6 +637,8 @@ function registerAgentTools(pi: any): void {
           "v0.38.37: what this turn deliberately left out (scope cut, deferred item + why, in plain words). " +
           "Renders under `### Remaining` in the user-facing terminal summary. " +
           "Bounds match the documented 10k-char value guard — longer input clips at a clause boundary, never a refusal. " +
+          "Never repeat a fact already covered by Unresolved: Unresolved names open problems and risks, leftOut names deliberately deferred scope and why. " +
+          "When both would say the same thing, put it in Unresolved once and omit leftOut. " +
           "Omit when nothing was deliberately left out — absent stays absent, never invented.",
       })),
       showVerification: Type.Optional(Type.Boolean({

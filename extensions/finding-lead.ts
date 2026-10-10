@@ -166,9 +166,24 @@ export function clipSummaryValue(value: string, limit: number): string {
   headUnits.forEach((unit, i) => {
     if (/[,;:·—–(+[\[]/u.test(unit)) boundary = i;
   });
+  // v0.39.23 (field 2026-10-10 — Clean-Web card headline stranded
+  // "lands on `sendThreshold…" with an unmatched backtick): never cut
+  // inside an inline code span. When the kept head holds an unmatched
+  // backtick, extend through the closing backtick when it lands within a
+  // short bound; the capped overrun keeps the span readable instead of
+  // dangling.
+  const finalize = (text: string): string => {
+    const opens = (text.match(/`/g) ?? []).length;
+    if (opens % 2 === 0) return `${text}…`;
+    const consumed = [...text].length;
+    const rest = units.slice(consumed, consumed + 40).join("");
+    const close = rest.indexOf("`");
+    if (close >= 0) return `${text}${rest.slice(0, close + 1)}…`;
+    return `${text}…`;
+  };
   if (boundary >= floor) {
     const cut = headUnits.slice(0, boundary).join("").replace(/[,;:·—–(+[\[\s]+$/u, "");
-    if ([...cut].length >= Math.min(floor, 16)) return `${cut}…`;
+    if ([...cut].length >= Math.min(floor, 16)) return finalize(cut);
   }
   let space = -1;
   headUnits.forEach((unit, i) => {
@@ -177,5 +192,5 @@ export function clipSummaryValue(value: string, limit: number): string {
   const kept = (space > capped / 2 ? headUnits.slice(0, space).join("") : head)
     .trimEnd()
     .replace(/[,;:·—–(+\[]$/u, "");
-  return `${kept}…`;
+  return finalize(kept);
 }
