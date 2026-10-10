@@ -47,6 +47,7 @@ import { formatGllaVersion } from "./glla-version.js";
 import { readProgressReport } from "./progress-reader.mjs";
 import { formatProgressReport } from "./progress-report.mjs";
 import { cmdGllaOwner, cmdGllaTakeover } from "./state-root-owner.js";
+import { inspectFleetHealth, formatFleetHealth } from './fleet-health.js';
 import { AUDIT_JOB_CLEANUP_MIN_AGE_MS, cancelDetachedGoalCompletionAuditor, cleanupDeadAuditJobs, inspectAuditJobHealth, DEFAULT_AUDITOR_STALL_MS, DEFAULT_AUDITOR_TOOL_TIMEOUT_MS } from "./goal-loop-auditor-process.js";
 import { releaseAuditorSurface } from "./loops/goal-auditor-surface.js";
 import { inferStartFromSession, resolveTweakReplacement, seedPlusContextSufficient, type StartContextInference } from "./start-context.js";
@@ -3303,6 +3304,12 @@ async function cmdSettings(args: string, ctx: ExtensionContext): Promise<void> {
   // v0.35.29 (issue #15): tracked-subagent panel — read-only, stale-safe.
   if (/^agents(?:\s|$)/.test(trimmed)) {
     cmdAgents(trimmed.slice("agents".length).trim(), ctx);
+    return;
+  }
+  if (/^fleet(?:\s|$)/.test(trimmed)) {
+    const roots = loadSettings(ctx.cwd).fleetHealthRoots ?? [ctx.cwd];
+    const report = await inspectFleetHealth(roots.map(root => path.resolve(ctx.cwd, root)));
+    ctx.ui.notify(formatFleetHealth(report).join('\n'), report.complete ? 'info' : 'warning');
     return;
   }
   if (/^status(?:\s|$)/.test(trimmed)) {

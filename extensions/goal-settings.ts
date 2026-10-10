@@ -62,6 +62,9 @@ import {
 export const THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
 
 export interface Settings {
+  /** Explicit roots for the on-demand read-only /glla fleet view.
+   * Defaults to the current project; no background discovery. */
+  fleetHealthRoots?: string[];
   /** Where glla's durable state directory lives. This is global-only because
    * project settings.json lives inside the selected state root. The historical
    * cwd root remains the safe default; sessionDir is an explicit opt-in. */
@@ -529,6 +532,8 @@ export function normalizeLoadedSettings(settings: Settings): Settings {
   // value (defaults are valid by construction, so merged-in file junk is
   // the only deletable content). Snapshot first, diff at the end.
   const before = new Map<string, unknown>(Object.entries(settings));
+  if (settings.fleetHealthRoots !== undefined && (!Array.isArray(settings.fleetHealthRoots)
+    || settings.fleetHealthRoots.some(root => typeof root !== 'string' || !root.trim()))) delete settings.fleetHealthRoots;
   // Settings files can be edited by hand or survive an older UI. Normalize
   // the main fallback chain at every read so runtime, display, and persistence
   // all see the same bounded value.
