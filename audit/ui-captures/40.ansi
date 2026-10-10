@@ -1,72 +1,72 @@
 [38;5;244m── Running ─────────────────────────────[0m
-[38;5;72m● [0m[38;5;72mRUNNING · GOAL working · 1/3 ▰▰▱▱▱ [0m…[0m
-[38;5;72m│  [0m[38;5;147mMake execution evidence clear with[0m…[0m
+[38;5;72m● [0m[38;5;72mRUNNING[0m[38;5;244m · [0m[38;5;244mGOAL[0m [38;5;244mworking[0m[38;5;244m · [0m[38;5;244m1/3 ▰▰▱▱▱ [0m…[0m
+[38;5;72m│  [0mMake execution evidence clear with[0m…[0m
 [38;5;72m├─ [0m[38;5;244mlast progress 1s ago · runtime[0m
 [38;5;72m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.[0m…[0m
 [38;5;72m├─ [0m[38;5;244mfallbacks: minimax/MiniMax-M3.1-Fl[0m…[0m
-[38;5;72m└─ [0m[38;5;147mnext: Unify production surfaces[0m
-[38;5;72mglla: RUNNING · goal working · automatic[0m
+[38;5;72m└─ [0m[38;5;244mnext: Unify production surfaces[0m
+[38;5;244mglla:[0m [38;5;72mRUNNING[0m [38;5;244m· goal working[0m [38;5;244m· automatic[0m
 
 [38;5;244m── Quota recovery ──────────────────────[0m
-[38;5;147m● [0m[38;5;147mRETRY ARMED · GOAL working[0m
-[38;5;147m│  [0m[38;5;147mMake execution evidence clear with[0m…[0m
-[38;5;147m├─ [0m[38;5;179mprovider error[0m
-[38;5;147m├─ [0m[38;5;244mrecovery timer armed · in 5m 00s[0m
-[38;5;147m├─ [0m[38;5;244mmodel: primary minimax/MiniMax-M3.[0m…[0m
-[38;5;147m└─ [0m[38;5;147mnext: Retry when recovery timer fi[0m…[0m
-[38;5;147mglla: RETRY ARMED · goal working · auto…[0m
+[38;5;244m● [0m[38;5;244mRETRY ARMED[0m[38;5;244m · [0m[38;5;244mGOAL[0m [38;5;244mworking[0m
+[38;5;244m│  [0mMake execution evidence clear with[0m…[0m
+[38;5;244m├─ [0m[38;5;179mprovider error[0m
+[38;5;244m├─ [0m[38;5;244mrecovery timer armed · in 5m 00s[0m
+[38;5;244m├─ [0m[38;5;244mmodel: primary minimax/MiniMax-M3.[0m…[0m
+[38;5;244m└─ [0m[38;5;244mnext: Retry when recovery timer fi[0m…[0m
+[38;5;244mglla:[0m [38;5;244mRETRY ARMED[0m [38;5;244m· goal working[0m [38;5;244m· auto[0m…[0m
 
 [38;5;244m── Workflow rejection ──────────────────[0m
-[38;5;72m● [0m[38;5;72mRUNNING · PROJECT replanning · 0/1 [0m…[0m
-[38;5;72m│  [0m[38;5;147mBuild a truthful project UI[0m
+[38;5;72m● [0m[38;5;72mRUNNING[0m[38;5;244m · [0m[38;5;244mPROJECT[0m [38;5;244mreplanning[0m[38;5;244m · [0m[38;5;244m0/1 [0m…[0m
+[38;5;72m│  [0mBuild a truthful project UI
 [38;5;72m├─ [0m[38;5;179mworkflow: Audit rejected: plan the[0m…[0m
 [38;5;72m├─ [0m[38;5;244mlast progress 1s ago · runtime[0m
 [38;5;72m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.[0m…[0m
-[38;5;72m└─ [0m[38;5;147mnext: Plan the next increment; sco[0m…[0m
-[38;5;72mglla: RUNNING · project replanning · au…[0m
+[38;5;72m└─ [0m[38;5;244mnext: Plan the next increment; sco[0m…[0m
+[38;5;244mglla:[0m [38;5;72mRUNNING[0m [38;5;244m· project replanning[0m [38;5;244m· au[0m…[0m
 
 [38;5;244m── Blocked prerequisite ────────────────[0m
-[38;5;179m● [0m[38;5;179mBLOCKED · GOAL working[0m
-[38;5;179m│  [0m[38;5;147mMake execution evidence clear with[0m…[0m
-[38;5;179m├─ [0m[38;5;179mnext: Paste AAV version[0m
+[38;5;179m● [0m[38;5;179mBLOCKED[0m[38;5;244m · [0m[38;5;244mGOAL[0m [38;5;244mworking[0m
+[38;5;179m│  [0mMake execution evidence clear with[0m…[0m
+[38;5;179m├─ [0m[38;5;244mnext: Paste AAV version[0m
 [38;5;179m├─ [0m[38;5;179mVersion evidence missing[0m
 [38;5;179m├─ [0m[38;5;244mexecution unconfirmed · saved work[0m…[0m
-[38;5;179m└─ [0m[38;5;147mdetails: /glla status[0m
-[38;5;179mglla: Paste AAV version · BLOCKED · goa…[0m
+[38;5;179m└─ [0m[38;5;244mdetails: /glla status[0m
+[38;5;244mglla:[0m [38;5;179mBLOCKED[0m [38;5;244m· goal working[0m [38;5;244m·[0m [38;5;179mPaste AA[0m…[0m
 
 [38;5;244m── Dormant audit ───────────────────────[0m
-[38;5;147m● [0m[38;5;147mDORMANT · GOAL auditing[0m
-[38;5;147m│  [0m[38;5;147mMake execution evidence clear with[0m…[0m
-[38;5;147m├─ [0m[38;5;147mnext: Reopen project; /glla status[0m
-[38;5;147m├─ [0m[38;5;179mSession observed closed[0m
-[38;5;147m├─ [0m[38;5;244mlast progress 1s ago · runtime[0m
-[38;5;147m└─ [0m[38;5;147mdetails: /glla status[0m
-[38;5;147mglla: Reopen project; /glla status · DO…[0m
+[38;5;179m● [0m[38;5;179mDORMANT[0m[38;5;244m · [0m[38;5;244mGOAL[0m [38;5;244mauditing[0m
+[38;5;179m│  [0mMake execution evidence clear with[0m…[0m
+[38;5;179m├─ [0m[38;5;244mnext: Reopen project; /glla status[0m
+[38;5;179m├─ [0m[38;5;179mSession observed closed[0m
+[38;5;179m├─ [0m[38;5;244mlast progress 1s ago · runtime[0m
+[38;5;179m└─ [0m[38;5;244mdetails: /glla status[0m
+[38;5;244mglla:[0m [38;5;179mDORMANT[0m [38;5;244m· goal auditing[0m [38;5;244m·[0m [38;5;179mReopen [0m…[0m
 
 [38;5;244m── Unconfirmed audit ───────────────────[0m
-[38;5;179m● [0m[38;5;179mEXECUTION UNCONFIRMED · GOAL auditi[0m…[0m
-[38;5;179m│  [0m[38;5;147mMake execution evidence clear with[0m…[0m
+[38;5;179m● [0m[38;5;179mEXECUTION UNCONFIRMED[0m[38;5;244m · [0m[38;5;244mGOAL[0m [38;5;244mauditi[0m…[0m
+[38;5;179m│  [0mMake execution evidence clear with[0m…[0m
 [38;5;179m├─ [0m[38;5;244mexecution unconfirmed · saved work[0m…[0m
 [38;5;179m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.[0m…[0m
 [38;5;179m├─ [0m[38;5;244mfallbacks: minimax/MiniMax-M3.1-Fl[0m…[0m
-[38;5;179m└─ [0m[38;5;179mnext: /glla status to inspect exec[0m…[0m
-[38;5;179mglla: EXECUTION UNCONFIRMED · goal audi…[0m
+[38;5;179m└─ [0m[38;5;244mnext: /glla status to inspect exec[0m…[0m
+[38;5;244mglla:[0m [38;5;179mEXECUTION UNCONFIRMED[0m [38;5;244m· goal audi[0m…[0m
 
 [38;5;244m── Approved settlement owed ────────────[0m
-[38;5;179m● [0m[38;5;179mEXECUTION UNCONFIRMED · GOAL settli[0m…[0m
-[38;5;179m│  [0m[38;5;147mMake execution evidence clear with[0m…[0m
+[38;5;179m● [0m[38;5;179mEXECUTION UNCONFIRMED[0m[38;5;244m · [0m[38;5;244mGOAL[0m [38;5;244msettli[0m…[0m
+[38;5;179m│  [0mMake execution evidence clear with[0m…[0m
 [38;5;179m├─ [0m[38;5;244mapproval recorded · settlement owed[0m
 [38;5;179m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.[0m…[0m
 [38;5;179m├─ [0m[38;5;244mfallbacks: minimax/MiniMax-M3.1-Fl[0m…[0m
-[38;5;179m└─ [0m[38;5;179mnext: /glla status · settlement/ar[0m…[0m
-[38;5;179mglla: EXECUTION UNCONFIRMED · goal sett…[0m
+[38;5;179m└─ [0m[38;5;244mnext: /glla status · settlement/ar[0m…[0m
+[38;5;244mglla:[0m [38;5;179mEXECUTION UNCONFIRMED[0m [38;5;244m· goal sett[0m…[0m
 
 [38;5;244m── Completed project ───────────────────[0m
-[38;5;72m✓ [0m[38;5;72mCOMPLETE · PROJECT[0m
-[38;5;72m│  [0m[38;5;147mBuild a truthful project UI[0m
+[38;5;72m✓ [0m[38;5;72mCOMPLETE[0m[38;5;244m · [0m[38;5;244mPROJECT[0m
+[38;5;72m│  [0mBuild a truthful project UI
 [38;5;72m├─ [0m[38;5;244m1/1 requirements verified[0m
-[38;5;72m└─ [0m[38;5;147mnext: No action needed[0m
-[38;5;72mglla: COMPLETE · project · no action[0m
+[38;5;72m└─ [0m[38;5;244mnext: No action needed[0m
+[38;5;244mglla:[0m [38;5;72mCOMPLETE[0m [38;5;244m· project[0m [38;5;244m· no action[0m
 
 [38;5;244m── Outcome-first completed summary[0m
 [38;5;147m[1mDone — Execution status is now truthful 
