@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 0.39.22 — stalled-audit UI: dead audits named on every surface (2026-10-10)
+
+### Audit visibility
+
+- Past one hour of worker silence with no in-budget tool, a quiet audit
+  escalates to **stalled** on every surface: the detailed card drops the
+  live-worker claim (`no worker responds`) and offers the retry
+  (`/goal resume retries the claim`); the compact glance card and footer
+  agree (`AUDIT STALLED`, error tone, ✖ glyph) instead of claiming
+  `detached worker` / `No action needed`. The quiet watcher fires its own
+  one-shot stall notice.
+- Elapsed ages read in days past 24h (`15d 00h`, not `360h 00m`).
+- Display-only: no retry or recovery behavior changed.
+
 ## 0.39.21 — 5h retry-window policy, stall-proof test cleanup (2026-10-09)
 
 ### Recovery policy
