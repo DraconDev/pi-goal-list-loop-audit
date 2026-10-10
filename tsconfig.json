@@ -13,6 +13,7 @@
   },
   "include": [
     "extensions/**/*.ts",
-    "tests/**/*.ts"
+    "tests/**/*.ts",
+    "scripts/ui-status-capture.ts"
   ]
 }
