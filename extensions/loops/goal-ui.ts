@@ -810,11 +810,13 @@ export function currentUiStatusContext(ctx: ExtensionContext, now = Date.now()):
       ...(progress.currentTool && progress.currentToolStartedAt !== undefined && progress.toolTimeoutMs !== undefined
         ? { tool: { name: progress.currentTool, startedAt: progress.currentToolStartedAt, budgetMs: progress.toolTimeoutMs } } : {}) }
     : undefined;
-  return uiStatusContextFromRuntime(state, now, generation, {
+  const context = uiStatusContextFromRuntime(state, now, generation, {
     ownerKey, generation, observedAt: now, session: 'open',
     lastActivityAt: activity.lastActivityAt, turnActive, turnQueued,
     recovery: mainModelRecoveryRuntimeStatus(),
   }, audit);
+  if (isPersistenceDegraded()) context.persistenceHold = `Persistence failed: ${lastPersistenceFailure()?.what ?? 'state write'}`;
+  return context;
 }
 
 function refreshUI(ctx: ExtensionContext, force = false): void {
