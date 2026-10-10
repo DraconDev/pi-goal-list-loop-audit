@@ -111,7 +111,10 @@ export function projectUiStatus(state: State, context: UiStatusContext): UiStatu
         if (base.retryKind === 'regular' && epoch(recovery?.retryAt) !== undefined) base.retryAt = recovery?.retryAt;
         return finish('retry-armed', 'automatic', base.retryKind === 'hourly' ? 'Hourly recovery probe is armed' : 'Automatic recovery timer is armed', recovery?.reason);
       }
-      if (evidence.turnActive || (base.lastActivityAt !== undefined && now - base.lastActivityAt <= UI_OBSERVATION_FRESH_MS)) return finish('running', 'automatic', 'Observed work is in progress');
+      if (evidence.turnActive || (base.lastActivityAt !== undefined && now - base.lastActivityAt <= UI_OBSERVATION_FRESH_MS)) {
+        const nextTask = goal?.taskList?.tasks.find(task => task.status !== 'complete');
+        return finish('running', 'automatic', nextTask?.title ?? (base.workflow === 'replanning' ? 'Plan the next increment; scope unchanged' : 'Observed work is in progress'));
+      }
       if (evidence.turnQueued) return finish('queued', 'automatic', 'Turn queued; execution start not yet observed');
     }
   }
