@@ -73,7 +73,7 @@ export async function inspectFleetHealth(roots: readonly string[], input: Partia
     let handle: fs.promises.FileHandle | undefined;
     try {
       if (report.bytesRead >= bounds.maxTotalBytes) { issue(file, 'partial', 'Total read-byte limit reached'); return; }
-      handle = await bounded(fs.promises.open(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW), h => { void h.close().catch(() => {}); });
+      handle = await bounded(fs.promises.open(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK), h => { void h.close().catch(() => {}); });
       const stat = await bounded(handle.stat());
       if (!stat.isFile()) { issue(file, 'skipped', 'Artifact is not a regular file'); return; }
       const size = Math.min(stat.size, limit, bounds.maxTotalBytes - report.bytesRead);
@@ -121,7 +121,7 @@ export async function inspectFleetHealth(roots: readonly string[], input: Partia
           saved = undefined; project.savedAt = undefined; throw new Error();
         }
         saved = record.value; project.savedAt = record.at;
-      } catch { project.partial = true; issue(journal, 'malformed', 'Malformed journal record or invalid state snapshot'); }
+      } catch { saved = undefined; project.savedAt = undefined; project.partial = true; issue(journal, 'malformed', 'Malformed journal record or invalid state snapshot'); }
     }
     if (!saved) { project.partial = true; issue(journal, 'partial', 'No valid state snapshot in bounded read'); return; }
     const now = Date.now();
@@ -140,8 +140,13 @@ export async function inspectFleetHealth(roots: readonly string[], input: Partia
     if (closed) project.provenance = 'journal+closure';
     // Only an explicit closure marker after the snapshot is an execution
     // fact. A PID, its absence or an old retry deadline proves no liveness.
-    project.status = projectUiStatus(saved, closed ? { now, generation: 0,
-      evidence: { ownerKey: uiStatusOwnerKey(saved) ?? '', generation: 0, observedAt: now, session: 'closed' } } : { now });
+    try {
+      project.status = projectUiStatus(saved, closed ? { now, generation: 0,
+        evidence: { ownerKey: uiStatusOwnerKey(saved) ?? '', generation: 0, observedAt: now, session: 'closed' } } : { now });
+    } catch {
+      project.partial = true;
+      issue(journal, 'malformed', 'Snapshot contains invalid presentation fields');
+    }
   }
   const queue: { dir: string; depth: number }[] = [];
   const seen = new Set<string>();
