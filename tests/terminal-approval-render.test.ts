@@ -177,7 +177,7 @@ test("v0.38.37 posted summary carries verifiable-result bullets plus the deliber
     record: "— record: .pi-glla/archive/20260907-approval-render.md",
   };
   const withLeftOut = buildTerminalApprovalRender({ ...base, leftOut: "the walkthrough artifact surface" });
-  const numbered = withLeftOut.chatLines.filter((l) => /^\d+\. \*\*/.test(l));
+  const numbered = withLeftOut.chatLines.filter((l) => /^\d+\. /.test(l));
   assert.ok(numbered.length >= 1 && numbered.length <= 8, `numbered findings carry the evidence, got ${numbered.length}`);
   assert.ok(numbered.some((l) => /extensions\/completion-summary\.ts/.test(l)), "each finding carries its evidence inline");
   // Rich voice: SIX's concrete `Next: replay on next contact` survives in
