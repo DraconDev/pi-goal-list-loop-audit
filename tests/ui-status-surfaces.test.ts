@@ -69,6 +69,22 @@ test('narrow footers reserve required commands before secondary context', () => 
   }
 });
 
+test('persistence-hold footer preserves the inspection command after prerequisite prose', () => {
+  const state = fixture();
+  const status = projectUiStatus(state, { now: NOW, persistenceHold: 'Journal write failed' });
+  assert.match(status.nextAction, /^Resolve persistence failure before continuing; \/glla status/);
+  const theme: DisplayTheme = { fg: (_color, text) => `\x1b[38;5;179m${text}\x1b[0m` };
+  for (const width of [32, 40, 60]) for (const style of [undefined, theme]) {
+    const footer = buildUiStatusFooter(status, NOW, style, width);
+    const plain = footer.replace(/\x1b\[[0-9;]*m/g, '');
+    assert.ok(plain.includes('/glla status'), `${width}: ${plain}`);
+    assert.ok(visibleWidth(footer) <= width);
+    assert.doesNotMatch(plain, /resume|No action needed|automatic/);
+  }
+  const wide = buildUiStatusFooter(status, NOW, undefined, 200);
+  assert.match(wide, /Resolve persistence failure before continuing; \/glla status for details/);
+});
+
 test('cohesive active card retains primary and fallback model context', () => {
   const state = fixture();
   const lines = buildWidgetLines(state, undefined, NOW, undefined, 120, { uiStatusContext: context(state), modelProvenance: {
