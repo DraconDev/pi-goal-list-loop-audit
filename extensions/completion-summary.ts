@@ -973,21 +973,23 @@ export function buildRichTerminalParts(args: {
   // archive machine layer keeps the verbatim recap; only this human
   // projection pairs.
   const unresolvedDetails = next.filter((d) => /^\s*Unresolved\s*:/i.test(d));
-  const remainingSentences = new Set(next.filter(d => /^\s*(?:Unresolved|Left out)\s*:/i.test(d))
-    .flatMap(d => leadBody(d).body.split(/(?<=[.!?])\s+/)).map(sentence => sentence.trim()));
+  const remainingBodies = next.filter(d => /^\s*(?:Unresolved|Left out)\s*:/i.test(d))
+    .map(d => leadBody(d).body.trim()).filter(Boolean).sort((a, b) => b.length - a.length);
   const nextDetails = next.filter((d) => /^\s*Next\s*:/i.test(d)).flatMap(detail => {
     if (!args.chat) return [detail];
     const { lead, body } = leadBody(detail);
-    const sentences = body.split(/(?<=[.!?])\s+/);
-    // Remove only verbatim leading restatements. Never infer equivalence
-    // from shared words; preserve all distinct action clauses and archives.
-    let removed = false;
-    while (sentences.length && remainingSentences.has(sentences[0]!.trim())) {
-      sentences.shift(); removed = true;
-    }
-    if (!removed) return [detail];
-    const action = sentences.join(' ').trim();
-    return action ? [`${lead}: ${action}`] : [];
+    const text = body.trim();
+    if (remainingBodies.includes(text)) return []; // Exact whole-detail repeat.
+    // Never extract sentence fragments: e.g./initials/decimals and Markdown
+    // can make punctuation ambiguous. Match an entire Remaining detail and
+    // conservatively retain short/dotted/numeric/structured terminal tokens.
+    const repeated = remainingBodies.find(prior => {
+      if (!/[.!?]$/.test(prior) || /[\r\n]/.test(prior)) return false;
+      const terminalWord = prior.slice(0, -1).split(/\s+/).at(-1) ?? '';
+      if (!/^[A-Za-z]{4,}$/.test(terminalWord)) return false;
+      return text.startsWith(prior) && /^\s+\S/.test(text.slice(prior.length));
+    });
+    return repeated ? [`${lead}: ${text.slice(repeated.length).trimStart()}`] : [detail];
   });
   const problemWords = unresolvedDetails.map(pairingWords);
   const pairedByProblem = new Map<number, number[]>();
