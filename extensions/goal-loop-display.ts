@@ -1442,7 +1442,8 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
   if (status.workflowIssue) rows.push(row('├─ ', `workflow: ${status.workflowIssue}`, 'warning'));
   if (terminal && progress) rows.push(row('├─ ', progress));
   if (!terminal && (!compact || rows.length < 5)) {
-    const activity = status.lastActivityAt !== undefined ? `last progress ${fmtElapsed(now - status.lastActivityAt)} ago · ${status.provenance}`
+    const activity = status.workflow === 'settling' ? 'approval recorded · settlement owed'
+      : status.lastActivityAt !== undefined ? `last progress ${fmtElapsed(now - status.lastActivityAt)} ago · ${status.provenance}`
       : status.execution === 'running' ? 'current-owner turn observed'
       : status.execution === 'tool-wait' ? 'current-owner tool within budget'
       : status.execution === 'queued' ? 'turn queued · execution not yet observed' : 'execution unconfirmed · saved work retained';

@@ -99,7 +99,7 @@ export function projectUiStatus(state: State, context: UiStatusContext): UiStatu
   if (matches) {
     base.provenance = 'runtime';
     if (validTime(evidence.lastActivityAt, now)) base.lastActivityAt = evidence.lastActivityAt;
-    if (evidence.session === 'closed') return finish('dormant', 'user', 'Reopen the project to inspect or continue', 'Session observed closed');
+    if (evidence.session === 'closed') return finish('dormant', 'user', 'Reopen project; /glla status', 'Session observed closed');
     if (evidence.recovery?.hold) return finish('blocked', 'user', '/glla status for the required recovery action', evidence.recovery.hold);
     if (evidence.session === 'open') {
       const tool = evidence.tool;
@@ -118,5 +118,5 @@ export function projectUiStatus(state: State, context: UiStatusContext): UiStatu
   const savedActivity = epoch(goal?.pendingCompletion?.lastActivityAt);
   if (validTime(savedActivity, now)) base.lastActivityAt = savedActivity;
   if (recoveryOwned && epoch(recovery?.retryAt) !== undefined) base.retryAt = recovery?.retryAt;
-  return finish('unconfirmed', 'inspect', '/glla status to inspect execution', providerWait ? 'Retry saved; execution unconfirmed' : undefined);
+  return finish('unconfirmed', 'inspect', base.workflow === 'settling' ? '/glla status · settlement/archive owed' : '/glla status to inspect execution', providerWait ? 'Retry saved; execution unconfirmed' : undefined);
 }
