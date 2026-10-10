@@ -296,17 +296,23 @@ work commands (`/goal`, `/list`, `/loop`, `/review`). Common actions:
 | Command | Purpose |
 |---|---|
 | `/glla status` | Supervision, recovery and current-work summary |
-| `/glla log` | Supervision event history |
-| `/glla audits` | Completion-audit outcomes |
-| `/glla pause` | Freeze automatic supervision without killing a running tool |
-| `/glla resume` | Broad resume for whatever is held: goal, list item, loop or recovery |
-| `/glla decide` | Show a pending decision instead of guessing an answer |
-| `/glla progress [json]` | Outcome-evidence digest for the current work |
-| `/glla agents [--tail <id>]` | Tracked subagent state, with transcript tailing |
+| `/glla log` | Recent supervision event trail |
+| `/glla audits` | Browse the completion-audit log |
+| `/glla pause` | Freeze all supervisor automation (re-arms, recovery, dispatch); active work keeps running |
+| `/glla resume` | Resume paused/held work or start a waiting-only list; also unfreezes a `/glla pause` |
+| `/glla decide` | Reopen a pending decision instead of guessing an answer |
+| `/glla progress [json]` | Read-only outcome-evidence digest |
+| `/glla agents [--tail <id>]` | Tracked subagents, with transcript tailing |
 | `/glla fleet` | Bounded, read-only health observations across configured roots |
+| `/glla stats` | Per-project ledger rollups |
+| `/glla fallbacks` / `/glla fallbacks clear` | Show or remove configured main fallback models |
+| `/glla owner` / `/glla takeover` | Inspect or take over this folder's state root |
+| `/glla postaudit` | Configure post-completion follow-ups |
+| `/glla tooloverride` | Configure tool visibility and optional execution arguments |
+| `/glla switchlog` | Model-switch trail, including blocked forbidden-model switches |
 | `/glla version` | Loaded version versus the registry |
 | `/glla bug [description]` | Capture diagnostics without changing the objective |
-| `/glla wipe` | Explicitly discard durable GLLA state |
+| `/glla wipe` | Confirm-gated reset of all live goal/list/loop state, keeping history |
 
 Actions are verbs, not key=value arguments: settings live in the `/glla` table or
 the project settings file. `/glla fleet` inspects only GLLA runtime artifacts under
