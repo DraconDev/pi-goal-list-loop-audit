@@ -70,7 +70,7 @@ for (const idle of [true, false]) test(`pending is nonterminal; approval deliver
   await waitFor(() => readState(cwd).goal === null);
   assert.equal(entries.length, 1);
   assert.match(entries[0].content, /^## Done — Fixed routing/);
-  assert.match(entries[0].content, /1\. \*\*router\.ts/);
+  assert.match(entries[0].content, /1\. router\.ts/);
   // Technical verification stays in the archive by default; the human chat
   // carries the change story and record pointer.
   assert.doesNotMatch(entries[0].content, /### Verification/);
@@ -93,7 +93,7 @@ test("complete_goal leftOut renders the deliberate-non-do bullet end to end", as
   assert.match(entries[0].content, /- \*\*Left out\*\* — the walkthrough artifact surface/);
   const lines = entries[0].content.split("\n");
   assert.ok(lines.every((l: string) => l.startsWith("## ") || l.startsWith("### ") || l.startsWith("• ") || l === "" || /^\d+\. /.test(l) || l.startsWith("- **") || l.startsWith("\u2014 ") || ["What Changed", "Remaining", "Next", "Summary", "Verification"].includes(l)), "posted summary is one change-first voice");
-  const numbered = lines.filter((l: string) => /^\d+\. \*\*/.test(l));
+  const numbered = lines.filter((l: string) => /^\d+\. /.test(l));
   assert.ok(numbered.length >= 1 && numbered.length <= 8, `posted summary carries numbered findings plus the trailer, got ${numbered.length}`);
   assert.ok(lines[lines.length - 1]!.startsWith("• record:"), "record pointer stays last");
 });
@@ -121,7 +121,7 @@ test("complete_goal findingGroups ride the claim into the grouped terminal rende
   // it. This assertion still described the pre-v0.38.102 one-line
   // `- **outcome** — evidence` form, which is why it was the one test the
   // 2026-09-24 rendering change left red.
-  assert.ok(entries[0].content.includes("- **pins the path**"), "the gist is the bullet");
+  assert.ok(entries[0].content.includes("- pins the path"), "the gist is the bullet");
   assert.ok(entries[0].content.includes("  - router.ts:12"), "the evidence is indented under the gist");
 });
 
