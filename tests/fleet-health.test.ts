@@ -105,6 +105,25 @@ test('symlinks, nonregular artifacts and unavailable roots are explicit skipped/
   } finally { f.cleanup(); }
 });
 
+test('/glla fleet command does not dispatch work or change sibling artifacts', async () => {
+  const f = setup();
+  try {
+    const sibling = f.project('sibling'), current = f.project('current');
+    const settings = path.join(current, '.pi-glla', 'settings.json');
+    fs.writeFileSync(settings, JSON.stringify({ fleetHealthRoots: [sibling] }));
+    const artifact = path.join(sibling, '.pi-glla', 'active.jsonl');
+    const before = fs.readFileSync(artifact), beforeFiles = fs.readdirSync(path.dirname(artifact));
+    const { default: activate } = await import('../extensions/loops/goal.js');
+    const { MockPi, makeMockCtx } = await import('./harness/mock-pi.js');
+    const pi = new MockPi(); activate(pi.api);
+    const ctx = makeMockCtx(current);
+    await pi.command('glla', 'fleet', ctx);
+    assert.equal(pi.userMessages.length, 0);
+    assert.deepEqual(fs.readFileSync(artifact), before);
+    assert.deepEqual(fs.readdirSync(path.dirname(artifact)), beforeFiles);
+  } finally { f.cleanup(); }
+});
+
 test('a saved retry is not an armed timer in fleet output', async () => {
   const f = setup();
   try {
