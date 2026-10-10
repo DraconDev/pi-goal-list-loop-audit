@@ -545,7 +545,7 @@ async function cmdPause(ctx: ExtensionContext): Promise<void> {
   ctx.ui.notify(`Goal "${shortObj(state.goal.objective)}" paused. ${resumeCommand} to continue.`, "info");
 }
 
-function cmdResume(ctx: ExtensionContext): Promise<void> | void {
+async function cmdResume(ctx: ExtensionContext): Promise<void> {
   releaseInitialSessionLoadBarrier();
   // v0.35.23 (note.md Next #2): an explicit resume is exactly the decision
   // the load hold waits for — release it before re-arming automation, or
