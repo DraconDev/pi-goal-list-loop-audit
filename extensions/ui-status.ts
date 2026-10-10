@@ -75,6 +75,11 @@ export function projectUiStatus(state: State, context: UiStatusContext): UiStatu
     objective: loop?.builder?.vision ?? loop?.target ?? goal?.objective,
     provenance: 'saved', workflowIssue: context.workflowIssue,
     nextAction: ownerKey ? '/glla status to inspect execution' : 'No saved work' };
+  // v0.35.61: waiting work rides every footer — a queue beside live work
+  // is durable context, not a second card. Set before any finish() so all
+  // executions carry it.
+  const queued = state.list?.length ?? 0;
+  if (queued > 0) base.queueDepth = queued;
   const finish = (execution: ExecutionHealth, actionability: UiStatus['actionability'], nextAction: string, blocker?: string): UiStatus =>
     ({ ...base, execution, actionability, nextAction, ...(blocker ? { blocker } : {}) });
   if (goal?.status === 'complete' || loop?.builder?.phase === 'complete') return finish('complete', 'none', 'No action needed');
@@ -125,12 +130,9 @@ export function projectUiStatus(state: State, context: UiStatusContext): UiStatu
   const savedActivity = epoch(goal?.pendingCompletion?.lastActivityAt);
   if (validTime(savedActivity, now)) base.lastActivityAt = savedActivity;
   if (recoveryOwned && epoch(recovery?.retryAt) !== undefined) base.retryAt = recovery?.retryAt;
-  // v0.35.61: waiting work rides every footer — a queue beside an active
-  // goal is durable context, not a second card. v0.38.31: a saved retry
-  // names its recovery owner with the unconfirmed qualifier inline, so the
-  // status line never reads as an armed probe it cannot prove.
-  const queued = state.list?.length ?? 0;
-  if (queued > 0) base.queueDepth = queued;
+  // v0.38.31: a saved retry names its recovery owner with the unconfirmed
+  // qualifier inline, so the status line never reads as an armed probe it
+  // cannot prove.
   if (providerWait) base.recoveryNote = 'main-model recovery — retry saved (unconfirmed)';
   return finish('unconfirmed', 'inspect', base.workflow === 'settling' ? '/glla status · settlement/archive owed' : '/glla status to inspect execution', providerWait ? 'Retry saved; execution unconfirmed' : undefined);
 }

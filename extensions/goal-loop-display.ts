@@ -1432,10 +1432,14 @@ export function buildUiStatusFooter(status: UiStatus, now: number, theme?: Displ
   // the user must act, the required action) carries the tone. Mode, phase
   // and filler stay dim so a blocked footer doesn't wash the whole line.
   const head = `${paint(theme, 'dim', 'glla:')} ${paint(theme, tone, UI_HEALTH_LABEL[status.execution])} ${paint(theme, 'dim', `· ${phase}`)}`;
+  // v0.35.61 queue depth and the saved-recovery honesty note ride the
+  // footer as dim segments — durable context, never tone claims.
+  const queueSeg = status.queueDepth ? ` ${paint(theme, 'dim', `· ${status.queueDepth} queued`)}` : '';
+  const recoverySeg = status.recoveryNote ? ` ${paint(theme, 'dim', `· ${uiSafeText(status.recoveryNote)}`)}` : '';
   const tail = status.actionability === 'user'
     ? `${paint(theme, 'dim', '·')} ${paint(theme, tone, uiSafeText(status.nextAction))}`
     : `${paint(theme, 'dim', `· ${action}`)}`;
-  const text = `${head} ${tail}`;
+  const text = `${head}${queueSeg}${recoverySeg} ${tail}`;
   return width ? tuiTruncateToWidth(text, Math.max(1, width), '…') : text;
 }
 export function buildUiStatusCard(state: State, status: UiStatus, now: number, theme?: DisplayTheme, width = 80, compact = true, extras?: WidgetExtras): string[] {
