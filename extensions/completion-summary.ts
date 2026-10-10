@@ -509,10 +509,14 @@ function findingPresentation(finding: string, chat: boolean): { outcome: string;
   // evidence tokens ride mid-sentence, so strip a leading `,;:` husk.
   // Content words are untouched — only the join seam is cleaned.
   const normalizedReason = [...new Set(reasonParts)].join(" · ").trim().replace(/^[,;:]+/, "").trim();
+  // v0.39.23 (field 2026-10-10 — Clean-Web card `- , - with …`): the same
+  // stranded-punctuation husk can lead the outcome when the agent doubles
+  // punctuation around the em-dash split. Strip it like the reason husk.
+  const stripHusk = (text: string): string => text.trim().replace(/^[,;:]+/, "").trim();
   return {
     // Chat removes machine receipts; the archive keeps the full evidence
     // prose. The outcome/reason split itself is shared by both surfaces.
-    outcome: chat ? chatNarrative(parsed.outcome) : sanitizeDisplayText(parsed.outcome),
+    outcome: stripHusk(chat ? chatNarrative(parsed.outcome) : sanitizeDisplayText(parsed.outcome)),
     reason: chat ? chatNarrative(normalizedReason) : sanitizeDisplayText(normalizedReason),
     evidence: parsed.evidence,
   };
@@ -1058,6 +1062,15 @@ export function buildRichTerminalParts(args: {
   };
 }
 
+/** Demote agent-written markdown headings to TUI-safe bold for chat.
+ * A `#`-heading line that survives into chat content renders literally
+ * (the Pi TUI has no heading style); `**bold**` renders everywhere the
+ * card does. Archive/non-chat lines bypass this — a .md file renders
+ * headings natively. */
+function terminalizeHeadings(line: string): string {
+  return line.replace(/^(\s*)#{1,6}\s+(.*\S)\s*$/, "$1**$2**");
+}
+
 /** Compose parts + banner + section headers into markdown lines.
  * v0.38.50: the duration line rides directly under the headline.
  * Audit 2026-09-13: findings-first order is pinned — findings, then the
@@ -1081,22 +1094,31 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   // the screen literally. Chat/terminal surfaces get plain section labels;
   // the archived markdown keeps its headings (a .md file renders them).
   const head = (text: string): string => (parts.chat ? text : `### ${text}`);
+  // v0.39.23 (field 2026-10-10 — Clean-Web terminal screenshots): agents
+  // write `###`/`####` headers INSIDE finding/remaining/next text and the
+  // Pi TUI renders bold/lists but not `#` headings, so they reached the
+  // screen literally. Chat-facing content demotes markdown headings to
+  // bold (which the TUI renders); the archived markdown keeps them.
+  const contentLine = (line: string): string => {
+    const clean = sanitizeDisplayText(line);
+    return parts.chat ? terminalizeHeadings(clean) : clean;
+  };
   if (parts.summaryLines.length > 0) {
-    lines.push(head("Summary"), ...parts.summaryLines.map((line) => sanitizeDisplayText(line)), "");
+    lines.push(head("Summary"), ...parts.summaryLines.map(contentLine), "");
   }
   if (parts.findingLines.length > 0) {
-    lines.push(head("What Changed"), ...parts.findingLines.map((line) => sanitizeDisplayText(line)), "");
+    lines.push(head("What Changed"), ...parts.findingLines.map(contentLine), "");
   }
   if (parts.remainingLines.length > 0) {
-    lines.push(head("Remaining"), ...parts.remainingLines.map((line) => sanitizeDisplayText(line)), "");
+    lines.push(head("Remaining"), ...parts.remainingLines.map(contentLine), "");
   }
   if (parts.verificationSummaryLine) {
-    lines.push(head("Verification"), sanitizeDisplayText(parts.verificationSummaryLine), "");
+    lines.push(head("Verification"), contentLine(parts.verificationSummaryLine), "");
   } else if (!parts.chat && parts.tableLines.length > 0) {
     lines.push("### Verification Evidence", ...parts.tableLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.nextLines.length > 0) {
-    lines.push(head("Next"), ...parts.nextLines.map((line) => sanitizeDisplayText(line)), "");
+    lines.push(head("Next"), ...parts.nextLines.map(contentLine), "");
   }
   if (parts.repoLines.length > 0) {
     lines.push(head("Final Repository State"), ...parts.repoLines.map((line) => `- ${sanitizeDisplayText(line)}`), "");
