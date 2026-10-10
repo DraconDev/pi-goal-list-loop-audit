@@ -18,7 +18,7 @@ Run `caf4d4f3-5c65-4ff3-914a-a73cdc7a334d` failed on provider error: `Server req
 | Milestone | Evidence | State |
 | --- | --- | --- |
 | Design/source mapping | docs/UI-STATUS.md; inline checkpoint above | Initial checkpoint recorded; further integration research pending |
-| Shared projection/runtime | tests/ui-status-projection.test.ts; tests/ui-status-runtime.test.ts | Pending |
+| Shared projection/runtime | extensions/ui-status.ts; tests/ui-status-projection.test.ts; tests/ui-status-runtime.test.ts | Initial pure projection: 8 tests pass; types clean. Runtime adapter and expanded matrix pending |
 | All UI surfaces | tests/ui-status-surfaces.test.ts | Pending |
 | Fleet view | tests/fleet-health.test.ts | Pending |
 | Summaries and captures | summary suites; reproducible narrow/wide captures and native inspection | Pending |
