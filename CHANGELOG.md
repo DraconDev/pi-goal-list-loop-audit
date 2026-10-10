@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.39.25 — recovery resume, privacy and clearer documentation (2026-10-10)
+
+### Recovery, display and documentation
+
+- Fleet output uses fixed inspection guidance instead of exposing private
+  saved prerequisite text from other projects.
+- Narrow footers prioritize complete action commands even when preceded by
+  prerequisite prose; wide layouts retain the full prerequisite.
+- Delayed recovery model selection preserves supervisor/load holds and
+  reconciles its saved cursor without selecting the same backup twice.
+- Post-probe manual resume is fenced to the original paused snapshot and
+  session generation, and stands down for new supervisor/load/storage holds.
 - Recognize “Get … test suite to 0 failures” as an actionable objective
   instead of pausing it as verification-report debris on restore. Explicit
   evidence/reviewer report tails remain guarded; classifier and restart
