@@ -748,6 +748,27 @@ function cmdResume(ctx: ExtensionContext): Promise<void> | void {
   scheduleContinuation(ctx, true);
 }
 
+/** Release a goal parked while a main-model recovery probe runs. Only a
+ * resolved probe (no pending switch, no re-armed deadline, no manual hold)
+ * releases the park; a failed probe keeps the durable envelope in charge.
+ * v0.39.25: this is the missing half of "/goal resume doesn't always work".
+ */
+function releasePausedGoalAfterRecoveryProbe(ctx: ExtensionContext, resumeCommand: string, requested: boolean): void {
+  if (!requested) return;
+  const recovery = state.mainModelRecovery;
+  if (recovery?.pendingModelSwitch || recovery?.retryAt || recovery?.manualResumeRequired) return;
+  if (isLoopActive()) return;
+  const goal = state.goal;
+  if (!goal || goal.status !== "paused" || goal.pendingCompletion) return;
+  if ((goal.pauseReason ?? "").startsWith("main model recovery")) return; // recovery release owns this shape
+  if (warnIfStaleAtEntry(ctx, resumeCommand)) return;
+  ctx.ui.notify(`Provider back — resuming the paused ${goal.policy === "list" ? "list item" : "goal"}: ${displaySlice(goal.objective, 70)}`, "info");
+  appendLedger(ctx.cwd, "goal_resumed_after_recovery_probe", { goalId: goal.id, policy: goal.policy, via: resumeCommand });
+  if (!updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined, pauseKind: undefined, pauseOptions: undefined, pauseRecommended: undefined, pauseResumeAt: undefined, interruptedAt: undefined, interruptedReason: undefined, autoResumedAt: undefined, autoResumedEvent: undefined }, ctx)) return;
+  resetLengthExhaustionEpisodes();
+  scheduleContinuation(ctx, true);
+}
+
 async function cmdCancel(ctx: ExtensionContext): Promise<void> {
   if (warnIfStaleAtEntry(ctx, "/goal cancel")) return;
   if (refuseTerminalGoalAction(ctx, "cancel")) return;
