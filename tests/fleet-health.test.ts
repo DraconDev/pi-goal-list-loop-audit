@@ -67,6 +67,29 @@ test('malformed, missing and invalid journals cannot make a healthy report', asy
   } finally { f.cleanup(); }
 });
 
+test('permission-denied journals report unreadable rather than healthy', { skip: process.getuid?.() === 0 }, async () => {
+  const f = setup();
+  try {
+    const p = f.project('denied');
+    fs.chmodSync(path.join(p, '.pi-glla', 'active.jsonl'), 0);
+    const report = await inspectFleetHealth([p]);
+    assert.equal(report.complete, false);
+    assert.equal(report.projects[0]!.status, undefined);
+    assert.ok(report.issues.some(issue => issue.kind === 'unreadable' && issue.detail === 'EACCES'));
+  } finally { f.cleanup(); }
+});
+
+test('a malformed newest record cannot advertise an earlier terminal snapshot', async () => {
+  const f = setup();
+  try {
+    const value = { ...f.snapshot, goal: { ...f.snapshot.goal, status: 'complete' } };
+    const p = f.project('truncated', JSON.stringify({ type: 'state', at: '2026-01-01T00:00:00Z', value }) + '\n{"type":"state"');
+    const report = await inspectFleetHealth([p]);
+    assert.equal(report.complete, false);
+    assert.equal(report.projects[0]!.status, undefined);
+  } finally { f.cleanup(); }
+});
+
 test('depth, directory, project, total-byte and time budgets report incompleteness', async () => {
   const f = setup();
   try {
