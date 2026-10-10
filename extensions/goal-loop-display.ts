@@ -24,6 +24,7 @@ import { auditorSurfaceSuppressed } from "./loops/goal-auditor-surface.js";
 import { isCompactionRecoveryHold, compactionResumeAction } from "./compaction-resume.js";
 import { stateWorkView, type WorkView, type WorkActivity } from "./work-lifecycle.js";
 import { projectUiStatus, type UiStatus, type UiStatusContext } from "./ui-status.js";
+import { compactionStatusText } from './compaction-status.js';
 
 /** v0.34.57 (OPEN-ISSUES bug #1.8 / tasklist item #2): the MAIN host is
  * NEVER detached — it is always SUPERVISING, regardless of any handle state.
@@ -1439,7 +1440,10 @@ export function buildUiStatusFooter(status: UiStatus, now: number, theme?: Displ
   const tail = status.actionability === 'user'
     ? `${paint(theme, 'dim', '·')} ${paint(theme, tone, uiSafeText(status.nextAction))}`
     : `${paint(theme, 'dim', `· ${action}`)}`;
-  const text = `${head}${queueSeg}${recoverySeg} ${tail}`;
+  const compaction = status.compaction;
+  const compactionSeg = compaction?.tokens !== undefined && compaction.tokens >= compaction.threshold
+    ? ` ${paint(theme, 'dim', `· compact: ${compaction.reason}`)}` : '';
+  const text = `${head}${queueSeg}${recoverySeg} ${tail}${compactionSeg}`;
   // Required actions outrank secondary context when the full footer cannot
   // fit. Commands can follow prerequisite prose (e.g. repair storage, then
   // /glla status for details). Reserve the complete command first without
@@ -1538,6 +1542,10 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
     const retry = status.retryKind === 'hourly' ? 'hourly recovery probe armed'
       : status.retryAt ? `${status.execution === 'retry-armed' ? 'recovery timer armed' : 'retry schedule saved, not confirmed'} · ${Date.parse(status.retryAt) > now ? `in ${fmtElapsed(Date.parse(status.retryAt) - now)}` : 'deadline due'}` : activity;
     rows.push(row('├─ ', retry));
+  }
+  if (!terminal && status.compaction && (!compact || (status.compaction.tokens !== undefined
+    && status.compaction.tokens >= status.compaction.threshold))) {
+    rows.push(row('├─ ', compactionStatusText(status.compaction)));
   }
   const provenance = terminal ? [] : modelProvenanceLines(extras?.modelProvenance, width);
   // Detailed status retains all model/owner facts. In the glance card these
