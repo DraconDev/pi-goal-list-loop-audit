@@ -23,7 +23,7 @@ The recovery defect did not demonstrate dispatch escaping the downstream supervi
 - `timeout 240 npm test -- tests/recovery-delayed-holds.test.ts tests/recovery-owner-fences.test.ts tests/recovery-restore-after-restart.test.ts tests/same-model-retry-before-fallback.test.ts`: 62 pass, 0 fail.
 - `timeout 100 npm run check`: exit 0 after correcting test fixture timestamp types.
 - Inventory regenerated through `node scripts/generate-inventory.mjs`.
-- `timeout 1800 npm run release:check`: exit 0; 3633 pass, 0 fail (3634 tests, 386 files); package, import, launcher/worker RPC and skill probes pass. Full log: `/tmp/glla-audit-full.log`.
+- `timeout 1800 npm run release:check`: exit 0; 3633 pass, 1 skip, 0 fail (3634 tests, 386 files); package, import, launcher/worker RPC and skill probes pass. Full log: `/tmp/glla-audit-full.log`.
 
 The persistence scout initially observed a five-second fixture timeout; the same case passed on a longer bounded rerun (68 focused tests pass). No concrete persistence defect established from that observation.
 
@@ -31,4 +31,4 @@ The persistence scout initially observed a five-second fixture timeout; the same
 
 Fixes are committed on main with configured repository identity; daemon commits preserved without rewriting history. Existing untracked nested folder-auto-banner was left untouched. This pass does not publish a new release or reload sibling sessions; registry-installed 0.39.24 remains the earlier release while these audit repairs reside in the source tree.
 
-Selective bounded survey, not exhaustive certification. Real providers, multi-process races, Windows and power-loss/fsync behavior were not exercised. Independent final rehearsal pending.
+Selective bounded survey, not exhaustive certification. Real providers, multi-process races, Windows and power-loss/fsync behavior were not exercised. Independent final rehearsal by fresh-context reviewer `edb8e586-c943-4b55-b49e-d049151a4a71` supports the completion contract: all seven commit artifacts match checked ledger findings, current source retains the fixes, regressions add assertions without weakening coverage, and the full gate log confirms all new regressions and package probes. No issues or blockers found; red-proof evidence was not independently rerun. Report: `audit-final-rehearsal.md` in that run's saved outputs.
