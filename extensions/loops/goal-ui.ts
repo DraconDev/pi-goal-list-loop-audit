@@ -823,7 +823,7 @@ export function currentUiStatusContext(ctx: ExtensionContext, now = Date.now()):
   const selectedGoal = state.loop?.active ? undefined : state.goal;
   const compaction = projectCompactionStatus({
     tokens, threshold, observedAt: now, supervising: isSupervising(),
-    audit: completionAuditInFlight || selectedGoal?.status === 'auditing' || respecBuilderAuditInFlight(ctx.cwd),
+    audit: completionAuditInFlight || state.goal?.status === 'auditing' || respecBuilderAuditInFlight(ctx.cwd),
     paused: supervisorPaused(state) || typeof state.loadHoldAt === 'number' || isPersistenceDegraded()
       || (selectedGoal?.status === 'paused' && !mainModelRecoveryActive()),
     recovery: mainModelRecoveryActive() || pressureExcluded(ctx),

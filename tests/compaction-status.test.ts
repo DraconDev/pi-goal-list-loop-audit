@@ -8,6 +8,9 @@ import { projectUiStatus } from '../extensions/ui-status.js';
 import { uiStatusContextFromRuntime } from '../extensions/ui-status-runtime.js';
 import { buildWidgetLines, buildStatusText } from '../extensions/goal-loop-display.js';
 import type { State } from '../extensions/goal-loop-core.js';
+import activate, { __testOnlyLoadState, __testOnlyResetOwnerSession, __testOnlyResetStaleFlag } from '../extensions/loops/goal.js';
+import { currentUiStatusContext } from '../extensions/loops/goal-ui.js';
+import { MockPi, makeMockCtx, seedGoal, seedLoop, seedState, tmpCwd } from './harness/mock-pi.js';
 
 const NOW = 1_800_000_000_000;
 const input: CompactionObservation = { tokens: 400_000, threshold: 200_000, observedAt: NOW,
@@ -71,6 +74,28 @@ test('only fresh current-owner host observations establish compaction eligibilit
     assert.equal(projectUiStatus(state, { now: NOW, generation: 1, evidence: { ...host, ...patch } }).compaction?.reason, 'unconfirmed');
   }
   assert.equal(projectUiStatus(state, { now: NOW, generation: 1, evidence: host }).compaction?.reason, 'eligible');
+});
+
+test('production adapter selects an active loop instead of an unrelated paused goal', async () => {
+  const cwd = tmpCwd(), pi = new MockPi(); activate(pi.api);
+  __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
+  const ctx = makeMockCtx(cwd, { sessionManager: { name: 'compaction-mixed-owners' } });
+  await pi.fire('session_start', { reason: 'startup' }, ctx);
+  try {
+    seedState(cwd, { goal: seedGoal({ status: 'paused', pauseReason: 'Unrelated prerequisite' }), loop: seedLoop() });
+    __testOnlyLoadState(cwd);
+    ctx.isIdle = () => true; ctx.hasPendingMessages = () => false;
+    ctx.getContextUsage = () => ({ tokens: 400_000, contextWindow: 1_000_000, percent: 40 });
+    let compacts = 0; ctx.compact = () => { compacts++; };
+    const observation = currentUiStatusContext(ctx);
+    assert.match(observation.evidence!.ownerKey, /^loop:/);
+    assert.equal(observation.evidence!.compaction?.reason, 'eligible');
+    assert.equal(compacts, 0, 'status inspection must never launch compaction');
+  } finally {
+    await pi.fire('session_shutdown', { reason: 'test-end' }, ctx);
+    __testOnlyResetOwnerSession(); __testOnlyResetStaleFlag();
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
 });
 
 test('fresh host admission can explain audit deferral without claiming stale worker liveness', () => {
