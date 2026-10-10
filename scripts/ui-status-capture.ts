@@ -46,7 +46,7 @@ for (const width of [40, 120]) {
   const rows: string[] = [];
   for (const [label, state, uiStatusContext] of fixtures) {
     rows.push(ansi(244, `── ${label} ${'─'.repeat(Math.max(0, width - label.length - 4))}`));
-    const extras = { uiStatusContext, compactAuditCard: true, modelProvenance: { primary: 'openai-codex/gpt-6.1-sol', primarySource: 'inherited' as const, fallbackRefs: ['minimax/MiniMax-M3.1-Flash'] } };
+    const extras = { uiStatusContext, compactAuditCard: true, modelProvenance: { primary: state.mainModelRecovery?.primary ?? 'openai-codex/gpt-6.1-sol', primarySource: 'inherited' as const, fallbackRefs: state.mainModelRecovery ? ['openai-codex/gpt-6.1-sol'] : ['minimax/MiniMax-M3.1-Flash'] } };
     rows.push(...(buildWidgetLines(state, null, now, theme, width, extras) ?? []));
     rows.push(buildStatusText(state, null, now, theme, extras, width) ?? '', '');
   }
