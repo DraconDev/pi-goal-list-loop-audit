@@ -1,0 +1,81 @@
+[38;5;244m── Running ─────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[38;5;72m● [0m[38;5;72mGOAL · working · RUNNING[0m
+[38;5;72m│  [0m[38;5;147mMake execution evidence clear without losing the cohesive card[0m
+[38;5;72m├─ [0m[38;5;244mlast progress 1s ago · runtime[0m
+[38;5;72m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.1-sol · inherited from session[0m
+[38;5;72m├─ [0m[38;5;244mfallbacks: minimax/MiniMax-M3.1-Flash[0m
+[38;5;72m└─ [0m[38;5;147mnext: Observed work is in progress[0m
+[38;5;72mglla: RUNNING · goal working · automatic[0m
+
+[38;5;244m── Quota recovery ──────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[38;5;147m● [0m[38;5;147mGOAL · working · RETRY ARMED[0m
+[38;5;147m│  [0m[38;5;147mMake execution evidence clear without losing the cohesive card[0m
+[38;5;147m├─ [0m[38;5;179mprovider error[0m
+[38;5;147m├─ [0m[38;5;244mrecovery timer armed · in 5m 00s[0m
+[38;5;147m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.1-sol · inherited from session[0m
+[38;5;147m└─ [0m[38;5;147mnext: Automatic recovery timer is armed[0m
+[38;5;147mglla: RETRY ARMED · goal working · automatic[0m · lifecycle: running · activity: recovering
+
+[38;5;244m── Workflow rejection ──────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[38;5;72m● [0m[38;5;72mPROJECT · replanning · RUNNING · 0/1 requirements verified[0m
+[38;5;72m│  [0m[38;5;147mBuild a truthful project UI[0m
+[38;5;72m├─ [0m[38;5;179mworkflow: Audit rejected: plan the next increment[0m
+[38;5;72m├─ [0m[38;5;244mlast progress 1s ago · runtime[0m
+[38;5;72m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.1-sol · inherited from session[0m
+[38;5;72m└─ [0m[38;5;147mnext: Observed work is in progress[0m
+[38;5;72mglla: RUNNING · project replanning · automatic[0m
+
+[38;5;244m── Blocked prerequisite ────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[38;5;179m● [0m[38;5;179mGOAL · working · BLOCKED[0m
+[38;5;179m│  [0m[38;5;147mMake execution evidence clear without losing the cohesive card[0m
+[38;5;179m├─ [0m[38;5;179mnext: Paste AAV version[0m
+[38;5;179m├─ [0m[38;5;179mVersion evidence missing[0m
+[38;5;179m├─ [0m[38;5;244mexecution unconfirmed · saved work retained[0m
+[38;5;179m└─ [0m[38;5;147mdetails: /glla status[0m
+[38;5;179mglla: Paste AAV version · BLOCKED · goal working[0m
+
+[38;5;244m── Dormant audit ───────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[38;5;147m● [0m[38;5;147mGOAL · auditing · DORMANT[0m
+[38;5;147m│  [0m[38;5;147mMake execution evidence clear without losing the cohesive card[0m
+[38;5;147m├─ [0m[38;5;147mnext: Reopen the project to inspect or continue[0m
+[38;5;147m├─ [0m[38;5;179mSession observed closed[0m
+[38;5;147m├─ [0m[38;5;244mlast progress 1s ago · runtime[0m
+[38;5;147m└─ [0m[38;5;147mdetails: /glla status[0m
+[38;5;147mglla: Reopen the project to inspect or continue · DORMANT · goal auditing[0m
+
+[38;5;244m── Unconfirmed audit ───────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[38;5;179m● [0m[38;5;179mGOAL · auditing · EXECUTION UNCONFIRMED[0m
+[38;5;179m│  [0m[38;5;147mMake execution evidence clear without losing the cohesive card[0m
+[38;5;179m├─ [0m[38;5;244mexecution unconfirmed · saved work retained[0m
+[38;5;179m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.1-sol · inherited from session[0m
+[38;5;179m├─ [0m[38;5;244mfallbacks: minimax/MiniMax-M3.1-Flash[0m
+[38;5;179m└─ [0m[38;5;179mnext: /glla status to inspect execution[0m
+[38;5;179mglla: EXECUTION UNCONFIRMED · goal auditing · inspect execution[0m
+
+[38;5;244m── Approved settlement owed ────────────────────────────────────────────────────────────────────────────────────────────[0m
+[38;5;179m● [0m[38;5;179mGOAL · settling · EXECUTION UNCONFIRMED[0m
+[38;5;179m│  [0m[38;5;147mMake execution evidence clear without losing the cohesive card[0m
+[38;5;179m├─ [0m[38;5;244mexecution unconfirmed · saved work retained[0m
+[38;5;179m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.1-sol · inherited from session[0m
+[38;5;179m├─ [0m[38;5;244mfallbacks: minimax/MiniMax-M3.1-Flash[0m
+[38;5;179m└─ [0m[38;5;179mnext: /glla status to inspect execution[0m
+[38;5;179mglla: EXECUTION UNCONFIRMED · goal settling · inspect execution[0m
+
+[38;5;244m── Completed project ───────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[38;5;72m✓ [0m[38;5;72mPROJECT · COMPLETE[0m
+[38;5;72m│  [0m[38;5;147mBuild a truthful project UI[0m
+[38;5;72m├─ [0m[38;5;244m1/1 requirements verified[0m
+[38;5;72m└─ [0m[38;5;147mnext: No action needed[0m
+[38;5;72mglla: COMPLETE · project · no action[0m
+
+[38;5;244m── Outcome-first completed summary[0m
+[38;5;147m[1mDone — Execution status is now truthful and actionable[0m[0m                                                                  
+                                                                                                                        
+What Changed                                                                                                            
+[38;5;72m1. [0m[1mCards share owner-fenced execution evidence.[0m                                                                         
+                                                                                                                        
+Remaining                                                                                                               
+[38;5;72m- [0m[1mUnresolved[0m — Saved journals cannot prove a live session.                                                              
+                                                                                                                        
+Next                                                                                                                    
+[38;5;72m- [0m[1mNext[0m — Use /glla fleet for a read-only health observation.                                                            

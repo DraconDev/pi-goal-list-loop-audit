@@ -1,0 +1,16 @@
+{
+  "width": 40,
+  "rows": 85,
+  "fixedNow": "2026-10-10T12:00:00.000Z",
+  "fixtures": [
+    "Running",
+    "Quota recovery",
+    "Workflow rejection",
+    "Blocked prerequisite",
+    "Dormant audit",
+    "Unconfirmed audit",
+    "Approved settlement owed",
+    "Completed project"
+  ],
+  "source": "production card/footer builders and pi-tui Markdown"
+}
