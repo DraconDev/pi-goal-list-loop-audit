@@ -24,12 +24,13 @@ import {
   __testOnlyLoadState,
   __testOnlyResetAuditorQuietWatch,
 } from "../extensions/loops/goal-ui.js";
-import { tmpCwd, seedState } from "./harness/mock-pi.js";
+import { MockPi, tmpCwd, seedState } from "./harness/mock-pi.js";
 
 const NOW = Date.parse("2026-10-10T12:00:00Z");
 const QUIET_MS = 3 * 60_000;
 
-activate((globalThis as Record<string, unknown>).__pi as never ?? (await import("./harness/mock-pi.js").then(() => undefined) as never));
+const pi = new MockPi();
+activate(pi.api);
 
 function auditingGoal(): Record<string, unknown> {
   return {

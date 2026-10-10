@@ -49,6 +49,8 @@ test("fmtElapsed", () => {
   assert.equal(fmtElapsed(45_000), "45s");
   assert.equal(fmtElapsed(180_000), "3m 00s");
   assert.equal(fmtElapsed(3_900_000), "1h 05m");
+  assert.equal(fmtElapsed(90_000_000), "1d 01h", "day granularity past 24h");
+  assert.equal(fmtElapsed(15 * 24 * 3_600_000), "15d 00h", "a 15-day stall reads in days");
 });
 
 test("fmtTokens", () => {
