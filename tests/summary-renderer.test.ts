@@ -51,6 +51,20 @@ test("real dark/light renderers preserve content, fit narrow widths and color se
   }
 });
 
+test("plain receipt headings get semantic styling without coloring entire findings", () => {
+  const theme = loadThemeFromPath(path.resolve(import.meta.dirname, "../node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/theme/dark.json"), "truecolor");
+  const pi = new MockPi(); registerSummaryRenderer(pi.api);
+  const plainContent = "Done — readable\n\nWhat Changed\n- **A user-visible improvement**\n\nRemaining\n- Still needs input.\n\nNext\n- Supply the input.\n";
+  const message = { content: plainContent, details: { terminalApprovalGoalId: "approved-goal" } };
+  const render = pi.messageRenderers.get("goal-event")!(message as never, { outputPad: 1 } as never, theme) as Component;
+  const text = render.render(120).join("\n");
+  assert.ok(text.includes(theme.fg("accent", "What Changed")));
+  assert.ok(text.includes(theme.fg("warning", "Remaining")));
+  assert.ok(text.includes(theme.fg("accent", "Next")));
+  assert.ok(!text.includes(theme.fg("accent", "A user-visible improvement")));
+  assert.equal(message.content, plainContent);
+});
+
 test("continuations retain Pi's default renderer and unsafe terminal sequences never execute", () => {
   const theme = loadThemeFromPath(path.resolve(import.meta.dirname, "../node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/theme/dark.json"), "truecolor");
   const pi = new MockPi(); registerSummaryRenderer(pi.api); const factory = pi.messageRenderers.get("goal-event")!;

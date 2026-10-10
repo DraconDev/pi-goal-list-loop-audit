@@ -14,6 +14,13 @@ export function summaryHeadingTone(text: string): SummaryTone {
   return "text";
 }
 
+function structuralHeading(line: string): string | undefined {
+  if (/^#{2,4}\s/.test(line)) return line;
+  const plain = line.trim().replace(/^\*\*(.*?)\*\*$/, '$1');
+  return /^(?:Summary|What Changed|Remaining|Verification|Next|Final Repository State)$/.test(plain)
+    ? `### ${plain}` : undefined;
+}
+
 function labelTone(text: string): SummaryTone | undefined {
   text = stripTerminalSequences(text);
   if (/^(?:Unresolved|Remaining)$/i.test(text)) return "warning";
@@ -43,7 +50,7 @@ export function summaryMarkdownBlocks(content: string): string[] {
     if (marker) {
       if (!fence) fence = { char: marker[0]!, size: marker.length };
       else if (marker[0] === fence.char && marker.length >= fence.size && /^\s{0,3}(?:`+|~+)\s*$/.test(line)) fence = undefined;
-    } else if (!fence && /^#{2,4}\s/.test(line) && lines.length) {
+    } else if (!fence && structuralHeading(line) && lines.length) {
       blocks.push(lines.join("\n")); lines = [];
     }
     lines.push(line);
@@ -57,7 +64,7 @@ function summaryTheme(theme: Theme, sectionTone: SummaryTone): MarkdownTheme {
   return {
     heading: text => theme.bold(theme.fg(summaryHeadingTone(text), stripTerminalSequences(text))),
     bold: text => {
-      const tone = labelTone(text) ?? (sectionTone === "accent" ? "accent" : undefined);
+      const tone = labelTone(text);
       return theme.bold(tone ? theme.fg(tone, stripTerminalSequences(text)) : text);
     },
     link: fg("mdLink"), linkUrl: fg("mdLinkUrl"), code: fg("mdCode"),
@@ -75,10 +82,15 @@ export function registerSummaryRenderer(pi: Pick<ExtensionAPI, "registerMessageR
     if (!(message.details as { terminalApprovalGoalId?: string } | undefined)?.terminalApprovalGoalId || typeof message.content !== "string") return undefined;
     const box = new Box(outputPad, 1, text => theme.bg("customMessageBg", text));
     for (const block of summaryMarkdownBlocks(message.content)) {
-      const heading = block.split("\n").find(line => /^#{2,4}\s/.test(line)) ?? "";
+      const firstLine = block.split("\n")[0] ?? "";
+      const heading = structuralHeading(firstLine) ?? "";
       const tone = summaryHeadingTone(heading);
       const verification = /^#+\s+Verification\b/i.test(heading);
-      box.addChild(new Markdown(block, 0, 0, summaryTheme(theme, tone), {
+      // Current receipts use plain section labels for host compatibility.
+      // Promote them only in the display layer so Markdown can style them;
+      // durable content and archive text remain unchanged.
+      const displayBlock = heading ? heading + block.slice(firstLine.length) : block;
+      box.addChild(new Markdown(displayBlock, 0, 0, summaryTheme(theme, tone), {
         color: text => theme.fg(verification ? summaryVerificationTone(stripTerminalSequences(text)) : tone === "dim" ? "dim" : "text", text),
       }));
     }
