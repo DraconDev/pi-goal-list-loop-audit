@@ -58,8 +58,8 @@ test("card opens with the outcome, then a change-first account and compact verif
   assert.equal(chatLines.filter(line => line.startsWith("## Done")).length, 1, "one outcome headline");
   const findingsIdx = chatLines.findIndex((l) => l === "What Changed");
   assert.ok(findingsIdx > 0, "findings section present");
-  assert.match(chatLines[findingsIdx + 1] ?? "", /^1\. \*\*extensions\/completion-summary\.ts/, "numbered outcome first");
-  assert.match(chatLines[findingsIdx + 2] ?? "", /^2\. \*\*gate green/, "second finding numbered");
+  assert.match(chatLines[findingsIdx + 1] ?? "", /^1\. extensions\/completion-summary\.ts/, "numbered outcome first");
+  assert.match(chatLines[findingsIdx + 2] ?? "", /^2\. gate green/, "second finding numbered");
   assert.ok(chatLines.some((l) => /extensions\/completion-summary\.ts/.test(l)), "code refs ride the finding bodies");
 });
 
@@ -195,7 +195,7 @@ test("change and next lines render uncapped", () => {
       ],
     }) as unknown as Goal,
   });
-  const numbered = r.chatLines.filter((l) => /^\d+\. \*\*/.test(l));
+  const numbered = r.chatLines.filter((l) => /^\d+\. /.test(l));
   assert.equal(numbered.length, 2, `every flat finding renders, got ${numbered.length}`);
 });
 
@@ -240,12 +240,12 @@ test("fewer than four groups render as nested change subsections", () => {
   const { chatLines, transcriptLines } = render({ findingGroups: GROUPS });
   const findingsIdx = chatLines.findIndex((l) => l === "What Changed");
   assert.ok(findingsIdx > 0, "findings section present");
-  assert.equal(chatLines[findingsIdx + 1], "1. Sound manager", "first area subsection");
+  assert.equal(chatLines[findingsIdx + 1], "**1. Sound manager**", "area hierarchy is emphasized");
   // v0.38.102: the GIST is the bullet and the evidence rides indented beneath
   // it. Field 2026-09-27: a long `outcome — reason` line buried the outcome in
   // its own evidence, so the reader had to parse the whole sentence to learn
   // what actually changed.
-  assert.equal(chatLines[findingsIdx + 2], "- **mutes WebAudio**", "the gist is the bullet");
+  assert.equal(chatLines[findingsIdx + 2], "- mutes WebAudio", "finding prose remains neutral");
   assert.equal(chatLines[findingsIdx + 3], "  - soundManager.ts:333", "evidence is indented beneath it");
   assert.ok(!chatLines.some((l) => l.startsWith("| Area |")), "no table below the threshold");
   assert.deepEqual(transcriptLines.slice(0, 3), chatLines.slice(0, 3), "transcript shares headline and duration");
@@ -260,7 +260,7 @@ test("four or more groups render as an Area | Finding | Evidence table", () => {
     ];
   const table = { chatLines: buildRichArchiveSection(richGoal(), "complete", "archive.md", groups) };
   const chat = render({ findingGroups: groups }).chatLines;
-  assert.ok(chat.some(line => line === "4. Screen B"));
+  assert.ok(chat.some(line => line === "**4. Screen B**"));
   assert.ok(chat.includes("What Changed"));
   assert.ok(!chat.some(line => line.startsWith("| Area |")));
   const headerIdx = table.chatLines.findIndex((l) => l === "| Area | User-visible outcome | Evidence / reason |");
@@ -279,7 +279,7 @@ test("four or more groups render as an Area | Finding | Evidence table", () => {
 
 test("three groups stay nested — the table trigger is exactly four", () => {
   const three = render({ findingGroups: [...GROUPS, { title: "Third", findings: ["Lead: body"] }] });
-  assert.ok(three.chatLines.some((l) => l.startsWith("3. Third")), "third group nested");
+  assert.ok(three.chatLines.some((l) => l.startsWith("**3. Third**")), "third group nested");
   assert.ok(three.chatLines.includes("What Changed"));
   assert.ok(!three.chatLines.some((l) => l.startsWith("| Area |")), "still no table");
 });
@@ -293,20 +293,20 @@ test("v0.38.55: render path respects the sanitize trust boundary", () => {
     findings: [`Lead ${g}a: ${"x".repeat(500)}`, `Lead ${g}b: short`, `Lead ${g}c: short`, `Lead ${g}d: short`, `Lead ${g}e: short`],
   }));
   const crowded = render({ findingGroups: sanitizeFindingGroups(many) });
-  const bullets = crowded.chatLines.filter((l) => l.startsWith("- **"));
+  const bullets = crowded.chatLines.filter((l) => l.startsWith("- ") && l !== '- replay on next contact');
   assert.equal(bullets.length, 15, `all 15 in-boundary findings render, got ${bullets.length}`);
   assert.ok(crowded.chatLines.includes('- replay on next contact'), 'the next action remains outside the finding count');
-  const long = bullets.find((l) => l.startsWith("- **"));
+  const long = bullets.find((l) => l.includes('x'.repeat(400)));
   assert.ok(long, "first finding present");
   // The renderer itself never clips values — the 10k-char finding bound
   // is the trust boundary's doing (pinned by the sanitize test above).
   assert.ok(long!.includes("x".repeat(400)), `value substantially present, got ${long!.length}`);
-  assert.ok(crowded.chatLines.some((l) => l.startsWith("3.")), "later groups keep their headers");
+  assert.ok(crowded.chatLines.some((l) => l.startsWith("**3.")), "later groups keep their headers");
   assert.ok(crowded.chatLines.includes("What Changed"));
   const fifteen = sanitizeFindingGroups(Array.from({ length: 15 }, (_, i) => ({ title: `t${i}`, findings: ["Lead: body"] })));
   const capped = render({ findingGroups: fifteen });
-  assert.ok(capped.chatLines.includes("12. t11"), "groups inside the 12-group boundary render");
-  assert.ok(!capped.chatLines.includes("13. t12"), "groups past the boundary never render");
+  assert.ok(capped.chatLines.includes("**12. t11**"), "groups inside the 12-group boundary render");
+  assert.ok(!capped.chatLines.includes("**13. t12**"), "groups past the boundary never render");
   // Every Next renders — the one-concrete-action chat filter still
   // applies to six-label Nexts; parts-level Nexts are uncapped.
   const parts = buildRichTerminalParts({
@@ -529,7 +529,7 @@ test("v0.39.19: chat headings are plain text — the TUI shows # literally", () 
   // literally (field screenshot), so only the deeper levels go plain.
   assert.ok(!chatLines.some((l) => l.startsWith("###")), `no H3/H4 headings in chat, got: ${chatLines.join(" / ")}`);
   assert.ok(chatLines.includes("What Changed"), "section label survives without hashes");
-  assert.ok(chatLines.includes("1. Sound manager"), "area label survives without hashes");
+  assert.ok(chatLines.includes("**1. Sound manager**"), "area label survives without hashes");
   const archive = buildRichArchiveSection(richGoal(), "complete", ".pi-glla/archive/20260911-rich-voice.md", [
     { title: "Sound manager", findings: ["mutes WebAudio — soundManager.ts:333"] },
   ]);
