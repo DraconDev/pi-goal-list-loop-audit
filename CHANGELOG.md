@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+## 0.39.26 — compaction diagnostics and semantic summaries (2026-10-10)
+
+### Compaction status
+
+- Shared, fresh owner-scoped diagnostics explain preventive compaction eligibility,
+  audit/recovery holds, busy/pending boundaries and prior-attempt suppression.
+  Detailed status carries the evidence; over-target cards and footers surface
+  deferral reasons without claiming a hard 200k ceiling or live execution from
+  saved journals. Metadata inspection is bounded and read-only.
+- Diagnostics select the active loop rather than an unrelated paused goal.
+  Existing compaction safety, attempt budgets and automatic continuation are
+  unchanged; the context investigation found no new reproduced lifecycle defect.
+
+### Terminal summaries
+
+- Semantic headings use theme colors without literal Markdown hash prefixes.
+  Findings are neutral prose rather than whole-sentence bold/accent blocks;
+  area hierarchy remains emphasized and nested evidence lists close cleanly.
+- Exact whole-body Remaining/Next duplicates collapse in chat. Similar wording,
+  abbreviations, partial repeats and distinct actions remain intact; unsafe
+  sentence/prefix deletion and same-label similarity deletion are removed.
+  Archives retain original evidence and no display ANSI enters durable content.
+- Automated real-terminal dark/light captures at 40 and 120 columns document
+  readability; regression coverage includes the auditor-found provider
+  prohibition and longer-abbreviation cases.
+
 ## 0.39.25 — recovery resume, privacy and clearer documentation (2026-10-10)
 
 ### Recovery, display and documentation
