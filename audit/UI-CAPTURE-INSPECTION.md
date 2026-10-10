@@ -28,4 +28,4 @@ The first narrow styled capture exposed ANSI-unaware truncation: `truncateCells`
 
 ## Verification status
 
-`timeout 240 npm test -- tests/ui-status-surfaces.test.ts tests/summary-agent-text.test.ts tests/rich-terminal-summary.test.ts`: 40 pass, 0 fail. Types pass, including the capture generator. Combined six-file UI/fleet gate: 65 pass, 0 fail before the final saved-metric fixture refinements. Broader runtime/mode integration, independent review and the full release gate remain open in `UI-REDESIGN.md`.
+`timeout 240 npm test -- tests/ui-status-surfaces.test.ts tests/summary-agent-text.test.ts tests/rich-terminal-summary.test.ts`: 41 pass, 0 fail within the combined six-file gate. Types pass, including the capture generator. Combined six-file UI/fleet gate: 66 pass, 0 fail, including chat/archive label and limitation-integrity coverage. Broader runtime/mode integration, independent review and the full release gate remain open in `UI-REDESIGN.md`.
