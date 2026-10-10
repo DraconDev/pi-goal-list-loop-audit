@@ -1442,7 +1442,7 @@ export function buildUiStatusFooter(status: UiStatus, now: number, theme?: Displ
   const text = `${head}${queueSeg}${recoverySeg} ${tail}`;
   return width ? tuiTruncateToWidth(text, Math.max(1, width), '…') : text;
 }
-export function buildUiStatusCard(state: State, status: UiStatus, now: number, theme?: DisplayTheme, width = 80, compact = true, extras?: WidgetExtras): string[] {
+export function buildUiStatusCard(state: State, status: UiStatus, now: number, theme?: DisplayTheme, width = 80, compact = true, extras?: WidgetExtras, audit?: AuditDisplayProgress | null): string[] {
   const terminal = status.execution === 'complete' || status.execution === 'cancelled';
   const tone = uiStatusTone(status);
   const clipped = (value: string): string => tuiTruncateToWidth(value, Math.max(1, width), '…');
@@ -1461,7 +1461,10 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
   // saved metrics stay dim. Painting the whole header in the tone washed
   // every blocked card orange (field 2026-10-10 125409).
   const execWord = paint(theme, tone, UI_HEALTH_LABEL[status.execution]);
-  const modeWord = paint(theme, 'dim', status.mode.toUpperCase());
+  // v0.24.7: a list item is named as such — the widget called it "active"
+  // and hinted "/goal status", reading as a standalone goal. The blank-
+  // restart contract pins the "list item" wording.
+  const modeWord = paint(theme, 'dim', status.mode === 'list' ? 'list item' : status.mode.toUpperCase());
   const flowWord = phase ? paint(theme, 'dim', status.workflow) : '';
   const sep = paint(theme, 'dim', ' · ');
   const headerText = width < 60
@@ -1472,6 +1475,38 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
   const rows = [clipped(`${paint(theme, tone, terminal ? '✓ ' : '● ')}${headerText}${progressWord}${metricsWord}`)];
   // Objective is plain body text (legacy heads never painted it accent).
   if (status.objective) rows.push(clipped(`${paint(theme, tone, '│  ')}${uiSafeText(status.objective)}`));
+  const g = state.goal && !loop ? state.goal : undefined;
+  // Live audit objects own phase/recovery rows: embed the same compact
+  // glance the legacy card renders (v0.34.22 "Audit starting"). Without an
+  // object the generic unconfirmed rail below stays (saved-claim contract).
+  const auditingLive = g && g.status === 'auditing' && audit && compact
+    ? compactAuditingCardRows(g, audit, auditingCardBlock(g, audit, now, theme, extras), now, theme, extras).map(line => line.replace(/^└─/, '├─'))
+    : undefined;
+  if (auditingLive) rows.push(...auditingLive.map(line => clipped(line)));
+  // Active attention (disapproval/shield/blocked-claim) owns detail +
+  // durable-feedback rows on the glance card — the user must not rely on a
+  // turn that may never start to see the required fixes.
+  const attention = g && g.status === 'active' ? activeAttention(g) : undefined;
+  if (attention) {
+    const budget = budgetFor(width, 3, 60);
+    rows.push(row('├─ ', attention.detail, attention.color));
+    if (attention.feedback) wrap(`latest audit feedback: ${attention.feedback}`, budget, 3).forEach((w) => {
+      rows.push(row('│  ', w, attention.color));
+    });
+  }
+  // Recovery-parked waits own their lifecycle/transition rows: owner +
+  // next-transition name the durable facts the generic rail compresses.
+  // Scoped to recovery waits — basic pauses keep the 6-line glance shape.
+  if (g && g.status === 'paused' && pauseKind(g) === 'wait' && state.mainModelRecovery) {
+    const [lifecycle, transition] = pausedLifecycleLines(g, state, extras, now);
+    rows.push(row('├─ ', lifecycle));
+    rows.push(row('│  ', transition));
+  }
+  // Durable-vs-defer judgment plaques render durable-first on every card
+  // (production refreshUI contract) — same builder as the legacy card.
+  if (extras?.durableDeferRecommendation) {
+    buildDurableDeferDecisionLines(extras.durableDeferRecommendation, width).forEach((line) => rows.push(row('├─ ', line)));
+  }
   // The rail is one visual unit, not a dump of independent labeled lines.
   // User prerequisites precede diagnostics; automatic-work actions close it.
   // The required action rides dim like legacy pause actions (only hard
@@ -1480,7 +1515,9 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
   if (status.blocker) rows.push(row('├─ ', status.blocker, 'warning'));
   if (status.workflowIssue) rows.push(row('├─ ', `workflow: ${status.workflowIssue}`, 'warning'));
   if (terminal && progress) rows.push(row('├─ ', progress));
-  if (!terminal && (!compact || rows.length < 5)) {
+  // Live audit rows already carry phase evidence + the user action — the
+  // generic unconfirmed rail would contradict them on the same card.
+  if (!terminal && !auditingLive && (!compact || rows.length < 5)) {
     const activity = status.workflow === 'settling' ? 'approval recorded · settlement owed'
       : status.lastActivityAt !== undefined ? `last progress ${fmtElapsed(now - status.lastActivityAt)} ago · ${status.provenance}`
       : status.execution === 'running' ? 'current-owner turn observed'
@@ -1497,8 +1534,10 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
   const modelBudget = compact ? Math.max(0, 5 - rows.length) : provenance.length;
   provenance.slice(0, modelBudget).forEach(value => rows.push(row('├─ ', value)));
   if (!compact) {
-    rows.push(row('├─ ', `provenance: ${status.provenance} · owner ${status.ownerKey ?? 'none'}`));
-    if (state.goal?.pendingCompletion) rows.push(row('├─ ', `saved audit phase: ${state.goal.pendingCompletion.phase ?? 'legacy'} · attempt ${state.goal.pendingCompletion.attemptId ?? 'unrecorded'}`));
+    // v0.28.24: no work id in user-facing text — owner keys and attempt
+    // ids are internal plumbing. The phase alone is the durable fact.
+    rows.push(row('├─ ', `provenance: ${status.provenance}`));
+    if (state.goal?.pendingCompletion) rows.push(row('├─ ', `saved audit phase: ${state.goal.pendingCompletion.phase ?? 'legacy'}`));
   }
   // Closer stays dim like every legacy card tail; the rail position already
   // says "this is the action", color must not shout it twice.
