@@ -3,10 +3,13 @@
 # Next
 
 ##
-glla resume doesnt always work i have to say continue 
+summary shoudl be semantic we can do bold too and use colors where make sense 
+/home/dracon/Pictures/Screenshots/Screenshot_20261010_195442.png
+/home/dracon/Pictures/Screenshots/Screenshot_20261010_195436.png
 
 ##
-make the readme longer mention auto comactor too and glla options so people have a better idea what we do without reading code
+we are seeing many projects over 200k context like 400k is that a fluke or wht is the reason 
+
 
 # later
 
