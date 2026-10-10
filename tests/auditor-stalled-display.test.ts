@@ -96,6 +96,30 @@ test("stalled: card names the death, drops the live-worker claim, offers the ret
   assert.match(footer, /auditor ✖ stalled/, "footer names the same stalled phase");
 });
 
+test("stalled: the compact glance card matches the detailed card (production surface)", () => {
+  const g = auditingGoal() as never;
+  const audit = auditProgress({ lastActivityAt: NOW - 61 * 60_000 });
+  const lines = buildWidgetLines({ goal: g, list: [] }, audit, NOW, undefined, 120, { compactAuditCard: true })!;
+  const text = lines.join("\n");
+  assert.match(text, /auditor: stalled · no worker responds · last progress 1h 01m/, `compact phase line reuses the detailed lead:\n${text}`);
+  assert.doesNotMatch(text, /Audit review pending/, "no review-pending fallthrough");
+  assert.doesNotMatch(text, /detached worker/, "no live worker claimed");
+  assert.doesNotMatch(text, /No action needed/, "no automatic-application claim");
+  assert.match(text, /next: \/goal resume retries the claim/, "compact action row names the retry");
+  const footer = buildStatusText({ goal: g, list: [] }, audit, NOW, undefined, { compactAuditCard: true })!;
+  assert.match(footer, /AUDIT STALLED/, "compact footer prefix names the stall");
+  assert.match(footer, /auditor ✖ stalled/, "compact footer phase agrees");
+  assert.doesNotMatch(footer, /AUDIT REVIEW/, "no self-contradicting review prefix");
+});
+
+test("stalled: compact 15d shape stays consistent", () => {
+  const g = auditingGoal() as never;
+  const audit = auditProgress({ lastActivityAt: NOW - 15 * 24 * 60 * 60_000 });
+  const text = buildWidgetLines({ goal: g, list: [] }, audit, NOW, undefined, 120, { compactAuditCard: true })!.join("\n");
+  assert.match(text, /activity 15d 00h ago/, "compact facts read in days");
+  assert.doesNotMatch(text, /detached worker|No action needed|Audit review pending/, "no live-worker fiction at 15 days");
+});
+
 test("stalled: the seo shape reads in days and never claims a worker", () => {
   const g = auditingGoal() as never;
   const audit = auditProgress({ lastActivityAt: NOW - 15 * 24 * 60 * 60_000 });
