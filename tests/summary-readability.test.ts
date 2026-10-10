@@ -8,7 +8,8 @@ function render(details: string[], chat = true) {
 test('chat removes repeated Remaining narration but retains the distinct next action and archive text', () => {
   const details = ['Left out: The narrow-window check is not wired into smoke.',
     'Unresolved: Provider results are still unknown.',
-    'Next: The narrow-window check is not wired into smoke. Wire the 390px case into the browser gate.'];
+    'Next: The narrow-window check is not wired into smoke.',
+    'Next: Wire the 390px case into the browser gate.'];
   const chat = render(details), archive = render(details, false);
   assert.equal(chat.split('The narrow-window check is not wired into smoke.').length - 1, 1);
   assert.ok(chat.includes('Wire the 390px case into the browser gate.'));
@@ -32,13 +33,21 @@ test('abbreviations cannot delete a distinct provider prohibition', () => {
 });
 
 test('ambiguous abbreviation endings and partial repeated clauses are retained', () => {
-  for (const prefix of ['Do not enable e.g.', 'Wait for Dr.', 'Inspect U.S.', 'Use version 1.']) {
+  for (const prefix of ['Do not enable e.g.', 'Wait for Dr.', 'Wait for Prof.', 'Inspect U.S.', 'Use version 1.']) {
     const details = ['Unresolved: ' + prefix, 'Next: ' + prefix + ' provider B must stay disabled.'];
     assert.ok(render(details).includes(prefix + ' provider B must stay disabled.'), prefix);
   }
   const multi = ['Unresolved: Provider results are unknown. Credentials are missing.',
     'Next: Provider results are unknown. Restore network access.'];
   assert.ok(render(multi).includes('Provider results are unknown. Restore network access.'), 'do not delete extracted fragments of a longer risk');
+});
+
+test('partial repeats retain the full instruction instead of inferring sentence boundaries', () => {
+  const details = ['Unresolved: Provider results are unknown.',
+    'Next: Provider results are unknown. Restore network access.'];
+  const chat = render(details);
+  assert.ok(chat.includes('Provider results are unknown. Restore network access.'));
+  assert.equal(chat.split('Provider results are unknown.').length - 1, 2);
 });
 
 test('case-sensitive evidence is never treated as a verbatim repetition', () => {

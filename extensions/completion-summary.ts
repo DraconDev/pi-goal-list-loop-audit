@@ -974,22 +974,13 @@ export function buildRichTerminalParts(args: {
   // projection pairs.
   const unresolvedDetails = next.filter((d) => /^\s*Unresolved\s*:/i.test(d));
   const remainingBodies = next.filter(d => /^\s*(?:Unresolved|Left out)\s*:/i.test(d))
-    .map(d => leadBody(d).body.trim()).filter(Boolean).sort((a, b) => b.length - a.length);
+    .map(d => leadBody(d).body.trim()).filter(Boolean);
   const nextDetails = next.filter((d) => /^\s*Next\s*:/i.test(d)).flatMap(detail => {
     if (!args.chat) return [detail];
-    const { lead, body } = leadBody(detail);
-    const text = body.trim();
-    if (remainingBodies.includes(text)) return []; // Exact whole-detail repeat.
-    // Never extract sentence fragments: e.g./initials/decimals and Markdown
-    // can make punctuation ambiguous. Match an entire Remaining detail and
-    // conservatively retain short/dotted/numeric/structured terminal tokens.
-    const repeated = remainingBodies.find(prior => {
-      if (!/[.!?]$/.test(prior) || /[\r\n]/.test(prior)) return false;
-      const terminalWord = prior.slice(0, -1).split(/\s+/).at(-1) ?? '';
-      if (!/^[A-Za-z]{4,}$/.test(terminalWord)) return false;
-      return text.startsWith(prior) && /^\s+\S/.test(text.slice(prior.length));
-    });
-    return repeated ? [`${lead}: ${text.slice(repeated.length).trimStart()}`] : [detail];
+    // Only exact whole-body equality proves repetition. Neither shared
+    // prefixes nor punctuation establishes a safe semantic boundary.
+    // Preserve the complete action whenever it carries any distinct text.
+    return remainingBodies.includes(leadBody(detail).body.trim()) ? [] : [detail];
   });
   const problemWords = unresolvedDetails.map(pairingWords);
   const pairedByProblem = new Map<number, number[]>();

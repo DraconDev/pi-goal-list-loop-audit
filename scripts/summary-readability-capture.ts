@@ -14,7 +14,7 @@ const content = composeRichTerminalLines(buildRichTerminalParts({
     { title: 'Evidence', findings: ['Neutral observations do not imply passing verification — unavailable provider results remain explicitly unknown'] },
   ],
   details: ['Unresolved: Provider results are still unknown.', 'Left out: The narrow-window check is not wired into smoke.',
-    'Next: The narrow-window check is not wired into smoke. Wire the 390px case into the browser gate.'],
+    'Next: The narrow-window check is not wired into smoke.', 'Next: Wire the 390px case into the browser gate.'],
 })).join('\n');
 const directory = path.resolve('audit/summary-captures'); fs.mkdirSync(directory, { recursive: true });
 for (const appearance of ['dark', 'light']) for (const width of [40, 120]) {
