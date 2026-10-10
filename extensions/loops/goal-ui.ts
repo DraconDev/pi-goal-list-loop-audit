@@ -25,6 +25,8 @@ import * as path from "node:path";
 import { defineTool, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { truncateCells } from "../goal-loop-display.js";
 import { Type } from "typebox";
+import { uiStatusOwnerKey, type UiStatusContext } from '../ui-status.js';
+import { uiStatusContextFromRuntime, type UiAuditObservation } from '../ui-status-runtime.js';
 
 // v0.34.109 (decomposition step 1): the state singleton and the persistence
 // core moved to goal-state.ts — the SINGLE owner of the mutable state object
@@ -542,6 +544,9 @@ function publishDetachedAuditProgress(
   const current = detachedAuditContext(generation, goalId, attemptId);
   if (!current) return false;
   latestAuditProgress = {
+    ownerKey: `goal:${goalId}`,
+    generation,
+    attemptId,
     // Candidate identity is marked by the parent before the worker starts;
     // preserve it across progress-file snapshots so the card never loses
     // which model actually handled the audit.
@@ -790,6 +795,28 @@ function displayLoopActivityFor(ctx: ExtensionContext, loop: LoopState): {
   return { activity: "active", lastActivityAt, lastStreamActivityAt: streamAt };
 }
 
+export function currentUiStatusContext(ctx: ExtensionContext, now = Date.now()): UiStatusContext {
+  const generation = sessionGeneration;
+  const ownerKey = uiStatusOwnerKey(state);
+  // A stale command/render context cannot attribute this generation's timers.
+  if (!ownerKey || freshCtxForGeneration(generation) !== ctx) return { now };
+  let turnActive = false, turnQueued = false;
+  try { turnActive = ctx.isIdle() === false; turnQueued = ctx.hasPendingMessages() === true; } catch { return { now }; }
+  const activity = displayActivityFor(ctx);
+  const progress = latestAuditProgress;
+  const audit: UiAuditObservation | undefined = progress?.ownerKey && progress.attemptId && progress.generation !== undefined
+    ? { ownerKey: progress.ownerKey, generation: progress.generation, attemptId: progress.attemptId,
+      observedAt: progress.lastEventAt ?? 0, lastActivityAt: progress.lastActivityAt,
+      ...(progress.currentTool && progress.currentToolStartedAt !== undefined && progress.toolTimeoutMs !== undefined
+        ? { tool: { name: progress.currentTool, startedAt: progress.currentToolStartedAt, budgetMs: progress.toolTimeoutMs } } : {}) }
+    : undefined;
+  return uiStatusContextFromRuntime(state, now, generation, {
+    ownerKey, generation, observedAt: now, session: 'open',
+    lastActivityAt: activity.lastActivityAt, turnActive, turnQueued,
+    recovery: mainModelRecoveryRuntimeStatus(),
+  }, audit);
+}
+
 function refreshUI(ctx: ExtensionContext, force = false): void {
   if (!ctx.hasUI) return;
   const now = Date.now();
@@ -854,6 +881,7 @@ function refreshUI(ctx: ExtensionContext, force = false): void {
       auditorSilent: settings.auditorSilent !== false,
       auditorProgressSignals: settings.auditorProgressSignals !== false,
       compactAuditCard: true,
+      uiStatusContext: currentUiStatusContext(ctx, now),
       mainModelFallbacks: fallbackRefs,
       mainModelRecoveryRuntime: mainModelRecoveryRuntimeStatus(),
       modelProvenance,
