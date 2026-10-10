@@ -32,3 +32,10 @@ The persistence scout initially observed a five-second fixture timeout; the same
 Fixes are committed on main with configured repository identity; daemon commits preserved without rewriting history. Existing untracked nested folder-auto-banner was left untouched. This pass does not publish a new release or reload sibling sessions; registry-installed 0.39.24 remains the earlier release while these audit repairs reside in the source tree.
 
 Selective bounded survey, not exhaustive certification. Real providers, multi-process races, Windows and power-loss/fsync behavior were not exercised. Independent final rehearsal by fresh-context reviewer `edb8e586-c943-4b55-b49e-d049151a4a71` supports the completion contract: all seven commit artifacts match checked ledger findings, current source retains the fixes, regressions add assertions without weakening coverage, and the full gate log confirms all new regressions and package probes. No issues or blockers found; red-proof evidence was not independently rerun. Report: `audit-final-rehearsal.md` in that run's saved outputs.
+
+
+## Completion challenge repair
+
+The initial completion review approved the pass, but its falsification round correctly rejected the footer repair: production persistence holds place `/glla status` after prerequisite prose, so moving the whole action first still clipped the command. This is an extension of the existing footer finding, not another survey or DECIDE.
+
+Repair f9d58225 reserves the recognized command ahead of prose only on constrained user-action footers; wide layouts retain the verbatim prerequisite. Regression 42d9542b uses the actual persistence-hold projection, covers styled/plain widths 32/40/60 and wide prerequisite preservation, and failed before the repair. The existing ledger finding now includes both repair commits. Focused surfaces/projection/paused-action gate: 23 pass, 0 fail; typecheck exit 0. Final full release gate after repair: exit 0, 3634 pass, 1 skip, 0 fail (3635 tests, 386 files), all packed probes pass; log `/tmp/glla-audit-challenge-full.log`.
