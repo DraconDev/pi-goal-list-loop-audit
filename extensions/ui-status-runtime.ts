@@ -43,7 +43,12 @@ export function uiStatusContextFromRuntime(state: State, now: number, generation
       evidence.lastActivityAt = audit.lastActivityAt;
       evidence.tool = audit.tool;
       // A fresh adapter poll must not refresh stale worker observations.
-      evidence.observedAt = Math.min(host.observedAt, audit.observedAt);
+      const tool = audit.tool;
+      const withinBudget = tool && Number.isFinite(tool.startedAt) && tool.startedAt <= now
+        && Number.isFinite(tool.budgetMs) && tool.budgetMs > 0 && now - tool.startedAt < tool.budgetMs;
+      // The current generation still owns this bounded tool wait. Preserve
+      // its old activity timestamp; do not manufacture a worker heartbeat.
+      evidence.observedAt = withinBudget ? host.observedAt : Math.min(host.observedAt, audit.observedAt);
     }
   }
   context.evidence = evidence;

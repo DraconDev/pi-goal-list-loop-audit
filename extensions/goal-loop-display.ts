@@ -1423,7 +1423,10 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
   // Actions precede diagnostics and historical counters, including on narrow terminals.
   rows.push(line(`Next: ${status.nextAction}`));
   if (status.blocker || status.workflowIssue) rows.push(line([status.blocker ? `Hold: ${status.blocker}` : '', status.workflowIssue ? `Workflow: ${status.workflowIssue}` : ''].filter(Boolean).join(' · ')));
-  const activity = status.lastActivityAt !== undefined ? `last progress ${fmtElapsed(now - status.lastActivityAt)} ago (${status.provenance})` : 'no worker activity confirmed';
+  const activity = status.lastActivityAt !== undefined ? `last progress ${fmtElapsed(now - status.lastActivityAt)} ago (${status.provenance})`
+    : status.execution === 'running' ? 'current-owner turn observed'
+    : status.execution === 'tool-wait' ? 'current-owner tool within budget'
+    : status.execution === 'queued' ? 'host queue observed; turn not started' : 'no worker activity confirmed';
   const retry = status.retryKind === 'hourly' ? 'hourly timer observed'
     : status.retryAt ? `${status.execution === 'retry-armed' ? 'timer observed' : 'schedule saved, unconfirmed'} · ${Date.parse(status.retryAt) > now ? `in ${fmtElapsed(Date.parse(status.retryAt) - now)}` : 'deadline due'}` : activity;
   rows.push(line(`Evidence: ${retry}`));
