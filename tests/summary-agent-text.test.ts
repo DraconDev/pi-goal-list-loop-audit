@@ -69,6 +69,25 @@ test("outcome strips stranded leading punctuation like the reason husk", () => {
   assert.ok(text.includes("doubled punctuation outcome"), "outcome words survive the strip");
 });
 
+test('chat removes redundant section labels without erasing archive evidence or deliberate scope cuts', () => {
+  const args = { outcome: 'Readable completion summary', countsLine: '', details: [
+    'Unresolved: Saved journals cannot prove a live session.',
+    'Left out: Background crawling was deliberately excluded.',
+    'Next: Use /glla fleet for a read-only health observation.',
+  ] };
+  const chat = composeRichTerminalLines(buildRichTerminalParts({ ...args, chat: true })).join('\n');
+  const archive = composeRichTerminalLines(buildRichTerminalParts({ ...args, chat: false })).join('\n');
+  assert.ok(!chat.includes('**Unresolved**'));
+  assert.ok(!chat.includes('**Next**'));
+  assert.ok(chat.includes('**Left out**'), 'intentional omission stays distinguishable from an open risk');
+  assert.ok(archive.includes('**Unresolved**'));
+  assert.ok(archive.includes('**Next**'));
+  for (const value of ['Saved journals cannot prove a live session.', 'Background crawling was deliberately excluded.', 'Use /glla fleet for a read-only health observation.']) {
+    assert.equal(chat.split(value).length - 1, 1, 'one human instance of each fact');
+    assert.ok(archive.includes(value), 'archive retains every fact');
+  }
+});
+
 test("clip never strands an unmatched backtick", () => {
   const clipped = clipSummaryValue("A fresh install lands on `sendThreshold:` low for every kid", 44);
   const opens = (clipped.match(/`/g) ?? []).length;
