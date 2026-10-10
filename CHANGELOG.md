@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 0.39.23 — terminal summary hardening: agent-proof headings, punctuation, clips (2026-10-10)
+
+### Summary render
+
+- Agent-written `###`/`####` lines inside summary findings demote to
+  bold on chat (the Pi TUI has no heading style); archives keep real
+  headings.
+- Finding outcomes strip stranded leading punctuation, matching the
+  reason husk fix.
+- The headline clipper extends through a closing backtick instead of
+  stranding an unmatched one inside a code span.
+- The `complete_goal` `leftOut` guidance forbids repeating Unresolved
+  facts (Unresolved = open problems; leftOut = deferred scope + why).
+
 ## 0.39.22 — stalled-audit UI: dead audits named on every surface (2026-10-10)
 
 ### Audit visibility
