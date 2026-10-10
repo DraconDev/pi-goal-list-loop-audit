@@ -1433,7 +1433,11 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
   const heading = width < 60
     ? `${UI_HEALTH_LABEL[status.execution]} · ${status.mode.toUpperCase()}${phase ? ` ${status.workflow}` : ''}`
     : `${status.mode.toUpperCase()} · ${phase}${UI_HEALTH_LABEL[status.execution]}`;
-  const rows = [row(terminal ? '✓ ' : '● ', `${heading}${progress && !terminal ? ` · ${progress}` : ''}`, tone)];
+  const metrics = !terminal && width >= 80 && (status.mode === 'goal' || status.mode === 'list') && state.goal
+    ? [state.goal.agentRole ? `${state.goal.agentRole} role` : '',
+      Number.isFinite(Date.parse(state.goal.createdAt)) ? `age ${fmtElapsed(now - Date.parse(state.goal.createdAt))}` : '',
+      state.goal.usage?.tokensUsed ? `${fmtTokens(state.goal.usage.tokensUsed)} tok` : ''].filter(Boolean).join(' · ') : '';
+  const rows = [row(terminal ? '✓ ' : '● ', `${heading}${progress && !terminal ? ` · ${progress}` : ''}${metrics ? ` · ${metrics}` : ''}`, tone)];
   if (status.objective) rows.push(row('│  ', status.objective, 'accent'));
   // The rail is one visual unit, not a dump of independent labeled lines.
   // User prerequisites precede diagnostics; automatic-work actions close it.
@@ -1465,8 +1469,8 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
   return rows;
 }
 function buildTaskProgressText(goal: Goal): string {
-  const tasks = goal.taskList?.tasks ?? [];
-  return `Tasks: ${tasks.filter(task => task.status === 'complete').length}/${tasks.length} finished`;
+  const total = countTotal(goal), done = countDone(goal);
+  return `${done}/${total} ${meter(total > 0 ? done / total : 0)} tasks`;
 }
 
 export function buildStatusText(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, extras?: WidgetExtras, width?: number): string | undefined {
