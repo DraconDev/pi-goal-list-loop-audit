@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 
 export type CompactionReason = 'unconfirmed' | 'unknown-usage' | 'below-target' | 'eligible'
   | 'unsupervised' | 'audit' | 'paused' | 'recovery' | 'busy' | 'pending'
-  | 'boundary-unknown' | 'pressure-budget' | 'prior-attempt' | 'rearming' | 'unavailable' | 'metadata-unknown';
+  | 'boundary-unknown' | 'pressure-budget' | 'prior-attempt' | 'rearming' | 'unavailable' | 'metadata-unknown' | 'compacting';
 export interface CompactionStatus {
   reason: CompactionReason;
   tokens?: number;
@@ -19,6 +19,7 @@ export interface CompactionObservation {
   audit: boolean;
   paused: boolean;
   recovery: boolean;
+  compacting?: boolean;
   idle?: boolean;
   pending?: boolean;
   available: boolean;
@@ -36,6 +37,7 @@ const notes: Record<CompactionReason, string> = {
   'prior-attempt': 'suppressed by prior boundary attempt',
   rearming: 'prior attempt can rearm at the next boundary',
   unavailable: 'host compaction API unavailable', 'metadata-unknown': 'attempt metadata unreadable',
+  compacting: 'compaction already in flight',
 };
 export function unconfirmedCompactionStatus(): CompactionStatus {
   return { reason: 'unconfirmed', threshold: 200_000, observedAt: 0, note: notes.unconfirmed };
@@ -44,8 +46,8 @@ export function unconfirmedCompactionStatus(): CompactionStatus {
 export function projectCompactionStatus(input: CompactionObservation): CompactionStatus {
   const threshold = Number.isFinite(input.threshold) && input.threshold > 0 ? input.threshold : 200_000;
   const tokens = typeof input.tokens === 'number' && Number.isFinite(input.tokens) && input.tokens > 0 ? input.tokens : undefined;
-  const reason: CompactionReason = !input.supervising ? 'unsupervised' : input.audit ? 'audit'
-    : input.paused ? 'paused' : input.recovery ? 'recovery' : input.pressureBudget ? 'pressure-budget'
+  const reason: CompactionReason = input.audit ? 'audit' : input.paused ? 'paused'
+    : input.recovery ? 'recovery' : input.compacting ? 'compacting' : !input.supervising ? 'unsupervised' : input.pressureBudget ? 'pressure-budget'
     : input.idle === undefined || input.pending === undefined ? 'boundary-unknown'
     : !input.idle ? 'busy' : input.pending ? 'pending' : tokens === undefined ? 'unknown-usage'
     : input.marker === 'unknown' ? 'metadata-unknown' : input.marker === 'rearming' ? 'rearming'
