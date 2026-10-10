@@ -230,22 +230,24 @@ wrong for most of them:
 Long-running goals outgrow a single context window, so GLLA treats compaction as
 part of the supervision loop rather than an accident of the host:
 
-- The **auto-compactor** watches admitted context usage for the active work.
-  When usage crosses the configured threshold it asks for a summary at a safe
-  boundary instead of forcing one mid-tool.
-- **Unsafe boundaries defer, not force.** Compaction is not triggered while a
-  turn is mid-flight, a tool result is pending, or a dispatch has not been
-  acknowledged yet; the attempt is retried or clearly reported instead.
+- The **auto-compactor** watches admitted context usage. When usage crosses the
+  configured token target (`compactionTokenThreshold`, in the Compactor section)
+  it compacts opportunistically at an idle boundary — between work turns or list
+  items, with no tool or audit running — and work resumes afterward.
+- **Unsafe boundaries defer, not force.** Compaction is not forced while a turn is
+  mid-flight or a dispatch is unacknowledged; the attempt is retried or clearly
+  reported instead.
 - A **failed summarizer is not completion.** If the summary cannot be produced,
   work stays held with the failure visible, so a lost summary cannot silently
   end a goal.
-- **Post-compaction continuation** rebuilds the same objective, task list and
-  verification contract from durable state. Trusted user seeding keeps an
-  objective from being rewritten into report-shaped debris, and report-like
-  fragments are paused for repair instead of dispatched.
-- Related pressures — token budget, wall-clock horizon and repeated compaction
-  inside one dispatch — each have their own bounded behavior and are listed in
-  [SETTINGS.md](docs/SETTINGS.md).
+- **After compaction**, the same objective, task list and verification contract
+  are rebuilt from durable state. Trusted user seeding keeps an objective from
+  being rewritten into report-shaped debris, and report-like fragments are paused
+  for repair instead of dispatched.
+- The **compactor agent** (`compactorModel`, plus fallbacks) writes the handoff
+  brief; transcript summarization itself uses Pi's own compaction settings, and an
+  unset compactor agent resolves to a registry plan-B model rather than the
+  session model.
 
 See [RECOVERY.md](docs/RECOVERY.md) for the state machine and
 [SETTINGS.md](docs/SETTINGS.md) for thresholds.
