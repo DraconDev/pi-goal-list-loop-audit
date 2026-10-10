@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Recognize “Get … test suite to 0 failures” as an actionable objective
+  instead of pausing it as verification-report debris on restore. Explicit
+  evidence/reviewer report tails remain guarded; classifier and restart
+  regressions cover the screenshot case.
+
 ## 0.39.24 — evidence-based UI: shared status projection, fleet health, summary partitioning (2026-10-10)
 
 ### Shared status projection
