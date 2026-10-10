@@ -1430,7 +1430,10 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
   const progress = coverage ? `${coverage.verified}/${coverage.total} requirements verified${coverage.blocked ? ` · ${coverage.blocked} requirements blocked` : ''}`
     : state.goal?.taskList ? buildTaskProgressText(state.goal) : loop ? `iteration ${loop.iteration}` : '';
   const phase = status.workflow.toUpperCase() === UI_HEALTH_LABEL[status.execution] ? '' : `${status.workflow} · `;
-  const rows = [row(terminal ? '✓ ' : '● ', `${status.mode.toUpperCase()} · ${phase}${UI_HEALTH_LABEL[status.execution]}${progress && !terminal ? ` · ${progress}` : ''}`, tone)];
+  const heading = width < 60
+    ? `${UI_HEALTH_LABEL[status.execution]} · ${status.mode.toUpperCase()}${phase ? ` ${status.workflow}` : ''}`
+    : `${status.mode.toUpperCase()} · ${phase}${UI_HEALTH_LABEL[status.execution]}`;
+  const rows = [row(terminal ? '✓ ' : '● ', `${heading}${progress && !terminal ? ` · ${progress}` : ''}`, tone)];
   if (status.objective) rows.push(row('│  ', status.objective, 'accent'));
   // The rail is one visual unit, not a dump of independent labeled lines.
   // User prerequisites precede diagnostics; automatic-work actions close it.
