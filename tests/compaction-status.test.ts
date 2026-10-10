@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import type { ExtensionContext } from '@earendil-works/pi-coding-agent';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
@@ -87,7 +88,7 @@ test('production adapter selects an active loop instead of an unrelated paused g
     ctx.isIdle = () => true; ctx.hasPendingMessages = () => false;
     ctx.getContextUsage = () => ({ tokens: 400_000, contextWindow: 1_000_000, percent: 40 });
     let compacts = 0; ctx.compact = () => { compacts++; };
-    const observation = currentUiStatusContext(ctx);
+    const observation = currentUiStatusContext(ctx as unknown as ExtensionContext);
     assert.match(observation.evidence!.ownerKey, /^loop:/);
     assert.equal(observation.evidence!.compaction?.reason, 'eligible');
     assert.equal(compacts, 0, 'status inspection must never launch compaction');
