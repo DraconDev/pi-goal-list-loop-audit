@@ -109,7 +109,7 @@ export function projectUiStatus(state: State, context: UiStatusContext): UiStatu
       if (recoveryOwned && evidence.recovery && (evidence.recovery.retryTimerArmed || evidence.recovery.hourlyTimerArmed)) {
         base.retryKind = evidence.recovery.retryTimerArmed ? 'regular' : 'hourly';
         if (base.retryKind === 'regular' && epoch(recovery?.retryAt) !== undefined) base.retryAt = recovery?.retryAt;
-        return finish('retry-armed', 'automatic', base.retryKind === 'hourly' ? 'Hourly recovery probe is armed' : 'Automatic recovery timer is armed', recovery?.reason);
+        return finish('retry-armed', 'automatic', base.retryKind === 'hourly' ? 'Probe when hourly timer fires' : 'Retry when recovery timer fires', recovery?.reason);
       }
       if (evidence.turnActive || (base.lastActivityAt !== undefined && now - base.lastActivityAt <= UI_OBSERVATION_FRESH_MS)) {
         const nextTask = goal?.taskList?.tasks.find(task => task.status !== 'complete');
