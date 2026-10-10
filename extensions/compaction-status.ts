@@ -61,9 +61,17 @@ export function readCompactionMetadata(markerPath: string, budgetPath: string, w
   now: number, tokens: number | undefined, threshold: number, lastCompactionAt?: number): Pick<CompactionObservation, 'marker' | 'pressureBudget'> {
   const read = (file: string): { missing?: boolean; value?: Record<string, unknown>; invalid?: boolean } => {
     try {
-      const stat = fs.lstatSync(file);
-      if (!stat.isFile() || stat.size > 4096) return { invalid: true };
-      const value: unknown = JSON.parse(fs.readFileSync(file, 'utf8'));
+      const fd = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
+      let text: string;
+      try {
+        const stat = fs.fstatSync(fd);
+        if (!stat.isFile() || stat.size > 4096) return { invalid: true };
+        const buffer = Buffer.alloc(4097);
+        const size = fs.readSync(fd, buffer, 0, buffer.length, 0);
+        if (size > 4096) return { invalid: true };
+        text = buffer.subarray(0, size).toString('utf8');
+      } finally { fs.closeSync(fd); }
+      const value: unknown = JSON.parse(text);
       return value && typeof value === 'object' && !Array.isArray(value)
         ? { value: value as Record<string, unknown> } : { invalid: true };
     } catch (error) {
@@ -83,6 +91,6 @@ export function readCompactionMetadata(markerPath: string, budgetPath: string, w
 }
 
 export function compactionStatusText(status: CompactionStatus): string {
-  const usage = status.tokens === undefined ? '' : `${Math.round(status.tokens)} / ${status.threshold} target · `;
-  return `compaction: ${usage}${status.note}`;
+  const usage = status.tokens === undefined ? '' : ` · ${Math.round(status.tokens)} / ${status.threshold} token target`;
+  return `compaction: ${status.note}${usage}`;
 }

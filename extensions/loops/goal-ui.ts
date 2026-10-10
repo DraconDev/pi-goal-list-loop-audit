@@ -826,7 +826,7 @@ export function currentUiStatusContext(ctx: ExtensionContext, now = Date.now()):
     paused: supervisorPaused(state) || typeof state.loadHoldAt === 'number' || isPersistenceDegraded()
       || (state.goal?.status === 'paused' && !mainModelRecoveryActive()),
     recovery: mainModelRecoveryActive() || pressureExcluded(ctx),
-    compacting: compactionInFlightSince !== null, idle: !turnActive, pending: turnQueued,
+    compacting: isCompactionInFlightSince(compactionInFlightSince, now), idle: !turnActive, pending: turnQueued,
     available: typeof ctx.compact === 'function', ...metadata,
   });
   const context = uiStatusContextFromRuntime(state, now, generation, {
