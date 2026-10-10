@@ -13,7 +13,7 @@
 [38;5;147m├─ [0m[38;5;179mprovider error[0m
 [38;5;147m├─ [0m[38;5;244mrecovery timer armed · in 5m 00s[0m
 [38;5;147m├─ [0m[38;5;244mmodel: primary minimax/MiniMax-M3.[0m…[0m
-[38;5;147m└─ [0m[38;5;147mnext: Automatic recovery timer is [0m…[0m
+[38;5;147m└─ [0m[38;5;147mnext: Retry when recovery timer fi[0m…[0m
 [38;5;147mglla: RETRY ARMED · goal working · auto…[0m
 
 [38;5;244m── Workflow rejection ──────────────────[0m

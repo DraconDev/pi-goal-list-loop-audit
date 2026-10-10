@@ -13,7 +13,7 @@
 [38;5;147m├─ [0m[38;5;179mprovider error[0m
 [38;5;147m├─ [0m[38;5;244mrecovery timer armed · in 5m 00s[0m
 [38;5;147m├─ [0m[38;5;244mmodel: primary minimax/MiniMax-M3.1-Flash · inherited from session[0m
-[38;5;147m└─ [0m[38;5;147mnext: Automatic recovery timer is armed[0m
+[38;5;147m└─ [0m[38;5;147mnext: Retry when recovery timer fires[0m
 [38;5;147mglla: RETRY ARMED · goal working · automatic[0m
 
 [38;5;244m── Workflow rejection ──────────────────────────────────────────────────────────────────────────────────────────────────[0m
