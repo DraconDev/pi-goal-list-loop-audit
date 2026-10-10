@@ -1402,22 +1402,41 @@ const UI_HEALTH_LABEL: Record<UiStatus['execution'], string> = {
   'tool-wait': 'TOOL WAIT', 'retry-armed': 'RETRY ARMED', queued: 'QUEUED',
   blocked: 'BLOCKED', dormant: 'DORMANT', unconfirmed: 'EXECUTION UNCONFIRMED',
 };
+// Execution-tone semantics (matches the established card/footer vocabulary):
+// success = live or terminal-ok (running, complete); warning = needs the
+// user (blocked, dormant, unconfirmed inspection); accent = informational
+// in-flight progress (tool-wait, queued); dim = automatic background or
+// settled/terminal-neutral (retry-armed, idle, cancelled). Glyph AND text
+// always carry the state — color never does alone.
 function uiStatusTone(status: UiStatus): DisplayColor {
-  return status.execution === 'blocked' ? 'warning'
-    : status.execution === 'running' || status.execution === 'complete' ? 'success'
-    : status.execution === 'unconfirmed' ? 'warning' : 'accent';
+  switch (status.execution) {
+    case 'running':
+    case 'complete': return 'success';
+    case 'blocked':
+    case 'dormant':
+    case 'unconfirmed': return 'warning';
+    case 'tool-wait':
+    case 'queued': return 'accent';
+    default: return 'dim';
+  }
 }
 function uiSafeText(value: string): string {
   return compactDisplayText(sanitizeProviderDisplayText(sanitizeDisplayText(value)));
 }
 export function buildUiStatusFooter(status: UiStatus, now: number, theme?: DisplayTheme, width?: number): string {
+  const tone = uiStatusTone(status);
   const action = status.actionability === 'user' ? 'needs your action'
     : status.actionability === 'inspect' ? 'inspect execution' : status.actionability === 'automatic' ? 'automatic' : 'no action';
   const phase = status.workflow.toUpperCase() === UI_HEALTH_LABEL[status.execution] ? status.mode : `${status.mode} ${uiSafeText(status.workflow)}`;
-  const text = status.actionability === 'user'
-    ? `glla: ${uiSafeText(status.nextAction)} · ${UI_HEALTH_LABEL[status.execution]} · ${phase}`
-    : `glla: ${UI_HEALTH_LABEL[status.execution]} · ${phase} · ${action}`;
-  return paint(theme, uiStatusTone(status), width ? truncateCells(text, width) : text);
+  // Segmented like every legacy footer: only the execution word (and, when
+  // the user must act, the required action) carries the tone. Mode, phase
+  // and filler stay dim so a blocked footer doesn't wash the whole line.
+  const head = `${paint(theme, 'dim', 'glla:')} ${paint(theme, tone, UI_HEALTH_LABEL[status.execution])} ${paint(theme, 'dim', `· ${phase}`)}`;
+  const tail = status.actionability === 'user'
+    ? `${paint(theme, 'dim', '·')} ${paint(theme, tone, uiSafeText(status.nextAction))}`
+    : `${paint(theme, 'dim', `· ${action}`)}`;
+  const text = `${head} ${tail}`;
+  return width ? tuiTruncateToWidth(text, Math.max(1, width), '…') : text;
 }
 export function buildUiStatusCard(state: State, status: UiStatus, now: number, theme?: DisplayTheme, width = 80, compact = true, extras?: WidgetExtras): string[] {
   const terminal = status.execution === 'complete' || status.execution === 'cancelled';
@@ -1437,11 +1456,18 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
     ? [state.goal.agentRole ? `${state.goal.agentRole} role` : '',
       Number.isFinite(Date.parse(state.goal.createdAt)) ? `age ${fmtElapsed(now - Date.parse(state.goal.createdAt))}` : '',
       state.goal.usage?.tokensUsed ? `${fmtTokens(state.goal.usage.tokensUsed)} tok` : ''].filter(Boolean).join(' · ') : '';
-  const rows = [row(terminal ? '✓ ' : '● ', `${heading}${progress && !terminal ? ` · ${progress}` : ''}${metrics ? ` · ${metrics}` : ''}`, tone)];
-  if (status.objective) rows.push(row('│  ', status.objective, 'accent'));
+  // Segmented header: icon + execution word carry the tone, mode/phase and
+  // saved metrics stay dim. Painting the whole header in the tone washed
+  // every blocked card orange (field 2026-10-10 125409).
+  const headerText = `${paint(theme, 'dim', heading.replace(UI_HEALTH_LABEL[status.execution], '').replace(/\s*·\s*$/, ''))}${heading.includes(UI_HEALTH_LABEL[status.execution]) ? `${paint(theme, 'dim', ' · ')}${paint(theme, tone, UI_HEALTH_LABEL[status.execution])}` : ''}${progress && !terminal ? paint(theme, 'dim', ` · ${uiSafeText(progress)}`) : ''}${metrics ? paint(theme, 'dim', ` · ${uiSafeText(metrics)}`) : ''}`;
+  const rows = [clipped(`${paint(theme, tone, terminal ? '✓ ' : '● ')}${headerText}`)];
+  // Objective is plain body text (legacy heads never painted it accent).
+  if (status.objective) rows.push(clipped(`${paint(theme, tone, '│  ')}${uiSafeText(status.objective)}`));
   // The rail is one visual unit, not a dump of independent labeled lines.
   // User prerequisites precede diagnostics; automatic-work actions close it.
-  if (status.actionability === 'user') rows.push(row('├─ ', `next: ${status.nextAction}`, tone));
+  // The required action rides dim like legacy pause actions (only hard
+  // errors shout); position — ahead of diagnostics — carries the emphasis.
+  if (status.actionability === 'user') rows.push(row('├─ ', `next: ${status.nextAction}`, 'dim'));
   if (status.blocker) rows.push(row('├─ ', status.blocker, 'warning'));
   if (status.workflowIssue) rows.push(row('├─ ', `workflow: ${status.workflowIssue}`, 'warning'));
   if (terminal && progress) rows.push(row('├─ ', progress));
