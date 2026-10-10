@@ -1337,8 +1337,13 @@ export function manuallyResumeMainModelRecovery(ctx: ExtensionContext): boolean 
   return true;
 }
 
-let mainModelRecoveryProbeInFlight = false;let mainModelRecoveryProbeToken = 0;
+let mainModelRecoveryProbeInFlight = false;
+let mainModelRecoveryProbeToken = 0;
 let mainModelRecoveryProbeGeneration: number | null = null;
+/** The in-flight probe's promise, so a caller that requested a probe as a side
+ * effect (for example /goal resume) can chain onto the SAME resolution instead
+ * of racing a second probe that would be skipped as in-flight. */
+let mainModelRecoveryProbePromise: Promise<void> | null = null;
 let hourlyProbeInFlight = false;
 let hourlyProbeToken = 0;
 let hourlyProbeGeneration: number | null = null;
@@ -1367,15 +1372,24 @@ export async function probeMainModelRecovery(ctx: ExtensionContext): Promise<voi
   mainModelRecoveryProbeInFlight = true;
   const probeToken = ++mainModelRecoveryProbeToken;
   mainModelRecoveryProbeGeneration = generation;
-  try {
-    await probeMainModelRecoveryImpl(ctx);
-  } finally {
-    if (mainModelRecoveryProbeToken === probeToken) {
-      mainModelRecoveryProbeInFlight = false;
-      mainModelRecoveryProbeGeneration = null;
+  const probeRun = (async () => {
+    try {
+      await probeMainModelRecoveryImpl(ctx);
+    } finally {
+      if (mainModelRecoveryProbeToken === probeToken) {
+        mainModelRecoveryProbeInFlight = false;
+        mainModelRecoveryProbeGeneration = null;
+      }
     }
-  }
+  })();
+  mainModelRecoveryProbePromise = probeRun;
+  await probeRun;
 }
+
+/** The currently in-flight recovery probe, if any. Callers use this to release
+ * work once THE probe they triggered actually settles (v0.39.25). */
+export function mainModelRecoveryProbeSettled(): Promise<void> | null {
+  return mainModelRecoveryProbePromise;
 
 async function probePreferredPrimary(ctx: ExtensionContext, recovery: MainModelRecovery): Promise<void> {
   if (!mainModelFailbackEnabled()) {
