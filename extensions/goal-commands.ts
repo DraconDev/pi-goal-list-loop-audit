@@ -565,6 +565,11 @@ function cmdResume(ctx: ExtensionContext): Promise<void> | void {
     : false;
   if (!recoveryStaleEntry && manuallyResumeMainModelRecovery(ctx)) {
     releaseAuditorSurface();
+    if (state.goal?.status === "paused") {
+      // v0.39.25: the same "resume stops at the probe" gap as the armed
+      // recovery below — release the parked goal once this probe resolves.
+      void probeMainModelRecovery(ctx).then(() => releasePausedGoalAfterRecoveryProbe(ctx, resumeCommand, true));
+    }
     return;
   }
   // v0.39.25 (field 2026-10-10): /goal resume while a saved main-model
