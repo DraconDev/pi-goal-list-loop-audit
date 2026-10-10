@@ -14,7 +14,7 @@
 [38;5;147m├─ [0m[38;5;244mrecovery timer armed · in 5m 00s[0m
 [38;5;147m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.1-sol · inherited from session[0m
 [38;5;147m└─ [0m[38;5;147mnext: Automatic recovery timer is armed[0m
-[38;5;147mglla: RETRY ARMED · goal working · automatic[0m · lifecycle: running · activity: recovering
+[38;5;147mglla: RETRY ARMED · goal working · automatic[0m
 
 [38;5;244m── Workflow rejection ──────────────────────────────────────────────────────────────────────────────────────────────────[0m
 [38;5;72m● [0m[38;5;72mPROJECT · replanning · RUNNING · 0/1 requirements verified[0m
@@ -75,7 +75,7 @@ What Changed
 [38;5;72m1. [0m[1mCards share owner-fenced execution evidence.[0m                                                                         
                                                                                                                         
 Remaining                                                                                                               
-[38;5;72m- [0m[1mUnresolved[0m — Saved journals cannot prove a live session.                                                              
+[38;5;72m- [0mSaved journals cannot prove a live session.                                                                           
                                                                                                                         
 Next                                                                                                                    
-[38;5;72m- [0m[1mNext[0m — Use /glla fleet for a read-only health observation.                                                            
+[38;5;72m- [0mUse /glla fleet for a read-only health observation.                                                                   

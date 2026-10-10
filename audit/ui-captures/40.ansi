@@ -1,68 +1,68 @@
 [38;5;244m── Running ─────────────────────────────[0m
-[38;5;72m● [0m[38;5;72mGOAL · working · RUNNING[0m
-[38;5;72m│  [0m[38;5;147mMake execution…
+[38;5;72m● [0m[38;5;72mRUNNING · GOAL working[0m
+[38;5;72m│  [0m[38;5;147mMake execution evidence clear with[0m…[0m
 [38;5;72m├─ [0m[38;5;244mlast progress 1s ago · runtime[0m
-[38;5;72m├─ [0m[38;5;244mmodel: primary…
+[38;5;72m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.[0m…[0m
 [38;5;72m├─ [0m[38;5;244mfallbacks: minimax/MiniMax-M3.1-Fl[0m…[0m
 [38;5;72m└─ [0m[38;5;147mnext: Observed work is in progress[0m
 [38;5;72mglla: RUNNING · goal working · automatic[0m
 
 [38;5;244m── Quota recovery ──────────────────────[0m
-[38;5;147m● [0m[38;5;147mGOAL · working · RETRY ARMED[0m
-[38;5;147m│  [0m[38;5;147mMake executio…
+[38;5;147m● [0m[38;5;147mRETRY ARMED · GOAL working[0m
+[38;5;147m│  [0m[38;5;147mMake execution evidence clear with[0m…[0m
 [38;5;147m├─ [0m[38;5;179mprovider error[0m
 [38;5;147m├─ [0m[38;5;244mrecovery timer armed · in 5m 00s[0m
-[38;5;147m├─ [0m[38;5;244mmodel: primar…
-[38;5;147m└─ [0m[38;5;147mnext: Automat…
-[38;5;147mglla: RETRY ARMED · goal working · auto[0m…[0m
+[38;5;147m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.[0m…[0m
+[38;5;147m└─ [0m[38;5;147mnext: Automatic recovery timer is [0m…[0m
+[38;5;147mglla: RETRY ARMED · goal working · auto…[0m
 
 [38;5;244m── Workflow rejection ──────────────────[0m
-[38;5;72m● [0m[38;5;72mPROJECT · replan…
+[38;5;72m● [0m[38;5;72mRUNNING · PROJECT replanning · 0/1 [0m…[0m
 [38;5;72m│  [0m[38;5;147mBuild a truthful project UI[0m
-[38;5;72m├─ [0m[38;5;179mworkflow: Audi…
+[38;5;72m├─ [0m[38;5;179mworkflow: Audit rejected: plan the[0m…[0m
 [38;5;72m├─ [0m[38;5;244mlast progress 1s ago · runtime[0m
-[38;5;72m├─ [0m[38;5;244mmodel: primary…
+[38;5;72m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.[0m…[0m
 [38;5;72m└─ [0m[38;5;147mnext: Observed work is in progress[0m
 [38;5;72mglla: RUNNING · project replanning · au…[0m
 
 [38;5;244m── Blocked prerequisite ────────────────[0m
-[38;5;179m● [0m[38;5;179mGOAL · working · BLOCKED[0m
-[38;5;179m│  [0m[38;5;147mMake executio…
+[38;5;179m● [0m[38;5;179mBLOCKED · GOAL working[0m
+[38;5;179m│  [0m[38;5;147mMake execution evidence clear with[0m…[0m
 [38;5;179m├─ [0m[38;5;179mnext: Paste AAV version[0m
 [38;5;179m├─ [0m[38;5;179mVersion evidence missing[0m
-[38;5;179m├─ [0m[38;5;244mexecution unc…
+[38;5;179m├─ [0m[38;5;244mexecution unconfirmed · saved work[0m…[0m
 [38;5;179m└─ [0m[38;5;147mdetails: /glla status[0m
 [38;5;179mglla: Paste AAV version · BLOCKED · goa…[0m
 
 [38;5;244m── Dormant audit ───────────────────────[0m
-[38;5;147m● [0m[38;5;147mGOAL · auditing · DORMANT[0m
-[38;5;147m│  [0m[38;5;147mMake executio…
-[38;5;147m├─ [0m[38;5;147mnext: Reopen …
+[38;5;147m● [0m[38;5;147mDORMANT · GOAL auditing[0m
+[38;5;147m│  [0m[38;5;147mMake execution evidence clear with[0m…[0m
+[38;5;147m├─ [0m[38;5;147mnext: Reopen the project to inspec[0m…[0m
 [38;5;147m├─ [0m[38;5;179mSession observed closed[0m
 [38;5;147m├─ [0m[38;5;244mlast progress 1s ago · runtime[0m
 [38;5;147m└─ [0m[38;5;147mdetails: /glla status[0m
 [38;5;147mglla: Reopen the project to inspect or …[0m
 
 [38;5;244m── Unconfirmed audit ───────────────────[0m
-[38;5;179m● [0m[38;5;179mGOAL · auditin…
-[38;5;179m│  [0m[38;5;147mMake executio…
-[38;5;179m├─ [0m[38;5;244mexecution unc…
-[38;5;179m├─ [0m[38;5;244mmodel: primar…
+[38;5;179m● [0m[38;5;179mEXECUTION UNCONFIRMED · GOAL auditi[0m…[0m
+[38;5;179m│  [0m[38;5;147mMake execution evidence clear with[0m…[0m
+[38;5;179m├─ [0m[38;5;244mexecution unconfirmed · saved work[0m…[0m
+[38;5;179m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.[0m…[0m
 [38;5;179m├─ [0m[38;5;244mfallbacks: minimax/MiniMax-M3.1-Fl[0m…[0m
-[38;5;179m└─ [0m[38;5;179mnext: /glla s…
+[38;5;179m└─ [0m[38;5;179mnext: /glla status to inspect exec[0m…[0m
 [38;5;179mglla: EXECUTION UNCONFIRMED · goal audi…[0m
 
 [38;5;244m── Approved settlement owed ────────────[0m
-[38;5;179m● [0m[38;5;179mGOAL · settlin…
-[38;5;179m│  [0m[38;5;147mMake executio…
-[38;5;179m├─ [0m[38;5;244mexecution unc…
-[38;5;179m├─ [0m[38;5;244mmodel: primar…
+[38;5;179m● [0m[38;5;179mEXECUTION UNCONFIRMED · GOAL settli[0m…[0m
+[38;5;179m│  [0m[38;5;147mMake execution evidence clear with[0m…[0m
+[38;5;179m├─ [0m[38;5;244mexecution unconfirmed · saved work[0m…[0m
+[38;5;179m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.[0m…[0m
 [38;5;179m├─ [0m[38;5;244mfallbacks: minimax/MiniMax-M3.1-Fl[0m…[0m
-[38;5;179m└─ [0m[38;5;179mnext: /glla s…
+[38;5;179m└─ [0m[38;5;179mnext: /glla status to inspect exec[0m…[0m
 [38;5;179mglla: EXECUTION UNCONFIRMED · goal sett…[0m
 
 [38;5;244m── Completed project ───────────────────[0m
-[38;5;72m✓ [0m[38;5;72mPROJECT · COMPLETE[0m
+[38;5;72m✓ [0m[38;5;72mCOMPLETE · PROJECT[0m
 [38;5;72m│  [0m[38;5;147mBuild a truthful project UI[0m
 [38;5;72m├─ [0m[38;5;244m1/1 requirements verified[0m
 [38;5;72m└─ [0m[38;5;147mnext: No action needed[0m
@@ -77,9 +77,9 @@ What Changed
    [1mevidence.[0m                            
                                         
 Remaining                               
-[38;5;72m- [0m[1mUnresolved[0m — Saved journals cannot    
-  prove a live session.                 
+[38;5;72m- [0mSaved journals cannot prove a live    
+  session.                              
                                         
 Next                                    
-[38;5;72m- [0m[1mNext[0m — Use /glla fleet for a read-only
-  health observation.                   
+[38;5;72m- [0mUse /glla fleet for a read-only health
+  observation.                          

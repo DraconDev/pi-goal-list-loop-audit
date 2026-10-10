@@ -156,7 +156,7 @@ test("Next section carries the concrete action; stale self-reference still drops
   const { chatLines, transcriptLines } = render();
   const nextIdx = chatLines.findIndex((l) => l === "Next");
   assert.ok(nextIdx > 0, "Next section present");
-  assert.ok(chatLines.some((l) => /^- \*\*Next\*\* — replay on next contact$/.test(l)), "concrete Next survives as a bold-lead bullet");
+  assert.ok(chatLines.some((l) => /^- replay on next contact$/.test(l)), "concrete Next survives without repeating its section label");
   const stale = render({
     goal: seedGoal({
       id: "20260911-rich-stale",
@@ -294,7 +294,8 @@ test("v0.38.55: render path respects the sanitize trust boundary", () => {
   }));
   const crowded = render({ findingGroups: sanitizeFindingGroups(many) });
   const bullets = crowded.chatLines.filter((l) => l.startsWith("- **"));
-  assert.equal(bullets.length, 16, `every in-boundary finding renders, got ${bullets.length}`);
+  assert.equal(bullets.length, 15, `all 15 in-boundary findings render, got ${bullets.length}`);
+  assert.ok(crowded.chatLines.includes('- replay on next contact'), 'the next action remains outside the finding count');
   const long = bullets.find((l) => l.startsWith("- **"));
   assert.ok(long, "first finding present");
   // The renderer itself never clips values — the 10k-char finding bound
