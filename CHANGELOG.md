@@ -6,6 +6,15 @@
   instead of pausing it as verification-report debris on restore. Explicit
   evidence/reviewer report tails remain guarded; classifier and restart
   regressions cover the screenshot case.
+- /goal resume while a saved main-model recovery is armed now releases the
+  paused goal once the recovery probe selects a working model instead of
+  stopping at the probe. A failed probe re-arms the envelope and leaves the
+  park in place; recovery-reason parks and lists are unchanged. Recovery
+  probe promise is now exported so chained work does not race a skipped
+  second probe. Regression: tests/resume-during-recovery.test.ts.
+- README expanded with the auto-compactor behavior, the eight settings table
+  sections, the full /glla action list, and how state/recovery/holds are
+  separated across the surfaces.
 
 ## 0.39.24 — evidence-based UI: shared status projection, fleet health, summary partitioning (2026-10-10)
 
