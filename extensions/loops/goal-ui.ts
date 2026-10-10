@@ -914,6 +914,8 @@ function scheduleUIRefresh(): void {
 // suppresses the notify (it is automatic machinery), never the recording.
 let auditorQuietSince: number | null = null;
 let auditorQuietNotified = false;
+let auditorStallSince: number | null = null;
+let auditorStallNotified = false;
 let lastAuditorQuietStretch: { ms: number; endedAt: number } | null = null;
 
 /** Drive the quiet watcher once per UI tick. Returns a warning message to
@@ -929,6 +931,8 @@ export function __auditorQuietWatchTick(now = Date.now()): string | null {
       auditorQuietSince = null;
       auditorQuietNotified = false;
     }
+    auditorStallSince = null;
+    auditorStallNotified = false;
     return null;
   }
   const phase = auditorDisplayPhase(g, latestAuditProgress, now);
@@ -945,6 +949,23 @@ export function __auditorQuietWatchTick(now = Date.now()): string | null {
     }
     return null;
   }
+  // v0.39.22: a stalled worker gets its own one-shot notify — the quiet
+  // notice fired an hour ago and reads as routine by now. The claim stays
+  // durable either way; the notify names the retry, not just the discard.
+  if (phase === "stalled") {
+    if (auditorStallSince === null) {
+      auditorStallSince = typeof latestAuditProgress?.lastActivityAt === "number"
+        ? latestAuditProgress.lastActivityAt
+        : now;
+    }
+    if (!auditorStallNotified && !supervisorPaused(state)) {
+      auditorStallNotified = true;
+      return `glla: the detached auditor is STALLED — no worker activity for ${fmtElapsed(now - auditorStallSince)} and no tool running. The claim is durable; /goal resume retries it, /goal cancel discards it.`;
+    }
+    return null;
+  }
+  if (auditorStallSince !== null) auditorStallSince = null;
+  auditorStallNotified = false;
   // Left the quiet phase: record the ended stretch for the footer summary.
   if (auditorQuietSince !== null) {
     const ms = now - auditorQuietSince;
