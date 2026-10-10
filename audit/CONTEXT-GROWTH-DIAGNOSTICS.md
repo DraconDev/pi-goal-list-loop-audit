@@ -55,6 +55,21 @@ The shared display builder supplies detailed `/glla status` and `/goal status`, 
 
 Behavioral reproduction: `npm test -- tests/compaction-status.test.ts tests/ui-status-projection.test.ts tests/ui-status-runtime.test.ts tests/ui-status-surfaces.test.ts tests/between-tasks-compaction.test.ts tests/compaction-settled-boundary.test.ts` — 54 pass, 0 fail across six files. `npm run check` exits 0 (exit recorded in `/tmp/glla-compaction-status-types.log`). Regression cases cover all reason codes, override normalization, bounded read-only metadata, owner/generation/freshness fences, stale detached-audit observations and the production card/footer builders. An independent fresh-context review found that an unrelated paused goal incorrectly deferred diagnostics for a selected active loop. The goal-specific pause check now follows the selected owner; a production `currentUiStatusContext` regression covers an active loop alongside a paused goal and verifies that inspection launches no compaction. Global supervisor/persistence/audit holds remain intact. The same independent reviewer rechecked the ownership correction and production regression after the fix: original P1 resolved, no issues found, BLOCKERS: none (follow-up run 17544ad7-179b-4601-8c42-8bd949f58d38). Review inspected source and recorded validation logs rather than rerunning commands.
 
+## Lifecycle defect disposition
+
+The lifecycle follow-up confirms **no newly reproduced GLLA-owned compaction lifecycle defect** from the bounded context investigation. This is not a claim that every historical 400k incident has been explained. No compaction/continuation/admission behavior was changed merely to make the token count smaller.
+
+| Reported or confirmed issue | Disposition | Regression/evidence |
+|---|---|---|
+| Context grows past 200k | Target is opportunistic, not a hard cap; safety holds and bounded-attempt guards are intentional. No new defect reproduced. | `tests/between-tasks-compaction.test.ts`, `tests/compaction-settled-boundary.test.ts` |
+| Unobserved 400k sessions | Remains unknown; do not assign a root cause without matching timestamped host/owner/admission evidence. | Historical Freeport observations above establish 316213 tokens, not the exact reported 400k case. |
+| Paused unrelated goal falsely labels selected-loop compaction held | Confirmed **diagnostic ownership defect**, repaired and audited in the preceding status item; not a compaction dispatch defect. | `tests/compaction-status.test.ts`: production active-loop + paused-goal regression, inspection launches zero compactions. |
+| Busy-boundary deferral, prior-attempt rearming, compact failure and provider-recovery handoff | Existing ownership-safe behavior retained; no new failing reproduction in these suites. | Existing compaction/recovery suites, including pressure-budget and quota-exclusion cases. |
+
+Lifecycle validation command: `timeout 300 npm test -- tests/*compaction*.test.ts tests/*compactor*.test.ts tests/*context-pressure*.test.ts tests/*recovery*.test.ts tests/pressure-budget-late-success.test.ts tests/quota-context-pressure-exclusion.test.ts`.
+
+Observed: **389 pass, 0 fail across 34 files**, exit 0. Log `/tmp/glla-compaction-lifecycle-disposition.log` records the runner output and exit. `timeout 100 npm run check` exits 0, recorded in `/tmp/glla-compaction-lifecycle-types.log`. Coverage retains pause/cancel/owner-generation fences, healthy tool boundaries, bounded failure/retry budgets and automatic post-compaction continuation; no test standards or types were relaxed. External projects, Pi core and providers remain unchanged.
+
 ## Mechanical reproduction and verification
 
 `npm test -- tests/between-tasks-compaction.test.ts tests/compaction-settled-boundary.test.ts tests/compaction-target-settings.test.ts tests/quota-context-pressure-exclusion.test.ts tests/pressure-budget-late-success.test.ts`
