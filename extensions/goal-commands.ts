@@ -445,7 +445,7 @@ async function cmdSet(args: string, ctx: ExtensionContext, skipDraft = false, ex
 
 async function cmdStatus(ctx: ExtensionContext): Promise<void> {
   if (!state.goal) {
-    const recoveryLines = formatMainModelRecoveryStatus(state.mainModelRecovery, normalizeMainModelFallbackRefs(loadSettings(ctx.cwd).mainModelFallbacks), Date.now(), mainModelRecoveryRuntimeStatus());
+    const recoveryLines = formatMainModelRecoveryStatus(state.mainModelRecovery, normalizeMainModelFallbackRefs(loadSettings(ctx.cwd).mainModelFallbacks), Date.now(), currentUiStatusContext(ctx).evidence?.recovery);
     if (recoveryLines.length > 0) {
       ctx.ui.notify(["No active goal.", ...recoveryLines, "Use /goal <objective>, /list show, or /loop status for the owning surface."].join("\n"), "info");
       return;
@@ -469,7 +469,7 @@ async function cmdStatus(ctx: ExtensionContext): Promise<void> {
     `Auto-continue: ${g.autoContinue ? "on" : "off"}`,
     `Iteration: ${flags.iterationCounter}`,
     `Tokens: ${(g.usage?.tokensUsed ?? 0).toLocaleString()}${(g.usage?.tokensLimit ?? 0) > 0 ? ` / ${(g.usage!.tokensLimit).toLocaleString()}` : " (no cap — set Token limit in /glla settings)"}`, 
-    ...formatMainModelRecoveryStatus(state.mainModelRecovery, normalizeMainModelFallbackRefs(loadSettings(ctx.cwd).mainModelFallbacks), Date.now(), mainModelRecoveryRuntimeStatus()),
+    ...formatMainModelRecoveryStatus(state.mainModelRecovery, normalizeMainModelFallbackRefs(loadSettings(ctx.cwd).mainModelFallbacks), Date.now(), uiContext.evidence?.recovery),
   ];
   // v0.38.7: /goal status names disapprovals + last-verdict age, not just
   // the approval count — a capped/queued session must show what unblocks.
