@@ -1077,6 +1077,7 @@ export function registerGoalRuntime(pi: ExtensionAPI, ownership: ProcessOwnerBou
       // the bare `/glla` table, so they do not compete with action completion.
       ["version", "show the installed package version and registry check"],
       ["status", "show goal, list, loop, and pending decisions"],
+      ["fleet", "bounded read-only health observations under configured roots"],
       ["progress", "read-only outcome evidence digest; progress json prints the report"],
       ["log", "show the recent event trail"],
       ["resume", "resume paused/held work or start a waiting-only list; also unfreezes a /glla pause"],
