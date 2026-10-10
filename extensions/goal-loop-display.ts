@@ -1422,7 +1422,7 @@ export function buildUiStatusFooter(status: UiStatus, now: number, theme?: Displ
 export function buildUiStatusCard(state: State, status: UiStatus, now: number, theme?: DisplayTheme, width = 80, compact = true, extras?: WidgetExtras): string[] {
   const terminal = status.execution === 'complete' || status.execution === 'cancelled';
   const tone = uiStatusTone(status);
-  const clipped = (value: string): string => truncateCells(value, Math.max(1, width));
+  const clipped = (value: string): string => tuiTruncateToWidth(value, Math.max(1, width), '…');
   const row = (prefix: string, value: string, color: DisplayColor = 'dim'): string =>
     clipped(`${paint(theme, tone, prefix)}${paint(theme, color, uiSafeText(value))}`);
   const loop = status.mode === 'project' || status.mode === 'loop' ? state.loop : undefined;
@@ -1486,7 +1486,7 @@ export function buildStatusText(state: State, audit?: AuditDisplayProgress | nul
   // non-trivial activity. Supervised-recovery waits use the ⏳ auto-retrying
   // badge and must not gain a duplicate "lifecycle: waiting" segment.
   const ownedBackgroundWait = !!view.wait && !view.wait.legacy;
-  const lifecycleAddsInfo = !backgroundDisplay(state) && (ownedBackgroundWait
+  const lifecycleAddsInfo = !shared && !backgroundDisplay(state) && (ownedBackgroundWait
     || (view.lifecycle === "running" && view.activity !== "unknown" && view.activity !== "auditing"));
   const withActivity = withAgentSummary && lifecycleAddsInfo
     ? `${withAgentSummary} · lifecycle: ${view.lifecycle} · activity: ${view.activity}`
@@ -1501,7 +1501,7 @@ export function buildStatusText(state: State, audit?: AuditDisplayProgress | nul
   // network (refresh rides the command-contact gate).
   const versionTail = extras?.versionTail ? ` ${extras.versionTail}` : "";
   const withVersion = withMode && versionTail ? `${withMode}${versionTail}` : withMode;
-  if (!withVersion || typeof state.supervisorPausedAt !== "number") return truncateStatusToWidth(withVersion, width);
+  if (shared || !withVersion || typeof state.supervisorPausedAt !== "number") return truncateStatusToWidth(withVersion, width);
   return truncateStatusToWidth(withVersion.replace(/^glla:/, `glla: ${paint(theme, "warning", "⏸ supervisor")} ·`), width);
 }
 
