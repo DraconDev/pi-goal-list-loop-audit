@@ -208,9 +208,52 @@ Compaction and provider recovery are bounded, not magic. High context can defer
 compaction at unsafe boundaries; a failed summarizer is not proof that the task
 is complete. [Recovery](docs/RECOVERY.md) explains the states and next actions.
 
+### How GLLA survives long work
+
+GLLA supervises several failure classes differently, because "keep going" is
+wrong for most of them:
+
+- **Interrupted turns and stale handles** are recorded, not guessed at. A goal
+  that was mid-turn when the session died keeps its objective, task list and
+  evidence, and says so plainly (`⚠ interrupted — stale handle`) instead of
+  pretending work is still flowing.
+- **Provider failures** pause with a durable deadline and let recovery walk a
+  configured fallback chain at a bounded cadence. GLLA does not invent success:
+  a saved `retryAt` is a historical fact, not proof a timer is armed.
+- **Loop supervisors and heartbeat watches** park work they can no longer drive,
+  rather than re-sending prompts into an ownerless session.
+- **Explicit holds** — your pause, a supervisor freeze, a load hold, or a
+  degraded-write condition — always outrank automatic resumption.
+
+## Context, compaction and the auto-compactor
+
+Long-running goals outgrow a single context window, so GLLA treats compaction as
+part of the supervision loop rather than an accident of the host:
+
+- The **auto-compactor** watches admitted context usage for the active work.
+  When usage crosses the configured threshold it asks for a summary at a safe
+  boundary instead of forcing one mid-tool.
+- **Unsafe boundaries defer, not force.** Compaction is not triggered while a
+  turn is mid-flight, a tool result is pending, or a dispatch has not been
+  acknowledged yet; the attempt is retried or clearly reported instead.
+- A **failed summarizer is not completion.** If the summary cannot be produced,
+  work stays held with the failure visible, so a lost summary cannot silently
+  end a goal.
+- **Post-compaction continuation** rebuilds the same objective, task list and
+  verification contract from durable state. Trusted user seeding keeps an
+  objective from being rewritten into report-shaped debris, and report-like
+  fragments are paused for repair instead of dispatched.
+- Related pressures — token budget, wall-clock horizon and repeated compaction
+  inside one dispatch — each have their own bounded behavior and are listed in
+  [SETTINGS.md](docs/SETTINGS.md).
+
+See [RECOVERY.md](docs/RECOVERY.md) for the state machine and
+[SETTINGS.md](docs/SETTINGS.md) for thresholds.
+
 ## Configure only what you need
 
-Open `/glla` for settings. Start with:
+Open `/glla` for an interactive settings table, or use actions directly. Start
+with:
 
 - **Auditor model and thinking level:** choose a verifier that can handle the contract.
 - **Fallback models:** choose providers you can actually authenticate and afford.
@@ -219,9 +262,53 @@ Open `/glla` for settings. Start with:
 - **Retry and audit limits:** keep failure recovery bounded.
 - **Notifications:** decide how you want to hear about decisions and results.
 
+### What the settings table controls
+
+Bare `/glla` opens a table you can navigate; each row edits one setting and shows
+the effective value rather than only the stored one. Groups cover:
+
+| Group | Example settings |
+|---|---|
+| Supervision | `autoResume`, `keepGoing`, `supervisorPause` |
+| Context | compaction token threshold and related compaction behavior |
+| Recovery | main-model fallbacks, retry minutes, same-model retry budget |
+| Audit | auditor model, fallback model, silent mode, progress signals, post-audit policy |
+| Subagents | model strategy, per-agent models and fallback chains |
+| Tools | per-tool overrides and the tracked-subagent panel |
+
+Aggressive mode is a single switch that tightens supervision defaults; the table
+shows what each unset key resolves to, so an unset value never claims a
+different default than the runtime uses.
+
 [SETTINGS.md](docs/SETTINGS.md) is the detailed reference. `/glla version` shows
 the loaded version and registry comparison; unpublished checkout changes are not
 necessarily available to npm or Pi catalog users.
+
+## The /glla surface
+
+`/glla` is the operational namespace for supervision itself — separate from the
+work commands (`/goal`, `/list`, `/loop`, `/review`). Common actions:
+
+| Command | Purpose |
+|---|---|
+| `/glla status` | Supervision, recovery and current-work summary |
+| `/glla log` | Supervision event history |
+| `/glla audits` | Completion-audit outcomes |
+| `/glla pause` | Freeze automatic supervision without killing a running tool |
+| `/glla resume` | Broad resume for whatever is held: goal, list item, loop or recovery |
+| `/glla decide` | Show a pending decision instead of guessing an answer |
+| `/glla progress [json]` | Outcome-evidence digest for the current work |
+| `/glla agents [--tail <id>]` | Tracked subagent state, with transcript tailing |
+| `/glla fleet` | Bounded, read-only health observations across configured roots |
+| `/glla version` | Loaded version versus the registry |
+| `/glla bug [description]` | Capture diagnostics without changing the objective |
+| `/glla wipe` | Explicitly discard durable GLLA state |
+
+Actions are verbs, not key=value arguments: settings live in the `/glla` table or
+the project settings file. `/glla fleet` inspects only GLLA runtime artifacts under
+roots you configure, with bounded depth, time and bytes; it reports partial,
+unreadable and skipped observations instead of declaring a fleet healthy, and it
+never dispatches work or mutates sibling state.
 
 ## Optional companions
 
