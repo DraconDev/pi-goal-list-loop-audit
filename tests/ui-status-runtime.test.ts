@@ -46,6 +46,18 @@ test('new parent polls cannot refresh an old worker snapshot', () => {
   assert.equal(projectUiStatus(state, uiStatusContextFromRuntime(state, NOW, 3, host(state), progress)).execution, 'unconfirmed');
 });
 
+test('owned long tool wait preserves its budget without inventing fresh activity', () => {
+  const state = fixture(); const progress = auditing(state);
+  progress.observedAt = NOW - 61 * 60000; progress.lastActivityAt = progress.observedAt;
+  progress.tool = { name: 'bash', startedAt: progress.observedAt, budgetMs: 120 * 60000 };
+  const context = uiStatusContextFromRuntime(state, NOW, 3, host(state), progress);
+  const status = projectUiStatus(state, context);
+  assert.equal(status.execution, 'tool-wait');
+  assert.equal(status.lastActivityAt, progress.lastActivityAt);
+  progress.tool.budgetMs = 60 * 60000;
+  assert.equal(projectUiStatus(state, uiStatusContextFromRuntime(state, NOW, 3, host(state), progress)).execution, 'unconfirmed');
+});
+
 test('confirmed closure and load hold survive the audit adapter', () => {
   const state = fixture(); const progress = auditing(state);
   const observation = host(state); observation.session = 'closed';
