@@ -1619,7 +1619,15 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
     if ((state.list?.length ?? 0) > 0) return waitingListStatus(state, now, theme, width);
     return undefined;
   }
-  if (g.status === "auditing") {
+// The auditing footer is the liveness surface for a live audit object — one
+// implementation shared by the legacy base path and the shared-projection
+// path (which routes here when an audit object is present). Saved/stale
+// claims without an object stay on the projection footer (unconfirmed).
+function auditingStatusText(state: State, g: Goal, audit: AuditDisplayProgress | null | undefined, now: number, theme?: DisplayTheme, extras?: WidgetExtras, width?: number): string {
+  const held = heldLoop(state);
+  const heldSuffix = held ? paint(theme, "warning", " · loop⏸held") : "";
+  void width;
+  {
     const host = paint(theme, "accent", MAIN_HOST_LABEL);
     if (auditRecoveryPending(g)) {
       return `glla: ${host} · ${paint(theme, "warning", "audit recovery pending")}${heldSuffix}`;
@@ -1663,6 +1671,10 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
       ? `${activityAge !== undefined ? `activity ${fmtElapsed(activityAge)} ago` : "no worker activity yet"} · `
       : "";
     return `glla: ${compactPrefix}${freshness}${host} · ${label}${quietSuffix}${heldSuffix}`;
+  }
+}
+  if (g.status === "auditing") {
+    return auditingStatusText(state, g, audit, now, theme, extras, width);
   }
   if (g.status === "paused") {
     // v0.28.22: the status line names the ACTIONABILITY, not the reason —
