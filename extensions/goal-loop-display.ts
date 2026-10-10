@@ -1441,10 +1441,16 @@ export function buildUiStatusFooter(status: UiStatus, now: number, theme?: Displ
     : `${paint(theme, 'dim', `· ${action}`)}`;
   const text = `${head}${queueSeg}${recoverySeg} ${tail}`;
   // Required actions outrank secondary context when the full footer cannot
-  // fit. Put the prerequisite first rather than clipping its command behind
-  // mode, queue and saved recovery facts. Wide layouts retain all context.
+  // fit. Commands can follow prerequisite prose (e.g. repair storage, then
+  // /glla status for details). Reserve the complete command first without
+  // treating inspection as satisfying the prerequisite. Wide layouts retain
+  // the verbatim action; command-first and commandless actions keep ordering.
+  const nextAction = uiSafeText(status.nextAction);
+  const command = nextAction.match(/\/(?:glla|goal|list|loop|review)(?:\s+[a-z][a-z-]*)?\b/i)?.[0];
+  const compactAction = command && !nextAction.startsWith(command)
+    ? `${command} · ${nextAction}` : nextAction;
   const fitted = width && status.actionability === 'user' && visibleLen(text) > width
-    ? `${paint(theme, 'dim', 'glla:')} ${paint(theme, tone, uiSafeText(status.nextAction))} ${paint(theme, 'dim', `· ${UI_HEALTH_LABEL[status.execution]} · ${phase}`)}${queueSeg}${recoverySeg}`
+    ? `${paint(theme, 'dim', 'glla:')} ${paint(theme, tone, compactAction)} ${paint(theme, 'dim', `· ${UI_HEALTH_LABEL[status.execution]} · ${phase}`)}${queueSeg}${recoverySeg}`
     : text;
   return width ? tuiTruncateToWidth(fitted, Math.max(1, width), '…') : fitted;
 }
