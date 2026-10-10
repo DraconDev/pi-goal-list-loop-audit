@@ -1623,6 +1623,65 @@ export function loopCadenceCountdown(l: { minimumIterationIntervalMs?: number; l
   return remaining > 0 ? `next tick in ${fmtElapsed(remaining)}` : undefined;
 }
 
+// A stale-handle interrupt keeps the goal ACTIVE but outranks every other
+// operational note — one implementation for the legacy base path and the
+// shared-projection path (v0.28.1 S1/S2).
+function interruptedActiveStatus(g: Goal, theme?: DisplayTheme, heldSuffix = ""): string {
+  const label = interruptedForNoStart(g)
+    ? "⚠ turn start not observed — automatic retry held"
+    : "⚠ interrupted — stale handle · /new (or a fresh session_start) rebinds";
+  return `glla: ${paint(theme, "error", label)}${heldSuffix}`;
+}
+function auditingStatusText(state: State, g: Goal, audit: AuditDisplayProgress | null | undefined, now: number, theme?: DisplayTheme, extras?: WidgetExtras, width?: number): string {
+  const held = heldLoop(state);
+  const heldSuffix = held ? paint(theme, "warning", " · loop⏸held") : "";
+  {
+    const host = paint(theme, "accent", MAIN_HOST_LABEL);
+    if (auditRecoveryPending(g)) {
+      return `glla: ${host} · ${paint(theme, "warning", "audit recovery pending")}${heldSuffix}`;
+    }
+    const phase = auditorDisplayPhase(g, audit, now);
+    const live = auditorHasLiveEvidence(audit, phase, now);
+    // v0.34.86: objective-vocabulary phase label when progress signals are
+    // on — "auditor reading source…" names the work the coarse "thinking"
+    // label hid. Opt-out via auditorProgressSignals.
+    const signals = extras?.auditorProgressSignals !== false;
+    // v0.38.99: same precedence as the card — see durablePhaseOverride:
+    // settling, workerless, and contradicted-starting claims are named by
+    // their durable phase; any other real progress object speaks for itself.
+    const durableLabel = durablePhaseOverride(g.pendingCompletion, audit, now);
+    const toolWait = auditorToolWait(audit, phase, now);
+    const observed = durableLabel
+      ?? (toolWait ? `waiting on ${sanitizeDisplayText(audit!.currentTool!)}` : undefined)
+      ?? (signals && phase === "running"
+        ? (auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, live, now))
+        : auditorPhaseForDisplay(audit, phase, live, now));
+    // v0.35.15: leading phase glyph + draining activity meter — a glance
+    // answers "is the audit alive?" without reading the sentence.
+    const phaseText = `auditor ${auditorPhaseGlyph(phase)} ${observed}`;
+    const color = phase === "stalled" ? "error" : phase === "blocked" || phase === "quiet" ? "warning" : live ? "success" : "accent";
+    const activityMeter = auditorActivityMeter(audit, phase, now);
+    const label = live
+      ? `${paint(theme, "success", phaseText)} ${paint(theme, "accent", activityMeter)} ${activityBadge("AUDITOR · DETACHED · LIVE", now, theme)}`
+      : `${paint(theme, color, phaseText)} ${paint(theme, color === "warning" || color === "error" ? color : "dim", activityMeter)}`;
+    // The persistent footer is the liveness surface only: host, phase, and
+    // freshness. The auditor card above already owns the transition hint
+    // ("next:"), the worker attribution ("detached worker"), and the
+    // verdict tally ("audits: …") — repeating them here doubled every fact
+    // on screen (Screenshot 20260914). One surface per fact.
+    const quietAge = phase === "quiet" ? auditorActivityAge(audit, now) : undefined;
+    const quietSuffix = quietAge !== undefined ? ` · silent ${fmtElapsed(quietAge)}` : "";
+    const compactPrefix = extras?.compactAuditCard
+      ? `${paint(theme, color, durableLabel ?? (toolWait ? `AUDIT TOOL WAIT · ${sanitizeDisplayText(audit!.currentTool!)} ${fmtElapsed(now - audit!.currentToolStartedAt!)} / ${fmtElapsed(audit!.toolTimeoutMs!)}` : phase === "running" ? "AUDIT RUNNING" : phase === "quiet" ? "AUDIT QUIET — may be stuck" : phase === "stalled" ? "AUDIT STALLED — worker dead" : phase === "blocked" ? "AUDIT BLOCKED" : phase === "queued" ? "AUDIT STARTING" : "AUDIT REVIEW"))} · `
+      : "";
+    const activityAge = auditorActivityAge(audit, now);
+    const freshness = extras?.compactAuditCard && phase !== "quiet" && !toolWait
+      ? `${activityAge !== undefined ? `activity ${fmtElapsed(activityAge)} ago` : "no worker activity yet"} · `
+      : "";
+    return `glla: ${compactPrefix}${freshness}${host} · ${label}${quietSuffix}${heldSuffix}`;
+  }
+}
+
 function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, extras?: WidgetExtras, width?: number): string | undefined {
   if (state.loop?.builder && state.loop.builder.phase !== "complete" && (state.loop.active || !state.goal)) {
     const l = state.loop, builder = l.builder!, coverage = respecCoverage(builder);
@@ -1671,65 +1730,6 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
 // implementation shared by the legacy base path and the shared-projection
 // path (which routes here when an audit object is present). Saved/stale
 // claims without an object stay on the projection footer (unconfirmed).
-// A stale-handle interrupt keeps the goal ACTIVE but outranks every other
-// operational note — one implementation for the legacy base path and the
-// shared-projection path (v0.28.1 S1/S2).
-function interruptedActiveStatus(g: Goal, theme?: DisplayTheme, heldSuffix = ""): string {
-  const label = interruptedForNoStart(g)
-    ? "⚠ turn start not observed — automatic retry held"
-    : "⚠ interrupted — stale handle · /new (or a fresh session_start) rebinds";
-  return `glla: ${paint(theme, "error", label)}${heldSuffix}`;
-}
-function auditingStatusText(state: State, g: Goal, audit: AuditDisplayProgress | null | undefined, now: number, theme?: DisplayTheme, extras?: WidgetExtras, width?: number): string {
-  const held = heldLoop(state);
-  const heldSuffix = held ? paint(theme, "warning", " · loop⏸held") : "";
-  void width;
-  {
-    const host = paint(theme, "accent", MAIN_HOST_LABEL);
-    if (auditRecoveryPending(g)) {
-      return `glla: ${host} · ${paint(theme, "warning", "audit recovery pending")}${heldSuffix}`;
-    }
-    const phase = auditorDisplayPhase(g, audit, now);
-    const live = auditorHasLiveEvidence(audit, phase, now);
-    // v0.34.86: objective-vocabulary phase label when progress signals are
-    // on — "auditor reading source…" names the work the coarse "thinking"
-    // label hid. Opt-out via auditorProgressSignals.
-    const signals = extras?.auditorProgressSignals !== false;
-    // v0.38.99: same precedence as the card — see durablePhaseOverride:
-    // settling, workerless, and contradicted-starting claims are named by
-    // their durable phase; any other real progress object speaks for itself.
-    const durableLabel = durablePhaseOverride(g.pendingCompletion, audit, now);
-    const toolWait = auditorToolWait(audit, phase, now);
-    const observed = durableLabel
-      ?? (toolWait ? `waiting on ${sanitizeDisplayText(audit!.currentTool!)}` : undefined)
-      ?? (signals && phase === "running"
-        ? (auditorProgressPhaseLabel(audit) ?? auditorPhaseForDisplay(audit, phase, live, now))
-        : auditorPhaseForDisplay(audit, phase, live, now));
-    // v0.35.15: leading phase glyph + draining activity meter — a glance
-    // answers "is the audit alive?" without reading the sentence.
-    const phaseText = `auditor ${auditorPhaseGlyph(phase)} ${observed}`;
-    const color = phase === "stalled" ? "error" : phase === "blocked" || phase === "quiet" ? "warning" : live ? "success" : "accent";
-    const activityMeter = auditorActivityMeter(audit, phase, now);
-    const label = live
-      ? `${paint(theme, "success", phaseText)} ${paint(theme, "accent", activityMeter)} ${activityBadge("AUDITOR · DETACHED · LIVE", now, theme)}`
-      : `${paint(theme, color, phaseText)} ${paint(theme, color === "warning" || color === "error" ? color : "dim", activityMeter)}`;
-    // The persistent footer is the liveness surface only: host, phase, and
-    // freshness. The auditor card above already owns the transition hint
-    // ("next:"), the worker attribution ("detached worker"), and the
-    // verdict tally ("audits: …") — repeating them here doubled every fact
-    // on screen (Screenshot 20260914). One surface per fact.
-    const quietAge = phase === "quiet" ? auditorActivityAge(audit, now) : undefined;
-    const quietSuffix = quietAge !== undefined ? ` · silent ${fmtElapsed(quietAge)}` : "";
-    const compactPrefix = extras?.compactAuditCard
-      ? `${paint(theme, color, durableLabel ?? (toolWait ? `AUDIT TOOL WAIT · ${sanitizeDisplayText(audit!.currentTool!)} ${fmtElapsed(now - audit!.currentToolStartedAt!)} / ${fmtElapsed(audit!.toolTimeoutMs!)}` : phase === "running" ? "AUDIT RUNNING" : phase === "quiet" ? "AUDIT QUIET — may be stuck" : phase === "stalled" ? "AUDIT STALLED — worker dead" : phase === "blocked" ? "AUDIT BLOCKED" : phase === "queued" ? "AUDIT STARTING" : "AUDIT REVIEW"))} · `
-      : "";
-    const activityAge = auditorActivityAge(audit, now);
-    const freshness = extras?.compactAuditCard && phase !== "quiet" && !toolWait
-      ? `${activityAge !== undefined ? `activity ${fmtElapsed(activityAge)} ago` : "no worker activity yet"} · `
-      : "";
-    return `glla: ${compactPrefix}${freshness}${host} · ${label}${quietSuffix}${heldSuffix}`;
-  }
-}
   if (g.status === "auditing") {
     return auditingStatusText(state, g, audit, now, theme, extras, width);
   }
