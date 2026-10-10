@@ -1390,6 +1390,7 @@ export async function probeMainModelRecovery(ctx: ExtensionContext): Promise<voi
  * work once THE probe they triggered actually settles (v0.39.25). */
 export function mainModelRecoveryProbeSettled(): Promise<void> | null {
   return mainModelRecoveryProbePromise;
+}
 
 async function probePreferredPrimary(ctx: ExtensionContext, recovery: MainModelRecovery): Promise<void> {
   if (!mainModelFailbackEnabled()) {
