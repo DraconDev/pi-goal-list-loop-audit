@@ -608,22 +608,13 @@ export function buildDurationLine(goal: Goal, now = Date.now()): string | null {
   return segs.length > 0 ? `\u2014 ${segs.join(" \u00b7 ")}` : null;
 }
 
-/** Head words for same-label restatement detection (field 2026-10-02,
- * below). Small closed stopword set; meaning-bearing shorts ("not", "no")
- * are kept so a negation can never match its affirmative. */
+/** Topic words for co-locating a problem and its action, never for
+ * deleting a distinct claim. */
 const RESTATEMENT_STOPWORDS = new Set([
   "a", "an", "and", "are", "as", "at", "be", "been", "by", "for", "from",
   "in", "is", "it", "its", "of", "on", "or", "so", "the", "to", "was",
   "were", "with",
 ]);
-
-function restatementHead(detail: string): { lead: string; words: Set<string> } {
-  const lead = /^\s*(Next|Unresolved|Left out)\s*:/i.exec(detail)?.[1]?.toLowerCase() ?? "";
-  const body = detail.replace(/^\s*(?:Next|Unresolved|Left out)\s*:?/i, "");
-  const words = body.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/)
-    .filter((w) => w.length > 1 && !RESTATEMENT_STOPWORDS.has(w));
-  return { lead, words: new Set(words.slice(0, 12)) };
-}
 
 /** Content words for cross-lead problem→action pairing (field 2026-10-02,
  * note.md). Full body, not the restatement head window: the shared topic
@@ -651,36 +642,15 @@ function pairingScore(problem: Set<string>, action: Set<string>): number {
   return shared >= 2 && longShared >= 1 ? shared : 0;
 }
 
-/** True when `detail` restates an already-kept same-label next detail:
- * same lead, ≥2 shared head words, head-word Dice ≥ 0.5. */
-function isNextRestatement(kept: Array<{ lead: string; words: Set<string> }>, detail: string): boolean {
-  const head = restatementHead(detail);
-  if (!head.lead || head.words.size === 0) return false;
-  for (const prior of kept) {
-    if (prior.lead !== head.lead) continue;
-    let shared = 0;
-    for (const w of head.words) if (prior.words.has(w)) shared++;
-    if (shared < 2) continue;
-    if ((2 * shared) / (prior.words.size + head.words.size) >= 0.5) return true;
-  }
-  return false;
-}
-
 /** Partition informing details into findings / Tests / next buckets.
  * Field 20260918_172705: exact-duplicate lines collapse to one per bucket
  * (repeated claim details rendered as doubled rows).
- * Field 2026-10-02: same-label NEAR-duplicates in the next/remaining
- * bucket also collapse to their first occurrence — the agent restated one
- * fact twice inside Unresolved with different wording and the human card
- * rendered both, then the same fact again under Next, burying what was
- * important. The same-lead gate is structural, not lexical: a problem
- * ("fix not live, needs release") and its action ("cut a release") always
- * both render; findings and evidence rows keep every word; and the
- * verbatim six-label recap stays intact in the archive machine layer, so
- * no agent prose is ever lost — only the human projection dedupes. */
+ * Only exact duplicate details collapse. Shared-topic similarity cannot
+ * prove equivalence: it used to erase differing qualifiers and actions.
+ * Cross-section repeated leading sentences are removed only in chat;
+ * original claim details and archive evidence remain intact. */
 export function partitionRichDetails(details: string[]): { findings: string[]; tests: string[]; next: string[] } {
   const seen = new Set<string>();
-  const nextHeads: Array<{ lead: string; words: Set<string> }> = [];
   const push = (bucket: string[], detail: string): boolean => {
     const key = detail.trim();
     if (seen.has(key)) return false;
@@ -701,8 +671,7 @@ export function partitionRichDetails(details: string[]): { findings: string[]; t
       continue;
     }
     if (/^\s*(Next|Unresolved|Left out)\s*:/i.test(detail)) {
-      if (isNextRestatement(nextHeads, detail)) { seen.add(detail.trim()); continue; }
-      if (push(next, detail)) nextHeads.push(restatementHead(detail));
+      push(next, detail);
       continue;
     }
     push(findings, detail);

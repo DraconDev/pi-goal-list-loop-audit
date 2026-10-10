@@ -8,9 +8,8 @@
 //      belongs to the agent's claim, not the renderer).
 //   2. A zero turns count is omitted (untracked, not known) while elapsed
 //      and audit counts still render.
-//   3. Field 2026-10-02: same-label near-duplicates in the next/remaining
-//      bucket collapse to their first occurrence; a problem and its action
-//      (different labels) always both render.
+//   3. Shared-topic wording never proves two claims equivalent. Preserve
+//      qualifiers and actions; collapse only exact duplicate details.
 
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
@@ -37,11 +36,11 @@ test("172705: exact-duplicate details render once per bucket", () => {
   assert.deepEqual(parts.next, ["Unresolved: none."]);
 });
 
-test("2026-10-02: same-label restatement in next/remaining collapses to first", () => {
+test("same-label paraphrases remain intact rather than guessing equivalence", () => {
   const first = "Unresolved: The fix is NOT live. The installed binary is 0.112.42 built before this change, and the guard is still running that old binary — a release cut was explicitly out of scope, so activation happens at the next release.";
   const restatement = "Unresolved: the fix is still not live — the installed binary is 0.112.42 built before this work, so activation needs a release cut, which was explicitly out of scope.";
   const parts = partitionRichDetails([first, restatement]);
-  assert.deepEqual(parts.next, [first]);
+  assert.deepEqual(parts.next, [first, restatement], 'paraphrased qualifiers must not be silently discarded');
 });
 
 test("2026-10-02: problem and action across labels always both render", () => {
