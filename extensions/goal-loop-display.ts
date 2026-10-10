@@ -2417,6 +2417,37 @@ function auditingCardBlock(g: Goal, audit: AuditDisplayProgress | null | undefin
 
 // Branch lines sit flush-left (pi-tasks convention): pi's widget renderer
 // adds its own one-space gutter, so any indent here doubles up.
+function compactAuditingCardRows(g: Goal, audit: AuditDisplayProgress | null | undefined, block: { lead: string[]; tail: string[] }, now: number, theme?: DisplayTheme, extras?: WidgetExtras): string[] {
+      const phase = auditorDisplayPhase(g, audit, now);
+      const durable = auditLifecycleProjection(g.pendingCompletion, { now });
+      // v0.39.22: stalled needs recovery like quiet/blocked — without it
+      // the glance path falls through to "Audit review pending · detached
+      // worker" + "No action needed", preserving the can't-tell gap on
+      // the production surface. With it, the glance reuses the detailed
+      // lead (stalled · no worker responds) and its retry action row.
+      const needsRecovery = auditRecoveryPending(g) || phase === "quiet" || phase === "stalled" || phase === "blocked" || durable?.phase === "settling";
+      const elapsed = auditorElapsedMs(audit, now);
+      const finished = audit?.toolCalls?.filter(call => call.finishedAt !== undefined).length;
+      const age = auditorActivityAge(audit, now);
+      const facts = [finished !== undefined ? `${finished} calls finished` : undefined,
+        age !== undefined ? `activity ${fmtElapsed(age)} ago` : "no activity yet"].filter(Boolean);
+      const toolWait = auditorToolWait(audit, phase, now);
+      const action = block.lead.find(line => line.startsWith("│ next:"));
+      // No history or model plaques in the glance card: Pi clips its tail.
+      // Keep state, real evidence and the user action ahead of all details.
+      const phaseLine = toolWait ? `├─ ${paint(theme, "accent", `Waiting on ${sanitizeDisplayText(audit!.currentTool!)}${audit?.round === 2 ? " · second audit pass" : ""} · detached auditor`)}` : needsRecovery ? (phase === "quiet" ? `├─ ${paint(theme, "warning", "Audit quiet — may be stuck")}` : block.lead[0]!)
+        : `├─ ${paint(theme, "accent", phase === "running" ? `Audit running · ${(extras?.auditorProgressSignals !== false ? auditorProgressPhaseLabel(audit) : undefined) ?? auditorPhaseForDisplay(audit, phase, auditorHasLiveEvidence(audit, phase, now), now)} · detached worker` : phase === "queued" ? "Audit starting · detached worker" : "Audit review pending · detached worker")}`;
+      const toolLine = block.lead.find(line => /^│ (?:last )?tool:/.test(line));
+      const modelRef = auditorCardModelRef(audit, g.pendingCompletion);
+      const compactToolLine = modelRef ? toolLine?.split(` · ${modelRef}`)[0] : toolLine;
+      return [phaseLine,
+        ...(facts.length ? [`│ ${facts.join(" · ")}`] : []),
+        ...(elapsed !== undefined ? [`│ audit elapsed ${fmtElapsed(elapsed)}`] : []),
+        ...(compactToolLine ? [compactToolLine.startsWith("│ tool:") ? compactToolLine : `│ last tool: ${lastAuditorTool(audit) ?? audit?.currentTool}`] : []),
+        ...(needsRecovery ? (action ? [action] : block.lead.slice(1)) : [toolWait ? `│ No tool completion yet — timeout handling is automatic` : `│ No action needed — review applies automatically`]),
+        `└─ /goal status for full audit details`];
+}
+
 function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | undefined, now: number, theme?: DisplayTheme, width?: number, extras?: WidgetExtras): string[] {
   // Head glyph is ● (not ◆): U+25C6 renders as a color-emoji diamond in some
   // terminal fonts and ignores ANSI color; ● takes the paint everywhere.
@@ -2535,36 +2566,6 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
 // legacy card and the projection card. The projection card embeds these
 // after its own segmented header, so both surfaces name the same live phase
 // (v0.34.22: "Audit starting" before worker progress).
-function compactAuditingCardRows(g: Goal, audit: AuditDisplayProgress | null | undefined, block: { lead: string[]; tail: string[] }, now: number, theme?: DisplayTheme, extras?: WidgetExtras): string[] {
-      const phase = auditorDisplayPhase(g, audit, now);
-      const durable = auditLifecycleProjection(g.pendingCompletion, { now });
-      // v0.39.22: stalled needs recovery like quiet/blocked — without it
-      // the glance path falls through to "Audit review pending · detached
-      // worker" + "No action needed", preserving the can't-tell gap on
-      // the production surface. With it, the glance reuses the detailed
-      // lead (stalled · no worker responds) and its retry action row.
-      const needsRecovery = auditRecoveryPending(g) || phase === "quiet" || phase === "stalled" || phase === "blocked" || durable?.phase === "settling";
-      const elapsed = auditorElapsedMs(audit, now);
-      const finished = audit?.toolCalls?.filter(call => call.finishedAt !== undefined).length;
-      const age = auditorActivityAge(audit, now);
-      const facts = [finished !== undefined ? `${finished} calls finished` : undefined,
-        age !== undefined ? `activity ${fmtElapsed(age)} ago` : "no activity yet"].filter(Boolean);
-      const toolWait = auditorToolWait(audit, phase, now);
-      const action = block.lead.find(line => line.startsWith("│ next:"));
-      // No history or model plaques in the glance card: Pi clips its tail.
-      // Keep state, real evidence and the user action ahead of all details.
-      const phaseLine = toolWait ? `├─ ${paint(theme, "accent", `Waiting on ${sanitizeDisplayText(audit!.currentTool!)}${audit?.round === 2 ? " · second audit pass" : ""} · detached auditor`)}` : needsRecovery ? (phase === "quiet" ? `├─ ${paint(theme, "warning", "Audit quiet — may be stuck")}` : block.lead[0]!)
-        : `├─ ${paint(theme, "accent", phase === "running" ? `Audit running · ${(extras?.auditorProgressSignals !== false ? auditorProgressPhaseLabel(audit) : undefined) ?? auditorPhaseForDisplay(audit, phase, auditorHasLiveEvidence(audit, phase, now), now)} · detached worker` : phase === "queued" ? "Audit starting · detached worker" : "Audit review pending · detached worker")}`;
-      const toolLine = block.lead.find(line => /^│ (?:last )?tool:/.test(line));
-      const modelRef = auditorCardModelRef(audit, g.pendingCompletion);
-      const compactToolLine = modelRef ? toolLine?.split(` · ${modelRef}`)[0] : toolLine;
-      return [phaseLine,
-        ...(facts.length ? [`│ ${facts.join(" · ")}`] : []),
-        ...(elapsed !== undefined ? [`│ audit elapsed ${fmtElapsed(elapsed)}`] : []),
-        ...(compactToolLine ? [compactToolLine.startsWith("│ tool:") ? compactToolLine : `│ last tool: ${lastAuditorTool(audit) ?? audit?.currentTool}`] : []),
-        ...(needsRecovery ? (action ? [action] : block.lead.slice(1)) : [toolWait ? `│ No tool completion yet — timeout handling is automatic` : `│ No action needed — review applies automatically`]),
-        `└─ /goal status for full audit details`];
-}
   let auditTail: string[] = [];
   if (g.status === "auditing") {
     const block = auditingCardBlock(g, audit, now, theme, extras);
