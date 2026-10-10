@@ -195,7 +195,7 @@ export function formatFleetHealth(report: FleetReport): string[] {
     `Bounds: depth ${report.bounds.maxDepth}, projects ${report.bounds.maxProjects}, directories ${report.bounds.maxDirectories}, ${report.bounds.maxMs}ms`,
     ...report.projects.flatMap(project => [
       `${safe(project.path)} — ${project.status ? `${project.status.mode} ${project.status.workflow} · ${project.status.execution}` : 'UNREADABLE/UNCONFIRMED'} · ${project.provenance}${project.partial ? ' (partial)' : ''}`,
-      `  saved ${safe(project.savedAt ?? 'unknown')} · observed ${new Date(project.observedAt).toISOString()} · ${project.status ? safe(project.status.nextAction) : 'Inspect unreadable runtime artifacts in this project'}`,
+      `  saved ${safe(project.savedAt ?? 'unknown')} · observed ${new Date(project.observedAt).toISOString()} · ${project.status ? 'Open this project and use /glla status for local prerequisites and execution details' : 'Inspect unreadable runtime artifacts in this project'}`,
     ]),
     ...report.issues.map(issue => `${issue.kind}: ${safe(issue.path)} — ${issue.detail}`),
     'Saved workflow is not a running session. Open the project and use /glla status to inspect or continue.',
