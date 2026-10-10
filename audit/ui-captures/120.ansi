@@ -1,14 +1,14 @@
 [38;5;244m── Running ─────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
-[38;5;72m● [0m[38;5;72mGOAL · working · RUNNING[0m
+[38;5;72m● [0m[38;5;72mGOAL · working · RUNNING · 1/3 ▰▰▱▱▱ tasks · age 10m 00s[0m
 [38;5;72m│  [0m[38;5;147mMake execution evidence clear without losing the cohesive card[0m
 [38;5;72m├─ [0m[38;5;244mlast progress 1s ago · runtime[0m
 [38;5;72m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.1-sol · inherited from session[0m
 [38;5;72m├─ [0m[38;5;244mfallbacks: minimax/MiniMax-M3.1-Flash[0m
-[38;5;72m└─ [0m[38;5;147mnext: Observed work is in progress[0m
+[38;5;72m└─ [0m[38;5;147mnext: Unify production surfaces[0m
 [38;5;72mglla: RUNNING · goal working · automatic[0m
 
 [38;5;244m── Quota recovery ──────────────────────────────────────────────────────────────────────────────────────────────────────[0m
-[38;5;147m● [0m[38;5;147mGOAL · working · RETRY ARMED[0m
+[38;5;147m● [0m[38;5;147mGOAL · working · RETRY ARMED · age 10m 00s[0m
 [38;5;147m│  [0m[38;5;147mMake execution evidence clear without losing the cohesive card[0m
 [38;5;147m├─ [0m[38;5;179mprovider error[0m
 [38;5;147m├─ [0m[38;5;244mrecovery timer armed · in 5m 00s[0m
@@ -22,11 +22,11 @@
 [38;5;72m├─ [0m[38;5;179mworkflow: Audit rejected: plan the next increment[0m
 [38;5;72m├─ [0m[38;5;244mlast progress 1s ago · runtime[0m
 [38;5;72m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.1-sol · inherited from session[0m
-[38;5;72m└─ [0m[38;5;147mnext: Observed work is in progress[0m
+[38;5;72m└─ [0m[38;5;147mnext: Plan the next increment; scope unchanged[0m
 [38;5;72mglla: RUNNING · project replanning · automatic[0m
 
 [38;5;244m── Blocked prerequisite ────────────────────────────────────────────────────────────────────────────────────────────────[0m
-[38;5;179m● [0m[38;5;179mGOAL · working · BLOCKED[0m
+[38;5;179m● [0m[38;5;179mGOAL · working · BLOCKED · age 10m 00s[0m
 [38;5;179m│  [0m[38;5;147mMake execution evidence clear without losing the cohesive card[0m
 [38;5;179m├─ [0m[38;5;179mnext: Paste AAV version[0m
 [38;5;179m├─ [0m[38;5;179mVersion evidence missing[0m
@@ -35,7 +35,7 @@
 [38;5;179mglla: Paste AAV version · BLOCKED · goal working[0m
 
 [38;5;244m── Dormant audit ───────────────────────────────────────────────────────────────────────────────────────────────────────[0m
-[38;5;147m● [0m[38;5;147mGOAL · auditing · DORMANT[0m
+[38;5;147m● [0m[38;5;147mGOAL · auditing · DORMANT · age 10m 00s[0m
 [38;5;147m│  [0m[38;5;147mMake execution evidence clear without losing the cohesive card[0m
 [38;5;147m├─ [0m[38;5;147mnext: Reopen project; /glla status[0m
 [38;5;147m├─ [0m[38;5;179mSession observed closed[0m
@@ -44,7 +44,7 @@
 [38;5;147mglla: Reopen project; /glla status · DORMANT · goal auditing[0m
 
 [38;5;244m── Unconfirmed audit ───────────────────────────────────────────────────────────────────────────────────────────────────[0m
-[38;5;179m● [0m[38;5;179mGOAL · auditing · EXECUTION UNCONFIRMED[0m
+[38;5;179m● [0m[38;5;179mGOAL · auditing · EXECUTION UNCONFIRMED · age 10m 00s[0m
 [38;5;179m│  [0m[38;5;147mMake execution evidence clear without losing the cohesive card[0m
 [38;5;179m├─ [0m[38;5;244mexecution unconfirmed · saved work retained[0m
 [38;5;179m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.1-sol · inherited from session[0m
@@ -53,7 +53,7 @@
 [38;5;179mglla: EXECUTION UNCONFIRMED · goal auditing · inspect execution[0m
 
 [38;5;244m── Approved settlement owed ────────────────────────────────────────────────────────────────────────────────────────────[0m
-[38;5;179m● [0m[38;5;179mGOAL · settling · EXECUTION UNCONFIRMED[0m
+[38;5;179m● [0m[38;5;179mGOAL · settling · EXECUTION UNCONFIRMED · age 10m 00s[0m
 [38;5;179m│  [0m[38;5;147mMake execution evidence clear without losing the cohesive card[0m
 [38;5;179m├─ [0m[38;5;244mapproval recorded · settlement owed[0m
 [38;5;179m├─ [0m[38;5;244mmodel: primary openai-codex/gpt-6.1-sol · inherited from session[0m
