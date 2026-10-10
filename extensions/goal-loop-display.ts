@@ -1449,9 +1449,6 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
   const progress = coverage ? `${coverage.verified}/${coverage.total} requirements verified${coverage.blocked ? ` · ${coverage.blocked} requirements blocked` : ''}`
     : state.goal?.taskList ? buildTaskProgressText(state.goal) : loop ? `iteration ${loop.iteration}` : '';
   const phase = status.workflow.toUpperCase() === UI_HEALTH_LABEL[status.execution] ? '' : `${status.workflow} · `;
-  const heading = width < 60
-    ? `${UI_HEALTH_LABEL[status.execution]} · ${status.mode.toUpperCase()}${phase ? ` ${status.workflow}` : ''}`
-    : `${status.mode.toUpperCase()} · ${phase}${UI_HEALTH_LABEL[status.execution]}`;
   const metrics = !terminal && width >= 80 && (status.mode === 'goal' || status.mode === 'list') && state.goal
     ? [state.goal.agentRole ? `${state.goal.agentRole} role` : '',
       Number.isFinite(Date.parse(state.goal.createdAt)) ? `age ${fmtElapsed(now - Date.parse(state.goal.createdAt))}` : '',
@@ -1499,7 +1496,9 @@ export function buildUiStatusCard(state: State, status: UiStatus, now: number, t
     rows.push(row('├─ ', `provenance: ${status.provenance} · owner ${status.ownerKey ?? 'none'}`));
     if (state.goal?.pendingCompletion) rows.push(row('├─ ', `saved audit phase: ${state.goal.pendingCompletion.phase ?? 'legacy'} · attempt ${state.goal.pendingCompletion.attemptId ?? 'unrecorded'}`));
   }
-  rows.push(row('└─ ', tail, status.actionability === 'inspect' ? 'warning' : 'accent'));
+  // Closer stays dim like every legacy card tail; the rail position already
+  // says "this is the action", color must not shout it twice.
+  rows.push(row('└─ ', tail, 'dim'));
   return rows;
 }
 function buildTaskProgressText(goal: Goal): string {
