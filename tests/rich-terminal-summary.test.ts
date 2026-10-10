@@ -496,7 +496,7 @@ test("v0.38.102 a single (1) marker is prose, not a list, and is left intact", (
     "Unresolved: the only named owner is TODO(owner) and the count is off by (1) unit.",
   ]);
   const idx = chatLines.findIndex((l) => l === "Remaining");
-  assert.equal(chatLines[idx + 1], "- **Unresolved** — the only named owner is TODO(owner) and the count is off by (1) unit.");
+  assert.equal(chatLines[idx + 1], "- the only named owner is TODO(owner) and the count is off by (1) unit.");
   assert.ok(
     !chatLines.slice(idx + 1).some((l) => l.startsWith("  - ")),
     "a lone (1) must not produce a sub-bullet",
@@ -510,7 +510,7 @@ test("v0.38.102 Next gets the same treatment as Remaining", () => {
   ]);
   const idx = chatLines.findIndex((l) => l === "Next");
   assert.ok(idx > 0, "Next section present");
-  assert.equal(chatLines[idx + 1], "- **Next** — finish the handoff, and note:");
+  assert.equal(chatLines[idx + 1], "- finish the handoff, and note:");
   assert.equal(chatLines[idx + 2], "  - claim the owner name.");
   assert.equal(chatLines[idx + 3], "  - record it in the runbook.");
 });

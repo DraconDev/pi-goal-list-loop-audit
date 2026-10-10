@@ -1109,8 +1109,12 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
   if (parts.findingLines.length > 0) {
     lines.push(head("What Changed"), ...parts.findingLines.map(contentLine), "");
   }
+  // Section headings already supply these labels in chat. Keep the
+  // explicit Left out distinction and preserve all archive labels verbatim.
+  const sectionLine = (line: string): string => contentLine(parts.chat
+    ? line.replace(/^(\s*-\s+)\*\*(?:Unresolved|Next)\*\*\s+—\s+/, '$1') : line);
   if (parts.remainingLines.length > 0) {
-    lines.push(head("Remaining"), ...parts.remainingLines.map(contentLine), "");
+    lines.push(head("Remaining"), ...parts.remainingLines.map(sectionLine), "");
   }
   if (parts.verificationSummaryLine) {
     lines.push(head("Verification"), contentLine(parts.verificationSummaryLine), "");
@@ -1118,7 +1122,7 @@ export function composeRichTerminalLines(parts: RichTerminalParts): string[] {
     lines.push("### Verification Evidence", ...parts.tableLines.map((line) => sanitizeDisplayText(line)), "");
   }
   if (parts.nextLines.length > 0) {
-    lines.push(head("Next"), ...parts.nextLines.map(contentLine), "");
+    lines.push(head("Next"), ...parts.nextLines.map(sectionLine), "");
   }
   if (parts.repoLines.length > 0) {
     lines.push(head("Final Repository State"), ...parts.repoLines.map((line) => `- ${sanitizeDisplayText(line)}`), "");
