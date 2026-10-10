@@ -25,7 +25,8 @@ test('goal resume recovers the provider and reactivates the paused goal', async 
     pi.api.setModel = async () => true;
     try {
       await pi.command('goal', 'resume', ctx);
-      await tick(120);
+      await tick(60);
+      console.log("NOTICES", JSON.stringify(ctx.ui.notifies.map(n => n.message)));
       const saved = readState(cwd);
       assert.equal(saved.goal?.status, 'active', 'the resumed goal must come back after recovery succeeds');
       const notices = [...ctx.ui.matching('/resum/i'), ...ctx.ui.matching('/Resumed goal/i')];
