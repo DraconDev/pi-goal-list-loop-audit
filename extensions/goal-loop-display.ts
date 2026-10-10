@@ -1512,7 +1512,16 @@ function buildTaskProgressText(goal: Goal): string {
 
 export function buildStatusText(state: State, audit?: AuditDisplayProgress | null, now = Date.now(), theme?: DisplayTheme, extras?: WidgetExtras, width?: number): string | undefined {
   const shared = extras?.uiStatusContext ? projectUiStatus(state, { ...extras.uiStatusContext, now }) : undefined;
-  const base = shared ? buildUiStatusFooter(shared, now, theme, width)
+  // Adapter boundary: background waits, waiting-only queues, live audit
+  // objects and stale-handle interruptions keep their exact legacy lines
+  // (behavioral pins) — disjoint states, so the renderers never contradict.
+  // Everything else rides the shared projection footer.
+  const waitingOnly = (!state.goal && (state.list?.length ?? 0) > 0) ? waitingListStatus(state, now, theme, width) : undefined;
+  const auditingLive = (state.goal?.status === "auditing" && audit) ? auditingStatusText(state, state.goal, audit, now, theme, extras, width) : undefined;
+  const interruptedActive = (state.goal?.status === "active" && state.goal.interruptedAt)
+    ? interruptedActiveStatus(state.goal, theme, heldLoop(state) ? paint(theme, "warning", " · loop⏸held") : "") : undefined;
+  const base = shared
+    ? backgroundStatus(state, theme) ?? waitingOnly ?? auditingLive ?? interruptedActive ?? buildUiStatusFooter(shared, now, theme, width)
     : backgroundStatus(state, theme) ?? buildStatusTextBase(state, audit, now, theme, extras, width);
   // Audit 2026-09-07: the worker summary rides the status on EVERY branch
   // including auditing — suppressing it there hid hung/aborting children
@@ -1623,6 +1632,15 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
 // implementation shared by the legacy base path and the shared-projection
 // path (which routes here when an audit object is present). Saved/stale
 // claims without an object stay on the projection footer (unconfirmed).
+// A stale-handle interrupt keeps the goal ACTIVE but outranks every other
+// operational note — one implementation for the legacy base path and the
+// shared-projection path (v0.28.1 S1/S2).
+function interruptedActiveStatus(g: Goal, theme?: DisplayTheme, heldSuffix = ""): string {
+  const label = interruptedForNoStart(g)
+    ? "⚠ turn start not observed — automatic retry held"
+    : "⚠ interrupted — stale handle · /new (or a fresh session_start) rebinds";
+  return `glla: ${paint(theme, "error", label)}${heldSuffix}`;
+}
 function auditingStatusText(state: State, g: Goal, audit: AuditDisplayProgress | null | undefined, now: number, theme?: DisplayTheme, extras?: WidgetExtras, width?: number): string {
   const held = heldLoop(state);
   const heldSuffix = held ? paint(theme, "warning", " · loop⏸held") : "";
@@ -1801,10 +1819,7 @@ function auditingStatusText(state: State, g: Goal, audit: AuditDisplayProgress |
     // v0.28.1 (S1/S2): a stale-handle interrupt keeps the goal ACTIVE.
     // It outranks any older operational note on the same state snapshot.
     if (g.interruptedAt) {
-      const label = interruptedForNoStart(g)
-        ? "⚠ turn start not observed — automatic retry held"
-        : "⚠ interrupted — stale handle · /new (or a fresh session_start) rebinds";
-      return `glla: ${paint(theme, "error", label)}${heldSuffix}`;
+      return interruptedActiveStatus(g, theme, heldSuffix);
     }
     const attention = activeAttention(g);
     if (attention) {
