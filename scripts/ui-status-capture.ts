@@ -28,7 +28,7 @@ const dormant = goal(); dormant.goal!.status = 'auditing'; dormant.goal!.pending
 const dormantContext = observed(dormant); dormantContext.evidence!.session = 'closed';
 const unconfirmed = structuredClone(dormant);
 const settling = structuredClone(dormant); settling.goal!.pendingCompletion!.phase = 'settling';
-const project: State = { goal: undefined, list: [], loop: { target: 'Build a truthful project UI', startedAt: at, active: true, iteration: 3, maxIterations: 50,
+const project: State = { goal: null, list: [], loop: { target: 'Build a truthful project UI', startedAt: at, active: true, iteration: 3, maxIterations: 50,
   plateauWindow: 5, stallCount: 0, bestValue: null, lastValue: null, history: [], builder: adoptRespecRequirements(createRespecBuilder('Build a truthful project UI'), [{ id: 'ui', text: 'Truthful execution', acceptance: 'Owner-fenced evidence' }]) } };
 project.loop!.builder!.phase = 'replanning';
 const rejection = observed(project); rejection.workflowIssue = 'Audit rejected: plan the next increment';
