@@ -20,7 +20,7 @@ Run `caf4d4f3-5c65-4ff3-914a-a73cdc7a334d` failed on provider error: `Server req
 | Design/source mapping | docs/UI-STATUS.md; inline checkpoint above | Initial checkpoint recorded; further integration research pending |
 | Shared projection/runtime | extensions/ui-status.ts; extensions/ui-status-runtime.ts; tests/ui-status-projection.test.ts; tests/ui-status-runtime.test.ts | 15 projection/adapter tests pass; types clean. Broader mode matrix and live integration regressions pending |
 | All UI surfaces | tests/ui-status-surfaces.test.ts; goal-ui.ts production adapter; goal-loop-display.ts shared card/footer | Initial 4 surface tests pass. Goal runtime stamps audit owner/generation/attempt identity; compact/detailed card and footer use shared projection. Status commands, notifications and project-audit evidence integration pending |
-| Fleet view | tests/fleet-health.test.ts | Pending |
+| Fleet view | extensions/fleet-health.ts; tests/fleet-health.test.ts; /glla fleet command/completion; fleetHealthRoots setting; docs/UI-STATUS.md fleet boundary | Implemented: 10 tests pass (configured roots, bounds, malformed/latest-invalid state, permission-denied reads, explicit closure, saved retries, immutable siblings, command zero-dispatch). Combined fleet/projection/runtime/surfaces gate: 29 pass, 0 fail; npm run check exits 0. No sibling-session reload or process probes. Full release suite remains pending |
 | Summaries and captures | summary suites; reproducible narrow/wide captures and native inspection | Pending |
 | Independent rehearsal | Fresh-context reviewer report and disposition | Pending |
 | Full release gate | timeout 1800 npm run release:check | Not run |
