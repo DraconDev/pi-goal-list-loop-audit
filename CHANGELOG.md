@@ -2,6 +2,42 @@
 
 ## Unreleased
 
+## 0.39.24 — evidence-based UI: shared status projection, fleet health, summary partitioning (2026-10-10)
+
+### Shared status projection
+
+- One typed presentation projection (`extensions/ui-status.ts`) separates
+  workflow phase (working/replanning/auditing/settling) from execution
+  health (observed activity, tool wait, armed retry, blocked/manual hold,
+  dormant, unconfirmed) across cards, footer, status commands,
+  notifications and fleet reporting. Saved retry deadlines, claim age and
+  quiet timestamps render as historical facts with explicit uncertainty —
+  never as proof of armed timers, live workers or death.
+- Glance cards keep the cohesive rail with segmented color: only the
+  execution word (and a required user action in the footer) carries the
+  tone; mode, metrics, evidence and closers stay dim. Narrow layouts clip
+  ANSI-aware with prerequisites surviving truncation.
+- Saved behavioral contracts are preserved: interruption banners, queue
+  counts, live audit phases, parked-claim rows, required-fixes tails,
+  durable-vs-defer plaques and the no-id user-facing-text rule all render
+  through shared builders, and `/glla` autocomplete stays action-only
+  (fleet joins as the 19th verb).
+
+### Fleet health
+
+- New read-only `/glla fleet` command inspects only GLLA runtime artifacts
+  under configured `fleetHealthRoots` (bounded roots/depth/time/journal
+  reads, partial-result reporting). No background crawler, sibling mutation
+  or session restart; dormant and unconfirmed sessions are classified
+  honestly instead of declared healthy.
+
+### Completion summaries
+
+- Chat summaries lead with grouped user-visible outcomes, state each
+  limitation once and offer one next action; technical receipts and full
+  evidence stay in the archive/details. Agent-written headings demote to
+  bold on chat; approval/challenge caveats are preserved.
+
 ## 0.39.23 — terminal summary hardening: agent-proof headings, punctuation, clips (2026-10-10)
 
 ### Summary render
