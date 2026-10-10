@@ -114,7 +114,10 @@ test("/glla completions stay concise: actions only; settings live in the table",
   // v0.38.110: fallbacks, owner, takeover and postaudit bring the action
   // list to 17; canonical-route coverage lives in command-registration-collisions.
   // v0.40.x: progress joins as the 18th — observational readout, not a setting.
-  assert.ok((glla.match(/\["[^"]+",/g) ?? []).length <= 18, "glla autocomplete stays concise");
+  // UI redesign milestone 4: fleet joins as the 19th — bounded read-only
+  // health observations under configured roots; an inspection action, not
+  // a setting, and the objective explicitly requires it under /glla.
+  assert.ok((glla.match(/\["[^"]+",/g) ?? []).length <= 19, "glla autocomplete stays concise");
   assert.ok(!/\["[a-zA-Z]+=",/.test(glla), "no key=value setting aliases in autocomplete");
   assert.doesNotMatch(glla, /key=value|project key/);
   assert.doesNotMatch(SRC, /\^\(keep-going\|agents\|auditor\|stall-brakes\|subagents\|other\)\\b/);
