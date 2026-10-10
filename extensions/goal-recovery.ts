@@ -1337,8 +1337,7 @@ export function manuallyResumeMainModelRecovery(ctx: ExtensionContext): boolean 
   return true;
 }
 
-let mainModelRecoveryProbeInFlight = false;
-let mainModelRecoveryProbeToken = 0;
+let mainModelRecoveryProbeInFlight = false;let mainModelRecoveryProbeToken = 0;
 let mainModelRecoveryProbeGeneration: number | null = null;
 let hourlyProbeInFlight = false;
 let hourlyProbeToken = 0;
