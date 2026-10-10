@@ -39,7 +39,21 @@ Deferral is not itself a defect. A healthy long tool/turn can overshoot the targ
 
 No new GLLA lifecycle defect is confirmed by this bounded evidence. Existing tests reproduce and cover settled-boundary firing, override validation, success rearming, failed-attempt suppression, unknown usage, and safe-boundary holds. Do not invent a lifecycle change to explain an unobserved 400k case.
 
-Confirmed observability gap: the caller currently receives only a boolean for most admission refusals (`maybeCompactTranscriptAtBoundary`), so a user cannot distinguish busy/pending/held/budget suppression from threshold behavior on status surfaces. The next list item should project a shared evidence-based eligibility reason, without starting compaction or claiming stale journal observations are live. A reported 400k case needs a timestamped usage observation plus matching work/owner/eligibility evidence before assigning a root cause.
+The investigation identified an observability gap: admission returns only a boolean for most refusals (`maybeCompactTranscriptAtBoundary`). The subsequent status item implements a shared observational explanation, described below, without changing dispatch or compaction behavior. A reported 400k case still needs a timestamped usage observation plus matching work/owner/eligibility evidence before assigning a root cause.
+
+## Implemented status projection
+
+`extensions/compaction-status.ts` defines `CompactionStatus`: `reason` (stable reason code), optional `tokens` (current transcript usage, not cumulative work usage), `threshold` (effective positive global token target or default 200000), `observedAt` (host sample time), and `note` (human explanation). This is a presentation observation, never a dispatch permission.
+
+`currentUiStatusContext` samples only the admitted current-generation host. Sources are host `getContextUsage`, `isIdle`, `hasPendingMessages`, compact API availability, current GLLA supervision/audit/hold/recovery ownership, and two metadata files. Metadata reads are bounded to 4097 bytes per regular file, reject symlinks/nonregular/oversized/invalid files, and never clear a marker or claim an attempt. Matching pressure-budget keys use the selected work owner. Marker rearming uses recorded completion or durable lastCompactionAt and the existing success grace/hysteresis conditions.
+
+The pure projection names unknown usage, below target, busy/pending/unknown boundary, audit, pause, provider recovery, in-flight compaction, unsupervised work, prior boundary attempt, failed-request budget, rearming, unavailable API and unreadable metadata. It reports the most relevant current hold; it does not assert every condition simultaneously or explain historical boundaries from present metadata. Eligibility means observed conditions permit a future boundary check, not that compaction has fired. An audit hold is shown before generic unsupervised state for explanatory clarity.
+
+`UiStatus.compaction` is accepted only with a fresh open host observation matching the current owner and generation, and a fresh nonfuture sample (30-second observation window). Saved/fleet-only, replaced, closed or stale hosts yield `unconfirmed`, with no invented token count. Host compaction evidence is distinct from detached-worker activity: an admitted host can report an audit hold without asserting a stale auditor is alive.
+
+The shared display builder supplies detailed `/glla status` and `/goal status`, compact/detailed widget cards, and footers. Detailed status always carries the observation for nonterminal selected work; glance cards and footer chips include it when known usage meets/exceeds the target, avoiding routine below-target clutter. Reason text precedes token counts on cards. Colors remain neutral diagnostics, not success claims. Inspection starts no compaction, timers, workers or writes, and never scans journals. Existing admission logic remains authoritative and unchanged.
+
+Behavioral reproduction: `npm test -- tests/compaction-status.test.ts tests/ui-status-projection.test.ts tests/ui-status-runtime.test.ts tests/ui-status-surfaces.test.ts tests/between-tasks-compaction.test.ts tests/compaction-settled-boundary.test.ts` — 53 pass, 0 fail across six files. `npm run check` exits 0. Regression cases cover all reason codes, override normalization, bounded read-only metadata, owner/generation/freshness fences, stale detached-audit observations and the production card/footer builders.
 
 ## Mechanical reproduction and verification
 
