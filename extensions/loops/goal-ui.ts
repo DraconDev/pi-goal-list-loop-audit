@@ -1233,6 +1233,8 @@ export function __testOnlyAuditorQuietWatchTick(
 export function __testOnlyResetAuditorQuietWatch(): void {
   auditorQuietSince = null;
   auditorQuietNotified = false;
+  auditorStallSince = null;
+  auditorStallNotified = false;
   lastAuditorQuietStretch = null;
 }
 

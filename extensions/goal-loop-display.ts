@@ -58,7 +58,11 @@ export function fmtElapsed(ms: number): string {
   // liveness signal — minute-only granularity looks frozen on a 1s tick.
   if (m < 60) return `${m}m ${String(s % 60).padStart(2, "0")}s`;
   const h = Math.floor(m / 60);
-  return `${h}h ${String(m % 60).padStart(2, "0")}m`;
+  if (h < 24) return `${h}h ${String(m % 60).padStart(2, "0")}m`;
+  // v0.39.22: day granularity past 24h — a 15-day stalled audit reads
+  // "15d 00h", not "360h 00m". Only affects renders past a day.
+  const d = Math.floor(h / 24);
+  return `${d}d ${String(h % 24).padStart(2, "0")}h`;
 }
 
 export function fmtTokens(n: number): string {
