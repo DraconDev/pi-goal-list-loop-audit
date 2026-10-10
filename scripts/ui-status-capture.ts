@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { Markdown, type MarkdownTheme } from '@earendil-works/pi-tui';
 import { buildWidgetLines, buildStatusText, type DisplayTheme } from '../extensions/goal-loop-display.js';
-import type { State } from '../extensions/goal-loop-core.js';
+import { buildTaskList, type State } from '../extensions/goal-loop-core.js';
 import { uiStatusOwnerKey, type UiStatusContext } from '../extensions/ui-status.js';
 import { createRespecBuilder, adoptRespecRequirements } from '../extensions/respec-builder.js';
 import { buildRichTerminalParts, composeRichTerminalLines } from '../extensions/completion-summary.js';
@@ -21,6 +21,9 @@ function goal(): State { return { goal: { id: 'capture-fixture', objective: 'Mak
   status: 'active', policy: 'goal', autoContinue: true, usage: { tokensUsed: 0, tokensLimit: 0 }, createdAt: at, updatedAt: at }, list: [] }; }
 function observed(state: State): UiStatusContext { return { now, generation: 1, evidence: { ownerKey: uiStatusOwnerKey(state)!, generation: 1, observedAt: now, session: 'open', turnActive: true, lastActivityAt: now - 1000 } }; }
 const running = goal();
+running.goal!.taskList = buildTaskList([{ title: 'Map execution evidence' }, { title: 'Unify production surfaces' }, { title: 'Verify and publish' }]);
+running.goal!.taskList.tasks[0]!.status = 'complete';
+running.goal!.taskList.tasks[1]!.status = 'in_progress';
 const quota = goal(); quota.mainModelRecovery = { kind: 'goal', owner: { kind: 'goal', id: quota.goal!.id }, primary: 'minimax/MiniMax-M3.1-Flash', active: 'minimax/MiniMax-M3.1-Flash', reason: 'Provider 429 · saved work retained', retryAt: new Date(now + 300000).toISOString(), firstFailureAt: at, attempts: 1, attempted: ['minimax/MiniMax-M3.1-Flash'], skipped: [] };
 const quotaContext = observed(quota); quotaContext.evidence!.recovery = { retryTimerArmed: true, hourlyTimerArmed: false, turnActive: false, turnQueued: false, switchInFlight: false };
 const blocked = goal(); blocked.goal!.status = 'paused'; blocked.goal!.pauseKind = 'blocked'; blocked.goal!.pauseReason = 'Version evidence missing'; blocked.goal!.pauseSuggestedAction = 'Paste AAV version';
