@@ -82,6 +82,16 @@ test('simultaneous holds and workflow issues remain cohesive and bounded', () =>
   assert.match(lines.join('\n'), /workflow: Audit rejected/);
 });
 
+test('narrow styled cards preserve uncertainty and clip ANSI by terminal cells', () => {
+  const state = fixture(); state.goal!.status = 'auditing';
+  const theme: DisplayTheme = { fg: (_color, text) => `\x1b[38;5;179m${text}\x1b[0m` };
+  const lines = buildWidgetLines(state, undefined, NOW, theme, 40, { uiStatusContext: { now: NOW } })!;
+  assert.match(lines[0]!, /EXECUTION UNCONFIRMED/);
+  assert.ok(lines.every(line => visibleWidth(line) <= 40));
+  assert.match(lines[1]!, /Verify the redesigned UI/);
+  assert.doesNotMatch(lines.join('\n'), /\x1b\[[0-9;]*…/);
+});
+
 test('semantic warning color never replaces the text state', () => {
   const state = fixture();
   const theme: DisplayTheme = { fg: (color, text) => `<${color}>${text}</${color}>` };
