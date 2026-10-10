@@ -2491,10 +2491,11 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
   // recovery, provenance, and judgment history. The card and the one-line
   // footer share auditorDisplayPhase/auditorPhaseForDisplay, so the two
   // surfaces agree on phase words by construction.
-  let auditTail: string[] = [];
-  if (g.status === "auditing") {
-    const block = auditingCardBlock(g, audit, now, theme, extras);
-    if (extras?.compactAuditCard) {
+// Compact auditing glance rows (no head): one implementation shared by the
+// legacy card and the projection card. The projection card embeds these
+// after its own segmented header, so both surfaces name the same live phase
+// (v0.34.22: "Audit starting" before worker progress).
+function compactAuditingCardRows(g: Goal, audit: AuditDisplayProgress | null | undefined, block: { lead: string[]; tail: string[] }, now: number, theme?: DisplayTheme, extras?: WidgetExtras): string[] {
       const phase = auditorDisplayPhase(g, audit, now);
       const durable = auditLifecycleProjection(g.pendingCompletion, { now });
       // v0.39.22: stalled needs recovery like quiet/blocked — without it
@@ -2517,12 +2518,18 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
       const toolLine = block.lead.find(line => /^│ (?:last )?tool:/.test(line));
       const modelRef = auditorCardModelRef(audit, g.pendingCompletion);
       const compactToolLine = modelRef ? toolLine?.split(` · ${modelRef}`)[0] : toolLine;
-      return [head, phaseLine,
+      return [phaseLine,
         ...(facts.length ? [`│ ${facts.join(" · ")}`] : []),
         ...(elapsed !== undefined ? [`│ audit elapsed ${fmtElapsed(elapsed)}`] : []),
         ...(compactToolLine ? [compactToolLine.startsWith("│ tool:") ? compactToolLine : `│ last tool: ${lastAuditorTool(audit) ?? audit?.currentTool}`] : []),
         ...(needsRecovery ? (action ? [action] : block.lead.slice(1)) : [toolWait ? `│ No tool completion yet — timeout handling is automatic` : `│ No action needed — review applies automatically`]),
         `└─ /goal status for full audit details`];
+}
+  let auditTail: string[] = [];
+  if (g.status === "auditing") {
+    const block = auditingCardBlock(g, audit, now, theme, extras);
+    if (extras?.compactAuditCard) {
+      return [head, ...compactAuditingCardRows(g, audit, block, now, theme, extras)];
     }
     lines.push(...block.lead);
     auditTail = block.tail;
