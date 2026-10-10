@@ -1,18 +1,19 @@
 [48;2;58;48;85m                                                                                                                        [49m
 [48;2;58;48;85m [38;2;104;183;141mDone — Completion summaries are easier to scan[39m                                                                         [49m
-[48;2;58;48;85m [38;2;222;224;225m### [39m[38;2;167;152;215mWhat Changed[39m                                                                                                       [49m
+[48;2;58;48;85m [38;2;167;152;215mWhat Changed[39m                                                                                                           [49m
 [48;2;58;48;85m                                                                                                                        [49m
 [48;2;58;48;85m [38;2;222;224;225m1. Layout[39m                                                                                                              [49m
 [48;2;58;48;85m [38;2;167;152;215m- [39m[38;2;222;224;225mThe menu stays readable at narrow widths[39m                                                                             [49m
 [48;2;58;48;85m     [38;2;167;152;215m- [39m[38;2;222;224;225mbrowser probe at 390px confirmed no document overflow[39m                                                            [49m
-[48;2;58;48;85m       [38;2;222;224;225m[39m[38;2;222;224;225m2. Evidence[39m                                                                                                      [49m
+[48;2;58;48;85m                                                                                                                        [49m
+[48;2;58;48;85m [38;2;222;224;225m2. Evidence[39m                                                                                                            [49m
 [48;2;58;48;85m [38;2;167;152;215m- [39m[38;2;222;224;225mNeutral observations do not imply passing verification[39m                                                               [49m
 [48;2;58;48;85m     [38;2;167;152;215m- [39m[38;2;222;224;225munavailable provider results remain explicitly unknown[39m                                                           [49m
-[48;2;58;48;85m [38;2;222;224;225m### [39m[38;2;205;154;34mRemaining[39m                                                                                                          [49m
+[48;2;58;48;85m [38;2;205;154;34mRemaining[39m                                                                                                              [49m
 [48;2;58;48;85m                                                                                                                        [49m
 [48;2;58;48;85m [38;2;205;154;34m- [39m[38;2;222;224;225mProvider results are still unknown.[39m                                                                                  [49m
 [48;2;58;48;85m [38;2;205;154;34m- [39m[38;2;126;136;142mLeft out[39m[38;2;222;224;225m[38;2;222;224;225m — The narrow-window check is not wired into smoke.[39m                                                          [49m
-[48;2;58;48;85m [38;2;222;224;225m### [39m[38;2;167;152;215mNext[39m                                                                                                               [49m
+[48;2;58;48;85m [38;2;167;152;215mNext[39m                                                                                                                   [49m
 [48;2;58;48;85m                                                                                                                        [49m
 [48;2;58;48;85m [38;2;167;152;215m- [39m[38;2;222;224;225mWire the 390px case into the browser gate.[39m                                                                           [49m
 [48;2;58;48;85m                                                                                                                        [49m

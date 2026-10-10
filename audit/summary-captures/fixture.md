@@ -4,6 +4,7 @@ What Changed
 **1. Layout**
 - The menu stays readable at narrow widths
   - browser probe at 390px confirmed no document overflow
+
 **2. Evidence**
 - Neutral observations do not imply passing verification
   - unavailable provider results remain explicitly unknown
