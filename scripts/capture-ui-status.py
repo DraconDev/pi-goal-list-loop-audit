@@ -31,7 +31,8 @@ def stop(process):
             process.wait(timeout=3)
 
 root = Path(__file__).resolve().parents[1]
-out = root / 'audit' / 'ui-captures'
+summaries = '--summaries' in sys.argv
+out = root / 'audit' / ('summary-captures' if summaries else 'ui-captures')
 xvfb = terminal = None
 read_fd, write_fd = os.pipe()
 try:
@@ -43,20 +44,23 @@ try:
     display = ':' + os.read(read_fd, 32).decode().strip()
     env = {**os.environ, 'DISPLAY': display}
     with tempfile.TemporaryDirectory(prefix='glla-capture-') as temporary:
-        for width in [40, 120]:
-            metadata = json.loads((out / f'{width}.json').read_text())
-            marker = Path(temporary) / f'ready-{width}'
+        stems = [f'{appearance}-{width}' for appearance in ['dark', 'light'] for width in [40, 120]] if summaries else ['40', '120']
+        for stem in stems:
+            metadata = json.loads((out / f'{stem}.json').read_text())
+            width = metadata['width']
+            light = metadata.get('appearance') == 'light'
+            marker = Path(temporary) / f'ready-{stem}'
             terminal = subprocess.Popen(['xterm', '-geometry', f'{width}x{metadata["rows"] + 2}+0+0',
-                                         '-fa', 'Hack', '-fs', '11', '-fg', '#ddd9ea', '-bg', '#181622',
-                                         '-b', '10', '-title', f'GLLA capture {width}', '-e', sys.executable,
-                                         str(Path(__file__).resolve()), '--paint', str(out / f'{width}.ansi'), str(marker)],
+                                         '-fa', 'Hack', '-fs', '11', '-fg', '#202020' if light else '#ddd9ea', '-bg', '#ffffff' if light else '#181622',
+                                         '-b', '10', '-title', f'GLLA capture {stem}', '-e', sys.executable,
+                                         str(Path(__file__).resolve()), '--paint', str(out / f'{stem}.ansi'), str(marker)],
                                         env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             deadline = time.monotonic() + 10
             while not marker.exists():
                 if terminal.poll() is not None or time.monotonic() > deadline:
                     raise RuntimeError('Private terminal renderer did not become ready')
                 time.sleep(0.05)
-            window = subprocess.check_output(['xdotool', 'search', '--name', f'GLLA capture {width}'], env=env, timeout=5).decode().splitlines()[-1]
+            window = subprocess.check_output(['xdotool', 'search', '--name', f'GLLA capture {stem}'], env=env, timeout=5).decode().splitlines()[-1]
             geometry = subprocess.check_output(['xdotool', 'getwindowgeometry', '--shell', window], env=env, timeout=5).decode()
             values = dict(line.split('=', 1) for line in geometry.splitlines() if '=' in line)
             x, y, w, h = [int(values[key]) for key in ['X', 'Y', 'WIDTH', 'HEIGHT']]
@@ -65,9 +69,9 @@ try:
             # Brief raster flush after the output-ready IPC marker.
             time.sleep(0.2)
             image = ImageGrab.grab(xdisplay=display).crop((x, y, x + w, y + h))
-            image.convert('P', palette=1, colors=128).save(out / f'{width}.png', optimize=True)
+            image.convert('P', palette=1, colors=128).save(out / f'{stem}.png', optimize=True)
             metadata.update({'capture': 'real xterm on private Xvfb', 'pixels': [w, h]})
-            (out / f'{width}.json').write_text(json.dumps(metadata, indent=2) + '\n')
+            (out / f'{stem}.json').write_text(json.dumps(metadata, indent=2) + '\n')
             stop(terminal)
             terminal = None
 finally:
