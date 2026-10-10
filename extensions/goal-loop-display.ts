@@ -1440,7 +1440,13 @@ export function buildUiStatusFooter(status: UiStatus, now: number, theme?: Displ
     ? `${paint(theme, 'dim', '·')} ${paint(theme, tone, uiSafeText(status.nextAction))}`
     : `${paint(theme, 'dim', `· ${action}`)}`;
   const text = `${head}${queueSeg}${recoverySeg} ${tail}`;
-  return width ? tuiTruncateToWidth(text, Math.max(1, width), '…') : text;
+  // Required actions outrank secondary context when the full footer cannot
+  // fit. Put the prerequisite first rather than clipping its command behind
+  // mode, queue and saved recovery facts. Wide layouts retain all context.
+  const fitted = width && status.actionability === 'user' && visibleLen(text) > width
+    ? `${paint(theme, 'dim', 'glla:')} ${paint(theme, tone, uiSafeText(status.nextAction))} ${paint(theme, 'dim', `· ${UI_HEALTH_LABEL[status.execution]} · ${phase}`)}${queueSeg}${recoverySeg}`
+    : text;
+  return width ? tuiTruncateToWidth(fitted, Math.max(1, width), '…') : fitted;
 }
 export function buildUiStatusCard(state: State, status: UiStatus, now: number, theme?: DisplayTheme, width = 80, compact = true, extras?: WidgetExtras, audit?: AuditDisplayProgress | null): string[] {
   const terminal = status.execution === 'complete' || status.execution === 'cancelled';
