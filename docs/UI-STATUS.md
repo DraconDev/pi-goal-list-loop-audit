@@ -28,13 +28,13 @@ Represent independent workflow rejection and provider recovery together. Require
 
 - `extensions/goal-loop-display.ts`: compact/detailed cards and footer, including project-builder branch.
 - `extensions/loops/goal-ui.ts`: production compact-card caller, runtime evidence adapter and notifications.
-- `extensions/goal-commands.ts`: status and future on-demand fleet command integration.
+- `extensions/goal-commands.ts`: goal/glla shared status projection and on-demand read-only fleet command integration.
 - `extensions/completion-summary.ts`: concise chat projection versus complete durable archive.
 - `extensions/goal-recovery.ts`: recovery evidence and ownership fencing; preserve retry policy and permission gates.
 
 ## Glance contract
 
-Four to six meaningful lines: actionability/workflow, objective/progress, runtime evidence, blocker, next action. Required action precedes historical diagnostics. Glyph and color always have a text equivalent. `/glla status` retains details and provenance.
+Four to six meaningful lines: actionability/workflow, objective/progress, runtime evidence, blocker, next action. Preserve the older cohesive rail (`●`, `│`, `├─`, `└─`), semantic color, primary/fallback model context and progress meter rather than flattening the card into independently labeled lines. Required actions precede historical diagnostics; automatic-work actions close the rail. Model/history detail yields to prerequisites when space is tight. Wide headers retain useful saved work-age, token and role facts without claiming active execution duration. Terminal outcomes omit unrelated worker uncertainty and duplicate terminal-phase labels. Glyph and color always have a text equivalent. `/glla status` retains details and provenance. Narrow painted rows use Pi's ANSI-aware width helper; uncertainty and actual action commands must survive clipping.
 
 ## Fleet boundary
 
@@ -54,4 +54,4 @@ Fleet: configured-root limits, symlinks, malformed and oversized journals, parti
 
 Summary: outcome-first grouped changes, one instance of each limitation, one next action, full archive evidence and truthful audit/challenge caveats.
 
-Captures: reproducible actual terminal renderer output for running, quota recovery, workflow rejection, user-blocked, dormant/unconfirmed audit, settling and completed summary at narrow/wide widths. Capture implementation and native inspection are pending.
+Captures: reproducible actual terminal renderer output for running, quota recovery, workflow rejection, user-blocked, dormant/unconfirmed audit, settling and completed summary at narrow/wide widths. See [native capture inspection](../audit/UI-CAPTURE-INSPECTION.md) for reproduction commands, real private-xterm screenshots and the disposition of the user's older/newer style comparison. These fixtures demonstrate production rendering, not live session execution; final integration gates remain open in the implementation register.
