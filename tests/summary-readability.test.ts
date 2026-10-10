@@ -23,6 +23,24 @@ test('exact redundant next sentence adds no second copy; differing qualifiers st
     'Next: The narrow-window check is not wired into CI. Run the standalone probe.'];
   for (const detail of distinct) assert.ok(render(distinct).includes(detail.split(': ')[1]!));
 });
+test('abbreviations cannot delete a distinct provider prohibition', () => {
+  const details = ['Unresolved: Do not enable e.g. provider A until credentials are rotated.',
+    'Next: Do not enable e.g. provider B until the network is restored.'];
+  const chat = render(details);
+  for (const detail of details) assert.ok(chat.includes(detail.split(': ')[1]!), chat);
+  assert.ok(render(details, false).includes('Do not enable e.g. provider B until the network is restored.'));
+});
+
+test('ambiguous abbreviation endings and partial repeated clauses are retained', () => {
+  for (const prefix of ['Do not enable e.g.', 'Wait for Dr.', 'Inspect U.S.', 'Use version 1.']) {
+    const details = ['Unresolved: ' + prefix, 'Next: ' + prefix + ' provider B must stay disabled.'];
+    assert.ok(render(details).includes(prefix + ' provider B must stay disabled.'), prefix);
+  }
+  const multi = ['Unresolved: Provider results are unknown. Credentials are missing.',
+    'Next: Provider results are unknown. Restore network access.'];
+  assert.ok(render(multi).includes('Provider results are unknown. Restore network access.'), 'do not delete extracted fragments of a longer risk');
+});
+
 test('case-sensitive evidence is never treated as a verbatim repetition', () => {
   const details = ['Unresolved: Endpoint ABC is unavailable.', 'Next: Endpoint abc is unavailable. Inspect endpoint abc.'];
   const chat = render(details);
