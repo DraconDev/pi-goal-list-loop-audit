@@ -1521,11 +1521,11 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
     // v0.35.15: leading phase glyph + draining activity meter — a glance
     // answers "is the audit alive?" without reading the sentence.
     const phaseText = `auditor ${auditorPhaseGlyph(phase)} ${observed}`;
-    const color = phase === "blocked" || phase === "quiet" ? "warning" : live ? "success" : "accent";
+    const color = phase === "stalled" ? "error" : phase === "blocked" || phase === "quiet" ? "warning" : live ? "success" : "accent";
     const activityMeter = auditorActivityMeter(audit, phase, now);
     const label = live
       ? `${paint(theme, "success", phaseText)} ${paint(theme, "accent", activityMeter)} ${activityBadge("AUDITOR · DETACHED · LIVE", now, theme)}`
-      : `${paint(theme, color, phaseText)} ${paint(theme, color === "warning" ? "warning" : "dim", activityMeter)}`;
+      : `${paint(theme, color, phaseText)} ${paint(theme, color === "warning" || color === "error" ? color : "dim", activityMeter)}`;
     // The persistent footer is the liveness surface only: host, phase, and
     // freshness. The auditor card above already owns the transition hint
     // ("next:"), the worker attribution ("detached worker"), and the
@@ -1534,7 +1534,7 @@ function buildStatusTextBase(state: State, audit?: AuditDisplayProgress | null, 
     const quietAge = phase === "quiet" ? auditorActivityAge(audit, now) : undefined;
     const quietSuffix = quietAge !== undefined ? ` · silent ${fmtElapsed(quietAge)}` : "";
     const compactPrefix = extras?.compactAuditCard
-      ? `${paint(theme, color, durableLabel ?? (toolWait ? `AUDIT TOOL WAIT · ${sanitizeDisplayText(audit!.currentTool!)} ${fmtElapsed(now - audit!.currentToolStartedAt!)} / ${fmtElapsed(audit!.toolTimeoutMs!)}` : phase === "running" ? "AUDIT RUNNING" : phase === "quiet" ? "AUDIT QUIET — may be stuck" : phase === "blocked" ? "AUDIT BLOCKED" : phase === "queued" ? "AUDIT STARTING" : "AUDIT REVIEW"))} · `
+      ? `${paint(theme, color, durableLabel ?? (toolWait ? `AUDIT TOOL WAIT · ${sanitizeDisplayText(audit!.currentTool!)} ${fmtElapsed(now - audit!.currentToolStartedAt!)} / ${fmtElapsed(audit!.toolTimeoutMs!)}` : phase === "running" ? "AUDIT RUNNING" : phase === "quiet" ? "AUDIT QUIET — may be stuck" : phase === "stalled" ? "AUDIT STALLED — worker dead" : phase === "blocked" ? "AUDIT BLOCKED" : phase === "queued" ? "AUDIT STARTING" : "AUDIT REVIEW"))} · `
       : "";
     const activityAge = auditorActivityAge(audit, now);
     const freshness = extras?.compactAuditCard && phase !== "quiet" && !toolWait
@@ -2327,7 +2327,12 @@ function goalLines(g: Goal, state: State, audit: AuditDisplayProgress | null | u
     if (extras?.compactAuditCard) {
       const phase = auditorDisplayPhase(g, audit, now);
       const durable = auditLifecycleProjection(g.pendingCompletion, { now });
-      const needsRecovery = auditRecoveryPending(g) || phase === "quiet" || phase === "blocked" || durable?.phase === "settling";
+      // v0.39.22: stalled needs recovery like quiet/blocked — without it
+      // the glance path falls through to "Audit review pending · detached
+      // worker" + "No action needed", preserving the can't-tell gap on
+      // the production surface. With it, the glance reuses the detailed
+      // lead (stalled · no worker responds) and its retry action row.
+      const needsRecovery = auditRecoveryPending(g) || phase === "quiet" || phase === "stalled" || phase === "blocked" || durable?.phase === "settling";
       const elapsed = auditorElapsedMs(audit, now);
       const finished = audit?.toolCalls?.filter(call => call.finishedAt !== undefined).length;
       const age = auditorActivityAge(audit, now);
