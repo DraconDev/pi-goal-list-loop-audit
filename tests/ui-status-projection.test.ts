@@ -2,11 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { State } from '../extensions/goal-loop-core.js';
 import { projectUiStatus, uiStatusOwnerKey, type UiStatusEvidence } from '../extensions/ui-status.js';
-import { seedGoal } from './harness/mock-pi.js';
 
 const NOW = Date.parse('2026-10-10T12:00:00Z');
 function fixture(): State {
-  return { goal: seedGoal({ id: 'ui-owner', status: 'active' }), list: [], loop: null } as State;
+  return { goal: { id: 'ui-owner', objective: 'UI fixture', status: 'active', policy: 'goal',
+    autoContinue: true, usage: { tokensUsed: 0, tokensLimit: 1_000_000 },
+    createdAt: new Date(NOW).toISOString(), updatedAt: new Date(NOW).toISOString() }, list: [] };
 }
 function observed(state: State, patch: Partial<UiStatusEvidence> = {}): UiStatusEvidence {
   return { ownerKey: uiStatusOwnerKey(state)!, generation: 2, session: 'open', observedAt: NOW, ...patch };
