@@ -19,7 +19,7 @@ import {
   assignQueueOrder, compareQueueItems, readAuditLog, readQueueFromDisk, routeGoalArgs, routeListText, sanitizeDisplayText, sanitizeProviderAuditReport, statusLabel,
   visibleListPosition, visibleListPositions,
   writeQueueItemFile, type ModeCommand, type State, type AuditVerdict, type LedgerRecord, LIST_MUTATING_SUBCOMMANDS, SETTINGS_MUTATING_ACTIONS,
-  clearLoadHold, stateRootPending,
+  clearLoadHold, stateRootPending, isPersistenceDegraded,
 } from "./goal-loop-core.js";
 // v0.38.99: the status surfaces name the durable audit lifecycle from the one
 // projection the widget uses.
@@ -563,12 +563,14 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
   const recoveryStaleEntry = state.mainModelRecovery
     ? warnIfStaleAtEntry(ctx, resumeCommand)
     : false;
+  const requestedGoal = state.goal?.status === "paused" ? state.goal : undefined;
+  const resumeGeneration = flags.sessionGeneration;
   if (!recoveryStaleEntry && manuallyResumeMainModelRecovery(ctx)) {
     releaseAuditorSurface();
     if (state.goal?.status === "paused") {
       // v0.39.25: the same "resume stops at the probe" gap as the armed
       // recovery below — release the parked goal once THIS probe settles.
-      void mainModelRecoveryProbeSettled()?.then(() => releasePausedGoalAfterRecoveryProbe(ctx, resumeCommand, true));
+      void mainModelRecoveryProbeSettled()?.then(() => releasePausedGoalAfterRecoveryProbe(ctx, resumeCommand, requestedGoal, resumeGeneration));
     }
     return;
   }
@@ -578,13 +580,12 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
   // to get the resumed work running. Remember the resume request and release
   // the parked goal once the probe actually wins; a failed probe re-arms the
   // envelope and leaves the park in place.
-  const resumeGoalAfterProbe = state.goal?.status === "paused";
   if (!recoveryStaleEntry && (state.mainModelRecovery?.retryAt || state.mainModelRecovery?.pendingModelSwitch)) {
     releaseAuditorSurface();
     clearMainModelRecoveryTimer();
     flags.continuationDispatchStoodDown = false;
     ctx.ui.notify("Retrying the saved main-model recovery now — one provider probe, then the configured fallback models if needed.", "info");
-    void probeMainModelRecovery(ctx).then(() => releasePausedGoalAfterRecoveryProbe(ctx, resumeCommand, resumeGoalAfterProbe));
+    void probeMainModelRecovery(ctx).then(() => releasePausedGoalAfterRecoveryProbe(ctx, resumeCommand, requestedGoal, resumeGeneration));
     return;
   }
   // Optional failback must never consume a paused-work resume. Its probe
@@ -758,8 +759,11 @@ async function cmdResume(ctx: ExtensionContext): Promise<void> {
  * releases the park; a failed probe keeps the durable envelope in charge.
  * v0.39.25: this is the missing half of "/goal resume doesn't always work".
  */
-function releasePausedGoalAfterRecoveryProbe(ctx: ExtensionContext, resumeCommand: string, requested: boolean): void {
-  if (!requested) return;
+function releasePausedGoalAfterRecoveryProbe(ctx: ExtensionContext, resumeCommand: string, requested: Goal | undefined, generation: number): void {
+  // The command authorizes only this held snapshot, not successor work or a
+  // later pause. A resolved/skipped probe alone is never permission to resume.
+  if (!requested || state.goal !== requested || flags.sessionGeneration !== generation) return;
+  if (typeof state.supervisorPausedAt === 'number' || state.loadHoldAt || isPersistenceDegraded()) return;
   const recovery = state.mainModelRecovery;
   if (recovery?.pendingModelSwitch || recovery?.retryAt || recovery?.manualResumeRequired) return;
   if (isLoopActive()) return;
@@ -767,9 +771,9 @@ function releasePausedGoalAfterRecoveryProbe(ctx: ExtensionContext, resumeComman
   if (!goal || goal.status !== "paused" || goal.pendingCompletion) return;
   if ((goal.pauseReason ?? "").startsWith("main model recovery")) return; // recovery release owns this shape
   if (warnIfStaleAtEntry(ctx, resumeCommand)) return;
-  ctx.ui.notify(`Provider back — resuming the paused ${goal.policy === "list" ? "list item" : "goal"}: ${displaySlice(goal.objective, 70)}`, "info");
-  appendLedger(ctx.cwd, "goal_resumed_after_recovery_probe", { goalId: goal.id, policy: goal.policy, via: resumeCommand });
   if (!updateGoal({ status: "active", pauseReason: undefined, pauseSuggestedAction: undefined, pauseKind: undefined, pauseOptions: undefined, pauseRecommended: undefined, pauseResumeAt: undefined, interruptedAt: undefined, interruptedReason: undefined, autoResumedAt: undefined, autoResumedEvent: undefined }, ctx)) return;
+  appendLedger(ctx.cwd, "goal_resumed_after_recovery_probe", { goalId: goal.id, policy: goal.policy, via: resumeCommand });
+  ctx.ui.notify(`Recovery probe settled — resuming the paused ${goal.policy === "list" ? "list item" : "goal"}: ${displaySlice(goal.objective, 70)}`, "info");
   resetLengthExhaustionEpisodes();
   scheduleContinuation(ctx, true);
 }
